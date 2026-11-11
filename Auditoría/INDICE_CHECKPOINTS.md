@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.491**
+- Último checkpoint: **C1.492**
 - Última sesión: `IMA-EXEC-20261110-1825Z-02`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.491: **116431**
+- Caracteres del archivo activo tras C1.492: **119928**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -342,3 +342,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.489 | IMA-EXEC-20261110-1825Z-02 | EXAM: getCompetencyEvaluations aislado por identidad estudiante y asignación docente exacta; RBAC/scope/lock, IDs ambiguos y hoja sin mutación; suite V8 17 escenarios PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.489 | 1271–1315 | C1.488 | 5360e6869fb0b82c890ac09b4a616be1b97db96a; checkpoint 7f9b01bba0c340c5db1ece20260faa5342616b31; Node/CI NOT RUN |
 | C1.490 | IMA-EXEC-20261110-1825Z-02 | EXAM: getStudentRecoveries aislado por identidad/vínculo familiar; scope institucional, lectura no mutante, IDs ambiguos y datos inválidos; suite V8 23 escenarios PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.490 | 1318–1369 | C1.489 | bd235885ccc8177bd71a10d399c650d04e5c7cfd; checkpoint 9646aabe65ac23494bd1ce9acfb71e0b8c592964; Node/CI NOT RUN |
 | C1.491 | IMA-EXEC-20261110-1825Z-02 | EXAM: getGradeRectificationHistory aislado por identidad/vínculo familiar y scope institucional; Profesor denegado en ruta directa; lectura no mutante, IDs ambiguos y datos inválidos; suite V8 26 escenarios PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.491 | 1369–1424 | C1.490 | 01c3d394ceab7b8f15bb279d8d5a84cb8866f29f; checkpoint 2b03527a267fbf1bf2a1d0d64b4fa8637740831d; Node/CI NOT RUN |
+| C1.492 | IMA-EXEC-20261110-1825Z-02 | EXAM: getStudentAcademicReport protegido por identidad/vínculo/scope; lectura sin escrituras indirectas; hojas opcionales, esquemas e IDs validados; borradores ocultos; suite V8 27 escenarios PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.492 | 1425–1475 | C1.491 | fdb221b3fe5300bde146b5da1df4cc934dc78d6c; checkpoint 6128e5f70cf3809935d8bb6361b1dc6ea3ad9e86; Node/CI NOT RUN |
