@@ -1568,3 +1568,39 @@ Continuar inventario de mutaciones EXAM sin cobertura equivalente y seleccionar 
 
 HEAD final: se confirmará después de publicar y verificar el commit del checkpoint.
 ===============================================================================
+
+
+===============================================================================
+C1.552 — TASK-153 / AUD-NG-386 / copyEvaluationSetupBetweenGroups: identidad revalidada bajo lock
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD previo al checkpoint: e46a506e8c03e23834b79437c9d0d52e3f3e610f
+
+### Alcance y resultado
+Se cerró una brecha de cobertura en copyEvaluationSetupBetweenGroups: la suite comprobaba revalidación de identidad bajo ScriptLock, pero no la pérdida de userId entre preflight y revalidación.
+
+### Cambios
+- tests/security/exam-service-evaluation-setup-copy-security.test.js: fixture con secuencia de identidades y escenario válido en preflight / userId compuesto por espacios bajo lock.
+- La regresión exige RESOURCE_NOT_AVAILABLE, dos comprobaciones de identidad, lock adquirido/liberado, cero aperturas de Sheets y snapshots intactos de CategoriasEvaluacion y ResourceOwnership.
+- Se corrigió la aserción de eventos para incluir explícitamente tryLock.
+- beta_test.txt / BETA-EXAM-059: pasos beta ampliados.
+- Sin cambios en backend productivo, permisos, roles, scope ni persistencia.
+
+### Verificación local
+- Parseo V8 de backend/exam-service/Code.gs: PASS.
+- Parseo V8 de la suite: PASS.
+- Suite completa: 28 escenarios PASS en aislamiento V8 con shims.
+- Escenario nuevo: identidad válida en preflight; userId en blanco bajo lock; RESOURCE_NOT_AVAILABLE; lock liberado; cero aperturas de Sheets; categorías y ownership intactos.
+- Node 22/CI para esta revisión: NOT RUN. El workflow 43045163554 SUCCESS pertenece a una revisión anterior.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-059 permanece Pendiente beta.
+
+### Estado y continuidad
+C1.552 completa la cobertura local de revalidación de identidad para copyEvaluationSetupBetweenGroups. TASK-153 / AUD-NG-386 continúa En ejecución para mutaciones EXAM restantes. Sin cambios productivos.
+
+### Siguiente acción exacta
+Continuar inventario de mutaciones EXAM y seleccionar otro handler con brecha verificable. No repetir C1.552 ni C1.534–C1.551.
+
+HEAD final: se confirmará después de publicar y verificar el commit del checkpoint.
+===============================================================================
