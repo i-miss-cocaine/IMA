@@ -367,4 +367,4 @@ test(() => {
   assert.equal(JSON.stringify(examRows), examSnapshot, "the complete exam row must remain unchanged");
 });
 
-process.stdout.write("exam-service-exam-mutation-security: " + passed + "/16 PASS\\n");
+process.stdout.write("exam-service-exam-mutation-security: " + passed + "/17 PASS\\n");
