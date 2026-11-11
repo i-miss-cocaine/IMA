@@ -1842,3 +1842,23 @@ C1.562 queda verificada y cerrada en cobertura local. Solo se modificó la suite
 
 HEAD anterior: 13c331a7d94b1c3d7a85d7c63904dcf68b008f72. Rama: NG_beta_0.0.0.1_work. Rama base sin cambios esperada: 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
+
+
+===============================================================================
+## C1.564 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — cobertura de revocación RBAC bajo ScriptLock en reopenPeriodGradebook.
+
+### Cambio
+- La suite `tests/security/exam-service-period-gradebook-reopen-security.test.js` tenía 27 escenarios y un validador RBAC estático.
+- El fixture ahora admite una secuencia RBAC y se agregó escenario [true, false] que llama al handler real.
+- El escenario exige RESOURCE_NOT_AVAILABLE en la segunda validación RBAC; eventos [rbac, identity, lock, rbac]; dos verificaciones RBAC, una identidad; lock adquirido y liberado; cero aperturas de Sheets; snapshots de CierresPeriodos e HistorialRectificacionesNotas sin cambios.
+- El backend ya revalida el permiso bajo lock antes de abrir Sheets; no se modificó código productivo.
+
+### Verificación / estado
+- Parseo JavaScript de la suite modificada: PASS.
+- Suite Node local (28 escenarios internos): NOT RUN en este entorno; pendiente confirmación del usuario.
+- CI y Apps Script/Sheets real: NOT RUN. BETA-EXAM-054 permanece Pendiente beta.
+- C1.564 En ejecución hasta ejecutar la suite focalizada. TASK-153 / AUD-NG-386 continúa En ejecución.
+
+HEAD inicial: 2096c07e6e7737ed41447bc5bf8a868219bcfcaa. Rama: NG_beta_0.0.0.1_work. Rama base esperada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================

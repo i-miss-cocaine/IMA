@@ -4116,7 +4116,9 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Alcance/estado:** cobertura local completada; solo se amplió la prueba, sin cambios en backend productivo, RBAC, roles, scope, asignaciones o persistencia. C1.562 queda verificada y cerrada localmente; TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
 
 
-### 10.214 TASK-153 / AUD-NG-386 — cubrir revocación RBAC bajo ScriptLock en reopenPeriodGradebook (siguiente tarea identificada)
-- **Brecha preliminar:** reopenPeriodGradebook ejecuta preflight RBAC/identidad y vuelve a validar ambos dentro del lock, pero su suite dedicada de 27 escenarios no modela una secuencia RBAC concedido→revocado; el fixture usa un único booleano `denied`.
-- **Alcance previsto:** ampliar el fixture de `tests/security/exam-service-period-gradebook-reopen-security.test.js` y añadir un escenario determinista [true, false] que invoque el handler real, compruebe RESOURCE_NOT_AVAILABLE, liberación del lock, cero aperturas de Sheets y preservación de CierresPeriodos/auditoría. No modificar backend salvo que la inspección revele un defecto productivo.
-- **Estado:** pendiente de implementación e inspección detallada en la siguiente iteración.
+### 10.214 TASK-153 / AUD-NG-386 — cubrir revocación RBAC bajo ScriptLock en reopenPeriodGradebook (C1.564)
+- **Brecha confirmada:** el handler realiza preflight RBAC/identidad y revalida el permiso y la identidad bajo ScriptLock. La suite tenía 27 escenarios y un permiso RBAC estático; no modelaba concesión inicial seguida de revocación.
+- **Cobertura añadida:** el fixture acepta una secuencia RBAC determinista y un nuevo escenario [true, false] invoca el handler real. Verifica RESOURCE_NOT_AVAILABLE en la segunda comprobación, secuencia `rbac, identity, lock, rbac`, una identidad, lock adquirido/liberado, cero aperturas de Sheets y snapshots intactos de CierresPeriodos e HistorialRectificacionesNotas.
+- **Alcance:** cambio exclusivo de prueba; el backend ya revalida RBAC antes de abrir Sheets, por lo que no se modificó lógica productiva, roles, permisos, scope ni persistencia.
+- **Verificación:** parseo JavaScript de la suite modificada PASS en entorno del agente. Ejecución de los 28 escenarios con Node local: NOT RUN aquí; pendiente del usuario. CI y Apps Script/Sheets real: NOT RUN.
+- **Estado:** cobertura añadida; C1.564 permanece En ejecución hasta confirmar la suite local. TASK-153 / AUD-NG-386 continúa En ejecución.
