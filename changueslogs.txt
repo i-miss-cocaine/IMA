@@ -2016,3 +2016,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - El workflow global falla después en `exam-service-security-contract.test.js` por ReferenceError preexistente `withAuthorizedExamCreation_ is not defined`; no atribuible a C1.574.
 - C1.574 Completada en cobertura local/CI focalizado. Apps Script/Sheets real NOT RUN; BETA-EXAM-079 permanece Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.575 — verificación local saveStudentRecovery
+- Parseo del backend y de la suite: PASS.
+- Suite focalizada ejecutada en V8 aislado con shims compatibles: 17/17 PASS.
+- Revocación RBAC [true,false] rechaza antes de Sheets, libera ScriptLock y preserva todas las hojas sintéticas.
+- CI focalizado pendiente; BETA-EXAM-080 Pendiente beta.
+===============================================================================
