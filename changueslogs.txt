@@ -1346,5 +1346,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - El envío a revisión ahora exige RBAC, identidad firmada de Profesor, scope departamental activo y asignación exacta; el ProfesorID se deriva del actor autenticado.
 - Se ignoran los campos de cliente profesorId, anoId y notasPendientesCount; AnoID conserva el sentinel legado ANO-CURRENT.
 - ScriptLock serializa la creación; se valida el esquema, se bloquean envíos activos/aprobados/cerrados duplicados y se permite reenvío después de Observado; ID REV-UUID con control de colisión.
-- Harness local aislado 21/21 PASS; CI pendiente de verificación; Apps Script/Sheets NOT RUN; BETA-EXAM-054 Pendiente beta.
+- Harness local aislado 23/23 PASS; CI pendiente de verificación; Apps Script/Sheets NOT RUN; BETA-EXAM-054 Pendiente beta.
 ===============================================================================

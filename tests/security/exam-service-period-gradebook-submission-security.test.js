@@ -45,13 +45,13 @@ function fixture(options = {}) {
   if (options.badAssignmentSchema) assignmentRows[0] = ["wrong"];
   const closureRows = [closureHeaders];
   if (options.existing) closureRows.push([
-    "REV-OLD", "ANO-CURRENT", "P1", "10", "A", "Math", "T1",
+    "REV-OLD", options.existingYear || "ANO-CURRENT", "P1", "10", "A", "Math", "T1",
     options.existingState || "PendienteRevision", new Date()
   ]);
   if (options.duplicateId) closureRows.push(["REV-U1", "ANO-CURRENT", "P2", "9", "B", "Science", "T1", "Observado", new Date()]);
   if (options.badSchema) closureRows[0] = ["wrong"];
   const sheets = { ConfiguracionAcademica: makeSheet(assignmentRows) };
-  if (!options.missingClosure) sheets.CierresPeriodos = makeSheet(closureRows);
+  if (!options.missingClosure) sheets.CierresPeriodos = makeSheet(options.emptyClosure ? [] : closureRows);
   const stats = { acquired: 0, released: 0, held: false, opens: 0 };
   const actor = options.actor || { authorized: true, userId: "T1", role: "Profesor" };
   const scope = options.scope || { authorized: true, institutionId: "I1", departmentIds: ["D1"], institutionWide: false };
@@ -158,6 +158,15 @@ test(() => {
 test(() => {
   const x = fixture({ existing: true });
   assert.throws(() => x.call(), /ALREADY_EXISTS/);
+  assert.equal(x.sheets.CierresPeriodos.rows.length, 2);
+});
+test(() => {
+  const x = fixture({ existing: true, existingYear: "2026" });
+  assert.throws(() => x.call(), /ALREADY_EXISTS/);
+});
+test(() => {
+  const x = fixture({ emptyClosure: true });
+  assert.equal(x.call().status, "success");
   assert.equal(x.sheets.CierresPeriodos.rows.length, 2);
 });
 test(() => {

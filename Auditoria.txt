@@ -1573,6 +1573,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 ### AUD-NG-386 — EXAM: submitGradebookForReview (C1.501)
 - **Hallazgo:** el endpoint creaba filas PendienteRevision sin autorización local, aceptaba profesorId/año/conteo del cliente y permitía duplicidad concurrente; la creación de hoja ocurría antes de cualquier control.
 - **Corrección:** RBAC + identidad firmada de Profesor + scope departamental activo + asignación exacta; actor derivado del token; ScriptLock, esquema y duplicidad validados; UUID y creación diferida de hoja. Reenvío permitido solo después de Observado.
-- **Pruebas:** harness local aislado 21/21 PASS; CI pendiente de confirmación; Apps Script/Sheets real NOT RUN; BETA-EXAM-054 Pendiente beta.
+- **Pruebas:** harness local aislado 23/23 PASS; CI pendiente de confirmación; Apps Script/Sheets real NOT RUN; BETA-EXAM-054 Pendiente beta.
 - **Límite:** ConfiguracionAcademica carece de DepartmentID/AnoID; no se infiere relación departamental ni año académico. TASK-153 y AUD-NG-386 continúan abiertos por otras operaciones EXAM.
 ===============================================================================

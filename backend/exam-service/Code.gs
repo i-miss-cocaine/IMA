@@ -2946,13 +2946,12 @@ function getAuthorizedPeriodGradebookSubmissionContext_(payload) {
   const sheet = ss.getSheetByName("CierresPeriodos");
   const closureHeaders = ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "ProfesorID", "Estado", "FechaCierre"];
   if (sheet) {
-    const data = sheet.getDataRange().getValues();
+    const data = sheet.getLastRow() > 0 ? sheet.getDataRange().getValues() : [];
     if (data.length && closureHeaders.some((header, index) =>
       String(data[0][index] || "").trim() !== header)) {
       throw new Error("GRADEBOOK_SUBMISSION_SCHEMA_INVALID");
     }
     const sameContext = data.slice(1).filter(row =>
-      normalizeString(row[1]) === normalizeString(anoId) &&
       normalizeString(row[2]) === normalizeString(periodoId) &&
       normalizeString(row[3]) === normalizeString(grado) &&
       normalizeString(row[4]) === normalizeString(seccion) &&
