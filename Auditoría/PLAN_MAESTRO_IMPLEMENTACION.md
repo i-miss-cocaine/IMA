@@ -3978,3 +3978,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** suite exam-service-exam-mutation-security 15/15 PASS en V8 aislado con shims fs/vm/assert; parseo V8 de Code.gs y test PASS. Node 22 nativo/CI NOT RUN.
 - **Beta:** BETA-EXAM-076 agregado para validar el rechazo y conservación integral de la fila en Apps Script/Sheets desplegado; Pendiente beta.
 - **Estado:** cobertura local de updateExam añadida; sin cambios productivos. TASK-153 / AUD-NG-386 continúa En ejecución; continuar inventario de mutaciones EXAM sin cobertura equivalente.
+
+### 10.196 TASK-153 / AUD-NG-386 — ejecutar saveGradebookGrades real ante pérdida de identidad bajo lock (C1.543)
+- **Hallazgo de cobertura:** la suite verificaba dos llamadas de identidad, pero usaba el mismo actor estable; no demostraba que el handler rechazara la pérdida de userId entre preflight y contexto bajo lock ni que preservara las notas.
+- **Estado:** cobertura local añadida al handler saveGradebookGrades; la prueba exige RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas de Sheets y snapshot de CalificacionesEstudiantes intacto. Sin cambios productivos. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario restante.

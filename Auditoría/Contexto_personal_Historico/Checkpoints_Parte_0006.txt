@@ -1270,3 +1270,29 @@ C1.541 cubrió updateExamStatus real. updateExam comparte el wrapper/contexto, p
 ### Beta y continuidad
 BETA-EXAM-076 agregado; Pendiente beta. TASK-153 / AUD-NG-386 continúa En ejecución. Siguiente acción: continuar el inventario de mutaciones EXAM restantes, sin repetir C1.534–C1.542.
 ===============================================================================
+
+
+===============================================================================
+C1.543 — TASK-153 / AUD-NG-386 / revalidación de identidad en saveGradebookGrades
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 0395d35eb67d0f24715a14916572faffd858e4ca
+
+### Alcance y hallazgo
+La suite de saveGradebookGrades comprobaba que RBAC e identidad se verificaran dos veces, pero mantenía constante el actor. Faltaba simular pérdida de userId entre preflight y revalidación contextual bajo lock y comprobar que no se alteraran calificaciones.
+
+### Cambio
+- tests/security/exam-service-gradebook-save-security.test.js: fixture ampliada para suministrar una secuencia determinista de identidades y exponer el contador de verificaciones.
+- Nuevo escenario ejecuta el handler real saveGradebookGrades, wrapper y contexto productivos; el actor tiene userId válido en preflight y solo espacios en la segunda validación.
+- Se exige RESOURCE_NOT_AVAILABLE, dos verificaciones de identidad, lock adquirido/liberado, cero aperturas de Sheets y snapshot completo de CalificacionesEstudiantes sin cambios.
+- Sin cambios en Code.gs, permisos, roles, scope ni persistencia.
+
+### Verificación local
+- Parseo V8 de Code.gs y suite dedicada: pendiente de ejecución local en esta iteración.
+- Node 22 nativo/CI: NOT RUN.
+- Apps Script/Sheets real: NOT RUN.
+
+### Beta y continuidad
+BETA-EXAM-057 ya contempla la revalidación de identidad para saveGradebookGrades y bulkApplyGradebookGrades; se precisa el escenario de pérdida de userId después del preflight. Permanece Pendiente beta. TASK-153 / AUD-NG-386 continúa En ejecución; siguiente acción: continuar inventario de mutaciones EXAM no cubiertas sin repetir C1.534–C1.543.
+===============================================================================
