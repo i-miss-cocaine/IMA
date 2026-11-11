@@ -1920,3 +1920,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - CI específico 43102931371 reporta PASS 29/29; el archivo inspeccionado contiene 29 invocaciones test() y salida configurada /29.
 - Discrepancia registrada sin inflar evidencia: confirmar HEAD/archivo local antes de cerrar C1.568. TASK-153 continúa En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.570 — TASK-153 / gradeExamSubmission: revocación RBAC anidada
+- Añadida cobertura del handler real con secuencia RBAC [true, true, false] entre preflight, contexto de entrega y contexto anidado del examen.
+- Se exige RESOURCE_NOT_AVAILABLE antes de segunda apertura de Sheets y escritura, con lock liberado.
+- Parseo sintáctico PASS; suite local y CI pendientes. Sin cambios productivos. BETA-EXAM-073 ampliado.
+===============================================================================

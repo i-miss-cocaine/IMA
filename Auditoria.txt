@@ -1946,3 +1946,9 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Usuario informa PASS 28/28 para la suite reviewPeriodGradebook.
 - CI run 43102931371 confirma PASS 29/29 en el paso específico. El archivo inspeccionado en HEAD previo contiene 29 invocaciones test() y anuncia PASS (count/29).
 - Se conserva el resultado local exactamente como fue comunicado; falta reconciliar que el comando se ejecutó sobre el HEAD actualizado. C1.568 / TASK-153 permanecen En ejecución; no se inicia otra mutación EXAM en esta iteración.
+
+
+### C1.570 — revocación RBAC anidada en gradeExamSubmission
+- Brecha de cobertura: tercera comprobación RBAC en getAuthorizedExamMutationContext_ no estaba probada con permiso revocado tras preflight y contexto de entrega.
+- Se añadió escenario del handler real con [true, true, false], esperando RESOURCE_NOT_AVAILABLE, lock liberado, una sola apertura/lectura de entrega y cero escrituras.
+- Solo se modifica la suite dedicada; backend productivo sin cambios. Parseo PASS; suite local, CI y Apps Script/Sheets NOT RUN. Pendiente ejecución local.

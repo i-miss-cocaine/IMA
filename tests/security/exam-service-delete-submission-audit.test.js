@@ -246,6 +246,64 @@ test(() => {
 
 
 test(() => {
+  const examContext = extract("getAuthorizedExamMutationContext_");
+  const deliveryContext = extract("getAuthorizedExamSubmissionMutationContext_");
+  const wrapper = extract("withAuthorizedExamSubmissionMutation_");
+  const handler = extract("gradeExamSubmission");
+  const events = [];
+  const permissionResults = [true, true, false];
+  let permissionIndex = 0, identityCalls = 0, spreadsheetOpens = 0, deliveryReads = 0, writes = 0;
+  const deliverySheet = {
+    getDataRange() {
+      deliveryReads++;
+      events.push("delivery-read");
+      return { getValues() { return [["EntregaID","ExamenID","EstudianteID"], ["EEX-1","EXM-1","STU-1"]]; } };
+    },
+    getRange() { return { setValues() { writes++; events.push("delivery-write"); } }; }
+  };
+  const ss = { getSheetByName(name) { events.push("sheet:" + name); return name === "EntregasExamen" ? deliverySheet : null; } };
+  const runtime = {
+    validateRolePermission(action) {
+      const authorized = permissionResults[Math.min(permissionIndex++, permissionResults.length - 1)] === true;
+      events.push("permission:" + action + ":" + permissionIndex);
+      return { authorized };
+    },
+    getVerifiedExamIdentity_() {
+      identityCalls++;
+      events.push("identity:" + identityCalls);
+      return { authorized: true, userId: "TEACHER-1", role: "Profesor" };
+    },
+    LockService: { getScriptLock() { return {
+      tryLock() { events.push("lock-acquire"); return true; },
+      releaseLock() { events.push("lock-release"); }
+    }; } },
+    SpreadsheetApp: { openById() { spreadsheetOpens++; events.push("spreadsheet-open"); return ss; } },
+    SPREADSHEET_ID: "SYNTHETIC-SHEET",
+    getSheetOrThrow(sheet, name) { return sheet.getSheetByName(name); }
+  };
+  const executable = [examContext, deliveryContext, wrapper, handler].join("\n");
+  const grade = new Function("runtime", "with (runtime) { " + executable + "; return gradeExamSubmission; }")(runtime);
+  let error;
+  try {
+    grade({ entregaId: "EEX-1", examenId: "EXM-1", calificacion: 90, estado: "Calificado" });
+  } catch (e) { error = e.message; }
+  assert.equal(error, "RESOURCE_NOT_AVAILABLE",
+    "nested exam RBAC revocation must reject the grade mutation");
+  assert.deepEqual(events, [
+    "permission:gradeExamSubmission:1", "identity:1", "lock-acquire",
+    "permission:gradeExamSubmission:2", "identity:2", "spreadsheet-open",
+    "sheet:EntregasExamen", "delivery-read", "permission:gradeExamSubmission:3", "lock-release"
+  ]);
+  assert.equal(permissionIndex, 3, "preflight, delivery context and nested exam context must each check RBAC");
+  assert.equal(identityCalls, 2, "nested RBAC denial must occur before a third identity check");
+  assert.equal(spreadsheetOpens, 1, "nested RBAC denial must occur before a second Sheets open");
+  assert.equal(deliveryReads, 1, "only the delivery lookup may occur before nested exam revalidation");
+  assert.equal(writes, 0, "the rejected grade must not mutate the delivery");
+  assert.equal(events[events.length - 1], "lock-release", "the shared lock must be released after nested RBAC denial");
+});
+
+
+test(() => {
   const auditHelper = extract("getOrCreateExamSubmissionDeletionAuditSheet_");
   const examContext = extract("getAuthorizedExamMutationContext_");
   const deliveryContext = extract("getAuthorizedExamSubmissionMutationContext_");

@@ -1958,3 +1958,23 @@ HEAD inicial: a23caa4b70894a334ccf0ae408b963ed075823ca. Rama: NG_beta_0.0.0.1_wo
 
 HEAD de inicio de esta iteración: f607fb31a3e9ae5f98a2fdbb167e0749b3695727. Rama: NG_beta_0.0.0.1_work. Rama base sin cambios esperada: 44d9891132332e692dbe2ba8602b41f50a508a59. HEAD final: se confirma tras publicar.
 ===============================================================================
+
+
+===============================================================================
+## C1.570 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — cubrir revocación RBAC en la revalidación anidada de `gradeExamSubmission`.
+
+### Hallazgo y cambio
+- `withAuthorizedExamSubmissionMutation_` comprueba RBAC en preflight y después del lock; `getAuthorizedExamSubmissionMutationContext_` resuelve la entrega y llama a `getAuthorizedExamMutationContext_`, que vuelve a validar RBAC antes de una segunda apertura de Sheets.
+- La suite ya probaba identidad degradada en esa tercera etapa, pero no permiso concedido en preflight/contexto de entrega y revocado en el contexto anidado del examen.
+- Se agrega un escenario del handler real con secuencia RBAC [true, true, false]. Verifica RESOURCE_NOT_AVAILABLE en la tercera comprobación, dos consultas de identidad, lock adquirido/liberado, una sola apertura de Sheets, una lectura de entrega y cero escrituras.
+- Solo cambia `tests/security/exam-service-delete-submission-audit.test.js`; backend productivo, roles, permisos, scope, ownership y persistencia sin cambios. BETA-EXAM-073 se amplía para el escenario desplegado.
+
+### Verificación / estado
+- Parseo sintáctico del test modificado: PASS.
+- Suite local `node --test tests/security/exam-service-delete-submission-audit.test.js`: NOT RUN; pendiente. CI: NOT RUN. Apps Script/Sheets real: NOT RUN.
+- C1.569 conserva el resultado local informado 28/28 para reviewPeriodGradebook y el CI específico 29/29; la discrepancia de versión/HEAD no se considera resuelta por esta tarea.
+- TASK-153 / AUD-NG-386 continúa En ejecución. No se inicia una segunda operación de mutación en esta iteración.
+
+HEAD inicial: 11a2475823531d5e54fe992b7a883963315681d8. Rama: NG_beta_0.0.0.1_work. Rama base esperada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59. HEAD final: se confirma tras publicar.
+===============================================================================
