@@ -244,4 +244,69 @@ test(() => {
   assert.equal(events[events.length - 1], "lock-release", "the shared lock must be released after nested identity denial");
 });
 
+
+test(() => {
+  const auditHelper = extract("getOrCreateExamSubmissionDeletionAuditSheet_");
+  const examContext = extract("getAuthorizedExamMutationContext_");
+  const deliveryContext = extract("getAuthorizedExamSubmissionMutationContext_");
+  const wrapper = extract("withAuthorizedExamSubmissionMutation_");
+  const handler = extract("deleteExamSubmission");
+  const events = [];
+  let permissionCalls = 0, identityCalls = 0, spreadsheetOpens = 0;
+  let deliveryReads = 0, deleted = 0, auditCreated = 0;
+  const deliverySheet = {
+    getDataRange() {
+      deliveryReads++;
+      events.push("delivery-read");
+      return { getValues() { return [["EntregaID","ExamenID","EstudianteID"], ["EEX-1","EXM-1","STU-1","2026-11-11","[]","95.00","Calificado"]]; } };
+    },
+    deleteRow() { deleted++; events.push("delivery-delete"); }
+  };
+  const ss = {
+    getSheetByName(name) {
+      events.push("sheet:" + name);
+      return name === "EntregasExamen" ? deliverySheet : null;
+    },
+    insertSheet() { auditCreated++; throw new Error("audit must not be created"); }
+  };
+  const runtime = {
+    validateRolePermission(action) {
+      permissionCalls++;
+      events.push("permission:" + action + ":" + permissionCalls);
+      return { authorized: true };
+    },
+    getVerifiedExamIdentity_() {
+      identityCalls++;
+      events.push("identity:" + identityCalls);
+      return { authorized: true, userId: identityCalls < 3 ? "ADMIN-1" : "   ", role: "Administrador" };
+    },
+    LockService: { getScriptLock() { return {
+      tryLock() { events.push("lock-acquire"); return true; },
+      releaseLock() { events.push("lock-release"); }
+    }; } },
+    SpreadsheetApp: { openById() { spreadsheetOpens++; events.push("spreadsheet-open"); return ss; } },
+    SPREADSHEET_ID: "SYNTHETIC-SHEET",
+    getSheetOrThrow(sheet, name) { return sheet.getSheetByName(name); },
+    Utilities: { getUuid() { return "UUID-EVENT-1"; } },
+    Date, String, Error
+  };
+  const executable = [auditHelper, examContext, deliveryContext, wrapper, handler].join("\n");
+  const remove = new Function("runtime", "with (runtime) { " + executable + "; return deleteExamSubmission; }")(runtime);
+  let error;
+  try {
+    remove({ entregaId: "EEX-1", examenId: "EXM-1", motivo: "Solicitud administrativa documentada." });
+  } catch (e) { error = e.message; }
+  assert.equal(error, "RESOURCE_NOT_AVAILABLE",
+    "nested exam ownership revalidation must reject an identity that becomes incomplete");
+  assert.equal(permissionCalls, 3, "preflight, delivery context and nested exam context must each recheck permission");
+  assert.equal(identityCalls, 3, "preflight, delivery context and nested exam context must each verify identity");
+  assert.equal(spreadsheetOpens, 1, "nested identity denial must occur before a second Sheets open");
+  assert.equal(deliveryReads, 1, "only the delivery lookup needed to resolve examId may occur");
+  assert.equal(deleted, 0, "the rejected delete must not remove the delivery row");
+  assert.equal(auditCreated, 0, "the rejected delete must not create an audit sheet");
+  assert.equal(events.includes("sheet:HistorialEliminacionesEntregasExamen"), false,
+    "audit history must not be accessed after nested identity denial");
+  assert.equal(events[events.length - 1], "lock-release", "the shared lock must be released after nested identity denial");
+});
+
 console.log("exam-service-delete-submission-audit: " + scenarios + "/" + scenarios + " PASS");

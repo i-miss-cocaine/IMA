@@ -1157,3 +1157,31 @@ La suite de mutaciones de entrega cubría la identidad incompleta en el contexto
 ### Beta y continuidad
 BETA-EXAM-073 agregado; pendiente beta para validar gradeExamSubmission/deleteExamSubmission con identidad que cambia antes de la revalidación anidada en Apps Script/Sheets real. TASK-153 / AUD-NG-386 continúa En ejecución. Siguiente iteración: continuar una sola unidad del inventario EXAM restante sin repetir C1.534–C1.538.
 ===============================================================================
+
+
+===============================================================================
+C1.539 — TASK-153 / AUD-NG-386 / revalidación anidada en deleteExamSubmission
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 0ea8cec7d7250536290dd3962d5821adb0963a63
+
+### Alcance y hallazgo
+C1.538 ya cubría la tercera verificación de identidad en gradeExamSubmission. Faltaba ejecutar la misma ruta real para deleteExamSubmission y verificar que el rechazo no alcance el borrado ni la auditoría.
+
+### Cambio
+- tests/security/exam-service-delete-submission-audit.test.js: nuevo escenario con handler, wrapper y ambos contextos productivos extraídos.
+- Identidad autorizada en preflight y contexto de entrega; userId compuesto por espacios en la revalidación anidada del examen.
+- Se exige RESOURCE_NOT_AVAILABLE, tres validaciones RBAC/identidad, una apertura y lectura de entrega, cero borrados, cero creación/acceso al historial de eliminación y liberación del ScriptLock.
+- Sin cambios en Code.gs, permisos, roles, ownership ni persistencia.
+
+### Verificación local
+- Parseo V8 de backend/exam-service/Code.gs y suite dedicada: PASS.
+- Suite dedicada completa: 28/28 PASS en runtime V8 aislado con shims fs/vm/assert.
+- Harness ejecuta la ruta productiva real de deleteExamSubmission y verifica los efectos de borrado/auditoría: PASS.
+- Node 22 nativo/CI posterior: NOT RUN.
+- Apps Script/Sheets real: NOT RUN.
+
+### Beta y continuidad
+BETA-EXAM-073 ya contempla gradeExamSubmission y deleteExamSubmission y permanece Pendiente beta. TASK-153 / AUD-NG-386 continúa En ejecución. Siguiente acción: continuar el inventario de mutaciones EXAM restantes desde este checkpoint, sin repetir C1.534–C1.539.
+===============================================================================

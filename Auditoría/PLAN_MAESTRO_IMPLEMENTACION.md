@@ -3941,3 +3941,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** parseo V8 de Code.gs y del test PASS; harness V8 aislado de la ruta anidada PASS (3 verificaciones de identidad, RESOURCE_NOT_AVAILABLE, 1 apertura/lectura, 0 escrituras, lock liberado). Suite Node 22/CI sobre el nuevo commit pendiente.
 - **Beta:** BETA-EXAM-073 agregado para confirmar el mismo escenario en gradeExamSubmission/deleteExamSubmission sobre Apps Script/Sheets desplegado; Pendiente beta.
 - **Estado:** cobertura local añadida; sin cambios productivos, permisos ni roles. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
+
+
+### 10.192 TASK-153 / AUD-NG-386 — cubrir revalidación anidada de identidad en deleteExamSubmission (C1.539)
+- **Hallazgo de cobertura:** C1.538 cubrió la revalidación anidada para gradeExamSubmission, pero la misma ruta compartida no tenía una prueba de extremo a extremo local para deleteExamSubmission y su efecto de auditoría.
+- **Cambio:** la suite ejecuta deleteExamSubmission, withAuthorizedExamSubmissionMutation_, getAuthorizedExamSubmissionMutationContext_ y getAuthorizedExamMutationContext_ reales. La identidad es válida en preflight y contexto de entrega y pierde userId en la tercera validación.
+- **Contrato comprobado:** RESOURCE_NOT_AVAILABLE; una sola apertura y lectura de EntregasExamen para resolver examId; cero deleteRow, ninguna creación/acceso/escritura de HistorialEliminacionesEntregasExamen y liberación del ScriptLock.
+- **Verificación local:** suite dedicada 28/28 PASS en V8 aislado con shims fs/vm/assert; parseo V8 de Code.gs y test PASS. Node 22 nativo/CI posterior NOT RUN; Apps Script/Sheets real NOT RUN.
+- **Beta:** BETA-EXAM-073 ya incluye deleteExamSubmission y permanece Pendiente beta.
+- **Estado:** cobertura local de ambas mutaciones (grade/delete) completada; sin cambios productivos, permisos, roles, ownership ni persistencia. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario restante.

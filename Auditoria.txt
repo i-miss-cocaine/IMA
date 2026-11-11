@@ -1866,3 +1866,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Resultado:** RESOURCE_NOT_AVAILABLE antes de la segunda apertura de Sheets y antes de cualquier escritura; una lectura de entrega para resolver examId; ScriptLock liberado. No se detectó defecto productivo.
 - **Verificación:** parseo V8 de Code.gs y suite PASS; harness V8 focalizado PASS. Node 22/CI posterior pendiente.
 - **Beta:** BETA-EXAM-073 Pendiente beta.
+
+
+
+### C1.539 — AUD-NG-386 / revalidación anidada de identidad en deleteExamSubmission
+- **Hallazgo:** la prueba anidada C1.538 cubría la calificación, pero no ejecutaba deleteExamSubmission con los contextos reales ni verificaba sus efectos de borrado/auditoría.
+- **Cambio:** escenario real aislado con identidad válida en preflight/contexto de entrega y userId en blanco en la tercera validación del contexto anidado.
+- **Resultado:** RESOURCE_NOT_AVAILABLE; una apertura/lectura de EntregasExamen; cero deleteRow, ninguna creación/acceso del historial de eliminación y ScriptLock liberado.
+- **Verificación:** suite dedicada completa 28/28 PASS en V8 aislado con shims; parseo V8 de Code.gs/test y harness específico PASS. Node 22 nativo/CI y Apps Script/Sheets real NOT RUN.
+- **Beta:** BETA-EXAM-073 incluye ambas mutaciones y permanece Pendiente beta.

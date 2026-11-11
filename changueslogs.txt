@@ -1756,3 +1756,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Parseo V8 de Code.gs/test y harness aislado PASS. Node 22/CI posterior pendiente.
 - Sin cambios productivos ni de permisos/roles; BETA-EXAM-073 Pendiente beta.
 ===============================================================================
+
+
+
+===============================================================================
+[2026-11-11] C1.539 — revalidación anidada de identidad en deleteExamSubmission
+- Se amplía la suite de mutaciones de entrega con el handler deleteExamSubmission, wrapper y contextos reales.
+- La identidad pierde userId en la tercera validación: rechazo RESOURCE_NOT_AVAILABLE, sin borrar la entrega ni crear/acceder al historial de auditoría; lock liberado.
+- Suite dedicada 28/28 PASS en V8 aislado con shims; parseo V8 de Code.gs/test PASS. Node 22 nativo/CI y Apps Script/Sheets real NOT RUN.
+- Sin cambios productivos ni de permisos/roles; BETA-EXAM-073 continúa Pendiente beta.
+===============================================================================
