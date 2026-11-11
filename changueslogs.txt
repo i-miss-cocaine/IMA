@@ -2053,3 +2053,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - CI focalizado pendiente; Apps Script/Sheets NOT RUN, BETA-EXAM-081 Pendiente beta.
 - C1.576 Completada en verificación local. TASK-153 / AUD-NG-386 continúa En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.577 — cierre local saveRubric
+- Parseo de backend y suite: PASS.
+- Suite focalizada ejecutada en V8 aislado con shims compatibles: 21/21 PASS.
+- Revocación RBAC [true,false] rechaza dentro del lock, lo libera, evita abrir Sheets y preserva rúbricas/ownership; cero escrituras.
+- CI focalizado NOT RUN; Apps Script/Sheets NOT RUN, BETA-EXAM-082 Pendiente beta.
+- C1.577 Completada en verificación local. TASK-153 / AUD-NG-386 continúa En ejecución.
+===============================================================================

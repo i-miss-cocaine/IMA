@@ -933,3 +933,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; cobertura local C1.576 29/29 PASS; CI focalizado pendiente. Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas y snapshots completos antes/después de ambas hojas.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-082 — TASK-153 / AUD-NG-386 / EXAM: revocación RBAC en saveRubric bajo lock
+- **Módulo/rol:** Servicio EXAM; Profesor con permiso saveRubric, identidad firmada y scope institucional/departamental válido.
+- **Objetivo:** verificar en Apps Script/Sheets desplegado que revocar saveRubric después del preflight impide crear o actualizar una rúbrica durante la revalidación bajo ScriptLock.
+- **Precondiciones:** versión beta desplegada; rúbrica nueva o existente con ownership sintético válido; departamento dentro del scope verificado; sesión firmada; mecanismo controlado para permitir RBAC en preflight y denegarlo en contexto bajo lock.
+- **Pasos:** invocar saveRubric con permiso concedido; revocarlo antes de la revalidación contextual; revisar respuesta, trazas RBAC/identidad/lock/Sheets y snapshots completos de RubricasEvaluacion y ResourceOwnership. Repetir flujo válido con permisos estables para comprobar creación/actualización y ownership.
+- **Resultado esperado:** RESOURCE_NOT_AVAILABLE, lock liberado, cero apertura de Sheets y ambas hojas intactas; el flujo válido conserva reglas de ownership y escritura.
+- **Estado:** Pendiente beta; cobertura local C1.577 21/21 PASS; CI focalizado NOT RUN; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, trazas saneadas y snapshots completos antes/después de ambas hojas.
+===============================================================================
