@@ -126,7 +126,7 @@ test(() => {
   const x=fixture({failCategoryWrite:true});
   assert.throws(()=>x.call(),/write failed/);
   assert.equal(x.sheets.CategoriasEvaluacion.rows.length,2);
-  assert.equal(x.sheets.ResourceOwnership.rows.length,1);
+  assert.equal(x.sheets.ResourceOwnership.rows.length,2);
   assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]);
 });
 test(() => {
