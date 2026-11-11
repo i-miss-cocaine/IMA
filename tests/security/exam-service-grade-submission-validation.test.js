@@ -58,6 +58,10 @@ test(() => {
   const x = fixture(); x.call({ calificacion: 100, estado: "Calificado" });
   assert.equal(x.calls.writes[0].rows[0][5], "100.00");
 });
+test(() => {
+  const x = fixture(); x.call({ calificacion: 0.1 + 0.2, estado: "Calificado" });
+  assert.equal(x.calls.writes[0].rows[0][5], "0.30");
+});
 for (const score of [-0.01, 100.01, NaN, Infinity, "abc", "", null, undefined, "10.123"]) {
   test(() => {
     const x = fixture();
