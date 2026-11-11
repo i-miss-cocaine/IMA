@@ -73,8 +73,7 @@ function doOptions() {
 }
 
 const PUBLIC_ACTIONS = [
-  // Solo metadatos globales no sensibles pueden consultarse sin sesión.
-  "getRubrics"
+  // Las acciones públicas se limitan a endpoints sin datos académicos o institucionales.
 ];
 
 const ROLE_PERMISSIONS = {
@@ -1720,24 +1719,50 @@ function saveEvaluationCategory(payload) {
 }
 
 function getRubrics(payload) {
-  const { asignatura } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "RubricasEvaluacion");
+  return withAuthorizedExamMetadataRead_("getRubrics", payload,
+    context => getRubricsUnlocked_(payload, context));
+}
+
+function getRubricsUnlocked_(payload, context) {
+  const ss = context && context.ss;
+  if (!ss) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const sheet = ss.getSheetByName("RubricasEvaluacion");
+  if (!sheet) return { status: "success", data: [] };
   const data = sheet.getDataRange().getValues();
-  if (data.length <= 1) return { status: "success", data: [] };
+  if (!data || data.length <= 1) return { status: "success", data: [] };
 
-  const rubrics = data.slice(1).filter(r => {
-    if (r[3] === "Eliminada") return false;
-    if (asignatura && normalizeString(r[2]) !== normalizeString(asignatura)) return false;
-    return true;
-  }).map(r => ({
-    rubricaId: r[0],
-    titulo: r[1],
-    asignatura: r[2],
-    estado: r[3] || "Activa",
-    criterios: r[4] ? (typeof r[4] === 'string' ? JSON.parse(r[4]) : r[4]) : []
-  }));
+  const expectedHeaders = ["ID", "Titulo", "Asignatura", "Estado", "CriteriosJSON"];
+  if (expectedHeaders.some((header, index) => String(data[0][index] || "").trim() !== header)) {
+    throw new Error("RUBRICS_SCHEMA_INVALID");
+  }
 
+  const idCounts = {};
+  data.slice(1).forEach(row => {
+    const id = String(row[0] || "").trim();
+    if (id) idCounts[id] = (idCounts[id] || 0) + 1;
+  });
+  const asignatura = String((payload && payload.asignatura) || "").trim();
+  const rubrics = [];
+  data.slice(1).forEach(row => {
+    const id = String(row[0] || "").trim();
+    if (!id || idCounts[id] !== 1 || String(row[3] || "").trim() === "Eliminada") return;
+    if (asignatura && normalizeString(row[2]) !== normalizeString(asignatura)) return;
+    let criterios = [];
+    if (row[4] !== "" && row[4] !== null && row[4] !== undefined) {
+      try {
+        criterios = typeof row[4] === "string" ? JSON.parse(row[4]) : row[4];
+      } catch (_) {
+        throw new Error("RUBRICS_CRITERIA_INVALID");
+      }
+    }
+    rubrics.push({
+      rubricaId: row[0],
+      titulo: row[1],
+      asignatura: row[2],
+      estado: row[3] || "Activa",
+      criterios
+    });
+  });
   return { status: "success", data: rubrics };
 }
 
