@@ -1227,3 +1227,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Harness V8 de exam-service-gradebook-read-security PASS; contrato estático PASS.
 - Node nativo/CI/Apps Script real NOT RUN. BETA-EXAM-042 Pendiente beta; TASK-153 sigue En ejecución y AUD-NG-386 abierto.
 ===============================================================================
+
+===============================================================================
+[2026-11-11] C1.489 — IMA-EXEC-20261110-1825Z-02 — EXAM: getCompetencyEvaluations
+- La lectura ahora exige permiso RBAC específico, identidad verificada y ámbito autorizado bajo el ScriptLock compartido.
+- Estudiante/Alumno solo obtiene evaluaciones propias; Profesor requiere estudiante único y asignación exacta de grado/sección/asignatura/periodo en ConfiguracionAcademica; asignación ambigua se deniega.
+- Roles administrativos requieren ámbito institucional; roles no permitidos fallan cerrado.
+- La consulta no crea hojas ni escribe; se excluyen IDs de evaluación vacíos/duplicados y fechas inválidas no interrumpen la respuesta.
+- Harness V8 aislado de 16 escenarios PASS; suite Node dedicada de 17 escenarios añadida, runner Node nativo/CI NOT RUN.
+- BETA-EXAM-043 Pendiente beta; TASK-153 En ejecución y AUD-NG-386 abierto.
+===============================================================================
