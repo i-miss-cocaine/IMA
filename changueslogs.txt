@@ -1439,3 +1439,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Parseo sintáctico local de ambos tests PASS. Workflow GitHub Actions 43029272236 PASS: security-contract, departmental-access y read-endpoints-security; pasos previos del workflow también PASS.
 - Sin cambios al código de producción; no requiere despliegue beta. TASK-153 / AUD-NG-386 continúan En ejecución; siguiente tarea vuelve al inventario de seguridad de handlers EXAM.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.513 — IMA-EXEC-20261110-1825Z-02 — EXAM: integración CI de contratos del banco de preguntas
+- Se incorporan exam-service-question-bank-security.test.js y exam-service-question-bank-read-security.test.js a los filtros push/pull_request y a los pasos ejecutables del workflow exam-service-security-contract.yml (Node 22).
+- Los contratos existentes cubren identidad/RBAC, ownership y aislamiento departamental, filtrado de answer keys, bloqueo y rollback de mutaciones.
+- Validación local estructural del workflow y parseo sintáctico de ambos scripts: PASS. Ejecución semántica local NOT RUN por ausencia de checkout accesible; se requiere resultado del workflow disparado por este commit para confirmar ejecución real.
+- Sin cambios de producción ni requisito beta. TASK-153 / AUD-NG-386 continúa En ejecución por otras superficies EXAM.
+===============================================================================

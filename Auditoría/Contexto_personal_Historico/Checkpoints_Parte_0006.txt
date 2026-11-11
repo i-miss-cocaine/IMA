@@ -57,3 +57,35 @@ Commits de implementación iterativa de esta tarea: fe719e8235141f3629952c2fd777
 Workflow: 43029272236 — PASS.
 HEAD final: se confirma mediante lectura de la referencia de rama después del commit documental.
 ===============================================================================
+
+
+
+===============================================================================
+CHECKPOINT C1.513 — integración CI de contratos de seguridad del banco de preguntas EXAM
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial de iteración: 5a981f717705585baa3cec3b4e0dc676abf0a0ea.
+### Hallazgo
+Los contratos locales de lectura y mutación del banco de preguntas existían, pero no estaban conectados al workflow exam-service-security-contract.yml: ni los cambios en esos archivos activaban CI ni el job ejecutaba los scripts.
+### Corrección
+- Se agregan tests/security/exam-service-question-bank-security.test.js y tests/security/exam-service-question-bank-read-security.test.js a los filtros de push y pull_request.
+- Se añaden pasos Node 22 para ejecutar ambos contratos en el job exam-security-contracts.
+- No se modifica backend ni lógica de producción; se cierra una brecha de cobertura automatizada para RBAC, identidad, ownership, aislamiento, answer keys, lock y rollback.
+### Archivos modificados
+- .github/workflows/exam-service-security-contract.yml
+- changueslogs.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+### Verificación
+- Estructura del workflow: PASS (dos filtros de rutas, dos steps y comandos Node exactos).
+- Parseo sintáctico de los dos contratos Node: PASS.
+- Ejecución semántica local de los contratos: NOT RUN; el entorno de edición no dispone de checkout accesible y la clonación no pudo resolver github.com.
+- Resultado CI de ambos contratos: pendiente de observar el workflow disparado por este commit; no se declara PASS anticipadamente.
+- Apps Script/Sheets real: NOT RUN; no aplica beta porque no se modificó código de producción.
+### Estado y continuidad
+Integración CI completada en el árbol de trabajo. TASK-153 / AUD-NG-386 permanecen En ejecución por otras mutaciones EXAM.
+Siguiente acción: verificar el workflow de este commit y continuar inventario de handlers mutadores EXAM sin repetir contratos ya cubiertos.
+HEAD final: se confirma tras commit y lectura de la referencia.
+===============================================================================

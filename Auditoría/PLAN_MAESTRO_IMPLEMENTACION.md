@@ -3688,3 +3688,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI:** workflow 43029272236 PASS, commit de código de pruebas f06fbe6773321cf5e674b0f8ce3c8b9bc8c957cf; los tres contratos Node (security-contract, departmental-access, read-endpoints-security) completaron correctamente y el job finalizó success.
 - **Estado:** incidencia de harness resuelta; sin requisito beta ni despliegue. TASK-153 / AUD-NG-386 continúan En ejecución por otras superficies EXAM.
 - **Siguiente:** retomar el inventario de handlers mutadores EXAM y seleccionar la siguiente brecha de autorización/identidad verificable.
+
+
+### 10.165 TASK-153 / AUD-NG-386 — integración CI de contratos de seguridad del banco de preguntas EXAM (C1.513)
+- **Hallazgo:** los contratos locales `exam-service-question-bank-security.test.js` y `exam-service-question-bank-read-security.test.js` cubren RBAC, identidad firmada, ownership, aislamiento departamental, filtrado de respuestas y serialización; sin embargo, el workflow `exam-service-security-contract.yml` no los ejecutaba ni reaccionaba a cambios en esos archivos.
+- **Corrección:** se agregan ambos contratos a los filtros de rutas de `push` y `pull_request`, y como pasos explícitos del job Node 22. No se modifica la lógica de producción ni los contratos existentes.
+- **Verificación local:** validación estructural del YAML por anclas/rutas/steps y parseo sintáctico de ambos scripts Node; ejecución semántica local NOT RUN porque el entorno de edición no tiene checkout/FS del repositorio y no puede resolver GitHub para clonarlo. La ejecución efectiva de ambos contratos queda verificada por el workflow disparado por este commit.
+- **Beta:** no aplica; el cambio solo conecta contratos locales existentes y no modifica comportamiento desplegable.
+- **Estado:** integración CI completada; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+- **Siguiente:** continuar el inventario de handlers mutadores EXAM desde las rutas restantes y seleccionar la siguiente brecha demostrable de autorización, identidad o integridad.
