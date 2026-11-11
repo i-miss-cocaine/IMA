@@ -27,5 +27,6 @@ t(()=>{assert.throws(()=>fx({existing:true}).call(),/ALREADY_EXISTS/);assert.thr
 t(()=>{const x=fx({missingClosure:true});assert.equal(x.call().status,"success");assert.equal(x.sheets.CierresPeriodos.rows.length,2);const y=fx({missingClosure:true,denied:true});assert.throws(()=>y.call());assert.equal(y.sheets.CierresPeriodos,undefined);});
 t(()=>{for(const p of [{anoId:""},{periodoId:""},{grado:""},{seccion:""},{asignatura:""}])assert.throws(()=>fx().call(p),/REQUIRED_CONTEXT/);});
 t(()=>{const x=fx({timeout:true});assert.throws(()=>x.call(),/LOCK_TIMEOUT/);assert.equal(x.stats.opens,0);const y=fx();y.call();assert.equal(y.stats.rel,1);});
-t(()=>{const x=fx();x.rt.Utilities.getUuid=()=>"CL";x.sheets.CierresPeriodos.rows.push(["CL","2025","P0","9","B","Science","T1","Cerrado",""]);assert.throws(()=>x.call(),/ID_COLLISION/);});
+t(()=>{const x=fx();x.call();assert.throws(()=>x.call(),/ALREADY_EXISTS/);assert.equal(x.sheets.CierresPeriodos.rows.length,2);});
+t(()=>{const x=fx();x.rt.Utilities.getUuid=()=>"CL";x.sheets.CierresPeriodos.rows.push(["CIERRE-CL","2025","P0","9","B","Science","T1","Cerrado",""]);assert.throws(()=>x.call(),/ID_COLLISION/);});
 console.log("exam-service-period-gradebook-closure-security: PASS ("+n+"/12)");

@@ -2838,18 +2838,18 @@ function getAuthorizedPeriodGradebookClosureContext_(payload) {
   if (roles.indexOf(String(actor.role||"").trim())===-1) throw new Error("RESOURCE_NOT_AVAILABLE");
   const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedExamDepartmentScope_(p,ss,actor);
   if (!scope||scope.authorized!==true||!String(scope.institutionId||"").trim()) throw new Error("RESOURCE_NOT_AVAILABLE");
-  if (actor.role==="Profesor") {
-    if (String(p.profesorId||"").trim()!==String(actor.userId).trim()) throw new Error("RESOURCE_NOT_AVAILABLE");
-    const cfg=getSheetOrThrow(ss,"ConfiguracionAcademica").getDataRange().getValues();
-    const headers=["ID","Fecha","Parcial","Grado","Sección","Asignatura","Unidad","Tema","profesorId"];
-    if (!cfg.length||headers.some((h,i)=>String(cfg[0][i]||"").trim()!==h)) throw new Error("ACADEMIC_ASSIGNMENT_SCHEMA_INVALID");
-    const rows=cfg.slice(1).filter(r=>normalizeString(r[3])===normalizeString(grado)&&normalizeString(r[4])===normalizeString(seccion));
-    const exact=rows.filter(r=>normalizeString(r[2])===normalizeString(periodoId)&&normalizeString(r[5])===normalizeString(asignatura));
-    if (!exact.length||exact.some(r=>String(r[8]||"").trim()!==String(actor.userId).trim())) throw new Error("RESOURCE_NOT_AVAILABLE");
-    const subjects=Array.from(new Set(rows.map(r=>normalizeString(r[5])).filter(Boolean)));
-    const periods=Array.from(new Set(rows.map(r=>normalizeString(r[2])).filter(Boolean)));
-    if(subjects.length!==1||periods.length!==1||subjects[0]!==normalizeString(asignatura)||periods[0]!==normalizeString(periodoId)) throw new Error("GRADEBOOK_PERIOD_SUBJECT_CONTEXT_AMBIGUOUS");
-  } else if(scope.institutionWide!==true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  if (actor.role!=="Profesor" && scope.institutionWide!==true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const cfg=getSheetOrThrow(ss,"ConfiguracionAcademica").getDataRange().getValues();
+  const headers=["ID","Fecha","Parcial","Grado","Sección","Asignatura","Unidad","Tema","profesorId"];
+  if (!cfg.length||headers.some((h,i)=>String(cfg[0][i]||"").trim()!==h)) throw new Error("ACADEMIC_ASSIGNMENT_SCHEMA_INVALID");
+  const rows=cfg.slice(1).filter(r=>normalizeString(r[3])===normalizeString(grado)&&normalizeString(r[4])===normalizeString(seccion));
+  const exact=rows.filter(r=>normalizeString(r[2])===normalizeString(periodoId)&&normalizeString(r[5])===normalizeString(asignatura));
+  if(!exact.length) throw new Error("RESOURCE_NOT_AVAILABLE");
+  if(actor.role==="Profesor" && (String(p.profesorId||"").trim()!==String(actor.userId).trim() ||
+      exact.some(r=>String(r[8]||"").trim()!==String(actor.userId).trim()))) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const subjects=Array.from(new Set(rows.map(r=>normalizeString(r[5])).filter(Boolean)));
+  const periods=Array.from(new Set(rows.map(r=>normalizeString(r[2])).filter(Boolean)));
+  if(subjects.length!==1||periods.length!==1||subjects[0]!==normalizeString(asignatura)||periods[0]!==normalizeString(periodoId)) throw new Error("GRADEBOOK_PERIOD_SUBJECT_CONTEXT_AMBIGUOUS");
   const users=getSheetOrThrow(ss,"Usuarios").getDataRange().getValues(),counts=Object.create(null);
   users.slice(1).forEach(r=>{const id=String(r[0]||"").trim();if(id)counts[id]=(counts[id]||0)+1;});
   const ids=users.slice(1).filter(r=>{const id=String(r[0]||"").trim(),role=normalizeString(r[6]||r[5]);return id&&counts[id]===1&&(role==="estudiante"||role==="alumno")&&normalizeString(r[2])===normalizeString(grado)&&normalizeString(r[3])===normalizeString(seccion);}).map(r=>String(r[0]).trim());
