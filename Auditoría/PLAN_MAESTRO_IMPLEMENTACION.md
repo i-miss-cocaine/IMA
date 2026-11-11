@@ -3816,3 +3816,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas:** suite dedicada ampliada a 27 escenarios; harness local focalizado del wrapper 12/12 PASS; workflow GitHub Actions 43051393921 SUCCESS; suite 27/27 PASS en Node 22. No se declara ejecución local de la suite completa (checkout no disponible). Apps Script/Sheets real NOT RUN; BETA-EXAM-053 actualizado.
 - **Estado:** subalcance reviewPeriodGradebook corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
 - **Siguiente:** inspeccionar el siguiente wrapper mutador EXAM pendiente, una sola operación por iteración.
+
+
+### 10.178 TASK-153 / AUD-NG-386 — autorización previa al lock en reopenPeriodGradebook (C1.525)
+- **Hallazgo:** `withAuthorizedPeriodGradebookReopen_` adquiría ScriptLock antes de validar el permiso `reopenPeriodGradebook` y la identidad firmada, permitiendo que solicitudes no autorizadas compitieran por el lock.
+- **Política preservada:** allowlist contextual existente: Administrador, Desarrollador, Dirección, Director y Secretaría; identidad autorizada y `userId` no vacío. No se amplían roles ni scopes.
+- **Corrección:** preflight RBAC/identidad/rol antes del lock; el contexto existente vuelve a validar RBAC, identidad, rol y scope `institutionWide` bajo lock, junto con integridad del cierre y auditoría.
+- **Pruebas:** suite dedicada ampliada de 22 a 26 escenarios; harness local focalizado y CI pendientes de confirmar. Apps Script/Sheets real NOT RUN; BETA-EXAM-055 actualizado.
+- **Estado:** subalcance reopenPeriodGradebook corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+- **Siguiente:** inspeccionar el siguiente wrapper mutador EXAM pendiente, una sola operación por iteración.
