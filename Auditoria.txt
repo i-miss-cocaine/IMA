@@ -1583,6 +1583,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Hallazgo:** reapertura sin RBAC/identidad/scope; autorizadoPor manipulable; creación de hoja de cierres; selección de primera fila sin validar unicidad/esquema/estado; errores de auditoría ignorados.
 - **Corrección:** ScriptLock, RBAC, identidad firmada, allowlist institucional y scope institutionWide; Profesor excluido, Director habilitado explícitamente. Solo cierre único, completo y Cerrado; motivo acotado; auditoría con UUID y actor verificado.
 - **Integridad:** si falla el append de auditoría, se intenta restaurar Cerrado y limpiar fila parcial; no se informa éxito si falla la trazabilidad.
-- **Pruebas:** harness V8 aislado 22/22 PASS; parseo de funciones extraídas PASS; suite completa del checkout y regresiones previas NOT RUN; CI NOT CONFIRMED; Apps Script/Sheets NOT RUN; BETA-EXAM-055 Pendiente beta.
+- **Pruebas:** harness V8 aislado 22/22 PASS; parseo de funciones extraídas PASS; suite completa del checkout y regresiones previas NOT RUN; CI run 43009948936: suite dedicada y security-contract PASS; workflow global FAIL en departmental-access (read-endpoints skipped); Apps Script/Sheets NOT RUN; BETA-EXAM-055 Pendiente beta.
 - **Límite:** CierresPeriodos carece de InstitutionID/DepartmentID; se exige scope institucional amplio y se confía en el spreadsheet aislado de cada institución.
 ===============================================================================
