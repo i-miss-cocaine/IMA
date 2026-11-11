@@ -164,7 +164,18 @@ test("invalid numeric values and dates are normalized", () => {
   assert.equal(row.notaOriginal, null);
   assert.equal(row.fecha, null);
 });
-test("blank grade cells remain null instead of becoming zero", () => {\n  const row = fixture().call({}).data.find(item => item.recuperacionId === "REC-BLANK");\n  assert.equal(row.notaOriginal, null);\n  assert.equal(row.notaRecuperada, null);\n  assert.equal(row.notaFinalCalculada, null);\n});\ntest("post-lock snapshot includes a recovery inserted before lock acquisition", () => {\n  let x;\n  x = fixture({ beforeAcquire() { x.sheets.RecuperacionesEstudiante.rows.push(["REC-AFTER", "E-8", "STU-1", 10, 20, 20, "Mayor", "PROF-1", null]); } });\n  assert.ok(x.call({}).data.some(item => item.recuperacionId === "REC-AFTER"));\n});\ntest("duplicate student identity denied", () => denied(() => fixture({
+test("blank grade cells remain null instead of becoming zero", () => {
+  const row = fixture().call({}).data.find(item => item.recuperacionId === "REC-BLANK");
+  assert.equal(row.notaOriginal, null);
+  assert.equal(row.notaRecuperada, null);
+  assert.equal(row.notaFinalCalculada, null);
+});
+test("post-lock snapshot includes a recovery inserted before lock acquisition", () => {
+  let x;
+  x = fixture({ beforeAcquire() { x.sheets.RecuperacionesEstudiante.rows.push(["REC-AFTER", "E-8", "STU-1", 10, 20, 20, "Mayor", "PROF-1", null]); } });
+  assert.ok(x.call({}).data.some(item => item.recuperacionId === "REC-AFTER"));
+});
+test("duplicate student identity denied", () => denied(() => fixture({
   actor: { userId: "DUP", role: "Estudiante" }
 }).call({})));
 test("schema mismatch fails closed", () => {
