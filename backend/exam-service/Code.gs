@@ -840,7 +840,9 @@ function getAuthorizedExamSubmissionMutationContext_(payload, action) {
   const permission = validateRolePermission(action, payload);
   if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
   const actor = getVerifiedExamIdentity_(payload);
-  if (!actor.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim()) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const deliverySheet = getSheetOrThrow(ss, "EntregasExamen");
   const deliveryRows = deliverySheet.getDataRange().getValues();
@@ -930,12 +932,14 @@ function deleteExamUnlocked_(payload, context) {
 }
 
 function withAuthorizedExamSubmissionMutation_(payload, action, mutation) {
-  // Rechazar solicitudes no autorizadas antes de competir por el lock compartido.
+  // Rechazar RBAC e identidad incompleta antes de competir por el lock compartido.
   // El contexto completo se vuelve a validar dentro del lock para evitar TOCTOU.
   const permission = validateRolePermission(action, payload);
   if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
   const actor = getVerifiedExamIdentity_(payload);
-  if (!actor || actor.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim()) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
 
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("EXAM_SUBMISSION_LOCK_TIMEOUT");
