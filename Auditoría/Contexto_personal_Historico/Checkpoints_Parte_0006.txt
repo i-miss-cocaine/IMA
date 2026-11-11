@@ -2385,3 +2385,30 @@ HEAD inicial: `4451fd9d161fc72afab08b2a09263ec363e0141e`. HEAD final: se confirm
 - Siguiente: inspeccionar la siguiente ruta mutadora EXAM no cubierta por reentrada local equivalente, sin repetir escenarios ya cubiertos.
 - HEAD inicial: `65a396c560b86e90693ebfdc74a952fc4fccbe01`; HEAD final: se confirma tras publicar.
 ===============================================================================
+
+===============================================================================
+### Addendum CI — C1.585
+- GitHub Actions run 43116003454, commit 661ca6491e2f99ac8005b7b02769ecf5522bab1f, workflow Exam-Service security local contracts: SUCCESS en Node.js 22.
+- Job exam-security-contracts: SUCCESS; todos los pasos completados sin fallos.
+- C1.585 Completada en verificación local y CI. BETA-EXAM-086 permanece Pendiente beta para Apps Script/Sheets desplegado.
+===============================================================================
+
+===============================================================================
+## C1.586 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — contención reentrante en submitExam durante persistencia de entrega.
+
+### Hallazgo y corrección
+- submitExam protege la mutación con ScriptLock, pero su contrato específico solo cubría RBAC, identidad y timeout; no una segunda solicitud durante appendRow de EntregasExamen.
+- Se añadió una prueba que ejecuta submitExam y submitExamUnlocked_ reales sobre un runtime sintético. Durante appendRow intenta una segunda entrega para el mismo estudiante/examen; la secundaria recibe EXAM_SUBMISSION_LOCK_TIMEOUT y la exterior registra una sola fila.
+- Se verifica una apertura del contexto, dos intentos de lock, una liberación y ausencia de duplicación. Backend productivo sin cambios.
+
+### Verificación local
+- Parseo sintáctico de backend y contrato: PASS.
+- Ejecución completa del contrato en V8 aislado con shims compatibles: 12/12 PASS.
+- CI Node.js 22: pendiente de observación tras commit. Apps Script/Sheets real: NOT RUN; BETA-EXAM-087 Pendiente beta.
+
+### Estado y continuidad
+- C1.586 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución.
+- Siguiente: inspeccionar otra ruta mutadora EXAM sin cobertura reentrante local equivalente; no repetir submitExam, createExam, updateExam, updateExamStatus ni deleteExam.
+- HEAD inicial: 661ca6491e2f99ac8005b7b02769ecf5522bab1f; HEAD final: se confirma tras publicar.
+===============================================================================

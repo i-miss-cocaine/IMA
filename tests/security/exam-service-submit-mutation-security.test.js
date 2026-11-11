@@ -64,6 +64,40 @@ test("shared context accepts a complete student identity", () => {
  const result=context(()=>actor,{openById(){return {};}},"SHEET",()=>({userId:"S1",role:"Estudiante"}),()=>[],()=>({authorized:true}))({});
  assert.equal(result.actor.userId,"S1"); assert.equal(result.studentActor,true);
 });
+test("reentrant submission during appendRow is rejected while the outer ScriptLock is held", () => {
+  const submit = extractFunction("submitExam");
+  const worker = extractFunction("submitExamUnlocked_");
+  const state = { permissions: 0, identities: 0, opens: 0, locks: 0, releases: 0, held: false, writes: 0, nestedErrors: [] };
+  const actor = { authorized: true, userId: "STUDENT-1", role: "Estudiante" };
+  const examRows = [["ID","Titulo","Asignatura","Grado","Seccion","FechaLimite","Tiempo","Estado","ProfesorID","","","","Intentos"], ["EXAM-1","Evaluación","Matemáticas","10","A","","","Activo","TEACHER-1","","","",2]];
+  const questionRows = [["PreguntaID","ExamenID","Tipo","Texto","Opciones","RespuestaCorrecta"], ["Q1","EXAM-1","opcion_multiple","2+2","{}","4"]];
+  const deliveryRows = [["EntregaID","ExamenID","EstudianteID","Fecha","Respuestas","Calificacion","Estado"]];
+  let handler;
+  function nested() { try { handler({ examenId: "EXAM-1", respuestas: [{ preguntaId: "Q1", respuestaEstudiante: "4" }] }); } catch (error) { state.nestedErrors.push(error.message); } }
+  const deliveries = { getDataRange() { return { getValues() { return deliveryRows; } }; }, appendRow(row) { state.writes++; deliveryRows.push(row); nested(); } };
+  const examSheet = { getDataRange() { return { getValues() { return examRows; } }; } };
+  const questionSheet = { getDataRange() { return { getValues() { return questionRows; } }; } };
+  const ss = { getSheetByName(name) { return ({ Examenes: examSheet, PreguntasExamen: questionSheet, EntregasExamen: deliveries })[name] || null; } };
+  const lock = { tryLock() { state.locks++; if (state.held) return false; state.held = true; return true; }, releaseLock() { state.releases++; state.held = false; } };
+  const runtime = {
+    validateRolePermission() { state.permissions++; return { authorized: true }; },
+    getVerifiedExamIdentity_() { state.identities++; return actor; },
+    LockService: { getScriptLock() { return lock; } },
+    getExamReadContext_() { state.opens++; return { actor, ss, studentActor: true, profile: {}, scope: {} }; },
+    getSheetOrThrow(sheet, name) { const value = sheet.getSheetByName(name); if (!value) throw new Error("missing " + name); return value; },
+    isExamAssignedToStudent_() { return true; },
+    assertExamResourceOwnershipForScope_() { return { authorized: true }; },
+    normalizeString(value) { return String(value || "").trim().toLowerCase(); },
+    Date, JSON, String, Set, Array, parseInt, Error
+  };
+  handler = new Function("runtime", "with (runtime) { " + submit + "\n" + worker + "; return submitExam; }")(runtime);
+  const result = handler({ examenId: "EXAM-1", respuestas: [{ preguntaId: "Q1", respuestaEstudiante: "4" }] });
+  assert.equal(result.status, "success");
+  assert.deepEqual(state.nestedErrors, ["EXAM_SUBMISSION_LOCK_TIMEOUT"]);
+  assert.equal(state.permissions, 3); assert.equal(state.identities, 3);
+  assert.equal(state.locks, 2); assert.equal(state.releases, 1); assert.equal(state.held, false);
+  assert.equal(state.opens, 1); assert.equal(state.writes, 1); assert.equal(deliveryRows.length, 2);
+});
 const failed=cases.filter(x=>x.result!=="PASS");
 console.log(JSON.stringify({passed:cases.length-failed.length,total:cases.length,cases},null,2));
 if(failed.length)process.exitCode=1;

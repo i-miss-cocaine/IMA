@@ -2040,8 +2040,7 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - C1.584 Completada en verificación local y CI. BETA-EXAM-085 continúa Pendiente beta.
 
 
-
-### C1.585 — AUD-NG-386 / deleteExam: reentrada durante las dos escrituras de baja lógica
-- **Brecha:** deleteExam desactiva ResourceOwnership y después actualiza Examenes.Estado bajo el mismo ScriptLock; el contrato no intentaba reentrada durante ninguna de las dos escrituras.
-- **Cambio:** se añaden dos hooks sintéticos, uno en cada setValue, que invocan deleteExam real de forma anidada. Ambas solicitudes secundarias deben fallar EXAM_MUTATION_LOCK_TIMEOUT; la exterior completa la baja lógica con dos escrituras, una apertura de Sheets y libera el lock.
-- **Verificación local:** parseo Code.gs/test PASS; contrato V8 aislado 21/21 PASS. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN. BETA-EXAM-086 agregado y Pendiente beta.
+### C1.586 — AUD-NG-386 / submitExam: contención reentrante durante persistencia de entrega
+- **Brecha:** el contrato de submitExam comprobaba RBAC, identidad y timeout, pero no una segunda entrega durante appendRow de EntregasExamen.
+- **Cambio:** se añade fixture con handlers submitExam y submitExamUnlocked_ reales; appendRow intenta una segunda entrega del mismo estudiante/examen. La secundaria recibe EXAM_SUBMISSION_LOCK_TIMEOUT; la exterior registra una sola fila, usa un único contexto y libera ScriptLock.
+- **Verificación local:** parseo Code.gs/test PASS; contrato V8 aislado 12/12 PASS. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN. BETA-EXAM-087 Pendiente beta.
