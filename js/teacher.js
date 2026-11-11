@@ -5398,7 +5398,7 @@ function toBase64(file) {
         const selAsignatura = document.getElementById('gb-filter-asignatura')?.value;
         const selParcial = document.getElementById('gb-filter-parcial')?.value;
 
-        if (!confirm(`¿Confirma el CIERRE OFICIAL y PUBLICACIÓN del período ${selParcial} para la asignatura ${selAsignatura} (${selGrado} ${selSeccion})?\n\nLas notas quedarán consolidadas y visibles para estudiantes y padres.`)) {
+        if (!confirm(`¿Confirma el CIERRE OFICIAL y PUBLICACIÓN del período ${selParcial} para la asignatura ${selAsignatura} (${selGrado} ${selSeccion})?\n\nLas calificaciones deben estar guardadas y publicadas previamente. El cierre no publicará calificaciones de otras asignaturas o períodos.`)) {
             return;
         }
 
