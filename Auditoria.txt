@@ -1770,3 +1770,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Suite `reopen-period-gradebook-security`: **26/26 PASS** en Node 22. Las demás suites del workflow también finalizaron SUCCESS, incluidas las pruebas generales de contrato, acceso departamental y endpoints de lectura.
 - Harness local focalizado del wrapper: **10/10 PASS**. No se declara ejecución local de la suite completa; el checkout local no estaba disponible.
 - Apps Script/Sheets real: NOT RUN; BETA-EXAM-055 permanece Pendiente beta.
+
+
+### C1.526 — AUD-NG-386 / rectifyStudentGrade
+- **Hallazgo alto corregido:** `withAuthorizedStudentGradeRectification_` solicitaba ScriptLock antes de validar RBAC e identidad firmada.
+- **Corrección:** preflight del permiso `rectifyStudentGrade`, identidad autorizada, `userId` no vacío y allowlist existente (Administrador, Desarrollador, Dirección, Director y Secretaría) antes del lock. El contexto conserva revalidación bajo lock de RBAC, identidad, rol, scope `institutionWide`, calificación, perfil estudiante y auditoría.
+- **Cobertura local:** harness del wrapper exacto 7/7 PASS; suite dedicada 28/28 PASS en runner JavaScript aislado; parseo Code.gs y suite PASS. No se declara ejecución local nativa Node: checkout no disponible por DNS.
+- **CI:** workflow GitHub Actions 43053113842 SUCCESS; job `exam-security-contracts` SUCCESS; suite dedicada 28/28 PASS en Node 22.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-067 permanece Pendiente beta.
