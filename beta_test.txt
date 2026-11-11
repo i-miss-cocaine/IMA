@@ -809,3 +809,14 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta.
 - **Evidencia requerida:** trazas de permiso/identidad/lock/Sheets y filas de BancoPreguntas/ResourceOwnership, incluyendo RegisteredBy.
 ===============================================================================
+
+===============================================================================
+## BETA-EXAM-072 — TASK-153 / AUD-NG-386 / EXAM: identidad firmada completa en mutaciones generales
+- **Módulo/rol:** Servicio EXAM; docentes y demás roles con permisos efectivos para actualizar estado, editar o eliminar exámenes.
+- **Objetivo:** comprobar en Apps Script/Sheets real que todas las mutaciones generales rechazan identidades incompletas antes de adquirir ScriptLock y revalidan actor/userId antes de abrir hojas.
+- **Precondiciones:** versión beta desplegada; cuentas y sesiones sintéticas con permisos válidos, identidad inválida y userId ausente/blanco; examen y ResourceOwnership de prueba.
+- **Pasos:** invocar updateExamStatus, updateExam y deleteExam con RBAC denegado; actor ausente/no autorizado; userId ausente, vacío o espacios; identidad válida en preflight que pierde userId al revalidarse bajo lock; repetir con identidad válida y ownership/scope autorizado; probar timeout del lock y fallo contextual.
+- **Resultado esperado:** entradas inválidas no adquieren lock; identidad incompleta en contexto no abre Sheets; el lock se libera tras rechazo/exception; mutaciones válidas mantienen roles, scope, ownership y persistencia existentes.
+- **Estado:** Pendiente beta.
+- **Evidencia requerida:** trazas saneadas de RBAC/identidad/lock/Sheets, resultado de cada operación y estado de Examenes/ResourceOwnership antes y después.
+===============================================================================
