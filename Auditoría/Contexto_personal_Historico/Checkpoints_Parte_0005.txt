@@ -2127,3 +2127,29 @@ El límite superior de 100 coincide con la calificación porcentual calculada po
 ### Estado
 Subalcance gradeExamSubmission implementado y con verificaciones locales PASS. TASK-153 / AUD-NG-386 continúan En ejecución por otros mutadores EXAM.
 ===============================================================================
+
+===============================================================================
+CHECKPOINT C1.510 — Eliminación trazable de deleteExamSubmission
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial: b29e05edbf82e62daf398f43ac5ced8e5e06a773.
+### Hallazgo
+deleteExamSubmission borraba físicamente una entrega sin motivo ni registro de actor/resultado. El wrapper existente ya serializaba la operación y verificaba RBAC, identidad firmada, propiedad del examen y scope institucional/departamental.
+### Cambio
+- Exige motivo string de 10–2.000 caracteres y valida integridad mínima de fila e IDs frente al contexto autorizado.
+- Crea/valida HistorialEliminacionesEntregasExamen con esquema de nueve columnas: UUID, entrega, examen, estudiante, actor/rol firmados, motivo, fecha y estado.
+- Registra DELETE_REQUESTED antes de borrar; actualiza a DELETED o DELETE_FAILED. Si falla el registro inicial, no borra.
+- No copia RespuestasJSON ni respuestas del estudiante al historial.
+### Archivos
+backend/exam-service/Code.gs; tests/security/exam-service-delete-submission-audit.test.js; .github/workflows/exam-service-security-contract.yml; beta_test.txt (BETA-EXAM-063); Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoria.txt; changueslogs.txt; historial e índice de checkpoints.
+### Verificación
+- Parseo completo de Code.gs con parser V8: PASS.
+- Contrato aislado local de helper/función: 17/17 PASS; incluye autorización, motivo, esquema, creación, escritura, fallos de borrado/finalización, asociación de IDs y minimización de datos.
+- Fuente del test Node dedicada parseada correctamente; ejecución Node del archivo/CI aún no observadas.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-063 Pendiente beta.
+### Limitaciones y recuperación
+Si falla la actualización de estado después de que deleteRow ya se ejecutó, el evento permanece como DELETE_REQUESTED y la función informa EXAM_SUBMISSION_DELETION_AUDIT_FINALIZATION_FAILED. El registro inicial conserva evidencia y requiere reconciliación operativa. El motivo pasa a ser obligatorio para esta acción.
+### Estado
+Subalcance deleteExamSubmission implementado y con verificaciones locales PASS. TASK-153 / AUD-NG-386 continúan En ejecución por otras mutaciones EXAM.
+===============================================================================
