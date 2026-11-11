@@ -528,3 +528,14 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta. Suite V8 local aislada de 27 escenarios PASS; runner Node nativo/CI y Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** build/commit desplegado, matriz de roles/vínculos/scopes, fixtures sintéticos, secuencia de contención del lock, respuestas saneadas y snapshot de las cuatro hojas antes/después.
 ===============================================================================
+
+===============================================================================
+## BETA-EXAM-047 — TASK-153 / AUD-NG-386 / EXAM: getEvaluationCategories
+- **Módulo/acción:** EXAM — getEvaluationCategories; lectura de categorías y ponderaciones de evaluación.
+- **Objetivo:** verificar en Apps Script/Sheets desplegado que la configuración de categorías solo se expone a sesiones autenticadas con permiso y ámbito válido, y que la consulta nunca inicializa ni modifica la hoja.
+- **Precondiciones:** entorno beta aislado; usuarios sintéticos Administrador/Desarrollador/Dirección/Director/Secretaría/Profesor/Estudiante/Alumno/Tutor/Padre/Responsable con sesiones y scopes válidos; token ausente/expirado, rol desconocido y scope ausente; hoja CategoriasEvaluacion ausente, solo encabezados, poblada y con esquema incompatible.
+- **Pasos:** probar sesión ausente/inválida, permiso RBAC denegado, rol no permitido y scope institucional/departamental no verificado; consultar con roles autorizados; provocar timeout y lectura concurrente; probar hoja ausente, vacía, solo encabezados y poblada; probar encabezados incompatibles; capturar snapshot antes/después de la hoja y verificar que no se crea cuando está ausente.
+- **Resultado esperado:** acceso solo con identidad, RBAC, rol y scope válidos; timeout/errores fallan cerrados; hoja ausente/vacía devuelve las cuatro categorías predeterminadas sin persistirlas; hoja poblada devuelve el contrato status/data; esquema incompatible se rechaza; ninguna consulta crea ni modifica hojas o filas.
+- **Estado:** Pendiente beta. Suite V8 local aislada de 12 escenarios PASS; runner Node nativo/CI y Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** build/commit desplegado, matriz de roles y scopes, tokens sintéticos, respuestas saneadas, secuencia de contención del lock y snapshots de CategoriasEvaluacion antes/después.
+===============================================================================
