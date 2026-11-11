@@ -45,4 +45,5 @@ test(()=>{const x=fixture({timeout:true});assert.throws(()=>x.call(),/LOCK_TIMEO
 test(()=>{const x=fixture();x.stats.onOpen=()=>assert.throws(()=>x.call(),/LOCK_TIMEOUT/);assert.equal(x.call().status,"success");assert.equal(x.stats.acquired,2);assert.equal(x.stats.released,1)});
 test(()=>{const x=fixture();x.call();assert.throws(()=>x.call(),/AUDIT_ID_COLLISION/)});
 test(()=>{const x=fixture();assert.equal(x.call({autorizadoPor:"Attacker",_verifiedUserId:"FAKE"}).status,"success");assert.equal(x.sheets.HistorialRectificacionesNotas.rows[1][7],"SEC-1")});
-console.log("exam-service-student-grade-rectification-security: PASS ("+n+"/27)");
+test(()=>{for(const options of [{denied:true},{invalidIdentity:true},{actor:{authorized:true,userId:"",role:"Secretaría"}},{actor:{authorized:true,userId:"X",role:"Profesor"}}]){const x=fixture(options);assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/);assert.equal(x.stats.acquired,0,"denial must not acquire ScriptLock");assert.equal(x.stats.opens,0,"denial must not open Sheets");}});
+console.log("exam-service-student-grade-rectification-security: PASS ("+n+"/28)");
