@@ -3656,3 +3656,9 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Corrección:** exige permiso efectivo purgeSecurityCaches e identidad firmada antes de CacheService. SESSION_REVOKED registra REVOKED con TTL 86400; GENERIC_PURGE conserva la eliminación explícita del marcador.
 - **Pruebas locales:** contrato aislado 7/7 PASS sobre la función extraída; sintaxis de función PASS. Parseo completo de Code.gs y CI aún no observados; Apps Script/CacheService real NOT RUN.
 - **Beta:** BETA-EXAM-061 Pendiente beta. TASK-153 y AUD-NG-386 continúan En ejecución por otras superficies EXAM.
+
+### 10.161 TASK-153 / AUD-NG-386 — integridad de gradeExamSubmission (C1.509)
+- **Hallazgo:** gradeExamSubmission ya exigía RBAC/identidad/ownership mediante el wrapper contextual, pero escribía calificación y metadatos sin validar tipo/rango/longitud.
+- **Corrección:** calificación finita 0–100, máximo dos decimales con tolerancia IEEE-754 y normalización a dos decimales; estado requerido (1–50), comentario string (0–2.000), tema/asignatura string (0–120). Validación antes de setValues.
+- **Pruebas locales:** parseo completo Code.gs PASS; contrato aislado V8 15/15 PASS; fuente del test Node parsea correctamente. CI aún no observado; Apps Script/Sheets real NOT RUN.
+- **Beta:** BETA-EXAM-062 Pendiente beta. TASK-153 / AUD-NG-386 permanecen En ejecución por otras mutaciones EXAM.
