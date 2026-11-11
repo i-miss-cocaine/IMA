@@ -36,7 +36,7 @@ function makeSheet(rows, kind, options, state) {
   };
 }
 function fixture(options = {}) {
-  const state = { opens: 0, locks: 0, releases: 0, held: false, uuid: 0, action: "", identityCalls: 0 };
+  const state = { opens: 0, locks: 0, releases: 0, held: false, uuid: 0, action: "", identityCalls: 0, permissionCalls: 0 };
   const categoryRows = options.categoryRows || [categoryHeaders,
     ["CAT-OWNED", "Propia", "Global", 20, "100", "Activo"],
     ["CAT-LEGACY", "Legada", "Global", 10, "100", "Activo"]];
@@ -60,7 +60,7 @@ function fixture(options = {}) {
       tryLock() { state.locks++; if (options.timeout || state.held) return false; state.held = true; return true; },
       releaseLock() { state.releases++; state.held = false; }
     }; } },
-    validateRolePermission(action) { state.action = action; return { authorized: options.permission !== false }; },
+    validateRolePermission(action) { state.action = action; state.permissionCalls++; const sequence = options.permissionSequence; return { authorized: Array.isArray(sequence) && sequence.length ? sequence[Math.min(state.permissionCalls - 1, sequence.length - 1)] === true : options.permission !== false }; },
     getVerifiedExamIdentity_() { state.identityCalls++; const sequence = options.identitySequence; return Array.isArray(sequence) && sequence.length ? sequence[Math.min(state.identityCalls - 1, sequence.length - 1)] : actor; },
     getVerifiedExamDepartmentScope_() { if (options.duringScope) options.duringScope(); return scope; },
     assertExamResourceOwnershipForScope_(spreadsheet, currentScope, type, id) {
@@ -128,6 +128,20 @@ test("identity losing userId during locked context revalidation is rejected befo
   assert.equal(x.state.releases, releasesBefore + 1, "context denial releases the shared lock");
   assert.equal(x.state.held, false);
   assert.equal(x.state.opens, opensBefore, "incomplete revalidated identity must be rejected before opening Sheets");
+  assert.deepEqual(x.sheets.CategoriasEvaluacion.rows, categoriesBefore, "category data must remain unchanged");
+  assert.deepEqual(x.sheets.ResourceOwnership.rows, ownershipBefore, "ownership data must remain unchanged");
+});
+test("RBAC permission revoked during locked context revalidation is rejected before Sheets or mutation", () => {
+  const x = fixture({ permissionSequence: [true, false] });
+  const categoriesBefore = x.sheets.CategoriasEvaluacion.rows.map(row => row.slice());
+  const ownershipBefore = x.sheets.ResourceOwnership.rows.map(row => row.slice());
+  denied(() => x.call({ categoriaId: "CAT-OWNED", nombre: "No debe actualizarse", porcentajePonderacion: 99 }));
+  assert.equal(x.state.permissionCalls, 2, "RBAC must be checked before and after lock acquisition");
+  assert.equal(x.state.identityCalls, 1, "revoked RBAC must stop before the second identity lookup");
+  assert.equal(x.state.locks, 1, "valid preflight acquires the shared lock");
+  assert.equal(x.state.releases, 1, "RBAC rejection releases the shared lock");
+  assert.equal(x.state.held, false);
+  assert.equal(x.state.opens, 0, "revoked permission must be rejected before opening Sheets");
   assert.deepEqual(x.sheets.CategoriasEvaluacion.rows, categoriesBefore, "category data must remain unchanged");
   assert.deepEqual(x.sheets.ResourceOwnership.rows, ownershipBefore, "ownership data must remain unchanged");
 });

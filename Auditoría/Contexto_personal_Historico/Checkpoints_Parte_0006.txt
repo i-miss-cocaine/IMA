@@ -1718,3 +1718,27 @@ C1.557 completa la cobertura local de revocación RBAC para rectifyStudentGrade.
 
 HEAD inicial: 16684ee9751d2d55bb59683f84d0259bdb6bee8f. Commit principal de C1.557 (prueba y documentación): 01d197310478c091b9565c00342b849b98e71746. La publicación final de la rama se verificó después de este commit.
 ===============================================================================
+
+
+===============================================================================
+## C1.558 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — cubrir revocación RBAC entre preflight y contexto bajo ScriptLock en saveEvaluationCategory.
+
+### Hallazgo y alcance
+- saveEvaluationCategory valida RBAC antes del lock y vuelve a comprobarlo dentro de getAuthorizedEvaluationCategoryMutationContext_. La suite cubría denegación inicial e identidad degradada bajo lock, pero no permiso revocado entre ambas comprobaciones.
+- Se amplió el fixture para simular una secuencia RBAC y se añadió un escenario concedido→revocado durante la revalidación contextual.
+- La prueba exige RESOURCE_NOT_AVAILABLE, dos comprobaciones RBAC, una consulta de identidad, lock adquirido/liberado, cero aperturas de Sheets y snapshots intactos de CategoriasEvaluacion y ResourceOwnership.
+- No se modificó backend productivo, matriz RBAC, roles, scope, ownership ni persistencia.
+
+### Verificación local
+- Parseo V8 de backend/exam-service/Code.gs: PASS.
+- Parseo V8 de tests/security/exam-service-evaluation-category-mutation-security.test.js: PASS.
+- Suite completa: 19/19 PASS en runtime V8 aislado con shims.
+- Se conservan altas/ediciones autorizadas, límites de scope, ownership, rollback, validaciones, timeout y reentrada concurrente.
+- Node 22/CI para esta revisión: NOT RUN. Apps Script/Sheets real: NOT RUN; BETA-EXAM-049 permanece Pendiente beta.
+
+### Estado y continuidad
+C1.558 completa la cobertura local de revocación RBAC para saveEvaluationCategory. No hubo cambios productivos. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
+
+HEAD inicial: 5f1677f0bd99fc0c422d885dcb0ead52deb983a2. HEAD final se confirmará tras publicar los cambios de prueba y documentación.
+===============================================================================

@@ -4084,3 +4084,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** parseo V8 de backend y test PASS; suite completa tests/security/exam-service-student-grade-rectification-security.test.js: 30/30 PASS en runtime V8 aislado con shims. Se conservan escenarios positivos, validación de rol/scope/nota, auditoría, rollback, timeout e identidad degradada.
 - **Alcance:** ampliación exclusiva de pruebas. No se modifica backend productivo, permisos, roles, scope ni persistencia. Node 22/CI de esta revisión NOT RUN; Apps Script/Sheets real NOT RUN. BETA-EXAM-078 permanece Pendiente beta.
 - **Estado:** cobertura local de revocación RBAC para rectifyStudentGrade completada. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
+
+
+### 10.210 TASK-153 / AUD-NG-386 — cubrir revocación RBAC de saveEvaluationCategory bajo ScriptLock (C1.558)
+- **Brecha de cobertura:** saveEvaluationCategory ejecuta preflight RBAC y vuelve a validar el permiso en getAuthorizedEvaluationCategoryMutationContext_ dentro del lock; la suite ya probaba denegación inicial e identidad degradada bajo lock, pero no simulaba el permiso concedido→revocado entre ambas comprobaciones.
+- **Cobertura añadida:** fixture con secuencia RBAC [true, false] y escenario de edición de una categoría con ownership válido. Se comprueba RESOURCE_NOT_AVAILABLE, dos comprobaciones RBAC, una consulta de identidad, lock adquirido/liberado, cero aperturas de Sheets y snapshots intactos de CategoriasEvaluacion y ResourceOwnership.
+- **Verificación local:** parseo V8 backend/test PASS; suite completa tests/security/exam-service-evaluation-category-mutation-security.test.js: 19/19 PASS en runtime V8 aislado con shims. Se conservan altas/ediciones válidas, aislamiento institucional/departamental, ownership, rollback, validaciones, timeout y reentrada concurrente.
+- **Alcance:** ampliación exclusiva de pruebas. No se modifica backend productivo, permisos, roles, scope, ownership ni persistencia. Node 22/CI de esta revisión NOT RUN; Apps Script/Sheets real NOT RUN. BETA-EXAM-049 permanece Pendiente beta.
+- **Estado:** cobertura local de revocación RBAC para saveEvaluationCategory completada. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
