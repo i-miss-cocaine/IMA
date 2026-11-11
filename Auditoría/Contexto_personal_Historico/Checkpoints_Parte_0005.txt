@@ -1581,7 +1581,8 @@ Fecha: 2026-11-11 UTC.
 Repositorio: i-miss-cocaine/IMA.
 Rama exclusiva: NG_beta_0.0.0.1_work.
 Checkpoint anterior: C1.494.
-HEAD inicial: 40e1b2dab0a4e911458fee1880906d49c10e1206.
+HEAD inicial efectivo antes de la primera escritura de C1.495: cc9102326a5759c710e29534e32a244bcf93375c.
+Nota de continuidad: la primera consulta había observado 40e1b2dab0a4e911458fee1880906d49c10e1206; antes de la primera escritura la rama ya incluía tres commits sobre saveRubric (079752cb754017ee093723a6b272ae4bdd537b2e, 4a9ecd1d264330c9291546c4d69b430c93d00f68 y cc9102326a5759c710e29534e32a244bcf93375c). Se conservaron íntegramente y quedaron fuera del alcance de C1.495.
 
 ### Alcance y decisiones
 Auditar y asegurar saveEvaluationCategory dentro de TASK-153 / AUD-NG-386.
