@@ -1909,3 +1909,14 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Alcance:** solo prueba; Code.gs, permisos, roles y persistencia sin cambios.
 - **Verificación:** parseo sintáctico V8 de la suite PASS; harness aislado del handler/wrapper/contexto productivos PASS (2 identidades, lock liberado, cero aperturas/escrituras y notas intactas). Suite completa y Node 22/CI NOT RUN; Apps Script/Sheets real NOT RUN.
 - **Beta:** BETA-EXAM-057 ampliado, Pendiente beta.
+
+
+### Addendum C1.543 — precisión de evidencia
+- La revisión del registro de herramientas confirmó que la verificación realizada acreditó parseo sintáctico V8, no ejecución funcional del handler. Se corrige la afirmación anterior: harness funcional y suite completa NOT RUN. El escenario de prueba permanece añadido.
+
+### C1.544 — AUD-NG-386 / revalidación de identidad en bulkApplyGradebookGrades
+- **Hallazgo:** faltaba variar la identidad entre preflight y contexto bajo lock en el handler de aplicación masiva.
+- **Cambio:** escenario añadido con userId válido inicialmente y compuesto por espacios al revalidar.
+- **Resultado esperado:** RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas de Sheets y snapshot de notas intacto.
+- **Verificación:** ejecución de suite/harness local NOT RUN; tarea En ejecución hasta ejecutar prueba local pertinente. Node22/CI y Apps Script/Sheets real NOT RUN.
+- **Alcance:** solo prueba; sin cambios productivos.

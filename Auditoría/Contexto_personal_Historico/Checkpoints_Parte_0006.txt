@@ -1297,3 +1297,32 @@ La suite de saveGradebookGrades comprobaba que RBAC e identidad se verificaran d
 ### Beta y continuidad
 BETA-EXAM-057 ya contempla la revalidación de identidad para saveGradebookGrades y bulkApplyGradebookGrades; se precisa el escenario de pérdida de userId después del preflight. Permanece Pendiente beta. TASK-153 / AUD-NG-386 continúa En ejecución; siguiente acción: continuar inventario de mutaciones EXAM no cubiertas sin repetir C1.534–C1.543.
 ===============================================================================
+
+
+### Addendum de precisión — C1.543
+Al revisar la evidencia disponible en esta continuación, se comprobó que la ejecución registrada anteriormente como harness PASS solo acreditaba parseo sintáctico del texto de prueba, no la ejecución del handler productivo. Se corrige el alcance: parseo sintáctico PASS; harness funcional y suite completa NOT RUN. No se retira ni altera el escenario añadido; queda pendiente su ejecución local.
+
+===============================================================================
+C1.544 — TASK-153 / AUD-NG-386 / revalidación de identidad en bulkApplyGradebookGrades
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 876cee3d18d1ebedd068c51bafb43497d7f517fb
+
+### Alcance y hallazgo
+bulkApplyGradebookGrades usa el contrato de guardado protegido por withAuthorizedGradebookSave_, pero la suite dedicada solo verificaba dos llamadas de identidad manteniendo estable el actor. Faltaba probar pérdida de userId entre preflight y revalidación contextual bajo lock desde el handler masivo real.
+
+### Cambio
+- tests/security/exam-service-gradebook-bulk-apply-security.test.js: fixture ampliada para secuenciar identidades y contar validaciones.
+- Nuevo escenario: userId válido en preflight y compuesto por espacios en la segunda validación; exige RESOURCE_NOT_AVAILABLE, dos verificaciones, lock liberado, cero aperturas de Sheets y snapshot completo de CalificacionesEstudiantes sin cambios.
+- Sin cambios en Code.gs, permisos, roles, scope ni persistencia.
+
+### Verificación local
+- Prueba agregada al archivo; ejecución de suite/harness local: NOT RUN en esta iteración.
+- Node 22/CI: NOT RUN.
+- Apps Script/Sheets real: NOT RUN.
+- Estado: En ejecución; no se declara completada hasta ejecutar las verificaciones locales pertinentes.
+
+### Beta y continuidad
+BETA-EXAM-057 ya contempla bulkApplyGradebookGrades; se explicita la secuencia de identidad cambiante y la verificación de snapshot. Pendiente beta. Siguiente acción: ejecutar la suite dedicada y corregir cualquier fallo antes de cerrar C1.544.
+===============================================================================

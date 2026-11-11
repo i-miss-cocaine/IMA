@@ -3981,4 +3981,9 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 
 ### 10.196 TASK-153 / AUD-NG-386 — ejecutar saveGradebookGrades real ante pérdida de identidad bajo lock (C1.543)
 - **Hallazgo de cobertura:** la suite verificaba dos llamadas de identidad, pero usaba el mismo actor estable; no demostraba que el handler rechazara la pérdida de userId entre preflight y contexto bajo lock ni que preservara las notas.
-- **Estado:** cobertura local añadida al handler saveGradebookGrades; parseo V8 de la suite PASS y harness aislado de handler/wrapper/contexto PASS (2 verificaciones, lock liberado, cero aperturas/escrituras y snapshot de notas intacto). La suite completa y Node 22/CI no se ejecutaron. Sin cambios productivos. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario restante.
+- **Estado:** cobertura local añadida al handler saveGradebookGrades; parseo sintáctico V8 de la suite PASS. La ejecución del harness funcional y de la suite completa no quedó acreditada en esta sesión; Node 22/CI tampoco se ejecutaron. Sin cambios productivos. Sin cambios productivos. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario restante.
+
+### 10.197 TASK-153 / AUD-NG-386 — cubrir pérdida de identidad en bulkApplyGradebookGrades bajo lock (C1.544)
+- **Hallazgo:** la suite del handler bulkApplyGradebookGrades comprueba la doble verificación de identidad, pero usa una identidad estable; no cubre pérdida de userId entre preflight y revalidación dentro del lock.
+- **Cambio:** se añadió un escenario a la suite dedicada con identidad válida en preflight y userId compuesto por espacios en la segunda verificación; exige rechazo, liberación del lock, cero aperturas de Sheets y snapshot íntegro de CalificacionesEstudiantes.
+- **Estado:** En ejecución. La prueba nueva está añadida, pero la suite/harness local aún no se han ejecutado. No se cierra hasta ejecutar la verificación local pertinente. Sin cambios productivos.

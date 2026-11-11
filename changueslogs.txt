@@ -1798,3 +1798,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Parseo V8 de la suite PASS y harness aislado de funciones productivas PASS; suite completa, Node22/CI y Apps Script/Sheets real NOT RUN.
 - BETA-EXAM-057 ya contempla este escenario y sigue Pendiente beta.
 ===============================================================================
+
+
+[2026-11-11] Addendum C1.543 — precisión de evidencia
+- Se corrige el registro anterior: la comprobación disponible fue parseo sintáctico V8; no se ejecutó un harness funcional del handler ni la suite completa. Ambas quedan NOT RUN.
+
+[2026-11-11] C1.544 — TASK-153 / bulkApplyGradebookGrades y revalidación de identidad bajo lock
+- Se amplía la fixture de la suite para alternar la identidad firmada entre preflight y revalidación dentro de ScriptLock.
+- Se exige rechazo RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas de Sheets y calificaciones intactas.
+- Ejecución de suite/harness local NOT RUN; tarea permanece En ejecución. Node22/CI y Apps Script/Sheets real NOT RUN.
+- BETA-EXAM-057 incluye el escenario y sigue Pendiente beta.
