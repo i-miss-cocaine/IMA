@@ -2405,10 +2405,17 @@ HEAD inicial: `4451fd9d161fc72afab08b2a09263ec363e0141e`. HEAD final: se confirm
 ### Verificación local
 - Parseo sintáctico de backend y contrato: PASS.
 - Ejecución completa del contrato en V8 aislado con shims compatibles: 12/12 PASS.
-- CI Node.js 22: pendiente de observación tras commit. Apps Script/Sheets real: NOT RUN; BETA-EXAM-087 Pendiente beta.
+- CI Node.js 22: GitHub Actions run 43116458048 SUCCESS. Apps Script/Sheets real: NOT RUN; BETA-EXAM-087 Pendiente beta.
 
 ### Estado y continuidad
 - C1.586 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución.
 - Siguiente: inspeccionar otra ruta mutadora EXAM sin cobertura reentrante local equivalente; no repetir submitExam, createExam, updateExam, updateExamStatus ni deleteExam.
 - HEAD inicial: 661ca6491e2f99ac8005b7b02769ecf5522bab1f; HEAD final: se confirma tras publicar.
+===============================================================================
+
+===============================================================================
+### Addendum CI — C1.586
+- GitHub Actions run 43116458048, commit de prueba 88292d3771702613c5b35f31c62cb0ccfdb65767, workflow Exam-Service security local contracts: SUCCESS en Node.js 22.
+- Job exam-security-contracts: SUCCESS; paso Run exam submission mutation security regression: SUCCESS; todos los pasos completados sin fallos.
+- C1.586 Completada en verificación local y CI. BETA-EXAM-087 permanece Pendiente beta para Apps Script/Sheets desplegado.
 ===============================================================================

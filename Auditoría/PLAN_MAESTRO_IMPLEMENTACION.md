@@ -4312,12 +4312,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Brecha confirmada:** deleteExam ejecuta una baja lógica de dos pasos bajo ScriptLock: primero ResourceOwnership.Status=INACTIVE y luego Examenes.Estado=Eliminado. Las pruebas existentes cubrían revocación RBAC y rollback, pero no una solicitud reentrante durante ninguna de esas escrituras.
 - **Cobertura añadida:** el contrato invoca deleteExam anidado desde ambos hooks setValue. Las dos solicitudes deben recibir EXAM_MUTATION_LOCK_TIMEOUT; la exterior completa exactamente las dos escrituras previstas, abre Sheets una sola vez y libera el lock.
 - **Alcance:** contrato local en tests/security/exam-service-exam-mutation-security.test.js; backend productivo sin cambios. BETA-EXAM-086 registra las dos ventanas de reentrada en Apps Script/Sheets desplegado.
-- **Verificación local:** parseo sintáctico de backend y contrato PASS; ejecución aislada V8 del contrato completo 21/21 PASS. CI Node.js 22 pendiente de observación tras commit. Apps Script/Sheets real NOT RUN.
+- **Verificación local:** parseo sintáctico de backend y contrato PASS; ejecución aislada V8 del contrato completo 21/21 PASS. CI Node.js 22: GitHub Actions run 43116003454 SUCCESS. Apps Script/Sheets real NOT RUN.
 - **Estado:** C1.585 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para las rutas mutadoras EXAM restantes.
 
 ### 10.235 TASK-153 / AUD-NG-386 — contención reentrante en submitExam durante appendRow (C1.586)
 - **Brecha confirmada:** submitExam valida RBAC e identidad antes y después de adquirir ScriptLock, y luego submitExamUnlocked_ calcula la nota y persiste la entrega con appendRow. El contrato específico verificaba RBAC, identidad y timeout, pero no una segunda entrega reentrante durante esa persistencia.
 - **Cobertura añadida:** el fixture ejecuta submitExam y submitExamUnlocked_ reales con Sheets/contexto sintéticos; appendRow intenta una segunda solicitud del mismo estudiante/examen. La secundaria debe recibir EXAM_SUBMISSION_LOCK_TIMEOUT; la exterior registra exactamente una entrega, obtiene una sola apertura de contexto y libera el lock.
 - **Alcance:** solo tests/security/exam-service-submit-mutation-security.test.js; backend productivo sin cambios. BETA-EXAM-087 registra la verificación desplegada.
-- **Verificación local:** parseo sintáctico de Code.gs y contrato PASS; contrato completo V8 aislado 12/12 PASS. CI Node.js 22 pendiente de observación tras commit. Apps Script/Sheets real NOT RUN.
+- **Verificación local:** parseo sintáctico de Code.gs y contrato PASS; contrato completo V8 aislado 12/12 PASS. CI Node.js 22: GitHub Actions run 43116458048 SUCCESS. Apps Script/Sheets real NOT RUN.
 - **Estado:** C1.586 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.

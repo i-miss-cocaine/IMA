@@ -2111,7 +2111,7 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-11] C1.580 — concurrencia reentrante en bulkApplyGradebookGrades
 - Se amplía el fixture con hook en setValues para intentar una segunda aplicación masiva mientras la primera conserva ScriptLock.
 - La segunda solicitud falla GRADEBOOK_SAVE_LOCK_TIMEOUT; la exterior realiza una sola escritura, no abre Sheets por segunda vez y libera el lock.
-- Suite V8 aislada 31/31 PASS; parseo Code.gs/test PASS. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN.
+- Suite V8 aislada 31/31 PASS; parseo Code.gs/test PASS. Backend productivo sin cambios. CI Node.js 22: run 43116003454 SUCCESS; Apps Script/Sheets real NOT RUN.
 - BETA-EXAM-057 actualizado. TASK-153 / AUD-NG-386 continúa En ejecución.
 ===============================================================================
 
@@ -2120,7 +2120,7 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-11] C1.581 — concurrencia de reapertura durante append de auditoría
 - Se agregó hook sintético en appendRow y una segunda llamada a reopenPeriodGradebook mientras la solicitud exterior conserva ScriptLock.
 - La segunda solicitud recibe GRADEBOOK_REOPEN_LOCK_TIMEOUT; el cierre queda Reabierto una sola vez, se registra una sola fila de auditoría y se libera el lock exterior.
-- Suite V8 aislada 29/29 PASS; parseo Code.gs/test PASS. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN.
+- Suite V8 aislada 29/29 PASS; parseo Code.gs/test PASS. Backend productivo sin cambios. CI Node.js 22: run 43116458048 SUCCESS; Apps Script/Sheets real NOT RUN.
 - BETA-EXAM-055 actualizado. TASK-153 / AUD-NG-386 continúa En ejecución.
 ===============================================================================
 
