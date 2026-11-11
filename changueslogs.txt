@@ -1472,3 +1472,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Todos los demás pasos del workflow EXAM también finalizaron success. HEAD probado: dbcd49f775589359967ba79d5405c73200d1f11a.
 - Prueba focalizada local del wrapper exacto: 6/6 PASS; parseo Code.gs y contrato: PASS.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.515 — IMA-EXEC-20261110-1825Z-02 — EXAM: RBAC e identidad antes del lock del banco de preguntas
+- withAuthorizedQuestionBankMutation_ valida permiso manageQuestionBank e identidad firmada antes de solicitar ScriptLock; getAuthorizedQuestionBankMutationContext_ vuelve a validar scope/ownership/esquema dentro del lock.
+- Contrato exam-service-question-bank-security.test.js ampliado: rol estudiante, token expirado e identidad inválida no deben adquirir el lock.
+- Parseo Code.gs y contrato Node PASS; harness local exacto 6/6 PASS. CI pendiente de observar.
+- Sin cambio de esquema. Apps Script/Sheets real NOT RUN. TASK-153 / AUD-NG-386 sigue En ejecución.
+===============================================================================

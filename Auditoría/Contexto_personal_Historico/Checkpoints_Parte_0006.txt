@@ -138,3 +138,36 @@ HEAD final: pendiente de confirmación tras publicar.
 - Ejecución local focalizada del wrapper exacto: **6/6 PASS**. Parseo de Code.gs y contrato: PASS.
 - HEAD de implementación verificado: `dbcd49f775589359967ba79d5405c73200d1f11a`; rama base sin cambios.
 - HEAD final tras el commit documental: `3d719a498610b329679315686c331ca105b279f9`; rama base permanece en `44d9891132332e692dbe2ba8602b41f50a508a59`.
+
+
+
+===============================================================================
+CHECKPOINT C1.515 — autorización previa al lock en mutaciones del banco de preguntas EXAM
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial: 0fa020c145c41abb197280529e93d69e4b631eea.
+### Hallazgo
+withAuthorizedQuestionBankMutation_ adquiría ScriptLock antes de validar el permiso efectivo manageQuestionBank y la identidad firmada. Una llamada directa a manageQuestionBank con rol no autorizado o token inválido competía por el lock compartido antes de ser rechazada.
+### Corrección
+- validateRolePermission("manageQuestionBank", payload) e getVerifiedExamIdentity_(payload) se ejecutan antes de solicitar ScriptLock.
+- getAuthorizedQuestionBankMutationContext_ conserva la revalidación bajo el lock, incluyendo scope departamental, ownership, unicidad de recurso y esquema; no se elimina el control TOCTOU.
+- El finally existente conserva la liberación del lock en éxito, rechazo contextual y excepción.
+### Pruebas
+- Parseo completo de Code.gs: PASS.
+- Parseo sintáctico del contrato Node actualizado: PASS.
+- Harness local focalizado sobre la función exacta: 6/6 PASS (RBAC pre-lock, identidad pre-lock, flujo autorizado con revalidación, rechazo contextual bajo lock, liberación ante excepción y timeout).
+- Contrato Node completo y workflow CI: pendientes de ejecución/verificación posterior al commit.
+- Apps Script/Sheets real: NOT RUN; no se requiere despliegue para validar el wrapper aislado.
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-question-bank-security.test.js
+- changueslogs.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+### Estado y continuidad
+Subalcance de autorización previa al lock de manageQuestionBank corregido. TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente acción: verificar contrato ampliado en CI y continuar inventario sin repetir wrappers ya endurecidos.
+HEAD final: pendiente de confirmación tras publicar.
+===============================================================================

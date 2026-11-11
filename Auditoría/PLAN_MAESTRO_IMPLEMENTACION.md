@@ -3714,3 +3714,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Beta:** Apps Script/Sheets real NOT RUN; no aplica para aprobación local del wrapper aislado.
 - **Estado:** subalcance de lock/autorización corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras rutas mutadoras EXAM.
 - **Siguiente:** continuar inventario de mutadores EXAM no cubiertos, sin repetir los wrappers ya endurecidos.
+
+
+### 10.168 TASK-153 / AUD-NG-386 — autorización previa al lock en manageQuestionBank (C1.515)
+- **Hallazgo:** `withAuthorizedQuestionBankMutation_` adquiría ScriptLock antes de validar el permiso `manageQuestionBank` y la identidad firmada; solicitudes directas con rol no autorizado o token inválido competían por el bloqueo compartido.
+- **Corrección:** valida RBAC e identidad firmada antes de solicitar el lock. El contexto completo se vuelve a validar dentro del lock, conservando scope departamental, ownership, unicidad y esquema; `finally` conserva la liberación.
+- **Pruebas locales:** parseo completo Code.gs y contrato Node PASS; harness focalizado del wrapper exacto 6/6 PASS (RBAC/identidad pre-lock, flujo autorizado/revalidación, rechazo contextual, liberación y timeout).
+- **CI:** el contrato existente `exam-service-question-bank-security.test.js` se amplía con denegaciones antes del lock; ejecución CI pendiente.
+- **Beta:** Apps Script/Sheets real NOT RUN; no se necesita despliegue para la validación local del wrapper.
+- **Estado:** subalcance de manageQuestionBank completado localmente; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+- **Siguiente:** verificar CI y continuar el inventario de handlers mutadores EXAM.

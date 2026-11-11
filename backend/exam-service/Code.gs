@@ -547,6 +547,13 @@ function getAuthorizedQuestionBankMutationContext_(payload) {
 }
 
 function withAuthorizedQuestionBankMutation_(payload, mutation) {
+  // Rechazar RBAC e identidad inválidos antes de competir por el lock compartido.
+  // El contexto completo se revalida bajo el lock para evitar TOCTOU.
+  const permission = validateRolePermission("manageQuestionBank", payload);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(payload);
+  if (!actor || actor.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("QUESTION_BANK_LOCK_TIMEOUT");
   try {
