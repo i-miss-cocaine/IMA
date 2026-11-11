@@ -2003,3 +2003,28 @@ backend/exam-service/Code.gs; js/teacher.js; tests/security/exam-service-gradebo
 CalificacionesEstudiantes no contiene PeriodoID/Asignatura; se verifica asignación y período de la solicitud y se bloquea si el cierre correspondiente está Cerrado, pero no se inventa una dimensión histórica por fila. ConfiguracionAcademica no contiene DepartmentID: se comprueban scope departamental activo y asignación exacta actor/grado/sección/asignatura/período, pero no es posible correlacionar esa asignación con un departamento concreto. El spreadsheet es institucionalmente aislado; el aislamiento departamental por fila requiere evolución de esquema. bulkApplyGradebookGrades no se modifica en esta iteración.
 TASK-153 / AUD-NG-386 siguen En ejecución por otras mutaciones EXAM.
 ===============================================================================
+
+===============================================================================
+CHECKPOINT C1.505 — Protección de bulkApplyGradebookGrades
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial: c77335f7589a736fde5d3e926b47ff2775a5e6cc.
+### Hallazgo
+bulkApplyGradebookGrades era una mutación masiva con permiso RBAC de Profesor, pero sin validación contextual de identidad, ámbito, asignación, roster, propiedad de categoría, cierre ni unicidad de registros. No estaba en PUBLIC_ACTIONS; el defecto era la ausencia de controles propios del flujo y de validación de los datos antes de escribir.
+### Cambio
+- Reutiliza el wrapper de guardado del libro con permiso específico bulkApplyGradebookGrades y ScriptLock.
+- Valida identidad firmada, rol permitido, scope, profesor autenticado, asignación exacta, contexto, roster único, esquema, período abierto, categoría y ownership.
+- Limita lote a 500, rechaza IDs vacíos/duplicados, notas no decimales o fuera de 0–100, persistencia ambigua y estudiantes fuera del roster.
+- Conserva el contrato de aplicación masiva: borrador/no publicado, conteos aplicados/omitidos y omisión de nota positiva previa salvo sobrescritura explícita.
+- Una escritura consolidada; no crea hojas implícitamente.
+### Archivos
+backend/exam-service/Code.gs; tests/security/exam-service-gradebook-bulk-apply-security.test.js; .github/workflows/exam-service-security-contract.yml; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; beta_test.txt (BETA-EXAM-058); changueslogs.txt; Auditoria.txt; historial e índice de checkpoints.
+### Verificación
+- Parseo completo Code.gs y suite local dedicada: pendientes de ejecución/verificación.
+- CI: pendiente tras publicar.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-058 Pendiente beta.
+### Limitaciones
+CalificacionesEstudiantes no persiste asignatura/período por fila y ConfiguracionAcademica no contiene DepartmentID; se reutiliza la validación contextual del endpoint de guardado sin inferir relaciones inexistentes. La escritura de Sheets no es transaccional.
+TASK-153 / AUD-NG-386 permanecen En ejecución por otras mutaciones EXAM.
+===============================================================================

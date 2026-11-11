@@ -655,3 +655,13 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; Apps Script/Sheets NOT RUN. Suite dedicada 23/23 PASS y security-contract PASS (CI run 43012781628); falla global preexistente en departmental-access.
 - **Evidencia requerida:** identidad/rol/scope, asignación y roster, snapshots de notas antes/después, filas de ownership/categorías, denegaciones, estado de cierre y prueba de concurrencia.
 ===============================================================================
+
+===============================================================================
+## BETA-EXAM-058 — TASK-153 / AUD-NG-386 / EXAM: bulkApplyGradebookGrades
+- **Objetivo:** verificar en beta que la aplicación masiva solo modifica calificaciones de estudiantes del roster y contexto académico autorizado, con identidad firmada, permiso de operación, ámbito, categoría y período comprobados.
+- **Precondiciones:** spreadsheet institucional aislado; sesiones sintéticas Profesor, Administrador y roles denegados; asignaciones ConfiguracionAcademica exactas/conflictivas; roster con IDs únicos/duplicados y estudiantes de otras secciones; categorías CAT-1..4 y personalizadas con ownership válido/ausente/ambiguo; calificaciones existentes positivas, cero, inválidas y duplicadas; períodos abiertos/cerrados.
+- **Pasos:** probar token ausente/expirado, RBAC denegado, rol no permitido, scope ausente/insuficiente, profesorId manipulado, asignación ajena, estudiante fuera del roster, IDs vacíos/duplicados, evaluación inexistente/ajena, nota malformada/fuera de rango/precisión excesiva, lote vacío/superior a 500, cierre de período, timeout, sobrescritura habilitada/deshabilitada y fallo de escritura.
+- **Resultado esperado:** actor y rol derivados de la sesión; Profesor limitado a asignación exacta y roster; actores institucionales sujetos a scope institutionWide; categoría con ownership verificable; período cerrado inmutable; nota estricta 0–100; sin escrituras parciales por validación y sin sobrescritura de notas positivas cuando sobrescribirExistentes=false.
+- **Estado:** Pendiente beta. La prueba local aislada y CI se registrarán al verificar el commit; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit/build desplegado, tokens/roles/scopes, asignación y roster, snapshots de calificaciones antes/después, categoría/ownership, cierre, conteos aplicados/omitidos y denegaciones.
+===============================================================================

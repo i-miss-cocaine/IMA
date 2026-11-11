@@ -3625,3 +3625,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Estado:** subalcance saveGradebookGrades completado con verificaciones locales PASS y suite dedicada CI 23/23 PASS. Falla global departmental-access ajena al cambio; TASK-153 permanece En ejecución.
 - **Límite de ámbito:** ConfiguracionAcademica no contiene DepartmentID: se comprueban scope departamental activo y asignación exacta actor/grado/sección/asignatura/período, pero no es posible correlacionar esa asignación con un departamento concreto. El spreadsheet es institucionalmente aislado; el aislamiento departamental por fila requiere evolución de esquema.
 - **Siguiente:** auditar la siguiente mutación EXAM elegible; bulkApplyGradebookGrades permanece fuera de este alcance.
+
+
+### 10.157 TASK-153 / AUD-NG-386 — protección de bulkApplyGradebookGrades (C1.505)
+- **Hallazgo:** la mutación masiva permitía aplicar notas sin comprobar dentro de su flujo la identidad firmada, permiso específico, ámbito institucional/departamental, asignación docente ni pertenencia del estudiante al roster; aceptaba lotes no acotados, sobrescribía la primera coincidencia y podía crear la hoja implícitamente. El endpoint no estaba en PUBLIC_ACTIONS; la exposición observada era su permiso RBAC de Profesor sin controles contextuales propios del flujo.
+- **Corrección:** reutiliza el contrato contextual del guardado del libro con permiso bulkApplyGradebookGrades, ScriptLock, identidad firmada, scope, asignación exacta, roster, esquema, período abierto, categoría/ownership y notas/lote validados. Se preserva el comportamiento de omitir notas positivas existentes salvo sobrescritura explícita; se rechazan IDs vacíos/duplicados, persistencia ambigua y lotes mayores de 500. Se conserva la respuesta histórica y el guardado en borrador/no publicado.
+- **Pruebas locales:** suite dedicada exam-service-gradebook-bulk-apply-security.test.js con 23 escenarios; resultado local pendiente de ejecución/verificación.
+- **CI/beta:** workflow de contrato actualizado para ejecutar la suite; BETA-EXAM-058 Pendiente beta; Apps Script/Sheets real NOT RUN.
+- **Estado:** subalcance en implementación; TASK-153 permanece En ejecución.
+- **Límite:** se reutilizan las mismas limitaciones de modelo de saveGradebookGrades: CalificacionesEstudiantes no persiste asignatura/período por fila y ConfiguracionAcademica no contiene DepartmentID. No se infiere ownership departamental por registro.

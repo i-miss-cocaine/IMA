@@ -2461,19 +2461,19 @@ function saveGradebookGrades(payload) {
     saveGradebookGradesUnlocked_(payload, context));
 }
 
-function withAuthorizedGradebookSave_(payload, mutation) {
+function withAuthorizedGradebookSave_(payload, mutation, permissionAction) {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("GRADEBOOK_SAVE_LOCK_TIMEOUT");
   try {
-    return mutation(getAuthorizedGradebookSaveContext_(payload));
+    return mutation(getAuthorizedGradebookSaveContext_(payload, permissionAction));
   } finally {
     try { lock.releaseLock(); } catch (_) {}
   }
 }
 
-function getAuthorizedGradebookSaveContext_(payload) {
+function getAuthorizedGradebookSaveContext_(payload, permissionAction) {
   const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
-  const permission = validateRolePermission("saveGradebookGrades", p);
+  const permission = validateRolePermission(permissionAction || "saveGradebookGrades", p);
   if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
   const actor = getVerifiedExamIdentity_(p);
   if (!actor || actor.authorized !== true || !String(actor.userId || "").trim()) {
@@ -2571,8 +2571,9 @@ function getAuthorizedGradebookSaveContext_(payload) {
     gradeSheet, gradeData, categoryIds, ownedCategories };
 }
 
-function saveGradebookGradesUnlocked_(payload, context) {
+function saveGradebookGradesUnlocked_(payload, context, options) {
   const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const opts = options && typeof options === "object" ? options : {};
   const calificaciones = p.calificaciones;
   if (p.esAnoHistoricoAnterior === true || p.anoLectivo && p.esAnoHistoricoAnterior) {
     throw new Error("GRADEBOOK_HISTORICAL_YEAR_IMMUTABLE");
@@ -2621,90 +2622,51 @@ function saveGradebookGradesUnlocked_(payload, context) {
       observaciones: String(item.observaciones || "").slice(0, 1000) };
   });
   const data = context.gradeData.map(r => r.slice()), now = new Date();
+  let appliedCount = 0, omittedCount = 0;
   normalized.forEach(entry => {
+    if (opts.preserveExistingPositive === true && entry.existing >= 1) {
+      const previous = parseFloat(context.gradeData[entry.existing][3]);
+      if (!isNaN(previous) && previous > 0) { omittedCount++; return; }
+    }
     const row = entry.existing >= 1 ? data[entry.existing] :
       ["CALIF-" + Utilities.getUuid(), entry.evaluacionId, entry.userId, 0, 0, true, false, "", now];
-    row[3] = entry.grade;
-    row[4] = entry.grade;
-    row[5] = p.esBorrador !== false;
-    row[6] = p.esPublicada === true;
-    row[7] = entry.observaciones;
-    row[8] = now;
-    if (entry.existing < 1) data.push(row);
-    else data[entry.existing] = row;
+    row[3] = entry.grade; row[4] = entry.grade;
+    row[5] = p.esBorrador !== false; row[6] = p.esPublicada === true;
+    row[7] = entry.observaciones; row[8] = now;
+    if (entry.existing < 1) data.push(row); else data[entry.existing] = row;
+    appliedCount++;
   });
-  context.gradeSheet.getRange(1, 1, data.length, 9).setValues(data);
-  return { status: "success", message: "Se guardaron " + normalized.length + " calificaciones exitosamente.", savedCount: normalized.length };
+  if (appliedCount > 0) context.gradeSheet.getRange(1, 1, data.length, 9).setValues(data);
+  const result = { status: "success", message: "Se guardaron " + appliedCount + " calificaciones exitosamente.", savedCount: normalized.length };
+  if (opts.returnCounts === true) { result.appliedCount = appliedCount; result.omittedCount = omittedCount; }
+  return result;
 }
-// [F9-Task10] [P1] - Ampliar el libro de calificaciones para mejorar el registro individual y masivo
+// [F9-Task10] [P1] - Aplicación masiva protegida por el mismo contrato de guardado del libro.
 function bulkApplyGradebookGrades(payload) {
-  const { evaluacionId, estudiantes, nota, observaciones, sobrescribirExistentes } = payload || {};
-  if (!evaluacionId || !Array.isArray(estudiantes) || estudiantes.length === 0) {
-    return { status: "error", message: "Se requiere evaluacionId y una lista de IDs de estudiantes para aplicación masiva." };
-  }
-
-  const notaNum = parseFloat(nota);
-  if (isNaN(notaNum) || notaNum < 0 || notaNum > 100) {
-    return { status: "error", message: "La calificación a aplicar masivamente debe estar entre 0 y 100." };
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CalificacionesEstudiantes");
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["ID", "EvaluacionID", "UserID", "NotaObtenida", "PuntajePonderado", "EsBorrador", "EsPublicada", "Observaciones", "FechaRegistro"]);
-  }
-
-  const data = sheet.getDataRange().getValues();
-  const now = new Date();
-  let aplicados = 0;
-  let omitidos = 0;
-
-  const indexMap = {};
-  for (let i = 1; i < data.length; i++) {
-    const key = `${String(data[i][1]).trim()}_${String(data[i][2]).trim()}`;
-    indexMap[key] = i;
-  }
-
-  estudiantes.forEach(uId => {
-    const studentIdStr = String(uId).trim();
-    if (!studentIdStr) return;
-
-    const key = `${String(evaluacionId).trim()}_${studentIdStr}`;
-    if (key in indexMap) {
-      const idx = indexMap[key];
-      const notaActual = parseFloat(data[idx][3]);
-      if (!sobrescribirExistentes && !isNaN(notaActual) && notaActual > 0) {
-        omitidos++;
-        return;
-      }
-      data[idx][3] = notaNum;
-      data[idx][5] = true; // EsBorrador
-      data[idx][7] = observaciones || data[idx][7] || "Aplicado masivamente";
-      data[idx][8] = now;
-      aplicados++;
-    } else {
-      const cid = "CALIF-BULK-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
-      const newRow = [cid, evaluacionId, studentIdStr, notaNum, notaNum, true, false, observaciones || "Aplicado masivamente", now];
-      data.push(newRow);
-      indexMap[key] = data.length - 1;
-      aplicados++;
-    }
-  });
-
-  if (data.length > 1) {
-    sheet.getRange(1, 1, data.length, data[0].length).setValues(data);
-  }
-
-  return {
-    status: "success",
-    evaluacionId,
-    totalProcesados: estudiantes.length,
-    aplicados,
-    omitidos,
-    message: `Calificación masiva (${notaNum}) aplicada a ${aplicados} estudiante(s). ${omitidos} omitido(s) por conservar nota previa.`
-  };
+  return withAuthorizedGradebookSave_(payload, context => {
+    const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+    const evaluacionId = String(p.evaluacionId || "").trim(), estudiantes = p.estudiantes;
+    if (!evaluacionId || !Array.isArray(estudiantes) || !estudiantes.length || estudiantes.length > 500) throw new Error("GRADEBOOK_BATCH_INVALID");
+    if (typeof p.observaciones !== "undefined" && typeof p.observaciones !== "string") throw new Error("GRADEBOOK_OBSERVATIONS_INVALID");
+    const observations = String(p.observaciones || "").slice(0, 1000), seen = Object.create(null);
+    const calificaciones = estudiantes.map(rawId => {
+      const userId = String(rawId || "").trim();
+      if (!userId) throw new Error("GRADEBOOK_ENTRY_INVALID");
+      if (seen[userId]) throw new Error("GRADEBOOK_ENTRY_DUPLICATE");
+      seen[userId] = true;
+      const existing = context.gradeData.slice(1).filter(row => String(row[1] || "").trim() === evaluacionId && String(row[2] || "").trim() === userId);
+      if (existing.length > 1) throw new Error("GRADEBOOK_RECORD_AMBIGUOUS");
+      return { evaluacionId, userId, notaObtenida: p.nota,
+        observaciones: observations || (existing.length ? String(existing[0][7] || "") : "") || "Aplicado masivamente" };
+    });
+    const result = saveGradebookGradesUnlocked_({ ...p, calificaciones, esBorrador: true, esPublicada: false }, context,
+      { preserveExistingPositive: p.sobrescribirExistentes !== true, returnCounts: true });
+    return { status: "success", evaluacionId, totalProcesados: estudiantes.length,
+      aplicados: result.appliedCount, omitidos: result.omittedCount,
+      message: "Calificación masiva (" + String(p.nota) + ") aplicada a " + result.appliedCount +
+        " estudiante(s). " + result.omittedCount + " omitido(s) por conservar nota previa." };
+  }, "bulkApplyGradebookGrades");
 }
-
 function copyEvaluationSetupBetweenGroups(payload) {
   const { grupoOrigen, grupoDestino } = payload || {};
   if (!grupoOrigen || !grupoDestino) {

@@ -1374,3 +1374,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - teacher.js transmite grado/sección/asignatura/parcial activos para que el backend compruebe el contexto.
 - Parseo Code.gs y harness V8 sobre funciones reales: 10/10 PASS. Suite dedicada 23 escenarios incorporada a CI; resultado CI pendiente.
 ==========================================================================
+
+===============================================================================
+[2026-11-11] C1.505 — IMA-EXEC-20261110-1825Z-02 — EXAM: protección de bulkApplyGradebookGrades
+- La aplicación masiva reutiliza el guard contextual del libro con permiso RBAC específico, identidad firmada, scope, asignación docente, roster, categoría/ownership, cierre y ScriptLock.
+- Se limita el lote a 500; se rechazan IDs vacíos/duplicados, estudiantes fuera del roster, registros ambiguos y notas fuera de formato/rango; no se crean hojas implícitamente.
+- Se preserva la semántica de omitir notas positivas existentes salvo sobrescritura explícita; respuesta histórica con conteos aplicados/omitidos y estado borrador/no publicado.
+- Suite dedicada de 23 escenarios incorporada al workflow; resultados locales/CI pendientes de verificación.
+===============================================================================

@@ -1604,3 +1604,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Pruebas: V8 final 5/5 PASS; CI dedicado 23/23 PASS y security-contract PASS (43012781628). Suite global falla por ReferenceError preexistente en departmental-access. Beta 057 pendiente.
 - Límite: no hay PeriodoID/Asignatura por fila; ConfiguracionAcademica no contiene DepartmentID: se comprueban scope departamental activo y asignación exacta actor/grado/sección/asignatura/período, pero no es posible correlacionar esa asignación con un departamento concreto. El spreadsheet es institucionalmente aislado; el aislamiento departamental por fila requiere evolución de esquema. bulkApplyGradebookGrades queda fuera.
 ===============================================================================
+
+===============================================================================
+### AUD-NG-386 — bulkApplyGradebookGrades (C1.505)
+- **Hallazgo:** mutación masiva con permiso RBAC de Profesor, pero sin validación contextual propia de identidad, scope, asignación, roster, categoría/ownership, cierre ni unicidad; podía sobrescribir la primera coincidencia y crear hoja implícitamente. La acción no estaba en PUBLIC_ACTIONS.
+- **Corrección:** wrapper compartido con permiso específico bulkApplyGradebookGrades, ScriptLock, identidad firmada, scope, asignación exacta, roster, esquema, período abierto, categoría/ownership y validación estricta de lote/notas. Se conserva la omisión de notas positivas salvo sobrescritura explícita.
+- **Pruebas:** suite local dedicada 23 escenarios añadida; ejecución local y CI pendientes de confirmación. Apps Script/Sheets NOT RUN; BETA-EXAM-058 Pendiente beta.
+- **Límite:** CalificacionesEstudiantes no almacena período/asignatura por fila y ConfiguracionAcademica carece de DepartmentID; no se infiere propiedad departamental inexistente. TASK-153 y AUD-NG-386 siguen En ejecución.
+===============================================================================
