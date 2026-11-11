@@ -36,3 +36,29 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - GitHub Actions run 43117909903, commit 6e85cccfe0b19ea72f5ff5f2497acdc505929352, workflow Exam-Service security local contracts: SUCCESS en Node.js 22.
 - Job exam-security-contracts: SUCCESS; paso Run exam submission deletion audit regression: SUCCESS (33/33); todos los demás pasos, incluido el contrato general de lectura, terminaron SUCCESS.
 - C1.587 Completada en verificación local y CI. BETA-EXAM-088 permanece Pendiente beta para Apps Script/Sheets desplegado.
+
+===============================================================================
+## C1.588 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de closePeriodGradebook durante appendRow.
+
+### Hallazgo y cambio
+- El contrato existente cubría la reentrada al abrir Sheets, pero no durante la persistencia del cierre.
+- Se añade un caso al contrato dedicado: appendRow intenta ejecutar closePeriodGradebook de forma anidada mientras el lock exterior permanece retenido.
+- Resultado esperado: la secundaria recibe GRADEBOOK_CLOSURE_LOCK_TIMEOUT; la exterior registra un solo cierre, abre Sheets una vez y libera el lock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-period-gradebook-closure-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Caso añadido al contrato. Ejecución local Node NOT RUN en este entorno; no se declara PASS.
+- CI Node.js 22 pendiente tras commit. Apps Script/Sheets real NOT RUN; BETA-EXAM-089 Pendiente beta.
+- C1.588 En ejecución hasta ejecutar la verificación local pertinente.
+- HEAD inicial: ddf1ff2c1d8546ed9c4ebdc3ce50be721d360694; HEAD final: se confirma tras publicar.
+===============================================================================

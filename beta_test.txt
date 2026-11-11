@@ -1015,3 +1015,14 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; contrato local V8 aislado 3/3 escenarios de reentrada PASS; CI Node.js 22 GitHub Actions run 43117909903 SUCCESS; Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de las solicitudes exterior/secundaria, conteo de lock, aperturas/contexto, escrituras y snapshots de EntregasExamen e HistorialEliminacionesEntregasExamen.
 ===============================================================================
+
+===============================================================================
+## BETA-EXAM-089 — TASK-153 / AUD-NG-386 / EXAM: contención reentrante de closePeriodGradebook durante appendRow
+- **Módulo/rol:** Servicio EXAM; Profesor con permiso closePeriodGradebook, identidad firmada y asignación departamental verificadas; alternativamente rol institucional con scope institutionWide autorizado.
+- **Objetivo:** comprobar en Apps Script/Sheets desplegado que una segunda solicitud de cierre iniciada durante appendRow no atraviesa ScriptLock ni crea cierres duplicados.
+- **Precondiciones:** versión beta desplegada; período y asignatura con roster válido y cuatro categorías publicadas; sin cierre previo; mecanismo controlado para intentar una segunda solicitud durante appendRow de CierresPeriodos.
+- **Pasos:** invocar closePeriodGradebook; durante appendRow del cierre exterior intentar closePeriodGradebook anidado para el mismo contexto; revisar respuestas, trazas RBAC/identidad/lock/Sheets y snapshot de CierresPeriodos.
+- **Resultado esperado:** la solicitud secundaria termina con GRADEBOOK_CLOSURE_LOCK_TIMEOUT; la exterior crea exactamente un cierre, abre Sheets una sola vez y libera ScriptLock.
+- **Estado:** Pendiente beta; escenario local añadido al contrato dedicado. La ejecución local y CI de esta revisión deben registrarse por separado; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, trazas saneadas de ambas solicitudes, adquisiciones/liberaciones del lock, aperturas de Sheets y snapshot de CierresPeriodos antes/después.
+===============================================================================

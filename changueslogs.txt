@@ -2214,3 +2214,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Job exam-security-contracts y paso Run exam submission deletion audit regression: SUCCESS (33/33); todos los pasos del workflow terminaron correctamente.
 - C1.587 Completada en cobertura local/CI. BETA-EXAM-088 sigue Pendiente beta para Apps Script/Sheets desplegado.
 ===============================================================================
+
+===============================================================================
+[2026-11-11] C1.588 — cobertura de reentrada en closePeriodGradebook durante appendRow
+- Se amplía exam-service-period-gradebook-closure-security.test.js para invocar el handler real de forma anidada durante la escritura del cierre.
+- La solicitud secundaria debe recibir GRADEBOOK_CLOSURE_LOCK_TIMEOUT; la exterior conserva un único cierre, una apertura de Sheets y lock liberado.
+- Backend productivo sin cambios. Caso añadido; ejecución local NOT RUN en este entorno y CI pendiente de observación.
+- BETA-EXAM-089 agregado. TASK-153 / AUD-NG-386 continúa En ejecución.
+===============================================================================

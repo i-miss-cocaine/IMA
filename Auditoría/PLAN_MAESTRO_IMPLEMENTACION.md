@@ -4333,3 +4333,10 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - GitHub Actions run 43117909903, commit 6e85cccfe0b19ea72f5ff5f2497acdc505929352, workflow Exam-Service security local contracts: SUCCESS en Node.js 22.
 - Job exam-security-contracts: SUCCESS; paso Run exam submission deletion audit regression: SUCCESS (33/33); todos los demás pasos, incluido el contrato general de lectura, terminaron SUCCESS.
 - C1.587 Completada en verificación local y CI. BETA-EXAM-088 permanece Pendiente beta para Apps Script/Sheets desplegado.
+
+### 10.237 TASK-153 / AUD-NG-386 — contención reentrante de closePeriodGradebook durante appendRow (C1.588)
+- **Brecha confirmada:** closePeriodGradebook mantiene ScriptLock durante la validación y creación del cierre, pero su contrato cubría timeout, RBAC, identidad, scope, consistencia de notas y reentrada durante la apertura de Sheets; no probaba una segunda solicitud durante appendRow de CierresPeriodos.
+- **Cobertura añadida:** el contrato invoca el handler real y, desde appendRow del cierre exterior, intenta una segunda llamada. La solicitud secundaria debe recibir GRADEBOOK_CLOSURE_LOCK_TIMEOUT; la exterior crea un único cierre, abre Sheets una vez y libera el lock.
+- **Alcance:** solo tests/security/exam-service-period-gradebook-closure-security.test.js; backend productivo sin cambios. BETA-EXAM-089 registra la comprobación desplegada.
+- **Verificación local:** caso añadido; ejecución de la suite Node local NOT RUN en este entorno. CI Node.js 22 pendiente de observar tras commit. Apps Script/Sheets real NOT RUN.
+- **Estado:** C1.588 En ejecución hasta completar las verificaciones locales pertinentes. TASK-153 / AUD-NG-386 continúa En ejecución.

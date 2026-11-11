@@ -2061,3 +2061,10 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - GitHub Actions run 43117909903, commit 6e85cccfe0b19ea72f5ff5f2497acdc505929352, workflow Exam-Service security local contracts: SUCCESS en Node.js 22.
 - Job exam-security-contracts: SUCCESS; paso Run exam submission deletion audit regression: SUCCESS (33/33); todos los demás pasos, incluido el contrato general de lectura, terminaron SUCCESS.
 - C1.587 Completada en verificación local y CI. BETA-EXAM-088 permanece Pendiente beta para Apps Script/Sheets desplegado.
+
+### C1.588 — AUD-NG-386 / closePeriodGradebook: reentrada durante appendRow del cierre
+- **Brecha:** el contrato ya cubría la reentrada durante openById, pero no una segunda solicitud mientras el cierre exterior persistía la fila de CierresPeriodos.
+- **Cambio:** se añade un escenario que invoca el handler real anidado desde appendRow. La secundaria debe fallar GRADEBOOK_CLOSURE_LOCK_TIMEOUT; la exterior conserva un único cierre, una apertura de Sheets y una liberación del lock.
+- **Alcance:** solo contrato de seguridad; backend productivo sin cambios. BETA-EXAM-089 agregado y Pendiente beta.
+- **Verificación:** caso añadido; ejecución local NOT RUN en este entorno. CI posterior al commit pendiente. Apps Script/Sheets real NOT RUN.
+- **Estado:** En ejecución; no se declara completado hasta ejecutar la suite local pertinente.

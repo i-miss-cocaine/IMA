@@ -49,4 +49,19 @@ t(()=>{const x=fx();assert.equal(x.call().status,"success");assert.deepEqual(x.s
 t(()=>{const x=fx({actors:[{authorized:true,userId:"T1",role:"Profesor"},{authorized:true,userId:"   ",role:"Profesor"}]});assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/);assert.deepEqual(x.stats.events.slice(0,5),["rbac","identity","lock","rbac","identity"]);assert.equal(x.stats.opens,0);assert.deepEqual([x.stats.acq,x.stats.rel,x.stats.held],[1,1,false]);});
 // Revocación RBAC entre preflight y contexto: denegar bajo lock antes de consultar identidad o abrir Sheets.
 t(()=>{const x=fx({permissions:[true,false]});const before=JSON.stringify(x.sheets.CierresPeriodos.rows);assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/);assert.deepEqual(x.stats.events,["rbac","identity","lock","rbac"]);assert.deepEqual([x.stats.acq,x.stats.rel,x.stats.held],[1,1,false]);assert.equal(x.stats.opens,0);assert.equal(JSON.stringify(x.sheets.CierresPeriodos.rows),before);});
-console.log("exam-service-period-gradebook-closure-security: PASS ("+n+"/21)");
+// La reentrada durante appendRow debe quedar contenida por el mismo ScriptLock.
+t(()=>{
+  const x=fx(), sheet=x.sheets.CierresPeriodos, append=sheet.appendRow.bind(sheet);
+  let nestedError="";
+  sheet.appendRow=function(row){
+    try{x.call();}catch(error){nestedError=error.message;}
+    append(row);
+  };
+  const result=x.call();
+  assert.equal(result.status,"success");
+  assert.match(nestedError,/GRADEBOOK_CLOSURE_LOCK_TIMEOUT/);
+  assert.equal(sheet.rows.length,2,"la solicitud exterior debe crear un único cierre");
+  assert.equal(x.stats.opens,1,"la solicitud anidada no debe abrir Sheets");
+  assert.deepEqual([x.stats.acq,x.stats.rel,x.stats.held],[2,1,false]);
+});
+console.log("exam-service-period-gradebook-closure-security: PASS ("+n+"/22)");
