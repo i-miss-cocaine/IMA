@@ -2668,50 +2668,155 @@ function bulkApplyGradebookGrades(payload) {
   }, "bulkApplyGradebookGrades");
 }
 function copyEvaluationSetupBetweenGroups(payload) {
-  const { grupoOrigen, grupoDestino } = payload || {};
-  if (!grupoOrigen || !grupoDestino) {
-    return { status: "error", message: "Se requieren parámetros grupoOrigen y grupoDestino para copiar la configuración de evaluación." };
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheetCat = getOrCreateSheet(ss, "CategoriasEvaluacion");
-  const dataCat = sheetCat.getDataRange().getValues();
-
-  let copiados = 0;
-  if (dataCat.length > 1) {
-    const origAsig = String(grupoOrigen.asignatura || "").trim();
-    const destAsig = String(grupoDestino.asignatura || "").trim();
-    const destGrado = String(grupoDestino.grado || "").trim();
-    const destSec = String(grupoDestino.seccion || "").trim();
-    const destPer = String(grupoDestino.periodo || "").trim();
-
-    for (let i = 1; i < dataCat.length; i++) {
-      const rowAsig = String(dataCat[i][1] || "").trim();
-      if (!origAsig || rowAsig === origAsig) {
-        const newCatId = "CAT-COPY-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
-        const newRow = [
-          newCatId,
-          destAsig || rowAsig,
-          dataCat[i][2], // Nombre Categoria
-          dataCat[i][3], // Ponderacion
-          destGrado || dataCat[i][4],
-          destSec || dataCat[i][5],
-          destPer || dataCat[i][6],
-          new Date()
-        ];
-        sheetCat.appendRow(newRow);
-        copiados++;
-      }
-    }
-  }
-
-  return {
-    status: "success",
-    categoriasCopias: copiados,
-    message: `Configuración de evaluación copiada exitosamente (${copiados} categoría(s) duplicadas para el grupo destino sin copiar datos de estudiantes).`
-  };
+  return withAuthorizedEvaluationSetupCopy_(payload,
+    context => copyEvaluationSetupBetweenGroupsUnlocked_(payload, context));
 }
 
+function withAuthorizedEvaluationSetupCopy_(payload, mutation) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("EVALUATION_SETUP_COPY_LOCK_TIMEOUT");
+  try {
+    return mutation(getAuthorizedEvaluationSetupCopyContext_(payload));
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
+}
+
+function getAuthorizedEvaluationSetupCopyContext_(payload) {
+  const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const source = p.grupoOrigen, destination = p.grupoDestino;
+  const groupFields = ["asignatura", "grado", "seccion", "periodo"];
+  if (!source || typeof source !== "object" || Array.isArray(source) ||
+      !destination || typeof destination !== "object" || Array.isArray(destination)) {
+    throw new Error("EVALUATION_COPY_GROUP_REQUIRED");
+  }
+  const normalizeGroup = group => {
+    const result = {};
+    groupFields.forEach(field => { result[field] = String(group[field] || "").trim(); });
+    if (groupFields.some(field => !result[field])) throw new Error("EVALUATION_COPY_GROUP_CONTEXT_REQUIRED");
+    return result;
+  };
+  const sourceGroup = normalizeGroup(source), destinationGroup = normalizeGroup(destination);
+  const norm = value => normalizeString(value);
+  if (groupFields.every(field => norm(sourceGroup[field]) === norm(destinationGroup[field]))) {
+    throw new Error("EVALUATION_COPY_SOURCE_EQUALS_DESTINATION");
+  }
+
+  const permission = validateRolePermission("copyEvaluationSetupBetweenGroups", p);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(p);
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim() ||
+      String(actor.role || "").trim() !== "Profesor") throw new Error("RESOURCE_NOT_AVAILABLE");
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const scope = getVerifiedExamDepartmentScope_(p, ss, actor);
+  if (!scope || scope.authorized !== true || !String(scope.institutionId || "").trim() ||
+      (!scope.institutionWide && !(scope.departmentIds || []).length)) throw new Error("RESOURCE_NOT_AVAILABLE");
+
+  const assignments = getSheetOrThrow(ss, "ConfiguracionAcademica").getDataRange().getValues();
+  const assignmentHeaders = ["ID", "Fecha", "Parcial", "Grado", "Sección", "Asignatura", "Unidad", "Tema", "profesorId"];
+  if (!assignments.length || assignmentHeaders.some((header, index) =>
+      String(assignments[0][index] || "").trim() !== header)) throw new Error("ACADEMIC_ASSIGNMENT_SCHEMA_INVALID");
+  [sourceGroup, destinationGroup].forEach(group => {
+    const matches = assignments.slice(1).filter(row =>
+      norm(row[2]) === norm(group.periodo) && norm(row[3]) === norm(group.grado) &&
+      norm(row[4]) === norm(group.seccion) && norm(row[5]) === norm(group.asignatura));
+    if (matches.length !== 1 || String(matches[0][8] || "").trim() !== String(actor.userId).trim()) {
+      throw new Error("RESOURCE_NOT_AVAILABLE");
+    }
+  });
+
+  const categorySheet = getSheetOrThrow(ss, "CategoriasEvaluacion");
+  const categoryRows = categorySheet.getDataRange().getValues();
+  const legacyHeaders = ["ID", "Asignatura", "NombreCategoria", "Ponderacion", "Grado", "Seccion", "Periodo", "FechaRegistro"];
+  if (!categoryRows.length || legacyHeaders.some((header, index) =>
+      String(categoryRows[0][index] || "").trim() !== header)) {
+    throw new Error("EVALUATION_CATEGORY_COPY_SCHEMA_UNSUPPORTED");
+  }
+  const ownershipSheet = getSheetOrThrow(ss, "ResourceOwnership");
+  const ownershipRows = ownershipSheet.getDataRange().getValues();
+  const ownershipHeaders = ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"];
+  if (!ownershipRows.length || ownershipHeaders.some((header, index) =>
+      String(ownershipRows[0][index] || "").trim() !== header)) throw new Error("RESOURCE_OWNERSHIP_SCHEMA_INVALID");
+
+  const categoryIdCounts = Object.create(null), ownershipIdCounts = Object.create(null), activeOwners = Object.create(null);
+  categoryRows.slice(1).forEach(row => {
+    const id = String(row[0] || "").trim();
+    if (id) categoryIdCounts[id] = (categoryIdCounts[id] || 0) + 1;
+  });
+  ownershipRows.slice(1).forEach(row => {
+    const ownershipId = String(row[0] || "").trim();
+    if (ownershipId) ownershipIdCounts[ownershipId] = (ownershipIdCounts[ownershipId] || 0) + 1;
+    if (String(row[1] || "").trim() !== String(scope.institutionId).trim() ||
+        String(row[2] || "").trim().toUpperCase() !== "CATEGORIA_EVALUACION" ||
+        String(row[5] || "").trim().toUpperCase() !== "ACTIVE") return;
+    const resourceId = String(row[3] || "").trim();
+    if (!resourceId) return;
+    if (!activeOwners[resourceId]) activeOwners[resourceId] = [];
+    activeOwners[resourceId].push(row);
+  });
+
+  const sourceCategories = categoryRows.slice(1).filter(row =>
+    norm(row[1]) === norm(sourceGroup.asignatura) && norm(row[4]) === norm(sourceGroup.grado) &&
+    norm(row[5]) === norm(sourceGroup.seccion) && norm(row[6]) === norm(sourceGroup.periodo));
+  const selected = sourceCategories.map(row => {
+    const id = String(row[0] || "").trim();
+    if (!id || categoryIdCounts[id] !== 1) throw new Error("EVALUATION_CATEGORY_RECORD_AMBIGUOUS");
+    const owners = activeOwners[id] || [];
+    if (owners.length !== 1) throw new Error("RESOURCE_OWNERSHIP_UNVERIFIED");
+    const departmentId = String(owners[0][4] || "").trim();
+    const inScope = (scope.departmentIds || []).some(value => String(value || "").trim() === departmentId);
+    if (!departmentId || !(scope.institutionWide === true || inScope)) throw new Error("RESOURCE_SCOPE_DENIED");
+    return { row, departmentId };
+  });
+  return { actor, scope, categorySheet, categoryRows, ownershipSheet, ownershipRows,
+    categoryIdCounts, ownershipIdCounts, selected, destinationGroup };
+}
+
+function copyEvaluationSetupBetweenGroupsUnlocked_(payload, context) {
+  const now = new Date(), categoryWrites = [], ownershipWrites = [];
+  const usedCategoryIds = Object.assign(Object.create(null), context.categoryIdCounts);
+  const usedOwnershipIds = Object.assign(Object.create(null), context.ownershipIdCounts);
+  context.selected.forEach(entry => {
+    const categoryId = "CAT-COPY-" + String(Utilities.getUuid() || "").trim();
+    const ownershipId = "OWN-" + String(Utilities.getUuid() || "").trim();
+    if (categoryId === "CAT-COPY-" || usedCategoryIds[categoryId] ||
+        ownershipId === "OWN-" || usedOwnershipIds[ownershipId]) throw new Error("EVALUATION_COPY_ID_COLLISION");
+    usedCategoryIds[categoryId] = 1;
+    usedOwnershipIds[ownershipId] = 1;
+    const row = entry.row;
+    categoryWrites.push([categoryId, context.destinationGroup.asignatura, row[2], row[3],
+      context.destinationGroup.grado, context.destinationGroup.seccion, context.destinationGroup.periodo, now]);
+    ownershipWrites.push([ownershipId, context.scope.institutionId, "CATEGORIA_EVALUACION", categoryId,
+      entry.departmentId, "ACTIVE", context.actor.userId, now.toISOString(), now.toISOString()]);
+  });
+  if (!categoryWrites.length) return { status: "success", categoriasCopias: 0,
+    message: "No se encontraron categorías de origen para el grupo indicado." };
+
+  const insertedCategoryIds = categoryWrites.map(row => row[0]);
+  const insertedOwnershipIds = ownershipWrites.map(row => row[0]);
+  try {
+    context.ownershipSheet.getRange(context.ownershipSheet.getLastRow() + 1, 1, ownershipWrites.length, 9).setValues(ownershipWrites);
+    context.categorySheet.getRange(context.categorySheet.getLastRow() + 1, 1, categoryWrites.length, 8).setValues(categoryWrites);
+  } catch (error) {
+    let rollbackFailed = false;
+    const removeByIds = (sheet, ids) => {
+      try {
+        const rows = sheet.getDataRange().getValues(), idSet = Object.create(null);
+        ids.forEach(id => { idSet[id] = true; });
+        for (let index = rows.length - 1; index >= 1; index--) {
+          if (idSet[String(rows[index][0] || "").trim()]) sheet.deleteRow(index + 1);
+        }
+      } catch (_) { rollbackFailed = true; }
+    };
+    removeByIds(context.categorySheet, insertedCategoryIds);
+    removeByIds(context.ownershipSheet, insertedOwnershipIds);
+    if (rollbackFailed) throw new Error("EVALUATION_COPY_ROLLBACK_FAILED");
+    throw error;
+  }
+  return { status: "success", categoriasCopias: categoryWrites.length,
+    message: "Configuración de evaluación copiada exitosamente (" + categoryWrites.length +
+      " categoría(s) duplicadas para el grupo destino sin copiar datos de estudiantes)." };
+}
 // [F9-Task11] [P1] - Ampliar las recuperaciones académicas y su integración con los resultados oficiales
 function saveStudentRecovery(payload) {
  return withAuthorizedStudentRecoveryMutation_(payload, context => saveStudentRecoveryUnlocked_(payload, context));
