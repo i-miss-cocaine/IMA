@@ -116,7 +116,10 @@ function runSubmissionMutationWrapper(options = {}) {
     },
     getVerifiedExamIdentity_() {
       identityCalls++; events.push("identity");
-      return { authorized: !(options.preflightIdentityDenied || (options.contextIdentityDenied && identityCalls > 1)), userId: "ACTOR-1" };
+      return {
+        authorized: !(options.preflightIdentityDenied || (options.contextIdentityDenied && identityCalls > 1)),
+        userId: options.preflightEmptyUserId || (options.contextEmptyUserId && identityCalls > 1) ? "" : "ACTOR-1"
+      };
     },
     LockService: { getScriptLock() {
       events.push("lock-request");
@@ -130,7 +133,9 @@ function runSubmissionMutationWrapper(options = {}) {
       const permission = runtime.validateRolePermission();
       if (!permission.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
       const actor = runtime.getVerifiedExamIdentity_();
-      if (!actor.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+      if (!actor || actor.authorized !== true || !String(actor.userId || "").trim()) {
+        throw new Error("RESOURCE_NOT_AVAILABLE");
+      }
       return { actor };
     }
   };
@@ -174,4 +179,15 @@ test(() => {
   assert.deepEqual(x.events, ["permission", "identity", "lock-request", "lock-acquire"]);
 });
 
+test(() => {
+  const x = runSubmissionMutationWrapper({ preflightEmptyUserId: true });
+  assert.throws(() => x.call(), /RESOURCE_NOT_AVAILABLE/);
+  assert.deepEqual(x.events, ["permission", "identity"], "empty signed userId must be rejected before requesting the shared lock");
+});
+test(() => {
+  const x = runSubmissionMutationWrapper({ contextEmptyUserId: true });
+  assert.throws(() => x.call(), /RESOURCE_NOT_AVAILABLE/);
+  assert.deepEqual(x.events, ["permission", "identity", "lock-request", "lock-acquire", "context",
+    "permission", "identity", "lock-release"], "context must reject an empty signed userId and release the lock");
+});
 console.log("exam-service-delete-submission-audit: " + scenarios + "/" + scenarios + " PASS");
