@@ -1895,7 +1895,7 @@ HEAD inicial: 9d2945bd82fb7f99b6036f466563443a668a50bb. Rama: NG_beta_0.0.0.1_wo
 - CI y Apps Script/Sheets real: NOT RUN.
 - C1.566 En ejecución hasta confirmar la suite local. TASK-153 / AUD-NG-386 continúa En ejecución.
 
-HEAD inicial: 03a10e12fa2b915bf1b2b476cbf85eade74a6baa. Rama: NG_beta_0.0.0.1_work. Rama base esperada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59. Commit de implementación/checkpoint: 49996c4e3a213308f473ff9924ad94f78f1e169c.
+HEAD inicial: 03a10e12fa2b915bf1b2b476cbf85eade74a6baa. Rama: NG_beta_0.0.0.1_work. Rama base esperada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59. HEAD final: se confirma tras publicar.
 ===============================================================================
 
 ===============================================================================
@@ -1930,7 +1930,7 @@ HEAD inicial: bcb218eff043f04860c06e476e236c4cef31b945. Rama: NG_beta_0.0.0.1_wo
 - CI run 43102931371: el paso específico reviewPeriodGradebook PASS (29/29). El workflow global FAIL posteriormente en security-contract por ReferenceError: withAuthorizedExamCreation_ is not defined; el mismo fallo aparece en run 43101929348 del commit anterior bcb218eff043f04860c06e476e236c4cef31b945, por lo que no lo introduce C1.568. Apps Script/Sheets real: NOT RUN. BETA-EXAM-053 permanece Pendiente beta.
 - TASK-153 / AUD-NG-386 continúa En ejecución hasta completar la verificación local pertinente.
 
-HEAD inicial: a23caa4b70894a334ccf0ae408b963ed075823ca. Rama: NG_beta_0.0.0.1_work. Rama base sin cambios esperada: 44d9891132332e692dbe2ba8602b41f50a508a59. HEAD final: se confirma tras publicar.
+HEAD inicial: a23caa4b70894a334ccf0ae408b963ed075823ca. Rama: NG_beta_0.0.0.1_work. Rama base sin cambios esperada: 44d9891132332e692dbe2ba8602b41f50a508a59. HEAD de implementación/checkpoint: 49996c4e3a213308f473ff9924ad94f78f1e169c.
 ===============================================================================
 
 
