@@ -1264,3 +1264,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se eliminaron escrituras indirectas de getOrCreateSheet/getEvaluationCategories; hojas opcionales no se crean. Se validan esquemas, IDs únicos y visibilidad de borradores.
 - Parseo V8 y suite aislada de 27 escenarios PASS. Node nativo/CI y Apps Script real NOT RUN. BETA-EXAM-046 Pendiente beta.
 ===============================================================================
+
+===============================================================================
+[2026-11-11] C1.493 — IMA-EXEC-20261110-1825Z-02 — EXAM: getEvaluationCategories
+- Se retiró getEvaluationCategories de PUBLIC_ACTIONS; la lectura ahora exige permiso RBAC, identidad firmada, rol permitido y scope institucional/departamental.
+- Se añadió lectura protegida bajo ScriptLock, con denegación cerrada ante identidad, rol, permiso o ámbito inválido y timeout.
+- La hoja CategoriasEvaluacion se consulta sin getOrCreateSheet ni escrituras. Si falta o solo contiene encabezados, se conservan las cuatro categorías predeterminadas en memoria y el contrato status/data.
+- Se valida el esquema de seis columnas cuando existen registros; el esquema incompatible falla cerrado.
+- Parseo V8 y suite aislada de 12 escenarios PASS. Node nativo/CI y Apps Script real NOT RUN. BETA-EXAM-047 Pendiente beta.
+===============================================================================
