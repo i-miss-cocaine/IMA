@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.488**
+- Último checkpoint: **C1.489**
 - Última sesión: `IMA-EXEC-20261110-1825Z-02`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.488: **105819**
+- Caracteres del archivo activo tras C1.489: **109097**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -339,3 +339,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.486 | IMA-EXEC-20261110-1825Z-02 | EXAM: simulateExamReschedule serializado; RBAC, ownership, propiedad docente, conflicto bajo mismo lock y log con rol verificado; harness V8 PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.486 | 1111–1154 | C1.485 | 62e7e672234e128a0cca8e5c3a251bbc4fa21b8f; checkpoint/index 605152faa8b5727db29d59f2d3274a3a949d6bf9; Node/CI/Apps Script NOT RUN |
 | C1.487 | IMA-EXEC-20261110-1825Z-02 | EXAM: métricas globales restringidas a Administrador/Desarrollador con scope institucional; lock compartido, salida sin valores de celdas; harness V8 PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.487 | 1171–1212 | C1.486 | 7c6f3a395dfd962adfaa090c3de1f0fe0f7d7a87; Node/CI/Apps Script NOT RUN |
 | C1.488 | IMA-EXEC-20261110-1825Z-02 | EXAM: getGradebookData valida RBAC, identidad, asignación docente exacta y scope institucional; IDs ambiguos excluidos; harness V8 PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.488 | 1215–1262 | C1.487 | 4d60c97b8d13a0e16f5500c94bc1acde41ac11f9; checkpoint/index 6adcce8eefcec26befd2f36f9dc8d1142a850196; Node/CI NOT RUN |
+| C1.489 | IMA-EXEC-20261110-1825Z-02 | EXAM: getCompetencyEvaluations aislado por identidad estudiante y asignación docente exacta; RBAC/scope/lock, IDs ambiguos y hoja sin mutación; suite V8 17 escenarios PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.489 | 1270–1315 | C1.488 | 5360e6869fb0b82c890ac09b4a616be1b97db96a; checkpoint 7f9b01bba0c340c5db1ece20260faa5342616b31; Node/CI NOT RUN |
