@@ -683,6 +683,6 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Precondiciones:** versión beta desplegada; sesión firmada válida; actor con permiso createExam y departamento D1 autorizado; hojas Examenes, PreguntasExamen y ResourceOwnership con esquema vigente.
 - **Pasos:** probar permiso denegado con token válido, identidad inválida, scope ausente, departamento ajeno, lock ocupado, esquema ownership inválido, creación positiva con preguntas y fallos inducidos en cada escritura incluyendo append que persiste antes de reportar error.
 - **Resultado esperado:** sin permiso no se abre ni modifica el spreadsheet; sin identidad/scope no se escribe; creación positiva registra examen, ownership y preguntas relacionados; ante fallo capturable se eliminan todas las filas parciales y se libera el lock; errores de rollback se informan explícitamente.
-- **Estado:** Pendiente beta; Apps Script/Sheets real NOT RUN. Contrato local dedicado y parseo completo se ejecutan en CI.
+- **Estado:** Pendiente beta; Apps Script/Sheets real NOT RUN. Contrato local aislado 10/10 PASS (Node 22) sobre la función createExam; parseo del archivo completo y estado del workflow de push no verificados en esta ejecución.
 - **Evidencia requerida:** rol/permiso, scope y departamento, snapshots antes/después de las tres hojas, IDs relacionados, respuesta de creación, errores simulados, liberación del lock y logs sin datos sensibles.
 ===============================================================================
