@@ -1773,3 +1773,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - La identidad pierde userId tras preflight: rechazo RESOURCE_NOT_AVAILABLE antes de abrir Sheets; lock liberado; cero escrituras/borrados; examen y ownership intactos.
 - Suite específica 13/13 PASS en V8 aislado con shims; parseo V8 PASS. Node22/CI y Apps Script/Sheets real NOT RUN.
 - BETA-EXAM-074 Pendiente beta; sin cambios productivos.
+
+
+[2026-11-11] C1.541 — TASK-153 / updateExamStatus y revalidación de identidad bajo lock
+- Se añade prueba del handler real updateExamStatus, su worker, wrapper y contexto.
+- La identidad pierde userId en contexto bajo lock: RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas/escrituras y Estado del examen inalterado.
+- Suite 14/14 PASS en V8 aislado con shims; parseo V8 PASS. Node22/CI y Apps Script/Sheets real NOT RUN.
+- BETA-EXAM-075 Pendiente beta; sin cambios productivos.

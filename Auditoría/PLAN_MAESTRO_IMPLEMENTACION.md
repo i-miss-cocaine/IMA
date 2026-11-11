@@ -3959,3 +3959,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** suite específica 13/13 PASS en V8 aislado con shims; parseo V8 de Code.gs y test PASS. Node 22 nativo/CI NOT RUN; Apps Script/Sheets real NOT RUN.
 - **Beta:** BETA-EXAM-074 añadido para validar deleteExam en entorno desplegado; Pendiente beta.
 - **Estado:** cobertura local de revalidación bajo lock en el handler destructivo deleteExam añadida; sin cambios productivos. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario restante.
+
+
+### 10.194 TASK-153 / AUD-NG-386 — ejecutar updateExamStatus real ante pérdida de identidad bajo lock (C1.541)
+- **Hallazgo de cobertura:** la suite cubría el wrapper genérico y deleteExam real, pero no ejercitaba el handler updateExamStatus ni verificaba que la denegación protegiera la columna Estado del examen.
+- **Cambio:** escenario que ejecuta assertExamResourceOwnershipForScope_, getAuthorizedExamMutationContext_, withAuthorizedExamMutation_, updateExamStatusUnlocked_ y updateExamStatus reales. Identidad válida en preflight; userId de espacios en la revalidación contextual bajo lock.
+- **Contrato comprobado:** RESOURCE_NOT_AVAILABLE; dos verificaciones RBAC/identidad; lock adquirido y liberado; cero aperturas de Sheets, cero escrituras; snapshot de Examenes intacto y Estado permanece Inactivo.
+- **Verificación local:** suite exam-service-exam-mutation-security 14/14 PASS en V8 aislado con shims fs/vm/assert; parseo V8 de Code.gs y test PASS. Node 22 nativo/CI NOT RUN.
+- **Beta:** BETA-EXAM-075 agregado para validar el rechazo y la conservación de Estado en Apps Script/Sheets desplegado; Pendiente beta.
+- **Estado:** cobertura local del handler updateExamStatus añadida; sin cambios productivos. TASK-153 / AUD-NG-386 continúa En ejecución; updateExam queda como siguiente mutación a evaluar.

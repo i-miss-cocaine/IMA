@@ -1213,3 +1213,31 @@ La suite exam-mutation-security verificaba la revalidación de identidad del wra
 ### Beta y continuidad
 BETA-EXAM-074 añadido para validar deleteExam bajo identidad que pierde userId después de la adquisición del lock; Pendiente beta. TASK-153 / AUD-NG-386 continúa En ejecución. Siguiente iteración: inventariar la siguiente mutación EXAM sin repetir C1.534–C1.540.
 ===============================================================================
+
+
+===============================================================================
+C1.541 — TASK-153 / AUD-NG-386 / revalidación de identidad en updateExamStatus
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 6b90c2b4dfcdd14338ce304ace8ca13fca3d5793
+
+### Alcance y hallazgo
+C1.540 cubrió deleteExam real. updateExamStatus usa el mismo wrapper y contexto, pero no había una prueba que ejecutara su handler ni comprobara que la denegación impidiera modificar la columna Estado.
+
+### Cambio
+- tests/security/exam-service-exam-mutation-security.test.js: escenario nuevo con funciones reales assertExamResourceOwnershipForScope_, getAuthorizedExamMutationContext_, withAuthorizedExamMutation_, updateExamStatusUnlocked_ y updateExamStatus.
+- Identidad válida en preflight; userId de espacios en la segunda validación, dentro del lock.
+- Se exige RESOURCE_NOT_AVAILABLE, dos validaciones RBAC/identidad, lock liberado, cero aperturas de Sheets y escrituras, y snapshot de Examenes sin cambios (Estado permanece Inactivo).
+- Sin cambios en Code.gs ni en permisos, roles, ownership o persistencia.
+
+### Verificación local
+- Parseo V8 de Code.gs y suite: PASS.
+- Suite exam-service-exam-mutation-security: 14/14 PASS en V8 aislado con shims fs/vm/assert.
+- Harness ejecuta updateExamStatus real y comprueba ausencia de escritura: PASS.
+- Node 22 nativo/CI: NOT RUN.
+- Apps Script/Sheets real: NOT RUN.
+
+### Beta y continuidad
+BETA-EXAM-075 agregado; Pendiente beta. TASK-153 / AUD-NG-386 continúa En ejecución. Siguiente acción: evaluar updateExam con handler real y preservar todos los campos del examen ante revalidación de identidad fallida.
+===============================================================================

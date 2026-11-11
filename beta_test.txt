@@ -844,3 +844,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de RBAC/identidad/lock/Sheets, snapshots de Examenes y ResourceOwnership antes/después y resultado de ambas variantes.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-075 — TASK-153 / AUD-NG-386 / EXAM: identidad incompleta en updateExamStatus
+- **Módulo/rol:** Servicio EXAM; docente propietario u otro actor con permiso efectivo updateExamStatus y ownership/scope válidos.
+- **Objetivo:** validar en Apps Script/Sheets desplegado que el handler no cambie el Estado del examen si la identidad firmada pierde userId durante la revalidación dentro de ScriptLock.
+- **Precondiciones:** versión beta desplegada; examen sintético con Estado inicial Inactivo y ResourceOwnership ACTIVE; identidad firmada válida en preflight y mecanismo controlado para devolver userId vacío/espacios en el contexto bajo lock.
+- **Pasos:** invocar updateExamStatus solicitando estado Activo; provocar la identidad incompleta en la segunda validación; revisar respuesta, Estado y trazas de lock/Sheets. Repetir con identidad estable y permiso/scope/ownership válidos.
+- **Resultado esperado:** identidad incompleta produce RESOURCE_NOT_AVAILABLE, no abre Sheets ni escribe Estado y libera lock. Con identidad válida, el handler conserva su comportamiento normal de actualización.
+- **Estado:** Pendiente beta.
+- **Evidencia requerida:** commit desplegado, trazas saneadas de RBAC/identidad/lock/Sheets, snapshots del examen antes/después y resultado de ambas variantes.
+===============================================================================
