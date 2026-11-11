@@ -161,4 +161,4 @@ const badSchema = runtime();
 badSchema.sheets.EvaluacionesCompetencias.rows[0][0] = "Unexpected";
 assert.throws(() => badSchema.call({}), /COMPETENCY_EVALUATION_SCHEMA_INVALID/);
 
-process.stdout.write("exam-service-competency-evaluations-security: PASS (16 scenarios)\n");
+process.stdout.write("exam-service-competency-evaluations-security: PASS (17 scenarios)\n");
