@@ -517,3 +517,14 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta. Suite V8 local aislada de 23 escenarios PASS; runner Node nativo/CI y Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** build/commit desplegado, matriz de roles/vínculos/scopes, fixtures sintéticos, secuencia de lock, respuestas saneadas y snapshot de la hoja antes/después que confirme ausencia de mutaciones.
 ===============================================================================
+
+===============================================================================
+## BETA-EXAM-046 — TASK-153 / AUD-NG-386 / EXAM: getStudentAcademicReport
+- **Módulo/acción:** EXAM — getStudentAcademicReport; informe académico consolidado.
+- **Objetivo:** verificar en Apps Script/Sheets desplegado que matrículas, calificaciones, recuperaciones y categorías solo se exponen a la identidad estudiantil propia, tutor con vínculo vigente o personal con scope institucional.
+- **Precondiciones:** entorno beta aislado; estudiantes sintéticos STU-A/STU-B; tutor vinculado/no vinculado y relación revocada/pendiente; Administrador/Desarrollador/Dirección/Secretaría con scope institucional y departamental; Profesor; hojas Matriculas, CalificacionesEstudiantes, RecuperacionesEstudiante y CategoriasEvaluacion con esquemas correctos e incorrectos; IDs duplicados; calificaciones borrador/publicadas; fechas y notas válidas e inválidas.
+- **Pasos:** probar sesión/RBAC inválido; estudiante solicita su informe y luego altera userId; tutor consulta vínculo vigente, ajeno y revocado; personal institucional consulta con scope institucional, scope departamental y sin estudiante objetivo; probar Profesor y rol desconocido; provocar timeout y contención del lock; probar identidad de estudiante duplicada; comprobar hoja ausente y snapshot antes/después; probar duplicados de matrículas/calificaciones/recuperaciones, esquema incompatible, borradores y fechas inválidas; comprobar categorías ausentes sin que se creen automáticamente.
+- **Resultado esperado:** estudiante solo ve su informe; tutor solo ve estudiante vinculado; personal institucional solo con scope institucional y estudiante único explícito; Profesor y roles no permitidos denegados en esta ruta; lock serializa lecturas y timeout falla cerrado; hojas ausentes permanecen ausentes; IDs ambiguos se excluyen; borradores no publicados no se exponen; fechas inválidas devuelven null; categorías se leen sin efectos laterales.
+- **Estado:** Pendiente beta. Suite V8 local aislada de 27 escenarios PASS; runner Node nativo/CI y Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** build/commit desplegado, matriz de roles/vínculos/scopes, fixtures sintéticos, secuencia de contención del lock, respuestas saneadas y snapshot de las cuatro hojas antes/después.
+===============================================================================
