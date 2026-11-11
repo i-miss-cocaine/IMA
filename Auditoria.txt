@@ -1546,3 +1546,14 @@ C1.493 — EXAM: aislamiento de getEvaluationCategories (TASK-153 / AUD-NG-386)
 - Node nativo/CI/Apps Script real: NOT RUN. BETA-EXAM-047 Pendiente beta.
 - TASK-153 permanece En ejecución; AUD-NG-386 sigue abierto por otras lecturas EXAM.
 ===============================================================================
+
+===============================================================================
+C1.494 — EXAM: aislamiento de getRubrics (TASK-153 / AUD-NG-386)
+- Hallazgo: getRubrics permanecía en PUBLIC_ACTIONS y podía devolver criterios de rúbricas sin sesión; además getOrCreateSheet creaba RubricasEvaluacion durante una lectura. El filtro opcional por asignatura no constituía autorización.
+- Corrección: se retiró getRubrics de PUBLIC_ACTIONS. El endpoint valida RBAC, identidad firmada, rol permitido y scope institucional/departamental bajo ScriptLock; conserva los permisos RBAC existentes para Profesor, Estudiante/Alumno, Tutor/Padre/Responsable y roles institucionales.
+- Lectura/integridad: hoja ausente/vacía devuelve status/data con lista vacía sin crearla; se valida esquema de cinco columnas, se excluyen IDs vacíos/duplicados y rúbricas eliminadas, se conserva filtro de asignatura y criterios JSON se parsean con fallo cerrado.
+- Límite de modelo identificado: RubricasEvaluacion no incluye InstitutionID/DepartmentID y saveRubric tampoco persiste ownership; el catálogo se conserva como catálogo compartido legado, no como recurso segregado por institución. La autenticación/scope protege el endpoint, pero no puede atribuir rúbricas existentes a una institución sin una migración de modelo independiente.
+- Pruebas locales: parseo V8 PASS; suite dedicada en shim V8 aislado PASS (16 escenarios); regresiones C1.493 PASS (12) y C1.492 PASS (27).
+- Node nativo/CI/Apps Script real: NOT RUN. BETA-EXAM-048 Pendiente beta.
+- TASK-153 permanece En ejecución; AUD-NG-386 continúa abierto por otras lecturas EXAM.
+===============================================================================
