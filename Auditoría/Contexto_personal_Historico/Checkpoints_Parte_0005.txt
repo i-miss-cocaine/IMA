@@ -1521,3 +1521,52 @@ Auditar y asegurar exclusivamente getEvaluationCategories dentro de TASK-153 / A
 - TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras lecturas EXAM.
 - Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.494 — EXAM: aislamiento de getRubrics
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.493.
+HEAD inicial: 0eb56cf9f78673f110bd9b8b69b0b10d50ba5861.
+
+### Alcance y decisiones
+Auditar y asegurar exclusivamente getRubrics dentro de TASK-153 / AUD-NG-386.
+- Hallazgo: getRubrics estaba en PUBLIC_ACTIONS, exponía rúbricas/criterios sin sesión y usaba getOrCreateSheet durante una lectura.
+- Se retiró de PUBLIC_ACTIONS. El endpoint pasa por withAuthorizedExamMetadataRead_: permiso RBAC, identidad firmada, rol permitido y scope institucional/departamental, bajo ScriptLock. Se conservan los permisos RBAC existentes para Profesor, Estudiante/Alumno, Tutor/Padre/Responsable y roles institucionales.
+- Se eliminó la creación de hoja en lectura. Hoja ausente/vacía devuelve status/data con lista vacía. Se validan cinco encabezados; IDs vacíos/duplicados y rúbricas eliminadas se excluyen; se conserva filtro de asignatura; JSON de criterios inválido falla cerrado.
+- Límite del modelo: RubricasEvaluacion solo tiene ID, Titulo, Asignatura, Estado y CriteriosJSON; saveRubric no registra InstitutionID/DepartmentID ni ownership. Se conserva el catálogo compartido legado. La validación de scope autentica al actor, pero no ofrece segregación por institución de cada rúbrica; una evolución de modelo es independiente y queda identificada, no simulada.
+
+### Archivos
+- backend/exam-service/Code.gs
+- tests/security/exam-service-rubrics-security.test.js
+- Auditoria.txt
+- changueslogs.txt
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación local
+- Parseo V8 del backend: PASS.
+- Suite dedicada mediante shim V8 aislado: PASS (16 escenarios).
+- Regresión C1.493 evaluation categories: PASS (12 escenarios).
+- Regresión C1.492 student academic report: PASS (27 escenarios).
+- Cobertura: identidad/RBAC/rol/scope, timeout y concurrencia, hoja ausente/vacía sin creación, esquema, filtro por asignatura, eliminadas, IDs duplicados, JSON inválido, allowlist pública y ausencia de escrituras.
+- Node nativo: NOT RUN. CI: NOT RUN. Apps Script/Sheets real: NOT RUN.
+- BETA-EXAM-048: Pendiente beta; no bloquea cierre local.
+
+### Commits de la iteración
+- Implementación: bd64bf3bb3acc2e348392baba06089a2f6ab6c4b.
+- Suite local: 0fdd92905f990a1a7d9a44abd0596e0048e71b2e.
+- Auditoria.txt: 92ef20ea3c9145f114ca28f3f29584d6fc81e773.
+- Changelog: fafd896d913e0c028a39a9d73ee197872b09a0fa.
+- Beta: 33e710f3f7468db56c00cef5237b0048ee50ad06.
+- Plan Maestro: 202dc9fc68d8b390b0b5957750cc27143f3e1969.
+
+### Estado y continuidad
+- Subalcance getRubrics completado localmente.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras lecturas EXAM.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+===============================================================================
