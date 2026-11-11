@@ -868,7 +868,7 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Precondiciones:** versión beta desplegada; examen sintético con fila completa y ResourceOwnership ACTIVE; identidad firmada válida en preflight y mecanismo controlado para devolver userId vacío/espacios en el contexto bajo lock.
 - **Pasos:** invocar updateExam solicitando cambios en titulo, asignatura, gradoAsignado, seccionAsignada, fechaLimite, tiempoLimite y parcial; provocar identidad incompleta en la segunda validación; comparar fila completa antes/después y revisar trazas de lock/Sheets. Repetir con identidad estable y permiso/scope/ownership válidos.
 - **Resultado esperado:** identidad incompleta produce RESOURCE_NOT_AVAILABLE, no abre Sheets ni escribe la fila y libera lock. Con identidad válida, el handler conserva su actualización normal de los campos permitidos.
-- **Estado:** Pendiente beta.
+- **Estado:** Pendiente beta. Cobertura local asociada C1.572 confirmada por el usuario: 17/17 PASS; Apps Script/Sheets desplegado NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de RBAC/identidad/lock/Sheets y snapshots completos de la fila del examen antes/después para ambas variantes.
 ===============================================================================
 

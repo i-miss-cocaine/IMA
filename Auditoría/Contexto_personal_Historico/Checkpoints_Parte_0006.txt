@@ -2038,3 +2038,14 @@ HEAD inicial: 8388e58c76b0fca4836f2e7004745b4e4f08bf05. Rama: NG_beta_0.0.0.1_wo
 
 HEAD inicial: 04fdd9eb6f415ef5d38ceb32410d9549864397e0. Rama: NG_beta_0.0.0.1_work. Rama base esperada: 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
+
+
+===============================================================================
+## Addendum de cierre local — C1.572
+- El usuario confirma que Codespaces ejecutó `node tests/security/exam-service-exam-mutation-security.test.js`: **17/17 PASS**.
+- El HEAD de la rama contiene el escenario nuevo y el contador de salida actualizado a `/17`; el commit `77ebffd0c55b7d64daf579f04eebddb987607f1c` ajustó ese contador.
+- La prueba verifica RBAC [true,false] durante la revalidación bajo ScriptLock, rechazo `RESOURCE_NOT_AVAILABLE`, liberación del lock, cero aperturas de Sheets, cero escrituras y fila completa del examen intacta.
+- CI: NOT RUN en esta iteración. Apps Script/Sheets real: NOT RUN; BETA-EXAM-076 permanece Pendiente beta.
+- C1.572 **Completada en verificación local**. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
+- HEAD de trabajo verificado antes de este registro: `77ebffd0c55b7d64daf579f04eebddb987607f1c`. Rama base verificada sin cambios: `44d9891132332e692dbe2ba8602b41f50a508a59`.
+===============================================================================
