@@ -1627,5 +1627,5 @@ HEAD final: se confirmará después de publicar y verificar el commit del checkp
 ### Estado y continuidad
 C1.553 completa la corrección y cobertura local de createExam. TASK-153 / AUD-NG-386 continúa En ejecución; la siguiente mutación EXAM se seleccionará en la próxima iteración.
 
-HEAD: pendiente de commit y verificación de la rama autorizada.
+Commit de implementación: 7cea38a5761a4272e2c85e536f34a4db97dc429f (fix(exam): revalidate createExam authorization under lock). HEAD de la rama de trabajo verificado tras la publicación; Node 22/CI y Apps Script/Sheets permanecen NOT RUN.
 ===============================================================================
