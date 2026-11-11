@@ -137,3 +137,4 @@ HEAD final: pendiente de confirmación tras publicar.
 - El step `Run exam submission deletion audit regression` ejecutó el contrato ampliado con los seis escenarios nuevos y finalizó **success**; el resto de los contratos EXAM también PASS.
 - Ejecución local focalizada del wrapper exacto: **6/6 PASS**. Parseo de Code.gs y contrato: PASS.
 - HEAD de implementación verificado: `dbcd49f775589359967ba79d5405c73200d1f11a`; rama base sin cambios.
+- HEAD final tras el commit documental: `3d719a498610b329679315686c331ca105b279f9`; rama base permanece en `44d9891132332e692dbe2ba8602b41f50a508a59`.
