@@ -1795,6 +1795,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se amplía la suite para alternar identidad entre preflight y contexto bajo lock al ejecutar saveGradebookGrades real.
 - El segundo actor conserva autorización pero pierde userId; se exige rechazo, lock liberado, cero aperturas de Sheets y calificaciones sin cambios.
 - Solo cambia la prueba; Code.gs, permisos, roles y persistencia permanecen intactos.
-- Verificación local pendiente al registrar el cambio; Node22/CI y Apps Script/Sheets real NOT RUN.
+- Parseo V8 de la suite PASS y harness aislado de funciones productivas PASS; suite completa, Node22/CI y Apps Script/Sheets real NOT RUN.
 - BETA-EXAM-057 ya contempla este escenario y sigue Pendiente beta.
 ===============================================================================

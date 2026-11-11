@@ -1289,8 +1289,9 @@ La suite de saveGradebookGrades comprobaba que RBAC e identidad se verificaran d
 - Sin cambios en Code.gs, permisos, roles, scope ni persistencia.
 
 ### Verificación local
-- Parseo V8 de Code.gs y suite dedicada: pendiente de ejecución local en esta iteración.
-- Node 22 nativo/CI: NOT RUN.
+- Parseo sintáctico V8 de la suite modificada: PASS.
+- Harness local aislado con las funciones productivas reales saveGradebookGrades, withAuthorizedGradebookSave_ y getAuthorizedGradebookSaveContext_: PASS; 2 verificaciones de identidad, lock adquirido/liberado, 0 aperturas de Sheets, 0 escrituras y snapshot de notas intacto.
+- Suite dedicada completa y Node 22 nativo/CI: NOT RUN.
 - Apps Script/Sheets real: NOT RUN.
 
 ### Beta y continuidad

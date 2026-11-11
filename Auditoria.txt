@@ -1907,5 +1907,5 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Cambio:** escenario del handler real con userId válido inicialmente y compuesto por espacios al revalidar.
 - **Resultado esperado verificado por el nuevo caso:** RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas de Sheets y snapshot de calificaciones inalterado.
 - **Alcance:** solo prueba; Code.gs, permisos, roles y persistencia sin cambios.
-- **Verificación:** pendiente de ejecución local; Node 22/CI y Apps Script/Sheets real NOT RUN.
+- **Verificación:** parseo sintáctico V8 de la suite PASS; harness aislado del handler/wrapper/contexto productivos PASS (2 identidades, lock liberado, cero aperturas/escrituras y notas intactas). Suite completa y Node 22/CI NOT RUN; Apps Script/Sheets real NOT RUN.
 - **Beta:** BETA-EXAM-057 ampliado, Pendiente beta.

@@ -3981,4 +3981,4 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 
 ### 10.196 TASK-153 / AUD-NG-386 — ejecutar saveGradebookGrades real ante pérdida de identidad bajo lock (C1.543)
 - **Hallazgo de cobertura:** la suite verificaba dos llamadas de identidad, pero usaba el mismo actor estable; no demostraba que el handler rechazara la pérdida de userId entre preflight y contexto bajo lock ni que preservara las notas.
-- **Estado:** cobertura local añadida al handler saveGradebookGrades; la prueba exige RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas de Sheets y snapshot de CalificacionesEstudiantes intacto. Sin cambios productivos. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario restante.
+- **Estado:** cobertura local añadida al handler saveGradebookGrades; parseo V8 de la suite PASS y harness aislado de handler/wrapper/contexto PASS (2 verificaciones, lock liberado, cero aperturas/escrituras y snapshot de notas intacto). La suite completa y Node 22/CI no se ejecutaron. Sin cambios productivos. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario restante.
