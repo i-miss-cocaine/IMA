@@ -2024,3 +2024,9 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Verificación local:** parseo Code.gs/test PASS; suite V8 aislada **19/19 PASS**. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN. BETA-EXAM-084 actualizado y Pendiente beta.
 
 
+### Addendum CI — C1.583
+- GitHub Actions run **43114753785**, commit `0f515eeac717ec22d51cb98df1cf18c6c7256957`: workflow completo SUCCESS en Node.js 22.
+- Job `exam-security-contracts` y paso `Run exam mutation security regression`: SUCCESS; todos los pasos del workflow terminaron SUCCESS.
+- C1.583 Completada en verificación local y CI. BETA-EXAM-084 continúa Pendiente beta.
+
+

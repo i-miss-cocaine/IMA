@@ -4289,3 +4289,9 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Estado:** C1.583 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para las rutas mutadoras EXAM restantes.
 
 
+#### Addendum CI — C1.583
+- GitHub Actions run **43114753785**, commit `0f515eeac717ec22d51cb98df1cf18c6c7256957`, workflow `Exam-Service security local contracts`: **SUCCESS** en Node.js 22.
+- Job `exam-security-contracts` y paso `Run exam mutation security regression`: SUCCESS; todos los pasos del workflow completados sin fallos.
+- C1.583 Completada en verificación local y CI. BETA-EXAM-084 permanece Pendiente beta para Apps Script/Sheets desplegado.
+
+
