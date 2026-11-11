@@ -5326,13 +5326,16 @@ function toBase64(file) {
         const metodo = prompt("Seleccione el método de aplicación:\n1. Sustitucion (Reemplaza nota anterior)\n2. Promedio (Promedia nota original y nueva)\n3. Mayor (Conserva la nota más alta)", "Sustitucion");
 
         try {
+            const selectedMethod = ({ "1": "Sustitucion", "2": "Promedio", "3": "Mayor" })[String(metodo || "").trim()] || String(metodo || "Sustitucion").trim();
             const res = await fetchApi('EXAM', 'saveStudentRecovery', {
                 evaluacionId: "CAT-GLOBAL",
                 userId: userId,
-                notaOriginal: notaActual,
-                notaRecuperada: parseFloat(notaRec),
-                metodoAplicado: metodo || "Sustitucion",
-                autorizadoPor: currentUser.nombre
+                notaRecuperada: Number(notaRec),
+                metodoAplicado: selectedMethod,
+                grado: document.getElementById('gb-filter-grado')?.value || "",
+                seccion: document.getElementById('gb-filter-seccion')?.value || "",
+                asignatura: document.getElementById('gb-filter-asignatura')?.value || "",
+                periodoId: document.getElementById('gb-filter-parcial')?.value || ""
             });
 
             if (res.status === 'success') {

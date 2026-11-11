@@ -2645,50 +2645,50 @@ function copyEvaluationSetupBetweenGroups(payload) {
 
 // [F9-Task11] [P1] - Ampliar las recuperaciones académicas y su integración con los resultados oficiales
 function saveStudentRecovery(payload) {
-  const { evaluacionId, userId, notaOriginal, notaRecuperada, metodoAplicado, autorizadoPor, periodoId, asignatura } = payload || {};
-  if (!evaluacionId || !userId) throw new Error("evaluacionId y userId son requeridos.");
-
-  if (periodoId) {
-    const ssCheck = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const cierresSheet = getOrCreateSheet(ssCheck, "CierresPeriodos");
-    const cierresData = cierresSheet.getDataRange().getValues();
-    const isClosed = cierresData.slice(1).some(r =>
-      String(r[2]).trim() === String(periodoId).trim() &&
-      String(r[7]).trim() === "Cerrado" &&
-      (!asignatura || String(r[5]).trim() === String(asignatura).trim())
-    );
-    if (isClosed) {
-      throw new Error("El período académico se encuentra cerrado. Las recuperaciones en períodos cerrados requieren autorización explícita de reapertura o rectificación.");
-    }
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "RecuperacionesEstudiante");
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["ID", "EvaluacionID", "UserID", "NotaOriginal", "NotaRecuperada", "NotaFinalCalculada", "MetodoAplicado", "AutorizadoPor", "Fecha"]);
-  }
-
-  const orig = parseFloat(notaOriginal) || 0;
-  const rec = parseFloat(notaRecuperada) || 0;
-  if (isNaN(orig) || orig < 0 || orig > 100 || isNaN(rec) || rec < 0 || rec > 100) {
-    throw new Error("Las calificaciones originales y recuperadas deben ser valores numéricos válidos entre 0 y 100.");
-  }
-
-  let finalCalc = rec;
-  const metodo = metodoAplicado || "Sustitucion";
-  if (metodo === "Promedio") finalCalc = (orig + rec) / 2;
-  else if (metodo === "Mayor") finalCalc = Math.max(orig, rec);
-
-  const recId = "REC-" + Date.now();
-  const now = new Date();
-
-  sheet.appendRow([recId, evaluacionId, userId, orig, rec, finalCalc, metodo, autorizadoPor || "Docente", now]);
-
-  return {
-    status: "success",
-    message: "Recuperación de nota registrada e integrada exitosamente.",
-    data: { recuperacionId: recId, notaOriginal: orig, notaRecuperada: rec, notaFinalCalculada: finalCalc, metodoAplicado: metodo }
-  };
+ return withAuthorizedStudentRecoveryMutation_(payload, context => saveStudentRecoveryUnlocked_(payload, context));
+}
+function withAuthorizedStudentRecoveryMutation_(payload, mutation) {
+ const lock=LockService.getScriptLock();if(!lock.tryLock(5000))throw new Error("STUDENT_RECOVERY_MUTATION_LOCK_TIMEOUT");
+ try{return mutation(getAuthorizedStudentRecoveryMutationContext_(payload));}finally{try{lock.releaseLock();}catch(_){}}
+}
+function getAuthorizedStudentRecoveryMutationContext_(payload) {
+ const p=payload&&typeof payload==="object"&&!Array.isArray(payload)?payload:{},evaluationId=String(p.evaluacionId||"").trim(),userId=String(p.userId||"").trim();
+ const grade=String(p.grado||"").trim(),section=String(p.seccion||"").trim(),subject=String(p.asignatura||"").trim(),periodId=String(p.periodoId||"").trim();
+ const recoveredNumber=p.notaRecuperada===""||p.notaRecuperada==null?NaN:Number(p.notaRecuperada),method=String(p.metodoAplicado||"Sustitucion").trim();
+ if(evaluationId!=="CAT-GLOBAL"||!userId||!grade||!section||!subject||!periodId||!Number.isFinite(recoveredNumber)||recoveredNumber<0||recoveredNumber>100||["Sustitucion","Promedio","Mayor"].indexOf(method)===-1)throw new Error("STUDENT_RECOVERY_REQUIRED_FIELDS_INVALID");
+ const permission=validateRolePermission("saveStudentRecovery",p);if(!permission||permission.authorized!==true)throw new Error("RESOURCE_NOT_AVAILABLE");
+ const actor=getVerifiedExamIdentity_(p);if(!actor||actor.authorized!==true||!String(actor.userId||"").trim())throw new Error("RESOURCE_NOT_AVAILABLE");
+ const role=String(actor.role||"").trim(),institutionRoles=["Administrador","Desarrollador","Dirección","Director","Secretaría"];if(role!=="Profesor"&&institutionRoles.indexOf(role)===-1)throw new Error("RESOURCE_NOT_AVAILABLE");
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedExamDepartmentScope_(p,ss,actor);if(!scope||scope.authorized!==true||!String(scope.institutionId||"").trim())throw new Error("RESOURCE_NOT_AVAILABLE");
+ const profile=getExamStudentProfile_(ss,userId);if(!profile||["Estudiante","Alumno"].indexOf(String(profile.role||"").trim())===-1||normalizeString(profile.grado)!==normalizeString(grade)||normalizeString(profile.seccion)!==normalizeString(section))throw new Error("RESOURCE_NOT_AVAILABLE");
+ if(role==="Profesor"){
+  const config=getSheetOrThrow(ss,"ConfiguracionAcademica").getDataRange().getValues(),headers=["ID","Fecha","Parcial","Grado","Sección","Asignatura","Unidad","Tema","profesorId"];
+  if(!config.length||headers.some((h,i)=>String(config[0][i]||"").trim()!==h))throw new Error("ACADEMIC_ASSIGNMENT_SCHEMA_INVALID");
+  const matches=config.slice(1).filter(r=>normalizeString(r[2])===normalizeString(periodId)&&normalizeString(r[3])===normalizeString(grade)&&normalizeString(r[4])===normalizeString(section)&&normalizeString(r[5])===normalizeString(subject));
+  if(!matches.length||matches.some(r=>String(r[8]||"").trim()!==String(actor.userId).trim()))throw new Error("RESOURCE_NOT_AVAILABLE");
+ }else if(scope.institutionWide!==true)throw new Error("RESOURCE_NOT_AVAILABLE");
+ const closure=ss.getSheetByName("CierresPeriodos");if(closure){const rows=closure.getDataRange().getValues();if(rows.length){
+  const headers=["CierreID","AnoID","PeriodoID","Grado","Seccion","Asignatura","ProfesorID","Estado","FechaCierre"];if(headers.some((h,i)=>String(rows[0][i]||"").trim()!==h))throw new Error("PERIOD_CLOSURE_SCHEMA_INVALID");
+  const matches=rows.slice(1).filter(r=>normalizeString(r[2])===normalizeString(periodId)&&normalizeString(r[3])===normalizeString(grade)&&normalizeString(r[4])===normalizeString(section)&&normalizeString(r[5])===normalizeString(subject));
+  if(matches.length>1||matches.some(r=>String(r[7]||"").trim()==="Cerrado"))throw new Error("STUDENT_RECOVERY_PERIOD_CLOSED_OR_AMBIGUOUS");
+ }}
+ const grades=getSheetOrThrow(ss,"CalificacionesEstudiantes").getDataRange().getValues(),gh=["ID","EvaluacionID","UserID","NotaObtenida","PuntajePonderado","EsBorrador","EsPublicada","Observaciones","FechaRegistro"];
+ if(!grades.length||gh.some((h,i)=>String(grades[0][i]||"").trim()!==h))throw new Error("STUDENT_RECOVERY_GRADEBOOK_SCHEMA_INVALID");
+ const weights={"CAT-1":.35,"CAT-2":.40,"CAT-3":.15,"CAT-4":.10},scores={};
+ grades.slice(1).filter(r=>String(r[2]||"").trim()===userId&&Object.prototype.hasOwnProperty.call(weights,String(r[1]||"").trim())).forEach(r=>{
+  const id=String(r[1]).trim();if(Object.prototype.hasOwnProperty.call(scores,id))throw new Error("STUDENT_RECOVERY_GRADEBOOK_AMBIGUOUS");
+  const score=Number(r[3]);if(!Number.isFinite(score)||score<0||score>100)throw new Error("STUDENT_RECOVERY_GRADEBOOK_INVALID");scores[id]=score;
+ });
+ const originalGrade=Object.keys(weights).reduce((sum,id)=>sum+(scores[id]||0)*weights[id],0),sheet=ss.getSheetByName("RecuperacionesEstudiante"),recoveryHeaders=["ID","EvaluacionID","UserID","NotaOriginal","NotaRecuperada","NotaFinalCalculada","MetodoAplicado","AutorizadoPor","Fecha"];
+ if(sheet){const rows=sheet.getDataRange().getValues();if(rows.length&&recoveryHeaders.some((h,i)=>String(rows[0][i]||"").trim()!==h))throw new Error("STUDENT_RECOVERY_SCHEMA_INVALID");}
+ return {actor,ss,sheet,recoveryHeaders,userId,evaluationId,originalGrade,recoveredNumber,method};
+}
+function saveStudentRecoveryUnlocked_(payload,context) {
+ const sheet=context.sheet||getOrCreateSheet(context.ss,"RecuperacionesEstudiante");if(!context.sheet||sheet.getLastRow()===0)sheet.appendRow(context.recoveryHeaders);
+ const rows=sheet.getDataRange().getValues(),id="REC-"+Utilities.getUuid();if(rows.slice(1).some(r=>String(r[0]||"").trim()===id))throw new Error("STUDENT_RECOVERY_ID_COLLISION");
+ const original=context.originalGrade,recovered=context.recoveredNumber;let finalGrade=recovered;if(context.method==="Promedio")finalGrade=(original+recovered)/2;else if(context.method==="Mayor")finalGrade=Math.max(original,recovered);
+ sheet.appendRow([id,context.evaluationId,context.userId,original,recovered,finalGrade,context.method,String(context.actor.userId).trim(),new Date()]);
+ return {status:"success",message:"Recuperación de nota registrada e integrada exitosamente.",data:{recuperacionId:id,notaOriginal:original,notaRecuperada:recovered,notaFinalCalculada:finalGrade,metodoAplicado:context.method}};
 }
 
 function getStudentRecoveries(payload) {
