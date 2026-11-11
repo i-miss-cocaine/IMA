@@ -1414,3 +1414,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Estado, comentario, tema y asignatura deben ser strings dentro de límites definidos; payload inválido se rechaza antes de escribir.
 - Parseo completo Code.gs PASS; contrato aislado V8 17/17 PASS; test Node dedicado añadido al workflow; CI aún no observado. BETA-EXAM-062 Pendiente beta.
 ===============================================================================
+
+===============================================================================
+[2026-11-11] C1.510 — IMA-EXEC-20261110-1825Z-02 — EXAM: eliminación trazable de entregas
+- deleteExamSubmission conserva su wrapper ScriptLock/RBAC/identidad/ownership y ahora exige motivo documentado.
+- Se crea/valida HistorialEliminacionesEntregasExamen; registra UUID, IDs, actor/rol verificados, motivo, fecha y estado, sin copiar respuestas de estudiantes.
+- El evento se escribe antes del borrado; se marca DELETED o DELETE_FAILED. Si falla la finalización posterior al borrado, queda DELETE_REQUESTED para reconciliación.
+- Parseo completo Code.gs PASS; contrato aislado local 17/17 PASS; test Node parsea y workflow integrado; CI no observado. BETA-EXAM-063 Pendiente beta.
+===============================================================================
