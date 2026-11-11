@@ -3884,3 +3884,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI:** suite dedicada conectada al workflow existente; resultado Node 22 pendiente tras publicar el cambio.
 - **Beta:** BETA-EXAM-071 Pendiente beta; Apps Script/Sheets real NOT RUN.
 - **Estado:** subalcance manageQuestionBank corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras superficies EXAM.
+
+### 10.185 TASK-153 / AUD-NG-386 — identidad firmada completa en mutaciones generales EXAM (C1.532)
+- **Hallazgo alto:** el wrapper compartido withAuthorizedExamMutation_ no rechazaba userId ausente/blanco antes de ScriptLock; getAuthorizedExamMutationContext_ no exigía actor presente, autorización estricta ni userId antes de abrir Sheets.
+- **Corrección:** preflight y contexto revalidado exigen actor presente, authorized === true y String(userId || "").trim() no vacío. El contexto sigue ejecutándose bajo lock y falla antes de SpreadsheetApp.openById; el finally libera el lock.
+- **Cobertura:** nueva suite tests/security/exam-service-exam-mutation-security.test.js; 12/12 PASS en ejecución aislada con shims; parseo Code.gs PASS; harness de wrappers 11/11 PASS. No se afirma Node 22 nativo.
+- **Workflow:** .github/workflows/exam-service-security-contract.yml incluye filtros push/pull_request y step dedicado. Estado de Actions NOT VERIFIED por ausencia de runs/checks accesibles.
+- **Beta:** BETA-EXAM-072 Pendiente beta; Apps Script/Sheets real NOT RUN.
+- **Estado:** subalcance corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
