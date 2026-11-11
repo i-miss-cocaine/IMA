@@ -3792,7 +3792,8 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Hallazgo:** `withAuthorizedPeriodGradebookClosure_` adquiría ScriptLock antes de validar el permiso `closePeriodGradebook` y la identidad firmada; solicitudes no autorizadas podían competir por el lock compartido.
 - **Corrección:** preflight del permiso específico, identidad autorizada con `userId` no vacío y rol permitido antes del lock. El contexto existente conserva la revalidación de RBAC, identidad, rol, scope, asignación, roster, publicación de las cuatro categorías y unicidad del cierre dentro del lock.
 - **Pruebas locales:** suite dedicada ampliada a 19 escenarios; orden RBAC/identidad antes del lock, denegación sin lock/Sheets, identidad incompleta/no autorizada/rol no admitido, doble validación bajo lock, cierre positivo, timeout, duplicidad y regresiones previas.
-- **CI:** pendiente de ejecución/verificación Node 22. Apps Script/Sheets real NOT RUN.
-- **Beta:** BETA-EXAM-065 agregado; permanece Pendiente beta.
+- **CI:** workflow GitHub Actions 43046863190 PASS; job exam-security-contracts completado con éxito; suite dedicada 19/19 PASS en Node 22 y parseo Code.gs PASS.
+- **Verificación local:** harness focalizado del wrapper 8/8 PASS.
+- **Beta:** BETA-EXAM-065 agregado; Apps Script/Sheets real NOT RUN y permanece Pendiente beta.
 - **Estado:** subalcance closePeriodGradebook corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
 - **Siguiente:** inspeccionar el siguiente wrapper mutador pendiente que solicite ScriptLock antes de autorización, sin repetir closePeriodGradebook.

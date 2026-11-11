@@ -476,3 +476,13 @@ Subalcance closePeriodGradebook corregido; TASK-153 / AUD-NG-386 continúa En ej
 Siguiente acción: verificar pruebas locales/CI y cerrar C1.522; después inspeccionar el siguiente wrapper mutador pendiente.
 HEAD final: pendiente de confirmar tras publicar.
 ===============================================================================
+
+
+### ADDENDUM FINAL DE VERIFICACIÓN — C1.522
+- Commit de implementación/pruebas: `dff13f45ad4b855e6606e79f291747a4fe357215`.
+- GitHub Actions workflow `43046863190`: **completed / success**; job `exam-security-contracts` `130613013006` y todos sus pasos SUCCESS.
+- Suite `exam-service-period-gradebook-closure-security`: **19/19 PASS** en Node 22; parseo completo de Code.gs ejecutado por la suite.
+- Harness local focalizado del wrapper: **8/8 PASS**; verificó RBAC/identidad/rol antes de lock, denegaciones sin lock/Sheets, ruta autorizada, liberación y timeout.
+- Apps Script/Sheets real: NOT RUN. BETA-EXAM-065 permanece Pendiente beta.
+- HEAD final de rama y rama base se verifican tras publicar este addendum.
+===============================================================================

@@ -1727,3 +1727,10 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Corrección:** preflight de `closePeriodGradebook`, actor autenticado con `userId` no vacío y rol permitido antes del lock; el contexto interno revalida permiso, identidad, rol, scope y datos del cierre bajo lock.
 - **Cobertura local:** suite dedicada ampliada a 19 escenarios; denegación RBAC e identidad inválida/incompleta/rol no permitido sin lock ni apertura de Sheets; doble validación autorizada, cierre positivo y regresiones previas.
 - **CI:** pendiente de ejecución/verificación. Apps Script/Sheets real NOT RUN; BETA-EXAM-065 permanece Pendiente beta.
+
+
+### ADDENDUM FINAL DE CI — C1.522 / closePeriodGradebook
+- GitHub Actions workflow `43046863190`: **completed / success**; job `exam-security-contracts` y todos los pasos SUCCESS.
+- Suite dedicada `exam-service-period-gradebook-closure-security`: 19/19 PASS en Node 22; parseo completo Code.gs PASS.
+- Harness local focalizado del wrapper: 8/8 PASS; denegación RBAC/identidad/rol antes del lock, doble validación autorizada, liberación y timeout.
+- Apps Script/Sheets real NOT RUN. BETA-EXAM-065 permanece Pendiente beta.
