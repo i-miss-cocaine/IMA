@@ -4228,3 +4228,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - El job `exam-security-contracts` terminó SUCCESS. Pasaron todos los pasos: suites focalizadas de rúbricas, evaluaciones, recuperaciones, mutaciones EXAM, entregas, libro de calificaciones, banco de preguntas, creación de exámenes, purge de caché, validación de notas, contrato general, acceso departamental y endpoints de lectura.
 - La prueba `exam-service-security-contract.test.js` pasó; desapareció el ReferenceError `withAuthorizedExamCreation_ is not defined`. No se reprodujo el fallo global previo.
 - **Estado:** C1.578 Completada en verificación local y CI. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
+
+
+### 10.228 TASK-153 / AUD-NG-386 — cubrir revocación RBAC bajo ScriptLock en saveGradebookGrades (C1.579)
+- **Brecha confirmada:** `withAuthorizedGradebookSave_` valida RBAC en preflight y `getAuthorizedGradebookSaveContext_` vuelve a comprobarlo bajo ScriptLock. El contrato `exam-service-gradebook-save-security.test.js` cubría identidad degradada bajo lock, pero el fixture siempre devolvía un permiso fijo y no verificaba la transición concedido→revocado.
+- **Cobertura añadida:** fixture RBAC secuencial y escenario `[true, false]` en `saveGradebookGrades`; exige `RESOURCE_NOT_AVAILABLE`, una sola consulta de identidad (la segunda comprobación RBAC detiene el flujo), lock adquirido/liberado, cero apertura de Sheets y snapshot íntegro de CalificacionesEstudiantes.
+- **Alcance:** solo prueba/fixture; backend productivo, RBAC, identidad, scope, asignaciones, ownership y persistencia sin cambios. BETA-EXAM-083 registra el escenario desplegado.
+- **Verificación local:** parseo de Code.gs y del contrato PASS; ejecución completa aislada del contrato con shims compatibles: **29/29 PASS**. CI Node.js 22 pendiente de ejecución/observación tras commit. Apps Script/Sheets real NOT RUN, reservado a beta.
+- **Estado:** C1.579 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.

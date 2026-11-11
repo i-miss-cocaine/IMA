@@ -2195,3 +2195,24 @@ HEAD inicial: `4451fd9d161fc72afab08b2a09263ec363e0141e`. HEAD final: se confirm
 - C1.578 **Completada en verificación local y CI**. No se modificó backend productivo; no aplica beta.
 - HEAD inicial: `4451fd9d161fc72afab08b2a09263ec363e0141e`. HEAD de implementación/pruebas: `aaf068438b2cd3cd24bcb2bafbc50105139c1054`. El commit documental de este addendum conserva el commit de implementación como padre.
 ===============================================================================
+
+
+===============================================================================
+## C1.579 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — cubrir revocación RBAC bajo ScriptLock en saveGradebookGrades.
+
+### Hallazgo y corrección
+- `withAuthorizedGradebookSave_` y `getAuthorizedGradebookSaveContext_` ya realizan dos comprobaciones RBAC; la suite específica no simulaba revocación entre ambas.
+- Se agregó secuencia de permisos al fixture y escenario `[true, false]` sobre el handler real. La denegación debe detenerse antes de la segunda identidad y de abrir Sheets, liberar el lock y preservar las filas de CalificacionesEstudiantes.
+
+### Verificación local
+- Parseo sintáctico de `backend/exam-service/Code.gs`: PASS.
+- Parseo sintáctico del contrato: PASS.
+- Ejecución aislada del contrato completo con shims compatibles: **29/29 PASS**.
+- CI Node.js 22: pendiente de observación tras commit. Apps Script/Sheets real: NOT RUN; BETA-EXAM-083 Pendiente beta.
+
+### Estado y continuidad
+- C1.579 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
+- Siguiente: observar CI focalizado y seleccionar la siguiente brecha no cubierta sin repetir las coberturas vigentes.
+- HEAD inicial: `1ced2a2ecdf4b5fca455cf6879b1b6c6b878ed49`; HEAD final: se confirma tras publicar.
+===============================================================================

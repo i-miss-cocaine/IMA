@@ -945,3 +945,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; cobertura local C1.577 21/21 PASS y paso focalizado CI run 43110460170 SUCCESS; workflow global falla después por ReferenceError preexistente; Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas y snapshots completos antes/después de ambas hojas.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-083 — TASK-153 / AUD-NG-386 / EXAM: revocación RBAC en saveGradebookGrades bajo lock
+- **Módulo/rol:** Servicio EXAM; Profesor con permiso saveGradebookGrades, identidad firmada y asignación académica válida.
+- **Objetivo:** comprobar en Apps Script/Sheets desplegado que revocar saveGradebookGrades después del preflight impide guardar calificaciones durante la revalidación RBAC bajo ScriptLock.
+- **Precondiciones:** versión beta desplegada; libro, estudiantes, asignación, evaluación y calificaciones sintéticos válidos; sesión firmada; mecanismo controlado para permitir RBAC en preflight y denegarlo en la comprobación contextual bajo lock.
+- **Pasos:** invocar saveGradebookGrades con permiso concedido; revocarlo antes de la revalidación contextual; revisar respuesta, trazas RBAC/identidad/lock/Sheets y snapshot completo de CalificacionesEstudiantes. Repetir con permiso estable para confirmar el flujo válido.
+- **Resultado esperado:** RESOURCE_NOT_AVAILABLE, lock liberado, cero apertura de Sheets, cero escrituras y datos de calificaciones intactos; el flujo válido conserva reglas de asignación, roster y persistencia.
+- **Estado:** Pendiente beta; cobertura local C1.579 29/29 PASS y CI focalizado por observar.
+- **Evidencia requerida:** commit desplegado, trazas saneadas de ambas comprobaciones RBAC, identidad y lock; snapshots completos de CalificacionesEstudiantes antes/después.
+===============================================================================

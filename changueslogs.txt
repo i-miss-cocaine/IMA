@@ -2088,3 +2088,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - El ReferenceError withAuthorizedExamCreation_ is not defined quedó resuelto; no se reprodujo el fallo global anterior.
 - C1.578 Completada en verificación local y CI. TASK-153 / AUD-NG-386 sigue En ejecución para el inventario EXAM restante.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.579 — cobertura de revocación RBAC en saveGradebookGrades
+- El fixture del contrato de seguridad ahora permite secuenciar permisos y cubre [true,false] entre preflight y revalidación bajo ScriptLock.
+- La prueba comprueba RESOURCE_NOT_AVAILABLE, lock liberado, una sola identidad, cero apertura de Sheets y snapshot íntegro de CalificacionesEstudiantes.
+- Contrato local aislado: 29/29 PASS; parseo Code.gs y contrato PASS. CI pendiente; BETA-EXAM-083 Pendiente beta.
+- Solo cambia tests/security/exam-service-gradebook-save-security.test.js y registros; backend productivo sin cambios.
+===============================================================================
