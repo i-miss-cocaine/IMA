@@ -190,4 +190,11 @@ test(() => {
   assert.deepEqual(x.events, ["permission", "identity", "lock-request", "lock-acquire", "context",
     "permission", "identity", "lock-release"], "context must reject an empty signed userId and release the lock");
 });
+test(() => {
+  const context = extract("getAuthorizedExamSubmissionMutationContext_");
+  const identityCheck = context.indexOf('!String(actor.userId || "").trim()');
+  const spreadsheetOpen = context.indexOf("SpreadsheetApp.openById(SPREADSHEET_ID)");
+  assert.ok(identityCheck >= 0 && spreadsheetOpen > identityCheck,
+    "context must reject an empty signed userId before opening Sheets");
+});
 console.log("exam-service-delete-submission-audit: " + scenarios + "/" + scenarios + " PASS");
