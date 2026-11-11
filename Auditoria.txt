@@ -1516,3 +1516,13 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Runner Node nativo/CI y Apps Script/Sheets real: NOT RUN. BETA-EXAM-044 Pendiente beta.
 - TASK-153 permanece En ejecución; AUD-NG-386 continúa abierto por otras lecturas EXAM.
 ===============================================================================
+
+===============================================================================
+C1.491 — EXAM: aislamiento de getGradeRectificationHistory (TASK-153 / AUD-NG-386)
+- Hallazgo: la lectura consultaba HistorialRectificacionesNotas directamente, permitía omitir userId y enumerar rectificaciones de otros estudiantes; getOrCreateSheet podía crear una hoja durante la lectura. No verificaba identidad, vínculo familiar, scope ni RBAC, y convertía valores no numéricos a cero y fechas inválidas podían lanzar excepción.
+- Corrección: handler usa withAuthorizedExamRead_("getGradeRectificationHistory", ...) y ScriptLock compartido. Estudiante/Alumno solo consulta su identidad firmada; Tutor/Padre/Responsable requiere vínculo verificado en contexto; roles institucionales requieren scope institucional y estudiante objetivo explícito/único. Profesor queda denegado en esta ruta directa; su consulta debe pasar por getGradebookData y sus controles de asignación/roster. Se retiró el permiso docente estático.
+- Integridad/privacidad: lectura no mutante; hoja ausente devuelve lista vacía; esquema de nueve encabezados validado; IDs de rectificación vacíos/duplicados y EvaluacionID vacío excluidos; notas vacías/no numéricas y fechas inválidas normalizadas a null; filtro evaluacionId se aplica después del aislamiento.
+- Pruebas locales: parseo V8 PASS; suite dedicada mediante shim V8 aislado PASS (23 escenarios: identidad/IDOR, tutor/vínculo, roles/scope, profesor, RBAC, timeout/liberación, snapshot post-lock, hoja ausente, IDs ambiguos, esquema y datos inválidos).
+- Node nativo/CI/Apps Script real: NOT RUN. BETA-EXAM-045 Pendiente beta.
+- TASK-153 permanece En ejecución; AUD-NG-386 continúa abierto por otras lecturas EXAM.
+===============================================================================
