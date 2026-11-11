@@ -905,3 +905,51 @@ Completar la identidad firmada de manageQuestionBank en el preflight y en el con
 - Documentación: se registra en commit posterior.
 - TASK-153 / AUD-NG-386 continúa En ejecución por otras superficies EXAM.
 ===============================================================================
+
+===============================================================================
+C1.532 — TASK-153 / AUD-NG-386 / EXAM mutaciones generales
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+Rama exclusiva: NG_beta_0.0.0.1_work
+HEAD inicial: 45d115dd3fd9167caa7af322d81a6e40ac24599a
+Rama base: NG_beta_0.0.0.1 — HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras.
+
+### Alcance
+Completar la identidad firmada en el wrapper compartido de mutaciones de exámenes y en su contexto revalidado bajo ScriptLock.
+
+### Hallazgo y corrección
+- withAuthorizedExamMutation_ validaba actor y authorized === true antes del lock, pero aceptaba userId ausente o en blanco.
+- getAuthorizedExamMutationContext_ solo comprobaba actor.authorized truthy y abría Sheets sin exigir actor presente, autorización estricta ni userId firmado completo.
+- Ambos puntos ahora exigen actor presente, authorized === true y String(userId || "").trim() no vacío.
+- La validación del contexto permanece dentro del lock, antes de SpreadsheetApp.openById; el finally existente libera el lock cuando la identidad cambia o falla la revalidación.
+- Se preservan RBAC, roles, scope, ownership, actualización/estado/borrado de exámenes y contratos existentes.
+
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-exam-mutation-security.test.js
+- .github/workflows/exam-service-security-contract.yml
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- beta_test.txt
+- changueslogs.txt
+
+### Verificación
+- Parseo completo de Code.gs: PASS.
+- Harness aislado de wrappers productivos extraídos: 11/11 PASS.
+- Ejecución aislada de la suite dedicada completa: 12/12 PASS; se ejecutó con shims para require/fs/vm en el runtime de trabajo, no en Node 22 nativo.
+- Wiring del workflow: PASS; filtros push/pull_request y step dedicado añadidos.
+- Estado GitHub Actions: NOT VERIFIED; el conector no devolvió runs ni checks para el commit de cierre.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-072 queda Pendiente beta.
+
+### Commits
+- Implementación: 44ac692feb5f504e889c4237f6c89afca9360ce8.
+- Suite dedicada: 7177e6e6ff3ad3d2b9f0320bda8a4ce2f67ab473.
+- Integración CI: 287aabeb463c0831a840f3ad027efbb483dfbf6a.
+- Corrección del contador de la suite: 58644205ab2bef790100f069e40c8da4ee18f0dd.
+- Commits documentales y HEAD final: se confirman al terminar la publicación.
+
+### Estado y continuidad
+El subalcance de mutaciones generales EXAM queda corregido. TASK-153 / AUD-NG-386 permanece En ejecución por otras rutas aún no revisadas. La rama base permanece intacta.
+===============================================================================
