@@ -1716,5 +1716,5 @@ HEAD inicial: c3d9b8261519195b09f9396b5d04512a4921bba4. HEAD final se confirmar�
 ### Estado y continuidad
 C1.557 completa la cobertura local de revocación RBAC para rectifyStudentGrade. No hubo cambios productivos. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
 
-HEAD inicial: 16684ee9751d2d55bb59683f84d0259bdb6bee8f. HEAD final se confirmará tras publicar los cambios de prueba y documentación.
+HEAD inicial: 16684ee9751d2d55bb59683f84d0259bdb6bee8f. Commit principal de C1.557 (prueba y documentación): 01d197310478c091b9565c00342b849b98e71746. La publicación final de la rama se verificó después de este commit.
 ===============================================================================
