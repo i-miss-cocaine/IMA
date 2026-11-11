@@ -74,7 +74,8 @@ const questionRows = [["PreguntaID", "ExamenID", "Tipo", "Texto", "OpcionesJSON"
 const familyRows = [["RelacionID", "PersonaEstudianteID", "PersonaResponsableID", "TipoParentesco", "EstadoAutorizacion"], ["REL-1", "EXP-1", "TUTOR-1", "Madre/Padre", "Verificada"], ["REL-2", "EXP-2", "TUTOR-1", "Madre/Padre", "Revocada"]];
 const studentExpRows = [["ExpedienteID", "UserID"], ["EXP-1", "STUDENT-1"], ["EXP-2", "STUDENT-2"]];
 const legacyGuardianRows = [["RelacionID", "EstudianteID", "TutorID", "", "", "", "", "", "", "Estado"], ["LEG-2", "STUDENT-2", "TUTOR-1", "", "", "", "", "", "", "Activa"]];
-const sheets = { Examenes: examRows, AsignacionesAmbitosRoles: scopeRows, ResourceOwnership: ownershipRows, EntregasExamen: deliveryRows, Usuarios: userRows, PreguntasExamen: questionRows, RelacionesFamiliares: familyRows, ExpedientesEstudiantes: studentExpRows, RelacionesEstudianteTutor: legacyGuardianRows };
+const sheets = { Examenes: examRows, AsignacionesAmbitosRoles: scopeRows, ResourceOwnership: ownershipRows, EntregasExamen: deliveryRows, Usuarios: userRows, PreguntasExamen: questionRows, RelacionesFamiliares: familyRows, ExpedientesEstudiantes: studentExpRows, RelacionesEstudianteTutor: legacyGuardianRows,
+  HistorialEliminacionesEntregasExamen: [["EventoID", "EntregaExamenID", "ExamenID", "EstudianteID", "ActorID", "RolActor", "Motivo", "FechaSolicitud", "Estado"]] };
 const sheetObjects = Object.fromEntries(Object.entries(sheets).map(([name, rows]) => [name, {
   getDataRange() { return { getValues: () => rows.map(row => row.slice()) }; },
   getLastRow() { return rows.length; },
@@ -111,6 +112,7 @@ const runtime = {
   },
   isInTeacherList(value, filter) { return String(value).trim() === String(filter).trim(); },
   normalizeString(value) { return String(value || "").trim().toLowerCase(); },
+  Utilities: { getUuid() { return "AUDIT-EVENT-" + (deliveryRows.length + 1); } },
   LockService: { getScriptLock() { return {
     tryLock() { examMutationLockAcquires++; if (examMutationBeforeAcquire) { const cb = examMutationBeforeAcquire; examMutationBeforeAcquire = null; cb(); } if (!examMutationLockAvailable || examMutationLockHeld) return false; examMutationLockHeld = true; return true; },
     releaseLock() { examMutationLockReleases++; examMutationLockHeld = false; }
@@ -135,7 +137,7 @@ const duplicate = runtime.assertExamResourceOwnershipForScope_(ss, scope, "EXAME
 assert.equal(duplicate.authorized, false); assert.equal(duplicate.code, "RESOURCE_OWNERSHIP_AMBIGUOUS");
 assert.deepEqual(Array.from(runtime.getAllExams({ sessionToken: "other-token" }).data), [], "no accessible ownership returns an empty list");
 const readFunctions = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_",
-  "getExamStudentProfile_", "isExamAssignedToStudent_", "getVerifiedGuardianStudentIds_", "getExamReadContext_", "withAuthorizedExamRead_", "getAuthorizedExamReadContext_", "getStudentExams", "getStudentExamsUnlocked_", "getExamQuestions", "getExamQuestionsUnlocked_", "getExamResult", "withAuthorizedExamResultRead_", "getAuthorizedExamResultReadContext_", "getExamResultUnlocked_", "submitExam", "submitExamUnlocked_",
+  "getExamStudentProfile_", "isExamAssignedToStudent_", "getVerifiedGuardianStudentIds_", "getExamReadContext_", "withAuthorizedExamRead_", "getAuthorizedExamReadContext_", "getOrCreateExamSubmissionDeletionAuditSheet_", "getStudentExams", "getStudentExamsUnlocked_", "getExamQuestions", "getExamQuestionsUnlocked_", "getExamResult", "withAuthorizedExamResultRead_", "getAuthorizedExamResultReadContext_", "getExamResultUnlocked_", "submitExam", "submitExamUnlocked_",
   "validateRolePermission", "getAuthorizedExamMutationContext_", "withAuthorizedExamMutation_", "getAuthorizedExamSubmissionMutationContext_", "withAuthorizedExamSubmissionMutation_", "updateExam", "updateExamUnlocked_", "updateExamStatus", "updateExamStatusUnlocked_", "deleteExam", "deleteExamUnlocked_", "gradeExamSubmission", "deleteExamSubmission"]
   .map(name => extractFunction(source, name)).join("\n");
 vm.runInNewContext(readFunctions + "\nthis.getStudentExams = getStudentExams; this.getExamQuestions = getExamQuestions; this.getExamResult = getExamResult; this.submitExam = submitExam; " +
@@ -224,8 +226,14 @@ assert.throws(() => runtime.gradeExamSubmission({ sessionToken: "teacher-token",
 runtime.deleteExam({ sessionToken: "teacher-token", examenId: "EXM-1" });
 assert.equal(examRows.find(row => row[0] === "EXM-1")[7], "Inactivo", "exam with submissions is deactivated, not removed");
 assert.equal(ownershipRows.find(row => row[3] === "EXM-1")[5], "ACTIVE", "ownership remains active while prior submissions exist");
-runtime.deleteExamSubmission({ sessionToken: "teacher-token", entregaId: "DEL-1" });
+runtime.deleteExamSubmission({ sessionToken: "teacher-token", entregaId: "DEL-1",
+  motivo: "Corrección solicitada por error de registro" });
 assert.equal(deliveryRows.some(row => row[0] === "DEL-1"), false, "teacher can delete submission for own exam");
+const deletionAudit = sheets.HistorialEliminacionesEntregasExamen[1];
+assert.equal(deletionAudit[1], "DEL-1");
+assert.equal(deletionAudit[4], "TEACHER-1");
+assert.equal(deletionAudit[5], "Profesor");
+assert.equal(deletionAudit[8], "DELETED", "successful deletion is finalized in the audit log");
 assert.throws(() => runtime.deleteExamSubmission({ sessionToken: "teacher-token", entregaId: "DEL-2" }),
   /RESOURCE_NOT_AVAILABLE/, "teacher cannot delete a submission from another department");
 examRows.push(["EXM-7", "Sin entregas", "Matemáticas", "10", "A", "", "", "Activo", "TEACHER-1", "P1"]);
