@@ -3472,3 +3472,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Node nativo/CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-044 Pendiente beta; no bloquea cierre local.
 - **Estado:** subalcance completado; TASK-153 En ejecución y AUD-NG-386 abierto por otras lecturas EXAM.
 - **Siguiente:** auditar individualmente getGradeRectificationHistory, lectura de trazabilidad de notas aún no cubierta.
+### 10.143 TASK-153 / AUD-NG-386 — aislamiento de getGradeRectificationHistory (C1.491)
+
+- **Hallazgo:** getGradeRectificationHistory leía HistorialRectificacionesNotas directamente, permitía omitir userId y consultar rectificaciones de otros estudiantes; getOrCreateSheet podía crear la hoja durante una lectura. No validaba RBAC, identidad, vínculo familiar ni scope y normalizaba valores inválidos de forma engañosa.
+- **Corrección:** handler usa withAuthorizedExamRead_ y ScriptLock compartido. Estudiante/Alumno solo consulta su identidad firmada; Tutor/Padre/Responsable requiere vínculo verificado en contexto; roles institucionales requieren scope institucional y estudiante explícito/único. Profesor se deniega en la ruta directa y debe usar gradebook con asignación/roster validados. Se retiró el permiso docente estático.
+- **Integridad/privacidad:** lectura sin escrituras ni creación de hojas; esquema de nueve encabezados validado; IDs de rectificación vacíos/duplicados y EvaluacionID vacío excluidos; notas vacías/no numéricas y fechas inválidas se devuelven como null.
+- **Pruebas locales:** parseo V8 PASS; suite dedicada en shim V8 aislado PASS (23 escenarios de identidad/IDOR, tutor/vínculo, roles/scope, profesor, RBAC, lock, snapshot, hoja ausente, IDs, esquema y valores inválidos).
+- **Node nativo/CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-045 Pendiente beta; no bloquea cierre local.
+- **Estado:** subalcance completado; TASK-153 permanece En ejecución y AUD-NG-386 abierto por otras lecturas EXAM.
+- **Siguiente:** auditar individualmente getStudentAcademicReport, lectura consolidada de expediente académico aún no cubierta.
