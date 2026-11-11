@@ -3462,3 +3462,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Node nativo/CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-043 Pendiente beta; no bloquea cierre local.
 - **Estado:** subalcance completado; TASK-153 permanece En ejecución y AUD-NG-386 abierto por otras lecturas EXAM.
 - **Siguiente:** identificar y auditar individualmente la siguiente lectura EXAM no cubierta.
+
+### 10.142 TASK-153 / AUD-NG-386 — aislamiento de getStudentRecoveries (C1.490)
+
+- **Hallazgo:** getStudentRecoveries leía RecuperacionesEstudiante sin RBAC, identidad, scope ni vínculo familiar verificado; los filtros userId/evaluacionId eran opcionales y podían exponer recuperaciones de otros estudiantes. getOrCreateSheet podía crear la hoja durante la lectura. La ruta docente no comprobaba asignación/roster.
+- **Corrección:** handler usa withAuthorizedExamRead_ y ScriptLock compartido. Estudiante/Alumno solo consulta su identidad firmada; Tutor/Padre/Responsable requiere el estudiante verificado en contexto familiar; roles institucionales requieren scope institucional y userId explícito/único. Profesor no usa esta ruta directa: debe consultar recuperaciones mediante getGradebookData, que valida asignación y roster. Se retira el permiso docente estático y el worker deniega roles no permitidos aun si la matriz dinámica los concede.
+- **Integridad/privacidad:** lectura no mutante; esquema de nueve columnas validado; IDs de recuperación vacíos/duplicados y evaluacionId vacío excluidos; notas vacías/no numéricas y fechas inválidas se devuelven como null.
+- **Pruebas locales:** parseo V8 y suite dedicada ejecutada en shim V8 aislado PASS (23 escenarios: aislamiento/IDOR, tutor/vínculo, roles/scope, ruta docente, RBAC, timeout/liberación, snapshot post-lock, hoja ausente, IDs ambiguos, esquema y datos inválidos).
+- **Node nativo/CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-044 Pendiente beta; no bloquea cierre local.
+- **Estado:** subalcance completado; TASK-153 En ejecución y AUD-NG-386 abierto por otras lecturas EXAM.
+- **Siguiente:** auditar individualmente getGradeRectificationHistory, lectura de trazabilidad de notas aún no cubierta.
