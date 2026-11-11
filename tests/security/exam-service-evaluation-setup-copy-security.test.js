@@ -46,6 +46,8 @@ function makeSheet(rows, options = {}) {
 }
 function fixture(options = {}) {
   const actor = options.actor || { authorized: true, userId: "P1", role: "Profesor" };
+  const actors = options.actors || [actor];
+  let identityCalls = 0;
   const scope = options.scope || { authorized: true, institutionId: "I1", institutionWide: false, departmentIds: ["D1"] };
   const sourceAssignment = ["A1", new Date(), "P1", "10", "A", "Matemáticas", "", "", "P1"];
   const destinationAssignment = ["A2", new Date(), "P1", "10", "B", "Matemáticas", "", "", "P1"];
@@ -77,7 +79,11 @@ function fixture(options = {}) {
       releaseLock() { stats.events.push("releaseLock"); stats.released++; stats.held = false; }
     }; }},
     validateRolePermission(action) { stats.events.push("rbac"); stats.action = action; return { authorized: options.permissionDenied !== true }; },
-    getVerifiedExamIdentity_() { stats.events.push("identity"); return options.invalidIdentity ? { authorized: false } : actor; },
+    getVerifiedExamIdentity_() {
+      stats.events.push("identity");
+      identityCalls++;
+      return options.invalidIdentity ? { authorized: false } : actors[Math.min(identityCalls - 1, actors.length - 1)];
+    },
     getVerifiedExamDepartmentScope_() { return options.invalidScope ? { authorized: false } : scope; },
     SpreadsheetApp: { openById() { stats.events.push("openById"); stats.opens++; if (options.reenter && stats.opens === 1) { try { runtime.run(payload); } catch (error) { stats.reentryError = String(error); } } return { getSheetByName: name => sheets[name] || null }; } },
     getSheetOrThrow(ss, name) { const sheet = ss.getSheetByName(name); if (!sheet) throw new Error("missing " + name); return sheet; },
@@ -90,7 +96,7 @@ function fixture(options = {}) {
     sessionToken: "signed", grupoOrigen: { asignatura: "Matemáticas", grado: "10", seccion: "A", periodo: "P1" },
     grupoDestino: { asignatura: "Matemáticas", grado: "10", seccion: "B", periodo: "P1" }
   };
-  return { runtime, sheets, stats, payload, call(overrides = {}) { return runtime.run(Object.assign({}, payload, overrides)); } };
+  return { runtime, sheets, stats, payload, identityCalls: () => identityCalls, call(overrides = {}) { return runtime.run(Object.assign({}, payload, overrides)); } };
 }
 let scenarios = 0;
 function test(fn) { fn(); scenarios++; }
@@ -146,4 +152,18 @@ test(() => { const x=fixture({permissionDenied:true});assert.throws(()=>x.call()
 test(() => { const x=fixture({invalidIdentity:true});assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/);assert.deepEqual([x.stats.acquired,x.stats.opens],[0,0]);assert.deepEqual(x.stats.events,["rbac","identity"]); });
 test(() => { const x=fixture({actor:{authorized:true,userId:"",role:"Profesor"}});assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/);assert.deepEqual([x.stats.acquired,x.stats.opens],[0,0]);assert.deepEqual(x.stats.events,["rbac","identity"]); });
 test(() => { const x=fixture({actor:{authorized:true,userId:"P1",role:"Director"}});assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/);assert.deepEqual([x.stats.acquired,x.stats.opens],[0,0]);assert.deepEqual(x.stats.events,["rbac","identity"]); });
+test(() => {
+  const x = fixture({ actors: [
+    { authorized: true, userId: "P1", role: "Profesor" },
+    { authorized: true, userId: "   ", role: "Profesor" }
+  ] });
+  const categoriesBefore = x.sheets.CategoriasEvaluacion.rows.map(row => row.slice());
+  const ownershipBefore = x.sheets.ResourceOwnership.rows.map(row => row.slice());
+  assert.throws(() => x.call(), /RESOURCE_NOT_AVAILABLE/);
+  assert.equal(x.identityCalls(), 2, "signed identity must be revalidated after lock acquisition");
+  assert.deepEqual(x.stats.events, ["rbac", "identity", "getScriptLock", "rbac", "identity", "releaseLock"]);
+  assert.deepEqual([x.stats.acquired, x.stats.released, x.stats.held, x.stats.opens], [1, 1, false, 0]);
+  assert.deepEqual(x.sheets.CategoriasEvaluacion.rows, categoriesBefore, "categories must remain unchanged");
+  assert.deepEqual(x.sheets.ResourceOwnership.rows, ownershipBefore, "ownership must remain unchanged");
+});
 console.log("exam-service-evaluation-setup-copy-security: PASS (" + scenarios + " scenarios)");
