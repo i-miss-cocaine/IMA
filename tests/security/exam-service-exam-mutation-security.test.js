@@ -277,4 +277,24 @@ test(() => {
   assert.equal(JSON.stringify(examRows), examSnapshot, "all exam fields must remain unchanged");
 });
 
-process.stdout.write("exam-service-exam-mutation-security: " + passed + "/15 PASS\\n");
+
+test(() => {
+ const ownershipCheck=extractFunction("assertExamResourceOwnershipForScope_"), context=extractFunction("getAuthorizedExamMutationContext_"), wrapper=extractFunction("withAuthorizedExamMutation_"), worker=extractFunction("updateExamStatusUnlocked_"), handler=extractFunction("updateExamStatus");
+ const state={permissionCalls:0,identityCalls:0,opens:0,lockAttempts:0,releases:0,held:false,writes:0};
+ const rows=[["ID","Titulo","Asignatura","Grado","Seccion","FechaLimite","Tiempo","Estado","ProfesorID"],["EXAM-1","Examen","Matemáticas","10","A","","","Inactivo","TEACHER-1"]], snapshot=JSON.stringify(rows);
+ const sheet={getDataRange(){return {getValues(){return rows;}}},getRange(){return {setValue(){state.writes++;},setValues(){state.writes++;}}}};
+ const ss={getSheetByName(n){return n==="Examenes"?sheet:null;}};
+ const lock={tryLock(){state.lockAttempts++;state.held=true;return true;},releaseLock(){state.releases++;state.held=false;}};
+ const runtime={validateRolePermission(){state.permissionCalls++;return {authorized:state.permissionCalls===1};},
+ getVerifiedExamIdentity_(){state.identityCalls++;return {authorized:true,userId:"TEACHER-1",role:"Profesor"};},
+ getVerifiedExamDepartmentScope_(){return {authorized:true,institutionId:"I1",departmentIds:["D1"]};},
+ SpreadsheetApp:{openById(){state.opens++;return ss;}},SPREADSHEET_ID:"SYNTHETIC",LockService:{getScriptLock(){return lock;}},
+ getSheetOrThrow(s,n){const v=s.getSheetByName(n);if(!v)throw new Error("missing "+n);return v;},EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_:new Map(),String,Error};
+ const executable=[ownershipCheck,context,wrapper,worker,handler].join("\n");
+ const update=new Function("runtime","with (runtime) { "+executable+"; return updateExamStatus; }")(runtime);
+ assert.throws(()=>update({examenId:"EXAM-1",estado:"Activo"}),/RESOURCE_NOT_AVAILABLE/,"RBAC revocation under lock must reject");
+ assert.equal(state.permissionCalls,2);assert.equal(state.identityCalls,1);assert.equal(state.lockAttempts,1);assert.equal(state.releases,1);
+ assert.equal(state.held,false);assert.equal(state.opens,0);assert.equal(state.writes,0);assert.equal(JSON.stringify(rows),snapshot);
+});
+
+process.stdout.write("exam-service-exam-mutation-security: " + passed + "/16 PASS\\n");

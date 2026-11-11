@@ -811,14 +811,14 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 ===============================================================================
 
 ===============================================================================
-## BETA-EXAM-072 — TASK-153 / AUD-NG-386 / EXAM: identidad firmada completa en mutaciones generales
+## BETA-EXAM-072 — TASK-153 / AUD-NG-386 / EXAM: identidad y RBAC en mutaciones generales
 - **Módulo/rol:** Servicio EXAM; docentes y demás roles con permisos efectivos para actualizar estado, editar o eliminar exámenes.
-- **Objetivo:** comprobar en Apps Script/Sheets real que todas las mutaciones generales rechazan identidades incompletas antes de adquirir ScriptLock y revalidan actor/userId antes de abrir hojas.
-- **Precondiciones:** versión beta desplegada; cuentas y sesiones sintéticas con permisos válidos, identidad inválida y userId ausente/blanco; examen y ResourceOwnership de prueba.
-- **Pasos:** invocar updateExamStatus, updateExam y deleteExam con RBAC denegado; actor ausente/no autorizado; userId ausente, vacío o espacios; identidad válida en preflight que pierde userId al revalidarse bajo lock; repetir con identidad válida y ownership/scope autorizado; probar timeout del lock y fallo contextual.
-- **Resultado esperado:** entradas inválidas no adquieren lock; identidad incompleta en contexto no abre Sheets; el lock se libera tras rechazo/exception; mutaciones válidas mantienen roles, scope, ownership y persistencia existentes.
-- **Estado:** Pendiente beta.
-- **Evidencia requerida:** trazas saneadas de RBAC/identidad/lock/Sheets, resultado de cada operación y estado de Examenes/ResourceOwnership antes y después.
+- **Objetivo:** comprobar en Apps Script/Sheets real que las mutaciones generales rechazan identidades incompletas antes de adquirir ScriptLock, revalidan actor/userId y permiso dentro del lock y no persisten cambios tras una revocación.
+- **Precondiciones:** versión beta desplegada; cuentas y sesiones sintéticas con permisos válidos, identidad inválida y userId ausente/blanco; mecanismo controlado para revocar permiso entre preflight y revalidación; examen y ResourceOwnership de prueba.
+- **Pasos:** invocar updateExamStatus, updateExam y deleteExam con RBAC denegado; actor ausente/no autorizado; userId ausente, vacío o espacios; identidad válida en preflight que pierde userId al revalidarse bajo lock; conceder permiso en preflight y revocarlo en la segunda comprobación de updateExamStatus; repetir con identidad estable y ownership/scope autorizado; probar timeout del lock y fallo contextual.
+- **Resultado esperado:** entradas inválidas en preflight no adquieren lock; identidad incompleta o permiso revocado bajo lock produce RESOURCE_NOT_AVAILABLE, libera el lock, no abre Sheets ni escribe; snapshots de Examenes y ResourceOwnership permanecen intactos; mutaciones válidas mantienen roles, scope, ownership y persistencia existentes.
+- **Estado:** Pendiente beta; suite local dedicada 16/16 PASS en runtime V8 aislado con shims; Node 22/CI para esta revisión NOT RUN; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** trazas saneadas de RBAC/identidad/lock/Sheets, resultado de cada operación y estado de Examenes/ResourceOwnership antes y después, incluida la transición RBAC concedido→revocado.
 ===============================================================================
 
 
