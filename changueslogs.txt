@@ -1391,3 +1391,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se rechaza el esquema canónico de seis columnas porque el endpoint histórico requiere ocho columnas de configuración por grupo; no se fuerza una migración ni se corrompe el catálogo canónico.
 - Harness local aislado 22 escenarios PASS; parseo Code.gs y contrato PASS. BETA-EXAM-059 Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.507 — IMA-EXEC-20261110-1825Z-02 — EXAM: autorización RBAC de createExam
+- createExam ahora valida validateRolePermission("createExam", payload) dentro del endpoint antes de abrir el spreadsheet o tomar el lock; evita depender exclusivamente del control externo de doPost.
+- Se conserva la validación de identidad firmada, scope departamental, ownership y compensación de escrituras parciales.
+- Se añade contrato local de seguridad y se integra al workflow dedicado; BETA-EXAM-060 Pendiente beta.
+===============================================================================
