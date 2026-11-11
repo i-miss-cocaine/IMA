@@ -3892,3 +3892,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Workflow:** .github/workflows/exam-service-security-contract.yml incluye filtros push/pull_request y step dedicado. Estado de Actions NOT VERIFIED por ausencia de runs/checks accesibles.
 - **Beta:** BETA-EXAM-072 Pendiente beta; Apps Script/Sheets real NOT RUN.
 - **Estado:** subalcance corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+
+### 10.186 TASK-153 / AUD-NG-386 — identidad firmada completa durante la revalidación de closePeriodGradebook (C1.533)
+- **Hallazgo:** getAuthorizedPeriodGradebookClosureContext_ comprobaba !actor.userId, que acepta una cadena de espacios. Tras un preflight válido, un cambio de identidad durante la revalidación bajo lock podía abrir Sheets con userId incompleto y permitir que el cierre institucional registrara una atribución vacía después de trim.
+- **Corrección:** el contexto ahora exige actor presente, authorized === true y String(actor.userId || "").trim() no vacío antes de SpreadsheetApp.openById. Se preservan el wrapper, RBAC, roles permitidos, scope, roster, validación de calificaciones, cierre y liberación del lock.
+- **Pruebas locales:** parseo Code.gs PASS; suite dedicada de cierre 20/20 PASS en runtime aislado con shims; el caso añadido cambia actor válido por userId de espacios entre preflight y contexto, verifica que Sheets no se abre y que el lock se libera. Wiring al workflow existente PASS.
+- **CI:** NOT VERIFIED; el conector no devolvió runs/checks para el commit de prueba. No se afirma ejecución Node 22.
+- **Beta:** BETA-EXAM-065 existente ampliado con revalidación TOCTOU de userId en blanco; Pendiente beta. Apps Script/Sheets real NOT RUN.
+- **Estado:** subalcance closePeriodGradebook corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras rutas EXAM.
