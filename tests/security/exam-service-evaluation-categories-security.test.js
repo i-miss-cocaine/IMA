@@ -25,7 +25,7 @@ function fixture(options={}){
    releaseLock(){state.releases++;state.held=false;}};}},
   validateRolePermission(){return {authorized:state.permission};},
   getVerifiedExamIdentity_(){return state.actor;},
-  getVerifiedExamDepartmentScope_(){return state.scope;},
+  getVerifiedExamDepartmentScope_(){if(options.duringScope)options.duringScope();return state.scope;},
   SpreadsheetApp:{openById(){state.opens++;return ss;}}
  };
  vm.runInNewContext([extract("getEvaluationCategories"),extract("withAuthorizedExamMetadataRead_"),extract("getEvaluationCategoriesUnlocked_")].join("\n"),sandbox);
@@ -42,6 +42,7 @@ test("missing verified identity is denied",()=>{const x=fixture({actor:{authoriz
 test("unknown role is denied even when permission helper allows",()=>{const x=fixture({actor:{authorized:true,userId:"USR-X",role:"Visitor"}});denied(()=>x.call());assert.equal(x.state.opens,0);});
 test("missing department scope is denied",()=>{const x=fixture({scope:{authorized:false}});denied(()=>x.call());assert.equal(x.state.releases,1);});
 test("lock timeout fails closed without opening spreadsheet",()=>{const x=fixture({timeout:true});denied(()=>x.call(),/EXAM_METADATA_READ_LOCK_TIMEOUT/);assert.equal(x.state.opens,0);assert.equal(x.state.releases,0);});
+test("nested concurrent metadata read is rejected while lock is held",()=>{let x;let nested=false;x=fixture({duringScope(){denied(()=>x.call(),/EXAM_METADATA_READ_LOCK_TIMEOUT/);nested=true;}});x.call();assert.ok(nested);assert.equal(x.state.releases,1);assert.equal(x.state.held,false);});
 test("schema mismatch fails closed and releases lock",()=>{const x=fixture({rows:[["wrong","Nombre","Ambito","PorcentajePonderacion","EscalaID","Estado"],["CAT-1","Test","Global",10,"100","Activo"]]});denied(()=>x.call(),/EVALUATION_CATEGORIES_SCHEMA_INVALID/);assert.equal(x.state.releases,1);});
 test("read path does not expose any sheet mutation API",()=>{const x=fixture();x.call();assert.equal(x.state.held,false);assert.equal(x.state.releases,1);});
 test("public action allowlist no longer contains getEvaluationCategories",()=>{const block=source.match(/const PUBLIC_ACTIONS = \[([\s\S]*?)\];/);assert.ok(block);assert.ok(!block[1].includes("getEvaluationCategories"));});
