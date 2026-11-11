@@ -89,7 +89,7 @@ const ROLE_PERMISSIONS = {
     "createExam", "updateExam", "updateExamStatus", "deleteExam", "gradeExamSubmission", "deleteExamSubmission",
     "getAllExams", "getTeacherExamActivity", "getExamQuestions", "getStudentExams", "getExamResult",
     "getGradebookData", "saveGradebookGrades", "bulkApplyGradebookGrades", "copyEvaluationSetupBetweenGroups", "getEvaluationCategories", "saveEvaluationCategory",
-    "getRubrics", "saveRubric", "saveCompetencyEvaluation", "getCompetencyEvaluations", "saveStudentRecovery", "closePeriodGradebook", "reopenPeriodGradebook", "submitGradebookForReview", "reviewPeriodGradebook", "rectifyStudentGrade", "getStudentAcademicReport",
+    "getRubrics", "saveRubric", "saveCompetencyEvaluation", "getCompetencyEvaluations", "saveStudentRecovery", "closePeriodGradebook", "reopenPeriodGradebook", "submitGradebookForReview", "reviewPeriodGradebook", "rectifyStudentGrade",
     "manageQuestionBank", "getQuestionBank", "checkExamSchedulingConflict", "simulateExamReschedule",
     "getExamGradeDistributionAnalytics"
   ],
@@ -2635,56 +2635,131 @@ function getGradeRectificationHistoryUnlocked_(payload, context) {
 }
 
 function getStudentAcademicReport(payload) {
-  const { userId, anoId } = payload || {};
-  if (!userId) throw new Error("userId es requerido.");
+  return withAuthorizedExamRead_("getStudentAcademicReport", payload,
+    context => getStudentAcademicReportUnlocked_(payload, context));
+}
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+function getStudentAcademicReportUnlocked_(payload, context) {
+  const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const actor = context && context.actor;
+  const ss = context && context.ss;
+  const scope = context && context.scope;
+  if (!actor || !String(actor.userId || "").trim() || !ss || !scope || scope.authorized !== true) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
 
-  const matSheet = getOrCreateSheet(ss, "Matriculas");
-  const matData = matSheet.getDataRange().getValues();
-  const userMatriculas = matData.length > 1 ? matData.slice(1).filter(r => String(r[2]).trim() === String(userId).trim()) : [];
+  const role = String(actor.role || "").trim();
+  const studentRoles = ["Estudiante", "Alumno"];
+  const guardianRoles = ["Tutor", "Padre", "Responsable"];
+  const institutionRoles = ["Administrador", "Desarrollador", "Dirección", "Director", "Secretaría"];
+  let targetUserId = "";
+  if (studentRoles.indexOf(role) !== -1) {
+    targetUserId = String(actor.userId).trim();
+    if (p.userId && String(p.userId).trim() !== targetUserId) throw new Error("RESOURCE_NOT_AVAILABLE");
+    const profile = getExamStudentProfile_(ss, targetUserId);
+    if (!profile || studentRoles.indexOf(String(profile.role || "").trim()) === -1) throw new Error("RESOURCE_NOT_AVAILABLE");
+  } else if (guardianRoles.indexOf(role) !== -1) {
+    targetUserId = String(context.profile && context.profile.userId || "").trim();
+    if (!context.guardianActor || !targetUserId ||
+        (p.userId && String(p.userId).trim() !== targetUserId)) throw new Error("RESOURCE_NOT_AVAILABLE");
+  } else if (institutionRoles.indexOf(role) !== -1) {
+    if (scope.institutionWide !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+    targetUserId = String(p.userId || "").trim();
+    if (!targetUserId) throw new Error("RESOURCE_NOT_AVAILABLE");
+    const profile = getExamStudentProfile_(ss, targetUserId);
+    if (!profile || studentRoles.indexOf(String(profile.role || "").trim()) === -1) throw new Error("RESOURCE_NOT_AVAILABLE");
+  } else {
+    // Los docentes consultan calificaciones mediante getGradebookData, con asignación y roster validados.
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
 
-  const califSheet = getOrCreateSheet(ss, "CalificacionesEstudiantes");
-  const califData = califSheet.getDataRange().getValues();
-  const userCalificaciones = califData.length > 1 ? califData.slice(1).filter(r => {
-    if (String(r[2]).trim() !== String(userId).trim()) return false;
-    const esBorrador = r[5] === true || String(r[5]).toLowerCase() === "true";
-    const esPublicada = r[6] === true || String(r[6]).toLowerCase() === "true";
-    return esPublicada || !esBorrador;
-  }).map(r => ({
-    calificacionId: r[0],
-    evaluacionId: r[1],
-    notaObtenida: parseFloat(r[3]) || 0,
-    puntajePonderado: parseFloat(r[4]) || 0,
-    esPublicada: r[6] === true || String(r[6]).toLowerCase() === "true",
-    observaciones: r[7] || "",
-    fechaRegistro: r[8] ? new Date(r[8]).toISOString() : null
-  })) : [];
-
-  const recSheet = getOrCreateSheet(ss, "RecuperacionesEstudiante");
-  const recData = recSheet.getDataRange().getValues();
-  const userRecuperaciones = recData.length > 1 ? recData.slice(1).filter(r => String(r[2]).trim() === String(userId).trim()).map(r => ({
-    recuperacionId: r[0],
-    evaluacionId: r[1],
-    notaOriginal: parseFloat(r[3]) || 0,
-    notaRecuperada: parseFloat(r[4]) || 0,
-    notaFinalCalculada: parseFloat(r[5]) || 0,
-    metodoAplicado: r[6],
-    autorizadoPor: r[7],
-    fecha: r[8] ? new Date(r[8]).toISOString() : null
-  })) : [];
-
-  const catRes = getEvaluationCategories({});
-  const categories = catRes && catRes.data ? catRes.data : [];
-
-  return {
-    status: "success",
-    data: {
-      userId: userId,
-      matriculas: userMatriculas.map(r => ({ matriculaId: r[0], fecha: r[1], grado: r[4], seccion: r[5], periodo: r[6], estado: r[8] })),
-      calificaciones: userCalificaciones,
-      recuperaciones: userRecuperaciones,
-      categories: categories
+  const readOptionalSheet = (name, headers) => {
+    const sheet = ss.getSheetByName(name);
+    if (!sheet) return [];
+    const values = sheet.getDataRange().getValues();
+    if (!values.length) return [];
+    if (headers && headers.some((header, index) => String(values[0][index] || "").trim() !== header)) {
+      throw new Error("STUDENT_ACADEMIC_REPORT_SCHEMA_INVALID");
     }
+    return values.slice(1);
   };
+  const countIds = (rows, index) => {
+    const counts = Object.create(null);
+    rows.forEach(row => { const id = String(row[index] || "").trim(); if (id) counts[id] = (counts[id] || 0) + 1; });
+    return counts;
+  };
+  const safeDate = value => {
+    if (!value) return null;
+    const date = new Date(value);
+    return !isNaN(date.getTime()) ? date.toISOString() : null;
+  };
+  const safeNumber = value => {
+    const number = parseFloat(value);
+    return Number.isFinite(number) ? number : 0;
+  };
+
+  const matriculas = readOptionalSheet("Matriculas");
+  const matriculaCounts = countIds(matriculas, 0);
+  const userMatriculas = matriculas.filter(row =>
+    row.length >= 9 && String(row[2] || "").trim() === targetUserId &&
+    String(row[0] || "").trim() && matriculaCounts[String(row[0]).trim()] === 1);
+
+  const gradeHeaders = ["ID", "EvaluacionID", "UserID", "NotaObtenida", "PuntajePonderado",
+    "EsBorrador", "EsPublicada", "Observaciones", "FechaRegistro"];
+  const calificaciones = readOptionalSheet("CalificacionesEstudiantes", gradeHeaders);
+  const gradeCounts = countIds(calificaciones, 0);
+  const userCalificaciones = calificaciones.filter(row => {
+    const id = String(row[0] || "").trim();
+    if (!id || gradeCounts[id] !== 1 || String(row[2] || "").trim() !== targetUserId) return false;
+    const draft = row[5] === true || String(row[5]).toLowerCase() === "true";
+    const published = row[6] === true || String(row[6]).toLowerCase() === "true";
+    return published || !draft;
+  }).map(row => ({
+    calificacionId: row[0],
+    evaluacionId: row[1],
+    notaObtenida: safeNumber(row[3]),
+    puntajePonderado: safeNumber(row[4]),
+    esPublicada: row[6] === true || String(row[6]).toLowerCase() === "true",
+    observaciones: row[7] || "",
+    fechaRegistro: safeDate(row[8])
+  }));
+
+  const recoveryHeaders = ["ID", "EvaluacionID", "UserID", "NotaOriginal", "NotaRecuperada",
+    "NotaFinalCalculada", "MetodoAplicado", "AutorizadoPor", "Fecha"];
+  const recuperaciones = readOptionalSheet("RecuperacionesEstudiante", recoveryHeaders);
+  const recoveryCounts = countIds(recuperaciones, 0);
+  const userRecuperaciones = recuperaciones.filter(row => {
+    const id = String(row[0] || "").trim();
+    return !!id && recoveryCounts[id] === 1 && String(row[2] || "").trim() === targetUserId &&
+      !!String(row[1] || "").trim();
+  }).map(row => ({
+    recuperacionId: row[0],
+    evaluacionId: row[1],
+    notaOriginal: safeNumber(row[3]),
+    notaRecuperada: safeNumber(row[4]),
+    notaFinalCalculada: safeNumber(row[5]),
+    metodoAplicado: row[6],
+    autorizadoPor: row[7],
+    fecha: safeDate(row[8])
+  }));
+
+  const categoryHeaders = ["ID", "Nombre", "Ambito", "PorcentajePonderacion", "EscalaID", "Estado"];
+  const categories = readOptionalSheet("CategoriasEvaluacion", categoryHeaders).map(row => ({
+    categoriaId: row[0],
+    nombre: row[1],
+    ambito: row[2] || "Global",
+    porcentajePonderacion: safeNumber(row[3]),
+    escalaId: row[4] || "100",
+    estado: row[5] || "Activo"
+  }));
+
+  return { status: "success", data: {
+    userId: targetUserId,
+    matriculas: userMatriculas.map(row => ({
+      matriculaId: row[0], fecha: row[1], grado: row[4], seccion: row[5], periodo: row[6], estado: row[8]
+    })),
+    calificaciones: userCalificaciones,
+    recuperaciones: userRecuperaciones,
+    categories
+  }};
 }
