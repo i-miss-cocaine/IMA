@@ -2011,3 +2011,11 @@ HEAD inicial: 11a2475823531d5e54fe992b7a883963315681d8. Rama: NG_beta_0.0.0.1_wo
 
 HEAD inicial: 8388e58c76b0fca4836f2e7004745b4e4f08bf05. Rama: NG_beta_0.0.0.1_work. Rama base esperada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59. HEAD final: se confirma tras publicar.
 ===============================================================================
+
+
+### Addendum de cierre local/CI — C1.571
+- Usuario confirma que sincronizó la rama de trabajo y ejecutó `node tests/security/exam-service-delete-submission-audit.test.js`: **30/30 PASS**.
+- GitHub Actions run `43105983033`, commit `6dd31390e2b80a13290b0c3dbfc88b266e24d96f`: paso focalizado **30/30 PASS**, Node.js 22.23.4.
+- El workflow global falla posteriormente en `exam-service-security-contract.test.js` por `ReferenceError: withAuthorizedExamCreation_ is not defined`; es el mismo fallo preexistente registrado en ejecuciones anteriores, no introducido por C1.571.
+- C1.571 **Completada** en pruebas local y CI. Validación real en Apps Script/Sheets sigue Pendiente beta (BETA-EXAM-073). TASK-153 permanece En ejecución.
+- HEAD de implementación: `6dd31390e2b80a13290b0c3dbfc88b266e24d96f`. Rama base sin cambios: `44d9891132332e692dbe2ba8602b41f50a508a59`.
