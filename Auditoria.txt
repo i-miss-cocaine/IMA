@@ -2056,3 +2056,8 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Brecha:** el contrato verificaba la auditoría de borrado, los fallos y el wrapper/validación, pero no una solicitud anidada durante appendRow de DELETE_REQUESTED, deleteRow de EntregasExamen o setValue de DELETED.
 - **Cambio:** se amplía el contrato con los handlers reales y un lock sintético; en cada una de las tres ventanas la solicitud secundaria recibe EXAM_SUBMISSION_LOCK_TIMEOUT. La exterior crea un solo evento, elimina una entrega, marca DELETED, obtiene un contexto y libera el lock una sola vez.
 - **Verificación local:** parseo Code.gs/test PASS; harness V8 aislado 3/3 escenarios PASS. Backend productivo sin cambios. CI Node.js 22 pendiente; Apps Script/Sheets real NOT RUN. BETA-EXAM-088 agregado y Pendiente beta.
+
+#### Addendum CI — C1.587
+- GitHub Actions run 43117909903, commit 6e85cccfe0b19ea72f5ff5f2497acdc505929352, workflow Exam-Service security local contracts: SUCCESS en Node.js 22.
+- Job exam-security-contracts: SUCCESS; paso Run exam submission deletion audit regression: SUCCESS (33/33); todos los demás pasos, incluido el contrato general de lectura, terminaron SUCCESS.
+- C1.587 Completada en verificación local y CI. BETA-EXAM-088 permanece Pendiente beta para Apps Script/Sheets desplegado.

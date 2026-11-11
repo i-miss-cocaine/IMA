@@ -2206,3 +2206,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Harness V8 aislado 3/3 escenarios PASS; sintaxis backend/test PASS. Backend productivo sin cambios. CI Node.js 22 pendiente; Apps Script/Sheets real NOT RUN.
 - BETA-EXAM-088 agregado. TASK-153 / AUD-NG-386 continúa En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.587 — resultado CI
+- GitHub Actions run 43117909903, commit 6e85cccfe0b19ea72f5ff5f2497acdc505929352: workflow Exam-Service security local contracts SUCCESS en Node.js 22.
+- Job exam-security-contracts y paso Run exam submission deletion audit regression: SUCCESS (33/33); todos los pasos del workflow terminaron correctamente.
+- C1.587 Completada en cobertura local/CI. BETA-EXAM-088 sigue Pendiente beta para Apps Script/Sheets desplegado.
+===============================================================================

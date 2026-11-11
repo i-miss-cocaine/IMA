@@ -31,3 +31,8 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - Siguiente: inspeccionar otra ruta mutadora EXAM sin cobertura reentrante equivalente; no repetir createExam, updateExam, updateExamStatus, deleteExam, submitExam ni deleteExamSubmission.
 - HEAD final: se confirma tras publicar.
 ===============================================================================
+
+#### Addendum CI — C1.587
+- GitHub Actions run 43117909903, commit 6e85cccfe0b19ea72f5ff5f2497acdc505929352, workflow Exam-Service security local contracts: SUCCESS en Node.js 22.
+- Job exam-security-contracts: SUCCESS; paso Run exam submission deletion audit regression: SUCCESS (33/33); todos los demás pasos, incluido el contrato general de lectura, terminaron SUCCESS.
+- C1.587 Completada en verificación local y CI. BETA-EXAM-088 permanece Pendiente beta para Apps Script/Sheets desplegado.

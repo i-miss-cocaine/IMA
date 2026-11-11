@@ -4328,3 +4328,8 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Alcance:** solo tests/security/exam-service-delete-submission-audit.test.js; backend productivo sin cambios. BETA-EXAM-088 registra la validación desplegada.
 - **Verificación local:** parseo sintáctico de backend y contrato PASS; harness V8 aislado de los handlers reales 3/3 escenarios PASS. CI Node.js 22 pendiente de observación tras commit. Apps Script/Sheets real NOT RUN.
 - **Estado:** C1.587 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+
+#### Addendum CI — C1.587
+- GitHub Actions run 43117909903, commit 6e85cccfe0b19ea72f5ff5f2497acdc505929352, workflow Exam-Service security local contracts: SUCCESS en Node.js 22.
+- Job exam-security-contracts: SUCCESS; paso Run exam submission deletion audit regression: SUCCESS (33/33); todos los demás pasos, incluido el contrato general de lectura, terminaron SUCCESS.
+- C1.587 Completada en verificación local y CI. BETA-EXAM-088 permanece Pendiente beta para Apps Script/Sheets desplegado.
