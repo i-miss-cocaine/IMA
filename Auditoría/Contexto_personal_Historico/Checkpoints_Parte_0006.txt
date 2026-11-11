@@ -953,3 +953,47 @@ Completar la identidad firmada en el wrapper compartido de mutaciones de exámen
 ### Estado y continuidad
 El subalcance de mutaciones generales EXAM queda corregido. TASK-153 / AUD-NG-386 permanece En ejecución por otras rutas aún no revisadas. La rama base permanece intacta.
 ===============================================================================
+
+===============================================================================
+C1.533 — TASK-153 / AUD-NG-386 / cierre de período de calificaciones EXAM
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+Rama exclusiva: NG_beta_0.0.0.1_work
+HEAD inicial: b9189646ded7690e82bf9d6fc6b1d81a85e5f48c
+Rama base: NG_beta_0.0.0.1 — HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras.
+
+### Alcance
+Completar la validación de identidad firmada de getAuthorizedPeriodGradebookClosureContext_ bajo ScriptLock para closePeriodGradebook.
+
+### Hallazgo y corrección
+- El wrapper withAuthorizedPeriodGradebookClosure_ ya exigía actor autorizado, userId no vacío tras trim y rol permitido antes del lock.
+- El contexto revalidaba RBAC, actor autorizado y rol bajo lock, pero usaba !actor.userId; una cadena de espacios pasaba y podía llegar a abrir Sheets y, en contexto institucional, registrar un cierre con atribución vacía tras trim.
+- El contexto ahora exige String(actor.userId || "").trim() no vacío antes de SpreadsheetApp.openById.
+- No se alteran permisos, allowlist de roles, scope institucional/departamental, reglas de roster, publicación ni cierre. El lock sigue liberándose en finally.
+
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-period-gradebook-closure-security.test.js
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- beta_test.txt (ampliación de BETA-EXAM-065 existente)
+- changueslogs.txt
+
+### Verificación local
+- Parseo completo de Code.gs: PASS.
+- Suite dedicada de cierre: 20/20 PASS en runtime aislado con shims; incluye actor válido en preflight que cambia a userId solo espacios en contexto, rechazo antes de abrir Sheets y liberación del lock.
+- Wiring de suite al workflow existente: PASS (filtro de ruta y step ya presentes).
+- GitHub Actions/checks: NOT VERIFIED; el conector no devolvió ejecuciones ni checks para el commit de prueba.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-065 sigue Pendiente beta y se amplía con el caso TOCTOU de userId en blanco.
+
+### Commits
+- Código: 696a930e30992d2bc3f3e1cb723e03e0da68b47e.
+- Prueba: 76fe38621bfc17d3b81577d245b1abc63aab052d.
+- Corrección de formato de la prueba: ebd67db511e259b4217d8d37d96bdc1ef5de8604.
+- Documentación y HEAD final: se confirman al terminar la publicación.
+
+### Estado y continuidad
+El subalcance de identidad completa en el contexto de cierre queda corregido. TASK-153 / AUD-NG-386 permanece En ejecución por otras rutas EXAM. Rama base sin modificaciones.
+===============================================================================
