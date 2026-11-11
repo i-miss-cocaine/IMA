@@ -1157,3 +1157,11 @@ Asegurar el endpoint de simulación de reprogramación como unidad independiente
 - Actualización fast-forward compare-and-swap en NG_beta_0.0.0.1_work; sin force.
 - NG_beta_0.0.0.1 se mantiene en 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
+
+===============================================================================
+### Addendum C1.486-R2 — checkpoint consolidado
+- Commit del checkpoint, índice y cierre documental: 605152faa8b5727db29d59f2d3274a3a949d6bf9.
+- HEAD final verificado de NG_beta_0.0.0.1_work: 605152faa8b5727db29d59f2d3274a3a949d6bf9.
+- Commits de la unidad: implementación 62e7e672234e128a0cca8e5c3a251bbc4fa21b8f; checkpoint 605152faa8b5727db29d59f2d3274a3a949d6bf9.
+- Rama base NG_beta_0.0.0.1 intacta: 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================
