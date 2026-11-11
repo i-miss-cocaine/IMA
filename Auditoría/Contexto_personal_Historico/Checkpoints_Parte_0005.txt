@@ -1830,3 +1830,54 @@ Por tanto, no existe evidencia persistida suficiente para publicar selectivament
 - TASK-153 continúa En ejecución y AUD-NG-386 abierto.
 - Rama base intacta en 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.500 — Protección de reviewPeriodGradebook
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.499.
+HEAD inicial: b34112a22bc927e9086baa46aa26f9858c5960fd.
+Commits de implementación: 04e5a0d5992616218c20e843eaf8595371695b06; 6d22f86577a3304088945ee91bb4f731b3312bf0.
+HEAD final antes del checkpoint documental: 6d22f86577a3304088945ee91bb4f731b3312bf0.
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+### Hallazgo y decisión técnica
+reviewPeriodGradebook modificaba CierresPeriodos sin volver a validar RBAC, identidad firmada, rol ni scope; aceptaba revisadoPor del cliente y, para la decisión Publicado, llamaba publishGradebookForContext, que podía publicar borradores de estudiantes del grado/sección sin separar período ni asignatura. El esquema CalificacionesEstudiantes no contiene PeriodoID ni Asignatura. Además, CierresPeriodos no guarda InstitutionID/DepartmentID, por lo que la revisión se limita a actores con scope institucional amplio y al spreadsheet institucional.
+
+Se decidió retirar al Profesor de la autorización de revisión, restringir la revisión a roles institucionales explícitos, y no ejecutar publicación desde esta operación. La decisión Publicado falla cerrado hasta que el modelo de notas permita seleccionar con certeza las filas de un período/asignatura.
+
+### Implementación
+- reviewPeriodGradebook usa ScriptLock con timeout y liberación en finally; RBAC, identidad firmada, rol y scope se revalidan dentro del lock.
+- Allowlist: Administrador, Desarrollador, Dirección, Director y Secretaría. El Profesor deja de tener permiso estático para esta acción. Director recibe permiso explícito solo para reviewPeriodGradebook; la allowlist interna impide que permisos dinámicos amplíen el grupo autorizado.
+- Se exige scope institutionWide y un institutionId válido. La hoja CierresPeriodos debe existir y tener el esquema exacto de nueve columnas; no se crea durante la revisión.
+- El cierreId debe identificar exactamente una fila; se validan campos académicos requeridos y estado PendienteRevision. Se verifica la asignación en ConfiguracionAcademica para el mismo período/grado/sección/asignatura y que todas las filas coincidentes correspondan al ProfesorID guardado en el cierre.
+- Solo se admiten decisiones Aprobado y Observado. Publicado devuelve GRADEBOOK_REVIEW_PUBLICATION_UNSUPPORTED sin escribir ni publicar. La actualización de estado/fecha se realiza en una sola llamada setValues; revisadoPor se deriva de la identidad firmada y no del cliente.
+- No se añadió una columna de observaciones porque el esquema de CierresPeriodos no la contempla; observaciones conserva su comportamiento legado de aparecer en la respuesta, sin afirmar que quede persistida.
+
+### Archivos modificados
+1. backend/exam-service/Code.gs.
+2. tests/security/exam-service-period-gradebook-review-security.test.js (23 escenarios).
+3. .github/workflows/exam-service-security-contract.yml.
+4. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt (este checkpoint).
+5. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md (sección 10.152).
+6. Auditoría/INDICE_CHECKPOINTS.md.
+7. changueslogs.txt.
+8. beta_test.txt (BETA-EXAM-053).
+
+### Verificación
+- Parseo V8 PASS para Code.gs y test dedicado.
+- Harness V8 aislado local: reviewPeriodGradebook 23/23 PASS; cubre decisiones, publicación bloqueada, RBAC/identidad/roles/scope, asignación y esquema académico, fila ausente/duplicada/malformada, estado inválido, timeout/liberación, reentrada concurrente y autor derivado del servidor.
+- Regresión local de closePeriodGradebook: 16/16 PASS.
+- GitHub Actions para los commits de esta iteración: NOT CONFIRMED; las consultas de ejecuciones/estados no devolvieron runs ni statuses. No declarar CI PASS.
+- Apps Script/Sheets real NOT RUN. BETA-EXAM-053 Pendiente beta.
+- Revisión del diff: solo endpoint/allowlist EXAM, prueba dedicada y workflow; sin cambios en otras ramas ni en el esquema global.
+
+### Limitaciones y continuidad
+- La publicación queda deliberadamente deshabilitada desde reviewPeriodGradebook; no se puede filtrar con seguridad por período/asignatura con el esquema actual de CalificacionesEstudiantes.
+- submitGradebookForReview continúa siendo una operación independiente que crea registros PendienteRevision y aún requiere auditoría/autorización propia. Siguiente tarea: auditar y proteger submitGradebookForReview y su creación de registros.
+- TASK-153 continúa En ejecución y AUD-NG-386 abierto.
+- Rama base intacta en 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================
