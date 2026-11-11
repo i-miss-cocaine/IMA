@@ -3846,3 +3846,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Beta:** Apps Script/Sheets real NOT RUN; no se requiere despliegue para aprobar el control local de identidad.
 - **Estado:** subalcance de identidad completa para gradeExamSubmission/deleteExamSubmission corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras rutas mutadoras EXAM.
 - **Siguiente:** continuar inventario de mutadores EXAM no cubiertos, una sola operación por iteración.
+
+
+### 10.181 TASK-153 / AUD-NG-386 — autorización previa al lock en saveStudentRecovery (C1.528)
+- **Hallazgo alto:** `withAuthorizedStudentRecoveryMutation_` adquiría ScriptLock antes de validar RBAC, identidad firmada, `userId` y rol; las solicitudes no autorizadas podían competir por el lock compartido.
+- **Política preservada:** permiso específico `saveStudentRecovery`; actor firmado autorizado con `userId` no vacío; roles admitidos existentes: Profesor, Administrador, Desarrollador, Dirección, Director y Secretaría. No se amplían permisos ni roles.
+- **Corrección:** preflight de RBAC, identidad completa y allowlist antes de solicitar ScriptLock. `getAuthorizedStudentRecoveryMutationContext_` conserva la revalidación bajo lock de RBAC, identidad, rol, scope, perfil del estudiante, asignación docente o scope institucional, cierre del período, esquema e historial de calificaciones/recuperaciones.
+- **Pruebas locales:** parseo completo de Code.gs PASS; harness focalizado del wrapper productivo 9/9 PASS (denegación pre-lock, identidad inválida/incompleta, rol no admitido, Profesor y Secretaría permitidos, revalidación contextual, liberación ante error y timeout). Suite dedicada `exam-service-student-recovery-mutation-security.test.js` 16/16 PASS en Node 22 dentro de CI.
+- **CI:** GitHub Actions workflow `43059932693` SUCCESS; job `exam-security-contracts` `130659396717` SUCCESS; step de recuperación de notas SUCCESS. Las demás suites del job también SUCCESS.
+- **Beta:** BETA-EXAM-068 agregado; Apps Script/Sheets real NOT RUN y permanece Pendiente beta.
+- **Estado:** subalcance saveStudentRecovery corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras rutas mutadoras EXAM.
+- **Siguiente:** continuar inventario de wrappers mutadores EXAM no cubiertos, una sola operación por iteración.

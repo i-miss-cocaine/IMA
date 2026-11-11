@@ -1786,3 +1786,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Pruebas locales: parseo Code.gs/suite PASS; suite dedicada 26/26 PASS en runner aislado con shims; checkout local/Node nativo NOT RUN por fallo DNS al clonar.
 - CI: workflow 43058558651 SUCCESS; job 130654537657 SUCCESS; suite dedicada 26/26 PASS en Node 22.
 - Apps Script/Sheets real NOT RUN; no requerido para esta aprobación local.
+
+
+### C1.528 — AUD-NG-386 / saveStudentRecovery
+- **Hallazgo alto corregido:** `withAuthorizedStudentRecoveryMutation_` adquiría ScriptLock antes de comprobar RBAC, identidad firmada, `userId` y rol permitido.
+- **Corrección:** preflight de permiso `saveStudentRecovery`, actor autorizado, `userId` no vacío y allowlist vigente antes del lock; el contexto conserva la revalidación contextual bajo lock.
+- **Verificación local:** parseo Code.gs PASS; harness del wrapper extraído 9/9 PASS; suite dedicada 16/16 PASS en Node 22 mediante CI.
+- **CI:** workflow `43059932693`, job `130659396717` SUCCESS; step de recuperación de notas SUCCESS.
+- **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-068 permanece Pendiente beta.

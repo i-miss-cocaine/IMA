@@ -767,3 +767,13 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; harness local focalizado 7/7 PASS; suite dedicada 28/28 PASS en runner aislado y 28/28 PASS en Node 22 (workflow 43053113842 SUCCESS); Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, actor/rol/permiso/scope, trazas de orden RBAC/identidad/lock, calificación antes/después, fila de auditoría, evidencia de rollback y ausencia de lock/lectura en denegaciones.
 ===============================================================================
+
+===============================================================================
+## BETA-EXAM-068 — TASK-153 / AUD-NG-386 / EXAM: autorización previa al lock en saveStudentRecovery
+- **Módulo/rol:** Servicio EXAM; Profesor y roles institucionales Administrador, Desarrollador, Dirección, Director y Secretaría, sujetos al permiso efectivo `saveStudentRecovery`.
+- **Objetivo:** comprobar en Apps Script/Sheets real que RBAC, identidad firmada, `userId` no vacío y rol se validan antes de solicitar ScriptLock; las solicitudes denegadas no deben competir por el lock ni abrir hojas.
+- **Precondiciones:** entorno beta disponible, cuentas de prueba con roles y permisos diferenciados, datos sintéticos de estudiante/asignación/período y acceso controlado a las hojas académicas.
+- **Pasos:** intentar con permiso denegado, identidad no autorizada, `userId` vacío y rol no admitido; después ejecutar un caso Profesor asignado y un caso institucional con scope permitido; inducir denegación contextual y timeout controlado.
+- **Resultado esperado:** los casos inválidos fallan antes de adquirir ScriptLock; los casos válidos revalidan identidad/scope/datos bajo lock; el lock se libera en éxito y error; no hay escritura para solicitudes denegadas.
+- **Estado:** Pendiente beta.
+- **Evidencia requerida:** trazas controladas de orden RBAC/identidad/lock/Sheets, resultado de persistencia de los casos autorizados y confirmación de liberación del lock.

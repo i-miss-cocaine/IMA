@@ -746,3 +746,43 @@ Siguiente: continuar inventario de mutadores EXAM no cubiertos, una sola operaci
 - Apps Script/Sheets real NOT RUN; no requerido para aprobación local.
 - HEAD de trabajo verificado al momento del cierre documental: `af8da7501496dbc510ada5a26a5c13093954c933`; HEAD base `44d9891132332e692dbe2ba8602b41f50a508a59`; rama base sin escrituras.
 ===============================================================================
+
+
+===============================================================================
+C1.528 — TASK-153 / AUD-NG-386 / EXAM saveStudentRecovery
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+HEAD inicial verificado: 45bbcfa50cbd2347e71bbd9d00a1b46425ad4845
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 — HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras.
+Alcance: inspección y corrección de withAuthorizedStudentRecoveryMutation_ para saveStudentRecovery.
+### Hallazgo y corrección
+- El wrapper adquiría ScriptLock antes de validar el permiso específico, la identidad firmada, userId y la allowlist de roles.
+- Se añadió preflight de RBAC, identidad autorizada, userId no vacío y roles permitidos antes del lock.
+- El contexto getAuthorizedStudentRecoveryMutationContext_ conserva la revalidación bajo lock de permiso, identidad, rol, scope, perfil de estudiante, asignación/cobertura institucional, cierre de período, esquema y registro académico.
+- No se amplían permisos ni roles; no se modifica el contrato de persistencia.
+
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-student-recovery-mutation-security.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- beta_test.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación
+- Parseo completo de Code.gs: PASS.
+- Harness local focalizado del wrapper productivo: 9/9 PASS.
+- Suite exam-service-student-recovery-mutation-security: 16/16 PASS en Node 22.
+- GitHub Actions workflow 43059932693: SUCCESS; job exam-security-contracts 130659396717 SUCCESS; step de recuperación de notas SUCCESS.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-068 Pendiente beta.
+
+### Commits y continuidad
+- Implementación/pruebas: ba83949eaf59dde15484478681ea2843d4383e48.
+- HEAD verificado de implementación: ba83949eaf59dde15484478681ea2843d4383e48.
+- Cierre documental: se registra en el commit documental posterior.
+- Estado: subalcance saveStudentRecovery corregido; TASK-153 / AUD-NG-386 permanece En ejecución por otras mutaciones EXAM.
+- Siguiente acción: inspeccionar el siguiente wrapper mutador EXAM no cubierto, una sola operación en la siguiente iteración, conservando esta sesión.
+===============================================================================

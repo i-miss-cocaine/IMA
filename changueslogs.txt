@@ -1666,3 +1666,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Suite local aislada 26/26 PASS; parseo Code.gs y suite PASS. Node nativo local NOT RUN por indisponibilidad del checkout/DNS.
 - GitHub Actions workflow 43058558651 SUCCESS; suite dedicada 26/26 PASS en Node 22. Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+===============================================================================
+[2026-11-11] C1.528 — EXAM saveStudentRecovery
+- withAuthorizedStudentRecoveryMutation_ valida permiso RBAC, identidad firmada, userId no vacío y roles admitidos antes de solicitar ScriptLock.
+- El contexto existente revalida RBAC/identidad/rol/scope y controles académicos dentro del lock; se preservan Profesor y roles institucionales permitidos.
+- Harness local focalizado 9/9 PASS; parseo Code.gs PASS; suite dedicada 16/16 PASS en Node 22.
+- GitHub Actions workflow 43059932693 SUCCESS; job 130659396717 SUCCESS.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-068 agregado y Pendiente beta.
+===============================================================================
