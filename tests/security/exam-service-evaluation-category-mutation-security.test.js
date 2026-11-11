@@ -77,7 +77,7 @@ function fixture(options = {}) {
   };
   const names = ["saveEvaluationCategory", "withAuthorizedEvaluationCategoryMutation_",
     "getAuthorizedEvaluationCategoryMutationContext_", "saveEvaluationCategoryUnlocked_"];
-  vm.runInNewContext(names.map(extract).join("\\n"), runtime);
+  vm.runInNewContext(names.map(extract).join("\n"), runtime);
   return { runtime, state, sheets, call: payload => runtime.saveEvaluationCategory(payload) };
 }
 const results = [];
