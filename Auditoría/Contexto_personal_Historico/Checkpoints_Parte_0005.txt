@@ -1408,6 +1408,8 @@ Auditar y asegurar exclusivamente getGradeRectificationHistory del servicio EXAM
 - Implementación: 008a889f013d4f8498ebb8715782b5878dd8ea87.
 - Suite de seguridad: 1a25e3679f7828f24d2d10c383838495a3629613.
 - Ajuste de fixtures: ac5a2f41b2bc3d0efd1799aba938937472e0b493.
+- RBAC explícito estudiante/tutor y corrección de sintaxis: da8aef2c448d18d462a8e4e7e88f2d31666adec1; 01c3d394ceab7b8f15bb279d8d5a84cb8866f29f.
+- Cobertura estática de matriz de permisos: 0311f50b7cdaaa4306529f0cf656088d3ba5075c.
 - Auditoría: 95b214e7b31f011c22824a59c6a488934bf5f4ff.
 - Changelog: e410cd45f32f7973ac9ebcc46ce53b0d36698d57.
 - Beta: 136da8ba3af1d96344a4022805e10bc630e466c4.
