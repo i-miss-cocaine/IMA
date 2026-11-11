@@ -1692,29 +1692,140 @@ function getEvaluationCategoriesUnlocked_(context) {
 
 // [F9-Task03] [P0] - Consolidar la administración de escalas, ponderaciones y métodos de cálculo académico
 function saveEvaluationCategory(payload) {
-  const { categoriaId, nombre, porcentajePonderacion, ambito, escalaId } = payload || {};
-  if (!nombre) throw new Error("Nombre de la categoría es requerido.");
+  return withAuthorizedEvaluationCategoryMutation_(payload, context =>
+    saveEvaluationCategoryUnlocked_(payload, context));
+}
 
+function withAuthorizedEvaluationCategoryMutation_(payload, mutation) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT");
+  try {
+    const context = getAuthorizedEvaluationCategoryMutationContext_(payload);
+    return mutation(context);
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
+}
+
+function getAuthorizedEvaluationCategoryMutationContext_(payload) {
+  const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const permission = validateRolePermission("saveEvaluationCategory", p);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(p);
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim()) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CategoriasEvaluacion");
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["ID", "Nombre", "Ambito", "PorcentajePonderacion", "EscalaID", "Estado"]);
+  const scope = getVerifiedExamDepartmentScope_(p, ss, actor);
+  if (!scope || scope.authorized !== true || !String(scope.institutionId || "").trim()) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
   }
 
-  const data = sheet.getDataRange().getValues();
-  let cid = categoriaId;
+  const ownershipSheet = getSheetOrThrow(ss, "ResourceOwnership");
+  const ownershipHeaders = ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"];
+  const ownershipRows = ownershipSheet.getDataRange().getValues();
+  if (!ownershipRows.length || ownershipHeaders.some((header, index) =>
+      String(ownershipRows[0][index] || "").trim() !== header)) {
+    throw new Error("RESOURCE_OWNERSHIP_SCHEMA_INVALID");
+  }
 
-  if (cid) {
-    const idx = data.findIndex(r => String(r[0]).trim() === String(cid).trim());
-    if (idx !== -1) {
-      sheet.getRange(idx + 1, 2).setValue(nombre);
-      sheet.getRange(idx + 1, 4).setValue(porcentajePonderacion || 0);
-      return { status: "success", message: "Categoría de evaluación actualizada." };
+  const categoryHeaders = ["ID", "Nombre", "Ambito", "PorcentajePonderacion", "EscalaID", "Estado"];
+  const existingSheet = ss.getSheetByName("CategoriasEvaluacion");
+  const requestedId = String(p.categoriaId || "").trim();
+  if (requestedId && !existingSheet) throw new Error("RESOURCE_NOT_AVAILABLE");
+  let categoryRows = existingSheet ? existingSheet.getDataRange().getValues() : [];
+  if (categoryRows.length && categoryHeaders.some((header, index) =>
+      String(categoryRows[0][index] || "").trim() !== header)) {
+    throw new Error("EVALUATION_CATEGORIES_SCHEMA_INVALID");
+  }
+  const matches = requestedId ? categoryRows.slice(1).map((row, index) => ({ row, rowIndex: index + 1 }))
+    .filter(item => String(item.row[0] || "").trim() === requestedId) : [];
+  if (requestedId && matches.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
+
+  let ownership = null, departmentId = "";
+  if (requestedId) {
+    const check = assertExamResourceOwnershipForScope_(ss, scope, "CATEGORIA_EVALUACION", requestedId, "UPDATE", p);
+    if (!check || check.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+    const owned = ownershipRows.slice(1).map((row, index) => ({ row, rowIndex: index + 1 }))
+      .filter(item => String(item.row[1] || "").trim() === String(scope.institutionId).trim() &&
+        String(item.row[2] || "").trim().toUpperCase() === "CATEGORIA_EVALUACION" &&
+        String(item.row[3] || "").trim() === requestedId &&
+        String(item.row[5] || "").trim().toUpperCase() === "ACTIVE");
+    if (owned.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
+    ownership = owned[0];
+    departmentId = String(ownership.row[4] || "").trim();
+    if (!departmentId) throw new Error("RESOURCE_NOT_AVAILABLE");
+  } else {
+    const requestedDepartmentId = String(p.departmentId || p.departamentoId || "").trim();
+    departmentId = requestedDepartmentId ||
+      ((scope.departmentIds || []).length === 1 ? String(scope.departmentIds[0] || "").trim() : "");
+    if (!departmentId || !(scope.departmentIds || []).some(value => String(value || "").trim() === departmentId)) {
+      throw new Error("RESOURCE_SCOPE_DENIED");
     }
   }
 
-  cid = "CAT-" + Date.now();
-  sheet.appendRow([cid, nombre, ambito || "Global", porcentajePonderacion || 0, escalaId || "100", "Activo"]);
+  let sheet = existingSheet;
+  if (!sheet) {
+    sheet = getOrCreateSheet(ss, "CategoriasEvaluacion");
+  } else if (!categoryRows.length) {
+    sheet.appendRow(categoryHeaders);
+    categoryRows = [categoryHeaders];
+  }
+  if (!categoryRows.length && sheet.getLastRow() === 0) {
+    sheet.appendRow(categoryHeaders);
+    categoryRows = [categoryHeaders];
+  }
+  if (categoryRows.length && categoryHeaders.some((header, index) =>
+      String(categoryRows[0][index] || "").trim() !== header)) {
+    throw new Error("EVALUATION_CATEGORIES_SCHEMA_INVALID");
+  }
+  return { ss, actor, scope, sheet, categoryRows, ownershipSheet, ownershipRows, ownership, departmentId,
+    categoryRow: matches.length === 1 ? matches[0] : null };
+}
+
+function saveEvaluationCategoryUnlocked_(payload, context) {
+  const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const nombre = String(p.nombre || "").trim();
+  if (!nombre) throw new Error("Nombre de la categoría es requerido.");
+  const rawPercentage = p.porcentajePonderacion;
+  const percentage = rawPercentage === undefined || rawPercentage === null || rawPercentage === ""
+    ? 0 : Number(rawPercentage);
+  if (!Number.isFinite(percentage) || percentage < 0 || percentage > 100) {
+    throw new Error("EVALUATION_CATEGORY_PERCENTAGE_INVALID");
+  }
+
+  if (context.categoryRow) {
+    const row = context.categoryRow.row;
+    context.sheet.getRange(context.categoryRow.rowIndex + 1, 2).setValue(nombre);
+    context.sheet.getRange(context.categoryRow.rowIndex + 1, 4).setValue(percentage);
+    return { status: "success", message: "Categoría de evaluación actualizada.", data: { categoriaId: String(row[0]).trim() } };
+  }
+
+  const cid = "CAT-" + Utilities.getUuid();
+  if (context.categoryRows.slice(1).some(row => String(row[0] || "").trim() === cid) ||
+      context.ownershipRows.slice(1).some(row => String(row[1] || "").trim() === String(context.scope.institutionId || "").trim() &&
+        String(row[2] || "").trim().toUpperCase() === "CATEGORIA_EVALUACION" && String(row[3] || "").trim() === cid)) {
+    throw new Error("EVALUATION_CATEGORY_ID_COLLISION");
+  }
+  const ownershipId = "OWN-" + Utilities.getUuid();
+  const now = new Date().toISOString();
+  try {
+    context.ownershipSheet.appendRow([ownershipId, context.scope.institutionId, "CATEGORIA_EVALUACION", cid,
+      context.departmentId, "ACTIVE", context.actor.userId, now, now]);
+    context.sheet.appendRow([cid, nombre, p.ambito || "Global", percentage, p.escalaId || "100", "Activo"]);
+  } catch (error) {
+    let rollbackFailed = false;
+    try {
+      const rows = context.sheet.getDataRange().getValues();
+      for (let i = rows.length - 1; i >= 1; i--) if (String(rows[i][0] || "").trim() === cid) context.sheet.deleteRow(i + 1);
+    } catch (_) { rollbackFailed = true; }
+    try {
+      const rows = context.ownershipSheet.getDataRange().getValues();
+      for (let i = rows.length - 1; i >= 1; i--) if (String(rows[i][0] || "").trim() === ownershipId) context.ownershipSheet.deleteRow(i + 1);
+    } catch (_) { rollbackFailed = true; }
+    if (rollbackFailed) throw new Error("EVALUATION_CATEGORY_CREATE_ROLLBACK_FAILED");
+    throw error;
+  }
   return { status: "success", message: "Categoría de evaluación registrada.", data: { categoriaId: cid } };
 }
 
