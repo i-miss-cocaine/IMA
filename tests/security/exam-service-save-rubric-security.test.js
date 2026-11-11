@@ -87,7 +87,7 @@ function fixture(options = {}) {
   };
   const names = ["saveRubric", "withAuthorizedRubricMutation_", "getAuthorizedRubricMutationContext_",
     "saveRubricUnlocked_", "getRubricsUnlocked_"];
-  vm.runInNewContext(names.map(extract).join("\\n"), runtime);
+  vm.runInNewContext(names.map(extract).join("\n"), runtime);
   return { runtime, state, sheets, call: payload => runtime.saveRubric(payload),
     read: () => runtime.getRubricsUnlocked_({}, { ss, scope }) };
 }
