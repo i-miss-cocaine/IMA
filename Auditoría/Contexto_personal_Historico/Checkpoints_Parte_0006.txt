@@ -130,3 +130,10 @@ Subalcance de autorización previa al lock completado; TASK-153 / AUD-NG-386 con
 Siguiente acción: ejecutar/verificar contrato en CI y continuar inventario de mutadores restantes.
 HEAD final: pendiente de confirmación tras publicar.
 ===============================================================================
+
+
+### ADDENDUM DE VERIFICACIÓN — C1.514
+- GitHub Actions **43031994018**: **PASS** sobre `dbcd49f775589359967ba79d5405c73200d1f11a`; job `exam-security-contracts` completado con éxito.
+- El step `Run exam submission deletion audit regression` ejecutó el contrato ampliado con los seis escenarios nuevos y finalizó **success**; el resto de los contratos EXAM también PASS.
+- Ejecución local focalizada del wrapper exacto: **6/6 PASS**. Parseo de Code.gs y contrato: PASS.
+- HEAD de implementación verificado: `dbcd49f775589359967ba79d5405c73200d1f11a`; rama base sin cambios.

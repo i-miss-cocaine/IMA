@@ -1464,3 +1464,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Parseo local de Code.gs y contrato Node: PASS; ejecución focalizada del wrapper se registra con su resultado verificable. CI pendiente de este commit.
 - Sin cambio de esquema. Apps Script/Sheets real NOT RUN; TASK-153 / AUD-NG-386 sigue En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] Verificación C1.514 — workflow 43031994018 PASS
+- Contrato exam-service-delete-submission-audit.test.js: PASS, incluidos los seis escenarios añadidos para orden RBAC/identidad/lock, revalidación, liberación y timeout.
+- Todos los demás pasos del workflow EXAM también finalizaron success. HEAD probado: dbcd49f775589359967ba79d5405c73200d1f11a.
+- Prueba focalizada local del wrapper exacto: 6/6 PASS; parseo Code.gs y contrato: PASS.
+===============================================================================
