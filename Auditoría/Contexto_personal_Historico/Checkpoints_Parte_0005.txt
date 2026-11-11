@@ -2102,3 +2102,28 @@ La verificación local usa dobles de CacheService y no prueba la caché real de 
 ### Estado
 Subalcance purgeSecurityCaches implementado y verificado localmente. TASK-153 / AUD-NG-386 continúan En ejecución por otras superficies EXAM.
 ===============================================================================
+
+===============================================================================
+CHECKPOINT C1.509 — Integridad de calificación manual en gradeExamSubmission
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial: 83cdb20ec7329099aea13a8deee83e4d82de0196.
+### Hallazgo
+gradeExamSubmission ya utilizaba withAuthorizedExamSubmissionMutation_ (lock, permiso, identidad, propiedad del examen y entrega única), pero persistía calificacion, estado y metadatos directamente desde payload sin validar su tipo, rango o longitud.
+### Cambio
+- Exige nota finita entre 0 y 100, máximo dos decimales y tolerancia para representación IEEE-754; persiste como cadena normalizada a dos decimales.
+- Exige estado string no vacío hasta 50 caracteres; comentario string hasta 2.000; tema y asignatura string hasta 120.
+- Rechaza payload inválido después de autorización y antes de setValues; conserva wrapper y columnas existentes.
+### Archivos
+backend/exam-service/Code.gs; tests/security/exam-service-grade-submission-validation.test.js; .github/workflows/exam-service-security-contract.yml; beta_test.txt (BETA-EXAM-062); Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoria.txt; changueslogs.txt; historial e índice.
+### Verificación
+- Parseo completo del Code.gs mediante parser V8: PASS.
+- Contrato aislado sobre gradeExamSubmission productiva en V8: 15/15 PASS, incluyendo límites, valores no finitos, rango, precisión, float representation, metadatos inválidos y denegación del wrapper.
+- Fuente del test Node dedicada parseada correctamente; ejecución Node del archivo y CI aún no observadas.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-062 Pendiente beta.
+### Limitaciones
+El límite superior de 100 coincide con la calificación porcentual calculada por submitExam (0–100). No se restringe el vocabulario de estado para preservar compatibilidad de consumidores; solo se valida que sea string no vacío y acotado.
+### Estado
+Subalcance gradeExamSubmission implementado y con verificaciones locales PASS. TASK-153 / AUD-NG-386 continúan En ejecución por otros mutadores EXAM.
+===============================================================================
