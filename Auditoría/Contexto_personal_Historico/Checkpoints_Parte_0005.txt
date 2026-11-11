@@ -2023,8 +2023,7 @@ backend/exam-service/Code.gs; tests/security/exam-service-gradebook-bulk-apply-s
 ### Verificación
 - GitHub Actions run 43015764891: suite dedicada 24/24 PASS; parseo completo Code.gs PASS mediante vm.Script; security-contract PASS.
 - Workflow global FAIL en departmental-access por ReferenceError withAuthorizedExamRead_ is not defined; read-endpoints skipped. Falla ajena al cambio y ya documentada en iteraciones previas.
-- Ejecución directa en checkout local NOT RUN en esta sesión; Apps Script/Sheets real NOT RUN.
-- Apps Script/Sheets real NOT RUN; BETA-EXAM-058 Pendiente beta.
+- Ejecución directa en checkout local NOT RUN en esta sesión; Apps Script/Sheets real NOT RUN; BETA-EXAM-058 Pendiente beta.
 ### Limitaciones
 CalificacionesEstudiantes no persiste asignatura/período por fila y ConfiguracionAcademica no contiene DepartmentID; se reutiliza la validación contextual del endpoint de guardado sin inferir relaciones inexistentes. La escritura de Sheets no es transaccional.
 TASK-153 / AUD-NG-386 permanecen En ejecución por otras mutaciones EXAM.
