@@ -119,6 +119,34 @@ assert.equal(sheetOpens,opensBeforeContextRecheck,"incomplete revalidated identi
 
 runtime.validateRolePermission=originalPermission;
 runtime.getVerifiedExamIdentity_=originalIdentity;
+
+// Revocación RBAC entre el preflight y la revalidación dentro de ScriptLock.
+const bankBeforePermissionRevocation=bankRows.map(row=>row.slice());
+const ownershipBeforePermissionRevocation=ownershipRows.map(row=>row.slice());
+const opensBeforePermissionRevocation=sheetOpens;
+const lockBeforePermissionRevocation=lockAcquires;
+const releasesBeforePermissionRevocation=lockReleases;
+let permissionCalls=0, identityCallsDuringRevocation=0;
+const permissionSequence=[true,false];
+runtime.validateRolePermission=()=>{
+ permissionCalls++;
+ return {authorized:permissionSequence.shift()===true};
+};
+runtime.getVerifiedExamIdentity_=(...args)=>{
+ identityCallsDuringRevocation++;
+ return originalIdentity(...args);
+};
+assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:"BNK-D1",accion:"actualizar",textoPregunta:"No autorizada"}),/RESOURCE_NOT_AVAILABLE/);
+assert.equal(permissionCalls,2,"RBAC must be revalidated under lock and deny the revoked permission");
+assert.equal(identityCallsDuringRevocation,1,"revoked RBAC must stop before contextual identity lookup");
+assert.equal(lockAcquires,lockBeforePermissionRevocation+1,"authorized preflight acquires the lock before RBAC revalidation");
+assert.equal(lockReleases,releasesBeforePermissionRevocation+1,"RBAC denial under lock must release the shared lock");
+assert.equal(sheetOpens,opensBeforePermissionRevocation,"revoked RBAC must be rejected before opening Sheets");
+assert.deepEqual(bankRows,bankBeforePermissionRevocation,"question bank rows must remain unchanged after RBAC revocation");
+assert.deepEqual(ownershipRows,ownershipBeforePermissionRevocation,"ownership rows must remain unchanged after RBAC revocation");
+runtime.validateRolePermission=originalPermission;
+runtime.getVerifiedExamIdentity_=originalIdentity;
+
 const deleted=runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:"BNK-D1",accion:"eliminar"});
 assert.equal(deleted.status,"success");
 assert.equal(bankRows.find(r=>r[0]==="BNK-D1")[12],"Inactivo");

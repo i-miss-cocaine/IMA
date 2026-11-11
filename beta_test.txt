@@ -897,3 +897,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; suite local dedicada 30/30 PASS en runtime V8 aislado con shims; Node 22/CI para esta revisión NOT RUN; Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de ambas comprobaciones RBAC, identidad, lock y aperturas/escrituras de Sheets; snapshots completos de CalificacionesEstudiantes e HistorialRectificacionesNotas antes/después para ambas variantes.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-079 — TASK-153 / AUD-NG-386 / EXAM: revocación RBAC en manageQuestionBank bajo lock
+- **Módulo/rol:** Servicio EXAM; Profesor con permiso efectivo manageQuestionBank, identidad firmada y departamento autorizado.
+- **Objetivo:** verificar en Apps Script/Sheets desplegado que una revocación del permiso después del preflight impide actualizar, desactivar o crear preguntas en el banco durante la revalidación bajo ScriptLock.
+- **Precondiciones:** versión beta desplegada; pregunta sintética con ownership ACTIVE y snapshots de BancoPreguntas/ResourceOwnership; sesión firmada válida; mecanismo controlado para conceder manageQuestionBank en preflight y denegarlo en la comprobación contextual bajo lock.
+- **Pasos:** invocar manageQuestionBank para actualizar una pregunta existente con permiso concedido en preflight; revocar el permiso antes de la revalidación contextual; revisar respuesta, trazas RBAC/identidad/lock/Sheets y snapshots completos de ambas hojas. Repetir para una operación válida con permiso, identidad, scope y ownership estables.
+- **Resultado esperado:** la revocación produce RESOURCE_NOT_AVAILABLE, libera el lock, evita abrir Sheets y conserva intactas BancoPreguntas y ResourceOwnership; el flujo válido conserva las reglas de actualización y ownership.
+- **Estado:** Pendiente beta; cobertura local asociada C1.574 en espera de CI focalizado.
+- **Evidencia requerida:** commit desplegado, trazas saneadas de ambas comprobaciones RBAC, identidad, lock y accesos a Sheets; snapshots completos de BancoPreguntas y ResourceOwnership antes/después.
+===============================================================================

@@ -1999,3 +1999,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Workflow global falla después en `exam-service-security-contract.test.js:449` por `ReferenceError: withAuthorizedExamCreation_ is not defined`; el mismo error se reproduce en run anterior 43106785251, por lo que es preexistente.
 - C1.573 Completada en cobertura local/CI focalizado. Apps Script/Sheets real NOT RUN; BETA-EXAM-074 sigue Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.574 — TASK-153 / manageQuestionBank: revocación RBAC bajo ScriptLock
+- Añadido escenario del handler real con secuencia RBAC [true, false] entre el preflight y getAuthorizedQuestionBankMutationContext_.
+- Debe rechazar con RESOURCE_NOT_AVAILABLE, liberar ScriptLock, evitar aperturas de Sheets y preservar snapshots completos de BancoPreguntas y ResourceOwnership.
+- La suite focalizada de question bank incorpora el caso; ejecución Node 22/CI pendiente. BETA-EXAM-079 ampliada.
+- Sin cambios backend productivos, roles, permisos, scope, ownership ni persistencia.
+===============================================================================

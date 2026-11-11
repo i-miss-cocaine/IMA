@@ -4181,3 +4181,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Alcance:** solo se amplía `tests/security/exam-service-exam-mutation-security.test.js`; backend productivo, permisos, roles, scope, ownership y persistencia sin cambios. BETA-EXAM-074 incorpora la variante de revocación.
 - **Verificación aislada:** suite ejecutada en V8 con shims compatibles para assert/fs/path/vm: **18/18 PASS**; parseo de Code.gs y del archivo de prueba PASS. Node 22/Codespaces y CI quedan pendientes de ejecución/verificación posterior al commit. Apps Script/Sheets real: NOT RUN, reservado a beta.
 - **Estado:** C1.573 **Completada** en verificación local aislada y CI focalizado; el workflow global conserva un fallo preexistente ajeno a esta suite. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
+
+
+
+### 10.223 TASK-153 / AUD-NG-386 — cubrir revocación RBAC bajo ScriptLock en manageQuestionBank (C1.574)
+- **Brecha confirmada:** `manageQuestionBank` valida RBAC en preflight y `getAuthorizedQuestionBankMutationContext_` vuelve a validarlo al entrar en el contexto bajo ScriptLock. La suite cubría identidad incompleta durante esa revalidación, pero no permiso concedido→revocado.
+- **Cobertura añadida:** escenario del handler real con RBAC `[true, false]`. Exige `RESOURCE_NOT_AVAILABLE`, dos comprobaciones RBAC, una sola consulta de identidad, lock adquirido/liberado, cero aperturas de Sheets y snapshots completos de BancoPreguntas y ResourceOwnership intactos.
+- **Alcance:** solo se amplía `tests/security/exam-service-question-bank-security.test.js`; backend productivo, RBAC, roles, scope, ownership y persistencia sin cambios. BETA-EXAM-079 incorpora el escenario desplegado.
+- **Verificación inicial:** parseo y suite focalizada pendientes de CI Node 22; Apps Script/Sheets real NOT RUN, reservado a beta.
+- **Estado:** C1.574 En ejecución hasta confirmar CI focalizado. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.

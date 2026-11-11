@@ -2079,3 +2079,23 @@ HEAD inicial: `685e81c59a479939c227eb34cc6957dd34d73aa7`. Rama: `NG_beta_0.0.0.1
 - C1.573 **Completada** en cobertura local/CI focalizado. Apps Script/Sheets real: NOT RUN; BETA-EXAM-074 permanece Pendiente beta.
 - HEAD de implementación: `f00eb98817d8557cb9d39d0fbbcd9fb3367c56aa`. Rama base verificada sin cambios: `44d9891132332e692dbe2ba8602b41f50a508a59`.
 ===============================================================================
+
+
+===============================================================================
+## C1.574 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — cubrir revocación RBAC durante revalidación bajo ScriptLock de `manageQuestionBank`.
+
+### Hallazgo y cambio
+- `manageQuestionBank` valida permiso en preflight y vuelve a validarlo en `getAuthorizedQuestionBankMutationContext_` dentro del lock. La suite ya cubría degradación de identidad, pero no revocación RBAC entre ambas comprobaciones.
+- Se añadió escenario del handler real con secuencia RBAC `[true, false]`. Exige `RESOURCE_NOT_AVAILABLE`, dos llamadas RBAC, solo una consulta de identidad, lock adquirido/liberado, cero aperturas de Sheets y snapshots completos de BancoPreguntas y ResourceOwnership intactos.
+- Solo cambia `tests/security/exam-service-question-bank-security.test.js`; backend productivo, RBAC, roles, scope, ownership y persistencia sin cambios.
+
+### Verificación
+- Parseo JavaScript y ejecución focalizada Node 22/CI: pendientes.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-079 permanece Pendiente beta.
+
+### Estado y continuidad
+C1.574 En ejecución hasta confirmar la suite focalizada en CI. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
+
+HEAD inicial: `bb8e5282ca7d8694129c5d3ab28593fe718a3e5a`. Rama: `NG_beta_0.0.0.1_work`. Rama base esperada sin cambios: `44d9891132332e692dbe2ba8602b41f50a508a59`. HEAD final: se confirma tras publicar.
+===============================================================================
