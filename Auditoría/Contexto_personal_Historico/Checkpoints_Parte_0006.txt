@@ -89,3 +89,10 @@ Integración CI completada en el árbol de trabajo. TASK-153 / AUD-NG-386 perman
 Siguiente acción: verificar el workflow de este commit y continuar inventario de handlers mutadores EXAM sin repetir contratos ya cubiertos.
 HEAD final: se confirma tras commit y lectura de la referencia.
 ===============================================================================
+
+
+### ADDENDUM DE VERIFICACIÓN — C1.513
+- Workflow GitHub Actions **43030509930**: **PASS** (conclusión success) sobre commit `bd1aeddaa658f8f6eb606eaec8b0cbc5e0b381fd`.
+- Los pasos `Run question bank mutation security regression` y `Run question bank read security regression`: **PASS**; también finalizaron PASS los contratos EXAM restantes del job.
+- La ejecución semántica local continúa NOT RUN por la limitación de checkout documentada; CI sí ejecutó ambos scripts Node en runner Ubuntu/Node 22.
+- HEAD de la rama de trabajo verificado: `bd1aeddaa658f8f6eb606eaec8b0cbc5e0b381fd`; rama base sin cambios.

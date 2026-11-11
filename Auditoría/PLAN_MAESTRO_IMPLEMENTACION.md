@@ -3697,3 +3697,10 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Beta:** no aplica; el cambio solo conecta contratos locales existentes y no modifica comportamiento desplegable.
 - **Estado:** integración CI completada; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
 - **Siguiente:** continuar el inventario de handlers mutadores EXAM desde las rutas restantes y seleccionar la siguiente brecha demostrable de autorización, identidad o integridad.
+
+
+### 10.166 TASK-153 / AUD-NG-386 — verificación CI de contratos del banco de preguntas (C1.513)
+- **Resultado:** workflow GitHub Actions 43030509930, commit `bd1aeddaa658f8f6eb606eaec8b0cbc5e0b381fd`, conclusión `success`.
+- **Evidencia:** los steps `Run question bank mutation security regression` y `Run question bank read security regression` completaron `success`; los contratos EXAM restantes del mismo job también finalizaron correctamente.
+- **Distinción de entorno:** ejecución semántica local NOT RUN por falta de checkout; la ejecución real de ambos contratos se verificó en el runner Ubuntu con Node 22. Apps Script/Sheets real NOT RUN; no aplica beta por tratarse de integración de pruebas.
+- **Continuidad:** C1.513 queda verificado; TASK-153 / AUD-NG-386 permanece En ejecución por otras rutas mutadoras EXAM.

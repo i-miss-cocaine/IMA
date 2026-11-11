@@ -1448,3 +1448,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Validación local estructural del workflow y parseo sintáctico de ambos scripts: PASS. Ejecución semántica local NOT RUN por ausencia de checkout accesible; se requiere resultado del workflow disparado por este commit para confirmar ejecución real.
 - Sin cambios de producción ni requisito beta. TASK-153 / AUD-NG-386 continúa En ejecución por otras superficies EXAM.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] Verificación C1.513 — workflow 43030509930 PASS
+- Los contratos exam-service-question-bank-security.test.js y exam-service-question-bank-read-security.test.js terminaron PASS en GitHub Actions (Ubuntu / Node 22), junto con los demás pasos del workflow.
+- Ejecución semántica local NOT RUN por falta de checkout; CI PASS verificado sobre bd1aeddaa658f8f6eb606eaec8b0cbc5e0b381fd.
+===============================================================================
