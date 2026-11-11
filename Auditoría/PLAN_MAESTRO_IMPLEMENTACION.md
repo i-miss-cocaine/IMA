@@ -4052,3 +4052,10 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cambio:** createExam ahora ejecuta preflight RBAC/identidad, adquiere el lock compartido, revalida RBAC/identidad y solo entonces abre Sheets y resuelve scope/departamento. La persistencia y el rollback de examen, ownership y preguntas permanecen dentro de la sección protegida. Se amplió la suite dedicada con escenarios de pérdida de identidad y revocación RBAC bajo lock; BETA-EXAM-060 documenta la validación desplegada.
 - **Verificación local:** parseo V8 de Code.gs y suite: PASS; suite dedicada 14/14 PASS en V8 aislada con shims. Node 22/CI para este commit NOT RUN. Apps Script/Sheets real NOT RUN.
 - **Estado:** cobertura local completada; no se alteran matriz RBAC, roles, scope permitido ni esquema de persistencia. TASK-153 / AUD-NG-386 continúa En ejecución.
+
+
+### 10.206 TASK-153 / AUD-NG-386 — revalidar RBAC e identidad de submitExam bajo ScriptLock (C1.554)
+- **Hallazgo:** submitExam comprobaba permiso e identidad firmada antes de adquirir ScriptLock, pero después de esperar el lock ejecutaba submitExamUnlocked_ sin repetir RBAC ni identidad en el wrapper. La revalidación contextual interna comprobaba identidad, pero no cubría la revocación del permiso dinámico/estático durante la espera.
+- **Cambio:** submitExam conserva el preflight para rechazar solicitudes inválidas sin competir por el lock; después de adquirirlo vuelve a ejecutar validateRolePermission y getVerifiedExamIdentity_, exigiendo actor autorizado, userId no vacío y rol Estudiante/Alumno antes de invocar la mutación. No se cambian roles, permisos, asignaciones, scope ni reglas de intentos.
+- **Verificación local:** parseo V8 de Code.gs y suite de seguridad submitExam: PASS; 11/11 escenarios en runtime V8 aislado, incluidos RBAC revocado e identidad degradada bajo lock, liberación del lock y timeout. Node 22/CI para este cambio NOT RUN. Apps Script/Sheets real NOT RUN.
+- **Estado:** completada la corrección y cobertura local; BETA-EXAM-069 actualizado y Pendiente beta. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario restante de mutaciones EXAM.

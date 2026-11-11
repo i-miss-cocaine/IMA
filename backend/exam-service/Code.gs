@@ -1493,6 +1493,16 @@ function submitExam(payload) {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("EXAM_SUBMISSION_LOCK_TIMEOUT");
   try {
+    const lockedPermission = validateRolePermission("submitExam", payload);
+    if (!lockedPermission || lockedPermission.authorized !== true) {
+      throw new Error("RESOURCE_NOT_AVAILABLE");
+    }
+    const lockedActor = getVerifiedExamIdentity_(payload);
+    const lockedRole = String(lockedActor && lockedActor.role || "").trim();
+    if (!lockedActor || lockedActor.authorized !== true || !String(lockedActor.userId || "").trim() ||
+        (lockedRole !== "Estudiante" && lockedRole !== "Alumno")) {
+      throw new Error("RESOURCE_NOT_AVAILABLE");
+    }
     return submitExamUnlocked_(payload);
   } finally {
     lock.releaseLock();

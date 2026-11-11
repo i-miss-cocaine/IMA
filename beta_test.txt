@@ -782,15 +782,13 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 
 ===============================================================================
 ## BETA-EXAM-069 — TASK-153 / AUD-NG-386 / EXAM: identidad completa en submitExam
-- **Módulo/rol:** EXAM; Estudiante y Alumno.
-- **Objetivo:** comprobar en Apps Script/Sheets real que submitExam exige permiso efectivo, identidad firmada autorizada, userId no vacío y rol de estudiante antes de solicitar ScriptLock.
-- **Precondiciones:** entorno beta disponible, cuentas sintéticas Estudiante/Alumno y cuentas de roles no admitidos; examen activo asignado y preguntas válidas; acceso controlado a EntregasExamen.
-- **Pasos:** probar RBAC denegado, identidad no autorizada, userId vacío y rol no estudiante; ejecutar envío válido como Estudiante y Alumno; probar límite de intentos y concurrencia/reintento; confirmar liberación del lock en éxito y error.
-- **Resultado esperado:** solicitudes inválidas no adquieren lock ni abren Sheets; identidades completas revalidan contexto bajo lock; un envío válido persiste una sola entrega y respeta el límite de intentos.
-- **Estado:** Pendiente beta.
-- **Evidencia requerida:** trazas RBAC/identidad/lock/Sheets, registros de entrega y resultado de intentos concurrentes.
-
-===============================================================================
+- **Módulo/rol:** EXAM; Estudiante y Alumno con permiso efectivo submitExam.
+- **Objetivo:** comprobar en Apps Script/Sheets real que submitExam exige RBAC e identidad firmada autorizada antes del lock y vuelve a validar ambos dentro de ScriptLock antes de ejecutar la mutación.
+- **Precondiciones:** entorno beta disponible, cuentas sintéticas Estudiante/Alumno y cuentas de roles no admitidos; examen activo asignado y preguntas válidas; acceso controlado a EntregasExamen; mecanismo controlado para revocar permiso o degradar identidad entre preflight y validación bajo lock.
+- **Pasos:** probar RBAC denegado, identidad no autorizada, userId vacío y rol no estudiante; ejecutar envío válido como Estudiante y Alumno; después de un preflight válido provocar RBAC denegado en la segunda comprobación y, en otro intento, identidad no autorizada o userId vacío/espacios bajo lock; verificar que ambas denegaciones liberan el lock y no abren Sheets ni invocan la mutación; probar límite de intentos y concurrencia/reintento.
+- **Resultado esperado:** solicitudes inválidas en preflight no adquieren lock; una revocación RBAC o degradación de identidad bajo lock devuelve RESOURCE_NOT_AVAILABLE, libera el lock y no abre Sheets ni persiste EntregasExamen; un envío válido revalida contexto, persiste una sola entrega y respeta el límite de intentos.
+- **Estado:** Pendiente beta; suite local ampliada 11/11 PASS en runtime V8 aislado; Node 22/CI para este cambio NOT RUN; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** trazas RBAC/identidad/lock/Sheets, registros de entrega y resultado de intentos concurrentes, confirmación de ausencia de escrituras en denegaciones y liberación del lock.
 ## BETA-EXAM-070 — TASK-153 / AUD-NG-386 / EXAM: identidad completa en createExam
 - **Módulo/rol:** Servicio EXAM; actor con permiso efectivo createExam y scope departamental autorizado.
 - **Objetivo:** confirmar en Apps Script/Sheets real que createExam rechaza actor ausente/no autorizado o userId vacío antes de abrir Sheets, consultar datos institucionales o adquirir ScriptLock.

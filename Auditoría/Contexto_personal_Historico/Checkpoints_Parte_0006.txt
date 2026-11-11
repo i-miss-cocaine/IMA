@@ -1629,3 +1629,26 @@ C1.553 completa la corrección y cobertura local de createExam. TASK-153 / AUD-N
 
 Commit de implementación: 7cea38a5761a4272e2c85e536f34a4db97dc429f (fix(exam): revalidate createExam authorization under lock). HEAD de la rama de trabajo verificado tras la publicación; Node 22/CI y Apps Script/Sheets permanecen NOT RUN.
 ===============================================================================
+
+
+## C1.554 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — revalidación de submitExam bajo ScriptLock.
+
+### Hallazgo y cambio
+- submitExam comprobaba RBAC e identidad firmada antes de adquirir el lock, pero no repetía ambas comprobaciones dentro de la sección protegida.
+- Se mantiene el preflight y, tras adquirir ScriptLock, se revalidan RBAC, identidad autorizada, userId no vacío y rol Estudiante/Alumno antes de invocar submitExamUnlocked_.
+- La denegación por revocación RBAC o degradación de identidad libera el lock y evita ejecutar la mutación. No se modifican roles, permisos, asignaciones, scope, límite de intentos ni esquema.
+- BETA-EXAM-069 actualizado para validación desplegada de ambas condiciones bajo lock.
+
+### Verificación
+- Parseo V8 de backend/exam-service/Code.gs: PASS.
+- Parseo V8 de tests/security/exam-service-submit-mutation-security.test.js: PASS.
+- Suite dedicada: 11/11 PASS en runtime V8 aislado con shims.
+- Node 22/CI para el commit actual: NOT RUN.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-069 permanece Pendiente beta.
+
+### Estado y continuidad
+C1.554 completa la corrección y cobertura local de submitExam. TASK-153 / AUD-NG-386 continúa En ejecución; siguiente iteración: seleccionar una sola mutación EXAM restante, sin repetir C1.553/C1.554.
+
+Commit de implementación/documentación: pendiente de publicación; HEAD final se confirma tras el commit.
+===============================================================================
