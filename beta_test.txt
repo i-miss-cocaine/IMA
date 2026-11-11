@@ -665,3 +665,13 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta. La prueba local aislada y CI se registrarán al verificar el commit; Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit/build desplegado, tokens/roles/scopes, asignación y roster, snapshots de calificaciones antes/después, categoría/ownership, cierre, conteos aplicados/omitidos y denegaciones.
 ===============================================================================
+
+===============================================================================
+## BETA-EXAM-059 — TASK-153 / AUD-NG-386 / EXAM: copyEvaluationSetupBetweenGroups
+- **Objetivo:** validar en beta la copia de configuración de categorías entre grupos autorizados y el rechazo seguro de esquemas incompatibles, asignaciones ajenas y recursos sin ownership.
+- **Precondiciones:** spreadsheet institucional aislado; sesión firmada de Profesor; dos asignaciones únicas de origen/destino; hoja CategoriasEvaluacion con esquema legacy de ocho columnas y categorías de origen con ResourceOwnership activo único; fixtures alternativos con esquema canónico de seis columnas, ownership ausente/ambiguo y asignaciones ajenas.
+- **Pasos:** probar sesión/RBAC inválidos, rol distinto de Profesor, scope ausente, asignación de origen/destino ajena o duplicada, origen igual a destino, categoría con ID duplicado, ownership ausente/duplicado/fuera de scope, lock ocupado, colisión UUID, error al escribir categorías y rollback compensatorio; con esquema legacy válido, comprobar que copia las filas y registra ownership de cada ID nuevo; con esquema canónico de seis columnas, comprobar rechazo sin mutaciones.
+- **Resultado esperado:** identidad firmada y permiso específico; ambas asignaciones exactas y únicas del Profesor; ownership activo único y dentro del scope para cada categoría fuente; IDs nuevos únicos; lock liberado; escritura de ownership y categorías compensada ante fallo capturable; nunca se crea la hoja implícitamente ni se fuerza el esquema canónico de seis columnas a una estructura legacy de ocho.
+- **Estado:** Pendiente beta; Apps Script/Sheets real NOT RUN. Harness local aislado: 19 escenarios PASS; parseo completo de Code.gs y parseo del contrato PASS.
+- **Evidencia requerida:** build desplegado, identidad/rol/scope, asignaciones origen/destino, headers de categoría/ownership, snapshots antes/después, IDs y ownership nuevos, rechazo del esquema canónico, simulación de fallo/rollback y logs sin datos sensibles.
+===============================================================================
