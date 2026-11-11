@@ -873,7 +873,7 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 ### TASK-153 — seguimiento C1.506 / AUD-NG-386 EXAM
 - copyEvaluationSetupBetweenGroups queda protegido por permiso específico, identidad firmada de Profesor, scope activo, asignaciones únicas de origen/destino y ownership activo único de categorías fuente.
 - IDs UUID y ResourceOwnership se registran por cada copia; escrituras por lote con compensación ante fallo capturable; ScriptLock serializa la operación.
-- Harness V8 local aislado 19 escenarios PASS; parseo Code.gs y contrato PASS. CI pendiente de observación en el checkpoint.
+- Harness V8 local aislado 22 escenarios PASS; parseo Code.gs y contrato PASS. CI pendiente de observación en el checkpoint.
 - BETA-EXAM-059 Pendiente beta. TASK-153 permanece En ejecución; AUD-NG-386 abierto.
 - Limitación: la ruta legacy exige CategoriasEvaluacion de ocho columnas; el esquema canónico de seis columnas se rechaza de forma segura. ConfiguracionAcademica carece de DepartmentID y no permite atribuir un grupo a un departamento.
 ===============================================================================
