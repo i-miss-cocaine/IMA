@@ -3762,7 +3762,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Hallazgo:** `withAuthorizedCompetencyEvaluationMutation_` adquiría ScriptLock antes de validar el permiso efectivo `saveCompetencyEvaluation` y la identidad firmada; una invocación directa no autorizada podía competir por el lock.
 - **Corrección:** valida RBAC e identidad firmada con `userId` no vacío antes de solicitar ScriptLock; el contexto existente revalida RBAC, identidad, scope, asignación académica, rúbrica y esquema dentro del lock.
 - **Pruebas locales:** suite dedicada 24/24 PASS en V8 local compatible; parseo completo de Code.gs y contrato PASS. Incluye denegación pre-lock, identidad incompleta, revalidación contextual, timeout y llamada anidada.
-- **CI:** pendiente de ejecutar/verificar sobre el commit de esta tarea.
+- **CI:** GitHub Actions workflow 43038212516 PASS sobre el commit de implementación `d27b86312ff6d0b0194101c5e35f070a17fa2a96`; job `exam-security-contracts` completado con éxito, incluida la suite dedicada de competency evaluation en Node 22 y los contratos EXAM.
 - **Beta:** BETA-EXAM-050 actualizado; Apps Script/Sheets real NOT RUN.
 - **Estado:** subalcance saveCompetencyEvaluation corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
 - **Siguiente:** continuar inventario de wrappers mutadores restantes, sin repetir saveRubric ni saveCompetencyEvaluation.

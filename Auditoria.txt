@@ -1685,3 +1685,9 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Cobertura local:** 24/24 escenarios PASS en V8 local compatible; parseo completo Code.gs y suite PASS. Se prueban permiso denegado e identidad ausente/incompleta antes de solicitar el lock, revalidación contextual, timeout, reentrada y liberación.
 - **CI:** pendiente de ejecución sobre el commit de esta tarea. Apps Script/Sheets real NOT RUN.
 - **Beta:** BETA-EXAM-050 actualizado para comprobar el orden de autorización/lock en despliegue.
+
+
+### ADDENDUM FINAL DE CI — C1.519 / saveCompetencyEvaluation
+- GitHub Actions workflow `43038212516`: **completed / success** sobre `d27b86312ff6d0b0194101c5e35f070a17fa2a96`.
+- Job `exam-security-contracts`: SUCCESS; step `Run competency evaluation mutation security regression`: SUCCESS en Node 22. Los restantes contratos EXAM del workflow también finalizaron SUCCESS.
+- Suite dedicada local V8 compatible 24/24 PASS; CI Node 22 PASS. Apps Script/Sheets real NOT RUN; beta permanece Pendiente beta.

@@ -344,3 +344,12 @@ Subalcance saveCompetencyEvaluation corregido. TASK-153 / AUD-NG-386 continúa E
 Siguiente acción: revisar el siguiente wrapper mutador elegible, sin repetir saveRubric ni saveCompetencyEvaluation.
 HEAD final: pendiente de confirmar tras publicar.
 ===============================================================================
+
+
+### ADDENDUM FINAL DE CI — C1.519
+- GitHub Actions workflow `43038212516`: **completed / success** sobre el commit de implementación `d27b86312ff6d0b0194101c5e35f070a17fa2a96`.
+- Job `exam-security-contracts`: SUCCESS; `Run competency evaluation mutation security regression`: SUCCESS en Node 22; los demás contratos EXAM también finalizaron SUCCESS.
+- Suite dedicada V8 local compatible: 24/24 PASS; Node 22 CI: PASS.
+- Apps Script/Sheets real: NOT RUN. BETA-EXAM-050 permanece Pendiente beta, sin bloquear el cierre de implementación.
+- Siguiente tarea elegible: inspeccionar el siguiente wrapper mutador de TASK-153 que aún adquiera ScriptLock antes de autorización; no iniciado en esta iteración.
+- HEAD de implementación probado: `d27b86312ff6d0b0194101c5e35f070a17fa2a96`; HEAD documental final se confirmará tras publicar.
