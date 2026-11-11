@@ -1767,29 +1767,124 @@ function getRubricsUnlocked_(payload, context) {
 }
 
 function saveRubric(payload) {
-  const { rubricaId, titulo, asignatura, criterios } = payload || {};
-  if (!titulo) throw new Error("Título de la rúbrica es requerido.");
+  return withAuthorizedRubricMutation_(payload, context => saveRubricUnlocked_(payload, context));
+}
 
+function withAuthorizedRubricMutation_(payload, mutation) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("RUBRIC_MUTATION_LOCK_TIMEOUT");
+  try {
+    const context = getAuthorizedRubricMutationContext_(payload);
+    return mutation(context);
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
+}
+
+function getAuthorizedRubricMutationContext_(payload) {
+  const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const permission = validateRolePermission("saveRubric", p);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(p);
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim()) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const scope = getVerifiedExamDepartmentScope_(p, ss, actor);
+  if (!scope || scope.authorized !== true || !String(scope.institutionId || "").trim()) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+
+  const ownershipSheet = getSheetOrThrow(ss, "ResourceOwnership");
+  const ownershipHeaders = ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"];
+  const ownershipRows = ownershipSheet.getDataRange().getValues();
+  if (!ownershipRows.length || ownershipHeaders.some((header, index) =>
+      String(ownershipRows[0][index] || "").trim() !== header)) {
+    throw new Error("RESOURCE_OWNERSHIP_SCHEMA_INVALID");
+  }
+
   const sheet = getOrCreateSheet(ss, "RubricasEvaluacion");
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["ID", "Titulo", "Asignatura", "Estado", "CriteriosJSON"]);
+  let rubricRows = sheet.getDataRange().getValues();
+  const rubricHeaders = ["ID", "Titulo", "Asignatura", "Estado", "CriteriosJSON"];
+  if (!rubricRows.length) {
+    sheet.appendRow(rubricHeaders);
+    rubricRows = [rubricHeaders];
+  }
+  if (rubricHeaders.some((header, index) => String(rubricRows[0][index] || "").trim() !== header)) {
+    throw new Error("RUBRICS_SCHEMA_INVALID");
   }
 
-  const rid = rubricaId || ("RUB-" + Date.now());
-  const critJSON = JSON.stringify(criterios || []);
+  const requestedId = String(p.rubricaId || "").trim();
+  const rubricMatches = requestedId ? rubricRows.slice(1).map((row, index) => ({ row, rowIndex: index + 1 }))
+    .filter(item => String(item.row[0] || "").trim() === requestedId) : [];
+  if (requestedId && rubricMatches.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
 
-  const data = sheet.getDataRange().getValues();
-  const idx = data.findIndex(r => String(r[0]).trim() === String(rid).trim());
-
-  if (idx !== -1) {
-    sheet.getRange(idx + 1, 2).setValue(titulo);
-    sheet.getRange(idx + 1, 3).setValue(asignatura || "General");
-    sheet.getRange(idx + 1, 5).setValue(critJSON);
+  let ownership = null, departmentId = "";
+  if (requestedId) {
+    const check = assertExamResourceOwnershipForScope_(ss, scope, "RUBRICA_EVALUACION", requestedId, "UPDATE", p);
+    if (!check || check.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+    const owned = ownershipRows.slice(1).map((row, index) => ({ row, rowIndex: index + 1 }))
+      .filter(item => String(item.row[1] || "").trim() === String(scope.institutionId).trim() &&
+        String(item.row[2] || "").trim().toUpperCase() === "RUBRICA_EVALUACION" &&
+        String(item.row[3] || "").trim() === requestedId &&
+        String(item.row[5] || "").trim().toUpperCase() === "ACTIVE");
+    if (owned.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
+    ownership = owned[0];
+    departmentId = String(ownership.row[4] || "").trim();
+    if (!departmentId) throw new Error("RESOURCE_NOT_AVAILABLE");
   } else {
-    sheet.appendRow([rid, titulo, asignatura || "General", "Activa", critJSON]);
+    const requestedDepartmentId = String(p.departmentId || p.departamentoId || "").trim();
+    departmentId = requestedDepartmentId ||
+      ((scope.departmentIds || []).length === 1 ? String(scope.departmentIds[0] || "").trim() : "");
+    if (!departmentId || !(scope.departmentIds || []).some(value => String(value || "").trim() === departmentId)) {
+      throw new Error("RESOURCE_SCOPE_DENIED");
+    }
+  }
+  return { ss, actor, scope, sheet, rubricRows, ownershipSheet, ownershipRows, ownership, departmentId,
+    rubricRow: rubricMatches.length === 1 ? rubricMatches[0] : null };
+}
+
+function saveRubricUnlocked_(payload, context) {
+  const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const titulo = String(p.titulo || "").trim();
+  if (!titulo) throw new Error("RUBRIC_TITLE_REQUIRED");
+  let critJSON;
+  try { critJSON = JSON.stringify(p.criterios || []); }
+  catch (_) { throw new Error("RUBRIC_CRITERIA_INVALID"); }
+  if (typeof critJSON !== "string") throw new Error("RUBRIC_CRITERIA_INVALID");
+
+  if (context.rubricRow) {
+    const row = context.rubricRow.row;
+    const updated = [titulo, p.asignatura || "General", row[3] || "Activa", critJSON];
+    context.sheet.getRange(context.rubricRow.rowIndex + 1, 2, 1, 4).setValues([updated]);
+    return { status: "success", message: "Rúbrica guardada correctamente.", data: { rubricaId: String(row[0]).trim() } };
   }
 
+  const rid = "RUB-" + Utilities.getUuid();
+  if (context.rubricRows.slice(1).some(row => String(row[0] || "").trim() === rid) ||
+      context.ownershipRows.slice(1).some(row => String(row[1] || "").trim() === String(context.scope.institutionId || "").trim() &&
+        String(row[2] || "").trim().toUpperCase() === "RUBRICA_EVALUACION" && String(row[3] || "").trim() === rid)) {
+    throw new Error("RUBRIC_ID_COLLISION");
+  }
+  const ownershipId = "OWN-" + Utilities.getUuid();
+  const now = new Date().toISOString();
+  try {
+    context.ownershipSheet.appendRow([ownershipId, context.scope.institutionId, "RUBRICA_EVALUACION", rid,
+      context.departmentId, "ACTIVE", context.actor.userId, now, now]);
+    context.sheet.appendRow([rid, titulo, p.asignatura || "General", "Activa", critJSON]);
+  } catch (error) {
+    let rollbackFailed = false;
+    try {
+      const rows = context.sheet.getDataRange().getValues();
+      for (let i = rows.length - 1; i >= 1; i--) if (String(rows[i][0] || "").trim() === rid) context.sheet.deleteRow(i + 1);
+    } catch (_) { rollbackFailed = true; }
+    try {
+      const rows = context.ownershipSheet.getDataRange().getValues();
+      for (let i = rows.length - 1; i >= 1; i--) if (String(rows[i][0] || "").trim() === ownershipId) context.ownershipSheet.deleteRow(i + 1);
+    } catch (_) { rollbackFailed = true; }
+    if (rollbackFailed) throw new Error("RUBRIC_CREATE_ROLLBACK_FAILED");
+    throw error;
+  }
   return { status: "success", message: "Rúbrica guardada correctamente.", data: { rubricaId: rid } };
 }
 
