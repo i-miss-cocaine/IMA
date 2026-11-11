@@ -2070,3 +2070,12 @@ C1.573 En ejecución hasta confirmar la suite en Node 22/Codespaces y revisar el
 
 HEAD inicial: `685e81c59a479939c227eb34cc6957dd34d73aa7`. Rama: `NG_beta_0.0.0.1_work`. Rama base esperada sin cambios: `44d9891132332e692dbe2ba8602b41f50a508a59`. HEAD final: se confirma tras publicar.
 ===============================================================================
+
+
+### Addendum de cierre local/CI — C1.573
+- Suite focalizada ejecutada en V8 aislado con shims compatibles: **18/18 PASS**.
+- GitHub Actions run **43107771200**, commit `f00eb98817d8557cb9d39d0fbbcd9fb3367c56aa`: paso `Run exam mutation security regression` **SUCCESS**, Node.js 22.23.4.
+- El workflow global falla después en `exam-service-security-contract.test.js:449` por `ReferenceError: withAuthorizedExamCreation_ is not defined`. El mismo fallo exacto aparece en el run previo **43106785251** sobre el commit anterior; se clasifica como preexistente y no causado por C1.573.
+- C1.573 **Completada** en cobertura local/CI focalizado. Apps Script/Sheets real: NOT RUN; BETA-EXAM-074 permanece Pendiente beta.
+- HEAD de implementación: `f00eb98817d8557cb9d39d0fbbcd9fb3367c56aa`. Rama base verificada sin cambios: `44d9891132332e692dbe2ba8602b41f50a508a59`.
+===============================================================================

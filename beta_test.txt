@@ -843,7 +843,8 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Pasos:** invocar deleteExam con identidad válida en preflight; hacer que la revalidación contextual devuelva actor autorizado con userId vacío/espacios; revisar Examenes, ResourceOwnership, trazas de lock y accesos a Sheets. Repetir con identidad estable y scope/ownership válidos.
 - **Resultado esperado:** identidad incompleta produce RESOURCE_NOT_AVAILABLE; no se abre Sheets ni se modifica el estado del examen ni ResourceOwnership; lock liberado. El flujo válido conserva baja lógica, ownership y reglas existentes.
 - **Extensión C1.573:** repetir `deleteExam` con permiso concedido en preflight y revocado durante la validación RBAC bajo ScriptLock (`[true, false]`). Resultado esperado: `RESOURCE_NOT_AVAILABLE`, lock liberado, cero aperturas de Sheets, cero escrituras/bajas y filas completas de Examenes y ResourceOwnership intactas.
-- **Estado:** Pendiente beta.
+- **Estado:** Pendiente beta. Cobertura local asociada C1.573: V8 aislado 18/18 PASS; CI run 43107771200, paso focalizado Node 22 PASS. Apps Script/Sheets real NOT RUN.
+
 - **Evidencia requerida:** commit desplegado, trazas saneadas de RBAC/identidad/lock/Sheets, snapshots de Examenes y ResourceOwnership antes/después y resultado de ambas variantes.
 ===============================================================================
 
