@@ -2071,3 +2071,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - El workflow global falla después en `exam-service-security-contract.test.js:449` por `ReferenceError: withAuthorizedExamCreation_ is not defined`, fallo preexistente ajeno a C1.577.
 - C1.577 Completada en verificación local y CI focalizado; BETA-EXAM-082 Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.578 — reparación del fixture createExam en contrato general EXAM
+- Se añadieron withAuthorizedExamCreation_ y createExamUnlocked_ a las funciones extraídas por makeCreationRuntime; el fixture ahora ejecuta el wrapper y worker reales.
+- Antes del cambio, el contrato fallaba al invocar createExam directamente por dependencias ausentes en el runtime de prueba. Tras el cambio, parseo de Code.gs y ejecución completa del contrato en V8 aislado con shims compatibles: PASS.
+- Solo cambia la suite de seguridad y registros; backend productivo, RBAC, roles, scope, ownership y persistencia sin cambios. CI posterior al commit pendiente; beta no aplica.
+===============================================================================

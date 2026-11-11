@@ -2163,3 +2163,25 @@ HEAD inicial: `3550427d2b34c1a60937fdef4d9e035096efc7b1`. HEAD final de implemen
 ===============================================================================
 
 - Commit de implementación/pruebas C1.577: `49211fd30c7d15d242e08b6f534cb785fe4fe69c`. Suite focalizada re-ejecutada desde el contenido publicado: 21/21 PASS. CI run `43110460170`: paso focalizado SUCCESS; fallo global posterior por ReferenceError preexistente.
+
+
+===============================================================================
+## C1.578 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — corregir el fixture de `createExam` en el contrato general de seguridad EXAM.
+
+### Hallazgo y corrección
+- El fixture `makeCreationRuntime` de `tests/security/exam-service-security-contract.test.js` omitía `withAuthorizedExamCreation_` y `createExamUnlocked_`, aunque invocaba el handler `createExam` real. El workflow general fallaba en la aserción de autorización directa por dependencias no cargadas en el runtime aislado.
+- Se añadieron ambos helpers al conjunto extraído. El cambio queda limitado a la suite; no se modifica backend productivo ni políticas de seguridad.
+
+### Verificación local
+- Parseo sintáctico de `backend/exam-service/Code.gs` y del contrato general: PASS.
+- Ejecución completa de `exam-service-security-contract.test.js` en V8 aislado con shims compatibles: PASS; todas las aserciones completaron, incluidas autenticación, identidad, propiedad docente, aislamiento de departamento, creación y rollback.
+- Node 22/CI: pendiente de ejecución/observación tras publicar. Apps Script/Sheets real: no aplica; no cambia código desplegable.
+
+### Estado
+- C1.578: corrección del harness completada localmente; CI pendiente.
+- TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
+- Siguiente acción: verificar el workflow disparado por este commit y continuar con la siguiente brecha técnica elegible, sin repetir las coberturas C1.577 y anteriores.
+
+HEAD inicial: `4451fd9d161fc72afab08b2a09263ec363e0141e`. HEAD final: se confirma tras publicar.
+===============================================================================
