@@ -1766,3 +1766,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Suite dedicada 28/28 PASS en V8 aislado con shims; parseo V8 de Code.gs/test PASS. Node 22 nativo/CI y Apps Script/Sheets real NOT RUN.
 - Sin cambios productivos ni de permisos/roles; BETA-EXAM-073 continúa Pendiente beta.
 ===============================================================================
+
+
+[2026-11-11] C1.540 — TASK-153 / deleteExam y revalidación de identidad bajo lock
+- Se añade cobertura del handler real deleteExam, su wrapper/contexto y la función de baja lógica.
+- La identidad pierde userId tras preflight: rechazo RESOURCE_NOT_AVAILABLE antes de abrir Sheets; lock liberado; cero escrituras/borrados; examen y ownership intactos.
+- Suite específica 13/13 PASS en V8 aislado con shims; parseo V8 PASS. Node22/CI y Apps Script/Sheets real NOT RUN.
+- BETA-EXAM-074 Pendiente beta; sin cambios productivos.

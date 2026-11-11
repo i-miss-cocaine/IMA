@@ -3950,3 +3950,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** suite dedicada 28/28 PASS en V8 aislado con shims fs/vm/assert; parseo V8 de Code.gs y test PASS. Node 22 nativo/CI posterior NOT RUN; Apps Script/Sheets real NOT RUN.
 - **Beta:** BETA-EXAM-073 ya incluye deleteExamSubmission y permanece Pendiente beta.
 - **Estado:** cobertura local de ambas mutaciones (grade/delete) completada; sin cambios productivos, permisos, roles, ownership ni persistencia. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario restante.
+
+
+### 10.193 TASK-153 / AUD-NG-386 — ejecutar deleteExam real ante pérdida de identidad bajo lock (C1.540)
+- **Hallazgo de cobertura:** la suite general verificaba que el wrapper rechaza una identidad incompleta bajo lock, pero su callback era sintético. No ejecutaba el handler deleteExam ni comprobaba el invariante de baja lógica y ResourceOwnership.
+- **Cambio:** se agrega escenario que ejecuta deleteExam, deleteExamUnlocked_, withAuthorizedExamMutation_, getAuthorizedExamMutationContext_ y assertExamResourceOwnershipForScope_ reales. Actor válido en preflight; actor autorizado con userId de espacios en la revalidación contextual.
+- **Contrato comprobado:** RESOURCE_NOT_AVAILABLE tras dos verificaciones RBAC/identidad; lock adquirido y liberado; cero aperturas de Sheets, cero escrituras/borrados; filas de Examenes y ResourceOwnership permanecen idénticas y ownership ACTIVE.
+- **Verificación local:** suite específica 13/13 PASS en V8 aislado con shims; parseo V8 de Code.gs y test PASS. Node 22 nativo/CI NOT RUN; Apps Script/Sheets real NOT RUN.
+- **Beta:** BETA-EXAM-074 añadido para validar deleteExam en entorno desplegado; Pendiente beta.
+- **Estado:** cobertura local de revalidación bajo lock en el handler destructivo deleteExam añadida; sin cambios productivos. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario restante.

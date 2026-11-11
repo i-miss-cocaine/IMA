@@ -107,4 +107,61 @@ test(() => {
   assert.equal(x.state.mutations, 0);
   assert.equal(x.state.releases, 0);
 });
-process.stdout.write("exam-service-exam-mutation-security: " + passed + "/12 PASS\\n");
+
+test(() => {
+  const ownershipCheck = extractFunction("assertExamResourceOwnershipForScope_");
+  const context = extractFunction("getAuthorizedExamMutationContext_");
+  const wrapper = extractFunction("withAuthorizedExamMutation_");
+  const deleteHandler = extractFunction("deleteExam");
+  const deleteWorker = extractFunction("deleteExamUnlocked_");
+  const state = { permissionCalls: 0, identityCalls: 0, opens: 0, lockAttempts: 0,
+    releases: 0, held: false, writes: 0, deletes: 0 };
+  const actors = [
+    { authorized: true, userId: "TEACHER-1", role: "Profesor" },
+    { authorized: true, userId: "   ", role: "Profesor" }
+  ];
+  const examRows = [
+    ["ID", "Titulo", "Asignatura", "Grado", "Seccion", "FechaLimite", "Tiempo", "Estado", "ProfesorID"],
+    ["EXAM-1", "Examen", "Matemáticas", "10", "A", "", "", "Inactivo", "TEACHER-1"]
+  ];
+  const ownershipRows = [
+    ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"],
+    ["OWN-1", "I1", "EXAMEN", "EXAM-1", "D1", "ACTIVE", "TEACHER-1", "", ""]
+  ];
+  const examSnapshot = JSON.stringify(examRows), ownershipSnapshot = JSON.stringify(ownershipRows);
+  const examSheet = { getDataRange() { return { getValues() { return examRows; } }; },
+    getRange() { return { setValue() { state.writes++; }, setValues() { state.writes++; } }; } };
+  const ownershipSheet = { getDataRange() { return { getValues() { return ownershipRows; } }; },
+    getRange() { return { setValue() { state.writes++; } }; } };
+  const deliveriesSheet = { getDataRange() { return { getValues() { return [["EntregaID","ExamenID"], ["E-1","EXAM-1"]]; } }; } };
+  const ss = { getSheetByName(name) {
+    return ({ Examenes: examSheet, ResourceOwnership: ownershipSheet, EntregasExamen: deliveriesSheet })[name] || null;
+  }};
+  const lock = { tryLock() { state.lockAttempts++; state.held = true; return true; },
+    releaseLock() { state.releases++; state.held = false; } };
+  const runtime = {
+    validateRolePermission() { state.permissionCalls++; return { authorized: true }; },
+    getVerifiedExamIdentity_() { return actors[Math.min(state.identityCalls++, actors.length - 1)]; },
+    getVerifiedExamDepartmentScope_() { return { authorized: true, institutionId: "I1", departmentIds: ["D1"] }; },
+    SpreadsheetApp: { openById() { state.opens++; return ss; } }, SPREADSHEET_ID: "SYNTHETIC",
+    LockService: { getScriptLock() { return lock; } },
+    getSheetOrThrow(sheet, name) { const value = sheet.getSheetByName(name); if (!value) throw new Error("missing " + name); return value; },
+    EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_: new Map(), String, Error
+  };
+  const executable = [ownershipCheck, context, wrapper, deleteWorker, deleteHandler].join("\n");
+  const remove = new Function("runtime", "with (runtime) { " + executable + "; return deleteExam; }")(runtime);
+  assert.throws(() => remove({ examenId: "EXAM-1" }), /RESOURCE_NOT_AVAILABLE/,
+    "deleteExam must reject the identity that loses its userId during context revalidation");
+  assert.equal(state.permissionCalls, 2);
+  assert.equal(state.identityCalls, 2);
+  assert.equal(state.lockAttempts, 1);
+  assert.equal(state.releases, 1);
+  assert.equal(state.held, false);
+  assert.equal(state.opens, 0);
+  assert.equal(state.writes, 0);
+  assert.equal(state.deletes, 0);
+  assert.equal(JSON.stringify(examRows), examSnapshot);
+  assert.equal(JSON.stringify(ownershipRows), ownershipSnapshot);
+});
+
+process.stdout.write("exam-service-exam-mutation-security: " + passed + "/13 PASS\\n");

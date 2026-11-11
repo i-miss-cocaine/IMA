@@ -1875,3 +1875,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Resultado:** RESOURCE_NOT_AVAILABLE; una apertura/lectura de EntregasExamen; cero deleteRow, ninguna creación/acceso del historial de eliminación y ScriptLock liberado.
 - **Verificación:** suite dedicada completa 28/28 PASS en V8 aislado con shims; parseo V8 de Code.gs/test y harness específico PASS. Node 22 nativo/CI y Apps Script/Sheets real NOT RUN.
 - **Beta:** BETA-EXAM-073 incluye ambas mutaciones y permanece Pendiente beta.
+
+
+### C1.540 — AUD-NG-386 / revalidación de identidad bajo lock en deleteExam
+- **Hallazgo:** la suite general probaba el wrapper con callback sintético, sin ejecutar el handler deleteExam ni proteger explícitamente el estado de Examenes/ResourceOwnership.
+- **Cambio:** escenario real con identidad válida en preflight y userId en espacios en contexto bajo lock.
+- **Resultado:** RESOURCE_NOT_AVAILABLE; lock liberado; cero aperturas de Sheets, escrituras o borrados; examen sin cambios y ownership permanece ACTIVE.
+- **Verificación:** suite dedicada 13/13 PASS en V8 aislado con shims; parseo V8 de Code.gs/test y harness PASS. Node22/CI y Apps Script/Sheets real NOT RUN.
+- **Beta:** BETA-EXAM-074 Pendiente beta.

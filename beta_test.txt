@@ -832,3 +832,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de las tres validaciones de identidad, permisos, aperturas/lecturas/escrituras de Sheets, estado de la entrega antes/después y estado del lock.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-074 — TASK-153 / AUD-NG-386 / EXAM: identidad incompleta en deleteExam bajo lock
+- **Módulo/rol:** Servicio EXAM; docente propietario u otro actor con permiso efectivo deleteExam y ownership/scope válidos.
+- **Objetivo:** confirmar en Apps Script/Sheets desplegado que deleteExam vuelve a validar la identidad firmada dentro de ScriptLock y no ejecuta la baja lógica si el userId deja de estar disponible.
+- **Precondiciones:** versión beta desplegada; examen sintético único con ResourceOwnership ACTIVE; sesión firmada válida inicialmente; mecanismo controlado para invalidar/alterar la identidad entre preflight y contexto bajo lock.
+- **Pasos:** invocar deleteExam con identidad válida en preflight; hacer que la revalidación contextual devuelva actor autorizado con userId vacío/espacios; revisar Examenes, ResourceOwnership, trazas de lock y accesos a Sheets. Repetir con identidad estable y scope/ownership válidos.
+- **Resultado esperado:** identidad incompleta produce RESOURCE_NOT_AVAILABLE; no se abre Sheets ni se modifica el estado del examen ni ResourceOwnership; lock liberado. El flujo válido conserva baja lógica, ownership y reglas existentes.
+- **Estado:** Pendiente beta.
+- **Evidencia requerida:** commit desplegado, trazas saneadas de RBAC/identidad/lock/Sheets, snapshots de Examenes y ResourceOwnership antes/después y resultado de ambas variantes.
+===============================================================================
