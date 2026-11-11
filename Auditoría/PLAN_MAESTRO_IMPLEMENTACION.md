@@ -4251,3 +4251,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Alcance:** solo fixture/prueba en `tests/security/exam-service-gradebook-bulk-apply-security.test.js); backend productivo, permisos, identidad, scope y persistencia sin cambios. BETA-EXAM-057 actualizado.
 - **Verificación local:** parseo de `backend/exam-service/Code.gs` y del contrato PASS; ejecución completa aislada V8 con shims compatibles **31/31 PASS**, incluido el escenario de contención reentrante. CI Node.js 22 pendiente de ejecución/observación tras commit. Apps Script/Sheets real NOT RUN; la simultaneidad de infraestructura desplegada sigue Pendiente beta.
 - **Estado:** C1.580 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para las superficies restantes.
+
+
+### 10.230 TASK-153 / AUD-NG-386 — concurrencia durante auditoría en reopenPeriodGradebook (C1.581)
+- **Brecha confirmada:** `reopenPeriodGradebook` protege con ScriptLock una transición en `CierresPeriodos` seguida por `appendRow` en `HistorialRectificacionesNotas`. El contrato cubría reentrada en apertura de Sheets, validaciones y rollback por fallo de auditoría, pero no reentraba durante el append de la fila de auditoría.
+- **Cobertura añadida:** hook sintético en `mkSheet.appendRow` y escenario de reentrada al handler real mientras el cierre ya está marcado `Reabierto`. La solicitud anidada debe recibir `GRADEBOOK_REOPEN_LOCK_TIMEOUT`; la exterior conserva éxito, deja exactamente una fila de auditoría y libera ScriptLock.
+- **Alcance:** fixture/prueba en `tests/security/exam-service-period-gradebook-reopen-security.test.js`; backend productivo sin cambios. BETA-EXAM-055 actualizado.
+- **Verificación local:** parseo de `backend/exam-service/Code.gs` y del contrato PASS; suite completa aislada V8 con shims compatibles **29/29 PASS**. CI Node.js 22 pendiente de observación tras commit. Apps Script/Sheets real NOT RUN; concurrencia desplegada continúa Pendiente beta.
+- **Estado:** C1.581 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para las rutas restantes.

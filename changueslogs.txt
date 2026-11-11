@@ -2114,3 +2114,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Suite V8 aislada 31/31 PASS; parseo Code.gs/test PASS. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN.
 - BETA-EXAM-057 actualizado. TASK-153 / AUD-NG-386 continúa En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.581 — concurrencia de reapertura durante append de auditoría
+- Se agregó hook sintético en appendRow y una segunda llamada a reopenPeriodGradebook mientras la solicitud exterior conserva ScriptLock.
+- La segunda solicitud recibe GRADEBOOK_REOPEN_LOCK_TIMEOUT; el cierre queda Reabierto una sola vez, se registra una sola fila de auditoría y se libera el lock exterior.
+- Suite V8 aislada 29/29 PASS; parseo Code.gs/test PASS. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN.
+- BETA-EXAM-055 actualizado. TASK-153 / AUD-NG-386 continúa En ejecución.
+===============================================================================

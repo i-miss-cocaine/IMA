@@ -2246,3 +2246,23 @@ HEAD inicial: `4451fd9d161fc72afab08b2a09263ec363e0141e`. HEAD final: se confirm
 - Siguiente: revisar la siguiente ruta de mutación sensible a concurrencia que carezca de prueba local equivalente; no repetir cobertura vigente.
 - HEAD inicial: `2a68e1449acb46869aeb10725af4c72b010faf53`; HEAD final: se confirma tras publicar.
 ===============================================================================
+
+
+===============================================================================
+## C1.581 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — concurrencia de reopenPeriodGradebook durante append de auditoría.
+
+### Hallazgo y corrección
+- La ruta de reapertura actualiza CierresPeriodos y registra la acción en HistorialRectificacionesNotas bajo ScriptLock. La suite cubría reentrada al abrir Sheets y rollback ante fallo de append, pero no una segunda solicitud durante la escritura del registro de auditoría.
+- Se agregó hook de append al fixture y reentrada al handler real. La solicitud anidada recibe GRADEBOOK_REOPEN_LOCK_TIMEOUT; la exterior completa, mantiene el estado Reabierto, escribe una sola fila de auditoría y libera ScriptLock.
+
+### Verificación local
+- Parseo sintáctico de backend y contrato: PASS.
+- Ejecución completa del contrato en V8 aislado con shims compatibles: **29/29 PASS**.
+- CI Node.js 22: pendiente de observación tras commit. Apps Script/Sheets real: NOT RUN; BETA-EXAM-055 Pendiente beta.
+
+### Estado y continuidad
+- C1.581 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución.
+- Siguiente: inspeccionar rutas EXAM restantes para detectar un riesgo de concurrencia distinto, sin repetir cobertura existente.
+- HEAD inicial: `82596e4f6a19c16730bfc90d435e7d472d05363b`; HEAD final: se confirma tras publicar.
+===============================================================================
