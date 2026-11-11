@@ -692,6 +692,8 @@ function getQuestionBankUnlocked_(payload, context) {
 }
 function createExam(p) {
   p = p && typeof p === "object" && !Array.isArray(p) ? p : {};
+  const permission = validateRolePermission("createExam", p);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
   const actor = getVerifiedExamIdentity_(p);
   if (!actor.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
 
