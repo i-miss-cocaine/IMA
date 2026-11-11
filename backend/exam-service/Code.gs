@@ -506,7 +506,9 @@ function getAuthorizedQuestionBankMutationContext_(payload) {
   const permission = validateRolePermission("manageQuestionBank", payload);
   if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
   const actor = getVerifiedExamIdentity_(payload);
-  if (!actor.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim()) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const scope = getVerifiedExamDepartmentScope_(payload, ss, actor);
   if (!scope.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
@@ -552,7 +554,9 @@ function withAuthorizedQuestionBankMutation_(payload, mutation) {
   const permission = validateRolePermission("manageQuestionBank", payload);
   if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
   const actor = getVerifiedExamIdentity_(payload);
-  if (!actor || actor.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim()) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
 
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("QUESTION_BANK_LOCK_TIMEOUT");

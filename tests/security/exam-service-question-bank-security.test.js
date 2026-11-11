@@ -36,7 +36,7 @@ const claims = {
  "other-token": {userId:"TEACHER-2",role:"Profesor"},
  "student-token": {userId:"STUDENT-1",role:"Estudiante"}
 };
-let failBankAppend=false, lockAvailable=true, lockHeld=false, beforeAcquire=null, lockAcquires=0, lockReleases=0, uuid=0;
+let failBankAppend=false, lockAvailable=true, lockHeld=false, beforeAcquire=null, lockAcquires=0, lockReleases=0, sheetOpens=0, uuid=0;
 function makeSheet(rows,kind) {
  return {
   getDataRange(){return {getValues:()=>rows.map(row=>row.slice())};},
@@ -57,7 +57,7 @@ const runtime={
  getDynamicPermissionsForRole(){return null;},hasActiveDelegationForAction(){return false;},
  verifySessionToken(token){return claims[token]||null;},validateContextualAccess(){return {authorized:true};},
  PropertiesService:{getScriptProperties(){return {getProperty(name){return name==="IMA_INSTITUTION_ID"?"I1":null;}};}},
- SpreadsheetApp:{openById(){return ss;}},getSheetOrThrow(spreadsheet,name){const sheet=spreadsheet.getSheetByName(name);if(!sheet)throw Error("Missing "+name);return sheet;},
+ SpreadsheetApp:{openById(){sheetOpens++;return ss;}},getSheetOrThrow(spreadsheet,name){const sheet=spreadsheet.getSheetByName(name);if(!sheet)throw Error("Missing "+name);return sheet;},
  getOrCreateSheet(spreadsheet,name){const sheet=spreadsheet.getSheetByName(name);if(!sheet)throw Error("Missing "+name);return sheet;},
  Utilities:{getUuid(){uuid++;return "UUID-"+uuid;}},
  LockService:{getScriptLock(){return {
@@ -94,6 +94,29 @@ runtime.getVerifiedExamIdentity_=()=>({authorized:false});
 const lockBeforeIdentityDenial=lockAcquires;
 assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:"BNK-D1",accion:"actualizar"}),/RESOURCE_NOT_AVAILABLE/);
 assert.equal(lockAcquires,lockBeforeIdentityDenial,"identity denial must happen before acquiring the shared lock");
+runtime.validateRolePermission=originalPermission;
+runtime.getVerifiedExamIdentity_=originalIdentity;
+
+// La identidad autorizada también debe incluir userId firmado antes del lock y de abrir Sheets.
+runtime.validateRolePermission=()=>({authorized:true});
+runtime.getVerifiedExamIdentity_=()=>({authorized:true,role:"Profesor"});
+const lockBeforeMissingUser=lockAcquires, opensBeforeMissingUser=sheetOpens;
+assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:"BNK-D1",accion:"actualizar"}),/RESOURCE_NOT_AVAILABLE/);
+assert.equal(lockAcquires,lockBeforeMissingUser,"missing userId must be rejected before lock");
+assert.equal(sheetOpens,opensBeforeMissingUser,"missing userId must be rejected before opening Sheets");
+
+// Revalidar dentro del lock: si la identidad cambia y pierde userId, no debe abrir Sheets.
+let identityCalls=0;
+runtime.getVerifiedExamIdentity_=()=>++identityCalls===1
+  ? {authorized:true,userId:"TEACHER-1",role:"Profesor"}
+  : {authorized:true,role:"Profesor"};
+const lockBeforeContextRecheck=lockAcquires, opensBeforeContextRecheck=sheetOpens, releasesBeforeContextRecheck=lockReleases;
+assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:"BNK-D1",accion:"actualizar"}),/RESOURCE_NOT_AVAILABLE/);
+assert.equal(identityCalls,2,"identity must be revalidated under lock");
+assert.equal(lockAcquires,lockBeforeContextRecheck+1,"valid preflight acquires lock before context revalidation");
+assert.equal(lockReleases,releasesBeforeContextRecheck+1,"context denial releases shared lock");
+assert.equal(sheetOpens,opensBeforeContextRecheck,"incomplete revalidated identity must be rejected before Sheets");
+
 runtime.validateRolePermission=originalPermission;
 runtime.getVerifiedExamIdentity_=originalIdentity;
 const deleted=runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:"BNK-D1",accion:"eliminar"});
