@@ -354,5 +354,5 @@ HEAD final: pendiente de confirmar tras publicar.
 - Siguiente tarea elegible: inspeccionar el siguiente wrapper mutador de TASK-153 que aún adquiera ScriptLock antes de autorización; no iniciado en esta iteración.
 - HEAD de implementación probado: `d27b86312ff6d0b0194101c5e35f070a17fa2a96`.
 - Commit documental de cierre CI: `89e743e5ede2c0a2cf09d07da05c99cf3f568d45`.
-- HEAD final de la rama autorizada tras el cierre documental: `89e743e5ede2c0a2cf09d07da05c99cf3f568d45`.
-- Comparación final: rama de trabajo 1.230 commits adelante y 0 atrás; base `NG_beta_0.0.0.1` sin modificaciones.
+- HEAD final de la rama autorizada tras el cierre documental: `3ba3d6b5639e2ed1bedf054abc5d99f248675675`.
+- Comparación final: rama de trabajo 1.231 commits adelante y 0 atrás; base `NG_beta_0.0.0.1` sin modificaciones.
