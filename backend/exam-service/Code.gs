@@ -1736,6 +1736,22 @@ function getRubricsUnlocked_(payload, context) {
     throw new Error("RUBRICS_SCHEMA_INVALID");
   }
 
+  const ownershipSheet = ss.getSheetByName("ResourceOwnership");
+  const ownershipRows = ownershipSheet ? ownershipSheet.getDataRange().getValues() : [];
+  const ownershipHeaders = ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"];
+  if (ownershipRows.length && ownershipHeaders.some((header, index) =>
+      String(ownershipRows[0][index] || "").trim() !== header)) {
+    throw new Error("RESOURCE_OWNERSHIP_SCHEMA_INVALID");
+  }
+  const scope = context.scope || {};
+  const ownedRubrics = Object.create(null);
+  ownershipRows.slice(1).forEach(row => {
+    if (String(row[2] || "").trim().toUpperCase() !== "RUBRICA_EVALUACION") return;
+    const id = String(row[3] || "").trim();
+    if (!id) return;
+    if (!ownedRubrics[id]) ownedRubrics[id] = [];
+    ownedRubrics[id].push(row);
+  });
   const idCounts = {};
   data.slice(1).forEach(row => {
     const id = String(row[0] || "").trim();
@@ -1746,6 +1762,17 @@ function getRubricsUnlocked_(payload, context) {
   data.slice(1).forEach(row => {
     const id = String(row[0] || "").trim();
     if (!id || idCounts[id] !== 1 || String(row[3] || "").trim() === "Eliminada") return;
+    const ownershipRecords = ownedRubrics[id];
+    if (ownershipRecords && ownershipRecords.length) {
+      if (ownershipRecords.length !== 1) return;
+      const owner = ownershipRecords[0];
+      const departmentId = String(owner[4] || "").trim();
+      const inScope = String(owner[5] || "").trim().toUpperCase() === "ACTIVE" &&
+        String(owner[1] || "").trim() === String(scope.institutionId || "").trim() &&
+        !!departmentId && (scope.institutionWide === true ||
+          (scope.departmentIds || []).some(value => String(value || "").trim() === departmentId));
+      if (!inScope) return;
+    }
     if (asignatura && normalizeString(row[2]) !== normalizeString(asignatura)) return;
     let criterios = [];
     if (row[4] !== "" && row[4] !== null && row[4] !== undefined) {
@@ -1803,18 +1830,15 @@ function getAuthorizedRubricMutationContext_(payload) {
     throw new Error("RESOURCE_OWNERSHIP_SCHEMA_INVALID");
   }
 
-  const sheet = getOrCreateSheet(ss, "RubricasEvaluacion");
-  let rubricRows = sheet.getDataRange().getValues();
+  const requestedId = String(p.rubricaId || "").trim();
+  const existingSheet = ss.getSheetByName("RubricasEvaluacion");
+  if (requestedId && !existingSheet) throw new Error("RESOURCE_NOT_AVAILABLE");
+  let rubricRows = existingSheet ? existingSheet.getDataRange().getValues() : [];
   const rubricHeaders = ["ID", "Titulo", "Asignatura", "Estado", "CriteriosJSON"];
-  if (!rubricRows.length) {
-    sheet.appendRow(rubricHeaders);
-    rubricRows = [rubricHeaders];
-  }
-  if (rubricHeaders.some((header, index) => String(rubricRows[0][index] || "").trim() !== header)) {
+  if (rubricRows.length && rubricHeaders.some((header, index) =>
+      String(rubricRows[0][index] || "").trim() !== header)) {
     throw new Error("RUBRICS_SCHEMA_INVALID");
   }
-
-  const requestedId = String(p.rubricaId || "").trim();
   const rubricMatches = requestedId ? rubricRows.slice(1).map((row, index) => ({ row, rowIndex: index + 1 }))
     .filter(item => String(item.row[0] || "").trim() === requestedId) : [];
   if (requestedId && rubricMatches.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
@@ -1839,6 +1863,19 @@ function getAuthorizedRubricMutationContext_(payload) {
     if (!departmentId || !(scope.departmentIds || []).some(value => String(value || "").trim() === departmentId)) {
       throw new Error("RESOURCE_SCOPE_DENIED");
     }
+  }
+
+  let sheet = existingSheet;
+  if (!sheet) {
+    sheet = getOrCreateSheet(ss, "RubricasEvaluacion");
+    rubricRows = sheet.getDataRange().getValues();
+  } else if (!rubricRows.length && !requestedId) {
+    sheet.appendRow(rubricHeaders);
+    rubricRows = [rubricHeaders];
+  }
+  if (!rubricRows.length || rubricHeaders.some((header, index) =>
+      String(rubricRows[0][index] || "").trim() !== header)) {
+    throw new Error("RUBRICS_SCHEMA_INVALID");
   }
   return { ss, actor, scope, sheet, rubricRows, ownershipSheet, ownershipRows, ownership, departmentId,
     rubricRow: rubricMatches.length === 1 ? rubricMatches[0] : null };
