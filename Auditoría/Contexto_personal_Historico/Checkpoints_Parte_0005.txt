@@ -2072,9 +2072,9 @@ createExam verificaba token e identidad y scope, pero no ejecutaba validateRoleP
 ### Archivos
 backend/exam-service/Code.gs; tests/security/exam-service-create-exam-security.test.js; .github/workflows/exam-service-security-contract.yml; beta_test.txt (BETA-EXAM-060); Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoria.txt; changueslogs.txt; historial e índice de checkpoints.
 ### Verificación
-- Parseo completo de Code.gs mediante Node vm.Script y contrato dedicado.
-- Casos locales de creación positiva, permiso denegado antes de abrir Sheets, identidad/scope/departamento inválidos, lock, esquema inválido, append parcial y fallos de examen/preguntas; resultados pendientes hasta ejecución.
-- CI y Apps Script/Sheets real no se declaran PASS hasta obtener evidencia.
+- Contrato local aislado 10/10 PASS con Node 22 sobre la función createExam extraída y fixtures; incluye creación positiva, permiso denegado antes de abrir Sheets, identidad/scope/departamento, lock, esquema ownership, append parcial y fallos de examen/preguntas con rollback.
+- Sintaxis de la función modificada PASS. Parseo del Code.gs completo no verificado localmente; el estado del workflow de push no pudo verificarse con el conector disponible.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-060 Pendiente beta.
 ### Estado
 Subalcance createExam; TASK-153 / AUD-NG-386 permanecen En ejecución por otras mutaciones EXAM.
 ===============================================================================
