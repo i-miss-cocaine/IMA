@@ -257,3 +257,35 @@ HEAD final: pendiente de confirmación tras publicar.
 - El step `Run node tests/security/exam-service-security-contract.test.js` y todos los demás contratos EXAM del workflow finalizaron **success**.
 - Parseo local de Code.gs y contrato: PASS; harness focalizado sobre el wrapper exacto: **6/6 PASS**; aserciones estáticas de RBAC/identidad/scope/ownership/esquema: PASS.
 - HEAD de implementación probado: `c54b9e2a1d3f1fa1073d2b2f193251cca2d879d3`.
+
+
+===============================================================================
+CHECKPOINT C1.518 — autorización previa al lock en saveRubric
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial: 3de2533d4eb9eb3dbc952d04187620a2a87ced16.
+### Hallazgo
+withAuthorizedRubricMutation_ adquiría ScriptLock antes de validar RBAC e identidad firmada; una llamada directa no autorizada podía competir por el lock compartido.
+### Corrección
+- validateRolePermission("saveRubric", payload) y getVerifiedExamIdentity_(payload), con userId no vacío, se ejecutan antes de solicitar ScriptLock.
+- getAuthorizedRubricMutationContext_ permanece dentro del lock y revalida permiso, identidad, scope departamental, ownership activo único y esquema; se conserva el control TOCTOU.
+- finally conserva la liberación del lock ante éxito, rechazo contextual y excepción.
+### Pruebas
+- Harness local determinista sobre el wrapper productivo extraído: 7/7 PASS (RBAC/identidad pre-lock, flujo autorizado con revalidación, denegación RBAC contextual, denegación de identidad contextual, liberación ante excepción y timeout).
+- Aserciones estáticas/dinámicas añadidas al contrato Node; parseo completo de Code.gs y del contrato: pendiente.
+- GitHub Actions: pendiente de ejecución/verificación.
+- Apps Script/Sheets real: NOT RUN; sin cambio de esquema.
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-security-contract.test.js
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+### Estado y continuidad
+Subalcance saveRubric corregido. TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente acción: verificar parseo/contrato y CI; después continuar inventario sin repetir wrappers endurecidos.
+HEAD final: pendiente de confirmación tras publicar.
+===============================================================================

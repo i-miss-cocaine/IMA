@@ -1655,3 +1655,13 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Beta:** BETA-EXAM-063 Pendiente beta. TASK-153 / AUD-NG-386 permanecen En ejecución por otros mutadores EXAM.
 - **Límite operativo:** si falla la actualización final después de borrar, el evento queda en DELETE_REQUESTED y la función informa EXAM_SUBMISSION_DELETION_AUDIT_FINALIZATION_FAILED; la evidencia inicial no se pierde y requiere reconciliación operativa.
 ===============================================================================
+
+
+===============================================================================
+### AUD-NG-386 — saveRubric (C1.518)
+- **Hallazgo alto:** `withAuthorizedRubricMutation_` adquiría ScriptLock antes de validar RBAC e identidad firmada; solicitudes directas inválidas podían competir por el lock compartido.
+- **Corrección:** validación previa de `saveRubric` e identidad firmada con actor no vacío; la validación completa de permiso, identidad, scope, ownership activo único y esquema se mantiene dentro del lock para evitar TOCTOU.
+- **Pruebas locales:** harness determinista del wrapper productivo extraído 7/7 PASS; contrato de seguridad ampliado con comprobaciones de orden pre-lock y revalidación contextual. Parseo completo Code.gs/contrato Node pendiente.
+- **CI:** pendiente de ejecución/verificación. Apps Script/Sheets real NOT RUN; sin cambios de esquema.
+- **Estado:** subalcance saveRubric corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+===============================================================================

@@ -184,6 +184,96 @@ assert.deepEqual(categoryWrapperResult.events, [
   "permission:saveEvaluationCategory", "identity", "lock-request", "lock-acquire:5000"
 ], "category lock timeout must occur only after preflight authorization");
 
+
+const rubricMutationWrapperContract = extractFunction(source, "withAuthorizedRubricMutation_");
+assert.ok(rubricMutationWrapperContract.indexOf('validateRolePermission("saveRubric", payload)') < rubricMutationWrapperContract.indexOf("LockService.getScriptLock()"),
+  "rubric mutation wrapper must validate RBAC before requesting the shared lock");
+assert.ok(rubricMutationWrapperContract.indexOf("getVerifiedExamIdentity_(payload)") < rubricMutationWrapperContract.indexOf("LockService.getScriptLock()"),
+  "rubric mutation wrapper must validate signed identity before requesting the shared lock");
+const rubricMutationContextContract = extractFunction(source, "getAuthorizedRubricMutationContext_");
+assert.ok(rubricMutationContextContract.includes('validateRolePermission("saveRubric", p)') &&
+  rubricMutationContextContract.includes("getVerifiedExamIdentity_(p)") &&
+  rubricMutationContextContract.includes("getVerifiedExamDepartmentScope_(p, ss, actor)") &&
+  rubricMutationContextContract.includes('assertExamResourceOwnershipForScope_(ss, scope, "RUBRICA_EVALUACION"'),
+  "rubric mutation context must revalidate RBAC, signed identity, department scope and resource ownership under lock");
+assert.ok(extractFunction(source, "saveRubric").includes("withAuthorizedRubricMutation_"),
+  "saveRubric must delegate to its serialized authorization wrapper");
+
+function runRubricMutationWrapper(options = {}, mutation = () => "ok") {
+  const events = [];
+  let permissionCalls = 0, identityCalls = 0;
+  const sandbox = {
+    validateRolePermission(action, payload) {
+      events.push("permission:" + action);
+      permissionCalls++;
+      return { authorized: !(options.preflightPermissionDenied || (options.contextPermissionDenied && permissionCalls > 1)) };
+    },
+    getVerifiedExamIdentity_(payload) {
+      events.push("identity");
+      identityCalls++;
+      return { authorized: !(options.preflightIdentityDenied || (options.contextIdentityDenied && identityCalls > 1)), userId: "actor-1" };
+    },
+    LockService: { getScriptLock() {
+      events.push("lock-request");
+      return {
+        tryLock(timeout) { events.push("lock-acquire:" + timeout); return options.lockAvailable !== false; },
+        releaseLock() { events.push("lock-release"); }
+      };
+    } },
+    getAuthorizedRubricMutationContext_(payload) {
+      events.push("context:saveRubric");
+      const permission = sandbox.validateRolePermission("saveRubric", payload);
+      if (!permission.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+      const actor = sandbox.getVerifiedExamIdentity_(payload);
+      if (!actor.authorized || !String(actor.userId || "").trim()) throw new Error("RESOURCE_NOT_AVAILABLE");
+      events.push("scope-ownership-schema-validation");
+      return { actor };
+    },
+    runMutation(events, context) { events.push("mutation"); return mutation(events, context); }
+  };
+  vm.runInNewContext(rubricMutationWrapperContract +
+    "\nthis.invokeRubricMutation = withAuthorizedRubricMutation_;", sandbox);
+  try {
+    return { result: sandbox.invokeRubricMutation({ sessionToken: "synthetic" }, context => sandbox.runMutation(events, context)), events };
+  } catch (error) {
+    return { error: error.message, events };
+  }
+}
+
+let rubricWrapperResult = runRubricMutationWrapper({ preflightPermissionDenied: true });
+assert.equal(rubricWrapperResult.error, "RESOURCE_NOT_AVAILABLE");
+assert.deepEqual(rubricWrapperResult.events, ["permission:saveRubric"], "rubric RBAC denial must precede lock acquisition");
+rubricWrapperResult = runRubricMutationWrapper({ preflightIdentityDenied: true });
+assert.equal(rubricWrapperResult.error, "RESOURCE_NOT_AVAILABLE");
+assert.deepEqual(rubricWrapperResult.events, ["permission:saveRubric", "identity"], "invalid rubric actor must precede lock acquisition");
+rubricWrapperResult = runRubricMutationWrapper();
+assert.equal(rubricWrapperResult.result, "ok");
+assert.deepEqual(rubricWrapperResult.events, [
+  "permission:saveRubric", "identity", "lock-request", "lock-acquire:5000",
+  "context:saveRubric", "permission:saveRubric", "identity", "scope-ownership-schema-validation",
+  "mutation", "lock-release"
+], "authorized rubric mutation must revalidate context under the acquired lock");
+rubricWrapperResult = runRubricMutationWrapper({ contextPermissionDenied: true });
+assert.equal(rubricWrapperResult.error, "RESOURCE_NOT_AVAILABLE");
+assert.deepEqual(rubricWrapperResult.events, [
+  "permission:saveRubric", "identity", "lock-request", "lock-acquire:5000",
+  "context:saveRubric", "permission:saveRubric", "lock-release"
+], "rubric RBAC must be rechecked under lock");
+rubricWrapperResult = runRubricMutationWrapper({ contextIdentityDenied: true });
+assert.equal(rubricWrapperResult.error, "RESOURCE_NOT_AVAILABLE");
+assert.deepEqual(rubricWrapperResult.events, [
+  "permission:saveRubric", "identity", "lock-request", "lock-acquire:5000",
+  "context:saveRubric", "permission:saveRubric", "identity", "lock-release"
+], "rubric identity must be rechecked under lock");
+rubricWrapperResult = runRubricMutationWrapper({}, () => { throw new Error("synthetic rubric write failure"); });
+assert.equal(rubricWrapperResult.error, "synthetic rubric write failure");
+assert.equal(rubricWrapperResult.events.at(-1), "lock-release", "rubric lock must release after mutation failure");
+rubricWrapperResult = runRubricMutationWrapper({ lockAvailable: false });
+assert.equal(rubricWrapperResult.error, "RUBRIC_MUTATION_LOCK_TIMEOUT");
+assert.deepEqual(rubricWrapperResult.events, [
+  "permission:saveRubric", "identity", "lock-request", "lock-acquire:5000"
+], "rubric lock timeout must occur only after preflight authorization");
+
 for (const name of ["updateExamStatus", "updateExam", "deleteExam", "gradeExamSubmission", "deleteExamSubmission"]) {
   const declarations = source.match(new RegExp("function\\s+" + name + "\\s*\\(", "g")) || [];
   assert.equal(declarations.length, 1, name + " must have exactly one active function declaration");

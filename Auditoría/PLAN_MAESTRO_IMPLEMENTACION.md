@@ -3746,3 +3746,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Beta:** Apps Script/Sheets real NOT RUN; sin cambios de esquema.
 - **Estado:** subalcance saveEvaluationCategory corregido; TASK-153 / AUD-NG-386 sigue En ejecución por otras mutaciones.
 - **Siguiente:** verificar CI y continuar el inventario de mutaciones EXAM restantes.
+
+
+### 10.171 TASK-153 / AUD-NG-386 — autorización previa al lock en saveRubric (C1.518)
+- **Hallazgo:** `withAuthorizedRubricMutation_` adquiría ScriptLock antes de validar el permiso efectivo `saveRubric` y la identidad firmada; llamadas directas no autorizadas podían competir por el bloqueo compartido.
+- **Corrección:** valida RBAC e identidad firmada con actor no vacío antes de solicitar el lock. `getAuthorizedRubricMutationContext_` conserva la revalidación dentro del lock de permiso, identidad, scope departamental, ownership activo único y esquema.
+- **Pruebas locales:** harness determinista sobre el wrapper productivo extraído, 7/7 escenarios PASS (RBAC/identidad pre-lock, ruta autorizada con revalidación, denegaciones contextuales, liberación tras excepción y timeout); contrato ampliado con aserciones estáticas y dinámicas. Parseo completo Code.gs y contrato Node: pendiente de ejecución local.
+- **CI:** pendiente de ejecución/verificación.
+- **Beta:** Apps Script/Sheets real NOT RUN; sin cambios de esquema.
+- **Estado:** subalcance saveRubric corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+- **Siguiente:** continuar el inventario de wrappers mutadores restantes; el siguiente candidato es `withAuthorizedCompetencyEvaluationMutation_`.

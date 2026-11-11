@@ -2059,6 +2059,15 @@ function saveRubric(payload) {
 }
 
 function withAuthorizedRubricMutation_(payload, mutation) {
+  // Rechazar RBAC e identidad inválidos antes de competir por el lock compartido.
+  // El contexto completo se revalida dentro del lock para preservar el control TOCTOU.
+  const permission = validateRolePermission("saveRubric", payload);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(payload);
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim()) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("RUBRIC_MUTATION_LOCK_TIMEOUT");
   try {

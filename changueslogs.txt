@@ -1523,3 +1523,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Todos los demás contratos del job exam-security-contracts finalizaron success.
 - HEAD probado: c54b9e2a1d3f1fa1073d2b2f193251cca2d879d3. Harness focalizado 6/6 PASS; parseo Code.gs/contrato y aserciones estáticas PASS.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.518 — IMA-EXEC-20261110-1825Z-02 — EXAM: autorización pre-lock de saveRubric
+- withAuthorizedRubricMutation_ valida permiso saveRubric e identidad firmada/actor antes de ScriptLock; el contexto revalida RBAC, identidad, scope, ownership y esquema dentro del lock.
+- exam-service-security-contract.test.js incorpora aserciones estáticas y harness determinista de siete escenarios.
+- Harness local sobre wrapper productivo extraído: 7/7 PASS. Parseo completo Code.gs/contrato Node y CI pendientes de verificación.
+- Apps Script/Sheets real NOT RUN; sin cambios de esquema. TASK-153 / AUD-NG-386 continúa En ejecución.
+===============================================================================
