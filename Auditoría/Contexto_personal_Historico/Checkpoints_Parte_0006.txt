@@ -2159,5 +2159,7 @@ HEAD inicial: `bb8e5282ca7d8694129c5d3ab28593fe718a3e5a`. Rama: `NG_beta_0.0.0.1
 - CI focalizado: NOT RUN. Apps Script/Sheets real: NOT RUN; BETA-EXAM-082 Pendiente beta.
 - C1.577 **Completada en verificación local**. TASK-153 / AUD-NG-386 continúa En ejecución.
 
-HEAD inicial: `3550427d2b34c1a60937fdef4d9e035096efc7b1`. HEAD final: pendiente de publicación.
+HEAD inicial: `3550427d2b34c1a60937fdef4d9e035096efc7b1`. HEAD final de implementación/documentación: `49211fd30c7d15d242e08b6f534cb785fe4fe69c` (commit de cierre de checkpoint a continuación).
 ===============================================================================
+
+- Commit de implementación/documentación C1.577: `49211fd30c7d15d242e08b6f534cb785fe4fe69c`. Suite focalizada re-ejecutada desde el contenido publicado: 21/21 PASS. HEAD final se actualizará al publicar este registro de checkpoint.
