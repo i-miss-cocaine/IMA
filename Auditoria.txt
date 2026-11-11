@@ -1699,3 +1699,10 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Cobertura local:** save 27/27 PASS; bulk apply 28/28 PASS en V8 local compatible. Se verifica denegación pre-lock sin apertura de Sheets, identidad inválida/incompleta y doble validación RBAC/identidad.
 - **CI:** pendiente de ejecución sobre el commit de esta tarea. Apps Script/Sheets real NOT RUN.
 - **Beta:** BETA-EXAM-057 y BETA-EXAM-058 actualizados; permanecen Pendiente beta.
+
+
+### ADDENDUM FINAL DE CI — C1.520 / saveGradebookGrades y bulkApplyGradebookGrades
+- GitHub Actions workflow `43043521060`: **completed / success** sobre el commit de implementación `b9b0fca57760c6a19ce058bd607403c8e05d314a`.
+- Job `exam-security-contracts`: SUCCESS; steps `Run gradebook save security regression` y `Run bulk gradebook apply security regression`: SUCCESS en Node 22; restantes contratos del workflow también SUCCESS.
+- Suites locales V8 compatibles: save 27/27 PASS; bulk apply 28/28 PASS; parseo Code.gs PASS.
+- Apps Script/Sheets real NOT RUN. BETA-EXAM-057 y BETA-EXAM-058 permanecen Pendiente beta.

@@ -1577,3 +1577,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Suites dedicadas locales: save 27/27 PASS; bulk apply 28/28 PASS en V8 local compatible; parseo Code.gs PASS.
 - CI Node 22 pendiente; Apps Script/Sheets real NOT RUN. BETA-EXAM-057 y 058 actualizados.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] Verificación CI C1.520 — workflow 43043521060 PASS
+- HEAD de implementación y pruebas: b9b0fca57760c6a19ce058bd607403c8e05d314a.
+- Job exam-security-contracts completed/success; regresiones gradebook save y bulk apply SUCCESS en Node 22; todos los demás pasos del workflow SUCCESS.
+- Suites locales: save 27/27 PASS; bulk apply 28/28 PASS; parseo Code.gs PASS.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-057 y BETA-EXAM-058 siguen Pendiente beta.
+===============================================================================

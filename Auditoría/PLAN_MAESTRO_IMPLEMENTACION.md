@@ -3772,7 +3772,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Hallazgo:** `withAuthorizedGradebookSave_` adquiría ScriptLock antes de validar el permiso efectivo y la identidad firmada. El wrapper es compartido por `saveGradebookGrades` y `bulkApplyGradebookGrades`, por lo que ambas rutas podían competir por el lock con solicitudes no autorizadas.
 - **Corrección:** valida el permiso correspondiente a `permissionAction` (o `saveGradebookGrades` por defecto) y la identidad firmada con `userId` no vacío antes del lock; el contexto existente vuelve a validar RBAC, identidad, rol, scope, asignación, roster, cierre y esquema dentro del lock.
 - **Pruebas locales:** suite `exam-service-gradebook-save-security.test.js` 27/27 PASS y `exam-service-gradebook-bulk-apply-security.test.js` 28/28 PASS en V8 local compatible; parseo completo de Code.gs y ambas suites PASS. Incluyen orden pre-lock, denegación sin lock/Sheets, identidad inválida o incompleta y revalidación contextual.
-- **CI:** pendiente de ejecución/verificación en Node 22.
+- **CI:** GitHub Actions workflow 43043521060 completed / success; job `exam-security-contracts` y steps de gradebook save y bulk apply SUCCESS en Node 22.
 - **Beta:** BETA-EXAM-057 y BETA-EXAM-058 ampliados; Apps Script/Sheets real NOT RUN.
 - **Estado:** subalcance saveGradebookGrades/bulkApplyGradebookGrades corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
 - **Siguiente:** inspeccionar el siguiente wrapper mutador pendiente; no repetir el wrapper compartido de guardado de calificaciones.

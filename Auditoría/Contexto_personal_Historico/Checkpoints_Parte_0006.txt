@@ -386,3 +386,13 @@ Subalcance saveGradebookGrades/bulkApplyGradebookGrades corregido. TASK-153 / AU
 Siguiente acción: inspeccionar el siguiente wrapper mutador pendiente; no repetir el wrapper compartido de guardado de calificaciones.
 HEAD final: pendiente de confirmar tras publicar.
 ===============================================================================
+
+
+### ADDENDUM FINAL DE CI — C1.520
+- GitHub Actions workflow `43043521060`: **completed / success** sobre el commit de implementación y pruebas `b9b0fca57760c6a19ce058bd607403c8e05d314a`.
+- Job `exam-security-contracts`: SUCCESS; `Run gradebook save security regression` y `Run bulk gradebook apply security regression`: SUCCESS en Node 22; todos los demás steps también SUCCESS.
+- Suites locales V8 compatibles: save 27/27 PASS; bulk apply 28/28 PASS; parseo completo Code.gs y ambas suites PASS.
+- Apps Script/Sheets real: NOT RUN. BETA-EXAM-057 y BETA-EXAM-058 permanecen Pendiente beta.
+- HEAD de implementación/pruebas probado por CI: `b9b0fca57760c6a19ce058bd607403c8e05d314a`; los commits siguientes son exclusivamente cierre documental.
+- HEAD final de rama y estado de base se verifican tras publicar el cierre documental; no se duplica el SHA del propio checkpoint en su contenido.
+===============================================================================
