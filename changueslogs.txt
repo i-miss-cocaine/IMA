@@ -1246,3 +1246,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Lectura sin creación de hojas/escrituras; esquema validado, IDs ambiguos/vacíos excluidos, notas/fechas inválidas normalizadas a null.
 - Parseo V8 y suite aislada de 23 escenarios PASS. Node nativo/CI y Apps Script real NOT RUN. BETA-EXAM-044 Pendiente beta.
 ===============================================================================
+
+===============================================================================
+[2026-11-11] C1.491 — IMA-EXEC-20261110-1825Z-02 — EXAM: getGradeRectificationHistory
+- Lectura protegida con RBAC, identidad y ámbito bajo ScriptLock compartido.
+- Estudiante/Alumno aislado a su identidad; Tutor/Padre/Responsable limitado al vínculo verificado; roles institucionales requieren scope institucional y estudiante explícito/único.
+- Profesor denegado en la ruta directa; se conserva la consulta docente a través de gradebook con asignación/roster validados.
+- Lectura sin creación de hojas/escrituras; esquema validado, IDs ambiguos/vacíos excluidos y valores/fechas inválidos normalizados a null.
+- Parseo V8 y suite aislada de 23 escenarios PASS. Node nativo/CI y Apps Script real NOT RUN. BETA-EXAM-045 Pendiente beta.
+===============================================================================
