@@ -921,3 +921,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de RBAC/identidad/lock/Sheets y snapshots antes/después de las hojas implicadas.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-081 — TASK-153 / AUD-NG-386 / EXAM: revocación RBAC en copyEvaluationSetupBetweenGroups bajo lock
+- **Módulo/rol:** Servicio EXAM; Profesor con permiso copyEvaluationSetupBetweenGroups, identidad firmada y asignaciones académicas de origen/destino válidas.
+- **Objetivo:** verificar en Apps Script/Sheets desplegado que revocar el permiso tras el preflight impide copiar categorías durante la revalidación RBAC bajo ScriptLock.
+- **Precondiciones:** versión beta desplegada; grupos origen/destino válidos y categoría/ownership sintéticos; sesión firmada; mecanismo controlado para permitir RBAC en preflight y denegarlo en contexto bajo lock.
+- **Pasos:** invocar la copia con permiso concedido; revocarlo antes de la comprobación contextual; revisar respuesta, trazas RBAC/identidad/lock/Sheets y snapshots de CategoriasEvaluacion y ResourceOwnership. Repetir flujo válido con permisos estables.
+- **Resultado esperado:** RESOURCE_NOT_AVAILABLE, lock liberado, cero apertura de Sheets y ambas hojas intactas; el flujo válido copia categorías y ownership conforme al contrato.
+- **Estado:** Pendiente beta; cobertura local C1.576 29/29 PASS; CI focalizado pendiente. Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, trazas saneadas y snapshots completos antes/después de ambas hojas.
+===============================================================================

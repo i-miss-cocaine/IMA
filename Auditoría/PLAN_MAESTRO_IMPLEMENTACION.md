@@ -4198,3 +4198,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Alcance:** solo se amplía `tests/security/exam-service-student-recovery-mutation-security.test.js`; backend productivo, RBAC, roles, scope, ownership y persistencia sin cambios. BETA-EXAM-080 registra la variante desplegada.
 - **Verificación local:** parseo de backend y suite PASS; ejecución aislada V8 con shims compatibles **18/18 PASS**. GitHub Actions run **43109446831**: paso `Run student recovery mutation security regression` SUCCESS; el workflow global falla después en `exam-service-security-contract.test.js:449` por `ReferenceError: withAuthorizedExamCreation_ is not defined`, fallo preexistente y fuera del alcance de C1.575. Apps Script/Sheets real NOT RUN, reservado a beta.
 - **Estado:** C1.575 **Completada en verificación local/CI focalizado**. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
+
+
+### 10.225 TASK-153 / AUD-NG-386 — cubrir revocación RBAC bajo ScriptLock en copyEvaluationSetupBetweenGroups (C1.576)
+- **Brecha confirmada:** `withAuthorizedEvaluationSetupCopy_` realiza RBAC en preflight y `getAuthorizedEvaluationSetupCopyContext_` vuelve a validar el permiso bajo lock. La suite verificaba revalidación de identidad, pero el fixture RBAC devolvía siempre el mismo resultado y no cubría permiso concedido→revocado.
+- **Cobertura añadida:** secuencia RBAC `[true, false]` en el handler real; exige `RESOURCE_NOT_AVAILABLE`, dos llamadas RBAC, una identidad, lock adquirido/liberado, cero aperturas de Sheets y snapshots de CategoriasEvaluacion/ResourceOwnership intactos.
+- **Alcance:** fixture y prueba en `tests/security/exam-service-evaluation-setup-copy-security.test.js`; backend productivo, permisos, roles, scope, ownership y persistencia sin cambios. BETA-EXAM-081 registra la comprobación desplegada.
+- **Verificación local:** parseo del backend y suite PASS; V8 aislado con shims compatibles **29/29 escenarios PASS**. CI focalizado pendiente de ejecución/observación. Apps Script/Sheets real NOT RUN, reservado a beta.
+- **Estado:** C1.576 **Completada en verificación local**. TASK-153 / AUD-NG-386 continúa En ejecución.

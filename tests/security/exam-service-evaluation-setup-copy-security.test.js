@@ -70,7 +70,7 @@ function fixture(options = {}) {
     CategoriasEvaluacion: makeSheet(categories, { failWrite: options.failCategoryWrite }),
     ResourceOwnership: makeSheet(ownership)
   };
-  const stats = { acquired: 0, released: 0, held: false, opens: 0, action: "", reentryError: "", events: [] };
+  const stats = { acquired: 0, released: 0, held: false, opens: 0, action: "", reentryError: "", events: [], permissionCalls: 0 };
   let uuid = 0;
   const runtime = {
     SPREADSHEET_ID: "TEST",
@@ -78,7 +78,7 @@ function fixture(options = {}) {
       tryLock() { stats.events.push("tryLock"); stats.acquired++; if (options.lockTimeout || stats.held) return false; stats.held = true; return true; },
       releaseLock() { stats.events.push("releaseLock"); stats.released++; stats.held = false; }
     }; }},
-    validateRolePermission(action) { stats.events.push("rbac"); stats.action = action; return { authorized: options.permissionDenied !== true }; },
+    validateRolePermission(action) { stats.events.push("rbac"); stats.action = action; stats.permissionCalls++; const sequence = options.permissionSequence; return { authorized: Array.isArray(sequence) && sequence.length ? sequence[Math.min(stats.permissionCalls - 1, sequence.length - 1)] === true : options.permissionDenied !== true }; },
     getVerifiedExamIdentity_() {
       stats.events.push("identity");
       identityCalls++;
@@ -165,5 +165,17 @@ test(() => {
   assert.deepEqual([x.stats.acquired, x.stats.released, x.stats.held, x.stats.opens], [1, 1, false, 0]);
   assert.deepEqual(x.sheets.CategoriasEvaluacion.rows, categoriesBefore, "categories must remain unchanged");
   assert.deepEqual(x.sheets.ResourceOwnership.rows, ownershipBefore, "ownership must remain unchanged");
+});
+test(() => {
+  const x = fixture({ permissionSequence: [true, false] });
+  const categoriesBefore = x.sheets.CategoriasEvaluacion.rows.map(row => row.slice());
+  const ownershipBefore = x.sheets.ResourceOwnership.rows.map(row => row.slice());
+  assert.throws(() => x.call(), /RESOURCE_NOT_AVAILABLE/);
+  assert.equal(x.stats.permissionCalls, 2, "RBAC must be checked in preflight and locked context");
+  assert.equal(x.identityCalls(), 1, "revoked RBAC must stop before locked identity revalidation");
+  assert.deepEqual(x.stats.events, ["rbac", "identity", "getScriptLock", "tryLock", "rbac", "releaseLock"]);
+  assert.deepEqual([x.stats.acquired, x.stats.released, x.stats.held, x.stats.opens], [1, 1, false, 0]);
+  assert.deepEqual(x.sheets.CategoriasEvaluacion.rows, categoriesBefore, "category rows must remain unchanged");
+  assert.deepEqual(x.sheets.ResourceOwnership.rows, ownershipBefore, "ownership rows must remain unchanged");
 });
 console.log("exam-service-evaluation-setup-copy-security: PASS (" + scenarios + " scenarios)");

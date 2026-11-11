@@ -2129,3 +2129,14 @@ HEAD inicial: `bb8e5282ca7d8694129c5d3ab28593fe718a3e5a`. Rama: `NG_beta_0.0.0.1
 - C1.575 **Completada en verificación local**. TASK-153 / AUD-NG-386 permanece En ejecución para el inventario EXAM restante.
 - Commit de implementación: `f9ff9d4d86474592cdd57602d9db98eb432661b2`. HEAD previo de rama: `3ca69a166a85ae31073be87c8b28fd2c2ad32f5e`. HEAD final de implementación/documentación: `cac17212091f9560c6bfc19f70499a093ebb5cc4` (se actualizará al publicar este addendum).
 ===============================================================================
+
+
+===============================================================================
+### Addendum de cierre local — C1.576
+- Parseo de `backend/exam-service/Code.gs` y suite: PASS.
+- Suite `exam-service-evaluation-setup-copy-security` ejecutada en V8 aislado con shims compatibles: **29/29 escenarios PASS**. El caso RBAC [true,false] confirma denegación dentro del lock, liberación, cero apertura de Sheets y preservación íntegra de CategoriasEvaluacion/ResourceOwnership.
+- CI focalizado: pendiente de ejecución/observación tras el commit. Apps Script/Sheets real: NOT RUN; BETA-EXAM-081 Pendiente beta.
+- Backend productivo sin cambios; diff limitado a fixture, prueba y registros asociados.
+- C1.576 **Completada en verificación local**. TASK-153 / AUD-NG-386 continúa En ejecución.
+- HEAD inicial: `0a5e1ef8ec0a905db5fdd0b277690e3675935498`. HEAD final: pendiente.
+===============================================================================
