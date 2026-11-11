@@ -1399,3 +1399,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se conserva la validación de identidad firmada, scope departamental, ownership y compensación de escrituras parciales.
 - Se añade contrato local de seguridad y se integra al workflow dedicado; contrato aislado local 10/10 PASS (Node 22); parseo completo/estado CI de push no verificados; BETA-EXAM-060 Pendiente beta.
 ===============================================================================
+
+===============================================================================
+[2026-11-11] C1.508 — IMA-EXEC-20261110-1825Z-02 — EXAM: autorización y revocación de sesiones en purgeSecurityCaches
+- purgeSecurityCaches ahora verifica RBAC efectivo e identidad firmada dentro de la función antes de acceder a CacheService; no depende únicamente del dispatcher doPost.
+- SESSION_REVOKED ahora escribe revoked_session_<id> con TTL de 86400, en coherencia con verifySessionToken, que rechaza tokens con ese marcador. GENERIC_PURGE conserva la eliminación explícita.
+- Se añade contrato local dedicado de 7 escenarios y se integra al workflow de seguridad EXAM.
+- Contrato local aislado 7/7 PASS; sintaxis de función extraída PASS. Parseo completo/CI aún no observado; BETA-EXAM-061 Pendiente beta.
+===============================================================================
