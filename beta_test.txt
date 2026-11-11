@@ -697,3 +697,14 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; contrato local aislado 7/7 PASS y sintaxis de función extraída PASS; parseo completo de Code.gs/CI aún no observado; Apps Script/CacheService real NOT RUN.
 - **Evidencia requerida:** versión/commit desplegado, resultado de autorización, snapshots o evidencia controlada de CacheService antes/después, expiración TTL, denegaciones y logs sin tokens ni datos sensibles.
 ===============================================================================
+
+===============================================================================
+## BETA-EXAM-062 — TASK-153 / AUD-NG-386 / EXAM: calificación de entregas
+- **Módulo/rol:** Servicio EXAM; usuario con permiso efectivo gradeExamSubmission y propiedad/alcance autorizado sobre el examen.
+- **Objetivo:** comprobar que la calificación manual solo persiste valores numéricos finitos entre 0 y 100, con precisión de dos decimales, y metadatos de tipo/longitud válidos.
+- **Precondiciones:** versión beta desplegada; examen y entrega sintéticos; actores autorizados y no autorizados; evidencia de EntregasExamen antes/después.
+- **Pasos:** probar límites 0 y 100, decimales, cadena numérica, representación flotante (0.1+0.2), valores negativos/mayores a 100, NaN/Infinity, cadenas inválidas, precisión >2 decimales, estado ausente, metadatos de tipo incorrecto y comentario >2.000 caracteres.
+- **Resultado esperado:** solo datos válidos actualizan la fila; nota normalizada a dos decimales; cualquier entrada inválida rechaza antes de setValues y no altera la entrega; la autorización/propiedad se mantiene.
+- **Estado:** Pendiente beta; parseo completo Code.gs PASS; contrato aislado local V8 15/15 PASS; prueba Node dedicada añadida al workflow, resultado CI aún no observado; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, identidad/permiso y ownership sintéticos, fila de entrega antes/después, resultado de cada límite/entrada inválida y logs sin datos sensibles.
+===============================================================================
