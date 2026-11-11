@@ -165,4 +165,4 @@ failBankAppend=true;
 assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",departmentId:"D1",accion:"crear",textoPregunta:"Rollback"}),/synthetic bank append failure after persistence/);
 assert.equal(bankRows.length,bankCount);assert.equal(ownershipRows.length,ownerCount);
 assert.equal(lockAcquires,lockReleases+1,"only the contended lock acquisition is unreleased");
-process.stdout.write("exam-service-question-bank-security: ownership, department scope, serialized writes and rollback assertions passed\n");
+process.stdout.write("exam-service-question-bank-security: ownership, department scope, RBAC revocation, serialized writes and rollback assertions passed\n");
