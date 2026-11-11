@@ -1622,3 +1622,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Limitación importante:** el endpoint histórico espera CategoriasEvaluacion de ocho columnas (ID, Asignatura, NombreCategoria, Ponderacion, Grado, Seccion, Periodo, FechaRegistro), mientras saveEvaluationCategory usa el esquema canónico de seis columnas. La copia falla cerrada con EVALUATION_CATEGORY_COPY_SCHEMA_UNSUPPORTED cuando detecta el esquema canónico; no se inventa una migración ni se escriben filas incompatibles. ConfiguracionAcademica no incluye DepartmentID, por lo que se valida asignación exacta y scope activo, sin afirmar correlación departamental por fila.
 - **Beta:** BETA-EXAM-059 Pendiente beta; Apps Script/Sheets real NOT RUN. TASK-153 y AUD-NG-386 siguen En ejecución por otras superficies EXAM.
 ===============================================================================
+
+
+===============================================================================
+### AUD-NG-386 — createExam (C1.507)
+- **Hallazgo:** el endpoint verificaba identidad y scope pero omitía validateRolePermission("createExam", payload) dentro de la función. El control RBAC del doPost no sustituye la autorización del propio endpoint ante invocación directa desde otro punto de entrada.
+- **Corrección:** RBAC efectivo comprobado al inicio, antes de abrir Sheets o adquirir el lock; se mantienen identidad firmada, scope, departamento, ownership y rollback.
+- **Verificación:** contrato local dedicado para creación positiva, denegación RBAC, identidad/scope/departamento, lock y fallos parciales; BETA-EXAM-060 Pendiente beta.
+===============================================================================
