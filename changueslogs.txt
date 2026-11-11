@@ -1198,3 +1198,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Pruebas locales aisladas: parseo V8 y escenarios de RBAC, ownership, profesor ajeno, IDs duplicados, estados, exclusión, umbral, fecha/límite inválidos y lock/timeout. Node nativo, CI y Apps Script/Sheets real NOT RUN.
 - BETA-EXAM-039 Pendiente beta; TASK-153 En ejecución y AUD-NG-386 abierto.
 ===============================================================================
+
+===============================================================================
+[2026-11-11] C1.486 — IMA-EXEC-20261110-1825Z-02 — EXAM: simulateExamReschedule
+- La simulación exige permiso RBAC específico, identidad firmada, scope y ownership del examen bajo ScriptLock compartido.
+- Se rechazan IDs ambiguos/duplicados y profesores no propietarios; el cálculo de conflicto reutiliza checkExamSchedulingConflictUnlocked_ con el mismo contexto/lock, sin doble adquisición.
+- La auditoría toma el rol del actor verificado, no de authRole suministrado por el cliente; el endpoint no escribe datos.
+- Harness V8 local de read-endpoints PASS: autorización, ownership, profesor ajeno, duplicados, conflicto, fecha inválida, timeout, lock único y cambio de propiedad pre-lock. Contrato estático y sintaxis PASS.
+- Node nativo, CI y Apps Script/Sheets real NOT RUN. BETA-EXAM-040 Pendiente beta; TASK-153 En ejecución y AUD-NG-386 abierto.
+===============================================================================

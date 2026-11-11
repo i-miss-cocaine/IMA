@@ -463,3 +463,12 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** permiso específico e identidad firmada; ScriptLock compartido; solo exámenes únicos, activos, dentro del scope y propiedad docente cuando aplica; límite entero 1–100 (predeterminado 2); fecha ISO válida; timeout fail-closed.
 - **Estado:** Pendiente beta. Pruebas locales aisladas cubren RBAC, ownership, duplicados, filtro docente, exclusión de examen, estados, fechas, límite y lock.
 - **Evidencia requerida:** build/commit, actores sintéticos, matriz RBAC/ámbito, fixtures, secuencias concurrentes, respuestas saneadas y logs.
+
+## BETA-EXAM-040 — TASK-153 / AUD-NG-386 / EXAM: simulación segura de reprogramación
+- **Módulo/acción:** EXAM simulateExamReschedule; lectura consistente con checkExamSchedulingConflict y mutaciones create/update/status/delete.
+- **Objetivo:** verificar en Apps Script/Sheets desplegado que la simulación exige permiso específico, identidad firmada, ámbito y ownership del examen objetivo; no realiza cambios y usa un único snapshot serializado para leer examen y calcular conflictos.
+- **Precondiciones:** entorno beta aislado; profesores de dos departamentos; exámenes propios/ajenos, ownership activo/ausente/duplicado, IDs únicos/duplicados, agendas con/sin conflicto y tokens válidos/ausentes.
+- **Pasos:** probar sesión ausente/inválida y permiso denegado; intentar simular examen ajeno, fuera de ámbito y con ID duplicado; probar sección/fecha destino válidas e inválidas; intercalar con cambio de propietario, sección, fecha o estado; verificar que no se escriben filas y que el log usa el rol firmado; provocar timeout del ScriptLock.
+- **Resultado esperado:** acceso solo al examen único y autorizado; profesor solo simula sus propios exámenes; cálculo de conflictos reutiliza el worker interno bajo el mismo lock (sin adquirir lock anidado); sin escrituras; auditoría con rol verificado; timeout fail-closed.
+- **Estado:** Pendiente beta. Pruebas locales aisladas cubren autorización, ownership, aislamiento docente, IDs duplicados, conflicto, lock único, intercalación post-lock y ausencia de escritura observable.
+- **Evidencia requerida:** commit/build, actores sintéticos, matriz RBAC/ámbito, snapshots antes/después, secuencias concurrentes y logs saneados.

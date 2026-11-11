@@ -3422,3 +3422,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI/runner Node nativo y Apps Script/Sheets real:** NOT RUN. **Beta:** BETA-EXAM-039 Pendiente beta; no bloquea cierre local.
 - **Estado:** subalcance completado; TASK-153 En ejecución y AUD-NG-386 abierto por otras lecturas EXAM.
 - **Siguiente:** auditar individualmente simulateExamReschedule; no agrupar con getGradingPerformanceAndPersistenceMetrics.
+
+### 10.138 TASK-153 / AUD-NG-386 — seguridad y consistencia de simulateExamReschedule (C1.486)
+
+- **Hallazgo:** el endpoint leía directamente la hoja, elegía la primera coincidencia del ID, carecía de RBAC/identidad/ámbito/ownership del examen y abría un segundo lock al llamar el handler público de conflictos. El log confiaba en payload.authRole.
+- **Corrección:** simulateExamReschedule delega en withAuthorizedExamRead_; el worker valida ID único, ownership del recurso y propiedad docente, y llama checkExamSchedulingConflictUnlocked_ con el mismo contexto y lock. No se producen escrituras.
+- **Auditoría:** el rol del evento se deriva de actor verificado. Los IDs ambiguos y el acceso no autorizado fallan de forma cerrada.
+- **Pruebas locales:** parseo V8 y harness local de read-endpoints PASS (simulación, conflicto, RBAC, ownership, aislamiento docente, duplicados, fecha inválida, timeout, lock único e intercalación pre-lock). Contrato estático y sintaxis PASS.
+- **Node nativo/CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-040 Pendiente beta; no bloquea el cierre local.
+- **Estado:** subalcance completado; TASK-153 En ejecución y AUD-NG-386 abierto por otras lecturas EXAM.
+- **Siguiente:** auditar individualmente getGradingPerformanceAndPersistenceMetrics.

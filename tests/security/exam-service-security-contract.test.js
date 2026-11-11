@@ -344,4 +344,17 @@ assert.ok(schedulingWorker.includes("idCounts[id] !== 1") &&
   schedulingWorker.includes("EXAM_SCHEDULE_LIMIT_INVALID"),
   "scheduling conflict counts only unique, owned, teacher-visible exams and validates date/limit inputs");
 
+
+const rescheduleHandler = extractFunction(source, "simulateExamReschedule");
+const rescheduleWorker = extractFunction(source, "simulateExamRescheduleUnlocked_");
+assert.ok(rescheduleHandler.includes('withAuthorizedExamRead_("simulateExamReschedule"'),
+  "reschedule simulation delegates to the shared serialized RBAC reader");
+assert.ok(rescheduleWorker.includes("matches.length !== 1") &&
+  rescheduleWorker.includes("assertExamResourceOwnershipForScope_") &&
+  rescheduleWorker.includes('actor.role === "Profesor"') &&
+  rescheduleWorker.includes("checkExamSchedulingConflictUnlocked_") &&
+  !rescheduleWorker.includes("checkExamSchedulingConflict(") &&
+  rescheduleWorker.includes("actor.role);"),
+  "simulation requires a unique owned teacher-visible exam and reuses the conflict worker under the same lock");
+
 process.stdout.write("exam-service-security-contract: authentication, identity, teacher ownership and serialized exam mutations assertions passed\\n");

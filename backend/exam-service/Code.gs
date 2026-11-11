@@ -1252,25 +1252,41 @@ function checkExamSchedulingConflictUnlocked_(payload, context) {
 
 // [TAREA-F7-IMP-07] [Fase 7: Planificación Académica, Horarios y Recursos] - Simulación de reprogramación de evaluaciones previa confirmación oficial.
 function simulateExamReschedule(payload) {
-  const { examenId, nuevaFecha, nuevaSeccion } = payload || {};
-  if (!examenId || !nuevaFecha) throw new Error("examenId y nuevaFecha son requeridos para simular la reprogramación.");
+  return withAuthorizedExamRead_("simulateExamReschedule", payload,
+    context => simulateExamRescheduleUnlocked_(payload, context));
+}
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getSheetOrThrow(ss, "Examenes");
-  const data = sheet.getDataRange().getValues();
-  const examRow = data.slice(1).find(r => String(r[0]).trim() === String(examenId).trim());
+function simulateExamRescheduleUnlocked_(payload, context) {
+  const input = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const examenId = String(input.examenId || "").trim();
+  const nuevaFecha = input.nuevaFecha;
+  if (!examenId || !nuevaFecha) throw new Error("EXAM_RESCHEDULE_INPUT_INVALID");
 
-  if (!examRow) throw new Error("Examen no encontrado.");
+  const { actor, ss, scope } = context;
+  const rows = getSheetOrThrow(ss, "Examenes").getDataRange().getValues().slice(1);
+  const matches = rows.filter(row => String(row[0] || "").trim() === examenId);
+  if (matches.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const examRow = matches[0];
 
-  const seccionTarget = nuevaSeccion || examRow[4];
-  const conflictCheck = checkExamSchedulingConflict({
+  if (actor.role === "Profesor" && String(examRow[8] || "").trim() !== actor.userId) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+  const ownership = assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examenId,
+    "SIMULATE_EXAM_RESCHEDULE", input);
+  if (!ownership || ownership.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+
+  const seccionTarget = String(input.nuevaSeccion || examRow[4] || "").trim();
+  if (!seccionTarget) throw new Error("EXAM_RESCHEDULE_SECTION_INVALID");
+  const conflictCheck = checkExamSchedulingConflictUnlocked_({
     seccionAsignada: seccionTarget,
     fechaLimite: nuevaFecha,
     examenId,
     maxExamenesPorDia: 2
-  });
+  }, context);
 
-  logStructuredEvent("EXAM", "simulateExamReschedule", "INFO", "EXAM_RESCHEDULE_SIMULATED", `Simulación de reprogramación para examen ${examenId}`, { examenId, nuevaFecha, tieneConflicto: conflictCheck.hasConflict }, payload && payload.authRole);
+  logStructuredEvent("EXAM", "simulateExamReschedule", "INFO", "EXAM_RESCHEDULE_SIMULATED",
+    `Simulación de reprogramación para examen ${examenId}`,
+    { examenId, nuevaFecha, tieneConflicto: conflictCheck.hasConflict }, actor.role);
 
   return {
     status: "success",

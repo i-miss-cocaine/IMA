@@ -41,7 +41,7 @@ function runtime(options = {}) {
     ["DEL-D1","EXM-1","STU-1",new Date("2026-11-10T12:00:00Z"),"[]",88,"Calificado",""],
     ["DEL-D2","EXM-1","STU-1",new Date("2026-11-10T13:00:00Z"),"[]",89,"Calificado",""],
     ["DEL-DUP","EXM-3","STU-1",new Date("2026-11-10T14:00:00Z"),"[]",70,"Calificado",""],
-    ["DEL-DUP","EXM-3","STU-1",new Date("2026-11-10T15:00:00Z"),"[]",71,"Calificado",""],
+    ["DEL-DUP","EXM-3","STU-D",new Date("2026-11-10T15:00:00Z"),"[]",71,"Calificado",""],
     ["DEL-AMB","EXM-3","STU-D",new Date("2026-11-10T16:00:00Z"),"[]",80,"Calificado",""],
     ["DEL-FOREIGN","EXM-4","STU-1",new Date("2026-11-10T17:00:00Z"),"[]",60,"Calificado",""],
     ["DEL-DUP-EXM","EXM-D","STU-1",new Date("2026-11-10T18:00:00Z"),"[]",60,"Calificado",""]
@@ -61,6 +61,7 @@ function runtime(options = {}) {
   };
   const ss = { getSheetByName(name) { return sheets[name] || null; } };
   let held = false, acquires = 0, releases = 0;
+  const events = [];
   const context = {
     LockService: { getScriptLock() { return {
       tryLock() {
@@ -92,22 +93,23 @@ function runtime(options = {}) {
       return id === "STU-1" ? { userId: id, grado: "10", seccion: "A", role: "Estudiante" } : null;
     },
     isExamAssignedToStudent_(exam, profile) { return String(exam[3]) === profile.grado && String(exam[4]) === profile.seccion; },
-    assertExamResourceOwnershipForScope_() { return { authorized: options.ownership !== false }; }
+    assertExamResourceOwnershipForScope_() { return { authorized: options.ownership !== false }; },
+    logStructuredEvent(...args) { events.push(args); }
   };
   const names = ["withAuthorizedExamRead_", "getAuthorizedExamReadContext_", "getStudentExams", "getStudentExamsUnlocked_",
     "getExamQuestions", "getExamQuestionsUnlocked_", "getAllExams", "getAllExamsUnlocked_",
     "getTeacherExamActivity", "getTeacherExamActivityUnlocked_", "getExamGradeDistributionAnalytics",
-    "getExamGradeDistributionAnalyticsUnlocked_", "checkExamSchedulingConflict", "checkExamSchedulingConflictUnlocked_"];
+    "getExamGradeDistributionAnalyticsUnlocked_", "checkExamSchedulingConflict", "checkExamSchedulingConflictUnlocked_", "simulateExamReschedule", "simulateExamRescheduleUnlocked_"];
   vm.runInNewContext(names.map(extractFunction).join("\n") +
     "\nthis.getStudentExams=getStudentExams; this.getExamQuestions=getExamQuestions; " +
     "this.getAllExams=getAllExams; this.getTeacherExamActivity=getTeacherExamActivity; " +
-    "this.getExamGradeDistributionAnalytics=getExamGradeDistributionAnalytics; this.checkExamSchedulingConflict=checkExamSchedulingConflict;", context);
-  return { context, sheets, stats: () => ({ acquires, releases, held }) };
+    "this.getExamGradeDistributionAnalytics=getExamGradeDistributionAnalytics; this.checkExamSchedulingConflict=checkExamSchedulingConflict; this.simulateExamReschedule=simulateExamReschedule;", context);
+  return { context, sheets, events, stats: () => ({ acquires, releases, held }) };
 }
 const valid = runtime();
 const list = valid.context.getStudentExams({ sessionToken: "student", studentId: "ATTACKER" });
 assert.deepEqual(Array.from(list.data, row => row.examenId), ["EXM-2", "EXM-3"],
-  "ambiguous duplicate deliveries exclude their exam; inactive exam is visible only with one own delivery");
+  "the student sees only their own unique delivery; inactive exams require one own delivery");
 assert.equal(list.data[0].entrega.calificacion, null, "pending student delivery never exposes a score");
 assert.deepEqual(valid.stats(), { acquires: 1, releases: 1, held: false }, "student listing is serialized and releases lock");
 const questions = valid.context.getExamQuestions({ sessionToken: "student", examenId: "EXM-3" });
@@ -228,5 +230,51 @@ const deniedCount = deniedOwnership.context.checkExamSchedulingConflict({ seccio
 assert.equal(deniedCount.hasConflict, false, "ownership-denied exams are excluded from the conflict count");
 assert.equal(deniedCount.examenesCount, 0, "ownership denial never leaks the number of inaccessible exams");
 assert.deepEqual(deniedOwnership.stats(), { acquires: 1, releases: 1, held: false });
+
+
+const reschedule = runtime({ studentActor: false });
+reschedule.sheets.Examenes.rows[1][5] = "2026-11-10";
+reschedule.sheets.Examenes.rows[3][5] = "2026-11-12";
+reschedule.sheets.Examenes.rows.push(["SCH-EXTRA","Otro examen propio","Math","10","A","2026-11-12","30","Activo","PROF-1","P1"]);
+const rowsBeforeSimulation = JSON.stringify(reschedule.sheets.Examenes.rows);
+const simulated = reschedule.context.simulateExamReschedule({
+  sessionToken: "teacher", examenId: "EXM-1", nuevaFecha: "2026-11-12", authRole: "Administrador"
+});
+assert.equal(simulated.status, "success");
+assert.equal(simulated.simulacion.examenId, "EXM-1");
+assert.equal(simulated.simulacion.titulo, "Activo propio");
+assert.equal(simulated.simulacion.tieneConflicto, true, "simulation reuses the scheduling conflict calculation");
+assert.equal(JSON.stringify(reschedule.sheets.Examenes.rows), rowsBeforeSimulation, "simulation performs no sheet writes");
+assert.deepEqual(reschedule.stats(), { acquires: 1, releases: 1, held: false },
+  "simulation and conflict check share one lock without nested acquisition");
+assert.equal(reschedule.events.length, 1);
+assert.equal(reschedule.events[0][6], "Profesor", "audit event role comes from verified identity, not payload");
+assert.throws(() => runtime({ deniedAction: "simulateExamReschedule", studentActor: false }).context
+  .simulateExamReschedule({ examenId: "EXM-1", nuevaFecha: "2026-11-12" }),
+  /RESOURCE_NOT_AVAILABLE/, "simulation requires its own explicit RBAC permission");
+assert.throws(() => runtime({ ownership: false, studentActor: false }).context
+  .simulateExamReschedule({ examenId: "EXM-1", nuevaFecha: "2026-11-12" }),
+  /RESOURCE_NOT_AVAILABLE/, "simulation fails closed without resource ownership");
+assert.throws(() => runtime({ studentActor: false, actor: { userId: "PROF-2", role: "Profesor" } }).context
+  .simulateExamReschedule({ examenId: "EXM-1", nuevaFecha: "2026-11-12" }),
+  /RESOURCE_NOT_AVAILABLE/, "teacher cannot simulate another teacher's exam");
+assert.throws(() => reschedule.context.simulateExamReschedule({ examenId: "EXM-D", nuevaFecha: "2026-11-12" }),
+  /RESOURCE_NOT_AVAILABLE/, "ambiguous duplicate exam IDs are denied");
+assert.throws(() => reschedule.context.simulateExamReschedule({ examenId: "EXM-1", nuevaFecha: "2026-02-31" }),
+  /EXAM_SCHEDULE_DATE_INVALID/, "simulation validates impossible calendar dates");
+assert.deepEqual(reschedule.stats(), { acquires: 3, releases: 3, held: false },
+  "simulation releases the lock after duplicate-ID and invalid-date denials");
+
+
+assert.throws(() => runtime({ lockAvailable: false, studentActor: false }).context
+  .simulateExamReschedule({ examenId: "EXM-1", nuevaFecha: "2026-11-12" }),
+  /EXAM_READ_LOCK_TIMEOUT/, "simulation fails closed when the shared lock is unavailable");
+const rescheduleRace = runtime({ studentActor: false, beforeAcquire() {
+  rescheduleRace.sheets.Examenes.rows[1][8] = "PROF-2";
+} });
+assert.throws(() => rescheduleRace.context.simulateExamReschedule({ examenId: "EXM-1", nuevaFecha: "2026-11-12" }),
+  /RESOURCE_NOT_AVAILABLE/, "simulation rechecks target ownership after acquiring the shared lock");
+assert.deepEqual(rescheduleRace.stats(), { acquires: 1, releases: 1, held: false },
+  "post-lock ownership denial releases the lock");
 
 process.stdout.write("exam-service-read-endpoints-security: PASS\\n");
