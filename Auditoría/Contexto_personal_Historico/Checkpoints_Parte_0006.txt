@@ -289,3 +289,15 @@ Subalcance saveRubric corregido. TASK-153 / AUD-NG-386 continúa En ejecución p
 Siguiente acción: verificar parseo/contrato y CI; después continuar inventario sin repetir wrappers endurecidos.
 HEAD final: pendiente de confirmación tras publicar.
 ===============================================================================
+
+
+### ADDENDUM DE PUBLICACIÓN Y VERIFICACIÓN — C1.518
+- Commit de implementación y registros: `70937df09f8dcae605a0bd63e7eb85e4fcb05375`; HEAD de `NG_beta_0.0.0.1_work` verificado en ese SHA.
+- Diff del commit revisado: siete archivos previstos; sin cambios de código fuera del wrapper `saveRubric` y sus contratos.
+- Parseo completo de Code.gs y del contrato general: PASS.
+- Harness sobre wrapper productivo extraído: 7/7 PASS.
+- Suite dedicada `exam-service-save-rubric-security.test.js`: 19/19 PASS en V8 local compatible; Node 22 nativo NOT RUN.
+- GitHub Actions y status checks del HEAD: NOT RUN/no se observó ejecución. No se declara CI PASS.
+- Comparación de ramas: base `NG_beta_0.0.0.1` intacta en `44d9891132332e692dbe2ba8602b41f50a508a59`; rama de trabajo 1.226 commits adelante y 0 atrás.
+- Siguiente tarea elegible: revisar `withAuthorizedCompetencyEvaluationMutation_` con el mismo criterio de autorización pre-lock y revalidación contextual; no iniciada en esta iteración.
+- HEAD final: `70937df09f8dcae605a0bd63e7eb85e4fcb05375`.

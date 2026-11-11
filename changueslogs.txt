@@ -1532,3 +1532,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Harness local sobre wrapper productivo extraído: 7/7 PASS. Parseo completo Code.gs/contrato Node y CI pendientes de verificación.
 - Apps Script/Sheets real NOT RUN; sin cambios de esquema. TASK-153 / AUD-NG-386 continúa En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] Verificación C1.518 — saveRubric
+- Suite dedicada exam-service-save-rubric-security.test.js: 19/19 PASS en V8 local compatible; orden pre-lock, revalidación contextual y timeout incluidos.
+- Parseo completo de Code.gs y contrato: PASS. Harness focalizado: 7/7 PASS.
+- Node 22 nativo NOT RUN. GitHub Actions/status checks del HEAD 70937df09f8dcae605a0bd63e7eb85e4fcb05375: NOT RUN; no se observó ejecución.
+===============================================================================

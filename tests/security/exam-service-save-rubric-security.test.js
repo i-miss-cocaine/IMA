@@ -12,7 +12,7 @@ function extract(name) {
   let depth = 0, quote = "", escaped = false, line = false, block = false;
   for (let i = open; i < source.length; i++) {
     const c = source[i], n = source[i + 1];
-    if (line) { if (c === "\\n") line = false; continue; }
+    if (line) { if (c === "\n") line = false; continue; }
     if (block) { if (c === "*" && n === "/") { block = false; i++; } continue; }
     if (quote) { if (escaped) { escaped = false; continue; } if (c === "\\\\") { escaped = true; continue; } if (c === quote) quote = ""; continue; }
     if (c === "/" && n === "/") { line = true; i++; continue; }
@@ -43,7 +43,8 @@ function makeSheet(rows, kind, options, state) {
   };
 }
 function fixture(options = {}) {
-  const state = { opens: 0, locks: 0, releases: 0, held: false, uuid: 0, rubricWrites: 0 };
+  const state = { opens: 0, locks: 0, releases: 0, held: false, uuid: 0, rubricWrites: 0,
+    events: [], permissionCalls: 0, identityCalls: 0 };
   const rubricRows = options.rubricRows || [rubricHeaders,
     ["RUB-OWNED", "Propia", "Matemáticas", "Activa", "[]"],
     ["RUB-LEGACY", "Legada", "General", "Activa", "[]"]];
@@ -63,23 +64,31 @@ function fixture(options = {}) {
   const scope = options.scope || { authorized: true, institutionId: "INST-A", departmentIds: ["DEPT-A"], institutionWide: false };
   const actor = options.actor || { authorized: true, userId: "TEACHER-A", role: "Profesor" };
   const scriptLock = {
-    tryLock() { state.locks++; if (options.timeout || state.held) return false; state.held = true; return true; },
-    releaseLock() { state.releases++; state.held = false; }
+    tryLock(timeout) { state.events.push("lock-acquire:" + timeout); state.locks++; if (options.timeout || state.held) return false; state.held = true; return true; },
+    releaseLock() { state.events.push("lock-release"); state.releases++; state.held = false; }
   };
   const runtime = {
     SPREADSHEET_ID: "LOCAL",
-    LockService: { getScriptLock() { return scriptLock; } },
-    validateRolePermission(action) { state.action = action; return { authorized: options.permission !== false }; },
-    getVerifiedExamIdentity_() { return actor; },
-    getVerifiedExamDepartmentScope_() { return scope; },
+    LockService: { getScriptLock() { state.events.push("lock-request"); return scriptLock; } },
+    validateRolePermission(action) {
+      state.events.push("permission"); state.permissionCalls++; state.action = action;
+      return { authorized: options.permission !== false && !(options.contextPermission === false && state.permissionCalls > 1) };
+    },
+    getVerifiedExamIdentity_() {
+      state.events.push("identity"); state.identityCalls++;
+      if (options.contextIdentity === false && state.identityCalls > 1) return { authorized: false };
+      return actor;
+    },
+    getVerifiedExamDepartmentScope_() { state.events.push("scope"); return scope; },
     assertExamResourceOwnershipForScope_(spreadsheet, currentScope, type, id) {
+      state.events.push("ownership");
       const rows = sheets.ResourceOwnership ? sheets.ResourceOwnership.rows.slice(1) : [];
       const matches = rows.filter(row => String(row[1]) === String(currentScope.institutionId) &&
         String(row[2]).toUpperCase() === type && String(row[3]) === id && String(row[5]).toUpperCase() === "ACTIVE");
       return { authorized: matches.length === 1 && (currentScope.institutionWide === true ||
         (currentScope.departmentIds || []).includes(matches[0][4])) };
     },
-    SpreadsheetApp: { openById() { state.opens++; return ss; } },
+    SpreadsheetApp: { openById() { state.events.push("spreadsheet-open"); state.opens++; return ss; } },
     getSheetOrThrow(spreadsheet, name) { const sheet = spreadsheet.getSheetByName(name); if (!sheet) throw new Error("MISSING_" + name); return sheet; },
     getOrCreateSheet(spreadsheet, name) { return spreadsheet.getSheetByName(name) || spreadsheet.insertSheet(name); },
     Utilities: { getUuid() { state.uuid++; return "UUID-" + state.uuid; } },
@@ -88,6 +97,11 @@ function fixture(options = {}) {
   const names = ["saveRubric", "withAuthorizedRubricMutation_", "getAuthorizedRubricMutationContext_",
     "saveRubricUnlocked_", "getRubricsUnlocked_"];
   vm.runInNewContext(names.map(extract).join("\n"), runtime);
+  const originalMutationContext = runtime.getAuthorizedRubricMutationContext_;
+  runtime.getAuthorizedRubricMutationContext_ = function(payload) {
+    state.events.push("context");
+    return originalMutationContext(payload);
+  };
   return { runtime, state, sheets, call: payload => runtime.saveRubric(payload),
     read: () => runtime.getRubricsUnlocked_({}, { ss, scope }) };
 }
@@ -102,6 +116,11 @@ test("authorized create writes rubric and unique department ownership", () => {
   const owner = x.sheets.ResourceOwnership.rows.find(row => row[3] === id);
   assert.equal(owner[1], "INST-A"); assert.equal(owner[2], "RUBRICA_EVALUACION"); assert.equal(owner[4], "DEPT-A");
   assert.equal(owner[5], "ACTIVE"); assert.equal(owner[6], "TEACHER-A");
+  assert.deepEqual(x.state.events.slice(0, 8), [
+    "permission", "identity", "lock-request", "lock-acquire:5000", "context", "permission", "identity", "spreadsheet-open"
+  ], "RBAC and signed identity must precede lock acquisition; context must be revalidated after lock acquisition");
+  assert.ok(x.state.events.indexOf("scope") > x.state.events.indexOf("spreadsheet-open"));
+  assert.equal(x.state.events.at(-1), "lock-release");
 });
 test("authorized owner can update existing rubric without changing ownership", () => {
   const x = fixture(); const before = x.sheets.ResourceOwnership.rows[1].slice();
@@ -119,11 +138,15 @@ test("cross-department and cross-institution update denied", () => {
   denied(() => x.call({ rubricaId: "RUB-OWNED", titulo: "Ajena" }));
   assert.equal(x.sheets.RubricasEvaluacion.rows[1][1], "Propia");
 });
-test("missing permission denied before spreadsheet access", () => {
-  const x = fixture({ permission: false }); denied(() => x.call({ titulo: "No" })); assert.equal(x.state.opens, 0);
+test("missing permission denied before lock request and spreadsheet access", () => {
+  const x = fixture({ permission: false }); denied(() => x.call({ titulo: "No" }));
+  assert.equal(x.state.opens, 0); assert.equal(x.state.locks, 0);
+  assert.deepEqual(x.state.events, ["permission"]);
 });
-test("missing verified identity denied before spreadsheet access", () => {
-  const x = fixture({ actor: { authorized: false } }); denied(() => x.call({ titulo: "No" })); assert.equal(x.state.opens, 0);
+test("missing verified identity denied before lock request and spreadsheet access", () => {
+  const x = fixture({ actor: { authorized: false } }); denied(() => x.call({ titulo: "No" }));
+  assert.equal(x.state.opens, 0); assert.equal(x.state.locks, 0);
+  assert.deepEqual(x.state.events, ["permission", "identity"]);
 });
 test("missing scope denied without rubric creation", () => {
   const x = fixture({ scope: { authorized: false, institutionId: "INST-A", departmentIds: [] } });
@@ -143,8 +166,26 @@ test("duplicate rubric ID is rejected", () => {
   const x = fixture({ rubricRows: [rubricHeaders, ["RUB-X","A","G","Activa","[]"], ["RUB-X","B","G","Activa","[]"]] });
   denied(() => x.call({ rubricaId: "RUB-X", titulo: "Dup" }));
 });
-test("lock timeout fails closed and does not access spreadsheet", () => {
-  const x = fixture({ timeout: true }); assert.throws(() => x.call({ titulo: "No" }), /RUBRIC_MUTATION_LOCK_TIMEOUT/); assert.equal(x.state.opens, 0);
+test("RBAC is revalidated inside the acquired lock", () => {
+  const x = fixture({ contextPermission: false });
+  denied(() => x.call({ titulo: "Context permission denied" }));
+  assert.equal(x.state.locks, 1); assert.equal(x.state.releases, 1); assert.equal(x.state.opens, 0);
+  assert.deepEqual(x.state.events, [
+    "permission", "identity", "lock-request", "lock-acquire:5000", "context", "permission", "lock-release"
+  ]);
+});
+test("signed identity is revalidated inside the acquired lock", () => {
+  const x = fixture({ contextIdentity: false });
+  denied(() => x.call({ titulo: "Context identity denied" }));
+  assert.equal(x.state.locks, 1); assert.equal(x.state.releases, 1); assert.equal(x.state.opens, 0);
+  assert.deepEqual(x.state.events, [
+    "permission", "identity", "lock-request", "lock-acquire:5000", "context", "permission", "identity", "lock-release"
+  ]);
+});
+test("lock timeout fails closed after preflight and does not access spreadsheet", () => {
+  const x = fixture({ timeout: true }); assert.throws(() => x.call({ titulo: "No" }), /RUBRIC_MUTATION_LOCK_TIMEOUT/);
+  assert.equal(x.state.opens, 0);
+  assert.deepEqual(x.state.events, ["permission", "identity", "lock-request", "lock-acquire:5000"]);
 });
 test("nested mutation is excluded by the shared script lock", () => {
   const x = fixture(); const inner = () => x.call({ titulo: "Nested", departmentId: "DEPT-A" });
