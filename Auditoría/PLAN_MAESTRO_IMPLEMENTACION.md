@@ -4107,3 +4107,9 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** el usuario ejecutó `node --test tests/security/exam-service-period-gradebook-submission-security.test.js`; resultado informado por Node: Tests 1, Suites 0, Pass 1, Fail 0, Cancelled 0, Skipped 0, Todo 0. El archivo contiene 27 escenarios internos síncronos basados en aserciones; al completar el archivo sin excepción, los 27 escenarios pasaron. No se informó la versión de Node. CI y Apps Script/Sheets real: NOT RUN.
 - **Beta:** BETA-EXAM-054 actualizado; permanece Pendiente beta.
 - **Alcance:** ampliación exclusiva de cobertura; el backend ya revalidaba RBAC y no requiere cambio productivo. La cobertura local de esta tarea queda completada; TASK-153 / AUD-NG-386 continúa para el inventario EXAM restante.
+
+### 10.213 TASK-153 / AUD-NG-386 — verificar revocación RBAC de closePeriodGradebook bajo ScriptLock (C1.562)
+- **Brecha:** closePeriodGradebook valida RBAC e identidad antes del lock y vuelve a validar RBAC, identidad y rol en getAuthorizedPeriodGradebookClosureContext_. La suite cubre denegación inicial e identidad degradada bajo lock, pero no permiso concedido→revocado entre ambas comprobaciones.
+- **Cobertura añadida:** el fixture admite una secuencia determinista RBAC; nuevo escenario [true, false] que invoca closePeriodGradebook real. Exige RESOURCE_NOT_AVAILABLE en la segunda comprobación, sin segunda consulta de identidad ni apertura de Sheets, lock adquirido/liberado y CierresPeriodos intacto.
+- **Verificación:** parseo JavaScript de la suite modificada: PASS. Ejecución de los 21 escenarios y runtime Node local: NOT RUN en este entorno; pendiente ejecución por el usuario. CI y Apps Script/Sheets real: NOT RUN.
+- **Alcance:** solo prueba de seguridad; sin cambios en backend productivo, roles, permisos, scope, asignaciones o persistencia. TASK-153 / AUD-NG-386 permanece En ejecución hasta ejecutar la suite focalizada.

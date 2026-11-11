@@ -1804,3 +1804,22 @@ La verificación local de los 27 escenarios queda completada. No se modificó c�
 
 HEAD inicial: d4f2e81dd553bd5976f2703913a26e6bb52cbdbb. Rama de trabajo: NG_beta_0.0.0.1_work. Rama base sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
+
+
+===============================================================================
+## C1.562 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — añadir cobertura de revocación RBAC bajo ScriptLock para closePeriodGradebook.
+
+### Hallazgo y cambio
+- El handler valida RBAC e identidad antes de adquirir ScriptLock y vuelve a validar RBAC, identidad y rol dentro de getAuthorizedPeriodGradebookClosureContext_.
+- La suite dedicada cubría RBAC denegado en preflight e identidad degradada durante la revalidación, pero no permiso concedido en preflight y revocado bajo lock.
+- El fixture ahora admite una secuencia RBAC determinista; se añadió [true, false] ejecutando el handler real. El escenario exige RESOURCE_NOT_AVAILABLE en la segunda comprobación, orden de eventos [rbac, identity, lock, rbac], lock liberado, cero aperturas de Sheets y snapshot de CierresPeriodos intacto.
+- Solo se modificó tests/security/exam-service-period-gradebook-closure-security.test.js. Backend productivo, RBAC, roles, scope y persistencia sin cambios.
+
+### Verificación y estado
+- Parseo JavaScript de la suite modificada con Function constructor: PASS.
+- Suite focalizada de 21 escenarios: NOT RUN; pendiente ejecución local por el usuario. CI y Apps Script/Sheets real: NOT RUN.
+- TASK-153 / AUD-NG-386 continúa En ejecución hasta recibir y revisar el resultado de la suite.
+
+HEAD inicial: 16dad718e2462963bfc10af46a28899040685c45. Rama: NG_beta_0.0.0.1_work. Rama base esperada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================
