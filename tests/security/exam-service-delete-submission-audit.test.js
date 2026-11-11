@@ -45,7 +45,8 @@ function fixture(options = {}) {
   const context = {
     withAuthorizedExamSubmissionMutation_(payload, action, callback) {
       calls.action = action;
-      if (options.denied) throw new Error("RESOURCE_NOT_AVAILABLE");
+      if (options.denied || payload.entregaId && payload.entregaId !== "EEX-1" ||
+          payload.examenId && payload.examenId !== "EXM-1") throw new Error("RESOURCE_NOT_AVAILABLE");
       return callback({
         ss, actor: { userId: "ADMIN-1", role: "Administrador" },
         examId: "EXM-1", entregaId: "EEX-1",
