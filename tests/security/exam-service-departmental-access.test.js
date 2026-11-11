@@ -89,7 +89,7 @@ const ss = { getSheetByName(name) { return sheetObjects[name] || null; } };
 let examMutationLockAvailable = true, examMutationLockHeld = false, examMutationLockAcquires = 0, examMutationLockReleases = 0, examMutationBeforeAcquire = null, examSubmissionDuringAppend = null;
 const runtime = {
   SPREADSHEET_ID: "LOCAL", EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_: new WeakMap(),
-  PUBLIC_ACTIONS: [], ROLE_PERMISSIONS: { Profesor: ["getAllExams","getTeacherExamActivity","getStudentExams","getExamQuestions","updateExam","updateExamStatus","deleteExam","gradeExamSubmission","deleteExamSubmission"], Estudiante: ["getStudentExams","getExamQuestions","getExamResult","submitExam"], Tutor: ["getStudentExams","getExamQuestions","getExamResult"] },
+  PUBLIC_ACTIONS: [], ROLE_PERMISSIONS: { Profesor: ["getAllExams","getTeacherExamActivity","getStudentExams","getExamQuestions","updateExam","updateExamStatus","deleteExam","gradeExamSubmission","deleteExamSubmission"], Estudiante: ["getStudentExams","getExamQuestions","getExamResult","submitExam"], Tutor: ["getStudentExams","getExamQuestions","getExamResult"], "Dirección": ["*"] },
   getDynamicPermissionsForRole() { return null; }, hasActiveDelegationForAction() { return false; },
   validateContextualAccess() { return { authorized: true }; },
   verifySessionToken(token) { return claims[token] || null; },
