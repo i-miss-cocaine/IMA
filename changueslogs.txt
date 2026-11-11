@@ -1282,3 +1282,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Límite: el modelo RubricasEvaluacion carece de InstitutionID/DepartmentID y saveRubric no persiste ownership; se mantiene como catálogo compartido legado, pendiente de eventual evolución de modelo.
 - Parseo V8 PASS; suite local aislada 17 escenarios PASS; regresiones C1.493 12, C1.492 27, read-endpoints y security-contract PASS. Node nativo/CI/Apps Script real NOT RUN. BETA-EXAM-048 Pendiente beta.
 ===============================================================================
+
+===============================================================================
+[2026-11-11] C1.495 — IMA-EXEC-20261110-1825Z-02 — EXAM: saveEvaluationCategory
+- La mutación ahora requiere RBAC, identidad firmada y scope institucional/departamental, y se serializa bajo ScriptLock.
+- Las altas registran ownership por institución/departamento en ResourceOwnership; las ediciones requieren ownership activo, único y dentro del ámbito. Categorías heredadas sin ownership no se pueden modificar.
+- La lectura asociada filtra categorías con ownership fuera del ámbito y excluye referencias ambiguas; conserva las categorías legadas compartidas y defaults en memoria.
+- Validación de nombre/porcentaje, esquema e IDs; rollback de ambas escrituras ante fallo de alta.
+- Parseo V8 PASS; pruebas aisladas: mutación 17 escenarios y lectura 17 escenarios PASS; read-endpoints y security-contract PASS. Node nativo/CI/Apps Script real NOT RUN. BETA-EXAM-049 Pendiente beta.
+===============================================================================
