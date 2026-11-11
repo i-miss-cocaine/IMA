@@ -1679,14 +1679,52 @@ function getEvaluationCategoriesUnlocked_(context) {
   if (expectedHeaders.some((header, index) => String(data[0][index] || "").trim() !== header)) {
     throw new Error("EVALUATION_CATEGORIES_SCHEMA_INVALID");
   }
-  const categories = data.slice(1).map(r => ({
-    categoriaId: r[0],
-    nombre: r[1],
-    ambito: r[2] || "Global",
-    porcentajePonderacion: parseFloat(r[3]) || 0,
-    escalaId: r[4] || "100",
-    estado: r[5] || "Activo"
-  }));
+
+  const ownershipSheet = ss.getSheetByName("ResourceOwnership");
+  const ownershipRows = ownershipSheet ? ownershipSheet.getDataRange().getValues() : [];
+  const ownershipHeaders = ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"];
+  if (ownershipRows.length && ownershipHeaders.some((header, index) =>
+      String(ownershipRows[0][index] || "").trim() !== header)) {
+    throw new Error("RESOURCE_OWNERSHIP_SCHEMA_INVALID");
+  }
+  const scope = context.scope || {};
+  const ownedCategories = Object.create(null);
+  ownershipRows.slice(1).forEach(row => {
+    if (String(row[2] || "").trim().toUpperCase() !== "CATEGORIA_EVALUACION") return;
+    const id = String(row[3] || "").trim();
+    if (!id) return;
+    if (!ownedCategories[id]) ownedCategories[id] = [];
+    ownedCategories[id].push(row);
+  });
+  const idCounts = Object.create(null);
+  data.slice(1).forEach(row => {
+    const id = String(row[0] || "").trim();
+    if (id) idCounts[id] = (idCounts[id] || 0) + 1;
+  });
+  const categories = [];
+  data.slice(1).forEach(row => {
+    const id = String(row[0] || "").trim();
+    if (!id || idCounts[id] !== 1) return;
+    const owners = ownedCategories[id];
+    if (owners && owners.length) {
+      if (owners.length !== 1) return;
+      const owner = owners[0];
+      const departmentId = String(owner[4] || "").trim();
+      const visible = String(owner[5] || "").trim().toUpperCase() === "ACTIVE" &&
+        String(owner[1] || "").trim() === String(scope.institutionId || "").trim() &&
+        !!departmentId && (scope.institutionWide === true ||
+          (scope.departmentIds || []).some(value => String(value || "").trim() === departmentId));
+      if (!visible) return;
+    }
+    categories.push({
+      categoriaId: row[0],
+      nombre: row[1],
+      ambito: row[2] || "Global",
+      porcentajePonderacion: parseFloat(row[3]) || 0,
+      escalaId: row[4] || "100",
+      estado: row[5] || "Activo"
+    });
+  });
   return { status: "success", data: categories };
 }
 
