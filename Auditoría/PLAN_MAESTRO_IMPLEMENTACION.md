@@ -3908,3 +3908,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** suite dedicada ejecutada en runtime V8 aislado con shims de fs/vm/assert: 28/28 PASS; parseo completo de backend/exam-service/Code.gs: PASS. No se afirma Node 22 nativo.
 - **Beta:** BETA-EXAM-053 ampliado; permanece Pendiente beta. Apps Script/Sheets real NOT RUN.
 - **Estado:** cobertura de reviewPeriodGradebook reforzada; TASK-153 / AUD-NG-386 continúa En ejecución por otras rutas EXAM no cerradas.
+
+
+### 10.188 TASK-153 / AUD-NG-386 — regresión TOCTOU de identidad en reopenPeriodGradebook (C1.535)
+- **Hallazgo:** el contexto bajo lock ya exige actor presente, `authorized === true` y `userId` no vacío tras `trim()` antes de abrir Sheets; la suite dedicada no simulaba el cambio de identidad entre preflight y contexto.
+- **Cobertura añadida:** actor válido en preflight y actor autorizado con `userId` solo espacios durante la revalidación. Se verifica rechazo, cero aperturas de Sheets, estado `Cerrado` intacto y liberación del lock.
+- **Verificación local:** suite dedicada 27/27 PASS en runtime V8 aislado con shims de `fs`/`vm`/`assert`; parseo completo de `Code.gs` PASS. No se afirma Node 22 nativo.
+- **Beta:** BETA-EXAM-055 ampliado; Pendiente beta. Apps Script/Sheets real NOT RUN.
+- **Estado:** cobertura TOCTOU de `reopenPeriodGradebook` completada; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.

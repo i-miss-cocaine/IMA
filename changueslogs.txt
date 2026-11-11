@@ -1721,3 +1721,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Suite dedicada 28/28 PASS en runtime V8 aislado con shims; parseo Code.gs PASS. Node 22 nativo y CI NOT VERIFIED.
 - BETA-EXAM-053 ampliado; Apps Script/Sheets real NOT RUN, Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.535 — EXAM reopenPeriodGradebook: regresión de identidad TOCTOU
+- La fixture de seguridad ahora permite alternar identidades entre preflight y contexto bajo ScriptLock.
+- Nuevo escenario: actor válido inicialmente y userId compuesto por espacios al revalidar; rechazo antes de abrir Sheets, estado Cerrado intacto y lock liberado.
+- Suite dedicada 27/27 PASS en runtime V8 aislado con shims; parseo Code.gs PASS. Node 22 nativo/CI aún no verificados.
+- BETA-EXAM-055 ampliado y Pendiente beta; Apps Script/Sheets real NOT RUN.
+===============================================================================

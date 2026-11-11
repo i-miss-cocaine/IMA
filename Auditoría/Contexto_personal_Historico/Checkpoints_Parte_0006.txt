@@ -1044,3 +1044,40 @@ Completar la cobertura local de revalidación de identidad firmada entre el pref
 La cobertura de revalidación TOCTOU de reviewPeriodGradebook queda completada. TASK-153 / AUD-NG-386 permanece En ejecución por otras rutas EXAM no cerradas.
 Siguiente acción: continuar el inventario de mutaciones EXAM restantes, priorizando la revalidación TOCTOU de reopenPeriodGradebook sin repetir los controles ya cubiertos.
 ===============================================================================
+
+
+===============================================================================
+C1.535 — TASK-153 / AUD-NG-386 / EXAM reopenPeriodGradebook
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+Rama exclusiva: NG_beta_0.0.0.1_work
+HEAD inicial: c6dc9e38ab8bc5945710e16c309b06fc18ff3471
+Rama base: NG_beta_0.0.0.1 — HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras.
+
+### Alcance y hallazgo
+El contexto bajo lock ya exige actor presente, authorized === true y userId no vacío tras trim antes de abrir Sheets. La suite no modelaba el cambio de identidad entre preflight y revalidación.
+
+### Cambio
+La fixture admite una secuencia de actores. Se añade regresión con identidad válida en preflight y userId compuesto por espacios en el segundo actor. Se comprueba rechazo antes de abrir Sheets, cierre Cerrado sin cambios, lock liberado y ausencia de escritura.
+No se modifica código productivo ni permisos, roles, scope o persistencia.
+
+### Archivos modificados
+- tests/security/exam-service-period-gradebook-reopen-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación
+- Parseo completo de backend/exam-service/Code.gs: PASS.
+- Suite dedicada: 27/27 PASS en runtime V8 aislado con shims fs/vm/assert.
+- Node 22 nativo: NOT RUN; checkout local no disponible por DNS.
+- GitHub Actions: pendiente tras publicar.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-055 ampliado, Pendiente beta.
+
+### Continuidad
+Cobertura TOCTOU de reopenPeriodGradebook completada. TASK-153 / AUD-NG-386 sigue En ejecución por otras mutaciones EXAM.
+Siguiente acción: continuar el inventario de mutaciones EXAM restantes según dependencias y evidencia vigente, sin repetir controles ya cubiertos.
+===============================================================================
