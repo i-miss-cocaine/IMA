@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Panel del Estudiante - New Generation Bilingual School and Institute</title>
+    <link rel="icon" type="image/png" href="imagenes/new-generation-logo.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="New Generation">
+    <link rel="apple-touch-icon" href="imagenes/new-generation-logo.png">
+    <meta name="description" content="Panel del estudiante para la gestión de tareas, exámenes y seguimiento del progreso académico.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=22">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+</head>
+<body class="font-inter antialiased text-gray-900 bg-gray-50 min-h-screen flex flex-col">
+
+
+    <!-- ENCABEZADO INSTITUCIONAL (A-75) -->
+    <header id="main-header" class="fixed w-full z-[100] transition-all duration-300 bg-white border-b border-gray-100">
+        <div class="container mx-auto px-4 md:px-6 flex justify-between items-center h-16 md:h-20">
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="flex items-center gap-3 group" title="Ir al inicio">
+                    <img src="imagenes/new-generation-logo.png" alt="Logotipo oficial de New Generation Bilingual School and Institute" class="logo-img transition-transform duration-300 group-hover:scale-105">
+                    <div class="header-title-container">
+                        <h1 class="text-sm md:text-xl font-black text-gray-900 uppercase tracking-tighter leading-none">New Generation</h1>
+                        <p class="text-[9px] md:text-[11px] font-bold text-blue-600 uppercase tracking-widest mt-1">Bilingual School & Institute</p>
+                    </div>
+                </a>
+            </div>
+
+            <nav class="hidden md:flex items-center gap-0">
+                <a href="index.html" class="nav-link-desktop">Inicio</a>
+                <a href="student-dashboard.html" id="nav-portal-link" class="nav-link-desktop active">Portal</a>
+
+                <!-- Dropdown Cursos -->
+                <div class="relative group">
+                    <button class="nav-link-desktop flex items-center gap-1">
+                        Cursos <i class="fas fa-chevron-down text-[8px] opacity-50 group-hover:rotate-180 transition-transform"></i>
+                    </button>
+                    <div class="absolute left-0 mt-0 dropdown-container-ima bg-white rounded-xl shadow-2xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 translate-y-1 border border-gray-100 z-[110]">
+                        <div id="desktop-courses-menu"></div>
+                    </div>
+                </div>
+
+                <!-- Dropdown Contenido -->
+                <div class="relative group">
+                    <button class="nav-link-desktop flex items-center gap-1">
+                        Contenido <i class="fas fa-chevron-down text-[8px] opacity-50 group-hover:rotate-180 transition-transform"></i>
+                    </button>
+                    <div class="absolute left-0 mt-0 dropdown-container-ima bg-white rounded-xl shadow-2xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 translate-y-1 border border-gray-100 z-[110]">
+                        <div id="desktop-content-menu"></div>
+                    </div>
+                </div>
+
+                <a href="#" onclick="handleHeaderAction('show-activities')" class="nav-link-desktop">Actividades</a>
+                <a href="pseudocode.html" class="nav-link-desktop">Pseudocódigo</a>
+                <button id="open-profile-btn" class="nav-link-desktop">Mi perfil</button>
+            </nav>
+
+            <div class="flex items-center gap-4">
+                <img src="imagenes/bandera-de-honduras.png" alt="Bandera Nacional de Honduras" class="hn-flag opacity-100 block transition-transform hover:scale-110">
+            </div>
+        </div>
+    </header>
+
+    <!-- Modal de Perfil -->
+    <div id="profile-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden z-[60] backdrop-blur-sm">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md mx-4 animate-fade-in-up">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-medium text-gray-800">Mi Perfil</h2>
+                <button id="close-profile-modal" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <form id="profile-form" class="space-y-4">
+                <div>
+                    <label class="block font-medium text-gray-700 mb-1">Nombre Completo</label>
+                    <input type="text" id="profile-nombre" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                </div>
+                <div>
+                    <label class="block font-medium text-gray-700 mb-1">Correo Electrónico</label>
+                    <input type="email" id="profile-email" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
+                </div>
+                <div>
+                    <label class="block font-medium text-gray-700 mb-1">Teléfono</label>
+                    <input type="tel" id="profile-telefono" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
+                </div>
+                <div>
+                    <label class="block font-medium text-gray-700 mb-1">Número de Lista</label>
+                    <input type="number" id="profile-numeroLista" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
+                </div>
+                <div class="pt-4 border-t">
+                    <label class="block font-medium text-gray-700 mb-1">Contraseña Actual (para cambios)</label>
+                    <input type="password" id="profile-current-password" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" placeholder="••••••••">
+                </div>
+                <div>
+                    <label class="block font-medium text-gray-700 mb-1">Nueva Contraseña (opcional)</label>
+                    <input type="password" id="profile-password" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" placeholder="Mínimo 6 caracteres">
+                </div>
+                <div class="flex flex-col gap-3 mt-6">
+                    <button type="submit" class="btn-ima-primary w-full py-3">Guardar Cambios</button>
+                    <button type="button" onclick="window.handleLogout()" class="w-full py-3 bg-red-50 text-red-600 font-semibold rounded-xl hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <main class="mt-[4.5rem] pb-12 flex-grow">
+        <div class="container mx-auto px-4 md:px-8 py-8 max-w-7xl">
+            <div id="hidden-student-data" class="hidden"><span id="student-name"></span></div>
+
+            <!-- Cabecera de Información del Alumno (Tarea 3 - Fase Diagnóstico) -->
+            <div id="student-profile-header" class="mb-8">
+                <!-- Se poblará dinámicamente desde js/student.js -->
+            </div>
+
+            <!-- Sistema de Pestañas Principal (Tarea 1) -->
+            <div class="flex justify-center mb-8">
+                <div class="bg-gray-100/50 p-1.5 rounded-[2rem] flex flex-wrap gap-1 border border-gray-200">
+                    <button id="tab-activities" class="px-6 md:px-8 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 bg-blue-600 text-white shadow-lg shadow-blue-100">
+                        <i class="fas fa-tasks mr-2"></i> Actividades
+                    </button>
+                    <button id="tab-progress" class="px-6 md:px-8 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 text-gray-500 hover:bg-white hover:text-blue-600">
+                        <i class="fas fa-chart-line mr-2"></i> Progreso Académico
+                    </button>
+                    <button id="tab-financial" class="px-6 md:px-8 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 text-gray-500 hover:bg-white hover:text-blue-600">
+                        <i class="fas fa-file-invoice-dollar mr-2"></i> Matrícula y Finanzas
+                    </button>
+                    <button id="tab-guias" class="px-6 md:px-8 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 text-gray-500 hover:bg-white hover:text-blue-600">
+                        <i class="fas fa-book mr-2"></i> Guías de Estudio
+                    </button>
+                </div>
+            </div>
+
+            <!-- Vista de Actividades -->
+            <div id="view-activities" class="animate-fade-in">
+                <!-- Header de Navegación del Dashboard (v7.7.6) -->
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 bg-white/40 backdrop-blur-md p-6 rounded-[2.5rem] border border-white/60 shadow-sm">
+                    <div>
+                        <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Seguimiento Académico</h2>
+                        <div class="flex items-center gap-3">
+                            <label for="parcial-history-selector" class="text-xs font-bold text-gray-700 uppercase">Parcial:</label>
+                            <select id="parcial-history-selector" class="bg-white/50 border border-blue-100 rounded-xl px-4 py-2 text-xs font-bold text-blue-600 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer pr-8 relative">
+                                <option value="I parcial">I parcial</option>
+                                <option value="II parcial">II parcial</option>
+                                <option value="III parcial">III parcial</option>
+                                <option value="IV parcial">IV parcial</option>
+                            </select>
+                            <div class="pointer-events-none -ml-8 z-10 text-blue-400">
+                                <i class="fas fa-chevron-down text-[10px]"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex-grow md:max-w-2xl text-right">
+                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Estado Académico</p>
+                        <p class="text-xs font-bold text-blue-600 uppercase tracking-widest">Selecciona una asignatura para ver sus actividades.</p>
+                    </div>
+                </div>
+
+                <div class="space-y-10">
+                    <section>
+                        <div id="subject-info-container" class="mb-8 hidden">
+                            <!-- Se poblará vía js/student.js -->
+                        </div>
+
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-xl font-bold text-gray-900 uppercase tracking-tighter flex items-center gap-3">
+                                <div class="w-1.5 h-8 bg-blue-600 rounded-full"></div>
+                                Actividades de la Clase
+                            </h2>
+                            <div id="active-parcial-label" class="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100 shadow-sm">
+                                <!-- Parcial Seleccionado -->
+                            </div>
+                        </div>
+
+                        <div id="tasks-list" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                            <!-- Se poblará vía js/student.js -->
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Vista de Progreso Académico -->
+            <div id="view-progress" class="hidden animate-fade-in">
+                <!-- Expediente Académico (Task 4) -->
+                <div id="student-expediente" class="mb-10">
+                    <!-- Inyectado dinámicamente desde student.js -->
+                </div>
+            </div>
+
+            <!-- Vista de Matrícula y Control Financiero (REQ-EXP-009) -->
+            <div id="view-financial" class="hidden animate-fade-in">
+                <div id="student-financial-container" class="space-y-8">
+                    <!-- Inyectado dinámicamente desde student.js -->
+                </div>
+            </div>
+
+            <!-- Vista de Guías de Estudio Formativas (REQ-DOC-001) -->
+            <div id="view-guias" class="hidden animate-fade-in">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white/40 backdrop-blur-md p-6 rounded-[2.5rem] border border-white/60 shadow-sm">
+                    <div>
+                        <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Material Formativo</h2>
+                        <h3 class="text-xl font-bold text-gray-800">Guías de Estudio por Asignatura</h3>
+                        <p class="text-xs text-gray-500 mt-1">Recursos y material didáctico de apoyo para preparar tus exámenes y reforzar tus aprendizajes.</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <select id="student-guia-parcial" class="bg-white/80 border border-blue-100 rounded-xl px-4 py-2 text-xs font-bold text-blue-600 outline-none focus:ring-2 focus:ring-blue-500/20">
+                            <option value="">Todos los Parciales</option>
+                            <option value="I Parcial">I Parcial</option>
+                            <option value="II Parcial">II Parcial</option>
+                            <option value="III Parcial">III Parcial</option>
+                            <option value="IV Parcial">IV Parcial</option>
+                        </select>
+                        <button id="btn-student-reload-guias" class="bg-blue-600 text-white p-2.5 rounded-xl hover:bg-blue-700 transition-colors" title="Actualizar">
+                            <i class="fas fa-sync-alt text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="student-guias-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="col-span-full text-center py-12 text-gray-400">
+                        <i class="fas fa-spinner fa-spin mr-2"></i> Consultando guías de estudio disponibles...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Carga de Comprobante de Pago (REQ-EXP-011) -->
+    <div id="voucher-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden z-[70] backdrop-blur-sm">
+        <div class="bg-white p-6 md:p-8 rounded-3xl shadow-2xl w-full max-w-md mx-4 animate-fade-in-up">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800">Reportar Comprobante de Pago</h2>
+                <button type="button" id="close-voucher-modal" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+            </div>
+            <form id="voucher-form" class="space-y-4">
+                <input type="hidden" id="voucher-cargo-id">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Concepto:</label>
+                    <input type="text" id="voucher-concepto" class="w-full p-3 bg-gray-50 border rounded-xl text-xs font-bold" readonly>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Monto a Reportar (L.):</label>
+                    <input type="number" step="0.01" id="voucher-monto" class="w-full p-3 border rounded-xl text-xs font-bold" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Método de Pago:</label>
+                    <select id="voucher-metodo" class="w-full p-3 border rounded-xl text-xs font-bold bg-white">
+                        <option value="Transferencia Bancaria">Transferencia Bancaria</option>
+                        <option value="Depósito Bancario">Depósito en Ventanilla</option>
+                        <option value="Tarjeta">Tarjeta Débito/Crédito</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">N° Referencia / Transacción:</label>
+                    <input type="text" id="voucher-referencia" class="w-full p-3 border rounded-xl text-xs" placeholder="Ej. TRANS-987654" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Archivo de Comprobante (PDF o Imagen):</label>
+                    <input type="file" id="voucher-file" accept="image/*,.pdf" class="w-full text-xs">
+                </div>
+                <div class="flex gap-3 pt-3">
+                    <button type="button" id="cancel-voucher-btn" class="w-1/2 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold text-xs">Cancelar</button>
+                    <button type="submit" id="submit-voucher-btn" class="w-1/2 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700 shadow-md">Enviar Comprobante</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Entrega -->
+    <div id="submission-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden z-[60] backdrop-blur-sm">
+        <div class="bg-white p-6 md:p-8 rounded-3xl shadow-2xl w-full max-w-lg mx-4 animate-fade-in-up max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                <h2 class="text-2xl font-medium text-gray-800">Entregar Tarea</h2>
+                <button id="close-modal-x" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <h3 id="modal-task-title" class="text-lg text-blue-600 font-semibold mb-4 flex-shrink-0"></h3>
+
+            <div class="overflow-y-auto pr-2 flex-grow scroll-minimalist">
+                <form id="submission-form" class="space-y-6">
+                    <div>
+                        <label for="file-input" class="block font-semibold text-gray-700 mb-2 text-sm">Seleccionar Archivos (Imágenes, PDF, HTML, JS, CSS, PSC)</label>
+                        <div class="relative group">
+                            <input type="file" id="file-input" name="file-input" accept="image/*,.heic,application/pdf,text/html,text/css,text/javascript,.js,.psc,.html,.css" multiple class="w-full p-3 border-2 border-dashed border-gray-300 rounded-xl focus:border-blue-500 transition-colors text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Area de Vista Previa (Solo para progreso de subida automática) -->
+                    <div id="file-preview-container" class="hidden mt-4 p-4 border rounded-xl bg-gray-50">
+                        <p class="text-xs font-semibold text-gray-600 mb-2">Procesando y subiendo...</p>
+                        <div id="file-info-preview" class="text-center text-gray-700 font-medium"></div>
+                    </div>
+
+                    <!-- Lista de Archivos Subidos -->
+                    <div id="uploaded-files-container" class="hidden mt-6">
+                        <p class="text-sm font-semibold text-gray-600 mb-2">Archivos en la entrega:</p>
+                        <div class="file-list-scroll scroll-minimalist">
+                            <ul id="uploaded-files-list" class="space-y-2">
+                                <!-- Items de archivos subidos -->
+                            </ul>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 mt-6 pt-4 border-t flex-shrink-0">
+                <button type="button" id="cancel-submission-btn" class="btn-ima-cancel px-6 py-2.5 text-sm">Cancelar</button>
+                <button type="submit" form="submission-form" id="confirm-submission-btn" class="btn-ima-primary px-8 py-2.5 opacity-50 cursor-not-allowed text-sm" disabled>Entregar Tarea</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAVEGACIÓN MÓVIL (A-75): Barra Inferior Icon-Only -->
+    <div class="mobile-bottom-nav md:hidden z-[2000]">
+        <a href="index.html" class="bottom-nav-item" title="Inicio">
+            <i class="fas fa-home text-xl"></i>
+        </a>
+        <a href="student-dashboard.html" id="mobile-portal-bottom-nav" class="bottom-nav-item active" title="Portal">
+            <i class="fas fa-th-large text-xl"></i>
+        </a>
+        <button class="bottom-nav-item" onclick="window.openAcademicHierarchy('Presentaciones')" title="Cursos">
+            <i class="fas fa-book-open text-xl"></i>
+        </button>
+        <button class="bottom-nav-item" onclick="window.openAcademicHierarchy('Contenido')" title="Contenido">
+            <i class="fas fa-file-pdf text-xl"></i>
+        </button>
+        <a href="#" onclick="handleHeaderAction('show-activities')" class="bottom-nav-item" title="Actividades">
+            <i class="fas fa-gamepad text-xl"></i>
+        </a>
+        <a href="pseudocode.html" class="bottom-nav-item" title="Pseudocódigo">
+            <i class="fas fa-code text-xl"></i>
+        </a>
+        <button id="mobile-profile-btn-nav" class="bottom-nav-item" title="Perfil">
+            <i class="fas fa-user-circle text-xl"></i>
+        </button>
+    </div>
+
+    <footer class="bg-white/50 py-6 mt-auto">
+        <div class="container mx-auto px-6 text-center">
+            <p class="text-[10px] font-medium text-gray-400 uppercase tracking-widest mb-2">
+                &copy; 2026 <strong>New Generation Bilingual School and Institute</strong>.
+            </p>
+            <p class="text-[10px] font-medium text-gray-400 uppercase tracking-widest opacity-60">
+                <a href="#" class="hover:text-blue-600 transition-colors">Privacidad</a>
+                <span class="mx-1">-</span>
+                <a href="#" class="hover:text-blue-600 transition-colors">Términos y Condiciones</a>
+                <span class="mx-1">-</span>
+                <a href="#" class="hover:text-blue-600 transition-colors">Contáctanos</a>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Modal de Instrucciones iOS -->
+    <div id="ios-install-modal" class="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white w-full max-w-sm mx-4 rounded-3xl shadow-2xl overflow-hidden p-6 text-center">
+            <div class="flex justify-center mb-4">
+                <div class="bg-blue-100 p-3 rounded-full">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                </div>
+            </div>
+            <h3 class="text-xl font-medium text-gray-800 mb-2">Instalar en iOS</h3>
+            <p class="text-gray-600 mb-6 text-sm">Para instalar esta aplicación en tu iPhone o iPad:</p>
+            <div class="space-y-4 text-left mb-6">
+                <div class="flex items-center space-x-3">
+                    <span class="bg-gray-200 text-gray-700 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium">1</span>
+                    <span class="text-sm">Busca en el menú de compartir la opción:</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span class="bg-gray-200 text-gray-700 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium">2</span>
+                    <span class="text-sm">"Añadir a la pantalla de inicio"</span>
+                </div>
+            </div>
+            <button id="close-ios-modal" class="w-full bg-blue-600 text-white font-medium py-3 rounded-xl hover:bg-blue-700 transition-colors">Entendido</button>
+        </div>
+    </div>
+
+    <!-- Motor de Procesamiento PDF (v1.17.1) -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="js/config.js?v=22"></script>
+    <script src="js/persistence.js?v=22"></script>
+    <script src="js/api.js?v=22"></script>
+    <script src="js/games-adapter.js?v=22"></script>
+    <script src="js/ui-common.js?v=22"></script>
+    <script src="js/data.js?v=22"></script>
+    <script src="js/student.js?v=22"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.setupCommonUI) window.setupCommonUI();
+            if (window.renderCommonNav) window.renderCommonNav();
+
+            const closeModalX = document.getElementById('close-modal-x');
+            const cancelSubmissionBtn = document.getElementById('cancel-submission-btn');
+            if (closeModalX) closeModalX.onclick = () => document.getElementById('submission-modal').classList.add('hidden');
+            if (cancelSubmissionBtn) cancelSubmissionBtn.onclick = () => document.getElementById('submission-modal').classList.add('hidden');
+        });
+    </script>
+</body>
+</html>

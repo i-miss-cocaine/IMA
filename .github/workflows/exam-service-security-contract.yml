@@ -1,0 +1,93 @@
+name: Exam-Service security local contracts
+on:
+  push:
+    branches: [NG_beta_0.0.0.1_work]
+    paths:
+      - 'backend/exam-service/Code.gs'
+      - 'tests/security/exam-service-security-contract.test.js'
+      - 'tests/security/exam-service-departmental-access.test.js'
+      - 'tests/security/exam-service-read-endpoints-security.test.js'
+      - 'tests/security/exam-service-save-rubric-security.test.js'
+      - 'tests/security/exam-service-competency-evaluation-mutation-security.test.js'
+      - 'tests/security/exam-service-student-recovery-mutation-security.test.js'
+      - 'tests/security/exam-service-period-gradebook-closure-security.test.js'
+      - 'tests/security/exam-service-period-gradebook-submission-security.test.js'
+      - 'tests/security/exam-service-period-gradebook-review-security.test.js'
+      - 'tests/security/exam-service-period-gradebook-reopen-security.test.js'
+      - 'tests/security/exam-service-student-grade-rectification-security.test.js'
+      - 'tests/security/exam-service-gradebook-save-security.test.js'
+      - 'tests/security/exam-service-evaluation-setup-copy-security.test.js'
+      - 'tests/security/exam-service-create-exam-security.test.js'
+      - 'tests/security/exam-service-question-bank-read-security.test.js'
+      - 'tests/security/exam-service-question-bank-security.test.js'
+      - 'tests/security/exam-service-security-cache-purge.test.js'
+      - 'tests/security/exam-service-grade-submission-validation.test.js'
+      - 'tests/security/exam-service-delete-submission-audit.test.js'
+      - 'tests/security/exam-service-gradebook-bulk-apply-security.test.js'
+      - '.github/workflows/exam-service-security-contract.yml'
+  pull_request:
+    branches: [NG_beta_0.0.0.1_work]
+    paths:
+      - 'backend/exam-service/Code.gs'
+      - 'tests/security/exam-service-security-contract.test.js'
+      - 'tests/security/exam-service-departmental-access.test.js'
+      - 'tests/security/exam-service-read-endpoints-security.test.js'
+      - 'tests/security/exam-service-save-rubric-security.test.js'
+      - 'tests/security/exam-service-competency-evaluation-mutation-security.test.js'
+      - 'tests/security/exam-service-student-recovery-mutation-security.test.js'
+      - 'tests/security/exam-service-period-gradebook-closure-security.test.js'
+      - 'tests/security/exam-service-period-gradebook-submission-security.test.js'
+      - 'tests/security/exam-service-period-gradebook-review-security.test.js'
+      - 'tests/security/exam-service-period-gradebook-reopen-security.test.js'
+      - 'tests/security/exam-service-student-grade-rectification-security.test.js'
+      - 'tests/security/exam-service-gradebook-save-security.test.js'
+      - 'tests/security/exam-service-evaluation-setup-copy-security.test.js'
+      - 'tests/security/exam-service-create-exam-security.test.js'
+      - 'tests/security/exam-service-question-bank-read-security.test.js'
+      - 'tests/security/exam-service-question-bank-security.test.js'
+      - '.github/workflows/exam-service-security-contract.yml'
+jobs:
+  exam-security-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run rubric mutation security regression
+        run: node tests/security/exam-service-save-rubric-security.test.js
+      - name: Run competency evaluation mutation security regression
+        run: node tests/security/exam-service-competency-evaluation-mutation-security.test.js
+      - name: Run student recovery mutation security regression
+        run: node tests/security/exam-service-student-recovery-mutation-security.test.js
+      - name: Run period gradebook submission security regression
+        run: node tests/security/exam-service-period-gradebook-submission-security.test.js
+      - name: Run period gradebook closure security regression
+        run: node tests/security/exam-service-period-gradebook-closure-security.test.js
+      - name: Run period gradebook review security regression
+        run: node tests/security/exam-service-period-gradebook-review-security.test.js
+      - name: Run period gradebook reopen security regression
+        run: node tests/security/exam-service-period-gradebook-reopen-security.test.js
+      - name: Run student grade rectification security regression
+        run: node tests/security/exam-service-student-grade-rectification-security.test.js
+      - name: Run gradebook save security regression
+        run: node tests/security/exam-service-gradebook-save-security.test.js
+      - name: Run bulk gradebook apply security regression
+        run: node tests/security/exam-service-gradebook-bulk-apply-security.test.js
+      - name: Run evaluation setup copy security regression
+        run: node tests/security/exam-service-evaluation-setup-copy-security.test.js
+      - name: Run exam creation security regression
+        run: node tests/security/exam-service-create-exam-security.test.js
+      - name: Run security cache purge regression
+        run: node tests/security/exam-service-security-cache-purge.test.js
+      - name: Run grade submission validation regression
+        run: node tests/security/exam-service-grade-submission-validation.test.js
+      - name: Run exam submission deletion audit regression
+        run: node tests/security/exam-service-delete-submission-audit.test.js
+      - name: Run question bank mutation security regression
+        run: node tests/security/exam-service-question-bank-security.test.js
+      - name: Run question bank read security regression
+        run: node tests/security/exam-service-question-bank-read-security.test.js
+      - run: node tests/security/exam-service-security-contract.test.js
+      - run: node tests/security/exam-service-departmental-access.test.js
+      - run: node tests/security/exam-service-read-endpoints-security.test.js

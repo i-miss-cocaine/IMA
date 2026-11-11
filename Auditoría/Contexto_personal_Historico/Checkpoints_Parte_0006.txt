@@ -1,0 +1,748 @@
+===============================================================================
+PARTE 0006 — CHECKPOINTS IMA
+Continuación append-only de Checkpoints_Parte_0005.txt; parte anterior conservada íntegra.
+
+CHECKPOINT C1.511 — RBAC interno de submitExam
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial de iteración: 2b52e0e8867828504fc4922679564e373873a0d7.
+### Hallazgo
+submitExam validaba identidad, rol de estudiante, asignación académica, scope y ownership, pero dependía del RBAC aplicado por doPost. La invocación directa de la función podía omitir el permiso efectivo submitExam.
+### Corrección
+- Añadida validación validateRolePermission("submitExam", payload) dentro de submitExam, antes de adquirir ScriptLock.
+- Se conserva la verificación de identidad firmada/contexto dentro de submitExamUnlocked_, además de asignación, propiedad, límite de intentos y serialización existente.
+- El contrato departmental-access prueba un Tutor sin permiso mediante invocación directa y comprueba que no se adquiere el lock; la ruta positiva de Estudiante conserva sus pruebas previas.
+### Archivos modificados
+backend/exam-service/Code.gs; tests/security/exam-service-departmental-access.test.js; beta_test.txt (BETA-EXAM-064); changueslogs.txt; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoría/INDICE_CHECKPOINTS.md; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt.
+### Verificación
+- Harness local focalizado: 6 aserciones PASS (RBAC denegado antes de lock/flujo de persistencia y actor autorizado continúa).
+- Suite departmental-access ampliada; ejecución Node completa y CI NOT RUN al preparar este checkpoint.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-064 Pendiente beta.
+### Estado y continuidad
+Subalcance submitExam implementado. TASK-153 / AUD-NG-386 permanecen En ejecución por otras rutas EXAM. Siguiente acción: continuar revisión de endpoints mutadores restantes para identificar y corregir dependencias de RBAC/identidad exclusivamente en doPost.
+HEAD final: se confirma mediante lectura de la referencia de rama después del commit.
+===============================================================================
+
+
+CHECKPOINT C1.512 — reparación de contratos automatizados EXAM
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial de iteración: 2f3e581d4739183e99b8d3da0fd363c3636e9f22.
+### Hallazgo
+El workflow de seguridad EXAM detectó fixtures de test obsoletos tras cambios de seguridad anteriores: falta de contexto RBAC en el harness createExam, wrapper/workers omitidos en departmental-access y expectativas que no reflejaban persistencia normalizada y auditoría obligatoria de borrado.
+### Corrección
+- exam-service-security-contract.test.js carga validateContextualAccess y validateRolePermission reales en el contexto aislado; agrega un Tutor sin permiso y verifica denegación antes de SpreadsheetApp.openById y LockService.
+- exam-service-departmental-access.test.js modela withAuthorizedExamRead_ en el primer harness y carga getAllExamsUnlocked_/getTeacherExamActivityUnlocked_; incorpora permiso institucional Dirección.
+- Alinea la expectativa de calificación con el formato persistido "95.00".
+- Proporciona hoja de historial, motivo válido y comprobaciones de actor/rol/estado DELETED para deleteExamSubmission.
+- No se modificó código de producción ni esquema persistente.
+### Archivos modificados en la iteración
+- tests/security/exam-service-security-contract.test.js
+- tests/security/exam-service-departmental-access.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- changueslogs.txt
+### Verificación
+- Parseo sintáctico local de los dos archivos de prueba: PASS.
+- Workflow GitHub Actions 43029272236: PASS.
+- Pasos Node: exam-service-security-contract.test.js PASS; exam-service-departmental-access.test.js PASS; exam-service-read-endpoints-security.test.js PASS.
+- El job incluye además los contratos de regresión previos, todos completados; resultado global success.
+- Ejecución Node local completa no disponible en el entorno de edición; Apps Script/Sheets real NOT RUN; no requiere beta por ser corrección de fixtures.
+### Estado y continuidad
+La incidencia de CI del harness queda resuelta. TASK-153 / AUD-NG-386 siguen En ejecución por otras superficies EXAM. Siguiente tarea: continuar inventario de handlers mutadores EXAM para identificar la siguiente brecha de autorización/identidad.
+Commits de implementación iterativa de esta tarea: fe719e8235141f3629952c2fd777d438b00ba267; 4d687235c48c7c5952744c5ac950ef63fd29e1da; 9ef8827624a8a391b57395075a47722feec6bcbd; 73566d1fab21d14a006112f98942c946ef077362; 1b6fd8a7a5b6bb2ca82646a2980e399a5d6c5c40; f06fbe6773321cf5e674b0f8ce3c8b9bc8c957cf.
+Workflow: 43029272236 — PASS.
+HEAD final: se confirma mediante lectura de la referencia de rama después del commit documental.
+===============================================================================
+
+
+
+===============================================================================
+CHECKPOINT C1.513 — integración CI de contratos de seguridad del banco de preguntas EXAM
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial de iteración: 5a981f717705585baa3cec3b4e0dc676abf0a0ea.
+### Hallazgo
+Los contratos locales de lectura y mutación del banco de preguntas existían, pero no estaban conectados al workflow exam-service-security-contract.yml: ni los cambios en esos archivos activaban CI ni el job ejecutaba los scripts.
+### Corrección
+- Se agregan tests/security/exam-service-question-bank-security.test.js y tests/security/exam-service-question-bank-read-security.test.js a los filtros de push y pull_request.
+- Se añaden pasos Node 22 para ejecutar ambos contratos en el job exam-security-contracts.
+- No se modifica backend ni lógica de producción; se cierra una brecha de cobertura automatizada para RBAC, identidad, ownership, aislamiento, answer keys, lock y rollback.
+### Archivos modificados
+- .github/workflows/exam-service-security-contract.yml
+- changueslogs.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+### Verificación
+- Estructura del workflow: PASS (dos filtros de rutas, dos steps y comandos Node exactos).
+- Parseo sintáctico de los dos contratos Node: PASS.
+- Ejecución semántica local de los contratos: NOT RUN; el entorno de edición no dispone de checkout accesible y la clonación no pudo resolver github.com.
+- Resultado CI de ambos contratos: pendiente de observar el workflow disparado por este commit; no se declara PASS anticipadamente.
+- Apps Script/Sheets real: NOT RUN; no aplica beta porque no se modificó código de producción.
+### Estado y continuidad
+Integración CI completada en el árbol de trabajo. TASK-153 / AUD-NG-386 permanecen En ejecución por otras mutaciones EXAM.
+Siguiente acción: verificar el workflow de este commit y continuar inventario de handlers mutadores EXAM sin repetir contratos ya cubiertos.
+HEAD final: se confirma tras commit y lectura de la referencia.
+===============================================================================
+
+
+### ADDENDUM DE VERIFICACIÓN — C1.513
+- Workflow GitHub Actions **43030509930**: **PASS** (conclusión success) sobre commit `bd1aeddaa658f8f6eb606eaec8b0cbc5e0b381fd`.
+- Los pasos `Run question bank mutation security regression` y `Run question bank read security regression`: **PASS**; también finalizaron PASS los contratos EXAM restantes del job.
+- La ejecución semántica local continúa NOT RUN por la limitación de checkout documentada; CI sí ejecutó ambos scripts Node en runner Ubuntu/Node 22.
+- HEAD de la rama de trabajo verificado: `bd1aeddaa658f8f6eb606eaec8b0cbc5e0b381fd`; rama base sin cambios.
+
+
+
+===============================================================================
+CHECKPOINT C1.514 — autorización previa al lock en mutaciones de entregas EXAM
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial: dff96162526f71587a25273e57ece85678e0a423.
+### Hallazgo
+El wrapper compartido de calificación y borrado de entregas adquiría ScriptLock antes de validar permiso e identidad. Solicitudes inválidas podían competir por el bloqueo global antes de ser rechazadas.
+### Corrección
+- validateRolePermission(action, payload) y getVerifiedExamIdentity_(payload) se ejecutan antes de solicitar ScriptLock.
+- getAuthorizedExamSubmissionMutationContext_ vuelve a verificar permiso, identidad, ownership y entrega dentro del lock para preservar la protección TOCTOU.
+- El finally existente garantiza liberar el lock ante rechazo contextual o fallo de mutación.
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-delete-submission-audit.test.js
+- changueslogs.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+### Verificación
+- Parseo sintáctico de Code.gs: PASS.
+- Parseo sintáctico del contrato Node actualizado: PASS.
+- Se agregan seis escenarios deterministas de orden RBAC/identidad/lock, ruta autorizada, revalidación dentro del lock, liberación tras excepción y timeout.
+- Ejecución local focalizada del wrapper: pendiente de registrar inmediatamente tras ejecutar el código exacto editado.
+- CI: pendiente del commit de implementación.
+- Apps Script/Sheets real: NOT RUN; no es requisito beta para aprobar el wrapper aislado.
+### Estado y continuidad
+Subalcance de autorización previa al lock completado; TASK-153 / AUD-NG-386 continúa En ejecución por otras superficies EXAM.
+Siguiente acción: ejecutar/verificar contrato en CI y continuar inventario de mutadores restantes.
+HEAD final: pendiente de confirmación tras publicar.
+===============================================================================
+
+
+### ADDENDUM DE VERIFICACIÓN — C1.514
+- GitHub Actions **43031994018**: **PASS** sobre `dbcd49f775589359967ba79d5405c73200d1f11a`; job `exam-security-contracts` completado con éxito.
+- El step `Run exam submission deletion audit regression` ejecutó el contrato ampliado con los seis escenarios nuevos y finalizó **success**; el resto de los contratos EXAM también PASS.
+- Ejecución local focalizada del wrapper exacto: **6/6 PASS**. Parseo de Code.gs y contrato: PASS.
+- HEAD de implementación verificado: `dbcd49f775589359967ba79d5405c73200d1f11a`; rama base sin cambios.
+- HEAD final tras el commit documental: `3d719a498610b329679315686c331ca105b279f9`; rama base permanece en `44d9891132332e692dbe2ba8602b41f50a508a59`.
+
+
+
+===============================================================================
+CHECKPOINT C1.515 — autorización previa al lock en mutaciones del banco de preguntas EXAM
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial: 0fa020c145c41abb197280529e93d69e4b631eea.
+### Hallazgo
+withAuthorizedQuestionBankMutation_ adquiría ScriptLock antes de validar el permiso efectivo manageQuestionBank y la identidad firmada. Una llamada directa a manageQuestionBank con rol no autorizado o token inválido competía por el lock compartido antes de ser rechazada.
+### Corrección
+- validateRolePermission("manageQuestionBank", payload) e getVerifiedExamIdentity_(payload) se ejecutan antes de solicitar ScriptLock.
+- getAuthorizedQuestionBankMutationContext_ conserva la revalidación bajo el lock, incluyendo scope departamental, ownership, unicidad de recurso y esquema; no se elimina el control TOCTOU.
+- El finally existente conserva la liberación del lock en éxito, rechazo contextual y excepción.
+### Pruebas
+- Parseo completo de Code.gs: PASS.
+- Parseo sintáctico del contrato Node actualizado: PASS.
+- Harness local focalizado sobre la función exacta: 6/6 PASS (RBAC pre-lock, identidad pre-lock, flujo autorizado con revalidación, rechazo contextual bajo lock, liberación ante excepción y timeout).
+- Contrato Node completo y workflow CI: pendientes de ejecución/verificación posterior al commit.
+- Apps Script/Sheets real: NOT RUN; no se requiere despliegue para validar el wrapper aislado.
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-question-bank-security.test.js
+- changueslogs.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+### Estado y continuidad
+Subalcance de autorización previa al lock de manageQuestionBank corregido. TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente acción: verificar contrato ampliado en CI y continuar inventario sin repetir wrappers ya endurecidos.
+HEAD final: pendiente de confirmación tras publicar.
+===============================================================================
+
+
+### ADDENDUM DE VERIFICACIÓN — C1.515
+- GitHub Actions **43032803048**: **PASS** sobre `98b7c48fb688e20b183140bbe2583104121cb5e4`; job `exam-security-contracts` completado con éxito.
+- Step `Run question bank mutation security regression`: **success**, incluidos los asserts de RBAC, token expirado e identidad inválida antes de adquirir el lock; los demás contratos del job también PASS.
+- Parseo local de Code.gs y del contrato: PASS. Harness focalizado local del wrapper exacto: **6/6 PASS**.
+- HEAD de implementación: `98b7c48fb688e20b183140bbe2583104121cb5e4`.
+
+
+===============================================================================
+CHECKPOINT C1.516 — autorización previa al lock en mutaciones de metadatos EXAM
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial: 58cb9adcba3c5a1b7e4662a4684ff05f239ea984.
+### Hallazgo
+withAuthorizedExamMutation_ adquiría ScriptLock antes de validar RBAC e identidad firmada. Las rutas updateExamStatus, updateExam y deleteExam podían consumir el bloqueo global antes de rechazar una solicitud no autorizada.
+### Corrección
+- validateRolePermission(action, payload) y getVerifiedExamIdentity_(payload) se ejecutan antes de solicitar ScriptLock.
+- getAuthorizedExamMutationContext_(payload, action) conserva la revalidación dentro del lock: permiso, identidad, ámbito institucional/departamental, existencia única y ownership del examen.
+- finally conserva la liberación del lock en éxito, rechazo contextual y excepción.
+### Pruebas locales
+- Parseo completo de Code.gs: PASS.
+- Parseo sintáctico del contrato Node ampliado: PASS.
+- Harness focalizado sobre la función exacta: 6/6 PASS (RBAC pre-lock, identidad pre-lock, flujo autorizado con revalidación, rechazo RBAC contextual, liberación ante excepción y timeout).
+- Contrato Node completo en entorno local: NOT RUN (no hay checkout/runtime local del repositorio); el contrato está conectado al workflow EXAM existente y CI pendiente.
+- Apps Script/Sheets real: NOT RUN; no es requisito de aprobación local del wrapper.
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-security-contract.test.js
+- changueslogs.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+### Estado y continuidad
+Subalcance de autorización previa al lock para updateExamStatus, updateExam y deleteExam corregido. TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente acción: verificar CI y continuar el inventario de wrappers/handlers restantes sin repetir los subalcances cerrados.
+HEAD final: pendiente de confirmación tras publicar.
+===============================================================================
+
+
+### ADDENDUM DE VERIFICACIÓN — C1.516
+- GitHub Actions **43035256222**: **PASS** sobre `31559023dfd397143dd1c67319df993ada68196e`; job `exam-security-contracts` completado con éxito.
+- El step `Run node tests/security/exam-service-security-contract.test.js` ejecutó el contrato ampliado y finalizó **success**; los demás contratos EXAM del workflow también finalizaron success.
+- Parseo local de Code.gs y del contrato: PASS. Harness local focalizado sobre el wrapper exacto: **6/6 PASS**.
+- HEAD de implementación probado: `31559023dfd397143dd1c67319df993ada68196e`.
+
+
+===============================================================================
+CHECKPOINT C1.517 — autorización previa al lock en saveEvaluationCategory
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial: 0454b8b98e45088f6f6f825752fa1af3b37cca52.
+### Hallazgo
+withAuthorizedEvaluationCategoryMutation_ adquiría ScriptLock antes de validar RBAC e identidad firmada. La ruta saveEvaluationCategory podía hacer competir solicitudes inválidas por el lock compartido.
+### Corrección
+- validateRolePermission("saveEvaluationCategory", payload) e getVerifiedExamIdentity_(payload) se ejecutan antes de solicitar ScriptLock; se exige actor autorizado con userId no vacío.
+- getAuthorizedEvaluationCategoryMutationContext_ permanece dentro del lock y revalida permiso, identidad, scope departamental, ownership de CATEGORIA_EVALUACION, esquema de ResourceOwnership y esquema/unicidad de la categoría.
+- finally conserva la liberación del lock en éxito, rechazo contextual y excepción.
+### Pruebas locales
+- Parseo completo de Code.gs: PASS.
+- Parseo sintáctico del contrato Node ampliado: PASS.
+- Harness focalizado sobre la función exacta: 6/6 PASS (RBAC pre-lock, identidad/actor pre-lock, flujo autorizado con revalidación de contexto, rechazo RBAC contextual, liberación ante excepción y timeout).
+- Aserciones estáticas: PASS para RBAC/identidad/scope/ownership/esquema.
+- Contrato Node completo local: NOT RUN (sin checkout/runtime local); integrado al workflow EXAM para ejecución CI.
+- Apps Script/Sheets real: NOT RUN; no hay cambio de esquema.
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-security-contract.test.js
+- changueslogs.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+### Estado y continuidad
+Subalcance saveEvaluationCategory corregido. TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente acción: verificar CI y continuar inventario de wrappers mutadores restantes.
+HEAD final: pendiente de confirmación tras publicar.
+===============================================================================
+
+
+### ADDENDUM DE VERIFICACIÓN — C1.517
+- GitHub Actions **43035967966**: **PASS** sobre `c54b9e2a1d3f1fa1073d2b2f193251cca2d879d3`; job `exam-security-contracts` completado con éxito.
+- El step `Run node tests/security/exam-service-security-contract.test.js` y todos los demás contratos EXAM del workflow finalizaron **success**.
+- Parseo local de Code.gs y contrato: PASS; harness focalizado sobre el wrapper exacto: **6/6 PASS**; aserciones estáticas de RBAC/identidad/scope/ownership/esquema: PASS.
+- HEAD de implementación probado: `c54b9e2a1d3f1fa1073d2b2f193251cca2d879d3`.
+
+
+===============================================================================
+CHECKPOINT C1.518 — autorización previa al lock en saveRubric
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial: 3de2533d4eb9eb3dbc952d04187620a2a87ced16.
+### Hallazgo
+withAuthorizedRubricMutation_ adquiría ScriptLock antes de validar RBAC e identidad firmada; una llamada directa no autorizada podía competir por el lock compartido.
+### Corrección
+- validateRolePermission("saveRubric", payload) y getVerifiedExamIdentity_(payload), con userId no vacío, se ejecutan antes de solicitar ScriptLock.
+- getAuthorizedRubricMutationContext_ permanece dentro del lock y revalida permiso, identidad, scope departamental, ownership activo único y esquema; se conserva el control TOCTOU.
+- finally conserva la liberación del lock ante éxito, rechazo contextual y excepción.
+### Pruebas
+- Harness local determinista sobre el wrapper productivo extraído: 7/7 PASS (RBAC/identidad pre-lock, flujo autorizado con revalidación, denegación RBAC contextual, denegación de identidad contextual, liberación ante excepción y timeout).
+- Aserciones estáticas/dinámicas añadidas al contrato Node; parseo completo de Code.gs y del contrato: pendiente.
+- GitHub Actions: pendiente de ejecución/verificación.
+- Apps Script/Sheets real: NOT RUN; sin cambio de esquema.
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-security-contract.test.js
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+### Estado y continuidad
+Subalcance saveRubric corregido. TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente acción: verificar parseo/contrato y CI; después continuar inventario sin repetir wrappers endurecidos.
+HEAD final: pendiente de confirmación tras publicar.
+===============================================================================
+
+
+### ADDENDUM DE PUBLICACIÓN Y VERIFICACIÓN — C1.518
+- Commit de implementación y registros: `70937df09f8dcae605a0bd63e7eb85e4fcb05375`; HEAD de `NG_beta_0.0.0.1_work` verificado en ese SHA.
+- Diff del commit revisado: siete archivos previstos; sin cambios de código fuera del wrapper `saveRubric` y sus contratos.
+- Parseo completo de Code.gs y del contrato general: PASS.
+- Harness sobre wrapper productivo extraído: 7/7 PASS.
+- Suite dedicada `exam-service-save-rubric-security.test.js`: 19/19 PASS en V8 local compatible; Node 22 nativo NOT RUN.
+- GitHub Actions y status checks del HEAD: NOT RUN/no se observó ejecución. No se declara CI PASS.
+- Comparación de ramas: base `NG_beta_0.0.0.1` intacta en `44d9891132332e692dbe2ba8602b41f50a508a59`; rama de trabajo 1.226 commits adelante y 0 atrás.
+- Siguiente tarea elegible: revisar `withAuthorizedCompetencyEvaluationMutation_` con el mismo criterio de autorización pre-lock y revalidación contextual; no iniciada en esta iteración.
+- HEAD final: `70937df09f8dcae605a0bd63e7eb85e4fcb05375`.
+
+
+### ADDENDUM FINAL DE CI — C1.518
+- GitHub Actions workflow `43037336799`: **completed / success** sobre `178e901275b84b28a3d6faa887e34d5445f02ced`.
+- Job `exam-security-contracts`: SUCCESS; 23 pasos de pruebas SUCCESS, incluidos `Run rubric mutation security regression`, contrato general EXAM, departmental-access y read-endpoints.
+- La prueba dedicada `exam-service-save-rubric-security.test.js` pasó en Node 22 de CI; harness V8 local compatible 19/19 PASS.
+- HEAD de código y pruebas: `178e901275b84b28a3d6faa887e34d5445f02ced`. Node 22 local NOT RUN; Apps Script/Sheets real NOT RUN.
+- La rama base continúa intacta en `44d9891132332e692dbe2ba8602b41f50a508a59`; comparación final previa al cierre: 1.227 commits adelante, 0 atrás.
+- Siguiente tarea elegible: `withAuthorizedCompetencyEvaluationMutation_`; pendiente de iniciar en la próxima iteración.
+
+
+===============================================================================
+CHECKPOINT C1.519 — autorización previa al lock en saveCompetencyEvaluation
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial: 1ea6a79133f3430a07d4f68932d75b79150450e0.
+### Hallazgo
+withAuthorizedCompetencyEvaluationMutation_ adquiría ScriptLock antes de validar permiso saveCompetencyEvaluation e identidad firmada. La ruta directa no autorizada podía competir por el lock compartido.
+### Corrección
+- Validar permiso RBAC específico y actor firmado autorizado con userId no vacío antes de solicitar ScriptLock.
+- Conservar getAuthorizedCompetencyEvaluationMutationContext_ dentro del lock, que vuelve a validar RBAC, identidad, scope, asignación académica, rúbrica y esquema antes de permitir la escritura.
+- Mantener finally para liberar el lock ante éxito, rechazo contextual, timeout o excepción.
+### Pruebas
+- Suite dedicada exam-service-competency-evaluation-mutation-security.test.js: 24/24 PASS en V8 local compatible.
+- Parseo completo de backend/exam-service/Code.gs y contrato dedicado: PASS.
+- Casos: RBAC/identidad denegados antes de pedir lock; identidad sin userId; revalidación contextual de permiso e identidad; timeout fail-closed y orden de operaciones.
+- GitHub Actions Node 22: pendiente de ejecución/verificación.
+- Apps Script/Sheets real: NOT RUN; sin cambio de esquema.
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-competency-evaluation-mutation-security.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- beta_test.txt
+### Estado y continuidad
+Subalcance saveCompetencyEvaluation corregido. TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente acción: revisar el siguiente wrapper mutador elegible, sin repetir saveRubric ni saveCompetencyEvaluation.
+HEAD final: pendiente de confirmar tras publicar.
+===============================================================================
+
+
+### ADDENDUM FINAL DE CI — C1.519
+- GitHub Actions workflow `43038212516`: **completed / success** sobre el commit de implementación `d27b86312ff6d0b0194101c5e35f070a17fa2a96`.
+- Job `exam-security-contracts`: SUCCESS; `Run competency evaluation mutation security regression`: SUCCESS en Node 22; los demás contratos EXAM también finalizaron SUCCESS.
+- Suite dedicada V8 local compatible: 24/24 PASS; Node 22 CI: PASS.
+- Apps Script/Sheets real: NOT RUN. BETA-EXAM-050 permanece Pendiente beta, sin bloquear el cierre de implementación.
+- Siguiente tarea elegible: inspeccionar el siguiente wrapper mutador de TASK-153 que aún adquiera ScriptLock antes de autorización; no iniciado en esta iteración.
+- HEAD de implementación y pruebas probado por CI: `d27b86312ff6d0b0194101c5e35f070a17fa2a96`.
+- Cierre documental CI: commit `89e743e5ede2c0a2cf09d07da05c99cf3f568d45`, seguido por commits de ajuste de checkpoint/índice en la misma rama autorizada.
+- HEAD de rama verificado tras los cierres documentales mediante consulta directa de la referencia; el SHA del propio commit de checkpoint no se duplica dentro de su contenido.
+- Comparación final: rama base `NG_beta_0.0.0.1` sin modificaciones; rama de trabajo adelantada y 0 commits detrás.
+
+
+### C1.520 — IMA-EXEC-20261110-1825Z-02 — TASK-153 / AUD-NG-386 / EXAM
+**HEAD inicial:** 2d5bb20c85a211296c51a4777ca17cfdc82a77ca
+**Alcance:** wrapper compartido `withAuthorizedGradebookSave_`, consumido por `saveGradebookGrades` y `bulkApplyGradebookGrades`.
+### Hallazgo y corrección
+- ScriptLock se solicitaba antes de validar el permiso efectivo y la identidad firmada, permitiendo que una solicitud directa no autorizada compitiera por el lock compartido.
+- Se agregó preflight RBAC según `permissionAction` (default `saveGradebookGrades`) y actor firmado autorizado con `userId` no vacío antes del lock.
+- El contexto existente permanece dentro del lock y revalida RBAC, identidad, rol, scope, asignación académica, roster, cierre y esquema.
+### Pruebas
+- `exam-service-gradebook-save-security.test.js`: 27/27 PASS en V8 local compatible.
+- `exam-service-gradebook-bulk-apply-security.test.js`: 28/28 PASS en V8 local compatible.
+- Parseo completo de Code.gs y ambas suites: PASS.
+- CI Node 22: pendiente de ejecución/verificación.
+- Apps Script/Sheets real: NOT RUN; sin cambio de esquema.
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-gradebook-save-security.test.js
+- tests/security/exam-service-gradebook-bulk-apply-security.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- beta_test.txt
+### Estado y continuidad
+Subalcance saveGradebookGrades/bulkApplyGradebookGrades corregido. TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente acción: inspeccionar el siguiente wrapper mutador pendiente; no repetir el wrapper compartido de guardado de calificaciones.
+HEAD final: pendiente de confirmar tras publicar.
+===============================================================================
+
+
+### ADDENDUM FINAL DE CI — C1.520
+- GitHub Actions workflow `43043521060`: **completed / success** sobre el commit de implementación y pruebas `b9b0fca57760c6a19ce058bd607403c8e05d314a`.
+- Job `exam-security-contracts`: SUCCESS; `Run gradebook save security regression` y `Run bulk gradebook apply security regression`: SUCCESS en Node 22; todos los demás steps también SUCCESS.
+- Suites locales V8 compatibles: save 27/27 PASS; bulk apply 28/28 PASS; parseo completo Code.gs y ambas suites PASS.
+- Apps Script/Sheets real: NOT RUN. BETA-EXAM-057 y BETA-EXAM-058 permanecen Pendiente beta.
+- HEAD de implementación/pruebas probado por CI: `b9b0fca57760c6a19ce058bd607403c8e05d314a`; los commits siguientes son exclusivamente cierre documental.
+- HEAD final de rama y estado de base se verifican tras publicar el cierre documental; no se duplica el SHA del propio checkpoint en su contenido.
+===============================================================================
+
+
+### C1.521 — IMA-EXEC-20261110-1825Z-02 — TASK-153 / AUD-NG-386 / EXAM
+**HEAD inicial:** 9b5a4c642201a91dc735f320ac65cde48124a7ec
+**Alcance:** wrapper `withAuthorizedEvaluationSetupCopy_` para `copyEvaluationSetupBetweenGroups`.
+### Hallazgo y corrección
+- ScriptLock se solicitaba antes de validar RBAC e identidad firmada del Profesor.
+- Se agregó preflight del permiso específico, actor autorizado, `userId` no vacío y rol Profesor antes del lock. El contexto existente revalida dentro del lock RBAC, identidad, scope, asignaciones, ownership y esquema.
+- Se preservaron la copia de categorías, el registro de ResourceOwnership y el rollback compensatorio.
+### Pruebas
+- Suite `exam-service-evaluation-setup-copy-security.test.js`: 27 escenarios PASS en V8 local compatible.
+- Parseo completo de Code.gs y contrato: PASS.
+- Reentrada concurrente determinista y rollback existentes: PASS.
+- CI Node 22: pendiente de ejecución/verificación.
+- Apps Script/Sheets real: NOT RUN; sin cambio de esquema.
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-evaluation-setup-copy-security.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- beta_test.txt
+### Estado y continuidad
+Subalcance copyEvaluationSetupBetweenGroups corregido. TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente acción: inspeccionar el siguiente wrapper mutador pendiente; no repetir este wrapper.
+HEAD final: pendiente de confirmar tras publicar.
+===============================================================================
+
+
+### ADDENDUM FINAL DE CI — C1.521
+- GitHub Actions workflow `43045163554`: **completed / success** sobre el commit de implementación y pruebas `285b30755ec1d5b0b5cf99cdb5942d5bc1ec8a87`.
+- Job `exam-security-contracts`: SUCCESS; step `Run evaluation setup copy security regression`: SUCCESS en Node 22; los demás steps del workflow también SUCCESS.
+- Suite local V8 compatible: 27/27 PASS; parseo completo de Code.gs y suite PASS; incluye reentrada concurrente determinista y rollback.
+- Apps Script/Sheets real: NOT RUN. BETA-EXAM-059 permanece Pendiente beta.
+- HEAD de implementación/pruebas probado por CI: `285b30755ec1d5b0b5cf99cdb5942d5bc1ec8a87`; los commits posteriores son exclusivamente cierre documental.
+- HEAD final de rama y estado de base se verifican tras publicar el cierre documental; no se duplica el SHA del propio checkpoint en su contenido.
+===============================================================================
+
+
+===============================================================================
+C1.522 — TASK-153 / AUD-NG-386 / EXAM closePeriodGradebook
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+HEAD inicial verificado: da96cd40c9b8c0b39ff47cc48c8e06c66de9d370
+HEAD de implementación/pruebas: pendiente de confirmar tras publicar.
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 — HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras en la rama base.
+
+### Objetivo
+Corregir el orden de autorización de closePeriodGradebook para que RBAC e identidad firmada se validen antes de competir por ScriptLock, manteniendo revalidación contextual bajo lock.
+
+### Hallazgo y corrección
+- Hallazgo alto: withAuthorizedPeriodGradebookClosure_ adquiría ScriptLock antes de validar el permiso closePeriodGradebook y la identidad firmada.
+- Se añadió preflight RBAC, identidad autorizada, userId no vacío y rol permitido (Profesor y roles institucionales admitidos) antes del lock.
+- Se preservó la revalidación interna de RBAC, identidad, rol, scope, asignación, roster, publicación de las cuatro categorías, esquema y unicidad del cierre dentro del lock.
+- No se alteró la lógica de persistencia del cierre ni el esquema.
+
+### Pruebas y verificaciones
+- Suite dedicada Node: ampliada de 16 a 19 escenarios; resultado local pendiente de ejecutar/verificar en esta iteración.
+- Parseo completo Code.gs: pendiente de ejecutar localmente.
+- CI Node 22: pendiente de ejecución/verificación tras publicar.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-065 queda Pendiente beta.
+
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-period-gradebook-closure-security.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- beta_test.txt
+
+### Estado y continuidad
+Subalcance closePeriodGradebook corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente acción: verificar pruebas locales/CI y cerrar C1.522; después inspeccionar el siguiente wrapper mutador pendiente.
+HEAD final: pendiente de confirmar tras publicar.
+===============================================================================
+
+
+### ADDENDUM FINAL DE VERIFICACIÓN — C1.522
+- Commit de implementación/pruebas: `dff13f45ad4b855e6606e79f291747a4fe357215`.
+- GitHub Actions workflow `43046863190`: **completed / success**; job `exam-security-contracts` `130613013006` y todos sus pasos SUCCESS.
+- Suite `exam-service-period-gradebook-closure-security`: **19/19 PASS** en Node 22; parseo completo de Code.gs ejecutado por la suite.
+- Harness local focalizado del wrapper: **8/8 PASS**; verificó RBAC/identidad/rol antes de lock, denegaciones sin lock/Sheets, ruta autorizada, liberación y timeout.
+- Apps Script/Sheets real: NOT RUN. BETA-EXAM-065 permanece Pendiente beta.
+- HEAD final de rama y rama base se verifican tras publicar este addendum.
+===============================================================================
+
+
+===============================================================================
+C1.523 — TASK-153 / AUD-NG-386 / EXAM submitGradebookForReview
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+HEAD inicial verificado: 1b69f1233a3968e06cdd03a72e6c00c4f527028a
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 — HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras en la rama base.
+
+### Objetivo
+Corregir el orden de autorización de submitGradebookForReview para que RBAC e identidad firmada del Profesor se validen antes de competir por ScriptLock, manteniendo revalidación contextual bajo lock.
+
+### Hallazgo y corrección
+- Hallazgo alto: withAuthorizedPeriodGradebookSubmission_ adquiría ScriptLock antes de validar el permiso submitGradebookForReview y la identidad firmada.
+- Se añadió preflight RBAC, identidad autorizada, userId no vacío y rol exacto Profesor antes del lock.
+- Se preservó la revalidación interna de RBAC, identidad, rol, scope institucional, asignación docente, esquema y existencia de cierres dentro del lock.
+- No se alteró la lógica de persistencia, el estado PendienteRevision ni el esquema de CierresPeriodos.
+
+### Pruebas y verificaciones
+- Harness local focalizado del wrapper: 8/8 PASS (Node 22); denegación RBAC/identidad/rol sin lock ni Sheets, orden de doble validación, ruta autorizada, timeout y liberación ante error.
+- Suite dedicada: ajustada de 23 a 25 escenarios; GitHub Actions workflow 43048342087 SUCCESS, 25/25 PASS en Node 22 y parseo completo Code.gs PASS.
+- Parseo completo Code.gs: pendiente de ejecución en esta iteración.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-066 queda Pendiente beta.
+
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-period-gradebook-submission-security.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- beta_test.txt
+
+### Estado y continuidad
+Subalcance submitGradebookForReview corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente acción: inspeccionar el wrapper mutador withAuthorizedPeriodGradebookReview_ de reviewPeriodGradebook en la próxima iteración.
+HEAD final verificado tras cierre documental: 884189499ba13aad0f93034ecbcece5e6f8b5446.
+===============================================================================
+
+
+===============================================================================
+### ADDENDUM FINAL DE VERIFICACIÓN — C1.523 / submitGradebookForReview
+- Commit de implementación: `e2110415430dd96dc6b824113c14f197c7af8169`.
+- Commit de ajuste de suite y denominador: `66efc4b91fe1f364bf7a14b6308e252abf7ccc83`.
+- GitHub Actions workflow `43048598007`: **completed / success**; job `exam-security-contracts` `130619218017` SUCCESS.
+- Suite `exam-service-period-gradebook-submission-security`: **25/25 PASS** en Node 22; parseo completo de Code.gs PASS.
+- Harness local focalizado del wrapper: **8/8 PASS** en Node 22; denegación RBAC/identidad/rol antes del lock, doble validación autorizada, timeout y liberación ante error.
+- Apps Script/Sheets real: NOT RUN. BETA-EXAM-066 permanece Pendiente beta.
+- HEAD final de rama y rama base se verifican tras publicar este addendum.
+===============================================================================
+
+
+===============================================================================
+C1.524 — TASK-153 / AUD-NG-386 / EXAM reviewPeriodGradebook
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+HEAD inicial verificado: 842ceb7eee69263a23d3b922f64f23ef8a6c6e83
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 — HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras en la rama base.
+
+### Objetivo
+Corregir el orden de autorización de reviewPeriodGradebook para que RBAC e identidad firmada del revisor se validen antes de competir por ScriptLock, manteniendo revalidación contextual bajo lock.
+
+### Hallazgo y corrección
+- Hallazgo alto: withAuthorizedPeriodGradebookReview_ adquiría ScriptLock antes de validar el permiso reviewPeriodGradebook y la identidad firmada.
+- Se añadió preflight RBAC, identidad autorizada, userId no vacío y rol dentro de la allowlist ya definida: Administrador, Desarrollador, Dirección, Director y Secretaría.
+- El contexto existente conserva revalidación de RBAC, identidad, rol, scope institutionWide, cierre único en estado PendienteRevision y asignación docente dentro del lock.
+- No se amplió la allowlist, no se cambió la lógica de decisión Aprobado/Observado ni se modificó el esquema.
+
+### Pruebas y verificaciones
+- Harness local focalizado del wrapper: 12/12 PASS (Node); denegación RBAC/identidad/userId/rol sin lock, cinco roles permitidos, orden pre-lock, revalidación contextual, timeout y liberación.
+- Suite dedicada: ampliada de 23 a 27 escenarios; ejecución CI pendiente de confirmar.
+- Checkout local completo no disponible en el entorno de ejecución (falló git clone por resolución DNS); la suite dedicada no se declara ejecutada localmente.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-053 permanece Pendiente beta.
+
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-period-gradebook-review-security.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- beta_test.txt
+
+### Estado y continuidad
+Subalcance reviewPeriodGradebook corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente acción: inspeccionar el siguiente wrapper mutador EXAM pendiente, sin avanzar otra operación en esta iteración.
+HEAD final: pendiente de confirmar tras CI y cierre documental.
+===============================================================================
+
+
+===============================================================================
+### ADDENDUM FINAL DE VERIFICACIÓN — C1.524 / reviewPeriodGradebook
+- Commit de implementación: `a20ce52cad7db979bff52beb5c94c27b23bfce58`.
+- Commit de suite dedicada: `70c7a70e046db64cca95909328bfef8ffce5ff28`.
+- GitHub Actions workflow `43051393921`: **completed / success**; job `exam-security-contracts` `130629202452` SUCCESS; step de revisión del libro de notas SUCCESS.
+- Suite `exam-service-period-gradebook-review-security`: **27/27 PASS** en Node 22.
+- Harness local focalizado del wrapper: **12/12 PASS** en Node. La suite completa no se declara ejecutada localmente: no había checkout local y git clone falló por resolución DNS.
+- Apps Script/Sheets real: NOT RUN. BETA-EXAM-053 permanece Pendiente beta.
+- HEAD final de rama y rama base se verifican tras publicar este addendum.
+===============================================================================
+
+
+===============================================================================
+C1.525 — TASK-153 / AUD-NG-386 / EXAM reopenPeriodGradebook
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+HEAD inicial: 23853ce743b31759dd66838c273597d42a4a344e
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 — HEAD inicial verificado 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras.
+
+### Hallazgo y corrección
+- withAuthorizedPeriodGradebookReopen_ adquiría ScriptLock antes de validar el permiso reopenPeriodGradebook y la identidad firmada.
+- Se añadió preflight RBAC, identidad autorizada, userId no vacío y allowlist existente: Administrador, Desarrollador, Dirección, Director y Secretaría.
+- El contexto existente revalida RBAC/identidad/rol y scope institutionWide bajo lock, además de la integridad del cierre Cerrado único y de la auditoría/rollback.
+- No se ampliaron roles ni scopes y no se modificó la semántica de reapertura ni el esquema.
+
+### Pruebas
+- Harness local focalizado del wrapper: 10/10 PASS (Node).
+- Suite dedicada: ampliada de 22 a 26 escenarios; GitHub Actions workflow 43052136181 SUCCESS, job 130631828833 SUCCESS; reopen-period-gradebook-security 26/26 PASS en Node 22.
+- El workflow completo también pasó las suites de contrato, acceso departamental y endpoints de lectura.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-055 permanece Pendiente beta.
+
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-period-gradebook-reopen-security.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- beta_test.txt
+
+### Estado y continuidad
+Subalcance reopenPeriodGradebook corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente: inspeccionar el siguiente wrapper mutador EXAM pendiente, sin avanzar otra operación en esta iteración.
+HEAD final: se verificará tras cierre documental.
+===============================================================================
+
+
+===============================================================================
+### ADDENDUM FINAL DE VERIFICACIÓN — C1.525 / reopenPeriodGradebook
+- Commit de implementación: `01aedb8a586b06fa4753b683f33770380d56a950`.
+- Commit de suite: `769190534426f2aa7879c39864dbbec5e51c89c2`.
+- GitHub Actions workflow `43052136181`: **completed / success**; job `exam-security-contracts` `130631828833` SUCCESS; step de reapertura SUCCESS.
+- Suite `reopen-period-gradebook-security`: **26/26 PASS** en Node 22. Las suites generales de contrato, acceso departamental y lectura también pasaron en el mismo workflow.
+- Harness local focalizado: **10/10 PASS**. La suite completa se ejecutó en CI, no se declara ejecutada localmente.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-055 continúa Pendiente beta.
+- Rama base `NG_beta_0.0.0.1` verificada sin modificaciones. HEAD final se registra después del cierre del checkpoint.
+===============================================================================
+
+
+===============================================================================
+C1.526 — TASK-153 / AUD-NG-386 / EXAM rectifyStudentGrade
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+HEAD inicial: 324c4b216457f88ab63a8f64819e317c0fb539d3
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 — HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras.
+
+### Hallazgo y corrección
+- `withAuthorizedStudentGradeRectification_` adquiría ScriptLock antes de validar el permiso `rectifyStudentGrade` y la identidad firmada.
+- Se añadió preflight de RBAC, identidad autorizada, userId no vacío y allowlist contextual existente: Administrador, Desarrollador, Dirección, Director y Secretaría.
+- El contexto existente conserva la revalidación bajo lock de permiso, identidad, rol y scope `institutionWide`, además de unicidad de calificación, perfil estudiante, esquema e historial de auditoría.
+- No se ampliaron roles ni scopes y no se modificó la lógica de rectificación, persistencia o rollback.
+
+### Pruebas y verificaciones
+- Harness local focalizado sobre el wrapper productivo extraído: 7/7 PASS; denegaciones RBAC/identidad/userId/rol no adquieren lock ni ejecutan contexto; flujo autorizado revalida, timeout y liberación tras error.
+- Suite dedicada `exam-service-student-grade-rectification-security.test.js`: 28/28 PASS en runner JavaScript aislado con shims; parseo Code.gs y suite PASS. No se declara ejecución local nativa Node: checkout no disponible por fallo DNS al clonar.
+- GitHub Actions workflow `43053113842`: completed/success; job `exam-security-contracts` `130635301069` SUCCESS; step de rectificación SUCCESS, 28/28 PASS en Node 22. Las demás suites del workflow también SUCCESS.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-067 permanece Pendiente beta.
+
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-student-grade-rectification-security.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- beta_test.txt
+
+### Commits
+- Implementación: `c6e779aeaa4ba367f6976d2f9b4acb8c822bbb14`.
+- Suite: `441783a3c9557bd354fff222cd2e32b4ea6ce8fa`.
+- Plan: `e95d900fa70ab5031df0226c0f7fd2ff6f0a7af9`.
+- Auditoría: `013136e4fe5c4d6bdbd79185eab244e00e11eb59`.
+- Changelog: `e987c5dd38d662195b3e4888efe9ce117bc5a0b7`.
+- Beta: `5f99576315a08ab1d158b4b641cb30b141d08178`.
+- Checkpoint C1.526: `93f255771b435cfed62adf367ec8ee32bd4d29dd`; índice: `a738896db26de732a3ef12f1147850dfb5b62666`. HEAD final verificado: `a738896db26de732a3ef12f1147850dfb5b62666`; rama base intacta en `44d9891132332e692dbe2ba8602b41f50a508a59`.
+
+### Estado y continuidad
+Subalcance rectifyStudentGrade corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente: inspeccionar el siguiente wrapper mutador EXAM pendiente, una sola operación por iteración.
+===============================================================================
+
+
+===============================================================================
+### ADDENDUM FINAL DE VERIFICACIÓN — C1.526 / rectifyStudentGrade
+- GitHub Actions workflow `43053113842`: completed / success; job `exam-security-contracts` `130635301069` SUCCESS.
+- Suite `exam-service-student-grade-rectification-security`: 28/28 PASS en Node 22; step dedicado SUCCESS.
+- Harness focalizado local: 7/7 PASS; suite completa 28/28 PASS en runner aislado con shims; no se afirma Node nativo local.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-067 continúa Pendiente beta.
+===============================================================================
+
+
+===============================================================================
+C1.527 — TASK-153 / AUD-NG-386 / EXAM gradeExamSubmission + deleteExamSubmission
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+HEAD inicial: c16d4ea2369c95339dcf4be8946a6a2664888c9e
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 — HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras.
+
+### Hallazgo y corrección
+- El wrapper withAuthorizedExamSubmissionMutation_ validaba permiso e identidad antes de ScriptLock, pero no exigía userId no vacío; getAuthorizedExamSubmissionMutationContext_ tampoco lo comprobaba antes de abrir Sheets.
+- Se añadió el control de identidad completa (actor autorizado y userId no vacío) en el preflight y en el contexto, antes de SpreadsheetApp.openById.
+- Se preservan las acciones gradeExamSubmission/deleteExamSubmission, permisos, roles, ownership, auditoría, revalidación contextual y liberación finally. No se amplían permisos/roles ni se altera el esquema.
+
+### Pruebas
+- Parseo Code.gs y suite: PASS.
+- Suite dedicada exam-service-delete-submission-audit.test.js: 26/26 PASS en runner JavaScript aislado con shims; cubre userId vacío antes de lock, revalidación incompleta bajo lock con liberación y orden de validación previo a Sheets.
+- Node nativo local: NOT RUN; checkout local no disponible por fallo DNS al clonar.
+- GitHub Actions workflow 43058558651: completed/success; job exam-security-contracts 130654537657 SUCCESS; suite dedicada 26/26 PASS en Node 22; las demás suites del job SUCCESS.
+- Apps Script/Sheets real: NOT RUN; no requerido para aprobación local.
+
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-delete-submission-audit.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Commits
+- Implementación: 418c6ee8b6bbdfc97610a0532fcb85a67d1e44b8.
+- Pruebas iniciales: 295c061b2d53249ef1a2e9dea63d00fc8c36397d.
+- Cobertura de orden contexto/Sheets: b1b240ec8c8a26f3bdab789dbc39811fc935dcef.
+- Documentación y checkpoint: commits posteriores; HEAD final pendiente de verificación.
+
+### Estado y continuidad
+Subalcance de identidad completa en mutaciones de entregas corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente: continuar inventario de mutadores EXAM no cubiertos, una sola operación por iteración.
+===============================================================================
+
+
+===============================================================================
+### ADDENDUM FINAL DE VERIFICACIÓN — C1.527 / mutaciones de entregas EXAM
+- Implementación: `418c6ee8b6bbdfc97610a0532fcb85a67d1e44b8`.
+- Suite: `295c061b2d53249ef1a2e9dea63d00fc8c36397d` y cobertura de orden contexto/Sheets `b1b240ec8c8a26f3bdab789dbc39811fc935dcef`.
+- Cierre documental inicial: plan `d3b26691d263bfe7791f132d55821b451ad24c53`; auditoría `f73a42600669684ac3e4f6fda4f88f4ce159a4c5`; changelog `30b101800ab132e36b39c52b75da5af2b50d0abc`; checkpoint `5cd95439ddbe04635bd8ef6373cd437d94cec686`; índice `af8da7501496dbc510ada5a26a5c13093954c933`.
+- CI workflow `43058558651` SUCCESS; job `130654537657` SUCCESS; suite `exam-service-delete-submission-audit` 26/26 PASS en Node 22.
+- Suite aislada local 26/26 PASS; parseo Code.gs y suite PASS. Node nativo local NOT RUN por fallo DNS del checkout.
+- Apps Script/Sheets real NOT RUN; no requerido para aprobación local.
+- HEAD de trabajo verificado al momento del cierre documental: `af8da7501496dbc510ada5a26a5c13093954c933`; HEAD base `44d9891132332e692dbe2ba8602b41f50a508a59`; rama base sin escrituras.
+===============================================================================
