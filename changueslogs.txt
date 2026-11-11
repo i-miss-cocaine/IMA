@@ -2148,3 +2148,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Job exam-security-contracts y paso Run student recovery mutation security regression: SUCCESS; cero pasos fallidos.
 - C1.582 Completada en cobertura local/CI. BETA-EXAM-068 sigue Pendiente beta para Apps Script/Sheets real.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.583 — contención reentrante de updateExamStatus
+- Se amplía exam-service-exam-mutation-security.test.js con reentrada al handler real durante setValue del estado.
+- La solicitud anidada falla EXAM_MUTATION_LOCK_TIMEOUT; la exterior conserva una sola transición, una apertura de Sheets y libera ScriptLock.
+- Suite V8 aislada 19/19 PASS; parseo Code.gs/test PASS. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN.
+- BETA-EXAM-084 actualizado. TASK-153 / AUD-NG-386 continúa En ejecución.
+===============================================================================

@@ -4279,3 +4279,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - GitHub Actions run **43114100704**, commit `e99a72450d7fe4522ab881579f099dbb2dad702e`, workflow `Exam-Service security local contracts`: **SUCCESS** en Node.js 22.
 - Job `exam-security-contracts`: SUCCESS; paso `Run student recovery mutation security regression`: SUCCESS; cero pasos fallidos.
 - C1.582 Completada en verificación local y CI. BETA-EXAM-068 permanece Pendiente beta para contención en Apps Script/Sheets real.
+
+
+### 10.232 TASK-153 / AUD-NG-386 — contención reentrante de updateExamStatus (C1.583)
+- **Brecha confirmada:** la suite de mutaciones EXAM cubría RBAC, identidad, scope y timeout de ScriptLock para updateExamStatus, pero no una segunda solicitud durante la escritura de estado de la solicitud exterior.
+- **Cobertura añadida:** hook sintético en `Examenes.setValue` que reentra al handler real mientras ScriptLock está retenido. La solicitud anidada debe fallar con `EXAM_MUTATION_LOCK_TIMEOUT`; la exterior conserva el cambio de estado, realiza exactamente una escritura, no abre Sheets por segunda vez y libera el lock.
+- **Alcance:** fixture/contrato en `tests/security/exam-service-exam-mutation-security.test.js`; backend productivo, RBAC, identidad, ownership y persistencia sin cambios. BETA-EXAM-084 registra el escenario desplegado.
+- **Verificación local:** parseo sintáctico de `backend/exam-service/Code.gs` y del contrato PASS; suite V8 aislada **19/19 PASS**. CI Node.js 22 pendiente de observación tras commit. Apps Script/Sheets real NOT RUN; contención desplegada Pendiente beta.
+- **Estado:** C1.583 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para las rutas mutadoras EXAM restantes.
+
+

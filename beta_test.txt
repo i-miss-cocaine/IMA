@@ -959,3 +959,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; cobertura local C1.579 29/29 PASS y CI Node.js 22 run 43112000769 SUCCESS.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de ambas comprobaciones RBAC, identidad y lock; snapshots completos de CalificacionesEstudiantes antes/después.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-084 — TASK-153 / AUD-NG-386 / EXAM: contención reentrante de updateExamStatus
+- **Módulo/rol:** Servicio EXAM; Profesor con permiso updateExamStatus, identidad firmada, examen activo/inactivo de su propiedad y scope departamental válido.
+- **Objetivo:** comprobar en Apps Script/Sheets desplegado que una segunda solicitud updateExamStatus durante la escritura de estado exterior no atraviesa el ScriptLock compartido ni produce una segunda transición.
+- **Precondiciones:** versión beta desplegada; examen sintético con ownership activo; sesión firmada y asignación de departamento; mecanismo controlado para intentar una segunda solicitud desde el hook/ventana de escritura de la primera.
+- **Pasos:** invocar updateExamStatus para cambiar Inactivo→Activo; durante setValue intentar una segunda solicitud para el mismo examen; revisar respuesta, trazas de lock/RBAC/identidad/Sheets y snapshot de Examenes; repetir con solicitud individual válida sin reentrada.
+- **Resultado esperado:** la solicitud anidada termina con EXAM_MUTATION_LOCK_TIMEOUT, la exterior completa una sola transición, se abre Sheets una sola vez y ScriptLock queda liberado; el flujo individual válido conserva su comportamiento.
+- **Estado:** Pendiente beta; contrato local V8 aislado 19/19 PASS; CI Node.js 22 pendiente; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, trazas saneadas de ambas solicitudes, conteo de adquisición/liberación del lock, lecturas/escrituras y snapshot antes/después de Examenes.
+===============================================================================

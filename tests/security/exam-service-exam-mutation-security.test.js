@@ -408,4 +408,76 @@ test(() => {
   assert.equal(JSON.stringify(examRows), examSnapshot, "the complete exam row must remain unchanged");
 });
 
-process.stdout.write("exam-service-exam-mutation-security: " + passed + "/18 PASS\\n");
+
+test(() => {
+  const ownershipCheck = extractFunction("assertExamResourceOwnershipForScope_");
+  const context = extractFunction("getAuthorizedExamMutationContext_");
+  const wrapper = extractFunction("withAuthorizedExamMutation_");
+  const statusWorker = extractFunction("updateExamStatusUnlocked_");
+  const statusHandler = extractFunction("updateExamStatus");
+  const state = { permissionCalls: 0, identityCalls: 0, opens: 0,
+    lockAttempts: 0, releases: 0, held: false, writes: 0, nestedError: "", nestedAttempts: 0 };
+  const actor = { authorized: true, userId: "TEACHER-1", role: "Profesor" };
+  const examRows = [
+    ["ID", "Titulo", "Asignatura", "Grado", "Seccion", "FechaLimite", "Tiempo", "Estado", "ProfesorID"],
+    ["EXAM-1", "Examen", "Matemáticas", "10", "A", "", "", "Inactivo", "TEACHER-1"]
+  ];
+  const ownershipRows = [
+    ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"],
+    ["OWN-1", "I1", "EXAMEN", "EXAM-1", "D1", "ACTIVE", "TEACHER-1", "", ""]
+  ];
+  const examSnapshot = JSON.stringify(examRows);
+  let update;
+  const examSheet = {
+    getDataRange() { return { getValues() { return examRows; } }; },
+    getRange(row, column) {
+      return { setValue(value) {
+        state.writes++;
+        examRows[row - 1][column - 1] = value;
+        if (!state.nestedAttempts) {
+          state.nestedAttempts++;
+          try { update({ examenId: "EXAM-1", estado: "Inactivo" }); }
+          catch (error) { state.nestedError = error.message; }
+        }
+      } };
+    }
+  };
+  const ownershipSheet = { getDataRange() { return { getValues() { return ownershipRows; } }; } };
+  const ss = { getSheetByName(name) {
+    return ({ Examenes: examSheet, ResourceOwnership: ownershipSheet })[name] || null;
+  }};
+  const lock = {
+    tryLock() { state.lockAttempts++; if (state.held) return false; state.held = true; return true; },
+    releaseLock() { state.releases++; state.held = false; }
+  };
+  const runtime = {
+    validateRolePermission() { state.permissionCalls++; return { authorized: true }; },
+    getVerifiedExamIdentity_() { state.identityCalls++; return actor; },
+    getVerifiedExamDepartmentScope_() { return { authorized: true, institutionId: "I1", departmentIds: ["D1"] }; },
+    SpreadsheetApp: { openById() { state.opens++; return ss; } },
+    SPREADSHEET_ID: "SYNTHETIC",
+    LockService: { getScriptLock() { return lock; } },
+    getSheetOrThrow(sheet, name) {
+      const value = sheet.getSheetByName(name);
+      if (!value) throw new Error("missing " + name);
+      return value;
+    },
+    EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_: new WeakMap(),
+    String, Error
+  };
+  const executable = [ownershipCheck, context, wrapper, statusWorker, statusHandler].join("\n");
+  update = new Function("runtime", "with (runtime) { " + executable + "; return updateExamStatus; }")(runtime);
+  const result = update({ examenId: "EXAM-1", estado: "Activo" });
+  assert.deepEqual(result, { status: "success" });
+  assert.equal(state.nestedError, "EXAM_MUTATION_LOCK_TIMEOUT",
+    "a reentrant status mutation must be rejected while the outer ScriptLock is held");
+  assert.equal(state.lockAttempts, 2, "the outer and nested requests must each attempt the shared lock");
+  assert.equal(state.releases, 1, "only the outer request may release the acquired lock");
+  assert.equal(state.held, false, "the outer lock must be released after the write");
+  assert.equal(state.opens, 1, "the nested request must fail before opening Sheets");
+  assert.equal(state.writes, 1, "only the outer status transition may be written");
+  assert.equal(examRows[1][7], "Activo", "the outer status transition must remain committed");
+  assert.notEqual(JSON.stringify(examRows), examSnapshot);
+});
+
+process.stdout.write("exam-service-exam-mutation-security: " + passed + "/19 PASS\\n");
