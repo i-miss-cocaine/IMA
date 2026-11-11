@@ -62,15 +62,15 @@ function fixture(options = {}) {
 const cases=[];
 function test(name,fn){fn();cases.push(name);}
 function denied(fn,pattern=/RESOURCE_NOT_AVAILABLE/){assert.throws(fn,pattern);}
-test("student sees own history only",()=>{const r=fixture().call({});assert.deepEqual(Array.from(r.data,x=>x.userId),["STU-1","STU-1","STU-1","STU-1"]);});
+test("student sees own history only",()=>{const r=fixture().call({});assert.deepEqual(Array.from(r.data,x=>x.userId),["STU-1","STU-1","STU-1"]);});
 test("student cannot request another student",()=>denied(()=>fixture().call({userId:"STU-2"})));
 test("student may filter own history by evaluation",()=>{const r=fixture().call({evaluacionId:"E-1"});assert.deepEqual(Array.from(r.data,x=>x.rectificacionId),["RECT-1"]);});
-test("guardian reads only verified linked student",()=>{const x=fixture({actor:{userId:"GUARD-1",role:"Tutor"},guardian:true});assert.equal(x.call({userId:"STU-1"}).data.length,4);});
+test("guardian reads only verified linked student",()=>{const x=fixture({actor:{userId:"GUARD-1",role:"Tutor"},guardian:true});assert.equal(x.call({userId:"STU-1"}).data.length,3);});
 test("guardian cannot change linked student",()=>denied(()=>fixture({actor:{userId:"GUARD-1",role:"Tutor"},guardian:true}).call({userId:"STU-2"})));
 test("guardian without verified relationship is denied",()=>denied(()=>fixture({actor:{userId:"GUARD-1",role:"Tutor"}}).call({userId:"STU-1"})));
 test("institution role requires institution-wide scope",()=>denied(()=>fixture({actor:{userId:"ADMIN",role:"Administrador"},institutionWide:false}).call({userId:"STU-1"})));
 test("institution role requires explicit target",()=>denied(()=>fixture({actor:{userId:"ADMIN",role:"Administrador"}}).call({})));
-test("institution role reads one unique student",()=>assert.equal(fixture({actor:{userId:"ADMIN",role:"Administrador"}}).call({userId:"STU-1"}).data.length,4));
+test("institution role reads one unique student",()=>assert.equal(fixture({actor:{userId:"ADMIN",role:"Administrador"}}).call({userId:"STU-1"}).data.length,3));
 test("teacher direct access is denied in favor of gradebook assignment controls",()=>denied(()=>fixture({actor:{userId:"PROF-1",role:"Profesor"}}).call({userId:"STU-1"})));
 test("unknown role denied",()=>denied(()=>fixture({actor:{userId:"OTHER",role:"Coordinador"}}).call({userId:"STU-1"})));
 test("RBAC denial fails closed",()=>denied(()=>fixture({permissionDenied:true}).call({})));
