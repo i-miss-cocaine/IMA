@@ -523,8 +523,8 @@ Corregir el orden de autorización de submitGradebookForReview para que RBAC e i
 
 ### Estado y continuidad
 Subalcance submitGradebookForReview corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
-Siguiente acción: ejecutar suite local/CI, cerrar C1.523 y después inspeccionar el siguiente wrapper mutador pendiente.
-HEAD final: pendiente de confirmar tras publicar.
+Siguiente acción: inspeccionar el wrapper mutador withAuthorizedPeriodGradebookReview_ de reviewPeriodGradebook en la próxima iteración.
+HEAD final verificado tras cierre documental: 884189499ba13aad0f93034ecbcece5e6f8b5446.
 ===============================================================================
 
 

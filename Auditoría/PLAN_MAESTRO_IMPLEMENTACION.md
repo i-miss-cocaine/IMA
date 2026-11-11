@@ -3802,7 +3802,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 ### 10.176 TASK-153 / AUD-NG-386 — autorización previa al lock en submitGradebookForReview (C1.523)
 - **Hallazgo:** `withAuthorizedPeriodGradebookSubmission_` adquiría ScriptLock antes de validar `submitGradebookForReview` y la identidad firmada; solicitudes denegadas competían por el lock compartido.
 - **Corrección:** preflight del permiso específico, identidad autorizada, `userId` no vacío y rol exacto Profesor antes del lock. El contexto existente conserva la revalidación RBAC/identidad/rol, scope institucional, asignación docente, esquema y existencia de cierres dentro del lock.
-- **Pruebas locales:** suite dedicada ajustada a 25 escenarios (23 previos + 2 nuevos); orden RBAC/identidad antes del lock, denegación sin lock/Sheets, identidad inválida/incompleta/rol no admitido, doble validación bajo lock, envío positivo, timeout, asignación no verificada, duplicidad e invariantes existentes.
+- **Cobertura de suite dedicada:** 25 escenarios (23 previos + 2 nuevos); orden RBAC/identidad antes del lock, denegación sin lock/Sheets, identidad inválida/incompleta/rol no admitido, doble validación bajo lock, envío positivo, timeout, asignación no verificada, duplicidad e invariantes existentes.
 - **Verificación local focalizada:** harness del wrapper 8/8 PASS; suite dedicada 25/25 PASS en GitHub Actions workflow 43048598007 (Node 22), incluido parseo completo de Code.gs.
 - **Beta:** BETA-EXAM-066 agregado; Apps Script/Sheets real NOT RUN.
 - **Estado:** subalcance submitGradebookForReview corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
