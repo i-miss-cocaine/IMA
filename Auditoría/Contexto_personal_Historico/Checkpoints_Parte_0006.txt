@@ -590,3 +590,40 @@ HEAD final: pendiente de confirmar tras CI y cierre documental.
 - Apps Script/Sheets real: NOT RUN. BETA-EXAM-053 permanece Pendiente beta.
 - HEAD final de rama y rama base se verifican tras publicar este addendum.
 ===============================================================================
+
+
+===============================================================================
+C1.525 — TASK-153 / AUD-NG-386 / EXAM reopenPeriodGradebook
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+HEAD inicial: 23853ce743b31759dd66838c273597d42a4a344e
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 — HEAD inicial verificado 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras.
+
+### Hallazgo y corrección
+- withAuthorizedPeriodGradebookReopen_ adquiría ScriptLock antes de validar el permiso reopenPeriodGradebook y la identidad firmada.
+- Se añadió preflight RBAC, identidad autorizada, userId no vacío y allowlist existente: Administrador, Desarrollador, Dirección, Director y Secretaría.
+- El contexto existente revalida RBAC/identidad/rol y scope institutionWide bajo lock, además de la integridad del cierre Cerrado único y de la auditoría/rollback.
+- No se ampliaron roles ni scopes y no se modificó la semántica de reapertura ni el esquema.
+
+### Pruebas
+- Harness local focalizado del wrapper: 10/10 PASS (Node).
+- Suite dedicada: ampliada de 22 a 26 escenarios; GitHub Actions workflow 43052136181 SUCCESS, job 130631828833 SUCCESS; reopen-period-gradebook-security 26/26 PASS en Node 22.
+- El workflow completo también pasó las suites de contrato, acceso departamental y endpoints de lectura.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-055 permanece Pendiente beta.
+
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-period-gradebook-reopen-security.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- beta_test.txt
+
+### Estado y continuidad
+Subalcance reopenPeriodGradebook corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente: inspeccionar el siguiente wrapper mutador EXAM pendiente, sin avanzar otra operación en esta iteración.
+HEAD final: se verificará tras cierre documental.
+===============================================================================
