@@ -787,3 +787,14 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** solicitudes inválidas no adquieren lock ni abren Sheets; identidades completas revalidan contexto bajo lock; un envío válido persiste una sola entrega y respeta el límite de intentos.
 - **Estado:** Pendiente beta.
 - **Evidencia requerida:** trazas RBAC/identidad/lock/Sheets, registros de entrega y resultado de intentos concurrentes.
+
+===============================================================================
+## BETA-EXAM-070 — TASK-153 / AUD-NG-386 / EXAM: identidad completa en createExam
+- **Módulo/rol:** Servicio EXAM; actor con permiso efectivo createExam y scope departamental autorizado.
+- **Objetivo:** confirmar en Apps Script/Sheets real que createExam rechaza actor ausente/no autorizado o userId vacío antes de abrir Sheets, consultar datos institucionales o adquirir ScriptLock.
+- **Precondiciones:** versión beta desplegada; cuentas sintéticas con permiso createExam, sesión firmada válida e identidad incompleta; departamento autorizado y hojas Examenes, PreguntasExamen y ResourceOwnership con esquemas vigentes.
+- **Pasos:** probar RBAC denegado, identidad no autorizada, actor ausente, userId ausente/blanco; creación válida; departamento fuera de scope; timeout; fallos inducidos en ownership/examen/preguntas y rollback.
+- **Resultado esperado:** denegaciones de identidad ocurren antes de abrir Sheets y antes del lock; actor válido crea examen y ownership consistentes; fallos parciales ejecutan rollback y liberan el lock.
+- **Estado:** Pendiente beta.
+- **Evidencia requerida:** trazas RBAC/identidad/Sheets/scope/lock, registros de Examenes/PreguntasExamen/ResourceOwnership y evidencia de rollback.
+===============================================================================

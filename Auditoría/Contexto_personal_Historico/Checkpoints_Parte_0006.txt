@@ -827,3 +827,42 @@ Corregir la autorización de identidad firmada en submitExam antes de solicitar 
 - HEAD final verificado en NG_beta_0.0.0.1_work: 032d91080306e76d9fe7373f445421148ff1313c.
 - Rama base NG_beta_0.0.0.1 permanece en 44d9891132332e692dbe2ba8602b41f50a508a59.
 - Compare API: rama de trabajo ahead 1297, behind 0; sin modificación de la rama base.
+
+===============================================================================
+C1.530 — TASK-153 / AUD-NG-386 / EXAM createExam
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+HEAD inicial: b6b25c3532b93d9714dcb95f19a212ad55f5e1b0
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 — HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras.
+### Alcance
+Completar validación de identidad firmada de createExam antes de abrir Sheets, manteniendo RBAC, scope departamental, ownership y rollback.
+
+### Hallazgo y corrección
+- C1.507 había agregado RBAC al endpoint, pero no exigía explícitamente actor autorizado estricto y userId no vacío antes de SpreadsheetApp.openById.
+- createExam ahora rechaza actor ausente, authorized distinto de true o userId vacío/solo espacios antes de abrir Sheets, consultar scope o adquirir ScriptLock.
+- No se endurecen roles por lista ni se alteran permisos, ownership, persistencia o compensación.
+
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-create-exam-security.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- beta_test.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación
+- Parseo completo Code.gs: PASS.
+- Harness local de la función productiva extraída: 12/12 PASS.
+- Suite Node 22 exam-service-create-exam-security: 12/12 PASS.
+- Workflow 43062526177 SUCCESS; job exam-security-contracts 130668623026 SUCCESS.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-070 Pendiente beta.
+
+### Commits y continuidad
+- Implementación/pruebas: 7bad167cdeee874194e4472c82be138c455724b2.
+- Cierre documental: se registra en commit posterior.
+- Estado: subalcance createExam corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras rutas EXAM.
+- Siguiente acción: continuar inventario de mutadores EXAM no cubiertos, una sola operación en la siguiente iteración, conservando esta sesión.
+===============================================================================

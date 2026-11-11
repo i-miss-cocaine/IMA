@@ -3868,3 +3868,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Beta:** BETA-EXAM-069 agregado; Apps Script/Sheets real NOT RUN.
 - **Estado:** subalcance submitExam corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras superficies EXAM.
 - **Siguiente:** continuar inventario de rutas mutadoras EXAM aún no cubiertas, una operación por iteración.
+
+### 10.183 TASK-153 / AUD-NG-386 — identidad firmada completa antes de Sheets en createExam (C1.530)
+- **Hallazgo alto:** createExam comprobaba RBAC e identidad autorizada, pero no exigía explícitamente userId firmado no vacío ni authorized === true antes de SpreadsheetApp.openById.
+- **Corrección:** falla cerrado si falta actor, authorized no es exactamente true o userId queda vacío tras trim; condición previa a abrir Sheets, consultar scope o adquirir ScriptLock. Se preservan RBAC, scope, ownership y rollback.
+- **Verificación local:** parseo completo Code.gs PASS; harness de función productiva extraída 12/12 PASS.
+- **Suite Node 22:** exam-service-create-exam-security 12/12 PASS; workflow 43062526177 SUCCESS, job 130668623026 SUCCESS.
+- **Beta:** BETA-EXAM-070 Pendiente beta; Apps Script/Sheets real NOT RUN.
+- **Estado:** subalcance createExam corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras rutas EXAM.
