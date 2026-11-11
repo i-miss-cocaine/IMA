@@ -217,3 +217,36 @@ HEAD final: pendiente de confirmación tras publicar.
 - El step `Run node tests/security/exam-service-security-contract.test.js` ejecutó el contrato ampliado y finalizó **success**; los demás contratos EXAM del workflow también finalizaron success.
 - Parseo local de Code.gs y del contrato: PASS. Harness local focalizado sobre el wrapper exacto: **6/6 PASS**.
 - HEAD de implementación probado: `31559023dfd397143dd1c67319df993ada68196e`.
+
+
+===============================================================================
+CHECKPOINT C1.517 — autorización previa al lock en saveEvaluationCategory
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial: 0454b8b98e45088f6f6f825752fa1af3b37cca52.
+### Hallazgo
+withAuthorizedEvaluationCategoryMutation_ adquiría ScriptLock antes de validar RBAC e identidad firmada. La ruta saveEvaluationCategory podía hacer competir solicitudes inválidas por el lock compartido.
+### Corrección
+- validateRolePermission("saveEvaluationCategory", payload) e getVerifiedExamIdentity_(payload) se ejecutan antes de solicitar ScriptLock; se exige actor autorizado con userId no vacío.
+- getAuthorizedEvaluationCategoryMutationContext_ permanece dentro del lock y revalida permiso, identidad, scope departamental, ownership de CATEGORIA_EVALUACION, esquema de ResourceOwnership y esquema/unicidad de la categoría.
+- finally conserva la liberación del lock en éxito, rechazo contextual y excepción.
+### Pruebas locales
+- Parseo completo de Code.gs: PASS.
+- Parseo sintáctico del contrato Node ampliado: PASS.
+- Harness focalizado sobre la función exacta: 6/6 PASS (RBAC pre-lock, identidad/actor pre-lock, flujo autorizado con revalidación de contexto, rechazo RBAC contextual, liberación ante excepción y timeout).
+- Aserciones estáticas: PASS para RBAC/identidad/scope/ownership/esquema.
+- Contrato Node completo local: NOT RUN (sin checkout/runtime local); integrado al workflow EXAM para ejecución CI.
+- Apps Script/Sheets real: NOT RUN; no hay cambio de esquema.
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-security-contract.test.js
+- changueslogs.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+### Estado y continuidad
+Subalcance saveEvaluationCategory corregido. TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente acción: verificar CI y continuar inventario de wrappers mutadores restantes.
+HEAD final: pendiente de confirmación tras publicar.
+===============================================================================

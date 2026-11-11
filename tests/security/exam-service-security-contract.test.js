@@ -101,6 +101,89 @@ assert.equal(lockWrapperResult.error, "EXAM_MUTATION_LOCK_TIMEOUT");
 assert.deepEqual(lockWrapperResult.events, ["permission:updateExam", "identity", "lock-request", "lock-acquire:5000"],
   "lock timeout must occur only after preflight authorization");
 
+const evaluationCategoryMutationWrapperContract = extractFunction(source, "withAuthorizedEvaluationCategoryMutation_");
+assert.ok(evaluationCategoryMutationWrapperContract.indexOf('validateRolePermission("saveEvaluationCategory", payload)') < evaluationCategoryMutationWrapperContract.indexOf("LockService.getScriptLock()"),
+  "evaluation category mutation wrapper must validate RBAC before requesting the shared lock");
+assert.ok(evaluationCategoryMutationWrapperContract.indexOf("getVerifiedExamIdentity_(payload)") < evaluationCategoryMutationWrapperContract.indexOf("LockService.getScriptLock()"),
+  "evaluation category mutation wrapper must validate signed identity before requesting the shared lock");
+const evaluationCategoryMutationContextContract = extractFunction(source, "getAuthorizedEvaluationCategoryMutationContext_");
+assert.ok(evaluationCategoryMutationContextContract.includes('validateRolePermission("saveEvaluationCategory", p)') &&
+  evaluationCategoryMutationContextContract.includes("getVerifiedExamIdentity_(p)"),
+  "category mutation context must revalidate action RBAC and signed identity");
+assert.ok(evaluationCategoryMutationContextContract.includes("getVerifiedExamDepartmentScope_(p, ss, actor)") &&
+  evaluationCategoryMutationContextContract.includes('assertExamResourceOwnershipForScope_(ss, scope, "CATEGORIA_EVALUACION"') &&
+  evaluationCategoryMutationContextContract.includes("RESOURCE_OWNERSHIP_SCHEMA_INVALID"),
+  "category mutation context must retain verified scope, ownership and ownership schema validation");
+
+function runEvaluationCategoryMutationWrapper(options = {}, mutation = () => "ok") {
+  const events = [];
+  let permissionCalls = 0, identityCalls = 0;
+  const sandbox = {
+    validateRolePermission(action, payload) {
+      events.push("permission:" + action);
+      permissionCalls++;
+      return { authorized: !(options.preflightPermissionDenied || (options.contextPermissionDenied && permissionCalls > 1)) };
+    },
+    getVerifiedExamIdentity_(payload) {
+      events.push("identity");
+      identityCalls++;
+      return { authorized: !(options.preflightIdentityDenied || (options.contextIdentityDenied && identityCalls > 1)), userId: "actor-1" };
+    },
+    LockService: { getScriptLock() {
+      events.push("lock-request");
+      return {
+        tryLock(timeout) { events.push("lock-acquire:" + timeout); return options.lockAvailable !== false; },
+        releaseLock() { events.push("lock-release"); }
+      };
+    } },
+    getAuthorizedEvaluationCategoryMutationContext_(payload) {
+      events.push("context:saveEvaluationCategory");
+      const permission = sandbox.validateRolePermission("saveEvaluationCategory", payload);
+      if (!permission.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+      const actor = sandbox.getVerifiedExamIdentity_(payload);
+      if (!actor.authorized || !String(actor.userId || "").trim()) throw new Error("RESOURCE_NOT_AVAILABLE");
+      events.push("scope-ownership-schema-validation");
+      return { actor };
+    },
+    runMutation(events, context) { events.push("mutation"); return mutation(events, context); }
+  };
+  vm.runInNewContext(evaluationCategoryMutationWrapperContract +
+    "\nthis.invokeEvaluationCategoryMutation = withAuthorizedEvaluationCategoryMutation_;", sandbox);
+  try {
+    return { result: sandbox.invokeEvaluationCategoryMutation({ sessionToken: "synthetic" }, context => sandbox.runMutation(events, context)), events };
+  } catch (error) {
+    return { error: error.message, events };
+  }
+}
+
+let categoryWrapperResult = runEvaluationCategoryMutationWrapper({ preflightPermissionDenied: true });
+assert.equal(categoryWrapperResult.error, "RESOURCE_NOT_AVAILABLE");
+assert.deepEqual(categoryWrapperResult.events, ["permission:saveEvaluationCategory"], "category RBAC denial must precede lock acquisition");
+categoryWrapperResult = runEvaluationCategoryMutationWrapper({ preflightIdentityDenied: true });
+assert.equal(categoryWrapperResult.error, "RESOURCE_NOT_AVAILABLE");
+assert.deepEqual(categoryWrapperResult.events, ["permission:saveEvaluationCategory", "identity"], "invalid category actor must precede lock acquisition");
+categoryWrapperResult = runEvaluationCategoryMutationWrapper({}, events => { events.push("write"); return "saved"; });
+assert.equal(categoryWrapperResult.result, "saved");
+assert.deepEqual(categoryWrapperResult.events, [
+  "permission:saveEvaluationCategory", "identity", "lock-request", "lock-acquire:5000",
+  "context:saveEvaluationCategory", "permission:saveEvaluationCategory", "identity",
+  "scope-ownership-schema-validation", "mutation", "write", "lock-release"
+], "authorized category mutation must revalidate scope and ownership under lock");
+categoryWrapperResult = runEvaluationCategoryMutationWrapper({ contextPermissionDenied: true });
+assert.equal(categoryWrapperResult.error, "RESOURCE_NOT_AVAILABLE");
+assert.deepEqual(categoryWrapperResult.events, [
+  "permission:saveEvaluationCategory", "identity", "lock-request", "lock-acquire:5000",
+  "context:saveEvaluationCategory", "permission:saveEvaluationCategory", "lock-release"
+], "category RBAC must be rechecked under lock");
+categoryWrapperResult = runEvaluationCategoryMutationWrapper({}, () => { throw new Error("synthetic category write failure"); });
+assert.equal(categoryWrapperResult.error, "synthetic category write failure");
+assert.equal(categoryWrapperResult.events.at(-1), "lock-release", "category lock must release after mutation failure");
+categoryWrapperResult = runEvaluationCategoryMutationWrapper({ lockAvailable: false });
+assert.equal(categoryWrapperResult.error, "EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT");
+assert.deepEqual(categoryWrapperResult.events, [
+  "permission:saveEvaluationCategory", "identity", "lock-request", "lock-acquire:5000"
+], "category lock timeout must occur only after preflight authorization");
+
 for (const name of ["updateExamStatus", "updateExam", "deleteExam", "gradeExamSubmission", "deleteExamSubmission"]) {
   const declarations = source.match(new RegExp("function\\s+" + name + "\\s*\\(", "g")) || [];
   assert.equal(declarations.length, 1, name + " must have exactly one active function declaration");

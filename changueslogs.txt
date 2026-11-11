@@ -1506,3 +1506,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Los demás contratos EXAM del job exam-security-contracts finalizaron success.
 - HEAD probado: 31559023dfd397143dd1c67319df993ada68196e. Harness local focalizado 6/6 PASS; parseo Code.gs y contrato PASS.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.517 — IMA-EXEC-20261110-1825Z-02 — EXAM: autorización pre-lock de saveEvaluationCategory
+- withAuthorizedEvaluationCategoryMutation_ valida RBAC saveEvaluationCategory e identidad firmada/actor antes de ScriptLock; contexto completo permanece dentro y revalida scope, ownership y esquema.
+- exam-service-security-contract.test.js amplía aserciones estáticas de contexto y seis escenarios deterministas de preflight, revalidación, excepción y timeout.
+- Parseo Code.gs/contrato PASS; harness exacto 6/6 PASS; aserciones estáticas PASS. CI pendiente.
+- Apps Script/Sheets real NOT RUN; no cambia esquema. TASK-153 / AUD-NG-386 continúa En ejecución.
+===============================================================================

@@ -3735,3 +3735,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Beta:** Apps Script/Sheets real NOT RUN; no requerido para aprobación local del wrapper.
 - **Estado:** subalcance de metadatos EXAM corregido; TASK-153 / AUD-NG-386 sigue En ejecución por otras mutaciones.
 - **Siguiente:** verificar CI y continuar el inventario de rutas mutadoras EXAM restantes.
+
+
+### 10.170 TASK-153 / AUD-NG-386 — autorización previa al lock en saveEvaluationCategory (C1.517)
+- **Hallazgo:** `withAuthorizedEvaluationCategoryMutation_` adquiría ScriptLock antes de validar RBAC e identidad firmada.
+- **Corrección:** valida `saveEvaluationCategory` e identidad con actor no vacío antes del lock; revalida dentro del lock permiso, identidad, scope, ownership de categoría y esquemas.
+- **Pruebas locales:** parseo Code.gs/contrato PASS; harness del wrapper exacto 6/6 PASS; aserciones estáticas de scope/ownership/esquema PASS.
+- **Contrato Node completo local:** NOT RUN por ausencia de checkout/runtime local; integrado al workflow EXAM.
+- **CI:** pendiente de ejecución/verificación.
+- **Beta:** Apps Script/Sheets real NOT RUN; sin cambios de esquema.
+- **Estado:** subalcance saveEvaluationCategory corregido; TASK-153 / AUD-NG-386 sigue En ejecución por otras mutaciones.
+- **Siguiente:** verificar CI y continuar el inventario de mutaciones EXAM restantes.
