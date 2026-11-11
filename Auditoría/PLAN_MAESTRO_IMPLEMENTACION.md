@@ -4265,3 +4265,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - GitHub Actions run **43113608977**, commit `decee670a4aee56207986c8e3a29ab6772c1f102`, workflow `Exam-Service security local contracts`: **SUCCESS** en Node.js 22.
 - Job `exam-security-contracts`: SUCCESS; paso `Run period gradebook reopen security regression`: SUCCESS; no hubo pasos fallidos.
 - C1.581 Completada en verificación local y CI. BETA-EXAM-055 permanece Pendiente beta para validación de Apps Script/Sheets real.
+
+
+### 10.231 TASK-153 / AUD-NG-386 — concurrencia reentrante en saveStudentRecovery (C1.582)
+- **Brecha confirmada:** `saveStudentRecovery` ya valida RBAC, identidad, scope, perfil, asignación, cierre, historial y datos fuente bajo ScriptLock, pero el contrato no probaba una segunda solicitud durante el `appendRow` de la recuperación exterior.
+- **Cobertura añadida:** hook sintético en la hoja `RecuperacionesEstudiante` que reentra al handler real durante el append. La segunda solicitud debe fallar con `STUDENT_RECOVERY_MUTATION_LOCK_TIMEOUT`; la solicitud exterior conserva éxito, registra exactamente una recuperación y libera el lock. Se comprueban llamadas RBAC/identidad, intentos de lock, apertura de Sheets y orden de eventos.
+- **Alcance:** fixture/contrato en `tests/security/exam-service-student-recovery-mutation-security.test.js`; backend productivo, reglas de cálculo, roles, scope y persistencia sin cambios. BETA-EXAM-068 actualizado.
+- **Verificación local:** parseo sintáctico de backend y contrato PASS; suite completa aislada V8 con shims compatibles **19/19 PASS**. CI Node.js 22 pendiente de observación tras commit. Apps Script/Sheets real NOT RUN; contención en infraestructura desplegada continúa Pendiente beta.
+- **Estado:** C1.582 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas EXAM.

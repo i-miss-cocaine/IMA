@@ -2004,3 +2004,9 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - GitHub Actions run **43113608977**, commit `decee670a4aee56207986c8e3a29ab6772c1f102`: workflow completo SUCCESS en Node.js 22.
 - Job `exam-security-contracts` y paso `Run period gradebook reopen security regression`: SUCCESS; cero pasos fallidos.
 - C1.581 Completada en verificación local y CI. BETA-EXAM-055 continúa Pendiente beta.
+
+
+### C1.582 — AUD-NG-386 / saveStudentRecovery: reentrada durante append de recuperación
+- **Brecha:** el contrato cubría RBAC, identidad, scope, integridad, timeout y revocación, pero no una segunda solicitud durante la escritura de la recuperación exterior.
+- **Cambio:** hook sintético en appendRow intenta una segunda llamada al handler mientras ScriptLock sigue retenido. La solicitud anidada falla STUDENT_RECOVERY_MUTATION_LOCK_TIMEOUT; la exterior registra una sola recuperación, libera el lock y mantiene éxito.
+- **Verificación local:** parseo Code.gs/test PASS; suite V8 aislada **19/19 PASS**. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN. BETA-EXAM-068 actualizado y Pendiente beta.

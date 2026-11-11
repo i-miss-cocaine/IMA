@@ -2275,3 +2275,24 @@ HEAD inicial: `4451fd9d161fc72afab08b2a09263ec363e0141e`. HEAD final: se confirm
 - C1.581 **Completada en verificación local y CI**. BETA-EXAM-055 permanece Pendiente beta para Apps Script/Sheets real.
 - HEAD inicial: `82596e4f6a19c16730bfc90d435e7d472d05363b`; HEAD de implementación/pruebas: `decee670a4aee56207986c8e3a29ab6772c1f102`; HEAD final documental: se confirma tras publicar.
 ===============================================================================
+
+
+===============================================================================
+## C1.582 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — concurrencia reentrante en saveStudentRecovery.
+
+### Hallazgo y corrección
+- `saveStudentRecovery` ya protege la validación contextual y la escritura bajo ScriptLock; el contrato no intentaba una segunda solicitud durante el append de la recuperación exterior.
+- Se agregó hook sintético al append de `RecuperacionesEstudiante` y reentrada al handler real. La solicitud anidada recibe `STUDENT_RECOVERY_MUTATION_LOCK_TIMEOUT`; la exterior completa una sola escritura y libera el lock.
+
+### Verificación local
+- Parseo sintáctico de `backend/exam-service/Code.gs`: PASS.
+- Parseo sintáctico del contrato: PASS.
+- Ejecución completa del contrato en V8 aislado con shims compatibles: **19/19 PASS**.
+- CI Node.js 22: pendiente de observación tras commit. Apps Script/Sheets real: NOT RUN; BETA-EXAM-068 Pendiente beta para contención desplegada.
+
+### Estado y continuidad
+- C1.582 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución.
+- Siguiente: revisar la siguiente ruta mutadora EXAM no cubierta por reentrada local equivalente, sin repetir cobertura.
+- HEAD inicial: `84943d81087540f6b202a6578e9a08f611fd6be5`; HEAD final: se confirma tras publicar.
+===============================================================================
