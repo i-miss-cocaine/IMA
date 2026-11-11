@@ -2138,5 +2138,7 @@ HEAD inicial: `bb8e5282ca7d8694129c5d3ab28593fe718a3e5a`. Rama: `NG_beta_0.0.0.1
 - CI focalizado: pendiente de ejecución/observación tras el commit. Apps Script/Sheets real: NOT RUN; BETA-EXAM-081 Pendiente beta.
 - Backend productivo sin cambios; diff limitado a fixture, prueba y registros asociados.
 - C1.576 **Completada en verificación local**. TASK-153 / AUD-NG-386 continúa En ejecución.
-- HEAD inicial: `0a5e1ef8ec0a905db5fdd0b277690e3675935498`. HEAD final: pendiente.
+- HEAD inicial: `0a5e1ef8ec0a905db5fdd0b277690e3675935498`. HEAD final: `806569719b48f78173c6fd7c4ed8a4776708b4f1`.
 ===============================================================================
+
+- CI focalizado: NOT RUN; no se observó ejecución de workflow asociada al commit C1.576. La verificación local 29/29 PASS es la evidencia de cierre; Apps Script/Sheets queda Pendiente beta.
