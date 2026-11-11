@@ -1638,3 +1638,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Pruebas locales:** contrato aislado 7/7 PASS sobre la función productiva extraída y sintaxis de función PASS. Parseo completo de Code.gs/CI pendiente de observación; Apps Script/CacheService real NOT RUN.
 - **Beta:** BETA-EXAM-061 Pendiente beta. TASK-153 y AUD-NG-386 permanecen En ejecución por otras superficies EXAM.
 ===============================================================================
+
+===============================================================================
+### AUD-NG-386 — gradeExamSubmission (C1.509)
+- **Hallazgo alto:** la función ya comprobaba permiso, identidad, ownership del examen y lock mediante withAuthorizedExamSubmissionMutation_, pero persistía calificacion/estado/comentario/tema/asignatura directamente desde payload sin validar tipo, rango ni longitud. Una entrada inválida podía contaminar EntregasExamen.
+- **Corrección:** exige calificación finita 0–100 y máximo dos decimales (con tolerancia a representación IEEE-754), normaliza a cadena de dos decimales y valida estado no vacío hasta 50 caracteres, comentario string hasta 2.000 y tema/asignatura string hasta 120. La validación ocurre después del contexto autorizado y antes de setValues.
+- **Pruebas locales:** parseo completo Code.gs PASS; contrato aislado de función en V8 15/15 PASS; sintaxis del test Node PASS. CI/ejecución Node del archivo completo aún no observada; Apps Script/Sheets real NOT RUN.
+- **Beta:** BETA-EXAM-062 Pendiente beta. TASK-153 / AUD-NG-386 permanecen En ejecución por otros mutadores EXAM.
+===============================================================================
