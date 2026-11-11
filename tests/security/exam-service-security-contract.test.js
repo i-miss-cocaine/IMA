@@ -139,7 +139,8 @@ assert.deepEqual(Array.from(adminExamList.data, row => row.examenId), ["EXM-1", 
   "institution-wide administrative scope retains access to owned resources");
 
 const creationClaims = { "teacher-session": { userId: "TEACHER-1", role: "Profesor" },
-  "admin-session": { userId: "ADMIN-1", role: "Administrador" } };
+  "admin-session": { userId: "ADMIN-1", role: "Administrador" },
+  "tutor-session": { userId: "TUTOR-1", role: "Tutor" } };
 function makeSheet(rows, failSetValues) {
   return {
     rows: rows.map(row => row.slice()),
@@ -168,21 +169,33 @@ function makeCreationRuntime(options) {
   };
   if (options && options.badOwnershipSchema) creationSheets.ResourceOwnership.rows[0][4] = "WrongHeader";
   let uuid = 0;
+  let spreadsheetOpenCount = 0;
+  let lockAcquireCount = 0;
   const context = {
     SPREADSHEET_ID: "LOCAL",
     EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_: new WeakMap(),
+    PUBLIC_ACTIONS: [],
+    ROLE_PERMISSIONS: { Profesor: ["createExam"], Administrador: ["*"], Tutor: [] },
     verifySessionToken(token) { return creationClaims[token] || null; },
+    getDynamicPermissionsForRole() { return null; },
+    hasActiveDelegationForAction() { return null; },
     PropertiesService: { getScriptProperties() { return { getProperty(name) { return name === "IMA_INSTITUTION_ID" ? "I1" : null; } }; } },
-    SpreadsheetApp: { openById() { return { getSheetByName(name) { return creationSheets[name] || null; } }; } },
+    SpreadsheetApp: { openById() { spreadsheetOpenCount++; return { getSheetByName(name) { return creationSheets[name] || null; } }; } },
     getSheetOrThrow(spreadsheet, name) { const sheet = spreadsheet.getSheetByName(name); if (!sheet) throw new Error("Missing sheet " + name); return sheet; },
-    LockService: { getScriptLock() { return { tryLock() { return true; }, releaseLock() {} }; } },
+    LockService: { getScriptLock() { lockAcquireCount++; return { tryLock() { return true; }, releaseLock() {} }; } },
     Utilities: { getUuid() { uuid++; return "UUID-" + uuid; } }
   };
-  const functions = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "createExam"]
+  const functions = ["validateContextualAccess", "validateRolePermission", "getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "createExam"]
     .map(name => extractFunction(source, name)).join("\n");
   vm.runInNewContext(functions + "\nthis.createExam = createExam;", context);
-  return { context, sheets: creationSheets };
+  return { context, sheets: creationSheets, getSpreadsheetOpenCount: () => spreadsheetOpenCount,
+    getLockAcquireCount: () => lockAcquireCount };
 }
+const deniedCreation = makeCreationRuntime();
+assert.throws(() => deniedCreation.context.createExam({ sessionToken: "tutor-session", titulo: "No autorizado" }),
+  /RESOURCE_NOT_AVAILABLE/, "createExam enforces action RBAC on direct invocation");
+assert.equal(deniedCreation.getSpreadsheetOpenCount(), 0, "RBAC denial occurs before spreadsheet access");
+assert.equal(deniedCreation.getLockAcquireCount(), 0, "RBAC denial occurs before lock acquisition");
 const creation = makeCreationRuntime();
 const created = creation.context.createExam({ sessionToken: "teacher-session", titulo: "Prueba", asignatura: "Matemáticas",
   gradoAsignado: "10", seccionAsignada: "A", profesorId: "ATTACKER",
