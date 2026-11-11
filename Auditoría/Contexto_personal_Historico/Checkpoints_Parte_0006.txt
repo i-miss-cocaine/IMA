@@ -2353,7 +2353,7 @@ HEAD inicial: `4451fd9d161fc72afab08b2a09263ec363e0141e`. HEAD final: se confirm
 ### Estado y continuidad
 - C1.584 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución.
 - Siguiente: inspeccionar la siguiente ruta mutadora EXAM no cubierta por reentrada local equivalente, sin repetir escenarios ya cubiertos.
-- HEAD inicial: `5b8792918204eda3b08a43ab04646d0f8d6ab005`; HEAD final: se confirma tras publicar.
+- HEAD inicial: `5b8792918204eda3b08a43ab04646d0f8d6ab005`; HEAD de implementación/pruebas: `230656e62f3d40d5d3e3588044608d2c274d8c5e`; HEAD final documental: `19ce61286c63d0def078fd833cc43b505c8ea713`.
 ===============================================================================
 
 ===============================================================================
