@@ -2413,3 +2413,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Smoke local focalizado 2/2 PASS; parseo del contrato PASS; CI run 43139327739 SUCCESS, contrato 29/29 PASS en Node.js 22.
 - Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-103 Pendiente beta. C1.602 Completada.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.603 — cobertura de reentrada al inicializar CategoriasEvaluacion
+- Se añaden dos escenarios de reentrada al handler real durante insertSheet y appendRow de encabezados cuando falta CategoriasEvaluacion.
+- Las secundarias reciben EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; la exterior conserva una sola hoja, encabezados exactos, una categoría y un ownership activo asociado.
+- Harness local focalizado 2/2 PASS; parseo del contrato PASS.
+- Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-104 Pendiente beta. C1.603 en verificación CI.
+===============================================================================
