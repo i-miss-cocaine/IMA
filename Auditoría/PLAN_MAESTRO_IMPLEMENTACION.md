@@ -4446,3 +4446,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Alcance:** únicamente tests/security/exam-service-question-bank-security.test.js; backend productivo, RBAC, roles, scope, ownership y persistencia sin cambios. BETA-EXAM-096 registra la comprobación desplegada.
 - **Verificación:** GitHub Actions run 43132167465, workflow Exam-Service security local contracts, Node.js 22.23.4: SUCCESS; paso Run question bank mutation security regression SUCCESS; job exam-security-contracts SUCCESS. Cinco escenarios de reentrada superados. Apps Script/Sheets real NOT RUN.
 - **Estado:** C1.595 **Completada en verificación local aislada/CI**. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+
+
+### 10.245 TASK-153 / AUD-NG-386 — contención reentrante de saveCompetencyEvaluation durante appendRow (C1.596)
+- **Brecha confirmada:** el contrato de saveCompetencyEvaluation cubría autorización, identidad, scope, asignación, rúbrica, timeout, reentrada durante la validación de scope y fallos de append; no ejercitaba una segunda solicitud durante el append exterior de EvaluacionesCompetencias.
+- **Cobertura añadida:** el fixture intercepta appendRow de EvaluacionesCompetencias e invoca el handler real de forma anidada. La secundaria debe recibir COMPETENCY_EVALUATION_MUTATION_LOCK_TIMEOUT; la exterior conserva exactamente una evaluación y libera ScriptLock.
+- **Invariantes:** una sola fila de evaluación persistida y un append exterior; la secundaria no abre Sheets; una apertura por la operación exterior; lock liberado al finalizar.
+- **Alcance:** solo tests/security/exam-service-competency-evaluation-mutation-security.test.js; backend productivo, RBAC, identidad, asignación, scope, rúbricas y persistencia sin cambios. BETA-EXAM-097 registra la comprobación desplegada.
+- **Verificación:** GitHub Actions run 43134830869, workflow Exam-Service security local contracts, Node.js 22: SUCCESS; paso Run competency evaluation mutation security regression y job exam-security-contracts SUCCESS; contrato 27/27 PASS. Apps Script/Sheets real NOT RUN.
+- **Estado:** C1.596 **Completada en verificación local aislada/CI**. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.

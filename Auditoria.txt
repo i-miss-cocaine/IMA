@@ -2177,3 +2177,13 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Backend productivo sin cambios. Ejecución aislada sobre código/fixtures; Apps Script/Sheets real NOT RUN.
 - C1.595 Completada en verificación local aislada/CI. BETA-EXAM-096 sigue Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.596 — contención reentrante de saveCompetencyEvaluation durante appendRow
+- Se amplía tests/security/exam-service-competency-evaluation-mutation-security.test.js con hook de appendRow en EvaluacionesCompetencias que invoca el handler real de forma anidada.
+- La solicitud secundaria recibe COMPETENCY_EVALUATION_MUTATION_LOCK_TIMEOUT; la exterior persiste exactamente una evaluación, realiza un append, abre Sheets una vez y libera ScriptLock.
+- GitHub Actions run 43134830869, commit a3b59eda30396c470ba639aba67c54f7f7a8e8ef: workflow Exam-Service security local contracts SUCCESS en Node.js 22; contrato 27/27 PASS y job exam-security-contracts SUCCESS.
+- Backend productivo sin cambios. Ejecución aislada sobre código/fixtures; Apps Script/Sheets real NOT RUN.
+- C1.596 Completada en verificación local aislada/CI. BETA-EXAM-097 sigue Pendiente beta.
+===============================================================================

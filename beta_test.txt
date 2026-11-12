@@ -1109,3 +1109,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; suite local aislada 5/5 escenarios de reentrada PASS; GitHub Actions run 43132167465 SUCCESS en Node.js 22. Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de solicitudes exteriores/secundarias, adquisiciones/liberaciones del lock, aperturas de Sheets, conteos appendRow/setValues/setValue y snapshots de BancoPreguntas y ResourceOwnership antes/después.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-097 — TASK-153 / AUD-NG-386 / EXAM: contención reentrante de saveCompetencyEvaluation durante appendRow
+- **Módulo/rol:** Servicio EXAM; Profesor con permiso saveCompetencyEvaluation, identidad firmada, scope institucional/departamental verificado y asignación académica válida; Administrador únicamente con scope institucional amplio verificado.
+- **Objetivo:** verificar en Apps Script/Sheets desplegado que una segunda evaluación por competencias iniciada durante appendRow de EvaluacionesCompetencias no atraviesa ScriptLock ni duplica registros.
+- **Precondiciones:** versión beta desplegada; estudiante válido y único; asignación del profesor vigente para asignatura/periodo; rúbrica válida si se utiliza; hojas Usuarios, ConfiguracionAcademica, RubricasEvaluacion, ResourceOwnership (si aplica) y EvaluacionesCompetencias con esquemas válidos; mecanismo controlado para invocar una segunda mutación durante appendRow.
+- **Pasos:** ejecutar saveCompetencyEvaluation con datos válidos; durante appendRow de EvaluacionesCompetencias intentar una segunda llamada al mismo handler; revisar respuestas, trazas RBAC/identidad/lock/Sheets, conteo de appendRow y snapshot completo de EvaluacionesCompetencias antes/después.
+- **Resultado esperado:** la solicitud secundaria termina con COMPETENCY_EVALUATION_MUTATION_LOCK_TIMEOUT; la operación exterior persiste exactamente una evaluación, abre Sheets una vez y libera ScriptLock; no quedan evaluaciones duplicadas.
+- **Estado:** Pendiente beta; contrato local aislado 27/27 PASS; GitHub Actions run 43134830869 SUCCESS en Node.js 22. Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, trazas saneadas de solicitudes exterior/secundaria, adquisiciones/liberaciones del lock, aperturas de Sheets, conteo appendRow y snapshots de EvaluacionesCompetencias antes/después.
+===============================================================================

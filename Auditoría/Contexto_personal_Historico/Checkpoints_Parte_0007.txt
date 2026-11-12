@@ -312,3 +312,31 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.595 Completada en verificación local aislada/CI.
 - HEAD inicial: 3e225077fc40aa613ae53da85aedd884156b86b3; HEAD de código probado: 2cdcdd4b9bb1bc4d29ba251b9ce824373336110c; HEAD final se confirma tras commit documental.
 ===============================================================================
+
+
+===============================================================================
+## C1.596 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de saveCompetencyEvaluation durante appendRow.
+
+### Hallazgo y cambio
+- El contrato cubría RBAC, identidad, scope, asignación, rúbricas, timeout, reentrada durante la validación y fallo de persistencia, pero no una segunda solicitud durante el append exterior de EvaluacionesCompetencias.
+- Se añade hook en appendRow del fixture para invocar saveCompetencyEvaluation real de forma anidada mientras el ScriptLock exterior permanece retenido.
+- La secundaria debe recibir COMPETENCY_EVALUATION_MUTATION_LOCK_TIMEOUT; la exterior debe persistir exactamente una evaluación mediante un append, abrir Sheets una vez y liberar el lock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-competency-evaluation-mutation-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- GitHub Actions run 43134830869, commit de código/prueba a3b59eda30396c470ba639aba67c54f7f7a8e8ef: workflow Exam-Service security local contracts SUCCESS, Node.js 22.
+- Contrato exam-service-competency-evaluation-mutation-security: 27/27 PASS; paso específico y job exam-security-contracts SUCCESS.
+- Runner aislado ejecutó código y fixtures sin despliegue ni servicio remoto; Apps Script/Sheets real NOT RUN. BETA-EXAM-097 Pendiente beta.
+- C1.596 Completada en verificación local aislada/CI. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD inicial: 6d7b8124c13b7d60256d0a183069a25beb50432e; HEAD de código probado: a3b59eda30396c470ba639aba67c54f7f7a8e8ef; HEAD final se confirma tras commit documental.
+===============================================================================
