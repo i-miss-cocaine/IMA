@@ -2461,3 +2461,8 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Medio — selección implícita de rol:** el login podía usar `Usuarios.Rol` como selección por defecto aunque existieran varias membresías. Se exige selección explícita y se incorpora control accesible en el formulario.
 - **Verificación:** se añadió cobertura local para los casos; no fue ejecutada en esta iteración. No se declara PASS. La ejecución local y CI permanecen pendientes antes de cerrar el incremento.
 ===============================================================================
+
+
+### C1.616-R1 — integridad del esquema de membresías
+- ensureUserRoleMembershipSheet_ validaba solo las primeras 12 celdas y podía aceptar una hoja con columnas adicionales, mientras el lector la rechazaba. Se unifica el criterio: exactamente 12 columnas y cabecera canónica; el contrato incluye regresión para columnas adicionales.
+- Prueba añadida, aún NOT RUN; pendiente de ejecución local antes del cierre.
