@@ -74,6 +74,9 @@ function fixture(options = {}) {
     getSheetByName(name) { return sheets[name] || null; },
     insertSheet(name) {
       sheets[name] = makeSheet([], options, "evaluation", state);
+      if (name === "EvaluacionesCompetencias" && typeof options.duringInsert === "function") {
+        options.duringInsert(sheets[name]);
+      }
       return sheets[name];
     }
   };
@@ -280,6 +283,50 @@ test("reentrant mutation during evaluation append is rejected without duplicate 
   assert.equal(x.state.releases, 1, "the outer request must release its lock exactly once");
   assert.equal(x.state.opens, 1, "the nested request must be rejected before opening Sheets");
   assert.equal(x.state.held, false, "the outer ScriptLock must be released");
+});
+
+test("reentrant mutation during evaluation sheet insert is rejected without duplicate initialization", () => {
+  let x, nestedError = "", nestedAttempts = 0;
+  x = fixture({ missingEvaluationSheet: true, duringInsert() {
+    nestedAttempts++;
+    try { x.call(); } catch (error) { nestedError = error.message; }
+  }});
+  const result = x.call();
+  assert.equal(result.status, "success");
+  assert.equal(nestedAttempts, 1);
+  assert.equal(nestedError, "COMPETENCY_EVALUATION_MUTATION_LOCK_TIMEOUT");
+  const rows = x.sheets.EvaluacionesCompetencias.rows;
+  assert.equal(JSON.stringify(rows[0]), JSON.stringify(evaluationHeaders));
+  assert.equal(rows.length, 2, "only the outer request may persist one evaluation");
+  assert.equal(rows[1][1], "COMP-1");
+  assert.equal(rows[1][3], "STU-1");
+  assert.equal(x.state.evaluationAppends, 2, "outer request writes one header and one evaluation");
+  assert.equal(x.state.locks, 2);
+  assert.equal(x.state.releases, 1);
+  assert.equal(x.state.opens, 1, "nested request must time out before opening Sheets");
+  assert.equal(x.state.held, false);
+});
+test("reentrant mutation during initial evaluation headers append is rejected without duplicate initialization", () => {
+  let x, nestedError = "", nestedAttempts = 0;
+  x = fixture({ missingEvaluationSheet: true, duringAppend() {
+    if (nestedAttempts > 0) return;
+    nestedAttempts++;
+    try { x.call(); } catch (error) { nestedError = error.message; }
+  }});
+  const result = x.call();
+  assert.equal(result.status, "success");
+  assert.equal(nestedAttempts, 1);
+  assert.equal(nestedError, "COMPETENCY_EVALUATION_MUTATION_LOCK_TIMEOUT");
+  const rows = x.sheets.EvaluacionesCompetencias.rows;
+  assert.equal(JSON.stringify(rows[0]), JSON.stringify(evaluationHeaders));
+  assert.equal(rows.length, 2, "only the outer request may persist one evaluation");
+  assert.equal(rows[1][1], "COMP-1");
+  assert.equal(rows[1][3], "STU-1");
+  assert.equal(x.state.evaluationAppends, 2, "outer request writes one header and one evaluation");
+  assert.equal(x.state.locks, 2);
+  assert.equal(x.state.releases, 1);
+  assert.equal(x.state.opens, 1, "nested request must time out before opening Sheets");
+  assert.equal(x.state.held, false);
 });
 
 test("missing rubric and duplicate rubric IDs are denied", () => {
