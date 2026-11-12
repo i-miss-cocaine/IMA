@@ -4529,6 +4529,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Invariantes:** ambas secundarias reciben EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; la exterior crea una sola hoja, encabezados exactos, una categoría y un ownership activo asociado; una inserción, una apertura de Sheets, tres appendRow exteriores y ScriptLock liberado.
 - **Alcance:** contrato de seguridad y BETA-EXAM-104; backend productivo sin cambios.
 - **Verificación local:** harness determinista sobre saveEvaluationCategory, wrapper, contexto y worker productivos extraídos de backend/exam-service/Code.gs: 2/2 PASS; parseo JavaScript del contrato actualizado PASS.
-- **CI:** pendiente de completar tras la publicación de esta unidad.
+- **Contrato local:** suite completa 22/22 PASS en runner aislado; harness focalizado de insertSheet y appendRow de encabezados 2/2 PASS; parseo JavaScript del contrato PASS.
+- **CI:** el conector devolvió una lista de estados vacía para el commit de pruebas; no hay run ID ni resultado verificable disponible. CI NOT VERIFIED; no se declara PASS.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-104 Pendiente beta.
-- **Estado:** C1.603 en verificación CI; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- **Estado:** C1.603 Completada con verificación local aislada. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
