@@ -33,6 +33,7 @@ const validateFn = extractFunction(source, "validateRoleScopeAccess");
 const assignFn = extractFunction(source, "assignRoleScope");
 const permissionFn = extractFunction(source, "validateRolePermission");
 const assignmentsFn = extractFunction(source, "getInternalRoleAssignments");
+const ownershipFn = extractFunction(source, "assertRecordOwnership");
 
 const headers = ["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"];
 const rows = [
@@ -44,6 +45,12 @@ const rows = [
   ["A-5","U-2","Director","DEPARTAMENTO",'["DEP-X"]',"Activo","U-ADMIN","2026-01-01","2026-01-01","2027-01-01","No",""],
   ["A-6","U-1","Director","DEPARTAMENTO",'["DEP-REVOKED"]',"Revocado","U-ADMIN","2026-01-01","2026-01-01","2027-01-01","No",""],
   ["A-7","U-1","Director","NIVEL",'["BASICA"]',"Activo","U-ADMIN","2026-01-01","2026-01-01","2027-01-01","No",""]
+];
+
+const ownershipRows = [
+  ["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status"],
+  ["OWN-A","INST-1","EXPEDIENTE","RES-A","DEP-A","ACTIVE"],
+  ["OWN-B","INST-1","EXPEDIENTE","RES-B","DEP-B","ACTIVE"]
 ];
 
 function makeContext() {
@@ -67,7 +74,9 @@ function makeContext() {
       openById(id) {
         assert.equal(id, "LOCAL");
         return { getSheetByName(name) {
-          return name === "AsignacionesAmbitosRoles" ? { getDataRange: () => ({ getValues: () => rows.map(r => r.slice()) }) } : null;
+          if (name === "AsignacionesAmbitosRoles") return { getDataRange: () => ({ getValues: () => rows.map(r => r.slice()) }) };
+          if (name === "ResourceOwnership") return { getLastRow: () => ownershipRows.length, getDataRange: () => ({ getValues: () => ownershipRows.map(r => r.slice()) }) };
+          return null;
         }};
       }
     },
@@ -78,7 +87,7 @@ function makeContext() {
     ROLE_PERMISSIONS: {},
     logStructuredEvent: () => {}
   };
-  vm.runInNewContext(scopeFn + "\n" + validateFn + "\n" + permissionFn + "\nthis.getUserContextScope=getUserContextScope;this.validateRoleScopeAccess=validateRoleScopeAccess;this.validateRolePermission=validateRolePermission;", ctx);
+  vm.runInNewContext(scopeFn + "\\n" + validateFn + "\\n" + ownershipFn + "\\n" + permissionFn + "\\nthis.getUserContextScope=getUserContextScope;this.validateRoleScopeAccess=validateRoleScopeAccess;this.assertRecordOwnership=assertRecordOwnership;this.validateRolePermission=validateRolePermission;", ctx);
   return ctx;
 }
 
@@ -112,6 +121,15 @@ assert.equal(activeAllowed.authorized, true);
 assert.equal(activeAllowed.activeDepartmentId, "DEP-B");
 const activeDenied = ctx.validateRoleScopeAccess({ sessionToken: "token-u1-director", activeDepartmentId: "DEP-B", scopeType: "DEPARTAMENTO", requestedValue: "DEP-A" });
 assert.equal(activeDenied.authorized, false, "a selected department cannot access another assigned department");
+
+const selectedResource = ctx.assertRecordOwnership({ sessionToken: "token-u1-director", activeDepartmentId: "DEP-B" }, "EXPEDIENTE", "RES-B", "READ");
+assert.equal(selectedResource.authorized, true, "ownership in the selected department remains accessible");
+assert.equal(selectedResource.departmentId, "DEP-B");
+const otherDepartmentResource = ctx.assertRecordOwnership({ sessionToken: "token-u1-director", activeDepartmentId: "DEP-B" }, "EXPEDIENTE", "RES-A", "READ");
+assert.equal(otherDepartmentResource.authorized, false, "ownership outside the active department is denied");
+assert.equal(otherDepartmentResource.code, "RESOURCE_SCOPE_DENIED");
+const unionResource = ctx.assertRecordOwnership({ sessionToken: "token-u1-director" }, "EXPEDIENTE", "RES-A", "READ");
+assert.equal(unionResource.authorized, true, "omitting active context preserves the previously authorized department union");
 const activeOtherDimensionDenied = ctx.validateRoleScopeAccess({ sessionToken: "token-u1-director", activeDepartmentId: "DEP-B", scopeType: "NIVEL", requestedValue: "BASICA" });
 assert.equal(activeOtherDimensionDenied.authorized, false, "unrelated scope dimensions fail closed in a department-specific context");
 const unassignedActive = ctx.getUserContextScope({ sessionToken: "token-u1-director", activeDepartmentId: "DEP-X" });
