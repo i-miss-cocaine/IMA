@@ -2411,3 +2411,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Se añade hook anti-replay. La secundaria recibe SIGNATURE_CALLBACK_SERVICE_BUSY antes de consultar/reservar el replayKey; solo la exterior deja reserva y evento.
 - BETA-FUNC-027 ampliada; backend productivo sin cambios; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+### C1.612 — cierre CI USER
+- GitHub Actions Department Scope Contract run 43144355981, commit ec4a97029a208da0f3b2c1cc8a64937bec250acf: SUCCESS en Node.js 24; todos los pasos PASS.
+- Paso user-service-signature-ownership.test.js SUCCESS; harness local focalizado 1/1 PASS; parseo del contrato PASS.
+- Backend productivo sin cambios. BETA-FUNC-027 Pendiente beta; proveedor PSC externo y validación criptográfica real NOT RUN.
+===============================================================================

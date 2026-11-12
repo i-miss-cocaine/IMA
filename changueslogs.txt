@@ -2575,3 +2575,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - La secundaria recibe SIGNATURE_CALLBACK_SERVICE_BUSY antes de cache.get/cache.put; solo la exterior reserva requestId y registra el evento.
 - BETA-FUNC-027 ampliada; backend sin cambios; CI pendiente; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.612 — verificación CI de callback anti-replay
+- GitHub Actions Department Scope Contract run 43144355981, commit ec4a97029a208da0f3b2c1cc8a64937bec250acf: SUCCESS en Node.js 24.
+- Contrato USER signature ownership y todos los pasos del job PASS; harness local focalizado 1/1 PASS.
+- C1.612 completada local/CI; backend sin cambios. BETA-FUNC-027 Pendiente beta; proveedor PSC real y validación criptográfica real NOT RUN.
+===============================================================================

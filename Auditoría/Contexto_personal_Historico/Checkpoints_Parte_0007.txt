@@ -870,3 +870,11 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.612 En ejecución; TASK-153 continúa En ejecución.
 - HEAD inicial: d40caa77643248a20930b8f27c52f770f59f0fe0; HEAD final se confirma tras publicar.
 ===============================================================================
+
+
+### Addendum de cierre CI — C1.612
+- GitHub Actions Department Scope Contract run 43144355981, commit ec4a97029a208da0f3b2c1cc8a64937bec250acf: SUCCESS en Node.js 24; todos los pasos PASS.
+- Run user-service signature ownership contract SUCCESS; harness V8 focalizado anti-replay 1/1 PASS; parseo del contrato PASS.
+- C1.612 Completada con verificación local focalizada y CI. BETA-FUNC-027 permanece Pendiente beta; proveedor PSC y validación criptográfica real NOT RUN.
+- HEAD probado: ec4a97029a208da0f3b2c1cc8a64937bec250acf; HEAD final se confirma tras este registro documental.
+===============================================================================
