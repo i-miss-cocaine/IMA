@@ -34,6 +34,7 @@ function makeSheet(rows, options = {}) {
     getRange(startRow, startCol, rowCount, colCount) {
       return { setValues: values => {
         this.writes++;
+        if (typeof options.onWrite === "function") options.onWrite(options.kind, values);
         if (this.failWrite) throw new Error("write failed");
         for (let r = 0; r < rowCount; r++) {
           if (!this.rows[startRow - 1 + r]) this.rows[startRow - 1 + r] = [];
@@ -66,9 +67,9 @@ function fixture(options = {}) {
   if (options.duplicateOwnershipId) ownership.push(["OWN-SRC-1","I1","CATEGORIA_EVALUACION","CAT-OTHER","D1","INACTIVE","P1","t","t"]);
   if (options.badCategory) categories[1][3] = "invalid";
   const sheets = {
-    ConfiguracionAcademica: makeSheet(assignments),
-    CategoriasEvaluacion: makeSheet(categories, { failWrite: options.failCategoryWrite }),
-    ResourceOwnership: makeSheet(ownership)
+    ConfiguracionAcademica: makeSheet(assignments, { kind: "assignments", onWrite: options.onWrite }),
+    CategoriasEvaluacion: makeSheet(categories, { kind: "categories", failWrite: options.failCategoryWrite, onWrite: options.onWrite }),
+    ResourceOwnership: makeSheet(ownership, { kind: "ownership", onWrite: options.onWrite })
   };
   const stats = { acquired: 0, released: 0, held: false, opens: 0, action: "", reentryError: "", events: [], permissionCalls: 0 };
   let uuid = 0;
@@ -133,6 +134,27 @@ test(() => assert.throws(() => fixture().call({grupoDestino:{asignatura:"Matemá
 test(() => assert.throws(() => fixture().call({grupoDestino:{asignatura:"Matemáticas",grado:"10",seccion:"B"}}), /EVALUATION_COPY_GROUP_CONTEXT_REQUIRED/));
 test(() => { const x=fixture({lockTimeout:true});assert.throws(()=>x.call(),/EVALUATION_SETUP_COPY_LOCK_TIMEOUT/);assert.equal(x.stats.opens,0); });
 test(() => { const x=fixture({reenter:true}),r=x.call();assert.equal(r.categoriasCopias,1);assert.match(x.stats.reentryError,/EVALUATION_SETUP_COPY_LOCK_TIMEOUT/);assert.equal(x.sheets.CategoriasEvaluacion.writes,1);assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[2,1,false]); });
+test(() => {
+  for (const targetKind of ["ownership", "categories"]) {
+    let x, nestedError = "";
+    x = fixture({ onWrite(kind) {
+      if (kind !== targetKind) return;
+      try { x.call(); } catch (error) { nestedError = error.message; }
+    }});
+    const result = x.call();
+    const copiedCategoryId = x.sheets.CategoriasEvaluacion.rows[2][0];
+    assert.equal(result.categoriasCopias, 1);
+    assert.equal(nestedError, "EVALUATION_SETUP_COPY_LOCK_TIMEOUT",
+      targetKind + " setValues must reject nested copy while the outer lock is held");
+    assert.deepEqual([x.stats.acquired, x.stats.released, x.stats.held, x.stats.opens], [2, 1, false, 1]);
+    assert.equal(x.sheets.ResourceOwnership.writes, 1);
+    assert.equal(x.sheets.CategoriasEvaluacion.writes, 1);
+    assert.equal(x.sheets.CategoriasEvaluacion.rows.filter(row => row[0] === copiedCategoryId).length, 1);
+    assert.equal(x.sheets.ResourceOwnership.rows.filter(row => row[3] === copiedCategoryId).length, 1);
+    assert.equal(x.sheets.ResourceOwnership.rows.length, 3);
+    assert.equal(x.sheets.CategoriasEvaluacion.rows.length, 3);
+  }
+});
 test(() => {
   const x=fixture({failCategoryWrite:true});
   assert.throws(()=>x.call(),/write failed/);

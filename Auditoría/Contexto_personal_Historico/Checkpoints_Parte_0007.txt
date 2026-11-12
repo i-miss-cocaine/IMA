@@ -248,3 +248,31 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.593 Completada en verificación local aislada/CI. BETA-EXAM-094 permanece Pendiente beta.
 - HEAD de código y workflow probado: 22c952bbfb8421ca3bb89139d6c212b8542705d6; commit posterior 4c7a56307d378e6d556e3a15421138c1f131dbf7 ajustó únicamente el filtro de rutas pull_request.
 - HEAD final se confirma tras este commit documental.
+
+
+===============================================================================
+## C1.594 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de copyEvaluationSetupBetweenGroups durante setValues de ownership y categoría.
+
+### Hallazgo y cambio
+- El contrato existente cubría timeout, RBAC, identidad, scope, rollback y reentrada durante openById, pero no una segunda copia durante las escrituras batch.
+- Se amplía el fixture para reentrar al handler real desde setValues de ResourceOwnership y desde setValues de CategoriasEvaluacion.
+- En ambos puntos la solicitud secundaria debe recibir EVALUATION_SETUP_COPY_LOCK_TIMEOUT; la exterior conserva una categoría y un ownership asociados, una escritura por hoja, una apertura de Sheets y liberación del lock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-evaluation-setup-copy-security.test.js
+- .github/workflows/exam-service-security-contract.yml
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Escenarios añadidos para ambas ventanas de persistencia; ejecución local aislada/CI pendiente tras commit.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-095 Pendiente beta.
+- C1.594 En ejecución hasta completar la verificación local aislada.
+- HEAD inicial: dab23e9bb6fb35766fb484a01fe1660e2057f1ae; HEAD final: se confirma tras publicar.
+===============================================================================

@@ -4422,3 +4422,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - El paso `Run evaluation category mutation security regression` ejecutó `tests/security/exam-service-evaluation-category-mutation-security.test.js`: **20/20 PASS**, sin fallos; job `exam-security-contracts` SUCCESS.
 - El runner ejecutó el código y fixtures de forma aislada, sin despliegue ni infraestructura remota. Apps Script/Sheets real NOT RUN.
 - C1.593 **Completada en verificación local aislada/CI**. BETA-EXAM-094 permanece Pendiente beta.
+
+
+### 10.243 TASK-153 / AUD-NG-386 — contención reentrante de copyEvaluationSetupBetweenGroups durante setValues (C1.594)
+- **Brecha confirmada:** el contrato de copyEvaluationSetupBetweenGroups cubría el timeout del lock y una segunda llamada durante openById, pero no una solicitud reentrante durante las escrituras batch de ResourceOwnership y CategoriasEvaluacion.
+- **Cobertura añadida:** el fixture intercepta setValues en ambas hojas e invoca el handler real de forma anidada. En cada punto la secundaria debe recibir EVALUATION_SETUP_COPY_LOCK_TIMEOUT; la exterior copia una sola categoría, crea un único ownership asociado, realiza una escritura por hoja, abre Sheets una vez y libera ScriptLock.
+- **Alcance:** contrato tests/security/exam-service-evaluation-setup-copy-security.test.js, activación del workflow local y BETA-EXAM-095; backend productivo sin cambios.
+- **Verificación local:** escenarios añadidos para ambas ventanas de persistencia; ejecución aislada/CI pendiente. Apps Script/Sheets real NOT RUN.
+- **Estado:** C1.594 En ejecución hasta completar la verificación local aislada. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.

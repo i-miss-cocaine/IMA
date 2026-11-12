@@ -27,6 +27,7 @@ on:
       - 'tests/security/exam-service-delete-submission-audit.test.js'
       - 'tests/security/exam-service-gradebook-bulk-apply-security.test.js'
       - 'tests/security/exam-service-evaluation-category-mutation-security.test.js'
+      - 'tests/security/exam-service-evaluation-setup-copy-security.test.js'
       - '.github/workflows/exam-service-security-contract.yml'
   pull_request:
     branches: [NG_beta_0.0.0.1_work]

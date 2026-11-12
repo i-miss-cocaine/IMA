@@ -2149,3 +2149,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Contrato exam-service-evaluation-category-mutation-security: PASS (20/20); paso Run evaluation category mutation security regression y job exam-security-contracts SUCCESS.
 - Ejecución aislada sobre código/fixtures sin despliegue; Apps Script/Sheets real NOT RUN.
 - C1.593 Completada en verificación local aislada/CI. BETA-EXAM-094 sigue Pendiente beta.
+
+
+===============================================================================
+[2026-11-11] C1.594 — contención reentrante de copyEvaluationSetupBetweenGroups durante persistencia batch
+- Se amplía exam-service-evaluation-setup-copy-security.test.js con hooks en setValues de ResourceOwnership y CategoriasEvaluacion para invocar el handler real de forma anidada.
+- Cada solicitud secundaria debe terminar EVALUATION_SETUP_COPY_LOCK_TIMEOUT; la operación exterior conserva una categoría y un ownership asociados, una escritura por hoja, una apertura Sheets y liberación del lock.
+- Backend productivo sin cambios. Cobertura local añadida; ejecución aislada/CI pendiente. Apps Script/Sheets real NOT RUN.
+- BETA-EXAM-095 agregado. TASK-153 / AUD-NG-386 continúa En ejecución.
+===============================================================================

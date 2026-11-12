@@ -2320,3 +2320,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Ejecución aislada sobre código/fixtures sin despliegue; Apps Script/Sheets real NOT RUN.
 - C1.593 Completada en verificación local aislada/CI. BETA-EXAM-094 sigue Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.594 — contención reentrante de copyEvaluationSetupBetweenGroups durante setValues
+- Se amplía exam-service-evaluation-setup-copy-security.test.js para invocar el handler real de forma anidada durante setValues de ResourceOwnership y CategoriasEvaluacion.
+- Ambas solicitudes secundarias deben fallar EVALUATION_SETUP_COPY_LOCK_TIMEOUT; la operación exterior conserva una sola categoría y ownership asociado, una escritura por hoja, una apertura Sheets y libera ScriptLock.
+- Backend productivo sin cambios. Cobertura añadida; ejecución aislada/CI pendiente. Apps Script/Sheets real NOT RUN.
+- BETA-EXAM-095 agregado. TASK-153 / AUD-NG-386 continúa En ejecución.
+===============================================================================
