@@ -5060,3 +5060,18 @@ La revisión de requisitos originales confirma cobertura de:
 - Contrato V8 aislado PASS para los cuatro lectores; sintaxis USER/ACADEMIC/ACCOUNTING/TASK/EXAM/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
 - **Estado:** C1.642 completada localmente. La declaración de cierre C1.640 queda supersedida en lo relativo a los lectores de ámbito de servicios; **T153-S02 vuelve a En ejecución** hasta completar búsqueda estática de todos los consumidores de `AsignacionesAmbitosRoles`.
 - **Siguiente acción:** localizar todos los lectores restantes de `AsignacionesAmbitosRoles` y verificar que usan el contexto ligado a membresía o una excepción legacy fail-closed.
+
+
+ 
+**Addendum C1.643 — lectores contextuales USER/ACADEMIC**
+- ACADEMIC `validateContextualAccess` deja de leer AsignacionesAmbitosRoles por UserID/ScopeType/Estado; delega en `getVerifiedAcademicDepartmentScope_`, que comprueba sesión, rol, membresía, tenant, responsabilidad y vigencia.
+- USER `getUserScopeConfig` devuelve el contexto efectivo para autconsulta. La lectura administrativa de otro usuario requiere permiso y, cuando hay varias membresías, una MembershipID exacta; no une roles de forma implícita ni usa legacy fallback si el usuario tiene membresías en otro tenant.
+- Contrato C1.643 PASS. T153-S02 sigue En ejecución hasta completar la revisión del firmante de firma avanzada.
+ 
+**Addendum C1.644 — aislamiento de firmantes y cierre de T153-S02**
+- `assertAdvancedSignatureSignerScope_` valida el ámbito de firma por membresía exacta, rol, institución y responsabilidad activa. Si existen varias membresías se requiere `firmanteMembershipId` + `firmanteRoleId`; no se hereda el ámbito de otro rol.
+- El fallback legacy solo opera si no existen registros de membresía del usuario en ningún tenant y la fila de ámbito carece de InstitutionID/MembershipID.
+- Revisión estática de los seis entrypoints backend del subflujo: USER, ACADEMIC, ACCOUNTING, TASK, EXAM y DEVELOPER. Las lecturas restantes están ligadas a contexto/membresía; el único acceso adicional en ACCOUNTING es una escritura de revocación local durante offboarding. DEVELOPER permanece separado.
+- Contrato V8 aislado PASS (C1.621–C1.644); sintaxis USER/ACADEMIC/ACCOUNTING/TASK/EXAM/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets multi-proyecto Pendiente beta.
+- **Estado:** T153-S02 COMPLETADA para implementación y contratos aislados. BETA-FUNC-033/C1.639 y C1.641–C1.644 requieren validación real; TASK-153 global sigue En ejecución.
+- **Siguiente unidad:** revisar dependencias y trabajo elegible tras T153-S01. Su inventario técnico está hecho, pero la autoridad/crosswalk departamental sigue sin evidencia; no fusionar catálogos ni migrar datos.
