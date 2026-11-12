@@ -2770,3 +2770,14 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
 - C1.628 completada; T153-S02 sigue En ejecución. Siguiente: prueba determinista de concurrencia de assignRoleScope bajo ScriptLock.
 ===============================================================================
+
+
+ 
+===============================================================================
+[2026-11-12] C1.629 — concurrencia de asignaciones de ámbito
+- Prueba determinista intercaló dos llamadas a assignRoleScope: la segunda no adquiere ScriptLock, devuelve WRITE_LOCK_BUSY y no escribe; la primera crea una fila y libera el lock.
+- Retry posterior reutiliza el AssignmentID sin duplicar. Se verifica que solo el propietario libera el lock.
+- Contrato completo V8 aislado PASS, incluidos C1.621–C1.629; sintaxis backend/test PASS.
+- Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
+- C1.629 completada; T153-S02 sigue En ejecución. Siguiente: paridad temporal de contexto y listado administrativo.
+===============================================================================
