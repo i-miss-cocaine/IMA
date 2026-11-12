@@ -10504,27 +10504,54 @@ function getUserContextScope(payload) {
 }
 function getUserScopeConfig(payload) {
   try {
-    var userId = payload && payload.userId ? payload.userId : (payload && payload._verifiedUserId ? payload._verifiedUserId : null);
-    if (!userId) {
-      return { status: "error", message: "userId es requerido para consultar ámbitos del usuario." };
-    }
-    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    var sheet = getOrCreateSheet(ss, "AsignacionesAmbitosRoles");
-    var ámbitos = [];
-    if (sheet && sheet.getLastRow() > 1) {
-      var data = sheet.getDataRange().getValues();
-      for (var i = 1; i < data.length; i++) {
-        if (String(data[i][1]).trim() === String(userId).trim() && String(data[i][5]).trim().toLowerCase() === "activo") {
-          var vals = [];
-          try { vals = JSON.parse(data[i][4]); } catch (_) { vals = [data[i][4]]; }
-          ámbitos.push({ assignmentId: data[i][0], roleId: data[i][2], scopeType: data[i][3], scopeValues: vals, fechaCreacion: data[i][7] });
+    var actorId=String((payload&&payload._verifiedUserId)||"").trim(),actorRole=getUserVerifiedRole(payload);
+    if(!actorId||!actorRole||actorRole==="NO_ACCESS")return {status:"error",code:"VERIFIED_IDENTITY_REQUIRED",message:"Se requiere una sesión firmada y activa."};
+    var targetUserId=String((payload&&payload.userId)||actorId).trim();
+    if(!targetUserId)return {status:"error",code:"USER_ID_REQUIRED",message:"userId es requerido."};
+    var assignments=[];
+    if(targetUserId===actorId){
+      var context=getUserContextScope(payload);
+      if(context&&context.status==="success")assignments=context.scopes||[];
+      else if(!context||context.code!=="DEPARTMENT_SCOPE_NOT_ASSIGNED")return {status:"error",code:context&&context.code||"USER_SCOPE_CONTEXT_FAILED",message:"No fue posible consultar el contexto efectivo."};
+    }else{
+      var permission=validateRolePermission("getUserScopeConfig",payload);
+      if(!permission||permission.authorized!==true)return {status:"error",code:"AUTH_PERMISSION_DENIED",message:"No tiene permiso para consultar ámbitos de otro usuario."};
+      var institutionId=String(getIdentityInstitutionId_()||"").trim();
+      if(!institutionId)return {status:"error",code:"IDENTITY_CONFIGURATION_REQUIRED",message:"No existe institución configurada."};
+      var membershipState=getUserRoleMembershipState_(targetUserId,institutionId),membership=null;
+      if(membershipState&&membershipState.hasRecords){
+        var activeMemberships=membershipState.memberships||[];
+        if(!activeMemberships.length)return {status:"error",code:"ROLE_MEMBERSHIP_NOT_ACTIVE",message:"El usuario no tiene membresías activas y únicas en esta institución."};
+        var requestedMembershipId=String((payload&&payload.membershipId)||"").trim();
+        if(requestedMembershipId){
+          var matches=activeMemberships.filter(function(item){return item.membershipId===requestedMembershipId;});
+          if(matches.length!==1)return {status:"error",code:"ROLE_MEMBERSHIP_NOT_ACTIVE",message:"La membresía solicitada no está activa o no pertenece al usuario."};
+          membership=matches[0];
+        }else if(activeMemberships.length===1)membership=activeMemberships[0];
+        else return {status:"error",code:"ROLE_MEMBERSHIP_SELECTION_REQUIRED",message:"Seleccione una membresía para consultar sus ámbitos."};
+      }else{
+        var ss=SpreadsheetApp.openById(SPREADSHEET_ID),membershipSheet=ss.getSheetByName("MembresiasRolesRBAC");
+        if(membershipSheet){
+          var membershipRows=membershipSheet.getDataRange().getValues().slice(1);
+          var hasOtherTenantMembership=membershipRows.some(function(row){return String(row[1]||"").trim()===targetUserId&&String(row[3]||"").trim()!==institutionId;});
+          if(hasOtherTenantMembership)return {status:"error",code:"ROLE_MEMBERSHIP_INSTITUTION_MISMATCH",message:"El usuario tiene membresías en otra institución; no se permite fallback de ámbitos legacy."};
         }
       }
+      var list=getInternalRoleAssignments({userId:targetUserId,roleId:membership?membership.roleId:undefined,membershipId:membership?membership.membershipId:undefined,soloVigentes:true});
+      if(!list||list.status!=="success")return {status:"error",code:list&&list.code||"USER_SCOPE_LIST_FAILED",message:"No fue posible consultar las asignaciones efectivas."};
+      assignments=list.data||[];
     }
-    return { status: "success", userId: userId, ambitos: ámbitos, timestamp: new Date().toISOString() };
-  } catch (error) {
-    return { status: "error", message: error.message };
-  }
+    var ambitos=assignments.map(function(item){
+      var values=item.scopeValues;
+      if(!Array.isArray(values)){
+        var raw=String(values||"").trim();
+        try{var parsed=JSON.parse(raw);values=Array.isArray(parsed)?parsed:(parsed===""?[]:[String(parsed)]);}
+        catch(_){values=raw?raw.split(",").map(function(value){return value.trim();}).filter(Boolean):[];}
+      }
+      return {assignmentId:item.assignmentId||item.asignacionId,roleId:item.roleId||null,scopeType:item.scopeType,scopeValues:values,fechaCreacion:item.fechaCreacion||"",membershipId:item.membershipId||null,responsibilityId:item.responsibilityId||item.responsibility&&item.responsibility.responsibilityId||null};
+    });
+    return {status:"success",userId:targetUserId,ambitos:ambitos,timestamp:new Date().toISOString()};
+  }catch(error){return {status:"error",code:error.message||"USER_SCOPE_CONFIG_FAILED",message:error.message};}
 }
 
 function validateRoleScopeAccess(payload) {
