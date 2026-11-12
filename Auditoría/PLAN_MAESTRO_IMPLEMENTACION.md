@@ -4858,3 +4858,11 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - No se inventa un mapa de capacidades a acciones: el requisito no define una taxonomía institucional universal. Las capacidades continúan siendo metadatos de responsabilidad; solo la matriz RBAC explícita autoriza acciones. Se agrega una regresión con CAP_ADMINISTRAR presente y acción ausente en la matriz.
 - Cobertura añadida: ResponsibilityID duplicado; capacidades no-string; duplicidad tras trim; rechazo de escritura sin mutación; RolInternoID duplicado; no elevación RBAC por capacidad.
 - Apps Script/Sheets real sigue siendo prueba beta; ejecución local aislada y CI se registrarán por separado. T153-S02 continúa En ejecución: este incremento endurece la integridad de catálogos, pero no completa todavía toda la relación usuario↔roles↔responsabilidades↔ámbitos ni sus criterios multirol.
+
+ 
+**Cierre de verificación C1.624**
+- Ejecución de todo `internal-responsibility-rbac-contract.test.js` con sus fixtures en harness V8 aislado: **PASS**; parseo sintáctico del backend y del contrato: **PASS**. Este harness permitió ejecutar el código completo del contrato sin checkout local, pero no se presenta como ejecución de Node CLI.
+- GitHub Actions Department Scope Contract run **43268942510 SUCCESS**, Node.js 24: contratos Department Scope, Internal Responsibility RBAC, User Role Membership, ownership académico/contable, sintaxis de seis servicios Apps Script y clientes configurados, todos los pasos PASS.
+- Se intentó checkout/ejecución Node local independiente, pero DNS no resolvió github.com; Node CLI local: **NOT RUN**. No hay servicios Apps Script/Sheets desplegados en este entorno; validación real: **Pendiente beta**.
+- Revisión del diff: ocho archivos previstos, solo backend USER, contrato focal y registros de seguimiento; sin cambios en otros servicios ni datos reales.
+- **Estado:** C1.624 completada conforme a evidencia aislada y CI. T153-S02 sigue En ejecución: falta verificar el ciclo integral usuario↔roles↔responsabilidades↔ámbitos y el comportamiento multirol/contexto activo con las restantes invariantes. No iniciar T153-S03.

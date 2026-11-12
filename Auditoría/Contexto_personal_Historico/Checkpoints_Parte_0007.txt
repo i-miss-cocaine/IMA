@@ -1138,3 +1138,11 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - Pruebas añadidas para duplicados, tipos inválidos, normalización, no mutación y no elevación. Resultado de ejecución local/CI pendiente.
 - T153-S02 permanece En ejecución; C1.624 no cierra la subtarea ni inicia T153-S03.
 ===============================================================================
+
+ 
+### C1.624 — cierre de verificación
+- Contrato completo `internal-responsibility-rbac-contract.test.js` ejecutado en harness V8 aislado PASS; parseo sintáctico del backend y del test PASS.
+- Department Scope Contract run **43268942510 SUCCESS** (Node.js 24; todos los pasos PASS, incluidos contratos RBAC/responsabilidades, membresías, ownership académico/contable y syntax-checks).
+- Node CLI en checkout independiente NOT RUN por fallo DNS al resolver github.com. Apps Script/Sheets real NOT RUN; prueba beta Pendiente.
+- Diff revisado: ocho archivos previstos; no se modificaron ramas/servicios ajenos ni datos reales.
+- C1.624 completada. T153-S02 permanece En ejecución; C1.624 no declara finalizado el ciclo completo ni inicia T153-S03.

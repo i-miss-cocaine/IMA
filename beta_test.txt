@@ -1269,3 +1269,6 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 
 - **C1.624 — prueba beta de catálogos:** en Sheets real, duplicar ResponsibilityID y RolInternoID, insertar JSON con capacidades no string o IDs repetidos con espacios, verificar que los catálogos y vínculos efectivos los excluyan; intentar guardar duplicados y confirmar que no se escribe; confirmar que CAP_ADMINISTRAR no habilita acciones no concedidas en MatrizPermisosRoles.
 - **Resultado esperado:** registros ambiguos/malformados no generan responsabilidades ni permisos; la matriz RBAC explícita continúa como única fuente de autorización de acciones. Estado: Pendiente beta.
+
+- **Evidencia de implementación C1.624:** contrato completo ejecutado en harness V8 aislado PASS; Department Scope Contract run 43268942510 SUCCESS (Node.js 24; todos los pasos PASS).
+- **Limitaciones:** Node CLI de checkout independiente NOT RUN por DNS; Apps Script/Sheets real NOT RUN. Este caso sigue Pendiente beta y no bloquea cierre de implementación.

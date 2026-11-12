@@ -2717,3 +2717,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se amplía contrato: duplicados de catálogos, tipos incorrectos, IDs repetidos, no mutación y CAP_ADMINISTRAR sin grant RBAC explícito.
 - No se crea mapeo universal de capacidades a acciones; metadatos no elevan permisos.
 ===============================================================================
+
+ 
+===============================================================================
+[2026-11-12] C1.624 — cierre de verificación
+- Contrato completo internal-responsibility-rbac-contract.test.js ejecutado en harness V8 aislado PASS; sintaxis backend/test PASS.
+- Department Scope Contract run 43268942510 SUCCESS en Node.js 24; todos los pasos del workflow PASS.
+- Node CLI en checkout independiente NOT RUN por DNS de github.com; Apps Script/Sheets real NOT RUN y permanece Pendiente beta.
+- Diff de ocho archivos revisado; sin cambios en la rama base ni datos reales. C1.624 completada; T153-S02 continúa En ejecución.
+===============================================================================

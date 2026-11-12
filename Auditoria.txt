@@ -2532,3 +2532,13 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Control de privilegios:** CAP_ADMINISTRAR permanece metadato; no reemplaza la concesión explícita en MatrizPermisosRoles. No se inventa taxonomía/mapeo no definido por el requisito.
 - **Cobertura:** contratos sintéticos de duplicidad, datos mal formados, normalización y denegación de permiso sin grant explícito. Verificación pendiente hasta ejecutar pruebas.
 ===============================================================================
+
+ 
+===============================================================================
+### C1.624 — verificación y cierre del incremento
+- **Pruebas aisladas:** contrato completo RBAC/responsabilidades ejecutado en harness V8 aislado PASS; parseo sintáctico del backend y test PASS.
+- **CI:** Department Scope Contract **43268942510 SUCCESS**, Node.js 24; todos los contratos de ámbitos, responsabilidades/RBAC, membresías, ownership académico/contable y syntax-checks configurados PASS.
+- **Limitaciones:** Node CLI en checkout independiente NOT RUN por fallo DNS; Apps Script/Sheets real y concurrencia desplegada Pendiente beta.
+- **Revisión:** ocho archivos previstos; cambios acotados al USER service, su contrato y documentación/checkpoint; rama base intacta.
+- C1.624 queda completada. T153-S02 permanece En ejecución; no se declara cerrado el ciclo completo ni TASK-153.
+===============================================================================
