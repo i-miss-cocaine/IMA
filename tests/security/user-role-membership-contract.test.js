@@ -23,9 +23,9 @@ function extractFunction(source, name) {
 }
 
 const sourceCode = fs.readFileSync(path.resolve(__dirname, "../../backend/user-service/Code.gs"), "utf8");
-assert.match(sourceCode, /case "getUserRoleMemberships":\\s*result = getUserRoleMemberships\\(payload\\);/);
-assert.match(sourceCode, /case "switchActiveRole":\\s*result = switchActiveRole\\(payload\\);/);
-assert.match(sourceCode, /case "manageUserRoleMemberships":\\s*result = manageUserRoleMemberships\\(payload\\);/);
+assert.match(sourceCode, /case "getUserRoleMemberships":\s*result = getUserRoleMemberships\(payload\);/);
+assert.match(sourceCode, /case "switchActiveRole":\s*result = switchActiveRole\(payload\);/);
+assert.match(sourceCode, /case "manageUserRoleMemberships":\s*result = manageUserRoleMemberships\(payload\);/);
 assert.match(sourceCode, /"getUserRoleMemberships", "switchActiveRole"/);
 const helperStart = sourceCode.indexOf("const USER_ROLE_MEMBERSHIP_HEADERS_ =");
 const helperEnd = sourceCode.indexOf("function generateSessionToken(user) {", helperStart);
@@ -77,6 +77,7 @@ function makeHarness(membershipRows = [headers]) {
       base64Decode:v=>Buffer.from(v,"base64"),
       newBlob:v=>({getDataAsString:()=>Buffer.from(v).toString("utf8")}),
       getUuid:()=>"uuid-test-001",
+      DigestAlgorithm:{SHA_256:"SHA_256"},
       computeDigest:() => [1,2]
     },
     getAuthTokenSecret:()=>"secret",
