@@ -2388,3 +2388,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Smoke local focalizado 1/1 PASS; CI run 43137456877 SUCCESS; contrato grade-submission-validation 18/18 PASS, Node.js 22.
 - Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-100 Pendiente beta. C1.599 Completada.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.600 — reentrada en creación de auditoría de eliminación de entregas EXAM
+- Añadidos escenarios de reentrada durante insertSheet y appendRow de encabezados cuando falta la hoja de auditoría; se mantienen los tres escenarios de escritura ya existentes.
+- Smoke local 5/5 PASS; CI run 43137857655 SUCCESS; contrato delete-submission-audit 35/35 PASS, Node.js 22.
+- Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-101 Pendiente beta. C1.600 Completada.
+===============================================================================

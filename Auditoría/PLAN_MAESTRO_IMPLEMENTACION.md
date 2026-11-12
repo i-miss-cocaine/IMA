@@ -4487,3 +4487,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI:** GitHub Actions run 43137456877, workflow Exam-Service security local contracts, Node.js 22: SUCCESS; contrato grade-submission-validation 18/18 PASS; job exam-security-contracts SUCCESS.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-100 Pendiente beta.
 - **Estado:** C1.599 Completada con verificación local focalizada y suite CI. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+
+
+### 10.249 TASK-153 / AUD-NG-386 — reentrada durante la creación de la hoja de auditoría de eliminación de entregas (C1.600)
+- **Brecha confirmada:** deleteExamSubmission ya cubría reentrada durante append del evento de auditoría, deleteRow de la entrega y finalización del evento, pero no durante insertSheet ni appendRow de los encabezados iniciales cuando la hoja aún no existe.
+- **Cobertura añadida:** el fixture admite hoja de auditoría ausente y provoca reentrada del handler real desde insertSheet y desde appendRow de encabezados; se conservan los tres escenarios previos.
+- **Invariantes:** las dos llamadas secundarias reciben EXAM_SUBMISSION_LOCK_TIMEOUT; exterior crea una sola hoja y encabezado, registra un único evento, elimina la entrega una vez, finaliza DELETE/DELETED y libera el lock.
+- **Alcance:** únicamente tests/security/exam-service-delete-submission-audit.test.js; backend productivo sin cambios. BETA-EXAM-101 registra la comprobación desplegada.
+- **Verificación local:** escenarios focalizados deterministas ejecutados sobre helper, wrapper y handler productivos extraídos de Code.gs: 5/5 PASS; parseo de Code.gs y contrato PASS.
+- **CI:** GitHub Actions run 43137857655, workflow Exam-Service security local contracts, Node.js 22: SUCCESS; contrato delete-submission-audit 35/35 PASS; job exam-security-contracts SUCCESS.
+- **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-101 Pendiente beta.
+- **Estado:** C1.600 Completada con verificación local focalizada y suite CI. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.

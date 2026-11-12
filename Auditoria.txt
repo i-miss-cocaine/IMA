@@ -2222,3 +2222,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Verificación local focalizada 1/1 PASS; parseo de fuente y test PASS. GitHub Actions run 43137456877 SUCCESS, Node.js 22; contrato grade-submission-validation 18/18 PASS; job exam-security-contracts SUCCESS.
 - Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-100 Pendiente beta. C1.599 Completada; TASK-153 / AUD-NG-386 continúa En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.600 — reentrada durante la creación de la hoja de auditoría de eliminación de entregas
+- Se amplía el fixture de deleteExamSubmission para cubrir hoja HistorialEliminacionesEntregasExamen ausente y reentrada desde insertSheet y appendRow de encabezados iniciales.
+- Se conservan y ejecutan los tres escenarios existentes: append del evento, deleteRow de entrega y finalización de auditoría. En todos, secundaria EXAM_SUBMISSION_LOCK_TIMEOUT y operación exterior única/coherente.
+- Smoke local focalizado 5/5 PASS; GitHub Actions run 43137857655 SUCCESS, Node.js 22; contrato delete-submission-audit 35/35 PASS; job exam-security-contracts SUCCESS.
+- Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-101 Pendiente beta. C1.600 Completada; TASK-153 / AUD-NG-386 continúa En ejecución.
+===============================================================================

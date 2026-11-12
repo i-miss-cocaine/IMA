@@ -1157,3 +1157,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; escenario local focalizado PASS; GitHub Actions run 43137456877 SUCCESS, contrato grade-submission-validation 18/18 PASS en Node.js 22. Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de llamadas exterior/secundaria, adquisiciones/liberaciones del lock, aperturas/lecturas de Sheets, contador setValues y snapshot de EntregasExamen antes/después.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-101 — TASK-153 / AUD-NG-386 / EXAM: contención reentrante al crear la hoja de auditoría de eliminación de entregas
+- **Módulo/rol:** Servicio EXAM; Administrador autenticado con permiso deleteExamSubmission e identidad firmada.
+- **Objetivo:** verificar en Apps Script/Sheets desplegado que una solicitud secundaria de eliminación iniciada durante insertSheet o appendRow de encabezados de HistorialEliminacionesEntregasExamen no supera ScriptLock ni duplica la eliminación.
+- **Precondiciones:** versión beta desplegada; entrega existente y elegible para eliminación; hoja HistorialEliminacionesEntregasExamen ausente; administrador autorizado; mecanismo controlado de reentrada durante creación de hoja y escritura de encabezados.
+- **Pasos:** ejecutar deleteExamSubmission y provocar una segunda llamada durante insertSheet; repetir provocando la segunda llamada durante appendRow de encabezados; revisar auditoría, entrega, trazas RBAC/identidad/lock y conteos de escritura.
+- **Resultado esperado:** cada secundaria EXAM_SUBMISSION_LOCK_TIMEOUT; exterior crea una sola hoja con encabezados válidos, registra un único evento DELETE_REQUESTED/DELETED y elimina la entrega una vez; lock liberado.
+- **Estado:** Pendiente beta; smoke local focalizado 5/5 PASS (incluye los tres puntos ya cubiertos); GitHub Actions run 43137857655 SUCCESS, contrato delete-submission-audit 35/35 PASS en Node.js 22. Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, trazas saneadas de llamadas exterior/secundaria, creación de hoja, appendRow de encabezados y evento, deleteRow, estado final de auditoría y liberación de lock.
+===============================================================================
