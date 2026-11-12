@@ -191,6 +191,7 @@ console.log("User role membership contract: institution/user binding, effective 
   const legacyToken = userHarness.ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Director"});
   const legacyUnassignedToken = userHarness.ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Student"});
   for (const relativePath of servicePaths) {
+    sharedRows.splice(1, sharedRows.length - 1, membership("M-SHARED","U-1","Director","INST-1"));
     const serviceSource = fs.readFileSync(path.resolve(__dirname, relativePath), "utf8");
     const membershipVerifier = extractFunction(serviceSource, "verifyUserRoleMembershipClaim_");
     const sessionVerifier = extractFunction(serviceSource, "verifySessionToken");
