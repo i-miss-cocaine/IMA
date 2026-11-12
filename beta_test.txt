@@ -1307,3 +1307,8 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **C1.631 — prueba beta de vigencia de membresías RBAC:** en Apps Script/Sheets real, crear dos membresías activas para el mismo usuario con inicios/fines exactos, futuros, vencidos, inválidos y FechaFin numérica 0. Consultar listado de membresías y validar sesiones emitidas para cada rol; cambiar/revocar una membresía y comprobar la otra.
 - **Resultado esperado:** límites exactos inclusivos; membresías futuras, vencidas o con fechas inválidas no se resuelven; una membresía inválida no afecta a otra; la sesión firmada solo permanece válida mientras su membresía exacta esté activa. Estado: Pendiente beta.
 - **Evidencia de implementación C1.631:** contrato V8 aislado con reloj fijo PASS; sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI no ejecutado. Validación real Pendiente beta.
+
+
+- **C1.632 — prueba beta de unicidad y transición de membresías:** en Apps Script/Sheets real, crear dos membresías activas del mismo usuario/tenant para un mismo RoleID, luego cambiar una a otro rol; probar sesiones con claim anterior y nuevo. Reutilizar un MembershipID en otra fila/usuario y consultar membresías del usuario original y del otro.
+- **Resultado esperado:** el rol duplicado no resuelve sesión; el cambio invalida el claim anterior; el claim nuevo solo funciona con la membresía exacta; MembershipID global duplicado se rechaza; otras membresías únicas permanecen activas y los listados respetan usuario/institución. Estado: Pendiente beta.
+- **Evidencia de implementación C1.632:** contrato V8 aislado PASS; sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI no ejecutado. Validación real Pendiente beta.
