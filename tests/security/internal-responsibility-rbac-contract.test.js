@@ -181,9 +181,14 @@ ${resolveFn}
 ${assignmentsFn}
 ${extractFunction(source,"getUserContextScope")}
 function verifySessionToken(token) {
-  if (token !== "session-director") return null;
-  var active = resolveUserRoleMembership_("U-LIFE","Director","INST-1","MEM-LIFE");
-  return active ? {userId:"U-LIFE",role:"Director",membershipId:"MEM-LIFE",institutionId:"INST-1"} : null;
+  var claims = token === "session-director"
+    ? {userId:"U-LIFE",role:"Director",membershipId:"MEM-LIFE",institutionId:"INST-1"}
+    : (token === "session-auditor"
+      ? {userId:"U-LIFE",role:"Auditor",membershipId:"MEM-AUD",institutionId:"INST-1"}
+      : null);
+  if (!claims) return null;
+  var active = resolveUserRoleMembership_(claims.userId,claims.role,claims.institutionId,claims.membershipId);
+  return active ? claims : null;
 }
 function getUserVerifiedRole(payload) {
   var claims = verifySessionToken(payload && payload.sessionToken);
@@ -345,3 +350,23 @@ permissionCtx.getDynamicPermissionsForRole=()=>null;
 const capabilitySpoof = permissionCtx.validateRolePermission("approveFinancialRecords",{responsibility:{institutionalResponsibility:{capabilities:["CAP_ADMINISTRAR"]}}});
 assert.equal(capabilitySpoof.authorized,false,"a responsibility capability does not authorize an action without an explicit RBAC matrix grant");
 console.log("C1.624 responsibility/capability integrity contract: duplicate IDs, malformed capability metadata, duplicate normalized identifiers, no partial writes, and RBAC separation PASS.");
+
+
+// C1.625: multi-role contexts must bind every scope to the exact signed RBAC role.
+lifecycleMembershipRows.push(["MEM-AUD","U-LIFE","Auditor","INST-1","ACTIVE","","","U-ADMIN","2026-01-01","2026-01-01","",""]);
+lifecycleResponsibilityRows.push(["RESP-AUD","Responsabilidad de auditoría","Metadatos",'["mod_auditoria"]','["CAP_CONSULTAR"]',"Activa","U-ADMIN","2026-01-01"]);
+lifecycleInternalRoleRows.push(["RI-AUD","R-AUD","Auditoría","Consulta","DEP-B","AREA-B","Administrativa",12,"No","Activo","U-ADMIN","2026-01-01","2026-01-01","RESP-AUD"]);
+lifecycleScopeRows.push(["A-AUD","U-LIFE","Auditor","DEPARTAMENTO",'["DEP-B"]',"Activo","U-ADMIN","2026-01-01","","","No","","INST-1","MEM-AUD","RI-AUD"]);
+// A normalized alias is not the exact role bound to MEM-LIFE and must never inherit its scope.
+lifecycleScopeRows.push(["A-ROLE-ALIAS","U-LIFE","Direct-or","DEPARTAMENTO",'["DEP-X"]',"Activo","U-ADMIN","2026-01-01","","","No","","INST-1","MEM-LIFE","RI-AUD"]);
+
+const directorContext = lifecycleCtx.getUserContextScope({sessionToken:"session-director"});
+assert.equal(directorContext.status,"success");
+assert.deepEqual(Array.from(directorContext.departmentIds),["DEP-A"],"Director receives only the scope bound to the Director membership");
+assert.equal(directorContext.scopes.length,1,"a punctuation-normalized role alias cannot inject another scope into the signed role context");
+const auditorContext = lifecycleCtx.getUserContextScope({sessionToken:"session-auditor"});
+assert.equal(auditorContext.status,"success");
+assert.deepEqual(Array.from(auditorContext.departmentIds),["DEP-B"],"Auditor receives only the scope bound to the Auditor membership");
+assert.equal(auditorContext.scopes.length,1,"the second active membership remains isolated from the first");
+assert.equal(lifecycleCtx.getInternalRoleAssignments({userId:"U-LIFE",roleId:"Director",membershipId:"MEM-LIFE"}).data.length,1,"administrative listing and effective context agree on exact role/membership binding");
+console.log("C1.625 multi-role context contract: exact signed role binding, cross-role isolation and alias rejection PASS.");
