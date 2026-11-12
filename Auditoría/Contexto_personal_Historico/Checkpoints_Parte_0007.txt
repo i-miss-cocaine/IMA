@@ -1318,3 +1318,20 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** C1.634 implementada y verificada en harness aislado. T153-S02 sigue En ejecución; no iniciar T153-S03.
 - **Siguiente acción:** auditar permisos de la acción administrativa `revokeUserSession`, límites de acceso al ledger persistente y compatibilidad/migración de sesiones históricas.
 ===============================================================================
+
+
+===============================================================================
+### C1.635 — IMA-EXEC-20261112-1754Z-03 — límites de autorización y compatibilidad de revocación
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.634.
+- **HEAD inicial:** `e02a3abaf1516892bc2c67ed9f358b54b1508d18`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificar límites de acceso a la revocación administrativa y compatibilidad del ledger con tokens legacy.
+- **Autorización:** `revokeUserSession` no pertenece a PUBLIC_ACTIONS ni a los bypasses de identidad/autoservicio. El contrato de `validateRolePermission` deniega a Director sin grant dinámico y permite Administrador por wildcard explícito. `logoutUser` continúa público, pero el handler solo revoca un SessionID obtenido de claims firmados.
+- **Compatibilidad:** tokens role-only legacy sin MembershipID siguen siendo válidos cuando el rol actual coincide; sus SessionID también quedan cubiertos por el ledger persistente al revocarlos.
+- **Retención:** los registros expirados se eliminan en la siguiente escritura del ledger; los registros con expiración inválida se conservan para que la verificación falle cerrada.
+- **Verificación local:** contrato completo V8 aislado **PASS**, incluidos C1.621–C1.635. Parseo sintáctico backend USER/test **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** autorización en dispatcher, Sheets y migración de sesiones legacy reales NOT RUN; casos registrados en `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `tests/security/internal-responsibility-rbac-contract.test.js`; no se modificó lógica productiva en C1.635.
+- **Commit funcional:** `31452dfbe9d6c7f8537955eb029e5b5b091c0a5b`.
+- **Estado:** C1.635 completada. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** revisar todas las rutas de escritura/lectura de marcadores de revocación para asegurar que ninguna ruta de cambio de rol/logout dependa solo de caché; definir tratamiento de tokens/revocaciones pre-C1.634.
+===============================================================================
