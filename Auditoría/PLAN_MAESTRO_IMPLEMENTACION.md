@@ -5027,3 +5027,16 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Contrato completo V8 aislado PASS: revocación USER propagada a los cuatro consumidores con cachés locales vacías; corte user-wide, login posterior, cutoff compartido y ledger ausente fail-closed. Sintaxis de los cinco servicios y test PASS.
 - Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets multi-proyecto Pendiente beta.
 - **Estado:** C1.639 completada en harness aislado. T153-S02 sigue En ejecución hasta revisar trazabilidad de requisitos y rollout multi-proyecto.
+
+
+ 
+**Cierre C1.640 — T153-S02 completada (implementación y contratos)**
+La revisión de requisitos originales confirma cobertura de:
+- Relación usuario↔roles↔responsabilidades↔ámbitos, vigencia y revocación (C1.614, C1.616–C1.617, C1.624, C1.631–C1.637).
+- Múltiples roles/departamentos sin privilegio implícito por unión (C1.625, C1.628, C1.638).
+- Contexto activo explícito y validación de ámbito en servidor (C1.615, C1.638).
+- Separación capacidades/RBAC y autorización de acciones protegidas (C1.624, C1.635).
+- Revocación persistente transversal USER→ACADEMIC/ACCOUNTING/TASK/EXAM (C1.634–C1.639).
+- Selector de rol y login multirol explícito (C1.616–C1.617; Department Scope CI run 43217920934 SUCCESS).
+**Estado:** T153-S02 COMPLETADA en implementación/contratos aislados. No se declara validación real Apps Script/Sheets; BETA-FUNC-033 y prueba multi-proyecto C1.639 siguen Pendiente beta. TASK-153 global permanece En ejecución.
+**Siguiente unidad por orden:** T153-S01, inventario/reconciliación técnica de catálogos departamentales. T153-S03 y T153-S04 dependen de S01; T153-S05/S06 mantienen sus dependencias declaradas.
