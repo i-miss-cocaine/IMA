@@ -634,6 +634,74 @@ membershipTemporalRows[1][6]="invalid-date";
 assert.deepEqual(Array.from(membershipTemporalCtx.getUserRoleMembershipState_("U-DATE","INST-1",fixedMembershipNow).memberships.map(item=>item.membershipId)),["MEM-EXP"],"invalid membership end excludes only the malformed membership");
 console.log("C1.631 membership temporal contract: inclusive boundaries, future/past epoch expiry, invalid dates and role membership resolution PASS.");
 
+ 
+// C1.632: duplicate role memberships and membership-ID collisions must not create ambiguous sessions.
+const membershipIntegrityRows = [
+  membershipHeaders,
+  ["MEM-I1","U-MULTI","Director","INST-1","ACTIVE","","","U-ADMIN","2026-01-01","2026-01-01","",""],
+  ["MEM-I2","U-MULTI","Director","INST-1","ACTIVE","","","U-ADMIN","2026-01-01","2026-01-01","",""],
+  ["MEM-OTHER-USER","U-OTHER","Auditor","INST-1","ACTIVE","","","U-ADMIN","2026-01-01","2026-01-01","",""],
+  ["MEM-OTHER-TENANT","U-MULTI","Auditor","INST-OTHER","ACTIVE","","","U-ADMIN","2026-01-01","2026-01-01","",""]
+];
+const membershipIntegrityCtx = {
+  SPREADSHEET_ID:"LOCAL",
+  ROLE_PERMISSIONS:{Director:[],Auditor:[]},
+  getIdentityInstitutionId_:()=>"INST-1",
+  SpreadsheetApp:{openById:()=>({getSheetByName:name=>name==="MembresiasRolesRBAC"?{
+    getDataRange:()=>({getValues:()=>membershipIntegrityRows.map(row=>row.slice())})
+  }:null})}
+};
+const membershipIntegrityCode = `
+const USER_ROLE_MEMBERSHIP_HEADERS_ = ${JSON.stringify(membershipHeaders)};
+${membershipDateFn}
+${configuredRoleFn}
+${membershipStateFn}
+${resolveMembershipFn}
+${extractFunction(source,"resolveUserRoleMembership_")}
+${extractFunction(source,"getUserVerifiedRole")}
+${extractFunction(source,"getUserRoleMemberships")}
+function verifySessionToken(token) {
+  var claims = token === "session-m1"
+    ? {userId:"U-MULTI",role:"Director",membershipId:"MEM-I1",institutionId:"INST-1"}
+    : (token === "session-m2-old"
+      ? {userId:"U-MULTI",role:"Director",membershipId:"MEM-I2",institutionId:"INST-1"}
+      : (token === "session-m2-new"
+        ? {userId:"U-MULTI",role:"Auditor",membershipId:"MEM-I2",institutionId:"INST-1"}
+        : null));
+  return claims && resolveUserRoleMembership_(claims.userId,claims.role,claims.institutionId,claims.membershipId) ? claims : null;
+}
+this.getUserRoleMemberships=getUserRoleMemberships;
+this.resolveUserRoleMembership_=resolveUserRoleMembership_;
+this.getUserRoleMembershipState_=getUserRoleMembershipState_;
+`;
+vm.runInNewContext(membershipIntegrityCode,membershipIntegrityCtx);
+const ambiguousMemberships = membershipIntegrityCtx.getUserRoleMembershipState_("U-MULTI","INST-1");
+assert.deepEqual(Array.from(ambiguousMemberships.memberships),[],"two active memberships for the same role are both excluded as ambiguous");
+assert.equal(membershipIntegrityCtx.resolveUserRoleMembership_("U-MULTI","Director","INST-1","MEM-I1"),null);
+assert.equal(membershipIntegrityCtx.resolveUserRoleMembership_("U-MULTI","Director","INST-1","MEM-I2"),null);
+assert.equal(membershipIntegrityCtx.getUserRoleMemberships({sessionToken:"session-m1"}).code,"VERIFIED_IDENTITY_REQUIRED","ambiguous role memberships cannot produce a verified membership session");
+
+// A distinct role on the second membership restores unambiguous independent role sessions.
+membershipIntegrityRows[2][2]="Auditor";
+assert.equal(membershipIntegrityCtx.resolveUserRoleMembership_("U-MULTI","Director","INST-1","MEM-I1").membershipId,"MEM-I1");
+assert.equal(membershipIntegrityCtx.resolveUserRoleMembership_("U-MULTI","Director","INST-1","MEM-I2"),null,"the old role claim is invalidated after a membership role change");
+assert.equal(membershipIntegrityCtx.resolveUserRoleMembership_("U-MULTI","Auditor","INST-1","MEM-I2").membershipId,"MEM-I2");
+const directorMembershipList = membershipIntegrityCtx.getUserRoleMemberships({sessionToken:"session-m1"});
+assert.equal(directorMembershipList.status,"success");
+assert.deepEqual(Array.from(directorMembershipList.memberships.map(item=>item.membershipId)),["MEM-I1","MEM-I2"],"membership listing includes only the same user's active memberships in the active institution");
+assert.equal(directorMembershipList.activeRoleId,"Director");
+assert.equal(membershipIntegrityCtx.getUserRoleMemberships({sessionToken:"session-m2-old"}).code,"VERIFIED_IDENTITY_REQUIRED","old role-bound token is rejected");
+assert.equal(membershipIntegrityCtx.getUserRoleMemberships({sessionToken:"session-m2-new"}).activeRoleId,"Auditor");
+
+// Reusing an existing MembershipID for another user invalidates that ID without impacting the other unique membership.
+membershipIntegrityRows.push(["MEM-I1","U-OTHER","Director","INST-1","ACTIVE","","","U-ADMIN","2026-01-01","2026-01-01","",""]);
+assert.equal(membershipIntegrityCtx.resolveUserRoleMembership_("U-MULTI","Director","INST-1","MEM-I1"),null,"globally duplicated MembershipID is rejected");
+assert.equal(membershipIntegrityCtx.resolveUserRoleMembership_("U-MULTI","Auditor","INST-1","MEM-I2").membershipId,"MEM-I2","the independent unique membership remains active");
+assert.equal(membershipIntegrityCtx.getUserRoleMemberships({sessionToken:"session-m1"}).code,"VERIFIED_IDENTITY_REQUIRED");
+assert.equal(membershipIntegrityCtx.getUserRoleMemberships({sessionToken:"session-m2-new"}).status,"success");
+console.log("C1.632 membership integrity contract: duplicate same-role ambiguity, role-change session invalidation, user/tenant filtering and global MembershipID collision isolation PASS.");
+
+
 
 
 
