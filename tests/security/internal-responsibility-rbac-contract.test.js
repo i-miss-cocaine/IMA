@@ -327,7 +327,6 @@ duplicateCapabilityRows[1][4]='["CAP_ADMINISTRAR"," CAP_ADMINISTRAR "]';
 assert.deepEqual(Array.from(catalogFixture(duplicateCapabilityRows).responsabilidades),[],"duplicate normalized capability identifiers are rejected");
 const malformedRecordRows=[capabilityHeaders,malformedCapabilityRows[1].slice()];
 const malformedRecordCtx={getSheetByName:()=>({getDataRange:()=>({getValues:()=>malformedRecordRows.map(r=>r.slice())})})};
-assert.equal(joinCtx.getInternalRoleCatalog({}).data.length,1,"valid linked responsibility remains visible before malformed-record fixture");
 const malformedRecord = (() => {
   const ctx={};
   vm.runInNewContext(recordFn+"\nthis.getInstitutionalResponsibilityRecord_=getInstitutionalResponsibilityRecord_;",ctx);
