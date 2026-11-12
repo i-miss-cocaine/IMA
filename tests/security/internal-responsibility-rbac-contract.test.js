@@ -403,3 +403,73 @@ assert.deepEqual(Array.from(lifecycleCtx.getUserContextScope({sessionToken:"sess
 assert.equal(lifecycleCtx.getInternalRoleAssignments({userId:"U-LIFE",roleId:"Auditor",membershipId:"MEM-AUD"}).data.length,1,"Auditor assignment remains active after Director membership expiry");
 console.log("C1.626 multi-role context contract: active-department selection, cross-membership denial, independent revocation and expiry PASS.");
 
+ 
+// C1.627: explicit RBAC permissions are resolved from the authenticated role membership, never from responsibility metadata.
+lifecycleMembershipRows[1][6]="";
+const rbacMatrixRows = [
+  ["RoleID","PermissionID","Action","Permitted","Scope"],
+  ["Director","P-DIR-APPROVE","approveFinancialRecords",true,"INST-1"],
+  ["Auditor","P-AUD-APPROVE","approveFinancialRecords",false,"INST-1"],
+  ["Auditor","P-AUD-AUDIT","viewAuditLogs",true,"INST-1"],
+  ["Director","P-DIR-AUDIT","viewAuditLogs",false,"INST-1"]
+];
+const rbacCacheValues = {};
+const rbacCache = {
+  get:key=>Object.prototype.hasOwnProperty.call(rbacCacheValues,key)?rbacCacheValues[key]:null,
+  put:(key,value)=>{rbacCacheValues[key]=value;}
+};
+const rbacCtx = {
+  SPREADSHEET_ID:"LOCAL",
+  PUBLIC_ACTIONS:[],
+  IDENTITY_MANAGER_ACTIONS_:[],
+  IDENTITY_MANAGER_ROLES_:[],
+  ROLE_PERMISSIONS:{Director:[],Auditor:[]},
+  getIdentityInstitutionId_:()=> "INST-1",
+  getDynamicPermissionCacheKey_:()=> "rbac-c1-627",
+  CacheService:{getScriptCache:()=>rbacCache},
+  SpreadsheetApp:{openById:()=>({getSheetByName:name=>name==="MatrizPermisosRoles"?{
+    getLastRow:()=>rbacMatrixRows.length,
+    getDataRange:()=>({getValues:()=>rbacMatrixRows.map(row=>row.slice())})
+  }:lifecycleSheets[name]||null})},
+  validateContextualAccess:()=>({authorized:true}),
+  hasActiveDelegationForAction:()=>null,
+  logStructuredEvent:()=>{}
+};
+const rbacCode = `
+const USER_ROLE_MEMBERSHIP_HEADERS_ = ${JSON.stringify(membershipHeaders)};
+${membershipDateFn}
+${configuredRoleFn}
+${membershipStateFn}
+${resolveMembershipFn}
+${extractFunction(source,"resolveUserRoleMembership_")}
+${extractFunction(source,"isConfiguredRbacRole_")}
+${extractFunction(source,"getUserVerifiedRole")}
+${extractFunction(source,"getDynamicPermissionsForRole")}
+${extractFunction(source,"validateRolePermission")}
+function verifySessionToken(token) {
+  var claims = token === "session-director"
+    ? {userId:"U-LIFE",role:"Director",membershipId:"MEM-LIFE",institutionId:"INST-1"}
+    : (token === "session-auditor"
+      ? {userId:"U-LIFE",role:"Auditor",membershipId:"MEM-AUD",institutionId:"INST-1"}
+      : null);
+  if (!claims) return null;
+  return resolveUserRoleMembership_(claims.userId,claims.role,claims.institutionId,claims.membershipId) ? claims : null;
+}
+this.validateRolePermission=validateRolePermission;
+`;
+vm.runInNewContext(rbacCode,rbacCtx);
+const directorApproval = rbacCtx.validateRolePermission("approveFinancialRecords",{sessionToken:"session-director"});
+assert.equal(directorApproval.authorized,true,"Director receives only its explicit institution RBAC grant");
+const auditorApproval = rbacCtx.validateRolePermission("approveFinancialRecords",{sessionToken:"session-auditor",responsibility:{institutionalResponsibility:{capabilities:["CAP_ADMINISTRAR"]}}});
+assert.equal(auditorApproval.authorized,false,"Auditor cannot inherit Director approval and responsibility capabilities cannot elevate permission");
+const auditorAudit = rbacCtx.validateRolePermission("viewAuditLogs",{sessionToken:"session-auditor"});
+assert.equal(auditorAudit.authorized,true,"Auditor receives its explicit audit grant");
+const directorAudit = rbacCtx.validateRolePermission("viewAuditLogs",{sessionToken:"session-director"});
+assert.equal(directorAudit.authorized,false,"Director does not inherit Auditor audit grant");
+lifecycleMembershipRows[1][4]="REVOKED";
+assert.equal(rbacCtx.validateRolePermission("approveFinancialRecords",{sessionToken:"session-director"}).authorized,false,"revoking Director membership removes its explicit action grant");
+assert.equal(rbacCtx.validateRolePermission("viewAuditLogs",{sessionToken:"session-auditor"}).authorized,true,"Director revocation does not remove Auditor's independent explicit grant");
+lifecycleMembershipRows[1][4]="ACTIVE";
+console.log("C1.627 explicit RBAC membership contract: role-specific grants/denials, no cross-role inheritance, capability non-elevation and independent revocation PASS.");
+
+
