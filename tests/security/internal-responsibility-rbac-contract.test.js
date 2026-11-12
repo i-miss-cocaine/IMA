@@ -936,7 +936,6 @@ console.log("C1.637 legacy session migration contract: optional cutoff preserves
 
  
 // C1.638: validateRoleScopeAccess must enforce the authenticated membership's effective department/institution scope.
-lifecycleScopeRows.push(["A-INST","U-LIFE","Director","INSTITUCION",'["INST-1"]',"Activo","U-ADMIN","2026-01-01","","","No","","INST-1","MEM-LIFE","RI-LIFE"]);
 vm.runInNewContext(extractFunction(source,"validateRoleScopeAccess")+"\nthis.validateRoleScopeAccess=validateRoleScopeAccess;",lifecycleCtx);
 const directorOwnDepartment=lifecycleCtx.validateRoleScopeAccess({sessionToken:"session-director",scopeType:"DEPARTAMENTO",requestedValue:"DEP-A"});
 assert.equal(directorOwnDepartment.status,"success");
@@ -946,6 +945,7 @@ assert.equal(lifecycleCtx.validateRoleScopeAccess({sessionToken:"session-auditor
 assert.equal(lifecycleCtx.validateRoleScopeAccess({sessionToken:"session-auditor",scopeType:"DEPARTAMENTO",requestedValue:"DEP-A"}).authorized,false,"Auditor cannot inherit Director's department");
 assert.equal(lifecycleCtx.validateRoleScopeAccess({sessionToken:"session-director",activeDepartmentId:"DEP-A2",scopeType:"DEPARTAMENTO",requestedValue:"DEP-A2"}).authorized,true,"activeDepartmentId selects only the requested authorized department");
 assert.equal(lifecycleCtx.validateRoleScopeAccess({sessionToken:"session-director",activeDepartmentId:"DEP-A2",scopeType:"DEPARTAMENTO",requestedValue:"DEP-A"}).authorized,false,"active department selection removes access to the other department in the same membership context");
+lifecycleScopeRows.push(["A-INST","U-LIFE","Director","INSTITUCION",'["INST-1"]',"Activo","U-ADMIN","2026-01-01","","","No","","INST-1","MEM-LIFE","RI-LIFE"]);
 assert.equal(lifecycleCtx.validateRoleScopeAccess({sessionToken:"session-director",scopeType:"DEPARTAMENTO",requestedValue:"DEP-Z"}).authorized,true,"an explicit institution-wide assignment grants institution-level department access");
 assert.equal(lifecycleCtx.validateRoleScopeAccess({sessionToken:"session-director",activeDepartmentId:"DEP-A2",scopeType:"DEPARTAMENTO",requestedValue:"DEP-Z"}).authorized,false,"an explicit active department context narrows institution-wide scope to that department");
 assert.equal(lifecycleCtx.validateRoleScopeAccess({sessionToken:"session-director",scopeType:"",requestedValue:"DEP-A"}).code,"SCOPE_REQUEST_INVALID");
