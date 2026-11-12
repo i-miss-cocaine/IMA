@@ -4521,3 +4521,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI:** GitHub Actions run 43139327739, workflow Exam-Service security local contracts, Node.js 22: SUCCESS; paso Run competency evaluation mutation security regression: 29/29 PASS; job exam-security-contracts SUCCESS.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-103 Pendiente beta.
 - **Estado:** C1.602 Completada con verificación local focalizada y CI. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+
+
+### 10.252 TASK-153 / AUD-NG-386 — reentrada durante la inicialización de CategoriasEvaluacion (C1.603)
+- **Brecha confirmada:** saveEvaluationCategory ya cubría reentrada durante los appendRow de ResourceOwnership y de la categoría final, además de la autorización cuando la hoja faltaba; no había una llamada secundaria durante insertSheet ni durante appendRow de los encabezados iniciales de CategoriasEvaluacion.
+- **Cobertura añadida:** el fixture de tests/security/exam-service-evaluation-category-mutation-security.test.js permite reentrada desde insertSheet y desde appendRow de encabezados al crear la hoja ausente.
+- **Invariantes:** ambas secundarias reciben EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; la exterior crea una sola hoja, encabezados exactos, una categoría y un ownership activo asociado; una inserción, una apertura de Sheets, tres appendRow exteriores y ScriptLock liberado.
+- **Alcance:** contrato de seguridad y BETA-EXAM-104; backend productivo sin cambios.
+- **Verificación local:** harness determinista sobre saveEvaluationCategory, wrapper, contexto y worker productivos extraídos de backend/exam-service/Code.gs: 2/2 PASS; parseo JavaScript del contrato actualizado PASS.
+- **CI:** pendiente de completar tras la publicación de esta unidad.
+- **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-104 Pendiente beta.
+- **Estado:** C1.603 en verificación CI; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
