@@ -3065,57 +3065,87 @@ function getVerifiedAcademicIdentity_(payload) {
   return { authorized: true, userId: String(claims.userId).trim(), role: String(claims.role).trim() };
 }
 
-function getVerifiedAcademicDepartmentScope_(payload, ss, identity) {
-  const actor = identity || getVerifiedAcademicIdentity_(payload);
-  if (!actor.authorized) return actor;
-  let institutionId = "";
-  try { institutionId = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim(); } catch (_) {}
-  if (!institutionId) return { authorized: false, code: "IDENTITY_CONFIGURATION_REQUIRED" };
-  const sheet = ss.getSheetByName("AsignacionesAmbitosRoles");
-  if (!sheet) return { authorized: false, code: "ROLE_SCOPE_NOT_INITIALIZED" };
-  const data = sheet.getDataRange().getValues();
-  const norm = function(value) {
-    return String(value || "").trim().toUpperCase()
-      .replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I")
-      .replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N")
-      .replace(/^ROLE[_-]?/, "").replace(/[^A-Z0-9]/g, "");
-  };
-  const parseValues = function(value) {
-    if (Array.isArray(value)) return value.map(function(v) { return String(v).trim(); }).filter(Boolean);
-    const raw = String(value || "").trim();
-    if (!raw) return [];
-    try {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed.map(function(v) { return String(v).trim(); }).filter(Boolean);
-      if (parsed !== null && parsed !== undefined) return [String(parsed).trim()].filter(Boolean);
-    } catch (_) {}
-    return raw.split(",").map(function(v) { return String(v).trim(); }).filter(Boolean);
-  };
-  const now = new Date();
-  const scopes = [];
-  for (let i = 1; i < data.length; i++) {
-    const row = data[i] || [];
-    if (String(row[1] || "").trim() !== actor.userId || norm(row[2]) !== norm(actor.role)) continue;
-    if (["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(String(row[5] || "").trim().toUpperCase()) === -1) continue;
-    const start = row[8] ? new Date(row[8]) : null;
-    const end = row[9] ? new Date(row[9]) : null;
-    if ((start && isNaN(start.getTime())) || (end && isNaN(end.getTime()))) continue;
-    if (start && start.getTime() > now.getTime()) continue;
-    if (end && end.getTime() < now.getTime()) continue;
-    const scopeType = String(row[3] || "").trim().toUpperCase();
-    const scopeValues = parseValues(row[4]);
-    if (!scopeType || !scopeValues.length) continue;
-    scopes.push({ assignmentId: String(row[0] || ""), roleId: String(row[2] || ""), scopeType: scopeType, scopeValues: scopeValues });
+
+function getInstitutionalResponsibilityForRoleScope_(ss, responsibilityId) {
+  var id=String(responsibilityId||"").trim(); if(!id||!ss)return null;
+  var sheet=ss.getSheetByName("ResponsabilidadesInstitucionales"); if(!sheet)return null;
+  var data=sheet.getDataRange().getValues();
+  var headers=["ResponsibilityID","Nombre","Descripcion","ModulosJSON","CapacidadesJSON","Estado","CreadoPor","FechaActualizacion"];
+  if(!data.length||JSON.stringify(data[0].map(String))!==JSON.stringify(headers))return null;
+  var rows=data.slice(1).filter(function(r){return String(r[0]||"").trim()===id;});
+  if(rows.length!==1)return null;
+  var r=rows[0],state=String(r[5]||"").trim().toUpperCase();
+  if(!(r[5]===true||state==="TRUE"||state==="ACTIVA"||state==="ACTIVO"))return null;
+  var modules,capabilities; try{modules=JSON.parse(r[3]||"[]");capabilities=JSON.parse(r[4]||"[]");}catch(e){return null;}
+  var normalizeIds=function(values){if(!Array.isArray(values))return null;var seen={},out=[];for(var i=0;i<values.length;i++){if(typeof values[i]!=="string")return null;var value=values[i].trim(),key="$"+value;if(!value||seen[key])return null;seen[key]=true;out.push(value);}return out;};
+  modules=normalizeIds(modules);capabilities=normalizeIds(capabilities);if(!modules||!capabilities)return null;
+  return {responsibilityId:id,name:String(r[1]||""),description:String(r[2]||""),modules:modules,capabilities:capabilities};
+}
+function resolveInternalResponsibilityForRoleScope_(ss, responsibilityId) {
+  var id=String(responsibilityId||"").trim();if(!id||!ss)return null;
+  var sheet=ss.getSheetByName("CatalogoRolesInternos");if(!sheet)return null;
+  var data=sheet.getDataRange().getValues();
+  var base=["RolInternoID","CodigoInterno","NombreResponsabilidad","Descripcion","Departamento","AreaAcademica","TipoResponsabilidad","VigenciaMeses","PermiteSuplencia","Estado","CreadoPor","FechaCreacion","FechaActualizacion"];
+  if(!data.length)return null;
+  var headers=data[0].map(String),legacy=JSON.stringify(headers)===JSON.stringify(base),linked=JSON.stringify(headers)===JSON.stringify(base.concat(["ResponsibilityID"]));
+  if(!legacy&&!linked)return null;
+  var rows=data.slice(1).filter(function(r){return String(r[0]||"").trim()===id;});
+  if(rows.length!==1||String(rows[0][9]||"").trim().toUpperCase()!=="ACTIVO")return null;
+  var r=rows[0],institutionalId=linked?String(r[13]||"").trim():"";
+  var institutional=institutionalId?getInstitutionalResponsibilityForRoleScope_(ss,institutionalId):null;
+  if(institutionalId&&!institutional)return null;
+  return {responsibilityId:id,name:String(r[2]||""),department:String(r[4]||""),academicArea:String(r[5]||""),responsibilityType:String(r[6]||""),institutionalResponsibilityId:institutionalId||null,institutionalResponsibility:institutional};
+}
+function getVerifiedDepartmentScopeForSession_(payload, ss, actor) {
+  if(!actor||actor.authorized!==true||!actor.userId||!actor.role)return {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
+  var token=payload&&(payload.sessionToken||payload.authToken||payload.token),claims=token?verifySessionToken(token):null;
+  if(!claims||String(claims.userId||"").trim()!==String(actor.userId).trim()||String(claims.role||"").trim()!==String(actor.role).trim())return {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
+  var institutionId="";try{institutionId=String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID")||"").trim();}catch(_){}
+  if(!institutionId)return {authorized:false,code:"IDENTITY_CONFIGURATION_REQUIRED"};
+  var membershipId=String(claims.membershipId||"").trim(),claimsInstitutionId=String(claims.institutionId||"").trim();
+  if(membershipId&&(!claimsInstitutionId||claimsInstitutionId!==institutionId))return {authorized:false,code:"ROLE_MEMBERSHIP_INSTITUTION_MISMATCH"};
+  var sheet=ss&&ss.getSheetByName("AsignacionesAmbitosRoles");if(!sheet)return {authorized:false,code:"ROLE_SCOPE_NOT_INITIALIZED"};
+  var data=sheet.getDataRange().getValues();
+  var legacyHeaders=["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"];
+  var membershipHeaders=legacyHeaders.concat(["InstitutionID","MembershipID"]),currentHeaders=membershipHeaders.concat(["ResponsibilityID"]);
+  var actual=data.length?data[0].map(String):[];
+  var schema=JSON.stringify(actual)===JSON.stringify(currentHeaders)?"current":(JSON.stringify(actual)===JSON.stringify(membershipHeaders)?"membership":(JSON.stringify(actual)===JSON.stringify(legacyHeaders)?"legacy":"invalid"));
+  if(schema==="invalid"||(membershipId&&schema!=="current"))return {authorized:false,code:"ROLE_SCOPE_SCHEMA_MISMATCH"};
+  var norm=function(v){return String(v||"").trim().toUpperCase().replace(/^ROLE[_-]?/,"").replace(/[^A-Z0-9]/g,"");};
+  var parseValues=function(v){if(Array.isArray(v))return v.map(function(x){return String(x).trim();}).filter(Boolean);var raw=String(v||"").trim();if(!raw)return [];try{var p=JSON.parse(raw);if(Array.isArray(p))return p.map(function(x){return String(x).trim();}).filter(Boolean);if(p!==null&&p!==undefined)return [String(p).trim()].filter(Boolean);}catch(_){}return raw.split(",").map(function(x){return String(x).trim();}).filter(Boolean);};
+  var parseDate=function(v){if(v===""||v===null||v===undefined)return {valid:true,date:null};var d=v instanceof Date?v:new Date(v);return isNaN(d.getTime())?{valid:false,date:null}:{valid:true,date:d};};
+  var assignmentCounts={};data.slice(1).forEach(function(r){var id=String((r||[])[0]||"").trim();if(id)assignmentCounts[id]=(assignmentCounts[id]||0)+1;});
+  var now=new Date(),scopes=[];
+  for(var i=1;i<data.length;i++){
+    var row=data[i]||[],assignmentId=String(row[0]||"").trim();
+    if(!assignmentId||assignmentCounts[assignmentId]!==1||String(row[1]||"").trim()!==String(actor.userId).trim())continue;
+    var rowRole=String(row[2]||"").trim();
+    if(!rowRole||(membershipId?rowRole!==String(claims.role).trim():norm(rowRole)!==norm(claims.role)))continue;
+    var rowInstitution=schema==="legacy"?"":String(row[12]||"").trim(),rowMembership=schema==="legacy"?"":String(row[13]||"").trim();
+    var rowResponsibility=schema==="current"?String(row[14]||"").trim():"",responsibility=null;
+    if(membershipId){if(rowInstitution!==institutionId||rowMembership!==membershipId||!rowResponsibility)continue;responsibility=resolveInternalResponsibilityForRoleScope_(ss,rowResponsibility);if(!responsibility)continue;}
+    else if(rowInstitution||rowMembership)continue;
+    if(["ACTIVO","ACTIVA","ACTIVE"].indexOf(String(row[5]||"").trim().toUpperCase())===-1)continue;
+    var start=parseDate(row[8]),end=parseDate(row[9]);if(!start.valid||!end.valid)continue;
+    if(start.date&&start.date.getTime()>now.getTime())continue;if(end.date&&end.date.getTime()<now.getTime())continue;
+    var scopeType=String(row[3]||"").trim().toUpperCase(),scopeValues=parseValues(row[4]);if(!scopeType||!scopeValues.length)continue;
+    scopes.push({assignmentId:assignmentId,roleId:rowRole,institutionId:rowInstitution||null,membershipId:rowMembership||null,responsibilityId:rowResponsibility||null,responsibility:responsibility,scopeType:scopeType,scopeValues:scopeValues});
   }
-  const departmentIds = [];
-  let institutionWide = false;
-  scopes.forEach(function(scope) {
-    if (scope.scopeType === "DEPARTAMENTO") scope.scopeValues.forEach(function(value) {
-      if (departmentIds.indexOf(value) === -1) departmentIds.push(value);
-    });
-    if (scope.scopeType === "INSTITUCION" && scope.scopeValues.indexOf(institutionId) !== -1) institutionWide = true;
-  });
-  return { authorized: true, userId: actor.userId, role: actor.role, institutionId: institutionId, scopes: scopes, departmentIds: departmentIds, institutionWide: institutionWide };
+  if(!scopes.length)return {authorized:false,code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",userId:actor.userId,role:actor.role,institutionId:institutionId,membershipId:membershipId||null,scopes:[],departmentIds:[],institutionWide:false};
+  var departmentIds=[],institutionWide=false;
+  scopes.forEach(function(scope){if(scope.scopeType==="DEPARTAMENTO")scope.scopeValues.forEach(function(v){if(departmentIds.indexOf(v)===-1)departmentIds.push(v);});if(scope.scopeType==="INSTITUCION"&&scope.scopeValues.indexOf(institutionId)!==-1)institutionWide=true;});
+  var activeDepartmentId=String((payload&&payload.activeDepartmentId)||"").trim();
+  if(activeDepartmentId){
+    if(departmentIds.indexOf(activeDepartmentId)===-1)return {authorized:false,code:"ACTIVE_SCOPE_NOT_ASSIGNED",userId:actor.userId,role:actor.role,institutionId:institutionId,membershipId:membershipId||null,scopes:[],departmentIds:[],institutionWide:false};
+    scopes=scopes.filter(function(scope){if(scope.scopeType!=="DEPARTAMENTO")return false;var selected=scope.scopeValues.filter(function(v){return v===activeDepartmentId;});if(!selected.length)return false;scope.scopeValues=selected;return true;});
+    departmentIds=[activeDepartmentId];institutionWide=false;
+  }
+  return {authorized:true,userId:String(actor.userId),role:String(actor.role),institutionId:institutionId,membershipId:membershipId||null,scopes:scopes,departmentIds:departmentIds,institutionWide:institutionWide,activeDepartmentId:activeDepartmentId||null};
+}
+
+function getVerifiedAcademicDepartmentScope_(payload, ss, identity) {
+  const actor=identity||getVerifiedAcademicIdentity_(payload);
+  return getVerifiedDepartmentScopeForSession_(payload,ss,actor);
 }
 
 function getStudentPersonIdForUser_(ss, userId) {
