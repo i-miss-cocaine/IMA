@@ -1335,7 +1335,7 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Evidencia de implementación C1.636:** contrato V8 aislado PASS; sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI no ejecutado. Apps Script/Sheets/PropertiesService real Pendiente beta.
 
 
-- **C1.637 — prueba beta de migración controlada de sesiones:** con SESSION_REVOCATION_LEGACY_CUTOFF ausente, verificar que una sesión histórica no expirada sigue compatible. Configurar el cutoff en epoch; verificar que tokens con iat menor o igual son rechazados y tokens con iat posterior son aceptados. Probar valor no numérico/negativo y retirar la propiedad.
+- **C1.637 — prueba beta de migración controlada de sesiones:** con la fila LEGACY_SESSION_CUTOFF ausente en EstadoRevocacionSesiones, verificar que una sesión histórica no expirada sigue compatible. Agregar LEGACY_SESSION_CUTOFF con epoch en EstadoRevocacionSesiones; verificar que tokens con iat menor o igual son rechazados y tokens con iat posterior son aceptados. Probar valor no numérico/negativo y retirar la propiedad.
 - **Resultado esperado:** el modo predeterminado no fuerza logout masivo; el cutoff solo invalida sesiones cuando el responsable lo activa; valores malformados fallan cerrados. Estado: Pendiente beta.
 - **Evidencia de implementación C1.637:** contrato V8 aislado PASS; sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; ScriptProperties/rollout real Pendiente beta.
 
