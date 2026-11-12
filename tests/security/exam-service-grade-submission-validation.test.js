@@ -89,4 +89,83 @@ test(() => {
   assert.throws(() => x.call({ calificacion: 90, estado: "Calificado" }), /RESOURCE_NOT_AVAILABLE/);
   assert.equal(x.calls.writes.length, 0);
 });
+
+
+test(() => {
+  const examContext = extract("getAuthorizedExamMutationContext_");
+  const deliveryContext = extract("getAuthorizedExamSubmissionMutationContext_");
+  const wrapper = extract("withAuthorizedExamSubmissionMutation_");
+  const handler = extract("gradeExamSubmission");
+  const state = {
+    permissionCalls: 0, identityCalls: 0, opens: 0, deliveryReads: 0,
+    examReads: 0, lockAttempts: 0, releases: 0, held: false,
+    writes: 0, nestedErrors: [], events: []
+  };
+  const payload = {
+    entregaId: "EEX-1", examenId: "EXM-1", calificacion: 94.5,
+    estado: "Calificado", comentario: "Correcto"
+  };
+  let grade;
+  const actor = { authorized: true, userId: "TEACHER-1", role: "Profesor" };
+  const deliveryRows = [
+    ["EntregaID","ExamenID","EstudianteID","Fecha","Respuestas","Calificacion","Estado"],
+    ["EEX-1","EXM-1","STU-1",new Date(),"[]","0.00","Pendiente"]
+  ];
+  const examRows = [
+    ["ID","Titulo","Asignatura","Grado","Seccion","FechaLimite","Tiempo","Estado","ProfesorID"],
+    ["EXM-1","Evaluación","Matemáticas","10","A","","","Activo","TEACHER-1"]
+  ];
+  const deliverySheet = {
+    getDataRange() { state.deliveryReads++; state.events.push("delivery-read"); return { getValues() { return deliveryRows; } }; },
+    getRange() { return { setValues(rows) {
+      state.writes++; state.events.push("delivery-write");
+      try { grade(payload); } catch (error) { state.nestedErrors.push(error.message); }
+      deliveryRows[1] = rows[0].slice();
+    } }; }
+  };
+  const examSheet = {
+    getDataRange() { state.examReads++; state.events.push("exam-read"); return { getValues() { return examRows; } }; }
+  };
+  const ss = {
+    getSheetByName(name) {
+      state.events.push("sheet:" + name);
+      return name === "EntregasExamen" ? deliverySheet : name === "Examenes" ? examSheet : null;
+    }
+  };
+  const runtime = {
+    validateRolePermission() { state.permissionCalls++; return { authorized: true }; },
+    getVerifiedExamIdentity_() { state.identityCalls++; return actor; },
+    LockService: { getScriptLock() { return {
+      tryLock() { state.lockAttempts++; state.events.push("lock:" + state.lockAttempts); if (state.held) return false; state.held = true; return true; },
+      releaseLock() { state.releases++; state.held = false; state.events.push("release"); }
+    }; } },
+    SpreadsheetApp: { openById() { state.opens++; return ss; } },
+    SPREADSHEET_ID: "SYNTHETIC-SHEET",
+    getSheetOrThrow(sheet, name) { const value = sheet.getSheetByName(name); if (!value) throw new Error("missing " + name); return value; },
+    getVerifiedExamDepartmentScope_() { return { authorized: true, institutionId: "INST-1", departmentIds: ["DEP-1"] }; },
+    assertExamResourceOwnershipForScope_() { return { authorized: true }; },
+    Number, Math, Error, String, Date
+  };
+  const executable = [examContext, deliveryContext, wrapper, handler].join("\n");
+  grade = new Function("runtime", "with (runtime) { " + executable + "; return gradeExamSubmission; }")(runtime);
+  const result = grade(payload);
+  assert.equal(result.status, "success");
+  assert.deepEqual(state.nestedErrors, ["EXAM_SUBMISSION_LOCK_TIMEOUT"]);
+  assert.equal(state.permissionCalls, 4, "outer preflight/context checks and nested preflight must be enforced");
+  assert.equal(state.identityCalls, 4, "nested identity must be verified before lock contention");
+  assert.equal(state.lockAttempts, 2, "nested call must attempt the shared lock and time out");
+  assert.equal(state.releases, 1);
+  assert.equal(state.held, false);
+  assert.equal(state.opens, 2, "outer delivery and exam contexts each open Sheets once; nested call must not open it");
+  assert.equal(state.deliveryReads, 1);
+  assert.equal(state.examReads, 1);
+  assert.equal(state.writes, 1, "only the outer grade may write");
+  assert.equal(deliveryRows.length, 2);
+  assert.equal(deliveryRows[1][0], "EEX-1");
+  assert.equal(deliveryRows[1][1], "EXM-1");
+  assert.equal(deliveryRows[1][5], "94.50");
+  assert.equal(deliveryRows[1][6], "Calificado");
+  assert.equal(state.events[state.events.length - 1], "release");
+}, "grade mutation reentry");
+
 console.log("exam-service-grade-submission-validation: " + scenarios + "/" + scenarios + " PASS");
