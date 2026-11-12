@@ -4533,3 +4533,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI:** el conector devolvió una lista de estados vacía para el commit de pruebas; no hay run ID ni resultado verificable disponible. CI NOT VERIFIED; no se declara PASS.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-104 Pendiente beta.
 - **Estado:** C1.603 Completada con verificación local aislada. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+
+
+### 10.253 TASK-153 / AUD-NG-386 — reentrada durante escrituras de reapertura de período (C1.604)
+- **Brecha confirmada:** el contrato de reopenPeriodGradebook probaba reentrada durante appendRow del evento de auditoría, pero no durante setValue del estado Reabierto ni durante appendRow de encabezados al inicializar un historial vacío.
+- **Cobertura añadida:** tests/security/exam-service-period-gradebook-reopen-security.test.js incorpora hooks de escritura y dos escenarios independientes: reentrada durante el cambio de estado del cierre y durante la inicialización de encabezados.
+- **Invariantes:** cada secundaria recibe GRADEBOOK_REOPEN_LOCK_TIMEOUT; la exterior cambia el cierre una sola vez, conserva una fila de evento de auditoría, no duplica encabezados/eventos y libera ScriptLock.
+- **Alcance:** contrato local y ampliación de BETA-EXAM-055; backend productivo sin cambios.
+- **Verificación local:** contrato completo 31/31 PASS en runner aislado; parseo JavaScript de Code.gs y del contrato PASS.
+- **CI:** pendiente de resultado verificable tras el commit de pruebas.
+- **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-055 Pendiente beta.
+- **Estado:** C1.604 en verificación CI; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
