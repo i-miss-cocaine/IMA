@@ -1343,7 +1343,11 @@ function manageUserRoleMemberships(payload) {
     if (!userSheet) return { status: "error", code: "USER_NOT_FOUND", message: "Usuario objetivo no disponible." };
     var userRows = userSheet.getDataRange().getValues();
     var target = userRows.find(function(row, index) { return index > 0 && String(row[0] || "").trim() === userId; });
-    if (!target || String(target[10] || "Activa").trim() !== "Activa") return { status: "error", code: "USER_NOT_FOUND", message: "Usuario objetivo no disponible." };
+    if (!target) return { status: "error", code: "USER_NOT_FOUND", message: "Usuario objetivo no disponible." };
+    var targetState = String(target[10] || "Activa").trim().toUpperCase();
+    if (action === "ASSIGN" && ["ACTIVA", "ACTIVO", "ACTIVE"].indexOf(targetState) === -1) {
+      return { status: "error", code: "USER_NOT_ACTIVE", message: "No se pueden asignar roles a una cuenta inactiva." };
+    }
     var sheet = ensureUserRoleMembershipSheet_(ss);
     var data = sheet.getDataRange().getValues();
     var now = new Date();
@@ -1353,7 +1357,7 @@ function manageUserRoleMemberships(payload) {
       var end = parseUserRoleMembershipDate_((payload && payload.endAt) || "");
       if (!start.valid || !end.valid || (start.date && end.date && end.date.getTime() <= start.date.getTime())) return { status: "error", code: "ROLE_MEMBERSHIP_DATES_INVALID", message: "La vigencia de la membresía no es válida." };
       var duplicate = data.slice(1).some(function(row) {
-        if (String(row[1] || "").trim() !== userId || String(row[2] || "").trim() !== roleId || String(row[3] || "").trim() !== institutionId || String(row[4] || "").trim().toUpperCase() !== "ACTIVE") return false;
+        if (String(row[1] || "").trim() !== userId || String(row[2] || "").trim() !== roleId || String(row[3] || "").trim() !== institutionId || ["ACTIVE", "ACTIVA", "ACTIVO"].indexOf(String(row[4] || "").trim().toUpperCase()) === -1) return false;
         var oldEnd = parseUserRoleMembershipDate_(row[6]);
         return !oldEnd.valid || !oldEnd.date || oldEnd.date.getTime() >= now.getTime();
       });
