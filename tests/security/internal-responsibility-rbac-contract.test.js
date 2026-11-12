@@ -28,7 +28,8 @@ const consumerSources = {
   accounting: fs.readFileSync(path.resolve(__dirname, "../../backend/accounting-service/Code.gs"), "utf8"),
   task: fs.readFileSync(path.resolve(__dirname, "../../backend/task-service/Code.gs"), "utf8"),
   exam: fs.readFileSync(path.resolve(__dirname, "../../backend/exam-service/Code.gs"), "utf8"),
-  departmentCatalog: fs.readFileSync(path.resolve(__dirname, "../../backend/shared/DepartmentCatalogContract.gs"), "utf8")
+  departmentCatalog: fs.readFileSync(path.resolve(__dirname, "../../backend/shared/DepartmentCatalogContract.gs"), "utf8"),
+  departmentReconciliation: fs.readFileSync(path.resolve(__dirname, "../../backend/shared/DepartmentCatalogReconciliation.gs"), "utf8")
 };
 const recordFn = extractFunction(source, "getInstitutionalResponsibilityRecord_");
 const resolveFn = extractFunction(source, "resolveActiveInternalResponsibility_");
@@ -1236,7 +1237,7 @@ const duplicateCodeDepartments=[departmentRecords[0],{...departmentRecords[1],Co
 assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:departmentConfig,records:duplicateCodeDepartments,sourceId:"D-ROOT",effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_CODE_AMBIGUOUS");
 const crosswalkConfig={...departmentConfig,sourceCatalog:"CatalogoDepartamentos",keyField:"deptId",nameField:"nombre",statusField:"estado",authorityMode:"CROSSWALK",canonicalCatalog:"DepartmentAuthority",canonicalKeyField:"CanonicalDepartmentID",canonicalStatusField:"Status",canonicalAuthorityApproved:true,canonicalApprovalReference:"CANONICAL-ADR-001"};
 const crosswalkRecords=[{deptId:"DEP-1",nombre:"Matemáticas",estado:"Activo"}];
-const approvedMapping={institutionId:"INST-1",domain:"ACADEMICO",sourceCatalog:"CatalogoDepartamentos",sourceId:"DEP-1",canonicalId:"CAN-MATH",status:"ACTIVE",approved:true,approvalReference:"XW-001",validFrom:"",validTo:""};
+const approvedMapping={institutionId:"INST-1",domain:"ACADEMICO",sourceCatalog:"CatalogoDepartamentos",canonicalCatalog:"DepartmentAuthority",sourceId:"DEP-1",canonicalId:"CAN-MATH",status:"ACTIVE",approved:true,approvalReference:"XW-001",approvedBy:"U-DIRECTOR",approvedAt:"2026-11-12T18:00:00.000Z",validFrom:"",validTo:"",revokedAt:""};
 const canonicalDepartmentRecords=[{CanonicalDepartmentID:"CAN-MATH",Status:"ACTIVE"},{CanonicalDepartmentID:"CAN-MATH-ALT",Status:"ACTIVE"}];
 assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:crosswalkConfig,records:crosswalkRecords,sourceId:"DEP-1",crosswalk:[approvedMapping],canonicalRecords:canonicalDepartmentRecords,effectiveAt:fixedTemporalNow}).canonicalId,"CAN-MATH","approved crosswalk resolves source to canonical ID");
 assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:crosswalkConfig,records:crosswalkRecords,sourceId:"DEP-1",crosswalk:[],effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_CROSSWALK_NOT_FOUND");
@@ -1246,6 +1247,11 @@ assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:cro
 assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:crosswalkConfig,records:crosswalkRecords,sourceId:"DEP-1",crosswalk:[{...approvedMapping,approved:false}],canonicalRecords:canonicalDepartmentRecords,effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_CROSSWALK_NOT_FOUND","unapproved mappings are not accepted");
 assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:crosswalkConfig,records:crosswalkRecords,sourceId:"DEP-1",crosswalk:[approvedMapping],canonicalRecords:[],effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_CANONICAL_KEY_NOT_FOUND","crosswalk cannot point to a nonexistent canonical record");
 assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:crosswalkConfig,records:crosswalkRecords,sourceId:"DEP-1",crosswalk:[approvedMapping],canonicalRecords:[{CanonicalDepartmentID:"CAN-MATH",Status:"INACTIVE"}],effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_CANONICAL_INACTIVE","crosswalk cannot resolve to an inactive canonical record");
+assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:crosswalkConfig,records:crosswalkRecords,sourceId:"DEP-1",crosswalk:[{...approvedMapping,canonicalCatalog:"OTHER"}],canonicalRecords:canonicalDepartmentRecords,effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_CROSSWALK_NOT_FOUND","crosswalk is bound to its canonical catalog");
+assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:crosswalkConfig,records:crosswalkRecords,sourceId:"DEP-1",crosswalk:[{...approvedMapping,approvedBy:""}],canonicalRecords:canonicalDepartmentRecords,effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_CROSSWALK_NOT_FOUND","crosswalk requires a recorded approver");
+assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:crosswalkConfig,records:crosswalkRecords,sourceId:"DEP-1",crosswalk:[{...approvedMapping,approvedAt:"invalid"}],canonicalRecords:canonicalDepartmentRecords,effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_CROSSWALK_NOT_FOUND","crosswalk requires a valid approval timestamp");
+assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:crosswalkConfig,records:crosswalkRecords,sourceId:"DEP-1",crosswalk:[{...approvedMapping,approvedAt:"2026-11-12T18:00:00.001Z"}],canonicalRecords:canonicalDepartmentRecords,effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_CROSSWALK_NOT_FOUND","future approval is not effective");
+assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:crosswalkConfig,records:crosswalkRecords,sourceId:"DEP-1",crosswalk:[{...approvedMapping,revokedAt:"2026-11-12T17:30:00.000Z"}],canonicalRecords:canonicalDepartmentRecords,effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_CROSSWALK_NOT_FOUND","revoked crosswalk cannot resolve");
 console.log("C1.646 neutral department catalog contract: explicit authority, stable IDs, active/effective state, namespace uniqueness, hierarchy integrity, approved crosswalk and ambiguity fail-closed PASS.");
 
  
@@ -1414,6 +1420,64 @@ const epochEvent={eventId:"EVT-EPOCH",departmentId:"D-EPOCH",eventType:"RENAME",
 lifecycleResult=validateDepartmentLifecycleEvent_({config:lifecycleConfig,currentRecord:epochRecord,event:epochEvent,catalogRecords:[epochRecord],historyRows:[],now:0,snapshotScopeVerified:true,snapshotInstitutionId:"INST-1",snapshotDomain:"ACADEMIC"});
 assert.equal(lifecycleResult.valid,true);assert.equal(lifecycleResult.historyRow.effectiveAt,"1970-01-01T00:00:00.000Z");
 console.log("C1.649 department identity lifecycle contract: 69 assertions PASS.");
+
+ 
+// C1.650 dry-run catalog pair reconciliation: explicit authority and approved, scoped crosswalk only.
+const departmentReconciliationCode=extractFunction(consumerSources.departmentReconciliation,"buildDepartmentCatalogReconciliationReport_")+"\nthis.buildDepartmentCatalogReconciliationReport_=buildDepartmentCatalogReconciliationReport_;";
+const departmentReconciliationCtx={Date:FixedTemporalDate};
+vm.runInNewContext(departmentReconciliationCode,departmentReconciliationCtx);
+const buildDepartmentCatalogReconciliationReport_=departmentReconciliationCtx.buildDepartmentCatalogReconciliationReport_;
+const reconciliationNow="2026-11-12T18:00:00.000Z";
+const reconciliationSourceRecords=[
+ {id:"A",name:"Exact",status:"ACTIVE"},{id:"B",name:"Source B",status:"ACTIVE"},{id:"C",name:"Source C",status:"ACTIVE"},{id:"D",name:"Source D",status:"ACTIVE"},{id:"E",name:"Same Name",status:"ACTIVE"},
+ {id:"F",name:"Unapproved",status:"ACTIVE"},{id:"G",name:"Expired",status:"ACTIVE"},{id:"H",name:"Missing target",status:"ACTIVE"},{id:"I",name:"Inactive source",status:"INACTIVE"},{id:"J",name:"Inactive target",status:"ACTIVE"},
+ {id:"K",name:"Future approval",status:"ACTIVE"},{id:"L",name:"Revoked",status:"ACTIVE"},{id:"M",name:"Future mapping",status:"ACTIVE"},{id:"N",name:"Expired mapping",status:"ACTIVE"},{id:"O",name:"No approver",status:"ACTIVE"},{id:"P",name:"Duplicate",status:"ACTIVE"},
+ {id:"Q",name:"Many to one",status:"ACTIVE"},{id:"R",name:"Exact conflict",status:"ACTIVE"},{id:"T",name:"One to many",status:"ACTIVE"},{id:"W",name:"One to one",status:"ACTIVE"}
+];
+const reconciliationCanonicalRecords=[
+ {id:"A",name:"Canonical A",status:"ACTIVE"},{id:"X",name:"Canonical X",status:"ACTIVE"},{id:"Y",name:"Canonical Y",status:"ACTIVE"},{id:"Z",name:"Canonical Z",status:"ACTIVE"},
+ {id:"INACTIVE",name:"Inactive",status:"INACTIVE"},{id:"R",name:"Canonical R",status:"ACTIVE"},{id:"U",name:"Canonical U",status:"ACTIVE"},{id:"V",name:"Canonical V",status:"ACTIVE"},{id:"W-CAN",name:"Canonical W",status:"ACTIVE"}
+];
+const reconciliationAuthority={institutionId:"INST-1",domain:"ACADEMIC",authorityCatalogId:"AUTH",approved:true,approvalReference:"AUTH-ADR",approvedBy:"DIR-1",approvedAt:"2026-11-12T17:00:00.000Z",version:"v1"};
+function reconciliationMap(sourceId,canonicalId,extra={}){return {institutionId:"INST-1",domain:"ACADEMIC",sourceCatalog:"SRC",canonicalCatalog:"AUTH",sourceId:sourceId,canonicalId:canonicalId,status:"ACTIVE",approved:true,approvalReference:"XW-"+sourceId,approvedBy:"DIR-1",approvedAt:"2026-11-12T17:00:00.000Z",validFrom:"",validTo:"",revokedAt:"",...extra};}
+const reconciliationMappings=[
+ reconciliationMap("B","X"),reconciliationMap("C","Y"),reconciliationMap("C","Z"),reconciliationMap("D","X"),reconciliationMap("F","X",{approved:false}),
+ reconciliationMap("G","X",{validTo:"2026-11-11T23:59:59.000Z"}),reconciliationMap("H","MISSING"),reconciliationMap("I","X"),reconciliationMap("J","INACTIVE"),
+ reconciliationMap("K","X",{approvedAt:"2026-11-12T18:00:00.001Z"}),reconciliationMap("L","X",{revokedAt:"2026-11-12T17:30:00.000Z"}),
+ reconciliationMap("M","X",{validFrom:"2026-11-12T18:00:00.001Z"}),reconciliationMap("N","X",{validTo:"2026-11-11T23:59:59.000Z"}),reconciliationMap("O","X",{approvedBy:""}),
+ reconciliationMap("P","X"),reconciliationMap("P","X"),reconciliationMap("Q","Y"),reconciliationMap("R","X"),reconciliationMap("T","U"),reconciliationMap("T","V"),reconciliationMap("W","W-CAN"),reconciliationMap("UNKNOWN","X")
+];
+const reconciliationBase={institutionId:"INST-1",domain:"ACADEMIC",now:reconciliationNow,sourceCatalog:{catalogId:"SRC",records:reconciliationSourceRecords},canonicalCatalog:{catalogId:"AUTH",records:reconciliationCanonicalRecords},authorityDecision:reconciliationAuthority,crosswalkRows:reconciliationMappings,snapshotScopeVerified:true,snapshotInstitutionId:"INST-1",snapshotDomain:"ACADEMIC",crosswalkScopeVerified:true,crosswalkInstitutionId:"INST-1",crosswalkDomain:"ACADEMIC"};
+const reconciliationReport=buildDepartmentCatalogReconciliationReport_(reconciliationBase);
+assert.equal(reconciliationReport.valid,true);assert.equal(reconciliationReport.writesPerformed,false);assert.equal(reconciliationReport.automaticResolutionPerformed,false);
+function reconciliationRow(id){return reconciliationReport.rows.find(row=>row.sourceId===id);}
+assert.equal(reconciliationRow("A").classification,"EXACT_MATCH");assert.equal(reconciliationRow("B").classification,"RELATION_N_1");assert.equal(reconciliationRow("D").classification,"RELATION_N_1");
+assert.equal(reconciliationRow("C").classification,"RELATION_1_N_AND_N_1");assert.equal(reconciliationRow("Q").classification,"RELATION_N_1");assert.equal(reconciliationRow("T").classification,"RELATION_1_N");
+assert.equal(reconciliationRow("W").classification,"APPROVED_EQUIVALENCE");assert.equal(reconciliationRow("E").classification,"NO_CORRESPONDENCE","matching names are not a key or crosswalk");
+["F","G","H","I","J","K","L","M","N","O","P","R"].forEach(id=>assert.equal(reconciliationRow(id).classification,"CONFLICT",id));
+assert.equal(reconciliationReport.exceptions.length,1);assert.equal(reconciliationReport.exceptions[0].issue,"CROSSWALK_SOURCE_NOT_FOUND");
+assert.equal(reconciliationReport.summary.exactMatches,1);assert.equal(reconciliationReport.summary.approvedEquivalences,1);assert.equal(reconciliationReport.summary.relation1N,1);
+assert.equal(reconciliationReport.summary.relationN1,3);assert.equal(reconciliationReport.summary.relation1NAndN1,1);assert.equal(reconciliationReport.summary.noCorrespondence,1);
+assert.ok(reconciliationReport.summary.conflicts>=13);assert.equal(reconciliationRow("B").mappingEvidence[0].approvedBy,"DIR-1");
+assert.equal(reconciliationReport.canonicalCoverage.find(row=>row.canonicalId==="A").classification,"MAPPED");
+assert.equal(reconciliationReport.canonicalCoverage.find(row=>row.canonicalId==="INACTIVE").classification,"NO_CORRESPONDENCE");
+assert.equal(reconciliationReport.summary.unmappedCanonicalRecords>=1,true);
+assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,authorityDecision:{...reconciliationAuthority,approved:false}}).code,"DEPARTMENT_AUTHORITY_NOT_APPROVED");
+assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,authorityDecision:{...reconciliationAuthority,authorityCatalogId:"OTHER"}}).code,"DEPARTMENT_AUTHORITY_DECISION_SCOPE_MISMATCH");
+assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,snapshotScopeVerified:false}).code,"DEPARTMENT_RECONCILIATION_SNAPSHOT_SCOPE_UNVERIFIED");
+assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,crosswalkScopeVerified:false}).code,"DEPARTMENT_RECONCILIATION_CROSSWALK_SCOPE_UNVERIFIED");
+assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,crosswalkRows:[{...reconciliationMappings[0],institutionId:"INST-2"}]}).code,"DEPARTMENT_RECONCILIATION_CROSSWALK_SCOPE_MISMATCH");
+assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,sourceCatalog:{catalogId:"SRC",records:[...reconciliationSourceRecords,reconciliationSourceRecords[0]]}}).code,"DEPARTMENT_RECONCILIATION_SOURCE_ID_AMBIGUOUS");
+assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,canonicalCatalog:{catalogId:"AUTH",records:[...reconciliationCanonicalRecords,reconciliationCanonicalRecords[0]]}}).code,"DEPARTMENT_RECONCILIATION_CANONICAL_ID_AMBIGUOUS");
+assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,now:"invalid"}).code,"DEPARTMENT_RECONCILIATION_SCOPE_INVALID");
+assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,authorityDecision:{...reconciliationAuthority,approvedAt:"invalid"}}).code,"DEPARTMENT_AUTHORITY_NOT_APPROVED");
+assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,authorityDecision:{...reconciliationAuthority,approvedBy:""}}).code,"DEPARTMENT_AUTHORITY_NOT_APPROVED");
+assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,authorityDecision:{...reconciliationAuthority,version:""}}).code,"DEPARTMENT_AUTHORITY_NOT_APPROVED");
+assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,crosswalkRows:[{...reconciliationMappings[0],canonicalCatalog:"OTHER"}]}).code,"DEPARTMENT_RECONCILIATION_CROSSWALK_SCOPE_MISMATCH");
+assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,sourceCatalog:{catalogId:"SRC",records:[]}}).rows.length,0);
+assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,sourceCatalog:{catalogId:"",records:reconciliationSourceRecords}}).code,"DEPARTMENT_RECONCILIATION_CATALOG_PAIR_INVALID");
+console.log("C1.650 catalog reconciliation preflight: 39 assertions PASS.");
+
 
 
 

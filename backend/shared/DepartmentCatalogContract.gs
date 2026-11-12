@@ -106,9 +106,12 @@ function resolveDepartmentCatalogReference_(input) {
       if (String(item.institutionId || "").trim() !== String(config.institutionId).trim()) return false;
       if (String(item.domain || "").trim() !== String(config.domain).trim()) return false;
       if (String(item.sourceCatalog || "").trim() !== String(config.sourceCatalog).trim()) return false;
+      if (String(item.canonicalCatalog || "").trim() !== String(config.canonicalCatalog).trim()) return false;
       if (String(item.sourceId || "").trim() !== sourceId) return false;
       var status = String(item.status || "").trim().toUpperCase();
-      if (item.approved !== true || !String(item.approvalReference || "").trim() || ["ACTIVE", "ACTIVO", "ACTIVA"].indexOf(status) === -1) return false;
+      var approvedAtValue = item.approvedAt;
+      var approvedAt = approvedAtValue === "" || approvedAtValue === null || approvedAtValue === undefined ? null : (approvedAtValue instanceof Date ? approvedAtValue : new Date(approvedAtValue));
+      if (item.approved !== true || !String(item.approvalReference || "").trim() || !String(item.approvedBy || "").trim() || !approvedAt || isNaN(approvedAt.getTime()) || approvedAt.getTime() > snapshot.effectiveAt.getTime() || String(item.revokedAt || "").trim() || ["ACTIVE", "ACTIVO", "ACTIVA"].indexOf(status) === -1) return false;
       var start = item.validFrom === "" || item.validFrom === null || item.validFrom === undefined ? null : new Date(item.validFrom);
       var end = item.validTo === "" || item.validTo === null || item.validTo === undefined ? null : new Date(item.validTo);
       if ((start && isNaN(start.getTime())) || (end && isNaN(end.getTime()))) return false;
