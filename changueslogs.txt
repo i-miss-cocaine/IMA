@@ -2422,3 +2422,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Harness local focalizado 2/2 PASS; contrato completo 22/22 PASS en runner aislado; parseo del contrato PASS.
 - El conector no expuso estados CI para el commit de pruebas (CI NOT VERIFIED). Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-104 Pendiente beta. C1.603 Completada con verificación local.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.604 — cobertura reentrante de reopenPeriodGradebook
+- Añadidas dos pruebas: reentrada durante setValue del estado Reabierto y durante appendRow de encabezados del historial vacío.
+- Ambas secundarias reciben GRADEBOOK_REOPEN_LOCK_TIMEOUT; la exterior conserva un único cambio de estado y un único evento de auditoría; lock liberado.
+- Contrato local 31/31 PASS; parseo de Code.gs y contrato PASS.
+- Backend productivo sin cambios. BETA-EXAM-055 actualizado; Apps Script/Sheets real NOT RUN. CI pendiente de resultado verificable.
+===============================================================================
