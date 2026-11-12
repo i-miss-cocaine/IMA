@@ -5084,3 +5084,14 @@ La revisión de requisitos originales confirma cobertura de:
 - No se encontró caché/sincronización específica de catálogos en los seis entrypoints; los caches existentes son de rol u ownership. `admision.html` no contiene referencias directas a los nombres de catálogo. No se inspeccionó exhaustivamente todo el árbol frontend ni se accedió a filas productivas.
 - **Estado:** C1.645 amplía el inventario, pero no cierra S01-1 como exhaustivo ni T153-S01. No se selecciona fuente ni se alteran datos. S01-2…S01-7 siguen pendientes según sus puertas.
 - **Siguiente trabajo técnico elegible:** definir un contrato neutral/configurable de resolución de referencias y crosswalk con fixtures sintéticos, sin imponer cuál catálogo es autoridad ni producir mappings reales.
+
+
+
+**Addendum C1.646 — contrato neutral de catálogo departamental (T153-S01)**
+- Se incorporó el módulo puro backend/shared/DepartmentCatalogContract.gs: validación de configuración aprobada por institución/dominio, snapshot, clave estable, estado/vigencia, códigos con namespace, jerarquía acíclica y resolución SOURCE/CROSSWALK.
+- CROSSWALK exige mapping activo/aprobado con referencia de aprobación y vigencia; el destino canónico debe existir una sola vez y estar activo/vigente. Si hay varios destinos se exige requestedCanonicalId explícito; ausencia/ambigüedad falla cerrado.
+- Pruebas sintéticas C1.646 añadidas al contrato RBAC: ID estable frente a renombre, rechazo de nombre como ID, inactivo/futuro/vencido/fecha inválida, aprobación, clave duplicada, padre ausente/ciclo, código ambiguo, mapping no aprobado/ausente/ambiguo y destino canónico inexistente/inactivo. Se añadieron regresiones para IDs reservados del prototipo y effectiveAt=0.
+- Verificación local: 21 aserciones de contrato, 4 regresiones de ID reservado y epoch cero PASS; sintaxis del módulo PASS con Node v22.16.0.
+- CI run 43285818735: Department Scope e Internal Responsibility RBAC PASS; workflow total FAIL en User Role Membership Contract, fallo ya reproducible en run 43283289566 anterior a C1.646. No se declara CI global PASS.
+- El módulo no tiene callsites productivos; no crea configuración, no selecciona autoridad, no toca datos reales ni migra IDs. No implementa todavía POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL ni grants interdepartamentales; TASK-153 sigue En ejecución.
+- Siguiente acción técnica: completar el inventario estático frontend pendiente de S01-1, sin inferir autoridad ni requerir datos institucionales para esa inspección.

@@ -1817,3 +1817,14 @@ RESULTADO DE EVALUACIÓN:
 - Cobertura de pruebas automatizadas en tests/regression/academic-grading-suite.js alcanzando 131/131 pruebas aprobadas (100.0%).
 - Estado: Completado y Verificado funcionalmente.
 ===============================================================================
+
+
+
+===============================================================================
+### C1.646 — contrato neutral de catálogo departamental
+- Se añade módulo puro de resolución configurable SOURCE/CROSSWALK con aprobación institucional explícita, clave estable, estado/vigencia, namespace de códigos, integridad jerárquica y validación del destino canónico.
+- No se selecciona catálogo autoridad ni se crea configuración institucional; no hay integración productiva ni lectura/escritura de Sheets.
+- La prueba sintética incluye renombre, ID/nombre, duplicados, estado/fechas, jerarquía, mapping aprobado/ambiguo y destino canónico. Se corrigieron colisiones de Object.prototype para IDs reservados y el tratamiento de timestamp cero.
+- Local: 21 aserciones de contrato + 4 IDs reservados + epoch cero PASS; sintaxis del módulo PASS. CI run 43285818735: dos pasos relevantes PASS; workflow FAIL en User Role Membership Contract, fallo ya presente en run 43283289566 previo a C1.646.
+- Alcance no cubierto: política POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL, concesiones compartidas, consumidores productivos, datos reales y migración. T153-S01/TASK-153 siguen En ejecución.
+===============================================================================

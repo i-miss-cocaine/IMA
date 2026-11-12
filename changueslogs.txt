@@ -2962,3 +2962,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - No se eligió autoridad, no se leyeron/mutaron filas productivas.
 - C1.645 amplía S01-1 sin cerrarlo. Siguiente: contrato neutral/configurable y pruebas sintéticas.
 ===============================================================================
+
+
+
+===============================================================================
+[2026-11-12] C1.646 — contrato neutral de catálogo departamental
+- Módulo puro SOURCE/CROSSWALK con aprobación por institución/dominio, claves estables, estados/fechas, namespace, jerarquía y destino canónico validado.
+- Local: 21 aserciones + 4 IDs reservados + epoch cero PASS; sintaxis PASS. CI 43285818735: Department Scope e Internal Responsibility RBAC PASS; fallo preexistente en User Role Membership Contract (también falla en run 43283289566 anterior).
+- Sin callsites productivos, configuración real, lectura/mutación de Sheets, autoridad elegida ni migración. Política estricta y referencias compartidas siguen pendientes; TASK-153/T153-S01 en ejecución.
+- Siguiente: completar inventario estático frontend de S01-1.
+===============================================================================

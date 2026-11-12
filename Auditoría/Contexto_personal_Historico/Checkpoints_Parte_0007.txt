@@ -1519,3 +1519,20 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Restricciones:** no se selecciona fuente canónica; no se crean equivalencias por nombre; no se leen ni mutan filas productivas; no se migran IDs.
 - **Siguiente acción elegible:** diseñar contrato neutral/configurable de resolución de referencias departamentales y crosswalk, con datos sintéticos, sin seleccionar A/B ni asignar autoridad institucional.
 ===============================================================================
+
+
+
+===============================================================================
+### C1.646 — IMA-EXEC-20261112-1754Z-03 — contrato neutral de catálogo departamental
+- **HEAD auditado:** d6b9382d362adb84de4c5e06cc158637e5778de1 (rama NG_beta_0.0.0.1_work; la rama base no se modifica).
+- **Unidad:** PM-01 / TASK-153 / T153-S01 — contrato técnico neutral y configurable de catálogo/referencias, sin selección de autoridad institucional ni migración de datos.
+- **Implementación:** se añadió backend/shared/DepartmentCatalogContract.gs con validateDepartmentCatalogConfiguration_, validateDepartmentCatalogSnapshot_ y resolveDepartmentCatalogReference_. La configuración exige institución, dominio, catálogo fuente, clave estable, estado, modo de autoridad, versión y referencia de aprobación. Los modos son SOURCE o CROSSWALK; el modo CROSSWALK requiere catálogo/clave/estado canónico y aprobación explícita.
+- **Crosswalk:** cada mapping se liga a InstitutionID, dominio, catálogo/ID fuente, canonicalId, estado activo, aprobación y ventana de vigencia. Se verifica unicidad/ambigüedad y existencia/estado/vigencia del destino canónico. La selección de un destino entre mappings múltiples requiere requestedCanonicalId explícito.
+- **Integridad del snapshot:** ID estable obligatorio y único; nombre no se acepta como clave; código requiere namespace y no puede ser ambiguo dentro de él; estado/fechas se validan; ParentDepartmentID debe existir y la jerarquía no puede contener ciclos.
+- **Correcciones C1.646:** los mapas internos usan Object.create(null) y comprobación de propiedad propia para aceptar IDs válidos como __proto__, constructor, toString y hasOwnProperty sin colisiones con el prototipo. effectiveAt=0 se conserva como timestamp válido y no se sustituye por Date.now().
+- **Pruebas locales:** contrato aislado con 21 aserciones funcionales PASS; regresión de 4 identificadores reservados PASS; timestamp epoch cero PASS; node --check del módulo PASS (Node v22.16.0). No se ejecutaron filas reales ni Apps Script/Sheets.
+- **CI:** run 43285818735 en HEAD d6b9382: Department Scope Contract PASS e Internal Responsibility RBAC Contract PASS (incluye C1.646); el workflow completo FALLÓ en el paso previo User Role Membership Contract. El mismo fallo en ese mismo paso aparece en run 43283289566, HEAD 49635d1 anterior a C1.646; se registra como fallo preexistente no atribuible a este contrato. Las etapas posteriores fueron omitidas por fail-fast.
+- **Límites:** módulo puro sin callsites productivos; no se añadió ConfiguracionInstitucional ni se leyó/mutó Sheets; no se eligió USER o ACADEMIC como autoridad. Este contrato no implementa aún POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL ni las concesiones compartidas interdepartamentales de TASK-153.
+- **Estado:** contrato neutral de catálogo/crosswalk implementado y verificado localmente; T153-S01 y TASK-153 continúan En ejecución. No se habilitan S03/S04 ni se migran propietarios históricos.
+- **Siguiente acción elegible:** completar el inventario estático del árbol frontend para cerrar el límite de cobertura de S01-1; después revisar las puertas de S01-2…S01-7. La selección institucional real sigue separada de las actividades técnicas.
+===============================================================================
