@@ -42,7 +42,8 @@ const rows = [
   ["A-3","U-1","Director","DEPARTAMENTO",'["DEP-FUTURE"]',"Activo","U-ADMIN","2026-01-01","2027-01-01","2027-12-31","No",""],
   ["A-4","U-1","Administrador","INSTITUCION",'["INST-1"]',"Activo","U-ADMIN","2026-01-01","2026-01-01","2027-01-01","No",""],
   ["A-5","U-2","Director","DEPARTAMENTO",'["DEP-X"]',"Activo","U-ADMIN","2026-01-01","2026-01-01","2027-01-01","No",""],
-  ["A-6","U-1","Director","DEPARTAMENTO",'["DEP-REVOKED"]',"Revocado","U-ADMIN","2026-01-01","2026-01-01","2027-01-01","No",""]
+  ["A-6","U-1","Director","DEPARTAMENTO",'["DEP-REVOKED"]',"Revocado","U-ADMIN","2026-01-01","2026-01-01","2027-01-01","No",""],
+  ["A-7","U-1","Director","NIVEL",'["BASICA"]',"Activo","U-ADMIN","2026-01-01","2026-01-01","2027-01-01","No",""]
 ];
 
 function makeContext() {
@@ -98,6 +99,27 @@ assert.equal(allowed.status, "success");
 assert.equal(allowed.authorized, true);
 const denied = ctx.validateRoleScopeAccess({ sessionToken: "token-u1-director", scopeType: "DEPARTAMENTO", requestedValue: "DEP-X" });
 assert.equal(denied.authorized, false, "another user's department must be denied");
+
+const activeContext = ctx.getUserContextScope({ sessionToken: "token-u1-director", activeDepartmentId: "DEP-B" });
+assert.equal(activeContext.status, "success");
+assert.equal(activeContext.activeDepartmentId, "DEP-B");
+assert.deepEqual(Array.from(activeContext.departmentIds), ["DEP-B"], "active department narrows the union of authorized departments");
+assert.deepEqual(Array.from(activeContext.scopes, s => s.scopeType), ["DEPARTAMENTO"], "unrelated scope dimensions are excluded in a department-specific context");
+assert.deepEqual(Array.from(activeContext.scopes[0].scopeValues), ["DEP-B"]);
+assert.equal(activeContext.institutionWide, false, "active department context cannot retain institution-wide bypass");
+const activeAllowed = ctx.validateRoleScopeAccess({ sessionToken: "token-u1-director", activeDepartmentId: "DEP-B", scopeType: "DEPARTAMENTO", requestedValue: "DEP-B" });
+assert.equal(activeAllowed.authorized, true);
+assert.equal(activeAllowed.activeDepartmentId, "DEP-B");
+const activeDenied = ctx.validateRoleScopeAccess({ sessionToken: "token-u1-director", activeDepartmentId: "DEP-B", scopeType: "DEPARTAMENTO", requestedValue: "DEP-A" });
+assert.equal(activeDenied.authorized, false, "a selected department cannot access another assigned department");
+const activeOtherDimensionDenied = ctx.validateRoleScopeAccess({ sessionToken: "token-u1-director", activeDepartmentId: "DEP-B", scopeType: "NIVEL", requestedValue: "BASICA" });
+assert.equal(activeOtherDimensionDenied.authorized, false, "unrelated scope dimensions fail closed in a department-specific context");
+const unassignedActive = ctx.getUserContextScope({ sessionToken: "token-u1-director", activeDepartmentId: "DEP-X" });
+assert.equal(unassignedActive.status, "error");
+assert.equal(unassignedActive.code, "ACTIVE_SCOPE_NOT_ASSIGNED");
+const institutionalActive = ctx.getUserContextScope({ sessionToken: "token-u1-admin", activeDepartmentId: "DEP-A" });
+assert.equal(institutionalActive.status, "error", "institution-wide role cannot select an unverified department from its broad grant");
+assert.equal(institutionalActive.code, "ACTIVE_SCOPE_NOT_ASSIGNED");
 
 const institutional = ctx.getUserContextScope({ sessionToken: "token-u1-admin" });
 assert.equal(institutional.status, "success");
