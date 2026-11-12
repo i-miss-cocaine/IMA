@@ -114,6 +114,8 @@ function membership(id,user,role,institution,status="ACTIVE",from=start,to=end){
   assert.equal(ctx.resolveUserRoleMembership_("U-2","Director","INST-1").membershipId,"MU","exact user binding");
   const foreignOnly=makeHarness([headers,membership("M-FOREIGN","U-1","Director","INST-2")]);
   assert.equal(foreignOnly.ctx.getUserRoleMembershipState_("U-1","INST-1").hasRecords,false,"memberships in another institution do not migrate this institution's legacy role");
+  const foreignLegacy=foreignOnly.ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Student"});
+  assert.equal(foreignOnly.ctx.verifySessionToken(foreignLegacy).role,"Student","foreign-tenant membership does not invalidate the local legacy role");
 }
 {
   const duplicate=makeHarness([headers,membership("M1","U-1","Director","INST-1"),membership("M2","U-1","Director","INST-1")]);
