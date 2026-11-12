@@ -1308,6 +1308,12 @@ function verifySessionToken(tokenString) {
     if (typeof claims.sessionId !== "string" || !claims.sessionId.trim()) return null;
     if (!Number.isSafeInteger(claims.iat) || !Number.isSafeInteger(claims.exp)) return null;
     if (claims.iat > now + 60 || claims.exp <= now || claims.exp <= claims.iat || claims.exp - claims.iat > 86400) return null;
+    const legacySessionCutoffRaw = PropertiesService.getScriptProperties().getProperty("SESSION_REVOCATION_LEGACY_CUTOFF");
+    if (legacySessionCutoffRaw !== null && legacySessionCutoffRaw !== "") {
+      const legacySessionCutoff = Number(legacySessionCutoffRaw);
+      if (!Number.isSafeInteger(legacySessionCutoff) || legacySessionCutoff < 0) return null;
+      if (claims.iat <= legacySessionCutoff) return null;
+    }
     const cache = CacheService.getScriptCache();
     const revokedUserMarker = cache.get("revoked_user_" + claims.userId);
     if (revokedUserMarker) {
