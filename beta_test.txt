@@ -1328,3 +1328,8 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **C1.635 — prueba beta de límites de revocación y compatibilidad legacy:** probar la acción revokeUserSession desde roles Administrador, Director y roles sin grant; comprobar que logoutUser no permite revocar IDs suministrados por cliente. Emitir un token legacy sin MembershipID, validarlo con rol actual y revocarlo por SessionID. Insertar registros de ledger expirados y fechas inválidas, ejecutar una revocación nueva y verificar limpieza/fallo cerrado.
 - **Resultado esperado:** la revocación administrativa requiere permiso explícito; logout público revoca solo el SessionID firmado; token legacy sigue compatible pero revocable; registros expirados se purgan y registros corruptos no habilitan sesiones. Estado: Pendiente beta.
 - **Evidencia de implementación C1.635:** contrato V8 aislado PASS; sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
+
+
+- **C1.636 — prueba beta de integridad del ledger:** registrar una revocación en Apps Script/Sheets real para inicializar el ledger y el sentinel. Eliminar o renombrar temporalmente la hoja después de inicializarla y consultar una sesión válida; restaurar la hoja y repetir.
+- **Resultado esperado:** antes de inicialización, ledger ausente no bloquea sesiones; después de inicialización, ledger ausente o con esquema incompatible rechaza sesiones; al restaurar el ledger válido, las sesiones no revocadas vuelven a verificarse. Estado: Pendiente beta.
+- **Evidencia de implementación C1.636:** contrato V8 aislado PASS; sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI no ejecutado. Apps Script/Sheets/PropertiesService real Pendiente beta.
