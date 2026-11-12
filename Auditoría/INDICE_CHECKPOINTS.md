@@ -571,3 +571,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 
 
 | C1.609 | IMA-EXEC-20261110-1825Z-02 | registerDocumentSignature: reentrada durante appendRow; secundaria rechazada por ScriptLock antes de abrir Sheets/ownership; exterior conserva una firma única y libera lock; harness local focalizado 1/1 PASS; parseo PASS; CI pendiente | PM-01 — TASK-153 / USER | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt — C1.609 | sección final | C1.608 | C1.609 Completada local/CI; backend sin cambios; BETA-FUNC-030 Pendiente beta |
+
+| C1.610 | IMA-EXEC-20261110-1825Z-02 | createAdvancedSignatureRequest: reentrada durante appendRow de TransaccionesFirmaAvanzada; secundaria rechazada por ScriptLock antes de abrir Sheets/leer Drive; exterior conserva una transacción y libera lock; contrato local/CI pendiente | PM-01 — TASK-153 / USER | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt — C1.610 | sección final | C1.609 | C1.610 En ejecución; backend sin cambios; BETA-FUNC-029 Pendiente beta |

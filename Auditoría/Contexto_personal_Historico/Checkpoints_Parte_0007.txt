@@ -766,3 +766,30 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.609 Completada con verificación local focalizada y CI. BETA-FUNC-030 permanece Pendiente beta; Apps Script/Sheets real NOT RUN.
 - HEAD probado: e30c217311d81907ba82ab691a576fd3f81742bc; HEAD final se confirma tras este registro documental.
 ===============================================================================
+
+
+===============================================================================
+## C1.610 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** TASK-153 / USER — reentrada durante la creación de solicitud de firma avanzada.
+
+### Hallazgo y cambio
+- createAdvancedSignatureRequest valida ownership, signer scope, proveedor y bytes reales del archivo bajo ScriptLock, pero no tenía una prueba de reentrada durante appendRow de TransaccionesFirmaAvanzada.
+- Se amplía el fixture con hook en appendRow y lock compartido. La secundaria debe fallar antes de abrir Sheets o leer Drive; la exterior conserva una única transacción y libera ScriptLock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/user-service-signature-ownership.test.js
+- beta_test.txt (ampliación de BETA-FUNC-029)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Harness V8 focalizado y parseo del contrato: pendiente de ejecución.
+- CI Department Scope: pendiente tras publicar.
+- Apps Script/Sheets real NOT RUN; BETA-FUNC-029 Pendiente beta.
+- C1.610 En ejecución; TASK-153 continúa En ejecución.
+- HEAD inicial: 8a79a1592793d30f814da94cacc5f71da2fc9b72; HEAD final se confirma tras publicar.
+===============================================================================

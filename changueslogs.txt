@@ -2528,3 +2528,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato USER signature ownership y todos los pasos del job PASS; harness local focalizado 1/1 PASS.
 - C1.609 completada local/CI; backend sin cambios. BETA-FUNC-030 Pendiente beta; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.610 — cobertura reentrante de solicitud de firma avanzada
+- Se añade reentrada durante appendRow de TransaccionesFirmaAvanzada; el fixture simula lock compartido y cuenta intentos.
+- La secundaria falla antes de abrir Sheets o leer Drive; la exterior conserva una sola transacción y libera ScriptLock.
+- BETA-FUNC-029 actualizado; backend sin cambios; CI pendiente; Apps Script/Sheets real NOT RUN.
+===============================================================================

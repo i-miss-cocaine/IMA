@@ -42,7 +42,7 @@ function makeHarness(options = {}) {
     rows:[["TransaccionID","DocumentoID","SolicitudID","FirmanteID","FirmanteNombre","FirmanteEmail","MecanismoFirma","ProveedorID","DocumentoHash","Estado","FechaSolicitud","FechaRespuesta","CertificadoX509Ref"]],
     reads:0,appends:[],
     getDataRange(){this.reads++;const self=this;return {getValues(){return self.rows.map(row=>row.slice());}};},
-    appendRow(row){assert.equal(state.held,true,"transaction append must occur while lock is held");this.appends.push(row.slice());this.rows.push(row.slice());}
+    appendRow(row){assert.equal(state.held,true,"transaction append must occur while lock is held");this.appends.push(row.slice());if(options.onAppend)options.onAppend(row.slice());this.rows.push(row.slice());}
   };
   const state={held:false,lockAttempts:0,releases:0,spreadsheetOpens:0,txSheetRequests:0,
     ownershipCalls:[],events:[],permissionCalls:0,driveReads:0,providerConfigReads:0};
@@ -85,7 +85,7 @@ function makeHarness(options = {}) {
       if(departmentId!=="D1")return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};
       return {authorized:true,departmentId};
     },
-    LockService:{getScriptLock:()=>({tryLock:()=>{state.lockAttempts++;if(options.lockAvailable===false)return false;state.held=true;return true;},
+    LockService:{getScriptLock:()=>({tryLock:()=>{state.lockAttempts++;if(options.lockAvailable===false||state.held)return false;state.held=true;return true;},
       releaseLock:()=>{assert.equal(state.held,true);state.held=false;state.releases++;}})},
     SpreadsheetApp:{openById:id=>{assert.equal(state.held,true);assert.equal(id,"SPREADSHEET");state.spreadsheetOpens++;return ss;}},
     SPREADSHEET_ID:"SPREADSHEET",
@@ -133,6 +133,22 @@ function makeHarness(options = {}) {
   assert.equal(valid.state.events[0].data.actorUserId,"ACTOR-1");
   assert.equal(valid.state.held,false);
   assert.equal(valid.state.releases,1);
+
+  let reentrant, nestedError = "";
+  reentrant = makeHarness({ onAppend() {
+    try { reentrant.execute(); } catch (error) { nestedError = error.message; }
+  }});
+  const reentrantResult = reentrant.execute();
+  assert.equal(reentrantResult.status, "success");
+  assert.equal(nestedError, "Servicio ocupado creando solicitudes de firma. Por favor reintente.");
+  assert.equal(reentrant.state.lockAttempts, 2, "outer and nested advanced signature requests must contend for the same lock");
+  assert.equal(reentrant.state.spreadsheetOpens, 1, "nested request must time out before opening Sheets");
+  assert.equal(reentrant.state.ownershipCalls.length, 1, "only outer request may revalidate document ownership");
+  assert.equal(reentrant.state.driveReads, 1, "nested request must not read source bytes");
+  assert.equal(reentrant.transactions.appends.length, 1, "only one advanced signature transaction may be appended");
+  assert.equal(reentrant.transactions.rows.length, 2, "header plus exactly one transaction must remain");
+  assert.equal(reentrant.state.releases, 1);
+  assert.equal(reentrant.state.held, false);
 
   assert.throws(()=>valid.execute(),/SIGNATURE_REQUEST_ALREADY_PENDING/);
   assert.equal(valid.transactions.appends.length,1,"a second pending request for the same document/signer must not be created");

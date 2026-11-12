@@ -2364,3 +2364,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Paso user-service-signature-ownership.test.js SUCCESS; harness local focalizado 1/1 PASS; parseo del contrato PASS.
 - Backend productivo sin cambios. BETA-FUNC-030 Pendiente beta; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+### C1.610 — TASK-153 / USER
+- Brecha: createAdvancedSignatureRequest carecía de prueba de reentrada durante appendRow de TransaccionesFirmaAvanzada.
+- Se añade hook de reentrada y contención real de ScriptLock; la secundaria no abre Sheets ni lee Drive y la exterior conserva una única transacción, una validación de ownership y un hash de archivo.
+- BETA-FUNC-029 actualizado; backend productivo sin cambios; CI y Apps Script/Sheets real pendientes.
+===============================================================================
