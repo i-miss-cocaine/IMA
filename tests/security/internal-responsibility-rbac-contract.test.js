@@ -31,6 +31,10 @@ const catalogFn = extractFunction(source, "getInstitutionalResponsibilitiesCatal
 const roleCatalogFn = extractFunction(source, "getInternalRoleCatalog");
 const assignmentsFn = extractFunction(source, "getInternalRoleAssignments");
 const verifiedFn = extractFunction(source, "getUserVerifiedRole");
+const membershipDateFn = extractFunction(source, "parseUserRoleMembershipDate_");
+const membershipStateFn = extractFunction(source, "getUserRoleMembershipState_");
+const resolveMembershipFn = extractFunction(source, "resolveUserRoleMembership_");
+const configuredRoleFn = extractFunction(source, "isConfiguredRbacRole_");
 const permissionFn = extractFunction(source, "validateRolePermission");
 
 const roleHeaders = ["RolInternoID","CodigoInterno","NombreResponsabilidad","Descripcion","Departamento","AreaAcademica","TipoResponsabilidad","VigenciaMeses","PermiteSuplencia","Estado","CreadoPor","FechaCreacion","FechaActualizacion","ResponsibilityID"];
@@ -39,17 +43,21 @@ const roleRows = [roleHeaders,["RI-1","R-COORD","Coordinación","Supervisión","
 const capabilityRows = [capabilityHeaders,["RESP-ACA","Coordinación académica","Metadatos de función",'["mod_coordinacion"]','["CAP_CONSULTAR","CAP_ADMINISTRAR"]',"Activa","U-ADMIN","2026-01-01"]];
 const scopeHeaders = ["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID","InstitutionID","MembershipID","ResponsibilityID"];
 const scopeRows = [scopeHeaders,["A-1","U-1","Director","DEPARTAMENTO",'["DEP-A"]',"Activo","U-ADMIN","2026-01-01","","","No","","INST-1","MEM-1","RI-1"]];
+const membershipHeaders = ["MembershipID","UserID","RoleID","InstitutionID","Status","StartAt","EndAt","CreatedBy","CreatedAt","UpdatedAt","RevokedBy","RevokedAt"];
+const membershipRows = [membershipHeaders,["MEM-1","U-1","Director","INST-1","ACTIVE","","","U-ADMIN","2026-01-01","2026-01-01","",""]];
 
 function spreadsheet() {
   return { getSheetByName(name) {
     if (name === "CatalogoRolesInternos") return { getDataRange: () => ({ getValues: () => roleRows.map(r => r.slice()) }) };
     if (name === "ResponsabilidadesInstitucionales") return { getDataRange: () => ({ getValues: () => capabilityRows.map(r => r.slice()) }) };
     if (name === "AsignacionesAmbitosRoles") return { getDataRange: () => ({ getValues: () => scopeRows.map(r => r.slice()) }) };
+    if (name === "MembresiasRolesRBAC") return { getDataRange: () => ({ getValues: () => membershipRows.map(r => r.slice()) }) };
+    if (name === "MatrizPermisosRoles") return null;
     return null;
   }};
 }
-const joinCtx = { normalizeString: v => String(v || "").trim().toLowerCase(), SPREADSHEET_ID:"LOCAL", getIdentityInstitutionId_:()=>"INST-1", SpreadsheetApp:{openById:()=>spreadsheet()} };
-vm.runInNewContext(recordFn + "\n" + resolveFn + "\n" + roleCatalogFn + "\n" + assignmentsFn + "\nthis.resolveActiveInternalResponsibility_=resolveActiveInternalResponsibility_;this.getInternalRoleCatalog=getInternalRoleCatalog;this.getInternalRoleAssignments=getInternalRoleAssignments;", joinCtx);
+const joinCtx = { normalizeString: v => String(v || "").trim().toLowerCase(), SPREADSHEET_ID:"LOCAL", ROLE_PERMISSIONS:{Director:true}, getIdentityInstitutionId_:()=>"INST-1", SpreadsheetApp:{openById:()=>spreadsheet()} };
+vm.runInNewContext("const USER_ROLE_MEMBERSHIP_HEADERS_ = "+JSON.stringify(membershipHeaders)+";\n"+membershipDateFn+"\n"+configuredRoleFn+"\n"+membershipStateFn+"\n"+resolveMembershipFn+"\n"+recordFn+"\n"+resolveFn+"\n"+roleCatalogFn+"\n"+assignmentsFn+"\nthis.resolveActiveInternalResponsibility_=resolveActiveInternalResponsibility_;this.getInternalRoleCatalog=getInternalRoleCatalog;this.getInternalRoleAssignments=getInternalRoleAssignments;", joinCtx);
 const linked = joinCtx.resolveActiveInternalResponsibility_(spreadsheet(),"RI-1");
 assert.equal(linked.institutionalResponsibilityId,"RESP-ACA");
 assert.deepEqual(Array.from(linked.institutionalResponsibility.capabilities),["CAP_CONSULTAR","CAP_ADMINISTRAR"],"capabilities are exposed as organizational metadata");
@@ -140,3 +148,77 @@ permissionCtx.getDynamicPermissionsForRole=()=>true;
 assert.equal(permissionCtx.validateRolePermission("approveFinancialRecords",{}).authorized,true,"only an explicit RBAC matrix grant authorizes the action");
 
 console.log("Internal responsibility RBAC contract: verified-identity writes, linked active responsibility metadata, tenant/membership assignment filtering, no fabricated catalog fallback, and strict separation between capabilities and RBAC permissions passed.");
+
+ 
+// C1.621 lifecycle contract: responsibility and membership revocation must remove effective access.
+const lifecycleMembershipRows = [membershipHeaders,["MEM-LIFE","U-LIFE","Director","INST-1","ACTIVE","","","U-ADMIN","2026-01-01","2026-01-01","",""]];
+const lifecycleResponsibilityRows = [capabilityHeaders,["RESP-LIFE","Responsabilidad vigente","Metadatos",'["mod_coord"]','["CAP_CONSULTAR"]',"Activa","U-ADMIN","2026-01-01"]];
+const lifecycleInternalRoleRows = [roleHeaders,["RI-LIFE","R-LIFE","Coordinación","Descripción","DEP-A","AREA-A","Academica",12,"No","Activo","U-ADMIN","2026-01-01","2026-01-01","RESP-LIFE"]];
+const lifecycleScopeRows = [scopeHeaders,["A-LIFE","U-LIFE","Director","DEPARTAMENTO",'["DEP-A"]',"Activo","U-ADMIN","2026-01-01","","","No","","INST-1","MEM-LIFE","RI-LIFE"]];
+const lifecycleSheets = {
+  MembresiasRolesRBAC:{getDataRange:()=>({getValues:()=>lifecycleMembershipRows.map(r=>r.slice())})},
+  MatrizPermisosRoles:null,
+  ResponsabilidadesInstitucionales:{getDataRange:()=>({getValues:()=>lifecycleResponsibilityRows.map(r=>r.slice())})},
+  CatalogoRolesInternos:{getDataRange:()=>({getValues:()=>lifecycleInternalRoleRows.map(r=>r.slice())})},
+  AsignacionesAmbitosRoles:{getDataRange:()=>({getValues:()=>lifecycleScopeRows.map(r=>r.slice())})}
+};
+const lifecycleCtx = {
+  SPREADSHEET_ID:"LOCAL",
+  ROLE_PERMISSIONS:{Director:true,Auditor:true},
+  getIdentityInstitutionId_:()=>"INST-1",
+  normalizeString:v=>String(v||"").trim().toLowerCase(),
+  SpreadsheetApp:{openById:()=>({getSheetByName:name=>lifecycleSheets[name]||null})}
+};
+const lifecycleCode = `
+const USER_ROLE_MEMBERSHIP_HEADERS_ = ${JSON.stringify(membershipHeaders)};
+${membershipDateFn}
+${configuredRoleFn}
+${membershipStateFn}
+${resolveMembershipFn}
+${recordFn}
+${resolveFn}
+${assignmentsFn}
+${extractFunction(source,"getUserContextScope")}
+function verifySessionToken(token) {
+  if (token !== "session-director") return null;
+  var active = resolveUserRoleMembership_("U-LIFE","Director","INST-1","MEM-LIFE");
+  return active ? {userId:"U-LIFE",role:"Director",membershipId:"MEM-LIFE",institutionId:"INST-1"} : null;
+}
+function getUserVerifiedRole(payload) {
+  var claims = verifySessionToken(payload && payload.sessionToken);
+  if (!claims) return "NO_ACCESS";
+  payload._verifiedUserId = claims.userId;
+  return claims.role;
+}
+this.getUserContextScope = getUserContextScope;
+this.getInternalRoleAssignments = getInternalRoleAssignments;
+`;
+vm.runInNewContext(lifecycleCode,lifecycleCtx);
+const liveContext = lifecycleCtx.getUserContextScope({sessionToken:"session-director"});
+assert.equal(liveContext.status,"success","active membership and responsibility resolve a live scope");
+assert.deepEqual(Array.from(liveContext.departmentIds),["DEP-A"]);
+assert.equal(lifecycleCtx.getInternalRoleAssignments({userId:"U-LIFE",roleId:"Director",membershipId:"MEM-LIFE"}).data.length,1);
+
+lifecycleResponsibilityRows[1][5]="Inactiva";
+assert.equal(lifecycleCtx.getUserContextScope({sessionToken:"session-director"}).code,"DEPARTMENT_SCOPE_NOT_ASSIGNED","deactivated institutional responsibility removes effective scope");
+assert.equal(lifecycleCtx.getInternalRoleAssignments({userId:"U-LIFE",roleId:"Director",membershipId:"MEM-LIFE"}).data.length,0,"assignment listing hides a deactivated responsibility");
+lifecycleResponsibilityRows[1][5]="Activa";
+
+lifecycleInternalRoleRows[1][9]="Inactivo";
+assert.equal(lifecycleCtx.getUserContextScope({sessionToken:"session-director"}).code,"DEPARTMENT_SCOPE_NOT_ASSIGNED","deactivated internal role removes effective scope");
+assert.equal(lifecycleCtx.getInternalRoleAssignments({userId:"U-LIFE",roleId:"Director",membershipId:"MEM-LIFE"}).data.length,0,"assignment listing hides an inactive internal role");
+lifecycleInternalRoleRows[1][9]="Activo";
+
+lifecycleMembershipRows[1][4]="REVOKED";
+assert.equal(lifecycleCtx.getUserContextScope({sessionToken:"session-director"}).code,"VERIFIED_IDENTITY_REQUIRED","revoked membership invalidates the previously issued session");
+assert.equal(lifecycleCtx.getInternalRoleAssignments({userId:"U-LIFE",roleId:"Director",membershipId:"MEM-LIFE"}).data.length,0,"assignment listing hides a revoked membership");
+lifecycleMembershipRows[1][4]="ACTIVE";
+
+lifecycleMembershipRows[1][2]="Auditor";
+assert.equal(lifecycleCtx.getUserContextScope({sessionToken:"session-director"}).code,"VERIFIED_IDENTITY_REQUIRED","role change invalidates the previous role-bound session");
+assert.equal(lifecycleCtx.getInternalRoleAssignments({userId:"U-LIFE",roleId:"Director",membershipId:"MEM-LIFE"}).data.length,0,"assignment listing hides an assignment after its role changes");
+lifecycleMembershipRows[1][2]="Director";
+
+lifecycleMembershipRows[1][6]=new Date("2000-01-01T00:00:00.000Z");
+assert.equal(lifecycleCtx.getUserContextScope({sessionToken:"session-director"}).code,"VERIFIED_IDENTITY_REQUIRED","expired membership invalidates the previous session");
+console.log("C1.621 lifecycle contract: responsibility deactivation, internal-role deactivation, membership revocation, role changes and expiry remove effective scope and assignment visibility.");
