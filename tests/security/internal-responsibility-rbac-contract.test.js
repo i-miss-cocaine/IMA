@@ -1512,9 +1512,10 @@ assert.equal(validateDepartmentalImportScope_({...importBase,rows:[{id:"1",insti
 assert.equal(validateDepartmentalImportScope_({...importBase,rows:[]}).code,"DEPARTMENT_IMPORT_ROWS_REQUIRED");
 assert.equal(validateDepartmentalImportScope_({...importBase,authorizedDepartmentIds:["DEP-A","DEP-A"]}).code,"DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_INVALID");
 assert.equal(validateDepartmentalImportScope_({...importBase,actorContext:{...deptActor,institutionWide:true,institutionWideAuthorized:false}}).code,"DEPARTMENT_IMPORT_INSTITUTION_WIDE_UNAUTHORIZED");
-assert.equal(validateDepartmentalImportScope_({...importBase,actorContext:{...deptActor,institutionWide:true,institutionWideAuthorized:true},targetDepartmentId:"DEP-Z"}).valid,true);
+assert.equal(validateDepartmentalImportScope_({...importBase,actorContext:{...deptActor,institutionWide:true,institutionWideAuthorized:true},targetDepartmentId:"DEP-Z",rowDepartmentsVerified:true,rowDepartmentsInstitutionId:"INST-1",rowDepartmentsDomain:"ACADEMIC"}).valid,true);
+assert.equal(validateDepartmentalImportScope_({...importBase,actorContext:{...deptActor,institutionWide:true,institutionWideAuthorized:true},targetDepartmentId:"DEP-Z"}).code,"DEPARTMENT_IMPORT_ROW_TARGETS_UNVERIFIED");
 assert.equal(validateDepartmentalImportScope_({...importBase,targetInstitutionId:"INST-2"}).code,"DEPARTMENT_IMPORT_TARGET_UNVERIFIED");
-console.log("C1.651 departmental query/import scope contract: 26 assertions PASS.");
+console.log("C1.651 departmental query/import scope contract: 27 assertions PASS.");
 
 
 

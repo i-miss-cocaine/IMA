@@ -323,7 +323,10 @@ function validateDepartmentalImportScope_(input) {
   if(!Array.isArray(rows)||!rows.length)return fail("DEPARTMENT_IMPORT_ROWS_REQUIRED");
   for(i=0;i<rows.length;i++){
     var row=rows[i]||{},rowDepartment=String(row.departmentId||"").trim(),rowInstitution=String(row.institutionId||"").trim();
-    if(rowDepartment&&rowDepartment!==target)return fail("DEPARTMENT_IMPORT_MIXED_DEPARTMENTS");
+    if(rowDepartment&&rowDepartment!==target){
+      if(actor.institutionWide!==true||actor.institutionWideAuthorized!==true)return fail("DEPARTMENT_IMPORT_MIXED_DEPARTMENTS");
+      if(cfg.rowDepartmentsVerified!==true||String(cfg.rowDepartmentsInstitutionId||"").trim()!==institutionId||String(cfg.rowDepartmentsDomain||"").trim()!==domain)return fail("DEPARTMENT_IMPORT_ROW_TARGETS_UNVERIFIED");
+    }
     if(rowInstitution&&rowInstitution!==institutionId)return fail("DEPARTMENT_IMPORT_TENANT_MISMATCH");
   }
   return {valid:true,code:"DEPARTMENT_IMPORT_SCOPE_VALID",institutionId:institutionId,departmentId:target,rowCount:rows.length,writesPerformed:false,requiresAtomicImportValidation:true};
