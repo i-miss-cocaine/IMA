@@ -28,3 +28,17 @@
 - **Estado:** implementación y contratos focalizados aprobados; workflow global con los fallos separados arriba. TASK-153 continúa En ejecución.
 - **Siguiente:** siguiente callsite elegible de importación/consulta dentro de TASK-153; no alterar la autoridad ni poblar snapshots sin proceso institucional aprobado.
 ===============================================================================
+
+
+===============================================================================
+### C1.660 — IMA-EXEC-20261112-1754Z-03 — aislamiento del portal de autoservicio laboral (ACCOUNTING)
+- **HEAD inicial:** d60b88c8900742091873abb686019a7de7f37bd9. **Commit de código/pruebas:** f27a796113895e56458d7ced6b7e28e6dd20da8f. **Rama:** NG_beta_0.0.0.1_work. **Base:** NG_beta_0.0.0.1 = 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
+- **Hallazgo:** getEmployeeSelfServicePortal confiaba en authRole/authUserId/targetUserId del payload, resolvía expediente con ID equivocado, usaba índices incompatibles con los encabezados de ExpedientesLaborales/ContratosLaborales/SolicitudesVacaciones, consultaba una hoja de préstamos con nombre distinto y creaba hojas durante lecturas.
+- **Corrección:** identidad derivada de sesión firmada; perfiles de autoservicio limitados al userId autenticado e ignoran target/rol enviados por cliente. Personal con permiso debe pasar scope departamental/institucional y ResourceOwnership activo del expediente objetivo. Se rechazan mapeos UserID→ExpedienteID ausentes/duplicados y ExpedienteID duplicados con RESOURCE_NOT_FOUND. Lectura de solo lectura con getSheetByName, encabezados validados y filtros correctos por ExpedienteID/UserID según cada tabla. El endpoint se incorpora a resourceScopeActions.
+- **Pruebas:** contrato ACCOUNTING ampliado con self-service, spoof de authRole/authUserId/targetUserId, acceso staff del mismo/otro departamento, acceso institucional, sesión inválida, mapeo duplicado y hoja ausente sin escrituras. Parseo V8 local de Code.gs y test PASS.
+- **CI:** Department Scope run 43329951229: Department Scope PASS; Internal Responsibility RBAC PASS; ACCOUNTING departmental import PASS; USER migrated ownership PASS; ACCOUNTING departmental resource access PASS (incluye casos C1.660). Workflow FAIL posterior en user-role-membership-contract.test.js:119 porque verifySessionToken(foreignLegacy) devuelve null y el test intenta leer .role; fallo previamente conocido y separado. Identity mapping run 43329951362 SUCCESS.
+- **Limitaciones:** no se ejecutó syntax-check global por el fallo posterior de User Role Membership; no se desplegó Apps Script ni se usaron datos reales. BETA-FUNC-038 Pendiente beta.
+- **Archivos:** backend/accounting-service/Code.gs; tests/security/accounting-departmental-resource-access.test.js; changueslogs.txt; beta_test.txt; este checkpoint e índice.
+- **Estado:** portal laboral protegido por identidad/ownership en contratos focalizados; TASK-153 sigue En ejecución.
+- **Siguiente:** siguiente callsite elegible de consulta/descarga en ACCOUNTING dentro de TASK-153; evitar duplicar el alcance de C1.658–C1.660.
+===============================================================================
