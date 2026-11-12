@@ -791,6 +791,8 @@ tenantCache.put=(key,value,ttl)=>sessionCacheWrites.push({key,value,ttl});
 tenantCache.remove=()=>{};
 tenantSessionCtx.SESSION_REVOCATION_HEADERS_=["SessionID","UserID","RevokedAt","ExpiresAt"];
 tenantSessionCtx.CacheService={getScriptCache:()=>tenantCache};
+const sessionRevocationProperties = {};
+tenantSessionCtx.PropertiesService={getScriptProperties:()=>({getProperty:key=>sessionRevocationProperties[key]||null,setProperty:(key,value)=>{sessionRevocationProperties[key]=String(value);}})};
 tenantSessionCtx.LockService={getScriptLock:()=>({waitLock:()=>{},releaseLock:()=>{}})};
 tenantSessionCtx.getOrCreateSheet=(_ss,name)=>name==="SesionesRevocadas"?sessionRevocationSheet:null;
 tenantSessionCtx.logStructuredEvent=()=>{};
