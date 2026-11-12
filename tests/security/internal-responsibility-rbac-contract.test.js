@@ -869,6 +869,40 @@ sessionRevocationRows[0]=originalRevocationHeader;
 
 console.log("C1.634 persistent session revocation contract: cache-eviction resilience, 24h+60s persistence, safe user/session logout targeting, post-revocation login and role-switch invalidation PASS.");
 
+ 
+// C1.635: direct administrative revocation remains protected; legacy role-only sessions still use persistent revocation.
+const revocationAuthorizationCtx = {
+  PUBLIC_ACTIONS:["logoutUser"],
+  IDENTITY_MANAGER_ACTIONS_:[],
+  IDENTITY_MANAGER_ROLES_:[],
+  TICKET_ADMIN_ROLES_:[],
+  ROLE_PERMISSIONS:{Administrador:["*"],Director:[]},
+  getUserVerifiedRole:payload=>{payload._verifiedUserId=payload.userId||"U-ACTOR";return payload.role||"NO_ACCESS";},
+  getDynamicPermissionsForRole:()=>null,
+  validateContextualAccess:()=>({authorized:true}),
+  hasActiveDelegationForAction:()=>null,
+  logStructuredEvent:()=>{}
+};
+vm.runInNewContext(extractFunction(source,"validateRolePermission")+"\nthis.validateRolePermission=validateRolePermission;",revocationAuthorizationCtx);
+assert.equal(revocationAuthorizationCtx.validateRolePermission("revokeUserSession",{role:"Director",userId:"U-DIRECTOR"}).authorized,false,"direct administrative revocation is not public or implicitly granted to Director");
+assert.equal(revocationAuthorizationCtx.validateRolePermission("revokeUserSession",{role:"Administrador",userId:"U-ADMIN"}).authorized,true,"administrator wildcard explicitly authorizes administrative revocation");
+assert.equal(revocationAuthorizationCtx.validateRolePermission("logoutUser",{}).authorized,true,"logout remains public but the handler requires signed claims before revoking any session");
+
+// Legacy role-only tokens remain compatible, but their SessionID is covered by the persistent revocation ledger.
+const legacyIat=Math.floor(Date.now()/1000)+10;
+tenantClaimsByPayload.claimslegacy={userId:"U-TENANT",role:"Director",sessionId:"SID-LEGACY",iat:legacyIat,exp:legacyIat+3600};
+assert.equal(tenantSessionCtx.verifySessionToken("claimslegacy.sig").sessionId,"SID-LEGACY","legacy token without MembershipID remains compatible when its current role matches");
+assert.equal(tenantSessionCtx.revokeUserSession({sessionId:"SID-LEGACY"}).status,"success");
+assert.equal(tenantSessionCtx.verifySessionToken("claimslegacy.sig"),null,"persistent revocation also invalidates legacy role-only tokens");
+
+// Expired ledger rows are pruned during the next persistent write.
+const pruneNow=Date.now();
+sessionRevocationRows.push(["SID-OLD-EXPIRED","U-OLD",new Date(pruneNow-90000*1000),new Date(pruneNow-1000)]);
+assert.equal(tenantSessionCtx.revokeUserSession({sessionId:"SID-PRUNE"}).status,"success");
+assert.equal(sessionRevocationRows.some(row=>row[0]==="SID-OLD-EXPIRED"),false,"expired revocation rows are removed during ledger maintenance");
+console.log("C1.635 revocation boundary contract: administrative action authorization, safe public logout, legacy-token revocation compatibility and expired-ledger pruning PASS.");
+
+
 
 
 
