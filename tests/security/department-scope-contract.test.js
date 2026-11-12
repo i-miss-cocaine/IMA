@@ -225,7 +225,7 @@ const assignmentNow = new Date();
 const futureStart = new Date(assignmentNow.getTime() + 24 * 60 * 60 * 1000).toISOString();
 const pastEnd = new Date(assignmentNow.getTime() - 24 * 60 * 60 * 1000).toISOString();
 const assignmentRows = [
-  headers,
+  headers.slice(0,12),
   ["R-1","U-1","ROL-INT-1","DEPARTAMENTO",'["DEP-A"]',"Activo","U-ADMIN",assignmentNow.toISOString(),"","", "No",""],
   ["R-2","U-1","ROL-INT-1","DEPARTAMENTO",'["DEP-FUTURE"]',"Activo","U-ADMIN",assignmentNow.toISOString(),futureStart,"", "No",""],
   ["R-3","U-1","ROL-INT-1","DEPARTAMENTO",'["DEP-EXPIRED"]',"Activo","U-ADMIN",assignmentNow.toISOString(),"",pastEnd, "No",""],
