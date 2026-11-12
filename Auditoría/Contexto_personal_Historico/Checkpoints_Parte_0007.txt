@@ -1630,3 +1630,18 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** C1.652 publicada y verificada en la rama autorizada; TASK-153 continúa En ejecución.
 - **Siguiente acción:** integrar la prevalidación departamental en validateImportPreview y en importDataWithColumnMapping antes de cualquier writer, resolviendo destino/RowID con snapshots server-side y manteniendo compensación atómica; no inferir departamentos desde texto libre.
 ===============================================================================
+
+
+===============================================================================
+### C1.653 — IMA-2026-11-12-01 — selección de importación departamental y bloqueo de ejecución local
+- **HEAD auditado:** 766ec52e14c9caa0c4140cfeb76ee477e30b8fdb (rama NG_beta_0.0.0.1_work; commit de checkpoint C1.652).
+- **Rama base verificada:** 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- **Unidad seleccionada:** PM-01 / TASK-153 — conectar la prevalidación departamental en `validateImportPreview` y `importDataWithColumnMapping`, antes de cualquier writer.
+- **Revisión estática:** `backend/accounting-service/Code.gs` contiene ambos endpoints. `validateImportPreview` solo valida identificador obligatorio y no aplica ámbito departamental. `importDataWithColumnMapping` resuelve mappings y ejecuta writers propietarios por fila, con compensación posterior ante errores, pero no ejecuta preflight departamental del lote antes del primer writer. `validateDepartmentalImportScope_` está en `backend/shared/DepartmentCatalogContract.gs` y no tiene integración en ACCOUNTING.
+- **Diseño requerido para reanudar:** derivar actor/membresía/tenant y departamentos desde sesión firmada y snapshots server-side; resolver el destino canónico sin confiar en campos de departamento libres; para alcance institucional validar cada RowID contra asignaciones verificadas; validar lote completo antes de cualquier writer y conservar la compensación/idempotencia existente. Rechazar destinos no autorizados, mezcla no demostrada, snapshots ausentes/inconsistentes y ownership ambiguo. Mantener pruebas negativas y de atomicidad.
+- **Verificación local:** BLOCKED / NOT RUN. Se intentó clonar el repositorio para ejecutar Node y el entorno no pudo resolver `github.com` (DNS); por tanto no existe checkout local verificable ni se ejecutaron pruebas sobre el código real. No se modificó código ni se afirma PASS.
+- **CI:** sin nueva ejecución; el estado histórico de C1.652 permanece: run 43312801914 pasó Department Scope e Internal Responsibility RBAC y falló User Role Membership en línea 119; run 43312802506 falló en contrato USER/TASK fuera del alcance de C1.652.
+- **Archivos de código modificados:** ninguno.
+- **Estado:** TASK-153 continúa En ejecución. La integración de importación no se marca completada. Este checkpoint registra la selección y el impedimento técnico de verificación local.
+- **Siguiente acción exacta:** restablecer checkout local de la rama autorizada, ejecutar el harness vigente y añadir pruebas locales para preview, preflight de lote, RowID institucional, departamento mixto, snapshots inválidos, destino no autorizado, cero escrituras ante fallo de preflight y compensación ante fallo posterior; después implementar y verificar la integración.
+===============================================================================
