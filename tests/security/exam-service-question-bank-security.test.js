@@ -240,5 +240,5 @@ for (const kind of ["ownership", "bank"]) {
  assertWriteDelta("ownership", "setValue", run.before, 1, "delete/bank/setValue");
  assertWriteDelta("bank", "setValue", run.before, 1, "delete/bank/setValue");
 }
-assert.equal(lockAcquires, lockReleases + 1, "only the deliberately contended lock acquisition remains unreleased");
+assert.equal(lockAcquires, lockReleases + 6, "one initial timeout plus five nested lock denials must remain unreleased");
 process.stdout.write("exam-service-question-bank-security: ownership, department scope, RBAC revocation, serialized writes and rollback assertions passed\n");
