@@ -176,3 +176,30 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - Runner aislado ejecutó código/fixtures sin despliegue ni servicio remoto; Apps Script/Sheets real NOT RUN.
 - C1.591 Completada en verificación local aislada/CI. BETA-EXAM-092 permanece Pendiente beta.
 - HEAD inicial: 7f5fdc284644fd3fd366b7c28fc147982bd9b9e3; HEAD final: se confirma tras commit documental.
+
+
+===============================================================================
+## C1.592 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de rectifyStudentGrade durante appendRow y setValues.
+
+### Hallazgo y cambio
+- El contrato cubría validación, rollback de errores y reentrada durante openById, pero no reentrada en los dos puntos de persistencia.
+- Se amplía el fixture con hooks y contadores de appendRow/setValues y se añaden dos escenarios de reentrada al handler real: durante la escritura del historial y durante la actualización de la calificación.
+- Resultado esperado en ambos: secundaria GRADE_RECTIFICATION_LOCK_TIMEOUT; exterior realiza un append y una escritura, conserva nota e historial consistentes, abre Sheets una vez y libera ScriptLock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-student-grade-rectification-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Contrato ampliado a 32 casos; ejecución local aislada/CI pendiente tras commit.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-093 Pendiente beta.
+- C1.592 En ejecución hasta completar la verificación local aislada.
+- HEAD inicial: 9856febdaafb7c594e835fd53aa7115a96144a4d; HEAD final: se confirma tras publicar.
+===============================================================================

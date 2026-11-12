@@ -1062,3 +1062,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; contrato local aislado 30/30 PASS; GitHub Actions run 43127784802 SUCCESS en Node.js 22. Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de ambas solicitudes, adquisiciones/liberaciones del lock, aperturas de Sheets, conteo de escrituras y snapshot de CierresPeriodos antes/después.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-093 — TASK-153 / AUD-NG-386 / EXAM: contención reentrante de rectifyStudentGrade durante appendRow y setValues
+- **Módulo/rol:** Servicio EXAM; Administrador, Desarrollador, Dirección, Director o Secretaría con permiso rectifyStudentGrade, identidad firmada y scope institucional autorizado.
+- **Objetivo:** verificar en Apps Script/Sheets desplegado que una segunda rectificación iniciada durante el append de auditoría o la actualización de la nota no atraviesa ScriptLock ni duplica efectos.
+- **Precondiciones:** versión beta desplegada; calificación única y válida; estudiante y perfil institucional válidos; actor autorizado; historial de rectificaciones válido; mecanismo controlado para invocar una segunda solicitud durante appendRow de HistorialRectificacionesNotas y durante setValues de CalificacionesEstudiantes.
+- **Pasos:** ejecutar rectifyStudentGrade con motivo y nota válidos; durante appendRow del historial intentar una rectificación anidada; repetir en entorno de prueba con reentrada durante setValues de CalificacionesEstudiantes; revisar respuestas, trazas RBAC/identidad/lock/Sheets y snapshots de ambas hojas.
+- **Resultado esperado:** ambas solicitudes secundarias terminan con GRADE_RECTIFICATION_LOCK_TIMEOUT; cada operación exterior realiza un solo append de auditoría y una sola escritura de nota, abre Sheets una vez y libera ScriptLock; la nota y el historial quedan consistentes sin duplicados.
+- **Estado:** Pendiente beta; contrato local aislado/CI pendiente tras commit. Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, trazas saneadas de las solicitudes, adquisiciones/liberaciones del lock, aperturas de Sheets, conteos de appendRow/setValues y snapshots de CalificacionesEstudiantes e HistorialRectificacionesNotas antes/después.
+===============================================================================

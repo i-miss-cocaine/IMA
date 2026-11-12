@@ -2120,3 +2120,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Contrato exam-service-period-gradebook-review-security: PASS (30/30); paso Run period gradebook review security regression y job exam-security-contracts SUCCESS.
 - Ejecución aislada sobre código/fixtures sin despliegue; Apps Script/Sheets real NOT RUN.
 - C1.591 Completada en verificación local aislada/CI. BETA-EXAM-092 sigue Pendiente beta.
+
+
+### C1.592 — AUD-NG-386 / rectifyStudentGrade: reentrada durante auditoría y escritura de nota
+- **Brecha:** el contrato cubría rollback y reentrada durante openById, pero no reentrada durante appendRow del historial ni setValues de la calificación.
+- **Cambio:** dos pruebas reentran al handler real desde ambos puntos de persistencia. La secundaria debe recibir GRADE_RECTIFICATION_LOCK_TIMEOUT; la exterior mantiene un append y una escritura únicos, nota consistente y lock liberado.
+- **Alcance:** contrato de seguridad; backend productivo sin cambios. BETA-EXAM-093 agregado y Pendiente beta.
+- **Verificación:** dos casos añadidos; contrato 32 casos, ejecución local aislada/CI pendiente tras commit. Apps Script/Sheets real NOT RUN.
+- **Estado:** En ejecución hasta verificar el contrato local aislado.

@@ -2285,3 +2285,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Ejecución aislada sobre código/fixtures sin despliegue; Apps Script/Sheets real NOT RUN.
 - C1.591 Completada en verificación local aislada/CI. BETA-EXAM-092 sigue Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.592 — contención reentrante de rectifyStudentGrade durante appendRow y setValues
+- Se amplía exam-service-student-grade-rectification-security.test.js para invocar el handler real de forma anidada durante appendRow de HistorialRectificacionesNotas y setValues de CalificacionesEstudiantes.
+- Ambas solicitudes secundarias deben fallar GRADE_RECTIFICATION_LOCK_TIMEOUT; la operación exterior conserva una sola entrada de auditoría, una sola escritura de nota y libera ScriptLock.
+- Backend productivo sin cambios. Contrato ampliado a 32 casos; ejecución local aislada/CI pendiente tras commit. Apps Script/Sheets real NOT RUN.
+- BETA-EXAM-093 agregado. TASK-153 / AUD-NG-386 continúa En ejecución.
+===============================================================================

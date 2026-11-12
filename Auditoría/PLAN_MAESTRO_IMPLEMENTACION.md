@@ -4392,3 +4392,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - El paso `Run period gradebook review security regression` ejecutó `tests/security/exam-service-period-gradebook-review-security.test.js` y registró `exam-service-period-gradebook-review-security: PASS (30/30)`; job `exam-security-contracts` terminó SUCCESS.
 - El runner ejecutó código y fixtures de forma aislada, sin despliegue ni infraestructura remota. Apps Script/Sheets real NOT RUN.
 - C1.591 **Completada en verificación local aislada/CI**. BETA-EXAM-092 permanece Pendiente beta.
+
+
+### 10.241 TASK-153 / AUD-NG-386 — contención reentrante de rectifyStudentGrade durante appendRow y setValues (C1.592)
+- **Brecha confirmada:** rectifyStudentGrade mantiene ScriptLock durante la auditoría y actualización de nota; el contrato cubría errores de escritura, rollback y reentrada durante openById, pero no reentrada desde appendRow de HistorialRectificacionesNotas ni desde setValues de CalificacionesEstudiantes.
+- **Cobertura añadida:** dos escenarios invocan el handler real de forma anidada durante cada punto de persistencia. En ambos, la secundaria debe recibir GRADE_RECTIFICATION_LOCK_TIMEOUT; la exterior realiza un único append de auditoría y una única escritura de nota, abre Sheets una vez y libera el lock.
+- **Alcance:** contrato de seguridad y BETA-EXAM-093; backend productivo sin cambios.
+- **Verificación:** contrato ampliado a 32 casos; ejecución local aislada/CI pendiente tras commit. Apps Script/Sheets real NOT RUN.
+- **Estado:** C1.592 En ejecución hasta completar la verificación local aislada.
