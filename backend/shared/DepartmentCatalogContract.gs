@@ -282,7 +282,7 @@ function validateDepartmentLifecycleEvent_(input) {
     var institutionId = String(config.institutionId || "").trim();
     var domain = String(config.domain || "").trim();
     var approvalReference = String(config.approvalReference || "").trim();
-    if (!institutionId || !domain || config.authorityApproved !== true || !approvalReference) return fail("DEPARTMENT_LIFECYCLE_CONFIG_UNAPPROVED");
+    if (!institutionId || !domain || config.authorityApproved !== true || !approvalReference || !String(config.version || "").trim()) return fail("DEPARTMENT_LIFECYCLE_CONFIG_UNAPPROVED");
     if (cfg.snapshotScopeVerified !== true || String(cfg.snapshotInstitutionId || "").trim() !== institutionId || String(cfg.snapshotDomain || "").trim() !== domain) return fail("DEPARTMENT_LIFECYCLE_SNAPSHOT_SCOPE_UNVERIFIED");
     var states = Array.isArray(config.states) ? config.states.map(function(x) { return String(x || "").trim().toUpperCase(); }).filter(Boolean) : [];
     var activeStates = Array.isArray(config.activeStates) ? config.activeStates.map(function(x) { return String(x || "").trim().toUpperCase(); }).filter(Boolean) : ["ACTIVE"];
@@ -416,6 +416,7 @@ function validateDepartmentLifecycleEvent_(input) {
     };
     var historyRow = {
       eventId: eventId, eventSignature: eventSignature, institutionId: institutionId, domain: domain,
+      configurationVersion: String(config.version).trim(), configurationApprovalReference: approvalReference,
       departmentId: departmentId, eventType: eventType, effectiveAt: new Date(effectiveTime).toISOString(),
       changedBy: changedBy, approvedBy: String(event.approvedBy || "").trim() || null,
       approvalReference: String(event.approvalReference || "").trim() || null, reason: reason,

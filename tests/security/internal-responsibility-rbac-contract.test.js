@@ -1333,7 +1333,7 @@ const departmentLifecycleCode=extractFunction(consumerSources.departmentCatalog,
 const departmentLifecycleCtx={Date:FixedTemporalDate};
 vm.runInNewContext(departmentLifecycleCode,departmentLifecycleCtx);
 const validateDepartmentLifecycleEvent_=departmentLifecycleCtx.validateDepartmentLifecycleEvent_;
-const lifecycleConfig={institutionId:"INST-1",domain:"ACADEMIC",authorityApproved:true,approvalReference:"ADR-1",states:["ACTIVE","INACTIVE","CLOSED","MERGED","SPLIT"],activeStates:["ACTIVE"],events:[
+const lifecycleConfig={institutionId:"INST-1",domain:"ACADEMIC",authorityApproved:true,approvalReference:"ADR-1",version:"v1",states:["ACTIVE","INACTIVE","CLOSED","MERGED","SPLIT"],activeStates:["ACTIVE"],events:[
  {type:"RENAME",requiresApproval:true},{type:"CHANGE_CODE",requiresApproval:true},{type:"CHANGE_PARENT",requiresApproval:true},
  {type:"DEACTIVATE",from:"ACTIVE",to:"INACTIVE",requiresApproval:true},{type:"REACTIVATE",from:"INACTIVE",to:"ACTIVE",requiresApproval:true},
  {type:"CLOSE",from:"ACTIVE",to:"CLOSED",requiresApproval:true},{type:"REOPEN",from:"CLOSED",to:"ACTIVE",requiresApproval:true},
@@ -1355,7 +1355,9 @@ function runDepartmentLifecycle(type,extra={},overrides={}){
 }
 let lifecycleResult=runDepartmentLifecycle("RENAME",{newName:"Ciencias Matemáticas"});
 assert.equal(lifecycleResult.valid,true);assert.equal(lifecycleResult.nextRecord.departmentId,"D-CHILD");assert.equal(lifecycleResult.nextRecord.name,"Ciencias Matemáticas");
-assert.equal(lifecycleResult.historyRow.before.name,"Matemáticas");assert.equal(lifecycleResult.historyRow.after.name,"Ciencias Matemáticas");assert.equal(lifecycleResult.historicalIdentityPreserved,true);
+assert.equal(lifecycleResult.historyRow.before.name,"Matemáticas");
+assert.equal(lifecycleResult.historyRow.configurationVersion,"v1");
+assert.equal(lifecycleResult.historyRow.configurationApprovalReference,"ADR-1");assert.equal(lifecycleResult.historyRow.after.name,"Ciencias Matemáticas");assert.equal(lifecycleResult.historicalIdentityPreserved,true);
 assert.equal(runDepartmentLifecycle("RENAME",{newName:"Matemáticas"}).code,"DEPARTMENT_LIFECYCLE_RENAME_INVALID");
 assert.equal(runDepartmentLifecycle("RENAME",{newName:"Nueva"},{proposedRecord:{departmentId:"D-NEW"}}).code,"DEPARTMENT_STABLE_ID_IMMUTABLE");
 lifecycleResult=runDepartmentLifecycle("CHANGE_CODE",{newCode:"MATH2",newNamespace:"INST-1"});assert.equal(lifecycleResult.valid,true);assert.equal(lifecycleResult.nextRecord.code,"MATH2");
@@ -1392,6 +1394,7 @@ assert.equal(runDepartmentLifecycle("RENAME",{newName:"Otra",effectiveAt:"2026-1
 assert.equal(runDepartmentLifecycle("RENAME",{newName:"Otra",approvedBy:"",approvalReference:""}).code,"DEPARTMENT_LIFECYCLE_APPROVAL_REQUIRED");
 assert.equal(runDepartmentLifecycle("UNKNOWN",{newName:"Otra"}).code,"DEPARTMENT_LIFECYCLE_EVENT_NOT_ALLOWED");
 assert.equal(runDepartmentLifecycle("RENAME",{newName:"Otra"},{config:{...lifecycleConfig,authorityApproved:false}}).code,"DEPARTMENT_LIFECYCLE_CONFIG_UNAPPROVED");
+assert.equal(runDepartmentLifecycle("RENAME",{newName:"Otra"},{config:{...lifecycleConfig,version:""}}).code,"DEPARTMENT_LIFECYCLE_CONFIG_UNAPPROVED");
 assert.equal(runDepartmentLifecycle("RENAME",{newName:"Otra"},{config:{...lifecycleConfig,events:lifecycleConfig.events.concat(lifecycleConfig.events[0])}}).code,"DEPARTMENT_LIFECYCLE_EVENT_RULE_AMBIGUOUS");
 assert.equal(runDepartmentLifecycle("RENAME",{newName:"Otra"},{catalogRecords:[lifecycleRoot,lifecycleOther,lifecycleInactive,lifecycleClosed]}).code,"DEPARTMENT_LIFECYCLE_CURRENT_RECORD_NOT_IN_SNAPSHOT");
 assert.equal(runDepartmentLifecycle("RENAME",{newName:"Otra"},{catalogRecords:[lifecycleRoot,{...lifecycleChild,name:"Otro"},lifecycleOther,lifecycleInactive,lifecycleClosed]}).code,"DEPARTMENT_LIFECYCLE_SNAPSHOT_MISMATCH");
