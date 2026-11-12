@@ -1253,10 +1253,15 @@ function verifySessionToken(tokenString) {
       var activeMembership = resolveUserRoleMembership_(claims.userId, claims.role, claims.institutionId, claims.membershipId);
       if (!activeMembership || activeMembership.institutionId !== String(getIdentityInstitutionId_()).trim()) return null;
     } else {
-      var institutionIdForLegacy = String(getIdentityInstitutionId_() || "").trim();
-      var membershipStateForLegacy = getUserRoleMembershipState_(claims.userId, institutionIdForLegacy);
-      if (membershipStateForLegacy.initialized && membershipStateForLegacy.hasRecords) {
-        if (!resolveUserRoleMembership_(claims.userId, claims.role.trim(), institutionIdForLegacy)) return null;
+      var membershipSheetForLegacy = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("MembresiasRolesRBAC");
+      if (membershipSheetForLegacy) {
+        var institutionIdForLegacy = String(getIdentityInstitutionId_() || "").trim();
+        var membershipStateForLegacy = getUserRoleMembershipState_(claims.userId, institutionIdForLegacy);
+        if (membershipStateForLegacy.hasRecords) {
+          if (!resolveUserRoleMembership_(claims.userId, claims.role.trim(), institutionIdForLegacy)) return null;
+        } else if (!currentRole || currentRole !== claims.role.trim()) {
+          return null;
+        }
       } else if (!currentRole || currentRole !== claims.role.trim()) {
         return null;
       }
