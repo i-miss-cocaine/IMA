@@ -865,7 +865,7 @@ assert.equal(sessionRevocationRows.length,rowsBeforeInvalidLogout,"an invalid to
 // User-wide revocation applies to sessions issued before the revocation timestamp, while allowing a later login.
 tenantClaimsByPayload.claimsbefore={userId:"U-TENANT",role:"Director",membershipId:"MEM-LOCAL",institutionId:"INST-1",sessionId:"SID-BEFORE",iat:nowForNewClaims-30,exp:nowForNewClaims+3600};
 assert.equal(tenantSessionCtx.verifySessionToken("claimsbefore.sig").sessionId,"SID-BEFORE");
-assert.equal(tenantSessionCtx.revokeUserSession({userId:"U-CROSS-USER"}).status,"success");
+assert.equal(tenantSessionCtx.revokeUserSession({userId:"U-TENANT"}).status,"success");
 assert.equal(tenantSessionCtx.verifySessionToken("claimsbefore.sig"),null,"user-wide revocation blocks all previously issued sessions");
 const afterRevocationIat=Math.floor(Date.now()/1000)+5;
 tenantClaimsByPayload.claimsafter={userId:"U-TENANT",role:"Director",membershipId:"MEM-LOCAL",institutionId:"INST-1",sessionId:"SID-AFTER",iat:afterRevocationIat,exp:afterRevocationIat+3600};
