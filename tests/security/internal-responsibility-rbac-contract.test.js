@@ -1104,6 +1104,45 @@ for(const [serviceName,readerName] of scopeServiceReaders){
 }
 console.log("C1.642 cross-service scope contract: exact signed MembershipID/InstitutionID/RoleID binding, active responsibility chain, duplicate IDs, temporal fail-closed, multi-department union and activeDepartmentId narrowing PASS.");
 
+ 
+// C1.643: remaining USER/ACADEMIC scope readers must not bypass membership-bound context.
+const academicContextRows=[scopeHeaders,...scopeCurrentRows.slice(1).filter(row=>row[0]!=="S-INST")];
+const academicContext={Date:FixedTemporalDate,SPREADSHEET_ID:"LOCAL",PropertiesService:{getScriptProperties:()=>({getProperty:key=>key==="IMA_INSTITUTION_ID"?"INST-1":null})},verifySessionToken:token=>token==="scope-valid"?scopeClaims:null,SpreadsheetApp:{openById:()=>({getSheetByName:name=>{const rows=name==="AsignacionesAmbitosRoles"?academicContextRows:(name==="CatalogoRolesInternos"?scopeRoleRows:(name==="ResponsabilidadesInstitucionales"?scopeResponsibilityRows:null));return rows?{getLastRow:()=>rows.length,getDataRange:()=>({getValues:()=>rows.map(row=>row.slice())})}:null;}})}};
+const academicContextCode=`
+${extractFunction(consumerSources.academic,"getInstitutionalResponsibilityForRoleScope_")}
+${extractFunction(consumerSources.academic,"resolveInternalResponsibilityForRoleScope_")}
+${extractFunction(consumerSources.academic,"getVerifiedDepartmentScopeForSession_")}
+${extractFunction(consumerSources.academic,"getVerifiedAcademicDepartmentScope_")}
+${extractFunction(consumerSources.academic,"validateContextualAccess")}
+this.validateContextualAccess=validateContextualAccess;
+`;
+vm.runInNewContext(academicContextCode,academicContext);
+assert.equal(academicContext.validateContextualAccess("read",{sessionToken:"scope-valid",scopeType:"DEPARTAMENTO",requestedValue:"DEP-A"},"U-SCOPE","Director").authorized,true,"ACADEMIC contextual access resolves the exact membership-bound scope");
+assert.equal(academicContext.validateContextualAccess("read",{sessionToken:"scope-valid",scopeType:"DEPARTAMENTO",requestedValue:"DEP-OTHER-MEM"},"U-SCOPE","Director").authorized,false,"ACADEMIC cannot authorize a row from another membership");
+assert.equal(academicContext.validateContextualAccess("read",{sessionToken:"scope-valid",activeDepartmentId:"DEP-A2",scopeType:"DEPARTAMENTO",requestedValue:"DEP-A"},"U-SCOPE","Director").authorized,false,"ACADEMIC active department context narrows access");
+assert.equal(academicContext.validateContextualAccess("read",{sessionToken:"scope-valid",activeDepartmentId:"DEP-A2",scopeType:"DEPARTAMENTO",requestedValue:"DEP-A2"},"U-SCOPE","Director").authorized,true,"ACADEMIC permits the selected active department");
+let requestedAssignmentOptions=null;
+const scopeConfigCtx={
+ getUserVerifiedRole:p=>p._verifiedUserId==="U-ADMIN"?"Administrador":"Director",
+ getUserContextScope:p=>({status:"success",userId:"U-SELF",scopes:[{assignmentId:"SELF-A",roleId:"Director",scopeType:"DEPARTAMENTO",scopeValues:["DEP-SELF"],fechaCreacion:"2026-01-01",membershipId:"MEM-SELF"}]}),
+ validateRolePermission:()=>({authorized:true}),getIdentityInstitutionId_:()=>"INST-1",
+ getUserRoleMembershipState_:userId=>({initialized:true,hasRecords:userId==="U-TARGET",memberships:userId==="U-TARGET"?[{membershipId:"MEM-T1",roleId:"Director",institutionId:"INST-1"},{membershipId:"MEM-T2",roleId:"Auditor",institutionId:"INST-1"}]:[]}),
+ SpreadsheetApp:{openById:()=>({getSheetByName:name=>name==="MembresiasRolesRBAC"?{getDataRange:()=>({getValues:()=>[membershipHeaders,["MEM-T1","U-TARGET","Director","INST-1","ACTIVE","",""],["MEM-T2","U-TARGET","Auditor","INST-1","ACTIVE","",""]]})}:null})},
+ getInternalRoleAssignments:options=>{requestedAssignmentOptions=options;return {status:"success",data:[{asignacionId:"TARGET-A",roleId:options.roleId,scopeType:"DEPARTAMENTO",scopeValues:'["DEP-TARGET"]',fechaCreacion:"2026-01-01",membershipId:options.membershipId}]};}
+};
+vm.runInNewContext(extractFunction(source,"getUserScopeConfig")+"\nthis.getUserScopeConfig=getUserScopeConfig;",scopeConfigCtx);
+const selfConfig=scopeConfigCtx.getUserScopeConfig({_verifiedUserId:"U-SELF",userId:"U-SELF"});
+assert.equal(selfConfig.status,"success");
+assert.deepEqual(Array.from(selfConfig.ambitos[0].scopeValues),["DEP-SELF"],"self scope config returns the effective signed context");
+const ambiguousConfig=scopeConfigCtx.getUserScopeConfig({_verifiedUserId:"U-ADMIN",userId:"U-TARGET"});
+assert.equal(ambiguousConfig.code,"ROLE_MEMBERSHIP_SELECTION_REQUIRED","admin cannot silently union multiple memberships");
+const selectedConfig=scopeConfigCtx.getUserScopeConfig({_verifiedUserId:"U-ADMIN",userId:"U-TARGET",membershipId:"MEM-T2"});
+assert.equal(selectedConfig.status,"success");
+assert.equal(requestedAssignmentOptions.roleId,"Auditor");
+assert.equal(requestedAssignmentOptions.membershipId,"MEM-T2","administrative scope config is bound to the selected membership");
+console.log("C1.643 direct scope-reader contract: ACADEMIC contextual access delegates to membership-bound scope; USER self config uses effective context and administrative reads require exact membership selection PASS.");
+
+
 
 
 
