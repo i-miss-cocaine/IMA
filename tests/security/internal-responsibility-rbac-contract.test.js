@@ -701,6 +701,76 @@ assert.equal(membershipIntegrityCtx.getUserRoleMemberships({sessionToken:"sessio
 assert.equal(membershipIntegrityCtx.getUserRoleMemberships({sessionToken:"session-m2-new"}).status,"success");
 console.log("C1.632 membership integrity contract: duplicate same-role ambiguity, role-change session invalidation, user/tenant filtering and global MembershipID collision isolation PASS.");
 
+ 
+// C1.633: signed session verification and effective context must reject tenant-swapped or inactive membership claims.
+const tenantMembershipRows = [
+  membershipHeaders,
+  ["MEM-LOCAL","U-TENANT","Director","INST-1","ACTIVE","","","U-ADMIN","2026-01-01","2026-01-01","",""],
+  ["MEM-OTHER","U-TENANT","Auditor","INST-OTHER","ACTIVE","","","U-ADMIN","2026-01-01","2026-01-01","",""]
+];
+const tenantClaimsByPayload = {
+  "claims-local":{userId:"U-TENANT",role:"Director",membershipId:"MEM-LOCAL",institutionId:"INST-1",sessionId:"SID-LOCAL",iat:Math.floor(Date.now()/1000)-30,exp:Math.floor(Date.now()/1000)+3600},
+  "claims-other":{userId:"U-TENANT",role:"Auditor",membershipId:"MEM-OTHER",institutionId:"INST-OTHER",sessionId:"SID-OTHER",iat:Math.floor(Date.now()/1000)-30,exp:Math.floor(Date.now()/1000)+3600},
+  "claims-swapped":{userId:"U-TENANT",role:"Auditor",membershipId:"MEM-OTHER",institutionId:"INST-1",sessionId:"SID-SWAPPED",iat:Math.floor(Date.now()/1000)-30,exp:Math.floor(Date.now()/1000)+3600}
+};
+const tenantUserRows = [
+  ["UserID","","","","","","Role","","","","Estado"],
+  ["U-TENANT","","","","","","Director","","","","Activa"]
+];
+const tenantScopeRows = [
+  scopeHeaders,
+  ["A-TENANT","U-TENANT","Director","DEPARTAMENTO",'["DEP-A"]',"Activo","U-ADMIN","2026-01-01","","","No","","INST-1","MEM-LOCAL","RI-LOCAL"]
+];
+const tenantCache = {get:()=>null,put:()=>{}};
+const tenantSessionCtx = {
+  SPREADSHEET_ID:"LOCAL",
+  ROLE_PERMISSIONS:{Director:[],Auditor:[]},
+  getIdentityInstitutionId_:()=>"INST-1",
+  getAuthTokenSecret:()=>"test-secret",
+  computeHmacSignature:()=>"sig",
+  CacheService:{getScriptCache:()=>tenantCache},
+  Utilities:{
+    base64Decode:key=>JSON.stringify(tenantClaimsByPayload[key]||{}),
+    newBlob:value=>({getDataAsString:()=>value})
+  },
+  SpreadsheetApp:{openById:()=>({getSheetByName:name=>{
+    if(name==="Usuarios")return {getDataRange:()=>({getValues:()=>tenantUserRows.map(row=>row.slice())})};
+    if(name==="MembresiasRolesRBAC")return {getDataRange:()=>({getValues:()=>tenantMembershipRows.map(row=>row.slice())})};
+    if(name==="AsignacionesAmbitosRoles")return {getDataRange:()=>({getValues:()=>tenantScopeRows.map(row=>row.slice())})};
+    return null;
+  }})},
+  resolveActiveInternalResponsibility_:(_ss,id)=>id==="RI-LOCAL"?{responsibilityId:id}:null
+};
+const tenantSessionCode = `
+const USER_ROLE_MEMBERSHIP_HEADERS_ = ${JSON.stringify(membershipHeaders)};
+${extractFunction(source,"parseUserRoleMembershipDate_")}
+${extractFunction(source,"isConfiguredRbacRole_")}
+${extractFunction(source,"getUserRoleMembershipState_")}
+${extractFunction(source,"resolveUserRoleMembership_")}
+${extractFunction(source,"verifySessionToken")}
+${extractFunction(source,"getUserVerifiedRole")}
+${extractFunction(source,"getUserContextScope")}
+this.verifySessionToken=verifySessionToken;
+this.getUserContextScope=getUserContextScope;
+`;
+vm.runInNewContext(tenantSessionCode,tenantSessionCtx);
+assert.equal(tenantSessionCtx.verifySessionToken("claims-local.sig").membershipId,"MEM-LOCAL","a valid session is bound to its active local membership");
+assert.equal(tenantSessionCtx.verifySessionToken("claims-other.sig"),null,"a valid membership in another tenant cannot authenticate against the active institution");
+assert.equal(tenantSessionCtx.verifySessionToken("claims-swapped.sig"),null,"swapping institutionId without changing the membership does not authenticate");
+const localTenantContext = tenantSessionCtx.getUserContextScope({sessionToken:"claims-local.sig"});
+assert.equal(localTenantContext.status,"success");
+assert.deepEqual(Array.from(localTenantContext.departmentIds),["DEP-A"]);
+assert.equal(tenantSessionCtx.getUserContextScope({sessionToken:"claims-other.sig"}).code,"VERIFIED_IDENTITY_REQUIRED","cross-tenant session cannot obtain an effective context");
+tenantMembershipRows[1][4]="REVOKED";
+assert.equal(tenantSessionCtx.verifySessionToken("claims-local.sig"),null,"revoking the exact local membership invalidates its signed session");
+assert.equal(tenantSessionCtx.getUserContextScope({sessionToken:"claims-local.sig"}).code,"VERIFIED_IDENTITY_REQUIRED");
+assert.equal(tenantSessionCtx.verifySessionToken("claims-other.sig"),null,"the other-tenant membership remains unusable from this tenant");
+tenantMembershipRows[1][4]="ACTIVE";
+tenantUserRows[1][10]="Inactiva";
+assert.equal(tenantSessionCtx.verifySessionToken("claims-local.sig"),null,"deactivating the account invalidates all membership-bound sessions");
+console.log("C1.633 signed-session tenant contract: exact membership/tenant binding, institution-swap denial, membership revocation and inactive-account invalidation PASS.");
+
+
 
 
 
