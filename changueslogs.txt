@@ -2972,3 +2972,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Sin callsites productivos, configuración real, lectura/mutación de Sheets, autoridad elegida ni migración. Política estricta y referencias compartidas siguen pendientes; TASK-153/T153-S01 en ejecución.
 - Siguiente: completar inventario estático frontend de S01-1.
 ===============================================================================
+
+
+
+===============================================================================
+[2026-11-12] C1.647 — inventario estático frontend departamental
+- 46 archivos HTML/JS de aplicación revisados. Sin referencias directas a hojas de catálogo; se identifican listas estáticas DEPT-* y DEP-* no coincidentes, formulario de Secretaría sin handler, filtro de Coordinación sin listener localizado y varios campos de departamento como texto libre.
+- Se confirma assignDepartmentHead con alta de ID desconocido y Nombre=ID; no se modifica por falta de autoridad/crosswalk.
+- Sin cambios funcionales ni datos reales. S01-1/T153-S01 sigue En ejecución. Siguiente: contrato de POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL y grants read-only sintéticos.
+===============================================================================

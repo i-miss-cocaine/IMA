@@ -1828,3 +1828,13 @@ RESULTADO DE EVALUACIÓN:
 - Local: 21 aserciones de contrato + 4 IDs reservados + epoch cero PASS; sintaxis del módulo PASS. CI run 43285818735: dos pasos relevantes PASS; workflow FAIL en User Role Membership Contract, fallo ya presente en run 43283289566 previo a C1.646.
 - Alcance no cubierto: política POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL, concesiones compartidas, consumidores productivos, datos reales y migración. T153-S01/TASK-153 siguen En ejecución.
 ===============================================================================
+
+
+
+===============================================================================
+### C1.647 — inventario estático frontend T153-S01-1
+- 46 archivos de aplicación HTML/JS inspeccionados; no hay acceso directo a las hojas de catálogo desde el frontend.
+- js/config.js declara DEPT-*; las pantallas Dirección/Secretaría usan DEP-*; la selección de jefatura termina en assignDepartmentHead, que inserta IDs desconocidos con Nombre=ID. No se acredita correspondencia.
+- Secretaría presenta el formulario sin handler cargado; Coordinación tiene filtro estático sin listener localizado. RRHH, flujos y documentos usan etiquetas libres de departamento; contabilidad/secretaría muestran texto.
+- Sin cambios funcionales. No se infiere autoridad ni se alteran datos. Siguiente: contrato sintético de política estricta y referencia interdepartamental de solo lectura.
+===============================================================================

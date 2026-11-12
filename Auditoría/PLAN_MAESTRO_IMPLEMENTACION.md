@@ -5095,3 +5095,12 @@ La revisión de requisitos originales confirma cobertura de:
 - CI run 43285818735: Department Scope e Internal Responsibility RBAC PASS; workflow total FAIL en User Role Membership Contract, fallo ya reproducible en run 43283289566 anterior a C1.646. No se declara CI global PASS.
 - El módulo no tiene callsites productivos; no crea configuración, no selecciona autoridad, no toca datos reales ni migra IDs. No implementa todavía POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL ni grants interdepartamentales; TASK-153 sigue En ejecución.
 - Siguiente acción técnica: completar el inventario estático frontend pendiente de S01-1, sin inferir autoridad ni requerir datos institucionales para esa inspección.
+
+
+
+**Addendum C1.647 — inventario estático del frontend (T153-S01-1)**
+- Se inspeccionaron 46 archivos HTML/JS de aplicación, excluyendo tests, material didáctico y juegos. No hay referencias front-end directas a las hojas CatalogoDepartamentos o DepartamentosAcademicos; las consultas usan endpoints ACADEMIC.
+- js/config.js declara ACADEMIC_DEPARTMENTS_CATALOG con IDs DEPT-* y AREA-* sin usos encontrados en los otros archivos revisados. Las pantallas Dirección/Secretaría contienen otra lista DEP-* que no coincide; Dirección envía el ID a assignDepartmentHead, mientras Secretaría no carga el handler del formulario en sus scripts.
+- assignDepartmentHead crea un registro desconocido usando Nombre=DepartamentoID sin validar catálogo. getDepartmentAcademicPlanning devuelve datos de planificación y etiquetas de departamento. Coordinación mantiene un filtro hardcodeado sin listener localizado; RRHH, flujos/documentos y contabilidad manejan departamento como texto libre/etiqueta.
+- No se modifican IDs ni catálogos por falta de correspondencia/autoridad demostrada. Cobertura estática frontend completada; S01-1/T153-S01 no se cierra sin evidencia de autoridad y datos institucionales.
+- Siguiente trabajo técnico: contrato puro para POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL y grants de referencia de solo lectura, con fixtures sintéticos.

@@ -1536,3 +1536,19 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** contrato neutral de catálogo/crosswalk implementado y verificado localmente; T153-S01 y TASK-153 continúan En ejecución. No se habilitan S03/S04 ni se migran propietarios históricos.
 - **Siguiente acción elegible:** completar el inventario estático del árbol frontend para cerrar el límite de cobertura de S01-1; después revisar las puertas de S01-2…S01-7. La selección institucional real sigue separada de las actividades técnicas.
 ===============================================================================
+
+
+
+===============================================================================
+### C1.647 — IMA-EXEC-20261112-1754Z-03 — inventario estático del frontend departamental
+- **HEAD auditado:** ea8cd498bc49b839a94584c1148c79544c411620 (checkpoint C1.646).
+- **Cobertura:** inspección de 46 archivos de aplicación HTML/JS del árbol frontend (excluidos tests, materiales didácticos y juegos de contenido). Se buscaron nombres de catálogos, IDs/keys, nombres de campos, filtros, llamadas API y etiquetas departamentales.
+- **Sin acceso directo a hojas:** no se encontraron referencias front-end directas a CatalogoDepartamentos ni DepartamentosAcademicos; el acceso a ACADEMIC se realiza por endpoints. No se consultaron datos productivos.
+- **Config estática:** js/config.js declara ACADEMIC_DEPARTMENTS_CATALOG con IDs DEPT-MAT/DEPT-CNT/DEPT-INF/DEPT-ESP/DEPT-ING/DEPT-SOC/DEPT-ART/DEPT-EFI y AREA-*; no se encontraron usos de esa constante en los otros archivos frontend inspeccionados.
+- **Jefaturas:** dashboard-direccion.html y dashboard-secretaria.html contienen la misma lista hardcodeada DEP-COM/DEP-MAT/DEP-SOC/DEP-NAT/DEP-TEC/DEP-ADM. Estos IDs no coinciden con la lista DEPT-* de js/config.js. dashboard-direccion carga js/teacher.js, cuyo handler envía departamentoId a ACADEMIC.assignDepartmentHead. dashboard-secretaria solo carga js/secretary.js; no se encontró handler del formulario en ese archivo. La UI de Secretaría presenta el formulario pero no se halló wiring del submit.
+- **Backend relacionado:** assignDepartmentHead crea la hoja DepartamentosAcademicos si falta y, cuando el ID no existe, agrega una fila con Nombre=DepartamentoID sin validar FK/autoridad. getDepartmentAcademicPlanning devuelve los departamentos almacenados y vacantes; los consumidores frontend inspeccionados usan el texto departamento para mostrar vacantes.
+- **Otros consumidores de texto:** dashboard-coordinacion define un filtro con nombres hardcodeados y no se encontró listener/consumidor de coord-filter-dept en los scripts frontend revisados. dashboard-recursos-humanos utiliza campos libres Departamento/Área para proyecciones y turnos. js/teacher.js almacena departamento como texto en flujos y documentos; js/secretary.js y js/accounting.js muestran departamento como etiqueta, sin mapping ID. No se infiere que estos campos sean equivalentes al catálogo canónico.
+- **Dictamen:** el frontend contiene al menos tres representaciones no reconciliadas (DEPT-*, DEP-* y etiquetas/nombres libres). No se modifican opciones, IDs ni registros sin una autoridad/crosswalk aprobados. El formulario sin handler de Secretaría queda como hallazgo de integración, no se corrige dentro del inventario.
+- **Estado:** cobertura estática frontend completada para los 46 archivos de aplicación enumerados; S01-1 y T153-S01 permanecen En ejecución porque no se demuestra autoridad institucional ni correspondencia de datos reales. No se cierra TASK-153.
+- **Siguiente trabajo elegible:** contrato puro de POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL y concesiones interdepartamentales de solo lectura, con fixtures sintéticos; no requiere seleccionar ni migrar catálogos reales.
+===============================================================================
