@@ -10409,6 +10409,31 @@ function getUserContextScope(payload) {
     return { status: "error", code: "USER_SCOPE_CONTEXT_FAILED", message: error.message };
   }
 }
+function getUserScopeConfig(payload) {
+  try {
+    var userId = payload && payload.userId ? payload.userId : (payload && payload._verifiedUserId ? payload._verifiedUserId : null);
+    if (!userId) {
+      return { status: "error", message: "userId es requerido para consultar ámbitos del usuario." };
+    }
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = getOrCreateSheet(ss, "AsignacionesAmbitosRoles");
+    var ámbitos = [];
+    if (sheet && sheet.getLastRow() > 1) {
+      var data = sheet.getDataRange().getValues();
+      for (var i = 1; i < data.length; i++) {
+        if (String(data[i][1]).trim() === String(userId).trim() && String(data[i][5]).trim().toLowerCase() === "activo") {
+          var vals = [];
+          try { vals = JSON.parse(data[i][4]); } catch (_) { vals = [data[i][4]]; }
+          ámbitos.push({ assignmentId: data[i][0], roleId: data[i][2], scopeType: data[i][3], scopeValues: vals, fechaCreacion: data[i][7] });
+        }
+      }
+    }
+    return { status: "success", userId: userId, ambitos: ámbitos, timestamp: new Date().toISOString() };
+  } catch (error) {
+    return { status: "error", message: error.message };
+  }
+}
+
 function validateRoleScopeAccess(payload) {
   try {
     var scopeType = String((payload && payload.scopeType) || "").trim().toUpperCase();
