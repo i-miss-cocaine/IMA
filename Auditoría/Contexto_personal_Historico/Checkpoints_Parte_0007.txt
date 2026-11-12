@@ -1063,3 +1063,18 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** incremento C1.619 implementado y CI PASS; TASK-153/T153-S02 continúa En ejecución.
 - **Siguiente acción:** probar ciclo de vida y concurrencia de escrituras, actualizaciones, duplicados, revocación y desactivación con fixtures/mocks deterministas; mantener aislamiento y no otorgar RBAC por capacidades.
 ===============================================================================
+
+
+===============================================================================
+### C1.620 — IMA-EXEC-20261110-1825Z-02 — escrituras serializadas de roles, responsabilidades y ámbitos
+- **Sesión:** IMA-EXEC-20261110-1825Z-02 (mismo ID de sesión).
+- **Continuidad:** C1.619; HEAD inicial `12a02bc2f88b0640f4a08bf8c54da0f526c7e7ab`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Incremento: protección contra carreras en escrituras de catálogos y asignaciones.
+- **Implementación:** `assignRoleScope`, `manageInternalRoleCatalog` y `saveInstitutionalResponsibility` usan ScriptLock con liberación garantizada en `finally`. Si el lock no se obtiene, el handler falla cerrado antes de leer/mutar el registro.
+- **Pruebas:** mocks reproducibles para lock ocupado sin escritura parcial; altas repetidas de rol por nombre normalizado verifican reutilización de la fila bajo lock; se mantiene cobertura de autorización por identidad firmada y vínculo institucional.
+- **CI:** Department Scope Contract run 43226324130 SUCCESS, Node 24.22.2; todos los contratos y checks de sintaxis configurados PASS.
+- **Terminal local:** NOT RUN por fallo DNS al resolver github.com; CI ejecutó los contratos en runner aislado. Apps Script/Sheets real NOT RUN. Las intercalaciones reales de múltiples solicitudes quedan Pendiente beta.
+- **Commits:** `d0552a69d0afe6f78bbe0443db47328c263d43e8`; `911e8900c90079ac71e52ce0f1a3b47334ba7e32`.
+- **Estado:** incremento C1.620 implementado y CI PASS; TASK-153/T153-S02 continúa En ejecución.
+- **Siguiente acción:** probar desactivación/revocación de responsabilidad, expiración/revocación de membresía y cambio de rol frente a sesiones previas, verificando revocación efectiva de ámbitos y ausencia de registros huérfanos.
+===============================================================================

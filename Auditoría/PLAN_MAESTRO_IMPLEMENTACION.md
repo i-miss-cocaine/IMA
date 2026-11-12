@@ -4803,3 +4803,13 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - BETA-FUNC-033 se amplía para validar en Sheets real la migración de encabezados, la asignación y desactivación de responsabilidades, la revocación de membresía y la denegación RBAC cuando una capacidad no tiene una regla explícita. Permanece Pendiente beta.
 - **Estado:** C1.619 implementado y CI PASS; terminal local y Apps Script/Sheets real NOT RUN. TASK-153/T153-S02 sigue En ejecución; no iniciar T153-S03.
 - **Siguiente acción elegible:** verificar ciclo de vida y concurrencia de las escrituras de catálogo/asignaciones (duplicados, reintentos, actualización concurrente, desactivación y revocación), confirmar que el vínculo siga siendo efectivo únicamente con membresía y responsabilidad activas, y ampliar los contratos aislados para esos intercalados.
+
+
+**Addendum C1.620 — serialización y contención de escrituras RBAC/responsabilidades**
+- `assignRoleScope`, `manageInternalRoleCatalog` y `saveInstitutionalResponsibility` adquieren `LockService.getScriptLock()` antes de consultar y mutar los catálogos; liberan el lock mediante `finally` en salidas exitosas, errores y retornos anticipados. Un timeout/bloqueo devuelve error y no ejecuta la escritura.
+- Se amplían los contratos con mocks deterministas de lock ocupado: la asignación de ámbito y ambas escrituras de catálogo rechazan el intento sin filas parciales. El catálogo de roles se comprueba además frente a altas repetidas por nombre normalizado para evitar duplicación bajo serialización.
+- Department Scope Contract run **43226324130 SUCCESS** (Node 24.22.2): Department Scope, Internal Responsibility RBAC, User Role Membership, ownership académico/contable, sintaxis de seis servicios Apps Script y JS cliente configurado, todos PASS. La prueba de concurrencia es una simulación determinista de contención del lock y repetición/idempotencia; no simula múltiples procesos reales ni sustituye la prueba beta sobre Sheets.
+- Commits: `d0552a69d0afe6f78bbe0443db47328c263d43e8` (locks); `911e8900c90079ac71e52ce0f1a3b47334ba7e32` (contratos de contención).
+- Terminal local NOT RUN por DNS de github.com; runner aislado CI PASS. Apps Script/Sheets real NOT RUN; BETA-FUNC-033 sigue Pendiente beta.
+- **Estado:** C1.620 implementado y CI PASS. TASK-153/T153-S02 continúa En ejecución.
+- **Siguiente acción elegible:** verificar revocación/desactivación de la responsabilidad vinculada, expiración/revocación de membresía y cambios de rol con una sesión previa; asegurar que el contexto y listados de ámbitos fallen cerrados después de cada cambio y que la actualización del vínculo no deje asignaciones huérfanas.

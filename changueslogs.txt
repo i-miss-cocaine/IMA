@@ -2664,3 +2664,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato nuevo `internal-responsibility-rbac-contract.test.js` y fixture de compatibilidad legacy. Department Scope Contract 43225238922 SUCCESS: contratos y parseos configurados PASS.
 - Terminal local NOT RUN por DNS; Apps Script/Sheets real NOT RUN; BETA-FUNC-033 Pendiente beta. TASK-153/T153-S02 continúa En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.620 — serialización de escrituras RBAC y responsabilidades
+- ScriptLock protege asignaciones de ámbito, catálogo de roles internos y catálogo de responsabilidades institucionales; `finally` libera el lock y timeout evita escrituras parciales.
+- Contratos deterministas prueban lock ocupado y alta repetida idempotente. Department Scope Contract 43226324130 SUCCESS; contratos y sintaxis configurados PASS.
+- Terminal local NOT RUN por DNS; Apps Script/Sheets real y concurrencia multi-solicitud beta NOT RUN. BETA-FUNC-033 Pendiente beta; TASK-153/T153-S02 continúa En ejecución.
+===============================================================================
