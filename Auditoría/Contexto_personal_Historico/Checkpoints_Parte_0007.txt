@@ -1499,3 +1499,23 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** C1.644 completada. **T153-S02: COMPLETADA** en implementación/contratos aislados. La verificación real multi-proyecto y BETA-FUNC-033 siguen Pendiente beta; TASK-153 global continúa En ejecución.
 - **Siguiente acción elegible:** revisar el Plan Maestro y dependencias tras el inventario T153-S01; no inferir ni fusionar los catálogos departamentales sin crosswalk institucional verificable.
 ===============================================================================
+
+
+===============================================================================
+### C1.645 — IMA-EXEC-20261112-1754Z-03 — inventario técnico ampliado de catálogos departamentales
+- **HEAD auditado:** `37a2c95769689470e45b6f4416d69b0519c4b96a`.
+- **Unidad:** PM-01 / TASK-153 / T153-S01-1 (inventario técnico de solo lectura). Reutiliza C1.403; no repite su dictamen de autoridad.
+- **Matriz de evidencia por archivo (SHA de blob):**
+  - `backend/user-service/Code.gs` — `0f1673f01688259f01ffba0f2a51b3a11946c154`: escritor `manageDepartmentPositions(CREATE_DEPT)` de CatalogoDepartamentos; escritor de CatalogoCargos/HistorialAdscripciones; lector `getUserInstitutionalAffiliations` de HistorialAdscripciones, sin join/validación contra el catálogo.
+  - `backend/academic-service/Code.gs` — `09017bf97bdd024ddf9305321dd79f2b35ecc2a0`: escritor/upsert `assignDepartmentHead` y lector `getDepartmentAcademicPlanning` de DepartamentosAcademicos; escritores/lector de AreasCurricularesExtensiones y resolver de referencias desde CatalogoAsignaturas.
+  - `backend/accounting-service/Code.gs` — `b235913a42057c96a26b667e6a070ad50a0d6611`: `resolveEmployeeDepartmentId_` relaciona ExpedientesLaborales.Departamento con DepartamentosAcademicos por ID o nombre y conserva fallback textual si no hay match.
+  - `backend/task-service/Code.gs` — `a3a83ba0492f42b22d060611c91793bfe22bf5b2`: consume DepartmentID desde ámbito firmado y ResourceOwnership; no consulta catálogos.
+  - `backend/exam-service/Code.gs` — `8e0db5ee172eec092811b564511608a0dd05d941`: consume DepartmentID desde ámbito firmado y ResourceOwnership; no consulta catálogos.
+  - `backend/developer-service/Code.gs` — `e685850ee270bdc1fbe4e127998d64303288e898`: sin referencias a ambos catálogos.
+  - `admision.html` — `5c8d1960a2cdf15147ebd1975f610c7f0f8f4788`: sin referencias directas a los nombres de catálogo.
+- **Hallazgos adicionales:** CatalogoDepartamentos usa `deptId` y puede aceptar ID externo sin unicidad; DepartamentosAcademicos usa `DepartamentoID` suministrado y no valida unicidad/crosswalk; las áreas curriculares siembran IDs DEPT-* que no se validan contra ambos catálogos; ACCOUNTING puede convertir un nombre no resuelto en departmentId; TASK/EXAM no validan que el ID de ResourceOwnership exista en un catálogo.
+- **Cachés/sync:** no se encontró sincronización ni caché específica de catálogo; se identificó caché de ownership en TASK/EXAM y caché de rol invalidada por USER, no equivalentes a caché de catálogo.
+- **Estado:** inventario estático ampliado, pero T153-S01-1 no se cierra como exhaustivo: la inspección frontend no cubre el árbol completo y no se han leído datos reales. S01-2…S01-7 continúan pendientes/por ejecutar según sus puertas originales.
+- **Restricciones:** no se selecciona fuente canónica; no se crean equivalencias por nombre; no se leen ni mutan filas productivas; no se migran IDs.
+- **Siguiente acción elegible:** diseñar contrato neutral/configurable de resolución de referencias departamentales y crosswalk, con datos sintéticos, sin seleccionar A/B ni asignar autoridad institucional.
+===============================================================================
