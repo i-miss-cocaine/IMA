@@ -172,11 +172,43 @@ assert.equal(invalid.code, "VERIFIED_IDENTITY_REQUIRED");
 const permission = ctx.validateRolePermission("getUserContextScope", { sessionToken: "token-u1-director" });
 assert.equal(permission.authorized, true, "any authenticated user may read their own scope context");
 
-const assignCtx = {};
+const assignedScopeRows = [headers.slice()];
+const assignSheet = {
+  getLastRow: () => assignedScopeRows.length,
+  getDataRange: () => ({ getValues: () => assignedScopeRows.map(row => row.slice()) }),
+  getRange: (row, col) => ({ setValue: value => { while (assignedScopeRows.length < row) assignedScopeRows.push([]); assignedScopeRows[row - 1][col - 1] = value; } }),
+  appendRow: row => assignedScopeRows.push(row.slice())
+};
+const assignCtx = {
+  SPREADSHEET_ID: "LOCAL",
+  getIdentityInstitutionId_: () => "INST-1",
+  getUserRoleMembershipState_: () => ({ hasRecords: true }),
+  resolveUserRoleMembership_: () => ({ membershipId: "MEM-TARGET-1", institutionId: "INST-1", roleId: "Director" }),
+  SpreadsheetApp: { openById: id => { assert.equal(id, "LOCAL"); return {}; } },
+  getOrCreateSheet: (_ss, name) => { assert.equal(name, "AsignacionesAmbitosRoles"); return assignSheet; },
+  Utilities: { getUuid: () => "12345678-1234-1234-1234-123456789012" },
+  recordEntityChangeLog: () => {},
+  logStructuredEvent: () => {}
+};
 vm.runInNewContext(assignFn + "\nthis.assignRoleScope=assignRoleScope;", assignCtx);
 const spoofAssign = assignCtx.assignRoleScope({ authRole: "Administrador", role: "Administrador", userId: "U-2", roleId: "Director", scopeType: "DEPARTAMENTO", scopeValues: ["DEP-A"] });
 assert.equal(spoofAssign.status, "error");
 assert.equal(spoofAssign.code, "VERIFIED_IDENTITY_REQUIRED", "scope assignment must not trust client-supplied role");
+const boundAssignment = assignCtx.assignRoleScope({ _verifiedRole: "Administrador", _verifiedUserId: "U-ADMIN", userId: "U-1", roleId: "Director", scopeType: "DEPARTAMENTO", scopeValues: ["DEP-A"] });
+assert.equal(boundAssignment.status, "success");
+assert.equal(boundAssignment.membershipId, "MEM-TARGET-1");
+assert.equal(assignedScopeRows[1][12], "INST-1", "new scope assignment stores its institution");
+assert.equal(assignedScopeRows[1][13], "MEM-TARGET-1", "new scope assignment stores its exact RBAC membership");
+assignCtx.resolveUserRoleMembership_ = () => ({ membershipId: "MEM-TARGET-2", institutionId: "INST-1", roleId: "Director" });
+const secondMembershipAssignment = assignCtx.assignRoleScope({ _verifiedRole: "Administrador", _verifiedUserId: "U-ADMIN", userId: "U-1", roleId: "Director", scopeType: "DEPARTAMENTO", scopeValues: ["DEP-B"] });
+assert.equal(secondMembershipAssignment.status, "success");
+assert.equal(assignedScopeRows.length, 3, "a different membership receives a separate assignment row");
+assert.equal(assignedScopeRows[2][13], "MEM-TARGET-2");
+assignCtx.resolveUserRoleMembership_ = () => null;
+const inactiveMembershipAssignment = assignCtx.assignRoleScope({ _verifiedRole: "Administrador", _verifiedUserId: "U-ADMIN", userId: "U-1", roleId: "Director", scopeType: "DEPARTAMENTO", scopeValues: ["DEP-C"] });
+assert.equal(inactiveMembershipAssignment.status, "error");
+assert.equal(inactiveMembershipAssignment.code, "ROLE_MEMBERSHIP_NOT_ACTIVE");
+assert.equal(assignedScopeRows.length, 3, "no scope is written without a unique active target membership");
 
 
 const assignmentNow = new Date();
