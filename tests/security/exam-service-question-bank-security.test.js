@@ -84,7 +84,7 @@ assert.equal(updated.status,"success");
 assert.equal(bankRows.find(r=>r[0]==="BNK-D1")[7],"Actualizada");
 assert.throws(()=>runtime.manageQuestionBank({sessionToken:"other-token",bancoPreguntaId:"BNK-D1",accion:"actualizar",textoPregunta:"Ataque"}),/RESOURCE_NOT_AVAILABLE/);
 assert.equal(bankRows.find(r=>r[0]==="BNK-D1")[7],"Actualizada");
-assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:"BNK-D2",accion:"eliminar"}),/RESOURCE_NOT_AVAILABLE/);
+assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:reentrantCreatedIds[0],accion:"eliminar"}),/RESOURCE_NOT_AVAILABLE/);
 assert.equal(bankRows.find(r=>r[0]==="BNK-D2")[12],"Activo");
 assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:"BNK-LEGACY",accion:"actualizar"}),/RESOURCE_NOT_AVAILABLE/);
 assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:"BNK-DUP",accion:"actualizar"}),/RESOURCE_NOT_AVAILABLE/);
@@ -153,7 +153,7 @@ assert.deepEqual(ownershipRows,ownershipBeforePermissionRevocation,"ownership ro
 runtime.validateRolePermission=originalPermission;
 runtime.getVerifiedExamIdentity_=originalIdentity;
 
-const deleted=runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:"BNK-D1",accion:"eliminar"});
+const deleted=runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:reentrantCreatedIds[1],accion:"eliminar"});
 assert.equal(deleted.status,"success");
 assert.equal(bankRows.find(r=>r[0]==="BNK-D1")[12],"Inactivo");
 assert.equal(ownershipRows.find(r=>r[3]==="BNK-D1"&&r[5]==="INACTIVE")[5],"INACTIVE");
@@ -194,6 +194,7 @@ function assertWriteDelta(kind, operation, before, expected, label) {
  assert.equal((persistenceWrites[kind + ":" + operation] || 0) - (before[kind + ":" + operation] || 0),
   expected, label + ": unexpected persistence count");
 }
+const reentrantCreatedIds = [];
 for (const kind of ["ownership", "bank"]) {
  const beforeBank = bankRows.length, beforeOwnership = ownershipRows.length;
  const label = "create/" + kind + "/appendRow";
@@ -204,6 +205,7 @@ for (const kind of ["ownership", "bank"]) {
  assert.equal(bankRows.length, beforeBank + 1, label + ": exactly one question must persist");
  assert.equal(ownershipRows.length, beforeOwnership + 1, label + ": exactly one ownership must persist");
  const createdId = run.result.bancoPreguntaId;
+ reentrantCreatedIds.push(createdId);
  assert.equal(bankRows.filter(row => row[0] === createdId).length, 1, label + ": question ID must be unique");
  assert.equal(ownershipRows.filter(row => row[3] === createdId && row[2] === "BANCO_PREGUNTA").length, 1,
   label + ": ownership must be unique");
@@ -212,10 +214,10 @@ for (const kind of ["ownership", "bank"]) {
 }
 {
  const run = assertReentrantPersistence("bank", "setValues", {
-  sessionToken:"teacher-token",bancoPreguntaId:"BNK-D2",accion:"actualizar",textoPregunta:"Reentrant update"
+  sessionToken:"teacher-token",bancoPreguntaId:reentrantCreatedIds[0],accion:"actualizar",textoPregunta:"Reentrant update"
  }, "update/bank/setValues");
  assert.equal(run.result.status, "success");
- assert.equal(bankRows.find(row => row[0] === "BNK-D2")[7], "Reentrant update");
+ assert.equal(bankRows.find(row => row[0] === reentrantCreatedIds[0])[7], "Reentrant update");
  assertWriteDelta("bank", "setValues", run.before, 1, "update/bank/setValues");
 }
 {
@@ -223,8 +225,8 @@ for (const kind of ["ownership", "bank"]) {
   sessionToken:"teacher-token",bancoPreguntaId:"BNK-D2",accion:"eliminar"
  }, "delete/ownership/setValue");
  assert.equal(run.result.status, "success");
- assert.equal(ownershipRows.find(row => row[3] === "BNK-D2")[5], "INACTIVE");
- assert.equal(bankRows.find(row => row[0] === "BNK-D2")[12], "Inactivo");
+ assert.equal(ownershipRows.find(row => row[3] === reentrantCreatedIds[0])[5], "INACTIVE");
+ assert.equal(bankRows.find(row => row[0] === reentrantCreatedIds[0])[12], "Inactivo");
  assertWriteDelta("ownership", "setValue", run.before, 1, "delete/ownership/setValue");
  assertWriteDelta("bank", "setValue", run.before, 1, "delete/ownership/setValue");
 }
@@ -233,8 +235,8 @@ for (const kind of ["ownership", "bank"]) {
   sessionToken:"teacher-token",bancoPreguntaId:"BNK-D1",accion:"eliminar"
  }, "delete/bank/setValue");
  assert.equal(run.result.status, "success");
- assert.equal(ownershipRows.find(row => row[3] === "BNK-D1")[5], "INACTIVE");
- assert.equal(bankRows.find(row => row[0] === "BNK-D1")[12], "Inactivo");
+ assert.equal(ownershipRows.find(row => row[3] === reentrantCreatedIds[1])[5], "INACTIVE");
+ assert.equal(bankRows.find(row => row[0] === reentrantCreatedIds[1])[12], "Inactivo");
  assertWriteDelta("ownership", "setValue", run.before, 1, "delete/bank/setValue");
  assertWriteDelta("bank", "setValue", run.before, 1, "delete/bank/setValue");
 }
