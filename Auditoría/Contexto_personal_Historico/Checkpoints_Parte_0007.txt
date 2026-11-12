@@ -1369,3 +1369,19 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** C1.637 completada. T153-S02 permanece En ejecución; no iniciar T153-S03.
 - **Siguiente acción:** revisar el criterio original de cierre de T153-S02 y contrastar la matriz de pruebas ejecutadas con cada requisito y dependencia, sin repetir evidencia vigente.
 ===============================================================================
+
+
+===============================================================================
+### C1.638 — IMA-EXEC-20261112-1754Z-03 — autorización de ámbitos efectiva en servidor
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.637.
+- **HEAD inicial:** `19a2cbfe012593148bb8f8cb007d6f6108988bf2`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificar que `validateRoleScopeAccess` aplica el contexto activo real de la membresía, no solo los permisos declarativos.
+- **Contrato:** se ejecuta la función productiva `validateRoleScopeAccess` junto con `getUserContextScope` para el mismo usuario con membresías Director/DEP-A, DEP-A2 y Auditor/DEP-B.
+- **Casos:** cada rol puede consultar solo su departamento; selección de `activeDepartmentId` reduce el acceso al departamento elegido; asignación explícita `INSTITUCION` permite acceso departamental institucional, pero el contexto activo seleccionado vuelve a restringirlo; revocar Director deniega su validación sin afectar Auditor.
+- **Verificación local:** contrato completo V8 aislado **PASS**, C1.621–C1.638; sintaxis backend USER/test **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** validación en Apps Script/Sheets real NOT RUN; escenario agregado a `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `tests/security/internal-responsibility-rbac-contract.test.js`; no se modificó lógica productiva.
+- **Commits de contrato:** `f5949a518a80fe67dd5473cbcfbc6bc4fcbdb437`; ajuste de fixtures de alcance institucional `1f33dfe3e3c094d1503c2a3a35652c020c23327b`.
+- **Estado:** C1.638 completada. T153-S02 permanece En ejecución hasta cerrar la matriz completa de requisitos originales.
+- **Siguiente acción:** completar matriz de trazabilidad de T153-S02 y revisar criterios restantes, evidencias vigentes y dependencias; no repetir pruebas ya ejecutadas.
+===============================================================================
