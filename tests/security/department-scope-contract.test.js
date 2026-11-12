@@ -37,7 +37,7 @@ const ownershipFn = extractFunction(source, "assertRecordOwnership");
 const permissionCacheKeyFn = extractFunction(source, "getDynamicPermissionCacheKey_");
 const dynamicPermissionsFn = extractFunction(source, "getDynamicPermissionsForRole");
 
-const headers = ["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"];
+const headers = ["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID","InstitutionID","MembershipID","ResponsibilityID"];
 const rows = [
   headers,
   ["A-1","U-1","Director","DEPARTAMENTO",'["DEP-A","DEP-B"]',"Activo","U-ADMIN","2026-01-01","2026-01-01","2027-01-01","No",""],
@@ -51,6 +51,9 @@ const rows = [
   ["A-9","U-1","Director","DEPARTAMENTO",'["DEP-M2"]',"Activo","U-ADMIN","2026-01-01","2026-01-01","2027-01-01","No","","INST-1","MEM-2"],
   ["A-10","U-1","Director","DEPARTAMENTO",'["DEP-OTHER-INST"]',"Activo","U-ADMIN","2026-01-01","2026-01-01","2027-01-01","No","","INST-2","MEM-3"]
 ];
+rows[8].push("INST-1", "MEM-1", "RESP-ACTIVE");
+rows[9].push("INST-1", "MEM-2", "RESP-ACTIVE");
+rows[10].push("INST-2", "MEM-3", "RESP-ACTIVE");
 
 const ownershipRows = [
   ["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status"],
@@ -83,6 +86,7 @@ function makeContext() {
         assert.equal(id, "LOCAL");
         return { getSheetByName(name) {
           if (name === "AsignacionesAmbitosRoles") return { getDataRange: () => ({ getValues: () => rows.map(r => r.slice()) }) };
+          if (name === "CatalogoRolesInternos") return { getDataRange: () => ({ getValues: () => [["RolInternoID","CodigoInterno","NombreResponsabilidad","Descripcion","Departamento","AreaAcademica","TipoResponsabilidad","VigenciaMeses","PermiteSuplencia","Estado","CreadoPor","FechaCreacion","FechaActualizacion"],["RESP-ACTIVE","COORD","Coordinación","","DEP-M1","","Académica",12,"No","Activo","U-ADMIN","2026-01-01","2026-01-01"]] }) };
           if (name === "ResourceOwnership") return { getLastRow: () => ownershipRows.length, getDataRange: () => ({ getValues: () => ownershipRows.map(r => r.slice()) }) };
           return null;
         }};
@@ -185,6 +189,7 @@ const assignCtx = {
   SPREADSHEET_ID: "LOCAL",
   getIdentityInstitutionId_: () => "INST-1",
   getUserRoleMembershipState_: () => ({ hasRecords: true }),
+  resolveActiveInternalResponsibility_: (_ss, id) => id === "RESP-ACTIVE" ? { responsibilityId: id } : null,
   resolveUserRoleMembership_: () => ({ membershipId: "MEM-TARGET-1", institutionId: "INST-1", roleId: "Director" }),
   SpreadsheetApp: { openById: id => { assert.equal(id, "LOCAL"); return {}; } },
   getOrCreateSheet: (_ss, name) => { assert.equal(name, "AsignacionesAmbitosRoles"); return assignSheet; },
@@ -193,21 +198,23 @@ const assignCtx = {
   logStructuredEvent: () => {}
 };
 vm.runInNewContext(assignFn + "\nthis.assignRoleScope=assignRoleScope;", assignCtx);
-const spoofAssign = assignCtx.assignRoleScope({ authRole: "Administrador", role: "Administrador", userId: "U-2", roleId: "Director", scopeType: "DEPARTAMENTO", scopeValues: ["DEP-A"] });
+const spoofAssign = assignCtx.assignRoleScope({ authRole: "Administrador", role: "Administrador", userId: "U-2", roleId: "Director", responsibilityId: "RESP-ACTIVE", scopeType: "DEPARTAMENTO", scopeValues: ["DEP-A"] });
 assert.equal(spoofAssign.status, "error");
 assert.equal(spoofAssign.code, "VERIFIED_IDENTITY_REQUIRED", "scope assignment must not trust client-supplied role");
-const boundAssignment = assignCtx.assignRoleScope({ _verifiedRole: "Administrador", _verifiedUserId: "U-ADMIN", userId: "U-1", roleId: "Director", scopeType: "DEPARTAMENTO", scopeValues: ["DEP-A"] });
+const boundAssignment = assignCtx.assignRoleScope({ _verifiedRole: "Administrador", _verifiedUserId: "U-ADMIN", userId: "U-1", roleId: "Director", responsibilityId: "RESP-ACTIVE", scopeType: "DEPARTAMENTO", scopeValues: ["DEP-A"] });
 assert.equal(boundAssignment.status, "success");
 assert.equal(boundAssignment.membershipId, "MEM-TARGET-1");
 assert.equal(assignedScopeRows[1][12], "INST-1", "new scope assignment stores its institution");
 assert.equal(assignedScopeRows[1][13], "MEM-TARGET-1", "new scope assignment stores its exact RBAC membership");
+assert.equal(assignedScopeRows[1][14], "RESP-ACTIVE", "new scope assignment stores its active organizational responsibility");
 assignCtx.resolveUserRoleMembership_ = () => ({ membershipId: "MEM-TARGET-2", institutionId: "INST-1", roleId: "Director" });
-const secondMembershipAssignment = assignCtx.assignRoleScope({ _verifiedRole: "Administrador", _verifiedUserId: "U-ADMIN", userId: "U-1", roleId: "Director", scopeType: "DEPARTAMENTO", scopeValues: ["DEP-B"] });
+const secondMembershipAssignment = assignCtx.assignRoleScope({ _verifiedRole: "Administrador", _verifiedUserId: "U-ADMIN", userId: "U-1", roleId: "Director", responsibilityId: "RESP-ACTIVE", scopeType: "DEPARTAMENTO", scopeValues: ["DEP-B"] });
 assert.equal(secondMembershipAssignment.status, "success");
 assert.equal(assignedScopeRows.length, 3, "a different membership receives a separate assignment row");
 assert.equal(assignedScopeRows[2][13], "MEM-TARGET-2");
+assert.equal(assignedScopeRows[2][14], "RESP-ACTIVE");
 assignCtx.resolveUserRoleMembership_ = () => null;
-const inactiveMembershipAssignment = assignCtx.assignRoleScope({ _verifiedRole: "Administrador", _verifiedUserId: "U-ADMIN", userId: "U-1", roleId: "Director", scopeType: "DEPARTAMENTO", scopeValues: ["DEP-C"] });
+const inactiveMembershipAssignment = assignCtx.assignRoleScope({ _verifiedRole: "Administrador", _verifiedUserId: "U-ADMIN", userId: "U-1", roleId: "Director", responsibilityId: "RESP-ACTIVE", scopeType: "DEPARTAMENTO", scopeValues: ["DEP-C"] });
 assert.equal(inactiveMembershipAssignment.status, "error");
 assert.equal(inactiveMembershipAssignment.code, "ROLE_MEMBERSHIP_NOT_ACTIVE");
 assert.equal(assignedScopeRows.length, 3, "no scope is written without a unique active target membership");
