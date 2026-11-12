@@ -4966,3 +4966,13 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Migración: revocaciones antiguas ya desaparecidas de caché no son recuperables; rollout debe validar la invalidez de tokens históricos.
 - **Estado:** C1.634 completada en harness aislado. T153-S02 continúa En ejecución.
 - **Siguiente acción:** auditar autorización de revokeUserSession, acceso al ledger y compatibilidad de sesiones históricas.
+
+
+ 
+**Addendum C1.635 — límites de autorización y compatibilidad de revocación**
+- `revokeUserSession` no es acción pública ni bypass de identidad; la matriz/roles autorizados son el único camino de autorización. Director sin grant dinámico es denegado; Administrador con wildcard explícito es autorizado. `logoutUser` es público pero usa solo SessionID de claims firmados.
+- Tokens legacy role-only sin MembershipID conservan compatibilidad mientras su rol actual coincide; el ledger persistente puede revocar su SessionID.
+- Los registros del ledger con expiración vencida se purgan en la siguiente escritura; filas con fecha de expiración inválida permanecen y hacen que la verificación falle cerrada.
+- Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.635); sintaxis backend USER/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
+- **Estado:** C1.635 completada. T153-S02 continúa En ejecución.
+- **Siguiente acción:** auditar todas las rutas de marcadores de revocación y definir el tratamiento de tokens/revocaciones previas a C1.634.
