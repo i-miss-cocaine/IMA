@@ -1089,12 +1089,88 @@ function verifyInterServiceEnvelope(envelope, expectedTargetService, customSecre
 }
 
 const USER_ROLE_MEMBERSHIP_HEADERS_ = ["MembershipID","UserID","RoleID","InstitutionID","Status","StartAt","EndAt","CreatedBy","CreatedAt","UpdatedAt","RevokedBy","RevokedAt"];
+const SESSION_REVOCATION_HEADERS_ = ["SessionID","UserID","RevokedAt","ExpiresAt"];
 
 function parseUserRoleMembershipDate_(value) {
   if (value === "" || value === null || value === undefined) return { valid: true, date: null };
   var date = value instanceof Date ? value : new Date(value);
   return isNaN(date.getTime()) ? { valid: false, date: null } : { valid: true, date: date };
 }
+
+function isSessionRevoked_(claims, nowValue) {
+  if (!claims) return true;
+  var userId = String(claims.userId || "").trim();
+  var sessionId = String(claims.sessionId || "").trim();
+  if (!userId && !sessionId) return true;
+  var now = nowValue instanceof Date ? nowValue : (nowValue ? new Date(nowValue) : new Date());
+  if (isNaN(now.getTime())) throw new Error("SESSION_REVOCATION_CLOCK_INVALID");
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = ss.getSheetByName("SesionesRevocadas");
+  if (!sheet) return false;
+  var data = sheet.getDataRange().getValues();
+  if (!data.length) return false;
+  if (JSON.stringify(data[0].map(String)) !== JSON.stringify(SESSION_REVOCATION_HEADERS_)) {
+    throw new Error("SESSION_REVOCATION_SCHEMA_MISMATCH");
+  }
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i] || [];
+    var rowSessionId = String(row[0] || "").trim();
+    var rowUserId = String(row[1] || "").trim();
+    var matchesSession = !!sessionId && !!rowSessionId && rowSessionId === sessionId;
+    var matchesUser = !!userId && !!rowUserId && rowUserId === userId;
+    if (!matchesSession && !matchesUser) continue;
+    var expires = parseUserRoleMembershipDate_(row[3]);
+    if (expires.valid && expires.date && expires.date.getTime() <= now.getTime()) continue;
+    if (!expires.valid) return true;
+    if (matchesSession) return true;
+    var revokedAt = parseUserRoleMembershipDate_(row[2]);
+    if (!revokedAt.valid || !revokedAt.date) return true;
+    if (Number(claims.iat) <= Math.floor(revokedAt.date.getTime() / 1000)) return true;
+  }
+  return false;
+}
+
+function recordSessionRevocation_(userId, sessionId, nowValue) {
+  var userKey = String(userId || "").trim();
+  var sessionKey = String(sessionId || "").trim();
+  if (!userKey && !sessionKey) throw new Error("SESSION_REVOCATION_TARGET_REQUIRED");
+  var now = nowValue instanceof Date ? nowValue : (nowValue ? new Date(nowValue) : new Date());
+  if (isNaN(now.getTime())) throw new Error("SESSION_REVOCATION_CLOCK_INVALID");
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = getOrCreateSheet(ss, "SesionesRevocadas");
+    if (sheet.getLastRow() === 0) sheet.appendRow(SESSION_REVOCATION_HEADERS_);
+    var data = sheet.getDataRange().getValues();
+    if (!data.length || JSON.stringify(data[0].map(String)) !== JSON.stringify(SESSION_REVOCATION_HEADERS_)) {
+      throw new Error("SESSION_REVOCATION_SCHEMA_MISMATCH");
+    }
+    var existingRows = data.slice(1);
+    var activeRows = existingRows.filter(function(row) {
+      var expiry = parseUserRoleMembershipDate_((row || [])[3]);
+      return !expiry.valid || !expiry.date || expiry.date.getTime() > now.getTime();
+    });
+    if (activeRows.length !== existingRows.length && existingRows.length) {
+      sheet.getRange(2, 1, existingRows.length, SESSION_REVOCATION_HEADERS_.length).clearContent();
+      if (activeRows.length) sheet.getRange(2, 1, activeRows.length, SESSION_REVOCATION_HEADERS_.length).setValues(activeRows);
+    }
+    if (sessionKey) {
+      var existingSession = activeRows.find(function(row) { return String((row || [])[0] || "").trim() === sessionKey; });
+      if (existingSession) {
+        var existingUser = String(existingSession[1] || "").trim();
+        if (existingUser && userKey && existingUser !== userKey) throw new Error("SESSION_REVOCATION_ID_CONFLICT");
+        if (!existingUser && userKey) sheet.appendRow([sessionKey, userKey, now, new Date(now.getTime() + 86460 * 1000)]);
+        return true;
+      }
+    }
+    sheet.appendRow([sessionKey, userKey, now, new Date(now.getTime() + 86460 * 1000)]);
+    return true;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 
 function getUserRoleMembershipState_(userId, institutionId, nowValue) {
   var userKey = String(userId || "").trim();
@@ -1227,8 +1303,14 @@ function verifySessionToken(tokenString) {
     if (!Number.isSafeInteger(claims.iat) || !Number.isSafeInteger(claims.exp)) return null;
     if (claims.iat > now + 60 || claims.exp <= now || claims.exp <= claims.iat || claims.exp - claims.iat > 86400) return null;
     const cache = CacheService.getScriptCache();
-    if (cache.get("revoked_user_" + claims.userId)) return null;
+    const revokedUserMarker = cache.get("revoked_user_" + claims.userId);
+    if (revokedUserMarker) {
+      if (revokedUserMarker === "REVOKED") return null; // marcador legado: bloquea hasta su expiración natural
+      const revokedAtSeconds = Number(revokedUserMarker);
+      if (!Number.isSafeInteger(revokedAtSeconds) || claims.iat <= revokedAtSeconds) return null;
+    }
     if (cache.get("revoked_session_" + claims.sessionId)) return null;
+    if (isSessionRevoked_(claims, new Date(now * 1000))) return null;
 
     const stateCacheKey = "acct_state_" + claims.userId;
     const roleCacheKey = "acct_role_" + claims.userId;
@@ -1328,7 +1410,8 @@ function switchActiveRole(payload) {
       membershipId: membership.membershipId,
       institutionId: institutionId
     });
-    CacheService.getScriptCache().put("revoked_session_" + currentClaims.sessionId, "1", 86400);
+    var oldSessionRevocation = revokeUserSession({ sessionId: currentClaims.sessionId });
+    if (!oldSessionRevocation || oldSessionRevocation.status !== "success") return { status: "error", code: "SESSION_REVOCATION_FAILED", message: "No fue posible invalidar la sesión anterior." };
     return { status: "success", sessionToken: nextToken, activeRoleId: membership.roleId, membershipId: membership.membershipId, message: "Contexto de rol activo actualizado." };
   } catch (error) {
     return { status: "error", code: error.message || "ACTIVE_ROLE_SWITCH_FAILED", message: "No fue posible cambiar el rol activo." };
@@ -2937,17 +3020,27 @@ function revokeSecurityDelegation(payload) {
 
 // [TAREA-F4-P0-03] [Fase 4: Revocación de Sesiones] - Cambios de estado, revocación explícita de sesiones e invalidación en tiempo real
 function revokeUserSession(payload) {
-  const { userId, sessionId } = payload || {};
-  const cache = CacheService.getScriptCache();
-  if (sessionId) {
-    cache.put("revoked_session_" + sessionId, "REVOKED", 21600);
+  var userId = String((payload && payload.userId) || "").trim();
+  var sessionId = String((payload && payload.sessionId) || "").trim();
+  if (!userId && !sessionId) return { status: "error", code: "SESSION_REVOCATION_TARGET_REQUIRED", message: "Debe especificarse el usuario o la sesión que se revocará." };
+  var now = new Date();
+  try {
+    recordSessionRevocation_(userId, sessionId, now);
+    try {
+      var cache = CacheService.getScriptCache();
+      if (sessionId) cache.put("revoked_session_" + sessionId, "REVOKED", 21600);
+      if (userId) cache.put("revoked_user_" + userId, String(Math.floor(now.getTime() / 1000)), 21600);
+    } catch (_) {
+      // La hoja persistente es la fuente de verdad; la caché solo acelera la denegación.
+    }
+    if (userId) invalidateUserRoleCache(userId);
+    try {
+      logStructuredEvent("USER", "revokeUserSession", "WARN", "SESSION_REVOKED", `Sesión revocada para usuario ${userId || 'N/A'}, sessionId: ${sessionId || 'ALL'}`, { userId: userId || null, sessionId: sessionId || null }, (payload && payload._verifiedRole) || "SYSTEM");
+    } catch (_) {}
+    return { status: "success", message: "Sesión revocada exitosamente." };
+  } catch (error) {
+    return { status: "error", code: error.message || "SESSION_REVOCATION_FAILED", message: "No fue posible registrar la revocación de sesión." };
   }
-  if (userId) {
-    cache.put("revoked_user_" + userId, "REVOKED", 21600);
-    invalidateUserRoleCache(userId);
-  }
-  logStructuredEvent("USER", "revokeUserSession", "WARN", "SESSION_REVOKED", `Sesión revocada para usuario ${userId || 'N/A'}, sessionId: ${sessionId || 'ALL'}`, payload, payload && payload.authRole);
-  return { status: "success", message: "Sesión revocada exitosamente." };
 }
 
 // [TAREA-F4-P2-04] [TAREA-F4-P2-02] [Fase 4: Ciclo de Vida de Cuentas y Concurrencia] - Máquina de estados y candado atómico LockService para cambios de cuenta
@@ -3077,24 +3170,16 @@ function registerUser(payload) {
 
 // [TAREA-F4-P0-04] [Fase 4: Auditoría y Protección] - Registro de intentos fallidos/exitosos, cierres de sesión y respuestas genéricas
 function logoutUser(payload) {
-  const { sessionToken, userId, sessionId } = payload || {};
-  let effectiveUserId = userId;
-  let effectiveSessionId = sessionId;
-
-  if (sessionToken) {
-    const claims = verifySessionToken(sessionToken);
-    if (claims) {
-      if (!effectiveUserId) effectiveUserId = claims.userId;
-      if (!effectiveSessionId) effectiveSessionId = claims.sessionId;
-    }
+  var token = payload && (payload.sessionToken || payload.authToken || payload.token);
+  var claims = token ? verifySessionToken(token) : null;
+  if (!claims) {
+    return { status: "success", message: "Cierre de sesión registrado." };
   }
-
-  if (effectiveUserId || effectiveSessionId) {
-    revokeUserSession({ userId: effectiveUserId, sessionId: effectiveSessionId });
-  }
-
-  logStructuredEvent("USER", "logoutUser", "INFO", "LOGOUT_SUCCESS", `Cierre de sesión registrado para usuario ${effectiveUserId || 'Anónimo'}`, { userId: effectiveUserId, sessionId: effectiveSessionId }, "Anónimo");
-
+  var revocation = revokeUserSession({ sessionId: claims.sessionId });
+  if (!revocation || revocation.status !== "success") return revocation || { status: "error", code: "SESSION_REVOCATION_FAILED" };
+  try {
+    logStructuredEvent("USER", "logoutUser", "INFO", "LOGOUT_SUCCESS", "Cierre de sesión registrado para usuario " + claims.userId, { userId: claims.userId, sessionId: claims.sessionId }, claims.role);
+  } catch (_) {}
   return { status: "success", message: "Cierre de sesión registrado exitosamente." };
 }
 
