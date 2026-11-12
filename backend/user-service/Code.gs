@@ -1388,11 +1388,12 @@ function manageUserRoleMemberships(payload) {
 
     var targetIndexes = [];
     for (var i = 1; i < data.length; i++) {
-      if (String(data[i][0] || "").trim() === membershipId && String(data[i][1] || "").trim() === userId && String(data[i][3] || "").trim() === institutionId) targetIndexes.push(i);
+      if (String(data[i][0] || "").trim() === membershipId) targetIndexes.push(i);
     }
     if (!targetIndexes.length) return { status: "error", code: "ROLE_MEMBERSHIP_NOT_FOUND", message: "Membresía no encontrada." };
     if (targetIndexes.length !== 1) return { status: "error", code: "ROLE_MEMBERSHIP_ID_CONFLICT", message: "El identificador de membresía es ambiguo; no se modificó ningún registro." };
     var targetIndex = targetIndexes[0];
+    if (String(data[targetIndex][1] || "").trim() !== userId || String(data[targetIndex][3] || "").trim() !== institutionId) return { status: "error", code: "ROLE_MEMBERSHIP_NOT_FOUND", message: "Membresía no encontrada." };
     if (String(data[targetIndex][4] || "").trim().toUpperCase() === "REVOKED") return { status: "success", action: action, membershipId: membershipId, idempotent: true };
     sheet.getRange(targetIndex + 1, 5).setValue("REVOKED");
     sheet.getRange(targetIndex + 1, 10).setValue(now);
