@@ -27,7 +27,7 @@ const accounting=fs.readFileSync(path.resolve(__dirname,"../../backend/accountin
 const names=[
  "getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentScope_","assertResourceOwnershipForScope_","resolveEmployeeDepartmentId_","assertEmployeeExpedienteScopeAccess_",
  "getAccountingPersonIdForUser_","resolveStudentExpedienteForAccounting_","assertPaymentVoucherOwnerAccess_",
- "extractDriveFileId","getEmployeeDocuments","uploadEmployeeDocument","uploadPaymentVoucher","getPaymentVouchers","getPaymentVoucherFile","reviewPaymentVoucher","validateRolePermission"
+ "extractDriveFileId","getEmployeeDocuments","getEmployeeRecords","uploadEmployeeDocument","uploadPaymentVoucher","getPaymentVouchers","getPaymentVoucherFile","reviewPaymentVoucher","validateRolePermission"
 ];
 const code="var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n"+names.map(n=>extractFunction(accounting,n)).join("\n");
 const claims={
@@ -107,7 +107,7 @@ const context={
  Utilities:{base64Encode:bytes=>Buffer.from(bytes).toString("base64")},
  logStructuredEvent:()=>{}
 };
-vm.runInNewContext(code+"\nthis.assertEmployeeExpedienteScopeAccess_=assertEmployeeExpedienteScopeAccess_;this.assertPaymentVoucherOwnerAccess_=assertPaymentVoucherOwnerAccess_;this.getEmployeeDocuments=getEmployeeDocuments;this.uploadEmployeeDocument=uploadEmployeeDocument;this.uploadPaymentVoucher=uploadPaymentVoucher;this.getPaymentVouchers=getPaymentVouchers;this.getPaymentVoucherFile=getPaymentVoucherFile;this.reviewPaymentVoucher=reviewPaymentVoucher;",context);
+vm.runInNewContext(code+"\nthis.assertEmployeeExpedienteScopeAccess_=assertEmployeeExpedienteScopeAccess_;this.assertPaymentVoucherOwnerAccess_=assertPaymentVoucherOwnerAccess_;this.getEmployeeDocuments=getEmployeeDocuments;this.getEmployeeRecords=getEmployeeRecords;this.uploadEmployeeDocument=uploadEmployeeDocument;this.uploadPaymentVoucher=uploadPaymentVoucher;this.getPaymentVouchers=getPaymentVouchers;this.getPaymentVoucherFile=getPaymentVoucherFile;this.reviewPaymentVoucher=reviewPaymentVoucher;",context);
 const actor=token=>({sessionToken:token});
 assert.equal(context.assertEmployeeExpedienteScopeAccess_(actor("staffA"),ss,"EXP-A").authorized,true);
 assert.equal(context.assertEmployeeExpedienteScopeAccess_(actor("staffA"),ss,"EXP-B").code,"RESOURCE_SCOPE_DENIED");
@@ -121,6 +121,21 @@ assert.deepEqual(Array.from(context.getEmployeeDocuments(actor("staffA")).docume
 assert.equal(context.getEmployeeDocuments({sessionToken:"staffA",expedienteId:"EXP-B"}).code,"RESOURCE_SCOPE_DENIED");
 assert.deepEqual(Array.from(context.getEmployeeDocuments(actor("admin")).documentos,d=>d.documentoId),["DOC-A","DOC-B"]);
 assert.deepEqual(Array.from(context.getEmployeeDocuments(actor("employee")).documentos,d=>d.documentoId),["DOC-A"]);
+assert.deepEqual(Array.from(context.getEmployeeRecords(actor("staffA")).expedientes,r=>r.expedienteId),["EXP-A","EXP-NO-DEPT"],"department staff must receive only verified owned employee records");
+assert.deepEqual(Array.from(context.getEmployeeRecords(actor("staffB")).expedientes,r=>r.expedienteId),["EXP-B"],"another department must not receive department A records");
+assert.deepEqual(Array.from(context.getEmployeeRecords(actor("admin")).expedientes,r=>r.expedienteId),["EXP-A","EXP-B","EXP-NO-DEPT"],"institution scope still requires unique registered ownership");
+assert.deepEqual(Array.from(context.getEmployeeRecords(actor("employee")).expedientes,r=>r.expedienteId),["EXP-A"],"employee self-service must remain limited to the verified actor");
+assert.equal(context.getEmployeeRecords({sessionToken:"staffA",expedienteId:"EXP-B"}).code,"RESOURCE_NOT_FOUND","a specific out-of-scope expediente must not disclose existence");
+assert.deepEqual(Array.from(context.getEmployeeRecords({sessionToken:"staffA",userId:"U-B"}).expedientes,r=>r.expedienteId),[],"client userId filters must not grant access");
+assert.equal(context.getEmployeeRecords({sessionToken:"invalid"}).code,"VERIFIED_IDENTITY_REQUIRED","unverified callers must be rejected");
+const duplicateEmployeeRow=rows.ExpedientesLaborales[1].slice();
+rows.ExpedientesLaborales.push(duplicateEmployeeRow);
+assert.equal(context.getEmployeeRecords({sessionToken:"staffA",expedienteId:"EXP-A"}).code,"RESOURCE_NOT_FOUND","duplicate expediente IDs must fail closed");
+rows.ExpedientesLaborales.pop();
+rows.ExpedientesLaborales.splice(1);
+assert.deepEqual(Array.from(context.getEmployeeRecords(actor("admin")).expedientes,r=>r.expedienteId),[],"empty employee sheets must return an empty list");
+assert.equal(rows.ExpedientesLaborales.length,1,"read-only listing must not seed demonstration employee records");
+rows.ExpedientesLaborales.push(duplicateEmployeeRow);
 assert.equal(context.uploadEmployeeDocument({sessionToken:"staffA",expedienteId:"EXP-B",tituloDocumento:"No autorizado"}).code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.assertPaymentVoucherOwnerAccess_(actor("student"),"U-STUDENT",{}).accessType,"SELF");
 assert.equal(context.assertPaymentVoucherOwnerAccess_(actor("student"),"U-OTHER",{}).code,"RESOURCE_SCOPE_DENIED");

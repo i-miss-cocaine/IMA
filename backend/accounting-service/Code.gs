@@ -8592,24 +8592,57 @@ function updateEmployeeLaborStatus(payload) {
 }
 
 function getEmployeeRecords(payload) {
-  const { userId, expedienteId, estadoLaboral } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  let rows = getOrCreateSheet(ss, "ExpedientesLaborales").getDataRange().getValues().slice(1);
-
-  if (rows.length === 0) {
-    const defaults = [
-      ["EMP-101", "PERS-01", "USR-DOC-01", "Docente de Informática", "Docencia", "Académico", new Date("2024-01-15"), "", "active", "Lic. Carlos Mendoza"],
-      ["EMP-102", "PERS-02", "USR-ADM-01", "Encargado de Compras", "Administración", "Operaciones", new Date("2023-06-01"), "", "active", "Ing. Sofía Reyes"]
-    ];
-    const sheet = getOrCreateSheet(ss, "ExpedientesLaborales");
-    sheet.getRange(2, 1, defaults.length, 10).setValues(defaults);
-    rows = defaults;
+  const actor = getVerifiedAccountingIdentity_(payload);
+  if (!actor.authorized) {
+    return { status: "error", code: actor.code || "VERIFIED_IDENTITY_REQUIRED", message: "Acceso denegado." };
   }
 
-  let filtered = rows;
-  if (expedienteId) filtered = filtered.filter(r => String(r[0]).trim() === String(expedienteId).trim());
-  if (userId) filtered = filtered.filter(r => String(r[2]).trim() === String(userId).trim());
-  if (estadoLaboral) filtered = filtered.filter(r => String(r[8]).trim() === String(estadoLaboral).trim());
+  const { userId, expedienteId, estadoLaboral } = payload || {};
+  const requestedExpedienteId = String(expedienteId || "").trim();
+  const requestedUserId = String(userId || "").trim();
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName("ExpedientesLaborales") || getOrCreateSheet(ss, "ExpedientesLaborales");
+  const values = sheet.getDataRange().getValues();
+  const rows = values.length > 1 ? values.slice(1) : [];
+
+  const expedienteCounts = {};
+  rows.forEach(function(row) {
+    const id = String((row || [])[0] || "").trim();
+    if (id) expedienteCounts[id] = (expedienteCounts[id] || 0) + 1;
+  });
+
+  let candidates = rows;
+  if (requestedExpedienteId) {
+    candidates = rows.filter(function(row) {
+      return String((row || [])[0] || "").trim() === requestedExpedienteId;
+    });
+    if (candidates.length !== 1) {
+      return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Expediente no disponible." };
+    }
+  }
+  if (requestedUserId) {
+    candidates = candidates.filter(function(row) {
+      return String((row || [])[2] || "").trim() === requestedUserId;
+    });
+  }
+  if (estadoLaboral) {
+    candidates = candidates.filter(function(row) {
+      return String((row || [])[8] || "").trim() === String(estadoLaboral).trim();
+    });
+  }
+
+  const filtered = [];
+  for (let i = 0; i < candidates.length; i++) {
+    const row = candidates[i] || [];
+    const id = String(row[0] || "").trim();
+    if (!id || expedienteCounts[id] !== 1) continue;
+
+    const access = assertEmployeeExpedienteScopeAccess_(payload, ss, id);
+    if (access.authorized) filtered.push(row);
+    else if (requestedExpedienteId) {
+      return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Expediente no disponible." };
+    }
+  }
 
   const mapped = filtered.map(r => ({
     expedienteId: r[0],

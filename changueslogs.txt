@@ -3060,3 +3060,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - **Resultado:** las dos suites nuevas/modificadas de esta unidad aprobaron también en Node 24 CI. El fallo global preexistente queda separado y no se corrige aquí sin trazabilidad causal. No se modifica código en este addendum.
 - **Estado:** C1.656 mantiene su alcance. TASK-153 sigue En ejecución; próximo subalcance: resolver snapshot server-side por RowID para la variante institucional multi-departamento o continuar con otra superficie de consulta/descarga aún no integrada.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.658 — IMA-EXEC-20261112-1754Z-03 — aislamiento departamental del listado de expedientes laborales
+- ACCOUNTING getEmployeeRecords ahora exige identidad de sesión verificada y valida cada expediente mediante assertEmployeeExpedienteScopeAccess_ / ResourceOwnership antes de exponerlo. Los filtros userId/expedienteId solo restringen resultados; no conceden acceso.
+- Las consultas masivas omiten registros fuera del ámbito y con ExpedienteID vacío/duplicado; una consulta por ID no disponible o fuera del ámbito devuelve RESOURCE_NOT_FOUND para no revelar existencia. Se elimina el sembrado automático de empleados ficticios en una operación de lectura.
+- Se amplía accounting-departmental-resource-access.test.js con escenarios de departamentos A/B, alcance institucional, autoservicio, filtro de usuario manipulable, ID específico ajeno, IDs duplicados, identidad inválida y hoja vacía sin escrituras.
+- Verificación local V8 aislada y parseo: PASS. Apps Script/Sheets desplegado: Pendiente beta.
+===============================================================================
