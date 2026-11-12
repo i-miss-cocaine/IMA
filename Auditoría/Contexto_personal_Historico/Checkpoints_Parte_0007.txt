@@ -1199,3 +1199,19 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** C1.627 completada conforme a verificaciones locales ejecutadas. T153-S02 permanece En ejecución; no iniciar T153-S03.
 - **Siguiente acción:** contrastar los vínculos de responsabilidad y ámbito que entrega el contexto efectivo con las asignaciones administrativas y probar conflictos/duplicados de vínculos sin producir permisos o ámbitos ambiguos.
 ===============================================================================
+
+
+===============================================================================
+### C1.628 — IMA-EXEC-20261112-1754Z-03 — coherencia de la cadena responsabilidad↔ámbito entre lectores
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.627.
+- **HEAD inicial:** `ba8c7cf7e73e630336814dc171385575f557de67`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Contrastar vínculos de responsabilidad y ámbito del contexto efectivo con el listado administrativo; rechazar relaciones ambiguas o rotas.
+- **Contrato:** se comparan los ResponsibilityID expuestos por `getUserContextScope` y `getInternalRoleAssignments` para la misma membresía Director; ambos lectores resuelven la misma responsabilidad institucional activa.
+- **Casos fail-closed:** duplicar ResponsibilityID en `ResponsabilidadesInstitucionales`, duplicar RolInternoID en `CatalogoRolesInternos` o dejar un ResponsibilityID enlazado inexistente. En cada caso, el contexto efectivo devuelve `DEPARTMENT_SCOPE_NOT_ASSIGNED` y el listado administrativo no expone la asignación.
+- **Verificación local:** contrato completo en harness V8 aislado **PASS**, incluidos C1.621–C1.628. Parseo sintáctico de backend USER y contrato **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** Apps Script/Sheets real NOT RUN; escenario agregado a `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `tests/security/internal-responsibility-rbac-contract.test.js`; sin cambios de lógica productiva.
+- **Commit funcional:** `4dc4d9532235260ea72e5e6c50e535b5475df757`.
+- **Estado:** C1.628 completada. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** diseñar una prueba local determinista de concurrencia para asignaciones de ámbito bajo ScriptLock; comprobar que solicitudes simultáneas no creen duplicados ni dejen escrituras parciales.
+===============================================================================
