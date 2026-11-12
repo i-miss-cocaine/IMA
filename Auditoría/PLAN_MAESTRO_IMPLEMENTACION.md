@@ -4990,8 +4990,8 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 
  
 **Addendum C1.637 — migración controlada de sesiones históricas**
-- `verifySessionToken` soporta la propiedad ScriptProperties opcional `SESSION_REVOCATION_LEGACY_CUTOFF`. Ausente: compatibilidad normal. Configurada con epoch válido: rechaza tokens cuyo iat sea menor o igual al cutoff. Token posterior: elegible. Valor inválido: fail-closed.
-- El cutoff no se activa automáticamente para evitar una desconexión masiva no autorizada. El responsable de rollout puede configurarlo si decide invalidar todas las sesiones anteriores y solicitar reautenticación general.
+- `verifySessionToken` soporta la fila compartida `LEGACY_SESSION_CUTOFF` de `EstadoRevocacionSesiones`. Ausente: compatibilidad normal. Configurada con epoch válido en el estado compartido: rechaza tokens cuyo iat sea menor o igual al cutoff. Token posterior: elegible. Valor inválido: fail-closed.
+- El cutoff no se activa automáticamente para evitar una desconexión masiva no autorizada. El responsable de rollout puede agregar esa fila al estado compartido si decide invalidar todas las sesiones anteriores y solicitar reautenticación general.
 - Revocaciones históricas cache-only ya desaparecidas no pueden reconstruirse; sin cutoff, los tokens históricos restantes conservan validez solo hasta su expiración natural y mientras no exista marcador legacy vigente.
 - Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.637); sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; ScriptProperties/rollout real Pendiente beta.
 - **Estado:** C1.637 completada. T153-S02 continúa En ejecución.
@@ -5015,3 +5015,15 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Contrato completo V8 aislado PASS (C1.621–C1.639); sintaxis USER/ACADEMIC/ACCOUNTING/TASK/EXAM/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets reales entre despliegues Pendiente beta.
 - **Estado:** C1.639 completada. T153-S02 continúa En ejecución hasta matriz de trazabilidad de requisitos originales.
 - **Siguiente acción:** trazar cada criterio de T153-S02 a código y evidencia vigente; ejecutar únicamente pruebas faltantes y determinar cierre.
+
+
+ 
+**Addendum C1.639 — revocación persistente compartida entre proyectos Apps Script**
+- Se detectó que ACADEMIC, ACCOUNTING, TASK y EXAM mantenían cachés locales de revocación; las marcas escritas en USER no se propagaban entre proyectos independientes.
+- USER persiste las revocaciones en `SesionesRevocadas` y el marcador `LEDGER_INITIALIZED=1` en `EstadoRevocacionSesiones`. Los cuatro consumidores consultan esos registros compartidos antes de aceptar cualquier sesión.
+- Los consumidores aplican revocación por SessionID, revocación user-wide por timestamp, expiración del registro y cutoff legacy. Si el estado indica ledger inicializado y la hoja falta, rechazan el token.
+- El cutoff de migración C1.637 queda como fila compartida `LEGACY_SESSION_CUTOFF` en `EstadoRevocacionSesiones`, no en ScriptProperties por proyecto.
+- DEVELOPER permanece como control plane separado y rechaza claims de membresía/institución; no es consumidor del ledger RBAC institucional.
+- Contrato completo V8 aislado PASS: revocación USER propagada a los cuatro consumidores con cachés locales vacías; corte user-wide, login posterior, cutoff compartido y ledger ausente fail-closed. Sintaxis de los cinco servicios y test PASS.
+- Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets multi-proyecto Pendiente beta.
+- **Estado:** C1.639 completada en harness aislado. T153-S02 sigue En ejecución hasta revisar trazabilidad de requisitos y rollout multi-proyecto.
