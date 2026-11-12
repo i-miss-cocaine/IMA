@@ -334,7 +334,7 @@ const malformedRecord = (() => {
 })();
 assert.equal(malformedRecord,null,"malformed capability metadata cannot resolve an effective responsibility");
 const duplicateRoleRows=[roleHeaders,roleRows[1].slice(),roleRows[1].slice()];
-const duplicateRoleCtx={SPREADSHEET_ID:"LOCAL",normalizeString:v=>String(v||"").trim().toLowerCase(),SpreadsheetApp:{openById:()=>({getSheetByName:()=>({getDataRange:()=>({getValues:()=>duplicateRoleRows.map(r=>r.slice())})})})}};
+const duplicateRoleCtx={SPREADSHEET_ID:"LOCAL",normalizeString:v=>String(v||"").trim().toLowerCase(),SpreadsheetApp:{openById:()=>({getSheetByName:name=>({getDataRange:()=>({getValues:()=>(name==="CatalogoRolesInternos"?duplicateRoleRows:capabilityRows).map(r=>r.slice())})})})}};
 vm.runInNewContext(recordFn+"\n"+roleCatalogFn+"\nthis.getInternalRoleCatalog=getInternalRoleCatalog;",duplicateRoleCtx);
 assert.deepEqual(Array.from(duplicateRoleCtx.getInternalRoleCatalog({}).data),[],"duplicate RolInternoIDs are excluded from the administrative role catalog");
 const beforeDuplicateCapabilityWrite=capabilityRows.length;
