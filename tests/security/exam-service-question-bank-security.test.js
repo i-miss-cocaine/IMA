@@ -36,15 +36,21 @@ const claims = {
  "other-token": {userId:"TEACHER-2",role:"Profesor"},
  "student-token": {userId:"STUDENT-1",role:"Estudiante"}
 };
-let failBankAppend=false, lockAvailable=true, lockHeld=false, beforeAcquire=null, lockAcquires=0, lockReleases=0, sheetOpens=0, uuid=0;
+let failBankAppend=false, lockAvailable=true, lockHeld=false, beforeAcquire=null, lockAcquires=0, lockReleases=0, sheetOpens=0, uuid=0, persistenceHook=null;
+const persistenceWrites = Object.create(null);
+function recordPersistence(kind, operation) {
+ const key = kind + ":" + operation;
+ persistenceWrites[key] = (persistenceWrites[key] || 0) + 1;
+ if (persistenceHook) persistenceHook(kind, operation);
+}
 function makeSheet(rows,kind) {
  return {
   getDataRange(){return {getValues:()=>rows.map(row=>row.slice())};},
-  appendRow(row){if(kind==="bank"&&failBankAppend){failBankAppend=false;rows.push(row.slice());throw Error("synthetic bank append failure after persistence");}rows.push(row.slice());},
+  appendRow(row){recordPersistence(kind,"appendRow");if(kind==="bank"&&failBankAppend){failBankAppend=false;rows.push(row.slice());throw Error("synthetic bank append failure after persistence");}rows.push(row.slice());},
   deleteRow(n){rows.splice(n-1,1);},
   getRange(row,col,numRows,numCols){return {
-   setValue(v){rows[row-1][col-1]=v;},
-   setValues(values){values.forEach((v,ri)=>{for(let ci=0;ci<(numCols||v.length);ci++)rows[row-1+ri][col-1+ci]=v[ci];});}
+   setValue(v){recordPersistence(kind,"setValue");rows[row-1][col-1]=v;},
+   setValues(values){recordPersistence(kind,"setValues");values.forEach((v,ri)=>{for(let ci=0;ci<(numCols||v.length);ci++)rows[row-1+ri][col-1+ci]=v[ci];});}
   };}
  };
 }
@@ -165,4 +171,72 @@ failBankAppend=true;
 assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",departmentId:"D1",accion:"crear",textoPregunta:"Rollback"}),/synthetic bank append failure after persistence/);
 assert.equal(bankRows.length,bankCount);assert.equal(ownershipRows.length,ownerCount);
 assert.equal(lockAcquires,lockReleases+1,"only the contended lock acquisition is unreleased");
+// Cada frontera de persistencia debe conservar el lock compartido frente a una
+// segunda llamada reentrante al handler real.
+function assertReentrantPersistence(targetKind, targetOperation, payload, label) {
+ const before = Object.assign({}, persistenceWrites);
+ const opensBefore = sheetOpens, acquiresBefore = lockAcquires, releasesBefore = lockReleases;
+ let nestedError = "";
+ persistenceHook = (kind, operation) => {
+  if (kind !== targetKind || operation !== targetOperation) return;
+  persistenceHook = null;
+  try { runtime.manageQuestionBank(payload); } catch (error) { nestedError = error.message; }
+ };
+ const result = runtime.manageQuestionBank(payload);
+ persistenceHook = null;
+ assert.equal(nestedError, "QUESTION_BANK_LOCK_TIMEOUT", label + ": nested mutation must be rejected by ScriptLock");
+ assert.equal(lockAcquires, acquiresBefore + 2, label + ": outer and nested calls must attempt the shared lock");
+ assert.equal(lockReleases, releasesBefore + 1, label + ": only the outer lock must be released");
+ assert.equal(sheetOpens, opensBefore + 1, label + ": nested call must not open Sheets");
+ return { result, before };
+}
+function assertWriteDelta(kind, operation, before, expected, label) {
+ assert.equal((persistenceWrites[kind + ":" + operation] || 0) - (before[kind + ":" + operation] || 0),
+  expected, label + ": unexpected persistence count");
+}
+for (const kind of ["ownership", "bank"]) {
+ const beforeBank = bankRows.length, beforeOwnership = ownershipRows.length;
+ const label = "create/" + kind + "/appendRow";
+ const run = assertReentrantPersistence(kind, "appendRow", {
+  sessionToken:"teacher-token",departmentId:"D1",accion:"crear",textoPregunta:"Reentrant " + kind
+ }, label);
+ assert.equal(run.result.status, "success");
+ assert.equal(bankRows.length, beforeBank + 1, label + ": exactly one question must persist");
+ assert.equal(ownershipRows.length, beforeOwnership + 1, label + ": exactly one ownership must persist");
+ const createdId = run.result.bancoPreguntaId;
+ assert.equal(bankRows.filter(row => row[0] === createdId).length, 1, label + ": question ID must be unique");
+ assert.equal(ownershipRows.filter(row => row[3] === createdId && row[2] === "BANCO_PREGUNTA").length, 1,
+  label + ": ownership must be unique");
+ assertWriteDelta("ownership", "appendRow", run.before, 1, label);
+ assertWriteDelta("bank", "appendRow", run.before, 1, label);
+}
+{
+ const run = assertReentrantPersistence("bank", "setValues", {
+  sessionToken:"teacher-token",bancoPreguntaId:"BNK-D2",accion:"actualizar",textoPregunta:"Reentrant update"
+ }, "update/bank/setValues");
+ assert.equal(run.result.status, "success");
+ assert.equal(bankRows.find(row => row[0] === "BNK-D2")[7], "Reentrant update");
+ assertWriteDelta("bank", "setValues", run.before, 1, "update/bank/setValues");
+}
+{
+ const run = assertReentrantPersistence("ownership", "setValue", {
+  sessionToken:"teacher-token",bancoPreguntaId:"BNK-D2",accion:"eliminar"
+ }, "delete/ownership/setValue");
+ assert.equal(run.result.status, "success");
+ assert.equal(ownershipRows.find(row => row[3] === "BNK-D2")[5], "INACTIVE");
+ assert.equal(bankRows.find(row => row[0] === "BNK-D2")[12], "Inactivo");
+ assertWriteDelta("ownership", "setValue", run.before, 1, "delete/ownership/setValue");
+ assertWriteDelta("bank", "setValue", run.before, 1, "delete/ownership/setValue");
+}
+{
+ const run = assertReentrantPersistence("bank", "setValue", {
+  sessionToken:"teacher-token",bancoPreguntaId:"BNK-D1",accion:"eliminar"
+ }, "delete/bank/setValue");
+ assert.equal(run.result.status, "success");
+ assert.equal(ownershipRows.find(row => row[3] === "BNK-D1")[5], "INACTIVE");
+ assert.equal(bankRows.find(row => row[0] === "BNK-D1")[12], "Inactivo");
+ assertWriteDelta("ownership", "setValue", run.before, 1, "delete/bank/setValue");
+ assertWriteDelta("bank", "setValue", run.before, 1, "delete/bank/setValue");
+}
+assert.equal(lockAcquires, lockReleases + 1, "only the deliberately contended lock acquisition remains unreleased");
 process.stdout.write("exam-service-question-bank-security: ownership, department scope, RBAC revocation, serialized writes and rollback assertions passed\n");
