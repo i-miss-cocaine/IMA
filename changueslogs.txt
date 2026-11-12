@@ -2913,3 +2913,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - T153-S02 se marca COMPLETADA para implementación/contratos aislados. Beta real multi-proyecto sigue Pendiente; TASK-153 global continúa En ejecución.
 - Siguiente unidad: T153-S01, inventario/reconciliación de catálogos. T153-S03/S04 esperan S01.
 ===============================================================================
+
+
+ 
+===============================================================================
+[2026-11-12] C1.641 — inventario técnico T153-S01
+- Revisión USER CatalogoDepartamentos, ACADEMIC DepartamentosAcademicos, consumidores ACADEMIC/ACCOUNTING, AsignacionesAmbitosRoles y ResourceOwnership.
+- No hay FK, clave estable compartida, jerarquía ni autoridad institucional única demostrada; los catálogos tienen semánticas/consumidores distintos.
+- No fusionar, renombrar ni migrar; no inferir propiedad por nombre/actor/grado/sección/rol.
+- T153-S02 completada en C1.640; T153-S01 inventario técnico completado pero mapeo/autoridad institucional pendiente. S03/S04 no elegibles.
+===============================================================================
