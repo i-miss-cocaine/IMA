@@ -1645,3 +1645,16 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** TASK-153 continúa En ejecución. La integración de importación no se marca completada. Este checkpoint registra la selección y el impedimento técnico de verificación local.
 - **Siguiente acción exacta:** restablecer checkout local de la rama autorizada, ejecutar el harness vigente y añadir pruebas locales para preview, preflight de lote, RowID institucional, departamento mixto, snapshots inválidos, destino no autorizado, cero escrituras ante fallo de preflight y compensación ante fallo posterior; después implementar y verificar la integración.
 ===============================================================================
+
+
+===============================================================================
+### C1.654 — IMA-2026-11-12-02 — ejecución alternativa V8 de contrato puro de importación
+- **HEAD inicial:** 2599318fc97306dc33dcf89a9be596f8c249e189; rama exclusiva `NG_beta_0.0.0.1_work`.
+- **Método alternativo:** se descargó el contenido exacto de `backend/shared/DepartmentCatalogContract.gs` mediante el conector GitHub y se ejecutó la función pura `validateDepartmentalImportScope_` aislada en un runtime V8, sin requerir checkout local ni DNS del contenedor.
+- **Pruebas ejecutadas:** 7 assertions PASS: lote válido de un departamento; destino no autorizado; mezcla de departamentos; tenant mismatch; snapshot no verificado; membresía no verificada; lote vacío. Cada caso verificó el código de resultado esperado y `writesPerformed === false`.
+- **Alcance de evidencia:** esto verifica el helper puro exacto recuperado de la rama; NO equivale a ejecutar el harness Node del repositorio, ni verifica integración de `validateImportPreview` o `importDataWithColumnMapping`, llamadas a Sheets, escritores, compensación, ni atomicidad end-to-end.
+- **Red local:** intento alternativo de `git clone` también falla por resolución DNS de `github.com`. El conector GitHub sí permite leer y escribir contenido Git, pero no proporciona checkout/ejecución Node local.
+- **Archivos de código modificados:** ninguno. No se ejecutaron writers ni se accedió a datos reales.
+- **Estado:** evidencia adicional focalizada PASS; TASK-153 sigue En ejecución y la integración productiva permanece pendiente.
+- **Siguiente acción exacta:** disponer de checkout/runner Node del repositorio para el harness completo; después diseñar y conectar snapshot departamental canónico de ACCOUNTING, proteger preview y preflight completo del lote antes de writers, y ejecutar regresiones de rollback/idempotencia.
+===============================================================================
