@@ -4696,3 +4696,15 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - GitHub Actions Department Scope Contract run 43144355981, commit ec4a97029a208da0f3b2c1cc8a64937bec250acf: SUCCESS en Node.js 24; todos los pasos del job department-scope-contract SUCCESS.
 - Paso Run user-service signature ownership contract: SUCCESS. Harness V8 focalizado de handleSignatureProviderCallback_: 1/1 PASS; parseo del contrato PASS.
 - C1.612 completada con verificación local focalizada y CI. BETA-FUNC-027 permanece Pendiente beta; proveedor PSC externo y validación criptográfica real NOT RUN.
+
+
+### 10.262 TASK-153 / TASK — serialización de submitAssignment y versionado de entregas (C1.613)
+- **Brecha confirmada:** submitAssignment verificaba acceso del estudiante y propiedad del archivo, pero realizaba lookup de entrega existente, append/update y append de versión sin ScriptLock; dos solicitudes concurrentes podían observar ausencia o el mismo contador de versión y persistir duplicados/colisiones.
+- **Cambio:** se protege la secuencia de lectura, revalidación de acceso/ownership y persistencia con ScriptLock. Si no se obtiene en 10 segundos, falla con TASK_SUBMISSION_LOCK_TIMEOUT antes de abrir Sheets. El finally libera el lock en éxito/error.
+- **Cobertura:** reentrada durante appendRow de Entregas, rechazo secundario antes de abrir Sheets, una sola fila de entrega y versión inicial; retry posterior reutiliza entregaId y agrega versionNum 2; lock ocupado no abre Sheets ni muta.
+- **Alcance:** TASK Service submitAssignment/saveSubmissionDraft (este último delega); BETA-FUNC-021 ampliada; backend productivo modificado únicamente en submitAssignment.
+- **Verificación local:** harness V8 focalizado PASS para reentrada, retry/versionado y lock ocupado; parseo Code.gs y test PASS.
+- **CI:** Task-Service security local contracts run 43145265418 SUCCESS; backup and restore contract run 43145265344 SUCCESS, Node.js 22.23.4.
+- **Nota de ejecución:** primer workflow 43145146918 FAIL porque se publicó el contrato antes de incluir el cambio productivo; commit posterior 6b23d83 incorporó el ScriptLock y ambos workflows de confirmación pasaron.
+- **Apps Script/Sheets real:** NOT RUN; BETA-FUNC-021 Pendiente beta.
+- **Estado:** C1.613 Completada local/CI; TASK-153 continúa En ejecución.

@@ -878,3 +878,34 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.612 Completada con verificación local focalizada y CI. BETA-FUNC-027 permanece Pendiente beta; proveedor PSC y validación criptográfica real NOT RUN.
 - HEAD probado: ec4a97029a208da0f3b2c1cc8a64937bec250acf; HEAD final se confirma tras este registro documental.
 ===============================================================================
+
+
+===============================================================================
+## C1.613 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** TASK-153 / TASK — serialización y ownership de submitAssignment.
+
+### Hallazgo y cambio
+- submitAssignment verificaba acceso, pero leía entregas/versiones y persistía sin ScriptLock; llamadas concurrentes podían duplicar la entrega o el número de versión.
+- Se protege la secuencia completa con ScriptLock; la revalidación assertTaskServiceStudentCanAccessTask ocurre dentro del lock. Timeout TASK_SUBMISSION_LOCK_TIMEOUT antes de abrir Sheets; finally libera el bloqueo.
+- Se agrega cobertura de reentrada durante appendRow y retry posterior sobre el mismo entregaId con versionNum 2.
+
+### Archivos modificados
+- backend/task-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- beta_test.txt (ampliación de BETA-FUNC-021)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Harness V8 focalizado: PASS; reentrada, retry/versionado y lock ocupado sin mutación.
+- Parseo JavaScript Code.gs/test: PASS.
+- GitHub Actions Task-Service security local contracts run 43145265418 SUCCESS.
+- GitHub Actions backup/restore contract run 43145265344 SUCCESS.
+- Primer run 43145146918 FAIL porque el commit inicial publicó el contrato sin el cambio productivo; commit 6b23d83 corrigió el alcance y ambos workflows posteriores pasaron.
+- Apps Script/Sheets real NOT RUN; BETA-FUNC-021 Pendiente beta.
+- C1.613 Completada local/CI; TASK-153 continúa En ejecución.
+- HEAD de código verificado: 6b23d83cbf1d454d53ce7e6678205f5264d07435; HEAD final se confirma tras este registro documental.
+===============================================================================

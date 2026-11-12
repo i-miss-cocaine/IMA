@@ -2583,3 +2583,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato USER signature ownership y todos los pasos del job PASS; harness local focalizado 1/1 PASS.
 - C1.612 completada local/CI; backend sin cambios. BETA-FUNC-027 Pendiente beta; proveedor PSC real y validación criptográfica real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.613 — serialización de entrega y versionado TASK
+- submitAssignment adquiere ScriptLock antes de abrir Sheets y revalida acceso del estudiante/ownership dentro del lock.
+- Reentrada rechazada con TASK_SUBMISSION_LOCK_TIMEOUT; evita filas de entrega/versiones duplicadas; retry posterior actualiza misma entrega y agrega nueva versión.
+- Harness local focalizado PASS; Task-Service security local contracts run 43145265418 SUCCESS y backup/restore run 43145265344 SUCCESS.
+- Apps Script/Sheets real NOT RUN; BETA-FUNC-021 Pendiente beta.
+===============================================================================

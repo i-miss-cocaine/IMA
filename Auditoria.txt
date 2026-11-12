@@ -2419,3 +2419,13 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Paso user-service-signature-ownership.test.js SUCCESS; harness local focalizado 1/1 PASS; parseo del contrato PASS.
 - Backend productivo sin cambios. BETA-FUNC-027 Pendiente beta; proveedor PSC externo y validación criptográfica real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+### C1.613 — TASK-153 / TASK
+- submitAssignment ahora protege con ScriptLock la revalidación de acceso/ownership y toda la secuencia de entrega/versionado; timeout TASK_SUBMISSION_LOCK_TIMEOUT antes de abrir Sheets y liberación en finally.
+- Harness focalizado local PASS: reentrada rechazada, una sola entrega/versión, retry sobre mismo entregaId con versionNum 2 y lock ocupado sin mutación.
+- GitHub Actions Task-Service security local contracts run 43145265418 SUCCESS; backup/restore contract run 43145265344 SUCCESS (Node.js 22.23.4).
+- Primer run 43145146918 falló porque el contrato se publicó antes que el cambio productivo; commit 6b23d83 incorporó el lock y los dos workflows posteriores pasaron.
+- Backend modificado en submitAssignment; BETA-FUNC-021 Pendiente beta; Apps Script/Sheets real NOT RUN.
+===============================================================================
