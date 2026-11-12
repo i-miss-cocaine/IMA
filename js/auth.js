@@ -124,20 +124,59 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (loginForm) {
+        const submitBtn = loginForm.querySelector('button[type="submit"]');
+        const roleSelection = document.getElementById('active-role-selection');
+        const roleSelect = document.getElementById('active-role-select');
+        let roleSelectionPending = false;
+
+        [loginForm.email, loginForm.password].forEach((field) => {
+            field?.addEventListener('input', () => {
+                roleSelectionPending = false;
+                if (roleSelection) roleSelection.hidden = true;
+                if (roleSelect) {
+                    roleSelect.required = false;
+                    roleSelect.replaceChildren();
+                }
+                if (submitBtn) submitBtn.textContent = 'Entrar al Portal';
+            });
+        });
+
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const submitBtn = loginForm.querySelector('button[type="submit"]');
             const identifier = e.target.email.value;
             const password = e.target.password.value;
             const rememberMe = document.getElementById('remember-me')?.checked;
+            const activeRoleId = roleSelectionPending && roleSelect ? roleSelect.value : '';
 
             submitBtn.classList.add('btn-loading');
             submitBtn.disabled = true;
 
             try {
-                const result = await fetchApi('USER', 'loginUser', { identifier, password });
+                const loginPayload = { identifier, password };
+                if (activeRoleId) loginPayload.activeRoleId = activeRoleId;
+                const result = await fetchApi('USER', 'loginUser', loginPayload);
+
+                if (result.status !== 'success' && result.code === 'ACTIVE_ROLE_SELECTION_REQUIRED' &&
+                    Array.isArray(result.availableRoles) && result.availableRoles.length > 1 && roleSelection && roleSelect) {
+                    roleSelect.replaceChildren();
+                    result.availableRoles.forEach((membership) => {
+                        const option = document.createElement('option');
+                        option.value = membership.roleId;
+                        option.textContent = membership.roleId;
+                        roleSelect.appendChild(option);
+                    });
+                    roleSelect.required = true;
+                    roleSelection.hidden = false;
+                    roleSelectionPending = true;
+                    submitBtn.textContent = 'Continuar con el rol seleccionado';
+                    roleSelect.focus();
+                    return;
+                }
 
                 if (result.status === 'success' && result.data) {
+                    roleSelectionPending = false;
+                    if (roleSelection) roleSelection.hidden = true;
+                    if (roleSelect) roleSelect.required = false;
                     // REQ: Implementar lógica de "Recordarme" (v4.0)
                     const storage = rememberMe ? localStorage : sessionStorage;
                     const otherStorage = rememberMe ? sessionStorage : localStorage;
@@ -149,6 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         email: result.data.email,
                         sessionToken: result.data.sessionToken || result.sessionToken || null,
                         rol: result.data.rol || 'Estudiante',
+                        rolesDisponibles: Array.isArray(result.data.rolesDisponibles) ? result.data.rolesDisponibles : [],
                         grado: result.data.grado,
                         seccion: result.data.seccion,
                         numeroLista: result.data.numeroLista,
