@@ -1848,3 +1848,13 @@ RESULTADO DE EVALUACIÓN:
 - Local: 56 aserciones de política, 25 de catálogo, 4 IDs reservados y sintaxis PASS. CI 43287675970: C1.646/C1.648 PASS; fallo preexistente User Role Membership en línea 119, también presente en run previo 43283289566.
 - Sin configuración real, grants, callsites ni cambios de datos. TASK-153 sigue En ejecución.
 ===============================================================================
+
+
+
+===============================================================================
+### C1.649 — contrato de identidad/ciclo de vida departamental
+- Motor puro parametrizado por estados/transiciones aprobados y versionados. ID inmutable; rename, code+namespace, parent, cierre/reactivación, merge/split con historial before/after, firma e idempotencia.
+- Snapshot/historial requieren scope tenant/domain verificado; padre activo/existente sin ciclos; raíz sin padre permitida; merge/split no transfieren recursos ni crean unidades automáticamente.
+- Local: 68 lifecycle + 56 policy + 25 catálogo + 4 IDs reservados; sintaxis PASS. CI 43289049534: C1.646/C1.648/C1.649 PASS; falla preexistente User Role Membership línea 119, presente antes de C1.646.
+- Sin integración ni escrituras reales. TASK-153 continúa En ejecución.
+===============================================================================

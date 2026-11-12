@@ -1568,3 +1568,21 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Límites:** no se creó hoja ConfiguracionInstitucional ni DepartmentReferenceGrants; no hay callsites productivos ni persistencia real de auditoría; no se activa acceso interdepartamental y no se consultan/modifican datos reales. TASK-153/T153-S01 sigue En ejecución; no se elige autoridad.
 - **Siguiente acción elegible:** avanzar el contrato genérico de identidad/ciclo de vida (S01-3) con estados/transiciones parametrizables, historial, renombre y fusión/división sintéticos, sin fijar semántica institucional ni cerrar S01-2.
 ===============================================================================
+
+
+
+===============================================================================
+### C1.649 — IMA-EXEC-20261112-1754Z-03 — contrato configurable de identidad y ciclo de vida
+- **HEAD auditado:** 0b8dc9a56d656180c541bdfe776d7a83fb826f0c (rama NG_beta_0.0.0.1_work).
+- **Rama base verificada:** 44d9891132332e692dbe2ba8602b41f50a508a59; no se actualizó ni modificó.
+- **Unidad:** PM-01 / TASK-153 / T153-S01-3 — contrato técnico genérico, parametrizable por reglas institucionales aprobadas.
+- **Implementación:** se añadió validateDepartmentLifecycleEvent_ a backend/shared/DepartmentCatalogContract.gs. Requiere configuración aprobada y versionada (InstitutionID, Domain, authorityApproved, approvalReference, version, states, activeStates, events), además de snapshot institucional/dominio verificado por servidor.
+- **Identidad:** DepartmentID permanece inmutable; un proposedRecord con ID distinto se rechaza. RENAME conserva ID y deja before/after. CHANGE_CODE exige código+namespace y previene colisión entre unidades activas. CHANGE_PARENT admite raíz sin padre, exige padre existente/activo y evita ciclos.
+- **Estados:** transiciones no se inventan; se leen de config.events. Se validan estado origen/destino y aprobación del evento. Se probaron desactivar/reactivar, cerrar/reabrir, merge y split. El motor no fija vocabulario institucional.
+- **Merge/split:** MERGE exige destino activo y mantiene el ID de origen con referencia al destino. SPLIT exige al menos dos IDs nuevos y únicos y devuelve propuestas; no crea unidades. Ambos indican ownershipMigrationRequired=true; no transfieren recursos ni expedientes automáticamente. Unidades inactivas/cerradas/mergeadas/divididas no permiten nuevas asignaciones según activeStates.
+- **Historial:** genera fila before/after con EventID, InstitutionID, Domain, DepartmentID, tipo, fecha efectiva, ChangedBy, ApprovedBy, ApprovalReference, motivo, versión y referencia de aprobación de configuración, IDs relacionados y firma. EventID/firma idénticos son idempotentes; colisión, duplicidad ambigua, desorden temporal, fecha inválida/futura o evento fuera de vigencia se rechazan. El snapshot y cada fila histórica deben coincidir en tenant/dominio.
+- **Pruebas locales:** 68 aserciones del ciclo de vida PASS; 56 de política PASS; 25 de catálogo PASS; 4 IDs reservados PASS; sintaxis del módulo PASS (Node v22.16.0). CI Node 24 reporta 69 aserciones de ciclo de vida PASS.
+- **CI:** run 43289049534 en HEAD 0b8dc9a: Department Scope PASS; Internal Responsibility RBAC PASS con C1.646, C1.648 y C1.649 PASS. User Role Membership falla en tests/security/user-role-membership-contract.test.js:119 con TypeError al leer role de null. El mismo fallo/línea existe en run 43283289566 anterior a C1.646; no es atribuible a estos contratos. Las etapas posteriores quedan omitidas por fail-fast.
+- **Límites:** función pura; no escribe catálogo/historial, no crea hojas, no ejecuta transiciones, no crea IDs, no migra recursos ni modifica expedientes. No se definieron estados institucionales reales ni se seleccionó autoridad. TASK-153/T153-S01 continúa En ejecución.
+- **Siguiente acción:** revisar la puerta T153-S01-4 del Plan Maestro y determinar si un preflight/dry-run genérico de reconciliación puede construirse con fixtures sintéticos sin aplicar ni inferir crosswalks reales.
+===============================================================================

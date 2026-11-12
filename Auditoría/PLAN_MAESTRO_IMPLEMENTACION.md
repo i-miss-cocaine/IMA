@@ -5113,3 +5113,13 @@ La revisión de requisitos originales confirma cobertura de:
 - auditEvent captura actor, membresía, rol, tenant, departamentos, recurso, operación, campos/documentos solicitados, decisión, motivo, GrantID, AuthorizedBy y timestamp. El consumidor debe persistirlo antes de divulgar; denegaciones no exponen allowlists.
 - Pruebas locales: 56 aserciones de política, 25 de catálogo, 4 IDs reservados y sintaxis PASS. CI 43287675970: contratos Department Scope e Internal Responsibility PASS (C1.646/C1.648); falla preexistente User Role Membership en línea 119, también observada en run 43283289566 previo.
 - Sin hojas reales, callsites productivos, escritura de auditoría ni acceso activado. TASK-153 sigue En ejecución. Siguiente trabajo: contrato genérico de identidad/ciclo de vida parametrizable para S01-3, sin anticipar decisiones de S01-2.
+
+
+
+**Addendum C1.649 — contrato genérico de identidad y ciclo de vida (T153-S01-3)**
+- Se incorpora validateDepartmentLifecycleEvent_ al módulo compartido. La configuración de estado/transiciones debe estar aprobada y versionada; el motor no impone vocabulario institucional.
+- DepartmentID es inmutable; renombre, cambio de código+namespace y cambio de padre preservan historial. Se permiten raíces sin padre; padres deben existir/estar activos y no formar ciclos. Código activo único por namespace.
+- Se validan transiciones parametrizadas, actor/motivo/aprobación, vigencia y scope tenant/domain verificado. EventID con firma igual es idempotente; colisión, duplicidad, fecha inválida/futura o evento fuera de orden se rechazan.
+- MERGE/SPLIT preservan ID histórico, requieren destino/propuestas nuevas y no transfieren recursos; las propuestas SPLIT no se crean. Cada evento genera before/after, firma, versión y referencia de aprobación de configuración.
+- Local: 68 aserciones lifecycle, 56 policy, 25 catalog, 4 IDs reservados y sintaxis PASS. CI run 43289049534 confirma 69 assertions lifecycle PASS y C1.646/C1.648 PASS; workflow falla en User Role Membership línea 119, fallo preexistente del run 43283289566.
+- Sin escrituras, hojas ni datos reales. TASK-153/T153-S01 sigue En ejecución. Siguiente: evaluar dry-run genérico de reconciliación para S01-4 sin usar crosswalks reales.

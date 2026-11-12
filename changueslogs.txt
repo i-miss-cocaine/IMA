@@ -2990,3 +2990,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Local: 56 aserciones de política + 25 de catálogo + 4 IDs reservados; sintaxis PASS. CI 43287675970: C1.646/C1.648 PASS; User Role Membership falla en línea 119, fallo preexistente confirmado en run 43283289566.
 - Sin callsites, hojas reales, persistencia de auditoría ni acceso activado. TASK-153 en ejecución.
 ===============================================================================
+
+
+
+===============================================================================
+[2026-11-12] C1.649 — contrato de identidad y ciclo de vida departamental
+- Motor puro y parametrizable: ID estable, rename, código+namespace, jerarquía, estados/transiciones aprobados, cierre/reactivación, merge/split, historial before/after e idempotencia.
+- Local: 68 lifecycle + 56 policy + 25 catálogo + 4 IDs reservados; sintaxis PASS. CI 43289049534: C1.646/C1.648/C1.649 PASS; User Role Membership línea 119 falla igual que en run previo 43283289566.
+- Sin escrituras ni migración real. TASK-153 en ejecución.
+===============================================================================
