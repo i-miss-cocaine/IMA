@@ -555,3 +555,6 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 
 
 | C1.603 | IMA-EXEC-20261110-1825Z-02 | saveEvaluationCategory: reentrada durante insertSheet y appendRow de encabezados al inicializar CategoriasEvaluacion; ambas secundarias EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; exterior conserva una hoja, encabezados, categoría y ownership activo únicos; harness 2/2 PASS; suite local aislada 22/22 PASS; parseo PASS; CI NOT VERIFIED | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt — C1.603 | sección final | C1.602 | C1.603 Completada localmente; backend sin cambios; BETA-EXAM-104 Pendiente beta |
+
+
+| C1.604 | IMA-EXEC-20261110-1825Z-02 | reopenPeriodGradebook: reentrada durante setValue de estado y appendRow de encabezados del historial vacío; ambas secundarias GRADEBOOK_REOPEN_LOCK_TIMEOUT; una transición y un evento de auditoría, sin duplicados; contrato local 31/31 PASS; parseo Code.gs/contrato PASS; CI pendiente | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt — C1.604 | sección final | C1.603 | C1.604 en verificación CI; backend sin cambios; BETA-EXAM-055 Pendiente beta |
