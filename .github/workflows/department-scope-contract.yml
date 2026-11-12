@@ -14,6 +14,7 @@ on:
       - js/student.js
       - tests/security/student-payment-voucher-client.test.js
       - tests/security/department-scope-contract.test.js
+      - tests/security/internal-responsibility-rbac-contract.test.js
       - tests/security/user-role-membership-contract.test.js
       - login.html
       - js/auth.js
@@ -40,6 +41,8 @@ jobs:
           node-version: 24
       - name: Run department scope contract
         run: node tests/security/department-scope-contract.test.js
+      - name: Run internal responsibility RBAC contract
+        run: node tests/security/internal-responsibility-rbac-contract.test.js
       - name: Run user role membership contract
         run: node tests/security/user-role-membership-contract.test.js
       - name: Run academic departmental resource access contract
