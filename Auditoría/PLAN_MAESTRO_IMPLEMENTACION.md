@@ -4976,3 +4976,13 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.635); sintaxis backend USER/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
 - **Estado:** C1.635 completada. T153-S02 continúa En ejecución.
 - **Siguiente acción:** auditar todas las rutas de marcadores de revocación y definir el tratamiento de tokens/revocaciones previas a C1.634.
+
+
+ 
+**Addendum C1.636 — integridad del ledger persistente de revocaciones**
+- Se incorpora el sentinel ScriptProperties `SESSION_REVOCATION_LEDGER_INITIALIZED=1`, escrito antes de crear/escribir `SesionesRevocadas`.
+- Si el ledger fue inicializado y la hoja desaparece, la verificación de sesión falla cerrada. La ausencia inicial antes de la primera revocación sigue siendo compatible.
+- Contrato V8 aislado PASS: sentinel, ledger ausente, restauración, y verificación de que cambio de rol/logout no escriben directamente marcas cache-only. Sintaxis backend/test PASS.
+- Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets/PropertiesService real Pendiente beta.
+- **Estado:** C1.636 completada. T153-S02 continúa En ejecución.
+- **Siguiente acción:** definir el tratamiento de tokens/revocaciones históricas anteriores a C1.634; una invalidación global de sesiones debe ser un paso explícito de rollout.
