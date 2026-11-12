@@ -176,6 +176,59 @@ function verifyUserRoleMembershipClaim_(claims) {
 }
 
 
+
+const SESSION_REVOCATION_HEADERS_ = ["SessionID","UserID","RevokedAt","ExpiresAt"];
+const SESSION_REVOCATION_STATE_HEADERS_ = ["Key","Value","UpdatedAt"];
+
+function isSessionRevokedInSharedLedger_(claims, spreadsheet) {
+  if (!claims) return true;
+  var userId = String(claims.userId || "").trim();
+  var sessionId = String(claims.sessionId || "").trim();
+  if (!userId && !sessionId) return true;
+  var stateSheet = spreadsheet.getSheetByName("EstadoRevocacionSesiones");
+  var sharedInitialized = false;
+  if (stateSheet) {
+    var stateData = stateSheet.getDataRange().getValues();
+    if (!stateData.length || JSON.stringify(stateData[0].map(String)) !== JSON.stringify(SESSION_REVOCATION_STATE_HEADERS_)) {
+      throw new Error("SESSION_REVOCATION_STATE_SCHEMA_MISMATCH");
+    }
+    sharedInitialized = stateData.slice(1).some(function(row) {
+      return String(row[0] || "").trim() === "LEDGER_INITIALIZED" && String(row[1] || "").trim() === "1";
+    });
+  }
+  var sheet = spreadsheet.getSheetByName("SesionesRevocadas");
+  if (!sheet) {
+    if (sharedInitialized) throw new Error("SESSION_REVOCATION_LEDGER_MISSING");
+    return false;
+  }
+  var data = sheet.getDataRange().getValues();
+  if (!data.length || JSON.stringify(data[0].map(String)) !== JSON.stringify(SESSION_REVOCATION_HEADERS_)) {
+    throw new Error("SESSION_REVOCATION_SCHEMA_MISMATCH");
+  }
+  var now = new Date();
+  function parseRevocationDate(value) {
+    if (value === "" || value === null || value === undefined) return { valid: true, date: null };
+    var date = value instanceof Date ? value : new Date(value);
+    return isNaN(date.getTime()) ? { valid: false, date: null } : { valid: true, date: date };
+  }
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i] || [];
+    var rowSessionId = String(row[0] || "").trim();
+    var rowUserId = String(row[1] || "").trim();
+    var matchesSession = !!sessionId && !!rowSessionId && rowSessionId === sessionId;
+    var matchesUser = !!userId && !!rowUserId && rowUserId === userId;
+    if (!matchesSession && !matchesUser) continue;
+    var expiry = parseRevocationDate(row[3]);
+    if (expiry.valid && expiry.date && expiry.date.getTime() <= now.getTime()) continue;
+    if (!expiry.valid) return true;
+    if (matchesSession) return true;
+    var revokedAt = parseRevocationDate(row[2]);
+    if (!revokedAt.valid || !revokedAt.date) return true;
+    if (Number(claims.iat) <= Math.floor(revokedAt.date.getTime() / 1000)) return true;
+  }
+  return false;
+}
+
 function verifySessionToken(tokenString) {
   if (!tokenString || typeof tokenString !== "string" || tokenString.indexOf(".") === -1) {
     return null;
@@ -206,6 +259,8 @@ function verifySessionToken(tokenString) {
     const cache = CacheService.getScriptCache();
     if (cache.get("revoked_user_" + claims.userId)) return null;
     if (cache.get("revoked_session_" + claims.sessionId)) return null;
+    const revocationSpreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+    if (isSessionRevokedInSharedLedger_(claims, revocationSpreadsheet)) return null;
 
     const stateCacheKey = "acct_state_" + claims.userId;
     const roleCacheKey = "acct_role_" + claims.userId;
