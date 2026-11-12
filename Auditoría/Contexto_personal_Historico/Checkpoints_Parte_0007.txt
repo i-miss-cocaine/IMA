@@ -1165,3 +1165,21 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** C1.625 implementada y verificada en harness aislado. T153-S02 continúa En ejecución; no iniciar T153-S03.
 - **Siguiente acción:** completar la matriz multirol del contexto activo: selección/cambio de departamento por membresía, revocación/expiración de una membresía sin afectar la otra, y consistencia de ámbitos/responsabilidades entre lectores y permisos RBAC explícitos.
 ===============================================================================
+
+
+===============================================================================
+### C1.626 — IMA-EXEC-20261112-1754Z-03 — selección de departamento y revocación/expiración independiente multirol
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.625.
+- **HEAD inicial:** `273cbf93655df2450c9a300be04ad1707a1d72de`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Completar pruebas de selección/cambio de departamento por membresía y aislamiento ante revocación/expiración de una membresía sin afectar las demás.
+- **Implementación:** se amplía `tests/security/internal-responsibility-rbac-contract.test.js`; no fue necesario modificar lógica productiva. Se agrega un segundo departamento a la membresía Director y se ejercita `activeDepartmentId`: el contexto se reduce al departamento solicitado y rechaza un departamento perteneciente a la membresía Auditor.
+- **Revocación independiente:** al marcar REVOKED la membresía Director, la sesión Director se invalida y sus asignaciones dejan de aparecer; la sesión Auditor continúa activa, conserva DEP-B y su asignación permanece visible.
+- **Expiración independiente:** al establecer una fecha de fin vencida en la membresía Director, su sesión queda invalidada; la sesión Auditor y su ámbito DEP-B siguen vigentes.
+- **Consistencia:** se contrasta el contexto efectivo con `getInternalRoleAssignments` para ambas membresías antes y después de revocación/expiración.
+- **Verificación local:** contrato completo ejecutado en harness V8 aislado: **PASS**; bloques iniciales y C1.621–C1.626 PASS. Parseo sintáctico de backend USER y contrato: **PASS**.
+- **Node CLI independiente:** NOT RUN (no hubo checkout local conectado en esta sesión). **CI:** no se ejecutó workflow ni se declara CI PASS. **Beta:** Apps Script/Sheets real NOT RUN; escenario registrado en `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `tests/security/internal-responsibility-rbac-contract.test.js`.
+- **Commit funcional:** `e86a9215897c42b441f5b100ff2b25f789b1f41c`.
+- **Estado:** C1.626 completada conforme a las verificaciones locales ejecutadas. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** comprobar que la resolución de responsabilidad/ámbitos y la autorización de acciones RBAC explícitas permanecen alineadas por cada membresía, incluidos permisos permitidos y denegados sin herencia entre roles.
+===============================================================================
