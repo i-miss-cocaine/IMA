@@ -1104,7 +1104,7 @@ function getUserRoleMembershipState_(userId, institutionId, nowValue) {
   var sheet = ss.getSheetByName("MembresiasRolesRBAC");
   if (!sheet) return { initialized: false, hasRecords: false, memberships: [] };
   var values = sheet.getDataRange().getValues();
-  if (!values.length || JSON.stringify(values[0].slice(0, USER_ROLE_MEMBERSHIP_HEADERS_.length).map(String)) !== JSON.stringify(USER_ROLE_MEMBERSHIP_HEADERS_)) {
+  if (!values.length || values[0].length !== USER_ROLE_MEMBERSHIP_HEADERS_.length || JSON.stringify(values[0].map(String)) !== JSON.stringify(USER_ROLE_MEMBERSHIP_HEADERS_)) {
     throw new Error("ROLE_MEMBERSHIP_SCHEMA_MISMATCH");
   }
   var now = nowValue instanceof Date ? nowValue : (nowValue ? new Date(nowValue) : new Date());
@@ -1149,6 +1149,8 @@ function resolveUserRoleMembership_(userId, roleId, institutionId, membershipId)
   var roleKey = String(roleId || "").trim();
   var membershipKey = String(membershipId || "").trim();
   if (!roleKey) return null;
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  if (!isConfiguredRbacRole_(ss, roleKey)) return null;
   var state = getUserRoleMembershipState_(userId, institutionId);
   var matches = state.memberships.filter(function(item) {
     return item.roleId === roleKey && (!membershipKey || item.membershipId === membershipKey);
