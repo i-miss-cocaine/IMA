@@ -8601,7 +8601,8 @@ function getEmployeeRecords(payload) {
   const requestedExpedienteId = String(expedienteId || "").trim();
   const requestedUserId = String(userId || "").trim();
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = ss.getSheetByName("ExpedientesLaborales") || getOrCreateSheet(ss, "ExpedientesLaborales");
+  const sheet = ss.getSheetByName("ExpedientesLaborales");
+  if (!sheet) return { status: "success", expedientes: [] };
   const values = sheet.getDataRange().getValues();
   const rows = values.length > 1 ? values.slice(1) : [];
 
