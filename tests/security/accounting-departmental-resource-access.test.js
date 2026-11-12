@@ -128,6 +128,7 @@ assert.deepEqual(Array.from(context.getEmployeeRecords(actor("employee")).expedi
 assert.equal(context.getEmployeeRecords({sessionToken:"staffA",expedienteId:"EXP-B"}).code,"RESOURCE_NOT_FOUND","a specific out-of-scope expediente must not disclose existence");
 assert.deepEqual(Array.from(context.getEmployeeRecords({sessionToken:"staffA",userId:"U-B"}).expedientes,r=>r.expedienteId),[],"client userId filters must not grant access");
 assert.equal(context.getEmployeeRecords({sessionToken:"invalid"}).code,"VERIFIED_IDENTITY_REQUIRED","unverified callers must be rejected");
+const employeeRowsSnapshot=rows.ExpedientesLaborales.map(r=>r.slice());
 const duplicateEmployeeRow=rows.ExpedientesLaborales[1].slice();
 rows.ExpedientesLaborales.push(duplicateEmployeeRow);
 assert.equal(context.getEmployeeRecords({sessionToken:"staffA",expedienteId:"EXP-A"}).code,"RESOURCE_NOT_FOUND","duplicate expediente IDs must fail closed");
@@ -135,7 +136,7 @@ rows.ExpedientesLaborales.pop();
 rows.ExpedientesLaborales.splice(1);
 assert.deepEqual(Array.from(context.getEmployeeRecords(actor("admin")).expedientes,r=>r.expedienteId),[],"empty employee sheets must return an empty list");
 assert.equal(rows.ExpedientesLaborales.length,1,"read-only listing must not seed demonstration employee records");
-rows.ExpedientesLaborales.push(duplicateEmployeeRow);
+rows.ExpedientesLaborales.splice(0,rows.ExpedientesLaborales.length,...employeeRowsSnapshot);
 assert.equal(context.uploadEmployeeDocument({sessionToken:"staffA",expedienteId:"EXP-B",tituloDocumento:"No autorizado"}).code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.assertPaymentVoucherOwnerAccess_(actor("student"),"U-STUDENT",{}).accessType,"SELF");
 assert.equal(context.assertPaymentVoucherOwnerAccess_(actor("student"),"U-OTHER",{}).code,"RESOURCE_SCOPE_DENIED");
