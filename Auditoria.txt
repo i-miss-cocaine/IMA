@@ -2324,3 +2324,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Cobertura: dos escenarios sobre handler/wrapper productivos; secundaria GRADE_RECTIFICATION_LOCK_TIMEOUT; exterior conserva una hoja, encabezados, auditoría y calificación únicos, con lock liberado.
 - Resultado local: suite V8 aislada 34/34 PASS; parseo Code.gs/contrato PASS. Backend sin cambios; Apps Script/Sheets real NOT RUN; BETA-EXAM-056 Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+### C1.607 — cierre de CI
+- GitHub Actions run 43142345822, commit bc6ced1c1caf4be40bc47e22d18a69d17ea50079: workflow Exam-Service security local contracts SUCCESS, Node.js 22; todos los pasos PASS.
+- Contrato de rectificación de notas 34/34 PASS; suite local V8 34/34 PASS; parseo PASS.
+- Backend sin cambios. BETA-EXAM-056 sigue Pendiente beta; Apps Script/Sheets real NOT RUN.
+===============================================================================

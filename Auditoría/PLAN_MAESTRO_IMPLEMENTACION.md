@@ -4599,3 +4599,9 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI:** pendiente de resultado verificable tras publicar.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-056 Pendiente beta.
 - **Estado:** C1.607 Completada en verificación local aislada; TASK-153 / AUD-NG-386 continúa En ejecución.
+
+
+**Cierre de verificación C1.607**
+- GitHub Actions run 43142345822, commit bc6ced1c1caf4be40bc47e22d18a69d17ea50079: workflow Exam-Service security local contracts SUCCESS en Node.js 22; todos los pasos del job exam-security-contracts SUCCESS.
+- Contrato exam-service-student-grade-rectification-security: 34/34 PASS; suite local V8 aislada 34/34 PASS; parseo de Code.gs y contrato PASS.
+- C1.607 completada con verificación local y CI. BETA-EXAM-056 permanece Pendiente beta; Apps Script/Sheets real NOT RUN.

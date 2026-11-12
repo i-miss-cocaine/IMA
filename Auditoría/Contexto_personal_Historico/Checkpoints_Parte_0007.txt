@@ -687,3 +687,11 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.607 Completada localmente; TASK-153 / AUD-NG-386 continúa En ejecución.
 - HEAD inicial: 1f1bf2d2a41ab45748f448d1f2ae9dfc0a863bf1; HEAD final se confirma tras publicar.
 ===============================================================================
+
+
+### Addendum de cierre CI — C1.607
+- GitHub Actions run 43142345822, commit bc6ced1c1caf4be40bc47e22d18a69d17ea50079: workflow Exam-Service security local contracts SUCCESS en Node.js 22; todos los pasos PASS.
+- Contrato exam-service-student-grade-rectification-security: 34/34 PASS; harness local V8 aislado: 34/34 PASS; parseo Code.gs/contrato PASS.
+- C1.607 Completada con verificación local y CI. BETA-EXAM-056 permanece Pendiente beta; Apps Script/Sheets real NOT RUN.
+- HEAD probado: bc6ced1c1caf4be40bc47e22d18a69d17ea50079; HEAD final se confirma tras este registro documental.
+===============================================================================
