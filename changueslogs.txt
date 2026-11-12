@@ -2737,3 +2737,14 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato completo ejecutado en harness V8 aislado PASS; sintaxis de USER y contrato PASS. Node CLI independiente NOT RUN; CI sin estado reportado; Apps Script/Sheets real Pendiente beta.
 - T153-S02 continúa En ejecución; siguiente incremento: selección/cambio de departamento, revocación independiente y consistencia multirol.
 ===============================================================================
+
+
+ 
+===============================================================================
+[2026-11-12] C1.626 — selección de departamento y revocación/expiración independiente multirol
+- Contrato ampliado para seleccionar activeDepartmentId dentro de los ámbitos de Director y denegar la selección de DEP-B, perteneciente a Auditor.
+- Revocación y expiración de la membresía Director invalidan solo su sesión/asignaciones; Auditor conserva sesión, DEP-B y asignación administrativa.
+- Contrato completo en harness V8 aislado PASS, incluidos C1.621–C1.626; sintaxis backend USER y test PASS.
+- Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
+- C1.626 completada; T153-S02 continúa En ejecución. Siguiente: consistencia de responsabilidades/ámbitos con permisos RBAC explícitos por membresía.
+===============================================================================
