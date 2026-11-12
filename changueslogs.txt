@@ -2891,3 +2891,15 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Node CLI independiente NOT RUN; CI no ejecutado; validación real entre despliegues Pendiente beta.
 - C1.639 completada; T153-S02 sigue En ejecución a la espera de matriz de trazabilidad.
 ===============================================================================
+
+
+ 
+===============================================================================
+[2026-11-12] C1.639 — revocación persistente compartida entre servicios
+- Hallazgo: cachés de revocación de ACADEMIC/ACCOUNTING/TASK/EXAM eran independientes de USER; revocación USER no se propagaba.
+- USER persiste SesionesRevocadas y EstadoRevocacionSesiones; los cuatro consumidores verifican SessionID, user-wide cutoff, expiración y cutoff legacy compartido; ledger ausente después de inicialización falla cerrado.
+- C1.637: el cutoff global se traslada a fila LEGACY_SESSION_CUTOFF del estado compartido.
+- Contrato completo V8 aislado PASS, incluidos C1.621–C1.639; sintaxis cinco servicios/test PASS.
+- Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real multi-proyecto Pendiente beta.
+- C1.639 completada; T153-S02 sigue En ejecución hasta revisión de trazabilidad y rollout.
+===============================================================================
