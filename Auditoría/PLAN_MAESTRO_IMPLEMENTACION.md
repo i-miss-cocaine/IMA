@@ -4897,3 +4897,12 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Contrato completo en harness V8 aislado PASS (bloques iniciales y C1.621–C1.627); sintaxis backend USER y contrato PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
 - **Estado:** C1.627 completada. T153-S02 continúa En ejecución; no iniciar T153-S03.
 - **Siguiente acción:** contrastar vínculos de responsabilidad/ámbito del contexto efectivo con el listado administrativo y probar vínculos conflictivos o duplicados.
+
+
+ 
+**Addendum C1.628 — consistencia de responsabilidad y ámbito entre lectores**
+- Se contrasta el conjunto de ResponsibilityID que entrega el contexto efectivo con el listado administrativo para la misma membresía; ambos resuelven la misma responsabilidad institucional.
+- Duplicados de ResponsibilityID, duplicados de RolInternoID y vínculos a ResponsibilityID inexistentes hacen que tanto el contexto como el listado administrativo fallen cerrados, sin exponer ámbitos efectivos.
+- Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.628); sintaxis backend USER/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
+- **Estado:** C1.628 completada. T153-S02 continúa En ejecución.
+- **Siguiente acción:** probar concurrencia determinista de assignRoleScope bajo ScriptLock, sin duplicados ni escrituras parciales.
