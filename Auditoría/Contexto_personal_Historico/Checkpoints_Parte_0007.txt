@@ -548,3 +548,31 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.603 Completada con verificación local aislada; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
 - HEAD inicial: 1737dfde3222a2c3658f27387d33d1614c8dd027; commit de pruebas: 1446c530ed9f03b8209bac8de546a82a0f93f1d9; HEAD final se confirma tras publicación documental.
 ===============================================================================
+
+
+===============================================================================
+## C1.604 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada en las escrituras de reapertura de período.
+
+### Hallazgo y cambio
+- reopenPeriodGradebook ya cubría reentrada durante appendRow del evento de auditoría; faltaban el cambio de estado del cierre mediante setValue y la inicialización de encabezados cuando HistorialRectificacionesNotas existe vacío.
+- Se amplía el fixture y se agregan ambos escenarios. Las secundarias reciben GRADEBOOK_REOPEN_LOCK_TIMEOUT; la exterior conserva una transición Reabierto y un solo evento, sin duplicar encabezados, y libera ScriptLock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-period-gradebook-reopen-security.test.js
+- beta_test.txt (actualización de BETA-EXAM-055)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Contrato completo re-ejecutado en runner aislado: 31/31 PASS.
+- Parseo JavaScript de Code.gs y del contrato: PASS.
+- CI: pendiente de resultado verificable tras el commit de pruebas.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-055 Pendiente beta.
+- C1.604 en verificación CI; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD inicial: e1fb4a6e2fc1bc9ce031f3ccb61a802a93cafbce; commit de pruebas: 08c46dd5c0e3c310e3fdc39097b61f52200ba258; HEAD final se confirma tras publicación documental.
+===============================================================================
