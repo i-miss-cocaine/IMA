@@ -4944,3 +4944,13 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.632); sintaxis backend USER/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
 - **Estado:** C1.632 completada. T153-S02 continúa En ejecución.
 - **Siguiente acción:** contrastar lecturas de membresías/roles, contexto activo y permisos de sesión para estados inactivos, duplicados y tenant mismatch.
+
+
+ 
+**Addendum C1.633 — vínculo de sesión firmada, institución y membresía**
+- Se ejecuta `verifySessionToken` real con HMAC/decodificación de payload controlados por fixtures y con la resolución real de membresía/estado de usuario.
+- La sesión local válida resuelve su MembershipID exacta y el contexto entrega DEP-A. Una membresía válida en otra institución no autentica contra la institución activa; intercambiar InstitutionID sin cambiar MembershipID tampoco autentica.
+- Revocar la membresía local o inactivar la cuenta invalida la sesión firmada. No se altera el estado de la membresía independiente de otro tenant.
+- Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.633); sintaxis backend USER/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; HMAC/CacheService/Sheets real Pendiente beta.
+- **Estado:** C1.633 completada. T153-S02 continúa En ejecución.
+- **Siguiente acción:** revisar revocación/caché de sesión, invalidación inmediata, expiración de token y aislamiento entre usuario, membresía y sesión.
