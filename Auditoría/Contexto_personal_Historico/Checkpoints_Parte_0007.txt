@@ -1001,3 +1001,10 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Siguiente acción concreta:** ejecutar `node tests/security/user-role-membership-contract.test.js`; ejecutar `node --check` en los seis servicios backend modificados y `js/auth.js`; corregir cualquier fallo y verificar CI. Después continuar el resto de T153-S02; no iniciar T153-S03 antes de cumplir sus dependencias.
 - **HEAD antes de registrar este checkpoint:** 8761be825782aef12f5fdbddfb6f3d351546bc2b.
 ===============================================================================
+
+
+### Addendum C1.616-R1 — validación estricta del esquema
+- Se corrigió ensureUserRoleMembershipSheet_ para rechazar columnas adicionales, no solo cabeceras incorrectas en las primeras 12 columnas.
+- Se amplió tests/security/user-role-membership-contract.test.js con una fixture de 13 columnas que debe producir ROLE_MEMBERSHIP_SCHEMA_MISMATCH.
+- Commit de corrección backend: 0b35e0175bdb2a6a496859c06c49c91b0df0c131. Commit de prueba: 1cba3b9b5adfda6a7f22e266347ca83a5509fd7d.
+- Estado de verificación sin cambios: pruebas locales NOT RUN; CI NOT VERIFIED; C1.616 permanece En ejecución.
