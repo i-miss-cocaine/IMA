@@ -106,6 +106,8 @@ function membership(id,user,role,institution,status="ACTIVE",from=start,to=end){
   for(const role of ["Future","Expired","Revoked","Other","BadDate"]) assert.equal(ctx.resolveUserRoleMembership_("U-1",role,"INST-1"),null,role+" must be denied");
   assert.equal(ctx.resolveUserRoleMembership_("U-1","Director","INST-2"),null,"wrong institution denied");
   assert.equal(ctx.resolveUserRoleMembership_("U-2","Director","INST-1").membershipId,"MU","exact user binding");
+  const foreignOnly=makeHarness([headers,membership("M-FOREIGN","U-1","Director","INST-2")]);
+  assert.equal(foreignOnly.ctx.getUserRoleMembershipState_("U-1","INST-1").hasRecords,false,"memberships in another institution do not migrate this institution's legacy role");
 }
 {
   const duplicate=makeHarness([headers,membership("M1","U-1","Director","INST-1"),membership("M2","U-1","Director","INST-1")]);
@@ -141,7 +143,7 @@ function membership(id,user,role,institution,status="ACTIVE",from=start,to=end){
   const switched=ctx.switchActiveRole({sessionToken:current,activeRoleId:"Coordinador"});
   assert.equal(switched.status,"success");
   assert.equal(ctx.verifySessionToken(switched.sessionToken).role,"Coordinador");
-  assert.equal(ctx.verifySessionToken(current).role,"Director","the prior role session remains valid only while its membership remains active");
+  assert.equal(ctx.verifySessionToken(current),null,"role switching revokes the prior signed session");
   assert.equal(ctx.switchActiveRole({sessionToken:switched.sessionToken,activeRoleId:"Administrador"}).code,"ROLE_MEMBERSHIP_NOT_ACTIVE");
 }
 {
@@ -193,9 +195,10 @@ console.log("User role membership contract: institution/user binding, effective 
     const membershipVerifier = extractFunction(serviceSource, "verifyUserRoleMembershipClaim_");
     const sessionVerifier = extractFunction(serviceSource, "verifySessionToken");
     const cache = {};
+    let serviceInstitution = "INST-1";
     const serviceCtx = {
       SPREADSHEET_ID:"LOCAL",
-      PropertiesService:{getScriptProperties:()=>({getProperty:key=>key==="IMA_INSTITUTION_ID"?"INST-1":""})},
+      PropertiesService:{getScriptProperties:()=>({getProperty:key=>key==="IMA_INSTITUTION_ID"?serviceInstitution:""})},
       SpreadsheetApp:{openById:()=>({getSheetByName:name=>name==="Usuarios"?{getDataRange:()=>({getValues:()=>[
         ["UserId","Nombre","Grado","Seccion","Email","PasswordHash","Rol","Telefono","NumeroLista","PersonaID","EstadoCuenta"],
         ["U-1","Test User","","","u1@example.test","","Student","","","","Activa"]
@@ -212,6 +215,11 @@ console.log("User role membership contract: institution/user binding, effective 
     sharedRows[1][4]="ACTIVE";
     assert.equal(serviceCtx.verifySessionToken(legacyToken).role,"Director",relativePath+" accepts legacy role only with active membership");
     assert.equal(serviceCtx.verifySessionToken(legacyUnassignedToken),null,relativePath+" denies legacy role without membership after migration");
+    sharedRows.splice(1,sharedRows.length-1,membership("M-FOREIGN","U-1","Director","INST-2"));
+    assert.equal(serviceCtx.verifySessionToken(legacyUnassignedToken).role,"Student",relativePath+" ignores memberships belonging to another institution");
+    sharedRows.splice(1);
+    serviceInstitution = "";
+    assert.equal(serviceCtx.verifySessionToken(legacyUnassignedToken).role,"Student",relativePath+" preserves legacy role when no institution memberships exist");
   }
 }
 
