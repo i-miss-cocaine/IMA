@@ -160,6 +160,15 @@ function membership(id,user,role,institution,status="ACTIVE",from=start,to=end){
   assert.equal(ctx.resolveUserRoleMembership_("U-1","Director","INST-1"),null);
   assert.equal(ctx.locked,false,"ScriptLock is released");
 }
+{
+  const rows=[headers,membership("M-ACTOR","U-1","Student","INST-1"),membership("M-DUP","U-1","Director","INST-1"),membership("M-DUP","U-2","Director","INST-1")];
+  const {ctx,membershipRows}=makeHarness(rows);
+  const actorSession=ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Student"});
+  const denied=ctx.manageUserRoleMemberships({sessionToken:actorSession,action:"REVOKE",userId:"U-1",membershipId:"M-DUP"});
+  assert.equal(denied.code,"ROLE_MEMBERSHIP_ID_CONFLICT","ambiguous global membership ID cannot be revoked");
+  assert.equal(membershipRows[2][4],"ACTIVE");
+  assert.equal(membershipRows[3][4],"ACTIVE");
+}
 
 
 {
