@@ -576,11 +576,11 @@ function validateRolePermission(action, payload) {
   if (!ctxCheck.authorized) {
     return { authorized: false, role: userRole + " (" + ctxCheck.reason + ")" };
   }
-  const resourceScopeActions = ["getEmployeeDocuments", "uploadEmployeeDocument", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher"];
+  const resourceScopeActions = ["getEmployeeDocuments", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher"];
   if (resourceScopeActions.indexOf(action) !== -1) {
     const roleKey = String(userRole || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
     const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1 &&
-      ["getEmployeeDocuments", "uploadEmployeeDocument"].indexOf(action) !== -1;
+      ["getEmployeeDocuments", "uploadEmployeeDocument", "getEmployeeSelfServicePortal"].indexOf(action) !== -1;
     const paymentSelfServiceRole = ["ESTUDIANTE", "ALUMNO", "TUTOR", "PADRE", "MADRE", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(roleKey) !== -1 &&
       ["getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher"].indexOf(action) !== -1;
     if (!employeeSelfRole && !paymentSelfServiceRole) {
@@ -12754,131 +12754,79 @@ function runHRIntegrationAndRegressionTests(payload) {
 
 // TAREA RH-10: Verificar y completar el portal de autoservicio del empleado
 function getEmployeeSelfServicePortal(payload) {
-  const { authRole, authUserId, targetUserId } = payload || {};
-  const isSelfServiceUser = authRole === "Empleado" || authRole === "Profesor" || authRole === "Asistente";
-
-  const effectiveUserId = isSelfServiceUser ? (authUserId || "EMP-CURRENT") : (targetUserId || authUserId || "EMP-CURRENT");
+  const p = payload || {};
+  const actor = getVerifiedAccountingIdentity_(p);
+  if (!actor.authorized) return { status: "error", code: actor.code || "VERIFIED_IDENTITY_REQUIRED", message: "Acceso denegado." };
+  const roleKey = String(actor.role || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
+  const selfServiceRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL", "PROFESOR", "ASISTENTE"].indexOf(roleKey) !== -1;
+  const requestedUserId = String(p.targetUserId || "").trim();
+  const targetUserId = selfServiceRole ? actor.userId : (requestedUserId || actor.userId);
+  if (!targetUserId) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Expediente no disponible." };
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-
-  // 1. Expediente Laboral Propio
-  const empSheet = getOrCreateSheet(ss, "ExpedientesLaborales");
-  const empRows = empSheet.getDataRange().getValues();
-  let expediente = null;
-
-  if (empRows.length > 1) {
-    const foundRow = empRows.slice(1).find(r => String(r[0]).trim() === String(effectiveUserId).trim());
-    if (foundRow) {
-      expediente = {
-        expedienteId: foundRow[0],
-        nombreCompleto: foundRow[1],
-        puesto: foundRow[2],
-        departamento: foundRow[3],
-        fechaIngreso: foundRow[4],
-        tipoContrato: foundRow[5],
-        jornada: foundRow[6],
-        estadoLaboral: foundRow[7]
-      };
-    }
+  const employeeSheet = ss.getSheetByName("ExpedientesLaborales");
+  if (!employeeSheet) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Expediente no disponible." };
+  const employeeData = employeeSheet.getDataRange().getValues();
+  if (!employeeData || employeeData.length < 2) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Expediente no disponible." };
+  const employeeHeaders = (employeeData[0] || []).map(function(value) { return String(value || "").trim().toUpperCase(); });
+  const expedienteIndex = employeeHeaders.indexOf("EXPEDIENTEID"), userIndex = employeeHeaders.indexOf("USERID");
+  const personaIndex = employeeHeaders.indexOf("PERSONAID"), positionIndex = employeeHeaders.indexOf("PUESTO");
+  const departmentIndex = employeeHeaders.indexOf("DEPARTAMENTO"), entryDateIndex = employeeHeaders.indexOf("FECHAINGRESO");
+  const statusIndex = employeeHeaders.indexOf("ESTADOLABORAL");
+  if ([expedienteIndex, userIndex, personaIndex, positionIndex, departmentIndex, entryDateIndex, statusIndex].some(function(index) { return index < 0; })) {
+    return { status: "error", code: "RESOURCE_DATA_SCHEMA_INVALID", message: "Datos del expediente no disponibles." };
   }
-
-  // 2. Contratos Propios
-  const conSheet = getOrCreateSheet(ss, "ContratosLaborales");
-  const conRows = conSheet.getDataRange().getValues();
-  let contratos = [];
-
-  if (conRows.length > 1) {
-    contratos = conRows.slice(1).filter(r => String(r[1]).trim() === String(effectiveUserId).trim()).map(r => ({
-      contratoId: r[0],
-      empleadoId: r[1],
-      tipoContrato: r[2],
-      puesto: r[3],
-      fechaInicio: r[4],
-      fechaFin: r[5],
-      salarioBase: r[6],
-      estadoContrato: r[7]
-    }));
+  const employeeRows = employeeData.slice(1);
+  const matchingEmployees = employeeRows.filter(function(row) { return String(row[userIndex] || "").trim() === targetUserId; });
+  if (matchingEmployees.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Expediente no disponible." };
+  const employee = matchingEmployees[0], expedienteId = String(employee[expedienteIndex] || "").trim();
+  if (!expedienteId || employeeRows.filter(function(row) { return String(row[expedienteIndex] || "").trim() === expedienteId; }).length !== 1) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Expediente no disponible." };
   }
+  const access = assertEmployeeExpedienteScopeAccess_(p, ss, expedienteId);
+  if (!access.authorized) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Expediente no disponible." };
 
-  // 3. Solicitudes de Vacaciones / Permisos
-  const vacSheet = getOrCreateSheet(ss, "SolicitudesVacaciones");
-  const vacRows = vacSheet.getDataRange().getValues();
-  let solicitudesVacaciones = [];
-
-  if (vacRows.length > 1) {
-    solicitudesVacaciones = vacRows.slice(1).filter(r => String(r[1]).trim() === String(effectiveUserId).trim()).map(r => ({
-      solicitudId: r[0],
-      empleadoId: r[1],
-      tipoSolicitud: r[2],
-      fechaInicio: r[3],
-      fechaFin: r[4],
-      diasSolicitados: r[5],
-      estado: r[6],
-      comentarios: r[7]
-    }));
+  function readRows(name, expectedHeaders) {
+    const sheet = ss.getSheetByName(name);
+    if (!sheet) return { valid: true, rows: [] };
+    const values = sheet.getDataRange().getValues();
+    if (!values || !values.length) return { valid: true, rows: [] };
+    const headers = (values[0] || []).map(function(value) { return String(value || "").trim().toUpperCase(); });
+    const expected = expectedHeaders.map(function(value) { return String(value).toUpperCase(); });
+    if (JSON.stringify(headers) !== JSON.stringify(expected)) return { valid: false, rows: [] };
+    return { valid: true, rows: values.slice(1) };
   }
-
-  // 4. Préstamos / Anticipos
-  const loanSheet = getOrCreateSheet(ss, "PrestamosAnticiposEmpleado");
-  const loanRows = loanSheet.getDataRange().getValues();
-  let prestamos = [];
-
-  if (loanRows.length > 1) {
-    prestamos = loanRows.slice(1).filter(r => String(r[1]).trim() === String(effectiveUserId).trim()).map(r => ({
-      prestamoId: r[0],
-      empleadoId: r[1],
-      montoTotal: r[2],
-      cuotasPactadas: r[3],
-      montoCuota: r[4],
-      saldoPendiente: r[5],
-      estado: r[6]
-    }));
+  const contractsResult = readRows("ContratosLaborales", ["ContratoID", "ExpedienteID", "TipoContrato", "FechaInicio", "FechaFin", "SalarioBase", "Jornada", "EstadoContrato", "Observaciones"]);
+  const vacationsResult = readRows("SolicitudesVacaciones", ["SolicitudID", "ExpedienteID", "Tipo", "FechaInicio", "FechaFin", "DiasSolicitados", "Estado", "AprobadoPor", "Observaciones"]);
+  const loansResult = readRows("AnticiposPrestamosEmpleado", ["PrestamoID", "Fecha", "EmpleadoId", "Tipo", "MontoSolicitado", "MontoAprobado", "PlazoCuotas", "CuotaMensual", "SaldoPendiente", "EstadoAprobacion", "AprobadoPor", "Observaciones"]);
+  const shiftsResult = readRows("AsignacionesTurnosLaborales", ["AsignacionTurnoID", "EmpleadoID", "NombreTurno", "FechaInicio", "FechaFin", "HoraEntrada", "HoraSalida", "DepartamentoArea", "Estado", "CreadoPor", "FechaCreacion", "UltimaModificacion"]);
+  const trainingResult = readRows("InscripcionesCapacitacion", ["InscripcionID", "CursoID", "EmpleadoID", "FechaInscripcion", "EstadoInscripcion", "AsistenciaPorcentaje", "ResultadoNota", "CertificadoDriveUrl", "FechaEmisionCertificado", "FechaVencimientoCertificado", "Observaciones", "CreadoPor", "FechaCreacion", "UltimaModificacion"]);
+  if (![contractsResult, vacationsResult, loansResult, shiftsResult, trainingResult].every(function(result) { return result.valid; })) {
+    return { status: "error", code: "RESOURCE_DATA_SCHEMA_INVALID", message: "Datos laborales no disponibles." };
   }
-
-  // 5. Turnos y Sustituciones
-  const shiftSheet = getOrCreateSheet(ss, "AsignacionesTurnosLaborales");
-  const shiftRows = shiftSheet.getDataRange().getValues();
-  let turnos = [];
-
-  if (shiftRows.length > 1) {
-    turnos = shiftRows.slice(1).filter(r => String(r[1]).trim() === String(effectiveUserId).trim()).map(r => ({
-      asignacionTurnoId: r[0],
-      nombreTurno: r[2],
-      fechaInicio: r[3],
-      fechaFin: r[4],
-      horaEntrada: r[5],
-      horaSalida: r[6],
-      estado: r[8]
-    }));
-  }
-
-  // 6. Capacitaciones
-  const capSheet = getOrCreateSheet(ss, "InscripcionesCapacitacion");
-  const capRows = capSheet.getDataRange().getValues();
-  let capacitaciones = [];
-
-  if (capRows.length > 1) {
-    capacitaciones = capRows.slice(1).filter(r => String(r[2]).trim() === String(effectiveUserId).trim()).map(r => ({
-      inscripcionId: r[0],
-      cursoId: r[1],
-      estadoInscripcion: r[4],
-      asistenciaPorcentaje: r[5],
-      resultadoNota: r[6],
-      certificadoDriveUrl: r[7]
-    }));
-  }
-
+  const contratos = contractsResult.rows.filter(function(row) { return String(row[1] || "").trim() === expedienteId; }).map(function(row) {
+    return { contratoId: row[0], expedienteId: row[1], tipoContrato: row[2], fechaInicio: row[3], fechaFin: row[4], salarioBase: parseFloat(row[5] || 0), jornada: row[6], estadoContrato: row[7], observaciones: row[8] };
+  });
+  const solicitudesVacaciones = vacationsResult.rows.filter(function(row) { return String(row[1] || "").trim() === expedienteId; }).map(function(row) {
+    return { solicitudId: row[0], empleadoId: row[1], tipoSolicitud: row[2], fechaInicio: row[3], fechaFin: row[4], diasSolicitados: row[5], estado: row[6], comentarios: row[8] };
+  });
+  const prestamos = loansResult.rows.filter(function(row) { return String(row[2] || "").trim() === targetUserId; }).map(function(row) {
+    return { prestamoId: row[0], empleadoId: row[2], montoTotal: parseFloat(row[4] || 0), cuotasPactadas: parseInt(row[6] || 1, 10), montoCuota: parseFloat(row[7] || 0), saldoPendiente: parseFloat(row[8] || 0), estado: row[9] };
+  });
+  const turnos = shiftsResult.rows.filter(function(row) { return String(row[1] || "").trim() === targetUserId; }).map(function(row) {
+    return { asignacionTurnoId: row[0], nombreTurno: row[2], fechaInicio: row[3], fechaFin: row[4], horaEntrada: row[5], horaSalida: row[6], estado: row[8] };
+  });
+  const capacitaciones = trainingResult.rows.filter(function(row) { return String(row[2] || "").trim() === targetUserId; }).map(function(row) {
+    return { inscripcionId: row[0], cursoId: row[1], estadoInscripcion: row[4], asistenciaPorcentaje: row[5], resultadoNota: row[6], certificadoDriveUrl: row[7] };
+  });
+  const primaryContract = contratos.length ? contratos[0] : null;
   return {
     status: "success",
     data: {
-      effectiveUserId,
-      expediente,
-      contratos,
-      solicitudesVacaciones,
-      prestamos,
-      turnos,
-      capacitaciones,
-      seguridadTrazable: "Acceso restringido server-side a la identidad autenticada."
+      effectiveUserId: targetUserId,
+      expediente: { expedienteId: expedienteId, nombreCompleto: "", puesto: employee[positionIndex], departamento: employee[departmentIndex], fechaIngreso: employee[entryDateIndex], tipoContrato: primaryContract ? primaryContract.tipoContrato : "", jornada: primaryContract ? primaryContract.jornada : "", estadoLaboral: employee[statusIndex] },
+      contratos: contratos, solicitudesVacaciones: solicitudesVacaciones, prestamos: prestamos, turnos: turnos, capacitaciones: capacitaciones,
+      seguridadTrazable: "Acceso validado con identidad firmada y ownership/ámbito del expediente."
     }
   };
 }

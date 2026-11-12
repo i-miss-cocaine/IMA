@@ -27,7 +27,7 @@ const accounting=fs.readFileSync(path.resolve(__dirname,"../../backend/accountin
 const names=[
  "getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentScope_","getVerifiedDepartmentScopeForSession_","assertResourceOwnershipForScope_","resolveEmployeeDepartmentId_","assertEmployeeExpedienteScopeAccess_",
  "getAccountingPersonIdForUser_","resolveStudentExpedienteForAccounting_","assertPaymentVoucherOwnerAccess_",
- "extractDriveFileId","getEmployeeDocuments","getEmployeeRecords","uploadEmployeeDocument","uploadPaymentVoucher","getPaymentVouchers","getPaymentVoucherFile","reviewPaymentVoucher","validateRolePermission"
+ "extractDriveFileId","getEmployeeDocuments","getEmployeeRecords","getEmployeeSelfServicePortal","uploadEmployeeDocument","uploadPaymentVoucher","getPaymentVouchers","getPaymentVoucherFile","reviewPaymentVoucher","validateRolePermission"
 ];
 const code="var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n"+names.map(n=>extractFunction(accounting,n)).join("\n");
 const claims={
@@ -53,6 +53,31 @@ const rows={
   ["DocumentoID","ExpedienteID","CategoriaDoc","TituloDocumento","ArchivoUrl","FechaCarga","CargadoPor","EstadoVisibilidad","Observaciones"],
   ["DOC-A","EXP-A","Contrato","A","url","","U-A","Privado",""],
   ["DOC-B","EXP-B","Contrato","B","url","","U-B","Privado",""]
+ ],
+ ContratosLaborales:[
+  ["ContratoID","ExpedienteID","TipoContrato","FechaInicio","FechaFin","SalarioBase","Jornada","EstadoContrato","Observaciones"],
+  ["CTR-A","EXP-A","Indefinido","2026-01-01","","20000","Completa","Activo","A"],
+  ["CTR-B","EXP-B","Temporal","2026-01-01","","15000","Parcial","Activo","B"]
+ ],
+ SolicitudesVacaciones:[
+  ["SolicitudID","ExpedienteID","Tipo","FechaInicio","FechaFin","DiasSolicitados","Estado","AprobadoPor","Observaciones"],
+  ["VAC-A","EXP-A","Vacaciones","2026-12-01","2026-12-05",5,"Pendiente","","A"],
+  ["VAC-B","EXP-B","Permiso","2026-12-02","2026-12-03",2,"Pendiente","","B"]
+ ],
+ AnticiposPrestamosEmpleado:[
+  ["PrestamoID","Fecha","EmpleadoId","Tipo","MontoSolicitado","MontoAprobado","PlazoCuotas","CuotaMensual","SaldoPendiente","EstadoAprobacion","AprobadoPor","Observaciones"],
+  ["ADV-A","2026-01-01","U-EMP","Anticipo",1000,0,2,500,1000,"Pendiente","","A"],
+  ["ADV-B","2026-01-01","U-B","Anticipo",2000,0,4,500,2000,"Pendiente","","B"]
+ ],
+ AsignacionesTurnosLaborales:[
+  ["AsignacionTurnoID","EmpleadoID","NombreTurno","FechaInicio","FechaFin","HoraEntrada","HoraSalida","DepartamentoArea","Estado","CreadoPor","FechaCreacion","UltimaModificacion"],
+  ["TUR-A","U-EMP","Matutino","2026-01-01","2026-12-31","07:00","15:00","DEP-A","Activo","","",""],
+  ["TUR-B","U-B","Vespertino","2026-01-01","2026-12-31","13:00","21:00","DEP-B","Activo","","",""]
+ ],
+ InscripcionesCapacitacion:[
+  ["InscripcionID","CursoID","EmpleadoID","FechaInscripcion","EstadoInscripcion","AsistenciaPorcentaje","ResultadoNota","CertificadoDriveUrl","FechaEmisionCertificado","FechaVencimientoCertificado","Observaciones","CreadoPor","FechaCreacion","UltimaModificacion"],
+  ["CAP-A","CUR-A","U-EMP","2026-01-01","Finalizado",100,95,"private-a","","","","","",""],
+  ["CAP-B","CUR-B","U-B","2026-01-01","Finalizado",100,90,"private-b","","","","","",""]
  ],
  ResourceOwnership:[
   ["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"],
@@ -107,7 +132,7 @@ const context={
  Utilities:{base64Encode:bytes=>Buffer.from(bytes).toString("base64")},
  logStructuredEvent:()=>{}
 };
-vm.runInNewContext(code+"\nthis.assertEmployeeExpedienteScopeAccess_=assertEmployeeExpedienteScopeAccess_;this.assertPaymentVoucherOwnerAccess_=assertPaymentVoucherOwnerAccess_;this.getEmployeeDocuments=getEmployeeDocuments;this.getEmployeeRecords=getEmployeeRecords;this.uploadEmployeeDocument=uploadEmployeeDocument;this.uploadPaymentVoucher=uploadPaymentVoucher;this.getPaymentVouchers=getPaymentVouchers;this.getPaymentVoucherFile=getPaymentVoucherFile;this.reviewPaymentVoucher=reviewPaymentVoucher;",context);
+vm.runInNewContext(code+"\nthis.assertEmployeeExpedienteScopeAccess_=assertEmployeeExpedienteScopeAccess_;this.assertPaymentVoucherOwnerAccess_=assertPaymentVoucherOwnerAccess_;this.getEmployeeDocuments=getEmployeeDocuments;this.getEmployeeRecords=getEmployeeRecords;this.getEmployeeSelfServicePortal=getEmployeeSelfServicePortal;this.uploadEmployeeDocument=uploadEmployeeDocument;this.uploadPaymentVoucher=uploadPaymentVoucher;this.getPaymentVouchers=getPaymentVouchers;this.getPaymentVoucherFile=getPaymentVoucherFile;this.reviewPaymentVoucher=reviewPaymentVoucher;",context);
 const actor=token=>({sessionToken:token});
 assert.equal(context.assertEmployeeExpedienteScopeAccess_(actor("staffA"),ss,"EXP-A").authorized,true);
 assert.equal(context.assertEmployeeExpedienteScopeAccess_(actor("staffA"),ss,"EXP-B").code,"RESOURCE_SCOPE_DENIED");
@@ -200,4 +225,32 @@ assert.ok(extractFunction(accounting,"getPaymentVouchers").includes("assertPayme
 assert.ok(extractFunction(accounting,"reviewPaymentVoucher").includes("assertPaymentVoucherOwnerAccess_"));
 assert.ok(accounting.includes('"getPaymentVoucherFile"'),"new file action must be declared in role permissions");
 assert.ok(accounting.includes('case "getPaymentVoucherFile": result = getPaymentVoucherFile(payload); break;'));
+const selfPortal=context.getEmployeeSelfServicePortal(actor("employee"));
+assert.equal(selfPortal.status,"success");
+assert.equal(selfPortal.data.effectiveUserId,"U-EMP");
+assert.equal(selfPortal.data.expediente.expedienteId,"EXP-A");
+assert.equal(selfPortal.data.expediente.puesto,"Docente");
+assert.equal(selfPortal.data.expediente.departamento,"DEP-A");
+assert.deepEqual(Array.from(selfPortal.data.contratos,r=>r.contratoId),["CTR-A"]);
+assert.deepEqual(Array.from(selfPortal.data.solicitudesVacaciones,r=>r.solicitudId),["VAC-A"]);
+assert.deepEqual(Array.from(selfPortal.data.prestamos,r=>r.prestamoId),["ADV-A"]);
+assert.deepEqual(Array.from(selfPortal.data.turnos,r=>r.asignacionTurnoId),["TUR-A"]);
+assert.deepEqual(Array.from(selfPortal.data.capacitaciones,r=>r.inscripcionId),["CAP-A"]);
+assert.equal(context.getEmployeeSelfServicePortal({sessionToken:"employee",authRole:"Director",authUserId:"U-B",targetUserId:"U-B"}).data.expediente.expedienteId,"EXP-A","self-service payload identity and target overrides must be ignored");
+assert.equal(context.getEmployeeSelfServicePortal({sessionToken:"staffA",targetUserId:"U-EMP"}).status,"success");
+assert.equal(context.getEmployeeSelfServicePortal({sessionToken:"staffB",targetUserId:"U-EMP"}).code,"RESOURCE_NOT_FOUND");
+assert.equal(context.getEmployeeSelfServicePortal({sessionToken:"staffA",targetUserId:"U-B"}).code,"RESOURCE_NOT_FOUND");
+assert.equal(context.getEmployeeSelfServicePortal({sessionToken:"admin",targetUserId:"U-B"}).status,"success");
+assert.equal(context.getEmployeeSelfServicePortal({sessionToken:"invalid"}).code,"VERIFIED_IDENTITY_REQUIRED");
+const duplicatePortalEmployee=rows.ExpedientesLaborales[1].slice();duplicatePortalEmployee[0]="EXP-DUP";rows.ExpedientesLaborales.push(duplicatePortalEmployee);
+assert.equal(context.getEmployeeSelfServicePortal(actor("employee")).code,"RESOURCE_NOT_FOUND","duplicate employee user mappings fail closed");
+rows.ExpedientesLaborales.pop();
+const originalPortalOpen=context.SpreadsheetApp.openById,originalPortalGetOrCreate=context.getOrCreateSheet;let portalCreationAttempts=0;
+context.SpreadsheetApp.openById=()=>({getSheetByName:()=>null});
+context.getOrCreateSheet=()=>{portalCreationAttempts++;throw new Error("read path must not create sheets");};
+assert.equal(context.getEmployeeSelfServicePortal(actor("employee")).code,"RESOURCE_NOT_FOUND");
+assert.equal(portalCreationAttempts,0,"self-service reads must not create sheets");
+context.SpreadsheetApp.openById=originalPortalOpen;context.getOrCreateSheet=originalPortalGetOrCreate;
+assert.ok(extractFunction(accounting,"getEmployeeSelfServicePortal").includes("assertEmployeeExpedienteScopeAccess_"));
+assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeSelfServicePortal"'));
 console.log("Accounting departmental resource and payment voucher access contracts passed.");
