@@ -4734,3 +4734,15 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - GitHub Actions Department Scope run 43210592288 SUCCESS; Identity Mapping run 43210592306 SUCCESS; Task-Service security run 43210592253 SUCCESS. Todos los pasos de los tres workflows PASS.
 - BETA-FUNC-031 permanece Pendiente beta; Apps Script/Sheets real NOT RUN.
 - C1.614 completada local/CI como incremento parcial de T153-S02; no acredita soporte de múltiples roles simultáneos ni cierre de TASK-153.
+
+
+### 10.264 TASK-153 / T153-S02 — contexto activo explícito por departamento (C1.615)
+- **Brecha:** getUserContextScope devolvía la unión de todos los departamentos y dimensiones de ámbito del rol autenticado. No existía selector de departamento activo para solicitudes que deban operar dentro de uno de esos departamentos.
+- **Cambio:** se admite activeDepartmentId como selector no confiable únicamente si coincide exactamente con un departamento de una asignación vigente del usuario y rol verificados. El contexto resultante reduce departmentIds y scopes al departamento seleccionado, elimina el alcance institucional amplio y descarta dimensiones sin relación departamental demostrada.
+- **Denegación:** departamento no asignado, departamento elegido únicamente por un grant institucional general o ámbito de otra dimensión dentro del contexto departamental producen denegación fail-closed. No se infiere ni consulta un catálogo departamental no reconciliado.
+- **Compatibilidad:** si no se envía activeDepartmentId, se conserva la unión anterior, limitada a las asignaciones vigentes del rol firmado. validateRoleScopeAccess devuelve también el departamento activo; assertRecordOwnership consume el contexto reducido sin cambios adicionales.
+- **Cobertura local:** contrato Department Scope aislado con fixtures sintéticos; 37 aserciones PASS, incluidas selección válida, reducción de dos departamentos a uno, denegación de otro departamento, exclusión de otras dimensiones, selector no asignado y rechazo de selección derivada de alcance institucional. Contrato focalizado adicional 8/8 PASS; parseo de las funciones modificadas y del contrato PASS.
+- **Archivos funcionales:** backend/user-service/Code.gs; tests/security/department-scope-contract.test.js; beta_test.txt.
+- **Beta:** BETA-FUNC-032 Pendiente beta. Apps Script/Sheets real NOT RUN.
+- **Límite del incremento:** no habilita múltiples roles RBAC simultáneos. verifySessionToken sigue exigiendo que el rol firmado coincida con el rol único vigente de Usuarios; AsignacionesAmbitosRoles no se utiliza como fuente para elevar roles. El modelo canónico de membresías multirol y su contexto activo requieren una unidad separada dentro de T153-S02.
+- **Estado:** C1.615 Completada en verificación local; T153-S02 continúa En ejecución. T153-S01 permanece bloqueada solo para decisiones/datos institucionales reales; este cambio genérico no depende de ella.
