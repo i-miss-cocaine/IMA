@@ -2618,6 +2618,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-12] C1.615 — contexto activo explícito por departamento
 - USER getUserContextScope acepta activeDepartmentId solo cuando pertenece a un ámbito departamental vigente del rol firmado; reduce departmentIds/scopes al departamento elegido y desactiva el grant institucional amplio para esa solicitud.
 - La selección no asignada, inferida solo por grant institucional o acompañada de dimensiones sin relación departamental se rechaza fail-closed. Sin selector se mantiene la unión autorizada previa.
-- Contrato Department Scope local: 43 aserciones PASS; contrato focalizado adicional 8/8 PASS; parseo de funciones modificadas y contrato PASS.
+- Contrato Department Scope local PASS con selección activa y ownership positivo/negativo; contrato focalizado adicional 8/8 PASS; parseo de funciones modificadas y contrato PASS.
 - BETA-FUNC-032 Pendiente beta; Apps Script/Sheets real NOT RUN. Multirol RBAC simultáneo permanece pendiente dentro de T153-S02.
 ===============================================================================
