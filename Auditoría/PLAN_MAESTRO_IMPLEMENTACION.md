@@ -4362,3 +4362,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - El paso `Run gradebook save security regression` ejecutó `tests/security/exam-service-gradebook-save-security.test.js` y registró `exam-service-gradebook-save-security: PASS (30/30)`; job `exam-security-contracts` terminó SUCCESS.
 - El runner ejecutó el código y fixtures de forma aislada, sin despliegue ni infraestructura remota; satisface la verificación local del contrato. Apps Script/Sheets real NOT RUN.
 - C1.589 **Completada en verificación local aislada/CI**. BETA-EXAM-090 permanece Pendiente beta.
+
+
+### 10.239 TASK-153 / AUD-NG-386 — contención reentrante de submitGradebookForReview durante appendRow (C1.590)
+- **Brecha confirmada:** el handler valida RBAC, identidad, asignación y ausencia de solicitud previa bajo ScriptLock y crea el registro de revisión mediante appendRow; el contrato cubría timeout, revalidación y validaciones de negocio, pero no una segunda solicitud durante el append exterior.
+- **Cobertura añadida:** hook en appendRow de CierresPeriodos que invoca el handler real de forma anidada. La secundaria debe recibir GRADEBOOK_SUBMISSION_LOCK_TIMEOUT; la exterior crea un único registro REV-* en PendienteRevision, realiza un append, abre Sheets una vez y libera el lock.
+- **Alcance:** solo tests/security/exam-service-period-gradebook-submission-security.test.js y registro BETA-EXAM-091; backend productivo sin cambios.
+- **Verificación:** caso añadido; ejecución local aislada pendiente. Apps Script/Sheets real NOT RUN.
+- **Estado:** C1.590 En ejecución hasta completar la verificación local aislada. TASK-153 / AUD-NG-386 continúa En ejecución.

@@ -106,3 +106,30 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - El runner ejecutó código/fixtures sin despliegue ni servicio remoto; satisface la verificación local aislada. Apps Script/Sheets real NOT RUN.
 - C1.589 Completada en verificación local aislada/CI. BETA-EXAM-090 permanece Pendiente beta.
 - HEAD inicial: 9c4e4f39b0fe5ada096745d4505e247f594103ea; HEAD final: se confirma tras commit documental.
+
+
+===============================================================================
+## C1.590 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de submitGradebookForReview durante appendRow.
+
+### Hallazgo y cambio
+- El contrato existente cubría timeout, RBAC, identidad, asignación y duplicidad previa, pero no reentrada durante la creación del registro de revisión.
+- Se añade un hook en appendRow de CierresPeriodos que invoca submitGradebookForReview de forma anidada mientras ScriptLock exterior permanece retenido.
+- Resultado esperado: secundaria GRADEBOOK_SUBMISSION_LOCK_TIMEOUT; exterior crea un único registro REV-* en PendienteRevision mediante un append, abre Sheets una vez y libera el lock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-period-gradebook-submission-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Caso añadido; ejecución local aislada/CI pendiente tras commit.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-091 Pendiente beta.
+- C1.590 En ejecución hasta verificar el contrato local aislado.
+- HEAD inicial: 8a38c734f1bee2af398ced51b75f0b8e5b214478; HEAD final: se confirma tras publicar.
+===============================================================================

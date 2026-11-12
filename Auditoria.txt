@@ -2090,3 +2090,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Paso Run gradebook save security regression: exam-service-gradebook-save-security PASS (30/30); job exam-security-contracts SUCCESS.
 - Ejecución aislada sobre código/fixtures sin despliegue; Apps Script/Sheets real NOT RUN.
 - C1.589 Completada en verificación local aislada/CI. BETA-EXAM-090 sigue Pendiente beta.
+
+
+### C1.590 — AUD-NG-386 / submitGradebookForReview: reentrada durante appendRow
+- **Brecha:** el contrato verificaba timeout, RBAC, identidad, asignación y duplicidad previa, pero no una segunda solicitud durante el append exterior del registro de revisión.
+- **Cambio:** el fixture reentra al handler real desde appendRow. La secundaria debe recibir GRADEBOOK_SUBMISSION_LOCK_TIMEOUT; la exterior crea un único registro PendienteRevision y libera el lock.
+- **Alcance:** contrato de seguridad; backend productivo sin cambios. BETA-EXAM-091 agregado y Pendiente beta.
+- **Verificación:** caso añadido; ejecución aislada/CI pendiente tras commit. Apps Script/Sheets real NOT RUN.
+- **Estado:** En ejecución hasta verificar el contrato local aislado.

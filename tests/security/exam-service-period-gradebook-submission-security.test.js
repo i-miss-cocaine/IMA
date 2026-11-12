@@ -30,7 +30,7 @@ function makeSheet(rows) {
     rows,
     getDataRange() { return { getValues: () => this.rows.map(row => row.slice()) }; },
     getLastRow() { return this.rows.length; },
-    appendRow(row) { this.rows.push(row.slice()); }
+    appendRow(row) { this.appendCount = (this.appendCount || 0) + 1; if (this.onAppend) this.onAppend(row); this.rows.push(row.slice()); }
   };
 }
 
@@ -52,6 +52,7 @@ function fixture(options = {}) {
   if (options.badSchema) closureRows[0] = ["wrong"];
   const sheets = { ConfiguracionAcademica: makeSheet(assignmentRows) };
   if (!options.missingClosure) sheets.CierresPeriodos = makeSheet(options.emptyClosure ? [] : closureRows);
+  if (options.onClosureAppend && sheets.CierresPeriodos) sheets.CierresPeriodos.onAppend = options.onClosureAppend;
   const stats = { acquired: 0, released: 0, held: false, opens: 0, events: [] };
   const actor = options.actor || { authorized: true, userId: "T1", role: "Profesor" };
   const actors = options.actors || [actor];
@@ -304,4 +305,21 @@ test(() => {
   assert.equal(x.stats.opens, 0, "revoked permission must be rejected before Sheets is opened");
   assert.deepEqual(x.sheets.CierresPeriodos.rows, before, "revoked permission must not create a review request");
 });
-console.log("exam-service-period-gradebook-submission-security: PASS (" + count + "/27)");
+test(() => {
+  let x, nestedAttempts = 0, nestedError = "";
+  x = fixture({ onClosureAppend: () => {
+    nestedAttempts++;
+    try { x.call(); } catch (error) { nestedError = error.message; }
+  } });
+  const result = x.call();
+  assert.equal(result.status, "success", "outer submission must complete");
+  assert.equal(nestedAttempts, 1);
+  assert.equal(nestedError, "GRADEBOOK_SUBMISSION_LOCK_TIMEOUT", "reentrant submission must time out on the shared ScriptLock");
+  assert.equal(x.sheets.CierresPeriodos.rows.length, 2, "only the outer request may create a review record");
+  assert.equal(x.sheets.CierresPeriodos.rows[1][0], "REV-U1");
+  assert.equal(x.sheets.CierresPeriodos.rows[1][7], "PendienteRevision");
+  assert.equal(x.sheets.CierresPeriodos.appendCount, 1, "exactly one closure row may be appended");
+  assert.deepEqual([x.stats.acquired, x.stats.released, x.stats.held, x.stats.opens], [2, 1, false, 1]);
+  assert.deepEqual(x.stats.events, ["rbac", "identity", "lock", "rbac", "identity", "sheets", "rbac", "identity", "lock"]);
+});
+console.log("exam-service-period-gradebook-submission-security: PASS (" + count + "/28)");
