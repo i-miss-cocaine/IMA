@@ -153,6 +153,12 @@ function verifyUserRoleMembershipClaim_(claims) {
       var institution = String(row[3] || "").trim();
       var status = String(row[4] || "").trim().toUpperCase();
       if (!id || !role || institution !== configuredInstitution || idCounts[id] !== 1) return;
+      var roleConfigured = typeof ROLE_PERMISSIONS !== "undefined" && Object.prototype.hasOwnProperty.call(ROLE_PERMISSIONS, role);
+      if (!roleConfigured) {
+        var roleSheet = ss.getSheetByName("MatrizPermisosRoles");
+        roleConfigured = !!roleSheet && roleSheet.getDataRange().getValues().slice(1).some(function(roleRow) { return String(roleRow[0] || "").trim() === role; });
+      }
+      if (!roleConfigured) return;
       if (["ACTIVE", "ACTIVA", "ACTIVO"].indexOf(status) === -1) return;
       var start = row[5] === "" || row[5] === null || row[5] === undefined ? null : (row[5] instanceof Date ? row[5] : new Date(row[5]));
       var end = row[6] === "" || row[6] === null || row[6] === undefined ? null : (row[6] instanceof Date ? row[6] : new Date(row[6]));
