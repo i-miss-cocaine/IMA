@@ -1252,8 +1252,14 @@ function verifySessionToken(tokenString) {
       if (!claims.membershipId || !claims.institutionId) return null;
       var activeMembership = resolveUserRoleMembership_(claims.userId, claims.role, claims.institutionId, claims.membershipId);
       if (!activeMembership || activeMembership.institutionId !== String(getIdentityInstitutionId_()).trim()) return null;
-    } else if (!currentRole || currentRole !== claims.role.trim()) {
-      return null;
+    } else {
+      var institutionIdForLegacy = String(getIdentityInstitutionId_() || "").trim();
+      var membershipStateForLegacy = getUserRoleMembershipState_(claims.userId, institutionIdForLegacy);
+      if (membershipStateForLegacy.initialized && membershipStateForLegacy.hasRecords) {
+        if (!resolveUserRoleMembership_(claims.userId, claims.role.trim(), institutionIdForLegacy)) return null;
+      } else if (!currentRole || currentRole !== claims.role.trim()) {
+        return null;
+      }
     }
     return claims;
   } catch (e) {
@@ -1314,7 +1320,6 @@ function switchActiveRole(payload) {
       membershipId: membership.membershipId,
       institutionId: institutionId
     });
-    CacheService.getScriptCache().put("revoked_session_" + currentClaims.sessionId, "1", 86400);
     return { status: "success", sessionToken: nextToken, activeRoleId: membership.roleId, membershipId: membership.membershipId, message: "Contexto de rol activo actualizado." };
   } catch (error) {
     return { status: "error", code: error.message || "ACTIVE_ROLE_SWITCH_FAILED", message: "No fue posible cambiar el rol activo." };
@@ -3088,17 +3093,43 @@ function loginUser(payload) {
       }
 
       if (row[5] === hp) {
+        var selectedRoleId = String((payload && payload.activeRoleId) || "").trim();
+        var selectedMembership = null;
+        var availableMemberships = [];
+        var membershipInstitutionId = "";
+        var membershipSheet = ss.getSheetByName("MembresiasRolesRBAC");
+        if (selectedRoleId || membershipSheet) {
+          try {
+            membershipInstitutionId = String(getIdentityInstitutionId_()).trim();
+            var membershipState = getUserRoleMembershipState_(String(row[0]), membershipInstitutionId);
+            availableMemberships = membershipState.memberships;
+            if (selectedRoleId) {
+              selectedMembership = resolveUserRoleMembership_(String(row[0]), selectedRoleId, membershipInstitutionId);
+              if (!selectedMembership) return { status: "error", code: "ROLE_MEMBERSHIP_NOT_ACTIVE", message: "El rol solicitado no está asignado o vigente para esta cuenta." };
+            } else if (membershipState.initialized && membershipState.hasRecords) {
+              selectedMembership = availableMemberships.find(function(item) { return item.roleId === String(row[6] || "").trim(); }) || null;
+              if (!selectedMembership) {
+                return { status: "error", code: "ACTIVE_ROLE_SELECTION_REQUIRED", message: "Seleccione uno de los roles RBAC vigentes de la cuenta.", availableRoles: availableMemberships.map(function(item) { return { roleId: item.roleId, membershipId: item.membershipId }; }) };
+              }
+            }
+          } catch (membershipError) {
+            return { status: "error", code: membershipError.message || "ROLE_MEMBERSHIP_VALIDATION_FAILED", message: "No fue posible validar los roles asignados." };
+          }
+        }
+        var effectiveRole = selectedMembership ? selectedMembership.roleId : String(row[6] || "").trim();
         sheet.getRange(i + 1, 12).setValue(0);
         sheet.getRange(i + 1, 13).setValue(new Date());
 
         const sessionToken = generateSessionToken({
           userId: row[0],
           email: row[4],
-          role: row[6],
-          accountState: state
+          role: effectiveRole,
+          accountState: state,
+          membershipId: selectedMembership ? selectedMembership.membershipId : "",
+          institutionId: selectedMembership ? membershipInstitutionId : ""
         });
 
-        logStructuredEvent("USER", "loginUser", "INFO", "LOGIN_SUCCESS", `Inicio de sesión exitoso para usuario ${row[0]}`, { correlationId, userId: row[0], rol: row[6] }, row[6]);
+        logStructuredEvent("USER", "loginUser", "INFO", "LOGIN_SUCCESS", `Inicio de sesión exitoso para usuario ${row[0]}`, { correlationId, userId: row[0], rol: effectiveRole }, effectiveRole);
 
         return {
           status: "success",
@@ -3109,7 +3140,8 @@ function loginUser(payload) {
             grado: row[2],
             seccion: row[3],
             email: row[4],
-            rol: row[6],
+            rol: effectiveRole,
+            rolesDisponibles: availableMemberships.map(function(item) { return { roleId: item.roleId, membershipId: item.membershipId }; }),
             sessionToken: sessionToken,
             telefono: row[7] || "",
             numeroLista: row[8] || "",
