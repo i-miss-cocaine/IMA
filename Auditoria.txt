@@ -2269,3 +2269,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Suite local completa 31/31 PASS en runner aislado; parseo de Code.gs y del contrato PASS.
 - Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-055 Pendiente beta. CI pendiente de resultado verificable.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.605 — reentrada al inicializar CierresPeriodos
+- closePeriodGradebook ya probaba reentrada durante appendRow del cierre final; se añadieron pruebas para reentrada durante insertSheet y appendRow de encabezados de CierresPeriodos ausente.
+- Las secundarias reciben GRADEBOOK_CLOSURE_LOCK_TIMEOUT; la exterior deja una sola hoja, encabezados y cierre, abre Sheets una vez y libera ScriptLock. No se alteran calificaciones.
+- Contrato completo 24/24 PASS en runner aislado; parseo de Code.gs y contrato PASS.
+- Backend productivo sin cambios. BETA-EXAM-052 ampliado; Apps Script/Sheets real NOT RUN; CI pendiente de resultado verificable.
+===============================================================================
