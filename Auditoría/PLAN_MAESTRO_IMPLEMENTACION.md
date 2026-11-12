@@ -4954,3 +4954,15 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.633); sintaxis backend USER/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; HMAC/CacheService/Sheets real Pendiente beta.
 - **Estado:** C1.633 completada. T153-S02 continúa En ejecución.
 - **Siguiente acción:** revisar revocación/caché de sesión, invalidación inmediata, expiración de token y aislamiento entre usuario, membresía y sesión.
+
+
+ 
+**Addendum C1.634 — revocación persistente de sesiones**
+- Hallazgo: tokens emitidos por 24 h dependían de CacheService (máximo 21,600 s/6 h y entradas no garantizadas hasta su vencimiento); switchActiveRole solicitaba 86,400 s. La acción pública logoutUser también confiaba en IDs de usuario/sesión enviados por cliente.
+- Corrección: ledger `SesionesRevocadas` persistente con SessionID/UserID/RevokedAt/ExpiresAt; verificación de token consulta el ledger y falla cerrada ante esquema inválido. Retención 86,460 s (24 h + tolerancia iat de 60 s). Caché solo acelera.
+- Revocación por usuario bloquea tokens emitidos hasta RevokedAt, permitiendo nuevos logins posteriores. Logout deriva solo SessionID de claims firmados y revoca la sesión actual; switchActiveRole registra persistentemente el token previo.
+- Contrato V8 aislado PASS: cache miss/eviction, persistencia, usuario-wide cutoff, nuevo token posterior, IDs falsificados, switch de rol, token expirado y ledger corrupto. Sintaxis backend/test PASS.
+- Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets/CacheService/HMAC real Pendiente beta.
+- Migración: revocaciones antiguas ya desaparecidas de caché no son recuperables; rollout debe validar la invalidez de tokens históricos.
+- **Estado:** C1.634 completada en harness aislado. T153-S02 continúa En ejecución.
+- **Siguiente acción:** auditar autorización de revokeUserSession, acceso al ledger y compatibilidad de sesiones históricas.
