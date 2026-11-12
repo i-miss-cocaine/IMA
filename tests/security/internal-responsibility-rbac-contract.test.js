@@ -1030,7 +1030,7 @@ for(const serviceName of Object.keys(crossServiceConsumers)){
 for(const serviceName of Object.keys(crossServiceConsumers)){
   assert.equal(crossServiceConsumers[serviceName].verifySessionToken("crossuser.sig").sessionId,"SID-CROSS-USER",serviceName+" accepts pre-revocation user session");
 }
-assert.equal(tenantSessionCtx.revokeUserSession({userId:"U-TENANT"}).status,"success");
+assert.equal(tenantSessionCtx.revokeUserSession({userId:"U-CROSS-USER"}).status,"success");
 for(const serviceName of Object.keys(crossServiceConsumers)){
   assert.equal(crossServiceConsumers[serviceName].verifySessionToken("crossuser.sig"),null,serviceName+" enforces user-wide cutoff from shared ledger");
   assert.equal(crossServiceConsumers[serviceName].verifySessionToken("crossafter.sig").sessionId,"SID-CROSS-AFTER",serviceName+" allows a session issued after user-wide revocation");
