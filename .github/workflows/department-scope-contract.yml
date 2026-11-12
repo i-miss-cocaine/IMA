@@ -11,6 +11,7 @@ on:
       - js/student.js
       - tests/security/student-payment-voucher-client.test.js
       - tests/security/department-scope-contract.test.js
+      - tests/security/user-role-membership-contract.test.js
       - tests/security/departmental-resource-access.test.js
       - tests/security/academic-student-expediente-ownership.test.js
       - tests/security/academic-admission-ownership.test.js
@@ -34,6 +35,8 @@ jobs:
           node-version: 24
       - name: Run department scope contract
         run: node tests/security/department-scope-contract.test.js
+      - name: Run user role membership contract
+        run: node tests/security/user-role-membership-contract.test.js
       - name: Run academic departmental resource access contract
         run: node tests/security/departmental-resource-access.test.js
       - name: Run academic student expediente ownership contract
