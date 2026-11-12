@@ -1052,6 +1052,59 @@ for(const serviceName of Object.keys(crossServiceConsumers)){
 assert.ok(originalSharedLedgerSheet,"the shared ledger fixture remains available for restoration");
 console.log("C1.639 cross-service revocation contract: USER session/user revocation, shared migration cutoff and missing-ledger fail-closed behavior enforced by ACADEMIC, ACCOUNTING, TASK and EXAM PASS.");
 
+ 
+// C1.641: every service-specific department reader binds scope rows to the exact signed membership, tenant and active responsibility.
+const scopeRoleHeaders=["RolInternoID","CodigoInterno","NombreResponsabilidad","Descripcion","Departamento","AreaAcademica","TipoResponsabilidad","VigenciaMeses","PermiteSuplencia","Estado","CreadoPor","FechaCreacion","FechaActualizacion","ResponsibilityID"];
+const scopeResponsibilityHeaders=["ResponsibilityID","Nombre","Descripcion","ModulosJSON","CapacidadesJSON","Estado","CreadoPor","FechaActualizacion"];
+const scopeRoleRows=[scopeRoleHeaders,
+ ["RI-SCOPE","R-SCOPE","Coordinación","","DEP-A","","Academica",12,"No","Activo","U-ADMIN","2026-01-01","2026-01-01","RESP-SCOPE"],
+ ["RI-INACTIVE","R-INACTIVE","Inactiva","","DEP-X","","Academica",12,"No","Inactivo","U-ADMIN","2026-01-01","2026-01-01","RESP-SCOPE"]
+];
+const scopeResponsibilityRows=[scopeResponsibilityHeaders,["RESP-SCOPE","Coordinación","",'["mod_scope"]','["CAP_SCOPE"]',"Activa","U-ADMIN","2026-01-01"]];
+const scopeBaseRow=(id,type,values,start="",end="",institution="INST-1",membership="MEM-SCOPE",responsibility="RI-SCOPE")=>[
+ id,"U-SCOPE","Director",type,JSON.stringify(values),"Activo","U-ADMIN","2026-01-01",start,end,"No","",institution,membership,responsibility
+];
+const scopeCurrentRows=[scopeHeaders,
+ scopeBaseRow("S-A","DEPARTAMENTO",["DEP-A"]),
+ scopeBaseRow("S-A2","DEPARTAMENTO",["DEP-A2"]),
+ scopeBaseRow("S-INST","INSTITUCION",["INST-1"]),
+ scopeBaseRow("S-OTHER-MEM","DEPARTAMENTO",["DEP-OTHER-MEM"],"","","INST-1","MEM-OTHER"),
+ scopeBaseRow("S-OTHER-TENANT","DEPARTAMENTO",["DEP-OTHER-TENANT"],"","","INST-OTHER","MEM-OTHER-TENANT"),
+ scopeBaseRow("S-INACTIVE-RESP","DEPARTAMENTO",["DEP-INACTIVE"],"","","INST-1","MEM-SCOPE","RI-INACTIVE"),
+ scopeBaseRow("S-FUTURE","DEPARTAMENTO",["DEP-FUTURE"],"2026-11-12T18:00:00.001Z"),
+ scopeBaseRow("S-EPOCH","DEPARTAMENTO",["DEP-EPOCH"],"",0),
+ scopeBaseRow("S-INVALID","DEPARTAMENTO",["DEP-INVALID"],"invalid-date"),
+ scopeBaseRow("S-DUP","DEPARTAMENTO",["DEP-DUP-A"]),
+ scopeBaseRow("S-DUP","DEPARTAMENTO",["DEP-DUP-B"])
+];
+const scopeClaims={userId:"U-SCOPE",role:"Director",membershipId:"MEM-SCOPE",institutionId:"INST-1"};
+const scopeServiceReaders=[["academic","getVerifiedAcademicDepartmentScope_"],["accounting","getVerifiedAccountingDepartmentScope_"],["task","getVerifiedTaskDepartmentScope_"],["exam","getVerifiedExamDepartmentScope_"]];
+for(const [serviceName,readerName] of scopeServiceReaders){
+ const scopeCtx={Date:FixedTemporalDate,PropertiesService:{getScriptProperties:()=>({getProperty:key=>key==="IMA_INSTITUTION_ID"?"INST-1":null})},verifySessionToken:token=>token==="scope-valid"?scopeClaims:(token==="scope-wrong-tenant"?{...scopeClaims,institutionId:"INST-OTHER"}:null)};
+ const code=`
+ ${extractFunction(consumerSources[serviceName],"getInstitutionalResponsibilityForRoleScope_")}
+ ${extractFunction(consumerSources[serviceName],"resolveInternalResponsibilityForRoleScope_")}
+ ${extractFunction(consumerSources[serviceName],"getVerifiedDepartmentScopeForSession_")}
+ ${extractFunction(consumerSources[serviceName],readerName)}
+ this.scopeReader=${readerName};
+ `;
+ vm.runInNewContext(code,scopeCtx);
+ const ss={getSheetByName:name=>{const rows=name==="AsignacionesAmbitosRoles"?scopeCurrentRows:(name==="CatalogoRolesInternos"?scopeRoleRows:(name==="ResponsabilidadesInstitucionales"?scopeResponsibilityRows:null));return rows?{getDataRange:()=>({getValues:()=>rows.map(row=>row.slice())})}:null;}};
+ const actor={authorized:true,userId:"U-SCOPE",role:"Director"};
+ const result=scopeCtx.scopeReader({sessionToken:"scope-valid"},ss,actor);
+ assert.equal(result.authorized,true,serviceName+" resolves the exact signed membership and active responsibility");
+ assert.deepEqual(Array.from(result.departmentIds),["DEP-A","DEP-A2"],serviceName+" excludes other membership, tenant, inactive responsibility, future, expired, invalid and duplicate assignment rows");
+ assert.equal(result.institutionWide,true,serviceName+" retains an explicit institution-wide grant for the same membership");
+ const narrowed=scopeCtx.scopeReader({sessionToken:"scope-valid",activeDepartmentId:"DEP-A2"},ss,actor);
+ assert.deepEqual(Array.from(narrowed.departmentIds),["DEP-A2"],serviceName+" narrows to the explicit active department");
+ assert.equal(narrowed.institutionWide,false,serviceName+" active department selection removes institution-wide expansion");
+ assert.equal(scopeCtx.scopeReader({sessionToken:"scope-valid",activeDepartmentId:"DEP-OTHER-MEM"},ss,actor).authorized,false,serviceName+" denies a department granted only to another membership");
+ assert.equal(scopeCtx.scopeReader({sessionToken:"scope-wrong-tenant"},ss,actor).authorized,false,serviceName+" rejects a signed institution mismatch");
+ assert.equal(scopeCtx.scopeReader({sessionToken:"scope-valid"},ss,{authorized:true,userId:"U-SCOPE",role:"Auditor"}).authorized,false,serviceName+" rejects an identity/claim role mismatch");
+}
+console.log("C1.641 cross-service scope contract: exact signed MembershipID/InstitutionID/RoleID binding, active responsibility chain, duplicate IDs, temporal fail-closed, multi-department union and activeDepartmentId narrowing PASS.");
+
+
 
 
 
