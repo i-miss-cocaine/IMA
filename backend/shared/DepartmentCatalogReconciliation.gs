@@ -13,6 +13,7 @@ function buildDepartmentCatalogReconciliationReport_(input) {
     if(!institutionId||!domain||!isFinite(now))return fail("DEPARTMENT_RECONCILIATION_SCOPE_INVALID");
     if(cfg.snapshotScopeVerified!==true||String(cfg.snapshotInstitutionId||"").trim()!==institutionId||String(cfg.snapshotDomain||"").trim()!==domain)return fail("DEPARTMENT_RECONCILIATION_SNAPSHOT_SCOPE_UNVERIFIED");
     if(cfg.crosswalkScopeVerified!==true||String(cfg.crosswalkInstitutionId||"").trim()!==institutionId||String(cfg.crosswalkDomain||"").trim()!==domain)return fail("DEPARTMENT_RECONCILIATION_CROSSWALK_SCOPE_UNVERIFIED");
+    if(cfg.authorityDecisionVerified!==true)return fail("DEPARTMENT_AUTHORITY_DECISION_UNVERIFIED");
     var sourceCatalogId=String(src.catalogId||"").trim(),canonicalCatalogId=String(can.catalogId||"").trim();
     if(!sourceCatalogId||!canonicalCatalogId||sourceCatalogId===canonicalCatalogId)return fail("DEPARTMENT_RECONCILIATION_CATALOG_PAIR_INVALID");
     if(String(auth.institutionId||"").trim()!==institutionId||String(auth.domain||"").trim()!==domain||String(auth.authorityCatalogId||"").trim()!==canonicalCatalogId)return fail("DEPARTMENT_AUTHORITY_DECISION_SCOPE_MISMATCH");

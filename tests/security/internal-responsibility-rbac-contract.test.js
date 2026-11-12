@@ -1447,7 +1447,7 @@ const reconciliationMappings=[
  reconciliationMap("M","X",{validFrom:"2026-11-12T18:00:00.001Z"}),reconciliationMap("N","X",{validTo:"2026-11-11T23:59:59.000Z"}),reconciliationMap("O","X",{approvedBy:""}),
  reconciliationMap("P","X"),reconciliationMap("P","X"),reconciliationMap("Q","Y"),reconciliationMap("R","X"),reconciliationMap("T","U"),reconciliationMap("T","V"),reconciliationMap("W","W-CAN"),reconciliationMap("UNKNOWN","X")
 ];
-const reconciliationBase={institutionId:"INST-1",domain:"ACADEMIC",now:reconciliationNow,sourceCatalog:{catalogId:"SRC",records:reconciliationSourceRecords},canonicalCatalog:{catalogId:"AUTH",records:reconciliationCanonicalRecords},authorityDecision:reconciliationAuthority,crosswalkRows:reconciliationMappings,snapshotScopeVerified:true,snapshotInstitutionId:"INST-1",snapshotDomain:"ACADEMIC",crosswalkScopeVerified:true,crosswalkInstitutionId:"INST-1",crosswalkDomain:"ACADEMIC"};
+const reconciliationBase={institutionId:"INST-1",domain:"ACADEMIC",now:reconciliationNow,sourceCatalog:{catalogId:"SRC",records:reconciliationSourceRecords},canonicalCatalog:{catalogId:"AUTH",records:reconciliationCanonicalRecords},authorityDecision:reconciliationAuthority,crosswalkRows:reconciliationMappings,snapshotScopeVerified:true,snapshotInstitutionId:"INST-1",snapshotDomain:"ACADEMIC",crosswalkScopeVerified:true,crosswalkInstitutionId:"INST-1",crosswalkDomain:"ACADEMIC",authorityDecisionVerified:true};
 const reconciliationReport=buildDepartmentCatalogReconciliationReport_(reconciliationBase);
 assert.equal(reconciliationReport.valid,true);assert.equal(reconciliationReport.writesPerformed,false);assert.equal(reconciliationReport.automaticResolutionPerformed,false);
 function reconciliationRow(id){return reconciliationReport.rows.find(row=>row.sourceId===id);}
@@ -1466,6 +1466,7 @@ assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,
 assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,authorityDecision:{...reconciliationAuthority,authorityCatalogId:"OTHER"}}).code,"DEPARTMENT_AUTHORITY_DECISION_SCOPE_MISMATCH");
 assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,snapshotScopeVerified:false}).code,"DEPARTMENT_RECONCILIATION_SNAPSHOT_SCOPE_UNVERIFIED");
 assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,crosswalkScopeVerified:false}).code,"DEPARTMENT_RECONCILIATION_CROSSWALK_SCOPE_UNVERIFIED");
+assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,authorityDecisionVerified:false}).code,"DEPARTMENT_AUTHORITY_DECISION_UNVERIFIED");
 assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,crosswalkRows:[{...reconciliationMappings[0],institutionId:"INST-2"}]}).code,"DEPARTMENT_RECONCILIATION_CROSSWALK_SCOPE_MISMATCH");
 assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,sourceCatalog:{catalogId:"SRC",records:[...reconciliationSourceRecords,reconciliationSourceRecords[0]]}}).code,"DEPARTMENT_RECONCILIATION_SOURCE_ID_AMBIGUOUS");
 assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,canonicalCatalog:{catalogId:"AUTH",records:[...reconciliationCanonicalRecords,reconciliationCanonicalRecords[0]]}}).code,"DEPARTMENT_RECONCILIATION_CANONICAL_ID_AMBIGUOUS");
@@ -1476,7 +1477,7 @@ assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,
 assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,crosswalkRows:[{...reconciliationMappings[0],canonicalCatalog:"OTHER"}]}).code,"DEPARTMENT_RECONCILIATION_CROSSWALK_SCOPE_MISMATCH");
 assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,sourceCatalog:{catalogId:"SRC",records:[]}}).rows.length,0);
 assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,sourceCatalog:{catalogId:"",records:reconciliationSourceRecords}}).code,"DEPARTMENT_RECONCILIATION_CATALOG_PAIR_INVALID");
-console.log("C1.650 catalog reconciliation preflight: 39 assertions PASS.");
+console.log("C1.650 catalog reconciliation preflight: 40 assertions PASS.");
 
 
 

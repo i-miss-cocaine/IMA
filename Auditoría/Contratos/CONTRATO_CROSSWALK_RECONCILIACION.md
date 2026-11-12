@@ -5,9 +5,9 @@
 
 ## Entrada y autoridad
 
-El reporte compara un catálogo fuente con un catálogo canónico para un único InstitutionID/Domain. Exige snapshots y crosswalk prefiltrados por tenant/dominio con scope verificado por el servidor; una decisión de autoridad explícita y aprobada para el catálogo canónico con ApprovalReference, ApprovedBy, ApprovedAt y Version; un instante de evaluación del servidor; y filas crosswalk que declaran InstitutionID, Domain, SourceCatalog, CanonicalCatalog, SourceID, CanonicalID, Status, Approved, ApprovalReference, ApprovedBy, ApprovedAt, ValidFrom, ValidTo y RevokedAt.
+El reporte compara un catálogo fuente con un catálogo canónico para un único InstitutionID/Domain. Exige snapshots y crosswalk prefiltrados por tenant/dominio con scope verificado por el servidor; una decisión de autoridad explícita, aprobada y verificada por servidor para el catálogo canónico con ApprovalReference, ApprovedBy, ApprovedAt y Version; un instante de evaluación del servidor; y filas crosswalk que declaran InstitutionID, Domain, SourceCatalog, CanonicalCatalog, SourceID, CanonicalID, Status, Approved, ApprovalReference, ApprovedBy, ApprovedAt, ValidFrom, ValidTo y RevokedAt.
 
-La función no elige la autoridad. Sin decisión aprobada, con decisión fuera de ámbito o sin snapshots verificados, falla cerrada.
+La función no elige la autoridad. Sin decisión aprobada, con decisión fuera de ámbito o sin snapshots, crosswalk o decisión de autoridad verificados, falla cerrada.
 
 ## Clasificaciones por registro fuente
 
