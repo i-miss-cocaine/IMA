@@ -2340,3 +2340,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Cobertura: dos escenarios de reentrada sobre handler/wrapper productivos; secundaria EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; exterior conserva únicamente los dos cambios solicitados y no altera ownership.
 - Resultado local: suite V8 aislada 24/24 PASS; parseo Code.gs/contrato PASS. Backend sin cambios; Apps Script/Sheets real NOT RUN; BETA-EXAM-049 Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+### C1.608 — cierre de CI
+- GitHub Actions run 43142702283, commit 17956338ed04cb07b6612e0308ea83620173f0a7: workflow Exam-Service security local contracts SUCCESS, Node.js 22; todos los pasos PASS.
+- Contrato de categorías de evaluación 24/24 PASS; suite local V8 24/24 PASS; parseo PASS.
+- Backend sin cambios. BETA-EXAM-049 sigue Pendiente beta; Apps Script/Sheets real NOT RUN.
+===============================================================================

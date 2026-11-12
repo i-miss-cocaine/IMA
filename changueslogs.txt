@@ -2504,3 +2504,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Suite V8 aislada 24/24 PASS; parseo Code.gs/contrato PASS. Backend productivo sin cambios.
 - BETA-EXAM-049 actualizado; Apps Script/Sheets real NOT RUN; CI pendiente.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.608 — verificación CI satisfactoria
+- GitHub Actions run 43142702283, commit 17956338ed04cb07b6612e0308ea83620173f0a7: workflow Exam-Service security local contracts SUCCESS en Node.js 22.
+- Contrato exam-service-evaluation-category-mutation-security 24/24 PASS; todos los pasos del job PASS.
+- C1.608 completada local/CI; backend sin cambios. BETA-EXAM-049 Pendiente beta; Apps Script/Sheets real NOT RUN.
+===============================================================================
