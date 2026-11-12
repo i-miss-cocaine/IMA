@@ -2478,3 +2478,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - submitGradebookForReview 30/30; closePeriodGradebook 24/24; reopenPeriodGradebook 31/31; saveEvaluationCategory 22/22.
 - C1.606 completada local/CI; backend sin cambios. BETA-EXAM-054 Pendiente beta; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.607 — cobertura reentrante al inicializar historial de rectificaciones
+- Se añaden dos escenarios: reentrada durante insertSheet y appendRow de encabezados cuando HistorialRectificacionesNotas no existe.
+- Ambas secundarias reciben GRADE_RECTIFICATION_LOCK_TIMEOUT; la exterior conserva una hoja, encabezados y auditoría únicos, actualiza una sola calificación y libera ScriptLock.
+- Suite V8 aislada 34/34 PASS; parseo Code.gs y contrato PASS. Backend productivo sin cambios.
+- BETA-EXAM-056 actualizado; Apps Script/Sheets real NOT RUN; CI pendiente.
+===============================================================================

@@ -4588,3 +4588,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - GitHub Actions run 43142063867, commit dbe2b29fb5b0774f1e13ffb27bb6afd3e8726999: workflow Exam-Service security local contracts **SUCCESS** en Node.js 22.23.4; todos los pasos del job `exam-security-contracts` SUCCESS.
 - El contrato submitGradebookForReview pasó 30/30; cierre 24/24; reapertura 31/31; categoría 22/22. Las correcciones Array.from de C1.603/C1.605/C1.606 eliminaron los fallos de realm sin modificar backend.
 - C1.606 queda verificada localmente y por CI. BETA-EXAM-054 permanece Pendiente beta (Apps Script/Sheets real NOT RUN).
+
+
+### 10.256 TASK-153 / AUD-NG-386 — reentrada al inicializar HistorialRectificacionesNotas en rectifyStudentGrade (C1.607)
+- **Brecha confirmada:** rectifyStudentGrade cubría reentrada durante el append de auditoría y la escritura de calificación, pero no durante insertSheet ni appendRow de encabezados cuando HistorialRectificacionesNotas no existe.
+- **Cobertura añadida:** tests/security/exam-service-student-grade-rectification-security.test.js incorpora hooks de inserción y append inicial, con dos escenarios sobre el handler y wrapper productivos extraídos de Code.gs.
+- **Invariantes:** ambas secundarias reciben GRADE_RECTIFICATION_LOCK_TIMEOUT; la operación exterior crea una sola hoja, encabezados exactos y un registro RECT-UUID-1, actualiza una sola calificación, conserva actor SEC-1 y libera ScriptLock.
+- **Alcance:** contrato local y actualización de BETA-EXAM-056; backend productivo sin cambios.
+- **Verificación local:** suite V8 aislada 34/34 PASS; parseo JavaScript de Code.gs y contrato PASS.
+- **CI:** pendiente de resultado verificable tras publicar.
+- **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-056 Pendiente beta.
+- **Estado:** C1.607 Completada en verificación local aislada; TASK-153 / AUD-NG-386 continúa En ejecución.

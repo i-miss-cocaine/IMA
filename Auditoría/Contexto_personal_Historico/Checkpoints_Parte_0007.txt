@@ -659,3 +659,31 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.606 Completada local/CI; backend productivo sin cambios; BETA-EXAM-054 Pendiente beta y Apps Script/Sheets real NOT RUN.
 - HEAD probado: dbe2b29fb5b0774f1e13ffb27bb6afd3e8726999; HEAD final se confirma tras este registro documental.
 ===============================================================================
+
+
+===============================================================================
+## C1.607 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada durante la inicialización de HistorialRectificacionesNotas en rectifyStudentGrade.
+
+### Hallazgo y cambio
+- rectifyStudentGrade cubría reentrada durante appendRow de auditoría y setValues de la calificación, pero no durante insertSheet ni appendRow de encabezados cuando HistorialRectificacionesNotas no existe.
+- El fixture incorpora contador de inserciones y hooks para ambos puntos. Las secundarias reciben GRADE_RECTIFICATION_LOCK_TIMEOUT; la exterior conserva una hoja, encabezados exactos y un registro RECT-UUID-1, actualiza una sola calificación y mantiene actor SEC-1.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-student-grade-rectification-security.test.js
+- beta_test.txt (actualización de BETA-EXAM-056)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Suite V8 aislada: 34/34 PASS.
+- Parseo JavaScript de Code.gs y contrato: PASS.
+- CI: pendiente de resultado verificable tras publicar.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-056 Pendiente beta.
+- C1.607 Completada localmente; TASK-153 / AUD-NG-386 continúa En ejecución.
+- HEAD inicial: 1f1bf2d2a41ab45748f448d1f2ae9dfc0a863bf1; HEAD final se confirma tras publicar.
+===============================================================================

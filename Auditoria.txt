@@ -2316,3 +2316,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - submitGradebookForReview 30/30; closePeriodGradebook 24/24; reopenPeriodGradebook 31/31; saveEvaluationCategory 22/22.
 - C1.603/C1.605/C1.606 cross-realm assertions corregidas; backend sin cambios. BETA-EXAM-054 sigue Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+### C1.607 — AUD-NG-386 / EXAM
+- Brecha: rectifyStudentGrade no ejercitaba reentrada al crear HistorialRectificacionesNotas ausente, durante insertSheet ni appendRow de encabezados.
+- Cobertura: dos escenarios sobre handler/wrapper productivos; secundaria GRADE_RECTIFICATION_LOCK_TIMEOUT; exterior conserva una hoja, encabezados, auditoría y calificación únicos, con lock liberado.
+- Resultado local: suite V8 aislada 34/34 PASS; parseo Code.gs/contrato PASS. Backend sin cambios; Apps Script/Sheets real NOT RUN; BETA-EXAM-056 Pendiente beta.
+===============================================================================
