@@ -2563,3 +2563,21 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Prueba:** fecha fija determinista; inicio/fin exactamente en el límite, inicio futuro, fin pasado, fechas inválidas, fechas vacías y FechaFin numérica 0. El caso 0 falló antes de la corrección y pasó después; ambos lectores coinciden.
 - **Estado:** corregido en C1.630. Contrato completo V8 aislado PASS; sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+### C1.634 — revocación de sesión basada únicamente en CacheService
+- **Severidad:** Alto — invalidación de sesiones y protección de cierre de sesión.
+- **Hallazgo:** `generateSessionToken` emite tokens de 24 horas; `revokeUserSession` guardaba revocaciones por 21,600 segundos (6 horas), y `switchActiveRole` solicitaba 86,400 segundos. La documentación oficial de Apps Script limita CacheService a un máximo de 21,600 segundos y advierte que las entradas pueden desaparecer antes de su expiración. Una revocación que depende solo de caché no es persistente ni cubre toda la vida del token.
+- **Hallazgo relacionado:** `logoutUser` es una acción pública y confiaba en `userId`/`sessionId` enviados por el cliente incluso cuando el token no era válido; además, al recibir token válido revocaba el usuario completo.
+- **Corrección:** se introduce el registro persistente `SesionesRevocadas` (`SessionID, UserID, RevokedAt, ExpiresAt`). `verifySessionToken` consulta el registro en cada verificación y falla cerrada ante esquema inválido. Los registros cubren 24 horas + 60 segundos de tolerancia máxima de `iat`; CacheService queda como acelerador de hasta 6 horas. Las revocaciones por usuario usan timestamp para bloquear tokens emitidos antes de la revocación y permitir nuevos inicios de sesión posteriores.
+- **Cambio de rol:** `switchActiveRole` utiliza el mismo mecanismo persistente para revocar la sesión anterior.
+- **Cierre de sesión:** `logoutUser` deriva exclusivamente el SessionID de claims firmados y revoca solo esa sesión; ignora identificadores de usuario/sesión aportados por el cliente. Token inválido no produce una revocación arbitraria.
+- **Contrato:** simula caché siempre vacía; verifica persistencia de revocación de sesión, cobertura 24h+60s, revocación de usuario con corte temporal, nuevo login posterior, logout con IDs falsificados, cambio de rol, expiración de token y esquema de revocación corrupto fail-closed.
+- **Verificación local:** contrato completo V8 aislado **PASS**, incluidos C1.621–C1.634; sintaxis backend USER/test **PASS**.
+- **Limitación de migración:** las revocaciones históricas registradas únicamente en la caché anterior no pueden reconstruirse si sus entradas ya desaparecieron. La nueva persistencia cubre revocaciones realizadas después del despliegue; la rotación/invalidez de tokens históricos debe validarse durante el rollout controlado.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** Sheets/CacheService/HMAC reales NOT RUN; escenario agregado a `beta_test.txt`, Pendiente beta.
+- **Archivos funcionales:** `backend/user-service/Code.gs`; `tests/security/internal-responsibility-rbac-contract.test.js`.
+- **Commits funcionales:** backend `444e04140f9a10deab70cc8c7ae8fa51701e6b3f`; contrato `a3a1bb73104b779191572e5b50cc1395811ecd73`.
+- **Estado:** C1.634 implementada y verificada en harness aislado. T153-S02 permanece En ejecución; no iniciar T153-S03.
+===============================================================================
