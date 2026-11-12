@@ -4544,3 +4544,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI:** pendiente de resultado verificable tras el commit de pruebas.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-055 Pendiente beta.
 - **Estado:** C1.604 en verificación CI; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+
+
+### 10.254 TASK-153 / AUD-NG-386 — reentrada al inicializar CierresPeriodos (C1.605)
+- **Brecha confirmada:** closePeriodGradebook cubría reentrada durante appendRow del cierre final, pero no durante insertSheet ni appendRow de encabezados cuando CierresPeriodos no existe.
+- **Cobertura añadida:** tests/security/exam-service-period-gradebook-closure-security.test.js amplía el fixture con conteo de inserciones y hook de append; incorpora dos escenarios independientes para reentrada durante creación de hoja y encabezados.
+- **Invariantes:** ambas secundarias reciben GRADEBOOK_CLOSURE_LOCK_TIMEOUT; la exterior inserta una hoja, conserva encabezados exactos y registra un solo cierre; una apertura de Sheets y ScriptLock liberado; no se alteran filas de calificaciones.
+- **Alcance:** contrato local y ampliación de BETA-EXAM-052; backend productivo sin cambios.
+- **Verificación local:** contrato completo 24/24 PASS en runner aislado sobre handlers extraídos de Code.gs; parseo JavaScript de Code.gs y del contrato PASS.
+- **CI:** pendiente de resultado verificable tras los commits.
+- **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-052 Pendiente beta.
+- **Estado:** C1.605 Completada con verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
