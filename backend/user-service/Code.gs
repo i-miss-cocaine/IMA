@@ -10233,25 +10233,35 @@ function assignRoleScope(payload) {
     if (["Administrador", "Director", "Desarrollador"].indexOf(verifiedRole) === -1) {
       return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "Solo personal administrativo autorizado puede asignar ámbitos de actuación a roles." };
     }
-
     var userId = String(payload.userId || "").trim();
     var roleId = String(payload.roleId || payload.rolId || "").trim();
     if (!roleId) return { status: "error", code: "ROLE_SCOPE_ROLE_REQUIRED", message: "Debe especificarse el rol objetivo del ámbito." };
-    var scopeType = String(payload.scopeType || payload.tipoAmbito || "").trim().toUpperCase(); // NIVEL, DEPARTAMENTO, CARRERA, ASIGNATURA, GRADO, SECCION, PERIODO, INSTITUCION
+    var scopeType = String(payload.scopeType || payload.tipoAmbito || "").trim().toUpperCase();
     var scopeValues = Array.isArray(payload.scopeValues) ? payload.scopeValues : (Array.isArray(payload.valoresAmbito) ? payload.valoresAmbito : (payload.scopeValues || payload.valoresAmbito ? [payload.scopeValues || payload.valoresAmbito] : []));
     var estado = payload.estado || "Activo";
-    var actor = actorUserId;
-
-    if (!userId || !scopeType) {
-      return { status: "error", message: "userId y scopeType son requeridos para asignar ámbito de actuación." };
+    if (!userId || !scopeType) return { status: "error", code: "ROLE_SCOPE_TARGET_REQUIRED", message: "userId y scopeType son requeridos para asignar ámbito de actuación." };
+    var institutionId = String(getIdentityInstitutionId_() || "").trim();
+    if (!institutionId) return { status: "error", code: "IDENTITY_CONFIGURATION_REQUIRED", message: "No existe institución configurada para asignar el ámbito." };
+    var membershipState = getUserRoleMembershipState_(userId, institutionId);
+    var targetMembership = null;
+    if (membershipState.hasRecords) {
+      targetMembership = resolveUserRoleMembership_(userId, roleId, institutionId);
+      if (!targetMembership) return { status: "error", code: "ROLE_MEMBERSHIP_NOT_ACTIVE", message: "El usuario no tiene una membresía activa y única para el rol y la institución solicitados." };
     }
-
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var sheet = getOrCreateSheet(ss, "AsignacionesAmbitosRoles");
+    var scopeHeaders = ["AsignacionAmbitoID", "UserID", "RoleID", "ScopeType", "ScopeValues", "Estado", "CreadoPor", "FechaCreacion", "FechaInicio", "FechaFin", "EsSuplente", "SuplenteDeUserID", "InstitutionID", "MembershipID"];
     if (sheet.getLastRow() === 0) {
-      sheet.appendRow(["AsignacionAmbitoID", "UserID", "RoleID", "ScopeType", "ScopeValues", "Estado", "CreadoPor", "FechaCreacion", "FechaInicio", "FechaFin", "EsSuplente", "SuplenteDeUserID"]);
+      sheet.appendRow(scopeHeaders);
+    } else {
+      var headerRow = sheet.getDataRange().getValues()[0] || [];
+      var legacyHeaders = scopeHeaders.slice(0, 12);
+      if (JSON.stringify(headerRow.slice(0, 12).map(String)) !== JSON.stringify(legacyHeaders)) {
+        return { status: "error", code: "ROLE_SCOPE_SCHEMA_MISMATCH", message: "El esquema de asignaciones de ámbito no coincide con el contrato esperado." };
+      }
+      if (String(headerRow[12] || "").trim() !== "InstitutionID") sheet.getRange(1, 13).setValue("InstitutionID");
+      if (String(headerRow[13] || "").trim() !== "MembershipID") sheet.getRange(1, 14).setValue("MembershipID");
     }
-
     var assignmentId = "AMB-" + Utilities.getUuid().substring(0, 8).toUpperCase();
     var valuesJSON = JSON.stringify(scopeValues);
     var now = new Date().toISOString();
@@ -10259,16 +10269,22 @@ function assignRoleScope(payload) {
     var fechaFin = payload.fechaFin || "";
     var esSuplente = payload.esSuplente ? "Sí" : "No";
     var suplenteDeUserId = payload.suplenteDeUserId || "";
-
+    var membershipId = targetMembership ? String(targetMembership.membershipId || "").trim() : "";
+    if (targetMembership && (!membershipId || String(targetMembership.institutionId || "").trim() !== institutionId || String(targetMembership.roleId || "").trim() !== roleId)) {
+      return { status: "error", code: "ROLE_MEMBERSHIP_BINDING_INVALID", message: "La membresía objetivo no coincide con el rol y la institución solicitados." };
+    }
     var data = sheet.getDataRange().getValues();
     var foundIdx = -1;
     for (var i = 1; i < data.length; i++) {
-      if (String(data[i][1]).trim() === String(userId).trim() && String(data[i][2] || "").trim() === roleId && String(data[i][3]).trim().toUpperCase() === String(scopeType).trim().toUpperCase()) {
+      if (String(data[i][1] || "").trim() === userId &&
+          String(data[i][2] || "").trim() === roleId &&
+          String(data[i][3] || "").trim().toUpperCase() === scopeType &&
+          String(data[i][12] || "").trim() === institutionId &&
+          String(data[i][13] || "").trim() === membershipId) {
         foundIdx = i;
         break;
       }
     }
-
     if (foundIdx !== -1) {
       assignmentId = data[foundIdx][0];
       sheet.getRange(foundIdx + 1, 5).setValue(valuesJSON);
@@ -10278,39 +10294,36 @@ function assignRoleScope(payload) {
       sheet.getRange(foundIdx + 1, 11).setValue(esSuplente);
       sheet.getRange(foundIdx + 1, 12).setValue(suplenteDeUserId);
     } else {
-      sheet.appendRow([assignmentId, userId, roleId || "", scopeType, valuesJSON, estado, actor, now, fechaInicio, fechaFin, esSuplente, suplenteDeUserId]);
+      sheet.appendRow([assignmentId, userId, roleId, scopeType, valuesJSON, estado, actorUserId, now, fechaInicio, fechaFin, esSuplente, suplenteDeUserId, institutionId, membershipId]);
     }
-
-    recordEntityChangeLog("AsignacionAmbitoRol", assignmentId, foundIdx !== -1 ? { scopeValues: data[foundIdx][4] } : {}, { userId: userId, scopeType: scopeType, scopeValues: scopeValues, estado: estado }, "SCOPE_ASSIGNED", actor);
-    logStructuredEvent("USER", "assignRoleScope", "INFO", "SCOPE_ASSIGNED", `Ámbito ${scopeType} asignado al usuario ${userId}.`, { userId: userId, scopeType: scopeType, scopeValues: scopeValues }, verifiedRole);
-
-    return {
-      status: "success",
-      assignmentId: assignmentId,
-      userId: userId,
-      scopeType: scopeType,
-      scopeValues: scopeValues,
-      message: `Ámbito de actuación '${scopeType}' asignado correctamente al usuario ${userId}.`
-    };
+    recordEntityChangeLog("AsignacionAmbitoRol", assignmentId, foundIdx !== -1 ? { scopeValues: data[foundIdx][4], institutionId: data[foundIdx][12] || "", membershipId: data[foundIdx][13] || "" } : {}, { userId: userId, roleId: roleId, institutionId: institutionId, membershipId: membershipId || null, scopeType: scopeType, scopeValues: scopeValues, estado: estado }, "SCOPE_ASSIGNED", actorUserId);
+    logStructuredEvent("USER", "assignRoleScope", "INFO", "SCOPE_ASSIGNED", "Ámbito " + scopeType + " asignado al usuario " + userId + ".", { userId: userId, roleId: roleId, institutionId: institutionId, membershipId: membershipId || null, scopeType: scopeType, scopeValues: scopeValues }, verifiedRole);
+    return { status: "success", assignmentId: assignmentId, userId: userId, roleId: roleId, institutionId: institutionId, membershipId: membershipId || null, scopeType: scopeType, scopeValues: scopeValues, message: "Ámbito de actuación '" + scopeType + "' asignado correctamente al usuario " + userId + "." };
   } catch (error) {
     logStructuredEvent("USER", "assignRoleScope", "ERROR", "SCOPE_ASSIGN_FAILED", error.message, payload, payload && payload._verifiedRole);
-    return { status: "error", message: error.message };
+    return { status: "error", code: error.message || "ROLE_SCOPE_ASSIGN_FAILED", message: error.message };
   }
 }
-
 function getUserContextScope(payload) {
   try {
     var verifiedRole = getUserVerifiedRole(payload);
     var userId = String((payload && payload._verifiedUserId) || "").trim();
-    if (!userId || !verifiedRole || verifiedRole === "NO_ACCESS") {
-      return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "Se requiere una sesión firmada y activa." };
+    if (!userId || !verifiedRole || verifiedRole === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "Se requiere una sesión firmada y activa." };
+    var token = payload.sessionToken || payload.authToken || payload.token;
+    var claims = verifySessionToken(token);
+    if (!claims || String(claims.userId || "").trim() !== userId || String(claims.role || "").trim() !== verifiedRole) {
+      return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "No fue posible vincular el ámbito con la identidad firmada." };
     }
     var institutionId = String(getIdentityInstitutionId_() || "").trim();
     if (!institutionId) return { status: "error", code: "IDENTITY_CONFIGURATION_REQUIRED", message: "No existe institución configurada." };
+    var membershipId = String(claims.membershipId || "").trim();
+    var claimsInstitutionId = String(claims.institutionId || "").trim();
+    if (membershipId && (!claimsInstitutionId || claimsInstitutionId !== institutionId)) {
+      return { status: "error", code: "ROLE_MEMBERSHIP_INSTITUTION_MISMATCH", message: "La membresía firmada no corresponde a la institución activa." };
+    }
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var sheet = ss.getSheetByName("AsignacionesAmbitosRoles");
     if (!sheet) return { status: "error", code: "ROLE_SCOPE_NOT_INITIALIZED", message: "No está inicializado el catálogo de ámbitos." };
-
     var data = sheet.getDataRange().getValues();
     var now = new Date();
     var normalizeRole = function(value) { return String(value || "").trim().toUpperCase().replace(/^ROLE[_-]?/, "").replace(/[^A-Z0-9]/g, ""); };
@@ -10331,12 +10344,18 @@ function getUserContextScope(payload) {
       if (isNaN(date.getTime())) return { valid: false, date: null };
       return { valid: true, date: date };
     };
-
     var scopes = [];
     for (var i = 1; i < data.length; i++) {
       var row = data[i] || [];
       if (String(row[1] || "").trim() !== userId) continue;
       if (!row[2] || normalizeRole(row[2]) !== normalizeRole(verifiedRole)) continue;
+      var rowInstitutionId = String(row[12] || "").trim();
+      var rowMembershipId = String(row[13] || "").trim();
+      if (membershipId) {
+        if (rowInstitutionId !== institutionId || rowMembershipId !== membershipId) continue;
+      } else if (rowInstitutionId || rowMembershipId) {
+        continue;
+      }
       var state = String(row[5] || "").trim().toUpperCase();
       if (["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(state) === -1) continue;
       var start = parseDate(row[8]);
@@ -10350,6 +10369,8 @@ function getUserContextScope(payload) {
       scopes.push({
         assignmentId: String(row[0] || ""),
         roleId: String(row[2] || ""),
+        institutionId: rowInstitutionId || null,
+        membershipId: rowMembershipId || null,
         scopeType: scopeType,
         scopeValues: scopeValues,
         fechaInicio: row[8] || "",
@@ -10358,26 +10379,16 @@ function getUserContextScope(payload) {
         suplenteDeUserId: String(row[11] || "").trim()
       });
     }
-    if (!scopes.length) {
-      return { status: "error", code: "DEPARTMENT_SCOPE_NOT_ASSIGNED", message: "El usuario no tiene ámbitos activos para su rol autenticado.", userId: userId, role: verifiedRole, institutionId: institutionId, scopes: [], departmentIds: [], institutionWide: false };
-    }
+    if (!scopes.length) return { status: "error", code: "DEPARTMENT_SCOPE_NOT_ASSIGNED", message: "El usuario no tiene ámbitos activos vinculados a su membresía y rol autenticados.", userId: userId, role: verifiedRole, institutionId: institutionId, membershipId: membershipId || null, scopes: [], departmentIds: [], institutionWide: false };
     var departmentIds = [];
     var institutionWide = false;
     scopes.forEach(function(scope) {
       if (scope.scopeType === "DEPARTAMENTO") scope.scopeValues.forEach(function(value) { if (departmentIds.indexOf(value) === -1) departmentIds.push(value); });
       if (scope.scopeType === "INSTITUCION" && scope.scopeValues.indexOf(institutionId) !== -1) institutionWide = true;
     });
-
-    // A selected department is an untrusted request parameter: accept it only as a narrowing
-    // of an already verified, active department assignment. Never infer a department from
-    // an institution-wide grant because the canonical department catalog is not yet resolved.
     var activeDepartmentId = String((payload && payload.activeDepartmentId) || "").trim();
     if (activeDepartmentId) {
-      if (departmentIds.indexOf(activeDepartmentId) === -1) {
-        return { status: "error", code: "ACTIVE_SCOPE_NOT_ASSIGNED", message: "El departamento activo solicitado no pertenece a los ámbitos vigentes del usuario.", userId: userId, role: verifiedRole, institutionId: institutionId, scopes: [], departmentIds: [], institutionWide: false };
-      }
-      // Other scope dimensions have no verified department relation in the current schema.
-      // Drop them for this request rather than accidentally widening the selected context.
+      if (departmentIds.indexOf(activeDepartmentId) === -1) return { status: "error", code: "ACTIVE_SCOPE_NOT_ASSIGNED", message: "El departamento activo solicitado no pertenece a los ámbitos vigentes del usuario.", userId: userId, role: verifiedRole, institutionId: institutionId, membershipId: membershipId || null, scopes: [], departmentIds: [], institutionWide: false };
       scopes = scopes.filter(function(scope) {
         if (scope.scopeType !== "DEPARTAMENTO") return false;
         var selectedValues = scope.scopeValues.filter(function(value) { return value === activeDepartmentId; });
@@ -10388,16 +10399,9 @@ function getUserContextScope(payload) {
       departmentIds = [activeDepartmentId];
       institutionWide = false;
     }
-
     return {
-      status: "success",
-      authorized: true,
-      userId: userId,
-      role: verifiedRole,
-      institutionId: institutionId,
-      scopes: scopes,
-      departmentIds: departmentIds,
-      institutionWide: institutionWide,
+      status: "success", authorized: true, userId: userId, role: verifiedRole, institutionId: institutionId,
+      membershipId: membershipId || null, scopes: scopes, departmentIds: departmentIds, institutionWide: institutionWide,
       activeDepartmentId: activeDepartmentId || null,
       activeContext: activeDepartmentId ? { scopeType: "DEPARTAMENTO", scopeValue: activeDepartmentId } : null
     };
@@ -10405,45 +10409,6 @@ function getUserContextScope(payload) {
     return { status: "error", code: "USER_SCOPE_CONTEXT_FAILED", message: error.message };
   }
 }
-function getUserScopeConfig(payload) {
-  try {
-    var userId = payload && payload.userId ? payload.userId : (payload && payload._verifiedUserId ? payload._verifiedUserId : null);
-    if (!userId) {
-      return { status: "error", message: "userId es requerido para consultar ámbitos del usuario." };
-    }
-
-    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    var sheet = getOrCreateSheet(ss, "AsignacionesAmbitosRoles");
-    var ámbitos = [];
-
-    if (sheet && sheet.getLastRow() > 1) {
-      var data = sheet.getDataRange().getValues();
-      for (var i = 1; i < data.length; i++) {
-        if (String(data[i][1]).trim() === String(userId).trim() && String(data[i][5]).trim().toLowerCase() === "activo") {
-          var vals = [];
-          try { vals = JSON.parse(data[i][4]); } catch (_) { vals = [data[i][4]]; }
-          ámbitos.push({
-            assignmentId: data[i][0],
-            roleId: data[i][2],
-            scopeType: data[i][3],
-            scopeValues: vals,
-            fechaCreacion: data[i][7]
-          });
-        }
-      }
-    }
-
-    return {
-      status: "success",
-      userId: userId,
-      ambitos: ámbitos,
-      timestamp: new Date().toISOString()
-    };
-  } catch (error) {
-    return { status: "error", message: error.message };
-  }
-}
-
 function validateRoleScopeAccess(payload) {
   try {
     var scopeType = String((payload && payload.scopeType) || "").trim().toUpperCase();

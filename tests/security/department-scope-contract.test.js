@@ -44,7 +44,10 @@ const rows = [
   ["A-4","U-1","Administrador","INSTITUCION",'["INST-1"]',"Activo","U-ADMIN","2026-01-01","2026-01-01","2027-01-01","No",""],
   ["A-5","U-2","Director","DEPARTAMENTO",'["DEP-X"]',"Activo","U-ADMIN","2026-01-01","2026-01-01","2027-01-01","No",""],
   ["A-6","U-1","Director","DEPARTAMENTO",'["DEP-REVOKED"]',"Revocado","U-ADMIN","2026-01-01","2026-01-01","2027-01-01","No",""],
-  ["A-7","U-1","Director","NIVEL",'["BASICA"]',"Activo","U-ADMIN","2026-01-01","2026-01-01","2027-01-01","No",""]
+  ["A-7","U-1","Director","NIVEL",'["BASICA"]',"Activo","U-ADMIN","2026-01-01","2026-01-01","2027-01-01","No",""],
+  ["A-8","U-1","Director","DEPARTAMENTO",'["DEP-M1"]',"Activo","U-ADMIN","2026-01-01","2026-01-01","2027-01-01","No","","INST-1","MEM-1"],
+  ["A-9","U-1","Director","DEPARTAMENTO",'["DEP-M2"]',"Activo","U-ADMIN","2026-01-01","2026-01-01","2027-01-01","No","","INST-1","MEM-2"],
+  ["A-10","U-1","Director","DEPARTAMENTO",'["DEP-OTHER-INST"]',"Activo","U-ADMIN","2026-01-01","2026-01-01","2027-01-01","No","","INST-2","MEM-3"]
 ];
 
 const ownershipRows = [
@@ -56,6 +59,8 @@ const ownershipRows = [
 function makeContext() {
   const claims = {
     "token-u1-director": { userId: "U-1", role: "Director" },
+    "token-u1-director-m1": { userId: "U-1", role: "Director", membershipId: "MEM-1", institutionId: "INST-1" },
+    "token-u1-director-mismatch": { userId: "U-1", role: "Director", membershipId: "MEM-2", institutionId: "INST-2" },
     "token-u1-admin": { userId: "U-1", role: "Administrador" },
     "token-u2-director": { userId: "U-2", role: "Director" },
     "token-u3-director": { userId: "U-3", role: "Director" }
@@ -70,6 +75,7 @@ function makeContext() {
       payload._verifiedRole = c.role;
       return c.role;
     },
+    verifySessionToken: token => claims[token] || null,
     SpreadsheetApp: {
       openById(id) {
         assert.equal(id, "LOCAL");
@@ -144,6 +150,16 @@ assert.equal(institutional.status, "success");
 assert.equal(institutional.institutionWide, true, "institution-wide access requires an explicit active INSTITUCION assignment");
 const institutionGrant = ctx.validateRoleScopeAccess({ sessionToken: "token-u1-admin", scopeType: "DEPARTAMENTO", requestedValue: "DEP-UNLISTED" });
 assert.equal(institutionGrant.authorized, true);
+
+const membershipScoped = ctx.getUserContextScope({ sessionToken: "token-u1-director-m1" });
+assert.equal(membershipScoped.status, "success");
+assert.equal(membershipScoped.membershipId, "MEM-1");
+assert.deepEqual(Array.from(membershipScoped.departmentIds), ["DEP-M1"], "scope is bound to the signed membership, not merely user and role");
+assert.equal(membershipScoped.scopes.some(scope => scope.scopeValues.includes("DEP-M2")), false, "another membership's scope is not inherited");
+assert.equal(membershipScoped.scopes.some(scope => scope.scopeValues.includes("DEP-OTHER-INST")), false, "another institution's scope is not inherited");
+const membershipInstitutionMismatch = ctx.getUserContextScope({ sessionToken: "token-u1-director-mismatch" });
+assert.equal(membershipInstitutionMismatch.status, "error");
+assert.equal(membershipInstitutionMismatch.code, "ROLE_MEMBERSHIP_INSTITUTION_MISMATCH", "a signed membership for another tenant is rejected");
 
 const noScope = ctx.getUserContextScope({ sessionToken: "token-u3-director", userId: "U-1" });
 assert.equal(noScope.status, "error");
