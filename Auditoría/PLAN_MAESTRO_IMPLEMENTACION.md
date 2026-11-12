@@ -4925,3 +4925,12 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.630); parseo backend USER/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
 - **Estado:** C1.630 completada y hallazgo corregido. T153-S02 continúa En ejecución.
 - **Siguiente acción:** revisar coherencia temporal en las rutas de autorización restantes pertinentes al subflujo, sin ampliar a servicios no afectados.
+
+
+ 
+**Addendum C1.631 — vigencia temporal de membresías RBAC**
+- Se ejecutan `getUserRoleMembershipState_` y `resolveUserRoleMembership_` reales con reloj fijo. Inicio/fin exactamente en el instante actual se aceptan; inicio futuro, fin pasado (incluido epoch numérico 0) y fechas inválidas excluyen solo la membresía afectada.
+- La membresía restante permanece disponible y la resolución del rol expirado devuelve null.
+- Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.631); sintaxis backend USER/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
+- **Estado:** C1.631 completada. T153-S02 continúa En ejecución.
+- **Siguiente acción:** verificar transiciones de rol/membresía en lectores administrativos y su correspondencia con sesión firmada, incluidos roles duplicados.
