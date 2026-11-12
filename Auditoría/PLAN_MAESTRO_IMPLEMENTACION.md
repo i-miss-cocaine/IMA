@@ -4437,3 +4437,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - El paso `Run evaluation setup copy security regression` ejecutó `tests/security/exam-service-evaluation-setup-copy-security.test.js` y registró **PASS (30 scenarios)**; el job `exam-security-contracts` terminó SUCCESS.
 - El runner ejecutó código y fixtures de forma aislada, sin despliegue ni infraestructura remota. Apps Script/Sheets real NOT RUN.
 - C1.594 **Completada en verificación local aislada/CI**. BETA-EXAM-095 permanece Pendiente beta.
+
+
+### 10.244 TASK-153 / AUD-NG-386 — contención reentrante de manageQuestionBank durante persistencia (C1.595)
+- **Brecha confirmada:** el contrato de manageQuestionBank cubría RBAC, identidad, scope, ownership, serialización, rollback y denegaciones; no ejercitaba una segunda llamada al handler durante las escrituras reales de creación, actualización y eliminación.
+- **Cobertura añadida:** cinco puntos de reentrada al handler real: appendRow de ResourceOwnership al crear; appendRow de BancoPreguntas al crear; setValues de BancoPreguntas al actualizar; setValue de ResourceOwnership al eliminar; setValue de BancoPreguntas al eliminar. Cada secundaria debe recibir QUESTION_BANK_LOCK_TIMEOUT.
+- **Invariantes:** la creación exterior persiste exactamente una pregunta y un ownership asociado; actualización y eliminación realizan una sola escritura por hoja afectada y mantienen estado coherente; la solicitud secundaria no abre Sheets; el lock exterior se libera.
+- **Alcance:** únicamente tests/security/exam-service-question-bank-security.test.js; backend productivo, RBAC, roles, scope, ownership y persistencia sin cambios. BETA-EXAM-096 registra la comprobación desplegada.
+- **Verificación:** GitHub Actions run 43132167465, workflow Exam-Service security local contracts, Node.js 22.23.4: SUCCESS; paso Run question bank mutation security regression SUCCESS; job exam-security-contracts SUCCESS. Cinco escenarios de reentrada superados. Apps Script/Sheets real NOT RUN.
+- **Estado:** C1.595 **Completada en verificación local aislada/CI**. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.

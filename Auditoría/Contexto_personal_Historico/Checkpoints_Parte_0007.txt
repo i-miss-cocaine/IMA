@@ -284,3 +284,31 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - El runner ejecutó código/fixtures sin despliegue ni servicio remoto; Apps Script/Sheets real NOT RUN.
 - C1.594 Completada en verificación local aislada/CI. BETA-EXAM-095 permanece Pendiente beta.
 - HEAD de código y workflow probado: c8372157236ff110618c2a12d53808e2aa732719; HEAD final se confirma tras este commit documental.
+
+
+===============================================================================
+## C1.595 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de manageQuestionBank durante persistencia.
+
+### Hallazgo y cambio
+- La suite cubría RBAC, identidad, scope, ownership, serialización y rollback, pero no la reentrada durante las escrituras de creación, actualización y eliminación.
+- Se agregan cinco escenarios: reentrada durante appendRow de ResourceOwnership y BancoPreguntas al crear; setValues de BancoPreguntas al actualizar; setValue de ResourceOwnership y BancoPreguntas al eliminar.
+- Cada solicitud secundaria debe recibir QUESTION_BANK_LOCK_TIMEOUT; la exterior mantiene unicidad/coherencia de pregunta y ownership, una apertura de Sheets y liberación del lock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-question-bank-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- GitHub Actions run 43132167465, commit 2cdcdd4b9bb1bc4d29ba251b9ce824373336110c: workflow Exam-Service security local contracts SUCCESS, Node.js 22.23.4.
+- Paso Run question bank mutation security regression SUCCESS; contrato con cinco escenarios de reentrada PASS; job exam-security-contracts SUCCESS.
+- Ejecución aislada sobre código/fixtures; Apps Script/Sheets real NOT RUN. BETA-EXAM-096 Pendiente beta.
+- C1.595 Completada en verificación local aislada/CI.
+- HEAD inicial: 3e225077fc40aa613ae53da85aedd884156b86b3; HEAD de código probado: 2cdcdd4b9bb1bc4d29ba251b9ce824373336110c; HEAD final se confirma tras commit documental.
+===============================================================================

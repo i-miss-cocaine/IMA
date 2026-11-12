@@ -1097,3 +1097,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; contrato local aislado 30 escenarios PASS; GitHub Actions run 43131212115 SUCCESS en Node.js 22. Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de ambas solicitudes, adquisiciones/liberaciones del lock, aperturas de Sheets, conteos setValues y snapshots de CategoriasEvaluacion y ResourceOwnership antes/después.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-096 — TASK-153 / AUD-NG-386 / EXAM: contención reentrante de manageQuestionBank durante persistencia
+- **Módulo/rol:** Servicio EXAM; Profesor con permiso manageQuestionBank, identidad firmada y asignación departamental válida; ownership activo de la pregunta para actualizar/eliminar.
+- **Objetivo:** comprobar en Apps Script/Sheets desplegado que una segunda mutación iniciada durante una escritura de BancoPreguntas o ResourceOwnership no atraviesa ScriptLock ni duplica o altera recursos.
+- **Precondiciones:** versión beta desplegada; institución y departamento válidos; pregunta propia con ownership único y activo; hojas BancoPreguntas, ResourceOwnership y AsignacionesAmbitosRoles con esquemas válidos; mecanismo controlado para invocar una segunda mutación durante cada operación de persistencia.
+- **Pasos:** ejecutar creación y durante appendRow de ResourceOwnership intentar crear otra pregunta; repetir durante appendRow de BancoPreguntas; ejecutar actualización y reentrar durante setValues; ejecutar eliminación y reentrar durante setValue de ResourceOwnership; repetir durante setValue de BancoPreguntas. Revisar respuestas, trazas RBAC/identidad/lock/Sheets y snapshots completos.
+- **Resultado esperado:** cada solicitud secundaria termina con QUESTION_BANK_LOCK_TIMEOUT; la operación exterior conserva exactamente una pregunta y ownership en creación, una actualización en modificación y una desactivación coherente en eliminación; una apertura de Sheets por operación exterior y liberación del ScriptLock.
+- **Estado:** Pendiente beta; suite local aislada 5/5 escenarios de reentrada PASS; GitHub Actions run 43132167465 SUCCESS en Node.js 22. Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, trazas saneadas de solicitudes exteriores/secundarias, adquisiciones/liberaciones del lock, aperturas de Sheets, conteos appendRow/setValues/setValue y snapshots de BancoPreguntas y ResourceOwnership antes/después.
+===============================================================================

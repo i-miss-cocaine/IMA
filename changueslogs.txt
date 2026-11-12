@@ -2338,3 +2338,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Ejecución aislada sobre código/fixtures sin despliegue; Apps Script/Sheets real NOT RUN.
 - C1.594 Completada en verificación local aislada/CI. BETA-EXAM-095 sigue Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.595 — contención reentrante de manageQuestionBank durante persistencia
+- Cinco escenarios añadidos: appendRow de ownership y banco en creación; setValues de banco en actualización; setValue de ownership y banco en eliminación.
+- Las secundarias reciben QUESTION_BANK_LOCK_TIMEOUT; la operación exterior conserva unicidad/coherencia, una apertura de Sheets y libera ScriptLock.
+- GitHub Actions run 43132167465, commit 2cdcdd4b9bb1bc4d29ba251b9ce824373336110c: workflow Exam-Service security local contracts SUCCESS en Node.js 22.23.4; paso question bank y job exam-security-contracts SUCCESS.
+- Backend productivo sin cambios. Apps Script/Sheets real NOT RUN.
+- C1.595 Completada en verificación local aislada/CI. BETA-EXAM-096 Pendiente beta.
+===============================================================================
