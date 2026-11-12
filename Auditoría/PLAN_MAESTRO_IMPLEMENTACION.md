@@ -5051,3 +5051,12 @@ La revisión de requisitos originales confirma cobertura de:
 - **Conclusión:** no se demuestra autoridad, clave estable ni correspondencia. No fusionar ni migrar; no inferir propietario desde actor, grado, sección, nombre o rol.
 - **Estado:** inventario técnico T153-S01 completado; selección/mapeo institucional sigue pendiente. Es una dependencia funcional real para S03/S04, no un trámite ajeno a la plataforma. T153-S02 quedó COMPLETADA en C1.640.
 - **Siguiente paso:** disponer de una fuente aprobada o crosswalk institucional verificable; luego ejecutar S03/S04.
+
+
+ 
+**Addendum C1.641 — reapertura correctiva de T153-S02**
+- La revisión posterior al cierre C1.640 encontró que los lectores locales de ámbitos en ACADEMIC, ACCOUNTING, TASK y EXAM no aplicaban el vínculo firmado MembershipID/InstitutionID ni validaban ResponsibilityID activo. El contexto seguro de USER no se propagaba automáticamente a los helpers locales de cada proyecto.
+- Se corrigieron los cuatro lectores para exigir el vínculo exacto de sesión/membresía/tenant/rol, responsabilidad interna/institucional activa, AssignmentID único, vigencia fail-closed y reducción por activeDepartmentId. La compatibilidad legacy solo admite filas sin vínculo de membresía/tenant.
+- Contrato V8 aislado PASS para los cuatro lectores; sintaxis USER/ACADEMIC/ACCOUNTING/TASK/EXAM/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
+- **Estado:** C1.641 completada localmente. La declaración de cierre C1.640 queda supersedida en lo relativo a los lectores de ámbito de servicios; **T153-S02 vuelve a En ejecución** hasta completar búsqueda estática de todos los consumidores de `AsignacionesAmbitosRoles`.
+- **Siguiente acción:** localizar todos los lectores restantes de `AsignacionesAmbitosRoles` y verificar que usan el contexto ligado a membresía o una excepción legacy fail-closed.
