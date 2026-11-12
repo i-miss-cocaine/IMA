@@ -1355,3 +1355,7 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 
 - **Cierre T153-S02 (C1.640):** los contratos sintéticos y V8 aislados cubren relación multirol, vigencia, contexto activo, autorización de capacidades y revocación compartida entre servicios. No equivale a validación real.
 - **Pendiente:** BETA-FUNC-033/C1.639 debe desplegar USER, ACADEMIC, ACCOUNTING, TASK y EXAM contra la misma SpreadsheetID/IMA_INSTITUTION_ID y comprobar revocación, cutoff compartido, ledger y cachés reales. Estado: Pendiente beta.
+
+
+- **C1.641 — ámbito por membresía en servicios consumidores:** desplegar ACADEMIC, ACCOUNTING, TASK y EXAM con la misma SpreadsheetID e IMA_INSTITUTION_ID que USER. Crear dos membresías/roles para un usuario en una institución y asignar departamentos distintos; verificar con cada sesión firmada que solo aparecen los ámbitos de su MembershipID. Probar una fila de otro tenant, responsabilidad interna/institucional inactiva, AssignmentID duplicado, fecha futura, vencida, inválida y FechaFin numérica 0; probar activeDepartmentId permitido/no permitido y grant INSTITUCION.
+- **Resultado esperado:** ningún servicio mezcla filas de otra membresía o tenant; las responsabilidades no vigentes no producen ámbito; fechas inválidas/futuras/vencidas y IDs ambiguos fallan cerrados; activeDepartmentId limita al departamento seleccionado y desactiva el alcance institucional amplio. Estado: Pendiente beta.
