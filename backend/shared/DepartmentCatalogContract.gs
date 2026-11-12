@@ -18,6 +18,12 @@ function validateDepartmentCatalogConfiguration_(config) {
   if (config.activeStates !== undefined && (!Array.isArray(config.activeStates) || !config.activeStates.length)) {
     return { valid: false, code: "DEPARTMENT_ACTIVE_STATES_INVALID" };
   }
+  if (String(config.authorityMode).trim().toUpperCase() === "CROSSWALK" &&
+      (!String(config.canonicalCatalog || "").trim() || !String(config.canonicalKeyField || "").trim() ||
+       !String(config.canonicalStatusField || "").trim() || config.canonicalAuthorityApproved !== true ||
+       !String(config.canonicalApprovalReference || "").trim())) {
+    return { valid: false, code: "DEPARTMENT_CANONICAL_AUTHORITY_UNCONFIGURED" };
+  }
   return { valid: true, config: config };
 }
 
@@ -36,7 +42,14 @@ function validateDepartmentCatalogSnapshot_(config, records, effectiveAt) {
     if (config.codeField && config.codeNamespaceField) {
       var code = String(record[config.codeField] || "").trim(), namespace = String(record[config.codeNamespaceField] || "").trim();
       if (code && !namespace) return { valid: false, code: "DEPARTMENT_CODE_NAMESPACE_REQUIRED", sourceId: id };
-      if (code) {
+      var activeStates = (config.activeStates || ["ACTIVE", "ACTIVO", "ACTIVA", "TRUE"]).map(function(v) { return String(v).trim().toUpperCase(); });
+      var state = record[config.statusField] === true ? "TRUE" : String(record[config.statusField] || "").trim().toUpperCase();
+      var fromValue = config.validFromField ? record[config.validFromField] : "", toValue = config.validToField ? record[config.validToField] : "";
+      var fromDate = fromValue === "" || fromValue === null || fromValue === undefined ? null : new Date(fromValue);
+      var toDate = toValue === "" || toValue === null || toValue === undefined ? null : new Date(toValue);
+      var effective = activeStates.indexOf(state) !== -1 && (!fromDate || (!isNaN(fromDate.getTime()) && fromDate.getTime() <= at.getTime())) &&
+        (!toDate || (!isNaN(toDate.getTime()) && toDate.getTime() >= at.getTime()));
+      if (code && effective) {
         var codeKey = namespace + "::" + code.toUpperCase();
         if (!codeMap[codeKey]) codeMap[codeKey] = [];
         codeMap[codeKey].push(id);
@@ -108,6 +121,20 @@ function resolveDepartmentCatalogReference_(input) {
     if (!mappings.length) return { resolved: false, code: "DEPARTMENT_CROSSWALK_NOT_FOUND", sourceId: sourceId };
     if (mappings.length !== 1) return { resolved: false, code: "DEPARTMENT_CROSSWALK_AMBIGUOUS", sourceId: sourceId, candidates: mappings.map(function(item) { return String(item.canonicalId).trim(); }) };
     mapping = mappings[0]; canonicalId = String(mapping.canonicalId).trim();
+    var canonicalRecords = Array.isArray(input.canonicalRecords) ? input.canonicalRecords : [];
+    var canonicalMatches = canonicalRecords.filter(function(record) { return String(record && record[config.canonicalKeyField] || "").trim() === canonicalId; });
+    if (!canonicalMatches.length) return { resolved: false, code: "DEPARTMENT_CANONICAL_KEY_NOT_FOUND", canonicalId: canonicalId };
+    if (canonicalMatches.length !== 1) return { resolved: false, code: "DEPARTMENT_CANONICAL_KEY_AMBIGUOUS", canonicalId: canonicalId };
+    var canonicalRecord = canonicalMatches[0], canonicalState = canonicalRecord[config.canonicalStatusField] === true ? "TRUE" : String(canonicalRecord[config.canonicalStatusField] || "").trim().toUpperCase();
+    var canonicalActiveStates = (config.canonicalActiveStates || ["ACTIVE", "ACTIVO", "ACTIVA", "TRUE"]).map(function(v) { return String(v).trim().toUpperCase(); });
+    if (canonicalActiveStates.indexOf(canonicalState) === -1) return { resolved: false, code: "DEPARTMENT_CANONICAL_INACTIVE", canonicalId: canonicalId };
+    var canonicalFrom = config.canonicalValidFromField ? canonicalRecord[config.canonicalValidFromField] : "";
+    var canonicalTo = config.canonicalValidToField ? canonicalRecord[config.canonicalValidToField] : "";
+    var canonicalStart = canonicalFrom === "" || canonicalFrom === null || canonicalFrom === undefined ? null : new Date(canonicalFrom);
+    var canonicalEnd = canonicalTo === "" || canonicalTo === null || canonicalTo === undefined ? null : new Date(canonicalTo);
+    if ((canonicalStart && isNaN(canonicalStart.getTime())) || (canonicalEnd && isNaN(canonicalEnd.getTime()))) return { resolved: false, code: "DEPARTMENT_CANONICAL_DATE_INVALID", canonicalId: canonicalId };
+    if (canonicalStart && canonicalStart.getTime() > snapshot.effectiveAt.getTime()) return { resolved: false, code: "DEPARTMENT_CANONICAL_NOT_YET_VALID", canonicalId: canonicalId };
+    if (canonicalEnd && canonicalEnd.getTime() < snapshot.effectiveAt.getTime()) return { resolved: false, code: "DEPARTMENT_CANONICAL_EXPIRED", canonicalId: canonicalId };
   }
   var name = config.nameField ? String(sourceRecord[config.nameField] || "").trim() : "";
   var parentId = config.parentField ? String(sourceRecord[config.parentField] || "").trim() : "";
