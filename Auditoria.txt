@@ -2438,3 +2438,8 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Contrato Department Scope ampliado con casos futuro/vencido/inválido/abierto/revocado y consulta ampliada. Ejecución local PASS; CI pendiente.
 - No se alteran datos ni asignaciones institucionales. BETA-FUNC-031 Pendiente beta; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+### Addendum C1.614 — revisión de publicación
+- La publicación documental inicial no contenía los blobs funcionales; se detectó mediante compare de Git. El commit correctivo incorpora ahora Code.gs y el contrato con el cambio y pruebas efectivas.
+- No se declara CI: GitHub Actions no muestra run ni check asociado al commit documental.

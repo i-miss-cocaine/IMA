@@ -4720,3 +4720,9 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Apps Script/Sheets real:** NOT RUN; BETA-FUNC-031 Pendiente beta.
 - **Alcance:** incremento parcial de T153-S02; no completa soporte de múltiples roles simultáneos ni el motor configurable de responsabilidades/autoridad. T153-S01 continúa bloqueada únicamente para decisiones/fuentes institucionales reales; el desarrollo genérico continúa.
 - **Estado:** C1.614 En ejecución hasta confirmar CI; backend USER modificado.
+
+
+**Addendum C1.614 — consolidación del cambio ejecutable**
+- La publicación documental inicial quedó en 52498c8f27f30e24ca6a12721f6ae79cb895bc8e, pero la comparación Git posterior confirmó que el blob de Code.gs y el contrato aún coincidían con el HEAD padre. No se considera esa publicación evidencia de cambio funcional.
+- Este commit incorpora efectivamente el filtro temporal en backend/user-service/Code.gs y los escenarios de prueba en tests/security/department-scope-contract.test.js. La verificación local se ejecuta contra estos blobs antes de consolidar.
+- El workflow Department Scope no generó run/checks para el commit documental; CI continúa pendiente de una ejecución verificable.

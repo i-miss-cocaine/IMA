@@ -32,6 +32,7 @@ const scopeFn = extractFunction(source, "getUserContextScope");
 const validateFn = extractFunction(source, "validateRoleScopeAccess");
 const assignFn = extractFunction(source, "assignRoleScope");
 const permissionFn = extractFunction(source, "validateRolePermission");
+const assignmentsFn = extractFunction(source, "getInternalRoleAssignments");
 
 const headers = ["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"];
 const rows = [
@@ -121,4 +122,34 @@ const spoofAssign = assignCtx.assignRoleScope({ authRole: "Administrador", role:
 assert.equal(spoofAssign.status, "error");
 assert.equal(spoofAssign.code, "VERIFIED_IDENTITY_REQUIRED", "scope assignment must not trust client-supplied role");
 
-console.log("Department scope contract: verified identity, role-bound active scopes, explicit institution scope, fail-closed defaults and spoof resistance passed.");
+
+const assignmentNow = new Date();
+const futureStart = new Date(assignmentNow.getTime() + 24 * 60 * 60 * 1000).toISOString();
+const pastEnd = new Date(assignmentNow.getTime() - 24 * 60 * 60 * 1000).toISOString();
+const assignmentRows = [
+  headers,
+  ["R-1","U-1","ROL-INT-1","DEPARTAMENTO",'["DEP-A"]',"Activo","U-ADMIN",assignmentNow.toISOString(),"","", "No",""],
+  ["R-2","U-1","ROL-INT-1","DEPARTAMENTO",'["DEP-FUTURE"]',"Activo","U-ADMIN",assignmentNow.toISOString(),futureStart,"", "No",""],
+  ["R-3","U-1","ROL-INT-1","DEPARTAMENTO",'["DEP-EXPIRED"]',"Activo","U-ADMIN",assignmentNow.toISOString(),"",pastEnd, "No",""],
+  ["R-4","U-1","ROL-INT-1","DEPARTAMENTO",'["DEP-BAD-START"]',"Activo","U-ADMIN",assignmentNow.toISOString(),"fecha-invalida","", "No",""],
+  ["R-5","U-1","ROL-INT-1","DEPARTAMENTO",'["DEP-BAD-END"]',"Activo","U-ADMIN",assignmentNow.toISOString(),"","fecha-invalida", "No",""],
+  ["R-6","U-1","ROL-INT-1","DEPARTAMENTO",'["DEP-UNBOUNDED"]',"Activo","U-ADMIN",assignmentNow.toISOString(),"","", "No",""],
+  ["R-7","U-1","ROL-INT-1","DEPARTAMENTO",'["DEP-REVOKED"]',"Revocado","U-ADMIN",assignmentNow.toISOString(),"","", "No",""]
+];
+const assignmentCtx = {
+  SPREADSHEET_ID: "LOCAL",
+  SpreadsheetApp: { openById: id => { assert.equal(id,"LOCAL"); return {}; } },
+  getOrCreateSheet: (_ss,name) => {
+    assert.equal(name,"AsignacionesAmbitosRoles");
+    return { getDataRange: () => ({ getValues: () => assignmentRows.map(row => row.slice()) }) };
+  }
+};
+vm.runInNewContext(assignmentsFn + "\nthis.getInternalRoleAssignments=getInternalRoleAssignments;", assignmentCtx);
+const currentAssignments = assignmentCtx.getInternalRoleAssignments({userId:"U-1",rolInternoId:"ROL-INT-1"});
+assert.equal(currentAssignments.status,"success");
+assert.deepEqual(Array.from(currentAssignments.data, row => row.asignacionId), ["R-1","R-6"], "future, expired, malformed and revoked assignments must not be effective");
+const historicalAssignments = assignmentCtx.getInternalRoleAssignments({userId:"U-1",rolInternoId:"ROL-INT-1",soloVigentes:false});
+assert.equal(historicalAssignments.status,"success");
+assert.equal(historicalAssignments.data.some(row => row.asignacionId === "R-2"),true,"non-current listing retains future assignments when explicitly requested");
+
+console.log("Department scope contract: verified identity, role-bound active scopes, explicit institution scope, effective assignment windows, fail-closed defaults and spoof resistance passed.");

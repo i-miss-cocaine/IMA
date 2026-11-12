@@ -10814,10 +10814,14 @@ function getInternalRoleAssignments(payload) {
       var estado = String(r[5] || "Activo").trim();
       if (estado !== "Activo") return false;
 
-      // Validación estricta de vigencia temporal si existen fechas
-      var fInicio = r[8] ? new Date(r[8]) : null;
-      var fFin = r[9] ? new Date(r[9]) : null;
-      if (soloVigentes && fFin && fFin < now) return false;
+      // Las asignaciones solo son vigentes dentro de su ventana temporal completa.
+      if (soloVigentes) {
+        var fInicio = r[8] ? new Date(r[8]) : null;
+        var fFin = r[9] ? new Date(r[9]) : null;
+        if ((fInicio && isNaN(fInicio.getTime())) || (fFin && isNaN(fFin.getTime()))) return false;
+        if (fInicio && fInicio.getTime() > now.getTime()) return false;
+        if (fFin && fFin.getTime() < now.getTime()) return false;
+      }
 
       return true;
     }).map(r => ({

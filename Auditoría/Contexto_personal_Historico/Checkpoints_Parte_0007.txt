@@ -938,3 +938,10 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - Incremento parcial T153-S02; no completa el soporte de múltiples roles simultáneos ni el motor genérico.
 - HEAD inicial: 603d8df710aef572dde6e62db6b9e4e877ea8af3; HEAD final se confirma tras publicar.
 ===============================================================================
+
+
+### Addendum C1.614-R1 — corrección de publicación
+- La comparación Git del commit 52498c8f27f30e24ca6a12721f6ae79cb895bc8e mostró que Code.gs y department-scope-contract.test.js conservaban los mismos blobs del padre; el commit había actualizado únicamente registros documentales.
+- Se detectó antes de cerrar la tarea. Este commit añade realmente el filtro temporal de inicio/fin y las pruebas future/expired/invalid/open/revoked y modo no vigente.
+- No se considera el commit documental evidencia de implementación. CI permanece pendiente; el HEAD correctivo se verificará después de publicar.
+===============================================================================
