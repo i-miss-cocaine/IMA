@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.596**
+- Último checkpoint: **C1.597**
 - Última sesión: `IMA-EXEC-20261110-1825Z-02`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.596: **22167**
+- Caracteres del archivo activo tras C1.597: **24282**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -537,3 +537,6 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 
 
 | C1.596 | IMA-EXEC-20261110-1825Z-02 | saveCompetencyEvaluation: reentrada durante appendRow de EvaluacionesCompetencias; secundaria COMPETENCY_EVALUATION_MUTATION_LOCK_TIMEOUT; una evaluación/append exterior, una apertura Sheets y lock liberado; contrato 27/27 PASS; CI 43134830869 SUCCESS Node 22 | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt — C1.596 | sección final | C1.595 | C1.596 Completada local aislada/CI; backend sin cambios; BETA-EXAM-097 Pendiente beta |
+
+
+| C1.597 | IMA-EXEC-20261110-1825Z-02 | saveRubric: reentrada durante appendRow de ResourceOwnership, appendRow de RubricasEvaluacion y setValues de actualización; secundarias RUBRIC_MUTATION_LOCK_TIMEOUT; alta única ownership/rúbrica, actualización única, una apertura Sheets por operación y lock liberado; smoke local 3/3 PASS; suite CI 24/24 PASS; run 43135541037 SUCCESS Node 22 | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt — C1.597 | sección final | C1.596 | C1.597 Completada con verificación local focalizada y suite CI; backend sin cambios; BETA-EXAM-098 Pendiente beta |

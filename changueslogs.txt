@@ -2357,3 +2357,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - GitHub Actions run 43134830869, commit a3b59eda30396c470ba639aba67c54f7f7a8e8ef: Node.js 22, contrato 27/27 PASS y job exam-security-contracts SUCCESS.
 - Backend productivo sin cambios; Apps Script/Sheets real NOT RUN. BETA-EXAM-097 Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.597 — contención reentrante de saveRubric durante persistencia
+- Se agregan tres escenarios de reentrada durante appendRow de ResourceOwnership, appendRow de RubricasEvaluacion y setValues de actualización.
+- Las solicitudes secundarias reciben RUBRIC_MUTATION_LOCK_TIMEOUT; se verifica unicidad de ownership/rúbrica, una actualización exterior, apertura Sheets única y liberación del lock.
+- Smoke local determinista 3/3 PASS; suite dedicada CI 24/24 PASS. GitHub Actions run 43135541037 SUCCESS en Node.js 22.
+- Backend productivo sin cambios; Apps Script/Sheets real NOT RUN. BETA-EXAM-098 Pendiente beta.
+===============================================================================

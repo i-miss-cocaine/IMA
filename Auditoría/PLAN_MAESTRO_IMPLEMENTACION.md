@@ -4455,3 +4455,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Alcance:** solo tests/security/exam-service-competency-evaluation-mutation-security.test.js; backend productivo, RBAC, identidad, asignación, scope, rúbricas y persistencia sin cambios. BETA-EXAM-097 registra la comprobación desplegada.
 - **Verificación:** GitHub Actions run 43134830869, workflow Exam-Service security local contracts, Node.js 22: SUCCESS; paso Run competency evaluation mutation security regression y job exam-security-contracts SUCCESS; contrato 27/27 PASS. Apps Script/Sheets real NOT RUN.
 - **Estado:** C1.596 **Completada en verificación local aislada/CI**. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+
+
+### 10.246 TASK-153 / AUD-NG-386 — contención reentrante de saveRubric durante persistencia (C1.597)
+- **Brecha confirmada:** la suite saveRubric verificaba timeout y reentrada durante getAuthorizedRubricMutationContext_, pero no durante las escrituras efectivas de alta ni actualización.
+- **Cobertura añadida:** reentrada al handler real durante appendRow de ResourceOwnership, appendRow de RubricasEvaluacion y setValues de actualización. Las tres solicitudes secundarias deben recibir RUBRIC_MUTATION_LOCK_TIMEOUT.
+- **Invariantes:** el alta exterior conserva exactamente un ownership y una rúbrica asociada; la actualización exterior aplica una sola escritura con sus valores; la secundaria no abre Sheets; una apertura por operación exterior y ScriptLock liberado.
+- **Alcance:** únicamente tests/security/exam-service-save-rubric-security.test.js; backend productivo, permisos, identidad, scope, ownership y persistencia sin cambios. BETA-EXAM-098 registra la comprobación desplegada.
+- **Verificación local:** node --check del smoke focalizado PASS; harness local determinista de los tres puntos de reentrada 3/3 PASS. El checkout del repositorio y la suite original completa no estuvieron disponibles localmente por fallo de resolución de github.com; la suite original sí fue ejecutada por CI.
+- **CI:** GitHub Actions run 43135541037, workflow Exam-Service security local contracts, Node.js 22: SUCCESS; paso Run rubric mutation security regression SUCCESS; suite dedicada 24/24 PASS; job exam-security-contracts SUCCESS.
+- **Estado:** C1.597 **Completada con verificación local focalizada y suite CI**. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM. Apps Script/Sheets real NOT RUN.

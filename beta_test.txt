@@ -1121,3 +1121,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; contrato local aislado 27/27 PASS; GitHub Actions run 43134830869 SUCCESS en Node.js 22. Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de solicitudes exterior/secundaria, adquisiciones/liberaciones del lock, aperturas de Sheets, conteo appendRow y snapshots de EvaluacionesCompetencias antes/después.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-098 — TASK-153 / AUD-NG-386 / EXAM: contención reentrante de saveRubric durante persistencia
+- **Módulo/rol:** Servicio EXAM; Profesor con permiso saveRubric, identidad firmada y scope institucional/departamental verificado.
+- **Objetivo:** comprobar en Apps Script/Sheets desplegado que una solicitud secundaria saveRubric iniciada durante appendRow de ResourceOwnership, appendRow de RubricasEvaluacion o setValues de actualización no supera ScriptLock ni duplica/reescribe la rúbrica.
+- **Precondiciones:** versión beta desplegada; usuario profesor autenticado; scope y departamento vigentes; hojas ResourceOwnership y RubricasEvaluacion con esquemas válidos; rúbrica existente y ownership activo único para escenario de actualización; mecanismo controlado de reentrada en el punto de escritura.
+- **Pasos:** ejecutar un alta válida e intentar una segunda saveRubric desde appendRow de ResourceOwnership; repetir desde appendRow de RubricasEvaluacion; ejecutar una actualización de rúbrica existente e intentar reentrada desde setValues; revisar respuestas, trazas RBAC/identidad/lock/Sheets, conteos de escritura y snapshots antes/después.
+- **Resultado esperado:** cada solicitud secundaria termina con RUBRIC_MUTATION_LOCK_TIMEOUT; la operación exterior de alta conserva exactamente un ownership y una rúbrica; la actualización exterior aplica una sola modificación; una apertura Sheets por operación exterior y ScriptLock liberado.
+- **Estado:** Pendiente beta; smoke local determinista 3/3 PASS; GitHub Actions run 43135541037 SUCCESS, suite dedicada 24/24 PASS en Node.js 22. Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, trazas saneadas de llamadas exteriores/secundarias, adquisiciones/liberaciones del lock, aperturas de Sheets, conteos appendRow/setValues y snapshots de RubricasEvaluacion/ResourceOwnership antes/después.
+===============================================================================

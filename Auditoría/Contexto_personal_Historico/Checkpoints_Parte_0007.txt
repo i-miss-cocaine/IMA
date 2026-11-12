@@ -340,3 +340,33 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.596 Completada en verificación local aislada/CI. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
 - HEAD inicial: 6d7b8124c13b7d60256d0a183069a25beb50432e; HEAD de código probado: a3b59eda30396c470ba639aba67c54f7f7a8e8ef; HEAD final se confirma tras commit documental.
 ===============================================================================
+
+
+===============================================================================
+## C1.597 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de saveRubric durante persistencia.
+
+### Hallazgo y cambio
+- La suite cubría timeout y reentrada durante getAuthorizedRubricMutationContext_, pero no las ventanas de escritura exterior.
+- Se amplía makeSheet con hooks/contadores para appendRow de ResourceOwnership, appendRow de RubricasEvaluacion y setValues de actualización.
+- En los tres puntos se invoca saveRubric real de forma anidada; la secundaria debe recibir RUBRIC_MUTATION_LOCK_TIMEOUT.
+- El alta exterior conserva exactamente un ownership y una rúbrica; la actualización una sola escritura; la secundaria no abre Sheets; una apertura por operación exterior y lock liberado.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-save-rubric-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Smoke local determinista de los tres puntos de reentrada: 3/3 PASS; node --check PASS.
+- GitHub Actions run 43135541037, commit de código/prueba dba948f652afd5cd42a00ae2da139faf77125841: workflow Exam-Service security local contracts SUCCESS en Node.js 22.
+- Suite save-rubric: 24/24 PASS; paso específico y job exam-security-contracts SUCCESS.
+- El checkout y la suite original completa no estuvieron disponibles localmente por fallo de resolución de github.com; la suite original fue ejecutada en CI. Apps Script/Sheets real NOT RUN. BETA-EXAM-098 Pendiente beta.
+- C1.597 Completada con verificación local focalizada y suite CI; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD inicial: 2963fd78148aba8c5244157fd37540a3313287b8; HEAD de código probado: dba948f652afd5cd42a00ae2da139faf77125841; HEAD final se confirma tras commit documental.
+===============================================================================

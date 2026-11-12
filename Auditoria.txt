@@ -2187,3 +2187,13 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Backend productivo sin cambios. Ejecución aislada sobre código/fixtures; Apps Script/Sheets real NOT RUN.
 - C1.596 Completada en verificación local aislada/CI. BETA-EXAM-097 sigue Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.597 — contención reentrante de saveRubric durante persistencia
+- Se amplía tests/security/exam-service-save-rubric-security.test.js con hooks de persistencia y tres escenarios de reentrada al handler real: appendRow de ResourceOwnership, appendRow de RubricasEvaluacion y setValues al actualizar.
+- Cada secundaria recibe RUBRIC_MUTATION_LOCK_TIMEOUT; el alta exterior conserva un ownership y una rúbrica, la actualización una escritura, una apertura Sheets por operación y lock liberado.
+- Verificación local: node --check del smoke focalizado PASS; harness determinista de los tres puntos de reentrada 3/3 PASS. Checkout y suite original completa no disponibles localmente por fallo de resolución de github.com.
+- GitHub Actions run 43135541037: workflow Exam-Service security local contracts SUCCESS en Node.js 22; suite save-rubric 24/24 PASS, paso específico y job exam-security-contracts SUCCESS.
+- Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-098 Pendiente beta.
+===============================================================================
