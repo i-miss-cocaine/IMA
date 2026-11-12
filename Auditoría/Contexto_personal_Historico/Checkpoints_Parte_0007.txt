@@ -1249,3 +1249,19 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** C1.630 completada conforme a verificaciones locales; hallazgo corregido. T153-S02 permanece En ejecución; no iniciar T153-S03.
 - **Siguiente acción:** revisar coherencia de límites temporales y vigencia de membresías/roles en las rutas de autorización restantes, sin ampliar a servicios no afectados.
 ===============================================================================
+
+
+===============================================================================
+### C1.631 — IMA-EXEC-20261112-1754Z-03 — vigencia temporal de membresías RBAC
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.630.
+- **HEAD inicial:** `2bff834983d54203e2983846be6412da0f9f5935`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificar los límites temporales de membresías RBAC que gobiernan resolución de sesión y enumeración de roles.
+- **Contrato:** se ejecuta `getUserRoleMembershipState_` y `resolveUserRoleMembership_` reales con reloj fijo y dos membresías sintéticas.
+- **Casos:** inicio y fin exactamente en el instante actual (inclusivos); inicio futuro; fin vencido numérico 0; inicio/fin inválidos. Se comprueba que una membresía inválida o vencida no se resuelve y que la otra permanece activa.
+- **Verificación local:** contrato completo V8 aislado **PASS**, incluidos C1.621–C1.631. Parseo sintáctico de backend USER y contrato **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** lectura de membresías y sesiones en Apps Script/Sheets real NOT RUN; escenario registrado en `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `tests/security/internal-responsibility-rbac-contract.test.js`; no se modificó lógica productiva.
+- **Commit funcional:** `1f31b4ac7e67dcc7c9801da5026feb5c7cf5bd95`.
+- **Estado:** C1.631 completada. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** verificar las transiciones de membresía y rol en los lectores públicos/administrativos (incluido cambio de rol y roles duplicados) y su correspondencia con la sesión firmada.
+===============================================================================
