@@ -27,7 +27,7 @@ const helperStart = sourceCode.indexOf("const USER_ROLE_MEMBERSHIP_HEADERS_ =");
 const helperEnd = sourceCode.indexOf("function generateSessionToken(user) {", helperStart);
 assert.ok(helperStart >= 0 && helperEnd > helperStart, "membership helpers exist");
 const membershipHelpers = sourceCode.slice(helperStart, helperEnd);
-const functionNames = ["generateSessionToken","verifySessionToken","getUserVerifiedRole","getUserRoleMemberships","switchActiveRole","manageUserRoleMemberships","ensureUserRoleMembershipSheet_","isConfiguredRbacRole_"];
+const functionNames = ["generateSessionToken","verifySessionToken","getUserVerifiedRole","getUserRoleMemberships","switchActiveRole","manageUserRoleMemberships","loginUser","ensureUserRoleMembershipSheet_","isConfiguredRbacRole_"];
 const functions = functionNames.map(name => extractFunction(sourceCode, name));
 const headers = ["MembershipID","UserID","RoleID","InstitutionID","Status","StartAt","EndAt","CreatedBy","CreatedAt","UpdatedAt","RevokedBy","RevokedAt"];
 const now = new Date(), start = new Date(now.getTime()-86400000).toISOString(), end = new Date(now.getTime()+86400000).toISOString();
@@ -72,11 +72,13 @@ function makeHarness(membershipRows = [headers]) {
       base64EncodeWebSafe:v=>Buffer.from(v).toString("base64").replace(/=/g,"").replace(/\+/g,"-").replace(/\//g,"_"),
       base64Decode:v=>Buffer.from(v,"base64"),
       newBlob:v=>({getDataAsString:()=>Buffer.from(v).toString("utf8")}),
-      getUuid:()=>"uuid-test-001"
+      getUuid:()=>"uuid-test-001",
+      computeDigest:() => [1,2]
     },
     getAuthTokenSecret:()=>"secret",
     computeHmacSignature:(v,s)=>"sig:"+v+":"+s,
     getIdentityInstitutionId_:()=>"INST-1",
+    getSheetOrThrow:(ss,name)=>ss.getSheetByName(name),
     LockService:{getScriptLock:()=>({waitLock(){ctx.locked=true;},releaseLock(){ctx.locked=false;}})},
     validateRolePermission:()=>({authorized:true}),
     invalidateUserRoleCache:()=>true,
@@ -86,7 +88,7 @@ function makeHarness(membershipRows = [headers]) {
   vm.runInNewContext(membershipHelpers+"\n"+functions.join("\n")+
     "\nthis.generateSessionToken=generateSessionToken;this.verifySessionToken=verifySessionToken;"+
     "this.getUserVerifiedRole=getUserVerifiedRole;this.getUserRoleMemberships=getUserRoleMemberships;"+
-    "this.switchActiveRole=switchActiveRole;this.manageUserRoleMemberships=manageUserRoleMemberships;"+
+    "this.switchActiveRole=switchActiveRole;this.manageUserRoleMemberships=manageUserRoleMemberships;this.loginUser=loginUser;"+
     "this.resolveUserRoleMembership_=resolveUserRoleMembership_;this.getUserRoleMembershipState_=getUserRoleMembershipState_;",ctx);
   return {ctx,sheets,cache,membershipRows};
 }
@@ -115,9 +117,14 @@ function membership(id,user,role,institution,status="ACTIVE",from=start,to=end){
   assert.equal(ctx.verifySessionToken(token).role,"Director","membership role may differ from legacy Users.Rol");
   membershipRows[1][4]="REVOKED";
   assert.equal(ctx.verifySessionToken(token),null,"revocation invalidates token");
-  const legacy=ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Student"});
-  assert.equal(ctx.verifySessionToken(legacy).role,"Student","legacy single-role compatibility");
-  const forged=ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Director"});
+  const legacyUnassigned=ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Student"});
+  assert.equal(ctx.verifySessionToken(legacyUnassigned),null,"legacy token cannot bypass an initialized membership set");
+  const legacyAssigned=ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Director"});
+  assert.equal(ctx.verifySessionToken(legacyAssigned).role,"Director","legacy token remains valid only when its role has an active membership");
+  const noMembership=makeHarness([headers]);
+  const legacyFallback=noMembership.ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Student"});
+  assert.equal(noMembership.ctx.verifySessionToken(legacyFallback).role,"Student","legacy single-role compatibility before membership migration");
+  const forged=ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Administrador"});
   assert.equal(ctx.verifySessionToken(forged),null,"legacy token cannot elevate role");
   const incomplete=ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Director",membershipId:"M-DIR"});
   assert.equal(ctx.verifySessionToken(incomplete),null,"membership token requires institution");
@@ -125,15 +132,15 @@ function membership(id,user,role,institution,status="ACTIVE",from=start,to=end){
 {
   const rows=[headers,membership("M-DIR","U-1","Director","INST-1"),membership("M-COORD","U-1","Coordinador","INST-1")];
   const {ctx}=makeHarness(rows);
-  const legacy=ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Student"});
-  const switched=ctx.switchActiveRole({sessionToken:legacy,activeRoleId:"Coordinador"});
+  const current=ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Director",membershipId:"M-DIR",institutionId:"INST-1"});
+  const switched=ctx.switchActiveRole({sessionToken:current,activeRoleId:"Coordinador"});
   assert.equal(switched.status,"success");
   assert.equal(ctx.verifySessionToken(switched.sessionToken).role,"Coordinador");
-  assert.equal(ctx.verifySessionToken(legacy),null,"role switch revokes previous session");
+  assert.equal(ctx.verifySessionToken(current).role,"Director","the prior role session remains valid only while its membership remains active");
   assert.equal(ctx.switchActiveRole({sessionToken:switched.sessionToken,activeRoleId:"Administrador"}).code,"ROLE_MEMBERSHIP_NOT_ACTIVE");
 }
 {
-  const rows=[headers], {ctx,membershipRows}=makeHarness(rows);
+  const rows=[headers,membership("M-STUDENT","U-1","Student","INST-1")], {ctx,membershipRows}=makeHarness(rows);
   const adminSession=ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Student"});
   const assigned=ctx.manageUserRoleMemberships({sessionToken:adminSession,action:"ASSIGN",userId:"U-1",roleId:"Director",startAt:start,endAt:end});
   assert.equal(assigned.status,"success");
@@ -144,6 +151,21 @@ function membership(id,user,role,institution,status="ACTIVE",from=start,to=end){
   assert.equal(membershipRows[1][4],"REVOKED");
   assert.equal(ctx.resolveUserRoleMembership_("U-1","Director","INST-1"),null);
   assert.equal(ctx.locked,false,"ScriptLock is released");
+}
+
+
+{
+  const rows=[headers,membership("M-DIR","U-1","Director","INST-1"),membership("M-COORD","U-1","Coordinador","INST-1")];
+  const {ctx,userRows}=makeHarness(rows);
+  userRows[1][5]="0102";
+  const selectionRequired=ctx.loginUser({identifier:"u1@example.test",password:"pw"});
+  assert.equal(selectionRequired.code,"ACTIVE_ROLE_SELECTION_REQUIRED");
+  assert.deepEqual(Array.from(selectionRequired.availableRoles,role=>role.roleId),["Director","Coordinador"]);
+  const login=ctx.loginUser({identifier:"u1@example.test",password:"pw",activeRoleId:"Coordinador"});
+  assert.equal(login.status,"success");
+  assert.equal(ctx.verifySessionToken(login.sessionToken).role,"Coordinador");
+  assert.equal(login.data.rol,"Coordinador");
+  assert.equal(ctx.loginUser({identifier:"u1@example.test",password:"pw",activeRoleId:"Administrador"}).code,"ROLE_MEMBERSHIP_NOT_ACTIVE");
 }
 
 console.log("User role membership contract: institution/user binding, effective dates, revocation, duplicate denial, signed active-role switching, legacy compatibility and locked assignment lifecycle passed.");
@@ -159,7 +181,8 @@ console.log("User role membership contract: institution/user binding, effective 
   const sharedRows = [headers,membership("M-SHARED","U-1","Director","INST-1")];
   const userHarness = makeHarness(sharedRows);
   const signedRoleToken = userHarness.ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Director",membershipId:"M-SHARED",institutionId:"INST-1"});
-  const legacyToken = userHarness.ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Student"});
+  const legacyToken = userHarness.ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Director"});
+  const legacyUnassignedToken = userHarness.ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Student"});
   for (const relativePath of servicePaths) {
     const serviceSource = fs.readFileSync(path.resolve(__dirname, relativePath), "utf8");
     const membershipVerifier = extractFunction(serviceSource, "verifyUserRoleMembershipClaim_");
@@ -182,7 +205,8 @@ console.log("User role membership contract: institution/user binding, effective 
     sharedRows[1][4]="REVOKED";
     assert.equal(serviceCtx.verifySessionToken(signedRoleToken),null,relativePath+" rejects revoked membership");
     sharedRows[1][4]="ACTIVE";
-    assert.equal(serviceCtx.verifySessionToken(legacyToken).role,"Student",relativePath+" preserves legacy token");
+    assert.equal(serviceCtx.verifySessionToken(legacyToken).role,"Director",relativePath+" accepts legacy role only with active membership");
+    assert.equal(serviceCtx.verifySessionToken(legacyUnassignedToken),null,relativePath+" denies legacy role without membership after migration");
   }
 }
 
