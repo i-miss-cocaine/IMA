@@ -188,6 +188,8 @@ function evaluateDepartmentReferenceAccess_(input) {
       resourceType: resourceType || null,
       resourceId: resourceId || null,
       operation: operation || null,
+      requestedFields: Array.isArray(cfg.requestedFields) ? cfg.requestedFields.map(function(x) { return String(x || "").trim(); }).filter(Boolean) : [],
+      requestedDocumentIds: Array.isArray(cfg.requestedDocumentIds) ? cfg.requestedDocumentIds.map(function(x) { return String(x || "").trim(); }).filter(Boolean) : [],
       decision: allowed ? "ALLOW" : "DENY",
       reasonCode: code,
       grantId: grant ? String(grant.grantId || "").trim() || null : null,
