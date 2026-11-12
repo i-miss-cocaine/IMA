@@ -1454,3 +1454,21 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Dependencias:** T153-S03 y T153-S04 esperan S01; T153-S05 espera S03/S04; T153-S06 espera S05. T153-S02 quedó completada en C1.640.
 - **Siguiente acción elegible:** obtener/definir una fuente institucional aprobada o un crosswalk verificable por institución. Hasta entonces, no crear propietario canónico ni migrar registros estudiantiles.
 ===============================================================================
+
+
+===============================================================================
+### C1.641 — IMA-EXEC-20261112-1754Z-03 — vinculación exacta de ámbitos en consumidores Apps Script
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.640.
+- **HEAD inicial:** `ba2f44579ca094b69fa4a9aa4d7bfd23e048df65`.
+- **Tarea:** corrección de brecha detectada durante la trazabilidad de T153-S02; se reabre la subtarea tras comprobar que los lectores de ámbito en servicios consumidores no aplicaban el contrato de USER.
+- **Hallazgo:** ACADEMIC, ACCOUNTING, TASK y EXAM resolvían departamentos por UserID/RoleID y estado/fecha, sin ligar cada fila al MembershipID e InstitutionID firmados, validar ResponsibilityID activo ni aplicar activeDepartmentId. La validación de sesión multirol no bastaba para garantizar el aislamiento de la asignación de ámbito.
+- **Corrección:** los cuatro servicios comparten una implementación local equivalente al contrato efectivo de USER: validación de claims contra identidad; tenant/MembershipID exactos; esquema actual obligatorio para sesiones con membresía; responsabilidad interna e institucional activa y única; AssignmentID único; fechas explícitas y fail-closed; selección de departamento activo que reduce el ámbito y desactiva el grant institucional amplio.
+- **Compatibilidad:** sesiones legacy sin claims de membresía solo consumen filas sin InstitutionID/MembershipID; no heredan filas vinculadas a otra membresía.
+- **Verificación local:** contrato completo V8 aislado **PASS**, C1.621–C1.639 y C1.641; parseo sintáctico de USER, ACADEMIC, ACCOUNTING, TASK, EXAM y contrato **PASS**.
+- **Casos C1.641:** ámbito válido de la membresía firmada; fila de otra membresía; tenant diferente; rol de actor distinto al claim; responsabilidad interna inactiva; fecha futura; FechaFin epoch 0; fecha inválida; AssignmentID duplicado; grant institucional explícito; activeDepartmentId autorizado y no autorizado. Todos los lectores aplican el mismo resultado.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** Sheets/Properties/Cache reales y despliegues independientes NOT RUN; escenario agregado a `beta_test.txt`, Pendiente beta.
+- **Archivos funcionales:** `backend/academic-service/Code.gs`, `backend/accounting-service/Code.gs`, `backend/task-service/Code.gs`, `backend/exam-service/Code.gs`, `tests/security/internal-responsibility-rbac-contract.test.js`.
+- **Commits:** ACADEMIC `4182b748a519a704d6a0185e2523c66796480c1c`; ACCOUNTING `6fefa91db8eb13e91bc52af4b059de98c61d5d45`; TASK `33e2034be857d6598a2a1fd0393787d341842551`; EXAM `7ff7ae0834a34fa0091ef1f13b7adeb5edcabe74`; contrato `b9bcd603b6bd5fe62eefb962d420c7397f3a6052`.
+- **Estado:** C1.641 completada en verificación local. T153-S02 vuelve a **En ejecución** hasta revisar los demás consumidores y confirmar que no quedan lectores de ámbito paralelos fuera de los cuatro servicios.
+- **Siguiente acción:** búsqueda estática acotada de todos los lectores de `AsignacionesAmbitosRoles` en servicios/handlers; confirmar que cada ruta usa contexto ligado a membresía o documentar excepción legacy segura.
+===============================================================================
