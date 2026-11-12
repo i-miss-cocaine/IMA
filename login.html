@@ -84,6 +84,12 @@
                     <input type="checkbox" id="remember-me" name="remember-me" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 bg-gray-50">
                     <label for="remember-me" class="ml-2 block text-[10px] font-semibold text-gray-400 uppercase tracking-widest cursor-pointer select-none">Recordarme en este equipo</label>
                 </div>
+                <div id="active-role-selection" class="space-y-2" hidden aria-live="polite">
+                    <label for="active-role-select" class="block text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Rol activo</label>
+                    <p class="text-xs text-gray-500">Tu cuenta tiene varios roles vigentes. Selecciona con cuál deseas entrar.</p>
+                    <select id="active-role-select" name="active-role" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:outline-none text-sm font-medium" aria-describedby="active-role-help"></select>
+                    <p id="active-role-help" class="sr-only">El rol seleccionado define el contexto de permisos de esta sesión.</p>
+                </div>
                 <button type="submit" id="login-submit-btn" class="btn-ima-primary w-full py-3" aria-label="Iniciar sesión y entrar al portal">
                     Entrar al Portal
                 </button>
