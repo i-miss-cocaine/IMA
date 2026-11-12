@@ -2781,3 +2781,15 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
 - C1.629 completada; T153-S02 sigue En ejecución. Siguiente: paridad temporal de contexto y listado administrativo.
 ===============================================================================
+
+
+ 
+===============================================================================
+[2026-11-12] C1.630 — paridad temporal de ámbitos
+- Hallazgo reproducido: FechaFin numérica 0 era tratada como vencida por getUserContextScope pero como vacía por getInternalRoleAssignments; el listado exponía una asignación no efectiva.
+- Corrección: lector administrativo distingue vacío explícito de valores falsy válidos y parsea 0 como fecha epoch.
+- Contrato temporal con reloj fijo cubre límites inclusivos, fechas futuras/pasadas/inválidas/vacías y epoch 0. El caso regresivo falló antes y pasó tras la corrección.
+- Contrato completo V8 aislado PASS, incluidos C1.621–C1.630; sintaxis backend/test PASS.
+- Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
+- C1.630 completada; T153-S02 sigue En ejecución.
+===============================================================================
