@@ -4622,3 +4622,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - GitHub Actions run 43142702283, commit 17956338ed04cb07b6612e0308ea83620173f0a7: workflow Exam-Service security local contracts SUCCESS en Node.js 22; todos los pasos del job exam-security-contracts SUCCESS.
 - Contrato exam-service-evaluation-category-mutation-security: 24/24 PASS; suite local V8 aislada 24/24 PASS; parseo Code.gs/contrato PASS.
 - C1.608 completada con verificación local y CI. BETA-EXAM-049 permanece Pendiente beta; Apps Script/Sheets real NOT RUN.
+
+
+### 10.258 TASK-153 / USER — reentrada durante el registro de conformidad manual (C1.609)
+- **Brecha confirmada:** registerDocumentSignature valida identidad, permiso y ownership bajo ScriptLock y tiene retry idempotente, pero el contrato no provocaba una segunda llamada durante appendRow de FirmasConformidades; además, el lock sintético del contrato no rechazaba una segunda adquisición mientras estaba retenido.
+- **Cobertura añadida:** el fixture comparte estado de lock entre llamadas, cuenta intentos y permite reentrada desde appendRow; el escenario verifica que la secundaria falla antes de abrir Sheets/consultar ownership y que la exterior conserva una sola firma.
+- **Invariantes:** dos intentos de lock, una apertura de Sheets, una comprobación de ownership, un append, una fila de firma canónica y una liberación del lock; el retry exacto existente conserva idempotencia.
+- **Alcance:** contrato de propiedad/serialización de firma manual; backend productivo sin cambios; BETA-FUNC-030 creado para verificación desplegada.
+- **Verificación local:** contrato V8 aislado y parseo de Code.gs/contrato PASS (resultado se registra tras ejecución).
+- **CI:** pendiente tras publicar.
+- **Apps Script/Sheets real:** NOT RUN; BETA-FUNC-030 Pendiente beta.
+- **Estado:** C1.609 en ejecución hasta completar verificación local y CI; TASK-153 continúa En ejecución.

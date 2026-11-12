@@ -2348,3 +2348,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Contrato de categorías de evaluación 24/24 PASS; suite local V8 24/24 PASS; parseo PASS.
 - Backend sin cambios. BETA-EXAM-049 sigue Pendiente beta; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+### C1.609 — TASK-153 / USER
+- Brecha: registerDocumentSignature carecía de escenario de reentrada durante appendRow; el fixture de lock no simulaba contención reentrante.
+- Se corrige el fixture para compartir el estado de lock y se añade una segunda llamada durante la persistencia. Se exige una sola firma, una validación de ownership, una apertura y liberación del lock.
+- BETA-FUNC-030 añadida; backend productivo sin cambios; Apps Script/Sheets real NOT RUN.
+===============================================================================

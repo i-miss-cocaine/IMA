@@ -731,3 +731,30 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.608 Completada con verificación local y CI. BETA-EXAM-049 permanece Pendiente beta; Apps Script/Sheets real NOT RUN.
 - HEAD probado: 17956338ed04cb07b6612e0308ea83620173f0a7; HEAD final se confirma tras este registro documental.
 ===============================================================================
+
+
+===============================================================================
+## C1.609 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** TASK-153 / USER — reentrada durante el registro de conformidad manual.
+
+### Hallazgo y cambio
+- registerDocumentSignature ya verificaba identidad, permiso y ownership bajo ScriptLock y soportaba retry idempotente, pero no tenía una prueba de reentrada durante appendRow.
+- El fixture ahora rechaza una segunda adquisición mientras el lock está retenido, cuenta intentos y permite reentrada durante appendRow. La secundaria debe fallar antes de abrir Sheets o volver a consultar ownership; la exterior conserva una única firma.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/user-service-signature-ownership.test.js
+- beta_test.txt (nuevo BETA-FUNC-030)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Harness V8 aislado y parseo Code.gs/contrato: pendiente de ejecución en este registro.
+- CI Department Scope: pendiente tras publicar.
+- Apps Script/Sheets real NOT RUN; BETA-FUNC-030 Pendiente beta.
+- C1.609 En ejecución; TASK-153 continúa En ejecución.
+- HEAD inicial: 77f1de794a703652f58e784726f915e0d612bcb1; HEAD final se confirma tras publicar.
+===============================================================================

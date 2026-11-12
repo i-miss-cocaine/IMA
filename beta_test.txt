@@ -1207,3 +1207,13 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; harness local determinista sobre handlers productivos extraídos de Code.gs 2/2 PASS; contrato completo 22/22 PASS en runner aislado; parseo JavaScript PASS. Apps Script/Sheets real NOT RUN; el conector no expuso estado de CI verificable para el commit de pruebas.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de llamadas exterior/secundaria, insertSheet, appendRow de encabezados, ownership y categoría, conteos de escrituras, snapshots antes/después y liberación del lock.
 ===============================================================================
+
+
+## BETA-FUNC-030 — TASK-153 / USER: serialización del registro de conformidad manual
+- **Módulo/servicio:** USER Service — registerDocumentSignature (conformidad manual institucional).
+- **Objetivo:** verificar en beta que la identidad firmante y el ownership del documento/solicitud se revalidan bajo ScriptLock y que solicitudes concurrentes no duplican la firma.
+- **Precondiciones:** entorno beta aislado; FirmasConformidades con esquema vigente; documento y solicitud sintéticos con ResourceOwnership único; firmante sintético autenticado; ScriptLock compartido.
+- **Pasos:** registrar una conformidad manual autorizada; provocar una segunda llamada al handler durante appendRow de la firma; comprobar que la secundaria falla por servicio ocupado antes de abrir Sheets o volver a consultar ownership; verificar conteo de filas, identidad firmante y liberación del lock. Repetir una solicitud idéntica después de finalizar para comprobar idempotencia.
+- **Resultado esperado:** la solicitud secundaria no persiste ni duplica firma; la exterior agrega una sola fila con documento canónico y firmante autenticado; lock liberado; el retry exacto devuelve la firma existente. Esto no acredita firma avanzada/cualificada ni validación criptográfica PSC.
+- **Estado:** Pendiente beta. Contrato local/CI de serialización y ownership; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** build/commit desplegado, IDs sintéticos, conteos de filas, ownership, respuestas de concurrencia y logs saneados; no registrar tokens ni credenciales.

@@ -302,7 +302,7 @@ function makeStatusHarness(options = {}) {
   const context = {
     validateRolePermission:(action)=>{assert.equal(action,"checkAdvancedSignatureStatus");return {authorized:options.permissionAllowed!==false};},
     getUserVerifiedRole:payload=>{payload._verifiedUserId="ACTOR-1";return "Director";},
-    LockService:{getScriptLock:()=>({tryLock:()=>{if(options.lockAvailable===false)return false;state.held=true;return true;},
+    LockService:{getScriptLock:()=>({tryLock:()=>{state.lockAttempts++;if(options.lockAvailable===false||state.held)return false;state.held=true;return true;},
       releaseLock:()=>{assert.equal(state.held,true);state.held=false;state.releases++;}})},
     SpreadsheetApp:{openById:()=>{assert.equal(state.held,true);state.opens++;return ss;}},
     SPREADSHEET_ID:"SPREADSHEET",
@@ -361,7 +361,7 @@ function makeManualSignatureHarness(options = {}) {
   const headers=["FirmaID","SolicitudID","DocumentoID","FirmanteID","RolFirmante","TipoFirma","TokenVerificacion","FechaFirma","IPOrigen","DocumentoHash","SignatureHash"];
   const initial=options.rows||[];
   const rows=[headers].concat(initial.map(row=>row.slice()));
-  const state={held:false,opens:0,reads:0,appends:0,releases:0,ownershipCalls:0,events:[]};
+  const state={held:false,lockAttempts:0,opens:0,reads:0,appends:0,releases:0,ownershipCalls:0,events:[]};
   const sheet={
     getDataRange(){assert.equal(state.held,true);state.reads++;return {getValues:()=>rows.map(row=>row.slice())};},
     appendRow(row){assert.equal(state.held,true);state.appends++;rows.push(row.slice());}
@@ -442,6 +442,23 @@ function makeManualSignatureHarness(options = {}) {
   const forbidden=makeManualSignatureHarness({permissionAllowed:false});
   assert.throws(()=>forbidden.execute(),/AUTH_PERMISSION_DENIED/);
   assert.equal(forbidden.state.lockAttempts||0,0);
+
+  let reentrant, nestedError = "";
+  reentrant = makeManualSignatureHarness({ onAppend() {
+    try { reentrant.execute(); } catch (error) { nestedError = error.message; }
+  }});
+  const reentrantResult = reentrant.execute();
+  assert.equal(reentrantResult.status, "success");
+  assert.equal(nestedError, "Servicio ocupado registrando conformidades. Por favor reintente.");
+  assert.equal(reentrant.state.lockAttempts, 2, "outer and nested manual signature requests must contend for the same lock");
+  assert.equal(reentrant.state.opens, 1, "nested signature must time out before opening Sheets");
+  assert.equal(reentrant.state.ownershipCalls, 1, "only the outer signature may validate document ownership");
+  assert.equal(reentrant.state.appends, 1, "only one manual signature may be appended");
+  assert.equal(reentrant.rows.length, 2, "header plus exactly one signature row must remain");
+  assert.equal(reentrant.rows.filter(row => row[1] === "SOL-1" && row[2] === "DOC-CANONICAL" && row[3] === "ACTOR-1").length, 1);
+  assert.equal(reentrant.state.releases, 1);
+  assert.equal(reentrant.state.held, false);
+
 }
 
 console.log("USER manual conformity signer identity, ownership, idempotency and lock contracts: PASS");

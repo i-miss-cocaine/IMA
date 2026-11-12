@@ -2512,3 +2512,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato exam-service-evaluation-category-mutation-security 24/24 PASS; todos los pasos del job PASS.
 - C1.608 completada local/CI; backend sin cambios. BETA-EXAM-049 Pendiente beta; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.609 — cobertura reentrante de conformidad manual USER
+- Se añade reentrada durante appendRow de registerDocumentSignature; el fixture ahora simula lock compartido real y cuenta intentos.
+- La secundaria falla antes de abrir Sheets o consultar ownership; la exterior conserva una sola firma con documento canónico y actor verificado; retry idempotente existente permanece cubierto.
+- BETA-FUNC-030 añadida; backend productivo sin cambios; CI pendiente; Apps Script/Sheets real NOT RUN.
+===============================================================================
