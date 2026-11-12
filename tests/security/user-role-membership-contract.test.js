@@ -124,6 +124,7 @@ function membership(id,user,role,institution,status="ACTIVE",from=start,to=end){
   assert.equal(ctx.verifySessionToken(token).role,"Director","membership role may differ from legacy Users.Rol");
   membershipRows[1][4]="REVOKED";
   assert.equal(ctx.verifySessionToken(token),null,"revocation invalidates token");
+  membershipRows[1][4]="ACTIVE";
   const legacyUnassigned=ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Student"});
   assert.equal(ctx.verifySessionToken(legacyUnassigned),null,"legacy token cannot bypass an initialized membership set");
   const legacyAssigned=ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Director"});
