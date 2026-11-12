@@ -84,7 +84,7 @@ assert.equal(updated.status,"success");
 assert.equal(bankRows.find(r=>r[0]==="BNK-D1")[7],"Actualizada");
 assert.throws(()=>runtime.manageQuestionBank({sessionToken:"other-token",bancoPreguntaId:"BNK-D1",accion:"actualizar",textoPregunta:"Ataque"}),/RESOURCE_NOT_AVAILABLE/);
 assert.equal(bankRows.find(r=>r[0]==="BNK-D1")[7],"Actualizada");
-assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:reentrantCreatedIds[0],accion:"eliminar"}),/RESOURCE_NOT_AVAILABLE/);
+assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:"BNK-D2",accion:"eliminar"}),/RESOURCE_NOT_AVAILABLE/);
 assert.equal(bankRows.find(r=>r[0]==="BNK-D2")[12],"Activo");
 assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:"BNK-LEGACY",accion:"actualizar"}),/RESOURCE_NOT_AVAILABLE/);
 assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:"BNK-DUP",accion:"actualizar"}),/RESOURCE_NOT_AVAILABLE/);
