@@ -2726,3 +2726,14 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Node CLI en checkout independiente NOT RUN por DNS de github.com; Apps Script/Sheets real NOT RUN y permanece Pendiente beta.
 - Diff de ocho archivos revisado; sin cambios en la rama base ni datos reales. C1.624 completada; T153-S02 continúa En ejecución.
 ===============================================================================
+
+
+ 
+===============================================================================
+[2026-11-12] C1.625 — aislamiento exacto de rol en contexto RBAC multirol
+- Se corrige getUserContextScope para exigir RoleID exacto cuando la asignación está vinculada a MembershipID; la normalización se conserva solo para compatibilidad legacy sin membresía.
+- Se detectó y cubrió la contaminación potencial de ámbitos por un RoleID alias que colisiona tras eliminar puntuación.
+- Contrato multirol: usuario con membresías Director/Auditor y departamentos separados; sesión Director solo DEP-A, sesión Auditor solo DEP-B, fila alias no añade DEP-X.
+- Contrato completo ejecutado en harness V8 aislado PASS; sintaxis de USER y contrato PASS. Node CLI independiente NOT RUN; CI sin estado reportado; Apps Script/Sheets real Pendiente beta.
+- T153-S02 continúa En ejecución; siguiente incremento: selección/cambio de departamento, revocación independiente y consistencia multirol.
+===============================================================================
