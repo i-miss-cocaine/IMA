@@ -1285,11 +1285,15 @@ policyResult=evaluateDepartmentReferenceAccess_({...policyBase,requestedFields:[
 assert.equal(policyResult.reasonCode,"DEPARTMENT_REFERENCE_FIELD_DENIED");
 assert.equal(policyResult.auditEvent.grantId,"GRANT-1");
 assert.equal(policyResult.auditEvent.authorizedBy,"USR-DIR");
+assert.equal(policyResult.allowedFields.length,0,"denied field requests do not return the grant allowlist");
+assert.equal(policyResult.allowedDocumentIds.length,0);
 assert.equal(JSON.stringify(policyResult.auditEvent.requestedFields),JSON.stringify(["referenceId","privateNotes"]));
 assert.equal(JSON.stringify(policyResult.auditEvent.requestedDocumentIds),JSON.stringify(["DOC-1"]));
 assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,requestedDocumentIds:["DOC-2"]}).reasonCode,"DEPARTMENT_REFERENCE_DOCUMENT_DENIED");
 policyResult=evaluateDepartmentReferenceAccess_({...policyBase,requestedDocumentIds:["DOC-2"]});
 assert.equal(JSON.stringify(policyResult.auditEvent.requestedDocumentIds),JSON.stringify(["DOC-2"]));
+assert.equal(policyResult.allowedFields.length,0);
+assert.equal(policyResult.allowedDocumentIds.length,0,"denied document requests do not return the grant allowlist");
 assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,requestedFields:[]}).reasonCode,"DEPARTMENT_REFERENCE_FIELDS_REQUIRED");
 assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,referenceGrants:[]}).reasonCode,"DEPARTMENT_REFERENCE_GRANT_NOT_FOUND");
 assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,referenceGrants:[{...policyGrant,expiresAt:"2026-11-12T17:59:59.999Z"}]}).reasonCode,"DEPARTMENT_REFERENCE_GRANT_NOT_FOUND");

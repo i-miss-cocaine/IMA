@@ -258,8 +258,8 @@ function evaluateDepartmentReferenceAccess_(input) {
   var authorizedBy = String(grant.authorizedBy || "").trim();
   var allowedFields = Array.isArray(grant.allowedFields) ? grant.allowedFields.map(function(x) { return String(x || "").trim(); }).filter(Boolean) : [];
   var allowedDocuments = Array.isArray(grant.allowedDocumentIds) ? grant.allowedDocumentIds.map(function(x) { return String(x || "").trim(); }).filter(Boolean) : [];
-  if (!grantId || !authorizedBy || !allowedFields.length || allowedFields.indexOf("*") !== -1 || allowedDocuments.indexOf("*") !== -1) return result(false, "DEPARTMENT_REFERENCE_GRANT_INVALID", "DENY", grant, allowedFields, allowedDocuments);
-  if (requestedFields.some(function(field) { return allowedFields.indexOf(field) < 0; })) return result(false, "DEPARTMENT_REFERENCE_FIELD_DENIED", "DENY", grant, allowedFields, allowedDocuments);
-  if (requestedDocuments.some(function(documentId) { return allowedDocuments.indexOf(documentId) < 0; })) return result(false, "DEPARTMENT_REFERENCE_DOCUMENT_DENIED", "DENY", grant, allowedFields, allowedDocuments);
+  if (!grantId || !authorizedBy || !allowedFields.length || allowedFields.indexOf("*") !== -1 || allowedDocuments.indexOf("*") !== -1) return result(false, "DEPARTMENT_REFERENCE_GRANT_INVALID", "DENY", grant, [], []);
+  if (requestedFields.some(function(field) { return allowedFields.indexOf(field) < 0; })) return result(false, "DEPARTMENT_REFERENCE_FIELD_DENIED", "DENY", grant, [], []);
+  if (requestedDocuments.some(function(documentId) { return allowedDocuments.indexOf(documentId) < 0; })) return result(false, "DEPARTMENT_REFERENCE_DOCUMENT_DENIED", "DENY", grant, [], []);
   return result(true, "READ_ONLY_REFERENCE_AUTHORIZED", "READ_ONLY_REFERENCE", grant, requestedFields, requestedDocuments);
 }
