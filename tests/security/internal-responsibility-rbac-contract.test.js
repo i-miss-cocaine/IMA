@@ -1227,7 +1227,7 @@ const cyclicDepartments=[{...departmentRecords[0],ParentDepartmentID:"D-CHILD"},
 assert.equal(departmentCatalogCtx.validateDepartmentCatalogSnapshot_(departmentConfig,cyclicDepartments,fixedTemporalNow).code,"DEPARTMENT_HIERARCHY_CYCLE");
 const duplicateCodeDepartments=[departmentRecords[0],{...departmentRecords[1],Codigo:"ROOT"}];
 assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:departmentConfig,records:duplicateCodeDepartments,sourceId:"D-ROOT",effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_CODE_AMBIGUOUS");
-const crosswalkConfig={...departmentConfig,sourceCatalog:"CatalogoDepartamentos",keyField:"deptId",nameField:"nombre",authorityMode:"CROSSWALK"};
+const crosswalkConfig={...departmentConfig,sourceCatalog:"CatalogoDepartamentos",keyField:"deptId",nameField:"nombre",statusField:"estado",authorityMode:"CROSSWALK"};
 const crosswalkRecords=[{deptId:"DEP-1",nombre:"Matemáticas",estado:"Activo"}];
 const approvedMapping={institutionId:"INST-1",domain:"ACADEMICO",sourceCatalog:"CatalogoDepartamentos",sourceId:"DEP-1",canonicalId:"CAN-MATH",status:"ACTIVE",approved:true,approvalReference:"XW-001",validFrom:"",validTo:""};
 assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:crosswalkConfig,records:crosswalkRecords,sourceId:"DEP-1",crosswalk:[approvedMapping],effectiveAt:fixedTemporalNow}).canonicalId,"CAN-MATH","approved crosswalk resolves source to canonical ID");
