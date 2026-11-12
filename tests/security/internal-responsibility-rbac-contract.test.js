@@ -777,6 +777,17 @@ console.log("C1.633 signed-session tenant contract: exact membership/tenant bind
 // C1.634: persistent revocation survives cache eviction and logout cannot revoke caller-supplied identities.
 tenantUserRows[1][10]="Activa"; // restore active account after the C1.633 negative account-state case
 const sessionRevocationRows = [["SessionID","UserID","RevokedAt","ExpiresAt"]];
+const sessionRevocationStateRows = [["Key","Value","UpdatedAt"]];
+const sessionRevocationStateSheet = {
+  getLastRow:()=>sessionRevocationStateRows.length,
+  getDataRange:()=>({getValues:()=>sessionRevocationStateRows.map(row=>row.slice())}),
+  appendRow:row=>{sessionRevocationStateRows.push(row.slice());},
+  getRange:(row,col,numRows,numCols)=>({
+    clearContent:()=>{for(let r=0;r<numRows;r++)for(let c=0;c<numCols;c++)sessionRevocationStateRows[row-1+r][col-1+c]="";},
+    setValue:value=>{sessionRevocationStateRows[row-1][col-1]=value;},
+    setValues:values=>{for(let r=0;r<values.length;r++)for(let c=0;c<values[r].length;c++)sessionRevocationStateRows[row-1+r][col-1+c]=values[r][c];}
+  })
+};
 const sessionRevocationSheet = {
   getLastRow:()=>sessionRevocationRows.length,
   getDataRange:()=>({getValues:()=>sessionRevocationRows.map(row=>row.slice())}),
@@ -791,21 +802,24 @@ tenantCache.get=()=>null; // Deliberately simulate an evicted/missing cache entr
 tenantCache.put=(key,value,ttl)=>sessionCacheWrites.push({key,value,ttl});
 tenantCache.remove=()=>{};
 tenantSessionCtx.SESSION_REVOCATION_HEADERS_=["SessionID","UserID","RevokedAt","ExpiresAt"];
+tenantSessionCtx.SESSION_REVOCATION_STATE_HEADERS_=["Key","Value","UpdatedAt"];
 tenantSessionCtx.CacheService={getScriptCache:()=>tenantCache};
 const sessionRevocationProperties = {};
 tenantSessionCtx.PropertiesService={getScriptProperties:()=>({getProperty:key=>sessionRevocationProperties[key]||null,setProperty:(key,value)=>{sessionRevocationProperties[key]=String(value);}})};
 tenantSessionCtx.LockService={getScriptLock:()=>({waitLock:()=>{},releaseLock:()=>{}})};
-tenantSessionCtx.getOrCreateSheet=(_ss,name)=>name==="SesionesRevocadas"?sessionRevocationSheet:null;
+tenantSessionCtx.getOrCreateSheet=(_ss,name)=>name==="SesionesRevocadas"?sessionRevocationSheet:(name==="EstadoRevocacionSesiones"?sessionRevocationStateSheet:null);
 tenantSessionCtx.logStructuredEvent=()=>{};
 tenantSessionCtx.SpreadsheetApp={openById:()=>({getSheetByName:name=>{
   if(name==="Usuarios")return {getDataRange:()=>({getValues:()=>tenantUserRows.map(row=>row.slice())})};
   if(name==="MembresiasRolesRBAC")return {getDataRange:()=>({getValues:()=>tenantMembershipRows.map(row=>row.slice())})};
   if(name==="AsignacionesAmbitosRoles")return {getDataRange:()=>({getValues:()=>tenantScopeRows.map(row=>row.slice())})};
   if(name==="SesionesRevocadas")return sessionRevocationSheet;
+  if(name==="EstadoRevocacionSesiones")return sessionRevocationStateSheet;
   return null;
 }})};
 const sessionRevocationCode = `
 this.SESSION_REVOCATION_HEADERS_=["SessionID","UserID","RevokedAt","ExpiresAt"];
+this.SESSION_REVOCATION_STATE_HEADERS_=["Key","Value","UpdatedAt"];
 ${extractFunction(source,"isSessionRevoked_")}
 ${extractFunction(source,"recordSessionRevocation_")}
 ${extractFunction(source,"invalidateUserRoleCache")}
@@ -924,13 +938,13 @@ console.log("C1.636 revocation ledger integrity contract: persistent initializat
 // C1.637: historical-token invalidation is an explicit rollout control, not an automatic mass logout.
 assert.equal(tenantSessionCtx.verifySessionToken("claimsafter.sig").sessionId,"SID-AFTER","without a rollout cutoff, active legacy sessions remain compatible");
 const migrationCutoff=Math.floor(Date.now()/1000)+20;
-sessionRevocationProperties.SESSION_REVOCATION_LEGACY_CUTOFF=String(migrationCutoff);
+sessionRevocationStateRows.push(["LEGACY_SESSION_CUTOFF",String(migrationCutoff),new Date()]);
 assert.equal(tenantSessionCtx.verifySessionToken("claimsafter.sig"),null,"an explicit cutoff invalidates tokens issued before or at the migration boundary");
 tenantClaimsByPayload.claimsmigrationnew={userId:"U-TENANT",role:"Director",membershipId:"MEM-LOCAL",institutionId:"INST-1",sessionId:"SID-MIGRATION-NEW",iat:migrationCutoff+1,exp:migrationCutoff+3601};
 assert.equal(tenantSessionCtx.verifySessionToken("claimsmigrationnew.sig").sessionId,"SID-MIGRATION-NEW","a token issued after the configured cutoff remains valid");
-sessionRevocationProperties.SESSION_REVOCATION_LEGACY_CUTOFF="invalid-cutoff";
+sessionRevocationStateRows.find(row=>row[0]==="LEGACY_SESSION_CUTOFF")[1]="invalid-cutoff";
 assert.equal(tenantSessionCtx.verifySessionToken("claimsmigrationnew.sig"),null,"malformed migration cutoff fails closed");
-delete sessionRevocationProperties.SESSION_REVOCATION_LEGACY_CUTOFF;
+sessionRevocationStateRows.splice(sessionRevocationStateRows.findIndex(row=>row[0]==="LEGACY_SESSION_CUTOFF"),1);
 assert.equal(tenantSessionCtx.verifySessionToken("claimsafter.sig").sessionId,"SID-AFTER","removing the optional migration cutoff restores normal expiry and revocation checks");
 console.log("C1.637 legacy session migration contract: optional cutoff preserves default compatibility, invalidates pre-cutoff tokens when configured and fails closed on malformed configuration PASS.");
 
