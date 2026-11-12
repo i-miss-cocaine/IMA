@@ -353,6 +353,7 @@ console.log("C1.624 responsibility/capability integrity contract: duplicate IDs,
 
 
 // C1.625: multi-role contexts must bind every scope to the exact signed RBAC role.
+lifecycleSheets.AsignacionesAmbitosRoles = {getDataRange:()=>({getValues:()=>lifecycleScopeRows.map(r=>r.slice())})};
 lifecycleMembershipRows.push(["MEM-AUD","U-LIFE","Auditor","INST-1","ACTIVE","","","U-ADMIN","2026-01-01","2026-01-01","",""]);
 lifecycleResponsibilityRows.push(["RESP-AUD","Responsabilidad de auditoría","Metadatos",'["mod_auditoria"]','["CAP_CONSULTAR"]',"Activa","U-ADMIN","2026-01-01"]);
 lifecycleInternalRoleRows.push(["RI-AUD","R-AUD","Auditoría","Consulta","DEP-B","AREA-B","Administrativa",12,"No","Activo","U-ADMIN","2026-01-01","2026-01-01","RESP-AUD"]);
