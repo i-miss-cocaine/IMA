@@ -1047,3 +1047,19 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** incremento C1.618 implementado y CI PASS; TASK-153/T153-S02 continúa En ejecución. No se cierra la tarea global.
 - **Siguiente acción:** revisar la integración de responsabilidades internas/capacidades con el catálogo de roles y permisos dinámicos, manteniendo vínculo verificable con tenant, membresía y ámbito.
 ===============================================================================
+
+
+===============================================================================
+### C1.619 — IMA-EXEC-20261110-1825Z-02 — responsabilidades institucionales vinculadas a roles internos
+- **Sesión:** IMA-EXEC-20261110-1825Z-02 (se conserva el ID).
+- **Continuidad:** C1.618; HEAD inicial de esta iteración `3451b22e64ddb2f5487d14792e5c8d6ee8edb9bb`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Incremento enfocado: vincular catálogo de roles internos con responsabilidades institucionales y mantener capacidades fuera de la autoridad RBAC.
+- **Implementación:** esquema aditivo `ResponsibilityID` en `CatalogoRolesInternos`; vínculo validado contra registro institucional activo y único; contexto de ámbito expone metadatos de módulos/capacidades; listados distinguen `RoleID` de `ResponsibilityID` y filtran tenant/membresía/vigencia. Escrituras de catálogos requieren sesión verificada; catálogos vacíos ya no devuelven responsabilidades sintéticas como registros activos.
+- **Seguridad:** se probaron suplantación de rol/actor del cliente, referencia ausente/inactiva, aislamiento de membresía y separación estricta entre capacidades organizativas y permisos RBAC explícitos.
+- **Pruebas/CI:** Department Scope Contract run 43225238922 SUCCESS, Node 24.22.2; contrato de responsabilidad/RBAC, contrato de ámbitos, membresías, ownership académico/contable, sintaxis de seis servicios Apps Script y JS de cliente PASS.
+- **Terminal local:** NOT RUN por imposibilidad de resolver github.com en el entorno local; CI ejecutó los contratos en runner aislado. Apps Script/Sheets real NOT RUN.
+- **Commits:** `ce385606a6113de3877d160c5a0a97efefb4ba4e`; `79187bddab6d6bacbc2a5b9c8dd2b0a2d6eab332`; `3608847e3e181da39ebb0336a462d585f2b0562a`; `c0dacf9a5e885ef2fc34bd179ebc8c5d1b50cffe`; `c669717705d381ceff9ae9e74a10fd5058b04e5b`; `671daded866a44d807523f2ce6036a8b353a69cc`; `aa08228543f44ec1bdf5aae7dd8af9beb5e39722`.
+- **Beta:** BETA-FUNC-033 ampliado; Pendiente beta. No se ejecutó migración en hojas reales ni despliegue.
+- **Estado:** incremento C1.619 implementado y CI PASS; TASK-153/T153-S02 continúa En ejecución.
+- **Siguiente acción:** probar ciclo de vida y concurrencia de escrituras, actualizaciones, duplicados, revocación y desactivación con fixtures/mocks deterministas; mantener aislamiento y no otorgar RBAC por capacidades.
+===============================================================================

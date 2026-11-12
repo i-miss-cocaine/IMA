@@ -2655,3 +2655,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se preservó getUserScopeConfig. Legacy permanece limitado a filas no vinculadas; no se infiere una membresía para filas históricas.
 - Terminal local NOT RUN por fallo DNS hacia github.com; Apps Script/Sheets real NOT RUN. TASK-153/T153-S02 continúa En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.619 — responsabilidades institucionales enlazadas a roles internos
+- USER incorpora el vínculo `CatalogoRolesInternos.ResponsibilityID` → `ResponsabilidadesInstitucionales.ResponsibilityID`; los registros vinculados deben existir y estar activos.
+- Se elimina el fallback de responsabilidades sintéticas; las capacidades se exponen como metadatos y no conceden permisos RBAC. Escrituras de ambos catálogos exigen rol e identidad de sesión verificados.
+- Contrato nuevo `internal-responsibility-rbac-contract.test.js` y fixture de compatibilidad legacy. Department Scope Contract 43225238922 SUCCESS: contratos y parseos configurados PASS.
+- Terminal local NOT RUN por DNS; Apps Script/Sheets real NOT RUN; BETA-FUNC-033 Pendiente beta. TASK-153/T153-S02 continúa En ejecución.
+===============================================================================
