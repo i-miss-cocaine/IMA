@@ -695,3 +695,31 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.607 Completada con verificación local y CI. BETA-EXAM-056 permanece Pendiente beta; Apps Script/Sheets real NOT RUN.
 - HEAD probado: bc6ced1c1caf4be40bc47e22d18a69d17ea50079; HEAD final se confirma tras este registro documental.
 ===============================================================================
+
+
+===============================================================================
+## C1.608 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada durante las escrituras de actualización de saveEvaluationCategory.
+
+### Hallazgo y cambio
+- saveEvaluationCategory cubría creación reentrante (insertSheet, appendRow de encabezados y appendRow de ownership/categoría), pero no la edición, que realiza dos setValue independientes para nombre y porcentaje.
+- Se agregan dos escenarios al contrato, uno por cada punto de escritura. La secundaria recibe EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; la exterior actualiza únicamente los campos solicitados, conserva ResourceOwnership, no agrega filas y libera ScriptLock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-evaluation-category-mutation-security.test.js
+- beta_test.txt (actualización de BETA-EXAM-049)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Suite V8 aislada: 24/24 PASS.
+- Parseo JavaScript de Code.gs y contrato: PASS.
+- CI: pendiente de resultado verificable tras publicar.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-049 Pendiente beta.
+- C1.608 Completada localmente; TASK-153 / AUD-NG-386 continúa En ejecución.
+- HEAD inicial: 6acd9773915439e4235f06dbcc51c820e0017003; HEAD final se confirma tras publicar.
+===============================================================================

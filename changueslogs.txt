@@ -2495,3 +2495,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato exam-service-student-grade-rectification-security 34/34 PASS; todos los pasos del job PASS.
 - C1.607 completada local/CI; backend sin cambios. BETA-EXAM-056 Pendiente beta; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.608 — cobertura reentrante de actualización de categorías
+- Se añaden dos escenarios: reentrada durante setValue del nombre y durante setValue del porcentaje en saveEvaluationCategory.
+- Las secundarias reciben EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; la exterior aplica solo los dos campos solicitados, no altera ownership y libera ScriptLock.
+- Suite V8 aislada 24/24 PASS; parseo Code.gs/contrato PASS. Backend productivo sin cambios.
+- BETA-EXAM-049 actualizado; Apps Script/Sheets real NOT RUN; CI pendiente.
+===============================================================================

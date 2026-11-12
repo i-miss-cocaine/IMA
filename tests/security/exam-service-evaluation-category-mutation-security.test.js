@@ -32,11 +32,11 @@ function makeSheet(rows, kind, options, state) {
     getLastRow() { return this.rows.length; },
     appendRow(row) { this.rows.push(row.slice()); state.appends++; state[kind + "Appends"] = (state[kind + "Appends"] || 0) + 1; if (options.onAppendRow) options.onAppendRow(kind, this, row.slice()); if (kind === "categories" && options.failCategoryAppend) throw new Error("synthetic category append failure"); },
     deleteRow(n) { this.rows.splice(n - 1, 1); },
-    getRange(row, col) { return { setValue: value => { this.rows[row - 1][col - 1] = value; } }; }
+    getRange(row, col) { return { setValue: value => { if (options.onSetValue) options.onSetValue(kind, this, row, col, value); state.setValueWrites++; this.rows[row - 1][col - 1] = value; } }; }
   };
 }
 function fixture(options = {}) {
-  const state = { opens: 0, locks: 0, releases: 0, appends: 0, inserts: 0, held: false, uuid: 0, action: "", identityCalls: 0, permissionCalls: 0 };
+  const state = { opens: 0, locks: 0, releases: 0, appends: 0, inserts: 0, setValueWrites: 0, held: false, uuid: 0, action: "", identityCalls: 0, permissionCalls: 0 };
   const categoryRows = options.categoryRows || [categoryHeaders,
     ["CAT-OWNED", "Propia", "Global", 20, "100", "Activo"],
     ["CAT-LEGACY", "Legada", "Global", 10, "100", "Activo"]];
@@ -262,6 +262,43 @@ test("RBAC action is exactly saveEvaluationCategory and lock is released", () =>
   const x = fixture(); x.call({ nombre: "Action", departmentId: "DEPT-A" });
   assert.equal(x.state.action, "saveEvaluationCategory"); assert.equal(x.state.locks, 1); assert.equal(x.state.releases, 1);
 });
+test("reentrant category update during name setValue is rejected under ScriptLock", () => {
+  let x, nestedError = "";
+  x = fixture({ onSetValue(kind, sheet, row, col) {
+    if (kind !== "categories" || col !== 2) return;
+    try { x.call({ categoriaId: "CAT-OWNED", nombre: "Nested name", porcentajePonderacion: 90 }); }
+    catch (error) { nestedError = error.message; }
+  }});
+  const beforeOwnership = x.sheets.ResourceOwnership.rows.map(row => row.slice());
+  const result = x.call({ categoriaId: "CAT-OWNED", nombre: "Outer name", porcentajePonderacion: 35 });
+  assert.equal(result.data.categoriaId, "CAT-OWNED");
+  assert.equal(nestedError, "EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT");
+  assert.equal(x.sheets.CategoriasEvaluacion.rows[1][1], "Outer name");
+  assert.equal(x.sheets.CategoriasEvaluacion.rows[1][3], 35);
+  assert.deepEqual(x.sheets.ResourceOwnership.rows, beforeOwnership);
+  assert.equal(x.state.setValueWrites, 2, "outer update must perform only its two field writes");
+  assert.equal(x.state.appends, 0);
+  assert.deepEqual([x.state.locks, x.state.releases, x.state.held, x.state.opens], [2, 1, false, 1]);
+});
+test("reentrant category update during percentage setValue is rejected under ScriptLock", () => {
+  let x, nestedError = "";
+  x = fixture({ onSetValue(kind, sheet, row, col) {
+    if (kind !== "categories" || col !== 4) return;
+    try { x.call({ categoriaId: "CAT-OWNED", nombre: "Nested percentage", porcentajePonderacion: 90 }); }
+    catch (error) { nestedError = error.message; }
+  }});
+  const beforeOwnership = x.sheets.ResourceOwnership.rows.map(row => row.slice());
+  const result = x.call({ categoriaId: "CAT-OWNED", nombre: "Outer percentage", porcentajePonderacion: 45 });
+  assert.equal(result.data.categoriaId, "CAT-OWNED");
+  assert.equal(nestedError, "EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT");
+  assert.equal(x.sheets.CategoriasEvaluacion.rows[1][1], "Outer percentage");
+  assert.equal(x.sheets.CategoriasEvaluacion.rows[1][3], 45);
+  assert.deepEqual(x.sheets.ResourceOwnership.rows, beforeOwnership);
+  assert.equal(x.state.setValueWrites, 2, "outer update must perform only its two field writes");
+  assert.equal(x.state.appends, 0);
+  assert.deepEqual([x.state.locks, x.state.releases, x.state.held, x.state.opens], [2, 1, false, 1]);
+});
+
 const failed = results.filter(item => !item.ok);
 process.stdout.write(JSON.stringify({ total: results.length, passed: results.length - failed.length, failed, results }, null, 2));
 if (failed.length) process.exitCode = 1;

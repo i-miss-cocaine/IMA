@@ -4605,3 +4605,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - GitHub Actions run 43142345822, commit bc6ced1c1caf4be40bc47e22d18a69d17ea50079: workflow Exam-Service security local contracts SUCCESS en Node.js 22; todos los pasos del job exam-security-contracts SUCCESS.
 - Contrato exam-service-student-grade-rectification-security: 34/34 PASS; suite local V8 aislada 34/34 PASS; parseo de Code.gs y contrato PASS.
 - C1.607 completada con verificación local y CI. BETA-EXAM-056 permanece Pendiente beta; Apps Script/Sheets real NOT RUN.
+
+
+### 10.257 TASK-153 / AUD-NG-386 — reentrada durante la actualización de saveEvaluationCategory (C1.608)
+- **Brecha confirmada:** saveEvaluationCategory ya cubría reentrada durante insertSheet, appendRow de encabezados y appendRow de ownership/categoría al crear; la edición existente realiza dos setValue independientes (nombre y porcentaje) sin escenarios reentrantes dedicados.
+- **Cobertura añadida:** dos escenarios del handler/wrapper/contexto productivos extraídos de Code.gs, uno por cada setValue de actualización.
+- **Invariantes:** secundaria recibe EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; exterior actualiza solo nombre y porcentaje solicitados, no cambia ResourceOwnership, no agrega filas, abre Sheets una vez y libera ScriptLock.
+- **Alcance:** contrato local y actualización de BETA-EXAM-049; backend productivo sin cambios.
+- **Verificación local:** suite V8 aislada 24/24 PASS; parseo Code.gs/contrato PASS.
+- **CI:** pendiente de resultado verificable tras publicar.
+- **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-049 Pendiente beta.
+- **Estado:** C1.608 Completada en verificación local aislada; TASK-153 / AUD-NG-386 continúa En ejecución.
