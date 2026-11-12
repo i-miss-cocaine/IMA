@@ -558,3 +558,6 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 
 
 | C1.604 | IMA-EXEC-20261110-1825Z-02 | reopenPeriodGradebook: reentrada durante setValue de estado y appendRow de encabezados del historial vacío; ambas secundarias GRADEBOOK_REOPEN_LOCK_TIMEOUT; una transición y un evento de auditoría, sin duplicados; contrato local 31/31 PASS; parseo Code.gs/contrato PASS; CI pendiente | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt — C1.604 | sección final | C1.603 | C1.604 en verificación CI; backend sin cambios; BETA-EXAM-055 Pendiente beta |
+
+
+| C1.605 | IMA-EXEC-20261110-1825Z-02 | closePeriodGradebook: reentrada durante insertSheet y appendRow de encabezados de CierresPeriodos ausente; ambas secundarias GRADEBOOK_CLOSURE_LOCK_TIMEOUT; exterior conserva hoja, encabezados y cierre únicos; contrato local 24/24 PASS; parseo Code.gs/contrato PASS; CI pendiente | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt — C1.605 | sección final | C1.604 | C1.605 Completada localmente; backend sin cambios; BETA-EXAM-052 Pendiente beta |
