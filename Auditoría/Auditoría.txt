@@ -1838,3 +1838,13 @@ RESULTADO DE EVALUACIÓN:
 - Secretaría presenta el formulario sin handler cargado; Coordinación tiene filtro estático sin listener localizado. RRHH, flujos y documentos usan etiquetas libres de departamento; contabilidad/secretaría muestran texto.
 - Sin cambios funcionales. No se infiere autoridad ni se alteran datos. Siguiente: contrato sintético de política estricta y referencia interdepartamental de solo lectura.
 ===============================================================================
+
+
+
+===============================================================================
+### C1.648 — política de referencias interdepartamentales
+- Se incorpora motor puro evaluateDepartmentReferenceAccess_: default estricto, modo opcional de solo lectura, identidad/propiedad verificadas, vínculo exacto a tenant/recurso/departamentos, grant vigente/no revocado, allowlists de campos/documentos y denegación de otras operaciones.
+- auditEvent devuelve trazabilidad de actor, membresía, rol, recurso, operación, decisión, motivo, campos/documentos, GrantID y AuthorizedBy. El consumidor debe persistirlo; no se escribe bitácora ni se habilita acceso real.
+- Local: 56 aserciones de política, 25 de catálogo, 4 IDs reservados y sintaxis PASS. CI 43287675970: C1.646/C1.648 PASS; fallo preexistente User Role Membership en línea 119, también presente en run previo 43283289566.
+- Sin configuración real, grants, callsites ni cambios de datos. TASK-153 sigue En ejecución.
+===============================================================================

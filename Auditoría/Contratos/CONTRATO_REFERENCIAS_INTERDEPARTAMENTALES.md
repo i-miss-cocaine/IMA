@@ -52,3 +52,9 @@ La función devuelve auditEvent con actor, membresía, rol, institución, depart
 El contrato sintético prueba default estricto, mismo departamento, alcance institucional autorizado/no autorizado, tenant y ownership verificados, recurso exacto, operaciones denegadas, allowlists de campos/documentos, concesión ausente/duplicada/inactiva/revocada/futura/vencida, autor, vigencia, configuración no vinculada, auditoría y reloj.
 
 No se crea ConfiguracionInstitucional ni DepartmentReferenceGrants en Sheets, no se leen datos productivos y no se habilita acceso real. La integración en cada consumidor y la persistencia de auditoría requieren una fase posterior de TASK-153.
+
+
+### Reglas adicionales de seguridad del contrato
+
+- La tabla DepartmentReferenceGrants solo puede escribirse mediante un endpoint administrativo del servidor con RBAC explícito; nunca desde el cliente. La función consumidora confía únicamente en snapshots cargados por el servidor.
+- El auditEvent registra los campos y documentos solicitados incluso en denegación. La respuesta de denegación no devuelve las allowlists completas; el consumidor conserva el evento y no entrega contenido antes de persistirlo.

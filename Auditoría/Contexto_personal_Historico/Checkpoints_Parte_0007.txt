@@ -1552,3 +1552,19 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** cobertura estática frontend completada para los 46 archivos de aplicación enumerados; S01-1 y T153-S01 permanecen En ejecución porque no se demuestra autoridad institucional ni correspondencia de datos reales. No se cierra TASK-153.
 - **Siguiente trabajo elegible:** contrato puro de POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL y concesiones interdepartamentales de solo lectura, con fixtures sintéticos; no requiere seleccionar ni migrar catálogos reales.
 ===============================================================================
+
+
+
+===============================================================================
+### C1.648 — IMA-EXEC-20261112-1754Z-03 — política de referencias interdepartamentales
+- **HEAD auditado:** c9102fbd6fc21c97e9d2362498249b9a215b5fd1 (rama NG_beta_0.0.0.1_work; rama base sin cambios).
+- **Unidad:** PM-01 / TASK-153; contrato puro de política de aislamiento y referencias compartidas, sin integración productiva.
+- **Implementación:** se añadió evaluateDepartmentReferenceAccess_ a backend/shared/DepartmentCatalogContract.gs. La clave POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL acepta BLOQUEO_TOTAL_CROSS_DEPARTAMENTO (default si falta) y PERMITIR_REFERENCIA_SOLO_LECTURA_INTERDEPARTAMENTAL. Política desconocida o configuración sin InstitutionID/mismatch falla cerrada.
+- **Contexto:** exige actorContext verificado (UserID, MembershipID, RoleID, InstitutionID y activeDepartmentId), resourceOwnership verificado por servidor (InstitutionID, departamento propietario, ResourceType/ResourceID) y snapshots actuales de configuración/grants. No acepta propietario ni política del payload. Acceso institucional amplio solo si institutionWideAuthorized=true está verificado.
+- **Decisión:** mismo departamento conserva autorización RBAC normal; alcance institucional requiere autorización explícita; política estricta bloquea todo cruce; política permisiva admite exclusivamente READ_REFERENCE con grant exacto de tenant/recurso/propietario/departamento destino, estado ACTIVE, no revocado, AuthorizedBy/AuthorizedAt, ValidFrom <= now < ExpiresAt, allowlists explícitas de campos/documentos y sin wildcard. Operaciones de lectura general, descarga, edición, eliminación, aprobación, firma, compartir, revocar, exportar e historial se deniegan.
+- **Auditoría:** auditEvent incluye actor/membresía/rol, tenant, departamentos, recurso, operación, campos/documentos solicitados, decisión, motivo, GrantID, AuthorizedBy y timestamp. El consumidor debe persistirlo antes de divulgar contenido. La función no escribe bitácoras. Respuestas denegadas no exponen las allowlists.
+- **Pruebas locales:** 56 aserciones de política PASS; 25 aserciones locales de catálogo PASS; 4 IDs reservados PASS; sintaxis del módulo PASS (Node v22.16.0).
+- **CI:** run 43287675970 en HEAD c9102fb: Department Scope PASS e Internal Responsibility RBAC PASS; el log confirma C1.646 y C1.648 PASS. User Role Membership falla en tests/security/user-role-membership-contract.test.js:119 con TypeError al leer role de null. El mismo fallo y línea se reproducen en run 43283289566 anterior a C1.646; se clasifica preexistente y ajeno al contrato. Las etapas posteriores quedan omitidas por fail-fast.
+- **Límites:** no se creó hoja ConfiguracionInstitucional ni DepartmentReferenceGrants; no hay callsites productivos ni persistencia real de auditoría; no se activa acceso interdepartamental y no se consultan/modifican datos reales. TASK-153/T153-S01 sigue En ejecución; no se elige autoridad.
+- **Siguiente acción elegible:** avanzar el contrato genérico de identidad/ciclo de vida (S01-3) con estados/transiciones parametrizables, historial, renombre y fusión/división sintéticos, sin fijar semántica institucional ni cerrar S01-2.
+===============================================================================

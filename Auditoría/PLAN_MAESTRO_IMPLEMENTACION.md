@@ -5104,3 +5104,12 @@ La revisión de requisitos originales confirma cobertura de:
 - assignDepartmentHead crea un registro desconocido usando Nombre=DepartamentoID sin validar catálogo. getDepartmentAcademicPlanning devuelve datos de planificación y etiquetas de departamento. Coordinación mantiene un filtro hardcodeado sin listener localizado; RRHH, flujos/documentos y contabilidad manejan departamento como texto libre/etiqueta.
 - No se modifican IDs ni catálogos por falta de correspondencia/autoridad demostrada. Cobertura estática frontend completada; S01-1/T153-S01 no se cierra sin evidencia de autoridad y datos institucionales.
 - Siguiente trabajo técnico: contrato puro para POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL y grants de referencia de solo lectura, con fixtures sintéticos.
+
+
+
+**Addendum C1.648 — contrato de política de referencias interdepartamentales**
+- Se añade evaluateDepartmentReferenceAccess_ al módulo compartido. La clave institucional POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL acepta BLOQUEO_TOTAL_CROSS_DEPARTAMENTO (default) y PERMITIR_REFERENCIA_SOLO_LECTURA_INTERDEPARTAMENTAL.
+- La decisión exige identidad/ámbito y propiedad de recurso verificados por servidor. Mismo departamento sigue sujeto a RBAC; alcance institucional requiere concesión explícita. El modo permisivo solo habilita READ_REFERENCE con grant exacto, vigente, activo, no revocado, autor/fecha, allowlists de campos y documentos; no se permiten wildcard ni operaciones de escritura/descarga/firma/exportación/historial.
+- auditEvent captura actor, membresía, rol, tenant, departamentos, recurso, operación, campos/documentos solicitados, decisión, motivo, GrantID, AuthorizedBy y timestamp. El consumidor debe persistirlo antes de divulgar; denegaciones no exponen allowlists.
+- Pruebas locales: 56 aserciones de política, 25 de catálogo, 4 IDs reservados y sintaxis PASS. CI 43287675970: contratos Department Scope e Internal Responsibility PASS (C1.646/C1.648); falla preexistente User Role Membership en línea 119, también observada en run 43283289566 previo.
+- Sin hojas reales, callsites productivos, escritura de auditoría ni acceso activado. TASK-153 sigue En ejecución. Siguiente trabajo: contrato genérico de identidad/ciclo de vida parametrizable para S01-3, sin anticipar decisiones de S01-2.

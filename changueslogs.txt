@@ -2981,3 +2981,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se confirma assignDepartmentHead con alta de ID desconocido y Nombre=ID; no se modifica por falta de autoridad/crosswalk.
 - Sin cambios funcionales ni datos reales. S01-1/T153-S01 sigue En ejecución. Siguiente: contrato de POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL y grants read-only sintéticos.
 ===============================================================================
+
+
+
+===============================================================================
+[2026-11-12] C1.648 — política de referencias interdepartamentales
+- Motor puro con default estricto y excepción de solo lectura mediante grant exacto, identidad/ownership verificados, allowlists de campos/documentos, vigencia, revocación y auditEvent.
+- Local: 56 aserciones de política + 25 de catálogo + 4 IDs reservados; sintaxis PASS. CI 43287675970: C1.646/C1.648 PASS; User Role Membership falla en línea 119, fallo preexistente confirmado en run 43283289566.
+- Sin callsites, hojas reales, persistencia de auditoría ni acceso activado. TASK-153 en ejecución.
+===============================================================================
