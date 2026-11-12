@@ -10100,12 +10100,44 @@ function getUserContextScope(payload) {
       if (scope.scopeType === "DEPARTAMENTO") scope.scopeValues.forEach(function(value) { if (departmentIds.indexOf(value) === -1) departmentIds.push(value); });
       if (scope.scopeType === "INSTITUCION" && scope.scopeValues.indexOf(institutionId) !== -1) institutionWide = true;
     });
-    return { status: "success", authorized: true, userId: userId, role: verifiedRole, institutionId: institutionId, scopes: scopes, departmentIds: departmentIds, institutionWide: institutionWide };
+
+    // A selected department is an untrusted request parameter: accept it only as a narrowing
+    // of an already verified, active department assignment. Never infer a department from
+    // an institution-wide grant because the canonical department catalog is not yet resolved.
+    var activeDepartmentId = String((payload && payload.activeDepartmentId) || "").trim();
+    if (activeDepartmentId) {
+      if (departmentIds.indexOf(activeDepartmentId) === -1) {
+        return { status: "error", code: "ACTIVE_SCOPE_NOT_ASSIGNED", message: "El departamento activo solicitado no pertenece a los ámbitos vigentes del usuario.", userId: userId, role: verifiedRole, institutionId: institutionId, scopes: [], departmentIds: [], institutionWide: false };
+      }
+      // Other scope dimensions have no verified department relation in the current schema.
+      // Drop them for this request rather than accidentally widening the selected context.
+      scopes = scopes.filter(function(scope) {
+        if (scope.scopeType !== "DEPARTAMENTO") return false;
+        var selectedValues = scope.scopeValues.filter(function(value) { return value === activeDepartmentId; });
+        if (!selectedValues.length) return false;
+        scope.scopeValues = selectedValues;
+        return true;
+      });
+      departmentIds = [activeDepartmentId];
+      institutionWide = false;
+    }
+
+    return {
+      status: "success",
+      authorized: true,
+      userId: userId,
+      role: verifiedRole,
+      institutionId: institutionId,
+      scopes: scopes,
+      departmentIds: departmentIds,
+      institutionWide: institutionWide,
+      activeDepartmentId: activeDepartmentId || null,
+      activeContext: activeDepartmentId ? { scopeType: "DEPARTAMENTO", scopeValue: activeDepartmentId } : null
+    };
   } catch (error) {
     return { status: "error", code: "USER_SCOPE_CONTEXT_FAILED", message: error.message };
   }
 }
-
 function getUserScopeConfig(payload) {
   try {
     var userId = payload && payload.userId ? payload.userId : (payload && payload._verifiedUserId ? payload._verifiedUserId : null);
@@ -10158,7 +10190,17 @@ function validateRoleScopeAccess(payload) {
       return (scope.scopeValues || []).some(function(value) { return String(value).trim().toUpperCase() === requestedValue.toUpperCase(); });
     });
     var isAllowed = institutionGrant || matchedScope;
-    return { status: "success", authorized: isAllowed, userId: context.userId, role: context.role, institutionId: context.institutionId, scopeType: scopeType, requestedValue: requestedValue, reason: isAllowed ? "Acceso al ámbito autorizado." : "El valor solicitado está fuera de los ámbitos activos del usuario." };
+    return {
+      status: "success",
+      authorized: isAllowed,
+      userId: context.userId,
+      role: context.role,
+      institutionId: context.institutionId,
+      scopeType: scopeType,
+      requestedValue: requestedValue,
+      activeDepartmentId: context.activeDepartmentId || null,
+      reason: isAllowed ? "Acceso al ámbito autorizado." : "El valor solicitado está fuera de los ámbitos activos del usuario."
+    };
   } catch (error) {
     return { status: "error", authorized: false, code: "SCOPE_VALIDATION_FAILED", message: error.message };
   }
