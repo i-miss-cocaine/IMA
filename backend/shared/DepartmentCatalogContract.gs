@@ -31,7 +31,7 @@ function validateDepartmentCatalogSnapshot_(config, records, effectiveAt) {
   var configuration = validateDepartmentCatalogConfiguration_(config);
   if (!configuration.valid) return configuration;
   if (!Array.isArray(records)) return { valid: false, code: "DEPARTMENT_SOURCE_SNAPSHOT_INVALID" };
-  var at = effectiveAt instanceof Date ? effectiveAt : new Date(effectiveAt || Date.now());
+  var at = effectiveAt instanceof Date ? effectiveAt : new Date(effectiveAt === undefined || effectiveAt === null || effectiveAt === "" ? Date.now() : effectiveAt);
   if (isNaN(at.getTime())) return { valid: false, code: "DEPARTMENT_EFFECTIVE_DATE_INVALID" };
   var keyField = String(config.keyField).trim(), codeMap = Object.create(null), recordsById = Object.create(null);
   for (var i = 0; i < records.length; i++) {
