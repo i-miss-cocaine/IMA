@@ -1299,3 +1299,22 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** C1.633 completada. T153-S02 permanece En ejecución; no iniciar T153-S03.
 - **Siguiente acción:** revisar revocación y caché de sesión (usuario/membresía/sesión), expiración de tokens y consistencia de invalidación inmediata ante cambios de estado.
 ===============================================================================
+
+
+===============================================================================
+### C1.634 — IMA-EXEC-20261112-1754Z-03 — revocación persistente de sesiones y logout seguro
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.633.
+- **HEAD inicial:** `bc1da9d9e518d4bff6fe9f5c9e6561b44a1c3f3c`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificar que la revocación de sesión se mantiene durante toda la vigencia del token y que el cierre de sesión no confía en identificadores aportados por el cliente.
+- **Hallazgo:** tokens de 24 h dependían de marcas CacheService de 6 h; el cambio de rol solicitaba 24 h, por encima del máximo permitido. La caché puede eliminar entradas antes del vencimiento. Además, `logoutUser` confiaba en userId/sessionId suministrados por cliente y podía revocar un usuario ajeno.
+- **Corrección:** se añade ledger persistente `SesionesRevocadas` con SessionID/UserID/RevokedAt/ExpiresAt; `verifySessionToken` consulta el ledger y falla cerrada si el esquema está corrupto. Los registros se conservan 24 h + 60 s, cubriendo el máximo de token y tolerancia de iat. CacheService se mantiene solo como optimización de 6 h.
+- **Semántica:** revocación de sesión bloquea el SessionID exacto; revocación por usuario bloquea tokens con iat anterior o igual a RevokedAt, sin impedir nuevos tokens posteriores. `switchActiveRole` persiste la revocación del token anterior. `logoutUser` obtiene exclusivamente el SessionID de claims firmados e ignora IDs del payload.
+- **Contrato:** caché siempre vacía; persistencia; revocación por usuario y nueva sesión posterior; logout con IDs falsificados; cambio de rol; token expirado; esquema persistente corrupto fail-closed.
+- **Verificación local:** contrato completo V8 aislado **PASS**, C1.621–C1.634; sintaxis backend USER/test **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** Apps Script/Sheets/CacheService/HMAC real NOT RUN.
+- **Migración:** revocaciones anteriores guardadas solo en caché y ya desaparecidas no pueden recuperarse; la nueva persistencia cubre las revocaciones posteriores al despliegue. Validar la política de tokens históricos durante rollout controlado.
+- **Archivos funcionales:** `backend/user-service/Code.gs`; `tests/security/internal-responsibility-rbac-contract.test.js`.
+- **Commits:** backend `444e04140f9a10deab70cc8c7ae8fa51701e6b3f`; contrato `a3a1bb73104b779191572e5b50cc1395811ecd73`.
+- **Estado:** C1.634 implementada y verificada en harness aislado. T153-S02 sigue En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** auditar permisos de la acción administrativa `revokeUserSession`, límites de acceso al ledger persistente y compatibilidad/migración de sesiones históricas.
+===============================================================================
