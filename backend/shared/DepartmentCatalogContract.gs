@@ -263,3 +263,170 @@ function evaluateDepartmentReferenceAccess_(input) {
   if (requestedDocuments.some(function(documentId) { return allowedDocuments.indexOf(documentId) < 0; })) return result(false, "DEPARTMENT_REFERENCE_DOCUMENT_DENIED", "DENY", grant, [], []);
   return result(true, "READ_ONLY_REFERENCE_AUTHORIZED", "READ_ONLY_REFERENCE", grant, requestedFields, requestedDocuments);
 }
+
+
+/**
+ * Validates a department identity/lifecycle event against an approved, tenant-scoped
+ * state machine. Pure contract: no writes, ID changes, resource transfer or activation.
+ */
+function validateDepartmentLifecycleEvent_(input) {
+  var cfg = input || {}, config = cfg.config || {}, current = cfg.currentRecord || {}, event = cfg.event || {};
+  var fail = function(code) { return { valid: false, idempotent: false, code: code }; };
+  var parseTime = function(value) {
+    if (value instanceof Date) return value.getTime();
+    if (typeof value === "number") return value;
+    if (value === undefined || value === null || value === "") return NaN;
+    return Date.parse(String(value));
+  };
+  try {
+    var institutionId = String(config.institutionId || "").trim();
+    var domain = String(config.domain || "").trim();
+    var approvalReference = String(config.approvalReference || "").trim();
+    if (!institutionId || !domain || config.authorityApproved !== true || !approvalReference) return fail("DEPARTMENT_LIFECYCLE_CONFIG_UNAPPROVED");
+    if (cfg.snapshotScopeVerified !== true || String(cfg.snapshotInstitutionId || "").trim() !== institutionId || String(cfg.snapshotDomain || "").trim() !== domain) return fail("DEPARTMENT_LIFECYCLE_SNAPSHOT_SCOPE_UNVERIFIED");
+    var states = Array.isArray(config.states) ? config.states.map(function(x) { return String(x || "").trim().toUpperCase(); }).filter(Boolean) : [];
+    var activeStates = Array.isArray(config.activeStates) ? config.activeStates.map(function(x) { return String(x || "").trim().toUpperCase(); }).filter(Boolean) : ["ACTIVE"];
+    var eventRules = Array.isArray(config.events) ? config.events : [];
+    if (!states.length || !eventRules.length || activeStates.some(function(x) { return states.indexOf(x) < 0; })) return fail("DEPARTMENT_LIFECYCLE_CONFIG_INVALID");
+
+    var departmentId = String(current.departmentId || "").trim();
+    var currentState = String(current.status || "").trim().toUpperCase();
+    var eventId = String(event.eventId || "").trim();
+    var eventDepartmentId = String(event.departmentId || "").trim();
+    var eventType = String(event.eventType || "").trim().toUpperCase();
+    var changedBy = String(event.changedBy || "").trim();
+    var reason = String(event.reason || "").trim();
+    var effectiveTime = parseTime(event.effectiveAt), now = parseTime(cfg.now);
+    if (!departmentId || !currentState || !eventId || eventDepartmentId !== departmentId || !eventType || !changedBy || !reason) return fail("DEPARTMENT_LIFECYCLE_EVENT_INVALID");
+    if (states.indexOf(currentState) < 0) return fail("DEPARTMENT_LIFECYCLE_CURRENT_STATE_INVALID");
+    if (!isFinite(effectiveTime) || !isFinite(now)) return fail("DEPARTMENT_LIFECYCLE_DATE_INVALID");
+    if (effectiveTime > now) return fail("DEPARTMENT_LIFECYCLE_FUTURE_EVENT_NOT_APPLICABLE");
+    var hasCurrentStart = current.validFrom !== undefined && current.validFrom !== null && current.validFrom !== "";
+    var hasCurrentEnd = current.validTo !== undefined && current.validTo !== null && current.validTo !== "";
+    var currentStart = hasCurrentStart ? parseTime(current.validFrom) : NaN;
+    var currentEnd = hasCurrentEnd ? parseTime(current.validTo) : NaN;
+    if ((hasCurrentStart && !isFinite(currentStart)) || (hasCurrentEnd && !isFinite(currentEnd))) return fail("DEPARTMENT_LIFECYCLE_CURRENT_DATE_INVALID");
+    if (hasCurrentStart && effectiveTime < currentStart) return fail("DEPARTMENT_LIFECYCLE_EVENT_BEFORE_VALIDITY");
+    if (hasCurrentEnd && effectiveTime > currentEnd) return fail("DEPARTMENT_LIFECYCLE_EVENT_AFTER_VALIDITY");
+    if (cfg.proposedRecord && String(cfg.proposedRecord.departmentId || "").trim() !== departmentId) return fail("DEPARTMENT_STABLE_ID_IMMUTABLE");
+
+    var matchingRules = eventRules.filter(function(rule) { return rule && String(rule.type || "").trim().toUpperCase() === eventType; });
+    if (matchingRules.length !== 1) return fail(matchingRules.length > 1 ? "DEPARTMENT_LIFECYCLE_EVENT_RULE_AMBIGUOUS" : "DEPARTMENT_LIFECYCLE_EVENT_NOT_ALLOWED");
+    var rule = matchingRules[0], fromState = String(rule.from || "").trim().toUpperCase(), toState = String(rule.to || "").trim().toUpperCase();
+    var stateTransition = !!(fromState || toState);
+    if (stateTransition && (!fromState || !toState || states.indexOf(fromState) < 0 || states.indexOf(toState) < 0 || fromState === toState)) return fail("DEPARTMENT_LIFECYCLE_TRANSITION_CONFIG_INVALID");
+    if (stateTransition && currentState !== fromState) return fail("DEPARTMENT_LIFECYCLE_TRANSITION_NOT_ALLOWED");
+    if (rule.requiresApproval !== false && (!String(event.approvedBy || "").trim() || !String(event.approvalReference || "").trim())) return fail("DEPARTMENT_LIFECYCLE_APPROVAL_REQUIRED");
+
+    var eventSignature = JSON.stringify({
+      departmentId: departmentId, eventType: eventType, effectiveAt: new Date(effectiveTime).toISOString(),
+      changedBy: changedBy, approvedBy: String(event.approvedBy || "").trim(), approvalReference: String(event.approvalReference || "").trim(),
+      reason: reason, newName: String(event.newName || "").trim(), newCode: String(event.newCode || "").trim(),
+      newNamespace: String(event.newNamespace || "").trim(), newParentId: String(event.newParentId || "").trim(),
+      targetDepartmentId: String(event.targetDepartmentId || "").trim(),
+      newDepartments: Array.isArray(event.newDepartments) ? event.newDepartments.map(function(x) { return { departmentId: String(x && x.departmentId || "").trim(), name: String(x && x.name || "").trim() }; }) : []
+    });
+    var history = Array.isArray(cfg.historyRows) ? cfg.historyRows : [];
+    for (var h = 0; h < history.length; h++) {
+      if (!history[h] || String(history[h].institutionId || "").trim() !== institutionId || String(history[h].domain || "").trim() !== domain) return fail("DEPARTMENT_LIFECYCLE_HISTORY_SCOPE_MISMATCH");
+    }
+    var sameEventId = history.filter(function(row) { return row && String(row.eventId || "").trim() === eventId; });
+    if (sameEventId.length > 1) return fail("DEPARTMENT_LIFECYCLE_EVENT_ID_AMBIGUOUS");
+    if (sameEventId.length === 1) {
+      if (String(sameEventId[0].eventSignature || "") === eventSignature) return { valid: true, idempotent: true, code: "DEPARTMENT_LIFECYCLE_EVENT_ALREADY_APPLIED", historyRow: sameEventId[0], nextRecord: current };
+      return fail("DEPARTMENT_LIFECYCLE_EVENT_ID_COLLISION");
+    }
+    var previous = history.filter(function(row) { return row && String(row.departmentId || "").trim() === departmentId; });
+    var latest = -Infinity;
+    for (var i = 0; i < previous.length; i++) {
+      var historicalTime = parseTime(previous[i].effectiveAt);
+      if (!isFinite(historicalTime)) return fail("DEPARTMENT_LIFECYCLE_HISTORY_DATE_INVALID");
+      if (historicalTime > latest) latest = historicalTime;
+    }
+    if (effectiveTime <= latest) return fail("DEPARTMENT_LIFECYCLE_EVENT_OUT_OF_ORDER");
+
+    var catalog = Array.isArray(cfg.catalogRecords) ? cfg.catalogRecords : [], byId = Object.create(null);
+    for (var j = 0; j < catalog.length; j++) {
+      var row = catalog[j] || {}, id = String(row.departmentId || "").trim();
+      if (!id) return fail("DEPARTMENT_LIFECYCLE_CATALOG_ID_MISSING");
+      if (Object.prototype.hasOwnProperty.call(byId, id)) return fail("DEPARTMENT_LIFECYCLE_CATALOG_ID_AMBIGUOUS");
+      byId[id] = row;
+    }
+    if (!Object.prototype.hasOwnProperty.call(byId, departmentId)) return fail("DEPARTMENT_LIFECYCLE_CURRENT_RECORD_NOT_IN_SNAPSHOT");
+    var snapshotCurrent = byId[departmentId];
+    if (String(snapshotCurrent.status || "").trim().toUpperCase() !== currentState ||
+        String(snapshotCurrent.name || "").trim() !== String(current.name || "").trim() ||
+        String(snapshotCurrent.code || "").trim() !== String(current.code || "").trim() ||
+        String(snapshotCurrent.namespace || "").trim() !== String(current.namespace || "").trim() ||
+        String(snapshotCurrent.parentId || "").trim() !== String(current.parentId || "").trim()) return fail("DEPARTMENT_LIFECYCLE_SNAPSHOT_MISMATCH");
+
+    var nextRecord = {};
+    Object.keys(current).forEach(function(key) { nextRecord[key] = current[key]; });
+    var relatedDepartmentIds = [], newDepartmentProposals = [];
+    if (eventType === "RENAME") {
+      var newName = String(event.newName || "").trim();
+      if (!newName || newName === String(current.name || "").trim()) return fail("DEPARTMENT_LIFECYCLE_RENAME_INVALID");
+      nextRecord.name = newName;
+    } else if (eventType === "CHANGE_CODE") {
+      var newCode = String(event.newCode || "").trim(), newNamespace = String(event.newNamespace || "").trim();
+      if (!newCode || !newNamespace || (newCode === String(current.code || "").trim() && newNamespace === String(current.namespace || "").trim())) return fail("DEPARTMENT_LIFECYCLE_CODE_CHANGE_INVALID");
+      var codeConflict = catalog.some(function(row) {
+        if (!row || String(row.departmentId || "").trim() === departmentId) return false;
+        var state = String(row.status || "").trim().toUpperCase();
+        return activeStates.indexOf(state) >= 0 && String(row.code || "").trim().toUpperCase() === newCode.toUpperCase() && String(row.namespace || "").trim() === newNamespace;
+      });
+      if (codeConflict) return fail("DEPARTMENT_LIFECYCLE_CODE_COLLISION");
+      nextRecord.code = newCode; nextRecord.namespace = newNamespace;
+    } else if (eventType === "CHANGE_PARENT") {
+      var newParentId = String(event.newParentId || "").trim();
+      if (newParentId === departmentId) return fail("DEPARTMENT_LIFECYCLE_PARENT_CYCLE");
+      if (newParentId) {
+        if (!Object.prototype.hasOwnProperty.call(byId, newParentId)) return fail("DEPARTMENT_LIFECYCLE_PARENT_NOT_FOUND");
+        if (activeStates.indexOf(String(byId[newParentId].status || "").trim().toUpperCase()) < 0) return fail("DEPARTMENT_LIFECYCLE_PARENT_INACTIVE");
+        var cursor = newParentId, seen = Object.create(null);
+        while (cursor) {
+          if (cursor === departmentId || Object.prototype.hasOwnProperty.call(seen, cursor)) return fail("DEPARTMENT_LIFECYCLE_PARENT_CYCLE");
+          if (!Object.prototype.hasOwnProperty.call(byId, cursor)) return fail("DEPARTMENT_LIFECYCLE_PARENT_NOT_FOUND");
+          if (activeStates.indexOf(String(byId[cursor].status || "").trim().toUpperCase()) < 0) return fail("DEPARTMENT_LIFECYCLE_PARENT_INACTIVE");
+          seen[cursor] = true; cursor = String(byId[cursor].parentId || "").trim();
+        }
+      }
+      nextRecord.parentId = newParentId || null;
+    }
+    if (stateTransition) nextRecord.status = toState;
+    if (eventType === "MERGE") {
+      var targetId = String(event.targetDepartmentId || "").trim();
+      if (!targetId || targetId === departmentId || !Object.prototype.hasOwnProperty.call(byId, targetId)) return fail("DEPARTMENT_LIFECYCLE_MERGE_TARGET_INVALID");
+      if (activeStates.indexOf(String(byId[targetId].status || "").trim().toUpperCase()) < 0) return fail("DEPARTMENT_LIFECYCLE_MERGE_TARGET_INACTIVE");
+      nextRecord.mergedIntoDepartmentId = targetId; relatedDepartmentIds = [targetId];
+    }
+    if (eventType === "SPLIT") {
+      var children = Array.isArray(event.newDepartments) ? event.newDepartments : [];
+      if (children.length < 2) return fail("DEPARTMENT_LIFECYCLE_SPLIT_TARGETS_REQUIRED");
+      var childIds = Object.create(null);
+      for (var k = 0; k < children.length; k++) {
+        var childId = String(children[k] && children[k].departmentId || "").trim(), childName = String(children[k] && children[k].name || "").trim();
+        if (!childId || !childName || childId === departmentId || Object.prototype.hasOwnProperty.call(childIds, childId) || Object.prototype.hasOwnProperty.call(byId, childId)) return fail("DEPARTMENT_LIFECYCLE_SPLIT_TARGET_INVALID");
+        childIds[childId] = true; relatedDepartmentIds.push(childId); newDepartmentProposals.push({ departmentId: childId, name: childName });
+      }
+      nextRecord.splitIntoDepartmentIds = relatedDepartmentIds.slice();
+    }
+    var snapshot = function(record) {
+      return { departmentId: String(record.departmentId || "").trim(), name: String(record.name || "").trim(), code: String(record.code || "").trim(), namespace: String(record.namespace || "").trim(), status: String(record.status || "").trim().toUpperCase(), parentId: String(record.parentId || "").trim() || null, validFrom: record.validFrom === undefined ? null : record.validFrom, validTo: record.validTo === undefined ? null : record.validTo, mergedIntoDepartmentId: String(record.mergedIntoDepartmentId || "").trim() || null, splitIntoDepartmentIds: Array.isArray(record.splitIntoDepartmentIds) ? record.splitIntoDepartmentIds.slice() : [] };
+    };
+    var historyRow = {
+      eventId: eventId, eventSignature: eventSignature, institutionId: institutionId, domain: domain,
+      departmentId: departmentId, eventType: eventType, effectiveAt: new Date(effectiveTime).toISOString(),
+      changedBy: changedBy, approvedBy: String(event.approvedBy || "").trim() || null,
+      approvalReference: String(event.approvalReference || "").trim() || null, reason: reason,
+      before: snapshot(current), after: snapshot(nextRecord), relatedDepartmentIds: relatedDepartmentIds,
+      ownershipMigrationRequired: eventType === "MERGE" || eventType === "SPLIT"
+    };
+    return {
+      valid: true, idempotent: false, code: "DEPARTMENT_LIFECYCLE_EVENT_VALID",
+      nextRecord: nextRecord, historyRow: historyRow, newDepartmentProposals: newDepartmentProposals,
+      newAssignmentsAllowed: activeStates.indexOf(String(nextRecord.status || "").trim().toUpperCase()) >= 0,
+      historicalIdentityPreserved: true, ownershipMigrationRequired: eventType === "MERGE" || eventType === "SPLIT"
+    };
+  } catch (error) { return fail("DEPARTMENT_LIFECYCLE_VALIDATION_FAILED"); }
+}

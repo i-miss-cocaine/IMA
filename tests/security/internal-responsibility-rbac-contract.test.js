@@ -1328,6 +1328,91 @@ assert.equal(policyResult.allowed,true);
 assert.equal(policyResult.auditEvent.checkedAt,"1970-01-01T00:00:00.000Z");
 console.log("C1.648 interdepartmental reference policy: strict default, verified scope, tenant/resource binding, exact read-only grants, field/document allowlists, expiry/revocation, audit and institutional-wide authorization PASS.");
 
+// C1.649 neutral department identity/lifecycle contract (synthetic tenant snapshot).
+const departmentLifecycleCode=extractFunction(consumerSources.departmentCatalog,"validateDepartmentLifecycleEvent_")+"\nthis.validateDepartmentLifecycleEvent_=validateDepartmentLifecycleEvent_;";
+const departmentLifecycleCtx={Date:FixedTemporalDate};
+vm.runInNewContext(departmentLifecycleCode,departmentLifecycleCtx);
+const validateDepartmentLifecycleEvent_=departmentLifecycleCtx.validateDepartmentLifecycleEvent_;
+const lifecycleConfig={institutionId:"INST-1",domain:"ACADEMIC",authorityApproved:true,approvalReference:"ADR-1",states:["ACTIVE","INACTIVE","CLOSED","MERGED","SPLIT"],activeStates:["ACTIVE"],events:[
+ {type:"RENAME",requiresApproval:true},{type:"CHANGE_CODE",requiresApproval:true},{type:"CHANGE_PARENT",requiresApproval:true},
+ {type:"DEACTIVATE",from:"ACTIVE",to:"INACTIVE",requiresApproval:true},{type:"REACTIVATE",from:"INACTIVE",to:"ACTIVE",requiresApproval:true},
+ {type:"CLOSE",from:"ACTIVE",to:"CLOSED",requiresApproval:true},{type:"REOPEN",from:"CLOSED",to:"ACTIVE",requiresApproval:true},
+ {type:"MERGE",from:"ACTIVE",to:"MERGED",requiresApproval:true},{type:"SPLIT",from:"ACTIVE",to:"SPLIT",requiresApproval:true}
+]};
+const lifecycleRoot={departmentId:"D-ROOT",name:"Dirección",code:"ROOT",namespace:"INST-1",status:"ACTIVE",parentId:""};
+const lifecycleChild={departmentId:"D-CHILD",name:"Matemáticas",code:"MATH",namespace:"INST-1",status:"ACTIVE",parentId:"D-ROOT",validFrom:"2020-01-01"};
+const lifecycleOther={departmentId:"D-OTHER",name:"Ciencias",code:"SCI",namespace:"INST-1",status:"ACTIVE",parentId:"D-ROOT"};
+const lifecycleInactive={departmentId:"D-INACTIVE",name:"Cerrado",code:"OLD",namespace:"INST-1",status:"INACTIVE",parentId:""};
+const lifecycleClosed={departmentId:"D-CLOSED",name:"Archivado",code:"ARC",namespace:"INST-1",status:"CLOSED",parentId:""};
+const lifecycleRecords=[lifecycleRoot,lifecycleChild,lifecycleOther,lifecycleInactive,lifecycleClosed];
+const lifecycleNow="2026-11-12T18:00:00.000Z";
+function lifecycleEvent(type,extra={}){return {eventId:"EVT-"+type,departmentId:"D-CHILD",eventType:type,effectiveAt:lifecycleNow,changedBy:"USR-1",approvedBy:"USR-APPROVER",approvalReference:"APR-1",reason:"Prueba sintética",...extra};}
+function runDepartmentLifecycle(type,extra={},overrides={}){
+ const current=overrides.currentRecord||lifecycleChild;
+ const catalog=overrides.catalogRecords||lifecycleRecords.map(x=>x.departmentId===current.departmentId?current:x);
+ const ev=lifecycleEvent(type,extra);ev.departmentId=current.departmentId;
+ return validateDepartmentLifecycleEvent_({config:overrides.config||lifecycleConfig,currentRecord:current,event:ev,catalogRecords:catalog,historyRows:overrides.historyRows||[],now:overrides.now===undefined?lifecycleNow:overrides.now,snapshotScopeVerified:overrides.snapshotScopeVerified===undefined?true:overrides.snapshotScopeVerified,snapshotInstitutionId:overrides.snapshotInstitutionId||"INST-1",snapshotDomain:overrides.snapshotDomain||"ACADEMIC",proposedRecord:overrides.proposedRecord});
+}
+let lifecycleResult=runDepartmentLifecycle("RENAME",{newName:"Ciencias Matemáticas"});
+assert.equal(lifecycleResult.valid,true);assert.equal(lifecycleResult.nextRecord.departmentId,"D-CHILD");assert.equal(lifecycleResult.nextRecord.name,"Ciencias Matemáticas");
+assert.equal(lifecycleResult.historyRow.before.name,"Matemáticas");assert.equal(lifecycleResult.historyRow.after.name,"Ciencias Matemáticas");assert.equal(lifecycleResult.historicalIdentityPreserved,true);
+assert.equal(runDepartmentLifecycle("RENAME",{newName:"Matemáticas"}).code,"DEPARTMENT_LIFECYCLE_RENAME_INVALID");
+assert.equal(runDepartmentLifecycle("RENAME",{newName:"Nueva"},{proposedRecord:{departmentId:"D-NEW"}}).code,"DEPARTMENT_STABLE_ID_IMMUTABLE");
+lifecycleResult=runDepartmentLifecycle("CHANGE_CODE",{newCode:"MATH2",newNamespace:"INST-1"});assert.equal(lifecycleResult.valid,true);assert.equal(lifecycleResult.nextRecord.code,"MATH2");
+assert.equal(runDepartmentLifecycle("CHANGE_CODE",{newCode:"SCI",newNamespace:"INST-1"}).code,"DEPARTMENT_LIFECYCLE_CODE_COLLISION");
+assert.equal(runDepartmentLifecycle("CHANGE_CODE",{newCode:"SCI",newNamespace:"EXT-1"}).valid,true);
+assert.equal(runDepartmentLifecycle("CHANGE_CODE",{newCode:"X",newNamespace:""}).code,"DEPARTMENT_LIFECYCLE_CODE_CHANGE_INVALID");
+lifecycleResult=runDepartmentLifecycle("CHANGE_PARENT",{newParentId:""});assert.equal(lifecycleResult.valid,true);assert.equal(lifecycleResult.nextRecord.parentId,null);
+assert.equal(runDepartmentLifecycle("CHANGE_PARENT",{newParentId:"D-OTHER"}).valid,true);
+assert.equal(runDepartmentLifecycle("CHANGE_PARENT",{newParentId:"D-MISSING"}).code,"DEPARTMENT_LIFECYCLE_PARENT_NOT_FOUND");
+assert.equal(runDepartmentLifecycle("CHANGE_PARENT",{newParentId:"D-INACTIVE"}).code,"DEPARTMENT_LIFECYCLE_PARENT_INACTIVE");
+const lifecycleCycleRecords=[lifecycleRoot,{...lifecycleChild},{...lifecycleOther,parentId:"D-CHILD"},lifecycleInactive,lifecycleClosed];
+assert.equal(runDepartmentLifecycle("CHANGE_PARENT",{newParentId:"D-OTHER"},{catalogRecords:lifecycleCycleRecords}).code,"DEPARTMENT_LIFECYCLE_PARENT_CYCLE");
+lifecycleResult=runDepartmentLifecycle("DEACTIVATE");assert.equal(lifecycleResult.valid,true);assert.equal(lifecycleResult.nextRecord.status,"INACTIVE");assert.equal(lifecycleResult.newAssignmentsAllowed,false);
+lifecycleResult=runDepartmentLifecycle("REACTIVATE",{},{currentRecord:lifecycleInactive});assert.equal(lifecycleResult.valid,true);assert.equal(lifecycleResult.nextRecord.status,"ACTIVE");assert.equal(lifecycleResult.newAssignmentsAllowed,true);
+assert.equal(runDepartmentLifecycle("DEACTIVATE",{},{currentRecord:lifecycleClosed}).code,"DEPARTMENT_LIFECYCLE_TRANSITION_NOT_ALLOWED");
+lifecycleResult=runDepartmentLifecycle("CLOSE");assert.equal(lifecycleResult.nextRecord.status,"CLOSED");assert.equal(lifecycleResult.newAssignmentsAllowed,false);
+assert.equal(runDepartmentLifecycle("REOPEN",{},{currentRecord:lifecycleClosed}).nextRecord.status,"ACTIVE");
+lifecycleResult=runDepartmentLifecycle("MERGE",{targetDepartmentId:"D-OTHER"});assert.equal(lifecycleResult.valid,true);assert.equal(lifecycleResult.nextRecord.status,"MERGED");
+assert.equal(lifecycleResult.nextRecord.mergedIntoDepartmentId,"D-OTHER");assert.equal(lifecycleResult.ownershipMigrationRequired,true);assert.equal(lifecycleResult.newAssignmentsAllowed,false);
+assert.equal(runDepartmentLifecycle("MERGE",{targetDepartmentId:"D-MISSING"}).code,"DEPARTMENT_LIFECYCLE_MERGE_TARGET_INVALID");
+assert.equal(runDepartmentLifecycle("MERGE",{targetDepartmentId:"D-INACTIVE"}).code,"DEPARTMENT_LIFECYCLE_MERGE_TARGET_INACTIVE");
+lifecycleResult=runDepartmentLifecycle("SPLIT",{newDepartments:[{departmentId:"D-NEW-1",name:"Matemáticas A"},{departmentId:"D-NEW-2",name:"Matemáticas B"}]});
+assert.equal(lifecycleResult.valid,true);assert.equal(lifecycleResult.nextRecord.status,"SPLIT");assert.equal(lifecycleResult.newDepartmentProposals.length,2);
+assert.equal(lifecycleResult.ownershipMigrationRequired,true);assert.equal(lifecycleResult.newAssignmentsAllowed,false);
+assert.equal(runDepartmentLifecycle("SPLIT",{newDepartments:[{departmentId:"D-NEW-1",name:"A"}]}).code,"DEPARTMENT_LIFECYCLE_SPLIT_TARGETS_REQUIRED");
+assert.equal(runDepartmentLifecycle("SPLIT",{newDepartments:[{departmentId:"D-NEW-1",name:"A"},{departmentId:"D-NEW-1",name:"B"}]}).code,"DEPARTMENT_LIFECYCLE_SPLIT_TARGET_INVALID");
+assert.equal(runDepartmentLifecycle("SPLIT",{newDepartments:[{departmentId:"D-OTHER",name:"A"},{departmentId:"D-NEW-2",name:"B"}]}).code,"DEPARTMENT_LIFECYCLE_SPLIT_TARGET_INVALID");
+lifecycleResult=runDepartmentLifecycle("RENAME",{newName:"Nueva"});
+assert.equal(runDepartmentLifecycle("RENAME",{newName:"Nueva"},{historyRows:[lifecycleResult.historyRow]}).idempotent,true);
+assert.equal(runDepartmentLifecycle("RENAME",{newName:"Otra"},{historyRows:[lifecycleResult.historyRow]}).code,"DEPARTMENT_LIFECYCLE_EVENT_ID_COLLISION");
+assert.equal(runDepartmentLifecycle("RENAME",{newName:"Otra"},{historyRows:[{eventId:"OLD",departmentId:"D-CHILD",institutionId:"INST-1",domain:"ACADEMIC",effectiveAt:"2026-11-13T00:00:00Z"}]}).code,"DEPARTMENT_LIFECYCLE_EVENT_OUT_OF_ORDER");
+assert.equal(runDepartmentLifecycle("RENAME",{newName:"Otra"},{historyRows:[{eventId:"OLD",departmentId:"D-CHILD",institutionId:"INST-1",domain:"ACADEMIC",effectiveAt:"invalid"}]}).code,"DEPARTMENT_LIFECYCLE_HISTORY_DATE_INVALID");
+assert.equal(runDepartmentLifecycle("RENAME",{newName:"Otra",effectiveAt:"2026-11-13T00:00:00Z"}).code,"DEPARTMENT_LIFECYCLE_FUTURE_EVENT_NOT_APPLICABLE");
+assert.equal(runDepartmentLifecycle("RENAME",{newName:"Otra",approvedBy:"",approvalReference:""}).code,"DEPARTMENT_LIFECYCLE_APPROVAL_REQUIRED");
+assert.equal(runDepartmentLifecycle("UNKNOWN",{newName:"Otra"}).code,"DEPARTMENT_LIFECYCLE_EVENT_NOT_ALLOWED");
+assert.equal(runDepartmentLifecycle("RENAME",{newName:"Otra"},{config:{...lifecycleConfig,authorityApproved:false}}).code,"DEPARTMENT_LIFECYCLE_CONFIG_UNAPPROVED");
+assert.equal(runDepartmentLifecycle("RENAME",{newName:"Otra"},{config:{...lifecycleConfig,events:lifecycleConfig.events.concat(lifecycleConfig.events[0])}}).code,"DEPARTMENT_LIFECYCLE_EVENT_RULE_AMBIGUOUS");
+assert.equal(runDepartmentLifecycle("RENAME",{newName:"Otra"},{catalogRecords:[lifecycleRoot,lifecycleOther,lifecycleInactive,lifecycleClosed]}).code,"DEPARTMENT_LIFECYCLE_CURRENT_RECORD_NOT_IN_SNAPSHOT");
+assert.equal(runDepartmentLifecycle("RENAME",{newName:"Otra"},{catalogRecords:[lifecycleRoot,{...lifecycleChild,name:"Otro"},lifecycleOther,lifecycleInactive,lifecycleClosed]}).code,"DEPARTMENT_LIFECYCLE_SNAPSHOT_MISMATCH");
+assert.equal(runDepartmentLifecycle("RENAME",{newName:"Otra",eventId:""}).code,"DEPARTMENT_LIFECYCLE_EVENT_INVALID");
+assert.equal(runDepartmentLifecycle("RENAME",{newName:"Otra",reason:""}).code,"DEPARTMENT_LIFECYCLE_EVENT_INVALID");
+assert.equal(runDepartmentLifecycle("RENAME",{newName:"Otra"},{currentRecord:{...lifecycleChild,validFrom:"invalid"}}).code,"DEPARTMENT_LIFECYCLE_CURRENT_DATE_INVALID");
+assert.equal(runDepartmentLifecycle("RENAME",{newName:"Otra"},{currentRecord:{...lifecycleChild,validFrom:"2026-12-01T00:00:00Z"}}).code,"DEPARTMENT_LIFECYCLE_EVENT_BEFORE_VALIDITY");
+assert.equal(runDepartmentLifecycle("RENAME",{newName:"Otra"},{currentRecord:{...lifecycleChild,validTo:"2026-11-11T00:00:00Z"}}).code,"DEPARTMENT_LIFECYCLE_EVENT_AFTER_VALIDITY");
+assert.equal(runDepartmentLifecycle("RENAME",{newName:"Nueva"},{snapshotScopeVerified:false}).code,"DEPARTMENT_LIFECYCLE_SNAPSHOT_SCOPE_UNVERIFIED");
+assert.equal(runDepartmentLifecycle("RENAME",{newName:"Nueva"},{historyRows:[{eventId:"FOREIGN",departmentId:"D-CHILD",institutionId:"INST-2",domain:"ACADEMIC",effectiveAt:"2026-11-11T00:00:00Z"}]}).code,"DEPARTMENT_LIFECYCLE_HISTORY_SCOPE_MISMATCH");
+const reservedLifecycleRecord={departmentId:"__proto__",name:"Raíz reservada",code:"PR",namespace:"INST-1",status:"ACTIVE",parentId:""};
+const reservedLifecycleEvent={eventId:"EVT-RES",departmentId:"__proto__",eventType:"RENAME",effectiveAt:lifecycleNow,changedBy:"USR-1",approvedBy:"USR-APP",approvalReference:"APR",reason:"test",newName:"Renombrado"};
+lifecycleResult=validateDepartmentLifecycleEvent_({config:lifecycleConfig,currentRecord:reservedLifecycleRecord,event:reservedLifecycleEvent,catalogRecords:[reservedLifecycleRecord],historyRows:[],now:lifecycleNow,snapshotScopeVerified:true,snapshotInstitutionId:"INST-1",snapshotDomain:"ACADEMIC"});
+assert.equal(lifecycleResult.valid,true);assert.equal(lifecycleResult.nextRecord.departmentId,"__proto__");
+const epochRecord={departmentId:"D-EPOCH",name:"Unidad",code:"E",namespace:"INST-1",status:"ACTIVE",parentId:"",validFrom:0};
+const epochEvent={eventId:"EVT-EPOCH",departmentId:"D-EPOCH",eventType:"RENAME",effectiveAt:0,changedBy:"USR-1",approvedBy:"USR-APP",approvalReference:"APR",reason:"epoch",newName:"Unidad histórica"};
+lifecycleResult=validateDepartmentLifecycleEvent_({config:lifecycleConfig,currentRecord:epochRecord,event:epochEvent,catalogRecords:[epochRecord],historyRows:[],now:0,snapshotScopeVerified:true,snapshotInstitutionId:"INST-1",snapshotDomain:"ACADEMIC"});
+assert.equal(lifecycleResult.valid,true);assert.equal(lifecycleResult.historyRow.effectiveAt,"1970-01-01T00:00:00.000Z");
+console.log("C1.649 department identity lifecycle contract: 55 assertions PASS.");
+
+
 
 
 
