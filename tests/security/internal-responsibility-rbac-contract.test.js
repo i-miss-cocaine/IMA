@@ -743,10 +743,12 @@ const tenantSessionCtx = {
 };
 const tenantSessionCode = `
 const USER_ROLE_MEMBERSHIP_HEADERS_ = ${JSON.stringify(membershipHeaders)};
+const SESSION_REVOCATION_HEADERS_ = ["SessionID","UserID","RevokedAt","ExpiresAt"];
 ${extractFunction(source,"parseUserRoleMembershipDate_")}
 ${extractFunction(source,"isConfiguredRbacRole_")}
 ${extractFunction(source,"getUserRoleMembershipState_")}
 ${extractFunction(source,"resolveUserRoleMembership_")}
+${extractFunction(source,"isSessionRevoked_")}
 ${extractFunction(source,"verifySessionToken")}
 ${extractFunction(source,"getUserVerifiedRole")}
 ${extractFunction(source,"getUserContextScope")}
