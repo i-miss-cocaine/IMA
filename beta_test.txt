@@ -1082,6 +1082,6 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Precondiciones:** versión beta desplegada; departamento incluido en el scope del actor; hojas CategoriasEvaluacion y ResourceOwnership con esquemas válidos; mecanismo controlado para invocar una segunda creación durante cada appendRow.
 - **Pasos:** ejecutar saveEvaluationCategory; repetir en entorno controlado provocando reentrada durante appendRow de ResourceOwnership y durante appendRow de CategoriasEvaluacion; revisar respuestas, trazas RBAC/identidad/lock/Sheets y snapshots de ambas hojas.
 - **Resultado esperado:** ambas solicitudes secundarias terminan con EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; cada operación exterior realiza un append de ownership y uno de categoría, abre Sheets una vez y libera ScriptLock; no quedan registros duplicados ni huérfanos.
-- **Estado:** Pendiente beta; contrato local aislado pendiente de CI tras commit. Apps Script/Sheets real NOT RUN.
+- **Estado:** Pendiente beta; contrato local aislado 20/20 PASS; GitHub Actions run 43129993264 SUCCESS en Node.js 22. Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de ambas solicitudes, adquisiciones/liberaciones del lock, aperturas de Sheets, conteos appendRow y snapshots de CategoriasEvaluacion y ResourceOwnership antes/después.
 ===============================================================================

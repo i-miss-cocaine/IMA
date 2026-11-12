@@ -4413,5 +4413,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Brecha confirmada:** el contrato cubría reentrada durante la validación de scope, pero no desde las dos escrituras de creación (appendRow de ResourceOwnership y CategoriasEvaluacion).
 - **Cobertura añadida:** se interceptan ambos appendRow y se invoca el handler real de forma anidada. La secundaria debe recibir EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; la exterior crea exactamente una fila de ownership y una de categoría, abre Sheets una vez y libera ScriptLock.
 - **Alcance:** contrato de seguridad, ejecución en workflow local de contratos y BETA-EXAM-094; backend productivo sin cambios.
-- **Verificación:** caso añadido para ambos puntos de persistencia y workflow actualizado para ejecutar el contrato; ejecución local aislada/CI pendiente tras commit. Apps Script/Sheets real NOT RUN.
-- **Estado:** C1.593 En ejecución hasta completar la verificación local aislada.
+- **Verificación:** GitHub Actions run 43129993264, workflow `Exam-Service security local contracts`, Node.js 22: SUCCESS; paso `Run evaluation category mutation security regression`; contrato 20/20 PASS; job `exam-security-contracts` SUCCESS. Apps Script/Sheets real NOT RUN.
+- **Estado:** C1.593 Completada en verificación local aislada/CI.
+
+
+#### Addendum de verificación local/CI — C1.593
+- GitHub Actions run **43129993264**, commit `22c952bbfb8421ca3bb89139d6c212b8542705d6`, workflow `Exam-Service security local contracts`: **SUCCESS** en Node.js 22.
+- El paso `Run evaluation category mutation security regression` ejecutó `tests/security/exam-service-evaluation-category-mutation-security.test.js`: **20/20 PASS**, sin fallos; job `exam-security-contracts` SUCCESS.
+- El runner ejecutó el código y fixtures de forma aislada, sin despliegue ni infraestructura remota. Apps Script/Sheets real NOT RUN.
+- C1.593 **Completada en verificación local aislada/CI**. BETA-EXAM-094 permanece Pendiente beta.

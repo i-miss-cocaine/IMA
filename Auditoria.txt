@@ -2141,5 +2141,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Brecha:** el contrato cubría reentrada durante la obtención de scope, pero no durante los dos appendRow que persisten ownership y categoría.
 - **Cambio:** un caso ejercita reentrada en cada appendRow del handler real. La secundaria debe recibir EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; la exterior conserva un único registro en cada hoja, una apertura Sheets y lock liberado.
 - **Alcance:** contrato de seguridad y workflow local; backend productivo sin cambios. BETA-EXAM-094 agregado y Pendiente beta.
-- **Verificación:** cobertura añadida; ejecución local aislada/CI pendiente tras commit. Apps Script/Sheets real NOT RUN.
-- **Estado:** En ejecución hasta verificar el contrato local aislado.
+- **Verificación:** GitHub Actions run 43129993264 SUCCESS en Node.js 22; contrato exam-service-evaluation-category-mutation-security 20/20 PASS; paso específico y job exam-security-contracts SUCCESS. Apps Script/Sheets real NOT RUN.
+- **Estado:** Completada en verificación local aislada/CI.
+
+#### Addendum de cierre — C1.593
+- GitHub Actions run 43129993264, commit 22c952bbfb8421ca3bb89139d6c212b8542705d6: workflow Exam-Service security local contracts SUCCESS en Node.js 22.
+- Contrato exam-service-evaluation-category-mutation-security: PASS (20/20); paso Run evaluation category mutation security regression y job exam-security-contracts SUCCESS.
+- Ejecución aislada sobre código/fixtures sin despliegue; Apps Script/Sheets real NOT RUN.
+- C1.593 Completada en verificación local aislada/CI. BETA-EXAM-094 sigue Pendiente beta.
