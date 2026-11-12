@@ -4887,3 +4887,13 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Contrato completo ejecutado en harness V8 aislado PASS (incluye C1.621–C1.626); parseo sintáctico de USER y contrato PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
 - **Estado:** C1.626 completada. T153-S02 continúa En ejecución; no iniciar T153-S03.
 - **Siguiente acción:** verificar alineación entre responsabilidad/ámbito efectivo y permisos RBAC explícitos por membresía, cubriendo concesiones, denegaciones y ausencia de herencia entre roles.
+
+
+ 
+**Addendum C1.627 — autorización RBAC explícita por rol/membresía**
+- Se amplía el contrato para ejecutar las funciones reales `getDynamicPermissionsForRole` y `validateRolePermission` contra una matriz institucional sintética. Director recibe `approveFinancialRecords` y deniega `viewAuditLogs`; Auditor deniega aprobación y recibe consulta de auditoría.
+- Cada sesión se valida contra su membresía activa. No existe herencia de grants entre los roles del mismo usuario. Una capacidad `CAP_ADMINISTRAR` incluida en metadatos de responsabilidad/payload no eleva el permiso explícitamente denegado por la matriz.
+- Al revocar MEM-LIFE, la autorización de Director se deniega y el grant independiente de Auditor sigue permitido.
+- Contrato completo en harness V8 aislado PASS (bloques iniciales y C1.621–C1.627); sintaxis backend USER y contrato PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
+- **Estado:** C1.627 completada. T153-S02 continúa En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** contrastar vínculos de responsabilidad/ámbito del contexto efectivo con el listado administrativo y probar vínculos conflictivos o duplicados.
