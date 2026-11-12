@@ -115,15 +115,15 @@ function verifyUserRoleMembershipClaim_(claims) {
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var sheet = ss.getSheetByName("MembresiasRolesRBAC");
     if (!sheet) return hasMembershipClaims ? false : null;
-    var configuredInstitution = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim();
-    if (!configuredInstitution) return false;
-    if (hasMembershipClaims && configuredInstitution !== String(claims.institutionId).trim()) return false;
     var values = sheet.getDataRange().getValues();
     var expectedHeaders = ["MembershipID","UserID","RoleID","InstitutionID","Status","StartAt","EndAt","CreatedBy","CreatedAt","UpdatedAt","RevokedBy","RevokedAt"];
     if (!values.length || values[0].length !== expectedHeaders.length || JSON.stringify(values[0].map(String)) !== JSON.stringify(expectedHeaders)) return false;
     var allRows = values.slice(1);
     var userRows = allRows.filter(function(row) { return String(row[1] || "").trim() === String(claims.userId).trim(); });
     if (!hasMembershipClaims && !userRows.length) return null;
+    var configuredInstitution = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim();
+    if (!configuredInstitution) return false;
+    if (hasMembershipClaims && configuredInstitution !== String(claims.institutionId).trim()) return false;
     var idCounts = {};
     allRows.forEach(function(row) {
       var id = String(row[0] || "").trim();
@@ -137,7 +137,7 @@ function verifyUserRoleMembershipClaim_(claims) {
       var institution = String(row[3] || "").trim();
       var status = String(row[4] || "").trim().toUpperCase();
       if (!id || !role || institution !== configuredInstitution || idCounts[id] !== 1) return;
-      if (["ACTIVE","ACTIVA","ACTIVO"].indexOf(status) === -1) return;
+      if (["ACTIVE", "ACTIVA", "ACTIVO"].indexOf(status) === -1) return;
       var start = row[5] === "" || row[5] === null || row[5] === undefined ? null : (row[5] instanceof Date ? row[5] : new Date(row[5]));
       var end = row[6] === "" || row[6] === null || row[6] === undefined ? null : (row[6] instanceof Date ? row[6] : new Date(row[6]));
       if ((start && isNaN(start.getTime())) || (end && isNaN(end.getTime()))) return;
@@ -152,6 +152,7 @@ function verifyUserRoleMembershipClaim_(claims) {
     return false;
   }
 }
+
 
 function verifySessionToken(tokenString) {
   if (!tokenString || typeof tokenString !== "string" || tokenString.indexOf(".") === -1) {
