@@ -4877,3 +4877,13 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Node CLI independiente NOT RUN por indisponibilidad de DNS/checkout. La consulta de estados CI no devolvió checks; no se afirma CI PASS. Apps Script/Sheets real y concurrencia desplegada Pendiente beta.
 - **Estado:** C1.625 implementada y verificada en harness aislado. T153-S02 continúa En ejecución; no iniciar T153-S03.
 - **Siguiente acción:** completar pruebas multirol de selección/cambio de departamento por membresía, revocación/expiración independiente y consistencia de permisos RBAC explícitos.
+
+
+ 
+**Addendum C1.626 — selección de departamento y ciclo de vida independiente de membresías multirol**
+- Contrato ampliado para un usuario con membresías Director y Auditor: Director dispone de DEP-A/DEP-A2; la selección `activeDepartmentId=DEP-A2` reduce el contexto a DEP-A2; intentar seleccionar DEP-B desde la sesión Director devuelve `ACTIVE_SCOPE_NOT_ASSIGNED`.
+- Revocar o expirar MEM-LIFE invalida únicamente la sesión y asignaciones Director; la sesión Auditor continúa activa, conserva DEP-B y su asignación sigue visible. Se comprueba tanto el contexto efectivo como el lector administrativo.
+- No se modificó lógica productiva: el comportamiento existente se verificó con fixtures de membresías, responsabilidades, roles y ámbitos.
+- Contrato completo ejecutado en harness V8 aislado PASS (incluye C1.621–C1.626); parseo sintáctico de USER y contrato PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
+- **Estado:** C1.626 completada. T153-S02 continúa En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** verificar alineación entre responsabilidad/ámbito efectivo y permisos RBAC explícitos por membresía, cubriendo concesiones, denegaciones y ausencia de herencia entre roles.
