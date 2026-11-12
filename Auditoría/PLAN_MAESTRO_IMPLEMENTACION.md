@@ -4472,5 +4472,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** hooks de persistencia invocan el handler real de forma anidada desde appendRow de ResourceOwnership, appendRow de Examenes y setValues de PreguntasExamen. Cada secundaria debe recibir EXAM_CREATE_LOCK_TIMEOUT.
 - **Invariantes:** la operación exterior conserva un único ownership, un examen y las preguntas asociadas; una sola escritura de preguntas, una apertura Sheets y ScriptLock liberado.
 - **Alcance:** únicamente tests/security/exam-service-create-exam-security.test.js; backend productivo sin cambios. BETA-EXAM-099 registra la comprobación desplegada.
-- **Verificación local:** pendiente de ejecutar con el código fuente y fixture de C1.598 antes del cierre; CI se activa al publicar el commit.
-- **Estado:** C1.598 En ejecución hasta completar las verificaciones locales pertinentes. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- **Verificación local:** harness focalizado ejecutado sobre los handlers productivos extraídos de `backend/exam-service/Code.gs`: tres puntos de reentrada, 3/3 PASS. Parseo JavaScript del contrato actualizado PASS.
+- **CI:** GitHub Actions run 43136684120, workflow `Exam-Service security local contracts`, Node.js 22: SUCCESS; paso `Run exam creation security regression`, contrato `exam-service-create-exam-security: 17/17 PASS`; job `exam-security-contracts` SUCCESS. El runner ejecutó código/fixtures sin despliegue ni infraestructura remota.
+- **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-099 permanece Pendiente beta.
+- **Estado:** C1.598 Completada con verificación local focalizada y suite CI. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.

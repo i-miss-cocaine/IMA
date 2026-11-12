@@ -2374,3 +2374,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Cada solicitud secundaria debe recibir EXAM_CREATE_LOCK_TIMEOUT; la operación exterior conserva un único ownership, examen y conjunto de preguntas asociados, abre Sheets una vez y libera ScriptLock.
 - Backend productivo sin cambios; pruebas y CI pendientes de ejecución inicial.
 ===============================================================================
+
+
+#### Verificación C1.598
+- Smoke local de tres puntos de reentrada: 3/3 PASS; suite createExam en GitHub Actions run 43136684120: 17/17 PASS, workflow SUCCESS Node.js 22.
+- C1.598 Completada en verificación local focalizada/CI; backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-099 Pendiente beta.
+===============================================================================

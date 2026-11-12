@@ -392,8 +392,18 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - Auditoría/INDICE_CHECKPOINTS.md
 
 ### Verificación y estado
-- Verificación local y CI pendientes de ejecución inicial tras publicar.
+- Smoke local determinista sobre los handlers productivos extraídos de Code.gs: 3/3 PASS; parseo del contrato actualizado PASS.
+- GitHub Actions run 43136684120, commit 0d0c7a083c13b4224642b0a2d38f8a04ae4f4590: workflow Exam-Service security local contracts SUCCESS, Node.js 22; suite createExam 17/17 PASS; job exam-security-contracts SUCCESS.
 - Apps Script/Sheets real NOT RUN; BETA-EXAM-099 Pendiente beta.
-- C1.598 En ejecución hasta completar las verificaciones locales pertinentes.
+- C1.598 Completada con verificación local focalizada y suite CI.
 - HEAD inicial: 93b6e08af1409ec7add9861bcba06146ec54e23c; HEAD final se confirma tras publicar.
 ===============================================================================
+
+
+#### Addendum de cierre — C1.598
+- GitHub Actions run **43136684120**, commit `0d0c7a083c13b4224642b0a2d38f8a04ae4f4590`: workflow Exam-Service security local contracts **SUCCESS**, Node.js 22.
+- Paso `Run exam creation security regression`: `exam-service-create-exam-security: 17/17 PASS`; job `exam-security-contracts` SUCCESS.
+- Harness local determinista sobre los handlers productivos extraídos de Code.gs: tres ventanas de reentrada, 3/3 PASS. El parseo del contrato actualizado también pasó.
+- Runner CI ejecutó el código y fixtures sin despliegue ni infraestructura remota. Apps Script/Sheets real NOT RUN; BETA-EXAM-099 permanece Pendiente beta.
+- C1.598 **Completada con verificación local focalizada y suite CI**. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD de código probado: `0d0c7a083c13b4224642b0a2d38f8a04ae4f4590`; HEAD final se confirma tras commit documental.

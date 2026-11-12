@@ -1142,6 +1142,6 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Precondiciones:** versión beta desplegada; usuario profesor autenticado; departamento asignado; hojas Examenes, PreguntasExamen y ResourceOwnership con esquemas válidos; preguntas de examen válidas; mecanismo controlado de reentrada en cada punto de escritura.
 - **Pasos:** ejecutar createExam con datos válidos e intentar una segunda creación durante cada uno de los tres puntos de persistencia; revisar respuestas, trazas RBAC/identidad/lock/Sheets, conteos de escritura y snapshots antes/después.
 - **Resultado esperado:** cada secundaria termina con EXAM_CREATE_LOCK_TIMEOUT; la operación exterior conserva un único ownership, un examen y sus preguntas asociadas; una apertura de Sheets por operación exterior y ScriptLock liberado.
-- **Estado:** Pendiente beta; contrato local aislado y workflow CI se ejecutarán con el commit de C1.598. Apps Script/Sheets real NOT RUN.
+- **Estado:** Pendiente beta; harness local focalizado 3/3 PASS; GitHub Actions run 43136684120 SUCCESS, suite createExam 17/17 PASS en Node.js 22. Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de llamadas exteriores/secundarias, adquisiciones/liberaciones del lock, aperturas de Sheets, conteos appendRow/setValues y snapshots de Examenes, PreguntasExamen y ResourceOwnership antes/después.
 ===============================================================================

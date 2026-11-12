@@ -2206,3 +2206,10 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Backend productivo sin cambios; BETA-EXAM-099 registra la verificación desplegada.
 - Estado inicial de esta iteración: pruebas locales y CI pendientes de ejecución.
 ===============================================================================
+
+
+#### Addendum de verificación — C1.598
+- Harness local sobre los handlers productivos extraídos de Code.gs: reentrada en ownership, examen y preguntas; 3/3 PASS.
+- GitHub Actions run 43136684120, commit 0d0c7a083c13b4224642b0a2d38f8a04ae4f4590: workflow SUCCESS en Node.js 22; contrato createExam 17/17 PASS y job exam-security-contracts SUCCESS.
+- Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-099 Pendiente beta. C1.598 Completada.
+===============================================================================
