@@ -1472,3 +1472,30 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** C1.642 completada en verificación local. T153-S02 vuelve a **En ejecución** hasta revisar los demás consumidores y confirmar que no quedan lectores de ámbito paralelos fuera de los cuatro servicios.
 - **Siguiente acción:** búsqueda estática acotada de todos los lectores de `AsignacionesAmbitosRoles` en servicios/handlers; confirmar que cada ruta usa contexto ligado a membresía o documentar excepción legacy segura.
 ===============================================================================
+
+
+===============================================================================
+### C1.643 — IMA-EXEC-20261112-1754Z-03 — cierre de lectores contextuales USER/ACADEMIC
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.642.
+- **Hallazgos:** `validateContextualAccess` de ACADEMIC leía asignaciones por usuario/tipo/estado sin verificar rol, membresía, tenant, responsabilidad ni fechas. `getUserScopeConfig` de USER devolvía ámbitos por userId sin usar el contexto firmado ni seleccionar membresía.
+- **Corrección:** ACADEMIC usa el lector de ámbito ligado a la sesión y falla cerrado; USER limita autconsulta al contexto efectivo y exige permiso + selección exacta de membresía para consulta administrativa de otro usuario.
+- **Pruebas:** contrato C1.643 PASS; casos de otro membership, departamento activo, autocontexto y selección obligatoria en consulta administrativa.
+- **Archivos:** `backend/academic-service/Code.gs`, `backend/user-service/Code.gs`, `tests/security/internal-responsibility-rbac-contract.test.js`.
+- **Commits:** ACADEMIC `f58f8fa743469869072e3577f6f18c1ba840c889`; USER `4cb02c95f7de1b1bce96c15bbe7e315eb9d8d422`; contrato `1e871367211f24a1e5b4c30b7125439753f2d37f`.
+- **Estado:** C1.643 completada localmente; T153-S02 continúa En ejecución hasta cerrar la ruta de firma avanzada.
+===============================================================================
+
+===============================================================================
+### C1.644 — IMA-EXEC-20261112-1754Z-03 — autorización de firmante ligada a membresía
+- **Hallazgo:** la verificación de firmante de firma avanzada no distinguía membresías/roles activos y podía combinar ámbitos de roles distintos.
+- **Corrección:** la firma avanzada valida MembershipID/RoleID/InstitutionID exactos, responsabilidad activa, unicidad de asignación y vigencia; exige selección explícita si el firmante tiene más de una membresía. Solo conserva fallback legacy sin vínculo cuando no existen registros de membresía del usuario en ningún tenant.
+- **Llamada:** `assertAdvancedSignatureSignerScope_` recibe el contexto de solicitud para resolver `firmanteMembershipId` y `firmanteRoleId`.
+- **Pruebas:** contrato completo V8 aislado PASS, incluidos C1.621–C1.644; sintaxis de USER/ACADEMIC/ACCOUNTING/TASK/EXAM/test PASS.
+- **Archivos:** `backend/user-service/Code.gs`, `tests/security/internal-responsibility-rbac-contract.test.js`.
+- **Commits:** USER `e15eed1b8ee8620bc4b76980335243995c8f4fd3`; corrección de normalización `49635d1f5be67b2ea54524977e95432565dd4d35`; contrato `d76514b599b883bbf62eb8b027f08ded249f61b7`.
+- **Inventario estático:** seis entrypoints backend revisados (USER, ACADEMIC, ACCOUNTING, TASK, EXAM, DEVELOPER). USER/ACADEMIC/ACCOUNTING/TASK/EXAM no conservan lectores de autorización sin contexto: las lecturas restantes usan el helper ligado a membresía o contexto efectivo; ACCOUNTING conserva escritura de revocación local en offboarding; DEVELOPER no consume AsignacionesAmbitosRoles y permanece separado.
+- **Verificación local:** contrato completo V8 aislado **PASS**; parseo sintáctico de cinco servicios RBAC y contrato **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no ejecutado. **Beta:** Apps Script/Sheets real NOT RUN.
+- **Estado:** C1.644 completada. **T153-S02: COMPLETADA** en implementación/contratos aislados. La verificación real multi-proyecto y BETA-FUNC-033 siguen Pendiente beta; TASK-153 global continúa En ejecución.
+- **Siguiente acción elegible:** revisar el Plan Maestro y dependencias tras el inventario T153-S01; no inferir ni fusionar los catálogos departamentales sin crosswalk institucional verificable.
+===============================================================================
