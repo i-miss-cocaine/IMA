@@ -1162,8 +1162,11 @@ function ensureUserRoleMembershipSheet_(ss) {
   var sheet = ss.getSheetByName("MembresiasRolesRBAC");
   if (!sheet) sheet = ss.insertSheet("MembresiasRolesRBAC");
   if (sheet.getLastRow() === 0) sheet.appendRow(USER_ROLE_MEMBERSHIP_HEADERS_);
-  var header = sheet.getRange(1, 1, 1, USER_ROLE_MEMBERSHIP_HEADERS_.length).getValues()[0].map(String);
-  if (JSON.stringify(header) !== JSON.stringify(USER_ROLE_MEMBERSHIP_HEADERS_)) throw new Error("ROLE_MEMBERSHIP_SCHEMA_MISMATCH");
+  var values = sheet.getDataRange().getValues();
+  if (!values.length || values[0].length !== USER_ROLE_MEMBERSHIP_HEADERS_.length ||
+      JSON.stringify(values[0].map(String)) !== JSON.stringify(USER_ROLE_MEMBERSHIP_HEADERS_)) {
+    throw new Error("ROLE_MEMBERSHIP_SCHEMA_MISMATCH");
+  }
   return sheet;
 }
 
