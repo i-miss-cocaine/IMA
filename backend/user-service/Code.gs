@@ -10961,7 +10961,7 @@ function getInternalRoleAssignments(payload) {
     var data=sheet.getDataRange().getValues(),legacy=["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"],membership=legacy.concat(["InstitutionID","MembershipID"]),current=membership.concat(["ResponsibilityID"]),h=data.length?data[0].map(String):[];
     var schema=JSON.stringify(h)===JSON.stringify(current)?"current":(JSON.stringify(h)===JSON.stringify(membership)?"membership":(JSON.stringify(h)===JSON.stringify(legacy)?"legacy":"invalid"));
     if(schema==="invalid")return {status:"error",code:"ROLE_SCOPE_SCHEMA_MISMATCH"};
-    var institutionId=String(getIdentityInstitutionId_()||"").trim();if(schema!=="legacy"&&!institutionId)return {status:"error",code:"IDENTITY_CONFIGURATION_REQUIRED"};
+    var institutionId=schema==="legacy"?"":String(getIdentityInstitutionId_()||"").trim();if(schema!=="legacy"&&!institutionId)return {status:"error",code:"IDENTITY_CONFIGURATION_REQUIRED"};
     var now=new Date(),out=[];
     for(var i=1;i<data.length;i++){var r=data[i]||[],u=String(r[1]||"").trim(),role=String(r[2]||"").trim(),m=schema==="legacy"?"":String(r[13]||"").trim(),inst=schema==="legacy"?"":String(r[12]||"").trim(),internal=schema==="current"?String(r[14]||"").trim():(schema==="legacy"?role:"");
       if(f.userId&&u!==String(f.userId).trim())continue;if(f.roleId&&role!==String(f.roleId).trim())continue;if(f.membershipId&&m!==String(f.membershipId).trim())continue;if(f.responsibilityId&&internal!==String(f.responsibilityId).trim())continue;if(f.rolInternoId&&internal!==String(f.rolInternoId).trim())continue;
