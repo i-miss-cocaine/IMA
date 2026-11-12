@@ -1106,7 +1106,11 @@ function isSessionRevoked_(claims, nowValue) {
   if (isNaN(now.getTime())) throw new Error("SESSION_REVOCATION_CLOCK_INVALID");
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheet = ss.getSheetByName("SesionesRevocadas");
-  if (!sheet) return false;
+  if (!sheet) {
+    var ledgerInitialized = PropertiesService.getScriptProperties().getProperty("SESSION_REVOCATION_LEDGER_INITIALIZED");
+    if (ledgerInitialized === "1") throw new Error("SESSION_REVOCATION_LEDGER_MISSING");
+    return false;
+  }
   var data = sheet.getDataRange().getValues();
   if (!data.length) return false;
   if (JSON.stringify(data[0].map(String)) !== JSON.stringify(SESSION_REVOCATION_HEADERS_)) {
@@ -1139,6 +1143,8 @@ function recordSessionRevocation_(userId, sessionId, nowValue) {
   var lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
+    // Persist the initialization sentinel before creating/writing the ledger; missing storage then fails closed.
+    PropertiesService.getScriptProperties().setProperty("SESSION_REVOCATION_LEDGER_INITIALIZED", "1");
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var sheet = getOrCreateSheet(ss, "SesionesRevocadas");
     if (sheet.getLastRow() === 0) sheet.appendRow(SESSION_REVOCATION_HEADERS_);
