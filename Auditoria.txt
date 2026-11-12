@@ -2158,3 +2158,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Backend productivo sin cambios. Cobertura local añadida; ejecución aislada/CI pendiente. Apps Script/Sheets real NOT RUN.
 - BETA-EXAM-095 agregado. TASK-153 / AUD-NG-386 continúa En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.594 — resultado de verificación local aislada/CI
+- GitHub Actions run 43131212115, commit c8372157236ff110618c2a12d53808e2aa732719: workflow Exam-Service security local contracts SUCCESS en Node.js 22.
+- Paso Run evaluation setup copy security regression: exam-service-evaluation-setup-copy-security PASS (30 scenarios); job exam-security-contracts SUCCESS.
+- Ejecución aislada sobre código/fixtures sin despliegue; Apps Script/Sheets real NOT RUN.
+- C1.594 Completada en verificación local aislada/CI. BETA-EXAM-095 sigue Pendiente beta.
+===============================================================================
