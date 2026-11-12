@@ -2506,3 +2506,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Evidencia:** contrato ampliado y Department Scope run 43228852462 SUCCESS, 16 pasos PASS (Node 24). No se usaron datos reales ni servicios desplegados.
 - **Pendiente beta:** Apps Script/Sheets real y concurrencia multi-solicitud desplegada; BETA-FUNC-033.
 ===============================================================================
+
+ 
+===============================================================================
+### C1.623 — integridad de lectura de asignaciones RBAC
+- **Severidad: Medio/Alto — coherencia de autorización e integridad.** El esquema intermedio con MembershipID pero sin ResponsibilityID podía mostrarse en el listado administrativo aunque no fuera consumible como ámbito efectivo. Los lectores tampoco descartaban AssignmentID vacío/duplicado.
+- **Corrección:** el listado no presenta filas del esquema transicional como efectivas; listado y contexto descartan IDs vacíos o ambiguos. No se borran registros históricos ni se altera el flujo legacy autorizado.
+- **Cobertura:** regresiones sintéticas de esquema intermedio y duplicidad de ID en ambos lectores, con membresía y responsabilidad activas.
+- **Evidencia:** CI pendiente tras publicar; Apps Script/Sheets real y concurrencia multi-solicitud desplegada continúan Pendiente beta.
+===============================================================================

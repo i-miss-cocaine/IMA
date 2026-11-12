@@ -4834,3 +4834,12 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Department Scope Contract run **43228852462 SUCCESS** (Node 24; 16 pasos PASS: contratos de ámbitos, responsabilidad/RBAC, membresías, ownership académico/contable, sintaxis de seis servicios y clientes).
 - Terminal local independiente NOT RUN. La suite se ejecutó en runner aislado CI, sin depender de servicios desplegados. Apps Script/Sheets real y concurrencia entre solicitudes desplegadas quedan Pendiente beta en BETA-FUNC-033.
 - **Estado:** C1.622 implementada y CI PASS; TASK-153/T153-S02 sigue En ejecución para revisión del resto de sus invariantes. BETA-FUNC-033 no bloquea cierre de código conforme a NDASC.
+
+ 
+**Addendum C1.623 — coherencia entre listados y ámbitos efectivos; IDs ambiguos fail-closed**
+- Se detectó una divergencia del esquema intermedio (InstitutionID/MembershipID, sin ResponsibilityID): el listado administrativo podía mostrar filas que getUserContextScope no podía convertir en ámbitos efectivos. El lector de asignaciones ahora devuelve lista vacía para ese esquema transicional; las filas históricas permanecen almacenadas y no se eliminan.
+- getInternalRoleAssignments y getUserContextScope cuentan los AssignmentID del conjunto y excluyen IDs vacíos o repetidos. Un identificador ambiguo no produce entradas duplicadas ni contexto efectivo; el resto de asignaciones únicas y vigentes se conserva.
+- El contrato local añade escenarios de esquema intermedio y duplicidad de AssignmentID en ambos lectores, con membresía/responsabilidad activas para aislar la condición probada.
+- Se mantiene compatibilidad del esquema legacy sin vínculo, sujeto al flujo legacy ya autorizado; el esquema membership transicional no se considera fuente de contexto RBAC efectivo. No se modifican filas históricas ni se realizan migraciones destructivas.
+- Apps Script/Sheets real y concurrencia multi-solicitud desplegada siguen siendo pruebas beta, no bloqueos de implementación conforme NDASC.
+- **Estado:** implementación y pruebas añadidas; resultado CI pendiente hasta ejecutar workflow. T153-S02 permanece En ejecución: C1.623 resuelve coherencia de lectura, pero no cierra los restantes criterios del subflujo ni TASK-153.

@@ -10298,9 +10298,13 @@ function getUserContextScope(payload) {
       if (isNaN(date.getTime())) return { valid: false, date: null };
       return { valid: true, date: date };
     };
+    var assignmentIdCounts = {};
+    data.slice(1).forEach(function(row) { var id = String((row || [])[0] || "").trim(); if (id) assignmentIdCounts[id] = (assignmentIdCounts[id] || 0) + 1; });
     var scopes = [];
     for (var i = 1; i < data.length; i++) {
       var row = data[i] || [];
+      var assignmentId = String(row[0] || "").trim();
+      if (!assignmentId || assignmentIdCounts[assignmentId] !== 1) continue;
       if (String(row[1] || "").trim() !== userId) continue;
       if (!row[2] || normalizeRole(row[2]) !== normalizeRole(verifiedRole)) continue;
       var rowInstitutionId = scopeSchema === "legacy" ? "" : String(row[12] || "").trim();
@@ -10325,7 +10329,7 @@ function getUserContextScope(payload) {
       var scopeValues = parseValues(row[4]);
       if (!scopeType || !scopeValues.length) continue;
       scopes.push({
-        assignmentId: String(row[0] || ""),
+        assignmentId: assignmentId,
         roleId: String(row[2] || ""),
         institutionId: rowInstitutionId || null,
         membershipId: rowMembershipId || null,
@@ -10973,8 +10977,12 @@ function getInternalRoleAssignments(payload) {
     var schema=JSON.stringify(h)===JSON.stringify(current)?"current":(JSON.stringify(h)===JSON.stringify(membership)?"membership":(JSON.stringify(h)===JSON.stringify(legacy)?"legacy":"invalid"));
     if(schema==="invalid")return {status:"error",code:"ROLE_SCOPE_SCHEMA_MISMATCH"};
     var institutionId=schema==="legacy"?"":String(getIdentityInstitutionId_()||"").trim();if(schema!=="legacy"&&!institutionId)return {status:"error",code:"IDENTITY_CONFIGURATION_REQUIRED"};
-    var now=new Date(),out=[],membershipCache={};
-    for(var i=1;i<data.length;i++){var r=data[i]||[],u=String(r[1]||"").trim(),role=String(r[2]||"").trim(),m=schema==="legacy"?"":String(r[13]||"").trim(),inst=schema==="legacy"?"":String(r[12]||"").trim(),internal=schema==="current"?String(r[14]||"").trim():(schema==="legacy"?role:"");
+    var now=new Date(),out=[],membershipCache={},assignmentIdCounts={};
+    data.slice(1).forEach(function(row){var id=String((row||[])[0]||"").trim();if(id)assignmentIdCounts[id]=(assignmentIdCounts[id]||0)+1;});
+    // El esquema intermedio no contiene ResponsibilityID: sus filas no pueden ser ámbitos efectivos.
+    if(schema==="membership")return {status:"success",data:[]};
+    for(var i=1;i<data.length;i++){var r=data[i]||[],assignmentId=String(r[0]||"").trim(),u=String(r[1]||"").trim(),role=String(r[2]||"").trim(),m=schema==="legacy"?"":String(r[13]||"").trim(),inst=schema==="legacy"?"":String(r[12]||"").trim(),internal=schema==="current"?String(r[14]||"").trim():(schema==="legacy"?role:"");
+      if(!assignmentId||assignmentIdCounts[assignmentId]!==1)continue;
       if(f.userId&&u!==String(f.userId).trim())continue;if(f.roleId&&role!==String(f.roleId).trim())continue;if(f.membershipId&&m!==String(f.membershipId).trim())continue;if(f.responsibilityId&&internal!==String(f.responsibilityId).trim())continue;if(f.rolInternoId&&internal!==String(f.rolInternoId).trim())continue;
       if(schema!=="legacy"&&inst!==institutionId)continue;if(schema==="membership"&&m==="")continue;if(schema==="current"&&(!m||!internal))continue;
       if(schema!=="legacy"){

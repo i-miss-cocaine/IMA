@@ -2691,3 +2691,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato ampliado: reasignación de responsabilidad y membresía, reintento, duplicados, aislamiento tenant y lock release. Department Scope CI 43228852462 SUCCESS (16 pasos).
 - Terminal local independiente NOT RUN; Apps Script/Sheets real y concurrencia multi-solicitud desplegada Pendiente beta. T153-S02 sigue En ejecución.
 ===============================================================================
+
+ 
+===============================================================================
+[2026-11-12] C1.623 — coherencia de lectura y unicidad de AssignmentID
+- getInternalRoleAssignments deja de listar filas del esquema intermedio sin ResponsibilityID, que no pueden producir un ámbito efectivo con sesión RBAC; no elimina registros históricos.
+- getInternalRoleAssignments y getUserContextScope excluyen AssignmentID vacío o duplicado para evitar registros ambiguos en administración y contexto efectivo.
+- Contratos ampliados para esquema intermedio y duplicidad de ID en ambos lectores. CI pendiente de ejecución; beta Apps Script/Sheets real permanece Pendiente.
+===============================================================================

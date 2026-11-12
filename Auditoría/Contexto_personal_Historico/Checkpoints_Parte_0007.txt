@@ -1111,3 +1111,13 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** C1.622 implementada y verificada por contrato aislado/CI; T153-S02 continúa En ejecución hasta revisar los requisitos restantes del subflujo; no se inicia T153-S03 en este checkpoint.
 - **Siguiente acción:** revisar las invariantes finales de escritura/lectura de ámbitos y cierre de T153-S02; beta BETA-FUNC-033 mantiene validación real de Sheets y concurrencia multi-solicitud.
 ===============================================================================
+
+ 
+===============================================================================
+### C1.623 — coherencia de lectores RBAC y AssignmentID ambiguos
+- Hallazgo: el esquema transicional con InstitutionID/MembershipID pero sin ResponsibilityID podía aparecer en el listado de asignaciones aunque no generara ámbito efectivo; además, los lectores no filtraban IDs vacíos o duplicados.
+- Corrección: el listado devuelve vacío para el esquema transicional no efectivo; ambos lectores excluyen asignaciones con AssignmentID vacío o no único. Se conserva lectura legacy autorizada y no se borran filas históricas.
+- Pruebas añadidas para esquema intermedio y duplicidad de ID en listado y contexto efectivo, con membresía/responsabilidad activas.
+- Verificación CI pendiente al publicar; Apps Script/Sheets real y concurrencia desplegada permanecen Pendiente beta.
+- T153-S02 sigue En ejecución; C1.623 no cierra TASK-153 ni inicia T153-S03.
+===============================================================================
