@@ -774,6 +774,7 @@ console.log("C1.633 signed-session tenant contract: exact membership/tenant bind
 
  
 // C1.634: persistent revocation survives cache eviction and logout cannot revoke caller-supplied identities.
+tenantUserRows[1][10]="Activa"; // restore active account after the C1.633 negative account-state case
 const sessionRevocationRows = [["SessionID","UserID","RevokedAt","ExpiresAt"]];
 const sessionRevocationSheet = {
   getLastRow:()=>sessionRevocationRows.length,
