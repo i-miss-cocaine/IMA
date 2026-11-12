@@ -1142,7 +1142,7 @@ function getUserRoleMembershipState_(userId, institutionId, nowValue) {
   var roleCounts = {};
   candidates.forEach(function(item) { roleCounts[item.roleId] = (roleCounts[item.roleId] || 0) + 1; });
   var memberships = candidates.filter(function(item) { return roleCounts[item.roleId] === 1; });
-  return { initialized: true, hasRecords: userRows.length > 0, memberships: memberships };
+  return { initialized: true, hasRecords: userRows.some(function(row) { return String(row[3] || "").trim() === institutionKey; }), memberships: memberships };
 }
 
 function resolveUserRoleMembership_(userId, roleId, institutionId, membershipId) {
@@ -1325,6 +1325,7 @@ function switchActiveRole(payload) {
       membershipId: membership.membershipId,
       institutionId: institutionId
     });
+    CacheService.getScriptCache().put("revoked_session_" + currentClaims.sessionId, "1", 86400);
     return { status: "success", sessionToken: nextToken, activeRoleId: membership.roleId, membershipId: membership.membershipId, message: "Contexto de rol activo actualizado." };
   } catch (error) {
     return { status: "error", code: error.message || "ACTIVE_ROLE_SWITCH_FAILED", message: "No fue posible cambiar el rol activo." };
@@ -1350,6 +1351,7 @@ function manageUserRoleMemberships(payload) {
   lock.waitLock(10000);
   try {
     var institutionId = String(getIdentityInstitutionId_()).trim();
+    if (!institutionId) return { status: "error", code: "ROLE_MEMBERSHIP_INSTITUTION_REQUIRED", message: "La institución activa no está configurada." };
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var userSheet = ss.getSheetByName("Usuarios");
     if (!userSheet) return { status: "error", code: "USER_NOT_FOUND", message: "Usuario objetivo no disponible." };
@@ -1384,14 +1386,13 @@ function manageUserRoleMemberships(payload) {
       return { status: "success", action: action, membershipId: newId, userId: userId, roleId: roleId };
     }
 
-    var targetIndex = -1;
+    var targetIndexes = [];
     for (var i = 1; i < data.length; i++) {
-      if (String(data[i][0] || "").trim() === membershipId && String(data[i][1] || "").trim() === userId && String(data[i][3] || "").trim() === institutionId) {
-        targetIndex = i;
-        break;
-      }
+      if (String(data[i][0] || "").trim() === membershipId && String(data[i][1] || "").trim() === userId && String(data[i][3] || "").trim() === institutionId) targetIndexes.push(i);
     }
-    if (targetIndex === -1) return { status: "error", code: "ROLE_MEMBERSHIP_NOT_FOUND", message: "Membresía no encontrada." };
+    if (!targetIndexes.length) return { status: "error", code: "ROLE_MEMBERSHIP_NOT_FOUND", message: "Membresía no encontrada." };
+    if (targetIndexes.length !== 1) return { status: "error", code: "ROLE_MEMBERSHIP_ID_CONFLICT", message: "El identificador de membresía es ambiguo; no se modificó ningún registro." };
+    var targetIndex = targetIndexes[0];
     if (String(data[targetIndex][4] || "").trim().toUpperCase() === "REVOKED") return { status: "success", action: action, membershipId: membershipId, idempotent: true };
     sheet.getRange(targetIndex + 1, 5).setValue("REVOKED");
     sheet.getRange(targetIndex + 1, 10).setValue(now);
