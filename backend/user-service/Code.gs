@@ -3117,9 +3117,13 @@ function loginUser(payload) {
               selectedMembership = resolveUserRoleMembership_(String(row[0]), selectedRoleId, membershipInstitutionId);
               if (!selectedMembership) return { status: "error", code: "ROLE_MEMBERSHIP_NOT_ACTIVE", message: "El rol solicitado no está asignado o vigente para esta cuenta." };
             } else if (membershipState.initialized && membershipState.hasRecords) {
-              selectedMembership = availableMemberships.find(function(item) { return item.roleId === String(row[6] || "").trim(); }) || null;
-              if (!selectedMembership) {
-                return { status: "error", code: "ACTIVE_ROLE_SELECTION_REQUIRED", message: "Seleccione uno de los roles RBAC vigentes de la cuenta.", availableRoles: availableMemberships.map(function(item) { return { roleId: item.roleId, membershipId: item.membershipId }; }) };
+              if (availableMemberships.length > 1) {
+                return { status: "error", code: "ACTIVE_ROLE_SELECTION_REQUIRED", message: "Seleccione el rol con el que desea iniciar sesión.", availableRoles: availableMemberships.map(function(item) { return { roleId: item.roleId, membershipId: item.membershipId }; }) };
+              }
+              if (availableMemberships.length === 1) {
+                selectedMembership = availableMemberships[0];
+              } else {
+                return { status: "error", code: "NO_ACTIVE_ROLE_MEMBERSHIPS", message: "La cuenta no tiene roles RBAC vigentes. Solicite que un administrador revise sus asignaciones." };
               }
             }
           } catch (membershipError) {
