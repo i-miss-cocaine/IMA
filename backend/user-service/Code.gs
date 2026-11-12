@@ -1487,7 +1487,7 @@ function validateRolePermission(action, payload) {
   if (userRole === "NO_ACCESS") {
     return { authorized: false, role: "Cuenta Inactiva/Bloqueada" };
   }
-  if (["getUserContextScope", "validateRoleScopeAccess"].indexOf(action) !== -1) {
+  if (["getUserContextScope", "validateRoleScopeAccess", "getUserRoleMemberships", "switchActiveRole"].indexOf(action) !== -1) {
     return { authorized: true, role: userRole, userId: payload && payload._verifiedUserId };
   }
   if (IDENTITY_MANAGER_ACTIONS_.indexOf(action) !== -1) return { authorized: IDENTITY_MANAGER_ROLES_.indexOf(userRole) !== -1, role: userRole };
@@ -1928,6 +1928,15 @@ function doPost(e) {
         break;
       case "assignRoleScope":
         result = assignRoleScope(payload);
+        break;
+      case "getUserRoleMemberships":
+        result = getUserRoleMemberships(payload);
+        break;
+      case "switchActiveRole":
+        result = switchActiveRole(payload);
+        break;
+      case "manageUserRoleMemberships":
+        result = manageUserRoleMemberships(payload);
         break;
       case "registerResourceOwnership":
         result = registerResourceOwnership(payload);
