@@ -1229,3 +1229,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta. Contrato local Department Scope ampliado PASS; parseo JavaScript PASS; GitHub Actions Department Scope run 43210592288, Identity Mapping run 43210592306 y Task-Service security run 43210592253 SUCCESS, todos los pasos PASS. Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, snapshots sintéticos saneados, instante de evaluación, IDs de asignación devueltos en ambos modos y trazas de lectura; no registrar datos personales reales.
 ===============================================================================
+
+
+===============================================================================
+## BETA-FUNC-032 — TASK-153 / USER: contexto activo explícito de departamento
+- **Módulo/servicio:** USER Service — getUserContextScope / validateRoleScopeAccess / assertRecordOwnership.
+- **Objetivo:** verificar que una sesión con varios departamentos autorizados pueda seleccionar un departamento activo y que esa selección reduzca el contexto de autorización a ese departamento.
+- **Precondiciones:** entorno beta aislado; asignaciones vigentes de un mismo rol para dos departamentos sintéticos; un ámbito adicional de otro tipo; ownership sintético de recursos en ambos departamentos; sesión firmada del usuario.
+- **Pasos:** consultar sin activeDepartmentId y confirmar la unión limitada de departamentos autorizados; consultar con activeDepartmentId igual al primero y confirmar que departmentIds, scopes y operaciones de ownership quedan limitados a ese departamento; intentar consultar el segundo departamento y otro tipo de ámbito desde el contexto seleccionado; intentar seleccionar un departamento no asignado; repetir con un usuario que solo tenga alcance institucional explícito y sin asignación departamental.
+- **Resultado esperado:** el contexto activo válido permite únicamente el departamento seleccionado; otro departamento y dimensiones sin relación departamental se deniegan; el selector no amplía permisos ni permite derivar departamentos desde un alcance institucional general; sin selector se conserva el comportamiento previo de unión estrictamente limitada.
+- **Estado:** Pendiente beta. Contrato Department Scope local PASS; parseo JavaScript de funciones y contrato PASS. Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, IDs sintéticos de asignación/ownership, respuestas autorizadas/denegadas y trazas de lectura saneadas; no registrar datos personales ni tokens.
+===============================================================================
