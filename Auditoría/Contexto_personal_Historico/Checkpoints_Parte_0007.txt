@@ -1232,3 +1232,20 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** C1.629 completada con prueba local determinista de concurrencia. T153-S02 permanece En ejecución; no iniciar T153-S03.
 - **Siguiente acción:** revisar la semántica de vigencia de asignaciones de ámbito (inicio/fin, fechas inválidas y límites exactos) y confirmar que contexto efectivo y listado administrativo aplican el mismo criterio temporal.
 ===============================================================================
+
+
+===============================================================================
+### C1.630 — IMA-EXEC-20261112-1754Z-03 — paridad temporal de contexto y listado administrativo
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.629.
+- **HEAD inicial:** `993c83bde8fd333a9563a4503fdfb7d16205626f`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificar que contexto efectivo y listado administrativo aplican el mismo criterio de vigencia de asignaciones de ámbito.
+- **Hallazgo:** el lector administrativo trataba FechaFin numérica `0` como vacía por truthiness, mientras el contexto efectivo la interpretaba como fecha válida del epoch y vencida. Se reprodujo una divergencia: contexto denegado y listado con una fila.
+- **Corrección:** `getInternalRoleAssignments` ahora considera vacíos únicamente `""`, `null` y `undefined`; otros valores, incluido 0, se convierten en fecha y se validan. Se preservan límites inclusivos.
+- **Contrato:** fecha fija y casos de inicio/fin exactamente en el límite, inicio futuro, fin pasado, fechas inválidas, límites vacíos y FechaFin numérica 0. El caso 0 falló antes del cambio y pasa después.
+- **Verificación local:** contrato completo V8 aislado **PASS**, bloques iniciales y C1.621–C1.630; parseo sintáctico backend USER/test **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** Apps Script/Sheets real NOT RUN; el escenario temporal se registra en `beta_test.txt`, Pendiente beta.
+- **Archivos funcionales:** `backend/user-service/Code.gs`; `tests/security/internal-responsibility-rbac-contract.test.js`.
+- **Commits funcionales:** contrato base `cea62448c0f7187a7b9094695038e4cbec87371a`; corrección de prueba epoch `f419101b2ad3a4a74ff6336f273ce23acc78f68e`; backend `2f84c6759c2a251670743ead482454a131069596`.
+- **Estado:** C1.630 completada conforme a verificaciones locales; hallazgo corregido. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** revisar coherencia de límites temporales y vigencia de membresías/roles en las rutas de autorización restantes, sin ampliar a servicios no afectados.
+===============================================================================
