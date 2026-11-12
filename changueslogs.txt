@@ -2544,3 +2544,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato USER signature ownership y todos los pasos del job PASS; harness local focalizado 1/1 PASS.
 - C1.610 completada local/CI; backend sin cambios. BETA-FUNC-029 Pendiente beta; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.611 — cobertura reentrante de configuración de proveedor de firma
+- Se añade reentrada durante setProperty de API key; el fixture simula lock compartido.
+- La secundaria recibe SIGNATURE_PROVIDER_CONFIGURATION_BUSY antes de abrir Sheets o escribir secretos; la exterior conserva una sola fila y credenciales.
+- BETA-FUNC-028 ampliada; backend sin cambios; CI pendiente; Apps Script/Sheets real NOT RUN.
+===============================================================================

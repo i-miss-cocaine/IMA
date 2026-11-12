@@ -2380,3 +2380,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Paso user-service-signature-ownership.test.js SUCCESS; harness local focalizado 1/1 PASS; parseo del contrato PASS.
 - Backend productivo sin cambios. BETA-FUNC-029 Pendiente beta; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+### C1.611 — TASK-153 / USER
+- Brecha: configureAdvancedSignatureProvider carecía de escenario de reentrada durante setProperty de credenciales; el fixture no simulaba lock compartido.
+- Se añade hook de reentrada y contención de ScriptLock. La secundaria recibe SIGNATURE_PROVIDER_CONFIGURATION_BUSY antes de abrir Sheets/escribir secretos; la exterior conserva una sola configuración y sus secretos.
+- BETA-FUNC-028 ampliada; backend productivo sin cambios; Apps Script/Sheets real NOT RUN.
+===============================================================================

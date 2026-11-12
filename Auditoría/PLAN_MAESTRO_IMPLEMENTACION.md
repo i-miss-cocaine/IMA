@@ -4656,3 +4656,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - GitHub Actions Department Scope Contract run 43143663056, commit 84c72def952552b17fe510cf7722a576ec6425b9: SUCCESS en Node.js 24; todos los pasos del job department-scope-contract SUCCESS.
 - Paso Run user-service signature ownership contract: SUCCESS. Harness V8 focalizado de createAdvancedSignatureRequest: 1/1 PASS; parseo del contrato PASS.
 - C1.610 completada con verificación local focalizada y CI. BETA-FUNC-029 permanece Pendiente beta; Apps Script/Sheets real NOT RUN.
+
+
+### 10.260 TASK-153 / USER — reentrada durante la configuración de credenciales del proveedor (C1.611)
+- **Brecha confirmada:** configureAdvancedSignatureProvider protege cambios de Script Properties y ConfiguracionFirmaAvanzada con ScriptLock, pero el fixture no simulaba reentrada ni verificaba que una segunda configuración fuese rechazada mientras la primera actualiza credenciales.
+- **Cobertura añadida:** el fixture comparte estado de lock, permite reentrada desde setProperty y verifica que la solicitud secundaria recibe SIGNATURE_PROVIDER_CONFIGURATION_BUSY antes de abrir Sheets o escribir secretos.
+- **Invariantes:** dos intentos de lock, una apertura de Sheets, una fila del proveedor exterior, solo secretos exteriores persistidos y lock liberado.
+- **Alcance:** contrato USER y ampliación de BETA-FUNC-028; backend productivo sin cambios.
+- **Verificación local:** harness V8 focalizado y parseo del contrato pendientes de ejecución.
+- **CI:** pendiente tras publicar.
+- **Apps Script/Sheets real:** NOT RUN; BETA-FUNC-028 Pendiente beta.
+- **Estado:** C1.611 En ejecución hasta verificar local y CI; TASK-153 continúa En ejecución.

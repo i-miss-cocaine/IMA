@@ -623,7 +623,7 @@ function makeProviderCallbackHarness(options = {}) {
       return "a".repeat(64);
     },
     LockService: { getScriptLock: () => ({
-      tryLock: () => { state.lockAttempts++; if(options.lockAvailable===false)return false; state.held=true; return true; },
+      tryLock: () => { state.lockAttempts++; if(options.lockAvailable===false||state.held)return false; state.held=true; return true; },
       releaseLock: () => { assert.equal(state.held,true); state.held=false; state.releases++; }
     })},
     CacheService: { getScriptCache: () => ({
@@ -716,7 +716,7 @@ function makeProviderConfigHarness(initialRows = [], options = {}) {
   const propertyValues = new Map(Object.entries(options.properties || {}));
   const properties = {
     getProperty: key => propertyValues.get(key) || null,
-    setProperty: (key,value) => propertyValues.set(key,String(value)),
+    setProperty: (key,value) => { propertyValues.set(key,String(value)); if(options.onSetProperty)options.onSetProperty(key,String(value)); },
     deleteProperty: key => propertyValues.delete(key)
   };
   const context = {
@@ -814,4 +814,31 @@ console.log("USER signature provider credentials, legacy migration, masking, rem
   assert.equal(JSON.stringify(auditPayload).includes(apiSecret),false);
   assert.equal(JSON.stringify(auditPayload).includes(hmacSecret),false);
 }
+{
+  let reentrant, nestedError = "";
+  reentrant = makeProviderConfigHarness([], { onSetProperty(key, value) {
+    if (key !== "IMA_SIGNATURE_PROVIDER_PSC_OUTER_API_KEY" || value !== "OUTER-API-SECRET") return;
+    try {
+      reentrant.configure({ proveedorId:"PSC_NESTED", nombreProveedor:"PSC anidado", apiKey:"NESTED-API-SECRET" });
+    } catch (error) { nestedError = error.message; }
+  }});
+  const configured = reentrant.configure({
+    proveedorId:"PSC_OUTER", nombreProveedor:"PSC exterior",
+    apiKey:"OUTER-API-SECRET", hmacSecret:"O".repeat(40)
+  });
+  assert.equal(configured.status,"success");
+  assert.equal(nestedError,"SIGNATURE_PROVIDER_CONFIGURATION_BUSY");
+  assert.equal(reentrant.state.lockAttempts,2);
+  assert.equal(reentrant.state.opens,1,"nested provider configuration must not open Sheets");
+  assert.equal(reentrant.state.releases,1);
+  assert.equal(reentrant.state.held,false);
+  assert.equal(reentrant.rows().length,2,"only header and one provider row may be persisted");
+  assert.equal(reentrant.rows()[1][0],"PSC_OUTER");
+  assert.equal(reentrant.rows().filter(row=>row[0]==="PSC_NESTED").length,0);
+  assert.equal(reentrant.properties.get("IMA_SIGNATURE_PROVIDER_PSC_OUTER_API_KEY"),"OUTER-API-SECRET");
+  assert.equal(reentrant.properties.get("IMA_SIGNATURE_PROVIDER_PSC_OUTER_HMAC_SECRET"),"O".repeat(40));
+  assert.equal(reentrant.properties.has("IMA_SIGNATURE_PROVIDER_PSC_NESTED_API_KEY"),false);
+}
+
+
 console.log("USER provider credential RBAC denial log redaction contract: PASS");
