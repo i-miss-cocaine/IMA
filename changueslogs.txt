@@ -2952,3 +2952,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
 - T153-S02 completada para implementación/contratos aislados; beta real pendiente.
 ===============================================================================
+
+
+ 
+===============================================================================
+[2026-11-12] C1.645 — inventario técnico ampliado de catálogos
+- USER CatalogoDepartamentos + HistorialAdscripciones/CatalogoCargos; ACADEMIC DepartamentosAcademicos + AreasCurricularesExtensiones/CatalogoAsignaturas; ACCOUNTING normaliza por ID/nombre y conserva fallback textual; TASK/EXAM usan ResourceOwnership sin lookup de catálogo; DEVELOPER no referencia catálogos.
+- No se detectó caché/sync específica de catálogos en los seis entrypoints. UI admision.html sin referencias directas; árbol frontend completo y datos productivos no inspeccionados.
+- No se eligió autoridad, no se leyeron/mutaron filas productivas.
+- C1.645 amplía S01-1 sin cerrarlo. Siguiente: contrato neutral/configurable y pruebas sintéticas.
+===============================================================================
