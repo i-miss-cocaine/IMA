@@ -2602,3 +2602,14 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Verificación local:** contrato completo V8 aislado **PASS**, incluidos C1.621–C1.639; sintaxis de los cinco servicios y contrato **PASS**. Se simularon cachés locales vacías y ledger compartido.
 - **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** despliegue real multi-proyecto/Sheets pendiente.
 ===============================================================================
+
+
+===============================================================================
+### C1.641 — T153-S01: inventario técnico actualizado de catálogos departamentales
+- USER `CatalogoDepartamentos`: esquema `deptId/nombre/jefaturaUserId/estado/fechaCreacion`; creación administrativa acepta ID del cliente o generado; sin InstitutionID, jerarquía ni referencia a DepartamentosAcademicos. No se encontró consumidor productivo que lo use como catálogo canónico.
+- ACADEMIC `DepartamentosAcademicos`: esquema `DepartamentoID/Nombre/JefeUserId/Estado/FechaActualizacion/AutorizadoPor`; alta usa el ID recibido y, si no existe, copia ese ID como nombre; no valida contra USER ni define jerarquía.
+- ACCOUNTING consulta `DepartamentosAcademicos` por ID o nombre para expedientes laborales y conserva el texto original como fallback. ACADEMIC lo usa para planificación; no equivale a una autoridad institucional demostrada para propiedad estudiantil.
+- `AsignacionesAmbitosRoles` y `ResourceOwnership` conservan DepartmentID como valor de ámbito/propiedad, no como FK demostrada contra un catálogo único.
+- **Conclusión:** las dos hojas tienen semánticas y consumidores distintos; no se puede demostrar autoridad única, clave estable compartida, jerarquía ni correspondencia. No fusionar, renombrar ni migrar; no inferir por nombre, actor, grado, sección o rol.
+- **Estado:** inventario técnico actualizado; T153-S01 sigue bloqueada solo para la selección/mapeo de autoridad departamental institucional. S02 ya está completada; S03/S04 dependen de S01.
+===============================================================================
