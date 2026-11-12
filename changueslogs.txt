@@ -2396,3 +2396,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Smoke local 5/5 PASS; CI run 43137857655 SUCCESS; contrato delete-submission-audit 35/35 PASS, Node.js 22.
 - Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-101 Pendiente beta. C1.600 Completada.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.601 — reentrada al inicializar RecuperacionesEstudiante EXAM
+- Añadidos escenarios de reentrada durante insertSheet y appendRow de encabezados cuando falta RecuperacionesEstudiante.
+- Smoke local 2/2 PASS; parseo del contrato actualizado PASS.
+- Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-102 Pendiente beta. C1.601 Completada.
+===============================================================================

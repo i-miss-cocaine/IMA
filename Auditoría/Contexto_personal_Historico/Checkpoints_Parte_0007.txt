@@ -463,3 +463,30 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.600 Completada con verificación local focalizada y suite CI. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
 - HEAD inicial: `f1aa60b5c50acef3532dfde6a2a4bbffc171a281`; HEAD de código probado: `49345d690ef9dd25bccae492e4498eb3bfc75282`; HEAD final se confirma tras commit documental.
 ===============================================================================
+
+
+===============================================================================
+## C1.601 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada al inicializar la hoja RecuperacionesEstudiante.
+
+### Hallazgo y cambio
+- saveStudentRecovery ya cubría una segunda llamada durante el append del registro final, pero no durante insertSheet ni appendRow de encabezados cuando RecuperacionesEstudiante no existe.
+- Se amplía el fixture para provocar reentrada al handler real en ambos puntos. Las solicitudes secundarias reciben STUDENT_RECOVERY_MUTATION_LOCK_TIMEOUT; la exterior crea una hoja, encabezados y recuperación únicos.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-student-recovery-mutation-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Harness local determinista sobre saveStudentRecovery, wrapper, contexto y worker productivos extraídos de Code.gs: 2/2 PASS.
+- Parseo JavaScript del contrato actualizado: PASS.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-102 Pendiente beta.
+- C1.601 Completada en verificación local aislada. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD inicial: `a228580423f4eaf6ee1783a2e281e62e97e23102`; HEAD final se confirma tras publicar el commit.
+===============================================================================

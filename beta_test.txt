@@ -1169,3 +1169,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; smoke local focalizado 5/5 PASS (incluye los tres puntos ya cubiertos); GitHub Actions run 43137857655 SUCCESS, contrato delete-submission-audit 35/35 PASS en Node.js 22. Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de llamadas exterior/secundaria, creación de hoja, appendRow de encabezados y evento, deleteRow, estado final de auditoría y liberación de lock.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-102 — TASK-153 / AUD-NG-386 / EXAM: contención reentrante al inicializar RecuperacionesEstudiante
+- **Módulo/rol:** Servicio EXAM; Profesor autenticado con permiso saveStudentRecovery, identidad firmada, asignación académica vigente y estudiante dentro del grupo asignado; para roles institucionales, scope institucional amplio verificado.
+- **Objetivo:** comprobar en Apps Script/Sheets desplegado que una solicitud secundaria saveStudentRecovery iniciada durante insertSheet o appendRow de los encabezados iniciales de RecuperacionesEstudiante no supera ScriptLock ni duplica registros.
+- **Precondiciones:** versión beta desplegada; estudiante válido y elegible; hoja RecuperacionesEstudiante ausente; usuario autorizado; mecanismo controlado de reentrada durante la creación de la hoja y la escritura de encabezados.
+- **Pasos:** ejecutar saveStudentRecovery con datos válidos y provocar una segunda llamada durante insertSheet; repetir en un escenario separado durante appendRow de encabezados; revisar respuestas, trazas RBAC/identidad/lock/Sheets y snapshots de RecuperacionesEstudiante.
+- **Resultado esperado:** cada secundaria STUDENT_RECOVERY_MUTATION_LOCK_TIMEOUT; exterior crea una sola hoja con encabezados válidos y registra una única recuperación coherente; una apertura de Sheets por operación exterior y ScriptLock liberado.
+- **Estado:** Pendiente beta; smoke local focalizado 2/2 PASS sobre handlers productivos extraídos de Code.gs; parseo del contrato actualizado PASS. Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, trazas saneadas de llamadas exterior/secundaria, inserción de hoja, appendRow de encabezados y recuperación, conteos de escritura, snapshot de RecuperacionesEstudiante antes/después y liberación del lock.
+===============================================================================

@@ -2231,3 +2231,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Smoke local focalizado 5/5 PASS; GitHub Actions run 43137857655 SUCCESS, Node.js 22; contrato delete-submission-audit 35/35 PASS; job exam-security-contracts SUCCESS.
 - Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-101 Pendiente beta. C1.600 Completada; TASK-153 / AUD-NG-386 continúa En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.601 — reentrada durante la inicialización de RecuperacionesEstudiante
+- Se amplía el contrato de saveStudentRecovery para cubrir reentrada desde insertSheet y appendRow de encabezados cuando falta la hoja RecuperacionesEstudiante.
+- Ambas secundarias reciben STUDENT_RECOVERY_MUTATION_LOCK_TIMEOUT; la operación exterior conserva una sola hoja, encabezados válidos y una recuperación.
+- Harness local determinista sobre handlers productivos extraídos de Code.gs: 2/2 PASS; parseo del contrato actualizado PASS.
+- Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-102 Pendiente beta. C1.601 Completada.
+===============================================================================

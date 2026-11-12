@@ -4498,3 +4498,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI:** GitHub Actions run 43137857655, workflow Exam-Service security local contracts, Node.js 22: SUCCESS; contrato delete-submission-audit 35/35 PASS; job exam-security-contracts SUCCESS.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-101 Pendiente beta.
 - **Estado:** C1.600 Completada con verificación local focalizada y suite CI. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+
+
+### 10.250 TASK-153 / AUD-NG-386 — reentrada durante la inicialización de RecuperacionesEstudiante (C1.601)
+- **Brecha confirmada:** saveStudentRecovery tenía reentrada cubierta durante el append del registro final, pero no durante la creación de la hoja ausente ni durante el append inicial de encabezados.
+- **Cobertura añadida:** el contrato tests/security/exam-service-student-recovery-mutation-security.test.js provoca reentrada al handler real desde insertSheet y desde appendRow de encabezados, conservando los escenarios existentes.
+- **Invariantes:** ambas solicitudes secundarias reciben STUDENT_RECOVERY_MUTATION_LOCK_TIMEOUT; la operación exterior crea una sola hoja con encabezados válidos y una sola recuperación; una apertura de Sheets y ScriptLock liberado.
+- **Alcance:** contrato de seguridad y BETA-EXAM-102; backend productivo sin cambios.
+- **Verificación local:** harness determinista sobre saveStudentRecovery, wrapper, contexto y worker productivos extraídos de backend/exam-service/Code.gs: 2/2 PASS; parseo JavaScript del contrato actualizado PASS.
+- **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-102 Pendiente beta.
+- **Estado:** C1.601 Completada en verificación local aislada. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
