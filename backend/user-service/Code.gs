@@ -10116,84 +10116,24 @@ function getInstitutionalResponsibilitiesCatalog(payload) {
 
 function saveInstitutionalResponsibility(payload) {
   try {
-    var verifiedRole = (payload && payload.authRole) || (payload && payload._verifiedRole) || (payload && payload.role) || "NO_ACCESS";
-    if (["Administrador", "Director", "Desarrollador"].indexOf(verifiedRole) === -1) {
-      return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "Solo personal administrativo autorizado puede configurar responsabilidades institucionales." };
-    }
-
-    var responsibilityId = payload.responsibilityId;
-    var name = payload.name;
-    var description = payload.description || "";
-    var modules = payload.modules || [];
-    var capabilities = payload.capabilities || [];
-    var estado = payload.estado || "Activa";
-
-    if (!name) {
-      return { status: "error", code: "VALIDATION_ERROR", message: "El nombre de la responsabilidad es obligatorio." };
-    }
-
-    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    var sheet = getOrCreateSheet(ss, "ResponsabilidadesInstitucionales");
-    if (sheet.getLastRow() === 0) {
-      sheet.appendRow(["ResponsibilityID", "Nombre", "Descripcion", "ModulosJSON", "CapacidadesJSON", "Estado", "CreadoPor", "FechaActualizacion"]);
-    }
-
-    var data = sheet.getDataRange().getValues();
-    var foundIdx = -1;
-    if (!responsibilityId) {
-      responsibilityId = "RESP-" + Date.now();
-    } else {
-      for (var i = 1; i < data.length; i++) {
-        if (String(data[i][0]).trim() === String(responsibilityId).trim()) {
-          foundIdx = i;
-          break;
-        }
-      }
-    }
-
-    var modulesJSON = typeof modules === "object" ? JSON.stringify(modules) : String(modules);
-    var capsJSON = typeof capabilities === "object" ? JSON.stringify(capabilities) : String(capabilities);
-    var now = new Date().toISOString();
-    var actor = payload._verifiedUserId || verifiedRole;
-
-    if (foundIdx !== -1) {
-      sheet.getRange(foundIdx + 1, 2, 1, 7).setValues([[
-        name,
-        description,
-        modulesJSON,
-        capsJSON,
-        estado,
-        actor,
-        now
-      ]]);
-    } else {
-      sheet.appendRow([
-        responsibilityId,
-        name,
-        description,
-        modulesJSON,
-        capsJSON,
-        estado,
-        actor,
-        now
-      ]);
-    }
-
-    recordEntityChangeLog("ResponsabilidadInstitucional", responsibilityId, foundIdx !== -1 ? { name: data[foundIdx][1] } : {}, { name: name, modules: modules, capabilities: capabilities, estado: estado }, "RESPONSIBILITY_SAVED", actor);
-
-    logStructuredEvent("USER", "saveInstitutionalResponsibility", "INFO", "RESPONSIBILITY_SAVED", `Responsabilidad ${responsibilityId} (${name}) guardada correctamente.`, { responsibilityId: responsibilityId, name: name, estado: estado }, verifiedRole);
-
-    return {
-      status: "success",
-      responsibilityId: responsibilityId,
-      name: name,
-      estado: estado,
-      message: `Responsabilidad institucional '${name}' guardada correctamente.`
-    };
-  } catch (error) {
-    logStructuredEvent("USER", "saveInstitutionalResponsibility", "ERROR", "RESPONSIBILITY_SAVE_FAILED", error.message, payload, payload && payload.authRole);
-    return { status: "error", message: error.message };
-  }
+    var verifiedRole=getUserVerifiedRole(payload);
+    if(["Administrador","Director","Desarrollador"].indexOf(verifiedRole)===-1||!payload._verifiedUserId)return {status:"error",code:"AUTH_PERMISSION_DENIED",message:"Se requiere una sesión verificada de personal administrativo autorizado."};
+    var responsibilityId=String(payload.responsibilityId||"").trim(),name=String(payload.name||"").trim(),description=payload.description||"",modules=payload.modules||[],capabilities=payload.capabilities||[],estado=String(payload.estado||"Activa").trim();
+    if(!name)return {status:"error",code:"VALIDATION_ERROR",message:"El nombre de la responsabilidad es obligatorio."};
+    if(!Array.isArray(modules)||!Array.isArray(capabilities)||modules.some(function(x){return typeof x!=="string"||!x.trim();})||capabilities.some(function(x){return typeof x!=="string"||!x.trim();}))return {status:"error",code:"RESPONSIBILITY_CATALOG_INVALID",message:"Módulos y capacidades deben ser listas de identificadores de texto."};
+    if(["ACTIVA","ACTIVO","INACTIVA","INACTIVO"].indexOf(estado.toUpperCase())===-1)return {status:"error",code:"RESPONSIBILITY_STATE_INVALID"};
+    var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getOrCreateSheet(ss,"ResponsabilidadesInstitucionales"),headers=["ResponsibilityID","Nombre","Descripcion","ModulosJSON","CapacidadesJSON","Estado","CreadoPor","FechaActualizacion"];
+    if(sheet.getLastRow()===0)sheet.appendRow(headers);
+    var data=sheet.getDataRange().getValues();if(!data.length||JSON.stringify(data[0].map(String))!==JSON.stringify(headers))return {status:"error",code:"RESPONSIBILITY_SCHEMA_MISMATCH"};
+    var matches=[];for(var i=1;i<data.length;i++)if(responsibilityId&&String(data[i][0]||"").trim()===responsibilityId)matches.push(i);
+    if(matches.length>1)return {status:"error",code:"RESPONSIBILITY_ID_NOT_UNIQUE"};
+    var idx=matches.length?matches[0]:-1;if(!responsibilityId)responsibilityId="RESP-"+Utilities.getUuid().replace(/-/g,"").substring(0,16).toUpperCase();
+    var actor=payload._verifiedUserId,now=new Date().toISOString(),row=[responsibilityId,name,description,JSON.stringify(modules),JSON.stringify(capabilities),estado,actor,now];
+    if(idx>=0)sheet.getRange(idx+1,1,1,headers.length).setValues([row]);else sheet.appendRow(row);
+    recordEntityChangeLog("ResponsabilidadInstitucional",responsibilityId,idx>=0?{name:data[idx][1],estado:data[idx][5]}:{},{name:name,modules:modules,capabilities:capabilities,estado:estado},"RESPONSIBILITY_SAVED",actor);
+    logStructuredEvent("USER","saveInstitutionalResponsibility","INFO","RESPONSIBILITY_SAVED","Responsabilidad institucional guardada.",{responsibilityId:responsibilityId,name:name,estado:estado},verifiedRole);
+    return {status:"success",responsibilityId:responsibilityId,name:name,estado:estado};
+  }catch(error){logStructuredEvent("USER","saveInstitutionalResponsibility","ERROR","RESPONSIBILITY_SAVE_FAILED",error.message,{responsibilityId:payload&&payload.responsibilityId},payload&&payload._verifiedRole);return {status:"error",code:error.message||"RESPONSIBILITY_SAVE_FAILED",message:error.message};}
 }
 
 function getInstitutionalResponsibilityRecord_(ss, responsibilityId) {
@@ -10982,101 +10922,27 @@ function getInstitutionalFunctionalSpaceCatalog(payload) {
 
 function manageInternalRoleCatalog(payload) {
   try {
-    var verifiedRole = (payload && payload.authRole) || (payload && payload._verifiedRole) || (payload && payload.role) || "NO_ACCESS";
-    if (["Administrador", "Director", "Desarrollador", "RecursosHumanos"].indexOf(verifiedRole) === -1) {
-      return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "Solo personal administrativo o de Recursos Humanos puede gestionar el catálogo de roles internos." };
-    }
-
-    var {
-      rolInternoId,
-      codigoInterno,
-      nombreResponsabilidad,
-      descripcion = "",
-      departamento = "",
-      areaAcademica = "",
-      tipoResponsabilidad = "Administrativa", // Administrativa, Academica, Operativa, Supervision
-      vigenciaMeses = 12,
-      permiteSuplencia = true,
-      estado = "Activo",
-      accion = "guardar" // 'guardar', 'desactivar', 'activar'
-    } = payload || {};
-
-    if (!nombreResponsabilidad && accion === "guardar") {
-      return { status: "error", code: "VALIDATION_ERROR", message: "El nombre de la responsabilidad organizativa es obligatorio." };
-    }
-
-    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    var sheet = getOrCreateSheet(ss, "CatalogoRolesInternos");
-    var data = sheet.getDataRange().getValues();
-    var now = new Date().toISOString();
-    var actor = (payload && payload.actor) || verifiedRole;
-
-    var normNombre = normalizeString(nombreResponsabilidad);
-    var targetIdx = -1;
-
-    if (rolInternoId) {
-      targetIdx = data.findIndex((r, idx) => idx > 0 && String(r[0]).trim() === String(rolInternoId).trim());
-    } else if (nombreResponsabilidad) {
-      // Detección de duplicados normalizados por nombre insensible a mayúsculas, espacios y acentos
-      targetIdx = data.findIndex((r, idx) => idx > 0 && normalizeString(r[2]) === normNombre && String(r[9]).trim() !== "Eliminado");
-    }
-
-    if (accion === "desactivar" || accion === "activar") {
-      if (targetIdx === -1) throw new Error("Rol interno no encontrado para cambiar estado.");
-      var nuevoEstado = accion === "activar" ? "Activo" : "Inactivo";
-      sheet.getRange(targetIdx + 1, 10).setValue(nuevoEstado);
-      sheet.getRange(targetIdx + 1, 13).setValue(now);
-      return { status: "success", rolInternoId: data[targetIdx][0], estado: nuevoEstado, message: `Rol interno ${data[targetIdx][0]} cambiado a estado ${nuevoEstado}.` };
-    }
-
-    var rId = rolInternoId;
-    var codInt = codigoInterno || ("ROL-" + normNombre.substring(0, 4).toUpperCase() + "-" + Math.floor(100 + Math.random() * 900));
-
-    if (targetIdx !== -1) {
-      rId = data[targetIdx][0];
-      sheet.getRange(targetIdx + 1, 2).setValue(codigoInterno || data[targetIdx][1]);
-      sheet.getRange(targetIdx + 1, 3).setValue(nombreResponsabilidad);
-      sheet.getRange(targetIdx + 1, 4).setValue(descripcion);
-      sheet.getRange(targetIdx + 1, 5).setValue(departamento);
-      sheet.getRange(targetIdx + 1, 6).setValue(areaAcademica);
-      sheet.getRange(targetIdx + 1, 7).setValue(tipoResponsabilidad);
-      sheet.getRange(targetIdx + 1, 8).setValue(parseInt(vigenciaMeses) || 12);
-      sheet.getRange(targetIdx + 1, 9).setValue(permiteSuplencia ? "Sí" : "No");
-      sheet.getRange(targetIdx + 1, 10).setValue(estado);
-      sheet.getRange(targetIdx + 1, 13).setValue(now);
-    } else {
-      rId = "ROL-INT-" + Date.now();
-      sheet.appendRow([
-        rId,
-        codInt,
-        nombreResponsabilidad,
-        descripcion,
-        departamento,
-        areaAcademica,
-        tipoResponsabilidad,
-        parseInt(vigenciaMeses) || 12,
-        permiteSuplencia ? "Sí" : "No",
-        estado,
-        actor,
-        now,
-        now
-      ]);
-    }
-
-    logStructuredEvent("USER", "manageInternalRoleCatalog", "INFO", "INTERNAL_ROLE_SAVED", `Rol interno guardado: ${rId} - ${nombreResponsabilidad}`, { rolInternoId: rId, nombre: nombreResponsabilidad, tipo: tipoResponsabilidad, estado }, verifiedRole);
-
-    return {
-      status: "success",
-      rolInternoId: rId,
-      codigoInterno: codInt,
-      nombreResponsabilidad: nombreResponsabilidad,
-      estado: estado,
-      message: `Rol interno '${nombreResponsabilidad}' guardado correctamente.`
-    };
-  } catch (error) {
-    logStructuredEvent("USER", "manageInternalRoleCatalog", "ERROR", "INTERNAL_ROLE_SAVE_FAILED", error.message, payload, payload && payload.authRole);
-    return { status: "error", message: error.message };
-  }
+    var verifiedRole=getUserVerifiedRole(payload);
+    if(["Administrador","Director","Desarrollador","RecursosHumanos"].indexOf(verifiedRole)===-1||!payload._verifiedUserId)return {status:"error",code:"AUTH_PERMISSION_DENIED",message:"Se requiere una sesión verificada de personal autorizado."};
+    var p=payload||{},rolInternoId=p.rolInternoId,codigoInterno=p.codigoInterno,nombreResponsabilidad=p.nombreResponsabilidad,descripcion=p.descripcion||"",departamento=p.departamento||"",areaAcademica=p.areaAcademica||"",tipoResponsabilidad=p.tipoResponsabilidad||"Administrativa",vigenciaMeses=p.vigenciaMeses||12,permiteSuplencia=p.permiteSuplencia!==false,estado=p.estado||"Activo",accion=p.accion||"guardar";
+    if(!nombreResponsabilidad&&accion==="guardar")return {status:"error",code:"VALIDATION_ERROR",message:"El nombre de la responsabilidad organizativa es obligatorio."};
+    var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getOrCreateSheet(ss,"CatalogoRolesInternos"),data=sheet.getDataRange().getValues();
+    var base=["RolInternoID","CodigoInterno","NombreResponsabilidad","Descripcion","Departamento","AreaAcademica","TipoResponsabilidad","VigenciaMeses","PermiteSuplencia","Estado","CreadoPor","FechaCreacion","FechaActualizacion"],headers=base.concat(["ResponsibilityID"]),actual=data.length?data[0].map(String):[];
+    if(JSON.stringify(actual)!==JSON.stringify(base)&&JSON.stringify(actual)!==JSON.stringify(headers))return {status:"error",code:"INTERNAL_ROLE_SCHEMA_MISMATCH"};
+    if(actual.length===13){sheet.getRange(1,14).setValue("ResponsibilityID");data[0]=headers;}
+    var linkedId=String(p.responsibilityId||"").trim();
+    if(linkedId&&!getInstitutionalResponsibilityRecord_(ss,linkedId))return {status:"error",code:"ROLE_INSTITUTIONAL_RESPONSIBILITY_NOT_ACTIVE",message:"La responsabilidad institucional vinculada no existe de forma única o no está activa."};
+    var norm=normalizeString(nombreResponsabilidad),idx=-1;
+    if(rolInternoId)idx=data.findIndex(function(r,n){return n>0&&String(r[0]||"").trim()===String(rolInternoId).trim();});
+    else if(nombreResponsabilidad)idx=data.findIndex(function(r,n){return n>0&&normalizeString(r[2])===norm&&String(r[9]||"").trim()!=="Eliminado";});
+    if(accion==="activar"||accion==="desactivar"){if(idx<0)return {status:"error",code:"INTERNAL_ROLE_NOT_FOUND"};var state=accion==="activar"?"Activo":"Inactivo";sheet.getRange(idx+1,10).setValue(state);sheet.getRange(idx+1,13).setValue(new Date().toISOString());return {status:"success",rolInternoId:data[idx][0],estado:state};}
+    if(["Activo","Inactivo"].indexOf(estado)===-1)return {status:"error",code:"INTERNAL_ROLE_STATE_INVALID"};
+    var id=idx>=0?data[idx][0]:(rolInternoId||"ROL-INT-"+Utilities.getUuid().replace(/-/g,"").substring(0,16).toUpperCase()),code=codigoInterno||(idx>=0?data[idx][1]:"ROL-"+norm.substring(0,4).toUpperCase()+"-"+Math.floor(100+Math.random()*900)),existingLink=idx>=0?String(data[idx][13]||"").trim():"",finalLink=linkedId||existingLink;
+    var row=[id,code,nombreResponsabilidad,descripcion,departamento,areaAcademica,tipoResponsabilidad,parseInt(vigenciaMeses)||12,permiteSuplencia?"Sí":"No",estado,payload._verifiedUserId,idx>=0?data[idx][11]:new Date().toISOString(),new Date().toISOString(),finalLink];
+    if(idx>=0)sheet.getRange(idx+1,1,1,headers.length).setValues([row]);else sheet.appendRow(row);
+    logStructuredEvent("USER","manageInternalRoleCatalog","INFO","INTERNAL_ROLE_SAVED","Rol interno guardado.",{rolInternoId:id,responsibilityId:finalLink||null,estado:estado},verifiedRole);
+    return {status:"success",rolInternoId:id,responsibilityId:finalLink||null,codigoInterno:code,nombreResponsabilidad:nombreResponsabilidad,estado:estado};
+  }catch(error){logStructuredEvent("USER","manageInternalRoleCatalog","ERROR","INTERNAL_ROLE_SAVE_FAILED",error.message,{},payload&&payload._verifiedRole);return {status:"error",code:error.message||"INTERNAL_ROLE_SAVE_FAILED",message:error.message};}
 }
 
 function getInternalRoleCatalog(payload) {
