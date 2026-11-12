@@ -2793,3 +2793,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
 - C1.630 completada; T153-S02 sigue En ejecución.
 ===============================================================================
+
+
+ 
+===============================================================================
+[2026-11-12] C1.631 — vigencia temporal de membresías RBAC
+- Contrato con getUserRoleMembershipState_ y resolveUserRoleMembership_ reales, reloj fijo y dos membresías: límites exactos inclusivos; inicio futuro, fin epoch 0 y fechas inválidas excluyen la membresía afectada sin invalidar la otra.
+- Contrato completo V8 aislado PASS, incluidos C1.621–C1.631; sintaxis backend/test PASS.
+- Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
+- C1.631 completada; T153-S02 sigue En ejecución.
+===============================================================================
