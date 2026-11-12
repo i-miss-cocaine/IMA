@@ -2520,3 +2520,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - La secundaria falla antes de abrir Sheets o consultar ownership; la exterior conserva una sola firma con documento canónico y actor verificado; retry idempotente existente permanece cubierto.
 - Harness V8 focalizado 1/1 PASS y parseo del contrato PASS. BETA-FUNC-030 añadida; backend productivo sin cambios; CI pendiente; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.609 — verificación CI de conformidad manual
+- GitHub Actions Department Scope Contract run 43143437010, commit e30c217311d81907ba82ab691a576fd3f81742bc: SUCCESS en Node.js 24.
+- Contrato USER signature ownership y todos los pasos del job PASS; harness local focalizado 1/1 PASS.
+- C1.609 completada local/CI; backend sin cambios. BETA-FUNC-030 Pendiente beta; Apps Script/Sheets real NOT RUN.
+===============================================================================

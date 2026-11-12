@@ -2356,3 +2356,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Se corrige el fixture para compartir el estado de lock y se añade una segunda llamada durante la persistencia. Se exige una sola firma, una validación de ownership, una apertura y liberación del lock.
 - Harness V8 focalizado del handler productivo: 1/1 PASS; parseo del contrato PASS. BETA-FUNC-030 añadida; backend productivo sin cambios; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+### C1.609 — cierre CI USER
+- GitHub Actions Department Scope Contract run 43143437010, commit e30c217311d81907ba82ab691a576fd3f81742bc: SUCCESS en Node.js 24; todos los pasos PASS.
+- Paso user-service-signature-ownership.test.js SUCCESS; harness local focalizado 1/1 PASS; parseo del contrato PASS.
+- Backend productivo sin cambios. BETA-FUNC-030 Pendiente beta; Apps Script/Sheets real NOT RUN.
+===============================================================================
