@@ -1302,3 +1302,8 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **C1.630 — prueba beta de vigencia temporal de ámbitos:** en Apps Script/Sheets real, crear asignaciones con FechaInicio/FechaFin vacías, vigentes, futuras, vencidas, inválidas y FechaFin numérica 0. Consultar el contexto efectivo y el listado administrativo con el mismo usuario/rol/membresía.
 - **Resultado esperado:** ambos lectores coinciden en inclusión/exclusión; fechas futuras, vencidas o inválidas no exponen ámbitos; los límites temporales exactos se aplican de forma inclusiva; FechaFin 0 se interpreta como fecha epoch vencida, no como campo vacío. Estado: Pendiente beta.
 - **Evidencia de implementación C1.630:** contrato temporal con reloj fijo y harness V8 aislado PASS; sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI no ejecutado. Validación real Pendiente beta.
+
+
+- **C1.631 — prueba beta de vigencia de membresías RBAC:** en Apps Script/Sheets real, crear dos membresías activas para el mismo usuario con inicios/fines exactos, futuros, vencidos, inválidos y FechaFin numérica 0. Consultar listado de membresías y validar sesiones emitidas para cada rol; cambiar/revocar una membresía y comprobar la otra.
+- **Resultado esperado:** límites exactos inclusivos; membresías futuras, vencidas o con fechas inválidas no se resuelven; una membresía inválida no afecta a otra; la sesión firmada solo permanece válida mientras su membresía exacta esté activa. Estado: Pendiente beta.
+- **Evidencia de implementación C1.631:** contrato V8 aislado con reloj fijo PASS; sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI no ejecutado. Validación real Pendiente beta.
