@@ -10989,13 +10989,22 @@ function getInternalRoleAssignments(payload) {
     var schema=JSON.stringify(h)===JSON.stringify(current)?"current":(JSON.stringify(h)===JSON.stringify(membership)?"membership":(JSON.stringify(h)===JSON.stringify(legacy)?"legacy":"invalid"));
     if(schema==="invalid")return {status:"error",code:"ROLE_SCOPE_SCHEMA_MISMATCH"};
     var institutionId=schema==="legacy"?"":String(getIdentityInstitutionId_()||"").trim();if(schema!=="legacy"&&!institutionId)return {status:"error",code:"IDENTITY_CONFIGURATION_REQUIRED"};
-    var now=new Date(),out=[];
+    var now=new Date(),out=[],membershipCache={};
     for(var i=1;i<data.length;i++){var r=data[i]||[],u=String(r[1]||"").trim(),role=String(r[2]||"").trim(),m=schema==="legacy"?"":String(r[13]||"").trim(),inst=schema==="legacy"?"":String(r[12]||"").trim(),internal=schema==="current"?String(r[14]||"").trim():(schema==="legacy"?role:"");
       if(f.userId&&u!==String(f.userId).trim())continue;if(f.roleId&&role!==String(f.roleId).trim())continue;if(f.membershipId&&m!==String(f.membershipId).trim())continue;if(f.responsibilityId&&internal!==String(f.responsibilityId).trim())continue;if(f.rolInternoId&&internal!==String(f.rolInternoId).trim())continue;
-      if(schema!=="legacy"&&inst!==institutionId)continue;if(schema==="membership"&&m)continue;if(schema==="current"&&m&&!internal)continue;
+      if(schema!=="legacy"&&inst!==institutionId)continue;if(schema==="membership"&&m==="")continue;if(schema==="current"&&(!m||!internal))continue;
+      if(schema!=="legacy"){
+        var membershipKey=u+"|"+institutionId;
+        if(!Object.prototype.hasOwnProperty.call(membershipCache,membershipKey)){
+          var membershipState=getUserRoleMembershipState_(u,institutionId);
+          membershipCache[membershipKey]=membershipState&&Array.isArray(membershipState.memberships)?membershipState.memberships:[];
+        }
+        var activeMembership=membershipCache[membershipKey].some(function(item){return item.membershipId===m&&item.roleId===role&&item.institutionId===institutionId;});
+        if(!activeMembership)continue;
+      }
       var state=String(r[5]||"").trim().toUpperCase();if(["ACTIVO","ACTIVA","ACTIVE"].indexOf(state)===-1)continue;
       var start=r[8]?new Date(r[8]):null,end=r[9]?new Date(r[9]):null;if((start&&isNaN(start.getTime()))||(end&&isNaN(end.getTime())))continue;if(f.soloVigentes!==false&&((start&&start.getTime()>now.getTime())||(end&&end.getTime()<now.getTime())))continue;
-      var responsibility=internal&&schema!=="legacy"?resolveActiveInternalResponsibility_(ss,internal):null;if(schema==="current"&&internal&&!responsibility)continue;if(f.departamento&&(!responsibility||normalizeString(responsibility.department)!==normalizeString(f.departamento)))continue;
+      var responsibility=internal&&schema!=="legacy"?resolveActiveInternalResponsibility_(ss,internal):null;if(schema==="current"&&(!responsibility||!responsibility.institutionalResponsibility))continue;if(f.departamento&&(!responsibility||normalizeString(responsibility.department)!==normalizeString(f.departamento)))continue;
       out.push({asignacionId:r[0],userId:u,roleId:schema==="legacy"?null:role,rolInternoId:internal||null,responsibilityId:internal||null,responsibility:responsibility,institutionId:inst||null,membershipId:m||null,scopeType:r[3],scopeValues:r[4],estado:r[5],creadoPor:r[6],fechaCreacion:r[7],fechaInicio:r[8]||null,fechaFin:r[9]||null,esSuplente:String(r[10]).toLowerCase()==="sí"||String(r[10]).toLowerCase()==="true",suplenteDeUserId:r[11]||null});
     }
     return {status:"success",data:out};
