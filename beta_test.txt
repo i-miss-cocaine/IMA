@@ -1333,3 +1333,8 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **C1.636 — prueba beta de integridad del ledger:** registrar una revocación en Apps Script/Sheets real para inicializar el ledger y el sentinel. Eliminar o renombrar temporalmente la hoja después de inicializarla y consultar una sesión válida; restaurar la hoja y repetir.
 - **Resultado esperado:** antes de inicialización, ledger ausente no bloquea sesiones; después de inicialización, ledger ausente o con esquema incompatible rechaza sesiones; al restaurar el ledger válido, las sesiones no revocadas vuelven a verificarse. Estado: Pendiente beta.
 - **Evidencia de implementación C1.636:** contrato V8 aislado PASS; sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI no ejecutado. Apps Script/Sheets/PropertiesService real Pendiente beta.
+
+
+- **C1.637 — prueba beta de migración controlada de sesiones:** con SESSION_REVOCATION_LEGACY_CUTOFF ausente, verificar que una sesión histórica no expirada sigue compatible. Configurar el cutoff en epoch; verificar que tokens con iat menor o igual son rechazados y tokens con iat posterior son aceptados. Probar valor no numérico/negativo y retirar la propiedad.
+- **Resultado esperado:** el modo predeterminado no fuerza logout masivo; el cutoff solo invalida sesiones cuando el responsable lo activa; valores malformados fallan cerrados. Estado: Pendiente beta.
+- **Evidencia de implementación C1.637:** contrato V8 aislado PASS; sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; ScriptProperties/rollout real Pendiente beta.
