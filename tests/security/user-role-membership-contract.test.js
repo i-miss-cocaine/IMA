@@ -73,6 +73,7 @@ function makeHarness(membershipRows = [headers]) {
   sheets.Usuarios = sheet(userRows);
   sheets.MatrizPermisosRoles = sheet(matrixRows);
   const cache = {};
+  let uuidCounter = 0;
   const ctx = {
     SPREADSHEET_ID:"LOCAL",
     ROLE_PERMISSIONS:{Student:[],Director:[],Coordinador:[],Future:[],Expired:[],Revoked:[],Other:[],BadDate:[]},
@@ -82,7 +83,7 @@ function makeHarness(membershipRows = [headers]) {
       base64EncodeWebSafe:v=>Buffer.from(v).toString("base64").replace(/=/g,"").replace(/\+/g,"-").replace(/\//g,"_"),
       base64Decode:v=>Buffer.from(v,"base64"),
       newBlob:v=>({getDataAsString:()=>Buffer.from(v).toString("utf8")}),
-      getUuid:()=>"uuid-test-001",
+      getUuid:()=>"uuid-test-"+(++uuidCounter),
       DigestAlgorithm:{SHA_256:"SHA_256"},
       computeDigest:() => [1,2]
     },
