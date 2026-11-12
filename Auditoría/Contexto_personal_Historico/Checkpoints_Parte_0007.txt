@@ -1335,3 +1335,20 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** C1.635 completada. T153-S02 permanece En ejecución; no iniciar T153-S03.
 - **Siguiente acción:** revisar todas las rutas de escritura/lectura de marcadores de revocación para asegurar que ninguna ruta de cambio de rol/logout dependa solo de caché; definir tratamiento de tokens/revocaciones pre-C1.634.
 ===============================================================================
+
+
+===============================================================================
+### C1.636 — IMA-EXEC-20261112-1754Z-03 — ledger de revocación falla cerrado ante pérdida de almacenamiento
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.635.
+- **HEAD inicial:** `49739a89010b0a6116fe66e08c6c43eb58dbe507`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificar integridad del almacenamiento persistente de revocaciones y ausencia de rutas cache-only.
+- **Hallazgo:** una hoja de ledger eliminada después de registrar revocaciones podía interpretarse como ausencia de registros.
+- **Corrección:** ScriptProperties conserva `SESSION_REVOCATION_LEDGER_INITIALIZED=1`; se persiste antes de crear/escribir la hoja. Si el ledger ya fue inicializado y la hoja falta, la verificación de token falla cerrada. La caché sigue siendo solo acelerador.
+- **Contrato:** simula ledger ausente antes y después de inicialización, restauración del ledger y búsqueda estática de escritores de cache de sesión. Solo `revokeUserSession` escribe marcas de caché, después de persistir; `switchActiveRole` y `logoutUser` llaman al mecanismo común.
+- **Verificación local:** contrato completo V8 aislado **PASS**, C1.621–C1.636; sintaxis backend USER/test **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** Apps Script/Sheets/PropertiesService reales NOT RUN; escenario agregado a `beta_test.txt`, Pendiente beta.
+- **Archivos funcionales:** `backend/user-service/Code.gs`; `tests/security/internal-responsibility-rbac-contract.test.js`.
+- **Commits:** backend `718387bcc35d0e5f5341fa5290f1556d2937b166`; contrato final `4b317323b94fa86f82d9a3a9813cb874c9a0d9e8`.
+- **Estado:** C1.636 completada. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** revisar tratamiento de tokens y revocaciones pre-C1.634; cualquier invalidez global de sesiones existentes debe planificarse como cambio de rollout explícito.
+===============================================================================
