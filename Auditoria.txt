@@ -2476,3 +2476,13 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Sin cambios productivos ni datos reales en esta iteración. Apps Script/Sheets/Drive real NOT RUN; BETA-FUNC-033 Pendiente beta.
 - C1.616 verificada por CI; TASK-153/T153-S02 continúa En ejecución.
 ===============================================================================
+
+
+===============================================================================
+### C1.618 — vinculación de ámbitos con membresía e institución
+- Hallazgo corregido: asignaciones de ámbito ligadas solo a userId+role podían heredarse entre membresías o tenants.
+- USER ahora persiste InstitutionID/MembershipID y exige coincidencia con claims firmados; asignaciones distintas por membresía no se sobrescriben.
+- Se conservó getUserScopeConfig y el acceso legacy se limita a filas sin vínculo.
+- CI Department Scope 43219335951 SUCCESS y Task-Service security 43219335906 SUCCESS. Terminal local NOT RUN por falta de resolución DNS; Apps Script/Sheets real NOT RUN.
+- Las filas históricas sin vínculo necesitan reasignación explícita para usarse con sesiones RBAC. TASK-153 sigue En ejecución.
+===============================================================================

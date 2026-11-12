@@ -1031,3 +1031,19 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - Commits de corrección: 03ad294560850ee15741272630f86ecac2ffc40e; c1d2b350eb94400cdb41e89c462ffc4a81d8e0c8.
 - Siguiente tarea elegible: continuar T153-S02 con la integración verificable de responsabilidades/capacidades y su vínculo con membresía, tenant y ámbitos; no iniciar T153-S03 antes de satisfacer las dependencias de T153-S02.
 ===============================================================================
+
+
+===============================================================================
+### C1.618 — IMA-EXEC-20261110-1825Z-02 — vinculación de ámbitos con membresía e institución
+- **Sesión:** IMA-EXEC-20261110-1825Z-02 (se conserva el ID).
+- **Continuidad:** C1.617; HEAD inicial de esta iteración: 3bf4d99292728974b8201cf6a2fd07116808e40c.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Incremento enfocado: vincular las asignaciones de ámbito al tenant y a la membresía RBAC activa.
+- **Implementación:** `AsignacionesAmbitosRoles` incorpora `InstitutionID` y `MembershipID`; el escritor valida una membresía objetivo activa y única para usuario/rol/institución, separa las claves de actualización por tenant+membresía y conserva compatibilidad legacy solo en filas sin vínculo. `getUserContextScope` exige coincidencia exacta de institución y membresía firmadas; los tokens legacy solo pueden leer filas legacy no vinculadas. Se conserva `getUserScopeConfig`.
+- **Pruebas:** el contrato Department Scope cubre aislamiento entre dos IDs de membresía, tenant distinto, escritura de vínculo, asignaciones separadas por membresía, rechazo de membresía inactiva y compatibilidad legacy.
+- **CI:** Department Scope Contract run 43219335951 SUCCESS (contratos de ámbitos, membresías, ownership académico/contable, seis parseos de servicios y clientes JS); Task-Service security run 43219335906 SUCCESS.
+- **Commits funcionales/pruebas:** 4110841981351b62340fd94efe593c656c2c22f1; 32c63b05db0917ea7489b2cf347acd86df8c6153; fa71c8de6f65c1818ed258950291e01fe06fa3ed.
+- **Terminal local:** NOT RUN; no fue posible resolver github.com desde el entorno local de esta sesión. CI sí ejecutó los contratos en runners aislados. Apps Script/Sheets real NOT RUN.
+- **Compatibilidad/impacto:** las filas antiguas sin InstitutionID/MembershipID siguen disponibles solo a sesiones legacy. Las sesiones con membresía RBAC requieren reasignación explícita del ámbito para generar vínculo; no se infiere ni migra la membresía a partir de userId+role.
+- **Estado:** incremento C1.618 implementado y CI PASS; TASK-153/T153-S02 continúa En ejecución. No se cierra la tarea global.
+- **Siguiente acción:** revisar la integración de responsabilidades internas/capacidades con el catálogo de roles y permisos dinámicos, manteniendo vínculo verificable con tenant, membresía y ámbito.
+===============================================================================

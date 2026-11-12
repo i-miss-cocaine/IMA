@@ -4782,3 +4782,12 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Commits de prueba: 03ad294560850ee15741272630f86ecac2ffc40e y c1d2b350eb94400cdb41e89c462ffc4a81d8e0c8.
 - No hubo cambios productivos en esta iteración. La ejecución desde la terminal local de esta sesión y Apps Script/Sheets real permanecen NOT RUN; BETA-FUNC-033 sigue Pendiente beta.
 - C1.616 queda verificada por CI; TASK-153/T153-S02 permanece En ejecución. Siguiente incremento: responsabilidades/capacidades vinculadas de forma verificable a tenant, membresía y ámbitos, usando datos sintéticos y sin crear asignaciones institucionales reales.
+
+
+**Addendum C1.618 — vínculo explícito entre ámbitos, tenant y membresía RBAC**
+- `AsignacionesAmbitosRoles` amplía su esquema de forma aditiva con `InstitutionID` y `MembershipID`; los registros nuevos quedan ligados a la membresía activa y única del usuario/rol en la institución actual.
+- El escritor no reutiliza una fila de otro tenant/membresía y rechaza una membresía ausente, ambigua o inactiva. El lector solo consume asignaciones con coincidencia exacta de tenant y membresía firmados.
+- Las filas legacy sin vínculo no se transfieren a sesiones RBAC nuevas; permanecen utilizables solo en el flujo legacy permitido por el verificador de sesión. Requieren reasignación explícita para quedar vinculadas.
+- Se preservó el endpoint existente `getUserScopeConfig`.
+- Contrato Department Scope run 43219335951 SUCCESS; Task-Service security run 43219335906 SUCCESS. Terminal local NOT RUN por imposibilidad de resolver github.com; Apps Script/Sheets real NOT RUN.
+- C1.618 no cierra TASK-153/T153-S02. Siguiente incremento: responsabilidades internas/capacidades y su relación verificable con catálogo de roles, permisos dinámicos, tenant, membresía y ámbitos.

@@ -2646,3 +2646,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Correcciones solo en archivos de prueba; no hubo cambios productivos en esta iteración. Terminal local NOT RUN; Apps Script/Sheets real NOT RUN.
 - C1.616 verificada por CI; BETA-FUNC-033 Pendiente beta; TASK-153/T153-S02 continúa En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.618 — ámbitos vinculados a tenant y membresía RBAC
+- USER añade InstitutionID/MembershipID a AsignacionesAmbitosRoles; valida membresía activa única al asignar y filtra por claims firmados al leer.
+- Contrato Department Scope run 43219335951 SUCCESS; Task-Service security run 43219335906 SUCCESS.
+- Se preservó getUserScopeConfig. Legacy permanece limitado a filas no vinculadas; no se infiere una membresía para filas históricas.
+- Terminal local NOT RUN por fallo DNS hacia github.com; Apps Script/Sheets real NOT RUN. TASK-153/T153-S02 continúa En ejecución.
+===============================================================================
