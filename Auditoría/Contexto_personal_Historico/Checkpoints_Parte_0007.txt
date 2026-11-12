@@ -1586,3 +1586,31 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Límites:** función pura; no escribe catálogo/historial, no crea hojas, no ejecuta transiciones, no crea IDs, no migra recursos ni modifica expedientes. No se definieron estados institucionales reales ni se seleccionó autoridad. TASK-153/T153-S01 continúa En ejecución.
 - **Siguiente acción:** revisar la puerta T153-S01-4 del Plan Maestro y determinar si un preflight/dry-run genérico de reconciliación puede construirse con fixtures sintéticos sin aplicar ni inferir crosswalks reales.
 ===============================================================================
+
+
+===============================================================================
+### C1.650 — IMA-EXEC-20261112-1754Z-03 — preflight de reconciliación de catálogos
+- **HEAD inicial:** 1320d47a4f719ccce2756829925afc62ed56bb60.
+- **HEAD final de la unidad:** 2f0f5b3f758fe239f90a3423d4de7e937941763c.
+- **Unidad:** PM-01 / TASK-153 / T153-S01-4 — reporte de solo lectura con fixtures sintéticos.
+- **Implementación:** nuevo backend/shared/DepartmentCatalogReconciliation.gs. Exige scope verificado de snapshot y crosswalk, decisión de autoridad canónica aprobada y verificada por servidor, institución/dominio/catálogo exactos y mappings aprobados, vigentes, no revocados, con aprobador y timestamp. Clasifica exact match, equivalencia aprobada, relaciones 1:N/N:1, ausencia y conflictos; detecta mappings huérfanos y cobertura canónica sin emparejar. No usa nombres como clave, no elige autoridad y no escribe ni migra.
+- **Endurecimiento:** resolveDepartmentCatalogReference_ también exige CanonicalCatalog exacto, ApprovedBy, ApprovedAt válido/no futuro y ausencia de revocación.
+- **Pruebas CI:** run 43290539079 ejecutó C1.649 (69) y C1.650 (40) PASS en Node 24. Workflow general FAIL posterior en User Role Membership, línea 119; el mismo TypeError ya aparecía antes de esta unidad en run 43283289566. Las etapas posteriores se omitieron.
+- **Pruebas locales:** C1.650 NOT RUN en entorno local. No se marca la subunidad completada bajo NDASC; CI no sustituye la ejecución local obligatoria.
+- **Archivos:** backend/shared/DepartmentCatalogContract.gs; backend/shared/DepartmentCatalogReconciliation.gs; tests/security/internal-responsibility-rbac-contract.test.js; Auditoría/Contratos/CONTRATO_CROSSWALK_RECONCILIACION.md.
+- **Límites:** no se consultaron datos reales ni se generó crosswalk institucional. TASK-153 permanece En ejecución.
+===============================================================================
+
+===============================================================================
+### C1.651 — IMA-EXEC-20261112-1754Z-03 — filtros de consulta y prevalidación de importación
+- **HEAD inicial:** 2f0f5b3f758fe239f90a3423d4de7e937941763c.
+- **HEAD final:** 2d523cd6f4c0303baf520a002dcfe07883312edd.
+- **Unidad:** PM-01 / TASK-153 — contratos puros para listados/búsquedas e importaciones departamentales.
+- **Implementación:** filterDepartmentScopedRecords_ exige actor verificado, snapshots de institución/dominio y ownership verificados; cada fila necesita un ResourceOwnership único. Omite registros de otros departamentos sin devolver existencia/conteos y entrega eventos de auditoría internos; conserva la obligación de RBAC y minimización de campos en el consumidor.
+- **Importación:** validateDepartmentalImportScope_ valida el lote completo antes de escribir, exige membership/target verificados, impide destinos no autorizados y lotes mixtos para actores departamentales. Un actor con alcance institucional explícito solo puede presentar destinos múltiples si cada RowID coincide con una asignación de departamento/institución/dominio verificada por snapshot de servidor. No ejecuta escritura ni transformación.
+- **Pruebas locales:** Node v22.16.0, node --check del harness aislado y 8 aserciones focalizadas PASS. El harness completo del repositorio no se ejecutó localmente; la clonación local no pudo resolverse por DNS. No se declara cierre de tarea.
+- **CI:** run 43293372396: C1.650 (40) y C1.651 (28) PASS en Node 24. Workflow general FAIL posterior en tests/security/user-role-membership-contract.test.js:119 (verifySessionToken(foreignLegacy) devuelve null); coincide con fallo observado en runs anteriores a C1.646. Los pasos posteriores se omitieron por fail-fast.
+- **Archivos:** backend/shared/DepartmentCatalogContract.gs; tests/security/internal-responsibility-rbac-contract.test.js; Auditoría/Contratos/CONTRATO_CROSSWALK_RECONCILIACION.md.
+- **Límites:** los helpers aún no tienen callsites productivos; no se afirma que endpoints existentes ya estén filtrados ni que importaciones reales estén protegidas. No hay datos reales, escrituras ni despliegue.
+- **Estado:** TASK-153 En ejecución. **Siguiente acción elegible:** integrar el filtro en un endpoint de consulta/listado con ownership server-side y el guard de importación en validateImportPreview, preservando atomicidad y pruebas negativas; ejecutar primero el harness local completo cuando el checkout esté disponible.
+===============================================================================

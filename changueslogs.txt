@@ -2999,3 +2999,18 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Local: 68 lifecycle + 56 policy + 25 catálogo + 4 IDs reservados; sintaxis PASS. CI 43289049534: C1.646/C1.648/C1.649 PASS; User Role Membership línea 119 falla igual que en run previo 43283289566.
 - Sin escrituras ni migración real. TASK-153 en ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.650 — preflight de reconciliación departamental
+- Se añadió reporte dry-run puro para comparar catálogo fuente/canónico con autoridad y snapshots verificados, mappings aprobados/vigentes/no revocados, clasificaciones exactas y relaciones 1:N/N:1, conflictos, huérfanos y cobertura inversa.
+- CI run 43290539079: 40 aserciones C1.650 PASS. Workflow general falla después en User Role Membership línea 119, fallo ya presente antes de C1.646. Prueba local C1.650 NOT RUN.
+- Sin datos reales, escrituras, migraciones ni autoridad seleccionada. TASK-153 en ejecución.
+===============================================================================
+
+===============================================================================
+[2026-11-12] C1.651 — contratos de consulta/listado e importación departamental
+- Helpers puros: filtro por ResourceOwnership verificado para listados/búsquedas y prevalidación de lotes con membresía/destino verificados, denegación de mezcla para alcance departamental y asignaciones por RowID verificadas para alcance institucional.
+- Local focalizado Node v22.16.0: syntax-check y 8 aserciones PASS; suite completa local NOT RUN. CI run 43293372396: C1.650 40 y C1.651 28 assertions PASS; workflow global FAIL en User Role Membership línea 119, reproducido en runs previos.
+- Sin callsites productivos ni datos reales. TASK-153 continúa En ejecución; siguiente: integración segura en endpoints de consulta e importación.
+===============================================================================

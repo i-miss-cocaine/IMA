@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.597**
-- Última sesión: `IMA-EXEC-20261110-1825Z-02`
+- Último checkpoint: **C1.651**
+- Última sesión: `IMA-EXEC-20261112-1754Z-03`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.597: **24282**
+- Caracteres del archivo activo tras C1.651: **aprox. 29.000**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -655,3 +655,7 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.648 | IMA-EXEC-20261112-1754Z-03 | Contrato puro de POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL: default estricto, grants exactos read-only, allowlists, vigencia/revocación y auditEvent; local/CI contrato PASS; CI global bloqueado por fallo preexistente User Role Membership | PM-01 — TASK-153 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt — C1.648 | sección final | C1.647 | Sin callsites ni hojas reales; acceso interdepartamental no activado; TASK-153 sigue En ejecución |
 
 | C1.649 | IMA-EXEC-20261112-1754Z-03 | Contrato lifecycle parametrizable: ID inmutable, rename/code/parent, estados/transiciones, cierre/reactivación, merge/split, historial before/after e idempotencia; local/CI contrato PASS | PM-01 — TASK-153 / T153-S01-3 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt — C1.649 | sección final | C1.648 | Sin integración ni escrituras; autoridad/estados reales pendientes; TASK-153 sigue En ejecución |
+
+| C1.650 | IMA-EXEC-20261112-1754Z-03 | Preflight de reconciliación SOURCE/CROSSWALK, autoridad verificada, clasificación exacta/equivalencia/1:N/N:1/conflicto; CI 40 assertions PASS; local NOT RUN | PM-01 — TASK-153 / T153-S01-4 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt — C1.650 | sección final | C1.649 | Reporte dry-run puro, sin datos reales ni escrituras; no se cierra la tarea por verificación local pendiente |
+
+| C1.651 | IMA-EXEC-20261112-1754Z-03 | Contratos de filtro de consultas/listados e importación departamental; local focalizado 8 assertions PASS; CI 28 assertions PASS; workflow posterior FAIL preexistente en User Role Membership | PM-01 — TASK-153 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt — C1.651 | sección final | C1.650 | Helpers puros sin callsites productivos; no se afirma protección de endpoints/importadores reales; TASK-153 sigue En ejecución |

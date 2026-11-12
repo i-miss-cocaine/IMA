@@ -5123,3 +5123,17 @@ La revisión de requisitos originales confirma cobertura de:
 - MERGE/SPLIT preservan ID histórico, requieren destino/propuestas nuevas y no transfieren recursos; las propuestas SPLIT no se crean. Cada evento genera before/after, firma, versión y referencia de aprobación de configuración.
 - Local: 68 aserciones lifecycle, 56 policy, 25 catalog, 4 IDs reservados y sintaxis PASS. CI run 43289049534 confirma 69 assertions lifecycle PASS y C1.646/C1.648 PASS; workflow falla en User Role Membership línea 119, fallo preexistente del run 43283289566.
 - Sin escrituras, hojas ni datos reales. TASK-153/T153-S01 sigue En ejecución. Siguiente: evaluar dry-run genérico de reconciliación para S01-4 sin usar crosswalks reales.
+
+
+**Addendum C1.650 — preflight de reconciliación departamental (T153-S01-4)**
+- Se añade buildDepartmentCatalogReconciliationReport_ como reporte dry-run sin escritura. Exige autoridad canónica explícita, aprobada y verificada por servidor; snapshots y crosswalk verificados para la institución/dominio; mapping con catálogo destino exacto, aprobación, aprobador, timestamp, vigencia y no revocación.
+- Clasifica correspondencias exactas, equivalencias aprobadas, relaciones 1:N/N:1, ausencia y conflictos; informa crosswalk huérfanos y cobertura canónica. Nombres son solo presentación, no clave; no selecciona autoridad ni migra.
+- CI run 43290539079: 40 aserciones C1.650 PASS; workflow general falla en User Role Membership línea 119, igual que un run anterior a C1.646. Local C1.650 NOT RUN; por NDASC no se cierra esta unidad.
+- Sin datos reales, escrituras, callsites ni crosswalk institucionales.
+
+**Addendum C1.651 — contratos de consultas/listados e importaciones departamentales**
+- filterDepartmentScopedRecords_ aplica filtro de resultados cargados por servidor usando actor/snapshots/ResourceOwnership verificados; ownership ausente, duplicado o fuera de institución falla cerrado; registros ajenos se omiten sin exponer existencia ni conteo. Los eventos de auditoría son internos y el consumidor debe persistirlos antes de responder.
+- validateDepartmentalImportScope_ valida el lote completo antes de escribir; actor, membresía, destino y snapshots deben estar verificados. Bloquea destino no autorizado y lotes mixtos para actores departamentales. El alcance institucional solo admite destinos múltiples con asignaciones por RowID verificadas por servidor y tenant/dominio exactos.
+- CI run 43293372396: 28 aserciones C1.651 y 40 C1.650 PASS. Workflow general falla después en User Role Membership línea 119 (TypeError al leer role de null), reproducido en runs anteriores a estos cambios. Local focalizado: node --check y 8 aserciones PASS con Node v22.16.0; suite completa local NOT RUN.
+- Los helpers no tienen callsites productivos: no se afirma todavía que los endpoints ni importadores existentes apliquen estas reglas. TASK-153 sigue En ejecución.
+- **Siguiente acción:** integrar los contratos en un endpoint de consulta/listado y en validateImportPreview, tras revisar sus lectores de ownership, RBAC, paginación y rollback. No tocar datos reales ni escoger autoridad departamental.
