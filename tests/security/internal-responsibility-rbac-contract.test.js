@@ -23,6 +23,12 @@ function extractFunction(source, name) {
 }
 
 const source = fs.readFileSync(path.resolve(__dirname, "../../backend/user-service/Code.gs"), "utf8");
+const consumerSources = {
+  academic: fs.readFileSync(path.resolve(__dirname, "../../backend/academic-service/Code.gs"), "utf8"),
+  accounting: fs.readFileSync(path.resolve(__dirname, "../../backend/accounting-service/Code.gs"), "utf8"),
+  task: fs.readFileSync(path.resolve(__dirname, "../../backend/task-service/Code.gs"), "utf8"),
+  exam: fs.readFileSync(path.resolve(__dirname, "../../backend/exam-service/Code.gs"), "utf8")
+};
 const recordFn = extractFunction(source, "getInstitutionalResponsibilityRecord_");
 const resolveFn = extractFunction(source, "resolveActiveInternalResponsibility_");
 const saveFn = extractFunction(source, "saveInstitutionalResponsibility");
