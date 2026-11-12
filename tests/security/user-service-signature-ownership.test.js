@@ -364,12 +364,12 @@ function makeManualSignatureHarness(options = {}) {
   const state={held:false,lockAttempts:0,opens:0,reads:0,appends:0,releases:0,ownershipCalls:0,events:[]};
   const sheet={
     getDataRange(){assert.equal(state.held,true);state.reads++;return {getValues:()=>rows.map(row=>row.slice())};},
-    appendRow(row){assert.equal(state.held,true);state.appends++;rows.push(row.slice());}
+    appendRow(row){assert.equal(state.held,true);state.appends++;if(options.onAppend)options.onAppend(row.slice());rows.push(row.slice());}
   };
   const context={
     validateRolePermission:action=>{assert.equal(action,"registerDocumentSignature");return {authorized:options.permissionAllowed!==false};},
     getUserVerifiedRole:payload=>{payload._verifiedUserId=options.actorId||"ACTOR-1";return options.role||"Director";},
-    LockService:{getScriptLock:()=>({tryLock:()=>{if(options.lockAvailable===false)return false;state.held=true;return true;},
+    LockService:{getScriptLock:()=>({tryLock:()=>{state.lockAttempts++;if(options.lockAvailable===false||state.held)return false;state.held=true;return true;},
       releaseLock:()=>{assert.equal(state.held,true);state.held=false;state.releases++;}})},
     SpreadsheetApp:{openById:()=>{assert.equal(state.held,true);state.opens++;return {}; }},
     SPREADSHEET_ID:"SPREADSHEET",

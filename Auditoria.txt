@@ -2354,5 +2354,5 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 ### C1.609 — TASK-153 / USER
 - Brecha: registerDocumentSignature carecía de escenario de reentrada durante appendRow; el fixture de lock no simulaba contención reentrante.
 - Se corrige el fixture para compartir el estado de lock y se añade una segunda llamada durante la persistencia. Se exige una sola firma, una validación de ownership, una apertura y liberación del lock.
-- BETA-FUNC-030 añadida; backend productivo sin cambios; Apps Script/Sheets real NOT RUN.
+- Harness V8 focalizado del handler productivo: 1/1 PASS; parseo del contrato PASS. BETA-FUNC-030 añadida; backend productivo sin cambios; Apps Script/Sheets real NOT RUN.
 ===============================================================================

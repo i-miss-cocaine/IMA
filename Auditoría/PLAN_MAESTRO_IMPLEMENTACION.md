@@ -4629,7 +4629,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** el fixture comparte estado de lock entre llamadas, cuenta intentos y permite reentrada desde appendRow; el escenario verifica que la secundaria falla antes de abrir Sheets/consultar ownership y que la exterior conserva una sola firma.
 - **Invariantes:** dos intentos de lock, una apertura de Sheets, una comprobación de ownership, un append, una fila de firma canónica y una liberación del lock; el retry exacto existente conserva idempotencia.
 - **Alcance:** contrato de propiedad/serialización de firma manual; backend productivo sin cambios; BETA-FUNC-030 creado para verificación desplegada.
-- **Verificación local:** contrato V8 aislado y parseo de Code.gs/contrato PASS (resultado se registra tras ejecución).
+- **Verificación local:** harness V8 focalizado del handler productivo extraído de Code.gs: 1/1 PASS; parseo del archivo de prueba PASS.
 - **CI:** pendiente tras publicar.
 - **Apps Script/Sheets real:** NOT RUN; BETA-FUNC-030 Pendiente beta.
 - **Estado:** C1.609 en ejecución hasta completar verificación local y CI; TASK-153 continúa En ejecución.
