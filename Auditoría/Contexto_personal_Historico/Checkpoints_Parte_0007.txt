@@ -1183,3 +1183,19 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** C1.626 completada conforme a las verificaciones locales ejecutadas. T153-S02 permanece En ejecución; no iniciar T153-S03.
 - **Siguiente acción:** comprobar que la resolución de responsabilidad/ámbitos y la autorización de acciones RBAC explícitas permanecen alineadas por cada membresía, incluidos permisos permitidos y denegados sin herencia entre roles.
 ===============================================================================
+
+
+===============================================================================
+### C1.627 — IMA-EXEC-20261112-1754Z-03 — permisos RBAC explícitos aislados por membresía activa
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.626.
+- **HEAD inicial:** `5e0a2b516f872d1aee66e485651015e4c6a98ff0`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificar alineación de la autorización RBAC explícita con el rol autenticado en cada membresía y ausencia de herencia entre roles del mismo usuario.
+- **Contrato:** se ejecuta el `validateRolePermission` y `getDynamicPermissionsForRole` reales con una matriz institucional sintética: Director puede `approveFinancialRecords` y no `viewAuditLogs`; Auditor no puede aprobar y sí consultar auditoría. Se autentican sesiones ligadas a MEM-LIFE y MEM-AUD.
+- **Controles negativos:** Auditor no hereda la concesión de aprobación de Director aunque el payload incluya metadatos de responsabilidad con `CAP_ADMINISTRAR`; revocar MEM-LIFE invalida la concesión de Director sin retirar la concesión independiente de Auditor.
+- **Verificación local:** contrato completo en harness V8 aislado **PASS**, incluidos bloques iniciales y C1.621–C1.627. Parseo sintáctico de backend USER y contrato **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow ni se declara CI PASS. **Beta:** matriz y sesiones en Apps Script/Sheets real NOT RUN; caso registrado en `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `tests/security/internal-responsibility-rbac-contract.test.js`; no se modificó lógica productiva.
+- **Commit funcional:** `a59e370f6dec698a455190005a02103e12fe251c`.
+- **Estado:** C1.627 completada conforme a verificaciones locales ejecutadas. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** contrastar los vínculos de responsabilidad y ámbito que entrega el contexto efectivo con las asignaciones administrativas y probar conflictos/duplicados de vínculos sin producir permisos o ámbitos ambiguos.
+===============================================================================
