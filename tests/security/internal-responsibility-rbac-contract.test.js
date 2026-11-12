@@ -1222,6 +1222,12 @@ assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({records:de
 assert.equal(departmentCatalogCtx.validateDepartmentCatalogConfiguration_({...departmentConfig,authorityApproved:false}).code,"DEPARTMENT_AUTHORITY_NOT_APPROVED");
 assert.equal(departmentCatalogCtx.validateDepartmentCatalogConfiguration_({...departmentConfig,keyField:"Nombre"}).code,"DEPARTMENT_STABLE_KEY_REQUIRED");
 assert.equal(departmentCatalogCtx.validateDepartmentCatalogSnapshot_(departmentConfig,[...departmentRecords,departmentRecords[0]],fixedTemporalNow).code,"DEPARTMENT_SOURCE_KEY_AMBIGUOUS");
+
+const reservedDepartmentIds=["__proto__","constructor","toString","hasOwnProperty"];
+const reservedDepartmentRecords=reservedDepartmentIds.map((id,index)=>({DepartamentoID:id,Nombre:"Reservado "+index,Codigo:"RES-"+index,Namespace:"INST-1",Estado:"Activo",ParentDepartmentID:"",FechaInicio:"",FechaFin:""}));
+assert.equal(departmentCatalogCtx.validateDepartmentCatalogSnapshot_(departmentConfig,reservedDepartmentRecords,fixedTemporalNow).valid,true,"object prototype property names remain valid stable department IDs");
+reservedDepartmentIds.forEach(id=>assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:departmentConfig,records:reservedDepartmentRecords,sourceId:id,effectiveAt:fixedTemporalNow}).canonicalId,id,"stable ID "+id+" resolves without prototype collisions"));
+
 assert.equal(departmentCatalogCtx.validateDepartmentCatalogSnapshot_(departmentConfig,[{...departmentRecords[0],ParentDepartmentID:"MISSING"}],fixedTemporalNow).code,"DEPARTMENT_PARENT_NOT_FOUND");
 const cyclicDepartments=[{...departmentRecords[0],ParentDepartmentID:"D-CHILD"},{...departmentRecords[1],ParentDepartmentID:"D-ROOT"}];
 assert.equal(departmentCatalogCtx.validateDepartmentCatalogSnapshot_(departmentConfig,cyclicDepartments,fixedTemporalNow).code,"DEPARTMENT_HIERARCHY_CYCLE");

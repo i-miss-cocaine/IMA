@@ -33,11 +33,11 @@ function validateDepartmentCatalogSnapshot_(config, records, effectiveAt) {
   if (!Array.isArray(records)) return { valid: false, code: "DEPARTMENT_SOURCE_SNAPSHOT_INVALID" };
   var at = effectiveAt instanceof Date ? effectiveAt : new Date(effectiveAt || Date.now());
   if (isNaN(at.getTime())) return { valid: false, code: "DEPARTMENT_EFFECTIVE_DATE_INVALID" };
-  var keyField = String(config.keyField).trim(), codeMap = {}, recordsById = {};
+  var keyField = String(config.keyField).trim(), codeMap = Object.create(null), recordsById = Object.create(null);
   for (var i = 0; i < records.length; i++) {
     var record = records[i] || {}, id = String(record[keyField] || "").trim();
     if (!id) return { valid: false, code: "DEPARTMENT_SOURCE_KEY_MISSING", rowIndex: i };
-    if (recordsById[id]) return { valid: false, code: "DEPARTMENT_SOURCE_KEY_AMBIGUOUS", sourceId: id };
+    if (Object.prototype.hasOwnProperty.call(recordsById, id)) return { valid: false, code: "DEPARTMENT_SOURCE_KEY_AMBIGUOUS", sourceId: id };
     recordsById[id] = record;
     if (config.codeField && config.codeNamespaceField) {
       var code = String(record[config.codeField] || "").trim(), namespace = String(record[config.codeNamespaceField] || "").trim();
@@ -51,7 +51,7 @@ function validateDepartmentCatalogSnapshot_(config, records, effectiveAt) {
         (!toDate || (!isNaN(toDate.getTime()) && toDate.getTime() >= at.getTime()));
       if (code && effective) {
         var codeKey = namespace + "::" + code.toUpperCase();
-        if (!codeMap[codeKey]) codeMap[codeKey] = [];
+        if (!Object.prototype.hasOwnProperty.call(codeMap, codeKey)) codeMap[codeKey] = [];
         codeMap[codeKey].push(id);
       }
     }
@@ -60,12 +60,12 @@ function validateDepartmentCatalogSnapshot_(config, records, effectiveAt) {
     var parentField = String(config.parentField).trim();
     for (var id in recordsById) {
       var parentId = String(recordsById[id][parentField] || "").trim();
-      if (parentId && !recordsById[parentId]) return { valid: false, code: "DEPARTMENT_PARENT_NOT_FOUND", sourceId: id, parentId: parentId };
+      if (parentId && !Object.prototype.hasOwnProperty.call(recordsById, parentId)) return { valid: false, code: "DEPARTMENT_PARENT_NOT_FOUND", sourceId: id, parentId: parentId };
     }
-    var visiting = {}, visited = {};
+    var visiting = Object.create(null), visited = Object.create(null);
     var visit = function(id) {
-      if (visiting[id]) return false;
-      if (visited[id]) return true;
+      if (Object.prototype.hasOwnProperty.call(visiting, id)) return false;
+      if (Object.prototype.hasOwnProperty.call(visited, id)) return true;
       visiting[id] = true;
       var parentId = String(recordsById[id][parentField] || "").trim();
       if (parentId && !visit(parentId)) return false;
