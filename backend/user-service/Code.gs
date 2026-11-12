@@ -1113,6 +1113,7 @@ function isSessionRevoked_(claims, nowValue) {
     if (!stateData.length || JSON.stringify(stateData[0].map(String)) !== JSON.stringify(SESSION_REVOCATION_STATE_HEADERS_)) {
       throw new Error("SESSION_REVOCATION_STATE_SCHEMA_MISMATCH");
     }
+    var legacyCutoffRevoked = false;
     stateData.slice(1).forEach(function(row) {
       var key = String(row[0] || "").trim();
       var value = String(row[1] || "").trim();
@@ -1120,11 +1121,10 @@ function isSessionRevoked_(claims, nowValue) {
       if (key === "LEGACY_SESSION_CUTOFF" && value !== "") {
         var cutoff = Number(value);
         if (!Number.isSafeInteger(cutoff) || cutoff < 0) throw new Error("SESSION_REVOCATION_CUTOFF_INVALID");
-        if (Number(claims.iat) <= cutoff) sharedLedgerInitialized = sharedLedgerInitialized || false;
-        if (Number(claims.iat) <= cutoff) claims._legacyCutoffRevoked = true;
+        if (Number(claims.iat) <= cutoff) legacyCutoffRevoked = true;
       }
     });
-    if (claims._legacyCutoffRevoked) return true;
+    if (legacyCutoffRevoked) return true;
   }
   var sheet = ss.getSheetByName("SesionesRevocadas");
   if (!sheet) {
