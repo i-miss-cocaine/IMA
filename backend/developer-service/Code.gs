@@ -137,6 +137,9 @@ function verifySessionToken(tokenString) {
     if (typeof claims.sessionId !== "string" || !claims.sessionId.trim()) return null;
     if (!Number.isSafeInteger(claims.iat) || !Number.isSafeInteger(claims.exp)) return null;
     if (claims.iat > now + 60 || claims.exp <= now || claims.exp <= claims.iat || claims.exp - claims.iat > 86400) return null;
+    // The developer control plane uses a separate spreadsheet and has no shared RBAC membership source.
+    // Reject application membership tokens rather than treating an unverified active role as control-plane authority.
+    if (claims.membershipId || claims.institutionId) return null;
     return claims;
   } catch (e) {
     return null;
