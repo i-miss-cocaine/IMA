@@ -5075,3 +5075,12 @@ La revisión de requisitos originales confirma cobertura de:
 - Contrato V8 aislado PASS (C1.621–C1.644); sintaxis USER/ACADEMIC/ACCOUNTING/TASK/EXAM/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets multi-proyecto Pendiente beta.
 - **Estado:** T153-S02 COMPLETADA para implementación y contratos aislados. BETA-FUNC-033/C1.639 y C1.641–C1.644 requieren validación real; TASK-153 global sigue En ejecución.
 - **Siguiente unidad:** revisar dependencias y trabajo elegible tras T153-S01. Su inventario técnico está hecho, pero la autoridad/crosswalk departamental sigue sin evidencia; no fusionar catálogos ni migrar datos.
+
+
+ 
+**Addendum C1.645 — ampliación de S01-1: inventario técnico de catálogos**
+- La revisión estática de USER/ACADEMIC/ACCOUNTING/TASK/EXAM/DEVELOPER confirma dos catálogos no enlazados: `CatalogoDepartamentos` (USER) y `DepartamentosAcademicos` (ACADEMIC). Se documentan además las relaciones `HistorialAdscripciones`, `CatalogoCargos`, `AreasCurricularesExtensiones`, `CatalogoAsignaturas`, `ExpedientesLaborales` y `ResourceOwnership`.
+- Los IDs no están armonizados: USER genera `DEP-` pero permite override; ACADEMIC recibe `DepartamentoID` externo; las áreas curriculares siembran `DEPT-*` sin validación; ACCOUNTING compara DepartamentoID o nombre y conserva fallback textual; TASK/EXAM validan ownership contra ámbito pero no contra catálogo.
+- No se encontró caché/sincronización específica de catálogos en los seis entrypoints; los caches existentes son de rol u ownership. `admision.html` no contiene referencias directas a los nombres de catálogo. No se inspeccionó exhaustivamente todo el árbol frontend ni se accedió a filas productivas.
+- **Estado:** C1.645 amplía el inventario, pero no cierra S01-1 como exhaustivo ni T153-S01. No se selecciona fuente ni se alteran datos. S01-2…S01-7 siguen pendientes según sus puertas.
+- **Siguiente trabajo técnico elegible:** definir un contrato neutral/configurable de resolución de referencias y crosswalk con fixtures sintéticos, sin imponer cuál catálogo es autoridad ni producir mappings reales.
