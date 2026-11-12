@@ -785,6 +785,15 @@
 - **Seguimiento C1.403:** T153-S01 inspeccionó las estructuras y consumidores de ambos catálogos. USER crea CatalogoDepartamentos sin relación ni lector observado; ACADEMIC usa DepartamentosAcademicos para planificación; ACCOUNTING lo consulta solo al resolver expedientes laborales. No se acredita fuente institucional ni propietario estudiantil. Se reutilizan AUD-NG-226/TASK-506 (PM-02/P1) y FASE2-T04; no se crea tarea duplicada. T153-S01 queda bloqueada hasta una decisión institucional aprobada; no se migran ni modifican datos.
 ---
 
+
+### Avance C1.656 — TASK-153 / ownership interservicio de expedientes laborales
+- USER recibe dos acciones exclusivamente por envelope HMAC desde ACCOUNTING: registerMigratedResourceOwnership y compensateMigratedResourceOwnership. Antes de persistir, vuelve a verificar token firmado, identidad, membresía/ámbito activo, institución y permiso dinámico registerResourceOwnership; solo registra EXPEDIENTE_LABORAL en el departamento activo y rechaza titularidad preexistente en vez de reasignarla.
+- La escritura de ownership usa ScriptLock, clave idempotente y journal MigracionOwnershipAccounting. Compensar marca el ownership creado como REVOKED y el journal como COMPENSATED; una compensación sin journal es no-op seguro para cubrir respuesta ambigua de red.
+- ACCOUNTING integra la llamada después del writer de empleado y conserva la intención de compensación antes de invocar USER. El rollback recorre el orden inverso. Los resultados idempotentes anteriores no se agregan como escrituras nuevas a compensar; ante writer ya existente y ownership no confirmado, devuelve RESOURCE_OWNERSHIP_REPAIR_REQUIRED sin eliminar el expediente previo.
+- Verificación V8 local: USER 18 escenarios PASS; ACCOUNTING 26 escenarios PASS, incluyendo permisos/tenant/scope, duplicados, journal, reintentos, compensación, lock, ruta HMAC y fallos parciales. Parseo de servicios PASS. Node CLI/CI aún no ejecutados; BETA-FUNC-035 Pendiente beta.
+- Límite: se habilita únicamente el departamento activo verificado. Importación institucional multi-departamento sigue rechazada; requiere asignación server-side verificable por RowID. TASK-153 permanece En ejecución.
+---
+
 <!-- ID: AUD-NG-164 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-164] Completar catálogo curricular maestro y relaciones de asignaturas/planes/ofertas
 - Severidad: Alto (P1).

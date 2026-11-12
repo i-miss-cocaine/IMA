@@ -30,6 +30,8 @@ const assignmentHeaders = ["AsignacionAmbitoID", "UserID", "RoleID", "ScopeType"
 let assignmentRows = [assignmentHeaders, ["ASG-1", "U-1", "Director", "DEPARTAMENTO", '["DEP-A","DEP-B"]', "Activo", "U-ADMIN", "", "", "", "No", "", "INST-1", "MEM-1", "RESP-1"]];
 const auditRows = [], writes = [], rollbackBatches = [];
 let writerAttempts = 0, failWriterAt = 0;
+const ownershipCalls = [], ownershipCompensations = [];
+let failOwnershipRegistration = false, idempotentEmployeeWrite = false;
 const assignmentSheet = { getDataRange: () => ({ getValues: () => assignmentRows.map(row => row.slice()) }) };
 const spreadsheet = { getSheetByName: name => name === "AsignacionesAmbitosRoles" ? assignmentSheet : null };
 const claims = { signed: { userId: "U-1", role: "Director", membershipId: "MEM-1", institutionId: "INST-1" } };
@@ -41,14 +43,16 @@ const context = {
   resolveInternalResponsibilityForRoleScope_: () => ({ responsibilityId: "RESP-1" }),
   getOrCreateSheet: (_ss, name) => { assert.equal(name, "AuditoriaMigraciones"); return { appendRow: row => auditRows.push(row) }; },
   Utilities: { getUuid: () => "RUN-1" },
-  resolveCrossReferenceIdentifier: () => ({ status: "success", idNuevoPlataforma: "EMP-1" }),
+  resolveCrossReferenceIdentifier: payload => ({ status: "success", idNuevoPlataforma: "EMP-" + String(payload.idOriginalLegado || "1").replace(/[^A-Za-z0-9]/g, "") }),
   migrationStableJson_: value => JSON.stringify(value), migrationHash_: () => "HASH-1",
   sendMigrationOwnerRequest_: (_type, action, payload) => {
     if (action === "compensateMigratedEntity") return { status: "success", compensated: true };
+    if (action === "compensateMigratedResourceOwnership") { ownershipCompensations.push(payload); return { status: "success", compensated: true }; }
+    if (action === "registerMigratedResourceOwnership") { ownershipCalls.push(payload); if (failOwnershipRegistration) throw new Error("MOCK_OWNERSHIP_TRANSPORT_FAILED"); return { status: "success", ownershipId: "OWN-" + payload.resourceId }; }
     writerAttempts++;
     if (writerAttempts === failWriterAt) throw new Error("MOCK_OWNER_WRITE_FAILED");
     writes.push(payload);
-    return { status: "success" };
+    return { status: "success", idempotent: idempotentEmployeeWrite };
   },
   rollbackMigrationOwnerWrites_: applied => { rollbackBatches.push(applied.slice()); return []; }
 };
@@ -88,6 +92,10 @@ const imported = context.api.run(base);
 assert.equal(imported.status, "success");
 assert.equal(writes.length, 1);
 assert.equal(writes[0].datos.Departamento, "DEP-A");
+assert.equal(ownershipCalls.length, 1);
+assert.equal(ownershipCalls[0].resourceId, "EMP-LEG1");
+assert.equal(ownershipCalls[0].departmentId, "DEP-A");
+assert.equal(ownershipCalls[0].sessionToken, "signed");
 assert.equal(auditRows.length, 1);
 
 const retry = context.api.run(base);
@@ -113,6 +121,43 @@ const rollback = context.api.run({ ...base, filasData: [
 ] });
 assert.equal(rollback.code, "MIGRATION_BATCH_ROLLED_BACK");
 assert.equal(rollback.estado, "rolled_back");
-assert.equal(rollbackBatches.at(-1).length, 1, "the first successful write is compensated after the second writer fails");
+assert.equal(rollbackBatches.at(-1).length, 2, "employee write and ownership intent are compensated");
 assert.equal(auditRows.at(-1)[8], "rolled_back");
-console.log("Accounting departmental import scope: 13 scenarios passed.");
+assert.equal(rollbackBatches.at(-1).some(x => x.tipoEntidad === "empleadoOwnership"), true);
+failOwnershipRegistration = true;
+const failedOwnership = context.api.run({ ...base, filasData: [{ legacyId: "LEG-5", Puesto: "Docente" }] });
+assert.equal(failedOwnership.status, "error");
+assert.equal(failedOwnership.estado, "rolled_back");
+assert.equal(rollbackBatches.at(-1).length, 2, "employee write and attempted ownership registration both enter compensation");
+assert.equal(auditRows.at(-1)[8], "rolled_back");
+failOwnershipRegistration = false;
+const rollbackCalls = [];
+const rollbackHarness = { sendMigrationOwnerRequest_: (type, action, payload) => { rollbackCalls.push({ type, action, payload }); return { status: "success" }; } };
+vm.runInNewContext(extractFunction(accounting, "rollbackMigrationOwnerWrites_") + "\nthis.rollback = rollbackMigrationOwnerWrites_;", rollbackHarness);
+const rollbackErrors = rollbackHarness.rollback([{ tipoEntidad: "empleado", idempotencyKey: "MIG-1" }, { tipoEntidad: "empleadoOwnership", idempotencyKey: "OWN-1" }]);
+assert.equal(rollbackErrors.length, 0);
+assert.equal(rollbackCalls[0].action, "compensateMigratedResourceOwnership");
+assert.equal(rollbackCalls[1].action, "compensateMigratedEntity");
+const routeStart = accounting.indexOf("const MIGRATION_OWNER_SCHEMAS_=");
+const routeEnd = accounting.indexOf("function migrationStableJson_", routeStart);
+const routeCalls = [];
+const routeHarness = { PropertiesService: { getScriptProperties: () => ({ getProperty: key => key === "IMA_USER_SERVICE_URL" ? "https://user.example.test/exec" : "12345678901234567890123456789012" }) }, createInterServiceEnvelope: (source, target, action, payload) => ({ sourceService: source, targetService: target, action, payload }), UrlFetchApp: { fetch: (url, options) => { routeCalls.push({ url, envelope: JSON.parse(options.payload) }); return { getResponseCode: () => 200, getContentText: () => JSON.stringify({ status: "success", ownershipId: "OWN-1" }) }; } } };
+vm.runInNewContext(accounting.slice(routeStart, routeEnd) + "\n" + extractFunction(accounting, "sendMigrationOwnerRequest_") + "\nthis.send = sendMigrationOwnerRequest_;", routeHarness);
+assert.equal(routeHarness.send("empleadoOwnership", "registerMigratedResourceOwnership", { resourceId: "EMP-1" }).status, "success");
+assert.equal(routeCalls[0].url, "https://user.example.test/exec");
+assert.equal(routeCalls[0].envelope.sourceService, "ACCOUNTING");
+assert.equal(routeCalls[0].envelope.targetService, "USER");
+assert.equal(routeCalls[0].envelope.action, "registerMigratedResourceOwnership");
+
+
+failOwnershipRegistration = true; idempotentEmployeeWrite = true;
+const idempotentOwnershipFailure = context.api.run({ ...base, filasData: [{ legacyId: "LEG-6", Puesto: "Docente" }] });
+assert.equal(idempotentOwnershipFailure.status, "error");
+assert.equal(idempotentOwnershipFailure.code, "MIGRATION_COMPENSATION_REQUIRED");
+assert.equal(idempotentOwnershipFailure.estado, "compensation_required");
+assert.equal(rollbackBatches.at(-1).length, 1, "a previously committed idempotent employee write is never compensated");
+assert.equal(rollbackBatches.at(-1)[0].tipoEntidad, "empleadoOwnership");
+assert.equal(idempotentOwnershipFailure.errores.some(x => x.error === "RESOURCE_OWNERSHIP_REPAIR_REQUIRED"), true);
+failOwnershipRegistration = false; idempotentEmployeeWrite = false;
+
+console.log("Accounting departmental import scope: 26 scenarios passed.");

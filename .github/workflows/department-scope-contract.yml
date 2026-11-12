@@ -24,6 +24,7 @@ on:
       - tests/security/user-service-signature-ownership.test.js
       - tests/security/accounting-departmental-resource-access.test.js
       - tests/security/accounting-departmental-import-scope.test.js
+      - tests/security/user-migrated-resource-ownership-contract.test.js
       - tests/security/resource-ownership-abac.test.js
       - .github/workflows/department-scope-contract.yml
 
@@ -46,6 +47,8 @@ jobs:
         run: node tests/security/internal-responsibility-rbac-contract.test.js
       - name: Run accounting departmental import scope contract
         run: node tests/security/accounting-departmental-import-scope.test.js
+      - name: Run user migrated resource ownership contract
+        run: node tests/security/user-migrated-resource-ownership-contract.test.js
       - name: Run user role membership contract
         run: node tests/security/user-role-membership-contract.test.js
       - name: Run academic departmental resource access contract
