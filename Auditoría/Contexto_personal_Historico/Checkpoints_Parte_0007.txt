@@ -542,9 +542,9 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 
 ### Verificación y estado
 - Harness local determinista sobre saveEvaluationCategory, wrapper, contexto y worker productivos extraídos de Code.gs: 2/2 PASS.
-- Parseo JavaScript del contrato actualizado: PASS.
-- GitHub Actions workflow Exam-Service security local contracts: pendiente de resultado.
+- Contrato completo ejecutado en runner aislado: 22/22 PASS; parseo JavaScript del contrato actualizado: PASS.
+- El conector devolvió estados CI vacíos para el commit de pruebas; CI NOT VERIFIED, sin afirmar ejecución ni resultado.
 - Apps Script/Sheets real NOT RUN; BETA-EXAM-104 Pendiente beta.
-- C1.603 en verificación CI; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- C1.603 Completada con verificación local aislada; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
 - HEAD inicial: 1737dfde3222a2c3658f27387d33d1614c8dd027; commit de pruebas: 1446c530ed9f03b8209bac8de546a82a0f93f1d9; HEAD final se confirma tras publicación documental.
 ===============================================================================
