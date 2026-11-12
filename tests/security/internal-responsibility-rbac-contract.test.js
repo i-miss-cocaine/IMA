@@ -934,6 +934,28 @@ delete sessionRevocationProperties.SESSION_REVOCATION_LEGACY_CUTOFF;
 assert.equal(tenantSessionCtx.verifySessionToken("claimsafter.sig").sessionId,"SID-AFTER","removing the optional migration cutoff restores normal expiry and revocation checks");
 console.log("C1.637 legacy session migration contract: optional cutoff preserves default compatibility, invalidates pre-cutoff tokens when configured and fails closed on malformed configuration PASS.");
 
+ 
+// C1.638: validateRoleScopeAccess must enforce the authenticated membership's effective department/institution scope.
+lifecycleScopeRows.push(["A-INST","U-LIFE","Director","INSTITUCION",'["INST-1"]',"Activo","U-ADMIN","2026-01-01","","","No","","INST-1","MEM-LIFE","RI-LIFE"]);
+vm.runInNewContext(extractFunction(source,"validateRoleScopeAccess")+"\nthis.validateRoleScopeAccess=validateRoleScopeAccess;",lifecycleCtx);
+const directorOwnDepartment=lifecycleCtx.validateRoleScopeAccess({sessionToken:"session-director",scopeType:"DEPARTAMENTO",requestedValue:"DEP-A"});
+assert.equal(directorOwnDepartment.status,"success");
+assert.equal(directorOwnDepartment.authorized,true,"Director is authorized inside its membership-bound department scope");
+assert.equal(lifecycleCtx.validateRoleScopeAccess({sessionToken:"session-director",scopeType:"DEPARTAMENTO",requestedValue:"DEP-B"}).authorized,false,"Director cannot cross into Auditor's department");
+assert.equal(lifecycleCtx.validateRoleScopeAccess({sessionToken:"session-auditor",scopeType:"DEPARTAMENTO",requestedValue:"DEP-B"}).authorized,true,"Auditor is authorized in its own department");
+assert.equal(lifecycleCtx.validateRoleScopeAccess({sessionToken:"session-auditor",scopeType:"DEPARTAMENTO",requestedValue:"DEP-A"}).authorized,false,"Auditor cannot inherit Director's department");
+assert.equal(lifecycleCtx.validateRoleScopeAccess({sessionToken:"session-director",activeDepartmentId:"DEP-A2",scopeType:"DEPARTAMENTO",requestedValue:"DEP-A2"}).authorized,true,"activeDepartmentId selects only the requested authorized department");
+assert.equal(lifecycleCtx.validateRoleScopeAccess({sessionToken:"session-director",activeDepartmentId:"DEP-A2",scopeType:"DEPARTAMENTO",requestedValue:"DEP-A"}).authorized,false,"active department selection removes access to the other department in the same membership context");
+assert.equal(lifecycleCtx.validateRoleScopeAccess({sessionToken:"session-director",scopeType:"DEPARTAMENTO",requestedValue:"DEP-Z"}).authorized,true,"an explicit institution-wide assignment grants institution-level department access");
+assert.equal(lifecycleCtx.validateRoleScopeAccess({sessionToken:"session-director",activeDepartmentId:"DEP-A2",scopeType:"DEPARTAMENTO",requestedValue:"DEP-Z"}).authorized,false,"an explicit active department context narrows institution-wide scope to that department");
+assert.equal(lifecycleCtx.validateRoleScopeAccess({sessionToken:"session-director",scopeType:"",requestedValue:"DEP-A"}).code,"SCOPE_REQUEST_INVALID");
+lifecycleMembershipRows[1][4]="REVOKED";
+assert.equal(lifecycleCtx.validateRoleScopeAccess({sessionToken:"session-director",scopeType:"DEPARTAMENTO",requestedValue:"DEP-A"}).authorized,false,"revoking Director membership denies its scope checks");
+assert.equal(lifecycleCtx.validateRoleScopeAccess({sessionToken:"session-auditor",scopeType:"DEPARTAMENTO",requestedValue:"DEP-B"}).authorized,true,"Director revocation does not affect Auditor scope validation");
+lifecycleMembershipRows[1][4]="ACTIVE";
+console.log("C1.638 server-side scope authorization contract: role/membership isolation, active department narrowing, institution-wide grant semantics and independent revocation PASS.");
+
+
 
 
 
