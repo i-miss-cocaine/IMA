@@ -27,9 +27,12 @@ const HEADERS = ["CierreID","AnoID","PeriodoID","Grado","Seccion","Asignatura","
 function sheet(rows) {
   return {
     rows: rows.map(row => row.slice()),
+    writes: 0,
     getDataRange() { return { getValues: () => this.rows.map(row => row.slice()) }; },
     getRange(row, col, rowCount, colCount) {
       return { setValues: values => {
+        this.writes++;
+        if (this.onSetValues) this.onSetValues(values);
         for (let r = 0; r < rowCount; r++) {
           for (let c = 0; c < colCount; c++) this.rows[row - 1 + r][col - 1 + c] = values[r][c];
         }
@@ -282,4 +285,24 @@ test(() => {
   assert.equal(x.stats.held, false);
   assert.equal(x.closure.rows[1][7], "PendienteRevision");
 });
-console.log("exam-service-period-gradebook-review-security: PASS (" + count + "/29)");
+test(() => {
+  const x = fixture();
+  let nestedAttempts = 0;
+  x.closure.onSetValues = () => {
+    nestedAttempts++;
+    assert.throws(() => x.call(), /GRADEBOOK_REVIEW_LOCK_TIMEOUT/,
+      "a reentrant review must time out while the outer review owns ScriptLock");
+  };
+  const result = x.call();
+  assert.equal(result.status, "success");
+  assert.equal(result.estadoActual, "Aprobado");
+  assert.equal(nestedAttempts, 1);
+  assert.equal(x.closure.writes, 1, "the outer review must write exactly once");
+  assert.equal(x.closure.rows[1][7], "Aprobado", "the outer decision must persist");
+  assert(Number.isFinite(x.closure.rows[1][8].getTime()));
+  assert.equal(x.stats.opens, 1, "the nested request must not open Sheets");
+  assert.equal(x.stats.acquired, 2, "the nested request must reach lock contention");
+  assert.equal(x.stats.released, 1, "the outer request must release ScriptLock");
+  assert.equal(x.stats.held, false, "ScriptLock must not remain held");
+});
+console.log("exam-service-period-gradebook-review-security: PASS (" + count + "/30)");

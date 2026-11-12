@@ -141,3 +141,30 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - Runner aislado ejecutó código/fixtures sin despliegue ni servicio remoto; Apps Script/Sheets real NOT RUN.
 - C1.590 Completada en verificación local aislada/CI. BETA-EXAM-091 permanece Pendiente beta.
 - HEAD inicial: f078c05220efd702f00424a7e22542d2b401c753; HEAD final: se confirma tras commit documental.
+
+
+===============================================================================
+## C1.591 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de reviewPeriodGradebook durante setValues.
+
+### Hallazgo y cambio
+- El contrato existente verificaba autorización, identidad, scope, estado previo y reentrada durante openById, pero no reentrada durante la escritura de la decisión de revisión.
+- Se amplía el fixture para interceptar setValues de CierresPeriodos e invocar reviewPeriodGradebook de forma anidada mientras ScriptLock exterior permanece retenido.
+- Resultado esperado: secundaria GRADEBOOK_REVIEW_LOCK_TIMEOUT; exterior persiste una sola decisión, realiza una escritura, abre Sheets una vez y libera el lock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-period-gradebook-review-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Contrato ampliado a 30 casos; ejecución local aislada/CI pendiente tras commit.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-092 Pendiente beta.
+- C1.591 En ejecución hasta verificar el contrato local aislado.
+- HEAD inicial: e1534424a0a3eedde7998d617697d995a80d6aad; HEAD final: se confirma tras publicar.
+===============================================================================

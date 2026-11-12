@@ -2105,3 +2105,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Contrato exam-service-period-gradebook-submission-security: PASS (28/28); paso específico y job exam-security-contracts SUCCESS.
 - Ejecución aislada sobre código/fixtures sin despliegue; Apps Script/Sheets real NOT RUN.
 - C1.590 Completada en verificación local aislada/CI. BETA-EXAM-091 sigue Pendiente beta.
+
+
+### C1.591 — AUD-NG-386 / reviewPeriodGradebook: reentrada durante setValues
+- **Brecha:** el contrato cubría reentrada durante openById, pero no durante la escritura de la decisión de revisión.
+- **Cambio:** el fixture reentra al handler real desde setValues de CierresPeriodos. La secundaria debe recibir GRADEBOOK_REVIEW_LOCK_TIMEOUT; la exterior persiste una sola decisión y libera el lock.
+- **Alcance:** contrato de seguridad; backend productivo sin cambios. BETA-EXAM-092 agregado y Pendiente beta.
+- **Verificación:** caso añadido; ejecución local aislada/CI pendiente tras commit. Apps Script/Sheets real NOT RUN.
+- **Estado:** En ejecución hasta verificar el contrato local aislado.

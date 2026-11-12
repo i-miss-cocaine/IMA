@@ -4377,3 +4377,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - El paso `Run period gradebook submission security regression` ejecutó `tests/security/exam-service-period-gradebook-submission-security.test.js` y registró `exam-service-period-gradebook-submission-security: PASS (28/28)`; job `exam-security-contracts` terminó SUCCESS.
 - El runner ejecutó el código y fixtures de forma aislada, sin despliegue ni infraestructura remota; Apps Script/Sheets real NOT RUN.
 - C1.590 **Completada en verificación local aislada/CI**. BETA-EXAM-091 permanece Pendiente beta.
+
+
+### 10.240 TASK-153 / AUD-NG-386 — contención reentrante de reviewPeriodGradebook durante setValues (C1.591)
+- **Brecha confirmada:** reviewPeriodGradebook mantiene ScriptLock durante la revalidación y cambia Estado/FechaCierre mediante setValues; el contrato cubría autorización, scope, estado previo y reentrada durante openById, pero no una solicitud secundaria durante la escritura exterior.
+- **Cobertura añadida:** el fixture intercepta setValues de CierresPeriodos e invoca el handler real de forma anidada. La secundaria debe recibir GRADEBOOK_REVIEW_LOCK_TIMEOUT; la exterior persiste la decisión una sola vez, abre Sheets una vez y libera el lock.
+- **Alcance:** contrato de seguridad y BETA-EXAM-092; backend productivo sin cambios.
+- **Verificación:** contrato ampliado a 30 casos; ejecución local aislada/CI pendiente de resultado. Apps Script/Sheets real NOT RUN.
+- **Estado:** C1.591 En ejecución hasta completar la verificación local aislada.
