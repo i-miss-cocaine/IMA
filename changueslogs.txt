@@ -3034,3 +3034,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Node CLI y suite completa NOT RUN; CI pendiente del push; Apps Script/Sheets real Pendiente beta. No se consultaron ni modificaron datos reales.
 - TASK-153 permanece En ejecución; el soporte de importación institucional multi-departamento requiere snapshot server-side de ownership por fila.
 ===============================================================================
+
+
+- **C1.655 — ajuste de compatibilidad del harness TASK-068:** identity-mapping-contract.test.js ahora extrae buildAccountingDepartmentalImportPreflight_ junto con el importador, de modo que el fixture de entidades no departamentales puede ejercitar el flujo sin ReferenceError. El test de importación departamental dedicado ya pasa antes del fallo legado de User Role Membership.

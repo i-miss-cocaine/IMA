@@ -155,7 +155,7 @@ function makeMigrationOrchestrationFixture(options){
   Date,JSON,String,Object,Array,Error
  };
  const start=accounting.indexOf("const MIGRATION_OWNER_SCHEMAS_"),first=accounting.indexOf("function migrationStableJson_",start);
- const constants=accounting.slice(start,first),names=["migrationStableJson_","migrationHash_","mapMigrationRowToTarget_","rollbackMigrationOwnerWrites_","importDataWithColumnMapping"];
+ const constants=accounting.slice(start,first),names=["migrationStableJson_","migrationHash_","mapMigrationRowToTarget_","buildAccountingDepartmentalImportPreflight_","rollbackMigrationOwnerWrites_","importDataWithColumnMapping"];
  const code=constants+names.map(n=>extractBalancedFunction(accounting,n)).join(String.fromCharCode(10));
  vm.runInNewContext(code,ctx);
  return{ctx,calls,auditRows,state};
