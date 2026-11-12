@@ -2639,3 +2639,18 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Corrección:** el firmante se resuelve contra membresías activas de la institución y filas de ámbito exactas. Una sola membresía activa puede seleccionarse automáticamente; con varias se requieren `firmanteMembershipId` y `firmanteRoleId`. La fila debe tener responsabilidad activa, AssignmentID único y vigencia válida. Fallback legacy solo cuando no hay registros de membresía del usuario en ningún tenant y las filas no tienen vínculo institucional/de membresía.
 - **Verificación:** contrato C1.644 PASS para multirol, selección exacta, rol/ámbito no heredado, responsabilidad activa, legacy sin vínculo y rechazo de membresía de otro tenant.
 ===============================================================================
+
+
+===============================================================================
+### C1.645 — ampliación del inventario técnico de catálogos departamentales (T153-S01-1)
+- **USER / CatalogoDepartamentos:** `manageDepartmentPositions(CREATE_DEPT)` crea `deptId/nombre/jefaturaUserId/estado/fechaCreacion`; usa ID generado con prefijo DEP- pero admite `deptId` suministrado y no comprueba duplicados. No declara jerarquía, namespace, vigencia ni relación con el catálogo académico.
+- **USER / adscripciones:** `HistorialAdscripciones` guarda `deptId/cargoId/fechaInicio/fechaFin/estado`; `CatalogoCargos` también guarda `deptId`. `getUserInstitutionalAffiliations` devuelve IDs sin resolver nombre ni validar existencia/estado contra CatalogoDepartamentos.
+- **ACADEMIC / DepartamentosAcademicos:** `assignDepartmentHead` crea/upserta `DepartamentoID/Nombre/JefeUserId/Estado/FechaActualizacion/AutorizadoPor` usando el ID recibido, sin crosswalk con USER; `getDepartmentAcademicPlanning` lee el catálogo y no filtra el listado de departamentos por estado.
+- **ACADEMIC / referencias curriculares:** `AreasCurricularesExtensiones` guarda `DepartamentoID`; el template siembra IDs `DEPT-HUMANIDADES`, `DEPT-IDIOMAS`, `DEPT-CIENCIAS`, `DEPT-MATEMATICAS`, `DEPT-INFORMATICA`, `DEPT-FINANZAS`; otras rutas usan `DEPT-GENERAL` y `DEPT-ACADEMICO`. No se valida su existencia en ninguno de los dos catálogos. `resolveAcademicRequestDepartment_` toma `CatalogoAsignaturas.DepartamentoID` o deriva el ID desde el área curricular.
+- **ACCOUNTING:** `resolveEmployeeDepartmentId_` interpreta `ExpedientesLaborales.Departamento`, busca por DepartamentoID o Nombre en DepartamentosAcademicos y, si no encuentra coincidencia, devuelve el texto original como departmentId. Ese fallback no demuestra identidad estable.
+- **TASK/EXAM:** no leen directamente ninguno de los dos catálogos; consumen DepartmentID desde contexto de ámbito y `ResourceOwnership`. La propiedad se valida por tenant/recurso/ámbito, pero no contra un catálogo canónico departamental.
+- **DEVELOPER:** no consume estos catálogos.
+- **Caché/sincronización:** no se encontró sincronización ni caché específica de los catálogos en los seis entrypoints. USER invalida caché de rol al cambiar adscripción; TASK/EXAM cachean snapshots de ResourceOwnership, no catálogos.
+- **UI:** `admision.html` no contiene referencias directas a estos nombres. No se declara exhaustiva la inspección de todos los archivos frontend.
+- **Límite de evidencia:** inspección estática de código y headers inicializadores; no se leyeron filas productivas de Sheets ni se modificaron datos.
+===============================================================================
