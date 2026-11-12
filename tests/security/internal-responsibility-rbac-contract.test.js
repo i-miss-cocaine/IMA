@@ -1142,6 +1142,45 @@ assert.equal(requestedAssignmentOptions.roleId,"Auditor");
 assert.equal(requestedAssignmentOptions.membershipId,"MEM-T2","administrative scope config is bound to the selected membership");
 console.log("C1.643 direct scope-reader contract: ACADEMIC contextual access delegates to membership-bound scope; USER self config uses effective context and administrative reads require exact membership selection PASS.");
 
+ 
+// C1.644: advanced-signature staff signer scope is membership-specific and rejects implicit multi-role union.
+const signatureUserHeaders=["UserID","Nombre","","","Email","","Rol","","","PersonaID","EstadoCuenta"];
+const signatureUserRows=[signatureUserHeaders,["U-SIGN","Firmante","","","signer@example.com","","Profesor","","","P-SIGN","Activa"]];
+const signatureMembershipRows=[membershipHeaders,
+ ["MEM-SIGN-A","U-SIGN","Director","INST-1","ACTIVE","",""],
+ ["MEM-SIGN-B","U-SIGN","Auditor","INST-1","ACTIVE","",""]
+];
+const signatureScopeRows=[scopeHeaders,
+ ["SIGN-A","U-SIGN","Director","DEPARTAMENTO",'["DEP-A"]',"Activo","U-ADMIN","2026-01-01","","","No","","INST-1","MEM-SIGN-A","RI-SCOPE"],
+ ["SIGN-B","U-SIGN","Auditor","DEPARTAMENTO",'["DEP-B"]',"Activo","U-ADMIN","2026-01-01","","","No","","INST-1","MEM-SIGN-B","RI-SCOPE"],
+ ["SIGN-OTHER","U-SIGN","Director","DEPARTAMENTO",'["DEP-A"]',"Activo","U-ADMIN","2026-01-01","","","No","","INST-1","MEM-OTHER","RI-SCOPE"]
+];
+let signatureMembershipState={hasRecords:true,memberships:[{membershipId:"MEM-SIGN-A",roleId:"Director",institutionId:"INST-1"},{membershipId:"MEM-SIGN-B",roleId:"Auditor",institutionId:"INST-1"}]};
+const signatureCtx={
+ getUserRoleMembershipState_:()=>signatureMembershipState,
+ resolveActiveInternalResponsibility_:(ss,id)=>id==="RI-SCOPE"?{responsibilityId:id}:null
+};
+vm.runInNewContext(extractFunction(source,"assertAdvancedSignatureSignerScope_")+"\nthis.assertAdvancedSignatureSignerScope_=assertAdvancedSignatureSignerScope_;",signatureCtx);
+const signatureSs={getSheetByName:name=>{const rows=name==="Usuarios"?signatureUserRows:(name==="MembresiasRolesRBAC"?signatureMembershipRows:(name==="AsignacionesAmbitosRoles"?signatureScopeRows:null));return rows?{getLastRow:()=>rows.length,getDataRange:()=>({getValues:()=>rows.map(row=>row.slice())})}:null;}};
+const signatureDoc={departmentId:"DEP-A",institutionId:"INST-1",expedienteId:""};
+assert.equal(signatureCtx.assertAdvancedSignatureSignerScope_(signatureSs,signatureDoc,"U-SIGN",{}).code,"SIGNATURE_SIGNER_MEMBERSHIP_SELECTION_REQUIRED","multiple signer memberships require explicit role selection");
+const selectedSigner=signatureCtx.assertAdvancedSignatureSignerScope_(signatureSs,signatureDoc,"U-SIGN",{firmanteMembershipId:"MEM-SIGN-A",firmanteRoleId:"Director"});
+assert.equal(selectedSigner.authorized,true,"selected active membership can sign within its assigned department");
+assert.equal(selectedSigner.membershipId,"MEM-SIGN-A");
+assert.equal(signatureCtx.assertAdvancedSignatureSignerScope_(signatureSs,signatureDoc,"U-SIGN",{firmanteMembershipId:"MEM-SIGN-B",firmanteRoleId:"Auditor"}).authorized,false,"another role's department is not inherited");
+assert.equal(signatureCtx.assertAdvancedSignatureSignerScope_(signatureSs,signatureDoc,"U-SIGN",{firmanteMembershipId:"MEM-OTHER",firmanteRoleId:"Director"}).authorized,false,"unassigned membership cannot authorize a signer");
+signatureMembershipState={hasRecords:true,memberships:[{membershipId:"MEM-SIGN-A",roleId:"Director",institutionId:"INST-1"}]};
+assert.equal(signatureCtx.assertAdvancedSignatureSignerScope_(signatureSs,signatureDoc,"U-SIGN",{}).authorized,true,"a single active membership remains backward compatible without explicit selector");
+signatureMembershipState={hasRecords:false,memberships:[]};
+const legacySignatureSs={getSheetByName:name=>{const rows=name==="Usuarios"?signatureUserRows:(name==="MembresiasRolesRBAC"?[membershipHeaders]:(name==="AsignacionesAmbitosRoles"?[["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"],["SIGN-LEGACY","U-SIGN","Director","DEPARTAMENTO",'["DEP-A"]',"Activo","U-ADMIN","2026-01-01","","","No",""]]:null));return rows?{getLastRow:()=>rows.length,getDataRange:()=>({getValues:()=>rows.map(row=>row.slice())})}:null;}};
+signatureUserRows[1][6]="Director";
+assert.equal(signatureCtx.assertAdvancedSignatureSignerScope_(legacySignatureSs,signatureDoc,"U-SIGN",{}).authorized,true,"legacy signer with no membership records retains only unlinked legacy scope rows");
+const otherTenantMembershipRows=[membershipHeaders,["MEM-OTHER-TENANT","U-SIGN","Director","INST-OTHER","ACTIVE","",""]];
+const crossTenantSignatureSs={getSheetByName:name=>{const rows=name==="Usuarios"?signatureUserRows:(name==="MembresiasRolesRBAC"?otherTenantMembershipRows:(name==="AsignacionesAmbitosRoles"?[["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"],["SIGN-LEGACY","U-SIGN","Director","DEPARTAMENTO",'["DEP-A"]',"Activo","U-ADMIN","2026-01-01","","","No",""]]:null));return rows?{getLastRow:()=>rows.length,getDataRange:()=>({getValues:()=>rows.map(row=>row.slice())})}:null;}};
+assert.equal(signatureCtx.assertAdvancedSignatureSignerScope_(crossTenantSignatureSs,signatureDoc,"U-SIGN",{}).authorized,false,"membership in another tenant blocks legacy scope fallback");
+console.log("C1.644 signature-signer scope contract: exact membership/role selection, no multi-role union, active membership and responsibility, legacy-only unlinked fallback and cross-tenant denial PASS.");
+
+
 
 
 
