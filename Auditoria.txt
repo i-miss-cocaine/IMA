@@ -2613,3 +2613,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Conclusión:** las dos hojas tienen semánticas y consumidores distintos; no se puede demostrar autoridad única, clave estable compartida, jerarquía ni correspondencia. No fusionar, renombrar ni migrar; no inferir por nombre, actor, grado, sección o rol.
 - **Estado:** inventario técnico actualizado; T153-S01 sigue bloqueada solo para la selección/mapeo de autoridad departamental institucional. S02 ya está completada; S03/S04 dependen de S01.
 ===============================================================================
+
+
+===============================================================================
+### C1.641 — brecha de vinculación de ámbitos en consumidores de servicios
+- **Severidad:** Alto — aislamiento multirol/multiinstitucional.
+- **Hallazgo:** los lectores de ámbito locales de ACADEMIC, ACCOUNTING, TASK y EXAM filtraban por UserID y RoleID, estado y fechas, pero no exigían coincidencia con MembershipID e InstitutionID firmados ni validaban el ResponsibilityID de la asignación. Tampoco aplicaban activeDepartmentId. El contexto seguro de USER no protegía automáticamente estos lectores duplicados en proyectos Apps Script separados.
+- **Corrección:** los cuatro lectores delegan en un contrato común local: token firmado coincide con actor; tenant y MembershipID exactos; esquema vigente y cadena de responsabilidad activa; AssignmentID único; vigencia con campos vacíos explícitos y fechas inválidas/vencidas/futuras excluidas; selección activa reduce a un solo departamento. Las sesiones legacy conservan únicamente filas sin vínculo de tenant/membresía.
+- **Verificación:** contrato V8 aislado para los cuatro lectores, con membresías/tenant alternos, responsabilidad inactiva, fechas futura/epoch/ inválida, AssignmentID duplicado, concesión institucional explícita y selección activa. PASS.
+===============================================================================
