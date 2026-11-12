@@ -730,7 +730,7 @@ const tenantSessionCtx = {
   computeHmacSignature:()=>"sig",
   CacheService:{getScriptCache:()=>tenantCache},
   Utilities:{
-    base64Decode:key=>JSON.stringify(tenantClaimsByPayload[key]||{}),
+    base64Decode:key=>JSON.stringify(tenantClaimsByPayload[key.replace(/=/g,"")]||{}),
     newBlob:value=>({getDataAsString:()=>value})
   },
   SpreadsheetApp:{openById:()=>({getSheetByName:name=>{
