@@ -1265,3 +1265,21 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** C1.631 completada. T153-S02 permanece En ejecución; no iniciar T153-S03.
 - **Siguiente acción:** verificar las transiciones de membresía y rol en los lectores públicos/administrativos (incluido cambio de rol y roles duplicados) y su correspondencia con la sesión firmada.
 ===============================================================================
+
+
+===============================================================================
+### C1.632 — IMA-EXEC-20261112-1754Z-03 — unicidad y transiciones de membresías/roles
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.631.
+- **HEAD inicial:** `0cc06db1886b3469d41cb388a7993e449afb90b6`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificar la ambigüedad de membresías con roles duplicados, el cambio de rol y la unicidad global de MembershipID.
+- **Contrato:** ejecuta `getUserRoleMembershipState_`, `resolveUserRoleMembership_` y `getUserRoleMemberships` reales con usuarios e instituciones sintéticos distintos.
+- **Roles duplicados:** dos membresías activas del mismo usuario/tenant para el mismo RoleID se excluyen ambas; no se resuelve ninguna sesión ligada a una de ellas.
+- **Cambio de rol:** al cambiar la segunda membresía de Director a Auditor, el token con claim Director se invalida; un token ligado al nuevo rol Auditor se resuelve. El listado devuelve solo membresías del usuario e institución activos.
+- **ID duplicado global:** reutilizar un MembershipID para otro usuario invalida ese ID en ambas filas; la otra membresía única del usuario original permanece activa.
+- **Verificación local:** contrato completo V8 aislado **PASS**, incluidos C1.621–C1.632. Parseo sintáctico backend USER/test **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** sesiones y datos reales en Apps Script/Sheets NOT RUN; escenario agregado a `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `tests/security/internal-responsibility-rbac-contract.test.js`; no se modificó lógica productiva.
+- **Commit funcional:** `b4d00488e94cd1db7a707297e7f59a90afbc4efd`.
+- **Estado:** C1.632 completada. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** contrastar las funciones de lectura de membresías/roles con el contexto activo y permisos de sesión ante estados inactivos, duplicados y tenant mismatch.
+===============================================================================
