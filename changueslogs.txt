@@ -2366,3 +2366,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Smoke local determinista 3/3 PASS; suite dedicada CI 24/24 PASS. GitHub Actions run 43135541037 SUCCESS en Node.js 22.
 - Backend productivo sin cambios; Apps Script/Sheets real NOT RUN. BETA-EXAM-098 Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.598 — cobertura de reentrada de createExam durante persistencia
+- Se agregan tres escenarios de reentrada desde appendRow de ResourceOwnership, appendRow de Examenes y setValues de PreguntasExamen.
+- Cada solicitud secundaria debe recibir EXAM_CREATE_LOCK_TIMEOUT; la operación exterior conserva un único ownership, examen y conjunto de preguntas asociados, abre Sheets una vez y libera ScriptLock.
+- Backend productivo sin cambios; pruebas y CI pendientes de ejecución inicial.
+===============================================================================

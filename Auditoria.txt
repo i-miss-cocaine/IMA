@@ -2197,3 +2197,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - GitHub Actions run 43135541037: workflow Exam-Service security local contracts SUCCESS en Node.js 22; suite save-rubric 24/24 PASS, paso específico y job exam-security-contracts SUCCESS.
 - Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-098 Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.598 — cobertura de reentrada de createExam durante persistencia
+- Brecha: el contrato no provocaba una segunda llamada al handler durante las escrituras de ResourceOwnership, Examenes y PreguntasExamen.
+- Se amplía tests/security/exam-service-create-exam-security.test.js con hooks y tres escenarios de reentrada; cada secundaria debe recibir EXAM_CREATE_LOCK_TIMEOUT y la exterior conservar ownership, examen y preguntas únicos/asociados.
+- Backend productivo sin cambios; BETA-EXAM-099 registra la verificación desplegada.
+- Estado inicial de esta iteración: pruebas locales y CI pendientes de ejecución.
+===============================================================================

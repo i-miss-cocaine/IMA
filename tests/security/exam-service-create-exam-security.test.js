@@ -31,12 +31,14 @@ function makeSheet(rows, options = {}) {
     getDataRange() { return { getValues: () => this.rows.map(row => row.slice()) }; },
     appendRow(row) {
       this.rows.push(row.slice());
+      if (options.onAppend) options.onAppend();
       if (options.failAppendAfterWrite) { options.failAppendAfterWrite = false; throw new Error("append persisted then failed"); }
       if (options.failAppend) throw new Error("append failed");
     },
     getRange(startRow, startCol, rowCount, colCount) {
       return { setValues: values => {
         this.writes++;
+        if (options.onWrite) options.onWrite();
         if (options.failWrite) throw new Error("write failed");
         for (let r = 0; r < rowCount; r++) {
           if (!this.rows[startRow - 1 + r]) this.rows[startRow - 1 + r] = [];
@@ -49,10 +51,18 @@ function makeSheet(rows, options = {}) {
 }
 function fixture(options = {}) {
   const stats = { permissionCalls: 0, action: "", acquired: 0, released: 0, opened: 0, held: false, events: [] };
+  const hooks = {};
   const sheets = {
-    Examenes: makeSheet([["ID","Titulo","Asignatura","Grado","Seccion","FechaLimite","Tiempo","Estado","ProfesorID","Parcial"]], { failAppend: options.failExamAppend }),
-    PreguntasExamen: makeSheet([["ID","ExamenID","Tipo","Texto","Opciones","Respuesta"]], { failWrite: options.failQuestionWrite }),
-    ResourceOwnership: makeSheet([OH], { failAppendAfterWrite: options.failOwnershipAppendAfterWrite, failAppend: options.failOwnershipAppend })
+    Examenes: makeSheet([["ID","Titulo","Asignatura","Grado","Seccion","FechaLimite","Tiempo","Estado","ProfesorID","Parcial"]], {
+      failAppend: options.failExamAppend, onAppend: () => hooks.examAppend && hooks.examAppend()
+    }),
+    PreguntasExamen: makeSheet([["ID","ExamenID","Tipo","Texto","Opciones","Respuesta"]], {
+      failWrite: options.failQuestionWrite, onWrite: () => hooks.questionWrite && hooks.questionWrite()
+    }),
+    ResourceOwnership: makeSheet([OH], {
+      failAppendAfterWrite: options.failOwnershipAppendAfterWrite, failAppend: options.failOwnershipAppend,
+      onAppend: () => hooks.ownershipAppend && hooks.ownershipAppend()
+    })
   };
   let uuid = 0;
   const runtime = {
@@ -70,7 +80,20 @@ function fixture(options = {}) {
     Date
   };
   vm.runInNewContext(extract("withAuthorizedExamCreation_") + "\n" + extract("createExamUnlocked_") + "\n" + extract("createExam"), runtime);
-  return { runtime, sheets, stats, call(payload = {}) { return runtime.createExam(Object.assign({
+  const reentryErrors = [];
+  const attemptReentry = () => {
+    try {
+      runtime.createExam({
+        sessionToken: "signed", departmentId: "D1", titulo: "Evaluación secundaria",
+        asignatura: "Matemáticas", gradoAsignado: "10", seccionAsignada: "A",
+        fechaLimite: "2026-11-20",
+        preguntas: [{ preguntaTipo: "opcion_multiple", textoPregunta: "2+2",
+          opciones: { a: "4" }, respuestaCorrecta: "a" }]
+      });
+    } catch (error) { reentryErrors.push(error.message); }
+  };
+  if (options.reenterAt) hooks[options.reenterAt] = attemptReentry;
+  return { runtime, sheets, stats, reentryErrors, call(payload = {}) { return runtime.createExam(Object.assign({
     sessionToken: "signed", departmentId: "D1", titulo: "Evaluación", asignatura: "Matemáticas",
     gradoAsignado: "10", seccionAsignada: "A", fechaLimite: "2026-11-20",
     preguntas: [{ preguntaTipo: "opcion_multiple", textoPregunta: "2+2", opciones: { a: "4" }, respuestaCorrecta: "a" }]
@@ -115,4 +138,23 @@ test(() => {
  assert.deepEqual(x.stats.events,["rbac","identity","lock","rbac"]);
  assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held,x.stats.opened],[1,1,false,0]);
 });
+for (const point of ["ownershipAppend", "examAppend", "questionWrite"]) {
+  test(() => {
+    const x = fixture({ reenterAt: point });
+    const result = x.call();
+    assert.equal(result.status, "success");
+    assert.deepEqual(x.reentryErrors, ["EXAM_CREATE_LOCK_TIMEOUT"]);
+    assert.deepEqual([
+      x.sheets.ResourceOwnership.rows.length,
+      x.sheets.Examenes.rows.length,
+      x.sheets.PreguntasExamen.rows.length
+    ], [2, 2, 2]);
+    assert.equal(x.sheets.ResourceOwnership.rows[1][3], result.examenId);
+    assert.equal(x.sheets.PreguntasExamen.rows[1][1], result.examenId);
+    assert.equal(x.sheets.PreguntasExamen.writes, 1);
+    assert.deepEqual([
+      x.stats.opened, x.stats.acquired, x.stats.released, x.stats.held
+    ], [1, 2, 1, false]);
+  });
+}
 console.log("exam-service-create-exam-security: " + scenarios + "/" + scenarios + " PASS");

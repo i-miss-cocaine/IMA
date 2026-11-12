@@ -4465,3 +4465,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** node --check del smoke focalizado PASS; harness local determinista de los tres puntos de reentrada 3/3 PASS. El checkout del repositorio y la suite original completa no estuvieron disponibles localmente por fallo de resolución de github.com; la suite original sí fue ejecutada por CI.
 - **CI:** GitHub Actions run 43135541037, workflow Exam-Service security local contracts, Node.js 22: SUCCESS; paso Run rubric mutation security regression SUCCESS; suite dedicada 24/24 PASS; job exam-security-contracts SUCCESS.
 - **Estado:** C1.597 **Completada con verificación local focalizada y suite CI**. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM. Apps Script/Sheets real NOT RUN.
+
+
+### 10.247 TASK-153 / AUD-NG-386 — contención reentrante de createExam durante persistencia (C1.598)
+- **Brecha confirmada:** el contrato de createExam cubría autorización, identidad, scope, timeout y rollback, pero no una segunda solicitud durante las escrituras de ResourceOwnership, Examenes o PreguntasExamen.
+- **Cobertura añadida:** hooks de persistencia invocan el handler real de forma anidada desde appendRow de ResourceOwnership, appendRow de Examenes y setValues de PreguntasExamen. Cada secundaria debe recibir EXAM_CREATE_LOCK_TIMEOUT.
+- **Invariantes:** la operación exterior conserva un único ownership, un examen y las preguntas asociadas; una sola escritura de preguntas, una apertura Sheets y ScriptLock liberado.
+- **Alcance:** únicamente tests/security/exam-service-create-exam-security.test.js; backend productivo sin cambios. BETA-EXAM-099 registra la comprobación desplegada.
+- **Verificación local:** pendiente de ejecutar con el código fuente y fixture de C1.598 antes del cierre; CI se activa al publicar el commit.
+- **Estado:** C1.598 En ejecución hasta completar las verificaciones locales pertinentes. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.

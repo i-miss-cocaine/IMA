@@ -370,3 +370,30 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.597 Completada con verificación local focalizada y suite CI; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
 - HEAD inicial: 2963fd78148aba8c5244157fd37540a3313287b8; HEAD de código probado: dba948f652afd5cd42a00ae2da139faf77125841; HEAD final se confirma tras commit documental.
 ===============================================================================
+
+
+===============================================================================
+## C1.598 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de createExam durante persistencia.
+
+### Hallazgo y cambio
+- El contrato cubría autorización, identidad, scope, timeout y rollback, pero no reentrada durante las escrituras efectivas.
+- Se agregan hooks y tres escenarios de reentrada al handler real: appendRow de ResourceOwnership, appendRow de Examenes y setValues de PreguntasExamen.
+- Cada secundaria debe recibir EXAM_CREATE_LOCK_TIMEOUT; la operación exterior conserva un ownership, un examen y sus preguntas asociados, una apertura de Sheets y liberación del lock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-create-exam-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Verificación local y CI pendientes de ejecución inicial tras publicar.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-099 Pendiente beta.
+- C1.598 En ejecución hasta completar las verificaciones locales pertinentes.
+- HEAD inicial: 93b6e08af1409ec7add9861bcba06146ec54e23c; HEAD final se confirma tras publicar.
+===============================================================================
