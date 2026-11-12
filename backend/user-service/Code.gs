@@ -1088,6 +1088,92 @@ function verifyInterServiceEnvelope(envelope, expectedTargetService, customSecre
   return { valid: true, sourceService, targetService, action, correlationId, requestId, payload: payload || {} };
 }
 
+const USER_ROLE_MEMBERSHIP_HEADERS_ = ["MembershipID","UserID","RoleID","InstitutionID","Status","StartAt","EndAt","CreatedBy","CreatedAt","UpdatedAt","RevokedBy","RevokedAt"];
+
+function parseUserRoleMembershipDate_(value) {
+  if (value === "" || value === null || value === undefined) return { valid: true, date: null };
+  var date = value instanceof Date ? value : new Date(value);
+  return isNaN(date.getTime()) ? { valid: false, date: null } : { valid: true, date: date };
+}
+
+function getUserRoleMembershipState_(userId, institutionId, nowValue) {
+  var userKey = String(userId || "").trim();
+  var institutionKey = String(institutionId || "").trim();
+  if (!userKey || !institutionKey) throw new Error("ROLE_MEMBERSHIP_IDENTITY_REQUIRED");
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = ss.getSheetByName("MembresiasRolesRBAC");
+  if (!sheet) return { initialized: false, hasRecords: false, memberships: [] };
+  var values = sheet.getDataRange().getValues();
+  if (!values.length || JSON.stringify(values[0].slice(0, USER_ROLE_MEMBERSHIP_HEADERS_.length).map(String)) !== JSON.stringify(USER_ROLE_MEMBERSHIP_HEADERS_)) {
+    throw new Error("ROLE_MEMBERSHIP_SCHEMA_MISMATCH");
+  }
+  var now = nowValue instanceof Date ? nowValue : (nowValue ? new Date(nowValue) : new Date());
+  if (isNaN(now.getTime())) throw new Error("ROLE_MEMBERSHIP_CLOCK_INVALID");
+  var allRows = values.slice(1);
+  var userRows = allRows.filter(function(row) { return String(row[1] || "").trim() === userKey; });
+  var membershipIdCounts = {};
+  allRows.forEach(function(row) {
+    var id = String(row[0] || "").trim();
+    if (id) membershipIdCounts[id] = (membershipIdCounts[id] || 0) + 1;
+  });
+  var candidates = [];
+  userRows.forEach(function(row) {
+    var membershipId = String(row[0] || "").trim();
+    var roleId = String(row[2] || "").trim();
+    var rowInstitution = String(row[3] || "").trim();
+    var state = String(row[4] || "").trim().toUpperCase();
+    if (!membershipId || !roleId || rowInstitution !== institutionKey || membershipIdCounts[membershipId] !== 1) return;
+    if (["ACTIVE", "ACTIVA", "ACTIVO"].indexOf(state) === -1) return;
+    var start = parseUserRoleMembershipDate_(row[5]);
+    var end = parseUserRoleMembershipDate_(row[6]);
+    if (!start.valid || !end.valid) return;
+    if (start.date && start.date.getTime() > now.getTime()) return;
+    if (end.date && end.date.getTime() < now.getTime()) return;
+    candidates.push({
+      membershipId: membershipId,
+      userId: userKey,
+      roleId: roleId,
+      institutionId: rowInstitution,
+      status: state,
+      startAt: row[5] || "",
+      endAt: row[6] || ""
+    });
+  });
+  var roleCounts = {};
+  candidates.forEach(function(item) { roleCounts[item.roleId] = (roleCounts[item.roleId] || 0) + 1; });
+  var memberships = candidates.filter(function(item) { return roleCounts[item.roleId] === 1; });
+  return { initialized: true, hasRecords: userRows.length > 0, memberships: memberships };
+}
+
+function resolveUserRoleMembership_(userId, roleId, institutionId, membershipId) {
+  var roleKey = String(roleId || "").trim();
+  var membershipKey = String(membershipId || "").trim();
+  if (!roleKey) return null;
+  var state = getUserRoleMembershipState_(userId, institutionId);
+  var matches = state.memberships.filter(function(item) {
+    return item.roleId === roleKey && (!membershipKey || item.membershipId === membershipKey);
+  });
+  return matches.length === 1 ? matches[0] : null;
+}
+
+function ensureUserRoleMembershipSheet_(ss) {
+  var sheet = ss.getSheetByName("MembresiasRolesRBAC");
+  if (!sheet) sheet = ss.insertSheet("MembresiasRolesRBAC");
+  if (sheet.getLastRow() === 0) sheet.appendRow(USER_ROLE_MEMBERSHIP_HEADERS_);
+  var header = sheet.getRange(1, 1, 1, USER_ROLE_MEMBERSHIP_HEADERS_.length).getValues()[0].map(String);
+  if (JSON.stringify(header) !== JSON.stringify(USER_ROLE_MEMBERSHIP_HEADERS_)) throw new Error("ROLE_MEMBERSHIP_SCHEMA_MISMATCH");
+  return sheet;
+}
+
+function isConfiguredRbacRole_(ss, roleId) {
+  var roleKey = String(roleId || "").trim();
+  if (!roleKey) return false;
+  if (typeof ROLE_PERMISSIONS !== "undefined" && Object.prototype.hasOwnProperty.call(ROLE_PERMISSIONS, roleKey)) return true;
+  var sheet = ss.getSheetByName("MatrizPermisosRoles");
+  if (!sheet || sheet.getLastRow() <= 1) return false;
+  return sheet.getDataRange().getValues().slice(1).some(function(row) { return String(row[0] || "").trim() === roleKey; });
+}
+
 function generateSessionToken(user) {
   const secret = getAuthTokenSecret();
   const now = Math.floor(Date.now() / 1000);
@@ -1097,6 +1183,8 @@ function generateSessionToken(user) {
     email: user.email,
     role: user.role,
     accountState: user.accountState || "Activa",
+    membershipId: user.membershipId || undefined,
+    institutionId: user.institutionId || undefined,
     iat: now,
     exp: exp,
     sessionId: "SES-" + Utilities.getUuid()
@@ -1157,7 +1245,14 @@ function verifySessionToken(tokenString) {
         return null;
       }
     }
-    if (acctState !== "Activa" || !currentRole || currentRole !== claims.role.trim()) return null;
+    if (acctState !== "Activa") return null;
+    if (claims.membershipId || claims.institutionId) {
+      if (!claims.membershipId || !claims.institutionId) return null;
+      var activeMembership = resolveUserRoleMembership_(claims.userId, claims.role, claims.institutionId, claims.membershipId);
+      if (!activeMembership || activeMembership.institutionId !== String(getIdentityInstitutionId_()).trim()) return null;
+    } else if (!currentRole || currentRole !== claims.role.trim()) {
+      return null;
+    }
     return claims;
   } catch (e) {
     return null;
@@ -1181,6 +1276,114 @@ function getUserVerifiedRole(payload) {
   payload._verifiedUserId = claims.userId;
   payload._verifiedRole = claims.role;
   return claims.role || "Estudiante";
+}
+
+function getUserRoleMemberships(payload) {
+  try {
+    var role = getUserVerifiedRole(payload);
+    var userId = String((payload && payload._verifiedUserId) || "").trim();
+    if (!userId || role === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "Se requiere una sesión firmada y activa." };
+    var institutionId = String(getIdentityInstitutionId_()).trim();
+    var state = getUserRoleMembershipState_(userId, institutionId);
+    return { status: "success", userId: userId, activeRoleId: role, memberships: state.memberships, legacyRoleOnly: !state.initialized || !state.hasRecords };
+  } catch (error) {
+    return { status: "error", code: error.message || "ROLE_MEMBERSHIP_READ_FAILED", message: "No fue posible consultar las membresías RBAC." };
+  }
+}
+
+function switchActiveRole(payload) {
+  try {
+    var currentRole = getUserVerifiedRole(payload);
+    var userId = String((payload && payload._verifiedUserId) || "").trim();
+    if (!userId || currentRole === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "Se requiere una sesión firmada y activa." };
+    var token = payload.sessionToken || payload.authToken || payload.token;
+    var currentClaims = verifySessionToken(token);
+    if (!currentClaims) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "Se requiere una sesión firmada y activa." };
+    var roleId = String((payload && payload.activeRoleId) || "").trim();
+    if (!roleId) return { status: "error", code: "ACTIVE_ROLE_REQUIRED", message: "Debe especificarse el rol activo solicitado." };
+    var institutionId = String(getIdentityInstitutionId_()).trim();
+    var membership = resolveUserRoleMembership_(userId, roleId, institutionId);
+    if (!membership) return { status: "error", code: "ROLE_MEMBERSHIP_NOT_ACTIVE", message: "El usuario no tiene una membresía RBAC activa para el rol solicitado." };
+    var nextToken = generateSessionToken({
+      userId: userId,
+      email: currentClaims.email || "",
+      role: membership.roleId,
+      accountState: currentClaims.accountState || "Activa",
+      membershipId: membership.membershipId,
+      institutionId: institutionId
+    });
+    CacheService.getScriptCache().put("revoked_session_" + currentClaims.sessionId, "1", 86400);
+    return { status: "success", sessionToken: nextToken, activeRoleId: membership.roleId, membershipId: membership.membershipId, message: "Contexto de rol activo actualizado." };
+  } catch (error) {
+    return { status: "error", code: error.message || "ACTIVE_ROLE_SWITCH_FAILED", message: "No fue posible cambiar el rol activo." };
+  }
+}
+
+function manageUserRoleMemberships(payload) {
+  var actorRole = getUserVerifiedRole(payload);
+  var actorId = String((payload && payload._verifiedUserId) || "").trim();
+  if (!actorId || actorRole === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "Se requiere identidad verificada." };
+  var permission = validateRolePermission("manageUserRoleMemberships", payload);
+  if (!permission || permission.authorized !== true) return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "No tiene permiso para administrar membresías RBAC." };
+
+  var action = String((payload && payload.action) || "").trim().toUpperCase();
+  var userId = String((payload && payload.userId) || "").trim();
+  var roleId = String((payload && payload.roleId) || "").trim();
+  var membershipId = String((payload && payload.membershipId) || "").trim();
+  if (["ASSIGN", "REVOKE"].indexOf(action) === -1 || !userId || (action === "ASSIGN" && !roleId) || (action === "REVOKE" && !membershipId)) {
+    return { status: "error", code: "ROLE_MEMBERSHIP_REQUEST_INVALID", message: "La operación y sus identificadores son obligatorios." };
+  }
+
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var institutionId = String(getIdentityInstitutionId_()).trim();
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var userSheet = ss.getSheetByName("Usuarios");
+    if (!userSheet) return { status: "error", code: "USER_NOT_FOUND", message: "Usuario objetivo no disponible." };
+    var userRows = userSheet.getDataRange().getValues();
+    var target = userRows.find(function(row, index) { return index > 0 && String(row[0] || "").trim() === userId; });
+    if (!target || String(target[10] || "Activa").trim() !== "Activa") return { status: "error", code: "USER_NOT_FOUND", message: "Usuario objetivo no disponible." };
+    var sheet = ensureUserRoleMembershipSheet_(ss);
+    var data = sheet.getDataRange().getValues();
+    var now = new Date();
+    if (action === "ASSIGN") {
+      if (!isConfiguredRbacRole_(ss, roleId)) return { status: "error", code: "RBAC_ROLE_NOT_CONFIGURED", message: "El rol no existe en la matriz de permisos configurada." };
+      var start = parseUserRoleMembershipDate_((payload && payload.startAt) || now);
+      var end = parseUserRoleMembershipDate_((payload && payload.endAt) || "");
+      if (!start.valid || !end.valid || (start.date && end.date && end.date.getTime() <= start.date.getTime())) return { status: "error", code: "ROLE_MEMBERSHIP_DATES_INVALID", message: "La vigencia de la membresía no es válida." };
+      var duplicate = data.slice(1).some(function(row) {
+        if (String(row[1] || "").trim() !== userId || String(row[2] || "").trim() !== roleId || String(row[3] || "").trim() !== institutionId || String(row[4] || "").trim().toUpperCase() !== "ACTIVE") return false;
+        var oldEnd = parseUserRoleMembershipDate_(row[6]);
+        return !oldEnd.valid || !oldEnd.date || oldEnd.date.getTime() >= now.getTime();
+      });
+      if (duplicate) return { status: "error", code: "ROLE_MEMBERSHIP_ALREADY_EXISTS", message: "Ya existe una membresía activa o futura para ese usuario y rol." };
+      var newId = "MEM-" + Utilities.getUuid();
+      sheet.appendRow([newId, userId, roleId, institutionId, "ACTIVE", start.date || now, end.date || "", actorId, now, now, "", ""]);
+      invalidateUserRoleCache(userId);
+      logStructuredEvent("USER", "manageUserRoleMemberships", "INFO", "ROLE_MEMBERSHIP_ASSIGNED", "Membresía RBAC asignada.", { membershipId: newId, userId: userId, roleId: roleId }, actorRole);
+      return { status: "success", action: action, membershipId: newId, userId: userId, roleId: roleId };
+    }
+
+    var targetIndex = -1;
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][0] || "").trim() === membershipId && String(data[i][1] || "").trim() === userId && String(data[i][3] || "").trim() === institutionId) {
+        targetIndex = i;
+        break;
+      }
+    }
+    if (targetIndex === -1) return { status: "error", code: "ROLE_MEMBERSHIP_NOT_FOUND", message: "Membresía no encontrada." };
+    if (String(data[targetIndex][4] || "").trim().toUpperCase() === "REVOKED") return { status: "success", action: action, membershipId: membershipId, idempotent: true };
+    sheet.getRange(targetIndex + 1, 5).setValue("REVOKED");
+    sheet.getRange(targetIndex + 1, 10).setValue(now);
+    sheet.getRange(targetIndex + 1, 11).setValue(actorId);
+    sheet.getRange(targetIndex + 1, 12).setValue(now);
+    invalidateUserRoleCache(userId);
+    logStructuredEvent("USER", "manageUserRoleMemberships", "WARN", "ROLE_MEMBERSHIP_REVOKED", "Membresía RBAC revocada.", { membershipId: membershipId, userId: userId }, actorRole);
+    return { status: "success", action: action, membershipId: membershipId };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // [TAREA-F4-P1-01] [Fase 4: Motor de Delegaciones] - Verificación de delegaciones de seguridad activas y vigentes
