@@ -4398,5 +4398,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Brecha confirmada:** rectifyStudentGrade mantiene ScriptLock durante la auditoría y actualización de nota; el contrato cubría errores de escritura, rollback y reentrada durante openById, pero no reentrada desde appendRow de HistorialRectificacionesNotas ni desde setValues de CalificacionesEstudiantes.
 - **Cobertura añadida:** dos escenarios invocan el handler real de forma anidada durante cada punto de persistencia. En ambos, la secundaria debe recibir GRADE_RECTIFICATION_LOCK_TIMEOUT; la exterior realiza un único append de auditoría y una única escritura de nota, abre Sheets una vez y libera el lock.
 - **Alcance:** contrato de seguridad y BETA-EXAM-093; backend productivo sin cambios.
-- **Verificación:** contrato ampliado a 32 casos; ejecución local aislada/CI pendiente tras commit. Apps Script/Sheets real NOT RUN.
-- **Estado:** C1.592 En ejecución hasta completar la verificación local aislada.
+- **Verificación:** GitHub Actions run 43128256513, workflow `Exam-Service security local contracts`, Node.js 22: **SUCCESS**; paso `Run student grade rectification security regression` y contrato `exam-service-student-grade-rectification-security: PASS (32/32)`. Job `exam-security-contracts` SUCCESS. Apps Script/Sheets real NOT RUN.
+- **Estado:** C1.592 **Completada en verificación local aislada/CI**. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras.
+
+
+#### Addendum de verificación local/CI — C1.592
+- GitHub Actions run **43128256513**, commit `3d7a315a18d3a333b56f3bcc3f09be75fe7fd76f`, workflow `Exam-Service security local contracts`: **SUCCESS** en Node.js 22.
+- El paso `Run student grade rectification security regression` ejecutó `tests/security/exam-service-student-grade-rectification-security.test.js` y registró `exam-service-student-grade-rectification-security: PASS (32/32)`; job `exam-security-contracts` terminó SUCCESS.
+- El runner ejecutó el código y fixtures de forma aislada, sin despliegue ni infraestructura remota. Apps Script/Sheets real NOT RUN.
+- C1.592 **Completada en verificación local aislada/CI**. BETA-EXAM-093 permanece Pendiente beta.
