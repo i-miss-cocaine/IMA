@@ -90,7 +90,7 @@ function makeHarness(membershipRows = [headers]) {
     "this.getUserVerifiedRole=getUserVerifiedRole;this.getUserRoleMemberships=getUserRoleMemberships;"+
     "this.switchActiveRole=switchActiveRole;this.manageUserRoleMemberships=manageUserRoleMemberships;this.loginUser=loginUser;"+
     "this.resolveUserRoleMembership_=resolveUserRoleMembership_;this.getUserRoleMembershipState_=getUserRoleMembershipState_;",ctx);
-  return {ctx,sheets,cache,membershipRows};
+  return {ctx,sheets,cache,membershipRows,userRows};
 }
 function membership(id,user,role,institution,status="ACTIVE",from=start,to=end){return[id,user,role,institution,status,from,to,"U-ADMIN",now,now,"",""];}
 
@@ -144,11 +144,11 @@ function membership(id,user,role,institution,status="ACTIVE",from=start,to=end){
   const adminSession=ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Student"});
   const assigned=ctx.manageUserRoleMemberships({sessionToken:adminSession,action:"ASSIGN",userId:"U-1",roleId:"Director",startAt:start,endAt:end});
   assert.equal(assigned.status,"success");
-  assert.equal(membershipRows.length,2);
+  assert.equal(membershipRows.length,3);
   assert.equal(ctx.resolveUserRoleMembership_("U-1","Director","INST-1").membershipId,assigned.membershipId);
   assert.equal(ctx.manageUserRoleMemberships({sessionToken:adminSession,action:"ASSIGN",userId:"U-1",roleId:"Director"}).code,"ROLE_MEMBERSHIP_ALREADY_EXISTS");
   assert.equal(ctx.manageUserRoleMemberships({sessionToken:adminSession,action:"REVOKE",userId:"U-1",membershipId:assigned.membershipId}).status,"success");
-  assert.equal(membershipRows[1][4],"REVOKED");
+  assert.equal(membershipRows[2][4],"REVOKED");
   assert.equal(ctx.resolveUserRoleMembership_("U-1","Director","INST-1"),null);
   assert.equal(ctx.locked,false,"ScriptLock is released");
 }
