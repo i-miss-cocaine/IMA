@@ -22,18 +22,23 @@ function extractFunction(source, name) {
 }
 const accounting = fs.readFileSync(path.resolve(__dirname, "../../backend/accounting-service/Code.gs"), "utf8");
 const shared = fs.readFileSync(path.resolve(__dirname, "../../backend/shared/DepartmentCatalogContract.gs"), "utf8");
-const names = ["getVerifiedAccountingIdentity_", "getVerifiedDepartmentScopeForSession_", "getVerifiedAccountingDepartmentScope_", "mapMigrationRowToTarget_", "buildAccountingDepartmentalImportPreflight_", "validateImportPreview", "importDataWithColumnMapping"];
+const names = ["getVerifiedAccountingIdentity_", "getVerifiedDepartmentScopeForSession_", "getVerifiedAccountingDepartmentScope_", "mapMigrationRowToTarget_", "accountingHasInstitutionalImportPermission_", "resolveAccountingImportRowDepartmentSnapshot_", "buildAccountingDepartmentalImportPreflight_", "validateImportPreview", "importDataWithColumnMapping"];
 const functions = names.map(name => extractFunction(accounting, name));
 functions.push(extractFunction(shared, "validateDepartmentalImportScope_"));
+const snapshotHeaders = ["ImportBatchID","SnapshotID","RowID","InstitutionID","Domain","DepartmentID","Status","VerifiedBy","VerifiedAt","SnapshotVersion"];
+const snapshotSchema = "const ACCOUNTING_IMPORT_ROW_DEPARTMENT_SNAPSHOT_HEADERS_ = " + JSON.stringify(snapshotHeaders) + ";";
 const schema = { service: "ACCOUNTING", sheet: "ExpedientesLaborales", headers: ["ExpedienteID", "PersonaId", "UserId", "Puesto", "Departamento", "CentroCosto", "FechaIngreso", "FechaSalida", "EstadoLaboral", "Observaciones"] };
 const assignmentHeaders = ["AsignacionAmbitoID", "UserID", "RoleID", "ScopeType", "ScopeValues", "Estado", "CreadoPor", "FechaCreacion", "FechaInicio", "FechaFin", "EsSuplente", "SuplenteDeUserID", "InstitutionID", "MembershipID", "ResponsibilityID"];
 let assignmentRows = [assignmentHeaders, ["ASG-1", "U-1", "Director", "DEPARTAMENTO", '["DEP-A","DEP-B"]', "Activo", "U-ADMIN", "", "", "", "No", "", "INST-1", "MEM-1", "RESP-1"]];
 const auditRows = [], writes = [], rollbackBatches = [];
+let snapshotRows = [snapshotHeaders,["BATCH-1","SNAP-1","ROW-1","INST-1","ACCOUNTING","DEP-A","VERIFIED","U-ADMIN","2026-11-12T22:00:00.000Z","1"],["BATCH-1","SNAP-1","ROW-2","INST-1","ACCOUNTING","DEP-B","VERIFIED","U-ADMIN","2026-11-12T22:00:00.000Z","1"]];
+let institutionalImportPermission = true;
 let writerAttempts = 0, failWriterAt = 0;
 const ownershipCalls = [], ownershipCompensations = [];
 let failOwnershipRegistration = false, idempotentEmployeeWrite = false;
 const assignmentSheet = { getDataRange: () => ({ getValues: () => assignmentRows.map(row => row.slice()) }) };
-const spreadsheet = { getSheetByName: name => name === "AsignacionesAmbitosRoles" ? assignmentSheet : null };
+const snapshotSheet = { getDataRange: () => ({ getValues: () => snapshotRows.map(row => row.slice()) }) };
+const spreadsheet = { getSheetByName: name => name === "AsignacionesAmbitosRoles" ? assignmentSheet : (name === "AsignacionesImportacionDepartamental" ? snapshotSheet : null) };
 const claims = { signed: { userId: "U-1", role: "Director", membershipId: "MEM-1", institutionId: "INST-1" } };
 const context = {
   SPREADSHEET_ID: "TEST", MIGRATION_OWNER_SCHEMAS_: { empleado: schema },
@@ -41,6 +46,8 @@ const context = {
   PropertiesService: { getScriptProperties: () => ({ getProperty: key => key === "IMA_INSTITUTION_ID" ? "INST-1" : null }) },
   SpreadsheetApp: { openById: () => spreadsheet },
   resolveInternalResponsibilityForRoleScope_: () => ({ responsibilityId: "RESP-1" }),
+  getDynamicPermissionsForRole: (role, action) => action === "importDataWithColumnMapping" ? institutionalImportPermission : null,
+  ROLE_PERMISSIONS: {},
   getOrCreateSheet: (_ss, name) => { assert.equal(name, "AuditoriaMigraciones"); return { appendRow: row => auditRows.push(row) }; },
   Utilities: { getUuid: () => "RUN-1" },
   resolveCrossReferenceIdentifier: payload => ({ status: "success", idNuevoPlataforma: "EMP-" + String(payload.idOriginalLegado || "1").replace(/[^A-Za-z0-9]/g, "") }),
@@ -56,7 +63,7 @@ const context = {
   },
   rollbackMigrationOwnerWrites_: applied => { rollbackBatches.push(applied.slice()); return []; }
 };
-vm.runInNewContext(functions.join("\n") + "\nthis.api = { build: buildAccountingDepartmentalImportPreflight_, preview: validateImportPreview, run: importDataWithColumnMapping };", context);
+vm.runInNewContext(snapshotSchema + "\n" + functions.join("\n") + "\nthis.api = { build: buildAccountingDepartmentalImportPreflight_, preview: validateImportPreview, run: importDataWithColumnMapping };", context);
 const base = { sessionToken: "signed", activeDepartmentId: "DEP-A", tipoEntidad: "empleado", sistemaOrigen: "Legacy", destinoModulo: "ExpedientesLaborales", columnaMapeo: { identificador: "legacyId", campos: { Puesto: "Puesto", Departamento: "Departamento" } }, filasData: [{ legacyId: "LEG-1", Puesto: "Docente" }] };
 const preflight = context.api.build(base, spreadsheet, schema);
 assert.equal(preflight.valid, true);
@@ -160,4 +167,21 @@ assert.equal(rollbackBatches.at(-1)[0].tipoEntidad, "empleadoOwnership");
 assert.equal(idempotentOwnershipFailure.errores.some(x => x.error === "RESOURCE_OWNERSHIP_REPAIR_REQUIRED"), true);
 failOwnershipRegistration = false; idempotentEmployeeWrite = false;
 
-console.log("Accounting departmental import scope: 26 scenarios passed.");
+
+assignmentRows=[assignmentHeaders,["ASG-I","U-1","Director","INSTITUCION",'["INST-1"]',"Activo","U-ADMIN","","","","No","","INST-1","MEM-1","RESP-1"]];
+const institutionalBase={...base,activeDepartmentId:"",importBatchId:"BATCH-1",filasData:[{legacyId:"LEG-7",RowID:"ROW-1",Puesto:"Docente"},{legacyId:"LEG-8",RowID:"ROW-2",Puesto:"Administrativo"}]};
+const ip=context.api.build(institutionalBase,spreadsheet,schema);assert.equal(ip.valid,true);assert.equal(ip.institutionWide,true);assert.equal(ip.snapshotId,"SNAP-1");assert.deepEqual(Array.from(ip.rows,r=>r.Departamento),["DEP-A","DEP-B"]);assert.deepEqual(Array.from(ip.departmentIds).sort(),["DEP-A","DEP-B"]);
+const iv=context.api.preview(institutionalBase);assert.equal(iv.status,"success");assert.deepEqual(Array.from(iv.departamentosDestino).sort(),["DEP-A","DEP-B"]);assert.equal(iv.snapshotId,"SNAP-1");
+const ii=context.api.run(institutionalBase);assert.equal(ii.status,"success");assert.equal(ownershipCalls.at(-2).departmentId,"DEP-A");assert.equal(ownershipCalls.at(-2).rowDepartmentSnapshotId,"SNAP-1");assert.equal(ownershipCalls.at(-2).rowDepartmentSnapshotRowId,"ROW-1");assert.equal(ownershipCalls.at(-1).departmentId,"DEP-B");assert.equal(ownershipCalls.at(-1).rowDepartmentSnapshotRowId,"ROW-2");
+const beforeW=writerAttempts,beforeA=auditRows.length;let missing=false;try{context.api.run({...institutionalBase,importBatchId:"MISSING"});}catch(e){missing=String(e.message).includes("DEPARTMENT_IMPORT_ROW_SNAPSHOT_NOT_FOUND");}assert.equal(missing,true);assert.equal(writerAttempts,beforeW);assert.equal(auditRows.length,beforeA);
+const forged=context.api.build({...institutionalBase,importBatchId:"FORGED",rowDepartmentAssignments:[{rowId:"ROW-1",departmentId:"DEP-A",verified:true,institutionId:"INST-1",domain:"ACCOUNTING",snapshotId:"SNAP-X"}],rowDepartmentSnapshotVerified:true},spreadsheet,schema);assert.equal(forged.valid,false);assert.equal(forged.code,"DEPARTMENT_IMPORT_ROW_SNAPSHOT_NOT_FOUND");
+assert.equal(context.api.build({...institutionalBase,filasData:[{legacyId:"LEG-9",Puesto:"Docente"}]},spreadsheet,schema).code,"DEPARTMENT_IMPORT_ROW_ID_REQUIRED");
+assert.equal(context.api.build({...institutionalBase,filasData:[{legacyId:"LEG-9",RowID:"ROW-1",Puesto:"Docente"},{legacyId:"LEG-10",RowID:"ROW-1",Puesto:"Docente"}]},spreadsheet,schema).code,"DEPARTMENT_IMPORT_ROW_ID_DUPLICATE");
+assert.equal(context.api.build({...institutionalBase,filasData:[{legacyId:"LEG-11",RowID:"ROW-1",Puesto:"Docente",Departamento:"DEP-B"},{legacyId:"LEG-12",RowID:"ROW-2",Puesto:"Docente"}]},spreadsheet,schema).code,"DEPARTMENT_IMPORT_ROW_TARGET_MISMATCH");
+const saved=snapshotRows.map(r=>r.slice());snapshotRows=[snapshotHeaders,...saved.slice(1).map(r=>r.slice())];snapshotRows[1][3]="INST-OTHER";assert.equal(context.api.build(institutionalBase,spreadsheet,schema).code,"DEPARTMENT_IMPORT_TENANT_MISMATCH");
+snapshotRows=[snapshotHeaders,saved[1].slice()];assert.equal(context.api.build(institutionalBase,spreadsheet,schema).code,"DEPARTMENT_IMPORT_ROW_SNAPSHOT_INCOMPLETE");
+snapshotRows=[snapshotHeaders,...saved.slice(1).map(r=>r.slice())];snapshotRows[2][6]="REVOKED";assert.equal(context.api.build(institutionalBase,spreadsheet,schema).code,"DEPARTMENT_IMPORT_ROW_SNAPSHOT_UNVERIFIED");
+snapshotRows=[snapshotHeaders,...saved.slice(1).map(r=>r.slice())];snapshotRows.push(snapshotRows[1].slice());assert.equal(context.api.build(institutionalBase,spreadsheet,schema).code,"DEPARTMENT_IMPORT_ROW_SNAPSHOT_INCOMPLETE");
+snapshotRows=[snapshotHeaders,...saved.slice(1).map(r=>r.slice())];institutionalImportPermission=false;assert.equal(context.api.build(institutionalBase,spreadsheet,schema).code,"DEPARTMENT_IMPORT_INSTITUTION_WIDE_UNAUTHORIZED");institutionalImportPermission=true;
+assignmentRows=[assignmentHeaders,["ASG-1","U-1","Director","DEPARTAMENTO",'["DEP-A","DEP-B"]',"Activo","U-ADMIN","","","","No","","INST-1","MEM-1","RESP-1"]];
+console.log("Accounting departmental import scope: 40 scenarios passed.");

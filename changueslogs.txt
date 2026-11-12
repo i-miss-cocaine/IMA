@@ -3071,3 +3071,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 ===============================================================================
 
 - **Verificación CI C1.658:** Department Scope run **43327018525** ejecutó PASS en Department Scope Contract, Internal Responsibility RBAC, ACCOUNTING departmental import scope, USER migrated resource ownership y ACCOUNTING departmental resource access. El workflow global terminó FAIL posteriormente en `user-role-membership-contract.test.js:119` (`foreignLegacy` null al leer `.role`), fallo ya observado antes de C1.656; los pasos posteriores quedaron omitidos. Identity mapping run **43326962372**: SUCCESS. La prueba focalizada nueva sí se ejecutó en Node 24 y aprobó.
+
+
+[2026-11-12] C1.659 — IMA-EXEC-20261112-1754Z-03 — snapshot server-side por RowID para importación institucional ACCOUNTING
+- ACCOUNTING resuelve ImportBatchID/RowID exclusivamente contra AsignacionesImportacionDepartamental, exige esquema exacto, snapshot/versión uniforme, RowID únicos y cobertura exacta, InstitutionID/Domain, DepartmentID, estado VERIFIED y verificador/fecha. El payload del cliente no aporta asignaciones; preflight deriva el destino por fila.
+- El contrato compartido valida correspondencia 1:1 RowID→departamento para actores institutionWide. USER admite ownership institucional solo con permiso dinámico y metadata SnapshotID/RowID procedente del envelope HMAC; conserva la ruta departamental previa y registra procedencia en el journal.
+- Contratos ACCOUNTING y USER ampliados con escenarios institucionales, tenant, snapshot ausente/incompleto/duplicado/revocado, RowID duplicado, spoof de departamento, permiso e idempotencia. Verificación CI pendiente.
+- La tabla snapshot es de solo lectura en esta unidad: no se crea ni se puebla; no se inventa autoridad ni se modifican datos reales. BETA-FUNC-037 Pendiente.

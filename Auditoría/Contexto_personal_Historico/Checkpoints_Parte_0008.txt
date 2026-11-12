@@ -12,3 +12,15 @@
 - **Estado:** incremento de consulta/listado completado y verificado; TASK-153 continúa En ejecución. BETA-FUNC-036 Pendiente beta.
 - **Siguiente acción elegible:** resolver snapshot server-side de ownership por RowID para la variante institucional multi-departamento de importación, conforme a C1.657; no seleccionar autoridad departamental ni tocar datos reales.
 ===============================================================================
+
+===============================================================================
+### C1.659 — IMA-EXEC-20261112-1754Z-03 — snapshot server-side por RowID para importación institucional multid departamento
+- HEAD inicial: abc9e44c2af5442d9fd058d40d37faf9d304123e; rama NG_beta_0.0.0.1_work. Rama base NG_beta_0.0.0.1 = 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ACCOUNTING: lector read-only de AsignacionesImportacionDepartamental; valida encabezados, batch, snapshot/versión uniforme, RowID únicos y cobertura exacta, tenant/dominio, departamento, estado VERIFIED, verificador y fecha no futura. Preview y writer comparten preflight; destinos se derivan por fila.
+- USER: registro ResourceOwnership institucional exige permiso dinámico y metadata RowID/SnapshotID en envelope HMAC. PayloadJSON del journal conserva la procedencia. La ruta departamental sigue usando activeDepartmentId.
+- Contrato compartido: exige una asignación verificada única por cada RowID para institutionWide; no admite filas sin asignación.
+- Pruebas añadidas: ACCOUNTING cubre batch DEP-A/DEP-B, preview, ownership por fila, batch/snapshot ausente, snapshot cliente falsificado, RowID ausente/duplicado, spoof de Departamento, tenant, snapshot incompleto/revocado/duplicado y permiso. USER cubre aceptación institucional, procedencia en journal, idempotencia, metadata ausente/tenant incorrecto y envelope HMAC.
+- Límite: no se crea ni se puebla la hoja ni se elige catálogo institucional. Se requiere que un proceso institucional aprobado materialice el snapshot. Apps Script/Sheets real queda BETA-FUNC-037 Pendiente beta.
+- Estado: implementación y contratos pendientes de CI; TASK-153 sigue En ejecución.
+- Siguiente: tras verificar esta unidad, continuar con el siguiente callsite elegible de importación/consulta.
+===============================================================================
