@@ -8214,7 +8214,7 @@ function assertAdvancedSignatureDocumentScope_(payload, ss, documentoId, solicit
   };
 }
 
-function assertAdvancedSignatureSignerScope_(ss, documentAccess, firmanteId) {
+function assertAdvancedSignatureSignerScope_(ss, documentAccess, firmanteId, signerContext) {
   const deny = function(code) { return { authorized: false, code: code }; };
   try {
     const signerId = String(firmanteId || "").trim();
@@ -8223,133 +8223,93 @@ function assertAdvancedSignatureSignerScope_(ss, documentAccess, firmanteId) {
     const expedienteId = String(documentAccess && documentAccess.expedienteId || "").trim();
     if (!signerId) return deny("SIGNATURE_SIGNER_REFERENCE_INVALID");
     if (!departmentId || !institutionId) return deny("RESOURCE_DEPARTMENT_UNRESOLVED");
-
     const usersSheet = ss && ss.getSheetByName("Usuarios");
     if (!usersSheet || usersSheet.getLastRow() <= 1) return deny("SIGNATURE_SIGNER_NOT_FOUND");
     const userData = usersSheet.getDataRange().getValues();
     const headers = (userData[0] || []).map(function(value) { return String(value || "").trim().toLowerCase(); });
-    const column = function(name, fallback) {
-      const index = headers.indexOf(name.toLowerCase());
-      return index >= 0 ? index : fallback;
-    };
-    const userIdIndex = column("userid", 0);
-    const nameIndex = column("nombre", 1);
-    const emailIndex = column("email", 4);
-    const roleIndex = column("rol", 6);
-    const personIndex = column("personaid", 9);
-    const stateIndex = column("estadocuenta", 10);
-    const users = userData.slice(1).filter(function(row) {
-      return String(row[userIdIndex] || "").trim() === signerId;
-    });
-    if (!users.length) return deny("SIGNATURE_SIGNER_NOT_FOUND");
-    if (users.length !== 1) return deny("SIGNATURE_SIGNER_ID_AMBIGUOUS");
-
-    const user = users[0];
-    if (String(user[stateIndex] || "Activa").trim().toUpperCase() !== "ACTIVA") {
-      return deny("SIGNATURE_SIGNER_INACTIVE");
-    }
-    const signerRole = String(user[roleIndex] || "").trim();
-    const signerName = String(user[nameIndex] || "").trim();
-    const signerEmail = String(user[emailIndex] || "").trim();
-    const signerPersonId = String(user[personIndex] || "").trim();
-    if (!signerRole || !signerName) return deny("SIGNATURE_SIGNER_PROFILE_INCOMPLETE");
-
-    const normalize = function(value) {
-      return String(value || "").trim().toUpperCase()
-        .replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I")
-        .replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N")
-        .replace(/^ROLE[_-]?/, "").replace(/[^A-Z0-9]/g, "");
-    };
-    const role = normalize(signerRole);
-    const isStudent = role === "ESTUDIANTE" || role === "ALUMNO";
-    const isGuardian = ["PADRE", "MADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(role) !== -1;
-    let accessType = "";
-
-    if (isStudent || isGuardian) {
-      if (!expedienteId || !signerPersonId) return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
-      const expedienteSheet = ss.getSheetByName("ExpedientesEstudiantes");
-      if (!expedienteSheet) return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
-      const expedienteRows = expedienteSheet.getDataRange().getValues().slice(1).filter(function(row) {
-        return String(row[0] || "").trim() === expedienteId;
-      });
-      if (expedienteRows.length !== 1) return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
-      const studentPersonId = String(expedienteRows[0][1] || "").trim();
-      if (!studentPersonId) return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
-
-      if (isStudent) {
-        if (signerPersonId !== studentPersonId) return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
-        accessType = "SELF";
-      } else {
-        const relationSheet = ss.getSheetByName("RelacionesEstudianteTutor");
-        const guardianSheet = ss.getSheetByName("ResponsablesTutores");
-        if (!relationSheet || !guardianSheet) return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
-        const activeRelations = relationSheet.getDataRange().getValues().slice(1).filter(function(row) {
-          const state = String(row[9] || "").trim().toUpperCase();
-          const portal = String(row[8] || "").trim().toUpperCase();
-          return String(row[1] || "").trim() === expedienteId &&
-            ["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(state) !== -1 &&
-            ["SI", "SÍ", "TRUE", "1", "ACTIVO", "ACTIVA"].indexOf(portal) !== -1;
-        });
-        const guardianRows = guardianSheet.getDataRange().getValues().slice(1);
-        const linked = activeRelations.filter(function(relation) {
-          const guardianMatches = guardianRows.filter(function(guardian) {
-            return String(guardian[0] || "").trim() === String(relation[2] || "").trim() &&
-              String(guardian[1] || "").trim() === signerPersonId &&
-              ["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(String(guardian[9] || "").trim().toUpperCase()) !== -1;
-          });
-          return guardianMatches.length === 1;
-        });
-        if (linked.length !== 1) return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
-        accessType = "GUARDIAN";
+    const column = function(name, fallback) { const index = headers.indexOf(name.toLowerCase()); return index >= 0 ? index : fallback; };
+    const userIdIndex=column("userid",0),nameIndex=column("nombre",1),emailIndex=column("email",4),roleIndex=column("rol",6),personIndex=column("personaid",9),stateIndex=column("estadocuenta",10);
+    const users=userData.slice(1).filter(function(row){return String(row[userIdIndex]||"").trim()===signerId;});
+    if(!users.length)return deny("SIGNATURE_SIGNER_NOT_FOUND");
+    if(users.length!==1)return deny("SIGNATURE_SIGNER_ID_AMBIGUOUS");
+    const user=users[0];
+    if(String(user[stateIndex]||"Activa").trim().toUpperCase()!=="ACTIVA")return deny("SIGNATURE_SIGNER_INACTIVE");
+    const profileRole=String(user[roleIndex]||"").trim(),signerName=String(user[nameIndex]||"").trim(),signerEmail=String(user[emailIndex]||"").trim(),signerPersonId=String(user[personIndex]||"").trim();
+    if(!signerName)return deny("SIGNATURE_SIGNER_PROFILE_INCOMPLETE");
+    const normalize=function(value){return String(value||"").trim().toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/^ROLE[_-]?/,"").replace(/[^A-Z0-9]/g,"");};
+    const profileRole=normalize(profileRole),isStudent=profileRole==="ESTUDIANTE"||profileRole==="ALUMNO",isGuardian=["PADRE","MADRE","TUTOR","RESPONSABLE","RESPONSABLEFAMILIAR"].indexOf(profileRole)!==-1;
+    let accessType="",authorizedRole=String(user[roleIndex]||"").trim(),authorizedMembershipId="";
+    if(isStudent||isGuardian){
+      if(!expedienteId||!signerPersonId)return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
+      const expedienteSheet=ss.getSheetByName("ExpedientesEstudiantes");if(!expedienteSheet)return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
+      const expedienteRows=expedienteSheet.getDataRange().getValues().slice(1).filter(function(row){return String(row[0]||"").trim()===expedienteId;});
+      if(expedienteRows.length!==1)return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
+      const studentPersonId=String(expedienteRows[0][1]||"").trim();if(!studentPersonId)return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
+      if(isStudent){if(signerPersonId!==studentPersonId)return deny("SIGNATURE_SIGNER_SCOPE_DENIED");accessType="SELF";}
+      else{
+        const relationSheet=ss.getSheetByName("RelacionesEstudianteTutor"),guardianSheet=ss.getSheetByName("ResponsablesTutores");
+        if(!relationSheet||!guardianSheet)return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
+        const activeRelations=relationSheet.getDataRange().getValues().slice(1).filter(function(row){const state=String(row[9]||"").trim().toUpperCase(),portal=String(row[8]||"").trim().toUpperCase();return String(row[1]||"").trim()===expedienteId&&["ACTIVO","ACTIVA","ACTIVE"].indexOf(state)!==-1&&["SI","SÍ","TRUE","1","ACTIVO","ACTIVA"].indexOf(portal)!==-1;});
+        const guardianRows=guardianSheet.getDataRange().getValues().slice(1);
+        const linked=activeRelations.filter(function(relation){const guardianMatches=guardianRows.filter(function(guardian){return String(guardian[0]||"").trim()===String(relation[2]||"").trim()&&String(guardian[1]||"").trim()===signerPersonId&&["ACTIVO","ACTIVA","ACTIVE"].indexOf(String(guardian[9]||"").trim().toUpperCase())!==-1;});return guardianMatches.length===1;});
+        if(linked.length!==1)return deny("SIGNATURE_SIGNER_SCOPE_DENIED");accessType="GUARDIAN";
       }
-    } else {
-      const scopeSheet = ss.getSheetByName("AsignacionesAmbitosRoles");
-      if (!scopeSheet) return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
-      const scopeRows = scopeSheet.getDataRange().getValues().slice(1);
-      const parseValues = function(value) {
-        if (Array.isArray(value)) return value.map(function(item) { return String(item).trim(); }).filter(Boolean);
-        const raw = String(value || "").trim();
-        if (!raw) return [];
-        try {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) return parsed.map(function(item) { return String(item).trim(); }).filter(Boolean);
-          if (parsed !== null && parsed !== undefined) return [String(parsed).trim()].filter(Boolean);
-        } catch (_) {}
-        return raw.split(",").map(function(item) { return String(item).trim(); }).filter(Boolean);
-      };
-      const now = Date.now();
-      const authorizedScopes = scopeRows.filter(function(row) {
-        if (String(row[1] || "").trim() !== signerId || normalize(row[2]) !== role) return false;
-        if (["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(String(row[5] || "").trim().toUpperCase()) === -1) return false;
-        const start = row[8] ? new Date(row[8]) : null;
-        const end = row[9] ? new Date(row[9]) : null;
-        if ((start && isNaN(start.getTime())) || (end && isNaN(end.getTime()))) return false;
-        if (start && start.getTime() > now) return false;
-        if (end && end.getTime() < now) return false;
-        const scopeType = String(row[3] || "").trim().toUpperCase();
-        const values = parseValues(row[4]);
-        return (scopeType === "DEPARTAMENTO" && values.indexOf(departmentId) !== -1) ||
-          (scopeType === "INSTITUCION" && values.indexOf(institutionId) !== -1);
-      });
-      if (!authorizedScopes.length) return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
-      accessType = authorizedScopes.some(function(row) {
-        return String(row[3] || "").trim().toUpperCase() === "INSTITUCION";
-      }) ? "INSTITUTION" : "DEPARTMENT";
+    }else{
+      const membershipState=getUserRoleMembershipState_(signerId,institutionId)||{},activeMemberships=membershipState.memberships||[];
+      const membershipSheet=ss.getSheetByName("MembresiasRolesRBAC");
+      const membershipRows=membershipSheet?membershipSheet.getDataRange().getValues().slice(1):[];
+      const hasAnyMembershipRecord=membershipRows.some(function(row){return String(row[1]||"").trim()===signerId;});
+      let selectedMembership=null;
+      if(membershipState.hasRecords){
+        if(!activeMemberships.length)return deny("SIGNATURE_SIGNER_MEMBERSHIP_NOT_ACTIVE");
+        const requestedMembershipId=String(signerContext&&(signerContext.firmanteMembershipId||signerContext.signerMembershipId)||"").trim();
+        const requestedRoleId=String(signerContext&&(signerContext.firmanteRoleId||signerContext.signerRoleId)||"").trim();
+        if(requestedMembershipId||requestedRoleId){
+          if(!requestedMembershipId||!requestedRoleId)return deny("SIGNATURE_SIGNER_MEMBERSHIP_SELECTION_REQUIRED");
+          const matches=activeMemberships.filter(function(item){return item.membershipId===requestedMembershipId&&item.roleId===requestedRoleId&&item.institutionId===institutionId;});
+          if(matches.length!==1)return deny("SIGNATURE_SIGNER_MEMBERSHIP_NOT_ACTIVE");
+          selectedMembership=matches[0];
+        }else if(activeMemberships.length===1)selectedMembership=activeMemberships[0];
+        else return deny("SIGNATURE_SIGNER_MEMBERSHIP_SELECTION_REQUIRED");
+      }else if(hasAnyMembershipRecord){
+        return deny("SIGNATURE_SIGNER_MEMBERSHIP_INSTITUTION_MISMATCH");
+      }
+      if(!selectedMembership&&!authorizedRole)return deny("SIGNATURE_SIGNER_PROFILE_INCOMPLETE");
+      const scopeSheet=ss.getSheetByName("AsignacionesAmbitosRoles");if(!scopeSheet)return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
+      const scopeData=scopeSheet.getDataRange().getValues(),scopeRows=scopeData.slice(1);
+      const legacyHeaders=["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"];
+      const membershipHeaders=legacyHeaders.concat(["InstitutionID","MembershipID"]),currentHeaders=membershipHeaders.concat(["ResponsibilityID"]);
+      const actualHeaders=scopeData.length?scopeData[0].map(String):[];
+      const schema=JSON.stringify(actualHeaders)===JSON.stringify(currentHeaders)?"current":(JSON.stringify(actualHeaders)===JSON.stringify(membershipHeaders)?"membership":(JSON.stringify(actualHeaders)===JSON.stringify(legacyHeaders)?"legacy":"invalid"));
+      if(schema==="invalid"||(selectedMembership&&schema!=="current"))return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
+      const assignmentCounts={};scopeRows.forEach(function(row){const id=String((row||[])[0]||"").trim();if(id)assignmentCounts[id]=(assignmentCounts[id]||0)+1;});
+      const parseValues=function(value){if(Array.isArray(value))return value.map(function(item){return String(item).trim();}).filter(Boolean);const raw=String(value||"").trim();if(!raw)return [];try{const parsed=JSON.parse(raw);if(Array.isArray(parsed))return parsed.map(function(item){return String(item).trim();}).filter(Boolean);if(parsed!==null&&parsed!==undefined)return [String(parsed).trim()].filter(Boolean);}catch(_){}return raw.split(",").map(function(item){return String(item).trim();}).filter(Boolean);};
+      const parseDate=function(value){if(value===""||value===null||value===undefined)return {valid:true,date:null};const date=value instanceof Date?value:new Date(value);return isNaN(date.getTime())?{valid:false,date:null}:{valid:true,date:date};};
+      const authorizedScopes=[];
+      for(let i=0;i<scopeRows.length;i++){
+        const row=scopeRows[i],assignmentId=String(row[0]||"").trim();if(!assignmentId||assignmentCounts[assignmentId]!==1||String(row[1]||"").trim()!==signerId)continue;
+        const rowRole=String(row[2]||"").trim();if(!rowRole)continue;
+        const rowInstitution=schema==="legacy"?"":String(row[12]||"").trim(),rowMembership=schema==="legacy"?"":String(row[13]||"").trim();
+        if(selectedMembership){
+          if(rowRole!==selectedMembership.roleId||rowInstitution!==institutionId||rowMembership!==selectedMembership.membershipId)continue;
+          const responsibilityId=schema==="current"?String(row[14]||"").trim():"";
+          if(!responsibilityId||!resolveActiveInternalResponsibility_(ss,responsibilityId))continue;
+        }else{
+          if(rowInstitution||rowMembership||normalize(rowRole)!==normalize(authorizedRole))continue;
+        }
+        if(["ACTIVO","ACTIVA","ACTIVE"].indexOf(String(row[5]||"").trim().toUpperCase())===-1)continue;
+        const start=parseDate(row[8]),end=parseDate(row[9]);if(!start.valid||!end.valid)continue;
+        const now=Date.now();if(start.date&&start.date.getTime()>now)continue;if(end.date&&end.date.getTime()<now)continue;
+        const scopeType=String(row[3]||"").trim().toUpperCase(),values=parseValues(row[4]);
+        if((scopeType==="DEPARTAMENTO"&&values.indexOf(departmentId)!==-1)||(scopeType==="INSTITUCION"&&values.indexOf(institutionId)!==-1))authorizedScopes.push({scopeType:scopeType});
+      }
+      if(!authorizedScopes.length)return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
+      authorizedRole=selectedMembership?selectedMembership.roleId:authorizedRole;
+      authorizedMembershipId=selectedMembership?selectedMembership.membershipId:"";
+      accessType=authorizedScopes.some(function(item){return item.scopeType==="INSTITUCION";})?"INSTITUTION":"DEPARTMENT";
     }
-
-    return {
-      authorized: true,
-      userId: signerId,
-      nombre: signerName,
-      email: signerEmail,
-      role: signerRole,
-      institutionId: institutionId,
-      departmentId: departmentId,
-      accessType: accessType
-    };
-  } catch (_) {
-    return deny("SIGNATURE_SIGNER_SCOPE_CHECK_FAILED");
-  }
+    return {authorized:true,userId:signerId,nombre:signerName,email:signerEmail,role:authorizedRole,institutionId:institutionId,departmentId:departmentId,membershipId:authorizedMembershipId||null,accessType:accessType};
+  }catch(_){return deny("SIGNATURE_SIGNER_SCOPE_CHECK_FAILED");}
 }
 
 function assertAdvancedSignatureProviderActive_(ss, providerId) {
@@ -8403,7 +8363,7 @@ function createAdvancedSignatureRequest(payload) {
     if (!documentAccess || documentAccess.authorized !== true) {
       throw new Error(documentAccess && documentAccess.code || "RESOURCE_SCOPE_DENIED");
     }
-    const signerAccess = assertAdvancedSignatureSignerScope_(ss, documentAccess, firmanteId);
+    const signerAccess = assertAdvancedSignatureSignerScope_(ss, documentAccess, firmanteId, payload);
     if (!signerAccess || signerAccess.authorized !== true) {
       throw new Error(signerAccess && signerAccess.code || "SIGNATURE_SIGNER_SCOPE_DENIED");
     }
