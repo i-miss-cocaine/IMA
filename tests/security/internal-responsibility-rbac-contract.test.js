@@ -1413,7 +1413,7 @@ const epochRecord={departmentId:"D-EPOCH",name:"Unidad",code:"E",namespace:"INST
 const epochEvent={eventId:"EVT-EPOCH",departmentId:"D-EPOCH",eventType:"RENAME",effectiveAt:0,changedBy:"USR-1",approvedBy:"USR-APP",approvalReference:"APR",reason:"epoch",newName:"Unidad histórica"};
 lifecycleResult=validateDepartmentLifecycleEvent_({config:lifecycleConfig,currentRecord:epochRecord,event:epochEvent,catalogRecords:[epochRecord],historyRows:[],now:0,snapshotScopeVerified:true,snapshotInstitutionId:"INST-1",snapshotDomain:"ACADEMIC"});
 assert.equal(lifecycleResult.valid,true);assert.equal(lifecycleResult.historyRow.effectiveAt,"1970-01-01T00:00:00.000Z");
-console.log("C1.649 department identity lifecycle contract: 55 assertions PASS.");
+console.log("C1.649 department identity lifecycle contract: 69 assertions PASS.");
 
 
 

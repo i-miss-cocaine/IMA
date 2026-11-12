@@ -33,3 +33,13 @@ La tabla propuesta DepartmentIdentityHistory registra InstitutionID, Domain, Eve
 ## Límites
 
 El contrato no elige estados institucionales, tipos de unidad, fuente canónica ni dueño del dato. No crea IDs reales, no ejecuta fusiones/divisiones, no modifica propietarios ni migra expedientes. Las decisiones y aprobación institucionales de S01-0/S01-2/S01-4/S01-7 siguen pendientes. El motor solo prepara reglas configurables para validación futura.
+
+
+
+## Validaciones adicionales de C1.649
+
+- La configuración de reglas requiere versión y referencia de aprobación; ambas quedan registradas en cada fila histórica.
+- El snapshot se acepta solo con scope verificado por servidor (InstitutionID y Domain coincidentes); cada fila de historial también debe pertenecer al mismo scope.
+- EventID repetido con la misma firma es idempotente; una firma diferente, duplicidad ambigua o evento fuera de orden se rechaza.
+- En este incremento no se aceptan eventos futuros para aplicación inmediata. Los eventos futuros programados requieren un contrato separado de activación temporal.
+- Los estados/transiciones son parámetros aprobados; no se fijan valores institucionales en el motor.
