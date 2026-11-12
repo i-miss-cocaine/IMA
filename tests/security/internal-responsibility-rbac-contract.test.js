@@ -371,3 +371,35 @@ assert.deepEqual(Array.from(auditorContext.departmentIds),["DEP-B"],"Auditor rec
 assert.equal(auditorContext.scopes.length,1,"the second active membership remains isolated from the first");
 assert.equal(lifecycleCtx.getInternalRoleAssignments({userId:"U-LIFE",roleId:"Director",membershipId:"MEM-LIFE"}).data.length,1,"administrative listing and effective context agree on exact role/membership binding");
 console.log("C1.625 multi-role context contract: exact signed role binding, cross-role isolation and alias rejection PASS.");
+
+ 
+// C1.626: department selection and independent revocation/expiry across active memberships.
+lifecycleScopeRows.push(["A-D2","U-LIFE","Director","DEPARTAMENTO",'["DEP-A2"]',"Activo","U-ADMIN","2026-01-01","","","No","","INST-1","MEM-LIFE","RI-LIFE"]);
+const directorAllDepartments = lifecycleCtx.getUserContextScope({sessionToken:"session-director"});
+assert.equal(directorAllDepartments.status,"success");
+assert.deepEqual(Array.from(directorAllDepartments.departmentIds),["DEP-A","DEP-A2"],"the Director context exposes only departments bound to its membership");
+const directorSelectedDepartment = lifecycleCtx.getUserContextScope({sessionToken:"session-director",activeDepartmentId:"DEP-A2"});
+assert.equal(directorSelectedDepartment.status,"success");
+assert.deepEqual(Array.from(directorSelectedDepartment.departmentIds),["DEP-A2"],"active department selection narrows the context to the selected authorized department");
+assert.equal(directorSelectedDepartment.scopes.length,1);
+assert.deepEqual(Array.from(directorSelectedDepartment.scopes[0].scopeValues),["DEP-A2"]);
+assert.equal(lifecycleCtx.getUserContextScope({sessionToken:"session-director",activeDepartmentId:"DEP-B"}).code,"ACTIVE_SCOPE_NOT_ASSIGNED","department selection cannot switch into another membership's department");
+assert.deepEqual(Array.from(lifecycleCtx.getUserContextScope({sessionToken:"session-auditor"}).departmentIds),["DEP-B"],"department selection tests do not broaden the Auditor context");
+
+// Revoking Director's membership must not revoke the same user's independent Auditor membership.
+lifecycleMembershipRows[1][4]="REVOKED";
+assert.equal(lifecycleCtx.getUserContextScope({sessionToken:"session-director"}).code,"VERIFIED_IDENTITY_REQUIRED","revocation invalidates the session bound to the revoked membership");
+assert.equal(lifecycleCtx.getInternalRoleAssignments({userId:"U-LIFE",roleId:"Director",membershipId:"MEM-LIFE"}).data.length,0,"revoked membership assignments disappear from administrative listing");
+assert.equal(lifecycleCtx.getUserContextScope({sessionToken:"session-auditor"}).status,"success","revoking Director membership leaves the independent Auditor membership active");
+assert.deepEqual(Array.from(lifecycleCtx.getUserContextScope({sessionToken:"session-auditor"}).departmentIds),["DEP-B"]);
+assert.equal(lifecycleCtx.getInternalRoleAssignments({userId:"U-LIFE",roleId:"Auditor",membershipId:"MEM-AUD"}).data.length,1,"the active Auditor assignment remains visible after Director revocation");
+lifecycleMembershipRows[1][4]="ACTIVE";
+
+// Expiry has the same per-membership isolation as explicit revocation.
+lifecycleMembershipRows[1][6]=new Date("2000-01-01T00:00:00.000Z");
+assert.equal(lifecycleCtx.getUserContextScope({sessionToken:"session-director"}).code,"VERIFIED_IDENTITY_REQUIRED","expired Director membership invalidates its previously issued session");
+assert.equal(lifecycleCtx.getUserContextScope({sessionToken:"session-auditor"}).status,"success","expiring Director membership does not invalidate Auditor membership");
+assert.deepEqual(Array.from(lifecycleCtx.getUserContextScope({sessionToken:"session-auditor"}).departmentIds),["DEP-B"]);
+assert.equal(lifecycleCtx.getInternalRoleAssignments({userId:"U-LIFE",roleId:"Auditor",membershipId:"MEM-AUD"}).data.length,1,"Auditor assignment remains active after Director membership expiry");
+console.log("C1.626 multi-role context contract: active-department selection, cross-membership denial, independent revocation and expiry PASS.");
+
