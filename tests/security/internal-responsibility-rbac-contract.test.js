@@ -865,7 +865,7 @@ assert.equal(sessionRevocationRows.length,rowsBeforeInvalidLogout,"an invalid to
 // User-wide revocation applies to sessions issued before the revocation timestamp, while allowing a later login.
 tenantClaimsByPayload.claimsbefore={userId:"U-TENANT",role:"Director",membershipId:"MEM-LOCAL",institutionId:"INST-1",sessionId:"SID-BEFORE",iat:nowForNewClaims-30,exp:nowForNewClaims+3600};
 assert.equal(tenantSessionCtx.verifySessionToken("claimsbefore.sig").sessionId,"SID-BEFORE");
-assert.equal(tenantSessionCtx.revokeUserSession({userId:"U-TENANT"}).status,"success");
+assert.equal(tenantSessionCtx.revokeUserSession({userId:"U-CROSS-USER"}).status,"success");
 assert.equal(tenantSessionCtx.verifySessionToken("claimsbefore.sig"),null,"user-wide revocation blocks all previously issued sessions");
 const afterRevocationIat=Math.floor(Date.now()/1000)+5;
 tenantClaimsByPayload.claimsafter={userId:"U-TENANT",role:"Director",membershipId:"MEM-LOCAL",institutionId:"INST-1",sessionId:"SID-AFTER",iat:afterRevocationIat,exp:afterRevocationIat+3600};
@@ -977,11 +977,13 @@ console.log("C1.638 server-side scope authorization contract: role/membership is
 
  
 // C1.639: USER revocation ledger and migration cutoff must be enforced by every Apps Script consumer.
+tenantUserRows.push(["U-CROSS-SESSION","","","","","","Director","","","","Activa"],["U-CROSS-USER","","","","","","Director","","","","Activa"]);
+tenantMembershipRows.push(["MEM-CROSS-SESSION","U-CROSS-SESSION","Director","INST-1","ACTIVE","","","U-ADMIN","2026-01-01","2026-01-01","",""],["MEM-CROSS-USER","U-CROSS-USER","Director","INST-1","ACTIVE","","","U-ADMIN","2026-01-01","2026-01-01","",""]);
 const crossServiceNow=Math.floor(Date.now()/1000);
 const crossServiceClaimsByPayload={
-  crosssession:{userId:"U-TENANT",role:"Director",membershipId:"MEM-LOCAL",institutionId:"INST-1",sessionId:"SID-CROSS-SESSION",iat:crossServiceNow-30,exp:crossServiceNow+3600},
-  crossuser:{userId:"U-TENANT",role:"Director",membershipId:"MEM-LOCAL",institutionId:"INST-1",sessionId:"SID-CROSS-USER",iat:crossServiceNow-30,exp:crossServiceNow+3600},
-  crossafter:{userId:"U-TENANT",role:"Director",membershipId:"MEM-LOCAL",institutionId:"INST-1",sessionId:"SID-CROSS-AFTER",iat:crossServiceNow+5,exp:crossServiceNow+3605}
+  crosssession:{userId:"U-CROSS-SESSION",role:"Director",membershipId:"MEM-CROSS-SESSION",institutionId:"INST-1",sessionId:"SID-CROSS-SESSION",iat:crossServiceNow-30,exp:crossServiceNow+3600},
+  crossuser:{userId:"U-CROSS-USER",role:"Director",membershipId:"MEM-CROSS-USER",institutionId:"INST-1",sessionId:"SID-CROSS-USER",iat:crossServiceNow-30,exp:crossServiceNow+3600},
+  crossafter:{userId:"U-CROSS-USER",role:"Director",membershipId:"MEM-CROSS-USER",institutionId:"INST-1",sessionId:"SID-CROSS-AFTER",iat:crossServiceNow+5,exp:crossServiceNow+3605}
 };
 const crossServiceConsumers={};
 function makeSharedSheet(rows) {
@@ -1035,8 +1037,7 @@ for(const serviceName of Object.keys(crossServiceConsumers)){
 }
 const crossMigrationCutoff=Math.floor(Date.now()/1000)+20;
 sessionRevocationStateRows.push(["LEGACY_SESSION_CUTOFF",String(crossMigrationCutoff),new Date()]);
-tenantClaimsByPayload.crossmigration={userId:"U-TENANT",role:"Director",membershipId:"MEM-LOCAL",institutionId:"INST-1",sessionId:"SID-CROSS-MIGRATION",iat:crossMigrationCutoff+1,exp:crossMigrationCutoff+3601};
-crossServiceClaimsByPayload.crossmigration=tenantClaimsByPayload.crossmigration;
+crossServiceClaimsByPayload.crossmigration={userId:"U-CROSS-USER",role:"Director",membershipId:"MEM-CROSS-USER",institutionId:"INST-1",sessionId:"SID-CROSS-MIGRATION",iat:crossMigrationCutoff+1,exp:crossMigrationCutoff+3601};
 for(const serviceName of Object.keys(crossServiceConsumers)){
   assert.equal(crossServiceConsumers[serviceName].verifySessionToken("crossafter.sig"),null,serviceName+" enforces the shared legacy migration cutoff");
   assert.equal(crossServiceConsumers[serviceName].verifySessionToken("crossmigration.sig").sessionId,"SID-CROSS-MIGRATION",serviceName+" accepts a token issued after the shared cutoff");
