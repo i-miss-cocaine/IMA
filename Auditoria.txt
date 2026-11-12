@@ -2301,3 +2301,10 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - CI run 43141769137 confirmó submitGradebookForReview 30/30 PASS y falló después en closePeriodGradebook por deepEqual entre fila VM y arreglo host.
 - Se normalizan aserciones de encabezados en cierre y reapertura con Array.from; sin cambios productivos. CI completo pendiente.
 ===============================================================================
+
+
+===============================================================================
+### C1.603-R1 — corrección de aserciones cross-realm
+- CI run 43141935472 superó los contratos de envío, cierre, revisión, reapertura y rectificación; falló en dos comparaciones de encabezados de CategoriasEvaluacion entre VM y host.
+- Se aplica Array.from a ambas aserciones; sin cambios al backend. CI integral pendiente.
+===============================================================================

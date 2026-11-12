@@ -2463,3 +2463,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - La segunda ejecución CI confirmó submitGradebookForReview 30/30 PASS y detectó la misma incompatibilidad deepEqual en cobertura C1.605.
 - Se normalizan filas de encabezados en cierre y reapertura con Array.from. Sin cambios al backend; workflow completo pendiente.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.603-R1 — normalización cross-realm de encabezados de categorías
+- CI run 43141935472 pasó los contratos previos y detectó dos comparaciones deepEqual cross-realm en el contrato de CategoriasEvaluacion.
+- Se normalizan con Array.from ambas filas de encabezados. Sin cambios productivos; repetición CI pendiente.
+===============================================================================

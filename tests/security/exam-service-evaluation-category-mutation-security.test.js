@@ -195,7 +195,7 @@ test("reentrant mutation during missing category sheet insert is rejected withou
   assert.equal(x.state.appends, 3, "outer create must append headers, ownership and one category");
   assert.equal(x.state.ownershipAppends, 1);
   assert.equal(x.state.categoriesAppends, 2, "outer create must append one header row and one category");
-  assert.deepEqual(x.sheets.CategoriasEvaluacion.rows[0], categoryHeaders);
+  assert.deepEqual(Array.from(x.sheets.CategoriasEvaluacion.rows[0]), categoryHeaders);
   assert.equal(x.sheets.CategoriasEvaluacion.rows.filter(row => row[0] === id).length, 1);
   assert.equal(x.sheets.ResourceOwnership.rows.filter(row => row[3] === id).length, 1);
 });
@@ -217,7 +217,7 @@ test("reentrant mutation during missing category sheet header append is rejected
   assert.equal(x.state.appends, 3, "outer create must append headers, ownership and one category");
   assert.equal(x.state.ownershipAppends, 1);
   assert.equal(x.state.categoriesAppends, 2, "outer create must append one header row and one category");
-  assert.deepEqual(x.sheets.CategoriasEvaluacion.rows[0], categoryHeaders);
+  assert.deepEqual(Array.from(x.sheets.CategoriasEvaluacion.rows[0]), categoryHeaders);
   assert.equal(x.sheets.CategoriasEvaluacion.rows.filter(row => row[0] === id).length, 1);
   assert.equal(x.sheets.ResourceOwnership.rows.filter(row => row[3] === id).length, 1);
 });

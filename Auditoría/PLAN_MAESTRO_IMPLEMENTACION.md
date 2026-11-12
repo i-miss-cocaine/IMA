@@ -4577,3 +4577,8 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 **Addendum C1.605-R1 / C1.606-R2 — normalización de encabezados cross-realm**
 - El workflow run 43141769137 confirmó 30/30 PASS para submitGradebookForReview y falló después en closePeriodGradebook por comparar una fila VM con un arreglo host. No falló lógica productiva.
 - Se normalizan con Array.from las aserciones afectadas de cierre y reapertura; CI completo de confirmación pendiente.
+
+
+**Addendum C1.603-R1 — corrección de aserciones cross-realm**
+- CI run 43141935472 pasó submitGradebookForReview (30/30), closePeriodGradebook (24/24), review, reopen y rectificación; se detuvo en dos aserciones de encabezados de CategoriasEvaluacion con deepEqual entre VM y host.
+- Se normalizan ambas filas con Array.from. No hay cambios productivos; repetición integral CI pendiente.
