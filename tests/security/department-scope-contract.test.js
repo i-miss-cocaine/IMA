@@ -52,9 +52,9 @@ const rows = [
   ["A-9","U-1","Director","DEPARTAMENTO",'["DEP-M2"]',"Activo","U-ADMIN","2026-01-01","2026-01-01","2027-01-01","No","","INST-1","MEM-2"],
   ["A-10","U-1","Director","DEPARTAMENTO",'["DEP-OTHER-INST"]',"Activo","U-ADMIN","2026-01-01","2026-01-01","2027-01-01","No","","INST-2","MEM-3"]
 ];
-rows[8].push("INST-1", "MEM-1", "RESP-ACTIVE");
-rows[9].push("INST-1", "MEM-2", "RESP-ACTIVE");
-rows[10].push("INST-2", "MEM-3", "RESP-ACTIVE");
+rows[8].push("RESP-ACTIVE");
+rows[9].push("RESP-ACTIVE");
+rows[10].push("RESP-ACTIVE");
 
 const ownershipRows = [
   ["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status"],
