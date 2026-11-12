@@ -5040,3 +5040,14 @@ La revisión de requisitos originales confirma cobertura de:
 - Selector de rol y login multirol explícito (C1.616–C1.617; Department Scope CI run 43217920934 SUCCESS).
 **Estado:** T153-S02 COMPLETADA en implementación/contratos aislados. No se declara validación real Apps Script/Sheets; BETA-FUNC-033 y prueba multi-proyecto C1.639 siguen Pendiente beta. TASK-153 global permanece En ejecución.
 **Siguiente unidad por orden:** T153-S01, inventario/reconciliación técnica de catálogos departamentales. T153-S03 y T153-S04 dependen de S01; T153-S05/S06 mantienen sus dependencias declaradas.
+
+
+ 
+**C1.641 — T153-S01: inventario técnico actualizado de catálogos**
+- USER `CatalogoDepartamentos`: `deptId/nombre/jefaturaUserId/estado/fechaCreacion`; acepta ID recibido o generado; no InstitutionID, jerarquía ni FK a ACADEMIC; no se encontró consumidor productivo como fuente canónica.
+- ACADEMIC `DepartamentosAcademicos`: `DepartamentoID/Nombre/JefeUserId/Estado/FechaActualizacion/AutorizadoPor`; alta no valida contra USER y puede copiar el ID como nombre; no InstitutionID ni jerarquía.
+- ACCOUNTING consulta ACADEMIC por ID/nombre para ExpedientesLaborales y conserva fallback textual; ACADEMIC lo usa en planificación. Los dos catálogos tienen semánticas/consumidores distintos.
+- `AsignacionesAmbitosRoles` y `ResourceOwnership` almacenan valores DepartmentID, no demuestran una FK canónica.
+- **Conclusión:** no se demuestra autoridad, clave estable ni correspondencia. No fusionar ni migrar; no inferir propietario desde actor, grado, sección, nombre o rol.
+- **Estado:** inventario técnico T153-S01 completado; selección/mapeo institucional sigue pendiente. Es una dependencia funcional real para S03/S04, no un trámite ajeno a la plataforma. T153-S02 quedó COMPLETADA en C1.640.
+- **Siguiente paso:** disponer de una fuente aprobada o crosswalk institucional verificable; luego ejecutar S03/S04.
