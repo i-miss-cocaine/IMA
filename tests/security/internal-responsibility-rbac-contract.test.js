@@ -592,6 +592,49 @@ lifecycleSheets.AsignacionesAmbitosRoles = priorTemporalSheet;
 delete lifecycleCtx.Date;
 console.log("C1.630 temporal parity contract: inclusive boundaries, future/past dates, invalid dates, empty bounds and epoch-valued expiry parity PASS.");
 
+ 
+// C1.631: membership validity uses the same inclusive temporal contract for session resolution and membership enumeration.
+const membershipTemporalRows = [
+  membershipHeaders,
+  ["MEM-DATE","U-DATE","Director","INST-1","ACTIVE","2026-11-12T18:00:00.000Z","2026-11-12T18:00:00.000Z","U-ADMIN","2026-01-01","2026-01-01","",""],
+  ["MEM-EXP","U-DATE","Auditor","INST-1","ACTIVE","","","U-ADMIN","2026-01-01","2026-01-01","",""]
+];
+const membershipTemporalCtx = {
+  SPREADSHEET_ID:"LOCAL",
+  ROLE_PERMISSIONS:{Director:[],Auditor:[]},
+  Date:FixedTemporalDate,
+  SpreadsheetApp:{openById:()=>({getSheetByName:name=>name==="MembresiasRolesRBAC"?{
+    getDataRange:()=>({getValues:()=>membershipTemporalRows.map(row=>row.slice())})
+  }:null})}
+};
+const membershipTemporalCode = `
+const USER_ROLE_MEMBERSHIP_HEADERS_ = ${JSON.stringify(membershipHeaders)};
+${extractFunction(source,"parseUserRoleMembershipDate_")}
+${extractFunction(source,"isConfiguredRbacRole_")}
+${extractFunction(source,"getUserRoleMembershipState_")}
+${extractFunction(source,"resolveUserRoleMembership_")}
+this.getUserRoleMembershipState_=getUserRoleMembershipState_;
+this.resolveUserRoleMembership_=resolveUserRoleMembership_;
+`;
+vm.runInNewContext(membershipTemporalCode,membershipTemporalCtx);
+const fixedMembershipNow = new FixedTemporalDate(fixedTemporalNow);
+const exactMembershipState = membershipTemporalCtx.getUserRoleMembershipState_("U-DATE","INST-1",fixedMembershipNow);
+assert.deepEqual(Array.from(exactMembershipState.memberships.map(item=>item.membershipId)),["MEM-DATE","MEM-EXP"],"membership start/end boundaries are inclusive at the exact clock instant");
+membershipTemporalRows[2][5]="2026-11-12T18:00:00.001Z";
+assert.deepEqual(Array.from(membershipTemporalCtx.getUserRoleMembershipState_("U-DATE","INST-1",fixedMembershipNow).memberships.map(item=>item.membershipId)),["MEM-DATE"],"future membership start excludes only that membership");
+membershipTemporalRows[2][5]="";
+membershipTemporalRows[2][6]=0;
+assert.deepEqual(Array.from(membershipTemporalCtx.getUserRoleMembershipState_("U-DATE","INST-1",fixedMembershipNow).memberships.map(item=>item.membershipId)),["MEM-DATE"],"numeric epoch membership expiry is treated as expired");
+assert.equal(membershipTemporalCtx.resolveUserRoleMembership_("U-DATE","Auditor","INST-1","MEM-EXP"),null,"expired membership cannot resolve a role-bound session");
+membershipTemporalRows[2][6]="";
+membershipTemporalRows[1][5]="invalid-date";
+assert.deepEqual(Array.from(membershipTemporalCtx.getUserRoleMembershipState_("U-DATE","INST-1",fixedMembershipNow).memberships.map(item=>item.membershipId)),["MEM-EXP"],"invalid membership start excludes only the malformed membership");
+membershipTemporalRows[1][5]="";
+membershipTemporalRows[1][6]="invalid-date";
+assert.deepEqual(Array.from(membershipTemporalCtx.getUserRoleMembershipState_("U-DATE","INST-1",fixedMembershipNow).memberships.map(item=>item.membershipId)),["MEM-EXP"],"invalid membership end excludes only the malformed membership");
+console.log("C1.631 membership temporal contract: inclusive boundaries, future/past epoch expiry, invalid dates and role membership resolution PASS.");
+
+
 
 
 
