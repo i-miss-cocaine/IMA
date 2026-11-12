@@ -10311,7 +10311,10 @@ function getUserContextScope(payload) {
       var assignmentId = String(row[0] || "").trim();
       if (!assignmentId || assignmentIdCounts[assignmentId] !== 1) continue;
       if (String(row[1] || "").trim() !== userId) continue;
-      if (!row[2] || normalizeRole(row[2]) !== normalizeRole(verifiedRole)) continue;
+      var rowRoleId = String(row[2] || "").trim();
+      // Las asignaciones ligadas a membresía deben coincidir con el RoleID firmado exactamente.
+      // La normalización histórica solo se conserva para el esquema legacy sin MembershipID.
+      if (!rowRoleId || (membershipId ? rowRoleId !== verifiedRole : normalizeRole(rowRoleId) !== normalizeRole(verifiedRole))) continue;
       var rowInstitutionId = scopeSchema === "legacy" ? "" : String(row[12] || "").trim();
       var rowMembershipId = scopeSchema === "legacy" ? "" : String(row[13] || "").trim();
       var rowResponsibilityId = scopeSchema === "current" ? String(row[14] || "").trim() : "";
