@@ -332,7 +332,7 @@ test(() => {
   assert.equal(result.status, "success");
   assert.equal(nestedError, "GRADEBOOK_SUBMISSION_LOCK_TIMEOUT");
   assert.equal(x.stats.insertions, 1, "the closure sheet must be inserted once");
-  assert.deepEqual(sheet.rows[0], ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "ProfesorID", "Estado", "FechaCierre"]);
+  assert.deepEqual(Array.from(sheet.rows[0]), ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "ProfesorID", "Estado", "FechaCierre"]);
   assert.equal(sheet.rows.length, 2, "only one review request may be persisted");
   assert.equal(sheet.appendCount, 2, "only header and outer request may be appended");
   assert.deepEqual([x.stats.opens, x.stats.acquired, x.stats.released, x.stats.held], [1, 2, 1, false]);
@@ -348,7 +348,7 @@ test(() => {
   assert.equal(result.status, "success");
   assert.equal(nestedAttempts, 1);
   assert.equal(nestedError, "GRADEBOOK_SUBMISSION_LOCK_TIMEOUT");
-  assert.deepEqual(sheet.rows[0], ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "ProfesorID", "Estado", "FechaCierre"]);
+  assert.deepEqual(Array.from(sheet.rows[0]), ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "ProfesorID", "Estado", "FechaCierre"]);
   assert.equal(sheet.rows.length, 2);
   assert.equal(sheet.appendCount, 2, "header and review request must each be appended once");
   assert.deepEqual([x.stats.opens, x.stats.insertions, x.stats.acquired, x.stats.released, x.stats.held], [1, 1, 2, 1, false]);

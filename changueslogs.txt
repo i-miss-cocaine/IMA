@@ -2449,3 +2449,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Suite V8 aislada 30/30 PASS; parseo de Code.gs y contrato PASS. Backend productivo sin cambios.
 - BETA-EXAM-054 actualizado; Apps Script/Sheets real NOT RUN; CI pendiente de resultado verificable.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.606-R1 — corrección de aserciones cross-realm
+- CI run 43141646897 falló en una aserción deepEqual de encabezados creados dentro del VM, por diferencia de realm aunque los valores eran idénticos.
+- Se aplica Array.from antes de comparar ambos encabezados; sin cambios productivos. V8 aislado 30/30 PASS y parseo PASS; repetición CI pendiente.
+===============================================================================

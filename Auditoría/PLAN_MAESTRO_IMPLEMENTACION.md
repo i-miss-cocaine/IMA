@@ -4566,3 +4566,9 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI:** pendiente de resultado verificable tras publicar el commit.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-054 Pendiente beta.
 - **Estado:** C1.606 Completada en verificación local aislada. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+
+
+**Addendum C1.606-R1 — corrección de aserciones cross-realm**
+- GitHub Actions run 43141646897 falló únicamente en la primera comparación estricta de encabezados creados desde el contexto VM: valores estructuralmente iguales pertenecían a realms distintos. Las 12 pruebas previas del workflow habían pasado; el contrato de envío se detuvo en el primer escenario nuevo.
+- Se normalizan las filas de encabezado mediante Array.from antes de deepEqual en ambos escenarios. Sin cambios al handler productivo ni a los invariantes probados.
+- Harness local V8 aislado re-ejecutado: 30/30 PASS; parseo de Code.gs/contrato PASS. La normalización evita la incompatibilidad de realm; CI de confirmación pendiente.

@@ -632,3 +632,10 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.606 Completada con verificación local aislada; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
 - HEAD inicial: dd3763ce0a2b54ea57d3433f4ec3da34eccd39ea; HEAD final se confirma tras publicar.
 ===============================================================================
+
+
+### Addendum C1.606-R1 — corrección de verificación
+- CI run 43141646897 falló en el primer escenario nuevo por deepEqual estricto entre arreglos de realms distintos; los 12 pasos anteriores habían pasado. No se observó fallo productivo.
+- Se normalizan ambas filas de encabezados con Array.from antes de deepEqual. Suite V8 aislada local re-ejecutada 30/30 PASS; parseo Code.gs/contrato PASS.
+- CI de confirmación pendiente; C1.606 mantiene cierre local y BETA-EXAM-054 Pendiente beta.
+===============================================================================
