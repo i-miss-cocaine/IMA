@@ -2621,3 +2621,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato Department Scope local PASS con selección activa y ownership positivo/negativo; contrato focalizado adicional 8/8 PASS; parseo de funciones modificadas y contrato PASS.
 - BETA-FUNC-032 Pendiente beta; Apps Script/Sheets real NOT RUN. Multirol RBAC simultáneo permanece pendiente dentro de T153-S02.
 ===============================================================================
+
+===============================================================================
+[2026-11-12] C1.616 — TASK-153 / T153-S02: membresías RBAC multirol y rol activo explícito
+- USER emite y valida contexto firmado por membershipId/institutionId; membresías deben ser únicas, vigentes, activas y pertenecer a rol configurado.
+- ACADEMIC, ACCOUNTING, TASK y EXAM validan los claims contra la fuente canónica y la institución configurada; DEVELOPER rechaza claims de membresía de la aplicación por mantener un plano de control separado.
+- Login ahora solicita selección explícita cuando hay varias membresías activas; el cliente presenta el selector. Asignación/revocación aplica controles de cuenta, tenant, ScriptLock y unicidad global.
+- Contrato de seguridad ampliado y workflow actualizado; pruebas y parseos locales NOT RUN; CI no verificable para el HEAD. No se declara PASS.
+- BETA-FUNC-033 Pendiente beta; Apps Script/Sheets real NOT RUN. T153-S02 permanece En ejecución.
+===============================================================================
