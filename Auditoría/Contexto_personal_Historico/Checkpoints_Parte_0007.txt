@@ -955,3 +955,25 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - El commit documental previo 52498c8 no se considera evidencia funcional; la implementación efectiva está en e36337b.
 - HEAD de código verificado: e36337bcf3d57ce0210d7d372e70486c5d0a6159; HEAD final se confirma tras este registro documental.
 ===============================================================================
+
+
+===============================================================================
+### C1.615 — TASK-153 / T153-S02: contexto activo explícito por departamento
+- **Sesión:** IMA-EXEC-20261110-1825Z-02.
+- **Rama:** NG_beta_0.0.0.1_work (única rama modificada).
+- **Checkpoint anterior:** C1.614 / C1.614-R1.
+- **HEAD inicial verificado:** e42b7df470ebf7019b0bea884eb0074e3ac453a7.
+- **Objetivo:** permitir que una solicitud seleccione explícitamente uno de los departamentos ya asignados al usuario/rol verificado, sin ampliar el conjunto autorizado.
+- **Implementación:** USER getUserContextScope valida activeDepartmentId contra los departamentos extraídos de asignaciones vigentes del rol firmado. Cuando coincide, reduce departmentIds y scopes al departamento elegido, desactiva institutionWide para esa solicitud y descarta dimensiones de ámbito sin relación departamental demostrada. Un selector no asignado o derivado únicamente de alcance institucional general falla con ACTIVE_SCOPE_NOT_ASSIGNED. Si el selector se omite, se conserva la unión previamente autorizada.
+- **Integración:** validateRoleScopeAccess devuelve activeDepartmentId; assertRecordOwnership consume el contexto reducido mediante getUserContextScope sin cambio adicional.
+- **Archivos funcionales/documentales:** backend/user-service/Code.gs; tests/security/department-scope-contract.test.js; beta_test.txt; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; changueslogs.txt; este checkpoint; Auditoría/INDICE_CHECKPOINTS.md.
+- **Commits:** implementación USER 4149f540b18baa636bf8fc18f638ffad76c4a205; contrato 9b3a5432e0b40fc412613438347413ba3ef92ccd; escenario beta 0f1bffcf7afaf5768a582c3f7c9a7cd17d307dad; plan 589ede300406509efc9211afe5f8609a6dcbe583; changelog 9d1f948d80843fdbb282a165cebcc5c015cffc26.
+- **Verificación local:** contrato Department Scope aislado, 37 aserciones PASS; contrato focalizado de contexto activo, 8/8 PASS; parseo JavaScript de las funciones modificadas y del contrato PASS. El harness usa fixtures sintéticos y funciones productivas extraídas; no representa ejecución de Apps Script/Sheets desplegado.
+- **CI:** pendiente de ejecución/observación para los commits de C1.615; no se declara PASS.
+- **Beta:** BETA-FUNC-032 Pendiente beta. Apps Script/Sheets real NOT RUN.
+- **Decisiones de seguridad:** activeDepartmentId es entrada no confiable y solo puede restringir asignaciones vigentes verificadas; no se utiliza AsignacionesAmbitosRoles para conceder roles RBAC; no se infiere departamento desde grant institucional. La exclusión de otras dimensiones dentro del contexto departamental evita ampliar acceso sin relación canónica.
+- **Límites:** no se implementa todavía soporte de múltiples roles RBAC simultáneos. verifySessionToken continúa vinculando el rol firmado al rol único vigente de Usuarios. Se requiere definir la fuente canónica de membresías multirol y su integración firmada antes de habilitar selección de rol; no se deduce desde asignaciones de ámbito/responsabilidad.
+- **Estado:** C1.615 Completada en verificación local; T153-S02 continúa En ejecución. T153-S01 sigue bloqueada solo para la decisión/fuente institucional real, sin impedir este incremento genérico.
+- **Siguiente tarea elegible:** continuar T153-S02 con el modelo canónico de membresías multirol y contexto de rol firmado, tras inspeccionar la fuente de verdad disponible y las dependencias ya registradas; mantener fail-closed y no elevar privilegios mediante el selector de ámbito.
+- **HEAD final de implementación verificado:** 4149f540b18baa636bf8fc18f638ffad76c4a205. Los commits posteriores solo incorporan pruebas y registros de esta misma iteración.
+===============================================================================
