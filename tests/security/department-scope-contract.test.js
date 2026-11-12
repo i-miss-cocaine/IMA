@@ -34,6 +34,7 @@ const assignFn = extractFunction(source, "assignRoleScope");
 const permissionFn = extractFunction(source, "validateRolePermission");
 const assignmentsFn = extractFunction(source, "getInternalRoleAssignments");
 const ownershipFn = extractFunction(source, "assertRecordOwnership");
+const responsibilityFn = extractFunction(source, "resolveActiveInternalResponsibility_");
 const permissionCacheKeyFn = extractFunction(source, "getDynamicPermissionCacheKey_");
 const dynamicPermissionsFn = extractFunction(source, "getDynamicPermissionsForRole");
 
@@ -99,7 +100,7 @@ function makeContext() {
     ROLE_PERMISSIONS: {},
     logStructuredEvent: () => {}
   };
-  vm.runInNewContext(scopeFn + "\n" + validateFn + "\n" + ownershipFn + "\n" + permissionFn + "\nthis.getUserContextScope=getUserContextScope;this.validateRoleScopeAccess=validateRoleScopeAccess;this.assertRecordOwnership=assertRecordOwnership;this.validateRolePermission=validateRolePermission;", ctx);
+  vm.runInNewContext(responsibilityFn + "\n" + scopeFn + "\n" + validateFn + "\n" + ownershipFn + "\n" + permissionFn + "\nthis.getUserContextScope=getUserContextScope;this.validateRoleScopeAccess=validateRoleScopeAccess;this.assertRecordOwnership=assertRecordOwnership;this.validateRolePermission=validateRolePermission;", ctx);
   return ctx;
 }
 
