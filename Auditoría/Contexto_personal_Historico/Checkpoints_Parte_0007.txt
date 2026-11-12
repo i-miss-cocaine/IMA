@@ -1146,3 +1146,22 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - Node CLI en checkout independiente NOT RUN por fallo DNS al resolver github.com. Apps Script/Sheets real NOT RUN; prueba beta Pendiente.
 - Diff revisado: ocho archivos previstos; no se modificaron ramas/servicios ajenos ni datos reales.
 - C1.624 completada. T153-S02 permanece En ejecución; C1.624 no declara finalizado el ciclo completo ni inicia T153-S03.
+
+
+===============================================================================
+### C1.625 — IMA-EXEC-20261110-1825Z-02 — aislamiento exacto de rol en contexto RBAC multirol
+- **Sesión:** IMA-EXEC-20261110-1825Z-02; continuidad directa de C1.624.
+- **HEAD inicial:** `76ea29158a45bfa28662a6415c18cf76e61dc72a`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificación del ciclo usuario↔membresías/roles↔responsabilidades↔ámbitos y aislamiento del contexto activo multirol.
+- **Hallazgo:** `getUserContextScope` comparaba RoleID mediante normalización que elimina puntuación. Una fila vinculada a la misma MembershipID pero con RoleID distinto (p. ej. `Direct-or` frente a `Director`) podía incorporarse al contexto firmado, a diferencia del lector administrativo que exige coincidencia exacta. Esto permitía contaminación de ámbitos entre roles bajo una misma membresía si existía una fila malformada o residual.
+- **Corrección:** para asignaciones vinculadas a MembershipID, el RoleID de la fila debe coincidir exactamente con el rol de la sesión firmada. La normalización histórica se conserva únicamente para el esquema legacy sin MembershipID. Se mantiene la comprobación existente de institución, membresía, responsabilidad activa, vigencia e identidad firmada.
+- **Contrato:** ampliado `tests/security/internal-responsibility-rbac-contract.test.js` con un usuario que tiene dos membresías activas en la misma institución (Director/DEP-A y Auditor/DEP-B), sesiones independientes y una fila con RoleID alias `Direct-or` bajo la membresía Director. Comprueba que Director solo recibe DEP-A, Auditor solo recibe DEP-B y el alias no introduce DEP-X.
+- **Verificación aislada:** ejecución completa del contrato en harness V8 aislado: **PASS**, incluidos los escenarios históricos C1.621–C1.624 y el nuevo C1.625. Parseo sintáctico de backend USER y contrato: **PASS**.
+- **Node CLI independiente:** NOT RUN; no hubo checkout local disponible por la limitación DNS de github.com. **CI:** la consulta de estados del commit no devolvió checks; no se declara CI PASS.
+- **Beta:** Apps Script/Sheets real y concurrencia multi-solicitud desplegada NOT RUN; ampliar BETA-FUNC-033. Pendiente beta no bloqueante conforme a NDASC.
+- **Archivos funcionales:** `backend/user-service/Code.gs`; `tests/security/internal-responsibility-rbac-contract.test.js`.
+- **Commits:** backend `c4b7847a674bd5459849ad9e91657e92b5f96e4a`; contrato `ee9d4f19afb1955f9232e1da30983c895a4e3124`; corrección del fixture de regresión `e761c02af422745633750765f26c99c3aaff0c1f`.
+- **HEAD final funcional antes de registros:** `e761c02af422745633750765f26c99c3aaff0c1f`.
+- **Estado:** C1.625 implementada y verificada en harness aislado. T153-S02 continúa En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** completar la matriz multirol del contexto activo: selección/cambio de departamento por membresía, revocación/expiración de una membresía sin afectar la otra, y consistencia de ámbitos/responsabilidades entre lectores y permisos RBAC explícitos.
+===============================================================================
