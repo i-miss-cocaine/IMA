@@ -2542,3 +2542,14 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Revisión:** ocho archivos previstos; cambios acotados al USER service, su contrato y documentación/checkpoint; rama base intacta.
 - C1.624 queda completada. T153-S02 permanece En ejecución; no se declara cerrado el ciclo completo ni TASK-153.
 ===============================================================================
+
+
+===============================================================================
+### C1.625 — contaminación de ámbitos entre roles por normalización de RoleID
+- **Severidad:** Alto — aislamiento RBAC/contexto multirol.
+- **Hallazgo:** `getUserContextScope` normalizaba RoleID aun cuando la asignación estaba vinculada a una MembershipID. Un valor diferente que colisionara tras eliminar puntuación podía aportar ámbitos al contexto de otra membresía/rol.
+- **Impacto:** divergencia entre el contexto efectivo y el lector administrativo, con riesgo de acceso a departamentos no vinculados al rol firmado ante filas residuales o malformadas.
+- **Corrección:** coincidencia exacta de RoleID para toda asignación con MembershipID; normalización retenida solo para compatibilidad legacy sin vínculo de membresía.
+- **Evidencia:** contrato multirol Director/Auditor con dos membresías y fila alias `Direct-or`; ejecución completa del contrato en harness V8 aislado PASS y sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI sin estado reportado por la integración.
+- **Estado:** corregido en C1.625; T153-S02 sigue En ejecución para verificar las invariantes multirol restantes. Validación Apps Script/Sheets real Pendiente beta.
+===============================================================================
