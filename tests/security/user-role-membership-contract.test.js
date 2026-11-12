@@ -100,10 +100,10 @@ function makeHarness(membershipRows = [headers]) {
 function membership(id,user,role,institution,status="ACTIVE",from=start,to=end){return[id,user,role,institution,status,from,to,"U-ADMIN",now,now,"",""];}
 
 {
-  const rows=[headers,membership("M1","U-1","Director","INST-1"),membership("MF","U-1","Future","INST-1","ACTIVE",new Date(now.getTime()+86400000).toISOString(),""),membership("ME","U-1","Expired","INST-1","ACTIVE","",new Date(now.getTime()-86400000).toISOString()),membership("MR","U-1","Revoked","INST-1","REVOKED"),membership("MX","U-1","Other","INST-2"),membership("MU","U-2","Director","INST-1"),membership("MB","U-1","BadDate","INST-1","ACTIVE","invalid","")];
+  const rows=[headers,membership("M1","U-1","Director","INST-1"),membership("MF","U-1","Future","INST-1","ACTIVE",new Date(now.getTime()+86400000).toISOString(),""),membership("ME","U-1","Expired","INST-1","ACTIVE","",new Date(now.getTime()-86400000).toISOString()),membership("MR","U-1","Revoked","INST-1","REVOKED"),membership("MX","U-1","Other","INST-2"),membership("MU","U-2","Director","INST-1"),membership("MB","U-1","BadDate","INST-1","ACTIVE","invalid",""),membership("M-UNC","U-1","Unconfigured","INST-1")];
   const {ctx}=makeHarness(rows);
   assert.equal(ctx.resolveUserRoleMembership_("U-1","Director","INST-1").membershipId,"M1");
-  for(const role of ["Future","Expired","Revoked","Other","BadDate"]) assert.equal(ctx.resolveUserRoleMembership_("U-1",role,"INST-1"),null,role+" must be denied");
+  for(const role of ["Future","Expired","Revoked","Other","BadDate","Unconfigured"]) assert.equal(ctx.resolveUserRoleMembership_("U-1",role,"INST-1"),null,role+" must be denied");
   assert.equal(ctx.resolveUserRoleMembership_("U-1","Director","INST-2"),null,"wrong institution denied");
   assert.equal(ctx.resolveUserRoleMembership_("U-2","Director","INST-1").membershipId,"MU","exact user binding");
   const foreignOnly=makeHarness([headers,membership("M-FOREIGN","U-1","Director","INST-2")]);
@@ -200,6 +200,7 @@ console.log("User role membership contract: institution/user binding, effective 
     let serviceInstitution = "INST-1";
     const serviceCtx = {
       SPREADSHEET_ID:"LOCAL",
+      ROLE_PERMISSIONS:{Director:[],Student:[]},
       PropertiesService:{getScriptProperties:()=>({getProperty:key=>key==="IMA_INSTITUTION_ID"?serviceInstitution:""})},
       SpreadsheetApp:{openById:()=>({getSheetByName:name=>name==="Usuarios"?{getDataRange:()=>({getValues:()=>[
         ["UserId","Nombre","Grado","Seccion","Email","PasswordHash","Rol","Telefono","NumeroLista","PersonaID","EstadoCuenta"],
@@ -212,6 +213,10 @@ console.log("User role membership contract: institution/user binding, effective 
     };
     vm.runInNewContext(membershipVerifier+"\n"+sessionVerifier+"\nthis.verifySessionToken=verifySessionToken;",serviceCtx);
     assert.equal(serviceCtx.verifySessionToken(signedRoleToken).role,"Director",relativePath+" accepts active membership token");
+    delete serviceCtx.ROLE_PERMISSIONS.Director;
+    assert.equal(serviceCtx.verifySessionToken(signedRoleToken),null,relativePath+" rejects role removed from RBAC configuration");
+    serviceCtx.ROLE_PERMISSIONS.Director = [];
+    assert.equal(serviceCtx.verifySessionToken(signedRoleToken).role,"Director",relativePath+" accepts configured role membership");
     sharedRows[1][4]="REVOKED";
     assert.equal(serviceCtx.verifySessionToken(signedRoleToken),null,relativePath+" rejects revoked membership");
     sharedRows[1][4]="ACTIVE";
