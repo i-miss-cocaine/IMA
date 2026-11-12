@@ -1248,6 +1248,76 @@ assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:cro
 assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:crosswalkConfig,records:crosswalkRecords,sourceId:"DEP-1",crosswalk:[approvedMapping],canonicalRecords:[{CanonicalDepartmentID:"CAN-MATH",Status:"INACTIVE"}],effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_CANONICAL_INACTIVE","crosswalk cannot resolve to an inactive canonical record");
 console.log("C1.646 neutral department catalog contract: explicit authority, stable IDs, active/effective state, namespace uniqueness, hierarchy integrity, approved crosswalk and ambiguity fail-closed PASS.");
 
+ 
+// C1.648 interdepartmental reference policy: server-verified actor + ownership + tenant config + exact grant.
+const departmentPolicyCode=`
+${extractFunction(consumerSources.departmentCatalog,"evaluateDepartmentReferenceAccess_")}
+this.evaluateDepartmentReferenceAccess_=evaluateDepartmentReferenceAccess_;
+`;
+const departmentPolicyCtx={Date:FixedTemporalDate};
+vm.runInNewContext(departmentPolicyCode,departmentPolicyCtx);
+const evaluateDepartmentReferenceAccess_=departmentPolicyCtx.evaluateDepartmentReferenceAccess_;
+const policyNow="2026-11-12T18:00:00.000Z";
+const policyActor={verified:true,userId:"USR-1",membershipId:"MEM-1",roleId:"DOCENTE",institutionId:"INST-1",activeDepartmentId:"DEP-B"};
+const policyOwner={verified:true,institutionId:"INST-1",departmentId:"DEP-A",resourceType:"STUDENT_RECORD",resourceId:"EXP-1"};
+const policyGrant={institutionId:"INST-1",grantId:"GRANT-1",resourceType:"STUDENT_RECORD",resourceId:"EXP-1",ownerDepartmentId:"DEP-A",targetDepartmentId:"DEP-B",status:"ACTIVE",authorizedBy:"USR-DIR",authorizedAt:"2026-11-12T17:00:00.000Z",validFrom:"2026-11-12T17:00:00.000Z",expiresAt:"2026-11-13T00:00:00.000Z",revokedAt:"",allowedFields:["referenceId","title"],allowedDocumentIds:["DOC-1"]};
+const policyBase={actorContext:policyActor,resourceOwnership:policyOwner,institutionalConfig:{institutionId:"INST-1",POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL:"PERMITIR_REFERENCIA_SOLO_LECTURA_INTERDEPARTAMENTAL"},operation:"READ_REFERENCE",requestedFields:["referenceId","title"],requestedDocumentIds:["DOC-1"],referenceGrants:[policyGrant],now:policyNow};
+let policyResult=evaluateDepartmentReferenceAccess_(policyBase);
+assert.equal(policyResult.allowed,true);
+assert.equal(policyResult.mode,"READ_ONLY_REFERENCE");
+assert.equal(policyResult.grantId,"GRANT-1");
+assert.equal(policyResult.authorizedBy,"USR-DIR");
+assert.equal(policyResult.auditEvent.decision,"ALLOW");
+assert.equal(policyResult.auditEvent.actorUserId,"USR-1");
+assert.equal(policyResult.auditEvent.grantId,"GRANT-1");
+assert.equal(policyResult.requiresStandardAuthorization,true);
+policyResult=evaluateDepartmentReferenceAccess_({...policyBase,institutionalConfig:{institutionId:"INST-1"}});
+assert.equal(policyResult.reasonCode,"CROSS_DEPARTMENT_REFERENCE_BLOCKED","missing policy defaults to strict");
+policyResult=evaluateDepartmentReferenceAccess_({...policyBase,institutionalConfig:{institutionId:"INST-1",POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL:"BLOQUEO_TOTAL_CROSS_DEPARTAMENTO"}});
+assert.equal(policyResult.reasonCode,"CROSS_DEPARTMENT_REFERENCE_BLOCKED");
+policyResult=evaluateDepartmentReferenceAccess_({...policyBase,actorContext:{...policyActor,activeDepartmentId:"DEP-A"}});
+assert.equal(policyResult.allowed,true);
+assert.equal(policyResult.mode,"SAME_DEPARTMENT");
+["DOWNLOAD","SIGN","READ_CONTENT","EDIT","DELETE","APPROVE","SHARE","REVOKE","EXPORT","READ_HISTORY"].forEach(operation=>{
+ assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,operation}).reasonCode,"CROSS_DEPARTMENT_OPERATION_DENIED");
+});
+policyResult=evaluateDepartmentReferenceAccess_({...policyBase,requestedFields:["referenceId","privateNotes"]});
+assert.equal(policyResult.reasonCode,"DEPARTMENT_REFERENCE_FIELD_DENIED");
+assert.equal(policyResult.auditEvent.grantId,"GRANT-1");
+assert.equal(policyResult.auditEvent.authorizedBy,"USR-DIR");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,requestedDocumentIds:["DOC-2"]}).reasonCode,"DEPARTMENT_REFERENCE_DOCUMENT_DENIED");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,requestedFields:[]}).reasonCode,"DEPARTMENT_REFERENCE_FIELDS_REQUIRED");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,referenceGrants:[]}).reasonCode,"DEPARTMENT_REFERENCE_GRANT_NOT_FOUND");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,referenceGrants:[{...policyGrant,expiresAt:"2026-11-12T17:59:59.999Z"}]}).reasonCode,"DEPARTMENT_REFERENCE_GRANT_NOT_FOUND");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,referenceGrants:[{...policyGrant,validFrom:"2026-11-12T18:00:00.001Z"}]}).reasonCode,"DEPARTMENT_REFERENCE_GRANT_NOT_FOUND");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,referenceGrants:[{...policyGrant,revokedAt:"2026-11-12T17:30:00.000Z"}]}).reasonCode,"DEPARTMENT_REFERENCE_GRANT_NOT_FOUND");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,referenceGrants:[policyGrant,policyGrant]}).reasonCode,"DEPARTMENT_REFERENCE_GRANT_AMBIGUOUS");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,referenceGrants:[{...policyGrant,institutionId:"INST-2"}]}).reasonCode,"DEPARTMENT_REFERENCE_GRANT_NOT_FOUND");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,referenceGrants:[{...policyGrant,resourceId:"EXP-2"}]}).reasonCode,"DEPARTMENT_REFERENCE_GRANT_NOT_FOUND");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,referenceGrants:[{...policyGrant,targetDepartmentId:"DEP-C"}]}).reasonCode,"DEPARTMENT_REFERENCE_GRANT_NOT_FOUND");
+policyResult=evaluateDepartmentReferenceAccess_({...policyBase,referenceGrants:[{...policyGrant,authorizedBy:""}]});
+assert.equal(policyResult.reasonCode,"DEPARTMENT_REFERENCE_GRANT_INVALID");
+assert.equal(policyResult.auditEvent.grantId,"GRANT-1");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,referenceGrants:[{...policyGrant,authorizedAt:"invalid"}]}).reasonCode,"DEPARTMENT_REFERENCE_GRANT_NOT_FOUND");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,actorContext:{...policyActor,verified:false}}).reasonCode,"VERIFIED_ACTOR_CONTEXT_REQUIRED");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,actorContext:{...policyActor,institutionId:"INST-2"}}).reasonCode,"DEPARTMENT_POLICY_TENANT_MISMATCH");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,actorContext:{...policyActor,activeDepartmentId:""}}).reasonCode,"DEPARTMENT_SCOPE_REQUIRED");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,resourceOwnership:{...policyOwner,verified:false}}).reasonCode,"RESOURCE_OWNERSHIP_UNVERIFIED");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,resourceOwnership:{...policyOwner,institutionId:"INST-2"}}).reasonCode,"DEPARTMENT_POLICY_TENANT_MISMATCH");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,resourceOwnership:{...policyOwner,resourceId:""}}).reasonCode,"RESOURCE_OWNER_REFERENCE_INVALID");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,institutionalConfig:{institutionId:"INST-2"}}).reasonCode,"DEPARTMENT_POLICY_TENANT_MISMATCH");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,institutionalConfig:{POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL:"PERMITIR_REFERENCIA_SOLO_LECTURA_INTERDEPARTAMENTAL"}}).reasonCode,"DEPARTMENT_POLICY_CONFIG_UNSCOPED");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,institutionalConfig:{institutionId:"INST-1",POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL:"UNKNOWN"}}).reasonCode,"DEPARTMENT_ISOLATION_POLICY_INVALID");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,operation:"INVALID"}).reasonCode,"DEPARTMENT_OPERATION_INVALID");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,now:"not-a-date"}).reasonCode,"DEPARTMENT_POLICY_CLOCK_INVALID");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,actorContext:{...policyActor,institutionWide:true,institutionWideAuthorized:true}}).mode,"INSTITUTION_WIDE");
+assert.equal(evaluateDepartmentReferenceAccess_({...policyBase,actorContext:{...policyActor,institutionWide:true,institutionWideAuthorized:false}}).reasonCode,"INSTITUTION_WIDE_SCOPE_UNAUTHORIZED");
+policyResult=evaluateDepartmentReferenceAccess_({...policyBase,now:0,actorContext:{...policyActor,activeDepartmentId:"DEP-A"}});
+assert.equal(policyResult.allowed,true);
+assert.equal(policyResult.auditEvent.checkedAt,"1970-01-01T00:00:00.000Z");
+console.log("C1.648 interdepartmental reference policy: strict default, verified scope, tenant/resource binding, exact read-only grants, field/document allowlists, expiry/revocation, audit and institutional-wide authorization PASS.");
+
+
 
 
 
