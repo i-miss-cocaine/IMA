@@ -1385,3 +1385,20 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** C1.638 completada. T153-S02 permanece En ejecución hasta cerrar la matriz completa de requisitos originales.
 - **Siguiente acción:** completar matriz de trazabilidad de T153-S02 y revisar criterios restantes, evidencias vigentes y dependencias; no repetir pruebas ya ejecutadas.
 ===============================================================================
+
+
+===============================================================================
+### C1.639 — IMA-EXEC-20261112-1754Z-03 — revocación persistente transversal entre servicios
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.638.
+- **HEAD inicial de consolidación:** `8459656668860027c94c16964ee0f53e585ac32c`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificar que los consumidores Apps Script que aceptan sesiones aplican el ledger compartido de USER y el control explícito de migración.
+- **Servicios cubiertos:** ACADEMIC, ACCOUNTING, TASK y EXAM; cada consumidor ejecuta su `verifySessionToken` productivo y consulta el ledger institucional compartido.
+- **Casos:** revocación de SessionID desde USER se refleja en los cuatro servicios con cachés locales vacías; revocación por usuario aplica corte temporal; sesiones emitidas después del corte siguen válidas; `SESSION_REVOCATION_LEGACY_CUTOFF` se aplica transversalmente; ledger inicializado ausente falla cerrado en todos los consumidores.
+- **Aislamiento de fixtures:** usuarios/membresías dedicados a la prueba y revocación user-wide dirigida a `U-CROSS-USER`, evitando contaminación de escenarios previos.
+- **Verificación local:** contrato completo V8 aislado **PASS**, incluidos C1.621–C1.639; parseo sintáctico de USER, ACADEMIC, ACCOUNTING, TASK, EXAM y contrato **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** ledger, ScriptProperties y sesiones reales compartidas entre despliegues NOT RUN; escenario agregado a `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `tests/security/internal-responsibility-rbac-contract.test.js`; no se cambia lógica productiva en esta unidad.
+- **Commits de contrato y fixture:** `a07b525f60e4b6d2e324b1ed7e5adba9d9c0be53`, `96530e93c1039c75291b02d73e5642e057b7b7d5`, `8459656668860027c94c16964ee0f53e585ac32c`.
+- **Estado:** C1.639 completada con verificación local. T153-S02 sigue En ejecución hasta completar la matriz de trazabilidad de sus requisitos originales; no iniciar T153-S03.
+- **Siguiente acción:** construir matriz requisito→implementación→prueba/evidencia para T153-S02, identificar solo huecos reales y decidir cierre de la subtarea.
+===============================================================================
