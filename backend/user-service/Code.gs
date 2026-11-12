@@ -10115,9 +10115,14 @@ function getInstitutionalResponsibilitiesCatalog(payload) {
 }
 
 function saveInstitutionalResponsibility(payload) {
+  var writeLock = null;
+  var writeLockAcquired = false;
   try {
     var verifiedRole=getUserVerifiedRole(payload);
     if(["Administrador","Director","Desarrollador"].indexOf(verifiedRole)===-1||!payload._verifiedUserId)return {status:"error",code:"AUTH_PERMISSION_DENIED",message:"Se requiere una sesión verificada de personal administrativo autorizado."};
+    writeLock = LockService.getScriptLock();
+    writeLock.waitLock(10000);
+    writeLockAcquired = true;
     var responsibilityId=String(payload.responsibilityId||"").trim(),name=String(payload.name||"").trim(),description=payload.description||"",modules=payload.modules||[],capabilities=payload.capabilities||[],estado=String(payload.estado||"Activa").trim();
     if(!name)return {status:"error",code:"VALIDATION_ERROR",message:"El nombre de la responsabilidad es obligatorio."};
     if(!Array.isArray(modules)||!Array.isArray(capabilities)||modules.some(function(x){return typeof x!=="string"||!x.trim();})||capabilities.some(function(x){return typeof x!=="string"||!x.trim();}))return {status:"error",code:"RESPONSIBILITY_CATALOG_INVALID",message:"Módulos y capacidades deben ser listas de identificadores de texto."};
@@ -10134,6 +10139,10 @@ function saveInstitutionalResponsibility(payload) {
     logStructuredEvent("USER","saveInstitutionalResponsibility","INFO","RESPONSIBILITY_SAVED","Responsabilidad institucional guardada.",{responsibilityId:responsibilityId,name:name,estado:estado},verifiedRole);
     return {status:"success",responsibilityId:responsibilityId,name:name,estado:estado};
   }catch(error){logStructuredEvent("USER","saveInstitutionalResponsibility","ERROR","RESPONSIBILITY_SAVE_FAILED",error.message,{responsibilityId:payload&&payload.responsibilityId},payload&&payload._verifiedRole);return {status:"error",code:error.message||"RESPONSIBILITY_SAVE_FAILED",message:error.message};}
+
+  finally {
+    if (writeLockAcquired) { try { writeLock.releaseLock(); } catch (_) {} }
+  }
 }
 
 function getInstitutionalResponsibilityRecord_(ss, responsibilityId) {
@@ -10165,6 +10174,8 @@ function resolveActiveInternalResponsibility_(ss, responsibilityId) {
 }
 // [TAREA-AD-03] [Anexo Tareas: Dashboards Dinámicos - Ámbito de Actuación] - Gestión y validación contextual de ámbitos de actuación por rol y usuario
 function assignRoleScope(payload) {
+  var writeLock = null;
+  var writeLockAcquired = false;
   try {
     var verifiedRole = String((payload && payload._verifiedRole) || "").trim() || "NO_ACCESS";
     var actorUserId = String((payload && payload._verifiedUserId) || "").trim();
@@ -10172,6 +10183,9 @@ function assignRoleScope(payload) {
     if (["Administrador", "Director", "Desarrollador"].indexOf(verifiedRole) === -1) {
       return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "Solo personal administrativo autorizado puede asignar ámbitos de actuación a roles." };
     }
+    writeLock = LockService.getScriptLock();
+    writeLock.waitLock(10000);
+    writeLockAcquired = true;
     var userId = String(payload.userId || "").trim();
     var roleId = String(payload.roleId || payload.rolId || "").trim();
     var responsibilityId = String(payload.responsibilityId || payload.rolInternoId || "").trim();
@@ -10248,6 +10262,10 @@ function assignRoleScope(payload) {
   } catch (error) {
     logStructuredEvent("USER", "assignRoleScope", "ERROR", "SCOPE_ASSIGN_FAILED", error.message, payload, payload && payload._verifiedRole);
     return { status: "error", code: error.message || "ROLE_SCOPE_ASSIGN_FAILED", message: error.message };
+  }
+
+  finally {
+    if (writeLockAcquired) { try { writeLock.releaseLock(); } catch (_) {} }
   }
 }
 function getUserContextScope(payload) {
@@ -10921,9 +10939,14 @@ function getInstitutionalFunctionalSpaceCatalog(payload) {
 // ===========================================================================
 
 function manageInternalRoleCatalog(payload) {
+  var writeLock = null;
+  var writeLockAcquired = false;
   try {
     var verifiedRole=getUserVerifiedRole(payload);
     if(["Administrador","Director","Desarrollador","RecursosHumanos"].indexOf(verifiedRole)===-1||!payload._verifiedUserId)return {status:"error",code:"AUTH_PERMISSION_DENIED",message:"Se requiere una sesión verificada de personal autorizado."};
+    writeLock = LockService.getScriptLock();
+    writeLock.waitLock(10000);
+    writeLockAcquired = true;
     var p=payload||{},rolInternoId=p.rolInternoId,codigoInterno=p.codigoInterno,nombreResponsabilidad=p.nombreResponsabilidad,descripcion=p.descripcion||"",departamento=p.departamento||"",areaAcademica=p.areaAcademica||"",tipoResponsabilidad=p.tipoResponsabilidad||"Administrativa",vigenciaMeses=p.vigenciaMeses||12,permiteSuplencia=p.permiteSuplencia!==false,estado=p.estado||"Activo",accion=p.accion||"guardar";
     if(!nombreResponsabilidad&&accion==="guardar")return {status:"error",code:"VALIDATION_ERROR",message:"El nombre de la responsabilidad organizativa es obligatorio."};
     var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getOrCreateSheet(ss,"CatalogoRolesInternos"),data=sheet.getDataRange().getValues();
@@ -10943,6 +10966,10 @@ function manageInternalRoleCatalog(payload) {
     logStructuredEvent("USER","manageInternalRoleCatalog","INFO","INTERNAL_ROLE_SAVED","Rol interno guardado.",{rolInternoId:id,responsibilityId:finalLink||null,estado:estado},verifiedRole);
     return {status:"success",rolInternoId:id,responsibilityId:finalLink||null,codigoInterno:code,nombreResponsabilidad:nombreResponsabilidad,estado:estado};
   }catch(error){logStructuredEvent("USER","manageInternalRoleCatalog","ERROR","INTERNAL_ROLE_SAVE_FAILED",error.message,{},payload&&payload._verifiedRole);return {status:"error",code:error.message||"INTERNAL_ROLE_SAVE_FAILED",message:error.message};}
+
+  finally {
+    if (writeLockAcquired) { try { writeLock.releaseLock(); } catch (_) {} }
+  }
 }
 
 function getInternalRoleCatalog(payload) {
