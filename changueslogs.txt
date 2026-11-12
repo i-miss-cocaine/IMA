@@ -2934,3 +2934,21 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
 - C1.642 completada local; T153-S02 reabierta En ejecución hasta inventariar lectores restantes.
 ===============================================================================
+
+
+ 
+===============================================================================
+[2026-11-12] C1.643 — contexto de ámbito y consulta de configuración
+- ACADEMIC contextual access ahora delega en el lector ligado a sesión/membresía; elimina el bypass por UserID/ScopeType/Estado.
+- USER getUserScopeConfig devuelve contexto efectivo para autconsulta y exige permiso + MembershipID explícita para consultas administrativas multirol.
+- Contrato C1.643 PASS; sintaxis de servicios/test PASS.
+===============================================================================
+
+===============================================================================
+[2026-11-12] C1.644 — firmante de firma avanzada ligado a membresía
+- El firmante staff se resuelve por membresía activa exacta; multirol requiere firmanteMembershipId y firmanteRoleId. La asignación debe coincidir en institución, rol, membresía, responsabilidad activa, ID único y vigencia.
+- Fallback legacy solo cuando no hay registros de membresía del usuario en ningún tenant y las filas carecen de vínculo institucional/membresía.
+- Contrato completo V8 aislado PASS, C1.621–C1.644; sintaxis USER/ACADEMIC/ACCOUNTING/TASK/EXAM/test PASS.
+- Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
+- T153-S02 completada para implementación/contratos aislados; beta real pendiente.
+===============================================================================
