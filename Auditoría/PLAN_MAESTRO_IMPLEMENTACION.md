@@ -4906,3 +4906,12 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.628); sintaxis backend USER/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
 - **Estado:** C1.628 completada. T153-S02 continúa En ejecución.
 - **Siguiente acción:** probar concurrencia determinista de assignRoleScope bajo ScriptLock, sin duplicados ni escrituras parciales.
+
+
+ 
+**Addendum C1.629 — concurrencia determinista de assignRoleScope**
+- Se simula una intercalación reproducible: la primera solicitud adquiere ScriptLock y una segunda entra antes de que la primera escriba. La segunda obtiene `WRITE_LOCK_BUSY`, no escribe ni libera el lock de la primera.
+- La primera solicitud crea una sola asignación; tras liberar el lock, el reintento reutiliza el mismo AssignmentID y no crea duplicados. Se verifican adquisición/liberación y ausencia de mutación concurrente.
+- Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.629); sintaxis backend USER/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets ScriptLock real Pendiente beta.
+- **Estado:** C1.629 completada. T153-S02 continúa En ejecución.
+- **Siguiente acción:** verificar equivalencia temporal entre contexto efectivo y listado administrativo para fechas de inicio/fin, inválidas y límites exactos.
