@@ -576,3 +576,31 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.604 en verificación CI; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
 - HEAD inicial: e1fb4a6e2fc1bc9ce031f3ccb61a802a93cafbce; commit de pruebas: 08c46dd5c0e3c310e3fdc39097b61f52200ba258; HEAD final se confirma tras publicación documental.
 ===============================================================================
+
+
+===============================================================================
+## C1.605 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada durante la inicialización de CierresPeriodos.
+
+### Hallazgo y cambio
+- closePeriodGradebook ya cubría reentrada durante appendRow del cierre final, pero faltaba reentrada durante insertSheet y appendRow de encabezados cuando CierresPeriodos no existe.
+- Se amplía el fixture con conteo de inserciones y hook de append; se agregan dos escenarios. Ambas secundarias reciben GRADEBOOK_CLOSURE_LOCK_TIMEOUT; la exterior conserva una sola hoja, encabezados exactos y un único cierre, sin tocar calificaciones.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-period-gradebook-closure-security.test.js
+- beta_test.txt (actualización de BETA-EXAM-052)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Contrato completo sobre handlers productivos extraídos de Code.gs: 24/24 PASS en runner aislado.
+- Parseo JavaScript de Code.gs y del contrato: PASS.
+- CI: pendiente de resultado verificable; no se declara PASS.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-052 Pendiente beta.
+- C1.605 Completada con verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD inicial: ac3b836c704442f18bcd30ee5b27f335910081f1; commit inicial de pruebas: 1e10af3b18e75ea73884304550d18faf5d97ef16; commit del ajuste de hook: 39f73d46b83e794ad1055b1ed5c3a9b505f6d8c3; actualización beta: bba3f0d3520b343c2c8f4336c84c772974bd37ed; HEAD final se confirma tras publicación documental.
+===============================================================================
