@@ -5189,3 +5189,12 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - El alcance institucional global puede seleccionar un DepartmentID de la misma institución para registrar ResourceOwnership; se mantiene la exigencia de departamento no vacío y permiso dinámico.
 - Task-Service security local contracts: éxito, run 42846982461. Task-Service backup and restore contract: éxito, run 42846982439.
 - TASK-153 sigue En ejecución. Próximo tramo: endpoints de lectura/mutación TASK, luego EXAM y aplicabilidad DEVELOPER; referencias compartidas, permisos granulares, filtros/importaciones y E2E pendientes.
+
+
+ 
+## C1.641 — T153-S01: revalidación de inventario de catálogos
+- USER `manageDepartmentPositions` sigue creando `CatalogoDepartamentos` con `deptId/nombre/jefaturaUserId/estado/fechaCreacion`; no incluye InstitutionID/jerarquía y no se encontró consumidor productivo como fuente canónica.
+- ACADEMIC `assignDepartmentHead` crea/actualiza `DepartamentosAcademicos` con `DepartamentoID/Nombre/JefeUserId/Estado/FechaActualizacion/AutorizadoPor`; no valida IDs contra USER ni incorpora InstitutionID/jerarquía.
+- ACADEMIC `getDepartmentAcademicPlanning` consume esa hoja; ACCOUNTING `resolveEmployeeDepartmentId_` la consulta por ID/nombre y mantiene fallback textual para expedientes laborales.
+- No se encontró FK/crosswalk entre catálogos. `AsignacionesAmbitosRoles` y `ResourceOwnership` contienen DepartmentID pero no constituyen catálogo canónico.
+- Resultado: no fusionar ni migrar. T153-S01 queda pendiente de autoridad/correspondencia verificable por institución; T153-S03/S04 dependen de ello. T153-S02 ya está completada por C1.640.
