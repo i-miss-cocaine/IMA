@@ -31,19 +31,34 @@ function makeSheet(rows, kind, options, state) {
     getDataRange() { return { getValues: () => this.rows.map(row => row.slice()) }; },
     getLastRow() { return this.rows.length; },
     appendRow(row) {
+      if (kind === "ownership") {
+        state.ownershipAppends++;
+        if (typeof options.duringOwnershipAppend === "function") options.duringOwnershipAppend(row.slice());
+      }
+      if (kind === "rubrics") {
+        state.rubricAppends++;
+        if (typeof options.duringRubricAppend === "function") options.duringRubricAppend(row.slice());
+      }
       this.rows.push(row.slice());
       if (kind === "rubrics" && options.failRubricAppend) throw new Error("synthetic append failure");
     },
     deleteRow(n) { this.rows.splice(n - 1, 1); },
     getRange(row, col, numRows, numCols) {
-      return { setValues: values => values.forEach((line, ri) => {
-        for (let ci = 0; ci < line.length; ci++) this.rows[row - 1 + ri][col - 1 + ci] = line[ci];
-      }) };
+      return { setValues: values => {
+        if (kind === "rubrics") {
+          state.rubricSetValues++;
+          if (typeof options.duringRubricSetValues === "function") options.duringRubricSetValues(values.map(line => line.slice()));
+        }
+        values.forEach((line, ri) => {
+          for (let ci = 0; ci < line.length; ci++) this.rows[row - 1 + ri][col - 1 + ci] = line[ci];
+        });
+      } };
     }
   };
 }
 function fixture(options = {}) {
   const state = { opens: 0, locks: 0, releases: 0, held: false, uuid: 0, rubricWrites: 0,
+    ownershipAppends: 0, rubricAppends: 0, rubricSetValues: 0,
     events: [], permissionCalls: 0, identityCalls: 0 };
   const rubricRows = options.rubricRows || [rubricHeaders,
     ["RUB-OWNED", "Propia", "Matemáticas", "Activa", "[]"],
@@ -240,6 +255,63 @@ test("nested mutation is excluded by the shared script lock", () => {
   x.call({ titulo: "Outer", departmentId: "DEPT-A" });
   assert.ok(nestedDenied);
 });
+test("reentrant mutation during ownership append is rejected without duplicate persistence", () => {
+  let x, nestedError = "";
+  x = fixture({ duringOwnershipAppend() {
+    try { x.call({ titulo: "Nested ownership", departmentId: "DEPT-A" }); }
+    catch (error) { nestedError = error.message; }
+  }});
+  const result = x.call({ titulo: "Outer ownership", departmentId: "DEPT-A" });
+  const id = result.data.rubricaId;
+  assert.match(nestedError, /RUBRIC_MUTATION_LOCK_TIMEOUT/);
+  assert.equal(x.sheets.ResourceOwnership.rows.filter(row => row[3] === id).length, 1);
+  assert.equal(x.sheets.RubricasEvaluacion.rows.filter(row => row[0] === id).length, 1);
+  assert.equal(x.state.ownershipAppends, 1);
+  assert.equal(x.state.rubricAppends, 1);
+  assert.equal(x.state.locks, 2);
+  assert.equal(x.state.releases, 1);
+  assert.equal(x.state.opens, 1);
+  assert.equal(x.state.held, false);
+});
+
+test("reentrant mutation during rubric append is rejected without duplicate persistence", () => {
+  let x, nestedError = "";
+  x = fixture({ duringRubricAppend() {
+    try { x.call({ titulo: "Nested rubric", departmentId: "DEPT-A" }); }
+    catch (error) { nestedError = error.message; }
+  }});
+  const result = x.call({ titulo: "Outer rubric", departmentId: "DEPT-A" });
+  const id = result.data.rubricaId;
+  assert.match(nestedError, /RUBRIC_MUTATION_LOCK_TIMEOUT/);
+  assert.equal(x.sheets.ResourceOwnership.rows.filter(row => row[3] === id).length, 1);
+  assert.equal(x.sheets.RubricasEvaluacion.rows.filter(row => row[0] === id).length, 1);
+  assert.equal(x.state.ownershipAppends, 1);
+  assert.equal(x.state.rubricAppends, 1);
+  assert.equal(x.state.locks, 2);
+  assert.equal(x.state.releases, 1);
+  assert.equal(x.state.opens, 1);
+  assert.equal(x.state.held, false);
+});
+
+test("reentrant mutation during rubric update setValues is rejected without duplicate update", () => {
+  let x, nestedError = "";
+  x = fixture({ duringRubricSetValues() {
+    try { x.call({ rubricaId: "RUB-OWNED", titulo: "Nested update" }); }
+    catch (error) { nestedError = error.message; }
+  }});
+  const result = x.call({ rubricaId: "RUB-OWNED", titulo: "Outer update", asignatura: "Biología", criterios: [] });
+  assert.equal(result.data.rubricaId, "RUB-OWNED");
+  assert.match(nestedError, /RUBRIC_MUTATION_LOCK_TIMEOUT/);
+  assert.deepEqual(x.sheets.RubricasEvaluacion.rows[1].slice(1), ["Outer update", "Biología", "Activa", "[]"]);
+  assert.equal(x.state.rubricSetValues, 1);
+  assert.equal(x.state.ownershipAppends, 0);
+  assert.equal(x.state.rubricAppends, 0);
+  assert.equal(x.state.locks, 2);
+  assert.equal(x.state.releases, 1);
+  assert.equal(x.state.opens, 1);
+  assert.equal(x.state.held, false);
+});
+
 test("append failure rolls back both rubric and ownership records", () => {
   const x = fixture({ failRubricAppend: true }); assert.throws(() => x.call({ titulo: "Fallida", departmentId: "DEPT-A" }), /synthetic append failure/);
   assert.equal(x.sheets.RubricasEvaluacion.rows.length, 3);
