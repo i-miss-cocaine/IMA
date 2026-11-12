@@ -520,3 +520,31 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.602 Completada con verificación local focalizada y CI. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
 - HEAD inicial: `8539058d06a48c981c3138d070271068021d8cc7`; commit de pruebas/implementación: `60351f9d39bd4e56736c3a2b6acdd8a5342f67fd`; HEAD final se confirma tras commit documental.
 ===============================================================================
+
+
+===============================================================================
+## C1.603 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada al inicializar CategoriasEvaluacion.
+
+### Hallazgo y cambio
+- saveEvaluationCategory ya cubría reentrada durante los appendRow de ownership y categoría final, pero faltaban reentradas durante insertSheet y appendRow de encabezados iniciales cuando CategoriasEvaluacion no existe.
+- Se amplía el fixture para provocar una segunda llamada al handler real en ambos puntos. Las secundarias reciben EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; la exterior crea una sola hoja con encabezados exactos, una categoría y un ownership activo asociado.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-evaluation-category-mutation-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Harness local determinista sobre saveEvaluationCategory, wrapper, contexto y worker productivos extraídos de Code.gs: 2/2 PASS.
+- Parseo JavaScript del contrato actualizado: PASS.
+- GitHub Actions workflow Exam-Service security local contracts: pendiente de resultado.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-104 Pendiente beta.
+- C1.603 en verificación CI; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD inicial: 1737dfde3222a2c3658f27387d33d1614c8dd027; commit de pruebas: 1446c530ed9f03b8209bac8de546a82a0f93f1d9; HEAD final se confirma tras publicación documental.
+===============================================================================
