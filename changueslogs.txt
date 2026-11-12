@@ -2419,6 +2419,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-12] C1.603 — cobertura de reentrada al inicializar CategoriasEvaluacion
 - Se añaden dos escenarios de reentrada al handler real durante insertSheet y appendRow de encabezados cuando falta CategoriasEvaluacion.
 - Las secundarias reciben EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; la exterior conserva una sola hoja, encabezados exactos, una categoría y un ownership activo asociado.
-- Harness local focalizado 2/2 PASS; parseo del contrato PASS.
-- Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-104 Pendiente beta. C1.603 en verificación CI.
+- Harness local focalizado 2/2 PASS; contrato completo 22/22 PASS en runner aislado; parseo del contrato PASS.
+- El conector no expuso estados CI para el commit de pruebas (CI NOT VERIFIED). Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-104 Pendiente beta. C1.603 Completada con verificación local.
 ===============================================================================
