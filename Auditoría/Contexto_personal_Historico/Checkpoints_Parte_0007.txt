@@ -1689,3 +1689,13 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Archivos:** backend/user-service/Code.gs; backend/accounting-service/Code.gs; tests/security/accounting-departmental-import-scope.test.js; tests/security/user-migrated-resource-ownership-contract.test.js (nuevo); .github/workflows/department-scope-contract.yml; changueslogs.txt; beta_test.txt; pendientes/Dirección/Pendientes.md; checkpoint e índice.
 - **Estado:** subalcance de nuevas altas con departamento activo integrado; TASK-153 sigue En ejecución. No se habilita importación institucional multi-departamento ni se declara cerrada la tarea.
 ===============================================================================
+
+
+===============================================================================
+### C1.657 — IMA-EXEC-20261112-1754Z-03 — verificación CI posterior a C1.656
+- **HEAD verificado:** c6608ffc2bc154c26043cd2334b65cc92f67bf85. Rama base NG_beta_0.0.0.1 verificada: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- **GitHub Actions 43325626370 — Department Scope Contract:** PASS en Department Scope, Internal Responsibility RBAC, ACCOUNTING departmental import scope y nuevo USER migrated resource ownership contract. Falla después en user-role-membership-contract.test.js:119: verifySessionToken(foreignLegacy) devuelve null y el test intenta leer .role; las etapas posteriores se omiten. Es el mismo fallo/línea ya registrado antes de C1.656 (run 43321919328 / C1.655); no hay evidencia de causalidad con los archivos de esta unidad.
+- **GitHub Actions 43325626382 — Identity mapping and transport security contracts:** SUCCESS.
+- **Resultado:** las dos suites nuevas/modificadas de esta unidad aprobaron también en Node 24 CI. El fallo global preexistente queda separado y no se corrige aquí sin trazabilidad causal. No se modifica código en este addendum.
+- **Estado:** C1.656 mantiene su alcance. TASK-153 sigue En ejecución; próximo subalcance: resolver snapshot server-side por RowID para la variante institucional multi-departamento o continuar con otra superficie de consulta/descarga aún no integrada.
+===============================================================================

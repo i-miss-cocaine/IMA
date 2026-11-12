@@ -794,6 +794,12 @@
 - Límite: se habilita únicamente el departamento activo verificado. Importación institucional multi-departamento sigue rechazada; requiere asignación server-side verificable por RowID. TASK-153 permanece En ejecución.
 ---
 
+
+### Verificación C1.657 — CI de la saga ACCOUNTING→USER
+- GitHub Actions 43325626370 aprobó los pasos Department Scope, Internal Responsibility RBAC, ACCOUNTING departmental import y USER migrated resource ownership (Node 24). Falla en el siguiente contrato user-role-membership-contract.test.js:119 porque verifySessionToken(foreignLegacy) devuelve null; el mismo fallo ya estaba registrado antes de C1.656 (run 43321919328), sin evidencia causal con este cambio. Las etapas posteriores se omiten.
+- GitHub Actions 43325626382 Identity mapping and transport security contracts: SUCCESS. TASK-153 continúa En ejecución.
+---
+
 <!-- ID: AUD-NG-164 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-164] Completar catálogo curricular maestro y relaciones de asignaturas/planes/ofertas
 - Severidad: Alto (P1).
