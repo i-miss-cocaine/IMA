@@ -2496,3 +2496,13 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Evidencia:** Department Scope run 43227647058 SUCCESS; Task-Service security run 43227456678 SUCCESS. No se borraron asignaciones históricas ni se accedió a datos reales.
 - **Limitación:** Apps Script/Sheets real, despliegue y concurrencia multi-solicitud permanecen Pendiente beta en BETA-FUNC-033.
 ===============================================================================
+
+
+===============================================================================
+### C1.622 — corrección de duplicidad y reasignación de ámbitos
+- **Severidad: Alto — integridad/aislamiento RBAC.** El escritor incluía ResponsibilityID en la clave de actualización, generando otra fila al cambiar la responsabilidad; no había selección explícita para transferir una asignación a otra membresía. Además, un primer match no detectaba duplicados.
+- **Corrección:** AssignmentID opcional para seleccionar una fila exacta; valida usuario, rol, ScopeType e institución antes de permitir reasignar MembershipID. Sin AssignmentID, la clave idempotente incluye UserID, RoleID, ScopeType, InstitutionID y MembershipID, no ResponsibilityID. Múltiples coincidencias y IDs ambiguos fallan cerrados sin escritura.
+- **Integridad:** escritura de fila completa, preservación de creador/fecha, before/after de MembershipID y ResponsibilityID en el log de cambios; IDs de otra institución no se pueden modificar.
+- **Evidencia:** contrato ampliado y Department Scope run 43228852462 SUCCESS, 16 pasos PASS (Node 24). No se usaron datos reales ni servicios desplegados.
+- **Pendiente beta:** Apps Script/Sheets real y concurrencia multi-solicitud desplegada; BETA-FUNC-033.
+===============================================================================

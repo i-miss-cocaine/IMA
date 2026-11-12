@@ -1255,3 +1255,8 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta. Contratos aislados y sintaxis PASS en GitHub Actions: Department Scope run 43227647058 (incluye contratos C1.619/C1.620/C1.621); Task-Service security run 43227456678. Terminal local independiente NOT RUN; Apps Script/Sheets real y concurrencia multi-solicitud NOT RUN.
 - **Evidencia requerida:** commit desplegado, configuración institucional saneada, IDs sintéticos de membresías, rol seleccionado, respuestas por servicio, resultados autorizados/denegados antes y después de revocación y retirada de rol; nunca registrar tokens ni datos personales.
 ===============================================================================
+
+
+- **Pasos adicionales C1.622:** actualizar una asignación existente cambiando solo ResponsibilityID y verificar que conserva AssignmentID y no genera fila adicional; reintentar la misma solicitud y comprobar idempotencia; reasignar MembershipID usando AssignmentID explícito y una membresía destino activa del mismo usuario/rol/institución; probar ID inexistente, ID duplicado, clave natural duplicada y AssignmentID de otra institución; comprobar que cada error deja los datos intactos y que el before/after de auditoría contiene los vínculos anteriores/nuevos.
+- **Resultado esperado C1.622:** cambios de responsabilidad actualizan la misma asignación; el cambio de membresía solo ocurre por selector explícito validado; no hay duplicados, transferencias cross-tenant ni filas parciales.
+- **Estado C1.622:** Pendiente beta para repetir sobre Apps Script/Sheets real y solicitudes concurrentes desplegadas. Contrato aislado Department Scope run 43228852462 SUCCESS.

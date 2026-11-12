@@ -1094,3 +1094,20 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** C1.621 implementada y verificada por CI. TASK-153/T153-S02 permanece En ejecución; no iniciar T153-S03.
 - **Siguiente acción:** verificar actualizaciones/reasignaciones de ámbitos con cambios de ResponsibilityID y MembershipID, unicidad/idempotencia y ausencia de vínculos residuales entre tenants; ampliar los contratos aislados según los casos detectados.
 ===============================================================================
+
+
+===============================================================================
+### C1.622 — IMA-EXEC-20261110-1825Z-02 — reasignación idempotente y unicidad de ámbitos RBAC
+- **Sesión:** IMA-EXEC-20261110-1825Z-02; continuidad directa de C1.621.
+- **HEAD inicial:** `9a5308af54df1e455235d714e0fb68b1492f36e1`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Reasignación/actualización de ResponsibilityID y MembershipID, idempotencia, detección de duplicados y aislamiento institucional.
+- **Hallazgo:** el escritor `assignRoleScope` identificaba una fila por user/role/scope/institution/membership/responsibility. Cambiar ResponsibilityID convertía una actualización en un alta paralela; no había ruta por AssignmentID para una reasignación controlada de membresía y el primer duplicado podía ser actualizado silenciosamente.
+- **Implementación:** `assignRoleScope` acepta `assignmentId`/`asignacionId` para actualizaciones explícitas. El ID debe identificar una única fila y esta debe pertenecer al usuario, rol, tipo de ámbito e institución activos. La transferencia de membresía solo ocurre mediante ese selector explícito, tras volver a resolver una membresía activa del usuario/rol/tenant. Sin ID explícito, la clave idempotente es user+role+scopeType+institution+membership (no incluye ResponsibilityID), por lo que cambiar la responsabilidad actualiza la fila y conserva su ID. Claves duplicadas o IDs ambiguos fallan cerrados sin escritura. Se actualiza la fila completa en una operación setValues, se preservan creador/fecha de creación, y el registro de auditoría captura before/after de membresía y responsabilidad.
+- **Compatibilidad/aislamiento:** se mantienen migraciones aditivas de encabezados legacy/membership al esquema actual; asignaciones de membresías diferentes siguen siendo distintas salvo reasignación explícita por ID. Un AssignmentID perteneciente a otro tenant no puede transferirse ni modificarse.
+- **Contrato local aislado:** ampliado `tests/security/internal-responsibility-rbac-contract.test.js` con cambio de responsabilidad sin duplicar fila, reasignación explícita de MembershipID, reintento idempotente, duplicados fail-closed, ID de otro tenant sin cambios y liberación de ScriptLock.
+- **CI:** Department Scope Contract run **43228852462 SUCCESS**, Node 24. Todos los 16 pasos de contrato, regresión, ownership, RBAC/membresías, sintaxis de seis servicios y sintaxis cliente finalizaron SUCCESS.
+- **Terminal local independiente:** NOT RUN. La suite de contrato se ejecutó en runner aislado de GitHub Actions (no requiere despliegue); Apps Script/Sheets real y concurrencia entre solicitudes desplegadas permanecen NOT RUN/Pendiente beta.
+- **Commit funcional y pruebas:** `6d91b0919ea02aa829d149c0e6cb8b1d18785f83`.
+- **Estado:** C1.622 implementada y verificada por contrato aislado/CI; T153-S02 continúa En ejecución hasta revisar los requisitos restantes del subflujo; no se inicia T153-S03 en este checkpoint.
+- **Siguiente acción:** revisar las invariantes finales de escritura/lectura de ámbitos y cierre de T153-S02; beta BETA-FUNC-033 mantiene validación real de Sheets y concurrencia multi-solicitud.
+===============================================================================

@@ -598,3 +598,6 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 
 
 | C1.621 | IMA-EXEC-20261110-1825Z-02 | Lectura de asignaciones revalida membresía activa/vigente, rol configurado y responsabilidad activa; revocación, expiración y cambio de rol invalidan contexto y listado; Department Scope CI PASS 43227647058 | PM-01 — TASK-153 / T153-S02 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt — C1.621 | sección final | C1.620 | C1.621 implementado; Department Scope y Task-Service CI PASS; terminal local independiente NOT RUN; Apps Script/Sheets real y beta Pendiente; T153-S02 sigue En ejecución |
+
+
+| C1.622 | IMA-EXEC-20261110-1825Z-02 | assignRoleScope actualiza por AssignmentID con ownership tenant/usuario/rol/scope; clave idempotente excluye ResponsibilityID; cambio de MembershipID requiere ID explícito; duplicados fail-closed; audit before/after; Department Scope CI 43228852462 PASS (16 pasos) | PM-01 — TASK-153 / T153-S02 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt — C1.622 | sección final | C1.621 | C1.622 implementada y CI PASS; terminal local independiente NOT RUN; Sheets real/concurrencia desplegada Pendiente beta |

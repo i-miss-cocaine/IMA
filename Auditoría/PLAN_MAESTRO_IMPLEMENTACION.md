@@ -4824,3 +4824,13 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - BETA-FUNC-033 permanece Pendiente beta para comprobar los mismos cambios contra Sheets real, servicios desplegados y solicitudes concurrentes reales.
 - **Estado:** C1.621 implementada y verificada por CI; TASK-153/T153-S02 sigue En ejecución. No iniciar T153-S03.
 - **Siguiente acción elegible:** verificar reasignación/actualización de ámbitos y vínculos ResponsibilityID/MembershipID, idempotencia, unicidad y ausencia de vínculos residuales o cruzados entre tenants.
+
+
+**Addendum C1.622 — reasignación idempotente y prevención de ámbitos residuales**
+- `assignRoleScope` admite `assignmentId`/`asignacionId` para actualizar una asignación existente. La búsqueda exige ID único y ownership exacto por usuario, rol, tipo de ámbito e institución. Una fila de otro tenant no puede actualizarse.
+- Sin ID explícito, la clave de actualización es UserID+RoleID+ScopeType+InstitutionID+MembershipID; ResponsibilityID deja de formar parte de la clave, por lo que cambiar la responsabilidad modifica el registro existente y no crea una fila residual. Diferentes membresías permanecen aisladas; transferir una asignación entre ellas exige seleccionar el AssignmentID explícito y validar la membresía destino activa.
+- Si la clave natural o el ID explícito coinciden con más de una fila, la operación devuelve error y no escribe. La actualización reemplaza la fila completa en una sola operación de rango, conserva creador/fecha original y registra before/after de ResponsibilityID y MembershipID.
+- Contrato local aislado ampliado: actualización de responsabilidad conservando ID; reasignación de membresía por ID; reintento idempotente; duplicados rechazados sin mutación; intento de mover un ID de otra institución denegado; liberación del ScriptLock.
+- Department Scope Contract run **43228852462 SUCCESS** (Node 24; 16 pasos PASS: contratos de ámbitos, responsabilidad/RBAC, membresías, ownership académico/contable, sintaxis de seis servicios y clientes).
+- Terminal local independiente NOT RUN. La suite se ejecutó en runner aislado CI, sin depender de servicios desplegados. Apps Script/Sheets real y concurrencia entre solicitudes desplegadas quedan Pendiente beta en BETA-FUNC-033.
+- **Estado:** C1.622 implementada y CI PASS; TASK-153/T153-S02 sigue En ejecución para revisión del resto de sus invariantes. BETA-FUNC-033 no bloquea cierre de código conforme a NDASC.

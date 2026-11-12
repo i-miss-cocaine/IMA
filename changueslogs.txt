@@ -2681,3 +2681,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Department Scope run 43227647058 SUCCESS (16 pasos); Task-Service security run 43227456678 SUCCESS. Terminal local independiente NOT RUN; Apps Script/Sheets real NOT RUN.
 - BETA-FUNC-033 Pendiente beta; TASK-153/T153-S02 continúa En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.622 — reasignación idempotente y unicidad de ámbitos RBAC
+- `assignRoleScope` incorpora actualización explícita por AssignmentID con validación de ownership; cambios de ResponsibilityID actualizan la misma fila y conservan ID.
+- La clave idempotente se basa en usuario/rol/tipo de ámbito/institución/membresía; cambios de membresía requieren AssignmentID explícito y membresía destino activa. Duplicados y IDs cross-tenant fallan cerrados.
+- Actualización de fila completa; se preservan creador/fecha original y auditoría before/after de vínculos.
+- Contrato ampliado: reasignación de responsabilidad y membresía, reintento, duplicados, aislamiento tenant y lock release. Department Scope CI 43228852462 SUCCESS (16 pasos).
+- Terminal local independiente NOT RUN; Apps Script/Sheets real y concurrencia multi-solicitud desplegada Pendiente beta. T153-S02 sigue En ejecución.
+===============================================================================
