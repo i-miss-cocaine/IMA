@@ -2278,3 +2278,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Contrato completo 24/24 PASS en runner aislado; parseo de Code.gs y contrato PASS.
 - Backend productivo sin cambios. BETA-EXAM-052 ampliado; Apps Script/Sheets real NOT RUN; CI pendiente de resultado verificable.
 ===============================================================================
+
+
+===============================================================================
+### C1.606 — AUD-NG-386 / EXAM
+- Brecha: submitGradebookForReview no ejercitaba reentrada durante insertSheet ni appendRow de encabezados al crear CierresPeriodos ausente.
+- Cobertura local: dos escenarios sobre handler/wrapper productivos; las secundarias reciben GRADEBOOK_SUBMISSION_LOCK_TIMEOUT y la exterior conserva hoja, encabezados y solicitud únicos, con lock liberado.
+- Resultado: suite V8 aislada 30/30 PASS; parseo Code.gs/contrato PASS. Backend sin cambios; Apps Script/Sheets real NOT RUN; BETA-EXAM-054 Pendiente beta.
+- TASK-153 / AUD-NG-386 continúa En ejecución.
+===============================================================================

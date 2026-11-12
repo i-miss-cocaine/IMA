@@ -53,14 +53,14 @@ function fixture(options = {}) {
   const sheets = { ConfiguracionAcademica: makeSheet(assignmentRows) };
   if (!options.missingClosure) sheets.CierresPeriodos = makeSheet(options.emptyClosure ? [] : closureRows);
   if (options.onClosureAppend && sheets.CierresPeriodos) sheets.CierresPeriodos.onAppend = options.onClosureAppend;
-  const stats = { acquired: 0, released: 0, held: false, opens: 0, events: [] };
+  const stats = { acquired: 0, released: 0, held: false, opens: 0, insertions: 0, events: [] };
   const actor = options.actor || { authorized: true, userId: "T1", role: "Profesor" };
   const actors = options.actors || [actor];
   let identityCalls = 0;
   const scope = options.scope || { authorized: true, institutionId: "I1", departmentIds: ["D1"], institutionWide: false };
   const ss = {
     getSheetByName(name) { return sheets[name] || null; },
-    insertSheet(name) { return sheets[name] = makeSheet([]); }
+    insertSheet(name) { stats.insertions++; const sheet = sheets[name] = makeSheet([]); if (options.onClosureHeaderAppend) sheet.onAppend = options.onClosureHeaderAppend; if (options.onClosureInsert) options.onClosureInsert(sheet); return sheet; }
   };
   let permissionCalls = 0;
   const runtime = {
@@ -322,4 +322,35 @@ test(() => {
   assert.deepEqual([x.stats.acquired, x.stats.released, x.stats.held, x.stats.opens], [2, 1, false, 1]);
   assert.deepEqual(x.stats.events, ["rbac", "identity", "lock", "rbac", "identity", "sheets", "rbac", "identity", "lock"]);
 });
-console.log("exam-service-period-gradebook-submission-security: PASS (" + count + "/28)");
+test(() => {
+  let x, nestedError = "";
+  x = fixture({ missingClosure: true, onClosureInsert: () => {
+    try { x.call(); } catch (error) { nestedError = error.message; }
+  } });
+  const result = x.call();
+  const sheet = x.sheets.CierresPeriodos;
+  assert.equal(result.status, "success");
+  assert.equal(nestedError, "GRADEBOOK_SUBMISSION_LOCK_TIMEOUT");
+  assert.equal(x.stats.insertions, 1, "the closure sheet must be inserted once");
+  assert.deepEqual(sheet.rows[0], ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "ProfesorID", "Estado", "FechaCierre"]);
+  assert.equal(sheet.rows.length, 2, "only one review request may be persisted");
+  assert.equal(sheet.appendCount, 2, "only header and outer request may be appended");
+  assert.deepEqual([x.stats.opens, x.stats.acquired, x.stats.released, x.stats.held], [1, 2, 1, false]);
+});
+test(() => {
+  let x, nestedAttempts = 0, nestedError = "";
+  x = fixture({ missingClosure: true, onClosureHeaderAppend: row => {
+    if (row[0] !== "CierreID" || nestedAttempts++) return;
+    try { x.call(); } catch (error) { nestedError = error.message; }
+  } });
+  const result = x.call();
+  const sheet = x.sheets.CierresPeriodos;
+  assert.equal(result.status, "success");
+  assert.equal(nestedAttempts, 1);
+  assert.equal(nestedError, "GRADEBOOK_SUBMISSION_LOCK_TIMEOUT");
+  assert.deepEqual(sheet.rows[0], ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "ProfesorID", "Estado", "FechaCierre"]);
+  assert.equal(sheet.rows.length, 2);
+  assert.equal(sheet.appendCount, 2, "header and review request must each be appended once");
+  assert.deepEqual([x.stats.opens, x.stats.insertions, x.stats.acquired, x.stats.released, x.stats.held], [1, 1, 2, 1, false]);
+});
+console.log("exam-service-period-gradebook-submission-security: PASS (" + count + "/30)");

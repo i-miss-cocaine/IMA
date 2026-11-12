@@ -604,3 +604,31 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.605 Completada con verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
 - HEAD inicial (C1.604): 4403807e714f86593146410a1eb3a5cdd1c816c0; commit inicial de pruebas: 1e10af3b18e75ea73884304550d18faf5d97ef16; commit del ajuste de hook: 39f73d46b83e794ad1055b1ed5c3a9b505f6d8c3; actualización beta: bba3f0d3520b343c2c8f4336c84c772974bd37ed; HEAD final se confirma tras publicación documental.
 ===============================================================================
+
+
+===============================================================================
+## C1.606 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada durante la inicialización de CierresPeriodos en submitGradebookForReview.
+
+### Hallazgo y cambio
+- submitGradebookForReview cubría reentrada durante el append de la solicitud final, pero no durante insertSheet ni appendRow de encabezados cuando CierresPeriodos no existe.
+- Se amplía el fixture con conteo de inserciones y hooks para ambos puntos. Las solicitudes secundarias reciben GRADEBOOK_SUBMISSION_LOCK_TIMEOUT; la exterior conserva una sola hoja, encabezados exactos y una solicitud PendienteRevision.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-period-gradebook-submission-security.test.js
+- beta_test.txt (actualización de BETA-EXAM-054)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Suite completa V8 aislada sobre handlers/wrapper productivos extraídos de Code.gs: 30/30 PASS.
+- Parseo JavaScript de Code.gs y contrato: PASS.
+- CI: pendiente de resultado verificable tras el commit.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-054 Pendiente beta.
+- C1.606 Completada con verificación local aislada; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD inicial: dd3763ce0a2b54ea57d3433f4ec3da34eccd39ea; HEAD final se confirma tras publicar.
+===============================================================================

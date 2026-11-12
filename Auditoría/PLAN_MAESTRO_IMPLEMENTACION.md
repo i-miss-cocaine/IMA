@@ -4555,3 +4555,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI:** pendiente de resultado verificable tras los commits.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-052 Pendiente beta.
 - **Estado:** C1.605 Completada con verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+
+
+### 10.255 TASK-153 / AUD-NG-386 — reentrada al inicializar CierresPeriodos en submitGradebookForReview (C1.606)
+- **Brecha confirmada:** el contrato de submitGradebookForReview cubría reentrada durante el append de la solicitud final y reentrada desde openById, pero no una segunda llamada al handler cuando CierresPeriodos no existe y se ejecutan insertSheet o appendRow de encabezados.
+- **Cobertura añadida:** tests/security/exam-service-period-gradebook-submission-security.test.js instrumenta insertSheet y el append inicial de encabezados, con dos escenarios independientes sobre el handler y wrapper productivos extraídos de Code.gs.
+- **Invariantes:** ambas solicitudes secundarias reciben GRADEBOOK_SUBMISSION_LOCK_TIMEOUT; la operación exterior inserta una sola hoja, conserva encabezados exactos y registra una única solicitud PendienteRevision; una apertura de Sheets, una inserción, dos appendRow y ScriptLock liberado.
+- **Alcance:** contrato de seguridad y actualización de BETA-EXAM-054; backend productivo sin cambios.
+- **Verificación local:** suite V8 aislada 30/30 PASS; parseo de Code.gs y del contrato PASS.
+- **CI:** pendiente de resultado verificable tras publicar el commit.
+- **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-054 Pendiente beta.
+- **Estado:** C1.606 Completada en verificación local aislada. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
