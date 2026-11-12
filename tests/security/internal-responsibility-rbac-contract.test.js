@@ -27,7 +27,8 @@ const consumerSources = {
   academic: fs.readFileSync(path.resolve(__dirname, "../../backend/academic-service/Code.gs"), "utf8"),
   accounting: fs.readFileSync(path.resolve(__dirname, "../../backend/accounting-service/Code.gs"), "utf8"),
   task: fs.readFileSync(path.resolve(__dirname, "../../backend/task-service/Code.gs"), "utf8"),
-  exam: fs.readFileSync(path.resolve(__dirname, "../../backend/exam-service/Code.gs"), "utf8")
+  exam: fs.readFileSync(path.resolve(__dirname, "../../backend/exam-service/Code.gs"), "utf8"),
+  departmentCatalog: fs.readFileSync(path.resolve(__dirname, "../../backend/shared/DepartmentCatalogContract.gs"), "utf8")
 };
 const recordFn = extractFunction(source, "getInstitutionalResponsibilityRecord_");
 const resolveFn = extractFunction(source, "resolveActiveInternalResponsibility_");
@@ -1179,6 +1180,64 @@ const otherTenantMembershipRows=[membershipHeaders,["MEM-OTHER-TENANT","U-SIGN",
 const crossTenantSignatureSs={getSheetByName:name=>{const rows=name==="Usuarios"?signatureUserRows:(name==="MembresiasRolesRBAC"?otherTenantMembershipRows:(name==="AsignacionesAmbitosRoles"?[["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"],["SIGN-LEGACY","U-SIGN","Director","DEPARTAMENTO",'["DEP-A"]',"Activo","U-ADMIN","2026-01-01","","","No",""]]:null));return rows?{getLastRow:()=>rows.length,getDataRange:()=>({getValues:()=>rows.map(row=>row.slice())})}:null;}};
 assert.equal(signatureCtx.assertAdvancedSignatureSignerScope_(crossTenantSignatureSs,signatureDoc,"U-SIGN",{}).authorized,false,"membership in another tenant blocks legacy scope fallback");
 console.log("C1.644 signature-signer scope contract: exact membership/role selection, no multi-role union, active membership and responsibility, legacy-only unlinked fallback and cross-tenant denial PASS.");
+
+ 
+// C1.646: neutral department catalog contract requires explicit tenant authority and never treats names as stable IDs.
+const departmentCatalogCode=`
+${extractFunction(consumerSources.departmentCatalog,"validateDepartmentCatalogConfiguration_")}
+${extractFunction(consumerSources.departmentCatalog,"validateDepartmentCatalogSnapshot_")}
+${extractFunction(consumerSources.departmentCatalog,"resolveDepartmentCatalogReference_")}
+this.validateDepartmentCatalogConfiguration_=validateDepartmentCatalogConfiguration_;
+this.validateDepartmentCatalogSnapshot_=validateDepartmentCatalogSnapshot_;
+this.resolveDepartmentCatalogReference_=resolveDepartmentCatalogReference_;
+`;
+const departmentCatalogCtx={Date:FixedTemporalDate};
+vm.runInNewContext(departmentCatalogCode,departmentCatalogCtx);
+const departmentConfig={
+ institutionId:"INST-1",domain:"ACADEMICO",sourceCatalog:"DepartamentosAcademicos",
+ keyField:"DepartamentoID",nameField:"Nombre",codeField:"Codigo",codeNamespaceField:"Namespace",
+ statusField:"Estado",parentField:"ParentDepartmentID",validFromField:"FechaInicio",validToField:"FechaFin",
+ authorityMode:"SOURCE",authorityApproved:true,approvalReference:"TEST-ADR-001",version:"v1",activeStates:["ACTIVO"]
+};
+const departmentRecords=[
+ {DepartamentoID:"D-ROOT",Nombre:"Dirección",Codigo:"ROOT",Namespace:"INST-1",Estado:"Activo",ParentDepartmentID:"",FechaInicio:"",FechaFin:""},
+ {DepartamentoID:"D-CHILD",Nombre:"Matemáticas",Codigo:"MATH",Namespace:"INST-1",Estado:"Activo",ParentDepartmentID:"D-ROOT",FechaInicio:"2026-11-12T18:00:00.000Z",FechaFin:"2026-11-12T18:00:00.000Z"},
+ {DepartamentoID:"D-INACTIVE",Nombre:"Cerrado",Codigo:"OLD",Namespace:"INST-1",Estado:"Inactivo",ParentDepartmentID:"",FechaInicio:"",FechaFin:""},
+ {DepartamentoID:"D-FUTURE",Nombre:"Futuro",Codigo:"FUT",Namespace:"INST-1",Estado:"Activo",ParentDepartmentID:"",FechaInicio:"2026-11-12T18:00:00.001Z",FechaFin:""},
+ {DepartamentoID:"D-EXPIRED",Nombre:"Vencido",Codigo:"EXP",Namespace:"INST-1",Estado:"Activo",ParentDepartmentID:"",FechaInicio:"",FechaFin:0},
+ {DepartamentoID:"D-INVALID",Nombre:"Inválido",Codigo:"INV",Namespace:"INST-1",Estado:"Activo",ParentDepartmentID:"",FechaInicio:"invalid-date",FechaFin:""}
+];
+const sourceResolved=departmentCatalogCtx.resolveDepartmentCatalogReference_({config:departmentConfig,records:departmentRecords,sourceId:"D-CHILD",effectiveAt:fixedTemporalNow});
+assert.equal(sourceResolved.resolved,true,"explicitly approved source catalog resolves an active stable ID");
+assert.equal(sourceResolved.canonicalId,"D-CHILD");
+assert.equal(sourceResolved.parentId,"D-ROOT");
+const renamedRecords=departmentRecords.map(row=>row.DepartamentoID==="D-CHILD"?{...row,Nombre:"Ciencias Matemáticas"}:row);
+assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:departmentConfig,records:renamedRecords,sourceId:"D-CHILD",effectiveAt:fixedTemporalNow}).canonicalId,"D-CHILD","renaming a label does not change the stable key");
+assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:departmentConfig,records:departmentRecords,sourceId:"Matemáticas",effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_SOURCE_KEY_NOT_FOUND","display name is never a fallback identity");
+assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:departmentConfig,records:departmentRecords,sourceId:"D-INACTIVE",effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_SOURCE_INACTIVE");
+assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:departmentConfig,records:departmentRecords,sourceId:"D-FUTURE",effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_SOURCE_NOT_YET_VALID");
+assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:departmentConfig,records:departmentRecords,sourceId:"D-EXPIRED",effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_SOURCE_EXPIRED");
+assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:departmentConfig,records:departmentRecords,sourceId:"D-INVALID",effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_SOURCE_DATE_INVALID");
+assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({records:departmentRecords,sourceId:"D-CHILD",effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_AUTHORITY_UNCONFIGURED");
+assert.equal(departmentCatalogCtx.validateDepartmentCatalogConfiguration_({...departmentConfig,authorityApproved:false}).code,"DEPARTMENT_AUTHORITY_NOT_APPROVED");
+assert.equal(departmentCatalogCtx.validateDepartmentCatalogConfiguration_({...departmentConfig,keyField:"Nombre"}).code,"DEPARTMENT_STABLE_KEY_REQUIRED");
+assert.equal(departmentCatalogCtx.validateDepartmentCatalogSnapshot_(departmentConfig,[...departmentRecords,departmentRecords[0]],fixedTemporalNow).code,"DEPARTMENT_SOURCE_KEY_AMBIGUOUS");
+assert.equal(departmentCatalogCtx.validateDepartmentCatalogSnapshot_(departmentConfig,[{...departmentRecords[0],ParentDepartmentID:"MISSING"}],fixedTemporalNow).code,"DEPARTMENT_PARENT_NOT_FOUND");
+const cyclicDepartments=[{...departmentRecords[0],ParentDepartmentID:"D-CHILD"},{...departmentRecords[1],ParentDepartmentID:"D-ROOT"}];
+assert.equal(departmentCatalogCtx.validateDepartmentCatalogSnapshot_(departmentConfig,cyclicDepartments,fixedTemporalNow).code,"DEPARTMENT_HIERARCHY_CYCLE");
+const duplicateCodeDepartments=[departmentRecords[0],{...departmentRecords[1],Codigo:"ROOT"}];
+assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:departmentConfig,records:duplicateCodeDepartments,sourceId:"D-ROOT",effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_CODE_AMBIGUOUS");
+const crosswalkConfig={...departmentConfig,sourceCatalog:"CatalogoDepartamentos",keyField:"deptId",nameField:"nombre",authorityMode:"CROSSWALK"};
+const crosswalkRecords=[{deptId:"DEP-1",nombre:"Matemáticas",estado:"Activo"}];
+const approvedMapping={institutionId:"INST-1",domain:"ACADEMICO",sourceCatalog:"CatalogoDepartamentos",sourceId:"DEP-1",canonicalId:"CAN-MATH",status:"ACTIVE",approved:true,approvalReference:"XW-001",validFrom:"",validTo:""};
+assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:crosswalkConfig,records:crosswalkRecords,sourceId:"DEP-1",crosswalk:[approvedMapping],effectiveAt:fixedTemporalNow}).canonicalId,"CAN-MATH","approved crosswalk resolves source to canonical ID");
+assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:crosswalkConfig,records:crosswalkRecords,sourceId:"DEP-1",crosswalk:[],effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_CROSSWALK_NOT_FOUND");
+const ambiguousMappings=[approvedMapping,{...approvedMapping,canonicalId:"CAN-MATH-ALT",approvalReference:"XW-002"}];
+assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:crosswalkConfig,records:crosswalkRecords,sourceId:"DEP-1",crosswalk:ambiguousMappings,effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_CROSSWALK_AMBIGUOUS");
+assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:crosswalkConfig,records:crosswalkRecords,sourceId:"DEP-1",crosswalk:ambiguousMappings,requestedCanonicalId:"CAN-MATH-ALT",effectiveAt:fixedTemporalNow}).canonicalId,"CAN-MATH-ALT","one-to-many mapping requires explicit canonical target selection");
+assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:crosswalkConfig,records:crosswalkRecords,sourceId:"DEP-1",crosswalk:[{...approvedMapping,approved:false}],effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_CROSSWALK_NOT_FOUND","unapproved mappings are not accepted");
+console.log("C1.646 neutral department catalog contract: explicit authority, stable IDs, active/effective state, namespace uniqueness, hierarchy integrity, approved crosswalk and ambiguity fail-closed PASS.");
+
 
 
 
