@@ -1352,3 +1352,20 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** C1.636 completada. T153-S02 permanece En ejecución; no iniciar T153-S03.
 - **Siguiente acción:** revisar tratamiento de tokens y revocaciones pre-C1.634; cualquier invalidez global de sesiones existentes debe planificarse como cambio de rollout explícito.
 ===============================================================================
+
+
+===============================================================================
+### C1.637 — IMA-EXEC-20261112-1754Z-03 — control explícito de migración de sesiones históricas
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.636.
+- **HEAD inicial:** `a6fada1b58ee1c6c59bed0e59e49ec65008ce3ad`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Definir un mecanismo controlado para tratar tokens emitidos antes del ledger persistente sin forzar un logout masivo por defecto.
+- **Implementación:** `verifySessionToken` consulta la propiedad ScriptProperties opcional `SESSION_REVOCATION_LEGACY_CUTOFF`. Si no existe, mantiene compatibilidad normal. Si contiene un epoch válido, rechaza tokens con `iat <= cutoff`; tokens posteriores siguen siendo elegibles. Un valor malformado falla cerrado.
+- **Operación:** el cutoff no se activa automáticamente. Durante rollout, el responsable puede establecerlo en Script Properties para invalidar de forma explícita todas las sesiones emitidas hasta ese instante (reautenticación general). Sin el cutoff, tokens históricos no expirados continúan sujetos a los marcadores cache legacy que aún existan y al exp normal; revocaciones cache-only ya perdidas no pueden reconstruirse.
+- **Contrato:** cutoff ausente preserva sesión válida; cutoff configurado invalida token anterior; token emitido después del cutoff se acepta; cutoff malformado rechaza.
+- **Verificación local:** contrato completo V8 aislado **PASS**, C1.621–C1.637; sintaxis backend USER/test **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** ScriptProperties y rollout real NOT RUN; escenario documentado en `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `backend/user-service/Code.gs`; contrato `tests/security/internal-responsibility-rbac-contract.test.js`.
+- **Commit backend:** `e7453e036e6c2cc114f509c1e366ca9a8c98e2f6`; **commit contrato:** `5562ce59e6794d3ee73c987967e67bfb90975df6`.
+- **Estado:** C1.637 completada. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** revisar el criterio original de cierre de T153-S02 y contrastar la matriz de pruebas ejecutadas con cada requisito y dependencia, sin repetir evidencia vigente.
+===============================================================================
