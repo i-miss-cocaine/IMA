@@ -30,20 +30,24 @@ const evaluationHeaders = ["ID", "CompetenciaID", "IndicadorID", "UserID", "Asig
 const rubricHeaders = ["ID", "Titulo", "Asignatura", "Estado", "CriteriosJSON"];
 const configHeaders = ["ID", "Fecha", "Parcial", "Grado", "Sección", "Asignatura", "Unidad", "Tema", "profesorId"];
 
-function makeSheet(rows, options, kind) {
+function makeSheet(rows, options, kind, state) {
   return {
     rows: rows.map(row => row.slice()),
     getDataRange() { return { getValues: () => this.rows.map(row => row.slice()) }; },
     getLastRow() { return this.rows.length; },
     appendRow(row) {
-      if (kind === "evaluation" && options.failAppend) throw new Error("synthetic append failure");
+      if (kind === "evaluation") {
+        state.evaluationAppends++;
+        if (typeof options.duringAppend === "function") options.duringAppend(row.slice());
+        if (options.failAppend) throw new Error("synthetic append failure");
+      }
       this.rows.push(row.slice());
     }
   };
 }
 
 function fixture(options = {}) {
-  const state = { opens: 0, locks: 0, releases: 0, held: false, uuid: 0, action: "", events: [], permissionCalls: 0, identityCalls: 0 };
+  const state = { opens: 0, locks: 0, releases: 0, held: false, uuid: 0, evaluationAppends: 0, action: "", events: [], permissionCalls: 0, identityCalls: 0 };
   const actor = options.actor || { authorized: true, userId: "PROF-1", role: "Profesor" };
   const scope = options.scope || { authorized: true, institutionId: "INST-1", departmentIds: ["DEPT-1"], institutionWide: false };
   const userRows = [["UserID", "Nombre", "Grado", "Seccion", "X", "Y", "Role"],
@@ -57,19 +61,19 @@ function fixture(options = {}) {
   if (options.noAssignment) configRows.splice(1, 1);
   if (options.otherAssignment) configRows.push(["CFG-2", "", "P1", "10", "A", "Science", "", "", "PROF-1"]);
   const sheets = {
-    Usuarios: makeSheet(userRows, options, "users"),
-    ConfiguracionAcademica: makeSheet(configRows, options, "config"),
+    Usuarios: makeSheet(userRows, options, "users", state),
+    ConfiguracionAcademica: makeSheet(configRows, options, "config", state),
     RubricasEvaluacion: makeSheet(options.rubricRows || [rubricHeaders,
-      ["RUB-1", "Rúbrica", "Math", "Activa", "[]"]], options, "rubric")
+      ["RUB-1", "Rúbrica", "Math", "Activa", "[]"]], options, "rubric", state)
   };
-  if (options.ownershipRows) sheets.ResourceOwnership = makeSheet(options.ownershipRows, options, "ownership");
+  if (options.ownershipRows) sheets.ResourceOwnership = makeSheet(options.ownershipRows, options, "ownership", state);
   if (!options.missingEvaluationSheet) {
-    sheets.EvaluacionesCompetencias = makeSheet(options.evaluationRows || [evaluationHeaders], options, "evaluation");
+    sheets.EvaluacionesCompetencias = makeSheet(options.evaluationRows || [evaluationHeaders], options, "evaluation", state);
   }
   const ss = {
     getSheetByName(name) { return sheets[name] || null; },
     insertSheet(name) {
-      sheets[name] = makeSheet([], options, "evaluation");
+      sheets[name] = makeSheet([], options, "evaluation", state);
       return sheets[name];
     }
   };
@@ -261,6 +265,23 @@ test("nested mutation is rejected while the shared ScriptLock is held", () => {
   x.call(); assert.ok(nestedDenied); assert.equal(x.state.locks, 2);
   assert.equal(x.state.releases, 1); assert.equal(x.state.held, false);
 });
+test("reentrant mutation during evaluation append is rejected without duplicate persistence", () => {
+  let x, nestedError = "";
+  x = fixture({ duringAppend() {
+    try { x.call(); } catch (error) { nestedError = error.message; }
+  }});
+  const result = x.call();
+  assert.equal(result.status, "success");
+  assert.match(nestedError, /COMPETENCY_EVALUATION_MUTATION_LOCK_TIMEOUT/);
+  assert.equal(x.sheets.EvaluacionesCompetencias.rows.length, 2,
+    "only the outer request may persist one competency evaluation");
+  assert.equal(x.state.evaluationAppends, 1, "the outer request must append exactly once");
+  assert.equal(x.state.locks, 2, "outer and nested calls must both attempt the shared ScriptLock");
+  assert.equal(x.state.releases, 1, "the outer request must release its lock exactly once");
+  assert.equal(x.state.opens, 1, "the nested request must be rejected before opening Sheets");
+  assert.equal(x.state.held, false, "the outer ScriptLock must be released");
+});
+
 test("missing rubric and duplicate rubric IDs are denied", () => {
   const missing = fixture(); denied(() => missing.call(Object.assign({}, missing.payload, { rubricaId: "RUB-MISSING" })));
   const duplicate = fixture({ rubricRows: [rubricHeaders, ["RUB-1", "A", "Math", "Activa", "[]"], ["RUB-1", "B", "Math", "Activa", "[]"]] });
