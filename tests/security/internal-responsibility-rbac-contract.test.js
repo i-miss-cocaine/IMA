@@ -857,6 +857,16 @@ const switchResult=tenantSessionCtx.switchActiveRole({sessionToken:"claimsswitch
 assert.equal(switchResult.status,"success");
 assert.ok(sessionRevocationRows.some(row=>row[0]==="SID-SWITCH"),"role switch persists revocation of the previous session");
 assert.equal(tenantSessionCtx.verifySessionToken("claimsswitch.sig"),null,"previous role session is invalid after switch");
+
+const expiredIat=Math.floor(Date.now()/1000)-7200;
+tenantClaimsByPayload.claimsexpired={userId:"U-TENANT",role:"Director",membershipId:"MEM-LOCAL",institutionId:"INST-1",sessionId:"SID-EXPIRED",iat:expiredIat,exp:expiredIat+3600};
+assert.equal(tenantSessionCtx.verifySessionToken("claimsexpired.sig"),null,"token expiration is enforced independently of revocation records");
+const originalRevocationHeader=sessionRevocationRows[0].slice();
+sessionRevocationRows[0][0]="InvalidHeader";
+assert.equal(tenantSessionCtx.verifySessionToken("claimsafter.sig"),null,"revocation schema corruption fails closed during session verification");
+assert.notEqual(tenantSessionCtx.revokeUserSession({sessionId:"SID-FAIL"}).status,"success","revocation schema corruption cannot be reported as successful persistence");
+sessionRevocationRows[0]=originalRevocationHeader;
+
 console.log("C1.634 persistent session revocation contract: cache-eviction resilience, 24h+60s persistence, safe user/session logout targeting, post-revocation login and role-switch invalidation PASS.");
 
 
