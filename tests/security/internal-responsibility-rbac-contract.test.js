@@ -904,6 +904,22 @@ assert.equal(tenantSessionCtx.revokeUserSession({sessionId:"SID-PRUNE"}).status,
 assert.equal(sessionRevocationRows.some(row=>row[0]==="SID-OLD-EXPIRED"),false,"expired revocation rows are removed during ledger maintenance");
 console.log("C1.635 revocation boundary contract: administrative action authorization, safe public logout, legacy-token revocation compatibility and expired-ledger pruning PASS.");
 
+ 
+// C1.636: once the persistent revocation ledger has been initialized, its disappearance must fail closed.
+assert.equal(sessionRevocationProperties.SESSION_REVOCATION_LEDGER_INITIALIZED,"1","the ledger initialization sentinel is persistent");
+const tenantSpreadsheetWithRevocation = tenantSessionCtx.SpreadsheetApp;
+tenantSessionCtx.SpreadsheetApp={openById:()=>({getSheetByName:name=>{
+  if(name==="SesionesRevocadas")return null;
+  return tenantSpreadsheetWithRevocation.openById().getSheetByName(name);
+}})};
+assert.equal(tenantSessionCtx.verifySessionToken("claimsafter.sig"),null,"a missing initialized revocation ledger invalidates otherwise valid sessions");
+tenantSessionCtx.SpreadsheetApp=tenantSpreadsheetWithRevocation;
+assert.equal(tenantSessionCtx.verifySessionToken("claimsafter.sig").sessionId,"SID-AFTER","restoring the persistent ledger restores valid post-revocation sessions");
+assert.equal((source.match(/cache\.put\("revoked_session_/g)||[]).length,1,"only the persistent revocation helper writes session cache markers");
+assert.equal((source.match(/CacheService\.getScriptCache\(\)\.put\("revoked_session_/g)||[]).length,0,"no role-switch or logout route writes cache-only session revocations");
+console.log("C1.636 revocation ledger integrity contract: persistent initialization sentinel, missing-ledger fail-closed and no cache-only revocation writers PASS.");
+
+
 
 
 
