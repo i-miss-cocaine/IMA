@@ -205,7 +205,7 @@ console.log("User role membership contract: institution/user binding, effective 
       getAuthTokenSecret:()=>"secret",
       computeHmacSignature:(value,secret)=>"sig:"+value+":"+secret
     };
-    vm.runInNewContext(membershipVerifier+"\\n"+sessionVerifier+"\\nthis.verifySessionToken=verifySessionToken;",serviceCtx);
+    vm.runInNewContext(membershipVerifier+"\n"+sessionVerifier+"\nthis.verifySessionToken=verifySessionToken;",serviceCtx);
     assert.equal(serviceCtx.verifySessionToken(signedRoleToken).role,"Director",relativePath+" accepts active membership token");
     sharedRows[1][4]="REVOKED";
     assert.equal(serviceCtx.verifySessionToken(signedRoleToken),null,relativePath+" rejects revoked membership");
@@ -227,7 +227,7 @@ console.log("User role membership contract: institution/user binding, effective 
       newBlob:value=>({getDataAsString:()=>Buffer.from(value).toString("utf8")})
     }
   };
-  vm.runInNewContext(developerVerifier+"\\nthis.verifySessionToken=verifySessionToken;",developerCtx);
+  vm.runInNewContext(developerVerifier+"\nthis.verifySessionToken=verifySessionToken;",developerCtx);
   const nowSeconds=Math.floor(Date.now()/1000);
   function developerToken(extra) {
     const claims=Object.assign({userId:"U-1",role:"Student",iat:nowSeconds,exp:nowSeconds+3600,sessionId:"DEV-SESSION"},extra||{});
