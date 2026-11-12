@@ -4934,3 +4934,13 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.631); sintaxis backend USER/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
 - **Estado:** C1.631 completada. T153-S02 continúa En ejecución.
 - **Siguiente acción:** verificar transiciones de rol/membresía en lectores administrativos y su correspondencia con sesión firmada, incluidos roles duplicados.
+
+
+ 
+**Addendum C1.632 — unicidad y transiciones de membresías RBAC**
+- Dos membresías activas del mismo usuario/institución para el mismo RoleID se excluyen ambas como ambiguas; ninguna se puede resolver para sesión.
+- El cambio de rol de una MembershipID invalida el claim/token del rol anterior; el claim con el nuevo rol puede resolverse. `getUserRoleMemberships` filtra por usuario e institución y presenta las membresías activas restantes.
+- Una MembershipID duplicada globalmente (incluido otro usuario) invalida ese identificador; las demás membresías únicas permanecen activas.
+- Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.632); sintaxis backend USER/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
+- **Estado:** C1.632 completada. T153-S02 continúa En ejecución.
+- **Siguiente acción:** contrastar lecturas de membresías/roles, contexto activo y permisos de sesión para estados inactivos, duplicados y tenant mismatch.
