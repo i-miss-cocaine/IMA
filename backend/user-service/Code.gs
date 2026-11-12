@@ -10957,7 +10957,7 @@ function getInternalRoleCatalog(payload) {
 
 function getInternalRoleAssignments(payload) {
   try {
-    var f=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("AsignacionesAmbitosRoles");if(!sheet)return {status:"success",data:[]};
+    var f=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName?ss.getSheetByName("AsignacionesAmbitosRoles"):getOrCreateSheet(ss,"AsignacionesAmbitosRoles");if(!sheet)return {status:"success",data:[]};
     var data=sheet.getDataRange().getValues(),legacy=["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"],membership=legacy.concat(["InstitutionID","MembershipID"]),current=membership.concat(["ResponsibilityID"]),h=data.length?data[0].map(String):[];
     var schema=JSON.stringify(h)===JSON.stringify(current)?"current":(JSON.stringify(h)===JSON.stringify(membership)?"membership":(JSON.stringify(h)===JSON.stringify(legacy)?"legacy":"invalid"));
     if(schema==="invalid")return {status:"error",code:"ROLE_SCOPE_SCHEMA_MISMATCH"};
