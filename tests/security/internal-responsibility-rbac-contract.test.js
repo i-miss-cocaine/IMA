@@ -30,6 +30,7 @@ const manageFn = extractFunction(source, "manageInternalRoleCatalog");
 const catalogFn = extractFunction(source, "getInstitutionalResponsibilitiesCatalog");
 const roleCatalogFn = extractFunction(source, "getInternalRoleCatalog");
 const assignmentsFn = extractFunction(source, "getInternalRoleAssignments");
+const assignScopeFn = extractFunction(source, "assignRoleScope");
 const verifiedFn = extractFunction(source, "getUserVerifiedRole");
 const membershipDateFn = extractFunction(source, "parseUserRoleMembershipDate_");
 const membershipStateFn = extractFunction(source, "getUserRoleMembershipState_");
@@ -222,3 +223,74 @@ lifecycleMembershipRows[1][2]="Director";
 lifecycleMembershipRows[1][6]=new Date("2000-01-01T00:00:00.000Z");
 assert.equal(lifecycleCtx.getUserContextScope({sessionToken:"session-director"}).code,"VERIFIED_IDENTITY_REQUIRED","expired membership invalidates the previous session");
 console.log("C1.621 lifecycle contract: responsibility deactivation, internal-role deactivation, membership revocation, role changes and expiry remove effective scope and assignment visibility.");
+
+
+// C1.622: stable assignment identity, explicit reassignment, duplicate detection and tenant isolation.
+const writeRows = [scopeHeaders,["A-UPDATE","U-1","Director","DEPARTAMENTO",'["DEP-A"]',"Activo","U-ORIGINAL","2026-01-01","","","No","","INST-1","MEM-1","RI-1"]];
+const writeSheet = {
+  getLastRow:()=>writeRows.length,
+  getDataRange:()=>({getValues:()=>writeRows.map(r=>r.slice())}),
+  appendRow:row=>{writeRows.push(row.slice());},
+  getRange:(row,col,numRows,numCols)=>({
+    setValue:value=>{writeRows[row-1][col-1]=value;},
+    setValues:values=>{for(let i=0;i<values.length;i++)for(let j=0;j<values[i].length;j++)writeRows[row-1+i][col-1+j]=values[i][j];}
+  })
+};
+let uuidCounter=0, lockReleased=0, changeEvents=[];
+const writerCtx = {
+  SPREADSHEET_ID:"LOCAL",getIdentityInstitutionId_:()=>"INST-1",
+  LockService:{getScriptLock:()=>({waitLock:()=>{},releaseLock:()=>{lockReleased++;}})},
+  Utilities:{getUuid:()=>"UUID-"+(++uuidCounter)},
+  SpreadsheetApp:{openById:()=>({getSheetByName:()=>writeSheet})},
+  getOrCreateSheet:()=>writeSheet,
+  getUserRoleMembershipState_:(user,institution)=>({hasRecords:true}),
+  resolveUserRoleMembership_:(user,role,institution)=>({membershipId:writerCtx.membershipForUser||"MEM-1",institutionId:institution,roleId:role}),
+  resolveActiveInternalResponsibility_:(ss,id)=>["RI-1","RI-2"].includes(id)?{responsibilityId:id}:null,
+  recordEntityChangeLog:(...args)=>changeEvents.push(args),
+  logStructuredEvent:()=>{}
+};
+writerCtx.membershipForUser="MEM-1";
+vm.runInNewContext(assignScopeFn+"\nthis.assignRoleScope=assignRoleScope;",writerCtx);
+const writerPayload={_verifiedRole:"Director",_verifiedUserId:"U-ADMIN",userId:"U-1",roleId:"Director",scopeType:"DEPARTAMENTO",scopeValues:["DEP-B"],responsibilityId:"RI-2"};
+const reassignedResponsibility=writerCtx.assignRoleScope(writerPayload);
+assert.equal(reassignedResponsibility.status,"success");
+assert.equal(reassignedResponsibility.assignmentId,"A-UPDATE","responsibility update preserves stable assignment ID");
+assert.equal(writeRows.length,2,"responsibility update does not create a residual duplicate row");
+assert.equal(writeRows[1][14],"RI-2");
+assert.equal(writeRows[1][4],'["DEP-B"]');
+assert.equal(writeRows[1][6],"U-ORIGINAL","update preserves original creator");
+assert.equal(changeEvents[0][2].responsibilityId,"RI-1","audit before-image includes previous responsibility");
+assert.equal(changeEvents[0][3].responsibilityId,"RI-2","audit after-image includes new responsibility");
+
+writerCtx.membershipForUser="MEM-2";
+const membershipTransfer=writerCtx.assignRoleScope({...writerPayload,assignmentId:"A-UPDATE",scopeValues:["DEP-C"],responsibilityId:"RI-1"});
+assert.equal(membershipTransfer.status,"success","explicit assignment ID permits controlled membership reassignment");
+assert.equal(writeRows.length,2,"membership reassignment updates the selected row, not append a duplicate");
+assert.equal(writeRows[1][13],"MEM-2");
+assert.equal(writeRows[1][14],"RI-1");
+
+const duplicateRows=[scopeHeaders,writeRows[1].slice(),writeRows[1].slice()];
+const duplicateSheet=Object.assign({},writeSheet,{getLastRow:()=>duplicateRows.length,getDataRange:()=>({getValues:()=>duplicateRows.map(r=>r.slice())}),getRange:(row,col,nr,nc)=>({setValues:values=>{for(let i=0;i<values.length;i++)for(let j=0;j<values[i].length;j++)duplicateRows[row-1+i][col-1+j]=values[i][j];},setValue:value=>{duplicateRows[row-1][col-1]=value;}})});
+writerCtx.getOrCreateSheet=()=>duplicateSheet;
+const duplicateResult=writerCtx.assignRoleScope({...writerPayload,assignmentId:"A-UPDATE"});
+assert.equal(duplicateResult.code,"ROLE_SCOPE_ASSIGNMENT_DUPLICATE");
+assert.equal(duplicateRows.length,3,"duplicate detection performs no write");
+
+const tenantRows=[scopeHeaders,["A-OTHER","U-1","Director","DEPARTAMENTO",'["DEP-A"]',"Activo","U-ADMIN","2026-01-01","","","No","","INST-OTHER","MEM-OTHER","RI-1"]];
+const tenantSheet=Object.assign({},writeSheet,{getLastRow:()=>tenantRows.length,getDataRange:()=>({getValues:()=>tenantRows.map(r=>r.slice())}),getRange:(row,col,nr,nc)=>({setValues:values=>{for(let i=0;i<values.length;i++)for(let j=0;j<values[i].length;j++)tenantRows[row-1+i][col-1+j]=values[i][j];},setValue:value=>{tenantRows[row-1][col-1]=value;}})});
+writerCtx.getOrCreateSheet=()=>tenantSheet;
+const tenantResult=writerCtx.assignRoleScope({...writerPayload,assignmentId:"A-OTHER"});
+assert.equal(tenantResult.code,"ROLE_SCOPE_ASSIGNMENT_OWNERSHIP_MISMATCH","an assignment ID from another institution cannot be reassigned");
+assert.equal(tenantRows[1][12],"INST-OTHER","tenant isolation preserves the foreign row unchanged");
+
+const stableRows=[scopeHeaders,["A-STABLE","U-1","Director","DEPARTAMENTO",'["DEP-A"]',"Activo","U-ADMIN","2026-01-01","","","No","","INST-1","MEM-2","RI-1"]];
+const stableSheet=Object.assign({},writeSheet,{getLastRow:()=>stableRows.length,getDataRange:()=>({getValues:()=>stableRows.map(r=>r.slice())}),getRange:(row,col,nr,nc)=>({setValues:values=>{for(let i=0;i<values.length;i++)for(let j=0;j<values[i].length;j++)stableRows[row-1+i][col-1+j]=values[i][j];},setValue:value=>{stableRows[row-1][col-1]=value;}})});
+writerCtx.getOrCreateSheet=()=>stableSheet;
+const retry1=writerCtx.assignRoleScope({...writerPayload,assignmentId:undefined,responsibilityId:"RI-1"});
+const retry2=writerCtx.assignRoleScope({...writerPayload,assignmentId:undefined,responsibilityId:"RI-2"});
+assert.equal(retry1.assignmentId,"A-STABLE");
+assert.equal(retry2.assignmentId,"A-STABLE","retry with changed responsibility is idempotent on stable membership scope key");
+assert.equal(stableRows.length,2);
+assert.equal(stableRows[1][14],"RI-2");
+assert.ok(lockReleased>=5,"every writer path releases its ScriptLock");
+console.log("C1.622 assignment lifecycle contract: stable-ID responsibility update, explicit membership reassignment, idempotent retry, duplicate fail-closed behavior, tenant isolation and lock release PASS.");

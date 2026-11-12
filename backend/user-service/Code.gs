@@ -10174,98 +10174,82 @@ function resolveActiveInternalResponsibility_(ss, responsibilityId) {
 }
 // [TAREA-AD-03] [Anexo Tareas: Dashboards Dinámicos - Ámbito de Actuación] - Gestión y validación contextual de ámbitos de actuación por rol y usuario
 function assignRoleScope(payload) {
-  var writeLock = null;
-  var writeLockAcquired = false;
+  var writeLock=null,writeLockAcquired=false;
   try {
-    var verifiedRole = String((payload && payload._verifiedRole) || "").trim() || "NO_ACCESS";
-    var actorUserId = String((payload && payload._verifiedUserId) || "").trim();
-    if (verifiedRole === "NO_ACCESS" || !actorUserId) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "Se requiere identidad verificada para asignar ámbitos." };
-    if (["Administrador", "Director", "Desarrollador"].indexOf(verifiedRole) === -1) {
-      return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "Solo personal administrativo autorizado puede asignar ámbitos de actuación a roles." };
+    var verifiedRole=String((payload&&payload._verifiedRole)||"").trim()||"NO_ACCESS";
+    var actorUserId=String((payload&&payload._verifiedUserId)||"").trim();
+    if(verifiedRole==="NO_ACCESS"||!actorUserId)return {status:"error",code:"VERIFIED_IDENTITY_REQUIRED",message:"Se requiere identidad verificada para asignar ámbitos."};
+    if(["Administrador","Director","Desarrollador"].indexOf(verifiedRole)===-1)return {status:"error",code:"AUTH_PERMISSION_DENIED",message:"Solo personal administrativo autorizado puede asignar ámbitos de actuación a roles."};
+    writeLock=LockService.getScriptLock();writeLock.waitLock(10000);writeLockAcquired=true;
+    var userId=String(payload.userId||"").trim(),roleId=String(payload.roleId||payload.rolId||"").trim();
+    var responsibilityId=String(payload.responsibilityId||payload.rolInternoId||"").trim();
+    var requestedAssignmentId=String(payload.assignmentId||payload.asignacionId||"").trim();
+    if(!roleId)return {status:"error",code:"ROLE_SCOPE_ROLE_REQUIRED",message:"Debe especificarse el rol RBAC objetivo del ámbito."};
+    var scopeType=String(payload.scopeType||payload.tipoAmbito||"").trim().toUpperCase();
+    var scopeValues=Array.isArray(payload.scopeValues)?payload.scopeValues:(Array.isArray(payload.valoresAmbito)?payload.valoresAmbito:(payload.scopeValues||payload.valoresAmbito?[payload.scopeValues||payload.valoresAmbito]:[]));
+    var estado=payload.estado||"Activo";
+    if(!userId||!scopeType)return {status:"error",code:"ROLE_SCOPE_TARGET_REQUIRED",message:"userId y scopeType son requeridos para asignar ámbito de actuación."};
+    var institutionId=String(getIdentityInstitutionId_()||"").trim();
+    if(!institutionId)return {status:"error",code:"IDENTITY_CONFIGURATION_REQUIRED",message:"No existe institución configurada para asignar el ámbito."};
+    var membershipState=getUserRoleMembershipState_(userId,institutionId),targetMembership=null;
+    if(membershipState.hasRecords){
+      targetMembership=resolveUserRoleMembership_(userId,roleId,institutionId);
+      if(!targetMembership)return {status:"error",code:"ROLE_MEMBERSHIP_NOT_ACTIVE",message:"El usuario no tiene una membresía activa y única para el rol y la institución solicitados."};
     }
-    writeLock = LockService.getScriptLock();
-    writeLock.waitLock(10000);
-    writeLockAcquired = true;
-    var userId = String(payload.userId || "").trim();
-    var roleId = String(payload.roleId || payload.rolId || "").trim();
-    var responsibilityId = String(payload.responsibilityId || payload.rolInternoId || "").trim();
-    if (!roleId) return { status: "error", code: "ROLE_SCOPE_ROLE_REQUIRED", message: "Debe especificarse el rol RBAC objetivo del ámbito." };
-    var scopeType = String(payload.scopeType || payload.tipoAmbito || "").trim().toUpperCase();
-    var scopeValues = Array.isArray(payload.scopeValues) ? payload.scopeValues : (Array.isArray(payload.valoresAmbito) ? payload.valoresAmbito : (payload.scopeValues || payload.valoresAmbito ? [payload.scopeValues || payload.valoresAmbito] : []));
-    var estado = payload.estado || "Activo";
-    if (!userId || !scopeType) return { status: "error", code: "ROLE_SCOPE_TARGET_REQUIRED", message: "userId y scopeType son requeridos para asignar ámbito de actuación." };
-    var institutionId = String(getIdentityInstitutionId_() || "").trim();
-    if (!institutionId) return { status: "error", code: "IDENTITY_CONFIGURATION_REQUIRED", message: "No existe institución configurada para asignar el ámbito." };
-    var membershipState = getUserRoleMembershipState_(userId, institutionId);
-    var targetMembership = null;
-    if (membershipState.hasRecords) {
-      targetMembership = resolveUserRoleMembership_(userId, roleId, institutionId);
-      if (!targetMembership) return { status: "error", code: "ROLE_MEMBERSHIP_NOT_ACTIVE", message: "El usuario no tiene una membresía activa y única para el rol y la institución solicitados." };
+    var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getOrCreateSheet(ss,"AsignacionesAmbitosRoles");
+    var legacyHeaders=["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"];
+    var scopeHeaders=legacyHeaders.concat(["InstitutionID","MembershipID","ResponsibilityID"]);
+    if(sheet.getLastRow()===0)sheet.appendRow(scopeHeaders);
+    else {
+      var headerRow=sheet.getDataRange().getValues()[0]||[],actualHeaders=headerRow.map(String);
+      var legacySchema=JSON.stringify(actualHeaders)===JSON.stringify(legacyHeaders);
+      var membershipSchema=JSON.stringify(actualHeaders)===JSON.stringify(legacyHeaders.concat(["InstitutionID","MembershipID"]));
+      var currentSchema=JSON.stringify(actualHeaders)===JSON.stringify(scopeHeaders);
+      if(!legacySchema&&!membershipSchema&&!currentSchema)return {status:"error",code:"ROLE_SCOPE_SCHEMA_MISMATCH",message:"El esquema de asignaciones de ámbito no coincide con el contrato esperado."};
+      if(legacySchema)sheet.getRange(1,13,1,3).setValues([scopeHeaders.slice(12)]);
+      else if(membershipSchema)sheet.getRange(1,15).setValue("ResponsibilityID");
     }
-    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    var sheet = getOrCreateSheet(ss, "AsignacionesAmbitosRoles");
-    var legacyHeaders = ["AsignacionAmbitoID", "UserID", "RoleID", "ScopeType", "ScopeValues", "Estado", "CreadoPor", "FechaCreacion", "FechaInicio", "FechaFin", "EsSuplente", "SuplenteDeUserID"];
-    var scopeHeaders = legacyHeaders.concat(["InstitutionID", "MembershipID", "ResponsibilityID"]);
-    if (sheet.getLastRow() === 0) {
-      sheet.appendRow(scopeHeaders);
-    } else {
-      var headerRow = sheet.getDataRange().getValues()[0] || [];
-      var actualHeaders = headerRow.map(String);
-      var legacySchema = JSON.stringify(actualHeaders) === JSON.stringify(legacyHeaders);
-      var membershipSchema = JSON.stringify(actualHeaders) === JSON.stringify(legacyHeaders.concat(["InstitutionID", "MembershipID"]));
-      var currentSchema = JSON.stringify(actualHeaders) === JSON.stringify(scopeHeaders);
-      if (!legacySchema && !membershipSchema && !currentSchema) return { status: "error", code: "ROLE_SCOPE_SCHEMA_MISMATCH", message: "El esquema de asignaciones de ámbito no coincide con el contrato esperado." };
-      if (legacySchema) sheet.getRange(1, 13, 1, 3).setValues([scopeHeaders.slice(12)]);
-      else if (membershipSchema) sheet.getRange(1, 15).setValue("ResponsibilityID");
+    var membershipId=targetMembership?String(targetMembership.membershipId||"").trim():"";
+    if(targetMembership&&(!membershipId||String(targetMembership.institutionId||"").trim()!==institutionId||String(targetMembership.roleId||"").trim()!==roleId))
+      return {status:"error",code:"ROLE_MEMBERSHIP_BINDING_INVALID",message:"La membresía objetivo no coincide con el rol y la institución solicitados."};
+    if(targetMembership&&!responsibilityId)return {status:"error",code:"ROLE_RESPONSIBILITY_REQUIRED",message:"Toda asignación vinculada a una membresía RBAC requiere una responsabilidad organizativa activa."};
+    if(responsibilityId&&!resolveActiveInternalResponsibility_(ss,responsibilityId))
+      return {status:"error",code:"ROLE_RESPONSIBILITY_NOT_ACTIVE",message:"La responsabilidad organizativa no existe de forma única o no está activa."};
+    var data=sheet.getDataRange().getValues(),matches=[],assignmentId="",foundIdx=-1;
+    for(var i=1;i<data.length;i++){
+      var row=data[i]||[];
+      if(requestedAssignmentId){
+        if(String(row[0]||"").trim()===requestedAssignmentId)matches.push(i);
+      } else if(String(row[1]||"").trim()===userId&&String(row[2]||"").trim()===roleId&&
+        String(row[3]||"").trim().toUpperCase()===scopeType&&String(row[12]||"").trim()===institutionId&&
+        String(row[13]||"").trim()===membershipId)matches.push(i);
     }
-    var assignmentId = "AMB-" + Utilities.getUuid().substring(0, 8).toUpperCase();
-    var valuesJSON = JSON.stringify(scopeValues);
-    var now = new Date().toISOString();
-    var fechaInicio = payload.fechaInicio || now;
-    var fechaFin = payload.fechaFin || "";
-    var esSuplente = payload.esSuplente ? "Sí" : "No";
-    var suplenteDeUserId = payload.suplenteDeUserId || "";
-    var membershipId = targetMembership ? String(targetMembership.membershipId || "").trim() : "";
-    if (targetMembership && (!membershipId || String(targetMembership.institutionId || "").trim() !== institutionId || String(targetMembership.roleId || "").trim() !== roleId)) {
-      return { status: "error", code: "ROLE_MEMBERSHIP_BINDING_INVALID", message: "La membresía objetivo no coincide con el rol y la institución solicitados." };
-    }
-    if (targetMembership && !responsibilityId) return { status: "error", code: "ROLE_RESPONSIBILITY_REQUIRED", message: "Toda asignación vinculada a una membresía RBAC requiere una responsabilidad organizativa activa." };
-    if (responsibilityId && !resolveActiveInternalResponsibility_(ss, responsibilityId)) return { status: "error", code: "ROLE_RESPONSIBILITY_NOT_ACTIVE", message: "La responsabilidad organizativa no existe de forma única o no está activa." };
-    var data = sheet.getDataRange().getValues();
-    var foundIdx = -1;
-    for (var i = 1; i < data.length; i++) {
-      if (String(data[i][1] || "").trim() === userId &&
-          String(data[i][2] || "").trim() === roleId &&
-          String(data[i][3] || "").trim().toUpperCase() === scopeType &&
-          String(data[i][12] || "").trim() === institutionId &&
-          String(data[i][13] || "").trim() === membershipId &&
-          String(data[i][14] || "").trim() === responsibilityId) {
-        foundIdx = i;
-        break;
-      }
-    }
-    if (foundIdx !== -1) {
-      assignmentId = data[foundIdx][0];
-      sheet.getRange(foundIdx + 1, 5).setValue(valuesJSON);
-      sheet.getRange(foundIdx + 1, 6).setValue(estado);
-      sheet.getRange(foundIdx + 1, 9).setValue(fechaInicio);
-      sheet.getRange(foundIdx + 1, 10).setValue(fechaFin);
-      sheet.getRange(foundIdx + 1, 11).setValue(esSuplente);
-      sheet.getRange(foundIdx + 1, 12).setValue(suplenteDeUserId);
-      sheet.getRange(foundIdx + 1, 15).setValue(responsibilityId);
-    } else {
-      sheet.appendRow([assignmentId, userId, roleId, scopeType, valuesJSON, estado, actorUserId, now, fechaInicio, fechaFin, esSuplente, suplenteDeUserId, institutionId, membershipId, responsibilityId]);
-    }
-    recordEntityChangeLog("AsignacionAmbitoRol", assignmentId, foundIdx !== -1 ? { scopeValues: data[foundIdx][4], institutionId: data[foundIdx][12] || "", membershipId: data[foundIdx][13] || "" } : {}, { userId: userId, roleId: roleId, institutionId: institutionId, membershipId: membershipId || null, scopeType: scopeType, scopeValues: scopeValues, estado: estado }, "SCOPE_ASSIGNED", actorUserId);
-    logStructuredEvent("USER", "assignRoleScope", "INFO", "SCOPE_ASSIGNED", "Ámbito " + scopeType + " asignado al usuario " + userId + ".", { userId: userId, roleId: roleId, institutionId: institutionId, membershipId: membershipId || null, scopeType: scopeType, scopeValues: scopeValues }, verifiedRole);
-    return { status: "success", assignmentId: assignmentId, userId: userId, roleId: roleId, institutionId: institutionId, membershipId: membershipId || null, scopeType: scopeType, scopeValues: scopeValues, message: "Ámbito de actuación '" + scopeType + "' asignado correctamente al usuario " + userId + "." };
-  } catch (error) {
-    logStructuredEvent("USER", "assignRoleScope", "ERROR", "SCOPE_ASSIGN_FAILED", error.message, payload, payload && payload._verifiedRole);
-    return { status: "error", code: error.message || "ROLE_SCOPE_ASSIGN_FAILED", message: error.message };
-  }
-
-  finally {
-    if (writeLockAcquired) { try { writeLock.releaseLock(); } catch (_) {} }
+    if(matches.length>1)return {status:"error",code:"ROLE_SCOPE_ASSIGNMENT_DUPLICATE",message:"Se detectaron asignaciones duplicadas; no se modificó ningún registro."};
+    if(requestedAssignmentId&&matches.length===0)return {status:"error",code:"ROLE_SCOPE_ASSIGNMENT_NOT_FOUND",message:"La asignación indicada no existe en la institución activa."};
+    if(matches.length===1){
+      foundIdx=matches[0];var existing=data[foundIdx];
+      if(String(existing[1]||"").trim()!==userId||String(existing[2]||"").trim()!==roleId||
+        String(existing[3]||"").trim().toUpperCase()!==scopeType||String(existing[12]||"").trim()!==institutionId)
+        return {status:"error",code:"ROLE_SCOPE_ASSIGNMENT_OWNERSHIP_MISMATCH",message:"La asignación no pertenece al usuario, rol, ámbito e institución solicitados."};
+      if(!requestedAssignmentId&&String(existing[13]||"").trim()!==membershipId)
+        return {status:"error",code:"ROLE_SCOPE_ASSIGNMENT_OWNERSHIP_MISMATCH",message:"La membresía no coincide con la asignación existente."};
+      assignmentId=String(existing[0]||"").trim();
+      if(!assignmentId)return {status:"error",code:"ROLE_SCOPE_ASSIGNMENT_ID_INVALID",message:"La asignación existente no tiene un identificador válido."};
+    } else assignmentId="AMB-"+Utilities.getUuid().substring(0,8).toUpperCase();
+    var now=new Date().toISOString(),fechaInicio=payload.fechaInicio||now,fechaFin=payload.fechaFin||"";
+    var esSuplente=payload.esSuplente?"Sí":"No",suplenteDeUserId=payload.suplenteDeUserId||"";
+    var before=foundIdx!==-1?{scopeValues:data[foundIdx][4],estado:data[foundIdx][5],institutionId:data[foundIdx][12]||"",membershipId:data[foundIdx][13]||"",responsibilityId:data[foundIdx][14]||""}:{};
+    var updatedRow=[assignmentId,userId,roleId,scopeType,JSON.stringify(scopeValues),estado,foundIdx!==-1?(data[foundIdx][6]||actorUserId):actorUserId,foundIdx!==-1?(data[foundIdx][7]||now):now,fechaInicio,fechaFin,esSuplente,suplenteDeUserId,institutionId,membershipId,responsibilityId];
+    if(foundIdx!==-1)sheet.getRange(foundIdx+1,1,1,scopeHeaders.length).setValues([updatedRow]);
+    else sheet.appendRow(updatedRow);
+    recordEntityChangeLog("AsignacionAmbitoRol",assignmentId,before,{userId:userId,roleId:roleId,institutionId:institutionId,membershipId:membershipId||null,responsibilityId:responsibilityId||null,scopeType:scopeType,scopeValues:scopeValues,estado:estado},"SCOPE_ASSIGNED",actorUserId);
+    logStructuredEvent("USER","assignRoleScope","INFO","SCOPE_ASSIGNED","Ámbito "+scopeType+" asignado al usuario "+userId+".",{userId:userId,roleId:roleId,institutionId:institutionId,membershipId:membershipId||null,responsibilityId:responsibilityId||null,scopeType:scopeType,scopeValues:scopeValues},verifiedRole);
+    return {status:"success",assignmentId:assignmentId,userId:userId,roleId:roleId,institutionId:institutionId,membershipId:membershipId||null,responsibilityId:responsibilityId||null,scopeType:scopeType,scopeValues:scopeValues,message:"Ámbito de actuación '"+scopeType+"' asignado correctamente al usuario "+userId+"."};
+  } catch(error) {
+    logStructuredEvent("USER","assignRoleScope","ERROR","SCOPE_ASSIGN_FAILED",error.message,payload,payload&&payload._verifiedRole);
+    return {status:"error",code:error.message||"ROLE_SCOPE_ASSIGN_FAILED",message:error.message};
+  } finally {
+    if(writeLockAcquired){try{writeLock.releaseLock();}catch(_){}}
   }
 }
 function getUserContextScope(payload) {
