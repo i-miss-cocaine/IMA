@@ -23,6 +23,12 @@ function extractFunction(source, name) {
 }
 
 const sourceCode = fs.readFileSync(path.resolve(__dirname, "../../backend/user-service/Code.gs"), "utf8");
+const loginHtml = fs.readFileSync(path.resolve(__dirname, "../../login.html"), "utf8");
+const authClientSource = fs.readFileSync(path.resolve(__dirname, "../../js/auth.js"), "utf8");
+assert.match(loginHtml, /id="active-role-selection"/);
+assert.match(loginHtml, /id="active-role-select"/);
+assert.match(authClientSource, /ACTIVE_ROLE_SELECTION_REQUIRED/);
+assert.match(authClientSource, /loginPayload.activeRoleId = activeRoleId/);
 assert.match(sourceCode, /case "getUserRoleMemberships":\s*result = getUserRoleMemberships\(payload\);/);
 assert.match(sourceCode, /case "switchActiveRole":\s*result = switchActiveRole\(payload\);/);
 assert.match(sourceCode, /case "manageUserRoleMemberships":\s*result = manageUserRoleMemberships\(payload\);/);
@@ -175,6 +181,7 @@ function membership(id,user,role,institution,status="ACTIVE",from=start,to=end){
   const rows=[headers,membership("M-DIR","U-1","Director","INST-1"),membership("M-COORD","U-1","Coordinador","INST-1")];
   const {ctx,userRows}=makeHarness(rows);
   userRows[1][5]="0102";
+  userRows[1][6]="Director";
   const selectionRequired=ctx.loginUser({identifier:"u1@example.test",password:"pw"});
   assert.equal(selectionRequired.code,"ACTIVE_ROLE_SELECTION_REQUIRED");
   assert.deepEqual(Array.from(selectionRequired.availableRoles,role=>role.roleId),["Director","Coordinador"]);
@@ -183,6 +190,9 @@ function membership(id,user,role,institution,status="ACTIVE",from=start,to=end){
   assert.equal(ctx.verifySessionToken(login.sessionToken).role,"Coordinador");
   assert.equal(login.data.rol,"Coordinador");
   assert.equal(ctx.loginUser({identifier:"u1@example.test",password:"pw",activeRoleId:"Administrador"}).code,"ROLE_MEMBERSHIP_NOT_ACTIVE");
+  const noActive=makeHarness([headers,membership("M-REVOKED","U-1","Student","INST-1","REVOKED")]);
+  noActive.userRows[1][5]="0102";
+  assert.equal(noActive.ctx.loginUser({identifier:"u1@example.test",password:"pw"}).code,"NO_ACTIVE_ROLE_MEMBERSHIPS");
 }
 
 console.log("User role membership contract: institution/user binding, effective dates, revocation, duplicate denial, signed active-role switching, legacy compatibility and locked assignment lifecycle passed.");
