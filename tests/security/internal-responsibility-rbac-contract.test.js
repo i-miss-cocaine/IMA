@@ -772,6 +772,93 @@ tenantUserRows[1][10]="Inactiva";
 assert.equal(tenantSessionCtx.verifySessionToken("claimslocal.sig"),null,"deactivating the account invalidates all membership-bound sessions");
 console.log("C1.633 signed-session tenant contract: exact membership/tenant binding, institution-swap denial, membership revocation and inactive-account invalidation PASS.");
 
+ 
+// C1.634: persistent revocation survives cache eviction and logout cannot revoke caller-supplied identities.
+const sessionRevocationRows = [["SessionID","UserID","RevokedAt","ExpiresAt"]];
+const sessionRevocationSheet = {
+  getLastRow:()=>sessionRevocationRows.length,
+  getDataRange:()=>({getValues:()=>sessionRevocationRows.map(row=>row.slice())}),
+  appendRow:row=>{sessionRevocationRows.push(row.slice());},
+  getRange:(row,col,numRows,numCols)=>({
+    clearContent:()=>{for(let r=0;r<numRows;r++)for(let c=0;c<numCols;c++)sessionRevocationRows[row-1+r][col-1+c]="";},
+    setValues:values=>{for(let r=0;r<values.length;r++)for(let c=0;c<values[r].length;c++)sessionRevocationRows[row-1+r][col-1+c]=values[r][c];}
+  })
+};
+const sessionCacheWrites = [];
+tenantCache.get=()=>null; // Deliberately simulate an evicted/missing cache entry on every verification.
+tenantCache.put=(key,value,ttl)=>sessionCacheWrites.push({key,value,ttl});
+tenantCache.remove=()=>{};
+tenantSessionCtx.SESSION_REVOCATION_HEADERS_=["SessionID","UserID","RevokedAt","ExpiresAt"];
+tenantSessionCtx.CacheService={getScriptCache:()=>tenantCache};
+tenantSessionCtx.LockService={getScriptLock:()=>({waitLock:()=>{},releaseLock:()=>{}})};
+tenantSessionCtx.getOrCreateSheet=(_ss,name)=>name==="SesionesRevocadas"?sessionRevocationSheet:null;
+tenantSessionCtx.logStructuredEvent=()=>{};
+tenantSessionCtx.SpreadsheetApp={openById:()=>({getSheetByName:name=>{
+  if(name==="Usuarios")return {getDataRange:()=>({getValues:()=>tenantUserRows.map(row=>row.slice())})};
+  if(name==="MembresiasRolesRBAC")return {getDataRange:()=>({getValues:()=>tenantMembershipRows.map(row=>row.slice())})};
+  if(name==="AsignacionesAmbitosRoles")return {getDataRange:()=>({getValues:()=>tenantScopeRows.map(row=>row.slice())})};
+  if(name==="SesionesRevocadas")return sessionRevocationSheet;
+  return null;
+}})};
+const sessionRevocationCode = `
+this.SESSION_REVOCATION_HEADERS_=["SessionID","UserID","RevokedAt","ExpiresAt"];
+${extractFunction(source,"isSessionRevoked_")}
+${extractFunction(source,"recordSessionRevocation_")}
+${extractFunction(source,"invalidateUserRoleCache")}
+${extractFunction(source,"revokeUserSession")}
+${extractFunction(source,"logoutUser")}
+${extractFunction(source,"switchActiveRole")}
+this.revokeUserSession=revokeUserSession;
+this.logoutUser=logoutUser;
+this.switchActiveRole=switchActiveRole;
+`;
+vm.runInNewContext(sessionRevocationCode,tenantSessionCtx);
+assert.equal(tenantSessionCtx.verifySessionToken("claimslocal.sig").sessionId,"SID-LOCAL","local session is valid before revocation");
+const sessionRevoked = tenantSessionCtx.revokeUserSession({sessionId:"SID-LOCAL"});
+assert.equal(sessionRevoked.status,"success");
+assert.equal(tenantSessionCtx.verifySessionToken("claimslocal.sig"),null,"persistent session revocation blocks the token even when cache reads miss");
+const localRevocationRow = sessionRevocationRows.find(row=>row[0]==="SID-LOCAL");
+assert.ok(localRevocationRow,"the session revocation is persisted");
+assert.ok(new Date(localRevocationRow[3]).getTime()>=new Date(localRevocationRow[2]).getTime()+86460*1000,"persistent revocation outlives the maximum 24-hour token plus 60-second future-iat tolerance");
+assert.ok(sessionCacheWrites.some(item=>item.key==="revoked_session_SID-LOCAL"&&item.ttl===21600),"cache is only a six-hour acceleration layer; persistence supplies the full revocation window");
+
+// A fresh session ID for the same active membership is not blocked by a session-only logout.
+const nowForNewClaims=Math.floor(Date.now()/1000);
+tenantClaimsByPayload.claimsnew={userId:"U-TENANT",role:"Director",membershipId:"MEM-LOCAL",institutionId:"INST-1",sessionId:"SID-NEW",iat:nowForNewClaims,exp:nowForNewClaims+3600};
+assert.equal(tenantSessionCtx.verifySessionToken("claimsnew.sig").sessionId,"SID-NEW");
+
+// Public logout derives the target only from verified claims and ignores forged user/session IDs.
+tenantClaimsByPayload.claimslogout={userId:"U-TENANT",role:"Director",membershipId:"MEM-LOCAL",institutionId:"INST-1",sessionId:"SID-LOGOUT",iat:nowForNewClaims,exp:nowForNewClaims+3600};
+const logoutResult = tenantSessionCtx.logoutUser({sessionToken:"claimslogout.sig",userId:"U-ATTACKER",sessionId:"SID-ATTACKER"});
+assert.equal(logoutResult.status,"success");
+assert.ok(sessionRevocationRows.some(row=>row[0]==="SID-LOGOUT"&&!row[1]),"logout revokes the signed session only");
+assert.equal(sessionRevocationRows.some(row=>row[0]==="SID-ATTACKER"||row[1]==="U-ATTACKER"),false,"client-supplied identities are never used as revocation targets");
+assert.equal(tenantSessionCtx.verifySessionToken("claimslogout.sig"),null);
+const rowsBeforeInvalidLogout=sessionRevocationRows.length;
+assert.equal(tenantSessionCtx.logoutUser({sessionToken:"invalid.sig",userId:"U-ATTACKER",sessionId:"SID-FORGED"}).status,"success");
+assert.equal(sessionRevocationRows.length,rowsBeforeInvalidLogout,"an invalid token cannot revoke arbitrary caller-supplied identities");
+
+// User-wide revocation applies to sessions issued before the revocation timestamp, while allowing a later login.
+tenantClaimsByPayload.claimsbefore={userId:"U-TENANT",role:"Director",membershipId:"MEM-LOCAL",institutionId:"INST-1",sessionId:"SID-BEFORE",iat:nowForNewClaims-30,exp:nowForNewClaims+3600};
+assert.equal(tenantSessionCtx.verifySessionToken("claimsbefore.sig").sessionId,"SID-BEFORE");
+assert.equal(tenantSessionCtx.revokeUserSession({userId:"U-TENANT"}).status,"success");
+assert.equal(tenantSessionCtx.verifySessionToken("claimsbefore.sig"),null,"user-wide revocation blocks all previously issued sessions");
+const afterRevocationIat=Math.floor(Date.now()/1000)+5;
+tenantClaimsByPayload.claimsafter={userId:"U-TENANT",role:"Director",membershipId:"MEM-LOCAL",institutionId:"INST-1",sessionId:"SID-AFTER",iat:afterRevocationIat,exp:afterRevocationIat+3600};
+assert.equal(tenantSessionCtx.verifySessionToken("claimsafter.sig").sessionId,"SID-AFTER","a new session issued after the user-wide revocation timestamp is allowed");
+
+// Role switching must persistently revoke the previous session instead of relying on an overlong cache TTL.
+tenantMembershipRows.push(["MEM-LOCAL-AUD","U-TENANT","Auditor","INST-1","ACTIVE","","","U-ADMIN","2026-01-01","2026-01-01","",""]);
+const switchIat=Math.floor(Date.now()/1000)+6;
+tenantClaimsByPayload.claimsswitch={userId:"U-TENANT",role:"Director",membershipId:"MEM-LOCAL",institutionId:"INST-1",sessionId:"SID-SWITCH",iat:switchIat,exp:switchIat+3600};
+tenantSessionCtx.generateSessionToken=()=> "next-session-token";
+const switchResult=tenantSessionCtx.switchActiveRole({sessionToken:"claimsswitch.sig",activeRoleId:"Auditor"});
+assert.equal(switchResult.status,"success");
+assert.ok(sessionRevocationRows.some(row=>row[0]==="SID-SWITCH"),"role switch persists revocation of the previous session");
+assert.equal(tenantSessionCtx.verifySessionToken("claimsswitch.sig"),null,"previous role session is invalid after switch");
+console.log("C1.634 persistent session revocation contract: cache-eviction resilience, 24h+60s persistence, safe user/session logout targeting, post-revocation login and role-switch invalidation PASS.");
+
+
 
 
 
