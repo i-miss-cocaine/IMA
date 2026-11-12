@@ -2459,11 +2459,18 @@ function getSecurityDelegations(payload) {
   return { status: "success", data: list };
 }
 
+function getDynamicPermissionCacheKey_() {
+  var institutionId = String(getIdentityInstitutionId_() || "").trim();
+  var spreadsheetId = String(SPREADSHEET_ID || "").trim();
+  if (!institutionId || !spreadsheetId) throw new Error("IDENTITY_CONFIGURATION_REQUIRED");
+  return "dynamic_permissions_matrix:" + spreadsheetId + ":" + institutionId;
+}
 // [TAREA-F4-P1-03] [Fase 4: Matriz Dinámica de Permisos] - Consulta y caché de la matriz dinámica por rol y acción
 function getDynamicPermissionsForRole(role, action) {
   if (!role || !action) return null;
   const cache = CacheService.getScriptCache();
-  const cacheKey = "dynamic_permissions_matrix";
+  let cacheKey;
+  try { cacheKey = getDynamicPermissionCacheKey_(); } catch (e) { return null; }
   let matrix = null;
   try {
     const raw = cache.get(cacheKey);
@@ -2477,12 +2484,23 @@ function getDynamicPermissionsForRole(role, action) {
       if (!sheet || sheet.getLastRow() <= 1) return null;
       const data = sheet.getDataRange().getValues();
       matrix = {};
+      const institutionId = String(getIdentityInstitutionId_() || "").trim();
+      const globalRules = {};
+      const institutionRules = {};
       for (let i = 1; i < data.length; i++) {
         const rRole = String(data[i][0] || "").trim();
         const rAction = String(data[i][2] || "").trim();
+        const rScope = String(data[i][4] || "Global").trim();
         const rPermitted = data[i][3] === true || String(data[i][3]).toLowerCase() === "true";
+        if (!rRole || !rAction || (rScope !== "Global" && rScope !== institutionId)) continue;
+        const target = rScope === institutionId ? institutionRules : globalRules;
+        if (!target[rRole]) target[rRole] = {};
+        target[rRole][rAction] = rPermitted;
+      }
+      matrix = globalRules;
+      Object.keys(institutionRules).forEach(function(rRole) {
         if (!matrix[rRole]) matrix[rRole] = {};
-        matrix[rRole][rAction] = rPermitted;
+        Object.keys(institutionRules[rRole]).forEach(function(rAction) { matrix[rRole][rAction] = institutionRules[rRole][rAction]; });
       }
       cache.put(cacheKey, JSON.stringify(matrix), 600);
     } catch (e) {
@@ -2543,6 +2561,8 @@ function savePermissionMatrix(payload) {
   }
 
   const now = new Date();
+  const institutionId = String(getIdentityInstitutionId_() || "").trim();
+  if (!institutionId) throw new Error("IDENTITY_CONFIGURATION_REQUIRED");
   const rulesToSave = Array.isArray(matrix) ? matrix : (rol && accion !== undefined ? [{ rol, modulo, accion, permitido, ambito }] : []);
 
   if (rulesToSave.length === 0) {
@@ -2557,10 +2577,11 @@ function savePermissionMatrix(payload) {
     const targetPermitted = rule.permitido === true || String(rule.permitido).toLowerCase() === "true";
     const targetModule = String(rule.modulo || "General").trim();
     const targetAmbito = String(rule.ambito || "Global").trim();
+    if (targetAmbito !== "Global" && targetAmbito !== institutionId) throw new Error("PERMISSION_MATRIX_TENANT_SCOPE_INVALID");
 
     let foundIdx = -1;
     for (let i = 1; i < data.length; i++) {
-      if (String(data[i][0]).trim() === targetRol && String(data[i][2]).trim() === targetAction) {
+      if (String(data[i][0]).trim() === targetRol && String(data[i][2]).trim() === targetAction && String(data[i][4] || "Global").trim() === targetAmbito) {
         foundIdx = i;
         break;
       }
@@ -2574,7 +2595,7 @@ function savePermissionMatrix(payload) {
   });
 
   try {
-    CacheService.getScriptCache().remove("dynamic_permissions_matrix");
+    CacheService.getScriptCache().remove(getDynamicPermissionCacheKey_());
   } catch (e) {}
 
   logStructuredEvent("USER", "savePermissionMatrix", "INFO", "PERMISSION_MATRIX_UPDATED", `Matriz de permisos actualizada por ${callerId}. Reglas procesadas: ${rulesToSave.length}`, { rulesCount: rulesToSave.length, updatedBy: callerId }, callerRole);
