@@ -4762,3 +4762,8 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Riesgos/dependencias:** cada servicio debe tener `IMA_INSTITUTION_ID` y acceso a la misma hoja institucional; si no puede validar la fuente canónica, falla cerrado. La revocación de membresía se comprueba directamente contra la hoja en cada consumidor. La revocación de sesión de cambio de rol se registra en caché USER; no se afirma propagación de ese caché a proyectos Apps Script independientes.
 - **Estado:** incremento de implementación publicado en la rama autorizada; **no se marca C1.616 como completada localmente** porque faltan las verificaciones locales obligatorias. TASK-153/T153-S02 permanece En ejecución.
 - **Siguiente acción:** ejecutar el contrato Node y los parseos locales sobre el HEAD publicado; corregir cualquier FAIL y obtener evidencia CI. Después continuar el resto de T153-S02 (responsabilidades/capacidades y relación con ámbitos) sin iniciar T153-S03 antes de satisfacer sus dependencias.
+
+
+**Addendum C1.616-R1 — esquema RBAC exacto**
+- Se detectó que ensureUserRoleMembershipSheet_ comprobaba solo las primeras 12 columnas; ahora rechaza encabezados con columnas adicionales, igual que el lector y los consumidores.
+- Se añadió el caso de contrato para esquema extendido. La prueba continúa NOT RUN; no se declara PASS ni se cierra C1.616.
