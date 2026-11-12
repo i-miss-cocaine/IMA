@@ -10365,6 +10365,12 @@ function getUserContextScope(payload) {
     var sheet = ss.getSheetByName("AsignacionesAmbitosRoles");
     if (!sheet) return { status: "error", code: "ROLE_SCOPE_NOT_INITIALIZED", message: "No está inicializado el catálogo de ámbitos." };
     var data = sheet.getDataRange().getValues();
+    var legacyScopeHeaders = ["AsignacionAmbitoID", "UserID", "RoleID", "ScopeType", "ScopeValues", "Estado", "CreadoPor", "FechaCreacion", "FechaInicio", "FechaFin", "EsSuplente", "SuplenteDeUserID"];
+    var membershipScopeHeaders = legacyScopeHeaders.concat(["InstitutionID", "MembershipID"]);
+    var currentScopeHeaders = membershipScopeHeaders.concat(["ResponsibilityID"]);
+    var actualScopeHeaders = data.length ? data[0].map(String) : [];
+    var scopeSchema = JSON.stringify(actualScopeHeaders) === JSON.stringify(currentScopeHeaders) ? "current" : (JSON.stringify(actualScopeHeaders) === JSON.stringify(membershipScopeHeaders) ? "membership" : (JSON.stringify(actualScopeHeaders) === JSON.stringify(legacyScopeHeaders) ? "legacy" : "invalid"));
+    if (scopeSchema === "invalid") return { status: "error", code: "ROLE_SCOPE_SCHEMA_MISMATCH", message: "El esquema de asignaciones de ámbito no coincide con el contrato esperado." };
     var now = new Date();
     var normalizeRole = function(value) { return String(value || "").trim().toUpperCase().replace(/^ROLE[_-]?/, "").replace(/[^A-Z0-9]/g, ""); };
     var parseValues = function(value) {
@@ -10389,10 +10395,14 @@ function getUserContextScope(payload) {
       var row = data[i] || [];
       if (String(row[1] || "").trim() !== userId) continue;
       if (!row[2] || normalizeRole(row[2]) !== normalizeRole(verifiedRole)) continue;
-      var rowInstitutionId = String(row[12] || "").trim();
-      var rowMembershipId = String(row[13] || "").trim();
+      var rowInstitutionId = scopeSchema === "legacy" ? "" : String(row[12] || "").trim();
+      var rowMembershipId = scopeSchema === "legacy" ? "" : String(row[13] || "").trim();
+      var rowResponsibilityId = scopeSchema === "current" ? String(row[14] || "").trim() : "";
+      var responsibility = null;
       if (membershipId) {
-        if (rowInstitutionId !== institutionId || rowMembershipId !== membershipId) continue;
+        if (scopeSchema !== "current" || rowInstitutionId !== institutionId || rowMembershipId !== membershipId || !rowResponsibilityId) continue;
+        responsibility = resolveActiveInternalResponsibility_(ss, rowResponsibilityId);
+        if (!responsibility) continue;
       } else if (rowInstitutionId || rowMembershipId) {
         continue;
       }
@@ -10411,6 +10421,8 @@ function getUserContextScope(payload) {
         roleId: String(row[2] || ""),
         institutionId: rowInstitutionId || null,
         membershipId: rowMembershipId || null,
+        responsibilityId: rowResponsibilityId || null,
+        responsibility: responsibility,
         scopeType: scopeType,
         scopeValues: scopeValues,
         fechaInicio: row[8] || "",
