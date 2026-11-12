@@ -122,6 +122,8 @@ function membership(id,user,role,institution,status="ACTIVE",from=start,to=end){
   assert.equal(duplicateId.ctx.resolveUserRoleMembership_("U-1","Director","INST-1"),null,"duplicate membership ID fails closed");
   const bad=makeHarness([["MembershipID","UserID","RoleID"]]);
   assert.throws(()=>bad.ctx.getUserRoleMembershipState_("U-1","INST-1"),/ROLE_MEMBERSHIP_SCHEMA_MISMATCH/);
+  const badExtra=makeHarness([headers.concat("UnexpectedColumn")]);
+  assert.throws(()=>badExtra.ctx.ensureUserRoleMembershipSheet_(badExtra.ctx.SpreadsheetApp.openById("LOCAL")),/ROLE_MEMBERSHIP_SCHEMA_MISMATCH/,"extra columns are rejected by the write path too");
 }
 {
   const rows=[headers,membership("M-DIR","U-1","Director","INST-1")];
