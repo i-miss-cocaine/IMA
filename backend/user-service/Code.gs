@@ -1090,6 +1090,7 @@ function verifyInterServiceEnvelope(envelope, expectedTargetService, customSecre
 
 const USER_ROLE_MEMBERSHIP_HEADERS_ = ["MembershipID","UserID","RoleID","InstitutionID","Status","StartAt","EndAt","CreatedBy","CreatedAt","UpdatedAt","RevokedBy","RevokedAt"];
 const SESSION_REVOCATION_HEADERS_ = ["SessionID","UserID","RevokedAt","ExpiresAt"];
+const SESSION_REVOCATION_STATE_HEADERS_ = ["Key","Value","UpdatedAt"];
 
 function parseUserRoleMembershipDate_(value) {
   if (value === "" || value === null || value === undefined) return { valid: true, date: null };
@@ -1105,10 +1106,21 @@ function isSessionRevoked_(claims, nowValue) {
   var now = nowValue instanceof Date ? nowValue : (nowValue ? new Date(nowValue) : new Date());
   if (isNaN(now.getTime())) throw new Error("SESSION_REVOCATION_CLOCK_INVALID");
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var stateSheet = ss.getSheetByName("EstadoRevocacionSesiones");
+  var sharedLedgerInitialized = false;
+  if (stateSheet) {
+    var stateData = stateSheet.getDataRange().getValues();
+    if (!stateData.length || JSON.stringify(stateData[0].map(String)) !== JSON.stringify(SESSION_REVOCATION_STATE_HEADERS_)) {
+      throw new Error("SESSION_REVOCATION_STATE_SCHEMA_MISMATCH");
+    }
+    sharedLedgerInitialized = stateData.slice(1).some(function(row) {
+      return String(row[0] || "").trim() === "LEDGER_INITIALIZED" && String(row[1] || "").trim() === "1";
+    });
+  }
   var sheet = ss.getSheetByName("SesionesRevocadas");
   if (!sheet) {
     var ledgerInitialized = PropertiesService.getScriptProperties().getProperty("SESSION_REVOCATION_LEDGER_INITIALIZED");
-    if (ledgerInitialized === "1") throw new Error("SESSION_REVOCATION_LEDGER_MISSING");
+    if (ledgerInitialized === "1" || sharedLedgerInitialized) throw new Error("SESSION_REVOCATION_LEDGER_MISSING");
     return false;
   }
   var data = sheet.getDataRange().getValues();
@@ -1143,9 +1155,18 @@ function recordSessionRevocation_(userId, sessionId, nowValue) {
   var lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
-    // Persist the initialization sentinel before creating/writing the ledger; missing storage then fails closed.
-    PropertiesService.getScriptProperties().setProperty("SESSION_REVOCATION_LEDGER_INITIALIZED", "1");
+    // Persist a shared spreadsheet sentinel so every Apps Script consumer can detect a missing ledger.
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var stateSheet = getOrCreateSheet(ss, "EstadoRevocacionSesiones");
+    if (stateSheet.getLastRow() === 0) stateSheet.appendRow(SESSION_REVOCATION_STATE_HEADERS_);
+    var stateData = stateSheet.getDataRange().getValues();
+    if (!stateData.length || JSON.stringify(stateData[0].map(String)) !== JSON.stringify(SESSION_REVOCATION_STATE_HEADERS_)) {
+      throw new Error("SESSION_REVOCATION_STATE_SCHEMA_MISMATCH");
+    }
+    var initializedRow = stateData.slice(1).findIndex(function(row) { return String(row[0] || "").trim() === "LEDGER_INITIALIZED"; });
+    if (initializedRow === -1) stateSheet.appendRow(["LEDGER_INITIALIZED", "1", now]);
+    else if (String(stateData[initializedRow + 1][1] || "").trim() !== "1") stateSheet.getRange(initializedRow + 2, 2).setValue("1");
+    PropertiesService.getScriptProperties().setProperty("SESSION_REVOCATION_LEDGER_INITIALIZED", "1");
     var sheet = getOrCreateSheet(ss, "SesionesRevocadas");
     if (sheet.getLastRow() === 0) sheet.appendRow(SESSION_REVOCATION_HEADERS_);
     var data = sheet.getDataRange().getValues();
