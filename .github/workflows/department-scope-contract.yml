@@ -49,6 +49,8 @@ jobs:
         run: node tests/security/accounting-departmental-import-scope.test.js
       - name: Run user migrated resource ownership contract
         run: node tests/security/user-migrated-resource-ownership-contract.test.js
+      - name: Run accounting departmental resource access contract
+        run: node tests/security/accounting-departmental-resource-access.test.js
       - name: Run user role membership contract
         run: node tests/security/user-role-membership-contract.test.js
       - name: Run academic departmental resource access contract
@@ -59,8 +61,6 @@ jobs:
         run: node tests/security/academic-admission-ownership.test.js
       - name: Run user-service signature ownership contract
         run: node tests/security/user-service-signature-ownership.test.js
-      - name: Run accounting departmental resource access contract
-        run: node tests/security/accounting-departmental-resource-access.test.js
       - name: Run generic resource ownership ABAC contract
         run: node tests/security/resource-ownership-abac.test.js
       - name: Syntax-check updated Apps Script services
