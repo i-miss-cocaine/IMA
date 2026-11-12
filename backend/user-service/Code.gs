@@ -1122,7 +1122,7 @@ function getUserRoleMembershipState_(userId, institutionId, nowValue) {
     var roleId = String(row[2] || "").trim();
     var rowInstitution = String(row[3] || "").trim();
     var state = String(row[4] || "").trim().toUpperCase();
-    if (!membershipId || !roleId || rowInstitution !== institutionKey || membershipIdCounts[membershipId] !== 1) return;
+    if (!membershipId || !roleId || rowInstitution !== institutionKey || membershipIdCounts[membershipId] !== 1 || !isConfiguredRbacRole_(ss, roleId)) return;
     if (["ACTIVE", "ACTIVA", "ACTIVO"].indexOf(state) === -1) return;
     var start = parseUserRoleMembershipDate_(row[5]);
     var end = parseUserRoleMembershipDate_(row[6]);
