@@ -1113,9 +1113,18 @@ function isSessionRevoked_(claims, nowValue) {
     if (!stateData.length || JSON.stringify(stateData[0].map(String)) !== JSON.stringify(SESSION_REVOCATION_STATE_HEADERS_)) {
       throw new Error("SESSION_REVOCATION_STATE_SCHEMA_MISMATCH");
     }
-    sharedLedgerInitialized = stateData.slice(1).some(function(row) {
-      return String(row[0] || "").trim() === "LEDGER_INITIALIZED" && String(row[1] || "").trim() === "1";
+    stateData.slice(1).forEach(function(row) {
+      var key = String(row[0] || "").trim();
+      var value = String(row[1] || "").trim();
+      if (key === "LEDGER_INITIALIZED" && value === "1") sharedLedgerInitialized = true;
+      if (key === "LEGACY_SESSION_CUTOFF" && value !== "") {
+        var cutoff = Number(value);
+        if (!Number.isSafeInteger(cutoff) || cutoff < 0) throw new Error("SESSION_REVOCATION_CUTOFF_INVALID");
+        if (Number(claims.iat) <= cutoff) sharedLedgerInitialized = sharedLedgerInitialized || false;
+        if (Number(claims.iat) <= cutoff) claims._legacyCutoffRevoked = true;
+      }
     });
+    if (claims._legacyCutoffRevoked) return true;
   }
   var sheet = ss.getSheetByName("SesionesRevocadas");
   if (!sheet) {
@@ -1329,12 +1338,6 @@ function verifySessionToken(tokenString) {
     if (typeof claims.sessionId !== "string" || !claims.sessionId.trim()) return null;
     if (!Number.isSafeInteger(claims.iat) || !Number.isSafeInteger(claims.exp)) return null;
     if (claims.iat > now + 60 || claims.exp <= now || claims.exp <= claims.iat || claims.exp - claims.iat > 86400) return null;
-    const legacySessionCutoffRaw = PropertiesService.getScriptProperties().getProperty("SESSION_REVOCATION_LEGACY_CUTOFF");
-    if (legacySessionCutoffRaw !== null && legacySessionCutoffRaw !== "") {
-      const legacySessionCutoff = Number(legacySessionCutoffRaw);
-      if (!Number.isSafeInteger(legacySessionCutoff) || legacySessionCutoff < 0) return null;
-      if (claims.iat <= legacySessionCutoff) return null;
-    }
     const cache = CacheService.getScriptCache();
     const revokedUserMarker = cache.get("revoked_user_" + claims.userId);
     if (revokedUserMarker) {
