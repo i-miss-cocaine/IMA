@@ -325,7 +325,9 @@ function validateDepartmentalImportScope_(input) {
     var row=rows[i]||{},rowDepartment=String(row.departmentId||"").trim(),rowInstitution=String(row.institutionId||"").trim();
     if(rowDepartment&&rowDepartment!==target){
       if(actor.institutionWide!==true||actor.institutionWideAuthorized!==true)return fail("DEPARTMENT_IMPORT_MIXED_DEPARTMENTS");
-      if(cfg.rowDepartmentsVerified!==true||String(cfg.rowDepartmentsInstitutionId||"").trim()!==institutionId||String(cfg.rowDepartmentsDomain||"").trim()!==domain)return fail("DEPARTMENT_IMPORT_ROW_TARGETS_UNVERIFIED");
+      if(cfg.rowDepartmentSnapshotVerified!==true||String(cfg.rowDepartmentSnapshotInstitutionId||"").trim()!==institutionId||String(cfg.rowDepartmentSnapshotDomain||"").trim()!==domain||!Array.isArray(cfg.rowDepartmentAssignments))return fail("DEPARTMENT_IMPORT_ROW_TARGETS_UNVERIFIED");
+      var rowId=String(row.rowId||row.id||"").trim(),matches=cfg.rowDepartmentAssignments.filter(function(assignment){return assignment&&String(assignment.rowId||"").trim()===rowId;});
+      if(!rowId||matches.length!==1||matches[0].verified!==true||String(matches[0].institutionId||"").trim()!==institutionId||String(matches[0].domain||"").trim()!==domain||String(matches[0].departmentId||"").trim()!==rowDepartment)return fail("DEPARTMENT_IMPORT_ROW_TARGET_MISMATCH");
     }
     if(rowInstitution&&rowInstitution!==institutionId)return fail("DEPARTMENT_IMPORT_TENANT_MISMATCH");
   }
