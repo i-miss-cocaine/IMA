@@ -920,6 +920,21 @@ assert.equal((source.match(/cache\.put\("revoked_session_/g)||[]).length,1,"only
 assert.equal((source.match(/CacheService\.getScriptCache\(\)\.put\("revoked_session_/g)||[]).length,0,"no role-switch or logout route writes cache-only session revocations");
 console.log("C1.636 revocation ledger integrity contract: persistent initialization sentinel, missing-ledger fail-closed and no cache-only revocation writers PASS.");
 
+ 
+// C1.637: historical-token invalidation is an explicit rollout control, not an automatic mass logout.
+assert.equal(tenantSessionCtx.verifySessionToken("claimsafter.sig").sessionId,"SID-AFTER","without a rollout cutoff, active legacy sessions remain compatible");
+const migrationCutoff=Math.floor(Date.now()/1000)+20;
+sessionRevocationProperties.SESSION_REVOCATION_LEGACY_CUTOFF=String(migrationCutoff);
+assert.equal(tenantSessionCtx.verifySessionToken("claimsafter.sig"),null,"an explicit cutoff invalidates tokens issued before or at the migration boundary");
+tenantClaimsByPayload.claimsmigrationnew={userId:"U-TENANT",role:"Director",membershipId:"MEM-LOCAL",institutionId:"INST-1",sessionId:"SID-MIGRATION-NEW",iat:migrationCutoff+1,exp:migrationCutoff+3601};
+assert.equal(tenantSessionCtx.verifySessionToken("claimsmigrationnew.sig").sessionId,"SID-MIGRATION-NEW","a token issued after the configured cutoff remains valid");
+sessionRevocationProperties.SESSION_REVOCATION_LEGACY_CUTOFF="invalid-cutoff";
+assert.equal(tenantSessionCtx.verifySessionToken("claimsmigrationnew.sig"),null,"malformed migration cutoff fails closed");
+delete sessionRevocationProperties.SESSION_REVOCATION_LEGACY_CUTOFF;
+assert.equal(tenantSessionCtx.verifySessionToken("claimsafter.sig").sessionId,"SID-AFTER","removing the optional migration cutoff restores normal expiry and revocation checks");
+console.log("C1.637 legacy session migration contract: optional cutoff preserves default compatibility, invalidates pre-cutoff tokens when configured and fails closed on malformed configuration PASS.");
+
+
 
 
 
