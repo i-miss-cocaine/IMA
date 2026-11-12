@@ -4866,3 +4866,14 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Se intentó checkout/ejecución Node local independiente, pero DNS no resolvió github.com; Node CLI local: **NOT RUN**. No hay servicios Apps Script/Sheets desplegados en este entorno; validación real: **Pendiente beta**.
 - Revisión del diff: ocho archivos previstos, solo backend USER, contrato focal y registros de seguimiento; sin cambios en otros servicios ni datos reales.
 - **Estado:** C1.624 completada conforme a evidencia aislada y CI. T153-S02 sigue En ejecución: falta verificar el ciclo integral usuario↔roles↔responsabilidades↔ámbitos y el comportamiento multirol/contexto activo con las restantes invariantes. No iniciar T153-S03.
+
+
+ 
+**Addendum C1.625 — aislamiento exacto del rol firmado en contextos multirol**
+- Hallazgo: `getUserContextScope` normalizaba RoleID incluso para asignaciones con MembershipID. Un RoleID distinto pero equivalente tras eliminar puntuación podía añadir ámbitos al contexto firmado de otra membresía.
+- Corrección: las asignaciones membership-bound exigen coincidencia exacta entre el RoleID de la fila y el RoleID firmado. La normalización se conserva únicamente para el esquema legacy sin MembershipID.
+- Contrato ampliado con usuario de dos membresías activas (Director/DEP-A y Auditor/DEP-B), sesiones separadas y una asignación alias `Direct-or` bajo MembershipID Director. El contexto Director conserva solo DEP-A; Auditor solo DEP-B; el alias no incorpora DEP-X.
+- Ejecución completa del contrato `internal-responsibility-rbac-contract.test.js` en harness V8 aislado PASS, incluyendo C1.621–C1.625. Parseo sintáctico de USER y contrato PASS.
+- Node CLI independiente NOT RUN por indisponibilidad de DNS/checkout. La consulta de estados CI no devolvió checks; no se afirma CI PASS. Apps Script/Sheets real y concurrencia desplegada Pendiente beta.
+- **Estado:** C1.625 implementada y verificada en harness aislado. T153-S02 continúa En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** completar pruebas multirol de selección/cambio de departamento por membresía, revocación/expiración independiente y consistencia de permisos RBAC explícitos.
