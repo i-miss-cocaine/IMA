@@ -4407,3 +4407,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - El paso `Run student grade rectification security regression` ejecutó `tests/security/exam-service-student-grade-rectification-security.test.js` y registró `exam-service-student-grade-rectification-security: PASS (32/32)`; job `exam-security-contracts` terminó SUCCESS.
 - El runner ejecutó el código y fixtures de forma aislada, sin despliegue ni infraestructura remota. Apps Script/Sheets real NOT RUN.
 - C1.592 **Completada en verificación local aislada/CI**. BETA-EXAM-093 permanece Pendiente beta.
+
+
+### 10.242 TASK-153 / AUD-NG-386 — contención reentrante de saveEvaluationCategory durante appendRow (C1.593)
+- **Brecha confirmada:** el contrato cubría reentrada durante la validación de scope, pero no desde las dos escrituras de creación (appendRow de ResourceOwnership y CategoriasEvaluacion).
+- **Cobertura añadida:** se interceptan ambos appendRow y se invoca el handler real de forma anidada. La secundaria debe recibir EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; la exterior crea exactamente una fila de ownership y una de categoría, abre Sheets una vez y libera ScriptLock.
+- **Alcance:** contrato de seguridad y BETA-EXAM-094; backend productivo sin cambios.
+- **Verificación:** caso añadido para ambos puntos de persistencia; ejecución local aislada/CI pendiente tras commit. Apps Script/Sheets real NOT RUN.
+- **Estado:** C1.593 En ejecución hasta completar la verificación local aislada.

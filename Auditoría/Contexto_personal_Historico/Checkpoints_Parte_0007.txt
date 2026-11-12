@@ -211,3 +211,30 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - Runner aislado ejecutó código/fixtures sin despliegue ni servicio remoto; Apps Script/Sheets real NOT RUN.
 - C1.592 Completada en verificación local aislada/CI. BETA-EXAM-093 permanece Pendiente beta.
 - HEAD inicial: 3d7a315a18d3a333b56f3bcc3f09be75fe7fd76f; HEAD final: se confirma tras commit documental.
+
+
+===============================================================================
+## C1.593 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de saveEvaluationCategory durante appendRow de ownership y categoría.
+
+### Hallazgo y cambio
+- El contrato ya verificaba reentrada durante getVerifiedExamDepartmentScope_, pero no durante la persistencia.
+- Se amplía makeSheet con hook/contadores de appendRow y se prueba la reentrada en los dos puntos: ResourceOwnership y CategoriasEvaluacion.
+- Resultado esperado en ambos: secundaria EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; exterior realiza exactamente dos appendRow (uno por hoja), abre Sheets una vez, deja un ownership y una categoría y libera ScriptLock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-evaluation-category-mutation-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Cobertura añadida para ambos puntos de persistencia; ejecución local aislada/CI pendiente tras commit.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-094 Pendiente beta.
+- C1.593 En ejecución hasta verificar el contrato local aislado.
+- HEAD inicial: ce2ac72202e83d2c43bd95a93c7d6b11a48ad51a; HEAD final: se confirma tras publicar.
+===============================================================================

@@ -2135,3 +2135,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Contrato exam-service-student-grade-rectification-security: PASS (32/32); paso Run student grade rectification security regression y job exam-security-contracts SUCCESS.
 - Ejecución aislada sobre código/fixtures sin despliegue; Apps Script/Sheets real NOT RUN.
 - C1.592 Completada en verificación local aislada/CI. BETA-EXAM-093 sigue Pendiente beta.
+
+
+### C1.593 — AUD-NG-386 / saveEvaluationCategory: reentrada durante appendRow de ownership y categoría
+- **Brecha:** el contrato cubría reentrada durante la obtención de scope, pero no durante los dos appendRow que persisten ownership y categoría.
+- **Cambio:** un caso ejercita reentrada en cada appendRow del handler real. La secundaria debe recibir EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; la exterior conserva un único registro en cada hoja, una apertura Sheets y lock liberado.
+- **Alcance:** contrato de seguridad; backend productivo sin cambios. BETA-EXAM-094 agregado y Pendiente beta.
+- **Verificación:** cobertura añadida; ejecución local aislada/CI pendiente tras commit. Apps Script/Sheets real NOT RUN.
+- **Estado:** En ejecución hasta verificar el contrato local aislado.

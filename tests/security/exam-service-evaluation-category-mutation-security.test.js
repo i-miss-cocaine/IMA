@@ -30,13 +30,13 @@ function makeSheet(rows, kind, options, state) {
     rows: rows.map(row => row.slice()),
     getDataRange() { return { getValues: () => this.rows.map(row => row.slice()) }; },
     getLastRow() { return this.rows.length; },
-    appendRow(row) { this.rows.push(row.slice()); if (kind === "categories" && options.failCategoryAppend) throw new Error("synthetic category append failure"); },
+    appendRow(row) { this.rows.push(row.slice()); state.appends++; state[kind + "Appends"] = (state[kind + "Appends"] || 0) + 1; if (options.onAppendRow) options.onAppendRow(kind, this, row.slice()); if (kind === "categories" && options.failCategoryAppend) throw new Error("synthetic category append failure"); },
     deleteRow(n) { this.rows.splice(n - 1, 1); },
     getRange(row, col) { return { setValue: value => { this.rows[row - 1][col - 1] = value; } }; }
   };
 }
 function fixture(options = {}) {
-  const state = { opens: 0, locks: 0, releases: 0, held: false, uuid: 0, action: "", identityCalls: 0, permissionCalls: 0 };
+  const state = { opens: 0, locks: 0, releases: 0, appends: 0, held: false, uuid: 0, action: "", identityCalls: 0, permissionCalls: 0 };
   const categoryRows = options.categoryRows || [categoryHeaders,
     ["CAT-OWNED", "Propia", "Global", 20, "100", "Activo"],
     ["CAT-LEGACY", "Legada", "Global", 10, "100", "Activo"]];
@@ -174,6 +174,29 @@ test("nested concurrent mutation is rejected while the shared script lock is hel
   }});
   x.call({ nombre: "Outer", departmentId: "DEPT-A" });
   assert.ok(nestedDenied); assert.equal(x.state.locks, 2); assert.equal(x.state.releases, 1); assert.equal(x.state.held, false);
+});
+test("reentrant mutation during ownership/category appendRow is rejected without duplicate records", () => {
+  for (const targetKind of ["ownership", "categories"]) {
+    let x, nestedError = "";
+    x = fixture({ onAppendRow(kind) {
+      if (kind !== targetKind) return;
+      try { x.call({ nombre: "Nested", departmentId: "DEPT-A" }); }
+      catch (error) { nestedError = error.message; }
+    }});
+    const result = x.call({ nombre: "Outer", departmentId: "DEPT-A" });
+    const id = result.data.categoriaId;
+    assert.equal(nestedError, "EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT",
+      targetKind + " appendRow must reject nested mutation while outer lock is held");
+    assert.equal(x.state.locks, 2);
+    assert.equal(x.state.releases, 1);
+    assert.equal(x.state.held, false);
+    assert.equal(x.state.opens, 1, "nested request must time out before opening Sheets");
+    assert.equal(x.state.appends, 2, "outer create must perform exactly two appendRow operations");
+    assert.equal(x.state.ownershipAppends, 1);
+    assert.equal(x.state.categoriesAppends, 1);
+    assert.equal(x.sheets.CategoriasEvaluacion.rows.filter(row => row[0] === id).length, 1);
+    assert.equal(x.sheets.ResourceOwnership.rows.filter(row => row[3] === id).length, 1);
+  }
 });
 test("append failure rolls back both category and ownership records", () => {
   const x = fixture({ failCategoryAppend: true }); assert.throws(() => x.call({ nombre: "Fallida", departmentId: "DEPT-A" }), /synthetic category append failure/);
