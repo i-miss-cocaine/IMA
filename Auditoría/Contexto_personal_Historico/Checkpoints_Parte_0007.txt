@@ -1440,3 +1440,17 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Siguiente unidad:** T153-S01 — inventario/reconciliación técnica de `CatalogoDepartamentos` y `DepartamentosAcademicos`. T153-S03/S04 dependen de S01; T153-S05/S06 dependen de S02 y S03/S04 según el plan.
 - **Estado:** checkpoint de cierre de subfase; no se inicia S03 sin satisfacer su dependencia S01.
 ===============================================================================
+
+
+===============================================================================
+### C1.641 — IMA-EXEC-20261112-1754Z-03 — inventario técnico T153-S01
+- **HEAD inicial:** `ba2f44579ca094b69fa4a9aa4d7bfd23e048df65`.
+- **Tarea:** PM-01 / TASK-153 / T153-S01 — fuente canónica de departamentos.
+- **Trabajo:** revisión de `manageDepartmentPositions`, `assignDepartmentHead`, `getDepartmentAcademicPlanning`, `resolveEmployeeDepartmentId_`, esquemas de ownership y mapa de dependencias.
+- **Hallazgos:** USER crea `CatalogoDepartamentos` con `deptId/nombre/jefaturaUserId/estado/fechaCreacion`, permite ID recibido o generado y no incluye InstitutionID/jerarquía. No se encontró consumidor productivo del catálogo. ACADEMIC crea `DepartamentosAcademicos` con `DepartamentoID/Nombre/JefeUserId/Estado/FechaActualizacion/AutorizadoPor`, no valida contra USER y no incluye InstitutionID/jerarquía. ACCOUNTING resuelve expediente laboral por ID/nombre y mantiene fallback textual; ACADEMIC usa la hoja en planificación.
+- **Conclusión:** no hay FK, crosswalk, clave estable compartida ni autoridad institucional demostrada. Los catálogos no deben fusionarse ni migrarse con evidencia actual. Los valores de AsignacionesAmbitosRoles y ResourceOwnership no prueban propiedad canónica.
+- **Cambios de código:** ninguno; no se alteran datos ni esquemas.
+- **Estado:** inventario técnico completado; T153-S01 continúa bloqueada para asignar autoridad/correspondencia real. No se bloquea trabajo genérico por trámites ajenos; esta dependencia sí es funcional porque S03/S04 requieren validar el propietario del recurso contra un departamento canónico.
+- **Dependencias:** T153-S03 y T153-S04 esperan S01; T153-S05 espera S03/S04; T153-S06 espera S05. T153-S02 quedó completada en C1.640.
+- **Siguiente acción elegible:** obtener/definir una fuente institucional aprobada o un crosswalk verificable por institución. Hasta entonces, no crear propietario canónico ni migrar registros estudiantiles.
+===============================================================================
