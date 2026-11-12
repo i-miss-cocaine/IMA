@@ -2672,3 +2672,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contratos deterministas prueban lock ocupado y alta repetida idempotente. Department Scope Contract 43226324130 SUCCESS; contratos y sintaxis configurados PASS.
 - Terminal local NOT RUN por DNS; Apps Script/Sheets real y concurrencia multi-solicitud beta NOT RUN. BETA-FUNC-033 Pendiente beta; TASK-153/T153-S02 continúa En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.621 — revocación efectiva de membresías y responsabilidades en asignaciones
+- `getInternalRoleAssignments` revalida membresía activa/vigente, rol e institución antes de mostrar asignaciones; las responsabilidades internas e institucionales inactivas también se excluyen del esquema actual.
+- Contrato ampliado para desactivación, revocación, expiración y cambio de rol frente a sesiones previas; no se eliminan registros históricos.
+- Department Scope run 43227647058 SUCCESS (16 pasos); Task-Service security run 43227456678 SUCCESS. Terminal local independiente NOT RUN; Apps Script/Sheets real NOT RUN.
+- BETA-FUNC-033 Pendiente beta; TASK-153/T153-S02 continúa En ejecución.
+===============================================================================

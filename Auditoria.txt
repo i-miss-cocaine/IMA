@@ -2486,3 +2486,13 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - CI Department Scope 43219335951 SUCCESS y Task-Service security 43219335906 SUCCESS. Terminal local NOT RUN por falta de resolución DNS; Apps Script/Sheets real NOT RUN.
 - Las filas históricas sin vínculo necesitan reasignación explícita para usarse con sesiones RBAC. TASK-153 sigue En ejecución.
 ===============================================================================
+
+
+===============================================================================
+### C1.621 — hallazgo y corrección: asignaciones visibles tras revocación RBAC
+- **Severidad: Alto — autorización/privacidad.** El listado `getInternalRoleAssignments` comprobaba InstitutionID y MembershipID persistidos, pero no consultaba el estado vigente de la membresía. Una asignación podía continuar visible tras revocación, vencimiento o cambio del rol de esa membresía.
+- **Corrección:** revalidación de membresía activa, única, vigente y con RoleID/InstitutionID coincidentes antes de incluir la asignación; para el esquema actual se exige además que la responsabilidad interna y su registro institucional sigan activos.
+- **Cobertura:** fixtures sintéticos para responsabilidad/rol inactivos, membresía revocada, cambio de rol y expiración; se comprueba denegación del contexto anterior y ausencia en el listado.
+- **Evidencia:** Department Scope run 43227647058 SUCCESS; Task-Service security run 43227456678 SUCCESS. No se borraron asignaciones históricas ni se accedió a datos reales.
+- **Limitación:** Apps Script/Sheets real, despliegue y concurrencia multi-solicitud permanecen Pendiente beta en BETA-FUNC-033.
+===============================================================================

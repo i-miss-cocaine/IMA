@@ -1078,3 +1078,19 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** incremento C1.620 implementado y CI PASS; TASK-153/T153-S02 continúa En ejecución.
 - **Siguiente acción:** probar desactivación/revocación de responsabilidad, expiración/revocación de membresía y cambio de rol frente a sesiones previas, verificando revocación efectiva de ámbitos y ausencia de registros huérfanos.
 ===============================================================================
+
+
+===============================================================================
+### C1.621 — IMA-EXEC-20261110-1825Z-02 — revocación efectiva de responsabilidad y membresía en ámbitos
+- **Sesión:** IMA-EXEC-20261110-1825Z-02 (continuidad de C1.620).
+- **HEAD inicial:** `900f7a3bf10ac044b2225de894fff8693b90c1c6`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Ciclo de vida: desactivación de responsabilidades, revocación/expiración de membresía y cambio del rol ligado a sesiones anteriores.
+- **Hallazgo:** `getInternalRoleAssignments` filtraba por institución y MembershipID almacenados, pero no revalidaba que la membresía siguiera activa, vigente y asociada al mismo rol. Un vínculo revocado podía seguir apareciendo en el listado de asignaciones.
+- **Corrección:** el lector revalida membresía mediante `getUserRoleMembershipState_`, con caché por usuario/institución dentro de la consulta; solo expone asignaciones de membresías activas, únicas, vigentes y con rol configurado. Para el esquema actual exige ResponsibilityID resoluble y responsabilidad institucional activa. Se mantiene el lector legacy sin vínculo solo en su esquema legacy.
+- **Contrato:** `tests/security/internal-responsibility-rbac-contract.test.js` incorpora fixtures sintéticos para responsabilidad inactiva, rol interno inactivo, membresía revocada, cambio de rol y membresía vencida. Comprueba que desaparezcan tanto el ámbito efectivo como la visibilidad de la asignación.
+- **CI:** Department Scope Contract run **43227647058 SUCCESS** (Node 24.22.2); los 16 pasos del job, incluidos los contratos de ámbito/RBAC/membresías, ownership y sintaxis de seis servicios y clientes, finalizaron SUCCESS. Task-Service security run **43227456678 SUCCESS** para el commit de backend.
+- **Commits:** `bd863492c3d1cff8fccaad2178456e78e93f6276` (backend); `ab16295f94e5cb8d5ffdba40f4c8cd6c624a1e99` (contrato).
+- **Terminal local independiente:** NOT RUN. Las verificaciones de código se ejecutaron en runners aislados de GitHub Actions. Apps Script/Sheets real NOT RUN; concurrencia multi-solicitud real y flujos desplegados continúan Pendiente beta en BETA-FUNC-033.
+- **Estado:** C1.621 implementada y verificada por CI. TASK-153/T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** verificar actualizaciones/reasignaciones de ámbitos con cambios de ResponsibilityID y MembershipID, unicidad/idempotencia y ausencia de vínculos residuales entre tenants; ampliar los contratos aislados según los casos detectados.
+===============================================================================

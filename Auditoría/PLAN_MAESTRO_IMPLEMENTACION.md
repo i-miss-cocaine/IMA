@@ -4813,3 +4813,14 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Terminal local NOT RUN por DNS de github.com; runner aislado CI PASS. Apps Script/Sheets real NOT RUN; BETA-FUNC-033 sigue Pendiente beta.
 - **Estado:** C1.620 implementado y CI PASS. TASK-153/T153-S02 continúa En ejecución.
 - **Siguiente acción elegible:** verificar revocación/desactivación de la responsabilidad vinculada, expiración/revocación de membresía y cambios de rol con una sesión previa; asegurar que el contexto y listados de ámbitos fallen cerrados después de cada cambio y que la actualización del vínculo no deje asignaciones huérfanas.
+
+
+**Addendum C1.621 — revocación efectiva en contexto y listados de ámbitos**
+- Se detectó que `getInternalRoleAssignments` podía devolver asignaciones cuyo MembershipID seguía almacenado aunque la membresía hubiera sido revocada, vencida o hubiera cambiado de rol.
+- El lector ahora revalida cada combinación usuario/institución una sola vez por consulta mediante `getUserRoleMembershipState_` y solo incluye el vínculo si coinciden MembershipID, RoleID e InstitutionID y la membresía está activa, única, vigente y el rol configurado. En el esquema actual también exige responsabilidad interna e institucional resolubles y activas.
+- Se preserva la lectura del esquema legacy sin vínculo; los esquemas con membresía ya no muestran registros sin MembershipID. No se borran asignaciones históricas: quedan invisibles para el contexto/listado vigente y pueden auditarse.
+- El contrato `internal-responsibility-rbac-contract.test.js` añade escenarios sintéticos de desactivación de responsabilidad, desactivación del rol interno, revocación de membresía, cambio del rol y expiración. Comprueba denegación del contexto previo y exclusión de la asignación.
+- Department Scope Contract run **43227647058 SUCCESS** (16 pasos SUCCESS, Node 24.22.2); Task-Service security run **43227456678 SUCCESS**. Terminal local independiente NOT RUN; Apps Script/Sheets real NOT RUN.
+- BETA-FUNC-033 permanece Pendiente beta para comprobar los mismos cambios contra Sheets real, servicios desplegados y solicitudes concurrentes reales.
+- **Estado:** C1.621 implementada y verificada por CI; TASK-153/T153-S02 sigue En ejecución. No iniciar T153-S03.
+- **Siguiente acción elegible:** verificar reasignación/actualización de ámbitos y vínculos ResponsibilityID/MembershipID, idempotencia, unicidad y ausencia de vínculos residuales o cruzados entre tenants.
