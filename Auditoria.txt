@@ -2429,3 +2429,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Primer run 43145146918 falló porque el contrato se publicó antes que el cambio productivo; commit 6b23d83 incorporó el lock y los dos workflows posteriores pasaron.
 - Backend modificado en submitAssignment; BETA-FUNC-021 Pendiente beta; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+### C1.614 — TASK-153 / T153-S02
+- getInternalRoleAssignments consideraba vigentes asignaciones futuras y fechas inválidas porque solo comparaba fecha de fin.
+- Se aplica ventana temporal completa al modo soloVigentes (inicio no futuro, fin no vencido y ambas fechas válidas); el modo soloVigentes=false conserva la consulta ampliada.
+- Contrato Department Scope ampliado con casos futuro/vencido/inválido/abierto/revocado y consulta ampliada. Ejecución local PASS; CI pendiente.
+- No se alteran datos ni asignaciones institucionales. BETA-FUNC-031 Pendiente beta; Apps Script/Sheets real NOT RUN.
+===============================================================================

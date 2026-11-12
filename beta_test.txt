@@ -1217,3 +1217,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** la solicitud secundaria no persiste ni duplica firma; la exterior agrega una sola fila con documento canónico y firmante autenticado; lock liberado; el retry exacto devuelve la firma existente. Esto no acredita firma avanzada/cualificada ni validación criptográfica PSC.
 - **Estado:** Pendiente beta. Harness local V8 focalizado 1/1 PASS; parseo del contrato PASS; GitHub Actions Department Scope run 43143437010 SUCCESS (Node.js 24), incluido user-service-signature-ownership.test.js. Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** build/commit desplegado, IDs sintéticos, conteos de filas, ownership, respuestas de concurrencia y logs saneados; no registrar tokens ni credenciales.
+
+
+===============================================================================
+## BETA-FUNC-031 — TASK-153 / USER: vigencia efectiva de asignaciones de roles y ámbitos
+- **Módulo/servicio:** USER Service — getInternalRoleAssignments / AsignacionesAmbitosRoles.
+- **Objetivo:** verificar en beta que las consultas de asignaciones vigentes excluyan registros futuros, vencidos, revocados y fechas inválidas, sin ocultar asignaciones futuras cuando se solicita explícitamente el listado no vigente.
+- **Precondiciones:** entorno beta aislado; AsignacionesAmbitosRoles con encabezados vigentes; usuario y rol internos sintéticos; registros con inicio pasado, inicio futuro, fin pasado, fechas inválidas, sin límites y estado Revocado.
+- **Pasos:** consultar getInternalRoleAssignments con soloVigentes omitido y true; comprobar inclusión exclusiva de asignaciones activas cuya ventana temporal contiene el instante de consulta; repetir con soloVigentes=false y comprobar que el listado explícito conserva asignaciones activas futuras/vencidas para revisión histórica; comprobar que registros Revocado siguen excluidos.
+- **Resultado esperado:** las asignaciones futuras, expiradas, con fechas inválidas o revocadas no se consideran vigentes; los límites abiertos se aceptan; soloVigentes=false mantiene el comportamiento de consulta ampliada para registros en estado Activo.
+- **Estado:** Pendiente beta. Contrato local Department Scope ampliado y ejecutado PASS; parseo JavaScript PASS; CI pendiente tras commit. Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, snapshots sintéticos saneados, instante de evaluación, IDs de asignación devueltos en ambos modos y trazas de lectura; no registrar datos personales reales.
+===============================================================================

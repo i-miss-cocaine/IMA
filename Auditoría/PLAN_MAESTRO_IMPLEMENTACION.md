@@ -4708,3 +4708,15 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Nota de ejecución:** primer workflow 43145146918 FAIL porque se publicó el contrato antes de incluir el cambio productivo; commit posterior 6b23d83 incorporó el ScriptLock y ambos workflows de confirmación pasaron.
 - **Apps Script/Sheets real:** NOT RUN; BETA-FUNC-021 Pendiente beta.
 - **Estado:** C1.613 Completada local/CI; TASK-153 continúa En ejecución.
+
+
+### 10.263 TASK-153 / T153-S02 — vigencia efectiva en consultas de asignaciones (C1.614)
+- **Contexto:** T153-S02 exige relaciones usuario↔roles↔responsabilidades↔ámbitos con vigencia y revocación. La lectura getInternalRoleAssignments filtraba fechas de expiración, pero no excluía fechas de inicio futuras ni fechas inválidas.
+- **Cambio:** con soloVigentes=true (valor predeterminado), validar ambas fechas; excluir asignaciones aún no iniciadas, vencidas o con fechas inválidas. Mantener soloVigentes=false como consulta ampliada de registros en estado Activo.
+- **Cobertura:** escenarios de inicio futuro, fin pasado, inicio/fin inválidos, ventana abierta, estado Revocado y consulta ampliada no vigente. No se altera el esquema ni se asignan roles/ámbitos reales.
+- **Archivos:** backend/user-service/Code.gs; tests/security/department-scope-contract.test.js; beta_test.txt; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoria.txt; changueslogs.txt; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt; Auditoría/INDICE_CHECKPOINTS.md.
+- **Verificación local:** contrato Department Scope ejecutado PASS; parseo JavaScript del contrato PASS.
+- **CI:** pendiente de ejecución/observación tras publicar.
+- **Apps Script/Sheets real:** NOT RUN; BETA-FUNC-031 Pendiente beta.
+- **Alcance:** incremento parcial de T153-S02; no completa soporte de múltiples roles simultáneos ni el motor configurable de responsabilidades/autoridad. T153-S01 continúa bloqueada únicamente para decisiones/fuentes institucionales reales; el desarrollo genérico continúa.
+- **Estado:** C1.614 En ejecución hasta confirmar CI; backend USER modificado.

@@ -909,3 +909,32 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.613 Completada local/CI; TASK-153 continúa En ejecución.
 - HEAD de código verificado: 6b23d83cbf1d454d53ce7e6678205f5264d07435; HEAD final se confirma tras este registro documental.
 ===============================================================================
+
+
+===============================================================================
+## C1.614 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** TASK-153 / T153-S02 — vigencia efectiva en consultas de asignaciones de roles y ámbitos.
+
+### Hallazgo y cambio
+- getInternalRoleAssignments solo comparaba fecha de fin y podía devolver como vigente una asignación con fecha de inicio futura o fecha inválida.
+- El modo soloVigentes (predeterminado) ahora valida ambas fechas y excluye inicio futuro, fin vencido y fechas inválidas. Los límites abiertos siguen permitidos; soloVigentes=false conserva la consulta ampliada de registros activos.
+- Se agregan escenarios al contrato Department Scope. No se cambian esquemas, asignaciones ni datos institucionales.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- tests/security/department-scope-contract.test.js
+- beta_test.txt (nuevo BETA-FUNC-031)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Contrato Department Scope ejecutado localmente: PASS.
+- Parseo JavaScript del contrato: PASS.
+- CI Department Scope: pendiente tras publicar.
+- Apps Script/Sheets real NOT RUN; BETA-FUNC-031 Pendiente beta.
+- Incremento parcial T153-S02; no completa el soporte de múltiples roles simultáneos ni el motor genérico.
+- HEAD inicial: 603d8df710aef572dde6e62db6b9e4e877ea8af3; HEAD final se confirma tras publicar.
+===============================================================================

@@ -2592,3 +2592,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Harness local focalizado PASS; Task-Service security local contracts run 43145265418 SUCCESS y backup/restore run 43145265344 SUCCESS.
 - Apps Script/Sheets real NOT RUN; BETA-FUNC-021 Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.614 — vigencia efectiva de asignaciones de roles/ámbitos
+- USER getInternalRoleAssignments excluye, en consultas vigentes, fechas de inicio futuras, fechas vencidas y fechas inválidas; conserva límites abiertos y el modo explícito no vigente.
+- Contrato Department Scope ampliado y ejecutado PASS; CI pendiente; sin cambios de esquema/datos productivos.
+- BETA-FUNC-031 Pendiente beta; Apps Script/Sheets real NOT RUN.
+===============================================================================
