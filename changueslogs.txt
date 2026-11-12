@@ -2803,3 +2803,14 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
 - C1.631 completada; T153-S02 sigue En ejecución.
 ===============================================================================
+
+
+ 
+===============================================================================
+[2026-11-12] C1.632 — unicidad y transiciones de membresías RBAC
+- Roles duplicados activos para un mismo usuario/tenant no producen membresías resolubles. Cambiar Director→Auditor invalida claim anterior y habilita solo el nuevo claim.
+- MembershipID duplicado globalmente se rechaza sin afectar otra membresía única; listado filtra usuario e institución.
+- Contrato completo V8 aislado PASS, incluidos C1.621–C1.632; sintaxis backend/test PASS.
+- Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
+- C1.632 completada; T153-S02 sigue En ejecución.
+===============================================================================
