@@ -222,7 +222,7 @@ for (const kind of ["ownership", "bank"]) {
 }
 {
  const run = assertReentrantPersistence("ownership", "setValue", {
-  sessionToken:"teacher-token",bancoPreguntaId:"BNK-D2",accion:"eliminar"
+  sessionToken:"teacher-token",bancoPreguntaId:reentrantCreatedIds[0],accion:"eliminar"
  }, "delete/ownership/setValue");
  assert.equal(run.result.status, "success");
  assert.equal(ownershipRows.find(row => row[3] === reentrantCreatedIds[0])[5], "INACTIVE");
@@ -232,7 +232,7 @@ for (const kind of ["ownership", "bank"]) {
 }
 {
  const run = assertReentrantPersistence("bank", "setValue", {
-  sessionToken:"teacher-token",bancoPreguntaId:"BNK-D1",accion:"eliminar"
+  sessionToken:"teacher-token",bancoPreguntaId:reentrantCreatedIds[1],accion:"eliminar"
  }, "delete/bank/setValue");
  assert.equal(run.result.status, "success");
  assert.equal(ownershipRows.find(row => row[3] === reentrantCreatedIds[1])[5], "INACTIVE");
