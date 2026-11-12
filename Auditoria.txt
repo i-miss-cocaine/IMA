@@ -2590,3 +2590,15 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Contrato:** tras inicializar el ledger, se simula la desaparición de la hoja; un token que de otro modo sería válido se rechaza. Al restaurar la hoja, el token posterior a una revocación user-wide vuelve a verificarse. Se comprueba además que solo el helper persistente escribe marcas CacheService de sesión y que no quedan escritores cache-only en cambio de rol/logout.
 - **Estado:** corrección implementada y contrato completo V8 aislado PASS; sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets/PropertiesService real Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+### C1.639 — brecha de propagación de revocación entre proyectos Apps Script
+- **Severidad:** Alto — consistencia de revocación de sesiones entre servicios.
+- **Hallazgo:** ACADEMIC, ACCOUNTING, TASK y EXAM validaban membresía/tenant, pero solo consultaban sus cachés locales para revocación. Como cada servicio es un proyecto Apps Script separado, las marcas CacheService de USER no se propagaban. Un token revocado en USER podía seguir siendo aceptado por consumidores hasta expirar.
+- **Corrección:** los cuatro consumidores consultan el ledger persistente compartido `SesionesRevocadas` y el estado compartido `EstadoRevocacionSesiones` en el mismo SpreadsheetID institucional. Aplican SessionID exacto, corte user-wide por `iat`, expiración del registro y cutoff legacy compartido. Si `LEDGER_INITIALIZED=1` y falta el ledger, fallan cerrados.
+- **Migración:** el cutoff global se almacena como fila `LEGACY_SESSION_CUTOFF` en `EstadoRevocacionSesiones`, no en ScriptProperties por proyecto. Esto permite que USER y todos los consumidores apliquen la misma frontera.
+- **Alcance:** USER emite/revoca; ACADEMIC, ACCOUNTING, TASK y EXAM verifican. DEVELOPER mantiene el control plane separado y rechaza claims de membresía/institución; no es consumidor del ledger RBAC institucional.
+- **Verificación local:** contrato completo V8 aislado **PASS**, incluidos C1.621–C1.639; sintaxis de los cinco servicios y contrato **PASS**. Se simularon cachés locales vacías y ledger compartido.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** despliegue real multi-proyecto/Sheets pendiente.
+===============================================================================
