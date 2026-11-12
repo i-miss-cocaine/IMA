@@ -1215,3 +1215,20 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** C1.628 completada. T153-S02 permanece En ejecución; no iniciar T153-S03.
 - **Siguiente acción:** diseñar una prueba local determinista de concurrencia para asignaciones de ámbito bajo ScriptLock; comprobar que solicitudes simultáneas no creen duplicados ni dejen escrituras parciales.
 ===============================================================================
+
+
+===============================================================================
+### C1.629 — IMA-EXEC-20261112-1754Z-03 — concurrencia determinista de asignaciones de ámbito
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.628.
+- **HEAD inicial:** `509a02f20dddbf6fddfa27338ffc5e8bfd07df89`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificar que escrituras simultáneas de `assignRoleScope` respetan ScriptLock, no crean asignaciones duplicadas y permiten reintento idempotente.
+- **Escenario determinista:** el mock de ScriptLock intercaló una segunda llamada dentro de la adquisición de la primera. La llamada concurrente observó el lock ocupado y devolvió `WRITE_LOCK_BUSY`; la propietaria del lock completó una única fila.
+- **Reintento:** después de liberar el lock, la misma solicitud se repitió y reutilizó el AssignmentID existente, sin agregar otra fila.
+- **Invariantes:** una sola asignación para la clave usuario/rol/ámbito/institución/membresía; la llamada que no adquiere el lock no escribe ni libera el lock ajeno; cada adquisición exitosa libera el lock.
+- **Verificación local:** contrato completo en harness V8 aislado **PASS**, incluidos C1.621–C1.629. Parseo sintáctico de backend USER y contrato **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** ScriptLock y Sheets reales en Apps Script NOT RUN; caso registrado en `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `tests/security/internal-responsibility-rbac-contract.test.js`; no se modificó lógica productiva.
+- **Commit funcional:** `718e0bf923419b458a3a202c605c049ffedf1159`.
+- **Estado:** C1.629 completada con prueba local determinista de concurrencia. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** revisar la semántica de vigencia de asignaciones de ámbito (inicio/fin, fechas inválidas y límites exactos) y confirmar que contexto efectivo y listado administrativo aplican el mismo criterio temporal.
+===============================================================================
