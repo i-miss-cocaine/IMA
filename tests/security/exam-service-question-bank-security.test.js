@@ -153,7 +153,7 @@ assert.deepEqual(ownershipRows,ownershipBeforePermissionRevocation,"ownership ro
 runtime.validateRolePermission=originalPermission;
 runtime.getVerifiedExamIdentity_=originalIdentity;
 
-const deleted=runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:reentrantCreatedIds[1],accion:"eliminar"});
+const deleted=runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:"BNK-D1",accion:"eliminar"});
 assert.equal(deleted.status,"success");
 assert.equal(bankRows.find(r=>r[0]==="BNK-D1")[12],"Inactivo");
 assert.equal(ownershipRows.find(r=>r[3]==="BNK-D1"&&r[5]==="INACTIVE")[5],"INACTIVE");
