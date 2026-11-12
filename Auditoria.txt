@@ -2388,3 +2388,10 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Se añade hook de reentrada y contención de ScriptLock. La secundaria recibe SIGNATURE_PROVIDER_CONFIGURATION_BUSY antes de abrir Sheets/escribir secretos; la exterior conserva una sola configuración y sus secretos.
 - BETA-FUNC-028 ampliada; backend productivo sin cambios; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+### C1.611-R1 — corrección del fixture de configuración
+- El primer harness focalizado encontró que makeProviderConfigHarness aún permitía reentrada por no comprobar state.held. Se corrige el lock en el fixture correcto.
+- Harness focalizado posterior: 1/1 PASS; la secundaria recibe SIGNATURE_PROVIDER_CONFIGURATION_BUSY y no escribe credenciales ni fila. Sin cambios productivos; CI pendiente.
+===============================================================================

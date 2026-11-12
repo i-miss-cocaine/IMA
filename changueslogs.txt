@@ -2552,3 +2552,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - La secundaria recibe SIGNATURE_PROVIDER_CONFIGURATION_BUSY antes de abrir Sheets o escribir secretos; la exterior conserva una sola fila y credenciales.
 - BETA-FUNC-028 ampliada; backend sin cambios; CI pendiente; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.611-R1 — corrección del fixture de lock de proveedor
+- Se ajusta específicamente makeProviderConfigHarness para rechazar una segunda adquisición cuando el ScriptLock está retenido.
+- Harness V8 focalizado: 1/1 PASS; sin cambios productivos. CI de confirmación pendiente.
+===============================================================================

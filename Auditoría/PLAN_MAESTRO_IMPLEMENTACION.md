@@ -4667,3 +4667,9 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI:** pendiente tras publicar.
 - **Apps Script/Sheets real:** NOT RUN; BETA-FUNC-028 Pendiente beta.
 - **Estado:** C1.611 En ejecución hasta verificar local y CI; TASK-153 continúa En ejecución.
+
+
+**Addendum C1.611-R1 — corrección del fixture de lock**
+- La primera ejecución focalizada detectó que el hook de reentrada estaba conectado, pero el lock de makeProviderConfigHarness todavía permitía adquirirlo dos veces; el parche inicial había actualizado otro fixture.
+- Se corrige específicamente el lock del harness de configuración para rechazar adquisición cuando state.held=true. La nueva ejecución focalizada confirma SIGNATURE_PROVIDER_CONFIGURATION_BUSY, una apertura, una sola fila/credenciales exteriores y liberación.
+- No hay cambios productivos; CI de confirmación pendiente.

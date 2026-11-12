@@ -721,7 +721,7 @@ function makeProviderConfigHarness(initialRows = [], options = {}) {
   };
   const context = {
     LockService: { getScriptLock: () => ({
-      tryLock: () => { state.lockAttempts++; if(options.lockAvailable===false)return false; state.held=true; return true; },
+      tryLock: () => { state.lockAttempts++; if(options.lockAvailable===false||state.held)return false; state.held=true; return true; },
       releaseLock: () => { assert.equal(state.held,true); state.held=false; state.releases++; }
     })},
     PropertiesService: { getScriptProperties: () => properties },
