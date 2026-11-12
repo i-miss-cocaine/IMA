@@ -241,7 +241,7 @@ console.log("User role membership contract: institution/user binding, effective 
   const nowSeconds=Math.floor(Date.now()/1000);
   function developerToken(extra) {
     const claims=Object.assign({userId:"U-1",role:"Student",iat:nowSeconds,exp:nowSeconds+3600,sessionId:"DEV-SESSION"},extra||{});
-    const payload=Buffer.from(JSON.stringify(claims)).toString("base64").replace(/=/g,"").replace(/\\+/g,"-").replace(/\\//g,"_");
+    const payload=Buffer.from(JSON.stringify(claims)).toString("base64url");
     return payload+".010203";
   }
   assert.equal(developerCtx.verifySessionToken(developerToken({membershipId:"M-SHARED",institutionId:"INST-1"})),null,"separate developer control plane rejects app membership tokens");
