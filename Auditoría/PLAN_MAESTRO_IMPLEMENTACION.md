@@ -4582,3 +4582,9 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 **Addendum C1.603-R1 — corrección de aserciones cross-realm**
 - CI run 43141935472 pasó submitGradebookForReview (30/30), closePeriodGradebook (24/24), review, reopen y rectificación; se detuvo en dos aserciones de encabezados de CategoriasEvaluacion con deepEqual entre VM y host.
 - Se normalizan ambas filas con Array.from. No hay cambios productivos; repetición integral CI pendiente.
+
+
+**Cierre de verificación C1.606-R2**
+- GitHub Actions run 43142063867, commit dbe2b29fb5b0774f1e13ffb27bb6afd3e8726999: workflow Exam-Service security local contracts **SUCCESS** en Node.js 22.23.4; todos los pasos del job `exam-security-contracts` SUCCESS.
+- El contrato submitGradebookForReview pasó 30/30; cierre 24/24; reapertura 31/31; categoría 22/22. Las correcciones Array.from de C1.603/C1.605/C1.606 eliminaron los fallos de realm sin modificar backend.
+- C1.606 queda verificada localmente y por CI. BETA-EXAM-054 permanece Pendiente beta (Apps Script/Sheets real NOT RUN).

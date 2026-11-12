@@ -2470,3 +2470,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - CI run 43141935472 pasó los contratos previos y detectó dos comparaciones deepEqual cross-realm en el contrato de CategoriasEvaluacion.
 - Se normalizan con Array.from ambas filas de encabezados. Sin cambios productivos; repetición CI pendiente.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.606-R2 — verificación CI satisfactoria
+- GitHub Actions run 43142063867, commit dbe2b29fb5b0774f1e13ffb27bb6afd3e8726999: workflow Exam-Service security local contracts SUCCESS en Node.js 22.23.4; todos los pasos PASS.
+- submitGradebookForReview 30/30; closePeriodGradebook 24/24; reopenPeriodGradebook 31/31; saveEvaluationCategory 22/22.
+- C1.606 completada local/CI; backend sin cambios. BETA-EXAM-054 Pendiente beta; Apps Script/Sheets real NOT RUN.
+===============================================================================
