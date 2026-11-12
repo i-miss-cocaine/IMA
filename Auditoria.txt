@@ -2260,3 +2260,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Harness local determinista sobre handlers productivos extraídos de Code.gs: 2/2 PASS; contrato completo 22/22 PASS en runner aislado; parseo JavaScript del contrato PASS.
 - El conector no devolvió estados de CI para el commit de pruebas; CI NOT VERIFIED y no se declara PASS. Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-104 Pendiente beta. C1.603 Completada con verificación local; TASK-153 / AUD-NG-386 continúa En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.604 — reentrada en las escrituras de reapertura de período
+- Se amplía el contrato de reopenPeriodGradebook con reentrada durante setValue del estado del cierre y appendRow de encabezados del historial vacío; se conserva el escenario existente durante appendRow del evento.
+- Las secundarias deben recibir GRADEBOOK_REOPEN_LOCK_TIMEOUT; la exterior deja una sola transición y un solo evento, sin duplicar encabezados, y libera el lock.
+- Suite local completa 31/31 PASS en runner aislado; parseo de Code.gs y del contrato PASS.
+- Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-055 Pendiente beta. CI pendiente de resultado verificable.
+===============================================================================
