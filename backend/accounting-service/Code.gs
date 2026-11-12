@@ -352,6 +352,47 @@ function verifyInterServiceEnvelope(envelope, expectedTargetService, customSecre
   return { valid: true, sourceService, targetService, action, correlationId, requestId, payload: payload || {} };
 }
 
+function verifyUserRoleMembershipClaim_(claims) {
+  try {
+    if (!claims || !claims.membershipId || !claims.institutionId) return false;
+    var configuredInstitution = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim();
+    if (!configuredInstitution || configuredInstitution !== String(claims.institutionId).trim()) return false;
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName("MembresiasRolesRBAC");
+    if (!sheet) return false;
+    var values = sheet.getDataRange().getValues();
+    var expectedHeaders = ["MembershipID","UserID","RoleID","InstitutionID","Status","StartAt","EndAt","CreatedBy","CreatedAt","UpdatedAt","RevokedBy","RevokedAt"];
+    if (!values.length || values[0].length !== expectedHeaders.length || JSON.stringify(values[0].map(String)) !== JSON.stringify(expectedHeaders)) return false;
+    var allRows = values.slice(1);
+    var idCounts = {};
+    allRows.forEach(function(row) {
+      var id = String(row[0] || "").trim();
+      if (id) idCounts[id] = (idCounts[id] || 0) + 1;
+    });
+    var now = new Date().getTime();
+    var candidates = [];
+    allRows.forEach(function(row) {
+      if (String(row[1] || "").trim() !== String(claims.userId).trim()) return;
+      var id = String(row[0] || "").trim();
+      var role = String(row[2] || "").trim();
+      var institution = String(row[3] || "").trim();
+      var status = String(row[4] || "").trim().toUpperCase();
+      if (!id || !role || institution !== configuredInstitution || idCounts[id] !== 1) return;
+      if (["ACTIVE","ACTIVA","ACTIVO"].indexOf(status) === -1) return;
+      var start = row[5] === "" || row[5] === null || row[5] === undefined ? null : (row[5] instanceof Date ? row[5] : new Date(row[5]));
+      var end = row[6] === "" || row[6] === null || row[6] === undefined ? null : (row[6] instanceof Date ? row[6] : new Date(row[6]));
+      if ((start && isNaN(start.getTime())) || (end && isNaN(end.getTime()))) return;
+      if (start && start.getTime() > now) return;
+      if (end && end.getTime() < now) return;
+      candidates.push({ membershipId: id, roleId: role });
+    });
+    var sameRole = candidates.filter(function(item) { return item.roleId === String(claims.role).trim(); });
+    return sameRole.length === 1 && sameRole[0].membershipId === String(claims.membershipId).trim();
+  } catch (error) {
+    return false;
+  }
+}
+
 function verifySessionToken(tokenString) {
   if (!tokenString || typeof tokenString !== "string" || tokenString.indexOf(".") === -1) {
     return null;
@@ -403,7 +444,12 @@ function verifySessionToken(tokenString) {
         return null;
       }
     }
-    if (acctState !== "Activa" || !currentRole || currentRole !== claims.role.trim()) return null;
+    if (acctState !== "Activa") return null;
+    if (claims.membershipId || claims.institutionId) {
+      if (!verifyUserRoleMembershipClaim_(claims)) return null;
+    } else if (!currentRole || currentRole !== claims.role.trim()) {
+      return null;
+    }
     return claims;
   } catch (e) {
     return null;
