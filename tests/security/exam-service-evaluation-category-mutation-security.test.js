@@ -36,7 +36,7 @@ function makeSheet(rows, kind, options, state) {
   };
 }
 function fixture(options = {}) {
-  const state = { opens: 0, locks: 0, releases: 0, appends: 0, held: false, uuid: 0, action: "", identityCalls: 0, permissionCalls: 0 };
+  const state = { opens: 0, locks: 0, releases: 0, appends: 0, inserts: 0, held: false, uuid: 0, action: "", identityCalls: 0, permissionCalls: 0 };
   const categoryRows = options.categoryRows || [categoryHeaders,
     ["CAT-OWNED", "Propia", "Global", 20, "100", "Activo"],
     ["CAT-LEGACY", "Legada", "Global", 10, "100", "Activo"]];
@@ -48,7 +48,9 @@ function fixture(options = {}) {
   const ss = {
     getSheetByName(name) { return sheets[name] || null; },
     insertSheet(name) {
+      state.inserts++;
       sheets[name] = makeSheet([], name === "CategoriasEvaluacion" ? "categories" : "other", options, state);
+      if (options.onInsertSheet) options.onInsertSheet(name, sheets[name]);
       return sheets[name];
     }
   };
@@ -174,6 +176,50 @@ test("nested concurrent mutation is rejected while the shared script lock is hel
   }});
   x.call({ nombre: "Outer", departmentId: "DEPT-A" });
   assert.ok(nestedDenied); assert.equal(x.state.locks, 2); assert.equal(x.state.releases, 1); assert.equal(x.state.held, false);
+});
+test("reentrant mutation during missing category sheet insert is rejected without duplicate initialization", () => {
+  let x, nestedError = "";
+  x = fixture({ missingCategory: true, onInsertSheet(name) {
+    if (name !== "CategoriasEvaluacion") return;
+    try { x.call({ nombre: "Nested", departmentId: "DEPT-A" }); }
+    catch (error) { nestedError = error.message; }
+  }});
+  const result = x.call({ nombre: "Outer", departmentId: "DEPT-A" });
+  const id = result.data.categoriaId;
+  assert.equal(nestedError, "EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT");
+  assert.equal(x.state.inserts, 1);
+  assert.equal(x.state.locks, 2);
+  assert.equal(x.state.releases, 1);
+  assert.equal(x.state.held, false);
+  assert.equal(x.state.opens, 1, "nested request must time out before opening Sheets");
+  assert.equal(x.state.appends, 3, "outer create must append headers, ownership and one category");
+  assert.equal(x.state.ownershipAppends, 1);
+  assert.equal(x.state.categoriesAppends, 2, "outer create must append one header row and one category");
+  assert.deepEqual(x.sheets.CategoriasEvaluacion.rows[0], categoryHeaders);
+  assert.equal(x.sheets.CategoriasEvaluacion.rows.filter(row => row[0] === id).length, 1);
+  assert.equal(x.sheets.ResourceOwnership.rows.filter(row => row[3] === id).length, 1);
+});
+test("reentrant mutation during missing category sheet header append is rejected without duplicate initialization", () => {
+  let x, nestedError = "";
+  x = fixture({ missingCategory: true, onAppendRow(kind, sheet, row) {
+    if (kind !== "categories" || row[0] !== "ID") return;
+    try { x.call({ nombre: "Nested", departmentId: "DEPT-A" }); }
+    catch (error) { nestedError = error.message; }
+  }});
+  const result = x.call({ nombre: "Outer", departmentId: "DEPT-A" });
+  const id = result.data.categoriaId;
+  assert.equal(nestedError, "EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT");
+  assert.equal(x.state.inserts, 1);
+  assert.equal(x.state.locks, 2);
+  assert.equal(x.state.releases, 1);
+  assert.equal(x.state.held, false);
+  assert.equal(x.state.opens, 1, "nested request must time out before opening Sheets");
+  assert.equal(x.state.appends, 3, "outer create must append headers, ownership and one category");
+  assert.equal(x.state.ownershipAppends, 1);
+  assert.equal(x.state.categoriesAppends, 2, "outer create must append one header row and one category");
+  assert.deepEqual(x.sheets.CategoriasEvaluacion.rows[0], categoryHeaders);
+  assert.equal(x.sheets.CategoriasEvaluacion.rows.filter(row => row[0] === id).length, 1);
+  assert.equal(x.sheets.ResourceOwnership.rows.filter(row => row[3] === id).length, 1);
 });
 test("reentrant mutation during ownership/category appendRow is rejected without duplicate records", () => {
   for (const targetKind of ["ownership", "categories"]) {
