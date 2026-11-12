@@ -2633,3 +2633,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-12] C1.616-R1 — ensureUserRoleMembershipSheet_ ahora exige exactamente las 12 columnas canónicas; se añadió prueba de rechazo de columna adicional. Verificación local NOT RUN; sin declaración PASS.
+
+
+[2026-11-12] C1.616-R2 — contrato ampliado: una membresía de otro tenant no invalida el rol legacy del tenant actual cuando no hay membresías locales. Prueba añadida, NOT RUN.
