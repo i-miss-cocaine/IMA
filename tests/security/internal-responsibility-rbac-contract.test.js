@@ -1479,6 +1479,44 @@ assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,
 assert.equal(buildDepartmentCatalogReconciliationReport_({...reconciliationBase,sourceCatalog:{catalogId:"",records:reconciliationSourceRecords}}).code,"DEPARTMENT_RECONCILIATION_CATALOG_PAIR_INVALID");
 console.log("C1.650 catalog reconciliation preflight: 40 assertions PASS.");
 
+// C1.651 departmental query/list filtering and whole-batch import scope.
+const deptQueryCode=extractFunction(consumerSources.departmentCatalog,"evaluateDepartmentReferenceAccess_")+"\n"+extractFunction(consumerSources.departmentCatalog,"filterDepartmentScopedRecords_")+"\n"+extractFunction(consumerSources.departmentCatalog,"validateDepartmentalImportScope_")+"\nthis.filterDepartmentScopedRecords_=filterDepartmentScopedRecords_;this.validateDepartmentalImportScope_=validateDepartmentalImportScope_;";
+const deptQueryCtx={Object,Array,String,Date};
+vm.runInNewContext(deptQueryCode,deptQueryCtx);
+const filterDepartmentScopedRecords_=deptQueryCtx.filterDepartmentScopedRecords_;
+const validateDepartmentalImportScope_=deptQueryCtx.validateDepartmentalImportScope_;
+const deptActor={verified:true,userId:"U-1",membershipId:"MEM-1",roleId:"TEACHER",institutionId:"INST-1",activeDepartmentId:"DEP-A"};
+const deptQueryBase={actorContext:deptActor,domain:"ACADEMIC",now:"2026-11-12T18:00:00.000Z",snapshotScopeVerified:true,snapshotInstitutionId:"INST-1",snapshotDomain:"ACADEMIC",ownershipScopeVerified:true,ownershipInstitutionId:"INST-1",ownershipDomain:"ACADEMIC",institutionalConfig:{institutionId:"INST-1",POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL:"BLOQUEO_TOTAL_CROSS_DEPARTAMENTO"},records:[{resourceType:"STUDENT_FILE",resourceId:"A",name:"Own"},{resourceType:"STUDENT_FILE",resourceId:"B",name:"Other"}],ownershipRows:[{verified:true,institutionId:"INST-1",departmentId:"DEP-A",resourceType:"STUDENT_FILE",resourceId:"A"},{verified:true,institutionId:"INST-1",departmentId:"DEP-B",resourceType:"STUDENT_FILE",resourceId:"B"}]};
+const deptFiltered=filterDepartmentScopedRecords_(deptQueryBase);
+assert.equal(deptFiltered.allowed,true);assert.equal(deptFiltered.records.length,1);assert.equal(deptFiltered.records[0].resourceId,"A");assert.equal(deptFiltered.auditEvents.length,2);assert.equal(deptFiltered.excludedRecordsNotDisclosed,true);
+assert.equal(filterDepartmentScopedRecords_({...deptQueryBase,actorContext:{...deptActor,verified:false}}).code,"DEPARTMENT_QUERY_VERIFIED_ACTOR_REQUIRED");
+assert.equal(filterDepartmentScopedRecords_({...deptQueryBase,snapshotScopeVerified:false}).code,"DEPARTMENT_QUERY_SNAPSHOT_SCOPE_UNVERIFIED");
+assert.equal(filterDepartmentScopedRecords_({...deptQueryBase,ownershipScopeVerified:false}).code,"DEPARTMENT_QUERY_OWNERSHIP_SCOPE_UNVERIFIED");
+assert.equal(filterDepartmentScopedRecords_({...deptQueryBase,ownershipRows:[deptQueryBase.ownershipRows[0]]}).code,"DEPARTMENT_QUERY_OWNERSHIP_MISSING");
+assert.equal(filterDepartmentScopedRecords_({...deptQueryBase,ownershipRows:[...deptQueryBase.ownershipRows,{...deptQueryBase.ownershipRows[0]}]}).code,"DEPARTMENT_QUERY_OWNERSHIP_AMBIGUOUS");
+assert.equal(filterDepartmentScopedRecords_({...deptQueryBase,ownershipRows:[{...deptQueryBase.ownershipRows[0],institutionId:"INST-2"}]}).code,"DEPARTMENT_QUERY_OWNERSHIP_INVALID");
+assert.equal(filterDepartmentScopedRecords_({...deptQueryBase,records:[]}).records.length,0);
+const deptGlobal=filterDepartmentScopedRecords_({...deptQueryBase,actorContext:{...deptActor,institutionWide:true,institutionWideAuthorized:true}});
+assert.equal(deptGlobal.records.length,2);
+assert.equal(filterDepartmentScopedRecords_({...deptQueryBase,actorContext:{...deptActor,institutionWide:true,institutionWideAuthorized:false}}).records.length,0);
+const importBase={actorContext:deptActor,domain:"ACADEMIC",snapshotScopeVerified:true,snapshotInstitutionId:"INST-1",snapshotDomain:"ACADEMIC",targetDepartmentVerified:true,targetInstitutionId:"INST-1",targetDomain:"ACADEMIC",targetDepartmentId:"DEP-A",membershipsVerified:true,authorizedDepartmentIds:["DEP-A","DEP-C"],rows:[{id:"1"},{id:"2",departmentId:"DEP-A"}]};
+const importValid=validateDepartmentalImportScope_(importBase);
+assert.equal(importValid.valid,true);assert.equal(importValid.departmentId,"DEP-A");assert.equal(importValid.rowCount,2);assert.equal(importValid.writesPerformed,false);
+assert.equal(validateDepartmentalImportScope_({...importBase,actorContext:{...deptActor,verified:false}}).code,"DEPARTMENT_IMPORT_VERIFIED_ACTOR_REQUIRED");
+assert.equal(validateDepartmentalImportScope_({...importBase,snapshotScopeVerified:false}).code,"DEPARTMENT_IMPORT_SNAPSHOT_SCOPE_UNVERIFIED");
+assert.equal(validateDepartmentalImportScope_({...importBase,targetDepartmentVerified:false}).code,"DEPARTMENT_IMPORT_TARGET_UNVERIFIED");
+assert.equal(validateDepartmentalImportScope_({...importBase,membershipsVerified:false}).code,"DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED");
+assert.equal(validateDepartmentalImportScope_({...importBase,authorizedDepartmentIds:["DEP-B"]}).code,"DEPARTMENT_IMPORT_TARGET_NOT_AUTHORIZED");
+assert.equal(validateDepartmentalImportScope_({...importBase,rows:[{id:"1",departmentId:"DEP-A"},{id:"2",departmentId:"DEP-B"}]}).code,"DEPARTMENT_IMPORT_MIXED_DEPARTMENTS");
+assert.equal(validateDepartmentalImportScope_({...importBase,rows:[{id:"1",institutionId:"INST-2"}]}).code,"DEPARTMENT_IMPORT_TENANT_MISMATCH");
+assert.equal(validateDepartmentalImportScope_({...importBase,rows:[]}).code,"DEPARTMENT_IMPORT_ROWS_REQUIRED");
+assert.equal(validateDepartmentalImportScope_({...importBase,authorizedDepartmentIds:["DEP-A","DEP-A"]}).code,"DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_INVALID");
+assert.equal(validateDepartmentalImportScope_({...importBase,actorContext:{...deptActor,institutionWide:true,institutionWideAuthorized:false}}).code,"DEPARTMENT_IMPORT_INSTITUTION_WIDE_UNAUTHORIZED");
+assert.equal(validateDepartmentalImportScope_({...importBase,actorContext:{...deptActor,institutionWide:true,institutionWideAuthorized:true},targetDepartmentId:"DEP-Z"}).valid,true);
+assert.equal(validateDepartmentalImportScope_({...importBase,targetInstitutionId:"INST-2"}).code,"DEPARTMENT_IMPORT_TARGET_UNVERIFIED");
+console.log("C1.651 departmental query/import scope contract: 26 assertions PASS.");
+
+
 
 
 

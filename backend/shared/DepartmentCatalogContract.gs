@@ -272,6 +272,63 @@ function evaluateDepartmentReferenceAccess_(input) {
  * Validates a department identity/lifecycle event against an approved, tenant-scoped
  * state machine. Pure contract: no writes, ID changes, resource transfer or activation.
  */
+
+/**
+ * Filters server-loaded list/search rows by verified department ownership.
+ * The caller must persist auditEvents internally and still apply operation-level RBAC.
+ */
+function filterDepartmentScopedRecords_(input) {
+  var cfg=input||{},actor=cfg.actorContext||{},records=cfg.records,ownershipRows=cfg.ownershipRows;
+  var fail=function(code){return {allowed:false,code:code,records:[],auditEvents:[],requiresStandardAuthorization:true};};
+  var institutionId=String(actor.institutionId||"").trim(),domain=String(cfg.domain||"").trim();
+  if(actor.verified!==true||!String(actor.userId||"").trim()||!String(actor.membershipId||"").trim()||!String(actor.roleId||"").trim()||!institutionId||!domain)return fail("DEPARTMENT_QUERY_VERIFIED_ACTOR_REQUIRED");
+  if(cfg.snapshotScopeVerified!==true||String(cfg.snapshotInstitutionId||"").trim()!==institutionId||String(cfg.snapshotDomain||"").trim()!==domain)return fail("DEPARTMENT_QUERY_SNAPSHOT_SCOPE_UNVERIFIED");
+  if(cfg.ownershipScopeVerified!==true||String(cfg.ownershipInstitutionId||"").trim()!==institutionId||String(cfg.ownershipDomain||"").trim()!==domain)return fail("DEPARTMENT_QUERY_OWNERSHIP_SCOPE_UNVERIFIED");
+  if(!Array.isArray(records)||!Array.isArray(ownershipRows))return fail("DEPARTMENT_QUERY_INPUT_INVALID");
+  var ownership=Object.create(null),i;
+  for(i=0;i<ownershipRows.length;i++){
+    var row=ownershipRows[i]||{},type=String(row.resourceType||"").trim().toUpperCase(),id=String(row.resourceId||"").trim(),key=type+"|"+id;
+    if(row.verified!==true||String(row.institutionId||"").trim()!==institutionId||!String(row.departmentId||"").trim()||!type||!id)return fail("DEPARTMENT_QUERY_OWNERSHIP_INVALID");
+    if(Object.prototype.hasOwnProperty.call(ownership,key))return fail("DEPARTMENT_QUERY_OWNERSHIP_AMBIGUOUS");
+    ownership[key]=row;
+  }
+  var visible=[],auditEvents=[];
+  for(i=0;i<records.length;i++){
+    var record=records[i]||{},recordType=String(record.resourceType||"").trim().toUpperCase(),recordId=String(record.resourceId||"").trim(),recordKey=recordType+"|"+recordId;
+    if(!recordType||!recordId||!Object.prototype.hasOwnProperty.call(ownership,recordKey))return fail("DEPARTMENT_QUERY_OWNERSHIP_MISSING");
+    var owner=ownership[recordKey];
+    var decision=evaluateDepartmentReferenceAccess_({actorContext:actor,resourceOwnership:{verified:true,institutionId:institutionId,departmentId:owner.departmentId,resourceType:recordType,resourceId:recordId},institutionalConfig:cfg.institutionalConfig||{},operation:"READ_METADATA",now:cfg.now});
+    auditEvents.push(decision.auditEvent);
+    if(decision.allowed)visible.push(record);
+  }
+  return {allowed:true,code:"DEPARTMENT_QUERY_FILTERED",records:visible,auditEvents:auditEvents,requiresStandardAuthorization:true,excludedRecordsNotDisclosed:true};
+}
+
+/**
+ * Validates a whole import batch before writes. Server-verified membership and target
+ * department snapshots are mandatory; mixed-department batches fail closed.
+ */
+function validateDepartmentalImportScope_(input) {
+  var cfg=input||{},actor=cfg.actorContext||{},rows=cfg.rows;
+  var fail=function(code){return {valid:false,code:code,departmentId:null,rowCount:0,writesPerformed:false};};
+  var institutionId=String(actor.institutionId||"").trim(),domain=String(cfg.domain||"").trim(),target=String(cfg.targetDepartmentId||"").trim();
+  if(actor.verified!==true||!String(actor.userId||"").trim()||!String(actor.membershipId||"").trim()||!String(actor.roleId||"").trim()||!institutionId||!domain)return fail("DEPARTMENT_IMPORT_VERIFIED_ACTOR_REQUIRED");
+  if(cfg.snapshotScopeVerified!==true||String(cfg.snapshotInstitutionId||"").trim()!==institutionId||String(cfg.snapshotDomain||"").trim()!==domain)return fail("DEPARTMENT_IMPORT_SNAPSHOT_SCOPE_UNVERIFIED");
+  if(cfg.targetDepartmentVerified!==true||String(cfg.targetInstitutionId||"").trim()!==institutionId||String(cfg.targetDomain||"").trim()!==domain||!target)return fail("DEPARTMENT_IMPORT_TARGET_UNVERIFIED");
+  if(cfg.membershipsVerified!==true||!Array.isArray(cfg.authorizedDepartmentIds))return fail("DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED");
+  var allowed=Object.create(null);
+  for(var i=0;i<cfg.authorizedDepartmentIds.length;i++){var dep=String(cfg.authorizedDepartmentIds[i]||"").trim();if(!dep||Object.prototype.hasOwnProperty.call(allowed,dep))return fail("DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_INVALID");allowed[dep]=true;}
+  if(actor.institutionWide===true){if(actor.institutionWideAuthorized!==true)return fail("DEPARTMENT_IMPORT_INSTITUTION_WIDE_UNAUTHORIZED");}
+  else if(!Object.prototype.hasOwnProperty.call(allowed,target))return fail("DEPARTMENT_IMPORT_TARGET_NOT_AUTHORIZED");
+  if(!Array.isArray(rows)||!rows.length)return fail("DEPARTMENT_IMPORT_ROWS_REQUIRED");
+  for(i=0;i<rows.length;i++){
+    var row=rows[i]||{},rowDepartment=String(row.departmentId||"").trim(),rowInstitution=String(row.institutionId||"").trim();
+    if(rowDepartment&&rowDepartment!==target)return fail("DEPARTMENT_IMPORT_MIXED_DEPARTMENTS");
+    if(rowInstitution&&rowInstitution!==institutionId)return fail("DEPARTMENT_IMPORT_TENANT_MISMATCH");
+  }
+  return {valid:true,code:"DEPARTMENT_IMPORT_SCOPE_VALID",institutionId:institutionId,departmentId:target,rowCount:rows.length,writesPerformed:false,requiresAtomicImportValidation:true};
+}
+
 function validateDepartmentLifecycleEvent_(input) {
   var cfg = input || {}, config = cfg.config || {}, current = cfg.currentRecord || {}, event = cfg.event || {};
   var fail = function(code) { return { valid: false, idempotent: false, code: code }; };

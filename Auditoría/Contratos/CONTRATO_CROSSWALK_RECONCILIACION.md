@@ -30,3 +30,12 @@ resolveDepartmentCatalogReference_ exige que cada mapping declare el CanonicalCa
 ## Límites
 
 No se consulta información real, no se crea/actualiza ConfiguracionInstitucional, no se generan crosswalks, no se migran IDs, no se reasignan recursos y no se cambia el propietario del dato. La decisión de autoridad y la clasificación de filas reales siguen pendientes de evidencia institucional.
+
+
+## C1.651 — consultas y lotes de importación departamentales
+
+`filterDepartmentScopedRecords_` aplica el filtro de departamento a resultados de consultas/listados obtenidos en servidor. Requiere actor autenticado, snapshot de institución/dominio y snapshot de ownership verificados. Cada fila debe tener una única referencia ResourceOwnership verificada; ownership ausente, duplicado o fuera de institución falla cerrado. Los resultados de otro departamento se omiten sin exponer su existencia ni conteos. Los eventos de auditoría son internos y deben persistirse antes de responder. El consumidor sigue aplicando RBAC por operación y minimización de campos.
+
+`validateDepartmentalImportScope_` valida el lote completo antes de cualquier escritura. Exige membresía y departamento destino verificados por servidor, limita destinos a departamentos autorizados o a alcance institucional explícito, rechaza lotes mezclados y cualquier fila con InstitutionID distinto. Devuelve el departamento efectivo y número de filas, pero no escribe ni transforma registros.
+
+Ambos contratos son puros y no tienen callsites productivos en esta entrega. No sustituyen la integración de filtros en cada endpoint ni la atomicidad/rollback del importador real.
