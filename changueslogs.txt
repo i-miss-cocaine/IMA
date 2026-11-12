@@ -2903,3 +2903,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real multi-proyecto Pendiente beta.
 - C1.639 completada; T153-S02 sigue En ejecución hasta revisión de trazabilidad y rollout.
 ===============================================================================
+
+
+ 
+===============================================================================
+[2026-11-12] C1.640 — cierre T153-S02 por trazabilidad
+- Se revisaron los requisitos originales y evidencias C1.614–C1.639.
+- Cobertura: relaciones usuario/roles/responsabilidades/ámbitos, vigencia/revocación, multirol/multidepartamento, contexto activo, capacidades/RBAC, selector multirol y revocación transversal.
+- T153-S02 se marca COMPLETADA para implementación/contratos aislados. Beta real multi-proyecto sigue Pendiente; TASK-153 global continúa En ejecución.
+- Siguiente unidad: T153-S01, inventario/reconciliación de catálogos. T153-S03/S04 esperan S01.
+===============================================================================
