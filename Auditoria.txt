@@ -2452,3 +2452,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Contrato local y sintaxis JavaScript PASS. BETA-FUNC-031 Pendiente beta; Apps Script/Sheets real NOT RUN.
 - C1.614 completada local/CI; T153-S02 continúa En ejecución.
 ===============================================================================
+
+===============================================================================
+### C1.616 — hallazgos de seguridad resueltos en membresías RBAC
+- **Alto — aislamiento multiinstitucional:** el estado legacy podía considerar membresías de otro tenant como señal de migración local. Se limita la señal de existencia y la validación de membresía a `IMA_INSTITUTION_ID` de cada servicio; sin membresía local se conserva el fallback legacy controlado.
+- **Alto — rol retirado de configuración:** los consumidores podían validar una fila activa sin comprobar que el rol siguiera configurado. USER y servicios consumidores ahora rechazan membresías de roles no configurados.
+- **Alto — ID de membresía ambiguo:** la revocación podía seleccionar la primera fila coincidente. Ahora rechaza cualquier ID duplicado globalmente y no modifica registros ambiguos.
+- **Medio — selección implícita de rol:** el login podía usar `Usuarios.Rol` como selección por defecto aunque existieran varias membresías. Se exige selección explícita y se incorpora control accesible en el formulario.
+- **Verificación:** se añadió cobertura local para los casos; no fue ejecutada en esta iteración. No se declara PASS. La ejecución local y CI permanecen pendientes antes de cerrar el incremento.
+===============================================================================
