@@ -2443,3 +2443,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 ### Addendum C1.614 — revisión de publicación
 - La publicación documental inicial no contenía los blobs funcionales; se detectó mediante compare de Git. El commit correctivo incorpora ahora Code.gs y el contrato con el cambio y pruebas efectivas.
 - No se declara CI: GitHub Actions no muestra run ni check asociado al commit documental.
+
+
+===============================================================================
+### C1.614 — cierre de verificación CI
+- Commit funcional: e36337bcf3d57ce0210d7d372e70486c5d0a6159.
+- Department Scope run 43210592288 SUCCESS; Identity Mapping run 43210592306 SUCCESS; Task-Service security run 43210592253 SUCCESS; todos los pasos PASS.
+- Contrato local y sintaxis JavaScript PASS. BETA-FUNC-031 Pendiente beta; Apps Script/Sheets real NOT RUN.
+- C1.614 completada local/CI; T153-S02 continúa En ejecución.
+===============================================================================

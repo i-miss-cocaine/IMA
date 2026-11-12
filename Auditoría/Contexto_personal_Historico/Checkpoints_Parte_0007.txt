@@ -945,3 +945,13 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - Se detectó antes de cerrar la tarea. Este commit añade realmente el filtro temporal de inicio/fin y las pruebas future/expired/invalid/open/revoked y modo no vigente.
 - No se considera el commit documental evidencia de implementación. CI permanece pendiente; el HEAD correctivo se verificará después de publicar.
 ===============================================================================
+
+
+### Addendum de cierre CI — C1.614 / C1.614-R1
+- Commit funcional verificado: e36337bcf3d57ce0210d7d372e70486c5d0a6159; compare Git confirma cambios en backend/user-service/Code.gs y tests/security/department-scope-contract.test.js.
+- Contrato Department Scope local PASS; parseo JavaScript de Code.gs y contrato PASS.
+- GitHub Actions Department Scope run 43210592288 SUCCESS; Identity Mapping run 43210592306 SUCCESS; Task-Service security run 43210592253 SUCCESS. Todos los pasos PASS.
+- C1.614 completada local/CI. BETA-FUNC-031 sigue Pendiente beta; Apps Script/Sheets real NOT RUN.
+- El commit documental previo 52498c8 no se considera evidencia funcional; la implementación efectiva está en e36337b.
+- HEAD de código verificado: e36337bcf3d57ce0210d7d372e70486c5d0a6159; HEAD final se confirma tras este registro documental.
+===============================================================================

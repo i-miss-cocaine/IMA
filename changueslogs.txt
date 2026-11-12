@@ -2605,3 +2605,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-12] C1.614 — addendum de integridad de publicación
 - La revisión compare detectó que el commit documental inicial no incluía los blobs de backend/test. Se prepara commit correctivo que incorpora ambos cambios reales.
 - CI no generado/verificable para la publicación documental inicial; no se declara PASS.
+
+
+===============================================================================
+[2026-11-12] C1.614 — cierre CI
+- Department Scope 43210592288, Identity Mapping 43210592306 y Task-Service security 43210592253: SUCCESS, todos los pasos PASS para commit e36337bcf3d57ce0210d7d372e70486c5d0a6159.
+- Vigencia efectiva de asignaciones validada localmente y en CI. BETA-FUNC-031 Pendiente beta; Apps Script/Sheets real NOT RUN.
+===============================================================================

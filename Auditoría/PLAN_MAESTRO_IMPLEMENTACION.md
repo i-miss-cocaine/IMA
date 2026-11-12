@@ -4719,10 +4719,18 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI:** pendiente de ejecución/observación tras publicar.
 - **Apps Script/Sheets real:** NOT RUN; BETA-FUNC-031 Pendiente beta.
 - **Alcance:** incremento parcial de T153-S02; no completa soporte de múltiples roles simultáneos ni el motor configurable de responsabilidades/autoridad. T153-S01 continúa bloqueada únicamente para decisiones/fuentes institucionales reales; el desarrollo genérico continúa.
-- **Estado:** C1.614 En ejecución hasta confirmar CI; backend USER modificado.
+- **Estado:** C1.614 Completada local/CI; backend USER modificado. T153-S02 continúa En ejecución para soporte de roles múltiples y contexto activo explícito.
 
 
 **Addendum C1.614 — consolidación del cambio ejecutable**
 - La publicación documental inicial quedó en 52498c8f27f30e24ca6a12721f6ae79cb895bc8e, pero la comparación Git posterior confirmó que el blob de Code.gs y el contrato aún coincidían con el HEAD padre. No se considera esa publicación evidencia de cambio funcional.
 - Este commit incorpora efectivamente el filtro temporal en backend/user-service/Code.gs y los escenarios de prueba en tests/security/department-scope-contract.test.js. La verificación local se ejecuta contra estos blobs antes de consolidar.
 - El workflow Department Scope no generó run/checks para el commit documental; CI continúa pendiente de una ejecución verificable.
+
+
+**Cierre de verificación C1.614 — commit e36337bcf3d57ce0210d7d372e70486c5d0a6159**
+- Compare Git confirmó backend/user-service/Code.gs y tests/security/department-scope-contract.test.js como archivos funcionales modificados.
+- Contrato Department Scope local PASS; parseo de Code.gs y test PASS.
+- GitHub Actions Department Scope run 43210592288 SUCCESS; Identity Mapping run 43210592306 SUCCESS; Task-Service security run 43210592253 SUCCESS. Todos los pasos de los tres workflows PASS.
+- BETA-FUNC-031 permanece Pendiente beta; Apps Script/Sheets real NOT RUN.
+- C1.614 completada local/CI como incremento parcial de T153-S02; no acredita soporte de múltiples roles simultáneos ni cierre de TASK-153.
