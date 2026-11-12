@@ -1420,3 +1420,23 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** C1.639 implementada y verificada en harness aislado. T153-S02 permanece En ejecución hasta revisar la matriz completa de requisitos y la prueba beta multi-proyecto.
 - **Siguiente acción:** consolidar trazabilidad de T153-S02 y confirmar las dependencias de rollout/secretos/IDs institucionales antes de cerrar la subfase.
 ===============================================================================
+
+
+===============================================================================
+### C1.640 — IMA-EXEC-20261112-1754Z-03 — cierre de T153-S02 por trazabilidad de requisitos
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.639.
+- **HEAD de revisión:** `e136ccb4862c54cfef0344744bec6946b2991af5`.
+- **Revisión:** se contrastó la descripción original de T153-S02 y la descomposición PM-01 con las evidencias C1.614–C1.639, sin repetir los contratos ya vigentes.
+- **Matriz de aceptación:**
+  1. Relación usuario↔roles↔responsabilidades↔ámbitos, vigencia y revocación: C1.614, C1.616–C1.617, C1.624, C1.631–C1.637.
+  2. Multirol/multidepartamento sin privilegio implícito por unión: C1.625, C1.628, C1.638.
+  3. Contexto activo explícito y validación de ámbito en servidor: C1.615, C1.638.
+  4. Capacidades no elevan permisos; acción protegida y grant explícito: C1.624, C1.635.
+  5. Revocación coherente entre USER y consumidores Apps Script: C1.634–C1.639.
+  6. Selector multirol y login explícito: C1.616–C1.617; CI histórico Department Scope run 43217920934 SUCCESS.
+- **Resultado:** criterios de implementación y contratos aislados cubiertos. **T153-S02: COMPLETADA (implementación/contrato).** No se afirma prueba real de Apps Script/Sheets.
+- **Pendiente beta:** BETA-FUNC-033 y C1.639: despliegue sincronizado USER/ACADEMIC/ACCOUNTING/TASK/EXAM, misma SpreadsheetID/IMA_INSTITUTION_ID, ScriptProperties/CacheService/HMAC y propagación real de revocación. Node CLI independiente NOT RUN; CI sobre HEAD final no ejecutado.
+- **TASK-153:** permanece En ejecución; solo se cierra T153-S02, no el conjunto de aislamiento departamental.
+- **Siguiente unidad:** T153-S01 — inventario/reconciliación técnica de `CatalogoDepartamentos` y `DepartamentosAcademicos`. T153-S03/S04 dependen de S01; T153-S05/S06 dependen de S02 y S03/S04 según el plan.
+- **Estado:** checkpoint de cierre de subfase; no se inicia S03 sin satisfacer su dependencia S01.
+===============================================================================
