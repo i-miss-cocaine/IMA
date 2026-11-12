@@ -2258,3 +2258,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Backend productivo sin cambios. Caso añadido; verificación local aislada/CI pendiente tras commit. Apps Script/Sheets real NOT RUN.
 - BETA-EXAM-091 agregado. TASK-153 / AUD-NG-386 continúa En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.590 — resultado de verificación local aislada/CI
+- GitHub Actions run 43127400390, commit f078c05220efd702f00424a7e22542d2b401c753: workflow Exam-Service security local contracts SUCCESS en Node.js 22.
+- Paso Run period gradebook submission security regression: exam-service-period-gradebook-submission-security PASS (28/28); job exam-security-contracts SUCCESS.
+- Ejecución aislada sobre código/fixtures sin despliegue; Apps Script/Sheets real NOT RUN.
+- C1.590 Completada en verificación local aislada/CI. BETA-EXAM-091 sigue Pendiente beta.
+===============================================================================
