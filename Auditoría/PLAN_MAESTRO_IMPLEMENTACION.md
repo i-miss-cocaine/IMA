@@ -4986,3 +4986,13 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets/PropertiesService real Pendiente beta.
 - **Estado:** C1.636 completada. T153-S02 continúa En ejecución.
 - **Siguiente acción:** definir el tratamiento de tokens/revocaciones históricas anteriores a C1.634; una invalidación global de sesiones debe ser un paso explícito de rollout.
+
+
+ 
+**Addendum C1.637 — migración controlada de sesiones históricas**
+- `verifySessionToken` soporta la propiedad ScriptProperties opcional `SESSION_REVOCATION_LEGACY_CUTOFF`. Ausente: compatibilidad normal. Configurada con epoch válido: rechaza tokens cuyo iat sea menor o igual al cutoff. Token posterior: elegible. Valor inválido: fail-closed.
+- El cutoff no se activa automáticamente para evitar una desconexión masiva no autorizada. El responsable de rollout puede configurarlo si decide invalidar todas las sesiones anteriores y solicitar reautenticación general.
+- Revocaciones históricas cache-only ya desaparecidas no pueden reconstruirse; sin cutoff, los tokens históricos restantes conservan validez solo hasta su expiración natural y mientras no exista marcador legacy vigente.
+- Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.637); sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; ScriptProperties/rollout real Pendiente beta.
+- **Estado:** C1.637 completada. T153-S02 continúa En ejecución.
+- **Siguiente acción:** revisar los requisitos originales de T153-S02 y verificar matriz de evidencia/dependencias antes de decidir cierre o siguiente subfase.
