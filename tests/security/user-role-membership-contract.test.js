@@ -65,7 +65,7 @@ function makeHarness(membershipRows = [headers]) {
   const cache = {};
   const ctx = {
     SPREADSHEET_ID:"LOCAL",
-    ROLE_PERMISSIONS:{Student:[],Director:[],Coordinador:[]},
+    ROLE_PERMISSIONS:{Student:[],Director:[],Coordinador:[],Future:[],Expired:[],Revoked:[],Other:[],BadDate:[]},
     SpreadsheetApp:{openById(id){assert.equal(id,"LOCAL");return{getSheetByName:n=>sheets[n]||null,insertSheet(n){sheets[n]=sheet([]);return sheets[n];}};}},
     CacheService:{getScriptCache:()=>({get:k=>cache[k]||null,put:(k,v)=>cache[k]=v,remove:k=>delete cache[k]})},
     Utilities:{
