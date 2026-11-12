@@ -975,6 +975,83 @@ assert.equal(lifecycleCtx.validateRoleScopeAccess({sessionToken:"session-auditor
 lifecycleMembershipRows[1][4]="ACTIVE";
 console.log("C1.638 server-side scope authorization contract: role/membership isolation, active department narrowing, institution-wide grant semantics and independent revocation PASS.");
 
+ 
+// C1.639: USER revocation ledger and migration cutoff must be enforced by every Apps Script consumer.
+const crossServiceNow=Math.floor(Date.now()/1000);
+const crossServiceClaimsByPayload={
+  crosssession:{userId:"U-TENANT",role:"Director",membershipId:"MEM-LOCAL",institutionId:"INST-1",sessionId:"SID-CROSS-SESSION",iat:crossServiceNow-30,exp:crossServiceNow+3600},
+  crossuser:{userId:"U-TENANT",role:"Director",membershipId:"MEM-LOCAL",institutionId:"INST-1",sessionId:"SID-CROSS-USER",iat:crossServiceNow-30,exp:crossServiceNow+3600},
+  crossafter:{userId:"U-TENANT",role:"Director",membershipId:"MEM-LOCAL",institutionId:"INST-1",sessionId:"SID-CROSS-AFTER",iat:crossServiceNow+5,exp:crossServiceNow+3605}
+};
+const crossServiceConsumers={};
+function makeSharedSheet(rows) {
+  return {getDataRange:()=>({getValues:()=>rows.map(row=>row.slice())})};
+}
+const crossSharedSpreadsheet={getSheetByName:name=>{
+  if(name==="Usuarios")return makeSharedSheet(tenantUserRows);
+  if(name==="MembresiasRolesRBAC")return makeSharedSheet(tenantMembershipRows);
+  if(name==="SesionesRevocadas")return makeSharedSheet(sessionRevocationRows);
+  if(name==="EstadoRevocacionSesiones")return makeSharedSheet(sessionRevocationStateRows);
+  return null;
+}};
+for(const serviceName of ["academic","accounting","task","exam"]){
+  const consumerCtx={
+    SPREADSHEET_ID:"LOCAL",
+    ROLE_PERMISSIONS:{Director:[],Auditor:[]},
+    getAuthTokenSecret:()=>"test-secret",
+    computeHmacSignature:()=>"sig",
+    CacheService:{getScriptCache:()=>({get:()=>null,put:()=>{}})},
+    PropertiesService:{getScriptProperties:()=>({getProperty:key=>key==="IMA_INSTITUTION_ID"?"INST-1":null})},
+    Utilities:{
+      base64Decode:key=>JSON.stringify(crossServiceClaimsByPayload[key.replace(/=/g,"")]||{}),
+      newBlob:value=>({getDataAsString:()=>value})
+    },
+    SpreadsheetApp:{openById:()=>crossSharedSpreadsheet}
+  };
+  const consumerCode=`
+  this.SESSION_REVOCATION_HEADERS_=["SessionID","UserID","RevokedAt","ExpiresAt"];
+  this.SESSION_REVOCATION_STATE_HEADERS_=["Key","Value","UpdatedAt"];
+  ${extractFunction(consumerSources[serviceName],"isSessionRevokedInSharedLedger_")}
+  ${extractFunction(consumerSources[serviceName],"verifyUserRoleMembershipClaim_")}
+  ${extractFunction(consumerSources[serviceName],"verifySessionToken")}
+  this.verifySessionToken=verifySessionToken;
+  `;
+  vm.runInNewContext(consumerCode,consumerCtx);
+  crossServiceConsumers[serviceName]=consumerCtx;
+  assert.equal(consumerCtx.verifySessionToken("crosssession.sig").sessionId,"SID-CROSS-SESSION",serviceName+" accepts a valid active session before USER revocation");
+}
+assert.equal(tenantSessionCtx.revokeUserSession({sessionId:"SID-CROSS-SESSION"}).status,"success","USER writes the shared persistent revocation");
+for(const serviceName of Object.keys(crossServiceConsumers)){
+  assert.equal(crossServiceConsumers[serviceName].verifySessionToken("crosssession.sig"),null,serviceName+" rejects the session revoked by USER despite an empty local cache");
+  assert.equal(crossServiceConsumers[serviceName].verifySessionToken("crossafter.sig").sessionId,"SID-CROSS-AFTER",serviceName+" permits an unrelated fresh session");
+}
+for(const serviceName of Object.keys(crossServiceConsumers)){
+  assert.equal(crossServiceConsumers[serviceName].verifySessionToken("crossuser.sig").sessionId,"SID-CROSS-USER",serviceName+" accepts pre-revocation user session");
+}
+assert.equal(tenantSessionCtx.revokeUserSession({userId:"U-TENANT"}).status,"success");
+for(const serviceName of Object.keys(crossServiceConsumers)){
+  assert.equal(crossServiceConsumers[serviceName].verifySessionToken("crossuser.sig"),null,serviceName+" enforces user-wide cutoff from shared ledger");
+  assert.equal(crossServiceConsumers[serviceName].verifySessionToken("crossafter.sig").sessionId,"SID-CROSS-AFTER",serviceName+" allows a session issued after user-wide revocation");
+}
+const crossMigrationCutoff=Math.floor(Date.now()/1000)+20;
+sessionRevocationStateRows.push(["LEGACY_SESSION_CUTOFF",String(crossMigrationCutoff),new Date()]);
+tenantClaimsByPayload.crossmigration={userId:"U-TENANT",role:"Director",membershipId:"MEM-LOCAL",institutionId:"INST-1",sessionId:"SID-CROSS-MIGRATION",iat:crossMigrationCutoff+1,exp:crossMigrationCutoff+3601};
+crossServiceClaimsByPayload.crossmigration=tenantClaimsByPayload.crossmigration;
+for(const serviceName of Object.keys(crossServiceConsumers)){
+  assert.equal(crossServiceConsumers[serviceName].verifySessionToken("crossafter.sig"),null,serviceName+" enforces the shared legacy migration cutoff");
+  assert.equal(crossServiceConsumers[serviceName].verifySessionToken("crossmigration.sig").sessionId,"SID-CROSS-MIGRATION",serviceName+" accepts a token issued after the shared cutoff");
+}
+const originalSharedLedgerSheet=sessionRevocationSheet;
+const missingLedgerSpreadsheet={getSheetByName:name=>name==="SesionesRevocadas"?null:crossSharedSpreadsheet.getSheetByName(name)};
+for(const serviceName of Object.keys(crossServiceConsumers)){
+  crossServiceConsumers[serviceName].SpreadsheetApp={openById:()=>missingLedgerSpreadsheet};
+  assert.equal(crossServiceConsumers[serviceName].verifySessionToken("crossmigration.sig"),null,serviceName+" fails closed when the shared initialized ledger is missing");
+  crossServiceConsumers[serviceName].SpreadsheetApp={openById:()=>crossSharedSpreadsheet};
+}
+assert.ok(originalSharedLedgerSheet,"the shared ledger fixture remains available for restoration");
+console.log("C1.639 cross-service revocation contract: USER session/user revocation, shared migration cutoff and missing-ledger fail-closed behavior enforced by ACADEMIC, ACCOUNTING, TASK and EXAM PASS.");
+
+
 
 
 
