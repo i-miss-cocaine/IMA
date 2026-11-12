@@ -835,3 +835,11 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - Se corrige el lock específico. Harness V8 focalizado posterior: 1/1 PASS; SIGNATURE_PROVIDER_CONFIGURATION_BUSY, una apertura, una fila exterior, secretos nested ausentes y lock liberado.
 - CI pendiente; backend productivo sin cambios.
 ===============================================================================
+
+
+### Addendum de cierre CI — C1.611
+- GitHub Actions Department Scope Contract run 43144007883, commit 22be94e7ad058b4ab43a6c548f882a4b6746bb15: SUCCESS en Node.js 24; todos los pasos PASS.
+- Run user-service signature ownership contract SUCCESS; harness V8 focalizado local 1/1 PASS; parseo del contrato PASS.
+- C1.611 Completada con verificación local focalizada y CI. BETA-FUNC-028 permanece Pendiente beta; Apps Script/Sheets real NOT RUN.
+- HEAD probado: 22be94e7ad058b4ab43a6c548f882a4b6746bb15; HEAD final se confirma tras este registro documental.
+===============================================================================

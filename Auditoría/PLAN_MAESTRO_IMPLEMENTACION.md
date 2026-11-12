@@ -4673,3 +4673,9 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - La primera ejecución focalizada detectó que el hook de reentrada estaba conectado, pero el lock de makeProviderConfigHarness todavía permitía adquirirlo dos veces; el parche inicial había actualizado otro fixture.
 - Se corrige específicamente el lock del harness de configuración para rechazar adquisición cuando state.held=true. La nueva ejecución focalizada confirma SIGNATURE_PROVIDER_CONFIGURATION_BUSY, una apertura, una sola fila/credenciales exteriores y liberación.
 - No hay cambios productivos; CI de confirmación pendiente.
+
+
+**Cierre de verificación C1.611**
+- GitHub Actions Department Scope Contract run 43144007883, commit 22be94e7ad058b4ab43a6c548f882a4b6746bb15: SUCCESS en Node.js 24; todos los pasos del job department-scope-contract SUCCESS.
+- Paso Run user-service signature ownership contract: SUCCESS. Harness V8 focalizado de configureAdvancedSignatureProvider: 1/1 PASS; parseo del contrato PASS.
+- C1.611 completada con verificación local focalizada y CI. BETA-FUNC-028 permanece Pendiente beta; Apps Script/Sheets real NOT RUN.

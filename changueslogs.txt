@@ -2559,3 +2559,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se ajusta específicamente makeProviderConfigHarness para rechazar una segunda adquisición cuando el ScriptLock está retenido.
 - Harness V8 focalizado: 1/1 PASS; sin cambios productivos. CI de confirmación pendiente.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.611 — verificación CI de configuración de proveedor
+- GitHub Actions Department Scope Contract run 43144007883, commit 22be94e7ad058b4ab43a6c548f882a4b6746bb15: SUCCESS en Node.js 24.
+- Contrato USER signature ownership y todos los pasos del job PASS; harness local focalizado 1/1 PASS.
+- C1.611 completada local/CI; backend sin cambios. BETA-FUNC-028 Pendiente beta; Apps Script/Sheets real NOT RUN.
+===============================================================================
