@@ -2622,3 +2622,20 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Corrección:** los cuatro lectores delegan en un contrato común local: token firmado coincide con actor; tenant y MembershipID exactos; esquema vigente y cadena de responsabilidad activa; AssignmentID único; vigencia con campos vacíos explícitos y fechas inválidas/vencidas/futuras excluidas; selección activa reduce a un solo departamento. Las sesiones legacy conservan únicamente filas sin vínculo de tenant/membresía.
 - **Verificación:** contrato V8 aislado para los cuatro lectores, con membresías/tenant alternos, responsabilidad inactiva, fechas futura/epoch/ inválida, AssignmentID duplicado, concesión institucional explícita y selección activa. PASS.
 ===============================================================================
+
+
+===============================================================================
+### C1.643 — lectores directos USER/ACADEMIC fuera del contexto efectivo
+- **Severidad:** Alto — validación contextual y exposición de ámbitos.
+- **Hallazgos:** ACADEMIC `validateContextualAccess` consultaba AsignacionesAmbitosRoles por UserID/ScopeType/Estado, sin rol, membresía, institución, responsabilidad ni vigencia; además podía continuar si el catálogo no estaba inicializado. USER `getUserScopeConfig` aceptaba un userId solicitado y devolvía filas activas sin exigir contexto efectivo ni selección de membresía.
+- **Corrección:** ACADEMIC delega la comprobación contextual en `getVerifiedAcademicDepartmentScope_` y falla cerrado. USER usa `getUserContextScope` para el propio usuario; consultas administrativas de otro usuario requieren permiso y una MembershipID explícita cuando existen varias membresías, sin fallback legacy si hay membresías en otro tenant.
+- **Verificación:** contrato C1.643 PASS para departamento propio/ajeno, activeDepartmentId y lectura propia/administrativa con selección obligatoria.
+===============================================================================
+
+===============================================================================
+### C1.644 — firmante de firma avanzada sin vínculo de membresía explícito
+- **Severidad:** Alto — posible unión implícita de roles en autorización de firma.
+- **Hallazgo:** `assertAdvancedSignatureSignerScope_` autorizaba por UserID y RoleID normalizado; no exigía MembershipID/InstitutionID ni responsabilidad activa. Un firmante con varios roles podía heredar el ámbito de otro rol.
+- **Corrección:** el firmante se resuelve contra membresías activas de la institución y filas de ámbito exactas. Una sola membresía activa puede seleccionarse automáticamente; con varias se requieren `firmanteMembershipId` y `firmanteRoleId`. La fila debe tener responsabilidad activa, AssignmentID único y vigencia válida. Fallback legacy solo cuando no hay registros de membresía del usuario en ningún tenant y las filas no tienen vínculo institucional/de membresía.
+- **Verificación:** contrato C1.644 PASS para multirol, selección exacta, rol/ámbito no heredado, responsabilidad activa, legacy sin vínculo y rechazo de membresía de otro tenant.
+===============================================================================
