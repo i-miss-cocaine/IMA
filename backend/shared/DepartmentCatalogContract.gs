@@ -27,33 +27,21 @@ function validateDepartmentCatalogSnapshot_(config, records, effectiveAt) {
   if (!Array.isArray(records)) return { valid: false, code: "DEPARTMENT_SOURCE_SNAPSHOT_INVALID" };
   var at = effectiveAt instanceof Date ? effectiveAt : new Date(effectiveAt || Date.now());
   if (isNaN(at.getTime())) return { valid: false, code: "DEPARTMENT_EFFECTIVE_DATE_INVALID" };
-  var activeStates = (config.activeStates || ["ACTIVE", "ACTIVO", "ACTIVA", "TRUE"]).map(function(v) { return String(v).trim().toUpperCase(); });
-  var keyField = String(config.keyField).trim(), statusField = String(config.statusField).trim();
-  var idMap = {}, codeMap = {}, recordsById = {};
+  var keyField = String(config.keyField).trim(), codeMap = {}, recordsById = {};
   for (var i = 0; i < records.length; i++) {
     var record = records[i] || {}, id = String(record[keyField] || "").trim();
     if (!id) return { valid: false, code: "DEPARTMENT_SOURCE_KEY_MISSING", rowIndex: i };
-    if (idMap[id]) return { valid: false, code: "DEPARTMENT_SOURCE_KEY_AMBIGUOUS", sourceId: id };
-    idMap[id] = true;
-    var state = record[statusField] === true ? "TRUE" : String(record[statusField] || "").trim().toUpperCase();
-    if (activeStates.indexOf(state) === -1) return { valid: false, code: "DEPARTMENT_SOURCE_INACTIVE", sourceId: id };
-    var startValue = config.validFromField ? record[config.validFromField] : "";
-    var endValue = config.validToField ? record[config.validToField] : "";
-    var start = startValue === "" || startValue === null || startValue === undefined ? null : (startValue instanceof Date ? startValue : new Date(startValue));
-    var end = endValue === "" || endValue === null || endValue === undefined ? null : (endValue instanceof Date ? endValue : new Date(endValue));
-    if ((start && isNaN(start.getTime())) || (end && isNaN(end.getTime()))) return { valid: false, code: "DEPARTMENT_SOURCE_DATE_INVALID", sourceId: id };
-    if (start && start.getTime() > at.getTime()) return { valid: false, code: "DEPARTMENT_SOURCE_NOT_YET_VALID", sourceId: id };
-    if (end && end.getTime() < at.getTime()) return { valid: false, code: "DEPARTMENT_SOURCE_EXPIRED", sourceId: id };
+    if (recordsById[id]) return { valid: false, code: "DEPARTMENT_SOURCE_KEY_AMBIGUOUS", sourceId: id };
+    recordsById[id] = record;
     if (config.codeField && config.codeNamespaceField) {
       var code = String(record[config.codeField] || "").trim(), namespace = String(record[config.codeNamespaceField] || "").trim();
+      if (code && !namespace) return { valid: false, code: "DEPARTMENT_CODE_NAMESPACE_REQUIRED", sourceId: id };
       if (code) {
-        if (!namespace) return { valid: false, code: "DEPARTMENT_CODE_NAMESPACE_REQUIRED", sourceId: id };
         var codeKey = namespace + "::" + code.toUpperCase();
-        if (codeMap[codeKey]) return { valid: false, code: "DEPARTMENT_CODE_AMBIGUOUS", namespace: namespace, code: code };
-        codeMap[codeKey] = id;
+        if (!codeMap[codeKey]) codeMap[codeKey] = [];
+        codeMap[codeKey].push(id);
       }
     }
-    recordsById[id] = record;
   }
   if (config.parentField) {
     var parentField = String(config.parentField).trim();
@@ -72,7 +60,7 @@ function validateDepartmentCatalogSnapshot_(config, records, effectiveAt) {
     };
     for (var id in recordsById) if (!visit(id)) return { valid: false, code: "DEPARTMENT_HIERARCHY_CYCLE", sourceId: id };
   }
-  return { valid: true, recordsById: recordsById, effectiveAt: at };
+  return { valid: true, recordsById: recordsById, codeMap: codeMap, effectiveAt: at };
 }
 
 function resolveDepartmentCatalogReference_(input) {
@@ -83,6 +71,21 @@ function resolveDepartmentCatalogReference_(input) {
   if (!snapshot.valid) return { resolved: false, code: snapshot.code, detail: snapshot };
   var sourceRecord = snapshot.recordsById[sourceId];
   if (!sourceRecord) return { resolved: false, code: "DEPARTMENT_SOURCE_KEY_NOT_FOUND", sourceId: sourceId };
+  var activeStates = (config.activeStates || ["ACTIVE", "ACTIVO", "ACTIVA", "TRUE"]).map(function(v) { return String(v).trim().toUpperCase(); });
+  var sourceState = sourceRecord[config.statusField] === true ? "TRUE" : String(sourceRecord[config.statusField] || "").trim().toUpperCase();
+  if (activeStates.indexOf(sourceState) === -1) return { resolved: false, code: "DEPARTMENT_SOURCE_INACTIVE", sourceId: sourceId };
+  var startValue = config.validFromField ? sourceRecord[config.validFromField] : "";
+  var endValue = config.validToField ? sourceRecord[config.validToField] : "";
+  var startDate = startValue === "" || startValue === null || startValue === undefined ? null : (startValue instanceof Date ? startValue : new Date(startValue));
+  var endDate = endValue === "" || endValue === null || endValue === undefined ? null : (endValue instanceof Date ? endValue : new Date(endValue));
+  if ((startDate && isNaN(startDate.getTime())) || (endDate && isNaN(endDate.getTime()))) return { resolved: false, code: "DEPARTMENT_SOURCE_DATE_INVALID", sourceId: sourceId };
+  if (startDate && startDate.getTime() > snapshot.effectiveAt.getTime()) return { resolved: false, code: "DEPARTMENT_SOURCE_NOT_YET_VALID", sourceId: sourceId };
+  if (endDate && endDate.getTime() < snapshot.effectiveAt.getTime()) return { resolved: false, code: "DEPARTMENT_SOURCE_EXPIRED", sourceId: sourceId };
+  if (config.codeField && config.codeNamespaceField) {
+    var sourceCode = String(sourceRecord[config.codeField] || "").trim(), sourceNamespace = String(sourceRecord[config.codeNamespaceField] || "").trim();
+    var duplicateCodes = sourceCode ? snapshot.codeMap[sourceNamespace + "::" + sourceCode.toUpperCase()] || [] : [];
+    if (duplicateCodes.length > 1) return { resolved: false, code: "DEPARTMENT_CODE_AMBIGUOUS", sourceId: sourceId, namespace: sourceNamespace, codeValue: sourceCode };
+  }
   var canonicalId = sourceId, mapping = null;
   if (String(config.authorityMode).trim().toUpperCase() === "CROSSWALK") {
     var mappings = (Array.isArray(input.crosswalk) ? input.crosswalk : []).filter(function(item) {
