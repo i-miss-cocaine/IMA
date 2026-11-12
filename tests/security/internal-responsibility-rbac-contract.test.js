@@ -507,5 +507,60 @@ assert.equal(lifecycleCtx.getInternalRoleAssignments({userId:"U-LIFE",roleId:"Di
 lifecycleInternalRoleRows[1][13]="RESP-LIFE";
 console.log("C1.628 responsibility-chain contract: effective/admin reader parity, duplicate responsibility/internal-role rejection and dangling-link fail-closed PASS.");
 
+ 
+// C1.629: deterministic interleaving proves ScriptLock prevents duplicate concurrent scope creation.
+const concurrentRows=[scopeHeaders];
+const concurrentSheet={
+  getLastRow:()=>concurrentRows.length,
+  getDataRange:()=>({getValues:()=>concurrentRows.map(row=>row.slice())}),
+  appendRow:row=>{concurrentRows.push(row.slice());},
+  getRange:(row,col,nr,nc)=>({
+    setValue:value=>{concurrentRows[row-1][col-1]=value;},
+    setValues:values=>{for(let i=0;i<values.length;i++)for(let j=0;j<values[i].length;j++)concurrentRows[row-1+i][col-1+j]=values[i][j];}
+  })
+};
+let concurrentLockHeld=false, nestedAttempted=false, nestedConcurrentResult=null, concurrentLockReleases=0, concurrentUuid=0;
+let concurrentCtx;
+const concurrentLock={
+  waitLock:()=>{
+    if(concurrentLockHeld)throw new Error("WRITE_LOCK_BUSY");
+    concurrentLockHeld=true;
+    if(!nestedAttempted){
+      nestedAttempted=true;
+      nestedConcurrentResult=concurrentCtx.assignRoleScope(concurrentPayload);
+    }
+  },
+  releaseLock:()=>{concurrentLockHeld=false;concurrentLockReleases++;}
+};
+concurrentCtx={
+  SPREADSHEET_ID:"LOCAL",
+  getIdentityInstitutionId_:()=>"INST-1",
+  LockService:{getScriptLock:()=>concurrentLock},
+  Utilities:{getUuid:()=>"CONCURRENT-"+(++concurrentUuid)},
+  SpreadsheetApp:{openById:()=>({getSheetByName:()=>concurrentSheet})},
+  getOrCreateSheet:()=>concurrentSheet,
+  getUserRoleMembershipState_:()=>({hasRecords:true}),
+  resolveUserRoleMembership_:(user,role,institution)=>({membershipId:"MEM-CONCURRENT",institutionId:institution,roleId:role}),
+  resolveActiveInternalResponsibility_:(_ss,id)=>id==="RI-CONCURRENT"?{responsibilityId:id}:null,
+  recordEntityChangeLog:()=>{},
+  logStructuredEvent:()=>{}
+};
+vm.runInNewContext(assignScopeFn+"\nthis.assignRoleScope=assignRoleScope;",concurrentCtx);
+const concurrentPayload={_verifiedRole:"Director",_verifiedUserId:"U-ADMIN",userId:"U-CONCURRENT",roleId:"Director",scopeType:"DEPARTAMENTO",scopeValues:["DEP-CONCURRENT"],responsibilityId:"RI-CONCURRENT"};
+const firstConcurrentWrite=concurrentCtx.assignRoleScope(concurrentPayload);
+assert.equal(firstConcurrentWrite.status,"success","the lock owner completes the assignment");
+assert.equal(nestedConcurrentResult.code,"WRITE_LOCK_BUSY","the overlapping request is rejected while the first request owns ScriptLock");
+assert.equal(concurrentRows.length,2,"overlapping requests create exactly one assignment row");
+assert.equal(concurrentRows[1][1],"U-CONCURRENT");
+assert.equal(concurrentRows[1][13],"MEM-CONCURRENT");
+assert.equal(concurrentLockReleases,1,"only the lock owner releases the acquired lock");
+const retryConcurrentWrite=concurrentCtx.assignRoleScope(concurrentPayload);
+assert.equal(retryConcurrentWrite.status,"success");
+assert.equal(retryConcurrentWrite.assignmentId,firstConcurrentWrite.assignmentId,"a retry after lock release reuses the stable assignment");
+assert.equal(concurrentRows.length,2,"a retry does not append a duplicate assignment");
+assert.equal(concurrentLockReleases,2,"both successful lock acquisitions are released");
+console.log("C1.629 deterministic concurrency contract: overlapping scope writes serialize, busy request fails closed, retry is idempotent and no duplicate row is created PASS.");
+
+
 
 
