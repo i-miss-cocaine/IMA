@@ -843,3 +843,30 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.611 Completada con verificación local focalizada y CI. BETA-FUNC-028 permanece Pendiente beta; Apps Script/Sheets real NOT RUN.
 - HEAD probado: 22be94e7ad058b4ab43a6c548f882a4b6746bb15; HEAD final se confirma tras este registro documental.
 ===============================================================================
+
+
+===============================================================================
+## C1.612 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** TASK-153 / USER — reentrada durante la reserva anti-replay del callback de firma.
+
+### Hallazgo y cambio
+- handleSignatureProviderCallback_ autentica HMAC y reserva requestId bajo ScriptLock, pero el contrato no ejercitaba reentrada durante CacheService.put.
+- Se añade hook en cache.put y lock compartido. La secundaria recibe SIGNATURE_CALLBACK_SERVICE_BUSY antes de consultar o reservar el replayKey; la exterior reserva una vez y emite un único evento autenticado.
+- Backend productivo sin cambios; el estado de la transacción continúa sin mutarse y la validez criptográfica permanece pendiente del proveedor.
+
+### Archivos modificados
+- tests/security/user-service-signature-ownership.test.js
+- beta_test.txt (ampliación de BETA-FUNC-027)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Harness V8 focalizado y parseo del contrato: pendiente de ejecución.
+- CI Department Scope: pendiente tras publicar.
+- Apps Script/Sheets real NOT RUN; BETA-FUNC-027 Pendiente beta.
+- C1.612 En ejecución; TASK-153 continúa En ejecución.
+- HEAD inicial: d40caa77643248a20930b8f27c52f770f59f0fe0; HEAD final se confirma tras publicar.
+===============================================================================

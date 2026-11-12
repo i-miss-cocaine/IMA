@@ -4679,3 +4679,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - GitHub Actions Department Scope Contract run 43144007883, commit 22be94e7ad058b4ab43a6c548f882a4b6746bb15: SUCCESS en Node.js 24; todos los pasos del job department-scope-contract SUCCESS.
 - Paso Run user-service signature ownership contract: SUCCESS. Harness V8 focalizado de configureAdvancedSignatureProvider: 1/1 PASS; parseo del contrato PASS.
 - C1.611 completada con verificación local focalizada y CI. BETA-FUNC-028 permanece Pendiente beta; Apps Script/Sheets real NOT RUN.
+
+
+### 10.261 TASK-153 / USER — reentrada durante la reserva anti-replay del callback de firma (C1.612)
+- **Brecha confirmada:** handleSignatureProviderCallback_ autentica HMAC y serializa la reserva de requestId con ScriptLock, pero el contrato no simulaba una segunda llamada durante CacheService.put.
+- **Cobertura añadida:** hook onCachePut y lock compartido; la secundaria recibe SIGNATURE_CALLBACK_SERVICE_BUSY antes de consultar o reservar el replayKey.
+- **Invariantes:** dos intentos de lock, un cache.get, un cache.put, un evento autenticado y una liberación; el callback exterior permanece AUTHENTICATED_PENDING_VALIDATION y no muta el estado transaccional.
+- **Alcance:** contrato USER y ampliación de BETA-FUNC-027; backend productivo sin cambios.
+- **Verificación local:** harness V8 focalizado y parseo del contrato pendientes de ejecución.
+- **CI:** pendiente tras publicar.
+- **Apps Script/Sheets real:** NOT RUN; BETA-FUNC-027 Pendiente beta.
+- **Estado:** C1.612 En ejecución hasta verificar local y CI; TASK-153 continúa En ejecución.

@@ -2567,3 +2567,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato USER signature ownership y todos los pasos del job PASS; harness local focalizado 1/1 PASS.
 - C1.611 completada local/CI; backend sin cambios. BETA-FUNC-028 Pendiente beta; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.612 — cobertura reentrante anti-replay de callback de firma
+- Se añade reentrada durante CacheService.put; el fixture simula ScriptLock compartido.
+- La secundaria recibe SIGNATURE_CALLBACK_SERVICE_BUSY antes de cache.get/cache.put; solo la exterior reserva requestId y registra el evento.
+- BETA-FUNC-027 ampliada; backend sin cambios; CI pendiente; Apps Script/Sheets real NOT RUN.
+===============================================================================

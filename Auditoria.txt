@@ -2403,3 +2403,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Paso user-service signature ownership contract SUCCESS; harness local focalizado 1/1 PASS; parseo del contrato PASS.
 - Backend productivo sin cambios. BETA-FUNC-028 Pendiente beta; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+### C1.612 — TASK-153 / USER
+- Brecha: callback HMAC autenticado no tenía escenario de reentrada durante cache.put del replayKey.
+- Se añade hook anti-replay. La secundaria recibe SIGNATURE_CALLBACK_SERVICE_BUSY antes de consultar/reservar el replayKey; solo la exterior deja reserva y evento.
+- BETA-FUNC-027 ampliada; backend productivo sin cambios; Apps Script/Sheets real NOT RUN.
+===============================================================================

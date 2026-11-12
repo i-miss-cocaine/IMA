@@ -628,7 +628,7 @@ function makeProviderCallbackHarness(options = {}) {
     })},
     CacheService: { getScriptCache: () => ({
       get: key => { state.cacheGets++; return cacheValues.get(key)||null; },
-      put: (key,value,ttl) => { state.cachePuts++; assert.equal(ttl,600); cacheValues.set(key,value); }
+      put: (key,value,ttl) => { state.cachePuts++; assert.equal(ttl,600); cacheValues.set(key,value); if(options.onCachePut)options.onCachePut(key,value,ttl); }
     })},
     logStructuredEvent: (_service,_action,_level,code,_message,data) => state.events.push({code,data})
   };
@@ -653,6 +653,21 @@ function makeProviderCallbackHarness(options = {}) {
   assert.equal(valid.state.cachePuts,1);
   assert.equal(valid.state.releases,1);
   assert.equal(valid.state.events[0].code,"SIGNATURE_PROVIDER_CALLBACK_AUTHENTICATED");
+
+  let reentrant, nestedError = "";
+  reentrant = makeProviderCallbackHarness({ onCachePut() {
+    try { reentrant.run(); } catch (error) { nestedError = error.message; }
+  }});
+  const reentrantAccepted = reentrant.run();
+  assert.equal(reentrantAccepted.code,"SIGNATURE_CALLBACK_AUTHENTICATED_PENDING_VALIDATION");
+  assert.equal(nestedError,"SIGNATURE_CALLBACK_SERVICE_BUSY");
+  assert.equal(reentrant.state.lockAttempts,2);
+  assert.equal(reentrant.state.cacheGets,1,"nested callback must be rejected before replay-cache lookup");
+  assert.equal(reentrant.state.cachePuts,1,"only the outer callback may reserve requestId");
+  assert.equal(reentrant.state.releases,1);
+  assert.equal(reentrant.state.held,false);
+  assert.equal(reentrant.state.events.length,1,"only the authenticated outer callback is logged");
+
   assert.throws(()=>valid.run(),/SIGNATURE_CALLBACK_REPLAY_DETECTED/);
   assert.equal(valid.state.cachePuts,1);
 
