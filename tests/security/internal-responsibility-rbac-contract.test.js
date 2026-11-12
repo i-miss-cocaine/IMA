@@ -561,6 +561,38 @@ assert.equal(concurrentRows.length,2,"a retry does not append a duplicate assign
 assert.equal(concurrentLockReleases,2,"both successful lock acquisitions are released");
 console.log("C1.629 deterministic concurrency contract: overlapping scope writes serialize, busy request fails closed, retry is idempotent and no duplicate row is created PASS.");
 
+ 
+// C1.630: effective context and administrative listing must apply identical date boundaries.
+const NativeDateForTemporalContract = Date;
+const fixedTemporalNow = NativeDateForTemporalContract.parse("2026-11-12T18:00:00.000Z");
+const FixedTemporalDate = class extends NativeDateForTemporalContract {
+  constructor(...args) { if(args.length===0) super(fixedTemporalNow); else super(...args); }
+  static now() { return fixedTemporalNow; }
+};
+const priorTemporalSheet = lifecycleSheets.AsignacionesAmbitosRoles;
+lifecycleCtx.Date = FixedTemporalDate;
+const temporalRows = [scopeHeaders,["A-TEMP","U-LIFE","Director","DEPARTAMENTO",'["DEP-A"]',"Activo","U-ADMIN","2026-01-01","2026-11-12T18:00:00.000Z","2026-11-12T18:00:00.000Z","No","","INST-1","MEM-LIFE","RI-LIFE"]];
+lifecycleSheets.AsignacionesAmbitosRoles = {getDataRange:()=>({getValues:()=>temporalRows.map(row=>row.slice())})};
+const assertTemporalParity = (startAt,endAt,expectedActive,label) => {
+  temporalRows[1][8]=startAt;
+  temporalRows[1][9]=endAt;
+  const effective = lifecycleCtx.getUserContextScope({sessionToken:"session-director"});
+  const listed = lifecycleCtx.getInternalRoleAssignments({userId:"U-LIFE",roleId:"Director",membershipId:"MEM-LIFE"}).data;
+  assert.equal(effective.status==="success",expectedActive,label+" effective context");
+  assert.equal(listed.length,expectedActive?1:0,label+" administrative listing");
+};
+assertTemporalParity("2026-11-12T18:00:00.000Z","2026-11-12T18:00:00.000Z",true,"exact start/end boundary is inclusive");
+assertTemporalParity("2026-11-12T18:00:00.001Z","",false,"future start is inactive");
+assertTemporalParity("","2026-11-11T23:59:59.999Z",false,"past end is inactive");
+assertTemporalParity("invalid-date","",false,"invalid start is rejected");
+assertTemporalParity("","invalid-date",false,"invalid end is rejected");
+assertTemporalParity("","",true,"empty dates mean unbounded validity");
+assertTemporalParity("","0",false,"epoch end date is expired and cannot be treated as an empty date");
+lifecycleSheets.AsignacionesAmbitosRoles = priorTemporalSheet;
+delete lifecycleCtx.Date;
+console.log("C1.630 temporal parity contract: inclusive boundaries, future/past dates, invalid dates, empty bounds and epoch-valued expiry parity PASS.");
+
+
 
 
 
