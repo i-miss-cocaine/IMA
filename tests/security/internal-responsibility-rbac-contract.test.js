@@ -341,6 +341,7 @@ const beforeDuplicateCapabilityWrite=capabilityRows.length;
 const duplicateCapabilityWrite=authCtx.saveInstitutionalResponsibility({sessionToken:"valid-admin",name:"Duplicated capability",modules:["mod_unique"],capabilities:["CAP_ADMINISTRAR"," CAP_ADMINISTRAR "]});
 assert.equal(duplicateCapabilityWrite.code,"RESPONSIBILITY_CATALOG_INVALID","writes reject duplicate capability identifiers after trimming");
 assert.equal(capabilityRows.length,beforeDuplicateCapabilityWrite,"invalid capability metadata causes no partial catalog write");
+permissionCtx.getDynamicPermissionsForRole=()=>null;
 const capabilitySpoof = permissionCtx.validateRolePermission("approveFinancialRecords",{responsibility:{institutionalResponsibility:{capabilities:["CAP_ADMINISTRAR"]}}});
 assert.equal(capabilitySpoof.authorized,false,"a responsibility capability does not authorize an action without an explicit RBAC matrix grant");
 console.log("C1.624 responsibility/capability integrity contract: duplicate IDs, malformed capability metadata, duplicate normalized identifiers, no partial writes, and RBAC separation PASS.");
