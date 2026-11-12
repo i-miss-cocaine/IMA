@@ -1008,3 +1008,8 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - Se amplió tests/security/user-role-membership-contract.test.js con una fixture de 13 columnas que debe producir ROLE_MEMBERSHIP_SCHEMA_MISMATCH.
 - Commit de corrección backend: 0b35e0175bdb2a6a496859c06c49c91b0df0c131. Commit de prueba: 1cba3b9b5adfda6a7f22e266347ca83a5509fd7d.
 - Estado de verificación sin cambios: pruebas locales NOT RUN; CI NOT VERIFIED; C1.616 permanece En ejecución.
+
+
+**Addendum C1.616-R2 — compatibilidad legacy por tenant**
+- Se amplía el contrato para verificar que una membresía RBAC de INST-2 no invalida la sesión legacy de un usuario sin membresías en INST-1.
+- Commit de prueba: 90762894af246fa8b8f9503e44252e0315334c56. Ejecución local sigue NOT RUN.
