@@ -2140,6 +2140,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 ### C1.593 — AUD-NG-386 / saveEvaluationCategory: reentrada durante appendRow de ownership y categoría
 - **Brecha:** el contrato cubría reentrada durante la obtención de scope, pero no durante los dos appendRow que persisten ownership y categoría.
 - **Cambio:** un caso ejercita reentrada en cada appendRow del handler real. La secundaria debe recibir EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; la exterior conserva un único registro en cada hoja, una apertura Sheets y lock liberado.
-- **Alcance:** contrato de seguridad; backend productivo sin cambios. BETA-EXAM-094 agregado y Pendiente beta.
+- **Alcance:** contrato de seguridad y workflow local; backend productivo sin cambios. BETA-EXAM-094 agregado y Pendiente beta.
 - **Verificación:** cobertura añadida; ejecución local aislada/CI pendiente tras commit. Apps Script/Sheets real NOT RUN.
 - **Estado:** En ejecución hasta verificar el contrato local aislado.

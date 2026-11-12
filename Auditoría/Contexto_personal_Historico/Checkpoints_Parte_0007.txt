@@ -225,6 +225,7 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 
 ### Archivos modificados
 - tests/security/exam-service-evaluation-category-mutation-security.test.js
+- .github/workflows/exam-service-security-contract.yml
 - beta_test.txt
 - Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
 - Auditoria.txt

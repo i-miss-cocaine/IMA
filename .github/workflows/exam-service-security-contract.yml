@@ -26,6 +26,7 @@ on:
       - 'tests/security/exam-service-grade-submission-validation.test.js'
       - 'tests/security/exam-service-delete-submission-audit.test.js'
       - 'tests/security/exam-service-gradebook-bulk-apply-security.test.js'
+      - 'tests/security/exam-service-evaluation-category-mutation-security.test.js'
       - '.github/workflows/exam-service-security-contract.yml'
   pull_request:
     branches: [NG_beta_0.0.0.1_work]
@@ -82,6 +83,8 @@ jobs:
         run: node tests/security/exam-service-gradebook-save-security.test.js
       - name: Run bulk gradebook apply security regression
         run: node tests/security/exam-service-gradebook-bulk-apply-security.test.js
+      - name: Run evaluation category mutation security regression
+        run: node tests/security/exam-service-evaluation-category-mutation-security.test.js
       - name: Run evaluation setup copy security regression
         run: node tests/security/exam-service-evaluation-setup-copy-security.test.js
       - name: Run exam creation security regression

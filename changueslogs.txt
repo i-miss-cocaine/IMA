@@ -2309,6 +2309,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-12] C1.593 — contención reentrante de saveEvaluationCategory durante appendRow
 - Se amplía exam-service-evaluation-category-mutation-security.test.js para invocar el handler real de forma anidada durante appendRow de ResourceOwnership y CategoriasEvaluacion.
 - En ambos puntos la solicitud secundaria debe fallar EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; la operación exterior conserva exactamente un ownership y una categoría, una apertura Sheets y libera ScriptLock.
-- Backend productivo sin cambios. Caso de cobertura añadido; ejecución local aislada/CI pendiente tras commit. Apps Script/Sheets real NOT RUN.
+- Backend productivo sin cambios. Caso de cobertura añadido y workflow configurado para ejecutarlo; ejecución local aislada/CI pendiente tras commit. Apps Script/Sheets real NOT RUN.
 - BETA-EXAM-094 agregado. TASK-153 / AUD-NG-386 continúa En ejecución.
 ===============================================================================

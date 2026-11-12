@@ -4412,6 +4412,6 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 ### 10.242 TASK-153 / AUD-NG-386 — contención reentrante de saveEvaluationCategory durante appendRow (C1.593)
 - **Brecha confirmada:** el contrato cubría reentrada durante la validación de scope, pero no desde las dos escrituras de creación (appendRow de ResourceOwnership y CategoriasEvaluacion).
 - **Cobertura añadida:** se interceptan ambos appendRow y se invoca el handler real de forma anidada. La secundaria debe recibir EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; la exterior crea exactamente una fila de ownership y una de categoría, abre Sheets una vez y libera ScriptLock.
-- **Alcance:** contrato de seguridad y BETA-EXAM-094; backend productivo sin cambios.
-- **Verificación:** caso añadido para ambos puntos de persistencia; ejecución local aislada/CI pendiente tras commit. Apps Script/Sheets real NOT RUN.
+- **Alcance:** contrato de seguridad, ejecución en workflow local de contratos y BETA-EXAM-094; backend productivo sin cambios.
+- **Verificación:** caso añadido para ambos puntos de persistencia y workflow actualizado para ejecutar el contrato; ejecución local aislada/CI pendiente tras commit. Apps Script/Sheets real NOT RUN.
 - **Estado:** C1.593 En ejecución hasta completar la verificación local aislada.
