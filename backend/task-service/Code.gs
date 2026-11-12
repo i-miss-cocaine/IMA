@@ -1547,23 +1547,26 @@ function submitAssignment(payload) {
   if(!tareaId)throw new Error("tareaId es obligatorio.");
   try{const quota=getDriveStorageQuotaMetricsReport({});if(quota&&quota.status==="success"&&quota.metrics&&parseFloat(quota.metrics.porcentajeUso)>=99.5)return {status:"error",message:"No se puede confirmar la entrega: el almacenamiento del servidor alcanzó su límite máximo. Contacte al soporte institucional."};}
   catch(quotaError){Logger.log("Aviso al verificar cuota en submitAssignment: "+quotaError.message);}
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),taskRow=getSheetOrThrow(ss,"Tareas").getDataRange().getValues().slice(1).find(r=>String(r[0]).trim()===tareaId);
-  assertTaskServiceStudentCanAccessTask(ss,actorId,taskRow);
-  const fileId=extractTaskServiceFileId(payload.fileId),mimeType=payload.mimeType||"";
-  if(payload.fileId){const meta=ensureTaskServiceFileMetadataSheet(ss).getDataRange().getValues().slice(1);
-    const owned=meta.some(r=>(String(r[15]||"").trim()===fileId||String(r[20]||"").trim()===fileId)&&String(r[11]||"").trim()===tareaId&&String(r[19]||"").trim()===String(actorId).trim()&&String(r[14]||"").trim().toLowerCase()==="activo");
-    if(!owned)throw new Error("Acceso denegado: el archivo no pertenece al estudiante ni a la tarea indicada.");}
-  const entregas=getSheetOrThrow(ss,"Entregas"),versions=getOrCreateSheet(ss,"EntregasVersiones");
-  if(versions.getLastRow()===0)versions.appendRow(["ID","EntregaID","TareaID","UserID","VersionNum","ArchivoUrl","FileID","MimeType","TextoRespuesta","EnlaceExterno","FechaEnvio","Estado","Observaciones"]);
-  const data=entregas.getDataRange().getValues(),now=new Date(),idx=data.findIndex((r,i)=>i>0&&String(r[2]).trim()===String(actorId).trim()&&String(r[1]).trim()===tareaId);
-  let entregaId,versionNum=1,estado=payload.esBorrador?"borrador":"Pendiente de revisión";
-  if(taskRow[8]&&!payload.esBorrador&&now.getTime()>new Date(taskRow[8]).getTime())estado="EntregadaTarde";
-  if(idx>0){entregaId=data[idx][0];const prev=data[idx];versionNum=versions.getDataRange().getValues().filter(r=>String(r[1]).trim()===String(entregaId).trim()).length+1;prev[3]=now;prev[4]=fileId||"";prev[6]=estado;prev[8]=mimeType;entregas.getRange(idx+1,1,1,prev.length).setValues([prev]);}
-  else{entregaId="ENT-"+Utilities.getUuid();entregas.appendRow([entregaId,tareaId,actorId,now,fileId||"","",estado,payload.observaciones||"",mimeType]);}
-  versions.appendRow(["VER-"+Utilities.getUuid(),entregaId,tareaId,actorId,versionNum,fileId&&mimeType!=="folder"?"https://drive.google.com/file/d/"+fileId+"/view":"",fileId||"",mimeType,payload.textoRespuesta||"",payload.enlaceExterno||"",now,estado,payload.observaciones||""]);
-  return {status:"success",message:payload.esBorrador?"Borrador de tarea guardado.":"Tarea entregada y registrada en el servidor.",data:{entregaId,versionNum,submissionToken:"RECIEVED-"+Utilities.getUuid(),fechaRecepcion:now.toISOString(),estado}};
+  const lock=LockService.getScriptLock();let lockHeld=false;
+  try{
+    lockHeld=lock.tryLock(10000);if(!lockHeld)throw new Error("TASK_SUBMISSION_LOCK_TIMEOUT");
+    const ss=SpreadsheetApp.openById(SPREADSHEET_ID),taskRow=getSheetOrThrow(ss,"Tareas").getDataRange().getValues().slice(1).find(r=>String(r[0]).trim()===tareaId);
+    assertTaskServiceStudentCanAccessTask(ss,actorId,taskRow);
+    const fileId=extractTaskServiceFileId(payload.fileId),mimeType=payload.mimeType||"";
+    if(payload.fileId){const meta=ensureTaskServiceFileMetadataSheet(ss).getDataRange().getValues().slice(1);
+      const owned=meta.some(r=>(String(r[15]||"").trim()===fileId||String(r[20]||"").trim()===fileId)&&String(r[11]||"").trim()===tareaId&&String(r[19]||"").trim()===String(actorId).trim()&&String(r[14]||"").trim().toLowerCase()==="activo");
+      if(!owned)throw new Error("Acceso denegado: el archivo no pertenece al estudiante ni a la tarea indicada.");}
+    const entregas=getSheetOrThrow(ss,"Entregas"),versions=getOrCreateSheet(ss,"EntregasVersiones");
+    if(versions.getLastRow()===0)versions.appendRow(["ID","EntregaID","TareaID","UserID","VersionNum","ArchivoUrl","FileID","MimeType","TextoRespuesta","EnlaceExterno","FechaEnvio","Estado","Observaciones"]);
+    const data=entregas.getDataRange().getValues(),now=new Date(),idx=data.findIndex((r,i)=>i>0&&String(r[2]).trim()===String(actorId).trim()&&String(r[1]).trim()===tareaId);
+    let entregaId,versionNum=1,estado=payload.esBorrador?"borrador":"Pendiente de revisión";
+    if(taskRow[8]&&!payload.esBorrador&&now.getTime()>new Date(taskRow[8]).getTime())estado="EntregadaTarde";
+    if(idx>0){entregaId=data[idx][0];const prev=data[idx];versionNum=versions.getDataRange().getValues().filter(r=>String(r[1]).trim()===String(entregaId).trim()).length+1;prev[3]=now;prev[4]=fileId||"";prev[6]=estado;prev[8]=mimeType;entregas.getRange(idx+1,1,1,prev.length).setValues([prev]);}
+    else{entregaId="ENT-"+Utilities.getUuid();entregas.appendRow([entregaId,tareaId,actorId,now,fileId||"","",estado,payload.observaciones||"",mimeType]);}
+    versions.appendRow(["VER-"+Utilities.getUuid(),entregaId,tareaId,actorId,versionNum,fileId&&mimeType!=="folder"?"https://drive.google.com/file/d/"+fileId+"/view":"",fileId||"",mimeType,payload.textoRespuesta||"",payload.enlaceExterno||"",now,estado,payload.observaciones||""]);
+    return {status:"success",message:payload.esBorrador?"Borrador de tarea guardado.":"Tarea entregada y registrada en el servidor.",data:{entregaId,versionNum,submissionToken:"RECIEVED-"+Utilities.getUuid(),fechaRecepcion:now.toISOString(),estado}};
+  }finally{if(lockHeld){try{lock.releaseLock();}catch(releaseError){Logger.log("No se pudo liberar ScriptLock en submitAssignment: "+releaseError.message);}}}
 }
-
 function saveSubmissionDraft(payload) {
   return submitAssignment(Object.assign({}, payload, { esBorrador: true }));
 }
