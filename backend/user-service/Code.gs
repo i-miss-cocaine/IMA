@@ -887,7 +887,7 @@ function getOrCreateSheet(ss, name) {
   let sheet = ss.getSheetByName(name);
   if (!sheet) {
     sheet = ss.insertSheet(name);
-    if (name === "CatalogoRolesInternos") sheet.appendRow(["RolInternoID", "CodigoInterno", "NombreResponsabilidad", "Descripcion", "Departamento", "AreaAcademica", "TipoResponsabilidad", "VigenciaMeses", "PermiteSuplencia", "Estado", "CreadoPor", "FechaCreacion", "FechaActualizacion"]);
+    if (name === "CatalogoRolesInternos") sheet.appendRow(["RolInternoID", "CodigoInterno", "NombreResponsabilidad", "Descripcion", "Departamento", "AreaAcademica", "TipoResponsabilidad", "VigenciaMeses", "PermiteSuplencia", "Estado", "CreadoPor", "FechaCreacion", "FechaActualizacion", "ResponsibilityID"]);
     if (name === "PropuestasPaletasVisuales") sheet.appendRow(["PropuestaID", "PaletaNombre", "ColoresJSON", "CreadoPor", "Estado", "AprobadoPor", "FechaAprobacion", "Observaciones", "FechaCreacion"]);
     if (name === "ConfiguracionVisualGlobal") sheet.appendRow(["ConfigVisualID", "PaletaNombre", "ColoresJSON", "Version", "AprobadoPor", "FechaPublicacion"]);
     if (name === "TicketsReporteProblemas") sheet.appendRow(["TicketID", "UserId", "NombreUsuario", "RolActivo", "AreaFuncion", "SeccionPagina", "VersionGlobal", "TipoApp", "Descripcion", "ResultadoEsperado", "Estado", "CreadoEn", "ActualizadoEn"]);
@@ -10099,68 +10099,19 @@ function getCentralCapabilitiesCatalog(payload) {
 
 function getInstitutionalResponsibilitiesCatalog(payload) {
   try {
-    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    var sheet = getOrCreateSheet(ss, "ResponsabilidadesInstitucionales");
-    var data = sheet.getDataRange().getValues();
-
-    var responsabilidades = [];
-    if (data.length > 1) {
-      for (var i = 1; i < data.length; i++) {
-        var r = data[i];
-        if (r[5] === true || String(r[5]).toLowerCase() === "true" || r[5] === "Activa" || r[5] === "Activo") {
-          var modulos = [];
-          var caps = [];
-          try { modulos = JSON.parse(r[3]); } catch (_) { modulos = String(r[3] || "").split(","); }
-          try { caps = JSON.parse(r[4]); } catch (_) { caps = String(r[4] || "").split(","); }
-          responsabilidades.push({
-            responsibilityId: r[0],
-            name: r[1],
-            description: r[2],
-            modules: modulos,
-            capabilities: caps,
-            estado: "Activa"
-          });
-        }
-      }
+    var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("ResponsabilidadesInstitucionales");
+    if(!sheet)return {status:"success",configured:false,responsabilidades:[],timestamp:new Date().toISOString()};
+    var data=sheet.getDataRange().getValues(),h=["ResponsibilityID","Nombre","Descripcion","ModulosJSON","CapacidadesJSON","Estado","CreadoPor","FechaActualizacion"];
+    if(!data.length||JSON.stringify(data[0].map(String))!==JSON.stringify(h))return {status:"error",code:"RESPONSIBILITY_SCHEMA_MISMATCH"};
+    var seen={},list=[];
+    for(var i=1;i<data.length;i++){var r=data[i],id=String(r[0]||"").trim(),state=String(r[5]||"").trim().toUpperCase();
+      if(!id||seen[id]||!(r[5]===true||state==="TRUE"||state==="ACTIVA"||state==="ACTIVO"))continue;
+      var modules,caps;try{modules=JSON.parse(r[3]||"[]");caps=JSON.parse(r[4]||"[]");}catch(e){continue;}
+      if(!Array.isArray(modules)||!Array.isArray(caps))continue;seen[id]=true;
+      list.push({responsibilityId:id,name:String(r[1]||""),description:String(r[2]||""),modules:modules,capabilities:caps,estado:"Activa"});
     }
-
-    if (responsabilidades.length === 0) {
-      responsabilidades = [
-        {
-          responsibilityId: "RESP_COORDINACION",
-          name: "Coordinación Académica",
-          description: "Supervisión de docentes, revisión de sílabos y cargas de área.",
-          modules: ["mod_coordinacion_academica", "mod_supervision_silabos", "mod_horarios_area", "mod_asistencia_docente"],
-          capabilities: ["CAP_CONSULTAR", "CAP_CREAR", "CAP_EDITAR", "CAP_APROBAR", "CAP_ASIGNAR", "CAP_EXPORTAR"],
-          estado: "Activa"
-        },
-        {
-          responsibilityId: "RESP_PLANIFICACION",
-          name: "Planificación y Horarios",
-          description: "Diseño y asignación de horarios de clase, docentes y aulas.",
-          modules: ["mod_planificacion_horarios", "mod_horarios_area"],
-          capabilities: ["CAP_CONSULTAR", "CAP_CREAR", "CAP_EDITAR", "CAP_ASIGNAR", "CAP_EXPORTAR"],
-          estado: "Activa"
-        },
-        {
-          responsibilityId: "RESP_SUPERVISION_DOCENTE",
-          name: "Supervisión Docente",
-          description: "Evaluación y acompañamiento de jornalizaciones y desempeño.",
-          modules: ["mod_supervision_silabos", "mod_asistencia_docente"],
-          capabilities: ["CAP_CONSULTAR", "CAP_EDITAR", "CAP_APROBAR", "CAP_EXPORTAR"],
-          estado: "Activa"
-        }
-      ];
-    }
-
-    return {
-      status: "success",
-      responsabilidades: responsabilidades,
-      timestamp: new Date().toISOString()
-    };
-  } catch (error) {
-    return { status: "error", message: error.message };
-  }
+    return {status:"success",configured:list.length>0,responsabilidades:list,timestamp:new Date().toISOString()};
+  }catch(error){return {status:"error",message:error.message};}
 }
 
 function saveInstitutionalResponsibility(payload) {
@@ -10245,17 +10196,32 @@ function saveInstitutionalResponsibility(payload) {
   }
 }
 
+function getInstitutionalResponsibilityRecord_(ss, responsibilityId) {
+  var id=String(responsibilityId||"").trim(); if(!id||!ss)return null;
+  var sheet=ss.getSheetByName("ResponsabilidadesInstitucionales"); if(!sheet)return null;
+  var data=sheet.getDataRange().getValues(), headers=["ResponsibilityID","Nombre","Descripcion","ModulosJSON","CapacidadesJSON","Estado","CreadoPor","FechaActualizacion"];
+  if(!data.length||JSON.stringify(data[0].map(String))!==JSON.stringify(headers))return null;
+  var rows=data.slice(1).filter(function(r){return String(r[0]||"").trim()===id;});
+  if(rows.length!==1)return null;
+  var r=rows[0],state=String(r[5]||"").trim().toUpperCase();
+  if(!(r[5]===true||state==="TRUE"||state==="ACTIVA"||state==="ACTIVO"))return null;
+  var modules,capabilities;try{modules=JSON.parse(r[3]||"[]");capabilities=JSON.parse(r[4]||"[]");}catch(e){return null;}
+  if(!Array.isArray(modules)||!Array.isArray(capabilities))return null;
+  return {responsibilityId:id,name:String(r[1]||""),description:String(r[2]||""),modules:modules,capabilities:capabilities};
+}
+
 function resolveActiveInternalResponsibility_(ss, responsibilityId) {
-  var id = String(responsibilityId || "").trim();
-  if (!id) return null;
-  var sheet = ss.getSheetByName("CatalogoRolesInternos");
-  if (!sheet) return null;
-  var values = sheet.getDataRange().getValues();
-  var headers = ["RolInternoID", "CodigoInterno", "NombreResponsabilidad", "Descripcion", "Departamento", "AreaAcademica", "TipoResponsabilidad", "VigenciaMeses", "PermiteSuplencia", "Estado", "CreadoPor", "FechaCreacion", "FechaActualizacion"];
-  if (!values.length || JSON.stringify(values[0].map(String)) !== JSON.stringify(headers)) return null;
-  var matches = values.slice(1).filter(function(row) { return String(row[0] || "").trim() === id; });
-  if (matches.length !== 1 || String(matches[0][9] || "").trim().toUpperCase() !== "ACTIVO") return null;
-  return { responsibilityId: id, name: String(matches[0][2] || ""), department: String(matches[0][4] || ""), academicArea: String(matches[0][5] || ""), responsibilityType: String(matches[0][6] || "") };
+  var id=String(responsibilityId||"").trim();if(!id||!ss)return null;
+  var sheet=ss.getSheetByName("CatalogoRolesInternos");if(!sheet)return null;
+  var data=sheet.getDataRange().getValues(),base=["RolInternoID","CodigoInterno","NombreResponsabilidad","Descripcion","Departamento","AreaAcademica","TipoResponsabilidad","VigenciaMeses","PermiteSuplencia","Estado","CreadoPor","FechaCreacion","FechaActualizacion"];
+  if(!data.length)return null;
+  var h=data[0].map(String),legacy=JSON.stringify(h)===JSON.stringify(base),linked=JSON.stringify(h)===JSON.stringify(base.concat(["ResponsibilityID"]));
+  if(!legacy&&!linked)return null;
+  var rows=data.slice(1).filter(function(r){return String(r[0]||"").trim()===id;});
+  if(rows.length!==1||String(rows[0][9]||"").trim().toUpperCase()!=="ACTIVO")return null;
+  var r=rows[0],institutionalId=linked?String(r[13]||"").trim():"",institutional=institutionalId?getInstitutionalResponsibilityRecord_(ss,institutionalId):null;
+  if(institutionalId&&!institutional)return null;
+  return {responsibilityId:id,name:String(r[2]||""),department:String(r[4]||""),academicArea:String(r[5]||""),responsibilityType:String(r[6]||""),institutionalResponsibilityId:institutionalId||null,institutionalResponsibility:institutional};
 }
 // [TAREA-AD-03] [Anexo Tareas: Dashboards Dinámicos - Ámbito de Actuación] - Gestión y validación contextual de ámbitos de actuación por rol y usuario
 function assignRoleScope(payload) {
@@ -11115,83 +11081,30 @@ function manageInternalRoleCatalog(payload) {
 
 function getInternalRoleCatalog(payload) {
   try {
-    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    var sheet = getOrCreateSheet(ss, "CatalogoRolesInternos");
-    var rows = sheet.getDataRange().getValues().slice(1);
-    var { departamento, areaAcademica, tipoResponsabilidad, estado = "Activo", soloActivos = true } = payload || {};
-
-    var list = rows.filter(r => {
-      var rEstado = String(r[9] || "Activo").trim();
-      if (soloActivos && rEstado !== "Activo") return false;
-      if (estado && estado !== "Todos" && rEstado !== estado) return false;
-      if (departamento && normalizeString(r[4]) !== normalizeString(departamento)) return false;
-      if (areaAcademica && normalizeString(r[5]) !== normalizeString(areaAcademica)) return false;
-      if (tipoResponsabilidad && normalizeString(r[6]) !== normalizeString(tipoResponsabilidad)) return false;
-      return true;
-    }).map(r => ({
-      rolInternoId: r[0],
-      codigoInterno: r[1],
-      nombreResponsabilidad: r[2],
-      descripcion: r[3],
-      departamento: r[4],
-      areaAcademica: r[5],
-      tipoResponsabilidad: r[6],
-      vigenciaMeses: parseInt(r[7] || 12),
-      permiteSuplencia: String(r[8]).toLowerCase() === "sí" || String(r[8]).toLowerCase() === "true",
-      estado: r[9],
-      creadoPor: r[10],
-      fechaCreacion: r[11],
-      fechaActualizacion: r[12]
-    }));
-
-    return { status: "success", data: list };
-  } catch (error) {
-    return { status: "error", message: error.message };
-  }
+    var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("CatalogoRolesInternos");if(!sheet)return {status:"success",data:[]};
+    var data=sheet.getDataRange().getValues(),base=["RolInternoID","CodigoInterno","NombreResponsabilidad","Descripcion","Departamento","AreaAcademica","TipoResponsabilidad","VigenciaMeses","PermiteSuplencia","Estado","CreadoPor","FechaCreacion","FechaActualizacion"],h=data.length?data[0].map(String):[];
+    if(JSON.stringify(h)!==JSON.stringify(base)&&JSON.stringify(h)!==JSON.stringify(base.concat(["ResponsibilityID"])))return {status:"error",code:"INTERNAL_ROLE_SCHEMA_MISMATCH"};
+    var f=payload||{},list=data.slice(1).filter(function(r){var st=String(r[9]||"").trim();if(f.soloActivos!==false&&st!=="Activo")return false;if(f.estado&&f.estado!=="Todos"&&st!==f.estado)return false;if(f.departamento&&normalizeString(r[4])!==normalizeString(f.departamento))return false;if(f.areaAcademica&&normalizeString(r[5])!==normalizeString(f.areaAcademica))return false;if(f.tipoResponsabilidad&&normalizeString(r[6])!==normalizeString(f.tipoResponsabilidad))return false;return true;}).map(function(r){var id=h.length===14?String(r[13]||"").trim():"",record=id?getInstitutionalResponsibilityRecord_(ss,id):null;return {rolInternoId:r[0],codigoInterno:r[1],nombreResponsabilidad:r[2],descripcion:r[3],departamento:r[4],areaAcademica:r[5],tipoResponsabilidad:r[6],vigenciaMeses:parseInt(r[7]||12),permiteSuplencia:String(r[8]).toLowerCase()==="sí"||String(r[8]).toLowerCase()==="true",estado:r[9],creadoPor:r[10],fechaCreacion:r[11],fechaActualizacion:r[12],responsibilityId:id||null,institutionalResponsibility:record};}).filter(function(x){return !x.responsibilityId||!!x.institutionalResponsibility;});
+    return {status:"success",data:list};
+  }catch(error){return {status:"error",message:error.message};}
 }
 
 function getInternalRoleAssignments(payload) {
   try {
-    var { userId, rolInternoId, departamento, soloVigentes = true } = payload || {};
-    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    var sheet = getOrCreateSheet(ss, "AsignacionesAmbitosRoles");
-    var rows = sheet.getDataRange().getValues().slice(1);
-    var now = new Date();
-
-    var filtered = rows.filter(r => {
-      if (userId && String(r[1]).trim() !== String(userId).trim()) return false;
-      if (rolInternoId && String(r[2]).trim() !== String(rolInternoId).trim()) return false;
-
-      var estado = String(r[5] || "Activo").trim();
-      if (estado !== "Activo") return false;
-
-      // Las asignaciones solo son vigentes dentro de su ventana temporal completa.
-      if (soloVigentes) {
-        var fInicio = r[8] ? new Date(r[8]) : null;
-        var fFin = r[9] ? new Date(r[9]) : null;
-        if ((fInicio && isNaN(fInicio.getTime())) || (fFin && isNaN(fFin.getTime()))) return false;
-        if (fInicio && fInicio.getTime() > now.getTime()) return false;
-        if (fFin && fFin.getTime() < now.getTime()) return false;
-      }
-
-      return true;
-    }).map(r => ({
-      asignacionId: r[0],
-      userId: r[1],
-      rolInternoId: r[2],
-      scopeType: r[3],
-      scopeValues: r[4],
-      estado: r[5],
-      creadoPor: r[6],
-      fechaCreacion: r[7],
-      fechaInicio: r[8] || null,
-      fechaFin: r[9] || null,
-      esSuplente: String(r[10]).toLowerCase() === "sí" || String(r[10]).toLowerCase() === "true",
-      suplenteDeUserId: r[11] || null
-    }));
-
-    return { status: "success", data: filtered };
-  } catch (error) {
-    return { status: "error", message: error.message };
-  }
+    var f=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("AsignacionesAmbitosRoles");if(!sheet)return {status:"success",data:[]};
+    var data=sheet.getDataRange().getValues(),legacy=["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"],membership=legacy.concat(["InstitutionID","MembershipID"]),current=membership.concat(["ResponsibilityID"]),h=data.length?data[0].map(String):[];
+    var schema=JSON.stringify(h)===JSON.stringify(current)?"current":(JSON.stringify(h)===JSON.stringify(membership)?"membership":(JSON.stringify(h)===JSON.stringify(legacy)?"legacy":"invalid"));
+    if(schema==="invalid")return {status:"error",code:"ROLE_SCOPE_SCHEMA_MISMATCH"};
+    var institutionId=String(getIdentityInstitutionId_()||"").trim();if(schema!=="legacy"&&!institutionId)return {status:"error",code:"IDENTITY_CONFIGURATION_REQUIRED"};
+    var now=new Date(),out=[];
+    for(var i=1;i<data.length;i++){var r=data[i]||[],u=String(r[1]||"").trim(),role=String(r[2]||"").trim(),m=schema==="legacy"?"":String(r[13]||"").trim(),inst=schema==="legacy"?"":String(r[12]||"").trim(),internal=schema==="current"?String(r[14]||"").trim():(schema==="legacy"?role:"");
+      if(f.userId&&u!==String(f.userId).trim())continue;if(f.roleId&&role!==String(f.roleId).trim())continue;if(f.membershipId&&m!==String(f.membershipId).trim())continue;if(f.responsibilityId&&internal!==String(f.responsibilityId).trim())continue;if(f.rolInternoId&&internal!==String(f.rolInternoId).trim())continue;
+      if(schema!=="legacy"&&inst!==institutionId)continue;if(schema==="membership"&&m)continue;if(schema==="current"&&m&&!internal)continue;
+      var state=String(r[5]||"").trim().toUpperCase();if(["ACTIVO","ACTIVA","ACTIVE"].indexOf(state)===-1)continue;
+      var start=r[8]?new Date(r[8]):null,end=r[9]?new Date(r[9]):null;if((start&&isNaN(start.getTime()))||(end&&isNaN(end.getTime())))continue;if(f.soloVigentes!==false&&((start&&start.getTime()>now.getTime())||(end&&end.getTime()<now.getTime())))continue;
+      var responsibility=internal?resolveActiveInternalResponsibility_(ss,internal):null;if(internal&&!responsibility)continue;if(f.departamento&&(!responsibility||normalizeString(responsibility.department)!==normalizeString(f.departamento)))continue;
+      out.push({asignacionId:r[0],userId:u,roleId:schema==="legacy"?null:role,rolInternoId:internal||null,responsibilityId:internal||null,responsibility:responsibility,institutionId:inst||null,membershipId:m||null,scopeType:r[3],scopeValues:r[4],estado:r[5],creadoPor:r[6],fechaCreacion:r[7],fechaInicio:r[8]||null,fechaFin:r[9]||null,esSuplente:String(r[10]).toLowerCase()==="sí"||String(r[10]).toLowerCase()==="true",suplenteDeUserId:r[11]||null});
+    }
+    return {status:"success",data:out};
+  }catch(error){return {status:"error",code:error.message||"INTERNAL_ROLE_ASSIGNMENTS_FAILED",message:error.message};}
 }
