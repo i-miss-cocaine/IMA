@@ -446,6 +446,8 @@ function verifyUserRoleMembershipClaim_(claims) {
     var configuredInstitution = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim();
     if (!configuredInstitution) return false;
     if (hasMembershipClaims && configuredInstitution !== String(claims.institutionId).trim()) return false;
+    userRows = userRows.filter(function(row) { return String(row[3] || "").trim() === configuredInstitution; });
+    if (!hasMembershipClaims && !userRows.length) return null;
     var idCounts = {};
     allRows.forEach(function(row) {
       var id = String(row[0] || "").trim();
