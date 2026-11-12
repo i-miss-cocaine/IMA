@@ -1263,3 +1263,6 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 
 - **Pasos adicionales C1.623:** comprobar que una hoja intermedia con InstitutionID/MembershipID pero sin ResponsibilityID no aparece como asignación efectiva; duplicar AssignmentID y comprobar que ni el listado administrativo ni el contexto firmado devuelven el ámbito; introducir ID vacío y comprobar exclusión; confirmar que filas históricas no se borran.
 - **Resultado esperado C1.623:** el listado y el resolvedor de contexto aplican el mismo criterio de efectividad; esquema transicional e IDs ambiguos fallan cerrados sin mutación ni eliminación de historial.
+
+- **Evidencia C1.623:** Department Scope Contract run 43257600097 SUCCESS (16 pasos PASS, Node 24); Task-Service security local contracts run 43257599864 SUCCESS; Identity mapping and transport security contracts run 43257599910 SUCCESS. Los contratos locales aislados incluyen esquema transicional y AssignmentID vacío/duplicado en lectores.
+- **Estado actualizado:** Pendiente beta únicamente para ejecución contra Apps Script/Sheets real, despliegues de los servicios y concurrencia multi-solicitud real. Terminal independiente de la sesión NOT RUN; CI aislado PASS. Esta validación beta no bloquea el cierre de implementación.

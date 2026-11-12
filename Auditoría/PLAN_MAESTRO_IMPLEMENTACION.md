@@ -4843,3 +4843,10 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Se mantiene compatibilidad del esquema legacy sin vínculo, sujeto al flujo legacy ya autorizado; el esquema membership transicional no se considera fuente de contexto RBAC efectivo. No se modifican filas históricas ni se realizan migraciones destructivas.
 - Apps Script/Sheets real y concurrencia multi-solicitud desplegada siguen siendo pruebas beta, no bloqueos de implementación conforme NDASC.
 - **Estado:** implementación y pruebas añadidas; resultado CI pendiente hasta ejecutar workflow. T153-S02 permanece En ejecución: C1.623 resuelve coherencia de lectura, pero no cierra los restantes criterios del subflujo ni TASK-153.
+
+ 
+**Cierre de verificación C1.623**
+- Department Scope Contract run **43257600097 SUCCESS**: contratos de ámbitos, responsabilidad/RBAC, membresías, ownership académico/contable, contratos de firma y sintaxis de servicios/clientes, todos los pasos PASS (Node 24).
+- Task-Service security local contracts run **43257599864 SUCCESS**; Identity mapping and transport security contracts run **43257599910 SUCCESS**. Los tres runs corresponden al HEAD funcional C1.623.
+- El contrato de responsabilidad/RBAC y las regresiones C1.623 se ejecutaron en runner aislado CI, sin servicios desplegados. Terminal independiente de esta sesión NOT RUN; Apps Script/Sheets real NOT RUN.
+- **Estado:** C1.623 implementada y verificada localmente en CI; BETA-FUNC-033 sigue Pendiente beta. T153-S02 continúa En ejecución; siguiente incremento: revisar los criterios funcionales restantes de responsabilidades/capacidades y su relación con permisos/ámbitos antes de determinar cierre del subflujo.

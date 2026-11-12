@@ -1121,3 +1121,10 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - Verificación CI pendiente al publicar; Apps Script/Sheets real y concurrencia desplegada permanecen Pendiente beta.
 - T153-S02 sigue En ejecución; C1.623 no cierra TASK-153 ni inicia T153-S03.
 ===============================================================================
+
+ 
+### C1.623 — cierre de verificación
+- Department Scope Contract run 43257600097 SUCCESS (16 pasos PASS, Node 24); Task-Service security local contracts run 43257599864 SUCCESS; Identity mapping and transport security contracts run 43257599910 SUCCESS. Los tres runs apuntan al commit funcional C1.623.
+- Contrato RBAC y regresiones de esquema intermedio/AssignmentID duplicado ejecutados en runner aislado CI sin despliegue; sintaxis de servicios y clientes configurados PASS.
+- Terminal independiente NOT RUN; Apps Script/Sheets real y concurrencia multi-solicitud desplegada Pendiente beta (BETA-FUNC-033).
+- C1.623 completada y verificada por CI. T153-S02 continúa En ejecución; revisar criterios funcionales restantes antes de cerrarlo.

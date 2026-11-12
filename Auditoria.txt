@@ -2515,3 +2515,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Cobertura:** regresiones sintéticas de esquema intermedio y duplicidad de ID en ambos lectores, con membresía y responsabilidad activas.
 - **Evidencia:** CI pendiente tras publicar; Apps Script/Sheets real y concurrencia multi-solicitud desplegada continúan Pendiente beta.
 ===============================================================================
+
+ 
+===============================================================================
+### C1.623 — verificación y cierre del incremento
+- Department Scope Contract **43257600097 SUCCESS** (16 pasos PASS, Node 24), Task-Service security **43257599864 SUCCESS** e Identity mapping **43257599910 SUCCESS**; todos sobre el commit funcional C1.623.
+- Contratos RBAC, regresiones C1.623 y comprobaciones de sintaxis PASS en runners aislados. Terminal independiente NOT RUN; Apps Script/Sheets real y concurrencia multi-solicitud desplegada Pendiente beta.
+- C1.623 queda completada. T153-S02 permanece En ejecución por criterios funcionales restantes; no se declara cerrado TASK-153.
+===============================================================================

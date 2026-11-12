@@ -2699,3 +2699,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - getInternalRoleAssignments y getUserContextScope excluyen AssignmentID vacío o duplicado para evitar registros ambiguos en administración y contexto efectivo.
 - Contratos ampliados para esquema intermedio y duplicidad de ID en ambos lectores. CI pendiente de ejecución; beta Apps Script/Sheets real permanece Pendiente.
 ===============================================================================
+
+ 
+===============================================================================
+[2026-11-12] C1.623 — cierre de verificación
+- Department Scope Contract run 43257600097 SUCCESS; 16 pasos PASS (Node 24), incluido internal-responsibility-rbac-contract.test.js y sintaxis de servicios/clientes configurados.
+- Task-Service security local contracts run 43257599864 SUCCESS; Identity mapping and transport security contracts run 43257599910 SUCCESS.
+- Los tres workflows corresponden al commit funcional c6eeebabf3d8d404a4ff98f1b1ebb0fd751555bc. Terminal independiente NOT RUN; Apps Script/Sheets real y concurrencia desplegada siguen Pendiente beta.
+- C1.623 completada y verificada por CI. T153-S02 sigue En ejecución.
+===============================================================================
