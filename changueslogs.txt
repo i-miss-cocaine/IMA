@@ -3069,3 +3069,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se amplía accounting-departmental-resource-access.test.js con escenarios de departamentos A/B, alcance institucional, autoservicio, filtro de usuario manipulable, ID específico ajeno, IDs duplicados, identidad inválida y hoja vacía sin escrituras.
 - Verificación local V8 aislada y parseo: PASS. Apps Script/Sheets desplegado: Pendiente beta.
 ===============================================================================
+
+- **Verificación CI C1.658:** Department Scope run **43327018525** ejecutó PASS en Department Scope Contract, Internal Responsibility RBAC, ACCOUNTING departmental import scope, USER migrated resource ownership y ACCOUNTING departmental resource access. El workflow global terminó FAIL posteriormente en `user-role-membership-contract.test.js:119` (`foreignLegacy` null al leer `.role`), fallo ya observado antes de C1.656; los pasos posteriores quedaron omitidos. Identity mapping run **43326962372**: SUCCESS. La prueba focalizada nueva sí se ejecutó en Node 24 y aprobó.
