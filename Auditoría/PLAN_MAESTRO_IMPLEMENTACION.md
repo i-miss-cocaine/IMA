@@ -4996,3 +4996,12 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.637); sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; ScriptProperties/rollout real Pendiente beta.
 - **Estado:** C1.637 completada. T153-S02 continúa En ejecución.
 - **Siguiente acción:** revisar los requisitos originales de T153-S02 y verificar matriz de evidencia/dependencias antes de decidir cierre o siguiente subfase.
+
+ 
+**Addendum C1.638 — validación efectiva de ámbitos en servidor**
+- Se ejecuta `validateRoleScopeAccess` productivo sobre contextos Director/Auditor del mismo usuario. Director solo accede a DEP-A/DEP-A2; Auditor solo a DEP-B.
+- `activeDepartmentId` reduce el contexto al departamento elegido. Una asignación explícita de tipo INSTITUCION permite acceso departamental institucional; al seleccionar un departamento activo, el acceso vuelve a limitarse al seleccionado.
+- Revocar Director invalida su autorización de ámbito sin afectar Auditor.
+- Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.638); sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
+- **Estado:** C1.638 completada. T153-S02 sigue En ejecución hasta completar trazabilidad de requisitos.
+- **Siguiente acción:** revisar cada criterio original de T153-S02 y asociarlo a evidencia vigente o pendiente, sin repetir verificaciones.
