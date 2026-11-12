@@ -3023,3 +3023,14 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Pruebas focalizadas agregadas al contrato de seguridad departamental: unión, reducción de alcance, exclusión auditada, titularidad ausente/ambigua y fallo de auditoría.
 - Sin importación, datos reales ni despliegue; TASK-153 continúa En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.655 — prevalidación departamental en importación ACCOUNTING
+- validateImportPreview e importDataWithColumnMapping comparten buildAccountingDepartmentalImportPreflight_; el actor y la membresía se derivan de sesión firmada y asignaciones vigentes del servidor.
+- Para empleado, el destino debe ser el activeDepartmentId explícito y validado dentro de la membresía; el lote completo se mapea y valida antes de crear AuditoriaMigraciones o llamar a cualquier writer. Los departamentos libres o diferentes se rechazan; valores vacíos reciben únicamente el DepartmentID activo verificado.
+- Se conserva el writer propietario, fingerprint/idempotencia y compensación. Los imports de curso no reciben una restricción departamental artificial. Los roles institucionales amplios quedan fail-closed porque las filas nuevas aún no tienen RowID/ownership verificable por fila.
+- Pruebas aisladas V8: 9 escenarios PASS, incluyendo token/membresía real del código, preview, destino no autorizado, mezcla/texto libre, rol institucional amplio, membresía ausente, cero auditoría/escrituras ante fallo y escritura con DepartmentID normalizado. Parseo de Code.gs PASS.
+- Node CLI y suite completa NOT RUN; CI pendiente del push; Apps Script/Sheets real Pendiente beta. No se consultaron ni modificaron datos reales.
+- TASK-153 permanece En ejecución; el soporte de importación institucional multi-departamento requiere snapshot server-side de ownership por fila.
+===============================================================================

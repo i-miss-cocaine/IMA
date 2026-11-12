@@ -15764,19 +15764,15 @@ function importDocumentTemplateBase(payload) {
 // ---------------------------------------------------------------------------
 
 function validateImportPreview(payload) {
-  const { nombreArchivo, destinoModulo, columnaMapeo, filasData } = payload || {};
+  const p = payload || {}, nombreArchivo = p.nombreArchivo, destinoModulo = p.destinoModulo;
+  const columnaMapeo = p.columnaMapeo, filasData = p.filasData;
   if (!Array.isArray(filasData) || filasData.length === 0) throw new Error("filasData vacías para vista previa.");
 
-  const totalFilas = filasData.length;
-  const mapeo = columnaMapeo || {};
-  const errores = [];
+  const totalFilas = filasData.length, mapeo = columnaMapeo || {}, errores = [];
   let filasValidas = 0;
-
   filasData.forEach((row, idx) => {
-    // Validar identificador obligatorio según módulo
-    const idKey = mapeo["identificador"] || "identidad" || "userId" || "identificacion";
-    const idVal = row[idKey] || row[Object.keys(row)[0]];
-
+    const idKey = mapeo["identificador"] || "identidad";
+    const idVal = row && (row[idKey] || row[Object.keys(row || {})[0]]);
     if (!idVal || String(idVal).trim() === "") {
       errores.push({ filaNum: idx + 1, campo: idKey, mensaje: "Identificador único ausente en fila." });
     } else {
@@ -15784,10 +15780,22 @@ function validateImportPreview(payload) {
     }
   });
 
+  let departmentPreflight = null;
+  if (String(p.tipoEntidad || "").trim().toLowerCase() === "empleado") {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    departmentPreflight = buildAccountingDepartmentalImportPreflight_(p, ss, MIGRATION_OWNER_SCHEMAS_.empleado);
+    if (!departmentPreflight.valid) {
+      filasValidas = 0;
+      errores.push({ filaNum: 0, campo: "Departamento", mensaje: departmentPreflight.code || "DEPARTMENT_IMPORT_SCOPE_DENIED" });
+    }
+  }
+
   return {
-    status: "success",
+    status: departmentPreflight && !departmentPreflight.valid ? "error" : "success",
+    code: departmentPreflight && !departmentPreflight.valid ? departmentPreflight.code : undefined,
     nombreArchivo: nombreArchivo || "archivo.xlsx",
     destinoModulo: destinoModulo || "Estudiantes",
+    departamentoDestino: departmentPreflight && departmentPreflight.valid ? departmentPreflight.departmentId : undefined,
     resumenValidation: {
       totalFilas: totalFilas,
       filasValidas: filasValidas,
@@ -15831,6 +15839,66 @@ const MIGRATION_OWNER_SCHEMAS_={
 function migrationStableJson_(v){if(Array.isArray(v))return "["+v.map(migrationStableJson_).join(",")+"]";if(v&&typeof v==="object"&&!(v instanceof Date))return "{"+Object.keys(v).sort().map(k=>JSON.stringify(k)+":"+migrationStableJson_(v[k])).join(",")+"}";return JSON.stringify(v instanceof Date?v.toISOString():v);}
 function migrationHash_(value){const bytes=Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,String(value),Utilities.Charset.UTF_8);return bytes.map(b=>("0"+(b&255).toString(16)).slice(-2)).join("");}
 function mapMigrationRowToTarget_(row,mapping,schema){if(!row||typeof row!=="object"||Array.isArray(row))throw new Error("MIGRATION_ROW_INVALID");const fields=mapping&&mapping.campos&&typeof mapping.campos==="object"?mapping.campos:{},out={};schema.headers.slice(1).forEach(target=>{const source=fields[target]||target;if(Object.prototype.hasOwnProperty.call(row,source))out[target]=row[source];});if(!Object.keys(out).length)throw new Error("MIGRATION_FIELD_MAPPING_EMPTY");return out;}
+function buildAccountingDepartmentalImportPreflight_(payload, ss, schema) {
+  const p = payload || {}, type = String(p.tipoEntidad || "").trim().toLowerCase();
+  if (type !== "empleado") return { valid: true, applicable: false, rows: null };
+  if (!Array.isArray(p.filasData) || !p.filasData.length) return { valid: false, code: "DEPARTMENT_IMPORT_ROWS_REQUIRED" };
+
+  const actor = getVerifiedAccountingIdentity_(p);
+  if (!actor || actor.authorized !== true) return { valid: false, code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  const scope = getVerifiedAccountingDepartmentScope_(p, ss, actor);
+  if (!scope || scope.authorized !== true) return { valid: false, code: scope && scope.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+
+  const institutionId = String(scope.institutionId || "").trim();
+  const membershipId = String(scope.membershipId || "").trim();
+  const targetDepartmentId = String(scope.activeDepartmentId || "").trim();
+  const authorizedDepartmentIds = Array.isArray(scope.departmentIds) ? scope.departmentIds : [];
+  if (!institutionId || !membershipId || !targetDepartmentId || scope.institutionWide === true ||
+      authorizedDepartmentIds.indexOf(targetDepartmentId) === -1) {
+    // New employee rows have no server-owned RowID yet. Institutional-wide imports
+    // therefore remain denied until a verified per-row department assignment exists.
+    return { valid: false, code: "DEPARTMENT_IMPORT_ACTIVE_DEPARTMENT_REQUIRED" };
+  }
+
+  const domain = "ACCOUNTING", preparedRows = [], contractRows = [];
+  const targetSchema = schema || MIGRATION_OWNER_SCHEMAS_[type];
+  for (let i = 0; i < p.filasData.length; i++) {
+    let data;
+    try {
+      data = mapMigrationRowToTarget_(p.filasData[i], p.columnaMapeo || {}, targetSchema);
+    } catch (error) {
+      return { valid: false, code: String(error && error.message || "MIGRATION_ROW_INVALID"), rowIndex: i + 1 };
+    }
+    const suppliedDepartment = String(data.Departamento || "").trim();
+    if (suppliedDepartment && suppliedDepartment !== targetDepartmentId) {
+      return { valid: false, code: "DEPARTMENT_IMPORT_MIXED_DEPARTMENTS", rowIndex: i + 1 };
+    }
+    // A blank department inherits only the explicitly selected, server-revalidated
+    // active department. Free-text names and any other DepartmentID are rejected.
+    data.Departamento = targetDepartmentId;
+    preparedRows.push(data);
+    contractRows.push({ departmentId: targetDepartmentId, institutionId: institutionId });
+  }
+
+  const contract = validateDepartmentalImportScope_({
+    actorContext: {
+      verified: true, userId: actor.userId, membershipId: membershipId,
+      roleId: actor.role, institutionId: institutionId, institutionWide: false
+    },
+    domain: domain,
+    snapshotScopeVerified: true, snapshotInstitutionId: institutionId, snapshotDomain: domain,
+    targetDepartmentVerified: true, targetInstitutionId: institutionId,
+    targetDomain: domain, targetDepartmentId: targetDepartmentId,
+    membershipsVerified: true, authorizedDepartmentIds: authorizedDepartmentIds,
+    rows: contractRows
+  });
+  if (!contract.valid) return { valid: false, code: contract.code };
+  return {
+    valid: true, applicable: true, code: contract.code,
+    institutionId: institutionId, departmentId: targetDepartmentId,
+    rows: preparedRows, rowCount: preparedRows.length
+  };
+}
 const ACCOUNTING_MIGRATION_WRITER_SCHEMAS_={
  empleado:{sheet:"ExpedientesLaborales",headers:["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"]},
  curso:{sheet:"CatalogoCursosCapacitacion",headers:["CursoID","NombreCurso","Categoria","ProveedorResponsable","Modalidad","DuracionHoras","Requisitos","DirigidoA","Estado","CreadoPor","FechaCreacion","UltimaModificacion"]}
@@ -15899,11 +15967,14 @@ function importDataWithColumnMapping(payload){
  if(!source||!type||!destinoModulo)throw new Error("MIGRATION_CONTRACT_REQUIRED: sistemaOrigen, tipoEntidad y destinoModulo son obligatorios.");
  const schema=MIGRATION_OWNER_SCHEMAS_[type];if(!schema)throw new Error("MIGRATION_ENTITY_NOT_OWNED: "+type);
  if([schema.service,schema.sheet].indexOf(destinoModulo.toUpperCase())===-1&&destinoModulo!==schema.sheet)throw new Error("MIGRATION_DESTINATION_MISMATCH");
- const ss=SpreadsheetApp.openById(SPREADSHEET_ID),audit=getOrCreateSheet(ss,"AuditoriaMigraciones"),runId="MIG-"+Utilities.getUuid(),applied=[],errors=[];
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+ const departmentPreflight=buildAccountingDepartmentalImportPreflight_(p,ss,schema);
+ if(!departmentPreflight.valid)throw new Error("DEPARTMENT_IMPORT_SCOPE_DENIED: "+departmentPreflight.code);
+ const audit=getOrCreateSheet(ss,"AuditoriaMigraciones"),runId="MIG-"+Utilities.getUuid(),applied=[],errors=[];
  rows.forEach((row,i)=>{try{
   const identifierField=String(mapping.identificador||Object.keys(row||{})[0]||""),legacy=row&&row[identifierField];if(legacy===null||legacy===undefined||String(legacy).trim()==="")throw new Error("IDENTIFIER_MISSING");
   const identity=resolveCrossReferenceIdentifier({sistemaOrigen:source,tipoEntidad:type,idOriginalLegado:legacy});if(identity.status!=="success")throw new Error(identity.code||identity.status);
-  const data=mapMigrationRowToTarget_(row,mapping,schema),fingerprint=migrationStableJson_({source:source,type:type,legacy:String(legacy),idNuevoPlataforma:identity.idNuevoPlataforma,datos:data}),idempotencyKey="MIG-"+migrationHash_(fingerprint);
+  const data=departmentPreflight.applicable?departmentPreflight.rows[i]:mapMigrationRowToTarget_(row,mapping,schema),fingerprint=migrationStableJson_({source:source,type:type,legacy:String(legacy),idNuevoPlataforma:identity.idNuevoPlataforma,datos:data}),idempotencyKey="MIG-"+migrationHash_(fingerprint);
   const writePayload={tipoEntidad:type,idNuevoPlataforma:identity.idNuevoPlataforma,datos:data,idempotencyKey:idempotencyKey,correlationId:runId};
   sendMigrationOwnerRequest_(type,"writeMigratedEntity",writePayload);applied.push({tipoEntidad:type,idempotencyKey:idempotencyKey,correlationId:runId});
  }catch(e){errors.push({fila:i+1,error:String(e&&e.message||e)});}});
