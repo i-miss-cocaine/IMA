@@ -2113,3 +2113,10 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Alcance:** contrato de seguridad; backend productivo sin cambios. BETA-EXAM-092 agregado y Pendiente beta.
 - **Verificación:** caso añadido; ejecución local aislada/CI pendiente tras commit. Apps Script/Sheets real NOT RUN.
 - **Estado:** En ejecución hasta verificar el contrato local aislado.
+
+
+#### Addendum de cierre — C1.591
+- GitHub Actions run 43127784802, commit 7f5fdc284644fd3fd366b7c28fc147982bd9b9e3: workflow Exam-Service security local contracts SUCCESS en Node.js 22.
+- Contrato exam-service-period-gradebook-review-security: PASS (30/30); paso Run period gradebook review security regression y job exam-security-contracts SUCCESS.
+- Ejecución aislada sobre código/fixtures sin despliegue; Apps Script/Sheets real NOT RUN.
+- C1.591 Completada en verificación local aislada/CI. BETA-EXAM-092 sigue Pendiente beta.

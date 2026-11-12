@@ -4383,5 +4383,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Brecha confirmada:** reviewPeriodGradebook mantiene ScriptLock durante la revalidación y cambia Estado/FechaCierre mediante setValues; el contrato cubría autorización, scope, estado previo y reentrada durante openById, pero no una solicitud secundaria durante la escritura exterior.
 - **Cobertura añadida:** el fixture intercepta setValues de CierresPeriodos e invoca el handler real de forma anidada. La secundaria debe recibir GRADEBOOK_REVIEW_LOCK_TIMEOUT; la exterior persiste la decisión una sola vez, abre Sheets una vez y libera el lock.
 - **Alcance:** contrato de seguridad y BETA-EXAM-092; backend productivo sin cambios.
-- **Verificación:** contrato ampliado a 30 casos; ejecución local aislada/CI pendiente de resultado. Apps Script/Sheets real NOT RUN.
-- **Estado:** C1.591 En ejecución hasta completar la verificación local aislada.
+- **Verificación:** GitHub Actions run 43127784802, workflow `Exam-Service security local contracts`, Node.js 22: **SUCCESS**; paso `Run period gradebook review security regression` y contrato `exam-service-period-gradebook-review-security: PASS (30/30)`. Job `exam-security-contracts` SUCCESS. Apps Script/Sheets real NOT RUN.
+- **Estado:** C1.591 **Completada en verificación local aislada/CI**. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras.
+
+
+#### Addendum de verificación local/CI — C1.591
+- GitHub Actions run **43127784802**, commit `7f5fdc284644fd3fd366b7c28fc147982bd9b9e3`, workflow `Exam-Service security local contracts`: **SUCCESS** en Node.js 22.
+- El paso `Run period gradebook review security regression` ejecutó `tests/security/exam-service-period-gradebook-review-security.test.js` y registró `exam-service-period-gradebook-review-security: PASS (30/30)`; job `exam-security-contracts` terminó SUCCESS.
+- El runner ejecutó código y fixtures de forma aislada, sin despliegue ni infraestructura remota. Apps Script/Sheets real NOT RUN.
+- C1.591 **Completada en verificación local aislada/CI**. BETA-EXAM-092 permanece Pendiente beta.
