@@ -602,5 +602,5 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - CI: pendiente de resultado verificable; no se declara PASS.
 - Apps Script/Sheets real NOT RUN; BETA-EXAM-052 Pendiente beta.
 - C1.605 Completada con verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
-- HEAD inicial: ac3b836c704442f18bcd30ee5b27f335910081f1; commit inicial de pruebas: 1e10af3b18e75ea73884304550d18faf5d97ef16; commit del ajuste de hook: 39f73d46b83e794ad1055b1ed5c3a9b505f6d8c3; actualización beta: bba3f0d3520b343c2c8f4336c84c772974bd37ed; HEAD final se confirma tras publicación documental.
+- HEAD inicial (C1.604): 4403807e714f86593146410a1eb3a5cdd1c816c0; commit inicial de pruebas: 1e10af3b18e75ea73884304550d18faf5d97ef16; commit del ajuste de hook: 39f73d46b83e794ad1055b1ed5c3a9b505f6d8c3; actualización beta: bba3f0d3520b343c2c8f4336c84c772974bd37ed; HEAD final se confirma tras publicación documental.
 ===============================================================================
