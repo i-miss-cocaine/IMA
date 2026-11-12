@@ -1614,3 +1614,19 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Límites:** los helpers aún no tienen callsites productivos; no se afirma que endpoints existentes ya estén filtrados ni que importaciones reales estén protegidas. No hay datos reales, escrituras ni despliegue.
 - **Estado:** TASK-153 En ejecución. **Siguiente acción elegible:** integrar el filtro en un endpoint de consulta/listado con ownership server-side y el guard de importación en validateImportPreview, preservando atomicidad y pruebas negativas; ejecutar primero el harness local completo cuando el checkout esté disponible.
 ===============================================================================
+
+===============================================================================
+### C1.652 — IMA-2026-11-12-01 — integración del filtro departamental en consulta de admisiones
+- **HEAD inicial:** 613dc16d374bf80a9c461004bb48205de76e38da.
+- **HEAD final de la unidad:** 7bcb9774395ebb878b04dcde48fea1e08a7ea965 (rama NG_beta_0.0.0.1_work).
+- **Rama base verificada:** 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- **Unidad:** PM-01 / TASK-153 — primer callsite productivo del contrato de consultas/listados.
+- **Implementación:** getAdmissionRequests delega a filterDepartmentScopedRecords_ cuando la sesión contiene MembershipID firmado. El adaptador deriva ownership de ResourceOwnership, verifica esquema/tenant/tipo/ID, mantiene la unión de departamentos autorizados y aplica activeDepartmentId como restricción más estrecha. Las sesiones heredadas sin MembershipID conservan el guard previo.
+- **Auditoría:** se persisten en AuditoriaAccesoDepartamental, en bloque y bajo ScriptLock, los eventos ALLOW/DENY generados por el filtro. La respuesta no divulga filas cuando falta ownership, hay titularidad activa ambigua, el esquema no coincide o falla la escritura de auditoría. El filtro compartido ahora admite authorizedDepartmentIds server-side sin perder la semántica de activeDepartmentId ni el bypass institucional verificado.
+- **Archivos:** backend/shared/DepartmentCatalogContract.gs; backend/academic-service/Code.gs; tests/security/department-scope-contract.test.js; changueslogs.txt.
+- **Pruebas locales aisladas:** sintaxis de los tres archivos de código/prueba PASS; ejecución V8 con fixtures PASS para unión multi-departamento, reducción por departamento activo, auditoría de registros excluidos, ownership faltante/ambiguo, membresía ausente y fallo de persistencia de auditoría. Node CLI/full repository suite NOT RUN.
+- **CI:** run 43312801914: department-scope-contract PASS (incluye el nuevo adaptador), internal-responsibility-rbac-contract PASS; user-role-membership-contract FAIL en línea 119 por verifySessionToken(foreignLegacy) nulo; los pasos siguientes fueron omitidos. Run 43312802506: workflow separado local-security-contracts FAIL en task-service-security-contract.test.js:452, assertion sobre USER verifySessionToken; no se modificó USER ni TASK en C1.652. No se atribuye ese fallo al cambio sin evidencia causal.
+- **Límites:** no se conectó validateDepartmentalImportScope_ a la importación; ACCOUNTING sigue pendiente. No se consultaron ni modificaron datos reales ni se desplegó Apps Script. Auditoría y comportamiento real de Sheets quedan pendientes beta.
+- **Estado:** C1.652 publicada y verificada en la rama autorizada; TASK-153 continúa En ejecución.
+- **Siguiente acción:** integrar la prevalidación departamental en validateImportPreview y en importDataWithColumnMapping antes de cualquier writer, resolviendo destino/RowID con snapshots server-side y manteniendo compensación atómica; no inferir departamentos desde texto libre.
+===============================================================================
