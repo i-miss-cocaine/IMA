@@ -431,16 +431,21 @@ function verifyInterServiceEnvelope(envelope, expectedTargetService, customSecre
 
 function verifyUserRoleMembershipClaim_(claims) {
   try {
-    if (!claims || !claims.membershipId || !claims.institutionId) return false;
-    var configuredInstitution = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim();
-    if (!configuredInstitution || configuredInstitution !== String(claims.institutionId).trim()) return false;
+    if (!claims || !claims.userId || !claims.role) return false;
+    var hasMembershipClaims = !!claims.membershipId || !!claims.institutionId;
+    if (hasMembershipClaims && (!claims.membershipId || !claims.institutionId)) return false;
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var sheet = ss.getSheetByName("MembresiasRolesRBAC");
-    if (!sheet) return false;
+    if (!sheet) return hasMembershipClaims ? false : null;
+    var configuredInstitution = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim();
+    if (!configuredInstitution) return false;
+    if (hasMembershipClaims && configuredInstitution !== String(claims.institutionId).trim()) return false;
     var values = sheet.getDataRange().getValues();
     var expectedHeaders = ["MembershipID","UserID","RoleID","InstitutionID","Status","StartAt","EndAt","CreatedBy","CreatedAt","UpdatedAt","RevokedBy","RevokedAt"];
     if (!values.length || values[0].length !== expectedHeaders.length || JSON.stringify(values[0].map(String)) !== JSON.stringify(expectedHeaders)) return false;
     var allRows = values.slice(1);
+    var userRows = allRows.filter(function(row) { return String(row[1] || "").trim() === String(claims.userId).trim(); });
+    if (!hasMembershipClaims && !userRows.length) return null;
     var idCounts = {};
     allRows.forEach(function(row) {
       var id = String(row[0] || "").trim();
@@ -448,8 +453,7 @@ function verifyUserRoleMembershipClaim_(claims) {
     });
     var now = new Date().getTime();
     var candidates = [];
-    allRows.forEach(function(row) {
-      if (String(row[1] || "").trim() !== String(claims.userId).trim()) return;
+    userRows.forEach(function(row) {
       var id = String(row[0] || "").trim();
       var role = String(row[2] || "").trim();
       var institution = String(row[3] || "").trim();
@@ -464,7 +468,8 @@ function verifyUserRoleMembershipClaim_(claims) {
       candidates.push({ membershipId: id, roleId: role });
     });
     var sameRole = candidates.filter(function(item) { return item.roleId === String(claims.role).trim(); });
-    return sameRole.length === 1 && sameRole[0].membershipId === String(claims.membershipId).trim();
+    if (sameRole.length !== 1) return false;
+    return hasMembershipClaims ? sameRole[0].membershipId === String(claims.membershipId).trim() : true;
   } catch (error) {
     return false;
   }
@@ -522,11 +527,9 @@ function verifySessionToken(tokenString) {
       }
     }
     if (acctState !== "Activa") return null;
-    if (claims.membershipId || claims.institutionId) {
-      if (!verifyUserRoleMembershipClaim_(claims)) return null;
-    } else if (!currentRole || currentRole !== claims.role.trim()) {
-      return null;
-    }
+    var membershipCheck = verifyUserRoleMembershipClaim_(claims);
+    if (membershipCheck === false) return null;
+    if (membershipCheck === null && (!currentRole || currentRole !== claims.role.trim())) return null;
     return claims;
   } catch (e) {
     return null;
