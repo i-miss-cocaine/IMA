@@ -587,7 +587,7 @@ assertTemporalParity("","2026-11-11T23:59:59.999Z",false,"past end is inactive")
 assertTemporalParity("invalid-date","",false,"invalid start is rejected");
 assertTemporalParity("","invalid-date",false,"invalid end is rejected");
 assertTemporalParity("","",true,"empty dates mean unbounded validity");
-assertTemporalParity("","0",false,"epoch end date is expired and cannot be treated as an empty date");
+assertTemporalParity("",0,false,"epoch end date is expired and cannot be treated as an empty date");
 lifecycleSheets.AsignacionesAmbitosRoles = priorTemporalSheet;
 delete lifecycleCtx.Date;
 console.log("C1.630 temporal parity contract: inclusive boundaries, future/past dates, invalid dates, empty bounds and epoch-valued expiry parity PASS.");
