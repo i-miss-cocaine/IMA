@@ -1193,3 +1193,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; harness local determinista sobre handlers productivos extraídos de Code.gs 2/2 PASS; parseo JavaScript del contrato PASS; GitHub Actions run 43139327739 SUCCESS, contrato 29/29 PASS en Node.js 22. Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de llamadas exterior/secundaria, insertSheet, appendRow de encabezados y evaluación, conteos de escritura, snapshot de EvaluacionesCompetencias antes/después y liberación del lock.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-104 — TASK-153 / AUD-NG-386 / EXAM: contención reentrante al inicializar CategoriasEvaluacion
+- **Módulo/rol:** Servicio EXAM; usuario autenticado con permiso saveEvaluationCategory, identidad verificada, ámbito departamental y autorización de escritura en la institución.
+- **Objetivo:** verificar en Apps Script/Sheets desplegado que una segunda solicitud saveEvaluationCategory iniciada durante insertSheet o appendRow de los encabezados iniciales de CategoriasEvaluacion no supera ScriptLock ni duplica la categoría o su ownership.
+- **Precondiciones:** versión beta desplegada; hoja CategoriasEvaluacion ausente; ResourceOwnership presente con encabezados válidos; usuario autorizado y departamento dentro de su ámbito; mecanismo controlado de reentrada durante insertSheet y durante appendRow de encabezados.
+- **Pasos:** ejecutar saveEvaluationCategory con datos válidos y provocar una segunda llamada durante insertSheet; repetir en un escenario separado durante appendRow de encabezados; revisar respuestas, trazas RBAC/identidad/lock/Sheets y snapshots de CategoriasEvaluacion y ResourceOwnership.
+- **Resultado esperado:** cada secundaria EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; exterior crea una sola hoja con encabezados exactos, una categoría y un ownership activo asociado; una apertura de Sheets, una inserción de hoja y ScriptLock liberado.
+- **Estado:** Pendiente beta; harness local determinista sobre handlers productivos extraídos de Code.gs 2/2 PASS; parseo del contrato PASS. Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, trazas saneadas de llamadas exterior/secundaria, insertSheet, appendRow de encabezados, ownership y categoría, conteos de escrituras, snapshots antes/después y liberación del lock.
+===============================================================================
