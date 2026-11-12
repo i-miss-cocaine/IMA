@@ -2501,7 +2501,7 @@ function getDynamicPermissionsForRole(role, action) {
       Object.keys(institutionRules).forEach(function(rRole) {
         if (!matrix[rRole]) matrix[rRole] = {};
         Object.keys(institutionRules[rRole]).forEach(function(rAction) { matrix[rRole][rAction] = institutionRules[rRole][rAction]; });
-      }
+      });
       cache.put(cacheKey, JSON.stringify(matrix), 600);
     } catch (e) {
       return null;

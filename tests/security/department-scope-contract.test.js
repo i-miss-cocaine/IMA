@@ -34,6 +34,8 @@ const assignFn = extractFunction(source, "assignRoleScope");
 const permissionFn = extractFunction(source, "validateRolePermission");
 const assignmentsFn = extractFunction(source, "getInternalRoleAssignments");
 const ownershipFn = extractFunction(source, "assertRecordOwnership");
+const permissionCacheKeyFn = extractFunction(source, "getDynamicPermissionCacheKey_");
+const dynamicPermissionsFn = extractFunction(source, "getDynamicPermissionsForRole");
 
 const headers = ["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"];
 const rows = [
@@ -240,4 +242,25 @@ const historicalAssignments = assignmentCtx.getInternalRoleAssignments({userId:"
 assert.equal(historicalAssignments.status,"success");
 assert.equal(historicalAssignments.data.some(row => row.asignacionId === "R-2"),true,"non-current listing retains future assignments when explicitly requested");
 
-console.log("Department scope contract: verified identity, role-bound active scopes, explicit institution scope, effective assignment windows, fail-closed defaults and spoof resistance passed.");
+const permissionCache = new Map();
+let activeTenant = "INST-1";
+const permissionRows = [
+  ["rol","modulo","accion","permitido","ambito"],
+  ["Director","General","readRecords",true,"Global"],
+  ["Director","General","readRecords",false,"INST-1"],
+  ["Director","General","readRecords",true,"INST-2"]
+];
+const permissionCtx = {
+  SPREADSHEET_ID: "LOCAL",
+  getIdentityInstitutionId_: () => activeTenant,
+  CacheService: { getScriptCache: () => ({ get: key => permissionCache.get(key) || null, put: (key,value) => permissionCache.set(key,value), remove: key => permissionCache.delete(key) }) },
+  SpreadsheetApp: { openById: () => ({ getSheetByName: () => ({ getLastRow: () => permissionRows.length, getDataRange: () => ({ getValues: () => permissionRows }) }) }) }
+};
+vm.runInNewContext(permissionCacheKeyFn + "\n" + dynamicPermissionsFn + "\nthis.getDynamicPermissionsForRole=getDynamicPermissionsForRole;", permissionCtx);
+assert.equal(permissionCtx.getDynamicPermissionsForRole("Director","readRecords"), false, "institution deny overrides global allow");
+activeTenant = "INST-2";
+assert.equal(permissionCtx.getDynamicPermissionsForRole("Director","readRecords"), true, "institution two uses its own permission rule and cache");
+activeTenant = "INST-1";
+assert.equal(permissionCtx.getDynamicPermissionsForRole("Director","readRecords"), false, "institution one cache remains isolated");
+
+console.log("Department scope contract: verified identity, role-bound active scopes, institution-isolated dynamic permissions, effective assignment windows, fail-closed defaults and spoof resistance passed.");
