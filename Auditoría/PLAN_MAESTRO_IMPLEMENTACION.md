@@ -5005,3 +5005,13 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.638); sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
 - **Estado:** C1.638 completada. T153-S02 sigue En ejecución hasta completar trazabilidad de requisitos.
 - **Siguiente acción:** revisar cada criterio original de T153-S02 y asociarlo a evidencia vigente o pendiente, sin repetir verificaciones.
+
+
+ 
+**Addendum C1.639 — verificación transversal del ledger de revocación**
+- El contrato ejecuta `verifySessionToken` de ACADEMIC, ACCOUNTING, TASK y EXAM contra un ledger compartido con cachés locales vacías.
+- Revocación de sesión y revocación user-wide hechas desde USER se aplican en todos los consumidores; sesiones posteriores al corte se aceptan; el cutoff de migración se comparte y un ledger inicializado ausente falla cerrado.
+- Los fixtures usan usuarios/membresías propios; la revocación user-wide se dirige a `U-CROSS-USER` para evitar contaminación de los contratos anteriores.
+- Contrato completo V8 aislado PASS (C1.621–C1.639); sintaxis USER/ACADEMIC/ACCOUNTING/TASK/EXAM/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets reales entre despliegues Pendiente beta.
+- **Estado:** C1.639 completada. T153-S02 continúa En ejecución hasta matriz de trazabilidad de requisitos originales.
+- **Siguiente acción:** trazar cada criterio de T153-S02 a código y evidencia vigente; ejecutar únicamente pruebas faltantes y determinar cierre.
