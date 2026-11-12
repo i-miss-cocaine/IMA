@@ -8234,10 +8234,10 @@ function assertAdvancedSignatureSignerScope_(ss, documentAccess, firmanteId, sig
     if(users.length!==1)return deny("SIGNATURE_SIGNER_ID_AMBIGUOUS");
     const user=users[0];
     if(String(user[stateIndex]||"Activa").trim().toUpperCase()!=="ACTIVA")return deny("SIGNATURE_SIGNER_INACTIVE");
-    const profileRole=String(user[roleIndex]||"").trim(),signerName=String(user[nameIndex]||"").trim(),signerEmail=String(user[emailIndex]||"").trim(),signerPersonId=String(user[personIndex]||"").trim();
+    const profileRoleRaw=String(user[roleIndex]||"").trim(),signerName=String(user[nameIndex]||"").trim(),signerEmail=String(user[emailIndex]||"").trim(),signerPersonId=String(user[personIndex]||"").trim();
     if(!signerName)return deny("SIGNATURE_SIGNER_PROFILE_INCOMPLETE");
     const normalize=function(value){return String(value||"").trim().toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/^ROLE[_-]?/,"").replace(/[^A-Z0-9]/g,"");};
-    const profileRole=normalize(profileRole),isStudent=profileRole==="ESTUDIANTE"||profileRole==="ALUMNO",isGuardian=["PADRE","MADRE","TUTOR","RESPONSABLE","RESPONSABLEFAMILIAR"].indexOf(profileRole)!==-1;
+    const profileRole=normalize(profileRoleRaw),isStudent=profileRole==="ESTUDIANTE"||profileRole==="ALUMNO",isGuardian=["PADRE","MADRE","TUTOR","RESPONSABLE","RESPONSABLEFAMILIAR"].indexOf(profileRole)!==-1;
     let accessType="",authorizedRole=String(user[roleIndex]||"").trim(),authorizedMembershipId="";
     if(isStudent||isGuardian){
       if(!expedienteId||!signerPersonId)return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
