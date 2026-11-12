@@ -1375,6 +1375,9 @@ function manageUserRoleMemberships(payload) {
       });
       if (duplicate) return { status: "error", code: "ROLE_MEMBERSHIP_ALREADY_EXISTS", message: "Ya existe una membresía activa o futura para ese usuario y rol." };
       var newId = "MEM-" + Utilities.getUuid();
+      if (data.slice(1).some(function(row) { return String(row[0] || "").trim() === newId; })) {
+        return { status: "error", code: "ROLE_MEMBERSHIP_ID_CONFLICT", message: "No se pudo generar un identificador único para la membresía." };
+      }
       sheet.appendRow([newId, userId, roleId, institutionId, "ACTIVE", start.date || now, end.date || "", actorId, now, now, "", ""]);
       invalidateUserRoleCache(userId);
       logStructuredEvent("USER", "manageUserRoleMemberships", "INFO", "ROLE_MEMBERSHIP_ASSIGNED", "Membresía RBAC asignada.", { membershipId: newId, userId: userId, roleId: roleId }, actorRole);
