@@ -28,7 +28,8 @@ functions.push(extractFunction(shared, "validateDepartmentalImportScope_"));
 const schema = { service: "ACCOUNTING", sheet: "ExpedientesLaborales", headers: ["ExpedienteID", "PersonaId", "UserId", "Puesto", "Departamento", "CentroCosto", "FechaIngreso", "FechaSalida", "EstadoLaboral", "Observaciones"] };
 const assignmentHeaders = ["AsignacionAmbitoID", "UserID", "RoleID", "ScopeType", "ScopeValues", "Estado", "CreadoPor", "FechaCreacion", "FechaInicio", "FechaFin", "EsSuplente", "SuplenteDeUserID", "InstitutionID", "MembershipID", "ResponsibilityID"];
 let assignmentRows = [assignmentHeaders, ["ASG-1", "U-1", "Director", "DEPARTAMENTO", '["DEP-A","DEP-B"]', "Activo", "U-ADMIN", "", "", "", "No", "", "INST-1", "MEM-1", "RESP-1"]];
-const auditRows = [], writes = [];
+const auditRows = [], writes = [], rollbackBatches = [];
+let writerAttempts = 0, failWriterAt = 0;
 const assignmentSheet = { getDataRange: () => ({ getValues: () => assignmentRows.map(row => row.slice()) }) };
 const spreadsheet = { getSheetByName: name => name === "AsignacionesAmbitosRoles" ? assignmentSheet : null };
 const claims = { signed: { userId: "U-1", role: "Director", membershipId: "MEM-1", institutionId: "INST-1" } };
@@ -42,8 +43,14 @@ const context = {
   Utilities: { getUuid: () => "RUN-1" },
   resolveCrossReferenceIdentifier: () => ({ status: "success", idNuevoPlataforma: "EMP-1" }),
   migrationStableJson_: value => JSON.stringify(value), migrationHash_: () => "HASH-1",
-  sendMigrationOwnerRequest_: (_type, _action, payload) => { writes.push(payload); return { status: "success" }; },
-  rollbackMigrationOwnerWrites_: () => []
+  sendMigrationOwnerRequest_: (_type, action, payload) => {
+    if (action === "compensateMigratedEntity") return { status: "success", compensated: true };
+    writerAttempts++;
+    if (writerAttempts === failWriterAt) throw new Error("MOCK_OWNER_WRITE_FAILED");
+    writes.push(payload);
+    return { status: "success" };
+  },
+  rollbackMigrationOwnerWrites_: applied => { rollbackBatches.push(applied.slice()); return []; }
 };
 vm.runInNewContext(functions.join("\n") + "\nthis.api = { build: buildAccountingDepartmentalImportPreflight_, preview: validateImportPreview, run: importDataWithColumnMapping };", context);
 const base = { sessionToken: "signed", activeDepartmentId: "DEP-A", tipoEntidad: "empleado", sistemaOrigen: "Legacy", destinoModulo: "ExpedientesLaborales", columnaMapeo: { identificador: "legacyId", campos: { Puesto: "Puesto", Departamento: "Departamento" } }, filasData: [{ legacyId: "LEG-1", Puesto: "Docente" }] };
@@ -82,4 +89,30 @@ assert.equal(imported.status, "success");
 assert.equal(writes.length, 1);
 assert.equal(writes[0].datos.Departamento, "DEP-A");
 assert.equal(auditRows.length, 1);
-console.log("Accounting departmental import scope: 9 scenarios passed.");
+
+const retry = context.api.run(base);
+assert.equal(retry.status, "success");
+assert.equal(writes[1].idempotencyKey, writes[0].idempotencyKey, "retry retains a stable idempotency key");
+
+const beforeMixedWriters = writerAttempts, beforeMixedAudit = auditRows.length;
+let mixedImportDenied = false;
+try {
+  context.api.run({ ...base, filasData: [
+    { legacyId: "LEG-1", Puesto: "Docente", Departamento: "DEP-A" },
+    { legacyId: "LEG-2", Puesto: "Docente", Departamento: "DEP-B" }
+  ] });
+} catch (error) { mixedImportDenied = String(error.message).includes("DEPARTMENT_IMPORT_MIXED_DEPARTMENTS"); }
+assert.equal(mixedImportDenied, true);
+assert.equal(writerAttempts, beforeMixedWriters, "the entire mixed batch is rejected before the first writer");
+assert.equal(auditRows.length, beforeMixedAudit, "a rejected batch creates no migration audit row");
+
+failWriterAt = writerAttempts + 2;
+const rollback = context.api.run({ ...base, filasData: [
+  { legacyId: "LEG-3", Puesto: "Docente" },
+  { legacyId: "LEG-4", Puesto: "Docente" }
+] });
+assert.equal(rollback.code, "MIGRATION_BATCH_ROLLED_BACK");
+assert.equal(rollback.estado, "rolled_back");
+assert.equal(rollbackBatches.at(-1).length, 1, "the first successful write is compensated after the second writer fails");
+assert.equal(auditRows.at(-1)[8], "rolled_back");
+console.log("Accounting departmental import scope: 13 scenarios passed.");
