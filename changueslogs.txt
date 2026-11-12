@@ -2405,3 +2405,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - CI run 43138825738 SUCCESS; contrato saveStudentRecovery 21/21 PASS, Node.js 22. Las dos aserciones cross-realm detectadas en run 43138709373 se corrigieron y el contrato ahora falla ante casos fallidos.
 - Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-102 Pendiente beta. C1.601 Completada.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.602 — contención reentrante de saveCompetencyEvaluation al inicializar EvaluacionesCompetencias
+- Se añaden dos escenarios de reentrada al handler real durante insertSheet y appendRow de encabezados cuando falta EvaluacionesCompetencias.
+- Smoke local focalizado 2/2 PASS; parseo del contrato PASS; CI run 43139327739 SUCCESS, contrato 29/29 PASS en Node.js 22.
+- Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-103 Pendiente beta. C1.602 Completada.
+===============================================================================

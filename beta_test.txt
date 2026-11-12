@@ -1181,3 +1181,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; smoke local focalizado 2/2 PASS sobre handlers productivos extraídos de Code.gs; parseo del contrato actualizado PASS; GitHub Actions run 43138825738 SUCCESS, contrato 21/21 PASS en Node.js 22. Apps Script/Sheets real NOT RUN. La primera ejecución 43138709373 reveló dos aserciones cross-realm defectuosas; se corrigieron y el contrato ahora falla explícitamente si cualquier caso falla.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de llamadas exterior/secundaria, inserción de hoja, appendRow de encabezados y recuperación, conteos de escritura, snapshot de RecuperacionesEstudiante antes/después y liberación del lock.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-103 — TASK-153 / AUD-NG-386 / EXAM: contención reentrante al inicializar EvaluacionesCompetencias
+- **Módulo/rol:** Servicio EXAM; Profesor autenticado con permiso saveCompetencyEvaluation, identidad firmada, asignación vigente de grado/sección/asignatura/período y estudiante elegible; roles institucionales solo con alcance institucional verificado.
+- **Objetivo:** verificar en Apps Script/Sheets desplegado que una solicitud secundaria saveCompetencyEvaluation iniciada durante insertSheet o appendRow de los encabezados iniciales de EvaluacionesCompetencias no supera ScriptLock ni duplica la inicialización o la evaluación.
+- **Precondiciones:** versión beta desplegada; hoja EvaluacionesCompetencias ausente; profesor autorizado y asignación válida; estudiante y rúbrica elegibles; mecanismo controlado de reentrada durante la creación de la hoja y la escritura de encabezados.
+- **Pasos:** ejecutar saveCompetencyEvaluation con datos válidos y provocar una segunda llamada durante insertSheet; repetir en un escenario separado durante appendRow de encabezados; revisar respuestas, trazas RBAC/identidad/lock/Sheets y snapshot de EvaluacionesCompetencias.
+- **Resultado esperado:** cada secundaria COMPETENCY_EVALUATION_MUTATION_LOCK_TIMEOUT; exterior crea una sola hoja con encabezados válidos y registra una única evaluación; una apertura de Sheets por operación exterior, dos appendRow exteriores (encabezado y evaluación) y ScriptLock liberado.
+- **Estado:** Pendiente beta; harness local determinista sobre handlers productivos extraídos de Code.gs 2/2 PASS; parseo JavaScript del contrato PASS; GitHub Actions run 43139327739 SUCCESS, contrato 29/29 PASS en Node.js 22. Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, trazas saneadas de llamadas exterior/secundaria, insertSheet, appendRow de encabezados y evaluación, conteos de escritura, snapshot de EvaluacionesCompetencias antes/después y liberación del lock.
+===============================================================================

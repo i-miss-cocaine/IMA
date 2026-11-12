@@ -2241,3 +2241,13 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - CI run 43138825738 SUCCESS, contrato saveStudentRecovery 21/21 PASS en Node.js 22. El primer run 43138709373 detectó dos aserciones cross-realm defectuosas; fueron corregidas y el runner ahora propaga fallos.
 - Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-102 Pendiente beta. C1.601 Completada.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.602 — reentrada durante la inicialización de EvaluacionesCompetencias
+- Se amplía el fixture de saveCompetencyEvaluation para reentrar al handler real desde insertSheet y appendRow de encabezados cuando falta EvaluacionesCompetencias.
+- Ambas secundarias reciben COMPETENCY_EVALUATION_MUTATION_LOCK_TIMEOUT; la exterior conserva una sola hoja, encabezados exactos y una evaluación; dos appendRow exteriores, una apertura Sheets y lock liberado.
+- Harness local determinista sobre handlers productivos extraídos de Code.gs: 2/2 PASS; parseo JavaScript del contrato PASS.
+- GitHub Actions run 43139327739 SUCCESS; contrato exam-service-competency-evaluation-mutation-security 29/29 PASS, Node.js 22; job exam-security-contracts SUCCESS.
+- Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-103 Pendiente beta. C1.602 Completada.
+===============================================================================

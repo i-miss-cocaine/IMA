@@ -492,3 +492,31 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.601 Completada con verificación local y CI. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
 - HEAD inicial: `a228580423f4eaf6ee1783a2e281e62e97e23102`; commit inicial de cobertura: `a44fca694e9d2713b0e580ffb5cd64229b8f0089`; commit de corrección: `cf01fbb3047bbea84b4158e78cd24e4d78de75c5`; HEAD final tras cierre documental se confirma en el siguiente commit.
 ===============================================================================
+
+
+===============================================================================
+## C1.602 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada al inicializar EvaluacionesCompetencias.
+
+### Hallazgo y cambio
+- saveCompetencyEvaluation ya cubría reentrada durante el append de la evaluación y probaba la inicialización de la hoja tras autorización, pero faltaba reentrada durante insertSheet y appendRow de encabezados cuando la hoja no existe.
+- El fixture permite hooks en insertSheet y appendRow. Se agregan dos escenarios; cada solicitud secundaria recibe COMPETENCY_EVALUATION_MUTATION_LOCK_TIMEOUT y la exterior conserva hoja, encabezados y evaluación únicos.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-competency-evaluation-mutation-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Harness local determinista sobre saveCompetencyEvaluation, wrapper, contexto y worker productivos extraídos de Code.gs: 2/2 PASS.
+- Parseo JavaScript del contrato actualizado: PASS.
+- GitHub Actions run 43139327739: workflow Exam-Service security local contracts SUCCESS en Node.js 22; contrato exam-service-competency-evaluation-mutation-security 29/29 PASS; job exam-security-contracts SUCCESS.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-103 Pendiente beta.
+- C1.602 Completada con verificación local focalizada y CI. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD inicial: `8539058d06a48c981c3138d070271068021d8cc7`; commit de pruebas/implementación: `60351f9d39bd4e56736c3a2b6acdd8a5342f67fd`; HEAD final se confirma tras commit documental.
+===============================================================================

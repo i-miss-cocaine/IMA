@@ -549,3 +549,6 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 
 
 | C1.601 | IMA-EXEC-20261110-1825Z-02 | saveStudentRecovery: reentrada durante insertSheet y appendRow de encabezados al inicializar RecuperacionesEstudiante; ambas secundarias STUDENT_RECOVERY_MUTATION_LOCK_TIMEOUT; exterior crea hoja/encabezados y una recuperación, una apertura Sheets y lock liberado; harness local 2/2 PASS; contrato CI 21/21 PASS, run 43138825738 SUCCESS Node 22; parseo contrato PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt — C1.601 | sección final | C1.600 | C1.601 Completada local aislada/CI; backend sin cambios; BETA-EXAM-102 Pendiente beta |
+
+
+| C1.602 | IMA-EXEC-20261110-1825Z-02 | saveCompetencyEvaluation: reentrada durante insertSheet y appendRow de encabezados al inicializar EvaluacionesCompetencias; ambas secundarias COMPETENCY_EVALUATION_MUTATION_LOCK_TIMEOUT; exterior crea hoja/encabezados y una evaluación, dos appendRow exteriores, una apertura Sheets y lock liberado; harness local 2/2 PASS; contrato CI 29/29 PASS, run 43139327739 SUCCESS Node 22 | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt — C1.602 | sección final | C1.601 | C1.602 Completada local aislada/CI; backend sin cambios; BETA-EXAM-103 Pendiente beta |

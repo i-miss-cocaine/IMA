@@ -4510,3 +4510,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Corrección de verificación:** el run 43138709373 detectó dos comparaciones de arrays entre contextos JavaScript incompatibles y el runner no propagaba fallos; se corrigieron las aserciones y se añadió un fallo explícito cuando el resumen contiene casos fallidos. La segunda ejecución confirmó 21/21 PASS.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-102 Pendiente beta.
 - **Estado:** C1.601 Completada en verificación local aislada. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+
+
+### 10.251 TASK-153 / AUD-NG-386 — reentrada durante la inicialización de EvaluacionesCompetencias (C1.602)
+- **Brecha confirmada:** saveCompetencyEvaluation ya cubría reentrada durante el append del registro de evaluación y tenía un escenario de creación de hoja, pero no provocaba una segunda llamada al handler durante insertSheet ni durante appendRow de encabezados iniciales cuando EvaluacionesCompetencias no existe.
+- **Cobertura añadida:** el fixture de tests/security/exam-service-competency-evaluation-mutation-security.test.js permite reentrada desde insertSheet y desde appendRow de encabezados; se agregan ambos escenarios y se conservan las pruebas anteriores.
+- **Invariantes:** ambas solicitudes secundarias reciben COMPETENCY_EVALUATION_MUTATION_LOCK_TIMEOUT; la exterior crea una sola hoja, conserva encabezados exactos y registra una única evaluación; dos appendRow exteriores, una apertura de Sheets y ScriptLock liberado.
+- **Alcance:** contrato de seguridad y BETA-EXAM-103; backend productivo sin cambios.
+- **Verificación local:** harness determinista sobre saveCompetencyEvaluation, wrapper, contexto y worker productivos extraídos de backend/exam-service/Code.gs: 2/2 PASS; parseo JavaScript del contrato actualizado PASS.
+- **CI:** GitHub Actions run 43139327739, workflow Exam-Service security local contracts, Node.js 22: SUCCESS; paso Run competency evaluation mutation security regression: 29/29 PASS; job exam-security-contracts SUCCESS.
+- **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-103 Pendiente beta.
+- **Estado:** C1.602 Completada con verificación local focalizada y CI. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
