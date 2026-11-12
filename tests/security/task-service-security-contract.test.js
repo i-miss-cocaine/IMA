@@ -441,7 +441,8 @@ function verifyTokenWithClaims(sourceText, claims) {
       getDataRange: () => ({ getValues: () => [["UserId","","","","","","","","","","Estado"], ["USER-1","","","","","","Estudiante","","","","Activa"]] })
     } : null }) }
   };
-  vm.runInNewContext(extractFunctionFrom(sourceText, "verifySessionToken") + String.fromCharCode(10) + "this.verify = verifySessionToken;", context);
+  const membershipVerifier = sourceText.includes("function verifyUserRoleMembershipClaim_(") ? extractFunctionFrom(sourceText, "verifyUserRoleMembershipClaim_") : "";
+  vm.runInNewContext(membershipVerifier + String.fromCharCode(10) + extractFunctionFrom(sourceText, "verifySessionToken") + String.fromCharCode(10) + "this.verify = verifySessionToken;", context);
   const signature = sourceText.includes("const rawSig = Utilities.computeHmacSignature") ? "7369676e6564" : "signed";
   return context.verify(payloadB64 + "." + signature);
 }

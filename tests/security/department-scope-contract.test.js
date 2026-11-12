@@ -87,7 +87,7 @@ function makeContext() {
     ROLE_PERMISSIONS: {},
     logStructuredEvent: () => {}
   };
-  vm.runInNewContext(scopeFn + "\\n" + validateFn + "\\n" + ownershipFn + "\\n" + permissionFn + "\\nthis.getUserContextScope=getUserContextScope;this.validateRoleScopeAccess=validateRoleScopeAccess;this.assertRecordOwnership=assertRecordOwnership;this.validateRolePermission=validateRolePermission;", ctx);
+  vm.runInNewContext(scopeFn + "\n" + validateFn + "\n" + ownershipFn + "\n" + permissionFn + "\nthis.getUserContextScope=getUserContextScope;this.validateRoleScopeAccess=validateRoleScopeAccess;this.assertRecordOwnership=assertRecordOwnership;this.validateRolePermission=validateRolePermission;", ctx);
   return ctx;
 }
 
