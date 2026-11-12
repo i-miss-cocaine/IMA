@@ -3014,3 +3014,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Local focalizado Node v22.16.0: syntax-check y 8 aserciones PASS; suite completa local NOT RUN. CI run 43293372396: C1.650 40 y C1.651 28 assertions PASS; workflow global FAIL en User Role Membership línea 119, reproducido en runs previos.
 - Sin callsites productivos ni datos reales. TASK-153 continúa En ejecución; siguiente: integración segura en endpoints de consulta e importación.
 ===============================================================================
+
+===============================================================================
+[2026-11-12] C1.652 — integración del filtro departamental en consulta de admisiones
+- getAdmissionRequests aplica filterDepartmentScopedRecords_ para sesiones con membresía RBAC verificada; mantiene compatibilidad con sesiones heredadas sin MembershipID.
+- El adaptador deriva titularidad desde ResourceOwnership del servidor, preserva la unión de departamentos autorizados y reduce el alcance cuando existe activeDepartmentId. Los registros fuera del alcance se excluyen y auditan.
+- Auditoría append-only en AuditoriaAccesoDepartamental; no se devuelven solicitudes ante titularidad ausente/ambigua o fallo de persistencia de auditoría.
+- Pruebas focalizadas agregadas al contrato de seguridad departamental: unión, reducción de alcance, exclusión auditada, titularidad ausente/ambigua y fallo de auditoría.
+- Sin importación, datos reales ni despliegue; TASK-153 continúa En ejecución.
+===============================================================================

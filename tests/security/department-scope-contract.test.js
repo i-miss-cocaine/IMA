@@ -279,3 +279,84 @@ activeTenant = "INST-1";
 assert.equal(permissionCtx.getDynamicPermissionsForRole("Director","readRecords"), false, "institution one cache remains isolated");
 
 console.log("Department scope contract: verified identity, role-bound active scopes, institution-isolated dynamic permissions, effective assignment windows, fail-closed defaults and spoof resistance passed.");
+
+const academicSharedSource = fs.readFileSync(path.resolve(__dirname, "../../backend/shared/DepartmentCatalogContract.gs"), "utf8");
+const academicServiceSource = fs.readFileSync(path.resolve(__dirname, "../../backend/academic-service/Code.gs"), "utf8");
+const queryFilterFn = extractFunction(academicSharedSource, "filterDepartmentScopedRecords_");
+const queryEvaluateFn = extractFunction(academicSharedSource, "evaluateDepartmentReferenceAccess_");
+const queryAuditFn = extractFunction(academicServiceSource, "persistAcademicDepartmentScopeAudit_");
+const queryAdapterFn = extractFunction(academicServiceSource, "filterAcademicAdmissionRequestsByDepartment_");
+
+function makeAcademicQueryContext(options) {
+  options = options || {};
+  const auditRows = [];
+  const ownershipRows = [
+    ["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status"],
+    ["OWN-A","INST-1","SOLICITUD_ADMISION","REQ-A","DEP-A","ACTIVE"],
+    ["OWN-B","INST-1","SOLICITUD_ADMISION","REQ-B","DEP-B","ACTIVE"],
+    ["OWN-C","INST-1","SOLICITUD_ADMISION","REQ-C","DEP-C","ACTIVE"]
+  ];
+  if (options.ambiguous) ownershipRows.push(["OWN-B2","INST-1","SOLICITUD_ADMISION","REQ-B","DEP-B","ACTIVE"]);
+  const auditSheet = {
+    getLastRow: () => auditRows.length,
+    appendRow: row => auditRows.push(row.slice()),
+    getRange: (row, col, numRows, numCols) => ({
+      getValues: () => [auditRows[row - 1].slice(col - 1, col - 1 + numCols)],
+      setValues: values => {
+        if (options.auditFails) throw new Error("AUDIT_WRITE_FAILED");
+        values.forEach(value => auditRows.push(value.slice()));
+      }
+    })
+  };
+  const ss = {
+    getSheetByName(name) {
+      if (name === "ResourceOwnership") return { getDataRange: () => ({ getValues: () => ownershipRows.map(row => row.slice()) }) };
+      if (name === "AuditoriaAccesoDepartamental") return auditSheet;
+      return null;
+    },
+    insertSheet(name) { assert.equal(name, "AuditoriaAccesoDepartamental"); return auditSheet; }
+  };
+  const context = {
+    LockService: { getScriptLock: () => ({ waitLock: () => {}, releaseLock: () => {} }) },
+    Utilities: { getUuid: (() => { let n = 0; return () => "AUD-" + (++n); })() }
+  };
+  vm.runInNewContext(queryEvaluateFn + "\n" + queryFilterFn + "\n" + queryAuditFn + "\n" + queryAdapterFn +
+    "\nthis.filterAcademicAdmissionRequestsByDepartment_=filterAcademicAdmissionRequestsByDepartment_;", context);
+  return { context, ss, auditRows };
+}
+const admissionRows = [["REQ-A"],["REQ-B"],["REQ-C"]];
+const membershipScope = { authorized:true, institutionId:"INST-1", membershipId:"MEM-1", departmentIds:["DEP-A","DEP-B"], institutionWide:false, activeDepartmentId:null };
+const membershipActor = { authorized:true, userId:"U-1", role:"Director" };
+let queryFixture = makeAcademicQueryContext();
+let queryResult = queryFixture.context.filterAcademicAdmissionRequestsByDepartment_(queryFixture.ss,membershipScope,membershipActor,admissionRows);
+assert.equal(queryResult.allowed,true);
+assert.deepEqual(Array.from(queryResult.records,row=>row[0]),["REQ-A","REQ-B"],"membership-bound multi-department union is preserved");
+assert.equal(queryFixture.auditRows.length,4,"one header and one audit event per evaluated row are persisted");
+assert.equal(queryFixture.auditRows[1][11],"ALLOW");
+assert.equal(queryFixture.auditRows[2][11],"ALLOW");
+assert.equal(queryFixture.auditRows[3][11],"DENY","out-of-scope rows are audited but not disclosed");
+
+queryFixture = makeAcademicQueryContext();
+queryResult = queryFixture.context.filterAcademicAdmissionRequestsByDepartment_(queryFixture.ss,
+  Object.assign({},membershipScope,{activeDepartmentId:"DEP-A",departmentIds:["DEP-A"]}),membershipActor,admissionRows);
+assert.deepEqual(Array.from(queryResult.records,row=>row[0]),["REQ-A"],"active department narrows the authorized union");
+
+queryFixture = makeAcademicQueryContext();
+queryResult = queryFixture.context.filterAcademicAdmissionRequestsByDepartment_(queryFixture.ss,membershipScope,membershipActor,[["REQ-MISSING"]]);
+assert.equal(queryResult.allowed,false,"missing ownership fails closed");
+
+queryFixture = makeAcademicQueryContext({ambiguous:true});
+queryResult = queryFixture.context.filterAcademicAdmissionRequestsByDepartment_(queryFixture.ss,membershipScope,membershipActor,[admissionRows[1]]);
+assert.equal(queryResult.allowed,false,"ambiguous active ownership fails closed");
+
+queryFixture = makeAcademicQueryContext({auditFails:true});
+queryResult = queryFixture.context.filterAcademicAdmissionRequestsByDepartment_(queryFixture.ss,membershipScope,membershipActor,[admissionRows[0]]);
+assert.equal(queryResult.allowed,false,"audit persistence failure prevents disclosure");
+assert.equal(queryResult.code,"DEPARTMENT_AUDIT_PERSISTENCE_FAILED");
+
+queryFixture = makeAcademicQueryContext();
+queryResult = queryFixture.context.filterAcademicAdmissionRequestsByDepartment_(queryFixture.ss,
+  Object.assign({},membershipScope,{membershipId:null}),membershipActor,admissionRows);
+assert.equal(queryResult.allowed,false,"membership-bound query contract rejects missing membership");
+
+console.log("Academic admission department query adapter: membership binding, union/narrowing, ownership ambiguity, missing ownership and mandatory audit persistence passed.");

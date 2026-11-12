@@ -1373,6 +1373,84 @@ function getAcademicUserIdentityForAdmission_(ss, userId) {
   return { authorized: true, userId: id, role: String(matches[0][6] || "").trim() };
 }
 
+/**
+ * Persists department access decisions before any matching admission row is disclosed.
+ * The sheet is append-only and schema-checked; persistence failure is fail-closed.
+ */
+function persistAcademicDepartmentScopeAudit_(ss, events) {
+  if (!Array.isArray(events)) return false;
+  if (!events.length) return true;
+  var headers = ["AuditEventID","CheckedAt","ActorUserID","MembershipID","RoleID","InstitutionID","RequestingDepartmentID","OwnerDepartmentID","ResourceType","ResourceID","Operation","Decision","ReasonCode","GrantID","AuthorizedBy","RequestedFieldsJSON","RequestedDocumentIDsJSON"];
+  var lock = LockService.getScriptLock(), acquired = false;
+  try {
+    lock.waitLock(10000); acquired = true;
+    var sheet = ss.getSheetByName("AuditoriaAccesoDepartamental");
+    if (!sheet) { if (typeof ss.insertSheet !== "function") return false; sheet = ss.insertSheet("AuditoriaAccesoDepartamental"); }
+    if (sheet.getLastRow() === 0) sheet.appendRow(headers);
+    var actual = sheet.getRange(1,1,1,headers.length).getValues()[0].map(function(value){return String(value||"").trim();});
+    if (headers.some(function(value,index){return actual[index]!==value;})) return false;
+    var rows = events.map(function(event) { return [
+      Utilities.getUuid(),event.checkedAt||new Date().toISOString(),event.actorUserId||"",event.membershipId||"",
+      event.roleId||"",event.institutionId||"",event.requestingDepartmentId||"",event.ownerDepartmentId||"",
+      event.resourceType||"",event.resourceId||"",event.operation||"",event.decision||"",event.reasonCode||"",
+      event.grantId||"",event.authorizedBy||"",JSON.stringify(event.requestedFields||[]),JSON.stringify(event.requestedDocumentIds||[])
+    ]; });
+    sheet.getRange(sheet.getLastRow()+1,1,rows.length,headers.length).setValues(rows);
+    return true;
+  } catch(error) { return false; }
+  finally { if(acquired) lock.releaseLock(); }
+}
+
+/**
+ * Applies the shared department query contract to membership-bound admission requests.
+ * Scope and ownership snapshots are loaded server-side; client department identifiers
+ * are never used as authority. Legacy sessions retain their existing ownership guard.
+ */
+function filterAcademicAdmissionRequestsByDepartment_(ss, scope, actor, rows) {
+  if (!scope || scope.authorized !== true || !scope.membershipId || !actor ||
+      actor.authorized !== true || !actor.userId || !actor.role || !Array.isArray(rows)) {
+    return { allowed:false, code:"DEPARTMENT_QUERY_VERIFIED_ACTOR_REQUIRED", records:[] };
+  }
+  var ownershipSheet = ss && ss.getSheetByName("ResourceOwnership");
+  if (!ownershipSheet) return { allowed:false, code:"RESOURCE_OWNERSHIP_NOT_CONFIGURED", records:[] };
+  var ownershipData = ownershipSheet.getDataRange().getValues();
+  var requiredHeaders = ["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status"];
+  var actualHeaders = ownershipData.length ? ownershipData[0].slice(0,requiredHeaders.length).map(String) : [];
+  if (requiredHeaders.some(function(value,index){return actualHeaders[index]!==value;})) {
+    return { allowed:false, code:"RESOURCE_OWNERSHIP_SCHEMA_MISMATCH", records:[] };
+  }
+  var wanted = Object.create(null);
+  var candidates = rows.map(function(row) {
+    var id=String(row&&row[0]||"").trim();
+    if(id)wanted["SOLICITUD_ADMISION|"+id]=true;
+    return {resourceType:"SOLICITUD_ADMISION",resourceId:id,sourceRow:row};
+  }).filter(function(record){return !!record.resourceId;});
+  var ownershipRows = ownershipData.slice(1).filter(function(row) {
+    var key=String(row[2]||"").trim().toUpperCase()+"|"+String(row[3]||"").trim();
+    return String(row[1]||"").trim()===String(scope.institutionId||"").trim() &&
+      String(row[5]||"").trim().toUpperCase()==="ACTIVE" && !!wanted[key];
+  }).map(function(row) {
+    return {verified:true,institutionId:String(row[1]).trim(),resourceType:String(row[2]).trim(),
+      resourceId:String(row[3]).trim(),departmentId:String(row[4]||"").trim()};
+  });
+  var domain="ACADEMIC_ADMISSIONS";
+  var actorContext = {
+    verified:true,userId:String(actor.userId).trim(),membershipId:String(scope.membershipId).trim(),
+    roleId:String(actor.role).trim(),institutionId:String(scope.institutionId||"").trim(),
+    activeDepartmentId:String(scope.activeDepartmentId||"").trim(),
+    authorizedDepartmentIds:(scope.departmentIds||[]).map(function(value){return String(value||"").trim();}).filter(Boolean),
+    institutionWide:scope.institutionWide===true,institutionWideAuthorized:scope.institutionWide===true
+  };
+  var filtered=filterDepartmentScopedRecords_({
+    actorContext:actorContext,domain:domain,records:candidates,ownershipRows:ownershipRows,
+    snapshotScopeVerified:true,snapshotInstitutionId:actorContext.institutionId,snapshotDomain:domain,
+    ownershipScopeVerified:true,ownershipInstitutionId:actorContext.institutionId,ownershipDomain:domain,now:new Date()
+  });
+  if(!filtered.allowed)return {allowed:false,code:filtered.code,records:[]};
+  if(!persistAcademicDepartmentScopeAudit_(ss,filtered.auditEvents))return {allowed:false,code:"DEPARTMENT_AUDIT_PERSISTENCE_FAILED",records:[]};
+  return {allowed:true,code:filtered.code,records:filtered.records.map(function(record){return record.sourceRow;})};
+}
+
 function getAdmissionRequests(payload) {
   const permission=validateRolePermission("getAdmissionRequests",payload);
   if(!permission||permission.authorized!==true)return {status:"error",code:"RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
@@ -1382,15 +1460,23 @@ function getAdmissionRequests(payload) {
   if(!scope||!scope.authorized)return {status:"error",code:"RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
   const {estado,anolectivo,grado,solicitudId,page,pageSize,fetchAll}=payload||{};
   const allRows=getOrCreateSheet(ss,"SolicitudesAdmision").getDataRange().getValues().slice(1);
-  const filtered=allRows.filter(row=>{
+  const candidates=allRows.filter(row=>{
     const id=String(row[0]||"").trim();
-    if(!id||!assertAcademicAdmissionRequestScopeAccess_(ss,scope,id,payload).authorized)return false;
+    if(!id)return false;
     if(estado&&String(row[11]).trim()!==String(estado).trim())return false;
     if(anolectivo&&String(row[2]).trim()!==String(anolectivo).trim())return false;
     if(grado&&normalizeString(row[3])!==normalizeString(grado))return false;
     if(solicitudId&&id!==String(solicitudId).trim())return false;
     return true;
   });
+  let filtered;
+  if(scope.membershipId){
+    const departmentResult=filterAcademicAdmissionRequestsByDepartment_(ss,scope,actor,candidates);
+    if(!departmentResult.allowed)return {status:"error",code:"RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
+    filtered=departmentResult.records;
+  }else{
+    filtered=candidates.filter(row=>assertAcademicAdmissionRequestScopeAccess_(ss,scope,String(row[0]||"").trim(),payload).authorized);
+  }
   if(solicitudId&&filtered.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Solicitud no encontrada."};
   const totalRecords=filtered.length;
   let paginatedRows=filtered,pageNum=1,limit=totalRecords||1,totalPages=1;

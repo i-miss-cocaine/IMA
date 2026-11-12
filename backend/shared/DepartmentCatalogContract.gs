@@ -297,13 +297,18 @@ function filterDepartmentScopedRecords_(input) {
     var record=records[i]||{},recordType=String(record.resourceType||"").trim().toUpperCase(),recordId=String(record.resourceId||"").trim(),recordKey=recordType+"|"+recordId;
     if(!recordType||!recordId||!Object.prototype.hasOwnProperty.call(ownership,recordKey))return fail("DEPARTMENT_QUERY_OWNERSHIP_MISSING");
     var owner=ownership[recordKey];
-    var decision=evaluateDepartmentReferenceAccess_({actorContext:actor,resourceOwnership:{verified:true,institutionId:institutionId,departmentId:owner.departmentId,resourceType:recordType,resourceId:recordId},institutionalConfig:cfg.institutionalConfig||{},operation:"READ_METADATA",now:cfg.now});
+    var decisionActor=actor;
+    if(actor.institutionWide!==true&&Array.isArray(actor.authorizedDepartmentIds)){
+      var allowedDepartment=actor.authorizedDepartmentIds.some(function(value){return String(value||"").trim()===String(owner.departmentId||"").trim();});
+      decisionActor={};Object.keys(actor).forEach(function(key){decisionActor[key]=actor[key];});
+      decisionActor.activeDepartmentId=String(actor.activeDepartmentId||"").trim()||(allowedDepartment?String(owner.departmentId).trim():"");
+    }
+    var decision=evaluateDepartmentReferenceAccess_({actorContext:decisionActor,resourceOwnership:{verified:true,institutionId:institutionId,departmentId:owner.departmentId,resourceType:recordType,resourceId:recordId},institutionalConfig:cfg.institutionalConfig||{},operation:"READ_METADATA",now:cfg.now});
     auditEvents.push(decision.auditEvent);
     if(decision.allowed)visible.push(record);
   }
   return {allowed:true,code:"DEPARTMENT_QUERY_FILTERED",records:visible,auditEvents:auditEvents,requiresStandardAuthorization:true,excludedRecordsNotDisclosed:true};
 }
-
 /**
  * Validates a whole import batch before writes. Server-verified membership and target
  * department snapshots are mandatory; mixed-department batches fail closed.
