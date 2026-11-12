@@ -66,7 +66,9 @@ assert.equal(assignmentList.data[0].responsibility.institutionalResponsibilityId
 assert.equal(joinCtx.getInternalRoleAssignments({userId:"U-1",roleId:"Director",membershipId:"MEM-2"}).data.length,0,"another membership cannot read the assignment");
 
 const authClaims = { "valid-admin": {userId:"U-ADMIN",role:"Administrador"}, "valid-hr": {userId:"U-HR",role:"RecursosHumanos"} };
+let responsibilityLockBusy = false, responsibilityLockReleases = 0;
 const authCtx = {
+  LockService: { getScriptLock: () => ({ waitLock: () => { if (responsibilityLockBusy) throw new Error("WRITE_LOCK_BUSY"); }, releaseLock: () => { responsibilityLockReleases++; } }) },
   verifySessionToken: token => authClaims[token] || null,
   getUserVerifiedRole: undefined,
   getOrCreateSheet: (_ss,name) => name === "ResponsabilidadesInstitucionales" ? responsibilitySheet : roleSheet,
@@ -94,11 +96,26 @@ assert.equal(spoofedSave.code,"AUTH_PERMISSION_DENIED","client-supplied roles ca
 const saved = authCtx.saveInstitutionalResponsibility({sessionToken:"valid-admin",name:"Coordinación de área",modules:["mod_coord"],capabilities:["CAP_ADMINISTRAR"]});
 assert.equal(saved.status,"success");
 assert.equal(capabilityRows.at(-1)[6],"U-ADMIN","audit actor is derived from verified identity");
+const capabilityCountBeforeBusyWrite = capabilityRows.length;
+responsibilityLockBusy = true;
+const busySave = authCtx.saveInstitutionalResponsibility({sessionToken:"valid-admin",name:"No debe guardarse",modules:[],capabilities:[]});
+assert.equal(busySave.code,"WRITE_LOCK_BUSY");
+assert.equal(capabilityRows.length,capabilityCountBeforeBusyWrite,"a busy write lock prevents concurrent responsibility catalog writes");
+responsibilityLockBusy = false;
 const spoofedManage = authCtx.manageInternalRoleCatalog({authRole:"RecursosHumanos",nombreResponsabilidad:"Rol falso"});
 assert.equal(spoofedManage.code,"AUTH_PERMISSION_DENIED","client-supplied roles cannot authorize internal role writes");
 const managed = authCtx.manageInternalRoleCatalog({sessionToken:"valid-hr",nombreResponsabilidad:"Supervisor",responsibilityId:saved.responsibilityId});
 assert.equal(managed.status,"success");
 assert.equal(roleRows.at(-1)[13],saved.responsibilityId,"internal roles persist an explicit link to an active institutional responsibility");
+const roleCountBeforeBusyWrite = roleRows.length;
+responsibilityLockBusy = true;
+const busyManage = authCtx.manageInternalRoleCatalog({sessionToken:"valid-hr",nombreResponsabilidad:"No debe guardarse"});
+assert.equal(busyManage.code,"WRITE_LOCK_BUSY");
+assert.equal(roleRows.length,roleCountBeforeBusyWrite,"a busy write lock prevents concurrent internal role catalog writes");
+responsibilityLockBusy = false;
+const sameRole = authCtx.manageInternalRoleCatalog({sessionToken:"valid-hr",nombreResponsabilidad:"Supervisor",responsibilityId:saved.responsibilityId});
+assert.equal(sameRole.rolInternoId,managed.rolInternoId);
+assert.equal(roleRows.length,roleCountBeforeBusyWrite,"repeated role creation is idempotent under the script lock");
 
 const emptyCatalogCtx = { SPREADSHEET_ID:"LOCAL", SpreadsheetApp:{openById:()=>({getSheetByName:()=>null})} };
 vm.runInNewContext(catalogFn + "\nthis.getInstitutionalResponsibilitiesCatalog=getInstitutionalResponsibilitiesCatalog;",emptyCatalogCtx);

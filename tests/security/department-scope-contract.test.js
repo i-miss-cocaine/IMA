@@ -186,7 +186,9 @@ const assignSheet = {
   getRange: (row, col) => ({ setValue: value => { while (assignedScopeRows.length < row) assignedScopeRows.push([]); assignedScopeRows[row - 1][col - 1] = value; } }),
   appendRow: row => assignedScopeRows.push(row.slice())
 };
+let assignmentLockBusy = false;
 const assignCtx = {
+  LockService: { getScriptLock: () => ({ waitLock: () => { if (assignmentLockBusy) throw new Error("WRITE_LOCK_BUSY"); }, releaseLock: () => {} }) },
   SPREADSHEET_ID: "LOCAL",
   getIdentityInstitutionId_: () => "INST-1",
   getUserRoleMembershipState_: () => ({ hasRecords: true }),
@@ -214,6 +216,11 @@ assert.equal(secondMembershipAssignment.status, "success");
 assert.equal(assignedScopeRows.length, 3, "a different membership receives a separate assignment row");
 assert.equal(assignedScopeRows[2][13], "MEM-TARGET-2");
 assert.equal(assignedScopeRows[2][14], "RESP-ACTIVE");
+assignmentLockBusy = true;
+const blockedConcurrentScope = assignCtx.assignRoleScope({ _verifiedRole: "Administrador", _verifiedUserId: "U-ADMIN", userId: "U-1", roleId: "Director", responsibilityId: "RESP-ACTIVE", scopeType: "DEPARTAMENTO", scopeValues: ["DEP-B"] });
+assert.equal(blockedConcurrentScope.code, "WRITE_LOCK_BUSY");
+assert.equal(assignedScopeRows.length, 3, "scope assignment lock contention causes no partial write");
+assignmentLockBusy = false;
 assignCtx.resolveUserRoleMembership_ = () => null;
 const inactiveMembershipAssignment = assignCtx.assignRoleScope({ _verifiedRole: "Administrador", _verifiedUserId: "U-ADMIN", userId: "U-1", roleId: "Director", responsibilityId: "RESP-ACTIVE", scopeType: "DEPARTAMENTO", scopeValues: ["DEP-C"] });
 assert.equal(inactiveMembershipAssignment.status, "error");
