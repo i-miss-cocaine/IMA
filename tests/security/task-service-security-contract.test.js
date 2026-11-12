@@ -723,3 +723,82 @@ console.log("TASK-153 legacy document and folder-IDOR contracts passed.");
   assert.equal(driveAccess,false,"Drive is not accessed before general-scope authorization");
 }
 console.log("TASK-153 administrative content mutation scope contracts passed.");
+
+function makeSubmitAssignmentConcurrencyHarness(options = {}) {
+  const state = { held:false, lockAttempts:0, opens:0, ownershipChecks:0, releases:0, deliveryAppends:0, versionAppends:0, updates:0, uuid:0 };
+  const makeSheet = (name, rows) => ({
+    rows,
+    getLastRow: () => rows.length,
+    getDataRange: () => ({ getValues: () => rows.map(row => row.slice()) }),
+    appendRow(row) {
+      assert.equal(state.held, true, name + " append must occur while ScriptLock is held");
+      if (name === "Entregas") { state.deliveryAppends++; if (options.onDeliveryAppend) options.onDeliveryAppend(row.slice()); }
+      if (name === "EntregasVersiones") state.versionAppends++;
+      rows.push(row.slice());
+    },
+    getRange(row, col, numRows, numCols) {
+      return { setValues(values) { state.updates++; values.forEach((value, index) => { rows[row - 1 + index] = value.slice(); }); } };
+    }
+  });
+  const taskSheet = makeSheet("Tareas", [
+    ["TareaID","Titulo","Descripcion","Materia","Grado","Seccion","ProfesorID","Estado","FechaLimite"],
+    ["TASK-1","Tarea de prueba","","Matemáticas","6","A","TEACHER-1","Activa","2099-12-31T23:59:59Z"]
+  ]);
+  const deliverySheet = makeSheet("Entregas", [
+    ["EntregaID","TareaID","UserID","FechaEnvio","FileID","ArchivoURL","Estado","Observaciones","MimeType"]
+  ]);
+  const versionsSheet = makeSheet("EntregasVersiones", []);
+  const sheets = { Tareas:taskSheet, Entregas:deliverySheet, EntregasVersiones:versionsSheet };
+  const ss = { getSheetByName: name => sheets[name] || null };
+  const context = {
+    SPREADSHEET_ID:"LOCAL",
+    LockService:{ getScriptLock:()=>({ tryLock(){ state.lockAttempts++; if(options.lockAvailable===false || state.held)return false; state.held=true; return true; }, releaseLock(){ state.releases++; state.held=false; } }) },
+    SpreadsheetApp:{ openById(){ state.opens++; assert.equal(state.held,true); return ss; } },
+    getSheetOrThrow:(_ss,name)=>{if(!sheets[name])throw new Error("SHEET_NOT_FOUND");return sheets[name];},
+    getOrCreateSheet:(_ss,name)=>sheets[name],
+    assertTaskServiceStudentCanAccessTask:(_ss,userId,row)=>{state.ownershipChecks++;assert.equal(state.held,true);assert.equal(userId,"STU-1");assert.equal(row[0],"TASK-1");},
+    getDriveStorageQuotaMetricsReport:()=>({status:"success",metrics:{porcentajeUso:"10"}}),
+    extractTaskServiceFileId:value=>String(value||"").trim(),
+    Utilities:{getUuid:()=> "UUID-"+(++state.uuid)},
+    Logger:{log(){}},
+    Date
+  };
+  vm.runInNewContext(extractFunction("submitAssignment")+"\nthis.run=submitAssignment;",context);
+  const payload = { _verifiedUserId:"STU-1", _verifiedRole:"Estudiante", tareaId:"TASK-1", mimeType:"application/pdf", textoRespuesta:"respuesta", observaciones:"entrega de prueba" };
+  return { call:()=>context.run(payload), state, deliveries:deliverySheet, versions:versionsSheet };
+}
+{
+  let fixture, nestedError = "";
+  fixture = makeSubmitAssignmentConcurrencyHarness({ onDeliveryAppend() {
+    try { fixture.call(); } catch (error) { nestedError = error.message; }
+  }});
+  const first = fixture.call();
+  assert.equal(first.status,"success");
+  assert.equal(first.data.versionNum,1);
+  assert.equal(nestedError,"TASK_SUBMISSION_LOCK_TIMEOUT");
+  assert.equal(fixture.state.lockAttempts,2);
+  assert.equal(fixture.state.opens,1,"nested submit must fail before opening Sheets");
+  assert.equal(fixture.state.ownershipChecks,1,"ownership must be rechecked once under the outer lock");
+  assert.equal(fixture.state.deliveryAppends,1,"only one delivery row may be created");
+  assert.equal(fixture.state.versionAppends,2,"version header plus one version row");
+  assert.equal(fixture.deliveries.rows.length,2);
+  assert.equal(fixture.versions.rows.length,2);
+  assert.equal(fixture.state.releases,1);
+  assert.equal(fixture.state.held,false);
+  const retry = fixture.call();
+  assert.equal(retry.data.entregaId,first.data.entregaId,"retry must reuse the existing delivery ID");
+  assert.equal(retry.data.versionNum,2,"retry must append the next version");
+  assert.equal(fixture.deliveries.rows.length,2,"retry must not duplicate the delivery row");
+  assert.equal(fixture.versions.rows.length,3,"retry must append exactly one additional version");
+  assert.equal(fixture.state.deliveryAppends,1);
+  assert.equal(fixture.state.releases,2);
+  const busy = makeSubmitAssignmentConcurrencyHarness({ lockAvailable:false });
+  assert.throws(()=>busy.call(),/TASK_SUBMISSION_LOCK_TIMEOUT/);
+  assert.equal(busy.state.opens,0);
+  assert.equal(busy.state.ownershipChecks,0);
+  assert.equal(busy.state.deliveryAppends,0);
+  assert.equal(busy.state.versionAppends,0);
+  assert.equal(busy.state.releases,0);
+  assert.equal(busy.state.held,false);
+}
+console.log("TASK-153 submitAssignment lock and versioning contract passed.");
