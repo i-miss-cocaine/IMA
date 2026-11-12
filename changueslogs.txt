@@ -2748,3 +2748,14 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
 - C1.626 completada; T153-S02 continúa En ejecución. Siguiente: consistencia de responsabilidades/ámbitos con permisos RBAC explícitos por membresía.
 ===============================================================================
+
+
+ 
+===============================================================================
+[2026-11-12] C1.627 — autorización RBAC explícita aislada por membresía
+- Contrato con getDynamicPermissionsForRole y validateRolePermission reales: Director aprueba/no consulta auditoría; Auditor consulta auditoría/no aprueba, conforme a grants institucionales explícitos.
+- No hay herencia entre roles; CAP_ADMINISTRAR en metadatos/payload no eleva el permiso denegado. Revocar Director no afecta la concesión independiente de Auditor.
+- Contrato completo V8 aislado PASS, incluidos C1.621–C1.627; sintaxis backend/test PASS.
+- Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
+- C1.627 completada; T153-S02 sigue En ejecución. Siguiente: coherencia de vínculos responsabilidad/ámbito entre contexto y listado administrativo.
+===============================================================================
