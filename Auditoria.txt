@@ -2251,3 +2251,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - GitHub Actions run 43139327739 SUCCESS; contrato exam-service-competency-evaluation-mutation-security 29/29 PASS, Node.js 22; job exam-security-contracts SUCCESS.
 - Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-103 Pendiente beta. C1.602 Completada.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.603 — reentrada al inicializar CategoriasEvaluacion
+- Se amplía el fixture de saveEvaluationCategory con hooks en insertSheet y appendRow para provocar una segunda llamada durante la inicialización de la hoja ausente.
+- Ambas secundarias deben recibir EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; la operación exterior conserva una hoja, encabezados exactos, una categoría y un ownership activo asociado; una apertura Sheets y lock liberado.
+- Harness local determinista sobre handlers productivos extraídos de Code.gs: 2/2 PASS; parseo JavaScript del contrato PASS.
+- Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-104 Pendiente beta. C1.603 en verificación CI; TASK-153 / AUD-NG-386 continúa En ejecución.
+===============================================================================
