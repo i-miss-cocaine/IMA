@@ -1283,3 +1283,19 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - **Estado:** C1.632 completada. T153-S02 permanece En ejecución; no iniciar T153-S03.
 - **Siguiente acción:** contrastar las funciones de lectura de membresías/roles con el contexto activo y permisos de sesión ante estados inactivos, duplicados y tenant mismatch.
 ===============================================================================
+
+
+===============================================================================
+### C1.633 — IMA-EXEC-20261112-1754Z-03 — vinculación de sesión firmada con institución y membresía
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.632.
+- **HEAD inicial:** `b78f7c9aa899cd444cf40fef3a91c20e7bff2f4b`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Comprobar que la sesión firmada queda ligada a una MembershipID exacta y a la institución activa, y que los estados de cuenta/membresía invalidan el acceso.
+- **Contrato:** ejecuta el `verifySessionToken` y `getUserContextScope` reales con firma/HMAC y decodificación de payload controladas por fixtures; la resolución de membresía, estado de cuenta y contexto usa funciones productivas.
+- **Casos:** sesión local válida; membresía válida de otra institución; claim que intercambia InstitutionID conservando una MembershipID ajena; revocación de la membresía local; cuenta inactiva. Se verifica también que el contexto local solo expone DEP-A.
+- **Verificación local:** contrato completo V8 aislado **PASS**, incluidos C1.621–C1.633. Parseo sintáctico backend USER/test **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** HMAC/CacheService/Sheets reales y sesiones desplegadas NOT RUN; escenario registrado en `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `tests/security/internal-responsibility-rbac-contract.test.js`; sin cambios de lógica productiva.
+- **Commits de contrato:** `4021a57c4e092fb176f329639ee0318a3703e17d`; corrección de fixture de payload `889de9aa944d9b420d1c02ebc19b7504d6ec5f64`; padding del payload `481647a1ec59530a1af452879cbec1772e15a8b1`.
+- **Estado:** C1.633 completada. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** revisar revocación y caché de sesión (usuario/membresía/sesión), expiración de tokens y consistencia de invalidación inmediata ante cambios de estado.
+===============================================================================
