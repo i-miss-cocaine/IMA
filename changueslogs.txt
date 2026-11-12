@@ -2865,7 +2865,7 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
  
 ===============================================================================
 [2026-11-12] C1.637 — migración controlada de sesiones históricas
-- Se agrega SESSION_REVOCATION_LEGACY_CUTOFF opcional: unset preserva compatibilidad; epoch configurado invalida tokens iat anterior/igual; tokens posteriores se aceptan; valor inválido falla cerrado.
+- Se define LEGACY_SESSION_CUTOFF como fila opcional de EstadoRevocacionSesiones: ausente preserva compatibilidad; epoch configurado invalida tokens iat anterior/igual; tokens posteriores se aceptan; valor inválido falla cerrado. C1.639 lo comparte con todos los consumidores.
 - El cutoff no se activa automáticamente; el responsable de rollout puede decidir reautenticación general. Revocaciones cache-only perdidas no son recuperables.
 - Contrato completo V8 aislado PASS, incluidos C1.621–C1.637; sintaxis backend/test PASS.
 - Node CLI independiente NOT RUN; CI no ejecutado; ScriptProperties/rollout real Pendiente beta.
