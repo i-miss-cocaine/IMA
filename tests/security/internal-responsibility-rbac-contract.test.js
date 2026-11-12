@@ -1211,7 +1211,7 @@ const sourceResolved=departmentCatalogCtx.resolveDepartmentCatalogReference_({co
 assert.equal(sourceResolved.resolved,true,"explicitly approved source catalog resolves an active stable ID");
 assert.equal(sourceResolved.canonicalId,"D-CHILD");
 assert.equal(sourceResolved.parentId,"D-ROOT");
-assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:departmentConfig,records:departmentRecords,sourceId:"D-CHILD",effectiveAt:0}).effectiveAt,"1970-01-01T00:00:00.000Z","epoch zero is a valid injected effective timestamp, not a missing value");
+assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:departmentConfig,records:departmentRecords,sourceId:"D-ROOT",effectiveAt:0}).effectiveAt,"1970-01-01T00:00:00.000Z","epoch zero is a valid injected effective timestamp, not a missing value");
 const renamedRecords=departmentRecords.map(row=>row.DepartamentoID==="D-CHILD"?{...row,Nombre:"Ciencias Matemáticas"}:row);
 assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:departmentConfig,records:renamedRecords,sourceId:"D-CHILD",effectiveAt:fixedTemporalNow}).canonicalId,"D-CHILD","renaming a label does not change the stable key");
 assert.equal(departmentCatalogCtx.resolveDepartmentCatalogReference_({config:departmentConfig,records:departmentRecords,sourceId:"Matemáticas",effectiveAt:fixedTemporalNow}).code,"DEPARTMENT_SOURCE_KEY_NOT_FOUND","display name is never a fallback identity");
