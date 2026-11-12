@@ -2213,3 +2213,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - GitHub Actions run 43136684120, commit 0d0c7a083c13b4224642b0a2d38f8a04ae4f4590: workflow SUCCESS en Node.js 22; contrato createExam 17/17 PASS y job exam-security-contracts SUCCESS.
 - Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-099 Pendiente beta. C1.598 Completada.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.599 — reentrada de gradeExamSubmission durante setValues
+- Se añade al contrato de validación de calificación una ejecución del handler real con wrapper y contextos de autorización reales extraídos de Code.gs; el setValues exterior intenta una segunda calificación.
+- La secundaria debe recibir EXAM_SUBMISSION_LOCK_TIMEOUT; la exterior realiza una sola escritura con calificación y metadatos correctos, no duplica lecturas y libera ScriptLock.
+- Verificación local focalizada 1/1 PASS; parseo de fuente y test PASS. GitHub Actions run 43137456877 SUCCESS, Node.js 22; contrato grade-submission-validation 18/18 PASS; job exam-security-contracts SUCCESS.
+- Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-100 Pendiente beta. C1.599 Completada; TASK-153 / AUD-NG-386 continúa En ejecución.
+===============================================================================

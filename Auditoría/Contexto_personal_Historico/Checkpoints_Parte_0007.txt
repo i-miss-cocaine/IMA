@@ -407,3 +407,31 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - Runner CI ejecutó el código y fixtures sin despliegue ni infraestructura remota. Apps Script/Sheets real NOT RUN; BETA-EXAM-099 permanece Pendiente beta.
 - C1.598 **Completada con verificación local focalizada y suite CI**. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
 - HEAD de código probado: `0d0c7a083c13b4224642b0a2d38f8a04ae4f4590`; HEAD final se confirma tras commit documental.
+
+
+===============================================================================
+## C1.599 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de gradeExamSubmission durante persistencia.
+
+### Hallazgo y cambio
+- El contrato validaba rangos de calificación, metadatos, autorización, identidad y ownership, pero no reentrada durante setValues de EntregasExamen.
+- Se amplía `tests/security/exam-service-grade-submission-validation.test.js` con un escenario que ejecuta el handler, wrapper y contextos productivos extraídos de Code.gs y provoca una segunda calificación desde setValues.
+- La secundaria debe recibir EXAM_SUBMISSION_LOCK_TIMEOUT; la exterior guarda una sola actualización con nota/metadatos correctos y libera ScriptLock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-grade-submission-validation.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Smoke local focalizado sobre handlers productivos extraídos de Code.gs: 1/1 PASS; parseo de Code.gs y del contrato PASS.
+- GitHub Actions run 43137456877, commit `167cf09d1697cfec475d937b831006d6d289b861`: workflow Exam-Service security local contracts SUCCESS, Node.js 22; contrato grade-submission-validation 18/18 PASS; job exam-security-contracts SUCCESS.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-100 Pendiente beta.
+- C1.599 Completada con verificación local focalizada y suite CI. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD inicial: `9cec1b697cd148ecdde1ee62c1de035890359732`; HEAD de código probado: `167cf09d1697cfec475d937b831006d6d289b861`; HEAD final se confirma tras commit documental.
+===============================================================================

@@ -1145,3 +1145,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; harness local focalizado 3/3 PASS; GitHub Actions run 43136684120 SUCCESS, suite createExam 17/17 PASS en Node.js 22. Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de llamadas exteriores/secundarias, adquisiciones/liberaciones del lock, aperturas de Sheets, conteos appendRow/setValues y snapshots de Examenes, PreguntasExamen y ResourceOwnership antes/después.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-100 — TASK-153 / AUD-NG-386 / EXAM: contención reentrante de gradeExamSubmission durante setValues
+- **Módulo/rol:** Servicio EXAM; Profesor autenticado con permiso gradeExamSubmission, identidad firmada, ámbito departamental y ownership de examen verificados.
+- **Objetivo:** verificar en Apps Script/Sheets desplegado que una solicitud secundaria de calificación iniciada durante setValues de EntregasExamen no adquiere el ScriptLock ni altera la entrega.
+- **Precondiciones:** versión beta desplegada; profesor autorizado y propietario del examen; entrega existente con esquema válido; entorno de prueba con mecanismo controlado de reentrada en setValues.
+- **Pasos:** ejecutar gradeExamSubmission con calificación y metadatos válidos; desde setValues iniciar una segunda calificación sobre la misma entrega; revisar respuestas, trazas RBAC/identidad/lock/Sheets y snapshot de la entrega.
+- **Resultado esperado:** secundaria EXAM_SUBMISSION_LOCK_TIMEOUT; exterior guarda una sola actualización con calificación/metadatos correctos; una lectura de entrega y examen por contexto exterior, el lock se libera y no hay segunda escritura.
+- **Estado:** Pendiente beta; escenario local focalizado PASS; GitHub Actions run 43137456877 SUCCESS, contrato grade-submission-validation 18/18 PASS en Node.js 22. Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, trazas saneadas de llamadas exterior/secundaria, adquisiciones/liberaciones del lock, aperturas/lecturas de Sheets, contador setValues y snapshot de EntregasExamen antes/después.
+===============================================================================

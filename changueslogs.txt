@@ -2380,3 +2380,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Smoke local de tres puntos de reentrada: 3/3 PASS; suite createExam en GitHub Actions run 43136684120: 17/17 PASS, workflow SUCCESS Node.js 22.
 - C1.598 Completada en verificación local focalizada/CI; backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-099 Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.599 — reentrada en calificación de entregas EXAM
+- Añadida cobertura de reentrada durante setValues de EntregasExamen; la llamada secundaria recibe EXAM_SUBMISSION_LOCK_TIMEOUT y no altera la entrega.
+- Smoke local focalizado 1/1 PASS; CI run 43137456877 SUCCESS; contrato grade-submission-validation 18/18 PASS, Node.js 22.
+- Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-100 Pendiente beta. C1.599 Completada.
+===============================================================================

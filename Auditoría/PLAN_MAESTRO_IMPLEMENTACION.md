@@ -4476,3 +4476,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI:** GitHub Actions run 43136684120, workflow `Exam-Service security local contracts`, Node.js 22: SUCCESS; paso `Run exam creation security regression`, contrato `exam-service-create-exam-security: 17/17 PASS`; job `exam-security-contracts` SUCCESS. El runner ejecutó código/fixtures sin despliegue ni infraestructura remota.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-099 permanece Pendiente beta.
 - **Estado:** C1.598 Completada con verificación local focalizada y suite CI. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+
+
+### 10.248 TASK-153 / AUD-NG-386 — contención reentrante de gradeExamSubmission durante setValues (C1.599)
+- **Brecha confirmada:** el contrato validaba la calificación, metadatos, RBAC, identidad, ownership y revalidación de contexto, pero no iniciaba una segunda calificación durante la escritura de EntregasExamen.
+- **Cobertura añadida:** el fixture de `exam-service-grade-submission-validation` ejecuta el handler productivo con wrapper/contextos reales extraídos y provoca reentrada desde setValues.
+- **Invariantes:** secundaria `EXAM_SUBMISSION_LOCK_TIMEOUT`; exterior guarda una única actualización con nota y metadatos esperados; no se repite lectura/actualización por la secundaria y ScriptLock queda liberado.
+- **Alcance:** únicamente contrato de pruebas; backend productivo sin cambios. BETA-EXAM-100 registra la comprobación desplegada.
+- **Verificación local:** escenario focalizado determinista ejecutado sobre handlers productivos extraídos de `backend/exam-service/Code.gs`: 1/1 PASS; parseo de Code.gs y del contrato PASS.
+- **CI:** GitHub Actions run 43137456877, workflow Exam-Service security local contracts, Node.js 22: SUCCESS; contrato grade-submission-validation 18/18 PASS; job exam-security-contracts SUCCESS.
+- **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-100 Pendiente beta.
+- **Estado:** C1.599 Completada con verificación local focalizada y suite CI. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
