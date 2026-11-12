@@ -1053,7 +1053,7 @@ assert.ok(originalSharedLedgerSheet,"the shared ledger fixture remains available
 console.log("C1.639 cross-service revocation contract: USER session/user revocation, shared migration cutoff and missing-ledger fail-closed behavior enforced by ACADEMIC, ACCOUNTING, TASK and EXAM PASS.");
 
  
-// C1.641: every service-specific department reader binds scope rows to the exact signed membership, tenant and active responsibility.
+// C1.642: every service-specific department reader binds scope rows to the exact signed membership, tenant and active responsibility.
 const scopeRoleHeaders=["RolInternoID","CodigoInterno","NombreResponsabilidad","Descripcion","Departamento","AreaAcademica","TipoResponsabilidad","VigenciaMeses","PermiteSuplencia","Estado","CreadoPor","FechaCreacion","FechaActualizacion","ResponsibilityID"];
 const scopeResponsibilityHeaders=["ResponsibilityID","Nombre","Descripcion","ModulosJSON","CapacidadesJSON","Estado","CreadoPor","FechaActualizacion"];
 const scopeRoleRows=[scopeRoleHeaders,
@@ -1102,7 +1102,7 @@ for(const [serviceName,readerName] of scopeServiceReaders){
  assert.equal(scopeCtx.scopeReader({sessionToken:"scope-wrong-tenant"},ss,actor).authorized,false,serviceName+" rejects a signed institution mismatch");
  assert.equal(scopeCtx.scopeReader({sessionToken:"scope-valid"},ss,{authorized:true,userId:"U-SCOPE",role:"Auditor"}).authorized,false,serviceName+" rejects an identity/claim role mismatch");
 }
-console.log("C1.641 cross-service scope contract: exact signed MembershipID/InstitutionID/RoleID binding, active responsibility chain, duplicate IDs, temporal fail-closed, multi-department union and activeDepartmentId narrowing PASS.");
+console.log("C1.642 cross-service scope contract: exact signed MembershipID/InstitutionID/RoleID binding, active responsibility chain, duplicate IDs, temporal fail-closed, multi-department union and activeDepartmentId narrowing PASS.");
 
 
 
