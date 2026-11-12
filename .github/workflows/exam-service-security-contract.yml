@@ -46,6 +46,7 @@ on:
       - 'tests/security/exam-service-period-gradebook-reopen-security.test.js'
       - 'tests/security/exam-service-student-grade-rectification-security.test.js'
       - 'tests/security/exam-service-gradebook-save-security.test.js'
+      - 'tests/security/exam-service-evaluation-category-mutation-security.test.js'
       - 'tests/security/exam-service-evaluation-setup-copy-security.test.js'
       - 'tests/security/exam-service-create-exam-security.test.js'
       - 'tests/security/exam-service-question-bank-read-security.test.js'
