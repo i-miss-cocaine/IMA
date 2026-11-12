@@ -4572,3 +4572,8 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - GitHub Actions run 43141646897 falló únicamente en la primera comparación estricta de encabezados creados desde el contexto VM: valores estructuralmente iguales pertenecían a realms distintos. Las 12 pruebas previas del workflow habían pasado; el contrato de envío se detuvo en el primer escenario nuevo.
 - Se normalizan las filas de encabezado mediante Array.from antes de deepEqual en ambos escenarios. Sin cambios al handler productivo ni a los invariantes probados.
 - Harness local V8 aislado re-ejecutado: 30/30 PASS; parseo de Code.gs/contrato PASS. La normalización evita la incompatibilidad de realm; CI de confirmación pendiente.
+
+
+**Addendum C1.605-R1 / C1.606-R2 — normalización de encabezados cross-realm**
+- El workflow run 43141769137 confirmó 30/30 PASS para submitGradebookForReview y falló después en closePeriodGradebook por comparar una fila VM con un arreglo host. No falló lógica productiva.
+- Se normalizan con Array.from las aserciones afectadas de cierre y reapertura; CI completo de confirmación pendiente.

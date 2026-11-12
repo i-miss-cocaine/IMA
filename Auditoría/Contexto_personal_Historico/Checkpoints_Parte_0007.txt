@@ -639,3 +639,9 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - Se normalizan ambas filas de encabezados con Array.from antes de deepEqual. Suite V8 aislada local re-ejecutada 30/30 PASS; parseo Code.gs/contrato PASS.
 - CI de confirmación pendiente; C1.606 mantiene cierre local y BETA-EXAM-054 Pendiente beta.
 ===============================================================================
+
+
+### Addendum C1.605-R1 / C1.606-R2 — corrección cross-realm relacionada
+- CI run 43141769137: submitGradebookForReview 30/30 PASS; fallo posterior en closePeriodGradebook por deepEqual entre fila VM y arreglo host. Sin defecto productivo observado.
+- Se normalizan con Array.from las aserciones de encabezados afectadas en cierre y reapertura. CI integral pendiente.
+===============================================================================

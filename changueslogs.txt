@@ -2456,3 +2456,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - CI run 43141646897 falló en una aserción deepEqual de encabezados creados dentro del VM, por diferencia de realm aunque los valores eran idénticos.
 - Se aplica Array.from antes de comparar ambos encabezados; sin cambios productivos. V8 aislado 30/30 PASS y parseo PASS; repetición CI pendiente.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.605-R1 / C1.606-R2 — normalización cross-realm en contratos de cierre/reapertura
+- La segunda ejecución CI confirmó submitGradebookForReview 30/30 PASS y detectó la misma incompatibilidad deepEqual en cobertura C1.605.
+- Se normalizan filas de encabezados en cierre y reapertura con Array.from. Sin cambios al backend; workflow completo pendiente.
+===============================================================================

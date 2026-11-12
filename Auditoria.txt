@@ -2294,3 +2294,10 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - CI run 43141646897 detectó deepEqual estricto entre fila creada en VM y arreglo host; el contenido era igual, pero el prototipo/realm difería. No fue fallo de lógica productiva.
 - Se normalizan los encabezados con Array.from en ambas aserciones nuevas. Suite local V8 aislada 30/30 PASS; parseo PASS; CI de confirmación pendiente.
 ===============================================================================
+
+
+===============================================================================
+### C1.605-R1 / C1.606-R2 — corrección cross-realm relacionada
+- CI run 43141769137 confirmó submitGradebookForReview 30/30 PASS y falló después en closePeriodGradebook por deepEqual entre fila VM y arreglo host.
+- Se normalizan aserciones de encabezados en cierre y reapertura con Array.from; sin cambios productivos. CI completo pendiente.
+===============================================================================
