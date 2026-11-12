@@ -2849,3 +2849,14 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
 - C1.635 completada; T153-S02 sigue En ejecución.
 ===============================================================================
+
+
+ 
+===============================================================================
+[2026-11-12] C1.636 — integridad del ledger persistente
+- ScriptProperties sentinel registra que SesionesRevocadas ya fue inicializado. Si falta la hoja después de inicialización, verifySessionToken falla cerrado.
+- Contrato simula ledger perdido/restaurado y confirma que no hay rutas cache-only en logout/cambio de rol.
+- Contrato completo V8 aislado PASS, incluidos C1.621–C1.636; sintaxis backend/test PASS.
+- Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets/PropertiesService real Pendiente beta.
+- C1.636 completada; T153-S02 sigue En ejecución.
+===============================================================================
