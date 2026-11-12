@@ -2708,3 +2708,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Los tres workflows corresponden al commit funcional c6eeebabf3d8d404a4ff98f1b1ebb0fd751555bc. Terminal independiente NOT RUN; Apps Script/Sheets real y concurrencia desplegada siguen Pendiente beta.
 - C1.623 completada y verificada por CI. T153-S02 sigue En ejecución.
 ===============================================================================
+
+ 
+===============================================================================
+[2026-11-12] C1.624 — integridad de responsabilidades/capacidades y separación RBAC
+- Catálogo de responsabilidades descarta ResponsibilityID vacío/duplicado y listas de módulos/capacidades mal formadas, no-string o duplicadas tras trim.
+- saveInstitutionalResponsibility normaliza IDs y rechaza listas inválidas sin escritura; catálogo de roles excluye RolInternoID vacío/duplicado.
+- Se amplía contrato: duplicados de catálogos, tipos incorrectos, IDs repetidos, no mutación y CAP_ADMINISTRAR sin grant RBAC explícito.
+- No se crea mapeo universal de capacidades a acciones; metadatos no elevan permisos.
+===============================================================================

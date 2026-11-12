@@ -4850,3 +4850,11 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Task-Service security local contracts run **43257599864 SUCCESS**; Identity mapping and transport security contracts run **43257599910 SUCCESS**. Los tres runs corresponden al HEAD funcional C1.623.
 - El contrato de responsabilidad/RBAC y las regresiones C1.623 se ejecutaron en runner aislado CI, sin servicios desplegados. Terminal independiente de esta sesión NOT RUN; Apps Script/Sheets real NOT RUN.
 - **Estado:** C1.623 implementada y verificada localmente en CI; BETA-FUNC-033 sigue Pendiente beta. T153-S02 continúa En ejecución; siguiente incremento: revisar los criterios funcionales restantes de responsabilidades/capacidades y su relación con permisos/ámbitos antes de determinar cierre del subflujo.
+
+ 
+**Addendum C1.624 — integridad del catálogo de responsabilidades/capacidades y separación RBAC**
+- El catálogo de responsabilidades ya no aplica first-row-wins ante ResponsibilityID duplicado: cuenta IDs sobre el conjunto completo y solo expone registros únicos. El resolvedor de responsabilidad exige listas JSON de identificadores string, no vacíos y únicos tras trim; datos mal formados no producen vínculo efectivo.
+- `saveInstitutionalResponsibility` normaliza espacios externos y rechaza módulos/capacidades vacíos, de tipo incorrecto o duplicados tras normalización, sin escritura parcial. `getInternalRoleCatalog` excluye RolInternoID vacío o duplicado, alineándose con el resolvedor que ya exige unicidad.
+- No se inventa un mapa de capacidades a acciones: el requisito no define una taxonomía institucional universal. Las capacidades continúan siendo metadatos de responsabilidad; solo la matriz RBAC explícita autoriza acciones. Se agrega una regresión con CAP_ADMINISTRAR presente y acción ausente en la matriz.
+- Cobertura añadida: ResponsibilityID duplicado; capacidades no-string; duplicidad tras trim; rechazo de escritura sin mutación; RolInternoID duplicado; no elevación RBAC por capacidad.
+- Apps Script/Sheets real sigue siendo prueba beta; ejecución local aislada y CI se registrarán por separado. T153-S02 continúa En ejecución: este incremento endurece la integridad de catálogos, pero no completa todavía toda la relación usuario↔roles↔responsabilidades↔ámbitos ni sus criterios multirol.

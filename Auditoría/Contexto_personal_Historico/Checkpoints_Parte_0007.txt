@@ -1128,3 +1128,13 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - Contrato RBAC y regresiones de esquema intermedio/AssignmentID duplicado ejecutados en runner aislado CI sin despliegue; sintaxis de servicios y clientes configurados PASS.
 - Terminal independiente NOT RUN; Apps Script/Sheets real y concurrencia multi-solicitud desplegada Pendiente beta (BETA-FUNC-033).
 - C1.623 completada y verificada por CI. T153-S02 continúa En ejecución; revisar criterios funcionales restantes antes de cerrarlo.
+
+ 
+===============================================================================
+### C1.624 — integridad de catálogos de responsabilidades y capacidades
+- Hallazgo: el catálogo de responsabilidades aplicaba first-row-wins a ResponsibilityID duplicados; lectores aceptaban listas con elementos no string/duplicados; el catálogo de roles podía exponer RolInternoID duplicados aunque el resolvedor los rechazaba.
+- Corrección: ambos catálogos excluyen identificadores vacíos/ambiguos; lecturas validan arrays de IDs string no vacíos y únicos tras trim; escritura de responsabilidades normaliza y rechaza listas inválidas sin mutación parcial.
+- Separación RBAC: CAP_ADMINISTRAR sigue siendo metadato y no concede acciones ausentes de la matriz explícita. No se inventa mapeo universal capability→acción.
+- Pruebas añadidas para duplicados, tipos inválidos, normalización, no mutación y no elevación. Resultado de ejecución local/CI pendiente.
+- T153-S02 permanece En ejecución; C1.624 no cierra la subtarea ni inicia T153-S03.
+===============================================================================

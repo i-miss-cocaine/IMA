@@ -2523,3 +2523,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Contratos RBAC, regresiones C1.623 y comprobaciones de sintaxis PASS en runners aislados. Terminal independiente NOT RUN; Apps Script/Sheets real y concurrencia multi-solicitud desplegada Pendiente beta.
 - C1.623 queda completada. T153-S02 permanece En ejecución por criterios funcionales restantes; no se declara cerrado TASK-153.
 ===============================================================================
+
+ 
+===============================================================================
+### C1.624 — integridad de catálogos de responsabilidades/capacidades
+- **Severidad: Media — integridad de autorización/configuración.** Un ResponsibilityID duplicado podía exponerse por first-row-wins en el catálogo; metadatos de capacidades mal formados podían resolverse como responsabilidad; el listado de roles podía mostrar RolInternoID ambiguo.
+- **Corrección:** conteo global de IDs y exclusión de registros ambiguos; listas de módulos/capacidades estrictamente string, no vacías y únicas tras trim; validación equivalente en escritura; no hay mutación ante entradas inválidas.
+- **Control de privilegios:** CAP_ADMINISTRAR permanece metadato; no reemplaza la concesión explícita en MatrizPermisosRoles. No se inventa taxonomía/mapeo no definido por el requisito.
+- **Cobertura:** contratos sintéticos de duplicidad, datos mal formados, normalización y denegación de permiso sin grant explícito. Verificación pendiente hasta ejecutar pruebas.
+===============================================================================

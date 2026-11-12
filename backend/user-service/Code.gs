@@ -10103,11 +10103,13 @@ function getInstitutionalResponsibilitiesCatalog(payload) {
     if(!sheet)return {status:"success",configured:false,responsabilidades:[],timestamp:new Date().toISOString()};
     var data=sheet.getDataRange().getValues(),h=["ResponsibilityID","Nombre","Descripcion","ModulosJSON","CapacidadesJSON","Estado","CreadoPor","FechaActualizacion"];
     if(!data.length||JSON.stringify(data[0].map(String))!==JSON.stringify(h))return {status:"error",code:"RESPONSIBILITY_SCHEMA_MISMATCH"};
-    var seen={},list=[];
+    var idCounts={},list=[];
+    data.slice(1).forEach(function(row){var id=String((row||[])[0]||"").trim();if(id)idCounts[id]=(idCounts[id]||0)+1;});
+    var normalizeIds=function(values){if(!Array.isArray(values))return null;var seen={},out=[];for(var j=0;j<values.length;j++){if(typeof values[j]!=="string")return null;var value=values[j].trim(),key="$"+value;if(!value||seen[key])return null;seen[key]=true;out.push(value);}return out;};
     for(var i=1;i<data.length;i++){var r=data[i],id=String(r[0]||"").trim(),state=String(r[5]||"").trim().toUpperCase();
-      if(!id||seen[id]||!(r[5]===true||state==="TRUE"||state==="ACTIVA"||state==="ACTIVO"))continue;
+      if(!id||idCounts[id]!==1||!(r[5]===true||state==="TRUE"||state==="ACTIVA"||state==="ACTIVO"))continue;
       var modules,caps;try{modules=JSON.parse(r[3]||"[]");caps=JSON.parse(r[4]||"[]");}catch(e){continue;}
-      if(!Array.isArray(modules)||!Array.isArray(caps))continue;seen[id]=true;
+      modules=normalizeIds(modules);caps=normalizeIds(caps);if(!modules||!caps)continue;
       list.push({responsibilityId:id,name:String(r[1]||""),description:String(r[2]||""),modules:modules,capabilities:caps,estado:"Activa"});
     }
     return {status:"success",configured:list.length>0,responsabilidades:list,timestamp:new Date().toISOString()};
@@ -10125,7 +10127,9 @@ function saveInstitutionalResponsibility(payload) {
     writeLockAcquired = true;
     var responsibilityId=String(payload.responsibilityId||"").trim(),name=String(payload.name||"").trim(),description=payload.description||"",modules=payload.modules||[],capabilities=payload.capabilities||[],estado=String(payload.estado||"Activa").trim();
     if(!name)return {status:"error",code:"VALIDATION_ERROR",message:"El nombre de la responsabilidad es obligatorio."};
-    if(!Array.isArray(modules)||!Array.isArray(capabilities)||modules.some(function(x){return typeof x!=="string"||!x.trim();})||capabilities.some(function(x){return typeof x!=="string"||!x.trim();}))return {status:"error",code:"RESPONSIBILITY_CATALOG_INVALID",message:"Módulos y capacidades deben ser listas de identificadores de texto."};
+    var normalizeIds=function(values){if(!Array.isArray(values))return null;var seen={},out=[];for(var j=0;j<values.length;j++){if(typeof values[j]!=="string")return null;var value=values[j].trim(),key="$"+value;if(!value||seen[key])return null;seen[key]=true;out.push(value);}return out;};
+    modules=normalizeIds(modules);capabilities=normalizeIds(capabilities);
+    if(!modules||!capabilities)return {status:"error",code:"RESPONSIBILITY_CATALOG_INVALID",message:"Módulos y capacidades deben ser listas de identificadores de texto únicos y no vacíos."};
     if(["ACTIVA","ACTIVO","INACTIVA","INACTIVO"].indexOf(estado.toUpperCase())===-1)return {status:"error",code:"RESPONSIBILITY_STATE_INVALID"};
     var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getOrCreateSheet(ss,"ResponsabilidadesInstitucionales"),headers=["ResponsibilityID","Nombre","Descripcion","ModulosJSON","CapacidadesJSON","Estado","CreadoPor","FechaActualizacion"];
     if(sheet.getLastRow()===0)sheet.appendRow(headers);
@@ -10155,7 +10159,8 @@ function getInstitutionalResponsibilityRecord_(ss, responsibilityId) {
   var r=rows[0],state=String(r[5]||"").trim().toUpperCase();
   if(!(r[5]===true||state==="TRUE"||state==="ACTIVA"||state==="ACTIVO"))return null;
   var modules,capabilities;try{modules=JSON.parse(r[3]||"[]");capabilities=JSON.parse(r[4]||"[]");}catch(e){return null;}
-  if(!Array.isArray(modules)||!Array.isArray(capabilities))return null;
+  var normalizeIds=function(values){if(!Array.isArray(values))return null;var seen={},out=[];for(var i=0;i<values.length;i++){if(typeof values[i]!=="string")return null;var value=values[i].trim(),key="$"+value;if(!value||seen[key])return null;seen[key]=true;out.push(value);}return out;};
+  modules=normalizeIds(modules);capabilities=normalizeIds(capabilities);if(!modules||!capabilities)return null;
   return {responsibilityId:id,name:String(r[1]||""),description:String(r[2]||""),modules:modules,capabilities:capabilities};
 }
 
@@ -10965,7 +10970,8 @@ function getInternalRoleCatalog(payload) {
     var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("CatalogoRolesInternos");if(!sheet)return {status:"success",data:[]};
     var data=sheet.getDataRange().getValues(),base=["RolInternoID","CodigoInterno","NombreResponsabilidad","Descripcion","Departamento","AreaAcademica","TipoResponsabilidad","VigenciaMeses","PermiteSuplencia","Estado","CreadoPor","FechaCreacion","FechaActualizacion"],h=data.length?data[0].map(String):[];
     if(JSON.stringify(h)!==JSON.stringify(base)&&JSON.stringify(h)!==JSON.stringify(base.concat(["ResponsibilityID"])))return {status:"error",code:"INTERNAL_ROLE_SCHEMA_MISMATCH"};
-    var f=payload||{},list=data.slice(1).filter(function(r){var st=String(r[9]||"").trim();if(f.soloActivos!==false&&st!=="Activo")return false;if(f.estado&&f.estado!=="Todos"&&st!==f.estado)return false;if(f.departamento&&normalizeString(r[4])!==normalizeString(f.departamento))return false;if(f.areaAcademica&&normalizeString(r[5])!==normalizeString(f.areaAcademica))return false;if(f.tipoResponsabilidad&&normalizeString(r[6])!==normalizeString(f.tipoResponsabilidad))return false;return true;}).map(function(r){var id=h.length===14?String(r[13]||"").trim():"",record=id?getInstitutionalResponsibilityRecord_(ss,id):null;return {rolInternoId:r[0],codigoInterno:r[1],nombreResponsabilidad:r[2],descripcion:r[3],departamento:r[4],areaAcademica:r[5],tipoResponsabilidad:r[6],vigenciaMeses:parseInt(r[7]||12),permiteSuplencia:String(r[8]).toLowerCase()==="sí"||String(r[8]).toLowerCase()==="true",estado:r[9],creadoPor:r[10],fechaCreacion:r[11],fechaActualizacion:r[12],responsibilityId:id||null,institutionalResponsibility:record};}).filter(function(x){return !x.responsibilityId||!!x.institutionalResponsibility;});
+    var roleIdCounts={};data.slice(1).forEach(function(row){var id=String((row||[])[0]||"").trim();if(id)roleIdCounts[id]=(roleIdCounts[id]||0)+1;});
+    var f=payload||{},list=data.slice(1).filter(function(r){var roleId=String(r[0]||"").trim();if(!roleId||roleIdCounts[roleId]!==1)return false;var st=String(r[9]||"").trim();if(f.soloActivos!==false&&st!=="Activo")return false;if(f.estado&&f.estado!=="Todos"&&st!==f.estado)return false;if(f.departamento&&normalizeString(r[4])!==normalizeString(f.departamento))return false;if(f.areaAcademica&&normalizeString(r[5])!==normalizeString(f.areaAcademica))return false;if(f.tipoResponsabilidad&&normalizeString(r[6])!==normalizeString(f.tipoResponsabilidad))return false;return true;}).map(function(r){var id=h.length===14?String(r[13]||"").trim():"",record=id?getInstitutionalResponsibilityRecord_(ss,id):null;return {rolInternoId:r[0],codigoInterno:r[1],nombreResponsabilidad:r[2],descripcion:r[3],departamento:r[4],areaAcademica:r[5],tipoResponsabilidad:r[6],vigenciaMeses:parseInt(r[7]||12),permiteSuplencia:String(r[8]).toLowerCase()==="sí"||String(r[8]).toLowerCase()==="true",estado:r[9],creadoPor:r[10],fechaCreacion:r[11],fechaActualizacion:r[12],responsibilityId:id||null,institutionalResponsibility:record};}).filter(function(x){return !x.responsibilityId||!!x.institutionalResponsibility;});
     return {status:"success",data:list};
   }catch(error){return {status:"error",message:error.message};}
 }

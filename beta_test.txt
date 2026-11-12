@@ -1266,3 +1266,6 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 
 - **Evidencia C1.623:** Department Scope Contract run 43257600097 SUCCESS (16 pasos PASS, Node 24); Task-Service security local contracts run 43257599864 SUCCESS; Identity mapping and transport security contracts run 43257599910 SUCCESS. Los contratos locales aislados incluyen esquema transicional y AssignmentID vacío/duplicado en lectores.
 - **Estado actualizado:** Pendiente beta únicamente para ejecución contra Apps Script/Sheets real, despliegues de los servicios y concurrencia multi-solicitud real. Terminal independiente de la sesión NOT RUN; CI aislado PASS. Esta validación beta no bloquea el cierre de implementación.
+
+- **C1.624 — prueba beta de catálogos:** en Sheets real, duplicar ResponsibilityID y RolInternoID, insertar JSON con capacidades no string o IDs repetidos con espacios, verificar que los catálogos y vínculos efectivos los excluyan; intentar guardar duplicados y confirmar que no se escribe; confirmar que CAP_ADMINISTRAR no habilita acciones no concedidas en MatrizPermisosRoles.
+- **Resultado esperado:** registros ambiguos/malformados no generan responsabilidades ni permisos; la matriz RBAC explícita continúa como única fuente de autorización de acciones. Estado: Pendiente beta.

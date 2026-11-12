@@ -309,3 +309,39 @@ lifecycleSheets.AsignacionesAmbitosRoles = {getDataRange:()=>({getValues:()=>dup
 assert.equal(lifecycleCtx.getInternalRoleAssignments({userId:"U-LIFE",roleId:"Director",membershipId:"MEM-LIFE"}).data.length,0,"duplicate AssignmentIDs are excluded from administrative listing");
 assert.equal(lifecycleCtx.getUserContextScope({sessionToken:"session-director"}).code,"DEPARTMENT_SCOPE_NOT_ASSIGNED","duplicate AssignmentIDs cannot create effective scopes");
 console.log("C1.623 reader-integrity contract: transitional-schema consistency and duplicate AssignmentID fail-closed behavior PASS.");
+
+
+// C1.624: responsibility capabilities remain descriptive metadata; malformed or ambiguous catalog records fail closed.
+const catalogFixture = rows => {
+  const ctx = {SPREADSHEET_ID:"LOCAL",SpreadsheetApp:{openById:()=>({getSheetByName:()=>({getDataRange:()=>({getValues:()=>rows.map(r=>r.slice())})})})}};
+  vm.runInNewContext(catalogFn+"\nthis.getInstitutionalResponsibilitiesCatalog=getInstitutionalResponsibilitiesCatalog;",ctx);
+  return ctx.getInstitutionalResponsibilitiesCatalog({});
+};
+const duplicateResponsibilityRows=[capabilityHeaders,capabilityRows[1].slice(),capabilityRows[1].slice()];
+assert.deepEqual(Array.from(catalogFixture(duplicateResponsibilityRows).responsabilidades),[],"duplicate ResponsibilityIDs are excluded rather than first-row-wins");
+const malformedCapabilityRows=[capabilityHeaders,capabilityRows[1].slice()];
+malformedCapabilityRows[1][4]='["CAP_ADMINISTRAR",{"permission":"approveFinancialRecords"}]';
+assert.deepEqual(Array.from(catalogFixture(malformedCapabilityRows).responsabilidades),[],"non-string capability metadata is rejected by the catalog reader");
+const duplicateCapabilityRows=[capabilityHeaders,capabilityRows[1].slice()];
+duplicateCapabilityRows[1][4]='["CAP_ADMINISTRAR"," CAP_ADMINISTRAR "]';
+assert.deepEqual(Array.from(catalogFixture(duplicateCapabilityRows).responsabilidades),[],"duplicate normalized capability identifiers are rejected");
+const malformedRecordRows=[capabilityHeaders,malformedCapabilityRows[1].slice()];
+const malformedRecordCtx={getSheetByName:()=>({getDataRange:()=>({getValues:()=>malformedRecordRows.map(r=>r.slice())})})};
+assert.equal(joinCtx.getInternalRoleCatalog({}).data.length,1,"valid linked responsibility remains visible before malformed-record fixture");
+const malformedRecord = (() => {
+  const ctx={};
+  vm.runInNewContext(recordFn+"\nthis.getInstitutionalResponsibilityRecord_=getInstitutionalResponsibilityRecord_;",ctx);
+  return ctx.getInstitutionalResponsibilityRecord_(malformedRecordCtx,"RESP-ACA");
+})();
+assert.equal(malformedRecord,null,"malformed capability metadata cannot resolve an effective responsibility");
+const duplicateRoleRows=[roleHeaders,roleRows[1].slice(),roleRows[1].slice()];
+const duplicateRoleCtx={SPREADSHEET_ID:"LOCAL",normalizeString:v=>String(v||"").trim().toLowerCase(),SpreadsheetApp:{openById:()=>({getSheetByName:()=>({getDataRange:()=>({getValues:()=>duplicateRoleRows.map(r=>r.slice())})})})}};
+vm.runInNewContext(recordFn+"\n"+roleCatalogFn+"\nthis.getInternalRoleCatalog=getInternalRoleCatalog;",duplicateRoleCtx);
+assert.deepEqual(Array.from(duplicateRoleCtx.getInternalRoleCatalog({}).data),[],"duplicate RolInternoIDs are excluded from the administrative role catalog");
+const beforeDuplicateCapabilityWrite=capabilityRows.length;
+const duplicateCapabilityWrite=authCtx.saveInstitutionalResponsibility({sessionToken:"valid-admin",name:"Duplicated capability",modules:["mod_unique"],capabilities:["CAP_ADMINISTRAR"," CAP_ADMINISTRAR "]});
+assert.equal(duplicateCapabilityWrite.code,"RESPONSIBILITY_CATALOG_INVALID","writes reject duplicate capability identifiers after trimming");
+assert.equal(capabilityRows.length,beforeDuplicateCapabilityWrite,"invalid capability metadata causes no partial catalog write");
+const capabilitySpoof = permissionCtx.validateRolePermission("approveFinancialRecords",{responsibility:{institutionalResponsibility:{capabilities:["CAP_ADMINISTRAR"]}}});
+assert.equal(capabilitySpoof.authorized,false,"a responsibility capability does not authorize an action without an explicit RBAC matrix grant");
+console.log("C1.624 responsibility/capability integrity contract: duplicate IDs, malformed capability metadata, duplicate normalized identifiers, no partial writes, and RBAC separation PASS.");
