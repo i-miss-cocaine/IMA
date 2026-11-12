@@ -2372,3 +2372,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Se añade hook de reentrada y contención real de ScriptLock; la secundaria no abre Sheets ni lee Drive y la exterior conserva una única transacción, una validación de ownership y un hash de archivo.
 - BETA-FUNC-029 actualizado; backend productivo sin cambios; CI y Apps Script/Sheets real pendientes.
 ===============================================================================
+
+
+===============================================================================
+### C1.610 — cierre CI USER
+- GitHub Actions Department Scope Contract run 43143663056, commit 84c72def952552b17fe510cf7722a576ec6425b9: SUCCESS en Node.js 24; todos los pasos PASS.
+- Paso user-service-signature-ownership.test.js SUCCESS; harness local focalizado 1/1 PASS; parseo del contrato PASS.
+- Backend productivo sin cambios. BETA-FUNC-029 Pendiente beta; Apps Script/Sheets real NOT RUN.
+===============================================================================

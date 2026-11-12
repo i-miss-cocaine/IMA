@@ -4650,3 +4650,9 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI:** pendiente tras publicar.
 - **Apps Script/Sheets real:** NOT RUN; BETA-FUNC-029 Pendiente beta.
 - **Estado:** C1.610 En ejecución hasta verificar local y CI; TASK-153 continúa En ejecución.
+
+
+**Cierre de verificación C1.610**
+- GitHub Actions Department Scope Contract run 43143663056, commit 84c72def952552b17fe510cf7722a576ec6425b9: SUCCESS en Node.js 24; todos los pasos del job department-scope-contract SUCCESS.
+- Paso Run user-service signature ownership contract: SUCCESS. Harness V8 focalizado de createAdvancedSignatureRequest: 1/1 PASS; parseo del contrato PASS.
+- C1.610 completada con verificación local focalizada y CI. BETA-FUNC-029 permanece Pendiente beta; Apps Script/Sheets real NOT RUN.
