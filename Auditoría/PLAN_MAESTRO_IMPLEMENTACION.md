@@ -4506,5 +4506,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Invariantes:** ambas solicitudes secundarias reciben STUDENT_RECOVERY_MUTATION_LOCK_TIMEOUT; la operación exterior crea una sola hoja con encabezados válidos y una sola recuperación; una apertura de Sheets y ScriptLock liberado.
 - **Alcance:** contrato de seguridad y BETA-EXAM-102; backend productivo sin cambios.
 - **Verificación local:** harness determinista sobre saveStudentRecovery, wrapper, contexto y worker productivos extraídos de backend/exam-service/Code.gs: 2/2 PASS; parseo JavaScript del contrato actualizado PASS.
+- **CI:** GitHub Actions run 43138825738, workflow Exam-Service security local contracts, Node.js 22: SUCCESS; contrato saveStudentRecovery 21/21 PASS; job exam-security-contracts SUCCESS.
+- **Corrección de verificación:** el run 43138709373 detectó dos comparaciones de arrays entre contextos JavaScript incompatibles y el runner no propagaba fallos; se corrigieron las aserciones y se añadió un fallo explícito cuando el resumen contiene casos fallidos. La segunda ejecución confirmó 21/21 PASS.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-102 Pendiente beta.
 - **Estado:** C1.601 Completada en verificación local aislada. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.

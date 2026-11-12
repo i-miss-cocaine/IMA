@@ -2238,5 +2238,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Se amplía el contrato de saveStudentRecovery para cubrir reentrada desde insertSheet y appendRow de encabezados cuando falta la hoja RecuperacionesEstudiante.
 - Ambas secundarias reciben STUDENT_RECOVERY_MUTATION_LOCK_TIMEOUT; la operación exterior conserva una sola hoja, encabezados válidos y una recuperación.
 - Harness local determinista sobre handlers productivos extraídos de Code.gs: 2/2 PASS; parseo del contrato actualizado PASS.
+- CI run 43138825738 SUCCESS, contrato saveStudentRecovery 21/21 PASS en Node.js 22. El primer run 43138709373 detectó dos aserciones cross-realm defectuosas; fueron corregidas y el runner ahora propaga fallos.
 - Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-102 Pendiente beta. C1.601 Completada.
 ===============================================================================

@@ -486,7 +486,9 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 ### Verificación y estado
 - Harness local determinista sobre saveStudentRecovery, wrapper, contexto y worker productivos extraídos de Code.gs: 2/2 PASS.
 - Parseo JavaScript del contrato actualizado: PASS.
+- CI run 43138825738 SUCCESS, Node.js 22; contrato saveStudentRecovery 21/21 PASS; job exam-security-contracts SUCCESS.
+- El primer CI run 43138709373 detectó dos aserciones cross-realm; se corrigieron y el runner ahora falla explícitamente si hay casos fallidos.
 - Apps Script/Sheets real NOT RUN; BETA-EXAM-102 Pendiente beta.
-- C1.601 Completada en verificación local aislada. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
-- HEAD inicial: `a228580423f4eaf6ee1783a2e281e62e97e23102`; HEAD final se confirma tras publicar el commit.
+- C1.601 Completada con verificación local y CI. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD inicial: `a228580423f4eaf6ee1783a2e281e62e97e23102`; commit inicial de cobertura: `a44fca694e9d2713b0e580ffb5cd64229b8f0089`; commit de corrección: `cf01fbb3047bbea84b4158e78cd24e4d78de75c5`; HEAD final tras cierre documental se confirma en el siguiente commit.
 ===============================================================================

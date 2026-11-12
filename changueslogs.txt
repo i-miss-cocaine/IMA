@@ -2402,5 +2402,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-12] C1.601 — reentrada al inicializar RecuperacionesEstudiante EXAM
 - Añadidos escenarios de reentrada durante insertSheet y appendRow de encabezados cuando falta RecuperacionesEstudiante.
 - Smoke local 2/2 PASS; parseo del contrato actualizado PASS.
+- CI run 43138825738 SUCCESS; contrato saveStudentRecovery 21/21 PASS, Node.js 22. Las dos aserciones cross-realm detectadas en run 43138709373 se corrigieron y el contrato ahora falla ante casos fallidos.
 - Backend productivo sin cambios. Apps Script/Sheets real NOT RUN; BETA-EXAM-102 Pendiente beta. C1.601 Completada.
 ===============================================================================
