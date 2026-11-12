@@ -1,0 +1,165 @@
+CONTEXTO PERSONAL Y CONTINUIDAD DEL AGENTE DESARROLLADOR
+================================================================
+
+ÚLTIMA ACTUALIZACIÓN: 2026-11-04
+DOCUMENTO: Contexto_personal.txt
+PROPÓSITO: Permitir que el agente desarrollador retome el trabajo sin perder las reglas, restricciones ni el estado real de ejecución.
+
+1. ESTADO DE LA SESIÓN Y PUNTO DE INTERRUPCIÓN
+
+1.1 Repositorio IMA (repositorio donde se almacena este contexto)
+
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo autorizada para este repositorio: NG_beta.
+- Rama NG_beta actualizada y verificada hasta el commit:
+  3c3746f1e1552c593c31d6cb0ac1d3870a17fe29
+- PR existente: #1.
+- Rama de origen del PR: NG_beta.
+- Rama base del PR: main.
+- El PR permanece abierto. No se ha realizado ningún merge.
+- La rama main y las demás ramas no deben modificarse.
+- Este archivo se crea en NG_beta por solicitud expresa del usuario. Su presencia aquí no autoriza a ejecutar tareas de GPSpedia en el repositorio IMA.
+
+Último trabajo ejecutado en IMA:
+- Se recuperaron 49 registros históricos de tareas que aparecían marcados como completados en una versión anterior de New_Generation/Pendientes.md.
+- Se creó completadas_legacy.md en NG_beta.
+- Commit: 3c3746f1e1552c593c31d6cb0ac1d3870a17fe29.
+- Fuente: commit 9665b2569404c2e19c0de341552048367fb37fc9 de New_Generation.
+- Se verificó que el documento contiene 49 encabezados de tareas y 49 estados históricos de completado.
+- Se verificó que completadas.md y Pendientes.md conservaron sus SHA anteriores, sin modificaciones. pendiente_legacy.md también se conservó.
+- Las 49 marcas [X] se preservaron como estado declarado por la fuente histórica; no representan una nueva certificación funcional.
+- El PR #1 refleja el commit anterior y continúa abierto.
+- Estado de aprobación del usuario sobre esta última recuperación: pendiente de confirmación expresa. No alterar ni reescribir los registros recuperados.
+
+Archivos relevantes en IMA:
+- METODOLOGIA_DESARROLLO.md: metodología obligatoria vigente. Debe leerse antes de cualquier trabajo futuro en IMA.
+- Pendientes.md: registro actual de tareas pendientes.
+- pendiente_legacy.md: copia histórica del registro de pendientes posterior a la convergencia.
+- completadas.md: registro maestro actual de tareas completadas.
+- completadas_legacy.md: 49 tareas históricas recuperadas.
+- Auditoria.txt y Auditoría.txt: registros de auditoría existentes.
+- ChangesLogs.txt: registro de cambios existente.
+
+En la rama NG_beta, Pendientes.md sí existe y es el registro oficial de tareas. No se encontró, al momento de esta actualización, un archivo llamado contexto_personal.md en IMA. No sustituir Pendientes.md por otro registro.
+
+1.2 Proyecto GPSpedia (proyecto al que se refieren las reglas de desarrollo siguientes)
+
+- No se ha ejecutado ni auditado ninguna tarea de GPSpedia en esta sesión.
+- No se ha confirmado el estado actual del repositorio GPSpedia, sus archivos, ramas, tareas ni commits.
+- No afirmar que existe una rama de trabajo, que se creó un commit o que se modificó algún archivo de GPSpedia.
+- Antes de ejecutar la primera tarea, inspeccionar el repositorio y comprobar las ramas y los archivos requeridos.
+- El punto de inicio es una auditoría de continuidad: comprobar si existe una tarea marcada como En proceso y determinar si quedó incompleta o si ya fue ejecutada.
+- No inventar IDs, títulos, estados, resultados de pruebas ni aprobaciones.
+
+2. INSTRUCCIONES DE DESARROLLO PARA GPSpedia
+
+2.1 Repositorio base
+
+- Repositorio: GPSpedia.
+- Rama base: GPSpedia2.2.5.
+- Está prohibido modificar archivos de la rama GPSpedia2.2.5.
+- Está prohibido realizar merges hacia GPSpedia2.2.5.
+- Está prohibido modificar cualquier otra rama de cualquier repositorio que no sea la rama de trabajo autorizada para esta sesión.
+- La rama base es únicamente referencia para crear la rama de trabajo y comparar los cambios autorizados.
+
+2.2 Rama de trabajo
+
+- Crear una nueva rama con el formato: NombreVersionRamaBase_Work.
+- Ejemplo exacto: GPSpedia2.2.5_work.
+- Todos los cambios solicitados durante la sesión o chat relacionados con GPSpedia deben realizarse exclusivamente en esa rama de trabajo.
+- No trabajar directamente sobre GPSpedia2.2.5.
+- Crear un único commit por tarea en cada iteración.
+- El mensaje de cada commit debe detallar el trabajo realizado y los archivos modificados.
+- No integrar cambios mediante merge a la rama base. La integración, si posteriormente se autoriza, queda fuera de estas instrucciones.
+
+3. GESTIÓN DEL CONTEXTO Y SEGUIMIENTO DE TAREAS
+
+- Crear o leer el documento contexto_personal.md en el repositorio GPSpedia. Consultarlo para conocer las reglas, el estado de las tareas y el punto exacto de continuidad.
+- Registrar en contexto_personal.md las reglas aplicables y el seguimiento de las tareas en curso.
+- Cada entrada de tarea en contexto_personal.md debe incluir únicamente su ID, título y estado.
+- Formato de referencia:
+  - [Task_01] Reubicación de logo oficial (Completado)
+  - [Task_02] Auditoría de ui.js (En proceso)
+- Registrar cada tarea en Pendientes.md antes de comenzar su ejecución.
+- Antes de iniciar una tarea, registrar en contexto_personal.md su ID, título y estado En proceso.
+- No marcar ninguna tarea como completada hasta que haya sido ejecutada, verificada y aprobada por el usuario.
+- Si se encuentra una tarea marcada como En proceso, realizar automáticamente una auditoría de su estado para determinar si fue ejecutada correctamente o si el agente se interrumpió durante su desarrollo. Continuar el trabajo pendiente según los resultados de esa auditoría.
+- Si un archivo necesario para trabajar está corrupto o vacío, recuperar su última versión funcional disponible. Después, auditar las tareas anteriores para verificar si están implementadas y cumplen todos sus requisitos, y actualizar sus estados de acuerdo con los hallazgos.
+- Si la tarea ya existe en Pendientes.md, registrar su ID, título y estado En proceso en contexto_personal.md antes de ejecutarla.
+- No crear IDs duplicados ni alterar la secuencia existente.
+- Mantener contexto_personal.md actualizado para que otro agente pueda retomar el trabajo sin depender del historial conversacional.
+
+4. REGISTRO DE TAREAS EN Pendientes.md
+
+- Registrar cada tarea asignándole un ID que siga la secuencia existente, un título breve y un indicador [X] cuando corresponda.
+- Marcar una tarea como completada únicamente después de que el usuario haya revisado y aprobado satisfactoriamente los cambios.
+- Registrar todos y cada uno de los requisitos de la tarea, sin omitir detalles ni resumirlos.
+- Corregir errores ortográficos y mejorar la claridad de la redacción, conservando íntegramente el alcance y el nivel de detalle de los requisitos originales.
+- No sustituir requisitos por resúmenes ni eliminar condiciones, criterios de aceptación, restricciones o dependencias.
+- El documento de contexto mantiene únicamente ID, título y estado por tarea; el detalle íntegro de requisitos pertenece a Pendientes.md.
+
+5. IDENTIFICACIÓN, PRIORIZACIÓN Y EJECUCIÓN DE TAREAS
+
+- Identificar las tareas pendientes en Pendientes.md y ejecutarlas en el orden y la prioridad establecidos.
+- No intentar ejecutar todas las tareas a la vez.
+- Evaluar si es viable agrupar varias tareas en un mismo commit únicamente cuando pueda garantizarse el cumplimiento de todos sus requisitos y del proceso de desarrollo.
+- Indicar qué tareas se ejecutarán en cada commit y cuáles quedarán pendientes para los siguientes, respetando siempre el procedimiento.
+- Ejecutar las tareas en el orden establecido en Pendientes.md.
+- Cada commit debe contener cambios funcionales.
+- Están prohibidos los commits vacíos.
+- Están prohibidos los commits que modifiquen únicamente archivos de registros, auditoría, logs o documentación.
+- Las modificaciones exclusivas de ChangesLogs.txt, Auditoría.txt y Pendientes.md no constituyen una tarea funcional.
+- No utilizar una modificación documental aislada para simular el cumplimiento de una tarea funcional.
+- Si una solicitud exige expresamente crear o actualizar documentación, registrar esa labor y respetar las restricciones de commit aplicables; no introducir cambios funcionales ajenos solo para justificar un commit.
+
+6. VERIFICACIÓN DEL CÓDIGO EXISTENTE
+
+- Verificar el código existente antes de implementar cualquier cambio.
+- Si ya cumple todos los requisitos de una tarea, agregar en la primera línea del bloque de código correspondiente un comentario identificativo de la tarea.
+- En ese supuesto, actualizar Auditoría.txt y ChangesLogs.txt, marcar la tarea con [X] en Pendientes.md y continuar inmediatamente con la siguiente, sin detenerse ni solicitar confirmación.
+- Esta regla de reconocimiento de implementación existente no elimina la obligación general de que el usuario apruebe los cambios antes de marcar una tarea como completada. Si la regla entra en conflicto con el requisito de aprobación, mantener el estado sin completar y solicitar la revisión del usuario.
+- No declarar cumplimiento basándose únicamente en comentarios, nombres de funciones, documentación o supuestos. Debe existir evidencia verificable de todos los requisitos funcionales.
+
+7. VALIDACIÓN Y CONTROL DE CALIDAD
+
+- No marcar tareas como completadas sin verificar el cumplimiento de todos sus requisitos funcionales y obtener la aprobación del usuario.
+- No mezclar tareas ni declarar verificaciones que no se hayan realizado.
+- Ejecutar las pruebas necesarias antes de completar cada tarea y confirmar sus cambios.
+- Realizar un Code Review antes de cada commit, limitado a la tarea actual.
+- Están prohibidos los commits con blocking issues.
+- Corregir todos los bloqueos y repetir el Code Review hasta eliminarlos.
+- Cumplir estrictamente los procedimientos establecidos en METODOLOGIA_DESARROLLO.md (verificar su existencia y ubicación exactas en GPSpedia antes de utilizarlo).
+- No eliminar tareas ni sobrescribir registros ajenos a la tarea actual.
+- Conservar el contenido histórico de los registros; las actualizaciones deben ser aditivas y limitadas al alcance autorizado.
+- No declarar que una prueba, auditoría o Code Review fue satisfactorio si no se ejecutó y documentó evidencia suficiente.
+
+8. REGISTRO DEL PUNTO DE CONTINUIDAD
+
+- Registrar en contexto_personal.md cuál fue la última tarea que se realizó o, si el trabajo fue una auditoría, cuál fue la última tarea que se auditó.
+- Registrar el estado real de la tarea, sin anticipar su finalización.
+- Indicar qué requisitos se verificaron y cuáles quedaron pendientes, cuando corresponda.
+- Registrar el último commit y la rama de trabajo después de verificarlos.
+- Si el agente se interrumpe, el siguiente agente debe comenzar leyendo contexto_personal.md, Pendientes.md y METODOLOGIA_DESARROLLO.md; después debe auditar cualquier tarea que figure En proceso.
+
+9. CONTINUIDAD DEL TRABAJO
+
+- Continuar con la siguiente tarea pendiente de Pendientes.md, respetando estrictamente todas las instrucciones anteriores.
+- No saltar tareas por conveniencia ni cambiar su prioridad sin autorización.
+- No iniciar una tarea si no está registrada previamente en Pendientes.md.
+- No comenzar implementación antes de actualizar contexto_personal.md con la tarea en estado En proceso.
+- Si falta información o existe una contradicción entre registros, detener la implementación, investigar el historial y preservar los registros originales.
+- La aprobación del usuario es el criterio final para cerrar una tarea.
+
+10. ORDEN DE PRECEDENCIA Y SEPARACIÓN DE PROYECTOS
+
+- Las instrucciones de GPSpedia de este documento se aplican exclusivamente al repositorio GPSpedia.
+- Las instrucciones y metodología del repositorio IMA se aplican exclusivamente a IMA.
+- La solicitud de almacenar este documento en IMA/NG_beta no autoriza a modificar GPSpedia ni a crear allí ramas o commits.
+- Para trabajar en IMA, continuar utilizando exclusivamente NG_beta, leer METODOLOGIA_DESARROLLO.md y respetar el registro oficial Pendientes.md. No hacer merges ni modificar otras ramas.
+- Para trabajar en GPSpedia, utilizar exclusivamente GPSpedia2.2.5_work, después de verificar que fue creada desde GPSpedia2.2.5.
+- Si una regla local del repositorio de destino impone controles adicionales que no contradicen estas instrucciones, cumplir ambos conjuntos de reglas.
+- Ante una contradicción real, no elegir silenciosamente una regla ni alterar registros: informar al usuario y solicitar aclaración.
+
+================================================================
+FIN DEL CONTEXTO
+================================================================

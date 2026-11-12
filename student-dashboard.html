@@ -3,20 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <title>Panel del Estudiante - Área de Informática ISEMED</title>
-    <link rel="icon" type="image/png" href="IMA-Logo.png">
+    <title>Panel del Estudiante - New Generation Bilingual School and Institute</title>
+    <link rel="icon" type="image/png" href="imagenes/new-generation-logo.png">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2563eb">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="InformaticApp">
-    <link rel="apple-touch-icon" href="IMA-Logo.png">
+    <meta name="apple-mobile-web-app-title" content="New Generation">
+    <link rel="apple-touch-icon" href="imagenes/new-generation-logo.png">
     <meta name="description" content="Panel del estudiante para la gestión de tareas, exámenes y seguimiento del progreso académico.">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css?v=22">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 </head>
 <body class="font-inter antialiased text-gray-900 bg-gray-50 min-h-screen flex flex-col">
 
@@ -26,10 +27,10 @@
         <div class="container mx-auto px-4 md:px-6 flex justify-between items-center h-16 md:h-20">
             <div class="flex items-center gap-4">
                 <a href="index.html" class="flex items-center gap-3 group" title="Ir al inicio">
-                    <img src="imagenes/logo.png" alt="Escudo institucional del Área de Informática ISEMED" class="logo-img transition-transform duration-300 group-hover:scale-105">
+                    <img src="imagenes/new-generation-logo.png" alt="Logotipo oficial de New Generation Bilingual School and Institute" class="logo-img transition-transform duration-300 group-hover:scale-105">
                     <div class="header-title-container">
-                        <h1 class="text-sm md:text-xl font-black text-gray-900 uppercase tracking-tighter leading-none">ISEMED</h1>
-                        <p class="text-[9px] md:text-[11px] font-bold text-blue-600 uppercase tracking-widest mt-1">Área de Informática</p>
+                        <h1 class="text-sm md:text-xl font-black text-gray-900 uppercase tracking-tighter leading-none">New Generation</h1>
+                        <p class="text-[9px] md:text-[11px] font-bold text-blue-600 uppercase tracking-widest mt-1">Bilingual School & Institute</p>
                     </div>
                 </a>
             </div>
@@ -124,12 +125,18 @@
 
             <!-- Sistema de Pestañas Principal (Tarea 1) -->
             <div class="flex justify-center mb-8">
-                <div class="bg-gray-100/50 p-1.5 rounded-[2rem] flex gap-1 border border-gray-200">
-                    <button id="tab-activities" class="px-8 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 bg-blue-600 text-white shadow-lg shadow-blue-100">
+                <div class="bg-gray-100/50 p-1.5 rounded-[2rem] flex flex-wrap gap-1 border border-gray-200">
+                    <button id="tab-activities" class="px-6 md:px-8 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 bg-blue-600 text-white shadow-lg shadow-blue-100">
                         <i class="fas fa-tasks mr-2"></i> Actividades
                     </button>
-                    <button id="tab-progress" class="px-8 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 text-gray-500 hover:bg-white hover:text-blue-600">
+                    <button id="tab-progress" class="px-6 md:px-8 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 text-gray-500 hover:bg-white hover:text-blue-600">
                         <i class="fas fa-chart-line mr-2"></i> Progreso Académico
+                    </button>
+                    <button id="tab-financial" class="px-6 md:px-8 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 text-gray-500 hover:bg-white hover:text-blue-600">
+                        <i class="fas fa-file-invoice-dollar mr-2"></i> Matrícula y Finanzas
+                    </button>
+                    <button id="tab-guias" class="px-6 md:px-8 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 text-gray-500 hover:bg-white hover:text-blue-600">
+                        <i class="fas fa-book mr-2"></i> Guías de Estudio
                     </button>
                 </div>
             </div>
@@ -190,8 +197,85 @@
                     <!-- Inyectado dinámicamente desde student.js -->
                 </div>
             </div>
+
+            <!-- Vista de Matrícula y Control Financiero (REQ-EXP-009) -->
+            <div id="view-financial" class="hidden animate-fade-in">
+                <div id="student-financial-container" class="space-y-8">
+                    <!-- Inyectado dinámicamente desde student.js -->
+                </div>
+            </div>
+
+            <!-- Vista de Guías de Estudio Formativas (REQ-DOC-001) -->
+            <div id="view-guias" class="hidden animate-fade-in">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white/40 backdrop-blur-md p-6 rounded-[2.5rem] border border-white/60 shadow-sm">
+                    <div>
+                        <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Material Formativo</h2>
+                        <h3 class="text-xl font-bold text-gray-800">Guías de Estudio por Asignatura</h3>
+                        <p class="text-xs text-gray-500 mt-1">Recursos y material didáctico de apoyo para preparar tus exámenes y reforzar tus aprendizajes.</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <select id="student-guia-parcial" class="bg-white/80 border border-blue-100 rounded-xl px-4 py-2 text-xs font-bold text-blue-600 outline-none focus:ring-2 focus:ring-blue-500/20">
+                            <option value="">Todos los Parciales</option>
+                            <option value="I Parcial">I Parcial</option>
+                            <option value="II Parcial">II Parcial</option>
+                            <option value="III Parcial">III Parcial</option>
+                            <option value="IV Parcial">IV Parcial</option>
+                        </select>
+                        <button id="btn-student-reload-guias" class="bg-blue-600 text-white p-2.5 rounded-xl hover:bg-blue-700 transition-colors" title="Actualizar">
+                            <i class="fas fa-sync-alt text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="student-guias-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="col-span-full text-center py-12 text-gray-400">
+                        <i class="fas fa-spinner fa-spin mr-2"></i> Consultando guías de estudio disponibles...
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
+
+    <!-- Modal de Carga de Comprobante de Pago (REQ-EXP-011) -->
+    <div id="voucher-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden z-[70] backdrop-blur-sm">
+        <div class="bg-white p-6 md:p-8 rounded-3xl shadow-2xl w-full max-w-md mx-4 animate-fade-in-up">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800">Reportar Comprobante de Pago</h2>
+                <button type="button" id="close-voucher-modal" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+            </div>
+            <form id="voucher-form" class="space-y-4">
+                <input type="hidden" id="voucher-cargo-id">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Concepto:</label>
+                    <input type="text" id="voucher-concepto" class="w-full p-3 bg-gray-50 border rounded-xl text-xs font-bold" readonly>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Monto a Reportar (L.):</label>
+                    <input type="number" step="0.01" id="voucher-monto" class="w-full p-3 border rounded-xl text-xs font-bold" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Método de Pago:</label>
+                    <select id="voucher-metodo" class="w-full p-3 border rounded-xl text-xs font-bold bg-white">
+                        <option value="Transferencia Bancaria">Transferencia Bancaria</option>
+                        <option value="Depósito Bancario">Depósito en Ventanilla</option>
+                        <option value="Tarjeta">Tarjeta Débito/Crédito</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">N° Referencia / Transacción:</label>
+                    <input type="text" id="voucher-referencia" class="w-full p-3 border rounded-xl text-xs" placeholder="Ej. TRANS-987654" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Archivo de Comprobante (PDF o Imagen):</label>
+                    <input type="file" id="voucher-file" accept="image/*,.pdf" class="w-full text-xs">
+                </div>
+                <div class="flex gap-3 pt-3">
+                    <button type="button" id="cancel-voucher-btn" class="w-1/2 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold text-xs">Cancelar</button>
+                    <button type="submit" id="submit-voucher-btn" class="w-1/2 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700 shadow-md">Enviar Comprobante</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Modal de Entrega -->
     <div id="submission-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden z-[60] backdrop-blur-sm">
@@ -267,7 +351,7 @@
     <footer class="bg-white/50 py-6 mt-auto">
         <div class="container mx-auto px-6 text-center">
             <p class="text-[10px] font-medium text-gray-400 uppercase tracking-widest mb-2">
-                &copy; 2026 Área de Informática <strong>ISEMED</strong>.
+                &copy; 2026 <strong>New Generation Bilingual School and Institute</strong>.
             </p>
             <p class="text-[10px] font-medium text-gray-400 uppercase tracking-widest opacity-60">
                 <a href="#" class="hover:text-blue-600 transition-colors">Privacidad</a>
