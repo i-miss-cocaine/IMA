@@ -2553,3 +2553,13 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Evidencia:** contrato multirol Director/Auditor con dos membresías y fila alias `Direct-or`; ejecución completa del contrato en harness V8 aislado PASS y sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI sin estado reportado por la integración.
 - **Estado:** corregido en C1.625; T153-S02 sigue En ejecución para verificar las invariantes multirol restantes. Validación Apps Script/Sheets real Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+### C1.630 — divergencia temporal entre contexto efectivo y listado administrativo
+- **Severidad:** Medio — coherencia de autorización y exposición de asignaciones vencidas en listado administrativo.
+- **Hallazgo reproducido:** `getUserContextScope` consideraba el valor numérico `0` de FechaFin como fecha Unix válida y vencida, pero `getInternalRoleAssignments` usaba una comprobación de truthiness (`r[9] ? new Date(r[9]) : null`) y trataba `0` como ausencia de límite. El listado podía exponer una asignación que el contexto efectivo ya rechazaba.
+- **Corrección:** el lector administrativo ahora distingue explícitamente vacío (`""`, `null`, `undefined`) de valores falsy válidos, y construye la fecha cuando existe un valor. La validación de fechas inválidas y los límites inclusivos permanecen alineados con el contexto efectivo.
+- **Prueba:** fecha fija determinista; inicio/fin exactamente en el límite, inicio futuro, fin pasado, fechas inválidas, fechas vacías y FechaFin numérica 0. El caso 0 falló antes de la corrección y pasó después; ambos lectores coinciden.
+- **Estado:** corregido en C1.630. Contrato completo V8 aislado PASS; sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
+===============================================================================
