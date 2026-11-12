@@ -729,6 +729,7 @@ const tenantSessionCtx = {
   getAuthTokenSecret:()=>"test-secret",
   computeHmacSignature:()=>"sig",
   CacheService:{getScriptCache:()=>tenantCache},
+  PropertiesService:{getScriptProperties:()=>({getProperty:()=>null,setProperty:()=>{}})},
   Utilities:{
     base64Decode:key=>JSON.stringify(tenantClaimsByPayload[key.replace(/=/g,"")]||{}),
     newBlob:value=>({getDataAsString:()=>value})
