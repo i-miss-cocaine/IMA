@@ -2581,3 +2581,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Commits funcionales:** backend `444e04140f9a10deab70cc8c7ae8fa51701e6b3f`; contrato `a3a1bb73104b779191572e5b50cc1395811ecd73`.
 - **Estado:** C1.634 implementada y verificada en harness aislado. T153-S02 permanece En ejecución; no iniciar T153-S03.
 ===============================================================================
+
+
+===============================================================================
+### C1.636 — integridad del ledger persistente de revocaciones
+- **Hallazgo:** después de inicializar el ledger, la eliminación o pérdida de la hoja `SesionesRevocadas` podía hacer que `isSessionRevoked_` interpretara su ausencia como "sin revocaciones" y aceptara tokens que ya estaban registrados.
+- **Corrección:** se añade el marcador persistente ScriptProperties `SESSION_REVOCATION_LEDGER_INITIALIZED`. Se escribe antes de crear/escribir el ledger. Si el marcador existe y la hoja falta, `isSessionRevoked_` lanza `SESSION_REVOCATION_LEDGER_MISSING`; `verifySessionToken` captura el error y falla cerrado.
+- **Contrato:** tras inicializar el ledger, se simula la desaparición de la hoja; un token que de otro modo sería válido se rechaza. Al restaurar la hoja, el token posterior a una revocación user-wide vuelve a verificarse. Se comprueba además que solo el helper persistente escribe marcas CacheService de sesión y que no quedan escritores cache-only en cambio de rol/logout.
+- **Estado:** corrección implementada y contrato completo V8 aislado PASS; sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets/PropertiesService real Pendiente beta.
+===============================================================================
