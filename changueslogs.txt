@@ -2825,3 +2825,16 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Node CLI independiente NOT RUN; CI no ejecutado; beta HMAC/CacheService/Sheets real Pendiente.
 - C1.633 completada; T153-S02 sigue En ejecución.
 ===============================================================================
+
+
+ 
+===============================================================================
+[2026-11-12] C1.634 — revocación persistente y logout seguro
+- Hallazgo: CacheService (6 h máximo y no persistente garantizado) se usaba para revocar tokens de 24 h; switchActiveRole solicitaba TTL superior al límite. logoutUser confiaba en userId/sessionId del payload.
+- Corrección: ledger persistente SesionesRevocadas con retención 24 h + 60 s; verifySessionToken consulta el ledger y falla cerrado ante esquema inválido; CacheService solo acelera.
+- switchActiveRole revoca persistentemente la sesión anterior. logoutUser usa SessionID de claims firmados e ignora identificadores del cliente; logout de sesión actual no revoca otros dispositivos.
+- Contrato V8 aislado PASS, incluidos C1.621–C1.634; sintaxis backend/test PASS.
+- Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets/CacheService/HMAC real Pendiente beta.
+- Migración: revocaciones históricas perdidas de caché no recuperables; validar tokens históricos en rollout.
+- C1.634 completada; T153-S02 sigue En ejecución.
+===============================================================================
