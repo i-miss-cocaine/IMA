@@ -472,4 +472,40 @@ assert.equal(rbacCtx.validateRolePermission("viewAuditLogs",{sessionToken:"sessi
 lifecycleMembershipRows[1][4]="ACTIVE";
 console.log("C1.627 explicit RBAC membership contract: role-specific grants/denials, no cross-role inheritance, capability non-elevation and independent revocation PASS.");
 
+ 
+// C1.628: effective context and administrative assignment listing must resolve the same unique responsibility chain.
+lifecycleMembershipRows[1][6]="";
+const directorEffectiveForListing = lifecycleCtx.getUserContextScope({sessionToken:"session-director"});
+const directorAdministrativeAssignments = lifecycleCtx.getInternalRoleAssignments({userId:"U-LIFE",roleId:"Director",membershipId:"MEM-LIFE"});
+assert.equal(directorEffectiveForListing.status,"success");
+assert.equal(directorAdministrativeAssignments.status,"success");
+assert.equal(directorAdministrativeAssignments.data.length,2,"both active Director scopes are listed");
+assert.deepEqual(
+  Array.from(directorEffectiveForListing.scopes.map(scope=>scope.responsibilityId).sort()),
+  Array.from(directorAdministrativeAssignments.data.map(item=>item.responsibilityId).sort()),
+  "effective context and administrative listing expose the same responsibility IDs"
+);
+assert.equal(directorEffectiveForListing.scopes[0].responsibility.institutionalResponsibilityId,"RESP-LIFE");
+assert.equal(directorAdministrativeAssignments.data[0].responsibility.institutionalResponsibilityId,"RESP-LIFE");
+
+// A duplicate institutional ResponsibilityID makes the linked chain ambiguous and must fail closed in both readers.
+lifecycleResponsibilityRows.push(lifecycleResponsibilityRows[1].slice());
+assert.equal(lifecycleCtx.getUserContextScope({sessionToken:"session-director"}).code,"DEPARTMENT_SCOPE_NOT_ASSIGNED","duplicate ResponsibilityID removes effective scopes");
+assert.equal(lifecycleCtx.getInternalRoleAssignments({userId:"U-LIFE",roleId:"Director",membershipId:"MEM-LIFE"}).data.length,0,"duplicate ResponsibilityID is also excluded from administrative assignments");
+lifecycleResponsibilityRows.pop();
+
+// A duplicate internal role ID must likewise be rejected by both readers.
+lifecycleInternalRoleRows.push(lifecycleInternalRoleRows[1].slice());
+assert.equal(lifecycleCtx.getUserContextScope({sessionToken:"session-director"}).code,"DEPARTMENT_SCOPE_NOT_ASSIGNED","duplicate RolInternoID removes effective scopes");
+assert.equal(lifecycleCtx.getInternalRoleAssignments({userId:"U-LIFE",roleId:"Director",membershipId:"MEM-LIFE"}).data.length,0,"duplicate RolInternoID is excluded from administrative assignments");
+lifecycleInternalRoleRows.pop();
+
+// A dangling ResponsibilityID cannot be repaired by a valid role or scope row.
+lifecycleInternalRoleRows[1][13]="RESP-MISSING";
+assert.equal(lifecycleCtx.getUserContextScope({sessionToken:"session-director"}).code,"DEPARTMENT_SCOPE_NOT_ASSIGNED","dangling institutional responsibility link denies effective context");
+assert.equal(lifecycleCtx.getInternalRoleAssignments({userId:"U-LIFE",roleId:"Director",membershipId:"MEM-LIFE"}).data.length,0,"dangling responsibility link is excluded from administrative listing");
+lifecycleInternalRoleRows[1][13]="RESP-LIFE";
+console.log("C1.628 responsibility-chain contract: effective/admin reader parity, duplicate responsibility/internal-role rejection and dangling-link fail-closed PASS.");
+
+
 
