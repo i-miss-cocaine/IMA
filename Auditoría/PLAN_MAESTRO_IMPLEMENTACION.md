@@ -4771,3 +4771,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 
 **Addendum C1.616-R2 — regresión de tenant legacy**
 - El contrato añade una comprobación de sesión legacy cuando el usuario solo tiene membresías en otra institución. La compatibilidad se conserva únicamente en el tenant sin membresías propias. Commit de prueba 90762894; ejecución local NOT RUN.
+
+
+Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
+- Se corrigió el harness Department Scope para concatenar funciones JavaScript con saltos de línea reales; el contrato había fallado con SyntaxError antes de ejecutar sus aserciones.
+- El contrato transversal Task-Service ahora incluye el verificador real verifyUserRoleMembershipClaim_ cuando el servicio lo implementa; el fixture mantiene ausente la hoja de membresías para comprobar compatibilidad legacy.
+- El harness RBAC ahora genera sessionId deterministas pero únicos; el UUID fijo anterior hacía que el token recién emitido por switchActiveRole compartiera el sessionId revocado del token anterior.
+- Department Scope Contract run 43217920934 SUCCESS: todos los contratos y parseos/syntax-check configurados pasaron en Node 24.22.2.
+- Task-Service security run 43217821416 SUCCESS: security contract y resource ownership contract pasaron en Node 22.23.4.
+- Commits de prueba: 03ad294560850ee15741272630f86ecac2ffc40e y c1d2b350eb94400cdb41e89c462ffc4a81d8e0c8.
+- No hubo cambios productivos en esta iteración. La ejecución desde la terminal local de esta sesión y Apps Script/Sheets real permanecen NOT RUN; BETA-FUNC-033 sigue Pendiente beta.
+- C1.616 queda verificada por CI; TASK-153/T153-S02 permanece En ejecución. Siguiente incremento: responsabilidades/capacidades vinculadas de forma verificable a tenant, membresía y ámbitos, usando datos sintéticos y sin crear asignaciones institucionales reales.

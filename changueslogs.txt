@@ -2636,3 +2636,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-12] C1.616-R2 — contrato ampliado: una membresía de otro tenant no invalida el rol legacy del tenant actual cuando no hay membresías locales. Prueba añadida, NOT RUN.
+
+
+===============================================================================
+[2026-11-12] C1.617 — verificación de membresías RBAC multirol
+- Se corrigieron tres defectos de harness: concatenación de funciones en Department Scope, extracción de verifyUserRoleMembershipClaim_ en el contrato transversal Task-Service y UUID fijo del fixture de cambio de rol.
+- Department Scope Contract 43217920934 SUCCESS: todos los contratos, sintaxis de seis servicios y checks de clientes PASS.
+- Task-Service security 43217821416 SUCCESS: security contract y resource ownership PASS.
+- Correcciones solo en archivos de prueba; no hubo cambios productivos en esta iteración. Terminal local NOT RUN; Apps Script/Sheets real NOT RUN.
+- C1.616 verificada por CI; BETA-FUNC-033 Pendiente beta; TASK-153/T153-S02 continúa En ejecución.
+===============================================================================

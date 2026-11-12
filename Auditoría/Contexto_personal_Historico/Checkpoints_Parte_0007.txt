@@ -1013,3 +1013,21 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 **Addendum C1.616-R2 — compatibilidad legacy por tenant**
 - Se amplía el contrato para verificar que una membresía RBAC de INST-2 no invalida la sesión legacy de un usuario sin membresías en INST-1.
 - Commit de prueba: 90762894af246fa8b8f9503e44252e0315334c56. Ejecución local sigue NOT RUN.
+
+
+===============================================================================
+### C1.617 — IMA-EXEC-20261110-1825Z-02 — verificación de membresías RBAC multirol
+- Sesión: IMA-EXEC-20261110-1825Z-02 (se conserva el mismo ID).
+- Continuidad: checkpoint anterior C1.616; HEAD de código verificado antes del registro: c1d2b350eb94400cdb41e89c462ffc4a81d8e0c8.
+- Tarea: PM-01 / TASK-153 / T153-S02 — cerrar la verificación del incremento de membresías multirol, selección explícita y validación transversal. La tarea global continúa En ejecución.
+- Correcciones de harness: el contrato Department Scope concatenaba funciones con el texto literal barra-n en vez de un salto de línea; el contrato Task-Service no incluía verifyUserRoleMembershipClaim_ en el contexto aislado; el fixture RBAC reutilizaba un UUID fijo para tokens distintos. Se corrigieron los tres defectos de prueba; no se modificó código productivo en esta iteración.
+- Archivos funcionales modificados: ninguno.
+- Archivos de prueba modificados: tests/security/department-scope-contract.test.js; tests/security/task-service-security-contract.test.js; tests/security/user-role-membership-contract.test.js.
+- Verificación CI: Department Scope Contract run 43217920934 SUCCESS, en Node 24.22.2; todos los pasos PASS: Department Scope, User Role Membership, Academic departmental resource access, Academic student expediente ownership, Academic admission ownership, User-service signature ownership, Accounting departmental resource access, Resource Ownership ABAC, sintaxis de los seis servicios Apps Script, Student private voucher contract y sintaxis de js/student.js y js/auth.js.
+- Verificación CI adicional: Task-Service security run 43217821416 SUCCESS, en Node 22.23.4; task-service-security-contract y task-service-resource-ownership PASS.
+- Ejecución en terminal local de esta sesión: NOT RUN. Se intentó checkout, pero el entorno no pudo resolver/conectar con github.com; no se presenta CI como ejecución local.
+- Apps Script/Sheets/Drive real: NOT RUN. BETA-FUNC-033 permanece Pendiente beta.
+- Hallazgos: los fallos iniciales correspondían a fixtures/harnesses; quedaron corregidos y las ejecuciones finales pasaron. No se declara prueba real de despliegue ni migración de datos.
+- Commits de corrección: 03ad294560850ee15741272630f86ecac2ffc40e; c1d2b350eb94400cdb41e89c462ffc4a81d8e0c8.
+- Siguiente tarea elegible: continuar T153-S02 con la integración verificable de responsabilidades/capacidades y su vínculo con membresía, tenant y ámbitos; no iniciar T153-S03 antes de satisfacer las dependencias de T153-S02.
+===============================================================================

@@ -2466,3 +2466,13 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 ### C1.616-R1 — integridad del esquema de membresías
 - ensureUserRoleMembershipSheet_ validaba solo las primeras 12 celdas y podía aceptar una hoja con columnas adicionales, mientras el lector la rechazaba. Se unifica el criterio: exactamente 12 columnas y cabecera canónica; el contrato incluye regresión para columnas adicionales.
 - Prueba añadida, aún NOT RUN; pendiente de ejecución local antes del cierre.
+
+
+===============================================================================
+### C1.617 — verificación CI de membresías RBAC multirol
+- Los fallos de CI previos se aislaron a fixtures: literal barra-n en Department Scope, ausencia del helper verifyUserRoleMembershipClaim_ en el contrato transversal y reutilización de un UUID fijo para tokens distintos.
+- Correcciones de prueba publicadas en 03ad294560850ee15741272630f86ecac2ffc40e y c1d2b350eb94400cdb41e89c462ffc4a81d8e0c8.
+- Department Scope run 43217920934 SUCCESS; Task-Service security run 43217821416 SUCCESS. Contratos y syntax-checks configurados pasaron.
+- Sin cambios productivos ni datos reales en esta iteración. Apps Script/Sheets/Drive real NOT RUN; BETA-FUNC-033 Pendiente beta.
+- C1.616 verificada por CI; TASK-153/T153-S02 continúa En ejecución.
+===============================================================================
