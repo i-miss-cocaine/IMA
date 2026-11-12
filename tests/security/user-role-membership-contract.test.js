@@ -147,3 +147,64 @@ function membership(id,user,role,institution,status="ACTIVE",from=start,to=end){
 }
 
 console.log("User role membership contract: institution/user binding, effective dates, revocation, duplicate denial, signed active-role switching, legacy compatibility and locked assignment lifecycle passed.");
+
+
+{
+  const servicePaths = [
+    "../../backend/academic-service/Code.gs",
+    "../../backend/accounting-service/Code.gs",
+    "../../backend/task-service/Code.gs",
+    "../../backend/exam-service/Code.gs"
+  ];
+  const sharedRows = [headers,membership("M-SHARED","U-1","Director","INST-1")];
+  const userHarness = makeHarness(sharedRows);
+  const signedRoleToken = userHarness.ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Director",membershipId:"M-SHARED",institutionId:"INST-1"});
+  const legacyToken = userHarness.ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Student"});
+  for (const relativePath of servicePaths) {
+    const serviceSource = fs.readFileSync(path.resolve(__dirname, relativePath), "utf8");
+    const membershipVerifier = extractFunction(serviceSource, "verifyUserRoleMembershipClaim_");
+    const sessionVerifier = extractFunction(serviceSource, "verifySessionToken");
+    const cache = {};
+    const serviceCtx = {
+      SPREADSHEET_ID:"LOCAL",
+      PropertiesService:{getScriptProperties:()=>({getProperty:key=>key==="IMA_INSTITUTION_ID"?"INST-1":""})},
+      SpreadsheetApp:{openById:()=>({getSheetByName:name=>name==="Usuarios"?{getDataRange:()=>({getValues:()=>[
+        ["UserId","Nombre","Grado","Seccion","Email","PasswordHash","Rol","Telefono","NumeroLista","PersonaID","EstadoCuenta"],
+        ["U-1","Test User","","","u1@example.test","","Student","","","","Activa"]
+      ]})}:name==="MembresiasRolesRBAC"?{getDataRange:()=>({getValues:()=>sharedRows.map(r=>r.slice())})}:null})},
+      CacheService:{getScriptCache:()=>({get:key=>cache[key]||null,put:(key,value)=>cache[key]=value})},
+      Utilities:{base64Decode:value=>Buffer.from(value,"base64"),newBlob:value=>({getDataAsString:()=>Buffer.from(value).toString("utf8")})},
+      getAuthTokenSecret:()=>"secret",
+      computeHmacSignature:(value,secret)=>"sig:"+value+":"+secret
+    };
+    vm.runInNewContext(membershipVerifier+"\\n"+sessionVerifier+"\\nthis.verifySessionToken=verifySessionToken;",serviceCtx);
+    assert.equal(serviceCtx.verifySessionToken(signedRoleToken).role,"Director",relativePath+" accepts active membership token");
+    sharedRows[1][4]="REVOKED";
+    assert.equal(serviceCtx.verifySessionToken(signedRoleToken),null,relativePath+" rejects revoked membership");
+    sharedRows[1][4]="ACTIVE";
+    assert.equal(serviceCtx.verifySessionToken(legacyToken).role,"Student",relativePath+" preserves legacy token");
+  }
+}
+
+{
+  const developerSource = fs.readFileSync(path.resolve(__dirname, "../../backend/developer-service/Code.gs"), "utf8");
+  const developerVerifier = extractFunction(developerSource, "verifySessionToken");
+  const developerCtx = {
+    getAuthTokenSecret:()=>"secret",
+    Utilities:{
+      MacAlgorithm:{HMAC_SHA_256:"HMAC_SHA_256"},
+      computeHmacSignature:()=>[1,2,3],
+      base64Decode:value=>Buffer.from(value,"base64"),
+      newBlob:value=>({getDataAsString:()=>Buffer.from(value).toString("utf8")})
+    }
+  };
+  vm.runInNewContext(developerVerifier+"\\nthis.verifySessionToken=verifySessionToken;",developerCtx);
+  const nowSeconds=Math.floor(Date.now()/1000);
+  function developerToken(extra) {
+    const claims=Object.assign({userId:"U-1",role:"Student",iat:nowSeconds,exp:nowSeconds+3600,sessionId:"DEV-SESSION"},extra||{});
+    const payload=Buffer.from(JSON.stringify(claims)).toString("base64").replace(/=/g,"").replace(/\\+/g,"-").replace(/\\//g,"_");
+    return payload+".010203";
+  }
+  assert.equal(developerCtx.verifySessionToken(developerToken({membershipId:"M-SHARED",institutionId:"INST-1"})),null,"separate developer control plane rejects app membership tokens");
+  assert.equal(developerCtx.verifySessionToken(developerToken()).role,"Student","developer control plane preserves legacy token compatibility");
+}
