@@ -4915,3 +4915,13 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.629); sintaxis backend USER/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets ScriptLock real Pendiente beta.
 - **Estado:** C1.629 completada. T153-S02 continúa En ejecución.
 - **Siguiente acción:** verificar equivalencia temporal entre contexto efectivo y listado administrativo para fechas de inicio/fin, inválidas y límites exactos.
+
+
+ 
+**Addendum C1.630 — paridad temporal entre contexto efectivo y listado administrativo**
+- Se detectó una diferencia en el tratamiento de valores falsy: el contexto interpretaba FechaFin numérica 0 como fecha epoch vencida, mientras el listado la trataba como campo vacío y mantenía visible la asignación.
+- `getInternalRoleAssignments` ahora distingue explícitamente vacío (`""`, `null`, `undefined`) de otros valores; los convierte y valida como fechas, igual que el contexto.
+- Contrato temporal con reloj fijo cubre límites inclusivos, inicio futuro, fin pasado, fechas inválidas, límites vacíos y FechaFin 0. La prueba reprodujo FAIL antes de la corrección y PASS después.
+- Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.630); parseo backend USER/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
+- **Estado:** C1.630 completada y hallazgo corregido. T153-S02 continúa En ejecución.
+- **Siguiente acción:** revisar coherencia temporal en las rutas de autorización restantes pertinentes al subflujo, sin ampliar a servicios no afectados.
