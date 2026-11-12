@@ -4767,3 +4767,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 **Addendum C1.616-R1 — esquema RBAC exacto**
 - Se detectó que ensureUserRoleMembershipSheet_ comprobaba solo las primeras 12 columnas; ahora rechaza encabezados con columnas adicionales, igual que el lector y los consumidores.
 - Se añadió el caso de contrato para esquema extendido. La prueba continúa NOT RUN; no se declara PASS ni se cierra C1.616.
+
+
+**Addendum C1.616-R2 — regresión de tenant legacy**
+- El contrato añade una comprobación de sesión legacy cuando el usuario solo tiene membresías en otra institución. La compatibilidad se conserva únicamente en el tenant sin membresías propias. Commit de prueba 90762894; ejecución local NOT RUN.
