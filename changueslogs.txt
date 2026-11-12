@@ -2927,10 +2927,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
  
 ===============================================================================
-[2026-11-12] C1.641 — vinculación exacta de ámbitos en ACADEMIC/ACCOUNTING/TASK/EXAM
+[2026-11-12] C1.642 — vinculación exacta de ámbitos en ACADEMIC/ACCOUNTING/TASK/EXAM
 - Hallazgo: los helpers locales filtraban por usuario/rol sin comprobar MembershipID/InstitutionID firmados ni responsabilidad activa; no aplicaban activeDepartmentId.
 - Corrección: los cuatro servicios ahora validan identidad/claim, membresía/tenant/rol exactos, responsabilidad activa, AssignmentID único, fechas fail-closed y selección activa de departamento. Legacy sin membresía solo puede leer filas sin vínculo tenant/membresía.
 - Contrato V8 aislado PASS; sintaxis USER, ACADEMIC, ACCOUNTING, TASK, EXAM y test PASS.
 - Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
-- C1.641 completada local; T153-S02 reabierta En ejecución hasta inventariar lectores restantes.
+- C1.642 completada local; T153-S02 reabierta En ejecución hasta inventariar lectores restantes.
 ===============================================================================
