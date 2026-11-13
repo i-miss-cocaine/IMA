@@ -1776,6 +1776,65 @@ function compensateMigratedResourceOwnership_(p){
   journal.getRange(matches[0].n,9).setValue("COMPENSATED");journal.getRange(matches[0].n,11).setValue(new Date().toISOString());return{status:"success",compensated:true,idempotent:false};
  }catch(error){return{status:"error",code:String(error&&error.message||"RESOURCE_OWNERSHIP_COMPENSATION_FAILED")};}finally{if(held){try{lock.releaseLock();}catch(_){}}}
 }
+
+function verifyDepartmentReferenceEnvelope_(envelope, expectedTargetService, secret) {
+  if (!envelope || typeof envelope !== "object" || Array.isArray(envelope)) throw new Error("DEPARTMENT_REFERENCE_ENVELOPE_INVALID");
+  var sourceService = String(envelope.sourceService || "").trim().toUpperCase();
+  var targetService = String(envelope.targetService || "").trim().toUpperCase();
+  var action = String(envelope.action || "").trim();
+  var requestId = String(envelope.requestId || "").trim();
+  var correlationId = String(envelope.correlationId || "").trim();
+  var timestamp = envelope.timestamp;
+  var signature = String(envelope.hmacSignature || "").trim().toLowerCase();
+  var payload = envelope.payload;
+  if (["ACADEMIC", "ACCOUNTING"].indexOf(sourceService) === -1 ||
+      targetService !== String(expectedTargetService || "USER").trim().toUpperCase() ||
+      action !== "authorizeDepartmentReferenceRead" ||
+      !/^REQ-[0-9]{10,16}-[A-Za-z0-9_-]{1,32}$/.test(requestId) ||
+      !/^[A-Za-z0-9_.:-]{1,128}$/.test(correlationId) ||
+      typeof timestamp !== "number" || !Number.isFinite(timestamp) ||
+      Math.floor(timestamp) !== timestamp || Math.abs(Date.now() - timestamp) > 300000 ||
+      !/^[a-f0-9]{64}$/.test(signature) || !payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error("DEPARTMENT_REFERENCE_ENVELOPE_INVALID");
+  }
+  var sharedSecret = String(secret || "").trim();
+  if (sharedSecret.length < 32) throw new Error("DEPARTMENT_REFERENCE_TRANSPORT_SECRET_REQUIRED");
+  var bodyToSign = requestId + "|" + timestamp + "|" + correlationId + "|" +
+    sourceService + "|" + targetService + "|" + action + "|" + JSON.stringify(payload);
+  var expectedSignature = String(computeHmacSignature(bodyToSign, sharedSecret)).toLowerCase();
+  var signatureDiff = signature.length ^ expectedSignature.length;
+  for (var i = 0; i < Math.max(signature.length, expectedSignature.length); i++) {
+    signatureDiff |= (signature.charCodeAt(i) || 0) ^ (expectedSignature.charCodeAt(i) || 0);
+  }
+  if (signatureDiff !== 0) throw new Error("DEPARTMENT_REFERENCE_ENVELOPE_SIGNATURE_INVALID");
+  var lock = LockService.getScriptLock();
+  var held = false;
+  try {
+    held = lock.tryLock(10000);
+    if (!held) throw new Error("DEPARTMENT_REFERENCE_ENVELOPE_SERVICE_BUSY");
+    var cache = CacheService.getScriptCache();
+    var replayKey = "DEPARTMENT_REFERENCE_ENVELOPE_" + sourceService + "_" + requestId;
+    if (cache.get(replayKey)) throw new Error("DEPARTMENT_REFERENCE_ENVELOPE_REPLAY");
+    cache.put(replayKey, "SEEN", 300);
+  } finally {
+    if (held) { try { lock.releaseLock(); } catch (e) {} }
+  }
+  return { valid: true, sourceService: sourceService, targetService: targetService, action: action,
+    requestId: requestId, correlationId: correlationId, payload: payload };
+}
+
+function handleTrustedDepartmentReferenceEnvelope_(envelope) {
+  var secret = "";
+  try {
+    secret = String(PropertiesService.getScriptProperties().getProperty("IMA_DEPARTMENT_REFERENCE_HMAC_SECRET") || "").trim();
+  } catch (error) {
+    throw new Error("DEPARTMENT_REFERENCE_TRANSPORT_SECRET_UNAVAILABLE");
+  }
+  if (secret.length < 32) throw new Error("DEPARTMENT_REFERENCE_TRANSPORT_SECRET_REQUIRED");
+  var verified = verifyDepartmentReferenceEnvelope_(envelope, "USER", secret);
+  return authorizeDepartmentReferenceRead(verified.payload);
+}
+
 function handleTrustedMigrationEnvelope_(envelope){
  const secret=String(PropertiesService.getScriptProperties().getProperty("IMA_MIGRATION_HMAC_SECRET")||"");
  if(secret.length<32)throw new Error("MIGRATION_TRANSPORT_SECRET_REQUIRED");
@@ -1885,6 +1944,7 @@ function doPost(e) {
     if (!e || !e.postData || !e.postData.contents) return textResponse({ status: "error", message: "No se recibieron datos." });
     const request = JSON.parse(e.postData.contents);
     if (request && typeof request.sourceService === "string" && /^SIGNATURE_PROVIDER:/i.test(request.sourceService)) return textResponse(handleSignatureProviderCallback_(request));
+    if (request && request.sourceService && request.action === "authorizeDepartmentReferenceRead") return textResponse(handleTrustedDepartmentReferenceEnvelope_(request));
     if (request && request.sourceService) return textResponse(handleTrustedMigrationEnvelope_(request));
     const { action, payload } = request;
     const authCheck = validateRolePermission(action, payload);
