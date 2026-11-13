@@ -576,7 +576,7 @@ function validateRolePermission(action, payload) {
   if (!ctxCheck.authorized) {
     return { authorized: false, role: userRole + " (" + ctxCheck.reason + ")" };
   }
-  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "getLoanAmortizationSchedule", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher", "recordStaffCheckIn", "recordStaffAttendance", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitLeaveVacationRequest", "submitVacationRequest", "getLeaveVacationRequests", "getVacationRequests", "reviewLeaveVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure"];
+  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "getLoanAmortizationSchedule", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher", "recordStaffCheckIn", "recordStaffAttendance", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitLeaveVacationRequest", "submitVacationRequest", "getLeaveVacationRequests", "getVacationRequests", "reviewLeaveVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment"];
   if (resourceScopeActions.indexOf(action) !== -1) {
     const roleKey = String(userRole || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
     const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1 &&
@@ -3001,100 +3001,101 @@ function manageTrainingCourse(payload) {
   };
 }
 
-function manageTrainingEnrollment(payload) {
-  const {
-    inscripcionId,
-    cursoId,
-    empleadoId,
-    fechaInscripcion,
-    estadoInscripcion,
-    asistenciaPorcentaje,
-    resultadoNota,
-    certificadoDriveUrl,
-    fechaEmisionCertificado,
-    fechaVencimientoCertificado,
-    observaciones,
-    creadoPor
-  } = payload || {};
-
-  if (!cursoId || !empleadoId) {
-    throw new Error("cursoId y empleadoId son campos obligatorios.");
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "InscripcionesCapacitacion");
-
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow([
-      "InscripcionID",
-      "CursoID",
-      "EmpleadoID",
-      "FechaInscripcion",
-      "EstadoInscripcion",
-      "AsistenciaPorcentaje",
-      "ResultadoNota",
-      "CertificadoDriveUrl",
-      "FechaEmisionCertificado",
-      "FechaVencimientoCertificado",
-      "Observaciones",
-      "CreadoPor",
-      "FechaCreacion",
-      "UltimaModificacion"
-    ]);
-  }
-
-  const data = sheet.getDataRange().getValues();
-  const insId = inscripcionId || ("INSC-CAP-" + Date.now());
-  const nowStr = new Date().toISOString();
-  let foundIndex = -1;
-
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim() === String(insId).trim()) {
-      foundIndex = i + 1;
-      break;
-    }
-  }
-
-  const estadoFinal = estadoInscripcion || "Inscrito";
-
-  if (foundIndex > 0) {
-    sheet.getRange(foundIndex, 2).setValue(cursoId);
-    sheet.getRange(foundIndex, 3).setValue(empleadoId);
-    sheet.getRange(foundIndex, 4).setValue(fechaInscripcion || nowStr.split("T")[0]);
-    sheet.getRange(foundIndex, 5).setValue(estadoFinal);
-    sheet.getRange(foundIndex, 6).setValue(asistenciaPorcentaje || 0);
-    sheet.getRange(foundIndex, 7).setValue(resultadoNota || 0);
-    sheet.getRange(foundIndex, 8).setValue(certificadoDriveUrl || "");
-    sheet.getRange(foundIndex, 9).setValue(fechaEmisionCertificado || "");
-    sheet.getRange(foundIndex, 10).setValue(fechaVencimientoCertificado || "");
-    sheet.getRange(foundIndex, 11).setValue(observaciones || "");
-    sheet.getRange(foundIndex, 14).setValue(nowStr);
-  } else {
-    sheet.appendRow([
-      insId,
-      cursoId,
-      empleadoId,
-      fechaInscripcion || nowStr.split("T")[0],
-      estadoFinal,
-      asistenciaPorcentaje || 0,
-      resultadoNota || 0,
-      certificadoDriveUrl || "",
-      fechaEmisionCertificado || "",
-      fechaVencimientoCertificado || "",
-      observaciones || "",
-      creadoPor || "RecursosHumanos",
-      nowStr,
-      nowStr
-    ]);
-  }
-
-  return {
-    status: "success",
-    message: "Inscripción/capacitación registrada exitosamente.",
-    data: { inscripcionId: insId, cursoId, empleadoId, estadoInscripcion: estadoFinal }
-  };
+function resolveTrainingEnrollmentEmployeeWriteAccess_(payload,ss,employeeId) {
+  const actor=getVerifiedAccountingIdentity_(payload);
+  if(!actor.authorized)return actor;
+  const role=normalizeVacationRole_(actor.role);
+  if(["RECURSOSHUMANOS","ADMINISTRADOR"].indexOf(role)===-1)return {authorized:false,code:"ROLE_NOT_ALLOWED"};
+  const id=String(employeeId||"").trim();
+  if(!id)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  const headers=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
+  const employees=getVacationSheetSnapshot_(ss,"ExpedientesLaborales",headers);
+  if(employees.missing||employees.error||employees.rows.some(r=>r.length!==headers.length))return {authorized:false,code:"RESOURCE_SCHEMA_INVALID"};
+  const byUser=employees.rows.filter(r=>String(r[2]||"").trim()===id);
+  if(byUser.length!==1)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  const expedienteId=String(byUser[0][0]||"").trim();
+  if(!expedienteId||employees.rows.filter(r=>String(r[0]||"").trim()===expedienteId).length!==1)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  try{if(payload&&typeof payload==="object")RESOURCE_OWNERSHIP_REQUEST_CACHE_.delete(payload);}catch(_){}
+  const scope=getVerifiedAccountingDepartmentScope_(payload,ss,actor);
+  if(!scope.authorized)return {authorized:false,code:scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED"};
+  const ownership=assertResourceOwnershipForScope_(ss,scope,"EXPEDIENTE_LABORAL",expedienteId,"WRITE",payload);
+  if(!ownership.authorized)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  return {authorized:true,actor:actor,empleadoId:id,expedienteId:expedienteId,accessType:ownership.accessType};
 }
-
+function ensureTrainingEnrollmentWriteSheet_(ss) {
+  const headers=["InscripcionID","CursoID","EmpleadoID","FechaInscripcion","EstadoInscripcion","AsistenciaPorcentaje","ResultadoNota","CertificadoDriveUrl","FechaEmisionCertificado","FechaVencimientoCertificado","Observaciones","CreadoPor","FechaCreacion","UltimaModificacion"];
+  let sheet=ss.getSheetByName("InscripcionesCapacitacion");
+  if(!sheet)sheet=getOrCreateSheet(ss,"InscripcionesCapacitacion");
+  if(sheet.getLastRow()===0)sheet.appendRow(headers);
+  const snapshot=getVacationSheetSnapshot_(ss,"InscripcionesCapacitacion",headers);
+  if(snapshot.missing||snapshot.error||snapshot.rows.some(r=>r.length!==headers.length))return {error:true,sheet:sheet,rows:[]};
+  return {error:false,sheet:snapshot.sheet||sheet,rows:snapshot.rows,headers:headers};
+}
+function resolveTrainingCourseForEnrollment_(ss,courseId) {
+  const headers=["CursoID","NombreCurso","Categoria","ProveedorResponsable","Modalidad","DuracionHoras","Requisitos","DirigidoA","Estado","CreadoPor","FechaCreacion","UltimaModificacion"];
+  const courses=getVacationSheetSnapshot_(ss,"CatalogoCursosCapacitacion",headers);
+  if(courses.missing||courses.error||courses.rows.some(r=>r.length!==headers.length))return {authorized:false,code:"RESOURCE_SCHEMA_INVALID"};
+  const matches=courses.rows.filter(r=>String(r[0]||"").trim()===String(courseId||"").trim());
+  return matches.length===1?{authorized:true,course:matches[0]}:{authorized:false,code:"RESOURCE_NOT_FOUND"};
+}
+function manageTrainingEnrollment(payload) {
+  const p=payload||{},employeeId=String(p.empleadoId||"").trim(),courseId=String(p.cursoId||"").trim();
+  if(!employeeId||!courseId)return {status:"error",code:"TRAINING_ENROLLMENT_FIELDS_REQUIRED",message:"Curso y empleado son requeridos."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),initial=resolveTrainingEnrollmentEmployeeWriteAccess_(p,ss,employeeId);
+  if(!initial.authorized)return {status:"error",code:initial.code||"RESOURCE_NOT_FOUND",message:"No existe un expediente disponible para la inscripción."};
+  const initialCourse=resolveTrainingCourseForEnrollment_(ss,courseId);
+  if(!initialCourse.authorized)return {status:"error",code:initialCourse.code,message:"No existe un curso disponible para la inscripción."};
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La operación está siendo procesada. Intente nuevamente."};
+  try{
+    const access=resolveTrainingEnrollmentEmployeeWriteAccess_(p,ss,employeeId);
+    if(!access.authorized)return {status:"error",code:access.code==="ROLE_NOT_ALLOWED"?"ROLE_NOT_ALLOWED":"RESOURCE_NOT_FOUND",message:"No existe un expediente disponible para la inscripción."};
+    const course=resolveTrainingCourseForEnrollment_(ss,courseId);
+    if(!course.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe un curso disponible para la inscripción."};
+    const snapshot=ensureTrainingEnrollmentWriteSheet_(ss);
+    if(snapshot.error)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de inscripciones de capacitación no es válida."};
+    const suppliedId=String(p.inscripcionId||"").trim(),id=suppliedId||("INSC-CAP-"+Utilities.getUuid());
+    const matches=snapshot.rows.map((row,index)=>({row:row,index:index})).filter(x=>String(x.row[0]||"").trim()===id);
+    if(matches.length>1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe una inscripción disponible."};
+    if(!suppliedId&&matches.length)return {status:"error",code:"TRAINING_ENROLLMENT_ID_COLLISION",message:"No fue posible registrar la inscripción."};
+    const existing=matches.length===1?matches[0]:null;
+    if(existing&&String(existing.row[2]||"").trim()!==access.empleadoId)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe una inscripción disponible."};
+    const current=existing?existing.row.slice():null,now=new Date().toISOString(),today=now.split("T")[0];
+    const enrollmentDate=p.fechaInscripcion!==undefined&&p.fechaInscripcion!==""?p.fechaInscripcion:(current?current[3]:today);
+    if(isNaN(new Date(enrollmentDate).getTime()))return {status:"error",code:"TRAINING_ENROLLMENT_DATE_INVALID",message:"La fecha de inscripción no es válida."};
+    const attendance=Number(p.asistenciaPorcentaje===undefined?(current?current[5]:0):p.asistenciaPorcentaje);
+    if(!Number.isFinite(attendance)||attendance<0||attendance>100)return {status:"error",code:"TRAINING_ATTENDANCE_INVALID",message:"El porcentaje de asistencia debe estar entre 0 y 100."};
+    const grade=Number(p.resultadoNota===undefined?(current?current[6]:0):p.resultadoNota);
+    if(!Number.isFinite(grade)||grade<0)return {status:"error",code:"TRAINING_GRADE_INVALID",message:"La nota debe ser un número no negativo."};
+    const issueDate=p.fechaEmisionCertificado!==undefined?p.fechaEmisionCertificado:(current?current[8]:"");
+    const expiryDate=p.fechaVencimientoCertificado!==undefined?p.fechaVencimientoCertificado:(current?current[9]:"");
+    if(issueDate&&isNaN(new Date(issueDate).getTime()))return {status:"error",code:"TRAINING_CERTIFICATE_DATE_INVALID",message:"La fecha de emisión del certificado no es válida."};
+    if(expiryDate&&isNaN(new Date(expiryDate).getTime()))return {status:"error",code:"TRAINING_CERTIFICATE_DATE_INVALID",message:"La fecha de vencimiento del certificado no es válida."};
+    if(issueDate&&expiryDate&&new Date(expiryDate)<new Date(issueDate))return {status:"error",code:"TRAINING_CERTIFICATE_DATE_RANGE_INVALID",message:"El vencimiento no puede ser anterior a la emisión."};
+    const row=[
+      id,courseId,access.empleadoId,enrollmentDate,
+      String(p.estadoInscripcion!==undefined&&p.estadoInscripcion!==""?p.estadoInscripcion:(current?current[4]:"Inscrito")),
+      attendance,grade,
+      p.certificadoDriveUrl!==undefined?p.certificadoDriveUrl:(current?current[7]:""),
+      issueDate,expiryDate,
+      p.observaciones!==undefined?p.observaciones:(current?current[10]:""),
+      current?current[11]:access.actor.userId,current?current[12]:now,now
+    ];
+    if(existing){
+      const rowNumber=existing.index+2;
+      try{snapshot.sheet.getRange(rowNumber,1,1,snapshot.headers.length).setValues([row]);}
+      catch(writeError){
+        try{snapshot.sheet.getRange(rowNumber,1,1,snapshot.headers.length).setValues([current]);}
+        catch(rollbackError){return {status:"error",code:"TRAINING_ENROLLMENT_COMPENSATION_REQUIRED",message:"No fue posible completar ni revertir la inscripción."};}
+        return {status:"error",code:"TRAINING_ENROLLMENT_WRITE_FAILED",message:"No fue posible actualizar la inscripción."};
+      }
+    }else{
+      try{snapshot.sheet.appendRow(row);}
+      catch(writeError){return {status:"error",code:"TRAINING_ENROLLMENT_WRITE_FAILED",message:"No fue posible registrar la inscripción."};}
+    }
+    return {status:"success",message:"Inscripción/capacitación registrada exitosamente.",data:{inscripcionId:id,cursoId:courseId,empleadoId:access.empleadoId,estadoInscripcion:row[4]}};
+  }finally{lock.releaseLock();}
+}
 function getEmployeeTrainingHistory(payload) {
   const request=payload||{},actor=getVerifiedAccountingIdentity_(payload);
   if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
