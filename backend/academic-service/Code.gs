@@ -3407,8 +3407,8 @@ function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow) {
       const state = String(r[9] || "").trim().toUpperCase();
       const portal = String(r[8] || "").trim().toUpperCase();
       if (["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(state) === -1 || ["SI", "SÍ", "TRUE", "1", "ACTIVO", "ACTIVA"].indexOf(portal) === -1) return false;
-      const guardian = guardianRows.find(function(g) { return String(g[0] || "").trim() === String(r[2] || "").trim(); });
-      return guardian && String(guardian[1] || "").trim() === actorPersonId;
+      const guardianMatches = guardianRows.filter(function(g) { return String(g[0] || "").trim() === String(r[2] || "").trim(); });
+      return guardianMatches.length === 1 && String(guardianMatches[0][1] || "").trim() === actorPersonId;
     });
     if (!linked) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
     const studentIdentity = getStudentIdentityForPerson_(ss, personId);
