@@ -222,3 +222,11 @@
 ===============================================================================
 
 - **C1.671-R1 — ajuste del contrato:** CI run 43356975075 aprobó Department Scope, Internal Responsibility RBAC, ACCOUNTING import y USER migrated ownership; el contrato ACCOUNTING falló antes de los nuevos escenarios PDF por una expectativa estática antigua que no incluía los dos endpoints añadidos. Se corrigió la expectativa; ejecutar de nuevo. No atribuir el fallo a la lógica de generación/descarga.
+
+### C1.671-R2 — verificación final y cierre del subalcance PDF
+- HEAD funcional: c84160155d163cdb86066f873ab28983027fcf02. Commits de la iteración: a363ef72f655109ba5a85b5fa70ce7b05f359b98 (implementación/contrato y registros iniciales); f291c830cb4e87daf0b8f571b2b3d36ada4842f0 (corrección de expectativa estática self-service); c84160155d163cdb86066f873ab28983027fcf02 (parseo completo de Code.gs dentro del contrato).
+- CI final: run 43357208066; contrato ACCOUNTING departmental resource access PASS, incluido new Function sobre el archivo completo, y los escenarios PDF. Department Scope, Internal Responsibility RBAC, ACCOUNTING departmental import y USER migrated resource ownership PASS. El workflow global falla después en User Role Membership contract línea 119 (verifySessionToken(foreignLegacy) nulo al leer .role), fallo heredado anterior y no atribuible; pasos posteriores SKIPPED.
+- Corrección de test intermedia: run 43356975075 detectó únicamente la aserción estática desactualizada del listado self-service; corregida y reejecutada. Run 43357085322 ya pasó el contrato focal; 43357208066 es el resultado final que incluye parseo integral.
+- Pruebas locales: checkout/CLI local NOT RUN por error DNS Could not resolve host: github.com. El contrato aislado Node.js 24 se ejecutó en GitHub Actions; no depende de Apps Script desplegado.
+- Limitaciones: Apps Script/Google Drive reales y navegador NOT RUN; no se encontró callsite cliente de generación/descarga PDF en los archivos revisados. BETA-FUNC-049 Pendiente beta. No se desplegó ni se usaron datos reales.
+- Estado: C1.671 completada para generación/entrega backend privada; TASK-153 y AUD-NG-140 siguen En ejecución/abierto por el alcance restante. Sesión conservada: IMA-EXEC-20261112-1754Z-03.

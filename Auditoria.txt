@@ -2790,3 +2790,8 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Estado:** implementación y contrato aislado añadidos; CI pendiente al publicar. TASK-153 y AUD-NG-140 permanecen abiertos.
 
 - **C1.671 / trazabilidad CI:** run 43356975075 falló en el contrato ACCOUNTING por aserción estática desactualizada del listado de acciones self-service; los cuatro contratos previos pasaron. El test no alcanzó los escenarios PDF. Se actualiza la expectativa para reflejar generatePayrollReceiptPDF y getPayrollReceiptPDFFile; no es un fallo funcional observado.
+
+### AUD-NG-391 — cierre de verificación C1.671
+- CI final: Department Scope Contract run 43357208066. El contrato ACCOUNTING departmental resource access PASS, incluidos escenarios de generación/recuperación PDF y parseo del backend/accounting-service/Code.gs completo mediante new Function. También PASS: Department Scope, Internal Responsibility RBAC, ACCOUNTING departmental import y USER migrated resource ownership.
+- Incidencia global: el workflow termina FAIL después en User Role Membership contract, línea 119: verifySessionToken(foreignLegacy) devuelve null y el test intenta leer .role. Es la misma incidencia heredada observada antes de C1.669; el paso focal ACCOUNTING ya había terminado PASS. Los pasos posteriores quedan SKIPPED.
+- Resultado: C1.671 completada en código y contrato aislado. Checkout local no disponible por DNS al resolver github.com; el contrato se ejecutó en runner Node.js 24, sin servicios desplegados. Apps Script/Drive reales NOT RUN; BETA-FUNC-049 Pendiente beta.
