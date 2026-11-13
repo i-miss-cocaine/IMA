@@ -5544,6 +5544,12 @@ function getStaffAttendanceLogs(payload) {
 
   const sheet = ss.getSheetByName("DeduccionesAsistencia");
   if (!sheet) return empty();
+  if (!self) {
+    const scope = getVerifiedAccountingDepartmentScope_(request, ss, actor);
+    if (!scope.authorized || (!scope.institutionWide && !(scope.departmentIds || []).length)) {
+      return { status: "error", code: scope.code || "DEPARTMENT_SCOPE_REQUIRED", message: "Acceso denegado." };
+    }
+  }
   const data = sheet.getDataRange().getValues();
   const headers = ["AsistenciaID", "Fecha", "EmpleadoId", "EmpleadoNombre", "HoraEntrada", "HoraSalida", "MinutosTardanza", "EstadoAsistencia", "Observaciones"];
   if (!data.length || !Array.isArray(data[0]) || data[0].length !== headers.length ||
