@@ -6,6 +6,7 @@ function setup(mode,benefit){let s={ConfiguracionCargosMatricula:sh([C,["C1","I1
 {let h=setup("MANUAL");assert.equal(h.c.run(h.ss,{userId:"U1",periodo:"2027",grado:"Séptimo"},[]).created,0);}
 {let h=setup("MATRICULA_ONLY"),u=[];assert.equal(h.c.run(h.ss,{userId:"U1",periodo:"2027",grado:"Séptimo"},u).created,1);assert.equal(h.s.CargosEstudiante.r[1][10],"enrollment|u1|2027|m1");assert.equal(h.c.run(h.ss,{userId:"U1",periodo:"2027",grado:"Séptimo"},[]).created,0);u[0]();assert.equal(h.s.CargosEstudiante.r.length,1);}
 {let h=setup("ALL_ACTIVE_TARIFFS");assert.equal(h.c.run(h.ss,{userId:"U2",periodo:"2027",grado:"Séptimo"},[]).created,2);}
+{let h=setup("MATRICULA_ONLY");let r=h.c.run(h.ss,{userId:"U3",periodo:"2027",grado:"Séptimo",chargeReference:"ADMISION|A1|MAT-1"},[]);assert.ok(r.chargeId);assert.equal(h.s.CargosEstudiante.r[0][12],"ReferenciaOrigen");assert.equal(h.s.CargosEstudiante.r[1][12],"ADMISION|A1|MAT-1");}
 {let h=setup("MATRICULA_ONLY",true);h.c.run(h.ss,{userId:"U1",periodo:"2027",grado:"Séptimo"},[]);assert.equal(h.s.CargosEstudiante.r[1][5],500);assert.equal(h.s.CargosEstudiante.r[1][6],2500);}
 {let h=setup("MATRICULA_ONLY");h.s.ConfiguracionCargosMatricula.r[1][5]="BAD";assert.throws(()=>h.c.run(h.ss,{userId:"U1",periodo:"2027",grado:"Séptimo"},[]),/ENROLLMENT_TARIFF_NOT_CONFIGURED/);}
-assert.ok(src.includes("periodo:sPeriodo"));assert.ok(src.includes("periodo:targetAno"));console.log("ACADEMIC enrollment billing integration contract PASS.");
+assert.ok(src.includes("periodo:sPeriodo"));assert.ok(src.includes("periodo:targetAno"));assert.ok(src.includes("chargeReference:_chargeReferencePrefix"));console.log("ACADEMIC enrollment billing integration contract PASS.");
