@@ -5343,7 +5343,7 @@ function buildPayrollJournalLines_(planRows,conceptSummary,loanDeductionTotal){
  if(!lines.length||Math.abs(debit-credit)>0.01)throw new Error("PAYROLL_JOURNAL_UNBALANCED");
  return {lineas:lines,totalDebe:debit,totalHaber:credit};
 }
-function getPayrollLoanAppliedAmountForPlanilla_(ss,planillaId){if(!ss.getSheetByName("AmortizacionPrestamosNomina"))return 0;const rows=getPayrollLoanLedger_(ss).rows||[],target=String(planillaId||"").trim(),reversed=new Set(rows.filter(r=>String(r[9]||"").trim()==="REVERSADO").map(r=>String(r[12]||"").trim()));return Math.round(rows.filter(r=>String(r[2]||"").trim()===target&&String(r[9]||"").trim()==="APLICADO"&&!reversed.has(String(r[0]||"").trim())).reduce((t,r)=>t+payrollMoney_(r[5],"PAYROLL_JOURNAL_LOAN_INVALID"),0)*100)/100;}
+function getPayrollLoanAppliedAmountForPlanilla_(ss,planillaId){if(!ss.getSheetByName("AmortizacionPrestamosNomina"))return 0;const rows=getPayrollLoanLedger_(ss).rows||[],target=String(planillaId||"").trim(),reversed=new Set(rows.filter(r=>String(r[9]||"").trim()==="REVERSADO").map(r=>String(r[12]||"").trim())),cancelled=new Set(rows.filter(r=>String(r[9]||"").trim()==="CANCELADO").map(r=>String(r[12]||"").trim()));const activeApplied=rows.filter(r=>String(r[2]||"").trim()===target&&String(r[9]||"").trim()==="APLICADO"&&!reversed.has(String(r[0]||"").trim()));const source=activeApplied.length?activeApplied:rows.filter(r=>String(r[2]||"").trim()===target&&String(r[9]||"").trim()==="CALCULADO"&&!cancelled.has(String(r[0]||"").trim()));return Math.round(source.reduce((t,r)=>t+payrollMoney_(r[5],"PAYROLL_JOURNAL_LOAN_INVALID"),0)*100)/100;}
 function getPayrollJournalEntryById_(ss,id){const sh=ss.getSheetByName("AsientosContables");if(!sh)return null;const rows=sh.getDataRange().getValues().slice(1).filter(r=>String(r[0]||"").trim()===String(id||"").trim());return rows.length===1?rows[0]:null;}
 function validatePayrollJournalEntry_(row,referenceId,origin){if(!row||String(row[3]||"").trim()!==origin||String(row[4]||"").trim()!==String(referenceId||"").trim())throw new Error("PAYROLL_JOURNAL_LINK_INVALID");let lines=[];try{lines=JSON.parse(row[5]||"[]");}catch(e){throw new Error("PAYROLL_JOURNAL_ENTRY_INVALID");}if(!Array.isArray(lines)||!lines.length)throw new Error("PAYROLL_JOURNAL_ENTRY_INVALID");let d=0,h=0;lines.forEach(x=>{d+=payrollMoney_(x.debe,"PAYROLL_JOURNAL_ENTRY_INVALID");h+=payrollMoney_(x.haber,"PAYROLL_JOURNAL_ENTRY_INVALID");});d=Math.round(d*100)/100;h=Math.round(h*100)/100;if(Math.abs(d-h)>0.01)throw new Error("PAYROLL_JOURNAL_ENTRY_UNBALANCED");return {status:"success",asientoId:String(row[0]),totalDebe:d,totalHaber:h,estado:row[6]||"Asentado",idempotent:true};}
 function recordPayrollJournalEntry_(ss,planillaId,planRows,conceptSummary,actorId){
@@ -5382,8 +5382,11 @@ function recordPayrollJournalAdjustment(payload){
   if(ad[0].length!==headers.length||headers.some((h,i)=>String(ad[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"Estructura de ajustes de planilla no válida."};
   const prior=ad.slice(1).map((r,i)=>({row:r,index:i+2})).filter(x=>String(x.row[1]||"").trim()===id&&String(x.row[4]||"").trim()===ref);if(prior.length>1)return {status:"error",code:"PAYROLL_ADJUSTMENT_DUPLICATE",message:"Referencia de ajuste ambigua."};
   const journalRef=id+":"+ref,journal=getOrCreateSheet(ss,"AsientosContables"),found=journal.getDataRange().getValues().slice(1).filter(r=>String(r[3]||"").trim()==="PlanillasAjuste"&&String(r[4]||"").trim()===journalRef);if(found.length>1)return {status:"error",code:"PAYROLL_ADJUSTMENT_DUPLICATE",message:"Hay varios asientos para esta referencia."};
+  if(prior.length===1&&(String(prior[0].row[2]||"").trim()!==originalId||String(prior[0].row[5]||"")!==reason||String(prior[0].row[6]||"")!==JSON.stringify(lines)))return {status:"error",code:"PAYROLL_ADJUSTMENT_REFERENCE_CONFLICT",message:"La referencia de ajuste ya existe con otros datos."};
   if(prior.length===1&&String(prior[0].row[3]||"").trim()&&!found.length)return {status:"error",code:"PAYROLL_ADJUSTMENT_LINK_ORPHANED",message:"El asiento de ajuste vinculado no existe."};
-  let posted;if(found.length===1)posted=validatePayrollJournalEntry_(found[0],journalRef,"PlanillasAjuste");else posted=recordAccountingJournalEntry({descripcion:"Ajuste compensatorio de planilla "+id+"; asiento original "+originalId+"; motivo: "+reason,origenModulo:"PlanillasAjuste",referenciaId:journalRef,creadoPor:actor.userId,lineas});
+  if(found.length===1){let stored=[];try{stored=JSON.parse(found[0][5]||"[]");}catch(e){}if(JSON.stringify(stored)!==JSON.stringify(lines))return {status:"error",code:"PAYROLL_ADJUSTMENT_REFERENCE_CONFLICT",message:"El asiento de ajuste ya existe con otras líneas."};}
+  let posted;if(found.length===1)posted=validatePayrollJournalEntry_(found[0],journalRef,"PlanillasAjuste");else posted=recordAccountingJournalEntry({descripcion:"Ajuste compensatorio de planilla "+id+"; asiento original "+originalId+"; motivo: "+reason,origenModulo:"PlanillasAjuste",referenciaId:journalRef,creadoPor:actor.userId,lineas:lines});
+  if(!posted||posted.status!=="success"||!posted.asientoId)return {status:"error",code:"PAYROLL_ADJUSTMENT_POST_FAILED",message:"No se pudo registrar el asiento de ajuste."};
   if(prior.length===1){if(String(prior[0].row[3]||"").trim()&&String(prior[0].row[3]||"").trim()!==posted.asientoId)return {status:"error",code:"PAYROLL_ADJUSTMENT_LINK_CONFLICT",message:"Referencia de ajuste vinculada a otro asiento."};if(!String(prior[0].row[3]||"").trim())adj.getRange(prior[0].index,4).setValue(posted.asientoId);return {status:"success",ajusteId:prior[0].row[0],asientoId:posted.asientoId,asientoOriginalId:originalId,idempotent:true,message:"Ajuste compensatorio recuperado sin duplicar el asiento."};}
   const ajusteId="PAJ-"+Utilities.getUuid();adj.appendRow([ajusteId,id,originalId,posted.asientoId,ref,reason,JSON.stringify(lines),actor.userId,new Date(),"Registrado"]);
   return {status:"success",ajusteId,asientoId:posted.asientoId,asientoOriginalId:originalId,totalDebe:debit,totalHaber:credit,idempotent:false,message:"Ajuste compensatorio registrado; el asiento original permanece intacto."};
@@ -5412,12 +5415,8 @@ function updatePayrollPeriodStatus(payload) {
   const actorRole = String(actor && actor.role || "").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
   if (hasLoanMovements && (!actor || !actor.authorized || !["RECURSOSHUMANOS","ADMINISTRADOR"].includes(actorRole))) throw new Error("PAYROLL_LOAN_REVIEW_NOT_AUTHORIZED");
   const actorId = actor && actor.authorized ? actor.userId : "SYSTEM_PAYROLL";
-  if (requestedState === "APROBADA" || requestedState === "CERRADA") {
-    const loanResult = applyPayrollLoanLedgerForPlanilla_(ss, planillaId, "APLICAR", actorId);
-    if (!loanResult || loanResult.status !== "success") throw new Error("No fue posible aplicar la amortización de préstamos.");
-  } else if (["ANULADA","ANULADO","REVERTIDA","REVERTIDO","CANCELADA","CANCELADO"].includes(requestedState)) {
-    applyPayrollLoanLedgerForPlanilla_(ss, planillaId, "REVERSAR", actorId);
-  }
+  const shouldApplyPayrollLoans = ["APROBADA","CERRADA","CONTABILIZADA"].includes(requestedState);
+  const shouldReversePayrollLoans = ["ANULADA","ANULADO","REVERTIDA","REVERTIDO","CANCELADA","CANCELADO"].includes(requestedState);
 
   let count = 0;
   let totalSalarioNeto = 0;
@@ -5473,6 +5472,14 @@ function updatePayrollPeriodStatus(payload) {
   const fixedDeductions = Math.max(0,Math.round((totalDeducciones-conceptSummary.deductionTotal)*100)/100);
   const fixedEmployerLiability = Math.max(0,Math.round((totalPatronal-conceptSummary.employerTotal)*100)/100);
 
+  // Validar cuadratura antes de mutar saldos de préstamos; los previews CALCULADO también se concilian.
+  if (shouldApplyPayrollLoans) {
+    buildPayrollJournalLines_(payrollMatches,conceptSummary,getPayrollLoanAppliedAmountForPlanilla_(ss,planillaId));
+    const loanResult = applyPayrollLoanLedgerForPlanilla_(ss,planillaId,"APLICAR",actorId);
+    if (!loanResult || loanResult.status !== "success") throw new Error("No fue posible aplicar la amortización de préstamos.");
+  } else if (shouldReversePayrollLoans) {
+    applyPayrollLoanLedgerForPlanilla_(ss,planillaId,"REVERSAR",actorId);
+  }
   // Publicar/recuperar el asiento antes de confirmar el estado; permite reintentos seguros.
   let asientoRes = null;
   if (["APROBADA","CERRADA","CONTABILIZADA"].includes(requestedState)) {
