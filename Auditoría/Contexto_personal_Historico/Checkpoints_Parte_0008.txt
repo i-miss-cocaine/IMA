@@ -279,3 +279,17 @@
 - **Estado:** corrección publicada; verificación de ejecución pendiente. No se modificó código productivo ni otra rama.
 - **Siguiente acción exacta:** ejecutar node tests/security/user-role-membership-contract.test.js en Node.js 24 con checkout disponible; corregir únicamente fallos reproducibles y volver a ejecutar el contrato. Mantener la sesión IMA-EXEC-20261112-1754Z-03.
 ===============================================================================
+
+===============================================================================
+## C1.675 — IMA-EXEC-20261112-1754Z-03 — ejecución Node.js 24 del contrato User Role Membership
+- **Checkpoint anterior:** C1.674. **HEAD inicial:** aaaa0be348fa006ea33002c6d410110406de6764. **Rama:** NG_beta_0.0.0.1_work. **Rama base:** 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+- **Tarea única:** ejecutar y cerrar la verificación pendiente de tests/security/user-role-membership-contract.test.js en Node.js 24.
+- **Hallazgos del harness:** (1) switchActiveRole requiere simular revokeUserSession y su ledger persistente de sesión; (2) los verificadores de los cuatro microservicios llaman isSessionRevokedInSharedLedger_, helper y constantes que no estaban incluidos en el contexto VM del contrato.
+- **Correcciones de prueba:** se agregó mock de revocación estrictamente por SessionID al harness de usuario y se incluyeron el helper compartido de revocación y sus encabezados en el harness de ACADEMIC, ACCOUNTING, TASK y EXAM. No se modificó lógica productiva.
+- **Workflow:** se adelantó el paso User Role Membership antes de Accounting Departmental Resource Access para evitar que el fallo independiente de ese contrato impidiera ejecutar la prueba objetivo.
+- **Commits de esta iteración:** a8db480d67a4d7ee2732ab98f9717c57b3564f07 (documenta estado de ledger no inicializado); 49dde5e534fa6943ccf19d8a72772762cb1adcf6 (ordena ejecución CI); 6a224861ad00df4fd01878e0c4bd70431f006870 (mock de revocación para cambio de rol); 8d370ba1b0cd989bc55d018b899a8ff3a852e12b (helper compartido de revocación en harness de microservicios).
+- **Verificación objetivo:** GitHub Actions run 43362842576, Node.js v24.22.2: node tests/security/user-role-membership-contract.test.js PASS. Salida: "User role membership contract: institution/user binding, effective dates, revocation, duplicate denial, signed active-role switching, legacy compatibility and locked assignment lifecycle passed." También pasaron los contratos previos de department scope, internal responsibility RBAC, accounting departmental import scope y user migrated resource ownership.
+- **Fallo independiente de suite:** el workflow global terminó FAILURE en tests/security/accounting-departmental-resource-access.test.js:706, verifyAttendanceClientRendering: actual "Ocurrió un error al consultar tu historial de asistencia." frente a expected "1 registro(s) de asistencia disponible(s)." El paso User Role Membership ya había terminado PASS. Este fallo no se corrigió ni se atribuye a la tarea de membresías.
+- **Estado:** T153-S02 — verificación focalizada completada; contrato User Role Membership PASS en Node 24. Workflow global no PASS por fallo independiente de ACCOUNTING. No se ejecutaron navegador real ni Apps Script/Sheets desplegados.
+- **Siguiente acción:** continuar con el siguiente requisito independiente pendiente de TASK-153/AUD-NG-140; mantener separado el fallo de Accounting para su propia iteración. Mantener IMA-EXEC-20261112-1754Z-03.
+===============================================================================
