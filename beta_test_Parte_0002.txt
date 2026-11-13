@@ -242,3 +242,15 @@
 - **Evidencia requerida:** IDs sintéticos, snapshots de hojas y estados, respuestas de acceso permitido/denegado, logs de auditoría, valores enmascarados, resultado de rollback y órdenes bloqueadas; no usar datos reales.
 - **Estado:** Pendiente beta. La hoja bancaria separada requiere validar permisos directos de hoja antes de almacenar datos reales; cifrado criptográfico en reposo no implementado.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-085 — TASK-184 — Expediente digital 360° de adquisiciones
+- **Módulo/roles:** Compras / Contabilidad / Almacén / Dirección / Auditoría.
+- **Objetivo:** validar reconstrucción integral de adquisiciones y trazabilidad de documentos en entorno beta.
+- **Precondiciones:** expedientes sintéticos con cotizaciones múltiples, adjudicación, orden, confirmación del proveedor, recepciones parciales, facturas parciales, pagos parciales, asientos y documentos en Google Drive; usuarios con scope y roles distintos.
+- **Pasos:** (1) buscar por solicitud, orden, número de factura y nombre del proveedor; (2) abrir expediente cerrado y cancelado; (3) verificar solicitud, cotizaciones y detalle, acta de adjudicación, aprobador, orden PDF y confirmación del proveedor; (4) registrar confirmación con contacto/canal/estado y documento Drive; (5) validar recepción parcial, factura parcial, cantidades pedidas/recibidas/facturadas/pendientes y Three-Way Match; (6) validar pagos parciales, comprobantes y asientos; (7) conciliar totales del expediente contra hojas originales; (8) abrir enlaces de cotizaciones, PO, recepción, factura y comprobantes; (9) probar URLs externas no autorizadas y esquemas http/javascript; (10) probar rol autorizado, rol sin permiso documental y scope departamental ajeno; (11) comprobar que consulta no crea hojas ni altera registros; (12) comprobar que los documentos históricos sin URL permanecen señalados como no disponibles.
+- **Resultado esperado:** una búsqueda devuelve la cadena completa relacionada; totales coinciden con los documentos fuente; parciales reflejan saldos; las confirmaciones y enlaces se conservan; los enlaces documentales solo son HTTPS de Google Drive/Docs y el scope/rol restringe el acceso.
+- **Evidencia requerida:** IDs sintéticos de solicitud/orden/factura/recepción/confirmación/pago/asiento, snapshots antes/después, métricas reconciliadas, enlaces Drive de prueba, respuestas de acceso permitido/denegado y pruebas de no mutación.
+- **Estado:** Pendiente beta; contratos Node.js y GitHub Actions aprobados.
+===============================================================================

@@ -2498,7 +2498,7 @@
 ---
 
 <!-- ID: TASK-184 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [ ] [TASK-184] Implementar el expediente digital unificado de adquisiciones
+### [x] [TASK-184] Implementar el expediente digital unificado de adquisiciones
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección B (B.5), Sección D y Sección G (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Trazabilidad 360°, auditoría interna y archivo documental de compras)
