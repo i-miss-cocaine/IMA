@@ -605,9 +605,17 @@ window.runAssetDeprUI=function(post){
 window.loadAssetDeprScheduleUI=function(){
  const value=id=>document.getElementById(id).value,host=document.getElementById("asset-depr-results");if(!host)return;host.textContent="Cargando calendario...";
  fetchApi("ACCOUNTING","getAssetDepreciationSchedule",{activoId:value("asset-depr-id")}).then(result=>{
-  host.innerHTML="";const totals=document.createElement("p");totals.className="font-bold my-2";totals.textContent="Costo registrado "+result.totales.costo+" · Depreciación acumulada "+result.totales.depreciacionAcumulada+" · Valor neto "+result.totales.valorNeto;host.appendChild(totals);
-  const table=document.createElement("table");table.className="w-full text-left border-collapse";const head=document.createElement("tr");["Activo","Período","Método","Depreciación","Acumulada","Valor neto","Asiento","Estado"].forEach(v=>{const th=document.createElement("th");th.className="border-b p-2";th.textContent=v;head.appendChild(th);});table.appendChild(head);
-  (result.calendario||[]).forEach(r=>{const tr=document.createElement("tr");[r.activoId,r.periodo,r.metodo,r.depreciacionPeriodo,r.depreciacionAcumulada,r.valorNetoLibros,r.asientoId||"",r.estado].forEach(v=>{const td=document.createElement("td");td.className="border-b p-2";td.textContent=String(v===undefined?"":v);tr.appendChild(td);});table.appendChild(tr);});host.appendChild(table);
+  host.innerHTML="";
+  const addTitle=text=>{const h=document.createElement("h6");h.className="font-black mt-4 mb-2";h.textContent=text;host.appendChild(h);};
+  const addTable=(headers,rows)=>{const table=document.createElement("table");table.className="w-full text-left border-collapse mb-3";const head=document.createElement("tr");headers.forEach(v=>{const th=document.createElement("th");th.className="border-b p-2";th.textContent=v;head.appendChild(th);});table.appendChild(head);rows.forEach(values=>{const tr=document.createElement("tr");values.forEach(v=>{const td=document.createElement("td");td.className="border-b p-2";td.textContent=String(v===undefined||v===null?"":v);tr.appendChild(td);});table.appendChild(tr);});host.appendChild(table);};
+  const totals=document.createElement("p");totals.className="font-bold my-2";totals.textContent="Costo registrado "+result.totales.costo+" · Depreciación acumulada "+result.totales.depreciacionAcumulada+" · Valor neto "+result.totales.valorNeto+" · Totalmente depreciados "+result.totales.activosTotalmenteDepreciados;host.appendChild(totals);
+  const rec=document.createElement("p");rec.className="text-xs my-2 "+(result.conciliacion.estado==="Conciliado"?"text-emerald-700":"text-amber-700");rec.textContent="Conciliación contable: "+result.conciliacion.estado+" · Registro "+result.conciliacion.depreciacionRegistrada+" · Libro mayor "+result.conciliacion.depreciacionEnLibroMayor+" · Diferencia "+result.conciliacion.diferencia;host.appendChild(rec);
+  addTitle("Activos y vida útil");
+  addTable(["Activo","Categoría","Costo","Residual","Acumulada","Valor neto","Vida transcurrida / restante","Mejoras","Fin estimado"],(result.activos||[]).map(x=>[x.activoId,x.categoria,x.costoCapitalizado,x.valorResidual,x.depreciacionAcumulada,x.valorNetoLibros,x.vidaUtilTranscurridaMeses+" / "+x.vidaUtilRestanteMeses+" meses",(x.mejorasCapitalizables||[]).length,String(x.fechaFinEstimada||"").slice(0,10)]));
+  addTitle("Resumen anual");
+  addTable(["Año","Depreciación","Períodos"],(result.resumenAnual||[]).map(x=>[x.anio,x.depreciacion,x.periodos]));
+  addTitle("Calendario mensual");
+  addTable(["Activo","Período","Método","Depreciación","Acumulada","Valor neto","Asiento","Estado"],(result.calendario||[]).map(r=>[r.activoId,r.periodo,r.metodo,r.depreciacionPeriodo,r.depreciacionAcumulada,r.valorNetoLibros,r.asientoId||"",r.estado]));
  }).catch(e=>{host.textContent=e.message||String(e);});
 };
 
