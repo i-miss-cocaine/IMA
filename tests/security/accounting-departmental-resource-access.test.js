@@ -374,7 +374,7 @@ context.getOrCreateSheet=originalAlertGetOrCreate;
 assert.ok(extractFunction(accounting,"getEmployeeContractAlerts").includes('getSheetByName("ContratosLaborales")'));
 assert.ok(!extractFunction(accounting,"getEmployeeContractAlerts").includes("getOrCreateSheet"));
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeContractAlerts"'));
-assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getEmployeeLoansAdvances", "uploadEmployeeDocument"'));
+assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getStaffAttendanceLogs", "getEmployeeLoansAdvances", "uploadEmployeeDocument"'));
 
 
 const trainingHistory=context.getEmployeeTrainingHistory;
@@ -403,7 +403,7 @@ assert.deepEqual(Array.from(trainingHistory(actor("admin")).data.inscripciones),
 context.SpreadsheetApp.openById=originalTrainingOpen;context.getOrCreateSheet=originalTrainingGetOrCreate;
 assert.ok(!extractFunction(accounting,"getEmployeeTrainingHistory").includes("getOrCreateSheet"));
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeTrainingHistory"'));
-assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeTrainingHistory", "getEmployeeLoansAdvances", "uploadEmployeeDocument"'));
+assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeTrainingHistory", "getStaffAttendanceLogs", "getEmployeeLoansAdvances", "uploadEmployeeDocument"'));
 
 const laborHistory=context.getLaborIncidentsHistory;
 assert.deepEqual(Array.from(laborHistory(actor("staffA")).data.incidencias,r=>r.incidenciaId),["INC-A"]);
