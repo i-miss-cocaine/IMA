@@ -14109,69 +14109,53 @@ function registerStudentEnrollmentInternal_(payload) {
   const automaticBilling = billingResult && ["MATRICULA_ONLY","ALL_ACTIVE_TARIFFS"].indexOf(billingResult.mode) !== -1;
   if (Array.isArray(cargos) && cargos.length > 0 && !automaticBilling) {
     let existingCargos = cargosSheet.getDataRange().getValues();
-    if (chargeReference) {
-      if (!existingCargos.length || String(existingCargos[0][0] || "").trim() !== "CargoID") {
-        throw new Error("STUDENT_CHARGE_SCHEMA_CONFLICT");
-      }
-      const referenceHeader = String(existingCargos[0][9] || "").trim();
-      if (referenceHeader && referenceHeader !== "ReferenciaOrigen") {
-        throw new Error("STUDENT_CHARGE_SCHEMA_CONFLICT");
-      }
-      if (!referenceHeader) {
-        cargosSheet.getRange(1, 10).setValue("ReferenciaOrigen");
-        existingCargos[0][9] = "ReferenciaOrigen";
-      }
+    if (!existingCargos.length || String(existingCargos[0][0] || "").trim() !== "CargoID") throw new Error("STUDENT_CHARGE_SCHEMA_CONFLICT");
+    const referenceHeader = String(existingCargos[0][9] || "").trim();
+    const dedupeHeader = String(existingCargos[0][10] || "").trim();
+    if (referenceHeader && referenceHeader !== "ReferenciaOrigen" && !(referenceHeader === "Observaciones" && !chargeReference)) throw new Error("STUDENT_CHARGE_SCHEMA_CONFLICT");
+    if (chargeReference && referenceHeader && referenceHeader !== "ReferenciaOrigen") throw new Error("STUDENT_CHARGE_SCHEMA_CONFLICT");
+    if (!referenceHeader) {
+      cargosSheet.getRange(1, 10).setValue(chargeReference ? "ReferenciaOrigen" : "Observaciones");
+      existingCargos[0][9] = chargeReference ? "ReferenciaOrigen" : "Observaciones";
+    }
+    if (dedupeHeader && dedupeHeader !== "ClaveUnicaDedupe") throw new Error("STUDENT_CHARGE_SCHEMA_CONFLICT");
+    if (!dedupeHeader) {
+      cargosSheet.getRange(1, 11).setValue("ClaveUnicaDedupe");
+      existingCargos[0][10] = "ClaveUnicaDedupe";
     }
     cargos.forEach(c => {
       const concepto = c.concepto || "Matrícula/Colegiatura";
       const montoBase = parseFloat(c.montoBase || 0);
       const descuento = parseFloat(c.descuento || becaDescuento || 0);
       const montoFinal = Math.max(0, montoBase - descuento);
+      const dedupeKey = ["ENROLLMENT", sUserId, sPeriodo, concepto].join("|").toLowerCase();
       if (chargeReference) {
         const referenceMatches = existingCargos.slice(1).filter(r => String(r[9] || "").trim() === String(chargeReference).trim());
         if (referenceMatches.length > 1) throw new Error("ADMISSION_CHARGE_AMBIGUOUS");
         if (referenceMatches.length === 1) {
           const existing = referenceMatches[0];
-          if (String(existing[2] || "").trim() !== sUserId ||
-              String(existing[3] || "").trim() !== concepto ||
-              Math.abs(Number(existing[4]) - montoBase) > 0.000001 ||
-              Math.abs(Number(existing[5]) - descuento) > 0.000001 ||
-              Math.abs(Number(existing[6]) - montoFinal) > 0.000001 ||
-              !String(existing[0] || "").trim()) {
+          if (String(existing[2] || "").trim() !== sUserId || String(existing[3] || "").trim() !== concepto ||
+              Math.abs(Number(existing[4]) - montoBase) > 0.000001 || Math.abs(Number(existing[5]) - descuento) > 0.000001 ||
+              Math.abs(Number(existing[6]) - montoFinal) > 0.000001 || !String(existing[0] || "").trim()) {
             throw new Error("ADMISSION_CHARGE_CONFLICT");
           }
           admissionChargeId = String(existing[0] || "").trim();
           return;
         }
-        const activeDuplicates = existingCargos.slice(1).filter(r =>
-          String(r[2] || "").trim() === sUserId &&
-          String(r[3] || "").trim() === concepto &&
-          String(r[7] || "").trim().toUpperCase() !== "ANULADO"
-        );
-        if (activeDuplicates.length > 1) throw new Error("ADMISSION_CHARGE_AMBIGUOUS");
-        if (activeDuplicates.length === 1) throw new Error("ADMISSION_CHARGE_CONFLICT");
+        const existingPeriodCharge = existingCargos.slice(1).filter(r => String(r[10] || "").trim().toLowerCase() === dedupeKey);
+        if (existingPeriodCharge.length) throw new Error("ADMISSION_CHARGE_CONFLICT");
       } else {
-        const dup = existingCargos.find(r => String(r[2]).trim() === sUserId && String(r[3]).trim() === concepto && String(r[7]) !== "Anulado");
-        if (dup) return;
+        const duplicates = existingCargos.slice(1).filter(r => String(r[10] || "").trim().toLowerCase() === dedupeKey);
+        if (duplicates.length > 1) throw new Error("ENROLLMENT_CHARGE_AMBIGUOUS");
+        if (duplicates.length === 1) return;
       }
 
       const cargoId = "CRG-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
-      const chargeRow = [
-        cargoId,
-        now,
-        sUserId,
-        concepto,
-        montoBase,
-        descuento,
-        montoFinal,
-        c.estado || "Pendiente",
-        c.fechaVencimiento || ""
-      ];
-      if (chargeReference) chargeRow.push(String(chargeReference).trim());
+      const chargeRow = [cargoId, now, sUserId, concepto, montoBase, descuento, montoFinal,
+        c.estado || "Pendiente", c.fechaVencimiento || "", chargeReference ? String(chargeReference).trim() : "Matrícula " + sPeriodo, dedupeKey];
       cargosSheet.appendRow(chargeRow);
       if (chargeReference && !admissionChargeId) admissionChargeId = cargoId;
-      existingCargos.push([cargoId, now, sUserId, concepto, montoBase, descuento, montoFinal,
-        c.estado || "Pendiente", c.fechaVencimiento || "", chargeReference || ""]);
+      existingCargos.push(chargeRow);
       const insertedCargoRow = cargosSheet.getLastRow();
       if (Array.isArray(_rollbackActions)) _rollbackActions.push(function() {
         const current = cargosSheet.getDataRange().getValues();
@@ -14352,7 +14336,8 @@ function getStudentEnrollmentHistory(payload) {
       return {
         cargoId: row[0], fecha: row[1], userId: row[2], concepto: row[3],
         montoBase: row[4], descuento: row[5], montoFinal: row[6],
-        estado: row[7], fechaVencimiento: row[8]
+        estado: row[7], fechaVencimiento: row[8],
+        periodo: String(row[10] || "").trim().toLowerCase().split("|")[0] === "enrollment" ? String(row[10] || "").split("|")[2] : ""
       };
     }) : [];
     return { status: "success", data: { matriculas: matriculas, cargos: cargos } };
