@@ -12317,6 +12317,7 @@ function createStudentEnrollment(payload) {
     const targetAno = anolectivo || "2026";
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sUserId = String(userId).trim();
+    const rollbackActions = [];
     const enrollmentAccess = assertAcademicEnrollmentMutationAccess_(payload, sUserId);
     if (!enrollmentAccess || enrollmentAccess.authorized !== true) throw new Error(enrollmentAccess && enrollmentAccess.code || "RESOURCE_SCOPE_DENIED");
     if (forceCapacityOverride === true && getDynamicPermissionsForRole(enrollmentAccess.actor.role, "overrideEnrollmentCapacity") !== true) {
@@ -12372,13 +12373,13 @@ function createStudentEnrollment(payload) {
       observaciones || ""
     ]);
     const insertedEnrollmentRow = matSheet.getLastRow();
-    const rollbackActions = [function() {
+    rollbackActions.push(function() {
       const current = matSheet.getDataRange().getValues();
       if (insertedEnrollmentRow > 0 && insertedEnrollmentRow <= current.length &&
           String(current[insertedEnrollmentRow - 1][0] || "") === String(matriculaId)) {
         matSheet.deleteRow(insertedEnrollmentRow);
       }
-    }];
+    });
 
     // Actualizar EstadoExpediente a Activo si estaba Inactivo/Retirado/Trasladado/Suspendido
     if (expRowIdx !== -1) {
