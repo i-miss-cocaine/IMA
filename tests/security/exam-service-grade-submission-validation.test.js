@@ -148,6 +148,7 @@ test(() => {
     }; } },
     SpreadsheetApp: { openById() { state.opens++; return ss; } },
     SPREADSHEET_ID: "SYNTHETIC-SHEET",
+    prepareExamGradeRectificationEvent_() { return null; },
     getSheetOrThrow(sheet, name) { const value = sheet.getSheetByName(name); if (!value) throw new Error("missing " + name); return value; },
     getVerifiedExamDepartmentScope_() { return { authorized: true, institutionId: "INST-1", departmentIds: ["DEP-1"] }; },
     assertExamResourceOwnershipForScope_() { return { authorized: true }; },
