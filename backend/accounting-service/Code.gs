@@ -7163,7 +7163,7 @@ function getPayrollReceiptDistributionContext_(payload,ss,planillaId) {
   if(!planData.length||!isValidPayrollPlanHeaders_(planData[0])||!expData.length||expData[0].length!==expHeaders.length||expHeaders.some((h,i)=>String(expData[0][i]||"").trim().toUpperCase()!==h.toUpperCase())||!userData.length||!userData[0]||userData[0].length<11)return {error:"RESOURCE_SCHEMA_INVALID",message:"La estructura de planillas, expedientes o usuarios no es válida."};
   const plans=planData.slice(1).filter(r=>String(r[0]||"").trim()===planillaId);
   if(!plans.length)return {error:"RESOURCE_NOT_FOUND",message:"La planilla seleccionada no está disponible."};
-  if(plans.some(r=>!Array.isArray(r)||r.length!==planHeaders.length))return {error:"RESOURCE_SCHEMA_INVALID",message:"La estructura de la planilla no es válida."};
+  if(plans.some(r=>!Array.isArray(r)||(r.length!==planHeaders.length&&r.length!==planHeaders.length+1)))return {error:"RESOURCE_SCHEMA_INVALID",message:"La estructura de la planilla no es válida."};
   if(plans.some(r=>String(r[15]||"").trim().toUpperCase()!=="CERRADA"))return {error:"PAYROLL_NOT_CLOSED",message:"La distribución solo está permitida cuando toda la planilla está cerrada."};
   const periods=Array.from(new Set(plans.map(r=>String(r[2]||"").trim())));
   if(periods.length!==1||!periods[0])return {error:"PAYROLL_PERIOD_CONFLICT",message:"La planilla contiene períodos inconsistentes."};
