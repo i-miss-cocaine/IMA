@@ -2857,3 +2857,15 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Suite completa en CLI local NOT RUN por DNS github.com; CI Node ejecutó el contrato exacto. Sin despliegue ni datos reales. BETA-FUNC-053 Pendiente beta.
 - Siguiente revisión independiente: getStudentEnrollmentHistory (incluye cargos y requiere su propio análisis financiero/relacional). TASK-153 sigue En ejecución.
 ===============================================================================
+
+
+===============================================================================
+## C1.694 — TASK-153 / AUD-NG-386 — ACCOUNTING: vacaciones e incapacidades médicas
+- **Hallazgo:** las rutas heredadas de solicitudes/revisión de vacaciones, consulta de saldo y registro de incapacidades aceptaban identificadores y roles de payload sin vincularlos de forma uniforme a identidad firmada, expediente único y ownership departamental/institucional.
+- **Corrección:** sesión firmada para derivar actor/rol; autoservicio limitado a la relación única UserID↔ExpedienteID; gestión con scope y ResourceOwnership único/activo; anti-enumeración y esquemas canónicos; lecturas sin creación de hojas.
+- **Concurrencia e integridad:** ScriptLock en mutaciones, revalidación de acceso dentro del lock, timeout fail-closed, colisión de ID comprobada y compensación de escritura en revisión. Contrato Node añade cobertura positiva/negativa, lectura cruzada, esquema, duplicados, lock ocupado y reentrada determinista.
+- **CI:** Department Scope run 43446574257 SUCCESS (Node.js 24.22.2); contrato nuevo de vacaciones/incapacidades 40 aserciones PASS; ACCOUNTING departmental resource access y todos los demás pasos del workflow PASS, incluido syntax-check de seis servicios Apps Script.
+- **Commits:** 987bad6714d234b53adfe04fa9c1fb8272462354; 68472b0c0d9d2378801575b27be68da3529ce792; 3b0aa3a7a1124202c71a92ee99ec55415f4ba21a; c6a6e41fbf2bfc733c53e9a89692f38e0d0f7962.
+- **Límites:** Node CLI local y Apps Script/Sheets real NOT RUN; no hubo despliegue ni uso de datos reales. BETA-FUNC-067 Pendiente beta.
+- **Estado:** subalcance corregido en código y verificado por CI; TASK-153/AUD-NG-386 permanece En ejecución por otras rutas departamentales.
+===============================================================================

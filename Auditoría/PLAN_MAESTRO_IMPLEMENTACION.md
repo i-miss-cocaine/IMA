@@ -5395,3 +5395,12 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - La UI requiere que MatrizPermisosRoles tenga los actions getDepartmentReferencePolicy, getDepartmentReferenceGrants, manageDepartmentReferencePolicy y manageDepartmentReferenceGrants para el rol pertinente; el servidor exige además alcance institucional. No se autoasignan permisos.
 - Se registra BETA-FUNC-065 para verificación integrada en Apps Script/Sheets con datos sintéticos; Pendiente beta. No hubo despliegue ni modificación de datos reales.
 - **Estado:** T153-S05 completada en código (motor, persistencia, auditoría, consumidores ACADEMIC/ACCOUNTING y UI). TASK-153 global permanece En ejecución por otras superficies AUD-NG-386. Siguiente: seleccionar la siguiente ruta departamental pendiente del Plan Maestro, sin bloquearse por pruebas beta.
+
+
+### C1.694 — TASK-153 / AUD-NG-386 — ACCOUNTING: vacaciones e incapacidades médicas
+- Se protegieron submitLeaveVacationRequest/submitVacationRequest, getLeaveVacationRequests/getVacationRequests, reviewLeaveVacationRequest/reviewVacationRequest, calculateVacationBalances y recordMedicalLeave.
+- Identidad/rol firmados; autoservicio por expediente único; personal de gestión por scope y ResourceOwnership; anti-enumeración, esquema exacto, IDs únicos y lecturas sin crear hojas.
+- ScriptLock y revalidación dentro del lock en mutaciones; timeout fail-closed. El contrato determinista verifica reentrada sin duplicación.
+- Department Scope CI 43446574257 SUCCESS (Node 24.22.2): 40 aserciones del nuevo contrato, contrato ACCOUNTING existente, contratos transversales y sintaxis Apps Script PASS.
+- BETA-FUNC-067 Pendiente beta. Node CLI local y Apps Script/Sheets reales NOT RUN; no hubo despliegue ni datos reales.
+- **Estado:** este subalcance queda completado en código/CI; TASK-153/AUD-NG-386 sigue En ejecución. Siguiente: identificar el próximo handler ACCOUNTING pendiente de identidad/ownership y tratarlo como subalcance independiente.

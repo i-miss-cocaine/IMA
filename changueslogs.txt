@@ -3407,3 +3407,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se corrigieron fixtures de pruebas preexistentes para incluir el scope verificado y el esquema canónico; no se relajó la autorización productiva. Checkout local CLI NOT RUN por fallo DNS a github.com; GitHub Actions ejecutó los comandos Node en runners aislados.
 - BETA-FUNC-066 Pendiente beta. AUD-NG-124 completada en código. Siguiente: TASK-153/AUD-NG-386, siguiente ruta departamental pendiente.
 - HEAD funcional verificado: d2f92091f5af62fad1a7afe8fbe62716f95747da.
+
+
+[2026-11-13 14:50 UTC] C1.694 — TASK-153 / AUD-NG-386 — ACCOUNTING vacaciones e incapacidades
+- Se endurecieron solicitudes/revisión de vacaciones, consulta de saldos y registro de incapacidades con identidad firmada, expediente único, scope departamental/institucional y ResourceOwnership.
+- Las mutaciones revalidan acceso bajo ScriptLock; timeout fail-closed, validación de esquema/fechas/días/IDs y anti-enumeración. Lecturas no crean hojas.
+- Se añadió contrato Node de 40 aserciones y se integró al workflow; se corrigió la expectativa de autoservicio preexistente y se probó reentrada concurrente.
+- Department Scope CI 43446574257 SUCCESS (Node 24.22.2), todos los pasos PASS, incluidos contratos ACCOUNTING/ACADEMIC/USER/ABAC y sintaxis de servicios Apps Script.
+- BETA-FUNC-067 Pendiente beta; no hubo despliegue ni datos reales. TASK-153/AUD-NG-386 permanece En ejecución.
+- Commits: 987bad6, 68472b0, 3b0aa3a, c6a6e41.
