@@ -830,5 +830,5 @@
 - **Commits de implementación:** 5e16004d6f1018949f96ad419476f6c1f0c064cb; 7abc0789abd691419be5cf2d1c452333e93c1799; 822e59b05a8ff1b8df4441017b51e341a5399349; 5e0bda0ca8e764ced38e8a05f0b5998c86ab82ef; 840bc72f98b1b3c7f14791ddad87f67d5e07a49d; 19bf48a8810f7a6189a3f13506ea81e9bbded350; 6cf819b45c63f7c5c8fa2f6357d6e9392f0cc3e7; c8dee1eba95777729927fadfd86797218575074a; bfc9461a2587ab82103a23d08d167246027bfed6; 88376fb273f7ff4506e5dfc9d66380b9642c9dfa; fea7186360323006d709352db8475ea4a28d8028.
 - **Estado:** TASK-180 completada en código y CI; validación beta pendiente.
 - **Siguiente tarea:** TASK-181 — matriz comparativa de cotizaciones y adjudicación por partidas.
-- **Checkpoint commit:** por confirmar.
+- **Checkpoint commit:** ec1853bc017b98087fdd0d447001fc4fe2f1f253.
 ===============================================================================
