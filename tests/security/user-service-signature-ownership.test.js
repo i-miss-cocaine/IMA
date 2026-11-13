@@ -77,6 +77,7 @@ function makeHarness(options = {}) {
     getUserContextScope:()=>options.scopeAllowed===false
       ?{status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED"}
       :{status:"success",userId:"ACTOR-1",role:options.role||"Director",institutionId:"INST-1",departmentIds:["D1"],institutionWide:false},
+    getUserRoleMembershipState_:()=>({initialized:false,hasRecords:false,memberships:[]}),
     assertRecordOwnership:(payload,type,id,operation)=>{
       assert.equal(state.held,true,"ownership must be checked under lock");
       state.ownershipCalls.push({type,id,operation});
