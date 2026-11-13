@@ -441,6 +441,16 @@ function makeCreationRuntime(options) {
     PUBLIC_ACTIONS: [],
     ROLE_PERMISSIONS: { Profesor: ["createExam"], Administrador: ["*"], Tutor: [] },
     verifySessionToken(token) { return creationClaims[token] || null; },
+    getVerifiedDepartmentScopeForSession_(payload, spreadsheet, actor) {
+      if (!actor || actor.authorized !== true || !actor.userId || !actor.role) return { authorized: false };
+      const assignments = creationSheets.AsignacionesAmbitosRoles.rows.slice(1).filter(row =>
+        String(row[1] || "").trim() === actor.userId && String(row[2] || "").trim() === actor.role &&
+        String(row[5] || "").trim() === "ACTIVO");
+      if (assignments.length !== 1) return { authorized: false };
+      const departmentIds = String(assignments[0][3] || "").trim() === "INSTITUCION"
+        ? ["D1", "D2"] : [String(assignments[0][4] || "").trim()].filter(Boolean);
+      return { authorized: true, institutionId: "I1", departmentIds };
+    },
     getDynamicPermissionsForRole() { return null; },
     hasActiveDelegationForAction() { return null; },
     PropertiesService: { getScriptProperties() { return { getProperty(name) { return name === "IMA_INSTITUTION_ID" ? "I1" : null; } }; } },
