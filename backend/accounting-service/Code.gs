@@ -15433,11 +15433,10 @@ function deliverMaterialRequisition(payload) {
  try {
   const ss=SpreadsheetApp.openById(SPREADSHEET_ID),requestSheet=getOrCreateSheet(ss,"MaterialesSolicitudes");inventoryEnsureRequisitionSchema_(requestSheet);
   const data=requestSheet.getDataRange().getValues(),idx=data.findIndex((r,i)=>i>0&&String(r[0]).trim()===requestId);if(idx<0)throw new Error("Solicitud de material no encontrada.");
-  const row=data[idx];if(String(row[6]||"").trim()==="Entregado")throw new Error("La solicitud ya ha sido entregada previamente.");
+  const row=data[idx];inventoryAssertDepartmentScope_(p,ss,actor,row[2]);if(String(row[6]||"").trim()==="Entregado")throw new Error("La solicitud ya ha sido entregada previamente.");
   let items;try{items=typeof row[4]==="string"?JSON.parse(row[4]):row[4];}catch(e){throw new Error("MATERIAL_REQUISITION_ITEMS_INVALID");}
   if(!Array.isArray(items)||!items.length)throw new Error("MATERIAL_REQUISITION_ITEMS_REQUIRED");
   const department=String(row[2]||"").trim(),costCenter=String(row[10]||department).trim(),mode=String(row[11]||"GASTO_INMEDIATO").toUpperCase(),source=String(row[14]||"Bodega General").trim();
-  inventoryAssertDepartmentScope_(p,ss,actor,department);
   if(!department||!costCenter||!source||["GASTO_INMEDIATO","ASIGNADO"].indexOf(mode)===-1)throw new Error("INVENTORY_COST_CENTER_OR_MODE_REQUIRED");
   getChartOfAccounts({});const inventory=inventoryAccount_(ss,"1301","Activo"),debit=mode==="ASIGNADO"?inventoryAccount_(ss,"1302","Activo"):inventoryAccount_(ss,"5201","Gasto");
   const kardex=getOrCreateSheet(ss,"InventariosKardex"),journal=getOrCreateSheet(ss,"AsientosContables");movementStart=kardex.getLastRow()+1;journalStart=journal.getLastRow()+1;
@@ -15467,10 +15466,11 @@ function returnMaterialToInventory(payload) {
  if(!requestId||!returnId||!items.length)throw new Error("MATERIAL_RETURN_FIELDS_REQUIRED");
  const lock=LockService.getScriptLock();lock.waitLock(15000);let movementStart=0,journalStart=0,ledgerStart=0;
  try{
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),req=getOrCreateSheet(ss,"MaterialesSolicitudes"),data=req.getDataRange().getValues(),idx=data.findIndex((r,i)=>i>0&&String(r[0])===requestId);if(idx<0||String(data[idx][6])!=="Entregado")throw new Error("MATERIAL_RETURN_REQUEST_NOT_DELIVERED");
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),req=getOrCreateSheet(ss,"MaterialesSolicitudes"),data=req.getDataRange().getValues(),idx=data.findIndex((r,i)=>i>0&&String(r[0])===requestId);if(idx<0)throw new Error("RESOURCE_NOT_FOUND");
+  const department=String(data[idx][2]||"");inventoryAssertDepartmentScope_(p,ss,actor,department);
+  if(String(data[idx][6])!=="Entregado")throw new Error("MATERIAL_RETURN_REQUEST_NOT_DELIVERED");
   const ledger=inventoryEnsureLedgerSheet_(ss,"DevolucionesMateriales",["DevolucionID","SolicitudMatID","Fecha","ItemsJSON","AsientoID","ActorUserId","Observaciones"]);
-  const delivery=JSON.parse(String(data[idx][13]||"[]")),department=String(data[idx][2]),center=String(data[idx][10]||department),mode=String(data[idx][11]||"GASTO_INMEDIATO").toUpperCase(),source=String(data[idx][14]||"Bodega General");
-  inventoryAssertDepartmentScope_(p,ss,actor,department);
+  const delivery=JSON.parse(String(data[idx][13]||"[]")),center=String(data[idx][10]||department),mode=String(data[idx][11]||"GASTO_INMEDIATO").toUpperCase(),source=String(data[idx][14]||"Bodega General");
   const existing=inventoryFindLedgerById_(ledger,returnId);
   if(existing){if(String(existing[1])!==requestId||!inventoryLedgerPayloadMatches_(ss,delivery,items,existing[3]))throw new Error("MATERIAL_RETURN_IDEMPOTENCY_CONFLICT");inventoryAssertExistingJournal_(ss,existing[4],"INVENTARIO",returnId);return {status:"success",devolucionId:returnId,asientoId:existing[4],idempotent:true};}
   const previous=ledger.getDataRange().getValues().slice(1).filter(r=>String(r[1])===requestId),consumedSheet=ss.getSheetByName("ConsumosMateriales"),consumed=consumedSheet?consumedSheet.getDataRange().getValues().slice(1).filter(r=>String(r[1])===requestId):[];
@@ -15486,10 +15486,11 @@ function recognizeAssignedMaterialConsumption(payload) {
  if(!requestId||!consumptionId||!items.length)throw new Error("ASSIGNED_CONSUMPTION_FIELDS_REQUIRED");
  const lock=LockService.getScriptLock();lock.waitLock(15000);let movementStart=0,journalStart=0,ledgerStart=0;
  try{
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),req=getOrCreateSheet(ss,"MaterialesSolicitudes"),data=req.getDataRange().getValues(),idx=data.findIndex((r,i)=>i>0&&String(r[0])===requestId);if(idx<0||String(data[idx][6])!=="Entregado"||String(data[idx][11])!=="ASIGNADO")throw new Error("ASSIGNED_CONSUMPTION_REQUEST_INVALID");
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),req=getOrCreateSheet(ss,"MaterialesSolicitudes"),data=req.getDataRange().getValues(),idx=data.findIndex((r,i)=>i>0&&String(r[0])===requestId);if(idx<0)throw new Error("RESOURCE_NOT_FOUND");
+  const department=String(data[idx][2]||"");inventoryAssertDepartmentScope_(p,ss,actor,department);
+  if(String(data[idx][6])!=="Entregado"||String(data[idx][11])!=="ASIGNADO")throw new Error("ASSIGNED_CONSUMPTION_REQUEST_INVALID");
   const ledger=inventoryEnsureLedgerSheet_(ss,"ConsumosMateriales",["ConsumoID","SolicitudMatID","Fecha","ItemsJSON","AsientoID","ActorUserId","Observaciones"]);
-  const delivery=JSON.parse(String(data[idx][13]||"[]")),department=String(data[idx][2]),center=String(data[idx][10]||department);
-  inventoryAssertDepartmentScope_(p,ss,actor,department);
+  const delivery=JSON.parse(String(data[idx][13]||"[]")),center=String(data[idx][10]||department);
   const existing=inventoryFindLedgerById_(ledger,consumptionId);
   if(existing){if(String(existing[1])!==requestId||!inventoryLedgerPayloadMatches_(ss,delivery,items,existing[3]))throw new Error("ASSIGNED_CONSUMPTION_IDEMPOTENCY_CONFLICT");inventoryAssertExistingJournal_(ss,existing[4],"INVENTARIO",consumptionId);return {status:"success",consumoId:consumptionId,asientoId:existing[4],idempotent:true};}
   const returns=ss.getSheetByName("DevolucionesMateriales"),returnRows=returns?returns.getDataRange().getValues().slice(1).filter(r=>String(r[1])===requestId):[],prior=ledger.getDataRange().getValues().slice(1).filter(r=>String(r[1])===requestId),returnedByCode={},consumedByCode={};
@@ -15674,28 +15675,27 @@ function manageMaintenanceOrder(payload) {
   if(existing&&existing[16]&&!complete)throw new Error("MAINTENANCE_ORDER_ACCOUNTED_CANNOT_REOPEN");
   let departmentInfo=null,asientoId=existing&&existing[16]?String(existing[16]):"",details=existing&&existing[17]?existing[17]:"[]",idempotent=false;
   if((complete&&repArr.length)||p.departamento||(existing&&existing[14]))departmentInfo=inventoryResolveMaintenanceDepartment_(ss,p,assetRef,actor,existing);
-  if(complete&&repArr.length){
-   if(existing&&existing[16]){
-    if(String(existing[14]||"")!==departmentInfo.departmentId||String(existing[15]||"")!==departmentInfo.centroCosto||!inventoryLedgerPayloadMatches_(ss,[],repArr,existing[17]))throw new Error("MAINTENANCE_MATERIAL_IDEMPOTENCY_CONFLICT");
-    inventoryAssertExistingJournal_(ss,existing[16],"INVENTARIO",oId);idempotent=true;
-   }else{
-    getChartOfAccounts({});const expense=inventoryAccount_(ss,"5201","Gasto"),inventory=inventoryAccount_(ss,"1301","Activo"),kardex=getOrCreateSheet(ss,"InventariosKardex"),journal=getOrCreateSheet(ss,"AsientosContables");
-    movementStart=kardex.getLastRow()+1;journalStart=journal.getLastRow()+1;
-    const lines=[],saved=[],seen=Object.create(null);
-    repArr.forEach((raw,i)=>{
-     const item=catalogFindItem_(ss,raw.catalogItemId||raw.itemCodigo||raw.itemId,true),unit=catalogFindUnit_(ss,raw.unidadMedida||raw.unidad||item.unit),qty=Number(raw.cantidad);
-     if(catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit)||!Number.isFinite(qty)||qty<=0)throw new Error("MAINTENANCE_PART_INVALID");
-     if(seen[item.code])throw new Error("MAINTENANCE_PART_DUPLICATE:"+item.code);seen[item.code]=true;
-     const base=assetDeprMoney_(qty*unit.factor),ref="MNTMAT:"+oId+":"+i,prior=inventoryFindMovementByRef_(ss,ref);
-     let movement;
-     if(prior){if(String(prior[2]||"")!==String(item.code)||Math.abs(Number(prior[13]||prior[6]||0)-base)>0.000001||String(prior[10]||"")!==departmentInfo.ubicacionOrigen)throw new Error("MAINTENANCE_MOVEMENT_IDEMPOTENCY_CONFLICT");movement={kardexId:prior[0],cantidadBase:base};}
-     else movement=recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:"Salida",cantidad:qty,unidadMedida:unit.name,ubicacionResponsable:departmentInfo.ubicacionOrigen,observaciones:"Consumo de repuesto por Orden Mantenimiento "+oId+" [REF:"+ref+"]"});
-     const cost=inventoryCostPerBaseUnit_(item),amount=assetDeprMoney_(base*cost);if(base<=0||amount<=0)throw new Error("MAINTENANCE_PART_COST_INVALID");
-     lines.push({cuenta:expense.code,nombre:expense.name,debe:amount,haber:0,centroCosto:departmentInfo.centroCosto,departamento:departmentInfo.departmentId,itemCodigo:item.code,referenciaId:oId},{cuenta:inventory.code,nombre:inventory.name,debe:0,haber:amount,centroCosto:departmentInfo.centroCosto,departamento:departmentInfo.departmentId,itemCodigo:item.code,referenciaId:oId});
-     saved.push({itemCodigo:item.code,cantidadBase:base,costoUnitarioBase:cost,importe:amount,kardexId:movement.kardexId,unidadOriginal:unit.name,cantidadOriginal:qty,factorConversionBase:unit.factor});
-    });
-    asientoId="AST-INV-MNT-"+oId;inventoryPostJournal_(ss,{descripcion:"Consumo de repuestos de mantenimiento "+oId,origenModulo:"INVENTARIO",referenciaId:oId,asientoId:asientoId,lineas:lines,creadoPor:actor.userId});details=JSON.stringify(saved);
-   }
+  if(existing&&existing[16]){
+   if(!complete||!repArr.length||!departmentInfo||String(existing[14]||"")!==departmentInfo.departmentId||String(existing[15]||"")!==departmentInfo.centroCosto||!inventoryLedgerPayloadMatches_(ss,[],repArr,existing[17]))throw new Error("MAINTENANCE_MATERIAL_IDEMPOTENCY_CONFLICT");
+   inventoryAssertExistingJournal_(ss,existing[16],"INVENTARIO",oId);idempotent=true;
+  }
+  if(complete&&repArr.length&&!(existing&&existing[16])){
+   getChartOfAccounts({});const expense=inventoryAccount_(ss,"5201","Gasto"),inventory=inventoryAccount_(ss,"1301","Activo"),kardex=getOrCreateSheet(ss,"InventariosKardex"),journal=getOrCreateSheet(ss,"AsientosContables");
+   movementStart=kardex.getLastRow()+1;journalStart=journal.getLastRow()+1;
+   const lines=[],saved=[],seen=Object.create(null);
+   repArr.forEach((raw,i)=>{
+    const item=catalogFindItem_(ss,raw.catalogItemId||raw.itemCodigo||raw.itemId,true),unit=catalogFindUnit_(ss,raw.unidadMedida||raw.unidad||item.unit),qty=Number(raw.cantidad);
+    if(catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit)||!Number.isFinite(qty)||qty<=0)throw new Error("MAINTENANCE_PART_INVALID");
+    if(seen[item.code])throw new Error("MAINTENANCE_PART_DUPLICATE:"+item.code);seen[item.code]=true;
+    const base=assetDeprMoney_(qty*unit.factor),ref="MNTMAT:"+oId+":"+i,prior=inventoryFindMovementByRef_(ss,ref);
+    let movement;
+    if(prior){if(String(prior[2]||"")!==String(item.code)||Math.abs(Number(prior[13]||prior[6]||0)-base)>0.000001||String(prior[10]||"")!==departmentInfo.ubicacionOrigen)throw new Error("MAINTENANCE_MOVEMENT_IDEMPOTENCY_CONFLICT");movement={kardexId:prior[0],cantidadBase:base};}
+    else movement=recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:"Salida",cantidad:qty,unidadMedida:unit.name,ubicacionResponsable:departmentInfo.ubicacionOrigen,observaciones:"Consumo de repuesto por Orden Mantenimiento "+oId+" [REF:"+ref+"]"});
+    const cost=inventoryCostPerBaseUnit_(item),amount=assetDeprMoney_(base*cost);if(base<=0||amount<=0)throw new Error("MAINTENANCE_PART_COST_INVALID");
+    lines.push({cuenta:expense.code,nombre:expense.name,debe:amount,haber:0,centroCosto:departmentInfo.centroCosto,departamento:departmentInfo.departmentId,itemCodigo:item.code,referenciaId:oId},{cuenta:inventory.code,nombre:inventory.name,debe:0,haber:amount,centroCosto:departmentInfo.centroCosto,departamento:departmentInfo.departmentId,itemCodigo:item.code,referenciaId:oId});
+    saved.push({itemCodigo:item.code,cantidadBase:base,costoUnitarioBase:cost,importe:amount,kardexId:movement.kardexId,unidadOriginal:unit.name,cantidadOriginal:qty,factorConversionBase:unit.factor});
+   });
+   asientoId="AST-INV-MNT-"+oId;inventoryPostJournal_(ss,{descripcion:"Consumo de repuestos de mantenimiento "+oId,origenModulo:"INVENTARIO",referenciaId:oId,asientoId:asientoId,lineas:lines,creadoPor:actor.userId});details=JSON.stringify(saved);
   }
   const row=existing?existing.slice():new Array(19).fill("");while(row.length<19)row.push("");
   row[0]=oId;row[1]=existing?existing[1]:now;row[2]=assetRef;row[3]=p.tipoMantenimiento||(existing&&existing[3])||"Correctivo";row[4]=description;row[5]=p.prioridad||(existing&&existing[5])||"Media";row[6]=existing?existing[6]:actor.userId;row[7]=p.asignadoAEmpleadoId!==undefined?p.asignadoAEmpleadoId:(existing&&existing[7]||"");row[8]=repuestStr;row[9]=p.costoEstimado!==undefined?p.costoEstimado:(existing&&existing[9]||0);
