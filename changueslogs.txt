@@ -3167,3 +3167,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - getLoanAmortizationSchedule reutiliza el lector protegido con el payload firmado y exige una coincidencia única. IDs duplicados y relaciones UserID↔ExpedienteID ambiguas se excluyen; consultas específicas ajenas RESOURCE_NOT_FOUND.
 - Lecturas con encabezados exactos y getSheetByName; hojas ausentes no se crean. Se conserva el contrato status/solicitudes y los campos de amortización.
 - Department Scope Contract run 43351706517: ACCOUNTING departmental resource access PASS; Department Scope, Internal Responsibility RBAC, ACCOUNTING import y USER migrated ownership PASS. Workflow global FAIL posterior en User Role Membership contract línea 119 (foreignLegacy null), fallo heredado; pasos posteriores SKIPPED. Parseo V8 de Code.gs y test PASS. BETA-FUNC-046 Pendiente beta.
+
+
+[2026-11-13 UTC] [IMA-EXEC-20261112-1754Z-03] C1.669 — ACCOUNTING getStaffAttendanceLogs
+- La consulta de asistencia ahora exige identidad firmada; el autoservicio deriva el UserID de la sesión y no permite consultar a terceros. RecursosHumanos y roles de gestión permitidos quedan sujetos a mapeo único UserID↔ExpedienteID, ResourceOwnership y ámbito verificado.
+- Los filtros por empleado y fechas no amplían permisos; se rechazan consultas ajenas, rangos invertidos y esquemas inválidos; se excluyen IDs/mappings ambiguos; las hojas ausentes devuelven lista vacía sin crearla.
+- Se amplió tests/security/accounting-departmental-resource-access.test.js con escenarios de aislamiento DEP-A/DEP-B/institución, autoservicio, suplantación, sesión inválida, rol no permitido, filtros, duplicados, mapping ambiguo, esquema y ausencia de hoja.
+- Commits de implementación/pruebas: ef320645c76f70fe7272f152daa612dc5d3e1a78; 2af7112011cf4a50834c34fc798002342705da23; b759debc0c650575a2b883e0f5882a39fa15af46; 5e37f9bd449fc6739fcf781e8a1658dd73185d43.
+- Department Scope Contract run 43353897445: ACCOUNTING departmental resource access **PASS**; contratos previos de ámbito, RBAC, importación y ownership migrado PASS. Workflow global FAIL posterior en User Role Membership línea 119 (foreignLegacy nulo), fallo heredado. Apps Script/Sheets real NOT RUN; BETA-FUNC-047 Pendiente beta.

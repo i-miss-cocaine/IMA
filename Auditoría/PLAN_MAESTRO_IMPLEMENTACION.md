@@ -5210,3 +5210,16 @@ La revisión de requisitos originales confirma cobertura de:
 - Verificación: parseo V8 de Code.gs y contrato PASS; Department Scope Contract run 43351706517 confirma ACCOUNTING departmental resource access PASS, además de Department Scope, Internal Responsibility RBAC, ACCOUNTING import y USER migrated ownership PASS. El workflow global falla después en User Role Membership contract línea 119 (foreignLegacy nulo), fallo heredado y no atribuible a C1.668. Apps Script/Sheets real NOT RUN.
 - BETA-FUNC-046 Pendiente beta. **Estado:** C1.668 completada para estas lecturas; TASK-153 / AUD-NG-386 permanece En ejecución por otras superficies.
 - **Siguiente acción:** revisar el siguiente callsite elegible de consulta de asistencia ACCOUNTING, comenzando por `getStaffAttendanceLogs`, y verificar su prioridad/dependencias antes de modificar.
+
+
+### 10.266 TASK-153 / AUD-NG-389 — ACCOUNTING: aislamiento del historial de asistencia (C1.669)
+
+- **Trazabilidad:** TASK-153 / PM-01; AUD-NG-140 / REQ-EXP-014; hallazgo operativo AUD-NG-389.
+- **Alcance de esta iteración:** getStaffAttendanceLogs únicamente. No se amplía a registro de asistencia, autoservicio completo ni generación de PDF.
+- La consulta exige identidad firmada y allowlist de roles. Empleado/Trabajador/Personal consulta únicamente filas ligadas al UserID firmado; RecursosHumanos y roles de gestión permitidos consultan solo empleados con relación UserID↔ExpedienteID única y autorización assertEmployeeExpedienteScopeAccess_/ResourceOwnership.
+- Los filtros empleadoId, fechaInicio y fechaFin reducen el conjunto autorizado, nunca conceden acceso. Se rechazan consultas ajenas con RESOURCE_NOT_FOUND; IDs de asistencia y mappings ambiguos se excluyen; se valida el esquema exacto y los rangos de fecha; hojas ausentes devuelven lista vacía sin creación. Se conserva status/asistencias.
+- **Verificación:** Department Scope Contract run 43353897445: ACCOUNTING departmental resource access PASS; Department Scope, Internal Responsibility RBAC, ACCOUNTING import y USER migrated ownership PASS. El workflow global falla después en User Role Membership contract línea 119 (verifySessionToken(foreignLegacy) nulo y acceso a .role), fallo heredado observado antes de C1.669; pasos posteriores SKIPPED. Identity mapping and transport security run 43353684292 SUCCESS. Node.js 24; el contrato focalizado compila/ejecuta las funciones extraídas en VM. Syntax-check global quedó SKIPPED por el fallo previo. Apps Script/Sheets real NOT RUN.
+- **Commits de código/prueba:** ef320645c76f70fe7272f152daa612dc5d3e1a78; 2af7112011cf4a50834c34fc798002342705da23; b759debc0c650575a2b883e0f5882a39fa15af46; 5e37f9bd449fc6739fcf781e8a1658dd73185d43.
+- **Beta:** BETA-FUNC-047 Pendiente beta. No se declara certificación funcional ni despliegue.
+- **Estado:** C1.669 completada para este callsite. TASK-153 continúa En ejecución y AUD-NG-140 permanece abierto por sus demás requisitos.
+- **Siguiente acción elegible:** revisar recordStaffCheckIn para derivar la identidad del empleado de la sesión y restringir el registro de terceros a RR. HH./roles autorizados, verificando primero sus dependencias y el contrato original.

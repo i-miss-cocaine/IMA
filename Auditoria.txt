@@ -2753,3 +2753,16 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Verificación:** Department Scope Contract run 43351706517, paso ACCOUNTING departmental resource access PASS; Department Scope, Internal Responsibility RBAC, ACCOUNTING import y USER migrated ownership también PASS. Workflow global falla después en User Role Membership contract línea 119 (foreignLegacy nulo al acceder a .role), fallo heredado observado antes de C1.668; pasos posteriores SKIPPED. Node.js 24 runner aislado. Parseo V8 de Code.gs y test PASS.
 - **Beta:** BETA-FUNC-046 Pendiente beta; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+## AUD-NG-389 — ACCOUNTING: getStaffAttendanceLogs (C1.669)
+- **Severidad:** ALTA — exposición de registros de asistencia mediante una consulta sin identidad firmada ni comprobación de propiedad/ámbito; el filtro empleadoId podía omitirse o manipularse y la lectura utilizaba getOrCreateSheet.
+- **Origen y trazabilidad:** TASK-153 / PM-01 (aislamiento departamental estricto); AUD-NG-140 / REQ-EXP-014 (autoservicio y asistencia ligados a identidad verificada).
+- **Alcance de esta iteración:** exclusivamente el callsite de lectura getStaffAttendanceLogs. No se declara resuelto el alcance completo de AUD-NG-140 ni TASK-153.
+- **Corrección:** exige sesión firmada; Empleado/Trabajador/Personal consulta únicamente el UserID firmado; RecursosHumanos y roles de gestión permitidos consultan registros solo tras resolver un mapeo único UserID↔ExpedienteID y validar assertEmployeeExpedienteScopeAccess_/ResourceOwnership. El filtro empleadoId nunca concede permisos. Se excluyen IDs de asistencia y mappings ambiguos; encabezados exactos; filtros de fecha inclusivos y rango invertido rechazado; la lectura usa getSheetByName y no crea hojas.
+- **Contrato preservado:** status/asistencias y los campos asistenciaId, fecha, empleadoId, empleadoNombre, horaEntrada, horaSalida, minutosTardanza, estadoAsistencia, observaciones.
+- **Verificación:** Department Scope Contract run 43353897445, paso ACCOUNTING departmental resource access **PASS**; los pasos previos Department Scope, Internal Responsibility RBAC, ACCOUNTING import y USER migrated ownership también PASS. El workflow global falla después en User Role Membership contract: verifySessionToken(foreignLegacy) devuelve null y el test accede a .role (línea 119), fallo heredado ya observado en C1.668; los pasos posteriores quedan SKIPPED. Identity mapping and transport security run 43353684292 SUCCESS. El contrato ejecutó en Node.js 24 y compiló/ejecutó las funciones extraídas mediante VM; el paso de syntax-check global quedó SKIPPED por el fallo posterior. Apps Script/Sheets real NOT RUN; sin despliegue ni datos reales.
+- **Beta:** BETA-FUNC-047 Pendiente beta.
+- **Estado:** C1.669 completada para getStaffAttendanceLogs; TASK-153 continúa En ejecución y AUD-NG-140 permanece abierto por recordStaffCheckIn, generación real/privada de PDF y demás superficies.
+===============================================================================

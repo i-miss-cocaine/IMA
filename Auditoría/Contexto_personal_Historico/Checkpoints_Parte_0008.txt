@@ -172,3 +172,20 @@
 - **Beta:** BETA-FUNC-046 Pendiente beta; Apps Script/Sheets real NOT RUN; no se usaron datos reales.
 - **Estado:** C1.668 Completada como subalcance; TASK-153 / AUD-NG-386 continúa En ejecución. **Siguiente callsite candidato:** getStaffAttendanceLogs, sujeto a verificar requisitos y dependencias en el Plan Maestro/backlog.
 ===============================================================================
+
+
+===============================================================================
+## C1.669 — TASK-153 / AUD-NG-389 — ACCOUNTING getStaffAttendanceLogs
+- **Sesión:** IMA-EXEC-20261112-1754Z-03.
+- **Checkpoint anterior:** C1.668. **Estado:** completado para el callsite de consulta de asistencia; TASK-153 permanece En ejecución.
+- **Alcance:** proteger exclusivamente getStaffAttendanceLogs, trazado a TASK-153 / PM-01 y AUD-NG-140 / REQ-EXP-014.
+- **Implementación:** identidad de sesión firmada; Empleado/Trabajador/Personal limitado al UserID firmado; RecursosHumanos/Director/Administrador/Subdirector autorizados mediante mapeo único UserID↔ExpedienteID y assertEmployeeExpedienteScopeAccess_/ResourceOwnership. Filtros no amplían permisos; consultas ajenas RESOURCE_NOT_FOUND; IDs/mappings ambiguos excluidos; encabezados exactos; fechas inclusivas y rango inválido rechazado; getSheetByName, sin creación de hojas; contrato status/asistencias preservado.
+- **Archivos funcionales/prueba:** backend/accounting-service/Code.gs; tests/security/accounting-departmental-resource-access.test.js.
+- **Commits de implementación y ajustes del contrato:** ef320645c76f70fe7272f152daa612dc5d3e1a78; 2af7112011cf4a50834c34fc798002342705da23; b759debc0c650575a2b883e0f5882a39fa15af46; 5e37f9bd449fc6739fcf781e8a1658dd73185d43.
+- **Verificación final:** Department Scope Contract run 43353897445; pasos Department Scope, Internal Responsibility RBAC, ACCOUNTING departmental import y USER migrated ownership PASS; paso ACCOUNTING departmental resource access **PASS**. El workflow global falla después en User Role Membership contract línea 119: verifySessionToken(foreignLegacy) devuelve null y se intenta leer .role; fallo heredado registrado antes de C1.669. Los pasos posteriores, incluido syntax-check global, SKIPPED. Identity mapping and transport security run 43353684292 SUCCESS. Ejecución Node.js 24 en runner GitHub Actions; contrato focalizado compiló/ejecutó las funciones extraídas en VM. Ejecución local con checkout propio NOT RUN; Apps Script/Sheets real NOT RUN; no hubo despliegue ni datos reales.
+- **Incidencias de verificación corregidas antes del resultado final:** tres ejecuciones iniciales fallaron por aserciones estáticas desactualizadas del contrato y una referencia incorrecta al restaurar el fixture; se corrigieron y no se consideran PASS. El resultado válido es run 43353897445.
+- **Beta:** BETA-FUNC-047 Pendiente beta.
+- **Registros:** beta_test.txt; Auditoria.txt; changueslogs.txt; Plan Maestro; checkpoint e índice.
+- **Estado residual:** AUD-NG-140 sigue abierto por recordStaffCheckIn, generación de PDF real/privado y demás superficies; TASK-153 sigue En ejecución.
+- **Siguiente acción:** revisar recordStaffCheckIn conforme al requisito original y sus dependencias, sin ejecutar otra tarea en esta iteración.
+===============================================================================
