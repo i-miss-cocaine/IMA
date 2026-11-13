@@ -2788,21 +2788,24 @@ function manageLaborIncident(payload) {
     const suppliedId=String(p.incidenciaId||"").trim(),id=suppliedId||("INC-LAB-"+Utilities.getUuid());
     const matches=snapshot.rows.map((row,index)=>({row:row,index:index})).filter(x=>String(x.row[0]||"").trim()===id);
     if(matches.length>1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe una incidencia disponible."};
+    if(!suppliedId&&matches.length)return {status:"error",code:"LABOR_INCIDENT_ID_COLLISION",message:"No fue posible registrar la incidencia."};
     const existing=matches.length===1?matches[0]:null;
     if(existing&&String(existing.row[1]||"").trim()!==access.empleadoId)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe una incidencia disponible."};
     if(!existing&&snapshot.rows.some(r=>String(r[0]||"").trim()===id))return {status:"error",code:"LABOR_INCIDENT_ID_COLLISION",message:"No fue posible registrar la incidencia."};
-    const current=existing?existing.row.slice():null,now=new Date().toISOString(),today=now.split("T")[0];
+    const current=existing?existing.row.slice():null,now=new Date().toISOString(),today=now.split("T")[0],incidentDate=p.fecha!==undefined&&p.fecha!==""?p.fecha:(current?current[2]:today);
+    if(isNaN(new Date(incidentDate).getTime()))return {status:"error",code:"LABOR_INCIDENT_DATE_INVALID",message:"La fecha de la incidencia no es válida."};
     let history=[];
     if(current){
       try{history=JSON.parse(current[10]||"[]");}catch(_){return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"El historial de aclaraciones no es válido."};}
       if(!Array.isArray(history))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"El historial de aclaraciones no es válido."};
       if(current[9])history.push({timestamp:now,modificadoPor:access.actor.userId,aclaracionAnterior:current[9],estadoAnterior:current[6]});
     }
-    const responsibility=p.responsabilidadEstablecida===undefined?(current?current[7]:false):parseLaborBoolean_(p.responsabilidadEstablecida);
-    if(responsibility&&responsibility.valid===false)return {status:"error",code:"LABOR_INCIDENT_BOOLEAN_INVALID",message:"El valor de responsabilidad establecida no es válido."};
+    let responsibility;
+    if(p.responsabilidadEstablecida===undefined){if(current){const parsed=parseLaborBoolean_(current[7]);if(!parsed.valid)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"El valor de responsabilidad establecida no es válido."};responsibility=parsed.value;}else responsibility=false;}
+    else{responsibility=parseLaborBoolean_(p.responsabilidadEstablecida);if(!responsibility.valid)return {status:"error",code:"LABOR_INCIDENT_BOOLEAN_INVALID",message:"El valor de responsabilidad establecida no es válido."};responsibility=responsibility.value;}
     const row=[
       id,access.empleadoId,
-      p.fecha!==undefined&&p.fecha!==""?p.fecha:(current?current[2]:today),
+      incidentDate,
       String(p.categoria!==undefined&&p.categoria!==""?p.categoria:(current?current[3]:"ObservacionOperativa")),
       description,access.actor.userId,
       String(p.estado!==undefined&&p.estado!==""?p.estado:(current?current[6]:"Registrada")),
@@ -2842,6 +2845,7 @@ function manageDisciplinaryMeasure(payload) {
     const suppliedId=String(p.medidaId||"").trim(),id=suppliedId||("MED-DISC-"+Utilities.getUuid());
     const matches=snapshot.rows.map((row,index)=>({row:row,index:index})).filter(x=>String(x.row[0]||"").trim()===id);
     if(matches.length>1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe una medida disciplinaria disponible."};
+    if(!suppliedId&&matches.length)return {status:"error",code:"DISCIPLINARY_MEASURE_ID_COLLISION",message:"No fue posible registrar la medida disciplinaria."};
     const existing=matches.length===1?matches[0]:null;
     if(existing&&String(existing.row[2]||"").trim()!==access.empleadoId)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe una medida disciplinaria disponible."};
     const incidenceId=String(p.incidenciaId!==undefined?p.incidenciaId:(existing?existing.row[1]:"")||"").trim();
