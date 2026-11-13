@@ -104,6 +104,9 @@ assert.equal(context.assertStudentExpedienteScopeAccess_(actor("student"),ss,exp
 assert.equal(context.assertStudentExpedienteScopeAccess_(actor("student"),ss,expSheet,rows.ExpedientesEstudiantes[1]).code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.assertStudentExpedienteScopeAccess_(actor("guardian"),ss,expSheet,rows.ExpedientesEstudiantes[1]).accessType,"GUARDIAN");
 assert.equal(context.assertStudentExpedienteScopeAccess_(actor("guardian"),ss,expSheet,rows.ExpedientesEstudiantes[2]).code,"RESOURCE_SCOPE_DENIED");
+rows.ResponsablesTutores.push(["RESP-1","P-OTHER","",""]);
+assert.equal(context.assertStudentExpedienteScopeAccess_(actor("guardian"),ss,expSheet,rows.ExpedientesEstudiantes[1]).code,"RESOURCE_SCOPE_DENIED","guardian access must fail closed when ResponsableID maps to multiple people");
+rows.ResponsablesTutores.pop();
 const guardianOwnership = rows.ResourceOwnership.find(row => row[3] === "EXP-A");
 const originalGuardianOwnership = guardianOwnership.slice();
 guardianOwnership[1] = "INST-OTHER";
