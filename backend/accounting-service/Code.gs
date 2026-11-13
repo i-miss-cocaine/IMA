@@ -15344,11 +15344,14 @@ function getMaterialRequisitions(payload) {
 function inventoryEnsureRequisitionSchema_(sheet) {
  const headers=["CentroCosto","ModoReconocimiento","AsientoContableID","DetalleEntregaJSON","UbicacionOrigen"];
  const row=sheet.getDataRange().getValues()[0]||[];
- headers.forEach((h,i)=>{const col=10+i;if(String(row[col]||"").trim()!==h)sheet.getRange(1,col+1).setValue(h);});
+ headers.forEach((h,i)=>{const existing=String(row[10+i]||"").trim();if(existing&&existing!==h)throw new Error("MATERIAL_REQUISITION_SCHEMA_CONFLICT:"+existing);});
+ headers.forEach((h,i)=>{if(!String(row[10+i]||"").trim())sheet.getRange(1,11+i).setValue(h);});
 }
 function inventoryEnsureLedgerSheet_(ss,name,headers) {
  let sh=ss.getSheetByName(name);if(!sh)sh=ss.insertSheet(name);
- const rows=sh.getDataRange().getValues();if(!rows.length||!rows[0].some(x=>String(x||"").trim()))sh.getRange(1,1,1,headers.length).setValues([headers]);
+ const rows=sh.getDataRange().getValues();
+ if(!rows.length||!rows[0].some(x=>String(x||"").trim()))sh.getRange(1,1,1,headers.length).setValues([headers]);
+ else if(JSON.stringify(rows[0].map(x=>String(x||"").trim()))!==JSON.stringify(headers))throw new Error("INVENTORY_LEDGER_SCHEMA_MISMATCH:"+name);
  return sh;
 }
 function inventoryAssertDepartmentScope_(payload,ss,actor,departmentValue) {
@@ -15366,7 +15369,7 @@ function inventoryAccount_(ss,code,expectedType) {
  return {code:String(matches[0][1]),name:String(matches[0][2])};
 }
 function inventoryCostPerBaseUnit_(item) {
- const row=item.row||[],cost=Number(row[19]||row[18]||0);
+ const row=item.row||[],average=Number(row[19]),lastPurchase=Number(row[18]),cost=Number.isFinite(average)&&average>0?average:(Number.isFinite(lastPurchase)&&lastPurchase>0?lastPurchase:0);
  if(!Number.isFinite(cost)||cost<=0)throw new Error("INVENTORY_ITEM_COST_REQUIRED:"+item.code);
  return assetDeprMoney_(cost);
 }
@@ -15382,9 +15385,14 @@ function inventoryFindJournalById_(ss,id) {
  if(matches.length>1)throw new Error("INVENTORY_JOURNAL_ID_AMBIGUOUS:"+id);
  return matches[0]||null;
 }
-function inventoryAssertExistingJournal_(ss,id) {
+function inventoryFindLedgerById_(sheet,id) {
+ const matches=sheet.getDataRange().getValues().slice(1).filter(r=>String(r[0]||"")===String(id||""));
+ if(matches.length>1)throw new Error("INVENTORY_LEDGER_ID_AMBIGUOUS:"+id);
+ return matches[0]||null;
+}
+function inventoryAssertExistingJournal_(ss,id,expectedOrigin,expectedRef) {
  const row=inventoryFindJournalById_(ss,id);
- if(!row||String(row[6]||"")!=="Asentado")throw new Error("INVENTORY_LEDGER_JOURNAL_MISSING:"+id);
+ if(!row||String(row[6]||"")!=="Asentado"||(expectedOrigin&&String(row[3]||"")!==String(expectedOrigin))||(expectedRef&&String(row[4]||"")!==String(expectedRef)))throw new Error("INVENTORY_LEDGER_JOURNAL_MISSING_OR_MISMATCHED:"+id);
  return row;
 }
 function inventoryPostJournal_(ss,payload) {
@@ -15463,8 +15471,8 @@ function returnMaterialToInventory(payload) {
   const ledger=inventoryEnsureLedgerSheet_(ss,"DevolucionesMateriales",["DevolucionID","SolicitudMatID","Fecha","ItemsJSON","AsientoID","ActorUserId","Observaciones"]);
   const delivery=JSON.parse(String(data[idx][13]||"[]")),department=String(data[idx][2]),center=String(data[idx][10]||department),mode=String(data[idx][11]||"GASTO_INMEDIATO").toUpperCase(),source=String(data[idx][14]||"Bodega General");
   inventoryAssertDepartmentScope_(p,ss,actor,department);
-  const existing=ledger.getDataRange().getValues().slice(1).find(r=>String(r[0])===returnId);
-  if(existing){if(String(existing[1])!==requestId||!inventoryLedgerPayloadMatches_(ss,delivery,items,existing[3]))throw new Error("MATERIAL_RETURN_IDEMPOTENCY_CONFLICT");inventoryAssertExistingJournal_(ss,existing[4]);return {status:"success",devolucionId:returnId,asientoId:existing[4],idempotent:true};}
+  const existing=inventoryFindLedgerById_(ledger,returnId);
+  if(existing){if(String(existing[1])!==requestId||!inventoryLedgerPayloadMatches_(ss,delivery,items,existing[3]))throw new Error("MATERIAL_RETURN_IDEMPOTENCY_CONFLICT");inventoryAssertExistingJournal_(ss,existing[4],"INVENTARIO",returnId);return {status:"success",devolucionId:returnId,asientoId:existing[4],idempotent:true};}
   const previous=ledger.getDataRange().getValues().slice(1).filter(r=>String(r[1])===requestId),consumedSheet=ss.getSheetByName("ConsumosMateriales"),consumed=consumedSheet?consumedSheet.getDataRange().getValues().slice(1).filter(r=>String(r[1])===requestId):[];
   const returnedByCode={},consumedByCode={};previous.forEach(r=>{try{JSON.parse(r[3]).forEach(x=>returnedByCode[x.itemCodigo]=(returnedByCode[x.itemCodigo]||0)+Number(x.cantidadBase||0));}catch(_){}});consumed.forEach(r=>{try{JSON.parse(r[3]).forEach(x=>consumedByCode[x.itemCodigo]=(consumedByCode[x.itemCodigo]||0)+Number(x.cantidadBase||0));}catch(_){}});
   getChartOfAccounts({});const inventory=inventoryAccount_(ss,"1301","Activo"),credit=mode==="ASIGNADO"?inventoryAccount_(ss,"1302","Activo"):inventoryAccount_(ss,"5201","Gasto"),kardex=getOrCreateSheet(ss,"InventariosKardex"),journal=getOrCreateSheet(ss,"AsientosContables");movementStart=kardex.getLastRow()+1;journalStart=journal.getLastRow()+1;ledgerStart=ledger.getLastRow()+1;
@@ -15482,8 +15490,8 @@ function recognizeAssignedMaterialConsumption(payload) {
   const ledger=inventoryEnsureLedgerSheet_(ss,"ConsumosMateriales",["ConsumoID","SolicitudMatID","Fecha","ItemsJSON","AsientoID","ActorUserId","Observaciones"]);
   const delivery=JSON.parse(String(data[idx][13]||"[]")),department=String(data[idx][2]),center=String(data[idx][10]||department);
   inventoryAssertDepartmentScope_(p,ss,actor,department);
-  const existing=ledger.getDataRange().getValues().slice(1).find(r=>String(r[0])===consumptionId);
-  if(existing){if(String(existing[1])!==requestId||!inventoryLedgerPayloadMatches_(ss,delivery,items,existing[3]))throw new Error("ASSIGNED_CONSUMPTION_IDEMPOTENCY_CONFLICT");inventoryAssertExistingJournal_(ss,existing[4]);return {status:"success",consumoId:consumptionId,asientoId:existing[4],idempotent:true};}
+  const existing=inventoryFindLedgerById_(ledger,consumptionId);
+  if(existing){if(String(existing[1])!==requestId||!inventoryLedgerPayloadMatches_(ss,delivery,items,existing[3]))throw new Error("ASSIGNED_CONSUMPTION_IDEMPOTENCY_CONFLICT");inventoryAssertExistingJournal_(ss,existing[4],"INVENTARIO",consumptionId);return {status:"success",consumoId:consumptionId,asientoId:existing[4],idempotent:true};}
   const returns=ss.getSheetByName("DevolucionesMateriales"),returnRows=returns?returns.getDataRange().getValues().slice(1).filter(r=>String(r[1])===requestId):[],prior=ledger.getDataRange().getValues().slice(1).filter(r=>String(r[1])===requestId),returnedByCode={},consumedByCode={};
   returnRows.forEach(r=>{try{JSON.parse(r[3]).forEach(x=>returnedByCode[x.itemCodigo]=(returnedByCode[x.itemCodigo]||0)+Number(x.cantidadBase||0));}catch(_){}});prior.forEach(r=>{try{JSON.parse(r[3]).forEach(x=>consumedByCode[x.itemCodigo]=(consumedByCode[x.itemCodigo]||0)+Number(x.cantidadBase||0));}catch(_){}});
   getChartOfAccounts({});const expense=inventoryAccount_(ss,"5201","Gasto"),assigned=inventoryAccount_(ss,"1302","Activo"),kardex=getOrCreateSheet(ss,"InventariosKardex"),journal=getOrCreateSheet(ss,"AsientosContables");movementStart=kardex.getLastRow()+1;journalStart=journal.getLastRow()+1;ledgerStart=ledger.getLastRow()+1;
