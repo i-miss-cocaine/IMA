@@ -12,6 +12,8 @@ on:
       - backend/exam-service/Code.gs
       - backend/developer-service/Code.gs
       - js/student.js
+      - dashboard-recursos-humanos.html
+      - js/hr-payroll-pdf.js
       - tests/security/student-payment-voucher-client.test.js
       - tests/security/department-scope-contract.test.js
       - tests/security/internal-responsibility-rbac-contract.test.js
@@ -77,3 +79,5 @@ jobs:
         run: node --check js/student.js
       - name: Check authentication client syntax
         run: node --check js/auth.js
+      - name: Check HR payroll PDF download helper
+        run: node --check js/hr-payroll-pdf.js

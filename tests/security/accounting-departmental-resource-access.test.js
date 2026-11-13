@@ -638,8 +638,40 @@ assert.ok(!extractFunction(accounting,"generatePayrollReceiptPDF").includes("new
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getPayrollReceiptPDFFile"'));
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"generatePayrollReceiptPDF"'));
 assert.equal(context.getStaffPayrollReceipt({sessionToken:"employee"}).boletas.length,1);
+assert.equal(context.getStaffPayrollReceipt({sessionToken:"employee"}).boletas[0].boletaId,"BOL-A","the self-service payroll list exposes only the ID of a PDF that has a stored Drive file");
+assert.equal(context.getStaffPayrollReceipt({sessionToken:"hrA"}).boletas[0].empleadoId,"EXP-A","HR payroll listing remains limited to its authorized department");
+assert.ok(accounting.includes('"Empleado": ["getEmployeeRecords"') && accounting.includes('"getStaffPayrollReceipt", "generatePayrollReceiptPDF"'),"employee role permissions must include the payroll list action");
+assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getStaffPayrollReceipt"'),"the server self-service gate must permit employee payroll listing");
 const originalLock=context.LockService;context.LockService={getScriptLock:()=>({tryLock:()=>false,releaseLock:()=>{}})};
 assert.equal(context.generatePayrollReceiptPDF({sessionToken:"employee",periodoMes:"2026-02"}).code,"CONCURRENT_UPDATE_RETRY");
 context.LockService=originalLock;
+
+
+const payrollDownloadSource=fs.readFileSync(path.resolve(__dirname,"../../js/hr-payroll-pdf.js"),"utf8");
+assert.doesNotThrow(()=>new Function(payrollDownloadSource),"the browser PDF download helper must parse");
+const payrollDashboard=fs.readFileSync(path.resolve(__dirname,"../../dashboard-recursos-humanos.html"),"utf8");
+assert.ok(payrollDashboard.includes('data-target="sec-self-boletas"'),"the employee self-service portal must expose a payroll tab");
+assert.ok(payrollDashboard.includes("getStaffPayrollReceipt"),"the payroll tab must load server-authorized payroll rows");
+assert.ok(payrollDashboard.includes("getPayrollReceiptPDFFile"),"the payroll tab must use the protected PDF recovery endpoint");
+assert.ok(payrollDashboard.includes("generatePayrollReceiptPDF"),"the payroll tab must generate a missing PDF through the protected endpoint");
+let downloadedBlob=null,downloadedLink=null,clickCount=0,removedCount=0,revokedUrls=[];
+const fakeBody={appendChild(node){node.parentNode=this;downloadedLink=node;},removeChild(node){node.parentNode=null;removedCount++;}};
+const fakeWindow={
+ atob:value=>Buffer.from(value,"base64").toString("binary"),Blob:Blob,
+ URL:{createObjectURL:blob=>{downloadedBlob=blob;return "blob:payroll-test";},revokeObjectURL:url=>revokedUrls.push(url)},
+ document:{body:fakeBody,createElement:tag=>{assert.equal(tag,"a");return {style:{},click(){clickCount++;},parentNode:null};}},
+ setTimeout:callback=>{callback();return 1;}
+};
+vm.runInNewContext(payrollDownloadSource,{window:fakeWindow,Uint8Array:Uint8Array,Blob:Blob});
+const pdfFixture=Buffer.from("%PDF-IMA-TEST","ascii").toString("base64");
+assert.equal(fakeWindow.downloadPayrollReceiptPdf({status:"success",encoding:"base64",fileData:pdfFixture,fileName:"Boleta:EXP-A.pdf"}),true);
+assert.equal(downloadedBlob.type,"application/pdf");
+assert.equal(downloadedBlob.size,Buffer.from("%PDF-IMA-TEST","ascii").length);
+assert.equal(downloadedLink.download,"Boleta-EXP-A.pdf","download filenames must be sanitized");
+assert.equal(clickCount,1,"the browser anchor must be activated exactly once");
+assert.equal(removedCount,1,"the temporary anchor must be removed");
+assert.deepEqual(revokedUrls,["blob:payroll-test"],"the object URL must be revoked after download");
+assert.throws(()=>fakeWindow.downloadPayrollReceiptPdf({status:"error",encoding:"base64",fileData:pdfFixture}),/respuesta no contiene/i);
+assert.throws(()=>fakeWindow.downloadPayrollReceiptPdf({status:"success",encoding:"base64",fileData:Buffer.from("NOTPDF").toString("base64")}),/firma PDF/i);
 
 console.log("Accounting departmental resource and payment voucher access contracts passed.");
