@@ -15740,7 +15740,7 @@ function assetDeprRequireAsset_(ss,assetId){
  if(matches.length!==1)throw new Error(matches.length?"ASSET_ID_AMBIGUOUS":"ASSET_NOT_FOUND");return {sheet:sh,row:matches[0],headers:rows[0].map(String)};
 }
 function saveAssetDepreciationPolicy(payload){
- const p=payload||{},actor=assetDeprActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),category=String(p.categoria||"").trim(),method=String(p.metodo||"").trim();
+ const p=payload||{},actor=assetDeprActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),category=String(p.categoria||"").trim(),method=String(p.metodo||"").trim();const lock=LockService.getScriptLock();lock.waitLock(15000);try{
  if(!category||["LineaRecta","SaldoDecreciente","UnidadesProduccion"].indexOf(method)===-1)throw new Error("ASSET_DEPRECIATION_POLICY_INVALID");
  const life=Math.floor(Number(p.vidaUtilMeses)),residual=Number(p.valorResidualPorcentaje||0),rate=Number(p.tasaAnual||0),units=Number(p.unidadesTotales||0);
  if(!Number.isFinite(life)||life<1||!Number.isFinite(residual)||residual<0||residual>=100||(method==="SaldoDecreciente"&&(!Number.isFinite(rate)||rate<=0||rate>=1))||(method==="UnidadesProduccion"&&(!Number.isFinite(units)||units<=0)))throw new Error("ASSET_DEPRECIATION_POLICY_VALUES_INVALID");
@@ -15751,9 +15751,10 @@ function saveAssetDepreciationPolicy(payload){
  if(found.length===1)sh.getRange(found[0].i+1,1,1,values.length).setValues([values]);else sh.appendRow(values);
  logStructuredEvent("ACCOUNTING","saveAssetDepreciationPolicy","INFO","ASSET_DEPRECIATION_POLICY_SAVED","Política de depreciación actualizada.",{categoria:category,metodo:method,actorUserId:actor.userId},actor.role);
  return {status:"success",categoria:category,metodo:method,vidaUtilMeses:life};
+ }finally{lock.releaseLock();}
 }
 function configureAssetDepreciationProfile(payload){
- const p=payload||{},actor=assetDeprActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),asset=assetDeprRequireAsset_(ss,p.activoId),assetId=String(asset.row[0]).trim();
+ const p=payload||{},actor=assetDeprActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),asset=assetDeprRequireAsset_(ss,p.activoId),assetId=String(asset.row[0]).trim();const lock=LockService.getScriptLock();lock.waitLock(15000);try{
  const sh=assetDeprSheet_(ss,"ConfiguracionDepreciacionActivos",ASSET_DEPR_PROFILE_HEADERS_,true),rows=sh.getDataRange().getValues(),existing=rows.slice(1).filter(r=>String(r[0]||"").trim()===assetId);
  if(existing.length>1)throw new Error("ASSET_DEPRECIATION_PROFILE_AMBIGUOUS");
  const policies=ss.getSheetByName("PoliticasDepreciacionActivos"),category=String(p.categoriaContable||asset.row[3]||"").trim();
@@ -15772,9 +15773,10 @@ function configureAssetDepreciationProfile(payload){
  if(existing.length===1)sh.getRange(rows.indexOf(existing[0])+1,1,1,values.length).setValues([values]);else sh.appendRow(values);
  logStructuredEvent("ACCOUNTING","configureAssetDepreciationProfile","INFO","ASSET_DEPRECIATION_PROFILE_CONFIGURED","Ficha financiera de activo actualizada.",{activoId:assetId,actorUserId:actor.userId},actor.role);
  return {status:"success",activoId:assetId,metodo:method,vidaUtilMeses:life};
+ }finally{lock.releaseLock();}
 }
 function registerCapitalizableAssetImprovement(payload){
- const p=payload||{},actor=assetDeprActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),asset=assetDeprRequireAsset_(ss,p.activoId),assetId=String(asset.row[0]).trim();
+ const p=payload||{},actor=assetDeprActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),asset=assetDeprRequireAsset_(ss,p.activoId),assetId=String(asset.row[0]).trim();const lock=LockService.getScriptLock();lock.waitLock(15000);try{
  const profiles=assetDeprSheet_(ss,"ConfiguracionDepreciacionActivos",ASSET_DEPR_PROFILE_HEADERS_,false);if(!profiles)throw new Error("ASSET_DEPRECIATION_PROFILE_REQUIRED");
  const profileRows=profiles.getDataRange().getValues(),matches=profileRows.slice(1).filter(r=>String(r[0]||"").trim()===assetId);if(matches.length!==1)throw new Error("ASSET_DEPRECIATION_PROFILE_REQUIRED");
  const amount=Number(p.importe),date=assetDeprDate_(p.fechaCapitalizacion,"fechaCapitalizacion");const life=Math.floor(Number(p.vidaUtilMeses||matches[1][6])),residual=Number(p.valorResidual||0),method=String(p.metodo||"LineaRecta"),rate=Number(p.tasaAnual||0);if(!Number.isFinite(amount)||amount<=0||!String(p.descripcion||"").trim()||life<1||residual<0||residual>=amount||["LineaRecta","SaldoDecreciente"].indexOf(method)===-1||method==="SaldoDecreciente"&&(!(rate>0)||rate>=1))throw new Error("ASSET_CAPITALIZABLE_IMPROVEMENT_INVALID");
@@ -15782,6 +15784,7 @@ function registerCapitalizableAssetImprovement(payload){
  const improvementId="MEJ-"+Utilities.getUuid();sh.appendRow([improvementId,assetId,date,String(p.descripcion).trim(),amount,residual,life,method,rate,actor.userId,new Date(),"Activo"]);
  logStructuredEvent("ACCOUNTING","registerCapitalizableAssetImprovement","INFO","ASSET_CAPITALIZABLE_IMPROVEMENT_RECORDED","Mejora capitalizable registrada como componente independiente.",{activoId:assetId,improvementId,importe:amount,actorUserId:actor.userId},actor.role);
  return {status:"success",activoId:assetId,mejoraId:improvementId,importe:amount};
+ }finally{lock.releaseLock();}
 }
 function assetDeprComponentAmount_(component,period,priorAccum,unitsUsed){
  const start=assetDeprDate_(component.start,"component.start"),life=Math.floor(Number(component.life)),cost=Number(component.cost),residual=Number(component.residual||0),method=String(component.method||"LineaRecta");
@@ -15847,13 +15850,20 @@ function calculateAssetDepreciation(payload){
 }
 function getAssetDepreciationSchedule(payload){
  const p=payload||{},actor=assetDeprActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),config=assetDeprSheet_(ss,"ConfiguracionDepreciacionActivos",ASSET_DEPR_PROFILE_HEADERS_,false),depr=assetDeprSheet_(ss,"DepreciacionesActivos",ASSET_DEPR_HEADERS_,false);
- if(!config)return {status:"success",activos:[],calendario:[],totales:{costo:0,depreciacionAcumulada:0,valorNeto:0}};
+ if(!config)return {status:"success",activos:[],calendario:[],resumenAnual:[],conciliacion:{estado:"SinDatos"},totales:{costo:0,depreciacionAcumulada:0,valorNeto:0,activosTotalmenteDepreciados:0}};
  const profiles=config.getDataRange().getValues().slice(1).filter(r=>!p.activoId||String(r[0])===String(p.activoId)),records=depr?depr.getDataRange().getValues().slice(1):[];
  const filtered=records.filter(r=>(!p.activoId||String(r[1])===String(p.activoId))&&(!p.periodoDesde||String(r[2])>=String(p.periodoDesde))&&(!p.periodoHasta||String(r[2])<=String(p.periodoHasta)));
  const improvements=assetDeprSheet_(ss,"MejorasCapitalizablesActivos",ASSET_DEPR_IMPROVEMENT_HEADERS_,false),improvementRows=improvements?improvements.getDataRange().getValues().slice(1):[];
- const activos=profiles.map(r=>{const related=improvementRows.filter(m=>String(m[1])===String(r[0])&&String(m[11]||"Activo")==="Activo"),extra=related.reduce((sum,m)=>sum+Number(m[4]||0),0),extraResidual=related.reduce((sum,m)=>sum+Number(m[5]||0),0);return {activoId:r[0],categoria:r[1],fechaPuestaFuncionamiento:r[2],costoCapitalizado:Number(r[3]||0)+Number(r[4]||0)+extra,valorResidual:Number(r[5]||0)+extraResidual,vidaUtilMeses:Number(r[6]||0),metodo:r[7],depreciacionAcumuladaInicial:Number(r[18]||0),valorNetoApertura:Number(r[20]||0),moneda:r[17]};});
- const allRecords=records.filter(r=>(!p.activoId||String(r[1])===String(p.activoId))&&String(r[12])==="Contabilizada"),totalCost=assetDeprMoney_(activos.reduce((sum,x)=>sum+x.costoCapitalizado,0)),totalAccum=assetDeprMoney_(allRecords.reduce((sum,r)=>sum+Number(r[6]||0),0)+activos.reduce((sum,x)=>sum+x.depreciacionAcumuladaInicial,0)),totalResidual=assetDeprMoney_(activos.reduce((sum,x)=>sum+x.valorResidual,0));
- return {status:"success",activos,calendario:filtered.map(r=>({depreciacionId:r[0],activoId:r[1],periodo:r[2],metodo:r[4],baseCosto:Number(r[5]||0),depreciacionPeriodo:Number(r[6]||0),depreciacionAcumulada:Number(r[7]||0),valorNetoLibros:Number(r[8]||0),asientoId:r[11],estado:r[12]})),totales:{costo:totalCost,depreciacionAcumulada:totalAccum,valorNeto:assetDeprMoney_(Math.max(totalResidual,totalCost-totalAccum))}};
+ const allRecords=records.filter(r=>(!p.activoId||String(r[1])===String(p.activoId))&&String(r[12])==="Contabilizada");
+ const activos=profiles.map(r=>{
+  const related=improvementRows.filter(m=>String(m[1])===String(r[0])&&String(m[11]||"Activo")==="Activo"),extra=related.reduce((sum,m)=>sum+Number(m[4]||0),0),extraResidual=related.reduce((sum,m)=>sum+Number(m[5]||0),0),cost=assetDeprMoney_(Number(r[3]||0)+Number(r[4]||0)+extra),residual=assetDeprMoney_(Number(r[5]||0)+extraResidual),accum=assetDeprMoney_(Number(r[18]||0)+allRecords.filter(d=>String(d[1])===String(r[0])).reduce((sum,d)=>sum+Number(d[6]||0),0)),start=assetDeprDate_(r[9]||r[2],"FechaInicioDepreciacion"),asOf=p.fechaCorte?assetDeprDate_(p.fechaCorte,"fechaCorte"):new Date(),elapsed=Math.max(0,assetDeprMonthsBetween_(new Date(start.getFullYear(),start.getMonth(),1),new Date(asOf.getFullYear(),asOf.getMonth(),1))+1),life=Number(r[6]||0);
+  return {activoId:r[0],categoria:r[1],fechaPuestaFuncionamiento:r[2],fechaInicioDepreciacion:start.toISOString(),costoCapitalizado:cost,valorResidual:residual,vidaUtilMeses:life,vidaUtilTranscurridaMeses:Math.min(life,elapsed),vidaUtilRestanteMeses:Math.max(0,life-elapsed),fechaFinEstimada:new Date(start.getFullYear(),start.getMonth()+life,start.getDate()).toISOString(),metodo:r[7],depreciacionAcumuladaInicial:Number(r[18]||0),depreciacionAcumulada:accum,valorNetoLibros:assetDeprMoney_(Math.max(residual,cost-accum)),totalmenteDepreciado:accum>=cost-residual-0.01,valorNetoApertura:Number(r[20]||0),moneda:r[17],mejorasCapitalizables:related.map(m=>({mejoraId:m[0],fecha:m[2],descripcion:m[3],importe:Number(m[4]||0),vidaUtilMeses:Number(m[6]||0),metodo:m[7]}))};
+ });
+ const annual={};allRecords.forEach(r=>{const year=String(r[2]||"").slice(0,4);if(!year)return;if(!annual[year])annual[year]={anio:year,depreciacion:0,periodos:0};annual[year].depreciacion=assetDeprMoney_(annual[year].depreciacion+Number(r[6]||0));annual[year].periodos++;});
+ const journals=ss.getSheetByName("AsientosContables"),journalRows=journals?journals.getDataRange().getValues().slice(1):[];let journalCredits=0;
+ journalRows.forEach(j=>{const reference=String(j[4]||"");if(reference.indexOf("DEPRECIACION:")!==0||!profiles.some(profile=>reference.indexOf("DEPRECIACION:"+String(profile[0])+":")===0))return;let lines=[];try{lines=JSON.parse(j[5]||"[]");}catch(_){}lines.forEach(line=>{if(profiles.some(profile=>reference.indexOf("DEPRECIACION:"+String(profile[0])+":")===0&&String(profile[11])===String(line.codigoCuenta)))journalCredits+=Number(line.haber||0);});});
+ const postedTotal=assetDeprMoney_(allRecords.reduce((sum,r)=>sum+Number(r[6]||0),0)),totalCost=assetDeprMoney_(activos.reduce((sum,x)=>sum+x.costoCapitalizado,0)),totalAccum=assetDeprMoney_(activos.reduce((sum,x)=>sum+x.depreciacionAcumulada,0)),totalResidual=assetDeprMoney_(activos.reduce((sum,x)=>sum+x.valorResidual,0)),journalCreditsRounded=assetDeprMoney_(journalCredits),difference=assetDeprMoney_(postedTotal-journalCreditsRounded);
+ return {status:"success",activos,calendario:filtered.map(r=>({depreciacionId:r[0],activoId:r[1],periodo:r[2],metodo:r[4],baseCosto:Number(r[5]||0),depreciacionPeriodo:Number(r[6]||0),depreciacionAcumulada:Number(r[7]||0),valorNetoLibros:Number(r[8]||0),asientoId:r[11],estado:r[12]})),resumenAnual:Object.keys(annual).sort().map(y=>annual[y]),conciliacion:{depreciacionRegistrada:postedTotal,depreciacionEnLibroMayor:journalCreditsRounded,diferencia:difference,estado:Math.abs(difference)<=0.01?"Conciliado":"Diferencia"},totales:{costo:totalCost,depreciacionAcumulada:totalAccum,valorNeto:assetDeprMoney_(Math.max(totalResidual,totalCost-totalAccum)),activosTotalmenteDepreciados:activos.filter(x=>x.totalmenteDepreciado).length}};
 }
 
 
