@@ -15725,7 +15725,7 @@ function assetDeprAccount_(ss,code){
  return {code:key,name:String(matches[0][2]||key)};
 }
 function assetDeprDate_(value,field){
- const d=value instanceof Date?new Date(value.getTime()):new Date(value);if(!value||isNaN(d.getTime()))throw new Error("ASSET_DEPRECIATION_DATE_INVALID:"+field);return d;
+ const raw=String(value||"").trim(),d=value instanceof Date?new Date(value.getTime()):(/^\d{4}-\d{2}-\d{2}$/.test(raw)?new Date(Number(raw.slice(0,4)),Number(raw.slice(5,7))-1,Number(raw.slice(8,10))):new Date(value));if(!value||isNaN(d.getTime()))throw new Error("ASSET_DEPRECIATION_DATE_INVALID:"+field);return d;
 }
 function assetDeprMonth_(value){
  const s=String(value||"").trim();if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(s))throw new Error("ASSET_DEPRECIATION_PERIOD_INVALID");
@@ -15856,8 +15856,54 @@ function getAssetDepreciationSchedule(payload){
  return {status:"success",activos,calendario:filtered.map(r=>({depreciacionId:r[0],activoId:r[1],periodo:r[2],metodo:r[4],baseCosto:Number(r[5]||0),depreciacionPeriodo:Number(r[6]||0),depreciacionAcumulada:Number(r[7]||0),valorNetoLibros:Number(r[8]||0),asientoId:r[11],estado:r[12]})),totales:{costo:totalCost,depreciacionAcumulada:totalAccum,valorNeto:assetDeprMoney_(Math.max(totalResidual,totalCost-totalAccum))}};
 }
 
+
+function registerDepreciableAssetDisposal_(payload){
+ const p=payload||{},actor=assetDeprActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),lock=LockService.getScriptLock();
+ lock.waitLock(15000);
+ try{
+  const asset=assetDeprRequireAsset_(ss,p.bienIdCodigo||p.activoId),assetId=String(asset.row[0]).trim(),profileSheet=assetDeprSheet_(ss,"ConfiguracionDepreciacionActivos",ASSET_DEPR_PROFILE_HEADERS_,false);
+  if(!profileSheet)throw new Error("ASSET_DEPRECIATION_PROFILE_REQUIRED");
+  const profileRows=profileSheet.getDataRange().getValues(),profileMatches=profileRows.slice(1).map((r,i)=>({r,i})).filter(x=>String(x.r[0])===assetId);
+  if(profileMatches.length!==1)throw new Error(profileMatches.length?"ASSET_DEPRECIATION_PROFILE_AMBIGUOUS":"ASSET_DEPRECIATION_PROFILE_REQUIRED");
+  const profile=profileMatches[0].r,fechaBaja=assetDeprDate_(p.fechaBaja||new Date(),"fechaBaja"),periodKey=fechaBaja.getFullYear()+"-"+String(fechaBaja.getMonth()+1).padStart(2,"0"),period=assetDeprMonth_(periodKey);
+  if(fechaBaja.getDate()!==period.end.getDate())throw new Error("ASSET_DISPOSAL_REQUIRES_MONTH_END_CLOSE");
+  const depreciationSheet=assetDeprSheet_(ss,"DepreciacionesActivos",ASSET_DEPR_HEADERS_,false);if(!depreciationSheet)throw new Error("ASSET_DEPRECIATION_PERIODS_MISSING");
+  const depRows=depreciationSheet.getDataRange().getValues().slice(1).filter(r=>String(r[1])===assetId&&String(r[12])==="Contabilizada"&&String(r[2])<=periodKey);
+  const start=assetDeprDate_(profile[9]||profile[2],"FechaInicioDepreciacion"),cutoff=profile[19]?assetDeprDate_(profile[19],"FechaCorteApertura"):null;
+  let expected=new Date(start.getFullYear(),start.getMonth(),1);if(cutoff)expected=new Date(cutoff.getFullYear(),cutoff.getMonth()+1,1);
+  const lifeEnd=new Date(start.getFullYear(),start.getMonth()+Number(profile[6])-1,1),lastExpected=lifeEnd<period.start?lifeEnd:period.start;
+  while(expected<=lastExpected){const key=expected.getFullYear()+"-"+String(expected.getMonth()+1).padStart(2,"0");if(!depRows.some(r=>String(r[2])===key))throw new Error("ASSET_DEPRECIATION_PERIODS_MISSING:"+key);expected=new Date(expected.getFullYear(),expected.getMonth()+1,1);}
+  const improvements=assetDeprSheet_(ss,"MejorasCapitalizablesActivos",ASSET_DEPR_IMPROVEMENT_HEADERS_,false),improvementRows=improvements?improvements.getDataRange().getValues().slice(1).filter(r=>String(r[1])===assetId&&String(r[11]||"Activo")==="Activo"&&new Date(r[2])<=fechaBaja):[];
+  const cost=assetDeprMoney_(Number(profile[3])+Number(profile[4]||0)+improvementRows.reduce((sum,r)=>sum+Number(r[4]||0),0)),residual=assetDeprMoney_(Number(profile[5])+improvementRows.reduce((sum,r)=>sum+Number(r[5]||0),0)),accumulated=assetDeprMoney_(Number(profile[18]||0)+depRows.reduce((sum,r)=>sum+Number(r[6]||0),0)),bookValue=assetDeprMoney_(Math.max(residual,cost-accumulated)),proceeds=Number(p.valorVenta||0);
+  if(!Number.isFinite(proceeds)||proceeds<0)throw new Error("ASSET_DISPOSAL_PROCEEDS_INVALID");
+  const assetAccount=assetDeprAccount_(ss,profile[10]),accumAccount=assetDeprAccount_(ss,profile[11]),lines=[];
+  if(accumulated>0)lines.push({codigoCuenta:accumAccount.code,nombreCuenta:accumAccount.name,debe:accumulated,haber:0,centroCosto:String(profile[16]||""),descripcion:"Reversión depreciación acumulada "+assetId});
+  if(proceeds>0){const cash=assetDeprAccount_(ss,p.cuentaContrapartida||profile[15]);lines.push({codigoCuenta:cash.code,nombreCuenta:cash.name,debe:proceeds,haber:0,centroCosto:String(profile[16]||""),descripcion:"Contraprestación por baja "+assetId});}
+  if(bookValue>proceeds){const loss=assetDeprAccount_(ss,profile[14]);lines.push({codigoCuenta:loss.code,nombreCuenta:loss.name,debe:assetDeprMoney_(bookValue-proceeds),haber:0,centroCosto:String(profile[16]||""),descripcion:"Pérdida por baja de activo "+assetId});}
+  if(proceeds>bookValue){const gain=assetDeprAccount_(ss,profile[13]);lines.push({codigoCuenta:gain.code,nombreCuenta:gain.name,debe:0,haber:assetDeprMoney_(proceeds-bookValue),centroCosto:String(profile[16]||""),descripcion:"Ganancia por baja de activo "+assetId});}
+  lines.push({codigoCuenta:assetAccount.code,nombreCuenta:assetAccount.name,debe:0,haber:cost,centroCosto:String(profile[16]||""),descripcion:"Baja del costo histórico "+assetId});
+  const debe=assetDeprMoney_(lines.reduce((sum,x)=>sum+Number(x.debe||0),0)),haber=assetDeprMoney_(lines.reduce((sum,x)=>sum+Number(x.haber||0),0));if(Math.abs(debe-haber)>0.01)throw new Error("ASSET_DISPOSAL_UNBALANCED_JOURNAL");
+  const ref="BAJA_ACTIVO:"+assetId,journal=getOrCreateSheet(ss,"AsientosContables"),journalRows=journal.getDataRange().getValues(),existingJournal=journalRows.slice(1).find(r=>String(r[4]||"")===ref);
+  const bajaSheet=getOrCreateSheet(ss,"BajasBienes"),bajaRows=bajaSheet.getDataRange().getValues();
+  if(bajaRows.slice(1).some(r=>String(r[3]||"")===assetId&&String(r[9]||"")==="BajaConfirmada"))throw new Error("ASSET_ALREADY_DISPOSED");
+  const bajaId="DISP-"+Utilities.getUuid(),asientoId=existingJournal?String(existingJournal[0]):"AST-"+Utilities.getUuid(),motivo=String(p.motivoBaja||"").trim();if(!motivo)throw new Error("ASSET_DISPOSAL_REASON_REQUIRED");
+  if(!existingJournal)journal.appendRow([asientoId,fechaBaja,"Baja patrimonial "+assetId,"ActivosFijos",ref,JSON.stringify(lines),"Asentado",actor.userId]);
+  bajaSheet.appendRow([bajaId,fechaBaja,"ActivoFijo",assetId,String(p.nombreBien||asset.row[2]),motivo,bookValue,actor.userId,String(p.documentoActaUrl||""),"BajaConfirmada",String(p.observaciones||"")+" [ASIENTO_ID:"+asientoId+"] [VALOR_LIBROS:"+bookValue+"]"]);
+  asset.sheet.getRange(asset.sheet.getDataRange().getValues().findIndex(r=>String(r[0])===assetId)+1,8).setValue("Disposed");
+  asset.sheet.getRange(asset.sheet.getDataRange().getValues().findIndex(r=>String(r[0])===assetId)+1,9).setValue("Baja "+bajaId+" · asiento "+asientoId);
+  profileSheet.getRange(profileMatches[0].i+2,24).setValue("Baja");
+  logStructuredEvent("ACCOUNTING","registerAssetDisposal","INFO","DEPRECIABLE_ASSET_DISPOSED","Baja patrimonial contabilizada por valor neto en libros.",{activoId:assetId,bajaId,asientoId,valorLibros:bookValue,fechaBaja:fechaBaja,actorUserId:actor.userId},actor.role);
+  return {status:"success",bajaId,asientoId,valorLibros:bookValue,ganancia:Math.max(0,proceeds-bookValue),perdida:Math.max(0,bookValue-proceeds),message:"Baja patrimonial contabilizada; historial y valor neto preservados."};
+ }finally{lock.releaseLock();}
+}
+
 function registerAssetDisposal(payload) {
-  const { tipoBien, bienIdCodigo, nombreBien, motivoBaja, valorLibros, autorizadoPorUserId, documentoActaUrl, observaciones } = payload || {};
+  const p=payload||{},tipo=p.tipoBien||"ActivoFijo";
+  if(tipo==="ActivoFijo"){
+    const ss=SpreadsheetApp.openById(SPREADSHEET_ID),profile=ss.getSheetByName("ConfiguracionDepreciacionActivos"),assetKey=String(p.bienIdCodigo||p.activoId||"").trim();
+    if(profile&&assetKey){const assetSheet=ss.getSheetByName("ActivosPatrimoniales"),assetRows=assetSheet?assetSheet.getDataRange().getValues():[],matches=assetRows.slice(1).filter(r=>String(r[0]||"").trim()===assetKey||String(r[1]||"").trim()===assetKey);if(matches.length===1&&profile.getDataRange().getValues().slice(1).some(r=>String(r[0]||"").trim()===String(matches[0][0]||"").trim()))return registerDepreciableAssetDisposal_(Object.assign({},p,{activoId:matches[0][0]}));}
+  }
+  const { tipoBien, bienIdCodigo, nombreBien, motivoBaja, valorLibros, autorizadoPorUserId, documentoActaUrl, observaciones } = p;
   if (!bienIdCodigo || !motivoBaja) throw new Error("bienIdCodigo y motivoBaja son requeridos.");
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
