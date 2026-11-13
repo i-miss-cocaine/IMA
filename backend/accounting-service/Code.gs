@@ -7122,7 +7122,7 @@ function preparePayrollReceiptDistributionRows_(ss,context,actor) {
     const found=matches[0],old=found.r.slice(),state=String(old[5]||"").trim().toUpperCase(),error=String(old[10]||"").trim();
     if(state==="ENVIADO"||state==="PROCESANDO")return;
     if(!record.emailValid){old[5]="FALLIDO";old[10]=record.emailReason;old[4]=record.userId;}
-    else if(state==="FALLIDO"&&/^(EMAIL_|USER_INACTIVE)/.test(error)){old[5]="PENDIENTE";old[10]="";old[4]=record.userId;}
+    else if(state==="FALLIDO"){old[5]="PENDIENTE";old[10]="";old[4]=record.userId;}
     else if(state==="PENDIENTE"||state==="REINTENTABLE"){old[4]=record.userId;}
     dist.sheet.getRange(found.index,1,1,dist.headers.length).setValues([old]);
   });
@@ -7200,7 +7200,7 @@ function processPayrollReceiptDistribution(payload) {
     });
   }catch(e){return {status:"error",code:"PAYROLL_DISTRIBUTION_CLAIM_FAILED",message:"No fue posible reservar los envíos."};}
   finally{lock.releaseLock();}
-  let sent=0,retryable=0,failed=0;
+  let sent=0,retryable=0,failed=0,updateFailures=0;
   claimed.forEach(item=>{
     let generated;
     try{
@@ -7208,34 +7208,32 @@ function processPayrollReceiptDistribution(payload) {
       if(!generated||generated.status!=="success"){
         const code=String(generated&&generated.code||"PAYROLL_PDF_GENERATION_FAILED");
         const retry=["CONCURRENT_UPDATE_RETRY","PAYROLL_PDF_GENERATION_FAILED","PAYROLL_PDF_DELIVERY_FAILED","PAYROLL_PDF_UNAVAILABLE"].includes(code);
-        updatePayrollReceiptDistributionRow_(ss,item.distributionId,{estado:retry?"REINTENTABLE":"FALLIDO",errorCode:retry?"PDF_GENERATION_RETRYABLE":code});
-        if(retry)retryable++;else failed++;
+        const recorded=updatePayrollReceiptDistributionRow_(ss,item.distributionId,{estado:retry?"REINTENTABLE":"FALLIDO",errorCode:retry?"PDF_GENERATION_RETRYABLE":code});
+        if(!recorded)updateFailures++;else if(retry)retryable++;else failed++;
         return;
       }
       if(!String(generated.boletaId||"").trim()){
-        updatePayrollReceiptDistributionRow_(ss,item.distributionId,{estado:"REINTENTABLE",errorCode:"PDF_REFERENCE_MISSING"});retryable++;return;
+        if(updatePayrollReceiptDistributionRow_(ss,item.distributionId,{estado:"REINTENTABLE",errorCode:"PDF_REFERENCE_MISSING"}))retryable++;else updateFailures++;return;
       }
       const latestContext=getPayrollReceiptDistributionContext_(p,ss,planillaId);
       const latestRecord=!latestContext.error&&latestContext.records.find(r=>r.expedienteId===item.expedienteId);
       if(!latestRecord||!latestRecord.emailValid){
-        updatePayrollReceiptDistributionRow_(ss,item.distributionId,{estado:"FALLIDO",errorCode:latestContext.error||latestRecord&&latestRecord.emailReason||"DISTRIBUTION_CONTEXT_CHANGED"});failed++;return;
+        if(updatePayrollReceiptDistributionRow_(ss,item.distributionId,{estado:"FALLIDO",errorCode:latestContext.error||latestRecord&&latestRecord.emailReason||"DISTRIBUTION_CONTEXT_CHANGED"}))failed++;else updateFailures++;return;
       }
       item.email=latestRecord.email;
       const portalUrl=getPayrollPortalLoginUrl_();
       const body="Tiene un nuevo comprobante de nómina disponible en su cuenta institucional. Inicie sesión en el Portal Institucional y abra Nómina > Mis boletas:\n"+portalUrl+"\n\nPor seguridad, el comprobante no se adjunta a este correo. El portal requiere autenticación y solo muestra sus propios documentos.";
       const htmlBody='<p>Tiene un nuevo comprobante de nómina disponible en su cuenta institucional.</p><p>Inicie sesión en el <a href="'+portalUrl+'">Portal Institucional</a> y abra <strong>Nómina &gt; Mis boletas</strong>.</p><p>Por seguridad, el comprobante no se adjunta a este correo. El portal requiere autenticación y solo muestra sus propios documentos.</p>';
       MailApp.sendEmail({to:item.email,subject:"Comprobante de nómina disponible",body:body,htmlBody:htmlBody});
-      updatePayrollReceiptDistributionRow_(ss,item.distributionId,{boletaId:String(generated.boletaId||""),estado:"ENVIADO",enviadoEn:new Date(),errorCode:""});
-      sent++;
+      if(updatePayrollReceiptDistributionRow_(ss,item.distributionId,{boletaId:String(generated.boletaId||""),estado:"ENVIADO",enviadoEn:new Date(),errorCode:""}))sent++;else updateFailures++;
     }catch(e){
-      updatePayrollReceiptDistributionRow_(ss,item.distributionId,{estado:"REINTENTABLE",errorCode:"MAIL_SEND_FAILED"});
-      retryable++;
+      if(updatePayrollReceiptDistributionRow_(ss,item.distributionId,{boletaId:String(generated&&generated.boletaId||""),estado:"REINTENTABLE",errorCode:"MAIL_SEND_FAILED"}))retryable++;else updateFailures++;
     }
     if(generated&&generated.fileData)generated.fileData="";
   });
   const finalSheet=ensurePayrollReceiptDistributionSheet_(ss),rows=finalSheet.rows.filter(r=>String(r[1]||"").trim()===planillaId);
   const count=state=>rows.filter(r=>String(r[5]||"").trim().toUpperCase()===state).length;
-  return {status:"success",planillaId:planillaId,modo:mode,procesados:claimed.length,enviados:sent,reintentables:retryable,fallidos:failed,pendientesRestantes:count("PENDIENTE"),reintentosRestantes:count("REINTENTABLE"),enProceso:count("PROCESANDO"),message:"Lote de distribución procesado. Los envíos exitosos no se vuelven a enviar."};
+  return {status:"success",planillaId:planillaId,modo:mode,procesados:claimed.length,enviados:sent,reintentables:retryable,fallidos:failed,actualizacionesFallidas:updateFailures,pendientesRestantes:count("PENDIENTE"),reintentosRestantes:count("REINTENTABLE"),enProceso:count("PROCESANDO"),message:"Lote de distribución procesado. Los envíos exitosos no se vuelven a enviar."};
 }
 
 // [REQ-EXP-015] [Requerimientos de Expansión y Desarrollo] - Control de inventarios Kardex, activo fijo, custodia, mantenimientos y proveedores.
