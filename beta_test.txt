@@ -1528,3 +1528,11 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** mutaciones solo con actor/permiso/scope verificados, institución derivada del servidor, ownership/target confirmados, auditoría de autorización antes de mutar, revocación append-only e idempotente.
 - **Evidencia requerida:** snapshots sintéticos antes/después, respuestas de endpoints, audit logs, IDs de concesión, actor/permiso/scope y resultado de concurrencia. No usar PII real ni datos productivos.
 - **Estado:** Pendiente beta.
+
+## BETA-FUNC-062 — TASK-153 / autorización y auditoría de lectura de referencias
+- **Objetivo:** validar en USER desplegado el endpoint `authorizeDepartmentReferenceRead` y la persistencia obligatoria de decisiones ALLOW/DENY.
+- **Precondiciones:** `LogsSistema` con esquema contratado; `DepartmentReferenceGrants`, `ResourceOwnership` y `ConfiguracionInstitucional` de institución de prueba; permiso dinámico `readDepartmentReference`; membresía y scope departamental activos; concesión exacta vigente para los casos positivos.
+- **Pasos:** (1) solicitar campos/documentos incluidos en la allowlist; (2) probar política estricta, concesión ausente, revocada, futura, vencida, duplicada y tenant/departamento incorrecto; (3) probar ownership ausente/ambiguo; (4) probar permiso faltante y contexto sin membresía/departamento activo; (5) simular esquema/audit log no disponible y comprobar que no se emite autorización positiva; (6) comprobar que cada ALLOW/DENY tiene ID de auditoría persistido; (7) comprobar que la respuesta no incluye contenido y exige RBAC estándar adicional.
+- **Resultado esperado:** ninguna decisión positiva sin identidad/scope/ownership/política/concesión verificadas; auditoría durable antes de responder; sin contenido en la respuesta; denegaciones no enumeran recursos.
+- **Evidencia requerida:** respuestas de endpoint, IDs de audit log y snapshots sintéticos; prueba de fallos de persistencia; no usar PII real ni datos productivos.
+- **Estado:** Pendiente beta y callsites consumidores.

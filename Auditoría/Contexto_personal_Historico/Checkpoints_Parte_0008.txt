@@ -472,3 +472,18 @@
 - **Commits del incremento:** servicio grant 7e7e2df; test inicial 7d275f7; workflow aa43ae0; fixtures 12dedb6; response contract 5750f2f; audit/history f40ba04; expanded tests febeff9; test audit assertion 60a827d; scenario count 7e77613.
 - **Estado:** administración backend de concesiones implementada y verificada en CI. TASK-153 permanece En ejecución; siguiente subalcance: auditoría de lectura y punto de autorización servidor integrado en consumidores, seguido de UI administrativa.
 ===============================================================================
+
+
+===============================================================================
+## C1.687 — IMA-EXEC-20261113-1205Z-01 — TASK-153 — auditoría durable y autorización de lectura
+- **Checkpoint anterior:** C1.686. **HEAD al reanudar:** 1c87a65bfb441d70c9578fb3388084216c33f0c4. **HEAD antes del checkpoint:** 1c87a65bfb441d70c9578fb3388084216c33f0c4. **Rama:** NG_beta_0.0.0.1_work. **Base:** NG_beta_0.0.0.1, HEAD 44d9891132332e692dbe2ba8602b41f50a508a59 (solo lectura).
+- **Auditoría durable:** `appendDepartmentReferenceAuditEvent_` valida esquema LogsSistema, genera ID único y confirma persistencia por ID. Create/revoke registran autorización antes de mutar; si falla el evento previo, la mutación no ocurre. La confirmación posterior se expone como `auditCompletionRecorded`.
+- **Autorización de lectura:** `authorizeDepartmentReferenceRead` en USER `doPost`, con permiso dinámico `readDepartmentReference`; deriva actor/membresía/institución/departamento del contexto autenticado, resuelve ResourceOwnership, política y concesiones tenant-scoped, evalúa READ_REFERENCE y persiste ALLOW/DENY antes de responder. No entrega contenido; respuesta positiva exige RBAC estándar adicional.
+- **Pruebas:** `tests/security/department-reference-read-authorization.test.js`, 23 escenarios; `tests/security/department-reference-grant-admin.test.js`, 26 escenarios; `tests/security/department-reference-policy-storage.test.js`, 20 escenarios; `tests/security/department-reference-policy.test.js`, 28 escenarios.
+- **CI:** Department Scope run 43423969896 SUCCESS sobre HEAD 1c87a65bfb441d70c9578fb3388084216c33f0c4, Node.js 24.22.2; además Identity Mapping y Task-Service security local contracts SUCCESS en el mismo incremento. Syntax-check de servicios Apps Script y clientes PASS.
+- **Code review:** `logStructuredEvent` se identificó como no apto para garantía fail-closed porque absorbe errores; reemplazado en las mutaciones críticas por append directo con verificación por ID. Denegaciones de ownership se mantienen genéricas para no enumerar recursos. No se retorna contenido.
+- **Límites:** no hay callsites consumidores ni transporte interservicio dedicado, por lo que el endpoint aún no controla el momento real de entrega de contenido. No hay UI administrativa ni hoja productiva. BETA-FUNC-062 Pendiente beta; TASK-153 sigue En ejecución.
+- **CLI local:** Node.js local/checkout NOT RUN; Node.js 24.22.2 se ejecutó en GitHub Actions. No se declara PASS local.
+- **Commits:** durable audit helper 710510d; tests durable audit 249c588/b7b67a6/cb6d31d; read authorization endpoint bbabe9f; test read authorization 7acbe5c/b7ce58d; workflow 4adf4dd; audit unique ID verification d331f9f; route assertion 1c87a65.
+- **Estado:** auditoría durable de mutaciones y endpoint de decisión/auditoría de lectura implementados y verificados en CI. Siguiente subalcance: transporte interservicio autenticado y callsites consumidores; después UI administrativa.
+===============================================================================

@@ -820,6 +820,11 @@
 - **Pruebas C1.686:** `tests/security/department-reference-grant-admin.test.js`, 26 escenarios sintéticos; Department Scope CI run 43423152036 SUCCESS (Node.js 24.22.2), incluyendo 26 escenarios de administración, 20 de almacenamiento de política, 28 del evaluador, ResourceOwnership ABAC y sintaxis Apps Script/clientes.
 - **Límites:** no se creó hoja de producción; pruebas con mocks. No existe todavía UI administrativa, callsites consumidores ni persistencia de auditoría de cada lectura compartida antes de entregar contenido. La capacidad no habilita por sí sola acceso cross-departamento. TASK-153 sigue En ejecución.
 
+- **Avance C1.687 — autorización de lectura con auditoría durable:** se sustituyó el logger tolerante a errores por `appendDepartmentReferenceAuditEvent_`, que valida el esquema `LogsSistema`, agrega un ID único y confirma su persistencia. Create/revoke registran el evento de autorización antes de mutar; si falla, no mutan. Un fallo del evento de cierre se devuelve explícitamente como `auditCompletionRecorded:false`.
+- Se añadió `authorizeDepartmentReferenceRead` al dispatcher USER. Deriva actor, membresía, institución y departamento del contexto autenticado; exige permiso dinámico `readDepartmentReference`; resuelve ownership activo, política y concesiones tenant-scoped; ejecuta el evaluador; persiste tanto ALLOW como DENY antes de responder. No entrega contenido y las autorizaciones positivas requieren RBAC estándar adicional.
+- **Pruebas C1.687:** `tests/security/department-reference-read-authorization.test.js`, 23 escenarios; `tests/security/department-reference-grant-admin.test.js`, 26 escenarios. Department Scope CI run 43423969896 SUCCESS (Node.js 24.22.2), además 20 escenarios de policy storage, 28 del evaluador, ResourceOwnership ABAC y sintaxis Apps Script/clientes.
+- **Límites:** el endpoint es un punto de decisión/auditoría, no entrega contenido. Aún no existen callsites en ACADEMIC/ACCOUNTING/otros consumidores, transporte interservicio dedicado ni UI administrativa. Por tanto, no habilita lectura compartida productiva. No se inicializó hoja real. TASK-153 sigue En ejecución.
+
 <!-- ID: AUD-NG-164 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-164] Completar catálogo curricular maestro y relaciones de asignaturas/planes/ofertas
 - Severidad: Alto (P1).
