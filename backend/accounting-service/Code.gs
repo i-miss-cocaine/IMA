@@ -5475,7 +5475,7 @@ function updatePayrollPeriodStatus(payload) {
   // Validar cuadratura antes de mutar saldos de préstamos; los previews CALCULADO también se concilian.
   if (shouldApplyPayrollLoans) {
     buildPayrollJournalLines_(payrollMatches,conceptSummary,getPayrollLoanAppliedAmountForPlanilla_(ss,planillaId));
-    const loanResult = applyPayrollLoanLedgerForPlanilla_(ss,planillaId,"APLICAR",actorId);
+    const loanResult = applyPayrollLoanLedgerForPlanilla_(ss, planillaId, "APLICAR", actorId);
     if (!loanResult || loanResult.status !== "success") throw new Error("No fue posible aplicar la amortización de préstamos.");
   } else if (shouldReversePayrollLoans) {
     applyPayrollLoanLedgerForPlanilla_(ss,planillaId,"REVERSAR",actorId);

@@ -107,6 +107,8 @@ jobs:
         run: node tests/security/accounting-payroll-concept-catalog.test.js
       - name: Run accounting payroll receipt distribution privacy and retry contract
         run: node tests/security/accounting-payroll-receipt-distribution.test.js
+      - name: Run accounting payroll journal integration contract
+        run: node tests/security/accounting-payroll-journal-integration.test.js
       - name: Run accounting staffing needs ownership and read-isolation contract
         run: node tests/security/accounting-staffing-needs-ownership.test.js
       - name: Run accounting work shift and substitution ownership contract
