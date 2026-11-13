@@ -11826,51 +11826,127 @@ function uploadStudentDocument(payload) {
 }
 
 // [TAREA-F6-022] [Fase 6: Expediente Institucional y Ciclo de Vida] - Consulta de documentos con verificación de accesibilidad Drive y recuperación de versiones archivadas
+const ACADEMIC_DEPARTMENT_REFERENCE_SAFE_FIELDS_ = ["tipoDocumento", "nombreArchivo", "fechaRecepcion", "fechaVencimiento", "estadoRevision"];
+
+function authorizeDepartmentReferenceReadViaUser_(payload, expedienteId, requestedFields, requestedDocumentIds) {
+  const request = payload || {};
+  const sessionToken = String(request.sessionToken || request.authToken || request.token || "").trim();
+  const resourceId = String(expedienteId || "").trim();
+  const fields = Array.isArray(requestedFields) ? requestedFields.slice() : [];
+  const documents = Array.isArray(requestedDocumentIds) ? requestedDocumentIds.slice() : [];
+  if (!sessionToken || !resourceId || !fields.length || !documents.length) return { authorized: false, code: "DEPARTMENT_REFERENCE_REQUEST_INVALID" };
+  const referencePayload = { sessionToken: sessionToken, resourceType: "EXPEDIENTE_ESTUDIANTE", resourceId: resourceId, requestedFields: fields, requestedDocumentIds: documents };
+  try {
+    const properties = PropertiesService.getScriptProperties();
+    const url = String(properties.getProperty("IMA_USER_SERVICE_URL") || "").trim();
+    const secret = String(properties.getProperty("IMA_DEPARTMENT_REFERENCE_HMAC_SECRET") || "").trim();
+    if (!url || url.indexOf("https://") !== 0 || secret.length < 32) return { authorized: false, code: "DEPARTMENT_REFERENCE_TRANSPORT_CONFIGURATION_REQUIRED" };
+    const timestamp = Date.now();
+    const requestId = "REQ-" + timestamp + "-" + String(Utilities.getUuid()).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 12);
+    const correlationId = String(request.correlationId || ("CORR-" + timestamp)).trim();
+    if (!/^[A-Za-z0-9_.:-]{1,128}$/.test(correlationId) || !/^REQ-[0-9]{10,16}-[A-Za-z0-9_-]{1,32}$/.test(requestId)) return { authorized: false, code: "DEPARTMENT_REFERENCE_ENVELOPE_INVALID" };
+    const bodyToSign = requestId + "|" + timestamp + "|" + correlationId + "|ACADEMIC|USER|authorizeDepartmentReferenceRead|" + JSON.stringify(referencePayload);
+    const signatureBytes = Utilities.computeHmacSignature(Utilities.MacAlgorithm.HMAC_SHA_256, bodyToSign, secret);
+    const signature = Array.prototype.map.call(signatureBytes, function(byte) { return ("0" + (byte & 0xFF).toString(16)).slice(-2); }).join("");
+    const envelope = { sourceService: "ACADEMIC", targetService: "USER", action: "authorizeDepartmentReferenceRead", requestId: requestId, timestamp: timestamp, correlationId: correlationId, payload: referencePayload, hmacSignature: signature };
+    const response = UrlFetchApp.fetch(url, { method: "post", contentType: "application/json", payload: JSON.stringify(envelope), muteHttpExceptions: true });
+    const httpCode = response.getResponseCode();
+    if (httpCode < 200 || httpCode >= 300) return { authorized: false, code: "DEPARTMENT_REFERENCE_AUTHORITY_UNAVAILABLE" };
+    let result;
+    try { result = JSON.parse(response.getContentText()); }
+    catch (parseError) { return { authorized: false, code: "DEPARTMENT_REFERENCE_AUTHORITY_RESPONSE_INVALID" }; }
+    if (!result || result.status !== "success" || result.authorized !== true || result.requiresStandardAuthorization !== true) {
+      return { authorized: false, code: String(result && result.code || "DEPARTMENT_REFERENCE_NOT_AUTHORIZED") };
+    }
+    if (!Array.isArray(result.approvedFields) || !Array.isArray(result.approvedDocumentIds) ||
+        JSON.stringify(result.approvedFields) !== JSON.stringify(fields) ||
+        JSON.stringify(result.approvedDocumentIds) !== JSON.stringify(documents) ||
+        !String(result.grantId || "").trim() || !String(result.auditEventId || "").trim()) {
+      return { authorized: false, code: "DEPARTMENT_REFERENCE_AUTHORITY_RESPONSE_INVALID" };
+    }
+    return { authorized: true, code: String(result.code || "DEPARTMENT_REFERENCE_ALLOWED"), approvedFields: result.approvedFields.slice(),
+      approvedDocumentIds: result.approvedDocumentIds.slice(), grantId: String(result.grantId), auditEventId: String(result.auditEventId) };
+  } catch (error) {
+    return { authorized: false, code: "DEPARTMENT_REFERENCE_TRANSPORT_FAILED" };
+  }
+}
+
 function getStudentDocuments(payload) {
-  const { expedienteId, solicitudId } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const documentSheet = getOrCreateSheet(ss, "DocumentosEstudiante");
-  const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
-  const rows = documentSheet.getDataRange().getValues().slice(1);
-  const verRows = getOrCreateSheet(ss, "HistorialVersionesDocumentos").getDataRange().getValues().slice(1);
-  const cleanExpId = expedienteId ? String(expedienteId).trim().toLowerCase() : "";
-  const cleanSolId = solicitudId ? String(solicitudId).trim().toLowerCase() : "";
+  const request = payload || {};
+  const cleanExpId = request.expedienteId ? String(request.expedienteId).trim().toLowerCase() : "";
+  const cleanSolId = request.solicitudId ? String(request.solicitudId).trim().toLowerCase() : "";
   const explicitTarget = !!(cleanExpId || cleanSolId);
-  const candidates = rows.filter(r => {
-    const rowExpId = String(r[1] || "").trim().toLowerCase();
-    const rowSolId = String(r[2] || "").trim().toLowerCase();
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const documentSheet = ss.getSheetByName("DocumentosEstudiante");
+  const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
+  if (!documentSheet) return { status: "success", documents: [] };
+  const rows = documentSheet.getDataRange().getValues().slice(1);
+  const versionSheet = ss.getSheetByName("HistorialVersionesDocumentos");
+  const verRows = versionSheet ? versionSheet.getDataRange().getValues().slice(1) : [];
+  const candidates = rows.filter(function(row) {
+    const rowExpId = String(row[1] || "").trim().toLowerCase();
+    const rowSolId = String(row[2] || "").trim().toLowerCase();
     if (cleanExpId && cleanSolId) return rowExpId === cleanExpId || rowSolId === cleanSolId;
     if (cleanExpId) return rowExpId === cleanExpId;
     if (cleanSolId) return rowSolId === cleanSolId;
     return true;
   });
   const filtered = [];
+  const denied = [];
   for (let i = 0; i < candidates.length; i++) {
-    const access = assertStudentDocumentScopeAccess_(payload, ss, documentSheet, candidates[i], expSheet);
-    if (access.authorized) filtered.push(candidates[i]);
-    else if (explicitTarget) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
+    const access = assertStudentDocumentScopeAccess_(request, ss, documentSheet, candidates[i], expSheet);
+    if (access && access.authorized) filtered.push(candidates[i]);
+    else denied.push(access || { authorized: false, code: "RESOURCE_SCOPE_DENIED" });
   }
-  if (!explicitTarget && candidates.length && !filtered.length) {
-    return { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "No existen documentos disponibles dentro del ámbito autorizado." };
-  }
-  const mapped = filtered.map(r => {
-    const docId = String(r[0]);
-    const fileId = String(r[5] || "").trim();
-    let driveAccessible = false;
-    if (fileId) {
-      try { const file = DriveApp.getFileById(fileId); driveAccessible = !file.isTrashed(); } catch (_) { driveAccessible = false; }
+  if (explicitTarget && denied.length) {
+    if (!cleanExpId || cleanSolId || filtered.length || denied.length !== candidates.length || !candidates.length ||
+        denied.some(function(access) { return String(access.code || "") !== "RESOURCE_SCOPE_DENIED"; }) ||
+        candidates.some(function(row) { return String(row[1] || "").trim().toLowerCase() !== cleanExpId; })) {
+      return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." };
     }
-    const versions = verRows.filter(v => String(v[1]).trim() === docId.trim()).map(v => ({
-      versionId: v[0], documentoId: v[1], nombreArchivo: v[2], driveFileId: v[3],
-      driveUrl: v[4], fechaCreacion: v[5], archivadoPor: v[6], motivoArchivado: v[7], fechaArchivado: v[8]
-    }));
-    return {
-      documentoId: docId, expedienteId: r[1], solicitudId: r[2], tipoDocumento: r[3],
-      nombreArchivo: r[4], driveFileId: r[5], driveUrl: r[6], fechaRecepcion: r[7],
-      fechaVencimiento: r[8], estadoRevision: r[9], subidoPor: r[10], validadoPor: r[11],
-      observaciones: r[12], driveAccessible: driveAccessible, totalVersionesPrevias: versions.length,
-      historialVersiones: versions
-    };
+    const expRows = expSheet ? expSheet.getDataRange().getValues().slice(1) : [];
+    const matchingExpedientes = expRows.filter(function(row) { return String(row[0] || "").trim().toLowerCase() === cleanExpId; });
+    if (matchingExpedientes.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." };
+    const requestedFields = Array.isArray(request.referenceRequestedFields) ? request.referenceRequestedFields.map(function(value) { return String(value || "").trim(); }) : [];
+    const requestedDocumentIds = Array.isArray(request.referenceDocumentIds) ? request.referenceDocumentIds.map(function(value) { return String(value || "").trim(); }) : [];
+    if (!requestedFields.length || !requestedDocumentIds.length ||
+        requestedFields.some(function(field, index) { return !field || ACADEMIC_DEPARTMENT_REFERENCE_SAFE_FIELDS_.indexOf(field) === -1 || requestedFields.indexOf(field) !== index; }) ||
+        requestedDocumentIds.some(function(id, index) { return !id || requestedDocumentIds.indexOf(id) !== index; })) {
+      return { status: "error", code: "DEPARTMENT_REFERENCE_REQUEST_INVALID", message: "No existen documentos disponibles." };
+    }
+    const candidateCounts = Object.create(null);
+    candidates.forEach(function(row) { const id = String(row[0] || "").trim(); if (id) candidateCounts[id] = (candidateCounts[id] || 0) + 1; });
+    if (requestedDocumentIds.some(function(id) { return candidateCounts[id] !== 1; })) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." };
+    const authorization = authorizeDepartmentReferenceReadViaUser_(request, cleanExpId, requestedFields, requestedDocumentIds);
+    if (!authorization.authorized) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." };
+    const requestedSet = Object.create(null), fieldSet = Object.create(null);
+    authorization.approvedDocumentIds.forEach(function(id) { requestedSet[String(id)] = true; });
+    authorization.approvedFields.forEach(function(field) { fieldSet[String(field)] = true; });
+    const referenceDocuments = candidates.filter(function(row) { return !!requestedSet[String(row[0] || "").trim()]; }).map(function(row) {
+      const item = { documentoId: String(row[0]) };
+      if (fieldSet.tipoDocumento) item.tipoDocumento = row[3];
+      if (fieldSet.nombreArchivo) item.nombreArchivo = row[4];
+      if (fieldSet.fechaRecepcion) item.fechaRecepcion = row[7];
+      if (fieldSet.fechaVencimiento) item.fechaVencimiento = row[8];
+      if (fieldSet.estadoRevision) item.estadoRevision = row[9];
+      return item;
+    });
+    if (referenceDocuments.length !== authorization.approvedDocumentIds.length) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." };
+    return { status: "success", documents: referenceDocuments, referenceOnly: true, grantId: authorization.grantId, auditEventId: authorization.auditEventId };
+  }
+  if (!explicitTarget && candidates.length && !filtered.length) return { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "No existen documentos disponibles dentro del ámbito autorizado." };
+  const mapped = filtered.map(function(row) {
+    const docId = String(row[0]), fileId = String(row[5] || "").trim();
+    let driveAccessible = false;
+    if (fileId) { try { const file = DriveApp.getFileById(fileId); driveAccessible = !file.isTrashed(); } catch (_) { driveAccessible = false; } }
+    const versions = verRows.filter(function(version) { return String(version[1]).trim() === docId.trim(); }).map(function(version) {
+      return { versionId: version[0], documentoId: version[1], nombreArchivo: version[2], driveFileId: version[3], driveUrl: version[4],
+        fechaCreacion: version[5], archivadoPor: version[6], motivoArchivado: version[7], fechaArchivado: version[8] };
+    });
+    return { documentoId: docId, expedienteId: row[1], solicitudId: row[2], tipoDocumento: row[3], nombreArchivo: row[4],
+      driveFileId: row[5], driveUrl: row[6], fechaRecepcion: row[7], fechaVencimiento: row[8], estadoRevision: row[9],
+      subidoPor: row[10], validadoPor: row[11], observaciones: row[12], driveAccessible: driveAccessible,
+      totalVersionesPrevias: versions.length, historialVersiones: versions };
   });
   return { status: "success", documents: mapped };
 }
