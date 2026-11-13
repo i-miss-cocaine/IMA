@@ -6502,6 +6502,7 @@ function generatePayrollReceiptPDF(payload) {
     if(matchingPlans.length!==1)return {status:"error",code:matchingPlans.length?"PLANILLA_SELECTION_REQUIRED":"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible o requiere seleccionar una planilla."};
     const plan=matchingPlans[0],planillaId=String(plan[0]||"").trim();
     if(!planillaId||planRows.filter(r=>String(r[0]||"").trim()===planillaId&&String(r[3]||"").trim()===targetExpedienteId&&String(r[2]||"").trim()===String(plan[2]||"").trim()).length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
+    if(p._requireClosedForDistribution===true&&String(plan[15]||"").trim().toUpperCase()!=="CERRADA")return {status:"error",code:"PAYROLL_NOT_CLOSED",message:"La distribución requiere una planilla cerrada."};
     const visiblePayrollConcepts=[];
     const conceptDetailSheet=ss.getSheetByName("DetalleConceptosPlanilla");
     if(conceptDetailSheet){
@@ -7203,7 +7204,7 @@ function processPayrollReceiptDistribution(payload) {
   claimed.forEach(item=>{
     let generated;
     try{
-      generated=generatePayrollReceiptPDF(Object.assign({},p,{planillaId:planillaId,empleadoId:item.expedienteId}));
+      generated=generatePayrollReceiptPDF(Object.assign({},p,{planillaId:planillaId,empleadoId:item.expedienteId,_requireClosedForDistribution:true}));
       if(!generated||generated.status!=="success"){
         const code=String(generated&&generated.code||"PAYROLL_PDF_GENERATION_FAILED");
         const retry=["CONCURRENT_UPDATE_RETRY","PAYROLL_PDF_GENERATION_FAILED","PAYROLL_PDF_DELIVERY_FAILED","PAYROLL_PDF_UNAVAILABLE"].includes(code);
