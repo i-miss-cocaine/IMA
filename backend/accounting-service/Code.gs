@@ -8042,6 +8042,11 @@ function purchaseQuotationJsonArray_(value){
  if(!value)return [];
  try{const parsed=JSON.parse(value);return Array.isArray(parsed)?parsed:[];}catch(_){return [];}
 }
+function purchaseQuotationSheetSchemaValid_(sheet,expectedHeaders){
+ const values=sheet.getDataRange().getValues(),actual=values&&values.length?values[0]:[];
+ if(!actual.length||actual.every(value=>String(value||"").trim()==="")){sheet.appendRow(expectedHeaders);return true;}
+ return expectedHeaders.every((header,index)=>String(actual[index]||"").trim()===header);
+}
 function purchaseQuotationAccess_(payload,ss){
  const actor=getVerifiedAccountingIdentity_(payload||{});
  if(!actor||actor.authorized!==true)return {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
@@ -8052,7 +8057,9 @@ function purchaseQuotationAccess_(payload,ss){
  return {authorized:true,actor:actor,scope:scope};
 }
 function purchaseQuotationRequest_(ss,solicitudId,scope){
- const rows=getOrCreateSheet(ss,"SolicitudesCompra").getDataRange().getValues(),matches=rows.slice(1).map((row,index)=>({row:row,index:index+2})).filter(x=>String(x.row[0]||"").trim()===String(solicitudId||"").trim());
+ const requestSheet=getOrCreateSheet(ss,"SolicitudesCompra"),requestHeaders=["SolicitudID","Fecha","Departamento","SolicitanteUserId","Justificacion","Categoria","DetalleItemsJSON","MontoEstimado","CentroCosto","EstadoAprobacion","Observaciones"];
+ if(!purchaseQuotationSheetSchemaValid_(requestSheet,requestHeaders))return {error:{status:"error",code:"PURCHASE_QUOTATION_SCHEMA_INVALID",message:"El esquema de solicitudes de compra no coincide con el contrato."}};
+ const rows=requestSheet.getDataRange().getValues(),matches=rows.slice(1).map((row,index)=>({row:row,index:index+2})).filter(x=>String(x.row[0]||"").trim()===String(solicitudId||"").trim());
  if(matches.length!==1)return {error:{status:"error",code:matches.length?"PURCHASE_REQUEST_AMBIGUOUS":"PURCHASE_REQUEST_NOT_FOUND",message:"La solicitud no existe o tiene identificadores duplicados."}};
  const request=matches[0],department=String(request.row[2]||"").trim();
  if(scope.institutionWide!==true&&!(scope.departmentIds||[]).map(String).includes(department))return {error:{status:"error",code:"RESOURCE_NOT_FOUND",message:"La solicitud no está disponible en el ámbito autorizado."}};
@@ -8074,8 +8081,10 @@ function getPurchaseQuotationMatrix(payload){
  const p=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),access=purchaseQuotationAccess_(p,ss);
  if(!access.authorized)return {status:"error",code:access.code,message:"No tiene autorización para consultar esta matriz."};
  const found=purchaseQuotationRequest_(ss,p.solicitudId,access.scope);if(found.error)return found.error;
- const req=found.request,requestItems=found.items,quoteSheet=getOrCreateSheet(ss,"CotizacionesCompra"),quoteRows=quoteSheet.getDataRange().getValues().slice(1).map((row,index)=>({row:row,index:index+2})).filter(x=>String(x.row[1]||"").trim()===String(p.solicitudId).trim()&&!["RECHAZADA","ANULADA","CANCELADA","DESCARTADA"].includes(normalizePurchaseAwardRole_(x.row[9])));
- const ordered=quoteRows.sort((a,b)=>new Date(a.row[3]||0)-new Date(b.row[3]||0)),selected=ordered.slice(0,5),detailRows=getOrCreateSheet(ss,"DetalleCotizacionesCompra").getDataRange().getValues().slice(1),now=new Date();
+ const req=found.request,requestItems=found.items,quoteSheet=getOrCreateSheet(ss,"CotizacionesCompra"),detailSheet=getOrCreateSheet(ss,"DetalleCotizacionesCompra"),actaSheet=getOrCreateSheet(ss,"ActasAdjudicacionCompra");
+ if(!purchaseQuotationSheetSchemaValid_(quoteSheet,["CotizacionID","SolicitudID","ProveedorID","FechaRecepcion","VigenciaOferta","PrecioTotal","PlazoEntregaDias","CondicionesPago","DocumentoAdjuntoUrl","EstadoSelection","Observaciones"])||!purchaseQuotationSheetSchemaValid_(detailSheet,["DetalleCotizacionID","CotizacionID","SolicitudID","ItemId","Descripcion","Unidad","CantidadSolicitada","CantidadCotizada","PrecioUnitario","Subtotal","Descuento","Impuestos","Flete","Total","Garantia","CumplimientoTecnico","EspecificacionesCumplidas","FechaRegistro"])||!purchaseQuotationSheetSchemaValid_(actaSheet,["ActaID","SolicitudID","Fecha","ResponsablesEvaluacionJSON","Dictamen","Justificacion","MontoAdjudicado","DetalleAdjudicacionJSON","OfertasDescartadasJSON","SnapshotCotizacionesJSON","Estado","AdjudicadoPor","IdempotencyKey","OrdenesCompraJSON"]))return {status:"error",code:"PURCHASE_QUOTATION_SCHEMA_INVALID",message:"El esquema de cotizaciones, detalle o actas no coincide con el contrato."};
+ const quoteRows=quoteSheet.getDataRange().getValues().slice(1).map((row,index)=>({row:row,index:index+2})).filter(x=>String(x.row[1]||"").trim()===String(p.solicitudId).trim()&&!["RECHAZADA","ANULADA","CANCELADA","DESCARTADA"].includes(normalizePurchaseAwardRole_(x.row[9])));
+ const ordered=quoteRows.sort((a,b)=>new Date(a.row[3]||0)-new Date(b.row[3]||0)),selected=ordered.slice(0,5),detailRows=detailSheet.getDataRange().getValues().slice(1),now=new Date();
  const quotes=selected.map(q=>{
   const lines=detailRows.filter(r=>String(r[1]||"").trim()===String(q.row[0]||"").trim()).map(r=>({itemId:String(r[3]||""),descripcion:String(r[4]||""),unidad:String(r[5]||""),cantidadSolicitada:Number(r[6]||0),cantidadCotizada:Number(r[7]||0),precioUnitario:Number(r[8]||0),subtotal:Number(r[9]||0),descuento:Number(r[10]||0),impuestos:Number(r[11]||0),flete:Number(r[12]||0),total:Number(r[13]||0),garantia:String(r[14]||""),cumplimientoTecnico:String(r[15]||""),especificacionesCumplidas:String(r[16]).toUpperCase()==="TRUE"||normalizePurchaseAwardRole_(r[16])==="CUMPLE"}));
   return {cotizacionId:String(q.row[0]),proveedorId:String(q.row[2]),fechaRecepcion:q.row[3],vigenciaOferta:q.row[4],vigente:purchaseQuoteIsValid_(q.row,now),precioTotal:Number(q.row[5]||0),plazoEntregaDias:Number(q.row[6]||0),condicionesPago:String(q.row[7]||""),documentoAdjuntoUrl:String(q.row[8]||""),estadoSelection:String(q.row[9]||""),observaciones:String(q.row[10]||""),lineas:lines,soloResumen:!lines.length};
@@ -8101,9 +8110,10 @@ function submitPurchaseQuotation(payload) {
  try{
   const ss=SpreadsheetApp.openById(SPREADSHEET_ID),access=purchaseQuotationAccess_(p,ss);if(!access.authorized)return {status:"error",code:access.code,message:"No tiene autorización para registrar cotizaciones."};
   const found=purchaseQuotationRequest_(ss,solicitudId,access.scope);if(found.error)return found.error;
-  const suppliers=getOrCreateSheet(ss,"ProveedoresActivos").getDataRange().getValues().slice(1).filter(r=>String(r[0]||"").trim()===proveedorId);
+  const supplierSheet=getOrCreateSheet(ss,"ProveedoresActivos");if(!purchaseQuotationSheetSchemaValid_(supplierSheet,["ProveedorID","FechaRegistro","NombreProveedor","RTN","Telefono","Email","RubroServicio","Estado","Observaciones"]))return {status:"error",code:"PURCHASE_QUOTATION_SCHEMA_INVALID",message:"El catálogo de proveedores no coincide con el contrato."};
+  const suppliers=supplierSheet.getDataRange().getValues().slice(1).filter(r=>String(r[0]||"").trim()===proveedorId);
   if(suppliers.length!==1||normalizePurchaseAwardRole_(suppliers[0][7])!=="ACTIVO")return {status:"error",code:"SUPPLIER_NOT_FOUND_OR_INACTIVE",message:"El proveedor no existe, está duplicado o no está activo."};
-  quoteSheet=getOrCreateSheet(ss,"CotizacionesCompra");const quoteRows=quoteSheet.getDataRange().getValues().slice(1);
+  quoteSheet=getOrCreateSheet(ss,"CotizacionesCompra");detailSheet=getOrCreateSheet(ss,"DetalleCotizacionesCompra");if(!purchaseQuotationSheetSchemaValid_(quoteSheet,["CotizacionID","SolicitudID","ProveedorID","FechaRecepcion","VigenciaOferta","PrecioTotal","PlazoEntregaDias","CondicionesPago","DocumentoAdjuntoUrl","EstadoSelection","Observaciones"])||!purchaseQuotationSheetSchemaValid_(detailSheet,["DetalleCotizacionID","CotizacionID","SolicitudID","ItemId","Descripcion","Unidad","CantidadSolicitada","CantidadCotizada","PrecioUnitario","Subtotal","Descuento","Impuestos","Flete","Total","Garantia","CumplimientoTecnico","EspecificacionesCumplidas","FechaRegistro"]))return {status:"error",code:"PURCHASE_QUOTATION_SCHEMA_INVALID",message:"El esquema de cotizaciones no coincide con el contrato."};const quoteRows=quoteSheet.getDataRange().getValues().slice(1);
   if(quoteRows.some(r=>String(r[1]||"").trim()===solicitudId&&String(r[2]||"").trim()===proveedorId&&!["RECHAZADA","ANULADA","CANCELADA","DESCARTADA"].includes(normalizePurchaseAwardRole_(r[9]))))return {status:"error",code:"DUPLICATE_SUPPLIER_QUOTATION",message:"Ya existe una cotización activa de este proveedor para la solicitud."};
   const requestItems=found.items,normalized=[],seen=new Set();
   details.forEach((line,index)=>{
@@ -8121,7 +8131,7 @@ function submitPurchaseQuotation(payload) {
   if(!Number.isFinite(price)||price<0||details.length&&Math.abs(purchaseQuotationRound_(price)-purchaseQuotationRound_(calculated))>0.01)return {status:"error",code:"PURCHASE_QUOTATION_TOTAL_MISMATCH",message:"El total de la cotización no coincide con la suma de sus partidas."};
   const now=new Date(),quoteId="COT-"+Utilities.getUuid();detailSheet=getOrCreateSheet(ss,"DetalleCotizacionesCompra");
   quoteRowIndex=quoteSheet.getLastRow()+1;quoteSheet.appendRow([quoteId,solicitudId,proveedorId,now,p.vigenciaOferta||"30 días",purchaseQuotationRound_(price),Math.max(0,parseInt(p.plazoEntregaDias||5,10)),p.condicionesPago||"Contado",p.documentoAdjuntoUrl||"","EnRevision",p.observaciones||""]);
-  if(normalized.length){detailStart=detailSheet.getLastRow()+1;normalized.forEach(line=>detailSheet.appendRow(["DQC-"+Utilities.getUuid(),quoteId,solicitudId,line.itemId,line.descripcion,line.unidad,line.cantidadSolicitada,line.cantidadCotizada,line.precioUnitario,line.subtotal,line.descuento,line.impuestos,line.flete,line.total,line.garantia,line.cumplimientoTecnico,line.especificacionesCumplidas,now]));detailCount=normalized.length;}
+  if(normalized.length){detailStart=detailSheet.getLastRow()+1;detailCount=normalized.length;normalized.forEach(line=>detailSheet.appendRow(["DQC-"+Utilities.getUuid(),quoteId,solicitudId,line.itemId,line.descripcion,line.unidad,line.cantidadSolicitada,line.cantidadCotizada,line.precioUnitario,line.subtotal,line.descuento,line.impuestos,line.flete,line.total,line.garantia,line.cumplimientoTecnico,line.especificacionesCumplidas,now]));}
   return {status:"success",cotizacionId:quoteId,precioTotal:purchaseQuotationRound_(price),partidasRegistradas:normalized.length,message:"Cotización registrada con detalle de partidas."};
  }catch(error){
   if(quoteRowIndex&&quoteSheet)try{quoteSheet.getRange(quoteRowIndex,1,1,11).clearContent();}catch(_){}
@@ -8137,7 +8147,8 @@ function adjudicatePurchaseQuotations(payload){
  try{
   const ss=SpreadsheetApp.openById(SPREADSHEET_ID),access=purchaseQuotationAccess_(p,ss);if(!access.authorized)return {status:"error",code:access.code,message:"No tiene autorización para adjudicar cotizaciones."};
   const found=purchaseQuotationRequest_(ss,solicitudId,access.scope);if(found.error)return found.error;
-  requestSheet=getOrCreateSheet(ss,"SolicitudesCompra");requestSnapshot={index:found.request.index,state:found.request.row[9]};quoteSheet=getOrCreateSheet(ss,"CotizacionesCompra");ordersSheet=getOrCreateSheet(ss,"OrdenesCompra");actaSheet=getOrCreateSheet(ss,"ActasAdjudicacionCompra");
+  requestSheet=getOrCreateSheet(ss,"SolicitudesCompra");requestSnapshot={index:found.request.index,state:found.request.row[9]};quoteSheet=getOrCreateSheet(ss,"CotizacionesCompra");ordersSheet=getOrCreateSheet(ss,"OrdenesCompra");actaSheet=getOrCreateSheet(ss,"ActasAdjudicacionCompra");const supplierSheet=getOrCreateSheet(ss,"ProveedoresActivos");
+  if(!purchaseQuotationSheetSchemaValid_(quoteSheet,["CotizacionID","SolicitudID","ProveedorID","FechaRecepcion","VigenciaOferta","PrecioTotal","PlazoEntregaDias","CondicionesPago","DocumentoAdjuntoUrl","EstadoSelection","Observaciones"])||!purchaseQuotationSheetSchemaValid_(ordersSheet,["OrdenCompraID","SolicitudID","CotizacionID","ProveedorID","FechaEmision","FechaEntregaEstimada","DetalleItemsJSON","MontoTotal","CentroCosto","EstadoOrden","AprobadoPor","Observaciones","SolicitanteUserId","VersionDocumental","ArchivoPdfUrl"])||!purchaseQuotationSheetSchemaValid_(actaSheet,["ActaID","SolicitudID","Fecha","ResponsablesEvaluacionJSON","Dictamen","Justificacion","MontoAdjudicado","DetalleAdjudicacionJSON","OfertasDescartadasJSON","SnapshotCotizacionesJSON","Estado","AdjudicadoPor","IdempotencyKey","OrdenesCompraJSON"])||!purchaseQuotationSheetSchemaValid_(supplierSheet,["ProveedorID","FechaRegistro","NombreProveedor","RTN","Telefono","Email","RubroServicio","Estado","Observaciones"]))return {status:"error",code:"PURCHASE_QUOTATION_SCHEMA_INVALID",message:"El esquema de órdenes, cotizaciones, actas o proveedores no coincide con el contrato."};
   const actaRows=actaSheet.getDataRange().getValues(),existing=actaRows.slice(1).find(r=>String(r[12]||"").trim()===idempotencyKey);
   if(existing)return {status:"success",actaId:String(existing[0]),ordenes:purchaseQuotationJsonArray_(existing[13]),idempotente:true,message:"La adjudicación ya había sido registrada."};
   if(actaRows.slice(1).some(r=>String(r[1]||"").trim()===solicitudId))return {status:"error",code:"PURCHASE_REQUEST_ALREADY_AWARDED",message:"La solicitud ya tiene un acta de adjudicación; no se puede duplicar."};
