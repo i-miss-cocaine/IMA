@@ -2296,7 +2296,12 @@
             listEl.replaceChildren();
             statusEl.textContent = 'Consultando tu historial de asistencia...';
             try {
-                const res = await fetchApi('ACCOUNTING', 'getStaffAttendanceLogs', {});
+                const selfService = await fetchApi('ACCOUNTING', 'getEmployeeSelfServicePortal', {});
+                if (!selfService || selfService.status !== 'success' || !selfService.data || !selfService.data.effectiveUserId) {
+                    statusEl.textContent = (selfService && selfService.message) || 'No fue posible verificar tu expediente laboral.';
+                    return;
+                }
+                const res = await fetchApi('ACCOUNTING', 'getStaffAttendanceLogs', { empleadoId: selfService.data.effectiveUserId });
                 if (!res || res.status !== 'success' || !Array.isArray(res.asistencias)) {
                     statusEl.textContent = (res && res.message) || 'No fue posible consultar tu historial de asistencia.';
                     return;

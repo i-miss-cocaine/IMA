@@ -691,7 +691,13 @@ async function verifyAttendanceClientRendering(){
  const context={attendanceResponse:response};
  context.document={getElementById:id=>nodes[id]||null,createElement:()=>makeNode()};
  context.fetchApi=async(service,action,payload)=>{
-  assert.equal(service,"ACCOUNTING");assert.equal(action,"getStaffAttendanceLogs");assert.deepEqual(payload,{});
+  assert.equal(service,"ACCOUNTING");
+  if(action==="getEmployeeSelfServicePortal"){
+   assert.deepEqual(payload,{});
+   return {status:"success",data:{effectiveUserId:"U-SELF"}};
+  }
+  assert.equal(action,"getStaffAttendanceLogs");
+  assert.deepEqual(payload,{empleadoId:"U-SELF"},"attendance queries must be scoped to the user resolved by the verified self-service endpoint");
   return context.attendanceResponse;
  };
  context.console={error(){}};
