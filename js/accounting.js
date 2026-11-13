@@ -794,7 +794,7 @@ function renderBajasView(container) {
               <option value="Inventario">Insumo / Material de Inventario</option>
             </select>
           </div>
-          <div><label class="block font-bold text-gray-600 mb-1">Fecha efectiva de baja (cierre mensual para activos depreciables)</label><input type="date" id="baj-fecha" class="w-full p-2 border border-gray-300 rounded-xl"></div><div><label class="block font-bold text-gray-600 mb-1">Valor de venta / recuperación</label><input type="number" min="0" step="0.01" value="0" id="baj-valor-venta" class="w-full p-2 border border-gray-300 rounded-xl"></div>
+          <div><label class="block font-bold text-gray-600 mb-1">Fecha efectiva de baja (cierre mensual para activos depreciables)</label><input type="date" id="baj-fecha" required class="w-full p-2 border border-gray-300 rounded-xl"></div><div><label class="block font-bold text-gray-600 mb-1">Valor de venta / recuperación</label><input type="number" min="0" step="0.01" value="0" id="baj-valor-venta" class="w-full p-2 border border-gray-300 rounded-xl"></div>
           <div>
             <label class="block font-bold text-gray-600 mb-1">Motivo de Baja *</label>
             <textarea id="baj-motivo" required class="w-full p-2 border border-gray-300 rounded-xl" rows="2" placeholder="Desuso, obsolescencia, daño irreparable..."></textarea>
