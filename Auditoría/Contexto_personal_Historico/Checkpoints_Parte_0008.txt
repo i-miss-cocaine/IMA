@@ -205,4 +205,6 @@
 - **Beta:** BETA-FUNC-048 Pendiente beta.
 - **Estado residual:** TASK-153 permanece En ejecución; AUD-NG-140 continúa abierto por PDF privado/real y demás superficies.
 - **Siguiente acción:** inspeccionar generación/entrega de PDF de nómina y comprobar propiedad, privacidad y autorización de descarga; no ejecutar esa tarea en esta iteración.
+
+- **Trazabilidad de intentos CI:** las ejecuciones intermedias 43354589494, 43354700146, 43354813770, 43354889738, 43354978745 y 43355055912 terminaron FAIL durante la calibración de aserciones/fixtures y del escenario concurrente; no se contabilizan como PASS. Se corrigieron los contratos y el mock determinista de lock. El resultado focal final es run 43355125476, con ACCOUNTING departmental resource access PASS. El workflow completo aún falla posteriormente en User Role Membership (línea 119), ya registrado como incidencia heredada.
 ===============================================================================
