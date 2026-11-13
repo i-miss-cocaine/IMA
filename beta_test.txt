@@ -1540,3 +1540,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 
 ## Continuación activa de casos beta
 El archivo maestro histórico supera el umbral de rotación de 180.000 caracteres. Los casos nuevos desde C1.688 se registran en `beta_test_Parte_0002.txt`; este archivo raíz conserva el historial anterior y actúa como índice canónico.
+
+
+===============================================================================
+### BETA-FUNC-079 — TASK-179 — Integración contable de nómina y ajustes
+- **Módulo/roles:** Contabilidad / Recursos Humanos / Contador / Administrador.
+- **Objetivo:** verificar asiento integral por planilla cerrada, conciliación de obligaciones patronales, vínculo AST-Planilla y asientos compensatorios sin alterar el original.
+- **Precondiciones:** entorno beta aislado; planilla cerrada con al menos un empleado; expediente y ResourceOwnership válidos; cuentas contables configuradas; préstamo con saldo y ledger de nómina disponible.
+- **Pasos:** cerrar una planilla con salario, horas extra, bonificaciones, IHSS/RAP/ISR, deducciones y aportes patronales; confirmar cuentas 5101–5105, 2101–2106, 1105 y 1101; reintentar el cierre; validar el AST vinculado en PlanillasNomenclatura; generar un ajuste con referencia única y motivo; repetirlo; probar usuario sin rol y usuario fuera de scope.
+- **Resultado esperado:** débitos y créditos difieren como máximo L 0.01; aportes patronales incrementan el gasto institucional; préstamo reduce saldo por 1105 sin alterar salario neto; un solo asiento original por planilla; ajustes idempotentes y trazables que preservan el asiento original.
+- **Evidencia requerida:** planilla de prueba, detalle de líneas, totales Debe/Haber, IDs AST, vínculo de planilla, referencia de ajuste, actor y auditoría de denegaciones; sin datos personales reales.
+- **Estado:** Pendiente beta; no desplegado en Apps Script/Sheets real.
+===============================================================================

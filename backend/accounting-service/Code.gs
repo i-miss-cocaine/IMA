@@ -5309,6 +5309,87 @@ function summarizePayrollConceptDetails_(ss,planillaId) {
   return {incomeTotal:Math.round(incomeTotal*100)/100,deductionTotal:Math.round(deductionTotal*100)/100,employerTotal:Math.round(employerTotal*100)/100,journalLines};
 }
 
+
+function getPayrollPlanHeaders_(){return ["PlanillaID","FechaGeneracion","PeriodoMes","EmpleadoId","EmpleadoNombre","CargoPuesto","SalarioBase","HorasExtras","MontoHorasExtras","Bonificaciones","DeduccionIHSS","DeduccionRAP","DeduccionISR","OtrasDeducciones","SalarioNeto","Estado","PatronalIHSS","PatronalRAP","PatronalINFOP","CostoLaboralTotal"];}
+function isValidPayrollPlanHeaders_(headers){const h=getPayrollPlanHeaders_();return Array.isArray(headers)&&(headers.length===h.length||headers.length===h.length+1)&&h.every((x,i)=>String(headers[i]||"").trim().toUpperCase()===x.toUpperCase())&&(headers.length===h.length||String(headers[h.length]||"").trim().toUpperCase()==="ASIENTOCONTABLEID");}
+function ensurePayrollJournalLinkColumn_(sheet){const data=sheet.getDataRange().getValues(),h=getPayrollPlanHeaders_();if(!data.length||!isValidPayrollPlanHeaders_(data[0]))throw new Error("RESOURCE_SCHEMA_INVALID: PlanillasNomenclatura");if(data[0].length===h.length)sheet.getRange(1,h.length+1).setValue("AsientoContableID");return h.length+1;}
+function payrollMoney_(value,code){const n=Number(value==null||value===""?0:value);if(!Number.isFinite(n)||n<0)throw new Error(code||"PAYROLL_JOURNAL_AMOUNT_INVALID");return Math.round((n+Number.EPSILON)*100)/100;}
+function buildPayrollJournalLines_(planRows,conceptSummary,loanDeductionTotal){
+ if(!Array.isArray(planRows)||!planRows.length)throw new Error("PAYROLL_JOURNAL_ROWS_REQUIRED");
+ const s=conceptSummary||{},sum=i=>planRows.reduce((t,r)=>t+payrollMoney_(r[i],"PAYROLL_JOURNAL_AMOUNT_INVALID"),0);
+ const salary=sum(6),overtime=sum(8),income=payrollMoney_(s.incomeTotal,"PAYROLL_JOURNAL_CONCEPT_INVALID"),ihss=sum(10),rap=sum(11),isr=sum(12),other=sum(13),net=sum(14),pIHSS=sum(16),pRAP=sum(17),pINFOP=sum(18),loans=payrollMoney_(loanDeductionTotal,"PAYROLL_JOURNAL_LOAN_INVALID"),deductionConcepts=payrollMoney_(s.deductionTotal,"PAYROLL_JOURNAL_CONCEPT_INVALID");
+ payrollMoney_(s.employerTotal,"PAYROLL_JOURNAL_CONCEPT_INVALID");
+ const gross=Math.round((salary+overtime+income)*100)/100,deductions=Math.round((ihss+rap+isr+other)*100)/100;
+ if(Math.abs(gross-(deductions+net))>0.01)throw new Error("PAYROLL_JOURNAL_NET_RECONCILIATION_REQUIRED");
+ const nonLoanOther=Math.round((other-deductionConcepts-loans)*100)/100;
+ if(nonLoanOther < -0.01||nonLoanOther>salary+overtime+0.01)throw new Error("PAYROLL_JOURNAL_DEDUCTIONS_RECONCILIATION_REQUIRED");
+ const lines=[],add=(account,name,debit,credit)=>{const d=payrollMoney_(debit),h=payrollMoney_(credit);if(d>0||h>0)lines.push({cuenta:account,nombre:name,debe:d,haber:h});};
+ const salaryOffset=Math.min(salary,Math.max(0,nonLoanOther)),overtimeOffset=Math.max(0,nonLoanOther-salary);
+ add("5101","Gasto de salarios ordinarios",salary,salaryOffset);
+ add("5102","Gasto de horas extras y recargos",overtime,overtimeOffset);
+ add("5103","Gasto de aportaciones patronales IHSS",pIHSS,0);
+ add("5104","Gasto de aportaciones patronales RAP",pRAP,0);
+ add("5105","Gasto de aporte patronal INFOP",pINFOP,0);
+ add("2101","Retenciones obreras IHSS por pagar",0,ihss);
+ add("2102","Retenciones obreras RAP por pagar",0,rap);
+ add("2103","Retenciones ISR por pagar",0,isr);
+ add("2104","Obligaciones patronales IHSS por pagar",0,pIHSS);
+ add("2105","Obligaciones patronales RAP por pagar",0,pRAP);
+ add("2106","INFOP por pagar",0,pINFOP);
+ add("1105","Préstamos y anticipos por cobrar - amortización de saldo",0,loans);
+ add("1101","Sueldos netos por pagar / Bancos",0,net);
+ (Array.isArray(s.journalLines)?s.journalLines:[]).forEach(x=>{const account=String(x&&x.cuenta||"").trim(),name=String(x&&x.nombre||"Concepto salarial").trim().slice(0,120),d=payrollMoney_(x.debe,"PAYROLL_JOURNAL_CONCEPT_INVALID"),h=payrollMoney_(x.haber,"PAYROLL_JOURNAL_CONCEPT_INVALID");if(!/^[A-Za-z0-9._-]{1,20}$/.test(account)||(d>0&&h>0))throw new Error("PAYROLL_JOURNAL_CONCEPT_INVALID");if(d>0||h>0)lines.push({cuenta:account,nombre:name,debe:d,haber:h});});
+ let debit=0,credit=0;lines.forEach(x=>{debit+=x.debe;credit+=x.haber;});debit=Math.round(debit*100)/100;credit=Math.round(credit*100)/100;
+ if(!lines.length||Math.abs(debit-credit)>0.01)throw new Error("PAYROLL_JOURNAL_UNBALANCED");
+ return {lineas:lines,totalDebe:debit,totalHaber:credit};
+}
+function getPayrollLoanAppliedAmountForPlanilla_(ss,planillaId){if(!ss.getSheetByName("AmortizacionPrestamosNomina"))return 0;const rows=getPayrollLoanLedger_(ss).rows||[],target=String(planillaId||"").trim(),reversed=new Set(rows.filter(r=>String(r[9]||"").trim()==="REVERSADO").map(r=>String(r[12]||"").trim()));return Math.round(rows.filter(r=>String(r[2]||"").trim()===target&&String(r[9]||"").trim()==="APLICADO"&&!reversed.has(String(r[0]||"").trim())).reduce((t,r)=>t+payrollMoney_(r[5],"PAYROLL_JOURNAL_LOAN_INVALID"),0)*100)/100;}
+function getPayrollJournalEntryById_(ss,id){const sh=ss.getSheetByName("AsientosContables");if(!sh)return null;const rows=sh.getDataRange().getValues().slice(1).filter(r=>String(r[0]||"").trim()===String(id||"").trim());return rows.length===1?rows[0]:null;}
+function validatePayrollJournalEntry_(row,referenceId,origin){if(!row||String(row[3]||"").trim()!==origin||String(row[4]||"").trim()!==String(referenceId||"").trim())throw new Error("PAYROLL_JOURNAL_LINK_INVALID");let lines=[];try{lines=JSON.parse(row[5]||"[]");}catch(e){throw new Error("PAYROLL_JOURNAL_ENTRY_INVALID");}if(!Array.isArray(lines)||!lines.length)throw new Error("PAYROLL_JOURNAL_ENTRY_INVALID");let d=0,h=0;lines.forEach(x=>{d+=payrollMoney_(x.debe,"PAYROLL_JOURNAL_ENTRY_INVALID");h+=payrollMoney_(x.haber,"PAYROLL_JOURNAL_ENTRY_INVALID");});d=Math.round(d*100)/100;h=Math.round(h*100)/100;if(Math.abs(d-h)>0.01)throw new Error("PAYROLL_JOURNAL_ENTRY_UNBALANCED");return {status:"success",asientoId:String(row[0]),totalDebe:d,totalHaber:h,estado:row[6]||"Asentado",idempotent:true};}
+function recordPayrollJournalEntry_(ss,planillaId,planRows,conceptSummary,actorId){
+ const sheet=ss.getSheetByName("PlanillasNomenclatura");if(!sheet)throw new Error("RESOURCE_NOT_FOUND: PlanillasNomenclatura");
+ const col=ensurePayrollJournalLinkColumn_(sheet),data=sheet.getDataRange().getValues(),matches=data.slice(1).map((r,i)=>({row:r,index:i+2})).filter(x=>String(x.row[0]||"").trim()===String(planillaId).trim());
+ if(!matches.length||matches.length!==planRows.length)throw new Error("PAYROLL_JOURNAL_PLANILLA_CHANGED");
+ const ids=[...new Set(matches.map(x=>String(x.row[col-1]||"").trim()).filter(Boolean))];if(ids.length>1)throw new Error("PAYROLL_JOURNAL_LINK_AMBIGUOUS");
+ const journal=getOrCreateSheet(ss,"AsientosContables"),existing=journal.getDataRange().getValues().slice(1).filter(r=>String(r[3]||"").trim()==="Planillas"&&String(r[4]||"").trim()===String(planillaId).trim());
+ if(existing.length>1)throw new Error("PAYROLL_JOURNAL_DUPLICATE_REQUIRES_RECONCILIATION");
+ if(ids.length){const entry=getPayrollJournalEntryById_(ss,ids[0]);if(!entry)throw new Error("PAYROLL_JOURNAL_LINK_ORPHANED");const valid=validatePayrollJournalEntry_(entry,planillaId,"Planillas");if(existing.length!==1||String(existing[0][0])!==ids[0])throw new Error("PAYROLL_JOURNAL_LINK_CONFLICT");return valid;}
+ if(existing.length===1){const valid=validatePayrollJournalEntry_(existing[0],planillaId,"Planillas");matches.forEach(x=>sheet.getRange(x.index,col).setValue(valid.asientoId));return valid;}
+ const built=buildPayrollJournalLines_(planRows,conceptSummary,getPayrollLoanAppliedAmountForPlanilla_(ss,planillaId)),result=recordAccountingJournalEntry({descripcion:"Contabilización integral de planilla "+planillaId+" - salarios, retenciones y obligaciones patronales",origenModulo:"Planillas",referenciaId:planillaId,creadoPor:actorId||"SYSTEM_PAYROLL",lineas:built.lineas});
+ if(!result||result.status!=="success"||!result.asientoId)throw new Error("PAYROLL_JOURNAL_POST_FAILED");matches.forEach(x=>sheet.getRange(x.index,col).setValue(result.asientoId));return {status:"success",asientoId:result.asientoId,totalDebe:built.totalDebe,totalHaber:built.totalHaber,estado:result.estado,idempotent:false};
+}
+function recordPayrollJournalAdjustment(payload){
+ const p=payload||{},actor=getVerifiedAccountingIdentity_(p);if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+ const role=String(actor.role||"").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Z0-9]/g,"");if(!["CONTADOR","ADMINISTRADOR"].includes(role))return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+ const id=String(p.planillaId||"").trim(),ref=String(p.referenciaAjuste||"").trim(),reason=String(p.motivo||"").trim().slice(0,500);
+ if(!id||!/^[A-Za-z0-9_-]{6,80}$/.test(ref)||reason.length<12||!Array.isArray(p.lineas)||p.lineas.length<2||p.lineas.length>30)return {status:"error",code:"PAYROLL_ADJUSTMENT_INVALID",message:"Planilla, referencia única, motivo y líneas de ajuste son obligatorios."};
+ const lines=[];let debit=0,credit=0;for(const x of p.lineas){const account=String(x&&x.cuenta||"").trim(),name=String(x&&x.nombre||"").trim().slice(0,120),d=Number(x&&x.debe||0),h=Number(x&&x.haber||0);if(!/^[A-Za-z0-9._-]{1,20}$/.test(account)||!name||!Number.isFinite(d)||!Number.isFinite(h)||d<0||h<0||(d>0&&h>0)||(d===0&&h===0))return {status:"error",code:"PAYROLL_ADJUSTMENT_LINES_INVALID",message:"Las líneas deben tener cuentas válidas y un solo importe positivo por línea."};const rd=Math.round(d*100)/100,rh=Math.round(h*100)/100;debit+=rd;credit+=rh;lines.push({cuenta:account,nombre:name,debe:rd,haber:rh});}
+ debit=Math.round(debit*100)/100;credit=Math.round(credit*100)/100;if(Math.abs(debit-credit)>0.01)return {status:"error",code:"PAYROLL_ADJUSTMENT_UNBALANCED",message:"El asiento de ajuste debe cuadrar por partida doble."};
+ const lock=LockService.getScriptLock();if(!lock.tryLock(10000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La operación está ocupada. Intente nuevamente."};
+ try{
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=ss.getSheetByName("PlanillasNomenclatura");if(!sh)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Planilla no disponible."};
+  const col=ensurePayrollJournalLinkColumn_(sh),data=sh.getDataRange().getValues();if(!data.length||!isValidPayrollPlanHeaders_(data[0]))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"Estructura de planillas no válida."};
+  const rows=data.slice(1).filter(r=>String(r[0]||"").trim()===id);if(!rows.length||rows.some(r=>String(r[15]||"").trim().toUpperCase()!=="CERRADA"))return {status:"error",code:"PAYROLL_ADJUSTMENT_REQUIRES_CLOSED_PLANILLA",message:"Solo se puede ajustar una planilla cerrada."};
+  let originalId=String(rows[0][col-1]||"").trim();
+  if(!originalId){const j=ss.getSheetByName("AsientosContables"),old=j?j.getDataRange().getValues().slice(1).filter(r=>String(r[3]||"").trim()==="Planillas"&&String(r[4]||"").trim()===id):[];if(old.length!==1)return {status:"error",code:"PAYROLL_JOURNAL_LINK_REQUIRED",message:"La planilla no tiene un asiento original único vinculado."};const valid=validatePayrollJournalEntry_(old[0],id,"Planillas");originalId=valid.asientoId;rows.forEach(r=>{const ix=data.findIndex(x=>x===r);sh.getRange(ix+1,col).setValue(originalId);});}
+  if(rows.some(r=>String(r[col-1]||"").trim()&&String(r[col-1]||"").trim()!==originalId))return {status:"error",code:"PAYROLL_JOURNAL_LINK_CONFLICT",message:"La planilla tiene vínculos contables contradictorios."};
+  const original=getPayrollJournalEntryById_(ss,originalId);if(!original)return {status:"error",code:"PAYROLL_JOURNAL_LINK_ORPHANED",message:"No se encontró el asiento original."};validatePayrollJournalEntry_(original,id,"Planillas");
+  const scope=getVerifiedAccountingDepartmentScope_(p,ss,actor);if(!scope||!scope.authorized)return {status:"error",code:scope&&scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"Acceso al ámbito de la planilla denegado."};
+  const employees=[...new Set(rows.map(r=>String(r[3]||"").trim()).filter(Boolean))];if(!employees.length)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Planilla no disponible."};
+  for(const employeeId of employees){const access=assertResourceOwnershipForScope_(ss,scope,"EXPEDIENTE_LABORAL",employeeId,"WRITE",p);if(!access||!access.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Planilla no disponible."};}
+  const adj=ss.getSheetByName("AjustesAsientosPlanilla")||getOrCreateSheet(ss,"AjustesAsientosPlanilla"),headers=["AjusteID","PlanillaID","AsientoOriginalID","AsientoAjusteID","ReferenciaAjuste","Motivo","LineasJSON","CreadoPor","Fecha","Estado"];
+  let ad=adj.getDataRange().getValues();if(!ad.length||!ad[0]||!ad[0].length||ad[0].every(x=>String(x||"").trim()==="")){adj.getRange(1,1,1,headers.length).setValues([headers]);ad=[headers];}
+  if(ad[0].length!==headers.length||headers.some((h,i)=>String(ad[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"Estructura de ajustes de planilla no válida."};
+  const prior=ad.slice(1).map((r,i)=>({row:r,index:i+2})).filter(x=>String(x.row[1]||"").trim()===id&&String(x.row[4]||"").trim()===ref);if(prior.length>1)return {status:"error",code:"PAYROLL_ADJUSTMENT_DUPLICATE",message:"Referencia de ajuste ambigua."};
+  const journalRef=id+":"+ref,journal=getOrCreateSheet(ss,"AsientosContables"),found=journal.getDataRange().getValues().slice(1).filter(r=>String(r[3]||"").trim()==="PlanillasAjuste"&&String(r[4]||"").trim()===journalRef);if(found.length>1)return {status:"error",code:"PAYROLL_ADJUSTMENT_DUPLICATE",message:"Hay varios asientos para esta referencia."};
+  if(prior.length===1&&String(prior[0].row[3]||"").trim()&&!found.length)return {status:"error",code:"PAYROLL_ADJUSTMENT_LINK_ORPHANED",message:"El asiento de ajuste vinculado no existe."};
+  let posted;if(found.length===1)posted=validatePayrollJournalEntry_(found[0],journalRef,"PlanillasAjuste");else posted=recordAccountingJournalEntry({descripcion:"Ajuste compensatorio de planilla "+id+"; asiento original "+originalId+"; motivo: "+reason,origenModulo:"PlanillasAjuste",referenciaId:journalRef,creadoPor:actor.userId,lineas});
+  if(prior.length===1){if(String(prior[0].row[3]||"").trim()&&String(prior[0].row[3]||"").trim()!==posted.asientoId)return {status:"error",code:"PAYROLL_ADJUSTMENT_LINK_CONFLICT",message:"Referencia de ajuste vinculada a otro asiento."};if(!String(prior[0].row[3]||"").trim())adj.getRange(prior[0].index,4).setValue(posted.asientoId);return {status:"success",ajusteId:prior[0].row[0],asientoId:posted.asientoId,asientoOriginalId:originalId,idempotent:true,message:"Ajuste compensatorio recuperado sin duplicar el asiento."};}
+  const ajusteId="PAJ-"+Utilities.getUuid();adj.appendRow([ajusteId,id,originalId,posted.asientoId,ref,reason,JSON.stringify(lines),actor.userId,new Date(),"Registrado"]);
+  return {status:"success",ajusteId,asientoId:posted.asientoId,asientoOriginalId:originalId,totalDebe:debit,totalHaber:credit,idempotent:false,message:"Ajuste compensatorio registrado; el asiento original permanece intacto."};
+ }catch(e){return {status:"error",code:String(e&&e.message||"PAYROLL_ADJUSTMENT_FAILED").slice(0,100),message:"No fue posible registrar el ajuste contable."};}finally{lock.releaseLock();}
+}
+
 function updatePayrollPeriodStatus(payload) {
   const { planillaId, nuevoEstado, observaciones, authRole } = payload || {};
   if (!planillaId || !nuevoEstado) throw new Error("planillaId y nuevoEstado son requeridos.");
@@ -5350,7 +5431,6 @@ function updatePayrollPeriodStatus(payload) {
 
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim() === String(planillaId).trim()) {
-      sheet.getRange(i + 1, 16).setValue(nuevoEstado);
       const sBase = parseFloat(data[i][6] || 0);
       const mHE = parseFloat(data[i][8] || 0);
       const bonif = parseFloat(data[i][9] || 0);
@@ -5393,26 +5473,13 @@ function updatePayrollPeriodStatus(payload) {
   const fixedDeductions = Math.max(0,Math.round((totalDeducciones-conceptSummary.deductionTotal)*100)/100);
   const fixedEmployerLiability = Math.max(0,Math.round((totalPatronal-conceptSummary.employerTotal)*100)/100);
 
-  // Generar asiento contable automático por partida doble equilibrada al APROBAR o CERRAR la planilla [TASK-009]
+  // Publicar/recuperar el asiento antes de confirmar el estado; permite reintentos seguros.
   let asientoRes = null;
-  if (["APROBADA","CERRADA","CONTABILIZADA"].includes(requestedState) && !["APROBADA","CERRADA","CONTABILIZADA"].includes(previousState)) {
-    try {
-      asientoRes = recordAccountingJournalEntry({
-        descripcion: `Contabilización de Planilla ${planillaId} (${nuevoEstado}) - Salarios y Aportaciones Patronales`,
-        origenModulo: "Planillas",
-        referenciaId: planillaId,
-        creadoPor: authRole || "RecursosHumanos",
-        lineas: [
-          { cuenta: "5101", nombre: "Gasto de Salarios y Planilla", debe: fixedGross, haber: 0 },
-          { cuenta: "5102", nombre: "Gasto de Aportaciones Patronales (IHSS/RAP/INFOP)", debe: totalGastoPatronal, haber: 0 },
-          { cuenta: "2101", nombre: "Retenciones y Deducciones de Empleados por Pagar", debe: 0, haber: fixedDeductions },
-          { cuenta: "2102", nombre: "Obligaciones Patronales por Pagar (IHSS/RAP/INFOP)", debe: 0, haber: fixedEmployerLiability },
-          { cuenta: "1101", nombre: "Bancos / Sueldos Netos por Pagar", debe: 0, haber: totalSalarioNeto }
-        ].concat(conceptSummary.journalLines)
-      });
-    } catch (e) {
-      logDebug("Error registrando asiento automático de planilla:", e.message);
-    }
+  if (["APROBADA","CERRADA","CONTABILIZADA"].includes(requestedState)) {
+    asientoRes = recordPayrollJournalEntry_(ss,planillaId,payrollMatches,conceptSummary,actor && actor.authorized ? actor.userId : "SYSTEM_PAYROLL");
+  }
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]||"").trim() === String(planillaId).trim()) sheet.getRange(i + 1, 16).setValue(nuevoEstado);
   }
 
   logStructuredEvent("ACCOUNTING", "updatePayrollPeriodStatus", "INFO", "PAYROLL_STATUS_UPDATED", `Planilla ${planillaId} actualizada a estado ${nuevoEstado}`, payload, authRole);
@@ -6495,7 +6562,7 @@ function generatePayrollReceiptPDF(payload) {
     if(!access.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
 
     const planData=planSheet.getDataRange().getValues(),planHeaders=["PlanillaID","FechaGeneracion","PeriodoMes","EmpleadoId","EmpleadoNombre","CargoPuesto","SalarioBase","HorasExtras","MontoHorasExtras","Bonificaciones","DeduccionIHSS","DeduccionRAP","DeduccionISR","OtrasDeducciones","SalarioNeto","Estado","PatronalIHSS","PatronalRAP","PatronalINFOP","CostoLaboralTotal"];
-    if(!planData.length||JSON.stringify(planData[0].map(String))!==JSON.stringify(planHeaders))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de planillas no es válida."};
+    if(!planData.length||!isValidPayrollPlanHeaders_(planData[0]))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de planillas no es válida."};
     const planRows=planData.slice(1),requestedPlanilla=String(p.planillaId||"").trim(),requestedPeriod=String(p.periodoMes||"").trim();
     if(!requestedPlanilla&&!requestedPeriod)return {status:"error",code:"PLANILLA_SELECTION_REQUIRED",message:"Indique el periodo o la planilla."};
     const matchingPlans=planRows.filter(r=>String(r[3]||"").trim()===targetExpedienteId&&(!requestedPlanilla||String(r[0]||"").trim()===requestedPlanilla)&&(!requestedPeriod||String(r[2]||"").trim()===requestedPeriod));
@@ -6599,7 +6666,7 @@ function getPayrollReceiptPDFFile(payload){
   const boleta=selected[0],planillaId=String(boleta[1]||"").trim(),expedienteId=String(boleta[3]||"").trim(),period=String(boleta[5]||"").trim(),fileId=String(boleta[10]||"").trim();
   if(!planillaId||!expedienteId||!period||!/^[A-Za-z0-9_-]{10,}$/.test(fileId))return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Archivo no disponible."};
   const planData=planSheet.getDataRange().getValues(),planHeaders=["PlanillaID","FechaGeneracion","PeriodoMes","EmpleadoId","EmpleadoNombre","CargoPuesto","SalarioBase","HorasExtras","MontoHorasExtras","Bonificaciones","DeduccionIHSS","DeduccionRAP","DeduccionISR","OtrasDeducciones","SalarioNeto","Estado","PatronalIHSS","PatronalRAP","PatronalINFOP","CostoLaboralTotal"];
-  if(!planData.length||JSON.stringify(planData[0].map(String))!==JSON.stringify(planHeaders))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de planillas no es válida."};
+  if(!planData.length||!isValidPayrollPlanHeaders_(planData[0]))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de planillas no es válida."};
   const planRows=planData.slice(1),matches=planRows.filter(r=>String(r[0]||"").trim()===planillaId&&String(r[3]||"").trim()===expedienteId&&String(r[2]||"").trim()===period);
   if(matches.length!==1||planRows.filter(r=>String(r[0]||"").trim()===planillaId&&String(r[3]||"").trim()===expedienteId&&String(r[2]||"").trim()===period).length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Archivo no disponible."};
   const expData=expSheet.getDataRange().getValues(),expHeaders=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
@@ -7029,7 +7096,7 @@ function getStaffPayrollReceipt(payload) {
  const eh=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
  const ph=["PlanillaID","FechaGeneracion","PeriodoMes","EmpleadoId","EmpleadoNombre","CargoPuesto","SalarioBase","HorasExtras","MontoHorasExtras","Bonificaciones","DeduccionIHSS","DeduccionRAP","DeduccionISR","OtrasDeducciones","SalarioNeto","Estado","PatronalIHSS","PatronalRAP","PatronalINFOP","CostoLaboralTotal"];
  const bh=["BoletaID","PlanillaID","FechaEmision","EmpleadoId","EmpleadoNombre","PeriodoMes","TotalDevengado","TotalDeducciones","NetoAPagar","EstadoBoleta"];
- const em=read("ExpedientesLaborales",eh,false),pl=read("PlanillasNomenclatura",ph,true),bo=read("BoletasPago",bh,true,[bh.concat(["DriveFileId"])]);
+ const em=read("ExpedientesLaborales",eh,false),pl=read("PlanillasNomenclatura",ph,true,[ph.concat(["AsientoContableID"])]),bo=read("BoletasPago",bh,true,[bh.concat(["DriveFileId"])]);
  if(!em||em.error||pl.error||bo.error)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de las boletas de pago no es válida."};
  const expCounts=Object.create(null),userCounts=Object.create(null);
  em.rows.forEach(r=>{const e=String(r[0]||"").trim(),u=String(r[2]||"").trim();if(e)expCounts[e]=(expCounts[e]||0)+1;if(u)userCounts[u]=(userCounts[u]||0)+1;});
@@ -7075,7 +7142,7 @@ function getPayrollReceiptDistributionContext_(payload,ss,planillaId) {
   const planHeaders=["PlanillaID","FechaGeneracion","PeriodoMes","EmpleadoId","EmpleadoNombre","CargoPuesto","SalarioBase","HorasExtras","MontoHorasExtras","Bonificaciones","DeduccionIHSS","DeduccionRAP","DeduccionISR","OtrasDeducciones","SalarioNeto","Estado","PatronalIHSS","PatronalRAP","PatronalINFOP","CostoLaboralTotal"];
   const expHeaders=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
   const planData=planSheet.getDataRange().getValues(),expData=expSheet.getDataRange().getValues(),userData=userSheet.getDataRange().getValues();
-  if(!planData.length||planData[0].length!==planHeaders.length||planHeaders.some((h,i)=>String(planData[0][i]||"").trim().toUpperCase()!==h.toUpperCase())||!expData.length||expData[0].length!==expHeaders.length||expHeaders.some((h,i)=>String(expData[0][i]||"").trim().toUpperCase()!==h.toUpperCase())||!userData.length||!userData[0]||userData[0].length<11)return {error:"RESOURCE_SCHEMA_INVALID",message:"La estructura de planillas, expedientes o usuarios no es válida."};
+  if(!planData.length||!isValidPayrollPlanHeaders_(planData[0])||!expData.length||expData[0].length!==expHeaders.length||expHeaders.some((h,i)=>String(expData[0][i]||"").trim().toUpperCase()!==h.toUpperCase())||!userData.length||!userData[0]||userData[0].length<11)return {error:"RESOURCE_SCHEMA_INVALID",message:"La estructura de planillas, expedientes o usuarios no es válida."};
   const plans=planData.slice(1).filter(r=>String(r[0]||"").trim()===planillaId);
   if(!plans.length)return {error:"RESOURCE_NOT_FOUND",message:"La planilla seleccionada no está disponible."};
   if(plans.some(r=>!Array.isArray(r)||r.length!==planHeaders.length))return {error:"RESOURCE_SCHEMA_INVALID",message:"La estructura de la planilla no es válida."};
