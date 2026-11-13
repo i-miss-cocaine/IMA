@@ -576,7 +576,7 @@ function validateRolePermission(action, payload) {
   if (!ctxCheck.authorized) {
     return { authorized: false, role: userRole + " (" + ctxCheck.reason + ")" };
   }
-  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "getLoanAmortizationSchedule", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher", "recordStaffCheckIn", "recordStaffAttendance", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitLeaveVacationRequest", "submitVacationRequest", "getLeaveVacationRequests", "getVacationRequests", "reviewLeaveVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "recordMedicalLeave"];
+  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "getLoanAmortizationSchedule", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher", "recordStaffCheckIn", "recordStaffAttendance", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitLeaveVacationRequest", "submitVacationRequest", "getLeaveVacationRequests", "getVacationRequests", "reviewLeaveVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure"];
   if (resourceScopeActions.indexOf(action) !== -1) {
     const roleKey = String(userRole || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
     const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1 &&
@@ -2736,202 +2736,149 @@ function generateBatchMonthlyCharges(payload) {
 }
 
 // [TAREA RH-07] [Fase Recursos Humanos] - Registro de incidencias laborales, medidas disciplinarias autorizadas y trazabilidad con estricta confidencialidad.
+function resolveLaborIncidentWriteAccess_(payload,ss,employeeId) {
+  const actor=getVerifiedAccountingIdentity_(payload);
+  if(!actor.authorized)return actor;
+  const role=normalizeVacationRole_(actor.role);
+  if(["RECURSOSHUMANOS","ADMINISTRADOR"].indexOf(role)===-1)return {authorized:false,code:"ROLE_NOT_ALLOWED"};
+  const id=String(employeeId||"").trim();
+  if(!id)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  const headers=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
+  const employees=getVacationSheetSnapshot_(ss,"ExpedientesLaborales",headers);
+  if(employees.missing||employees.error||employees.rows.some(r=>r.length!==headers.length))return {authorized:false,code:"RESOURCE_SCHEMA_INVALID"};
+  const byUser=employees.rows.filter(r=>String(r[2]||"").trim()===id);
+  if(byUser.length!==1)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  const expedienteId=String(byUser[0][0]||"").trim();
+  if(!expedienteId||employees.rows.filter(r=>String(r[0]||"").trim()===expedienteId).length!==1)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  try{if(payload&&typeof payload==="object")RESOURCE_OWNERSHIP_REQUEST_CACHE_.delete(payload);}catch(_){}
+  const scope=getVerifiedAccountingDepartmentScope_(payload,ss,actor);
+  if(!scope.authorized)return {authorized:false,code:scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED"};
+  const ownership=assertResourceOwnershipForScope_(ss,scope,"EXPEDIENTE_LABORAL",expedienteId,"WRITE",payload);
+  if(!ownership.authorized)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  return {authorized:true,actor:actor,empleadoId:id,expedienteId:expedienteId,accessType:ownership.accessType};
+}
+function ensureLaborWriteSheet_(ss,name,headers) {
+  let sheet=ss.getSheetByName(name);
+  if(!sheet)sheet=getOrCreateSheet(ss,name);
+  if(sheet.getLastRow()===0)sheet.appendRow(headers);
+  const snapshot=getVacationSheetSnapshot_(ss,name,headers);
+  if(snapshot.missing||snapshot.error||snapshot.rows.some(r=>r.length!==headers.length))return {error:true,sheet:sheet,rows:[]};
+  return {error:false,sheet:snapshot.sheet||sheet,rows:snapshot.rows};
+}
+function parseLaborBoolean_(value) {
+  if(value===true||value===false)return {valid:true,value:value};
+  const normalized=String(value===undefined||value===null?"":value).trim().toLowerCase();
+  if(normalized==="true"||normalized==="1"||normalized==="si"||normalized==="sí")return {valid:true,value:true};
+  if(normalized==="false"||normalized==="0"||normalized==="no")return {valid:true,value:false};
+  return {valid:false,value:false};
+}
 function manageLaborIncident(payload) {
-  const {
-    incidenciaId,
-    empleadoId,
-    fecha,
-    categoria,
-    descripcionObjetiva,
-    responsableRegistro,
-    estado,
-    responsabilidadEstablecida,
-    documentacionDriveUrl,
-    observacionesAclaraciones,
-    creadoPor
-  } = payload || {};
-
-  if (!empleadoId || !descripcionObjetiva) {
-    throw new Error("empleadoId y descripcionObjetiva son campos obligatorios.");
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "IncidenciasLaborales");
-
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow([
-      "IncidenciaID",
-      "EmpleadoID",
-      "Fecha",
-      "Categoria",
-      "DescripcionObjetiva",
-      "ResponsableRegistro",
-      "Estado",
-      "ResponsabilidadEstablecida",
-      "DocumentacionDriveUrl",
-      "ObservacionesAclaraciones",
-      "HistorialAclaracionesJSON",
-      "CreadoPor",
-      "FechaCreacion",
-      "UltimaModificacion"
-    ]);
-  }
-
-  const data = sheet.getDataRange().getValues();
-  const incId = incidenciaId || ("INC-LAB-" + Date.now());
-  const nowStr = new Date().toISOString();
-  let foundIndex = -1;
-  let currentRow = null;
-
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim() === String(incId).trim()) {
-      foundIndex = i + 1;
-      currentRow = data[i];
-      break;
+  const p=payload||{},employeeId=String(p.empleadoId||"").trim(),description=String(p.descripcionObjetiva||"").trim();
+  if(!employeeId||!description)return {status:"error",code:"LABOR_INCIDENT_FIELDS_REQUIRED",message:"Empleado y descripción objetiva son requeridos."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),initial=resolveLaborIncidentWriteAccess_(p,ss,employeeId);
+  if(!initial.authorized)return {status:"error",code:initial.code||"RESOURCE_NOT_FOUND",message:"No existe un expediente disponible para registrar la incidencia."};
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La operación está siendo procesada. Intente nuevamente."};
+  try{
+    const access=resolveLaborIncidentWriteAccess_(p,ss,employeeId);
+    if(!access.authorized)return {status:"error",code:access.code==="ROLE_NOT_ALLOWED"?"ROLE_NOT_ALLOWED":"RESOURCE_NOT_FOUND",message:"No existe un expediente disponible para registrar la incidencia."};
+    const headers=["IncidenciaID","EmpleadoID","Fecha","Categoria","DescripcionObjetiva","ResponsableRegistro","Estado","ResponsabilidadEstablecida","DocumentacionDriveUrl","ObservacionesAclaraciones","HistorialAclaracionesJSON","CreadoPor","FechaCreacion","UltimaModificacion"];
+    const snapshot=ensureLaborWriteSheet_(ss,"IncidenciasLaborales",headers);
+    if(snapshot.error)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de incidencias laborales no es válida."};
+    const suppliedId=String(p.incidenciaId||"").trim(),id=suppliedId||("INC-LAB-"+Utilities.getUuid());
+    const matches=snapshot.rows.map((row,index)=>({row:row,index:index})).filter(x=>String(x.row[0]||"").trim()===id);
+    if(matches.length>1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe una incidencia disponible."};
+    const existing=matches.length===1?matches[0]:null;
+    if(existing&&String(existing.row[1]||"").trim()!==access.empleadoId)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe una incidencia disponible."};
+    if(!existing&&snapshot.rows.some(r=>String(r[0]||"").trim()===id))return {status:"error",code:"LABOR_INCIDENT_ID_COLLISION",message:"No fue posible registrar la incidencia."};
+    const current=existing?existing.row.slice():null,now=new Date().toISOString(),today=now.split("T")[0];
+    let history=[];
+    if(current){
+      try{history=JSON.parse(current[10]||"[]");}catch(_){return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"El historial de aclaraciones no es válido."};}
+      if(!Array.isArray(history))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"El historial de aclaraciones no es válido."};
+      if(current[9])history.push({timestamp:now,modificadoPor:access.actor.userId,aclaracionAnterior:current[9],estadoAnterior:current[6]});
     }
-  }
-
-  if (foundIndex > 0) {
-    let historial = [];
-    try { historial = JSON.parse(currentRow[10] || "[]"); } catch (e) { historial = []; }
-
-    // Preservar aclaraciones anteriores sin borrado silencioso
-    if (currentRow[9]) {
-      historial.push({
-        timestamp: nowStr,
-        modificadoPor: creadoPor || "RecursosHumanos",
-        aclaracionAnterior: currentRow[9],
-        estadoAnterior: currentRow[6]
-      });
+    const responsibility=p.responsabilidadEstablecida===undefined?(current?current[7]:false):parseLaborBoolean_(p.responsabilidadEstablecida);
+    if(responsibility&&responsibility.valid===false)return {status:"error",code:"LABOR_INCIDENT_BOOLEAN_INVALID",message:"El valor de responsabilidad establecida no es válido."};
+    const row=[
+      id,access.empleadoId,
+      p.fecha!==undefined&&p.fecha!==""?p.fecha:(current?current[2]:today),
+      String(p.categoria!==undefined&&p.categoria!==""?p.categoria:(current?current[3]:"ObservacionOperativa")),
+      description,access.actor.userId,
+      String(p.estado!==undefined&&p.estado!==""?p.estado:(current?current[6]:"Registrada")),
+      responsibility&&responsibility.valid===true?responsibility.value:responsibility,
+      p.documentacionDriveUrl!==undefined?p.documentacionDriveUrl:(current?current[8]:""),
+      p.observacionesAclaraciones!==undefined?p.observacionesAclaraciones:(current?current[9]:""),
+      JSON.stringify(history),current?current[11]:access.actor.userId,current?current[12]:now,now
+    ];
+    if(existing){
+      const rowNumber=existing.index+2;
+      try{snapshot.sheet.getRange(rowNumber,1,1,headers.length).setValues([row]);}
+      catch(writeError){
+        try{snapshot.sheet.getRange(rowNumber,1,1,headers.length).setValues([current]);}
+        catch(rollbackError){return {status:"error",code:"LABOR_INCIDENT_COMPENSATION_REQUIRED",message:"No fue posible completar ni revertir la actualización."};}
+        return {status:"error",code:"LABOR_INCIDENT_WRITE_FAILED",message:"No fue posible actualizar la incidencia."};
+      }
+    }else{
+      try{snapshot.sheet.appendRow(row);}
+      catch(writeError){return {status:"error",code:"LABOR_INCIDENT_WRITE_FAILED",message:"No fue posible registrar la incidencia."};}
     }
-
-    sheet.getRange(foundIndex, 2).setValue(empleadoId);
-    sheet.getRange(foundIndex, 3).setValue(fecha || nowStr.split("T")[0]);
-    sheet.getRange(foundIndex, 4).setValue(categoria || "ObservacionOperativa");
-    sheet.getRange(foundIndex, 5).setValue(descripcionObjetiva);
-    sheet.getRange(foundIndex, 6).setValue(responsableRegistro || currentRow[5]);
-    sheet.getRange(foundIndex, 7).setValue(estado || currentRow[6] || "Registrada");
-    sheet.getRange(foundIndex, 8).setValue(responsabilidadEstablecida !== undefined ? Boolean(responsabilidadEstablecida) : currentRow[7]);
-    sheet.getRange(foundIndex, 9).setValue(documentacionDriveUrl !== undefined ? documentacionDriveUrl : currentRow[8]);
-    sheet.getRange(foundIndex, 10).setValue(observacionesAclaraciones !== undefined ? observacionesAclaraciones : currentRow[9]);
-    sheet.getRange(foundIndex, 11).setValue(JSON.stringify(historial));
-    sheet.getRange(foundIndex, 14).setValue(nowStr);
-  } else {
-    sheet.appendRow([
-      incId,
-      empleadoId,
-      fecha || nowStr.split("T")[0],
-      categoria || "ObservacionOperativa",
-      descripcionObjetiva,
-      responsableRegistro || creadoPor || "RecursosHumanos",
-      estado || "Registrada",
-      Boolean(responsabilidadEstablecida),
-      documentacionDriveUrl || "",
-      observacionesAclaraciones || "",
-      JSON.stringify([]),
-      creadoPor || "RecursosHumanos",
-      nowStr,
-      nowStr
-    ]);
-  }
-
-  return {
-    status: "success",
-    message: "Incidencia laboral registrada exitosamente.",
-    data: { incidenciaId: incId, empleadoId, estado: estado || "Registrada" }
-  };
+    return {status:"success",message:"Incidencia laboral registrada exitosamente.",data:{incidenciaId:id,empleadoId:access.empleadoId,estado:row[6]}};
+  }finally{lock.releaseLock();}
 }
-
 function manageDisciplinaryMeasure(payload) {
-  const {
-    medidaId,
-    incidenciaId,
-    empleadoId,
-    tipoMedida,
-    fundamentoDocumentado,
-    fechaEfectiva,
-    responsableAprobacion,
-    estadoMedida,
-    diasSuspension,
-    actaFirmadaDriveUrl,
-    creadoPor
-  } = payload || {};
-
-  if (!empleadoId || !tipoMedida || !fundamentoDocumentado) {
-    throw new Error("empleadoId, tipoMedida y fundamentoDocumentado son campos obligatorios.");
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "MedidasDisciplinarias");
-
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow([
-      "MedidaID",
-      "IncidenciaID",
-      "EmpleadoID",
-      "TipoMedida",
-      "FundamentoDocumentado",
-      "FechaEfectiva",
-      "ResponsableAprobacion",
-      "EstadoMedida",
-      "DiasSuspension",
-      "ActaFirmadaDriveUrl",
-      "CreadoPor",
-      "FechaCreacion",
-      "UltimaModificacion"
-    ]);
-  }
-
-  const data = sheet.getDataRange().getValues();
-  const medId = medidaId || ("MED-DISC-" + Date.now());
-  const nowStr = new Date().toISOString();
-  let foundIndex = -1;
-
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim() === String(medId).trim()) {
-      foundIndex = i + 1;
-      break;
+  const p=payload||{},employeeId=String(p.empleadoId||"").trim(),type=String(p.tipoMedida||"").trim(),foundation=String(p.fundamentoDocumentado||"").trim();
+  if(!employeeId||!type||!foundation)return {status:"error",code:"DISCIPLINARY_MEASURE_FIELDS_REQUIRED",message:"Empleado, tipo de medida y fundamento documentado son requeridos."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),initial=resolveLaborIncidentWriteAccess_(p,ss,employeeId);
+  if(!initial.authorized)return {status:"error",code:initial.code||"RESOURCE_NOT_FOUND",message:"No existe un expediente disponible para registrar la medida."};
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La operación está siendo procesada. Intente nuevamente."};
+  try{
+    const access=resolveLaborIncidentWriteAccess_(p,ss,employeeId);
+    if(!access.authorized)return {status:"error",code:access.code==="ROLE_NOT_ALLOWED"?"ROLE_NOT_ALLOWED":"RESOURCE_NOT_FOUND",message:"No existe un expediente disponible para registrar la medida."};
+    const headers=["MedidaID","IncidenciaID","EmpleadoID","TipoMedida","FundamentoDocumentado","FechaEfectiva","ResponsableAprobacion","EstadoMedida","DiasSuspension","ActaFirmadaDriveUrl","CreadoPor","FechaCreacion","UltimaModificacion"];
+    const snapshot=ensureLaborWriteSheet_(ss,"MedidasDisciplinarias",headers);
+    if(snapshot.error)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de medidas disciplinarias no es válida."};
+    const suppliedId=String(p.medidaId||"").trim(),id=suppliedId||("MED-DISC-"+Utilities.getUuid());
+    const matches=snapshot.rows.map((row,index)=>({row:row,index:index})).filter(x=>String(x.row[0]||"").trim()===id);
+    if(matches.length>1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe una medida disciplinaria disponible."};
+    const existing=matches.length===1?matches[0]:null;
+    if(existing&&String(existing.row[2]||"").trim()!==access.empleadoId)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe una medida disciplinaria disponible."};
+    const incidenceId=String(p.incidenciaId!==undefined?p.incidenciaId:(existing?existing.row[1]:"")||"").trim();
+    if(incidenceId){
+      const ih=["IncidenciaID","EmpleadoID","Fecha","Categoria","DescripcionObjetiva","ResponsableRegistro","Estado","ResponsabilidadEstablecida","DocumentacionDriveUrl","ObservacionesAclaraciones","HistorialAclaracionesJSON","CreadoPor","FechaCreacion","UltimaModificacion"];
+      const incidents=getVacationSheetSnapshot_(ss,"IncidenciasLaborales",ih);
+      if(incidents.missing||incidents.error||incidents.rows.some(r=>r.length!==ih.length))return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe una incidencia disponible para la medida."};
+      const linked=incidents.rows.filter(r=>String(r[0]||"").trim()===incidenceId);
+      if(linked.length!==1||String(linked[0][1]||"").trim()!==access.empleadoId)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe una incidencia disponible para la medida."};
     }
-  }
-
-  const estadoFinal = estadoMedida || "Aprobada";
-
-  if (foundIndex > 0) {
-    sheet.getRange(foundIndex, 2).setValue(incidenciaId || "");
-    sheet.getRange(foundIndex, 3).setValue(empleadoId);
-    sheet.getRange(foundIndex, 4).setValue(tipoMedida);
-    sheet.getRange(foundIndex, 5).setValue(fundamentoDocumentado);
-    sheet.getRange(foundIndex, 6).setValue(fechaEfectiva || nowStr.split("T")[0]);
-    sheet.getRange(foundIndex, 7).setValue(responsableAprobacion || "Direccion");
-    sheet.getRange(foundIndex, 8).setValue(estadoFinal);
-    sheet.getRange(foundIndex, 9).setValue(parseInt(diasSuspension || 0, 10));
-    sheet.getRange(foundIndex, 10).setValue(actaFirmadaDriveUrl || "");
-    sheet.getRange(foundIndex, 13).setValue(nowStr);
-  } else {
-    sheet.appendRow([
-      medId,
-      incidenciaId || "",
-      empleadoId,
-      tipoMedida,
-      fundamentoDocumentado,
-      fechaEfectiva || nowStr.split("T")[0],
-      responsableAprobacion || "Direccion",
-      estadoFinal,
-      parseInt(diasSuspension || 0, 10),
-      actaFirmadaDriveUrl || "",
-      creadoPor || "RecursosHumanos",
-      nowStr,
-      nowStr
-    ]);
-  }
-
-  return {
-    status: "success",
-    message: "Medida disciplinaria registrada exitosamente.",
-    data: { medidaId: medId, empleadoId, tipoMedida, estadoMedida: estadoFinal }
-  };
+    const now=new Date().toISOString(),current=existing?existing.row.slice():null;
+    const rawDays=p.diasSuspension===undefined?(current?current[8]:0):p.diasSuspension,days=Number(rawDays);
+    if(!Number.isInteger(days)||days<0)return {status:"error",code:"DISCIPLINARY_DAYS_INVALID",message:"Los días de suspensión deben ser un entero no negativo."};
+    const effective=p.fechaEfectiva!==undefined&&p.fechaEfectiva!==""?p.fechaEfectiva:(current?current[5]:now.split("T")[0]);
+    if(isNaN(new Date(effective).getTime()))return {status:"error",code:"DISCIPLINARY_DATE_INVALID",message:"La fecha efectiva no es válida."};
+    const row=[
+      id,incidenceId,access.empleadoId,type,foundation,effective,
+      p.estadoMedida!==undefined?access.actor.userId:(current?current[6]:access.actor.userId),
+      String(p.estadoMedida!==undefined&&p.estadoMedida!==""?p.estadoMedida:(current?current[7]:"Aprobada")),
+      days,p.actaFirmadaDriveUrl!==undefined?p.actaFirmadaDriveUrl:(current?current[9]:""),
+      current?current[10]:access.actor.userId,current?current[11]:now,now
+    ];
+    if(existing){
+      const rowNumber=existing.index+2;
+      try{snapshot.sheet.getRange(rowNumber,1,1,headers.length).setValues([row]);}
+      catch(writeError){
+        try{snapshot.sheet.getRange(rowNumber,1,1,headers.length).setValues([current]);}
+        catch(rollbackError){return {status:"error",code:"DISCIPLINARY_MEASURE_COMPENSATION_REQUIRED",message:"No fue posible completar ni revertir la actualización."};}
+        return {status:"error",code:"DISCIPLINARY_MEASURE_WRITE_FAILED",message:"No fue posible actualizar la medida disciplinaria."};
+      }
+    }else{
+      try{snapshot.sheet.appendRow(row);}
+      catch(writeError){return {status:"error",code:"DISCIPLINARY_MEASURE_WRITE_FAILED",message:"No fue posible registrar la medida disciplinaria."};}
+    }
+    return {status:"success",message:"Medida disciplinaria registrada exitosamente.",data:{medidaId:id,incidenciaId:incidenceId,empleadoId:access.empleadoId,tipoMedida:type,estadoMedida:row[7]}};
+  }finally{lock.releaseLock();}
 }
-
 function getLaborIncidentsHistory(payload) {
  const request=payload||{},actor=getVerifiedAccountingIdentity_(payload);
  if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
