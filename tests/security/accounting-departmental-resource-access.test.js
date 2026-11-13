@@ -651,6 +651,13 @@ const payrollDownloadSource=fs.readFileSync(path.resolve(__dirname,"../../js/hr-
 assert.doesNotThrow(()=>new Function(payrollDownloadSource),"the browser PDF download helper must parse");
 const payrollDashboard=fs.readFileSync(path.resolve(__dirname,"../../dashboard-recursos-humanos.html"),"utf8");
 assert.ok(payrollDashboard.includes('data-target="sec-self-boletas"'),"the employee self-service portal must expose a payroll tab");
+assert.ok(payrollDashboard.includes('data-target="sec-self-asistencia"'),"the employee self-service portal must expose an attendance tab");
+assert.ok(payrollDashboard.includes("getStaffAttendanceLogs"),"the attendance tab must call the server-authorized attendance history endpoint");
+assert.ok(payrollDashboard.includes("self-attendance-status") && payrollDashboard.includes("list-self-attendance"),"the attendance tab must expose accessible status and result regions");
+const attendanceClientFunction=extractFunction(payrollDashboard,"refreshEmployeeAttendanceLogs");
+assert.doesNotThrow(()=>new Function("return async "+attendanceClientFunction),"the attendance client loader must parse");
+assert.ok(attendanceClientFunction.includes("textContent"),"attendance rows must be rendered as text, not interpreted markup");
+assert.ok(!attendanceClientFunction.includes("innerHTML"),"attendance rows must not use HTML injection");
 assert.ok(payrollDashboard.includes("getStaffPayrollReceipt"),"the payroll tab must load server-authorized payroll rows");
 assert.ok(payrollDashboard.includes("getPayrollReceiptPDFFile"),"the payroll tab must use the protected PDF recovery endpoint");
 assert.ok(payrollDashboard.includes("generatePayrollReceiptPDF"),"the payroll tab must generate a missing PDF through the protected endpoint");
@@ -674,4 +681,41 @@ assert.deepEqual(revokedUrls,["blob:payroll-test"],"the object URL must be revok
 assert.throws(()=>fakeWindow.downloadPayrollReceiptPdf({status:"error",encoding:"base64",fileData:pdfFixture}),/respuesta no contiene/i);
 assert.throws(()=>fakeWindow.downloadPayrollReceiptPdf({status:"success",encoding:"base64",fileData:Buffer.from("NOTPDF").toString("base64")}),/firma PDF/i);
 
-console.log("Accounting departmental resource and payment voucher access contracts passed.");
+async function verifyAttendanceClientRendering(){
+ let response={status:"success",asistencias:[{fecha:"2026-11-12",horaEntrada:"07:30",horaSalida:"15:30",estadoAsistencia:"Puntual",minutosTardanza:0,observaciones:"<img src=x onerror=alert(1)>"}]};
+ const nodes={
+  "list-self-attendance":{children:[],replaceChildren(){this.children=[];},appendChild(node){this.children.push(node);}},
+  "self-attendance-status":{textContent:""}
+ };
+ const makeNode=()=>({children:[],textContent:"",className:"",appendChild(node){this.children.push(node);}});
+ const context={attendanceResponse:response};
+ context.document={getElementById:id=>nodes[id]||null,createElement:()=>makeNode()};
+ context.fetchApi=async(service,action,payload)=>{
+  assert.equal(service,"ACCOUNTING");assert.equal(action,"getStaffAttendanceLogs");assert.deepEqual(payload,{});
+  return context.attendanceResponse;
+ };
+ context.console={error(){}};
+ const attendanceLoader=vm.runInNewContext("(async "+attendanceClientFunction+")",context);
+ await attendanceLoader();
+ assert.equal(nodes["self-attendance-status"].textContent,"1 registro(s) de asistencia disponible(s).");
+ assert.equal(nodes["list-self-attendance"].children.length,1);
+ const card=nodes["list-self-attendance"].children[0];
+ assert.equal(card.children[0].textContent,"Fecha: 2026-11-12");
+ assert.equal(card.children[1].textContent,"Entrada: 07:30 · Salida: 15:30");
+ assert.equal(card.children[2].textContent,"Estado: Puntual · Minutos de tardanza: 0");
+ assert.equal(card.children[3].textContent,"Observaciones: <img src=x onerror=alert(1)>","untrusted observations must remain inert text");
+ context.attendanceResponse={status:"success",asistencias:[]};
+ await attendanceLoader();
+ assert.equal(nodes["list-self-attendance"].children.length,0);
+ assert.match(nodes["self-attendance-status"].textContent,/No hay registros/);
+ context.attendanceResponse={status:"error",message:"Acceso denegado."};
+ await attendanceLoader();
+ assert.equal(nodes["list-self-attendance"].children.length,0);
+ assert.equal(nodes["self-attendance-status"].textContent,"Acceso denegado.");
+}
+verifyAttendanceClientRendering().then(()=>{
+ console.log("Accounting departmental resource, payroll PDF, and employee attendance client contracts passed.");
+}).catch(error=>{
+ console.error(error);
+ process.exitCode=1;
+});

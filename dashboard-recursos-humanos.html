@@ -675,6 +675,9 @@
                 <button class="tab-self-btn px-4 py-2 text-xs font-bold rounded-xl transition-all bg-slate-800 text-white" data-target="sec-self-expediente">
                     Mi Ficha &amp; Contrato
                 </button>
+                <button class="tab-self-btn px-4 py-2 text-xs font-bold rounded-xl transition-all text-gray-500 hover:text-gray-800 hover:bg-gray-50" data-target="sec-self-asistencia">
+                    Mi Asistencia
+                </button>
                 <button class="tab-self-btn px-4 py-2 text-xs font-bold rounded-xl transition-all text-gray-500 hover:text-gray-800 hover:bg-gray-50" data-target="sec-self-solicitudes">
                     Mis Solicitudes
                 </button>
@@ -694,6 +697,18 @@
                 <div id="sec-self-expediente" class="space-y-4">
                     <div id="info-self-expediente" class="p-4 bg-gray-50 rounded-2xl border border-gray-200"></div>
                     <div id="info-self-contratos" class="space-y-2"></div>
+                </div>
+
+                <!-- TAB: MI HISTORIAL DE ASISTENCIA -->
+                <div id="sec-self-asistencia" class="space-y-4 hidden">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <h4 class="text-xs font-black uppercase text-gray-900">Mi Historial de Asistencia</h4>
+                            <p id="self-attendance-status" class="text-[10px] text-gray-500 mt-1" role="status" aria-live="polite">Selecciona actualizar para consultar tus registros.</p>
+                        </div>
+                        <button id="btn-refresh-self-attendance" type="button" class="text-xs font-bold text-slate-700 hover:text-slate-900 whitespace-nowrap"><i class="fa-solid fa-rotate mr-1"></i>Actualizar</button>
+                    </div>
+                    <div id="list-self-attendance" class="space-y-2 text-xs font-medium text-gray-700"></div>
                 </div>
 
                 <!-- TAB 2: MIS SOLICITUDES -->
@@ -1841,13 +1856,14 @@
                             'tab-self-btn px-4 py-2 text-xs font-bold rounded-xl transition-all bg-slate-800 text-white' :
                             'tab-self-btn px-4 py-2 text-xs font-bold rounded-xl transition-all text-gray-500 hover:text-gray-800 hover:bg-gray-50';
                     });
-                    ['sec-self-expediente', 'sec-self-solicitudes', 'sec-self-turnos', 'sec-self-capacitaciones', 'sec-self-boletas'].forEach(secId => {
+                    ['sec-self-expediente', 'sec-self-asistencia', 'sec-self-solicitudes', 'sec-self-turnos', 'sec-self-capacitaciones', 'sec-self-boletas'].forEach(secId => {
                         const secEl = document.getElementById(secId);
                         if (secEl) {
                             if (secId === targetId) secEl.classList.remove('hidden');
                             else secEl.classList.add('hidden');
                         }
                     });
+                    if (targetId === 'sec-self-asistencia') await refreshEmployeeAttendanceLogs();
                     if (targetId === 'sec-self-boletas') await refreshEmployeePayrollReceipts();
                 });
             });
@@ -1857,6 +1873,11 @@
                 btnRefreshSelf.addEventListener('click', async () => {
                     await refreshEmployeeSelfServiceData();
                 });
+            }
+
+            const btnRefreshSelfAttendance = document.getElementById('btn-refresh-self-attendance');
+            if (btnRefreshSelfAttendance) {
+                btnRefreshSelfAttendance.addEventListener('click', refreshEmployeeAttendanceLogs);
             }
 
             const btnRefreshSelfPayroll = document.getElementById('btn-refresh-self-payroll');
@@ -2264,6 +2285,60 @@
                 }
             } catch (err) {
                 console.error('Error al actualizar portal de autoservicio:', err);
+            }
+        }
+
+        async function refreshEmployeeAttendanceLogs() {
+            const listEl = document.getElementById('list-self-attendance');
+            const statusEl = document.getElementById('self-attendance-status');
+            if (!listEl || !statusEl) return;
+
+            listEl.replaceChildren();
+            statusEl.textContent = 'Consultando tu historial de asistencia...';
+            try {
+                const res = await fetchApi('ACCOUNTING', 'getStaffAttendanceLogs', {});
+                if (!res || res.status !== 'success' || !Array.isArray(res.asistencias)) {
+                    statusEl.textContent = (res && res.message) || 'No fue posible consultar tu historial de asistencia.';
+                    return;
+                }
+                if (res.asistencias.length === 0) {
+                    statusEl.textContent = 'No hay registros de asistencia disponibles.';
+                    return;
+                }
+
+                statusEl.textContent = res.asistencias.length + ' registro(s) de asistencia disponible(s).';
+                res.asistencias.forEach(registro => {
+                    const card = document.createElement('article');
+                    card.className = 'p-4 bg-white border border-gray-200 rounded-2xl space-y-1';
+
+                    const date = document.createElement('p');
+                    date.className = 'font-bold text-gray-900';
+                    date.textContent = 'Fecha: ' + String(registro.fecha || 'No especificada');
+
+                    const hours = document.createElement('p');
+                    hours.className = 'text-[11px] text-gray-600';
+                    hours.textContent = 'Entrada: ' + String(registro.horaEntrada || '—') + ' · Salida: ' + String(registro.horaSalida || '—');
+
+                    const state = document.createElement('p');
+                    state.className = 'text-[11px] text-gray-600';
+                    state.textContent = 'Estado: ' + String(registro.estadoAsistencia || 'Sin estado') +
+                        ' · Minutos de tardanza: ' + String(Number(registro.minutosTardanza || 0));
+
+                    card.appendChild(date);
+                    card.appendChild(hours);
+                    card.appendChild(state);
+
+                    if (registro.observaciones) {
+                        const notes = document.createElement('p');
+                        notes.className = 'text-[10px] text-gray-500';
+                        notes.textContent = 'Observaciones: ' + String(registro.observaciones);
+                        card.appendChild(notes);
+                    }
+                    listEl.appendChild(card);
+                });
+            } catch (err) {
+                console.error('Error al consultar historial de asistencia:', err);
+                statusEl.textContent = 'Ocurrió un error al consultar tu historial de asistencia.';
             }
         }
 
