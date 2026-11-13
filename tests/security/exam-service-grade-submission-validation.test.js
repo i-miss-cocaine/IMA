@@ -36,7 +36,12 @@ function fixture(options = {}) {
     },
     Number, Math, Error
   };
-  vm.runInNewContext(extract("gradeExamSubmission"), runtime);
+  const historyHeader = source.match(/var EXAM_GRADE_RECTIFICATION_HEADERS_ = \[[^\]]+\];/);
+  assert.ok(historyHeader, "grade history schema is declared");
+  const gradeCode = [historyHeader[0], extract("normalizeExamGradeHistoryValue_"),
+    extract("getOrCreateExamGradeRectificationHistorySheet_"), extract("prepareExamGradeRectificationEvent_"),
+    extract("appendExamGradeRectificationEvent_"), extract("gradeExamSubmission")].join("\n");
+  vm.runInNewContext(gradeCode, runtime);
   return { calls, call(payload) { return runtime.gradeExamSubmission(payload); } };
 }
 let scenarios = 0;
