@@ -576,11 +576,11 @@ function validateRolePermission(action, payload) {
   if (!ctxCheck.authorized) {
     return { authorized: false, role: userRole + " (" + ctxCheck.reason + ")" };
   }
-  const resourceScopeActions = ["getEmployeeDocuments", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher"];
+  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher"];
   if (resourceScopeActions.indexOf(action) !== -1) {
     const roleKey = String(userRole || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
     const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1 &&
-      ["getEmployeeDocuments", "uploadEmployeeDocument", "getEmployeeSelfServicePortal"].indexOf(action) !== -1;
+      ["getEmployeeDocuments", "getEmployeeContracts", "uploadEmployeeDocument", "getEmployeeSelfServicePortal"].indexOf(action) !== -1;
     const paymentSelfServiceRole = ["ESTUDIANTE", "ALUMNO", "TUTOR", "PADRE", "MADRE", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(roleKey) !== -1 &&
       ["getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher"].indexOf(action) !== -1;
     if (!employeeSelfRole && !paymentSelfServiceRole) {
@@ -6470,6 +6470,7 @@ function getEmployeeDocuments(payload) {
     const rowExpedienteId = String(row[1] || "").trim();
     if (!documentId || !rowExpedienteId || documentIdCounts[documentId] !== 1) continue;
     if (expedienteId && rowExpedienteId !== expedienteId) continue;
+    if (employeeSelfRole && rowExpedienteId !== selfExpedienteId) continue;
     if (categoriaDoc && String(row[2] || "").trim().toLowerCase() !== categoriaDoc) continue;
 
     if (!Object.prototype.hasOwnProperty.call(accessByExpediente, rowExpedienteId)) {
@@ -8956,29 +8957,96 @@ function getJobCandidates(payload) {
 }
 
 function getEmployeeContracts(payload) {
-  const { expedienteId } = payload || {};
+  const request = payload || {};
+  const expedienteId = String(request.expedienteId || "").trim();
+  const actor = getVerifiedAccountingIdentity_(payload);
+  if (!actor.authorized) {
+    return { status: "error", code: actor.code || "VERIFIED_IDENTITY_REQUIRED", message: "Acceso denegado." };
+  }
+
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "ContratosLaborales").getDataRange().getValues().slice(1);
+  if (expedienteId) {
+    const requestedAccess = assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId);
+    if (!requestedAccess.authorized) {
+      return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen contratos disponibles." };
+    }
+  }
 
-  let filtered = rows;
-  if (expedienteId) filtered = filtered.filter(r => String(r[1]).trim() === String(expedienteId).trim());
+  const employeeSheet = ss.getSheetByName("ExpedientesLaborales");
+  if (!employeeSheet) return { status: "success", contratos: [] };
+  const employeeData = employeeSheet.getDataRange().getValues();
+  const expectedEmployeeHeaders = [
+    "ExpedienteID", "PersonaId", "UserId", "Puesto", "Departamento",
+    "CentroCosto", "FechaIngreso", "FechaSalida", "EstadoLaboral", "Observaciones"
+  ];
+  if (!employeeData.length || !Array.isArray(employeeData[0]) ||
+      employeeData[0].length !== expectedEmployeeHeaders.length ||
+      expectedEmployeeHeaders.some((header, index) => String(employeeData[0][index] || "").trim().toUpperCase() !== header.toUpperCase())) {
+    return { status: "error", code: "RESOURCE_SCHEMA_INVALID", message: "La estructura de expedientes laborales no es válida." };
+  }
 
-  const mapped = filtered.map(r => ({
-    contratoId: r[0],
-    expedienteId: r[1],
-    tipoContrato: r[2],
-    fechaInicio: r[3],
-    fechaFin: r[4],
-    salarioBase: parseFloat(r[5] || 0),
-    jornada: r[6],
-    estadoContrato: r[7],
-    observaciones: r[8]
-  }));
+  const contractSheet = ss.getSheetByName("ContratosLaborales");
+  if (!contractSheet) return { status: "success", contratos: [] };
+  const contractData = contractSheet.getDataRange().getValues();
+  const expectedContractHeaders = [
+    "ContratoID", "ExpedienteID", "TipoContrato", "FechaInicio", "FechaFin",
+    "SalarioBase", "Jornada", "EstadoContrato", "Observaciones"
+  ];
+  if (!contractData.length || !Array.isArray(contractData[0]) ||
+      contractData[0].length !== expectedContractHeaders.length ||
+      expectedContractHeaders.some((header, index) => String(contractData[0][index] || "").trim().toUpperCase() !== header.toUpperCase())) {
+    return { status: "error", code: "RESOURCE_SCHEMA_INVALID", message: "La estructura de contratos laborales no es válida." };
+  }
 
-  return {
-    status: "success",
-    contratos: mapped
-  };
+  const employeeRows = employeeData.slice(1);
+  const roleKey = String(actor.role || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
+  const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1;
+  let selfExpedienteId = "";
+  if (employeeSelfRole) {
+    const ownEmployeeRows = employeeRows.filter(row => String(row && row[2] || "").trim() === actor.userId);
+    if (ownEmployeeRows.length !== 1) {
+      return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen contratos disponibles." };
+    }
+    selfExpedienteId = String(ownEmployeeRows[0][0] || "").trim();
+    if (!selfExpedienteId || (expedienteId && expedienteId !== selfExpedienteId)) {
+      return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen contratos disponibles." };
+    }
+  }
+  const expedienteCounts = Object.create(null);
+  employeeRows.forEach(row => {
+    const id = String(row && row[0] || "").trim();
+    if (id) expedienteCounts[id] = (expedienteCounts[id] || 0) + 1;
+  });
+  const contractRows = contractData.slice(1);
+  const contractIdCounts = Object.create(null);
+  contractRows.forEach(row => {
+    const id = String(row && row[0] || "").trim();
+    if (id) contractIdCounts[id] = (contractIdCounts[id] || 0) + 1;
+  });
+
+  const accessByExpediente = Object.create(null);
+  const mapped = [];
+  for (let i = 0; i < contractRows.length; i++) {
+    const row = contractRows[i];
+    if (!Array.isArray(row) || row.length < expectedContractHeaders.length) continue;
+    const contractId = String(row[0] || "").trim();
+    const rowExpedienteId = String(row[1] || "").trim();
+    if (!contractId || !rowExpedienteId || contractIdCounts[contractId] !== 1 ||
+        expedienteCounts[rowExpedienteId] !== 1) continue;
+    if (expedienteId && rowExpedienteId !== expedienteId) continue;
+
+    if (!Object.prototype.hasOwnProperty.call(accessByExpediente, rowExpedienteId)) {
+      accessByExpediente[rowExpedienteId] = assertEmployeeExpedienteScopeAccess_(payload, ss, rowExpedienteId);
+    }
+    if (!accessByExpediente[rowExpedienteId].authorized) continue;
+
+    mapped.push({
+      contratoId: row[0], expedienteId: row[1], tipoContrato: row[2], fechaInicio: row[3], fechaFin: row[4],
+      salarioBase: parseFloat(row[5] || 0), jornada: row[6], estadoContrato: row[7], observaciones: row[8]
+    });
+  }
+
+  return { status: "success", contratos: mapped };
 }
 
 // ---------------------------------------------------------------------------

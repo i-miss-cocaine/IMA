@@ -54,3 +54,16 @@
 - **Estado:** consulta de documentos laborales aislada y protegida en código/contrato local; TASK-153 continúa En ejecución. No se desplegó Apps Script ni se usaron datos reales.
 - **Siguiente:** seleccionar el siguiente callsite elegible de consulta/descarga ACCOUNTING dentro de TASK-153, sin repetir C1.658–C1.661.
 ===============================================================================
+
+===============================================================================
+### C1.662 — IMA-EXEC-20261112-1754Z-03 — aislamiento de consulta de contratos laborales (ACCOUNTING)
+- **HEAD inicial:** 19669f303952cec4692e9080a5765e7a6022eb91. **Rama:** NG_beta_0.0.0.1_work. **Base:** NG_beta_0.0.0.1 = 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
+- **Hallazgo:** getEmployeeContracts leía ContratosLaborales mediante getOrCreateSheet, aceptaba un ExpedienteID enviado por cliente sin identidad ni autorización de ownership y listaba contratos sin filtro de ámbito.
+- **Corrección:** exige identidad de sesión firmada; integra getEmployeeContracts en resourceScopeActions y conserva el acceso de autoservicio Empleado mediante la excepción employeeSelfRole. Las consultas por expediente verifican ámbito/ownership antes de buscar y responden RESOURCE_NOT_FOUND para no revelar existencia. Los listados generales validan ownership por expediente y devuelven solo contratos autorizados.
+- **Integridad:** lectura getSheetByName sin crear hojas; validación de esquema de ExpedientesLaborales (10 encabezados) y ContratosLaborales (9 encabezados); excluye ContractID duplicados, filas incompletas y contratos asociados a ExpedienteID ausentes/duplicados; cachea la autorización por expediente durante la consulta. Se conserva la forma de respuesta y el mapeo de los nueve campos de contrato.
+- **Pruebas:** contrato ACCOUNTING ampliado con DEP-A/DEP-B, institutionWide, empleado propio, anti-enumeración, spoof de authRole/authUserId/userId, sesión inválida, ContractID duplicado, ExpedienteID duplicado, mapeo UserID→ExpedienteID ambiguo, esquema incorrecto y hoja ausente sin escrituras; aserciones estáticas de integración de resourceScopeActions y excepción self-service.
+- **Verificación local:** 12 escenarios V8 aislados PASS; parseo completo de Code.gs y del contrato de pruebas PASS. CI posterior a publicación: pendiente de observación. Apps Script/Sheets real: Pendiente beta en BETA-FUNC-040.
+- **Archivos:** backend/accounting-service/Code.gs; tests/security/accounting-departmental-resource-access.test.js; Auditoria.txt; beta_test.txt; changueslogs.txt; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; este checkpoint e índice.
+- **Estado:** consulta de contratos laborales protegida en código/contrato local; TASK-153 continúa En ejecución. No se desplegó Apps Script ni se usaron datos reales.
+- **Siguiente:** siguiente callsite elegible de consulta de datos laborales en ACCOUNTING, sin repetir C1.658–C1.662.
+===============================================================================

@@ -27,7 +27,7 @@ const accounting=fs.readFileSync(path.resolve(__dirname,"../../backend/accountin
 const names=[
  "getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentScope_","getVerifiedDepartmentScopeForSession_","assertResourceOwnershipForScope_","resolveEmployeeDepartmentId_","assertEmployeeExpedienteScopeAccess_",
  "getAccountingPersonIdForUser_","resolveStudentExpedienteForAccounting_","assertPaymentVoucherOwnerAccess_",
- "extractDriveFileId","getEmployeeDocuments","getEmployeeRecords","getEmployeeSelfServicePortal","uploadEmployeeDocument","uploadPaymentVoucher","getPaymentVouchers","getPaymentVoucherFile","reviewPaymentVoucher","validateRolePermission"
+ "extractDriveFileId","getEmployeeDocuments","getEmployeeContracts","getEmployeeRecords","getEmployeeSelfServicePortal","uploadEmployeeDocument","uploadPaymentVoucher","getPaymentVouchers","getPaymentVoucherFile","reviewPaymentVoucher","validateRolePermission"
 ];
 const code="var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n"+names.map(n=>extractFunction(accounting,n)).join("\n");
 const claims={
@@ -132,7 +132,7 @@ const context={
  Utilities:{base64Encode:bytes=>Buffer.from(bytes).toString("base64")},
  logStructuredEvent:()=>{}
 };
-vm.runInNewContext(code+"\nthis.assertEmployeeExpedienteScopeAccess_=assertEmployeeExpedienteScopeAccess_;this.assertPaymentVoucherOwnerAccess_=assertPaymentVoucherOwnerAccess_;this.getEmployeeDocuments=getEmployeeDocuments;this.getEmployeeRecords=getEmployeeRecords;this.getEmployeeSelfServicePortal=getEmployeeSelfServicePortal;this.uploadEmployeeDocument=uploadEmployeeDocument;this.uploadPaymentVoucher=uploadPaymentVoucher;this.getPaymentVouchers=getPaymentVouchers;this.getPaymentVoucherFile=getPaymentVoucherFile;this.reviewPaymentVoucher=reviewPaymentVoucher;",context);
+vm.runInNewContext(code+"\nthis.assertEmployeeExpedienteScopeAccess_=assertEmployeeExpedienteScopeAccess_;this.assertPaymentVoucherOwnerAccess_=assertPaymentVoucherOwnerAccess_;this.getEmployeeDocuments=getEmployeeDocuments;this.getEmployeeContracts=getEmployeeContracts;this.getEmployeeRecords=getEmployeeRecords;this.getEmployeeSelfServicePortal=getEmployeeSelfServicePortal;this.uploadEmployeeDocument=uploadEmployeeDocument;this.uploadPaymentVoucher=uploadPaymentVoucher;this.getPaymentVouchers=getPaymentVouchers;this.getPaymentVoucherFile=getPaymentVoucherFile;this.reviewPaymentVoucher=reviewPaymentVoucher;",context);
 const actor=token=>({sessionToken:token});
 assert.equal(context.assertEmployeeExpedienteScopeAccess_(actor("staffA"),ss,"EXP-A").authorized,true);
 assert.equal(context.assertEmployeeExpedienteScopeAccess_(actor("staffA"),ss,"EXP-B").code,"RESOURCE_SCOPE_DENIED");
@@ -272,6 +272,41 @@ assert.equal(portalCreationAttempts,0,"self-service reads must not create sheets
 context.SpreadsheetApp.openById=originalPortalOpen;context.getOrCreateSheet=originalPortalGetOrCreate;
 assert.ok(extractFunction(accounting,"getEmployeeDocuments").includes('getSheetByName("DocumentosLaborales")'));
 assert.ok(!extractFunction(accounting,"getEmployeeDocuments").includes("getOrCreateSheet"),"document reads must not create sheets");
+const employeeContracts= context.getEmployeeContracts;
+assert.deepEqual(Array.from(employeeContracts(actor("staffA")).contratos,c=>c.contratoId),["CTR-A"],"department staff may list only contracts owned by their department");
+assert.deepEqual(Array.from(employeeContracts(actor("staffB")).contratos,c=>c.contratoId),["CTR-B"],"other department staff may list only their own department contracts");
+assert.deepEqual(Array.from(employeeContracts(actor("admin")).contratos,c=>c.contratoId),["CTR-A","CTR-B"],"institution-wide scope may list authorized contracts");
+assert.deepEqual(Array.from(employeeContracts(actor("employee")).contratos,c=>c.contratoId),["CTR-A"],"employees may list only their own contracts");
+assert.equal(employeeContracts({sessionToken:"staffA",expedienteId:"EXP-B"}).code,"RESOURCE_NOT_FOUND","out-of-scope contract queries must not disclose resource existence");
+assert.equal(employeeContracts({sessionToken:"employee",authRole:"Director",authUserId:"U-B",userId:"U-B",expedienteId:"EXP-B"}).code,"RESOURCE_NOT_FOUND","client identity and role fields must not override the signed actor");
+assert.equal(employeeContracts({sessionToken:"invalid"}).code,"VERIFIED_IDENTITY_REQUIRED","unverified callers must be rejected before contract lookup");
+const originalContractRows=rows.ContratosLaborales.map(r=>r.slice());
+rows.ContratosLaborales.push(["CTR-A","EXP-B","Duplicado","2026-01-01","","1","Completa","Activo",""]);
+assert.deepEqual(Array.from(employeeContracts(actor("admin")).contratos,c=>c.contratoId),["CTR-B"],"duplicate contract IDs must be excluded");
+rows.ContratosLaborales.splice(0,rows.ContratosLaborales.length,...originalContractRows);
+const originalEmployeeRows=rows.ExpedientesLaborales.map(r=>r.slice());
+rows.ExpedientesLaborales.push(rows.ExpedientesLaborales[1].slice());
+assert.deepEqual(Array.from(employeeContracts(actor("admin")).contratos,c=>c.contratoId),["CTR-B"],"contracts linked to ambiguous employee expediente IDs must be excluded");
+rows.ExpedientesLaborales.splice(0,rows.ExpedientesLaborales.length,...originalEmployeeRows);
+const ambiguousUserEmployee=rows.ExpedientesLaborales[1].slice();ambiguousUserEmployee[0]="EXP-EMP-DUP";ambiguousUserEmployee[2]="U-EMP";rows.ExpedientesLaborales.push(ambiguousUserEmployee);
+assert.equal(employeeContracts(actor("employee")).code,"RESOURCE_NOT_FOUND","employees with ambiguous user-to-expediente mappings must not receive multiple personnel files");
+rows.ExpedientesLaborales.pop();
+const originalContractHeader=rows.ContratosLaborales[0][0];
+rows.ContratosLaborales[0][0]="Contrato";
+assert.equal(employeeContracts(actor("admin")).code,"RESOURCE_SCHEMA_INVALID","unexpected contract headers must fail closed");
+rows.ContratosLaborales[0][0]=originalContractHeader;
+const originalContractOpen=context.SpreadsheetApp.openById,originalContractGetOrCreate=context.getOrCreateSheet;
+let contractSheetCreationAttempts=0;
+context.SpreadsheetApp.openById=()=>({getSheetByName:name=>name==="ExpedientesLaborales"?makeSheet(rows.ExpedientesLaborales):null});
+context.getOrCreateSheet=()=>{contractSheetCreationAttempts++;throw new Error("read path must not create sheets");};
+assert.deepEqual(Array.from(employeeContracts(actor("admin")).contratos),[],"missing contract sheet must return an empty result");
+assert.equal(contractSheetCreationAttempts,0,"contract reads must not create sheets");
+context.SpreadsheetApp.openById=originalContractOpen;
+context.getOrCreateSheet=originalContractGetOrCreate;
+assert.ok(extractFunction(accounting,"getEmployeeContracts").includes('getSheetByName("ContratosLaborales")'));
+assert.ok(!extractFunction(accounting,"getEmployeeContracts").includes("getOrCreateSheet"),"contract reads must not create sheets");
+assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeContracts"'),"contracts must be included in resource scope authorization");
+assert.ok(extractFunction(accounting,"validateRolePermission").includes('["getEmployeeDocuments", "getEmployeeContracts", "uploadEmployeeDocument", "getEmployeeSelfServicePortal"]'),"employees must retain self-service contract access");
 assert.ok(extractFunction(accounting,"getEmployeeSelfServicePortal").includes("assertEmployeeExpedienteScopeAccess_"));
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeSelfServicePortal"'));
 console.log("Accounting departmental resource and payment voucher access contracts passed.");

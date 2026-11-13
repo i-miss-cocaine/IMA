@@ -2662,3 +2662,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Corrección:** identidad firmada obligatoria, validación de ámbito/ownership antes de consultar un expediente concreto, RESOURCE_NOT_FOUND para recursos ajenos, getSheetByName sin escrituras, validación exacta de encabezados y exclusión de IDs duplicados/filas sin clave.
 - **Evidencia:** 8 escenarios V8 aislados PASS y parseo de Code.gs/contrato PASS. CI Department Scope run 43341736674: Department Scope, Internal Responsibility RBAC, ACCOUNTING departmental import, USER migrated ownership y ACCOUNTING departmental resource access PASS; el workflow falla después en user-role-membership-contract.test.js:119 porque verifySessionToken(foreignLegacy) devuelve null y el test lee .role (fallo conocido y previo a C1.661). Identity mapping run 43341736657 SUCCESS. Apps Script/Sheets real Pendiente beta (BETA-FUNC-039). **Estado del hallazgo:** corregido en e7b9853e219734a9a5c8f6273c3c424ec0712c6a.
 ===============================================================================
+
+===============================================================================
+### C1.662 — aislamiento de consulta de contratos laborales (ACCOUNTING)
+- **Severidad:** Alto — privacidad de salarios y condiciones contractuales.
+- **Hallazgo:** `getEmployeeContracts` listaba contratos sin identidad/ámbito, aceptaba ExpedienteID controlado por el cliente y creaba hojas desde una ruta de lectura.
+- **Corrección:** identidad firmada, ownership/ámbito por expediente, RESOURCE_NOT_FOUND para consultas ajenas, filtro de listados, excepción self-service limitada al empleado autenticado, lectura sin escrituras y validación de esquema/IDs únicos y mapeo único UserID→ExpedienteID.
+- **Evidencia:** 12 escenarios V8 aislados PASS; parseo completo Code.gs y contrato PASS. CI pendiente de observación tras publicar; Apps Script/Sheets real BETA-FUNC-040 Pendiente beta.
+===============================================================================
