@@ -6470,7 +6470,7 @@ function getEmployeeDocuments(payload) {
     const rowExpedienteId = String(row[1] || "").trim();
     if (!documentId || !rowExpedienteId || documentIdCounts[documentId] !== 1) continue;
     if (expedienteId && rowExpedienteId !== expedienteId) continue;
-    if (employeeSelfRole && rowExpedienteId !== selfExpedienteId) continue;
+
     if (categoriaDoc && String(row[2] || "").trim().toLowerCase() !== categoriaDoc) continue;
 
     if (!Object.prototype.hasOwnProperty.call(accessByExpediente, rowExpedienteId)) {
@@ -9034,6 +9034,7 @@ function getEmployeeContracts(payload) {
     if (!contractId || !rowExpedienteId || contractIdCounts[contractId] !== 1 ||
         expedienteCounts[rowExpedienteId] !== 1) continue;
     if (expedienteId && rowExpedienteId !== expedienteId) continue;
+    if (employeeSelfRole && rowExpedienteId !== selfExpedienteId) continue;
 
     if (!Object.prototype.hasOwnProperty.call(accessByExpediente, rowExpedienteId)) {
       accessByExpediente[rowExpedienteId] = assertEmployeeExpedienteScopeAccess_(payload, ss, rowExpedienteId);
