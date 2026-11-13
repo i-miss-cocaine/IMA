@@ -2881,3 +2881,15 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Límites:** CLI local y Apps Script/Sheets real NOT RUN; sin despliegue ni datos reales. BETA-FUNC-068 Pendiente beta.
 - **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 sigue En ejecución.
 ===============================================================================
+
+
+===============================================================================
+## C1.696 — TASK-153 / AUD-NG-386 — ACCOUNTING: capacitación y desarrollo profesional
+- **Hallazgo:** manageTrainingEnrollment, manageTrainingCourse, manageProfessionalDevelopmentPlan y getTrainingAnalyticsReport no aplicaban de forma uniforme identidad firmada, ownership departamental, autoservicio vinculado ni filtros de lectura; algunas consultas creaban hojas vacías.
+- **Corrección:** inscripciones y planes vinculados a empleados exigen UserID↔ExpedienteID único y ResourceOwnership WRITE para HR/Admin; el empleado solo gestiona su propio plan y no puede alterar la evaluación privada. El catálogo compartido requiere alcance institucional completo. El reporte agrega solo empleados visibles en el scope y no crea hojas.
+- **Integridad:** IDs UUID/colisión, esquemas exactos, curso único, titularidad inmutable, fechas y rangos validados, porcentajes de asistencia 0–100, notas no negativas, metas JSON, ScriptLock, revalidación y compensación.
+- **CI:** Department Scope run 43451485260 SUCCESS (Node 24.22.2), incluidos los tres contratos nuevos de capacitación/desarrollo, el contrato ACCOUNTING previo, pruebas ACADEMIC/USER/ABAC y sintaxis de seis servicios Apps Script. Identity mapping 43451147241 y Department Reference Consumers 43451147225 SUCCESS.
+- **Commits:** 03cbfe8e06bd64d4a791dd5fd7db8b8e2d8f13b1; 4f5bbfd031a5481ec90a4aca82d45266707826e5; b20ad1ab79428b01cc6ef1e2852c7cfb2eb708ff; 089d9d07c65b64292af31041c1068dce5e743eba; 5f4f1bceefd2aab3b05bd44bdc0fd8368ce04441; 911423923c9ba04b2ec7dae55ece886176876f5f; 02734dee4cb3c67b0434fbe9f97b2c94661d86b5.
+- **Límites:** CLI local y Apps Script/Sheets real NOT RUN; sin despliegue ni datos reales. BETA-FUNC-069 Pendiente beta.
+- **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 sigue En ejecución.
+===============================================================================

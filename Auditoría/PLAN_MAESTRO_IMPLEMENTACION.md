@@ -5412,3 +5412,12 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Contrato focalizado integrado en Department Scope workflow. Runs 43449143792, 43449143799 y 43449143801 SUCCESS con Node 24.22.2; todos los pasos focalizados y transversales PASS.
 - BETA-FUNC-068 Pendiente beta. No se ejecutó CLI local ni Apps Script/Sheets real; no hubo despliegue ni datos reales.
 - **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 sigue En ejecución. Siguiente: auditar manageTrainingCourse y manageTrainingEnrollment, diferenciando catálogo institucional de inscripciones vinculadas a expedientes.
+
+
+### C1.696 — TASK-153 / AUD-NG-386 — ACCOUNTING: capacitación y desarrollo profesional
+- Se protegieron manageTrainingEnrollment, manageTrainingCourse, manageProfessionalDevelopmentPlan y getTrainingAnalyticsReport.
+- Inscripciones y planes exigen identidad firmada y expediente único; HR/Admin requieren scope y ResourceOwnership WRITE; autoservicio solo sobre plan propio. El catálogo compartido requiere scope institucional completo. Analítica filtra empleados por ownership y scope y no crea hojas.
+- IDs UUID/colisión, esquema, curso único, titularidad inmutable, validación de fechas/metas/nota/asistencia, ScriptLock, revalidación y compensación. Workflow actualizado para disparar CI al cambiar cualquiera de los nuevos contratos.
+- Department Scope run 43451485260 SUCCESS (Node 24.22.2), contratos de capacitación/desarrollo y regresión ACCOUNTING PASS; Identity mapping 43451147241 y Department Reference Consumers 43451147225 SUCCESS.
+- BETA-FUNC-069 Pendiente beta; no se ejecutó CLI local ni Apps Script/Sheets real; no hubo despliegue ni datos reales.
+- **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 sigue En ejecución. Siguiente: manageWorkShiftAndSubstitution y su ownership/transiciones.

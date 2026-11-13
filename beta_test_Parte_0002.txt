@@ -69,3 +69,14 @@
 - **Evidencia requerida:** snapshots anonimizados, IDs sintéticos, respuestas permitidas/denegadas, historial previo/nuevo, trazas de concurrencia y resultado de rollback. No registrar tokens, PII ni documentos.
 - **Estado:** Pendiente beta. No se ha desplegado ni ejecutado contra Apps Script/Sheets reales.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-069 — ACCOUNTING: capacitación y desarrollo profesional
+- **Objetivo:** validar catálogo institucional, inscripciones, planes profesionales y analítica con identidad firmada y scope.
+- **Precondiciones:** entorno beta aislado; cursos, expedientes, ResourceOwnership, inscripciones y planes con datos sintéticos; usuarios HR global, HR departamental, empleado y administrador. No usar datos personales reales ni documentos productivos.
+- **Pasos:** (1) permitir administración del catálogo solo a HR/Admin con scope institucional completo; denegar scope departamental; (2) crear/actualizar cursos y probar esquema, duración, ID duplicado/colisión, lock y rollback; (3) inscribir empleados solo en expedientes con ownership WRITE y cursos únicos; (4) intentar inscripción cruzada, cambio de propietario, IDs duplicados, fechas inválidas, asistencia fuera de 0–100 y certificados con rangos invertidos; (5) verificar lock ocupado y concurrencia sin duplicados; (6) permitir al empleado crear/actualizar solo su propio plan; (7) impedir que el empleado modifique EvaluacionSeguimiento; (8) permitir a HR/Admin modificar planes solo dentro de scope; (9) probar metas JSON, fechas, colisiones y compensación; (10) consultar analítica como HR de dos departamentos y como administrador, verificando que conteos y vencimientos no crucen scopes; (11) comprobar que lecturas de hojas ausentes no crean hojas.
+- **Resultado esperado:** catálogo solo por alcance institucional; inscripciones/planes por propietario autorizado; analítica agregada solo sobre recursos visibles; sin colisiones, transferencia de titularidad, mutaciones parciales ni filtraciones interdepartamentales.
+- **Evidencia requerida:** snapshots anonimizados, IDs sintéticos, scopes/ownership, respuestas permitidas/denegadas, conteos por departamento y trazas de concurrencia/rollback. No guardar tokens, PII ni certificados.
+- **Estado:** Pendiente beta. No se ha desplegado ni ejecutado contra Apps Script/Sheets reales.
+===============================================================================

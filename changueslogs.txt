@@ -3424,3 +3424,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato Node focalizado y paso CI nuevos. Department Scope 43449143792, Identity mapping 43449143799 y Department Reference Consumers 43449143801 SUCCESS (Node 24.22.2).
 - BETA-FUNC-068 Pendiente beta; sin despliegue ni datos reales. TASK-153/AUD-NG-386 permanece En ejecución.
 - Commits: 447d847, f6da8d5, b0126d9.
+
+
+[2026-11-13 15:20 UTC] C1.696 — TASK-153 / AUD-NG-386 — ACCOUNTING capacitación y desarrollo profesional
+- Se protegieron catálogo de cursos, inscripciones, planes de desarrollo y reporte de analítica con sesión firmada, scope y ownership según tipo de recurso.
+- Se incorporaron validación de titularidad, cursos/IDs únicos, fechas, metas, notas, asistencia, ScriptLock, revalidación, compensación y filtros de analítica por departamento.
+- Department Scope 43451485260 SUCCESS (Node 24.22.2); contratos focalizados y transversales PASS. BETA-FUNC-069 Pendiente beta; sin despliegue ni datos reales.
+- TASK-153/AUD-NG-386 permanece En ejecución.
+- Commits: 03cbfe8, 4f5bbfd, b20ad1a, 089d9d0, 5f4f1bc, 9114239, 02734de.
