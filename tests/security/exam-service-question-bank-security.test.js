@@ -62,6 +62,12 @@ const runtime={
  ROLE_PERMISSIONS:{Profesor:["manageQuestionBank"],Estudiante:[]},PUBLIC_ACTIONS:[],
  getDynamicPermissionsForRole(){return null;},hasActiveDelegationForAction(){return false;},
  verifySessionToken(token){return claims[token]||null;},validateContextualAccess(){return {authorized:true};},
+ getVerifiedDepartmentScopeForSession_(payload,spreadsheet,actor){
+  if(!actor||actor.authorized!==true||!actor.userId||!actor.role)return {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
+  const assignments=scopeRows.slice(1).filter(row=>String(row[1]||"").trim()===actor.userId&&String(row[2]||"").trim()===actor.role&&String(row[5]||"").trim()==="ACTIVO");
+  if(assignments.length!==1)return {authorized:false,code:"ROLE_SCOPE_NOT_ASSIGNED"};
+  return {authorized:true,institutionId:"I1",departmentIds:[String(assignments[0][4]||"").trim()].filter(Boolean)};
+ },
  PropertiesService:{getScriptProperties(){return {getProperty(name){return name==="IMA_INSTITUTION_ID"?"I1":null;}};}},
  SpreadsheetApp:{openById(){sheetOpens++;return ss;}},getSheetOrThrow(spreadsheet,name){const sheet=spreadsheet.getSheetByName(name);if(!sheet)throw Error("Missing "+name);return sheet;},
  getOrCreateSheet(spreadsheet,name){const sheet=spreadsheet.getSheetByName(name);if(!sheet)throw Error("Missing "+name);return sheet;},
