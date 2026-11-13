@@ -11875,7 +11875,8 @@ function authorizeDepartmentReferenceReadViaUser_(payload, expedienteId, request
 
 function getStudentDocuments(payload) {
   const request = payload || {};
-  const cleanExpId = request.expedienteId ? String(request.expedienteId).trim().toLowerCase() : "";
+  const rawExpId = request.expedienteId ? String(request.expedienteId).trim() : "";
+  const cleanExpId = rawExpId.toLowerCase();
   const cleanSolId = request.solicitudId ? String(request.solicitudId).trim().toLowerCase() : "";
   const explicitTarget = !!(cleanExpId || cleanSolId);
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -11919,7 +11920,7 @@ function getStudentDocuments(payload) {
     const candidateCounts = Object.create(null);
     candidates.forEach(function(row) { const id = String(row[0] || "").trim(); if (id) candidateCounts[id] = (candidateCounts[id] || 0) + 1; });
     if (requestedDocumentIds.some(function(id) { return candidateCounts[id] !== 1; })) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." };
-    const authorization = authorizeDepartmentReferenceReadViaUser_(request, cleanExpId, requestedFields, requestedDocumentIds);
+    const authorization = authorizeDepartmentReferenceReadViaUser_(request, rawExpId, requestedFields, requestedDocumentIds);
     if (!authorization.authorized) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." };
     const requestedSet = Object.create(null), fieldSet = Object.create(null);
     authorization.approvedDocumentIds.forEach(function(id) { requestedSet[String(id)] = true; });
