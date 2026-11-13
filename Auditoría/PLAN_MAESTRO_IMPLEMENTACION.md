@@ -5306,3 +5306,12 @@ La revisión de requisitos originales confirma cobertura de:
 - **Beta:** BETA-FUNC-052 agregado a beta_test.txt; Pendiente beta, no bloquea la aprobación local. BETA-FUNC-051 permanece Pendiente beta.
 - **Estado:** C1.676 completada para este subalcance. TASK-153/AUD-NG-140 permanecen En ejecución por los requisitos restantes.
 - **Siguiente tarea:** continuar con el siguiente requisito independiente pendiente de TASK-153/AUD-NG-140.
+
+
+ 
+### C1.677 — AUD-NG-140 / REQ-EXP-014 — cierre de implementación y verificación
+- Se concilia el alcance de identidad verificada, autoservicio, asistencia y recibos de nómina con las implementaciones C1.669–C1.673 y la corrección/validación C1.676.
+- Department Scope run 43364730161 SUCCESS en Node.js 24.22.2 (19 pasos completos), incluido el contrato ACCOUNTING de autoservicio, historial de asistencia, generación/recuperación PDF y cliente; Task-Service run 43364715823 SUCCESS en Node.js 22.23.4.
+- El harness local disponible en Node.js 22.16.0 y su node --check pasan. La suite completa en checkout local no se ejecutó por fallo DNS hacia github.com. Los workflows ejecutaron los contratos Node pertinentes en runners aislados.
+- BETA-FUNC-050/051 siguen Pendiente beta para navegador y Apps Script/Sheets/Drive desplegados; no bloquean el cierre de código conforme a NDASC.
+- **Estado:** AUD-NG-140 completada en código y CI. TASK-153 permanece En ejecución por los demás subalcances.
