@@ -2698,7 +2698,7 @@ function generateBatchMonthlyCharges(payload) {
       "Generación mensual completada: " + created + " cargos creados para " + displayMonth + " " + year + ".",
       { batchId, anoLectivo: year, mesPeriodo: displayMonth, creados: created, omitidos: omitted, sinTarifa: missingTariff, totalMontoGenerado: total }, authorizedBy || "Sistema");
     return { status: missingTariff ? "warning" : "success", batchId, anoLectivo: year, mesPeriodo: displayMonth, concepto: String(conceptoNombre || sim.concepto || ""),
-      totalProcesados: sim.desglose.length, creados: created, omitidos, sinTarifa: missingTariff, totalMontoGenerado: Math.round(total * 100) / 100,
+      totalProcesados: sim.desglose.length, creados: created, omitidos: omitted, sinTarifa: missingTariff, totalMontoGenerado: Math.round(total * 100) / 100,
       message: "Generación mensual completada. Se crearon " + created + " cargos; " + missingTariff + " estudiantes quedaron pendientes por falta de tarifa." };
   } finally { lock.releaseLock(); }
 }
