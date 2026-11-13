@@ -5159,3 +5159,10 @@ La revisión de requisitos originales confirma cobertura de:
 - El endpoint se incorpora a resourceScopeActions y a la excepción de autoservicio de empleados. El contrato ACCOUNTING departmental resource access pasó en CI run 43345686480; el workflow global falla posteriormente en User Role Membership contract (foreignLegacy nulo en línea 119), problema previo y ajeno al subalcance. Identity Mapping and Transport Security run 43345296984 SUCCESS.
 - BETA-FUNC-042 Pendiente beta; no se desplegó Apps Script/Sheets ni se usaron datos reales.
 - **Estado:** C1.664 completado como subalcance; TASK-153 / AUD-NG-386 permanece En ejecución. Siguiente callsite elegible: getLaborIncidentsHistory.
+
+
+**Addendum C1.665 — incidencias laborales y medidas disciplinarias ACCOUNTING (TASK-153)**
+- getLaborIncidentsHistory exige sesión firmada y rol permitido; el endpoint pasa a resourceScopeActions y cada EmpleadoID debe resolver a un único expediente con ResourceOwnership autorizado.
+- Incidencias y medidas se filtran por departamento/institución; consultas específicas ajenas usan RESOURCE_NOT_FOUND; IDs duplicados, mappings ambiguos y medidas ligadas a incidencias huérfanas/ambiguas se excluyen. Se valida el esquema y la lectura no crea hojas.
+- Se conserva la forma data.incidencias/medidasDisciplinarias y los filtros de presentación. El contrato completo local aislado PASS. CI para commits C1.665 NOT RUN; Apps Script/Sheets real no desplegado.
+- BETA-FUNC-043 Pendiente beta. TASK-153 / AUD-NG-386 continúa En ejecución. Siguiente callsite elegible: getWorkShiftsAndSubstitutionsHistory.

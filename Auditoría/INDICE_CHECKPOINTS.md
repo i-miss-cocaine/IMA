@@ -682,3 +682,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.663 | IMA-EXEC-20261112-1754Z-03 | Publicado en este commit | TASK-153 / PM-01 — aislamiento de alertas de contratos laborales (ACCOUNTING) | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — sección C1.663 | 72–85 | C1.662 | Este commit; SHA verificado tras publicación |
 
 | C1.664 | IMA-EXEC-20261112-1754Z-03 | Implementado; contrato ACCOUNTING CI PASS; workflow global bloqueado por User Role Membership heredado | TASK-153 / PM-01 — aislamiento de historial de capacitación ACCOUNTING | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.664 | 88–100 | C1.663 | Commit documental por confirmar |
+
+| C1.665 | IMA-EXEC-20261112-1754Z-03 | Implementación local completada; contrato ACCOUNTING aislado PASS; CI NOT RUN para nuevos commits | TASK-153 / PM-01 — aislamiento de incidencias laborales y medidas disciplinarias ACCOUNTING | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.665 | 103–115 | C1.664 | Commit documental por confirmar |

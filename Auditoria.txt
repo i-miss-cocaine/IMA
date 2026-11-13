@@ -2694,3 +2694,15 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Verificación:** parseo sintáctico Code.gs/test PASS; contrato ACCOUNTING departmental resource access PASS en Department Scope run 43345686480; los pasos previos Department Scope, Internal Responsibility RBAC, ACCOUNTING departmental import y USER migrated resource ownership también PASS. El workflow global falla después en User Role Membership contract, test tests/security/user-role-membership-contract.test.js:119: verifySessionToken(foreignLegacy) retorna null y el test intenta leer .role. Es un fallo ajeno al alcance ACCOUNTING, previamente observado en checkpoints anteriores; pasos posteriores quedan SKIPPED. Identity Mapping and Transport Security run 43345296984 SUCCESS.
 - **Estado:** subalcance corregido y contrato focalizado integrado PASS; TASK-153 permanece En ejecución. BETA-FUNC-042 Pendiente beta. Apps Script/Sheets real no desplegado.
 ===============================================================================
+
+
+===============================================================================
+### C1.665 — AUD-NG-386 / TASK-153 — ACCOUNTING getLaborIncidentsHistory
+- **Severidad:** Alto — incidencias laborales, aclaraciones, evidencia documental y medidas disciplinarias contienen datos personales y laborales sensibles.
+- **Hallazgo:** el endpoint confiaba en userRole opcional del payload, no exigía sesión firmada ni aplicaba ownership departamental al EmpleadoID de incidencias y medidas; además podía crear hojas al consultar.
+- **Corrección:** identidad y rol derivados de sesión firmada; lista de roles permitidos aplicada al rol verificado; incorporación de getLaborIncidentsHistory a resourceScopeActions; relación UserID↔ExpedienteID única y autorización por assertEmployeeExpedienteScopeAccess_/ResourceOwnership; anti-enumeración RESOURCE_NOT_FOUND; IDs duplicados y medidas con referencias ambiguas/huérfanas excluidos; encabezados exactos; lectura getSheetByName sin escrituras. Se preservan data.incidencias/medidasDisciplinarias y los filtros existentes.
+- **Verificación local:** parseo de Code.gs y test PASS; ejecución local aislada del contrato completo tests/security/accounting-departmental-resource-access.test.js PASS, incluidos DEP-A/DEP-B/institución, token inválido, rol falsificado, consultas ajenas, filtros, medidas vinculadas, IDs duplicados, ownership ambiguo, medidas huérfanas, esquema inválido y ausencia de creación de hojas.
+- **CI:** NOT RUN para el HEAD de esta unidad; no se obtuvo ejecución CI asociada a los commits nuevos. No reutilizar como evidencia CI de este cambio los runs anteriores de C1.664.
+- **Archivos funcionales:** backend/accounting-service/Code.gs; tests/security/accounting-departmental-resource-access.test.js. Registros de continuidad y beta añadidos en C1.665.
+- **Estado:** subalcance local completado; TASK-153 / AUD-NG-386 continúa En ejecución por superficies ACCOUNTING restantes. BETA-FUNC-043 Pendiente beta. No se desplegó Apps Script/Sheets ni se usaron datos reales.
+===============================================================================
