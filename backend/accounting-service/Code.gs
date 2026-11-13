@@ -8756,7 +8756,7 @@ function recordPurchaseReceipt(payload) {
         cumulativeReceived[code].danadaRechazada += qty;
       } else {
         cumulativeReceived[code].recibidaConforme += qty;
-        itemsToInventory.push({ ...item, cantidad: qty, conforme: true });
+        itemsToInventory.push({ ...item, codigoItem: code, cantidad: qty, conforme: true });
       }
     });
 

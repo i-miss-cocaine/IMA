@@ -7,8 +7,8 @@ const rows={
  RecepcionesCompra:[["RecepcionID","OrdenCompraID","Fecha","ReceptorUserId","DetalleJSON","EstadoConformidad","RegistrarInventario","AsientoID","Observaciones"]]
 };
 function sheet(name){return {getDataRange:()=>({getValues:()=>rows[name].map(r=>r.slice())}),getLastRow:()=>rows[name].length,appendRow:r=>rows[name].push(r.slice()),getRange:(row,col)=>({setValue:v=>{rows[name][row-1][col-1]=v;}})};}
-let inventoryMoves=[];
-const ctx={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>({getSheetByName:n=>rows[n]?sheet(n):null})},LockService:{getScriptLock:()=>({waitLock:()=>{},releaseLock:()=>{}})},getOrCreateSheet:(ss,name)=>sheet(name),recordInventoryMovement:p=>{inventoryMoves.push({...p});return {status:"success"};}};
+let inventoryMoves=[],lockBusy=false;
+const ctx={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>({getSheetByName:n=>rows[n]?sheet(n):null})},LockService:{getScriptLock:()=>({waitLock:()=>{if(lockBusy)throw new Error("LOCK_BUSY");},releaseLock:()=>{}})},getOrCreateSheet:(ss,name)=>sheet(name),recordInventoryMovement:p=>{inventoryMoves.push({...p});return {status:"success"};}};
 vm.createContext(ctx);vm.runInContext(extract(source,"recordPurchaseReceipt"),ctx);
 const partial=ctx.recordPurchaseReceipt({ordenCompraId:"PO-1",detalleRecibido:[{codigoItem:"IT-A",cantidad:4}],estadoConformidad:"Conforme",registrarEnInventario:true});
 assert.equal(partial.estadoOrden,"RecibidaParcial");assert.equal(partial.resumenPartidas.find(x=>x.codigoItem==="IT-A").pendiente,6);assert.equal(partial.resumenPartidas.find(x=>x.codigoItem==="IT-B").pendiente,5);assert.equal(inventoryMoves.length,1);
@@ -22,4 +22,10 @@ assert.throws(()=>ctx.recordPurchaseReceipt({ordenCompraId:"PO-3",detalleRecibid
 assert.equal(inventoryMoves.length,movesBefore);assert.equal(rows.RecepcionesCompra.length,receiptsBefore);
 const damaged=ctx.recordPurchaseReceipt({ordenCompraId:"PO-3",detalleRecibido:[{codigoItem:"IT-A",cantidad:2}],estadoConformidad:"Danado",registrarEnInventario:true});
 assert.equal(damaged.estadoOrden,"EnDisputa");assert.equal(damaged.resumenPartidas[0].recibidaConforme,0);assert.equal(damaged.resumenPartidas[0].danadaRechazada,2);assert.equal(inventoryMoves.length,movesBefore);
-console.log("F18-Task01 partial purchase receipt contract PASS: cumulative quantities, partial/total status, over-receipt rejection, unknown item rejection and damaged-unit exclusion.");
+rows.OrdenesCompra.push(["PO-4","","","SUP-1","","Aprobada",JSON.stringify([{codigo:"IT-C",cantidad:2}]),100,"CC-1","Aprobada"]);
+const aliasReceipt=ctx.recordPurchaseReceipt({ordenCompraId:"PO-4",detalleRecibido:[{codigo:"IT-C",nombreItem:"Item C",cantidad:1}],estadoConformidad:"Conforme",registrarEnInventario:true});
+assert.equal(aliasReceipt.estadoOrden,"RecibidaParcial");assert.equal(inventoryMoves.at(-1).itemCodigo,"IT-C","accepted item-code aliases must be normalized for inventory");
+const receiptsBeforeLock=rows.RecepcionesCompra.length,movesBeforeLock=inventoryMoves.length;lockBusy=true;
+assert.throws(()=>ctx.recordPurchaseReceipt({ordenCompraId:"PO-4",detalleRecibido:[{codigo:"IT-C",cantidad:1}],estadoConformidad:"Conforme",registrarEnInventario:true}),/LOCK_BUSY/);
+lockBusy=false;assert.equal(rows.RecepcionesCompra.length,receiptsBeforeLock);assert.equal(inventoryMoves.length,movesBeforeLock);assert.equal(rows.OrdenesCompra[3][9],"RecibidaParcial","lock contention must not advance receipt state");
+console.log("F18-Task01 partial purchase receipt contract PASS: cumulative quantities, partial/total status, over-receipt rejection, unknown item rejection, damaged-unit exclusion, code normalization and lock contention.");
