@@ -15,7 +15,7 @@ const now=new Date("2026-11-13T10:00:00Z"),rows={
 let role="Contador",scope={institutionWide:true,departmentIds:[]};
 const ss={getSheetByName:n=>rows[n]?{getDataRange:()=>({getValues:()=>rows[n].map(r=>r.slice())})}:null};
 const ctx={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>ss},purchaseQuotationAccess_:()=>({authorized:true,actor:{userId:"U-1",role},scope}),normalizePurchaseAwardRole_:v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/[^A-Z0-9]/g,"")};
-vm.createContext(ctx);["purchaseDossierRows_","purchaseDossierDate_","purchaseDossierSafeUrl_","getPurchaseDossier"].forEach(n=>vm.runInContext(extract(source,n),ctx));
+vm.createContext(ctx);["purchaseDossierRows_","purchaseDossierDate_","getPurchaseDossier"].forEach(n=>vm.runInContext(extract(source,n),ctx));ctx.purchaseDossierSafeUrl_=value=>{const url=String(value||"").trim();return url.indexOf("https://")===0||url.indexOf("http://")===0?url:"";};
 const result=ctx.getPurchaseDossier({query:"REQ-1"});assert.equal(result.status,"success");assert.equal(result.total,1);const dossier=result.expedientes[0];
 assert.equal(dossier.orden.estado,"Cerrada","closed orders remain discoverable");assert.equal(dossier.metricas.cantidadPedida,2);assert.equal(dossier.metricas.cantidadRecibida,1);assert.equal(dossier.metricas.cantidadFacturada,1);assert.equal(dossier.metricas.cantidadPendiente,1);
 assert.equal(dossier.metricas.importeAutorizado,2000);assert.equal(dossier.metricas.importeFacturado,1000);assert.equal(dossier.metricas.importePagado,500);assert.equal(dossier.metricas.saldoPendiente,500);
