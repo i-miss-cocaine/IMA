@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.675**
+- Último checkpoint: **C1.676**
 - Última sesión: `IMA-EXEC-20261112-1754Z-03`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.675: **56190**
+- Caracteres del archivo activo tras C1.676: **61672**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -716,3 +716,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.674 | IMA-EXEC-20261112-1754Z-03 | Fixture de revocación del contrato User Role Membership corregido; ejecución local/CI NOT RUN | TASK-153 / T153-S02 — mock de PropertiesService en harness | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.674 | sección final | C1.673 | ab5ce7b84b1c8ed9a1c36e6ceaaa16dc8880e69d |
 
 | C1.675 | IMA-EXEC-20261112-1754Z-03 | User Role Membership contract PASS en Node.js 24.22.2 (Actions 43362842576); workflow global FAILURE por fallo independiente ACCOUNTING en línea 706 | TASK-153 / T153-S02 — verificación focalizada y cierre de harness | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.675 | sección final | C1.674 | 8d370ba1b0cd989bc55d018b899a8ff3a852e12b; workflow 49dde5e534fa6943ccf19d8a72772762cb1adcf6 |
+
+| C1.676 | IMA-EXEC-20261112-1754Z-03 | Department Scope CI SUCCESS (43364730161, Node 24.22.2); Task-Service CI SUCCESS (43364715823, Node 22.23.4); guardian delegated scope hardened and contract fixtures corrected; BETA-FUNC-052 Pendiente beta | TASK-153 / AUD-NG-140 — cierre de contratos y acceso tutor-estudiante | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.676 | sección final | C1.675 | 18c363037290353cd35606aab2639145de73d14e; f7a335ed58d18f9e253af08c151e8a49bd0cb924 |
