@@ -662,3 +662,20 @@
 - **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 continúa En ejecución por otras rutas.
 - **Siguiente tarea elegible:** revisar manageStaffingNeeds y getStaffingNeedsPlanning, verificando el alcance institucional/departamental del plan de necesidades y la lectura sin creación de hojas.
 ===============================================================================
+
+
+===============================================================================
+### C1.698 — TASK-153 / AUD-NG-386 — ACCOUNTING: planificación de necesidades de personal
+- **Continuidad:** sesión IMA-EXEC-20261113-1540Z-01; checkpoint anterior C1.697; HEAD inicial 59070c7a44ebbaf0dbaf246c8c2517df603c3faa; HEAD funcional final 3a264402701d5fc3f2d0c839a30799e2496afb30; rama NG_beta_0.0.0.1_work. Rama base 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
+- **Alcance:** endurecimiento de manageStaffingNeeds y getStaffingNeedsPlanning.
+- **Hallazgos:** la escritura confiaba en campos del payload, aceptaba creador/departamento no verificados, carecía de scope departamental, lock y control de IDs duplicados; la lectura creaba hojas ausentes, no filtraba consistentemente planes/empleados/vacantes por ámbito y consultaba columnas incorrectas para el estado laboral y de vacantes.
+- **Corrección:** sesión firmada y rol RR. HH./Administrador; scope institucional/departamental verificado; resolución única de departamento por ID/nombre en catálogo; persistencia del DepartmentID canónico; creador y fecha de creación derivados/inmutables; vacante relacionada limitada al mismo departamento; UUID, validación de cantidad/esquema, ScriptLock, revalidación y compensación ante fallo.
+- **Lectura:** no crea hojas; limita proyecciones y vacantes al scope; empleados activos requieren ResourceOwnership EXPEDIENTE_LABORAL único de la institución y departamento visible; estados leídos desde columnas canónicas; filtros de departamento se aplican también a personal y vacantes. Configuración ausente o referencias ambiguas se resuelven fail-closed.
+- **Archivos de implementación:** backend/accounting-service/Code.gs; tests/security/accounting-staffing-needs-ownership.test.js (nuevo); .github/workflows/department-scope-contract.yml.
+- **Commits de implementación/corrección:** ca70dc8477955b53efbee120499737bd2f347173; 3a264402701d5fc3f2d0c839a30799e2496afb30.
+- **Verificación:** parseo JS del servicio y del contrato PASS en el entorno de ejecución; Department Scope run 43454938151 SUCCESS (Node.js 24.22.2; contrato staffing, regresiones ACCOUNTING y syntax-check de servicios); Identity Mapping run 43454721673 SUCCESS; Department Reference Consumers run 43454721709 SUCCESS. El primer run focalizado detectó una expectativa de conteo incorrecta en la prueba (2 en vez de 3 proyecciones tras crear un registro); se corrigió en 3a26440 y el run final pasó.
+- **CLI local:** NOT RUN; el entorno de trabajo no pudo resolver github.com para obtener checkout. **Apps Script/Sheets real:** NOT RUN; no hubo despliegue ni datos reales.
+- **Beta:** BETA-FUNC-071 agregado a beta_test_Parte_0002.txt; Pendiente beta.
+- **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 continúa En ejecución por otras rutas.
+- **Siguiente tarea elegible:** revisar las rutas de asistencia/registro de jornada de personal aún expuestas en ACCOUNTING, en particular recordStaffCheckIn, recordStaffAttendance y getStaffAttendanceLogs, sin asumir que su inclusión en el gate sustituye la verificación interna de ownership.
+===============================================================================

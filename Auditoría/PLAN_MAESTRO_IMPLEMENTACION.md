@@ -5430,3 +5430,11 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Department Scope 43452526608, Identity mapping 43452526528 y Department Reference Consumers 43452526505 SUCCESS (Node 24.22.2); contratos ACCOUNTING/ACADEMIC/USER/ABAC y syntax-check Apps Script PASS.
 - BETA-FUNC-070 Pendiente beta; CLI local y Apps Script/Sheets real NOT RUN; no hubo despliegue ni datos reales.
 - **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 sigue En ejecución. Siguiente: manageStaffingNeeds/getStaffingNeedsPlanning.
+
+
+### C1.698 — TASK-153 / AUD-NG-386 — ACCOUNTING: planificación de necesidades de personal
+- manageStaffingNeeds exige identidad firmada, RR. HH./Administrador y scope departamental/institucional; resuelve departamento canónico, impide transferencia de planes y valida vacante relacionada en el mismo ámbito.
+- Escrituras con ID UUID, validación de cantidad/esquema, ScriptLock, revalidación, creador inmutable y compensación.
+- getStaffingNeedsPlanning no crea hojas; filtra planes/vacantes por scope y empleados por ResourceOwnership único de la institución; corrige índices de estado laboral/vacante y filtra también personal/vacantes por departamento solicitado.
+- Department Scope 43454938151, Identity Mapping 43454721673 y Department Reference Consumers 43454721709 SUCCESS (Node 24.22.2). BETA-FUNC-071 Pendiente beta; CLI local y Apps Script/Sheets real NOT RUN; no hubo despliegue ni datos reales.
+- **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 sigue En ejecución. Siguiente: revisar recordStaffCheckIn, recordStaffAttendance y getStaffAttendanceLogs.

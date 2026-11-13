@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.697**
-- Última sesión: `IMA-EXEC-20261113-1525Z-01`
+- Último checkpoint: **C1.698**
+- Última sesión: `IMA-EXEC-20261113-1540Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.697: **138581**
+- Caracteres del archivo activo tras C1.698: **141784**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -745,3 +745,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.695 | IMA-EXEC-20261113-1502Z-01 | Incidencias/medidas ACCOUNTING; CI 43449143792/799/801 SUCCESS; BETA-FUNC-068 Pendiente | TASK-153/AUD-NG-386 | Checkpoints_Parte_0008.txt C1.695 | C1.694 | 447d847/f6da8d5/b0126d9 |
 | C1.696 | IMA-EXEC-20261113-1517Z-02 | Capacitación/planes/analítica ACCOUNTING; CI 43451485260 SUCCESS; BETA-FUNC-069 Pendiente | TASK-153/AUD-NG-386 | Checkpoints_Parte_0008.txt C1.696 | C1.695 | 03cbfe8/4f5bbfd/b20ad1a/089d9d0/02734de |
 | C1.697 | IMA-EXEC-20261113-1525Z-01 | Turnos/sustituciones ACCOUNTING; CI 43452526608 SUCCESS; BETA-FUNC-070 Pendiente | TASK-153/AUD-NG-386 | Checkpoints_Parte_0008.txt C1.697 | C1.696 | c3581d8/3110d75 |
+| C1.698 | IMA-EXEC-20261113-1540Z-01 | ACCOUNTING necesidades de personal; Department Scope 43454938151 SUCCESS; BETA-FUNC-071 Pendiente | TASK-153/AUD-NG-386 | Checkpoints_Parte_0008.txt C1.698 | sección final | C1.697 | commits ca70dc8/3a26440 |

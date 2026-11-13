@@ -91,3 +91,14 @@
 - **Evidencia requerida:** IDs sintéticos, scopes/ownership, snapshots anonimizados, respuestas permitidas/denegadas y trazas de concurrencia/rollback. No usar tokens ni datos personales.
 - **Estado:** Pendiente beta. No se ha desplegado ni ejecutado contra Apps Script/Sheets reales.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-071 — ACCOUNTING: planificación de necesidades de personal
+- **Objetivo:** verificar creación/actualización y lectura de planes de necesidades de personal con identidad firmada, scope departamental, propiedad de expedientes y ausencia de efectos laterales en consultas.
+- **Precondiciones:** entorno beta aislado; catálogo de departamentos con dos departamentos; usuarios sintéticos de RR. HH. con scopes A/B y administrador institucional; planes, expedientes, ResourceOwnership y vacantes con esquemas canónicos. Solo datos sintéticos.
+- **Pasos:** (1) crear un plan para el departamento autorizado y comprobar que persiste su DepartmentID canónico y el actor verificado; (2) denegar creación en otro departamento; (3) actualizar un plan propio y denegar transferencia de un plan ajeno; (4) aceptar solo vacante relacionada del mismo departamento y denegar una de otro ámbito; (5) probar cantidad inválida, IDs duplicados/colisión y esquema incompatible; (6) simular fallo de setValues y verificar compensación; (7) consultar como RR. HH. de A y confirmar que planes, personal activo y vacantes de B no aparecen; (8) consultar como administrador institucional y verificar ambos departamentos; (9) probar estado laboral y estado de vacante desde las columnas canónicas; (10) consultar con hojas ausentes y comprobar que la lectura no las crea; (11) simular lock ocupado y reentrada/concurrencia.
+- **Resultado esperado:** mutaciones solo con sesión/rol/scope verificados; sin transferencia de propiedad, referencias cruzadas, IDs ambiguos ni escrituras parciales; consultas limitadas por institución/departamento y sin crear hojas.
+- **Evidencia requerida:** snapshots anonimizados, IDs sintéticos, scopes/ownership, respuestas permitidas/denegadas, conteos por departamento y trazas de rollback/concurrencia. No guardar tokens ni PII.
+- **Estado:** Pendiente beta. No se ha desplegado ni ejecutado contra Apps Script/Sheets reales.
+===============================================================================
