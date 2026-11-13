@@ -71,3 +71,18 @@ Continuación del historial activo desde C1.710. Los registros anteriores perman
 - **Estado:** TASK-184 permanece Completada en código/CI; BETA-FUNC-085 Pendiente beta.
 - **Siguiente tarea elegible:** TASK-185 — motor integral de depreciación y gestión contable de activos fijos.
 ===============================================================================
+
+
+===============================================================================
+### C1.716 — IMA-EXEC-20261113-2213Z-01 — TASK-185 — Motor integral de depreciación
+- **Continuidad:** C1.715; HEAD de inicio 1dfd000ddb20b662c3ad200c25ed7d892f8353b6; rama exclusiva NG_beta_0.0.0.1_work; rama base 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Alcance completado:** ficha financiera por activo; políticas por categoría; métodos línea recta, saldo decreciente y unidades de producción; apertura histórica; mejoras capitalizables; calendario mensual/anual; asientos por partida doble; idempotencia; reversión compensatoria auditable; bajas con valor neto y ganancia/pérdida; resumen por categoría y conciliación con el libro mayor.
+- **Revisión de código:** diff de implementación acotado a backend/accounting-service/Code.gs, js/accounting.js y el contrato específico. Se corrigieron el corte histórico de reportes, el conflicto de reutilización de clave de mejora y la carrera entre validación del activo y adquisición de ScriptLock. Se revisaron preservación de esquema/filas, balance de asientos, reversión, residual, referencias de libro mayor y sintaxis.
+- **Pruebas:** tests/security/accounting-asset-depreciation.test.js PASS; contrato de TASK-182 y regresiones contables del workflow PASS; node --check < backend/accounting-service/Code.gs y node --check js/accounting.js PASS en el runner.
+- **CI:** Department Scope Contract run 43519538296 SUCCESS (Node.js 24.22.2). Identity Mapping run 43519439041 y Department Reference Consumers run 43519439164 SUCCESS en el commit de código anterior 63562112b39dec34b515e18393382153becdcbb3.
+- **Commits de cierre:** 1dfd000ddb20b662c3ad200c25ed7d892f8353b6 (HEAD heredado con implementación inicial); e6ac1f0162b916b6de15f34b5d91c71ed20c6280 (resumen por categoría); 8968286f05c7afed7d83f7b1249769e0c24a31e3 (corte histórico/idempotencia); 63562112b39dec34b515e18393382153becdcbb3 (revalidación bajo lock); 3f0673034ca6a18b587dd416c3a87a1a2bcdc74d (pruebas de corte histórico y claves idempotentes).
+- **Archivos de código/prueba:** backend/accounting-service/Code.gs, js/accounting.js, tests/security/accounting-asset-depreciation.test.js.
+- **Limitaciones:** CLI local NOT RUN por ausencia de checkout local y resolución DNS en el contenedor; Apps Script/Sheets desplegado NOT RUN. BETA-FUNC-086 documenta la validación en entorno beta. No se usaron datos productivos.
+- **Estado:** TASK-185 completada en código, revisión y CI; BETA-FUNC-086 Pendiente beta.
+- **Siguiente tarea elegible:** TASK-186 — catálogo maestro institucional de artículos/materiales. F19-Task01 cuenta con soporte técnico multialmacén en recordInventoryMovement y getInventoryKardex; F19-TASK05 es el registro de alcance equivalente que se resolverá junto con TASK-186. TASK-188 se mantiene detrás de la disponibilidad del catálogo.
+===============================================================================

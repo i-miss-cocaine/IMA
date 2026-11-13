@@ -3551,3 +3551,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - El contrato prueba el helper real de allowlist, URLs no permitidas, scope positivo/negativo, privacidad anidada, factura parcial, detalle de cotización y carrera de cancelación.
 - CI: Department Scope 43514861936, Identity Mapping 43514861917, Reference Consumers 43514861918 SUCCESS; Node.js 24; sintaxis Apps Script/JS PASS.
 - Commit: 828421d83bf9d2e0a032af4ab41e2e4a874b862c. CLI local y Apps Script/Sheets real NOT RUN. BETA-FUNC-085 Pendiente beta.
+
+
+[2026-11-13 22:29 UTC] C1.716 — TASK-185 — motor de depreciación y gestión contable de activos fijos
+- Se completó la ficha financiera y las políticas por categoría con línea recta, saldo decreciente y unidades de producción; se añadieron apertura histórica, mejoras capitalizables y migración de encabezados.
+- Se integró el asiento automático por partida doble, protección idempotente por activo/período, reversión compensatoria que conserva el asiento original, bajas con valor neto y ganancia/pérdida, calendario individual/consolidado, resumen por categoría y conciliación patrimonial contra el libro mayor.
+- Revisión correctiva: corte histórico por fecha, conflicto cuando se reutiliza una clave de mejora con payload distinto y revalidación del estado del activo después de adquirir ScriptLock.
+- Contrato TASK-185 PASS en GitHub Actions Node.js 24.22.2; Department Scope run 43519538296 SUCCESS, incluidos los contratos Node y sintaxis Apps Script/JS. Identity Mapping 43519439041 y Department Reference Consumers 43519439164 SUCCESS en el commit de código anterior 63562112.
+- CLI local NOT RUN (sin checkout local ni resolución de red en el contenedor); Apps Script/Sheets real NOT RUN. BETA-FUNC-086 Pendiente beta.
+- HEAD de cierre: 3f0673034ca6a18b587dd416c3a87a1a2bcdc74d. Rama base verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.

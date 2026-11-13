@@ -5530,3 +5530,13 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - El contrato local cubre el helper real de allowlist, entradas no permitidas, scope positivo/negativo, redacción anidada, detalle de cotización, búsqueda parcial y carrera determinista. GitHub Actions Node.js 24 y syntax-check PASS: Department Scope 43514861936, Identity Mapping 43514861917, Reference Consumers 43514861918.
 - Commit correctivo: 828421d83bf9d2e0a032af4ab41e2e4a874b862c. CLI local y Apps Script/Sheets real NOT RUN; BETA-FUNC-085 Pendiente beta.
 - **Siguiente tarea elegible:** TASK-185 — motor integral de depreciación y gestión contable de activos fijos.
+
+
+### C1.716 — TASK-185 — Motor integral de depreciación y gestión contable de activos fijos
+- Se completó la ficha financiera y las políticas de depreciación configurables por categoría para línea recta, saldo decreciente y unidades de producción, con activos históricos de apertura y mejoras capitalizables trazables.
+- Se integró la contabilización por partida doble mediante el servicio contable, idempotencia por activo/período, reversión compensatoria auditable, bajas con valor neto y resultado de disposición, calendario individual/consolidado, resumen por categoría y conciliación con el libro mayor.
+- Se corrigió el corte histórico de reportes, la colisión de claves idempotentes con payload distinto y la carrera de baja concurrente de un activo al registrar mejoras mediante revalidación dentro de ScriptLock.
+- Contrato tests/security/accounting-asset-depreciation.test.js PASS; GitHub Actions Department Scope run 43519538296 SUCCESS (Node.js 24.22.2, contratos y syntax-check Apps Script/JS). Identity Mapping 43519439041 y Department Reference Consumers 43519439164 SUCCESS en el commit previo de código 63562112.
+- **Limitaciones:** CLI local NOT RUN por ausencia de checkout local y resolución de red; Apps Script/Sheets real NOT RUN. La validación desplegada queda en BETA-FUNC-086 y no bloquea el cierre de código.
+- **Estado:** TASK-185 completada en código y CI; BETA-FUNC-086 Pendiente beta.
+- **Siguiente tarea elegible:** TASK-186 — catálogo maestro institucional de artículos/materiales. La dependencia técnica F19-Task01 está implementada en recordInventoryMovement y getInventoryKardex con separación por ubicación; F19-TASK05 representa el mismo alcance de catálogo y se resolverá mediante TASK-186. TASK-188 queda después de ese catálogo.

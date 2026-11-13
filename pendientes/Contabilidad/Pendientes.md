@@ -2536,7 +2536,7 @@
 ---
 
 <!-- ID: TASK-185 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [ ] [TASK-185] Motor integral de depreciación y gestión contable de activos fijos
+### [x] [TASK-185] Motor integral de depreciación y gestión contable de activos fijos
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E (F19-12), Sección G (Defecto 3) y Plan de Trabajo F19-04
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Cumplimiento contable institucional, cálculo de vida útil, amortización acumulada y balance patrimonial)
@@ -2585,7 +2585,8 @@
   - Las mejoras capitalizables actualizan la base de cálculo de forma trazable.
   - Las bajas reconocen el valor neto en libros a la fecha de disposición.
   - Los reportes patrimoniales coinciden exactamente con las cuentas contables de balance.
-- **Estado:** [ ] Pendiente
+- **Resolución C1.716:** ficha financiera y políticas configurables por categoría; métodos línea recta, saldo decreciente y unidades; apertura histórica; mejoras capitalizables; asientos automáticos por partida doble; reversión auditable; bajas con valor neto/resultado; calendario y conciliación patrimonial por activo, categoría y libro mayor. Se corrigieron el corte histórico, la idempotencia de mejoras y la revalidación del activo dentro de ScriptLock.
+- **Estado:** [x] Completada en código y CI; BETA-FUNC-086 Pendiente beta.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7724-7761; clave TASK-186; asignación única: Contabilidad -->
 
