@@ -453,6 +453,8 @@ window.loadSolicitudesData = function () {
             <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase">
               <th class="p-2">ID Solicitud</th>
               <th class="p-2">Departamento</th>
+              <th class="p-2">Centro de costo</th>
+              <th class="p-2">Reconocimiento</th>
               <th class="p-2">Solicitante</th>
               <th class="p-2">Motivo</th>
               <th class="p-2">Estado</th>
@@ -467,6 +469,8 @@ window.loadSolicitudesData = function () {
           <tr class="hover:bg-gray-50">
             <td class="p-2 font-mono font-bold text-purple-600">${s.solicitudMatId}</td>
             <td class="p-2 font-bold text-gray-800">${s.departamento}</td>
+            <td class="p-2 text-gray-700">${s.centroCosto || s.departamento}</td>
+            <td class="p-2 text-gray-600">${s.modoReconocimiento === "ASIGNADO" ? "Material asignado" : "Gasto inmediato"}</td>
             <td class="p-2 text-gray-600">${s.solicitanteUserId}</td>
             <td class="p-2 text-gray-500">${s.motivo || 'Consumo'}</td>
             <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${s.estadoAprobacion === 'Entregado' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${s.estadoAprobacion}</span></td>
