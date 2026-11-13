@@ -1818,6 +1818,7 @@ function renderPayrollAdjustmentsModule(container) {
         </div>
       </form>
     </section>`;
+  window.resetPayrollAdjustmentLines();
 }
 window.addPayrollAdjustmentLine = function() {
   const container=document.getElementById("payroll-adjustment-lines");if(!container)return;
@@ -1839,7 +1840,7 @@ window.submitPayrollJournalAdjustment = async function(event) {
     debe:Number(row.querySelector("[data-debit]").value||0),
     haber:Number(row.querySelector("[data-credit]").value||0)
   }));
-  if(!lines.length||lines.some(x=>!x.cuenta||!x.nombre||!Number.isFinite(x.debe)||!Number.isFinite(x.haber)||x.debe<0||x.haber<0||(x.debe>0&&x.haber>0)||(x.debe===0&&x.haber===0))){
+  if(lines.length<2||lines.some(x=>!x.cuenta||!x.nombre||!Number.isFinite(x.debe)||!Number.isFinite(x.haber)||x.debe<0||x.haber<0||(x.debe>0&&x.haber>0)||(x.debe===0&&x.haber===0))){
     if(status)status.textContent="Cada línea requiere cuenta, descripción y un importe positivo en Debe o Haber, nunca ambos.";return;
   }
   const debit=Math.round(lines.reduce((t,x)=>t+x.debe,0)*100)/100,credit=Math.round(lines.reduce((t,x)=>t+x.haber,0)*100)/100;
