@@ -357,7 +357,7 @@ context.getOrCreateSheet=originalContractGetOrCreate;
 assert.ok(extractFunction(accounting,"getEmployeeContracts").includes('getSheetByName("ContratosLaborales")'));
 assert.ok(!extractFunction(accounting,"getEmployeeContracts").includes("getOrCreateSheet"),"contract reads must not create sheets");
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeContracts"'),"contracts must be included in resource scope authorization");
-assert.ok(extractFunction(accounting,"validateRolePermission").includes('["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getStaffAttendanceLogs", "getEmployeeLoansAdvances", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "recordStaffCheckIn", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile"]'),"employees must retain self-service contract access");
+assert.ok(extractFunction(accounting,"validateRolePermission").includes('["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "recordStaffCheckIn", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile"]'),"employees must retain self-service contract access");
 assert.ok(extractFunction(accounting,"getEmployeeSelfServicePortal").includes("assertEmployeeExpedienteScopeAccess_"));
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeSelfServicePortal"'));
 
