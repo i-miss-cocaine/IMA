@@ -113,3 +113,15 @@
 - **Evidencia requerida:** IDs sintéticos, scopes/ownership, snapshots anonimizados, respuestas permitidas/denegadas y trazas de rollback/concurrencia. No guardar tokens ni PII.
 - **Estado:** Pendiente beta. No se ha desplegado ni ejecutado contra Apps Script/Sheets reales.
 ===============================================================================
+
+===============================================================================
+### BETA-FUNC-073 — Portal de autoservicio laboral y colecciones vinculadas
+- Módulo/rol: ACCOUNTING / Empleado, Profesor, Asistente, Recursos Humanos, Dirección y Administrador.
+- Tarea: TASK-153 / AUD-NG-386 — aislamiento de getEmployeeSelfServicePortal.
+- Objetivo: verificar expediente, contratos, vacaciones, préstamos, turnos y capacitaciones limitados al UserID/ExpedienteID y ámbito autorizado.
+- Precondiciones: beta aislada, usuarios sintéticos en dos departamentos, scopes/ownership y hojas con esquemas canónicos.
+- Pasos: probar autoservicio propio, suplantación targetUserId, consultas HR dentro/fuera de scope, administrador, filas ajenas/IDs duplicados, esquemas inválidos, XSS almacenado, URLs de certificado y lecturas sin escrituras.
+- Resultado esperado: sin IDOR; colecciones solo del propietario único; duplicados/esquemas inválidos fail-closed; UI escapa datos y rechaza URLs no HTTPS/host no permitido.
+- Evidencia: identidades sintéticas, scopes/ownership, IDs anonimizados y resultados por colección; no almacenar tokens ni PII.
+- Estado: Pendiente beta; sin despliegue ni acceso a Sheets reales.
+===============================================================================

@@ -3456,3 +3456,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Department Scope 43457958664, Identity Mapping 43457958668 y Department Reference Consumers 43457958703 SUCCESS (Node 24.22.2). BETA-FUNC-072 Pendiente beta; sin despliegue ni datos reales.
 - TASK-153/AUD-NG-386 permanece En ejecución.
 - Commits: 6496fee, a15c68e, a236c00, 80c22ae, bc25ec1.
+
+
+[2026-11-13 16:15 UTC] C1.700 — TASK-153 / AUD-NG-386 — ACCOUNTING portal autoservicio
+- Roles allowlist, UserID firmado y ownership/scope para terceros; colecciones filtradas por propietario e ID único.
+- UI con escape HTML y validación HTTPS/host de certificados.
+- Contrato Node agregado al workflow; BETA-FUNC-073 Pendiente beta.

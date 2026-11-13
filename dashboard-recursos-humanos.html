@@ -2199,95 +2199,24 @@
         }
 
         async function refreshEmployeeSelfServiceData() {
-            try {
-                const res = await fetchApi('ACCOUNTING', 'getEmployeeSelfServicePortal', {});
-                if (!res || res.status !== 'success' || !res.data) return;
-
-                const { expediente, contratos, solicitudesVacaciones, turnos, capacitaciones } = res.data;
-
-                // Render Expediente
-                const expEl = document.getElementById('info-self-expediente');
-                if (expEl) {
-                    expEl.innerHTML = !expediente ?
-                        '<p class="text-gray-400 font-bold uppercase py-2">Ficha del colaborador no encontrada.</p>' : `
-                        <div class="space-y-1 text-xs">
-                            <h4 class="font-black text-gray-900 text-sm">${expediente.nombreCompleto || 'Colaborador'} (${expediente.expedienteId})</h4>
-                            <p class="text-gray-600"><strong>Puesto:</strong> ${expediente.puesto || 'N/A'} | <strong>Departamento:</strong> ${expediente.departamento || 'N/A'}</p>
-                            <p class="text-gray-600"><strong>Jornada:</strong> ${expediente.jornada || 'Completa'} | <strong>Fecha Ingreso:</strong> ${expediente.fechaIngreso || 'N/A'}</p>
-                            <span class="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800">${expediente.estadoLaboral || 'Activo'}</span>
-                        </div>
-                    `;
-                }
-
-                // Render Contratos
-                const conEl = document.getElementById('info-self-contratos');
-                if (conEl) {
-                    conEl.innerHTML = contratos.length === 0 ?
-                        '<p class="text-gray-400 font-bold uppercase py-2">Sin contratos registrados.</p>' :
-                        contratos.map(c => `
-                            <div class="p-3 bg-white border border-gray-100 rounded-xl flex items-center justify-between text-xs">
-                                <div>
-                                    <span class="font-bold text-gray-900">${c.tipoContrato} (${c.puesto})</span>
-                                    <p class="text-[10px] text-gray-400">Vigencia: ${c.fechaInicio} al ${c.fechaFin || 'Indefinido'}</p>
-                                </div>
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-800">${c.estadoContrato}</span>
-                            </div>
-                        `).join('');
-                }
-
-                // Render Solicitudes
-                const solEl = document.getElementById('list-self-solicitudes');
-                if (solEl) {
-                    solEl.innerHTML = solicitudesVacaciones.length === 0 ?
-                        '<p class="text-gray-400 font-bold uppercase py-2">No registras solicitudes de vacaciones o permisos.</p>' :
-                        solicitudesVacaciones.map(s => `
-                            <div class="p-3 bg-white border border-gray-100 rounded-2xl flex items-center justify-between text-xs">
-                                <div>
-                                    <span class="font-bold text-gray-900">${s.tipoSolicitud} (${s.diasSolicitados} días)</span>
-                                    <p class="text-[10px] text-gray-400">Fechas: ${s.fechaInicio} al ${s.fechaFin}</p>
-                                </div>
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${s.estado === 'Aprobada' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${s.estado}</span>
-                            </div>
-                        `).join('');
-                }
-
-                // Render Turnos
-                const turEl = document.getElementById('list-self-turnos');
-                if (turEl) {
-                    turEl.innerHTML = turnos.length === 0 ?
-                        '<p class="text-gray-400 font-bold uppercase py-2">No tienes turnos asignados.</p>' :
-                        turnos.map(t => `
-                            <div class="p-3 bg-white border border-gray-100 rounded-2xl flex items-center justify-between text-xs">
-                                <div>
-                                    <span class="font-bold text-gray-900">${t.nombreTurno}</span>
-                                    <p class="text-[10px] text-gray-400">Horario: ${t.horaEntrada} - ${t.horaSalida} | Periodo: ${t.fechaInicio} al ${t.fechaFin}</p>
-                                </div>
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800">${t.estado}</span>
-                            </div>
-                        `).join('');
-                }
-
-                // Render Capacitaciones
-                const capEl = document.getElementById('list-self-capacitaciones');
-                if (capEl) {
-                    capEl.innerHTML = capacitaciones.length === 0 ?
-                        '<p class="text-gray-400 font-bold uppercase py-2">No registras capacitaciones activas.</p>' :
-                        capacitaciones.map(c => `
-                            <div class="p-3 bg-white border border-gray-100 rounded-2xl space-y-1 text-xs">
-                                <div class="flex items-center justify-between">
-                                    <span class="font-bold text-gray-900">Curso Ref: ${c.cursoId}</span>
-                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-800">${c.estadoInscripcion}</span>
-                                </div>
-                                <p class="text-[10px] text-gray-500">Asistencia: ${c.asistenciaPorcentaje}% | Calificación: ${c.resultadoNota || 'N/A'}</p>
-                                ${c.certificadoDriveUrl ? `<a href="${c.certificadoDriveUrl}" target="_blank" class="text-blue-600 hover:underline font-bold text-[10px]"><i class="fa-solid fa-file-pdf mr-1"></i>Ver Certificado Adjunto</a>` : ''}
-                            </div>
-                        `).join('');
-                }
-            } catch (err) {
-                console.error('Error al actualizar portal de autoservicio:', err);
-            }
-        }
-
+ try {
+  const res=await fetchApi('ACCOUNTING','getEmployeeSelfServicePortal',{});
+  if(!res||res.status!=='success'||!res.data)return;
+  const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const safeCertificateUrl=v=>{try{const url=new URL(String(v||''));return url.protocol==='https:'&&['drive.google.com','docs.google.com','lh3.googleusercontent.com'].includes(url.hostname.toLowerCase())?url.href:'';}catch(_){return '';}};
+  const expediente=res.data.expediente||null,contratos=Array.isArray(res.data.contratos)?res.data.contratos:[],solicitudesVacaciones=Array.isArray(res.data.solicitudesVacaciones)?res.data.solicitudesVacaciones:[],turnos=Array.isArray(res.data.turnos)?res.data.turnos:[],capacitaciones=Array.isArray(res.data.capacitaciones)?res.data.capacitaciones:[];
+  const expEl=document.getElementById('info-self-expediente');
+  if(expEl)expEl.innerHTML=!expediente?'<p class="text-gray-400 font-bold uppercase py-2">Ficha del colaborador no encontrada.</p>':`<div class="space-y-1 text-xs"><h4 class="font-black text-gray-900 text-sm">${esc(expediente.nombreCompleto||'Colaborador')} (${esc(expediente.expedienteId)})</h4><p class="text-gray-600"><strong>Puesto:</strong> ${esc(expediente.puesto||'N/A')} | <strong>Departamento:</strong> ${esc(expediente.departamento||'N/A')}</p><p class="text-gray-600"><strong>Jornada:</strong> ${esc(expediente.jornada||'Completa')} | <strong>Fecha Ingreso:</strong> ${esc(expediente.fechaIngreso||'N/A')}</p><span class="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800">${esc(expediente.estadoLaboral||'Activo')}</span></div>`;
+  const conEl=document.getElementById('info-self-contratos');
+  if(conEl)conEl.innerHTML=contratos.length===0?'<p class="text-gray-400 font-bold uppercase py-2">Sin contratos registrados.</p>':contratos.map(c=>`<div class="p-3 bg-white border border-gray-100 rounded-xl flex items-center justify-between text-xs"><div><span class="font-bold text-gray-900">${esc(c.tipoContrato)} (${esc(c.puesto||'N/A')})</span><p class="text-[10px] text-gray-400">Vigencia: ${esc(c.fechaInicio)} al ${esc(c.fechaFin||'Indefinido')}</p></div><span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-800">${esc(c.estadoContrato)}</span></div>`).join('');
+  const solEl=document.getElementById('list-self-solicitudes');
+  if(solEl)solEl.innerHTML=solicitudesVacaciones.length===0?'<p class="text-gray-400 font-bold uppercase py-2">No registras solicitudes de vacaciones o permisos.</p>':solicitudesVacaciones.map(s=>`<div class="p-3 bg-white border border-gray-100 rounded-2xl flex items-center justify-between text-xs"><div><span class="font-bold text-gray-900">${esc(s.tipoSolicitud)} (${esc(s.diasSolicitados)} días)</span><p class="text-[10px] text-gray-400">Fechas: ${esc(s.fechaInicio)} al ${esc(s.fechaFin)}</p></div><span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${s.estado==='Aprobada'?'bg-emerald-100 text-emerald-800':'bg-amber-100 text-amber-800'}">${esc(s.estado)}</span></div>`).join('');
+  const turEl=document.getElementById('list-self-turnos');
+  if(turEl)turEl.innerHTML=turnos.length===0?'<p class="text-gray-400 font-bold uppercase py-2">No tienes turnos asignados.</p>':turnos.map(t=>`<div class="p-3 bg-white border border-gray-100 rounded-2xl flex items-center justify-between text-xs"><div><span class="font-bold text-gray-900">${esc(t.nombreTurno)}</span><p class="text-[10px] text-gray-400">Horario: ${esc(t.horaEntrada)} - ${esc(t.horaSalida)} | Periodo: ${esc(t.fechaInicio)} al ${esc(t.fechaFin)}</p></div><span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800">${esc(t.estado)}</span></div>`).join('');
+  const capEl=document.getElementById('list-self-capacitaciones');
+  if(capEl)capEl.innerHTML=capacitaciones.length===0?'<p class="text-gray-400 font-bold uppercase py-2">No registras capacitaciones activas.</p>':capacitaciones.map(c=>{const href=safeCertificateUrl(c.certificadoDriveUrl);return `<div class="p-3 bg-white border border-gray-100 rounded-2xl space-y-1 text-xs"><div class="flex items-center justify-between"><span class="font-bold text-gray-900">Curso Ref: ${esc(c.cursoId)}</span><span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-800">${esc(c.estadoInscripcion)}</span></div><p class="text-[10px] text-gray-500">Asistencia: ${esc(c.asistenciaPorcentaje)}% | Calificación: ${esc(c.resultadoNota||'N/A')}</p>${href?`<a href="${esc(href)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline font-bold text-[10px]">Ver Certificado Adjunto</a>`:''}</div>`;}).join('');
+ }catch(err){console.error('Error al actualizar portal de autoservicio:',err);}
+}
         async function refreshEmployeeAttendanceLogs() {
             const listEl = document.getElementById('list-self-attendance');
             const statusEl = document.getElementById('self-attendance-status');

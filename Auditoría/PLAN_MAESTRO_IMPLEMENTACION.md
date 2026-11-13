@@ -5446,3 +5446,11 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - getStaffAttendanceLogs exige scope cuando hay historial, filtra cada expediente por ownership y conserva colección vacía cuando la hoja no existe.
 - Department Scope 43457958664, Identity Mapping 43457958668 y Department Reference Consumers 43457958703 SUCCESS (Node 24.22.2); contrato focalizado y regresión ACCOUNTING PASS. BETA-FUNC-072 Pendiente beta; CLI local y Apps Script/Sheets real NOT RUN; sin despliegue ni datos reales.
 - **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 sigue En ejecución. Siguiente: revisar getEmployeeSelfServicePortal y el aislamiento de sus colecciones vinculadas.
+
+
+### C1.700 — TASK-153 / AUD-NG-386 — ACCOUNTING: aislamiento del portal de autoservicio laboral
+- Allowlist de roles de autoservicio y gestión; autoservicio ligado al UserID firmado y targetUserId ajeno rechazado; consultas de terceros requieren ownership/ámbito.
+- Esquema canónico y relación UserID/ExpedienteID única; colecciones filtradas por ExpedienteID o UserID según su contrato, excluyendo IDs vacíos/duplicados y filas malformadas.
+- La UI escapa valores dinámicos y limita certificados a HTTPS en dominios Drive permitidos, con rel=noopener noreferrer.
+- Contrato Node para identidad, IDOR, roles, scope, colecciones, esquemas y XSS integrado al workflow Department Scope.
+- BETA-FUNC-073 Pendiente beta; TASK-153/AUD-NG-386 permanece En ejecución.
