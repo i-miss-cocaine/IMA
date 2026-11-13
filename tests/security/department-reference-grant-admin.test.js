@@ -100,7 +100,7 @@ function validPayload(extra={}) {
 }
 {
   const h=makeRuntime(), r=h.runtime.createGrant(validPayload());
-  assert.equal(r.status,"success");
+  assert.equal(r.status,"success",JSON.stringify(r));
   assert.equal(r.ownerDepartmentId,"D1");
   assert.equal(r.authorizedBy,"U1");
   assert.equal(h.state.sheets.DepartmentReferenceGrants.snapshot().length,2);
