@@ -52,6 +52,7 @@ assert.equal(ctx.assignPayrollConcept({sessionToken:"hr",codigoConcepto:"NUEVO_C
 assert.equal(ctx.getPayrollConceptAssignments({sessionToken:"hr"}).asignaciones.length,5);
 assert.equal(ctx.assignPayrollConcept({sessionToken:"hr",codigoConcepto:"NUEVO_CONCEPTO",tipoAsignacion:"GLOBAL",valorAsignacion:"ALL"}).code,"DEPARTMENT_SCOPE_NOT_ASSIGNED");
 const inactive=ctx.setPayrollConceptStatus({sessionToken:"hr",conceptoId:created.conceptoId,estado:"INACTIVO"});assert.equal(inactive.status,"success");
+rows.AsignacionesConceptosPlanilla=[headers.assignments];
 const cycleRows=rows.CatalogoConceptosPlanilla.slice(0,1).concat([
  concept("X1","CYCLE_A","A","BONIFICACIONES_FIJAS","DEBE","FORMULA",0,"SALARIO_BASE","CYCLE_B + 1"),
  concept("X2","CYCLE_B","B","BONIFICACIONES_FIJAS","DEBE","FORMULA",0,"SALARIO_BASE","CYCLE_A + 1")
