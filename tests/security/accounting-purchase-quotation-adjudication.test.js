@@ -16,9 +16,9 @@ const rows={};Object.keys(headers).forEach(k=>rows[k]=[headers[k]]);
 const requestItems=[{itemId:"ITEM-A",descripcion:"Papel bond",unidad:"Resma",cantidad:5,especificaciones:"75 g/m2"},{itemId:"ITEM-B",descripcion:"Tóner",unidad:"Unidad",cantidad:2,especificaciones:"Compatible"}];
 rows.SolicitudesCompra.push(["REQ-1",new Date(),"D1","USR-REQ","Reposición de materiales","Suministros",JSON.stringify(requestItems),1000,"CC-1","Aprobada",""]);
 ["S1","S2","S3"].forEach((id,i)=>rows.ProveedoresActivos.push([id,new Date(),"Proveedor "+id,"","","","General","Activo",""]));
-function sheet(name){return {getDataRange:()=>({getValues:()=>rows[name].map(r=>r.slice())}),getLastRow:()=>rows[name].length,appendRow:r=>rows[name].push(r.slice()),getRange:(row,col,nr=1,nc=1)=>({setValue:v=>{if(name==="SolicitudesCompra"&&col===10&&v==="Adjudicada"&&failRequestStatusWriteOnce){failRequestStatusWriteOnce=false;throw new Error("SIMULATED_REQUEST_STATUS_WRITE_FAILURE");}rows[name][row-1][col-1]=v;},clearContent:()=>{for(let y=0;y<nr;y++)for(let x=0;x<nc;x++)if(rows[name][row-1+y])rows[name][row-1+y][col-1+x]="";}})};}
+function sheet(name){return {getDataRange:()=>({getValues:()=>rows[name].map(r=>r.slice())}),getLastRow:()=>rows[name].length,appendRow:r=>{if(name==="DetalleCotizacionesCompra"){detailAppendCount++;if(failDetailAppendAt===detailAppendCount){failDetailAppendAt=0;throw new Error("SIMULATED_DETAIL_WRITE_FAILURE");}}rows[name].push(r.slice());},getRange:(row,col,nr=1,nc=1)=>({setValue:v=>{if(name==="SolicitudesCompra"&&col===10&&v==="Adjudicada"&&failRequestStatusWriteOnce){failRequestStatusWriteOnce=false;throw new Error("SIMULATED_REQUEST_STATUS_WRITE_FAILURE");}rows[name][row-1][col-1]=v;},clearContent:()=>{for(let y=0;y<nr;y++)for(let x=0;x<nc;x++)if(rows[name][row-1+y])rows[name][row-1+y][col-1+x]="";}})};}
 const ss={getSheetByName:n=>rows[n]?sheet(n):null};
-let uuid=0,failRequestStatusWriteOnce=false,actor={authorized:true,userId:"USR-REVIEWER",role:"Contador"};
+let uuid=0,failRequestStatusWriteOnce=false,failDetailAppendAt=0,detailAppendCount=0,actor={authorized:true,userId:"USR-REVIEWER",role:"Contador"};
 const ctx={SpreadsheetApp:{openById:()=>ss},SPREADSHEET_ID:"TEST",Utilities:{getUuid:()=>"UUID-"+(++uuid)},LockService:{getScriptLock:()=>({tryLock:()=>true,waitLock:()=>{},releaseLock:()=>{}})},getVerifiedAccountingIdentity_:()=>actor,getVerifiedAccountingDepartmentScope_:()=>({authorized:true,institutionWide:false,departmentIds:["D1"]}),getOrCreateSheet:(spreadsheet,name)=>{if(!rows[name])rows[name]=[headers[name]];return sheet(name);}};
 vm.createContext(ctx);vm.runInContext(code,ctx);
 const payload={sessionToken:"verified",solicitudId:"REQ-1"};
@@ -68,6 +68,16 @@ const rollback=ctx.adjudicatePurchaseQuotations({sessionToken:"verified",solicit
 assert.equal(rollback.status,"error");assert.equal(rows.SolicitudesCompra.find(r=>r[0]==="REQ-4")[9],"Aprobada");
 assert.equal(rows.CotizacionesCompra.find(r=>r[0]===q6.cotizacionId)[9],"EnRevision");assert.equal(rows.CotizacionesCompra.find(r=>r[0]===q7.cotizacionId)[9],"EnRevision");
 assert.equal(rows.ActasAdjudicacionCompra.some(r=>r[1]==="REQ-4"),false);assert.ok(rows.OrdenesCompra.slice(3).every(r=>r.every(v=>v==="")),"failed award clears partially written purchase orders");
+
+
+// A partial detail write must clear both the quotation header and already-appended line rows.
+rows.SolicitudesCompra.push(["REQ-5",new Date(),"D1","USR-REQ","Quinta compra","Suministros",JSON.stringify(requestItems),1000,"CC-1","Aprobada",""]);
+const detailRowsBefore=rows.DetalleCotizacionesCompra.length,quoteRowsBefore=rows.CotizacionesCompra.length;
+failDetailAppendAt=detailAppendCount+2;
+const partialSave=ctx.submitPurchaseQuotation({sessionToken:"verified",solicitudId:"REQ-5",proveedorId:"S3",precioTotal:90,detalleItems:makeLines(10,20)});
+assert.equal(partialSave.status,"error");assert.equal(partialSave.code,"SIMULATED_DETAIL_WRITE_FAILURE");
+assert.equal(rows.CotizacionesCompra.length,quoteRowsBefore+1);assert.equal(rows.CotizacionesCompra.at(-1)[0],"");
+assert.equal(rows.DetalleCotizacionesCompra.length,detailRowsBefore+1);assert.equal(rows.DetalleCotizacionesCompra.at(-1)[1],"","partial quotation detail row was cleared");
 
 actor={authorized:true,userId:"USR-REVIEWER",role:"Empleado"};const denied=ctx.getPurchaseQuotationMatrix(payload);assert.equal(denied.code,"ROLE_NOT_ALLOWED");
 console.log("TASK-181 quotation matrix/adjudication contract PASS: line comparison, partial offers, split awards, lowest-price rationale, rejection reasons, immutable snapshot, idempotency and RBAC.");
