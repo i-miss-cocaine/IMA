@@ -3342,3 +3342,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se agregó tests/security/academic-department-reference-consumer.test.js (17 escenarios) y se integró al workflow Department Scope.
 - Commits: a0e902a (implementación), 7c4fe20 (contrato), 73feaac (workflow). Node local NOT RUN por DNS; combined status y lookup de runs sin evidencia visible al consultar; no se declara PASS de CI. BETA-FUNC-063 Pendiente beta.
 - TASK-153 permanece En ejecución; no se activaron secretos ni configuración real.
+
+
+[2026-11-13 12:30 UTC] TASK-153 / T153-S05 — actualización de verificación C1.688
+- HEAD rama autorizada: c04813a74d7a5435692542cf3ca671c834ece10b.
+- Se revisó el test de solicitudId y se mantuvo el resultado vacío correcto cuando el fixture no contiene documentos; commits aecf33a y c04813a.
+- CI reportó `ima/department-scope-contract = failure` en 2d25eef0087b49f3ad9c86dd459c26ffb9e05988. No hay detalle de job/log disponible en las acciones accesibles; no se inventa causa. Para HEAD c04813a no hay estado visible aún.
+- Node local NOT RUN: fallo DNS al resolver github.com durante el intento de checkout. TASK-153/T153-S05 permanece En ejecución, con aprobación local pendiente. BETA-FUNC-063 Pendiente beta.
