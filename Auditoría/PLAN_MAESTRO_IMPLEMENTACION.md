@@ -5378,3 +5378,10 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Workflows general y aislado incluyen ambos consumidores y parseo Node 24. Los commits nuevos no exponen status/check observable; CI queda pendiente de evidencia, no se declara PASS.
 - BETA-FUNC-064 Pendiente beta. No se desplegó, no se activó secreto, no se modificaron hojas productivas.
 - **Estado:** consumidor ACCOUNTING completado y aprobado localmente. El siguiente alcance de T153-S05 es la superficie administrativa/configurable para gestionar política y concesiones, sin habilitar referencias por defecto.
+
+#### Corrección C1.691 — T153-S05 / ACADEMIC — preservar denegación sin intención de referencia
+- **Causa:** getStudentDocuments entraba al fallback de referencias interdepartamentales ante cualquier consulta individual con RESOURCE_SCOPE_DENIED, aunque el cliente no hubiera solicitado campos ni documentos de referencia. La validación posterior respondía DEPARTMENT_REFERENCE_REQUEST_INVALID y rompía el contrato ordinario.
+- **Cambio:** el fallback solo se activa cuando el payload contiene explícitamente referenceRequestedFields o referenceDocumentIds. Sin esas propiedades se conserva RESOURCE_SCOPE_DENIED; con intención explícita incompleta o inválida se mantiene DEPARTMENT_REFERENCE_REQUEST_INVALID. No se amplían permisos ni se relajan ownership, identidad o HMAC.
+- **Verificación:** tests/security/departmental-resource-access.test.js añadido al workflow aislado. Node 24.22.2: run 43429425878 SUCCESS (contratos ACADEMIC/ACCOUNTING, regresión y sintaxis); run 43429426602 Department Scope SUCCESS con todos los pasos ejecutables PASS. Checkout local de esta sesión NOT RUN por DNS; el runner CI aislado ejecutó el código de la rama sin despliegue.
+- **Archivos:** backend/academic-service/Code.gs; .github/workflows/academic-reference-consumer.yml. El contrato interdepartamental aclara que la intención debe ser explícita.
+- **Estado:** corrección completada. TASK-153/T153-S05 sigue En ejecución. Siguiente: superficie administrativa/configurable.

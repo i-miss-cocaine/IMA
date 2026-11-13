@@ -101,3 +101,7 @@ No se crea ConfiguracionInstitucional ni DepartmentReferenceGrants en Sheets, no
 - tests/security/accounting-department-reference-consumer.test.js: 29 escenarios PASS local en Node.js v22.16.0, incluyendo HMAC, allowlist, denegación, no enumeración, self-service, mismo departamento, contexto activo, errores de transporte/HTTP/JSON, duplicados, ownership y requestId. node --check PASS sobre las funciones exactas extraídas y el test; el test contiene parseo del Code.gs completo para el runner.
 - Workflow Department Scope y workflow aislado incluyen el contrato ACCOUNTING y parseo Node 24. No se dispone de status/check observable para los commits nuevos; no se declara CI PASS.
 - BETA-FUNC-064 queda Pendiente beta. No se desplegaron servicios ni se configuraron secretos ni se modificaron hojas productivas.
+
+### Corrección C1.691 — intención explícita del consumidor ACADEMIC
+- El fallback de referencias de getStudentDocuments solo puede ejecutarse si el request contiene referenceRequestedFields o referenceDocumentIds. Una consulta ordinaria sin esos campos conserva la denegación RESOURCE_SCOPE_DENIED; una intención explícita malformada se rechaza como DEPARTMENT_REFERENCE_REQUEST_INVALID.
+- El contrato de regresión departmental-resource-access se ejecuta en el workflow aislado junto con los consumidores ACADEMIC y ACCOUNTING.

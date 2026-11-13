@@ -3382,3 +3382,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Workflow general y aislado actualizados para ejecutar ACADEMIC (20) y ACCOUNTING (29) y parsear ambos servicios con Node 24. No se observa estado CI para los commits nuevos; no se declara CI PASS.
 - BETA-FUNC-064 Pendiente beta; sin despliegue, secretos productivos ni cambios en hojas.
 - Commits: 8008463, 819b2ed, 527f363, 984a8ad, bdf31af, be2d27e, a0c5097, ebdd7ef.
+
+[2026-11-13 13:10 UTC] C1.691 — TASK-153 / T153-S05 — preservar denegación ordinaria ACADEMIC
+- Se corrigió getStudentDocuments: el fallback de referencias solo se activa si el request contiene referenceRequestedFields o referenceDocumentIds. Una consulta individual denegada sin intención explícita conserva RESOURCE_SCOPE_DENIED; una intención presente pero inválida continúa fallando como DEPARTMENT_REFERENCE_REQUEST_INVALID.
+- Se incorporó tests/security/departmental-resource-access.test.js al workflow aislado. Node 24.22.2: run 43429425878 SUCCESS con consumidores ACADEMIC/ACCOUNTING, regresión y sintaxis; Department Scope run 43429426602 SUCCESS en todos los pasos ejecutables.
+- El checkout local no se pudo conectar por DNS; CI ejecutó el código desde checkout de la rama autorizada en runner aislado, sin despliegue.
+- Archivos de código/workflow: backend/academic-service/Code.gs y .github/workflows/academic-reference-consumer.yml. BETA-FUNC-063 sigue Pendiente beta.
+- Estado: corrección completada; TASK-153/T153-S05 continúa En ejecución por la superficie administrativa/configurable. Commit de código bed3dd0ca3d72e805f4df08a8c62c5db0c55aaf7.
