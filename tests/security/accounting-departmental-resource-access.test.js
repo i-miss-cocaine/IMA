@@ -532,7 +532,7 @@ rows.DeduccionesAsistencia.splice(0,rows.DeduccionesAsistencia.length,...attenda
 const attendanceEmployeesOriginal=rows.ExpedientesLaborales.map(r=>r.slice()),ambAttendanceEmployee=rows.ExpedientesLaborales[1].slice();
 ambAttendanceEmployee[0]="EXP-ATTENDANCE-AMB";ambAttendanceEmployee[2]="U-EMP";rows.ExpedientesLaborales.push(ambAttendanceEmployee);
 assert.deepEqual(Array.from(attendance(actor("admin")).asistencias,r=>r.asistenciaId),["AST-B"],"ambiguous UserID-to-expediente mappings must exclude attendance records");
-rows.ExpedientesLaborales.splice(0,rows.ExpedientesLaborales.length,...attendanceEmployees);
+rows.ExpedientesLaborales.splice(0,rows.ExpedientesLaborales.length,...attendanceEmployeesOriginal);
 const attendanceHeader=rows.DeduccionesAsistencia[0][0];rows.DeduccionesAsistencia[0][0]="AttendanceID";
 assert.equal(attendance(actor("admin")).code,"RESOURCE_SCHEMA_INVALID","attendance schema changes must fail closed");
 rows.DeduccionesAsistencia[0][0]=attendanceHeader;
