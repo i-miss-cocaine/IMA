@@ -12355,7 +12355,14 @@ function createStudentEnrollment(payload) {
 
     const dup = matData.find(r => String(r[2]).trim() === sUserId && String(r[6]).trim() === String(targetAno).trim() && (r[8] === "Activa" || r[8] === "Confirmada"));
     if (dup) {
-      return { status: "success", matriculaId: dup[0], isExisting: true, message: `El estudiante ya cuenta con una matrícula activa para el año ${targetAno}.` };
+      const billingResult = ensureEnrollmentPeriodCharges_(ss, {
+        userId:sUserId, periodo:targetAno, grado:String(dup[4] || grado), becaDescuento:dup[9]
+      }, rollbackActions);
+      return { status: "success", matriculaId: dup[0], isExisting: true,
+        cargoId: billingResult && billingResult.chargeId || "",
+        cargosGenerados: billingResult && billingResult.created || 0,
+        modoGeneracionCargos: billingResult && billingResult.mode || "MANUAL",
+        message: "El estudiante ya cuenta con una matrícula activa para el año " + targetAno + "." };
     }
 
     const now = new Date();
