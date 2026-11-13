@@ -30,7 +30,7 @@ assert.ok(ctx.exportCatalogItems({}).csv.includes("MAT-001"));
 
 const purchaseReceiptFn=extract(source,"recordPurchaseReceipt");assert.ok(purchaseReceiptFn.includes("recordInventoryMovementLocked_(ss,"));assert.ok(!purchaseReceiptFn.includes("recordInventoryMovement("));assert.ok(extract(source,"transferInventoryStock").includes("recordInventoryMovementLocked_(ss,"));assert.ok(extract(source,"confirmTransferReceipt").includes("recordInventoryMovementLocked_(ss,"));
 
-ctx.recordInventoryMovement({itemCodigo:"MAT-001",tipoMovimiento:"Entrada",cantidad:30,unidadMedida:"Unidad",ubicacionResponsable:"Laboratorio"});
+ctx.recordInventoryMovement({itemCodigo:"MAT-001",tipoMovimiento:"Entrada",cantidad:30,unidadMedida:"Unidad",ubicacionResponsable:"Bodega General"});
 const beforeDeliveryKardex=rows.InventariosKardex.length;
 const delivered=ctx.deliverMaterialRequisition({solicitudMatId:request.solicitudMatId,entregadoPorUserId:"U-1"});
 assert.equal(delivered.status,"success");
