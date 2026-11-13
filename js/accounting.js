@@ -46,6 +46,8 @@ window.switchTab = function (tab) {
     renderBibliotecaModule(container);
   } else if (tab === 'diario') {
     renderDiarioModule(container);
+  } else if (tab === 'payroll-adjustments') {
+    renderPayrollAdjustmentsModule(container);
   } else if (tab === 'presupuestos') {
     renderPresupuestosModule(container);
   } else if (tab === 'descuentos') {
@@ -1779,6 +1781,80 @@ function renderDiarioModule(container) {
   `;
 }
 
+
+function renderPayrollAdjustmentsModule(container) {
+  container.innerHTML = `
+    <section class="space-y-5" aria-labelledby="payroll-adjustment-title">
+      <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+        <h4 id="payroll-adjustment-title" class="text-base font-black uppercase text-amber-900"><i class="fas fa-file-invoice-dollar"></i> Ajustes compensatorios de nómina</h4>
+        <p class="mt-2 text-sm text-amber-900">Solo para planillas cerradas. El asiento original se conserva; el ajuste crea un nuevo asiento equilibrado y documentado. Requiere rol Contador o Administrador y ámbito de propiedad autorizado.</p>
+      </div>
+      <form id="payroll-adjustment-form" class="space-y-4" onsubmit="submitPayrollJournalAdjustment(event)">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label class="block text-xs font-bold uppercase text-gray-600">ID de planilla cerrada
+            <input id="payroll-adjust-planilla" required maxlength="100" class="mt-1 w-full rounded-xl border border-gray-300 p-3 text-sm" placeholder="ID de planilla">
+          </label>
+          <label class="block text-xs font-bold uppercase text-gray-600">Referencia única del ajuste
+            <input id="payroll-adjust-reference" required minlength="6" maxlength="80" pattern="[A-Za-z0-9_-]{6,80}" class="mt-1 w-full rounded-xl border border-gray-300 p-3 text-sm" placeholder="AJUSTE-2026-001">
+          </label>
+        </div>
+        <label class="block text-xs font-bold uppercase text-gray-600">Motivo y soporte documental
+          <textarea id="payroll-adjust-reason" required minlength="12" maxlength="500" rows="3" class="mt-1 w-full rounded-xl border border-gray-300 p-3 text-sm" placeholder="Explique la rectificación y su respaldo documental"></textarea>
+        </label>
+        <div class="space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <h5 class="text-xs font-black uppercase text-gray-700">Líneas contables del ajuste</h5>
+            <button type="button" onclick="addPayrollAdjustmentLine()" class="rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs font-bold uppercase">+ Agregar línea</button>
+          </div>
+          <div class="grid grid-cols-12 gap-2 text-[10px] font-black uppercase text-gray-500">
+            <span class="col-span-2">Cuenta</span><span class="col-span-4">Descripción</span><span class="col-span-2">Debe (L)</span><span class="col-span-2">Haber (L)</span><span class="col-span-2">Acción</span>
+          </div>
+          <div id="payroll-adjustment-lines" class="space-y-2"></div>
+        </div>
+        <div id="payroll-adjustment-status" role="status" aria-live="polite" class="min-h-5 text-sm text-gray-600"></div>
+        <div class="flex flex-wrap justify-end gap-2">
+          <button type="reset" onclick="resetPayrollAdjustmentLines()" class="rounded-xl border border-gray-300 bg-white px-4 py-3 text-xs font-bold uppercase">Limpiar</button>
+          <button id="payroll-adjustment-submit" type="submit" class="rounded-xl bg-amber-600 px-5 py-3 text-xs font-black uppercase text-white hover:bg-amber-700">Registrar ajuste compensatorio</button>
+        </div>
+      </form>
+    </section>`;
+}
+window.addPayrollAdjustmentLine = function() {
+  const container=document.getElementById("payroll-adjustment-lines");if(!container)return;
+  const row=document.createElement("div");row.className="grid grid-cols-12 gap-2";row.setAttribute("data-payroll-adjustment-line","1");
+  row.innerHTML='<input data-account class="col-span-2 min-w-0 rounded-lg border border-gray-300 p-2 text-sm" maxlength="20" placeholder="5101" aria-label="Código de cuenta"><input data-name class="col-span-4 min-w-0 rounded-lg border border-gray-300 p-2 text-sm" maxlength="120" placeholder="Descripción" aria-label="Descripción de cuenta"><input data-debit type="number" min="0" step="0.01" class="col-span-2 min-w-0 rounded-lg border border-gray-300 p-2 text-sm" placeholder="0.00" aria-label="Debe"><input data-credit type="number" min="0" step="0.01" class="col-span-2 min-w-0 rounded-lg border border-gray-300 p-2 text-sm" placeholder="0.00" aria-label="Haber"><button type="button" class="col-span-2 rounded-lg border border-rose-200 bg-rose-50 px-2 py-2 text-[10px] font-bold uppercase text-rose-700" aria-label="Quitar línea">Quitar</button>';
+  row.querySelector("button").addEventListener("click",()=>row.remove());container.appendChild(row);
+};
+window.resetPayrollAdjustmentLines = function() {
+  const container=document.getElementById("payroll-adjustment-lines");if(!container)return;
+  container.innerHTML="";window.addPayrollAdjustmentLine();window.addPayrollAdjustmentLine();
+  const status=document.getElementById("payroll-adjustment-status");if(status)status.textContent="";
+};
+window.submitPayrollJournalAdjustment = async function(event) {
+  if(event&&event.preventDefault)event.preventDefault();
+  const status=document.getElementById("payroll-adjustment-status"),button=document.getElementById("payroll-adjustment-submit");
+  const lines=Array.from(document.querySelectorAll("#payroll-adjustment-lines [data-payroll-adjustment-line]")).map(row=>({
+    cuenta:row.querySelector("[data-account]").value.trim(),
+    nombre:row.querySelector("[data-name]").value.trim(),
+    debe:Number(row.querySelector("[data-debit]").value||0),
+    haber:Number(row.querySelector("[data-credit]").value||0)
+  }));
+  if(!lines.length||lines.some(x=>!x.cuenta||!x.nombre||!Number.isFinite(x.debe)||!Number.isFinite(x.haber)||x.debe<0||x.haber<0||(x.debe>0&&x.haber>0)||(x.debe===0&&x.haber===0))){
+    if(status)status.textContent="Cada línea requiere cuenta, descripción y un importe positivo en Debe o Haber, nunca ambos.";return;
+  }
+  const debit=Math.round(lines.reduce((t,x)=>t+x.debe,0)*100)/100,credit=Math.round(lines.reduce((t,x)=>t+x.haber,0)*100)/100;
+  if(Math.abs(debit-credit)>0.01){if(status)status.textContent="El ajuste no está cuadrado. Debe y Haber deben coincidir dentro de L 0.01.";return;}
+  const payload={planillaId:document.getElementById("payroll-adjust-planilla").value.trim(),referenciaAjuste:document.getElementById("payroll-adjust-reference").value.trim(),motivo:document.getElementById("payroll-adjust-reason").value.trim(),lineas};
+  if(!payload.planillaId||!payload.referenciaAjuste||payload.motivo.length<12){if(status)status.textContent="Complete la planilla, referencia única y motivo.";return;}
+  if(button)button.disabled=true;if(status)status.textContent="Registrando ajuste y verificando el asiento original…";
+  try{
+    const result=await window.recordPayrollJournalAdjustment(payload);
+    if(!result||result.status!=="success")throw new Error(result&&result.message||result&&result.code||"No fue posible registrar el ajuste.");
+    if(status)status.textContent="Ajuste registrado: "+result.ajusteId+" · Asiento: "+result.asientoId+" · Asiento original conservado: "+result.asientoOriginalId;
+  }catch(error){if(status)status.textContent=error&&error.message?error.message:"Error al registrar el ajuste.";}
+  finally{if(button)button.disabled=false;}
+};
+
 function renderPresupuestosModule(container) {
   container.innerHTML = `
     <div class="bg-white p-6 rounded-2xl border border-gray-100 space-y-4">
@@ -1967,6 +2043,16 @@ window.processPaymentRefund = async function(payload) {
     return await window.callApi('ACCOUNTING', 'processPaymentRefund', payload || {});
   } catch (error) {
     console.error('[ACCOUNTING] Error en procesamiento de reembolso:', error);
+    throw error;
+  }
+};
+
+// [TASK-179] Registrar ajustes compensatorios de planillas cerradas.
+window.recordPayrollJournalAdjustment = async function(payload) {
+  try {
+    return await window.callApi('ACCOUNTING', 'recordPayrollJournalAdjustment', payload || {});
+  } catch (error) {
+    console.error('[ACCOUNTING] Error al registrar ajuste compensatorio de nómina:', error);
     throw error;
   }
 };

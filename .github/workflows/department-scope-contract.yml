@@ -154,6 +154,7 @@ jobs:
           node --check < backend/user-service/Code.gs
           node --check < backend/academic-service/Code.gs
           node --check < backend/accounting-service/Code.gs
+          node --check js/accounting.js
           node --check < backend/task-service/Code.gs
           node --check < backend/exam-service/Code.gs
           node --check < backend/developer-service/Code.gs
