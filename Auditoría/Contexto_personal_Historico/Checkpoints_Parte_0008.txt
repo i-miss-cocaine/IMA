@@ -311,3 +311,18 @@
 - **Estado:** C1.676 completada en el alcance de implementación y contratos locales/aislados. Los dos workflows relevantes están SUCCESS. No se realizó despliegue ni se usaron datos reales. TASK-153/AUD-NG-140 continúan abiertos por sus demás requisitos.
 - **Siguiente acción:** continuar con el siguiente requisito independiente pendiente de TASK-153/AUD-NG-140; conservar IMA-EXEC-20261112-1754Z-03.
 ===============================================================================
+
+
+===============================================================================
+## C1.677 — IMA-EXEC-20261112-1754Z-03 — cierre de implementación y verificación de AUD-NG-140
+- **Checkpoint anterior:** C1.676. **HEAD funcional verificado:** a4214f10f459245031f5cf8d11ac1a53744092e4. **Rama:** NG_beta_0.0.0.1_work. **Rama base:** 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios). **Norma:** Normas_Desarollo.md v1.4, SHA 83a4ef47b8552bf47458b7cd0842a43d13fdc5b0.
+- **Tarea única:** completar la conciliación de evidencia y cerrar AUD-NG-140 (REQ-EXP-014) en código, sin despliegue ni pruebas con datos reales.
+- **Criterios verificados:** identidad derivada de sesión firmada en el portal; autoservicio ligado al usuario autenticado; marcaje de asistencia propio o de tercero solo por roles autorizados y con horario derivado del turno; historial de asistencia limitado por identidad/ownership/ámbito; consulta de boletas limitada por identidad/ownership/ámbito; generación y recuperación de PDF real con Drive privado y respuesta Base64 sin URL pública; UI de autoservicio con historial de asistencia y boletas PDF.
+- **GitHub Actions Department Scope:** run 43364730161 SUCCESS, Node.js v24.22.2. Los 19 pasos completaron SUCCESS. El log confirma: ACCOUNTING departmental resource, payroll PDF y employee attendance client contracts passed; ACADEMIC departmental resource access passed; USER role membership passed; los demás contratos y los seis parseos de servicios Apps Script, además de sintaxis cliente, también pasaron.
+- **GitHub Actions Task-Service:** run 43364715823 SUCCESS, Node.js v22.23.4. Los contratos task-service-security-contract y task-service-resource-ownership terminaron PASS.
+- **Prueba CLI local disponible:** Node.js v22.16.0; node --check y harness aislado de scope delegado Tutor→estudiante PASS. El intento de git ls-remote/checkout local completo sigue BLOCKED por DNS: Could not resolve host github.com. No se declara ejecución local de la suite completa.
+- **Conciliación de commits:** entre el HEAD funcional 18c363037290353cd35606aab2639145de73d14e (base de los workflows finales) y a4214f10f459245031f5cf8d11ac1a53744092e4 solo hay cinco commits documentales; no hay cambios de código posteriores que invaliden la evidencia CI.
+- **Beta:** BETA-FUNC-050 y BETA-FUNC-051 continúan Pendiente beta para navegador real y Apps Script/Sheets/Drive desplegados. Esas verificaciones no bloquean el cierre de implementación conforme a NDASC. BETA-FUNC-052 permanece Pendiente beta para el flujo Tutor→expediente.
+- **Estado:** AUD-NG-140 completada en código y verificación aislada/CI; beta pendiente. TASK-153 continúa En ejecución por otros requisitos; no se declara completado el TASK-153 global.
+- **Siguiente acción:** seleccionar y ejecutar el siguiente requisito técnico independiente pendiente de TASK-153, manteniendo el mismo ID de sesión.
+===============================================================================
