@@ -457,3 +457,18 @@
 - **Commits del incremento:** política inicial 26bed0e; persistencia config/endpoints d379bff; repair 788db5e; contrato storage f8b525a/aa939e9/1ad8a57; workflow fccbcab.
 - **Estado:** subalcance de configuración backend implementado y verificado en CI. TASK-153 permanece En ejecución.
 ===============================================================================
+
+
+===============================================================================
+## C1.686 — IMA-EXEC-20261113-1205Z-01 — TASK-153 — administración de concesiones
+- **Checkpoint anterior:** C1.685. **HEAD al reanudar:** a52c687a567f55f69b92887bcd025879db9508fe. **HEAD antes del checkpoint:** 7e7761393b2be8f3e1c93dddf064c804ddc73010. **Rama:** NG_beta_0.0.0.1_work. **Base:** NG_beta_0.0.0.1, HEAD 44d9891132332e692dbe2ba8602b41f50a508a59 (solo lectura).
+- **Implementación:** `DepartmentReferenceGrants` schema estricto; endpoints `createDepartmentReferenceGrant`, `getDepartmentReferenceGrants`, `revokeDepartmentReferenceGrant` en dispatcher USER `doPost`. Identidad verificada, permisos dinámicos, scope institucional servidor, tenant derivado de contexto, ownership único ACTIVE y destino con asignación departamental activa. Create/revoke serializados con `ScriptLock`.
+- **Integridad:** allowlists explícitas sin wildcard/duplicados; vigencia temporal; bloqueo de duplicados activos no expirados; regrant permitido tras revocación con nueva fila/ID; revocación idempotente y append-only. Audit log de autorización antes de mutar; si falla el log, la mutación se cancela.
+- **Pruebas:** `tests/security/department-reference-grant-admin.test.js`, 26 escenarios sintéticos (crear/listar/revocar, tenant isolation, permisos, scope, ownership, target activo, duplicados, allowlists, vigencia, lock, esquema, auditoría fallida y preservación del historial). `tests/security/department-reference-policy-storage.test.js`: 20 escenarios. `tests/security/department-reference-policy.test.js`: 28 escenarios.
+- **CI:** Department Scope run 43423152036 SUCCESS sobre HEAD 7e7761393b2be8f3e1c93dddf064c804ddc73010, Node.js 24.22.2; los 30 pasos completaron SUCCESS, incluidos los 26 escenarios de concesiones, 20 storage, 28 policy, ResourceOwnership ABAC y syntax-check de servicios/clientes. También se ejecutaron Identity Mapping y Task-Service security local contracts SUCCESS en commits del mismo incremento.
+- **Code review:** se corrigió el uso duplicado de `status` en respuestas; la respuesta separa `status` de `grantStatus`. El actor de las fixtures fue corregido; pruebas validan que fallos de auditoría no creen/revoquen grants. Historial de revocación nunca se sobrescribe.
+- **Límites:** no se inicializó hoja real ni se tocaron datos de producción. No hay UI administrativa, integración de consumidores ni persistencia de auditEvent por cada lectura compartida antes de devolver contenido. Los endpoints de administración no habilitan referencias por sí solos. BETA-FUNC-061 Pendiente beta; TASK-153 sigue En ejecución.
+- **CLI local:** Node.js local/checkout NOT RUN en esta sesión; la ejecución Node.js 24.22.2 se realizó en GitHub Actions y está citada arriba. No se declara prueba local.
+- **Commits del incremento:** servicio grant 7e7e2df; test inicial 7d275f7; workflow aa43ae0; fixtures 12dedb6; response contract 5750f2f; audit/history f40ba04; expanded tests febeff9; test audit assertion 60a827d; scenario count 7e77613.
+- **Estado:** administración backend de concesiones implementada y verificada en CI. TASK-153 permanece En ejecución; siguiente subalcance: auditoría de lectura y punto de autorización servidor integrado en consumidores, seguido de UI administrativa.
+===============================================================================

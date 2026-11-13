@@ -1520,3 +1520,11 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** lecturas tenant-scoped no mutantes; solo dos valores admitidos; escrituras con actor verificado, permiso dinámico y scope institucional; InstitutionID derivado del contexto servidor; lock y auditoría de cambio.
 - **Evidencia requerida:** respuestas de get/set, snapshot sintético antes/después, actor/permiso/scope usados, log estructurado y resultado de concurrencia. No usar PII real.
 - **Estado:** Pendiente beta.
+
+## BETA-FUNC-061 — TASK-153 / administración de concesiones de referencias
+- **Objetivo:** validar en USER desplegado creación, consulta, revocación e historial append-only de `DepartmentReferenceGrants`.
+- **Precondiciones:** institución de prueba aislada; permisos dinámicos `manageDepartmentReferenceGrants` y `getDepartmentReferenceGrants`; actor con ámbito institucional; recurso con ownership único ACTIVE; departamento destino con asignación activa.
+- **Pasos:** (1) crear concesión con allowlists explícitas y vigencia; (2) consultar por institución y comprobar aislamiento tenant; (3) comprobar denegación sin permiso, con scope departamental, ownership ausente/ambiguo o destino inactivo; (4) comprobar rechazo de duplicado activo y de wildcard/listas inválidas; (5) revocar y comprobar idempotencia e historial; (6) volver a conceder y verificar nuevo GrantID sin sobrescribir la revocación anterior; (7) simular fallo del audit log y comprobar que no se crea/revoca; (8) probar lock ocupado y escrituras concurrentes.
+- **Resultado esperado:** mutaciones solo con actor/permiso/scope verificados, institución derivada del servidor, ownership/target confirmados, auditoría de autorización antes de mutar, revocación append-only e idempotente.
+- **Evidencia requerida:** snapshots sintéticos antes/después, respuestas de endpoints, audit logs, IDs de concesión, actor/permiso/scope y resultado de concurrencia. No usar PII real ni datos productivos.
+- **Estado:** Pendiente beta.

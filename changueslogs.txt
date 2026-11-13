@@ -3321,3 +3321,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se añadieron endpoints USER `getDepartmentReferencePolicy` y `setDepartmentReferencePolicy` en `doPost`. Ambos requieren identidad y scope verificados y permisos dinámicos explícitos; el setter exige alcance institucional, deriva InstitutionID del contexto servidor, usa ScriptLock, no permite valores arbitrarios y puede reparar un valor previamente desconocido.
 - Contrato `tests/security/department-reference-policy-storage.test.js`: 20 escenarios PASS. Department Scope CI run 43421342354 SUCCESS (Node.js 24.22.2); 20 escenarios de storage, 28 escenarios del evaluador, ResourceOwnership ABAC y syntax-check PASS.
 - No se ha creado hoja real ni cambiado datos de producción; el test usa un spreadsheet mock. No hay UI ni CRUD de concesiones aún.
+
+[2026-11-13 UTC] [IMA-EXEC-20261113-1205Z-01] TASK-153 — administración de concesiones de referencias (C1.686)
+- Se añadió `DepartmentReferenceGrants` con esquema estricto y endpoints USER create/list/revoke conectados a `doPost`.
+- Create/revoke exigen sesión verificada, permiso dinámico y scope institucional del servidor; tenant derivado del contexto, ownership único ACTIVE y departamento destino activo dentro de la misma institución. `ScriptLock` serializa las mutaciones.
+- Auditoría de autorización antes de persistir: si el log falla, no se muta la concesión. Revocación idempotente; historial append-only; regrant crea nuevo GrantID; duplicados activos no expirados bloqueados.
+- Contrato `tests/security/department-reference-grant-admin.test.js`: 26 escenarios PASS. Department Scope CI run 43423152036 SUCCESS (Node.js 24.22.2); policy evaluator 28, policy storage 20, ABAC y sintaxis Apps Script/clientes PASS.
+- No se inicializó hoja productiva. UI, integración de consumidores y auditEvent de lecturas antes de entregar contenido siguen pendientes.

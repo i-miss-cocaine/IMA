@@ -73,3 +73,12 @@ No se crea ConfiguracionInstitucional ni DepartmentReferenceGrants en Sheets, no
 - `getDepartmentReferencePolicy` y `setDepartmentReferencePolicy` están conectados al dispatcher `doPost`. Exigen sesión verificada y permisos dinámicos; la escritura exige `institutionWide` derivado del scope servidor, usa ScriptLock y deriva tenant del contexto, nunca del payload. El setter permite reparar un valor inválido con autorización.
 - `tests/security/department-reference-policy-storage.test.js`: 20 escenarios PASS. Department Scope CI run 43421342354 SUCCESS (Node.js 24.22.2), junto con 28 escenarios del evaluador y sintaxis de servicios.
 - No se ha creado ni modificado una hoja de producción; la prueba usa mocks. No hay UI administrativa, `DepartmentReferenceGrants`, ni consumidores productivos todavía.
+
+
+## Evidencia de administración de concesiones C1.686
+- Se añadió `DepartmentReferenceGrants` con encabezados estrictos `InstitutionID`, `GrantID`, `ResourceType`, `ResourceID`, `OwnerDepartmentID`, `TargetDepartmentID`, `AllowedFieldsJSON`, `AllowedDocumentIDsJSON`, `AuthorizedBy`, `AuthorizedAt`, `ValidFrom`, `ExpiresAt`, `Status`, `RevokedAt`, `RevokedBy`.
+- Endpoints USER `createDepartmentReferenceGrant`, `getDepartmentReferenceGrants` y `revokeDepartmentReferenceGrant` conectados a `doPost`. Las mutaciones requieren identidad verificada, permiso dinámico y ámbito institucional autenticado; el tenant nunca se acepta desde el payload.
+- La creación valida ownership único ACTIVE en `ResourceOwnership`, departamento destino con asignación activa en `AsignacionesAmbitosRoles`, allowlists sin wildcard/duplicados, ventana temporal y duplicados activos. Create/revoke usan `ScriptLock`.
+- La autorización de auditoría se registra antes de la mutación; fallo del log bloquea escritura/revocación. Revocación idempotente y append-only; regrant crea nueva fila/GrantID sin borrar historial.
+- `tests/security/department-reference-grant-admin.test.js`: 26 escenarios PASS. Department Scope CI run 43423152036 SUCCESS, Node.js 24.22.2; además 28 escenarios evaluator, 20 policy storage, ResourceOwnership ABAC y syntax-check de servicios/clientes.
+- Las pruebas usan mocks; no se creó ni modificó hoja de producción. Sin UI administrativa, callsites consumidores ni auditoría persistida de cada lectura compartida previa a entrega de contenido, el acceso cross-departamento permanece sin habilitar.
