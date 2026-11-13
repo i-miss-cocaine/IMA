@@ -3349,3 +3349,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se revisó el test de solicitudId y se mantuvo el resultado vacío correcto cuando el fixture no contiene documentos; commits aecf33a y c04813a.
 - CI reportó `ima/department-scope-contract = failure` en 2d25eef0087b49f3ad9c86dd459c26ffb9e05988. No hay detalle de job/log disponible en las acciones accesibles; no se inventa causa. Para HEAD c04813a no hay estado visible aún.
 - Node local NOT RUN: fallo DNS al resolver github.com durante el intento de checkout. TASK-153/T153-S05 permanece En ejecución, con aprobación local pendiente. BETA-FUNC-063 Pendiente beta.
+
+
+[2026-11-13 12:32 UTC] Corrección de estado: `ima/department-scope-contract = failure` confirmado también para c04813a74d7a5435692542cf3ca671c834ece10b. Sin logs/URL de ejecución accesibles; causa no determinada. Node local NOT RUN por DNS. T153-S05 permanece En ejecución.
