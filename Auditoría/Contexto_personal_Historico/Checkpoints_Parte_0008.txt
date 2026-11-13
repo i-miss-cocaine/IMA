@@ -189,3 +189,20 @@
 - **Estado residual:** AUD-NG-140 sigue abierto por recordStaffCheckIn, generación de PDF real/privado y demás superficies; TASK-153 sigue En ejecución.
 - **Siguiente acción:** revisar recordStaffCheckIn conforme al requisito original y sus dependencias, sin ejecutar otra tarea en esta iteración.
 ===============================================================================
+
+
+===============================================================================
+## C1.670 — TASK-153 / AUD-NG-390 — ACCOUNTING recordStaffCheckIn
+- **Sesión:** IMA-EXEC-20261112-1754Z-03 (continuidad de C1.669).
+- **HEAD inicial:** d29eac36298c06708db46c8b3fecdc638cc60a02.
+- **Alcance:** proteger exclusivamente recordStaffCheckIn y su autorización en validateRolePermission.
+- **Hallazgo:** el endpoint aceptaba el ID del empleado y hora esperada del cliente sin identidad firmada, ámbito ni propiedad; permitía marcajes ajenos y manipulación de tardanza.
+- **Cambios:** identidad firmada; autoservicio derivado de UserID; roles de gestión con scope y ResourceOwnership WRITE; mapping único de expediente; hora esperada de turno activo (fallback 07:30); validación de tipo/esquema; protección de duplicados y LockService para concurrencia; observaciones limitadas/neutralizadas. Contrato de DeduccionesAsistencia preservado.
+- **Archivos de código/prueba:** backend/accounting-service/Code.gs; tests/security/accounting-departmental-resource-access.test.js.
+- **Commits de implementación/prueba:** d7f9b9caeb2303358f416eabe11ca2ebae5adb6c; 8d1a0c14ccdf9a6df9aa06e00ede136c60bc0167; 273e3aa6c1d155839bfd8f5a7cbff164e55dc91b; c41bca0e1d34a6c49f7966053a263343b9b61ffb; 38fc1402407eac98610e49df9f239921965d1934; 3930efe66e3b897720efd12bc9623acadf3aac86; 71a5f94d6086b6554ab17102271251f624d88bae.
+- **Pruebas:** run 43355125476, Node.js 24; contrato ACCOUNTING departmental resource access PASS; Department Scope, Internal Responsibility RBAC, import y USER migrated ownership PASS. El workflow global falla después en User Role Membership línea 119 (foreignLegacy nulo y lectura de .role); etapas posteriores SKIPPED. Apps Script/Google Sheets reales NOT RUN; sin despliegue ni datos reales.
+- **Escenarios cubiertos:** sesión inválida, rol no permitido, suplantación de empleadoId, autoservicio, acceso HR dentro/fuera de departamento, alcance institucional, horario esperado no manipulable, tipos inválidos, entrada/salida duplicadas y contención concurrente.
+- **Beta:** BETA-FUNC-048 Pendiente beta.
+- **Estado residual:** TASK-153 permanece En ejecución; AUD-NG-140 continúa abierto por PDF privado/real y demás superficies.
+- **Siguiente acción:** inspeccionar generación/entrega de PDF de nómina y comprobar propiedad, privacidad y autorización de descarga; no ejecutar esa tarea en esta iteración.
+===============================================================================

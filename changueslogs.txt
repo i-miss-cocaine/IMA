@@ -3175,3 +3175,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se amplió tests/security/accounting-departmental-resource-access.test.js con escenarios de aislamiento DEP-A/DEP-B/institución, autoservicio, suplantación, sesión inválida, rol no permitido, filtros, duplicados, mapping ambiguo, esquema y ausencia de hoja.
 - Commits de implementación/pruebas: ef320645c76f70fe7272f152daa612dc5d3e1a78; 2af7112011cf4a50834c34fc798002342705da23; b759debc0c650575a2b883e0f5882a39fa15af46; 5e37f9bd449fc6739fcf781e8a1658dd73185d43.
 - Department Scope Contract run 43353897445: ACCOUNTING departmental resource access **PASS**; contratos previos de ámbito, RBAC, importación y ownership migrado PASS. Workflow global FAIL posterior en User Role Membership línea 119 (foreignLegacy nulo), fallo heredado. Apps Script/Sheets real NOT RUN; BETA-FUNC-047 Pendiente beta.
+
+
+[2026-11-13 UTC] [IMA-EXEC-20261112-1754Z-03] C1.670 — ACCOUNTING recordStaffCheckIn
+- Se protege el registro de asistencia con identidad de sesión firmada: autoservicio solo para el UserID autenticado; RR. HH./Director/Administrador/Subdirector requieren ámbito y ResourceOwnership WRITE del expediente destino.
+- Se ignoran empleadoId ajeno y horaEntradaEsperada del cliente; se valida tipo de marcaje, mapping único, esquema y duplicidad; la hora esperada procede del turno activo o fallback 07:30.
+- LockService serializa lectura y escritura; la contención devuelve CONCURRENT_UPDATE_RETRY. Se conserva el contrato de DeduccionesAsistencia y se limita/neutraliza observaciones.
+- Prueba focalizada run 43355125476 (Node.js 24): Accounting departmental resource and payment voucher access contracts **PASS**, con autoservicio, suplantación, RBAC, ownership, turnos, duplicados y concurrencia. Department Scope, Internal Responsibility RBAC, import y USER migrated ownership PASS.
+- Workflow global falla después en User Role Membership contract línea 119 (foreignLegacy nulo); pasos posteriores SKIPPED. Apps Script/Sheets reales NOT RUN; BETA-FUNC-048 Pendiente beta.

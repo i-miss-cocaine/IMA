@@ -5223,3 +5223,17 @@ La revisión de requisitos originales confirma cobertura de:
 - **Beta:** BETA-FUNC-047 Pendiente beta. No se declara certificación funcional ni despliegue.
 - **Estado:** C1.669 completada para este callsite. TASK-153 continúa En ejecución y AUD-NG-140 permanece abierto por sus demás requisitos.
 - **Siguiente acción elegible:** revisar recordStaffCheckIn para derivar la identidad del empleado de la sesión y restringir el registro de terceros a RR. HH./roles autorizados, verificando primero sus dependencias y el contrato original.
+
+
+### 10.267 TASK-153 / AUD-NG-390 — ACCOUNTING: escritura segura de asistencia (C1.670)
+
+- **Trazabilidad:** TASK-153 / PM-01; AUD-NG-140 / REQ-EXP-014; AUD-NG-390. Continuación del control de lectura C1.669.
+- **Alcance de esta iteración:** recordStaffCheckIn y su puerta de autorización validateRolePermission; no se amplía a PDF, correcciones de asistencia ni otras operaciones de RR. HH.
+- La mutación exige claims de sesión firmados. Empleado/Trabajador/Personal solo puede registrar su UserID autenticado; RecursosHumanos/Director/Administrador/Subdirector requieren ámbito verificado y ResourceOwnership activo para el expediente destino con operación WRITE. El cliente no determina la identidad del empleado.
+- Se validan esquema y mapeo único UserID↔ExpedienteID; se rechazan roles/tipos no permitidos. La hora de entrada esperada se deriva del turno vigente en AsignacionesTurnosLaborales; se conserva fallback 07:30 si no hay turno y se ignora horaEntradaEsperada del cliente.
+- El ciclo de marcaje usa LockService para serializar lectura y escritura; evita duplicar/sobrescribir Entrada o Salida y devuelve CONCURRENT_UPDATE_RETRY ante contención. Se preservan hoja, columnas y respuestas del contrato existente.
+- **Verificación:** run 43355125476 (Node.js 24), contrato ACCOUNTING departmental resource access **PASS**; Department Scope, Internal Responsibility RBAC, ACCOUNTING departmental import y USER migrated resource ownership PASS. Workflow global falla después en User Role Membership contract línea 119 (verifySessionToken(foreignLegacy) nulo y lectura de .role), fallo heredado previo a C1.670; pasos posteriores, incluido syntax-check global, SKIPPED. El contrato VM compila/ejecuta la función y fixtures; Apps Script/Google Sheets reales NOT RUN.
+- **Commits de implementación/pruebas:** d7f9b9caeb2303358f416eabe11ca2ebae5adb6c; 8d1a0c14ccdf9a6df9aa06e00ede136c60bc0167; 273e3aa6c1d155839bfd8f5a7cbff164e55dc91b; c41bca0e1d34a6c49f7966053a263343b9b61ffb; 38fc1402407eac98610e49df9f239921965d1934; 3930efe66e3b897720efd12bc9623acadf3aac86; 71a5f94d6086b6554ab17102271251f624d88bae.
+- **Beta:** BETA-FUNC-048 Pendiente beta; no bloquea el cierre local.
+- **Estado:** C1.670 completada localmente para este callsite; TASK-153 sigue En ejecución y AUD-NG-140 continúa abierto por sus demás requisitos.
+- **Siguiente acción elegible:** revisar el flujo de generación/entrega de PDF de nómina para garantizar propiedad, privacidad y autorización de descarga, conforme al alcance original pendiente de AUD-NG-140.

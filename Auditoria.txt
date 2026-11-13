@@ -2766,3 +2766,16 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Beta:** BETA-FUNC-047 Pendiente beta.
 - **Estado:** C1.669 completada para getStaffAttendanceLogs; TASK-153 continúa En ejecución y AUD-NG-140 permanece abierto por recordStaffCheckIn, generación real/privada de PDF y demás superficies.
 ===============================================================================
+
+
+===============================================================================
+## AUD-NG-390 — ACCOUNTING: recordStaffCheckIn (C1.670)
+- **Severidad:** ALTA — mutación de asistencia aceptaba empleadoId, empleadoNombre y horaEntradaEsperada del cliente sin validar sesión firmada, propiedad ni ámbito; permitía registrar en nombre de otro empleado y manipular el cálculo de tardanza.
+- **Origen:** TASK-153 / PM-01; AUD-NG-140 / REQ-EXP-014; continuación del aislamiento de consulta C1.669.
+- **Corrección:** la función exige identidad firmada; Empleado/Trabajador/Personal solo registra el UserID de sus claims. RecursosHumanos/Director/Administrador/Subdirector requieren ámbito vigente y ResourceOwnership WRITE del expediente destino. Se rechazan roles no permitidos, IDs/mappings ambiguos, tipos de marcaje inválidos y entradas/salidas duplicadas. La hora esperada se obtiene del turno activo de servidor (07:30 como fallback compatible cuando no hay turno); se ignora horaEntradaEsperada del cliente. LockService serializa el ciclo de lectura/actualización/escritura; una contención devuelve CONCURRENT_UPDATE_RETRY. Se valida el esquema y se inicializan encabezados solo en hoja nueva/vacía; observaciones limitadas y neutralizadas ante fórmulas.
+- **Contrato preservado:** hoja DeduccionesAsistencia y columnas AsistenciaID, Fecha, EmpleadoId, EmpleadoNombre, HoraEntrada, HoraSalida, MinutosTardanza, EstadoAsistencia, Observaciones; se mantiene la respuesta status/success y los campos de salida anteriores.
+- **Verificación local/aislada:** run 43355125476, Node.js 24, contrato tests/security/accounting-departmental-resource-access.test.js: **PASS** (mensaje Accounting departmental resource and payment voucher access contracts passed). Incluye sesión inválida, rol no permitido, suplantación de empleadoId, autoservicio, RR. HH. dentro/fuera de ámbito, alcance institucional, hora esperada manipulada, duplicidad Entrada/Salida, tipo inválido y contención concurrente determinista. Department Scope, Internal Responsibility RBAC, ACCOUNTING departmental import y USER migrated ownership también PASS.
+- **Workflow global:** falla después en User Role Membership contract, línea 119 (verifySessionToken(foreignLegacy) devuelve null y el test lee .role); fallo heredado observado antes de C1.669. Los pasos posteriores, incluido syntax-check global, quedan SKIPPED. No atribuido a este cambio.
+- **Límites:** Apps Script/Google Sheets reales y despliegue NOT RUN; la ejecución VM/fixtures valida la lógica aislada. BETA-FUNC-048 Pendiente beta.
+- **Estado:** C1.670 completada localmente para recordStaffCheckIn; TASK-153 sigue En ejecución y AUD-NG-140 permanece abierto por generación de PDF privada/real y demás superficies.
+===============================================================================
