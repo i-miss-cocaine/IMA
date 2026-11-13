@@ -39,7 +39,7 @@ assert.ok(rows.AmortizacionPrestamosNomina.some(r=>r[9]==="LIQUIDAR_ANTICIPADAME
 const planHeaders=["PlanillaID","Fecha","Periodo","EmpleadoId","Nombre","Puesto","SalarioBase","HorasExtras","MontoHorasExtras","Bonificaciones","IHSS","RAP","ISR","OtrasDeducciones","SalarioNeto","Estado","PatronalIHSS","PatronalRAP","PatronalINFOP","CostoLaboral"];
 rows.PlanillasNomenclatura=[planHeaders,["PLN-STATUS",new Date(),"2026-11","U-1","Empleado","Docente",1000,0,0,0,35,0,0,50,915,"Calculada",72,0,10,1082]];
 rows.AnticiposPrestamosEmpleado[1][3]="PrestamoInstitucional";rows.AnticiposPrestamosEmpleado[1][8]=500;rows.AnticiposPrestamosEmpleado[1][9]="Aprobado";rows.AnticiposPrestamosEmpleado[1][7]=50;
-const statusPreview=ctx.calculatePayrollLoanDeductions_(ss,"U-1","2026-11","PLN-STATUS",100);assert.equal(statusPreview.total,50);ctx.appendPayrollLoanLedgerEvents_(ss,statusPreview.events);
+const statusPreview=ctx.calculatePayrollLoanDeductions_(ss,"U-1","2027-03","PLN-STATUS",100);assert.equal(statusPreview.total,50);ctx.appendPayrollLoanLedgerEvents_(ss,statusPreview.events);
 assert.throws(()=>ctx.updatePayrollPeriodStatus({planillaId:"PLN-STATUS",nuevoEstado:"Aprobada",authRole:"Administrador"}),/PAYROLL_LOAN_REVIEW_NOT_AUTHORIZED/);
 const statusResult=ctx.updatePayrollPeriodStatus({planillaId:"PLN-STATUS",nuevoEstado:"Aprobada",sessionToken:"hr",authRole:"Administrador"});assert.equal(statusResult.status,"success");assert.equal(rows.AnticiposPrestamosEmpleado[1][8],450);
 ctx.updatePayrollPeriodStatus({planillaId:"PLN-STATUS",nuevoEstado:"Cerrada",sessionToken:"hr",authRole:"Administrador"});assert.equal(rows.AnticiposPrestamosEmpleado[1][8],450,"approval then close must not double amortize");
