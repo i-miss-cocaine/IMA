@@ -25,7 +25,7 @@ const h=setup();h.sheets.CargosEstudiante.rows.push(["LEGACY",new Date(),"U1","C
 const h=setup();h.sheets.CargosEstudiante.rows.push(["LEGACY",new Date(),"U1","Colegiatura",1200,0,1200,"Pendiente","","","u1_colegiatura",""]);const p=h.context.preview({anoLectivo:"2027",mesPeriodo:"Enero",nivelGrado:"Séptimo",conceptoId:"M1"});assert.equal(p.desglose.find(x=>x.userId==="U1").estado,"PendienteGenerar");
 }
 {
-const h=setup();assert.throws(()=>h.context.preview({anoLectivo:"2027",mesPeriodo:"13",conceptoId:"M1"}),/MONTHLY_CHARGE_PERIOD_INVALID/);assert.throws(()=>h.context.preview({anoLectivo:"2027",mesPeriodo:"Enero",conceptoId:"M1"}),/MONTHLY_CHARGE_SCHEMA_INVALID:MatriculaID/);
+const h=setup();assert.throws(()=>h.context.preview({anoLectivo:"2027",mesPeriodo:"13",conceptoId:"M1"}),/MONTHLY_CHARGE_PERIOD_INVALID/);h.sheets.Matriculas.rows[0]=["Id",...MH.slice(1)];assert.throws(()=>h.context.preview({anoLectivo:"2027",mesPeriodo:"Enero",conceptoId:"M1"}),/MONTHLY_CHARGE_SCHEMA_INVALID:MatriculaID/);
 }
 {
 const h=setup();h.context.LockService.getScriptLock=()=>({tryLock:()=>false,releaseLock:()=>{}});const g=h.context.generate({anoLectivo:"2027",mesPeriodo:"Enero",nivelGrado:"Séptimo",conceptoId:"M1"});assert.equal(g.code,"LOCK_TIMEOUT");
