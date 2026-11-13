@@ -636,8 +636,9 @@ console.log("ACADEMIC converted admission reconciliation contract passed.");
     /ADMISSION_CHARGE_CONFLICT/,"same reference with changed amount must fail closed");
   const ordinary=registerCharge(emptyHeader,"",1500);
   assert.equal(ordinary.result.cargoId,"","ordinary enrollment must not claim an admission CargoID");
-  assert.equal(ordinary.sheet.rows[1].length,9,"ordinary charges must preserve the legacy nine-column row shape");
-  assert.equal(ordinary.sheet.rows[0].length,9,"ordinary enrollment must not trigger admission-reference schema migration");
+  assert.equal(ordinary.sheet.rows[1].length,11,"ordinary charges must persist period idempotency metadata");
+  assert.equal(ordinary.sheet.rows[0][10],"ClaveUnicaDedupe","ordinary enrollment must add the period dedupe column");
+  assert.equal(ordinary.sheet.rows[1][10],"enrollment|stu-1|2026|matrícula ordinaria 2026","ordinary charges must be keyed by student, period and concept");
   const voided=registerCharge([emptyHeader[0],["CRG-VOID",new Date(),"STU-1","Matrícula Ordinaria 2026",1500,0,1500,"ANULADO",""]],"ADMISION|ADM-1|MAT-1",1500);
   assert.equal(voided.sheet.rows.length,3,"a voided legacy charge must not block a new admission-linked charge");
 }
