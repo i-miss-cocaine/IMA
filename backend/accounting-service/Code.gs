@@ -8811,7 +8811,7 @@ function getPurchaseDossier(payload){
   timeline.push({etapa:"Estado actual de orden",fecha:null,responsable:String(order[10]||""),estado:String(order[9]||""),referencia:orderId});
   addDoc("Orden de compra PDF "+orderId,order[14],"Orden de compra");
   orderReceipts.forEach(r=>{timeline.push({etapa:"Recepción de bodega",fecha:purchaseDossierDate_(r[2]),responsable:String(r[3]||""),estado:String(r[5]||""),referencia:r[0]});const note=String(r[8]||""),url=(note.match(/Adjuntos:\s*(https?:\/\/\S+)/i)||[])[1];addDoc("Recepción "+r[0],url,"Recepción");});
-  orderInvoices.forEach(inv=>{timeline.push({etapa:"Factura de proveedor",fecha:purchaseDossierDate_(inv[13]),responsable:String(inv[1]||""),estado:String(inv[6]||""),referencia:inv[2]});const note=String(inv[9]||""),url=(note.match(/FACTURA_URL:\s*(https?:\/\/\S+)/i)||[])[1];addDoc("Factura "+inv[2],url,"Factura");});
+  orderInvoices.forEach(inv=>{timeline.push({etapa:"Factura de proveedor",fecha:purchaseDossierDate_(inv[13]),responsable:String(inv[1]||""),estado:String(inv[6]||""),referencia:inv[2]});const note=String(inv[9]||""),url=(note.match(/FACTURA_URL:\s*(https?:\/\/\S+)/i)||[])[1],proof=(note.match(/COMPROBANTE_URL:\s*(https?:\/\/\S+)/i)||[])[1];addDoc("Factura "+inv[2],url,"Factura");addDoc("Comprobante de pago "+inv[2],proof,"Pago");});
   paymentEvents.forEach(payment=>{timeline.push({etapa:"Pago aplicado",fecha:payment.fecha,responsable:"",estado:"Aplicado",referencia:payment.pagoRefId});});
   const journalRefs=new Set([orderId,requestId].concat(orderInvoices.map(r=>String(r[0]||"")),paymentEvents.map(x=>x.pagoRefId),orderInvoices.map(r=>String(r[2]||"")))),orderJournals=journals.filter(j=>journalRefs.has(String(j[4]||"").trim())||journalRefs.has(String(j[0]||"").trim())||String(j[2]||"").includes(orderId));
   orderJournals.forEach(j=>timeline.push({etapa:"Asiento contable",fecha:purchaseDossierDate_(j[1]),responsable:String(j[7]||""),estado:String(j[6]||"Contabilizado"),referencia:j[0]}));
@@ -9558,7 +9558,7 @@ function verifyThreeWayMatch(payload) {
 }
 
 function recordAccountsPayableExpense(payload) {
-  const { proveedorId, numeroFactura, importe, impuestos, fechaVencimiento, ordenCompraId, partidasFacturadas, bypassConciliacion, autorizarDiferencias, authRole, observaciones } = payload || {};
+  const { proveedorId, numeroFactura, importe, impuestos, fechaVencimiento, ordenCompraId, partidasFacturadas, bypassConciliacion, autorizarDiferencias, authRole, observaciones , documentoFacturaUrl } = payload || {};
   if (!proveedorId || !numeroFactura || importe === undefined) {
     throw new Error("proveedorId, numeroFactura e importe requeridos.");
   }
@@ -9595,10 +9595,11 @@ function recordAccountsPayableExpense(payload) {
   const imp = parseFloat(importe || 0);
   const tax = parseFloat(impuestos || 0);
 
-  const obsConMeta = (observaciones ? observaciones + " | " : "") +
+  let obsConMeta = (observaciones ? observaciones + " | " : "") +
     (ordenCompraId ? `[ORDEN_${ordenCompraId}] ` : "") +
     (partidasFacturadas ? `[ITEMS_JSON:${JSON.stringify(partidasFacturadas)}] ` : "") +
     (conciliacionResultado ? `[MATCH:${conciliacionResultado.estadoConciliacion}]` : "");
+  if (documentoFacturaUrl && (String(documentoFacturaUrl).indexOf("https://")===0 || String(documentoFacturaUrl).indexOf("http://")===0)) obsConMeta += " [FACTURA_URL:" + String(documentoFacturaUrl).trim() + "]";
 
   const totalFactura = parseFloat((imp + tax).toFixed(2));
   const saldoInicial = totalFactura;
@@ -9744,7 +9745,8 @@ function recordSupplierPayment(payload) {
 
     const obsPrev = String(row[9] || "");
     const pagoNota = `[ABONO_${pagoRefId}: L ${abono.toFixed(2)} - ${metodoPago || 'Transferencia'} - Ref: ${referenciaBancaria || 'S/R'}]`;
-    sheet.getRange(idx + 1, 10).setValue((obsPrev ? obsPrev + " | " : "") + pagoNota);
+    const comprobanteMeta = comprobanteUrl && (String(comprobanteUrl).indexOf("https://")===0 || String(comprobanteUrl).indexOf("http://")===0) ? " [COMPROBANTE_URL:" + String(comprobanteUrl).trim() + "]" : "";
+    sheet.getRange(idx + 1, 10).setValue((obsPrev ? obsPrev + " | " : "") + pagoNota + comprobanteMeta);
 
     // Registrar egreso en MovimientosCajaBancos
     recordCashBankMovement({
