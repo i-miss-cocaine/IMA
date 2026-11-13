@@ -8131,16 +8131,17 @@ function adjudicatePurchaseQuotations(payload){
  const p=payload||{},solicitudId=String(p.solicitudId||"").trim(),allocations=Array.isArray(p.adjudicaciones)?p.adjudicaciones:[],idempotencyKey=String(p.idempotencyKey||"").trim();
  if(!solicitudId||!allocations.length||idempotencyKey.length<8)return {status:"error",code:"PURCHASE_AWARD_FIELDS_REQUIRED",message:"Solicitud, partidas adjudicadas y clave de idempotencia son requeridas."};
  const lock=LockService.getScriptLock();if(!lock.tryLock(15000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La adjudicación está siendo procesada."};
- let ordersSheet=null,actaSheet=null,requestSheet=null,quoteSheet=null,orderStart=0,actaRow=0,oldRequestState="",quoteStates=[];
+ let ordersSheet=null,actaSheet=null,requestSheet=null,quoteSheet=null,orderStart=0,actaRow=0,oldRequestState="",quoteStates=[],requestSnapshot=null;
  try{
   const ss=SpreadsheetApp.openById(SPREADSHEET_ID),access=purchaseQuotationAccess_(p,ss);if(!access.authorized)return {status:"error",code:access.code,message:"No tiene autorización para adjudicar cotizaciones."};
   const found=purchaseQuotationRequest_(ss,solicitudId,access.scope);if(found.error)return found.error;
-  requestSheet=getOrCreateSheet(ss,"SolicitudesCompra");quoteSheet=getOrCreateSheet(ss,"CotizacionesCompra");ordersSheet=getOrCreateSheet(ss,"OrdenesCompra");actaSheet=getOrCreateSheet(ss,"ActasAdjudicacionCompra");
+  requestSheet=getOrCreateSheet(ss,"SolicitudesCompra");requestSnapshot={index:found.request.index,state:found.request.row[9]};quoteSheet=getOrCreateSheet(ss,"CotizacionesCompra");ordersSheet=getOrCreateSheet(ss,"OrdenesCompra");actaSheet=getOrCreateSheet(ss,"ActasAdjudicacionCompra");
   const actaRows=actaSheet.getDataRange().getValues(),existing=actaRows.slice(1).find(r=>String(r[12]||"").trim()===idempotencyKey);
   if(existing)return {status:"success",actaId:String(existing[0]),ordenes:purchaseQuotationJsonArray_(existing[13]),idempotente:true,message:"La adjudicación ya había sido registrada."};
   if(actaRows.slice(1).some(r=>String(r[1]||"").trim()===solicitudId))return {status:"error",code:"PURCHASE_REQUEST_ALREADY_AWARDED",message:"La solicitud ya tiene un acta de adjudicación; no se puede duplicar."};
   const allQuoteRows=quoteSheet.getDataRange().getValues(),quoteObjects=allQuoteRows.slice(1).map((row,index)=>({row:row,index:index+2})).filter(x=>String(x.row[1]||"").trim()===solicitudId&&!["RECHAZADA","ANULADA","CANCELADA","DESCARTADA"].includes(normalizePurchaseAwardRole_(x.row[9])));
   if(!quoteObjects.length||quoteObjects.length>5)return {status:"error",code:quoteObjects.length?"PURCHASE_QUOTATION_COMPARISON_LIMIT_EXCEEDED":"PURCHASE_QUOTATIONS_NOT_FOUND",message:"La adjudicación requiere entre una y cinco cotizaciones comparables."};
+  const supplierIds=quoteObjects.map(q=>String(q.row[2]||"").trim());if(new Set(supplierIds).size!==supplierIds.length)return {status:"error",code:"DUPLICATE_SUPPLIER_QUOTATION",message:"Hay cotizaciones duplicadas del mismo proveedor; deben depurarse antes de adjudicar."};
   const detailRows=getOrCreateSheet(ss,"DetalleCotizacionesCompra").getDataRange().getValues().slice(1),supplierRows=getOrCreateSheet(ss,"ProveedoresActivos").getDataRange().getValues().slice(1),requestItems=found.items,now=new Date(),quoteById=Object.create(null),lineByQuote=Object.create(null);
   quoteObjects.forEach(q=>{quoteById[String(q.row[0])]=q;lineByQuote[String(q.row[0])]=detailRows.filter(r=>String(r[1]||"").trim()===String(q.row[0]).trim());if(!purchaseQuoteIsValid_(q.row,now))throw new Error("PURCHASE_QUOTATION_EXPIRED");});
   const allocationsByItem=Object.create(null),usedQuotes=new Set(),normalizedAllocations=[],supplierByQuote=Object.create(null);
@@ -8183,7 +8184,7 @@ function adjudicatePurchaseQuotations(payload){
   if(orderStart&&ordersSheet)try{const last=ordersSheet.getLastRow();if(last>=orderStart)ordersSheet.getRange(orderStart,1,last-orderStart+1,15).clearContent();}catch(_){}
   if(actaRow&&actaSheet)try{actaSheet.getRange(actaRow,1,1,14).clearContent();}catch(_){}
   if(quoteStates.length&&quoteSheet)quoteStates.forEach(x=>{try{quoteSheet.getRange(x.index,10).setValue(x.state);}catch(_){}});
-  if(requestSheet&&oldRequestState!==""&&found&&found.request)try{requestSheet.getRange(found.request.index,10).setValue(oldRequestState);}catch(_){}
+  if(requestSheet&&requestSnapshot)try{requestSheet.getRange(requestSnapshot.index,10).setValue(requestSnapshot.state);}catch(_){}
   return {status:"error",code:String(error&&error.message||"PURCHASE_AWARD_FAILED"),message:"No fue posible completar la adjudicación; se restauraron los estados anteriores."};
  }finally{lock.releaseLock();}
 }
