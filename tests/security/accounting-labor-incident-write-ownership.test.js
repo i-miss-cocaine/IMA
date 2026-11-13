@@ -39,4 +39,4 @@ const beforeRollback=rows.IncidenciasLaborales.find(r=>r[0]==="INC-A").slice();f
 available=false;assert.equal(ctx.manageLaborIncident({...p("ha"),empleadoId:"U-EMP",descripcionObjetiva:"busy"}).code,"CONCURRENT_UPDATE_RETRY");available=true;
 let nested=null;const count=rows.IncidenciasLaborales.length;onAppend=()=>{onAppend=null;nested=ctx.manageLaborIncident({...p("ha"),empleadoId:"U-EMP",descripcionObjetiva:"nested"});};assert.equal(ctx.manageLaborIncident({...p("ha"),empleadoId:"U-EMP",descripcionObjetiva:"outer"}).status,"success");assert.equal(nested.code,"CONCURRENT_UPDATE_RETRY");assert.equal(rows.IncidenciasLaborales.length,count+1);
 const gate=extractFunction(accounting,"validateRolePermission");assert.ok(gate.includes('"manageLaborIncident"'));assert.ok(gate.includes('"manageDisciplinaryMeasure"'));assert.ok(accounting.includes('"manageLaborIncident", "manageDisciplinaryMeasure"'));
-console.log("ACCOUNTING labor incident and disciplinary measure ownership contract passed (40 assertions)");
+console.log("ACCOUNTING labor incident and disciplinary measure ownership contract passed");

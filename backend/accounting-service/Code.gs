@@ -2863,7 +2863,7 @@ function manageDisciplinaryMeasure(payload) {
     if(isNaN(new Date(effective).getTime()))return {status:"error",code:"DISCIPLINARY_DATE_INVALID",message:"La fecha efectiva no es válida."};
     const row=[
       id,incidenceId,access.empleadoId,type,foundation,effective,
-      p.estadoMedida!==undefined?access.actor.userId:(current?current[6]:access.actor.userId),
+      p.estadoMedida!==undefined&&p.estadoMedida!==""?access.actor.userId:(current?current[6]:access.actor.userId),
       String(p.estadoMedida!==undefined&&p.estadoMedida!==""?p.estadoMedida:(current?current[7]:"Aprobada")),
       days,p.actaFirmadaDriveUrl!==undefined?p.actaFirmadaDriveUrl:(current?current[9]:""),
       current?current[10]:access.actor.userId,current?current[11]:now,now
