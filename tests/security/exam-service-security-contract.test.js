@@ -348,10 +348,10 @@ const runtime = {
     const rows = scopeRows.slice(1).filter(row => String(row[1] || "").trim() === actor.userId &&
       String(row[2] || "").trim() === actor.role && String(row[5] || "").trim() === "ACTIVO");
     if (rows.length !== 1) return { authorized: false };
-    const departmentIds = String(rows[0][3] || "").trim() === "INSTITUCION"
-      ? Array.from(new Set(ownershipRows.slice(1).filter(row => row[1] === "I1").map(row => row[4])))
-      : [String(rows[0][4] || "").trim()].filter(Boolean);
-    return { authorized: true, institutionId: "I1", departmentIds };
+    const institutionWide = String(rows[0][3] || "").trim() === "INSTITUCION";
+    const departmentIds = institutionWide ? [] : [String(rows[0][4] || "").trim()].filter(Boolean);
+    return { authorized: true, institutionId: "I1", departmentIds, institutionWide,
+      userId: actor.userId, role: actor.role };
   },
   getDynamicPermissionsForRole() { return null; },
   hasActiveDelegationForAction() { return false; },
@@ -447,9 +447,10 @@ function makeCreationRuntime(options) {
         String(row[1] || "").trim() === actor.userId && String(row[2] || "").trim() === actor.role &&
         String(row[5] || "").trim() === "ACTIVO");
       if (assignments.length !== 1) return { authorized: false };
-      const departmentIds = String(assignments[0][3] || "").trim() === "INSTITUCION"
-        ? ["D1", "D2"] : [String(assignments[0][4] || "").trim()].filter(Boolean);
-      return { authorized: true, institutionId: "I1", departmentIds };
+      const institutionWide = String(assignments[0][3] || "").trim() === "INSTITUCION";
+      const departmentIds = institutionWide ? [] : [String(assignments[0][4] || "").trim()].filter(Boolean);
+      return { authorized: true, institutionId: "I1", departmentIds, institutionWide,
+        userId: actor.userId, role: actor.role };
     },
     getDynamicPermissionsForRole() { return null; },
     hasActiveDelegationForAction() { return null; },
