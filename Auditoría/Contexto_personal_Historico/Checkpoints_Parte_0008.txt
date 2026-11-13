@@ -531,3 +531,10 @@
 - **Beta:** BETA-FUNC-063 continúa Pendiente beta; se amplía para usuarios multi-departamento y activeDepartmentId válido/ausente/no asignado.
 - **Estado:** incremento ACADEMIC aprobado localmente y completado. TASK-153/T153-S05 global sigue En ejecución; el siguiente alcance elegible es integrar un consumidor ACCOUNTING y completar la superficie administrativa/configurable sin habilitar acceso por defecto.
 ===============================================================================
+
+
+### Corrección C1.689 — identificador canónico (2026-11-13 12:55 UTC)
+- Se rectifica la nota provisional de C1.689: la expectativa EXP-1 en el test era correcta. El defecto estaba en ACADEMIC, que reutilizaba cleanExpId (minúsculas) como resourceId para USER, cuyo lookup de ResourceOwnership compara el ID exacto.
+- getStudentDocuments mantiene la normalización en minúsculas solo para filtrar y encontrar el expediente; al autorizar, pasa el ExpedienteID canónico de la única fila coincidente. La falta/duplicidad del expediente continúa denegando antes de llamar a USER.
+- El test usa expedienteId exp-1 y exige resourceId EXP-1 en el sobre firmado. Node.js v22.16.0: 20 escenarios PASS; el SHA del archivo local de test coincide con el blob actual de la rama. node --check PASS sobre las funciones productivas extraídas y el test.
+- Commits correctivos: 196d48659db13011a8547836e533fa0ce6352f04 y 559e85906ea1253e802a8d1dc2d94405214ee571. Checkout completo/CI siguen sin evidencia observable; no se declaran.
