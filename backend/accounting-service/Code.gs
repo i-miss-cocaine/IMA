@@ -576,11 +576,11 @@ function validateRolePermission(action, payload) {
   if (!ctxCheck.authorized) {
     return { authorized: false, role: userRole + " (" + ctxCheck.reason + ")" };
   }
-  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "getStaffPayrollReceipt", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher"];
+  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "getLoanAmortizationSchedule", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher"];
   if (resourceScopeActions.indexOf(action) !== -1) {
     const roleKey = String(userRole || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
     const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1 &&
-      (["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "uploadEmployeeDocument", "getEmployeeSelfServicePortal"].indexOf(action) !== -1 && ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1) || (roleKey === "PROFESOR" && action === "getStaffPayrollReceipt");
+      (["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getEmployeeLoansAdvances", "uploadEmployeeDocument", "getEmployeeSelfServicePortal"].indexOf(action) !== -1 && ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1) || (roleKey === "PROFESOR" && action === "getStaffPayrollReceipt");
     const paymentSelfServiceRole = ["ESTUDIANTE", "ALUMNO", "TUTOR", "PADRE", "MADRE", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(roleKey) !== -1 &&
       ["getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher"].indexOf(action) !== -1;
     if (!employeeSelfRole && !paymentSelfServiceRole) {
@@ -5922,29 +5922,73 @@ function requestEmployeeLoanAdvance(payload) {
 }
 
 function getEmployeeLoansAdvances(payload) {
-  const { empleadoId, estadoAprobacion } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "AnticiposPrestamosEmpleado").getDataRange().getValues().slice(1);
+  const p = payload || {}, actor = getVerifiedAccountingIdentity_(p);
+  if (!actor.authorized) return { status: "error", code: actor.code || "VERIFIED_IDENTITY_REQUIRED", message: "Acceso denegado." };
+  const role = String(actor.role || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
+  const self = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(role) !== -1;
+  if (!self && ["RECURSOSHUMANOS", "ADMINISTRADOR"].indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED", message: "Acceso denegado." };
 
-  let filtered = rows;
-  if (empleadoId) filtered = filtered.filter(r => String(r[2]).trim() === String(empleadoId).trim());
-  if (estadoAprobacion) filtered = filtered.filter(r => String(r[9]).trim() === String(estadoAprobacion).trim());
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID), empty = () => ({ status: "success", solicitudes: [] });
+  const sheet = ss.getSheetByName("AnticiposPrestamosEmpleado");
+  if (!sheet) return empty();
+  const data = sheet.getDataRange().getValues();
+  const headers = ["PrestamoID", "Fecha", "EmpleadoId", "Tipo", "MontoSolicitado", "MontoAprobado", "PlazoCuotas", "CuotaMensual", "SaldoPendiente", "EstadoAprobacion", "AprobadoPor", "Observaciones"];
+  if (!data.length || !Array.isArray(data[0]) || data[0].length !== headers.length || headers.some((h, i) => String(data[0][i] || "").trim().toUpperCase() !== h.toUpperCase())) {
+    return { status: "error", code: "RESOURCE_SCHEMA_INVALID", message: "La estructura de anticipos y préstamos no es válida." };
+  }
+
+  const employeeSheet = ss.getSheetByName("ExpedientesLaborales");
+  if (!employeeSheet) return empty();
+  const employeeData = employeeSheet.getDataRange().getValues();
+  const employeeHeaders = ["ExpedienteID", "PersonaId", "UserId", "Puesto", "Departamento", "CentroCosto", "FechaIngreso", "FechaSalida", "EstadoLaboral", "Observaciones"];
+  if (!employeeData.length || !Array.isArray(employeeData[0]) || employeeData[0].length !== employeeHeaders.length || employeeHeaders.some((h, i) => String(employeeData[0][i] || "").trim().toUpperCase() !== h.toUpperCase())) {
+    return { status: "error", code: "RESOURCE_SCHEMA_INVALID", message: "La estructura de expedientes laborales no es válida." };
+  }
+
+  const employeeRows = employeeData.slice(1), userCounts = Object.create(null), expedienteCounts = Object.create(null), expedienteByUser = Object.create(null);
+  employeeRows.forEach(r => {
+    const expedienteId = String(r[0] || "").trim(), userId = String(r[2] || "").trim();
+    if (expedienteId) expedienteCounts[expedienteId] = (expedienteCounts[expedienteId] || 0) + 1;
+    if (userId) userCounts[userId] = (userCounts[userId] || 0) + 1;
+  });
+  employeeRows.forEach(r => {
+    const expedienteId = String(r[0] || "").trim(), userId = String(r[2] || "").trim();
+    if (expedienteId && userId && expedienteCounts[expedienteId] === 1 && userCounts[userId] === 1) expedienteByUser[userId] = expedienteId;
+  });
+
+  const requestedUser = String(p.empleadoId || "").trim(), requestedLoan = String(p.prestamoId || "").trim();
+  const targetUser = self ? actor.userId : requestedUser;
+  if (self && requestedUser && requestedUser !== actor.userId) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen solicitudes disponibles." };
+  if (targetUser && !expedienteByUser[targetUser]) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen solicitudes disponibles." };
+
+  const accessCache = Object.create(null);
+  const allowedUser = userId => {
+    userId = String(userId || "").trim();
+    if (!userId || !expedienteByUser[userId]) return false;
+    if (!Object.prototype.hasOwnProperty.call(accessCache, userId)) accessCache[userId] = assertEmployeeExpedienteScopeAccess_(p, ss, expedienteByUser[userId]);
+    return !!accessCache[userId].authorized;
+  };
+  if (targetUser && !allowedUser(targetUser)) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen solicitudes disponibles." };
+
+  const rows = data.slice(1), loanCounts = Object.create(null);
+  rows.forEach(r => { const id = String(r && r[0] || "").trim(); if (id) loanCounts[id] = (loanCounts[id] || 0) + 1; });
+  let filtered = rows.filter(r => {
+    if (!Array.isArray(r) || r.length < headers.length) return false;
+    const id = String(r[0] || "").trim(), userId = String(r[2] || "").trim();
+    if (!id || loanCounts[id] !== 1 || !userId || (targetUser && userId !== targetUser)) return false;
+    if (requestedLoan && id !== requestedLoan) return false;
+    if (p.estadoAprobacion && String(r[9] || "").trim() !== String(p.estadoAprobacion).trim()) return false;
+    return allowedUser(userId);
+  });
+  if ((requestedLoan || (self && requestedUser)) && !filtered.length) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen solicitudes disponibles." };
 
   const mapped = filtered.map(r => ({
-    prestamoId: r[0],
-    fecha: r[1],
-    empleadoId: r[2],
-    tipo: r[3],
-    montoSolicitado: parseFloat(r[4] || 0),
-    montoAprobado: parseFloat(r[5] || 0),
-    plazoCuotas: parseInt(r[6] || 1),
-    cuotaMensual: parseFloat(r[7] || 0),
-    saldoPendiente: parseFloat(r[8] || 0),
-    estadoAprobacion: r[9],
-    aprobadoPor: r[10],
-    observaciones: r[11]
+    prestamoId: r[0], fecha: r[1], empleadoId: r[2], tipo: r[3],
+    montoSolicitado: parseFloat(r[4] || 0), montoAprobado: parseFloat(r[5] || 0),
+    plazoCuotas: parseInt(r[6] || 1), cuotaMensual: parseFloat(r[7] || 0),
+    saldoPendiente: parseFloat(r[8] || 0), estadoAprobacion: r[9],
+    aprobadoPor: r[10], observaciones: r[11]
   }));
-
   return { status: "success", solicitudes: mapped };
 }
 
@@ -5980,34 +6024,19 @@ function approveEmployeeLoanAdvance(payload) {
 }
 
 function getLoanAmortizationSchedule(payload) {
-  const { prestamoId } = payload || {};
-  if (!prestamoId) throw new Error("prestamoId requerido.");
-
-  const res = getEmployeeLoansAdvances({ prestamoId });
-  const item = res.solicitudes && res.solicitudes[0];
-  if (!item) throw new Error("Préstamo no encontrado.");
-
-  const schedule = [];
-  const cuotas = item.plazoCuotas || 1;
-  const mntCuota = item.cuotaMensual || (item.montoAprobado / cuotas);
+  const p = payload || {}, prestamoId = String(p.prestamoId || "").trim();
+  if (!prestamoId) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Préstamo no disponible." };
+  const res = getEmployeeLoansAdvances(Object.assign({}, p, { prestamoId: prestamoId }));
+  if (!res || res.status !== "success") return res || { status: "error", code: "RESOURCE_NOT_FOUND", message: "Préstamo no disponible." };
+  const matches = (res.solicitudes || []).filter(item => String(item.prestamoId || "").trim() === prestamoId);
+  if (matches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Préstamo no disponible." };
+  const item = matches[0], schedule = [], cuotas = item.plazoCuotas || 1, mntCuota = item.cuotaMensual || (item.montoAprobado / cuotas);
   let saldo = item.montoAprobado;
-
   for (let i = 1; i <= cuotas; i++) {
     saldo = Math.max(0, saldo - mntCuota);
-    schedule.push({
-      numeroCuota: i,
-      montoCuota: mntCuota,
-      saldoRestante: saldo
-    });
+    schedule.push({ numeroCuota: i, montoCuota: mntCuota, saldoRestante: saldo });
   }
-
-  return {
-    status: "success",
-    prestamoId: prestamoId,
-    montoAprobado: item.montoAprobado,
-    plazoCuotas: cuotas,
-    tablaAmortizacion: schedule
-  };
+  return { status: "success", prestamoId: prestamoId, montoAprobado: item.montoAprobado, plazoCuotas: cuotas, tablaAmortizacion: schedule };
 }
 
 function generatePayrollReceiptPDF(payload) {
