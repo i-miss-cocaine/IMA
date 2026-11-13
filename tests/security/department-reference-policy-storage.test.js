@@ -208,4 +208,4 @@ function payload(value) { return { userId: "U1", role: "Coordinador", value: val
   assert.equal(result.status, "success");
   assert.equal(h.runtime.getPolicy("I1").value, STRICT);
 }
-process.stdout.write("Department reference policy storage contract: 20 scenarios PASS.\\n");
+process.stdout.write("Department reference policy storage contract: 20 scenarios PASS.\n");
