@@ -12249,20 +12249,79 @@ function getEnrollmentCapacityReport(payload) {
 }
 
 // [TAREA-F6-002] [Fase 6: Expediente Institucional y Ciclo de Vida] - Creación de matrícula con candado de concurrencia, validación de estado institucional y prevención de matrículas duplicadas
+// [TASK-153] Mutating enrollment operations require verified actor and resource UPDATE ownership.
+function assertAcademicEnrollmentMutationAccess_(payload, targetUserId) {
+  const actor = getVerifiedAcademicIdentity_(payload);
+  if (!actor || actor.authorized !== true || !actor.userId || !actor.role) {
+    return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
+  }
+  const normalize = function(value) {
+    return String(value || "").trim().toUpperCase()
+      .replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I")
+      .replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N")
+      .replace(/[^A-Z0-9]/g, "");
+  };
+  const actorRole = normalize(actor.role);
+  if (["ESTUDIANTE", "ALUMNO", "PADRE", "MADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(actorRole) !== -1) {
+    return { authorized: false, code: "ENROLLMENT_MUTATION_ROLE_DENIED" };
+  }
+  const studentId = String(targetUserId || "").trim();
+  if (!studentId) return { authorized: false, code: "STUDENT_REFERENCE_REQUIRED" };
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const usersSheet = ss.getSheetByName("Usuarios");
+  const expedienteSheet = ss.getSheetByName("ExpedientesEstudiantes");
+  if (!usersSheet || !expedienteSheet) return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
+  const users = usersSheet.getDataRange().getValues();
+  if (!users.length) return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
+  const headers = (users[0] || []).map(function(value) { return String(value || "").trim().toLowerCase(); });
+  const userIdx = headers.indexOf("userid") >= 0 ? headers.indexOf("userid") : 0;
+  const roleIdx = headers.indexOf("rol") >= 0 ? headers.indexOf("rol") : 6;
+  const personIdx = headers.indexOf("personaid") >= 0 ? headers.indexOf("personaid") : 9;
+  const stateIdx = headers.indexOf("estadocuenta") >= 0 ? headers.indexOf("estadocuenta") : (headers.indexOf("estado") >= 0 ? headers.indexOf("estado") : 10);
+  const studentMatches = users.slice(1).filter(function(row) {
+    return String(row[userIdx] || "").trim() === studentId;
+  });
+  if (studentMatches.length !== 1) return { authorized: false, code: studentMatches.length ? "STUDENT_ACCOUNT_AMBIGUOUS" : "RESOURCE_OWNER_UNRESOLVED" };
+  const student = studentMatches[0];
+  if (["ESTUDIANTE", "ALUMNO"].indexOf(normalize(student[roleIdx])) === -1 ||
+      ["ACTIVA", "ACTIVO", "ACTIVE"].indexOf(normalize(student[stateIdx] || "Activa")) === -1) {
+    return { authorized: false, code: "STUDENT_ACCOUNT_INACTIVE_OR_INVALID" };
+  }
+  const personId = String(student[personIdx] || "").trim();
+  if (!personId) return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
+  const expedienteRows = expedienteSheet.getDataRange().getValues().slice(1);
+  const expedienteMatches = expedienteRows.filter(function(row) {
+    return String(row[1] || "").trim() === personId;
+  });
+  if (expedienteMatches.length !== 1 || !String(expedienteMatches[0][0] || "").trim()) {
+    return { authorized: false, code: expedienteMatches.length > 1 ? "RESOURCE_OWNERSHIP_AMBIGUOUS" : "RESOURCE_OWNER_UNRESOLVED" };
+  }
+  const scope = getVerifiedAcademicDepartmentScope_(payload, ss, actor);
+  if (!scope || scope.authorized !== true) return scope || { authorized: false, code: "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+  const ownership = assertResourceOwnershipForScope_(
+    ss, scope, "EXPEDIENTE_ESTUDIANTE", String(expedienteMatches[0][0]).trim(), "UPDATE", payload
+  );
+  if (!ownership || ownership.authorized !== true) return ownership || { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  return { authorized: true, actor: actor, studentUserId: studentId, expedienteId: String(expedienteMatches[0][0]).trim(), departmentId: ownership.departmentId };
+}
+
 function createStudentEnrollment(payload) {
-  const { userId, alumno, grado, seccion, anolectivo, tipo, becaDescuento, observaciones, forceCapacityOverride, skipLock } = payload || {};
+  const { userId, alumno, grado, seccion, anolectivo, tipo, becaDescuento, observaciones, forceCapacityOverride } = payload || {};
   if (!userId || !grado || !seccion) throw new Error("userId, grado y sección requeridos.");
 
-  const lock = !skipLock ? LockService.getScriptLock() : null;
-  if (lock) {
-    const success = lock.tryLock(10000);
-    if (!success) throw new Error("Servicio ocupado. Por favor, reintente la operación de matrícula.");
-  }
+  const lock = LockService.getScriptLock();
+  const success = lock.tryLock(10000);
+  if (!success) throw new Error("Servicio ocupado. Por favor, reintente la operación de matrícula.");
 
   try {
     const targetAno = anolectivo || "2026";
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sUserId = String(userId).trim();
+    const enrollmentAccess = assertAcademicEnrollmentMutationAccess_(payload, sUserId);
+    if (!enrollmentAccess || enrollmentAccess.authorized !== true) throw new Error(enrollmentAccess && enrollmentAccess.code || "RESOURCE_SCOPE_DENIED");
+    if (forceCapacityOverride === true && getDynamicPermissionsForRole(enrollmentAccess.actor.role, "overrideEnrollmentCapacity") !== true) {
+      throw new Error("AUTH_PERMISSION_DENIED");
+    }
 
     // 1. Validar integridad de Expediente y Estado Institucional
     const expSheet = getOrCreateSheet(ss, "ExpedientesEstudiantes");
@@ -12327,7 +12386,7 @@ function createStudentEnrollment(payload) {
 
     return { status: "success", matriculaId: matriculaId, message: "Matrícula procesada y confirmada con éxito." };
   } finally {
-    if (lock) lock.releaseLock();
+    lock.releaseLock();
   }
 }
 
@@ -12474,19 +12533,19 @@ function getStudentEnrollments(payload) {
 // [TAREA-F6-002] [BLOCKING-ISSUE-FIX] - Desestructuración explícita de userId, nuevoAnoLectivo, nuevoGrado y nuevaSeccion para la renovación de matrícula de estudiante
 // [TAREA-F6-002] [BLOCKING-ISSUE-FIX] - Desestructuración explícita de userId, nuevoAnoLectivo, nuevoGrado, nuevaSeccion y motivo con paso de observaciones a createStudentEnrollment
 function renewStudentEnrollment(payload) {
-  const { userId, nuevoAnoLectivo, nuevoGrado, nuevaSeccion, motivo } = payload || {};
+  const request = payload || {};
+  const { userId, nuevoAnoLectivo, nuevoGrado, nuevaSeccion, motivo } = request;
   if (!userId || !nuevoAnoLectivo || !nuevoGrado) throw new Error("userId, nuevoAñoLectivo y nuevoGrado son requeridos.");
 
-  return createStudentEnrollment({
+  return createStudentEnrollment(Object.assign({}, request, {
     userId: userId,
     anolectivo: nuevoAnoLectivo,
     grado: nuevoGrado,
     seccion: nuevaSeccion || "A",
     tipo: "Renovacion",
     observaciones: motivo || "Renovación Anual de Matrícula",
-    authRole: payload && payload.authRole,
-    callerUserId: payload && payload.userId
-  });
+    callerUserId: getVerifiedAcademicIdentity_(request).userId || ""
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -13902,7 +13961,30 @@ function registerStudentEnrollment(payload) {
   delete publicPayload._chargeReference;
   delete publicPayload._chargeReferencePrefix;
   delete publicPayload._rollbackActions;
-  return registerStudentEnrollmentInternal_(publicPayload);
+  delete publicPayload.skipLock;
+  const studentId = String(publicPayload.userId || "").trim();
+  const access = assertAcademicEnrollmentMutationAccess_(publicPayload, studentId);
+  if (!access || access.authorized !== true) throw new Error(access && access.code || "RESOURCE_SCOPE_DENIED");
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error("Servicio ocupado. Por favor, reintente la operación de matrícula.");
+  const rollbackActions = [];
+  try {
+    return registerStudentEnrollmentInternal_(Object.assign({}, publicPayload, { _rollbackActions: rollbackActions }));
+  } catch (error) {
+    const rollbackErrors = [];
+    for (let i = rollbackActions.length - 1; i >= 0; i--) {
+      try { rollbackActions[i](); } catch (rollbackError) {
+        rollbackErrors.push(String(rollbackError && rollbackError.message || rollbackError));
+      }
+    }
+    if (rollbackErrors.length) {
+      throw new Error("ENROLLMENT_COMPENSATION_REQUIRED: " +
+        String(error && error.message || error) + " | " + rollbackErrors.join(" | "));
+    }
+    throw error;
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function registerStudentEnrollmentInternal_(payload) {

@@ -1460,3 +1460,12 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Evidencia requerida:** actor/rol, relación/AccesoPortal y bandera financiera sintéticos, ámbito/InstitutionID, ResourceOwnership, payload saneado, respuestas allow/deny, IDs sintéticos y snapshots de hojas antes/después.
 - **Estado:** Pendiente beta. Los contratos locales/CI de código cubren la lógica aislada; no se han desplegado servicios ni consultado Sheets reales.
 ===============================================================================
+
+
+## BETA-FUNC-055 — TASK-153 / ACADEMIC: mutaciones de matrícula con ownership departamental
+- **Objetivo:** validar en entorno desplegado que crear, renovar y registrar matrículas exige identidad de sesión vigente y ownership UPDATE del expediente en el departamento autorizado.
+- **Precondiciones:** versión beta con ACADEMIC desplegado; cuentas sintéticas de Director/Secretaría, estudiante y tutor; ResourceOwnership y AsignacionesAmbitosRoles configurados para dos departamentos.
+- **Pasos:** crear y renovar matrícula de un estudiante propio del departamento; repetir con token ausente/expirado; intentar usar userId de otro estudiante/departamento; intentar actuar como estudiante/tutor; probar override de cupo sin permiso y con permiso explícito.
+- **Resultado esperado:** solo actores de personal autorizados y con ownership vigente pueden mutar; spoofing, relación SELF/GUARDIAN y ownership ajeno se rechazan sin escritura; override requiere permiso explícito; no se duplican matrículas.
+- **Estado:** Pendiente beta.
+- **Evidencia requerida:** respuestas API, estado previo/posterior de Matriculas y bitácora de denegaciones, sin datos personales reales.
