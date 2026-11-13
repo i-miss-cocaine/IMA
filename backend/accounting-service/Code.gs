@@ -2555,337 +2555,155 @@ function createAdmissionCharge(payload) {
   }
 
 // [TASK-002] [F15-Task02] - Simulación interactiva de generación de mensualidades escolares (Pre-visualización)
+function monthlyChargeHeaderMap_(headers, required) {
+  const map = {};
+  (headers || []).forEach((value, index) => { map[String(value || "").trim().toLowerCase()] = index; });
+  required.forEach(name => { if (map[name.toLowerCase()] === undefined) throw new Error("MONTHLY_CHARGE_SCHEMA_INVALID:" + name); });
+  return map;
+}
+function normalizeMonthlyChargeMonth_(value) {
+  const raw = String(value == null ? "" : value).trim();
+  const match = raw.match(/^(?:\d{4}[-/])?(\d{1,2})$/);
+  if (match) { const month = Number(match[1]); if (month >= 1 && month <= 12) return String(month).padStart(2, "0"); }
+  const normalized = raw.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\./g, "").trim();
+  const months = { enero:1, ene:1, febrero:2, feb:2, marzo:3, mar:3, abril:4, abr:4, mayo:5, may:5, junio:6, jun:6, julio:7, jul:7, agosto:8, ago:8, septiembre:9, setiembre:9, sep:9, sept:9, octubre:10, oct:10, noviembre:11, nov:11, diciembre:12, dic:12 };
+  if (!months[normalized]) throw new Error("MONTHLY_CHARGE_PERIOD_INVALID");
+  return String(months[normalized]).padStart(2, "0");
+}
+function monthlyChargeDedupeKey_(userId, conceptId, month, year) {
+  return ["MONTHLY", String(userId).trim(), String(conceptId).trim(), String(year).trim(), normalizeMonthlyChargeMonth_(month)].join("|").toLowerCase();
+}
+function resolveMonthlyChargeTariff_(tariffRows, tariffHeaders, conceptRows, conceptHeaders, year, grade, conceptId, conceptName) {
+  const th = monthlyChargeHeaderMap_(tariffHeaders, ["TarifaID", "AnoLectivo", "NivelGrado", "ConceptoID", "MontoTotal", "CuotasNum", "Estado"]);
+  const ch = conceptRows.length ? monthlyChargeHeaderMap_(conceptHeaders, ["ConceptoID", "NombreConcepto"]) : {};
+  let selectedId = String(conceptId || "").trim();
+  const requestedName = String(conceptName || "").trim();
+  if (!selectedId && requestedName && conceptRows.length) {
+    const matches = conceptRows.slice(1).filter(row => String(row[ch.conceptoid] || "").trim() && String(row[ch.nombreconcepto] || "").trim().toLowerCase() === requestedName.toLowerCase());
+    if (matches.length > 1) throw new Error("MONTHLY_CHARGE_CONCEPT_AMBIGUOUS");
+    if (matches.length === 1) selectedId = String(matches[0][ch.conceptoid]).trim();
+  }
+  const active = tariffRows.slice(1).filter(row => String(row[th.anolectivo] || "").trim() === String(year).trim() &&
+    String(row[th.nivelgrado] || "").trim().toLowerCase() === String(grade).trim().toLowerCase() &&
+    ["ACTIVA", "ACTIVE"].includes(String(row[th.estado] || "").trim().toUpperCase()));
+  const candidates = selectedId ? active.filter(row => String(row[th.conceptoid] || "").trim() === selectedId) : active;
+  if (!selectedId && candidates.length > 1) throw new Error("MONTHLY_CHARGE_CONCEPT_REQUIRED");
+  if (candidates.length > 1) throw new Error("MONTHLY_CHARGE_TARIFF_AMBIGUOUS");
+  if (!candidates.length) return null;
+  const row = candidates[0], amount = Number(row[th.montototal]), installments = Number(row[th.cuotasnum] || 1);
+  if (!isFinite(amount) || amount <= 0 || !Number.isInteger(installments) || installments < 1) throw new Error("MONTHLY_CHARGE_TARIFF_INVALID");
+  let resolvedName = requestedName;
+  if (!resolvedName && conceptRows.length) {
+    const match = conceptRows.slice(1).find(item => String(item[ch.conceptoid] || "").trim() === String(row[th.conceptoid] || "").trim());
+    if (match) resolvedName = String(match[ch.nombreconcepto] || "").trim();
+  }
+  if (!resolvedName) resolvedName = String(row[th.conceptoid] || "").trim();
+  return { tariffId: String(row[th.tarifaid] || "").trim(), conceptId: String(row[th.conceptoid] || "").trim(),
+    conceptName: resolvedName, amount: Math.round((amount / installments) * 100) / 100, installments, row };
+}
+function monthlyChargeExistingKey_(row, headers, userId, conceptId, conceptName, month, year) {
+  const h = monthlyChargeHeaderMap_(headers, ["UserId", "Concepto", "Estado"]);
+  if (String(row[h.estado] || "").trim().toLowerCase() === "anulado") return false;
+  if (String(row[h.userid] || "").trim().toLowerCase() !== String(userId).trim().toLowerCase()) return false;
+  const keyIndex = headers.findIndex(value => String(value || "").trim().toLowerCase() === "claveunicadedupe");
+  const key = keyIndex >= 0 ? String(row[keyIndex] || "").trim().toLowerCase() : "";
+  if (key === monthlyChargeDedupeKey_(userId, conceptId, month, year)) return true;
+  const legacy = [String(userId).trim(), String(conceptName).trim(), String(month).trim(), String(year).trim()].join("_").toLowerCase();
+  return !!key && key === legacy;
+}
 function previewBatchMonthlyCharges(payload) {
-  const { anoLectivo, mesPeriodo, nivelGrado, seccion, conceptoId, conceptoNombre, fechaVencimiento, studentIds } = payload || {};
-  if (!anoLectivo || !mesPeriodo) {
-    throw new Error("anoLectivo y mesPeriodo son requeridos para simular la generación de mensualidades.");
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sAno = String(anoLectivo).trim();
-  const sMes = String(mesPeriodo).trim();
-  const sConcepto = String(conceptoNombre || "Colegiatura Mensual - " + sMes).trim();
-  const sVencimiento = fechaVencimiento || new Date().toISOString().split("T")[0];
-
-  // 1. Obtener estudiantes elegibles desde Matriculas o Usuarios
-  let students = [];
+  const input = payload || {};
+  const { anoLectivo, mesPeriodo, nivelGrado, seccion, conceptoId, conceptoNombre, fechaVencimiento, studentIds } = input;
+  if (!anoLectivo || !mesPeriodo) throw new Error("anoLectivo y mesPeriodo son requeridos para simular la generación de mensualidades.");
+  const year = String(anoLectivo).trim(), month = normalizeMonthlyChargeMonth_(mesPeriodo), displayMonth = String(mesPeriodo).trim();
+  const dueDate = String(fechaVencimiento || "").trim(), ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const matSheet = ss.getSheetByName("Matriculas");
-  if (matSheet) {
-    const matRows = matSheet.getDataRange().getValues().slice(1);
-    matRows.forEach(r => {
-      const uId = String(r[2]).trim();
-      const nom = String(r[3] || "").trim();
-      const ciclo = String(r[4] || "").trim();
-      const grado = String(r[5] || "").trim();
-      const sec = String(r[6] || "A").trim();
-      const estadoMat = String(r[8] || "Activa").trim().toLowerCase();
-
-      // Excluir retirados, trasladados o suspendidos
-      if (estadoMat === "retirado" || estadoMat === "cancelada" || estadoMat === "suspendido" || estadoMat === "inactiva") return;
-      if (sAno && ciclo && ciclo.indexOf(sAno) === -1 && sAno.indexOf(ciclo) === -1) return;
-      if (nivelGrado && normalizeString(grado) !== normalizeString(nivelGrado)) return;
-      if (seccion && normalizeString(sec) !== normalizeString(seccion)) return;
-      if (Array.isArray(studentIds) && studentIds.length > 0 && !studentIds.includes(uId)) return;
-
-      students.push({
-        userId: uId,
-        nombre: nom,
-        grado: grado,
-        seccion: sec,
-        tipoBeca: r[9] || "Ninguna",
-        descuentoPct: parseFloat(r[10] || 0),
-        exonerado: String(r[11]).toLowerCase() === "sí" || String(r[11]).toLowerCase() === "true"
-      });
-    });
-  }
-
-  if (students.length === 0) {
-    const uSheet = ss.getSheetByName("Usuarios");
-    if (uSheet) {
-      const uRows = uSheet.getDataRange().getValues().slice(1);
-      uRows.forEach(r => {
-        const uId = String(r[0]).trim();
-        const nom = String(r[1] || "").trim();
-        const grado = String(r[2] || "").trim();
-        const sec = String(r[3] || "A").trim();
-        const rol = String(r[6] || "").trim();
-        const estadoAcc = String(r[10] || "Activa").trim().toLowerCase();
-
-        if (rol !== "Estudiante" && rol !== "Alumno") return;
-        if (estadoAcc === "desactivada" || estadoAcc === "inactiva" || estadoAcc === "retirado") return;
-        if (nivelGrado && normalizeString(grado) !== normalizeString(nivelGrado)) return;
-        if (seccion && normalizeString(sec) !== normalizeString(seccion)) return;
-        if (Array.isArray(studentIds) && studentIds.length > 0 && !studentIds.includes(uId)) return;
-
-        students.push({
-          userId: uId,
-          nombre: nom,
-          grado: grado,
-          seccion: sec,
-          tipoBeca: "Ninguna",
-          descuentoPct: 0,
-          exonerado: false
-        });
-      });
-    }
-  }
-
-  // 2. Obtener tarifas aplicables desde TarifasPlanPago o ConceptosCobro
-  const tarifaSheet = getOrCreateSheet(ss, "TarifasPlanPago");
-  const tarifaRows = tarifaSheet.getDataRange().getValues().slice(1);
-  const conceptoSheet = getOrCreateSheet(ss, "ConceptosCobro");
-  const conceptoRows = conceptoSheet.getDataRange().getValues().slice(1);
-
-  // 3. Revisar cargos existentes en CargosEstudiante para detectar ya generados
-  const cargosSheet = getOrCreateSheet(ss, "CargosEstudiante");
-  const cargosRows = cargosSheet.getDataRange().getValues().slice(1);
-  const existingSet = new Set();
-  cargosRows.forEach(r => {
-    const uId = String(r[2]).trim();
-    const cDesc = String(r[3]).trim().toLowerCase();
-    const cEstado = String(r[7]).trim();
-    const cDedupeKey = String(r[10] || "").trim();
-    if (cEstado !== "Anulado") {
-      if (cDedupeKey) existingSet.add(cDedupeKey.toLowerCase());
-      existingSet.add((uId + "_" + cDesc).toLowerCase());
-      existingSet.add((uId + "_" + sMes + "_" + sAno).toLowerCase());
-    }
+  if (!matSheet) throw new Error("MONTHLY_CHARGE_ENROLLMENTS_NOT_CONFIGURED");
+  const matData = matSheet.getDataRange().getValues();
+  if (!matData.length) throw new Error("MONTHLY_CHARGE_ENROLLMENT_SCHEMA_INVALID");
+  const mh = monthlyChargeHeaderMap_(matData[0], ["MatriculaID", "UserId", "Alumno", "Grado", "Seccion", "AnoLectivo", "Estado", "BecaDescuento"]);
+  const requested = Array.isArray(studentIds) && studentIds.length ? new Set(studentIds.map(id => String(id).trim().toLowerCase())) : null;
+  const students = [];
+  matData.slice(1).forEach(row => {
+    const userId = String(row[mh.userid] || "").trim(), status = String(row[mh.estado] || "").trim().toLowerCase();
+    if (!userId || !["activa", "confirmada"].includes(status) || String(row[mh.anolectivo] || "").trim() !== year) return;
+    const grade = String(row[mh.grado] || "").trim(), section = String(row[mh.seccion] || "").trim();
+    if (nivelGrado && grade.toLowerCase() !== String(nivelGrado).trim().toLowerCase()) return;
+    if (seccion && section.toLowerCase() !== String(seccion).trim().toLowerCase()) return;
+    if (requested && !requested.has(userId.toLowerCase())) return;
+    students.push({ userId, name: String(row[mh.alumno] || "").trim(), grade, section, discount: Math.max(0, Number(row[mh.becadescuento]) || 0) });
   });
-
-  // 4. Calcular simulación detallada por estudiante
-  let totalImporteEstimado = 0;
-  let estudiantesYaGenerados = 0;
-  let estudiantesSinTarifa = 0;
-  const desgloseEstudiantes = [];
-
-  students.forEach(st => {
-    const dedupeKey = (st.userId + "_" + sConcepto + "_" + sMes + "_" + sAno).toLowerCase();
-    const yaExiste = existingSet.has(dedupeKey) || existingSet.has((st.userId + "_" + sConcepto).toLowerCase()) || existingSet.has((st.userId + "_" + sMes + "_" + sAno).toLowerCase());
-
-    if (yaExiste) {
-      estudiantesYaGenerados++;
-      desgloseEstudiantes.push({
-        userId: st.userId,
-        nombre: st.nombre,
-        grado: st.grado,
-        seccion: st.seccion,
-        montoBase: 0,
-        descuento: 0,
-        montoFinal: 0,
-        estado: "YaGenerado",
-        motivo: "Cargo existente para este período."
-      });
-      return;
-    }
-
-    // Buscar tarifa para su grado
-    let montoBase = 0;
-    const tarifaMatch = tarifaRows.find(tr =>
-      String(tr[1]).trim() === sAno &&
-      normalizeString(tr[2]) === normalizeString(st.grado) &&
-      (String(tr[7] || "Activa").trim() === "Activa")
-    );
-
-    if (tarifaMatch) {
-      const cuotas = parseInt(tarifaMatch[5] || 1);
-      const totalTarifa = parseFloat(tarifaMatch[4] || 0);
-      montoBase = cuotas > 0 ? (totalTarifa / cuotas) : totalTarifa;
-    } else {
-      // Buscar en ConceptosCobro
-      const conceptoMatch = conceptoRows.find(cr =>
-        (String(cr[0]).trim() === String(conceptoId || "").trim()) ||
-        (normalizeString(cr[2]) === normalizeString(sConcepto) || normalizeString(cr[1]) === normalizeString(sConcepto))
-      );
-      if (conceptoMatch) {
-        montoBase = parseFloat(conceptoMatch[3] || conceptoMatch[4] || 0);
-      } else {
-        montoBase = 1200; // Tarifa estándar base configurable
-      }
-    }
-
-    if (montoBase <= 0) {
-      estudiantesSinTarifa++;
-    }
-
-    let descuento = 0;
-    if (st.exonerado) {
-      descuento = montoBase;
-    } else if (st.descuentoPct > 0) {
-      descuento = montoBase * (st.descuentoPct / 100);
-    }
-    const montoFinal = Math.max(0, montoBase - descuento);
-    totalImporteEstimado += montoFinal;
-
-    desgloseEstudiantes.push({
-      userId: st.userId,
-      nombre: st.nombre,
-      grado: st.grado,
-      seccion: st.seccion,
-      montoBase: montoBase,
-      descuento: descuento,
-      montoFinal: montoFinal,
-      estado: "PendienteGenerar",
-      fechaVencimiento: sVencimiento
-    });
+  const tariffSheet = ss.getSheetByName("TarifasPlanPago"), conceptSheet = ss.getSheetByName("ConceptosCobro"), chargeSheet = ss.getSheetByName("CargosEstudiante");
+  if (!tariffSheet || !chargeSheet) throw new Error("MONTHLY_CHARGE_CONFIGURATION_MISSING");
+  const tariffData = tariffSheet.getDataRange().getValues(), conceptData = conceptSheet ? conceptSheet.getDataRange().getValues() : [], chargeData = chargeSheet.getDataRange().getValues();
+  if (!tariffData.length || !chargeData.length) throw new Error("MONTHLY_CHARGE_SCHEMA_INVALID");
+  monthlyChargeHeaderMap_(tariffData[0], ["TarifaID", "AnoLectivo", "NivelGrado", "ConceptoID", "MontoTotal", "CuotasNum", "Estado"]);
+  const chargeHeaders = chargeData[0];
+  monthlyChargeHeaderMap_(chargeHeaders, ["CargoID", "UserId", "Concepto", "Estado", "ClaveUnicaDedupe"]);
+  const resolved = new Map(), result = [];
+  let total = 0, alreadyGenerated = 0, missingTariff = 0, eligible = 0;
+  students.forEach(student => {
+    const lookupKey = student.grade.toLowerCase();
+    if (!resolved.has(lookupKey)) resolved.set(lookupKey, resolveMonthlyChargeTariff_(tariffData, tariffData[0], conceptData, conceptData[0] || [], year, student.grade, conceptoId, conceptoNombre));
+    const tariff = resolved.get(lookupKey);
+    if (!tariff) { missingTariff++; result.push({ userId: student.userId, nombre: student.name, grado: student.grade, seccion: student.section, montoBase: 0, descuento: 0, montoFinal: 0, estado: "SinTarifa", motivo: "No existe una tarifa activa para el concepto, grado y año lectivo seleccionados." }); return; }
+    const key = monthlyChargeDedupeKey_(student.userId, tariff.conceptId, month, year);
+    const exists = chargeData.slice(1).some(row =>
+      monthlyChargeExistingKey_(row, chargeHeaders, student.userId, tariff.conceptId, tariff.conceptName, month, year) ||
+      monthlyChargeExistingKey_(row, chargeHeaders, student.userId, tariff.conceptId, tariff.conceptName, displayMonth, year));
+    if (exists) { alreadyGenerated++; result.push({ userId: student.userId, nombre: student.name, grado: student.grade, seccion: student.section, conceptoId: tariff.conceptId, concepto: tariff.conceptName, claveUnicaDedupe: key, montoBase: 0, descuento: 0, montoFinal: 0, estado: "YaGenerado", motivo: "El mismo concepto ya tiene un cargo en este mes y año lectivo." }); return; }
+    const discount = Math.min(tariff.amount, student.discount), finalAmount = Math.max(0, Math.round((tariff.amount - discount) * 100) / 100);
+    total += finalAmount; eligible++;
+    result.push({ userId: student.userId, nombre: student.name, grado: student.grade, seccion: student.section, conceptoId: tariff.conceptId, concepto: tariff.conceptName, tarifaId: tariff.tariffId, claveUnicaDedupe: key, montoBase: tariff.amount, descuento: discount, montoFinal: finalAmount, estado: "PendienteGenerar", fechaVencimiento: dueDate });
   });
-
-  return {
-    status: "success",
-    simulacion: true,
-    anoLectivo: sAno,
-    mesPeriodo: sMes,
-    concepto: sConcepto,
-    fechaVencimiento: sVencimiento,
-    totalEstudiantesElegibles: students.length,
-    estudiantesParaGenerar: students.length - estudiantesYaGenerados,
-    estudiantesYaGenerados: estudiantesYaGenerados,
-    estudiantesSinTarifa: estudiantesSinTarifa,
-    totalImporteEstimado: parseFloat(totalImporteEstimado.toFixed(2)),
-    desglose: desgloseEstudiantes
-  };
+  return { status: missingTariff ? "warning" : "success", simulacion: true, anoLectivo: year, mesPeriodo: displayMonth, mesClave: month,
+    concepto: String(conceptoNombre || (result.find(item => item.concepto) || {}).concepto || ""), conceptoId: String(conceptoId || ""), fechaVencimiento: dueDate,
+    totalEstudiantesElegibles: students.length, estudiantesParaGenerar: eligible, estudiantesYaGenerados: alreadyGenerated,
+    estudiantesSinTarifa: missingTariff, totalImporteEstimado: Math.round(total * 100) / 100, desglose: result };
 }
-
-// [TASK-002] [F15-Task02] - Motor de generación masiva, programada y recurrente de mensualidades escolares
 function generateBatchMonthlyCharges(payload) {
-  const { anoLectivo, mesPeriodo, nivelGrado, seccion, conceptoId, conceptoNombre, fechaVencimiento, studentIds, authorizedBy, excludeUserIds = [] } = payload || {};
-  if (!anoLectivo || !mesPeriodo) {
-    throw new Error("anoLectivo y mesPeriodo son obligatorios para la generación masiva de mensualidades.");
-  }
-
-  // Candado atómico ScriptLock de alta concurrencia
+  const input = payload || {};
+  const { anoLectivo, mesPeriodo, conceptoNombre, fechaVencimiento, authorizedBy, excludeUserIds = [] } = input;
+  if (!anoLectivo || !mesPeriodo) throw new Error("anoLectivo y mesPeriodo son obligatorios para la generación masiva de mensualidades.");
   const lock = LockService.getScriptLock();
-  const hasLock = lock.tryLock(30000);
-  if (!hasLock) {
-    return {
-      status: "error",
-      code: "LOCK_TIMEOUT",
-      message: "El motor de facturación y cobros masivos está siendo utilizado por otra operación concurrente. Intente nuevamente en unos instantes."
-    };
-  }
-
+  if (!lock.tryLock(30000)) return { status: "error", code: "LOCK_TIMEOUT", message: "El motor de facturación está ocupado. Intente nuevamente." };
   try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sAno = String(anoLectivo).trim();
-    const sMes = String(mesPeriodo).trim();
-    const sConcepto = String(conceptoNombre || "Colegiatura Mensual - " + sMes).trim();
-    const sVencimiento = fechaVencimiento || new Date().toISOString().split("T")[0];
-    const now = new Date();
-    const batchId = "BATCH-CRG-" + now.getTime() + "-" + Math.floor(1000 + Math.random() * 9000);
-
-    // 1. Obtener vista previa y desglose para respetar validaciones
-    const sim = previewBatchMonthlyCharges(payload);
-    const cargosSheet = getOrCreateSheet(ss, "CargosEstudiante");
-    const cargosData = cargosSheet.getDataRange().getValues();
-
-    // Indexar claves de idempotencia existentes
-    const existingDedupeKeys = new Set();
-    for (let i = 1; i < cargosData.length; i++) {
-      const r = cargosData[i];
-      if (String(r[7]).trim() !== "Anulado") {
-        const uId = String(r[2]).trim();
-        const cDesc = String(r[3]).trim().toLowerCase();
-        const cKey = String(r[10] || "").trim().toLowerCase();
-        if (cKey) existingDedupeKeys.add(cKey);
-        existingDedupeKeys.add((uId + "_" + cDesc).toLowerCase());
-        existingDedupeKeys.add((uId + "_" + sMes + "_" + sAno).toLowerCase());
-      }
-    }
-
-    let creados = 0;
-    let omitidos = 0;
-    let fallidos = 0;
-    let totalMontoGenerado = 0;
-    const newRows = [];
-    const createdCargoIds = [];
-
-    const excludedSet = new Set((excludeUserIds || []).map(id => String(id).trim().toLowerCase()));
-
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID), year = String(anoLectivo).trim(), month = normalizeMonthlyChargeMonth_(mesPeriodo);
+    const displayMonth = String(mesPeriodo).trim(), sim = previewBatchMonthlyCharges(input), chargeSheet = ss.getSheetByName("CargosEstudiante");
+    const data = chargeSheet.getDataRange().getValues(), headers = data[0];
+    const h = monthlyChargeHeaderMap_(headers, ["CargoID", "Fecha", "UserId", "Concepto", "MontoBase", "Descuento", "MontoFinal", "Estado", "FechaVencimiento", "Observaciones", "ClaveUnicaDedupe"]);
+    const batchIndex = headers.findIndex(value => String(value || "").trim().toLowerCase() === "batchid");
+    const excluded = new Set((excludeUserIds || []).map(id => String(id).trim().toLowerCase()));
+    const keys = new Set(data.slice(1).map(row => String(row[h.claveunicadedupe] || "").trim().toLowerCase()).filter(Boolean));
+    const now = new Date(), batchId = "BATCH-CRG-" + now.getTime() + "-" + Math.floor(1000 + Math.random() * 9000);
+    const rowsToWrite = [], ids = [];
+    let omitted = 0, created = 0, missingTariff = 0, total = 0;
     sim.desglose.forEach(item => {
-      const uIdLower = String(item.userId).toLowerCase();
-      if (excludedSet.has(uIdLower)) {
-        omitidos++;
-        return;
-      }
-      if (item.estado === "YaGenerado") {
-        omitidos++;
-        return;
-      }
-
-      // Clave lógica única de idempotencia: studentId_concepto_periodo_anoLectivo
-      const dedupeKey = (item.userId + "_" + sConcepto + "_" + sMes + "_" + sAno).toLowerCase();
-      if (existingDedupeKeys.has(dedupeKey)) {
-        omitidos++;
-        return;
-      }
-
-      const cargoId = "CRG-" + sAno + "-" + Math.floor(100000 + Math.random() * 900000);
-      const montoBase = parseFloat(item.montoBase || 0);
-      const descuento = parseFloat(item.descuento || 0);
-      const montoFinal = Math.max(0, montoBase - descuento);
-
-      // Fila según esquema: [cargoId, fecha, userId, concepto, montoBase, descuento, montoFinal, estado, fechaVencimiento, ref/obs, claveDedupe, batchId]
-      newRows.push([
-        cargoId,
-        now,
-        item.userId,
-        sConcepto,
-        montoBase,
-        descuento,
-        montoFinal,
-        montoFinal <= 0 ? "Exonerado" : "Pendiente",
-        sVencimiento,
-        "Generación masiva de mensualidad [" + sMes + " " + sAno + "]. Lote: " + batchId + ". Autorizado: " + (authorizedBy || 'Admin'),
-        dedupeKey,
-        batchId
-      ]);
-
-      existingDedupeKeys.add(dedupeKey);
-      createdCargoIds.push(cargoId);
-      totalMontoGenerado += montoFinal;
-      creados++;
+      if (excluded.has(String(item.userId || "").trim().toLowerCase()) || item.estado === "YaGenerado") { omitted++; return; }
+      if (item.estado === "SinTarifa") { missingTariff++; return; }
+      if (item.estado !== "PendienteGenerar") return;
+      const key = monthlyChargeDedupeKey_(item.userId, item.conceptoId, month, year);
+      if (keys.has(key)) { omitted++; return; }
+      const row = new Array(headers.length).fill(""), id = "CRG-" + year + "-" + now.getTime() + "-" + (created + 1);
+      row[h.cargoid] = id; row[h.fecha] = now; row[h.userid] = item.userId; row[h.concepto] = item.concepto;
+      row[h.montobase] = item.montoBase; row[h.descuento] = item.descuento; row[h.montofinal] = item.montoFinal;
+      row[h.estado] = item.montoFinal <= 0 ? "Exonerado" : "Pendiente"; row[h.fechavencimiento] = String(item.fechaVencimiento || fechaVencimiento || "");
+      row[h.observaciones] = "Generación mensual [" + displayMonth + " " + year + "]. Tarifa: " + item.tarifaId + ".";
+      row[h.claveunicadedupe] = key; if (batchIndex >= 0) row[batchIndex] = batchId;
+      rowsToWrite.push(row); ids.push(id); keys.add(key); created++; total += Number(item.montoFinal) || 0;
     });
-
-    if (newRows.length > 0) {
-      const startRow = cargosSheet.getLastRow() + 1;
-      cargosSheet.getRange(startRow, 1, newRows.length, newRows[0].length).setValues(newRows);
-    }
-
-    // Aplicar becas aprobadas a los cargos recién creados de forma consistente
-    createdCargoIds.forEach(cId => {
-      try {
-        const row = newRows.find(r => r[0] === cId);
-        if (row) applyApprovedScholarshipsToCharges({ userId: row[2] });
-      } catch (_) {}
-    });
-
-    logStructuredEvent(
-      "ACCOUNTING",
-      "generateBatchMonthlyCharges",
-      "INFO",
-      "BATCH_MONTHLY_CHARGES_GENERATED",
-      "Generación masiva completada: " + creados + " cargos creados, " + omitidos + " omitidos por lote " + batchId + ".",
-      { batchId: batchId, anoLectivo: sAno, mesPeriodo: sMes, creados: creados, omitidos: omitidos, totalMontoGenerado: totalMontoGenerado },
-      authorizedBy || "Sistema"
-    );
-
-    return {
-      status: "success",
-      batchId: batchId,
-      anoLectivo: sAno,
-      mesPeriodo: sMes,
-      concepto: sConcepto,
-      fechaVencimiento: sVencimiento,
-      totalProcesados: sim.desglose.length,
-      creados: creados,
-      omitidos: omitidos,
-      fallidos: fallidos,
-      totalMontoGenerado: parseFloat(totalMontoGenerado.toFixed(2)),
-      message: "Generación masiva completada exitosamente. Se crearon " + creados + " mensualidades correspondientes al período " + sMes + " " + sAno + "."
-    };
-  } finally {
-    lock.releaseLock();
-  }
+    if (rowsToWrite.length) chargeSheet.getRange(chargeSheet.getLastRow() + 1, 1, rowsToWrite.length, headers.length).setValues(rowsToWrite);
+    ids.forEach(id => { try { const row = rowsToWrite.find(item => item[h.cargoid] === id); if (row) applyApprovedScholarshipsToCharges({ userId: row[h.userid] }); } catch (_) {} });
+    logStructuredEvent("ACCOUNTING", "generateBatchMonthlyCharges", "INFO", "BATCH_MONTHLY_CHARGES_GENERATED",
+      "Generación mensual completada: " + created + " cargos creados para " + displayMonth + " " + year + ".",
+      { batchId, anoLectivo: year, mesPeriodo: displayMonth, creados: created, omitidos: omitted, sinTarifa: missingTariff, totalMontoGenerado: total }, authorizedBy || "Sistema");
+    return { status: missingTariff ? "warning" : "success", batchId, anoLectivo: year, mesPeriodo: displayMonth, concepto: String(conceptoNombre || sim.concepto || ""),
+      totalProcesados: sim.desglose.length, creados: created, omitidos, sinTarifa: missingTariff, totalMontoGenerado: Math.round(total * 100) / 100,
+      message: "Generación mensual completada. Se crearon " + created + " cargos; " + missingTariff + " estudiantes quedaron pendientes por falta de tarifa." };
+  } finally { lock.releaseLock(); }
 }
+
+
 
 
   const now = new Date();
