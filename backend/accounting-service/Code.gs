@@ -6471,6 +6471,13 @@ function generatePayrollReceiptPDF(payload) {
     if(matchingPlans.length!==1)return {status:"error",code:matchingPlans.length?"PLANILLA_SELECTION_REQUIRED":"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible o requiere seleccionar una planilla."};
     const plan=matchingPlans[0],planillaId=String(plan[0]||"").trim();
     if(!planillaId||planRows.filter(r=>String(r[0]||"").trim()===planillaId).length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
+    const visiblePayrollConcepts=[];
+    const conceptDetailSheet=ss.getSheetByName("DetalleConceptosPlanilla");
+    if(conceptDetailSheet){
+      const conceptDetails=conceptDetailSheet.getDataRange().getValues(),conceptHeaders=getPayrollConceptDetailHeaders_();
+      if(!conceptDetails.length||!conceptDetails[0]||conceptDetails[0].length!==conceptHeaders.length||conceptHeaders.some((h,i)=>String(conceptDetails[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"El detalle de conceptos de planilla no es válido."};
+      conceptDetails.slice(1).filter(r=>String(r[1]||"").trim()===planillaId&&String(r[3]||"").trim()===targetExpedienteId&&(r[12]===true||String(r[12]).toUpperCase()==="TRUE")&&String(r[19]||"").trim().toUpperCase()!=="CANCELADO").forEach(r=>visiblePayrollConcepts.push({nombre:String(r[5]||r[4]||""),monto:Number(r[10]||0),categoria:String(r[6]||"")}));
+    }
 
     const boletaSheet=getOrCreateSheet(ss,"BoletasPago");
     let boletaData=boletaSheet.getDataRange().getValues();
@@ -6514,6 +6521,10 @@ function generatePayrollReceiptPDF(payload) {
       "Total deducciones: L. "+deductions.toFixed(2),"Salario neto: L. "+Number(plan[14]||0).toFixed(2),
       "Estado de planilla: "+String(plan[15]||""),"Boleta: "+boletaId,"Este documento contiene información salarial confidencial."
     ].forEach(line=>body.appendParagraph(line));
+    if(visiblePayrollConcepts.length){
+      body.appendParagraph("CONCEPTOS SALARIALES ADICIONALES");
+      visiblePayrollConcepts.forEach(item=>body.appendParagraph(item.nombre+" ("+item.categoria+"): L. "+item.monto.toFixed(2)));
+    }
     document.saveAndClose();
     const pdfBlob=temporaryDocumentFile.getAs(MimeType.PDF);pdfBlob.setName(fileName);
     const privateFolder=getOrCreateFolderNews(DriveApp.getRootFolder(),"Boletas_Pago_Privadas");
