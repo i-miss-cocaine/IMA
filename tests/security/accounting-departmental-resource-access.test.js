@@ -340,7 +340,7 @@ context.getOrCreateSheet=originalContractGetOrCreate;
 assert.ok(extractFunction(accounting,"getEmployeeContracts").includes('getSheetByName("ContratosLaborales")'));
 assert.ok(!extractFunction(accounting,"getEmployeeContracts").includes("getOrCreateSheet"),"contract reads must not create sheets");
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeContracts"'),"contracts must be included in resource scope authorization");
-assert.ok(extractFunction(accounting,"validateRolePermission").includes('["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getStaffAttendanceLogs", "getEmployeeLoansAdvances", "uploadEmployeeDocument", "getEmployeeSelfServicePortal"]'),"employees must retain self-service contract access");
+assert.ok(extractFunction(accounting,"validateRolePermission").includes('["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getStaffAttendanceLogs", "getEmployeeLoansAdvances", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "recordStaffCheckIn"]'),"employees must retain self-service contract access");
 assert.ok(extractFunction(accounting,"getEmployeeSelfServicePortal").includes("assertEmployeeExpedienteScopeAccess_"));
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeSelfServicePortal"'));
 
@@ -549,6 +549,7 @@ assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getSta
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getStaffAttendanceLogs", "getEmployeeLoansAdvances"'),"employees must retain self-service attendance access");
 
 
+const attendanceShiftTime=rows.AsignacionesTurnosLaborales[1][5];rows.AsignacionesTurnosLaborales[1][5]="23:59";
 const attendanceWritesBefore=rows.DeduccionesAsistencia.length;
 assert.equal(context.recordStaffCheckIn({sessionToken:"invalid",empleadoId:"U-EMP"}).code,"VERIFIED_IDENTITY_REQUIRED","attendance mutation requires signed identity");
 assert.equal(context.recordStaffCheckIn({sessionToken:"student",empleadoId:"U-EMP"}).code,"ROLE_NOT_ALLOWED","non-staff roles cannot register attendance");
@@ -566,7 +567,7 @@ assert.equal(context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-E
 const beforeForeign=rows.DeduccionesAsistencia.length;
 assert.equal(context.recordStaffCheckIn({sessionToken:"hrB",empleadoId:"U-EMP",tipoRegistro:"Entrada"}).code,"RESOURCE_NOT_FOUND","HR cannot write attendance outside its verified department");
 assert.equal(rows.DeduccionesAsistencia.length,beforeForeign,"out-of-scope HR attempts must not mutate storage");
-const hrWrite=context.recordStaffCheckIn({sessionToken:"hrA",empleadoId:"U-EMP",tipoRegistro:"Entrada"});
+const hrWrite=context.recordStaffCheckIn({sessionToken:"hrA",empleadoId:"U-X",tipoRegistro:"Entrada"});
 assert.equal(hrWrite.status,"success","HR with matching department ownership can register attendance for an employee");
 const adminWrite=context.recordStaffCheckIn({sessionToken:"admin",empleadoId:"U-B",tipoRegistro:"Entrada"});
 assert.equal(adminWrite.status,"success","institution-wide manager can register attendance for an owned employee");
@@ -585,5 +586,6 @@ lockSheet.appendRow=appendOriginal;context.LockService=lockOriginal;
 assert.ok(extractFunction(accounting,"recordStaffCheckIn").includes("assertResourceOwnershipForScope_"));
 assert.ok(extractFunction(accounting,"recordStaffCheckIn").includes("getVerifiedAccountingIdentity_"));
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"recordStaffCheckIn"'));
+rows.AsignacionesTurnosLaborales[1][5]=attendanceShiftTime;
 
 console.log("Accounting departmental resource and payment voucher access contracts passed.");
