@@ -43,6 +43,9 @@
                 <button id="btn-role-config-admin" class="p-2 text-indigo-600 hover:text-indigo-800 rounded-xl hover:bg-indigo-50 text-lg transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500" title="Configuración de Roles, Responsabilidades y Dashboards" aria-label="Configuración de Roles">
                     <i class="fa-solid fa-user-shield"></i>
                 </button>
+                <button id="btn-department-reference-admin" class="p-2 text-cyan-700 hover:text-cyan-900 rounded-xl hover:bg-cyan-50 text-lg transition-all focus:outline-none focus:ring-2 focus:ring-cyan-500" title="Administración de referencias interdepartamentales" aria-label="Referencias interdepartamentales">
+                    <i class="fa-solid fa-share-alt"></i>
+                </button>
                 <button id="btn-security-compliance-dashboard" class="p-2 text-red-600 hover:text-red-800 rounded-xl hover:bg-red-50 text-lg transition-all focus:outline-none focus:ring-2 focus:ring-red-500" title="Panel de Seguridad, Auditoría y Cumplimiento" aria-label="Panel de Seguridad">
                     <i class="fa-solid fa-shield-halved"></i>
                 </button>
@@ -171,6 +174,7 @@
 
     <script src="js/secretary.js?v=23"></script>
     <script src="js/teacher.js?v=23"></script>
+    <script src="js/department-reference-admin.js?v=1"></script>
     <script>
         // [TAREA-F4-P2-03] [Fase 4: Gestión de Usuarios] - Vinculación de los botones de gestión de usuarios y seguridad
         document.addEventListener("DOMContentLoaded", function() {
@@ -458,5 +462,88 @@
             </div>
         </div>
     </div>
+
+
+    <!-- TASK-153 / T153-S05: administración institucional de política y concesiones de referencias -->
+    <div id="modal-department-reference-admin" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[125] flex items-center justify-center p-2 md:p-4 hidden" role="dialog" aria-modal="true" aria-labelledby="department-reference-admin-title">
+        <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-5xl w-full p-5 md:p-6 space-y-5 max-h-[92vh] overflow-y-auto">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                    <span class="px-3 py-1 bg-cyan-50 text-cyan-800 rounded-full text-[10px] font-black uppercase tracking-widest">Control institucional</span>
+                    <h3 id="department-reference-admin-title" class="font-black text-slate-900 text-lg uppercase tracking-tight mt-2">Referencias interdepartamentales</h3>
+                    <p class="text-xs text-slate-500 mt-1">Administra la política y las concesiones de lectura limitada. El bloqueo total es el valor predeterminado.</p>
+                </div>
+                <button id="btn-close-department-reference-admin" type="button" class="w-10 h-10 shrink-0 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center" aria-label="Cerrar administración de referencias">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="department-reference-admin-status" class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs" role="status" aria-live="polite">La configuración se consulta desde USER; la institución y el departamento propietario los determina el servidor.</div>
+
+            <section class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                <div>
+                    <h4 class="text-xs font-black uppercase tracking-wide text-slate-800">Política institucional</h4>
+                    <p class="text-[11px] text-slate-500 mt-1">La opción permisiva solo habilita referencias READ_REFERENCE respaldadas por una concesión vigente y exacta. No habilita listados, descargas ni contenido.</p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 sm:items-end">
+                    <label class="flex-1 text-[11px] font-bold text-slate-600">Política
+                        <select id="department-reference-policy" class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm">
+                            <option value="BLOQUEO_TOTAL_CROSS_DEPARTAMENTO">Bloqueo total entre departamentos (predeterminado)</option>
+                            <option value="PERMITIR_REFERENCIA_SOLO_LECTURA_INTERDEPARTAMENTAL">Permitir referencias de solo lectura con concesión</option>
+                        </select>
+                    </label>
+                    <button id="btn-save-department-reference-policy" type="button" class="px-4 py-2.5 rounded-xl bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-black uppercase">Guardar política</button>
+                </div>
+                <p id="department-reference-policy-source" class="text-[10px] text-slate-500"></p>
+            </section>
+
+            <form id="department-reference-grant-form" class="border border-slate-200 rounded-2xl p-4 space-y-3">
+                <div>
+                    <h4 class="text-xs font-black uppercase tracking-wide text-slate-800">Crear concesión de lectura</h4>
+                    <p class="text-[11px] text-slate-500 mt-1">Usa identificadores exactos. USER valida ownership del recurso, institución, departamento destino, vigencia y permisos antes de guardar.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <label class="text-[11px] font-bold text-slate-600">Tipo de recurso
+                        <input id="department-reference-resource-type" required maxlength="80" value="EXPEDIENTE_LABORAL" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" autocomplete="off">
+                    </label>
+                    <label class="text-[11px] font-bold text-slate-600">ID exacto del recurso
+                        <input id="department-reference-resource-id" required maxlength="200" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" autocomplete="off">
+                    </label>
+                    <label class="text-[11px] font-bold text-slate-600">ID del departamento destino
+                        <input id="department-reference-target-department" required maxlength="200" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" autocomplete="off">
+                    </label>
+                    <label class="text-[11px] font-bold text-slate-600 md:col-span-3">Campos permitidos (separados por coma)
+                        <input id="department-reference-allowed-fields" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="categoriaDoc, fechaCarga, estadoVisibilidad" autocomplete="off">
+                    </label>
+                    <label class="text-[11px] font-bold text-slate-600 md:col-span-3">IDs de documentos permitidos (separados por coma)
+                        <input id="department-reference-allowed-documents" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="DOC-001, DOC-002" autocomplete="off">
+                    </label>
+                    <label class="text-[11px] font-bold text-slate-600">Válida desde
+                        <input id="department-reference-valid-from" type="datetime-local" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                    </label>
+                    <label class="text-[11px] font-bold text-slate-600">Expira
+                        <input id="department-reference-expires-at" type="datetime-local" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                    </label>
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <p class="text-[10px] text-slate-500">No se aceptan comodines. La institución y el departamento propietario nunca se envían desde el navegador.</p>
+                    <button id="btn-create-department-reference-grant" type="submit" class="px-4 py-2.5 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-black uppercase">Crear concesión</button>
+                </div>
+            </form>
+
+            <section class="space-y-3">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <h4 class="text-xs font-black uppercase tracking-wide text-slate-800">Concesiones de la institución</h4>
+                        <p class="text-[11px] text-slate-500 mt-1">Las revocaciones conservan el historial; una nueva autorización crea otra concesión.</p>
+                    </div>
+                    <button id="btn-refresh-department-reference-grants" type="button" class="px-3 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 text-[10px] font-black uppercase">Actualizar</button>
+                </div>
+                <div id="department-reference-grants-list" class="space-y-2" aria-live="polite">
+                    <p class="text-xs text-slate-400 italic">No se han consultado concesiones.</p>
+                </div>
+            </section>
+        </div>
+    </div>
+
 </body>
 </html>

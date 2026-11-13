@@ -10,6 +10,9 @@ on:
       - tests/security/academic-department-reference-consumer.test.js
       - tests/security/accounting-department-reference-consumer.test.js
       - tests/security/departmental-resource-access.test.js
+      - dashboard-direccion.html
+      - js/department-reference-admin.js
+      - tests/security/department-reference-admin-ui.test.js
       - .github/workflows/academic-reference-consumer.yml
 
 permissions:
@@ -39,6 +42,10 @@ jobs:
         run: node tests/security/accounting-department-reference-consumer.test.js
       - name: Run ACADEMIC departmental resource access regression contract
         run: node tests/security/departmental-resource-access.test.js
+      - name: Run department reference administration UI contract
+        run: node tests/security/department-reference-admin-ui.test.js
+      - name: Check department reference administration UI syntax
+        run: node --check js/department-reference-admin.js
       - name: Parse ACADEMIC Apps Script service
         run: node --check < backend/academic-service/Code.gs
       - name: Parse ACCOUNTING Apps Script service
