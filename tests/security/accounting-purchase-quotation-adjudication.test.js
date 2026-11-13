@@ -16,9 +16,9 @@ const rows={};Object.keys(headers).forEach(k=>rows[k]=[headers[k]]);
 const requestItems=[{itemId:"ITEM-A",descripcion:"Papel bond",unidad:"Resma",cantidad:5,especificaciones:"75 g/m2"},{itemId:"ITEM-B",descripcion:"Tóner",unidad:"Unidad",cantidad:2,especificaciones:"Compatible"}];
 rows.SolicitudesCompra.push(["REQ-1",new Date(),"D1","USR-REQ","Reposición de materiales","Suministros",JSON.stringify(requestItems),1000,"CC-1","Aprobada",""]);
 ["S1","S2","S3"].forEach((id,i)=>rows.ProveedoresActivos.push([id,new Date(),"Proveedor "+id,"","","","General","Activo",""]));
-function sheet(name){return {getDataRange:()=>({getValues:()=>rows[name].map(r=>r.slice())}),getLastRow:()=>rows[name].length,appendRow:r=>rows[name].push(r.slice()),getRange:(row,col,nr=1,nc=1)=>({setValue:v=>{rows[name][row-1][col-1]=v;},clearContent:()=>{for(let y=0;y<nr;y++)for(let x=0;x<nc;x++)if(rows[name][row-1+y])rows[name][row-1+y][col-1+x]="";}})};}
+function sheet(name){return {getDataRange:()=>({getValues:()=>rows[name].map(r=>r.slice())}),getLastRow:()=>rows[name].length,appendRow:r=>rows[name].push(r.slice()),getRange:(row,col,nr=1,nc=1)=>({setValue:v=>{if(name==="SolicitudesCompra"&&col===10&&v==="Adjudicada"&&failRequestStatusWriteOnce){failRequestStatusWriteOnce=false;throw new Error("SIMULATED_REQUEST_STATUS_WRITE_FAILURE");}rows[name][row-1][col-1]=v;},clearContent:()=>{for(let y=0;y<nr;y++)for(let x=0;x<nc;x++)if(rows[name][row-1+y])rows[name][row-1+y][col-1+x]="";}})};}
 const ss={getSheetByName:n=>rows[n]?sheet(n):null};
-let uuid=0,actor={authorized:true,userId:"USR-REVIEWER",role:"Contador"};
+let uuid=0,failRequestStatusWriteOnce=false,actor={authorized:true,userId:"USR-REVIEWER",role:"Contador"};
 const ctx={SpreadsheetApp:{openById:()=>ss},SPREADSHEET_ID:"TEST",Utilities:{getUuid:()=>"UUID-"+(++uuid)},LockService:{getScriptLock:()=>({tryLock:()=>true,waitLock:()=>{},releaseLock:()=>{}})},getVerifiedAccountingIdentity_:()=>actor,getVerifiedAccountingDepartmentScope_:()=>({authorized:true,institutionWide:false,departmentIds:["D1"]}),getOrCreateSheet:(spreadsheet,name)=>{if(!rows[name])rows[name]=[headers[name]];return sheet(name);}};
 vm.createContext(ctx);vm.runInContext(code,ctx);
 const payload={sessionToken:"verified",solicitudId:"REQ-1"};
@@ -51,5 +51,22 @@ const copyQuote=(id,supplier,unitA,unitB)=>{const sourceQ=rows.CotizacionesCompr
 copyQuote(q1.cotizacionId,"S1",10,20);copyQuote(q2.cotizacionId,"S2",12,15);
 const nonLowest=ctx.adjudicatePurchaseQuotations({sessionToken:"verified",solicitudId:"REQ-2",idempotencyKey:"AWARD-REQ-2-0001",dictamen:"Adjudicación",justificacion:"corta",adjudicaciones:[{itemId:"ITEM-A",cotizacionId:q2.cotizacionId+"-R2",cantidadAdjudicada:5},{itemId:"ITEM-B",cotizacionId:q2.cotizacionId+"-R2",cantidadAdjudicada:2}],ofertasDescartadas:[{cotizacionId:q1.cotizacionId+"-R2",motivo:"Oferta no seleccionada por precio."}]});
 assert.equal(nonLowest.status,"error");assert.equal(nonLowest.code,"PURCHASE_AWARD_NON_LOWEST_JUSTIFICATION_REQUIRED");assert.equal(rows.OrdenesCompra.length,3);
+
+// One quotation line cannot be allocated above the supplier's quoted quantity, even when split into duplicate allocation rows.
+rows.SolicitudesCompra.push(["REQ-3",new Date(),"D1","USR-REQ","Tercera compra","Suministros",JSON.stringify([{...requestItems[0],cantidad:6},requestItems[1]]),1000,"CC-1","Aprobada",""]);
+const q4=ctx.submitPurchaseQuotation({sessionToken:"verified",solicitudId:"REQ-3",proveedorId:"S1",precioTotal:90,detalleItems:makeLines(10,20)}),q5=ctx.submitPurchaseQuotation({sessionToken:"verified",solicitudId:"REQ-3",proveedorId:"S2",precioTotal:90,detalleItems:makeLines(12,15)});
+assert.equal(q4.status,"success");assert.equal(q5.status,"success");
+const overAllocated=ctx.adjudicatePurchaseQuotations({sessionToken:"verified",solicitudId:"REQ-3",idempotencyKey:"AWARD-REQ-3-0001",dictamen:"Dictamen de prueba",justificacion:"Se seleccionan las mejores ofertas disponibles.",adjudicaciones:[{itemId:"ITEM-A",cotizacionId:q4.cotizacionId,cantidadAdjudicada:3},{itemId:"ITEM-A",cotizacionId:q4.cotizacionId,cantidadAdjudicada:3},{itemId:"ITEM-B",cotizacionId:q5.cotizacionId,cantidadAdjudicada:2}]});
+assert.equal(overAllocated.status,"error");assert.equal(overAllocated.code,"PURCHASE_AWARD_QUOTE_QUANTITY_EXCEEDED");
+// Simulate a late write failure after orders, acta and quotation states have been prepared; the whole award must roll back.
+rows.SolicitudesCompra.push(["REQ-4",new Date(),"D1","USR-REQ","Cuarta compra","Suministros",JSON.stringify(requestItems),1000,"CC-1","Aprobada",""]);
+const q6=ctx.submitPurchaseQuotation({sessionToken:"verified",solicitudId:"REQ-4",proveedorId:"S1",precioTotal:90,detalleItems:makeLines(10,20)}),q7=ctx.submitPurchaseQuotation({sessionToken:"verified",solicitudId:"REQ-4",proveedorId:"S2",precioTotal:90,detalleItems:makeLines(12,15)});
+assert.equal(q6.status,"success");assert.equal(q7.status,"success");
+failRequestStatusWriteOnce=true;
+const rollback=ctx.adjudicatePurchaseQuotations({sessionToken:"verified",solicitudId:"REQ-4",idempotencyKey:"AWARD-REQ-4-0001",dictamen:"Dictamen de adjudicación",justificacion:"Se seleccionan ofertas conformes y competitivas.",adjudicaciones:[{itemId:"ITEM-A",cotizacionId:q6.cotizacionId,cantidadAdjudicada:5},{itemId:"ITEM-B",cotizacionId:q7.cotizacionId,cantidadAdjudicada:2}]});
+assert.equal(rollback.status,"error");assert.equal(rows.SolicitudesCompra.find(r=>r[0]==="REQ-4")[9],"Aprobada");
+assert.equal(rows.CotizacionesCompra.find(r=>r[0]===q6.cotizacionId)[9],"EnRevision");assert.equal(rows.CotizacionesCompra.find(r=>r[0]===q7.cotizacionId)[9],"EnRevision");
+assert.equal(rows.ActasAdjudicacionCompra.some(r=>r[1]==="REQ-4"),false);assert.ok(rows.OrdenesCompra.slice(3).every(r=>r.every(v=>v==="")),"failed award clears partially written purchase orders");
+
 actor={authorized:true,userId:"USR-REVIEWER",role:"Empleado"};const denied=ctx.getPurchaseQuotationMatrix(payload);assert.equal(denied.code,"ROLE_NOT_ALLOWED");
 console.log("TASK-181 quotation matrix/adjudication contract PASS: line comparison, partial offers, split awards, lowest-price rationale, rejection reasons, immutable snapshot, idempotency and RBAC.");
