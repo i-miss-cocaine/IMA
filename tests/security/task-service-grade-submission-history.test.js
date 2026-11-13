@@ -60,5 +60,26 @@ test(()=>{const x=fixture({lockTimeout:true});assert.throws(()=>x.call({...base,
 test(()=>{const x=fixture();const r=x.callRubric({...base,motivoRectificacion:"Corrección con rúbrica",rubricaEvaluacionJSON:{criterio:1}});assert.equal(r.rectificacionRegistrada,true);assert.equal(x.history().rows[1][7],"Corrección con rúbrica");assert.equal(x.rubricSheet.rows.length,2);});
 test(()=>{const x=fixture();x.call({...base,motivoRectificacion:"Cambio",_verifiedUserId:"ATACANTE"});assert.equal(x.history().rows[1][8],"PROF-VERIFICADO");});
 test(()=>{const x=fixture({permissionDenied:true});assert.throws(()=>x.call({...base,motivoRectificacion:"Cambio"}),/RESOURCE_NOT_FOUND/);assert.equal(x.deliverySheet.rows[1][5],"70");});
+test(()=>{
+ const x=fixture(); let nestedError="";
+ const originalGetRange=x.deliverySheet.getRange.bind(x.deliverySheet);
+ x.deliverySheet.getRange=(...args)=>{
+  const range=originalGetRange(...args), originalSetValues=range.setValues;
+  range.setValues=(values)=>{
+   try{x.call({...base,motivoRectificacion:"Reentrada no autorizada",calificacion:"91"});}
+   catch(error){nestedError=error.message;}
+   return originalSetValues(values);
+  };
+  return range;
+ };
+ const result=x.call({...base,motivoRectificacion:"Corrección serializada"});
+ assert.equal(result.status,"success");
+ assert.equal(nestedError,"TASK_SUBMISSION_GRADE_LOCK_TIMEOUT");
+ assert.equal(x.deliverySheet.rows[1][5],"85");
+ assert.equal(x.history().rows.length,2,"only the outer rectification is appended");
+ assert.equal(x.state.lockAttempts,2);
+ assert.equal(x.state.releases,1);
+ assert.equal(x.state.held,false);
+});
 test(()=>{assert.ok(teacherHtml.includes('id="motivo-rectificacion"'));assert.ok(teacherSource.includes("motivoRectificacion: document.getElementById('motivo-rectificacion')?.value || ''"));assert.ok(teacherSource.includes("res.rectificacionRegistrada"));});
 process.stdout.write("task-service-grade-submission-history: "+count+"/"+count+" PASS\n");
