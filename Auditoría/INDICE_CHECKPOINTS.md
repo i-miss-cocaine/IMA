@@ -691,3 +691,6 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 
 
 | C1.668 | IMA-EXEC-20261112-1754Z-03 | getEmployeeLoansAdvances y getLoanAmortizationSchedule protegidos; contrato ACCOUNTING CI PASS (run 43351706517); workflow global falla después en User Role Membership heredado; BETA-FUNC-046 pendiente | TASK-153 / PM-01 — AUD-NG-388 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.668 | sección final | C1.667 | c5b71f21f9705cd7d3cc8c856039718dc901e713 |
+
+
+| C1.669 | IMA-EXEC-20261112-1754Z-03 | getStaffAttendanceLogs protegido; contrato ACCOUNTING departmental resource access PASS (run 43353897445); workflow global falla después en User Role Membership heredado; BETA-FUNC-047 pendiente | TASK-153 / PM-01 — AUD-NG-389 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.669 | sección final | C1.668 | 8d1a84ad17b7896a9913d5c02c373e2593ef5614 |
