@@ -785,6 +785,9 @@ function doPost(e) {
       case "getStaffAttendanceLogs": result = getStaffAttendanceLogs(payload); break;
       case "submitAttendanceCorrection": result = submitAttendanceCorrection(payload); break;
       case "reviewAttendanceCorrection": result = reviewAttendanceCorrection(payload); break;
+      case "getPayrollBatchPreview": result = getPayrollBatchPreview(payload); break;
+      case "getPayrollEmployeePayConfig": result = getPayrollEmployeePayConfig(payload); break;
+      case "savePayrollEmployeePayConfig": result = savePayrollEmployeePayConfig(payload); break;
       case "calculatePayrollPeriod": result = calculatePayrollPeriod(payload); break;
       case "calculateExtraordinaryPayroll": result = calculateExtraordinaryPayroll(payload); break;
       case "updatePayrollPeriodStatus": result = updatePayrollPeriodStatus(payload); break;
@@ -4826,6 +4829,98 @@ function setPayrollConceptAssignmentStatus(payload) {
     const updated=found.r.slice();updated[10]=state;data.sheet.getRange(found.index,1,1,updated.length).setValues([updated]);
     return {status:"success",asignacionId:id,estado:state};
   }catch(e){return {status:"error",code:"PAYROLL_CONCEPT_ASSIGNMENT_STATUS_FAILED",message:"No fue posible cambiar el estado de la asignación."};}finally{lock.releaseLock();}
+}
+
+
+function getPayrollEmployeePayConfigHeaders_(){return ["EmpleadoId","ModalidadPago","FrecuenciaPago","VigenciaInicio","VigenciaFin","Estado","ActualizadoPor","ActualizadoEn"];}
+function ensurePayrollEmployeePayConfigSheet_(ss){
+ const headers=getPayrollEmployeePayConfigHeaders_(),sheet=ss.getSheetByName("ConfiguracionPagoEmpleado")||getOrCreateSheet(ss,"ConfiguracionPagoEmpleado");
+ let data=sheet.getDataRange().getValues();
+ if(!data.length||!data[0]||!data[0].length){sheet.getRange(1,1,1,headers.length).setValues([headers]);data=[headers];}
+ if(data[0].length!==headers.length||headers.some((h,i)=>String(data[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))throw new Error("RESOURCE_SCHEMA_INVALID: ConfiguracionPagoEmpleado");
+ return {sheet,headers,rows:data.slice(1)};
+}
+function normalizePayrollBatchValue_(value){return String(value==null?"":value).trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
+function payrollVarianceMetric_(current,previous){
+ const c=Number(current||0),p=Number(previous||0);
+ if(!Number.isFinite(c)||!Number.isFinite(p))throw new Error("PAYROLL_VARIANCE_VALUE_INVALID");
+ const difference=Math.round((c-p)*100)/100;
+ return {actual:Math.round(c*100)/100,anterior:Math.round(p*100)/100,diferencia:difference,porcentaje:p===0?(c===0?0:null):Math.round((difference/p)*10000)/100};
+}
+function buildPayrollVarianceReport_(current,previous,threshold){
+ const fields=["salarioBase","horasExtras","montoHorasExtras","bonificaciones","totalDevengado","deduccionIHSS","deduccionRAP","deduccionISR","otrasDeducciones","totalDeducciones","salarioNeto","costoLaboralTotal"];
+ const rubros={};fields.forEach(k=>rubros[k]=payrollVarianceMetric_(current[k],previous[k]));
+ const limit=Number.isFinite(Number(threshold))?Math.max(0,Math.min(1000,Number(threshold))):10;
+ const incomePct=rubros.totalDevengado.porcentaje,deductionPct=rubros.totalDeducciones.porcentaje;
+ const alertas=[];
+ if(incomePct!==null&&Math.abs(incomePct)>limit)alertas.push({tipo:"INGRESOS",porcentaje:incomePct,umbral:limit});
+ if(deductionPct!==null&&Math.abs(deductionPct)>limit)alertas.push({tipo:"DEDUCCIONES",porcentaje:deductionPct,umbral:limit});
+ return {rubros,umbralPorcentaje:limit,alerta:alertas.length>0,alertas};
+}
+function getPayrollEmployeePayConfig(payload){
+ const p=payload||{},access=requirePayrollConceptManager_(p);if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
+ try{
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(p,ss,access.actor);
+  if(!scope||!scope.authorized)return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"No existe un ámbito autorizado."};
+  const config=ensurePayrollEmployeePayConfigSheet_(ss),exps=getOrCreateSheet(ss,"ExpedientesLaborales").getDataRange().getValues().slice(1);
+  const allowed=scope.institutionWide?null:(scope.departmentIds||[]).map(String);
+  const employeeId=String(p.empleadoId||"").trim();
+  const employees=exps.filter(e=>(!employeeId||String(e[0]||"").trim()===employeeId)&&(!allowed||allowed.includes(String(e[4]||"").trim())));
+  return {status:"success",configuraciones:config.rows.filter(r=>employees.some(e=>String(e[0]||"").trim()===String(r[0]||"").trim())).map(r=>({empleadoId:r[0],modalidadPago:r[1],frecuenciaPago:r[2],vigenciaInicio:r[3],vigenciaFin:r[4],estado:r[5]}))};
+ }catch(e){return {status:"error",code:"PAYROLL_PAYMENT_CONFIG_READ_FAILED",message:"No fue posible consultar la configuración de pago."};}
+}
+function savePayrollEmployeePayConfig(payload){
+ const p=payload||{},access=requirePayrollConceptManager_(p);if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
+ const employeeId=String(p.empleadoId||"").trim(),modality=normalizePayrollBatchValue_(p.modalidadPago),frequency=normalizePayrollBatchValue_(p.frecuenciaPago);
+ const modalities=["SALARIO_FIJO","POR_HORA","COMISION","MIXTO"],frequencies=["SEMANAL","CATORCENAL","QUINCENAL","MENSUAL"];
+ const start=p.vigenciaInicio?new Date(p.vigenciaInicio):null,end=p.vigenciaFin?new Date(p.vigenciaFin):null;
+ if(!employeeId||!modalities.includes(modality)||!frequencies.includes(frequency)||start&&isNaN(start.getTime())||end&&isNaN(end.getTime())||start&&end&&start>end)return {status:"error",code:"PAYROLL_PAYMENT_CONFIG_INVALID",message:"Empleado, modalidad, frecuencia y vigencia deben ser válidos."};
+ const lock=LockService.getScriptLock();if(!lock.tryLock(10000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La configuración está ocupada."};
+ try{
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(p,ss,access.actor);
+  if(!scope||!scope.authorized)return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"No existe un ámbito autorizado."};
+  const exps=getOrCreateSheet(ss,"ExpedientesLaborales").getDataRange().getValues().slice(1),employees=exps.filter(e=>String(e[0]||"").trim()===employeeId);
+  if(employees.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Empleado no disponible."};
+  const dept=String(employees[0][4]||"").trim(),allowed=(scope.departmentIds||[]).map(String);
+  if(scope.institutionWide!==true&&!allowed.includes(dept))return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Empleado no disponible."};
+  const data=ensurePayrollEmployeePayConfigSheet_(ss),matches=data.rows.map((r,i)=>({row:r,index:i+2})).filter(x=>String(x.row[0]||"").trim()===employeeId);
+  if(matches.length>1)return {status:"error",code:"PAYROLL_PAYMENT_CONFIG_AMBIGUOUS",message:"Hay configuraciones duplicadas para el empleado."};
+  const row=[employeeId,modality,frequency,start||"",end||"","ACTIVO",access.actor.userId,new Date()];
+  if(matches.length){data.sheet.getRange(matches[0].index,1,1,row.length).setValues([row]);}
+  else data.sheet.appendRow(row);
+  return {status:"success",empleadoId:employeeId,modalidadPago:modality,frecuenciaPago:frequency,message:"Configuración de pago guardada."};
+ }catch(e){return {status:"error",code:"PAYROLL_PAYMENT_CONFIG_SAVE_FAILED",message:"No fue posible guardar la configuración de pago."};}finally{lock.releaseLock();}
+}
+function getPayrollBatchPreview(payload){
+ const p=payload||{},access=requirePayrollConceptManager_(p);if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
+ const period=String(p.periodoMes||"").trim();if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(period))return {status:"error",code:"PAYROLL_PERIOD_INVALID",message:"Use un período con formato AAAA-MM."};
+ try{
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(p,ss,access.actor);
+  if(!scope||!scope.authorized)return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"No existe un ámbito autorizado."};
+  const allowed=scope.institutionWide?null:(scope.departmentIds||[]).map(String),exps=getOrCreateSheet(ss,"ExpedientesLaborales").getDataRange().getValues().slice(1),contracts=getOrCreateSheet(ss,"ContratosLaborales").getDataRange().getValues().slice(1),config=ensurePayrollEmployeePayConfigSheet_(ss).rows,planRows=getOrCreateSheet(ss,"PlanillasNomenclatura").getDataRange().getValues().slice(1);
+  const start=new Date(period+"-01T00:00:00"),end=new Date(Number(period.slice(0,4)),Number(period.slice(5,7)),0,23,59,59,999),parseDate=v=>{if(!v)return null;const d=v instanceof Date?v:new Date(v);return isNaN(d.getTime())?null:d;};
+  const active=exps.filter(e=>["ACTIVE","ACTIVO","ENPERIODOPRUEBA"].includes(normalizePayrollBatchValue_(e[8]))&&(!allowed||allowed.includes(String(e[4]||"").trim())));
+  const configByEmployee=Object.create(null);config.forEach(r=>{const id=String(r[0]||"").trim();if(id){if(configByEmployee[id])configByEmployee[id].duplicate=true;else configByEmployee[id]=r;}});
+  const groups=Object.create(null),excluded=[],included=[];const filters={departamento:String(p.departamento||"").trim(),cargo:String(p.cargo||"").trim(),tipoContrato:String(p.tipoContrato||"").trim(),modalidadPago:String(p.modalidadPago||"").trim(),frecuenciaPago:String(p.frecuenciaPago||"").trim(),search:normalizePayrollBatchValue_(p.search)};
+  active.forEach(e=>{
+   const id=String(e[0]||"").trim(),name=String(e[9]||e[3]||"Empleado"),position=String(e[3]||"Personal"),department=String(e[4]||"").trim();
+   const contractsForEmployee=contracts.filter(c=>(String(c[1]||"").trim()===id||String(c[1]||"").trim()===String(e[2]||"").trim())&&!["ANULADO","INACTIVO"].includes(normalizePayrollBatchValue_(c[7]))&&(!parseDate(c[3])||parseDate(c[3])<=end)&&(!parseDate(c[4])||parseDate(c[4])>=start));
+   if(contractsForEmployee.length!==1){excluded.push({empleadoId:id,empleadoNombre:name,motivo:contractsForEmployee.length?"CONTRATOS_SUPERPUESTOS":"SIN_CONTRATO_VIGENTE"});return;}
+   const contract=contractsForEmployee[0],cfg=configByEmployee[id],cfgValid=!!(cfg&&!cfg.duplicate&&normalizePayrollBatchValue_(cfg[5])==="ACTIVO"&&(!parseDate(cfg[3])||parseDate(cfg[3])<=end)&&(!parseDate(cfg[4])||parseDate(cfg[4])>=start));
+   const modality=cfgValid?String(cfg[1]):"NO_CONFIGURADA",frequency=cfgValid?String(cfg[2]):"MENSUAL",contractType=String(contract[2]||"NO_DEFINIDO");
+   const candidate={empleadoId:id,empleadoNombre:name,puesto:position,departamento:department,tipoContrato:contractType,modalidadPago:modality,frecuenciaPago:frequency,pendienteValidacion:!cfgValid};
+   if(filters.departamento&&department!==filters.departamento||filters.cargo&&position!==filters.cargo||filters.tipoContrato&&contractType!==filters.tipoContrato||filters.modalidadPago&&modality!==filters.modalidadPago||filters.frecuenciaPago&&frequency!==filters.frecuenciaPago||filters.search&&!normalizePayrollBatchValue_(name+" "+position+" "+id).includes(filters.search))return;
+   included.push(candidate);
+   const key=[department,position,contractType,modality,frequency].join("|");
+   if(!groups[key])groups[key]={departamento:department,cargo:position,tipoContrato:contractType,modalidadPago:modality,frecuenciaPago:frequency,empleados:[],empleadoIds:[],pendientesValidacion:0};
+   groups[key].empleados.push(candidate);groups[key].empleadoIds.push(id);if(!cfgValid)groups[key].pendientesValidacion++;
+  });
+  const periodRows=planRows.filter(r=>String(r[2]||"").trim()===period&&normalizePayrollBatchValue_(r[15])!=="REEMPLAZADA"&&!["ANULADA","ANULADO"].includes(normalizePayrollBatchValue_(r[15])));
+  const planIds=[...new Set(periodRows.map(r=>String(r[0]||"").trim()).filter(Boolean))];
+  const processed=new Set(periodRows.map(r=>String(r[3]||"").trim()));
+  const groupList=Object.keys(groups).sort().map(k=>{const g=groups[k];g.procesados=g.empleadoIds.filter(id=>processed.has(id)).length;g.pendientes=g.empleadoIds.length-g.procesados;g.employeeIdsPendientes=g.empleadoIds.filter(id=>!processed.has(id));return g;});
+  return {status:"success",periodoMes:period,planillaId:planIds.length===1?planIds[0]:null,planillaAmbigua:planIds.length>1,contadores:{incluidos:included.length,procesadosCorrectamente:included.filter(e=>processed.has(e.empleadoId)).length,excluidosPorIncidencias:excluded.length,pendientesValidacion:included.filter(e=>e.pendienteValidacion&&!processed.has(e.empleadoId)).length,pendientesCalculo:included.filter(e=>!processed.has(e.empleadoId)).length},incidencias:excluded,grupos:groupList,empleados:included,umbralVariacion:10};
+ }catch(e){return {status:"error",code:"PAYROLL_BATCH_PREVIEW_FAILED",message:"No fue posible preparar la segmentación de planilla."};}
 }
 
 function appendPayrollConceptDetailRows_(ss,rows) {
