@@ -1462,7 +1462,7 @@
 ---
 
 <!-- ID: F19-TASK05 | Fuentes: AUDITORIAS/AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md -->
-### [ ] [F19-TASK05] Crear catálogo maestro centralizado de artículos e insumos
+### [x] [F19-TASK05] Crear catálogo maestro centralizado de artículos e insumos
 - **Hallazgo de origen:** secciones C.2.1, D, E/F19-01 y H P1.
 - **Severidad:** Alta. **Objetivo:** evitar que el Kardex cree artículos implícitos con nombres/unidades inconsistentes.
 - **Acción ejecutable:** crear `CatalogoArticulos` con código único, nombre normalizado, categoría, unidad de medida, especificaciones, marca/modelo, costo de referencia, código de barras/QR y estado; exigir referencia válida al registrar movimientos.
@@ -1470,8 +1470,8 @@
 - **Dependencias/riesgos:** Kardex existente, compras/recepciones, unidades y códigos históricos; riesgo de romper referencias antiguas o duplicar artículos.
 - **Alcance:** catálogo maestro y validación de referencias; no borrar artículos históricos ni cambiar códigos sin migración trazable.
 - **Criterios de aceptación:** alta/edición autorizada; código único; unidad/categoría obligatorias; movimientos referencian artículo existente; reportes consolidan por ID, no por texto libre; datos antiguos quedan vinculados o marcados para reconciliación.
-- **Prioridad:** P1. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; el informe señala que los artículos se crean implícitamente en Kardex.
+- **Prioridad:** P1. **Estado:** Completada mediante la implementación unificada TASK-186; BETA-FUNC-087 Pendiente beta.
+- **Evidencia de cierre:** C1.717. El catálogo independiente, la referencia obligatoria en movimientos/solicitudes, el vínculo histórico por código y la reconciliación de registros antiguos cubren este alcance sin borrar el historial.
 
 ---
 
@@ -2593,7 +2593,7 @@
 ---
 
 <!-- ID: TASK-186 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [ ] [TASK-186] Creación de un catálogo maestro institucional de artículos, materiales y suministros
+### [x] [TASK-186] Creación de un catálogo maestro institucional de artículos, materiales y suministros
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E (F19-01), Sección G y Plan de Trabajo F19-05
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Estandarización de materiales, prevención de duplicados tipográficos, normalización de unidades de medida y control de adquisiciones)
@@ -2627,7 +2627,8 @@
   - Se detectan y alertan posibles duplicados antes de guardar.
   - Todas las operaciones de Kardex y solicitudes exigen la selección de artículos del catálogo.
   - Los artículos desactivados conservan su historial pero quedan bloqueados para nuevas operaciones.
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Completada en código y CI; BETA-FUNC-087 Pendiente beta.
+- **Evidencia de cierre:** C1.717; contratos de catálogo, recepción parcial, capitalización y sintaxis en GitHub Actions Node.js 24.22.2.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7762-7802; clave TASK-187; asignación única: Contabilidad -->
 

@@ -3560,3 +3560,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato TASK-185 PASS en GitHub Actions Node.js 24.22.2; Department Scope run 43519538296 SUCCESS, incluidos los contratos Node y sintaxis Apps Script/JS. Identity Mapping 43519439041 y Department Reference Consumers 43519439164 SUCCESS en el commit de código anterior 63562112.
 - CLI local NOT RUN (sin checkout local ni resolución de red en el contenedor); Apps Script/Sheets real NOT RUN. BETA-FUNC-086 Pendiente beta.
 - HEAD de cierre: 3f0673034ca6a18b587dd416c3a87a1a2bcdc74d. Rama base verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+ 
+[2026-11-13 22:55 UTC] C1.717 — TASK-186 / F19-TASK05 — catálogo maestro institucional
+- Se incorporó CatalogoArticulos independiente, categorías y unidades configurables, factores de conversión, ficha ampliada, código/ID inmutables, sugerencias de duplicados, estados lógicos, CSV compatible con Excel y reconciliación de históricos.
+- Kardex, transferencias, recepciones y solicitudes requieren artículos activos; los movimientos registran cantidad base, unidad original y factor. Se corrigió el uso de locks anidados en operaciones internas.
+- Contratos de catálogo, recepción parcial, capitalización, payroll journal y sintaxis Apps Script/JS PASS en GitHub Actions Node.js 24.22.2. Department Scope 43522764235, Identity 43522567093, Reference Consumers 43522567045 SUCCESS.
+- CLI local y Apps Script/Sheets real NOT RUN. BETA-FUNC-087 pendiente beta.
+- HEAD de cierre: c60464986eef21906e5f0c012b126a67e8dd14ad. Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.

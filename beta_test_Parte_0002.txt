@@ -266,3 +266,24 @@
 - **Evidencia requerida:** IDs sintéticos, snapshots de perfiles/políticas, calendarios, hojas de depreciación, mejoras, asientos originales/compensatorios, asiento de baja, conciliaciones Debe/Haber, resultados de rol/scope y diff de esquema; sin PII real.
 - **Estado:** Pendiente beta; la implementación y los contratos locales/CI están aprobados. No se ha desplegado Apps Script/Sheets real.
 ===============================================================================
+
+===============================================================================
+### BETA-FUNC-087 — Catálogo maestro institucional y movimientos vinculados
+- **Relación:** TASK-186 / F19-TASK05; checkpoint C1.717. Validar en entorno beta desplegado, con datos sintéticos y sin alterar datos productivos.
+- **Preparación:** respaldar hojas y capturar encabezados/filas antes de la prueba; verificar permisos directos y roles de Administrador, Contador, Almacenista y usuario solicitante.
+- **Casos:**
+  1. Crear categorías y unidades base; crear unidades derivadas con factores válidos y rechazar factores no positivos, bases incompatibles y duplicados.
+  2. Crear, editar y consultar artículos con ficha completa; comprobar código normalizado único, ID inmutable, nombre normalizado y sugerencias de similitud.
+  3. Intentar código duplicado por mayúsculas, tildes/espacios y verificar que no crea un segundo artículo; confirmar advertencia para similitud y confirmación explícita.
+  4. Verificar stock mínimo/máximo y punto de reposición; rechazar máximo menor que mínimo y reposición superior al máximo.
+  5. Registrar entrada de 2 cajas de 12 unidades y comprobar 24 unidades base; retirar 1 unidad y comprobar 23; rechazar unidad de dimensión incompatible.
+  6. Ejecutar transferencias entre dos almacenes y comprobar que el stock consolidado no cambia; verificar saldos por ubicación y que el cliente no puede omitir la conversión enviando cantidadBase.
+  7. Crear solicitud interna y solicitud de compra únicamente con artículos activos; rechazar códigos libres, artículos inactivos y cantidades inválidas; completar una entrega y recepción parcial.
+  8. Importar CSV válido; luego importar archivo con un duplicado/categoría/unidad inválida y comprobar rollback total; exportar y reabrir en Excel conservando acentos, códigos y columnas.
+  9. Revisar históricos de Kardex, solicitudes y órdenes: los códigos existentes deben vincularse al ID cuando exista coincidencia; los códigos sin catálogo deben aparecer como pendientes de reconciliación, sin borrar ni reescribir movimientos.
+  10. Ejecutar altas simultáneas del mismo código y movimientos concurrentes en la misma ubicación; verificar serialización, stock no negativo y ausencia de duplicados.
+  11. Probar permisos/scope por rol, intentos de modificación del ID/código y desactivación; artículos desactivados deben conservar historial y bloquear nuevas operaciones.
+- **Resultado esperado:** catálogo único y consistente; conversiones exactas; movimientos y solicitudes referenciados; importación atómica; historial preservado; concurrencia y permisos efectivos.
+- **Evidencia requerida:** snapshots de catálogo/categorías/unidades/Kardex/solicitudes antes y después, IDs de movimientos, resultados de conversiones, respuestas de duplicados/denegaciones, importación/exportación y logs de concurrencia; datos sintéticos únicamente.
+- **Estado:** Pendiente beta. GitHub Actions valida contratos Node.js; no se ha desplegado ni probado Apps Script/Sheets real.
+===============================================================================

@@ -5540,3 +5540,12 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - **Limitaciones:** CLI local NOT RUN por ausencia de checkout local y resolución de red; Apps Script/Sheets real NOT RUN. La validación desplegada queda en BETA-FUNC-086 y no bloquea el cierre de código.
 - **Estado:** TASK-185 completada en código y CI; BETA-FUNC-086 Pendiente beta.
 - **Siguiente tarea elegible:** TASK-186 — catálogo maestro institucional de artículos/materiales. La dependencia técnica F19-Task01 está implementada en recordInventoryMovement y getInventoryKardex con separación por ubicación; F19-TASK05 representa el mismo alcance de catálogo y se resolverá mediante TASK-186. TASK-188 queda después de ese catálogo.
+
+ 
+## Registro de ejecución C1.717 — TASK-186 / F19-TASK05
+- Catálogo maestro institucional independiente de Kardex, categorías/unidades configurables, conversiones, normalización y prevención de duplicados.
+- Integración obligatoria en movimientos, transferencias, recepciones y solicitudes; conservación y reconciliación de históricos.
+- Importación/exportación CSV compatible con Excel y validación transaccional de importación.
+- Contratos Node.js 24.22.2 y GitHub Actions aprobados: Department Scope 43522764235, Identity Mapping 43522567093 y Department Reference Consumers 43522567045.
+- Estado: TASK-186 y F19-TASK05 completadas en código/CI; BETA-FUNC-087 pendiente de validación desplegada.
+- Siguiente tarea elegible: TASK-188 — contabilización de entregas y consumo de materiales.
