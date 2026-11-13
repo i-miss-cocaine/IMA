@@ -147,3 +147,15 @@
 - Evidencia: IDs sintéticos, respuestas, valores antes/después y scopes; sin tokens ni PII.
 - Estado: Pendiente beta; no desplegado en Apps Script/Sheets real.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-076 — Deducción de préstamos en nómina y amortización
+- Roles: ACCOUNTING / Recursos Humanos y Administrador; empleado propietario del préstamo.
+- Objetivo: comprobar cuotas automáticas, límite de salario neto, aplicación al aprobar/cerrar, liquidación y reverso auditable.
+- Precondiciones: entorno beta aislado, expedientes y préstamos sintéticos aprobados, hoja AnticiposPrestamosEmpleado canónica y planillas de prueba.
+- Pasos: calcular nómina sin alterar saldo; validar cuota mensual y anticipo de una cuota; comprobar que cuotas incompletas no se descuentan si el neto disponible no alcanza; aprobar/cerrar; repetir cierre; anular; repetir anulación; recalcular período anulado; ejecutar última cuota.
+- Resultado esperado: no hay saldo reducido en cálculo preliminar; cuota íntegra ≤ saldo y neto disponible; una sola aplicación por préstamo/período; cierre reduce saldo; última cuota liquida en 0.00; anulación restaura saldo y conserva eventos append-only.
+- Evidencia: movimientos CALCULADO/APLICADO/REVERSADO/CANCELADO, planillaId, saldo antes/después y cuotas derivadas. Sin PII ni tokens.
+- Estado: Pendiente beta; no desplegado en Apps Script/Sheets real.
+===============================================================================

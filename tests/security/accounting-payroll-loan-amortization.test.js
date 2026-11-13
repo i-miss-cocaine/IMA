@@ -1,0 +1,29 @@
+const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),vm=require("node:vm");
+function extract(s,n){const a=s.indexOf("function "+n+"(");assert.ok(a>=0,n);const o=s.indexOf("{",a);let d=0,q="",e=false,l=false,b=false;for(let i=o;i<s.length;i++){const c=s[i],x=s[i+1];if(l){if(c==="\n")l=false;continue;}if(b){if(c==="*"&&x==="/"){b=false;i++;}continue;}if(q){if(e){e=false;continue;}if(c==="\\"){e=true;continue;}if(c===q)q="";continue;}if(c==="/"&&x==="/"){l=true;i++;continue;}if(c==="/"&&x==="*"){b=true;i++;continue;}if(c==="'"||c==='"'||c.charCodeAt(0)===96){q=c;continue;}if(c==="{")d++;else if(c==="}"&&--d===0)return s.slice(a,i+1);}throw Error(n+" unbalanced");}
+const root=path.resolve(__dirname,"../.."),src=fs.readFileSync(path.join(root,"backend/accounting-service/Code.gs"),"utf8");
+const names=["getPayrollLoanLedger_","appendPayrollLoanLedgerEvents_","calculatePayrollLoanDeductions_","applyPayrollLoanLedgerForPlanilla_","getLoanAmortizationSchedule"];
+const code=names.map(n=>extract(src,n)).join("\n");assert.doesNotThrow(()=>new vm.Script(src));
+const loanHeaders=["PrestamoID","Fecha","EmpleadoId","Tipo","MontoSolicitado","MontoAprobado","PlazoCuotas","CuotaMensual","SaldoPendiente","EstadoAprobacion","AprobadoPor","Observaciones"];
+const ledgerHeaders=["MovimientoID","PrestamoID","PlanillaID","Periodo","EmpleadoId","Monto","SaldoAntes","SaldoDespues","CuotaNumero","Evento","Fecha","ActorId","ReversaDe"];
+const rows={AnticiposPrestamosEmpleado:[loanHeaders,["L-1",new Date(),"U-1","PrestamoInstitucional",500,500,10,50,500,"Aprobado","HR-1",""]]};
+let seq=0;function sheet(name){return {getDataRange:()=>({getValues:()=>(rows[name]||[]).map(r=>r.slice())}),getLastRow:()=>rows[name].length,getRange:(row,col,nr,nc)=>({setValues:values=>{for(let i=0;i<values.length;i++)rows[name][row-1+i]=values[i].slice();}}),appendRow:r=>rows[name].push(r.slice())};}
+const ss={getSheetByName:n=>Object.prototype.hasOwnProperty.call(rows,n)?sheet(n):null};
+const ctx={SpreadsheetApp:{openById:()=>ss},SPREADSHEET_ID:"TEST",Utilities:{getUuid:()=>"ID-"+(++seq)},getOrCreateSheet:(s,n)=>{if(!rows[n])rows[n]=[];return sheet(n);},getEmployeeLoansAdvances:()=>({status:"success",solicitudes:[{prestamoId:"L-1",montoAprobado:500,plazoCuotas:10,cuotaMensual:50,saldoPendiente:Number(rows.AnticiposPrestamosEmpleado[1][8])}]})};
+vm.createContext(ctx);vm.runInContext(code,ctx);
+const first=ctx.calculatePayrollLoanDeductions_(ss,"U-1","2026-11","PLN-1",100);assert.equal(first.total,50);assert.equal(first.events.length,1);assert.equal(rows.AnticiposPrestamosEmpleado[1][8],500,"preview must not change principal");
+ctx.appendPayrollLoanLedgerEvents_(ss,first.events);assert.equal(rows.AmortizacionPrestamosNomina[0].length,ledgerHeaders.length);
+const duplicate=ctx.calculatePayrollLoanDeductions_(ss,"U-1","2026-11","PLN-OTHER",100);assert.equal(duplicate.total,0,"same loan cannot be deducted twice in one period");
+assert.equal(ctx.applyPayrollLoanLedgerForPlanilla_(ss,"PLN-1","APLICAR","HR-1").applied,1);assert.equal(rows.AnticiposPrestamosEmpleado[1][8],450);assert.equal(rows.AnticiposPrestamosEmpleado[1][9],"Aprobado");
+ctx.applyPayrollLoanLedgerForPlanilla_(ss,"PLN-1","APLICAR","HR-1");assert.equal(rows.AnticiposPrestamosEmpleado[1][8],450,"approval retry must be idempotent");
+let schedule=ctx.getLoanAmortizationSchedule({prestamoId:"L-1"});assert.equal(schedule.status,"success");assert.equal(schedule.cuotasPagadas,1);assert.equal(schedule.cuotasRestantes,9);assert.equal(schedule.tablaAmortizacion[8].saldoRestante,0);
+assert.equal(ctx.applyPayrollLoanLedgerForPlanilla_(ss,"PLN-1","REVERSAR","HR-1").reversed,1);assert.equal(rows.AnticiposPrestamosEmpleado[1][8],500);assert.equal(rows.AnticiposPrestamosEmpleado[1][9],"Aprobado");
+ctx.applyPayrollLoanLedgerForPlanilla_(ss,"PLN-1","REVERSAR","HR-1");assert.equal(rows.AnticiposPrestamosEmpleado[1][8],500,"reversal retry must be idempotent");
+const newPreview=ctx.calculatePayrollLoanDeductions_(ss,"U-1","2026-11","PLN-2",100);assert.equal(newPreview.total,50,"reversed plan permits one replacement payroll");ctx.appendPayrollLoanLedgerEvents_(ss,newPreview.events);
+ctx.applyPayrollLoanLedgerForPlanilla_(ss,"PLN-2","APLICAR","HR-1");assert.equal(rows.AnticiposPrestamosEmpleado[1][8],450);
+rows.AnticiposPrestamosEmpleado[1][8]=50;
+const last=ctx.calculatePayrollLoanDeductions_(ss,"U-1","2026-12","PLN-3",100);assert.equal(last.total,50);ctx.appendPayrollLoanLedgerEvents_(ss,last.events);ctx.applyPayrollLoanLedgerForPlanilla_(ss,"PLN-3","APLICAR","HR-1");assert.equal(rows.AnticiposPrestamosEmpleado[1][8],0);assert.equal(rows.AnticiposPrestamosEmpleado[1][9],"Liquidado");
+const noNet=ctx.calculatePayrollLoanDeductions_(ss,"U-1","2027-01","PLN-4",10);assert.equal(noNet.total,0,"do not create a partial installment or negative net salary");
+rows.AnticiposPrestamosEmpleado[1][3]="Anticipo Salario";rows.AnticiposPrestamosEmpleado[1][8]=200;rows.AnticiposPrestamosEmpleado[1][7]=200;rows.AnticiposPrestamosEmpleado[1][9]="Aprobado";
+const advanceInsufficient=ctx.calculatePayrollLoanDeductions_(ss,"U-1","2027-02","PLN-5",100);assert.equal(advanceInsufficient.total,0,"salary advance is a single installment and must not be partially deducted");
+const advanceFull=ctx.calculatePayrollLoanDeductions_(ss,"U-1","2027-02","PLN-5",200);assert.equal(advanceFull.total,200);
+console.log("ACCOUNTING payroll loan amortization contract passed: preview, period uniqueness, net cap, approval, retry, schedule, reversal, reissue, final liquidation and single-installment advance");
