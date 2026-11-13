@@ -12380,7 +12380,7 @@ function createStudentEnrollment(payload) {
         matSheet.deleteRow(insertedEnrollmentRow);
       }
     });
-    ensureEnrollmentPeriodCharges_(ss, { userId:sUserId, periodo:targetAno, grado:grado, becaDescuento:becaDescuento }, rollbackActions);
+    const billingResult = ensureEnrollmentPeriodCharges_(ss, { userId:sUserId, periodo:targetAno, grado:grado, becaDescuento:becaDescuento }, rollbackActions);
 
     // Actualizar EstadoExpediente a Activo si estaba Inactivo/Retirado/Trasladado/Suspendido
     if (expRowIdx !== -1) {
@@ -12399,7 +12399,7 @@ function createStudentEnrollment(payload) {
 
     logStructuredEvent("ACADEMIC", "createStudentEnrollment", "INFO", "ENROLLMENT_CREATED", `Matrícula ${matriculaId} confirmada para ${alumno} en ${grado} ${seccion} (${targetAno})`, { matriculaId, targetAno, grado, seccion }, payload && payload.authRole);
 
-    return { status: "success", matriculaId: matriculaId, message: "Matrícula procesada y confirmada con éxito." };
+    return { status: "success", matriculaId: matriculaId, cargoId: billingResult && billingResult.chargeId || "", cargosGenerados: billingResult && billingResult.created || 0, modoGeneracionCargos: billingResult && billingResult.mode || "MANUAL", message: "Matrícula procesada y confirmada con éxito." };
   } catch (error) {
     const rollbackErrors = [];
     for (let i = rollbackActions.length - 1; i >= 0; i--) {
