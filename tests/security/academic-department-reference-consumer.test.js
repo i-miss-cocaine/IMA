@@ -21,6 +21,7 @@ const defaultDocs = ["DOC-1"];
 function makeSheet(rows) { return { getDataRange() { return { getValues() { return rows; } }; } }; }
 function makeRuntime(options = {}) {
   const calls = [];
+  let uuidSequence = 0;
   const documentRows = [
     ["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl","FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones"],
     ["DOC-1","EXP-1","","ACTA","Acta de nacimiento.pdf","PRIVATE-DRIVE-ID","https://drive.google.com/private","2026-01-02","","VALIDADO","U1","U2","dato privado"],
@@ -36,7 +37,7 @@ function makeRuntime(options = {}) {
       if(name==="IMA_DEPARTMENT_REFERENCE_HMAC_SECRET")return options.secret===undefined?secret:options.secret;
       return null;
     }};}},
-    Utilities:{MacAlgorithm:{HMAC_SHA_256:"HMAC_SHA_256"},getUuid(){return"12345678-1234-1234-1234-123456789012";},
+    Utilities:{MacAlgorithm:{HMAC_SHA_256:"HMAC_SHA_256"},getUuid(){uuidSequence++;return"12345678-1234-1234-1234-"+String(uuidSequence).padStart(12,"0");},
       computeHmacSignature(algorithm,body,key){return Array.from(crypto.createHmac("sha256",key).update(body).digest());}},
     UrlFetchApp:{fetch(url,request){
       calls.push({url,request});
@@ -141,4 +142,10 @@ function request(overrides={}){return Object.assign({expedienteId:"EXP-1",sessio
  const h=makeRuntime({referenceMode:true,expectNoActiveDepartment:true}),r=h.context.read(request({activeDepartmentId:undefined}));
  assert.equal(r.status,"success");assert.equal(h.calls.length,1);
 }
-process.stdout.write("ACADEMIC department reference consumer contract: 19 scenarios PASS.\n");
+{
+ const h=makeRuntime({referenceMode:true});
+ h.context.read(request());h.context.read(request());
+ const requestIds=h.calls.map(call=>JSON.parse(call.request.payload).requestId);
+ assert.equal(requestIds.length,2);assert.notEqual(requestIds[0],requestIds[1]);
+}
+process.stdout.write("ACADEMIC department reference consumer contract: 20 scenarios PASS.\n");
