@@ -62,6 +62,26 @@ assert.equal(oneTimeResult.conceptValues.ONE_TIME_BONUS,75,"one-time assignment 
 const nextPeriodContext={salarioBase:1000,devengado:1000,horasExtras:0,baseCotizable:1000,baseISR:1000,diasTrabajados:30,diasPeriodo:30,ihss:0,rap:0,isr:0,salarioNeto:1000,conceptValues:Object.create(null)};
 const nextPeriodResult=ctx.calculatePayrollConceptPhase_(oneTimeEngine,employee,"U1","2026-12","PLN-NEXT",nextPeriodContext,1,Infinity);
 assert.ok(!Object.prototype.hasOwnProperty.call(nextPeriodResult.conceptValues,"ONE_TIME_BONUS"),"one-time assignment does not recur in later periods");
+rows.CatalogoConceptosPlanilla.push(
+ concept("C7","DEPT_BONUS","Bono departamento","BONIFICACIONES_FIJAS","DEBE","FIJO",10,"SALARIO_BASE",""),
+ concept("C8","POSITION_BONUS","Bono cargo","BONIFICACIONES_FIJAS","DEBE","FIJO",15,"SALARIO_BASE",""),
+ concept("C9","STRUCTURE_BONUS","Bono estructura","BONIFICACIONES_FIJAS","DEBE","FIJO",20,"SALARIO_BASE","")
+);
+assert.equal(ctx.assignPayrollConcept({sessionToken:"hr",codigoConcepto:"DEPT_BONUS",tipoAsignacion:"DEPARTAMENTO",valorAsignacion:"D1",frecuencia:"MENSUAL"}).status,"success");
+assert.equal(ctx.assignPayrollConcept({sessionToken:"hr",codigoConcepto:"POSITION_BONUS",tipoAsignacion:"CARGO",valorAsignacion:"Docente",departamentoScope:"D1",frecuencia:"MENSUAL"}).status,"success");
+assert.equal(ctx.assignPayrollConcept({sessionToken:"hr",codigoConcepto:"STRUCTURE_BONUS",tipoAsignacion:"ESTRUCTURA_SALARIAL",valorAsignacion:"CC1",departamentoScope:"D1",frecuencia:"MENSUAL"}).status,"success");
+const eligibilityEngine=ctx.getPayrollConceptEngine_(ss);
+function eligibilityContext(){return {salarioBase:1000,devengado:1000,horasExtras:0,baseCotizable:1000,baseISR:1000,diasTrabajados:30,diasPeriodo:30,ihss:0,rap:0,isr:0,salarioNeto:1000,conceptValues:Object.create(null)};}
+const eligible=ctx.calculatePayrollConceptPhase_(eligibilityEngine,employee,"U1","2026-11","PLN-ELIGIBLE",eligibilityContext(),1,Infinity);
+assert.equal(eligible.conceptValues.BONO_FIJO,100,"employee-specific concept applies only to its owner");
+assert.equal(eligible.conceptValues.DEPT_BONUS,10,"department assignment applies to matching department");
+assert.equal(eligible.conceptValues.POSITION_BONUS,15,"position assignment applies only within its department");
+assert.equal(eligible.conceptValues.STRUCTURE_BONUS,20,"salary-structure assignment applies only within its department");
+const otherEmployee=["E2","P2","U2","Docente","D1","CC1"];
+const ineligible=ctx.calculatePayrollConceptPhase_(eligibilityEngine,otherEmployee,"U2","2026-11","PLN-INELIGIBLE",eligibilityContext(),1,Infinity);
+assert.ok(!Object.prototype.hasOwnProperty.call(ineligible.conceptValues,"BONO_FIJO"),"employee-specific bonus is not exposed to another employee");
+assert.ok(!Object.prototype.hasOwnProperty.call(ineligible.conceptValues,"ONE_TIME_BONUS"),"one-time bonus is not exposed to another employee");
+
 
 assert.equal(ctx.assignPayrollConcept({sessionToken:"hr",codigoConcepto:"NUEVO_CONCEPTO",tipoAsignacion:"GLOBAL",valorAsignacion:"ALL"}).code,"DEPARTMENT_SCOPE_NOT_ASSIGNED");
 const inactive=ctx.setPayrollConceptStatus({sessionToken:"hr",conceptoId:created.conceptoId,estado:"INACTIVO"});assert.equal(inactive.status,"success");
