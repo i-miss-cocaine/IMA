@@ -6425,25 +6425,64 @@ function uploadEmployeeDocument(payload) {
 }
 
 function getEmployeeDocuments(payload) {
-  const { expedienteId, categoriaDoc } = payload || {};
+  const request = payload || {};
+  const expedienteId = String(request.expedienteId || "").trim();
+  const categoriaDoc = String(request.categoriaDoc || "").trim().toLowerCase();
+  const actor = getVerifiedAccountingIdentity_(payload);
+  if (!actor.authorized) {
+    return { status: "error", code: actor.code || "VERIFIED_IDENTITY_REQUIRED", message: "Acceso denegado." };
+  }
+
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "DocumentosLaborales").getDataRange().getValues().slice(1);
-  let candidates = rows;
-  if (expedienteId) candidates = candidates.filter(r => String(r[1] || "").trim() === String(expedienteId).trim());
-  if (categoriaDoc) candidates = candidates.filter(r => String(r[2] || "").toLowerCase().trim() === String(categoriaDoc).toLowerCase().trim());
-  const filtered = [];
-  for (let i = 0; i < candidates.length; i++) {
-    const access = assertEmployeeExpedienteScopeAccess_(payload, ss, candidates[i][1]);
-    if (access.authorized) filtered.push(candidates[i]);
-    else if (expedienteId) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
+  if (expedienteId) {
+    const requestedAccess = assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId);
+    if (!requestedAccess.authorized) {
+      return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." };
+    }
   }
-  if (!expedienteId && candidates.length && !filtered.length) {
-    return { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "No existen documentos disponibles dentro del ámbito autorizado." };
+
+  const sheet = ss.getSheetByName("DocumentosLaborales");
+  if (!sheet) return { status: "success", documentos: [] };
+
+  const data = sheet.getDataRange().getValues();
+  const expectedHeaders = [
+    "DocumentoID", "ExpedienteID", "CategoriaDoc", "TituloDocumento", "ArchivoUrl",
+    "FechaCarga", "CargadoPor", "EstadoVisibilidad", "Observaciones"
+  ];
+  if (!data.length || !Array.isArray(data[0]) || data[0].length !== expectedHeaders.length ||
+      expectedHeaders.some((header, index) => String(data[0][index] || "").trim() !== header)) {
+    return { status: "error", code: "RESOURCE_SCHEMA_INVALID", message: "La estructura de documentos laborales no es válida." };
   }
-  const mapped = filtered.map(r => ({
-    documentoId: r[0], expedienteId: r[1], categoriaDoc: r[2], tituloDocumento: r[3],
-    archivoUrl: r[4], fechaCarga: r[5], cargadoPor: r[6], estadoVisibilidad: r[7], observaciones: r[8]
-  }));
+
+  const rows = data.slice(1);
+  const documentIdCounts = Object.create(null);
+  rows.forEach(row => {
+    const documentId = String(row && row[0] || "").trim();
+    if (documentId) documentIdCounts[documentId] = (documentIdCounts[documentId] || 0) + 1;
+  });
+
+  const accessByExpediente = Object.create(null);
+  const mapped = [];
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    if (!Array.isArray(row) || row.length < expectedHeaders.length) continue;
+    const documentId = String(row[0] || "").trim();
+    const rowExpedienteId = String(row[1] || "").trim();
+    if (!documentId || !rowExpedienteId || documentIdCounts[documentId] !== 1) continue;
+    if (expedienteId && rowExpedienteId !== expedienteId) continue;
+    if (categoriaDoc && String(row[2] || "").trim().toLowerCase() !== categoriaDoc) continue;
+
+    if (!Object.prototype.hasOwnProperty.call(accessByExpediente, rowExpedienteId)) {
+      accessByExpediente[rowExpedienteId] = assertEmployeeExpedienteScopeAccess_(payload, ss, rowExpedienteId);
+    }
+    if (!accessByExpediente[rowExpedienteId].authorized) continue;
+
+    mapped.push({
+      documentoId: row[0], expedienteId: row[1], categoriaDoc: row[2], tituloDocumento: row[3],
+      archivoUrl: row[4], fechaCarga: row[5], cargadoPor: row[6], estadoVisibilidad: row[7], observaciones: row[8]
+    });
+  }
+
   return { status: "success", documentos: mapped };
 }
 
