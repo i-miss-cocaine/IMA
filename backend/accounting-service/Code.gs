@@ -5378,7 +5378,7 @@ function recordPayrollJournalAdjustment(payload){
  debit=Math.round(debit*100)/100;credit=Math.round(credit*100)/100;if(Math.abs(debit-credit)>0.01)return {status:"error",code:"PAYROLL_ADJUSTMENT_UNBALANCED",message:"El asiento de ajuste debe cuadrar por partida doble."};
  const lock=LockService.getScriptLock();if(!lock.tryLock(10000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La operación está ocupada. Intente nuevamente."};
  try{
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=ss.getSheetByName("PlanillasNomenclatura");if(!sh)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Planilla no disponible."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID);validatePayrollJournalAccountMap_(ss);const sh=ss.getSheetByName("PlanillasNomenclatura");if(!sh)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Planilla no disponible."};
   const col=ensurePayrollJournalLinkColumn_(sh),data=sh.getDataRange().getValues();if(!data.length||!isValidPayrollPlanHeaders_(data[0]))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"Estructura de planillas no válida."};
   const rows=data.slice(1).filter(r=>String(r[0]||"").trim()===id);if(!rows.length||rows.some(r=>String(r[15]||"").trim().toUpperCase()!=="CERRADA"))return {status:"error",code:"PAYROLL_ADJUSTMENT_REQUIRES_CLOSED_PLANILLA",message:"Solo se puede ajustar una planilla cerrada."};
   let originalId=String(rows[0][col-1]||"").trim();
@@ -9157,7 +9157,7 @@ function recordSupplierPayment(payload) {
       observaciones: `Pago a factura ${row[2]} (${obligacionId}). ${observaciones || ''}`
     });
 
-    // Registrar asiento contable por partida doble (Debe: Pasivo 2101, Haber: Bancos 1101)
+    // Registrar asiento contable por partida doble (Debe: Pasivo 2107, Haber: Bancos 1101)
     let asientoRes = null;
     try {
       asientoRes = recordAccountingJournalEntry({
@@ -9242,7 +9242,7 @@ function applySupplierCreditNote(payload) {
     const ncNota = `[NC_${numeroNotaCredito}: L ${mntNC.toFixed(2)} - ${motivo || 'Devolución/Descuento'}]`;
     sheet.getRange(idx + 1, 10).setValue((obsPrev ? obsPrev + " | " : "") + ncNota);
 
-    // Asiento contable de contrapartida (Debe: 2101 Pasivo Proveedores, Haber: 5101 Devoluciones/Descuentos sobre Compras)
+    // Asiento contable de contrapartida (Debe: 2107 Pasivo Proveedores, Haber: 5101 Devoluciones/Descuentos sobre Compras)
     let asientoRes = null;
     try {
       asientoRes = recordAccountingJournalEntry({
