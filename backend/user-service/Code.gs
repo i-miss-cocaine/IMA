@@ -10771,7 +10771,6 @@ function appendDepartmentReferenceAuditEvent_(eventCode, message, payload, role)
   if (!data.length || JSON.stringify(data[0].map(String)) !== JSON.stringify(headers)) {
     throw new Error("DEPARTMENT_REFERENCE_AUDIT_SCHEMA_MISMATCH");
   }
-  var before = sheet.getLastRow();
   var timestamp = new Date().toISOString();
   var logId = "LOG-" + Utilities.getUuid();
   var sanitized = typeof sanitizePayloadForLog === "function" ? sanitizePayloadForLog(payload || {}) : JSON.stringify(payload || {});
@@ -10780,7 +10779,10 @@ function appendDepartmentReferenceAuditEvent_(eventCode, message, payload, role)
     "INFO", String(eventCode || "DEPARTMENT_REFERENCE_GRANT_EVENT"), String(message || ""),
     sanitized, String(role || "Sistema")
   ]);
-  if (sheet.getLastRow() !== before + 1) throw new Error("DEPARTMENT_REFERENCE_AUDIT_WRITE_UNCONFIRMED");
+  var persisted = sheet.getDataRange().getValues().slice(1).filter(function(row) {
+    return String((row || [])[0] || "").trim() === logId;
+  });
+  if (persisted.length !== 1) throw new Error("DEPARTMENT_REFERENCE_AUDIT_WRITE_UNCONFIRMED");
   return { status: "success", id: logId, timestamp: timestamp };
 }
 
