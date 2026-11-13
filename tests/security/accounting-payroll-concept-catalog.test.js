@@ -50,6 +50,19 @@ const invalid=ctx.savePayrollConcept({sessionToken:"hr",codigo:"FORMULA_INVALIDA
 const assignmentResult=ctx.assignPayrollConcept({sessionToken:"hr",codigoConcepto:"NUEVO_CONCEPTO",tipoAsignacion:"EMPLEADO",valorAsignacion:"U1",frecuencia:"MENSUAL"});assert.equal(assignmentResult.status,"success");
 assert.equal(ctx.assignPayrollConcept({sessionToken:"hr",codigoConcepto:"NUEVO_CONCEPTO",tipoAsignacion:"EMPLEADO",valorAsignacion:"U1",frecuencia:"MENSUAL"}).code,"PAYROLL_CONCEPT_ASSIGNMENT_DUPLICATE");
 assert.equal(ctx.getPayrollConceptAssignments({sessionToken:"hr"}).asignaciones.length,5);
+const oneTimeConcept=concept("C6","ONE_TIME_BONUS","Bono extraordinario","AJUSTES_EXTRAORDINARIOS","DEBE","FIJO",75,"SALARIO_BASE","","MENSUAL","EXENTO","NO_COTIZABLE","5112",true,20,false);
+rows.CatalogoConceptosPlanilla.push(oneTimeConcept);
+assert.equal(ctx.assignPayrollConcept({sessionToken:"hr",codigoConcepto:"ONE_TIME_BONUS",tipoAsignacion:"EMPLEADO",valorAsignacion:"U1",frecuencia:"MENSUAL",periodoUnico:"2026/11"}).code,"PAYROLL_CONCEPT_PERIOD_REQUIRED","non-recurring concepts reject malformed periods");
+const oneTimeAssignment=ctx.assignPayrollConcept({sessionToken:"hr",codigoConcepto:"ONE_TIME_BONUS",tipoAsignacion:"EMPLEADO",valorAsignacion:"U1",frecuencia:"MENSUAL",periodoUnico:"2026-11"});
+assert.equal(oneTimeAssignment.status,"success","non-recurring concepts accept valid YYYY-MM periods");
+const oneTimeEngine=ctx.getPayrollConceptEngine_(ss);
+const oneTimeContext={salarioBase:1000,devengado:1000,horasExtras:0,baseCotizable:1000,baseISR:1000,diasTrabajados:30,diasPeriodo:30,ihss:0,rap:0,isr:0,salarioNeto:1000,conceptValues:Object.create(null)};
+const oneTimeResult=ctx.calculatePayrollConceptPhase_(oneTimeEngine,employee,"U1","2026-11","PLN-ONE-TIME",oneTimeContext,1,Infinity);
+assert.equal(oneTimeResult.conceptValues.ONE_TIME_BONUS,75,"one-time assignment applies in its selected period");
+const nextPeriodContext={salarioBase:1000,devengado:1000,horasExtras:0,baseCotizable:1000,baseISR:1000,diasTrabajados:30,diasPeriodo:30,ihss:0,rap:0,isr:0,salarioNeto:1000,conceptValues:Object.create(null)};
+const nextPeriodResult=ctx.calculatePayrollConceptPhase_(oneTimeEngine,employee,"U1","2026-12","PLN-NEXT",nextPeriodContext,1,Infinity);
+assert.ok(!Object.prototype.hasOwnProperty.call(nextPeriodResult.conceptValues,"ONE_TIME_BONUS"),"one-time assignment does not recur in later periods");
+
 assert.equal(ctx.assignPayrollConcept({sessionToken:"hr",codigoConcepto:"NUEVO_CONCEPTO",tipoAsignacion:"GLOBAL",valorAsignacion:"ALL"}).code,"DEPARTMENT_SCOPE_NOT_ASSIGNED");
 const inactive=ctx.setPayrollConceptStatus({sessionToken:"hr",conceptoId:created.conceptoId,estado:"INACTIVO"});assert.equal(inactive.status,"success");
 rows.AsignacionesConceptosPlanilla=[headers.assignments];

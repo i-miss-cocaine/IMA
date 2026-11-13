@@ -4783,7 +4783,7 @@ function assignPayrollConcept(payload) {
     const catalog=ensurePayrollConceptSheet_(ss,"CatalogoConceptosPlanilla",getPayrollConceptHeaders_());
     const conceptMatches=catalog.rows.filter(r=>String(r[1]||"").trim().toUpperCase()===code&&String(r[18]||"").toUpperCase()==="ACTIVO");
     if(conceptMatches.length!==1)return {status:"error",code:"PAYROLL_CONCEPT_NOT_ACTIVE",message:"El concepto no existe o está inactivo."};
-    if((String(conceptMatches[0][10]||"").toUpperCase()==="UNICA"||conceptMatches[0][19]===false||String(conceptMatches[0][19]).toUpperCase()==="FALSE")&&!/^d{4}-d{2}$/.test(period))return {status:"error",code:"PAYROLL_CONCEPT_PERIOD_REQUIRED",message:"El concepto único requiere un período YYYY-MM."};
+    if((String(conceptMatches[0][10]||"").toUpperCase()==="UNICA"||conceptMatches[0][19]===false||String(conceptMatches[0][19]).toUpperCase()==="FALSE")&&!/^\\d{4}-\\d{2}$/.test(period))return {status:"error",code:"PAYROLL_CONCEPT_PERIOD_REQUIRED",message:"El concepto único requiere un período YYYY-MM."};
     let departmentScope=String(p.departamentoScope||"").trim();
     if(type==="GLOBAL"&&!scope.institutionWide)return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"La asignación global requiere ámbito institucional."};
     if(type==="EMPLEADO"){
