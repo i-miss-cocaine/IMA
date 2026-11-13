@@ -10633,6 +10633,165 @@ function assertRecordOwnership(payload, resourceType, resourceId, operation) {
  * Registra o actualiza la propiedad departamental de un recurso.
  * El permiso registerResourceOwnership se define por institución en MatrizPermisosRoles.
  */
+/**
+ * Evalúa una referencia interdepartamental usando exclusivamente snapshots
+ * verificados por el servidor. No lee ni escribe hojas y no sustituye RBAC,
+ * autorización estándar del recurso ni persistencia del evento de auditoría.
+ */
+function evaluateDepartmentReferenceAccess_(input) {
+  var request = input || {};
+  var actor = request.actorContext || {};
+  var ownership = request.resourceOwnership || {};
+  var config = request.institutionalConfig;
+  var grants = Array.isArray(request.referenceGrants) ? request.referenceGrants : [];
+  var operation = String(request.operation || "").trim().toUpperCase();
+  var requestedFields = Array.isArray(request.requestedFields) ? request.requestedFields.map(function(value) { return String(value || "").trim(); }).filter(Boolean) : [];
+  var requestedDocumentIds = Array.isArray(request.requestedDocumentIds) ? request.requestedDocumentIds.map(function(value) { return String(value || "").trim(); }).filter(Boolean) : [];
+  var rawNow = request.now;
+  var nowDate = rawNow instanceof Date ? new Date(rawNow.getTime()) : new Date(rawNow);
+  var nowValid = rawNow !== undefined && rawNow !== null && !isNaN(nowDate.getTime());
+  var timestamp = nowValid ? nowDate.toISOString() : "";
+  var userId = String(actor.userId || "").trim();
+  var membershipId = String(actor.membershipId || "").trim();
+  var roleId = String(actor.roleId || "").trim();
+  var institutionId = String(actor.institutionId || "").trim();
+  var actorDepartmentId = String(actor.activeDepartmentId || "").trim();
+  var ownerDepartmentId = String(ownership.departmentId || "").trim();
+  var resourceType = String(ownership.resourceType || "").trim().toUpperCase();
+  var resourceId = String(ownership.resourceId || "").trim();
+  var auditEvent = {
+    actorUserId: userId,
+    membershipId: membershipId,
+    roleId: roleId,
+    institutionId: institutionId,
+    actorDepartmentId: actorDepartmentId,
+    ownerDepartmentId: ownerDepartmentId,
+    resourceType: resourceType,
+    resourceId: resourceId,
+    operation: operation,
+    decision: "DENY",
+    reason: "",
+    grantId: "",
+    authorizedBy: "",
+    requestedFields: requestedFields.slice(),
+    requestedDocumentIds: requestedDocumentIds.slice(),
+    timestamp: timestamp
+  };
+  function deny(code, reason) {
+    auditEvent.decision = "DENY";
+    auditEvent.reason = String(reason || code);
+    return { authorized: false, code: code, requiresStandardAuthorization: false, auditEvent: auditEvent };
+  }
+  function allow(code, reason) {
+    auditEvent.decision = "ALLOW";
+    auditEvent.reason = String(reason || code);
+    return { authorized: true, code: code, requiresStandardAuthorization: true, auditEvent: auditEvent };
+  }
+  function parseAllowlist(value) {
+    var parsed = value;
+    if (typeof value === "string") {
+      try { parsed = JSON.parse(value); } catch (error) { return null; }
+    }
+    if (!Array.isArray(parsed)) return null;
+    var result = [];
+    for (var i = 0; i < parsed.length; i++) {
+      var item = String(parsed[i] || "").trim();
+      if (!item || item.indexOf("*") !== -1 || result.indexOf(item) !== -1) return null;
+      result.push(item);
+    }
+    return result;
+  }
+  function grantValue(grant, key) {
+    if (grant && grant[key] !== undefined) return grant[key];
+    var lower = key.charAt(0).toLowerCase() + key.slice(1);
+    return grant ? grant[lower] : undefined;
+  }
+  function parseGrantDate(value) {
+    if (value === undefined || value === null || value === "") return null;
+    var date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+    return isNaN(date.getTime()) ? null : date;
+  }
+  if (actor.status !== "success" || actor.verified !== true || !userId || !membershipId || !roleId || !institutionId || !nowValid) {
+    return deny("VERIFIED_REFERENCE_CONTEXT_REQUIRED", "La identidad, membresía, rol, institución o reloj del servidor no está verificado.");
+  }
+  if (ownership.authorized !== true || !String(ownership.institutionId || "").trim() ||
+      String(ownership.institutionId).trim() !== institutionId || !ownerDepartmentId || !resourceType || !resourceId) {
+    return deny("RESOURCE_OWNERSHIP_UNVERIFIED", "La propiedad del recurso no está verificada para la institución activa.");
+  }
+  var policy = "BLOQUEO_TOTAL_CROSS_DEPARTAMENTO";
+  if (config !== undefined && config !== null) {
+    if (String(config.institutionId || "").trim() !== institutionId ||
+        String(config.key || "") !== "POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL") {
+      return deny("DEPARTMENT_REFERENCE_POLICY_CONFIG_INVALID", "La política no pertenece a la institución o clave esperada.");
+    }
+    policy = String(config.value || "").trim();
+    if (policy !== "BLOQUEO_TOTAL_CROSS_DEPARTAMENTO" &&
+        policy !== "PERMITIR_REFERENCIA_SOLO_LECTURA_INTERDEPARTAMENTAL") {
+      return deny("DEPARTMENT_REFERENCE_POLICY_UNKNOWN", "La política institucional tiene un valor desconocido.");
+    }
+  }
+  if (actor.institutionWide === true) {
+    if (actor.institutionWideAuthorized !== true) {
+      return deny("INSTITUTION_WIDE_SCOPE_UNVERIFIED", "El alcance institucional no tiene autorización explícita del servidor.");
+    }
+    return allow("INSTITUTIONAL_SCOPE_ALLOWED", "El actor tiene alcance institucional explícito y verificado.");
+  }
+  if (!actorDepartmentId) {
+    return deny("ACTIVE_DEPARTMENT_REQUIRED", "No existe un departamento activo verificado para el actor.");
+  }
+  if (actorDepartmentId === ownerDepartmentId) {
+    return allow("SAME_DEPARTMENT_ALLOWED", "El recurso pertenece al departamento activo del actor.");
+  }
+  if (policy === "BLOQUEO_TOTAL_CROSS_DEPARTAMENTO") {
+    return deny("CROSS_DEPARTMENT_BLOCKED", "La política institucional mantiene bloqueado todo cruce departamental.");
+  }
+  if (operation !== "READ_REFERENCE") {
+    return deny("CROSS_DEPARTMENT_OPERATION_DENIED", "Las referencias interdepartamentales solo permiten READ_REFERENCE.");
+  }
+  if (!requestedFields.length && !requestedDocumentIds.length) {
+    return deny("REFERENCE_ALLOWLIST_REQUEST_REQUIRED", "Debe solicitarse al menos un campo o documento específico.");
+  }
+  if (requestedFields.concat(requestedDocumentIds).some(function(value) { return value.indexOf("*") !== -1; })) {
+    return deny("REFERENCE_WILDCARD_NOT_ALLOWED", "No se permiten comodines en referencias compartidas.");
+  }
+  var matching = grants.filter(function(grant) {
+    return String(grantValue(grant, "InstitutionID") || "").trim() === institutionId &&
+      String(grantValue(grant, "ResourceType") || "").trim().toUpperCase() === resourceType &&
+      String(grantValue(grant, "ResourceID") || "").trim() === resourceId &&
+      String(grantValue(grant, "OwnerDepartmentID") || "").trim() === ownerDepartmentId &&
+      String(grantValue(grant, "TargetDepartmentID") || "").trim() === actorDepartmentId;
+  });
+  if (!matching.length) return deny("DEPARTMENT_REFERENCE_GRANT_NOT_FOUND", "No existe una concesión exacta para este recurso y departamento.");
+  if (matching.length !== 1) return deny("DEPARTMENT_REFERENCE_GRANT_AMBIGUOUS", "Existe más de una concesión para el mismo ámbito.");
+  var grant = matching[0];
+  var grantId = String(grantValue(grant, "GrantID") || "").trim();
+  var authorizedBy = String(grantValue(grant, "AuthorizedBy") || "").trim();
+  var authorizedAt = grantValue(grant, "AuthorizedAt");
+  var validFrom = parseGrantDate(grantValue(grant, "ValidFrom"));
+  var expiresAt = parseGrantDate(grantValue(grant, "ExpiresAt"));
+  var revokedAt = grantValue(grant, "RevokedAt");
+  auditEvent.grantId = grantId;
+  auditEvent.authorizedBy = authorizedBy;
+  if (!grantId || !authorizedBy || !authorizedAt || !validFrom || !expiresAt ||
+      String(grantValue(grant, "Status") || "").trim().toUpperCase() !== "ACTIVE" ||
+      (revokedAt !== undefined && revokedAt !== null && revokedAt !== "")) {
+    return deny("DEPARTMENT_REFERENCE_GRANT_INVALID", "La concesión está incompleta, inactiva o revocada.");
+  }
+  if (nowDate.getTime() < validFrom.getTime() || nowDate.getTime() >= expiresAt.getTime()) {
+    return deny("DEPARTMENT_REFERENCE_GRANT_OUT_OF_WINDOW", "La concesión no está vigente en el reloj del servidor.");
+  }
+  var allowedFields = parseAllowlist(grantValue(grant, "AllowedFieldsJSON"));
+  var allowedDocuments = parseAllowlist(grantValue(grant, "AllowedDocumentIDsJSON"));
+  if (!allowedFields || !allowedDocuments) {
+    return deny("DEPARTMENT_REFERENCE_ALLOWLIST_INVALID", "Las listas permitidas deben ser arreglos JSON explícitos sin comodines ni duplicados.");
+  }
+  if (requestedFields.some(function(field) { return allowedFields.indexOf(field) === -1; }) ||
+      requestedDocumentIds.some(function(documentId) { return allowedDocuments.indexOf(documentId) === -1; })) {
+    return deny("DEPARTMENT_REFERENCE_SCOPE_EXCEEDED", "La solicitud excede los campos o documentos autorizados.");
+  }
+  return allow("DEPARTMENT_REFERENCE_ALLOWED", "La referencia exacta está autorizada y vigente.");
+}
+
 function registerResourceOwnership(payload) {
   let lock = null;
   try {
