@@ -105,3 +105,11 @@ No se crea ConfiguracionInstitucional ni DepartmentReferenceGrants en Sheets, no
 ### Corrección C1.691 — intención explícita del consumidor ACADEMIC
 - El fallback de referencias de getStudentDocuments solo puede ejecutarse si el request contiene referenceRequestedFields o referenceDocumentIds. Una consulta ordinaria sin esos campos conserva la denegación RESOURCE_SCOPE_DENIED; una intención explícita malformada se rechaza como DEPARTMENT_REFERENCE_REQUEST_INVALID.
 - El contrato de regresión departmental-resource-access se ejecuta en el workflow aislado junto con los consumidores ACADEMIC y ACCOUNTING.
+
+
+## Evidencia de UI administrativa C1.692
+- dashboard-direccion.html incorpora un modal institucional y js/department-reference-admin.js consume los cinco endpoints USER existentes para leer/actualizar política y listar/crear/revocar concesiones.
+- La UI mantiene bloqueo estricto por defecto, exige allowlists explícitas, no envía InstitutionID/OwnerDepartmentID, muestra los errores de permiso/scope, conserva historial de revocación y no renderiza datos remotos mediante HTML interpolado.
+- Se añadió secuenciación de refrescos para impedir que respuestas antiguas sobrescriban estado reciente y se deshabilita el control de revocación durante la operación.
+- tests/security/department-reference-admin-ui.test.js: 17 aserciones PASS. Workflow Node 24.22.2 run 43430108023 SUCCESS, junto con los consumidores ACADEMIC/ACCOUNTING, regresión de acceso departamental y parseo de servicios.
+- La UI requiere permisos dinámicos explícitos para los cuatro actions de lectura/administración y scope institucional; no los concede automáticamente. BETA-FUNC-065 queda Pendiente beta; no se desplegó ni se modificaron hojas productivas.
