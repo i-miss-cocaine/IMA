@@ -3215,6 +3215,54 @@ function getVerifiedAcademicDepartmentScope_(payload, ss, identity) {
   return getVerifiedDepartmentScopeForSession_(payload,ss,actor);
 }
 
+function getVerifiedAcademicGuardianDepartmentScope_(payload, ss, guardian, expedienteId) {
+  if (!guardian || guardian.authorized !== true || !guardian.userId || !guardian.role) {
+    return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
+  }
+  const token = payload && (payload.sessionToken || payload.authToken || payload.token);
+  const claims = token ? verifySessionToken(token) : null;
+  if (!claims || String(claims.userId || "").trim() !== String(guardian.userId).trim() ||
+      String(claims.role || "").trim() !== String(guardian.role).trim()) {
+    return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
+  }
+  let institutionId = "";
+  try { institutionId = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim(); } catch (_) {}
+  if (!institutionId) return { authorized: false, code: "IDENTITY_CONFIGURATION_REQUIRED" };
+  const claimsInstitutionId = String(claims.institutionId || "").trim();
+  if (claims.membershipId && (!claimsInstitutionId || claimsInstitutionId !== institutionId)) {
+    return { authorized: false, code: "ROLE_MEMBERSHIP_INSTITUTION_MISMATCH" };
+  }
+  const id = String(expedienteId || "").trim();
+  if (!id) return { authorized: false, code: "RESOURCE_REFERENCE_INVALID" };
+  const ownershipSheet = ss && ss.getSheetByName("ResourceOwnership");
+  if (!ownershipSheet) return { authorized: false, code: "RESOURCE_OWNERSHIP_NOT_CONFIGURED" };
+  const data = ownershipSheet.getDataRange().getValues();
+  const headers = ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"];
+  if (!data.length || JSON.stringify(data[0].map(String)) !== JSON.stringify(headers)) {
+    return { authorized: false, code: "RESOURCE_OWNERSHIP_SCHEMA_MISMATCH" };
+  }
+  const matches = data.slice(1).filter(function(row) {
+    return String(row[1] || "").trim() === institutionId &&
+      String(row[2] || "").trim().toUpperCase() === "EXPEDIENTE_ESTUDIANTE" &&
+      String(row[3] || "").trim() === id &&
+      String(row[5] || "").trim().toUpperCase() === "ACTIVE";
+  });
+  if (!matches.length) return { authorized: false, code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
+  if (matches.length !== 1) return { authorized: false, code: "RESOURCE_OWNERSHIP_AMBIGUOUS" };
+  const departmentId = String(matches[0][4] || "").trim();
+  if (!departmentId) return { authorized: false, code: "RESOURCE_DEPARTMENT_UNRESOLVED" };
+  return {
+    authorized: true,
+    code: "RESOURCE_SCOPE_ALLOWED",
+    userId: String(guardian.userId).trim(),
+    role: String(guardian.role).trim(),
+    institutionId: institutionId,
+    departmentIds: [departmentId],
+    institutionWide: false,
+    delegatedAccess: "GUARDIAN"
+  };
+}
+
 function getStudentPersonIdForUser_(ss, userId) {
   const sheet = ss.getSheetByName("Usuarios");
   if (!sheet || sheet.getLastRow() < 2) return "";
