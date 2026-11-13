@@ -3234,3 +3234,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Node.js 24.22.2 / GitHub Actions run 43362842576: User Role Membership contract PASS.
 - El workflow global termina FAILURE en accounting-departmental-resource-access.test.js:706 (verifyAttendanceClientRendering); el paso objetivo ya había pasado. No se declara PASS global ni se modificó código productivo.
 - Commits de código/prueba/workflow: a8db480d67a4d7ee2732ab98f9717c57b3564f07, 49dde5e534fa6943ccf19d8a72772762cb1adcf6, 6a224861ad00df4fd01878e0c4bd70431f006870, 8d370ba1b0cd989bc55d018b899a8ff3a852e12b.
+
+ 
+[2026-11-13 UTC] [IMA-EXEC-20261112-1754Z-03] C1.676 — contratos de alcance departamental y acceso Tutor delegado
+- ACADEMIC: se corrige el ámbito de acceso de tutores para validar la sesión del tutor y resolver el scope desde el estudiante vinculado/membresía institucional activa. Se exige relación y AccesoPortal activos, mapping ResponsableID único y ResourceOwnership único/activo con departamento.
+- Se endurecen los casos negativos de membresía revocada/ambigua, institución no coincidente, mapping Tutor duplicado, ownership ajeno/inactivo/duplicado y departamento no resuelto.
+- ACCOUNTING: se corrigen comparaciones cross-realm en el contrato de renderizado de Mi Asistencia y se conserva el error capturado para diagnóstico.
+- USER/TASK/ACADEMIC: se completan harnesses con helper de ámbito compartido, mocks de revocación/PropertiesService y encabezados canónicos.
+- CI Department Scope run 43364730161 PASS (Node 24.22.2); CI Task-Service run 43364715823 PASS (Node 22.23.4).
+- Prueba local aislada de scope delegado PASS (Node 22.16.0); checkout local completo NOT RUN por DNS/red.
+- BETA-FUNC-052 agregado; Pendiente beta. Sin despliegue ni datos reales.
