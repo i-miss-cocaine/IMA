@@ -253,3 +253,15 @@
 - Se actualiza el resumen del índice al checkpoint C1.672 y el tamaño real del archivo activo.
 - El backlog Dirección conserva AUD-NG-140 En ejecución: el siguiente subalcance es integrar getStaffPayrollReceipt/getStaffAttendanceLogs en el autoservicio tras revisar el consumidor actual. BETA-FUNC-050 sigue pendiente para navegador/Apps Script/Drive reales.
 - No se modificó código funcional en este addendum.
+
+===============================================================================
+## C1.673 — IMA-EXEC-20261112-1754Z-03 — historial de asistencia en autoservicio
+- **Checkpoint anterior:** C1.672-R1. **HEAD inicial:** c149f321ee41e567cbf54f99617ff97a11df0884. **Rama:** NG_beta_0.0.0.1_work. **Rama base:** 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+- **Tarea:** TASK-153 / AUD-NG-140 / REQ-EXP-014; integración UI del callsite getStaffAttendanceLogs, una tarea en esta iteración.
+- **Implementación:** pestaña Mi Asistencia y botón Actualizar en dashboard-recursos-humanos.html. Primero consulta getEmployeeSelfServicePortal y usa data.effectiveUserId devuelto por el backend autenticado como empleadoId para getStaffAttendanceLogs; previene que un actor RR. HH. reciba el conjunto departamental en un panel “Mi Asistencia”. Muestra fecha, horas, estado, tardanza y observaciones con textContent.
+- **Archivos modificados:** dashboard-recursos-humanos.html; tests/security/accounting-departmental-resource-access.test.js; beta_test.txt.
+- **Commits:** f54fb20748b5e2074442dca4f0b9447447337e39; c149f321ee41e567cbf54f99617ff97a11df0884.
+- **Pruebas:** harness aislado V8 sobre la función extraída del HEAD: parseo PASS; scoping a effectiveUserId PASS; render PASS; vacío PASS; error PASS; XSS como texto PASS. Contrato test file parse PASS. Backend existente getStaffAttendanceLogs ya tenía contrato ACCOUNTING PASS run 43353897445 en C1.669 y no se modificó. Suite Node completa del repo y workflow CI de estos commits NOT RUN; no se generaron runs/status checks tras la actualización de ref. Navegador/Apps Script/Sheets reales NOT RUN; BETA-FUNC-051 Pendiente beta.
+- **Resultado:** subalcance UI implementado y verificado de forma aislada; TASK-153/AUD-NG-140 continúa En ejecución por alcance restante.
+- **Siguiente acción:** identificar siguiente callsite elegible en el Plan Maestro/backlog; no ejecutado en esta iteración.
+===============================================================================

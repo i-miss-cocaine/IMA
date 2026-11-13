@@ -2808,3 +2808,13 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Límites:** navegador real y Apps Script/Google Drive desplegados NOT RUN; BETA-FUNC-049 (backend PDF) y BETA-FUNC-050 (UI descarga) Pendiente beta. Sin despliegue ni datos reales.
 - **Estado:** subalcance UI completado; TASK-153/AUD-NG-140 sigue En ejecución por superficies restantes. BETA-FUNC-049 y BETA-FUNC-050 Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+## C1.673 — AUD-NG-140 — integración del historial de asistencia en autoservicio
+- Se integra la pestaña Mi Asistencia en dashboard-recursos-humanos.html con getStaffAttendanceLogs. La UI resuelve primero el effectiveUserId desde getEmployeeSelfServicePortal con sesión firmada y consulta solo ese empleado, evitando el resultado amplio que el endpoint entrega a RR. HH. cuando no se especifica empleadoId.
+- La presentación usa textContent y estados explícitos de carga, vacío y error. Contrato UI ampliado para verificar payload de identidad y renderizado inerte de observaciones.
+- Harness V8 aislado sobre la función extraída: parseo, scoping, render, vacío, error y XSS como texto PASS. El contrato backend de getStaffAttendanceLogs conserva evidencia vigente C1.669 / run 43353897445 PASS; no se modificó el servicio.
+- La suite Node completa y CI para los nuevos commits no se ejecutaron/no generaron runs; navegador y Apps Script/Sheets reales quedan Pendiente beta en BETA-FUNC-051. No se declara aprobación de esas pruebas.
+- Commits: f54fb20748b5e2074442dca4f0b9447447337e39; c149f321ee41e567cbf54f99617ff97a11df0884.
+===============================================================================
