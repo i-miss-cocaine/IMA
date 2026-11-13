@@ -576,11 +576,11 @@ function validateRolePermission(action, payload) {
   if (!ctxCheck.authorized) {
     return { authorized: false, role: userRole + " (" + ctxCheck.reason + ")" };
   }
-  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher"];
+  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher"];
   if (resourceScopeActions.indexOf(action) !== -1) {
     const roleKey = String(userRole || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
     const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1 &&
-      ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "uploadEmployeeDocument", "getEmployeeSelfServicePortal"].indexOf(action) !== -1;
+      ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "uploadEmployeeDocument", "getEmployeeSelfServicePortal"].indexOf(action) !== -1;
     const paymentSelfServiceRole = ["ESTUDIANTE", "ALUMNO", "TUTOR", "PADRE", "MADRE", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(roleKey) !== -1 &&
       ["getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher"].indexOf(action) !== -1;
     if (!employeeSelfRole && !paymentSelfServiceRole) {
@@ -3378,126 +3378,26 @@ function manageTrainingEnrollment(payload) {
 }
 
 function getEmployeeTrainingHistory(payload) {
-  const {
-    empleadoId,
-    cursoId,
-    soloProximosVencimientos,
-    diasAnticipacion,
-    userRole,
-    authenticatedUserId
-  } = payload || {};
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-
-  // Cursos
-  const courseSheet = getOrCreateSheet(ss, "CatalogoCursosCapacitacion");
-  const courseData = courseSheet.getDataRange().getValues();
-  const cursosMap = {};
-  if (courseData.length > 1) {
-    courseData.slice(1).forEach(r => {
-      cursosMap[String(r[0]).trim()] = {
-        cursoId: r[0],
-        nombreCurso: r[1],
-        categoria: r[2],
-        proveedorResponsable: r[3],
-        modalidad: r[4],
-        duracionHoras: r[5],
-        requisitos: parseJsonSafe(r[6], []),
-        dirigidoA: r[7],
-        estado: r[8]
-      };
-    });
-  }
-
-  // Inscripciones
-  const insSheet = getOrCreateSheet(ss, "InscripcionesCapacitacion");
-  const insData = insSheet.getDataRange().getValues();
-  let inscripciones = [];
-
-  const now = new Date();
-  const targetDays = parseInt(diasAnticipacion || "30", 10);
-  const isEmployeeRole = userRole === "Empleado";
-  const targetEmpId = isEmployeeRole ? authenticatedUserId : empleadoId;
-
-  if (insData.length > 1) {
-    inscripciones = insData.slice(1).filter(r => {
-      if (targetEmpId && String(r[2]).trim() !== String(targetEmpId).trim()) return false;
-      if (cursoId && String(r[1]).trim() !== String(cursoId).trim()) return false;
-
-      // Filtro de vencimiento
-      if (soloProximosVencimientos) {
-        const fechaVenc = r[9] ? new Date(r[9]) : null;
-        if (!fechaVenc || isNaN(fechaVenc.getTime())) return false;
-        const diffDays = Math.ceil((fechaVenc - now) / (1000 * 60 * 60 * 24));
-        if (diffDays < 0 || diffDays > targetDays) return false;
-      }
-
-      return true;
-    }).map(r => {
-      const cId = String(r[1]).trim();
-      const cursoInfo = cursosMap[cId] || { nombreCurso: cId };
-      const fechaVenc = r[9] ? new Date(r[9]) : null;
-      let estaProximoAVencer = false;
-      let diasParaVencer = null;
-
-      if (fechaVenc && !isNaN(fechaVenc.getTime())) {
-        diasParaVencer = Math.ceil((fechaVenc - now) / (1000 * 60 * 60 * 24));
-        estaProximoAVencer = diasParaVencer >= 0 && diasParaVencer <= targetDays;
-      }
-
-      return {
-        inscripcionId: r[0],
-        cursoId: r[1],
-        nombreCurso: cursoInfo.nombreCurso,
-        categoriaCurso: cursoInfo.categoria,
-        duracionHoras: cursoInfo.duracionHoras,
-        empleadoId: r[2],
-        fechaInscripcion: r[3],
-        estadoInscripcion: r[4],
-        asistenciaPorcentaje: r[5],
-        resultadoNota: r[6],
-        certificadoDriveUrl: r[7],
-        fechaEmisionCertificado: r[8],
-        fechaVencimientoCertificado: r[9],
-        estaProximoAVencer,
-        diasParaVencer,
-        observaciones: r[10],
-        fechaCreacion: r[12]
-      };
-    });
-  }
-
-  // Planes de Desarrollo
-  const planSheet = getOrCreateSheet(ss, "PlanesDesarrolloProfesional");
-  const planData = planSheet.getDataRange().getValues();
-  let planesDesarrollo = [];
-
-  if (planData.length > 1) {
-    planesDesarrollo = planData.slice(1).filter(r => {
-      if (targetEmpId && String(r[1]).trim() !== String(targetEmpId).trim()) return false;
-      return true;
-    }).map(r => ({
-      planId: r[0],
-      empleadoId: r[1],
-      tituloObjetivo: r[2],
-      descripcion: r[3],
-      metasAcciones: parseJsonSafe(r[4], []),
-      fechaInicio: r[5],
-      fechaMeta: r[6],
-      estadoObjetivo: r[7],
-      evaluacionSeguimiento: r[8],
-      fechaCreacion: r[10]
-    }));
-  }
-
-  return {
-    status: "success",
-    data: {
-      cursos: Object.values(cursosMap),
-      inscripciones,
-      planesDesarrollo
-    }
-  };
+  const request=payload||{},actor=getVerifiedAccountingIdentity_(payload);
+  if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),empty=courses=>({status:"success",data:{cursos:courses||[],inscripciones:[],planesDesarrollo:[]}});
+  const read=(name,headers)=>{const sh=ss.getSheetByName(name);if(!sh)return {missing:true,rows:[]};const v=sh.getDataRange().getValues();if(!v.length||!Array.isArray(v[0])||v[0].length!==headers.length||headers.some((h,i)=>String(v[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))return {error:true,rows:[]};return {rows:v.slice(1).filter(r=>Array.isArray(r)&&r.length>=headers.length)};};
+  const ch=["CursoID","NombreCurso","Categoria","ProveedorResponsable","Modalidad","DuracionHoras","Requisitos","DirigidoA","Estado","CreadoPor","FechaCreacion","UltimaModificacion"],ih=["InscripcionID","CursoID","EmpleadoID","FechaInscripcion","EstadoInscripcion","AsistenciaPorcentaje","ResultadoNota","CertificadoDriveUrl","FechaEmisionCertificado","FechaVencimientoCertificado","Observaciones","CreadoPor","FechaCreacion","UltimaModificacion"],ph=["PlanID","EmpleadoID","TituloObjetivo","Descripcion","MetasAccionesJSON","FechaInicio","FechaMeta","EstadoObjetivo","EvaluacionSeguimiento","CreadoPor","FechaCreacion","UltimaModificacion"],eh=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
+  const c=read("CatalogoCursosCapacitacion",ch);if(c.error)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura del catálogo de capacitación no es válida."};
+  const courses=[],cc=Object.create(null);c.rows.forEach(r=>{const id=String(r[0]||"").trim();if(id)cc[id]=(cc[id]||0)+1;});c.rows.forEach(r=>{const id=String(r[0]||"").trim();if(!id||cc[id]!==1)return;courses.push({cursoId:r[0],nombreCurso:r[1],categoria:r[2],proveedorResponsable:r[3],modalidad:r[4],duracionHoras:r[5],requisitos:parseJsonSafe(r[6],[]),dirigidoA:r[7],estado:r[8]});});
+  const e=read("ExpedientesLaborales",eh);if(e.error)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de expedientes laborales no es válida."};if(e.missing)return empty(courses);
+  const ec=Object.create(null),uc=Object.create(null);e.rows.forEach(r=>{const x=String(r[0]||"").trim(),u=String(r[2]||"").trim();if(x)ec[x]=(ec[x]||0)+1;if(u)uc[u]=(uc[u]||0)+1;});
+  const role=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,""),self=["EMPLEADO","TRABAJADOR","PERSONAL"].indexOf(role)!==-1,requested=String(request.empleadoId||"").trim(),target=self?actor.userId:requested;
+  if(self&&requested&&requested!==actor.userId)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe historial de capacitación disponible."};
+  if(target&&uc[target]!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe historial de capacitación disponible."};
+  const allowed=Object.create(null);for(let i=0;i<e.rows.length;i++){const r=e.rows[i],x=String(r[0]||"").trim(),u=String(r[2]||"").trim();if(!x||!u||ec[x]!==1||uc[u]!==1||(target&&u!==target))continue;const access=assertEmployeeExpedienteScopeAccess_(payload,ss,x);if(access.authorized)allowed[u]=true;}
+  if(target&&!allowed[target])return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe historial de capacitación disponible."};
+  const ins=read("InscripcionesCapacitacion",ih);if(ins.error)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de inscripciones de capacitación no es válida."};const plans=read("PlanesDesarrolloProfesional",ph);if(plans.error)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de planes de desarrollo no es válida."};
+  const ic=Object.create(null),pc=Object.create(null);ins.rows.forEach(r=>{const id=String(r[0]||"").trim();if(id)ic[id]=(ic[id]||0)+1;});plans.rows.forEach(r=>{const id=String(r[0]||"").trim();if(id)pc[id]=(pc[id]||0)+1;});
+  const now=new Date(),parsed=parseInt(request.diasAnticipacion||"30",10),days=Number.isFinite(parsed)&&parsed>=0?parsed:30,filter=String(request.cursoId||"").trim(),history=[];
+  ins.rows.forEach(r=>{const id=String(r[0]||"").trim(),u=String(r[2]||"").trim();if(!id||ic[id]!==1||!u||!allowed[u]||(filter&&String(r[1]||"").trim()!==filter))return;const expiry=r[9]?new Date(r[9]):null;if(request.soloProximosVencimientos){if(!expiry||isNaN(expiry.getTime()))return;const d=Math.ceil((expiry.getTime()-now.getTime())/86400000);if(d<0||d>days)return;}let near=false,left=null;if(expiry&&!isNaN(expiry.getTime())){left=Math.ceil((expiry.getTime()-now.getTime())/86400000);near=left>=0&&left<=days;}const course=courses.find(x=>String(x.cursoId).trim()===String(r[1]||"").trim());history.push({inscripcionId:r[0],cursoId:r[1],nombreCurso:course?course.nombreCurso:String(r[1]||""),categoriaCurso:course?course.categoria:undefined,duracionHoras:course?course.duracionHoras:undefined,empleadoId:r[2],fechaInscripcion:r[3],estadoInscripcion:r[4],asistenciaPorcentaje:r[5],resultadoNota:r[6],certificadoDriveUrl:r[7],fechaEmisionCertificado:r[8],fechaVencimientoCertificado:r[9],estaProximoAVencer:near,diasParaVencer:left,observaciones:r[10],fechaCreacion:r[12]});});
+  const development=[];plans.rows.forEach(r=>{const id=String(r[0]||"").trim(),u=String(r[1]||"").trim();if(!id||pc[id]!==1||!u||!allowed[u])return;development.push({planId:r[0],empleadoId:r[1],tituloObjetivo:r[2],descripcion:r[3],metasAcciones:parseJsonSafe(r[4],[]),fechaInicio:r[5],fechaMeta:r[6],estadoObjetivo:r[7],evaluacionSeguimiento:r[8],fechaCreacion:r[10]});});
+  return {status:"success",data:{cursos:courses,inscripciones:history,planesDesarrollo:development}};
 }
 
 function manageProfessionalDevelopmentPlan(payload) {
