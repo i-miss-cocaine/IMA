@@ -8049,7 +8049,7 @@ function purchaseAssetReceiptContext_(payload,ss) {
   const payableSheet=ss.getSheetByName("CuentasPorPagarGastos"),invoiceRows=payableSheet?payableSheet.getDataRange().getValues().slice(1):[],orderMarker="[ORDEN_"+orderId+"]",supplierId=String(order[3]||"").trim();
   const invoices=invoiceRows.filter(row=>{
     const observations=String(row[9]||""),match=observations.match(/\[MATCH:([^\]]+)\]/i),matchState=match?normalizePurchaseAwardRole_(match[1]):"";
-    return observations.includes(orderMarker)&&String(row[1]||"").trim()===supplierId&&["APROBADO","APROBADA"].includes(normalizePurchaseAwardRole_(row[6]))&&["CONCILIADA","DIFERENCIAAUTORIZADA"].includes(matchState);
+    return observations.includes(orderMarker)&&String(row[1]||"").trim()===supplierId&&["APROBADO","APROBADA"].includes(normalizePurchaseAwardRole_(row[6]))&&normalizePurchaseAwardRole_(row[7])!=="BLOQUEADOCONCILIACION"&&["CONCILIADA","DIFERENCIAAUTORIZADA"].includes(matchState);
   }).map(row=>({obligacionId:String(row[0]||""),numeroFactura:String(row[2]||""),proveedorId:String(row[1]||""),estadoAprobacion:String(row[6]||""),estadoConciliacion:(String(row[9]||"").match(/\[MATCH:([^\]]+)\]/i)||[])[1]||""})).filter(x=>x.numeroFactura);
   return {access,receiptId,receipt,orderId,order,supplierId,invoices,candidates};
 }
@@ -8060,14 +8060,16 @@ function getPurchaseReceiptAssetCandidates(payload) {
 function registerAssetsFromPurchaseReceipt(payload) {
   const p=payload||{},receiptId=String(p.recepcionId||"").trim(),invoiceNumber=String(p.numeroFactura||"").trim(),assetsInput=Array.isArray(p.activos)?p.activos:[];
   if(!receiptId||!invoiceNumber||!assetsInput.length)throw new Error("PURCHASE_ASSET_FIELDS_REQUIRED");
-  const lock=LockService.getScriptLock();if(!lock.tryLock(15000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La recepción está siendo procesada."};
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(15000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La recepción está siendo procesada."};
   let assetSheet=null,assignmentSheet=null,assetStart=0,assignmentStart=0;
   try{
-    const ss=SpreadsheetApp.openById(SPREADSHEET_ID);assetSheet=ensureAssetAcquisitionSchema_(ss);
+    const ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+    // La autorización y todas las lecturas de origen preceden a cualquier mutación de esquema.
     const context=purchaseAssetReceiptContext_(p,ss),invoiceMatches=context.invoices.filter(x=>x.numeroFactura===invoiceNumber);
     if(invoiceMatches.length!==1)throw new Error(invoiceMatches.length?"PURCHASE_ASSET_INVOICE_AMBIGUOUS":"PURCHASE_ASSET_INVOICE_NOT_LINKED");
-    const invoice=invoiceMatches[0],assetData=assetSheet.getDataRange().getValues(),existingRows=assetData.slice(1);
-    const serialIndex=ASSET_BASE_HEADERS_.length+ASSET_ACQUISITION_HEADERS_.indexOf("NumeroSerie"),codeIndex=1,receiptIndex=ASSET_BASE_HEADERS_.length+ASSET_ACQUISITION_HEADERS_.indexOf("RecepcionID"),itemIndex=ASSET_BASE_HEADERS_.length+ASSET_ACQUISITION_HEADERS_.indexOf("PurchaseItemId");
+    const invoice=invoiceMatches[0],existingSheet=ss.getSheetByName("ActivosPatrimoniales"),assetData=existingSheet?existingSheet.getDataRange().getValues():[],existingRows=assetData.slice(1);
+    const serialIndex=ASSET_BASE_HEADERS_.length+ASSET_ACQUISITION_HEADERS_.indexOf("NumeroSerie"),codeIndex=1,receiptIndex=ASSET_BASE_HEADERS_.length+ASSET_ACQUISITION_HEADERS_.indexOf("RecepcionID"),itemIndex=ASSET_BASE_HEADERS_.length+ASSET_ACQUISITION_HEADERS_.indexOf("PurchaseItemId"),invoiceIndex=ASSET_BASE_HEADERS_.length+ASSET_ACQUISITION_HEADERS_.indexOf("FacturaNumero");
     const serialSeen=new Set(),codeSeen=new Set(),newCounts=Object.create(null),pending=[];
     assetsInput.forEach(input=>{
       const itemId=String(input.itemId||input.ItemId||input.codigoItem||input.codigo||"").trim(),candidate=context.candidates.find(x=>x.itemId===itemId);
@@ -8080,7 +8082,7 @@ function registerAssetsFromPurchaseReceipt(payload) {
       const duplicate=existingRows.find(row=>String(row[serialIndex]||"").trim().toUpperCase()===ns||(!String(row[serialIndex]||"").trim()&&String(row[4]||"").trim().toUpperCase()===ns)||String(row[codeIndex]||"").trim().toUpperCase()===nc);
       if(duplicate){
         const sameSource=String(duplicate[receiptIndex]||"").trim()===receiptId&&String(duplicate[itemIndex]||"").trim()===itemId;
-        if(sameSource&&String(duplicate[serialIndex]||"").trim().toUpperCase()===ns&&String(duplicate[codeIndex]||"").trim().toUpperCase()===nc)return;
+        if(sameSource&&String(duplicate[serialIndex]||"").trim().toUpperCase()===ns&&String(duplicate[codeIndex]||"").trim().toUpperCase()===nc&&String(duplicate[invoiceIndex]||"").trim()===invoiceNumber)return;
         throw new Error("PURCHASE_ASSET_SERIAL_OR_CODE_ALREADY_EXISTS");
       }
       newCounts[itemId]=(newCounts[itemId]||0)+1;
@@ -8088,13 +8090,14 @@ function registerAssetsFromPurchaseReceipt(payload) {
     });
     Object.keys(newCounts).forEach(itemId=>{const candidate=context.candidates.find(x=>x.itemId===itemId);if(newCounts[itemId]>candidate.unidadesDisponibles)throw new Error("PURCHASE_ASSET_QUANTITY_EXCEEDED:"+itemId);});
     if(!pending.length)return {status:"success",recepcionId:receiptId,activos:[],idempotente:true,message:"Los activos de esta solicitud ya estaban registrados."};
+    assetSheet=ensureAssetAcquisitionSchema_(ss);
+    assignmentSheet=getOrCreateSheet(ss,"AsignacionesActivos");
+    const assignmentHeaders=["AsignacionID","ActivoID","CustodioUserId","FechaEntrega","FechaDevolucion","EstadoActa","Observaciones"],assignmentData=assignmentSheet.getDataRange().getValues();
+    if(!assignmentData.length||assignmentHeaders.some((header,index)=>String(assignmentData[0][index]||"").trim()!==header))throw new Error("ASSET_ASSIGNMENT_SCHEMA_MISMATCH");
     const now=new Date(),rowsToAppend=pending.map(item=>{
       const assetId="ACT-CMP-"+Utilities.getUuid(),estado=item.custodian?"assigned":"available",observations="Alta desde recepción "+receiptId+" / orden "+context.orderId;
       return {assetId,custodian:item.custodian,row:[assetId,item.code,item.name,item.category,item.model,item.location,item.custodian,estado,observations,context.supplierId,context.orderId,receiptId,invoice.numeroFactura,invoice.obligacionId,context.receipt[2]||now,item.candidate.costoUnitarioAdquisicion,item.serial,item.brand,item.model,item.itemId,"ActivoFijo"]};
     });
-    assignmentSheet=getOrCreateSheet(ss,"AsignacionesActivos");
-    const assignmentHeaders=["AsignacionID","ActivoID","CustodioUserId","FechaEntrega","FechaDevolucion","EstadoActa","Observaciones"],assignmentData=assignmentSheet.getDataRange().getValues();
-    if(!assignmentData.length||assignmentHeaders.some((header,index)=>String(assignmentData[0][index]||"").trim()!==header))throw new Error("ASSET_ASSIGNMENT_SCHEMA_MISMATCH");
     assetStart=assetSheet.getLastRow()+1;rowsToAppend.forEach(item=>assetSheet.appendRow(item.row));
     const assigned=rowsToAppend.filter(item=>item.custodian);
     if(assigned.length){assignmentStart=assignmentSheet.getLastRow()+1;assigned.forEach(item=>assignmentSheet.appendRow(["ASG-"+Utilities.getUuid(),item.assetId,item.custodian,now,"","Asignación inicial pendiente de acta","Custodia inicial desde recepción de compra "+receiptId]));}

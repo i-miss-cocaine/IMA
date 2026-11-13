@@ -543,8 +543,8 @@ window.loadActivosData = function () {
     const esc=escapePurchaseAssetHtml;
     let html='<table class="w-full text-left border-collapse"><thead><tr class="bg-gray-50 border-b text-gray-600 font-bold uppercase"><th class="p-2">Código</th><th class="p-2">Activo</th><th class="p-2">Serie</th><th class="p-2">Ubicación</th><th class="p-2">Custodio</th><th class="p-2">Adquisición</th><th class="p-2">Acciones</th></tr></thead><tbody class="divide-y divide-gray-100">';
     items.forEach(a=>{
-      const acquisition=a.ordenCompraId?`<button onclick="viewAssetAcquisitionRecord('${esc(a.activoId)}')" class="px-2 py-1 bg-indigo-50 text-indigo-700 rounded font-bold text-[10px]">Ver expediente</button>`:"—";
-      html+=`<tr><td class="p-2 font-mono font-bold text-indigo-600">${esc(a.codigoPatrimonial)}</td><td class="p-2 font-bold">${esc(a.nombre)}<div class="text-[10px] text-gray-500">${esc(a.categoria)}</div></td><td class="p-2">${esc(a.numeroSerie||a.serieModel)}</td><td class="p-2">${esc(a.ubicacionActual)}</td><td class="p-2">${esc(a.custodioUserId||"Sin custodio")}</td><td class="p-2">${acquisition}</td><td class="p-2 whitespace-nowrap"><button onclick="handleAsignarCustodia('${esc(a.activoId)}')" class="px-2 py-1 bg-blue-50 text-blue-600 rounded font-bold text-[10px]">Asignar</button>${a.custodioUserId||a.estado==="assigned"?` <button onclick="handleDevolverCustodia('${esc(a.activoId)}','${esc(a.codigoPatrimonial)}','${esc(a.nombre)}','${esc(a.custodioUserId)}')" class="px-2 py-1 bg-rose-50 text-rose-600 rounded font-bold text-[10px]">Devolver</button>`:""}</td></tr>`;
+      const acquisition=a.ordenCompraId?`<button onclick="viewAssetAcquisitionRecord(${purchaseAssetJsArg(a.activoId)})" class="px-2 py-1 bg-indigo-50 text-indigo-700 rounded font-bold text-[10px]">Ver expediente</button>`:"—";
+      html+=`<tr><td class="p-2 font-mono font-bold text-indigo-600">${esc(a.codigoPatrimonial)}</td><td class="p-2 font-bold">${esc(a.nombre)}<div class="text-[10px] text-gray-500">${esc(a.categoria)}</div></td><td class="p-2">${esc(a.numeroSerie||a.serieModel)}</td><td class="p-2">${esc(a.ubicacionActual)}</td><td class="p-2">${esc(a.custodioUserId||"Sin custodio")}</td><td class="p-2">${acquisition}</td><td class="p-2 whitespace-nowrap"><button onclick="handleAsignarCustodia(${purchaseAssetJsArg(a.activoId)})" class="px-2 py-1 bg-blue-50 text-blue-600 rounded font-bold text-[10px]">Asignar</button>${a.custodioUserId||a.estado==="assigned"?` <button onclick="handleDevolverCustodia(${purchaseAssetJsArg(a.activoId)},${purchaseAssetJsArg(a.codigoPatrimonial)},${purchaseAssetJsArg(a.nombre)},${purchaseAssetJsArg(a.custodioUserId)})" class="px-2 py-1 bg-rose-50 text-rose-600 rounded font-bold text-[10px]">Devolver</button>`:""}</td></tr>`;
     });
     container.innerHTML=html+"</tbody></table>";
   }).catch(err=>{container.innerHTML='<div class="p-4 text-rose-600 font-bold text-center">Error al cargar activos: '+escapePurchaseAssetHtml(err.message)+'</div>';});
@@ -556,7 +556,7 @@ window.viewAssetAcquisitionRecord=function(activoId){
     const modal=document.createElement("div");modal.id="asset-acquisition-modal";modal.className="fixed inset-0 z-[110] bg-black/60 flex items-center justify-center p-3";
     modal.innerHTML=`<div class="bg-white rounded-2xl p-5 max-w-xl w-full space-y-3"><div class="flex justify-between"><h3 class="font-black text-sm">Expediente de adquisición</h3><button onclick="document.getElementById('asset-acquisition-modal').remove()" class="text-xl">×</button></div>
       <dl class="grid grid-cols-2 gap-2 text-xs"><dt>Activo</dt><dd>${escapePurchaseAssetHtml(asset.nombre)}</dd><dt>Orden</dt><dd>${escapePurchaseAssetHtml(asset.ordenCompraId)}</dd><dt>Recepción</dt><dd>${escapePurchaseAssetHtml(asset.recepcionId)}</dd><dt>Proveedor</dt><dd>${escapePurchaseAssetHtml(asset.proveedorId)}</dd><dt>Factura</dt><dd>${escapePurchaseAssetHtml(asset.numeroFactura)}</dd><dt>Obligación</dt><dd>${escapePurchaseAssetHtml(asset.obligacionId)}</dd><dt>Fecha adquisición</dt><dd>${asset.fechaAdquisicion?new Date(asset.fechaAdquisicion).toLocaleDateString():"—"}</dd><dt>Costo de adquisición</dt><dd>${Number(asset.costoAdquisicion||0).toFixed(2)}</dd><dt>Número de serie</dt><dd>${escapePurchaseAssetHtml(asset.numeroSerie)}</dd></dl>
-      <button onclick="switchComprasSubtab('recepciones');document.getElementById('asset-acquisition-modal').remove()" class="px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold">Ir a recepciones</button></div>`;
+      <button onclick="openPurchaseReceiptRecord(${purchaseAssetJsArg(asset.recepcionId)})" class="px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold">Ir a recepciones</button></div>`;
     document.body.appendChild(modal);
   }).catch(err=>alert("No se pudo abrir el expediente: "+(err.message||err)));
 };
@@ -1248,17 +1248,18 @@ function renderComprasRecepcionesView(container) {
     const tbody=document.getElementById("tbl-compras-recepciones");if(!tbody)return;
     const list=res.recepciones||[];
     if(!list.length){tbody.innerHTML='<tr><td colspan="6" class="p-4 text-center text-gray-400">No hay recepciones físicas registradas.</td></tr>';return;}
-    tbody.innerHTML=list.map(r=>`<tr class="hover:bg-gray-50">
+    tbody.innerHTML=list.map(r=>`<tr class="hover:bg-gray-50" data-receipt-id="${escapePurchaseAssetHtml(r.recepcionId)}">
       <td class="p-3 font-bold text-gray-900">${escapePurchaseAssetHtml(r.recepcionId)}</td>
       <td class="p-3 font-semibold text-purple-700">${escapePurchaseAssetHtml(r.ordenCompraId)}</td>
       <td class="p-3">${r.fechaRecepcion?new Date(r.fechaRecepcion).toLocaleString():"-"}</td>
       <td class="p-3">${escapePurchaseAssetHtml(r.receptorUserId)}</td>
       <td class="p-3">${escapePurchaseAssetHtml(r.estadoConformidad)}</td>
-      <td class="p-3">${r.estadoConformidad==="Conforme"?`<button onclick="openReceiptAssetRegistration('${escapePurchaseAssetHtml(r.recepcionId)}')" class="px-2 py-1 rounded bg-indigo-50 text-indigo-700 font-bold">Registrar activos</button>`:"—"}</td>
+      <td class="p-3">${r.estadoConformidad==="Conforme"?`<button onclick="openReceiptAssetRegistration(${purchaseAssetJsArg(r.recepcionId)})" class="px-2 py-1 rounded bg-indigo-50 text-indigo-700 font-bold">Registrar activos</button>`:"—"}</td>
     </tr>`).join("");
   }).catch(err=>{const tbody=document.getElementById("tbl-compras-recepciones");if(tbody)tbody.innerHTML='<tr><td colspan="6" class="p-4 text-center text-red-500">Error: '+escapePurchaseAssetHtml(err.message)+'</td></tr>';});
 }
 function escapePurchaseAssetHtml(value){return String(value==null?"":value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));}
+function purchaseAssetJsArg(value){return JSON.stringify(String(value==null?"":value)).replace(/&/g,"\\u0026").replace(/</g,"\\u003c").replace(/>/g,"\\u003e").replace(/"/g,"&quot;");}
 window.openReceiptAssetRegistration=function(recepcionId){
   fetchBackendAccounting("getPurchaseReceiptAssetCandidates",{recepcionId}).then(result=>{
     const candidates=(result.candidatos||[]).filter(item=>item.unidadesDisponibles>0);
@@ -1282,12 +1283,13 @@ window.openReceiptAssetRegistration=function(recepcionId){
       <div class="flex justify-between items-center"><h3 class="font-black text-sm uppercase">Capitalizar bienes recibidos</h3><button type="button" onclick="closeReceiptAssetModal()" class="text-xl text-gray-500">×</button></div>
       <p class="text-xs text-gray-600">Cada fila representa una unidad física. Las unidades incompletas se omiten; no se capitalizan consumibles, materiales ni artículos dañados.</p>
       <label class="block text-xs font-bold">Factura aprobada y conciliada *<select id="receipt-asset-invoice" class="w-full mt-1 p-2 border rounded-lg">${invoiceOptions}</select></label>
-      <form id="receipt-asset-form" onsubmit="submitReceiptAssetRegistration(event,'${escapePurchaseAssetHtml(recepcionId)}')" class="space-y-3">${cards}
+      <form id="receipt-asset-form" onsubmit="submitReceiptAssetRegistration(event,${purchaseAssetJsArg(recepcionId)})" class="space-y-3">${cards}
         <div class="flex justify-end gap-2"><button type="button" onclick="closeReceiptAssetModal()" class="px-4 py-2 bg-gray-100 rounded-lg text-xs font-bold">Cancelar</button><button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold">Registrar activos seleccionados</button></div>
       </form></div>`;
     document.body.appendChild(modal);
   }).catch(error=>alert("No se pudo consultar la recepción: "+(error.message||error)));
 };
+window.openPurchaseReceiptRecord=function(receiptId){window.pendingPurchaseReceiptFocus=String(receiptId||"");switchComprasSubtab("recepciones");setTimeout(()=>{const row=Array.from(document.querySelectorAll("[data-receipt-id]")).find(item=>item.dataset.receiptId===window.pendingPurchaseReceiptFocus);if(row)row.scrollIntoView({behavior:"smooth",block:"center"});},180);};
 window.closeReceiptAssetModal=function(){document.getElementById("receipt-asset-modal")?.remove();};
 window.submitReceiptAssetRegistration=function(event,recepcionId){
   event.preventDefault();const rows=Array.from(document.querySelectorAll("#receipt-asset-form [data-asset-row]")),assets=[];

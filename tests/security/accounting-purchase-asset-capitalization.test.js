@@ -51,6 +51,14 @@ assert.equal(directOrderLine.capitalizable,false);
 const preview=ctx.getPurchaseReceiptAssetCandidates({recepcionId:"REC-1"});
 assert.equal(preview.candidatos.length,1);assert.equal(preview.candidatos[0].unidadesDisponibles,2);assert.equal(preview.facturasDisponibles[0].numeroFactura,"INV-001");
 const first={recepcionId:"REC-1",numeroFactura:"INV-001",activos:[{itemId:"IT-1",codigoPatrimonial:"PAT-001",numeroSerie:"SN-001",categoriaPatrimonial:"Equipo computacional",marca:"Marca A",modelo:"Modelo A",ubicacionActual:"Bodega"}]};
+const allowedAccess=ctx.purchaseQuotationAccess_,headerLengthBefore=rows.ActivosPatrimoniales[0].length;
+ctx.purchaseQuotationAccess_=()=>({authorized:true,scope:{institutionWide:false,departmentIds:["D-OTHER"]}});
+assert.throws(()=>ctx.getPurchaseReceiptAssetCandidates({recepcionId:"REC-1"}),/RESOURCE_NOT_FOUND/);
+ctx.purchaseQuotationAccess_=()=>({authorized:false,code:"ROLE_NOT_ALLOWED"});
+const denied=ctx.registerAssetsFromPurchaseReceipt(first);
+ctx.purchaseQuotationAccess_=allowedAccess;
+assert.equal(denied.code,"ROLE_NOT_ALLOWED");assert.equal(rows.ActivosPatrimoniales[0].length,headerLengthBefore,"unauthorized calls must not mutate the asset schema");
+
 const registered=ctx.registerAssetsFromPurchaseReceipt(first);
 assert.equal(registered.status,"success");assert.equal(registered.activos.length,1);
 assert.equal(rows.ActivosPatrimoniales.length,2);assert.equal(rows.ActivosPatrimoniales[1][10],"ORD-1");assert.equal(rows.ActivosPatrimoniales[1][11],"REC-1");assert.equal(rows.ActivosPatrimoniales[1][12],"INV-001");assert.equal(rows.ActivosPatrimoniales[1][16],"SN-001");assert.equal(rows.ActivosPatrimoniales[1][20],"ActivoFijo");
@@ -73,8 +81,10 @@ const rollback=ctx.registerAssetsFromPurchaseReceipt({recepcionId:"REC-1",numero
 ctx.failAssignmentWrite=false;assert.equal(rollback.status,"error");assert.equal(rows.ActivosPatrimoniales.length,beforeRollback);
 const duplicateManual=()=>ctx.manageAssetItem({codigoPatrimonial:"PAT-NEW",nombre:"Equipo",numeroSerie:"SN-001"});
 assert.throws(duplicateManual,/ASSET_SERIAL_ALREADY_EXISTS/);
+rows.ActivosPatrimoniales.push(["ACT-LEGACY","PAT-LEGACY","Equipo antiguo","Equipo","SN-LEGACY","","","available",""]);
+assert.throws(()=>ctx.manageAssetItem({codigoPatrimonial:"PAT-NEW-LEGACY",nombre:"Equipo",numeroSerie:"SN-LEGACY"}),/ASSET_SERIAL_ALREADY_EXISTS/);
 const countBefore=rows.ActivosPatrimoniales.length,listed=ctx.getAssetItems({});
-assert.equal(listed.activos.length,2);assert.equal(rows.ActivosPatrimoniales.length,countBefore);
+assert.equal(listed.activos.length,3);assert.equal(rows.ActivosPatrimoniales.length,countBefore);
 const absentCtx={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>({getSheetByName:()=>null})}};vm.createContext(absentCtx);vm.runInContext(extract(source,"getAssetItems"),absentCtx);
 assert.deepEqual(JSON.parse(JSON.stringify(absentCtx.getAssetItems({}))),{status:"success",activos:[]});
 const damagedRows=JSON.parse(JSON.stringify(rows));damagedRows.RecepcionesCompra[1][5]="EnDisputa";
@@ -84,5 +94,5 @@ vm.createContext(damagedCtx);["purchaseAssetReceiptContext_","getPurchaseReceipt
 assert.equal(damagedCtx.getPurchaseReceiptAssetCandidates({recepcionId:"REC-1"}).candidatos.length,0);
 assert.ok(source.includes("clasificacionInventario:a.clasificacionInventario"));assert.ok(source.includes("clasificacionInventario: normalizePurchaseAssetClassification_(item)"));assert.ok(source.includes("const classification=normalizePurchaseAssetClassification_(source)"));
 assert.ok(source.includes("item.itemId || item.ItemId"));
-assert.ok(client.includes("registerAssetsFromPurchaseReceipt")&&client.includes("submitNewPurchaseRequest"));
+assert.ok(client.includes("registerAssetsFromPurchaseReceipt")&&client.includes("submitNewPurchaseRequest")&&client.includes("purchaseAssetJsArg"));
 console.log("TASK-182 purchase-to-fixed-assets contract PASS: classification propagation, receipt eligibility, invoice linkage, per-unit serial/code uniqueness, idempotent retries, quantity bounds, custody history, rollback, read-only empty inventory and client flow.");
