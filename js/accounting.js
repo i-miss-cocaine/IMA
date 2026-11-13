@@ -50,8 +50,6 @@ window.switchTab = function (tab) {
     renderPresupuestosModule(container);
   } else if (tab === 'descuentos') {
     renderDescuentosModule(container);
-  } else if (tab === 'matricula') {
-    renderEnrollmentBillingConfigurationModule(container);
   } else {
     renderResumenModule(container);
   }
@@ -1789,107 +1787,6 @@ function renderPresupuestosModule(container) {
     </div>
   `;
 }
-
-
-function enrollmentBillingEscapeHtml_(value) {
-  return String(value === null || value === undefined ? "" : value)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-}
-
-function renderEnrollmentBillingConfigurationModule(container) {
-  const currentYear = new Date().getFullYear();
-  container.innerHTML = '<section class="space-y-5" aria-labelledby="enrollment-billing-title">' +
-    '<div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-5"><h4 id="enrollment-billing-title" class="text-base font-black uppercase text-indigo-900"><i class="fas fa-sliders-h"></i> Configuración de cargos al matricular</h4>' +
-    '<p class="text-sm text-indigo-900 mt-2">Define cómo se generan los cargos al registrar una matrícula inicial o rematrícula. La configuración se guarda por año lectivo y grado; no modifica cargos históricos.</p></div>' +
-    '<form id="enrollment-billing-load-form" class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-200">' +
-    '<label class="text-xs font-bold text-gray-700">Año lectivo<input id="enrollment-billing-year" type="number" min="2000" max="2200" required value="' + currentYear + '" class="mt-1 w-full p-2.5 border border-gray-300 rounded-xl text-sm"></label>' +
-    '<label class="text-xs font-bold text-gray-700">Grado<input id="enrollment-billing-grade" type="text" maxlength="80" required placeholder="Ej. Séptimo grado" class="mt-1 w-full p-2.5 border border-gray-300 rounded-xl text-sm"></label>' +
-    '<div class="flex items-end"><button type="submit" class="w-full px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase hover:bg-indigo-700">Consultar configuración</button></div></form>' +
-    '<div id="enrollment-billing-feedback" role="status" aria-live="polite" class="text-sm text-gray-600"></div><div id="enrollment-billing-editor" class="hidden space-y-4"></div></section>';
-  document.getElementById("enrollment-billing-load-form").addEventListener("submit", function(event) {
-    event.preventDefault();
-    window.loadEnrollmentBillingConfiguration();
-  });
-}
-
-window.updateEnrollmentBillingModeUI = function() {
-  const mode = document.getElementById("enrollment-billing-mode");
-  const concept = document.getElementById("enrollment-billing-concept-wrap");
-  if (mode && concept) concept.classList.toggle("hidden", mode.value !== "MATRICULA_ONLY");
-};
-
-window.loadEnrollmentBillingConfiguration = async function() {
-  const year = String(document.getElementById("enrollment-billing-year").value || "").trim();
-  const grade = String(document.getElementById("enrollment-billing-grade").value || "").trim();
-  const feedback = document.getElementById("enrollment-billing-feedback");
-  const editor = document.getElementById("enrollment-billing-editor");
-  if (!year || !grade) {
-    feedback.textContent = "Indica el año lectivo y el grado para consultar sus tarifas.";
-    editor.classList.add("hidden");
-    return;
-  }
-  feedback.textContent = "Consultando tarifas y configuración...";
-  editor.classList.add("hidden");
-  try {
-    const response = await window.fetchApi("ACCOUNTING", "getEnrollmentBillingConfiguration", { anoLectivo: year, nivelGrado: grade });
-    if (!response || response.status !== "success") throw new Error(response && (response.message || response.code) || "No fue posible consultar la configuración.");
-    const tariffs = response.tarifas || [];
-    const config = response.config || null;
-    window.currentEnrollmentBillingConfiguration_ = { anoLectivo: year, nivelGrado: grade, tarifas: tariffs, config: config };
-    const options = tariffs.map(function(t) {
-      const label = (t.conceptoNombre || t.conceptoId) + " — L " + Number(t.montoTotal).toFixed(2) + " / " + Number(t.cuotasNum) + " cuota(s)";
-      return '<option value="' + enrollmentBillingEscapeHtml_(t.conceptoId) + '">' + enrollmentBillingEscapeHtml_(label) + '</option>';
-    }).join("");
-    const summary = tariffs.length ? tariffs.map(function(t) {
-      return '<li class="flex flex-wrap justify-between gap-2 border-b border-gray-100 py-2 text-sm"><span>' + enrollmentBillingEscapeHtml_(t.conceptoNombre || t.conceptoId) +
-        '</span><span class="font-semibold">L ' + Number(t.montoTotal).toFixed(2) + ' · ' + Number(t.cuotasNum) + ' cuota(s)</span></li>';
-    }).join("") : '<li class="text-sm text-amber-700 py-2">No hay tarifas activas para este grado y año lectivo.</li>';
-    editor.innerHTML = '<form id="enrollment-billing-save-form" class="space-y-4 border border-gray-200 rounded-2xl p-5">' +
-      '<div class="flex flex-wrap justify-between gap-2"><h5 class="font-black text-gray-900 uppercase text-sm">Regla de generación</h5><span class="text-xs text-gray-500">' +
-      (config ? "Configuración existente" : "Sin configuración guardada") + '</span></div>' +
-      '<label class="block text-xs font-bold text-gray-700">¿Qué cargos debe crear la matrícula?<select id="enrollment-billing-mode" required onchange="updateEnrollmentBillingModeUI()" class="mt-1 w-full p-3 border border-gray-300 rounded-xl text-sm bg-white">' +
-      '<option value="MANUAL">Manual — no generar cargos automáticamente</option><option value="MATRICULA_ONLY">Solo el concepto de matrícula seleccionado</option>' +
-      '<option value="ALL_ACTIVE_TARIFFS">Plan completo — todos los conceptos con tarifa activa</option></select></label>' +
-      '<label id="enrollment-billing-concept-wrap" class="block text-xs font-bold text-gray-700">Tarifa / concepto de matrícula<select id="enrollment-billing-concept" class="mt-1 w-full p-3 border border-gray-300 rounded-xl text-sm bg-white">' +
-      '<option value="">Selecciona una tarifa activa</option>' + options + '</select></label>' +
-      '<div class="bg-gray-50 rounded-xl p-4"><h6 class="font-bold text-xs uppercase text-gray-700 mb-2">Tarifas activas disponibles</h6><ul class="divide-y divide-gray-100">' + summary + '</ul></div>' +
-      '<p class="text-xs text-gray-500">El plan completo utiliza solo tarifas activas del año y grado seleccionados. Sin configuración, el modo es manual: no se inventan importes ni se crean cobros por defecto.</p>' +
-      '<button type="submit" class="px-5 py-3 bg-indigo-600 text-white rounded-xl font-black text-xs uppercase hover:bg-indigo-700">Guardar configuración</button></form>';
-    document.getElementById("enrollment-billing-mode").value = config && config.modoGeneracion || "MANUAL";
-    document.getElementById("enrollment-billing-concept").value = config && config.conceptoMatriculaId || "";
-    window.updateEnrollmentBillingModeUI();
-    document.getElementById("enrollment-billing-save-form").addEventListener("submit", function(event) {
-      event.preventDefault();
-      window.saveEnrollmentBillingConfiguration();
-    });
-    editor.classList.remove("hidden");
-    feedback.textContent = "Configuración cargada. " + tariffs.length + " tarifa(s) activa(s) disponibles.";
-  } catch (error) {
-    feedback.textContent = "Error: " + String(error.message || error);
-  }
-};
-
-window.saveEnrollmentBillingConfiguration = async function() {
-  const context = window.currentEnrollmentBillingConfiguration_;
-  const feedback = document.getElementById("enrollment-billing-feedback");
-  if (!context) { feedback.textContent = "Primero consulta el año lectivo y el grado."; return; }
-  const mode = document.getElementById("enrollment-billing-mode").value;
-  const conceptId = document.getElementById("enrollment-billing-concept").value;
-  if (mode === "MATRICULA_ONLY" && !conceptId) { feedback.textContent = "Selecciona una tarifa activa para el concepto de matrícula."; return; }
-  feedback.textContent = "Guardando configuración...";
-  try {
-    const response = await window.fetchApi("ACCOUNTING", "saveEnrollmentBillingConfiguration", {
-      anoLectivo: context.anoLectivo, nivelGrado: context.nivelGrado, modoGeneracion: mode,
-      conceptoMatriculaId: mode === "MATRICULA_ONLY" ? conceptId : ""
-    });
-    if (!response || response.status !== "success") throw new Error(response && (response.message || response.code) || "No fue posible guardar la configuración.");
-    feedback.textContent = "Configuración guardada: " + mode + ". " + (response.message || "");
-    await window.loadEnrollmentBillingConfiguration();
-  } catch (error) {
-    feedback.textContent = "Error: " + String(error.message || error);
-  }
-};
 
 function renderDescuentosModule(container) {
   container.innerHTML = `
