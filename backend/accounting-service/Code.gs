@@ -5805,7 +5805,10 @@ function recordStaffCheckIn(payload) {
       if (activeShifts.length > 1) return { status: "error", code: "ATTENDANCE_SCHEDULE_AMBIGUOUS", message: "Existe más de un turno vigente para el empleado." };
       if (activeShifts.length === 1) {
         expectedTime = String(activeShifts[0][5] || "").trim();
-        if (!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(expectedTime)) {
+        const expectedParts = expectedTime.split(":").map(Number);
+        if (expectedTime.length !== 5 || expectedTime.charAt(2) !== ":" || expectedParts.length !== 2 ||
+            !Number.isInteger(expectedParts[0]) || !Number.isInteger(expectedParts[1]) ||
+            expectedParts[0] < 0 || expectedParts[0] > 23 || expectedParts[1] < 0 || expectedParts[1] > 59) {
           return { status: "error", code: "RESOURCE_SCHEMA_INVALID", message: "La hora de entrada del turno no es válida." };
         }
       }
