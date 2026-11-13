@@ -90,6 +90,7 @@ function makeHarness(membershipRows = [headers]) {
     getAuthTokenSecret:()=>"secret",
     computeHmacSignature:(v,s)=>"sig:"+v+":"+s,
     getIdentityInstitutionId_:()=>"INST-1",
+    // An absent revocation ledger is represented by an uninitialized script property.
     PropertiesService:{getScriptProperties:()=>({getProperty:()=>null})},
     getSheetOrThrow:(ss,name)=>ss.getSheetByName(name),
     LockService:{getScriptLock:()=>({waitLock(){ctx.locked=true;},releaseLock(){ctx.locked=false;}})},
