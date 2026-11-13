@@ -3525,3 +3525,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato TASK-181 PASS; Department Scope run 43503615191 SUCCESS (Node.js 24.22.2); regresiones y sintaxis del workflow PASS. Se corrigió una expectativa de orden no contractual y se añadió prueba de lock ocupado sin efectos laterales.
 - CLI local NOT RUN; Apps Script/Sheets real NOT RUN. BETA-FUNC-081 Pendiente beta.
 - Commits finales: 8911bd5, 039273e.
+
+
+[2026-11-13 20:44 UTC] C1.709 — F18-Task01 — integridad de recepciones parciales
+- Se valida código y cantidad autorizada por partida, se rechazan artículos ajenos y sobreentregas conformes, y se mantiene RecibidaParcial hasta completar las cantidades conformes.
+- Unidades dañadas/rechazadas no reducen el saldo pendiente ni generan entradas de inventario; se normalizan alias de código.
+- Contrato local Node PASS; Department Scope 43504297096, Identity Mapping 43504296863 y Department Reference Consumers 43504298124 SUCCESS (Node 24.22.2), incluido lock ocupado sin efectos laterales.
+- CLI local y Apps Script/Sheets real NOT RUN. BETA-FUNC-082 Pendiente beta.

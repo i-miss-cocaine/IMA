@@ -8678,27 +8678,21 @@ function recordPurchaseReceipt(payload) {
       authorizedItems = [];
     }
 
-    if (!Array.isArray(authorizedItems) || authorizedItems.length === 0) {
-      throw new Error("PURCHASE_ORDER_ITEMS_INVALID");
-    }
+    // 2. Consultar recepciones previas válidas asociadas a esta Orden
+    const prevRecRows = recSheet.getDataRange().getValues().slice(1).filter(r => String(r[1]).trim() === String(ordenCompraId).trim());
 
-    // Cada partida autorizada debe tener código único y cantidad positiva.
+    // Mapeo acumulado histórico por código de ítem: { cantidadRecibidaConforme, cantidadDanada, cantidadRechazada }
     const cumulativeReceived = {};
     authorizedItems.forEach(item => {
       const code = String(item.codigoItem || item.codigo || item.id || "").trim();
-      const requested = Number(item.cantidad || item.quantity || item.cantidadSolicitada);
-      if (!code || Object.prototype.hasOwnProperty.call(cumulativeReceived, code) || !Number.isFinite(requested) || requested <= 0) {
-        throw new Error("PURCHASE_ORDER_ITEMS_INVALID");
+      if (code) {
+        cumulativeReceived[code] = {
+          solicitada: parseFloat(item.cantidad || 0),
+          recibidaConforme: 0,
+          danadaRechazada: 0
+        };
       }
-      cumulativeReceived[code] = {
-        solicitada: requested,
-        recibidaConforme: 0,
-        danadaRechazada: 0
-      };
     });
-
-    // 2. Consultar recepciones previas válidas asociadas a esta Orden.
-    const prevRecRows = recSheet.getDataRange().getValues().slice(1).filter(r => String(r[1]).trim() === String(ordenCompraId).trim());
 
     prevRecRows.forEach(pr => {
       let d = [];
@@ -8718,45 +8712,29 @@ function recordPurchaseReceipt(payload) {
       });
     });
 
-    // 3. Validar y procesar el detalle recibido en esta entrega.
+    // 3. Procesar detalle recibido en esta entrega
     const currentDetail = Array.isArray(detalleRecibido) ? detalleRecibido : [];
-    if (currentDetail.length === 0) throw new Error("PURCHASE_RECEIPT_DETAILS_REQUIRED");
     let hasDamagedOrDispute = (estadoConformidad === "EnDisputa" || estadoConformidad === "Danado" || estadoConformidad === "Rechazado");
     let itemsToInventory = [];
-    const currentConformingByCode = {};
-
-    // Rechazar partidas ajenas a la orden, cantidades inválidas y sobreentregas conformes.
-    // Las unidades dañadas/rechazadas quedan trazadas, pero no reducen el saldo pendiente.
-    currentDetail.forEach(item => {
-      const code = String(item.codigoItem || item.codigo || item.id || "").trim();
-      const qty = Number(item.cantidad);
-      if (!code || !Object.prototype.hasOwnProperty.call(cumulativeReceived, code)) {
-        throw new Error("PURCHASE_RECEIPT_ITEM_NOT_AUTHORIZED");
-      }
-      if (!Number.isFinite(qty) || qty <= 0) throw new Error("PURCHASE_RECEIPT_QUANTITY_INVALID");
-
-      const isDamaged = Boolean(item.danado || item.rechazado || item.estado === "Danado" || item.estado === "Rechazado" || item.conforme === false) ||
-        estadoConformidad === "EnDisputa" || estadoConformidad === "Danado" || estadoConformidad === "Rechazado";
-      if (!isDamaged) {
-        currentConformingByCode[code] = (currentConformingByCode[code] || 0) + qty;
-        if (cumulativeReceived[code].recibidaConforme + currentConformingByCode[code] > cumulativeReceived[code].solicitada + 0.001) {
-          throw new Error("PURCHASE_RECEIPT_QUANTITY_EXCEEDED");
-        }
-      }
-    });
 
     currentDetail.forEach(item => {
       const code = String(item.codigoItem || item.codigo || item.id || "").trim();
-      const qty = Number(item.cantidad);
-      const isDamaged = Boolean(item.danado || item.rechazado || item.estado === "Danado" || item.estado === "Rechazado" || item.conforme === false) ||
-        estadoConformidad === "EnDisputa" || estadoConformidad === "Danado" || estadoConformidad === "Rechazado";
+      const qty = parseFloat(item.cantidad || 0);
+      const isDamaged = Boolean(item.danado || item.rechazado || item.estado === "Danado" || item.estado === "Rechazado" || item.conforme === false);
 
       if (isDamaged) {
         hasDamagedOrDispute = true;
-        cumulativeReceived[code].danadaRechazada += qty;
-      } else {
-        cumulativeReceived[code].recibidaConforme += qty;
-        itemsToInventory.push({ ...item, codigoItem: code, cantidad: qty, conforme: true });
+      }
+
+      if (cumulativeReceived[code]) {
+        if (!isDamaged && estadoConformidad !== "EnDisputa" && estadoConformidad !== "Rechazado") {
+          cumulativeReceived[code].recibidaConforme += qty;
+          itemsToInventory.push({ ...item, cantidad: qty, conforme: true });
+        } else {
+          cumulativeReceived[code].danadaRechazada += qty;
+        }
+      } else if (!isDamaged) {
+        itemsToInventory.push({ ...item, cantidad: qty, conforme: true });
       }
     });
 

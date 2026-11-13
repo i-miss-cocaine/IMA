@@ -851,3 +851,21 @@
 - **Estado:** TASK-181 completada en código y verificaciones locales ejecutadas por CI; beta pendiente no bloquea cierre.
 - **Siguiente acción:** verificar F18-Task01 y los contratos actuales de recordPurchaseReceipt/manageAssetItem/assignAssetCustody para determinar elegibilidad técnica de TASK-182.
 ===============================================================================
+
+
+===============================================================================
+### C1.709 — IMA-EXEC-20261113-2044Z-01 — F18-Task01 — integridad de recepciones parciales
+- **Continuidad:** C1.708; checkpoint documental d034c86cf85831b23618d8dfc6bb99e7d4014756; HEAD inicial d034c86cf85831b23618d8dfc6bb99e7d4014756; rama NG_beta_0.0.0.1_work; rama base 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **HEAD funcional final:** 5c5d26cf4280c2a6b0880a958cc2cd2ea232ecc3.
+- **Alcance:** resolver F18-Task01, dependencia técnica de TASK-182: control de recepciones parciales, entregas escalonadas y saldos pendientes por partida.
+- **Hallazgos corregidos:** recepción aceptaba partidas ajenas a la orden y podía registrar cantidades conformes por encima de lo autorizado; el alias codigo/id se aceptaba para validar pero no se normalizaba al registrar inventario; estado global Danado no excluía de forma consistente las unidades del inventario.
+- **Implementación:** valida partidas autorizadas (código único y cantidad positiva), exige detalle de recepción, rechaza partidas no autorizadas y cantidades inválidas, acumula recepciones conformes por código y bloquea sobreentregas. Las unidades dañadas/rechazadas quedan registradas, no reducen el saldo pendiente ni ingresan al inventario. Normaliza el código de artículo antes de generar el movimiento.
+- **Concurrencia:** se conserva el lock de la recepción; el contrato prueba lock ocupado y confirma que no cambia la recepción, el inventario ni el estado de la orden.
+- **Archivos:** backend/accounting-service/Code.gs; tests/security/accounting-purchase-receipt-partial.test.js (nuevo); .github/workflows/department-scope-contract.yml; Auditoría/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md; beta_test_Parte_0002.txt; changueslogs.txt; checkpoint e índice.
+- **Verificación:** contrato F18-Task01 PASS en Node.js 24.22.2; Department Scope run 43504297096 SUCCESS; Identity Mapping run 43504296863 SUCCESS; Department Reference Consumers run 43504298124 SUCCESS. Pruebas cubren acumulación parcial/total, sobreentrega, partida desconocida, cantidades dañadas, normalización de código y contención de lock.
+- **CLI local:** NOT RUN; no se ejecutó Node desde checkout local. **Apps Script/Sheets real:** NOT RUN; sin despliegue ni datos institucionales.
+- **Beta:** BETA-FUNC-082 agregado a beta_test_Parte_0002.txt; Pendiente beta.
+- **Commits:** fd47a23c0ebd4b9d206d83be5eadac762aaaf17d; 5c5d26cf4280c2a6b0880a958cc2cd2ea232ecc3.
+- **Estado:** F18-Task01 completada en código y CI; la dependencia técnica indicada por TASK-182 queda satisfecha en el entorno local/CI. La validación de Sheets desplegado permanece separada.
+- **Siguiente tarea elegible:** TASK-182 — integrar la recepción de compras con el registro de activos fijos; verificar contratos de recepción, clasificación capitalizable, serie única, ownership y trazabilidad de orden/proveedor/factura.
+===============================================================================
