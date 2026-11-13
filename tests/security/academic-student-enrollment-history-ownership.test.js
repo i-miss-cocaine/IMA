@@ -130,6 +130,14 @@ const call=(identity,extra)=>context.run(Object.assign({identity},extra||{}));
  matriculaRows.pop();cargoRows.pop();
 }
 {
+ const extendedCharges=cargoRows.map(row=>row.slice());
+ extendedCharges[0].push("ReferenciaCargo");
+ extendedCharges.slice(1).forEach(row=>row.push("REF-"+row[0]));
+ sheets.CargosEstudiante=makeSheet(extendedCharges);
+ const extended=call({authorized:true,userId:"STU-1",role:"Estudiante"});
+ assert.deepEqual(Array.from(extended.data.cargos,row=>row.cargoId),["CRG-1","CRG-2"],
+   "known charge fields remain readable when a compatible optional trailing column is present");
+ sheets.CargosEstudiante=makeSheet(cargoRows);
  sheets.Matriculas=makeSheet([["MatriculaID","UserId"]]);
  assert.equal(call({authorized:true,userId:"STU-1",role:"Estudiante"}).code,"RESOURCE_SCHEMA_INVALID","malformed enrollment schema is rejected");
  sheets.Matriculas=makeSheet(matriculaRows);

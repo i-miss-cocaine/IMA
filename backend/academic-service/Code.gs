@@ -14173,7 +14173,7 @@ function getStudentEnrollmentHistory(payload) {
     if (!sheet) return [];
     const data = sheet.getDataRange().getValues();
     if (!data || !data.length) return [];
-    if (!Array.isArray(data[0]) || data[0].length !== headers.length ||
+    if (!Array.isArray(data[0]) || data[0].length < headers.length ||
         headers.some(function(header, index) {
           return String(data[0][index] || "").trim().toUpperCase() !== header.toUpperCase();
         })) {
