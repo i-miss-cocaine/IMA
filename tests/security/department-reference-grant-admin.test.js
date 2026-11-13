@@ -49,6 +49,7 @@ function makeSheet(rows) {
 const GRANT_HEADERS = ["InstitutionID","GrantID","ResourceType","ResourceID","OwnerDepartmentID","TargetDepartmentID","AllowedFieldsJSON","AllowedDocumentIDsJSON","AuthorizedBy","AuthorizedAt","ValidFrom","ExpiresAt","Status","RevokedAt","RevokedBy"];
 const OWNER_HEADERS = ["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"];
 const SCOPE_HEADERS = ["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID","InstitutionID","MembershipID","ResponsibilityID"];
+const LOG_HEADERS = ["ID","Timestamp","Servicio","Función","Severidad","CódigoError","Mensaje","DatosPayload","RolUsuario"];
 const now = Date.now();
 function ownerRow(institution="I1", type="EXPEDIENTE", id="DOC-1", department="D1") {
   return ["OWN-1",institution,type,id,department,"ACTIVE","U0",new Date(now).toISOString(),new Date(now).toISOString()];
@@ -64,6 +65,8 @@ function makeRuntime(options={}) {
   if (options.owners !== false) sheets.ResourceOwnership = makeSheet(options.ownerRows || [OWNER_HEADERS, ownerRow()]);
   if (options.scopes !== false) sheets.AsignacionesAmbitosRoles = makeSheet(options.scopeRows || [SCOPE_HEADERS, scopeRow()]);
   if (options.grants) sheets.DepartmentReferenceGrants = makeSheet(options.grants);
+  sheets.LogsSistema = makeSheet([LOG_HEADERS]);
+  if (options.auditFailure) sheets.LogsSistema.appendRow = function() { throw new Error("AUDIT_UNAVAILABLE"); };
   const state = {
     sheets, permissions: Object.assign({manageDepartmentReferenceGrants:true,getDepartmentReferenceGrants:true}, options.permissions||{}),
     context: options.context || {status:"success",authorized:true,institutionId:"I1",institutionWide:true,scopes:[{scopeType:"INSTITUCION",scopeValues:["I1"]}]},
@@ -105,6 +108,8 @@ function validPayload(extra={}) {
   assert.equal(r.authorizedBy,"U1");
   assert.equal(h.state.sheets.DepartmentReferenceGrants.snapshot().length,2);
   assert.equal(h.state.sheets.DepartmentReferenceGrants.snapshot()[1][12],"ACTIVE");
+  assert.equal(h.state.sheets.LogsSistema.snapshot().length,3,"authorization and completion audit events are persisted");
+  assert.equal(h.state.sheets.LogsSistema.snapshot()[1][5],"DEPARTMENT_REFERENCE_GRANT_CREATE_AUTHORIZED");
 }
 {
   const h=makeRuntime(), r=h.runtime.createGrant(validPayload());
@@ -120,6 +125,7 @@ function validPayload(extra={}) {
   assert.equal(revoked.status,"success");
   const row=h.state.sheets.DepartmentReferenceGrants.snapshot()[1];
   assert.equal(row[12],"REVOKED"); assert.equal(row[14],"U1");
+  assert.equal(h.state.sheets.LogsSistema.snapshot().length,3,"revocation authorization and completion are persisted");
 }
 {
   const h=makeRuntime({grants:[GRANT_HEADERS,grantRow("I1","DRG-1","REVOKED")]});
@@ -221,6 +227,7 @@ function validPayload(extra={}) {
   assert.equal(r.status,"error");
   assert.equal(r.code,"AUDIT_UNAVAILABLE");
   assert.equal(h.state.sheets.DepartmentReferenceGrants.snapshot().length,1,"only the schema header may be initialized when authorization audit fails");
+  assert.equal(h.state.sheets.LogsSistema.snapshot().length,1,"failed audit must not append a success event");
 }
 {
   const h=makeRuntime({auditFailure:true,grants:[GRANT_HEADERS,grantRow()]});
