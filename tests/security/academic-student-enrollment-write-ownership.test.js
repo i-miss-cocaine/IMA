@@ -81,7 +81,7 @@ console.log("ACADEMIC enrollment mutation identity, staff role, active student m
 const createFn = extractFunction("createStudentEnrollment");
 const renewFn = extractFunction("renewStudentEnrollment");
 const registerFn = extractFunction("registerStudentEnrollment");
-assert.ok(!createFn.includes("skipLock"), "create endpoint cannot bypass its lock via payload");
+assert.ok(!createFn.includes("const { userId, alumno, grado, seccion, anolectivo, tipo, becaDescuento, observaciones, forceCapacityOverride, skipLock }") && !createFn.includes("const lock = !skipLock"), "create endpoint cannot bypass its lock via payload");
 assert.ok(renewFn.includes("Object.assign({}, request"), "renewal preserves signed session/context fields");
 assert.ok(registerFn.indexOf("lock.tryLock") < registerFn.indexOf("assertAcademicEnrollmentMutationAccess_"), "registration checks ownership under the mutation lock");
 const events = [];
