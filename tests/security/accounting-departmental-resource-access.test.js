@@ -402,6 +402,7 @@ assert.equal(laborHistory({sessionToken:"invalid"}).code,"VERIFIED_IDENTITY_REQU
 assert.equal(laborHistory({sessionToken:"staffA",empleadoId:"U-B"}).code,"RESOURCE_NOT_FOUND");
 assert.equal(laborHistory({sessionToken:"staffA",incidenciaId:"INC-B"}).code,"RESOURCE_NOT_FOUND");
 assert.deepEqual(Array.from(laborHistory({sessionToken:"staffA",categoria:"seguridad"}).data.incidencias,r=>r.incidenciaId),["INC-A"]);
+assert.deepEqual(Array.from(laborHistory({sessionToken:"staffA",categoria:"seguridad"}).data.medidasDisciplinarias,r=>r.medidaId),["MED-A"],"category filters must not accidentally suppress measures for authorized employees");
 assert.deepEqual(Array.from(laborHistory({sessionToken:"staffA",incidenciaId:"INC-A"}).data.medidasDisciplinarias,r=>r.medidaId),["MED-A"]);
 const origInc=rows.IncidenciasLaborales.map(r=>r.slice());rows.IncidenciasLaborales.push(rows.IncidenciasLaborales[1].slice());
 assert.deepEqual(Array.from(laborHistory(actor("admin")).data.incidencias,r=>r.incidenciaId),["INC-B"]);
