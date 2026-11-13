@@ -104,8 +104,6 @@ jobs:
         run: node tests/security/accounting-payroll-loan-amortization.test.js
       - name: Run accounting dynamic payroll concept catalog and calculation contract
         run: node tests/security/accounting-payroll-concept-catalog.test.js
-      - name: Run accounting payroll receipt distribution privacy and idempotency contract
-        run: node tests/security/accounting-payroll-receipt-distribution.test.js
       - name: Run accounting payroll receipt distribution privacy and retry contract
         run: node tests/security/accounting-payroll-receipt-distribution.test.js
       - name: Run accounting staffing needs ownership and read-isolation contract
