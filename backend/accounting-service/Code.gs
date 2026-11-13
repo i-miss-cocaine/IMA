@@ -8026,6 +8026,7 @@ function purchaseAssetReceiptContext_(payload,ss) {
   let receiptItems=[];try{receiptItems=typeof receipt[4]==="string"?JSON.parse(receipt[4]||"[]"):(receipt[4]||[]);}catch(_){throw new Error("PURCHASE_RECEIPT_DETAILS_INVALID");}
   if(!Array.isArray(receiptItems))throw new Error("PURCHASE_RECEIPT_DETAILS_INVALID");
   const assetSheet=ss.getSheetByName("ActivosPatrimoniales"),assetRows=assetSheet?assetSheet.getDataRange().getValues():[],headers=assetRows.length?assetRows[0].map(x=>String(x||"").trim()):[],headerIndex=Object.create(null);
+  if(assetRows.length){if(ASSET_BASE_HEADERS_.some((header,index)=>String(headers[index]||"").trim()!==header))throw new Error("ASSET_SCHEMA_MISMATCH");ASSET_ACQUISITION_HEADERS_.forEach((header,index)=>{const existing=String(headers[ASSET_BASE_HEADERS_.length+index]||"").trim();if(existing&&existing!==header)throw new Error("ASSET_SCHEMA_MISMATCH:"+header);});}
   headers.forEach((h,i)=>{headerIndex[h]=i;});
   const registeredByItem=Object.create(null);
   assetRows.slice(1).forEach(row=>{
@@ -9316,6 +9317,7 @@ function performBankReconciliation(payload) {
 // ---------------------------------------------------------------------------
 
 // [TASK-013] [F18-Task02] - Motor de Conciliación Documental de Tres Vías (Three-Way Matching) entre Orden de Compra, Recepción Física y Factura
+// TASK-182: retain adjudicated itemId identity across invoice, receipt and fixed-asset source matching.
 function verifyThreeWayMatch(payload) {
   const { ordenCompraId, facturaProveedor, tolerancias, autorizarDiferencias, motivoAutorizacion, authRole } = payload || {};
   if (!ordenCompraId || !facturaProveedor) {

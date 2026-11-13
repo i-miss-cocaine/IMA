@@ -1256,6 +1256,7 @@ function renderComprasRecepcionesView(container) {
       <td class="p-3">${escapePurchaseAssetHtml(r.estadoConformidad)}</td>
       <td class="p-3">${r.estadoConformidad==="Conforme"?`<button onclick="openReceiptAssetRegistration(${purchaseAssetJsArg(r.recepcionId)})" class="px-2 py-1 rounded bg-indigo-50 text-indigo-700 font-bold">Registrar activos</button>`:"—"}</td>
     </tr>`).join("");
+    if(window.pendingPurchaseReceiptFocus){const target=Array.from(tbody.querySelectorAll("[data-receipt-id]")).find(row=>row.dataset.receiptId===window.pendingPurchaseReceiptFocus);if(target){target.scrollIntoView({behavior:"smooth",block:"center"});window.pendingPurchaseReceiptFocus="";}}
   }).catch(err=>{const tbody=document.getElementById("tbl-compras-recepciones");if(tbody)tbody.innerHTML='<tr><td colspan="6" class="p-4 text-center text-red-500">Error: '+escapePurchaseAssetHtml(err.message)+'</td></tr>';});
 }
 function escapePurchaseAssetHtml(value){return String(value==null?"":value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));}
@@ -1289,7 +1290,7 @@ window.openReceiptAssetRegistration=function(recepcionId){
     document.body.appendChild(modal);
   }).catch(error=>alert("No se pudo consultar la recepción: "+(error.message||error)));
 };
-window.openPurchaseReceiptRecord=function(receiptId){window.pendingPurchaseReceiptFocus=String(receiptId||"");switchComprasSubtab("recepciones");setTimeout(()=>{const row=Array.from(document.querySelectorAll("[data-receipt-id]")).find(item=>item.dataset.receiptId===window.pendingPurchaseReceiptFocus);if(row)row.scrollIntoView({behavior:"smooth",block:"center"});},180);};
+window.openPurchaseReceiptRecord=function(receiptId){window.pendingPurchaseReceiptFocus=String(receiptId||"");switchComprasSubtab("recepciones");};
 window.closeReceiptAssetModal=function(){document.getElementById("receipt-asset-modal")?.remove();};
 window.submitReceiptAssetRegistration=function(event,recepcionId){
   event.preventDefault();const rows=Array.from(document.querySelectorAll("#receipt-asset-form [data-asset-row]")),assets=[];
