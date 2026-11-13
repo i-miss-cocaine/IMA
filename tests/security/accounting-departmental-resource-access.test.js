@@ -556,7 +556,7 @@ assert.equal(context.recordStaffCheckIn({sessionToken:"student",empleadoId:"U-EM
 assert.equal(context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-B",tipoRegistro:"Entrada"}).code,"RESOURCE_NOT_FOUND","employee cannot register attendance for another user");
 assert.equal(rows.DeduccionesAsistencia.length,attendanceWritesBefore,"denied attendance writes must not mutate storage");
 const selfEntry=context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",empleadoNombre:"Empleado A",horaEntradaEsperada:"00:01",tipoRegistro:"Entrada"});
-assert.equal(selfEntry.status,"success","employee can register own attendance");
+assert.equal(selfEntry.status,"success","employee can register own attendance: "+JSON.stringify(selfEntry));
 assert.equal(rows.DeduccionesAsistencia[rows.DeduccionesAsistencia.length-1][2],"U-EMP","attendance owner must be derived from signed identity");
 assert.notEqual(rows.DeduccionesAsistencia[rows.DeduccionesAsistencia.length-1][7],"Tardanza","client-supplied expected time cannot manipulate tardiness; assigned shift is authoritative");
 assert.equal(context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",tipoRegistro:"Entrada"}).code,"ATTENDANCE_ALREADY_RECORDED","duplicate entry must not overwrite the original mark");
