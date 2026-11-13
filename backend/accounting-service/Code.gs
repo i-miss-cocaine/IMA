@@ -5624,66 +5624,152 @@ function getStaffAttendanceLogs(payload) {
   return { status: "success", asistencias: mapped };
 }
 
+function resolveAttendanceCorrectionEmployeeAccess_(payload, ss, targetUserId, requireManager) {
+  const actor = getVerifiedAccountingIdentity_(payload);
+  if (!actor.authorized) return actor;
+  const role = String(actor.role || "").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
+  const self = ["EMPLEADO","TRABAJADOR","PERSONAL"].indexOf(role)!==-1;
+  const manager = ["RECURSOSHUMANOS","ADMINISTRADOR"].indexOf(role)!==-1;
+  if (requireManager ? !manager : (!self && !manager)) return {authorized:false,code:"ROLE_NOT_ALLOWED"};
+  const userId = self ? actor.userId : String(targetUserId || actor.userId || "").trim();
+  if (!userId || (self && targetUserId && String(targetUserId).trim() !== actor.userId)) return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  const employeeSheet = ss.getSheetByName("ExpedientesLaborales");
+  if (!employeeSheet) return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  const values = employeeSheet.getDataRange().getValues();
+  const headers = ["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
+  if (!values.length || !Array.isArray(values[0]) || values[0].length !== headers.length || headers.some((h,i)=>String(values[0][i]||"").trim().toUpperCase()!==h.toUpperCase())) return {authorized:false,code:"RESOURCE_SCHEMA_INVALID"};
+  const rows = values.slice(1).filter(r=>Array.isArray(r)&&r.length===headers.length);
+  const matches = rows.filter(r=>String(r[2]||"").trim()===userId);
+  if (matches.length!==1) return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  const expedienteId=String(matches[0][0]||"").trim();
+  if (!expedienteId || rows.filter(r=>String(r[0]||"").trim()===expedienteId).length!==1 || !["ACTIVO","ACTIVE"].includes(String(matches[0][8]||"").trim().toUpperCase())) return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  if (self) return {authorized:true,actor:actor,userId:userId,expedienteId:expedienteId,accessType:"SELF"};
+  const scope=getVerifiedAccountingDepartmentScope_(payload,ss,actor);
+  if (!scope.authorized) return {authorized:false,code:scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED"};
+  const ownership=assertResourceOwnershipForScope_(ss,scope,"EXPEDIENTE_LABORAL",expedienteId,"WRITE",payload);
+  if (!ownership.authorized) return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  return {authorized:true,actor:actor,userId:userId,expedienteId:expedienteId,departmentId:ownership.departmentId,accessType:ownership.accessType};
+}
+
 function submitAttendanceCorrection(payload) {
-  const { asistenciaId, empleadoId, fechaIncidencia, horaOriginal, horaSolicitada, motivo, evidenciaUrl } = payload || {};
-  if (!empleadoId || !horaSolicitada || !motivo) throw new Error("empleadoId, horaSolicitada y motivo son requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CorreccionesAsistencia");
-  const now = new Date();
-  const corrId = "CORR-" + now.getTime();
-
-  sheet.appendRow([
-    corrId,
-    asistenciaId || "GENERAL",
-    String(empleadoId).trim(),
-    fechaIncidencia || now,
-    horaOriginal || "",
-    horaSolicitada,
-    motivo,
-    evidenciaUrl || "",
-    "Pendiente",
-    "",
-    "Solicitado por el empleado"
-  ]);
-
-  return { status: "success", correccionId: corrId, message: "Solicitud de corrección de asistencia enviada para revisión." };
+  const p=payload||{}, actor=getVerifiedAccountingIdentity_(p);
+  if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+  const role=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
+  const self=["EMPLEADO","TRABAJADOR","PERSONAL"].includes(role);
+  const target=self?actor.userId:String(p.empleadoId||actor.userId||"").trim();
+  if(!target)return {status:"error",code:"RESOURCE_REFERENCE_INVALID",message:"Debe identificarse el empleado."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),pre=resolveAttendanceCorrectionEmployeeAccess_(p,ss,target,false);
+  if(!pre.authorized)return {status:"error",code:pre.code||"RESOURCE_NOT_FOUND",message:"No existe un expediente laboral disponible."};
+  const timePattern=/^(?:[01]\d|2[0-3]):[0-5]\d$/;
+  const safeText=(value,max)=>{let text=String(value||"").trim().slice(0,max);return /^[=+@-]/.test(text)?"'"+text:text;};
+  const requestedTime=String(p.horaSolicitada||"").trim(),reason=safeText(p.motivo,500);
+  if(!timePattern.test(requestedTime)||!reason)return {status:"error",code:"ATTENDANCE_CORRECTION_FIELDS_INVALID",message:"La hora solicitada y el motivo son obligatorios."};
+  const evidence=String(p.evidenciaUrl||"").trim();
+  if(evidence&&!/^https:\/\/(?:drive\.google\.com|docs\.google\.com|lh3\.googleusercontent\.com)\//i.test(evidence))return {status:"error",code:"EVIDENCE_URL_INVALID",message:"La evidencia debe usar un enlace HTTPS autorizado."};
+  const normalizeDate=value=>{
+    if(value instanceof Date)return isNaN(value.getTime())?"":value.toISOString().slice(0,10);
+    const raw=String(value||"").trim();if(!raw)return "";
+    if(/^\d{4}-\d{2}-\d{2}$/.test(raw)){const d=new Date(raw+"T00:00:00.000Z");return !isNaN(d.getTime())&&d.toISOString().slice(0,10)===raw?raw:"";}
+    const d=new Date(raw);return isNaN(d.getTime())?"":d.toISOString().slice(0,10);
+  };
+  const attendanceId=String(p.asistenciaId||"GENERAL").trim()||"GENERAL";
+  let incidentDate=normalizeDate(p.fechaIncidencia);
+  if(p.fechaIncidencia&&!incidentDate)return {status:"error",code:"ATTENDANCE_DATE_INVALID",message:"La fecha de incidencia no es válida."};
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La operación está siendo procesada. Intente nuevamente."};
+  try{
+    const access=resolveAttendanceCorrectionEmployeeAccess_(Object.assign({},p),ss,target,false);
+    if(!access.authorized)return {status:"error",code:access.code||"RESOURCE_NOT_FOUND",message:"No existe un expediente laboral disponible."};
+    let originalTime=String(p.horaOriginal||"").trim();
+    if(attendanceId!=="GENERAL"){
+      const attendanceSheet=ss.getSheetByName("DeduccionesAsistencia");
+      if(!attendanceSheet)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe el registro de asistencia."};
+      const attendanceData=attendanceSheet.getDataRange().getValues();
+      const attendanceHeaders=["AsistenciaID","Fecha","EmpleadoId","EmpleadoNombre","HoraEntrada","HoraSalida","MinutosTardanza","EstadoAsistencia","Observaciones"];
+      if(!attendanceData.length||!Array.isArray(attendanceData[0])||attendanceData[0].length!==attendanceHeaders.length||attendanceHeaders.some((h,i)=>String(attendanceData[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura del historial de asistencia no es válida."};
+      const matches=attendanceData.slice(1).map((row,index)=>({row:row,index:index+1})).filter(x=>String(x.row[0]||"").trim()===attendanceId);
+      if(matches.length!==1||String(matches[0].row[2]||"").trim()!==target)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe el registro de asistencia."};
+      const row=matches[0].row,entry=String(row[4]||"").trim(),exit=String(row[5]||"").trim();
+      if(!originalTime)originalTime=entry||exit;
+      if(!timePattern.test(originalTime)||((originalTime!==entry)&&(originalTime!==exit)))return {status:"error",code:"ATTENDANCE_RECORD_CHANGED",message:"La hora original no coincide con el registro actual."};
+      if(!incidentDate)incidentDate=normalizeDate(row[1]);
+      if(!incidentDate||incidentDate!==normalizeDate(row[1]))return {status:"error",code:"ATTENDANCE_DATE_MISMATCH",message:"La fecha no coincide con el registro de asistencia."};
+    }else if(!incidentDate)incidentDate=new Date().toISOString().slice(0,10);
+    const correctionHeaders=["CorreccionID","AsistenciaID","EmpleadoId","FechaIncidencia","HoraOriginal","HoraSolicitada","Motivo","EvidenciaUrl","EstadoAprobacion","AprobadoPor","Observaciones"];
+    const correctionSheet=ss.getSheetByName("CorreccionesAsistencia")||getOrCreateSheet(ss,"CorreccionesAsistencia");
+    let correctionData=correctionSheet.getDataRange().getValues();
+    if(!correctionData.length||!Array.isArray(correctionData[0])||!correctionData[0].length){correctionSheet.appendRow(correctionHeaders);correctionData=[correctionHeaders];}
+    if(correctionData[0].length!==correctionHeaders.length||correctionHeaders.some((h,i)=>String(correctionData[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de correcciones no es válida."};
+    if(correctionData.slice(1).some(r=>String(r[1]||"").trim()===attendanceId&&String(r[2]||"").trim()===target&&String(r[8]||"").trim().toUpperCase()==="PENDIENTE"))return {status:"error",code:"ATTENDANCE_CORRECTION_ALREADY_PENDING",message:"Ya existe una corrección pendiente para este registro."};
+    const id="CORR-"+Utilities.getUuid();
+    if(correctionData.slice(1).some(r=>String(r[0]||"").trim()===id))return {status:"error",code:"ATTENDANCE_CORRECTION_ID_COLLISION",message:"No fue posible registrar la corrección."};
+    correctionSheet.appendRow([id,attendanceId,target,incidentDate,originalTime,requestedTime,reason,evidence,"Pendiente","",""]);
+    return {status:"success",correccionId:id,message:"Solicitud de corrección de asistencia enviada para revisión."};
+  }catch(error){return {status:"error",code:"ATTENDANCE_CORRECTION_WRITE_FAILED",message:"No fue posible registrar la corrección."};}
+  finally{lock.releaseLock();}
 }
 
-// [F10-Task17] [P2] - Aprobar/Rechazar correcciones de asistencia laboral y sincronizar registros
 function reviewAttendanceCorrection(payload) {
-  const { correccionId, nuevoEstado, observaciones, authRole } = payload || {};
-  if (!correccionId || !nuevoEstado) throw new Error("correccionId y nuevoEstado son requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const corrSheet = getOrCreateSheet(ss, "CorreccionesAsistencia");
-  const corrData = corrSheet.getDataRange().getValues();
-
-  const idx = corrData.findIndex(r => String(r[0]).trim() === String(correccionId).trim());
-  if (idx === -1) throw new Error("Solicitud de corrección no encontrada.");
-
-  corrSheet.getRange(idx + 1, 9).setValue(nuevoEstado);
-  corrSheet.getRange(idx + 1, 10).setValue(authRole || "RecursosHumanos");
-  if (observaciones) corrSheet.getRange(idx + 1, 11).setValue(observaciones);
-
-  if (nuevoEstado === "Aprobado") {
-    const asistenciaId = corrData[idx][1];
-    const horaSolicitada = corrData[idx][5];
-
-    if (asistenciaId && asistenciaId !== "GENERAL") {
-      const attSheet = getOrCreateSheet(ss, "DeduccionesAsistencia");
-      const attData = attSheet.getDataRange().getValues();
-      const attIdx = attData.findIndex(r => String(r[0]).trim() === String(asistenciaId).trim());
-      if (attIdx !== -1) {
-        attSheet.getRange(attIdx + 1, 5).setValue(horaSolicitada);
-        attSheet.getRange(attIdx + 1, 8).setValue("Corregido");
-      }
+  const p=payload||{},actor=getVerifiedAccountingIdentity_(p);
+  if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+  const role=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
+  if(!["RECURSOSHUMANOS","ADMINISTRADOR"].includes(role))return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+  const correctionId=String(p.correccionId||"").trim(),newStatus=String(p.nuevoEstado||"").trim().toUpperCase();
+  if(!correctionId||!["APROBADO","RECHAZADO"].includes(newStatus))return {status:"error",code:"ATTENDANCE_CORRECTION_REVIEW_INVALID",message:"La solicitud y el estado de revisión son obligatorios."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),correctionSheet=ss.getSheetByName("CorreccionesAsistencia");
+  if(!correctionSheet)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Solicitud de corrección no disponible."};
+  const headers=["CorreccionID","AsistenciaID","EmpleadoId","FechaIncidencia","HoraOriginal","HoraSolicitada","Motivo","EvidenciaUrl","EstadoAprobacion","AprobadoPor","Observaciones"];
+  const initial=correctionSheet.getDataRange().getValues();
+  if(!initial.length||!Array.isArray(initial[0])||initial[0].length!==headers.length||headers.some((h,i)=>String(initial[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de correcciones no es válida."};
+  const matches=initial.slice(1).map((row,index)=>({row:row,index:index+1})).filter(x=>String(x.row[0]||"").trim()===correctionId);
+  if(matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Solicitud de corrección no disponible."};
+  const target=String(matches[0].row[2]||"").trim(),pre=resolveAttendanceCorrectionEmployeeAccess_(p,ss,target,true);
+  if(!pre.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Solicitud de corrección no disponible."};
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La operación está siendo procesada. Intente nuevamente."};
+  try{
+    const access=resolveAttendanceCorrectionEmployeeAccess_(Object.assign({},p),ss,target,true);
+    if(!access.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Solicitud de corrección no disponible."};
+    const data=correctionSheet.getDataRange().getValues();
+    const current=data.slice(1).map((row,index)=>({row:row,index:index+1})).filter(x=>String(x.row[0]||"").trim()===correctionId);
+    if(current.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Solicitud de corrección no disponible."};
+    const correction=current[0].row.slice(),rowIndex=current[0].index;
+    if(String(correction[8]||"").trim().toUpperCase()!=="PENDIENTE")return {status:"error",code:"ATTENDANCE_CORRECTION_ALREADY_REVIEWED",message:"La solicitud ya fue revisada."};
+    const safeText=value=>{let text=String(value||"").trim().slice(0,500);return /^[=+@-]/.test(text)?"'"+text:text;};
+    const comments=p.observaciones==null?String(correction[10]||""):safeText(p.observaciones);
+    const updatedCorrection=correction.slice();updatedCorrection[8]=newStatus==="APROBADO"?"Aprobado":"Rechazado";updatedCorrection[9]=actor.userId;updatedCorrection[10]=comments;
+    let attendanceSheet=null,attendanceRow=null,attendanceIndex=-1,updatedAttendance=null;
+    const attendanceId=String(correction[1]||"").trim();
+    if(newStatus==="APROBADO"&&attendanceId&&attendanceId!=="GENERAL"){
+      attendanceSheet=ss.getSheetByName("DeduccionesAsistencia");
+      if(!attendanceSheet)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Registro de asistencia no disponible."};
+      const values=attendanceSheet.getDataRange().getValues(),ah=["AsistenciaID","Fecha","EmpleadoId","EmpleadoNombre","HoraEntrada","HoraSalida","MinutosTardanza","EstadoAsistencia","Observaciones"];
+      if(!values.length||!Array.isArray(values[0])||values[0].length!==ah.length||ah.some((h,i)=>String(values[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura del historial de asistencia no es válida."};
+      const found=values.slice(1).map((r,i)=>({row:r,index:i+1})).filter(x=>String(x.row[0]||"").trim()===attendanceId);
+      if(found.length!==1||String(found[0].row[2]||"").trim()!==target)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Registro de asistencia no disponible."};
+      attendanceRow=found[0].row.slice();attendanceIndex=found[0].index;
+      const original=String(correction[4]||"").trim(),entry=String(attendanceRow[4]||"").trim(),exit=String(attendanceRow[5]||"").trim();
+      const column=original===entry?4:(original===exit?5:-1);
+      if(column<0)return {status:"error",code:"ATTENDANCE_RECORD_CHANGED",message:"La hora original ya cambió; no se aplicó la corrección."};
+      if(!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(correction[5]||"").trim()))return {status:"error",code:"ATTENDANCE_CORRECTION_TIME_INVALID",message:"La hora solicitada no es válida."};
+      updatedAttendance=attendanceRow.slice();updatedAttendance[column]=correction[5];updatedAttendance[7]="Corregido";
+      const note=safeText("Corrección aprobada "+correctionId);updatedAttendance[8]=[String(updatedAttendance[8]||"").trim(),note].filter(Boolean).join(" | ").slice(0,500);
     }
-  }
-
-  return { status: "success", correccionId: correccionId, estado: nuevoEstado, message: `Corrección de asistencia ${nuevoEstado}.` };
+    let attendanceWritten=false;
+    try{
+      if(attendanceSheet){attendanceSheet.getRange(attendanceIndex+1,1,1,updatedAttendance.length).setValues([updatedAttendance]);attendanceWritten=true;}
+      correctionSheet.getRange(rowIndex+1,1,1,updatedCorrection.length).setValues([updatedCorrection]);
+    }catch(error){
+      if(attendanceWritten){
+        try{attendanceSheet.getRange(attendanceIndex+1,1,1,attendanceRow.length).setValues([attendanceRow]);}
+        catch(rollbackError){return {status:"error",code:"ATTENDANCE_CORRECTION_ROLLBACK_FAILED",message:"Falló la actualización y no pudo confirmarse la reversión del registro de asistencia."};}
+      }
+      return {status:"error",code:"ATTENDANCE_CORRECTION_WRITE_FAILED",message:"No fue posible completar la revisión; no se confirmó la operación."};
+    }
+    return {status:"success",correccionId:correctionId,estado:updatedCorrection[8],message:"Corrección de asistencia "+updatedCorrection[8].toLowerCase()+"."};
+  }catch(error){return {status:"error",code:"ATTENDANCE_CORRECTION_REVIEW_FAILED",message:"No fue posible revisar la solicitud."};}
+  finally{lock.releaseLock();}
 }
-
 function recordStaffAttendance(payload) {
   return recordStaffCheckIn(payload);
 }

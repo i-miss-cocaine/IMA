@@ -125,3 +125,14 @@
 - Evidencia: identidades sintéticas, scopes/ownership, IDs anonimizados y resultados por colección; no almacenar tokens ni PII.
 - Estado: Pendiente beta; sin despliegue ni acceso a Sheets reales.
 ===============================================================================
+
+===============================================================================
+### BETA-FUNC-074 — Correcciones de asistencia
+- **Módulo/roles:** ACCOUNTING / Empleado, Recursos Humanos y Administrador.
+- **Objetivo:** validar solicitud propia, revisión con scope/ownership WRITE, integridad del registro de asistencia y trazabilidad del revisor.
+- **Precondiciones:** entorno beta aislado, expedientes activos en dos departamentos, ownership y scopes sintéticos, CorreccionesAsistencia y DeduccionesAsistencia canónicas.
+- **Pasos:** probar suplantación de empleado, solicitudes cruzadas, evidencia no HTTPS, corrección de entrada/salida, fecha/hora desactualizada, revisión duplicada, revisor fuera de scope, lock/reentrada y fallo parcial con rollback.
+- **Resultado esperado:** ninguna solicitud ni revisión sin identidad y ownership; no hay doble revisión ni actualización parcial; actor reviewer procede de sesión firmada.
+- **Evidencia:** IDs sintéticos, respuestas, snapshots anonimizados y rollback. Sin tokens ni PII.
+- **Estado:** Pendiente beta; no desplegado en Apps Script/Sheets real.
+===============================================================================

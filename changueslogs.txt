@@ -3462,3 +3462,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Roles allowlist, UserID firmado y ownership/scope para terceros; colecciones filtradas por propietario e ID único.
 - UI con escape HTML y validación HTTPS/host de certificados.
 - Contrato Node agregado al workflow; Department Scope 43460979338, Identity Mapping 43460979306 y Department Reference Consumers 43460979304 SUCCESS (Node 24.22.2); BETA-FUNC-073 Pendiente beta.
+
+
+[2026-11-13 16:25 UTC] C1.701 — TASK-153 / AUD-NG-386 — ACCOUNTING correcciones de asistencia
+- Se protegieron submitAttendanceCorrection y reviewAttendanceCorrection con identidad firmada, roles, expediente único/activo, scope y ResourceOwnership WRITE.
+- Se añadieron validación de asistencia/fecha/hora/evidencia, bloqueo de solicitudes pendientes duplicadas, revisión de transición única, reviewer firmado, ScriptLock y rollback compensatorio.
+- Contrato Node agregado al workflow Department Scope; BETA-FUNC-074 Pendiente beta.

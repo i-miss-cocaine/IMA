@@ -41,6 +41,7 @@ on:
       - tests/security/accounting-staffing-needs-ownership.test.js
       - tests/security/accounting-staff-attendance-ownership.test.js
       - tests/security/accounting-employee-self-service-portal.test.js
+      - tests/security/accounting-attendance-correction-ownership.test.js
       - tests/security/accounting-departmental-import-scope.test.js
       - tests/security/user-migrated-resource-ownership-contract.test.js
       - tests/security/resource-ownership-abac.test.js
@@ -91,6 +92,8 @@ jobs:
         run: node tests/security/accounting-staff-attendance-ownership.test.js
       - name: Run accounting employee self-service portal ownership and XSS contract
         run: node tests/security/accounting-employee-self-service-portal.test.js
+      - name: Run accounting attendance correction ownership, integrity and concurrency contract
+        run: node tests/security/accounting-attendance-correction-ownership.test.js
       - name: Run accounting staffing needs ownership and read-isolation contract
         run: node tests/security/accounting-staffing-needs-ownership.test.js
       - name: Run accounting work shift and substitution ownership contract
