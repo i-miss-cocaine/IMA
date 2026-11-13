@@ -15,7 +15,7 @@ const cats=ctx.getCatalogCategories({});assert.ok(cats.categorias.some(x=>x.nomb
 const units=ctx.getCatalogUnits({});assert.ok(units.unidades.some(x=>x.nombre==="Unidad"));
 ctx.manageCatalogUnit({nombre:"Caja de 12",unidadBase:"Unidad",factorConversionBase:12,tipo:"Cantidad"});
 const created=ctx.manageCatalogItem({itemCodigo:"MAT-001",itemNombre:"Papel bond",categoria:"Papelería y oficina",unidadMedida:"Caja de 12",stockMinimo:1});assert.equal(created.status,"success");assert.ok(ctx.getCatalogItems({query:"papel"}).sugerencias.some(x=>x.itemCodigo==="MAT-001"),"partial name searches return duplicate suggestions");
-assert.throws(()=>ctx.manageCatalogItem({itemCodigo:"mat 001",itemNombre:"Papel bond duplicado",categoria:"Papelería y oficina",unidadMedida:"Unidad"}),/CATALOG_ITEM_CODE_DUPLICATE/);
+const catalogRowsBefore=rows.CatalogoArticulos.length,normalizedUpdate=ctx.manageCatalogItem({itemCodigo:"mat 001",itemNombre:"Papel bond",categoria:"Papelería y oficina",unidadMedida:"Caja de 12"});assert.equal(normalizedUpdate.status,"success");assert.equal(normalizedUpdate.itemId,created.itemId);assert.equal(rows.CatalogoArticulos.length,catalogRowsBefore);
 assert.throws(()=>ctx.manageCatalogItem({itemCodigo:"MAT-002",itemNombre:"Papel bond",categoria:"Papelería y oficina",unidadMedida:"Unidad"}),/CATALOG_ITEM_NAME_DUPLICATE/);
 const move=ctx.recordInventoryMovement({itemCodigo:"MAT-001",tipoMovimiento:"Entrada",cantidad:2,unidadMedida:"Caja de 12",ubicacionResponsable:"Bodega A"});assert.equal(move.cantidadBase,24);assert.equal(move.stockNuevoUbicacion,24);
 const out=ctx.recordInventoryMovement({itemCodigo:"MAT-001",tipoMovimiento:"Salida",cantidad:1,unidadMedida:"Unidad",ubicacionResponsable:"Bodega A"});assert.equal(out.stockNuevoUbicacion,23);
