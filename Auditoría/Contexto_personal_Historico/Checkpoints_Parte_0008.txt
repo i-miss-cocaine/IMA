@@ -159,3 +159,16 @@
 - **Beta:** BETA-FUNC-045 Pendiente beta.
 - **Estado:** C1.667 Completada para el subalcance; TASK-153 / AUD-NG-386 continúa En ejecución. Siguiente callsite elegible: revisar consultas de préstamos/anticipos o asistencia, priorizando exposición de información salarial y ownership.
 ===============================================================================
+
+
+### C1.668 — IMA-EXEC-20261112-1754Z-03 — consultas de anticipos/préstamos y amortización (ACCOUNTING)
+- **HEAD inicial:** b1af3cf4a32bdb347a4d001724d1809010931f19. **HEAD funcional previo al cierre documental:** f7fe22b8daeb4522e49074f639c930a4d7425532. **Rama:** NG_beta_0.0.0.1_work. **Base:** 44d9891132332e692dbe2ba8602b41f50a508a59, sin escrituras.
+- **Tarea/subalcance:** TASK-153 / AUD-NG-388; getEmployeeLoansAdvances y getLoanAmortizationSchedule.
+- **Hallazgo:** el listado aceptaba empleadoId/estadoAprobacion del cliente sin identidad ni ownership; la lectura usaba getOrCreateSheet. La amortización llamaba al listado sin conservar token/actor, abriendo un bypass de autorización indirecto.
+- **Implementación:** sesión firmada; Empleado limitado al UserID firmado; RecursosHumanos limitado a expedientes únicos con ResourceOwnership y ámbito verificado; Administrador con ámbito institucional y ownership. Los filtros no conceden permisos. IDs de préstamo duplicados y mappings UserID↔ExpedienteID ambiguos fail-closed. La amortización propaga payload/token al lector protegido y exige una única coincidencia. Encabezados exactos, anti-enumeración RESOURCE_NOT_FOUND, lectura sin creación de hojas y respuesta status/solicitudes preservada. Se preserva lista vacía para empleados sin solicitudes.
+- **Archivos funcionales:** backend/accounting-service/Code.gs; tests/security/accounting-departmental-resource-access.test.js. **Registros:** beta_test.txt; Auditoria.txt; changueslogs.txt; Plan Maestro; checkpoint e índice.
+- **Commits funcionales/pruebas:** 2ada5e2c19c7d6ee45de11e854a8be3d9e7ac02c; 09efea0ac39df9b6a4a100f75d238c01e58398ac; 0a566c58825abce72190c34f89a7f31922f52459; 73187ceaa314538bdc6dfc7aecf1d47f3cc24b67; 7b91403ffe31d8dd115015ff0307c3ae41d136b4; 25376e15194dfec6c322ae3c1f93204ff73758ee; 9445598c2330be854e7d1c937fc09cdf6c448ee8; f7fe22b8daeb4522e49074f639c930a4d7425532.
+- **Verificación local/aislada:** compilación sintáctica V8 con new Function(Code.gs) y new Function(test) PASS. Department Scope Contract run 43351706517: ACCOUNTING departmental resource access PASS; los cuatro contratos previos (Department Scope, Internal Responsibility RBAC, ACCOUNTING import, USER migrated ownership) PASS. Workflow global falla posteriormente en User Role Membership contract línea 119: verifySessionToken(foreignLegacy) devuelve null y el test accede a .role; fallo heredado observado antes de esta iteración y ajeno a ACCOUNTING. Pasos posteriores SKIPPED. Node.js 24 runner aislado, sin despliegue.
+- **Beta:** BETA-FUNC-046 Pendiente beta; Apps Script/Sheets real NOT RUN; no se usaron datos reales.
+- **Estado:** C1.668 Completada como subalcance; TASK-153 / AUD-NG-386 continúa En ejecución. **Siguiente callsite candidato:** getStaffAttendanceLogs, sujeto a verificar requisitos y dependencias en el Plan Maestro/backlog.
+===============================================================================

@@ -2742,3 +2742,14 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Verificación:** Department Scope Contract run 43350422517, paso ACCOUNTING departmental resource access PASS con el contrato ampliado. Los pasos previos Department Scope, Internal Responsibility RBAC, ACCOUNTING import y USER migrated ownership PASS. Workflow global falla después en User Role Membership contract línea 119 (foreignLegacy nulo), fallo heredado no introducido por C1.667; pasos posteriores SKIPPED. Node.js 24 runner aislado, sin despliegue.
 - **Beta:** BETA-FUNC-045 Pendiente beta; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+## AUD-NG-388 — ACCOUNTING: getEmployeeLoansAdvances / getLoanAmortizationSchedule (C1.668)
+- **Severidad:** ALTA — consulta de anticipos, préstamos, montos aprobados, cuotas y saldos mediante EmpleadoId/PrestamoID del cliente sin identidad firmada ni ownership; la lectura utilizaba getOrCreateSheet.
+- **Corrección:** identidad de sesión firmada y allowlist de Empleado/RecursosHumanos/Administrador. Autoservicio limitado al UserID firmado; RecursosHumanos consulta solo expedientes con ResourceOwnership y ámbito departamental/institucional verificado; Administrador conserva ámbito institucional con ownership único. Los filtros por empleado, estado y PrestamoID no conceden acceso.
+- **Amortización:** getLoanAmortizationSchedule propaga la sesión original al lector protegido y exige exactamente un préstamo visible; no puede resolver IDs duplicados ni recursos ajenos.
+- **Integridad/compatibilidad:** encabezados exactos; mapeo único UserID↔ExpedienteID; PrestamoID duplicados y mappings ambiguos excluidos; consulta específica ajena RESOURCE_NOT_FOUND; hoja ausente devuelve lista vacía sin crearla; se preservan status/solicitudes y campos existentes.
+- **Verificación:** Department Scope Contract run 43351706517, paso ACCOUNTING departmental resource access PASS; Department Scope, Internal Responsibility RBAC, ACCOUNTING import y USER migrated ownership también PASS. Workflow global falla después en User Role Membership contract línea 119 (foreignLegacy nulo al acceder a .role), fallo heredado observado antes de C1.668; pasos posteriores SKIPPED. Node.js 24 runner aislado. Parseo V8 de Code.gs y test PASS.
+- **Beta:** BETA-FUNC-046 Pendiente beta; Apps Script/Sheets real NOT RUN.
+===============================================================================

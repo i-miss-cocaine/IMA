@@ -5200,3 +5200,13 @@ La revisión de requisitos originales confirma cobertura de:
 - Department Scope Contract run 43350422517: contrato ACCOUNTING departmental resource access PASS con C1.667; Department Scope, Internal Responsibility RBAC, ACCOUNTING import y USER migrated ownership también PASS. Workflow global falla después en User Role Membership contract línea 119 (foreignLegacy nulo), fallo heredado previo y ajeno; pasos posteriores SKIPPED.
 - Node.js 24 runner aislado, sin despliegue; Apps Script/Sheets real NOT RUN; BETA-FUNC-045 Pendiente beta.
 - **Estado:** C1.667 completada para este callsite; TASK-153 / AUD-NG-386 continúa En ejecución por otras superficies.
+
+
+## 10.104 TASK-153 / AUD-NG-388 — consulta de anticipos/préstamos y amortización ACCOUNTING (C1.668)
+
+- `getEmployeeLoansAdvances` exige identidad de sesión firmada y limita los roles a Empleado, RecursosHumanos y Administrador. Empleado consulta solo filas asociadas a su UserID firmado; RecursosHumanos queda limitado por expediente laboral único, ResourceOwnership y ámbito departamental/institucional verificado; Administrador conserva el ámbito institucional, sin omitir ownership.
+- Los filtros `empleadoId`, `estadoAprobacion` y `prestamoId` solo reducen el conjunto ya autorizado. Se excluyen PrestamoID duplicados y mappings UserID↔ExpedienteID ambiguos. Consultas específicas ajenas responden RESOURCE_NOT_FOUND.
+- `getLoanAmortizationSchedule` conserva el payload firmado y reutiliza el lector protegido; exige una coincidencia única y propaga errores de autorización/anti-enumeración. Las lecturas usan `getSheetByName`, encabezados exactos y no crean hojas. Se conserva `status/solicitudes` y la forma de la tabla de amortización.
+- Verificación: parseo V8 de Code.gs y contrato PASS; Department Scope Contract run 43351706517 confirma ACCOUNTING departmental resource access PASS, además de Department Scope, Internal Responsibility RBAC, ACCOUNTING import y USER migrated ownership PASS. El workflow global falla después en User Role Membership contract línea 119 (foreignLegacy nulo), fallo heredado y no atribuible a C1.668. Apps Script/Sheets real NOT RUN.
+- BETA-FUNC-046 Pendiente beta. **Estado:** C1.668 completada para estas lecturas; TASK-153 / AUD-NG-386 permanece En ejecución por otras superficies.
+- **Siguiente acción:** revisar el siguiente callsite elegible de consulta de asistencia ACCOUNTING, comenzando por `getStaffAttendanceLogs`, y verificar su prioridad/dependencias antes de modificar.
