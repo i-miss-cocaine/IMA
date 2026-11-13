@@ -62,7 +62,7 @@ const journalCount=rows.AsientosContables.length,kardexCount=rows.InventariosKar
 assert.throws(()=>ctx.deliverMaterialRequisition({solicitudMatId:request.solicitudMatId}),/ya ha sido entregada/);
 assert.equal(rows.AsientosContables.length,journalCount,"retries must not duplicate journal entries");
 assert.equal(rows.InventariosKardex.length,kardexCount,"retries must not duplicate stock movements");
-ctx.recordInventoryMovement({itemCodigo:"MAT-001",tipoMovimiento:"Entrada",cantidad:5,unidadMedida:"Unidad",ubicacionResponsable:"Laboratorio"});
+ctx.recordInventoryMovement({itemCodigo:"MAT-001",tipoMovimiento:"Entrada",cantidad:5,unidadMedida:"Unidad",ubicacionResponsable:"Bodega General"});
 const assignedRequest=ctx.createMaterialRequisition({departamento:"Laboratorio",centroCosto:"CC-LAB-02",modoReconocimiento:"ASIGNADO",articulosJSON:[{itemCodigo:"MAT-001",unidadMedida:"Unidad",cantidad:1}]});
 const assigned=ctx.deliverMaterialRequisition({solicitudMatId:assignedRequest.solicitudMatId});
 const assignedLines=JSON.parse(rows.AsientosContables.at(-1)[5]);
