@@ -65,7 +65,7 @@ function makeRuntime(options = {}) {
     helperSource+"\n"+readerSource+"\nthis.read=getStudentDocuments;",context);
   return{context,calls};
 }
-function request(overrides={}){return Object.assign({expedienteId:"EXP-1",sessionToken:"signed-session-token",activeDepartmentId:"DEP-A",
+function request(overrides={}){return Object.assign({expedienteId:"exp-1",sessionToken:"signed-session-token",activeDepartmentId:"DEP-A",
   referenceRequestedFields:defaultFields.slice(),referenceDocumentIds:defaultDocs.slice()},overrides);}
 {
  const h=makeRuntime({referenceMode:true,expectedActiveDepartmentId:"DEP-A"}),r=h.context.read(request());
