@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.699**
-- Última sesión: `IMA-EXEC-20261113-1558Z-01`
+- Último checkpoint: **C1.700**
+- Última sesión: `IMA-EXEC-20261113-1615Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.699: **145155**
+- Caracteres del archivo activo tras C1.700: **148032**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -747,3 +747,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.697 | IMA-EXEC-20261113-1525Z-01 | Turnos/sustituciones ACCOUNTING; CI 43452526608 SUCCESS; BETA-FUNC-070 Pendiente | TASK-153/AUD-NG-386 | Checkpoints_Parte_0008.txt C1.697 | C1.696 | c3581d8/3110d75 |
 | C1.698 | IMA-EXEC-20261113-1540Z-01 | ACCOUNTING necesidades de personal; Department Scope 43454938151 SUCCESS; BETA-FUNC-071 Pendiente | TASK-153/AUD-NG-386 | Checkpoints_Parte_0008.txt C1.698 | sección final | C1.697 | commits ca70dc8/3a26440 |
 | C1.699 | IMA-EXEC-20261113-1558Z-01 | ACCOUNTING asistencia; Department Scope 43457958664 SUCCESS; BETA-FUNC-072 Pendiente | TASK-153/AUD-NG-386 | Checkpoints_Parte_0008.txt C1.699 | sección final | C1.698 | commits 6496fee/a15c68e/a236c00/80c22ae/bc25ec1 |
+
+| C1.700 | IMA-EXEC-20261113-1615Z-01 | Portal de autoservicio laboral aislado; Department Scope 43460979338 SUCCESS; BETA-FUNC-073 Pendiente beta | TASK-153 / AUD-NG-386 — portal y colecciones vinculadas | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.700 | sección final | C1.699 | implementación ab9912d/ac230615; checkpoint por confirmar |

@@ -5453,4 +5453,4 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Esquema canónico y relación UserID/ExpedienteID única; colecciones filtradas por ExpedienteID o UserID según su contrato, excluyendo IDs vacíos/duplicados y filas malformadas.
 - La UI escapa valores dinámicos y limita certificados a HTTPS en dominios Drive permitidos, con rel=noopener noreferrer.
 - Contrato Node para identidad, IDOR, roles, scope, colecciones, esquemas y XSS integrado al workflow Department Scope.
-- BETA-FUNC-073 Pendiente beta; TASK-153/AUD-NG-386 permanece En ejecución.
+- Department Scope 43460979338, Identity Mapping 43460979306 y Department Reference Consumers 43460979304 SUCCESS (Node 24.22.2). BETA-FUNC-073 Pendiente beta; TASK-153/AUD-NG-386 permanece En ejecución.

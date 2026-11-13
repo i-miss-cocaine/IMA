@@ -696,3 +696,19 @@
 - **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 continúa En ejecución por otras rutas.
 - **Siguiente tarea elegible:** revisar getEmployeeSelfServicePortal y los vínculos entre expediente, contratos, vacaciones, préstamos, turnos y capacitación, verificando que cada colección vinculada permanezca dentro de la institución/expediente autorizado.
 ===============================================================================
+
+
+===============================================================================
+### C1.700 — IMA-EXEC-20261113-1615Z-01 — TASK-153 / AUD-NG-386 — portal de autoservicio laboral
+- **Continuidad:** checkpoint anterior C1.699; HEAD inicial 1fff31ef09223a45226ab9e6624ead0a95b807e5; HEAD funcional final ab9912d9574c459bf216c9a955d07dca3c771b0b y corrección de compatibilidad ac230615b26067a075d32dd6345361867ade73e5; rama exclusiva NG_beta_0.0.0.1_work. Rama base sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Hallazgos:** el portal aceptaba targetUserId en roles no-autoservicio sin allowlist específica; no excluía IDs duplicados/filas malformadas de colecciones vinculadas. El consumidor HR interpolaba valores del servidor en innerHTML y permitía enlaces de certificado sin validación HTTPS/host.
+- **Implementación:** allowlist de roles de autoservicio y gestión; para autoservicio se ignoran los campos de destino del cliente y prevalece el UserID firmado (compatibilidad conservada); las consultas de terceros requieren assertEmployeeExpedienteScopeAccess_ y scope/ownership. Se valida esquema canónico y unicidad UserID/ExpedienteID.
+- **Integridad:** contratos/vacaciones se filtran por ExpedienteID; préstamos/turnos/capacitaciones por UserID; IDs vacíos/duplicados y filas de longitud incorrecta se excluyen; esquemas inválidos fallan cerrados.
+- **UI:** todos los valores dinámicos se escapan antes de interpolar HTML; certificados limitados a HTTPS en drive.google.com, docs.google.com o lh3.googleusercontent.com; rel=noopener noreferrer.
+- **Archivos funcionales:** backend/accounting-service/Code.gs; dashboard-recursos-humanos.html; tests/security/accounting-employee-self-service-portal.test.js; .github/workflows/department-scope-contract.yml; beta_test_Parte_0002.txt; Plan Maestro; changueslogs.txt.
+- **Pruebas CI finales:** Department Scope run 43460979338 SUCCESS (Node.js 24.22.2; contrato nuevo, regresión ACCOUNTING, demás contratos aplicables y syntax-check de seis servicios Apps Script PASS); Identity Mapping run 43460979306 SUCCESS; Department Reference Consumers run 43460979304 SUCCESS. El run 43460700332 detectó una incompatibilidad con el contrato existente de autoservicio que esperaba ignorar targetUserId; corregida en ac230615 y revalidada en el run final.
+- **CLI local:** NOT RUN; no hubo checkout local. **Apps Script/Sheets real:** NOT RUN; sin despliegue ni datos reales.
+- **Beta:** BETA-FUNC-073 Pendiente beta para persistencia real, ownership/scope y renderizado XSS con datos sintéticos.
+- **Estado:** subalcance del portal completado en código y CI; TASK-153/AUD-NG-386 continúa En ejecución por otras superficies.
+- **Siguiente acción:** continuar inventario de handlers de TASK-153/AUD-NG-386; no inferir que el epic está cerrado.
+===============================================================================
