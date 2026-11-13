@@ -27,7 +27,7 @@ const purchase=ctx.createPurchaseRequest({departamento:"Laboratorio",justificaci
 const kardex=rows.InventariosKardex;kardex.push(["OLD-1",new Date(),"OLD-001","Registro histórico","Otros","Entrada",3,0,3,1,"Bodega Antigua",""]);const withLegacy=ctx.getCatalogItems({});assert.equal(withLegacy.pendientesReconciliacion[0].itemCodigo,"OLD-001");
 const before=rows.CatalogoArticulos.length;assert.throws(()=>ctx.importCatalogItems({items:[{itemCodigo:"MAT-003",itemNombre:"Marcador",categoria:"Papelería y oficina",unidadMedida:"Unidad"},{itemCodigo:"MAT-004",itemNombre:"Marcador",categoria:"Papelería y oficina",unidadMedida:"Unidad"}]}),/CATALOG_ITEM_NAME_DUPLICATE/);assert.equal(rows.CatalogoArticulos.length,before,"failed import must not append partial rows");
 assert.ok(ctx.exportCatalogItems({}).csv.includes("MAT-001"));
-ctx.manageCatalogItem({itemCodigo:"MAT-001",accion:"desactivar"});assert.throws(()=>ctx.recordInventoryMovement({itemCodigo:"MAT-001",tipoMovimiento:"Entrada",cantidad:1}),/CATALOG_ITEM_INACTIVE/);
+
 const purchaseReceiptFn=extract(source,"recordPurchaseReceipt");assert.ok(purchaseReceiptFn.includes("recordInventoryMovementLocked_(ss,"));assert.ok(!purchaseReceiptFn.includes("recordInventoryMovement("));assert.ok(extract(source,"transferInventoryStock").includes("recordInventoryMovementLocked_(ss,"));assert.ok(extract(source,"confirmTransferReceipt").includes("recordInventoryMovementLocked_(ss,"));
 
 ctx.recordInventoryMovement({itemCodigo:"MAT-001",tipoMovimiento:"Entrada",cantidad:30,unidadMedida:"Unidad",ubicacionResponsable:"Laboratorio"});
@@ -64,4 +64,5 @@ assert.throws(()=>ctx.deliverMaterialRequisition({solicitudMatId:duplicateReques
 assert.equal(rows.InventariosKardex.length,beforeDuplicateKardex,"failed multi-line delivery must roll back newly appended stock movements");
 assert.equal(rows.AsientosContables.length,beforeDuplicateJournals,"failed delivery must not leave a partial journal");
 
+ctx.manageCatalogItem({itemCodigo:"MAT-001",accion:"desactivar"});assert.throws(()=>ctx.recordInventoryMovement({itemCodigo:"MAT-001",tipoMovimiento:"Entrada",cantidad:1}),/CATALOG_ITEM_INACTIVE/);
 console.log("accounting catalog contract: PASS");
