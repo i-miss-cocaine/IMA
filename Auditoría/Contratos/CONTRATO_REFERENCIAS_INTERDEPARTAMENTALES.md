@@ -65,3 +65,11 @@ No se crea ConfiguracionInstitucional ni DepartmentReferenceGrants en Sheets, no
 - `tests/security/department-reference-policy.test.js` cubre 28 escenarios: default estricto, mismo departamento, alcance institucional explícito, tenant, ownership, operaciones, allowlists, concesiones ausentes/duplicadas/inactivas/revocadas/futuras/vencidas, autor y vigencia, wildcard, configuración inválida, auditoría de denegaciones y requisito de autorización estándar.
 - Department Scope CI run 43420632732: SUCCESS, Node.js 24.22.2. El paso `Run interdepartmental reference policy contract` y la sintaxis de los seis servicios finalizaron correctamente.
 - No existen todavía callsites productivos ni persistencia real de `DepartmentReferenceGrants`, configuración institucional o auditEvent. El helper no habilita por sí solo ningún acceso; la integración y persistencia previas a la entrega de contenido son obligatorias.
+
+
+## Evidencia de configuración institucional C1.685
+- Se incorporó `ConfiguracionInstitucional` con esquema exacto `InstitutionID`, `ConfigKey`, `ConfigValue`, `UpdatedBy`, `UpdatedAt`; la clave es `POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL`.
+- `getDepartmentReferencePolicy_` filtra por InstitutionID, no crea hojas y aplica `BLOQUEO_TOTAL_CROSS_DEPARTAMENTO` cuando falta hoja/clave; esquema incompatible, duplicados o valores desconocidos fallan cerrados.
+- `getDepartmentReferencePolicy` y `setDepartmentReferencePolicy` están conectados al dispatcher `doPost`. Exigen sesión verificada y permisos dinámicos; la escritura exige `institutionWide` derivado del scope servidor, usa ScriptLock y deriva tenant del contexto, nunca del payload. El setter permite reparar un valor inválido con autorización.
+- `tests/security/department-reference-policy-storage.test.js`: 20 escenarios PASS. Department Scope CI run 43421342354 SUCCESS (Node.js 24.22.2), junto con 28 escenarios del evaluador y sintaxis de servicios.
+- No se ha creado ni modificado una hoja de producción; la prueba usa mocks. No hay UI administrativa, `DepartmentReferenceGrants`, ni consumidores productivos todavía.

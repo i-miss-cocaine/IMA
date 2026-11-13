@@ -810,6 +810,10 @@
 - **Pruebas C1.684:** `tests/security/department-reference-policy.test.js`, 28 escenarios sintéticos; Department Scope CI run 43420632732 SUCCESS (Node.js 24.22.2), incluyendo contrato de referencias, ResourceOwnership ABAC y sintaxis de los seis servicios.
 - **Límites:** este incremento no crea `DepartmentReferenceGrants` ni `ConfiguracionInstitucional`, no añade endpoints/callsites productivos y no persiste el auditEvent. No habilita acceso interdepartamental real; la integración de consumidores, RBAC administrativo, persistencia de auditoría y revocación operativa permanecen pendientes. TASK-153 continúa En ejecución.
 
+- **Avance C1.685 — configuración institucional de la política:** se añadió `ConfiguracionInstitucional` con esquema estricto `InstitutionID/ConfigKey/ConfigValue/UpdatedBy/UpdatedAt`; lectura tenant-scoped y no mutante; default estricto si falta la clave; valores desconocidos/duplicados/esquema incompatible fallan cerrados. `getDepartmentReferencePolicy` y `setDepartmentReferencePolicy` se exponen por `doPost`, requieren permisos dinámicos explícitos; la escritura exige alcance institucional, usa ScriptLock y no acepta InstitutionID del payload.
+- **Pruebas C1.685:** `tests/security/department-reference-policy-storage.test.js`, 20 escenarios; Department Scope CI run 43421342354 SUCCESS (Node.js 24.22.2), incluyendo 28 escenarios del evaluador, 20 de almacenamiento/configuración, ResourceOwnership ABAC y sintaxis de servicios. La revisión del run muestra que la única diferencia posterior del HEAD es una corrección del texto de salida del test (sin cambio de lógica).
+- **Límites:** el endpoint de configuración está disponible en backend, pero aún no hay UI de plataforma ni almacenamiento/CRUD de `DepartmentReferenceGrants`, ni integración de consumidores ni persistencia obligatoria del auditEvent antes de entregar contenido. TASK-153 sigue En ejecución.
+
 <!-- ID: AUD-NG-164 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-164] Completar catálogo curricular maestro y relaciones de asignaturas/planes/ofertas
 - Severidad: Alto (P1).

@@ -1507,8 +1507,16 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 
 ## BETA-FUNC-059 — TASK-153 / referencias interdepartamentales de solo lectura
 - **Objetivo:** validar la integración desplegada de `DepartmentReferenceGrants` y `POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL` sin exponer expedientes completos.
-- **Precondiciones:** endpoints consumidores integrados; configuración por InstitutionID; tabla DepartmentReferenceGrants; actor, recurso y membresía de prueba; permisos administrativos RBAC; persistencia de eventos de auditoría.
+- **Precondiciones:** endpoints USER `getDepartmentReferencePolicy`/`setDepartmentReferencePolicy` desplegados y permisos dinámicos configurados; endpoints consumidores integrados; tabla DepartmentReferenceGrants; actor, recurso y membresía de prueba; permisos administrativos RBAC; persistencia de eventos de auditoría.
 - **Pasos:** (1) sin configuración, comprobar bloqueo cross-departamento; (2) con política permisiva, crear una concesión exacta para recurso/propietario/departamento destino; (3) solicitar solo campos y documentos permitidos; (4) probar campos/documentos fuera de allowlist y operaciones distintas de READ_REFERENCE; (5) probar concesión duplicada, ausente, inactiva, revocada, futura y vencida; (6) probar tenant y departamento destino incorrectos; (7) comprobar que el auditEvent queda persistido antes de entregar contenido; (8) revocar la concesión y repetir la lectura.
 - **Resultado esperado:** default estricto; solo lectura de referencias exactas bajo vigencia; ningún acceso completo, modificación, descarga ni exportación por concesión; denegaciones sin filtración de existencia; revocación efectiva inmediata; auditoría completa.
 - **Evidencia requerida:** snapshots sintéticos de configuración/concesiones, respuestas de endpoint, auditEvents persistidos, pruebas positivas/negativas por rol y comparación de acceso antes/después de revocar. No usar PII real.
 - **Estado:** Pendiente beta e integración productiva.
+
+## BETA-FUNC-060 — TASK-153 / configuración institucional de política de referencias
+- **Objetivo:** validar en USER desplegado la lectura y actualización de `POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL` por institución.
+- **Precondiciones:** `ConfiguracionInstitucional` inicializada o ausente; usuarios de prueba con permisos dinámicos de lectura/administración; scopes institucionales/departamentales; institución de prueba aislada.
+- **Pasos:** (1) leer cuando no existe hoja/clave y verificar default estricto sin crear hoja; (2) leer una configuración de otra institución y verificar que no se revela; (3) configurar política permisiva con rol autorizado y scope institucional; (4) verificar que actor sin permiso, scope departamental, tenant equivocado o valor desconocido no modifica datos; (5) comprobar duplicados y esquema incompatible fail-closed; (6) verificar que el setter puede corregir una clave con valor desconocido; (7) repetir escritura concurrente y confirmar serialización/idempotencia.
+- **Resultado esperado:** lecturas tenant-scoped no mutantes; solo dos valores admitidos; escrituras con actor verificado, permiso dinámico y scope institucional; InstitutionID derivado del contexto servidor; lock y auditoría de cambio.
+- **Evidencia requerida:** respuestas de get/set, snapshot sintético antes/después, actor/permiso/scope usados, log estructurado y resultado de concurrencia. No usar PII real.
+- **Estado:** Pendiente beta.

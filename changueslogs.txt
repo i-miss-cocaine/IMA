@@ -3315,3 +3315,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato `tests/security/department-reference-policy.test.js`: 28 escenarios PASS. Department Scope CI run 43420632732 SUCCESS (Node.js 24.22.2), 28 pasos; contrato de referencias, ResourceOwnership ABAC y sintaxis de servicios/clientes PASS.
 - No hay callsites productivos, tabla real, configuración real ni persistencia de auditoría. El helper permanece aislado y no habilita acceso compartido hasta que cada consumidor integre y persista el evento antes de exponer contenido.
 - CLI local NOT RUN por DNS de github.com; la ejecución CI sí se realizó y está registrada.
+
+[2026-11-13 UTC] [IMA-EXEC-20261113-1158Z-01] TASK-153 — configuración tenant-scoped de política de referencias (C1.685)
+- Se añadió `ConfiguracionInstitucional` con encabezados estrictos InstitutionID/ConfigKey/ConfigValue/UpdatedBy/UpdatedAt. Lectura `getDepartmentReferencePolicy_` no crea hojas; falta de clave/hoja => default estricto; esquema, duplicados o valor desconocido => error fail-closed.
+- Se añadieron endpoints USER `getDepartmentReferencePolicy` y `setDepartmentReferencePolicy` en `doPost`. Ambos requieren identidad y scope verificados y permisos dinámicos explícitos; el setter exige alcance institucional, deriva InstitutionID del contexto servidor, usa ScriptLock, no permite valores arbitrarios y puede reparar un valor previamente desconocido.
+- Contrato `tests/security/department-reference-policy-storage.test.js`: 20 escenarios PASS. Department Scope CI run 43421342354 SUCCESS (Node.js 24.22.2); 20 escenarios de storage, 28 escenarios del evaluador, ResourceOwnership ABAC y syntax-check PASS.
+- No se ha creado hoja real ni cambiado datos de producción; el test usa un spreadsheet mock. No hay UI ni CRUD de concesiones aún.
