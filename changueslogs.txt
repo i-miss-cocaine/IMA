@@ -3497,3 +3497,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato accounting-payroll-receipt-distribution.test.js PASS en Node.js 24.22.2; sintaxis Code.gs y scripts HR PASS. Department Scope 43488044739 SUCCESS; Identity Mapping 43487819815 y Department Reference Consumers 43487819899 SUCCESS.
 - Los runs 43487819897 y 43487891332 fallaron por una expectativa de fixture corregida: el historial de autoservicio incluye cinco filas históricas dentro del ámbito, incluyendo un período abierto, mientras que la distribución solo opera sobre el plan cerrado. Rerun final PASS.
 - CLI local NOT RUN por DNS del contenedor; sintaxis aislada V8 PASS. Apps Script/Sheets real NOT RUN. BETA-FUNC-078 Pendiente beta.
+
+
+[2026-11-13 19:25 UTC] TASK-179 — normalización del catálogo por defecto: 2101–2106 reservadas para obligaciones laborales, 2107 para proveedores; nuevas cuentas 1105 y 5101–5105. Los asientos de CuentasPorPagar/notas de crédito pasan a 2107. Se agregó bloqueo preventivo si el catálogo existente conserva 2101 como proveedores; sin migración automática de histórico.

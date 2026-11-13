@@ -5346,7 +5346,18 @@ function buildPayrollJournalLines_(planRows,conceptSummary,loanDeductionTotal){
 function getPayrollLoanAppliedAmountForPlanilla_(ss,planillaId){if(!ss.getSheetByName("AmortizacionPrestamosNomina"))return 0;const rows=getPayrollLoanLedger_(ss).rows||[],target=String(planillaId||"").trim(),reversed=new Set(rows.filter(r=>String(r[9]||"").trim()==="REVERSADO").map(r=>String(r[12]||"").trim())),cancelled=new Set(rows.filter(r=>String(r[9]||"").trim()==="CANCELADO").map(r=>String(r[12]||"").trim()));const activeApplied=rows.filter(r=>String(r[2]||"").trim()===target&&String(r[9]||"").trim()==="APLICADO"&&!reversed.has(String(r[0]||"").trim()));const source=activeApplied.length?activeApplied:rows.filter(r=>String(r[2]||"").trim()===target&&String(r[9]||"").trim()==="CALCULADO"&&!cancelled.has(String(r[0]||"").trim()));return Math.round(source.reduce((t,r)=>t+payrollMoney_(r[5],"PAYROLL_JOURNAL_LOAN_INVALID"),0)*100)/100;}
 function getPayrollJournalEntryById_(ss,id){const sh=ss.getSheetByName("AsientosContables");if(!sh)return null;const rows=sh.getDataRange().getValues().slice(1).filter(r=>String(r[0]||"").trim()===String(id||"").trim());return rows.length===1?rows[0]:null;}
 function validatePayrollJournalEntry_(row,referenceId,origin){if(!row||String(row[3]||"").trim()!==origin||String(row[4]||"").trim()!==String(referenceId||"").trim())throw new Error("PAYROLL_JOURNAL_LINK_INVALID");let lines=[];try{lines=JSON.parse(row[5]||"[]");}catch(e){throw new Error("PAYROLL_JOURNAL_ENTRY_INVALID");}if(!Array.isArray(lines)||!lines.length)throw new Error("PAYROLL_JOURNAL_ENTRY_INVALID");let d=0,h=0;lines.forEach(x=>{d+=payrollMoney_(x.debe,"PAYROLL_JOURNAL_ENTRY_INVALID");h+=payrollMoney_(x.haber,"PAYROLL_JOURNAL_ENTRY_INVALID");});d=Math.round(d*100)/100;h=Math.round(h*100)/100;if(Math.abs(d-h)>0.01)throw new Error("PAYROLL_JOURNAL_ENTRY_UNBALANCED");return {status:"success",asientoId:String(row[0]),totalDebe:d,totalHaber:h,estado:row[6]||"Asentado",idempotent:true};}
+
+function validatePayrollJournalAccountMap_(ss) {
+ const sheet=ss&&ss.getSheetByName("PlanCuentas");if(!sheet)return true;
+ const data=sheet.getDataRange().getValues();if(!data||data.length<=1)return true;
+ const rows=data.slice(1),byCode=code=>rows.filter(r=>String(r[1]||"").trim()===code);
+ const ihss=byCode("2101"),suppliers=byCode("2107");
+ if(ihss.length>1|| (ihss.length===1&&!String(ihss[0][2]||"").toUpperCase().includes("IHSS")))throw new Error("PAYROLL_ACCOUNT_CODE_CONFLICT:2101");
+ if(suppliers.length>1|| (suppliers.length===1&&!/(PROVEEDOR|CUENTAS POR PAGAR)/.test(String(suppliers[0][2]||"").toUpperCase())))throw new Error("PAYROLL_ACCOUNT_CODE_CONFLICT:2107");
+ return true;
+}
 function recordPayrollJournalEntry_(ss,planillaId,planRows,conceptSummary,actorId){
+ validatePayrollJournalAccountMap_(ss);
  const sheet=ss.getSheetByName("PlanillasNomenclatura");if(!sheet)throw new Error("RESOURCE_NOT_FOUND: PlanillasNomenclatura");
  const col=ensurePayrollJournalLinkColumn_(sheet),data=sheet.getDataRange().getValues(),matches=data.slice(1).map((r,i)=>({row:r,index:i+2})).filter(x=>String(x.row[0]||"").trim()===String(planillaId).trim());
  if(!matches.length||matches.length!==planRows.length)throw new Error("PAYROLL_JOURNAL_PLANILLA_CHANGED");
@@ -9155,7 +9166,7 @@ function recordSupplierPayment(payload) {
         referenciaId: pagoRefId,
         creadoPor: authRole || "Tesoreria",
         lineas: [
-          { cuenta: "2101", nombre: "Cuentas por Pagar Proveedores", debe: abono, haber: 0 },
+          { cuenta: "2107", nombre: "Cuentas por Pagar Proveedores", debe: abono, haber: 0 },
           { cuenta: "1101", nombre: "Bancos / Tesorería", debe: 0, haber: abono }
         ]
       });
@@ -9240,7 +9251,7 @@ function applySupplierCreditNote(payload) {
         referenciaId: numeroNotaCredito,
         creadoPor: authRole || "Contador",
         lineas: [
-          { cuenta: "2101", nombre: "Cuentas por Pagar Proveedores", debe: mntNC, haber: 0 },
+          { cuenta: "2107", nombre: "Cuentas por Pagar Proveedores", debe: mntNC, haber: 0 },
           { cuenta: "5101", nombre: "Gasto de Compras / Devoluciones sobre Compras", debe: 0, haber: mntNC }
         ]
       });
@@ -9369,10 +9380,21 @@ function getChartOfAccounts(payload) {
     const defaultAccounts = [
       ["CTA-101", "1101", "Caja General y Bancos", "Activo", "Deudora", "Activa", "Cuenta de Tesorería"],
       ["CTA-102", "1102", "Cuentas por Cobrar Estudiantes", "Activo", "Deudora", "Activa", "Colegiaturas y Cobros"],
-      ["CTA-201", "2101", "Cuentas por Pagar Proveedores", "Pasivo", "Acreedora", "Activa", "Obligaciones Operativas"],
+      ["CTA-105", "1105", "Préstamos y anticipos a empleados por cobrar", "Activo", "Deudora", "Activa", "Amortización por nómina"],
+      ["CTA-201", "2101", "Retenciones obreras IHSS por pagar", "Pasivo", "Acreedora", "Activa", "Obligaciones laborales"],
+      ["CTA-202", "2102", "Retenciones obreras RAP por pagar", "Pasivo", "Acreedora", "Activa", "Obligaciones laborales"],
+      ["CTA-203", "2103", "Retenciones ISR por pagar", "Pasivo", "Acreedora", "Activa", "Obligaciones tributarias"],
+      ["CTA-204", "2104", "Obligaciones patronales IHSS por pagar", "Pasivo", "Acreedora", "Activa", "Obligaciones laborales"],
+      ["CTA-205", "2105", "Obligaciones patronales RAP por pagar", "Pasivo", "Acreedora", "Activa", "Obligaciones laborales"],
+      ["CTA-206", "2106", "INFOP por pagar", "Pasivo", "Acreedora", "Activa", "Obligaciones patronales"],
+      ["CTA-207", "2107", "Cuentas por pagar proveedores", "Pasivo", "Acreedora", "Activa", "Obligaciones operativas"],
       ["CTA-301", "3101", "Patrimonio Institucional", "Patrimonio", "Acreedora", "Activa", "Fondos de la Institución"],
       ["CTA-401", "4101", "Ingresos por Colegiaturas y Matrículas", "Ingreso", "Acreedora", "Activa", "Servicios Educativos"],
-      ["CTA-501", "5101", "Gastos Operativos y Salarios", "Gasto", "Deudora", "Activa", "Planillas y Costos"]
+      ["CTA-501", "5101", "Gasto de salarios ordinarios", "Gasto", "Deudora", "Activa", "Planillas y costos laborales"],
+      ["CTA-502", "5102", "Gasto de horas extras y recargos", "Gasto", "Deudora", "Activa", "Planillas y costos laborales"],
+      ["CTA-503", "5103", "Gasto de aportaciones patronales IHSS", "Gasto", "Deudora", "Activa", "Planillas y costos laborales"],
+      ["CTA-504", "5104", "Gasto de aportaciones patronales RAP", "Gasto", "Deudora", "Activa", "Planillas y costos laborales"],
+      ["CTA-505", "5105", "Gasto de aporte patronal INFOP", "Gasto", "Deudora", "Activa", "Planillas y costos laborales"]
     ];
     sheet.getRange(2, 1, defaultAccounts.length, 7).setValues(defaultAccounts);
     rows = defaultAccounts;
@@ -12320,7 +12342,7 @@ function runPhase18PurchasingAndSuppliersRegressionSuite(payload) {
       run: function() {
         // 1. Verificación de balance estricto por partida doble (Debe === Haber)
         const lineasAsiento = [
-          { cuenta: "2101", nombre: "Cuentas por Pagar Proveedores", debe: 2500.00, haber: 0 },
+          { cuenta: "2107", nombre: "Cuentas por Pagar Proveedores", debe: 2500.00, haber: 0 },
           { cuenta: "1101", nombre: "Bancos / Tesorería", debe: 0, haber: 2500.00 }
         ];
 

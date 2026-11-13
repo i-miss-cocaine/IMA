@@ -1552,3 +1552,8 @@ El archivo maestro histórico supera el umbral de rotación de 180.000 caractere
 - **Evidencia requerida:** planilla de prueba, detalle de líneas, totales Debe/Haber, IDs AST, vínculo de planilla, referencia de ajuste, actor y auditoría de denegaciones; sin datos personales reales.
 - **Estado:** Pendiente beta; no desplegado en Apps Script/Sheets real.
 ===============================================================================
+
+
+### Nota de configuración de cuentas — TASK-179
+- El plan de cuentas por defecto separa 2101 (retención obrera IHSS) de 2107 (proveedores); las obligaciones laborales utilizan 2101–2106 y 1105.
+- Para instituciones con un catálogo histórico donde 2101 aún sea Proveedores, el asiento de nómina se bloquea con PAYROLL_ACCOUNT_CODE_CONFLICT:2101 hasta que el administrador contable resuelva el mapeo. No se reescriben asientos históricos ni se migra el catálogo existente automáticamente.
