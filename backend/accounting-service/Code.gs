@@ -8058,6 +8058,8 @@ function purchaseQuotationRequest_(ss,solicitudId,scope){
  if(scope.institutionWide!==true&&!(scope.departmentIds||[]).map(String).includes(department))return {error:{status:"error",code:"RESOURCE_NOT_FOUND",message:"La solicitud no está disponible en el ámbito autorizado."}};
  const items=purchaseQuotationJsonArray_(request.row[6]);
  if(!items.length)return {error:{status:"error",code:"PURCHASE_REQUEST_ITEMS_REQUIRED",message:"La solicitud no contiene partidas estructuradas para comparar."}};
+ const itemKeys=items.map((item,index)=>purchaseQuotationItemKey_(item,index));if(new Set(itemKeys).size!==itemKeys.length)return {error:{status:"error",code:"PURCHASE_REQUEST_ITEMS_AMBIGUOUS",message:"La solicitud contiene identificadores de partida duplicados."}};
+ if(items.some(item=>!Number.isFinite(Number(item.cantidad||item.quantity||item.cantidadSolicitada||1))||Number(item.cantidad||item.quantity||item.cantidadSolicitada||1)<=0))return {error:{status:"error",code:"PURCHASE_REQUEST_ITEM_QUANTITY_INVALID",message:"La solicitud contiene cantidades inválidas."}};
  return {request:request,items:items};
 }
 function purchaseQuoteIsValid_(row,now){
@@ -8142,9 +8144,10 @@ function adjudicatePurchaseQuotations(payload){
   const allQuoteRows=quoteSheet.getDataRange().getValues(),quoteObjects=allQuoteRows.slice(1).map((row,index)=>({row:row,index:index+2})).filter(x=>String(x.row[1]||"").trim()===solicitudId&&!["RECHAZADA","ANULADA","CANCELADA","DESCARTADA"].includes(normalizePurchaseAwardRole_(x.row[9])));
   if(!quoteObjects.length||quoteObjects.length>5)return {status:"error",code:quoteObjects.length?"PURCHASE_QUOTATION_COMPARISON_LIMIT_EXCEEDED":"PURCHASE_QUOTATIONS_NOT_FOUND",message:"La adjudicación requiere entre una y cinco cotizaciones comparables."};
   const supplierIds=quoteObjects.map(q=>String(q.row[2]||"").trim());if(new Set(supplierIds).size!==supplierIds.length)return {status:"error",code:"DUPLICATE_SUPPLIER_QUOTATION",message:"Hay cotizaciones duplicadas del mismo proveedor; deben depurarse antes de adjudicar."};
+  const quoteIds=quoteObjects.map(q=>String(q.row[0]||"").trim());if(new Set(quoteIds).size!==quoteIds.length)throw new Error("PURCHASE_QUOTATION_ID_AMBIGUOUS");
   const detailRows=getOrCreateSheet(ss,"DetalleCotizacionesCompra").getDataRange().getValues().slice(1),supplierRows=getOrCreateSheet(ss,"ProveedoresActivos").getDataRange().getValues().slice(1),requestItems=found.items,now=new Date(),quoteById=Object.create(null),lineByQuote=Object.create(null);
-  quoteObjects.forEach(q=>{quoteById[String(q.row[0])]=q;lineByQuote[String(q.row[0])]=detailRows.filter(r=>String(r[1]||"").trim()===String(q.row[0]).trim());if(!purchaseQuoteIsValid_(q.row,now))throw new Error("PURCHASE_QUOTATION_EXPIRED");});
-  const allocationsByItem=Object.create(null),usedQuotes=new Set(),normalizedAllocations=[],supplierByQuote=Object.create(null);
+  quoteObjects.forEach(q=>{const quoteId=String(q.row[0]);quoteById[quoteId]=q;lineByQuote[quoteId]=detailRows.filter(r=>String(r[1]||"").trim()===quoteId);const itemIds=lineByQuote[quoteId].map(r=>String(r[3]||"").trim());if(new Set(itemIds).size!==itemIds.length)throw new Error("PURCHASE_QUOTATION_LINE_AMBIGUOUS");if(!purchaseQuoteIsValid_(q.row,now))throw new Error("PURCHASE_QUOTATION_EXPIRED");});
+  const allocationsByItem=Object.create(null),allocatedByQuoteLine=Object.create(null),usedQuotes=new Set(),normalizedAllocations=[],supplierByQuote=Object.create(null);
   allocations.forEach(a=>{
    const itemId=String(a.itemId||"").trim(),quoteId=String(a.cotizacionId||"").trim(),q=quoteById[quoteId],line=q&&lineByQuote[quoteId].find(r=>String(r[3]||"").trim()===itemId);
    if(!q||!line)throw new Error("PURCHASE_AWARD_QUOTE_LINE_NOT_FOUND");
@@ -8154,7 +8157,7 @@ function adjudicatePurchaseQuotations(payload){
    if(!technical)throw new Error("PURCHASE_AWARD_TECHNICAL_NONCOMPLIANCE");
    if(!Number.isFinite(quantity)||quantity<=0||quantity>quoted+0.000001)throw new Error("PURCHASE_AWARD_QUANTITY_INVALID");
    if(!Number.isFinite(requested)||requested<=0||!Number.isFinite(unit)||unit<0)throw new Error("PURCHASE_AWARD_LINE_INVALID");
-   if(!allocationsByItem[itemId])allocationsByItem[itemId]=0;allocationsByItem[itemId]+=quantity;
+   if(!allocationsByItem[itemId])allocationsByItem[itemId]=0;allocationsByItem[itemId]+=quantity;const quoteLineKey=quoteId+"|"+itemId;allocatedByQuoteLine[quoteLineKey]=(allocatedByQuoteLine[quoteLineKey]||0)+quantity;if(allocatedByQuoteLine[quoteLineKey]>quoted+0.000001)throw new Error("PURCHASE_AWARD_QUOTE_QUANTITY_EXCEEDED");
    const landed=purchaseQuotationRound_(Number(line[13]||0)/quoted),competitors=quoteObjects.map(other=>{const r=lineByQuote[String(other.row[0])].find(x=>String(x[3]||"").trim()===itemId);if(!r||!(String(r[16]).toUpperCase()==="TRUE"||normalizePurchaseAwardRole_(r[16])==="CUMPLE")||Number(r[7]||0)<=0)return null;return purchaseQuotationRound_(Number(r[13]||0)/Number(r[7]));}).filter(x=>x!==null),lowest=competitors.length?Math.min.apply(null,competitors):landed;
    const justification=String(a.justificacion||p.justificacion||"").trim();
    if(landed>lowest+0.005&&justification.length<10)throw new Error("PURCHASE_AWARD_NON_LOWEST_JUSTIFICATION_REQUIRED");
