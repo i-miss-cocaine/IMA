@@ -4958,7 +4958,7 @@ function calculatePayrollPeriod(payload) {
         planSheet.getRange(planSheet.getLastRow() + 1, 1, processedRows.length, 20).setValues(processedRows);
       } catch (writeError) {
         if (payrollLoanLedgerEvents.length) {
-          const cancellations = payrollLoanLedgerEvents.map(r => ["PLM-"+Utilities.getUuid(),r[1],r[2],r[3],r[4],r[5],r[6],r[6],r[8],"CANCELADO",new Date(),"SYSTEM_ROLLBACK",r[0]]);
+          const cancellations = payrollLoanLedgerEvents.map(r => ["PLM-"+Utilities.getUuid(),r[1],r[2],r[3],r[4],r[5],r[6],r[6],r[8],"CANCELADO",new Date(),"SYSTEM_ROLLBACK",r[0],"Planilla write rollback"]);
           appendPayrollLoanLedgerEvents_(ss,cancellations);
         }
         throw writeError;
@@ -5944,7 +5944,7 @@ function approveEmployeeLoanAdvance(payload){
 }
 
 function getPayrollLoanLedger_(ss) {
-  const headers = ["MovimientoID","PrestamoID","PlanillaID","Periodo","EmpleadoId","Monto","SaldoAntes","SaldoDespues","CuotaNumero","Evento","Fecha","ActorId","ReversaDe"];
+  const headers = ["MovimientoID","PrestamoID","PlanillaID","Periodo","EmpleadoId","Monto","SaldoAntes","SaldoDespues","CuotaNumero","Evento","Fecha","ActorId","ReversaDe","Detalle"];
   const sheet = ss.getSheetByName("AmortizacionPrestamosNomina") || getOrCreateSheet(ss, "AmortizacionPrestamosNomina");
   let data = sheet.getDataRange().getValues();
   if (!data.length || !data[0] || !data[0].length) {
@@ -5993,7 +5993,7 @@ function calculatePayrollLoanDeductions_(ss, employeeId, period, planillaId, net
     if(amount<=0)return;
     const after=Math.round((balance-amount)*100)/100;
     const movementId="PLM-"+Utilities.getUuid();
-    events.push([movementId,id,planillaId,String(period),owner,amount,balance,after,paid+1,"CALCULADO",new Date(),"", ""]);
+    events.push([movementId,id,planillaId,String(period),owner,amount,balance,after,paid+1,"CALCULADO",new Date(),"", "", ""]);
     total=Math.round((total+amount)*100)/100;remaining=Math.max(0,Math.round((remaining-amount)*100)/100);
   });
   return {total,events};
@@ -6009,7 +6009,7 @@ function applyPayrollLoanLedgerForPlanilla_(ss,planillaId,action,actorId) {
   const rows=ledger.rows.filter(r=>String(r[2]||"").trim()===String(planillaId).trim()),events=ledger.rows;
   let applied=0,reversed=0,cancelled=0;
   const findLoan=id=>{const matches=loans.slice(1).map((r,i)=>({r,index:i+2})).filter(x=>String(x.r[0]||"").trim()===id);return matches.length===1?matches[0]:null;};
-  const append=(preview,event,before,after,reverseOf)=>appendPayrollLoanLedgerEvents_(ss,[[ "PLM-"+Utilities.getUuid(),preview[1],preview[2],preview[3],preview[4],preview[5],before,after,preview[8],event,new Date(),String(actorId||"SYSTEM_PAYROLL"),String(reverseOf||"") ]]);
+  const append=(preview,event,before,after,reverseOf,detail)=>appendPayrollLoanLedgerEvents_(ss,[[ "PLM-"+Utilities.getUuid(),preview[1],preview[2],preview[3],preview[4],preview[5],before,after,preview[8],event,new Date(),String(actorId||"SYSTEM_PAYROLL"),String(reverseOf||""),String(detail||"") ]]);
   if(action==="APLICAR"){
     rows.filter(r=>String(r[9]||"")==="CALCULADO").forEach(preview=>{
       const cancelledEvent=events.find(x=>String(x[9]||"")==="CANCELADO"&&String(x[12]||"")===String(preview[0]));
@@ -6054,6 +6054,60 @@ function applyPayrollLoanLedgerForPlanilla_(ss,planillaId,action,actorId) {
     });
   }else throw new Error("PAYROLL_LOAN_ACTION_INVALID");
   return {status:"success",applied,reversed,cancelled};
+}
+
+
+function manageEmployeeLoanAdvance(payload) {
+  const p=payload||{},actor=getVerifiedAccountingIdentity_(p);
+  if(!actor||!actor.authorized)return {status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+  const role=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
+  if(!["RECURSOSHUMANOS","ADMINISTRADOR"].includes(role))return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+  const id=String(p.prestamoId||"").trim(),action=String(p.accion||"").trim().toUpperCase(),reason=String(p.motivo||p.observaciones||"").trim().slice(0,500);
+  if(!id||!["SUSPENDER","REANUDAR","RENEGOCIAR","LIQUIDAR_ANTICIPADAMENTE"].includes(action))return {status:"error",code:"LOAN_MANAGEMENT_INVALID",message:"La operación solicitada no es válida."};
+  if(reason.length<10)return {status:"error",code:"LOAN_MANAGEMENT_REASON_REQUIRED",message:"Se requiere una justificación documentada de al menos 10 caracteres."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("AnticiposPrestamosEmpleado");
+  if(!sheet)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Préstamo no disponible."};
+  const headers=["PrestamoID","Fecha","EmpleadoId","Tipo","MontoSolicitado","MontoAprobado","PlazoCuotas","CuotaMensual","SaldoPendiente","EstadoAprobacion","AprobadoPor","Observaciones"],initial=sheet.getDataRange().getValues();
+  if(!initial.length||!initial[0]||initial[0].length!==headers.length||headers.some((h,i)=>String(initial[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de anticipos y préstamos no es válida."};
+  const found=initial.slice(1).map((r,i)=>({r,index:i+2})).filter(x=>String(x.r[0]||"").trim()===id);
+  if(found.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Préstamo no disponible."};
+  const access=resolveEmployeeLoanAdvanceAccess_(p,ss,String(found[0].r[2]||"").trim(),true);
+  if(!access.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Préstamo no disponible."};
+  const lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La operación está ocupada. Intente nuevamente."};
+  try{
+    const data=sheet.getDataRange().getValues(),matches=data.slice(1).map((r,i)=>({r,index:i+2})).filter(x=>String(x.r[0]||"").trim()===id);
+    if(matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Préstamo no disponible."};
+    const current=matches[0],row=current.r.slice(),balance=Number(row[8]),state=String(row[9]||"").trim().toUpperCase();
+    if(!Number.isFinite(balance)||balance<0)return {status:"error",code:"LOAN_DATA_INVALID",message:"El saldo del préstamo no es válido."};
+    const updated=row.slice();let event=action,detail=reason;
+    if(action==="SUSPENDER"){
+      if(!["APROBADO","APROBADA","ACTIVE","ACTIVO"].includes(state))return {status:"error",code:"LOAN_STATE_INVALID",message:"Solo se pueden suspender obligaciones activas."};
+      updated[9]="Suspendido";
+    }else if(action==="REANUDAR"){
+      if(state!=="SUSPENDIDO")return {status:"error",code:"LOAN_STATE_INVALID",message:"La obligación no está suspendida."};
+      updated[9]="Aprobado";
+    }else if(action==="RENEGOCIAR"){
+      if(!["APROBADO","APROBADA","ACTIVE","ACTIVO","SUSPENDIDO"].includes(state))return {status:"error",code:"LOAN_STATE_INVALID",message:"La obligación no admite renegociación en su estado actual."};
+      const terms=Number(p.nuevoPlazoCuotas);
+      if(!Number.isInteger(terms)||terms<1||terms>120||balance<=0)return {status:"error",code:"LOAN_RENEGOTIATION_INVALID",message:"El nuevo plazo debe ser entero entre 1 y 120 y el saldo debe ser positivo."};
+      updated[6]=terms;updated[7]=Math.round(balance/terms*100)/100;
+      detail="Nuevo plazo: "+terms+" cuotas; cuota recalculada: "+updated[7]+". Motivo: "+reason;
+    }else{
+      const paid=Number(p.montoPago),reference=String(p.referenciaPago||"").trim().slice(0,120);
+      if(!["APROBADO","APROBADA","ACTIVE","ACTIVO","SUSPENDIDO"].includes(state)||balance<=0)return {status:"error",code:"LOAN_STATE_INVALID",message:"La obligación no admite liquidación anticipada."};
+      if(!Number.isFinite(paid)||Math.abs(paid-balance)>0.005||!reference)return {status:"error",code:"LOAN_SETTLEMENT_INVALID",message:"La liquidación debe cubrir exactamente el saldo y aportar una referencia de pago."};
+      updated[8]=0;updated[9]="Liquidado";
+      detail="Referencia de pago: "+reference+"; monto: "+balance+". Motivo: "+reason;
+    }
+    const note=("["+new Date().toISOString()+"] "+action+" por "+String(actor.userId||"")+": "+detail).slice(-500);
+    updated[11]=String(row[11]||"")?String(row[11]||"").slice(-Math.max(0,499-note.length))+"\n"+note:note;
+    const ledger=getPayrollLoanLedger_(ss),duplicateToken=String(p.idempotencyToken||"").trim();
+    if(duplicateToken&&ledger.rows.some(r=>String(r[13]||"").includes("IDEMPOTENCY:"+duplicateToken)))return {status:"error",code:"LOAN_MANAGEMENT_DUPLICATE",message:"La operación ya fue registrada."};
+    const movement=["PLM-"+Utilities.getUuid(),id,"","",String(row[2]||""),Math.round((balance-Number(updated[8]))*100)/100,balance,Number(updated[8]),0,event,new Date(),String(actor.userId||""),"",detail+(duplicateToken?" | IDEMPOTENCY:"+duplicateToken:"")];
+    appendPayrollLoanLedgerEvents_(ss,[movement]);
+    sheet.getRange(current.index,1,1,updated.length).setValues([updated]);
+    return {status:"success",prestamoId:id,accion:action,saldoPendiente:Number(updated[8]),estadoAprobacion:updated[9],plazoCuotas:updated[6],cuotaMensual:updated[7],message:"La obligación fue actualizada con justificación y movimiento de auditoría."};
+  }catch(e){return {status:"error",code:"LOAN_MANAGEMENT_WRITE_FAILED",message:"No fue posible completar la administración de la obligación."};}finally{lock.releaseLock();}
 }
 
 function getLoanAmortizationSchedule(payload) {
