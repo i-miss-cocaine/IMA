@@ -10758,6 +10758,30 @@ const DEPARTMENT_REFERENCE_GRANT_SCOPE_HEADERS_ = [
   "SuplenteDeUserID", "InstitutionID", "MembershipID"
 ];
 
+function appendDepartmentReferenceAuditEvent_(eventCode, message, payload, role) {
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = ss.getSheetByName("LogsSistema");
+  var headers = ["ID", "Timestamp", "Servicio", "Función", "Severidad", "CódigoError", "Mensaje", "DatosPayload", "RolUsuario"];
+  if (!sheet) {
+    sheet = ss.insertSheet("LogsSistema");
+    sheet.appendRow(headers);
+  }
+  var data = sheet.getDataRange().getValues();
+  if (!data.length || JSON.stringify(data[0].map(String)) !== JSON.stringify(headers)) {
+    throw new Error("DEPARTMENT_REFERENCE_AUDIT_SCHEMA_MISMATCH");
+  }
+  var before = sheet.getLastRow();
+  var timestamp = new Date().toISOString();
+  var sanitized = typeof sanitizePayloadForLog === "function" ? sanitizePayloadForLog(payload || {}) : JSON.stringify(payload || {});
+  sheet.appendRow([
+    "LOG-" + Utilities.getUuid(), timestamp, "USER", "departmentReferenceGrant",
+    "INFO", String(eventCode || "DEPARTMENT_REFERENCE_GRANT_EVENT"), String(message || ""),
+    sanitized, String(role || "Sistema")
+  ]);
+  if (sheet.getLastRow() !== before + 1) throw new Error("DEPARTMENT_REFERENCE_AUDIT_WRITE_UNCONFIRMED");
+  return { status: "success", timestamp: timestamp };
+}
+
 function ensureDepartmentReferenceGrantsSheet_(ss) {
   var sheet = ss.getSheetByName(DEPARTMENT_REFERENCE_GRANT_SHEET_);
   if (!sheet) sheet = ss.insertSheet(DEPARTMENT_REFERENCE_GRANT_SHEET_);
@@ -10905,23 +10929,23 @@ function createDepartmentReferenceGrant(payload) {
       JSON.stringify(fields), JSON.stringify(documents), admin.actorId, now, validFrom.toISOString(),
       expiresAt.toISOString(), "ACTIVE", "", ""
     ];
-    logStructuredEvent("USER", "createDepartmentReferenceGrant", "INFO", "DEPARTMENT_REFERENCE_GRANT_CREATE_AUTHORIZED",
-      "Creación de concesión interdepartamental autorizada antes de persistir.", {
-        institutionId: admin.institutionId, grantId: grantId, resourceType: resourceType,
-        resourceId: resourceId, ownerDepartmentId: owner.departmentId, targetDepartmentId: targetDepartmentId,
-        authorizedBy: admin.actorId, validFrom: validFrom.toISOString(), expiresAt: expiresAt.toISOString()
-      }, admin.role);
+    var auditPayload = {
+      institutionId: admin.institutionId, grantId: grantId, resourceType: resourceType,
+      resourceId: resourceId, ownerDepartmentId: owner.departmentId, targetDepartmentId: targetDepartmentId,
+      authorizedBy: admin.actorId, validFrom: validFrom.toISOString(), expiresAt: expiresAt.toISOString()
+    };
+    appendDepartmentReferenceAuditEvent_("DEPARTMENT_REFERENCE_GRANT_CREATE_AUTHORIZED",
+      "Creación de concesión interdepartamental autorizada antes de persistir.", auditPayload, admin.role);
     sheet.appendRow(rowValues);
-    logStructuredEvent("USER", "createDepartmentReferenceGrant", "INFO", "DEPARTMENT_REFERENCE_GRANT_CREATED",
-      "Concesión de referencia interdepartamental creada.", {
-        institutionId: admin.institutionId, grantId: grantId, resourceType: resourceType,
-        resourceId: resourceId, ownerDepartmentId: owner.departmentId, targetDepartmentId: targetDepartmentId,
-        authorizedBy: admin.actorId, validFrom: validFrom.toISOString(), expiresAt: expiresAt.toISOString()
-      }, admin.role);
+    var auditCompletionRecorded = true;
+    try {
+      appendDepartmentReferenceAuditEvent_("DEPARTMENT_REFERENCE_GRANT_CREATED",
+        "Concesión de referencia interdepartamental creada.", auditPayload, admin.role);
+    } catch (auditCompletionError) { auditCompletionRecorded = false; }
     return { status: "success", grantId: grantId, institutionId: admin.institutionId, resourceType: resourceType,
       resourceId: resourceId, ownerDepartmentId: owner.departmentId, targetDepartmentId: targetDepartmentId,
       allowedFields: fields, allowedDocumentIds: documents, authorizedBy: admin.actorId,
-      authorizedAt: now, validFrom: validFrom.toISOString(), expiresAt: expiresAt.toISOString(), grantStatus: "ACTIVE" };
+      authorizedAt: now, validFrom: validFrom.toISOString(), expiresAt: expiresAt.toISOString(), grantStatus: "ACTIVE", auditCompletionRecorded: auditCompletionRecorded };
   } catch (error) {
     return { status: "error", code: error.message || "DEPARTMENT_REFERENCE_GRANT_CREATE_FAILED" };
   } finally {
@@ -10988,16 +11012,16 @@ function revokeDepartmentReferenceGrant(payload) {
         revokedAt: current[13], revokedBy: current[14] };
     }
     var now = new Date().toISOString();
-    logStructuredEvent("USER", "revokeDepartmentReferenceGrant", "WARN", "DEPARTMENT_REFERENCE_GRANT_REVOKE_AUTHORIZED",
-      "Revocación de concesión interdepartamental autorizada antes de persistir.", {
-        institutionId: admin.institutionId, grantId: grantId, revokedBy: admin.actorId
-      }, admin.role);
+    var revokeAuditPayload = { institutionId: admin.institutionId, grantId: grantId, revokedBy: admin.actorId };
+    appendDepartmentReferenceAuditEvent_("DEPARTMENT_REFERENCE_GRANT_REVOKE_AUTHORIZED",
+      "Revocación de concesión interdepartamental autorizada antes de persistir.", revokeAuditPayload, admin.role);
     sheet.getRange(matches[0], 13, 1, 3).setValues([["REVOKED", now, admin.actorId]]);
-    logStructuredEvent("USER", "revokeDepartmentReferenceGrant", "WARN", "DEPARTMENT_REFERENCE_GRANT_REVOKED",
-      "Concesión de referencia interdepartamental revocada.", {
-        institutionId: admin.institutionId, grantId: grantId, revokedBy: admin.actorId
-      }, admin.role);
-    return { status: "success", grantId: grantId, grantStatus: "REVOKED", revokedAt: now, revokedBy: admin.actorId };
+    var revokeAuditCompletionRecorded = true;
+    try {
+      appendDepartmentReferenceAuditEvent_("DEPARTMENT_REFERENCE_GRANT_REVOKED",
+        "Concesión de referencia interdepartamental revocada.", revokeAuditPayload, admin.role);
+    } catch (auditCompletionError) { revokeAuditCompletionRecorded = false; }
+    return { status: "success", grantId: grantId, grantStatus: "REVOKED", revokedAt: now, revokedBy: admin.actorId, auditCompletionRecorded: revokeAuditCompletionRecorded };
   } catch (error) {
     return { status: "error", code: error.message || "DEPARTMENT_REFERENCE_GRANT_REVOKE_FAILED" };
   } finally {
