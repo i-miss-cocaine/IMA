@@ -13,6 +13,9 @@ const h=setup(),p=h.context.preview({anoLectivo:"2027",mesPeriodo:"Enero",nivelG
 const h=setup(),p=h.context.preview({anoLectivo:"2027",mesPeriodo:"1",nivelGrado:"Séptimo",conceptoId:"M1",seccion:"A"});assert.equal(p.totalEstudiantesElegibles,1);assert.equal(p.desglose[0].userId,"U1");
 }
 {
+const h=setup(),p8=h.context.preview({anoLectivo:"2027",mesPeriodo:"Enero",nivelGrado:"Octavo",conceptoId:"M1"}),pNext=h.context.preview({anoLectivo:"2028",mesPeriodo:"Enero",nivelGrado:"Séptimo",conceptoId:"M1"});assert.equal(p8.desglose[0].userId,"U3");assert.equal(p8.desglose[0].montoBase,2400);assert.equal(pNext.desglose[0].userId,"U5");assert.equal(pNext.desglose[0].montoBase,1300);
+}
+{
 const h=setup();h.sheets.TarifasPlanPago.rows.splice(1,1);const p=h.context.preview({anoLectivo:"2027",mesPeriodo:"Enero",nivelGrado:"Séptimo",conceptoId:"M1"});assert.equal(p.estudiantesSinTarifa,2);assert.equal(p.estudiantesParaGenerar,0);assert.ok(p.desglose.every(x=>x.estado==="SinTarifa"&&x.montoFinal===0));const g=h.context.generate({anoLectivo:"2027",mesPeriodo:"Enero",nivelGrado:"Séptimo",conceptoId:"M1"});assert.equal(g.creados,0);assert.equal(h.sheets.CargosEstudiante.rows.length,1);assert.equal(g.sinTarifa,2);
 }
 {
