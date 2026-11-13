@@ -31,7 +31,10 @@ function fixture(options = {}) {
       if (options.denied) throw new Error("RESOURCE_NOT_AVAILABLE");
       return callback({
         delivery: { row: ["EEX-1", "EXM-1", "STU-1", new Date(), "{}", "", "Pendiente"] , rowIndex: 1 },
-        deliverySheet: { getRange(...args) { return { setValues(rows) { calls.writes.push({ args, rows }); } }; } }
+        deliverySheet: {
+          getDataRange() { return { getValues() { return [["EntregaExamenID","ExamenID","UserID","FechaEntrega","RespuestasJSON","NotaTotal","Estado","ComentarioDocente","TemaAsociado","AsignaturaAsociada"]]; } }; },
+          getRange(...args) { return { setValues(rows) { calls.writes.push({ args, rows }); } }; }
+        }
       });
     },
     Number, Math, Error,
