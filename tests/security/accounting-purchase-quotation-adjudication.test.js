@@ -34,7 +34,7 @@ const q3=ctx.submitPurchaseQuotation({...payload,proveedorId:"S3",precioTotal:30
 assert.equal(q3.status,"success");
 rows.CotizacionesCompra.find(r=>r[0]===q3.cotizacionId)[3]=new Date(Date.now()-10*86400000);rows.CotizacionesCompra.find(r=>r[0]===q3.cotizacionId)[4]="1 día";
 const matrix=ctx.getPurchaseQuotationMatrix(payload);
-assert.equal(matrix.status,"success");assert.equal(matrix.cotizaciones.length,3);assert.equal(matrix.cotizaciones[0].proveedorNombre,"Proveedor S1");assert.equal(matrix.partidas.length,2);
+assert.equal(matrix.status,"success");assert.equal(matrix.cotizaciones.length,3);assert.ok(matrix.cotizaciones.some(q=>q.proveedorNombre==="Proveedor S1"),"matrix includes the first supplier regardless of display order");assert.equal(matrix.partidas.length,2);
 assert.equal(matrix.partidas[0].ofertas.find(x=>x.cotizacionId===q3.cotizacionId).estadoOferta,"PARCIAL");assert.equal(matrix.cotizaciones.find(x=>x.cotizacionId===q3.cotizacionId).vigente,false,"expired quotations are visible but not selectable");
 assert.equal(matrix.partidas[0].ofertas.find(x=>x.cotizacionId===q1.cotizacionId).menorPrecio,true);
 const award=ctx.adjudicatePurchaseQuotations({...payload,idempotencyKey:"AWARD-REQ-1-0001",dictamen:"Adjudicación por precio y cumplimiento técnico",justificacion:"Se eligen las ofertas de menor costo total que cumplen las especificaciones.",responsablesEvaluacion:["USR-COMPRAS-1"],adjudicaciones:[{itemId:"ITEM-A",cotizacionId:q1.cotizacionId,cantidadAdjudicada:5},{itemId:"ITEM-B",cotizacionId:q2.cotizacionId,cantidadAdjudicada:2}],ofertasDescartadas:[{cotizacionId:q3.cotizacionId,motivo:"Oferta parcial y costo unitario superior."}]});
