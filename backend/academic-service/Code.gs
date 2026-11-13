@@ -12332,28 +12332,142 @@ function createStudentEnrollment(payload) {
 }
 
 function getStudentEnrollments(payload) {
-  const { userId, anolectivo } = payload || {};
+  const request = payload || {};
+  const actor = getVerifiedAcademicIdentity_(request);
+  if (!actor || actor.authorized !== true || !actor.userId || !actor.role) {
+    return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "Acceso denegado." };
+  }
+
+  const normalizeRole = function(value) {
+    const role = String(value || "").trim().toUpperCase()
+      .replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I")
+      .replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N")
+      .replace(/[^A-Z0-9]/g, "");
+    return role === "ESTUDIANTE" || role === "ALUMNO" ? "STUDENT" : role;
+  };
+  const activeState = function(value) {
+    const state = String(value === true ? "TRUE" : value || "").trim().toUpperCase();
+    return ["ACTIVO", "ACTIVA", "ACTIVE", "TRUE", "1"].indexOf(state) !== -1;
+  };
+  const actorRole = normalizeRole(actor.role);
+  const studentRoles = ["STUDENT"];
+  const guardianRoles = ["PADRE", "MADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"];
+
+  const requestedUserId = String(request.userId || "").trim();
+  const targetUserId = studentRoles.indexOf(actorRole) !== -1
+    ? String(actor.userId).trim()
+    : requestedUserId;
+  if (!targetUserId) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Matrículas no disponibles." };
+  }
+
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "Matriculas").getDataRange().getValues().slice(1);
+  const usersSheet = ss.getSheetByName("Usuarios");
+  if (!usersSheet) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Matrículas no disponibles." };
+  const userData = usersSheet.getDataRange().getValues();
+  if (!userData || userData.length < 2 || !Array.isArray(userData[0])) {
+    return { status: "error", code: "RESOURCE_SCHEMA_INVALID", message: "La estructura de usuarios no es válida." };
+  }
+  const userHeaders = userData[0].map(function(value) { return String(value || "").trim().toUpperCase(); });
+  const userIdIndex = userHeaders.indexOf("USERID");
+  const personIdIndex = userHeaders.indexOf("PERSONAID");
+  const roleIndex = userHeaders.indexOf("ROL");
+  const stateIndex = userHeaders.indexOf("ESTADOCUENTA") >= 0 ? userHeaders.indexOf("ESTADOCUENTA") : userHeaders.indexOf("ESTADO");
+  if ([userIdIndex, personIdIndex, roleIndex, stateIndex].some(function(index) { return index < 0; })) {
+    return { status: "error", code: "RESOURCE_SCHEMA_INVALID", message: "La estructura de usuarios no es válida." };
+  }
 
-  let filtered = rows;
-  if (userId) filtered = filtered.filter(r => String(r[2]).trim() === String(userId).trim());
-  if (anolectivo) filtered = filtered.filter(r => String(r[6]).trim() === String(anolectivo).trim());
+  const userRows = userData.slice(1);
+  const actorRows = userRows.filter(function(row) {
+    return String(row[userIdIndex] || "").trim() === String(actor.userId).trim();
+  });
+  if (actorRows.length !== 1 ||
+      normalizeRole(actorRows[0][roleIndex]) !== actorRole ||
+      !activeState(actorRows[0][stateIndex])) {
+    return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "Acceso denegado." };
+  }
+  if (guardianRoles.indexOf(actorRole) !== -1 && !String(actorRows[0][personIdIndex] || "").trim()) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Matrículas no disponibles." };
+  }
 
-  const mapped = filtered.map(r => ({
-    matriculaId: r[0],
-    fecha: r[1],
-    userId: r[2],
-    alumno: r[3],
-    grado: r[4],
-    seccion: r[5],
-    periodo: r[6],
-    tipo: r[7],
-    estado: r[8],
-    becaDescuento: r[9],
-    observaciones: r[10]
-  }));
+  const targetRows = userRows.filter(function(row) {
+    return String(row[userIdIndex] || "").trim() === targetUserId;
+  });
+  if (targetRows.length !== 1 ||
+      studentRoles.indexOf(normalizeRole(targetRows[0][roleIndex])) === -1 ||
+      !activeState(targetRows[0][stateIndex])) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Matrículas no disponibles." };
+  }
+  const targetPersonId = String(targetRows[0][personIdIndex] || "").trim();
+  if (!targetPersonId) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Matrículas no disponibles." };
+  const studentIdentity = getStudentIdentityForPerson_(ss, targetPersonId);
+  if (!studentIdentity || String(studentIdentity.userId || "").trim() !== targetUserId) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Matrículas no disponibles." };
+  }
 
+  const expedienteSheet = ss.getSheetByName("ExpedientesEstudiantes");
+  if (!expedienteSheet) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Matrículas no disponibles." };
+  const expedienteData = expedienteSheet.getDataRange().getValues();
+  if (!expedienteData || !expedienteData.length || !Array.isArray(expedienteData[0]) ||
+      String(expedienteData[0][0] || "").trim().toUpperCase() !== "EXPEDIENTEID" ||
+      String(expedienteData[0][1] || "").trim().toUpperCase() !== "PERSONAID") {
+    return { status: "error", code: "RESOURCE_SCHEMA_INVALID", message: "La estructura de expedientes no es válida." };
+  }
+  const expedienteRows = expedienteData.slice(1);
+  const matchingExpedientes = expedienteRows.filter(function(row) {
+    return String(row[1] || "").trim() === targetPersonId;
+  });
+  if (matchingExpedientes.length !== 1) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Matrículas no disponibles." };
+  }
+  const expediente = matchingExpedientes[0];
+  const expedienteId = String(expediente[0] || "").trim();
+  if (!expedienteId || expedienteRows.filter(function(row) {
+    return String(row[0] || "").trim() === expedienteId;
+  }).length !== 1) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Matrículas no disponibles." };
+  }
+
+  const access = assertStudentExpedienteScopeAccess_(request, ss, expedienteSheet, expediente);
+  if (!access || access.authorized !== true) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Matrículas no disponibles." };
+  }
+
+  const enrollmentSheet = ss.getSheetByName("Matriculas");
+  if (!enrollmentSheet) return { status: "success", enrollments: [] };
+  const enrollmentData = enrollmentSheet.getDataRange().getValues();
+  if (!enrollmentData || !enrollmentData.length) return { status: "success", enrollments: [] };
+  const enrollmentHeaders = [
+    "MatriculaID", "Fecha", "UserId", "Alumno", "Grado", "Seccion",
+    "Periodo", "Tipo", "Estado", "BecaDescuento", "Observaciones"
+  ];
+  if (!Array.isArray(enrollmentData[0]) || enrollmentData[0].length !== enrollmentHeaders.length ||
+      enrollmentHeaders.some(function(header, index) {
+        return String(enrollmentData[0][index] || "").trim().toUpperCase() !== header.toUpperCase();
+      })) {
+    return { status: "error", code: "RESOURCE_SCHEMA_INVALID", message: "La estructura de matrículas no es válida." };
+  }
+
+  const rows = enrollmentData.slice(1);
+  const matriculaCounts = Object.create(null);
+  rows.forEach(function(row) {
+    const id = String(row[0] || "").trim();
+    if (id) matriculaCounts[id] = (matriculaCounts[id] || 0) + 1;
+  });
+  const period = String(request.anolectivo || "").trim();
+  const filtered = rows.filter(function(row) {
+    if (!Array.isArray(row) || row.length < enrollmentHeaders.length) return false;
+    const id = String(row[0] || "").trim();
+    if (!id || matriculaCounts[id] !== 1 || String(row[2] || "").trim() !== targetUserId) return false;
+    return !period || String(row[6] || "").trim() === period;
+  });
+  const mapped = filtered.map(function(row) {
+    return {
+      matriculaId: row[0], fecha: row[1], userId: row[2], alumno: row[3],
+      grado: row[4], seccion: row[5], periodo: row[6], tipo: row[7],
+      estado: row[8], becaDescuento: row[9], observaciones: row[10]
+    };
+  });
   return { status: "success", enrollments: mapped };
 }
 

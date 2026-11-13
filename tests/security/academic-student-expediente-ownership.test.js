@@ -700,3 +700,118 @@ console.log("ACADEMIC public enrollment internal-metadata isolation contract pas
     "a concurrent conversion that cannot acquire the lock must not read or mutate persistence");
 }
 console.log("ACADEMIC admission conversion lock contention and release contract passed.");
+
+// Student enrollment listing must bind the requested user to a unique active
+// student identity and a uniquely owned expediente before reading Matriculas.
+{
+  const userRows = [
+    ["UserID","Email","Nombre","x3","x4","x5","Rol","x7","x8","PersonaID","EstadoCuenta"],
+    ["STU-1","","Student 1","","","","Estudiante","","","PERSON-1","Activo"],
+    ["STU-2","","Student 2","","","","Alumno","","","PERSON-2","Activo"],
+    ["TUTOR-1","","Guardian","","","","Tutor","","","PERSON-T","Activo"],
+    ["STAFF-A","","Director A","","","","Director","","","PERSON-SA","Activo"],
+    ["STAFF-B","","Director B","","","","Director","","","PERSON-SB","Activo"]
+  ];
+  const expedienteRows = [
+    ["ExpedienteID","PersonaID","CodigoInstitucional","FechaNacimiento","Nacionalidad","DireccionResidencia","FotografiaUrl","EstadoExpediente","FechaCreacion","FechaActualizacion","Observaciones"],
+    ["EXP-1","PERSON-1","COD-1","","","","","Activo","","",""],
+    ["EXP-2","PERSON-2","COD-2","","","","","Activo","","",""]
+  ];
+  const enrollmentRows = [
+    ["MatriculaID","Fecha","UserId","Alumno","Grado","Seccion","Periodo","Tipo","Estado","BecaDescuento","Observaciones"],
+    ["MAT-1",new Date("2026-01-10"),"STU-1","Student 1","1","A","2026","Ordinaria","Activa",0,""],
+    ["MAT-1-OLD",new Date("2025-01-10"),"STU-1","Student 1","K","A","2025","Ordinaria","Cerrada",0,""],
+    ["MAT-2",new Date("2026-01-10"),"STU-2","Student 2","2","B","2026","Ordinaria","Activa",0,""]
+  ];
+  const relationRows = [
+    ["RelacionID","ExpedienteID","ResponsableID","TipoParentesco","EsRepresentanteLegal","EsContactoEmergencia","EsResponsableFinanciero","AutorizadoPickUp","AccesoPortal","Estado"],
+    ["REL-1","EXP-1","RESP-1","Madre","Sí","Sí","Sí","Sí","Sí","Activo"]
+  ];
+  const guardianRows = [
+    ["ResponsableID","PersonaID","Nombres","Apellidos"],
+    ["RESP-1","PERSON-T","Guardian","One"]
+  ];
+  const ownership = {"EXP-1":"D1","EXP-2":"D2"};
+  const enrollmentSheets = {
+    Usuarios:makeSheet(userRows),
+    ExpedientesEstudiantes:makeSheet(expedienteRows),
+    Matriculas:makeSheet(enrollmentRows),
+    RelacionesEstudianteTutor:makeSheet(relationRows),
+    ResponsablesTutores:makeSheet(guardianRows)
+  };
+  const enrollmentSs = {getSheetByName:name=>enrollmentSheets[name]||null};
+  const enrollmentContext = {
+    SPREADSHEET_ID:"SYNTHETIC",
+    SpreadsheetApp:{openById:()=>enrollmentSs},
+    getVerifiedAcademicIdentity_:payload=>payload&&payload.identity||{authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"},
+    getVerifiedAcademicDepartmentScope_:(_payload,_ss,identity)=>({
+      authorized:true,userId:identity.userId,role:identity.role,institutionId:"INST-1",
+      departmentIds:[identity.userId==="STAFF-B"||identity.userId==="STU-2"? "D2":"D1"],institutionWide:false
+    }),
+    getVerifiedAcademicGuardianDepartmentScope_:(_payload,_ss,guardian,student)=>({
+      authorized:true,userId:student.userId,role:student.role,institutionId:"INST-1",
+      departmentIds:[student.userId==="STU-2"?"D2":"D1"],institutionWide:false
+    }),
+    assertResourceOwnershipForScope_:(_ss,scope,type,id,operation)=>({
+      authorized:type==="EXPEDIENTE_ESTUDIANTE"&&operation==="READ"&&
+        (scope.institutionWide===true||(scope.departmentIds||[]).includes(ownership[id])),
+      code:"RESOURCE_SCOPE_DENIED",departmentId:ownership[id]||""
+    })
+  };
+  const enrollmentFunctions=[
+    extractFunction("getStudentPersonIdForUser_"),
+    extractFunction("getStudentIdentityForPerson_"),
+    extractFunction("assertStudentExpedienteScopeAccess_"),
+    extractFunction("getStudentEnrollments")
+  ].join("\n");
+  vm.runInNewContext(enrollmentFunctions+"\nthis.getStudentEnrollments=getStudentEnrollments;",enrollmentContext);
+  const call=(identity,extra)=>enrollmentContext.getStudentEnrollments(Object.assign({identity},extra||{}));
+  const studentOwn=call({authorized:true,userId:"STU-1",role:"Estudiante"},{userId:"STU-2"});
+  assert.equal(studentOwn.status,"success","student should receive own enrollment list");
+  assert.deepEqual(studentOwn.enrollments.map(row=>row.matriculaId),["MAT-1","MAT-1-OLD"],
+    "student-supplied userId must be ignored and never expose another student's enrollment");
+  const studentPeriod=call({authorized:true,userId:"STU-1",role:"Estudiante"},{anolectivo:"2025"});
+  assert.deepEqual(studentPeriod.enrollments.map(row=>row.matriculaId),["MAT-1-OLD"],
+    "period filters may narrow but must not expand the signed student's access");
+  const guardianOwn=call({authorized:true,userId:"TUTOR-1",role:"Tutor"},{userId:"STU-1"});
+  assert.equal(guardianOwn.status,"success","guardian with an active portal relationship may read the linked student's enrollments");
+  assert.deepEqual(guardianOwn.enrollments.map(row=>row.matriculaId),["MAT-1","MAT-1-OLD"]);
+  assert.equal(call({authorized:true,userId:"TUTOR-1",role:"Tutor"},{userId:"STU-2"}).code,"RESOURCE_NOT_FOUND",
+    "guardian must not query an unrelated student's enrollments");
+  assert.equal(call({authorized:true,userId:"STAFF-A",role:"Director"},{userId:"STU-1"}).status,"success",
+    "department staff may read an owned student enrollment");
+  assert.equal(call({authorized:true,userId:"STAFF-A",role:"Director"},{userId:"STU-2"}).code,"RESOURCE_NOT_FOUND",
+    "department staff must not read another department's enrollment");
+  assert.equal(call({authorized:true,userId:"STAFF-B",role:"Director"},{userId:"STU-2"}).status,"success",
+    "staff in the owning department may read the student's enrollment");
+  assert.equal(enrollmentContext.getStudentEnrollments({identity:{authorized:false},userId:"STU-1"}).code,"VERIFIED_IDENTITY_REQUIRED",
+    "unverified identity must be rejected");
+  const duplicateUser=userRows[1].slice();userRows.push(duplicateUser);
+  assert.equal(call({authorized:true,userId:"STU-1",role:"Estudiante"}).code,"VERIFIED_IDENTITY_REQUIRED",
+    "ambiguous signed-user mapping must fail closed");
+  userRows.pop();
+  const duplicateStudent=userRows[2].slice();duplicateStudent[0]="STU-3";userRows.push(duplicateStudent);
+  assert.equal(call({authorized:true,userId:"STAFF-A",role:"Director"},{userId:"STU-2"}).code,"RESOURCE_NOT_FOUND",
+    "duplicate active student person mappings must fail closed");
+  userRows.pop();
+  const duplicateExpediente=expedienteRows[1].slice();duplicateExpediente[0]="EXP-1-DUP";expedienteRows.push(duplicateExpediente);
+  assert.equal(call({authorized:true,userId:"STAFF-A",role:"Director"},{userId:"STU-1"}).code,"RESOURCE_NOT_FOUND",
+    "ambiguous student expediente mappings must fail closed");
+  expedienteRows.pop();
+  enrollmentRows.push(enrollmentRows[3].slice());
+  assert.deepEqual(call({authorized:true,userId:"STAFF-B",role:"Director"},{userId:"STU-2"}).enrollments,[],
+    "duplicate MatriculaID values must be excluded instead of attributed to either student");
+  enrollmentRows.pop();
+  enrollmentSheets.Matriculas=makeSheet([["MatriculaID","UserId"]]);
+  assert.equal(call({authorized:true,userId:"STAFF-A",role:"Director"},{userId:"STU-1"}).code,"RESOURCE_SCHEMA_INVALID",
+    "malformed enrollment headers must fail closed");
+  delete enrollmentSheets.Matriculas;
+  assert.deepEqual(call({authorized:true,userId:"STAFF-A",role:"Director"},{userId:"STU-1"}).enrollments,[],
+    "missing enrollment storage must return an empty list without creating a sheet");
+  const sourceFunction=extractFunction("getStudentEnrollments");
+  assert(sourceFunction.includes("assertStudentExpedienteScopeAccess_"),
+    "enrollment reads must pass through the verified expediente ownership guard");
+  assert(!sourceFunction.includes("getOrCreateSheet"),
+    "enrollment reads must not create or mutate persistence");
+}
+console.log("ACADEMIC student enrollment query ResourceOwnership contract passed.");
