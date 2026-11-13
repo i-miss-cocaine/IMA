@@ -555,14 +555,12 @@ assert.equal(context.recordStaffCheckIn({sessionToken:"invalid",empleadoId:"U-EM
 assert.equal(context.recordStaffCheckIn({sessionToken:"student",empleadoId:"U-EMP"}).code,"ROLE_NOT_ALLOWED","non-staff roles cannot register attendance");
 assert.equal(context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-B",tipoRegistro:"Entrada"}).code,"RESOURCE_NOT_FOUND","employee cannot register attendance for another user");
 assert.equal(rows.DeduccionesAsistencia.length,attendanceWritesBefore,"denied attendance writes must not mutate storage");
-const lockOriginal=context.LockService,lockState={held:false},lockSheet=ss.getSheetByName("DeduccionesAsistencia"),appendOriginal=lockSheet.appendRow;
-let nestedLockResult=null;
-context.LockService={getScriptLock:()=>({waitLock:()=>{if(lockState.held)throw Error("lock busy");lockState.held=true;},releaseLock:()=>{lockState.held=false;}})};
-lockSheet.appendRow=row=>{nestedLockResult=context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",tipoRegistro:"Entrada"});appendOriginal(row);};
+const lockOriginal=context.LockService,lockState={held:false};let nestedLockResult=null,nestedTriggered=false;
+context.LockService={getScriptLock:()=>({waitLock:()=>{if(lockState.held)throw Error("lock busy");lockState.held=true;if(!nestedTriggered){nestedTriggered=true;nestedLockResult=context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",tipoRegistro:"Entrada"});}},releaseLock:()=>{lockState.held=false;}})};
 const concurrencyResult=context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",tipoRegistro:"Salida"});
 assert.equal(concurrencyResult.status,"success","first concurrent mark must commit");
 assert.equal(nestedLockResult.code,"CONCURRENT_UPDATE_RETRY","overlapping attendance write must fail closed while the script lock is held");
-lockSheet.appendRow=appendOriginal;context.LockService=lockOriginal;
+context.LockService=lockOriginal;
 
 const selfEntry=context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",empleadoNombre:"Empleado A",horaEntradaEsperada:"00:01",tipoRegistro:"Entrada"});
 assert.equal(selfEntry.status,"success","employee can register own attendance: "+JSON.stringify(selfEntry));
