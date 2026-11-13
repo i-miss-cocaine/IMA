@@ -37,7 +37,7 @@ function makeRuntime(options = {}) {
       if(name==="IMA_DEPARTMENT_REFERENCE_HMAC_SECRET")return options.secret===undefined?secret:options.secret;
       return null;
     }};}},
-    Utilities:{MacAlgorithm:{HMAC_SHA_256:"HMAC_SHA_256"},getUuid(){uuidSequence++;return"12345678-1234-1234-1234-"+String(uuidSequence).padStart(12,"0");},
+    Utilities:{MacAlgorithm:{HMAC_SHA_256:"HMAC_SHA_256"},getUuid(){uuidSequence++;return String(uuidSequence).padStart(12,"0")+"-1234-1234-1234-123456789012";},
       computeHmacSignature(algorithm,body,key){return Array.from(crypto.createHmac("sha256",key).update(body).digest());}},
     UrlFetchApp:{fetch(url,request){
       calls.push({url,request});
