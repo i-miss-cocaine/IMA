@@ -35,5 +35,5 @@ const dist=rows.DistribucionBoletasPago.slice(1);assert.equal(dist.filter(r=>r[5
 const permissions=fs.readFileSync(path.join(root,"backend/accounting-service/Code.gs"),"utf8");
 assert.ok(permissions.includes('"previewPayrollReceiptDistribution", "processPayrollReceiptDistribution"'));
 assert.ok(permissions.includes('"Profesor": ["getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile"'));
-assert.ok(hr.includes("payroll-receipt-distribution-panel"),"HR dashboard includes distribution controls");
+assert.ok(hr.includes("payroll-receipt-distribution-panel")&&hr.includes("btn-preview-payroll-receipts")&&hr.includes("btn-send-payroll-receipts")&&hr.includes("btn-retry-payroll-receipts"),"HR dashboard includes preview, send and retry controls");
 console.log("ACCOUNTING payroll receipt distribution, privacy, closed-plan access, retry/idempotency and multi-employee plan contract passed");
