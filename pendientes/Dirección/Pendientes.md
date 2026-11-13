@@ -806,6 +806,10 @@
 - GitHub Actions 43325626382 Identity mapping and transport security contracts: SUCCESS. TASK-153 continúa En ejecución.
 ---
 
+- **Avance C1.684 — política de referencias interdepartamentales:** `backend/user-service/Code.gs` incorpora `evaluateDepartmentReferenceAccess_`, evaluador puro basado en contexto de actor verificado, ResourceOwnership verificado, política institucional y concesión exacta. Solo permite `READ_REFERENCE` entre departamentos bajo allowlist explícita de campos/documentos, con vigencia y revocación comprobadas en cada evaluación. Toda decisión devuelve `auditEvent`; las decisiones positivas exigen autorización estándar adicional.
+- **Pruebas C1.684:** `tests/security/department-reference-policy.test.js`, 28 escenarios sintéticos; Department Scope CI run 43420632732 SUCCESS (Node.js 24.22.2), incluyendo contrato de referencias, ResourceOwnership ABAC y sintaxis de los seis servicios.
+- **Límites:** este incremento no crea `DepartmentReferenceGrants` ni `ConfiguracionInstitucional`, no añade endpoints/callsites productivos y no persiste el auditEvent. No habilita acceso interdepartamental real; la integración de consumidores, RBAC administrativo, persistencia de auditoría y revocación operativa permanecen pendientes. TASK-153 continúa En ejecución.
+
 <!-- ID: AUD-NG-164 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-164] Completar catálogo curricular maestro y relaciones de asignaturas/planes/ofertas
 - Severidad: Alto (P1).

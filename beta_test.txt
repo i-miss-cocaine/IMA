@@ -1504,3 +1504,11 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** el preview refleja los encabezados y filtros correctos; la tarifa se calcula por grado/año/concepto sin montos inventados; solo se bloquea la misma combinación estudiante+concepto+mes+año; la falta de tarifa no crea cargos; la concurrencia no duplica filas y el lock se libera en fallos.
 - **Evidencia requerida:** parámetros y respuestas de preview/generación, snapshots sintéticos de Matriculas/CargosEstudiante, claves persistidas, IDs creados/omitidos, logs de lock y comparación antes/después. No incluir PII real.
 - **Estado:** Pendiente beta.
+
+## BETA-FUNC-059 — TASK-153 / referencias interdepartamentales de solo lectura
+- **Objetivo:** validar la integración desplegada de `DepartmentReferenceGrants` y `POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL` sin exponer expedientes completos.
+- **Precondiciones:** endpoints consumidores integrados; configuración por InstitutionID; tabla DepartmentReferenceGrants; actor, recurso y membresía de prueba; permisos administrativos RBAC; persistencia de eventos de auditoría.
+- **Pasos:** (1) sin configuración, comprobar bloqueo cross-departamento; (2) con política permisiva, crear una concesión exacta para recurso/propietario/departamento destino; (3) solicitar solo campos y documentos permitidos; (4) probar campos/documentos fuera de allowlist y operaciones distintas de READ_REFERENCE; (5) probar concesión duplicada, ausente, inactiva, revocada, futura y vencida; (6) probar tenant y departamento destino incorrectos; (7) comprobar que el auditEvent queda persistido antes de entregar contenido; (8) revocar la concesión y repetir la lectura.
+- **Resultado esperado:** default estricto; solo lectura de referencias exactas bajo vigencia; ningún acceso completo, modificación, descarga ni exportación por concesión; denegaciones sin filtración de existencia; revocación efectiva inmediata; auditoría completa.
+- **Evidencia requerida:** snapshots sintéticos de configuración/concesiones, respuestas de endpoint, auditEvents persistidos, pruebas positivas/negativas por rol y comparación de acceso antes/después de revocar. No usar PII real.
+- **Estado:** Pendiente beta e integración productiva.

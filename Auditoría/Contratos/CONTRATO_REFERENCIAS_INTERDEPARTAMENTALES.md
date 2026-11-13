@@ -58,3 +58,10 @@ No se crea ConfiguracionInstitucional ni DepartmentReferenceGrants en Sheets, no
 
 - La tabla DepartmentReferenceGrants solo puede escribirse mediante un endpoint administrativo del servidor con RBAC explícito; nunca desde el cliente. La función consumidora confía únicamente en snapshots cargados por el servidor.
 - El auditEvent registra los campos y documentos solicitados incluso en denegación. La respuesta de denegación no devuelve las allowlists completas; el consumidor conserva el evento y no entrega contenido antes de persistirlo.
+
+
+## Evidencia de implementación C1.684
+- `backend/user-service/Code.gs` contiene `evaluateDepartmentReferenceAccess_`, función pura sin lecturas/escrituras ni efectos laterales.
+- `tests/security/department-reference-policy.test.js` cubre 28 escenarios: default estricto, mismo departamento, alcance institucional explícito, tenant, ownership, operaciones, allowlists, concesiones ausentes/duplicadas/inactivas/revocadas/futuras/vencidas, autor y vigencia, wildcard, configuración inválida, auditoría de denegaciones y requisito de autorización estándar.
+- Department Scope CI run 43420632732: SUCCESS, Node.js 24.22.2. El paso `Run interdepartmental reference policy contract` y la sintaxis de los seis servicios finalizaron correctamente.
+- No existen todavía callsites productivos ni persistencia real de `DepartmentReferenceGrants`, configuración institucional o auditEvent. El helper no habilita por sí solo ningún acceso; la integración y persistencia previas a la entrega de contenido son obligatorias.
