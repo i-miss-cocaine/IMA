@@ -3334,3 +3334,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se añadió `authorizeDepartmentReferenceRead` al dispatcher USER: contexto de sesión/tenant/departamento autenticado, permiso dinámico, ResourceOwnership, política institucional y concesión vigente; registra ALLOW/DENY durable antes de responder; no entrega contenido; exige RBAC estándar adicional.
 - Contrato `tests/security/department-reference-read-authorization.test.js`: 23 escenarios PASS. Department Scope CI run 43423969896 SUCCESS (Node.js 24.22.2), junto con grant admin 26, policy storage 20, evaluator 28, ABAC y sintaxis.
 - Sin integración en callsites consumidores ni UI. No se ha habilitado acceso compartido productivo.
+
+
+[2026-11-13 UTC] [IMA-EXEC-20261113-1205Z-01] TASK-153 / T153-S05 — consumidor ACADEMIC de referencias documentales auditadas (C1.688)
+- ACADEMIC getStudentDocuments consulta USER mediante sobre HMAC-SHA256 solo cuando ownership deniega exclusivamente por RESOURCE_SCOPE_DENIED y el solicitante pide un expediente/documentos explícitos.
+- La respuesta de referencia contiene únicamente DocumentoID y metadatos aprobados por la allowlist; se excluyen expediente completo, DriveFileId/DriveUrl, historial, observaciones y contenido. La consulta ordinaria del mismo departamento conserva su contrato.
+- Se agregó tests/security/academic-department-reference-consumer.test.js (17 escenarios) y se integró al workflow Department Scope.
+- Commits: a0e902a (implementación), 7c4fe20 (contrato), 73feaac (workflow). Node local NOT RUN por DNS; combined status y lookup de runs sin evidencia visible al consultar; no se declara PASS de CI. BETA-FUNC-063 Pendiente beta.
+- TASK-153 permanece En ejecución; no se activaron secretos ni configuración real.
