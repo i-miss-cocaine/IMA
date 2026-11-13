@@ -3120,3 +3120,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-13 UTC] [IMA-EXEC-20261112-1754Z-03] C1.663 — verificación CI
 - Department Scope Contract run 43344297344: contrato ACCOUNTING departmental resource access PASS, incluidos los escenarios getEmployeeContractAlerts.
 - El workflow global falla después en User Role Membership contract por el caso foreignLegacy (verifySessionToken devuelve null y el test accede a .role), fallo previo y ajeno a esta modificación. Syntax-check global SKIPPED.
+
+
+[2026-11-13 UTC] [IMA-EXEC-20261112-1754Z-03] C1.664 — ACCOUNTING getEmployeeTrainingHistory
+- Protegido el historial de capacitación, certificados y planes de desarrollo mediante identidad firmada y ownership por expediente/ámbito departamental.
+- Autoservicio limitado al empleado autenticado; anti-enumeración, exclusión de IDs duplicados y relaciones ambiguas, validación de esquemas y lectura sin crear hojas.
+- Parseo sintáctico PASS y contrato ACCOUNTING departmental resource access PASS (Department Scope run 43345686480). El workflow global falla después en User Role Membership (foreignLegacy nulo en línea 119), fallo ajeno al cambio y ya observado previamente. BETA-FUNC-042 Pendiente beta; sin despliegue real.

@@ -83,3 +83,18 @@
 - **HEAD funcional verificado:** 94d7b9c20997947463f3adf6573f944016a2bb61. La suite integrada de acceso ACCOUNTING sí se ejecutó y pasó; el parseo sintáctico local de Code.gs también pasó. No se ejecutó Apps Script/Sheets real.
 - **HEAD documental final:** se confirma tras publicar este addendum; el commit se limita a checkpoint, índice y registros.
 ===============================================================================
+
+===============================================================================
+### C1.664 — IMA-EXEC-20261112-1754Z-03 — aislamiento del historial de capacitación (ACCOUNTING)
+- **HEAD funcional inicial:** a747a5933b6205067b554895e7bd0943acc78e88. **HEAD previo al checkpoint:** 4c993b594312319391ea1dd47ff461b11690b248. **Rama:** NG_beta_0.0.0.1_work. **Rama base:** NG_beta_0.0.0.1 = 44d9891132332e692dbe2ba8602b41f50a508a59, sin modificaciones.
+- **Tarea/subalcance:** TASK-153 / AUD-NG-386; siguiente callsite de consulta laboral después de C1.663.
+- **Hallazgo:** getEmployeeTrainingHistory podía exponer inscripciones, certificados, resultados, observaciones y planes sin verificar ownership/ámbito de cada expediente ni garantizar mapeo único de empleado.
+- **Corrección:** identidad/rol de sesión firmada; mapeo UserID↔ExpedienteID único; autorización por assertEmployeeExpedienteScopeAccess_; filtro por ámbito y autoservicio propio; consultas ajenas con RESOURCE_NOT_FOUND; esquemas exactos; IDs duplicados y relaciones ambiguas excluidos; lecturas con getSheetByName sin crear hojas; respuesta compatible data.cursos/inscripciones/planesDesarrollo. Se incluye el endpoint en resourceScopeActions y en el conjunto de autoservicio Empleado.
+- **Archivos funcionales:** backend/accounting-service/Code.gs; tests/security/accounting-departmental-resource-access.test.js. **Registros:** beta_test.txt; Auditoria.txt; changueslogs.txt; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt; Auditoría/INDICE_CHECKPOINTS.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md.
+- **Verificación local:** parseo sintáctico completo Code.gs y test PASS; escenarios V8 focalizados iniciales DEP-A/DEP-B, institución, empleado propio, consulta ajena, payload falsificado e identidad inválida PASS.
+- **CI:** Department Scope run 43345686480: contrato ACCOUNTING departmental resource access PASS, al igual que Department Scope, Internal Responsibility RBAC, ACCOUNTING departmental import scope y USER migrated resource ownership. El workflow global falla después en User Role Membership contract, tests/security/user-role-membership-contract.test.js:119: verifySessionToken(foreignLegacy) devuelve null y el test accede a .role; fallo ajeno al subalcance y registrado antes de C1.664. Los pasos posteriores quedan SKIPPED. Identity Mapping and Transport Security run 43345296984 SUCCESS.
+- **Commits funcionales y de pruebas:** a747a5933b6205067b554895e7bd0943acc78e88 (endpoint + pruebas); 15db9e8e139c0d441b340e75401fb4132957f4a1 (aserción de autoservicio); 41a369310205e4c9bc9297de7feddd1e659edcdd (dependencia parseJsonSafe en harness); 4c993b594312319391ea1dd47ff461b11690b248 (expectativa correcta para expediente ambiguo).
+- **Beta:** BETA-FUNC-042 Pendiente beta. No se desplegó Apps Script/Sheets ni se utilizaron datos reales.
+- **Estado:** subalcance corregido y prueba integrada ACCOUNTING PASS; TASK-153 permanece En ejecución. **Siguiente callsite elegible:** revisar getLaborIncidentsHistory para aplicar identidad firmada y ownership antes de exponer incidencias laborales.
+- **HEAD final:** se confirma después de publicar los registros de checkpoint.
+===============================================================================

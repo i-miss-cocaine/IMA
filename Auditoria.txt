@@ -2683,3 +2683,14 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 - **Addendum C1.663 / CI:** Department Scope Contract run 43344297344 confirmó PASS del contrato ACCOUNTING departmental resource access, incluidos los nuevos escenarios de alertas de contratos. El workflow global falla posteriormente en User Role Membership contract (foreignLegacy nulo y acceso a .role), fallo previamente observado y no atribuible a C1.663; syntax-check global quedó SKIPPED. TASK-153 sigue En ejecución; BETA-FUNC-041 pendiente.
+
+
+===============================================================================
+### C1.664 — AUD-NG-386 / TASK-153 — ACCOUNTING getEmployeeTrainingHistory
+- **Severidad:** Alto — exposición interdepartamental de certificados, resultados, observaciones y planes de desarrollo de empleados.
+- **Hallazgo:** getEmployeeTrainingHistory no aplicaba identidad firmada ni ownership departamental a inscripciones y planes; admitía consultas de empleado sin garantizar la relación única con ExpedientesLaborales.
+- **Corrección:** identidad/rol derivados de sesión firmada; relación única UserID↔ExpedienteID; autorización por assertEmployeeExpedienteScopeAccess_ y ResourceOwnership; autoservicio limitado al empleado autenticado; anti-enumeración RESOURCE_NOT_FOUND; validación de encabezados; exclusión de IDs duplicados y relaciones ambiguas; lecturas getSheetByName sin escrituras; forma compatible data.cursos/inscripciones/planesDesarrollo.
+- **Archivos funcionales:** backend/accounting-service/Code.gs; tests/security/accounting-departmental-resource-access.test.js. El endpoint se incorpora a resourceScopeActions y a la lista de autoservicio de empleados.
+- **Verificación:** parseo sintáctico Code.gs/test PASS; contrato ACCOUNTING departmental resource access PASS en Department Scope run 43345686480; los pasos previos Department Scope, Internal Responsibility RBAC, ACCOUNTING departmental import y USER migrated resource ownership también PASS. El workflow global falla después en User Role Membership contract, test tests/security/user-role-membership-contract.test.js:119: verifySessionToken(foreignLegacy) retorna null y el test intenta leer .role. Es un fallo ajeno al alcance ACCOUNTING, previamente observado en checkpoints anteriores; pasos posteriores quedan SKIPPED. Identity Mapping and Transport Security run 43345296984 SUCCESS.
+- **Estado:** subalcance corregido y contrato focalizado integrado PASS; TASK-153 permanece En ejecución. BETA-FUNC-042 Pendiente beta. Apps Script/Sheets real no desplegado.
+===============================================================================
