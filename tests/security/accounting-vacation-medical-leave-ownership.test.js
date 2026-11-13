@@ -25,6 +25,7 @@ assert.equal(ctx.submitLeaveVacationRequest({...p("ha"),expedienteId:"EA",fechaI
 assert.equal(ctx.submitVacationRequest({...p("dir"),expedienteId:"EA",fechaInicio:"2026-12-15",fechaFin:"2026-12-16"}).status,"success");
 assert.equal(ctx.submitVacationRequest({...p("prof"),fechaInicio:"2026-12-15",fechaFin:"2026-12-16"}).status,"success");
 assert.equal(ctx.submitVacationRequest({...p("emp"),fechaInicio:"2026-12-15",fechaFin:"2026-12-16"}).code,"ROLE_NOT_ALLOWED");
+console.log("DEBUG HR LIST",JSON.stringify(ctx.getLeaveVacationRequests(p("ha"))));
 assert.ok(ctx.getLeaveVacationRequests(p("ha")).solicitudes.every(x=>x.expedienteId==="EA"));
 assert.equal(ctx.getVacationRequests({...p("ha"),expedienteId:"EB"}).code,"RESOURCE_NOT_FOUND");
 assert.ok(ctx.getLeaveVacationRequests(p("emp")).solicitudes.every(x=>x.expedienteId==="EA"));
