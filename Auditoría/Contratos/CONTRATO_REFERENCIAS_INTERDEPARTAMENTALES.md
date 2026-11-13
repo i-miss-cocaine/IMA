@@ -91,3 +91,13 @@ No se crea ConfiguracionInstitucional ni DepartmentReferenceGrants en Sheets, no
 - `tests/security/department-reference-read-authorization.test.js`: 23 escenarios PASS. `tests/security/department-reference-grant-admin.test.js`: 26 escenarios PASS. Department Scope CI run 43423969896 SUCCESS (Node.js 24.22.2), con 20 policy storage, 28 evaluator, ABAC y sintaxis Apps Script/clientes.
 - **Corrección de evidencia C1.686:** el primer intento de auditoría usaba `logStructuredEvent`, que absorbe errores. C1.687 lo reemplaza por append directo fail-closed y prueba el fallo de persistencia. No se debe interpretar C1.686 por sí solo como garantía de auditoría durable.
 - No hay callsites consumidores, transporte interservicio dedicado ni UI administrativa; el endpoint no entrega contenido y no habilita por sí solo referencias productivas. Sin hojas reales ni datos de producción.
+
+
+## Evidencia de consumidor ACCOUNTING C1.690
+- Se integró getEmployeeDocuments con authorizeDepartmentReferenceRead en USER para el recurso EXPEDIENTE_LABORAL. Solo entra al flujo de referencia cuando la autorización ordinaria devuelve RESOURCE_SCOPE_DENIED, existe un expediente laboral único y hay documentos explícitos únicos.
+- No hay fallback para listados generales, errores de identidad/ownership/esquema ni roles de autoservicio Empleado/Trabajador/Personal. Se conserva el flujo same-department y self-service original.
+- Campos de referencia allowlisted: categoriaDoc, fechaCarga y estadoVisibilidad; DocumentoID se devuelve como identificador del elemento. Se excluyen tituloDocumento, ArchivoUrl, CargadoPor, Observaciones, expedienteId, enlaces y contenido.
+- El sobre ACCOUNTING→USER es HMAC-SHA256, destino/acción exactos, HTTPS, secret >=32 caracteres y activeDepartmentId opcional firmado. USER valida identidad, permiso, tenant, contexto activo, ResourceOwnership EXPEDIENTE_LABORAL, política, grant y auditoría durable antes de responder; requiere autorización estándar adicional del consumidor.
+- tests/security/accounting-department-reference-consumer.test.js: 29 escenarios PASS local en Node.js v22.16.0, incluyendo HMAC, allowlist, denegación, no enumeración, self-service, mismo departamento, contexto activo, errores de transporte/HTTP/JSON, duplicados, ownership y requestId. node --check PASS sobre las funciones exactas extraídas y el test; el test contiene parseo del Code.gs completo para el runner.
+- Workflow Department Scope y workflow aislado incluyen el contrato ACCOUNTING y parseo Node 24. No se dispone de status/check observable para los commits nuevos; no se declara CI PASS.
+- BETA-FUNC-064 queda Pendiente beta. No se desplegaron servicios ni se configuraron secretos ni se modificaron hojas productivas.
