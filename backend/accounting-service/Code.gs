@@ -5350,7 +5350,6 @@ function updatePayrollPeriodStatus(payload) {
           { cuenta: "2102", nombre: "Obligaciones Patronales por Pagar (IHSS/RAP/INFOP)", debe: 0, haber: fixedEmployer },
           { cuenta: "1101", nombre: "Bancos / Sueldos Netos por Pagar", debe: 0, haber: totalSalarioNeto }
         ].concat(conceptSummary.journalLines)
-        ]
       });
     } catch (e) {
       logDebug("Error registrando asiento automático de planilla:", e.message);
