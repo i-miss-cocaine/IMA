@@ -114,7 +114,7 @@ function payload(extra={}) {
 }
 {
   const h=makeRuntime({owners:[OWNER_HEADERS,ownerRow(),ownerRow()],grants:[GRANT_HEADERS,grantRow()]});
-  assert.equal(h.runtime.authorizeRead(payload()).code,"RESOURCE_OWNERSHIP_AMBIGUOUS");
+  assert.equal(h.runtime.authorizeRead(payload()).code,"RESOURCE_OWNERSHIP_UNVERIFIED","ambiguous ownership remains indistinguishable from missing ownership at the read boundary");
 }
 {
   const h=makeRuntime({grants:[["wrong","schema"]]});
