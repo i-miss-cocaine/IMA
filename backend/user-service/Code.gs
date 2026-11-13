@@ -10913,7 +10913,7 @@ function createDepartmentReferenceGrant(payload) {
     return { status: "success", grantId: grantId, institutionId: admin.institutionId, resourceType: resourceType,
       resourceId: resourceId, ownerDepartmentId: owner.departmentId, targetDepartmentId: targetDepartmentId,
       allowedFields: fields, allowedDocumentIds: documents, authorizedBy: admin.actorId,
-      authorizedAt: now, validFrom: validFrom.toISOString(), expiresAt: expiresAt.toISOString(), status: "ACTIVE" };
+      authorizedAt: now, validFrom: validFrom.toISOString(), expiresAt: expiresAt.toISOString(), grantStatus: "ACTIVE" };
   } catch (error) {
     return { status: "error", code: error.message || "DEPARTMENT_REFERENCE_GRANT_CREATE_FAILED" };
   } finally {
@@ -10976,7 +10976,7 @@ function revokeDepartmentReferenceGrant(payload) {
     if (matches.length !== 1) return { status: "error", code: "DEPARTMENT_REFERENCE_GRANT_AMBIGUOUS" };
     var current = rows[matches[0] - 1];
     if (String(current[12] || "").trim().toUpperCase() === "REVOKED" && current[13] && current[14]) {
-      return { status: "success", unchanged: true, grantId: grantId, status: "REVOKED",
+      return { status: "success", unchanged: true, grantId: grantId, grantStatus: "REVOKED",
         revokedAt: current[13], revokedBy: current[14] };
     }
     var now = new Date().toISOString();
@@ -10985,7 +10985,7 @@ function revokeDepartmentReferenceGrant(payload) {
       "Concesión de referencia interdepartamental revocada.", {
         institutionId: admin.institutionId, grantId: grantId, revokedBy: admin.actorId
       }, admin.role);
-    return { status: "success", grantId: grantId, status: "REVOKED", revokedAt: now, revokedBy: admin.actorId };
+    return { status: "success", grantId: grantId, grantStatus: "REVOKED", revokedAt: now, revokedBy: admin.actorId };
   } catch (error) {
     return { status: "error", code: error.message || "DEPARTMENT_REFERENCE_GRANT_REVOKE_FAILED" };
   } finally {
