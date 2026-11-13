@@ -1179,6 +1179,10 @@ function gradeExamSubmission(payload) {
     const asignaturaAsociada=p.asignaturaAsociada==null?"":p.asignaturaAsociada;
     if(!estado||estado.length>50||typeof comentario!=="string"||comentario.length>2000||
       typeof temaAsociado!=="string"||temaAsociado.length>120||typeof asignaturaAsociada!=="string"||asignaturaAsociada.length>120)throw new Error("EXAM_GRADE_METADATA_INVALID");
+    const deliveryHeaders=context.deliverySheet.getDataRange().getValues()[0]||[];
+    const expectedDeliveryHeaders=["EntregaExamenID","ExamenID","UserID","FechaEntrega","RespuestasJSON","NotaTotal","Estado","ComentarioDocente","TemaAsociado","AsignaturaAsociada"];
+    if(deliveryHeaders.length<expectedDeliveryHeaders.length||
+      expectedDeliveryHeaders.some((header,index)=>String(deliveryHeaders[index]||"").trim()!==header))throw new Error("EXAM_GRADE_DELIVERY_SCHEMA_INVALID");
     const oldRow=context.delivery.row.slice(), rowData=oldRow.slice();
     while(rowData.length<10)rowData.push("");
     const event=prepareExamGradeRectificationEvent_(context,rowData[5],score.toFixed(2),p.motivoRectificacion);

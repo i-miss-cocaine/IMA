@@ -22,6 +22,7 @@ function fixture(options={}){
  const deliveryRows=[["EntregaID","ExamenID","EstudianteID","Fecha","Respuestas","Calificacion","Estado","Comentario","Tema","Asignatura"],
   ["DEL-1","EX-1","STU-1",new Date(),"[]",options.oldGrade===undefined?"70.00":options.oldGrade,"Calificado","Comentario anterior","",""]];
  const deliverySheet=makeSheet(deliveryRows,{failGradeWrite:options.failGradeWrite});
+ if(options.badDeliverySchema)deliverySheet.rows[0][5]="WrongGradeColumn";
  let historySheet=options.badSchema?makeSheet([["Incorrecto"]]):(options.failAppend?makeSheet([["RectificacionID","TipoEntrega","EntregaID","RecursoID","EstudianteID","NotaAnterior","NotaNueva","Motivo","ActorID","RolActor","Fecha"]],{failAppend:true}):null);
  const ss={getSheetByName(name){return name==="EntregasExamen"?deliverySheet:name==="HistorialRectificacionesEntregasExamen"?historySheet:null;},
   insertSheet(){historySheet=makeSheet([]);return historySheet;}};
@@ -43,6 +44,7 @@ test(()=>{const x=fixture();const r=x.call({...payload,motivoRectificacion:"Corr
 test(()=>{const x=fixture();const r=x.call({...payload,calificacion:"70",motivoRectificacion:""});assert.equal(r.rectificacionRegistrada,false);assert.equal(x.history(),null);});
 test(()=>{const x=fixture();assert.throws(()=>x.call({...payload,motivoRectificacion:"x".repeat(1001)}),/GRADE_RECTIFICATION_REASON_INVALID/);assert.equal(x.deliverySheet.rows[1][5],"70.00");});
 test(()=>{const x=fixture({badSchema:true});assert.throws(()=>x.call({...payload,motivoRectificacion:"Cambio autorizado"}),/EXAM_GRADE_RECTIFICATION_HISTORY_SCHEMA_INVALID/);assert.equal(x.deliverySheet.rows[1][5],"70.00");});
+test(()=>{const x=fixture({badDeliverySchema:true});assert.throws(()=>x.call({...payload,motivoRectificacion:"Cambio autorizado"}),/EXAM_GRADE_DELIVERY_SCHEMA_INVALID/);assert.equal(x.deliverySheet.rows[1][5],"70.00");assert.equal(x.history(),null);});
 test(()=>{const x=fixture({failAppend:true});assert.throws(()=>x.call({...payload,motivoRectificacion:"Cambio autorizado"}),/EXAM_GRADE_RECTIFICATION_AUDIT_WRITE_FAILED/);assert.equal(x.deliverySheet.rows[1][5],"70.00");});
 test(()=>{const x=fixture({denied:true});assert.throws(()=>x.call({...payload,motivoRectificacion:"Cambio autorizado"}),/RESOURCE_NOT_AVAILABLE/);assert.equal(x.deliverySheet.rows[1][5],"70.00");});
 process.stdout.write("exam-service-grade-submission-history: "+count+"/"+count+" PASS\n");
