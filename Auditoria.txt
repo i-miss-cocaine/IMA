@@ -2720,3 +2720,8 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 ### C1.666-R1 — hallazgo de verificación del contrato
 - Department Scope Contract run 43349115076: pasos Department Scope, Internal Responsibility RBAC, Accounting Import Scope y User Migrated Resource Ownership PASS. El contrato ACCOUNTING terminó antes de ejecutar pruebas por SyntaxError en el archivo de test: `Identifier 'creations' has already been declared`, causado por colisión del contador añadido con el contador existente del bloque de incidencias laborales.
 - Corrección focalizada: renombrar el contador y las referencias del fixture de ausencia de hojas a `shiftCreations`. No se modificó lógica productiva. Repetición CI pendiente.
+
+
+### C1.666-R2 — normalización de aserción de fixture
+- CI run 43349284072: cuatro contratos previos PASS; el contrato ACCOUNTING pasó los escenarios nuevos anteriores y falló solo en la comparación del objeto de respuesta vacía, debido a prototipos cross-realm entre VM y host. Los valores eran estructuralmente iguales.
+- Se normalizó la respuesta mediante JSON round-trip antes de deepEqual. No se modifica el endpoint. CI de confirmación pendiente.

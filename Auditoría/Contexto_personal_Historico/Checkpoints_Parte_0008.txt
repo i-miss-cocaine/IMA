@@ -131,3 +131,10 @@
 - **Corrección:** contador del escenario de hojas ausentes renombrado a `shiftCreations`; solo cambia el test.
 - **Estado:** pendiente de reejecución CI y revisión del resultado.
 ===============================================================================
+
+
+### C1.666-R2 — corrección de aserción cross-realm
+- **CI:** Department Scope Contract run 43349284072. Los cuatro contratos previos pasaron; los escenarios nuevos de turnos/horas extras/sustituciones ejecutados antes del caso final no fallaron. El caso de hojas ausentes detectó únicamente diferencia de prototipo cross-realm en deepStrictEqual.
+- **Corrección:** la comparación del objeto devuelto se normaliza con JSON.parse(JSON.stringify(...)); sin cambio de producción.
+- **Estado:** pendiente nueva ejecución CI y revisión del resultado.
+===============================================================================

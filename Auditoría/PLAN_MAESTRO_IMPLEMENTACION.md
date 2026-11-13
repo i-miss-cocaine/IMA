@@ -5179,3 +5179,8 @@ La revisión de requisitos originales confirma cobertura de:
 **Addendum C1.666-R1 — corrección del contrato de pruebas**
 - CI Department Scope run 43349115076 confirmó PASS en cuatro contratos previos y detectó SyntaxError en accounting-departmental-resource-access.test.js: redeclaración de `creations` al añadir el escenario de hojas ausentes del historial de turnos. El fallo ocurrió al cargar el archivo de pruebas, antes de ejecutar assertions del nuevo endpoint.
 - Se renombró el contador del escenario a `shiftCreations`; no cambia la lógica productiva. CI de confirmación pendiente.
+
+
+**Addendum C1.666-R2 — comparación cross-realm del fixture**
+- Department Scope run 43349284072 ejecutó satisfactoriamente los escenarios nuevos previos al caso de hojas ausentes; la aserción final de ese caso falló porque deepStrictEqual compara prototipos entre realms VM/host. El objeto real y esperado tenían los mismos campos/valores.
+- Se aplica JSON round-trip a la respuesta antes de deepEqual; no hay cambios de lógica productiva. CI de confirmación pendiente.
