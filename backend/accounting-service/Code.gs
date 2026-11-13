@@ -4659,6 +4659,7 @@ function calculatePayrollPeriod(payload) {
     const attUpdates = []; // { rowIdx, planillaId }
     const vacUpdates = [];
     const incUpdates = [];
+    const payrollLoanLedgerEvents = [];
 
     // Función auxiliar para parsear fechas de forma segura
     function parseSafeDate(val) {
@@ -4858,7 +4859,7 @@ function calculatePayrollPeriod(payload) {
       });
 
       const bonificaciones = 0;
-      const otrasDed = parseFloat((deduccionTardanzas + deduccionAusencias + deduccionPermisosSinSueldo).toFixed(2));
+      const otrasDedBase = parseFloat((deduccionTardanzas + deduccionAusencias + deduccionPermisosSinSueldo).toFixed(2));
 
       // Deducciones de Ley Honduras (IHSS, RAP)
       const dedIHSS = parseFloat((Math.min(salarioBase, 10317.38) * 0.035).toFixed(2));
@@ -4907,6 +4908,9 @@ function calculatePayrollPeriod(payload) {
       const dedISR = parseFloat((annualTax > 0 ? (annualTax / 12) : 0).toFixed(2));
 
       const totalDevengado = parseFloat((salarioBase + montoHorasExtras + bonificaciones).toFixed(2));
+      const loanAllocation = calculatePayrollLoanDeductions_(ss, empUserId || empExpId, periodoMes, planillaId, Math.max(0, totalDevengado - dedIHSS - dedRAP - dedISR - otrasDedBase));
+      const otrasDed = parseFloat((otrasDedBase + loanAllocation.total).toFixed(2));
+      if (loanAllocation.events.length) payrollLoanLedgerEvents.push.apply(payrollLoanLedgerEvents, loanAllocation.events);
       const totalDeducciones = parseFloat((dedIHSS + dedRAP + dedISR + otrasDed).toFixed(2));
       const salarioNeto = parseFloat(Math.max(0, totalDevengado - totalDeducciones).toFixed(2));
 
@@ -4949,7 +4953,16 @@ function calculatePayrollPeriod(payload) {
     }
 
     if (processedRows.length > 0) {
-      planSheet.getRange(planSheet.getLastRow() + 1, 1, processedRows.length, 20).setValues(processedRows);
+      if (payrollLoanLedgerEvents.length) appendPayrollLoanLedgerEvents_(ss, payrollLoanLedgerEvents);
+      try {
+        planSheet.getRange(planSheet.getLastRow() + 1, 1, processedRows.length, 20).setValues(processedRows);
+      } catch (writeError) {
+        if (payrollLoanLedgerEvents.length) {
+          const cancellations = payrollLoanLedgerEvents.map(r => ["PLM-"+Utilities.getUuid(),r[1],r[2],r[3],r[4],r[5],r[6],r[6],r[8],"CANCELADO",new Date(),"SYSTEM_ROLLBACK",r[0]]);
+          appendPayrollLoanLedgerEvents_(ss,cancellations);
+        }
+        throw writeError;
+      }
 
       // 4. Marcar novedades como procesadas garantizando trazabilidad e idempotencia
       ovtUpdates.forEach(u => {
@@ -4992,9 +5005,23 @@ function updatePayrollPeriodStatus(payload) {
   const { planillaId, nuevoEstado, observaciones, authRole } = payload || {};
   if (!planillaId || !nuevoEstado) throw new Error("planillaId y nuevoEstado son requeridos.");
 
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "PlanillasNomenclatura");
   const data = sheet.getDataRange().getValues();
+  const payrollMatches = data.slice(1).filter(r => String(r[0]||"").trim() === String(planillaId).trim());
+  if (payrollMatches.length !== 1) throw new Error("Planilla no encontrada o duplicada.");
+  const requestedState = String(nuevoEstado).trim().toUpperCase();
+  const actor = getVerifiedAccountingIdentity_(payload || {});
+  const actorId = actor && actor.authorized ? actor.userId : "SYSTEM_PAYROLL";
+  if (requestedState === "APROBADA" || requestedState === "CERRADA") {
+    const loanResult = applyPayrollLoanLedgerForPlanilla_(ss, planillaId, "APLICAR", actorId);
+    if (!loanResult || loanResult.status !== "success") throw new Error("No fue posible aplicar la amortización de préstamos.");
+  } else if (["ANULADA","ANULADO","REVERTIDA","REVERTIDO","CANCELADA","CANCELADO"].includes(requestedState)) {
+    applyPayrollLoanLedgerForPlanilla_(ss, planillaId, "REVERSAR", actorId);
+  }
 
   let count = 0;
   let totalSalarioNeto = 0;
@@ -5079,6 +5106,9 @@ function updatePayrollPeriodStatus(payload) {
     asientoContable: asientoRes,
     message: `Ciclo de planilla actualizado a '${nuevoEstado}' e integrado con Contabilidad.`
   };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function getPayrollPeriodSummary(payload) {
@@ -5912,6 +5942,115 @@ function approveEmployeeLoanAdvance(payload){
   return {status:"success",prestamoId:id,montoAprobado:approved,estadoAprobacion:updated[9],message:"Solicitud de anticipo / préstamo "+updated[9].toLowerCase()+"."};
  }catch(e){return {status:"error",code:"LOAN_REVIEW_WRITE_FAILED",message:"No fue posible completar la revisión."};}finally{lock.releaseLock();}
 }
+
+function getPayrollLoanLedger_(ss) {
+  const headers = ["MovimientoID","PrestamoID","PlanillaID","Periodo","EmpleadoId","Monto","SaldoAntes","SaldoDespues","CuotaNumero","Evento","Fecha","ActorId","ReversaDe"];
+  const sheet = ss.getSheetByName("AmortizacionPrestamosNomina") || getOrCreateSheet(ss, "AmortizacionPrestamosNomina");
+  let data = sheet.getDataRange().getValues();
+  if (!data.length || !data[0] || !data[0].length) {
+    sheet.getRange(1,1,1,headers.length).setValues([headers]);
+    data = [headers];
+  }
+  if (data[0].length !== headers.length || headers.some((h,i)=>String(data[0][i]||"").trim().toUpperCase()!==h.toUpperCase())) throw new Error("RESOURCE_SCHEMA_INVALID: AmortizacionPrestamosNomina");
+  return {sheet,headers,rows:data.slice(1)};
+}
+function appendPayrollLoanLedgerEvents_(ss, events) {
+  if (!events || !events.length) return 0;
+  const ledger = getPayrollLoanLedger_(ss);
+  const start = ledger.sheet.getLastRow()+1;
+  ledger.sheet.getRange(start,1,events.length,ledger.headers.length).setValues(events);
+  return events.length;
+}
+function calculatePayrollLoanDeductions_(ss, employeeId, period, planillaId, netAvailable) {
+  const loanSheet=ss.getSheetByName("AnticiposPrestamosEmpleado");
+  if(!loanSheet)return {total:0,events:[]};
+  const data=loanSheet.getDataRange().getValues(),h=["PrestamoID","Fecha","EmpleadoId","Tipo","MontoSolicitado","MontoAprobado","PlazoCuotas","CuotaMensual","SaldoPendiente","EstadoAprobacion","AprobadoPor","Observaciones"];
+  if(!data.length||!data[0]||data[0].length!==h.length||h.some((x,i)=>String(data[0][i]||"").trim().toUpperCase()!==x.toUpperCase()))throw new Error("RESOURCE_SCHEMA_INVALID: AnticiposPrestamosEmpleado");
+  const ledger=getPayrollLoanLedger_(ss),counts=Object.create(null);
+  data.slice(1).forEach(r=>{const id=String(r&&r[0]||"").trim();if(id)counts[id]=(counts[id]||0)+1;});
+  const rows=ledger.rows,events=[],target=String(employeeId||"").trim(),available=Math.max(0,Number(netAvailable)||0);
+  let remaining=available,total=0;
+  if(!target||!remaining)return {total:0,events:[]};
+  data.slice(1).forEach(r=>{
+    const id=String(r[0]||"").trim(),owner=String(r[2]||"").trim(),state=String(r[9]||"").trim().toUpperCase();
+    if(!id||counts[id]!==1||owner!==target||!["APROBADO","APROBADA","ACTIVE","ACTIVO"].includes(state))return;
+    const balance=Number(r[8]),approved=Number(r[5]),terms=Number(r[6]),monthly=Number(r[7]);
+    if(!Number.isFinite(balance)||balance<=0||!Number.isFinite(approved)||approved<=0||!Number.isInteger(terms)||terms<1||!Number.isFinite(monthly)||monthly<=0)return;
+    const samePeriod=rows.filter(x=>String(x[1]||"").trim()===id&&String(x[3]||"").trim()===String(period).trim());
+    const cancelled=new Set(samePeriod.filter(x=>String(x[9]||"")==="CANCELADO").map(x=>String(x[12]||"")));
+    const activePreview=samePeriod.some(x=>String(x[9]||"")==="CALCULADO"&&!cancelled.has(String(x[0]||"")));
+    const applied=samePeriod.filter(x=>String(x[9]||"")==="APLICADO");
+    const reversed=new Set(samePeriod.filter(x=>String(x[9]||"")==="REVERSADO").map(x=>String(x[12]||"")));
+    const activeApplied=applied.some(x=>!reversed.has(String(x[0]||"")));
+    if(activePreview||activeApplied)return;
+    const paidEvents=rows.filter(x=>String(x[1]||"").trim()===id&&String(x[9]||"")==="APLICADO");
+    const reversedAll=new Set(rows.filter(x=>String(x[9]||"")==="REVERSADO").map(x=>String(x[12]||"")));
+    const paid=paidEvents.filter(x=>!reversedAll.has(String(x[0]||""))).length;
+    const isAdvance=String(r[3]||"").toLowerCase().includes("anticipo");
+    const installment=isAdvance?balance:Math.min(balance,monthly);
+    const amount=Math.round(Math.min(installment,remaining)*100)/100;
+    if(amount<=0)return;
+    const after=Math.round((balance-amount)*100)/100;
+    const movementId="PLM-"+Utilities.getUuid();
+    events.push([movementId,id,planillaId,String(period),owner,amount,balance,after,paid+1,"CALCULADO",new Date(),"", ""]);
+    total=Math.round((total+amount)*100)/100;remaining=Math.max(0,Math.round((remaining-amount)*100)/100);
+  });
+  return {total,events};
+}
+function applyPayrollLoanLedgerForPlanilla_(ss,planillaId,action,actorId) {
+  const ledgerSheet=ss.getSheetByName("AmortizacionPrestamosNomina");
+  if(!ledgerSheet)return {status:"success",applied:0,reversed:0,cancelled:0};
+  const ledger=getPayrollLoanLedger_(ss),loanSheet=ss.getSheetByName("AnticiposPrestamosEmpleado");
+  if(!loanSheet&&ledger.rows.some(r=>String(r[2]||"")===String(planillaId)))throw new Error("RESOURCE_NOT_FOUND: AnticiposPrestamosEmpleado");
+  const loans=loanSheet?loanSheet.getDataRange().getValues():[];
+  const h=["PrestamoID","Fecha","EmpleadoId","Tipo","MontoSolicitado","MontoAprobado","PlazoCuotas","CuotaMensual","SaldoPendiente","EstadoAprobacion","AprobadoPor","Observaciones"];
+  if(loans.length&&(!loans[0]||loans[0].length!==h.length||h.some((x,i)=>String(loans[0][i]||"").trim().toUpperCase()!==x.toUpperCase())))throw new Error("RESOURCE_SCHEMA_INVALID: AnticiposPrestamosEmpleado");
+  const rows=ledger.rows.filter(r=>String(r[2]||"").trim()===String(planillaId).trim()),events=ledger.rows;
+  let applied=0,reversed=0,cancelled=0;
+  const findLoan=id=>{const matches=loans.slice(1).map((r,i)=>({r,index:i+2})).filter(x=>String(x.r[0]||"").trim()===id);return matches.length===1?matches[0]:null;};
+  const append=(preview,event,before,after,reverseOf)=>appendPayrollLoanLedgerEvents_(ss,[[ "PLM-"+Utilities.getUuid(),preview[1],preview[2],preview[3],preview[4],preview[5],before,after,preview[8],event,new Date(),String(actorId||"SYSTEM_PAYROLL"),String(reverseOf||"") ]]);
+  if(action==="APLICAR"){
+    rows.filter(r=>String(r[9]||"")==="CALCULADO").forEach(preview=>{
+      const cancelledEvent=events.find(x=>String(x[9]||"")==="CANCELADO"&&String(x[12]||"")===String(preview[0]));
+      if(cancelledEvent)return;
+      const appliedEvent=events.find(x=>String(x[9]||"")==="APLICADO"&&String(x[12]||"")===String(preview[0]));
+      if(appliedEvent){
+        const reversedEvent=events.find(x=>String(x[9]||"")==="REVERSADO"&&String(x[12]||"")===String(appliedEvent[0]));
+        if(reversedEvent)return;
+        const match=findLoan(String(preview[1]||"").trim());if(!match)throw new Error("LOAN_RESOURCE_NOT_FOUND");
+        const current=Number(match.r[8]),before=Number(appliedEvent[6]),after=Number(appliedEvent[7]);
+        if(Math.abs(current-before)<0.005){const updated=match.r.slice();updated[8]=after;updated[9]=after===0?"Liquidado":"Aprobado";loanSheet.getRange(match.index,1,1,updated.length).setValues([updated]);}
+        else if(Math.abs(current-after)>=0.005&&current>after)throw new Error("LOAN_BALANCE_RECONCILIATION_REQUIRED");
+        return;
+      }
+      const match=findLoan(String(preview[1]||"").trim());if(!match)throw new Error("LOAN_RESOURCE_NOT_FOUND");
+      const amount=Number(preview[5]),current=Number(match.r[8]);
+      if(!Number.isFinite(amount)||amount<=0||!Number.isFinite(current)||current+0.005<amount)throw new Error("LOAN_BALANCE_CHANGED_RECALCULATE");
+      const after=Math.round((current-amount)*100)/100;
+      append(preview,"APLICADO",current,after,preview[0]);
+      const updated=match.r.slice();updated[8]=after;updated[9]=after===0?"Liquidado":"Aprobado";
+      loanSheet.getRange(match.index,1,1,updated.length).setValues([updated]);applied++;
+    });
+  }else if(action==="REVERSAR"){
+    const appliedEvents=rows.filter(r=>String(r[9]||"")==="APLICADO");
+    appliedEvents.forEach(event=>{
+      if(events.some(x=>String(x[9]||"")==="REVERSADO"&&String(x[12]||"")===String(event[0])))return;
+      const match=findLoan(String(event[1]||"").trim());if(!match)throw new Error("LOAN_RESOURCE_NOT_FOUND");
+      const amount=Number(event[5]),current=Number(match.r[8]);if(!Number.isFinite(amount)||amount<=0||!Number.isFinite(current))throw new Error("LOAN_DATA_INVALID");
+      const after=Math.round((current+amount)*100)/100;
+      append(event,"REVERSADO",current,after,event[0]);
+      const updated=match.r.slice();updated[8]=after;updated[9]=after>0?"Aprobado":"Liquidado";
+      loanSheet.getRange(match.index,1,1,updated.length).setValues([updated]);reversed++;
+    });
+    rows.filter(r=>String(r[9]||"")==="CALCULADO").forEach(preview=>{
+      if(events.some(x=>String(x[9]||"")==="CANCELADO"&&String(x[12]||"")===String(preview[0])))return;
+      if(events.some(x=>String(x[9]||"")==="APLICADO"&&String(x[12]||"")===String(preview[0])))return;
+      append(preview,"CANCELADO",Number(preview[6]),Number(preview[6]),preview[0]);cancelled++;
+    });
+  }else throw new Error("PAYROLL_LOAN_ACTION_INVALID");
+  return {status:"success",applied,reversed,cancelled};
+}
+
 function getLoanAmortizationSchedule(payload) {
   const p = payload || {}, prestamoId = String(p.prestamoId || "").trim();
   if (!prestamoId) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Préstamo no disponible." };
@@ -5919,15 +6058,25 @@ function getLoanAmortizationSchedule(payload) {
   if (!res || res.status !== "success") return res || { status: "error", code: "RESOURCE_NOT_FOUND", message: "Préstamo no disponible." };
   const matches = (res.solicitudes || []).filter(item => String(item.prestamoId || "").trim() === prestamoId);
   if (matches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Préstamo no disponible." };
-  const item = matches[0], schedule = [], cuotas = item.plazoCuotas || 1, mntCuota = item.cuotaMensual || (item.montoAprobado / cuotas);
-  let saldo = item.montoAprobado;
-  for (let i = 1; i <= cuotas; i++) {
-    saldo = Math.max(0, saldo - mntCuota);
-    schedule.push({ numeroCuota: i, montoCuota: mntCuota, saldoRestante: saldo });
+  const item = matches[0], schedule = [], monthly = Number(item.cuotaMensual || 0), balance = Number(item.saldoPendiente || 0);
+  if (!Number.isFinite(monthly) || monthly <= 0 || !Number.isFinite(balance) || balance < 0) return { status: "error", code: "LOAN_DATA_INVALID", message: "Los datos de amortización no son válidos." };
+  let paid = 0;
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID), ledgerSheet = ss.getSheetByName("AmortizacionPrestamosNomina");
+  if (ledgerSheet) {
+    const ledger = getPayrollLoanLedger_(ss);
+    const applied = ledger.rows.filter(r => String(r[1]||"").trim() === prestamoId && String(r[9]||"") === "APLICADO");
+    const reversed = new Set(ledger.rows.filter(r => String(r[9]||"") === "REVERSADO").map(r => String(r[12]||"")));
+    paid = applied.filter(r => !reversed.has(String(r[0]||""))).length;
   }
-  return { status: "success", prestamoId: prestamoId, montoAprobado: item.montoAprobado, plazoCuotas: cuotas, tablaAmortizacion: schedule };
+  let remaining = Math.ceil((balance - 0.000001) / monthly);
+  for (let i = 1; i <= remaining; i++) {
+    const amount = Math.round(Math.min(monthly, balance - schedule.reduce((sum, x) => sum + x.montoCuota, 0)) * 100) / 100;
+    if (amount <= 0) break;
+    const rest = Math.max(0, Math.round((balance - schedule.reduce((sum, x) => sum + x.montoCuota, 0) - amount) * 100) / 100);
+    schedule.push({ numeroCuota: paid + i, montoCuota: amount, saldoRestante: rest });
+  }
+  return { status: "success", prestamoId: prestamoId, montoAprobado: item.montoAprobado, saldoPendiente: balance, plazoCuotas: item.plazoCuotas, cuotasPagadas: paid, cuotasRestantes: schedule.length, tablaAmortizacion: schedule };
 }
-
 function generatePayrollReceiptPDF(payload) {
   const p=payload||{},actor=getVerifiedAccountingIdentity_(p);
   if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
