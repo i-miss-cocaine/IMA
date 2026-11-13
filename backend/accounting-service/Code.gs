@@ -4918,7 +4918,7 @@ function getPayrollBatchPreview(payload){
   });
   const periodRows=planRows.filter(r=>String(r[2]||"").trim()===period&&normalizePayrollBatchValue_(r[15])!=="REEMPLAZADA"&&!["ANULADA","ANULADO"].includes(normalizePayrollBatchValue_(r[15])));
   const planIds=[...new Set(periodRows.map(r=>String(r[0]||"").trim()).filter(Boolean))];
-  const processed=new Set(periodRows.map(r=>String(r[3]||"").trim()));
+  const processed=new Set(periodRows.map(r=>String(r[3]||"").trim()));included.forEach(e=>e.procesado=processed.has(e.empleadoId));
   const groupList=Object.keys(groups).sort().map(k=>{const g=groups[k];g.procesados=g.empleadoIds.filter(id=>processed.has(id)).length;g.pendientes=g.empleadoIds.length-g.procesados;g.employeeIdsPendientes=g.empleadoIds.filter(id=>!processed.has(id));return g;});
   return {status:"success",periodoMes:period,planillaId:planIds.length===1?planIds[0]:null,planillaAmbigua:planIds.length>1,contadores:{incluidos:included.length,procesadosCorrectamente:included.filter(e=>processed.has(e.empleadoId)).length,excluidosPorIncidencias:excluded.length,pendientesValidacion:included.filter(e=>e.pendienteValidacion&&!processed.has(e.empleadoId)).length,pendientesCalculo:included.filter(e=>!processed.has(e.empleadoId)).length},incidencias:excluded,grupos:groupList,empleados:included,umbralVariacion:10};
  }catch(e){return {status:"error",code:"PAYROLL_BATCH_PREVIEW_FAILED",message:"No fue posible preparar la segmentación de planilla."};}
@@ -4933,7 +4933,7 @@ function preparePayrollEmployeeRecalculation_(ss,planillaId,period,employeeIds,p
  const scope=getVerifiedAccountingDepartmentScope_(payload||{},ss,actor);if(!scope||!scope.authorized)return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED"};
  const plan=getOrCreateSheet(ss,"PlanillasNomenclatura"),data=plan.getDataRange().getValues();
  if(!data.length||!isValidPayrollPlanHeaders_(data[0]))return {status:"error",code:"RESOURCE_SCHEMA_INVALID"};
- const rows=data.slice(1).map((r,i)=>({row:r,index:i+2})).filter(x=>String(x.row[0]||"").trim()===String(planillaId).trim()&&String(x.row[2]||"").trim()===String(period).trim()&&normalizePayrollBatchValue_(x.row[15])!=="REEMPLAZADA");
+ const rows=data.slice(1).map((r,i)=>({row:r,index:i+2})).filter(x=>String(x.row[0]||"").trim()===String(planillaId).trim()&&String(x.row[2]||"").trim()===String(period).trim()&&String(x.row[15]||"").trim().toUpperCase()!=="REEMPLAZADA");
  if(!rows.length||rows.some(x=>normalizePayrollBatchValue_(x.row[15])!=="CALCULADA"))return {status:"error",code:"PAYROLL_RECALCULATION_REQUIRES_DRAFT",message:"Solo se pueden recalcular colaboradores de una planilla aún no aprobada."};
  const exps=getOrCreateSheet(ss,"ExpedientesLaborales").getDataRange().getValues().slice(1);
  const selected=rows.filter(x=>ids.includes(String(x.row[3]||"").trim()));
@@ -5513,7 +5513,7 @@ function validatePayrollJournalAccountMap_(ss) {
 function recordPayrollJournalEntry_(ss,planillaId,planRows,conceptSummary,actorId){
  validatePayrollJournalAccountMap_(ss);
  const sheet=ss.getSheetByName("PlanillasNomenclatura");if(!sheet)throw new Error("RESOURCE_NOT_FOUND: PlanillasNomenclatura");
- const col=ensurePayrollJournalLinkColumn_(sheet),data=sheet.getDataRange().getValues(),matches=data.slice(1).map((r,i)=>({row:r,index:i+2})).filter(x=>String(x.row[0]||"").trim()===String(planillaId).trim()&&normalizePayrollBatchValue_(x.row[15])!=="REEMPLAZADA");
+ const col=ensurePayrollJournalLinkColumn_(sheet),data=sheet.getDataRange().getValues(),matches=data.slice(1).map((r,i)=>({row:r,index:i+2})).filter(x=>String(x.row[0]||"").trim()===String(planillaId).trim()&&String(x.row[15]||"").trim().toUpperCase()!=="REEMPLAZADA");
  if(!matches.length||matches.length!==planRows.length)throw new Error("PAYROLL_JOURNAL_PLANILLA_CHANGED");
  const ids=[...new Set(matches.map(x=>String(x.row[col-1]||"").trim()).filter(Boolean))];if(ids.length>1)throw new Error("PAYROLL_JOURNAL_LINK_AMBIGUOUS");
  const journal=getOrCreateSheet(ss,"AsientosContables"),existing=journal.getDataRange().getValues().slice(1).filter(r=>String(r[3]||"").trim()==="Planillas"&&String(r[4]||"").trim()===String(planillaId).trim());
@@ -5568,7 +5568,7 @@ function updatePayrollPeriodStatus(payload) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "PlanillasNomenclatura");
   const data = sheet.getDataRange().getValues();
-  const payrollMatches = data.slice(1).filter(r => String(r[0]||"").trim() === String(planillaId).trim() && normalizePayrollBatchValue_(r[15]) !== "REEMPLAZADA");
+  const payrollMatches = data.slice(1).filter(r => String(r[0]||"").trim() === String(planillaId).trim() && String(r[15]||"").trim().toUpperCase() !== "REEMPLAZADA");
   if (payrollMatches.length !== 1) throw new Error("Planilla no encontrada o duplicada.");
   const requestedState = String(nuevoEstado).trim().toUpperCase();
   const previousState = String(payrollMatches[0][15] || "").trim().toUpperCase();
@@ -5651,7 +5651,7 @@ function updatePayrollPeriodStatus(payload) {
     asientoRes = recordPayrollJournalEntry_(ss,planillaId,payrollMatches,conceptSummary,actor && actor.authorized ? actor.userId : "SYSTEM_PAYROLL");
   }
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]||"").trim() === String(planillaId).trim() && normalizePayrollBatchValue_(data[i][15]) !== "REEMPLAZADA") sheet.getRange(i + 1, 16).setValue(nuevoEstado);
+    if (String(data[i][0]||"").trim() === String(planillaId).trim() && String(data[i][15]||"").trim().toUpperCase() !== "REEMPLAZADA") sheet.getRange(i + 1, 16).setValue(nuevoEstado);
   }
 
   logStructuredEvent("ACCOUNTING", "updatePayrollPeriodStatus", "INFO", "PAYROLL_STATUS_UPDATED", `Planilla ${planillaId} actualizada a estado ${nuevoEstado}`, payload, authRole);
