@@ -611,7 +611,7 @@ console.log("ACADEMIC converted admission reconciliation contract passed.");
       Date,
       Math
     };
-    vm.runInNewContext(extractFunction("registerStudentEnrollmentInternal_")+"\nthis.register=registerStudentEnrollmentInternal_;",context);
+    vm.runInNewContext(extractFunction("ensureEnrollmentPeriodCharges_")+"\n"+extractFunction("registerStudentEnrollmentInternal_")+"\nthis.register=registerStudentEnrollmentInternal_;",context);
     const rollback=[];
     const result=context.register({
       userId:"STU-1",alumno:"Student",grado:"1",seccion:"A",periodo:"2026",
