@@ -50,7 +50,7 @@ function makeHarness(options = {}) {
   const userRows=[["UserId","Nombre","Grado","Seccion","Email","PasswordHash","Rol","Telefono","NumeroLista","PersonaID","EstadoCuenta"],
     [options.signerId||"SIGNER-1",options.signerName||"Nombre canónico","","",options.signerEmail||"canonico@example.test","",""+signerRole,"","",options.signerPersonId||"PERS-SIGNER",options.signerState===undefined?"Activa":options.signerState]];
   if(options.duplicateSigner)userRows.push(userRows[1].slice());
-  const scopeRows=[["AsignacionID","UserId","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserId"]];
+  const scopeRows=[["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"]];
   if(options.scopeRows)options.scopeRows.forEach(row=>scopeRows.push(row.slice()));
   else if(options.includeScope!==false)scopeRows.push(["ASG-1","SIGNER-1",signerRole,options.scopeType||"DEPARTAMENTO",options.scopeValues||JSON.stringify(["D1"]),"Activo","","","","","",""]);
   const expedienteRows=[["ExpedienteID","PersonaID"],["EXP-1",options.expedientePersonId||"PERS-STUDENT"]];
