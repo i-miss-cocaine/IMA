@@ -220,7 +220,7 @@ function validPayload(extra={}) {
   const r=h.runtime.createGrant(validPayload());
   assert.equal(r.status,"error");
   assert.equal(r.code,"AUDIT_UNAVAILABLE");
-  assert.equal(h.state.sheets.DepartmentReferenceGrants,undefined,"no grant is persisted if authorization audit fails");
+  assert.equal(h.state.sheets.DepartmentReferenceGrants.snapshot().length,1,"only the schema header may be initialized when authorization audit fails");
 }
 {
   const h=makeRuntime({auditFailure:true,grants:[GRANT_HEADERS,grantRow()]});
