@@ -507,8 +507,9 @@ function renderActivosView(container) {
             </select>
           </div>
           <div>
-            <label class="block font-bold text-gray-600 mb-1">Serie / Modelo</label>
-            <input type="text" id="act-serie" class="w-full p-2 border border-gray-300 rounded-xl" placeholder="EJ: SN-987654321">
+            <label class="block font-bold text-gray-600 mb-1">Marca</label><input type="text" id="act-marca" class="w-full p-2 border border-gray-300 rounded-xl" placeholder="Marca">
+          <label class="block font-bold text-gray-600 mb-1">Modelo</label><input type="text" id="act-serie" class="w-full p-2 border border-gray-300 rounded-xl" placeholder="Modelo">
+          <label class="block font-bold text-gray-600 mb-1">Número de serie único</label><input type="text" id="act-numero-serie" class="w-full p-2 border border-gray-300 rounded-xl" placeholder="Número de serie">
           </div>
           <div>
             <label class="block font-bold text-gray-600 mb-1">Ubicación Actual</label>
@@ -535,51 +536,29 @@ function renderActivosView(container) {
 }
 
 window.loadActivosData = function () {
-  const container = document.getElementById('activos-table-container');
-  if (!container) return;
-
-  fetchApi('ACCOUNTING', 'getAssetItems', {})
-    .then(res => {
-      const items = (res && res.activos) ? res.activos : [];
-      if (items.length === 0) {
-        container.innerHTML = `<div class="p-4 text-center text-gray-400 font-bold uppercase">No hay activos registrados.</div>`;
-        return;
-      }
-      let html = `
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase">
-              <th class="p-2">Código</th>
-              <th class="p-2">Nombre del Activo</th>
-              <th class="p-2">Categoría</th>
-              <th class="p-2">Ubicación</th>
-              <th class="p-2">Custodio (UserId)</th>
-              <th class="p-2 text-right">Acción</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-      `;
-      items.forEach(a => {
-        html += `
-          <tr class="hover:bg-gray-50">
-            <td class="p-2 font-mono font-bold text-indigo-600">${a.codigoPatrimonial}</td>
-            <td class="p-2 font-bold text-gray-800">${a.nombre}</td>
-            <td class="p-2 text-gray-500">${a.categoria}</td>
-            <td class="p-2 text-gray-700 font-medium">${a.ubicacionActual}</td>
-            <td class="p-2 text-gray-600 font-mono">${a.custodioUserId || 'Sin Custodio'}</td>
-            <td class="p-2 text-right space-x-1 whitespace-nowrap">
-              <button onclick="handleAsignarCustodia('${a.activoId}')" class="px-2 py-1 bg-blue-50 text-blue-600 rounded font-bold text-[10px] hover:bg-blue-100 uppercase" title="Asignar Custodia">Asignar</button>
-              ${(a.custodioUserId || a.estado === 'assigned') ? `<button onclick="handleDevolverCustodia('${a.activoId}', '${a.codigoPatrimonial || ''}', '${(a.nombre || '').replace(/'/g, "\\'")}', '${a.custodioUserId || ''}')" class="px-2 py-1 bg-rose-50 text-rose-600 rounded font-bold text-[10px] hover:bg-rose-100 uppercase" title="Registrar Devolución y Acta">Devolver</button>` : ''}
-            </td>
-          </tr>
-        `;
-      });
-      html += `</tbody></table>`;
-      container.innerHTML = html;
-    })
-    .catch(err => {
-      container.innerHTML = `<div class="p-4 text-rose-600 font-bold text-center">Error al cargar activos: ${err.message}</div>`;
+  const container=document.getElementById("activos-table-container");if(!container)return;
+  fetchApi("ACCOUNTING","getAssetItems",{}).then(res=>{
+    const items=res&&res.activos?res.activos:[];
+    if(!items.length){container.innerHTML='<div class="p-4 text-center text-gray-400 font-bold uppercase">No hay activos registrados.</div>';return;}
+    const esc=escapePurchaseAssetHtml;
+    let html='<table class="w-full text-left border-collapse"><thead><tr class="bg-gray-50 border-b text-gray-600 font-bold uppercase"><th class="p-2">Código</th><th class="p-2">Activo</th><th class="p-2">Serie</th><th class="p-2">Ubicación</th><th class="p-2">Custodio</th><th class="p-2">Adquisición</th><th class="p-2">Acciones</th></tr></thead><tbody class="divide-y divide-gray-100">';
+    items.forEach(a=>{
+      const acquisition=a.ordenCompraId?`<button onclick="viewAssetAcquisitionRecord('${esc(a.activoId)}')" class="px-2 py-1 bg-indigo-50 text-indigo-700 rounded font-bold text-[10px]">Ver expediente</button>`:"—";
+      html+=`<tr><td class="p-2 font-mono font-bold text-indigo-600">${esc(a.codigoPatrimonial)}</td><td class="p-2 font-bold">${esc(a.nombre)}<div class="text-[10px] text-gray-500">${esc(a.categoria)}</div></td><td class="p-2">${esc(a.numeroSerie||a.serieModel)}</td><td class="p-2">${esc(a.ubicacionActual)}</td><td class="p-2">${esc(a.custodioUserId||"Sin custodio")}</td><td class="p-2">${acquisition}</td><td class="p-2 whitespace-nowrap"><button onclick="handleAsignarCustodia('${esc(a.activoId)}')" class="px-2 py-1 bg-blue-50 text-blue-600 rounded font-bold text-[10px]">Asignar</button>${a.custodioUserId||a.estado==="assigned"?` <button onclick="handleDevolverCustodia('${esc(a.activoId)}','${esc(a.codigoPatrimonial)}','${esc(a.nombre)}','${esc(a.custodioUserId)}')" class="px-2 py-1 bg-rose-50 text-rose-600 rounded font-bold text-[10px]">Devolver</button>`:""}</td></tr>`;
     });
+    container.innerHTML=html+"</tbody></table>";
+  }).catch(err=>{container.innerHTML='<div class="p-4 text-rose-600 font-bold text-center">Error al cargar activos: '+escapePurchaseAssetHtml(err.message)+'</div>';});
+};
+window.viewAssetAcquisitionRecord=function(activoId){
+  fetchApi("ACCOUNTING","getAssetItems",{}).then(res=>{
+    const asset=(res.activos||[]).find(item=>String(item.activoId)===String(activoId));if(!asset||!asset.ordenCompraId){alert("El activo no tiene un expediente de adquisición vinculado.");return;}
+    const existing=document.getElementById("asset-acquisition-modal");if(existing)existing.remove();
+    const modal=document.createElement("div");modal.id="asset-acquisition-modal";modal.className="fixed inset-0 z-[110] bg-black/60 flex items-center justify-center p-3";
+    modal.innerHTML=`<div class="bg-white rounded-2xl p-5 max-w-xl w-full space-y-3"><div class="flex justify-between"><h3 class="font-black text-sm">Expediente de adquisición</h3><button onclick="document.getElementById('asset-acquisition-modal').remove()" class="text-xl">×</button></div>
+      <dl class="grid grid-cols-2 gap-2 text-xs"><dt>Activo</dt><dd>${escapePurchaseAssetHtml(asset.nombre)}</dd><dt>Orden</dt><dd>${escapePurchaseAssetHtml(asset.ordenCompraId)}</dd><dt>Recepción</dt><dd>${escapePurchaseAssetHtml(asset.recepcionId)}</dd><dt>Proveedor</dt><dd>${escapePurchaseAssetHtml(asset.proveedorId)}</dd><dt>Factura</dt><dd>${escapePurchaseAssetHtml(asset.numeroFactura)}</dd><dt>Obligación</dt><dd>${escapePurchaseAssetHtml(asset.obligacionId)}</dd><dt>Fecha adquisición</dt><dd>${asset.fechaAdquisicion?new Date(asset.fechaAdquisicion).toLocaleDateString():"—"}</dd><dt>Costo de adquisición</dt><dd>${Number(asset.costoAdquisicion||0).toFixed(2)}</dd><dt>Número de serie</dt><dd>${escapePurchaseAssetHtml(asset.numeroSerie)}</dd></dl>
+      <button onclick="switchComprasSubtab('recepciones');document.getElementById('asset-acquisition-modal').remove()" class="px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold">Ir a recepciones</button></div>`;
+    document.body.appendChild(modal);
+  }).catch(err=>alert("No se pudo abrir el expediente: "+(err.message||err)));
 };
 
 window.handleSaveActivo = function (e) {
@@ -589,6 +568,9 @@ window.handleSaveActivo = function (e) {
     nombre: document.getElementById('act-nombre').value,
     categoria: document.getElementById('act-categoria').value,
     serieModel: document.getElementById('act-serie').value,
+    numeroSerie: document.getElementById('act-numero-serie').value,
+    marca: document.getElementById('act-marca').value,
+    modelo: document.getElementById('act-serie').value,
     ubicacionActual: document.getElementById('act-ubicacion').value
   };
 
@@ -1255,53 +1237,72 @@ function renderComprasOrdenesView(container) {
 function renderComprasRecepcionesView(container) {
   container.innerHTML = `
     <div class="bg-white p-5 rounded-2xl border border-gray-100 space-y-4">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <h5 class="text-sm font-black uppercase text-gray-800">Recepciones de Mercancía en Almacén</h5>
-      </div>
-      <p class="text-xs text-gray-600">Registro de entregas físicas escalonadas, control de faltantes y exclusión de dañados.</p>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs text-gray-700">
-          <thead class="bg-gray-50 text-gray-500 uppercase font-black">
-            <tr>
-              <th class="p-3">Recepción ID</th>
-              <th class="p-3">Orden Compra</th>
-              <th class="p-3">Fecha</th>
-              <th class="p-3">Receptor</th>
-              <th class="p-3">Estado Conformidad</th>
-            </tr>
-          </thead>
-          <tbody id="tbl-compras-recepciones" class="divide-y divide-gray-100">
-            <tr><td colspan="5" class="p-4 text-center text-gray-400">Cargando recepciones de compra...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-
-  fetchBackendAccounting('getPurchaseReceipts', {})
-    .then(res => {
-      const tbody = document.getElementById('tbl-compras-recepciones');
-      if (!tbody) return;
-      const list = res.recepciones || [];
-      if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">No hay recepciones físicas registradas.</td></tr>`;
-        return;
-      }
-      tbody.innerHTML = list.map(r => `
-        <tr class="hover:bg-gray-50">
-          <td class="p-3 font-bold text-gray-900">${r.recepcionId}</td>
-          <td class="p-3 font-semibold text-purple-700">${r.ordenCompraId}</td>
-          <td class="p-3">${r.fechaRecepcion ? new Date(r.fechaRecepcion).toLocaleString() : '-'}</td>
-          <td class="p-3">${r.receptorUserId}</td>
-          <td class="p-3"><span class="px-2 py-1 rounded-lg text-xs font-bold ${r.estadoConformidad === 'Conforme' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${r.estadoConformidad}</span></td>
-        </tr>
-      `).join('');
-    })
-    .catch(err => {
-      const tbody = document.getElementById('tbl-compras-recepciones');
-      if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${err.message}</td></tr>`;
-    });
+      <div class="flex flex-wrap items-center justify-between gap-3"><h5 class="text-sm font-black uppercase text-gray-800">Recepciones de Mercancía en Almacén</h5></div>
+      <p class="text-xs text-gray-600">Entregas escalonadas, control de faltantes y capitalización de bienes duraderos recibidos conforme.</p>
+      <div class="overflow-x-auto"><table class="w-full text-left text-xs text-gray-700">
+        <thead class="bg-gray-50 text-gray-500 uppercase font-black"><tr><th class="p-3">Recepción ID</th><th class="p-3">Orden Compra</th><th class="p-3">Fecha</th><th class="p-3">Receptor</th><th class="p-3">Conformidad</th><th class="p-3">Activos</th></tr></thead>
+        <tbody id="tbl-compras-recepciones" class="divide-y divide-gray-100"><tr><td colspan="6" class="p-4 text-center text-gray-400">Cargando recepciones...</td></tr></tbody>
+      </table></div>
+    </div>`;
+  fetchBackendAccounting("getPurchaseReceipts",{}).then(res=>{
+    const tbody=document.getElementById("tbl-compras-recepciones");if(!tbody)return;
+    const list=res.recepciones||[];
+    if(!list.length){tbody.innerHTML='<tr><td colspan="6" class="p-4 text-center text-gray-400">No hay recepciones físicas registradas.</td></tr>';return;}
+    tbody.innerHTML=list.map(r=>`<tr class="hover:bg-gray-50">
+      <td class="p-3 font-bold text-gray-900">${escapePurchaseAssetHtml(r.recepcionId)}</td>
+      <td class="p-3 font-semibold text-purple-700">${escapePurchaseAssetHtml(r.ordenCompraId)}</td>
+      <td class="p-3">${r.fechaRecepcion?new Date(r.fechaRecepcion).toLocaleString():"-"}</td>
+      <td class="p-3">${escapePurchaseAssetHtml(r.receptorUserId)}</td>
+      <td class="p-3">${escapePurchaseAssetHtml(r.estadoConformidad)}</td>
+      <td class="p-3">${r.estadoConformidad==="Conforme"?`<button onclick="openReceiptAssetRegistration('${escapePurchaseAssetHtml(r.recepcionId)}')" class="px-2 py-1 rounded bg-indigo-50 text-indigo-700 font-bold">Registrar activos</button>`:"—"}</td>
+    </tr>`).join("");
+  }).catch(err=>{const tbody=document.getElementById("tbl-compras-recepciones");if(tbody)tbody.innerHTML='<tr><td colspan="6" class="p-4 text-center text-red-500">Error: '+escapePurchaseAssetHtml(err.message)+'</td></tr>';});
 }
+function escapePurchaseAssetHtml(value){return String(value==null?"":value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));}
+window.openReceiptAssetRegistration=function(recepcionId){
+  fetchBackendAccounting("getPurchaseReceiptAssetCandidates",{recepcionId}).then(result=>{
+    const candidates=(result.candidatos||[]).filter(item=>item.unidadesDisponibles>0);
+    if(!candidates.length){alert("Esta recepción no tiene unidades capitalizables conformes pendientes de registrar.");return;}
+    if(!result.facturasDisponibles||!result.facturasDisponibles.length){alert("No existe una factura de proveedor aprobada y conciliada vinculada a esta orden. Registre y concilie la factura antes de capitalizar.");return;}
+    const rows=[];
+    candidates.forEach(candidate=>{for(let i=0;i<Math.min(candidate.unidadesDisponibles,100);i++)rows.push({itemId:candidate.itemId,descripcion:candidate.descripcion,costo:candidate.costoUnitarioAdquisicion});});
+    const modal=document.createElement("div");modal.id="receipt-asset-modal";modal.className="fixed inset-0 z-[110] bg-black/60 flex items-center justify-center p-3";
+    const invoiceOptions=result.facturasDisponibles.map(invoice=>`<option value="${escapePurchaseAssetHtml(invoice.numeroFactura)}">${escapePurchaseAssetHtml(invoice.numeroFactura)} — ${escapePurchaseAssetHtml(invoice.estadoConciliacion)}</option>`).join("");
+    const cards=rows.map((item,index)=>`<div data-asset-row data-item-id="${escapePurchaseAssetHtml(item.itemId)}" class="border rounded-xl p-3 grid grid-cols-1 md:grid-cols-4 gap-2">
+      <div class="md:col-span-4 text-xs font-bold">${escapePurchaseAssetHtml(item.descripcion)} · Partida ${escapePurchaseAssetHtml(item.itemId)} · Costo unitario ${Number(item.costo||0).toFixed(2)}</div>
+      <label class="text-[10px] font-bold">Código patrimonial<input data-field="codigoPatrimonial" class="w-full mt-1 p-2 border rounded-lg" placeholder="PAT-0001"></label>
+      <label class="text-[10px] font-bold">Número de serie<input data-field="numeroSerie" class="w-full mt-1 p-2 border rounded-lg" placeholder="Serie única"></label>
+      <label class="text-[10px] font-bold">Categoría patrimonial<input data-field="categoriaPatrimonial" class="w-full mt-1 p-2 border rounded-lg" placeholder="Equipo computacional"></label>
+      <label class="text-[10px] font-bold">Marca<input data-field="marca" class="w-full mt-1 p-2 border rounded-lg" placeholder="Marca"></label>
+      <label class="text-[10px] font-bold">Modelo<input data-field="modelo" class="w-full mt-1 p-2 border rounded-lg" placeholder="Modelo"></label>
+      <label class="text-[10px] font-bold">Ubicación inicial<input data-field="ubicacionActual" class="w-full mt-1 p-2 border rounded-lg" placeholder="Ubicación física"></label>
+      <label class="text-[10px] font-bold md:col-span-2">Custodio inicial (opcional)<input data-field="custodioUserId" class="w-full mt-1 p-2 border rounded-lg" placeholder="UserId"></label>
+    </div>`).join("");
+    modal.innerHTML=`<div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[94vh] overflow-y-auto p-5 space-y-4">
+      <div class="flex justify-between items-center"><h3 class="font-black text-sm uppercase">Capitalizar bienes recibidos</h3><button type="button" onclick="closeReceiptAssetModal()" class="text-xl text-gray-500">×</button></div>
+      <p class="text-xs text-gray-600">Cada fila representa una unidad física. Las unidades incompletas se omiten; no se capitalizan consumibles, materiales ni artículos dañados.</p>
+      <label class="block text-xs font-bold">Factura aprobada y conciliada *<select id="receipt-asset-invoice" class="w-full mt-1 p-2 border rounded-lg">${invoiceOptions}</select></label>
+      <form id="receipt-asset-form" onsubmit="submitReceiptAssetRegistration(event,'${escapePurchaseAssetHtml(recepcionId)}')" class="space-y-3">${cards}
+        <div class="flex justify-end gap-2"><button type="button" onclick="closeReceiptAssetModal()" class="px-4 py-2 bg-gray-100 rounded-lg text-xs font-bold">Cancelar</button><button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold">Registrar activos seleccionados</button></div>
+      </form></div>`;
+    document.body.appendChild(modal);
+  }).catch(error=>alert("No se pudo consultar la recepción: "+(error.message||error)));
+};
+window.closeReceiptAssetModal=function(){document.getElementById("receipt-asset-modal")?.remove();};
+window.submitReceiptAssetRegistration=function(event,recepcionId){
+  event.preventDefault();const rows=Array.from(document.querySelectorAll("#receipt-asset-form [data-asset-row]")),assets=[];
+  for(const row of rows){
+    const read=field=>row.querySelector('[data-field="'+field+'"]')?.value?.trim()||"";
+    const values={codigoPatrimonial:read("codigoPatrimonial"),numeroSerie:read("numeroSerie"),categoriaPatrimonial:read("categoriaPatrimonial"),marca:read("marca"),modelo:read("modelo"),ubicacionActual:read("ubicacionActual"),custodioUserId:read("custodioUserId")};
+    if(!Object.values(values).some(Boolean))continue;
+    if(!values.codigoPatrimonial||!values.numeroSerie||!values.categoriaPatrimonial||!values.marca||!values.modelo||!values.ubicacionActual){alert("Complete todos los datos obligatorios de cada unidad seleccionada.");return;}
+    assets.push({...values,itemId:row.dataset.itemId});
+  }
+  if(!assets.length){alert("Complete al menos una unidad.");return;}
+  const payload={recepcionId,numeroFactura:document.getElementById("receipt-asset-invoice").value,activos:assets};
+  const submit=document.querySelector("#receipt-asset-form button[type='submit']");if(submit)submit.disabled=true;
+  fetchBackendAccounting("registerAssetsFromPurchaseReceipt",payload).then(result=>{alert(result.message||"Activos registrados.");closeReceiptAssetModal();switchComprasSubtab("recepciones");}).catch(error=>{if(submit)submit.disabled=false;alert("No se pudieron registrar los activos: "+(error.message||error));});
+};
 
 function renderComprasThreeWayView(container) {
   container.innerHTML = `
@@ -1426,8 +1427,52 @@ function renderComprasProveedoresView(container) {
 }
 
 function openNewPurchaseRequestModal() {
-  alert("Modal de creación de solicitud de compra interactivo activo. Conectado con createPurchaseRequest.");
+  const existing=document.getElementById("purchase-request-modal");if(existing)existing.remove();
+  const modal=document.createElement("div");modal.id="purchase-request-modal";modal.className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-3";
+  modal.innerHTML=`<div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto p-5 space-y-4">
+    <div class="flex justify-between items-center"><h3 class="font-black text-sm uppercase">Nueva solicitud de compra</h3><button type="button" onclick="closePurchaseRequestModal()" class="text-gray-500 text-xl">×</button></div>
+    <form id="purchase-request-form" onsubmit="submitNewPurchaseRequest(event)" class="space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <label class="text-xs font-bold">Departamento *<input id="purchase-request-department" required class="w-full mt-1 p-2 border rounded-lg" placeholder="Departamento solicitante"></label>
+        <label class="text-xs font-bold">Centro de costo<input id="purchase-request-cost-center" class="w-full mt-1 p-2 border rounded-lg" placeholder="Centro de costo"></label>
+        <label class="text-xs font-bold">Categoría general<input id="purchase-request-category" class="w-full mt-1 p-2 border rounded-lg" value="Bienes y suministros"></label>
+      </div>
+      <label class="block text-xs font-bold">Justificación *<textarea id="purchase-request-justification" required rows="2" class="w-full mt-1 p-2 border rounded-lg" placeholder="Motivo y necesidad de la compra"></textarea></label>
+      <div class="flex justify-between items-center"><h4 class="font-black text-xs uppercase">Partidas solicitadas</h4><button type="button" onclick="addPurchaseRequestLine()" class="px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-bold">Agregar partida</button></div>
+      <div id="purchase-request-lines" class="space-y-3"></div>
+      <div class="flex justify-end gap-2"><button type="button" onclick="closePurchaseRequestModal()" class="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-xs font-bold">Cancelar</button><button type="submit" class="px-4 py-2 rounded-lg bg-purple-600 text-white text-xs font-bold">Guardar solicitud</button></div>
+    </form></div>`;
+  document.body.appendChild(modal);window.addPurchaseRequestLine();
 }
+window.closePurchaseRequestModal=function(){document.getElementById("purchase-request-modal")?.remove();};
+window.addPurchaseRequestLine=function(){
+  const host=document.getElementById("purchase-request-lines");if(!host)return;
+  const row=document.createElement("div");row.className="purchase-request-line border rounded-xl p-3 grid grid-cols-1 md:grid-cols-6 gap-2";
+  row.innerHTML=`<label class="text-[10px] font-bold">ID de partida *<input data-field="itemId" required class="w-full mt-1 p-2 border rounded-lg text-xs" placeholder="ITEM-001"></label>
+    <label class="text-[10px] font-bold md:col-span-2">Descripción *<input data-field="descripcion" required class="w-full mt-1 p-2 border rounded-lg text-xs" placeholder="Descripción del bien"></label>
+    <label class="text-[10px] font-bold">Unidad<input data-field="unidad" class="w-full mt-1 p-2 border rounded-lg text-xs" placeholder="Unidad"></label>
+    <label class="text-[10px] font-bold">Cantidad *<input data-field="cantidad" type="number" min="0.01" step="0.01" value="1" required class="w-full mt-1 p-2 border rounded-lg text-xs"></label>
+    <label class="text-[10px] font-bold">Precio estimado<input data-field="precioUnitario" type="number" min="0" step="0.01" value="0" class="w-full mt-1 p-2 border rounded-lg text-xs"></label>
+    <label class="text-[10px] font-bold md:col-span-2">Clasificación de inventario *
+      <select data-field="clasificacionInventario" required class="w-full mt-1 p-2 border rounded-lg text-xs">
+        <option value="MaterialInventariable">Material inventariable</option><option value="Consumible">Consumible</option><option value="ActivoFijo">Bien capitalizable / Activo fijo</option>
+      </select></label>
+    <div class="md:col-span-4 flex items-end justify-end"><button type="button" onclick="this.closest('.purchase-request-line').remove()" class="px-3 py-2 text-rose-600 text-xs font-bold">Quitar partida</button></div>`;
+  host.appendChild(row);
+};
+window.submitNewPurchaseRequest=function(event){
+  event.preventDefault();
+  const lines=Array.from(document.querySelectorAll("#purchase-request-lines .purchase-request-line")).map(row=>{
+    const value=field=>row.querySelector('[data-field="'+field+'"]')?.value?.trim()||"";
+    return {itemId:value("itemId"),descripcion:value("descripcion"),unidad:value("unidad"),cantidad:Number(value("cantidad")),precioUnitario:Number(value("precioUnitario")||0),clasificacionInventario:value("clasificacionInventario")};
+  });
+  if(!lines.length||lines.some(x=>!x.itemId||!x.descripcion||!Number.isFinite(x.cantidad)||x.cantidad<=0||!Number.isFinite(x.precioUnitario)||x.precioUnitario<0)){alert("Revise las partidas y sus cantidades.");return;}
+  const itemIds=lines.map(x=>x.itemId.toUpperCase());if(new Set(itemIds).size!==itemIds.length){alert("Cada partida debe tener un ID único.");return;}
+  const payload={departamento:document.getElementById("purchase-request-department").value.trim(),centroCosto:document.getElementById("purchase-request-cost-center").value.trim(),categoria:document.getElementById("purchase-request-category").value.trim(),justificacion:document.getElementById("purchase-request-justification").value.trim(),solicitanteUserId:(window.currentUser&&window.currentUser.userId)||"",detalleItems:lines,montoEstimado:lines.reduce((sum,x)=>sum+x.cantidad*x.precioUnitario,0)};
+  if(!payload.departamento||!payload.justificacion){alert("Departamento y justificación son obligatorios.");return;}
+  const submit=document.querySelector("#purchase-request-form button[type='submit']");if(submit)submit.disabled=true;
+  fetchBackendAccounting("createPurchaseRequest",payload).then(result=>{alert(result.message||"Solicitud registrada.");closePurchaseRequestModal();switchComprasSubtab("solicitudes");}).catch(error=>{if(submit)submit.disabled=false;alert("No fue posible registrar la solicitud: "+(error.message||error));});
+};
 
 function viewPurchaseRequestDetails(solId) {
   alert(`Detalle de solicitud de compra ${solId} cargado.`);

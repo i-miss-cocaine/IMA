@@ -197,11 +197,11 @@ function doGet() { return textResponse({ status: "success", service: "ACCOUNTING
 const ROLE_PERMISSIONS = {
   "Administrador": ["*"],
   "Director": [
-    "voidCharge", "reversePayment", "issueFiscalCreditNote", "processPaymentRefund", "previewBatchMonthlyCharges", "generateBatchMonthlyCharges", "configureSARAuthorizedCAI", "getSARAuthorizedCAIs", "initializeFinancialDriveStructure", "configurePaymentConcept", "configurePaymentTariff", "getEnrollmentBillingConfiguration", "saveEnrollmentBillingConfiguration", "getStudentAccountStatement", "recordStudentPayment", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher", "generatePaymentReceiptPDF", "createFiscalInvoice", "getFiscalInvoices", "configureGatewayIntegration", "testGatewayConnection", "recordCashBankMovement", "closeCashSession", "getCashBankSummary", "performBankReconciliation", "recordAccountsPayableExpense", "verifyThreeWayMatch", "recordSupplierPayment", "applySupplierCreditNote", "getSupplierAccountsPayableSummary", "getChartOfAccounts", "saveAccountItem", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getBudgets", "saveBudgetPlan", "getBudgetExecutionReport", "checkBudgetAvailability", "getFinancialSummary", "getAccountsReceivablePayableSummary", "generatePayrollPeriod", "recordStaffAttendance", "getStaffPayrollReceipt", "recordInventoryMovement", "getInventoryKardex", "registerSupplier", "createEmployeeRecord", "getEmployeeRecords", "manageEmployeeContract", "getEmployeeContracts", "submitVacationRequest", "getVacationRequests", "reviewVacationRequest", "configureFiscalPolicy", "getFiscalPolicies", "publishInstitutionalPolicy", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getAdvancedDashboardAnalytics", "manageBibliographicWork", "getBibliographicWorks", "manageLibraryBook", "getLibraryBooks", "processLibraryLoan", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "recordLibraryIncident", "getLibraryIncidents", "manageDigitalResource", "getDigitalResources", "manageAssetItem", "getAssetItems", "assignAssetCustody", "returnAssetCustody", "getAssetAssignments", "manageTransportVehicle", "getTransportVehicles", "manageTransportDriver", "getTransportDrivers", "manageTransportRoute", "getTransportRoutes", "assignStudentTransport", "getTransportAssignments", "recordStudentBoarding", "recordStudentAlighting", "getTripPassengerManifest", "getAuthorizedPickupPersons", "recordStudentSafeDelivery", "finalizeTransportTrip", "auditAndMigrateTransportData", "registerSpreadsheetSource", "resolveSpreadsheetSource", "getSpreadsheetCatalog", "configureSchoolDocumentTemplate", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "validateImportPreview", "importDataWithColumnMapping", "getMigrationLogs", "verifySACETemplateCompatibility", "generateSACEReportFile", "configureDiscountScholarshipRule", "getDiscountScholarshipRules", "submitDiscountScholarshipRequest", "getDiscountScholarshipRequests", "approveDiscountScholarshipRequest", "calculateAppliedDiscount", "applyApprovedScholarshipsToCharges", "configureLateFeeRule", "getLateFeeRules", "calculateLateFeesForAccount", "manageStoreProduct", "getStoreProducts", "createStoreOrder", "getStoreOrders", "updateStoreOrderStatus", "manageCafeteriaMenu", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "updateCafeteriaOrderStatus", "configureFamilyCreditAuthorization", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase", "createFamilyPaymentAgreement", "getFamilyPaymentAgreements", "saveMultiYearBudgetProjection", "getMultiYearBudgetProjections", "createPurchaseRequest", "getPurchaseRequests", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "createPurchaseOrder", "approvePurchaseOrder", "modifyPurchaseOrderAmount", "generatePurchaseOrderPDF", "getPurchaseOrders", "recordPurchaseReceipt", "getPurchaseReceipts", "manageWarehouseLocation", "getWarehouseLocations", "transferInventoryStock", "confirmTransferReceipt", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "deliverMaterialRequisition", "createPhysicalInventoryCount", "getPhysicalInventoryCounts", "reconcilePhysicalCount", "manageMaintenanceOrder", "getMaintenanceOrders", "registerAssetDisposal", "getAssetDisposals", "runPhase18PurchasingAndSuppliersRegressionSuite", "runPhase19InventoryAndAssetsRegressionSuite", "runPhase20LibraryAndResourcesRegressionSuite", "runPhase21TransportAndServicesRegressionSuite", "runPhase22DocumentManagementAndSACERegressionSuite", "purgeSecurityCaches"],
+    "voidCharge", "reversePayment", "issueFiscalCreditNote", "processPaymentRefund", "previewBatchMonthlyCharges", "generateBatchMonthlyCharges", "configureSARAuthorizedCAI", "getSARAuthorizedCAIs", "initializeFinancialDriveStructure", "configurePaymentConcept", "configurePaymentTariff", "getEnrollmentBillingConfiguration", "saveEnrollmentBillingConfiguration", "getStudentAccountStatement", "recordStudentPayment", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher", "generatePaymentReceiptPDF", "createFiscalInvoice", "getFiscalInvoices", "configureGatewayIntegration", "testGatewayConnection", "recordCashBankMovement", "closeCashSession", "getCashBankSummary", "performBankReconciliation", "recordAccountsPayableExpense", "verifyThreeWayMatch", "recordSupplierPayment", "applySupplierCreditNote", "getSupplierAccountsPayableSummary", "getChartOfAccounts", "saveAccountItem", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getBudgets", "saveBudgetPlan", "getBudgetExecutionReport", "checkBudgetAvailability", "getFinancialSummary", "getAccountsReceivablePayableSummary", "generatePayrollPeriod", "recordStaffAttendance", "getStaffPayrollReceipt", "recordInventoryMovement", "getInventoryKardex", "registerSupplier", "createEmployeeRecord", "getEmployeeRecords", "manageEmployeeContract", "getEmployeeContracts", "submitVacationRequest", "getVacationRequests", "reviewVacationRequest", "configureFiscalPolicy", "getFiscalPolicies", "publishInstitutionalPolicy", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getAdvancedDashboardAnalytics", "manageBibliographicWork", "getBibliographicWorks", "manageLibraryBook", "getLibraryBooks", "processLibraryLoan", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "recordLibraryIncident", "getLibraryIncidents", "manageDigitalResource", "getDigitalResources", "manageAssetItem", "getAssetItems", "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "assignAssetCustody", "returnAssetCustody", "getAssetAssignments", "manageTransportVehicle", "getTransportVehicles", "manageTransportDriver", "getTransportDrivers", "manageTransportRoute", "getTransportRoutes", "assignStudentTransport", "getTransportAssignments", "recordStudentBoarding", "recordStudentAlighting", "getTripPassengerManifest", "getAuthorizedPickupPersons", "recordStudentSafeDelivery", "finalizeTransportTrip", "auditAndMigrateTransportData", "registerSpreadsheetSource", "resolveSpreadsheetSource", "getSpreadsheetCatalog", "configureSchoolDocumentTemplate", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "validateImportPreview", "importDataWithColumnMapping", "getMigrationLogs", "verifySACETemplateCompatibility", "generateSACEReportFile", "configureDiscountScholarshipRule", "getDiscountScholarshipRules", "submitDiscountScholarshipRequest", "getDiscountScholarshipRequests", "approveDiscountScholarshipRequest", "calculateAppliedDiscount", "applyApprovedScholarshipsToCharges", "configureLateFeeRule", "getLateFeeRules", "calculateLateFeesForAccount", "manageStoreProduct", "getStoreProducts", "createStoreOrder", "getStoreOrders", "updateStoreOrderStatus", "manageCafeteriaMenu", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "updateCafeteriaOrderStatus", "configureFamilyCreditAuthorization", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase", "createFamilyPaymentAgreement", "getFamilyPaymentAgreements", "saveMultiYearBudgetProjection", "getMultiYearBudgetProjections", "createPurchaseRequest", "getPurchaseRequests", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "createPurchaseOrder", "approvePurchaseOrder", "modifyPurchaseOrderAmount", "generatePurchaseOrderPDF", "getPurchaseOrders", "recordPurchaseReceipt", "getPurchaseReceipts", "manageWarehouseLocation", "getWarehouseLocations", "transferInventoryStock", "confirmTransferReceipt", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "deliverMaterialRequisition", "createPhysicalInventoryCount", "getPhysicalInventoryCounts", "reconcilePhysicalCount", "manageMaintenanceOrder", "getMaintenanceOrders", "registerAssetDisposal", "getAssetDisposals", "runPhase18PurchasingAndSuppliersRegressionSuite", "runPhase19InventoryAndAssetsRegressionSuite", "runPhase20LibraryAndResourcesRegressionSuite", "runPhase21TransportAndServicesRegressionSuite", "runPhase22DocumentManagementAndSACERegressionSuite", "purgeSecurityCaches"],
   "Subdirector": [
-    "voidCharge", "reversePayment", "issueFiscalCreditNote", "processPaymentRefund", "previewBatchMonthlyCharges", "generateBatchMonthlyCharges", "configureSARAuthorizedCAI", "getSARAuthorizedCAIs","configurePaymentConcept", "configurePaymentTariff", "getEnrollmentBillingConfiguration", "saveEnrollmentBillingConfiguration", "getStudentAccountStatement", "recordStudentPayment", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher", "generatePaymentReceiptPDF", "createFiscalInvoice", "getFiscalInvoices", "configureGatewayIntegration", "testGatewayConnection", "recordCashBankMovement", "closeCashSession", "getCashBankSummary", "performBankReconciliation", "recordAccountsPayableExpense", "getChartOfAccounts", "saveAccountItem", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getBudgets", "saveBudgetPlan", "getBudgetExecutionReport", "checkBudgetAvailability", "getFinancialSummary", "getAccountsReceivablePayableSummary", "generatePayrollPeriod", "recordStaffAttendance", "getStaffPayrollReceipt", "recordInventoryMovement", "getInventoryKardex", "registerSupplier", "createEmployeeRecord", "getEmployeeRecords", "manageEmployeeContract", "getEmployeeContracts", "submitVacationRequest", "getVacationRequests", "reviewVacationRequest", "configureFiscalPolicy", "getFiscalPolicies", "publishInstitutionalPolicy", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getAdvancedDashboardAnalytics", "manageBibliographicWork", "getBibliographicWorks", "manageLibraryBook", "getLibraryBooks", "processLibraryLoan", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "recordLibraryIncident", "getLibraryIncidents", "manageDigitalResource", "getDigitalResources", "manageAssetItem", "getAssetItems", "assignAssetCustody", "returnAssetCustody", "getAssetAssignments", "manageTransportVehicle", "getTransportVehicles", "manageTransportDriver", "getTransportDrivers", "manageTransportRoute", "getTransportRoutes", "assignStudentTransport", "getTransportAssignments", "recordStudentBoarding", "recordStudentAlighting", "getTripPassengerManifest", "getAuthorizedPickupPersons", "recordStudentSafeDelivery", "finalizeTransportTrip", "auditAndMigrateTransportData", "registerSpreadsheetSource", "resolveSpreadsheetSource", "getSpreadsheetCatalog", "configureSchoolDocumentTemplate", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "validateImportPreview", "importDataWithColumnMapping", "getMigrationLogs", "verifySACETemplateCompatibility", "generateSACEReportFile", "configureDiscountScholarshipRule", "getDiscountScholarshipRules", "submitDiscountScholarshipRequest", "getDiscountScholarshipRequests", "approveDiscountScholarshipRequest", "calculateAppliedDiscount", "applyApprovedScholarshipsToCharges", "createPurchaseRequest", "getPurchaseRequests", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "createPurchaseOrder", "approvePurchaseOrder", "modifyPurchaseOrderAmount", "generatePurchaseOrderPDF", "getPurchaseOrders", "recordPurchaseReceipt", "manageWarehouseLocation", "getWarehouseLocations", "transferInventoryStock", "confirmTransferReceipt", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "deliverMaterialRequisition", "createPhysicalInventoryCount", "getPhysicalInventoryCounts", "reconcilePhysicalCount", "manageMaintenanceOrder", "getMaintenanceOrders", "registerAssetDisposal", "getAssetDisposals", "runPhase18PurchasingAndSuppliersRegressionSuite", "runPhase19InventoryAndAssetsRegressionSuite", "runPhase20LibraryAndResourcesRegressionSuite", "runPhase21TransportAndServicesRegressionSuite", "runPhase22DocumentManagementAndSACERegressionSuite"],
+    "voidCharge", "reversePayment", "issueFiscalCreditNote", "processPaymentRefund", "previewBatchMonthlyCharges", "generateBatchMonthlyCharges", "configureSARAuthorizedCAI", "getSARAuthorizedCAIs","configurePaymentConcept", "configurePaymentTariff", "getEnrollmentBillingConfiguration", "saveEnrollmentBillingConfiguration", "getStudentAccountStatement", "recordStudentPayment", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher", "generatePaymentReceiptPDF", "createFiscalInvoice", "getFiscalInvoices", "configureGatewayIntegration", "testGatewayConnection", "recordCashBankMovement", "closeCashSession", "getCashBankSummary", "performBankReconciliation", "recordAccountsPayableExpense", "getChartOfAccounts", "saveAccountItem", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getBudgets", "saveBudgetPlan", "getBudgetExecutionReport", "checkBudgetAvailability", "getFinancialSummary", "getAccountsReceivablePayableSummary", "generatePayrollPeriod", "recordStaffAttendance", "getStaffPayrollReceipt", "recordInventoryMovement", "getInventoryKardex", "registerSupplier", "createEmployeeRecord", "getEmployeeRecords", "manageEmployeeContract", "getEmployeeContracts", "submitVacationRequest", "getVacationRequests", "reviewVacationRequest", "configureFiscalPolicy", "getFiscalPolicies", "publishInstitutionalPolicy", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getAdvancedDashboardAnalytics", "manageBibliographicWork", "getBibliographicWorks", "manageLibraryBook", "getLibraryBooks", "processLibraryLoan", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "recordLibraryIncident", "getLibraryIncidents", "manageDigitalResource", "getDigitalResources", "manageAssetItem", "getAssetItems", "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "assignAssetCustody", "returnAssetCustody", "getAssetAssignments", "manageTransportVehicle", "getTransportVehicles", "manageTransportDriver", "getTransportDrivers", "manageTransportRoute", "getTransportRoutes", "assignStudentTransport", "getTransportAssignments", "recordStudentBoarding", "recordStudentAlighting", "getTripPassengerManifest", "getAuthorizedPickupPersons", "recordStudentSafeDelivery", "finalizeTransportTrip", "auditAndMigrateTransportData", "registerSpreadsheetSource", "resolveSpreadsheetSource", "getSpreadsheetCatalog", "configureSchoolDocumentTemplate", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "validateImportPreview", "importDataWithColumnMapping", "getMigrationLogs", "verifySACETemplateCompatibility", "generateSACEReportFile", "configureDiscountScholarshipRule", "getDiscountScholarshipRules", "submitDiscountScholarshipRequest", "getDiscountScholarshipRequests", "approveDiscountScholarshipRequest", "calculateAppliedDiscount", "applyApprovedScholarshipsToCharges", "createPurchaseRequest", "getPurchaseRequests", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "createPurchaseOrder", "approvePurchaseOrder", "modifyPurchaseOrderAmount", "generatePurchaseOrderPDF", "getPurchaseOrders", "recordPurchaseReceipt", "manageWarehouseLocation", "getWarehouseLocations", "transferInventoryStock", "confirmTransferReceipt", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "deliverMaterialRequisition", "createPhysicalInventoryCount", "getPhysicalInventoryCounts", "reconcilePhysicalCount", "manageMaintenanceOrder", "getMaintenanceOrders", "registerAssetDisposal", "getAssetDisposals", "runPhase18PurchasingAndSuppliersRegressionSuite", "runPhase19InventoryAndAssetsRegressionSuite", "runPhase20LibraryAndResourcesRegressionSuite", "runPhase21TransportAndServicesRegressionSuite", "runPhase22DocumentManagementAndSACERegressionSuite"],
   "Contador": [
-    "voidCharge", "reversePayment", "issueFiscalCreditNote", "processPaymentRefund", "previewBatchMonthlyCharges", "generateBatchMonthlyCharges", "configureSARAuthorizedCAI", "getSARAuthorizedCAIs","initializeFinancialDriveStructure", "configurePaymentConcept", "configurePaymentTariff", "getEnrollmentBillingConfiguration", "saveEnrollmentBillingConfiguration", "getStudentAccountStatement", "recordStudentPayment", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher", "generatePaymentReceiptPDF", "createFiscalInvoice", "getFiscalInvoices", "configureGatewayIntegration", "testGatewayConnection", "recordCashBankMovement", "closeCashSession", "getCashBankSummary", "performBankReconciliation", "recordAccountsPayableExpense", "verifyThreeWayMatch", "recordSupplierPayment", "applySupplierCreditNote", "getSupplierAccountsPayableSummary", "getChartOfAccounts", "saveAccountItem", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getBudgets", "saveBudgetPlan", "getBudgetExecutionReport", "checkBudgetAvailability", "getFinancialSummary", "getAccountsReceivablePayableSummary", "generatePayrollPeriod", "recordStaffAttendance", "getStaffPayrollReceipt", "recordInventoryMovement", "getInventoryKardex", "registerSupplier", "createEmployeeRecord", "getEmployeeRecords", "manageEmployeeContract", "getEmployeeContracts", "submitVacationRequest", "getVacationRequests", "reviewVacationRequest", "configureFiscalPolicy", "getFiscalPolicies", "publishInstitutionalPolicy", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getAdvancedDashboardAnalytics", "manageBibliographicWork", "getBibliographicWorks", "manageLibraryBook", "getLibraryBooks", "processLibraryLoan", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "recordLibraryIncident", "getLibraryIncidents", "manageDigitalResource", "getDigitalResources", "manageAssetItem", "getAssetItems", "assignAssetCustody", "returnAssetCustody", "getAssetAssignments", "manageTransportVehicle", "getTransportVehicles", "manageTransportDriver", "getTransportDrivers", "resolveSpreadsheetSource", "getSpreadsheetCatalog", "validateImportPreview", "importDataWithColumnMapping", "getMigrationLogs", "configureDiscountScholarshipRule", "getDiscountScholarshipRules", "submitDiscountScholarshipRequest", "getDiscountScholarshipRequests", "calculateAppliedDiscount", "getStoreProducts", "getStoreOrders", "getCafeteriaMenu", "getCafeteriaOrders", "createPurchaseRequest", "getPurchaseRequests", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "createPurchaseOrder", "approvePurchaseOrder", "modifyPurchaseOrderAmount", "generatePurchaseOrderPDF", "getPurchaseOrders", "recordPurchaseReceipt", "getPurchaseReceipts", "manageWarehouseLocation", "getWarehouseLocations", "transferInventoryStock", "confirmTransferReceipt", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "deliverMaterialRequisition", "createPhysicalInventoryCount", "getPhysicalInventoryCounts", "reconcilePhysicalCount", "manageMaintenanceOrder", "getMaintenanceOrders", "registerAssetDisposal", "getAssetDisposals", "runPhase18PurchasingAndSuppliersRegressionSuite", "runPhase19InventoryAndAssetsRegressionSuite", "runPhase20LibraryAndResourcesRegressionSuite", "runPhase21TransportAndServicesRegressionSuite", "runPhase22DocumentManagementAndSACERegressionSuite"],
+    "voidCharge", "reversePayment", "issueFiscalCreditNote", "processPaymentRefund", "previewBatchMonthlyCharges", "generateBatchMonthlyCharges", "configureSARAuthorizedCAI", "getSARAuthorizedCAIs","initializeFinancialDriveStructure", "configurePaymentConcept", "configurePaymentTariff", "getEnrollmentBillingConfiguration", "saveEnrollmentBillingConfiguration", "getStudentAccountStatement", "recordStudentPayment", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher", "generatePaymentReceiptPDF", "createFiscalInvoice", "getFiscalInvoices", "configureGatewayIntegration", "testGatewayConnection", "recordCashBankMovement", "closeCashSession", "getCashBankSummary", "performBankReconciliation", "recordAccountsPayableExpense", "verifyThreeWayMatch", "recordSupplierPayment", "applySupplierCreditNote", "getSupplierAccountsPayableSummary", "getChartOfAccounts", "saveAccountItem", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getBudgets", "saveBudgetPlan", "getBudgetExecutionReport", "checkBudgetAvailability", "getFinancialSummary", "getAccountsReceivablePayableSummary", "generatePayrollPeriod", "recordStaffAttendance", "getStaffPayrollReceipt", "recordInventoryMovement", "getInventoryKardex", "registerSupplier", "createEmployeeRecord", "getEmployeeRecords", "manageEmployeeContract", "getEmployeeContracts", "submitVacationRequest", "getVacationRequests", "reviewVacationRequest", "configureFiscalPolicy", "getFiscalPolicies", "publishInstitutionalPolicy", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getAdvancedDashboardAnalytics", "manageBibliographicWork", "getBibliographicWorks", "manageLibraryBook", "getLibraryBooks", "processLibraryLoan", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "recordLibraryIncident", "getLibraryIncidents", "manageDigitalResource", "getDigitalResources", "manageAssetItem", "getAssetItems", "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "assignAssetCustody", "returnAssetCustody", "getAssetAssignments", "manageTransportVehicle", "getTransportVehicles", "manageTransportDriver", "getTransportDrivers", "resolveSpreadsheetSource", "getSpreadsheetCatalog", "validateImportPreview", "importDataWithColumnMapping", "getMigrationLogs", "configureDiscountScholarshipRule", "getDiscountScholarshipRules", "submitDiscountScholarshipRequest", "getDiscountScholarshipRequests", "calculateAppliedDiscount", "getStoreProducts", "getStoreOrders", "getCafeteriaMenu", "getCafeteriaOrders", "createPurchaseRequest", "getPurchaseRequests", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "createPurchaseOrder", "approvePurchaseOrder", "modifyPurchaseOrderAmount", "generatePurchaseOrderPDF", "getPurchaseOrders", "recordPurchaseReceipt", "getPurchaseReceipts", "manageWarehouseLocation", "getWarehouseLocations", "transferInventoryStock", "confirmTransferReceipt", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "deliverMaterialRequisition", "createPhysicalInventoryCount", "getPhysicalInventoryCounts", "reconcilePhysicalCount", "manageMaintenanceOrder", "getMaintenanceOrders", "registerAssetDisposal", "getAssetDisposals", "runPhase18PurchasingAndSuppliersRegressionSuite", "runPhase19InventoryAndAssetsRegressionSuite", "runPhase20LibraryAndResourcesRegressionSuite", "runPhase21TransportAndServicesRegressionSuite", "runPhase22DocumentManagementAndSACERegressionSuite"],
   // REVISIÓN RBAC: Habilitar permiso processFamilyCreditPurchase para personal de tienda, cafetería, tutores y estudiantes
   "EncargadoTienda": ["getStoreProducts", "manageStoreProduct", "createStoreOrder", "getStoreOrders", "updateStoreOrderStatus", "recordInventoryMovement", "getInventoryKardex", "getInstitutionalPolicies", "processFamilyCreditPurchase"],
   "EncargadoCafeteria": ["getCafeteriaMenu", "manageCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "updateCafeteriaOrderStatus", "recordInventoryMovement", "getInventoryKardex", "getInstitutionalPolicies", "processFamilyCreditPurchase"],
@@ -913,6 +913,8 @@ function doPost(e) {
       case "manageDigitalResource": result = manageDigitalResource(payload); break;
       case "getDigitalResources": result = getDigitalResources(payload); break;
       case "manageAssetItem": result = manageAssetItem(payload); break;
+      case "getPurchaseReceiptAssetCandidates": result = getPurchaseReceiptAssetCandidates(payload); break;
+      case "registerAssetsFromPurchaseReceipt": result = registerAssetsFromPurchaseReceipt(payload); break;
       case "getAssetItems": result = getAssetItems(payload); break;
       case "assignAssetCustody": result = assignAssetCustody(payload); break;
       case "returnAssetCustody": result = returnAssetCustody(payload); break;
@@ -7977,6 +7979,131 @@ function registerSupplier(payload) {
 // FASE 18: COMPRAS, PROVEEDORES Y CONTRATACIÓN DE SERVICIOS
 // ---------------------------------------------------------------------------
 
+function normalizePurchaseAssetClassification_(item) {
+  const value = item || {};
+  const raw = String(value.clasificacionInventario || value.tipoBien || value.tipoInventario || value.clasificacionBien || value.clasificacion || (value.capitalizable === true ? "ActivoFijo" : "")).trim();
+  const normalized = normalizePurchaseAwardRole_(raw);
+  if (normalized.indexOf("ACTIVOFIJO") !== -1 || normalized.indexOf("BIENCAPITALIZABLE") !== -1 || normalized.indexOf("CAPITALIZABLE") !== -1 || normalized.indexOf("ACTIVOPATRIMONIAL") !== -1) return "ActivoFijo";
+  if (normalized.indexOf("CONSUMIBLE") !== -1) return "Consumible";
+  return "MaterialInventariable";
+}
+const ASSET_BASE_HEADERS_ = ["ActivoID","CodigoPatrimonial","Nombre","Categoria","SerieModel","UbicacionActual","CustodioUserId","Estado","Observaciones"];
+const ASSET_ACQUISITION_HEADERS_ = ["ProveedorID","OrdenCompraID","RecepcionID","FacturaNumero","ObligacionID","FechaAdquisicion","CostoAdquisicion","NumeroSerie","Marca","Modelo","PurchaseItemId","ClasificacionCompra"];
+function ensureAssetAcquisitionSchema_(ss) {
+  let sheet = ss.getSheetByName("ActivosPatrimoniales");
+  if (!sheet) sheet = getOrCreateSheet(ss, "ActivosPatrimoniales");
+  const values = sheet.getDataRange().getValues(), headers = values.length ? values[0] : [];
+  if (ASSET_BASE_HEADERS_.some((header,index)=>String(headers[index]||"").trim()!==header)) throw new Error("ASSET_SCHEMA_MISMATCH");
+  ASSET_ACQUISITION_HEADERS_.forEach((header,index)=>{
+    const column=ASSET_BASE_HEADERS_.length+index, existing=String(headers[column]||"").trim();
+    if(existing&&existing!==header)throw new Error("ASSET_SCHEMA_MISMATCH:"+header);
+    if(!existing)sheet.getRange(1,column+1).setValue(header);
+  });
+  return sheet;
+}
+function purchaseAssetReceiptContext_(payload,ss) {
+  const access=purchaseQuotationAccess_(payload||{},ss);
+  if(!access.authorized)throw new Error(access.code||"PURCHASE_ASSET_ACCESS_DENIED");
+  const receiptId=String(payload&&payload.recepcionId||"").trim();
+  if(!receiptId)throw new Error("PURCHASE_RECEIPT_ID_REQUIRED");
+  const receiptSheet=ss.getSheetByName("RecepcionesCompra"),orderSheet=ss.getSheetByName("OrdenesCompra"),requestSheet=ss.getSheetByName("SolicitudesCompra");
+  if(!receiptSheet||!orderSheet||!requestSheet)throw new Error("PURCHASE_ASSET_SOURCE_NOT_FOUND");
+  const receiptRows=receiptSheet.getDataRange().getValues(),receiptMatches=receiptRows.slice(1).filter(row=>String(row[0]||"").trim()===receiptId);
+  if(receiptMatches.length!==1)throw new Error(receiptMatches.length?"PURCHASE_RECEIPT_AMBIGUOUS":"PURCHASE_RECEIPT_NOT_FOUND");
+  const receipt=receiptMatches[0],orderId=String(receipt[1]||"").trim(),orderRows=orderSheet.getDataRange().getValues();
+  const orderMatches=orderRows.slice(1).filter(row=>String(row[0]||"").trim()===orderId);
+  if(orderMatches.length!==1)throw new Error(orderMatches.length?"PURCHASE_ORDER_AMBIGUOUS":"PURCHASE_ORDER_NOT_FOUND");
+  const order=orderMatches[0];
+  if(String(order[9]||"").trim()==="Cancelada")throw new Error("PURCHASE_ORDER_CANCELLED");
+  const requestRows=requestSheet.getDataRange().getValues(),requestMatches=requestRows.slice(1).filter(row=>String(row[0]||"").trim()===String(order[1]||"").trim());
+  if(requestMatches.length!==1)throw new Error(requestMatches.length?"PURCHASE_REQUEST_AMBIGUOUS":"PURCHASE_REQUEST_NOT_FOUND");
+  const request=requestMatches[0],department=String(request[2]||"").trim();
+  if(access.scope.institutionWide!==true&&!(access.scope.departmentIds||[]).map(String).includes(department))throw new Error("RESOURCE_NOT_FOUND");
+  const requestItems=purchaseQuotationJsonArray_(request[6]),requestByKey=Object.create(null);
+  requestItems.forEach((item,index)=>{requestByKey[purchaseQuotationItemKey_(item,index)]=item;});
+  const orderItems=purchaseQuotationJsonArray_(order[6]),orderByKey=Object.create(null);
+  orderItems.forEach((item,index)=>{orderByKey[purchaseQuotationItemKey_(item,index)]=item;});
+  let receiptItems=[];try{receiptItems=typeof receipt[4]==="string"?JSON.parse(receipt[4]||"[]"):(receipt[4]||[]);}catch(_){throw new Error("PURCHASE_RECEIPT_DETAILS_INVALID");}
+  if(!Array.isArray(receiptItems))throw new Error("PURCHASE_RECEIPT_DETAILS_INVALID");
+  const assetSheet=ss.getSheetByName("ActivosPatrimoniales"),assetRows=assetSheet?assetSheet.getDataRange().getValues():[],headers=assetRows.length?assetRows[0].map(x=>String(x||"").trim()):[],headerIndex=Object.create(null);
+  headers.forEach((h,i)=>{headerIndex[h]=i;});
+  const registeredByItem=Object.create(null);
+  assetRows.slice(1).forEach(row=>{
+    if(headerIndex.RecepcionID===undefined||String(row[headerIndex.RecepcionID]||"").trim()!==receiptId)return;
+    const key=String(row[headerIndex.PurchaseItemId]||"").trim();if(key)registeredByItem[key]=(registeredByItem[key]||0)+1;
+  });
+  const receivedByItem=Object.create(null),receiptConforming=String(receipt[5]||"").trim()==="Conforme";
+  if(receiptConforming)receiptItems.forEach(item=>{
+    const key=String(item.itemId||item.ItemId||item.codigoItem||item.codigo||item.id||"").trim(),qty=Number(item.cantidad);
+    const conforming=item.conforme!==false&&!item.danado&&!item.rechazado&&item.estado!=="Danado"&&item.estado!=="Rechazado";
+    if(key&&conforming&&Number.isFinite(qty)&&qty>0&&orderByKey[key])receivedByItem[key]=(receivedByItem[key]||0)+qty;
+  });
+  const candidates=Object.keys(receivedByItem).map(key=>{
+    const orderItem=orderByKey[key],requestItem=requestByKey[key]||{};
+    const classification=normalizePurchaseAssetClassification_({clasificacionInventario:orderItem.clasificacionInventario||requestItem.clasificacionInventario,tipoBien:orderItem.tipoBien||requestItem.tipoBien,capitalizable:orderItem.capitalizable===true||requestItem.capitalizable===true});
+    const orderedQty=Number(orderItem.cantidad||0),lineTotal=Number(orderItem.total),unitPrice=Number(orderItem.precioUnitario||0);
+    const unitCost=Number.isFinite(lineTotal)&&lineTotal>=0&&orderedQty>0?lineTotal/orderedQty:unitPrice,already=registeredByItem[key]||0;
+    return {itemId:key,descripcion:String(orderItem.descripcion||orderItem.nombreItem||requestItem.descripcion||requestItem.nombreItem||"Bien adquirido"),unidad:String(orderItem.unidad||requestItem.unidad||""),clasificacionInventario:classification,cantidadRecibidaConforme:receivedByItem[key],cantidadRegistrada:already,unidadesDisponibles:Math.max(0,receivedByItem[key]-already),costoUnitarioAdquisicion:Math.round(unitCost*100)/100};
+  }).filter(item=>item.clasificacionInventario==="ActivoFijo");
+  const payableSheet=ss.getSheetByName("CuentasPorPagarGastos"),invoiceRows=payableSheet?payableSheet.getDataRange().getValues().slice(1):[],orderMarker="[ORDEN_"+orderId+"]",supplierId=String(order[3]||"").trim();
+  const invoices=invoiceRows.filter(row=>{
+    const observations=String(row[9]||""),match=observations.match(/\[MATCH:([^\]]+)\]/i),matchState=match?normalizePurchaseAwardRole_(match[1]):"";
+    return observations.includes(orderMarker)&&String(row[1]||"").trim()===supplierId&&["APROBADO","APROBADA"].includes(normalizePurchaseAwardRole_(row[6]))&&["CONCILIADA","DIFERENCIAAUTORIZADA"].includes(matchState);
+  }).map(row=>({obligacionId:String(row[0]||""),numeroFactura:String(row[2]||""),proveedorId:String(row[1]||""),estadoAprobacion:String(row[6]||""),estadoConciliacion:(String(row[9]||"").match(/\[MATCH:([^\]]+)\]/i)||[])[1]||""})).filter(x=>x.numeroFactura);
+  return {access,receiptId,receipt,orderId,order,supplierId,invoices,candidates};
+}
+function getPurchaseReceiptAssetCandidates(payload) {
+  const context=purchaseAssetReceiptContext_(payload,SpreadsheetApp.openById(SPREADSHEET_ID));
+  return {status:"success",recepcionId:context.receiptId,ordenCompraId:context.orderId,proveedorId:context.supplierId,facturasDisponibles:context.invoices,candidatos:context.candidates};
+}
+function registerAssetsFromPurchaseReceipt(payload) {
+  const p=payload||{},receiptId=String(p.recepcionId||"").trim(),invoiceNumber=String(p.numeroFactura||"").trim(),assetsInput=Array.isArray(p.activos)?p.activos:[];
+  if(!receiptId||!invoiceNumber||!assetsInput.length)throw new Error("PURCHASE_ASSET_FIELDS_REQUIRED");
+  const lock=LockService.getScriptLock();if(!lock.tryLock(15000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La recepción está siendo procesada."};
+  let assetSheet=null,assignmentSheet=null,assetStart=0,assignmentStart=0;
+  try{
+    const ss=SpreadsheetApp.openById(SPREADSHEET_ID);assetSheet=ensureAssetAcquisitionSchema_(ss);
+    const context=purchaseAssetReceiptContext_(p,ss),invoiceMatches=context.invoices.filter(x=>x.numeroFactura===invoiceNumber);
+    if(invoiceMatches.length!==1)throw new Error(invoiceMatches.length?"PURCHASE_ASSET_INVOICE_AMBIGUOUS":"PURCHASE_ASSET_INVOICE_NOT_LINKED");
+    const invoice=invoiceMatches[0],assetData=assetSheet.getDataRange().getValues(),existingRows=assetData.slice(1);
+    const serialIndex=ASSET_BASE_HEADERS_.length+ASSET_ACQUISITION_HEADERS_.indexOf("NumeroSerie"),codeIndex=1,receiptIndex=ASSET_BASE_HEADERS_.length+ASSET_ACQUISITION_HEADERS_.indexOf("RecepcionID"),itemIndex=ASSET_BASE_HEADERS_.length+ASSET_ACQUISITION_HEADERS_.indexOf("PurchaseItemId");
+    const serialSeen=new Set(),codeSeen=new Set(),newCounts=Object.create(null),pending=[];
+    assetsInput.forEach(input=>{
+      const itemId=String(input.itemId||input.ItemId||input.codigoItem||input.codigo||"").trim(),candidate=context.candidates.find(x=>x.itemId===itemId);
+      if(!candidate)throw new Error("PURCHASE_ASSET_ITEM_NOT_CAPITALIZABLE:"+itemId);
+      const code=String(input.codigoPatrimonial||"").trim(),serial=String(input.numeroSerie||"").trim(),category=String(input.categoriaPatrimonial||input.categoria||"").trim(),brand=String(input.marca||"").trim(),model=String(input.modelo||"").trim(),location=String(input.ubicacionActual||"").trim();
+      if(!code||!serial||!category||!brand||!model||!location)throw new Error("PURCHASE_ASSET_DETAILS_REQUIRED");
+      const ns=serial.toUpperCase(),nc=code.toUpperCase();
+      if(serialSeen.has(ns)||codeSeen.has(nc))throw new Error("PURCHASE_ASSET_DUPLICATE_IN_REQUEST");
+      serialSeen.add(ns);codeSeen.add(nc);
+      const duplicate=existingRows.find(row=>String(row[serialIndex]||"").trim().toUpperCase()===ns||String(row[codeIndex]||"").trim().toUpperCase()===nc);
+      if(duplicate){
+        const sameSource=String(duplicate[receiptIndex]||"").trim()===receiptId&&String(duplicate[itemIndex]||"").trim()===itemId;
+        if(sameSource&&String(duplicate[serialIndex]||"").trim().toUpperCase()===ns&&String(duplicate[codeIndex]||"").trim().toUpperCase()===nc)return;
+        throw new Error("PURCHASE_ASSET_SERIAL_OR_CODE_ALREADY_EXISTS");
+      }
+      newCounts[itemId]=(newCounts[itemId]||0)+1;
+      pending.push({itemId,code,serial,category,brand,model,location,custodian:String(input.custodioUserId||"").trim(),name:String(input.nombre||candidate.descripcion).trim(),candidate});
+    });
+    Object.keys(newCounts).forEach(itemId=>{const candidate=context.candidates.find(x=>x.itemId===itemId);if(newCounts[itemId]>candidate.unidadesDisponibles)throw new Error("PURCHASE_ASSET_QUANTITY_EXCEEDED:"+itemId);});
+    if(!pending.length)return {status:"success",recepcionId,activos:[],idempotente:true,message:"Los activos de esta solicitud ya estaban registrados."};
+    const now=new Date(),rowsToAppend=pending.map(item=>{
+      const assetId="ACT-CMP-"+Utilities.getUuid(),estado=item.custodian?"assigned":"available",observations="Alta desde recepción "+receiptId+" / orden "+context.orderId;
+      return {assetId,custodian:item.custodian,row:[assetId,item.code,item.name,item.category,item.model,item.location,item.custodian,estado,observations,context.supplierId,context.orderId,receiptId,invoice.numeroFactura,invoice.obligacionId,context.receipt[2]||now,item.candidate.costoUnitarioAdquisicion,item.serial,item.brand,item.model,item.itemId,"ActivoFijo"]};
+    });
+    assignmentSheet=getOrCreateSheet(ss,"AsignacionesActivos");
+    const assignmentHeaders=["AsignacionID","ActivoID","CustodioUserId","FechaEntrega","FechaDevolucion","EstadoActa","Observaciones"],assignmentData=assignmentSheet.getDataRange().getValues();
+    if(!assignmentData.length||assignmentHeaders.some((header,index)=>String(assignmentData[0][index]||"").trim()!==header))throw new Error("ASSET_ASSIGNMENT_SCHEMA_MISMATCH");
+    assetStart=assetSheet.getLastRow()+1;rowsToAppend.forEach(item=>assetSheet.appendRow(item.row));
+    const assigned=rowsToAppend.filter(item=>item.custodian);
+    if(assigned.length){assignmentStart=assignmentSheet.getLastRow()+1;assigned.forEach(item=>assignmentSheet.appendRow(["ASG-"+Utilities.getUuid(),item.assetId,item.custodian,now,"","Asignación inicial pendiente de acta","Custodia inicial desde recepción de compra "+receiptId]));}
+    return {status:"success",recepcionId,ordenCompraId:context.orderId,numeroFactura:invoice.numeroFactura,activos:rowsToAppend.map(item=>({activoId:item.assetId,codigoPatrimonial:item.row[1],numeroSerie:item.row[16]})),message:rowsToAppend.length+" activo(s) patrimonial(es) registrado(s) desde la recepción."};
+  }catch(error){
+    if(assignmentStart&&assignmentSheet)try{const last=assignmentSheet.getLastRow();if(last>=assignmentStart)assignmentSheet.getRange(assignmentStart,1,last-assignmentStart+1,7).clearContent();}catch(_){}
+    if(assetStart&&assetSheet)try{const last=assetSheet.getLastRow();if(last>=assetStart)assetSheet.getRange(assetStart,1,last-assetStart+1,21).clearContent();}catch(_){}
+    return {status:"error",code:String(error&&error.message||"PURCHASE_ASSET_REGISTRATION_FAILED"),message:"No fue posible registrar los activos; se revirtió la escritura parcial."};
+  }finally{lock.releaseLock();}
+}
 function createPurchaseRequest(payload) {
   const { departamento, solicitanteUserId, justificacion, categoria, detalleItems, montoEstimado, centroCosto, observaciones } = payload || {};
   if (!departamento || !justificacion) throw new Error("Departamento y justificación son requeridos.");
@@ -7986,6 +8113,7 @@ function createPurchaseRequest(payload) {
   const now = new Date();
   const solId = "REQ-CMP-" + now.getTime();
 
+  const normalizedItems = Array.isArray(detalleItems) ? detalleItems.map(item => ({ ...item, clasificacionInventario: normalizePurchaseAssetClassification_(item) })) : [];
   sheet.appendRow([
     solId,
     now,
@@ -7993,7 +8121,7 @@ function createPurchaseRequest(payload) {
     solicitanteUserId || "COMPRADOR",
     justificacion,
     categoria || "Materiales/Insumos",
-    JSON.stringify(detalleItems || []),
+    JSON.stringify(normalizedItems),
     parseFloat(montoEstimado || 0),
     centroCosto || "Operaciones",
     "PendienteAprobacion",
@@ -8166,7 +8294,8 @@ function adjudicatePurchaseQuotations(payload){
   if(!quoteObjects.length||quoteObjects.length>5)return {status:"error",code:quoteObjects.length?"PURCHASE_QUOTATION_COMPARISON_LIMIT_EXCEEDED":"PURCHASE_QUOTATIONS_NOT_FOUND",message:"La adjudicación requiere entre una y cinco cotizaciones comparables."};
   const supplierIds=quoteObjects.map(q=>String(q.row[2]||"").trim());if(new Set(supplierIds).size!==supplierIds.length)return {status:"error",code:"DUPLICATE_SUPPLIER_QUOTATION",message:"Hay cotizaciones duplicadas del mismo proveedor; deben depurarse antes de adjudicar."};
   const quoteIds=quoteObjects.map(q=>String(q.row[0]||"").trim());if(new Set(quoteIds).size!==quoteIds.length)throw new Error("PURCHASE_QUOTATION_ID_AMBIGUOUS");
-  const detailRows=detailSheet.getDataRange().getValues().slice(1),supplierRows=getOrCreateSheet(ss,"ProveedoresActivos").getDataRange().getValues().slice(1),requestItems=found.items,now=new Date(),quoteById=Object.create(null),lineByQuote=Object.create(null);
+  const detailRows=detailSheet.getDataRange().getValues().slice(1),supplierRows=getOrCreateSheet(ss,"ProveedoresActivos").getDataRange().getValues().slice(1),requestItems=found.items,requestItemByKey=Object.create(null),now=new Date(),quoteById=Object.create(null),lineByQuote=Object.create(null);
+  requestItems.forEach((item,index)=>{requestItemByKey[purchaseQuotationItemKey_(item,index)]=item;});
   quoteObjects.forEach(q=>{const quoteId=String(q.row[0]);q.vigente=purchaseQuoteIsValid_(q.row,now);quoteById[quoteId]=q;lineByQuote[quoteId]=detailRows.filter(r=>String(r[1]||"").trim()===quoteId);const itemIds=lineByQuote[quoteId].map(r=>String(r[3]||"").trim());if(new Set(itemIds).size!==itemIds.length)throw new Error("PURCHASE_QUOTATION_LINE_AMBIGUOUS");});
   const allocationsByItem=Object.create(null),allocatedByQuoteLine=Object.create(null),usedQuotes=new Set(),normalizedAllocations=[],supplierByQuote=Object.create(null);
   allocations.forEach(a=>{
@@ -8183,7 +8312,9 @@ function adjudicatePurchaseQuotations(payload){
    const justification=String(a.justificacion||p.justificacion||"").trim();
    if(landed>lowest+0.005&&justification.length<10)throw new Error("PURCHASE_AWARD_NON_LOWEST_JUSTIFICATION_REQUIRED");
    const ratio=quantity/quoted,subtotal=purchaseQuotationRound_(quantity*unit),discount=purchaseQuotationRound_(Number(line[10]||0)*ratio),tax=purchaseQuotationRound_(Number(line[11]||0)*ratio),freight=purchaseQuotationRound_(Number(line[12]||0)*ratio),total=purchaseQuotationRound_(subtotal-discount+tax+freight);
-   normalizedAllocations.push({itemId:itemId,cotizacionId:quoteId,proveedorId:supplier,descripcion:String(line[4]||""),unidad:String(line[5]||""),cantidadAdjudicada:quantity,precioUnitario:unit,subtotal:subtotal,descuento:discount,impuestos:tax,flete:freight,total:total,garantia:String(line[14]||""),cumplimientoTecnico:String(line[15]||""),condicionesPago:String(q.row[7]||""),plazoEntregaDias:Number(q.row[6]||0),vigenciaOferta:String(q.row[4]||""),justificacion:justification});
+   const sourceRequestItem=requestItemByKey[itemId]||{};
+   const clasificacionInventario=normalizePurchaseAssetClassification_(sourceRequestItem);
+   normalizedAllocations.push({itemId:itemId,clasificacionInventario:clasificacionInventario,capitalizable:clasificacionInventario==="ActivoFijo",cotizacionId:quoteId,proveedorId:supplier,descripcion:String(line[4]||""),unidad:String(line[5]||""),cantidadAdjudicada:quantity,precioUnitario:unit,subtotal:subtotal,descuento:discount,impuestos:tax,flete:freight,total:total,garantia:String(line[14]||""),cumplimientoTecnico:String(line[15]||""),condicionesPago:String(q.row[7]||""),plazoEntregaDias:Number(q.row[6]||0),vigenciaOferta:String(q.row[4]||""),justificacion:justification});
    usedQuotes.add(quoteId);supplierByQuote[quoteId]=supplier;
   });
   requestItems.forEach((item,index)=>{const key=purchaseQuotationItemKey_(item,index),required=Number(item.cantidad||item.quantity||item.cantidadSolicitada||1),awarded=Number(allocationsByItem[key]||0);if(!Number.isFinite(required)||required<=0||Math.abs(required-awarded)>0.000001)throw new Error("PURCHASE_AWARD_QUANTITY_INCOMPLETE:"+key);});
@@ -8196,7 +8327,7 @@ function adjudicatePurchaseQuotations(payload){
   const dictamen=String(p.dictamen||"").trim(),justificacion=String(p.justificacion||"").trim();
   if(dictamen.length<10||justificacion.length<10)return {status:"error",code:"PURCHASE_AWARD_RATIONALE_REQUIRED",message:"El dictamen y la justificación deben describir la decisión."};
   const actaId="ACT-CMP-"+Utilities.getUuid(),orders=[];
-  Object.keys(grouped).forEach(supplierId=>{const group=grouped[supplierId],quote=quoteById[group.cotizacionId].row,orderId="ORD-CMP-"+Utilities.getUuid(),delivery=new Date(now.getTime()+Math.max(0,group.plazo)*86400000),details=group.lineas.map(a=>({itemId:a.itemId,descripcion:a.descripcion,unidad:a.unidad,cantidad:a.cantidadAdjudicada,precioUnitario:a.precioUnitario,subtotal:a.subtotal,descuento:a.descuento,impuestos:a.impuestos,flete:a.flete,total:a.total,garantia:a.garantia,cumplimientoTecnico:a.cumplimientoTecnico,condicionesPago:group.condicionesPago,plazoEntregaDias:group.plazo,vigenciaOferta:group.vigenciaOferta,cotizacionId:a.cotizacionId,proveedorId:a.proveedorId}));orders.push({ordenCompraId:orderId,solicitudId:solicitudId,cotizacionId:group.cotizacionId,proveedorId:supplierId,montoTotal:group.total,fechaEntregaEstimada:delivery,condicionesPago:group.condicionesPago,plazoEntregaDias:group.plazo,detalleItems:details});});
+  Object.keys(grouped).forEach(supplierId=>{const group=grouped[supplierId],quote=quoteById[group.cotizacionId].row,orderId="ORD-CMP-"+Utilities.getUuid(),delivery=new Date(now.getTime()+Math.max(0,group.plazo)*86400000),details=group.lineas.map(a=>({itemId:a.itemId,clasificacionInventario:a.clasificacionInventario,capitalizable:a.capitalizable,descripcion:a.descripcion,unidad:a.unidad,cantidad:a.cantidadAdjudicada,precioUnitario:a.precioUnitario,subtotal:a.subtotal,descuento:a.descuento,impuestos:a.impuestos,flete:a.flete,total:a.total,garantia:a.garantia,cumplimientoTecnico:a.cumplimientoTecnico,condicionesPago:group.condicionesPago,plazoEntregaDias:group.plazo,vigenciaOferta:group.vigenciaOferta,cotizacionId:a.cotizacionId,proveedorId:a.proveedorId}));orders.push({ordenCompraId:orderId,solicitudId:solicitudId,cotizacionId:group.cotizacionId,proveedorId:supplierId,montoTotal:group.total,fechaEntregaEstimada:delivery,condicionesPago:group.condicionesPago,plazoEntregaDias:group.plazo,detalleItems:details});});
   const totalAwarded=purchaseQuotationRound_(normalizedAllocations.reduce((sum,a)=>sum+a.total,0)),supplierSnapshot=supplierRows.filter(r=>quoteObjects.some(q=>String(q.row[2]||"").trim()===String(r[0]||"").trim())),validitySnapshot=Object.fromEntries(quoteObjects.map(q=>[String(q.row[0]),q.vigente])),snapshot=JSON.stringify({cotizaciones:quoteObjects.map(q=>q.row),detalle:detailRows.filter(r=>quoteObjects.some(q=>String(q.row[0])===String(r[1]))),proveedores:supplierSnapshot,vigenciaPorCotizacion:validitySnapshot}),awardJson=JSON.stringify(normalizedAllocations),rejectedJson=JSON.stringify(rejected),ordersJson=JSON.stringify(orders);
   orderStart=ordersSheet.getLastRow()+1;orders.forEach(o=>ordersSheet.appendRow([o.ordenCompraId,o.solicitudId,o.cotizacionId,o.proveedorId,now,o.fechaEntregaEstimada,JSON.stringify(o.detalleItems),o.montoTotal,String(found.request.row[8]||"Operaciones"),"Borrador","", "Acta "+actaId+"; "+justificacion+"; Pago: "+o.condicionesPago+"; Entrega: "+o.plazoEntregaDias+" días",String(found.request.row[3]||""),"1.0",""]));
   actaRow=actaSheet.getLastRow()+1;actaSheet.appendRow([actaId,solicitudId,now,JSON.stringify(responsibilities),dictamen,justificacion,totalAwarded,awardJson,rejectedJson,snapshot,"Adjudicada",access.actor.userId,idempotencyKey,ordersJson]);
@@ -8243,6 +8374,18 @@ function createPurchaseOrder(payload) {
   if (!solicitudId || !proveedorId || montoTotal === undefined) throw new Error("solicitudId, proveedorId y montoTotal son requeridos.");
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const requestSheet = ss.getSheetByName("SolicitudesCompra");
+  const requestRows = requestSheet ? requestSheet.getDataRange().getValues().slice(1) : [];
+  const sourceMatches = requestRows.filter(row => String(row[0] || "").trim() === String(solicitudId).trim());
+  const sourceItems = sourceMatches.length === 1 ? purchaseQuotationJsonArray_(sourceMatches[0][6]) : [];
+  const sourceByKey = Object.create(null);
+  sourceItems.forEach((item,index)=>{sourceByKey[purchaseQuotationItemKey_(item,index)]=item;});
+  const orderDetails = (Array.isArray(detalleItems) ? detalleItems : sourceItems).map((item,index)=>{
+    const key=purchaseQuotationItemKey_(item,index),source=sourceByKey[key]||{};
+    const merged={...source,...item,clasificacionInventario:item.clasificacionInventario||source.clasificacionInventario};
+    const classification=normalizePurchaseAssetClassification_(merged);
+    return {...merged,clasificacionInventario:classification,capitalizable:classification==="ActivoFijo"};
+  });
   const sheet = getOrCreateSheet(ss, "OrdenesCompra");
   const now = new Date();
   const ordenId = "ORD-CMP-" + now.getTime();
@@ -8254,7 +8397,7 @@ function createPurchaseOrder(payload) {
     proveedorId,
     now,
     fechaEntregaEstimada || "",
-    JSON.stringify(detalleItems || []),
+    JSON.stringify(orderDetails),
     parseFloat(montoTotal || 0),
     centroCosto || "Operaciones",
     "Borrador", // Estado inicial formal del ciclo
@@ -9206,7 +9349,7 @@ function verifyThreeWayMatch(payload) {
   // Mapear partidas de la orden: codigoItem -> { solicitada, precioUnitario, subtotal }
   const orderMap = {};
   orderItems.forEach(it => {
-    const c = String(it.codigoItem || it.codigo || it.id || "").trim();
+    const c = String(it.codigoItem || it.codigo || it.id || it.itemId || it.ItemId || "").trim();
     if (c) {
       orderMap[c] = {
         codigo: c,
@@ -9226,7 +9369,7 @@ function verifyThreeWayMatch(payload) {
     try { d = typeof pr[4] === "string" ? JSON.parse(pr[4]) : (pr[4] || []); } catch (e) {}
     const prConf = String(pr[5] || "Conforme").trim();
     d.forEach(it => {
-      const c = String(it.codigoItem || it.codigo || it.id || "").trim();
+      const c = String(it.codigoItem || it.codigo || it.id || it.itemId || it.ItemId || "").trim();
       const qty = parseFloat(it.cantidad || 0);
       const isOk = (it.conforme !== undefined ? Boolean(it.conforme) : (prConf === "Conforme")) && !it.danado && !it.rechazado;
       if (!receivedMap[c]) receivedMap[c] = { recibidaConforme: 0, rechazada: 0 };
@@ -9250,7 +9393,7 @@ function verifyThreeWayMatch(payload) {
         try {
           const prevItems = JSON.parse(match[1]);
           prevItems.forEach(pi => {
-            const c = String(pi.codigoItem || pi.codigo || "").trim();
+            const c = String(pi.codigoItem || pi.codigo || pi.itemId || pi.ItemId || "").trim();
             if (c) {
               previouslyInvoicedByItem[c] = (previouslyInvoicedByItem[c] || 0) + parseFloat(pi.cantidad || 0);
             }
@@ -9267,7 +9410,7 @@ function verifyThreeWayMatch(payload) {
   let totalFacturadoCalculado = 0;
 
   partidasFacturadas.forEach(pf => {
-    const code = String(pf.codigoItem || pf.codigo || pf.id || "").trim();
+    const code = String(pf.codigoItem || pf.codigo || pf.id || pf.itemId || pf.ItemId || "").trim();
     const cantFacturada = parseFloat(pf.cantidad || 0);
     const precioFacturado = parseFloat(pf.precioUnitario || pf.precio || 0);
     const subtotalFacturado = parseFloat(pf.subtotal || (cantFacturada * precioFacturado));
@@ -11802,97 +11945,31 @@ function getDigitalResources(payload) {
 // ---------------------------------------------------------------------------
 
 function manageAssetItem(payload) {
-  const { activoId, codigoPatrimonial, nombre, categoria, serieModel, ubicacionActual, custodioUserId, estado, observaciones } = payload || {};
-  if (!codigoPatrimonial || !nombre) throw new Error("codigoPatrimonial y nombre son requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "ActivosPatrimoniales");
-  const data = sheet.getDataRange().getValues();
-  const now = new Date();
-
-  let aId = activoId;
-  let existingIndex = -1;
-
-  if (aId) {
-    existingIndex = data.findIndex(r => String(r[0]).trim() === String(aId).trim());
-  } else {
-    existingIndex = data.findIndex(r => String(r[1]).trim() === String(codigoPatrimonial).trim());
-  }
-
-  if (existingIndex !== -1) {
-    aId = data[existingIndex][0];
-    sheet.getRange(existingIndex + 1, 1, 1, 9).setValues([[
-      aId,
-      String(codigoPatrimonial).trim(),
-      nombre,
-      categoria || "Equipo Computacional",
-      serieModel || "N/A",
-      ubicacionActual || "Laboratorio de Cómputo",
-      custodioUserId || "",
-      estado || "available",
-      observaciones || ""
-    ]]);
-  } else {
-    aId = "ACT-" + now.getTime();
-    sheet.appendRow([
-      aId,
-      String(codigoPatrimonial).trim(),
-      nombre,
-      categoria || "Equipo Computacional",
-      serieModel || "N/A",
-      ubicacionActual || "Laboratorio de Cómputo",
-      custodioUserId || "",
-      "available",
-      observaciones || ""
-    ]);
-  }
-
-  return {
-    status: "success",
-    activoId: aId,
-    codigoPatrimonial: codigoPatrimonial,
-    message: "Activo patrimonial registrado/actualizado en catálogo."
-  };
+  const p=payload||{},code=String(p.codigoPatrimonial||"").trim(),serial=String(p.numeroSerie||"").trim();
+  if(!code||!String(p.nombre||"").trim())throw new Error("codigoPatrimonial y nombre son requeridos.");
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ensureAssetAcquisitionSchema_(ss),data=sheet.getDataRange().getValues();
+  let existingIndex=-1;
+  if(p.activoId){const matches=data.map((row,index)=>({row,index})).filter(x=>x.index>0&&String(x.row[0]||"").trim()===String(p.activoId).trim());if(matches.length!==1)throw new Error(matches.length?"ASSET_ID_AMBIGUOUS":"ASSET_NOT_FOUND");existingIndex=matches[0].index;}
+  const serialIndex=ASSET_BASE_HEADERS_.length+ASSET_ACQUISITION_HEADERS_.indexOf("NumeroSerie");
+  if(serial&&data.slice(1).some((row,index)=>index+1!==existingIndex&&String(row[serialIndex]||"").trim().toUpperCase()===serial.toUpperCase()))throw new Error("ASSET_SERIAL_ALREADY_EXISTS");
+  if(data.slice(1).some((row,index)=>index+1!==existingIndex&&String(row[1]||"").trim().toUpperCase()===code.toUpperCase()))throw new Error("ASSET_CODE_ALREADY_EXISTS");
+  const assetId=existingIndex>0?String(data[existingIndex][0]):"ACT-"+Utilities.getUuid(),row=existingIndex>0?data[existingIndex].slice(0,21):new Array(21).fill("");
+  row[0]=assetId;row[1]=code;row[2]=String(p.nombre).trim();row[3]=p.categoria||"Equipo Computacional";row[4]=p.serieModel||p.modelo||"N/A";row[5]=p.ubicacionActual||"";row[6]=p.custodioUserId||"";row[7]=p.estado||(p.custodioUserId?"assigned":"available");row[8]=p.observaciones||"";
+  if(serial)row[serialIndex]=serial;
+  if(p.marca)row[ASSET_BASE_HEADERS_.length+ASSET_ACQUISITION_HEADERS_.indexOf("Marca")]=String(p.marca).trim();
+  if(p.modelo)row[ASSET_BASE_HEADERS_.length+ASSET_ACQUISITION_HEADERS_.indexOf("Modelo")]=String(p.modelo).trim();
+  if(existingIndex>0)sheet.getRange(existingIndex+1,1,1,21).setValues([row]);else sheet.appendRow(row);
+  return {status:"success",activoId,codigoPatrimonial:code,message:existingIndex>0?"Ficha patrimonial actualizada.":"Activo patrimonial registrado en catálogo."};
 }
-
 function getAssetItems(payload) {
-  const { categoria, estado } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  let rows = getOrCreateSheet(ss, "ActivosPatrimoniales").getDataRange().getValues().slice(1);
-
-  if (rows.length === 0) {
-    const defaults = [
-      ["ACT-001", "PAT-LAB-01", "Computadora HP All-in-One Core i5", "Equipo Computacional", "HP ProOne 400", "Lab Cómputo 1", "EMP-01", "assigned", "Asignado para Docencia"],
-      ["ACT-002", "PAT-PROY-01", "Proyector Epson PowerLite 3300", "Audiovisual", "Epson X41+", "Salón de Usos Múltiples", "", "available", "Disponible"]
-    ];
-    const sheet = getOrCreateSheet(ss, "ActivosPatrimoniales");
-    sheet.getRange(2, 1, defaults.length, 9).setValues(defaults);
-    rows = defaults;
-  }
-
-  let filtered = rows;
-  if (categoria) filtered = filtered.filter(r => String(r[3]).toLowerCase().trim() === String(categoria).toLowerCase().trim());
-  if (estado) filtered = filtered.filter(r => String(r[7]).trim() === String(estado).trim());
-
-  const mapped = filtered.map(r => ({
-    activoId: r[0],
-    codigoPatrimonial: r[1],
-    nombre: r[2],
-    categoria: r[3],
-    serieModel: r[4],
-    ubicacionActual: r[5],
-    custodioUserId: r[6],
-    estado: r[7],
-    observaciones: r[8]
-  }));
-
-  return {
-    status: "success",
-    activos: mapped
-  };
+  const p=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("ActivosPatrimoniales");
+  if(!sheet)return {status:"success",activos:[]};
+  const values=sheet.getDataRange().getValues();if(!values||values.length<=1)return {status:"success",activos:[]};
+  const headers=values[0].map(v=>String(v||"").trim()),index=Object.create(null);headers.forEach((h,i)=>{index[h]=i;});
+  let rows=values.slice(1);if(p.categoria)rows=rows.filter(r=>String(r[3]||"").toLowerCase().trim()===String(p.categoria).toLowerCase().trim());if(p.estado)rows=rows.filter(r=>String(r[7]||"").trim()===String(p.estado).trim());
+  const val=(row,name)=>index[name]===undefined?"":row[index[name]];
+  return {status:"success",activos:rows.filter(r=>String(r[0]||"").trim()).map(r=>({activoId:r[0],codigoPatrimonial:r[1],nombre:r[2],categoria:r[3],serieModel:r[4],ubicacionActual:r[5],custodioUserId:r[6],estado:r[7],observaciones:r[8],proveedorId:val(r,"ProveedorID"),ordenCompraId:val(r,"OrdenCompraID"),recepcionId:val(r,"RecepcionID"),numeroFactura:val(r,"FacturaNumero"),obligacionId:val(r,"ObligacionID"),fechaAdquisicion:val(r,"FechaAdquisicion"),costoAdquisicion:val(r,"CostoAdquisicion"),numeroSerie:val(r,"NumeroSerie"),marca:val(r,"Marca"),modelo:val(r,"Modelo"),itemId:val(r,"PurchaseItemId"),clasificacionInventario:val(r,"ClasificacionCompra")}))};
 }
-
-// [TASK-020] [F19-Task02] - Asignación formal de custodia con validación estricta de disponibilidad
 function assignAssetCustody(payload) {
   const { activoId, custodioUserId, fechaAsignacion, observaciones, ubicacionEntrega, accesoriosJSON } = payload || {};
   if (!activoId || !custodioUserId) throw new Error("activoId y custodioUserId son requeridos.");
