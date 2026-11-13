@@ -1905,7 +1905,12 @@ function getCafeteriaOrders(payload) {
     montoTotal: parseFloat(r[6] || 0),
     metodoPago: r[7],
     estado: r[8],
-    observaciones: r[9]
+    observaciones: r[9],
+    centroCosto: r[10] || r[2],
+    modoReconocimiento: r[11] || "GASTO_INMEDIATO",
+    asientoContableId: r[12] || "",
+    detalleEntregaJSON: r[13] || "[]",
+    ubicacionOrigen: r[14] || "Bodega General"
   }));
 
   return {
