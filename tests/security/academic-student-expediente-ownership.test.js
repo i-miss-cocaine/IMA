@@ -397,9 +397,11 @@ console.log("ACADEMIC admission conversion duplicate expediente ownership contra
     getInstitutionParams:()=>({data:[]}),
     logStructuredEvent:()=>{},
     Utilities:{getUuid:()=>"UUID"},
+    PropertiesService:{getScriptProperties:()=>({getProperty:()=>""})},
     Date
   };
   const functions=[
+    "ensureEnrollmentPeriodCharges_",
     "assertAdmissionEnrollmentRetrySafe_",
     "findAdmissionConversionMovement_",
     "convertAdmissionToStudent",
