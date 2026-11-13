@@ -223,6 +223,7 @@ console.log("User role membership contract: institution/user binding, effective 
     sharedRows.splice(1, sharedRows.length - 1, membership("M-SHARED","U-1","Director","INST-1"));
     const serviceSource = fs.readFileSync(path.resolve(__dirname, relativePath), "utf8");
     const membershipVerifier = extractFunction(serviceSource, "verifyUserRoleMembershipClaim_");
+    const revocationVerifier = extractFunction(serviceSource, "isSessionRevokedInSharedLedger_");
     const sessionVerifier = extractFunction(serviceSource, "verifySessionToken");
     const cache = {};
     let serviceInstitution = "INST-1";
@@ -239,7 +240,8 @@ console.log("User role membership contract: institution/user binding, effective 
       getAuthTokenSecret:()=>"secret",
       computeHmacSignature:(value,secret)=>"sig:"+value+":"+secret
     };
-    vm.runInNewContext(membershipVerifier+"\n"+sessionVerifier+"\nthis.verifySessionToken=verifySessionToken;",serviceCtx);
+    const revocationConstants = 'const SESSION_REVOCATION_HEADERS_ = ["SessionID","UserID","RevokedAt","ExpiresAt"]; const SESSION_REVOCATION_STATE_HEADERS_ = ["Key","Value","UpdatedAt"];\n';
+    vm.runInNewContext(revocationConstants+membershipVerifier+"\n"+revocationVerifier+"\n"+sessionVerifier+"\nthis.verifySessionToken=verifySessionToken;",serviceCtx);
     assert.equal(serviceCtx.verifySessionToken(signedRoleToken).role,"Director",relativePath+" accepts active membership token");
     delete serviceCtx.ROLE_PERMISSIONS.Director;
     assert.equal(serviceCtx.verifySessionToken(signedRoleToken),null,relativePath+" rejects role removed from RBAC configuration");
