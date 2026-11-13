@@ -4657,15 +4657,17 @@ function getPayrollConceptEngine_(ss) {
   active.forEach(c=>{
     const refs=tokenizePayrollFormula_(c.formula).filter(t=>/^[A-Za-z_][A-Za-z0-9_]*$/.test(t)&&!reserved.includes(t));
     if(c.tipoCalculo==="FORMULA"&&!c.formula)throw new Error("PAYROLL_FORMULA_REQUIRED:"+c.codigo);
-    refs.forEach(ref=>{if(!byCode[ref])throw new Error("PAYROLL_FORMULA_REFERENCE_INVALID:"+c.codigo+":"+ref);if(payrollConceptPhase_(byCode[ref].categoria)>payrollConceptPhase_(c.categoria))throw new Error("PAYROLL_FORMULA_PHASE_INVALID:"+c.codigo+":"+ref);});
+    if(c.tipoCalculo==="FORMULA"){const vars={BASE:1,SALARIO_BASE:1,DEVENGADO:1,HORAS_EXTRAS:1,BASE_COTIZABLE:1,BASE_ISR:1,DIAS_TRABAJADOS:1,DIAS_PERIODO:1,IHSS:1,RAP:1,ISR:1,SALARIO_NETO:1};refs.forEach(ref=>{if(!byCode[ref])throw new Error("PAYROLL_FORMULA_REFERENCE_INVALID:"+c.codigo+":"+ref);if(payrollConceptPhase_(byCode[ref].categoria)>payrollConceptPhase_(c.categoria))throw new Error("PAYROLL_FORMULA_PHASE_INVALID:"+c.codigo+":"+ref);vars[ref]=1;});evaluatePayrollFormula_(c.formula,vars);}
+    else refs.forEach(ref=>{if(!byCode[ref])throw new Error("PAYROLL_FORMULA_REFERENCE_INVALID:"+c.codigo+":"+ref);if(payrollConceptPhase_(byCode[ref].categoria)>payrollConceptPhase_(c.categoria))throw new Error("PAYROLL_FORMULA_PHASE_INVALID:"+c.codigo+":"+ref);});
     if(c.baseCalculo.startsWith("CONCEPTO:")){const ref=c.baseCalculo.slice(9);if(!byCode[ref])throw new Error("PAYROLL_BASE_REFERENCE_INVALID:"+c.codigo+":"+ref);if(payrollConceptPhase_(byCode[ref].categoria)>payrollConceptPhase_(c.categoria))throw new Error("PAYROLL_FORMULA_PHASE_INVALID:"+c.codigo+":"+ref);}
   });
   const state=Object.create(null),ordered=[];
   function visit(code){if(state[code]===1)throw new Error("PAYROLL_FORMULA_CYCLE:"+code);if(state[code]===2)return;state[code]=1;const c=byCode[code],refs=tokenizePayrollFormula_(c.formula).filter(t=>/^[A-Za-z_][A-Za-z0-9_]*$/.test(t)&&!reserved.includes(t));if(c.baseCalculo.startsWith("CONCEPTO:"))refs.push(c.baseCalculo.slice(9));refs.forEach(visit);state[code]=2;ordered.push(c);}
   active.slice().sort((a,b)=>a.prioridad-b.prioridad||a.codigo.localeCompare(b.codigo)).forEach(c=>visit(c.codigo));
+  const allCodes=Object.create(null);catalog.rows.forEach(r=>{const k=String(r[1]||"").trim().toUpperCase();if(k)allCodes[k]=true;});
   const assignmentRows=assignments.rows.filter(r=>String(r[10]||"").trim().toUpperCase()==="ACTIVO").map(r=>({asignacionId:String(r[0]||""),codigo:String(r[1]||"").trim().toUpperCase(),tipo:String(r[2]||"").toUpperCase(),valor:String(r[3]||"").trim(),departamentoScope:String(r[4]||"").trim(),valorOverride:r[5]===""||r[5]==null?null:Number(r[5]),fechaInicio:r[6],fechaFin:r[7],frecuencia:String(r[8]||"MENSUAL").toUpperCase(),periodoUnico:String(r[9]||"").trim(),estado:String(r[10]||"")}));
-  assignmentRows.forEach(a=>{if(!byCode[a.codigo]||!["GLOBAL","EMPLEADO","DEPARTAMENTO","CARGO","ESTRUCTURA_SALARIAL"].includes(a.tipo)||!a.valor)throw new Error("PAYROLL_CONCEPT_ASSIGNMENT_INVALID:"+a.asignacionId);});
-  return {concepts:ordered,byCode,assignments:assignmentRows};
+  assignmentRows.forEach(a=>{if(!allCodes[a.codigo]||!["GLOBAL","EMPLEADO","DEPARTAMENTO","CARGO","ESTRUCTURA_SALARIAL"].includes(a.tipo)||!a.valor)throw new Error("PAYROLL_CONCEPT_ASSIGNMENT_INVALID:"+a.asignacionId);});
+  return {concepts:ordered,byCode,assignments:assignmentRows.filter(a=>!!byCode[a.codigo])};
 }
 function resolvePayrollConceptBase_(baseCode,context,values) {
   const key=String(baseCode||"SALARIO_BASE").trim().toUpperCase();
@@ -4722,24 +4724,29 @@ function getPayrollConceptCatalog(payload) {
 function savePayrollConcept(payload) {
   const p=payload||{},access=requirePayrollConceptManager_(p);if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
   const code=String(p.codigo||"").trim().toUpperCase(),name=String(p.nombre||"").trim().slice(0,120),category=String(p.categoria||"").trim().toUpperCase(),nature=String(p.naturaleza||"").trim().toUpperCase(),type=String(p.tipoCalculo||"").trim().toUpperCase(),base=String(p.baseCalculo||"SALARIO_BASE").trim().toUpperCase(),formula=String(p.formula||"").trim().slice(0,500),account=String(p.cuentaContable||"").trim();
-  const value=Number(p.valor),priority=Number(p.prioridad||0),frequency=String(p.frecuencia||"MENSUAL").toUpperCase(),isr=String(p.tratamientoISR||"EXENTO").toUpperCase(),ihss=String(p.tratamientoIHSS||"NO_COTIZABLE").toUpperCase();
-  if(!/^[A-Z][A-Z0-9_]{1,39}$/.test(code)||!name||!payrollConceptCategories_().includes(category)||!["DEBE","HABER"].includes(nature)||!["FIJO","PORCENTAJE","PROPORCIONAL","FORMULA"].includes(type)||!Number.isFinite(value)||value<0||!["MENSUAL","POR_PERIODO","UNICA","QUINCENAL","SEMANAL"].includes(frequency)||!["GRAVADO","EXENTO"].includes(isr)||!["COTIZABLE","NO_COTIZABLE"].includes(ihss)||!account||!Number.isInteger(priority)||priority<0||priority>9999)return {status:"error",code:"PAYROLL_CONCEPT_INVALID",message:"Revise código, nombre, categoría, naturaleza, cálculo, frecuencia, tratamientos y cuenta contable."};
+  const value=Number(p.valor),priority=Number(p.prioridad||0),frequency=String(p.frecuencia||"MENSUAL").toUpperCase(),isr=String(p.tratamientoISR||"EXENTO").toUpperCase(),ihss=String(p.tratamientoIHSS||"NO_COTIZABLE").toUpperCase(),status=String(p.estado||"ACTIVO").toUpperCase();
+  const bases=["SALARIO_BASE","DEVENGADO","HORAS_EXTRAS","BASE_COTIZABLE","BASE_ISR","DIAS_TRABAJADOS","DIAS_PERIODO","IHSS","RAP","ISR","SALARIO_NETO"];
+  if(!/^[A-Z][A-Z0-9_]{1,39}$/.test(code)||!name||!payrollConceptCategories_().includes(category)||!["DEBE","HABER"].includes(nature)||!["FIJO","PORCENTAJE","PROPORCIONAL","FORMULA"].includes(type)||!Number.isFinite(value)||value<0||!["MENSUAL","POR_PERIODO","UNICA","QUINCENAL","SEMANAL"].includes(frequency)||!["GRAVADO","EXENTO"].includes(isr)||!["COTIZABLE","NO_COTIZABLE"].includes(ihss)||!account||!Number.isInteger(priority)||priority<0||priority>9999||!["ACTIVO","INACTIVO"].includes(status)||(!bases.includes(base)&&!/^CONCEPTO:[A-Z][A-Z0-9_]{1,39}$/.test(base)))return {status:"error",code:"PAYROLL_CONCEPT_INVALID",message:"Revise código, nombre, categoría, naturaleza, cálculo, frecuencia, tratamientos, base y cuenta contable."};
   if(nature!==(payrollConceptPhase_(category)===2?"HABER":"DEBE"))return {status:"error",code:"PAYROLL_CONCEPT_NATURE_MISMATCH",message:"La naturaleza contable no corresponde a la categoría del concepto."};
   if(type==="FORMULA"){try{const vars={BASE:1,SALARIO_BASE:1,DEVENGADO:1,HORAS_EXTRAS:1,BASE_COTIZABLE:1,BASE_ISR:1,DIAS_TRABAJADOS:1,DIAS_PERIODO:1,IHSS:1,RAP:1,ISR:1,SALARIO_NETO:1};tokenizePayrollFormula_(formula).filter(t=>/^[A-Za-z_][A-Za-z0-9_]*$/.test(t)).forEach(t=>{vars[t]=1;});evaluatePayrollFormula_(formula,vars);}catch(e){return {status:"error",code:"PAYROLL_FORMULA_INVALID",message:"La fórmula no es válida o contiene operaciones no permitidas."};}}
+  const start=p.vigenciaInicio?new Date(p.vigenciaInicio):null,end=p.vigenciaFin?new Date(p.vigenciaFin):null;
+  if(start&&isNaN(start.getTime())||end&&isNaN(end.getTime())||start&&end&&start>end)return {status:"error",code:"PAYROLL_CONCEPT_VALIDITY_INVALID",message:"El rango de vigencia no es válido."};
   const lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"El catálogo está ocupado."};
+  let cat=null,found=null,oldRow=null,writeRow=null;
   try{
-    const ss=SpreadsheetApp.openById(SPREADSHEET_ID),cat=ensurePayrollConceptSheet_(ss,"CatalogoConceptosPlanilla",getPayrollConceptHeaders_()),history=ensurePayrollConceptSheet_(ss,"HistorialConceptosPlanilla",getPayrollConceptHistoryHeaders_()),id=String(p.conceptoId||"").trim();
-    const matches=cat.rows.map((r,i)=>({r,index:i+2})).filter(x=>String(x.r[0]||"").trim()===id&&id||String(x.r[1]||"").trim().toUpperCase()===code);
+    const ss=SpreadsheetApp.openById(SPREADSHEET_ID);cat=ensurePayrollConceptSheet_(ss,"CatalogoConceptosPlanilla",getPayrollConceptHeaders_());
+    const id=String(p.conceptoId||"").trim(),matches=cat.rows.map((r,i)=>({r,index:i+2})).filter(x=>(id&&String(x.r[0]||"").trim()===id)||String(x.r[1]||"").trim().toUpperCase()===code);
     if(matches.length>1)return {status:"error",code:"PAYROLL_CONCEPT_DUPLICATE",message:"El código o concepto está duplicado."};
-    const found=matches[0]||null;
+    found=matches[0]||null;
     if(found&&String(found.r[1]||"").trim().toUpperCase()!==code&&cat.rows.some(r=>String(r[1]||"").trim().toUpperCase()===code))return {status:"error",code:"PAYROLL_CONCEPT_CODE_DUPLICATE",message:"El código ya está asignado."};
     const conceptId=found?String(found.r[0]):"CPT-"+Utilities.getUuid(),version=found?Number(found.r[20]||1)+1:1,now=new Date();
-    if(found)history.sheet.appendRow(["HCP-"+Utilities.getUuid(),conceptId,found.r[1],found.r[20],JSON.stringify(found.r),now,access.actor.userId,"ACTUALIZADO"]);
-    const row=[conceptId,code,name,String(p.descripcion||"").trim().slice(0,500),category,nature,type,value,base,formula,frequency,p.vigenciaInicio||"",p.vigenciaFin||"",isr,ihss,account,!!p.visibleBoleta,priority,String(p.estado||"Activo").toUpperCase(),p.recurrente!==false,version,found?found.r[21]:now,found?found.r[22]:access.actor.userId,now,access.actor.userId];
-    if(found)cat.sheet.getRange(found.index,1,1,row.length).setValues([row]);else cat.sheet.appendRow(row);
-    const engine=getPayrollConceptEngine_(ss);
+    writeRow=[conceptId,code,name,String(p.descripcion||"").trim().slice(0,500),category,nature,type,value,base,formula,frequency,p.vigenciaInicio||"",p.vigenciaFin||"",isr,ihss,account,!!p.visibleBoleta,priority,status,p.recurrente!==false,version,found?found.r[21]:now,found?found.r[22]:access.actor.userId,now,access.actor.userId];
+    if(found){oldRow=found.r.slice();cat.sheet.getRange(found.index,1,1,writeRow.length).setValues([writeRow]);}
+    else {cat.sheet.appendRow(writeRow);found={index:cat.sheet.getLastRow(),r:writeRow};}
+    try{getPayrollConceptEngine_(ss);}catch(validationError){if(oldRow)cat.sheet.getRange(found.index,1,1,oldRow.length).setValues([oldRow]);else cat.sheet.getRange(found.index,1,1,writeRow.length).clearContent();return {status:"error",code:"PAYROLL_CONCEPT_DEPENDENCY_INVALID",message:"No se guardó el concepto: revise referencias, fórmulas y dependencias circulares."};}
+    if(oldRow){const history=ensurePayrollConceptSheet_(ss,"HistorialConceptosPlanilla",getPayrollConceptHistoryHeaders_());history.sheet.appendRow(["HCP-"+Utilities.getUuid(),conceptId,oldRow[1],oldRow[20],JSON.stringify(oldRow),now,access.actor.userId,"ACTUALIZADO"]);}
     return {status:"success",conceptoId:conceptId,codigo:code,version:version,message:"Concepto salarial guardado y versión histórica conservada."};
-  }catch(e){return {status:"error",code:"PAYROLL_CONCEPT_SAVE_FAILED",message:"No fue posible guardar el concepto. Revise referencias y dependencias."};}finally{lock.releaseLock();}
+  }catch(e){if(cat&&found&&oldRow){try{cat.sheet.getRange(found.index,1,1,oldRow.length).setValues([oldRow]);}catch(_){}}return {status:"error",code:"PAYROLL_CONCEPT_SAVE_FAILED",message:"No fue posible guardar el concepto. Revise referencias y dependencias."};}finally{lock.releaseLock();}
 }
 function setPayrollConceptStatus(payload) {
   const p=payload||{},access=requirePayrollConceptManager_(p);if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
