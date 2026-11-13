@@ -12371,11 +12371,24 @@ function createStudentEnrollment(payload) {
       becaDescuento || 0,
       observaciones || ""
     ]);
+    const insertedEnrollmentRow = matSheet.getLastRow();
+    const rollbackActions = [function() {
+      const current = matSheet.getDataRange().getValues();
+      if (insertedEnrollmentRow > 0 && insertedEnrollmentRow <= current.length &&
+          String(current[insertedEnrollmentRow - 1][0] || "") === String(matriculaId)) {
+        matSheet.deleteRow(insertedEnrollmentRow);
+      }
+    }];
 
     // Actualizar EstadoExpediente a Activo si estaba Inactivo/Retirado/Trasladado/Suspendido
     if (expRowIdx !== -1) {
       const curState = String(expData[expRowIdx][7] || "Activo").trim();
       if (curState !== "Activo") {
+        const previousUpdatedAt = expData[expRowIdx][9];
+        rollbackActions.push(function() {
+          expSheet.getRange(expRowIdx + 1, 8).setValue(curState);
+          expSheet.getRange(expRowIdx + 1, 10).setValue(previousUpdatedAt);
+        });
         expSheet.getRange(expRowIdx + 1, 8).setValue("Activo");
         expSheet.getRange(expRowIdx + 1, 10).setValue(now);
         recordEntityChangeLog("ExpedienteEstudiante", expData[expRowIdx][0], curState, "Activo", "RE-ACTIVATION_VIA_ENROLLMENT", (payload && (payload.callerUserId || payload.userId)) || "Sistema", "MAT-" + Date.now());
@@ -12385,6 +12398,18 @@ function createStudentEnrollment(payload) {
     logStructuredEvent("ACADEMIC", "createStudentEnrollment", "INFO", "ENROLLMENT_CREATED", `Matrícula ${matriculaId} confirmada para ${alumno} en ${grado} ${seccion} (${targetAno})`, { matriculaId, targetAno, grado, seccion }, payload && payload.authRole);
 
     return { status: "success", matriculaId: matriculaId, message: "Matrícula procesada y confirmada con éxito." };
+  } catch (error) {
+    const rollbackErrors = [];
+    for (let i = rollbackActions.length - 1; i >= 0; i--) {
+      try { rollbackActions[i](); } catch (rollbackError) {
+        rollbackErrors.push(String(rollbackError && rollbackError.message || rollbackError));
+      }
+    }
+    if (rollbackErrors.length) {
+      throw new Error("ENROLLMENT_COMPENSATION_REQUIRED: " +
+        String(error && error.message || error) + " | " + rollbackErrors.join(" | "));
+    }
+    throw error;
   } finally {
     lock.releaseLock();
   }
@@ -13963,12 +13988,12 @@ function registerStudentEnrollment(payload) {
   delete publicPayload._rollbackActions;
   delete publicPayload.skipLock;
   const studentId = String(publicPayload.userId || "").trim();
-  const access = assertAcademicEnrollmentMutationAccess_(publicPayload, studentId);
-  if (!access || access.authorized !== true) throw new Error(access && access.code || "RESOURCE_SCOPE_DENIED");
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(10000)) throw new Error("Servicio ocupado. Por favor, reintente la operación de matrícula.");
   const rollbackActions = [];
   try {
+    const access = assertAcademicEnrollmentMutationAccess_(publicPayload, studentId);
+    if (!access || access.authorized !== true) throw new Error(access && access.code || "RESOURCE_SCOPE_DENIED");
     return registerStudentEnrollmentInternal_(Object.assign({}, publicPayload, { _rollbackActions: rollbackActions }));
   } catch (error) {
     const rollbackErrors = [];

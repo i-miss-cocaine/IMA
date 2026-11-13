@@ -69,8 +69,40 @@ actor = { authorized: true, userId: "STAFF-1", role: "Director" };
 ownershipAllowed = false;
 assert.equal(check({sessionToken:"valid"}, "STU-1").code, "RESOURCE_SCOPE_DENIED", "revoked ownership is denied");
 ownershipAllowed = true;
-assert.equal(calls.ownership, 2, "ownership is evaluated only after valid actor and target resolution");
+assert.equal(calls.ownership, 3, "ownership is evaluated only after valid actor and target resolution");
 const duplicateUsers = users.concat([["STU-1","","Duplicate","","","","Estudiante","","","P-STU-1","Activo"]]);
 sheets.Usuarios = sheet(duplicateUsers);
 assert.equal(check({sessionToken:"valid"}, "STU-1").code, "STUDENT_ACCOUNT_AMBIGUOUS", "duplicate student account mapping is denied");
 console.log("ACADEMIC enrollment mutation identity, staff role, active student mapping, unique expediente and department UPDATE ownership contracts passed.");
+
+// Wrapper invariants: no caller-supplied lock bypass, identity check occurs while lock is held,
+// and failed multi-sheet writes execute compensations in reverse order.
+const createFn = extractFunction("createStudentEnrollment");
+const renewFn = extractFunction("renewStudentEnrollment");
+const registerFn = extractFunction("registerStudentEnrollment");
+assert.ok(!createFn.includes("skipLock"), "create endpoint cannot bypass its lock via payload");
+assert.ok(renewFn.includes("Object.assign({}, request"), "renewal preserves signed session/context fields");
+assert.ok(registerFn.indexOf("lock.tryLock") < registerFn.indexOf("assertAcademicEnrollmentMutationAccess_"), "registration checks ownership under the mutation lock");
+const events = [];
+let shouldFail = false, undone = false, internalPayload = null;
+const wrapperContext = {
+  LockService: { getScriptLock: () => ({ tryLock: ms => { events.push("lock:" + ms); return true; }, releaseLock: () => events.push("release") }) },
+  assertAcademicEnrollmentMutationAccess_: (payload,id) => { events.push("authorize:" + id); return { authorized: true }; },
+  registerStudentEnrollmentInternal_: payload => {
+    internalPayload = payload;
+    if (shouldFail) { payload._rollbackActions.push(() => { undone = true; }); throw new Error("synthetic-write-failure"); }
+    return { status: "success", matriculaId: "MAT-1" };
+  }
+};
+vm.runInNewContext(registerFn + "\nthis.register=registerStudentEnrollment;", wrapperContext);
+const success = wrapperContext.register({userId:"STU-1",skipLock:true,_chargeReference:"spoof",_rollbackActions:[]});
+assert.equal(success.status,"success");
+assert.deepEqual(events.slice(0,2),["lock:10000","authorize:STU-1"],"lock is acquired before ownership validation");
+assert.equal(internalPayload.skipLock, undefined, "external skipLock is discarded");
+assert.equal(internalPayload._chargeReference, undefined, "internal charge references cannot be injected");
+assert.ok(Array.isArray(internalPayload._rollbackActions), "server-owned compensation journal is supplied");
+shouldFail = true;
+assert.throws(() => wrapperContext.register({userId:"STU-1"}), /synthetic-write-failure/);
+assert.equal(undone,true,"failed registration executes compensation");
+assert.equal(events.at(-1),"release","lock is released after rollback");
+console.log("ACADEMIC enrollment write lock, caller bypass rejection, signed context preservation and rollback contracts passed.");
