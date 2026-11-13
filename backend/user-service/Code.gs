@@ -10766,7 +10766,7 @@ function evaluateDepartmentReferenceAccess_(input) {
   var grant = matching[0];
   var grantId = String(grantValue(grant, "GrantID") || "").trim();
   var authorizedBy = String(grantValue(grant, "AuthorizedBy") || "").trim();
-  var authorizedAt = grantValue(grant, "AuthorizedAt");
+  var authorizedAt = parseGrantDate(grantValue(grant, "AuthorizedAt"));
   var validFrom = parseGrantDate(grantValue(grant, "ValidFrom"));
   var expiresAt = parseGrantDate(grantValue(grant, "ExpiresAt"));
   var revokedAt = grantValue(grant, "RevokedAt");
