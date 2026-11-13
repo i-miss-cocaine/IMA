@@ -168,7 +168,7 @@ test(() => {
   assert.equal(state.releases, 1);
   assert.equal(state.held, false);
   assert.equal(state.opens, 2, "outer delivery and exam contexts each open Sheets once; nested call must not open it");
-  assert.equal(state.deliveryReads, 1);
+  assert.equal(state.deliveryReads, 2, "one read resolves the delivery and one validates the canonical header schema");
   assert.equal(state.examReads, 1);
   assert.equal(state.writes, 1, "only the outer grade may write");
   assert.equal(deliveryRows.length, 2);
