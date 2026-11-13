@@ -5,19 +5,19 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.679**
-- Última sesión: `IMA-EXEC-20261112-1754Z-03`
+- Último checkpoint: **C1.682**
+- Última sesión: `IMA-EXEC-20261113-0951Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.679: **71432**
+- Caracteres del archivo activo tras C1.682: **82455**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
-- Último checkpoint: **C1.672**
-- Última sesión: `IMA-EXEC-20261112-1754Z-03`
+- Último checkpoint: **C1.682**
+- Última sesión: `IMA-EXEC-20261113-0951Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.672-R1: **48876**
+- Caracteres del archivo activo tras C1.682: **82455**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -728,3 +728,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.680 | IMA-EXEC-20261112-1754Z-03 | create/renew/registerStudentEnrollment protegidos por sesión firmada, actor personal, estudiante/expediente único y ResourceOwnership UPDATE; lock no omitible y compensación de fallos; Department Scope CI 43368812280 PASS (21 pasos); CLI local NOT RUN por DNS; BETA-FUNC-055 Pendiente beta | TASK-153 — autorización/ownership de mutaciones de matrícula ACADEMIC | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.680 | sección final | C1.679 | commits f259350e..caf2b2d2; CI 43368812280 PASS |
 
 | C1.681 | IMA-EXEC-20261113-0951Z-01 | Política de cargos configurable por institución/año/grado; modos MANUAL, MATRICULA_ONLY y ALL_ACTIVE_TARIFFS; panel Contabilidad; contrato y sintaxis CI 43405537798 PASS (Node 24.22.2); CLI local NOT RUN por DNS; BETA-FUNC-056 Pendiente beta | AUD-NG-129 — subalcance de configuración de política de cargos de matrícula | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.681 | sección final | C1.680 | commit 3b94d1b4ad5294e7e616b7b8e6801c9ffad34957 |
+| C1.682 | IMA-EXEC-20261113-0951Z-01 | AUD-NG-129 Completada en código/CI; integración de MANUAL/MATRICULA_ONLY/ALL_ACTIVE_TARIFFS, dedupe estudiante+periodo+concepto, compensación, beneficios vigentes, referencia de admisión e historial por periodo; Department Scope CI 43417167222 SUCCESS; BETA-FUNC-057 Pendiente beta | AUD-NG-129 / REQ-EXP-009 — integración de cargos de matrícula/rematrícula | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.682 | 397-415 | C1.681 | implementación final 9640306495b5b11ed295bd12ee428393b365fca4; checkpoint fe53c3ead712b877a37b13eef108ba1bf407adcd |
