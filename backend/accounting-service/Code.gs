@@ -7634,7 +7634,7 @@ function recordInventoryMovementLocked_(ss,payload) {
  let next=current;const incoming=["Entrada","Devolucion","AjustePositivo"].indexOf(tipoNorm)!==-1,outgoing=["Salida","Prestamo","Baja","TransferenciaSalida","Consumo","AjusteNegativo"].indexOf(tipoNorm)!==-1;
  if(incoming)next=assetDeprMoney_(current+qty);else if(outgoing){if(current<qty)throw new Error("INSUFFICIENT_LOCAL_STOCK:"+code+":"+target+":"+current+":"+qty);next=assetDeprMoney_(current-qty);}else next=assetDeprMoney_(qty);
  locations[target.toLowerCase()]=next;let total=0;Object.keys(locations).forEach(k=>total+=Number(locations[k]||0));total=assetDeprMoney_(total);
- const min=Number(p.stockMinimo===undefined||p.stockMinimo===""?item.row[20]||5:p.stockMinimo),now=new Date(),id="KDX-"+Utilities.getUuid();let obs=String(p.observaciones||"");if(p.numeroLote)obs+=" | [LOTE:"+p.numeroLote+"]";if(p.numeroSerie)obs+=" | [SERIE:"+p.numeroSerie+"]";if(p.documentOrigen)obs+=" | [DOC:"+p.documentOrigen+"]";if(p.referenciaMovimiento)obs+=" | [REF:"+p.referenciaMovimiento+"]";if(p.cantidadBase!==true&&factor!==1)obs+=" | [CONVERSION:"+inputQty+" "+unit.name+" x "+factor+" = "+qty+" "+unit.base+"]";
+ const storedMin=item.row[20],min=Number(p.stockMinimo===undefined||p.stockMinimo===""?(storedMin===undefined||storedMin===""?5:storedMin):p.stockMinimo),now=new Date(),id="KDX-"+Utilities.getUuid();let obs=String(p.observaciones||"");if(p.numeroLote)obs+=" | [LOTE:"+p.numeroLote+"]";if(p.numeroSerie)obs+=" | [SERIE:"+p.numeroSerie+"]";if(p.documentOrigen)obs+=" | [DOC:"+p.documentOrigen+"]";if(p.referenciaMovimiento)obs+=" | [REF:"+p.referenciaMovimiento+"]";if(p.cantidadBase!==true&&factor!==1)obs+=" | [CONVERSION:"+inputQty+" "+unit.name+" x "+factor+" = "+qty+" "+unit.base+"]";
  sheet.appendRow([id,now,code,name,category,tipoNorm,qty,current,next,min,target,obs.trim(),item.id,qty,unit.name,factor]);
  const low=next<=min;return {status:"success",kardexId:id,itemCodigo:code,itemNombre:name,ubicacion:target,cantidadRegistrada:inputQty,cantidadBase:qty,unidadBase:item.baseUnit,stockAnteriorUbicacion:current,stockNuevoUbicacion:next,stockConsolidadoInstitucional:total,stockMinimo:min,alertaStockMinimo:low,message:low?"Movimiento registrado; stock bajo en "+target+".":"Movimiento de inventario registrado correctamente."};
 }
@@ -7723,9 +7723,9 @@ function getInventoryKardex(payload) {
         categoriaTipo: itemInfo.categoriaTipo || "Consumible",
         ubicacion: ub,
         stockUbicacion: stockUb,
-        stockMinimo: itemInfo.stockMinimo || 5,
-        alertaStockMinimo: stockUb <= (itemInfo.stockMinimo || 5),
-        totalConsolidadoInstitucional: itemInfo.totalInstitucional || stockUb
+        stockMinimo: itemInfo.stockMinimo === undefined ? 5 : itemInfo.stockMinimo,
+        alertaStockMinimo: stockUb <= (itemInfo.stockMinimo === undefined ? 5 : itemInfo.stockMinimo),
+        totalConsolidadoInstitucional: itemInfo.totalInstitucional === undefined ? stockUb : itemInfo.totalInstitucional
       });
     });
   });
