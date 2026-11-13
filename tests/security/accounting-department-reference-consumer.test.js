@@ -177,4 +177,29 @@ function request(overrides={}){return Object.assign({expedienteId:"EXP-B",sessio
  const h=makeRuntime({scopeCode:"ACTIVE_DEPARTMENT_REQUIRED"});
  const r=h.context.read(request());assert.equal(r.code,"RESOURCE_NOT_FOUND");assert.equal(h.calls.length,0);
 }
-process.stdout.write("ACCOUNTING department reference consumer contract: 23 scenarios PASS.\n");
+{
+ const h=makeRuntime(),r=h.context.read({sessionToken:"employee"});
+ assert.equal(r.status,"success");assert.deepEqual(JSON.parse(JSON.stringify(r.documentos)).map(d=>d.documentoId),["DOC-A"]);assert.equal(h.calls.length,0);
+}
+{
+ const h=makeRuntime(),r=h.context.read(request({referenceRequestedFields:["categoriaDoc","fechaCarga","estadoVisibilidad"]}));
+ assert.equal(r.status,"success");assert.equal(r.documentos[0].estadoVisibilidad,"Restringido");
+ assert.deepEqual(Object.keys(r.documentos[0]),["documentoId","categoriaDoc","fechaCarga","estadoVisibilidad"]);
+}
+{
+ const h=makeRuntime({response:{status:"success",authorized:true,requiresStandardAuthorization:true,approvedFields:defaultFields,approvedDocumentIds:defaultDocs,grantId:"G",auditEventId:""}});
+ assert.equal(h.context.read(request()).code,"RESOURCE_NOT_FOUND");
+}
+{
+ const h=makeRuntime(),r=h.context.read(request({referenceRequestedFields:["categoriaDoc","categoriaDoc"]}));
+ assert.equal(r.code,"RESOURCE_NOT_FOUND");assert.equal(h.calls.length,0);
+}
+{
+ const h=makeRuntime(),r=h.context.read(request({expedienteId:"EXP-MISSING"}));
+ assert.equal(r.code,"RESOURCE_NOT_FOUND");assert.equal(h.calls.length,0);
+}
+{
+ const h=makeRuntime();h.documentRows[0][4]="ArchivoPrivado";
+ const r=h.context.read(request());assert.equal(r.code,"RESOURCE_NOT_FOUND");assert.equal(h.calls.length,0);
+}
+process.stdout.write("ACCOUNTING department reference consumer contract: 29 scenarios PASS.\n");
