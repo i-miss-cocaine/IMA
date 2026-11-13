@@ -67,3 +67,16 @@
 - **Estado:** consulta de contratos laborales protegida en código/contrato local; TASK-153 continúa En ejecución. No se desplegó Apps Script ni se usaron datos reales.
 - **Siguiente:** siguiente callsite elegible de consulta de datos laborales en ACCOUNTING, sin repetir C1.658–C1.662.
 ===============================================================================
+
+===============================================================================
+### C1.663 — IMA-EXEC-20261112-1754Z-03 — aislamiento de alertas de contratos laborales (ACCOUNTING)
+- **HEAD inicial:** 0dfa4dce46941e89869b92db5ce5671a36e8e32d. **Rama:** NG_beta_0.0.0.1_work. **Base:** NG_beta_0.0.0.1 = 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
+- **Tarea/subalcance:** TASK-153 / AUD-NG-386; siguiente callsite de consulta laboral después de C1.662.
+- **Hallazgo:** getEmployeeContractAlerts devolvía todos los contratos sin identidad firmada ni filtro de ownership/ámbito, creaba hojas durante la lectura y calculaba alertas/resúmenes con datos de otros departamentos.
+- **Corrección:** identidad verificada obligatoria; listado filtrado por assertEmployeeExpedienteScopeAccess_; consulta específica con RESOURCE_NOT_FOUND para no enumerar expedientes ajenos; excepción de autoservicio limitada al expediente único del empleado autenticado; validación de esquemas de 10/9 encabezados; exclusión de ContractID duplicados y ExpedienteID ambiguos; getSheetByName sin escrituras; resumen calculado únicamente con contratos autorizados.
+- **Archivos:** backend/accounting-service/Code.gs; tests/security/accounting-departmental-resource-access.test.js; beta_test.txt; Auditoria.txt; changueslogs.txt; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt; Auditoría/INDICE_CHECKPOINTS.md.
+- **Verificación local:** contrato V8 aislado focalizado con fixtures sintéticos para DEP-A/DEP-B, institución, empleado propio, sesión inválida y consulta fuera de ámbito: PASS. Parseo sintáctico completo de Code.gs: PASS. La suite integrada extendida en el archivo de pruebas no se ejecutó en este entorno; pendiente CI.
+- **Beta:** BETA-FUNC-041 Pendiente beta; no se desplegó Apps Script/Sheets ni se utilizaron datos reales.
+- **Estado:** este subalcance corregido; TASK-153 permanece En ejecución. **Siguiente callsite elegible:** getEmployeeTrainingHistory, revisando identidad, ámbito, propiedad y lectura sin mutaciones antes de exponer certificados o planes.
+- **HEAD final:** se confirma tras publicar; commit coherente en esta rama.
+===============================================================================

@@ -204,7 +204,7 @@ const ROLE_PERMISSIONS = {
   "EncargadoTienda": ["getStoreProducts", "manageStoreProduct", "createStoreOrder", "getStoreOrders", "updateStoreOrderStatus", "recordInventoryMovement", "getInventoryKardex", "getInstitutionalPolicies", "processFamilyCreditPurchase"],
   "EncargadoCafeteria": ["getCafeteriaMenu", "manageCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "updateCafeteriaOrderStatus", "recordInventoryMovement", "getInventoryKardex", "getInstitutionalPolicies", "processFamilyCreditPurchase"],
   "RecursosHumanos": ["initializeFinancialDriveStructure", "createEmployeeRecord", "getEmployeeRecords", "manageEmployeeContract", "getEmployeeContracts", "getEmployeeContractAlerts", "manageJobVacancy", "getJobVacancies", "submitJobCandidate", "getJobCandidates", "manageInterviewSchedule", "getInterviewSchedules", "processEmployeeOffboarding", "updateEmployeeLaborStatus", "configureWorkSchedule", "recordStaffCheckIn", "getStaffAttendanceLogs", "submitAttendanceCorrection", "reviewAttendanceCorrection", "submitLeaveVacationRequest", "getLeaveVacationRequests", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "getLoanAmortizationSchedule", "generatePayrollReceiptPDF", "uploadEmployeeDocument", "getEmployeeDocuments", "getHRDashboardAnalytics", "getInstitutionalPolicies", "managePerformancePeriod", "managePerformanceCriteria", "managePerformanceEvaluation", "getPerformanceEvaluations", "manageTrainingCourse", "manageTrainingEnrollment", "getEmployeeTrainingHistory", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "manageLaborIncident", "manageDisciplinaryMeasure", "getLaborIncidentsHistory", "manageStaffingNeeds", "getStaffingNeedsPlanning", "manageWorkShiftAndSubstitution", "getWorkShiftsAndSubstitutionsHistory", "getEmployeeSelfServicePortal", "verifyLaborAndTaxInformation", "runHRIntegrationAndRegressionTests", "runCriticalProcessConcurrencySuite"],
-  "Empleado": ["getEmployeeRecords", "getEmployeeContracts", "recordStaffCheckIn", "getStaffAttendanceLogs", "submitAttendanceCorrection", "submitLeaveVacationRequest", "getLeaveVacationRequests", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "generatePayrollReceiptPDF", "getEmployeeDocuments", "getPerformanceEvaluations", "getEmployeeTrainingHistory", "manageProfessionalDevelopmentPlan", "getEmployeeSelfServicePortal"],
+  "Empleado": ["getEmployeeRecords", "getEmployeeContracts", "getEmployeeContractAlerts", "recordStaffCheckIn", "getStaffAttendanceLogs", "submitAttendanceCorrection", "submitLeaveVacationRequest", "getLeaveVacationRequests", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "generatePayrollReceiptPDF", "getEmployeeDocuments", "getPerformanceEvaluations", "getEmployeeTrainingHistory", "manageProfessionalDevelopmentPlan", "getEmployeeSelfServicePortal"],
   "Padre": ["getStudentAccountStatement", "getAdmissionFinancialStatus", "createAdmissionCharge", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "generatePaymentReceiptPDF", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getTransportAssignments", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "getStoreProducts", "createStoreOrder", "getStoreOrders", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "configureFamilyCreditAuthorization", "processFamilyCreditPurchase"],
   "Tutor": ["getStudentAccountStatement", "getAdmissionFinancialStatus", "createAdmissionCharge", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "generatePaymentReceiptPDF", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getTransportAssignments", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "getStoreProducts", "createStoreOrder", "getStoreOrders", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "configureFamilyCreditAuthorization", "processFamilyCreditPurchase"],
   "Responsable": ["getStudentAccountStatement", "getAdmissionFinancialStatus", "createAdmissionCharge", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "generatePaymentReceiptPDF", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getTransportAssignments", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "getStoreProducts", "createStoreOrder", "getStoreOrders", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "configureFamilyCreditAuthorization", "processFamilyCreditPurchase"],
@@ -576,11 +576,11 @@ function validateRolePermission(action, payload) {
   if (!ctxCheck.authorized) {
     return { authorized: false, role: userRole + " (" + ctxCheck.reason + ")" };
   }
-  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher"];
+  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher"];
   if (resourceScopeActions.indexOf(action) !== -1) {
     const roleKey = String(userRole || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
     const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1 &&
-      ["getEmployeeDocuments", "getEmployeeContracts", "uploadEmployeeDocument", "getEmployeeSelfServicePortal"].indexOf(action) !== -1;
+      ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "uploadEmployeeDocument", "getEmployeeSelfServicePortal"].indexOf(action) !== -1;
     const paymentSelfServiceRole = ["ESTUDIANTE", "ALUMNO", "TUTOR", "PADRE", "MADRE", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(roleKey) !== -1 &&
       ["getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher"].indexOf(action) !== -1;
     if (!employeeSelfRole && !paymentSelfServiceRole) {
@@ -8734,29 +8734,119 @@ function manageEmployeeContract(payload) {
 
 // [TAREA RH-02] [Fase Recursos Humanos y Personal] - Consulta y alertas por vencimiento de contratos y documentos laborales de empleados.
 function getEmployeeContractAlerts(payload) {
-  const { diasAnticipacion } = payload || {};
-  const threshold = parseInt(diasAnticipacion || 30, 10);
+  const request = payload || {};
+  const requestedExpedienteId = String(request.expedienteId || "").trim();
+  const actor = getVerifiedAccountingIdentity_(payload);
+  if (!actor.authorized) {
+    return { status: "error", code: actor.code || "VERIFIED_IDENTITY_REQUIRED", message: "Acceso denegado." };
+  }
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "ContratosLaborales").getDataRange().getValues().slice(1);
+  if (requestedExpedienteId) {
+    const requestedAccess = assertEmployeeExpedienteScopeAccess_(payload, ss, requestedExpedienteId);
+    if (!requestedAccess.authorized) {
+      return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen alertas de contratos disponibles." };
+    }
+  }
+
+  const emptyResult = () => ({
+    status: "success",
+    data: [],
+    resumen: { vigentes: 0, proximosAVencer: 0, vencidos: 0, totalContratos: 0 }
+  });
+
+  const employeeSheet = ss.getSheetByName("ExpedientesLaborales");
+  if (!employeeSheet) return emptyResult();
+  const employeeData = employeeSheet.getDataRange().getValues();
+  const expectedEmployeeHeaders = [
+    "ExpedienteID", "PersonaId", "UserId", "Puesto", "Departamento",
+    "CentroCosto", "FechaIngreso", "FechaSalida", "EstadoLaboral", "Observaciones"
+  ];
+  if (!employeeData.length || !Array.isArray(employeeData[0]) ||
+      employeeData[0].length !== expectedEmployeeHeaders.length ||
+      expectedEmployeeHeaders.some((header, index) =>
+        String(employeeData[0][index] || "").trim().toUpperCase() !== header.toUpperCase())) {
+    return { status: "error", code: "RESOURCE_SCHEMA_INVALID", message: "La estructura de expedientes laborales no es válida." };
+  }
+
+  const contractSheet = ss.getSheetByName("ContratosLaborales");
+  if (!contractSheet) return emptyResult();
+  const contractData = contractSheet.getDataRange().getValues();
+  const expectedContractHeaders = [
+    "ContratoID", "ExpedienteID", "TipoContrato", "FechaInicio", "FechaFin",
+    "SalarioBase", "Jornada", "EstadoContrato", "Observaciones"
+  ];
+  if (!contractData.length || !Array.isArray(contractData[0]) ||
+      contractData[0].length !== expectedContractHeaders.length ||
+      expectedContractHeaders.some((header, index) =>
+        String(contractData[0][index] || "").trim().toUpperCase() !== header.toUpperCase())) {
+    return { status: "error", code: "RESOURCE_SCHEMA_INVALID", message: "La estructura de contratos laborales no es válida." };
+  }
+
+  const employeeRows = employeeData.slice(1);
+  const roleKey = String(actor.role || "").toUpperCase()
+    .replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I")
+    .replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N")
+    .replace(/[^A-Z0-9]/g, "");
+  const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1;
+  let selfExpedienteId = "";
+  if (employeeSelfRole) {
+    const ownEmployeeRows = employeeRows.filter(row =>
+      String(row && row[2] || "").trim() === actor.userId);
+    if (ownEmployeeRows.length !== 1) {
+      return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen alertas de contratos disponibles." };
+    }
+    selfExpedienteId = String(ownEmployeeRows[0][0] || "").trim();
+    if (!selfExpedienteId || (requestedExpedienteId && requestedExpedienteId !== selfExpedienteId)) {
+      return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen alertas de contratos disponibles." };
+    }
+  }
+
+  const expedienteCounts = Object.create(null);
+  employeeRows.forEach(row => {
+    const id = String(row && row[0] || "").trim();
+    if (id) expedienteCounts[id] = (expedienteCounts[id] || 0) + 1;
+  });
+  const contractRows = contractData.slice(1);
+  const contractIdCounts = Object.create(null);
+  contractRows.forEach(row => {
+    const id = String(row && row[0] || "").trim();
+    if (id) contractIdCounts[id] = (contractIdCounts[id] || 0) + 1;
+  });
+
+  const threshold = parseInt(request.diasAnticipacion || 30, 10);
+  const accessByExpediente = Object.create(null);
+  const authorizedRows = [];
+  for (let i = 0; i < contractRows.length; i++) {
+    const row = contractRows[i];
+    if (!Array.isArray(row) || row.length < expectedContractHeaders.length) continue;
+    const contractId = String(row[0] || "").trim();
+    const rowExpedienteId = String(row[1] || "").trim();
+    if (!contractId || !rowExpedienteId || contractIdCounts[contractId] !== 1 ||
+        expedienteCounts[rowExpedienteId] !== 1) continue;
+    if (requestedExpedienteId && rowExpedienteId !== requestedExpedienteId) continue;
+    if (employeeSelfRole && rowExpedienteId !== selfExpedienteId) continue;
+
+    if (!Object.prototype.hasOwnProperty.call(accessByExpediente, rowExpedienteId)) {
+      accessByExpediente[rowExpedienteId] =
+        assertEmployeeExpedienteScopeAccess_(payload, ss, rowExpedienteId);
+    }
+    if (accessByExpediente[rowExpedienteId].authorized) authorizedRows.push(row);
+  }
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
   let countVigentes = 0;
   let countProximos = 0;
   let countVencidos = 0;
-
-  const alertas = rows.map(r => {
-    const fFin = r[4] ? new Date(r[4]) : null;
+  const alertas = authorizedRows.map(row => {
+    const fechaFin = row[4] ? new Date(row[4]) : null;
     let estadoAlerta = "Vigente";
     let diasParaVencer = null;
-
-    if (fFin && !isNaN(fFin.getTime())) {
-      fFin.setHours(0, 0, 0, 0);
-      const diff = fFin.getTime() - today.getTime();
+    if (fechaFin && !isNaN(fechaFin.getTime())) {
+      fechaFin.setHours(0, 0, 0, 0);
+      const diff = fechaFin.getTime() - today.getTime();
       diasParaVencer = Math.ceil(diff / (1000 * 60 * 60 * 24));
-
       if (diasParaVencer < 0) {
         estadoAlerta = "Vencido";
         countVencidos++;
@@ -8768,17 +8858,16 @@ function getEmployeeContractAlerts(payload) {
         countVigentes++;
       }
     }
-
     return {
-      contratoId: r[0],
-      expedienteId: r[1],
-      tipoContrato: r[2],
-      fechaInicio: r[3],
-      fechaFin: r[4],
-      estadoContrato: r[7],
+      contratoId: row[0],
+      expedienteId: row[1],
+      tipoContrato: row[2],
+      fechaInicio: row[3],
+      fechaFin: row[4],
+      estadoContrato: row[7],
       estadoAlerta,
       diasParaVencer,
-      observaciones: r[8]
+      observaciones: row[8]
     };
   });
 
@@ -8789,7 +8878,7 @@ function getEmployeeContractAlerts(payload) {
       vigentes: countVigentes,
       proximosAVencer: countProximos,
       vencidos: countVencidos,
-      totalContratos: rows.length
+      totalContratos: authorizedRows.length
     }
   };
 }

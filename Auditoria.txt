@@ -2670,3 +2670,13 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Corrección:** identidad firmada, ownership/ámbito por expediente, RESOURCE_NOT_FOUND para consultas ajenas, filtro de listados, excepción self-service limitada al empleado autenticado, lectura sin escrituras y validación de esquema/IDs únicos y mapeo único UserID→ExpedienteID.
 - **Evidencia:** 12 escenarios V8 aislados PASS; parseo completo Code.gs y contrato PASS. CI final: Department Scope run 43342801024 ejecuta y aprueba el paso ACCOUNTING departmental resource access (incluye C1.662), además de Department Scope, Internal Responsibility RBAC, ACCOUNTING departmental import y USER migrated resource ownership. El workflow global termina FAIL después en user-role-membership-contract.test.js:119: verifySessionToken(foreignLegacy) devuelve null y el test accede a .role; mismo fallo ya observado antes de C1.662, no atribuible al cambio. Por el fallo posterior, pasos siguientes —incluido syntax-check global— quedan SKIPPED. Identity mapping run 43342801000 SUCCESS. Apps Script/Sheets real BETA-FUNC-040 Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+### C1.663 — AUD-NG-386 / TASK-153 — ACCOUNTING getEmployeeContractAlerts
+- **Severidad:** Alto — exposición de datos de vigencia y observaciones de contratos laborales entre departamentos.
+- **Hallazgo:** getEmployeeContractAlerts devolvía todas las filas de ContratosLaborales sin verificar identidad, ámbito ni ownership; usaba getOrCreateSheet en una consulta de lectura y calculaba resúmenes con datos fuera del ámbito del actor.
+- **Corrección:** identidad de sesión firmada obligatoria; consultas específicas de expediente con RESOURCE_NOT_FOUND para evitar enumeración; listados filtrados mediante assertEmployeeExpedienteScopeAccess_; autoservicio limitado al expediente único del empleado autenticado; validación de encabezados, exclusión de ContractID duplicados y ExpedienteID ambiguos; lectura sin crear hojas; resumen calculado solo sobre filas autorizadas.
+- **Evidencia local:** contrato V8 aislado focalizado de identidad, DEP-A/DEP-B, institutionWide, empleado propio, denegación de expediente ajeno y sesión inválida: PASS; parseo sintáctico de Code.gs: PASS. El contrato integrado ampliado queda pendiente de ejecución en CI.
+- **Estado:** corregido en código; TASK-153 permanece En ejecución por superficies pendientes. BETA-FUNC-041 Pendiente beta.
+===============================================================================
