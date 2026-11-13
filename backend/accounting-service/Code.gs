@@ -6349,11 +6349,12 @@ function getStaffPayrollReceipt(payload) {
  const expCounts=Object.create(null),userCounts=Object.create(null);
  em.rows.forEach(r=>{const e=String(r[0]||"").trim(),u=String(r[2]||"").trim();if(e)expCounts[e]=(expCounts[e]||0)+1;if(u)userCounts[u]=(userCounts[u]||0)+1;});
  const userExp=Object.create(null);em.rows.forEach(r=>{const e=String(r[0]||"").trim(),u=String(r[2]||"").trim();if(e&&u&&expCounts[e]===1&&userCounts[u]===1)userExp[u]=e;});
+ const expUser=Object.create(null);Object.keys(userExp).forEach(u=>{expUser[userExp[u]]=u;});
  const requested=String(p.empleadoId||"").trim(),period=String(p.periodoMes||"").trim(),bid=String(p.boletaId||"").trim(),own=self?userExp[actor.userId]||"": "";
  if(self&&(!own||(requested&&requested!==own)))return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
  const target=self?own:requested;
  if(target&&expCounts[target]!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
- const cache=Object.create(null),allowed=id=>{id=String(id||"").trim();if(!id||expCounts[id]!==1)return false;if(!Object.prototype.hasOwnProperty.call(cache,id))cache[id]=assertEmployeeExpedienteScopeAccess_(p,ss,id);return !!cache[id].authorized;};
+ const cache=Object.create(null),allowed=id=>{id=String(id||"").trim();if(!id||expCounts[id]!==1||!expUser[id])return false;if(!Object.prototype.hasOwnProperty.call(cache,id))cache[id]=assertEmployeeExpedienteScopeAccess_(p,ss,id);return !!cache[id].authorized;};
  if(target&&!allowed(target))return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
  const ids=Object.create(null);pl.rows.forEach(r=>{const id=String(r[0]||"").trim();if(id)ids[id]=(ids[id]||0)+1;});
  let selected=pl.rows.filter(r=>{const id=String(r[0]||"").trim(),e=String(r[3]||"").trim();return !!id&&ids[id]===1&&!!e&&(!target||e===target)&&(!period||String(r[2]||"").trim()===period)&&allowed(e);});
