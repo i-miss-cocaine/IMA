@@ -1,0 +1,268 @@
+# Registro de pruebas beta — continuación activa de beta_test.txt
+
+**Repositorio:** i-miss-cocaine/IMA  
+**Rama:** NG_beta_0.0.0.1_work  
+**Continuidad:** el archivo maestro histórico beta_test.txt conserva los casos anteriores; este archivo recibe los casos nuevos tras superar el umbral de rotación de 180.000 caracteres.  
+**Norma operativa:** Normas_Desarollo.md (NDASC 1.4). Los casos siguientes son pruebas de despliegue/beta y no bloquean la aprobación local de código.
+
+## BETA-FUNC-063 — TASK-153 / T153-S05 / ACADEMIC + USER: referencia documental interdepartamental de solo lectura
+
+- **Módulo/servicios:** ACADEMIC — getStudentDocuments; USER — authorizeDepartmentReferenceRead.
+- **Objetivo:** comprobar que una persona con permisos ordinarios de consulta y una concesión exacta vigente puede recibir únicamente metadatos de documentos estudiantiles autorizados, sin exponer expediente completo, historial, enlaces o identificadores privados de Drive.
+- **Precondiciones:** ACADEMIC y USER desplegados; misma institución configurada; membresía y departamento activo del actor (incluir usuarios con varios departamentos y seleccionar activeDepartmentId válido); ResourceOwnership único y activo para EXPEDIENTE_ESTUDIANTE; ConfiguracionInstitucional con POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL; concesión exacta en DepartmentReferenceGrants; permisos dinámicos getStudentDocuments y readDepartmentReference; IMA_USER_SERVICE_URL HTTPS configurada en ACADEMIC; IMA_DEPARTMENT_REFERENCE_HMAC_SECRET de al menos 32 caracteres configurado de forma coincidente en ACADEMIC y USER. Usar solo datos sintéticos y no registrar secretos.
+- **Pasos:** (1) con política BLOQUEO_TOTAL_CROSS_DEPARTAMENTO, solicitar documentos de expediente ajeno y comprobar denegación; (2) cambiar a PERMITIR_REFERENCIA_SOLO_LECTURA_INTERDEPARTAMENTAL y crear una concesión con campos/documentos exactos y vigencia; (3) solicitar solo los campos y DocumentoID autorizados y comprobar respuesta referenceOnly; (4) solicitar un campo no permitido, documento no concedido, otro expediente, solicitud de admisión, listado general o IDs duplicados; (5) comprobar que no se devuelven ExpedienteID, SolicitudID, DriveFileId, DriveUrl, historial, observaciones ni contenido; (6) comprobar que el acceso del mismo departamento mantiene el contrato anterior y que getStudentFile no se habilita por la concesión; (7) revocar la concesión y repetir; (8) repetir después de ExpiresAt; (9) retirar URL/secreto, configurar URL no HTTPS, simular timeout/HTTP no exitoso y HMAC inválido/replay; (10) verificar persistencia de ALLOW/DENY en LogsSistema antes de entregar respuesta; (11) repetir con usuario multi-departamento, activeDepartmentId válido, ausente y no asignado, confirmando que USER valida el contexto y falla cerrado cuando no corresponde.
+- **Resultado esperado:** el transporte ACADEMIC→USER valida HMAC, destino, acción, vigencia y anti-replay; USER vuelve a validar sesión, institución, membresía, permiso, propiedad, política y concesión; ACADEMIC conserva su RBAC ordinario y devuelve exclusivamente los campos/documentos aprobados. Cualquier error de transporte, auditoría, ownership o autorización falla cerrado; no se permite descarga ni lectura de contenido.
+- **Evidencia requerida:** request/response saneados, GrantID, AuditEventID, decisiones ALLOW/DENY persistidas, snapshots sintéticos de propiedad/concesión, comparación de campos devueltos y ausencia de datos privados. No incluir PII, tokens, secretos ni URLs privadas.
+- **Estado:** Pendiente beta. No se han desplegado servicios ni ejecutado Apps Script/Sheets/Drive reales.
+
+
+
+## BETA-FUNC-064 — TASK-153 / T153-S05 / ACCOUNTING + USER: referencia documental laboral de solo lectura
+
+- **Módulo/servicios:** ACCOUNTING — getEmployeeDocuments; USER — authorizeDepartmentReferenceRead.
+- **Objetivo:** validar una referencia interdepartamental de solo lectura a documentos laborales mediante concesión exacta, sin exponer enlaces privados, títulos sensibles, observaciones ni contenido.
+- **Precondiciones:** ACCOUNTING y USER desplegados; ResourceOwnership único y ACTIVE para EXPEDIENTE_LABORAL; empleado/expediente único; misma InstitutionID; política PERMITIR_REFERENCIA_SOLO_LECTURA_INTERDEPARTAMENTAL; concesión vigente para departamento destino y DocumentoID/campos exactos; permisos getEmployeeDocuments y readDepartmentReference; IMA_USER_SERVICE_URL HTTPS y secreto HMAC coincidente configurados fuera del código. Usar datos sintéticos.
+- **Pasos:** (1) comprobar acceso del mismo departamento y autoservicio del empleado sin cambios; (2) denegar un expediente ajeno con política estricta; (3) crear concesión exacta para READ_REFERENCE con categoriaDoc/fechaCarga/estadoVisibilidad y DocumentoID específico; (4) solicitar esos campos y comprobar referenceOnly; (5) intentar ArchivoUrl, TituloDocumento, CargadoPor, Observaciones, IDs duplicados, otro expediente, documento no concedido y listado sin expediente; (6) comprobar que actor Empleado/Trabajador/Personal no obtiene referencia cruzada aunque exista un payload de referencia; (7) comprobar que ownership ausente, ambiguo, inactivo o expediente duplicado falla cerrado; (8) repetir con activeDepartmentId válido, ausente y no asignado; (9) revocar y expirar concesión; (10) simular URL HTTP, secreto ausente, timeout, HTTP no exitoso, JSON inválido, HMAC inválido y replay; (11) confirmar ALLOW/DENY persistido en LogsSistema antes de respuesta.
+- **Resultado esperado:** USER valida sesión, institución, membresía, permiso, activeDepartmentId, ownership, política y concesión; ACCOUNTING conserva RBAC normal y devuelve solo DocumentoID y metadatos allowlisted. No se devuelve ExpedienteID, ArchivoUrl, TituloDocumento, CargadoPor, Observaciones ni contenido. Cualquier error falla cerrado; no se permite descarga.
+- **Evidencia requerida:** requests/responses saneados, GrantID, AuditEventID, LogsSistema, comparación de campos, evidencia de denegación para autoservicio y ausencia de enlaces/PII. No registrar tokens, secretos ni URLs privadas.
+- **Estado:** Pendiente beta. No se han desplegado servicios ni ejecutado Apps Script/Sheets/Drive reales.
+
+
+## BETA-FUNC-065 — TASK-153 / T153-S05 / USER + dashboard Dirección: administración de política y concesiones
+
+- **Módulo/servicios:** dashboard-direccion.html; js/department-reference-admin.js; USER — getDepartmentReferencePolicy, setDepartmentReferencePolicy, getDepartmentReferenceGrants, createDepartmentReferenceGrant, revokeDepartmentReferenceGrant.
+- **Objetivo:** verificar la administración institucional de la política de aislamiento y concesiones READ_REFERENCE sin conceder permisos desde el cliente ni habilitar cruces por defecto.
+- **Precondiciones:** dashboard y USER desplegados; usuario con sesión verificada, alcance institucional autorizado y permisos dinámicos explícitos para getDepartmentReferencePolicy, getDepartmentReferenceGrants, manageDepartmentReferencePolicy y manageDepartmentReferenceGrants; datos sintéticos de ResourceOwnership y asignación activa del departamento destino. Las hojas reales solo se usan en el entorno beta autorizado.
+- **Pasos:** (1) sin fila de configuración, consultar la política y confirmar BLOQUEO_TOTAL_CROSS_DEPARTAMENTO y que la lectura no crea hoja; (2) probar usuario sin cada permiso y usuario con solo alcance departamental, confirmando denegación sin revelar concesiones; (3) guardar bloqueo estricto y, en entorno de prueba autorizado, modo permisivo; comprobar tenant y UpdatedBy/UpdatedAt; (4) crear concesión con recurso, departamento destino, campos/documentos exactos y ventana temporal; comprobar que InstitutionID y OwnerDepartmentID proceden del servidor; (5) probar resourceId inexistente/ambiguo, target inactivo, destino igual al propietario, concesión activa duplicada, wildcard, listas duplicadas/vacías y fechas inválidas/invertidas; confirmar que no se muta; (6) listar concesiones y comprobar aislamiento por InstitutionID; (7) revocar y comprobar Status/RevokedAt/RevokedBy, historial append-only e idempotencia; (8) simular fallo de auditoría previa y comprobar que create/revoke no mutan; (9) simular fallo de auditoría posterior y comprobar advertencia auditCompletionRecorded=false; (10) verificar que el navegador no envía tenant/propietario, que el bloqueo estricto es el default y que no se entregan datos cross-departamento sin grant vigente; (11) repetir refrescos concurrentes y doble clic de revocación para confirmar que la UI no presenta respuestas antiguas ni duplica la operación.
+- **Resultado esperado:** USER aplica RBAC dinámico, scope institucional, ownership, tenant, validación de asignación destino, ScriptLock y auditoría fail-closed; la UI no autoasigna permisos ni expone contenido. El default sigue siendo estricto y solo se permite READ_REFERENCE con concesión exacta, activa y vigente.
+- **Evidencia requerida:** capturas saneadas, respuestas de endpoints, InstitutionID/GrantID anonimizados, eventos de LogsSistema, snapshots antes/después, pruebas de denegación por permisos/scope y confirmación de no exposición de secretos/PII. No registrar tokens ni IDs personales.
+- **Estado:** Pendiente beta. No se ha desplegado ni ejecutado contra Apps Script/Sheets productivos.
+
+## BETA-FUNC-066 — AUD-NG-124 / TASK + EXAM: propiedad docente e historial de rectificaciones de calificaciones
+
+- **Módulos/servicios:** TASK — getTeacherActivity, gradeSubmission, gradeSubmissionWithRubric; EXAM — getTeacherExamActivity, gradeExamSubmission; teacher-dashboard.html / js/teacher.js; hojas Entregas, EntregasExamen, HistorialRectificacionesEntregas y HistorialRectificacionesEntregasExamen.
+- **Objetivo:** validar con datos sintéticos en Apps Script/Sheets desplegados que la calificación queda ligada al docente propietario y que cada cambio real de nota conserva un historial append-only completo.
+- **Precondiciones:** institución beta aislada; dos docentes con asignaciones departamentales distintas; dos estudiantes; tareas y exámenes con ResourceOwnership único/ACTIVE; permisos RBAC de calificación; hojas con esquemas canónicos; acceso al dashboard. No usar registros reales.
+- **Pasos:** (1) consultar la actividad como cada docente y confirmar que solo recibe entregas de recursos propios y de su ámbito; (2) calificar una entrega propia sin nota anterior y confirmar que no se registra rectificación; (3) cambiar la nota existente sin motivo y comprobar rechazo sin modificación; (4) repetir con motivo y comprobar fila histórica con ID único, tipo, entrega/recurso, estudiante, nota anterior/nueva, actor, rol, fecha y motivo; (5) intentar calificar una entrega del otro docente manipulando entregaId, examenId, profesorId o IDs de usuario en payload y comprobar denegación sin escrituras; (6) repetir con identidad/sesión inválida, permiso revocado, ownership ausente/duplicado/inactivo y ámbito departamental incorrecto; (7) comprobar que gradeSubmissionWithRubric conserva el mismo requisito de rectificación y que la rúbrica no suplanta el historial; (8) verificar que una hoja de historial con encabezados incompatibles falla cerrada; (9) simular dos rectificaciones concurrentes de la misma entrega y comprobar serialización, orden consistente y ausencia de eventos duplicados; (10) revisar el dashboard para confirmar que el motivo se solicita en el flujo de tarea y examen y que los errores no se presentan como éxito.
+- **Resultado esperado:** primera calificación sin nota previa permitida; todo cambio posterior exige motivo y deja un evento histórico inmutable; ningún docente modifica entregas ajenas; las lecturas de actividad usan identidad firmada y ámbito/propiedad; fallos de auditoría no dejan una nota modificada sin el registro correspondiente; las operaciones concurrentes no duplican ni pierden rectificaciones.
+- **Evidencia requerida:** snapshots saneados antes/después, IDs de entrega/recurso anonimizados, filas de ambos historiales, actor/rol/ámbito, respuesta de denegaciones y trazas de concurrencia. No registrar tokens, PII ni datos productivos.
+- **Estado:** Pendiente beta. No se ha desplegado ni ejecutado contra Apps Script/Sheets reales.
+
+
+===============================================================================
+### BETA-FUNC-067 — ACCOUNTING: vacaciones e incapacidades médicas
+- **Objetivo:** verificar en un entorno beta aislado que las solicitudes de vacaciones/permisos, revisión, consulta de saldos y registro de incapacidades respetan identidad firmada, expediente único, institución, departamento y ResourceOwnership.
+- **Precondiciones:** despliegue beta de ACCOUNTING; hojas sintéticas con esquemas canónicos de ExpedientesLaborales, ResourceOwnership, SolicitudesVacaciones e IncapacidadesMedicas; actores de empleado, profesor, RR. HH., dirección y administrador con scopes separados. No utilizar PII ni expedientes reales.
+- **Pasos:** (1) crear solicitudes como empleado/profesor y confirmar que el expediente se deriva de la sesión; (2) intentar suplantar expedienteId, rol y userId; (3) consultar como RR. HH. de dos departamentos y confirmar aislamiento; (4) revisar solicitud propia del ámbito y denegar solicitud ajena, duplicada o inexistente; (5) probar fechas invertidas, días no enteros y encabezados incompatibles; (6) calcular saldos con expedientes y solicitudes sintéticos, incluidos estados aprobados/no aprobados; (7) registrar incapacidad y comprobar que el diagnóstico privado no se devuelve en respuestas ni se expone por endpoints de lectura; (8) provocar lock ocupado y dos solicitudes concurrentes, comprobar rechazo/reintento sin duplicados; (9) simular fallo parcial de actualización y comprobar compensación; (10) verificar que lecturas de hojas ausentes no crean hojas.
+- **Resultado esperado:** solo actor autenticado y autorizado accede al expediente permitido; lecturas/escrituras interdepartamentales se deniegan sin revelar existencia; no hay duplicados ni mutaciones parciales sin compensación; datos médicos permanecen privados.
+- **Evidencia requerida:** snapshots anonimizados, respuestas permitidas/denegadas, ownership/scope sintéticos, IDs de solicitudes/incapacidades, trazas de concurrencia y resultado de compensación. No registrar tokens, diagnósticos ni datos personales.
+- **Estado:** Pendiente beta. No se ha desplegado ni ejecutado contra Apps Script/Sheets reales.
+===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-068 — ACCOUNTING: incidencias laborales y medidas disciplinarias
+- **Objetivo:** comprobar escritura/actualización de incidencias y medidas con identidad firmada, scope departamental y ownership único del expediente.
+- **Precondiciones:** entorno beta aislado; expedientes, ResourceOwnership, IncidenciasLaborales y MedidasDisciplinarias con datos sintéticos; usuarios RecursosHumanos/Administrador en departamentos distintos. No utilizar PII ni documentos reales.
+- **Pasos:** (1) crear incidencia como RR. HH. del departamento propio; (2) intentar crear/actualizar para empleado de otro departamento; (3) probar identidad inválida, rol Empleado/Director y rol falsificado; (4) actualizar incidencia y comprobar historial de aclaraciones append-only y actor real; (5) probar historial JSON malformado, IDs duplicados y colisión UUID; (6) crear medida vinculada a incidencia del mismo empleado; (7) intentar vincular incidencia de otro empleado, cambiar propietario o usar ID duplicado; (8) validar fecha efectiva y días de suspensión; (9) simular fallo de escritura/compensación; (10) simular lock ocupado y dos mutaciones simultáneas, confirmar sin duplicados ni pérdida de historial; (11) verificar que URLs de documentos permanecen privadas y no se exponen a actores sin scope.
+- **Resultado esperado:** escritura solo sobre expedientes propios del ámbito autorizado; vínculo incidencia-medida consistente; identidad auditada real; sin colisiones, pérdida de historial ni escrituras parciales no compensadas.
+- **Evidencia requerida:** snapshots anonimizados, IDs sintéticos, respuestas permitidas/denegadas, historial previo/nuevo, trazas de concurrencia y resultado de rollback. No registrar tokens, PII ni documentos.
+- **Estado:** Pendiente beta. No se ha desplegado ni ejecutado contra Apps Script/Sheets reales.
+===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-069 — ACCOUNTING: capacitación y desarrollo profesional
+- **Objetivo:** validar catálogo institucional, inscripciones, planes profesionales y analítica con identidad firmada y scope.
+- **Precondiciones:** entorno beta aislado; cursos, expedientes, ResourceOwnership, inscripciones y planes con datos sintéticos; usuarios HR global, HR departamental, empleado y administrador. No usar datos personales reales ni documentos productivos.
+- **Pasos:** (1) permitir administración del catálogo solo a HR/Admin con scope institucional completo; denegar scope departamental; (2) crear/actualizar cursos y probar esquema, duración, ID duplicado/colisión, lock y rollback; (3) inscribir empleados solo en expedientes con ownership WRITE y cursos únicos; (4) intentar inscripción cruzada, cambio de propietario, IDs duplicados, fechas inválidas, asistencia fuera de 0–100 y certificados con rangos invertidos; (5) verificar lock ocupado y concurrencia sin duplicados; (6) permitir al empleado crear/actualizar solo su propio plan; (7) impedir que el empleado modifique EvaluacionSeguimiento; (8) permitir a HR/Admin modificar planes solo dentro de scope; (9) probar metas JSON, fechas, colisiones y compensación; (10) consultar analítica como HR de dos departamentos y como administrador, verificando que conteos y vencimientos no crucen scopes; (11) comprobar que lecturas de hojas ausentes no crean hojas.
+- **Resultado esperado:** catálogo solo por alcance institucional; inscripciones/planes por propietario autorizado; analítica agregada solo sobre recursos visibles; sin colisiones, transferencia de titularidad, mutaciones parciales ni filtraciones interdepartamentales.
+- **Evidencia requerida:** snapshots anonimizados, IDs sintéticos, scopes/ownership, respuestas permitidas/denegadas, conteos por departamento y trazas de concurrencia/rollback. No guardar tokens, PII ni certificados.
+- **Estado:** Pendiente beta. No se ha desplegado ni ejecutado contra Apps Script/Sheets reales.
+===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-070 — ACCOUNTING: turnos y sustituciones
+- **Objetivo:** verificar asignaciones de turnos y sustituciones de personal con identidad firmada, scope y ownership de cada empleado.
+- **Precondiciones:** entorno beta aislado; expedientes y ResourceOwnership para dos departamentos; hojas de asignaciones y sustituciones con esquemas canónicos; usuarios RR. HH. de distintos ámbitos y administrador. Solo datos sintéticos.
+- **Pasos:** (1) asignar turno a empleado del ámbito; (2) denegar asignación a empleado ajeno; (3) registrar sustitución entre empleados del mismo ámbito; (4) denegar sustitución si uno de los participantes queda fuera del scope; (5) denegar mismo empleado como sustituto y sustituido; (6) intentar actualizar IDs duplicados o cambiar titulares; (7) validar fechas, horas HH:mm y rangos; (8) simular colisión UUID, lock ocupado y dos escrituras concurrentes; (9) simular fallo de setValues y verificar compensación; (10) consultar historial como RR. HH. de distintos departamentos y comprobar que solo aparecen turnos/sustituciones de empleados visibles.
+- **Resultado esperado:** solo actores autorizados modifican registros de todos los participantes; titularidad inmutable; no duplicados ni cambios parciales no compensados; historial no filtra datos interdepartamentales.
+- **Evidencia requerida:** IDs sintéticos, scopes/ownership, snapshots anonimizados, respuestas permitidas/denegadas y trazas de concurrencia/rollback. No usar tokens ni datos personales.
+- **Estado:** Pendiente beta. No se ha desplegado ni ejecutado contra Apps Script/Sheets reales.
+===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-071 — ACCOUNTING: planificación de necesidades de personal
+- **Objetivo:** verificar creación/actualización y lectura de planes de necesidades de personal con identidad firmada, scope departamental, propiedad de expedientes y ausencia de efectos laterales en consultas.
+- **Precondiciones:** entorno beta aislado; catálogo de departamentos con dos departamentos; usuarios sintéticos de RR. HH. con scopes A/B y administrador institucional; planes, expedientes, ResourceOwnership y vacantes con esquemas canónicos. Solo datos sintéticos.
+- **Pasos:** (1) crear un plan para el departamento autorizado y comprobar que persiste su DepartmentID canónico y el actor verificado; (2) denegar creación en otro departamento; (3) actualizar un plan propio y denegar transferencia de un plan ajeno; (4) aceptar solo vacante relacionada del mismo departamento y denegar una de otro ámbito; (5) probar cantidad inválida, IDs duplicados/colisión y esquema incompatible; (6) simular fallo de setValues y verificar compensación; (7) consultar como RR. HH. de A y confirmar que planes, personal activo y vacantes de B no aparecen; (8) consultar como administrador institucional y verificar ambos departamentos; (9) probar estado laboral y estado de vacante desde las columnas canónicas; (10) consultar con hojas ausentes y comprobar que la lectura no las crea; (11) simular lock ocupado y reentrada/concurrencia.
+- **Resultado esperado:** mutaciones solo con sesión/rol/scope verificados; sin transferencia de propiedad, referencias cruzadas, IDs ambiguos ni escrituras parciales; consultas limitadas por institución/departamento y sin crear hojas.
+- **Evidencia requerida:** snapshots anonimizados, IDs sintéticos, scopes/ownership, respuestas permitidas/denegadas, conteos por departamento y trazas de rollback/concurrencia. No guardar tokens ni PII.
+- **Estado:** Pendiente beta. No se ha desplegado ni ejecutado contra Apps Script/Sheets reales.
+===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-072 — ACCOUNTING: marcajes e historial de asistencia
+- **Objetivo:** verificar marcajes de entrada/salida e historial con identidad firmada, expediente activo, scope/ownership, unicidad y concurrencia.
+- **Precondiciones:** entorno beta aislado; expedientes activos/inactivos y ResourceOwnership en dos departamentos; turnos vigentes; hoja DeduccionesAsistencia canónica; RR. HH. de distintos scopes, empleado autoservicio y administrador. Solo datos sintéticos.
+- **Pasos:** (1) registrar entrada propia y salida en el mismo registro; (2) denegar empleado ajeno, usuario no autorizado y expediente inactivo; (3) comprobar que HR solo marca empleados dentro de su ownership; (4) revocar scope/ownership antes de la revalidación bajo lock y verificar denegación; (5) probar turno inexistente, ambiguo y hora inválida; (6) probar ID duplicado/colisión, entrada/salida duplicada y registros ambiguos por usuario/fecha; (7) simular fallo de actualización y comprobar rollback/compensación; (8) simular lock ocupado y reentrada; (9) consultar historial por HR A/B, administrador y autoservicio, comprobando aislamiento; (10) probar rangos de fechas y hoja de asistencia ausente sin creación; (11) comprobar que recordStaffAttendance conserva el comportamiento del alias.
+- **Resultado esperado:** ninguna escritura sin actor y expediente autorizados; no se admiten empleados inactivos ni transferencias entre departamentos; no hay actualizaciones parciales; historial no filtra empleados de otros ámbitos y no crea hojas al consultar.
+- **Evidencia requerida:** IDs sintéticos, scopes/ownership, snapshots anonimizados, respuestas permitidas/denegadas y trazas de rollback/concurrencia. No guardar tokens ni PII.
+- **Estado:** Pendiente beta. No se ha desplegado ni ejecutado contra Apps Script/Sheets reales.
+===============================================================================
+
+===============================================================================
+### BETA-FUNC-073 — Portal de autoservicio laboral y colecciones vinculadas
+- Módulo/rol: ACCOUNTING / Empleado, Profesor, Asistente, Recursos Humanos, Dirección y Administrador.
+- Tarea: TASK-153 / AUD-NG-386 — aislamiento de getEmployeeSelfServicePortal.
+- Objetivo: verificar expediente, contratos, vacaciones, préstamos, turnos y capacitaciones limitados al UserID/ExpedienteID y ámbito autorizado.
+- Precondiciones: beta aislada, usuarios sintéticos en dos departamentos, scopes/ownership y hojas con esquemas canónicos.
+- Pasos: probar autoservicio propio, suplantación targetUserId, consultas HR dentro/fuera de scope, administrador, filas ajenas/IDs duplicados, esquemas inválidos, XSS almacenado, URLs de certificado y lecturas sin escrituras.
+- Resultado esperado: sin IDOR; colecciones solo del propietario único; duplicados/esquemas inválidos fail-closed; UI escapa datos y rechaza URLs no HTTPS/host no permitido.
+- Evidencia: identidades sintéticas, scopes/ownership, IDs anonimizados y resultados por colección; no almacenar tokens ni PII.
+- Estado: Pendiente beta; sin despliegue ni acceso a Sheets reales.
+===============================================================================
+
+===============================================================================
+### BETA-FUNC-074 — Correcciones de asistencia
+- **Módulo/roles:** ACCOUNTING / Empleado, Recursos Humanos y Administrador.
+- **Objetivo:** validar solicitud propia, revisión con scope/ownership WRITE, integridad del registro de asistencia y trazabilidad del revisor.
+- **Precondiciones:** entorno beta aislado, expedientes activos en dos departamentos, ownership y scopes sintéticos, CorreccionesAsistencia y DeduccionesAsistencia canónicas.
+- **Pasos:** probar suplantación de empleado, solicitudes cruzadas, evidencia no HTTPS, corrección de entrada/salida, fecha/hora desactualizada, revisión duplicada, revisor fuera de scope, lock/reentrada y fallo parcial con rollback.
+- **Resultado esperado:** ninguna solicitud ni revisión sin identidad y ownership; no hay doble revisión ni actualización parcial; actor reviewer procede de sesión firmada.
+- **Evidencia:** IDs sintéticos, respuestas, snapshots anonimizados y rollback. Sin tokens ni PII.
+- **Estado:** Pendiente beta; no desplegado en Apps Script/Sheets real.
+===============================================================================
+
+===============================================================================
+### BETA-FUNC-075 — Solicitudes y aprobaciones de anticipos/préstamos laborales
+- Roles: ACCOUNTING / Empleado, Recursos Humanos y Administrador.
+- Objetivo: verificar identidad propia, ownership/scope WRITE, validación de montos/plazos, trazabilidad del aprobador y transición única.
+- Precondiciones: beta aislada, expedientes activos en dos departamentos, scopes/ownership sintéticos y hoja AnticiposPrestamosEmpleado canónica.
+- Pasos: probar empleadoId manipulado; solicitudes HR dentro/fuera de scope; montos NaN/Infinity/negativos/cero; plazos fraccionarios/cero; aprobación/rechazo con reviewer manipulado; monto mayor al solicitado; revisión repetida y lock ocupado.
+- Resultado esperado: el empleado solo crea su solicitud; HR/Admin requieren scope/ownership; aprobaciones solo HR/Admin; reviewer firmado; saldos y cuotas correctos; sin doble aprobación.
+- Evidencia: IDs sintéticos, respuestas, valores antes/después y scopes; sin tokens ni PII.
+- Estado: Pendiente beta; no desplegado en Apps Script/Sheets real.
+===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-076 — Deducción de préstamos en nómina y amortización
+- Roles: ACCOUNTING / Recursos Humanos y Administrador; empleado propietario del préstamo.
+- Objetivo: comprobar cuotas automáticas, límite de salario neto, aplicación al aprobar/cerrar, liquidación y reverso auditable.
+- Precondiciones: entorno beta aislado, expedientes y préstamos sintéticos aprobados, hoja AnticiposPrestamosEmpleado canónica y planillas de prueba.
+- Pasos: calcular nómina sin alterar saldo; validar cuota mensual y anticipo de una cuota; comprobar que cuotas incompletas no se descuentan si el neto disponible no alcanza; aprobar/cerrar; repetir cierre; anular; repetir anulación; recalcular período anulado; ejecutar última cuota.
+- Resultado esperado: no hay saldo reducido en cálculo preliminar; cuota íntegra ≤ saldo y neto disponible; una sola aplicación por préstamo/período; cierre reduce saldo; última cuota liquida en 0.00; anulación restaura saldo y conserva eventos append-only.
+- Evidencia: movimientos CALCULADO/APLICADO/REVERSADO/CANCELADO, planillaId, saldo antes/después y cuotas derivadas. Sin PII ni tokens.
+- Estado: Pendiente beta; no desplegado en Apps Script/Sheets real.
+===============================================================================
+
+===============================================================================
+### BETA-FUNC-077 — Catálogo dinámico de conceptos salariales y reglas de nómina
+- **Roles:** ACCOUNTING / Recursos Humanos, Contabilidad y Administrador; colaboradores de prueba asignados.
+- **Objetivo:** validar catálogo, versiones, reglas, asignaciones, conceptos recurrentes/únicos, cálculos, privacidad de boleta y asiento contable.
+- **Precondiciones:** entorno beta aislado; expedientes, departamentos, cargos, estructuras salariales y cuentas contables sintéticos; hojas CatalogoConceptosPlanilla, AsignacionesConceptosPlanilla, HistorialConceptosPlanilla y DetalleConceptosPlanilla con esquema canónico.
+- **Pasos:** (1) crear/editar/activar/desactivar conceptos de cada categoría; (2) asignar por empleado, departamento, cargo y estructura; verificar que otro empleado no recibe asignaciones individuales; (3) probar fijo, porcentaje, proporcional y fórmula; probar referencias inexistentes, ciclos y división por cero; (4) probar vigencias, ISR/IHSS/RAP y aplicación única en YYYY-MM, incluyendo período malformado; (5) calcular planilla y comprobar que los conceptos patronales no reducen salario neto; (6) cerrar y verificar asiento por cuenta; (7) ocultar conceptos en boleta y comprobar que siguen en detalle contable; (8) modificar/desactivar reglas y verificar que la planilla cerrada conserva su snapshot y monto histórico; (9) editar concepto inactivo desde UI y verificar que sigue inactivo.
+- **Resultado esperado:** solo los empleados elegibles reciben conceptos; fórmulas sin referencias inexistentes ni ciclos; cálculo y tratamiento fiscal correctos; costos patronales contabilizados sin deducción al empleado; conceptos ocultos no aparecen en boleta; versiones/snapshots históricos no cambian; período único no se repite; edición conserva estado.
+- **Evidencia requerida:** IDs sintéticos, versiones, snapshots JSON, DetalleConceptosPlanilla, planilla y asiento balanceado, captura de boleta con conceptos visibles y prueba negativa de concepto oculto. Sin PII ni tokens.
+- **Estado:** Pendiente beta; no desplegado en Apps Script/Sheets real.
+===============================================================================
+
+
+===============================================================================
+## BETA-FUNC-078 — TASK-177 — Distribución segura de comprobantes de nómina
+- **Módulo/Roles:** Contabilidad / Recursos Humanos / Administrador / Empleado.
+- **Objetivo:** validar en despliegue la generación masiva de PDF privados y la distribución individual por correo, sin exposición de datos salariales.
+- **Precondiciones:** entorno beta desplegado; planilla sintética en estado Cerrada; empleados de dos departamentos; cuentas institucionales únicas, correos válidos, inválidos y faltantes; Drive y servicio MailApp disponibles.
+- **Pasos:** (1) previsualizar una planilla cerrada y comprobar totales/incidencias; (2) intentar previsualizar/enviar planilla Calculada y verificar bloqueo; (3) enviar lote y verificar destinatario/boleta individual; (4) inspeccionar asunto/cuerpo para confirmar que no contienen salarios; (5) comprobar que el enlace exige sesión y que cada usuario descarga solo su propia boleta; (6) simular error MailApp y reintentar solo REINTENTABLE; (7) repetir envío y comprobar que ENVIADO no se duplica; (8) probar empleados fuera de ámbito, correo duplicado, cuenta inactiva y expediente ambiguo; (9) interrumpir procesamiento en estado PROCESANDO y verificar conciliación manual sin reenvío automático incierto; (10) comprobar descarga histórica tras cierre y distribución.
+- **Resultado esperado:** planilla cerrada únicamente; cada usuario recibe su acceso autenticado y su propio PDF; ningún salario aparece en el correo; los envíos confirmados no se duplican; errores recuperables quedan reintentables; casos ambiguos/fuera de ámbito se bloquean.
+- **Evidencia requerida:** IDs sintéticos, estados antes/después, conteos, trazas de entrega MailApp, IDs de boletas/Drive y pruebas de autorización. No registrar direcciones completas, salarios, tokens ni PII.
+- **Estado:** Pendiente beta; no desplegado en Apps Script/Sheets real.
+===============================================================================
+
+
+===============================================================================
+## BETA-FUNC-080 — TASK-180 — Lotes de nómina y análisis comparativo
+- **Módulo/Roles:** Recursos Humanos / Contabilidad / Administrador / responsables departamentales.
+- **Objetivo:** validar en Apps Script/Sheets desplegado la vista previa por lotes, las comparaciones entre períodos y el recálculo individual sin afectar al resto de la planilla.
+- **Precondiciones:** entorno beta aislado; empleados sintéticos de al menos dos departamentos, cargos, contratos y frecuencias; contratos vigentes, inválidos y superpuestos; incidencias de asistencia, horas extra aprobadas, préstamo en amortización y cambio salarial; planillas de dos períodos distintos.
+- **Pasos:** (1) filtrar por departamento, cargo, tipo de contrato, modalidad y frecuencia; (2) comprobar incluidos, procesados, excluidos y pendientes de validación; (3) procesar un grupo y reanudar los pendientes sin duplicar empleados ni planillas; (4) buscar por nombre/puesto/estado sin recargar; (5) comparar períodos fiscales no consecutivos y verificar importes y porcentajes por rubro; (6) provocar variaciones superiores al umbral y comprobar alertas/causas; (7) corregir un empleado y recalcularlo de forma aislada; (8) forzar error durante recálculo y comprobar rollback de planilla, conceptos, marcadores y ledger de préstamo; (9) probar rol no autorizado, empleado fuera de ámbito, planilla cerrada, amortización aplicada y configuración duplicada/vencida; (10) conciliar sumas individuales y consolidado al céntimo.
+- **Resultado esperado:** lotes y comparativas reproducibles; sin doble procesamiento; alertas justificadas; recálculo individual seguro; datos históricos y empleados ajenos intactos; totales coincidentes a L 0.01.
+- **Evidencia requerida:** IDs sintéticos, snapshots antes/después, totales por rubro, diferencias, causas, estados del ledger y registros de autorización/denegación; sin PII ni salarios reales.
+- **Estado:** Pendiente beta; no desplegado en Apps Script/Sheets real.
+===============================================================================
+
+
+===============================================================================
+## BETA-FUNC-081 — TASK-181 — Matriz comparativa y adjudicación de cotizaciones
+- **Módulo/Roles:** Contabilidad / Compras / Contador / Director / Subdirector / Administrador.
+- **Objetivo:** validar en Apps Script/Sheets desplegado la comparación consolidada de ofertas y la adjudicación total o dividida por partidas, preservando trazabilidad, aislamiento y evidencia histórica.
+- **Precondiciones:** entorno beta aislado; solicitud de compra aprobada con al menos tres partidas; entre tres y cinco proveedores sintéticos activos; cotizaciones vigentes, vencidas, completas, parciales y no conformes; usuarios con roles/scopes institucionales y departamentales diferenciados; hojas con esquemas canónicos.
+- **Pasos:** (1) consultar matriz por solicitud y comprobar comparación de precio unitario, cantidades, subtotal, descuentos, impuestos, flete, total, entrega, condiciones de pago, garantía y cumplimiento técnico; (2) comprobar que ofertas parciales/no ofertadas se identifican y que cotizaciones vencidas se muestran sin permitir selección; (3) probar límite de cinco cotizaciones y rechazo de proveedores/cotizaciones duplicados; (4) intentar lectura/adjudicación con rol no permitido, scope de otro departamento, solicitud ambigua y proveedor inactivo; (5) adjudicar toda una compra a un proveedor y otra compra distribuyendo partidas entre proveedores; (6) intentar adjudicar cantidad superior a la cotizada, partidas duplicadas y cantidades incompletas; (7) adjudicar una oferta que no sea la de menor costo y verificar justificación; registrar ofertas descartadas y motivos; (8) verificar acta, responsables, dictamen, fecha, monto y órdenes individuales en borrador, con importes y condiciones correctos; (9) modificar una cotización después de adjudicar y comprobar que el acta y la matriz de consulta conservan el snapshot original; (10) repetir la misma clave de idempotencia y comprobar que no duplica actas/órdenes; (11) simular error de escritura parcial y lock ocupado, verificando rollback y ausencia de efectos laterales; (12) comprobar auditoría y que los documentos/valores de otras instituciones no se revelan.
+- **Resultado esperado:** comparación exacta de tres a cinco proveedores; ofertas vencidas o parciales claramente identificadas; adjudicación por partidas íntegra y trazable; justificación y descarte obligatorios; órdenes individuales no duplicadas; acta inmutable; operaciones fuera de rol/scope denegadas; reintentos idempotentes; fallos y contención de lock sin escrituras parciales.
+- **Evidencia requerida:** IDs sintéticos de solicitud/proveedores/cotizaciones/acta/órdenes; snapshots antes/después; totales por partida y proveedor; dictamen/justificación; resultados positivos/negativos por rol y departamento; logs de auditoría; evidencia de idempotencia y rollback. No usar datos reales, PII ni credenciales.
+- **Estado:** Pendiente beta; no desplegado en Apps Script/Sheets real.
+===============================================================================
+
+
+===============================================================================
+## BETA-FUNC-082 — F18-Task01 — Recepciones parciales, entregas escalonadas y saldos
+- **Módulo/Roles:** Contabilidad / Compras / Bodega / responsables de recepción.
+- **Objetivo:** validar en Apps Script/Sheets desplegado la recepción acumulativa por partida, control de cantidades autorizadas, estado parcial/total y actualización de inventario solo para unidades conformes.
+- **Precondiciones:** entorno beta aislado; orden de compra aprobada con varias partidas y cantidades conocidas; artículos con códigos únicos; recepciones previas sintéticas; inventario/Kardex inicial conocido; usuarios autorizados.
+- **Pasos:** (1) registrar una primera entrega parcial y comprobar RecibidaParcial y saldos por partida; (2) registrar entregas escalonadas para distintas partidas y comprobar acumulación sin reiniciar cantidades; (3) completar exactamente las cantidades conformes y comprobar RecibidaTotal; (4) intentar sobreentregar una partida y verificar rechazo sin cambios en orden, recepción o inventario; (5) enviar código de artículo ajeno, cantidad cero, negativa, no numérica y detalle vacío; (6) recibir unidades dañadas/rechazadas y comprobar que se conservan en el historial, no reducen el pendiente y no ingresan al inventario; (7) recibir reemplazos conformes y comprobar el saldo hasta completar lo autorizado; (8) probar aliases codigoItem/codigo/id/itemId (incluidas recepciones históricas) y verificar movimiento Kardex con código normalizado; (9) simular dos recepciones simultáneas/lock ocupado y verificar serialización sin duplicidad ni avance parcial; (10) verificar que órdenes canceladas no admiten recepciones y que órdenes distintas no comparten acumulados.
+- **Resultado esperado:** sumas conformes exactas por partida; ninguna sobreentrega conforme; estado parcial mientras exista saldo y total solo al completar; unidades dañadas fuera del stock aceptado; escrituras aisladas por orden y lock; sin mutaciones en intentos inválidos.
+- **Evidencia requerida:** IDs sintéticos de orden/recepción, snapshots de cantidades solicitadas/recibidas/dañadas/pendientes, estados antes/después, movimientos Kardex, respuestas de errores y trazas de concurrencia. No usar datos reales ni PII.
+- **Estado:** Pendiente beta; no desplegado en Apps Script/Sheets real.
+===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-083 — TASK-182 — Capitalización patrimonial desde recepción de compras
+- **Módulo/roles:** Contabilidad / Compras / Almacén / Contador / Administrador.
+- **Objetivo:** validar en Apps Script/Sheets desplegado la capitalización de bienes duraderos desde una recepción conforme, con trazabilidad completa de adquisición y custodia.
+- **Precondiciones:** entorno beta aislado; solicitud y orden adjudicada con al menos una partida ActivoFijo y otra Consumible; recepción conforme con unidades múltiples; factura de proveedor aprobada, conciliada y vinculada a la orden; usuarios autorizados; inventario patrimonial sintético con series conocidas.
+- **Pasos:** (1) abrir una recepción conforme y comprobar que solo aparecen partidas capitalizables con unidades conformes disponibles; (2) verificar precarga de descripción, proveedor, fecha, costo unitario, orden y recepción; (3) registrar varias unidades con códigos patrimoniales y números de serie independientes; (4) asignar custodio inicial y comprobar historial de asignación; (5) reintentar el mismo registro y verificar idempotencia sin duplicados; (6) intentar repetir código patrimonial y número de serie, comprobar rechazo; (7) intentar capitalizar consumibles, materiales inventariables, unidades dañadas/rechazadas o cantidades superiores a las recibidas y verificar bloqueo; (8) probar factura inexistente, no aprobada, no conciliada o bloqueada para pago; (9) comprobar que una recepción no conforme/en disputa no habilita capitalización; (10) abrir el expediente desde el inventario y verificar vínculos con orden, proveedor, recepción, factura y obligación; (11) probar rol no autorizado, scope ajeno y dos solicitudes simultáneas; (12) simular fallo al crear historial de custodia y comprobar rollback sin activo huérfano.
+- **Resultado esperado:** solo bienes capitalizables recibidos conformes y con factura aprobada/conciliada generan activos; cada unidad tiene identificación única; cantidades no exceden lo recibido; vínculos de adquisición son navegables; operaciones repetidas son idempotentes y los errores no dejan escrituras parciales.
+- **Evidencia requerida:** IDs sintéticos de solicitud/orden/recepción/factura/activo, snapshots de cantidades, campos de adquisición, códigos/series, custodios, estados de conciliación, respuestas de denegación, auditoría y pruebas de concurrencia/rollback. No usar PII ni datos productivos.
+- **Estado:** Pendiente beta; implementación y contrato Node.js validados en CI. No se desplegó Apps Script/Sheets real.
+===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-084 — TASK-183 — Perfil integral de proveedores y protección de cuentas bancarias
+- **Módulo/roles:** Contabilidad / Compras / Administrador / Director / Contador.
+- **Objetivo:** validar en entorno beta el catálogo ampliado de proveedores, el ciclo histórico de contactos/condiciones y la restricción de datos bancarios.
+- **Precondiciones:** entorno beta aislado; proveedores sintéticos con RTN válidos y duplicados controlados; usuarios de roles Administrador, Director, Contador, Subdirector y usuario sin permisos; hojas de proveedores y hojas auxiliares inicializadas.
+- **Pasos:** (1) registrar proveedor con RTN de 14 dígitos; (2) intentar RTN inválido y duplicado; (3) registrar contactos de Ventas, Cobranzas, Soporte y Entregas; cambiar el principal y verificar que el anterior permanece histórico; (4) registrar direcciones fiscales, de entrega y correspondencia; (5) actualizar condiciones comerciales y comprobar versiones históricas; (6) consultar directorio y verificar que solo expone cuenta enmascarada; (7) consultar cuenta completa como Contador/Director/Administrador y comprobar denegación a Subdirector/otros roles; (8) modificar cuenta con motivo y referencia documental y comprobar auditoría de actor/fecha/valor previo enmascarado, sin cuenta completa; (9) simular fallo de persistencia y verificar rollback; (10) emitir orden a proveedor Activo y comprobar éxito; intentar crear o emitir orden a proveedor Suspendido/Inactivo y comprobar bloqueo; (11) verificar que lecturas no crean ni modifican hojas.
+- **Resultado esperado:** RTN único; contactos, direcciones y condiciones trazables; cuentas completas visibles solo a roles autorizados; directorio y logs enmascaran números; cambio bancario documentado y auditable; proveedores Suspendidos/Inactivos no reciben nuevas órdenes.
+- **Evidencia requerida:** IDs sintéticos, snapshots de hojas y estados, respuestas de acceso permitido/denegado, logs de auditoría, valores enmascarados, resultado de rollback y órdenes bloqueadas; no usar datos reales.
+- **Estado:** Pendiente beta. La hoja bancaria separada requiere validar permisos directos de hoja antes de almacenar datos reales; cifrado criptográfico en reposo no implementado.
+===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-085 — TASK-184 — Expediente digital 360° de adquisiciones
+- **Módulo/roles:** Compras / Contabilidad / Almacén / Dirección / Auditoría.
+- **Objetivo:** validar reconstrucción integral de adquisiciones y trazabilidad de documentos en entorno beta.
+- **Precondiciones:** expedientes sintéticos con cotizaciones múltiples, adjudicación, orden, confirmación del proveedor, recepciones parciales, facturas parciales, pagos parciales, asientos y documentos en Google Drive; usuarios con scope y roles distintos.
+- **Pasos:** (1) buscar por solicitud, orden, número de factura y nombre del proveedor; (2) abrir expediente cerrado y cancelado; (3) verificar solicitud, cotizaciones y detalle, acta de adjudicación, aprobador, orden PDF y confirmación del proveedor; (4) registrar confirmación con contacto/canal/estado y documento Drive; (5) validar recepción parcial, factura parcial, cantidades pedidas/recibidas/facturadas/pendientes y Three-Way Match; (6) validar pagos parciales, comprobantes y asientos; (7) conciliar totales del expediente contra hojas originales; (8) abrir enlaces de cotizaciones, PO, recepción, factura y comprobantes; (9) probar URLs externas no autorizadas y esquemas http/javascript; (10) probar rol autorizado, rol sin permiso documental y scope departamental ajeno; (11) comprobar que consulta no crea hojas ni altera registros; (12) comprobar que los documentos históricos sin URL permanecen señalados como no disponibles; (13) buscar por un fragmento del número de factura y verificar que la factura correcta se asocia al expediente; (14) como rol sin permiso documental, inspeccionar toda la respuesta serializada y confirmar que no aparecen URLs Drive en observaciones ni campos anidados; (15) simular cancelación de la orden mientras la confirmación espera el lock y comprobar que no se inserta la confirmación; (16) comparar detalle de cotizaciones por partida, cantidades, precios, descuentos, impuestos, fletes y cumplimiento técnico.
+- **Resultado esperado:** una búsqueda devuelve la cadena completa relacionada; totales coinciden con los documentos fuente; parciales reflejan saldos; las confirmaciones y enlaces se conservan; los enlaces documentales solo son HTTPS de Google Drive/Docs; el scope/rol restringe el acceso sin filtrar URLs indirectas; la cancelación concurrente impide insertar confirmaciones y la búsqueda parcial conserva la relación de factura.
+- **Evidencia requerida:** IDs sintéticos de solicitud/orden/factura/recepción/confirmación/pago/asiento, snapshots antes/después, métricas reconciliadas, enlaces Drive de prueba, respuestas de acceso permitido/denegado y pruebas de no mutación.
+- **Estado:** Pendiente beta; contratos Node.js y GitHub Actions aprobados.
+===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-086 — TASK-185 — Depreciación y conciliación patrimonial de activos fijos
+- **Módulo/roles:** Contabilidad / Administración / Dirección / Auditoría; Administrador, Director, Contador y Auditor.
+- **Objetivo:** validar en entorno beta el ciclo real de configuración, cálculo, contabilización, reversión, baja y conciliación de activos fijos.
+- **Precondiciones:** institución de prueba aislada; activos sintéticos de varias categorías; políticas para línea recta, saldo decreciente y unidades de producción; plan de cuentas configurado; un activo histórico con saldo de apertura; una mejora capitalizable; usuarios con roles y ámbitos distintos. No usar datos financieros personales ni productivos.
+- **Pasos:** (1) configurar políticas por categoría y fichas financieras; (2) comparar vistas previas mensuales con los importes esperados para los tres métodos; (3) contabilizar un período y verificar débito de gasto, crédito de depreciación acumulada, centro de costo y partida doble; (4) repetir el período y comprobar idempotencia; (5) registrar una mejora y comprobar trazabilidad, nueva base y rechazo de reutilización de clave con payload distinto; (6) validar saldo inicial histórico, límite del valor residual y suspensión de activos dados de baja o totalmente depreciados; (7) revertir el último período y comprobar asiento compensatorio, conservación del original y bloqueo de reversión fuera de orden; (8) disponer un activo con valor de venta inferior/superior al valor neto y comprobar ganancia/pérdida y asiento balanceado; (9) consultar calendario mensual/anual, acumulados por categoría y corte histórico; (10) conciliar inventario patrimonial contra cuentas de activo y depreciación acumulada; (11) probar denegaciones por rol/scope y confirmar que las consultas no crean hojas ni mutan datos; (12) migrar hojas históricas con encabezados antiguos y verificar conservación de filas y columnas existentes.
+- **Resultado esperado:** cálculos reproducibles según política; ninguna depreciación por debajo del residual; un solo asiento original por activo/período; reversiones append-only y auditables; bajas con valor neto correcto; reportes y libro mayor conciliados dentro de L 0.01; controles de rol/scope efectivos; migración no destructiva.
+- **Evidencia requerida:** IDs sintéticos, snapshots de perfiles/políticas, calendarios, hojas de depreciación, mejoras, asientos originales/compensatorios, asiento de baja, conciliaciones Debe/Haber, resultados de rol/scope y diff de esquema; sin PII real.
+- **Estado:** Pendiente beta; la implementación y los contratos locales/CI están aprobados. No se ha desplegado Apps Script/Sheets real.
+===============================================================================

@@ -1,0 +1,39 @@
+name: Task-Service security local contracts
+on:
+  push:
+    branches: [NG_beta_0.0.0.1_work]
+    paths:
+      - 'backend/task-service/Code.gs'
+      - 'backend/user-service/Code.gs'
+      - 'backend/academic-service/Code.gs'
+      - 'js/api.js'
+      - 'js/auth.js'
+      - 'tests/security/task-service-security-contract.test.js'
+      - 'tests/security/task-service-resource-ownership.test.js'
+      - 'tests/security/task-service-grade-submission-history.test.js'
+      - 'teacher-dashboard.html'
+      - 'js/teacher.js'
+      - '.github/workflows/task-service-security-contract.yml'
+  pull_request:
+    branches: [NG_beta_0.0.0.1_work]
+    paths:
+      - 'backend/task-service/Code.gs'
+      - 'backend/user-service/Code.gs'
+      - 'backend/academic-service/Code.gs'
+      - 'js/api.js'
+      - 'js/auth.js'
+      - 'tests/security/task-service-security-contract.test.js'
+      - 'tests/security/task-service-resource-ownership.test.js'
+      - '.github/workflows/task-service-security-contract.yml'
+jobs:
+  local-security-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/security/task-service-security-contract.test.js
+      - run: node tests/security/task-service-resource-ownership.test.js
+      - run: node tests/security/task-service-grade-submission-history.test.js
+      - run: node --check js/teacher.js

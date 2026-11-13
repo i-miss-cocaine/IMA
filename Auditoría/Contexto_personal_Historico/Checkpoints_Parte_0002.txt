@@ -1,0 +1,1936 @@
+CONTEXTO PERSONAL Y CONTINUIDAD DEL AGENTE DESARROLLADOR
+================================================================
+
+# GATE PRIORITARIO IMA: COMMITS CONSOLIDADOS Y CHECKPOINTS OBLIGATORIOS
+
+**LECTURA Y CUMPLIMIENTO OBLIGATORIOS ANTES DE CUALQUIER TRABAJO EN IMA.** Estas reglas son controles de entrada y salida, no sugerencias. Si alguna no puede cumplirse, se detiene el trabajo sin continuar ni publicar cambios parciales.
+
+A. **COMMIT ÚNICO:** por cada iteración de trabajo se prepara y verifica el conjunto completo de cambios de todos los archivos relacionados y se publica exactamente un commit final. Nunca crear commits por archivo, documento, carpeta, subtarea o avance intermedio. Esta instrucción prevalece sobre cualquier texto anterior ambiguo de «un commit por tarea», «commits modulares», «lotes» o «subdividir por cuota». Solo separar en más de un commit si el usuario lo autoriza expresamente. Si el commit único no es posible, detenerse sin commits parciales.
+
+B. **CHECKPOINT OBLIGATORIO:** antes de pausar, terminar una sesión/iteración, transferir el trabajo, cerrar un sublote o detenerse por un bloqueo, agregar un checkpoint acumulativo al archivo de contexto real existente. No borrar, reescribir ni resumir checkpoints anteriores. No se permite terminar la iteración dejando el checkpoint para después.
+
+C. **PUERTA DE INICIO:** antes de modificar cualquier archivo, leer el contexto completo, la metodología completa, el plan vigente y el último checkpoint; verificar repositorio, rama de trabajo, rama base y HEAD de ambas ramas. Si no existe checkpoint fiable o hay contradicción de instrucciones, investigar y detenerse hasta resolverla.
+
+D. **PUERTA DE CIERRE:** el checkpoint debe incluir estado exacto de tarea/lote, último elemento terminado, elemento en curso, siguiente acción concreta, archivo/función/sección/rango exacto, evidencia y SHA de respaldo, pruebas realmente ejecutadas/no ejecutadas, archivos modificados/no modificados, limitaciones, rama y HEAD de partida. Tras publicar el único commit, verificar el HEAD de la rama y la integridad del commit; no crear un segundo commit solo para añadir el SHA que el propio commit no puede contener. El SHA final se confirma consultando el HEAD de GitHub y se comunica en el reporte de cierre.
+
+E. **VERIFICACIÓN:** antes del único commit revisar el diff total y confirmar que todos los cambios relacionados estén incluidos, que no existan cambios ajenos, que el historial previo se conserve y que la rama base permanezca intacta. Después comprobar que el commit incluye el checkpoint y todos los archivos de la iteración.
+
+Estas reglas son específicas y prioritarias para IMA. No modifican ni autorizan alterar las instrucciones de otros repositorios/proyectos. En caso de contradicción, prevalece esta adenda IMA más reciente y la instrucción expresa del usuario.
+
+F. **RECUPERACIÓN HISTÓRICA OBLIGATORIA CUANDO UN ARCHIVO DEVUELVA CERO CARACTERES:** una respuesta de lectura con contenido vacío (0 caracteres), incluso si Git informa que el archivo existe y tiene un blob SHA, NO demuestra que el archivo esté vacío, eliminado, corrupto ni que carezca de historial. Está prohibido sobrescribirlo, recrearlo o sustituirlo por una versión legacy antes de recuperar y verificar su contenido.
+   1. Confirmar repositorio, rama de trabajo autorizada y HEAD actual. La búsqueda de historial, commits, árboles y blobs para recuperar el archivo se limita exclusivamente a esa rama de trabajo y a sus commits alcanzables. No usar la rama base, otras ramas, ramas remotas ajenas ni copias legacy como fuente de restauración. Una copia legacy puede utilizarse únicamente como referencia comparativa si el alcance lo permite.
+   2. Consultar el historial del archivo dentro de la rama de trabajo, identificar el blob más reciente cuyo contenido completo pueda recuperarse y contrastar también el blob del HEAD actual. Si el blob actual puede recuperarse íntegramente, tiene prioridad; si no, seleccionar el commit histórico más reciente de esa misma rama que conserve una versión íntegra y estructuralmente válida. No elegir una versión solo por tamaño o fecha.
+   3. Verificar el contenido recuperado: SHA del blob, tamaño/caracteres, líneas, estructura inicial y final, encabezados, identificadores y estados. Para registros de tareas, inventariar los identificadores reales por categoría (sin contar marcadores o plantillas como tareas), total de tareas únicas, último identificador y, cuando corresponda, tareas completadas y pendientes. Comparar con el registro legacy solo para demostrar diferencias, nunca para reemplazar el historial de trabajo.
+   4. Preservar el blob y el commit de origen como respaldo inmutable. Antes de restaurar, reconciliar cambios posteriores, tareas nuevas, duplicados y estados; revisar el diff completo. La restauración solo se ejecuta si está autorizada y puede hacerse sin pérdida histórica, siguiendo el commit único por iteración. Si no se puede recuperar o validar íntegramente, detenerse y documentar el bloqueo; no escribir sobre el archivo.
+   5. **Inventario obligatorio en el checkpoint:** registrar ruta, rama, HEAD consultado, commit y blob SHA seleccionados, motivo de selección, resultado de la lectura convencional (0 caracteres), caracteres/tamaño y líneas recuperadas, cantidad de tareas por categoría, total de identificadores únicos de tarea, identificador máximo/último, estados completados/pendientes cuando se puedan contar de forma fiable, comparación con legacy y validaciones realizadas/no realizadas. No declarar «recuperado íntegramente» sin esa evidencia.
+
+Esta regla aplica a CUALQUIER archivo del repositorio IMA, sin excepción por tipo, extensión, ubicación o propósito: código fuente, documentación, configuraciones, datos, pruebas, recursos, archivos binarios y cualquier otro artefacto versionado. El hecho de que una herramienta devuelva 0 caracteres no permite clasificar el archivo como vacío. Si el archivo no es texto o la lectura textual no es compatible con su formato, la recuperación y validación deben hacerse sobre el objeto Git y sus bytes (incluidos tamaño y SHA); no se debe forzar una interpretación textual. El inventario de tareas/IDs se exige cuando el archivo contenga registros de tareas; para los demás archivos se registra expresamente «no aplica» y se inventarían las propiedades pertinentes al tipo de archivo.
+
+G. **CONTROL DE CRECIMIENTO, ROTACIÓN Y LOCALIZACIÓN DE CHECKPOINTS (OBLIGATORIO):**
+   1. El tamaño máximo de cada archivo activo de checkpoints será de **180.000 caracteres Unicode**, medidos sobre el contenido UTF-8 decodificado e incluyendo espacios y saltos de línea. Antes de anexar cualquier entrada, calcular el tamaño resultante. Si la adición excedería el límite, no escribir en ese archivo: crear el siguiente archivo secuencial de checkpoints.
+   2. La rotación es preventiva: el archivo nuevo debe quedar por debajo del límite desde su creación. Nunca truncar, borrar, resumir, mover ni reescribir checkpoints anteriores. El archivo que alcanzó el límite queda cerrado para nuevas entradas y permanece íntegro.
+   3. Cada archivo nuevo debe iniciar con una copia íntegra y vigente de este bloque normativo A–I del contexto personal (incluidas restricciones, precedencia, commits, checkpoints, recuperación y rotación), seguida de la identificación del repositorio/proyecto y referencias a la metodología vigente. No copiar todo el historial anterior: conservarlo en su archivo original. La copia normativa se considera una instantánea; cualquier cambio futuro de reglas debe propagarse a los nuevos archivos.
+   4. Convención de nombres: mantener Auditoría/Contexto_personal.txt como primer archivo histórico y punto de entrada; los archivos rotados se crearán como Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt, ..._0003.txt, etc., incrementando secuencialmente y sin reutilizar nombres. Los archivos Parte_01.txt a Parte_07.txt existentes son fragmentos de recuperación del contexto original y no se renombrarán ni se considerarán partes de esta nueva serie.
+   5. Mantener Auditoría/INDICE_CHECKPOINTS.md como índice permanente: una fila por checkpoint con ID, sesión, estado, archivo/ruta, ubicación (sección o líneas), tarea/fase y commit de cierre o estado de publicación. El índice debe señalar el último checkpoint y el archivo activo. No depender de buscar manualmente el último ID en todos los archivos.
+   6. Todo checkpoint debe declarar Ubicación exacta del checkpoint: ruta del archivo, identificador de parte, encabezado/sección y rango de líneas cuando sea posible; además debe incluir ID del checkpoint anterior y referencia al índice central. Si el rango final de líneas solo puede confirmarse tras escribir, calcularlo y registrarlo en el índice dentro del mismo cambio preparado.
+   7. Auditoria.txt y changueslogs.txt deben registrar el ID del checkpoint relacionado, ID de sesión, ruta exacta y referencia a la fila/entrada del índice. No duplicar el texto íntegro del checkpoint en esos registros; mantener evidencia local y referencias cruzadas.
+   8. Al rotar, preparar en una sola iteración el nuevo archivo con el bloque normativo completo, el checkpoint que provocó la rotación, la actualización del índice, la referencia de continuidad desde el archivo anterior y los cambios relacionados en auditoría/changelog. Publicar todo en el commit consolidado habitual; nunca crear un commit separado solo para rotar.
+   9. Antes de cada escritura comprobar tamaño actual, tamaño proyectado, SHA del blob, HEAD y espacio disponible respecto al límite. Si el archivo actual ya supera 180.000 caracteres, no anexar nada: preservar y cerrar ese archivo, crear la siguiente parte y documentar la anomalía. Si la fuente normativa no puede recuperarse íntegramente, detener la rotación hasta restaurarla de forma verificable.
+
+H. **ESTADO DE IMPLEMENTACIÓN Y PRUEBAS FUNCIONALES BETA (OBLIGATORIO PARA IMA):**
+   1. **Completada** describe que todos los requisitos de implementación de la tarea terminaron; exige verificaciones técnicas internas aplicables, autoauditoría, Code Review interno aprobado, evidencia y actualización del backlog/Plan Maestro. No requiere aprobación adicional del usuario.
+   2. No confundir cierre de implementación con certificación funcional integral. Las pruebas E2E, regresión transversal, seguridad por roles, integración y escenarios de plataforma se ejecutan en beta y se registran en `docs/testing/PRUEBAS_FUNCIONALES_BETA.md`.
+   3. Las pruebas técnicas/unitarias/contratos y controles acotados al cambio se ejecutan durante implementación cuando apliquen. Las pruebas integrales se difieren a beta. No afirmar que una prueba no ejecutada pasó.
+   4. Una tarea puede estar Completada mientras sus escenarios beta están Pendientes. Un defecto beta que demuestre incumplimiento de un requisito de implementación puede reabrirla con evidencia; la ausencia de pruebas beta no.
+   5. La plataforma no queda certificada para piloto/cutover por el simple hecho de que las tareas estén Completadas. La salida beta tiene sus propios criterios conforme a la sección 21 de `METODOLOGIA_DESARROLLO.md`.
+
+
+
+I. **AUDITORÍA ÚNICA Y CONTROL DE RECURSIVIDAD (OBLIGATORIO):** antes de iniciar, consulta el expediente e informes existentes y aplica §19.6 de METODOLOGIA_DESARROLLO.md. Mantén un expediente principal por tarea; no crees informes completos duplicados. Verifica correcciones de forma focalizada y regístralas en el expediente existente. Repite una auditoría completa solo por cambios sustanciales, requisitos modificados, dependencias que invaliden conclusiones, evidencia nueva contradictoria o cobertura original incompleta; justifica el alcance. Clasifica hallazgos como defecto de implementación, defecto relacionado, defecto documental o incidencia metodológica. No conviertas automáticamente defectos documentales/metodológicos en auditorías recursivas. Está prohibido auditar una auditoría cuyo único objeto sea revisar otro informe; usa una lista de comprobación documental y corrige directamente. Si no hay evidencia nueva ni criterio pendiente, continúa con la siguiente acción/tarea elegible.
+# CONTINUIDAD IMA — PARTE ROTATIVA DE CHECKPOINTS
+Repositorio: i-miss-cocaine/IMA. Rama: NG_beta_0.0.0.1_work. Rama base protegida: NG_beta_0.0.0.1.
+Metodología: METODOLOGIA_DESARROLLO.md, secciones 15–21.
+Archivo histórico origen: Auditoría/Contexto_personal.txt (cerrado; 177.832 caracteres).
+Índice central: Auditoría/INDICE_CHECKPOINTS.md.
+
+===============================================================================
+## C1.294 — Reauditoría TASK-637; bloqueo de TASK-638
+Sesión: IMA-AUDIT-20261109-1140Z; anterior C1.293; sesión abierta. Fecha: 2026-11-09 UTC.
+HEAD partida: fd73830144a9822369e4402076685928171908d6. Base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59.
+Fase metodológica 0 y 2. Fase PM-00.3. TASK-637 reabierta; TASK-638 bloqueada.
+
+### Resultado
+Tree b8ab033fddd985c9397ab67e7d6c4bf48933385d: 1.018 blobs. Inventario blob d5fdf1a621481d453a7a5779d2b82615901716b3: 1.013 rutas. Cinco informes C1.289-C1.293 omitidos y once filas SHA/tamaño desactualizadas. Sin cambios de código ni corrección del inventario en esta auditoría.
+
+### Archivos
+Nuevo informe C1.294; este archivo; índice; Plan Maestro; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; backlog Contabilidad; catálogo beta. Sin cambios de código.
+
+### Pruebas
+Ejecutadas: ramas/HEAD/base, comparación C1.293, tree no truncado, conteo y comparación rutas/SHA/tamaños, requisito e informes históricos.
+No ejecutadas: runtime, Node, navegador, HTTP, Apps Script, Drive, Sheets y E2E.
+BETA-FUNC-001..006 registradas Pendientes; no ejecutadas.
+
+### Siguiente acción reproducible
+Abrir docs/architecture/repository-inventory.md; regenerar desde tree íntegro; incluir C1.289-C1.293; corregir once filas; conciliar artefactos del commit correctivo; validar unicidad, conteos, tamaños, SHA, SELF e index.html; autoauditoría y Code Review. No reanudar TASK-638 hasta cerrar TASK-637.
+
+### Ubicación exacta
+Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — parte 0002, sección C1.294.
+Índice: Auditoría/INDICE_CHECKPOINTS.md, fila C1.294.
+Commit: el que contiene este checkpoint; SHA verificado externamente.
+===============================================================================
+# REAUDITORÍA TASK-637 — C1.294
+Sesión: IMA-AUDIT-20261109-1140Z. Checkpoint anterior: C1.293. Repositorio: i-miss-cocaine/IMA. Rama: NG_beta_0.0.0.1_work. HEAD de partida: fd73830144a9822369e4402076685928171908d6.
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59.
+Fase metodológica: 0 y 2. Fase PM: PM-00.3. Requisito original: pendientes/Contabilidad/Pendientes.md, TASK-637.
+Informes históricos revisados: Auditoría/AUDITORIA_TASK-637_C1.283.md y C1.287.md.
+
+## Continuidad
+HEAD fd73830144a9822369e4402076685928171908d6 corresponde al commit C1.293; su padre 32b8f5884dd24dbeaf1a3bf028eb7635ada592df coincide con el HEAD de partida anotado en C1.293. No hay discrepancia. La rama base fue verificada y no se modifica.
+El contexto activo tiene 177.832 caracteres; la nueva entrada excedería 180.000 y rota a Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt.
+
+## Requisito y evidencia
+TASK-637 exige inventario exhaustivo reconciliado con el tree vigente: ruta, tipo, tamaño, SHA, área, propósito y condición; cada ruta una vez, sin omisiones/invenciones y preservando index.html.
+Tree recursivo b8ab033fddd985c9397ab67e7d6c4bf48933385d, no truncado: 1.018 blobs. Inventario docs/architecture/repository-inventory.md, blob d5fdf1a621481d453a7a5779d2b82615901716b3: 1.013 rutas únicas.
+- Omitidas: 5. - Filas no autorreferenciales con SHA/tamaño desactualizado: 11. - Rutas obsoletas: 0.
+
+### Rutas omitidas
+1. Auditoría/AUDITORIA_TASK-638_C1.289.md — b052a3278890596e3c098f55156cc80b9c79729b, 10.046 bytes.
+2. Auditoría/AUDITORIA_TASK-638_C1.290.md — c4f77f1d9c61125e8ebc62517e20824ca22f8e67, 12.925 bytes.
+3. Auditoría/AUDITORIA_TASK-638_C1.291.md — f3f9f581283b587153cf7d04b7cb8866d1d0f169, 7.045 bytes.
+4. Auditoría/AUDITORIA_TASK-638_C1.292.md — 106cd84d4f659e4a22df1b00581d0772befbeccd, 10.751 bytes.
+5. Auditoría/AUDITORIA_TASK-638_C1.293.md — 919afdbfebf4253fa14bf6cf6ca28e14976dfb11, 11.779 bytes.
+
+Once filas desactualizadas: Auditoria.txt, Contexto_personal.txt, INDICE_CHECKPOINTS.md, MapaDependencias.md, PLAN_MAESTRO_IMPLEMENTACION.md, changueslogs.txt, backlogs Contabilidad/Dirección/Docente/Secretaría y tareas_auditoria.txt. La fila SELF conserva tamaño exacto; SHA se verifica externamente.
+
+## Hallazgo
+### AUD-NG-362 — MEDIO/P2 — Inventario incompleto y metadatos desactualizados
+Evidencia: 1.018 blobs frente a 1.013 rutas; cinco omitidas y once filas desactualizadas. Impacto: el catálogo no representa íntegramente el estado de la rama. Causa: snapshot C1.288 no reconciliado tras artefactos C1.289-C1.293 y cambios posteriores. Acción: reabrir TASK-637 con el mismo ID y regenerar desde el tree final. TASK-638 bloqueada hasta cierre verificado.
+
+## Tareas derivadas
+TASK-637 se amplía sin duplicar ID; detalle en tareas_auditoria.txt. TASK-638 conserva evidencia parcial C1.289-C1.293, pero no continúa hasta satisfacer la dependencia.
+
+## Dictamen
+**TASK-637: REABIERTA — EN EJECUCIÓN. TASK-638: BLOQUEADA.** No se modificó código ni se corrigió aún el inventario durante esta iteración de auditoría.
+
+## Pruebas y límites
+Ejecutadas: requisitos/metodología, ramas/HEAD/base, diff C1.293, tree no truncado, conteo, unicidad, comparación de rutas/SHA/tamaños e informes C1.283/C1.287/C1.293.
+No ejecutadas: runtime, Node, navegador, HTTP, Apps Script, Drive, Sheets, regresión y E2E; no aplican a esta auditoría documental.
+Pendiente: reconstrucción del inventario, SELF, autoauditoría y Code Review.
+
+## Próxima acción
+Abrir docs/architecture/repository-inventory.md; reconstruir desde tree completo; incluir C1.289-C1.293; corregir once filas; conciliar artefactos del commit correctivo; validar unicidad, conteos, tamaños, SHA, SELF e index.html; autoauditoría y Code Review. Después reanudar TASK-638 desde handlers, autorización contextual y persistencia.
+
+## Pruebas beta
+BETA-FUNC-001..006 se registran para TASK-685..690; todas Pendientes, ejecutar después de implementar en beta aislada. Ningún PASS se infiere.
+
+## Checkpoint
+C1.294; sesión IMA-AUDIT-20261109-1140Z; anterior C1.293; abierta. Fase metodológica 0/2; PM-00.3. TASK-637 reabierta; TASK-638 bloqueada.
+HEAD partida fd73830144a9822369e4402076685928171908d6; rama base NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt, sección C1.294; índice fila C1.294.
+Commit de cierre: el commit que contiene este checkpoint; SHA a verificar externamente.
+
+===============================================================================
+## C1.295 — Corrección y cierre TASK-637 (commit A)
+Sesión: IMA-AUDIT-20261109-1152Z; checkpoint inicial C1.294; sesión abierta. Fecha: 2026-11-09 UTC.
+Repositorio: i-miss-cocaine/IMA. Rama de trabajo: NG_beta_0.0.0.1_work. Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59.
+HEAD de partida verificado: 00ffac159929fd65f1fc3a65e72509838df0cbde.
+Fase metodológica: 0, 2, 3, 4, 5, 6 y 7. Fase PM: PM-00.3.
+Tarea anterior corregida: TASK-637 — inventario integral. AUD-NG-362 ampliado y cerrado.
+Tarea objetivo congelada: TASK-638; no se implementa ni se mezcla en commit A.
+
+### Auditoría y hallazgo
+Requisito completo: pendientes/Contabilidad/Pendientes.md, TASK-637. Exige una fila única por blob versionado con ruta, tipo, tamaño, SHA, área, propósito y condición; sin omisiones/invenciones; no alterar fuentes ni renombrar index.html.
+HEAD C1.294: tree recursivo no truncado con 1.020 blobs. Inventario anterior: 1.013 rutas únicas; siete omitidas (cinco informes TASK-638 C1.289-C1.293, informe C1.294 y Checkpoints_Parte_0002.txt) y doce filas con SHA/tamaño desactualizados. AUD-NG-362 conserva el mismo ID.
+
+### Implementación y validación
+Inventario regenerado desde el tree Git; se añadió el informe C1.295 y se incorporaron las siete rutas omitidas. Todas las filas se actualizaron con el SHA/tamaño del blob preparado; el resumen por área se recalculó. Resultado final: 1.021 blobs y 1.021 rutas únicas; cero omisiones, duplicados, rutas obsoletas o desajustes. SELF registra tamaño UTF-8 exacto; SHA externo verificado tras publicar. index.html conserva SHA cd742047cdc4948259dd721119429b04f78330ca.
+Autoauditoría y Code Review documental aprobados. No se modificó código, servicios, rutas ni recursos.
+
+### Respaldos Git previos
+Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — blob 86bdf00a6df9d125d8cfa9fb1a7d1f54a0d1a823
+Auditoría/INDICE_CHECKPOINTS.md — blob a4c61fbcf0f5f9de0c2c616fc879d6f839fce345
+Auditoria.txt — blob 43e115d4760f2b070028a176f28926b45290b603
+tareas_auditoria.txt — blob f0d8248d17d700d97c09130f66b8628b4fea7030
+changueslogs.txt — blob 244fd7a59274e6750658403a0cb289fb56a3fa16
+pendientes/Contabilidad/Pendientes.md — blob 5146c80c538ac9c6be39bb53e35a323ab92df47a
+Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md — blob d85e347e27d5d4e3f39a546120f5da53175eb8ab
+docs/architecture/repository-inventory.md — blob d5fdf1a621481d453a7a5779d2b82615901716b3
+
+### Archivos
+Modificados: docs/architecture/repository-inventory.md; Auditoría/AUDITORIA_TASK-637_C1.295.md (nuevo); Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; Auditoría/INDICE_CHECKPOINTS.md; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; pendientes/Contabilidad/Pendientes.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md.
+Revisados sin modificación: METODOLOGIA_DESARROLLO.md; Auditoría/MapaDependencias.md; index.html; otros backlogs; informes C1.283/C1.287/C1.294.
+
+### Pruebas
+Ejecutadas: continuidad HEAD/rama/base; tree recursivo; conteo/unicidad; reconciliación completa de rutas/SHA/tamaños; resumen de áreas; SELF/tamaño; preservación de index.html; copia normativa A-H íntegra.
+No ejecutadas: Node, navegador, HTTP, Apps Script, Drive, Sheets, integración, regresión y E2E; no aplican al alcance documental.
+
+### Estado y siguiente acción
+TASK-637: Completada; AUD-NG-362 cerrado. TASK-638 sigue congelada en este commit A. Tras verificar este commit, reanudar la auditoría preimplementación TASK-638 desde pendientes/Contabilidad/Pendientes.md y el punto pendiente C1.293 del MapaDependencias; seguir cada acción frontend → dispatcher → handler → autorización contextual → persistencia, servicios TASK/EXAM/ACADEMIC y configuración de secretos/deployments. No modificar código durante auditoría.
+
+### Ubicación exacta
+Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.295; parte 0002. Índice: Auditoría/INDICE_CHECKPOINTS.md, fila C1.295.
+Commit A de cierre: el commit que contiene este checkpoint; SHA a verificar externamente.
+===============================================================================
+
+
+===============================================================================
+## C1.296 — TASK-638: contratos, autorización y persistencia (commit B)
+Sesión: IMA-AUDIT-20261109-1152Z; checkpoint inicial C1.294; commit A C1.295 verificado. Sesión abierta. Fecha: 2026-11-09 UTC.
+Repositorio: i-miss-cocaine/IMA. Rama: NG_beta_0.0.0.1_work. Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59.
+HEAD de partida B: 0edce6ae2721b1d839ef259dad7ea77962fe8ab3.
+Fase metodológica: 0 y 2. Fase PM: PM-00.
+TASK-637: Completada en commit A. TASK-638: En ejecución; auditoría parcial, no cumple todavía el criterio global.
+
+### Continuidad y requisito
+Commit A 0edce6ae2721b1d839ef259dad7ea77962fe8ab3 se verificó antes de iniciar esta tarea; TASK-637 quedó cerrada y su inventario 1.021/1.021. Requisito TASK-638: pendientes/Contabilidad/Pendientes.md; mapear dependencias estáticas/dinámicas por archivo, rutas, imports, servicios, acciones, contratos y consumidores/proveedores. No cambiar rutas ni contratos durante auditoría.
+
+### Evidencia de C1.296
+24 JS: 262 llamadas literales (21 bajo js/ y 3 auxiliares sin llamadas) fetchApi (USER 70, ACADEMIC 120, TASK 23, EXAM 19, ACCOUNTING 30, DEVELOPER 0). dashboard-recursos-humanos.html: 25 llamadas inline ACCOUNTING; al menos 287 callsites. El subtotal 211 de C1.293 no cubría el universo completo.
+Dispatchers doPost: USER 182, ACADEMIC 241, TASK 44, EXAM 38, ACCOUNTING 240, DEVELOPER 39. Referencias a handlers inexistentes: USER cuatro, ACADEMIC una, TASK una. Cuatro wrappers sin dispatcher: tres USER y uno ACADEMIC; dos callers localizados en developer.js, dos wrappers sin caller encontrado.
+Cinco servicios comparten el mismo literal SPREADSHEET_ID; DEVELOPER conserva marcador. ACCOUNTING/DEVELOPER tienen URLs placeholder. No se verificaron deployments ni propiedades.
+USER→TASK: JSON plano sin HMAC; fallback de excepción devuelve status success local. Ampliar AUD-NG-083/AUD-NG-174.
+AUD-NG-363 MEDIO/P2 creado; TASK-678 existente ampliada sin duplicar ID. Hallazgos AUD-NG-002/356..361/358/359 y AUD-NG-082..086/174/323 conservados.
+
+### Fuentes backend (SHA)
+USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC df87a2eea9f0ef79d0b966d03fd5bbe432003df5; TASK 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM 1d93296628fae31f680004f637897e2b1314a64c; ACCOUNTING 38b979d41596b85e888b4a7060b37bbac0840a28; DEVELOPER 8aa4bac67cfe5c8c54da51a0784a56fef633e412.
+
+### Archivos
+Modificados: Auditoría/MapaDependencias.md; Auditoría/AUDITORIA_TASK-638_C1.296.md (nuevo); Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; pendientes/Contabilidad/Pendientes.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; Auditoría/INDICE_CHECKPOINTS.md; docs/architecture/repository-inventory.md.
+Revisados sin modificación: METODOLOGIA_DESARROLLO.md; index.html; seis Code.gs; 21 JS; developer-dashboard.html; dashboard-recursos-humanos.html; informes C1.289-C1.293; demás backlogs.
+
+### Pruebas
+Ejecutadas: continuidad HEAD/rama/base; lectura requisito e informes previos; inspección estática de seis Code.gs y 21 JS; recuento de llamadas y dispatchers; búsqueda de handlers; revisión de PUBLIC_ACTIONS, wrappers, hojas, SpreadsheetApp, DriveApp y URLs.
+No ejecutadas: Node, navegador, HTTP, Apps Script, Drive, Sheets, multi-cuenta, regresión, integración y E2E; no se verificaron deployments/Script Properties.
+
+### Dictamen y siguiente acción
+TASK-638 permanece En ejecución; no se modificó código. Abrir Auditoría/MapaDependencias.md, sección C1.296; completar por cada callsite la relación servicio/acción → dispatcher → handler → helpers → claims/contexto → hoja/archivo/Drive → mutación/response; empezar por los 287 callsites identificados y priorizar rutas sin handler, públicas y cross-service. Verificar deployments con evidencia autorizada. No implementar durante auditoría.
+
+### Ubicación exacta
+Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.296; parte 0002. Índice: Auditoría/INDICE_CHECKPOINTS.md, fila C1.296.
+Commit B de cierre: el commit que contiene este checkpoint; SHA a verificar externamente.
+===============================================================================
+
+
+===============================================================================
+## C1.297 — TASK-638: trazabilidad USER/ACADEMIC, identidad y acciones públicas
+
+- **ID de sesión operativo:** IMA-AUDIT-20261109-1152Z (sesión abierta; checkpoint inicial C1.294).
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **Rama base protegida:** NG_beta_0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; comparación: 369 adelante, 0 detrás; sin cambios.
+- **HEAD de partida verificado:** 5bf51a6b0c12fd62edc42385c55976789d00a423.
+- **Tree de partida:** ca33a4e8bcf0127e3b16c49954375a5b0ebadb20; tree recursivo 1.022 blobs, no truncado.
+- **Última tarea anterior:** TASK-637; requisito en pendientes/Contabilidad/Pendientes.md; informe C1.295; commit 0edce6ae2721b1d839ef259dad7ea77962fe8ab3. Auditoría del requisito, informe y commit: cierre documental satisfecho; no reabrir.
+- **Tarea en curso:** TASK-638, PM-00, fase metodológica 0/2. Estado En ejecución.
+- **Requisito íntegro:** pendientes/Contabilidad/Pendientes.md, sección TASK-638. Dependencia TASK-637 satisfecha.
+- **Fuentes leídas:** C1.296, C1.295, Plan Maestro, metodología 15–19, requisito TASK-638, MapaDependencias, seis Code.gs y JS relevantes de auth/tickets/admisión; auditoría y backlog de tareas derivadas.
+- **Hallazgos:** AUD-NG-001 ampliado (sessionToken no conservado/transmitido); AUD-NG-364 ALTO/P1 (ticket owner checks fail-open/impersonación); AUD-NG-365 MEDIO/P2 (audiencia/vigencia en consultas públicas USER manipulable). AUD-NG-280 y AUD-NG-002/AUD-NG-357/AUD-NG-323 se conservan sin duplicar.
+- **Tareas derivadas:** TASK-636 existente ampliada; TASK-678 existente ampliada. No se crean IDs de tarea duplicados.
+- **Recuperación de archivo:** fetch_file devolvió 0 caracteres para pendientes/Otros/Pendientes.md por tamaño. Se recuperó el blob vigente e9637ecc6f88b2aa0aec75909538e072509bf507 con fetch_blob: 1.627.709 caracteres, 1.647.413 bytes UTF-8, 16.484 líneas, 0 U+FFFD, 366 IDs TASK únicos (máximo TASK-682), 481 encabezados de tarea y 651 estados Pendiente/1 En ejecución en el conteo simple. No se restauró blob histórico ni se modificó el backlog; el contenido actual está íntegro.
+- **Archivos modificados:** informe C1.297 nuevo; MapaDependencias.md; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; Checkpoints_Parte_0002.txt; INDICE_CHECKPOINTS.md; repository-inventory.md.
+- **Archivos revisados sin modificación:** pendientes/Contabilidad/Pendientes.md; pendientes/Otros/Pendientes.md; metodología; contexto normativo; Plan Maestro; js/auth.js; js/api.js; js/ui-common.js; js/student.js; js/index-ui.js; backend USER y ACADEMIC Code.gs.
+- **Código fuente:** sin cambios; no se alteraron endpoints, contratos, rutas ni datos.
+- **Pruebas ejecutadas:** revisión estática, comparación Git, lectura de blobs y validación de identidad/acciones por código.
+- **No ejecutadas:** Node, navegador, HTTP, Apps Script runtime, Drive, Sheets, multiusuario, regresión, integración/E2E; deployments y Script Properties no verificados.
+- **Siguiente acción exacta:** continuar matriz por callsite de USER/ACADEMIC y recorrer helpers/persistencia/errores; completar HTML inline y trazas TASK/EXAM; mantener TASK-638 En ejecución.
+- **Ubicación:** Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.297; parte 0002. Índice: Auditoría/INDICE_CHECKPOINTS.md, fila C1.297.
+- **Commit de cierre:** el commit que contiene este checkpoint; SHA se verificará externamente.
+===============================================================================
+
+
+===============================================================================
+## C1.298 — TASK-638: traza TASK/EXAM y persistencia de categorías
+
+- **ID de sesión operativo:** IMA-AUDIT-20261109-1222Z-01; checkpoint inicial C1.297; estado de sesión: cerrada.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; 370 commits adelante, 0 detrás; sin cambios.
+- **HEAD de partida verificado:** 103c02dc0ba31c0d3ceb2e5c5a39c1a747cc67f9.
+- **Tree de partida:** ef7ec3fd8ca0d24cc75aeb2e0f5777a8192f8345; 1.023 blobs; recursivo y no truncado.
+- **Checkpoint anterior:** C1.297; commit de cierre verificado 103c02dc0ba31c0d3ceb2e5c5a39c1a747cc67f9.
+- **Tarea auditada en la iteración anterior:** TASK-638, PM-00, fase metodológica 0/2, En ejecución. Se contrastaron requisito, informe C1.297, diff/commit y archivos; sigue abierta y no se marca Completada.
+- **Auditoría de continuidad:** commit C1.297 contiene los ocho archivos que declara el informe y no contiene código; inventario y tree coinciden en 1.023 blobs. TASK-637 sigue satisfecha como dependencia. C1.297 contiene una errata de nombre de rama base (NG_beta_0.0.1); el nombre correcto es NG_beta_0.0.0.1 y el SHA 44d9891132332e692dbe2ba8602b41f50a508a59 es correcto. Se aclara aquí sin alterar el registro histórico.
+- **Tarea en curso:** TASK-638 — Trazar dependencias estáticas y dinámicas de extremo a extremo; PM-00; estado En ejecución.
+- **Requisito original:** pendientes/Contabilidad/Pendientes.md, TASK-638; dependencia TASK-637 verificada. Criterios: mapa por archivo, origen/destino exactos, referencias relativas y sensibilidad a mayúsculas, endpoints/acciones/contratos, consumidores/proveedores y distinción entre evidencia e inferencia.
+- **Trabajo de esta iteración:** trazas estáticas de acciones públicas TASK y EXAM; relaciones de handlers, callsites, hojas y Drive; auditoría del bootstrap y consulta de categorías de evaluación.
+- **Hallazgos nuevos:** AUD-NG-366 MEDIO/P2 (getOrCreateSheet y getEvaluationCategories agregan encabezado duplicado en inicialización); AUD-NG-367 MEDIO/P2 (getEvaluationCategories recibe ambito pero no filtra por él). Ambos se sustentan en backend/exam-service/Code.gs; informe C1.298.
+- **Hallazgos existentes reconciliados:** AUD-NG-002/TASK-636 para rutas públicas TASK, payload y propiedad de proyectos; AUD-NG-356/TASK-685 para EXAM; AUD-NG-001 para propagación de token. No se crean IDs duplicados.
+- **Tareas derivadas:** ampliación de F9-TASK03 existente en pendientes/Docente/Pendientes.md; tareas_auditoria.txt registra origen, acciones, archivos, dependencias y criterios. La ampliación pertenece a PM-05 y no bloquea TASK-638 ni altera el orden PM-00.
+- **Archivos modificados:** Auditoria.txt; Auditoría/AUDITORIA_TASK-638_C1.298.md; Auditoría/MapaDependencias.md; tareas_auditoria.txt; changueslogs.txt; pendientes/Docente/Pendientes.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; Auditoría/INDICE_CHECKPOINTS.md; docs/architecture/repository-inventory.md.
+- **Archivos revisados sin modificación:** pendientes/Contabilidad/Pendientes.md; pendientes/Otros/Pendientes.md; METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; Auditoría/AUDITORIA_TASK-638_C1.297.md; backend/task-service/Code.gs; backend/exam-service/Code.gs; js/student.js; js/teacher.js; js/api.js; index.html.
+- **Código de producto:** sin modificaciones.
+- **Pruebas ejecutadas:** verificación de rama/HEAD/base/tree; lectura del requisito TASK-638 y F9-TASK03; revisión estática de dispatchers, PUBLIC_ACTIONS, handlers, hojas, helpers y callsites seleccionados; auditoría de commit C1.297 y reconciliación de inventario.
+- **Pruebas no ejecutadas:** Node, navegador, HTTP, Apps Script runtime, Drive, Sheets, concurrencia real, multiusuario, regresión, integración y E2E; deployments y Script Properties no verificados.
+- **Estado:** TASK-638 continúa En ejecución; no cumple todavía su criterio global de cobertura exhaustiva por callsite/handler/persistencia y verificación de deployments. No iniciar TASK-639 ni PM-01.
+- **Siguiente acción reproducible:** continuar Auditoría/MapaDependencias.md, sección C1.298; tomar los callsites TASK/EXAM pendientes y completar acción → dispatcher → handler → helpers → claims/contexto → hoja/Drive → mutación/respuesta/error; después completar USER/ACADEMIC/ACCOUNTING y evidencia de deployments. No implementar correcciones de producto dentro de TASK-638.
+- **Siguiente tarea tras cerrar TASK-638:** TASK-639 — Verificar duplicaciones, símbolos globales y ciclos; pendientes/Secretaria/Pendientes.md; dependencias TASK-637 y TASK-638.
+- **Ubicación exacta:** Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.298; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.298.
+- **Commit de cierre:** el commit que contiene este checkpoint; SHA se verificará externamente.
+===============================================================================
+
+
+===============================================================================
+## C1.299 — TASK-638: autorización contextual y persistencia TASK/EXAM
+
+- **ID de sesión operativo:** IMA-AUDIT-20261109-1232Z-01; checkpoint inicial C1.298; estado final de sesión: cerrada.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; 371 commits adelante, 0 detrás; sin cambios.
+- **HEAD de partida verificado:** 7520d0b8471d8bb508fe808191a5d55bb2b126bd.
+- **Tree de partida:** 3ed927303b3550f223cb96adc5f741be2825160b; 1.024 blobs; recursivo, no truncado.
+- **Checkpoint anterior:** C1.298; commit de cierre verificado 7520d0b8471d8bb508fe808191a5d55bb2b126bd.
+- **Tarea auditada de continuidad:** TASK-638, PM-00, En ejecución. Se contrastaron requisito, informe C1.298, commit y archivos; continúa abierta.
+- **Requisito original:** pendientes/Contabilidad/Pendientes.md, TASK-638. Documentar dependencias por archivo, endpoints, acciones, contratos, consumidores/proveedores y evidencia; no modificar rutas ni contratos durante auditoría.
+- **Revisión TASK-636:** backlog original `pendientes/Otros/Pendientes.md` recuperado desde blob SHA e9637ecc6f88b2aa0aec75909538e072509bf507 (1.647.413 bytes). El fetch_file devolvió cero caracteres por limitación de lectura del archivo grande; el blob directo devolvió el contenido completo. Archivo no vacío/no corrupto; no se restauró ni modificó.
+- **Fuentes auditadas:** TASK Code.gs SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM Code.gs SHA 1d93296628fae31f680004f637897e2b1314a64c; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; student.js e2888cea60322e49a40b89adadb8010489605dcc; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+- **Hallazgos:** AUD-NG-368 MEDIO/P2 (preview exige claims.valid inexistente); AUD-NG-369 CRÍTICO/P0 (closeAcademicYear permite a Profesor borrar globalmente Entregas y archivos sin backup real); AUD-NG-370 ALTO/P1 (deleteFile no valida propietario); AUD-NG-371 ALTO/P1 (actividad docente TASK/EXAM filtra por profesorId opcional del cliente); AUD-NG-372 ALTO/P1 (EXAM sin scope docente/relación tutor-estudiante); AUD-NG-373 ALTO/P1 (saveGradebookGrades confía en authRole del payload).
+- **Tareas derivadas:** ampliar TASK-636 (PM-01/P0) con AUD-NG-368/369/370/371-TASK/373; ampliar TASK-685 con AUD-NG-371-EXAM/372/373. Se conservan IDs e historiales; sin duplicados. No implementar durante PM-00.
+- **Archivos modificados:** Auditoria.txt; Auditoría/AUDITORIA_TASK-638_C1.299.md; Auditoría/MapaDependencias.md; tareas_auditoria.txt; changueslogs.txt; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; Auditoría/INDICE_CHECKPOINTS.md; docs/architecture/repository-inventory.md.
+- **Archivos revisados sin modificación:** METODOLOGIA_DESARROLLO.md; pendientes/Contabilidad/Pendientes.md; pendientes/Otros/Pendientes.md (blob recuperado íntegro); backend/task-service/Code.gs; backend/exam-service/Code.gs; js/student.js; js/teacher.js; js/api.js; Auditoría/Contexto_personal.txt; Auditoría/AUDITORIA_TASK-638_C1.298.md.
+- **Código fuente:** sin modificaciones.
+- **Pruebas ejecutadas:** continuidad HEAD/rama/base/tree; lectura íntegra TASK-638 y TASK-636; auditoría del commit C1.298; inspección estática de dispatchers, permisos, claims, handlers, callsites y persistencia TASK/EXAM; cruce de token/rol/ámbito.
+- **Pruebas no ejecutadas:** Node, navegador, HTTP, Apps Script runtime, Drive, Sheets, cuentas/roles, concurrencia, regresión, integración y E2E; deployments/Script Properties no verificados; datos productivos no inspeccionados.
+- **Estado:** TASK-638 continúa En ejecución; no se cumple aún el cierre global de todos los callsites/handlers/dependencias ni verificación de deployments. No iniciar TASK-639 ni PM-01.
+- **Siguiente acción reproducible:** abrir Auditoría/MapaDependencias.md, sección C1.299; continuar acciones TASK/EXAM no cubiertas y completar USER/ACADEMIC/ACCOUNTING con cadena callsite → dispatcher → handler → helpers → claims/contexto → persistencia → respuesta/error; después verificar endpoints/deployments con evidencia autorizada. No implementar correcciones durante PM-00.
+- **Siguiente tarea tras cerrar TASK-638:** TASK-639 — Verificar duplicaciones, símbolos globales y ciclos; requisito en pendientes/Secretaria/Pendientes.md; depende de TASK-637 y TASK-638 verificadas.
+- **Ubicación exacta:** Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.299; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.299.
+- **Commit de cierre:** el commit que contiene este checkpoint; SHA se verifica externamente.
+===============================================================================
+
+
+===============================================================================
+## C1.300 — Actualización normativa: auditoría única y prompt reciclable
+ID de sesión: IMA-GOV-20261109-1255Z-01
+Fecha: 2026-11-09 UTC
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD de partida verificado: 9e21a060922bc4c7d96d06c0098a48d643b32276
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (solo lectura)
+Checkpoint anterior: C1.299
+Tipo de iteración: actualización de gobernanza documental; no corresponde a una tarea de producto ni altera el orden PM.
+
+### Cambios normativos
+- Se añade METODOLOGIA_DESARROLLO.md §19.6: expediente principal único por tarea, comprobación de vigencia, distinción entre auditoría de implementación/verificación focalizada/control documental/incidencia metodológica, reauditoría completa excepcional justificada, clasificación de hallazgos, prohibición de auditoría recursiva, puerta de salida y ficha de trazabilidad.
+- Se incorpora la misma regla como apartado I del bloque prioritario de Auditoría/Contexto_personal.txt y del archivo activo de checkpoints. Las referencias de rotación se actualizan de A–H a A–I para que futuras partes copien la regla nueva.
+- Se añade la referencia operativa en Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md §10.4. No se alteran los requisitos ni las dependencias del Plan Maestro.
+
+### Estado del proyecto
+- TASK-638 permanece En ejecución dentro de PM-00. Este cambio normativo no la audita, no la cierra y no habilita TASK-639 ni PM-01.
+- Se conserva el expediente e informes C1.289–C1.299; no se repitió ninguna auditoría funcional en esta iteración.
+- Próxima continuación: retomar TASK-638 desde el punto C1.299/MapaDependencias, aplicando §19.6 para reutilizar evidencia vigente y evitar duplicados. Resolver las brechas de cobertura pendientes antes de cerrar la tarea.
+
+### Archivos modificados
+1. METODOLOGIA_DESARROLLO.md.
+2. Auditoría/Contexto_personal.txt.
+3. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt.
+4. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md.
+5. Auditoría/INDICE_CHECKPOINTS.md.
+6. changueslogs.txt.
+
+### Archivos revisados sin modificación
+Auditoria.txt; tareas_auditoria.txt; Auditoría/MapaDependencias.md; Auditoría/AUDITORIA_TASK-638_C1.299.md; backlogs departamentales. No se reabrieron hallazgos ni se crearon tareas derivadas.
+
+### Pruebas y verificaciones
+- Ejecutadas: rama/HEAD de trabajo; SHA de documentos fuente; SHA de rama base; sincronización del bloque normativo A–I; ubicación de §19.6 y §10.4; límite de 180.000 caracteres para Auditoría/Contexto_personal.txt; revisión de cambios documentales.
+- No ejecutadas: pruebas de código, Node, navegador, HTTP, Apps Script, Drive, Sheets, integración o E2E; no aplican a esta actualización normativa.
+- Código fuente: sin modificaciones.
+
+### Siguiente acción reproducible
+Abrir Auditoría/MapaDependencias.md en la sección C1.299 y continuar TASK-638 con el cruce de acciones aún no cubiertas hacia dispatcher, handler, autorización contextual, persistencia y despliegue. Antes de repetir cualquier tramo, consultar los informes y aplicar §19.6; no crear un segundo informe completo si la evidencia sigue vigente.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.300; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.300.
+Commit de cierre: el commit que contiene este checkpoint; SHA se verificará externamente.
+===============================================================================
+
+
+===============================================================================
+## C1.301 — TASK-638 completada: matriz integral de dependencias y contratos
+ID de sesión operativo: IMA-EXEC-20261109-1305Z-01
+Checkpoint inicial de sesión: C1.300
+Fecha: 2026-11-09 UTC
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios)
+HEAD de partida verificado: 650a3cccf1974afbc7d29f7d5d922a3f30bc1b1b
+Fase metodológica: 0 — auditoría/inventario y cierre documental
+Fase PM: PM-00 — inventario, triage y resolución de dependencias
+Tarea: TASK-638 — Trazar dependencias estáticas y dinámicas de extremo a extremo
+Estado: Completada (alcance de inventario/documentación; no implica corrección de defectos ni certificación runtime)
+
+### Continuidad y aplicación de §19.6
+- Se verificó HEAD C1.300, la rama base y los SHAs de los documentos fuente. Se reutilizaron los expedientes C1.289–C1.299 y sus matrices; no se repitió el inventario HTML/JS/CSS/GS/JSON ya verificado.
+- Se mantuvo el expediente principal Auditoría/AUDITORIA_TASK-638_C1.299.md y se añadió el complemento C1.301; la matriz de acciones está en Auditoría/MapaDependencias.md §C1.301. No se creó informe de auditoría duplicado.
+
+### Resultado y evidencia
+- Cobertura consolidada: 1.024 blobs; 101 HTML/HTM; 24 JS; 6 CSS; 6 Apps Script; 27 JSON. Reconciliación de llamadas: 262 callsites JS (USER 70, ACADEMIC 120, TASK 23, EXAM 19, ACCOUNTING 30) +25 HTML inline (ACCOUNTING) =287.
+- Dispatchers estáticos: TASK 44, EXAM 38, ACADEMIC 241, USER 182, ACCOUNTING 240; matriz por acción con callsite, dispatcher, handler, hojas literales y primitivas de persistencia en MapaDependencias §C1.301.
+- Se documentan wrappers dinámicos, delegación USER→TASK, URL placeholders, despliegues no verificados y rutas/handlers ausentes. AUD-NG-358/TASK-687 y AUD-NG-359/TASK-688 ampliadas conservando IDs; AUD-NG-368..373 permanecen en TASK-636/TASK-685.
+- TASK-638 cumple sus criterios documentales y se marca Completada. TASK-639 queda como siguiente tarea elegible, dependiente de TASK-637/TASK-638.
+
+### Archivos modificados
+1. Auditoría/MapaDependencias.md.
+2. Auditoría/AUDITORIA_TASK-638_C1.299.md.
+3. pendientes/Contabilidad/Pendientes.md.
+4. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md.
+5. METODOLOGIA_DESARROLLO.md (corrección de referencia normativa A–H → A–I en §20.4).
+6. tareas_auditoria.txt.
+7. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt.
+8. Auditoría/INDICE_CHECKPOINTS.md.
+9. changueslogs.txt.
+
+### Archivos revisados sin modificación
+Auditoria.txt (AUD-NG-358/359 ya registrados; ampliación detallada queda en el expediente y tareas); backlogs restantes; backend TASK/EXAM/ACADEMIC/USER/ACCOUNTING; js/student.js, teacher.js, accounting.js, secretary.js, api.js; config.js y dashboard-recursos-humanos.html.
+
+### Pruebas y límites
+- Ejecutadas: verificación de rama/HEAD/base; SHAs de servicios/controladores; reconciliación estática de callsites/dispatchers/handlers; extracción de hojas y primitivas de persistencia; revisión de wrappers dinámicos y delegación; verificación de estados de rutas y placeholders.
+- No ejecutadas: Node, navegador, HTTP, Apps Script runtime, Drive/Sheets productivos, pruebas multiusuario, integración/E2E, ni verificación de deployments o Script Properties. No se modificó código.
+- Los endpoints no verificados se documentan como no verificados; no se declara operativa ninguna ruta por su URL o por existir un case/handler.
+
+### Siguiente tarea exacta
+TASK-639 — Verificar duplicaciones, símbolos globales y ciclos. Requisito: pendientes/Secretaria/Pendientes.md, ID TASK-639. Dependencias TASK-637 y TASK-638 satisfechas. Antes de auditar, consultar el informe/expediente que ya exista y aplicar §19.6 para evitar auditoría duplicada.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.301; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.301.
+Commit de cierre: el commit que contiene este checkpoint; SHA se verifica externamente.
+===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.302 — TASK-639 / PM-00
+===============================================================================
+ID: C1.302
+Sesión: IMA-AUDIT-20261109-1339Z-01
+Checkpoint anterior: C1.301
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD auditado/de partida: aa5a85f9eaedec5f89963a15cd32e8ed5e6e45e6
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios)
+Tarea: TASK-639 — Verificar duplicaciones, símbolos globales y ciclos.
+Fase: PM-00.
+Requisito original: pendientes/Secretaria/Pendientes.md — ID TASK-639.
+Expediente de origen: Auditoría/AUDITORIA_COMPLETADAS_F8-TASK02.md — AUD-NG-283.
+Expediente principal de esta tarea: Auditoría/AUDITORIA_TASK-639_C1.302.md.
+
+### Resultado
+- Inspección estática de 24 archivos JS y 6 servicios Apps Script inventariados.
+- Confirmadas redefiniciones globales en TASK, ACCOUNTING y USER (AUD-NG-374).
+- Confirmadas cuatro colisiones de handlers globales entre secretary.js y teacher.js (AUD-NG-375), especialmente por el orden de carga en dashboard-direccion.html.
+- Registrados helpers/contratos repetidos entre proyectos de microservicio aislados (AUD-NG-376), sin confundirlos con colisiones de runtime.
+- Grafo estático interservicio: USER → TASK; no se observó ciclo. Los ciclos dinámicos/runtime no fueron ejecutados y quedan expresamente no verificables.
+- TASK-639 cumple su alcance de auditoría estática y pasa a Completada. Se derivan TASK-691, TASK-692 y TASK-693 para PM-02.
+
+### Archivos modificados en esta iteración
+1. Auditoría/AUDITORIA_TASK-639_C1.302.md (nuevo expediente principal).
+2. Auditoria.txt (AUD-NG-374..376).
+3. tareas_auditoria.txt (TASK-691..693).
+4. pendientes/Secretaria/Pendientes.md (cierre de TASK-639).
+5. pendientes/Dirección/Pendientes.md (tareas derivadas).
+6. Auditoría/MapaDependencias.md (matriz de símbolos, propietarios, colisiones y grafo C1.302).
+7. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md (cierre PM-00 y seguimiento C1.302).
+8. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt (este checkpoint).
+9. Auditoría/INDICE_CHECKPOINTS.md (fila C1.302 y estado actual).
+10. changueslogs.txt (entrada C1.302).
+
+### Archivos fuente revisados sin modificación
+Los 24 JS y 6 GS inventariados; especialmente backend/user-service/Code.gs, backend/task-service/Code.gs, backend/accounting-service/Code.gs, js/secretary.js, js/teacher.js, js/config.js, js/games-adapter.js, dashboard-direccion.html y dashboard-secretaria.html.
+No se modificó código fuente, configuración, endpoints, deployments ni datos productivos.
+
+### Pruebas ejecutadas y pendientes
+- Ejecutadas: análisis estático de declaraciones, duplicados, asignaciones window.*, dispatchers, orden de scripts y llamadas interservicio.
+- Pendientes/no ejecutadas: suites de regresión, Node, navegador, lint/runtime, Apps Script, HTTP, contratos desplegados, integración/E2E, multiusuario, deployments y Script Properties.
+
+### Limitaciones
+La evidencia es estática y corresponde al HEAD indicado. No certifica el comportamiento efectivo de deployments ni descarta ciclos dinámicos dependientes de eventos, callbacks, configuración externa o datos productivos.
+
+### Siguiente acción exacta
+Iniciar selección de la primera tarea PM-01 pendiente, aplicando Plan Maestro §6.1: filtrar por fase/estado, leer requisito original completo desde la ruta exacta de §9, verificar dependencias contra evidencia y código, consultar expediente previo bajo METODOLOGIA_DESARROLLO.md §19.6 y registrar el ID elegido antes de auditar/implementar.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.302.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.302.
+Commit de cierre: el commit que contiene este checkpoint; SHA verificado externamente tras publicación.
+===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.303 — Corrección documental del índice C1.302
+===============================================================================
+ID: C1.303
+Sesión: IMA-DOCFIX-20261109-1344Z-01
+Checkpoint anterior: C1.302
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: 9ddafd273ccda4aeeb13e04fdb03a053a7556848
+Motivo: el control posterior al commit C1.302 detectó que el índice central actualizó su encabezado «Último checkpoint», pero no incorporó la fila de C1.302 debido a una coincidencia de formato no exacta durante la preparación del cambio.
+
+### Corrección
+- Se añade la fila C1.302 con ruta, rango de líneas y commit verificados.
+- Se corrige la referencia de commit de C1.301 a aa5a85f9eaedec5f89963a15cd32e8ed5e6e45e6.
+- Se actualiza el encabezado del índice al último checkpoint C1.303.
+- No se repite ni reabre TASK-639; es una corrección directa de trazabilidad documental conforme a METODOLOGIA_DESARROLLO.md §19.6, puntos 3 y 7.
+- No se modifica código ni se altera el expediente de auditoría.
+
+### Archivos modificados
+1. Auditoría/INDICE_CHECKPOINTS.md.
+2. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt (este checkpoint).
+3. changueslogs.txt.
+4. Auditoria.txt (referencia de checkpoint, sin nuevo hallazgo).
+
+### Verificaciones
+- HEAD previo C1.302: 9ddafd273ccda4aeeb13e04fdb03a053a7556848.
+- C1.302: sección previamente publicada en el archivo activo; rango de líneas 398–451.
+- El archivo activo permanece por debajo del límite de 180.000 caracteres.
+- No se ejecutaron pruebas de producto; no aplican a esta corrección documental.
+
+### Siguiente acción
+Continuar la selección PM-01 conforme al Plan Maestro §6.1. La siguiente candidata prioritaria identificada es TASK-636 (P0), requisito en pendientes/Otros/Pendientes.md; verificar el requisito original completo, las dependencias reales y la auditoría previa antes de comenzar.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.303.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.303.
+Commit de cierre: el commit que contiene este checkpoint; SHA verificado externamente tras publicación.
+===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.304 — Bloqueo de lectura del requisito original TASK-636
+===============================================================================
+ID: C1.304
+Sesión: IMA-BLOCK-20261109-1350Z-01
+Checkpoint anterior: C1.303
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: f4d8088d51af2840686fb9ca4ed11261b8535569
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Selección PM-01
+- Candidata siguiente: TASK-636 — P0 — «Cerrar bypasses de autorización y proteger tareas, proyectos y archivos».
+- Fase: PM-01.
+- Ruta exacta del requisito original indicada por el Plan Maestro §9: pendientes/Otros/Pendientes.md.
+- La tarea tiene antecedentes y ampliaciones AUD-NG-001/002, AUD-NG-364/365 y AUD-NG-369..373; esos antecedentes no sustituyen la lectura íntegra del requisito original.
+
+### Bloqueo técnico de recuperación
+- HEAD/tree consultado: f4d8088d51af2840686fb9ca4ed11261b8535569, exclusivamente en NG_beta_0.0.0.1_work.
+- Blob del archivo actual: e9637ecc6f88b2aa0aec75909538e072509bf507.
+- Tamaño Git: 1.647.413 bytes.
+- Lectura convencional fetch_file UTF-8: 0 caracteres.
+- Lectura fetch_file base64: 0 caracteres.
+- Rangos probados: líneas 1–80, 10.000–10.100, 18.000–18.100, 19.500–20.500 y 20.000–20.100; todos devolvieron 0 caracteres.
+- Historial consultado dentro de la rama de trabajo: la API de commits por ruta devuelve el commit 4cda8611c4d3c4aece4c7d80922cc4c14c920f5a; su árbol conserva el mismo blob SHA e9637ecc6f88b2aa0aec75909538e072509bf507 y el mismo tamaño. No se encontró una versión histórica alternativa en la rama.
+- No se sobrescribió, recreó, dividió ni restauró el archivo. No se usó la rama base ni otra rama como fuente.
+- La integridad del objeto Git queda identificada por SHA/tamaño, pero el contenido íntegro, líneas, encabezados y requisito TASK-636 no pudieron validarse textualmente.
+
+### Decisión
+No iniciar TASK-636 ni sustituir su requisito original por extractos de Auditoria.txt, MapaDependencias.md o memorias parciales. La selección PM-01 queda bloqueada hasta disponer de una lectura íntegra verificable del backlog o de un mecanismo de lectura por rangos que devuelva contenido. No cambiar el estado de TASK-636 ni declarar elegible otra tarea sin completar el análisis topológico y de prioridad.
+
+### Archivos modificados
+1. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt (este checkpoint).
+2. Auditoría/INDICE_CHECKPOINTS.md.
+3. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md.
+4. Auditoria.txt (incidencia documental/técnica de recuperación).
+5. changueslogs.txt.
+
+### Pruebas y cambios
+- Ejecutadas: verificación de rama/HEAD/base; consulta del árbol Git y blob; lectura UTF-8/base64 y rangos; consulta de historial por ruta dentro de la rama autorizada.
+- No ejecutadas: auditoría/implementación de TASK-636, pruebas de producto o modificaciones de código.
+- Código y backlogs: sin cambios.
+
+### Siguiente acción exacta
+Recuperar el contenido completo de pendientes/Otros/Pendientes.md (blob e9637ecc6f88b2aa0aec75909538e072509bf507) desde la rama NG_beta_0.0.0.1_work, preservando el blob original; validar caracteres, líneas, encabezados, IDs y requisito TASK-636. Solo después leer íntegramente el requisito, auditarlo con evidencia vigente y verificar dependencias según Plan Maestro §6.1 y METODOLOGIA_DESARROLLO.md §19.6.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.304.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.304.
+Commit de cierre: el commit que contiene este checkpoint; SHA verificado externamente tras publicación.
+===============================================================================
+
+
+
+===============================================================================
+CHECKPOINT C1.305 — Implementación parcial de TASK-636 / PM-01
+===============================================================================
+ID: C1.305
+Sesión: IMA-EXEC-20261109-1435Z-01
+Checkpoint anterior: C1.304
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: 0bbe85a6e2c0afd4ed08637e3cbb08a41f2ba14f
+Tree SHA de partida: 71d0fd7792301cf8476671b39fe9793dae991652
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Continuidad y requisito
+- Recuperado íntegramente el blob original pendientes/Otros/Pendientes.md: e9637ecc6f88b2aa0aec75909538e072509bf507; 1.627.709 caracteres y 16.484 líneas.
+- Leído el bloque completo TASK-636, PM-01/P0. No se restauró ni sobrescribió el backlog.
+- Reutilizados los informes TAREA-AD-06, F8-TASK06 y F8-TASK07; no se duplican auditorías.
+
+### Resultado de la iteración
+- js/auth.js: persiste sessionToken firmado.
+- js/api.js: propaga token y clona payload; requesterUserId/requesterRole permanecen no confiables.
+- backend/user-service/Code.gs: tickets con identidad y propiedad verificadas; getAutomationRules restringido a roles administrativos; noticias/comunicados filtrados por audiencia y vigencia verificadas.
+- AUD-NG-280, AUD-NG-364 y AUD-NG-365: correcciones de código parciales, pendientes de pruebas.
+- Permanecen abiertos AUD-NG-001/002, AUD-NG-306, AUD-NG-368/369/370/371. AUD-NG-373 pertenece a TASK-685 y queda fuera.
+- TASK-636 sigue En ejecución; no marcar Completada.
+
+### Archivos modificados
+1. js/auth.js
+2. js/api.js
+3. backend/user-service/Code.gs
+4. Auditoría/AUDITORIA_TASK-636_C1.305.md
+5. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt
+6. Auditoría/INDICE_CHECKPOINTS.md
+7. Auditoria.txt
+8. tareas_auditoria.txt
+9. changueslogs.txt
+
+### Pruebas y límites
+- Ejecutadas: sustituciones únicas, balance estático de llaves, checks estáticos de token/identidad/propiedad y filtros de audiencia.
+- No ejecutadas: Apps Script runtime, Sheets/Drive, navegador, HTTP, E2E ni pruebas con cuentas por rol.
+- No se declara protegida ninguna ruta pendiente de Task-Service/Academic-Service.
+
+### Tareas relacionadas y derivadas
+- TASK-496/AUD-NG-217: ámbito contextual y asignación docente.
+- TASK-501/AUD-NG-221: matriz dinámica.
+- TASK-502/AUD-NG-222: RBAC/ABAC común.
+- TASK-685/AUD-NG-373: EXAM, excluido de TASK-636.
+- No se crean IDs duplicados.
+
+### Siguiente acción exacta
+Continuar TASK-636 en backend/task-service/Code.gs: eliminar PUBLIC_ACTIONS sensibles, derivar identidad desde claims, comprobar propiedad de tareas/proyectos/archivos, filtrar aulas/posts/materiales, corregir preview y respaldar/restaurar closeAcademicYear antes de permitir borrados. Después proteger excepciones públicas ACADEMIC y ejecutar pruebas por rol.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.305.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.305.
+Commit de cierre: el commit que contiene este checkpoint; SHA verificado tras publicación.
+===============================================================================
+
+
+
+===============================================================================
+CHECKPOINT C1.306 — Protección de consultas, proyectos y recursos de Task-Service
+===============================================================================
+ID: C1.306
+Sesión: IMA-EXEC-20261109-1450Z-01
+Checkpoint anterior: C1.305
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: 2621b1482c8a1b606b6a5840ac9400d8fd527de4
+Tree SHA de partida: 0b4df4254d85769811302b9660b47ceb4a6ffa57
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Implementación
+- backend/task-service/Code.gs actualizado (blob 68e585c8abb865e05a0151c91907f5d8b9e7a5b3).
+- PUBLIC_ACTIONS queda vacío; consultas TASK requieren sesión y RBAC.
+- getStudentTasks usa claims, perfil real y vínculo familiar verificado.
+- getAllTasks/getTeacherActivity derivan profesorId de claims.
+- getAllStudentProjects/saveProject/listProjects/deleteProject/loadProject ligados al estudiante autenticado; sin fallback de Drive para listar/cargar proyectos.
+- Aulas, publicaciones y materiales filtrados por contexto de usuario; posts ya no confían en authRole del cliente.
+- Preview valida claims y propiedad de entrega/tarea.
+- deleteFile solo elimina archivos asociados a entregas propias.
+- Métricas globales Drive restringidas a Administrador/Desarrollador.
+- closeAcademicYear queda bloqueado con BACKUP_REQUIRED; no se borra ningún dato hasta disponer de backup/restore restaurable verificado.
+
+### Estado
+- AUD-NG-001/002 y AUD-NG-306: correcciones de código en Task-Service; faltan rutas públicas ACADEMIC y pruebas.
+- AUD-NG-368/370/371: correcciones de código parciales, pendientes de pruebas.
+- AUD-NG-369: sigue abierto porque el mecanismo de backup/restore aún no existe; borrado bloqueado preventivamente.
+- AUD-NG-373: sigue asignado a TASK-685, fuera de este alcance.
+- TASK-636 permanece En ejecución, no Completada.
+
+### Verificaciones
+- Ejecutadas sobre el blob: balance de llaves, PUBLIC_ACTIONS vacío, presencia de claims, propiedad de proyectos/entregas, filtro de aulas/posts/materiales, preview sin bandera .valid, cierre fail-closed y guardia de métricas Drive.
+- No ejecutadas: runtime Apps Script, Sheets/Drive reales, HTTP, navegador, E2E ni pruebas por rol.
+- No se declaran como satisfactorias pruebas no ejecutadas.
+
+### Archivos de esta iteración
+1. backend/task-service/Code.gs
+2. Auditoría/AUDITORIA_TASK-636_C1.305.md
+3. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt
+4. Auditoría/INDICE_CHECKPOINTS.md
+5. Auditoria.txt
+6. tareas_auditoria.txt
+7. changueslogs.txt
+8. Auditoría/MapaDependencias.md
+
+### Tareas derivadas y relaciones
+- No se crean IDs duplicados.
+- TASK-496/AUD-NG-217: validación contextual y ámbito docente.
+- TASK-501/AUD-NG-221: matriz dinámica.
+- TASK-502/AUD-NG-222: RBAC/ABAC común.
+- TASK-685/AUD-NG-373: EXAM, fuera de TASK-636.
+
+### Siguiente acción exacta
+Continuar TASK-636: revisar y proteger create/update/delete de tareas, aulas, publicaciones y materiales con propietario/claims; reconciliar asignaciones docentes con AsignacionesDocentes; definir el flujo de archivos subidos no entregados; implementar respaldo y restauración verificables para closeAcademicYear; después proteger las excepciones públicas de Academic-Service y ejecutar pruebas runtime por rol.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.306.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.306.
+Commit de cierre: el commit que contiene este checkpoint; SHA verificado tras publicación.
+===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.307 — Protección de mutaciones de Task-Service y asignaciones docentes
+===============================================================================
+ID: C1.307
+Sesión: IMA-EXEC-20261109-1455Z-01
+Checkpoint anterior: C1.306
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD de partida verificado: 7c43d5389d8d806ff81628a962af3ce4f792d118
+Tree SHA de partida: 44b2501c7130688a993137cac9ae381f8c04d6cb
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea: TASK-636
+Fase: PM-01 — Identidad, seguridad y gobierno de acceso
+Prioridad: P0
+Requisito original: pendientes/Otros/Pendientes.md, blob e9637ecc6f88b2aa0aec75909538e072509bf507 (recuperación íntegra registrada en C1.305).
+
+### Continuidad y alcance
+- Se continuó desde C1.306; no se repitió la auditoría anterior ni se modificó la rama base.
+- Se confirmó mediante revisión focalizada que el dispatcher de Task-Service inyecta _verifiedUserId/_verifiedRole tras verificar el token HMAC y validar el permiso de la acción.
+- Se detectó que createTask/updateTask/deleteTask, mutaciones de aulas/posts/materiales y varios flujos de archivo aún confiaban en IDs/autores/ámbitos enviados por el cliente. Se trabajó solo sobre los mutadores de tareas, aulas, posts y materiales incluidos en esta iteración.
+- Se reconciliaron AulasVirtuales[OfertaID/ProfesorID] y AsignacionesDocentes[OfertaID/DocenteUserId/Estado/FechaInicio/FechaFin].
+
+### Implementación preparada
+Archivo: backend/task-service/Code.gs
+Blob SHA nuevo: 2df5dbdd08cc41fe400ac489d24eaac399418f56
+- Helpers de autorización por rol administrativo, asignación docente activa y pertenencia a aula/tarea.
+- getTaskServiceAuthorizedClassrooms filtra aulas de profesores usando asignaciones activas, fecha de vigencia, OfertaID y ProfesorID de AulasVirtuales.
+- createTask deriva el propietario del profesor autenticado y exige aula coincidente (grado/sección/asignatura) y asignación vigente; la tarea de crédito extra comprueba la propiedad de la tarea original.
+- updateTask/deleteTask exigen propiedad de la tarea para docentes y asignación vigente; los cambios de ámbito se vuelven a validar contra un aula asignada.
+- createVirtualClassroom valida la asignación vigente a la oferta y genera identificador UUID; impide duplicación de oferta/grado/sección/asignatura.
+- createPost deriva AutorID de claims; docentes solo publican en aulas asignadas y no en General.
+- updatePost/deletePost validan autor propietario y aula asignada; administración mantiene su alcance autorizado.
+- createStudyMaterial deriva AutorID de claims; docentes solo publican en aulas asignadas y no en General.
+- deleteStudyMaterial valida autor propietario y aula asignada.
+- No se cambió PUBLIC_ACTIONS (continúa vacío) ni se añadieron excepciones públicas.
+
+### Verificaciones realmente ejecutadas
+- Balance de llaves del blob: correcto (0 neto).
+- PUBLIC_ACTIONS vacío.
+- Helper AsignacionesDocentes presente y verificación de estado Activo/fechas de vigencia.
+- Filtrado de aulas docente por oferta asignada y ProfesorID.
+- create/update/delete de tareas ligados a claims y propiedad/asignación.
+- create/update/delete de posts ligados a claims y autor.
+- create/delete de materiales ligados a claims y autor.
+- create de aula requiere asignación docente.
+- No ejecutadas: Node/V8 runtime, Apps Script, Sheets/Drive reales, HTTP, navegador, pruebas de rol, E2E o Code Review dinámico. Las verificaciones anteriores son estáticas; no equivalen a PASS funcional.
+- El código de esta iteración no incluye todavía los controles pendientes de uploadFile/submitAssignment/deleteFile y sesiones temporales; tampoco se completó el flujo de backup/restore de closeAcademicYear.
+- No se verificó que todos los registros históricos de AulasVirtuales tengan OfertaID y una asignación activa correlacionada. El nuevo comportamiento falla cerrado cuando falta la relación; requiere validar datos reales/fixtures antes de certificar.
+
+### Hallazgos y tareas derivadas
+- AUD-NG-002/AUD-NG-306: mutaciones TASK protegidas en código para el alcance indicado; pruebas por rol pendientes.
+- AUD-NG-368: preview se conserva corregido desde C1.306; pruebas pendientes.
+- AUD-NG-369: sigue abierto; closeAcademicYear bloqueado con BACKUP_REQUIRED.
+- AUD-NG-370: sigue parcialmente abierto; archivos temporales/no entregados y sesiones de carga requieren protección/validación focalizada.
+- AUD-NG-371: consultas de actividad docente protegidas en código; pruebas pendientes.
+- AUD-NG-373 sigue en TASK-685, fuera de este alcance.
+- No se crean IDs nuevos ni se duplican hallazgos. TASK-636 sigue EN EJECUCIÓN, NO COMPLETADA.
+
+### Archivos de esta iteración
+Modificado:
+1. backend/task-service/Code.gs
+
+Registros que se actualizan en el mismo commit:
+2. Auditoría/AUDITORIA_TASK-636_C1.305.md
+3. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt
+4. Auditoría/INDICE_CHECKPOINTS.md
+5. Auditoria.txt
+6. tareas_auditoria.txt
+7. changueslogs.txt
+8. Auditoría/MapaDependencias.md
+9. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+
+Archivos revisados sin modificación:
+- Auditoría/Contexto_personal.txt
+- METODOLOGIA_DESARROLLO.md
+- pendientes/Otros/Pendientes.md (lectura convencional devuelve 0 caracteres; requisito recuperado desde blob dentro de la rama de trabajo, sin escribirlo)
+- backend/academic-service/Code.gs (excepciones públicas y validateRolePermission revisados; su corrección queda como siguiente bloque)
+- backend/user-service/Code.gs
+- js/api.js, js/auth.js
+
+### Siguiente acción exacta
+Continuar TASK-636, auditoría focalizada de archivos no entregados y cargas:
+1. backend/task-service/Code.gs — uploadFile, submitAssignment, saveSubmissionDraft, deleteFile, deleteSubmission, uploadChunk (hay dos definiciones), initiateResumableUpload, getUploadProgress, cancelUploadSession, finishChunkedUpload, reconstructFileParts.
+2. Verificar metadatos de MetadatosArchivos, Entregas, EntregasVersiones y SesionesCargaResumible; no asumir que una fila identifica propietario si el esquema no lo registra.
+3. Revisar frontend js/student.js y cualquier consumidor de los flujos antiguos antes de cambiar contratos.
+4. Después revisar PUBLIC_ACTIONS de backend/academic-service/Code.gs: ping, createAdmissionRequest, getPublicAdmissionStatus, saveAdmissionDraft, getAdmissionDraft y getServiceHealthDiagnostics; mantener solo capacidades públicas documentadas de alta entropía y sin fuga de PII.
+5. Diseñar e implementar respaldo/restauración verificables para closeAcademicYear; no habilitar borrados antes de verificar restore en entorno aislado.
+6. Pruebas de contrato y revisión interna estática; runtime Apps Script/E2E siguen pendientes si no hay entorno de prueba autorizado.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.307.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.307.
+Commit de cierre: el commit único que contiene este checkpoint; SHA confirmado tras publicación.
+===============================================================================
+
+
+
+===============================================================================
+CHECKPOINT C1.308 — Propiedad de archivos, entregas y cargas reanudables
+===============================================================================
+ID: C1.308
+Sesión: IMA-EXEC-20261109-1510Z-01
+Checkpoint anterior: C1.307
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD de partida: e7cdbf2875c382cf3b2f8300bf7bccd190c058fc
+Tree SHA de partida: 2b7932d66b2198272e28ff795bf6bb143177d660
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea: TASK-636
+Fase: PM-01 — Identidad, seguridad y gobierno de acceso
+Prioridad: P0
+Requisito original: pendientes/Otros/Pendientes.md, blob e9637ecc6f88b2aa0aec75909538e072509bf507; lectura íntegra recuperada en C1.305.
+
+### Alcance y evidencia revisada
+- Se continuó desde C1.307 sin reiniciar la tarea ni alterar la rama base.
+- Se revisaron en Task-Service: uploadFile, submitAssignment, saveSubmissionDraft, deleteFile, deleteSubmission, las dos definiciones históricas de uploadChunk, finishChunkedUpload, initiateResumableUpload, getUploadProgress, cancelUploadSession y reconstructFileParts.
+- Se revisaron los consumidores del flujo de carga en js/student.js y js/ui-common.js, además de js/api.js y el flujo de administración docente de entregas. Se verificó que el flujo de carga grande usa sendApiRequest('initiateResumableUpload'/'uploadChunk') y que la UI antes confundía sessionKey con Drive fileId.
+- Se revisaron las columnas de metadatos escritas por logFileMetadata: el esquema histórico tiene 19 columnas y DriveId en la posición 16 (índice 15); no hay propietario persistido en los registros históricos.
+- La revisión de PUBLIC_ACTIONS de Academic-Service se conserva como siguiente bloque; no se modificó en esta iteración.
+
+### Implementación C1.308
+Archivos de código:
+- backend/task-service/Code.gs — blob SHA 07a7dc5720274622f17813104c037c7a63dda9c2.
+- js/ui-common.js — blob SHA 68e9fe25b96b92735045bf3f699f9437494531d9.
+- js/student.js — blob SHA b3bf2fac774d20f5eeb412e42f75452645080811.
+
+Controles implementados:
+1. uploadFile deriva actor y rol de _verifiedUserId/_verifiedRole; comprueba la tarea y el ámbito de grado/sección para estudiantes, y propiedad/asignación activa para docentes. Ignora userId, parcial y asignatura como autoridad del cliente; utiliza el contexto de tarea/perfil.
+2. Se elimina el permiso Drive ANYONE_WITH_LINK. Los archivos subidos permanecen bajo el modelo de permisos heredado de Drive.
+3. MetadatosArchivos amplía el esquema al final, sin desplazar columnas históricas: columna 20 PropietarioUserId y columna 21 DriveFolderId. Si el registro de propiedad no se puede escribir, uploadFile mueve el archivo recién creado a la papelera y falla la operación.
+4. submitAssignment/saveSubmissionDraft requieren estudiante autenticado; rechazan userId discordante; verifican el ámbito de la tarea y que el fileId o folderId tenga metadatos activos del mismo propietario y tarea. Se conserva la comprobación de cuota previa a la entrega.
+5. deleteFile permite eliminar archivos propios aún no entregados siempre que exista metadato de propietario verificable; los registros históricos sin propietario no pasan esta comprobación.
+6. deleteSubmission requiere profesor propietario de la tarea o rol administrativo; el docente se vuelve a validar contra AulasVirtuales y AsignacionesDocentes. Para entregas cuyo MIME registrado es folder, se usa la API de carpeta.
+7. Se elimina la definición antigua de uploadChunk basada en uploadId y se deshabilita finishChunkedUpload legacy; no se conserva una ruta de fragmentos temporales controlada por uploadId.
+8. Las sesiones reanudables derivan UserId de claims, requieren tarea, almacenan TareaID/FinalFileID/OwnerRole/FileHash/MimeType en columnas añadidas al final y usan SessionKey aleatorio UUID. Reanudar/reemplazar exige propietario, tarea y metadatos de archivo compatibles.
+9. uploadChunk, getUploadProgress, cancelUploadSession y reconstructFileParts verifican propietario de sesión. Se valida índice/cantidad de fragmentos; la finalización es idempotente y devuelve el Drive fileId real.
+10. js/ui-common.js envía tarea y MIME, propaga el fileId/folderId real al callback y descarta una clave local obsoleta para iniciar una sesión nueva autenticada. js/student.js envía tarea, usa el fileId real y conserva driveFileId físico separado del folder lógico para limpiar correctamente el estado de UI al retirar un archivo.
+
+### Verificaciones ejecutadas
+- Confirmación de refs antes de construir el cambio: rama de trabajo e7cdbf2875c382cf3b2f8300bf7bccd190c058fc; rama base 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Verificaciones estáticas sobre los blobs preparados: PUBLIC_ACTIONS de Task-Service vacío; ausencia de ANYONE_WITH_LINK; identidad verificada presente en mutaciones; comprobación de propietario en sesiones; metadatos del mismo actor y tarea en submitAssignment; guardia de propietario docente en deleteSubmission; permiso de initiateResumableUpload añadido a estudiantes; flujo frontend pasa tarea y usa el fileId real; una sola definición activa de uploadChunk; finishChunkedUpload legacy deshabilitado.
+- Se conserva la comprobación de cuota de almacenamiento en submitAssignment.
+- No se ejecutaron: parser/runtime Node o Apps Script, servicios reales Sheets/Drive, pruebas HTTP, navegador, E2E ni pruebas con cuentas por rol. Los checks son estáticos y no equivalen a PASS funcional.
+
+### Límites y riesgos residuales
+- Los registros históricos de MetadatosArchivos no contienen PropietarioUserId/DriveFolderId; las nuevas operaciones que requieren propiedad fallan de forma cerrada para esos registros. Hace falta una migración de datos auditada o una reconciliación segura, no inferir propietarios por nombre de carpeta.
+- El control de estudiante en este bloque aplica el mismo ámbito de grado/sección de getStudentTasks; no se certificó una relación integral de matrícula/oferta académica ni datos reales de Sheets.
+- La consistencia ante cargas simultáneas, cuotas de Apps Script, fallos reales de Drive y recuperación de sesiones requiere pruebas runtime. La reanudación legacy sin TareaID se invalida; el usuario debe iniciar una carga nueva.
+- AUD-NG-370 queda parcialmente corregido, no cerrado: faltan migración/reconciliación histórica y pruebas dinámicas. AUD-NG-002/AUD-NG-306 y demás correcciones de TASK-636 continúan pendientes de pruebas.
+- AUD-NG-369 sigue abierto: closeAcademicYear permanece bloqueado con BACKUP_REQUIRED; no se habilita borrado sin backup/restore restaurable verificado.
+- Las excepciones públicas de Academic-Service (ping, createAdmissionRequest, getPublicAdmissionStatus, saveAdmissionDraft, getAdmissionDraft y getServiceHealthDiagnostics) siguen pendientes de endurecimiento. No se habilitaron ni se declararon seguras.
+
+### Tareas derivadas de los hallazgos de la auditoría
+- No se crean IDs duplicados ni se reasignan hallazgos a otra tarea.
+- AUD-NG-370 permanece dentro de TASK-636 hasta migrar/reconciliar metadatos históricos y verificar rutas de archivos/sesiones.
+- TASK-496/AUD-NG-217: validación contextual y asignación docente; conservar su alcance transversal.
+- TASK-501/AUD-NG-221: matriz dinámica de permisos; conservar su alcance transversal.
+- TASK-502/AUD-NG-222: RBAC/ABAC común; conservar su alcance transversal.
+- TASK-685/AUD-NG-373: EXAM; permanece fuera de TASK-636.
+- Siguiente bloque de TASK-636: endurecer las excepciones públicas de Academic-Service con capacidades opacas de alta entropía y sin fuga de PII; después diseñar y demostrar backup/restore aislado para closeAcademicYear.
+
+### Archivos modificados en esta iteración
+1. backend/task-service/Code.gs
+2. js/ui-common.js
+3. js/student.js
+4. Auditoría/AUDITORIA_TASK-636_C1.305.md
+5. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt
+6. Auditoría/INDICE_CHECKPOINTS.md
+7. Auditoria.txt
+8. tareas_auditoria.txt
+9. changueslogs.txt
+10. Auditoría/MapaDependencias.md
+11. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.308.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.308.
+Commit de cierre: el commit único que contiene este checkpoint; SHA confirmado tras publicación.
+===============================================================================
+
+===============================================================================
+## C1.309 — TASK-636 / PM-01 — capacidades públicas ACADEMIC y protección de archivos
+ID: C1.309
+Sesión: IMA-EXEC-20261109-1533Z-01 (cerrada al publicar este checkpoint)
+Checkpoint anterior: C1.308
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD de partida: 9f5f15952c30cb1207904fd53d5a1de6e1248139
+Tree SHA de partida: 892db44e28fe598c02adb648d2540c46c5267787
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea: TASK-636 — Cerrar bypasses de autorización y proteger tareas, proyectos y archivos
+Fase PM: PM-01 — Identidad, seguridad y gobierno de acceso
+Prioridad: P0
+Requisito original: pendientes/Otros/Pendientes.md — líneas 3223–3249; blob e9637ecc6f88b2aa0aec75909538e072509bf507.
+
+### Recuperación y validación del requisito original (regla F)
+- Lectura convencional del backlog: 0 caracteres; no se sobrescribió ni sustituyó.
+- Recuperación directa del blob del HEAD autorizado: SHA e9637ecc6f88b2aa0aec75909538e072509bf507; 1.627.709 caracteres; 16.484 líneas; inicio "# Backlog consolidado — Otros"; final vacío tras el último bloque.
+- Historial de la misma rama: último commit que modifica la ruta 4cda8611c4d3c4aece4c7d80922cc4c14c920f5a; el HEAD es descendiente (24 adelante, 0 detrás) y conserva el mismo blob.
+- Inventario: 674 IDs únicos de registro; categorías/prefijos: AUD 110; TASK 255; TAREA 79; F8 24; FASE2 19; T 19; F40 15; F23 11; F21 10; F30 10; F32 10; F24 9; F19 8; F29 8; F31 8; F20 7; F38 7; F41 7; F35 6; F25 5; F27 5; F28 5; F37 5; F22 4; F26 4; F16 4; F10 3; F34 2; F9 2; F33 1; F11 1; F17 1; F18 1; F39 5; AUDIT 4. Familia TASK: 255; máximo TASK-682. El backlog declara reinicio operativo a Pendiente; TASK-636 se actualiza a En ejecución y conserva [ ].
+- Requisito TASK-636 leído íntegramente en líneas 3223–3249; prioridad P0; claims verificados, clasificación de rutas públicas, propiedad de recursos/archivos y capacidades opacas de alta entropía.
+- Se actualiza únicamente el bloque TASK-636; se preservan sus requisitos originales.
+
+### Auditoría de continuidad C1.308 y hallazgos
+- C1.308 es el último checkpoint previo; HEAD de partida 9f5f15952c30cb1207904fd53d5a1de6e1248139; rama base 44d9891132332e692dbe2ba8602b41f50a508a59.
+- AUD-NG-370 ampliado: deleteFile verificaba metadatos de propiedad, pero no referencias en Entregas/EntregasVersiones; podía borrar un archivo ya entregado.
+- AUD-NG-357 ampliado: borradores por email/draftKey; estado por DNI/ID secuencial devolvía PII; createAdmissionRequest confiaba en skipLock; getServiceHealthDiagnostics figuraba como acción pública.
+- Se reutiliza Auditoría/AUDITORIA_TASK-636_C1.305.md; no se crea informe completo duplicado.
+
+### Implementación C1.309
+1. backend/academic-service/Code.gs:
+   - PUBLIC_ACTIONS deja fuera getServiceHealthDiagnostics.
+   - Seguimiento y borradores usan tokens opacos derivados de dos UUID; se valida formato y solo se persiste hash SHA-256.
+   - SolicitudesAdmision añade PublicAccessTokenHash al final; BorradoresAdmision añade AccessTokenHash al final.
+   - getPublicAdmissionStatus exige accessToken y devuelve solo solicitud, fecha, año, grado y estado; no acepta DNI/ID secuencial ni devuelve nombres/expediente.
+   - saveAdmissionDraft/getAdmissionDraft exigen draftAccessToken; email no es credencial. Filas históricas sin hash quedan fail-closed.
+   - createAdmissionRequest siempre toma LockService; skipLock del cliente no controla el candado. La capacidad se devuelve y se incluye en notificación; health diagnostics exige claims Administrador/Desarrollador.
+2. backend/task-service/Code.gs: deleteFile comprueba Entregas y EntregasVersiones antes de DriveApp.setTrashed; bloquea archivos vinculados a entregas/versiones.
+3. js/student.js: almacena la capacidad emitida en localStorage y envía accessToken; el panel público no consulta ni muestra datos financieros.
+4. Registros y backlog: estado TASK-636 actualizado a En ejecución; hallazgos existentes ampliados sin IDs nuevos.
+
+### Archivos modificados
+1. backend/academic-service/Code.gs
+2. backend/task-service/Code.gs
+3. js/student.js
+4. pendientes/Otros/Pendientes.md
+5. Auditoría/AUDITORIA_TASK-636_C1.305.md
+6. Auditoria.txt
+7. tareas_auditoria.txt
+8. Auditoría/MapaDependencias.md
+9. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+10. changueslogs.txt
+11. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt
+12. Auditoría/INDICE_CHECKPOINTS.md
+
+### Archivos revisados sin modificación
+- METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoría/MapaDependencias.md; Auditoría/INDICE_CHECKPOINTS.md; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; js/api.js; js/auth.js; js/ui-common.js; backend/user-service/Code.gs; backend/task-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; informes previos de TASK-636 y auditorías fuente de TASK-638.
+
+### Verificaciones y límites
+- Estáticas: token/hash en rutas públicas; PUBLIC_ACTIONS sin health diagnostics; createAdmissionRequest sin bypass skipLock del cliente; estado público sin DNI/PII; borradores por token; deleteFile comprueba Entregas y EntregasVersiones antes del borrado; frontend actualizado y finanzas ocultas en ruta pública; columnas append-only y backlog preservado.
+- No ejecutadas: parser/runtime Apps Script o Node, Sheets/Drive reales, HTTP, navegador, E2E, concurrencia, pruebas por rol ni migración histórica. No se declaran PASS funcionales.
+- Autoauditoría/Code Review estático: diff focalizado revisado; ninguna operación destructiva se habilita.
+- AUD-NG-357 y AUD-NG-370 parcialmente abiertos; AUD-NG-369 sigue abierto. closeAcademicYear permanece bloqueado con BACKUP_REQUIRED.
+- Registros históricos sin hash no se migran por inferencia de email/DNI; requieren proceso independiente y verificable.
+- TASK-636 continúa En ejecución; no se marca Completada.
+
+### Tareas derivadas de los hallazgos de la auditoría
+- No se crean IDs nuevos. AUD-NG-357 y AUD-NG-370 permanecen dentro de TASK-636; AUD-NG-369 continúa dentro de TASK-636.
+- TASK-496/AUD-NG-217, TASK-501/AUD-NG-221 y TASK-502/AUD-NG-222 conservan su ámbito transversal; TASK-685/AUD-NG-373 permanece fuera de TASK-636.
+- Siguiente acción exacta: diseñar e implementar backup/restore aislado, verificable y con rollback para closeAcademicYear en backend/task-service/Code.gs; mantenerlo fail-closed hasta prueba de restauración. Después reconciliar MetadatosArchivos históricos sin inferir propietarios.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.309.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.309.
+Commit de cierre: el commit único que contiene este checkpoint; SHA verificado externamente tras publicación.
+===============================================================================
+
+===============================================================================
+## C1.310 — TASK-636 / PM-01 — integración frontend de capacidades de admisión
+ID: C1.310
+Sesión: IMA-EXEC-20261109-1533Z-02 (cerrada al publicar este checkpoint)
+Checkpoint anterior: C1.309
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD de partida: 2336d184f88246ea3801362da57fdfd55684d1b6
+Tree de partida: 312edce078e3fc1a6fd30eed9ea7a64df5a0b55c
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea: TASK-636 — Cerrar bypasses de autorización y proteger tareas, proyectos y archivos
+Fase PM: PM-01 — Identidad, seguridad y gobierno de acceso
+Prioridad: P0
+Requisito original: pendientes/Otros/Pendientes.md — bloque TASK-636, líneas 3223–3251 tras C1.309; blob C1.309 563611de9aadded3ad052e8511253ed9aee308b1.
+
+### Revisión de integración posterior a C1.309
+- Se verificó que admision.html carga js/student.js y usa window.getPublicAdmissionStatus, pero el propio formulario enviaba draftKey/email a saveAdmissionDraft y no guardaba el draftAccessToken devuelto.
+- El envío formal tampoco adjuntaba draftAccessToken; por tanto, el backend seguro no podía consumir el borrador existente y cada autosave podía crear una fila distinta.
+- El formulario de tracking aún ofrecía DNI/ID secuencial y esperaba nombres, responsable, canal y observaciones que getPublicAdmissionStatus ya no devuelve.
+- La revisión identificó además que el panel público no debía invocar getAdmissionFinancialStatus por solicitudId; se aisló el panel financiero para registros obtenidos mediante capacidad pública.
+
+### Correcciones C1.310
+1. admision.html:
+   - Autosave recupera draftAccessToken desde almacenamiento local/in-memory, lo envía a saveAdmissionDraft y persiste el token devuelto para reutilizar la misma fila.
+   - handleAdmissionSubmit adjunta el token de borrador al createAdmissionRequest; tras éxito elimina la capacidad de borrador y el borrador local.
+   - La confirmación muestra la capacidad privada de seguimiento, la almacena por solicitud y permite copiarla; el servidor también la entrega en la notificación.
+   - Tracking pide la credencial privada; no ofrece DNI como alternativa. Renderiza únicamente solicitud, estado, grado/año y fecha, escapando los valores; no representa nombres, responsable, canal ni observaciones.
+2. Se conserva la recuperación local del formulario. No se encontró consumidor frontend de getAdmissionDraft; no se declara recuperación cloud UI implementada.
+3. El panel de seguimiento público no invoca ni muestra estado financiero.
+
+### Verificaciones
+- Estáticas: autosave envía y persiste draftAccessToken; submit adjunta la credencial; tracking ya no presenta DNI/ID como credencial; respuesta mínima representada sin PII; token de seguimiento se muestra y copia; no se llama al servicio financiero en la ruta pública.
+- No ejecutadas: navegador, Apps Script runtime, HTTP, Sheets/Drive reales, E2E, concurrencia ni pruebas por rol.
+- No se declara PASS funcional; la integración requiere pruebas dinámicas.
+- TASK-636 permanece En ejecución; AUD-NG-357 parcialmente abierto por datos históricos sin hash y pruebas; AUD-NG-370 parcialmente abierto por metadatos históricos/runtime; AUD-NG-369 abierto por backup/restore.
+
+### Archivos modificados
+1. admision.html
+2. pendientes/Otros/Pendientes.md
+3. Auditoría/AUDITORIA_TASK-636_C1.305.md
+4. Auditoria.txt
+5. tareas_auditoria.txt
+6. Auditoría/MapaDependencias.md
+7. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+8. changueslogs.txt
+9. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt
+10. Auditoría/INDICE_CHECKPOINTS.md
+
+### Tareas derivadas de los hallazgos de la auditoría
+- No se crean IDs nuevos. AUD-NG-357 continúa dentro de TASK-636.
+- AUD-NG-370 permanece dentro de TASK-636; reconciliación histórica sin inferencia de propietario.
+- AUD-NG-369 permanece dentro de TASK-636; implementar backup/restore aislado y mantener closeAcademicYear fail-closed hasta verificar restauración.
+- TASK-496/AUD-NG-217, TASK-501/AUD-NG-221, TASK-502/AUD-NG-222 y TASK-685/AUD-NG-373 conservan sus ámbitos.
+
+### Siguiente acción exacta
+Diseñar e implementar backup/restore aislado, verificable y con rollback para closeAcademicYear en backend/task-service/Code.gs. Mantenerlo bloqueado hasta una prueba real de restauración; después abordar reconciliación de MetadatosArchivos históricos sin inferir propietarios. Revisar si el requisito original exige recuperación cloud de borradores; no declarar getAdmissionDraft como integrado mientras no exista consumidor.
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.310.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.310.
+Commit de cierre: el commit único que contiene este checkpoint; SHA verificado externamente tras publicación.
+===============================================================================
+
+===============================================================================
+## C1.311 — TASK-636 / PM-01 — bloqueo coherente del cierre y auditoría backup/restore
+ID: C1.311
+Sesión: IMA-EXEC-20261109-1605Z-01 (cerrada al publicar este checkpoint)
+Checkpoint anterior: C1.310
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD de partida: 831b9d6159d6aa4b5f190d0e4e3c1ad033fb67ef
+Tree SHA de partida: 280398fac34747b87336257ac0f0d3dc3df3e460
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea: TASK-636 — Cerrar bypasses de autorización y proteger tareas, proyectos y archivos
+Fase PM: PM-01 — Identidad, seguridad y gobierno de acceso
+Prioridad: P0
+Requisito original: pendientes/Otros/Pendientes.md, bloque TASK-636; blob del HEAD 831b9d6159d6aa4b5f190d0e4e3c1ad033fb67ef: 8ffa5fc6faebbdd150b18e008085bdbd516bf47c; bloque íntegro recuperado y leído.
+
+### Continuidad y auditoría
+- C1.310 es HEAD y su padre directo es C1.309; comparación: 1 commit, 10 archivos, sin divergencia.
+- Rama base intacta: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- TASK-636 sigue En ejecución. Se reutiliza Auditoría/AUDITORIA_TASK-636_C1.305.md; no se crea informe duplicado.
+
+### Auditoría focalizada AUD-NG-369
+- Código histórico en commit 191ad227c481db62b759d544d8782e8f17c29f45, blob 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe: closeAcademicYear borraba globalmente Entregas y enviaba a papelera sus recursos Drive; Tareas y ConfiguracionAcademica se filtraban por profesorId si se suministraba, o se borraban globalmente si faltaba. backupId era solo BACKUP-timestamp, sin respaldo ni restauración.
+- Código actual conserva guard de claims Administrador/Desarrollador y BACKUP_REQUIRED; no elimina datos.
+- Se detectó que ROLE_PERMISSIONS aún incluía closeAcademicYear para Profesor y js/teacher.js mantenía botón activo que enviaba profesorId/format. El endpoint lo rechazaba, pero la UI/allowlist no reflejaba el cierre administrativo y fail-closed.
+- Academic-Service backup genérico no satisface AUD-NG-369: hash 32-bit; verifyBackupIntegrity acepta cualquier checksum no vacío; restoreSystemBackup no exige verificación previa, lock ni rollback y limpia hojas completas. No reutilizar.
+- Alcance histórico observado: Tareas, Entregas, ConfiguracionAcademica, Log_Cierres y recursos Drive referenciados por Entregas. No se observó integración de Examenes/PreguntasExamen/EntregasExamen.
+
+### Correcciones C1.311
+1. backend/task-service/Code.gs: retirar closeAcademicYear de ROLE_PERMISSIONS.Profesor; permisos administrativos sujetos al guard de claims.
+2. js/teacher.js: deshabilitar botón docente, añadir aria-disabled y explicación; eliminar llamada frontend con profesorId/format.
+3. closeAcademicYear permanece fail-closed con BACKUP_REQUIRED. No se habilita ninguna eliminación.
+
+### Verificaciones y límites
+- Estáticas: permiso docente retirado; guard Administrador/Desarrollador y BACKUP_REQUIRED conservados; botón disabled/aria-disabled y sin llamada fetchApi al cierre; diff focalizado no toca datos/Drive.
+- No ejecutadas: Apps Script runtime/parser, Sheets/Drive reales, backup, restauración aislada, rollback, HTTP, navegador, E2E ni pruebas por rol.
+- No declarar PASS funcional. AUD-NG-369 sigue abierto.
+
+### Diseño requerido antes de habilitar
+- Protocolo dedicado Task-Service; no reutilizar restoreSystemBackup ACADEMIC.
+- Respaldo consistente de Tareas, Entregas, ConfiguracionAcademica y referencias/activos Drive, con manifiesto de alcance, actor verificado, esquema, conteos y SHA-256 estricto.
+- Prevalidación completa, LockService, compensación/rollback y verificación post-restauración de datos, relaciones y activos Drive/IDs/permisos.
+- Restauración aislada, repetible y con evidencia antes/después. Backup parcial, hash inválido, referencias rotas o rollback incompleto deben bloquear.
+- closeAcademicYear seguirá BACKUP_REQUIRED hasta prueba real de restauración en entorno Apps Script/Sheets/Drive aislado. No pruebas destructivas en producción.
+
+### Estado y siguiente acción
+- No se crea ID nuevo: AUD-NG-369 permanece dentro de TASK-636; AUD-NG-357/AUD-NG-370 conservan sus pendientes.
+- TASK-636 En ejecución; no marcar Completada.
+- Siguiente acción exacta: implementar backup/restore dedicado en backend/task-service/Code.gs para Tareas, Entregas, ConfiguracionAcademica y activos Drive; preparar pruebas aisladas y mantener BACKUP_REQUIRED hasta restauración verificada.
+- Código modificado: backend/task-service/Code.gs; js/teacher.js.
+- Seguimiento modificado: Auditoría/AUDITORIA_TASK-636_C1.305.md; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; Auditoría/INDICE_CHECKPOINTS.md; Auditoría/MapaDependencias.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; pendientes/Otros/Pendientes.md.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.311.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.311.
+Commit de cierre: el commit único que contiene este checkpoint; SHA verificado externamente.
+===============================================================================
+
+
+===============================================================================
+## C1.312 — TASK-636 / PM-01 — protocolo dedicado de backup/restore (implementación parcial)
+ID: C1.312
+Sesión: IMA-EXEC-20261109-1618Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.311
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD de partida de esta consolidación: cad69a6476f58eaa50d39848a020d17c7db8a588
+Tree de partida: e5552e4ca8eb9b76c63bca92b73d3088b7517650
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea: TASK-636 — Cerrar bypasses de autorización y proteger tareas, proyectos y archivos
+Fase PM: PM-01 — Identidad, seguridad y gobierno de acceso
+Prioridad: P0
+Requisito original: pendientes/Otros/Pendientes.md — bloque TASK-636; blob verificado íntegramente en la rama (el fetch de archivo grande puede devolver contenido vacío; el blob actual C1.311 es recuperable y no se reconstruye).
+Hallazgo focalizado: AUD-NG-369 — cierre académico destructivo sin respaldo restaurable.
+
+### Continuidad, selección y auditoría única
+- C1.311 es el último checkpoint válido anterior; su commit fue padre del commit de código C1.312.
+- La rama base continúa en 44d9891132332e692dbe2ba8602b41f50a508a59; no se modificó.
+- PM-00 (TASK-637/638/639) permanece cerrado según sus checkpoints; no hay hallazgo nuevo que obligue a reabrir esas tareas.
+- TASK-636 sigue siendo la tarea PM-01/P0 en ejecución; no se selecciona otra tarea porque el alcance pendiente documentado en C1.311 pertenece a esta misma tarea.
+- Se reutiliza Auditoría/AUDITORIA_TASK-636_C1.305.md como expediente principal y se agrega revisión focalizada C1.312 conforme a metodología §19.6. No se crea informe completo duplicado.
+- Requisito original recuperado del blob Git; no se modifica ni se sustituye el backlog de Otros.
+
+### Implementación C1.312
+1. backend/task-service/Code.gs:
+   - Acciones administrativas para crear, verificar y restaurar el respaldo académico; cada handler exige claims verificados Administrador/Desarrollador.
+   - Manifiesto versionado con SHA-256 estricto y snapshots de Tareas, Entregas y ConfiguracionAcademica; incluye Log_Cierres, EntregasVersiones y MetadatosArchivos cuando existen.
+   - Log_Cierres se verifica como append-only y no se sobrescribe durante la restauración.
+   - Captura recursiva de activos Drive referenciados por Entregas/EntregasVersiones, con SHA-256, tamaño, MIME, jerarquía y permisos; activos públicos o no verificables bloquean el backup.
+   - Restauración con prevalidación, LockService, conservación de IDs íntegros, recreación y remapeo de IDs cuando es necesario, verificación de hojas/fórmulas/activos/permisos y rollback compensatorio ante errores capturados.
+   - closeAcademicYear continúa BACKUP_REQUIRED; no hay eliminación habilitada.
+2. tests/security/task-service-backup-restore-contract.test.js: nuevo contrato estático de invariantes del protocolo.
+
+### Auditoría, verificaciones y límites
+- Autoauditoría estática ejecutada sobre: guard administrativo de cada handler; acciones no públicas; SHA-256 estricto; alcance de hojas; verificación de activos y permisos; LockService; preservación append-only de Log_Cierres; rollback compensatorio; cierre fail-closed.
+- El script Node del nuevo contrato no se ejecutó. No se afirma que haya pasado.
+- No ejecutadas: parser/runtime Apps Script, Sheets/Drive reales, restauración aislada repetible, pruebas de rollback con interrupción, HTTP, navegador, E2E ni pruebas por rol.
+- Limitación abierta: el journal compensatorio vive en memoria; una terminación abrupta del runtime puede impedir rollback. Debe añadirse journal durable/recuperación y probarse antes de habilitar closeAcademicYear.
+- AUD-NG-369 permanece abierto; TASK-636 continúa En ejecución, no Completada.
+
+### Archivos modificados/revisados
+Modificados:
+1. backend/task-service/Code.gs
+2. tests/security/task-service-backup-restore-contract.test.js
+3. Auditoría/AUDITORIA_TASK-636_C1.305.md
+4. Auditoria.txt
+5. Auditoría/MapaDependencias.md
+6. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+7. changueslogs.txt
+8. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt
+9. Auditoría/INDICE_CHECKPOINTS.md
+
+Revisados sin modificación: METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; Auditoría/MapaDependencias.md; Auditoría/INDICE_CHECKPOINTS.md; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; pendientes/Otros/Pendientes.md (blob recuperado); backend/academic-service/Code.gs; js/teacher.js; expediente principal TASK-636; auditorías fuente C1.299–C1.311.
+
+### Desviación de proceso y publicación
+- La operación update_file utilizada para incorporar el código generó automáticamente un commit de un solo archivo (cad69a6476f58eaa50d39848a020d17c7db8a588) antes de cerrar el expediente y checkpoint, contrario a la regla de commit único por iteración.
+- No se usa force-push, reset ni reescritura de historia. Esta consolidación registra la desviación y deja checkpoint verificable; el incidente de proceso no se oculta ni se considera una aprobación de la implementación.
+
+### Estado y siguiente acción exacta
+- TASK-636: En ejecución.
+- AUD-NG-369: abierto; implementación parcial.
+- Siguiente acción: diseñar e implementar journal durable de operaciones de restore/rollback con recuperación al reiniciar el runtime; ampliar el contrato de pruebas y ejecutar pruebas aisladas Apps Script/Sheets/Drive, incluida interrupción forzada, verificación de IDs/permisos y repetibilidad. Mantener closeAcademicYear bloqueado.
+- Requisitos originales: pendientes/Otros/Pendientes.md — bloque TASK-636; informe principal: Auditoría/AUDITORIA_TASK-636_C1.305.md.
+- Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.312.
+- Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.312.
+- Commit de cierre: este commit consolidado; SHA a verificar externamente después de publicar.
+===============================================================================
+
+
+===============================================================================
+## C1.313 — TASK-636 / PM-01 — journal durable para rollback y recuperación
+ID: C1.313
+Sesión: IMA-EXEC-20261109-1635Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.312
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD de partida: aa41c726bf5e9126c9e9376af75543d047cfdabc
+Tree de partida: 3e72b87ba9c31770b7ab72bdd25fc137d6ac99f9
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea: TASK-636 — PM-01 / P0
+Hallazgo: AUD-NG-369 — cierre académico destructivo sin respaldo restaurable.
+
+### Continuidad y control de auditoría
+- Se continúa exactamente desde C1.312 y el commit aa41c726bf5e9126c9e9376af75543d047cfdabc.
+- La rama base permanece en 44d9891132332e692dbe2ba8602b41f50a508a59; no se modifica.
+- Se mantiene TASK-636 como tarea activa PM-01/P0; no se crea tarea derivada ni informe duplicado.
+- Se conserva el expediente principal Auditoría/AUDITORIA_TASK-636_C1.305.md y se añade seguimiento focalizado C1.313.
+
+### Implementación C1.313
+1. Cada restauración normal crea primero un respaldo compensatorio completo usando el mismo protocolo SHA-256 y copia de activos.
+2. Se persiste en ScriptProperties un journal con versión, estado, manifiesto objetivo, manifiesto compensatorio, actor y marca temporal antes de modificar hojas o Drive.
+3. Si existe un journal pendiente, se bloquean nuevas restauraciones normales.
+4. Se agrega la acción administrativa recoverTaskServiceAcademicYearRestore. La recuperación restaura el manifiesto compensatorio y solo elimina el journal después de finalizar satisfactoriamente.
+5. Una restauración completada marca COMPLETED antes de limpiar el journal. Un rollback incompleto conserva RECOVERY_REQUIRED para permitir recuperación posterior.
+6. closeAcademicYear continúa BACKUP_REQUIRED; ninguna operación destructiva se habilita.
+
+### Verificaciones y límites
+- Inspecciones estáticas ejecutadas: handler de recuperación, dispatcher, guard administrativo, respaldo compensatorio previo, persistencia de ScriptProperties, bloqueo ante journal pendiente, recuperación desde el manifiesto compensatorio, SHA-256 estricto y fail-closed del cierre.
+- Contrato estático ampliado en tests/security/task-service-backup-restore-contract.test.js; no se ejecutó Node.
+- No ejecutadas: Apps Script runtime/parser, Sheets/Drive aislados, restauración repetible, interrupción forzada, recuperación tras timeout, HTTP, navegador, E2E ni pruebas por rol.
+- La persistencia durable está implementada en código, pero no está operacionalmente certificada hasta ejecutar pruebas de interrupción y recuperación en un proyecto aislado.
+- AUD-NG-369 permanece abierto; TASK-636 sigue En ejecución.
+
+### Archivos modificados
+1. backend/task-service/Code.gs
+2. tests/security/task-service-backup-restore-contract.test.js
+3. Auditoría/AUDITORIA_TASK-636_C1.305.md
+4. Auditoria.txt
+5. changueslogs.txt
+6. Auditoría/MapaDependencias.md
+7. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+8. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt
+9. Auditoría/INDICE_CHECKPOINTS.md
+
+### Estado y siguiente acción
+- Estado TASK-636: En ejecución.
+- Estado AUD-NG-369: abierto.
+- Siguiente acción exacta: ejecutar el contrato Node en el runner del repositorio, preparar un proyecto Apps Script/Sheets/Drive aislado, probar backup/verify/restore y simular interrupción abrupta en varias fases para demostrar recuperación automática/manual, integridad de IDs, permisos, referencias y Log_Cierres. Corregir cualquier fallo antes de habilitar closeAcademicYear.
+- Requisitos originales: pendientes/Otros/Pendientes.md — bloque TASK-636.
+- Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.313.
+- Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.313.
+- Commit de cierre: este commit consolidado; SHA a verificar tras publicar.
+===============================================================================
+
+
+===============================================================================
+## C1.314 — TASK-636 / PM-01 — confirmación explícita para recuperación de restore
+ID: C1.314
+Sesión: IMA-EXEC-20261109-1650Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.313
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD de partida: b8ee91c4bbe4c24dba5cb22b9f4e676a1436ec48
+Tree de partida: 4edc706dc07ef8d1a1fb295f456fd4c7cb411ccf
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea: TASK-636 — PM-01/P0
+Hallazgo: AUD-NG-369 — cierre académico destructivo sin respaldo restaurable.
+
+### Continuidad y revisión
+- Se continúa desde C1.313; no se reabre PM-00 ni se crea una auditoría paralela.
+- La rama base permanece intacta. La rama de trabajo autorizada es la única modificada.
+- Code Review focalizado detectó que la recuperación durable requería una confirmación explícita adicional para evitar restauraciones administrativas accidentales.
+
+### Corrección C1.314
+- recoverTaskServiceAcademicYearRestore conserva el guard de claims Administrador/Desarrollador.
+- Se exige confirmed=true y confirmCode=RECOVER-TASK-SERVICE-RESTORE antes de leer y aplicar el manifiesto compensatorio.
+- Se amplía tests/security/task-service-backup-restore-contract.test.js para verificar el guard de confirmación.
+- No se altera el estado de closeAcademicYear: continúa BACKUP_REQUIRED.
+
+### Verificación y límites
+- Inspección estática del handler, guard administrativo, confirmación, despacho y contrato actualizado.
+- No ejecutados: Node, parser/runtime Apps Script, Sheets/Drive aislados, interrupción forzada, restauración repetible, HTTP, navegador, E2E ni pruebas por rol.
+- AUD-NG-369 permanece abierto; TASK-636 continúa En ejecución.
+- La confirmación adicional reduce el riesgo de ejecución accidental, pero no sustituye la prueba operativa del journal durable.
+
+### Archivos modificados
+1. backend/task-service/Code.gs
+2. tests/security/task-service-backup-restore-contract.test.js
+3. Auditoría/AUDITORIA_TASK-636_C1.305.md
+4. Auditoria.txt
+5. changueslogs.txt
+6. Auditoría/MapaDependencias.md
+7. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+8. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt
+9. Auditoría/INDICE_CHECKPOINTS.md
+
+### Siguiente acción exacta
+Ejecutar el contrato Node en el runner del repositorio; después preparar un proyecto Apps Script/Sheets/Drive aislado y probar create/verify/restore, recuperación tras interrupción forzada, referencias, IDs, permisos y Log_Cierres. Mantener closeAcademicYear bloqueado hasta evidencias verificables.
+- Requisito original: pendientes/Otros/Pendientes.md — bloque TASK-636.
+- Expediente: Auditoría/AUDITORIA_TASK-636_C1.305.md.
+- Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.314.
+- Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.314.
+- Commit de cierre: este commit consolidado; SHA a verificar tras publicar.
+===============================================================================
+
+
+===============================================================================
+## C1.315 — TASK-636 / PM-01 — recuperación serializada e idempotencia de activos Drive
+ID: C1.315
+Sesión: IMA-EXEC-20261109-1650Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.314
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo autorizada: NG_beta_0.0.0.1_work
+HEAD de partida verificado: d7f15ec8ae91df6a33d228750ecd859b42eaecd9
+Tree SHA de partida: dc95884e6917592123056339e8534f450eed8305
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea activa: TASK-636 — [P0] Cerrar bypasses de autorización y proteger tareas, proyectos y archivos
+Fase: PM-01 — Identidad, seguridad y gobierno de acceso
+Hallazgo existente: AUD-NG-369 — respaldo/restauración verificables antes del cierre académico.
+
+### Continuidad y selección
+- Se continúa desde C1.314 con el mismo ID de sesión; no se reinicia TASK-636 ni se repiten las implementaciones previas.
+- Plan Maestro §6.1: TASK-636 sigue siendo la tarea PM-01/P0 en ejecución; su requisito está en pendientes/Otros/Pendientes.md y la fila de planificación indica que no se declararon dependencias adicionales en el extracto. No se salta a PM-02 mientras esta tarea P0 conserve criterios abiertos.
+- Se aplica metodología §19.6: se reutiliza Auditoría/AUDITORIA_TASK-636_C1.305.md como expediente único; C1.315 es una revisión focalizada de AUD-NG-369, sin informe duplicado ni auditoría recursiva.
+
+### Recuperación y validación del requisito original (regla F)
+- Ruta: pendientes/Otros/Pendientes.md; fetch_file en HEAD devolvió 0 caracteres.
+- HEAD consultado: d7f15ec8ae91df6a33d228750ecd859b42eaecd9; tree: dc95884e6917592123056339e8534f450eed8305.
+- Blob vigente recuperado desde el árbol Git de ese HEAD: 6323f01fc2335df264dfb54d2558bb8ad505a4d8; tamaño Git: 1.648.454 bytes; contenido decodificado: 1.628.735 caracteres y 16.488 líneas. Último commit que tocó la ruta: a44c781ede6f3c9053970647274d04e541c0eb9e.
+- Bloque TASK-636: comienza en la línea 3224, 26 líneas; título P0. Se leyó íntegro: clasificación de acciones públicas, claims verificados, ownership, scopes, excepciones de capacidades opacas y criterios positivos/negativos para tareas, proyectos, aulas, publicaciones, materiales, archivos y cierre.
+- Inventario del backlog actual: 674 encabezados de tarea únicos; categorías AUD 110, F 188, TAREA 79, TASK 255, FASE 19, AUDIT 4 y T 19. Todos los 674 están sin marcar [X]. Último encabezado por orden de archivo: TASK-501; mayor ID por orden alfanumérico: TASK-682.
+- Comparación histórica no sustitutiva con Auditoría/legacy/Pendientes.md: blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c, 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas y 35 IDs únicos marcados históricamente como completados. Tras normalizar mayúsculas hay 3 IDs coincidentes (F10-TASK02, F10-TASK14, F10-TASK15), 32 exclusivos de legacy y 671 exclusivos del backlog actual. No se mezclan ni restauran estados legacy.
+- El blob e9637ecc6f88b2aa0aec75909538e072509bf507 citado en el seguimiento C1.299 es una versión histórica distinta; el árbol del HEAD actual identifica 6323f01fc2335df264dfb54d2558bb8ad505a4d8 como blob vigente. Se conserva la trazabilidad histórica y se registra esta actualización de fuente.
+
+### Hallazgo y corrección C1.315
+- Code Review detectó que dos recuperaciones administrativas concurrentes podían competir por el mismo journal y que una interrupción tras crear un activo Drive podía duplicarlo al repetir la recuperación, porque el ID recreado solo vivía en memoria.
+- recoverTaskServiceAcademicYearRestore ahora adquiere ScriptLock antes de leer/modificar el journal. taskServiceRestoreAcademicYearBackup_ acepta lockAlreadyHeld para reutilizar el lock sin adquisición anidada.
+- Antes de mutar, el restore normal crea un archivo de estado durable en la carpeta del respaldo compensatorio. El estado contiene restoreId e idMap; ScriptProperties conserva el identificador del archivo y los manifiestos.
+- Los activos recreados usan marcadores deterministas por restoreId + originalId. El ID nuevo se persiste antes de quitar el marcador; si el runtime se interrumpe antes de guardar el mapa, la siguiente recuperación localiza el marcador. Los reintentos reutilizan el activo en vez de crear otro.
+- Los activos mapeados se validan por hash/tamaño, nombre y carpeta padre antes de modificar metadatos/permisos. Los marcadores duplicados/ambiguos y estados desconocidos del journal se rechazan.
+- Una recuperación fallida conserva RECOVERY_REQUIRED y error acotado. Los detalles de rollback almacenados en ScriptProperties se limitan para evitar exceder el tamaño de una propiedad.
+- El contrato tests/security/task-service-backup-restore-contract.test.js incorpora comprobaciones de estado Drive, marcadores, lock, retry, estados válidos, parent/name/hash, iteradores Drive y setContent.
+
+### Verificaciones y límites
+- Comprobaciones equivalentes del contrato ejecutadas en el runtime JavaScript de la sesión: 42/42 pasaron sobre los blobs preparados. Delimitadores del bloque modificado balanceados.
+- No se ejecutó el archivo con Node; el repositorio no contiene workflows de GitHub Actions ni package.json/runner configurado. La existencia del binario Node local no se toma como ejecución del test porque los archivos del repo no estaban materializados en ese runtime.
+- Documentación oficial de Apps Script consultada: Drive File.setContent y Folder.getFilesByName/getFoldersByName están disponibles; esta verificación documental no equivale a ejecutar Apps Script.
+- No ejecutadas: Apps Script runtime/parser, proyecto aislado de Sheets/Drive, restauración repetible, interrupciones forzadas en cada fase, HTTP, navegador, E2E ni pruebas por rol.
+- AUD-NG-369 permanece abierto; TASK-636 sigue En ejecución. closeAcademicYear continúa BACKUP_REQUIRED y no se habilita borrado.
+
+### Archivos preparados para el commit único
+1. backend/task-service/Code.gs
+2. tests/security/task-service-backup-restore-contract.test.js
+3. pendientes/Otros/Pendientes.md
+4. tareas_auditoria.txt
+5. Auditoría/AUDITORIA_TASK-636_C1.305.md
+6. Auditoria.txt
+7. changueslogs.txt
+8. Auditoría/MapaDependencias.md
+9. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+10. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt
+11. Auditoría/INDICE_CHECKPOINTS.md
+
+### Estado y siguiente acción exacta
+- TASK-636: En ejecución; AUD-NG-369 abierto.
+- Siguiente acción: ejecutar el archivo de contrato con Node en un runner disponible; después preparar un proyecto Apps Script/Sheets/Drive aislado y probar backup/verify/restore, recuperación repetible tras interrupción abrupta en fases de creación/mapeo/restauración, integridad de referencias/IDs/permisos y Log_Cierres. Mantener closeAcademicYear bloqueado hasta evidencias operativas.
+- Requisito original: pendientes/Otros/Pendientes.md — TASK-636, línea inicial 3224 en el blob recuperado; expediente principal Auditoría/AUDITORIA_TASK-636_C1.305.md.
+- Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.315.
+- Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.315.
+- Commit de cierre: el commit único que contiene este checkpoint; SHA a verificar tras publicar.
+===============================================================================
+
+
+===============================================================================
+## C1.316 — TASK-636 / PM-01 — ejecución Node en CI y bloqueo de integración Apps Script
+ID: C1.316
+Sesión: IMA-EXEC-20261109-1650Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.315
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo autorizada: NG_beta_0.0.0.1_work
+HEAD de partida: 1474c5ad247f546a0b27a862c40a240ad2213c24
+Commit de workflow inicial: 4ebe03b79c168c0afc3d7df1ece46fe48132901a
+Commit de workflow actualizado: f5359a3668519b1c4a1bbad155f0d123fc09914d
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea activa: TASK-636 — PM-01/P0
+Hallazgo: AUD-NG-369 — respaldo/restauración verificables antes del cierre académico.
+
+### Continuidad
+- Se mantiene el ID de sesión IMA-EXEC-20261109-1650Z-01; se continúa desde C1.315 sin reiniciar la tarea.
+- La rama base no se modifica. El workflow se ejecuta únicamente en la rama NG_beta_0.0.0.1_work.
+- No se crea un nuevo ID de tarea ni un informe de auditoría paralelo.
+
+### Ejecución real del contrato Node
+- Se creó .github/workflows/task-service-backup-restore-contract.yml, con trigger push limitado a NG_beta_0.0.0.1_work y paths del código, contrato y workflow; permisos contents:read.
+- Run 42659818881: commit 4ebe03b79c168c0afc3d7df1ece46fe48132901a; Node 22; completed/success; el paso “Execute backup and restore contract” concluyó success y el log mostró “Task-Service backup/restore static contract checks passed.”
+- El primer run emitió advertencia porque actions/checkout@v4 y setup-node@v4 aún declaraban runtime Node20, forzado a Node24.
+- Se actualizaron ambas acciones a v7, Node 24 explícito y package-manager-cache:false.
+- Run 42659961195: commit f5359a3668519b1c4a1bbad155f0d123fc09914d; completed/success; job “Run Node static contract” y paso de ejecución completados success. El log volvió a mostrar “Task-Service backup/restore static contract checks passed.” y no presentó advertencia de deprecación Node20.
+- Esta evidencia acredita ejecución del contrato estático Node; no acredita ejecución de Apps Script, Sheets o Drive.
+
+### Auditoría de disponibilidad del runtime
+- Se inspeccionó el árbol Git recursivo de HEAD f5359a3668519b1c4a1bbad155f0d123fc09914d.
+- No existen appsscript.json, .clasp.json, configuración clasp/deployment, proyecto Apps Script ni fixture aislado de Spreadsheet/Drive.
+- Sin proyecto/entorno aislado y acceso autorizado, no es seguro ni posible ejecutar restauraciones/cierres destructivos reales. No se usan datos productivos para probar rollback.
+
+### Archivos añadidos/modificados en C1.316
+1. .github/workflows/task-service-backup-restore-contract.yml
+2. Auditoría/AUDITORIA_TASK-636_C1.305.md
+3. Auditoria.txt
+4. tareas_auditoria.txt
+5. changueslogs.txt
+6. Auditoría/MapaDependencias.md
+7. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+8. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt
+9. Auditoría/INDICE_CHECKPOINTS.md
+10. pendientes/Otros/Pendientes.md
+
+### Estado y siguiente acción exacta
+- TASK-636: En ejecución; AUD-NG-369 abierto.
+- Criterio cubierto: contrato estático Node ejecutado con éxito en CI.
+- Criterio pendiente/bloqueado: pruebas de integración Apps Script/Sheets/Drive aislados, restauración repetible, interrupciones forzadas, integridad de referencias/IDs/permisos y Log_Cierres.
+- Siguiente acción exacta: disponer de un proyecto Apps Script de pruebas aislado con appsscript.json/deployment autorizado y Spreadsheet/Drive fixtures no productivos; ejecutar create/verify/restore y forzar interrupciones en fases de copia, mapeo, escritura de hojas y limpieza del journal. No ejecutar sobre producción. Mantener closeAcademicYear BACKUP_REQUIRED hasta evidencias verificables.
+- Requisito original: pendientes/Otros/Pendientes.md — bloque TASK-636; expediente principal Auditoría/AUDITORIA_TASK-636_C1.305.md.
+- Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.316.
+- Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.316.
+- Commit de cierre documental: este commit consolidado; SHA a verificar tras publicar.
+===============================================================================
+
+
+
+===============================================================================
+## C1.317 — Continuidad verificada / TASK-636 — PM-01 — bloqueo de integración aislada
+ID: C1.317
+Sesión: IMA-EXEC-20261109-1650Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.316
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo autorizada: NG_beta_0.0.0.1_work
+HEAD de partida verificado: 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea activa: TASK-636 — PM-01/P0
+Hallazgo principal: AUD-NG-369 — backup/restore/rollback del cierre académico.
+
+### Continuidad y auditoría de la iteración anterior
+- Se conserva la sesión IMA-EXEC-20261109-1650Z-01; no se reinicia TASK-636 ni se crea un expediente de auditoría paralelo.
+- Se consultó el HEAD por referencia de rama: 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a. La rama base NG_beta_0.0.0.1 resuelve a 44d9891132332e692dbe2ba8602b41f50a508a59; compare_commits confirma identical, 0 ahead y 0 behind respecto al SHA protegido.
+- La rama de trabajo contiene cuatro commits posteriores al HEAD histórico d7f15ec8ae91df6a33d228750ecd859b42eaecd9; el último es este HEAD 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a, que corresponde al checkpoint C1.316.
+- Se comparó el checkpoint C1.316 con su commit real y se revisaron los archivos del alcance, el contrato y el workflow. No se detectó evidencia nueva que invalide la implementación estática ni se repitió la auditoría funcional.
+- Se confirmó en el índice que C1.316 es el último checkpoint publicado, en Checkpoints_Parte_0002.txt, líneas 1284–1339.
+- Se leyó íntegramente el bloque original TASK-636 recuperado del blob Git 6323f01fc2335df264dfb54d2558bb8ad505a4d8 (1.648.454 bytes; 1.628.735 caracteres decodificados). La lectura convencional del backlog devuelve 0 caracteres; se preserva el blob y no se sobrescribe el archivo. Ruta normativa: pendientes/Otros/Pendientes.md — TASK-636.
+- Se aplicó §19.6: expediente principal único Auditoría/AUDITORIA_TASK-636_C1.305.md; esta entrada es seguimiento de continuidad, no auditoría nueva. No se generaron hallazgos ni IDs derivados.
+
+### Verificación independiente de CI
+- Workflow: .github/workflows/task-service-backup-restore-contract.yml; rama restringida NG_beta_0.0.0.1_work; Node 24; actions/checkout@v7 y setup-node@v7.
+- Run 42659818881 / job 129308031004: completed/success; pasos de checkout, setup Node y ejecución del contrato concluidos success. Log confirma “Task-Service backup/restore static contract checks passed.” La ejecución inicial conservó advertencia de runtime Node20 en actions v4.
+- Run 42659961195 / job 129308545903: completed/success; todos los pasos, incluido “Execute backup and restore contract”, concluidos success. Log confirma “Task-Service backup/restore static contract checks passed.”; corresponde al workflow actualizado con Node24/actions v7.
+- La prueba es un contrato estático Node que lee el código fuente y comprueba invariantes estructurales. No es una ejecución de Google Apps Script ni una prueba de SpreadsheetApp/DriveApp reales.
+
+### Estado técnico observado
+- backend/task-service/Code.gs mantiene closeAcademicYear fail-closed: devuelve BACKUP_REQUIRED antes de cualquier borrado.
+- El protocolo dedicado contiene creación/verificación/restauración, manifiesto SHA-256, snapshots de hojas, preservación append-only de Log_Cierres, snapshots de activos Drive, LockService, journal durable y recuperación compensatoria serializada/idempotente.
+- El contrato tests/security/task-service-backup-restore-contract.test.js verifica presencia de handlers, guards, checksum, lock, journal, marcadores deterministas y preservación de Log_Cierres. No ejecuta los handlers con servicios Google simulados ni reales.
+- El requisito de integración permanece sin evidencia: no existe appsscript.json, .clasp.json, configuración de deployment, proyecto Apps Script ni fixture aislado de Spreadsheet/Drive en el repositorio. No hay credenciales/deployment autorizado para ejecutar el protocolo en un entorno Google aislado.
+- No se ejecutan operaciones destructivas sobre datos institucionales reales ni se simula una prueba real de interrupción.
+
+### Decisión de continuidad
+- TASK-636 permanece En ejecución; AUD-NG-369 permanece abierto. No se marca Completada.
+- El criterio de contrato estático Node queda verificado en CI. Los criterios de integración dinámica, restauración repetible, interrupción abrupta en fases de copia/mapeo/escritura/limpieza del journal, integridad de IDs/referencias/permisos y verificación de Log_Cierres permanecen pendientes por falta del entorno aislado autorizado.
+- closeAcademicYear continúa bloqueado por BACKUP_REQUIRED. No se altera este guard.
+- No se selecciona una tarea PM-01 distinta mientras TASK-636 sigue activa y el prerrequisito técnico de integración no está resuelto; no se saltan dependencias ni se inventa un entorno.
+- Siguiente acción exacta: proporcionar/configurar un proyecto Apps Script aislado y autorizado, con deployment de prueba, Spreadsheet fixture y árbol Drive fixture no productivos. Después ejecutar create → verify → restore; forzar interrupciones controladas en las fases de copia de activos, persistencia del mapa, escritura de hojas y limpieza del journal; repetir recuperación y comprobar ausencia de duplicados, integridad de IDs/referencias/permisos y append-only de Log_Cierres. Mantener el cierre académico bloqueado hasta entonces.
+
+### Archivos modificados en esta iteración
+1. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — checkpoint C1.317.
+2. Auditoría/INDICE_CHECKPOINTS.md — último checkpoint, tamaño y fila C1.317.
+3. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md — seguimiento 10.15.
+4. Auditoria.txt — referencia de continuidad y evidencia de bloqueo.
+5. changueslogs.txt — entrada acumulativa C1.317.
+
+### Archivos revisados sin modificación
+METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoría/MapaDependencias.md; Auditoría/INDICE_CHECKPOINTS.md; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; pendientes/Otros/Pendientes.md (blob recuperado); Auditoría/AUDITORIA_TASK-636_C1.305.md; backend/task-service/Code.gs; tests/security/task-service-backup-restore-contract.test.js; .github/workflows/task-service-backup-restore-contract.yml.
+
+### Pruebas ejecutadas y pendientes
+- Ejecutadas en esta iteración: lectura íntegra de los documentos rectores y checkpoint vigente; recuperación íntegra del blob del requisito; comparación HEAD de trabajo/base; inspección focalizada del diff C1.316; consulta de jobs y logs de ambos runs CI; revisión estática de guard, handlers y contrato; comprobación de tamaño del archivo activo de checkpoints.
+- CI Node: 2 runs previos verificados como completed/success; no se inició un run nuevo porque no hubo cambios de código/prueba.
+- Pendientes: Google Apps Script runtime/parser; integración real aislada de Sheets/Drive; restore repetible; interrupciones forzadas; verificación post-restore de permisos/IDs/referencias; pruebas de roles, HTTP, navegador y E2E.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.317.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.317.
+Commit de cierre: este commit consolidado; SHA se confirma consultando el HEAD de GitHub tras publicar.
+===============================================================================
+
+
+===============================================================================
+## C1.318 — TASK-068: auditoría preimplementación y selección PM-01
+ID: C1.318
+Sesión: IMA-EXEC-20261109-1650Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.317
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo: NG_beta_0.0.0.1_work
+HEAD de partida: 5adf18921f8dd59e05e7f5af6210c48370273af7
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea activa: TASK-068 — PM-01/P0 — En ejecución
+Tarea previa no cerrada: TASK-636 — PM-01/P0 — En ejecución, bloqueo de integración Apps Script aislada.
+
+### Continuidad y selección
+- HEAD de trabajo verificado 5adf18921f8dd59e05e7f5af6210c48370273af7; base 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios fuera de rama autorizada.
+- Sesión IMA-EXEC-20261109-1650Z-01 y checkpoint C1.317 conservados.
+- PM-00 cerrado según backlogs/evidencia C1.301; TASK-637/638/639 completadas. TASK-068 se elige por P0, orden local 1, dependencia declarada ninguna y rol de base para tareas consumidoras.
+- TASK-636 no es dependencia declarada de TASK-068; permanece abierta por falta de entorno Apps Script aislado. No se modifica su guard/código.
+- Requisito íntegro leído: pendientes/Dirección/Pendientes.md — TASK-068.
+
+### Auditoría y hallazgos
+- Expediente principal único Auditoría/AUDITORIA_TASK-068_C1.318.md; no existía informe previo en el tree auditado.
+- Inspección de User-Service, Accounting-Service, IndexedDB, API, suite de regresión y MapaDependencias.
+- AUD-NG-377 CRÍTICO/P0: ausencia de CorrespondenciaIdentificadores y resolvers bidireccionales.
+- AUD-NG-378 CRÍTICO/P0: importDataWithColumnMapping solo cuenta filas/registra auditoría; no persiste entidades ni aplica correspondencias/idempotencia.
+- AUD-NG-379 ALTO/P1: linkPersonAccount cambia PersonaID sin historial append-only.
+- Hallazgos dentro de TASK-068; no se crean tareas derivadas ni auditorías duplicadas.
+- TASK-068 pasa de Pendiente a En ejecución; no se declara completada.
+
+### SHA de respaldo Git
+- backend/user-service/Code.gs: ac3fe79e26cc9855272409e7169d68e77f53bbab.
+- backend/accounting-service/Code.gs: 38b979d41596b85e888b4a7060b37bbac0840a28.
+- js/persistence.js: 94ac26feb4f7f31f1f3f2a238e164d23be565d94.
+- js/api.js: d0190f86060f109129a1d59a779cb5dbf82f8ab9.
+- tests/regression/academic-grading-suite.js: a22cb3ef376fe09e65c1b17c2f4f5125290bfba6.
+- Auditoría/MapaDependencias.md: cbd7e9b5632aebdd127e0dfb5bb86c7cc22d75db.
+- Tree recursivo 1.098 entradas, truncated=false.
+
+### Archivos modificados
+Auditoría/AUDITORIA_TASK-068_C1.318.md (nuevo); Auditoría/MapaDependencias.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoria.txt; pendientes/Dirección/Pendientes.md; changueslogs.txt; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; Auditoría/INDICE_CHECKPOINTS.md.
+
+### Archivos revisados sin modificación
+METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoría/MapaDependencias.md; Auditoría/INDICE_CHECKPOINTS.md; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; backend/user-service/Code.gs; backend/accounting-service/Code.gs; js/persistence.js; js/api.js; tests/regression/academic-grading-suite.js; tree Git completo.
+
+### Pruebas y límites
+- Ejecutadas: verificación HEAD/base; lectura íntegra del requisito; inspección estática de dispatchers/permisos/helpers/funciones de identidad/importación/stores/pruebas; búsqueda de resolvers y hoja; ausencia de expediente duplicado; tree no truncado.
+- No ejecutadas: Node, IndexedDB real, Apps Script runtime, Sheets, HTTP, importación real de dos fuentes, reimportación, concurrencia, pruebas por rol y E2E.
+- No se modificó código ni se usaron datos productivos.
+
+### Siguiente acción exacta
+Implementar contrato persistente CorrespondenciaIdentificadores, unicidad compuesta y lock; resolvers bidireccionales; estados de revisión y bitácora append-only; autorización Secretaría/Administrador; pruebas de homónimos, referencias múltiples, conflictos e idempotencia. Después integrar importación real en Accounting-Service. Antes de editar código, cumplir respaldo local íntegro por archivo y verificar mecanismo de publicación; no usar producción.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.318.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.318.
+Commit de cierre: confirmar externamente tras publicar.
+===============================================================================
+
+
+===============================================================================
+## C1.319 — TASK-068: respaldo Git alternativo e implementación parcial
+ID: C1.319
+Sesión: IMA-EXEC-20261109-1650Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.318
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida verificado: ede1d05d833661b39407a09870879330cf60c3b4
+Commit padre: 5adf18921f8dd59e05e7f5af6210c48370273af7
+Árbol de partida: 8e4804cb6c240ddd69da2dd60542687037a5789a
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea: TASK-068 — PM-01/P0 — En ejecución; implementación parcial, no completada.
+
+### Regla de respaldo incorporada
+Se añadió METODOLOGIA_DESARROLLO.md §3.14.1: cuando no sea posible crear copia local, usar blob Git histórico publicado, completo, alcanzable y verificado. Registrar HEAD, padre, árbol, ruta, tamaño, codificación, blob SHA y comando exacto `git show <HEAD>:<ruta>`; verificar integridad y comparar después del cambio. Si no puede demostrarse recuperación íntegra, detener edición. Se ajustaron FASE 3 y §19.4 A.3. No se denomina respaldo local.
+
+### Respaldo Git histórico previo a la edición
+- METODOLOGIA_DESARROLLO.md — 92.668 caracteres; blob 640426b96d07cdccfe36b4a0c5f00715f22cda05; `git show ede1d05d833661b39407a09870879330cf60c3b4:METODOLOGIA_DESARROLLO.md`.
+- backend/user-service/Code.gs — 429.611 caracteres; blob ac3fe79e26cc9855272409e7169d68e77f53bbab; `git show ede1d05d833661b39407a09870879330cf60c3b4:backend/user-service/Code.gs`.
+- backend/accounting-service/Code.gs — 713.779 caracteres; blob 38b979d41596b85e888b4a7060b37bbac0840a28; `git show ede1d05d833661b39407a09870879330cf60c3b4:backend/accounting-service/Code.gs`.
+Los tres blobs se recuperaron íntegramente desde el HEAD publicado antes de editar. No se creó copia local porque no hay checkout local disponible.
+
+### Implementación parcial
+- User-Service: esquema de correspondencias de 13 columnas y bitácora append-only; unicidad lógica compuesta; lock; alta idempotente; resolvers en ambas direcciones solo CONFIRMADA; revisión humana con motivo; resolución de usuario legado; RBAC Secretaría/Administrador; institución desde IMA_INSTITUTION_ID; clasificación de coincidencias sin fusión automática; vinculación de cuenta con verificación de destino e historial.
+- Accounting-Service: resolver de referencias cruzadas con filtro institucional y estado confirmado. Importador fail-closed: registra `blocked_no_destination_writer` y retorna `DESTINATION_WRITER_NOT_CONFIGURED`; no simula éxito.
+- Se añadió test Node que compila ambos archivos GS y valida contrato/dispatch/RBAC/lock/clave compuesta/fail-closed, y workflow CI Node 24.
+
+### Archivos modificados
+METODOLOGIA_DESARROLLO.md; backend/user-service/Code.gs; backend/accounting-service/Code.gs; tests/security/identity-mapping-contract.test.js (nuevo); .github/workflows/identity-mapping-contract.yml (nuevo); Auditoría/AUDITORIA_TASK-068_C1.318.md (anexo al expediente único); Auditoría/MapaDependencias.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoria.txt; changueslogs.txt; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; Auditoría/INDICE_CHECKPOINTS.md.
+Revisados sin cambio: requisito íntegro TASK-068 en pendientes/Dirección/Pendientes.md; Auditoría/Contexto_personal.txt; suite de regresión existente; dispatchers/RBAC y funciones de sesión; árbol Git recursivo.
+
+### Pruebas
+Preparadas: test Node de sintaxis/contrato y workflow CI Node 24. Pendiente ejecución por Actions tras publicar.
+No ejecutadas: Apps Script runtime, Spreadsheet real, configuración Script Properties, concurrencia LockService, pruebas funcionales con dos fuentes, reimportación real, relaciones académicas/familiares/administrativas, HTTP y E2E.
+No se accedió ni modificó datos productivos.
+
+### Hallazgos y estado
+AUD-NG-377 parcialmente atendido en código; falta configurar institución y probar en Spreadsheet aislado.
+AUD-NG-379 parcialmente atendido con bitácora y vinculación de cuenta; falta prueba runtime.
+AUD-NG-378 permanece abierto por falta de escritor destino específico.
+No se crean tareas derivadas ni segundo informe; expediente único Auditoría/AUDITORIA_TASK-068_C1.318.md. TASK-068 continúa En ejecución.
+
+### Siguiente acción exacta
+Ejecutar workflow identity-mapping-contract; corregir cualquier fallo; auditar contratos de destino por módulo y diseñar escritores idempotentes sin asumir nombres de hojas. Configurar IMA_INSTITUTION_ID en proyectos aislados autorizados y ejecutar pruebas con fixtures de al menos dos fuentes. No desplegar ni usar producción.
+Commit de cierre: confirmar externamente tras publicación.
+===============================================================================
+
+===============================================================================
+## C1.320 — TASK-068: caché IndexedDB y API cliente
+ID: C1.320
+Sesión: IMA-EXEC-20261109-1650Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.319
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: 9535253798a54e4add1f673a4196e0922526b58d
+Tarea: TASK-068 — En ejecución; no completada.
+
+### Respaldo Git histórico previo a edición
+- js/persistence.js blob: 94ac26feb4f7f31f1f3f2a238e164d23be565d94
+- js/api.js blob: d0190f86060f109129a1d59a779cb5dbf82f8ab9
+- tests/security/identity-mapping-contract.test.js blob: f4cdaf070778512984a6d7d7aca2f85bfcf85c3d
+- Recuperación: `git show 9535253798a54e4add1f673a4196e0922526b58d:<ruta>`; verificar el SHA blob indicado antes de usar el archivo.
+- Los tres archivos se recuperaron completos desde el HEAD publicado antes de editarlos. No se afirmó haber creado copia local.
+
+### Cambios preparados para este checkpoint
+- IndexedDB pasa de versión 4 a 5 y añade el store identity_mapping_cache mediante el onupgradeneeded existente; no se eliminan stores anteriores.
+- La caché usa clave compuesta institución/origen/tipo/ID legado y solo acepta respuestas status=success, confirmed=true e internalId no vacío. No guarda mapeos pendientes o probables. El servidor sigue siendo la fuente de verdad.
+- Se añaden helpers para leer, guardar y limpiar caché, con borrado filtrado por institución.
+- js/api.js añade wrappers para registrar, resolver en ambas direcciones, resolver usuario, revisar mapeo y consultar historial. Autorización y ámbito continúan siendo responsabilidad del backend.
+- El test estático amplía la compilación sintáctica de persistence.js y api.js y añade assertions para el store, regla confirmed-only y seis wrappers.
+
+### Evidencia y límites
+- El workflow identity-mapping-contract del commit C1.319 terminó completed/success (run 42665677368). Acredita únicamente el contrato estático previo; no valida los cambios C1.320.
+- Los cambios C1.320 aún requieren CI posterior a publicación y pruebas runtime IndexedDB (upgrade desde v4, datos previos, concurrencia de pestañas, cache miss, rechazo de no confirmadas y aislamiento institucional).
+- No hay integración UI demostrada ni Apps Script/Sheets aislado. Accounting import sigue fail-closed con DESTINATION_WRITER_NOT_CONFIGURED; AUD-NG-378 permanece abierto.
+- No se configuró IMA_INSTITUTION_ID ni se accedió a producción. No se declara migración funcional.
+- TASK-068 sigue En ejecución.
+
+### Publicación y CI
+- Implementación C1.320 publicada en d2b721afbac78fb7a4deaf1e6846d5d22d5dcfed.
+- El primer run 42667035119 falló por variables persistence/api no declaradas en el test; corregido en 0b891a5baee0babd17b208c9914b61a5e4ac1b4d.
+- Run 42667176023 completed/success en el commit corregido.
+
+### Siguiente acción
+Revisar contratos reales de persistencia destino; corregir fallos de lectura que crean hojas, validación de destino, sanitización de bitácora y hash de origen; preparar entorno aislado para pruebas. No desplegar ni usar producción. Después inspeccionar contratos de persistencia destino reales, resolver hallazgos de lectura que crean hojas, validación de destino, sanitización de bitácora y hash de origen; preparar entorno aislado para pruebas. No desplegar ni usar producción.
+===============================================================================
+
+===============================================================================
+## C1.321 — TASK-068: lecturas no mutantes y validación de destino
+ID: C1.321
+Sesión: IMA-EXEC-20261109-1650Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.320
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: 0b891a5baee0babd17b208c9914b61a5e4ac1b4d
+Tarea: TASK-068 — En ejecución; no completada.
+
+### Respaldo Git histórico previo a edición
+- backend/user-service/Code.gs blob: 8849916521c1d29a4071bf2a091ba2bbd63007ff
+- tests/security/identity-mapping-contract.test.js blob: f5431208363a18a644a0ae59d861712de0c905fd
+- Recuperación exacta: `git show 0b891a5baee0babd17b208c9914b61a5e4ac1b4d:backend/user-service/Code.gs` y `git show 0b891a5baee0babd17b208c9914b61a5e4ac1b4d:tests/security/identity-mapping-contract.test.js`. Verificar cada SHA blob esperado.
+- Archivos leídos completos desde el HEAD publicado antes de editarlos.
+
+### Hallazgos corregidos en código
+- Las funciones de lectura getIdentityMappingSheet_ y getIdentityDecisionSheet_ ya no crean hojas; obtienen únicamente hojas existentes y fallan cerrado si falta el esquema.
+- Se separan ensureIdentityMappingSheet_ y ensureIdentityDecisionSheet_ para crear/verificar hojas solo desde operaciones de escritura protegidas por ScriptLock.
+- reviewLegacyIdentifierMapping ahora solo confirma destinos existentes con esquema verificado para tipos persona (Personas.PersonaID) y usuario/user (Usuarios.UserId). Los tipos sin validador explícito no se pueden confirmar; no se presume que existen.
+- appendIdentityDecisionAudit_ sanitiza motivo, actor y ámbito institucional como celdas de texto; limita motivo a 2.000 caracteres.
+- hashRegistroOrigen se calcula en servidor a partir del registro recibido; se ignora el hash arbitrario enviado por cliente.
+- Test estático amplía assertions para lecturas no mutantes, validación de destino, sanitización y hash interno.
+
+### Publicación y CI
+- Commit C1.321: 19eba80c82a00113f4aad382438c17d3f685276e.
+- Workflow identity-mapping-contract: run 42667650780 completed/success.
+
+### Límites
+- La validación de destino soporta solo persona y usuario/user; otros tipos requieren contrato de destino específico antes de confirmar.
+- No se ejecutaron pruebas runtime Apps Script/Sheets, bloqueo, fórmula-injection en hoja real ni pruebas de reimportación.
+- Accounting import continúa fail-closed por falta de escritor destino; AUD-NG-378 sigue abierto. TASK-068 continúa En ejecución.
+===============================================================================
+
+===============================================================================
+## C1.322 — TASK-068: ampliar validación de destinos con esquemas verificados
+ID: C1.322
+Sesión: IMA-EXEC-20261109-1650Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.321
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: 19eba80c82a00113f4aad382438c17d3f685276e
+Tarea: TASK-068 — En ejecución; no completada.
+
+### Respaldo Git histórico previo a edición
+- backend/user-service/Code.gs blob: e772e612b660e90871c31f8710fff3b28e6db8e4
+- tests/security/identity-mapping-contract.test.js blob: 0c44c7771d523e3280a462de1186055671789419
+- Recuperación: `git show 19eba80c82a00113f4aad382438c17d3f685276e:backend/user-service/Code.gs` y `git show 19eba80c82a00113f4aad382438c17d3f685276e:tests/security/identity-mapping-contract.test.js`; verificar SHA blob esperado.
+- Se verificaron completos los dos archivos antes de editarlos.
+
+### Evidencia de esquema y cambio
+- USER y ACADEMIC comparten el mismo SPREADSHEET_ID versionado, verificado en encabezados de ambos servicios.
+- Esquemas canónicos observados en getOrCreateSheet de ACADEMIC: ExpedientesEstudiantes.ExpedienteID; ResponsablesTutores.ResponsableID; CatalogoAsignaturas.AsignaturaID; Matriculas.MatriculaID; DocumentosEstudiante.DocumentoID.
+- Esquemas canónicos observados en USER: Personas.PersonaID y Usuarios.UserId.
+- identityTargetExists_ amplía validación para persona, usuario, cuenta, estudiante, responsable, asignatura, matrícula y documento. Antes de confirmar verifica hoja existente, primera columna canónica y presencia del ID. No crea hojas.
+- Tipos empleado, curso y otros permanecen bloqueados por falta de esquema canónico verificado; no se infieren destinos.
+- Test estático agrega assertions para los cinco tipos nuevos.
+
+### Límites
+La comprobación es estática sobre esquemas versionados. No acredita que las hojas existan o conserven esos encabezados en la instancia real, ni que el ID de una fila sea semánticamente correcto. Falta Apps Script/Sheets aislado, pruebas de identidad multi-fuente y escritor idempotente de importación. AUD-NG-378 sigue abierto; TASK-068 En ejecución.
+===============================================================================
+
+### Publicación y CI — C1.322
+- Commit: 6e4a9349913b004d84129979bcb91548c0264c9e.
+- Workflow identity-mapping-contract: run 42668165457 completed/success.
+
+
+===============================================================================
+## C1.323 — TASK-068: auditoría estática de escritores de destino
+ID: C1.323
+Sesión: IMA-EXEC-20261109-1650Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.322
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: 6e4a9349913b004d84129979bcb91548c0264c9e
+Tarea: TASK-068 — En ejecución; no completada.
+
+### Respaldo Git histórico previo a edición documental
+- Checkpoints_Parte_0002.txt blob: 833d01a3d1aa542628346dd832babe3aebd3abfe
+- INDICE_CHECKPOINTS.md blob: d7534dd160a683b6fc782d434711be33aa90741d
+- PLAN_MAESTRO_IMPLEMENTACION.md blob: 7ee6bacfda25397a688b1b8e756814082ddd987e
+- MapaDependencias.md blob: e13994d4bf4241e0f5c090b4b767e448ff738abe
+- AUDITORIA_TASK-068_C1.318.md blob: 0e5919120ad8538573fd86e5b5e5ffb976be381b
+- Auditoria.txt blob: b7d9df7d88a9a2fc40ba024dbfd2d872fba9f381
+- changueslogs.txt blob: 3713247a8ee1932add90dd14caa7a6a7dd75bd08
+- Recuperación desde HEAD: `git show 6e4a9349913b004d84129979bcb91548c0264c9e:<ruta>`; verificar cada SHA blob esperado. Los archivos fueron leídos completos antes de editar.
+
+### Contratos de destino examinados
+- USER, ACADEMIC y ACCOUNTING tienen el mismo SPREADSHEET_ID versionado. No obstante, el importador genérico está en ACCOUNTING y los escritores de dominio están en ACADEMIC/USER.
+- ACCOUNTING no contiene llamadas UrlFetchApp.fetch; hay helpers de envelope HMAC pero no transporte interservicio operativo observado. Por tanto, no existe ruta verificable para delegar la escritura a los handlers de dominio.
+- ACADEMIC convertAdmissionToStudent exige solicitud de admisión existente, estado Admitida, validación documental, capacidad y vincula expediente/persona/relaciones/invitaciones. No es un escritor genérico de importación.
+- ACADEMIC createStudentEnrollment exige userId, grado y sección, comprueba expediente/capacidad y duplicidad activa por año. No crea por sí solo el expediente/persona.
+- ACADEMIC registerStudentEnrollment actualiza/crea matrícula y cargos por userId/período; no constituye escritor general de estudiante y no tiene ScriptLock en su implementación observada.
+- ACCOUNTING importDataWithColumnMapping solo resuelve identidad, registra auditoría de bloqueo y devuelve DESTINATION_WRITER_NOT_CONFIGURED. No persiste entidades.
+- La igualdad estática del Spreadsheet ID no autoriza a omitir invariantes de dominio ni garantiza deployment/Script Properties/runtime.
+
+### Dictamen
+No se identifica un escritor de destino genérico y verificable que preserve las relaciones académicas, familiares y administrativas y que sea idempotente para las fuentes de TASK-068. No se habilita escritura directa ni se reutilizan flujos de admisión/matrícula fuera de su contrato. Se mantiene fail-closed. AUD-NG-378 permanece abierto.
+No se crea tarea derivada ni segundo informe; se amplía el expediente único Auditoría/AUDITORIA_TASK-068_C1.318.md.
+
+### Próxima acción
+Diseñar contrato explícito de importación por entidad, con validación de schema, clave de idempotencia, precondiciones de dominio, escritura transaccional/compensación y relaciones; luego implementar solo destinos autorizados y probar fixtures aislados de dos fuentes. Configurar IMA_INSTITUTION_ID en Apps Script aislado y ejecutar pruebas runtime. No desplegar ni usar producción.
+===============================================================================
+
+
+===============================================================================
+## C1.324 — TASK-068 / PM-01 — validación integral del esquema destino
+ID de sesión: IMA-EXEC-20261109-1802Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.323
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo: NG_beta_0.0.0.1_work
+HEAD de partida: 07df2612b31b54d602deb4e694857983cb23e770
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios)
+Tarea: TASK-068 — En ejecución; no completada.
+Fase PM: PM-01; prioridad P0; orden local 1; dependencia declarada: ninguna.
+
+### Continuidad y selección
+- HEAD de trabajo coincide con C1.323; el commit es alcanzable y la rama base conserva su SHA.
+- Se revisó el requisito íntegro en `pendientes/Dirección/Pendientes.md`, la ficha PM-01/orden local 1 de la sección 9, dependencias, backlog, informe principal y estado real de implementación.
+- PM-00 permanece cerrado. TASK-068 sigue siendo la tarea P0/orden local 1 elegible; no se selecciona una tarea posterior porque esta continúa En ejecución.
+- Auditoría de continuidad focalizada: se reutiliza `Auditoría/AUDITORIA_TASK-068_C1.318.md`; no se repiten las auditorías C1.318–C1.323 ni se crea expediente duplicado.
+
+### Hallazgo y corrección
+- AUD-NG-380 MEDIO/P2: `identityTargetExists_` solo validaba la primera celda del encabezado destino.
+- Se añadió `IDENTITY_TARGET_SCHEMAS_` para Personas, Usuarios, ExpedientesEstudiantes, ResponsablesTutores, CatalogoAsignaturas, Matriculas y DocumentosEstudiante; aliases usuario/user/cuenta comparten Usuarios.
+- La función compara todos los encabezados antes de buscar el ID. Es de solo lectura: no crea hojas, no muta filas y rechaza tipos no soportados o esquemas incompatibles.
+- Se amplía el test de contrato para compilar ACADEMIC y ejecutar la función con hojas simuladas: cada tipo/alias, esquema válido, columna alterada, hoja ausente, ID vacío y entidad no soportada.
+- Se amplía el expediente principal y Auditoria.txt. No se crea tarea derivada ni ID duplicado; el estado del backlog permanece En ejecución.
+
+### Respaldo Git histórico previo a edición
+- HEAD de respaldo: 07df2612b31b54d602deb4e694857983cb23e770; commit publicado y alcanzable en la rama autorizada. Recuperación exacta: `git show 07df2612b31b54d602deb4e694857983cb23e770:<ruta>`; verificar el blob con `git hash-object`.
+- `backend/user-service/Code.gs`: blob `0b674212863f52dd7c2b7a26aaced8f2a7342355`.
+- `tests/security/identity-mapping-contract.test.js`: blob `dcb0e456a8e4f9432e8c6cf25d1a4006d8c2c95a`.
+- `Auditoría/AUDITORIA_TASK-068_C1.318.md`: blob `36930754cc06505acc15ca80884c9153eb4ffa9b`.
+- `Auditoria.txt`: blob `ed260b0961dbf4f883db51a24c224ace41ecfe32`.
+- `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`: blob `fa22477b39145f34d7349f98574bbf050a685b04`; 151249 caracteres, lectura completa.
+- `Auditoría/INDICE_CHECKPOINTS.md`: blob `3ee3c7cbe8517d295dd0d555140eec2e728018db`.
+- `changueslogs.txt`: blob `7ccbbe72d699d0aa94151b77377f3b00b9cd5809`.
+
+### Verificación, revisión y límites
+- Diff funcional limitado a validación del esquema destino; no se altera importación, resolvers, RBAC ni persistencia de entidades.
+- Autoauditoría/Code Review focalizados: esquema completo, ausencia de creación de hojas y rechazo cerrado de esquemas/tipos no soportados.
+- Prueba Node/CI del nuevo test: pendiente de ejecución posterior a la publicación; no se declara PASS en este checkpoint.
+- No ejecutados: Apps Script runtime, Spreadsheet real, dos fuentes, reimportación, concurrencia, relaciones, navegador, HTTP y E2E. No hay deployment/fixture aislado ni configuración de `IMA_INSTITUTION_ID` verificada.
+- AUD-NG-378 sigue abierto: no existe writer destino verificable ni transporte interservicio activo. El importador conserva `DESTINATION_WRITER_NOT_CONFIGURED`; no se habilita escritura directa ni se usan flujos de admisión/matrícula como sustitutos.
+- TASK-068 permanece En ejecución. AUD-NG-380 corregido en código; falta CI y el trabajo de escritor por entidad, importación idempotente y pruebas aisladas de dos fuentes.
+
+### Archivos modificados
+- `backend/user-service/Code.gs`; `tests/security/identity-mapping-contract.test.js`.
+- `Auditoría/AUDITORIA_TASK-068_C1.318.md`; `Auditoria.txt`; `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; `Auditoría/INDICE_CHECKPOINTS.md`; `changueslogs.txt`.
+- Revisados pero no modificados: `pendientes/Dirección/Pendientes.md`, `tareas_auditoria.txt`, `Auditoría/MapaDependencias.md`, `backend/accounting-service/Code.gs`, `backend/academic-service/Code.gs`.
+- No modificados: rama base, configuración de despliegue, datos productivos y demás ramas.
+
+### Siguiente acción exacta
+Continuar TASK-068 desde el contrato de importación por entidad en `backend/accounting-service/Code.gs::importDataWithColumnMapping` y dependencias de dominio. No escribir entidades hasta disponer de contrato canónico por entidad con clave idempotente, precondiciones, relaciones y compensación. Preparar fixtures aislados y dos fuentes; verificar/configurar `IMA_INSTITUTION_ID` solo en proyectos Apps Script de prueba autorizados. Requisito rector: `pendientes/Dirección/Pendientes.md` — bloque TASK-068; criterios completos 1–5 y aceptación.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.324.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.324.
+Commit de cierre: este commit; SHA se verificará externamente tras publicación.
+===============================================================================
+
+
+===============================================================================
+## C1.325 — TASK-068 / PM-01 — corrección del harness de validación de esquemas
+ID de sesión: IMA-EXEC-20261109-1802Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.324
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo: NG_beta_0.0.0.1_work
+HEAD de partida: 8bc3e1a6b84d4bb362a78c6375c2872b7b751f87
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios)
+Tarea: TASK-068 — En ejecución; no completada.
+Fase PM: PM-01; prioridad P0; orden local 1.
+
+### Auditoría focalizada de continuidad
+- Se revisó el commit C1.324 y el test añadido, sin repetir la auditoría de producto ni el expediente original.
+- Se detectó AUD-NG-381 MEDIO/P2: regex y separador de línea del harness quedaron doblemente escapados, por lo que la extracción/evaluación del fragmento VM no era ejecutable.
+- El código de producción de C1.324 no se modifica: su validación de encabezado completo permanece intacta.
+
+### Corrección
+- Se corrigen los escapes de la expresión regular a `[\\s\\S]` y el separador de código VM a `\n` válidos en el archivo JavaScript.
+- Se conserva toda la cobertura de esquemas canónicos, aliases, hoja ausente, ID vacío, tipo no soportado y columna incompatible.
+- Se registra AUD-NG-381 en el expediente principal y Auditoria.txt, y se amplía TASK-068 existente en tareas_auditoria.txt. No se crea informe duplicado ni tarea derivada.
+
+### Respaldo Git histórico
+- HEAD de partida: 8bc3e1a6b84d4bb362a78c6375c2872b7b751f87; commit alcanzable en la rama autorizada.
+- Test original: blob `842abb4ee47825e2281a9e4315e14704a203528e`.
+- Expediente original: blob `f3330860125267a8d34fc33378c418eaa88152e1`.
+- Auditoria.txt original: blob `274a3943a59134ca8c1f37d13d4df7beae18f8f5`.
+- tareas_auditoria.txt original: blob `d713613c3b20cca4f191c29a385efce066efd24a`.
+- Checkpoints_Parte_0002 original: blob `b6a5818734437e1310a03dd93b33a1e621b89a53`, tamaño previo 156832 caracteres; lectura íntegra.
+- Índice original: blob `468f655a2ae7443fff975391ae1e41416af28f87`.
+- changueslogs original: blob `669308aafee19b4b2ed84d4aa4073797fa5a0bab`.
+- Recuperación: `git show 8bc3e1a6b84d4bb362a78c6375c2872b7b751f87:<ruta>`; hash Git esperado registrado arriba.
+
+### Pruebas y límites
+- Revisión estática del harness: escapes dobles eliminados y patrones esperados presentes.
+- Run de C1.324: GitHub Actions run 42672140762 estaba queued al iniciar; no se declara PASS ni FAIL sin resultado terminal.
+- Node local no ejecutado. El workflow del commit C1.325 debe validar el test completo.
+- Apps Script/Sheets real, dos fuentes, reimportación, concurrencia, relaciones, navegador y E2E siguen pendientes por falta de entorno aislado/deployment. AUD-NG-378 permanece abierto; el importador continúa fail-closed.
+- TASK-068 sigue En ejecución.
+
+### Archivos modificados
+- `tests/security/identity-mapping-contract.test.js`.
+- `Auditoría/AUDITORIA_TASK-068_C1.318.md`; `Auditoria.txt`; `tareas_auditoria.txt`; `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; `Auditoría/INDICE_CHECKPOINTS.md`; `changueslogs.txt`.
+- Código de producción sin cambios en esta iteración; rama base y demás ramas sin cambios.
+
+### Siguiente acción exacta
+Verificar el resultado terminal del workflow `Identity mapping contract` para el commit C1.325. Si pasa, reanudar TASK-068 en el diseño del contrato de escritura por entidad dentro de `backend/accounting-service/Code.gs::importDataWithColumnMapping`; mantener fail-closed hasta definir precondiciones, clave idempotente, relaciones y compensación, y preparar fixtures aislados de dos fuentes.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.325.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.325.
+Commit de cierre: este commit; SHA se verificará externamente tras publicación.
+===============================================================================
+
+
+===============================================================================
+## C1.326 — TASK-068 / PM-01 — extractor determinista del test de esquemas
+ID de sesión: IMA-EXEC-20261109-1802Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.325
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo: NG_beta_0.0.0.1_work
+HEAD de partida: b28f839eda2dea30c27afabe93028191de876ac9
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios)
+Tarea: TASK-068 — En ejecución; no completada.
+Fase PM: PM-01; prioridad P0; orden local 1.
+
+### Continuidad y auditoría focalizada
+- HEAD coincide con el commit de cierre C1.325; la rama base permanece intacta.
+- Se consultaron los resultados reales de CI: run 42672140762 (C1.324) y run 42672511038 (C1.325) terminaron en failure por SyntaxError en la regex del test, antes de ejecutar los casos.
+- El defecto pertenece al harness de pruebas AUD-NG-381, no a un defecto demostrado en la validación de esquema de producción. No se repite auditoría funcional ni se crea expediente duplicado.
+
+### Corrección
+- Se elimina el extractor regex y se usa `indexOf` para localizar la constante, el inicio de la función y su cierre; `slice` obtiene el fragmento exacto.
+- La evaluación VM concatena `String.fromCharCode(10)`, evitando escapes de salto de línea en la cadena fuente.
+- Se mantienen los casos de prueba para todos los esquemas/aliases, encabezados válidos e incompatibles, hoja ausente, ID vacío y tipo no soportado.
+- No se modifica código de producción ni contratos públicos.
+
+### Respaldo Git histórico
+- HEAD de partida: b28f839eda2dea30c27afabe93028191de876ac9; commit publicado y alcanzable en la rama autorizada.
+- Test previo: blob `7022e7f4e535eb361700efcbbc1528c0b3bff93c`.
+- Expediente: blob `80d7d1c80e12bd317f05ca019f66b15eaf0da088`.
+- Auditoria.txt: blob `55fef21eb1a49fa91bc9e713c435d5c69db3293c`.
+- tareas_auditoria.txt: blob `032a04503031da101f93e79c293705b82daa6139`.
+- Checkpoints_Parte_0002: blob `67b27a00869f692334f3641d20a92efad595571f`, tamaño previo 160797 caracteres.
+- Índice: blob `f8744ac9110e2762cda6cb18f7bebdde833be1dd`.
+- changueslogs: blob `16a19f24d1ca6509f86a188a162c16bc8e9aca39`.
+- Recuperación: `git show b28f839eda2dea30c27afabe93028191de876ac9:<ruta>`; verificar con `git hash-object`.
+
+### Pruebas y límites
+- Revisión estática del extractor y de la cadena VM: no quedan referencias a targetSource[0] ni regex de extracción.
+- Runs C1.324/C1.325 fallidos; el resultado del nuevo run queda pendiente. No se declara test PASS.
+- No ejecutados: Apps Script runtime, Sheets real, dos fuentes, reimportación, concurrencia, relaciones, navegador, HTTP y E2E. AUD-NG-378 permanece abierto; importador fail-closed.
+- TASK-068 permanece En ejecución; AUD-NG-381 no se cierra hasta CI satisfactorio.
+
+### Archivos modificados
+- `tests/security/identity-mapping-contract.test.js`.
+- `Auditoría/AUDITORIA_TASK-068_C1.318.md`; `Auditoria.txt`; `tareas_auditoria.txt`; `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; `Auditoría/INDICE_CHECKPOINTS.md`; `changueslogs.txt`.
+- Código de producción sin cambios; rama base y demás ramas sin cambios.
+
+### Siguiente acción exacta
+Verificar el resultado terminal del workflow `Identity mapping contract` del commit C1.326. Si pasa, continuar TASK-068 en el contrato explícito de escritura por entidad dentro de `backend/accounting-service/Code.gs::importDataWithColumnMapping`; mantener fail-closed hasta definir clave idempotente, precondiciones, relaciones y compensación, y preparar fixtures aislados de dos fuentes.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.326.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.326.
+Commit de cierre: este commit; SHA se verificará externamente tras publicación.
+===============================================================================
+
+
+===============================================================================
+## C1.327 — TASK-068 / PM-01 — CI validado y bloqueo del transporte interservicio
+ID de sesión: IMA-EXEC-20261109-1802Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.326
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo: NG_beta_0.0.0.1_work
+HEAD de partida: 3ddfffa14bb8817513366c8b907a6d2a318dc34e
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios)
+Tarea: TASK-068 — En ejecución; no completada.
+Fase PM: PM-01; prioridad P0; orden local 1.
+
+### Continuidad y pruebas
+- Se verificó el resultado terminal del workflow `Identity mapping contract`: run 42672774951, job 129349656231, Node v24.22.2, completed/success. El log confirma: `TASK-068 identity mapping contract: syntax, canonical schemas, and isolated destination-validation cases passed.`
+- AUD-NG-381 queda resuelto como defecto del harness de pruebas. Los runs 42672140762 y 42672511038 fallidos se conservan como historial; no se cuentan como pruebas satisfactorias.
+- AUD-NG-380 queda corregido en código y respaldado por el contrato estático/aislado. No se declara integración Apps Script real.
+
+### Auditoría de bloqueo de AUD-NG-378
+- ACCOUNTING `doPost` y USER `doPost` reciben `{action,payload}` y aplican `validateRolePermission`; USER no enruta ni verifica un envelope interservicio. `verifyInterServiceEnvelope` está definido pero no conectado a un endpoint de importación.
+- ACCOUNTING no contiene `UrlFetchApp.fetch`, ni lee `USER_SERVICE_URL` ni `IMA_INTERSERVICE_HMAC_SECRET`. USER tampoco lee `IMA_INTERSERVICE_HMAC_SECRET`.
+- `getAuthTokenSecret` deriva un fallback determinista de `SPREADSHEET_ID + "_MASTER_AUTH_HMAC_SECRET"`; no es aceptable como secreto dedicado para un canal interservicio nuevo. El estado real de Script Properties no es accesible desde GitHub y no se presume configurado.
+- Árbol Git recursivo del HEAD C1.326: no hay `appsscript.json` ni `.clasp.json`; el único `manifest.json` localizado no es configuración Apps Script. No hay fixture aislado/deployment versionado; deployments y propiedades remotas no verificables.
+- Escritura directa desde ACCOUNTING en hojas compartidas no es segura: los ScriptLock de proyectos Apps Script distintos no coordinan concurrencia. La escritura cruzada puede dejar filas de entidad, mapeos y relaciones parcialmente confirmados.
+- Los handlers ACADEMIC de admisión/matrícula mantienen precondiciones y efectos secundarios de dominio; no se reutilizan como writers genéricos.
+
+### Decisión y recuperación
+- AUD-NG-378 continúa abierto dentro de TASK-068; no se crea un nuevo ID de auditoría/tarea. Se conserva `DESTINATION_WRITER_NOT_CONFIGURED` y no se escribe ninguna entidad.
+- Prerrequisitos para reanudar: deployment de prueba USER y ACADEMIC; URL de endpoint USER y acción explícita; secreto aleatorio `IMA_INTERSERVICE_HMAC_SECRET` en Script Properties de cada servicio participante; `IMA_INSTITUTION_ID` aislado; verificación de origen/destino/firma/timestamp/replay/actor; writer por entidad con propietario único; clave idempotente; relaciones; journal y compensación; fixtures aislados para dos fuentes y reimportación.
+- No solicitar ni almacenar secretos en Git/chat. La configuración se realiza en Script Properties del entorno aislado y solo se comparte la URL no secreta del deployment de prueba.
+
+### Archivos modificados
+- `Auditoría/AUDITORIA_TASK-068_C1.318.md`; `Auditoria.txt`; `tareas_auditoria.txt`; `Auditoría/MapaDependencias.md`.
+- `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; `Auditoría/INDICE_CHECKPOINTS.md`; `changueslogs.txt`.
+- Revisados pero no modificados: `backend/accounting-service/Code.gs`, `backend/user-service/Code.gs`, `backend/academic-service/Code.gs`, `pendientes/Dirección/Pendientes.md`, `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`, `METODOLOGIA_DESARROLLO.md`.
+- Sin cambios de código en esta iteración; rama base y demás ramas intactas.
+
+### Estado y siguiente acción exacta
+- TASK-068 permanece En ejecución. Correspondencia central, resolvers, revisión humana, bitácora y validación de esquema tienen implementación parcial/estática; importación idempotente de destino, relaciones y prueba real de dos fuentes siguen pendientes.
+- Bloqueo operativo: faltan deployment/endpoint de prueba y configuración segura externa; no se inventan URLs ni secretos y no se accede a datos productivos.
+- Reanudar cuando estén disponibles los prerequisitos anteriores: diseñar y aprobar el contrato por entidad; implementar el endpoint interservicio autenticado y el writer del servicio propietario; ejecutar reimportación/dos fuentes/compensación en Spreadsheet aislado.
+- Requisito original: `pendientes/Dirección/Pendientes.md`, TASK-068, líneas 301–345; registro maestro Plan Maestro §9, fila TASK-068; PM-01/P0/orden local 1, dependencia declarada ninguna.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.327.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.327.
+Commit de cierre: este commit; SHA se verificará externamente tras publicación.
+===============================================================================
+
+===============================================================================
+## C1.328 — TASK-068 / PM-01 — continuidad, bloqueo y recuperación de requisitos
+ID de sesión: IMA-EXEC-20261109-1909Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.327
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo exclusiva: NG_beta_0.0.0.1_work
+HEAD de partida verificado: 431fdff7c695f0507a96e533b391cb69ff9fdb62
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Comparación de ramas: ahead 404; behind 0; status ahead.
+Tarea activa: TASK-068 — Bloqueada; no completada.
+Fase PM: PM-01; prioridad P0; orden local 1.
+
+### Continuidad y auditoría previa
+- El HEAD actual coincide exactamente con el commit de cierre C1.327. No existen commits posteriores en la rama de trabajo que justifiquen repetir su implementación.
+- La rama base conserva 44d9891132332e692dbe2ba8602b41f50a508a59; no se modifica ninguna otra rama.
+- Se verificó el workflow previo Identity mapping contract: run 42672774951, job 129349656231, completed/success. El log confirma sintaxis, esquemas canónicos y casos aislados de validación de destino.
+- AUD-NG-381 queda resuelto. AUD-NG-378 permanece abierto dentro del expediente y tarea existentes; no se crea otro informe ni ID de auditoría.
+- Revisión focalizada del estado TASK-068: sin cambios de código desde C1.327 y sin hallazgos nuevos que justifiquen repetir la auditoría. La importación continúa fail-closed con DESTINATION_WRITER_NOT_CONFIGURED.
+
+### Bloqueo operativo y recuperación
+- No están acreditados deployment de prueba USER/ACADEMIC, URL no secreta del endpoint USER, configuración de IMA_INTERSERVICE_HMAC_SECRET en Script Properties, IMA_INSTITUTION_ID aislado ni Spreadsheet fixtures de prueba. No se presume configuración remota.
+- No se habilita escritura directa entre proyectos Apps Script: los ScriptLock de proyectos distintos no coordinan exclusión mutua. No se almacenan secretos en Git ni en el chat.
+- El estado de TASK-068 cambia de En ejecución a Bloqueada por AUD-NG-378. La correspondencia, resolvers, revisión humana, bitácora y validación estática tienen avance; writer de destino, relaciones, reimportación y pruebas reales de dos fuentes siguen pendientes.
+
+### Selección PM-01 conforme a §§6.1 y 9
+- TASK-068 conserva prioridad P0 y orden local 1, pero su bloqueo no está resuelto.
+- TASK-006 no es elegible: sus dependencias F16-TASK01 y F16-TASK02 continúan Pendientes.
+- TASK-153 no acredita aún su dependencia de sistema de usuarios, departamentos, roles y propiedad documental; TASK-636 sigue En ejecución.
+- F17-TASK02 no se trata como tarea independiente: el propio backlog la reconcilia con TASK-008 y ordena ampliar esa tarea sin duplicar la integración.
+- Otros candidatos P0 de PM-01 apuntan a pendientes/Otros/Pendientes.md. El contenido no pudo leerse por la API (0 caracteres), y la ruta de recuperación también devolvió 0; sus blobs existen y quedan identificados abajo. Sin leer íntegramente esos requisitos no es válido declarar cuál es la siguiente tarea elegible según §6.1.
+- No se selecciona una tarea alternativa ni se salta de fase. No se crean tareas ni auditorías duplicadas. La selección se reanudará después de recuperar y verificar el backlog completo desde Git.
+
+### Recuperación exacta del backlog
+Recuperación de requisitos PM-01 (sin modificar el original):
+- `pendientes/Otros/Pendientes.md` en HEAD 431fdff7c695f0507a96e533b391cb69ff9fdb62: blob `35cbd51f1e0b2f91f18b46c94d38223338d5ccdf`; GitHub Contents API devolvió 0 caracteres.
+- `RECUPERACION/Pendientes_RECUPERADO.md` en el mismo HEAD: blob `ef47d232db3ed46317dc14f22b1cdf8f938e8405`; GitHub Contents API devolvió 0 caracteres.
+- Recuperar íntegramente desde el historial de la rama autorizada con: `git show 431fdff7c695f0507a96e533b391cb69ff9fdb62:pendientes/Otros/Pendientes.md > /tmp/Otros_Pendientes.md` y `git show 431fdff7c695f0507a96e533b391cb69ff9fdb62:RECUPERACION/Pendientes_RECUPERADO.md > /tmp/Pendientes_RECUPERADO.md`. Verificar con `git rev-parse 431fdff7c695f0507a96e533b391cb69ff9fdb62:pendientes/Otros/Pendientes.md` y `git rev-parse 431fdff7c695f0507a96e533b391cb69ff9fdb62:RECUPERACION/Pendientes_RECUPERADO.md` contra los SHA anteriores. No tratar el resultado de 0 caracteres como archivo vacío.
+
+### Archivos modificados
+- pendientes/Dirección/Pendientes.md: solo estado de TASK-068 actualizado a Bloqueada; criterios y requisitos originales intactos.
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md: seguimiento C1.328 y decisión de selección.
+- Auditoría/AUDITORIA_TASK-068_C1.318.md: seguimiento del mismo expediente; sin informe nuevo.
+- Auditoria.txt; tareas_auditoria.txt; changueslogs.txt: registro de continuidad y bloqueo.
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; Auditoría/INDICE_CHECKPOINTS.md: checkpoint e índice.
+- Revisados sin modificación: METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; Auditoría/MapaDependencias.md; Auditoría/INDICE_CHECKPOINTS.md antes de su actualización; los backlogs Dirección, Docente, Contabilidad y Secretaría; los servicios USER, ACCOUNTING y ACADEMIC.
+- Sin cambios de código. Sin cambios en rama base.
+
+### Pruebas y verificaciones
+- Ejecutadas: comparación de ramas; verificación de HEAD; consulta del resultado del job CI 42672774951; inspección estática focalizada de código y dependencias de los candidatos revisados.
+- No ejecutadas en esta sesión: nuevo workflow CI, Node tests, runtime Apps Script, HTTP, navegador, deployments externos, Script Properties, Spreadsheet fixture, reimportación ni compensación.
+- Pendientes para TASK-068: endpoint interservicio autenticado; firma/origen/destino/timestamp/replay/actor; writer por entidad; clave idempotente; relaciones; journal/compensación; fixture aislado de dos fuentes y reimportación.
+
+### Estado y siguiente acción exacta
+- TASK-068: Bloqueada; no completada. Hallazgo activo: AUD-NG-378.
+- Requisito original: pendientes/Dirección/Pendientes.md, TASK-068, líneas 301–345; Plan Maestro §9, fila TASK-068.
+- Siguiente acción: recuperar desde el HEAD indicado ambos archivos de requisitos PM-01, verificar sus blob SHA, leer íntegramente los requisitos de cada candidato y volver a ejecutar el algoritmo §6.1. En paralelo, desbloquear TASK-068 únicamente cuando estén disponibles los deployments de prueba y la configuración externa segura indicada.
+- No se declara ninguna prueba nueva como satisfactoria.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.328.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.328.
+Commit de cierre: pendiente de publicar; HEAD se verificará después del commit.
+===============================================================================

@@ -1,0 +1,2262 @@
+CONTEXTO PERSONAL Y CONTINUIDAD DEL AGENTE DESARROLLADOR
+================================================================
+
+# GATE PRIORITARIO IMA: COMMITS CONSOLIDADOS Y CHECKPOINTS OBLIGATORIOS
+
+**LECTURA Y CUMPLIMIENTO OBLIGATORIOS ANTES DE CUALQUIER TRABAJO EN IMA.** Estas reglas son controles de entrada y salida, no sugerencias. Si alguna no puede cumplirse, se detiene el trabajo sin continuar ni publicar cambios parciales.
+
+A. **COMMIT ÚNICO:** por cada iteración de trabajo se prepara y verifica el conjunto completo de cambios de todos los archivos relacionados y se publica exactamente un commit final. Nunca crear commits por archivo, documento, carpeta, subtarea o avance intermedio. Esta instrucción prevalece sobre cualquier texto anterior ambiguo de «un commit por tarea», «commits modulares», «lotes» o «subdividir por cuota». Solo separar en más de un commit si el usuario lo autoriza expresamente. Si el commit único no es posible, detenerse sin commits parciales.
+
+B. **CHECKPOINT OBLIGATORIO:** antes de pausar, terminar una sesión/iteración, transferir el trabajo, cerrar un sublote o detenerse por un bloqueo, agregar un checkpoint acumulativo al archivo de contexto real existente. No borrar, reescribir ni resumir checkpoints anteriores. No se permite terminar la iteración dejando el checkpoint para después.
+
+C. **PUERTA DE INICIO:** antes de modificar cualquier archivo, leer el contexto completo, la metodología completa, el plan vigente y el último checkpoint; verificar repositorio, rama de trabajo, rama base y HEAD de ambas ramas. Si no existe checkpoint fiable o hay contradicción de instrucciones, investigar y detenerse hasta resolverla.
+
+D. **PUERTA DE CIERRE:** el checkpoint debe incluir estado exacto de tarea/lote, último elemento terminado, elemento en curso, siguiente acción concreta, archivo/función/sección/rango exacto, evidencia y SHA de respaldo, pruebas realmente ejecutadas/no ejecutadas, archivos modificados/no modificados, limitaciones, rama y HEAD de partida. Tras publicar el único commit, verificar el HEAD de la rama y la integridad del commit; no crear un segundo commit solo para añadir el SHA que el propio commit no puede contener. El SHA final se confirma consultando el HEAD de GitHub y se comunica en el reporte de cierre.
+
+E. **VERIFICACIÓN:** antes del único commit revisar el diff total y confirmar que todos los cambios relacionados estén incluidos, que no existan cambios ajenos, que el historial previo se conserve y que la rama base permanezca intacta. Después comprobar que el commit incluye el checkpoint y todos los archivos de la iteración.
+
+Estas reglas son específicas y prioritarias para IMA. No modifican ni autorizan alterar las instrucciones de otros repositorios/proyectos. En caso de contradicción, prevalece esta adenda IMA más reciente y la instrucción expresa del usuario.
+
+F. **RECUPERACIÓN HISTÓRICA OBLIGATORIA CUANDO UN ARCHIVO DEVUELVA CERO CARACTERES:** una respuesta de lectura con contenido vacío (0 caracteres), incluso si Git informa que el archivo existe y tiene un blob SHA, NO demuestra que el archivo esté vacío, eliminado, corrupto ni que carezca de historial. Está prohibido sobrescribirlo, recrearlo o sustituirlo por una versión legacy antes de recuperar y verificar su contenido.
+   1. Confirmar repositorio, rama de trabajo autorizada y HEAD actual. La búsqueda de historial, commits, árboles y blobs para recuperar el archivo se limita exclusivamente a esa rama de trabajo y a sus commits alcanzables. No usar la rama base, otras ramas, ramas remotas ajenas ni copias legacy como fuente de restauración. Una copia legacy puede utilizarse únicamente como referencia comparativa si el alcance lo permite.
+   2. Consultar el historial del archivo dentro de la rama de trabajo, identificar el blob más reciente cuyo contenido completo pueda recuperarse y contrastar también el blob del HEAD actual. Si el blob actual puede recuperarse íntegramente, tiene prioridad; si no, seleccionar el commit histórico más reciente de esa misma rama que conserve una versión íntegra y estructuralmente válida. No elegir una versión solo por tamaño o fecha.
+   3. Verificar el contenido recuperado: SHA del blob, tamaño/caracteres, líneas, estructura inicial y final, encabezados, identificadores y estados. Para registros de tareas, inventariar los identificadores reales por categoría (sin contar marcadores o plantillas como tareas), total de tareas únicas, último identificador y, cuando corresponda, tareas completadas y pendientes. Comparar con el registro legacy solo para demostrar diferencias, nunca para reemplazar el historial de trabajo.
+   4. Preservar el blob y el commit de origen como respaldo inmutable. Antes de restaurar, reconciliar cambios posteriores, tareas nuevas, duplicados y estados; revisar el diff completo. La restauración solo se ejecuta si está autorizada y puede hacerse sin pérdida histórica, siguiendo el commit único por iteración. Si no se puede recuperar o validar íntegramente, detenerse y documentar el bloqueo; no escribir sobre el archivo.
+   5. **Inventario obligatorio en el checkpoint:** registrar ruta, rama, HEAD consultado, commit y blob SHA seleccionados, motivo de selección, resultado de la lectura convencional (0 caracteres), caracteres/tamaño y líneas recuperadas, cantidad de tareas por categoría, total de identificadores únicos de tarea, identificador máximo/último, estados completados/pendientes cuando se puedan contar de forma fiable, comparación con legacy y validaciones realizadas/no realizadas. No declarar «recuperado íntegramente» sin esa evidencia.
+
+Esta regla aplica a CUALQUIER archivo del repositorio IMA, sin excepción por tipo, extensión, ubicación o propósito: código fuente, documentación, configuraciones, datos, pruebas, recursos, archivos binarios y cualquier otro artefacto versionado. El hecho de que una herramienta devuelva 0 caracteres no permite clasificar el archivo como vacío. Si el archivo no es texto o la lectura textual no es compatible con su formato, la recuperación y validación deben hacerse sobre el objeto Git y sus bytes (incluidos tamaño y SHA); no se debe forzar una interpretación textual. El inventario de tareas/IDs se exige cuando el archivo contenga registros de tareas; para los demás archivos se registra expresamente «no aplica» y se inventarían las propiedades pertinentes al tipo de archivo.
+
+G. **CONTROL DE CRECIMIENTO, ROTACIÓN Y LOCALIZACIÓN DE CHECKPOINTS (OBLIGATORIO):**
+   1. El tamaño máximo de cada archivo activo de checkpoints será de **180.000 caracteres Unicode**, medidos sobre el contenido UTF-8 decodificado e incluyendo espacios y saltos de línea. Antes de anexar cualquier entrada, calcular el tamaño resultante. Si la adición excedería el límite, no escribir en ese archivo: crear el siguiente archivo secuencial de checkpoints.
+   2. La rotación es preventiva: el archivo nuevo debe quedar por debajo del límite desde su creación. Nunca truncar, borrar, resumir, mover ni reescribir checkpoints anteriores. El archivo que alcanzó el límite queda cerrado para nuevas entradas y permanece íntegro.
+   3. Cada archivo nuevo debe iniciar con una copia íntegra y vigente de este bloque normativo A–I del contexto personal (incluidas restricciones, precedencia, commits, checkpoints, recuperación y rotación), seguida de la identificación del repositorio/proyecto y referencias a la metodología vigente. No copiar todo el historial anterior: conservarlo en su archivo original. La copia normativa se considera una instantánea; cualquier cambio futuro de reglas debe propagarse a los nuevos archivos.
+   4. Convención de nombres: mantener Auditoría/Contexto_personal.txt como primer archivo histórico y punto de entrada; los archivos rotados se crearán como Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt, ..._0003.txt, etc., incrementando secuencialmente y sin reutilizar nombres. Los archivos Parte_01.txt a Parte_07.txt existentes son fragmentos de recuperación del contexto original y no se renombrarán ni se considerarán partes de esta nueva serie.
+   5. Mantener Auditoría/INDICE_CHECKPOINTS.md como índice permanente: una fila por checkpoint con ID, sesión, estado, archivo/ruta, ubicación (sección o líneas), tarea/fase y commit de cierre o estado de publicación. El índice debe señalar el último checkpoint y el archivo activo. No depender de buscar manualmente el último ID en todos los archivos.
+   6. Todo checkpoint debe declarar Ubicación exacta del checkpoint: ruta del archivo, identificador de parte, encabezado/sección y rango de líneas cuando sea posible; además debe incluir ID del checkpoint anterior y referencia al índice central. Si el rango final de líneas solo puede confirmarse tras escribir, calcularlo y registrarlo en el índice dentro del mismo cambio preparado.
+   7. Auditoria.txt y changueslogs.txt deben registrar el ID del checkpoint relacionado, ID de sesión, ruta exacta y referencia a la fila/entrada del índice. No duplicar el texto íntegro del checkpoint en esos registros; mantener evidencia local y referencias cruzadas.
+   8. Al rotar, preparar en una sola iteración el nuevo archivo con el bloque normativo completo, el checkpoint que provocó la rotación, la actualización del índice, la referencia de continuidad desde el archivo anterior y los cambios relacionados en auditoría/changelog. Publicar todo en el commit consolidado habitual; nunca crear un commit separado solo para rotar.
+   9. Antes de cada escritura comprobar tamaño actual, tamaño proyectado, SHA del blob, HEAD y espacio disponible respecto al límite. Si el archivo actual ya supera 180.000 caracteres, no anexar nada: preservar y cerrar ese archivo, crear la siguiente parte y documentar la anomalía. Si la fuente normativa no puede recuperarse íntegramente, detener la rotación hasta restaurarla de forma verificable.
+
+H. **ESTADO DE IMPLEMENTACIÓN Y PRUEBAS FUNCIONALES BETA (OBLIGATORIO PARA IMA):**
+   1. **Completada** describe que todos los requisitos de implementación de la tarea terminaron; exige verificaciones técnicas internas aplicables, autoauditoría, Code Review interno aprobado, evidencia y actualización del backlog/Plan Maestro. No requiere aprobación adicional del usuario.
+   2. No confundir cierre de implementación con certificación funcional integral. Las pruebas E2E, regresión transversal, seguridad por roles, integración y escenarios de plataforma se ejecutan en beta y se registran en `docs/testing/PRUEBAS_FUNCIONALES_BETA.md`.
+   3. Las pruebas técnicas/unitarias/contratos y controles acotados al cambio se ejecutan durante implementación cuando apliquen. Las pruebas integrales se difieren a beta. No afirmar que una prueba no ejecutada pasó.
+   4. Una tarea puede estar Completada mientras sus escenarios beta están Pendientes. Un defecto beta que demuestre incumplimiento de un requisito de implementación puede reabrirla con evidencia; la ausencia de pruebas beta no.
+   5. La plataforma no queda certificada para piloto/cutover por el simple hecho de que las tareas estén Completadas. La salida beta tiene sus propios criterios conforme a la sección 21 de `METODOLOGIA_DESARROLLO.md`.
+
+
+
+I. **AUDITORÍA ÚNICA Y CONTROL DE RECURSIVIDAD (OBLIGATORIO):** antes de iniciar, consulta el expediente e informes existentes y aplica §19.6 de METODOLOGIA_DESARROLLO.md. Mantén un expediente principal por tarea; no crees informes completos duplicados. Verifica correcciones de forma focalizada y regístralas en el expediente existente. Repite una auditoría completa solo por cambios sustanciales, requisitos modificados, dependencias que invaliden conclusiones, evidencia nueva contradictoria o cobertura original incompleta; justifica el alcance. Clasifica hallazgos como defecto de implementación, defecto relacionado, defecto documental o incidencia metodológica. No conviertas automáticamente defectos documentales/metodológicos en auditorías recursivas. Está prohibido auditar una auditoría cuyo único objeto sea revisar otro informe; usa una lista de comprobación documental y corrige directamente. Si no hay evidencia nueva ni criterio pendiente, continúa con la siguiente acción/tarea elegible.
+
+# CONTINUIDAD IMA — PARTE ROTATIVA DE CHECKPOINTS
+Repositorio: i-miss-cocaine/IMA. Rama: NG_beta_0.0.0.1_work. Rama base protegida: NG_beta_0.0.0.1.
+Metodología: METODOLOGIA_DESARROLLO.md, secciones 15–21.
+Archivo anterior: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt (cerrado íntegro; 181.776 caracteres proyectados, no se anexó C1.329).
+Índice central: Auditoría/INDICE_CHECKPOINTS.md.
+SHA del bloque normativo A–I copiado íntegramente: a434b8ac19bd40646e81c0a911c525e3cea9920f.
+
+
+
+===============================================================================
+## C1.329 — Recuperación íntegra del backlog y nueva norma de pruebas beta
+ID: C1.329
+Sesión: IMA-GOV-20261109-2154Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.328
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: ad1e0a86f1bbd9da89bdaf10e43ae82aab90bd53
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios)
+
+### Recuperación histórica de pendientes/Otros/Pendientes.md
+- C1.304 registró HEAD f4d8088d51af2840686fb9ca4ed11261b8535569, blob e9637ecc6f88b2aa0aec75909538e072509bf507 (1.647.413 bytes) y lectura convencional de 0 caracteres. El historial por ruta identificó 4cda8611c4d3c4aece4c7d80922cc4c14c920f5a conservando ese blob.
+- El último commit que modificó la ruta acreditado en los checkpoints es C1.316: 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a. En ese commit, la ruta resuelve al blob 35cbd51f1e0b2f91f18b46c94d38223338d5ccdf. fetch_file devuelve 0 caracteres; fetch_blob recupera el contenido completo.
+- C1.317 anotó el blob 6323f01fc2335df264dfb54d2558bb8ad505a4d8, discrepante con el blob real resuelto por la ruta en HEAD 31262d5. Se conserva el registro histórico y se documenta la discrepancia.
+- C1.328 y el HEAD 431fdff7c695f0507a96e533b391cb69ff9fdb62 conservan el blob 35cbd51f1e0b2f91f18b46c94d38223338d5ccdf. Los 25 commits posteriores a C1.328 no modificaron esta ruta.
+- Blob actual recuperado: 1.629.561 caracteres y 16.492 líneas; 366 IDs únicos TASK-###, máximo TASK-682; 305 encabezados con ID TASK (255 checkbox abierto, 0 checkbox completado, 50 sin checkbox). Estos conteos de encabezado no sustituyen la lectura de estados del cuerpo.
+- TASK-636 y sus seguimientos hasta C1.316 están íntegros. No se sobrescribe ni recrea el backlog.
+
+### Nueva normativa de pruebas
+- METODOLOGIA_DESARROLLO.md §21.2 y §21.5: ninguna prueba funcional o de despliegue que dependa de servicios desplegados, infraestructura remota o datos reales bloquea el cierre de implementación.
+- Antes del cierre se ejecutan todas las pruebas locales aplicables: sintaxis, lint, revisión estática, imports, tipos/esquemas, contratos, unitarias, lógica, mocks/fixtures locales, seguridad local, regresión y Code Review. Los defectos locales reproducibles deben corregirse.
+- Las pruebas que requieren deployment, HTTP real, servicios vivos, Drive/Sheets reales, E2E desplegado, carga/concurrencia remota o configuración externa se registran como Pendiente beta en beta_test.txt; no se marcan PASS antes de ejecutarlas.
+- beta_test.txt queda como registro maestro. docs/testing/PRUEBAS_FUNCIONALES_BETA.md se conserva como referencia histórica.
+- Commit de normativa: ad1e0a86f1bbd9da89bdaf10e43ae82aab90bd53. No se modificó código de producto ni se declaró tarea completada.
+
+### Archivos modificados
+Iteración normativa: METODOLOGIA_DESARROLLO.md; beta_test.txt (nuevo); docs/testing/PRUEBAS_FUNCIONALES_BETA.md (aviso histórico).
+Cierre de trazabilidad: este checkpoint y Auditoría/INDICE_CHECKPOINTS.md, changueslogs.txt, Auditoria.txt.
+
+### Pruebas y verificaciones
+- Ejecutadas: recuperación de blobs e9637ecc..., 6323f01... y 35cbd51...; comparación de contenido C1.304/C1.316/C1.328; lectura íntegra del backlog; consulta del commit C1.316 y de sus archivos; validación del §21.5, beta_test.txt y aviso histórico; HEAD/base.
+- No ejecutadas: pruebas de aplicación, deployments, HTTP, Apps Script, Sheets/Drive, E2E ni pruebas funcionales beta. No hubo cambios de código de producto.
+
+### Estado y siguiente acción
+- La lectura íntegra del backlog queda resuelta mediante Git Blob; fetch_file sigue devolviendo 0 caracteres por el tamaño del archivo.
+- La discrepancia SHA de C1.317 queda identificada, no corregida retroactivamente.
+- TASK-068/AUD-NG-378 requiere auditoría focalizada para separar brechas de implementación (writer/transporte/código ausente) de pruebas remotas ahora diferidas a beta. No marcar Completada ni conservar un bloqueo basado exclusivamente en falta de deployment.
+- Siguiente acción: reconciliar la continuidad de los 25 commits posteriores a C1.328; reauditar TASK-068 bajo §21.5 y continuar implementación local elegible; registrar pruebas remotas en beta_test.txt.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.329.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.329.
+Commit de cierre: el commit que contiene este checkpoint; SHA verificado tras publicar.
+===============================================================================
+
+
+===============================================================================
+## C1.330 — Casos beta específicos para TASK-636 y TASK-068
+ID: C1.330
+Sesión: IMA-GOV-20261109-2201Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.329
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: 562821129a243a90bc4dbfdd04573ebcb58ae826
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios)
+
+### Registro de pruebas diferidas
+- Se agregan BETA-FUNC-007 para TASK-636/AUD-NG-369: respaldo, restauración, integridad de hojas/activos, interrupciones y recuperación durable en Apps Script/Sheets/Drive beta aislados.
+- Se agrega BETA-FUNC-008 para TASK-068/AUD-NG-378: transporte interservicio autenticado, writer por entidad, dos fuentes, reimportación idempotente, relaciones, journal y compensación.
+- Ambos casos quedan Pendiente beta. Requieren servicios desplegados y fixtures aislados; no bloquean la finalización de implementación por falta de deployment. Los defectos locales de código/contratos sí deben corregirse antes del cierre.
+- No se ejecutó ningún caso beta ni se declaró PASS.
+
+### Archivos modificados
+beta_test.txt; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; Auditoría/INDICE_CHECKPOINTS.md; changueslogs.txt; Auditoria.txt.
+
+### Pruebas y verificaciones
+- Ejecutadas: unicidad de IDs BETA-FUNC-007/008; revisión de precondiciones, resultados esperados y estado Pendiente beta; verificación de límite de tamaño de Parte_0003.
+- No ejecutadas: deployments, HTTP real, Apps Script, Sheets/Drive, restauración, importación real ni E2E.
+
+### Estado y siguiente acción
+- BETA-FUNC-007 y BETA-FUNC-008 quedan registrados para ejecución en beta.
+- TASK-636 y TASK-068 no cambian de estado en este checkpoint. Deben reauditarse bajo METODOLOGIA_DESARROLLO.md §21.5 para separar brechas de implementación de pruebas remotas diferidas.
+- Siguiente acción: reauditar TASK-068/AUD-NG-378 y continuar implementación local elegible; después aplicar el mismo criterio a TASK-636/AUD-NG-369.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.330.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.330.
+Commit de cierre: el commit que contiene este checkpoint; SHA verificado tras publicar.
+===============================================================================
+
+
+===============================================================================
+## C1.331 — Corrección de rumbo y reauditoría de TASK-636
+ID: C1.331
+Sesión: IMA-GOV-20261109-2201Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior válido: C1.316
+Baseline lógico: 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico conservado antes de publicar: acc9d02a1982533d694488d89a4ac8165a3f0bb7
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea auditada: TASK-636 / PM-01 / P0 — AUD-NG-369
+
+### Corrección de rumbo / disrupción
+- C1.316 queda como último checkpoint válido para continuidad lógica. C1.317–C1.330 no gobiernan selección, estados ni evidencia; no se borran, revierten ni reescriben sus commits/cambios físicos.
+- Se conserva el HEAD físico como padre para no reescribir historia. Se revalidará el código existente desde los requisitos; los dictámenes posteriores no se aceptan sin nueva evidencia.
+- Se aplica METODOLOGIA_DESARROLLO.md §21.5: pruebas locales obligatorias; deployment/servicios vivos/Sheets/Drive reales se registran en beta_test.txt y no bloquean implementación por ausencia de entorno.
+
+### Auditoría focalizada TASK-636
+- C1.316 identifica TASK-636 activa PM-01/P0 y conserva contrato Node CI exitoso (runs 42659818881 y 42659961195; segundo Node 24/actions v7).
+- El protocolo Task-Service incluye SHA-256, snapshots de hojas, verificación de activos y permisos Drive, lock, journal durable, recuperación explícita y marcadores deterministas. closeAcademicYear permanece fail-closed con BACKUP_REQUIRED.
+- Se amplía el contrato local para parsear Code.gs completo y ejercitar SHA-256 texto/bytes y snapshots con fixtures; el workflow Node se ejecutará tras publicar. No anticipar PASS.
+- La ausencia de deployment Apps Script y fixtures Sheets/Drive se difiere a BETA-FUNC-007 (Pendiente beta); no bloquea por sí sola.
+- TASK-636 sigue En ejecución porque permanecen alcances de seguridad AUD-NG-001/002/306/368/370/371 por revalidar; no se declara cierre global.
+
+### Siguiente tarea seleccionada
+- TASK-068 — PM-01/P0, orden local 1; requisito pendientes/Dirección/Pendientes.md; dependencias declaradas: ninguna.
+- No depende de TASK-636. El siguiente commit se reserva para la implementación/revalidación de TASK-068.
+
+### Archivos de este checkpoint
+- tests/security/task-service-backup-restore-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.331.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+
+Pruebas: Node syntax + SHA-256 + snapshots locales agregados; ejecución CI pendiente de observar tras publicación. No Apps Script/Sheets/Drive/HTTP/E2E.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.331.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.331.
+Commit de cierre: este commit; SHA verificado tras publicación.
+===============================================================================
+
+
+===============================================================================
+## C1.332 — Corrección del harness local de TASK-636
+ID: C1.332
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.331
+Motivo: revisión inmediata del contrato local antes de iniciar la siguiente tarea.
+- La inspección post-publicación detectó que el extractor de helpers y los separadores del VM buscaban la secuencia literal \\n en lugar de un salto de línea.
+- Se sustituye la dependencia de escapes por String.fromCharCode(10), manteniendo intacto el código de producto.
+- El test ahora puede extraer determinísticamente los helpers SHA-256/snapshot y parsear Code.gs completo. El resultado de CI se consultará tras publicar; no se anticipa PASS.
+- No se modifica el alcance ni el estado de TASK-636; BETA-FUNC-007 continúa Pendiente beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.332.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.332.
+===============================================================================
+
+
+===============================================================================
+## C1.333 — Extractor balanceado para pruebas locales TASK-636
+ID: C1.333
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.332
+- CI run 42708635543 (commit C1.331) falló en el extractor del helper SHA-256: el cierre de función no estaba siendo localizado por el patrón de salto de línea.
+- Se sustituye el extractor frágil por un recorrido balanceado de llaves que ignora strings y comentarios; el código de producción permanece intacto.
+- CI run 42708759124 (commit C1.332) se encontraba en ejecución al preparar esta corrección; se registrará su resultado observado por separado.
+- No se declara PASS. Se debe observar el nuevo workflow antes de continuar a TASK-068.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.333.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.333.
+===============================================================================
+
+
+===============================================================================
+## C1.334 — Fixture Date dentro del contexto VM de TASK-636
+ID: C1.334
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.333
+- CI run 42708759124 (C1.332) superó el extractor y parseo; falló la aserción de snapshot porque el fixture Date se creó fuera del VM y no satisfacía instanceof Date dentro del contexto aislado.
+- Se crea la fecha de prueba dentro del propio contexto VM; no se modifica producción ni el contrato de serialización.
+- Se requiere nueva ejecución CI para validar el contrato completo; no anticipar PASS.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.334.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.334.
+===============================================================================
+
+
+===============================================================================
+## C1.335 — Corrección del contexto de fecha del fixture TASK-636
+ID: C1.335
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.334
+- CI run 42708904660 (commit C1.333) alcanzó el caso snapshot y mostró que la fecha se creó en un VM distinto al contexto de snapshotContext.
+- Se ajusta la creación de Date para pasar snapshotContext explícitamente a vm.runInNewContext; sin cambios de producción.
+- La ejecución del commit C1.334 se verificará separadamente; el contrato no se declara PASS hasta que el run del nuevo commit finalice success.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.335.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.335.
+===============================================================================
+
+
+
+===============================================================================
+## C1.336 — TASK-068: clasificación local conservadora de identidades
+ID: C1.336
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.335
+Baseline lógico válido: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico previo: 38ca05028d31222b0002f3cf9cd625c3c3df17b9
+Tarea: TASK-068 / PM-01 / P0 / orden local 1
+
+### Reauditoría independiente
+- Requisito completo: pendientes/Dirección/Pendientes.md — TASK-068; dependencia declarada ninguna.
+- Se inspeccionan USER/ACCOUNTING y el contrato Node sin aceptar dictámenes C1.317–C1.330.
+- Brecha real: importDataWithColumnMapping no escribe entidad destino y devuelve DESTINATION_WRITER_NOT_CONFIGURED; no acredita persistencia ni reimportación idempotente. AUD-NG-378 permanece abierto por implementación ausente, no por falta de deployment.
+- Brecha local de detección: findPersonMatches no evaluaba fecha de nacimiento, responsable ni historial de matrícula.
+
+### Implementación de este commit
+- Se añade identityClassifyCandidate_ con clasificación exacta pendiente de confirmación, probable pendiente de revisión y posible duplicado; nunca permite fusión automática.
+- findPersonMatches integra ExpedientesEstudiantes, ResponsablesTutores, RelacionesFamiliares, Usuarios y Matriculas; exige Secretaría/Administrador con claims verificados.
+- Se añaden pruebas Node locales con fixtures para identificador exacto, fecha+responsable, historial de matrícula, homónimo y no coincidencia.
+
+### Estado
+- TASK-068 permanece En ejecución.
+- AUD-NG-378 abierto por writer y transporte aún ausentes; BETA-FUNC-008 sigue Pendiente beta solo para pruebas desplegadas/HTTP real/dos fuentes vivas.
+- No se ejecuta Apps Script/Sheets/Drive real ni HTTP. CI Node pendiente de observar.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.336.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.336.
+===============================================================================
+
+
+
+===============================================================================
+## C1.337 — Ajuste de contrato y verificación CI de TASK-636
+ID: C1.337
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.336
+- Se confirma CI TASK-636 run 42709000536, commit e6fbc4561ddd11c2105ab728433ba5f914f375b8: completed/success. Pasaron parseo Node de Code.gs, contrato estático, SHA-256 texto/bytes, snapshots con fecha/valores y hoja vacía. AUD-NG-369 continúa diferido a BETA-FUNC-007; closeAcademicYear sigue BACKUP_REQUIRED.
+- CI TASK-068 run 42709559046, commit f99d56439d693504372f1d184055c5973ce41d2f: failure por una aserción estática preexistente de formato de propiedad; no se alcanzaron los nuevos casos de clasificación. Se ajusta el literal a fusionAutomaticaPermitida: false; nuevo CI pendiente.
+- No se altera la lógica de no fusión automática. TASK-068 sigue En ejecución y AUD-NG-378 abierto por writer/transportes ausentes.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.337.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.337.
+===============================================================================
+
+
+
+===============================================================================
+## C1.338 — Resultados CI y cierre de iteración local TASK-068
+ID: C1.338
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.337
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico previo: 5fcbd34d3d8959571fc2f8eadbc27c55b8c87e70
+
+### Resultados locales observados
+- TASK-636: run 42709000536, commit e6fbc4561ddd11c2105ab728433ba5f914f375b8 — completed/success. Parseo Node, contrato estático, SHA-256 texto/bytes y snapshot de hojas con fixtures; hoja vacía incluida.
+- TASK-068: run 42709680737, commit 5fcbd34d3d8959571fc2f8eadbc27c55b8c87e70 — completed/success. Pasaron contrato de identidad y transporte; syntax, canonical schemas, destination validation y clasificación conservadora.
+- Los fallos de harness anteriores quedan preservados en historial y fueron corregidos antes de los runs exitosos.
+
+### Dictamen
+- TASK-636 continúa En ejecución por los alcances de seguridad AUD-NG-001/002/306/368/370/371 que deben revalidarse; AUD-NG-369 tiene integración real diferida a BETA-FUNC-007. closeAcademicYear permanece BACKUP_REQUIRED.
+- TASK-068 continúa En ejecución. El importador sigue sin writer destino (`DESTINATION_WRITER_NOT_CONFIGURED`), por lo que persistencia y reimportación idempotente no están implementadas. AUD-NG-378 es brecha de implementación, no prueba beta.
+- BETA-FUNC-007 y BETA-FUNC-008 permanecen Pendiente beta; no se ejecutaron pruebas remotas ni se declararon PASS.
+- Siguiente bloque TASK-068: diseñar e implementar writer explícito por entidad en su servicio propietario, contrato idempotente y compensación local; después preparar transporte autenticado con secretos externos configurables sin hardcode.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.338.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.338.
+===============================================================================
+
+
+===============================================================================
+## C1.339 — TASK-068: escritores de destino idempotentes por servicio propietario
+ID: C1.339
+Sesión: IMA-GOV-20261109-2201Z-01
+Fecha: 2026-11-09 UTC
+Baseline lógico válido: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico previo: c4b2f3148ac4a6e66474624f62f797c125a5b5b0
+Rama: NG_beta_0.0.0.1_work
+Tarea: TASK-068 / PM-01 / P0 / orden local 1
+
+### Corrección de continuidad
+- C1.316 es el último checkpoint válido para estado y selección. C1.331–C1.338 se preservan físicamente, pero no se toman como autoridad ni como evidencia no revalidada.
+- Se conserva el historial Git sin reset/revert ni alteración de ramas ajenas. Rama base protegida no modificada.
+- Se mantiene §21.5: verificaciones locales son requeridas; despliegues/servicios vivos se difieren a beta.
+
+### Implementación de esta iteración
+- USER: escritor interno allowlist para persona.
+- ACADEMIC: escritores internos allowlist para estudiante, responsable, asignatura, matrícula y documento.
+- Validación estricta de esquema, campos, tipo escalar y entidad de propiedad.
+- Upsert por ID interno; journal durable MigracionEscrituras; idempotencia con conflicto ante mismo key/datos distintos.
+- Compensación con snapshot y control de concurrencia; no revierte si el destino cambió posteriormente.
+- Protección contra fórmulas en celdas de texto.
+- Los writers no se exponen todavía al dispatcher público; la autenticación HMAC de transporte y la orquestación se implementarán en la siguiente iteración.
+
+### Pruebas
+- Se añaden fixtures Node para inserción, reintento idempotente, rechazo de payload incompatible y compensación de inserción para USER/persona y ACADEMIC/estudiante.
+- CI se ejecutará tras publicar; no declarar PASS antes de observar el resultado.
+- Sin Apps Script/Sheets/HTTP/deployment/beta.
+
+### Estado
+- TASK-068 sigue En ejecución; AUD-NG-378 continúa abierto por transporte y orquestación ausentes.
+- BETA-FUNC-008 sigue Pendiente beta.
+- Siguiente paso: implementar el envío ACCOUNTING→owner service con HMAC, secreto obligatorio en Script Properties, expiración/anti-replay y dispatcher privado que solo invoque los writers tras verificación.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.339.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.339.
+===============================================================================
+
+
+===============================================================================
+## C1.340 — Corrección del fixture de hoja vacía para TASK-068
+ID: C1.340
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.339
+- CI run 42712140456 falló en la prueba del writer porque el mock insertSheet creaba la hoja con encabezado preinsertado; ensureMigrationWriterSheet_ agregaba correctamente el encabezado al detectar una hoja recién creada. El fixture producía dos encabezados y una fila extra.
+- Se corrige el mock para que insertSheet cree una hoja vacía, reproduciendo el contrato real de Google Sheets.
+- No se modifica código de producción ni el comportamiento del writer.
+- El nuevo CI debe confirmar inserción, reintento idempotente, conflicto de payload y compensación antes de aceptar la iteración.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.340.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.340.
+===============================================================================
+
+
+
+===============================================================================
+## C1.341 — TASK-068: transporte interservicio autenticado y orquestación de importación
+ID: C1.341
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.340
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico previo: 023d7c2afabc383d41b12eab69058a47614f76d2
+
+### Implementación
+- ACCOUNTING enruta por tipo de entidad al owner USER o ACADEMIC; requiere URLs HTTPS en Script Properties IMA_USER_SERVICE_URL / IMA_ACADEMIC_SERVICE_URL y secreto compartido IMA_MIGRATION_HMAC_SECRET (mínimo 32 caracteres). No existe secreto fallback ni hardcode.
+- Las solicitudes write/compensate se firman con el sobre HMAC-SHA256 existente, destino explícito, timestamp de 5 minutos, requestId y protección anti-replay.
+- USER y ACADEMIC validan firma/destino/origen ACCOUNTING antes de invocar funciones privadas de escritura o compensación. No se agrega acción pública RBAC para estos writers.
+- importDataWithColumnMapping resuelve solo correspondencias confirmadas, mapea columnas destino→origen, calcula clave idempotente por contenido y orquesta escrituras por servicio propietario.
+- Si una fila falla, compensa en orden inverso las escrituras ya aplicadas y deja registro en AuditoriaMigraciones; si una compensación falla, registra estado compensation_required.
+
+### Pruebas locales
+- Se agregan fixtures Node con HMAC real SHA-256 para firma, validación de destino, origen permitido, alteración de payload y anti-replay en USER y ACADEMIC.
+- El contrato incluye sintaxis de los tres servicios y conserva pruebas de writers/idempotencia/compensación.
+- No se ejecutaron UrlFetchApp real, Apps Script, Sheets reales, deployment, HTTP ni pruebas beta.
+
+### Estado
+- TASK-068 sigue En ejecución hasta ampliar cobertura local de orquestación/rollback de lote y validar los mapeos con fixtures de dos fuentes.
+- BETA-FUNC-008 sigue Pendiente beta para HTTP real, dos servicios desplegados y dos fuentes reales/sintéticas aisladas.
+- Próxima iteración: pruebas locales integrales de importDataWithColumnMapping con mocks UrlFetchApp/SpreadsheetApp y conciliación de referencias.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.341.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.341.
+===============================================================================
+
+
+===============================================================================
+## C1.342 — Corrección del contrato estático tras integrar writers y transporte
+ID: C1.342
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.341
+- CI run 42712755670 falló antes de ejecutar los nuevos fixtures HMAC porque el contrato heredado aún exigía el literal DESTINATION_WRITER_NOT_CONFIGURED.
+- La expectativa se actualiza: confirma que la ruta antigua de no-writer ya no existe y que se requieren configuración de transporte, rollback de lote y el nuevo sender autenticado.
+- No se modifica la implementación de producción; se alinea el test con el contrato nuevo.
+- CI posterior debe ejecutar HMAC, origen/destino, manipulación de payload y anti-replay antes de continuar.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.342.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.342.
+===============================================================================
+
+
+===============================================================================
+## C1.343 — Ajuste de aserciones de configuración de rutas HMAC
+ID: C1.343
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.342
+- CI run 42712911846 ejecutó y superó los fixtures de writer y los casos HMAC locales (firma, origen, alteración y anti-replay).
+- Falló posteriormente en una aserción estática que buscaba getProperty("IMA_USER_SERVICE_URL") y getProperty("IMA_ACADEMIC_SERVICE_URL") literalmente.
+- La implementación resuelve la clave de URL mediante route.urlProperty; se ajustan las expectativas para verificar el registro tipado USER/ACADEMIC y sus propiedades configuradas.
+- Sin cambios de producción. CI nuevo pendiente.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.343.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.343.
+===============================================================================
+
+
+===============================================================================
+## C1.344 — TASK-068: snapshots de compensación con tipos preservados
+ID: C1.344
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.343
+- CI run 42713049025: completed/success. Contrato de identidad y TASK-030 transport access scope pasaron; fixtures HMAC verificaron firma, origen, alteración de payload y anti-replay en USER y ACADEMIC.
+- Se detecta riesgo en snapshots: JSON.stringify convertía objetos Date de Sheets a texto ISO; la compensación podía restaurar el valor como string y alterar el tipo original.
+- Se agrega codificación/decodificación tipada de snapshots Date en USER y ACADEMIC.
+- Se corrige el harness para extraer y ejecutar las funciones writer reales de ambos servicios, no copias duplicadas en el test. Se amplían pruebas a UPDATE y restauración de Date.
+- CI nuevo pendiente. Sin Apps Script/Sheets reales, HTTP ni beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.344.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.344.
+===============================================================================
+
+
+===============================================================================
+## C1.345 — Corrección del harness: ejecutar writers reales USER/ACADEMIC
+ID: C1.345
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.344
+- Revisión post-commit detectó que las llamadas runMigrationWriterFixture todavía suministraban copias serializadas de helpers, aunque el harness ya estaba preparado para extraer funciones del servicio.
+- Se cambian las invocaciones para pasar directamente el código real cargado de USER y ACADEMIC; el test extrae constantes y funciones writer reales con parser balanceado.
+- Los casos cubren inserción, reintento idempotente, conflicto de clave, compensación de inserción, actualización y restauración del tipo Date.
+- No se modifica código de producción. CI nuevo pendiente; no anticipar PASS.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.345.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.345.
+===============================================================================
+
+
+===============================================================================
+## C1.346 — Completar helpers tipados de snapshots en USER/ACADEMIC
+ID: C1.346
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.345
+- CI run 42713422124 falló en extracción de migrationEncodeSnapshot_: el cambio C1.344 había actualizado las llamadas a codificación/decodificación, pero el patrón de inserción no coincidió con la firma real migrationSafeCell_(v), por lo que los helpers no habían quedado añadidos.
+- Se incorporan migrationEncodeSnapshot_ y migrationDecodeSnapshot_ en USER y ACADEMIC antes de migrationSafeCell_.
+- No se altera la lógica de escritura, transporte ni el resto de la orquestación; se completa el soporte requerido para snapshots Date.
+- CI nuevo pendiente; los writers no se declaran aprobados hasta que el harness real termine success.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.346.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.346.
+===============================================================================
+
+
+===============================================================================
+## C1.347 — Ajuste de inicialización del fixture de writer real
+ID: C1.347
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.346
+- CI run 42713587990 confirmó que el harness ya extrae las funciones reales, pero falló porque guardaba la referencia target antes de que applyTrustedMigrationWrite_ creara la hoja destino.
+- Se captura la hoja después de la primera inserción; el fixture mantiene el modelo de hoja vacía y la inicialización de encabezados por el writer.
+- No se modifica código de producción. Nuevo CI pendiente.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.347.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.347.
+===============================================================================
+
+
+===============================================================================
+## C1.348 — TASK-068: pruebas locales de orquestación y compensación multi-fila
+ID: C1.348
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.347
+- CI run 42713722818: completed/success; contrato de identidad y TASK-030 transport access scope pasaron.
+- Se agregan mocks locales del importador ACCOUNTING: dos fuentes legadas que convergen al mismo ID interno, claves idempotentes por fuente/contenido, reintento, rollback inverso cuando falla una escritura, fallo de compensación y rechazo de correspondencia pendiente/destino incorrecto.
+- Los tests extraen migrationStableJson_, migrationHash_, mapMigrationRowToTarget_, rollbackMigrationOwnerWrites_ e importDataWithColumnMapping del código real de ACCOUNTING.
+- No se invoca UrlFetchApp ni Apps Script/Sheets reales; transporte vivo permanece beta.
+- CI nuevo pendiente; TASK-068 sigue En ejecución.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.348.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.348.
+===============================================================================
+
+
+===============================================================================
+## C1.349 — TASK-068: veto de coincidencias con identificadores fuertes contradictorios
+ID: C1.349
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.348
+Baseline lógico válido: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD previo: 4f05403e7da0f53a70e4973334b840212075a6f6
+- Reauditoría de TASK-068 detectó un caso de seguridad de identidad: el clasificador priorizaba una identificación exacta aunque la fecha de nacimiento o el código institucional aportaran evidencia fuerte contradictoria.
+- Se añade veto conservador cuando ambos lados proporcionan identificación nacional, código institucional o fecha de nacimiento y sus valores difieren. El candidato no se presenta como coincidencia; no hay fusión automática.
+- Se agregan pruebas locales para homónimos con identificación distinta, fecha de nacimiento distinta y conflicto combinado.
+- CI pendiente de observar tras publicar. TASK-068 continúa En ejecución hasta completar cobertura de criterios, relaciones y caché local. BETA-FUNC-008 sigue Pendiente beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.349.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.349.
+===============================================================================
+
+
+===============================================================================
+## C1.350 — TASK-068: interfaz de Secretaría para revisión de identidades
+ID: C1.350
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.349
+Baseline lógico válido: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD previo: 831a99d957bc157c94792e64f5722b66d2fef233
+- CI C1.349 run 42714376588: completed/success.
+- Se detectó que había endpoints y wrappers API, pero dashboard-secretaria.html no exponía interfaz de búsqueda, registro, revisión e historial.
+- Se agrega consola UI en Secretaría: búsqueda de candidatos, registro de referencia legada, confirmación/rechazo con motivo, consulta de historial y vinculación de cuenta a Persona.
+- Se agregan wrappers API findPersonMatches y linkPersonAccount. La UI limita visibilidad a Secretaría/Administrador; la autorización definitiva permanece en backend con sesión verificada, rol y ámbito institucional.
+- Resultados e historial se insertan mediante textContent, no como HTML no confiable.
+- Prueba local amplía contrato para parsear secretary.js y verificar controles, handlers y wrappers. Workflow amplía paths para incluir UI/API.
+- CI de C1.350 pendiente. Sin Apps Script, Sheets ni deployment real.
+- TASK-068 sigue En ejecución hasta validar localmente caché, relaciones y múltiples referencias mediante funciones reales; BETA-FUNC-008 sigue Pendiente beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.350.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.350.
+===============================================================================
+
+
+===============================================================================
+## C1.351 — TASK-068: pruebas locales de referencias múltiples, relaciones y caché
+ID: C1.351
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.350
+Baseline lógico válido: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD previo: 0d9c54c751564b6d430ac7517aa93f782bcc7f29
+- CI C1.350 run 42714860009: completed/success; contrato ampliado parsea js/secretary.js y verifica controles, handlers y wrappers UI/API.
+- Se agregan pruebas ejecutables con funciones reales para resolución directa y reversa: dos fuentes confirmadas apuntan al mismo ID interno; las pendientes y de otra institución no se devuelven como referencias confirmadas.
+- Se agrega fixture de relaciones: la búsqueda de candidatos obtiene responsable mediante relación familiar activa e historial de matrícula por PersonaID→Usuario→Matrícula, sin mutar filas relacionales.
+- Se agrega prueba de caché IndexedDB: solo se persisten correspondencias confirmadas, claves incluyen institución/fuente/tipo/ID legado y limpieza queda acotada a institución.
+- Estas pruebas son locales y no usan IndexedDB/Sheets/Apps Script reales; no se declara prueba de deployment. CI C1.351 pendiente.
+- TASK-068 permanece En ejecución hasta revisión final de la UI y criterios completos; BETA-FUNC-008 sigue Pendiente beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.351.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.351.
+===============================================================================
+
+
+===============================================================================
+## C1.352 — Corrección del fixture relacional TASK-068
+ID: C1.352
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.351
+- CI run 42715045824 falló en la nueva prueba de relaciones antes de alcanzar sus aserciones: el contexto VM no incluía SPREADSHEET_ID. La inspección también detectó nombres/llaves del fixture no alineados con el esquema real ResponsablesTutores y PersonaID.
+- Se corrige el contexto de prueba y se alinea la relación familiar para que su tercero referenciado sea PersonaID del responsable, tal como consume el código.
+- Sin cambios de producción. El contrato debe volver a ejecutarse y pasar todas las pruebas antes de validar C1.351.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.352.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.352.
+===============================================================================
+
+
+===============================================================================
+## C1.353 — TASK-068: RBAC explícito para búsqueda y vinculación
+ID: C1.353
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.352
+- CI C1.352 run 42715176076: completed/success; resolución múltiple, relaciones y caché confirmada-only pasaron con fixtures locales.
+- Revisión de autorización de la nueva UI detectó que findPersonMatches y linkPersonAccount tenían guardas internas requireIdentityManager_, pero no estaban incluidas en IDENTITY_MANAGER_ACTIONS_. El dispatcher podía denegarlas antes de alcanzar esas guardas según ROLE_PERMISSIONS.
+- Se agregan ambas acciones a la lista RBAC explícita de Secretaría/Administrador y se incorpora prueba local de permisos positivos para ambos roles y negativa para Docente.
+- Las funciones mantienen su validación de sesión verificada dentro del servicio; el cambio no confía en el rol del cliente.
+- CI C1.353 pendiente. TASK-068 continúa En ejecución; BETA-FUNC-008 sigue Pendiente beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.353.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.353.
+===============================================================================
+
+
+===============================================================================
+## C1.354 — TASK-068: justificación obligatoria para vincular cuentas
+ID: C1.354
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.353
+- CI C1.353 run 42715322689: completed/success; RBAC explícito de findPersonMatches y linkPersonAccount aprobado para Secretaría/Administrador y denegado a Docente.
+- Reauditoría detectó que linkPersonAccount aceptaba motivo vacío o genérico desde backend, aunque la interfaz exigía justificación. La validación solo en cliente no era suficiente.
+- Se exige en servidor motivo de al menos 10 caracteres y se registra exactamente esa justificación en HistorialDecisionesIdentidad.
+- Se añade prueba local de linkPersonAccount real extraído: rechazo de motivo corto sin mutación, vinculación autorizada, bitácora y conservación de relación familiar.
+- CI C1.354 pendiente. TASK-068 sigue En ejecución; BETA-FUNC-008 Pendiente beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.354.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.354.
+===============================================================================
+
+
+===============================================================================
+## C1.355 — Corrección del contexto VM en prueba de vínculo TASK-068
+ID: C1.355
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.354
+- CI run 42715475957 falló al ejecutar linkPersonAccount porque el contexto VM del fixture no definía SPREADSHEET_ID; el test no alcanzó la validación de motivo ni la escritura mock.
+- Se agrega SPREADSHEET_ID al contexto aislado. No se modifica producción.
+- Reejecutar CI y verificar el comportamiento de motivo obligatorio, auditoría y preservación de relaciones antes de validar C1.354.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.355.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.355.
+===============================================================================
+
+
+===============================================================================
+## C1.356 — TASK-068: auditoría de integridad de correspondencias
+ID: C1.356
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.355
+- CI C1.355 run 42715614599: completed/success; vínculo cuenta-Persona exige justificación server-side, escribe bitácora y conserva relaciones familiares en fixture local.
+- Se integra en auditAndReconcileIdentityInconsistencies el escaneo de CorrespondenciaIdentificadores: claves compuestas duplicadas, filas incompletas, esquema incompatible y destinos inexistentes para correspondencias CONFIRMADA.
+- Incidencias de identidad quedan PENDIENTE_REVISION; autoFix no modifica, fusiona ni elimina correspondencias. Se exponen separadas en inconsistenciasIdentidad.
+- Se añaden pruebas locales para duplicados, destino huérfano confirmado, fila incompleta y correspondencia pendiente no confirmada.
+- CI C1.356 pendiente. TASK-068 sigue En ejecución hasta revisión final de aceptación, cobertura y Code Review. BETA-FUNC-008 sigue Pendiente beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.356.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.356.
+===============================================================================
+
+
+===============================================================================
+## C1.357 — TASK-068: soporte de tipos empleado y curso con propietario ACCOUNTING
+ID: C1.357
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.356
+- CI C1.356 run 42715880749: completed/success; auditoría de correspondencias pasa.
+- Revisión de tipos del requisito detectó que empleado y curso estaban mencionados como entidades admitidas, pero no existían en los registros de destino ni en MIGRATION_OWNER_SCHEMAS_. Se verificaron los esquemas existentes del servicio ACCOUNTING: ExpedientesLaborales y CatalogoCursosCapacitacion.
+- Se agregan los dos tipos a IDENTITY_TARGET_SCHEMAS_ y a la UI. El importador los enruta al propietario ACCOUNTING mediante writer local (sin HTTP de loopback), journal separado, upsert por ID, idempotencia por contenido, snapshots tipados, compensación con precondición y protección contra fórmulas.
+- Se agregan fixtures locales para inserción, reintento, conflicto de idempotencia, protección de fórmulas y compensación en ambos tipos.
+- No se modifica el transporte USER/ACADEMIC; las pruebas HMAC siguen aplicando a esos propietarios. CI C1.357 pendiente.
+- TASK-068 sigue En ejecución; BETA-FUNC-008 continúa Pendiente beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.357.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.357.
+===============================================================================
+
+
+===============================================================================
+## C1.358 — Corrección de aserción de esquema para curso
+ID: C1.358
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.357
+- CI run 42716327775 falló en una aserción estática que esperaba formato con espacios en el literal de esquema de CatalogoCursosCapacitacion; el esquema canónico del writer está declarado compacto y coincide en nombres/orden.
+- Se ajusta la aserción para comparar la representación exacta declarada por ACCOUNTING_MIGRATION_WRITER_SCHEMAS_. No se modifica código de producto.
+- Reejecutar CI para validar parseo, writers de empleado/curso, idempotencia, compensación y suite existente.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.358.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.358.
+===============================================================================
+
+
+===============================================================================
+## C1.359 — TASK-068: pruebas UPDATE/compensación y ruta local ACCOUNTING
+ID: C1.359
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.358
+- CI C1.358 run 42716471988: completed/success; esquemas employee/course, escritores y suite previa pasaron.
+- Se amplían fixtures de writers ACCOUNTING para probar UPDATE y compensación con restauración de Date tipado, además de INSERT/reintento/conflicto ya cubiertos.
+- Se ejecuta sendMigrationOwnerRequest_ real con rutas locales ACCOUNTING para empleado/curso, confirmando dispatch privado write/compensate sin UrlFetchApp y rechazo de acciones no permitidas.
+- CI C1.359 pendiente. TASK-068 sigue En ejecución hasta revisión final de alcance y Code Review. BETA-FUNC-008 sigue Pendiente beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.359.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.359.
+===============================================================================
+
+
+===============================================================================
+## C1.360 — TASK-068: prueba integrada de registro, confirmación e historial
+ID: C1.360
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.359
+- CI C1.359 run 42716679171: completed/success; writers ACCOUNTING de empleado/curso pasan INSERT, UPDATE, idempotencia, conflicto, compensación y dispatch local.
+- Se agregan fixtures que ejecutan funciones reales de correspondencia: registro de dos fuentes hacia el mismo ID canónico, reintento idempotente, conflicto de destino, resolución pendiente antes de revisión, confirmación humana, resolución bidireccional y consulta de historial de decisiones.
+- CI C1.360 pendiente. TASK-068 continúa En ejecución hasta Code Review final y verificación de aceptación completa; BETA-FUNC-008 sigue Pendiente beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.360.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.360.
+===============================================================================
+
+
+===============================================================================
+## C1.361 — TASK-068: inicialización segura de esquemas en primer uso
+ID: C1.361
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.360
+- CI C1.360 run 42716865176: completed/success; registro idempotente, conflicto, confirmación humana, resolución bidireccional e historial pasaron.
+- Code Review detectó que ensureIdentityMappingSheet_ y ensureIdentityDecisionSheet_ usaban getOrCreateSheet sin agregar encabezados, por lo que el primer registro podía fallar si las hojas no existían. Ahora crean la hoja y escriben el esquema canónico solo cuando está vacía; esquemas incompatibles siguen fail-closed.
+- findPersonMatches deja de usar getOrCreateSheet para lectura de Personas; ahora exige la hoja existente con getSheetOrThrow y evita mutación accidental en búsqueda.
+- Se agregan pruebas locales de inicialización en primer uso y de lectura no mutante. CI C1.361 pendiente.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.361.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.361.
+===============================================================================
+
+
+===============================================================================
+## C1.362 — TASK-068: verificación final de integridad relacional y auditoría no mutante
+ID: C1.362
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.361
+- CI C1.361 run 42717056863: completed/success; inicialización first-use de ambas hojas y búsqueda no mutante aprobadas.
+- Se amplían regresiones locales para verificar que vincular una cuenta conserva referencias administrativas por UserId además de relaciones familiares, y que el escaneo de correspondencias es estrictamente de solo lectura (no auto-fix de mapeos).
+- La suite ya cubre relaciones académicas por Matricula/UserId/PersonaID, familiares por PersonaID y administrativas por UserId.
+- CI C1.362 pendiente. No se ejecuta deployment ni servicios vivos.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.362.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.362.
+===============================================================================
+
+
+===============================================================================
+## C1.363 — Cierre local de TASK-068 y continuidad a TASK-636
+ID: C1.363
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint lógico de origen: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico previo: a8eb2ee352b9f4dbbdfc9a2f234ce60e290a3a88
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 — 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Cierre TASK-068
+- Se completan y marcan los ocho criterios de aceptación en pendientes/Dirección/Pendientes.md.
+- Auditoría de cierre: Auditoría/AUDITORIA_TASK-068_C1.363.md.
+- CI final C1.362 run 42717289902: completed/success. Las ejecuciones C1.349–C1.362 de identidad y transporte local concluyeron success tras corregir los fallos de harness registrados.
+- Implementación local: correspondencia canónica, unicidad compuesta, resolución bidireccional/múltiples fuentes, detección de homónimos, revisión humana, historial, UI Secretaría/Admin, RBAC, caché confirmada-only, auditoría read-only, writers USER/ACADEMIC/ACCOUNTING y compensación idempotente.
+- Relaciones académicas/familiares/administrativas verificadas en fixtures locales.
+- BETA-FUNC-008 / AUD-NG-378 permanece Pendiente beta. Deployment, HTTP real y servicios vivos no bloquean cierre por §21.5. No se declara PASS beta.
+
+### Próxima tarea
+- TASK-636 permanece En ejecución. Próxima iteración: reauditar y resolver localmente AUD-NG-001/002/306/368/370/371; mantener AUD-NG-369 y BETA-FUNC-007 como beta diferida donde aplique.
+
+### Evidencia / límites
+- No se ejecutaron Apps Script runtime, deployments, HTTP real, Sheets/Drive reales ni E2E remoto.
+- Solo rama NG_beta_0.0.0.1_work; rama base protegida sin cambios.
+- C1.316 sigue siendo baseline lógico; commits posteriores se preservan y fueron aceptados únicamente tras revalidación independiente.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.363.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.363.
+===============================================================================
+
+
+===============================================================================
+## C1.364 — TASK-636 / AUD-NG-370: reconciliación segura de metadatos históricos
+ID: C1.364
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.363
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+- Se reanuda TASK-636 tras cierre TASK-068.
+- Reauditoría AUD-NG-370 confirma que los registros históricos sin propietario quedan bloqueados, pero faltaba herramienta segura de conciliación.
+- Se añade reconcileLegacyTaskFileMetadata: dry-run por defecto, admin verificado, lock, derivación exclusiva desde Entregas/EntregasVersiones por FileId exacto, deduplicación por UserId+TareaID, tarea existente y bitácora. Aplica solo relaciones únicas; ambiguos y sin fuente verificable permanecen sin owner y fail-closed. Nunca infiere por carpeta/nombre ni toca Drive.
+- Se agrega BETA-FUNC-009 para validación real de Drive/cargas; Pendiente beta y no bloqueante.
+- Se añade contrato Node local para dry-run, rol, migración exacta, conflicto y no inferencia. CI pendiente.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.364.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.364.
+===============================================================================
+
+
+===============================================================================
+## C1.365 — TASK-636: atomicidad de backfill y corrección del workflow local
+ID: C1.365
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.364
+- CI C1.364: workflow backup/restore run 42718141463 success; workflow security run 42718142238 falló antes del test porque Node no acepta extensión .gs en node --check.
+- Se sustituye node --check por vm.Script dentro del contrato Node para parsear Code.gs sin depender de extensión de Apps Script.
+- La reconciliación histórica ahora valida el esquema de bitácora y revierte los campos del registro si falla la persistencia de auditoría; se agrega prueba local de rollback.
+- No se cambia la regla: solo vínculo exacto único; ambiguos y huérfanos permanecen fail-closed.
+- CI C1.365 pendiente.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.365.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.365.
+===============================================================================
+
+===============================================================================
+## C1.366 — TASK-636 / AUD-NG-369 — aislamiento del estado de recuperación compensatoria
+ID: C1.366
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-09
+Checkpoint anterior válido: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+Checkpoint físico previo preservado: C1.365
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo: NG_beta_0.0.0.1_work
+HEAD físico de partida: 739b0e6dc11f5598abdcdc2837b63b4480746bc6
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Corrección de continuidad
+- La comparación Git confirma 76 commits posteriores a C1.316, todos descendientes de C1.316; la rama base permanece intacta.
+- Por instrucción expresa del usuario, C1.316 es el único baseline lógico válido. C1.317–C1.365 se preservan en el historial, sin reset, rebase ni eliminación, pero no se aceptan como evidencia de continuidad, auditoría o cierre de tareas.
+- Se trabaja sobre el HEAD físico actual únicamente para preservar la rama y publicar un commit fast-forward; los criterios se revalidan independientemente contra los requisitos originales.
+
+### Auditoría y requisito
+- Tarea activa: TASK-636 — PM-01 — P0; expediente principal único: Auditoría/AUDITORIA_TASK-636_C1.305.md.
+- Requisito original: pendientes/Otros/Pendientes.md — bloque TASK-636. La lectura convencional devolvió 0 caracteres; se recuperó desde el árbol Git del commit C1.316: blob 35cbd51f1e0b2f91f18b46c94d38223338d5ccdf, tamaño 1.649.288 bytes, contenido decodificado 1.629.561 caracteres y 16.492 líneas. Inicio y final estructuralmente presentes; el identificador TASK-636 se localizó y su bloque completo fue leído. No se modificó el requisito original al recuperarlo.
+- Se consultó el expediente principal y se reutilizaron únicamente los hallazgos existentes. No se creó un informe de auditoría paralelo ni se auditó otro informe.
+- AUD-NG-369 se amplía: el rollback reutilizaba el archivo de progreso/idMap de la restauración objetivo. Un ID ya mapeado a una copia con hash del estado objetivo podía impedir la restauración compensatoria del contenido anterior.
+
+### Implementación de esta iteración
+- Se añade taskServiceGetRestoreProgress_ para seleccionar el progreso primario o el de recuperación sin fallback.
+- recoverTaskServiceAcademicYearRestore crea un estado independiente dentro de la carpeta del manifiesto compensatorio y persiste recoveryRestoreStateFileId/recoveryRestoreId en el journal antes de ejecutar el rollback.
+- Los reintentos reutilizan el estado de recuperación independiente; journal parcial o estado faltante se rechaza fail-closed.
+- Se amplía el contrato Node con fixture local que verifica separación de IDs/archivos y rechazo de fallback.
+
+### Archivos modificados
+- backend/task-service/Code.gs
+- tests/security/task-service-backup-restore-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md (expediente existente; revisión focalizada)
+- pendientes/Otros/Pendientes.md (seguimiento aditivo de TASK-636; requisitos originales preservados)
+- beta_test.txt (BETA-FUNC-010)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- Pruebas añadidas: fixture Node local del selector de progreso, comprobación de independencia de fileId/restoreId, rechazo de estado de recuperación ausente y contrato estático de persistencia.
+- Parseo Node del archivo .gs y contrato completo: pendiente de ejecución CI tras publicar. No se declara PASS anticipadamente.
+- Apps Script/Sheets/Drive reales, interrupciones forzadas, despliegue y E2E: Pendientes beta en BETA-FUNC-010; no bloquean implementación local por la regla no bloqueante solicitada por el usuario.
+- No se ejecutó cierre académico ni borrado; closeAcademicYear continúa BACKUP_REQUIRED.
+- Estado TASK-636: En ejecución; AUD-NG-369 abierto. No se marca Completada.
+
+### Siguiente acción exacta
+Continuar TASK-636 en el mismo expediente: revalidar localmente AUD-NG-001/002/306/368/370/371 contra código, consumidores y contratos del HEAD, sin reutilizar como evidencia los checkpoints invalidados. Corregir únicamente hallazgos de implementación demostrados; mantener pruebas de despliegue/servicios reales en beta_test.txt.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.366.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.366.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================
+
+===============================================================================
+## C1.367 — TASK-636 / AUD-NG-370 — protección de referencias URL en versiones
+ID: C1.367
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-09
+Checkpoint anterior válido: C1.366
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: 39face118be5582ed175962ca755abc23551520c
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Evidencia de C1.366
+- CI security local contracts run 42723140739: completed/success.
+- CI backup and restore contract run 42723140736: completed/success.
+- Logs: Node 22.23.4; el contrato de reconciliación histórica y el contrato backup/restore con selector de progreso independiente finalizaron correctamente.
+- C1.366 permanece válido como corrección de continuidad desde C1.316; commits C1.317–C1.365 siguen preservados pero invalidados como evidencia por instrucción del usuario.
+
+### Reauditoría AUD-NG-370
+- `deleteFile` verificaba la columna FileID de EntregasVersiones, pero no ArchivoUrl.
+- Una referencia válida almacenada únicamente en ArchivoUrl podía escapar del control y permitir mover a papelera un archivo versionado.
+- No se crea un hallazgo duplicado: se amplía AUD-NG-370 dentro del expediente AUDITORIA_TASK-636_C1.305.md.
+
+### Implementación
+- El handler resuelve FileID y ArchivoUrl mediante encabezados canónicos, con fallback 6/5 para esquemas históricos.
+- Comprueba ambos valores con extractTaskServiceFileId antes de borrar.
+- Rechaza archivos ya en papelera.
+- Si falla la actualización del estado de MetadatosArchivos tras setTrashed(true), intenta setTrashed(false); si falla la compensación, expone DELETE_FILE_ROLLBACK_FAILED.
+- Se agregan fixtures Node para referencia URL-only, FileID-only, borrado permitido y fallo de metadatos con rollback.
+
+### Archivos modificados
+- backend/task-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- beta_test.txt (BETA-FUNC-011)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.366: ambos workflows locales aprobados (runs 42723140739 y 42723140736).
+- C1.367: contrato local actualizado; CI pendiente de ejecución tras publicar.
+- Drive/Sheets reales y despliegue: BETA-FUNC-011 Pendiente beta, no bloqueante para implementación local.
+- AUD-NG-370 permanece en revalidación hasta confirmar CI C1.367; TASK-636 sigue En ejecución.
+- No se ejecuta borrado en datos reales ni se habilita ninguna operación destructiva adicional.
+
+### Siguiente acción exacta
+Consultar los logs de CI C1.367. Si pasan, registrar la resolución local de este subalcance de AUD-NG-370 y continuar la reauditoría de AUD-NG-001/002/306/368/371 dentro del mismo expediente, sin duplicar informes.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.367.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.367.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================
+
+===============================================================================
+## C1.368 — TASK-636 / AUD-NG-365 — protección de audiencias públicas
+ID: C1.368
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-09
+Checkpoint anterior válido: C1.367
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: 60b86b8b81917f503eef741e650d1b6423d216c0
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría
+- Se revalidaron las excepciones públicas de USER-Service contra el requisito TASK-636 y el expediente único AUDITORIA_TASK-636_C1.305.md.
+- AUD-NG-365/AUD-NG-002 se reabren: getNews aceptaba grado/sección/includeInactive desde payload; getInstitutionalAnnouncements usaba rol/audiencia del payload y no restringía adecuadamente borradores/fechas.
+- El problema permite que un anónimo seleccione audiencias ajenas o reciba contenido no publicado/vigente; los controles previos documentados no coincidían con el código auditado.
+- No se crea informe paralelo ni ID duplicado.
+
+### Implementación
+- getNews llama getUserVerifiedRole; grado/sección se derivan de Usuarios mediante _verifiedUserId; los parámetros de audiencia del cliente se ignoran.
+- Anónimos: solo grado/sección general, estado Activa y fechas vigentes.
+- Usuarios autenticados: audiencia derivada del perfil/claims; roles privilegiados pueden consultar todas las audiencias; includeInactive solo se respeta para roles privilegiados verificados.
+- getInstitutionalAnnouncements deriva rol de claims; todos los usuarios reciben solo estados Publicado/Activa y fecha no futura; anónimos solo reciben audiencia TodaLaComunidad/general.
+- La respuesta anónima omite autorId y audiencia. Rol/audiencia del cliente no se usan.
+- Se agregan fixtures locales de noticias/comunicados y casos de spoofing; se añaden checks de token de sesión y capacidades opacas de ACADEMIC.
+- Workflow security local contracts incluye backend/user-service/Code.gs en sus filtros push/pull_request.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- .github/workflows/task-service-security-contract.yml
+- Auditoría/AUDITORIA_TASK-636_C1.305.md (expediente existente)
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- beta_test.txt (BETA-FUNC-012)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.367 security local contracts run 42723634980: completed/success; log confirma protección FileID/ArchivoUrl y rollback de metadatos.
+- C1.367 backup/restore run 42723635060: pendiente de consultar.
+- C1.368: contrato local ampliado; CI pendiente de ejecución tras publicar.
+- BETA-FUNC-012: Pendiente beta, no bloqueante para implementación local.
+- TASK-636 En ejecución; AUD-NG-365 reabierto; AUD-NG-002 en revalidación. No se marca tarea como Completada.
+
+### Siguiente acción exacta
+Consultar CI C1.368 y el workflow backup/restore C1.367; después continuar la reauditoría local de AUD-NG-001/002/306/368/371 y comprobar los criterios restantes de TASK-636 en Task-Service/Academic-Service. Mantener un único expediente y no aceptar evidencia de C1.317–C1.365.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.368.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.368.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================
+
+===============================================================================
+## C1.369 — TASK-636 / AUD-NG-002 — normalización de borradores en getPosts
+ID: C1.369
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-09
+Checkpoint anterior válido: C1.368
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: 5ee3393137dbcb9d483904b5998ffd09fb5919e2
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría
+- Se revalidó el criterio TASK-636: getPosts no debe exponer borradores mediante roles enviados por cliente.
+- AUD-NG-002 se amplía: el filtro solo reconocía row[7] === true. Si Google Sheets devolvía el valor como string "true" y Estado era Publicado, el registro podía pasar el filtro para estudiantes.
+- No se crea un ID duplicado; se mantiene AUD-NG-002 en el expediente único.
+
+### Implementación
+- getPosts normaliza EsBorrador como boolean true o string "true" antes de aplicar las reglas.
+- El rol se deriva exclusivamente de _verifiedRole; authRole del payload no participa.
+- Estudiantes no reciben borradores; Profesor/Administración solo pueden verlos con includeDrafts explícito y dentro de las aulas autorizadas.
+- Se agregan fixtures Node para boolean true, string "true", publicación normal, aula ajena y fecha futura.
+
+### Archivos modificados
+- backend/task-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- beta_test.txt (BETA-FUNC-013)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.368: Task-Service security local contracts run 42724379224 completed/success; Identity mapping/transport run 42724379276 completed/success.
+- C1.367: backup/restore run 42723635060 completed/success.
+- C1.369: fixture local agregado; CI pendiente tras publicar.
+- BETA-FUNC-013: Pendiente beta, no bloqueante para implementación local.
+- TASK-636 En ejecución; AUD-NG-002 en revalidación. No se marca tarea como Completada.
+
+### Siguiente acción exacta
+Consultar CI C1.369 y continuar la reauditoría local de los criterios restantes AUD-NG-001/002/306/368/371, incluyendo autorización de aulas/tareas y el flujo de closeAcademicYear. Mantener el expediente único y no reutilizar como evidencia C1.317–C1.365.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.369.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.369.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================
+
+===============================================================================
+## C1.370 — TASK-636 / AUD-NG-002 — ajuste de expectativas del fixture getPosts
+ID: C1.370
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-09
+Checkpoint anterior válido: C1.369
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: 56ea14bae876ea8effd8fde11c624db50aaf32d8
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Code Review
+- El contrato C1.369 incluía una publicación programada futura P5 y esperaba que Profesor no la recibiera aunque el código permite al personal docente revisar programación futura de su propia aula.
+- Se corrigió el fixture para reflejar la política: Profesor ve P1/P5 sin includeDrafts y P1/P2/P3/P5 con includeDrafts; Estudiante sigue viendo únicamente P1.
+- No se modificó el código de producción ni se amplió el alcance de permisos. Se conserva AUD-NG-002 y el expediente único.
+
+### Archivos modificados
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.369: CI del contrato pendiente de resultado al preparar esta corrección.
+- C1.370: fixture actualizado; CI pendiente tras publicar.
+- No se declara PASS hasta leer logs del run actualizado.
+- TASK-636 permanece En ejecución; AUD-NG-002 en revalidación.
+
+### Siguiente acción exacta
+Consultar CI C1.370; si pasa, continuar auditoría local de los controles restantes de TASK-636 en el mismo expediente, sin crear informes duplicados.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.370.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.370.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================
+
+===============================================================================
+## C1.371 — TASK-636 / AUD-NG-002 — eliminación segura de proyectos
+ID: C1.371
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-09
+Checkpoint anterior válido: C1.370
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: cd9d9d3e0b60b41c87d008470ecd76c9501c09a9
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría
+- Se revisó deleteProject dentro del criterio de propiedad de proyectos de TASK-636.
+- AUD-NG-002 se amplía: con fileId vacío, el uso de indexOf("") podía coincidir con cualquier URL del propietario; el catch global absorbía errores y devolvía success aunque la operación fallara.
+- La propiedad de otros usuarios ya estaba filtrada, pero el falso positivo podía borrar el proyecto equivocado del propio usuario y los errores cruzados quedaban ocultos.
+
+### Implementación
+- Se exige rol Estudiante/Alumno e identidad derivada de claims.
+- La búsqueda se realiza por propietario y por los identificadores aportados; si se envían fileId y fileName, ambos deben coincidir en el mismo registro.
+- Se elimina el matching por substring vacío y se rechaza explícitamente un proyecto no encontrado/no coincidente.
+- Drive se mueve a papelera antes de eliminar la fila. Si Drive falla, no se borra la fila; si falla deleteRow, se intenta deshacer setTrashed. Rollback fallido devuelve DELETE_PROJECT_ROLLBACK_FAILED.
+- Se elimina el catch que devolvía success ante errores.
+- Se agregan fixtures Node para nombre incorrecto, proyecto ajeno, ID/nombre discordantes, éxito y fallos Drive/Sheets con compensación.
+
+### Archivos modificados
+- backend/task-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- beta_test.txt (BETA-FUNC-014)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.370 security local contracts run 42724840584: completed/success; log confirma USER, deleteFile, reconciliación y getPosts.
+- C1.369 backup/restore run 42724684967: completed/success. Security run 42724685285 falló por expectativa del fixture docente sobre publicación programada; C1.370 corrigió la expectativa y pasó.
+- C1.371: fixtures locales agregados; CI pendiente tras publicar.
+- BETA-FUNC-014: Pendiente beta, no bloqueante para implementación local.
+- TASK-636 sigue En ejecución; AUD-NG-002 en revalidación. No se marca Completada.
+
+### Siguiente acción exacta
+Consultar CI C1.371 y continuar reauditoría de getStudentTasks/getAllTasks/getTeacherActivity/getSubmissionDocumentPreviewUrl y autorización contextual docente. Mantener closeAcademicYear fail-closed hasta definir y verificar la operación destructiva conforme al requisito rector.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.371.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.371.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================
+
+===============================================================================
+## C1.372 — TASK-636 / AUD-NG-371 — vigencia de asignaciones docentes en lecturas
+ID: C1.372
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-09
+Checkpoint anterior válido: C1.371
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: 7a1fe9840a90683c0e869aeb4e90349ea0690e26
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría
+- Se revisó el criterio de ámbito docente de TASK-636.
+- AUD-NG-371 se amplía: getStudentTasks, getAllTasks y getTeacherActivity filtraban por task[10] (profesor creador), pero no verificaban que la oferta/aula siguiera activa y asignada. La previsualización de entregas repetía el mismo control parcial.
+- El control activo existía en assertTaskServiceTeacherCanManageTask para mutaciones, pero no se aplicaba a todos los caminos de lectura.
+
+### Implementación
+- Se añade isTaskServiceTeacherTaskAuthorized_ para validar propietario, grado, sección, asignatura, aula activa y lista de aulas/ofertas autorizadas.
+- getStudentTasks, getAllTasks y getTeacherActivity aplican el helper para profesores; administradores conservan su ámbito administrativo.
+- getSubmissionDocumentPreviewUrl exige assertTaskServiceTeacherCanManageTask para profesores.
+- assertTaskServiceTeacherCanManageTask reutiliza getTaskServiceAuthorizedClassrooms.
+- Estados de aula desactivada y asignación activa se normalizan sin sensibilidad a mayúsculas/minúsculas ni espacios finales.
+- Fixtures locales prueban oferta vigente/vencida/inactiva, aula desactivada, sección, propietario y controles de lectura/preview.
+
+### Archivos modificados
+- backend/task-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- beta_test.txt (BETA-FUNC-015)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.371: CI security/backup runs 42725331670/42725331631 pendientes de consulta al iniciar esta iteración.
+- C1.372: fixtures locales agregados; CI pendiente tras publicar.
+- BETA-FUNC-015: Pendiente beta, no bloqueante para implementación local.
+- TASK-636 En ejecución; AUD-NG-371 en revalidación. No se marca Completada.
+
+### Siguiente acción exacta
+Consultar CI C1.372 y los runs C1.371; continuar revisión de los criterios restantes AUD-NG-001/002/306/368, y determinar el alcance exacto de closeAcademicYear sin habilitar operaciones destructivas sin respaldo verificado.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.372.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.372.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================
+
+===============================================================================
+## C1.373 — TASK-636 / AUD-NG-002 — publicación vigente de posts y materiales
+ID: C1.373
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-09
+Checkpoint anterior válido: C1.372
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: 47b7c105a40cd1d82f8356544ce9736d39ac0a65
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría
+- Se revisó el criterio de publicación/visibilidad de MaterialesEducativos y PublicacionesAnuncios.
+- AUD-NG-002 se amplía: getStudyMaterials no filtraba FechaPublicacion futura; un material Activo programado podía ser visto antes por estudiantes/familia.
+- Las comparaciones de estado eran sensibles a mayúsculas/minúsculas; registros "eliminado" podían aparecer a personal en getStudyMaterials/getPosts.
+- No se crea un hallazgo nuevo ni un informe paralelo.
+
+### Implementación
+- getStudyMaterials normaliza estado, excluye Eliminado para todos y exige estado explícito Activo/Publicado con fecha válida no futura para usuarios no privilegiados.
+- getPosts normaliza estado, excluye Eliminado para todos y exige Publicado para usuarios no privilegiados; personal conserva revisión de borradores/programados dentro de aulas autorizadas.
+- Se agregan fixtures locales de material general/aula, futuro, borrador, eliminado, aula ajena, estado vacío y posts eliminados con capitalización mixta.
+
+### Archivos modificados
+- backend/task-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- beta_test.txt (BETA-FUNC-016)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.371: security run 42725331670 y backup/restore run 42725331631 completed/success.
+- C1.372: security run 42725726339 y backup/restore run 42725726361 completed/success; logs confirman contratos de asignación docente activa.
+- C1.373: fixtures locales agregados; CI pendiente tras publicar.
+- BETA-FUNC-016: Pendiente beta, no bloqueante para implementación local.
+- TASK-636 En ejecución; AUD-NG-002 en revalidación. No se marca Completada.
+
+### Siguiente acción exacta
+Consultar CI C1.373; continuar la reauditoría de los criterios de sesión/token, métricas globales y excepciones públicas ACADEMIC/USER; revisar el estado de closeAcademicYear sin habilitar cierres destructivos sin respaldo verificado.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.373.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.373.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================
+
+===============================================================================
+## C1.374 — TASK-636 / AUD-NG-002 — dependencia del fixture getPosts
+ID: C1.374
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-09
+Checkpoint anterior válido: C1.373
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: 5024bf74e2d3b664ef63ab25ff4e71e042e2b385
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Code Review
+- getPosts normaliza estados mediante normalizeString.
+- El fixture C1.373 ejecutaba la función aislada sin inyectar normalizeString en el contexto VM, por lo que el test habría fallado por dependencia del harness y no por comportamiento del handler.
+- Se agrega la función real extraída del código fuente al contexto de ejecución del fixture.
+- No se modifica código productivo ni permisos.
+
+### Archivos modificados
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.373: workflow backup/restore run 42726290161 queued al preparar esta corrección; security local contract pendiente de aparecer/consultarse.
+- C1.374: fixture corregido; CI pendiente tras publicar.
+- TASK-636 En ejecución; AUD-NG-002 continúa en revalidación.
+
+### Siguiente acción exacta
+Consultar CI C1.374; si pasa, continuar auditoría de los criterios restantes de TASK-636 sin duplicar informes.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.374.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.374.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================
+
+===============================================================================
+## C1.375 — TASK-636 / AUD-NG-002 — orden del fixture getStudyMaterials
+ID: C1.375
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-09
+Checkpoint anterior válido: C1.374
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: 7f9c704e99011ac77b166439e92cc541ee92b093
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Code Review
+- CI C1.374 run 42726484169 ejecutó y aprobó los contratos anteriores: reconciliación, deleteFile, USER public content, getPosts, deleteProject y teacher scope.
+- Falló solo el último assert de getStudyMaterials: el resultado real estaba ordenado por .sort(), mientras el array esperado no estaba en el mismo orden.
+- Se ordena el esperado. No cambia lógica productiva ni reglas de autorización.
+
+### Archivos modificados
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.374: security run 42726484169 failure por orden de expected array, no por implementación.
+- C1.373: backup/restore run 42726290161 completed/success.
+- C1.375: fixture corregido; CI pendiente tras publicar.
+- TASK-636 En ejecución; AUD-NG-002 sigue en revalidación.
+
+### Siguiente acción exacta
+Consultar CI C1.375; si pasa, continuar la reauditoría de los criterios restantes del Plan Maestro en el expediente único.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.375.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.375.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================
+
+===============================================================================
+## C1.376 — TASK-636 / AUD-NG-001/002 — claims de sesión fail-closed
+ID: C1.376
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-10
+Checkpoint anterior válido: C1.375
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: a1bf06e9f186ba6b5a347796c627aa2b3b28cfba
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría
+- Se revisaron los requisitos originales de TASK-636 (pendientes/Otros/Pendientes.md, sección TASK-636) y el expediente único AUDITORIA_TASK-636_C1.305.
+- Los verificadores USER/ACADEMIC/TASK aceptaban claims sin exp porque la condición anterior solo rechazaba exp si truthy y vencido; userId y sessionId tampoco eran obligatorios.
+- Sin userId se omitía la consulta de revocación y estado de cuenta. La ausencia de sesión completa no debía ser aceptable.
+- generateSessionToken en USER emite userId, role, sessionId, iat y exp con TTL de 24h.
+
+### Implementación
+- USER, ACADEMIC y TASK exigen claims object no-array, userId/role/sessionId no vacíos, iat/exp enteros seguros.
+- iat no puede exceder ahora + 60 segundos; exp debe ser estrictamente futuro y mayor que iat; TTL no puede exceder 86400 segundos.
+- Se conserva la comprobación de revocación de usuario/sesión y estado de cuenta Activa.
+- Se agregan pruebas VM con los tres source files y escenarios válidos, campos ausentes, expiración, iat futuro y TTL excesivo.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- backend/academic-service/Code.gs
+- backend/task-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- beta_test.txt (BETA-FUNC-017)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.375 security run 42726782516: completed/success; job local-security-contracts success; logs confirman contratos deleteProject, teacher scope y getStudyMaterials.
+- C1.376: contrato VM añadido; CI pendiente tras publicar.
+- BETA-FUNC-017: Pendiente beta. No se declara ejecución real de Apps Script, login, expiración o revocación.
+- TASK-636 En ejecución; AUD-NG-001/002 en revalidación. No se marca Completada.
+
+### Siguiente acción exacta
+Consultar CI C1.376 y continuar auditoría de excepciones públicas ACADEMIC (admisión con capacidad opaca), permisos de métricas globales y cierre académico. No habilitar closeAcademicYear hasta implementar y demostrar backup/restauración aislada verificable.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.376.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.376.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================
+
+===============================================================================
+## C1.377 — TASK-636 / AUD-NG-001/002 — secreto HMAC privado sin fallback determinista
+ID: C1.377
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-10
+Checkpoint anterior válido: C1.376
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: 91f7183243edfa2126bf2282159230aa0c830e8b
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría
+- Se revisó getAuthTokenSecret en USER, ACADEMIC, TASK, ACCOUNTING, EXAM y DEVELOPER.
+- El fallback calculaba SHA-256 de SPREADSHEET_ID + literal conocido y guardaba el resultado en Script Properties. Como el código y los IDs están en el repositorio, no era una clave secreta frente a quien conozca esos datos.
+- Se conserva la compatibilidad con propiedades existentes, pero un despliegue limpio requiere configuración explícita.
+
+### Implementación
+- Los seis getAuthTokenSecret eliminan la derivación determinista y exigen AUTH_TOKEN_SECRET en Script Properties.
+- La propiedad debe contener al menos 32 caracteres; ausencia, error de lectura o valor débil lanza error fail-closed.
+- Se añade contrato local para los seis servicios: secreto provisionado aceptado; propiedad ausente y secreto corto rechazados.
+- C1.376 ya endureció claims de sesión USER/ACADEMIC/TASK: userId/role/sessionId/iat/exp requeridos, expiración estricta, iat futuro limitado y TTL máximo 24h.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- backend/academic-service/Code.gs
+- backend/task-service/Code.gs
+- backend/accounting-service/Code.gs
+- backend/exam-service/Code.gs
+- backend/developer-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- beta_test.txt (BETA-FUNC-018)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.376 Task-Service security run 42728633783: completed/success.
+- C1.376 backup/restore run 42728633788: completed/success.
+- Identity mapping run 42728633992: failure en Verify TASK-030 transport access scope; actual ['EXP-02','STU-02'], esperado []; TASK-068 identity mapping success. Incidencia independiente pendiente de investigación.
+- C1.377: contrato local añadido; CI pendiente.
+- BETA-FUNC-018: Pendiente beta; no se consultaron propiedades reales ni despliegues.
+- TASK-636 En ejecución; AUD-NG-001/002 abiertos hasta validar provisionamiento y runtime.
+
+### Siguiente acción exacta
+Consultar CI C1.377. Revisar el contrato de capacidades públicas de admisión ACADEMIC y los permisos de métricas globales; mantener closeAcademicYear bloqueado con BACKUP_REQUIRED hasta certificación aislada de backup/restore/rollback.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.377.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.377.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================
+
+===============================================================================
+## C1.378 — TASK-636 / AUD-NG-002/306/369 — auditoría de frontera pública y operaciones globales
+ID: C1.378
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-10
+Checkpoint anterior válido: C1.377
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: b3a5188b37b49346496b1d640ae51ae34a2ef703
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría
+- Se revisaron los requisitos originales TASK-636 y las excepciones públicas de ACADEMIC, métricas globales de Drive y cierre académico.
+- PUBLIC_ACTIONS ACADEMIC queda limitada a ping y cuatro acciones de admisión con capacidad opaca; los endpoints sensibles restantes requieren sesión/RBAC.
+- El token de admisión es de 64 hex, solo se almacena hash y getPublicAdmissionStatus expone campos mínimos no identificativos.
+- Métricas globales de Drive exigen Administrador/Desarrollador verificado antes de acceso a Drive.
+- closeAcademicYear sigue fail-closed con BACKUP_REQUIRED y sin borrar filas/archivos; backup/restore real continúa requisito pendiente.
+
+### Implementación
+- Sin cambios productivos en esta iteración.
+- Se agregan contratos locales de allowlist exacta, capacidades opacas, minimización de respuesta pública, hash de borradores, guardia de métricas y cierre fail-closed.
+
+### Archivos modificados
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- beta_test.txt (BETA-FUNC-019)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.377 Task-Service security run 42729179413: completed/success; incluye claims estrictos y HMAC privado en seis servicios.
+- C1.377 backup/restore run 42729179412: completed/success.
+- Identity mapping run 42729179521: failure en TASK-030 transport access scope (actual ['EXP-02','STU-02'], esperado []); TASK-068 pasa. Incidencia independiente no modificada.
+- C1.378: contratos locales agregados; CI pendiente.
+- BETA-FUNC-019 Pendiente beta; no se ejecutó Apps Script real.
+- TASK-636 En ejecución; AUD-NG-002/306/369 continúan abiertos/revalidación.
+
+### Siguiente acción exacta
+Consultar CI C1.378; investigar por separado la discrepancia del contrato TASK-030 sin ampliar el alcance si no es elegible; continuar auditoría de autorización contextual restante y validar provisionamiento AUTH_TOKEN_SECRET en beta. Mantener closeAcademicYear bloqueado hasta backup/restore/rollback verificables.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.378.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.378.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================
+
+===============================================================================
+## C1.379 — TASK-636 / seguimiento CI TASK-030 — fixture temporal determinista
+ID: C1.379
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-10
+Checkpoint anterior válido: C1.378
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: e10692bf1f6d86b60269cbb989e437923e716ff8
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría y diagnóstico
+- C1.377/C1.378 identity mapping workflow falló en TASK-030 transport access scope con actual ['EXP-02','STU-02'], esperado [].
+- El caso futureFamilyLink usa FechaInicio 2026-11-10; el runner se ejecutó el mismo día, por lo que la relación ya era vigente según transportRelationshipIsCurrent_.
+- La relación activa también expiraba el 2026-11-10, haciendo el fixture no determinista en ejecuciones posteriores.
+- No se encontró evidencia de regresión productiva en la función de ámbito; el fallo era una expectativa dependiente de la fecha real.
+
+### Corrección
+- Solo tests/security/transport-access-scope.test.js:
+  - relación activa: 2020-01-01 a 2099-12-31;
+  - relación futura: inicia 2099-01-01;
+  - relación expirada: 2020-01-01 a 2020-12-31.
+- No se modifica backend/accounting-service/Code.gs ni permisos productivos.
+
+### Pruebas y estado
+- C1.378 Task-Service security run 42729514766: completed/success; contrato de frontera pública aprobado.
+- Identity mapping C1.379 pendiente tras publicar.
+- TASK-030 no se marca cerrado hasta que su workflow pase.
+
+### Archivos modificados
+- tests/security/transport-access-scope.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Siguiente acción exacta
+Consultar CI C1.379. Si TASK-030 pasa, continuar la auditoría contextual de TASK-636 y validar provisionamiento HMAC en beta; si falla, analizar la nueva evidencia sin alterar la lógica de negocio por conveniencia.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.379.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.379.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================
+
+===============================================================================
+## C1.380 — TASK-636 / AUD-NG-001/002 — claims y rol vigente en verificadores
+ID: C1.380
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-10
+Checkpoint anterior válido: C1.379
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: f83f6b411b952ffd5611d5d8399818af7a52be76
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría
+- Se reauditaron los seis verifySessionToken después de C1.376.
+- ACCOUNTING, EXAM y DEVELOPER aún aceptaban claims incompletos; los cinco servicios conectados a Usuarios no invalidaban un token cuando el rol de la cuenta cambiaba.
+- USER/ACADEMIC/TASK tenían claims estrictos, pero su rol firmado podía permanecer vigente hasta expirar el token.
+- DEVELOPER usa un spreadsheet de control separado y su fallback de authRole se mantiene trazado a TASK-645/AUD-NG-289, fuera del alcance de esta iteración.
+
+### Implementación
+- Los seis servicios exigen userId, role, sessionId, iat y exp válidos; TTL máximo 24h y tolerancia de reloj 60s.
+- USER, ACADEMIC, TASK, ACCOUNTING y EXAM comparan el rol vigente de Usuarios[6] con claims.role y el estado Usuarios[10] con Activa; se cachea 60s y se falla cerrado ante usuario ausente, estado inactivo o rol discordante.
+- DEVELOPER aplica claims estrictos, sin añadir lectura de la hoja Usuarios que no es su fuente de identidad.
+- Se amplía fixture VM a los seis verificadores; cinco servicios prueban rechazo de rol obsoleto.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- backend/academic-service/Code.gs
+- backend/task-service/Code.gs
+- backend/accounting-service/Code.gs
+- backend/exam-service/Code.gs
+- backend/developer-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md
+- beta_test.txt (BETA-FUNC-020)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.379 Identity mapping run 42729838941: completed/success; TASK-030 temporal fixture determinism fixed.
+- C1.380 local VM contracts added; CI pending.
+- BETA-FUNC-020 Pendiente beta; no se ejecutaron despliegues ni hojas reales.
+- TASK-636 En ejecución; AUD-NG-001/002 en revalidación.
+
+### Siguiente acción exacta
+Consultar CI C1.380; después revisar el ámbito de las excepciones públicas ACADEMIC ya cubierto, continuar autorización contextual en los servicios restantes y validar el provisionamiento de AUTH_TOKEN_SECRET. El fallback authRole de DEVELOPER se remite a TASK-645/AUD-NG-289 sin duplicar hallazgo.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.380.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.380.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================
+
+===============================================================================
+## C1.381 — TASK-636 / corrección de fixture HMAC DEVELOPER
+ID: C1.381
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-10
+Checkpoint anterior válido: C1.380
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: cfea77cdfb745a5ac8afa87e206e6146f91fe1f5
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Code Review y diagnóstico
+- C1.380 Task-Service security run 42730386581 falló al ejecutar el verificador DEVELOPER dentro de VM.
+- El verificador de DEVELOPER usa Utilities.computeHmacSignature y Utilities.MacAlgorithm.HMAC_SHA_256 directamente; el fixture compartido no inyectaba MacAlgorithm.
+- El fallo ocurre antes de verificar el token/claims; no constituye evidencia de fallo de autenticación productiva.
+
+### Corrección
+- Se agrega MacAlgorithm.HMAC_SHA_256 al stub Utilities del fixture.
+- Se conserva la firma simulada determinista y las pruebas de claims.
+- No se modifica código productivo ni se debilita la verificación HMAC.
+
+### Pruebas y estado
+- C1.380 backup/restore run 42730386639: completed/success.
+- C1.380 identity mapping run 42730387149: completed/success.
+- C1.380 security run 42730386581: failure por dependencia faltante del harness.
+- C1.381 security pendiente tras publicar.
+
+### Archivos modificados
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Siguiente acción exacta
+Consultar CI C1.381. Si pasa, continuar revisión de autorización contextual y registrar cualquier limitación de DEVELOPER (fallback authRole) en la tarea rectora TASK-645/AUD-NG-289 sin duplicar hallazgos.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.381.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.381.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================
+
+===============================================================================
+## C1.382 — TASK-636 / AUD-NG-001/002 — invalidación de caché de rol vigente
+ID: C1.382
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-10
+Checkpoint anterior válido: C1.381
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: 99aa4c5d331b2058ed3c30ad0c705336fd652cfa
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría
+- C1.381 security run 42730707185 completed/success; seis claims estrictos y HMAC privado pasaron.
+- Code Review del cache introducido en C1.380 detectó que invalidateUserRoleCache no eliminaba acct_role_<userId>; manageAccountState y registerUser(forceUpdate) no siempre invalidaban la caché tras mutar estado/rol.
+- El TTL de 60s limitaba la exposición, pero la invalidación inmediata debía cubrir todas las claves relacionadas.
+
+### Implementación
+- invalidateUserRoleCache elimina user_role_, acct_state_ y acct_role_.
+- manageAccountState invalida después de actualizar Usuarios[10].
+- registerUser(forceUpdate) invalida después de restablecer el rol/cuenta.
+- Se agregan fixtures VM que verifican las tres claves eliminadas y ambos caminos de invalidación.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.381 security run 42730707185: completed/success.
+- C1.382 local VM fixture added; CI pending.
+- BETA-FUNC-020 remains Pendiente beta; no real deployment/Sheets validation.
+- TASK-636 En ejecución; AUD-NG-001/002 no cerrados.
+
+### Siguiente acción exacta
+Consultar CI C1.382; continuar auditoría contextual de permisos y revisar que los servicios que comparten Usuarios manejen consistentemente invalidación/revocación. Mantener la configuración HMAC real como validación beta pendiente.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.382.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.382.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================
+
+
+===============================================================================
+## C1.383 — 2026-11-10 — IMA-EXEC-20261110-0042Z-01
+
+- **Baseline válido:** C1.316 (SHA 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a).
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD físico anterior:** 5d6d4091d97c9ca5c5bbefdcd8a8f4ffab4cd484 (C1.382).
+- **Commits posteriores preservados:** C1.317–C1.382; no se usan como evidencia de continuidad. No se hizo reset, cherry-pick ni modificación de la rama base.
+- **Rama base protegida:** NG_beta_0.0.0.1 — SHA verificado antes de publicar: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Auditoría previa:** TASK-636 / iteración C1.316. Workflow y ejecuciones 42659818881 y 42659961195 exitosas; TASK-636 global continúa En ejecución; integración remota pendiente en beta.
+- **Tarea objetivo:** TASK-068 — PM-01, P0, orden local 1.
+- **Requisito original:** pendientes/Dirección/Pendientes.md, bloque TASK-068.
+- **Cambios:** resolvers USER y ACCOUNTING rechazan registros CONFIRMADA incompletos; findPersonMatches devuelve COINCIDENCIA_INSUFICIENTE; UI de Secretaría comunica ese estado; pruebas locales directas para ambos resolvers.
+- **Hallazgo:** seguimiento de AUD-NG-377, sin crear un ID duplicado.
+- **Archivos de producto/prueba:** backend/user-service/Code.gs; backend/accounting-service/Code.gs; js/secretary.js; tests/security/identity-mapping-contract.test.js.
+- **Registros actualizados:** auditoría principal TASK-636; auditoría principal TASK-068; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; Plan Maestro; backlog de Dirección; índice y parte activa de checkpoints.
+- **Pruebas:** ejecuciones posteriores a C1.316 no se aceptan como evidencia de continuidad. CI C1.383: 42732686635 identity-mapping-contract success; 42732686509 task-service-security-contract success. No se ejecutó integración remota Apps Script/Sheets/Drive.
+- **Beta pendiente:** BETA-FUNC-008 — comunicación real entre despliegues y configuración institucional. No bloqueante por §21.5.
+- **Commit:** C1.383 publicado: 7dc8e22bdd49b25ae4dbff8ad7b103a6580d1569.
+- **HEAD posterior:** pendiente de verificación después de actualizar exclusivamente NG_beta_0.0.0.1_work.
+- **Siguiente acción:** comprobar CI de C1.383 y cerrar TASK-068 únicamente si las pruebas concluyen correctamente; luego recalcular la siguiente tarea elegible PM-01 con §6.1.
+===============================================================================
+
+
+===============================================================================
+## C1.384 — 2026-11-10 — IMA-EXEC-20261110-0042Z-01
+
+- **Baseline válido:** C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a.
+- **Checkpoint de implementación:** C1.383 — 7dc8e22bdd49b25ae4dbff8ad7b103a6580d1569.
+- **Rama:** NG_beta_0.0.0.1_work.
+- **HEAD previo verificado:** 7dc8e22bdd49b25ae4dbff8ad7b103a6580d1569.
+- **Rama protegida:** NG_beta_0.0.0.1 — SHA 44d9891132332e692dbe2ba8602b41f50a508a59, sin modificaciones.
+- **TASK-068:** Completada localmente. CI 42732686635 y 42732686509 success. BETA-FUNC-008 sigue pendiente, no ejecutada y no bloqueante por §21.5.
+- **AUD-NG-377:** seguimiento resuelto localmente; ambos resolvers fallan cerrados ante correspondencias CONFIRMADA incompletas.
+- **TASK-636:** la iteración C1.316 está auditada; la tarea global sigue En ejecución. La ejecución 42732686509 valida contrato local de seguridad, no integración externa.
+- **PM-00:** la fila TASK-682 no tiene requisito original en la fuente indicada ni en el blob histórico recuperado; se clasifica como artefacto sintético no ejecutable y se excluye de la cola.
+- **Siguiente tarea:** TASK-153 — PM-01 — P0 — orden local 1.
+- **Requisito exacto:** pendientes/Dirección/Pendientes.md, bloque TASK-153; RECUPERACION/Pendientes_RECUPERADO.md, líneas 6506–6548.
+- **Auditoría de origen:** Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md, sección B/F41-08 y sección E/E2E-41-09.
+- **Prerrequisitos revisados:** Usuarios, CatalogoDepartamentos, AsignacionesAmbitosRoles, permisos de servicio, helper de propiedad y campos departamentales existen; estructuras específicas pendientes forman parte del alcance de TASK-153.
+- **F17-TASK02:** permanece pendiente; la matriz legal de recargos 25/50/75 requiere triage antes de calcular importes.
+- **Archivos actualizados:** backlog Dirección, auditorías principales TASK-636/TASK-068, Auditoria.txt, tareas_auditoria.txt, changueslogs.txt, Plan Maestro, índice y parte activa de checkpoints.
+- **Commit:** C1.384 publicado: fd15a79c2feab0a5eb975b98b9dce0bdf3f1726c.
+- **Siguiente acción:** iniciar auditoría única de TASK-153 reutilizando el informe FASE 41 existente; no crear informe duplicado.
+===============================================================================
+
+
+===============================================================================
+## C1.385 — 2026-11-10 — IMA-EXEC-20261110-0042Z-01
+
+- **Baseline válido:** C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a.
+- **Checkpoint anterior:** C1.384 — fd15a79c2feab0a5eb975b98b9dce0bdf3f1726c.
+- **Rama:** NG_beta_0.0.0.1_work.
+- **HEAD previo verificado:** fd15a79c2feab0a5eb975b98b9dce0bdf3f1726c.
+- **Rama protegida:** NG_beta_0.0.0.1 — SHA 44d9891132332e692dbe2ba8602b41f50a508a59, sin modificaciones.
+- **Tarea:** TASK-153 — PM-01 / P0 / orden local 1.
+- **Requisito:** pendientes/Dirección/Pendientes.md, bloque TASK-153; RECUPERACION/Pendientes_RECUPERADO.md, líneas 6506–6548.
+- **Auditoría de origen:** Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md, F41-08 y E2E-41-09; informe existente reutilizado.
+- **Hallazgos:** helper académico confía en payload; roles internos reciben bypass global; assertRecordOwnership no valida departamento para roles internos; consultas de documentos/expedientes sin barrera común; USER no exponía getUserContextScope.
+- **Cambios:** getUserContextScope basado en sesión firmada; filtra asignaciones activas por usuario+rol y vigencia; reconoce alcance institucional solo por asignación explícita; validateRoleScopeAccess usa contexto verificado; assignRoleScope exige actor verificado y upsert por usuario+rol+tipo.
+- **Pruebas:** nuevo contrato tests/security/department-scope-contract.test.js y workflow .github/workflows/department-scope-contract.yml; CI pendiente.
+- **Estado:** TASK-153 En ejecución. No se marcan criterios globales completos.
+- **Pendiente:** integración de assertRecordOwnership/validateAcademicResponsibilityAndScopeAccess en Academic, validación de Accounting, propiedad documental, operaciones granulares, referencias compartidas, filtros/importaciones y auditoría completa.
+- **Siguiente acción:** ejecutar CI C1.385 y continuar la integración perimetral en Academic Service.
+- **Commit:** este commit C1.385; SHA a verificar después de publicar.
+===============================================================================
+
+===============================================================================
+## C1.388 — 2026-11-10 — IMA-EXEC-20261110-0122Z-01
+
+- **Baseline válido:** C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a.
+- **Rama autorizada:** NG_beta_0.0.0.1_work.
+- **Rama protegida:** NG_beta_0.0.0.1 — SHA 44d9891132332e692dbe2ba8602b41f50a508a59, sin modificaciones.
+- **Checkpoint anterior documentado:** C1.385. La iteración incluye los commits C1.386, C1.387 y C1.388.
+- **Commits de código/prueba:** C1.386 5bbafab8c4b28ac2a5d31bcf9ebd64bd49a1f016; C1.387 f9be130f38aab02fd43d34cc7ebf12fcc5865357; C1.388 03471a1e36bdfccc29668103d1d4426e4353018a (HEAD verificado).
+- **Tarea activa:** TASK-153 — PM-01 / P0 / orden local 1. Estado En ejecución; no se cierra ni se marca ningún criterio global como completo.
+- **Requisito original:** pendientes/Dirección/Pendientes.md, bloque TASK-153; fuente histórica RECUPERACION/Pendientes_RECUPERADO.md, líneas 6506–6548.
+- **Auditoría única reutilizada:** Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md, F41-08 y E2E-41-09. No se crea un informe duplicado ni un ID de hallazgo nuevo.
+
+### Cambios de C1.386–C1.388
+
+- **ACADEMIC:** identidad de actor obtenida de sesión firmada; validateAcademicResponsibilityAndScopeAccess ignora userId/role aportados por el cliente y exige ámbitos activos; valida departamento de asignatura y asignación docente vigente.
+- **ACADEMIC:** getStudentFile y getStudentDocuments aplican propiedad del expediente; estudiante solo accede a su persona vinculada; tutor requiere relación activa y acceso de portal habilitado; getPendingDocumentsReport, uploadStudentDocument, updateDocumentStatus y grantDocumentExemption aplican la barrera de ámbito.
+- **ACADEMIC:** assertRecordOwnership deja de conceder acceso por defecto a roles internos; getSecureDocumentStream y validateEvidenceFileAndPermissions exigen que el archivo se resuelva a un documento autorizado.
+- **ACCOUNTING:** contexto de identidad y ámbito verificado; getEmployeeDocuments filtra por departamento resuelto desde ExpedientesLaborales.Departamento; uploadEmployeeDocument comprueba propiedad/ámbito; validateRolePermission exige ámbito para las acciones de documentos laborales.
+- **ACCOUNTING:** las nuevas cargas de DocumentosLaborales se configuran como privadas, no como enlaces públicos para cualquiera.
+- **Pruebas:** contratos directos Academic y Accounting; se amplía el contrato de identity mapping; workflow department-scope-contract.yml ejecuta las suites de ámbito.
+
+### CI y revalidación
+
+- C1.386 tuvo una primera ejecución fallida por una colisión de nombre actor en getStudentTimeline; corregida en C1.387. Esa ejecución fallida no se usa como evidencia de aprobación.
+- **Task-Service security local contracts:** run 42737665503, success, HEAD C1.387.
+- **Identity mapping and transport security contracts:** run 42737873813, success, HEAD C1.388.
+- **Department Scope Contract:** run 42737873883, success, HEAD C1.388.
+- Estas pruebas son contratos locales Node/VM. No se ejecutó integración real remota Apps Script/Sheets/Drive.
+
+### Límites y hallazgos pendientes
+
+1. ExpedientesEstudiantes y DocumentosEstudiante no contienen actualmente un DepartamentoID propietario. Los accesos departamentales a esos recursos fallan cerrados con RESOURCE_DEPARTMENT_UNRESOLVED cuando no se puede determinar el propietario. Las pruebas de departamento usan fixtures con el campo presente; falta ampliar el esquema, migrar datos y validar su integridad.
+2. ExpedientesLaborales sí contiene Departamento; DocumentosLaborales se autoriza mediante esa relación. Los archivos laborales preexistentes pueden conservar permisos públicos anteriores; no se ejecutó una limpieza/revocación masiva.
+3. No se encontraron implementaciones de las estructuras ExpedientesInstitucionales ni SolicitudesFirmas. Tampoco se encontró CatalogoDepartamentos; existe DepartamentosAcademicos, usado para resolver departamentos.
+4. validateEvidenceFileAndPermissions ahora falla cerrado para archivos que no estén relacionados con DocumentosEstudiante; falta mapear los demás tipos de evidencia a su expediente y ámbito.
+5. Sigue pendiente revisar uploadPaymentVoucher en ACCOUNTING: el flujo observado conserva ANYONE_WITH_LINK y recibe userId del payload. Se registra como riesgo relacionado, no corregido en esta iteración.
+6. No se implementaron todavía referencias compartidas con campos permitidos, vigencia y revocación; control granular completo de descarga/firma/compartir/exportar/eliminar/restaurar; filtros de búsqueda/importación; ni el parámetro POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL.
+7. BETA-FUNC-008 continúa pendiente por integración/configuración entre despliegues; no se declara ejecutada y permanece no bloqueante conforme a §21.5.
+
+### Dictamen y siguiente paso
+
+- TASK-153 permanece En ejecución y sus criterios de aceptación globales continúan pendientes.
+- Próximo trabajo dentro de TASK-153: incorporar propiedad departamental verificable a expedientes/documentos estudiantiles y migrar datos; corregir el flujo uploadPaymentVoucher; resolver las estructuras institucionales y de firmas; continuar con referencias compartidas y operaciones granulares.
+- **HEAD C1.388 verificado:** 03471a1e36bdfccc29668103d1d4426e4353018a.
+- **Siguiente publicación:** actualización documental/checkpoint C1.388, sin modificar la rama protegida.
+===============================================================================
+
+===============================================================================
+## C1.391 — 2026-11-10 — IMA-EXEC-20261110-0153Z-01
+
+- **Baseline válido:** C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a.
+- **Checkpoint previo:** C1.388, documentado en C1.389.
+- **Rama:** NG_beta_0.0.0.1_work. **Rama protegida:** NG_beta_0.0.0.1 — SHA 44d9891132332e692dbe2ba8602b41f50a508a59, sin modificaciones.
+- **Commits:** C1.390 26a97d3a752233b9468bdc1f068edfe18cf5e7cf; C1.391 2a5f892ed024e0291bf89ec116df2ec43851efc4 (HEAD verificado).
+- **Tarea activa:** TASK-153 — PM-01 / P0 / orden local 1. Sigue En ejecución; no se cierra ningún criterio global.
+- **Auditoría única:** F41-08 y E2E-41-09 del informe FASE 41 existente; sin ID duplicado.
+
+### Incremento C1.390–C1.391 — comprobantes de pago
+
+- Se añade resolución de persona y expediente del estudiante desde Usuarios y ExpedientesEstudiantes.
+- uploadPaymentVoucher exige sesión firmada y verifica estudiante propio, tutor con relación activa y acceso de portal, o personal con ámbito departamental/institucional autorizado.
+- Los archivos nuevos de comprobantes se configuran como privados; se elimina ANYONE_WITH_LINK.
+- getPaymentVouchers filtra por propietario y ámbito; el selector userId del cliente no puede cambiar la identidad de un estudiante autenticado.
+- reviewPaymentVoucher exige actor firmado, rechaza revisión por estudiante/tutor y comprueba el ámbito del propietario antes de mutar estado o registrar el pago.
+- validateRolePermission incorpora prevalidación de ámbito para las acciones de comprobantes y documentos laborales.
+- Se amplía el contrato Accounting con pruebas de estudiante propio, IDOR, tutor vinculado/no vinculado, departamento, alcance institucional, revisión y privacidad del archivo.
+
+### CI
+
+- **Identity mapping and transport security contracts:** run 42738762937, success, HEAD C1.390.
+- **Department Scope Contract:** run 42738862173, success, HEAD C1.391.
+- **Task-Service security local contracts:** run 42737665503, success, HEAD C1.387; no se modificó TASK-Service en C1.390–C1.391.
+- La primera ejecución Department Scope de C1.390 falló porque el test pasó un argumento Spreadsheet adicional al helper; se corrigió en C1.391. La ejecución aprobada es 42738862173.
+- CI local Node/VM; no se ejecutó integración real Apps Script/Sheets/Drive.
+
+### Límites y pendientes
+
+1. ExpedientesEstudiantes y DocumentosEstudiante siguen sin DepartamentoID propietario. Personal departamental no obtiene acceso a esos registros cuando el propietario no puede resolverse; el backend falla cerrado. Falta ampliar esquema, asignar departamento desde fuente autoritativa y migrar datos existentes.
+2. Los nuevos comprobantes se guardan privados, pero todavía no existe un endpoint de streaming/preview autorizado para esos archivos; el URL devuelto puede no ser accesible directamente al usuario final. Los comprobantes preexistentes pueden seguir siendo públicos y requieren limpieza/revocación.
+3. DocumentosLaborales preexistentes también requieren revisión de permisos anteriores; los nuevos uploads son privados.
+4. ExpedientesInstitucionales y SolicitudesFirmas no fueron encontrados/implementados; CatalogoDepartamentos tampoco, aunque existe DepartamentosAcademicos.
+5. validateEvidenceFileAndPermissions falla cerrado para evidencia no vinculada a DocumentosEstudiante; faltan relaciones de propiedad para otros tipos de evidencia.
+6. Continúan pendientes las referencias compartidas con vigencia/revocación, operaciones granulares de descarga/firma/compartir/exportar/eliminar/restaurar, filtros de búsqueda/importación y POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL.
+7. BETA-FUNC-008 sigue pendiente y no bloqueante por §21.5.
+
+### Dictamen y siguiente paso
+
+- TASK-153 permanece En ejecución. No se marcan completos los criterios de aceptación globales.
+- Siguiente trabajo: propiedad departamental y migración de expedientes/documentos estudiantiles; servicio de lectura/preview autorizado para archivos privados; revocación de enlaces públicos históricos; después estructuras institucionales/firmas, referencias compartidas y operaciones granulares.
+- **HEAD C1.391 verificado:** 2a5f892ed024e0291bf89ec116df2ec43851efc4.
+===============================================================================
+
+===============================================================================
+## C1.393 — 2026-11-10 — IMA-EXEC-20261110-0158Z-01
+
+- **Baseline lógico válido:** C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a.
+- **Checkpoint anterior:** C1.391, registrado en el commit documental C1.392 (c785939f9e264f3abe30571eb9ca015ce8e736f1).
+- **Rama autorizada:** NG_beta_0.0.0.1_work. **Rama protegida:** NG_beta_0.0.0.1 — SHA 44d9891132332e692dbe2ba8602b41f50a508a59, sin modificaciones.
+- **Commit funcional C1.393:** c9b0cb6524693087731c34d36645212aec21711a; HEAD de rama de trabajo verificado.
+- **Tarea activa:** TASK-153 — PM-01 / P0 / orden local 1. Sigue En ejecución; no se cierra ningún criterio global.
+- **Auditoría única:** se continúa F41-08/E2E-41-09 en el informe FASE 41 existente; no se crea un informe ni un ID duplicado.
+
+### Incremento C1.393 — lectura autenticada de comprobantes privados
+
+- ACCOUNTING incorpora getPaymentVoucherFile, expuesto mediante el router doPost y permisos RBAC de los roles que ya podían consultar comprobantes.
+- La operación exige sesión verificada y un comprobanteId; localiza la fila en ComprobantesPago y deriva el file ID exclusivamente de la referencia almacenada. Ignora cualquier fileId proporcionado por el cliente.
+- Antes de acceder a Drive reutiliza assertPaymentVoucherOwnerAccess_: estudiante propio, tutor con relación activa y acceso de portal, personal con ámbito departamental o rol con ámbito institucional explícito.
+- La lectura falla cerrada si la referencia no es válida, el archivo no existe o está en papelera, está vacío, supera 10 MiB o su extensión/MIME no pertenece a PDF/JPG/JPEG/PNG/WEBP.
+- El endpoint entrega el contenido autorizado en Base64, junto con nombre, MIME y tamaño, para que un cliente autenticado pueda construir una vista/descarga sin un enlace público.
+- Se amplía tests/security/accounting-departmental-resource-access.test.js con casos de identidad propia, IDOR, tutor vinculado, ámbito departamental, alcance institucional, sesión inválida, comprobante inexistente y file ID inyectado en payload (ignorado).
+
+### CI C1.393
+
+- **Identity mapping and transport security contracts:** run 42739904392 — completed/success. Logs confirman TASK-068 identity mapping y TASK-030 transport scope.
+- **Department Scope Contract:** run 42739904420 — completed/success. Logs confirman department scope, Academic departmental resource access y Accounting departmental resource/payment voucher access contracts.
+- Ambas ejecuciones corresponden exactamente al HEAD C1.393 (c9b0cb6524693087731c34d36645212aec21711a) en NG_beta_0.0.0.1_work.
+- Las pruebas son contratos locales Node/VM. No se ejecutó una integración real con Apps Script, Sheets o Drive.
+
+### Límites y pendientes
+
+1. No se integró todavía la llamada del cliente/UI para solicitar getPaymentVoucherFile y construir la vista/descarga desde Base64; este incremento implementa y prueba el endpoint backend.
+2. Los comprobantes y documentos históricos pueden conservar permisos públicos anteriores. No se ejecutó limpieza ni revocación masiva en Drive; la existencia del endpoint no revoca enlaces ya compartidos.
+3. El esquema de ExpedientesEstudiantes/DocumentosEstudiante sigue sin DepartamentoID propietario; la migración desde una fuente autoritativa continúa pendiente.
+4. Siguen pendientes ExpedientesInstitucionales, SolicitudesFirmas, referencias compartidas revocables, operaciones granulares, filtros de búsqueda/importación y POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL.
+5. No se probó acceso en runtime de despliegues Apps Script ni la recuperación de archivos reales; no se afirma PASS de integración.
+
+### Dictamen y siguiente paso
+
+- TASK-153 permanece En ejecución; no se marcan completos los criterios de aceptación globales.
+- Siguiente trabajo: integrar el endpoint Base64 en la UI de comprobantes y validar el flujo de extremo a extremo con un archivo privado de prueba; después inventariar y revocar de forma controlada permisos públicos históricos. Continuar la propiedad departamental y migración de expedientes/documentos estudiantiles.
+- **HEAD C1.393 verificado:** c9b0cb6524693087731c34d36645212aec21711a.
+===============================================================================
+
+===============================================================================
+## C1.395 — 2026-11-10 — IMA-EXEC-20261110-0158Z-01
+
+- **Baseline lógico válido:** C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a.
+- **Checkpoint anterior:** C1.393, registrado en el commit documental C1.394 (1eb6ad69f40daa2f7d1a75d01fa2d07d28b7ba15).
+- **Rama autorizada:** NG_beta_0.0.0.1_work. **Rama protegida:** NG_beta_0.0.0.1 — SHA 44d9891132332e692dbe2ba8602b41f50a508a59, sin modificaciones.
+- **Commit funcional C1.395:** d972031231d8ebe8fbbf30e37379a4976508f49a; HEAD de rama de trabajo verificado.
+- **Tarea activa:** TASK-153 — PM-01 / P0 / orden local 1. Sigue En ejecución; no se cierra ningún criterio global.
+- **Auditoría única:** continuación de F41-08/E2E-41-09 en el informe FASE 41; no se crea un ID ni un informe duplicado.
+
+### Incremento C1.395 — integración de vista de comprobantes privados en portal estudiantil
+
+- Se habilita la pestaña existente Matrícula y Finanzas del dashboard estudiantil, que ahora consulta ACCOUNTING mediante getPaymentVouchers.
+- La vista presenta únicamente los comprobantes que devuelve el backend para la identidad estudiantil autenticada; muestra fecha, referencia, importe y estado usando nodos DOM/textContent.
+- La acción Ver comprobante invoca getPaymentVoucherFile con el comprobanteId interno. No abre ni navega al comprobanteUrl histórico de Drive.
+- El contenido Base64 se transforma en Blob y URL.createObjectURL para vista PDF/imagen y descarga; el objeto URL se revoca al cerrar el modal o reemplazar la vista.
+- La UI informa comprobantes sin archivo y errores de consulta/lectura sin exponer enlaces de Drive.
+- Se agrega tests/security/student-payment-voucher-client.test.js y se amplía department-scope-contract.yml para ejecutar el contrato cliente y node --check js/student.js en los cambios de la rama autorizada.
+
+### CI C1.395
+
+- **Department Scope Contract:** run 42740584865 — completed/success, HEAD d972031231d8ebe8fbbf30e37379a4976508f49a.
+- Los pasos ejecutados y aprobados incluyen department scope, Academic departmental resource access, Accounting departmental resource access, student private voucher client contract y node --check js/student.js.
+- El contrato cliente es una verificación estática de integración de acciones/Blob URL; node --check valida sintaxis. No se ejecutó automatización de navegador ni integración real de Apps Script/Sheets/Drive.
+
+### Límites y pendientes
+
+1. La vista integrada corresponde al portal de estudiante/alumno; no se agregó UI de consulta de archivos para tutores ni personal administrativo.
+2. No se realizó prueba real de navegador, sesión desplegada, archivo privado en Drive ni despliegue Apps Script.
+3. Los comprobantes/documentos históricos pueden conservar permisos públicos anteriores; este cambio no revoca enlaces compartidos previamente.
+4. ExpedientesEstudiantes/DocumentosEstudiante siguen sin DepartamentoID propietario; faltan migración y validación de esquema.
+5. Referencias compartidas, operaciones granulares, filtros de búsqueda/importación, estructuras institucionales/firmas y parametrización estricta siguen pendientes.
+
+### Dictamen y siguiente paso
+
+- TASK-153 permanece En ejecución. No se marcan completos los criterios globales de aislamiento.
+- Siguiente trabajo: prueba end-to-end en un despliegue de prueba con un comprobante privado real y sesión autenticada; después inventario/revocación controlada de enlaces públicos históricos. Continuar la propiedad departamental y migración de expedientes/documentos estudiantiles.
+- **HEAD C1.395 verificado:** d972031231d8ebe8fbbf30e37379a4976508f49a.
+===============================================================================
+
+===============================================================================
+## C1.399 — 2026-11-10 — IMA-EXEC-20261110-0158Z-01
+
+- **Baseline lógico válido:** C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a.
+- **Checkpoint anterior:** C1.395, registrado en el commit documental C1.396 (bb2d22d1a349b3651feb3ee40bc8c3f6d0a815ea).
+- **Rama autorizada:** NG_beta_0.0.0.1_work. **Rama protegida:** NG_beta_0.0.0.1 — SHA 44d9891132332e692dbe2ba8602b41f50a508a59, sin modificaciones.
+- **Commits funcionales/test:** C1.397 e382c9a614f2c77bc5107bc17598bc1ac4694360; C1.398 3996c0bfacaea278647a657e0c4c0dcf6fe60464 (HEAD verificado).
+- **Tarea activa:** TASK-153 — PM-01 / P0 / orden local 1. Sigue En ejecución; no se cierra ningún criterio global.
+- **Auditoría única:** F41-08/E2E-41-09, informe FASE 41 existente; no se crea un ID ni un informe duplicado.
+
+### Incremento C1.397–C1.398 — reducción de exposición y errores opacos
+
+- getPaymentVouchers deja de devolver el enlace histórico de Drive: comprobanteUrl se devuelve vacío y se expone solo tieneComprobante como indicador de disponibilidad.
+- La UI estudiantil usa tieneComprobante y no consume comprobanteUrl.
+- getPaymentVoucherFile normaliza los intentos de acceso no autorizado a RESOURCE_NOT_FOUND con mensaje genérico, igual que un comprobante inexistente, para no revelar si un ID de otro propietario/departamento existe.
+- Se amplían los contratos Accounting para comprobar que el listado no expone el enlace, que el cliente no lo consume y que los archivos en papelera, vacíos o con extensión/MIME no permitido se rechazan.
+- Los fixtures de archivos inválidos se agregan después de las aserciones de listados para no alterar las expectativas de aislamiento del conjunto de comprobantes.
+
+### CI y correcciones de fixtures
+
+- **CI final Department Scope Contract:** run 42741228237 — completed/success, HEAD C1.398 (3996c0bfacaea278647a657e0c4c0dcf6fe60464).
+- Logs: department scope, Academic departmental resource access, Accounting departmental resource/payment voucher access, student private voucher client contract y node --check js/student.js — todos success.
+- **Ejecuciones previas no aprobadas:** run 42741028029 falló por expectativa de lista no actualizada al agregar fixtures; run 42741142611 falló porque el test esperaba RESOURCE_SCOPE_DENIED, aunque el endpoint ya ocultaba correctamente el recurso con RESOURCE_NOT_FOUND. Ambos problemas fueron corregidos en C1.398. No se usan como evidencia PASS.
+- No se ejecutó integración real Apps Script/Sheets/Drive ni automatización de navegador.
+
+### Límites y pendientes
+
+1. El portal implementado cubre estudiante/alumno; no hay UI equivalente para tutor ni personal administrativo.
+2. No se probó navegador real, sesión de despliegue, archivo privado real en Drive ni despliegue Apps Script.
+3. Los permisos públicos de archivos históricos no se revocan por ocultar comprobanteUrl; requieren inventario y cambio controlado de permisos en Drive.
+4. ExpedientesEstudiantes/DocumentosEstudiante siguen sin DepartamentoID propietario; la migración desde una fuente autoritativa continúa pendiente.
+5. Referencias compartidas, operaciones granulares, filtros de búsqueda/importación, estructuras institucionales/firmas y política estricta siguen pendientes.
+
+### Dictamen y siguiente paso
+
+- TASK-153 permanece En ejecución; no se marcan completos los criterios globales.
+- Siguiente trabajo: identificar fuente autoritativa para DepartamentoID de expedientes/documentos estudiantiles y diseñar migración fail-closed; la validación en Drive real queda condicionada a un deployment de prueba y fixtures privados controlados.
+- **HEAD C1.398 verificado:** 3996c0bfacaea278647a657e0c4c0dcf6fe60464.
+===============================================================================
+
+
+===============================================================================
+## C1.400 — 2026-11-10 — IMA-EXEC-20261110-0253Z-01
+
+- **Baseline lógico válido:** C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a.
+- **Checkpoint anterior:** C1.399 — Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice Auditoría/INDICE_CHECKPOINTS.md.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama autorizada:** NG_beta_0.0.0.1_work. **HEAD de partida verificado:** 88f9163b47a18cd464d13bf5c827ac4b114768d0.
+- **Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; sin modificaciones.
+- **Tarea activa auditada:** TASK-153 — PM-01 / P0. Sigue En ejecución.
+- **Tarea reclasificada:** TASK-682 — PM-01 / P1. Sigue Pendiente; no se implementa en esta iteración.
+
+### Auditoría de la iteración anterior — TASK-153 / C1.397–C1.398
+- Commits revisados: C1.397 e382c9a614f2c77bc5107bc17598bc1ac4694360; C1.398 3996c0bfacaea278647a657e0c4c0dcf6fe60464.
+- CI Department Scope run 42741228237: completed/success sobre C1.398.
+- Dictamen: el incremento publicado cumple su alcance local; no se identificó defecto accionable ni razón para reabrir TASK-153. No se activa la excepción de dos commits de §19.2.1.
+- No ejecutados: browser automation, Apps Script real, Sheets/Drive reales ni descarga con fixture remoto; se conservan como límites beta.
+
+### Auditoría preimplementación — continuación TASK-153
+- Siguiente alcance: determinar la fuente autoritativa del DepartamentoID propietario para expedientes/documentos estudiantiles y diseñar migración fail-closed.
+- Esquema ExpedientesEstudiantes: 11 campos, sin DepartamentoID.
+- Esquema DocumentosEstudiante: 13 campos, con ExpedienteID/SolicitudID, sin DepartamentoID.
+- SolicitudesAdmision: 16 campos, sin DepartamentoID. Matriculas: 11 campos, sin DepartamentoID.
+- getStudentPersonIdForUser_ solo resuelve PersonaID. getVerifiedAcademicDepartmentScope_ devuelve ámbitos del actor, no la propiedad del recurso.
+- assertStudentExpedienteScopeAccess_ y assertStudentDocumentScopeAccess_ fallan cerrados si no resuelven DepartamentoID. USER usa CatalogoDepartamentos y ACADEMIC DepartamentosAcademicos; no se acreditó fuente única ni mapeo por grado/sección.
+- Dictamen: no existe evidencia suficiente para migrar propietario sin inferencia. No copiar el departamento del actor ni deducirlo de grado/sección. Se requiere fuente institucional autoritativa o asignación explícita aprobada y auditable. TASK-153 permanece En ejecución, sin nuevo código.
+
+### Hallazgo documental AUD-NG-382 — corrección de PM-00
+- La selección C1.384 afirmó que el backlog canónico de Otros estaba vacío en C1.316. Es incorrecto: el árbol C1.316 contiene pendientes/Otros/Pendientes.md, blob 35cbd51f1e0b2f91f18b46c94d38223338d5ccdf, 1.649.288 bytes, con TASK-682 en líneas 8891–8902.
+- El blob ef47d232db3ed46317dc14f22b1cdf8f938e8405 es RECUPERACION/Pendientes_RECUPERADO.md, no el backlog canónico. El blob actual de Otros es 24347c3776521c930391f89e0430910554bf233b.
+- TASK-682 tiene requisitos completos y prioridad P1; la fila maestra se reclasifica PM-01 / Identidad, seguridad y gobierno de acceso / P1. No hay dependencia obligatoria explícita TASK-682 → TASK-153; TASK-153 conserva P0.
+- Se conserva el historial C1.384 y se supersede únicamente su decisión sobre TASK-682. No se crea un ID de tarea nuevo.
+
+### Archivos modificados
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- Auditoría/MapaDependencias.md
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Archivos/código no modificados
+- pendientes/Otros/Pendientes.md (requisito fuente intacto)
+- RECUPERACION/Pendientes_RECUPERADO.md (fuente histórica intacta)
+- Código de producto, pruebas, configuraciones y datos productivos: sin cambios.
+- No se ejecutaron pruebas nuevas de producto; solo verificaciones documentales/estructurales.
+
+### Verificaciones
+- HEAD de trabajo y HEAD base consultados antes de preparar cambios.
+- Blobs de respaldo registrados: Plan e432415966c248a3f67785439e3ff5483391e94e; FASE 41 961be16ed418b3079097eb6072caa47f619df72d; Auditoria.txt 68d45378c514c7de74401e609797c12d2bbf6e62; tareas_auditoria.txt a056ab229ac66e979ce0a922226bdad518073432; MapaDependencias 350ac4601f2787b3321ae91fb5d5653ab3124dd5; changueslogs 1aa889d79454cbf3fbf79dd1049b7ee40c2e0def; checkpoint original SHA se registra en el índice; índice original SHA se registra en el commit.
+- Backlog canónico baseline C1.316: 35cbd51f1e0b2f91f18b46c94d38223338d5ccdf. Backlog canónico vigente: 24347c3776521c930391f89e0430910554bf233b. Blob RECUPERACION no canónico: ef47d232db3ed46317dc14f22b1cdf8f938e8405.
+- Pruebas ejecutadas: validación de existencia del requisito, comparación de ruta/blob correcto, verificación de sustitución única de fila PM, conteo de caracteres del checkpoint y revisión de archivos preparados.
+- Pruebas no ejecutadas: test suites de producto, runtime Apps Script, browser automation, HTTP/E2E y Drive/Sheets reales; no se modificó código.
+- **Commit de cierre:** este commit; SHA a confirmar tras publicación consultando HEAD de GitHub.
+- **Siguiente acción concreta:** obtener confirmación de la fuente institucional autoritativa para DepartamentoID; después diseñar la migración histórica verificable y continuar TASK-153 en un commit separado.
+- **Ubicación exacta:** Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.400.
+===============================================================================
+
+===============================================================================
+## C1.401 — IMA-EXEC-20261110-0306Z-01 — Continuidad bloqueada, dependencias PM-01 y AUD-NG-383
+
+### Continuidad y rama
+- HEAD de partida: 48d89e6f96f9f3573647698067c4a1713435084a (commit documental C1.400).
+- Rama exclusiva: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1, HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- C1.400 se confirma como checkpoint vigente. No se reinicia trabajo ni se repiten las pruebas/actividades de C1.397–C1.398.
+
+### Tarea activa y bloqueo
+- TASK-153 / PM-01 / P0 / orden local 1 permanece En ejecución.
+- Se revalida la decisión de 10.75: la siguiente acción es obtener una fuente institucional autoritativa para DepartamentoID del recurso estudiantil y continuar el mapeo/migración fail-closed.
+- ExpedientesEstudiantes, DocumentosEstudiante, SolicitudesAdmision y Matriculas no contienen DepartamentoID. getStudentPersonIdForUser_ identifica PersonaID, no el departamento propietario. getVerifiedAcademicDepartmentScope_ devuelve ámbitos del actor, no la propiedad del recurso. No se encontró una relación institucional verificable entre grado/sección/matrícula y departamento propietario.
+- No se deduce propiedad desde el departamento del actor, grado o sección. Sin fuente autoritativa o asignación explícita aprobada y auditable, el bloqueo es real y permanece abierto.
+
+### Dependencias derivadas de TASK-153
+- TASK-139 queda bloqueada para la dimensión departamental de MatrizPermisosDocumentales: la matriz de roles existente no determina el propietario del expediente/documento.
+- TASK-123 queda bloqueada para la resolución de destinos: CatalogoSpreadsheets existe, pero no acredita el departamento propietario de cada entidad/destino.
+- Se incorporan ambas aristas en el Plan Maestro y MapaDependencias, conforme al paso 6 de §6.1. No se alteran los requisitos originales.
+- TASK-682 permanece P1 pendiente; no se inventa dependencia TASK-682 → TASK-153.
+
+### Hallazgo focalizado de seguridad — AUD-NG-383
+- Se detecta un bypass en getAttendanceFollowupCases: authRole del cliente prevalece sobre _verifiedRole. ROLE_PERMISSIONS permite la acción a Secretaría, por lo que un actor autenticado como Secretaría puede declarar Director para el filtro de confidencialidad.
+- saveAttendanceFollowupCase y addCaseFollowUpNote carecen de autorización por expediente/asignación. getGuidanceAppointments entrega NotasConfidenciales a cualquier usuario de Orientación/Consejería sin comprobar asignación. Las mutaciones relacionadas tampoco verifican el vínculo del actor con el caso.
+- generateConsolidatedAttendanceAndCoexistenceReport confía en rolSolicitante y expone el conteo de casos excluidos; además confunde ResponsableID con categoría al inspeccionar row[4].
+- Docente no aparece actualmente autorizado en ROLE_PERMISSIONS para getAttendanceFollowupCases; no se le atribuye el bypass confirmado.
+- RegistrosOrientacion no se encontró en Code.gs del backend; CitasOrientacion sí contiene NotasConfidenciales. La discrepancia requisito-esquema queda registrada.
+- AUD-NG-383 se vincula al F11-TASK01 existente. Se agrega adenda al informe FASE 11; no se crea informe ni tarea duplicados. F11-TASK01 permanece Pendiente y no se implementa en esta sesión.
+
+### Archivos modificados
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/MapaDependencias.md
+- Auditoría/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Archivos de producto y pruebas
+- Código de producto: sin cambios.
+- Pruebas y workflows: sin cambios.
+- Datos, hojas, propiedades, despliegues y ramas externas: sin cambios.
+- Pruebas ejecutadas: verificación documental de dependencias, lectura de rutas de código/roles, validación de unicidad de AUD-NG-383 y comprobación de integridad/longitud de los documentos preparados.
+- Pruebas no ejecutadas: suites de producto, runtime Apps Script, navegador, HTTP/E2E, Drive/Sheets reales. No se declara ningún PASS funcional.
+
+### Respaldo y publicación
+- Backups Git alcanzables desde HEAD de partida: Plan 25e7f85c8b404222292a8e8696523848e0eb7a0e; Mapa dc179f803f60738d690cdcc1161c4533e4d0b5ff; Índice 9b589c8a7cd0806f4f6163feba6916d69ac56e94; Checkpoints Parte 0003 a121b2b1aabf96eaec3ef4be319b1ec1d3fbad0a; FASE 11 9999dd843c028b02b86f8ceb06645fd90f182286; Auditoria.txt 4bd406c49c6033f24da3ad3e24fb2ca640250727; tareas_auditoria.txt cf481629969f85ff810f218362b73660ee6671e3; changueslogs.txt 49ae71b07e382b785bd2ffe4b6ce658fc9eeb972.
+- Checkpoint Parte 0003 antes de anexar: 152.699 bytes; el tamaño resultante se valida por debajo del límite de rotación de 180.000 bytes.
+- Se publicará un único commit documental, solo en NG_beta_0.0.0.1_work, con expected_sha 48d89e6f96f9f3573647698067c4a1713435084a. La rama base no se toca.
+- HEAD y SHA del commit de cierre se verificarán después de publicar.
+
+### Siguiente acción exacta
+Obtener/confirmar la fuente institucional autoritativa que relaciona cada expediente/recurso estudiantil con su departamento propietario, o una asignación explícita aprobada y auditable. Después diseñar el mapeo histórico verificable y continuar TASK-153. No iniciar TASK-139/TASK-123 mientras esa dependencia siga sin resolver.
+===============================================================================
+
+
+===============================================================================
+## C1.402 — Descomposición funcional TASK-153 / PM-01
+
+**Sesión:** IMA-EXEC-20261110-0436Z-01  
+**Fecha:** 2026-11-10  
+**Checkpoint anterior:** C1.401  
+**HEAD de partida:** e7c7b57f9b7ddb865e61f59afc317b65d9d126d6  
+**Rama:** NG_beta_0.0.0.1_work  
+**Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría de continuidad
+- Rama y HEAD verificados antes de editar: NG_beta_0.0.0.1_work @ e7c7b57f9b7ddb865e61f59afc317b65d9d126d6. La rama base permanece en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Se releen plan maestro, mapa de dependencias, índice, checkpoint C1.401, auditoría consolidada y changelog.
+- TASK-153 continúa En ejecución / PM-01 / P0. Se conserva la tarea madre; no se crea un ID global duplicado.
+
+### Trabajo realizado
+- Se incorpora la especificación del usuario a PLAN_MAESTRO_IMPLEMENTACION.md §10.77.
+- Se registra el uso de referentes SIS/LMS y ERP/SoD, distinguiendo patrones de diseño de requisitos internos y limitando el alcance a propiedad/autorización de recursos estudiantiles.
+- Se descompone TASK-153 en ocho unidades locales T153-S01…T153-S08: fuente canónica; contexto de roles/responsabilidades/ámbitos; propiedad de recursos; conciliación histórica; autorización por recurso; filtros masivos; delegación/cambio de propietario; certificación.
+- Se establecen criterios transversales: alta con propietario válido; rechazo de departamento inexistente/inactivo; denegación interdepartamental; alcance global solo por jerarquía formal; contexto activo para multiámbito; fail-closed para huérfanos; protección de expedientes cerrados/archivados; auditoría de delegación.
+- T153-S01 queda como siguiente unidad ejecutable. Antes de migrar o escribir DepartamentoID debe identificarse la autoridad entre CatalogoDepartamentos y DepartamentosAcademicos.
+- Se mantienen las dependencias TASK-153 → TASK-139 y TASK-153 → TASK-123.
+
+### Archivos modificados
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/MapaDependencias.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Verificación y límites
+- Verificación documental: HEAD/ramas, lectura de documentos rectores y consistencia del alcance de la descomposición.
+- No se modificó código, esquemas, datos ni configuración.
+- No se ejecutaron pruebas de producto, runtime Apps Script, Sheets/Drive reales, HTTP/E2E ni navegador.
+- TASK-153 no se cierra. T153-S01 queda seleccionada; la asignación/migración de propietarios continúa bloqueada hasta obtener una fuente institucional autoritativa o decisión formal aprobada y auditable.
+
+### Siguiente acción exacta
+Ejecutar únicamente T153-S01: inspeccionar el modelo completo de CatalogoDepartamentos y DepartamentosAcademicos, sus IDs, relaciones, escrituras, consumidores y reglas de vigencia; contrastarlo con la definición institucional disponible. Emitir dictamen de autoridad y mapeo. Si no existe autoridad demostrable, registrar el bloqueo y solicitar/esperar la decisión institucional sin tocar datos. Mantener el commit por unidad.
+
+### Commit
+Commit documental C1.402 en NG_beta_0.0.0.1_work; SHA a verificar tras publicación. Rama base intacta.
+===============================================================================
+
+
+===============================================================================
+## C1.403 — TASK-153 / T153-S01 — dictamen de autoridad departamental
+
+**Sesión:** IMA-EXEC-20261110-0439Z-01  
+**Fecha:** 2026-11-10 04:39Z  
+**Checkpoint anterior:** C1.402  
+**HEAD de partida:** abe1d701a0b13cf2dc926550670615407e9f2612  
+**Rama:** NG_beta_0.0.0.1_work  
+**Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59  
+**Tarea:** TASK-153 / PM-01 / P0; unidad T153-S01.  
+**Requisito original:** `pendientes/Dirección/Pendientes.md`, bloque TASK-153, líneas 696–754; fila TASK-153 de `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md` §9.  
+**Unidad siguiente según C1.402:** T153-S01 — inspección de autoridad de CatalogoDepartamentos y DepartamentosAcademicos.
+
+### Auditoría de continuidad y tarea anterior
+- C1.402 se verificó en `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`, líneas 2008–2051. El commit de contenido es 14e5dfe77fbe93759ec63b5066781967316883a8; abe1d701a0b13cf2dc926550670615407e9f2612 finaliza la fila del índice.
+- La comparación desde el HEAD anterior a C1.402 muestra únicamente documentación/checkpoint/índice; no hay cambios de código después de C1.398. La revisión C1.400 del incremento C1.397–C1.398 permanece vigente y CI Department Scope run 42741228237 fue completed/success.
+- No se activa §19.2.1: no se encontró incumplimiento nuevo en la tarea anterior que exija corrección de código antes de T153-S01.
+
+### Auditoría del requisito objetivo y selección
+- TASK-153 es PM-01/P0/orden local 1; su requisito original exige autorización por ámbito y propiedad real del recurso, no inferida desde el actor.
+- T153-S01 precede a T153-S03 y T153-S04. TASK-139 y TASK-123 continúan dependiendo de TASK-153.
+- TASK-506 es una tarea distinta existente PM-02/P1, con requisito canónico en `pendientes/Dirección/Pendientes.md`, líneas 2366 en adelante. Su criterio 3 cubre la relación o separación explícita entre catálogos; no se adelanta ni se duplica.
+- El algoritmo §6.1 impide tratar como elegible una unidad cuyo prerrequisito institucional no está resuelto. No se selecciona una tarea alternativa ni se salta de fase.
+
+### Evidencia de modelo y consumidores
+- USER `backend/user-service/Code.gs` (blob 85d12dad06826fdc37660f47d92e6976ff28bfe7), `manageDepartmentPositions`: crea diferidamente `CatalogoDepartamentos` con `deptId/nombre/jefaturaUserId/estado/fechaCreacion`; admite ID del cliente o generado; no se observó FK, mapeo ni campo de jerarquía. La búsqueda en los siete servicios backend y controladores principales no encontró consumidores del catálogo.
+- ACADEMIC `backend/academic-service/Code.gs` (blob 6c7ff36bb1ff314917bb85497a23c303a0dcf397), `assignDepartmentHead`: crea `DepartamentosAcademicos` con `DepartamentoID/Nombre/JefeUserId/Estado/FechaActualizacion/AutorizadoPor`; admite ID arbitrario, no valida jefe/departamento activo ni correspondencia con USER. No hay campo padre/nivel. `getDepartmentAcademicPlanning` devuelve departamentos sin filtrar por estado.
+- Consumidores observados: `js/teacher.js` (blob bc6495b4d0349a768626dcbf40b5f5ac8055de49) llama getDepartmentAcademicPlanning y assignDepartmentHead; `js/secretary.js` (blob 2860297607beb79100d08fe34f33b73ee54f8967) llama getDepartmentAcademicPlanning. No se encontró consumo de CatalogoDepartamentos.
+- ACCOUNTING `backend/accounting-service/Code.gs` (blob 15b01bef8a7bcdac9624219bca6f5085a5f8a827), `resolveEmployeeDepartmentId_`: busca ID/nombre en DepartamentosAcademicos y admite fallback al texto original. Solo resuelve ExpedientesLaborales; no demuestra propietario de expedientes estudiantiles.
+- USER `AsignacionesAmbitosRoles` guarda ScopeValues de DEPARTAMENTO sin validar existencia/estado contra catálogo canónico. El ámbito del actor no equivale a la propiedad del recurso.
+- Se conserva la evidencia C1.400 sobre ausencia de DepartamentoID en los esquemas estudiantiles observados y denegación fail-closed cuando no se resuelve propietario. No se relaja.
+
+### Reutilización de auditorías y tareas existentes
+- Expediente principal TASK-153: `Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md`; se agrega revisión focalizada C1.403, sin informe nuevo.
+- AUD-NG-226: expediente principal `Auditoría/AUDITORIA_COMPLETADAS_TAREA-F4-P1-07.md`; cubre integridad referencial, estado y relación intercatálogo. TASK-506 ya existe en PM-02/P1.
+- FASE2-T04: `Auditoría/AUDITORIA_COMPLETADAS_FASE2-T04.md`; documenta falta de inventario formal de autoridad de catálogos y duplicación de copias locales.
+- No se crea AUD-NG nuevo, tarea derivada ni arista de dependencia duplicada. `tareas_auditoria.txt` no se modifica.
+
+### Recuperación y verificación de backlog Otros
+- La lectura convencional de `pendientes/Otros/Pendientes.md` devolvió 0 caracteres; no se asumió que estuviera vacío ni se escribió sobre él.
+- Recuperación por blob desde la misma rama: SHA `24347c3776521c930391f89e0430910554bf233b`; árbol HEAD registra 1.655.930 bytes; fetch_blob devolvió 1.636.155 caracteres y 16.510 líneas. La historia por ruta identifica como último cambio 5d6d4091d97c9ca5c5bbefdcd8a8f4ffab4cd484 (C1.382); el tree de ese commit conserva el mismo blob SHA.
+- Inventario estructural: 674 registros con marcador ID, 674 IDs únicos, 0 duplicados; 674 encabezados pendientes y 0 marcados completados. Categorías por prefijo: AUD-NG 110; F 188; TAREA 79; TASK 255; FASE 19; AUDIT 4; T 19. Último ID de registro por aparición: TASK-501.
+- Comparación solo para demostrar diferencia, no como fuente de restauración: `Auditoría/legacy/Pendientes.md` blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c (1.782.094 caracteres / 20.182 líneas; formato histórico distinto y 35 encabezados [X]); `Auditoría/legacy/Pendientes_legacy.md` blob 5b35a722efbe4368b19a7d4947033dba9da3d410 (1.307.758 caracteres / 16.872 líneas; 33 encabezados [X]). Ninguna copia legacy reemplaza el backlog actual.
+- La copia textual de TASK-506 hallada dentro del consolidado Otros no sustituye la fuente canónica: §9 del Plan Maestro indica `pendientes/Dirección/Pendientes.md`. No se modifica el backlog Otros.
+
+### Dictamen y estado real
+- No se demuestra qué catálogo es institucionalmente autoritativo, si los departamentos administrativo y académico son entidades independientes o relacionadas, cuál es su mapeo estable, su jerarquía/estados ni quién es propietario de cada expediente/recurso estudiantil.
+- No hubo acceso a filas productivas de Sheets/Drive. No se elige fuente por conveniencia, no se fusionan catálogos, no se infieren propietarios desde actor/rol/grado/sección/matrícula y no se modifican datos.
+- **T153-S01: Bloqueada para implementación de datos** hasta recibir una decisión institucional aprobada y verificable. **TASK-153: En ejecución**, no completada. Se conserva fail-closed.
+- Hallazgos de integridad relacionados permanecen en AUD-NG-226/TASK-506; no se duplican. TASK-139 y TASK-123 siguen bloqueadas por la resolución de TASK-153.
+
+### Archivos modificados
+- Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/MapaDependencias.md
+- Auditoria.txt
+- changueslogs.txt
+- pendientes/Dirección/Pendientes.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Archivos revisados sin modificación
+- METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; Auditoría/INDICE_CHECKPOINTS.md (estado previo); Auditoria.txt; tareas_auditoria.txt; changueslogs.txt.
+- pendientes/Dirección/Pendientes.md; backlog Otros recuperado por blob; Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md; Auditoría/AUDITORIA_COMPLETADAS_TAREA-F4-P1-07.md; Auditoría/AUDITORIA_COMPLETADAS_FASE2-T04.md.
+- backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/task-service/Code.gs; backend/exam-service/Code.gs; backend/developer-service/Code.gs; js/teacher.js; js/secretary.js; js/api.js; dashboard-recursos-humanos.html; dashboard-direccion.html.
+- tests/security/department-scope-contract.test.js; tests/security/departmental-resource-access.test.js; tests/security/accounting-departmental-resource-access.test.js.
+
+### Pruebas y límites
+- Pruebas nuevas ejecutadas: ninguna; esta unidad fue auditoría estática y dictamen de autoridad, sin cambios de código.
+- CI reutilizado como evidencia vigente: Department Scope run 42741228237 completed/success sobre C1.398. No se repitió.
+- Apps Script/Sheets/Drive reales, HTTP/E2E y navegador: no ejecutados/no disponibles en esta revisión.
+
+### Respaldo Git histórico previo a la edición documental
+- HEAD de respaldo: abe1d701a0b13cf2dc926550670615407e9f2612; árbol: d3694566de41039f4e337cb88983e9b5e8d40187.
+- Auditoría FASE 41: f383d1aaff741474c28ec688b9e8aa5fae8260e3.
+- Plan Maestro: be400bdcfef3dc3d81f16dd3a8322c32e28ff82b.
+- MapaDependencias: 58c2c6d68b3c9b07ffcfac38e8ae6703ce7dd255.
+- Auditoria.txt: c41abc4a8535df752b557a7aef4e8920866f0826.
+- changueslogs.txt: e18bf397d230a0100a2cc6bf95e28ed3fd816af5.
+- Backlog Dirección: a8fe342f178a8dedf04e7ba136f6e77d3640e95a.
+- Checkpoints_Parte_0003.txt: 52810b8e4041f87acc2b6c84a99c7508ce0d28a6.
+- INDICE_CHECKPOINTS.md: bc21b83e96f1343b424ffb797eaec3875d71bbfb.
+- Método de recuperación: blob Git histórico publicado y alcanzable; no se afirma respaldo local. No se modifican blobs históricos.
+
+### Siguiente acción exacta
+Obtener de la institución el documento/registro aprobado que defina la fuente autoritativa, relación o separación entre departamentos administrativos/académicos, IDs estables, jerarquía, estados/vigencia y propietario de cada tipo de recurso estudiantil. Después verificar las filas reales de Sheets, elaborar mapeo explícito y reanudar T153-S01. No iniciar TASK-139/TASK-123 ni ejecutar migración antes de resolverlo.
+
+### Commit
+Un único commit documental de C1.403 en NG_beta_0.0.0.1_work; SHA a confirmar después de publicación. Rama base intacta.
+===============================================================================
+
+
+===============================================================================
+## C1.404 — TASK-694 — investigación y diseño de arquitectura universal multiinstitucional
+**Sesión:** IMA-EXEC-20261110-0500Z-01  
+**Fecha:** 2026-11-10  
+**Checkpoint anterior:** C1.403  
+**HEAD de partida:** 43799cc9f533a78e37bfd186f6fd8245466f8b97  
+**Rama:** NG_beta_0.0.0.1_work  
+**Rama base:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59  
+**Tarea:** TASK-694 / PM-02 / P0, diseño documental.  
+**Informe:** Auditoría/ARQUITECTURA_UNIVERSAL_MULTIINSTITUCIONAL_INVESTIGACION.md.
+
+### Continuidad
+- NG_beta_0.0.0.1_work se comparó idéntica al commit 43799cc9f533a78e37bfd186f6fd8245466f8b97; C1.403 era el checkpoint vigente.
+- Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59; comparación base→work: 508 commits ahead, 0 behind.
+- Se consultaron metodología, contexto, Plan Maestro, checkpoint C1.403 y backlogs relevantes.
+- TASK-694 es nuevo: máximo TASK en Plan Maestro y backlogs departamentales legibles era TASK-693. Backlog Otros devolvió 0 caracteres y no se sobrescribe; C1.403 documenta su recuperación por blob y máximo TASK-501.
+- No se modifica tareas_auditoria.txt: TASK-694 nace de solicitud de producto, no de hallazgo de auditoría.
+
+### Investigación
+Primera infancia: Procare/Famly/brightwheel. K–12: PowerSchool/Infinite Campus/Skyward/Synergy/eSchoolPLUS/SIMS/Arbor/Sentral/ManageBac/iSAMS/Ed-admin/openSIS/Gibbon/RosarioSIS. Técnico/superior: Workday Student/Ellucian Banner/PeopleSoft/Anthology/Frappe Education. LMS: Moodle/Canvas/Brightspace/Blackboard/Open edX. Referencia local: SACE Honduras. Estándares: CEDS P-20W, Ed-Fi, OneRoster 1.2, Edu-API (Candidate Final Public en página consultada), LTI, CASE, QTI, CLR, Open Badges y Caliper. FERPA es ejemplo jurisdiccional; WCAG 2.2 es referencia de accesibilidad. Fuentes y límites en el informe.
+
+### Dictamen
+Separar plataforma/tenant/grupo/institución/sede; estructuras administrativa, académica, enseñanza y físicas; identidad/relaciones/matrículas; ownership del recurso y ámbito del actor; configuración por política de clave; perfiles combinables; adaptadores de estándares. No se decide partición física, base de datos, microservicios, despliegue ni migración sin inventario técnico.
+
+### Subplan
+UNI-S01 tenant/institución; UNI-S02 organización; UNI-S03 núcleo P-20W; UNI-S04 trayectoria; UNI-S05 autorización/ownership; UNI-S06 configuración/herencia; UNI-S07 currículo/evaluación/credenciales; UNI-S08 perfiles; UNI-S09 interoperabilidad; UNI-S10 gobierno/migración/privacidad/accesibilidad/certificación. Dependencias y criterios en Plan Maestro e informe. Claves locales, sin IDs globales.
+
+### Reutilización y bloqueos
+TASK-153, TASK-060, F26-TASK01, TASK-506, TASK-171, TASK-668, AUD-NG-164, TASK-005, F8-TASK09, FASE2-T04 y F29-TASK17 se reutilizan. Ninguna cambia de estado. TASK-153/T153-S01 sigue bloqueada conforme C1.403; se conservan controles fail-closed.
+
+### Archivos modificados
+Informe nuevo; Plan Maestro; pendientes/Dirección/Pendientes.md; MapaDependencias; Auditoria.txt; changueslogs.txt; Checkpoints_Parte_0003.txt; INDICE_CHECKPOINTS.md.
+
+### Archivos revisados sin modificación
+METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; checkpoint C1.403; índice previo; tareas_auditoria.txt; backlogs de Dirección, Docente, Secretaría, Estudiante, Padre y Contabilidad. Código, pruebas, datos productivos, permisos y configuración sin cambios. pendientes/Otros/Pendientes.md no se modifica.
+
+### Pruebas y límites
+Ejecutadas: comparación rama/HEAD; revisión de fuentes; unicidad de TASK-694 en fuentes legibles; revisión documental de dependencias; cálculo del checkpoint. No ejecutadas: suites, Node, Apps Script, Sheets/Drive reales, HTTP/E2E, navegador, migración ni pruebas de aislamiento. No se afirma conformidad de proveedores ni legislación universal.
+
+### Cierre
+TASK-694 completada solo como investigación y diseño documental. UNI-S01…S10 sin iniciar. PM-01 conserva prioridad: TASK-153 sigue En ejecución y T153-S01 bloqueada según C1.403. Rama base intacta. Un único commit consolidado.
+===============================================================================
+
+
+===============================================================================
+## C1.405 — TASK-695 / PLAN-IMA-001 — descomposición funcional universal
+**Sesión:** IMA-EXEC-20261110-0513Z-01  
+**Fecha:** 2026-11-10  
+**Checkpoint anterior:** C1.404  
+**HEAD de partida:** af781161d229342e7b7a80b507ab3a9934c91d60  
+**Rama:** NG_beta_0.0.0.1_work  
+**Base:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59  
+**Tarea:** TASK-695 / PM-02 / P0 — diseño documental.  
+**Entregable:** PLAN-IMA-001_UNIDADES_FUNCIONALES.md; informe universal §11; Plan Maestro §10.78.
+
+### Continuidad y auditoría
+- Se consultaron metodología, Plan Maestro, TASK-694, informe de arquitectura, mapa, checkpoint/índice y backlogs de Dirección, Docente, Secretaría, Estudiante, Padre y Contabilidad.
+- HEAD/árbol de trabajo y base confirmados por Git refs. TASK-695 no existe; máximo ID numérico = TASK-694 en backlogs legibles.
+- pendientes/Otros/Pendientes.md devolvió 0 caracteres; no se interpretó como backlog vacío ni se modificó.
+
+### Trabajo realizado
+- 24 paquetes UNI-U01…UNI-U24; cada uno tiene objetivo, requisitos, criterios, dependencias y referencias existentes.
+- Tareas existentes reutilizadas/ampliables; U01/U04/U07/U10/U22 son brechas candidatas pendientes de auditoría técnica. No se crean IDs globales duplicados.
+- Señales de usuarios ECE, K–12/SIS, LMS, superior, biblioteca, transporte, comunicación y carga administrativa documentadas con enlaces y límites.
+- TASK-695 agregado al Plan Maestro y backlog Dirección; mapa, logs e índice actualizados.
+
+### Límites y pruebas
+- Solo documentación; sin cambios de código, datos productivos, esquemas, permisos, configuración o despliegue.
+- No se ejecutaron suites, pruebas unitarias/integración, Apps Script, Sheets/Drive reales, HTTP/E2E, navegador ni migraciones.
+- TASK-153/T153-S01 sigue bloqueada por decisión institucional pendiente; fail-closed preservado.
+
+### Siguiente tarea
+Auditoría técnica focalizada de U01 (registro y aislamiento runtime de tenants), respetando PM-00/PM-01. No iniciar cambios de ownership ni migración mientras TASK-153 siga bloqueada.
+===============================================================================
+
+
+===============================================================================
+## C1.406 — UNI-U01 / AUD-NG-384 / TASK-696 — auditoría runtime multi-tenant
+**Sesión:** IMA-EXEC-20261110-1108Z-01  
+**Fecha:** 2026-11-10  
+**Checkpoint anterior:** C1.405  
+**HEAD de partida:** 2b9275c25a8e8ff0cc720c269588118a56529568  
+**Rama:** NG_beta_0.0.0.1_work  
+**Base:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59  
+**Tarea:** auditoría focalizada de UNI-U01; PM-02; sin implementación.  
+**Informe principal:** Auditoría/AUDITORIA_UNI-U01_TENANT_RUNTIME_C1.406.md
+
+### Continuidad y selección
+- C1.405 verificado en HEAD 2b9275c25a8e8ff0cc720c269588118a56529568; rama base confirmada en 44d9891132332e692dbe2ba8602b41f50a508a59. TASK-153/T153-S01 conserva bloqueo C1.403. No se reaudita ni se repite evidencia vigente.
+- Requisitos leídos: UNI-U01; TASK-153; F29-TASK17; F37-TASK10. F29-TASK17 (P0) y F37-TASK10 (P1) siguen Pendientes; no son equivalentes al registro/guard runtime tenant.
+
+### Resultado de auditoría
+- Tokens HMAC de USER/ACADEMIC/ACCOUNTING/TASK/EXAM sin tenant verificable; fetchApi no propaga contexto tenant; USER deriva institutionId de una Script Property global.
+- Entry points revisados aplican RBAC, no un guard tenant transversal. Resolver financiero por dominio/año conserva fallback al Spreadsheet principal.
+- AUD-NG-384 CRÍTICO/P0: brecha runtime confirmada; no se afirma fuga real. TASK-696 registrada en Dirección/PM-02/P0 y queda Bloqueada por TASK-153/T153-S01, F29-TASK17 y F37-TASK10.
+
+### Alcance, cambios y pruebas
+- Solo documentación/registros; código, datos, esquemas, permisos, configuración y despliegue sin cambios.
+- Sin pruebas dinámicas, Apps Script, Sheets/Drive productivos ni fixtures de dos tenants. Auditoría estática focalizada; handlers individuales no revisados exhaustivamente.
+- Respaldo Git histórico (no local), recuperable con `git show 2b9275c25a8e8ff0cc720c269588118a56529568:<ruta>`; blobs verificados completos desde HEAD: backlog Dirección 17a15a59e0d84931bbc32c1bd479442a5206a71e; Plan Maestro 1d1cd1a65c22f067acb350a7e651afe7189e39c4; PLAN-IMA-001 885d0e5ed67ed97c81ef1b77686276d9627f3be1; Mapa e0390a4081ca86259b48b6c5d66e7eff4b70bf84; Auditoria.txt c9e9265f0a6df07fcce80b65c0b52f39c5dadf3c; tareas_auditoria e5b2f1711604485214601486adce5581d71ede3f; changueslogs ac8aadbab686f2c51779ab2208be68c12a36b642; índice cf6022ceebb6edd17faf43f16384dab27f4c1a78; checkpoint 14f0fca622f7fb52f7e7737876dbf25ed0cb49e2.
+- Siguiente tarea: TASK-153/T153-S01, pendiente de decisión institucional autoritativa; no iniciar ownership ni migración. TASK-696 permanece Bloqueada.
+===============================================================================
+
+
+===============================================================================
+## C1.407 — continuidad TASK-153/T153-S01
+Sesión: IMA-EXEC-20261110-1108Z-01 | 2026-11-10 11:22Z
+Anterior: C1.406 | HEAD: c0530aaad2d68a09cede69040ae723cca89caa14
+Rama: NG_beta_0.0.0.1_work | Base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+- Ramas/HEAD verificados. Blobs USER, ACADEMIC, ACCOUNTING, TASK, EXAM y js/api.js coinciden con AUD-NG-384; no hay cambios de código que invaliden C1.403.
+- Objetivo PM-01/P0: TASK-153/T153-S01. Requisito: `pendientes/Dirección/Pendientes.md`, bloque TASK-153; Plan Maestro §9. Expediente único: `Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md`, F41-08/E2E-41-09. Se reutiliza C1.403; no reauditar.
+- No hay nueva decisión institucional aprobada en el árbol. Siguen sin acreditarse autoridad/relación de CatalogoDepartamentos y DepartamentosAcademicos, IDs, jerarquía, vigencia y propietario de recursos estudiantiles. T153-S01 continúa **Bloqueada**.
+- No fusionar catálogos, inferir propietarios, migrar datos ni relajar fail-closed. TASK-123/TASK-139 y F41-TASK03 siguen afectados; F29-TASK17/TASK-006 tienen prerrequisitos pendientes. No saltar PM-01.
+- Sin cambios funcionales ni acceso a Sheets/Drive productivos. Pruebas nuevas: ninguna; solo lectura documental y SHA. Archivos funcionales/datos: sin modificación.
+- Siguiente acción exacta: obtener decisión institucional aprobada sobre catálogo autoritativo, relación entre modelos, IDs/jerarquía/estados y propietario por recurso; verificar la fuente real y reanudar T153-S01.
+- Cierre documental: checkpoint, índice y changelog; un commit consolidado. Rama base intacta.
+===============================================================================

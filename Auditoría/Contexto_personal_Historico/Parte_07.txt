@@ -1,0 +1,386 @@
+- **Pendientes.md — recuperación:** lectura convencional 0 caracteres. Blob actual de HEAD 676a3f798715f0cdd7d4bc75768472545b8465ee: 1.807.629 bytes, 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD, 515 TASK IDs únicos, máximo TASK-636. Blob histórico solicitado 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, 0 U+FFFD, 511 TASK IDs únicos, máximo TASK-511. Se conserva el blob actual posterior y no se restaura la versión histórica.
+- **Puntos inspeccionados:** completadas.md 5046–5067; dashboard-direccion.html 45–55 y 420–439; dashboard-secretaria.html 28–40 y scripts/modales; secretary.js 455–515; USER Code.gs 8970–9160, 9254–9300 y doPost/dispatcher 1351–1373 y rutas de responsabilidades; informes F8-Task08..11; plan, mapa, auditoría y metodología.
+- **Pruebas ejecutadas:** inspección manual de HTML, controlador, catálogos, persistencia, validación, asignaciones, autenticación, dispatcher, historial y blobs; comparación de ramas y verificación de existencia del informe individual.
+- **No ejecutadas:** Node, Apps Script runtime, HTTP, navegador/DOM, hojas productivas, preview real, rollback runtime ni E2E.
+- **Limitaciones:** no hay acceso a deployments Apps Script ni hojas productivas; no se certifican estados de datos externos. La revisión es estática/manual.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK12.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** dashboard-direccion.html; dashboard-secretaria.html; js/secretary.js; backend/user-service/Code.gs; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; código fuente y rama base.
+- **Siguiente tarea exacta:** F8-Task13 — definir y aplicar una estructura modular de carpetas, marcada [X] en completadas.md líneas 5071–5093.
+- **Próxima acción reproducible:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK13.md; si falta, auditar docs/architecture/folder-structure.md y backend/developer-service/Code.gs contra CA-MOD-103/104, comprobando estructura real, index.htm en raíz, rutas de recursos, clasp/despliegue y exposición de archivos sensibles.
+- **Commit de cierre:** se confirmará consultando HEAD después de publicar el único commit que contiene este informe y el checkpoint.
+===============================================================================
+
+
+===============================================================================
+## C1.273 — Checkpoint de cierre: auditoría F8-Task13 / TAREA-MOD-02 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-2330Z-02 (identificador documental; no ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.272. **Checkpoint de cierre:** C1.273.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 83f671ad81501061f4cc76ade672a27441f17b4d.
+- **Árbol de partida:** 4a3e2c9a91b100bbc5cc71c9a1952c2239390eca.
+- **Rama base protegida indicada en C1.271:** NG_beta_0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; comparación 341 commits adelante, 0 detrás. Sin cambios en rama base.
+- **Tarea realizada:** F8-Task13 / TAREA-MOD-02, marcada [X] en completadas.md líneas 5071–5093. No existía AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK13.md; auditoría ejecutada directamente.
+- **Dictamen:** NO CUMPLE. CA-MOD-103 NO CUMPLE; CA-MOD-104 PARCIAL/NO ACREDITADO.
+- **Hallazgos:** AUD-NG-329 ALTO/P1 migración física incompleta; AUD-NG-330 ALTO/P1 validador falso positivo; AUD-NG-331 MEDIO/P2 despliegue/exclusión no verificables; AUD-NG-332 MEDIO/P2 divergencia index.htm/index.html.
+- **Tareas nuevas:** TASK-673 (migración frontend y punto de entrada), TASK-674 (validador real y pruebas de árbol), TASK-675 (despliegue y exclusión de secretos).
+- **Tareas existentes ampliadas:** TASK-665, TASK-488 y TASK-636. AUD-NG-324 no se duplica.
+- **Fuentes:** completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; folder-structure.md ca44aea0abaf80bab58adb4b7bf51935f404bf96; developer-service Code.gs 8aa4bac67cfe5c8c54da51a0784a56fef633e412; index.html cd742047cdc4948259dd721119429b04f78330ca; dynamic-dashboard.html 765a45e5666c24c430e841cb70c3d71d03cf9074; tests suite 0495e1d526a872c33310935a003a83d924d34683; README 1d76341a6a286ebd0115e319f77b8c33b727dbba; inventory eeed10fd8da0db3cd119c5a9778e9cb8b2233808; routing c64e6a952c1ce12a47cb00a2d324f39cd6581a47.
+- **Pendientes.md:** blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado íntegro: 1.786.011 caracteres, 20.224 líneas, 515 TASK IDs únicos, máximo TASK-636; no se modificó. TASK-671/672 siguen definidos en F8-Task11; no se recrean.
+- **Puntos inspeccionados:** docs/architecture/folder-structure.md:1–41; developer-service Code.gs:1747–1795, 1895–1999; index.html:15–40, 420–435; dynamic-dashboard.html:1–49; tests/regression/modular-dashboard-suite.js:1–60; README.md:47–54; repository-inventory.md; routing-and-paths.md; existencia exacta de rutas app/ y archivos de despliegue.
+- **Pruebas ejecutadas:** inspección manual, comparación de rutas declaradas frente a rutas reales, consulta de visibilidad del repo y recuperación directa de Pendientes.md.
+- **No ejecutadas:** Node, Apps Script runtime, clasp push/status, HTTP, GitHub Pages, navegador/DOM ni escaneo completo de secretos.
+- **Limitaciones:** no se confirmó una credencial filtrada concreta; el control de exclusión no está versionado ni verificable.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK13.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** docs/architecture/folder-structure.md; backend/developer-service/Code.gs; index.html; app/html/dashboards/dynamic-dashboard.html; tests/regression/modular-dashboard-suite.js; README.md; docs/architecture/repository-inventory.md; docs/architecture/routing-and-paths.md; completadas.md; Pendientes.md; código fuente y rama base.
+- **Siguiente tarea exacta:** F8-Task14 — modularizar archivos grandes sin eliminar ni duplicar funciones, marcada [X] en completadas.md desde línea 5097.
+- **Próxima acción reproducible:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK14.md; si falta, auditar docs/architecture/monolith-decomposition-plan.md y backend/developer-service/Code.gs contra CA-MOD-105/106, comprobando contratos públicos, duplicados/colisiones, consumidores y compatibilidad.
+- **Commit de cierre:** se confirmará consultando HEAD después de publicar el único commit que contiene este informe y el checkpoint.
+===============================================================================
+
+
+===============================================================================
+## C1.274 — Checkpoint de cierre: auditoría F8-Task14 / TAREA-MOD-03 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-2330Z-03 (identificador documental; no ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.273. **Checkpoint de cierre:** C1.274.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** ce8e64defbe9f99293f370cead7db445b535721b.
+- **Árbol de partida:** 875169913d4160f196c5cbfe60cc70fc8404e947.
+- **Rama base protegida indicada en C1.271:** NG_beta_0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; comparación 342 commits adelante, 0 detrás. Sin cambios en rama base.
+- **Tarea realizada:** F8-Task14 / TAREA-MOD-03, marcada [X] en completadas.md líneas 5097–5117. No existía AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK14.md; auditoría ejecutada directamente.
+- **Dictamen:** NO CUMPLE. CA-MOD-105 PARCIAL/NO ACREDITADO; CA-MOD-106 NO ACREDITADO.
+- **Hallazgos:** AUD-NG-333 ALTO/P1 archivo developer-service sigue monolítico y plan lo omite; AUD-NG-334 ALTO/P1 validador no inspecciona funciones/firmas y cuenta falsos duplicados entre servicios; AUD-NG-335 ALTO/P1 suite solo comprueba presencia textual.
+- **Tareas nuevas:** TASK-676 (descomposición funcional de developer-service con wrappers/adaptadores); TASK-677 (validación real de contratos, firmas y colisiones por namespace).
+- **Tareas existentes ampliadas:** TASK-665, TASK-662 y TASK-636. TASK-671/672 y TASK-673/674/675 conservan sus alcances.
+- **Fuentes:** completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; monolith-decomposition-plan.md 388eda1feee9826f7be85665e56b35a566b8a5be; developer-service Code.gs 8aa4bac67cfe5c8c54da51a0784a56fef633e412; tests/regression/modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683; Auditoria.txt 782af5f003d78a4b91cbe9f5f7bf7a6ae2c4fbf4; MapaDependencias.md cc9969f76b286d8fe3ee084bcce760bb8380f3d1; plan 03ea6a7e98cff337da0c0baf9a7a1ede825d6eac; contexto f88465d1c6d8e6f112e0cefec43f65c0a9f7d6ae.
+- **Pendientes.md:** blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado íntegro: 1.786.011 caracteres, 20.224 líneas, 515 TASK IDs únicos, máximo TASK-636; no se modificó.
+- **Puntos inspeccionados:** completadas.md 5097–5117; monolith-decomposition-plan.md 1–21; developer-service Code.gs 1–100, 1747–1895 y 2261–2283; tests/regression/modular-dashboard-suite.js 1–60; inventario y plan de arquitectura.
+- **Pruebas ejecutadas:** inspección manual del plan, archivo fuente, catálogo de acciones, validador y suite.
+- **No ejecutadas:** Node, Apps Script runtime, HTTP, namespace productivo, consumidores reales ni E2E.
+- **Limitaciones:** no se afirma una colisión real concreta en producción; el validador no puede probar su ausencia y clasifica incorrectamente acciones repetidas entre servicios.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK14.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** docs/architecture/monolith-decomposition-plan.md; backend/developer-service/Code.gs; tests/regression/modular-dashboard-suite.js; completadas.md; Pendientes.md; código fuente y rama base.
+- **Siguiente tarea exacta:** F8-Task15 — actualizar el mapa de dependencias y la documentación arquitectónica, marcada [X] en completadas.md desde línea 5121.
+- **Próxima acción reproducible:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK15.md; si falta, auditar docs/architecture/repository-inventory.md, routing-and-paths.md, staged-migration-procedure.md, AUDITORIAS/MapaDependencias.md y backend/developer-service/Code.gs contra integridad, exactitud, rutas, dependencias, contratos y árbol real.
+- **Commit de cierre:** se confirmará consultando HEAD después de publicar el único commit que contiene este informe y el checkpoint.
+===============================================================================
+
+
+===============================================================================
+## C1.275 — Checkpoint de cierre: auditoría F8-Task15 / TAREA-MOD-05 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-2330Z-04 (identificador documental; no ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.274. **Checkpoint de cierre:** C1.275.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 570c458563c06e33d65e843d840b73357d7cf119.
+- **Árbol de partida:** e928bb0c76f789559cab4270c059788c2e9ba0f6.
+- **Rama base protegida indicada en C1.271:** NG_beta_0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; comparación 343 commits adelante, 0 detrás. Sin cambios en rama base.
+- **Tarea realizada:** F8-Task15 / TAREA-MOD-05, marcada [X] en completadas.md líneas 5121–5140. No existía AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK15.md; auditoría ejecutada directamente.
+- **Dictamen:** NO CUMPLE. CA-MOD-109 NO CUMPLE.
+- **Hallazgos:** AUD-NG-336 ALTO/P1 documentación incompleta de dependencias/datos; AUD-NG-337 ALTO/P1 generador de mapa estático y orden de inicialización incorrecto/incompleto; AUD-NG-338 MEDIO/P2 ausencia de build/alta de archivos reproducibles.
+- **Tarea nueva:** TASK-678 — mapa arquitectónico canónico, completo y verificable.
+- **Tareas existentes ampliadas:** TASK-674, TASK-675, TASK-665, TASK-677 y TASK-662. AUD-NG-324/330/331 se reconfirman sin duplicar.
+- **Fuentes:** completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; repository-inventory.md eeed10fd8da0db3cd119c5a9778e9cb8b2233808; routing-and-paths.md c64e6a952c1ce12a47cb00a2d324f39cd6581a47; staged-migration-procedure.md 2b46af3095596fcd7a9744e4cc500b50b38a34f0; spreadsheets-schema.md 0c8d5c4c2976d4b64949c693e66395896ce16246; AUDITORIAS/MapaDependencias.md 17564f9af34f77c0bb30cbf9461300c46dacdd03; developer-service Code.gs 8aa4bac67cfe5c8c54da51a0784a56fef633e412; index.html cd742047cdc4948259dd721119429b04f78330ca.
+- **Pendientes.md:** blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado íntegro: 1.786.011 caracteres, 20.224 líneas, 515 TASK IDs únicos, máximo TASK-636; no se modificó.
+- **Puntos inspeccionados:** completadas.md 5121–5140; inventario, routing, staged migration, spreadsheet schema, mapa, generador de dependencias, catálogo de contratos y orden de carga de index.html; módulos JS existentes.
+- **Pruebas ejecutadas:** inspección manual de documentos, rutas y secuencia de carga; comprobación de rutas de mapa/build y metadatos del repositorio.
+- **No ejecutadas:** Node, HTTP, navegador, GitHub Pages, Apps Script, build, clasp ni consultas a hojas productivas.
+- **Limitaciones:** no se certifican HTTP 404 ni el comportamiento de deployment; la documentación afirma esos estados sin evidencia runtime.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK15.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** docs/architecture/repository-inventory.md; routing-and-paths.md; staged-migration-procedure.md; spreadsheets-schema.md; backend/developer-service/Code.gs; index.html; js/config.js; js/persistence.js; js/api.js; js/games-adapter.js; js/ui-common.js; js/data.js; js/index-ui.js; completadas.md; Pendientes.md; código fuente y rama base.
+- **Siguiente tarea exacta:** F8-Task16 — independencia funcional y comunicación entre roles, marcada [X] en completadas.md desde línea 5144.
+- **Próxima acción reproducible:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK16.md; si falta, auditar backend/developer-service/Code.gs, backend/user-service/Code.gs y backend/academic-service/Code.gs contra fuentes maestras, hojas funcionales por rol, vistas/proyecciones, contratos de comunicación y copias inconsistentes.
+- **Commit de cierre:** se confirmará consultando HEAD después de publicar el único commit que contiene este informe y el checkpoint.
+===============================================================================
+
+
+===============================================================================
+## C1.276 — Checkpoint de cierre: auditoría F8-Task16 / TAREA-ARQ-01 (2026-11-09)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261109-0010Z-05 (identificador documental; no ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.275. **Checkpoint de cierre:** C1.276.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida:** 8c5b6ed11cd92e167792442582679daf28b69f7c.
+- **Rama base protegida:** NG_beta_0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; comparación previa: 344 commits adelante, 0 detrás.
+- **Tarea realizada:** F8-Task16 / TAREA-ARQ-01, marcada [X] en completadas.md líneas 5144–5166. No existía AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK16.md; auditoría ejecutada directamente.
+- **Dictamen:** NO CUMPLE. CA-ARQ-101/102 NO CUMPLEN.
+- **Hallazgos:** AUD-NG-339 CRÍTICO/P0 aprovisionamiento simulado/auditoría de aislamiento con falsos positivos; AUD-NG-340 ALTO/P1 escrituras cruzadas y atributos repetidos sin autoridad; AUD-NG-341 ALTO/P1 sesión/asignaciones no soportan múltiples roles; AUD-NG-342 CRÍTICO/P0 solicitudes no persistidas/eventos sin entrega interservicio.
+- **Tareas nuevas:** TASK-679 propiedad única de escritura/fuente de verdad; TASK-680 aprovisionamiento real; TASK-681 solicitudes persistentes/eventos interservicio; TASK-682 roles simultáneos/ámbitos independientes.
+- **Tareas existentes ampliadas:** F8-Task19, F8-Task20, F8-Task21, F8-Task22 y F8-Task23; se rechaza el estado completado de F8-Task16 por evidencia técnica.
+- **Fuentes:** developer-service 8aa4bac67cfe5c8c54da51a0784a56fef633e412; user-service 12079dd410aa6d8afbce55a4bc62a79dea605f9f; academic-service df87a2eea9f0ef79d0b966d03fd5bbe432003df5; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; METODOLOGIA_DESARROLLO.md cf796728bb384a32537392df2f9c72a339fa03ee; Pendientes.md blob 676a3f798715f0cdd7d4bc75768472545b8465ee.
+- **Puntos inspeccionados:** developer-service 223–291, 1286–1301, 1303–1348, 1638–1745; user-service 1065–1080, 1146–1162, 1253–1279, 1619–1703, 2393–2452, 4618–4745, 9117–9181, 9443–9575, 9631–9803; academic-service 5–6, 84–140, 2155–2385, 12800–12873; completadas.md 5144–5343.
+- **Pruebas ejecutadas:** auditoría manual de funciones/bloques y comparación con criterios.
+- **No ejecutadas:** Apps Script runtime, Google Drive/Sheets productivos, despliegue, concurrencia ni E2E.
+- **Limitaciones:** no se inspeccionaron datos productivos; no se afirma que existan duplicados físicos de matrícula/expediente.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK16.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/MapaDependencias.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** backend/developer-service/Code.gs; backend/user-service/Code.gs; backend/academic-service/Code.gs; completadas.md; Pendientes.md; METODOLOGIA_DESARROLLO.md; datos productivos; rama base.
+- **Siguiente tarea:** F8-Task17 — identificadores estables y columnas comunes de control, marcada [X] en completadas.md líneas 5170–5193.
+- **Próxima acción:** comprobar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK17.md; no existe en la ruta consultada. Auditar directamente developer/user/academic/task/exam/accounting services y validar IDs/columnas reales en tablas concretas, no solo el catálogo estático.
+- **Commit de cierre:** se confirmará consultando HEAD después de publicar el único commit que contiene este informe y el checkpoint.
+===============================================================================
+
+===============================================================================
+## C1.277 — Cierre de etapa 1: consolidación y migración del backlog departamental (2026-11-09)
+
+- **ID de sesión operativo:** IMA-MIG-20261109-0042Z-01 (identificador documental; no ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.276. **Checkpoint de cierre:** C1.277.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** ebc4b09825b12e70747a3b5b1b724e4bebc475b4.
+- **Árbol de partida:** f3380361b270645fd266d195af4dde373478b2e2.
+- **Rama base protegida:** NG_beta_0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; la continuidad previa documentó 344 commits adelante y 0 detrás. La rama base no se modifica.
+- **Trabajo realizado:** ETAPA 1 — consolidación y migración de tareas de auditorías, Pendientes.md, completadas.md y archivos departamentales existentes.
+- **Fuentes consultadas:** 219 archivos de artefactos de AUDITORIAS (informes, planes y bitácoras; se excluyeron README, MapaDependencias y Contexto de la extracción de tareas); Pendientes.md blob 676a3f798715f0cdd7d4bc75768472545b8465ee; completadas.md blob f57f1aef832e81e44fc4f7ec36a852d50e464676; seis archivos departamentales preexistentes.
+- **Inventario de origen:** 604 bloques de tareas extraídos de auditorías; 568 bloques con ID de Pendientes.md; 184 registros AUD-NG adicionales de Pendientes.md; 244 tareas de completadas.md; 465 registros de los archivos departamentales anteriores. Total: 2.065 bloques/registros fuente.
+- **Resultado consolidado:** 1.346 IDs únicos en siete departamentos/perfiles. Dirección 145; Secretaria 194; Contabilidad 184; Docente 129; Estudiante 7; Padre 13; Otros 674.
+- **Criterio de consolidación:** IDs coincidentes se reúnen en una sola tarea; se eliminan líneas exactamente repetidas después de normalizar espacios y capitalización; se conservan títulos alternativos y formulaciones/requisitos que no son textualmente idénticos. No se resume ni parafrasea el alcance. Los estados históricos de completado se restablecen a pendiente en los destinos.
+- **Dictamen documental:** migración preparada; la marca [X] no se mantiene en los archivos departamentales. Esto no acredita ni niega la implementación en código.
+- **Instrucción específica del usuario:** para esta etapa se integran expresamente las tareas de Pendientes.md, incluidas las marcadas [X], y las de completadas.md, aunque la regla general de METODOLOGIA_DESARROLLO.md sección 3.4 y AUDITORIAS/README.md establezca otro flujo. Esta instrucción específica gobierna únicamente esta migración.
+- **Archivos a modificar en el commit único:** pendientes/Dirección/Pendientes.md; pendientes/Secretaria/Pendientes.md; pendientes/Contabilidad/Pendientes.md; pendientes/Docente/Pendientes.md; pendientes/Estudiante/Pendientes.md; pendientes/Padre/Pendientes.md (nuevo); pendientes/Otros/Pendientes.md; pendientes/README.md; AUDITORIAS/Contexto_personal.txt.
+- **Fuentes originales preservadas sin modificación:** Pendientes.md; completadas.md; informes y bitácoras de AUDITORIAS; archivos de código y pruebas; rama base.
+- **Verificaciones ejecutadas:** extracción por identificador; agrupación de IDs coincidentes; conteo total y distribución departamental; verificación de unicidad de IDs dentro de cada destino; verificación de ausencia de [X] y de estados explícitos «Completada» en los campos de estado de destino.
+- **Pruebas no ejecutadas:** pruebas funcionales, runtime Apps Script, navegador, HTTP, despliegues, hojas productivas y E2E; no corresponden a esta migración documental.
+- **Limitaciones:** la deduplicación automática elimina coincidencias textuales exactas; las formulaciones distintas se conservan para evitar omitir requisitos. Las fuentes originales permanecen como evidencia histórica. La revisión semántica final de equivalencia entre requisitos queda como control de calidad de la etapa.
+- **Siguiente elemento exacto:** verificación final del diff/árbol de los nueve archivos, confirmación de que los 1.346 IDs están presentes una sola vez y publicación de un único commit descendiente del HEAD de partida.
+- **Próxima acción reproducible:** consultar el HEAD actual de NG_beta_0.0.0.1_work; construir el árbol completo sobre el árbol verificado; crear un solo commit con los siete archivos departamentales, README y este checkpoint; actualizar la referencia con expected_sha; volver a consultar HEAD y verificar los nueve paths y la rama base intacta.
+- **Commit de cierre:** el commit que contiene este checkpoint; su SHA se comunicará después de actualizar y verificar la referencia.
+===============================================================================
+
+===============================================================================
+## C1.278 — Diseño del Plan Maestro de Implementación IMA (2026-11-09)
+
+- **ID de sesión operativo:** IMA-PLAN-20261109-0126Z-01 (identificador documental; no ID nativo de ChatGPT).
+- **Estado de sesión:** cerrada al publicar el commit que contiene este checkpoint.
+- **Checkpoint inicial:** C1.277. **Checkpoint de cierre:** C1.278.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 00af54d8a959971032cb57afc6768402eb63b7e2 (compare contra la rama: identical, 0 ahead, 0 behind).
+- **Árbol de partida:** el conector no expuso el tree SHA del commit HEAD. Para construir el árbol se usó como base el tree f3380361b270645fd266d195af4dde373478b2e2 registrado en C1.277 y se reaplicaron las diez rutas modificadas entre C1.277 y el HEAD de partida, verificadas por compare.
+- **Referencia base protegida:** NG_beta_0.0.1; último SHA registrado en C1.277: 44d9891132332e692dbe2ba8602b41f50a508a59. La comparación de ese SHA contra el HEAD de trabajo muestra 347 commits adelante y 0 detrás. El conector confirmó el nombre de la rama, pero devolvió 404 al comparar directamente el nombre de la referencia base; su tip actual no pudo obtenerse de forma independiente. No se modificó la rama base.
+- **Fase metodológica:** planificación y análisis documental; no se inició desarrollo de código.
+- **Fase del Plan Maestro:** PM-00 — inventario, triage y resolución de dependencias.
+- **Etapa:** PM-00.1 inventario de tareas; PM-00.2 clasificación inicial por capa, área e integración; PM-00.3 definición de precedencias y puertas de salida.
+- **ID de tarea:** PLAN-IMA-001 (ID operativo de planificación; no es ID del backlog de producto).
+- **Comentario/contexto:** estudiar el backlog consolidado para ordenar la implementación de todo el portal por dependencias técnicas, capas, integración entre servicios y áreas funcionales. La interfaz de usuario no debe adelantarse a servicios, identidad, permisos, contratos y modelos de datos. Se preservan los requisitos originales en los siete backlogs departamentales.
+- **Fuentes revisadas íntegramente:** siete archivos `pendientes/*/Pendientes.md`; `pendientes/README.md`; `METODOLOGIA_DESARROLLO.md`; este archivo de contexto; `AUDITORIAS/MapaDependencias.md`; `AUDITORIAS/Auditoria.txt`; checkpoint C1.277.
+- **Inventario analizado:** 1.346 bloques de tarea; 1.346 IDs únicos; 39 familias de identificadores. Distribución: Dirección 145; Secretaría 194; Contabilidad 184; Docente 129; Estudiante 7; Padre 13; Otros 674. Se identificaron 830 registros con dependencias y 198 tareas con orden explícito local. Se conservaron dichos órdenes como secuencias internas de cada iniciativa, no como orden global.
+- **Clasificación inicial:** PM-00 35; PM-01 130; PM-02 88; PM-03 89; PM-04 115; PM-05 323; PM-06 286; PM-07 147; PM-08 129; PM-09 4. La suma es 1.346. Los 35 PM-00 quedan bloqueados para implementación hasta resolver encabezados, ampliaciones y metadatos incompletos mediante revisión manual.
+- **Resultado:** diseñado el grafo de precedencia PM-01 seguridad → PM-02 arquitectura/datos/contratos → PM-03 integración/workflows → PM-04 migración → PM-05 servicios funcionales → PM-06 documentos/trámites → PM-07 portales/analítica → PM-08 certificación transversal → PM-09 piloto/cutover. Las pruebas de seguridad y contrato acompañan cada iteración; PM-08 no posterga pruebas.
+- **Plan maestro:** `AUDITORIAS/PLAN_MAESTRO_IMPLEMENTACION.md`, versión 1.0, 1.346 filas de trazabilidad por ID; blob preparado: b3d911b9638c96c8d6142a1545ee1043d4ab5992.
+- **Metodología:** se anexa la sección 18, sin modificar ni reordenar instrucciones previas, para establecer el plan como orden rector, selección por dependencias y los campos de checkpoint/reporte requeridos.
+- **Checkpoint:** se anexa esta entrada C1.278 al final de `AUDITORIAS/Contexto_personal.txt`; no se modifica ningún checkpoint anterior.
+- **Archivos a modificar en el commit único:** `AUDITORIAS/PLAN_MAESTRO_IMPLEMENTACION.md` (nuevo); `METODOLOGIA_DESARROLLO.md` (anexo sección 18); `AUDITORIAS/Contexto_personal.txt` (anexo C1.278).
+- **Archivos/rutas preservados sin cambios:** `Pendientes.md`; `completadas.md`; los siete archivos departamentales; `pendientes/README.md`; informes de auditoría; código fuente; rama base. Las diez rutas que ya habían cambiado entre C1.277 y el HEAD de partida se preservan al construir el nuevo árbol.
+- **Verificaciones ejecutadas:** conteo de encabezados por archivo; unicidad de IDs entre departamentos; suma de distribución; extracción de dependencias; detección de órdenes explícitos; conteo de fases y generación de 1.346 filas del anexo. No se ejecutaron pruebas de código porque esta iteración es de planificación documental.
+- **No ejecutadas:** auditoría manual de implementación de cada tarea; pruebas unitarias/integración/E2E; Apps Script runtime; navegador; despliegue; operaciones sobre datos productivos.
+- **Limitaciones:** la fase propuesta de cada ID es clasificación de planificación, no certificación de cumplimiento. Las 35 entradas PM-00 requieren triage manual. El tip actual de la referencia base no pudo recuperarse por el conector; se conserva como último baseline el SHA registrado en C1.277. El tree SHA del HEAD de partida no fue expuesto.
+- **Siguiente tarea exacta:** PM-00.3 — cerrar triage de 35 registros; iniciar por TASK-637 (inventario integral), TASK-638 (mapa de dependencias estáticas/dinámicas) y TASK-639 (revisión manual de símbolos, duplicaciones y ciclos), confirmando sus relaciones y el estado real de los artefactos existentes.
+- **Próxima acción reproducible:** abrir `AUDITORIAS/PLAN_MAESTRO_IMPLEMENTACION.md`, anexo «Registro maestro por tarea», filtrar PM-00; auditar manualmente TASK-637, TASK-638 y TASK-639 contra el árbol de la rama, `docs/architecture/repository-inventory.md` y `AUDITORIAS/MapaDependencias.md`; no iniciar PM-01 hasta cerrar la puerta PM-00 o documentar formalmente cualquier bloqueo.
+- **Commit de cierre:** el commit único que contiene este checkpoint y los dos documentos relacionados; SHA final se confirmará externamente consultando HEAD después de publicar.
+===============================================================================
+
+
+===============================================================================
+## C1.279 — Revisión de control de calidad del Plan Maestro (2026-11-09)
+
+- **ID de sesión operativo:** IMA-PLAN-20261109-0126Z-01 (misma sesión documental que C1.278; no ID nativo de ChatGPT).
+- **Estado de sesión:** cerrada al publicar el commit que contiene este checkpoint.
+- **Checkpoint inicial de sesión:** C1.277. **Checkpoint anterior:** C1.278. **Checkpoint de cierre:** C1.279.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 42ed4950d2235640440ba7b5d6b9315829786a25.
+- **Fase metodológica:** Fase 2 — planificación de implementación / control del plan.
+- **Fase del Plan Maestro:** PM-00 — inventario y triage.
+- **Etapa:** revisión de consistencia de asignaciones de fase y conteos.
+- **ID de tarea:** PLAN-IMA-002 (actividad operativa de QA del plan; no es ID del backlog de producto).
+- **Comentario/contexto:** durante la validación del anexo se detectó que AUD-NG-110 («Garantizar la liberación del bloqueo de carga ante fallos de caché») había sido clasificada por coincidencia textual con la palabra «liberación» en PM-09. Su objetivo corresponde a recuperación/resiliencia, no a transición productiva. Se corrige a PM-08.
+- **Cambio realizado:** AUD-NG-110 pasa de PM-09 a PM-08. Conteos corregidos: PM-08 = 130; PM-09 = 3; PM-00 a PM-07 permanecen sin cambios. La suma sigue siendo 1.346.
+- **Validación:** el anexo contiene 1.346 filas, 1.346 IDs únicos y cero duplicados; la clasificación corregida conserva la suma global. Los tres registros restantes en PM-09 son tareas de cutover/retiro de legado.
+- **Archivos modificados en esta iteración:** `AUDITORIAS/PLAN_MAESTRO_IMPLEMENTACION.md`; `AUDITORIAS/Contexto_personal.txt`.
+- **Archivos sin cambios:** `METODOLOGIA_DESARROLLO.md`; los siete backlogs departamentales; `Pendientes.md`; `completadas.md`; código fuente; rama base.
+- **Pruebas ejecutadas:** comparación de la fila de AUD-NG-110; verificación de conteos PM-08/PM-09; verificación de unicidad y cantidad de filas del anexo.
+- **No ejecutadas:** pruebas de código/runtime/E2E; esta iteración solo corrige clasificación documental.
+- **Siguiente tarea:** PLAN-IMA-003 / PM-00.3 — triage manual de los 35 registros PM-00, empezando por TASK-637, TASK-638 y TASK-639.
+- **Próxima acción reproducible:** revisar el inventario de archivos y mapa de dependencias frente al árbol Git; confirmar si TASK-637/638/639 ya están implementadas y cuáles son los vacíos reales; resolver encabezados y ampliaciones antes de iniciar PM-01.
+- **Commit de cierre:** el commit único que contiene este checkpoint y la corrección del plan; SHA final se confirmará consultando HEAD después de publicar.
+===============================================================================
+
+
+
+===============================================================================
+## C1.280 — Actualización de normas para tareas derivadas de auditoría (2026-11-09)
+
+- **ID de sesión operativo:** IMA-NORMS-20261109-0157Z-01 (identificador documental; no ID nativo de ChatGPT).
+- **Estado de sesión:** abierta al preparar este checkpoint; se cerrará al verificar el commit.
+- **Checkpoint inicial de sesión:** C1.279. **Checkpoint de cierre:** C1.280.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 560c940d64b7a46191a2ad2605035d9334008db7.
+- **Rama base protegida:** no se modificó; su tip no se consultó en esta iteración documental.
+- **Fase metodológica:** actualización de normas / gobierno documental.
+- **Fase del Plan Maestro:** PM-00 — inventario, triage y resolución de dependencias.
+- **Etapa:** PM-00.0 — normalización de la gobernanza documental y trazabilidad de hallazgos.
+- **ID de tarea:** PLAN-IMA-003 (actividad operativa de metodología; no es ID del backlog de producto).
+- **Comentario/contexto:** el usuario indicó que Auditoria.txt, changueslogs.txt y tareas_auditoria.txt deben estar en la raíz; Pendientes.md y completadas.md permanecen en Auditoría/legacy/. Solicitó además que las normas establezcan que los hallazgos de auditoría se registren como tareas ejecutables en tareas_auditoria.txt.
+- **Fuentes revisadas:** METODOLOGIA_DESARROLLO.md (blob 87953370fb6735cd25386e3cc2dfcd9d8521dd0b); Auditoría/Contexto_personal.txt (blob 71ff2a3b9146a378b515431b1043889ba4318fe4; checkpoint final C1.279); Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md (blob 298d167fb1a6921d0b80a867bdb2239fe6dcd972); árbol Git de la rama en HEAD 560c940d64b7a46191a2ad2605035d9334008db7.
+- **Hallazgo normativo:** la metodología anterior indicaba que las tareas vivieran exclusivamente en cada informe y prohibía un registro maestro externo; además refería rutas/nombres anteriores (AUDITORIAS/, ChangesLogs.txt).
+- **Cambio realizado:** la sección 3.4 define tareas_auditoria.txt como registro maestro acumulativo en raíz; la sección 3.11 exige convertir todo hallazgo accionable en tarea ejecutable allí; los informes conservan evidencia y referencias cruzadas por ID; se actualizan el flujo de fases, el procedimiento de seguimiento y las rutas de auditoría a Auditoría/ y los nombres de bitácora vigentes.
+- **Criterio de preservación:** no se eliminan checkpoints anteriores; esta entrada se anexa al final. changueslogs.txt recibe una entrada nueva al final, sin modificar registros previos.
+- **Archivos modificados:** METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; changueslogs.txt.
+- **Archivos revisados sin modificación:** Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoria.txt; tareas_auditoria.txt; estructura Auditoría/legacy/.
+- **Pruebas/verificaciones:** comprobación textual de ausencia de las prohibiciones antiguas sobre el registro maestro; verificación de referencias de rutas actualizadas; revisión del diff documental y del árbol resultante.
+- **No ejecutadas:** pruebas de código, runtime Apps Script, navegador, HTTP, despliegues, E2E; no aplican a este cambio normativo.
+- **Siguiente tarea exacta:** revisar referencias internas restantes a rutas/nombres legacy en README, informes y documentación del repositorio, sin modificar contenido histórico salvo actualización de referencias operativas necesarias.
+- **Próxima acción reproducible:** buscar referencias activas a AUDITORIAS/, ChangesLogs.txt y ubicaciones anteriores de los tres registros; distinguir menciones históricas de instrucciones operativas vigentes y actualizar solo las instrucciones vigentes.
+- **Commit de cierre:** el commit único que contiene este checkpoint; SHA final se confirmará externamente consultando HEAD después de publicar.
+===============================================================================
+
+
+===============================================================================
+## C1.281 — Verificación del Plan Maestro y protocolo de continuidad/recuperación (2026-11-09)
+
+- **ID de sesión operativo:** IMA-PLAN-RECOVERY-20261109-0205Z-01 (identificador documental; no ID nativo de ChatGPT).
+- **Estado de sesión:** abierta al preparar; se cierra con la publicación verificada de este commit.
+- **Checkpoint inicial:** C1.280. **Checkpoint de cierre:** C1.281.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 2522203e4bac9984bbfa68100497065f9d42edcc.
+- **Fase metodológica:** continuidad, auditoría previa y gobierno documental.
+- **Fase PM:** PM-00 — inventario, triage y dependencias.
+- **Etapa:** verificación del plan rector y robustecimiento del flujo de ejecución.
+- **ID de tarea:** PLAN-IMA-004 (actividad operativa de planificación/metodología; no ID de tarea de producto).
+- **Contexto:** el usuario pidió comprobar que el plan señale orden, ID y ubicación de requisitos; establecer recuperación ante interrupción/corrupción con auditoría de la tarea anterior y registro de tareas derivadas; y crear un prompt reutilizable para ejecutar el plan.
+- **Verificación del plan:** se confirmaron 1.346 filas con IDs únicos distribuidas en PM-00 a PM-09, siete backlogs departamentales presentes y rutas concretas verificadas en el árbol Git. Antes del cambio, la tabla no mostraba la ruta exacta por fila y el algoritmo de orden dentro de fase no estaba suficientemente operacionalizado.
+- **Cambio al plan:** se añade «Orden PM» y «Ruta exacta de requisitos» a las 1.346 filas; se agrupan filas por PM-00 a PM-09; se define selección topológica por dependencias, con desempates por severidad, prioridad, orden local y estabilidad; se preservan los IDs y requisitos originales.
+- **Cambio a metodología:** se añade sección 19 con verificación del último checkpoint, auditoría obligatoria de la tarea anterior, auditoría de la tarea objetivo, conversión de hallazgos en tareas en `tareas_auditoria.txt`, protocolo de preservación/diagnóstico/restauración ante corrupción e interrupción, y reanudación segura.
+- **Criterio de preservación:** no se alteran los siete backlogs fuente ni los requisitos originales; se modifican solo el índice del plan y las normas; el checkpoint se anexa al final y changueslogs.txt recibe entrada nueva al final.
+- **Archivos modificados:** Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; changueslogs.txt.
+- **Archivos revisados sin modificación:** siete archivos pendientes departamentales; Auditoria.txt; tareas_auditoria.txt; estructura Auditoría/legacy/.
+- **Pruebas/verificaciones:** conteo de 1.346 filas; detección de los 10 valores de fase PM; verificación de existencia de las siete rutas de backlog; comprobación de columna de ruta exacta en cada fila; comprobación de ausencia de duplicación de sección 19; revisión de los cambios documentales y del árbol Git.
+- **No ejecutadas:** pruebas de código, Apps Script runtime, navegador, HTTP, despliegue y E2E; no aplican a la actualización documental.
+- **Siguiente tarea exacta:** PM-00.3 — triage de los 35 registros PM-00, empezando por TASK-637, TASK-638 y TASK-639; primero verificar checkpoint y auditar la última tarea ejecutada según el protocolo de sección 19.
+- **Próxima acción reproducible:** abrir `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`, filtrar PM-00; abrir la ruta indicada en cada fila (para TASK-637/638, `pendientes/Contabilidad/Pendientes.md`; para TASK-639, `pendientes/Secretaria/Pendientes.md`); contrastar requisitos, estado real del repositorio, `Auditoría/MapaDependencias.md` e inventario.
+- **Commit de cierre:** el commit único que contiene este checkpoint; SHA final se verificará consultando HEAD tras publicar.
+===============================================================================
+
+
+===============================================================================
+## C1.281 — Verificación del Plan Maestro y protocolo de continuidad/recuperación (2026-11-09)
+
+- **ID de sesión operativo:** IMA-PLAN-RECOVERY-20261109-0205Z-01 (identificador documental; no ID nativo de ChatGPT).
+- **Estado de sesión:** cerrada al publicar y verificar este commit.
+- **Checkpoint inicial:** C1.280. **Checkpoint de cierre:** C1.281.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 2522203e4bac9984bbfa68100497065f9d42edcc.
+- **Fase metodológica:** continuidad, auditoría previa y gobierno documental.
+- **Fase PM:** PM-00 — inventario, triage y dependencias.
+- **Etapa:** verificación del plan rector y robustecimiento del flujo de ejecución.
+- **ID de tarea:** PLAN-IMA-004 (actividad operativa de planificación/metodología; no ID de tarea de producto).
+- **Contexto:** el usuario pidió comprobar que el plan señale orden, ID y ubicación de requisitos; establecer recuperación ante interrupción/corrupción con auditoría de la tarea anterior y registro de tareas derivadas; y crear un prompt reutilizable para ejecutar el plan.
+- **Verificación del plan:** se confirmaron 1.346 filas con IDs únicos distribuidas en PM-00 a PM-09, siete backlogs departamentales presentes y rutas concretas verificadas en el árbol Git. Antes del cambio, la tabla no mostraba la ruta exacta por fila y el algoritmo de orden dentro de fase no estaba suficientemente operacionalizado.
+- **Cambio al plan:** versión 1.1; se añade «Orden PM» y «Ruta exacta de requisitos» a las 1.346 filas; se agrupan filas por PM-00 a PM-09; se define selección topológica por dependencias, con desempates por severidad, prioridad, orden local y estabilidad; se preservan los IDs y requisitos originales.
+- **Cambio a metodología:** se añade sección 19 con verificación del último checkpoint, auditoría obligatoria de la tarea anterior, auditoría de la tarea objetivo, conversión de hallazgos en tareas en `tareas_auditoria.txt`, protocolo de preservación/diagnóstico/restauración ante corrupción e interrupción, y reanudación segura. Se eliminó la contradicción que permitía corregir durante la auditoría y se aclaró que el estado de tareas de producto se administra en los backlogs y el plan; `tareas_auditoria.txt` conserva las tareas derivadas de hallazgos.
+- **Criterio de preservación:** no se alteran los siete backlogs fuente ni los requisitos originales; se modifican solo el índice del plan y las normas; el checkpoint se anexa al final y changueslogs.txt recibe entrada nueva al final.
+- **Archivos modificados:** Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; changueslogs.txt.
+- **Archivos revisados sin modificación:** siete archivos pendientes departamentales; Auditoria.txt; tareas_auditoria.txt; estructura Auditoría/legacy/.
+- **Pruebas/verificaciones:** conteo de 1.346 filas; 1.346 IDs únicos; monotonicidad de PM-00 a PM-09; distribución de filas por departamento (Dirección 145, Secretaría 194, Contabilidad 184, Docente 129, Estudiante 7, Padre 13, Otros 674); verificación de existencia de las siete rutas de backlog; comprobación de columna de ruta exacta en cada fila; comprobación de sección 19 y consistencia entre registro de tareas derivadas y backlog de producto; revisión de cambios documentales y árbol Git.
+- **No ejecutadas:** pruebas de código, Apps Script runtime, navegador, HTTP, despliegue y E2E; no aplican a la actualización documental.
+- **Siguiente tarea exacta:** PM-00.3 — triage de los 35 registros PM-00, empezando por TASK-637, TASK-638 y TASK-639; primero verificar checkpoint y auditar la última tarea ejecutada según el protocolo de sección 19.
+- **Próxima acción reproducible:** abrir `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`, filtrar PM-00; abrir la ruta indicada en cada fila (para TASK-637/638, `pendientes/Contabilidad/Pendientes.md`; para TASK-639, `pendientes/Secretaria/Pendientes.md`); contrastar requisitos, estado real del repositorio, `Auditoría/MapaDependencias.md` e inventario.
+- **Cierre de continuidad:** el checkpoint C1.280 indicaba sesión abierta; la revisión de HEAD, árbol, archivos y este checkpoint cierra documentalmente esa continuidad, sin alterar su contenido histórico.
+- **Commit de cierre:** el commit único que contiene este checkpoint; SHA final se verificará consultando HEAD tras publicar.
+===============================================================================
+
+
+===============================================================================
+## C1.282 — Primera ejecución del Plan Maestro: auditoría previa y TASK-637 (2026-11-09)
+
+- **ID de sesión operativo:** IMA-EXEC-20261109-0217Z-01 (identificador documental; no ID nativo de ChatGPT).
+- **Estado de sesión:** preparada para cierre tras publicar y verificar el commit consolidado.
+- **Checkpoint inicial:** C1.281. **Checkpoint de cierre:** C1.282.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 39c3d62136a23f58b284d2fee2291698fd114a42.
+- **Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios durante esta iteración.
+- **Fase metodológica:** Fases 0–7; continuidad, auditoría, planificación, respaldo, ejecución documental, validación, Code Review y cierre.
+- **Fase del Plan Maestro:** PM-00 — Inventario, triage y resolución de dependencias.
+- **Etapa:** PM-00.3 — Inventario integral y preparación de dependencias.
+- **Tarea anterior auditada:** PLAN-IMA-004; cumplimiento parcial por AUD-NG-343 (entrada duplicada en changueslogs.txt).
+- **Tarea ejecutada:** TASK-637 — Completar el inventario integral de archivos.
+- **Estado final TASK-637:** Completada; 999/999 archivos del Git tree inventariados.
+- **Git tree de partida:** b0042a7edd424ebf8efab7bcd1aace3641f08b23; 999 blobs únicos, árbol no truncado.
+- **Evidencia principal:** docs/architecture/repository-inventory.md; blob SHA 41f8e122eb7171c9f59a0552c9ad13ac4c90f9b0.
+- **Informes:** Auditoría/AUDITORIA_PLAN-IMA-004_C1.282.md (9cb67788d0e5434add1ab43362e6c02bf15731ff); Auditoría/AUDITORIA_TASK-637_C1.282.md (c41cd73177f3aca1f702c8452800f5259ed72ab2).
+- **Hallazgos:** AUD-NG-343 (duplicación changelog, P2); AUD-NG-344 (conteo 974 obsoleto frente a 999, P2); AUD-NG-345 (inventario previo parcial, P1); AUD-NG-346 (ruta obsoleta, P2).
+- **Tareas derivadas:** TASK-683 pendiente para desambiguar la duplicación histórica sin editar/eliminar entradas; TASK-637 ampliada conservando su ID y completada.
+- **Dependencias:** TASK-637 no tenía prerrequisitos de producto por ID; árbol, documentación e index.html verificados. TASK-638 depende de TASK-637; TASK-639 depende de TASK-637 y TASK-638.
+- **Archivos modificados:** docs/architecture/repository-inventory.md; pendientes/Contabilidad/Pendientes.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoría/AUDITORIA_PLAN-IMA-004_C1.282.md; Auditoría/AUDITORIA_TASK-637_C1.282.md; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; Auditoría/Contexto_personal.txt.
+- **Archivos revisados sin modificación:** METODOLOGIA_DESARROLLO.md; Auditoría/MapaDependencias.md; Auditoría/AUDITORIA_COMPLETADAS_F8-TASK02.md; README.md; index.html; docs/architecture/routing-and-paths.md; docs/architecture/folder-structure.md; los otros seis backlogs departamentales.
+- **Pruebas ejecutadas:** conteo de 999 blobs; unicidad de rutas; correspondencia 999/999 entre árbol e inventario; tamaño/SHA; clasificación; verificación de 1.346 IDs únicos y rutas de origen del Plan; conservación de SHA de index.html; Code Review documental.
+- **Pruebas no ejecutadas:** runtime Apps Script, navegador, HTTP y E2E; no aplican al alcance de inventario documental.
+- **Commit de cierre:** el commit único que contiene este checkpoint; SHA final se confirma externamente después de actualizar la rama.
+- **Siguiente tarea exacta:** TASK-638 — Trazar dependencias estáticas y dinámicas de extremo a extremo; `pendientes/Contabilidad/Pendientes.md`.
+- **Próxima acción reproducible:** auditar primero el cierre de TASK-637 y después abrir el requisito completo de TASK-638; verificar que todas sus dependencias de TASK-637 están satisfechas antes de ejecutar.
+===============================================================================
+
+
+===============================================================================
+## C1.283 — Reauditoría de TASK-637 y sincronización del inventario (2026-11-09)
+
+- **ID de sesión operativo:** IMA-EXEC-20261109-0217Z-02.
+- **Estado:** cerrada tras publicar y verificar el commit consolidado.
+- **Checkpoint inicial:** C1.282. **Checkpoint de cierre:** C1.283.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama:** NG_beta_0.0.0.1_work.
+- **HEAD de partida:** c3a8e40f2341d9831984799ac0563e17ceefd96e.
+- **Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- **Fase metodológica:** continuidad y auditoría posterior; corrección documental, pruebas, Code Review y cierre.
+- **Fase PM:** PM-00.3.
+- **Tarea:** TASK-637 — reabierta para corregir AUD-NG-347 y completada tras ampliar inventario.
+- **Hallazgo:** el inventario de 999 filas correspondía al HEAD anterior, mientras que el commit C1.282 añadió dos informes y elevó el tree a 1.001 blobs.
+- **Corrección:** inventario ampliado a 1.002 rutas (1.001 blobs del HEAD C1.282 más el informe C1.283).
+- **Evidencia:** tree C1.282 e052e8781270a0a23aedd2d90177b601d8df063a; informe C1.283 af96fa04c573dbacdb6c3637aeed35dea9462cad; SHA final del inventario verificado externamente tras publicar.
+- **Archivos modificados:** docs/architecture/repository-inventory.md; pendientes/Contabilidad/Pendientes.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoría/AUDITORIA_TASK-637_C1.283.md; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; Auditoría/Contexto_personal.txt.
+- **Archivos revisados sin modificación:** METODOLOGIA_DESARROLLO.md; Auditoría/MapaDependencias.md; informes C1.282; README.md; index.html; seis backlogs departamentales no objetivo.
+- **Pruebas:** árbol recursivo no truncado; 1.001 blobs del HEAD inicial; 1.002 rutas inventariadas; unicidad; SHA/tamaño; punto de entrada conservado.
+- **Pruebas no ejecutadas:** runtime Apps Script, navegador, HTTP y E2E; no aplican a inventario documental.
+- **Siguiente tarea exacta:** TASK-638 — Trazar dependencias estáticas y dinámicas de extremo a extremo; `pendientes/Contabilidad/Pendientes.md`.
+- **Próxima acción:** auditar el cierre final de TASK-637 y después abrir el requisito íntegro de TASK-638; verificar dependencia TASK-637 antes de avanzar.
+- **Commit de cierre:** el commit único que contiene este checkpoint; SHA final confirmado externamente después de publicar.
+
+
+===============================================================================
+## C1.284 — Regla excepcional de corrección de auditoría previa y commits A/B (2026-11-09)
+
+- **ID de sesión operativo:** IMA-GOV-20261109-0313Z-01.
+- **Estado:** cambio documental preparado para publicación y verificación.
+- **Checkpoint inicial:** C1.283. **Checkpoint de cierre:** C1.284.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 9f2f4f1c4da7cd9f896d56e5d20e1cce5ff6f90e.
+- **Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; se conserva sin modificaciones.
+- **Fase metodológica:** gobierno del proceso; actualización de continuidad, auditoría previa y control de commits.
+- **Fase PM:** PM-00 — inventario, triage y dependencias.
+- **ID de tarea:** PLAN-IMA-005 (actividad operativa de metodología; no es ID de tarea de producto).
+- **Contexto:** el usuario solicitó un algoritmo de recuperación para archivos incompletos/corruptos y una regla expresa para resolver hallazgos detectados al auditar la tarea anterior antes de ejecutar la tarea actual, permitiendo dos commits únicamente en ese caso.
+- **Cambio realizado:** la metodología define la excepción 19.2.1. El flujo normal conserva un commit por iteración. Si la auditoría de la tarea anterior detecta un hallazgo accionable que exige corrección, se congela la tarea actual, se corrige exclusivamente la anterior y se publica el commit A con checkpoint A; se verifica A antes de iniciar la tarea actual; luego se ejecuta la tarea actual y se publica el commit B con checkpoint B.
+- **Límites:** exactamente dos commits; sin tercer commit; A no contiene cambios de la tarea actual; B toma A como ancestro; ambos checkpoints son independientes; no se activa por hallazgos de la tarea objetivo, mejoras opcionales ni bloqueos técnicos.
+- **Continuidad de producto:** última tarea de producto registrada: TASK-637, completada tras reauditoría C1.283. Siguiente tarea: TASK-638, aún pendiente de auditoría previa de TASK-637 y de su propio requisito; no se inició su implementación en esta sesión.
+- **Archivos modificados:** METODOLOGIA_DESARROLLO.md; changueslogs.txt; Auditoría/Contexto_personal.txt.
+- **Archivos revisados sin modificación:** Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoria.txt; tareas_auditoria.txt; pendientes/Contabilidad/Pendientes.md; informe AUDITORIA_TASK-637_C1.283.md.
+- **Verificaciones:** coherencia de reglas de commit único y excepción; secuencia de 19.2/19.2.1/19.5; límites de dos commits; conservación del historial del contexto y changelog; comprobación de rama y HEAD.
+- **Pruebas no ejecutadas:** pruebas de aplicación, Apps Script runtime, navegador, HTTP y E2E; no aplican a este cambio metodológico.
+- **Siguiente acción exacta:** iniciar nueva sesión desde C1.284; auditar el cierre de TASK-637 y, si no hay hallazgos accionables pendientes, auditar y ejecutar TASK-638 conforme al Plan Maestro.
+- **Commit de cierre:** se confirmará externamente consultando el HEAD de la rama después de publicar.
+===============================================================================
