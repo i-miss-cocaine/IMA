@@ -4916,7 +4916,7 @@ function getPayrollBatchPreview(payload){
    if(!groups[key])groups[key]={departamento:department,cargo:position,tipoContrato:contractType,modalidadPago:modality,frecuenciaPago:frequency,empleados:[],empleadoIds:[],pendientesValidacion:0};
    groups[key].empleados.push(candidate);groups[key].empleadoIds.push(id);if(!cfgValid)groups[key].pendientesValidacion++;
   });
-  const periodRows=planRows.filter(r=>String(r[2]||"").trim()===period&&normalizePayrollBatchValue_(r[15])!=="REEMPLAZADA"&&!["ANULADA","ANULADO"].includes(normalizePayrollBatchValue_(r[15])));
+  const periodRows=planRows.filter(r=>String(r[2]||"").trim()===period&&!["REEMPLAZADA","ANULADA","ANULADO","REVERTIDA","REVERTIDO","CANCELADA","CANCELADO"].includes(normalizePayrollBatchValue_(r[15])));
   const planIds=[...new Set(periodRows.map(r=>String(r[0]||"").trim()).filter(Boolean))];
   const processed=new Set(periodRows.map(r=>String(r[3]||"").trim()));included.forEach(e=>e.procesado=processed.has(e.empleadoId));
   const groupList=Object.keys(groups).sort().map(k=>{const g=groups[k];g.procesados=g.empleadoIds.filter(id=>processed.has(id)).length;g.pendientes=g.empleadoIds.length-g.procesados;g.employeeIdsPendientes=g.empleadoIds.filter(id=>!processed.has(id));return g;});
@@ -5780,7 +5780,7 @@ function getPayrollPeriodSummary(payload) {
   if (compararConPeriodo) {
     const currentPeriod=String(periodoMes||mapped[0]&&mapped[0].periodoMes||"").trim(),priorPeriod=String(compararConPeriodo).trim();
     if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(currentPeriod)||!/^\d{4}-(0[1-9]|1[0-2])$/.test(priorPeriod)||currentPeriod===priorPeriod) return {status:"error",code:"PAYROLL_COMPARISON_PERIOD_INVALID",message:"Seleccione dos períodos distintos con formato AAAA-MM."};
-    const priorRows=rows.filter(r=>String(r[2]||"").trim()===priorPeriod&&normalizePayrollBatchValue_(r[15])!=="REEMPLAZADA"&&!["ANULADA","ANULADO"].includes(normalizePayrollBatchValue_(r[15])));
+    const priorRows=rows.filter(r=>String(r[2]||"").trim()===priorPeriod&&!["REEMPLAZADA","ANULADA","ANULADO","REVERTIDA","REVERTIDO","CANCELADA","CANCELADO"].includes(normalizePayrollBatchValue_(r[15])));
     const priorByEmployee=Object.create(null);priorRows.forEach(r=>{const id=String(r[3]||"").trim();if(id){if(priorByEmployee[id])priorByEmployee[id].duplicate=true;else priorByEmployee[id]=r;}});
     const threshold=Number.isFinite(Number(umbralVariacion))?Number(umbralVariacion):10,employeeVariances=[];
     mapped.forEach(employee=>{
