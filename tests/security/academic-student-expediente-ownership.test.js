@@ -645,21 +645,28 @@ console.log("ACADEMIC admission charge attribution contract passed.");
 // or caller-supplied rollback callbacks.
 {
   let forwarded;
-  const context={registerStudentEnrollmentInternal_:payload=>{forwarded=payload;return {status:"success"};}};
+  const context={
+    assertAcademicEnrollmentMutationAccess_:()=>({authorized:true}),
+    LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>{}})},
+    registerStudentEnrollmentInternal_:payload=>{forwarded=payload;return {status:"success"};}
+  };
   vm.runInNewContext(extractFunction("registerStudentEnrollment")+"\nthis.run=registerStudentEnrollment;",context);
+  const untrustedRollback=[()=>{throw Error("untrusted callback executed");}];
   const result=context.run({
     userId:"STU-1",grado:"1",periodo:"2026",
     _chargeReference:"ADMISION|FORGED|MAT-1",
     _chargeReferencePrefix:"ADMISION|FORGED|",
-    _rollbackActions:[()=>{throw Error("untrusted callback executed");}]
+    _rollbackActions:untrustedRollback
   });
   assert.equal(result.status,"success");
   assert.equal(Object.prototype.hasOwnProperty.call(forwarded,"_chargeReference"),false,
     "public enrollment API must strip admission-only charge reference");
   assert.equal(Object.prototype.hasOwnProperty.call(forwarded,"_chargeReferencePrefix"),false,
     "public enrollment API must strip the internal admission charge-reference prefix");
-  assert.equal(Object.prototype.hasOwnProperty.call(forwarded,"_rollbackActions"),false,
-    "public enrollment API must strip caller-controlled rollback callbacks");
+  assert.equal(Array.isArray(forwarded._rollbackActions),true,
+    "public enrollment API must supply a server-owned compensation journal");
+  assert.notEqual(forwarded._rollbackActions,untrustedRollback,
+    "caller-controlled rollback callbacks must not be forwarded");
 }
 console.log("ACADEMIC public enrollment internal-metadata isolation contract passed.");
 
