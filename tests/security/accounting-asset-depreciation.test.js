@@ -25,7 +25,7 @@ const journal=rows.AsientosContables[1],lines=JSON.parse(journal[5]);assert.equa
 const repeated=ctx.calculateAssetDepreciation({activoId:"A-1",periodo:"2026-01",post:true});assert.equal(repeated.resultados[0].status,"already_posted");assert.equal(rows.AsientosContables.length,2);
 ctx.registerCapitalizableAssetImprovement({activoId:"A-1",fechaCapitalizacion:"2026-02-01",descripcion:"Ampliación de memoria",importe:120,vidaUtilMeses:12,metodo:"LineaRecta"});
 const feb=ctx.calculateAssetDepreciation({activoId:"A-1",periodo:"2026-02",post:false});assert.equal(feb.resultados[0].depreciacionPeriodo,110);
-const schedule=ctx.getAssetDepreciationSchedule({activoId:"A-1"});assert.equal(schedule.calendario.length,1);assert.equal(schedule.calendario[0].estado,"Contabilizada");assert.equal(schedule.activos[0].costoCapitalizado,1200);
+const schedule=ctx.getAssetDepreciationSchedule({activoId:"A-1"});assert.equal(schedule.calendario.length,1);assert.equal(schedule.calendario[0].estado,"Contabilizada");assert.equal(schedule.activos[0].costoCapitalizado,1320);
 assert.throws(()=>ctx.configureAssetDepreciationProfile({activoId:"A-1",fechaPuestaFuncionamiento:"2026-01-01",costoCapitalizado:1200,valorResidual:1300,vidaUtilMeses:12,metodo:"LineaRecta",cuentaActivo:"1501",cuentaDepreciacionAcumulada:"1599",cuentaGastoDepreciacion:"6101"}),/PROFILE_INVALID/);
 assert.throws(()=>ctx.saveAssetDepreciationPolicy({categoria:"Mobiliario",metodo:"SaldoDecreciente",vidaUtilMeses:60,tasaAnual:1,cuentaActivo:"1501",cuentaDepreciacionAcumulada:"1599",cuentaGastoDepreciacion:"6101"}),/POLICY_VALUES_INVALID/);
 assert.ok(logs.some(x=>x[3]==="ASSET_DEPRECIATION_POSTED"));
