@@ -5367,3 +5367,14 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - La autorización ahora usa el ExpedienteID canónico obtenido de la única fila coincidente de ExpedientesEstudiantes, mientras cleanExpId se conserva para la comparación local insensible a mayúsculas. El test envía exp-1 y verifica que el sobre HMAC contiene EXP-1.
 - Reejecución local: 20 escenarios PASS en Node.js v22.16.0; el archivo de test local coincide por SHA con el blob de la rama. node --check PASS sobre las funciones modificadas extraídas y el test. El checkout completo y CI continúan sin evidencia observable; no se declaran.
 - Commits: 196d4865 y 559e8590. El incremento ACADEMIC se considera completado con evidencia local; TASK-153/T153-S05 global permanece En ejecución para el consumidor ACCOUNTING y la superficie administrativa/configurable.
+
+
+#### Actualización C1.690 — T153-S05 / consumidor ACCOUNTING (2026-11-13 13:05 UTC)
+- Se integró el endpoint existente getEmployeeDocuments con la autoridad central USER para referencias READ_REFERENCE de recurso EXPEDIENTE_LABORAL. El fallback se limita a consulta individual explícita, cuando el control ordinario devuelve exclusivamente RESOURCE_SCOPE_DENIED y el expediente/DocumentoID son únicos.
+- Se excluyen los roles de autoservicio Empleado/Trabajador/Personal del fallback. Mismo departamento y autoservicio conservan sus respuestas originales; no hay acceso cross-department por listados.
+- Allowlist de salida: DocumentoID, categoriaDoc, fechaCarga y estadoVisibilidad. No se exponen TituloDocumento, ArchivoUrl, CargadoPor, Observaciones, expedienteId ni contenido. El consumidor no descarga archivos.
+- Transporte ACCOUNTING→USER: HMAC-SHA256, target/action fijos, URL HTTPS, secreto >=32, activeDepartmentId opcional firmado y validación estricta de respuesta; USER vuelve a validar sesión, permiso, institución, activeDepartmentId, ResourceOwnership, política, concesión y auditoría durable.
+- Prueba local Node.js v22.16.0: 29 escenarios PASS; node --check PASS sobre las funciones exactas extraídas y test. SHA del test local coincide con blob de la rama. El test incluye new vm.Script sobre el Code.gs completo y se ejecutará así en el runner.
+- Workflows general y aislado incluyen ambos consumidores y parseo Node 24. Los commits nuevos no exponen status/check observable; CI queda pendiente de evidencia, no se declara PASS.
+- BETA-FUNC-064 Pendiente beta. No se desplegó, no se activó secreto, no se modificaron hojas productivas.
+- **Estado:** consumidor ACCOUNTING completado y aprobado localmente. El siguiente alcance de T153-S05 es la superficie administrativa/configurable para gestionar política y concesiones, sin habilitar referencias por defecto.
