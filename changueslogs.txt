@@ -3473,4 +3473,4 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-13 16:35 UTC] C1.702 — TASK-153 / AUD-NG-386 — ACCOUNTING anticipos y préstamos
 - requestEmployeeLoanAdvance y approveEmployeeLoanAdvance protegidas con identidad, roles, expediente activo, scope/ownership WRITE y ScriptLock.
 - Validación numérica/plazo, transición limitada, monto aprobado ≤ solicitado y aprobador firmado; actualización de fila completa.
-- Contrato Node agregado al workflow Department Scope; BETA-FUNC-075 Pendiente beta.
+- Contrato Node agregado al workflow Department Scope; runs 43463145244, 43463145440 y 43463145456 SUCCESS (Node 24.22.2); BETA-FUNC-075 Pendiente beta.

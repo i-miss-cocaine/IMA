@@ -5467,4 +5467,4 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - requestEmployeeLoanAdvance deriva el empleado desde identidad firmada o exige scope/ResourceOwnership WRITE para RecursosHumanos/Administrador; valida monto finito positivo, plazo entero y esquema canónico; protege escritura con ScriptLock y UUID.
 - approveEmployeeLoanAdvance solo permite RecursosHumanos/Administrador; obtiene empleado desde la solicitud única, revalida expediente activo y ownership WRITE bajo lock, acepta solo Aprobado/Rechazado, limita monto aprobado al solicitado y registra actor.userId, no authRole.
 - Actualización de fila completa para mantener consistencia de monto aprobado, cuota, saldo, estado y aprobador; revisión repetida bloqueada.
-- Contrato Node agregado a Department Scope; BETA-FUNC-075 Pendiente beta.
+- Contrato Node agregado a Department Scope; Department Scope 43463145244, Identity Mapping 43463145440 y Department Reference Consumers 43463145456 SUCCESS (Node 24.22.2; contratos y sintaxis PASS). BETA-FUNC-075 Pendiente beta.

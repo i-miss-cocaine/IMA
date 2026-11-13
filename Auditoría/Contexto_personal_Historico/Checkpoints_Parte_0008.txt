@@ -729,3 +729,19 @@
 - **Estado:** subalcance de correcciones de asistencia implementado y verificado por CI; TASK-153/AUD-NG-386 sigue En ejecución.
 - **Siguiente elegible:** requestEmployeeLoanAdvance / approveEmployeeLoanAdvance; operaciones financieras aún sin identidad/ownership en el código inspeccionado.
 ===============================================================================
+
+
+===============================================================================
+### C1.702 — IMA-EXEC-20261113-1635Z-01 — TASK-153 / AUD-NG-386 — anticipos y préstamos laborales
+- **Continuidad:** C1.701; HEAD inicial aaf9933a66a862ea58d1ede3e54b3de32a8bd658; rama autorizada NG_beta_0.0.0.1_work; rama base sin cambios 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Hallazgo:** requestEmployeeLoanAdvance aceptaba empleadoId del payload sin verificar identidad, monto/plazo inválidos podían producir valores no finitos y approveEmployeeLoanAdvance confiaba en authRole del cliente, permitía estados/montos arbitrarios y múltiples escrituras separadas sin control de ownership.
+- **Implementación:** helper resolveEmployeeLoanAdvanceAccess_ vincula empleado a identidad firmada o exige RecursosHumanos/Administrador con expediente activo, scope y ResourceOwnership WRITE. Solicitud valida monto finito positivo, plazo entero de 1–120, esquema canónico y UUID; ScriptLock y revalidación antes de append.
+- **Aprobación:** solo RecursosHumanos/Administrador; deriva empleado desde préstamo único, revalida ownership WRITE bajo lock, permite únicamente Aprobado/Rechazado, monto aprobado positivo y no superior al solicitado, actualiza cuota/saldo/estado/aprobador en una sola fila; AprobadoPor proviene de actor.userId, no authRole; transición PendienteAprobacion única.
+- **Archivos:** backend/accounting-service/Code.gs; tests/security/accounting-employee-loan-advance-ownership.test.js; .github/workflows/department-scope-contract.yml; beta_test_Parte_0002.txt; Plan Maestro y changueslogs.txt.
+- **Commit de implementación:** ea2a89d344399338a9707075c7c8e164777c5318.
+- **CI:** Department Scope run 43463145244 SUCCESS; Identity Mapping run 43463145440 SUCCESS; Department Reference Consumers run 43463145456 SUCCESS. Node.js 24.22.2; contrato de préstamos, asistencia, portal y regresiones PASS; sintaxis de servicios Apps Script PASS.
+- **CLI local:** NOT RUN; sin checkout local. **Apps Script/Sheets real:** NOT RUN; sin despliegue ni datos reales.
+- **Beta:** BETA-FUNC-075 Pendiente beta para pruebas reales con usuarios/ownership sintéticos, aprobación parcial y conciliación de saldos.
+- **Estado:** solicitud/aprobación de anticipos y préstamos protegidas y verificadas por CI; TASK-153/AUD-NG-386 continúa En ejecución.
+- **Siguiente elegible:** revisar TASK-175 / amortización de préstamos y su integración con cierre/reversión de nómina, sin duplicar lo ya implementado.
+===============================================================================
