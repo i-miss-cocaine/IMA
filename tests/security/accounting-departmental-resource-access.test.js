@@ -555,12 +555,6 @@ assert.equal(context.recordStaffCheckIn({sessionToken:"invalid",empleadoId:"U-EM
 assert.equal(context.recordStaffCheckIn({sessionToken:"student",empleadoId:"U-EMP"}).code,"ROLE_NOT_ALLOWED","non-staff roles cannot register attendance");
 assert.equal(context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-B",tipoRegistro:"Entrada"}).code,"RESOURCE_NOT_FOUND","employee cannot register attendance for another user");
 assert.equal(rows.DeduccionesAsistencia.length,attendanceWritesBefore,"denied attendance writes must not mutate storage");
-const lockOriginal=context.LockService,lockState={held:false};let nestedLockResult=null,nestedTriggered=false;
-context.LockService={getScriptLock:()=>({waitLock:()=>{if(lockState.held)throw Error("lock busy");lockState.held=true;if(!nestedTriggered){nestedTriggered=true;nestedLockResult=context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",tipoRegistro:"Entrada"});}},releaseLock:()=>{lockState.held=false;}})};
-const concurrencyResult=context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",tipoRegistro:"Salida"});
-assert.equal(concurrencyResult.status,"success","first concurrent mark must commit");
-assert.equal(nestedLockResult.code,"CONCURRENT_UPDATE_RETRY","overlapping attendance write must fail closed while the script lock is held");
-context.LockService=lockOriginal;
 
 const selfEntry=context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",empleadoNombre:"Empleado A",horaEntradaEsperada:"00:01",tipoRegistro:"Entrada"});
 assert.equal(selfEntry.status,"success","employee can register own attendance: "+JSON.stringify(selfEntry));
@@ -571,11 +565,17 @@ const exitResult=context.recordStaffCheckIn({sessionToken:"employee",empleadoId:
 assert.equal(exitResult.status,"success","employee can register own exit");
 assert.equal(rows.DeduccionesAsistencia[rows.DeduccionesAsistencia.length-1][5]!==""||rows.DeduccionesAsistencia.find(r=>r[2]==="U-EMP"&&r[1] instanceof Date&&r[1].toISOString().slice(0,10)===new Date().toISOString().slice(0,10))[5]!=="",true,"exit must update the same attendance row");
 assert.equal(context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",tipoRegistro:"Salida"}).code,"ATTENDANCE_ALREADY_RECORDED","duplicate exit must not overwrite the original mark");
+const lockOriginal=context.LockService,lockState={held:false};let nestedLockResult=null,nestedTriggered=false;
+context.LockService={getScriptLock:()=>({waitLock:()=>{if(lockState.held)throw Error("lock busy");lockState.held=true;if(!nestedTriggered){nestedTriggered=true;nestedLockResult=context.recordStaffCheckIn({sessionToken:"hrA",empleadoId:"U-X",tipoRegistro:"Entrada"});}},releaseLock:()=>{lockState.held=false;}})};
+const concurrencyResult=context.recordStaffCheckIn({sessionToken:"hrA",empleadoId:"U-X",tipoRegistro:"Entrada"});
+assert.equal(concurrencyResult.status,"success","first scoped HR write must commit");
+assert.equal(nestedLockResult.code,"CONCURRENT_UPDATE_RETRY","overlapping attendance write must fail closed while the script lock is held");
+context.LockService=lockOriginal;
+
 const beforeForeign=rows.DeduccionesAsistencia.length;
 assert.equal(context.recordStaffCheckIn({sessionToken:"hrB",empleadoId:"U-EMP",tipoRegistro:"Entrada"}).code,"RESOURCE_NOT_FOUND","HR cannot write attendance outside its verified department");
 assert.equal(rows.DeduccionesAsistencia.length,beforeForeign,"out-of-scope HR attempts must not mutate storage");
-const hrWrite=context.recordStaffCheckIn({sessionToken:"hrA",empleadoId:"U-X",tipoRegistro:"Entrada"});
-assert.equal(hrWrite.status,"success","HR with matching department ownership can register attendance for an employee");
+assert.equal(concurrencyResult.status,"success","HR with matching department ownership can register attendance for an employee");
 const adminWrite=context.recordStaffCheckIn({sessionToken:"admin",empleadoId:"U-B",tipoRegistro:"Entrada"});
 assert.equal(adminWrite.status,"success","institution-wide manager can register attendance for an owned employee");
 const invalidType=context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",tipoRegistro:"DELETE"});
