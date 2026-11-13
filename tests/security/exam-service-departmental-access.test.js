@@ -58,7 +58,7 @@ const ownershipRows = [
   ["OWN-7", "I1", "EXAMEN", "EXM-6", "D1", "ACTIVE", "TEACHER-1", "", ""]
 ];
 const deliveryRows = [
-  ["EntregaID", "ExamenID", "UserID", "Fecha", "Respuestas", "Nota", "Estado", "Comentario"],
+  ["EntregaExamenID", "ExamenID", "UserID", "FechaEntrega", "RespuestasJSON", "NotaTotal", "Estado", "ComentarioDocente", "TemaAsociado", "AsignaturaAsociada"],
   ["DEL-1", "EXM-1", "STUDENT-1", new Date("2026-11-01T10:00:00Z"), "[]", 90, "Entregado", ""],
   ["DEL-2", "EXM-2", "STUDENT-2", new Date("2026-11-02T10:00:00Z"), "[]", 80, "Entregado", ""],
   ["DEL-3", "EXM-3", "STUDENT-3", new Date("2026-11-03T10:00:00Z"), "[]", 70, "Entregado", ""]
@@ -227,7 +227,7 @@ runtime.updateExamStatus({ sessionToken: "teacher-token", examenId: "EXM-1", est
 assert.equal(examRows.find(row => row[0] === "EXM-1")[7], "Inactivo");
 assert.throws(() => runtime.updateExamStatus({ sessionToken: "teacher-token", examenId: "EXM-1", estado: "Publicado" }),
   /EXAM_STATUS_INVALID/, "exam status only accepts supported active/inactive values");
-runtime.gradeExamSubmission({ sessionToken: "teacher-token", entregaId: "DEL-1", calificacion: 95, estado: "Calificado", comentario: "Revisado" });
+runtime.gradeExamSubmission({ sessionToken: "teacher-token", entregaId: "DEL-1", calificacion: 95, estado: "Calificado", comentario: "Revisado", motivoRectificacion: "Corrección de prueba de propiedad" });
 assert.equal(deliveryRows.find(row => row[0] === "DEL-1")[5], "95.00", "teacher can grade a submission for own exam using normalized two-decimal storage");
 assert.throws(() => runtime.gradeExamSubmission({ sessionToken: "teacher-token", entregaId: "DEL-2", calificacion: 0 }),
   /RESOURCE_NOT_AVAILABLE/, "teacher cannot grade a submission belonging to another department");
