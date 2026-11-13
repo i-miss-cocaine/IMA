@@ -54,7 +54,7 @@ const oneTimeConcept=concept("C6","ONE_TIME_BONUS","Bono extraordinario","AJUSTE
 rows.CatalogoConceptosPlanilla.push(oneTimeConcept);
 assert.equal(ctx.assignPayrollConcept({sessionToken:"hr",codigoConcepto:"ONE_TIME_BONUS",tipoAsignacion:"EMPLEADO",valorAsignacion:"U1",frecuencia:"MENSUAL",periodoUnico:"2026/11"}).code,"PAYROLL_CONCEPT_PERIOD_REQUIRED","non-recurring concepts reject malformed periods");
 const oneTimeAssignment=ctx.assignPayrollConcept({sessionToken:"hr",codigoConcepto:"ONE_TIME_BONUS",tipoAsignacion:"EMPLEADO",valorAsignacion:"U1",frecuencia:"MENSUAL",periodoUnico:"2026-11"});
-assert.equal(oneTimeAssignment.status,"success","non-recurring concepts accept valid YYYY-MM periods");
+assert.equal(oneTimeAssignment.status,"success","non-recurring concepts accept valid YYYY-MM periods: "+JSON.stringify(oneTimeAssignment));
 const oneTimeEngine=ctx.getPayrollConceptEngine_(ss);
 const oneTimeContext={salarioBase:1000,devengado:1000,horasExtras:0,baseCotizable:1000,baseISR:1000,diasTrabajados:30,diasPeriodo:30,ihss:0,rap:0,isr:0,salarioNeto:1000,conceptValues:Object.create(null)};
 const oneTimeResult=ctx.calculatePayrollConceptPhase_(oneTimeEngine,employee,"U1","2026-11","PLN-ONE-TIME",oneTimeContext,1,Infinity);
