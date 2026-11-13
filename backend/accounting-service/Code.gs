@@ -4654,7 +4654,9 @@ function getPayrollConceptEngine_(ss) {
   const byCode=Object.create(null);
   active.forEach(c=>{if(!/^[A-Z][A-Z0-9_]{1,39}$/.test(c.codigo)||byCode[c.codigo])throw new Error("PAYROLL_CONCEPT_CODE_DUPLICATE_OR_INVALID");if(!payrollConceptPhase_(c.categoria)||!["DEBE","HABER"].includes(c.naturaleza)||!["FIJO","PORCENTAJE","PROPORCIONAL","FORMULA"].includes(c.tipoCalculo)||!Number.isFinite(c.valor)||c.valor<0||!c.cuentaContable)throw new Error("PAYROLL_CONCEPT_CONFIGURATION_INVALID:"+c.codigo);const expectedNature=payrollConceptPhase_(c.categoria)===1?"DEBE":"HABER";if(c.naturaleza!==expectedNature)throw new Error("PAYROLL_CONCEPT_NATURE_MISMATCH:"+c.codigo);if(!["GRAVADO","EXENTO"].includes(c.tratamientoISR)||!["COTIZABLE","NO_COTIZABLE"].includes(c.tratamientoIHSS))throw new Error("PAYROLL_CONCEPT_TAX_TREATMENT_INVALID:"+c.codigo);byCode[c.codigo]=c;});
   const reserved=["BASE","SALARIO_BASE","DEVENGADO","HORAS_EXTRAS","BASE_COTIZABLE","BASE_ISR","DIAS_TRABAJADOS","DIAS_PERIODO","IHSS","RAP","ISR","SALARIO_NETO"];
+  const allowedBases=reserved.filter(x=>x!=="BASE");
   active.forEach(c=>{
+    if(!allowedBases.includes(c.baseCalculo)&&!/^CONCEPTO:[A-Z][A-Z0-9_]{1,39}$/.test(c.baseCalculo))throw new Error("PAYROLL_BASE_REFERENCE_INVALID:"+c.codigo);
     const refs=tokenizePayrollFormula_(c.formula).filter(t=>/^[A-Za-z_][A-Za-z0-9_]*$/.test(t)&&!reserved.includes(t));
     if(c.tipoCalculo==="FORMULA"&&!c.formula)throw new Error("PAYROLL_FORMULA_REQUIRED:"+c.codigo);
     if(c.tipoCalculo==="FORMULA"){const vars={BASE:1,SALARIO_BASE:1,DEVENGADO:1,HORAS_EXTRAS:1,BASE_COTIZABLE:1,BASE_ISR:1,DIAS_TRABAJADOS:1,DIAS_PERIODO:1,IHSS:1,RAP:1,ISR:1,SALARIO_NETO:1};refs.forEach(ref=>{if(!byCode[ref])throw new Error("PAYROLL_FORMULA_REFERENCE_INVALID:"+c.codigo+":"+ref);if(payrollConceptPhase_(byCode[ref].categoria)>payrollConceptPhase_(c.categoria))throw new Error("PAYROLL_FORMULA_PHASE_INVALID:"+c.codigo+":"+ref);vars[ref]=1;});evaluatePayrollFormula_(c.formula,vars);}
@@ -4770,7 +4772,8 @@ function setPayrollConceptStatus(payload) {
 function assignPayrollConcept(payload) {
   const p=payload||{},access=requirePayrollConceptManager_(p);if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
   const code=String(p.codigoConcepto||"").trim().toUpperCase(),type=String(p.tipoAsignacion||"").trim().toUpperCase(),target=String(p.valorAsignacion||"").trim(),frequency=String(p.frecuencia||"MENSUAL").toUpperCase(),period=String(p.periodoUnico||"").trim();
-  if(!code||!["GLOBAL","EMPLEADO","DEPARTAMENTO","CARGO","ESTRUCTURA_SALARIAL"].includes(type)||!target||!["MENSUAL","POR_PERIODO","UNICA"].includes(frequency)||(frequency==="UNICA"&&!/^\d{4}-\d{2}$/.test(period)))return {status:"error",code:"PAYROLL_CONCEPT_ASSIGNMENT_INVALID",message:"La asignación o frecuencia no es válida."};
+  const startDate=p.fechaInicio?new Date(p.fechaInicio):null,endDate=p.fechaFin?new Date(p.fechaFin):null;
+  if(!code||!["GLOBAL","EMPLEADO","DEPARTAMENTO","CARGO","ESTRUCTURA_SALARIAL"].includes(type)||!target||!["MENSUAL","POR_PERIODO","UNICA"].includes(frequency)||(frequency==="UNICA"&&!/^\d{4}-\d{2}$/.test(period))||startDate&&isNaN(startDate.getTime())||endDate&&isNaN(endDate.getTime())||startDate&&endDate&&startDate>endDate)return {status:"error",code:"PAYROLL_CONCEPT_ASSIGNMENT_INVALID",message:"La asignación, vigencia o frecuencia no es válida."};
   const override=p.valorOverride==null||p.valorOverride===""?null:Number(p.valorOverride);
   if(override!==null&&(!Number.isFinite(override)||override<0))return {status:"error",code:"PAYROLL_CONCEPT_OVERRIDE_INVALID",message:"El valor de ajuste no es válido."};
   const lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"Las asignaciones están ocupadas."};
@@ -4801,7 +4804,28 @@ function assignPayrollConcept(payload) {
 }
 function getPayrollConceptAssignments(payload) {
   const p=payload||{},access=requirePayrollConceptManager_(p);if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
-  try{const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(p,ss,access.actor),data=ensurePayrollConceptSheet_(ss,"AsignacionesConceptosPlanilla",getPayrollAssignmentHeaders_());const rows=data.rows.filter(r=>scope&&scope.institutionWide||String(r[4]||"")&&scope&&scope.departmentIds.map(String).includes(String(r[4]||""))||String(r[2]||"")==="EMPLEADO"&&String(r[3]||"")===access.actor.userId);return {status:"success",asignaciones:rows.map(r=>({asignacionId:r[0],codigoConcepto:r[1],tipoAsignacion:r[2],valorAsignacion:r[3],departamentoScope:r[4],valorOverride:r[5],fechaInicio:r[6],fechaFin:r[7],frecuencia:r[8],periodoUnico:r[9],estado:r[10],observaciones:r[11]}))};}catch(e){return {status:"error",code:"PAYROLL_CONCEPT_ASSIGNMENTS_INVALID",message:"No fue posible leer las asignaciones."};}
+  try{
+    const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(p,ss,access.actor);
+    if(!scope||!scope.authorized)return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"No existe un ámbito autorizado para consultar asignaciones."};
+    const allowed=Array.isArray(scope.departmentIds)?scope.departmentIds.map(String):[],data=ensurePayrollConceptSheet_(ss,"AsignacionesConceptosPlanilla",getPayrollAssignmentHeaders_());
+    const rows=data.rows.filter(r=>scope.institutionWide||allowed.includes(String(r[4]||"")));
+    return {status:"success",asignaciones:rows.map(r=>({asignacionId:r[0],codigoConcepto:r[1],tipoAsignacion:r[2],valorAsignacion:r[3],departamentoScope:r[4],valorOverride:r[5],fechaInicio:r[6],fechaFin:r[7],frecuencia:r[8],periodoUnico:r[9],estado:r[10],observaciones:r[11]}))};
+  }catch(e){return {status:"error",code:"PAYROLL_CONCEPT_ASSIGNMENTS_INVALID",message:"No fue posible leer las asignaciones."};}
+}
+function setPayrollConceptAssignmentStatus(payload) {
+  const p=payload||{},access=requirePayrollConceptManager_(p);if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
+  const id=String(p.asignacionId||"").trim(),state=String(p.estado||"").trim().toUpperCase();if(!id||!["ACTIVO","INACTIVO"].includes(state))return {status:"error",code:"PAYROLL_CONCEPT_ASSIGNMENT_STATUS_INVALID",message:"Estado de asignación no válido."};
+  const lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"Las asignaciones están ocupadas."};
+  try{
+    const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(p,ss,access.actor);
+    if(!scope||!scope.authorized)return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"No existe un ámbito autorizado."};
+    const data=ensurePayrollConceptSheet_(ss,"AsignacionesConceptosPlanilla",getPayrollAssignmentHeaders_()),matches=data.rows.map((r,i)=>({r,index:i+2})).filter(x=>String(x.r[0]||"").trim()===id);
+    if(matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Asignación no disponible."};
+    const found=matches[0],dept=String(found.r[4]||"").trim();
+    if(!scope.institutionWide&&!Array.isArray(scope.departmentIds)||!scope.institutionWide&&!scope.departmentIds.map(String).includes(dept))return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Asignación no disponible."};
+    const updated=found.r.slice();updated[10]=state;data.sheet.getRange(found.index,1,1,updated.length).setValues([updated]);
+    return {status:"success",asignacionId:id,estado:state};
+  }catch(e){return {status:"error",code:"PAYROLL_CONCEPT_ASSIGNMENT_STATUS_FAILED",message:"No fue posible cambiar el estado de la asignación."};}finally{lock.releaseLock();}
 }
 
 function appendPayrollConceptDetailRows_(ss,rows) {
