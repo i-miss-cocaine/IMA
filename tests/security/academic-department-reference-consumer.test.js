@@ -46,7 +46,7 @@ function makeRuntime(options = {}) {
       const envelope=JSON.parse(request.payload);
       assert.equal(envelope.sourceService,"ACADEMIC");assert.equal(envelope.targetService,"USER");
       assert.equal(envelope.action,"authorizeDepartmentReferenceRead");
-      assert.equal(envelope.payload.resourceType,"EXPEDIENTE_ESTUDIANTE");assert.equal(envelope.payload.resourceId,"exp-1");
+      assert.equal(envelope.payload.resourceType,"EXPEDIENTE_ESTUDIANTE");assert.equal(envelope.payload.resourceId,"EXP-1");
       assert.equal(envelope.payload.sessionToken,"signed-session-token");
       if(options.expectedActiveDepartmentId !== undefined) assert.equal(envelope.payload.activeDepartmentId,options.expectedActiveDepartmentId);
       if(options.expectNoActiveDepartment) assert.equal(Object.prototype.hasOwnProperty.call(envelope.payload,"activeDepartmentId"),false);
