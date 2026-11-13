@@ -83,6 +83,14 @@ Auditar integralmente los módulos y servicios responsables de la administració
   - Crédito a cuenta `1101` (Bancos / Sueldos por Pagar) por `totalSalarioNeto`.
 - **Estado Técnico:** *Completa y verificada*. Cumple con el principio contable de partida doble (`totalDebe === totalHaber`).
 
+
+
+#### Actualización técnica — 2026-11-13 / TASK-179
+La integración se amplió para registrar salarios ordinarios y horas extra (5101–5102), costo patronal IHSS/RAP/INFOP (5103–5105), retenciones obreras y obligaciones patronales (2101–2106), amortización de préstamos (1105) y neto por pagar (1101). Los conceptos dinámicos conservan sus líneas contables. La publicación exige conciliación de nómina y Debe/Haber dentro de L 0.01, registra el AST en PlanillasNomenclatura.AsientoContableID y recupera el asiento existente ante reintentos.
+Los ajustes de planillas cerradas se registran como asientos PlanillasAjuste, con motivo, referencia única, actor y ownership verificados; el asiento original queda intacto. Se incorporó el formulario de ajustes en el dashboard de Contabilidad.
+**Hallazgo de catálogo:** el plan de cuentas por defecto anterior reutilizaba 2101 para Proveedores. El catálogo nuevo asigna 2101 a IHSS y 2107 a Proveedores. Los catálogos heredados con ese conflicto se bloquean preventivamente; no se migran ni alteran automáticamente los asientos históricos.
+**Verificación:** Department Scope run 43493002428 SUCCESS; Node.js 24 ejecutó los contratos de amortización, conceptos, comprobantes y diario de nómina; sintaxis de Code.gs y js/accounting.js PASS. BETA-FUNC-079 queda pendiente de ejecución en entorno desplegado.
+
 ---
 
 ## SECCIÓN C: COMPARACIÓN DE CAPACIDADES Y NORMATIVA HONDUREÑA

@@ -3500,3 +3500,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-13 19:25 UTC] TASK-179 — normalización del catálogo por defecto: 2101–2106 reservadas para obligaciones laborales, 2107 para proveedores; nuevas cuentas 1105 y 5101–5105. Los asientos de CuentasPorPagar/notas de crédito pasan a 2107. Se agregó bloqueo preventivo si el catálogo existente conserva 2101 como proveedores; sin migración automática de histórico.
+
+
+[2026-11-13 20:05 UTC] C1.706 — TASK-179 — integración contable de nómina
+- Se contabilizan salarios, horas extra, obligaciones patronales IHSS/RAP/INFOP, retenciones, préstamos y neto por pagar; conciliación Debe/Haber L 0.01.
+- AST persistente por planilla e idempotencia de reintentos; prevalidación de préstamo antes de aplicar el ledger.
+- Ajustes compensatorios de planilla cerrada con referencia única, motivo, actor/scope/ownership, nuevo asiento y conservación del original; UI de ajustes en dashboard de Contabilidad.
+- Catálogo por defecto: 2101–2106 obligaciones laborales, 2107 proveedores; bloqueo de conflicto heredado 2101 sin migración histórica.
+- Department Scope 43493002428 SUCCESS; contratos de nómina y sintaxis Apps Script/JS PASS; Identity Mapping 43491651675 y Department Reference Consumers 43491651567 SUCCESS. BETA-FUNC-079 Pendiente beta; Apps Script/Sheets real NOT RUN.

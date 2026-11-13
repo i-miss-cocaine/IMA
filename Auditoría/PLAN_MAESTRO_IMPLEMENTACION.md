@@ -5497,3 +5497,15 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Contrato Node accounting-payroll-receipt-distribution.test.js PASS; cubre preview, planilla abierta, roles, correos, envío, privacidad, reintento, idempotencia, reentrada/concurrencia, scope y descargas históricas. Department Scope 43488044739 SUCCESS; Identity Mapping 43487819815 y Department Reference Consumers 43487819899 SUCCESS.
 - BETA-FUNC-078 Pendiente beta. CLI local NOT RUN por DNS; Apps Script/Sheets real NOT RUN.
 - **Siguiente tarea elegible del Plan Maestro:** TASK-179 — integración contable de obligaciones patronales por partida doble.
+
+
+### Ejecución C1.706 — TASK-179 — Integración contable de nómina
+- **Estado de implementación:** completada en backend y dashboard.
+- Se incorporó el asiento integral por planilla: gastos 5101–5105, pasivos laborales 2101–2106, amortización de préstamos 1105 y neto por pagar 1101; se incluyen líneas de conceptos dinámicos y se verifica el balance Debe/Haber con tolerancia de L 0.01.
+- El identificador AST queda persistido en PlanillasNomenclatura.AsientoContableID; la operación recupera el asiento existente y no duplica ante reintentos. La conciliación de préstamos considera previews CALCULADO y movimientos APLICADO y valida el asiento antes de mutar saldos.
+- Los ajustes compensatorios de planillas CERRADAS se registran en AjustesAsientosPlanilla y AsientosContables como PlanillasAjuste, con referencia idempotente, motivo, actor firmado, scope y ownership; el asiento original no se modifica.
+- Se añadió UI en dashboard-contabilidad.html / js/accounting.js para registrar ajustes equilibrados.
+- El catálogo por defecto reserva 2101–2106 para obligaciones laborales y 2107 para proveedores. Catálogos históricos que tengan 2101 como Proveedores se bloquean preventivamente; no se reescriben asientos históricos.
+- **CI:** Department Scope 43493002428 SUCCESS; contratos de amortización, conceptos dinámicos, distribución de comprobantes y TASK-179 PASS; sintaxis Apps Script y js/accounting.js PASS (Node.js 24). Identity Mapping 43491651675 y Department Reference Consumers 43491651567 SUCCESS.
+- **Pendiente beta:** BETA-FUNC-079 requiere prueba desplegada con planilla real sintética, catálogo de cuentas institucional, ajuste compensatorio y conciliación de saldo. No se desplegó Apps Script ni se accedió a datos institucionales.
+- **Siguiente tarea elegible:** TASK-180 — procesamiento de planillas por lotes y revisión comparativa de resultados.

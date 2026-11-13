@@ -2340,7 +2340,7 @@
   - Las obligaciones patronales incrementan el gasto institucional y no reducen el salario neto de los colaboradores.
   - Reintentar la operación de cierre de planilla no genera un asiento contable duplicado.
   - Los totales contables coinciden exactamente con el resumen de nómina presentado a Recursos Humanos.
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Implementada y verificada en CI; BETA-FUNC-079 pendiente de validación en entorno desplegado. Revisar el catálogo institucional heredado si 2101 aún corresponde a Proveedores.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7489-7520; clave TASK-180; asignación única: Contabilidad -->
 

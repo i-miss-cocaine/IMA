@@ -796,3 +796,21 @@
 - **Estado:** TASK-177 completada en código y verificaciones CI. Los estados PROCESANDO inciertos se excluyen del reintento automático para evitar duplicar un correo cuya aceptación pudo ocurrir antes de una interrupción; requieren conciliación manual.
 - **Siguiente tarea elegible:** TASK-179 — integrar obligaciones patronales con contabilidad por partida doble.
 ===============================================================================
+
+
+===============================================================================
+### C1.706 — IMA-EXEC-20261113-2005Z-01 — TASK-179 / AUD-F17-B.7 — integración contable de nómina
+- **Continuidad:** C1.705; HEAD inicial 3699f7852c386898687b47d658760e8d23a508a7; rama NG_beta_0.0.0.1_work; rama base verificada sin cambios 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Hallazgos:** el asiento previo omitía aportaciones patronales; no persistía el vínculo AST-planilla; los reintentos podían duplicar; el catálogo por defecto reutilizaba 2101 para proveedores, en conflicto con IHSS.
+- **Implementación:** buildPayrollJournalLines_ integra 5101–5105, 2101–2106, 1105 y 1101; incorpora líneas de conceptos dinámicos, concilia salario bruto, deducciones y neto, y valida Debe/Haber con tolerancia L 0.01. El costo patronal se registra como gasto y pasivo y no reduce el neto del trabajador.
+- **Trazabilidad e idempotencia:** PlanillasNomenclatura.AsientoContableID conserva el AST; la publicación recupera asientos existentes y rechaza vínculos huérfanos o ambiguos. La prevalidación del asiento ocurre antes de aplicar movimientos de amortización; los movimientos CALCULADO y APLICADO se concilian sin duplicar.
+- **Ajustes:** recordPayrollJournalAdjustment admite solo Contador/Administrador con scope y ownership, planilla CERRADA, motivo y referencia única, líneas equilibradas, ledger de ajuste y nuevo asiento PlanillasAjuste; el asiento original no se altera. Se añadió UI en dashboard-contabilidad.html y js/accounting.js.
+- **Catálogo:** nuevas cuentas por defecto 1105, 2101–2107 y 5101–5105; Proveedores se mueve a 2107. Los catálogos heredados con 2101=Proveedores se bloquean preventivamente; no se modifican históricos ni se ejecuta migración automática.
+- **Archivos modificados:** backend/accounting-service/Code.gs; dashboard-contabilidad.html; js/accounting.js; .github/workflows/department-scope-contract.yml; tests/security/accounting-payroll-journal-integration.test.js; tests/security/accounting-payroll-loan-amortization.test.js; tests/security/accounting-payroll-receipt-distribution.test.js; tests/security/accounting-departmental-resource-access.test.js; beta_test.txt; pendientes/Contabilidad/Pendientes.md; Auditoría/AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; changueslogs.txt; índice y checkpoint.
+- **CI:** Department Scope 43493002428 SUCCESS; contratos de amortización, catálogo dinámico, distribución de comprobantes y TASK-179 PASS; sintaxis Code.gs y js/accounting.js PASS con Node.js 24. Identity Mapping 43491651675 y Department Reference Consumers 43491651567 SUCCESS.
+- **CLI local:** NOT RUN; el entorno no dispone de checkout/Node local verificado. **Apps Script/Sheets real:** NOT RUN; no hubo despliegue ni acceso a datos institucionales.
+- **Beta:** BETA-FUNC-079 Pendiente beta: ejecutar con planilla sintética desplegada, verificar el catálogo institucional, saldos de préstamos, asiento original y ajuste compensatorio. Catálogos heredados con 2101=Proveedores requieren revisión administrativa antes de activar la contabilización.
+- **Commits de implementación relevantes:** 4e43f06598ae9fb255c832667481c2ecd059e4b7; be33009563db228fb626f28a7f090325fff55383; a4104f203c068bdd99087f0ac1b29ea5e95408fd; c436e6c4b6f8454430f332cb9f13f7bd4d0bcd8f; 1d8b5d1b9c6d34f69bb8c5c794cd5e41e5d6c7ef.
+- **Estado:** TASK-179 completada en código y CI; BETA-FUNC-079 pendiente de validación desplegada.
+- **Siguiente tarea elegible:** TASK-180 — procesamiento de planillas por lotes y revisión comparativa de resultados.
+===============================================================================
