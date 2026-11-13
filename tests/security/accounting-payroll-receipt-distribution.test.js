@@ -27,7 +27,7 @@ assert.equal(emails.length,2);assert.equal(emails[0].to,"u1@institution.org");as
 const duplicate=ctx.processPayrollReceiptDistribution({...manager,modo:"ENVIAR"});assert.equal(duplicate.procesados,0);assert.equal(emails.filter(x=>x.to==="u1@institution.org").length,1);
 failSecond=false;const retry=ctx.processPayrollReceiptDistribution({...manager,modo:"REINTENTAR"});assert.equal(retry.enviados,1);assert.equal(retry.reintentables,0);assert.equal(emails.filter(x=>x.to==="u2@institution.org").length,2);
 ctx.processPayrollReceiptDistribution({...manager,modo:"REINTENTAR"});assert.equal(emails.filter(x=>x.to==="u1@institution.org").length,1);assert.equal(emails.filter(x=>x.to==="u2@institution.org").length,2);
-const hrReceipts=ctx.getStaffPayrollReceipt({sessionToken:"hr"});assert.equal(hrReceipts.status,"success");assert.equal(hrReceipts.boletas.length,4,"composite employee/period identity preserves all and only in-scope historical plan rows");
+const hrReceipts=ctx.getStaffPayrollReceipt({sessionToken:"hr"});assert.equal(hrReceipts.status,"success");assert.equal(hrReceipts.boletas.length,5,"composite employee/period identity preserves all in-scope historical plan rows across closed and open periods");
 const selfReceipts=ctx.getStaffPayrollReceipt({sessionToken:"employee"});assert.equal(selfReceipts.status,"success");assert.equal(selfReceipts.boletas.length,1);assert.equal(selfReceipts.boletas[0].empleadoId,"E1");
 const professorReceipts=ctx.getStaffPayrollReceipt({sessionToken:"professor"});assert.equal(professorReceipts.boletas.length,1);
 const existingPdf=ctx.getPayrollReceiptPDFFile({sessionToken:"hr",boletaId:"BOL-1"});assert.equal(existingPdf.status,"success","closed multi-employee plan rows permit own PDF retrieval");
