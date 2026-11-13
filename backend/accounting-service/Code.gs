@@ -10066,7 +10066,7 @@ function getChartOfAccounts(payload) {
 
 // [F11-Task02] [P0] - Garantizar la integridad de los registros contables y la partida doble
 function recordAccountingJournalEntry(payload) {
-  const { descripcion, origenModulo, referenciaId, lineas, creadoPor } = payload || {};
+  const { descripcion, origenModulo, referenciaId, lineas, creadoPor, asientoId: requestedAsientoId } = payload || {};
   if (!descripcion || !Array.isArray(lineas) || lineas.length === 0) {
     throw new Error("Descripción y líneas contables son requeridas.");
   }
@@ -10087,7 +10087,7 @@ function recordAccountingJournalEntry(payload) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "AsientosContables");
   const now = new Date();
-  const asientoId = "AST-" + now.getTime();
+  const asientoId = requestedAsientoId || ("AST-" + now.getTime());
 
   sheet.appendRow([
     asientoId,
@@ -15842,7 +15842,7 @@ function calculateAssetDepreciation(payload){
     const row=["DEP-"+Utilities.getUuid(),profile[0],period.key,new Date(),profile[7],baseCost,amount,accumulated,net,unitsUsed,JSON.stringify(components),existingJournal?existingJournal[0]:"","Preparando",ref,actor.userId];
     if(rowIndex>0)depr.getRange(rowIndex+1,1,1,row.length).setValues([row]);else{depr.appendRow(row);rowIndex=depr.getLastRow()-1;}
     let journalId=existingJournal?existingJournal[0]:"";
-    if(!journalId){journalId="AST-"+Utilities.getUuid();const lines=[{codigoCuenta:expense.code,nombreCuenta:expense.name,debe:amount,haber:0,centroCosto:String(profile[16]||""),descripcion:"Depreciación "+profile[0]+" "+period.key},{codigoCuenta:accum.code,nombreCuenta:accum.name,debe:0,haber:amount,centroCosto:String(profile[16]||""),descripcion:"Depreciación acumulada "+profile[0]+" "+period.key}];const sumD=lines.reduce((s,x)=>s+Number(x.debe||0),0),sumH=lines.reduce((s,x)=>s+Number(x.haber||0),0);if(Math.abs(sumD-sumH)>0.01)throw new Error("ASSET_DEPRECIATION_UNBALANCED_JOURNAL");journal.appendRow([journalId,new Date(),"Depreciación de activo "+profile[0]+" periodo "+period.key,"ActivosFijos",ref,JSON.stringify(lines),"Asentado",actor.userId]);}
+    if(!journalId){journalId="AST-"+Utilities.getUuid();const lines=[{codigoCuenta:expense.code,nombreCuenta:expense.name,debe:amount,haber:0,centroCosto:String(profile[16]||""),descripcion:"Depreciación "+profile[0]+" "+period.key},{codigoCuenta:accum.code,nombreCuenta:accum.name,debe:0,haber:amount,centroCosto:String(profile[16]||""),descripcion:"Depreciación acumulada "+profile[0]+" "+period.key}];const sumD=lines.reduce((s,x)=>s+Number(x.debe||0),0),sumH=lines.reduce((s,x)=>s+Number(x.haber||0),0);if(Math.abs(sumD-sumH)>0.01)throw new Error("ASSET_DEPRECIATION_UNBALANCED_JOURNAL");const journalResult=recordAccountingJournalEntry({asientoId:journalId,descripcion:"Depreciación de activo "+profile[0]+" periodo "+period.key,origenModulo:"ActivosFijos",referenciaId:ref,lineas:lines,creadoPor:actor.userId});if(journalResult.status!=="success")throw new Error("ASSET_DEPRECIATION_JOURNAL_FAILED");journalId=journalResult.asientoId;}
     depr.getRange(rowIndex+1,12).setValue(journalId);depr.getRange(rowIndex+1,13).setValue("Contabilizada");result.asientoId=journalId;result.status="posted";logStructuredEvent("ACCOUNTING","calculateAssetDepreciation","INFO","ASSET_DEPRECIATION_POSTED","Depreciación periódica contabilizada.",{activoId:profile[0],periodo:period.key,importe:amount,asientoId:journalId,actorUserId:actor.userId},actor.role);
    }
    total+=amount;results.push(result);
@@ -15861,6 +15861,7 @@ function reverseAssetDepreciationEntry(payload){
   const rows=sh.getDataRange().getValues(),matches=rows.slice(1).map((r,i)=>({r,i})).filter(x=>String(x.r[1])===assetId&&String(x.r[2])===period.key);
   if(matches.length!==1)throw new Error(matches.length?"ASSET_DEPRECIATION_PERIOD_AMBIGUOUS":"ASSET_DEPRECIATION_NOT_FOUND");
   const record=matches[0].r,rowNumber=matches[0].i+2;
+  if(rows.slice(1).some(r=>String(r[1])===assetId&&String(r[2])>period.key&&String(r[12])==="Contabilizada"))throw new Error("ASSET_DEPRECIATION_REVERSE_LATEST_PERIOD_ONLY");
   if(String(record[12])==="Revertida")return {status:"already_reversed",activoId:assetId,periodo:period.key,asientoId:record[11],asientoReversionId:record[15]||""};
   if(String(record[12])!=="Contabilizada")throw new Error("ASSET_DEPRECIATION_NOT_POSTED");
   const journal=getOrCreateSheet(ss,"AsientosContables"),journalRows=journal.getDataRange().getValues(),original=journalRows.slice(1).find(r=>String(r[0])===String(record[11]));
@@ -15870,7 +15871,7 @@ function reverseAssetDepreciationEntry(payload){
   const ref="REVERSO_DEPRECIACION:"+assetId+":"+period.key,existing=journalRows.slice(1).find(r=>String(r[4]||"")===ref),reversalLines=originalLines.map(line=>Object.assign({},line,{debe:Number(line.haber||0),haber:Number(line.debe||0),descripcion:"Reversión: "+String(line.descripcion||"Depreciación "+assetId)}));
   const debe=assetDeprMoney_(reversalLines.reduce((sum,x)=>sum+Number(x.debe||0),0)),haber=assetDeprMoney_(reversalLines.reduce((sum,x)=>sum+Number(x.haber||0),0));if(Math.abs(debe-haber)>0.01)throw new Error("ASSET_DEPRECIATION_REVERSAL_UNBALANCED");
   const reversalId=existing?String(existing[0]):"AST-"+Utilities.getUuid();
-  if(!existing)journal.appendRow([reversalId,new Date(),"Reversión de depreciación "+assetId+" periodo "+period.key,"ActivosFijos",ref,JSON.stringify(reversalLines),"Asentado",actor.userId]);
+  if(!existing){const reversalResult=recordAccountingJournalEntry({asientoId:reversalId,descripcion:"Reversión de depreciación "+assetId+" periodo "+period.key,origenModulo:"ActivosFijos",referenciaId:ref,lineas:reversalLines,creadoPor:actor.userId});if(reversalResult.status!=="success")throw new Error("ASSET_DEPRECIATION_REVERSAL_JOURNAL_FAILED");}
   sh.getRange(rowNumber,13).setValue("Revertida");sh.getRange(rowNumber,16).setValue(reversalId);sh.getRange(rowNumber,17).setValue(reason);
   logStructuredEvent("ACCOUNTING","reverseAssetDepreciationEntry","WARN","ASSET_DEPRECIATION_REVERSED","Asiento original conservado y contrapartida de reversión registrada.",{activoId:assetId,periodo:period.key,asientoOriginal:record[11],asientoReversion:reversalId,motivo:reason,actorUserId:actor.userId},actor.role);
   return {status:"success",activoId:assetId,periodo:period.key,asientoId:record[11],asientoReversionId:reversalId};
@@ -15932,7 +15933,7 @@ function registerDepreciableAssetDisposal_(payload){
   const bajaSheet=getOrCreateSheet(ss,"BajasBienes"),bajaRows=bajaSheet.getDataRange().getValues();
   if(bajaRows.slice(1).some(r=>String(r[3]||"")===assetId&&String(r[9]||"")==="BajaConfirmada"))throw new Error("ASSET_ALREADY_DISPOSED");
   const bajaId="DISP-"+Utilities.getUuid(),asientoId=existingJournal?String(existingJournal[0]):"AST-"+Utilities.getUuid(),motivo=String(p.motivoBaja||"").trim();if(!motivo)throw new Error("ASSET_DISPOSAL_REASON_REQUIRED");
-  if(!existingJournal)journal.appendRow([asientoId,fechaBaja,"Baja patrimonial "+assetId,"ActivosFijos",ref,JSON.stringify(lines),"Asentado",actor.userId]);
+  if(!existingJournal){const disposalResult=recordAccountingJournalEntry({asientoId,descripcion:"Baja patrimonial "+assetId,origenModulo:"ActivosFijos",referenciaId:ref,lineas:lines,creadoPor:actor.userId});if(disposalResult.status!=="success")throw new Error("ASSET_DISPOSAL_JOURNAL_FAILED");}
   bajaSheet.appendRow([bajaId,fechaBaja,"ActivoFijo",assetId,String(p.nombreBien||asset.row[2]),motivo,bookValue,actor.userId,String(p.documentoActaUrl||""),"BajaConfirmada",String(p.observaciones||"")+" [ASIENTO_ID:"+asientoId+"] [VALOR_LIBROS:"+bookValue+"]"]);
   asset.sheet.getRange(asset.sheet.getDataRange().getValues().findIndex(r=>String(r[0])===assetId)+1,8).setValue("Disposed");
   asset.sheet.getRange(asset.sheet.getDataRange().getValues().findIndex(r=>String(r[0])===assetId)+1,9).setValue("Baja "+bajaId+" · asiento "+asientoId);
