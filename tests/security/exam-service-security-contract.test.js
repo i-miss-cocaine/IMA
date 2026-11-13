@@ -465,6 +465,12 @@ function makeCreationRuntime(options) {
   return { context, sheets: creationSheets, getSpreadsheetOpenCount: () => spreadsheetOpenCount,
     getLockAcquireCount: () => lockAcquireCount };
 }
+const scopeFixture = makeCreationRuntime();
+const scopeActor = scopeFixture.context.getVerifiedExamIdentity_({ sessionToken: "teacher-session" });
+const scopeResult = scopeFixture.context.getVerifiedExamDepartmentScope_({ sessionToken: "teacher-session" },
+  scopeFixture.sheets, scopeActor);
+assert.equal(scopeResult.authorized, true);
+assert.deepEqual(Array.from(scopeResult.departmentIds), ["D1"], "teacher scope fixture is derived from the active assignment");
 const deniedCreation = makeCreationRuntime();
 assert.throws(() => deniedCreation.context.createExam({ sessionToken: "tutor-session", titulo: "No autorizado" }),
   /RESOURCE_NOT_AVAILABLE/, "createExam enforces action RBAC on direct invocation");
