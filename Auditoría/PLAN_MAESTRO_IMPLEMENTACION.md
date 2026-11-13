@@ -5283,3 +5283,12 @@ La revisión de requisitos originales confirma cobertura de:
 - Commit: ab5ce7b84b1c8ed9a1c36e6ceaaa16dc8880e69d. No se modificó lógica productiva.
 - Ejecución local y CI: NOT RUN; checkout bloqueado por DNS y el commit no presenta workflow run/status checks. No se declara PASS.
 - Estado: corrección publicada pendiente de ejecución del contrato. Siguiente acción: ejecutar el test focalizado en Node.js 24 y corregir fallos reproducibles.
+
+ 
+### C1.675 — TASK-153 / T153-S02 — verificación focalizada User Role Membership
+- Contrato tests/security/user-role-membership-contract.test.js ejecutado en GitHub Actions con Node.js 24.22.2: PASS (run 43362842576).
+- El harness se completó con el mock de revocación de sesión para switchActiveRole y con el helper/constantes isSessionRevokedInSharedLedger_ para validar tokens en los cuatro microservicios. No hubo cambios de lógica productiva.
+- El paso se movió antes de Accounting Departmental Resource Access en el workflow para que un fallo ajeno no impidiera ejecutar el contrato objetivo.
+- El workflow global terminó FAILURE después del PASS objetivo: accounting-departmental-resource-access.test.js:706 falla en verifyAttendanceClientRendering (mensaje de error de historial frente a mensaje de un registro disponible). Se registra como fallo independiente, no resuelto en esta tarea.
+- T153-S02 queda verificada en el alcance del contrato automatizado. Suite global, navegador real y Apps Script/Sheets desplegados no quedan certificados por este resultado.
+- Siguiente tarea: seleccionar el siguiente requisito independiente pendiente de TASK-153/AUD-NG-140; tratar el fallo de ACCOUNTING en una iteración separada.
