@@ -1043,9 +1043,14 @@ function renderComprasCotizacionesView(container) {
           </tbody>
         </table>
       </div>
+      <div class="rounded-xl border border-purple-100 bg-purple-50/40 p-4 space-y-3"><div class="flex flex-wrap gap-2 items-end"><label class="text-xs font-bold text-gray-700 flex-1 min-w-48">ID de solicitud para comparar<input id="cmp-matrix-request-id" class="mt-1 w-full rounded-lg border border-gray-300 p-2" placeholder="REQ-CMP-..."></label><button id="btn-cmp-load-matrix" class="px-4 py-2 rounded-lg bg-purple-700 text-white text-xs font-bold">Comparar hasta 5 proveedores</button></div><div id="cmp-matrix-result" class="space-y-3 text-xs text-gray-700"></div></div>
     </div>
   `;
 
+  const matrixButton=document.getElementById('btn-cmp-load-matrix');
+  if(matrixButton)matrixButton.addEventListener('click',()=>window.loadPurchaseQuotationMatrix());
+  const requestInput=document.getElementById('cmp-matrix-request-id');
+  if(requestInput)requestInput.addEventListener('keydown',event=>{if(event.key==='Enter')window.loadPurchaseQuotationMatrix();});
   fetchBackendAccounting('getPurchaseQuotations', {})
     .then(res => {
       const tbody = document.getElementById('tbl-compras-cotizaciones');
@@ -1071,6 +1076,69 @@ function renderComprasCotizacionesView(container) {
       if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${err.message}</td></tr>`;
     });
 }
+
+
+window.loadPurchaseQuotationMatrix=async function(){
+ const requestInput=document.getElementById('cmp-matrix-request-id'),target=document.getElementById('cmp-matrix-result'),solicitudId=String(requestInput&&requestInput.value||'').trim();
+ if(!target||!solicitudId){if(target)target.textContent='Ingrese el ID de una solicitud de compra.';return;}
+ target.textContent='Cargando matriz comparativa...';
+ try{const result=await fetchBackendAccounting('getPurchaseQuotationMatrix',{solicitudId:solicitudId});if(!result||result.status!=='success')throw new Error(result&&result.message||'No se pudo consultar la matriz.');window.renderPurchaseQuotationMatrix(result,target);}
+ catch(error){target.textContent=error.message||'Error al consultar cotizaciones.';}
+};
+window.renderPurchaseQuotationMatrix=function(matrix,target){
+ target.replaceChildren();
+ const addText=(parent,value,tag='div',className='')=>{const el=document.createElement(tag);el.className=className;el.textContent=String(value==null?'':value);parent.appendChild(el);return el;};
+ const money=value=>'L '+Number(value||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+ addText(target,'Solicitud '+matrix.solicitud.solicitudId+' · '+matrix.solicitud.departamento+' · '+matrix.totalCotizaciones+' cotización(es)','div','font-bold text-gray-800');
+ if(matrix.advertencia)addText(target,matrix.advertencia,'div','rounded-lg bg-amber-50 text-amber-800 p-2');
+ if(matrix.adjudicada)addText(target,'Esta solicitud ya tiene acta de adjudicación '+matrix.actaId+'. La matriz queda en modo consulta.','div','rounded-lg bg-emerald-50 text-emerald-800 p-2');
+ if(!matrix.cotizaciones.length){addText(target,'No hay cotizaciones registradas para esta solicitud.','div','text-gray-500');return;}
+ const wrapper=document.createElement('div');wrapper.className='overflow-x-auto border border-gray-200 rounded-xl';
+ const table=document.createElement('table');table.className='min-w-full text-left text-[11px]';
+ const head=document.createElement('tr');['Partida solicitada','Cantidad',...matrix.cotizaciones.map(q=>q.proveedorId+' · '+q.cotizacionId)].forEach(v=>addText(head,v,'th','p-2 bg-gray-100 border-b font-black text-gray-700'));table.appendChild(head);
+ matrix.partidas.forEach(part=>{
+  const tr=document.createElement('tr');tr.className='border-b align-top';addText(tr,part.descripcion,'td','p-2 font-bold');addText(tr,part.cantidadSolicitada+' '+part.unidad,'td','p-2');
+  part.ofertas.forEach(offer=>{
+   const cell=document.createElement('td');cell.className='p-2 min-w-44 border-l align-top';
+   if(offer.estadoOferta==='NO_COTIZADA'){addText(cell,'No cotizada','div','font-bold text-red-700');}
+   else{
+    addText(cell,offer.estadoOferta==='PARCIAL'?'Cotización parcial':'Cotización completa','div',offer.estadoOferta==='PARCIAL'?'font-bold text-amber-700':'font-bold text-gray-800');
+    addText(cell,'Cantidad: '+offer.cantidadCotizada+' / '+offer.cantidadSolicitada);
+    addText(cell,'Unitario: '+money(offer.precioUnitario));
+    addText(cell,'Subtotal: '+money(offer.subtotal));
+    addText(cell,'Descuento: '+money(offer.descuento)+' · Impuestos: '+money(offer.impuestos));
+    addText(cell,'Flete: '+money(offer.flete)+' · Total: '+money(offer.total));
+    addText(cell,'Garantía: '+(offer.garantia||'No indicada'));
+    addText(cell,'Técnico: '+(offer.cumplimientoTecnico||'Sin dictamen'));
+    addText(cell,offer.menorPrecio?'Menor costo unitario total':(offer.vigente?'':'Oferta vencida'),'div',offer.menorPrecio?'text-emerald-700 font-bold':'text-gray-500');
+    if(!offer.vigente)addText(cell,'No vigente','div','text-red-700 font-bold');
+    const selectLabel=document.createElement('label');selectLabel.className='flex items-center gap-1 mt-2 font-bold';
+    const check=document.createElement('input');check.type='checkbox';check.dataset.quoteId=offer.cotizacionId;check.dataset.itemId=part.itemId;check.disabled=matrix.adjudicada||!offer.vigente||!offer.especificacionesCumplidas;selectLabel.appendChild(check);selectLabel.appendChild(document.createTextNode('Adjudicar'));
+    cell.appendChild(selectLabel);
+    const qty=document.createElement('input');qty.type='number';qty.min='0.01';qty.max=String(offer.cantidadCotizada);qty.step='0.01';qty.value=String(Math.min(part.cantidadSolicitada,offer.cantidadCotizada));qty.className='mt-1 w-full rounded border p-1';qty.dataset.quoteId=offer.cotizacionId;qty.dataset.itemId=part.itemId;qty.disabled=check.disabled;addText(cell,'Cantidad a adjudicar','label','mt-1 text-gray-500');cell.appendChild(qty);
+   }
+   tr.appendChild(cell);
+  });
+  table.appendChild(tr);
+ });
+ wrapper.appendChild(table);target.appendChild(wrapper);
+ if(matrix.adjudicada)return;
+ const form=document.createElement('div');form.className='grid md:grid-cols-2 gap-2 rounded-xl border border-gray-200 p-3';
+ const dictamen=document.createElement('textarea');dictamen.id='cmp-award-dictamen';dictamen.placeholder='Dictamen de evaluación (obligatorio)';dictamen.className='rounded-lg border p-2 min-h-20';
+ const justification=document.createElement('textarea');justification.id='cmp-award-justification';justification.placeholder='Justificación de la decisión y excepciones al menor precio (obligatoria)';justification.className='rounded-lg border p-2 min-h-20';
+ const rejected=document.createElement('textarea');rejected.id='cmp-award-rejection';rejected.placeholder='Motivo para descartar ofertas no seleccionadas (obligatorio)';rejected.className='rounded-lg border p-2 min-h-16 md:col-span-2';
+ const responsible=document.createElement('input');responsible.id='cmp-award-responsibles';responsible.placeholder='Responsables de evaluación (IDs separados por coma; el usuario autenticado se agrega automáticamente)';responsible.className='rounded-lg border p-2 md:col-span-2';
+ form.append(dictamen,justification,rejected,responsible);target.appendChild(form);
+ const button=document.createElement('button');button.type='button';button.className='px-4 py-2 rounded-lg bg-emerald-700 text-white font-bold';button.textContent='Emitir acta y generar órdenes por proveedor';button.addEventListener('click',async()=>{
+  const selected=[...target.querySelectorAll('input[type="checkbox"][data-quote-id]:checked')],allocations=selected.map(check=>{const qty=target.querySelector('input[type="number"][data-quote-id="'+check.dataset.quoteId+'"][data-item-id="'+check.dataset.itemId+'"]');return {itemId:check.dataset.itemId,cotizacionId:check.dataset.quoteId,cantidadAdjudicada:Number(qty&&qty.value||0)};});
+  const used=new Set(allocations.map(x=>x.cotizacionId)),rejections=matrix.cotizaciones.filter(q=>!used.has(q.cotizacionId)).map(q=>({cotizacionId:q.cotizacionId,motivo:rejected.value.trim()}));
+  const payload={solicitudId:matrix.solicitud.solicitudId,adjudicaciones:allocations,dictamen:dictamen.value.trim(),justificacion:justification.value.trim(),responsablesEvaluacion:responsible.value.split(',').map(x=>x.trim()).filter(Boolean),ofertasDescartadas:rejections,idempotencyKey:'AWARD-'+matrix.solicitud.solicitudId+'-'+(window.crypto&&window.crypto.randomUUID?window.crypto.randomUUID():Date.now()+'-'+Math.random())};
+  button.disabled=true;button.textContent='Registrando adjudicación...';
+  try{const response=await fetchBackendAccounting('adjudicatePurchaseQuotations',payload);if(!response||response.status!=='success')throw new Error(response&&response.message||response&&response.code||'No se pudo adjudicar.');addText(target,'Acta '+response.actaId+' creada. Órdenes en borrador: '+response.ordenes.map(o=>o.ordenCompraId).join(', '),'div','rounded-lg bg-emerald-50 text-emerald-800 p-3 font-bold');window.loadPurchaseQuotationMatrix();}
+  catch(error){addText(target,error.message||'Error al adjudicar.','div','rounded-lg bg-red-50 text-red-700 p-2');button.disabled=false;button.textContent='Emitir acta y generar órdenes por proveedor';}
+ });
+ target.appendChild(button);
+};
 
 function renderComprasOrdenesView(container) {
   container.innerHTML = `
