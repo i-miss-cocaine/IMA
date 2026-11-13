@@ -1469,3 +1469,12 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** solo actores de personal autorizados y con ownership vigente pueden mutar; spoofing, relación SELF/GUARDIAN y ownership ajeno se rechazan sin escritura; override requiere permiso explícito; no se duplican matrículas.
 - **Estado:** Pendiente beta.
 - **Evidencia requerida:** respuestas API, estado previo/posterior de Matriculas y bitácora de denegaciones, sin datos personales reales.
+
+
+## BETA-FUNC-056 — AUD-NG-129 / ACCOUNTING: configuración de política de cargos de matrícula
+- **Objetivo:** validar que el panel de Contabilidad permite consultar y guardar, por institución/año lectivo/grado, el modo de generación: manual, solo concepto de matrícula seleccionado o todas las tarifas activas.
+- **Precondiciones:** ACCOUNTING desplegado; usuario sintético con rol Director, Subdirector o Contador; IMA_INSTITUTION_ID configurado; tarifas y conceptos sintéticos para al menos dos grados/años.
+- **Pasos:** abrir Contabilidad > Cargos de Matrícula; consultar cada combinación año/grado; guardar MANUAL; guardar MATRICULA_ONLY con una tarifa activa; guardar ALL_ACTIVE_TARIFFS; volver a consultar y comprobar persistencia; repetir con tarifa ausente/duplicada, esquema inválido, rol no autorizado y otra institución.
+- **Resultado esperado:** lectura sin mutación; configuración única por institución/año/grado; actor derivado de sesión verificada; modos inválidos y tarifas ambiguas/inexistentes rechazados; lock ocupado sin escritura; guardar no crea ni altera cargos existentes.
+- **Evidencia requerida:** respuestas API, InstitutionID sintético, actor/rol, filas antes/después y capturas del panel sin datos personales reales.
+- **Estado:** Pendiente beta. La integración del modo con la generación automática permanece en desarrollo dentro de AUD-NG-129.

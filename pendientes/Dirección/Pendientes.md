@@ -3047,7 +3047,8 @@
 - **Ampliación C1.33 / FASE2-05 (2026-11-05):** `registerStudentEnrollment` (Academic, 12670) no adquiere LockService ni reserva una clave idempotente. Primero actualiza/añade la fila de `Matriculas` y después añade cargos a `CargosEstudiante` mediante escrituras separadas, sin rollback ni estado recuperable si falla una escritura intermedia. `existingCargos` se lee una sola vez antes del bucle y no se actualiza tras cada alta, por lo que conceptos repetidos en el mismo payload pueden superar la deduplicación local. La ruta nueva `createStudentEnrollment` sí bloquea, pero admite `skipLock`; doPost solo lo elimina cuando `isInternalCall` es falso y no acredita que esa bandera provenga de una llamada interna autenticada.
 - **Criterios adicionales:** unificar ambas rutas en una operación atómica o con saga/reanudación explícita; bloquear la lectura-verificación-escritura de matrícula y cargos; reservar clave idempotente por estudiante+periodo+concepto; evitar duplicados dentro del mismo lote; no aceptar banderas de omisión de lock desde payload externo; reconciliar fallos parciales sin duplicar matrícula ni cargos.
 
-- **Estado:** [ ] Pendiente
+- **Avance C1.681:** configuración institucional por año/grado con modos MANUAL, MATRICULA_ONLY y ALL_ACTIVE_TARIFFS, panel de Contabilidad y contrato CI PASS. La política aún no se consume desde los endpoints de matrícula y no genera cargos.
+- **Estado:** [~] En ejecución
 
 ---
 

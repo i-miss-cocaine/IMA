@@ -3278,3 +3278,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Department Scope CI 43368812280 PASS (Node 24.22.2; 21 pasos, contrato nuevo y sintaxis de seis servicios Apps Script).
 - CLI local NOT RUN por DNS github.com; detector automatizado de clones NOT RUN/no configurado. BETA-FUNC-055 Pendiente beta.
 - TASK-153 continúa En ejecución por otros subalcances. AUD-NG-129 permanece Pendiente: no se implementó en esta iteración la unificación de cargos/tarifas por periodo.
+
+
+[2026-11-13 UTC] [IMA-EXEC-20261113-0951Z-01] AUD-NG-129 — configuración institucional de política de cargos de matrícula
+- ACCOUNTING agrega getEnrollmentBillingConfiguration y saveEnrollmentBillingConfiguration con sesión verificada, InstitutionID desde Script Properties, RBAC de Director/Subdirector/Contador, lock de escritura y detección de duplicados/esquemas incompatibles.
+- Política por institución + año lectivo + grado: MANUAL; MATRICULA_ONLY (una tarifa activa única); ALL_ACTIVE_TARIFFS (tarifas activas válidas). Sin registro, config=null y la interfaz propone MANUAL.
+- Contabilidad > Cargos de Matrícula permite consultar tarifas activas, elegir modo/concepto y guardar. La UI aclara que guardar no activa ni genera cargos hasta completar la integración del motor.
+- Contrato accounting-enrollment-billing-config.test.js y sintaxis de seis servicios PASS en Department Scope CI 43405537798 (Node 24.22.2; 25 pasos).
+- CLI local NOT RUN: Node 22.16.0 disponible, pero github.com no resuelve por DNS y no se obtuvo checkout. CI no se presenta como prueba local.
+- BETA-FUNC-056 agregado, Pendiente beta. AUD-NG-129 sigue En ejecución: falta consumir la política desde matrícula/rematrícula, aplicar descuentos/becas vigentes y completar idempotencia/recuperación.

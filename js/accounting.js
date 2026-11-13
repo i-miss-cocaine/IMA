@@ -1801,7 +1801,7 @@ function renderEnrollmentBillingConfigurationModule(container) {
   const currentYear = new Date().getFullYear();
   container.innerHTML = '<section class="space-y-5" aria-labelledby="enrollment-billing-title">' +
     '<div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-5"><h4 id="enrollment-billing-title" class="text-base font-black uppercase text-indigo-900"><i class="fas fa-sliders-h"></i> Configuración de cargos al matricular</h4>' +
-    '<p class="text-sm text-indigo-900 mt-2">Define cómo se generan los cargos al registrar una matrícula inicial o rematrícula. La configuración se guarda por año lectivo y grado; no modifica cargos históricos.</p></div>' +
+    '<p class="text-sm text-indigo-900 mt-2">Guarda la política de cargos por año lectivo y grado. La aplicación automática de esta política al crear matrículas sigue en integración dentro de AUD-NG-129; guardar aquí no crea ni modifica cargos.</p></div>' +
     '<form id="enrollment-billing-load-form" class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-200">' +
     '<label class="text-xs font-bold text-gray-700">Año lectivo<input id="enrollment-billing-year" type="number" min="2000" max="2200" required value="' + currentYear + '" class="mt-1 w-full p-2.5 border border-gray-300 rounded-xl text-sm"></label>' +
     '<label class="text-xs font-bold text-gray-700">Grado<input id="enrollment-billing-grade" type="text" maxlength="80" required placeholder="Ej. Séptimo grado" class="mt-1 w-full p-2.5 border border-gray-300 rounded-xl text-sm"></label>' +
@@ -1854,7 +1854,7 @@ window.loadEnrollmentBillingConfiguration = async function() {
       '<label id="enrollment-billing-concept-wrap" class="block text-xs font-bold text-gray-700">Tarifa / concepto de matrícula<select id="enrollment-billing-concept" class="mt-1 w-full p-3 border border-gray-300 rounded-xl text-sm bg-white">' +
       '<option value="">Selecciona una tarifa activa</option>' + options + '</select></label>' +
       '<div class="bg-gray-50 rounded-xl p-4"><h6 class="font-bold text-xs uppercase text-gray-700 mb-2">Tarifas activas disponibles</h6><ul class="divide-y divide-gray-100">' + summary + '</ul></div>' +
-      '<p class="text-xs text-gray-500">El plan completo utiliza solo tarifas activas del año y grado seleccionados. Sin configuración, el modo es manual: no se inventan importes ni se crean cobros por defecto.</p>' +
+      '<p class="text-xs text-gray-500">El plan completo utiliza solo tarifas activas del año y grado seleccionados. Hasta finalizar la integración del motor, esta pantalla solo guarda la política: no activa ni genera cargos.</p>' +
       '<button type="submit" class="px-5 py-3 bg-indigo-600 text-white rounded-xl font-black text-xs uppercase hover:bg-indigo-700">Guardar configuración</button></form>';
     document.getElementById("enrollment-billing-mode").value = config && config.modoGeneracion || "MANUAL";
     document.getElementById("enrollment-billing-concept").value = config && config.conceptoMatriculaId || "";
@@ -1884,7 +1884,7 @@ window.saveEnrollmentBillingConfiguration = async function() {
       conceptoMatriculaId: mode === "MATRICULA_ONLY" ? conceptId : ""
     });
     if (!response || response.status !== "success") throw new Error(response && (response.message || response.code) || "No fue posible guardar la configuración.");
-    feedback.textContent = "Configuración guardada: " + mode + ". " + (response.message || "");
+    feedback.textContent = "Política guardada: " + mode + ". Su aplicación automática se habilitará al completar la integración de AUD-NG-129.";
     await window.loadEnrollmentBillingConfiguration();
   } catch (error) {
     feedback.textContent = "Error: " + String(error.message || error);

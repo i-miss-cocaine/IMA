@@ -377,3 +377,17 @@
 - **Commits:** f259350e implementación inicial; 7828cf11 pruebas/compensación; 0d3e0d42 actualización de harness; 4fadb1ad fixture; 8016c882 journal de rollback; 5fbd330f/00645c31/Caf2b2d2 correcciones y pruebas finales.
 - **Estado:** subalcance de mutaciones de matrícula de TASK-153 Completado en código/CI. TASK-153 continúa En ejecución por otros subalcances; AUD-NG-129 permanece Pendiente.
 ===============================================================================
+
+
+===============================================================================
+## C1.681 — IMA-EXEC-20261113-0951Z-01 — política configurable de cargos de matrícula
+- **Checkpoint anterior:** C1.680. **HEAD inicial:** be242a0dc6db594c78dd06046f1c2422bdd858dc. **HEAD de implementación:** 3b94d1b4ad5294e7e616b7b8e6801c9ffad34957. **Rama:** NG_beta_0.0.0.1_work. **Base:** NG_beta_0.0.0.1, solo lectura.
+- **Alcance:** subcomponente de AUD-NG-129: hacer configurable la decisión de generación de cargos por institución, año lectivo y grado.
+- **Implementación:** ACCOUNTING agrega getEnrollmentBillingConfiguration y saveEnrollmentBillingConfiguration. InstitutionID procede de IMA_INSTITUTION_ID; actor desde sesión verificada; RBAC para Director/Subdirector/Contador; ScriptLock de escritura; upsert único; validación de esquemas/duplicados. Modos MANUAL, MATRICULA_ONLY (exactamente una tarifa activa válida seleccionada) y ALL_ACTIVE_TARIFFS (tarifas activas válidas). La lectura no crea hojas ni modifica datos; sin configuración devuelve config=null y la UI propone MANUAL.
+- **Interfaz:** dashboard-contabilidad.html añade Contabilidad > Cargos de Matrícula. js/accounting.js consulta año/grado, muestra tarifas activas y permite guardar la política. La interfaz advierte que el guardado todavía no activa la generación automática.
+- **Pruebas:** tests/security/accounting-enrollment-billing-config.test.js cubre modos, tarifas por año/grado, actor/InstitutionID confiables, upsert, duplicados, esquema, autenticación y lock ocupado. Department Scope CI 43405537798 SUCCESS (Node 24.22.2; 25 pasos, contrato nuevo y sintaxis de seis servicios).
+- **CLI local:** Node.js 22.16.0 disponible; pruebas locales NOT RUN por fallo DNS al resolver github.com y ausencia de checkout. CI es ejecución aislada remota, no local.
+- **Revisión/limitaciones:** cambios funcionales en ACCOUNTING Code.gs, dashboard-contabilidad.html, js/accounting.js, contrato nuevo y workflow. No se tocó la rama base. TarifasPlanPago no tiene columna InstitutionID; no se afirma aislamiento multiinstitucional del catálogo de tarifas. La política guardada aún no es consumida por createStudentEnrollment/registerStudentEnrollment y no genera cargos ni altera cargos históricos.
+- **Beta:** BETA-FUNC-056 agregado, Pendiente beta.
+- **Estado:** subalcance de configuración completado en código/CI. AUD-NG-129 permanece En ejecución hasta integrar modos en matrícula/rematrícula, idempotencia estudiante+periodo+concepto, becas/descuentos vigentes y compensación/reintentos.
+===============================================================================
