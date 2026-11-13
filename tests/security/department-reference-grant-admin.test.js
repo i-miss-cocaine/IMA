@@ -125,7 +125,8 @@ function validPayload(extra={}) {
   assert.equal(revoked.status,"success");
   const row=h.state.sheets.DepartmentReferenceGrants.snapshot()[1];
   assert.equal(row[12],"REVOKED"); assert.equal(row[14],"U1");
-  assert.equal(h.state.sheets.LogsSistema.snapshot().length,3,"revocation authorization and completion are persisted");
+  assert.equal(h.state.sheets.LogsSistema.snapshot().length,5,"create and revoke authorization/completion events are persisted");
+  assert.equal(h.state.sheets.LogsSistema.snapshot()[3][5],"DEPARTMENT_REFERENCE_GRANT_REVOKE_AUTHORIZED");
 }
 {
   const h=makeRuntime({grants:[GRANT_HEADERS,grantRow("I1","DRG-1","REVOKED")]});
@@ -221,6 +222,8 @@ function validPayload(extra={}) {
 {
   assert.ok(source.includes('case "createDepartmentReferenceGrant": result = createDepartmentReferenceGrant(payload); break;'));
   assert.ok(source.includes('case "getDepartmentReferenceGrants": result = getDepartmentReferenceGrants(payload); break;'));
+  assert.ok(source.includes('case "revokeDepartmentReferenceGrant": result = revokeDepartmentReferenceGrant(payload); break;'));
+}
 {
   const h=makeRuntime({auditFailure:true});
   const r=h.runtime.createGrant(validPayload());
@@ -237,6 +240,4 @@ function validPayload(extra={}) {
   assert.equal(h.state.sheets.DepartmentReferenceGrants.snapshot()[1][12],"ACTIVE",
     "grant remains active if revocation audit cannot be recorded");
 }
-  assert.ok(source.includes('case "revokeDepartmentReferenceGrant": result = revokeDepartmentReferenceGrant(payload); break;'));
-}
-process.stdout.write("Department reference grant administration contract: 26 scenarios PASS.\n");
+process.stdout.write("Department reference grant administration contract: 26 scenarios PASS.\\n");
