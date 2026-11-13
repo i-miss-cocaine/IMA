@@ -147,3 +147,15 @@
 - **Pruebas:** el contrato focalizado Node.js 24 en runner aislado pasó. El harness carga y ejecuta funciones extraídas de Code.gs; no se desplegó Apps Script/Sheets. El checkout local del entorno no estuvo disponible por DNS github.com.
 - **Estado:** C1.666 Completada como subalcance; TASK-153 / AUD-NG-386 continúa En ejecución por otras superficies. BETA-FUNC-044 Pendiente beta.
 ===============================================================================
+
+
+### C1.667 — IMA-EXEC-20261112-1754Z-03 — consulta de boletas de pago ACCOUNTING
+- **HEAD inicial:** 678996c91f89cb8428130f1878f4c70e7a714cf0. **Rama:** NG_beta_0.0.0.1_work. **Base:** 44d9891132332e692dbe2ba8602b41f50a508a59 (solo lectura).
+- **Tarea/subalcance:** TASK-153 / AUD-NG-387; getStaffPayrollReceipt.
+- **Hallazgo:** consulta de salario/deducciones/neto mediante IDs de cliente, sin identidad firmada/ownership; getOrCreateSheet creaba hojas en lectura.
+- **Implementación:** sesión firmada; autoservicio Profesor y alias limitado al expediente propio único; roles de gestión con ResourceOwnership/ámbito por expediente; BoletaID ligado a PlanillaID/EmpleadoId/PeriodoMes; anti-enumeración; encabezados exactos; duplicados/mappings ambiguos excluidos; hojas ausentes sin creación; contrato status/boletas preservado.
+- **Archivos de código/prueba:** backend/accounting-service/Code.gs; tests/security/accounting-departmental-resource-access.test.js. **Registros:** beta_test.txt, changueslogs.txt, Auditoria.txt, Plan Maestro, checkpoint e índice.
+- **Verificación:** Department Scope Contract run 43350422517, paso ACCOUNTING departmental resource access PASS; Department Scope, Internal Responsibility RBAC, ACCOUNTING import y USER migrated ownership también PASS. Workflow global FAIL posterior en User Role Membership contract línea 119 (foreignLegacy nulo), fallo heredado previo y ajeno; pasos posteriores SKIPPED. Pruebas Node.js 24 en runner aislado, sin despliegue. Node CLI del entorno local NOT RUN por DNS github.com; parseo de funciones relevantes cubierto al cargar el harness del contrato. Apps Script/Sheets real NOT RUN.
+- **Beta:** BETA-FUNC-045 Pendiente beta.
+- **Estado:** C1.667 Completada para el subalcance; TASK-153 / AUD-NG-386 continúa En ejecución. Siguiente callsite elegible: revisar consultas de préstamos/anticipos o asistencia, priorizando exposición de información salarial y ownership.
+===============================================================================

@@ -5191,3 +5191,12 @@ La revisión de requisitos originales confirma cobertura de:
 - Los cuatro contratos previos del workflow también PASS. El workflow global falló después en User Role Membership contract línea 119 (foreignLegacy nulo, acceso a .role); fallo heredado de C1.665, no relacionado con ACCOUNTING. Pasos posteriores, incluido syntax-check global, SKIPPED.
 - Contrato focalizado ejecutado en Node.js 24, runner aislado sin despliegue; checkout local del entorno bloqueado por DNS github.com. Apps Script/Sheets real NOT RUN; BETA-FUNC-044 Pendiente beta.
 - **Estado:** C1.666 Completada. TASK-153 / AUD-NG-386 permanece En ejecución para otros callsites.
+
+
+**Addendum C1.667 — consulta de boletas de pago y datos salariales ACCOUNTING (TASK-153 / AUD-NG-387)**
+- getStaffPayrollReceipt exige identidad firmada y roles autorizados. Profesor/roles de autoservicio se limitan al expediente ligado de forma única al userId firmado; RR. HH./Director/Administrador/Subdirector/Contador consultan únicamente expedientes con ResourceOwnership y ámbito verificado.
+- PlanillasNomenclatura se vincula por EmpleadoId=ExpedienteID. BoletaID se valida contra PlanillaID, EmpleadoId y PeriodoMes, y la consulta conserva la autorización del expediente. Los filtros no conceden permisos.
+- Esquemas exactos, IDs de planilla/boleta duplicados y mappings ambiguos fail-closed, anti-enumeración RESOURCE_NOT_FOUND, hojas ausentes sin creación, respuesta status/boletas preservada.
+- Department Scope Contract run 43350422517: contrato ACCOUNTING departmental resource access PASS con C1.667; Department Scope, Internal Responsibility RBAC, ACCOUNTING import y USER migrated ownership también PASS. Workflow global falla después en User Role Membership contract línea 119 (foreignLegacy nulo), fallo heredado previo y ajeno; pasos posteriores SKIPPED.
+- Node.js 24 runner aislado, sin despliegue; Apps Script/Sheets real NOT RUN; BETA-FUNC-045 Pendiente beta.
+- **Estado:** C1.667 completada para este callsite; TASK-153 / AUD-NG-386 continúa En ejecución por otras superficies.
