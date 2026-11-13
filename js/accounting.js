@@ -720,6 +720,11 @@ function renderMantenimientoView(container) {
               <option value="Alta">Alta / Urgente</option>
             </select>
           </div>
+          <div><label class="block font-bold text-gray-600 mb-1">Departamento responsable</label><input type="text" id="mnt-departamento" class="w-full p-2 border border-gray-300 rounded-xl" placeholder="Departamento solicitante"></div>
+          <div><label class="block font-bold text-gray-600 mb-1">Centro de costo</label><input type="text" id="mnt-centro-costo" class="w-full p-2 border border-gray-300 rounded-xl" placeholder="Centro de costo"></div>
+          <div><label class="block font-bold text-gray-600 mb-1">Almacén de origen</label><input type="text" id="mnt-ubicacion-origen" value="Bodega General" class="w-full p-2 border border-gray-300 rounded-xl"></div>
+          <div><label class="block font-bold text-gray-600 mb-1">Estado de la orden</label><select id="mnt-estado" class="w-full p-2 border border-gray-300 rounded-xl"><option value="Reportado" selected>Reportado</option><option value="EnProceso">En proceso</option><option value="Resuelto">Resuelto</option><option value="Completado">Completado</option></select></div>
+          <div><label class="block font-bold text-gray-600 mb-1">Repuestos consumidos (JSON, opcional)</label><textarea id="mnt-repuestos" rows="3" class="w-full p-2 border border-gray-300 rounded-xl font-mono" placeholder='[{"itemCodigo":"MAT-001","unidadMedida":"Unidad","cantidad":1}]'></textarea></div>
           <button type="submit" class="w-full py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all uppercase">
             Crear Orden
           </button>
@@ -785,16 +790,22 @@ window.loadMantenimientoData = function () {
 
 window.handleSaveMantenimiento = function (e) {
   e.preventDefault();
+  const rawParts=document.getElementById('mnt-repuestos').value.trim();let parts=[];
+  if(rawParts){try{parts=JSON.parse(rawParts);if(!Array.isArray(parts))throw new Error("Debe ingresar un arreglo JSON de repuestos.");}catch(err){alert("Repuestos inválidos: "+err.message);return;}}
   const payload = {
     activoIdUbicacion: document.getElementById('mnt-activo').value,
     tipoMantenimiento: document.getElementById('mnt-tipo').value,
     descripcionFalla: document.getElementById('mnt-falla').value,
-    prioridad: document.getElementById('mnt-prioridad').value
+    prioridad: document.getElementById('mnt-prioridad').value,
+    departamento: document.getElementById('mnt-departamento').value,
+    centroCosto: document.getElementById('mnt-centro-costo').value,
+    ubicacionOrigen: document.getElementById('mnt-ubicacion-origen').value,
+    estadoOrden: document.getElementById('mnt-estado').value,
+    repuestosConsumidosJSON: parts
   };
-
   fetchApi('ACCOUNTING', 'manageMaintenanceOrder', payload)
     .then(res => {
-      alert(res.message || "Orden de mantenimiento creada con éxito.");
+      alert(res.message || "Orden de mantenimiento creada con éxito."+(res.asientoId?" Asiento: "+res.asientoId:""));
       document.getElementById('form-mantenimiento').reset();
       loadMantenimientoData();
     })

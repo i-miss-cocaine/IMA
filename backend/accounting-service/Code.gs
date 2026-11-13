@@ -15618,128 +15618,111 @@ function reconcilePhysicalCount(payload) {
   };
 }
 
+function inventoryEnsureMaintenanceSchema_(sheet) {
+ const base=["OrdenMaintID","FechaReporte","ActivoIdUbicacion","TipoMantenimiento","DescripcionFalla","Prioridad","ReportadoPorUserId","AsignadoAEmpleadoId","RepuestosConsumidosJSON","CostoEstimado","CostoReal","EstadoOrden","FechaResolucion","Observaciones"];
+ const extra=["DepartamentoID","CentroCosto","AsientoContableID","DetalleRepuestosContabilizadosJSON","UbicacionOrigen"],row=sheet.getDataRange().getValues()[0]||[];
+ if(base.some((h,i)=>String(row[i]||"").trim()!==h))throw new Error("MAINTENANCE_ORDER_SCHEMA_MISMATCH");
+ extra.forEach((h,i)=>{const v=String(row[14+i]||"").trim();if(v&&v!==h)throw new Error("MAINTENANCE_ORDER_SCHEMA_CONFLICT:"+v);});
+ extra.forEach((h,i)=>{if(!String(row[14+i]||"").trim())sheet.getRange(1,15+i).setValue(h);});
+}
+function inventoryResolveMaintenanceDepartment_(ss,p,assetRef,actor,existingRow) {
+ let departmentValue=String(p.departamento||(existingRow&&existingRow[14])||"").trim(),center=String(p.centroCosto||(existingRow&&existingRow[15])||"").trim(),asset=null;
+ const assetSheet=ss.getSheetByName("ActivosPatrimoniales");
+ if(assetSheet){
+  const data=assetSheet.getDataRange().getValues();
+  if(data.length>1){
+   const h=data[0].map(v=>String(v||"").trim()),id=h.indexOf("ActivoID"),code=h.indexOf("CodigoPatrimonial"),name=h.indexOf("Nombre"),custodian=h.indexOf("CustodioUserId");
+   if(id<0||code<0||name<0||custodian<0)throw new Error("MAINTENANCE_ASSET_SCHEMA_INVALID");
+   const raw=String(assetRef||"").trim(),tokens=[raw,raw.split("/")[0].trim()].filter(Boolean),matches=data.slice(1).filter(r=>tokens.some(t=>[r[id],r[code],r[name]].some(v=>String(v||"").trim().toLowerCase()===t.toLowerCase())));
+   if(matches.length>1)throw new Error("MAINTENANCE_ASSET_REFERENCE_AMBIGUOUS");
+   if(matches.length===1)asset={row:matches[0],custodianIndex:custodian};
+  }
+ }
+ if(asset){
+  const custodianId=String(asset.row[asset.custodianIndex]||"").trim();
+  if(custodianId){
+   const employeeSheet=ss.getSheetByName("ExpedientesLaborales");
+   if(employeeSheet){
+    const data=employeeSheet.getDataRange().getValues(),h=data.length?data[0].map(v=>String(v||"").trim()):[],user=h.indexOf("UserId"),dept=h.indexOf("Departamento"),cost=h.indexOf("CentroCosto");
+    if(user<0||dept<0)throw new Error("MAINTENANCE_EMPLOYEE_SCHEMA_INVALID");
+    const matches=data.slice(1).filter(r=>String(r[user]||"").trim()===custodianId);
+    if(matches.length>1)throw new Error("MAINTENANCE_ASSET_CUSTODIAN_AMBIGUOUS");
+    if(matches.length===1){if(!departmentValue)departmentValue=String(matches[0][dept]||"").trim();if(!center&&cost>=0)center=String(matches[0][cost]||"").trim();}
+    else if(!departmentValue)throw new Error("MAINTENANCE_DEPARTMENT_UNRESOLVED");
+   }else if(!departmentValue)throw new Error("MAINTENANCE_DEPARTMENT_UNRESOLVED");
+  }
+ }
+ if(!departmentValue)throw new Error("MAINTENANCE_DEPARTMENT_REQUIRED");
+ const scoped=inventoryAssertDepartmentScope_(p,ss,actor,departmentValue);
+ center=center||scoped.department.departmentName||scoped.department.departmentId;
+ if(!center)throw new Error("MAINTENANCE_COST_CENTER_REQUIRED");
+ return {departmentId:scoped.department.departmentId,departmentName:scoped.department.departmentName||scoped.department.departmentId,centroCosto:center,ubicacionOrigen:String(p.ubicacionOrigen||(existingRow&&existingRow[18])||"Bodega General").trim()};
+}
 function manageMaintenanceOrder(payload) {
-  const { ordenMaintId, activoIdUbicacion, tipoMantenimiento, descripcionFalla, prioridad, reportadoPorUserId, asignadoAEmpleadoId, repuestosConsumidosJSON, costoEstimado, costoReal, estadoOrden, fechaResolucion, observaciones } = payload || {};
-  if (!activoIdUbicacion || !descripcionFalla) throw new Error("activoIdUbicacion y descripcionFalla son requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "MantenimientoOrdenes");
-  const data = sheet.getDataRange().getValues();
-
-  const oId = ordenMaintId || ("MNT-" + Date.now());
-  const idx = data.findIndex(r => String(r[0]).trim() === String(oId).trim());
-  const now = new Date();
-
-  let repuestStr = repuestosConsumidosJSON ? (typeof repuestosConsumidosJSON === "string" ? repuestosConsumidosJSON : JSON.stringify(repuestosConsumidosJSON)) : "[]";
-
-  if (idx !== -1) {
-    if (tipoMantenimiento) sheet.getRange(idx + 1, 4).setValue(tipoMantenimiento);
-    sheet.getRange(idx + 1, 5).setValue(descripcionFalla);
-    if (prioridad) sheet.getRange(idx + 1, 6).setValue(prioridad);
-    if (asignadoAEmpleadoId) sheet.getRange(idx + 1, 8).setValue(asignadoAEmpleadoId);
-    sheet.getRange(idx + 1, 9).setValue(repuestStr);
-    if (costoEstimado !== undefined) sheet.getRange(idx + 1, 10).setValue(costoEstimado);
-    if (costoReal !== undefined) sheet.getRange(idx + 1, 11).setValue(costoReal);
-    if (estadoOrden) sheet.getRange(idx + 1, 12).setValue(estadoOrden);
-    if (fechaResolucion || estadoOrden === "Resuelto" || estadoOrden === "Completado") {
-      sheet.getRange(idx + 1, 13).setValue(fechaResolucion || now);
-    }
-    sheet.getRange(idx + 1, 14).setValue(observaciones || "");
-  } else {
-    sheet.appendRow([
-      oId,
-      now,
-      activoIdUbicacion,
-      tipoMantenimiento || "Correctivo",
-      descripcionFalla,
-      prioridad || "Media",
-      reportadoPorUserId || "",
-      asignadoAEmpleadoId || "",
-      repuestStr,
-      costoEstimado || 0,
-      costoReal || 0,
-      estadoOrden || "Reportado",
-      "",
-      observaciones || ""
-    ]);
+ const p=payload||{},actor=catalogActor_(p,false),assetRef=String(p.activoIdUbicacion||"").trim(),description=String(p.descripcionFalla||"").trim();
+ if(!assetRef||!description)throw new Error("activoIdUbicacion y descripcionFalla son requeridos.");
+ const lock=LockService.getScriptLock();lock.waitLock(15000);let movementStart=0,journalStart=0;
+ try{
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getOrCreateSheet(ss,"MantenimientoOrdenes");inventoryEnsureMaintenanceSchema_(sheet);
+  const data=sheet.getDataRange().getValues(),oId=String(p.ordenMaintId||("MNT-"+Utilities.getUuid())).trim(),matches=data.map((r,i)=>({row:r,index:i})).filter(x=>x.index>0&&String(x.row[0]||"").trim()===oId);
+  if(matches.length>1)throw new Error("MAINTENANCE_ORDER_ID_AMBIGUOUS");
+  const found=matches[0]||null,existing=found?found.row:null,idx=found?found.index:-1,now=new Date(),state=String(p.estadoOrden||(existing&&existing[11])||"Reportado").trim(),complete=["RESUELTO","COMPLETADO"].includes(state.toUpperCase());
+  const repuestValue=p.repuestosConsumidosJSON!==undefined?p.repuestosConsumidosJSON:(existing?existing[8]:"[]");
+  let repArr;try{repArr=typeof repuestValue==="string"?JSON.parse(repuestValue||"[]"):(repuestValue||[]);}catch(_){throw new Error("MAINTENANCE_PARTS_JSON_INVALID");}
+  if(!Array.isArray(repArr))throw new Error("MAINTENANCE_PARTS_JSON_INVALID");
+  const repuestStr=JSON.stringify(repArr);
+  if(existing&&existing[16]&&!complete)throw new Error("MAINTENANCE_ORDER_ACCOUNTED_CANNOT_REOPEN");
+  let departmentInfo=null,asientoId=existing&&existing[16]?String(existing[16]):"",details=existing&&existing[17]?existing[17]:"[]",idempotent=false;
+  if((complete&&repArr.length)||p.departamento||(existing&&existing[14]))departmentInfo=inventoryResolveMaintenanceDepartment_(ss,p,assetRef,actor,existing);
+  if(complete&&repArr.length){
+   if(existing&&existing[16]){
+    if(String(existing[14]||"")!==departmentInfo.departmentId||String(existing[15]||"")!==departmentInfo.centroCosto||!inventoryLedgerPayloadMatches_(ss,[],repArr,existing[17]))throw new Error("MAINTENANCE_MATERIAL_IDEMPOTENCY_CONFLICT");
+    inventoryAssertExistingJournal_(ss,existing[16],"INVENTARIO",oId);idempotent=true;
+   }else{
+    getChartOfAccounts({});const expense=inventoryAccount_(ss,"5201","Gasto"),inventory=inventoryAccount_(ss,"1301","Activo"),kardex=getOrCreateSheet(ss,"InventariosKardex"),journal=getOrCreateSheet(ss,"AsientosContables");
+    movementStart=kardex.getLastRow()+1;journalStart=journal.getLastRow()+1;
+    const lines=[],saved=[],seen=Object.create(null);
+    repArr.forEach((raw,i)=>{
+     const item=catalogFindItem_(ss,raw.catalogItemId||raw.itemCodigo||raw.itemId,true),unit=catalogFindUnit_(ss,raw.unidadMedida||raw.unidad||item.unit),qty=Number(raw.cantidad);
+     if(catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit)||!Number.isFinite(qty)||qty<=0)throw new Error("MAINTENANCE_PART_INVALID");
+     if(seen[item.code])throw new Error("MAINTENANCE_PART_DUPLICATE:"+item.code);seen[item.code]=true;
+     const base=assetDeprMoney_(qty*unit.factor),ref="MNTMAT:"+oId+":"+i,prior=inventoryFindMovementByRef_(ss,ref);
+     let movement;
+     if(prior){if(String(prior[2]||"")!==String(item.code)||Math.abs(Number(prior[13]||prior[6]||0)-base)>0.000001||String(prior[10]||"")!==departmentInfo.ubicacionOrigen)throw new Error("MAINTENANCE_MOVEMENT_IDEMPOTENCY_CONFLICT");movement={kardexId:prior[0],cantidadBase:base};}
+     else movement=recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:"Salida",cantidad:qty,unidadMedida:unit.name,ubicacionResponsable:departmentInfo.ubicacionOrigen,observaciones:"Consumo de repuesto por Orden Mantenimiento "+oId+" [REF:"+ref+"]"});
+     const cost=inventoryCostPerBaseUnit_(item),amount=assetDeprMoney_(base*cost);if(base<=0||amount<=0)throw new Error("MAINTENANCE_PART_COST_INVALID");
+     lines.push({cuenta:expense.code,nombre:expense.name,debe:amount,haber:0,centroCosto:departmentInfo.centroCosto,departamento:departmentInfo.departmentId,itemCodigo:item.code,referenciaId:oId},{cuenta:inventory.code,nombre:inventory.name,debe:0,haber:amount,centroCosto:departmentInfo.centroCosto,departamento:departmentInfo.departmentId,itemCodigo:item.code,referenciaId:oId});
+     saved.push({itemCodigo:item.code,cantidadBase:base,costoUnitarioBase:cost,importe:amount,kardexId:movement.kardexId,unidadOriginal:unit.name,cantidadOriginal:qty,factorConversionBase:unit.factor});
+    });
+    asientoId="AST-INV-MNT-"+oId;inventoryPostJournal_(ss,{descripcion:"Consumo de repuestos de mantenimiento "+oId,origenModulo:"INVENTARIO",referenciaId:oId,asientoId:asientoId,lineas:lines,creadoPor:actor.userId});details=JSON.stringify(saved);
+   }
   }
-
-  // Descontar repuestos si se completó la orden
-  if ((estadoOrden === "Resuelto" || estadoOrden === "Completado") && repuestosConsumidosJSON) {
-    const repArr = typeof repuestosConsumidosJSON === "string" ? JSON.parse(repuestosConsumidosJSON) : repuestosConsumidosJSON;
-    if (Array.isArray(repArr)) {
-      repArr.forEach(rp => {
-        if (rp.itemCodigo && rp.cantidad) {
-          recordInventoryMovement({
-            itemCodigo: rp.itemCodigo,
-            itemNombre: rp.itemNombre || rp.itemCodigo,
-            tipoMovimiento: "Salida",
-            cantidad: parseFloat(rp.cantidad),
-            unidadMedida: rp.unidadMedida || rp.unidad || undefined,
-            ubicacionResponsable: "Mantenimiento / " + activoIdUbicacion,
-            observaciones: `Consumo de repuesto por Orden Mantenimiento ${oId}`
-          });
-        }
-      });
-    }
-  }
-
-  // Sincronización automática con TransporteVehiculos si el activo corresponde a una unidad [TASK-035]
-  try {
-    const vehSheet = getOrCreateSheet(ss, "TransporteVehiculos");
-    const vehData = vehSheet.getDataRange().getValues();
-    const vIdx = vehData.findIndex(r =>
-      String(r[0]).trim() === String(activoIdUbicacion).trim() ||
-      String(r[1]).trim() === String(activoIdUbicacion).trim() ||
-      String(r[2]).trim() === String(activoIdUbicacion).trim()
-    );
-
-    if (vIdx !== -1) {
-      if (estadoOrden === "Resuelto" || estadoOrden === "Completado") {
-        vehSheet.getRange(vIdx + 1, 8).setValue("Disponible");
-      } else if (estadoOrden === "EnTaller" || estadoOrden === "EnProceso" || estadoOrden === "Reportado") {
-        vehSheet.getRange(vIdx + 1, 8).setValue("EnMantenimiento");
-      }
-    }
-  } catch (_) {}
-
-  return {
-    status: "success",
-    ordenMaintId: oId,
-    message: "Orden de mantenimiento registrada/actualizada correctamente."
-  };
+  const row=existing?existing.slice():new Array(19).fill("");while(row.length<19)row.push("");
+  row[0]=oId;row[1]=existing?existing[1]:now;row[2]=assetRef;row[3]=p.tipoMantenimiento||(existing&&existing[3])||"Correctivo";row[4]=description;row[5]=p.prioridad||(existing&&existing[5])||"Media";row[6]=existing?existing[6]:actor.userId;row[7]=p.asignadoAEmpleadoId!==undefined?p.asignadoAEmpleadoId:(existing&&existing[7]||"");row[8]=repuestStr;row[9]=p.costoEstimado!==undefined?p.costoEstimado:(existing&&existing[9]||0);
+  const partsTotal=(()=>{try{return JSON.parse(details||"[]").reduce((sum,x)=>sum+Number(x.importe||0),0);}catch(_){return 0;}})();row[10]=p.costoReal!==undefined?p.costoReal:(Number(existing&&existing[10]||0)>0?existing[10]:partsTotal);
+  row[11]=state;row[12]=p.fechaResolucion||(complete?((existing&&existing[12])||now):(existing&&existing[12]||""));row[13]=p.observaciones!==undefined?p.observaciones:(existing&&existing[13]||"");row[14]=departmentInfo?departmentInfo.departmentId:(existing&&existing[14]||"");row[15]=departmentInfo?departmentInfo.centroCosto:(existing&&existing[15]||"");row[16]=asientoId;row[17]=details;row[18]=departmentInfo?departmentInfo.ubicacionOrigen:(existing&&existing[18]||p.ubicacionOrigen||"Bodega General");
+  if(idx!==-1)sheet.getRange(idx+1,1,1,row.length).setValues([row]);else sheet.appendRow(row);
+  try{
+   const vehSheet=getOrCreateSheet(ss,"TransporteVehiculos"),vehData=vehSheet.getDataRange().getValues(),vIdx=vehData.findIndex(r=>String(r[0]||"").trim()===assetRef||String(r[1]||"").trim()===assetRef||String(r[2]||"").trim()===assetRef);
+   if(vIdx!==-1){if(complete)vehSheet.getRange(vIdx+1,8).setValue("Disponible");else if(["ENTALLER","ENPROCESO","REPORTADO"].includes(state.toUpperCase()))vehSheet.getRange(vIdx+1,8).setValue("EnMantenimiento");}
+  }catch(_){}
+  return {status:"success",ordenMaintId:oId,asientoId:asientoId||null,idempotent:idempotent,detalleRepuestos:repArr.length?JSON.parse(details):[],message:idempotent?"Orden de mantenimiento y consumo contable ya registrados.":"Orden de mantenimiento registrada/actualizada correctamente."};
+ }catch(e){
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+  if(movementStart){const sh=ss.getSheetByName("InventariosKardex");if(sh)inventoryDeleteAppendedRows_(sh,movementStart);}
+  if(journalStart){const sh=ss.getSheetByName("AsientosContables");if(sh)inventoryDeleteAppendedRows_(sh,journalStart);}
+  throw e;
+ }finally{lock.releaseLock();}
 }
 
 function getMaintenanceOrders(payload) {
   const { estadoOrden, tipoMantenimiento } = payload || {};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const rows = getOrCreateSheet(ss, "MantenimientoOrdenes").getDataRange().getValues().slice(1);
-
   let filtered = rows;
   if (estadoOrden) filtered = filtered.filter(r => String(r[11]).trim() === String(estadoOrden).trim());
   if (tipoMantenimiento) filtered = filtered.filter(r => String(r[3]).trim() === String(tipoMantenimiento).trim());
-
-  const mapped = filtered.map(r => ({
-    ordenMaintId: r[0],
-    fechaReporte: r[1],
-    activoIdUbicacion: r[2],
-    tipoMantenimiento: r[3],
-    descripcionFalla: r[4],
-    prioridad: r[5],
-    reportadoPorUserId: r[6],
-    asignadoAEmpleadoId: r[7],
-    repuestosConsumidosJSON: r[8],
-    costoEstimado: parseFloat(r[9] || 0),
-    costoReal: parseFloat(r[10] || 0),
-    estadoOrden: r[11],
-    fechaResolucion: r[12],
-    observaciones: r[13]
-  }));
-
-  return {
-    status: "success",
-    ordenes: mapped
-  };
+  return {status:"success",ordenes:filtered.map(r=>({ordenMaintId:r[0],fechaReporte:r[1],activoIdUbicacion:r[2],tipoMantenimiento:r[3],descripcionFalla:r[4],prioridad:r[5],reportadoPorUserId:r[6],asignadoAEmpleadoId:r[7],repuestosConsumidosJSON:r[8],costoEstimado:parseFloat(r[9]||0),costoReal:parseFloat(r[10]||0),estadoOrden:r[11],fechaResolucion:r[12],observaciones:r[13],departamentoId:r[14]||"",centroCosto:r[15]||"",asientoContableId:r[16]||"",detalleRepuestosContabilizadosJSON:r[17]||"[]",ubicacionOrigen:r[18]||"Bodega General"}))};
 }
 
 
