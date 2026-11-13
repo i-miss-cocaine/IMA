@@ -230,3 +230,15 @@
 - **Evidencia requerida:** IDs sintéticos de solicitud/orden/recepción/factura/activo, snapshots de cantidades, campos de adquisición, códigos/series, custodios, estados de conciliación, respuestas de denegación, auditoría y pruebas de concurrencia/rollback. No usar PII ni datos productivos.
 - **Estado:** Pendiente beta; implementación y contrato Node.js validados en CI. No se desplegó Apps Script/Sheets real.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-084 — TASK-183 — Perfil integral de proveedores y protección de cuentas bancarias
+- **Módulo/roles:** Contabilidad / Compras / Administrador / Director / Contador.
+- **Objetivo:** validar en entorno beta el catálogo ampliado de proveedores, el ciclo histórico de contactos/condiciones y la restricción de datos bancarios.
+- **Precondiciones:** entorno beta aislado; proveedores sintéticos con RTN válidos y duplicados controlados; usuarios de roles Administrador, Director, Contador, Subdirector y usuario sin permisos; hojas de proveedores y hojas auxiliares inicializadas.
+- **Pasos:** (1) registrar proveedor con RTN de 14 dígitos; (2) intentar RTN inválido y duplicado; (3) registrar contactos de Ventas, Cobranzas, Soporte y Entregas; cambiar el principal y verificar que el anterior permanece histórico; (4) registrar direcciones fiscales, de entrega y correspondencia; (5) actualizar condiciones comerciales y comprobar versiones históricas; (6) consultar directorio y verificar que solo expone cuenta enmascarada; (7) consultar cuenta completa como Contador/Director/Administrador y comprobar denegación a Subdirector/otros roles; (8) modificar cuenta con motivo y referencia documental y comprobar auditoría de actor/fecha/valor previo enmascarado, sin cuenta completa; (9) simular fallo de persistencia y verificar rollback; (10) emitir orden a proveedor Activo y comprobar éxito; intentar crear o emitir orden a proveedor Suspendido/Inactivo y comprobar bloqueo; (11) verificar que lecturas no crean ni modifican hojas.
+- **Resultado esperado:** RTN único; contactos, direcciones y condiciones trazables; cuentas completas visibles solo a roles autorizados; directorio y logs enmascaran números; cambio bancario documentado y auditable; proveedores Suspendidos/Inactivos no reciben nuevas órdenes.
+- **Evidencia requerida:** IDs sintéticos, snapshots de hojas y estados, respuestas de acceso permitido/denegado, logs de auditoría, valores enmascarados, resultado de rollback y órdenes bloqueadas; no usar datos reales.
+- **Estado:** Pendiente beta. La hoja bancaria separada requiere validar permisos directos de hoja antes de almacenar datos reales; cifrado criptográfico en reposo no implementado.
+===============================================================================

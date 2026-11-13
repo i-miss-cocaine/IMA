@@ -2457,7 +2457,7 @@
 ---
 
 <!-- ID: TASK-183 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [ ] [TASK-183] Ampliar el catálogo de proveedores con contactos múltiples y datos comerciales protegidos
+### [x] [TASK-183] Ampliar el catálogo de proveedores con contactos múltiples y datos comerciales protegidos
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección B (B.1) y Sección G (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Gestión de proveedores, seguridad de información bancaria y control de pagos ACH)

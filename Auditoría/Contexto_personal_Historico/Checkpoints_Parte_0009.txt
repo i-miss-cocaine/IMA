@@ -28,3 +28,17 @@ Continuación del historial activo desde C1.710. Los registros anteriores perman
 - **Estado:** TASK-182 completada en código, revisión y CI; BETA-FUNC-083 pendiente de despliegue/validación beta.
 - **Siguiente tarea elegible:** TASK-183 — contactos múltiples, condiciones comerciales y datos bancarios protegidos de proveedores.
 ===============================================================================
+
+===============================================================================
+### C1.713 — IMA-EXEC-20261113-2138Z-01 — TASK-183 — Perfil ampliado y seguridad de proveedores
+- **Continuidad:** C1.712; rama NG_beta_0.0.0.1_work; HEAD de implementación inicial de la tarea: 56e65cb4b009539c4b8cb1cf11db3834777c632f.
+- **Alcance:** RTN hondureño de 14 dígitos con detección de duplicados; estados Activo/Inactivo/Suspendido/EnEvaluacion; contactos múltiples con sustitución histórica del principal; direcciones diferenciadas para facturación fiscal, entrega y correspondencia; condiciones comerciales versionadas; cuentas bancarias en hoja separada, directorio enmascarado y lectura completa restringida a Administrador/Director/Contador; motivo y referencia documental obligatorios para cambios; auditoría durable con números enmascarados y rollback si falla la escritura; bloqueo de órdenes nuevas/emisión a proveedores suspendidos o inactivos.
+- **Interfaz:** directorio conectado al endpoint getSuppliers; formulario de alta de proveedor con contacto principal, direcciones, condiciones comerciales y datos bancarios opcionales; adición de contactos múltiples y consulta/actualización bancaria restringida por backend.
+- **Revisión técnica:** se validaron permisos en la capa de rutas y nuevamente en las funciones sensibles; se preserva el historial de contactos, direcciones, condiciones y cuentas sustituidas; las lecturas no crean hojas; el registro de auditoría no incluye cuentas completas; los cambios bancarios se serializan bajo ScriptLock y se revierten si falla la persistencia.
+- **Pruebas:** tests/security/accounting-supplier-profile.test.js PASS; TASK-182 fixed asset capitalization PASS; TASK-181 quotation matrix PASS; F18-Task01 partial receipt PASS; sintaxis Apps Script y js/accounting.js PASS. Node.js 24.22.2.
+- **CI:** Department Scope 43512317759 SUCCESS; Identity Mapping 43512317641 SUCCESS; Department Reference Consumers 43512317687 SUCCESS para commit 7dfc14f77d3ba05934f488cdf701d2eb70dd5e3e.
+- **Commits:** implementación dbd588b88ea1173c98fb160127d725b88397cb5e; corrección de fixture 8c501864aa1548e68f50d58c19914cf36ec5f39b; UI mantenimiento bancario e6492a6a473e65e8bc18e8bb7c6af62df2b84695; auditoría durable y rollback 7dfc14f77d3ba05934f488cdf701d2eb70dd5e3e.
+- **Limitaciones:** CLI local NOT RUN; Apps Script/Sheets desplegado NOT RUN. La cuenta bancaria completa permanece en una hoja separada y se protege mediante control de acceso de aplicación; no se implementó cifrado criptográfico en reposo. Validar permisos directos de la hoja en beta antes de cargar datos bancarios reales.
+- **Estado:** TASK-183 completada en código y CI; BETA-FUNC-084 pendiente de despliegue/validación beta y verificación de permisos directos de la hoja.
+- **Siguiente tarea elegible:** TASK-184 — expediente digital unificado de adquisiciones.
+===============================================================================
