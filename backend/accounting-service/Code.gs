@@ -2571,7 +2571,7 @@ function normalizeMonthlyChargeMonth_(value) {
   return String(months[normalized]).padStart(2, "0");
 }
 function monthlyChargeDedupeKey_(userId, conceptId, month, year) {
-  return ["MONTHLY", String(userId).trim(), String(conceptId).trim(), String(year).trim(), normalizeMonthlyChargeMonth_(month)].join("|").toLowerCase();
+  return ["MONTHLY", String(userId).trim(), String(conceptId).trim(), normalizeMonthlyChargeMonth_(month), String(year).trim()].join("|").toLowerCase();
 }
 function resolveMonthlyChargeTariff_(tariffRows, tariffHeaders, conceptRows, conceptHeaders, year, grade, conceptId, conceptName) {
   const th = monthlyChargeHeaderMap_(tariffHeaders, ["TarifaID", "AnoLectivo", "NivelGrado", "ConceptoID", "MontoTotal", "CuotasNum", "Estado"]);
