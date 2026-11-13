@@ -3300,3 +3300,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - BETA-FUNC-057 agregado, Pendiente beta. Limitación conocida: TarifasPlanPago sigue sin InstitutionID; no se declara aislamiento multiinstitucional del catálogo de tarifas.
 - AUD-NG-129 Completada en código/CI. Siguiente tarea elegible: AUD-NG-132 (motor de cargos mensuales), sujeta a dependencias del Plan Maestro.
 
+
+[2026-11-13 UTC] [IMA-EXEC-20261113-1138Z-01] AUD-NG-132 — motor de cargos mensuales y deduplicación por periodo (C1.683)
+- `previewBatchMonthlyCharges` mapea Matriculas por encabezados canónicos y filtra por año, grado, sección y estado; la tarifa se resuelve por año/grado/concepto y se calcula por cuotas, sin monto fijo de respaldo.
+- La clave `MONTHLY|userId|conceptId|month|year` permite conceptos distintos en el mismo mes y el mismo concepto en meses/años diferentes, bloqueando solo la repetición exacta. La respuesta informa `omitidos` correctamente.
+- Contrato local Node ejecutado por GitHub Actions: 12 escenarios focales; incluye tarifas ausentes, dedupe temporal, compatibilidad de claves legacy, esquema, lock ocupado, reentrada concurrente, duplicidad de matrícula y liberación/reintento tras fallo de escritura.
+- CI final Department Scope run 43419664412 SUCCESS (Node.js 24.22.2; 24 pasos, incluidos los contratos de ACCOUNTING/ACADEMIC/USER y sintaxis de servicios/clientes). El primer run 43418670517 falló por una aserción cross-realm del harness; corregida y repetida con éxito en runs 43419266874 y 43419374826; la cobertura de año lectivo se amplió y volvió a pasar en 43419664412.
+- CLI local: Node.js 22.16.0 disponible; checkout/pruebas NOT RUN por fallo DNS al resolver github.com. No se equipara CI con ejecución local.
+- BETA-FUNC-058 agregado, Pendiente beta. AUD-NG-132 Completada en código/CI.

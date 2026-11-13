@@ -1496,3 +1496,11 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Evidencia requerida:** respuestas de API, snapshots antes/después de Matriculas/CargosEstudiante, claves de dedupe, referencias de admisión, resultados de descuentos y bitácora de rollback; sin PII real.
 - **Estado:** Pendiente beta.
 
+
+## BETA-FUNC-058 — AUD-NG-132 / ACCOUNTING: motor de cargos mensuales y deduplicación por periodo
+- **Objetivo:** validar en el servicio ACCOUNTING desplegado que la previsualización usa el esquema real de Matriculas, las tarifas correctas y la clave de deduplicación por estudiante, concepto, mes y año.
+- **Precondiciones:** ACCOUNTING desplegado; institución de prueba configurada; hojas sintéticas Matriculas, TarifasPlanPago, ConceptosCobro y CargosEstudiante; filas de varios grados, secciones y años lectivos. No utilizar datos personales reales.
+- **Pasos:** (1) verificar el preview con encabezados canónicos y columnas adicionales/reordenadas; (2) filtrar por grado/sección/año y contrastar estudiantes activos/confirmados frente a inactivos; (3) generar un concepto en enero y repetirlo; (4) generar el mismo concepto en febrero y otro concepto en enero; (5) generar el mismo concepto/mes en otro año lectivo; (6) retirar la tarifa aplicable y comprobar preview SinTarifa y generación sin nuevas filas; (7) ejecutar dos solicitudes concurrentes con la misma clave y luego reintentar; (8) inducir un fallo de escritura y confirmar que el siguiente intento puede adquirir el lock.
+- **Resultado esperado:** el preview refleja los encabezados y filtros correctos; la tarifa se calcula por grado/año/concepto sin montos inventados; solo se bloquea la misma combinación estudiante+concepto+mes+año; la falta de tarifa no crea cargos; la concurrencia no duplica filas y el lock se libera en fallos.
+- **Evidencia requerida:** parámetros y respuestas de preview/generación, snapshots sintéticos de Matriculas/CargosEstudiante, claves persistidas, IDs creados/omitidos, logs de lock y comparación antes/después. No incluir PII real.
+- **Estado:** Pendiente beta.

@@ -386,7 +386,10 @@
   - [ ] No se asignan contraseñas genéricas masivas.
   - [ ] Los usuarios existentes no se duplican.
   - [ ] Ninguna cuenta hereda privilegios superiores a su perfil autorizado.
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Completada en código/CI (C1.683). Contrato `accounting-monthly-charge-period.test.js` y regresiones relevantes PASS en GitHub Actions run 43419664412 (Node.js 24.22.2).
+- **Evidencia:** mapeo de matrícula por encabezados; tarifa seleccionada por año/grado/concepto sin monto predeterminado; clave única estudiante+concepto+mes+año; repetición idempotente; faltante de tarifa sin cargo; lock y fail-closed ante concurrencia; liberación del lock tras error de escritura.
+- **Cobertura:** grados, secciones, años lectivos, descuentos, distintos conceptos/meses, schema inválido, duplicidad de matrícula, reentrada concurrente y reintento tras fallo. Suite local del contenedor NOT RUN por DNS de github.com; no se declara como PASS.
+- **Beta:** BETA-FUNC-058 Pendiente beta; no bloquea el cierre de implementación conforme NDASC.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 3764-3796; clave TASK-077; asignación única: Dirección -->
 
@@ -3056,7 +3059,7 @@
 ---
 
 <!-- ID: AUD-NG-132 | Fuentes: Pendientes.md -->
-### [ ] [AUD-NG-132] Corregir el motor de cargos mensuales y su deduplicación por periodo
+### [x] [AUD-NG-132] Corregir el motor de cargos mensuales y su deduplicación por periodo
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-132 (REQ-EXP-010).
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** `backend/accounting-service/Code.gs`; pruebas de generación de cargos.
