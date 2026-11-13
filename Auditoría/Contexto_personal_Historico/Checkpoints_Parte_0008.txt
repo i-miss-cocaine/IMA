@@ -113,3 +113,14 @@
 - **Estado:** subalcance local completado; TASK-153 / AUD-NG-386 permanece En ejecución por otras superficies pendientes. **Siguiente callsite elegible:** revisar getWorkShiftsAndSubstitutionsHistory, verificando identidad firmada y ownership antes de devolver historial de turnos/sustituciones.
 - **HEAD funcional final:** 648d4654916f694c41eb55bb8b32c7099af85798. HEAD documental y de rama verificado tras la actualización del índice.
 ===============================================================================
+
+
+### C1.666 — IMA-EXEC-20261112-1754Z-03 — historial de turnos, sustituciones y horas extras (ACCOUNTING)
+- **HEAD inicial:** 88a823a451c95bb262d7d52f782f643ac879adc8. **Rama autorizada:** NG_beta_0.0.0.1_work. **Rama base:** NG_beta_0.0.0.1 = 44d9891132332e692dbe2ba8602b41f50a508a59, sin escrituras.
+- **Tarea/subalcance:** TASK-153 / AUD-NG-386; getWorkShiftsAndSubstitutionsHistory.
+- **Hallazgo:** la consulta confiaba en empleadoId/departamentoArea del payload, no verificaba identidad firmada ni ownership; leía con getOrCreateSheet.
+- **Implementación:** sesión/rol firmados; resourceScopeActions; relación única UserID↔ExpedienteID; ResourceOwnership por empleado; ambos participantes autorizados en sustituciones; filtros posteriores a autorización; encabezados exactos; IDs/mappings ambiguos excluidos; anti-enumeración; lectura sin crear hojas; contrato preservado.
+- **Archivos:** backend/accounting-service/Code.gs; tests/security/accounting-departmental-resource-access.test.js; beta_test.txt; Auditoria.txt; changueslogs.txt; Plan Maestro; checkpoint e índice.
+- **Pruebas:** casos añadidos para DEP-A/DEP-B/institución, suplantación, token inválido, consulta ajena, sustitución interdepartamental, IDs/mappings ambiguos, esquema inválido y ausencia de creación de hojas. Ejecución local/CI pendiente.
+- **Estado:** En ejecución hasta verificar localmente; BETA-FUNC-044 Pendiente beta; Apps Script/Sheets real NOT RUN.
+===============================================================================

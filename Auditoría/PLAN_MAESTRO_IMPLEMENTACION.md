@@ -5166,3 +5166,11 @@ La revisión de requisitos originales confirma cobertura de:
 - Incidencias y medidas se filtran por departamento/institución; consultas específicas ajenas usan RESOURCE_NOT_FOUND; IDs duplicados, mappings ambiguos y medidas ligadas a incidencias huérfanas/ambiguas se excluyen. Se valida el esquema y la lectura no crea hojas.
 - Se conserva la forma data.incidencias/medidasDisciplinarias y los filtros de presentación. El contrato completo local aislado PASS. Department Scope Contract run 43346646478: contrato ACCOUNTING PASS; workflow global FAIL posterior en User Role Membership contract (línea 119, foreignLegacy nulo), pasos posteriores SKIPPED. Apps Script/Sheets real no desplegado.
 - BETA-FUNC-043 Pendiente beta. TASK-153 / AUD-NG-386 continúa En ejecución. Siguiente callsite elegible: getWorkShiftsAndSubstitutionsHistory.
+
+
+**Addendum C1.666 — historial de turnos, sustituciones y horas extras ACCOUNTING (TASK-153 / AUD-NG-386)**
+- getWorkShiftsAndSubstitutionsHistory deriva identidad/rol de sesión firmada y limita el acceso a RecursosHumanos, Director, Administrador y Subdirector; el endpoint se integra a resourceScopeActions para exigir ámbito departamental/institucional verificado.
+- Cada empleado se resuelve mediante relación única UserID↔ExpedienteID y assertEmployeeExpedienteScopeAccess_/ResourceOwnership. Para sustituciones se valida el acceso a ambos participantes. departamentoArea solo filtra resultados ya autorizados.
+- Valida encabezados exactos; excluye IDs duplicados y mappings ambiguos; consulta específica fuera de ámbito RESOURCE_NOT_FOUND; hojas ausentes devuelven colecciones vacías sin crearlas. Preserva data.turnos/sustituciones/horasExtras y contadores.
+- Contrato focalizado añadido; ejecución local/CI pendiente. Apps Script/Sheets real no desplegado; BETA-FUNC-044 Pendiente beta.
+- **Estado:** C1.666 en ejecución hasta ejecutar verificaciones locales; TASK-153 / AUD-NG-386 continúa En ejecución.

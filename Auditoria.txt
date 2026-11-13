@@ -2706,3 +2706,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Archivos funcionales:** backend/accounting-service/Code.gs; tests/security/accounting-departmental-resource-access.test.js. Registros de continuidad y beta añadidos en C1.665.
 - **Estado:** subalcance local completado; TASK-153 / AUD-NG-386 continúa En ejecución por superficies ACCOUNTING restantes. BETA-FUNC-043 Pendiente beta. No se desplegó Apps Script/Sheets ni se usaron datos reales.
 ===============================================================================
+
+
+===============================================================================
+## AUD-NG-386 — ACCOUNTING: getWorkShiftsAndSubstitutionsHistory (C1.666)
+- **Severidad:** ALTA — consulta de turnos, sustituciones y horas extras basada en filtros/IDs del cliente sin identidad firmada ni propiedad departamental.
+- **Corrección:** identidad/rol derivados de sesión firmada; roles RR. HH. permitidos; relación UserID↔ExpedienteID única; autorización por assertEmployeeExpedienteScopeAccess_/ResourceOwnership para cada empleado. En sustituciones se comprueban ambos participantes. Filtros departamentales solo restringen después de autorizar.
+- **Integridad:** encabezados exactos, IDs duplicados y mappings ambiguos excluidos, anti-enumeración RESOURCE_NOT_FOUND y lecturas sin crear hojas. Se conserva data.turnos/sustituciones/horasExtras y totales.
+- **Verificación:** contrato ACCOUNTING focalizado ampliado; ejecución local/CI pendiente. Apps Script/Sheets real no desplegado; BETA-FUNC-044 Pendiente beta.
+===============================================================================

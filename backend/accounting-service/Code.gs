@@ -576,7 +576,7 @@ function validateRolePermission(action, payload) {
   if (!ctxCheck.authorized) {
     return { authorized: false, role: userRole + " (" + ctxCheck.reason + ")" };
   }
-  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher"];
+  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher"];
   if (resourceScopeActions.indexOf(action) !== -1) {
     const roleKey = String(userRole || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
     const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1 &&
@@ -13038,91 +13038,27 @@ function manageWorkShiftAndSubstitution(payload) {
 }
 
 function getWorkShiftsAndSubstitutionsHistory(payload) {
-  const { empleadoId, departamentoArea } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-
-  // 1. Asignaciones de Turnos
-  const turnosSheet = getOrCreateSheet(ss, "AsignacionesTurnosLaborales");
-  const turnosData = turnosSheet.getDataRange().getValues();
-  let turnos = [];
-
-  if (turnosData.length > 1) {
-    turnos = turnosData.slice(1).filter(r => {
-      if (empleadoId && String(r[1]).trim() !== String(empleadoId).trim()) return false;
-      if (departamentoArea && String(r[7]).toLowerCase() !== String(departamentoArea).toLowerCase()) return false;
-      return true;
-    }).map(r => ({
-      asignacionTurnoId: r[0],
-      empleadoId: r[1],
-      nombreTurno: r[2],
-      fechaInicio: r[3],
-      fechaFin: r[4],
-      horaEntrada: r[5],
-      horaSalida: r[6],
-      departamentoArea: r[7],
-      estado: r[8],
-      creadoPor: r[9],
-      fechaCreacion: r[10]
-    }));
-  }
-
-  // 2. Sustituciones
-  const sustSheet = getOrCreateSheet(ss, "SustitucionesPersonal");
-  const sustData = sustSheet.getDataRange().getValues();
-  let sustituciones = [];
-
-  if (sustData.length > 1) {
-    sustituciones = sustData.slice(1).filter(r => {
-      if (empleadoId && String(r[1]).trim() !== String(empleadoId).trim() && String(r[2]).trim() !== String(empleadoId).trim()) return false;
-      if (departamentoArea && String(r[8]).toLowerCase() !== String(departamentoArea).toLowerCase()) return false;
-      return true;
-    }).map(r => ({
-      sustitucionId: r[0],
-      empleadoSustitutoId: r[1],
-      empleadoSustituidoId: r[2],
-      fechaInicio: r[3],
-      fechaFin: r[4],
-      horaEntrada: r[5],
-      horaSalida: r[6],
-      motivoSustitucion: r[7],
-      departamentoArea: r[8],
-      estado: r[9],
-      creadoPor: r[10],
-      fechaCreacion: r[11]
-    }));
-  }
-
-  // 3. Solicitudes Horas Extras
-  const otSheet = getOrCreateSheet(ss, "SolicitudesHorasExtras");
-  const otData = otSheet.getDataRange().getValues();
-  let horasExtras = [];
-
-  if (otData.length > 1) {
-    horasExtras = otData.slice(1).filter(r => {
-      if (empleadoId && String(r[1]).trim() !== String(empleadoId).trim()) return false;
-      return true;
-    }).map(r => ({
-      solicitudId: r[0],
-      empleadoId: r[1],
-      fecha: r[2],
-      horasSolicitadas: r[3],
-      motivo: r[4],
-      estado: r[5],
-      aprobadoPor: r[6]
-    }));
-  }
-
-  return {
-    status: "success",
-    data: {
-      turnos,
-      sustituciones,
-      horasExtras,
-      totalTurnos: turnos.length,
-      totalSustituciones: sustituciones.length,
-      totalHorasExtras: horasExtras.length
-    }
-  };
+  const request=payload||{},actor=getVerifiedAccountingIdentity_(request);
+  if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+  const roleKey=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
+  if(["RECURSOSHUMANOS","DIRECTOR","ADMINISTRADOR","SUBDIRECTOR"].indexOf(roleKey)===-1)return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),empty=()=>({status:"success",data:{turnos:[],sustituciones:[],horasExtras:[],totalTurnos:0,totalSustituciones:0,totalHorasExtras:0}});
+  const read=(name,headers)=>{const sh=ss.getSheetByName(name);if(!sh)return {missing:true,rows:[]};const v=sh.getDataRange().getValues();if(!v.length||!Array.isArray(v[0])||v[0].length!==headers.length||headers.some((h,i)=>String(v[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))return {error:true,rows:[]};return {rows:v.slice(1).filter(r=>Array.isArray(r)&&r.length>=headers.length)};};
+  const eh=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"],th=["AsignacionTurnoID","EmpleadoID","NombreTurno","FechaInicio","FechaFin","HoraEntrada","HoraSalida","DepartamentoArea","Estado","CreadoPor","FechaCreacion","UltimaModificacion"],sh=["SustitucionID","EmpleadoSustitutoID","EmpleadoSustituidoID","FechaInicio","FechaFin","HoraEntrada","HoraSalida","MotivoSustitucion","DepartamentoArea","Estado","CreadoPor","FechaCreacion","UltimaModificacion"],oh=["SolicitudID","EmpleadoID","Fecha","HorasSolicitadas","Motivo","Estado","AprobadoPor"];
+  const employees=read("ExpedientesLaborales",eh);if(employees.missing)return empty();
+  const shifts=read("AsignacionesTurnosLaborales",th),subs=read("SustitucionesPersonal",sh),overtime=read("SolicitudesHorasExtras",oh);
+  if(employees.error||shifts.error||subs.error||overtime.error)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura del historial de turnos y sustituciones no es válida."};
+  const xc=Object.create(null),uc=Object.create(null);employees.rows.forEach(r=>{const x=String(r[0]||"").trim(),u=String(r[2]||"").trim();if(x)xc[x]=(xc[x]||0)+1;if(u)uc[u]=(uc[u]||0)+1;});
+  const byUser=Object.create(null);employees.rows.forEach(r=>{const x=String(r[0]||"").trim(),u=String(r[2]||"").trim();if(x&&u&&xc[x]===1&&uc[u]===1)byUser[u]=x;});
+  const cache=Object.create(null),canRead=u=>{u=String(u||"").trim();if(!u||!byUser[u])return false;if(!Object.prototype.hasOwnProperty.call(cache,u))cache[u]=assertEmployeeExpedienteScopeAccess_(request,ss,byUser[u]);return !!cache[u].authorized;};
+  const target=String(request.empleadoId||"").trim();if(target&&!canRead(target))return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existen registros de turnos disponibles."};
+  const dep=String(request.departamentoArea||"").trim().toLowerCase(),matchDep=v=>!dep||String(v||"").trim().toLowerCase()===dep;
+  const counts=(rows,i)=>{const out=Object.create(null);(rows||[]).forEach(r=>{const id=String(r[i]||"").trim();if(id)out[id]=(out[id]||0)+1;});return out;};
+  const tc=counts(shifts.rows,0),sc=counts(subs.rows,0),oc=counts(overtime.rows,0);
+  const turnos=(shifts.rows||[]).filter(r=>{const id=String(r[0]||"").trim(),u=String(r[1]||"").trim();return !!id&&tc[id]===1&&canRead(u)&&(!target||u===target)&&matchDep(r[7]);}).map(r=>({asignacionTurnoId:r[0],empleadoId:r[1],nombreTurno:r[2],fechaInicio:r[3],fechaFin:r[4],horaEntrada:r[5],horaSalida:r[6],departamentoArea:r[7],estado:r[8],creadoPor:r[9],fechaCreacion:r[10]}));
+  const sustituciones=(subs.rows||[]).filter(r=>{const id=String(r[0]||"").trim(),a=String(r[1]||"").trim(),b=String(r[2]||"").trim();return !!id&&sc[id]===1&&canRead(a)&&canRead(b)&&(!target||a===target||b===target)&&matchDep(r[8]);}).map(r=>({sustitucionId:r[0],empleadoSustitutoId:r[1],empleadoSustituidoId:r[2],fechaInicio:r[3],fechaFin:r[4],horaEntrada:r[5],horaSalida:r[6],motivoSustitucion:r[7],departamentoArea:r[8],estado:r[9],creadoPor:r[10],fechaCreacion:r[11]}));
+  const horasExtras=(overtime.rows||[]).filter(r=>{const id=String(r[0]||"").trim(),u=String(r[1]||"").trim();return !!id&&oc[id]===1&&canRead(u)&&(!target||u===target);}).map(r=>({solicitudId:r[0],empleadoId:r[1],fecha:r[2],horasSolicitadas:r[3],motivo:r[4],estado:r[5],aprobadoPor:r[6]}));
+  return {status:"success",data:{turnos,sustituciones,horasExtras,totalTurnos:turnos.length,totalSustituciones:sustituciones.length,totalHorasExtras:horasExtras.length}};
 }
 
 // TAREA RH-08: Implementar la planificación de necesidades de personal
