@@ -36,6 +36,7 @@ on:
       - tests/security/accounting-purchase-asset-capitalization.test.js
       - tests/security/accounting-asset-depreciation.test.js
       - tests/security/accounting-catalog.test.js
+      - tests/security/accounting-purchase-receipt-partial.test.js
       - tests/security/accounting-supplier-profile.test.js
       - tests/security/accounting-purchase-dossier.test.js
       - tests/security/accounting-vacation-medical-leave-ownership.test.js
