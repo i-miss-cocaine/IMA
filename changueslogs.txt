@@ -3371,3 +3371,14 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - El test ahora solicita con expedienteId exp-1 y comprueba que el payload HMAC dirigido a USER contiene EXP-1, además de verificar activeDepartmentId. Resultado local repetido: 20 escenarios PASS con Node.js v22.16.0; hash del test local coincide con el blob de la rama.
 - Commits de corrección: 196d48659db13011a8547836e533fa0ce6352f04 y 559e85906ea1253e802a8d1dc2d94405214ee571.
 - Se mantiene la limitación: checkout completo y CI no observables; no se declara parseo del servicio completo ni PASS de Actions. El parseo de las funciones modificadas y del test sí pasó localmente.
+
+
+[2026-11-13 13:05 UTC] TASK-153 / T153-S05 — consumidor ACCOUNTING de referencias documentales laborales
+- Se integró getEmployeeDocuments con la autorización central USER para EXPEDIENTE_LABORAL. El fallback solo opera con expediente explícito y cuando la autorización ordinaria devuelve RESOURCE_SCOPE_DENIED; requiere expediente único y documentos/IDs únicos.
+- Se excluyen roles de autoservicio Empleado/Trabajador/Personal del fallback interdepartamental. Se mantiene el comportamiento normal de mismo departamento y autoservicio.
+- Campos permitidos: categoriaDoc, fechaCarga, estadoVisibilidad; documentoId como identificador. No se devuelven título, ArchivoUrl, CargadoPor, Observaciones, expedienteId ni contenido.
+- El transporte ACCOUNTING→USER usa HMAC-SHA256, URL HTTPS, secreto >=32, activeDepartmentId opcional firmado, requestId/correlationId y validación estricta de respuesta; USER conserva validación de sesión, permiso, tenant, ownership, política, grant y auditoría durable.
+- tests/security/accounting-department-reference-consumer.test.js: 29 escenarios PASS local con Node.js v22.16.0. Se ejecutó node --check sobre helper/consumidor extraídos y test. SHA local del test coincide con el blob de la rama. El test en CI parsea el Code.gs completo antes de aislar funciones.
+- Workflow general y aislado actualizados para ejecutar ACADEMIC (20) y ACCOUNTING (29) y parsear ambos servicios con Node 24. No se observa estado CI para los commits nuevos; no se declara CI PASS.
+- BETA-FUNC-064 Pendiente beta; sin despliegue, secretos productivos ni cambios en hojas.
+- Commits: 8008463, 819b2ed, 527f363, 984a8ad, bdf31af, be2d27e, a0c5097, ebdd7ef.
