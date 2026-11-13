@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.702**
-- Última sesión: `IMA-EXEC-20261113-1635Z-01`
+- Último checkpoint: **C1.703**
+- Última sesión: `IMA-EXEC-20261113-1752Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.702: **153447**
+- Caracteres del archivo activo tras C1.703: **156617**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -752,4 +752,6 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 
 | C1.701 | IMA-EXEC-20261113-1625Z-01 | Correcciones de asistencia; Department Scope 43462250820 SUCCESS; BETA-FUNC-074 Pendiente beta | TASK-153 / AUD-NG-386 — submit/reviewAttendanceCorrection | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.701 | sección final | C1.700 | implementación 8d121e3; fixture bae1250; checkpoint aaf9933 |
 
-| C1.702 | IMA-EXEC-20261113-1635Z-01 | Anticipos/préstamos laborales; Department Scope 43463145244 SUCCESS; BETA-FUNC-075 Pendiente beta | TASK-153 / AUD-NG-386 — request/approveEmployeeLoanAdvance | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.702 | sección final | C1.701 | implementación ea2a89d; checkpoint por confirmar |
+| C1.702 | IMA-EXEC-20261113-1635Z-01 | Anticipos/préstamos laborales; Department Scope 43463145244 SUCCESS; BETA-FUNC-075 Pendiente beta | TASK-153 / AUD-NG-386 — request/approveEmployeeLoanAdvance | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.702 | sección final | C1.701 | implementación ea2a89d; checkpoint 447353f |
+
+| C1.703 | IMA-EXEC-20261113-1752Z-01 | TASK-174 amortización de préstamos en nómina; Department Scope 43476863084 SUCCESS; BETA-FUNC-076 Pendiente beta | TASK-174 — calculatePayrollPeriod / updatePayrollPeriodStatus / manageEmployeeLoanAdvance | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.703 | sección final | C1.702 | implementación 0ba84da; checkpoint 1ebe3c7 |
