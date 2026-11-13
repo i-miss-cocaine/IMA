@@ -5430,35 +5430,48 @@ function configureWorkSchedule(payload) {
 }
 
 // [F10-Task17] [P2] - Optimizar el registro de asistencia laboral del personal
-function resolveStaffAttendanceWriteAccess_(payload,ss,targetUserId) {
- const actor=getVerifiedAccountingIdentity_(payload);if(!actor.authorized)return actor;
- const role=normalizeVacationRole_(actor.role),self=["EMPLEADO","TRABAJADOR","PERSONAL"].indexOf(role)!==-1,management=["RECURSOSHUMANOS","DIRECTOR","ADMINISTRADOR","SUBDIRECTOR"].indexOf(role)!==-1;
- if(!self&&!management)return {authorized:false,code:"ROLE_NOT_ALLOWED"};
- const userId=String(targetUserId||"").trim();if(!userId||(self&&userId!==actor.userId))return {authorized:false,code:"RESOURCE_NOT_FOUND"};
- const headers=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"],employees=getVacationSheetSnapshot_(ss,"ExpedientesLaborales",headers);
- if(employees.missing||employees.error||employees.rows.some(r=>r.length!==headers.length))return {authorized:false,code:"RESOURCE_SCHEMA_INVALID"};
- const matches=employees.rows.filter(r=>String(r[2]||"").trim()===userId);if(matches.length!==1)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
- const expedienteId=String(matches[0][0]||"").trim();if(!expedienteId||employees.rows.filter(r=>String(r[0]||"").trim()===expedienteId).length!==1||["ACTIVE","ACTIVO"].indexOf(String(matches[0][8]||"").trim().toUpperCase())===-1)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
- if(self)return {authorized:true,actor:actor,role:role,self:true,empleadoId:userId,expedienteId:expedienteId};
- try{if(payload&&typeof payload==="object")RESOURCE_OWNERSHIP_REQUEST_CACHE_.delete(payload);}catch(_){}
- const scope=getVerifiedAccountingDepartmentScope_(payload,ss,actor);if(!scope.authorized||(!scope.institutionWide&&!(scope.departmentIds||[]).length))return {authorized:false,code:scope.code||"DEPARTMENT_SCOPE_REQUIRED"};
- const ownership=assertResourceOwnershipForScope_(ss,scope,"EXPEDIENTE_LABORAL",expedienteId,"WRITE",payload);
- return ownership.authorized?{authorized:true,actor:actor,role:role,self:false,empleadoId:userId,expedienteId:expedienteId,departmentId:ownership.departmentId}:{authorized:false,code:"RESOURCE_NOT_FOUND"};
-}
 function recordStaffCheckIn(payload) {
- const request=payload||{},identity=getVerifiedAccountingIdentity_(request);if(!identity.authorized)return {status:"error",code:identity.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
- const role=normalizeVacationRole_(identity.role),self=["EMPLEADO","TRABAJADOR","PERSONAL"].indexOf(role)!==-1,requested=String(request.empleadoId||"").trim();
+ const request=payload||{},identity=getVerifiedAccountingIdentity_(request);
+ if(!identity.authorized)return {status:"error",code:identity.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+ const normalizeRole=value=>String(value||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
+ const role=normalizeRole(identity.role),self=["EMPLEADO","TRABAJADOR","PERSONAL"].indexOf(role)!==-1,management=["RECURSOSHUMANOS","DIRECTOR","ADMINISTRADOR","SUBDIRECTOR"].indexOf(role)!==-1;
+ if(!self&&!management)return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+ const requested=String(request.empleadoId||"").trim();
  if(self&&requested&&requested!==identity.userId)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe un expediente laboral disponible."};
- const target=self?identity.userId:requested;if(!target)return {status:"error",code:"RESOURCE_REFERENCE_INVALID",message:"Debe especificarse el empleado."};
- const ss=SpreadsheetApp.openById(SPREADSHEET_ID),preflight=resolveStaffAttendanceWriteAccess_(request,ss,target);
+ const target=self?identity.userId:requested;
+ if(!target)return {status:"error",code:"RESOURCE_REFERENCE_INVALID",message:"Debe especificarse el empleado."};
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID),employeeHeaders=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
+ const resolveAccess=req=>{
+  const actor=getVerifiedAccountingIdentity_(req);if(!actor.authorized)return actor;
+  const actorRole=normalizeRole(actor.role),isSelf=["EMPLEADO","TRABAJADOR","PERSONAL"].indexOf(actorRole)!==-1,isManagement=["RECURSOSHUMANOS","DIRECTOR","ADMINISTRADOR","SUBDIRECTOR"].indexOf(actorRole)!==-1;
+  if(!isSelf&&!isManagement)return {authorized:false,code:"ROLE_NOT_ALLOWED"};
+  if(isSelf&&target!==actor.userId)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  const employeeSheet=ss.getSheetByName("ExpedientesLaborales");if(!employeeSheet)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  const values=employeeSheet.getDataRange().getValues();
+  if(!values.length||!Array.isArray(values[0])||values[0].length!==employeeHeaders.length||employeeHeaders.some((h,i)=>String(values[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))return {authorized:false,code:"RESOURCE_SCHEMA_INVALID"};
+  const rows=values.slice(1).filter(r=>Array.isArray(r)&&r.length===employeeHeaders.length),matches=rows.filter(r=>String(r[2]||"").trim()===target);
+  if(matches.length!==1)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  const expedienteId=String(matches[0][0]||"").trim();
+  if(!expedienteId||rows.filter(r=>String(r[0]||"").trim()===expedienteId).length!==1||["ACTIVE","ACTIVO"].indexOf(String(matches[0][8]||"").trim().toUpperCase())===-1)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  if(isSelf)return {authorized:true,actor:actor,expedienteId:expedienteId,accessType:"SELF"};
+  const scope=getVerifiedAccountingDepartmentScope_(req,ss,actor);
+  if(!scope.authorized)return {authorized:false,code:scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED"};
+  const ownership=assertResourceOwnershipForScope_(ss,scope,"EXPEDIENTE_LABORAL",expedienteId,"WRITE",req);
+  return ownership.authorized?{authorized:true,actor:actor,expedienteId:expedienteId,departmentId:ownership.departmentId}:{authorized:false,code:"RESOURCE_NOT_FOUND"};
+ };
+ const preflight=resolveAccess(request);
  if(!preflight.authorized)return {status:"error",code:preflight.code||"RESOURCE_NOT_FOUND",message:"No existe un expediente laboral disponible."};
- const tipo=String(request.tipoRegistro||"Entrada").trim().toUpperCase();if(["ENTRADA","ENTRADAPUNTUAL"].indexOf(tipo)===-1&&tipo!=="SALIDA")return {status:"error",code:"INVALID_ATTENDANCE_TYPE",message:"El tipo de marcaje no es válido."};
+ const tipo=String(request.tipoRegistro||"Entrada").trim().toUpperCase();
+ if(["ENTRADA","ENTRADAPUNTUAL"].indexOf(tipo)===-1&&tipo!=="SALIDA")return {status:"error",code:"INVALID_ATTENDANCE_TYPE",message:"El tipo de marcaje no es válido."};
  const isExit=tipo==="SALIDA",safeText=(v,n)=>{let t=String(v||"").trim().slice(0,n);return /^[=+@-]/.test(t)?"'"+t:t;},observation=safeText(request.observaciones,500),employeeName=safeText(request.empleadoNombre||"Personal",120)||"Personal";
- const lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"El registro está ocupado. Intente nuevamente."};
+ const lock=LockService.getScriptLock();
+ try{lock.waitLock(30000);}catch(_){return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"El registro está ocupado. Intente nuevamente."};}
  try{
-  const access=resolveStaffAttendanceWriteAccess_(request,ss,target);if(!access.authorized)return {status:"error",code:access.code||"RESOURCE_NOT_FOUND",message:"No existe un expediente laboral disponible."};
+  const access=resolveAccess(Object.assign({},request));
+  if(!access.authorized)return {status:"error",code:access.code||"RESOURCE_NOT_FOUND",message:"No existe un expediente laboral disponible."};
   const sheet=ss.getSheetByName("DeduccionesAsistencia")||getOrCreateSheet(ss,"DeduccionesAsistencia"),headers=["AsistenciaID","Fecha","EmpleadoId","EmpleadoNombre","HoraEntrada","HoraSalida","MinutosTardanza","EstadoAsistencia","Observaciones"];
-  let data=sheet.getDataRange().getValues();if(!data.length||(data.length===1&&(!Array.isArray(data[0])||!data[0].length))){sheet.appendRow(headers);data=[headers];}
+  let data=sheet.getDataRange().getValues();
+  if(!data.length||(data.length===1&&(!Array.isArray(data[0])||!data[0].length))){sheet.appendRow(headers);data=[headers];}
   if(!Array.isArray(data[0])||data[0].length!==headers.length||headers.some((h,i)=>String(data[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura del historial de asistencia no es válida."};
   const now=new Date(),dateStr=now.toISOString().slice(0,10),timeStr=now.toTimeString().slice(0,8),dateKey=v=>{if(v instanceof Date)return isNaN(v.getTime())?"":v.toISOString().slice(0,10);const c=String(v||"").trim().slice(0,10);if(!c)return "";if(/^\d{4}-\d{2}-\d{2}$/.test(c)){const d=new Date(c+"T00:00:00.000Z");return !isNaN(d.getTime())&&d.toISOString().slice(0,10)===c?c:"";}const d=new Date(v);return isNaN(d.getTime())?"":d.toISOString().slice(0,10);};
   const existing=[];for(let i=1;i<data.length;i++)if(String(data[i][2]||"").trim()===target&&dateKey(data[i][1])===dateStr)existing.push(i);
@@ -5466,13 +5479,14 @@ function recordStaffCheckIn(payload) {
   let expected="07:30";const shifts=ss.getSheetByName("AsignacionesTurnosLaborales");
   if(shifts){const sd=shifts.getDataRange().getValues(),sh=["AsignacionTurnoID","EmpleadoID","NombreTurno","FechaInicio","FechaFin","HoraEntrada","HoraSalida","DepartamentoArea","Estado","CreadoPor","FechaCreacion","UltimaModificacion"];
    if(!sd.length||sd[0].length!==sh.length||sh.some((h,i)=>String(sd[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de turnos laborales no es válida."};
-   const active=sd.slice(1).filter(r=>{const state=String(r[8]||"").trim().toUpperCase(),start=dateKey(r[3]),end=r[4]?dateKey(r[4]):"";return String(r[1]||"").trim()===target&&["ACTIVO","ACTIVE"].includes(state)&&start&&start<=dateStr&&(!r[4]||(end&&end>=dateStr));});
+   const active=sd.slice(1).filter(r=>{const state=String(r[8]||"").trim().toUpperCase(),start=dateKey(r[3]),end=r[4]?dateKey(r[4]):"";return String(r[1]||"").trim()===target&&["ACTIVO","ACTIVE"].indexOf(state)!==-1&&start&&start<=dateStr&&(!r[4]||(end&&end>=dateStr));});
    if(active.length>1)return {status:"error",code:"ATTENDANCE_SCHEDULE_AMBIGUOUS",message:"Existe más de un turno vigente para el empleado."};
    if(active.length===1){expected=String(active[0][5]||"").trim();const p=expected.split(":").map(Number);if(expected.length!==5||expected[2]!==":"||p.length!==2||!Number.isInteger(p[0])||!Number.isInteger(p[1])||p[0]<0||p[0]>23||p[1]<0||p[1]>59)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La hora de entrada del turno no es válida."};}
   }
   const ri=existing.length?existing[0]:-1,current=ri>=0?data[ri].slice():null;
   if(current&&((isExit&&String(current[5]||"").trim())||(!isExit&&(String(current[4]||"").trim()||String(current[5]||"").trim()))))return {status:"error",code:"ATTENDANCE_ALREADY_RECORDED",message:"El marcaje solicitado ya fue registrado para esta fecha."};
-  const id=current?String(current[0]||"").trim():"AST-"+Utilities.getUuid();if(!id)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"El identificador de asistencia no es válido."};
+  const id=current?String(current[0]||"").trim():"AST-"+(typeof Utilities!=="undefined"&&typeof Utilities.getUuid==="function"?Utilities.getUuid():now.getTime()+"-"+data.length);
+  if(!id)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"El identificador de asistencia no es válido."};
   if(!current&&data.slice(1).some(r=>String(r[0]||"").trim()===id))return {status:"error",code:"ATTENDANCE_ID_COLLISION",message:"No fue posible generar un identificador de asistencia único."};
   let late=0,state="EntradaPuntual";
   if(isExit){if(current){current[5]=timeStr;current[7]=String(current[4]||"").trim()?"JornadaCompleta":"MarcaIncompleta";if(observation)current[8]=observation;}else{try{sheet.appendRow([id,now,target,employeeName,"",timeStr,0,"MarcaIncompleta",observation||"Salida registrada sin marca de entrada previa"]);}catch(_){return {status:"error",code:"ATTENDANCE_WRITE_FAILED",message:"No fue posible registrar la salida."};}return {status:"success",asistenciaId:id,horaRegistrada:timeStr,tipoRegistro:"Salida",message:"Marcaje de Salida registrado."};}}
