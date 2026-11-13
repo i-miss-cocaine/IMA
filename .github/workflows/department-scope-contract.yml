@@ -69,6 +69,8 @@ jobs:
         run: node tests/security/user-migrated-resource-ownership-contract.test.js
       - name: Run user role membership contract
         run: node tests/security/user-role-membership-contract.test.js
+      - name: Run accounting vacation and medical leave ownership contract
+        run: node tests/security/accounting-vacation-medical-leave-ownership.test.js
       - name: Run accounting departmental resource access contract
         run: node tests/security/accounting-departmental-resource-access.test.js
       - name: Run academic departmental resource access contract
