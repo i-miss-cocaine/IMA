@@ -208,3 +208,15 @@
 
 - **Trazabilidad de intentos CI:** las ejecuciones intermedias 43354589494, 43354700146, 43354813770, 43354889738, 43354978745 y 43355055912 terminaron FAIL durante la calibración de aserciones/fixtures y del escenario concurrente; no se contabilizan como PASS. Se corrigieron los contratos y el mock determinista de lock. El resultado focal final es run 43355125476, con ACCOUNTING departmental resource access PASS. El workflow completo aún falla posteriormente en User Role Membership (línea 119), ya registrado como incidencia heredada.
 ===============================================================================
+
+
+===============================================================================
+## C1.671 — IMA-EXEC-20261112-1754Z-03 — generación y entrega privada de PDF de nómina
+- **HEAD inicial:** 425ad20f52eea0f9fe9abfcb4db3a62dc30a5edb. **Rama:** NG_beta_0.0.0.1_work. **Base:** 44d9891132332e692dbe2ba8602b41f50a508a59 (solo lectura).
+- **Tarea/subalcance:** TASK-153 / AUD-NG-391; AUD-NG-140 / REQ-EXP-014; generatePayrollReceiptPDF y getPayrollReceiptPDFFile.
+- **Hallazgo:** el generador aceptaba empleadoId arbitrario sin sesión/ownership y devolvía una URL fabricada; no generaba archivo PDF ni protegía su recuperación.
+- **Implementación:** claims firmados; autoservicio derivado del usuario; HR/Administrador con ownership/ámbito; planilla/boleta/mapping únicos; PDF real mediante DocumentApp; carpeta y archivo PRIVATE; DriveFileId persistido en BoletasPago; recuperación vuelve a autorizar y valida asociación, MIME, firma, tamaño y privacidad; Base64 sin URL pública; lock e idempotencia; lector de boletas compatible con esquema histórico y extendido.
+- **Archivos:** backend/accounting-service/Code.gs; tests/security/accounting-departmental-resource-access.test.js; Auditoria.txt; beta_test.txt; changueslogs.txt; Plan Maestro; checkpoint e índice.
+- **Verificación preliminar:** contrato Node.js 24 aislado ampliado; checkout local NOT RUN por DNS github.com; CI pendiente tras commit; Apps Script/Drive real NOT RUN.
+- **Estado:** implementación pendiente de CI. BETA-FUNC-049 Pendiente beta. TASK-153/AUD-NG-140 siguen abiertos.
+===============================================================================

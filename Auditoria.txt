@@ -2779,3 +2779,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Límites:** Apps Script/Google Sheets reales y despliegue NOT RUN; la ejecución VM/fixtures valida la lógica aislada. BETA-FUNC-048 Pendiente beta.
 - **Estado:** C1.670 completada localmente para recordStaffCheckIn; TASK-153 sigue En ejecución y AUD-NG-140 permanece abierto por generación de PDF privada/real y demás superficies.
 ===============================================================================
+
+
+## AUD-NG-391 — ACCOUNTING: generación y entrega privada de PDF de nómina (C1.671)
+- **Severidad:** ALTA. **Origen:** TASK-153 / PM-01; AUD-NG-140 / REQ-EXP-014.
+- **Hallazgo:** `generatePayrollReceiptPDF` aceptaba `empleadoId` arbitrario sin identidad/ownership y devolvía una URL fabricada, sin crear PDF. No existía una recuperación autenticada del documento.
+- **Corrección:** sesión firmada; autoservicio deriva el expediente propio; Recursos Humanos y Administrador requieren `assertEmployeeExpedienteScopeAccess_` y ownership/ámbito. Se valida el mapeo único UserID↔ExpedienteID, planilla única y boleta no ambigua. El PDF se crea mediante Google Docs, se guarda en carpeta privada, se fuerza acceso PRIVATE y se registra DriveFileId. `getPayrollReceiptPDFFile` vuelve a verificar identidad, propiedad, vínculo boleta-planilla-expediente, MIME, firma PDF, tamaño y privacidad antes de devolver Base64; no expone URL/ID de Drive.
+- **Integridad:** ScriptLock serializa generación; la repetición reutiliza el PDF existente; las denegaciones no generan archivo. Se conserva compatibilidad de `BoletasPago` legado mediante ampliación controlada del encabezado.
+- **Límites:** no se inspeccionaron ni revocaron permisos de archivos históricos externos a este flujo; no se encontró callsite de UI específico en los archivos cliente revisados. Drive/Apps Script reales y navegador quedan Pendiente beta.
+- **Estado:** implementación y contrato aislado añadidos; CI pendiente al publicar. TASK-153 y AUD-NG-140 permanecen abiertos.

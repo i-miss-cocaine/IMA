@@ -3185,3 +3185,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Workflow global falla después en User Role Membership contract línea 119 (foreignLegacy nulo); pasos posteriores SKIPPED. Apps Script/Sheets reales NOT RUN; BETA-FUNC-048 Pendiente beta.
 
 [2026-11-13 UTC] [IMA-EXEC-20261112-1754Z-03] C1.670 — nota de verificación: los runs intermedios 43354589494, 43354700146, 43354813770, 43354889738, 43354978745 y 43355055912 fallaron durante el ajuste de aserciones/fixtures y concurrencia; no se contabilizan como PASS. Tras corregirlos, el contrato focalizado ACCOUNTING quedó PASS en 43355125476. El fallo posterior de User Role Membership permanece separado y heredado.
+
+
+## C1.671 — TASK-153 / AUD-NG-391 — generación y entrega privada de PDF de nómina
+- `generatePayrollReceiptPDF` exige sesión firmada y propiedad/ámbito; genera PDF real y lo guarda privado. `getPayrollReceiptPDFFile` vuelve a autorizar cada recuperación y devuelve Base64 sin URL pública.
+- Se amplía el contrato aislado ACCOUNTING con autoservicio, HR departamental, administrador, IDOR, sesión/rol inválidos, privacidad, reintentos, compatibilidad de esquema y concurrencia.
+- Verificación CI pendiente tras publicación. BETA-FUNC-049 Pendiente beta.

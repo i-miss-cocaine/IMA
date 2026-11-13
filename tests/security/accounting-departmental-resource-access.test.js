@@ -27,7 +27,7 @@ const accounting=fs.readFileSync(path.resolve(__dirname,"../../backend/accountin
 const names=[
  "parseJsonSafe","getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentScope_","getVerifiedDepartmentScopeForSession_","assertResourceOwnershipForScope_","resolveEmployeeDepartmentId_","assertEmployeeExpedienteScopeAccess_",
  "getAccountingPersonIdForUser_","resolveStudentExpedienteForAccounting_","assertPaymentVoucherOwnerAccess_",
- "extractDriveFileId","getEmployeeDocuments","getEmployeeContracts","getEmployeeContractAlerts","getEmployeeTrainingHistory","getLaborIncidentsHistory","getWorkShiftsAndSubstitutionsHistory","getStaffAttendanceLogs","recordStaffCheckIn","getStaffPayrollReceipt","getEmployeeLoansAdvances","getLoanAmortizationSchedule","getEmployeeRecords","getEmployeeSelfServicePortal","uploadEmployeeDocument","uploadPaymentVoucher","getPaymentVouchers","getPaymentVoucherFile","reviewPaymentVoucher","validateRolePermission"
+ "extractDriveFileId","getEmployeeDocuments","getEmployeeContracts","getEmployeeContractAlerts","getEmployeeTrainingHistory","getLaborIncidentsHistory","getWorkShiftsAndSubstitutionsHistory","getStaffAttendanceLogs","recordStaffCheckIn","getStaffPayrollReceipt","getEmployeeLoansAdvances","getLoanAmortizationSchedule","getEmployeeRecords","getEmployeeSelfServicePortal","uploadEmployeeDocument","uploadPaymentVoucher","getPaymentVouchers","getPaymentVoucherFile","reviewPaymentVoucher","generatePayrollReceiptPDF","getPayrollReceiptPDFFile","validateRolePermission"
 ];
 const code="var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n"+names.map(n=>extractFunction(accounting,n)).join("\n");
 const claims={
@@ -155,18 +155,34 @@ const files={
  FILE_BADTYPE_123456789012345678901234567890:{isTrashed:()=>false,getName:()=>"voucher.exe",getMimeType:()=>"application/octet-stream",getBlob:()=>({getBytes:()=>Array.from(fileBytes),getContentType:()=>"application/octet-stream"})},
  FILE_EMPTY_123456789012345678901234567890:{isTrashed:()=>false,getName:()=>"voucher-empty.pdf",getMimeType:()=>"application/pdf",getBlob:()=>({getBytes:()=>[],getContentType:()=>"application/pdf"})}
 };
+let payrollFileSequence=0;
+const payrollPdfBytes=Array.from(Buffer.from("%PDF-1.4\n% fixture PDF\n"));
+const payrollFolder={
+ setSharing:()=>{},getSharingAccess:()=>"PRIVATE",
+ createFile:blob=>{
+  const id="FILE_PAYROLL_PRIVATE_"+(++payrollFileSequence);let trashed=false,sharing="PRIVATE",name=blob.name||"payroll.pdf";
+  const stored={getId:()=>id,getName:()=>name,getMimeType:()=>"application/pdf",isTrashed:()=>trashed,setTrashed:v=>{trashed=v;},setSharing:()=>{sharing="PRIVATE";},getSharingAccess:()=>sharing,getBlob:()=>({getBytes:()=>blob.getBytes(),getContentType:()=>"application/pdf"})};
+  files[id]=stored;return stored;
+ }
+};
+const payrollRoot={};
+const payrollDocumentApp={create:title=>{
+ const id="DOC_PAYROLL_TEMP_"+(++payrollFileSequence),body={appendParagraph:()=>body};
+ const docFile={setSharing:()=>{},setTrashed:()=>{},getAs:()=>({name:"",setName(n){this.name=n;return this;},getBytes:()=>payrollPdfBytes.slice(),getContentType:()=>"application/pdf"})};
+ files[id]=docFile;return {getId:()=>id,getBody:()=>body,saveAndClose:()=>{}};
+}};
 const context={
  SPREADSHEET_ID:"TEST",
  PropertiesService:{getScriptProperties:()=>({getProperty:key=>key==="IMA_INSTITUTION_ID"?"INST-1":null})},
  SpreadsheetApp:{openById:()=>ss},
  verifySessionToken:token=>claims[token]||null,
- LockService:{getScriptLock:()=>({waitLock:()=>{},releaseLock:()=>{}})},
+ LockService:{getScriptLock:()=>({tryLock:()=>true,waitLock:()=>{},releaseLock:()=>{}})},
  getOrCreateSheet:(spreadsheet,name)=>spreadsheet.getSheetByName(name)||makeSheet([[]]),
- DriveApp:{Access:{PRIVATE:"PRIVATE"},Permission:{NONE:"NONE"},getFileById:id=>{if(!files[id])throw new Error("File not found");return files[id];}},
- Utilities:{base64Encode:bytes=>Buffer.from(bytes).toString("base64")},
+ DriveApp:{Access:{PRIVATE:"PRIVATE"},Permission:{NONE:"NONE"},getRootFolder:()=>payrollRoot,getFileById:id=>{if(!files[id])throw new Error("File not found");return files[id];}},
+ Utilities:{base64Encode:bytes=>Buffer.from(bytes).toString("base64")},DocumentApp:payrollDocumentApp,MimeType:{PDF:"application/pdf"},getParentDriveFolder:()=>payrollRoot,getOrCreateFolderNews:()=>payrollFolder,
  logStructuredEvent:()=>{}
 };
-vm.runInNewContext(code+"\nthis.assertEmployeeExpedienteScopeAccess_=assertEmployeeExpedienteScopeAccess_;this.assertPaymentVoucherOwnerAccess_=assertPaymentVoucherOwnerAccess_;this.getEmployeeDocuments=getEmployeeDocuments;this.getEmployeeContracts=getEmployeeContracts;this.getEmployeeContractAlerts=getEmployeeContractAlerts;this.getEmployeeTrainingHistory=getEmployeeTrainingHistory;this.getLaborIncidentsHistory=getLaborIncidentsHistory;this.getWorkShiftsAndSubstitutionsHistory=getWorkShiftsAndSubstitutionsHistory;this.getStaffAttendanceLogs=getStaffAttendanceLogs;this.recordStaffCheckIn=recordStaffCheckIn;this.getStaffPayrollReceipt=getStaffPayrollReceipt;this.getEmployeeLoansAdvances=getEmployeeLoansAdvances;this.getLoanAmortizationSchedule=getLoanAmortizationSchedule;this.getEmployeeRecords=getEmployeeRecords;this.getEmployeeSelfServicePortal=getEmployeeSelfServicePortal;this.uploadEmployeeDocument=uploadEmployeeDocument;this.uploadPaymentVoucher=uploadPaymentVoucher;this.getPaymentVouchers=getPaymentVouchers;this.getPaymentVoucherFile=getPaymentVoucherFile;this.reviewPaymentVoucher=reviewPaymentVoucher;",context);
+vm.runInNewContext(code+"\nthis.assertEmployeeExpedienteScopeAccess_=assertEmployeeExpedienteScopeAccess_;this.assertPaymentVoucherOwnerAccess_=assertPaymentVoucherOwnerAccess_;this.getEmployeeDocuments=getEmployeeDocuments;this.getEmployeeContracts=getEmployeeContracts;this.getEmployeeContractAlerts=getEmployeeContractAlerts;this.getEmployeeTrainingHistory=getEmployeeTrainingHistory;this.getLaborIncidentsHistory=getLaborIncidentsHistory;this.getWorkShiftsAndSubstitutionsHistory=getWorkShiftsAndSubstitutionsHistory;this.getStaffAttendanceLogs=getStaffAttendanceLogs;this.recordStaffCheckIn=recordStaffCheckIn;this.getStaffPayrollReceipt=getStaffPayrollReceipt;this.getEmployeeLoansAdvances=getEmployeeLoansAdvances;this.getLoanAmortizationSchedule=getLoanAmortizationSchedule;this.getEmployeeRecords=getEmployeeRecords;this.getEmployeeSelfServicePortal=getEmployeeSelfServicePortal;this.uploadEmployeeDocument=uploadEmployeeDocument;this.uploadPaymentVoucher=uploadPaymentVoucher;this.getPaymentVouchers=getPaymentVouchers;this.getPaymentVoucherFile=getPaymentVoucherFile;this.reviewPaymentVoucher=reviewPaymentVoucher;this.generatePayrollReceiptPDF=generatePayrollReceiptPDF;this.getPayrollReceiptPDFFile=getPayrollReceiptPDFFile;",context);
 const actor=token=>({sessionToken:token});
 assert.equal(context.assertEmployeeExpedienteScopeAccess_(actor("staffA"),ss,"EXP-A").authorized,true);
 assert.equal(context.assertEmployeeExpedienteScopeAccess_(actor("staffA"),ss,"EXP-B").code,"RESOURCE_SCOPE_DENIED");
@@ -586,5 +602,43 @@ assert.ok(extractFunction(accounting,"recordStaffCheckIn").includes("assertResou
 assert.ok(extractFunction(accounting,"recordStaffCheckIn").includes("getVerifiedAccountingIdentity_"));
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"recordStaffCheckIn"'));
 rows.AsignacionesTurnosLaborales[1][5]=attendanceShiftTime;
+
+
+const payrollPdfBefore=Object.keys(files).length;
+const payrollPdf=context.generatePayrollReceiptPDF({sessionToken:"employee",empleadoId:"EXP-A",periodoMes:"2026-02"});
+assert.equal(payrollPdf.status,"success","employee must receive a real private payroll PDF: "+JSON.stringify(payrollPdf));
+assert.equal(payrollPdf.mimeType,"application/pdf");assert.equal(payrollPdf.encoding,"base64");assert.ok(payrollPdf.fileData.length>0);
+assert.equal(Object.prototype.hasOwnProperty.call(payrollPdf,"pdfUrl"),false,"no public PDF URL may be returned");
+assert.equal(rows.BoletasPago[0][10],"DriveFileId");assert.ok(rows.BoletasPago[1][10]);
+assert.equal(context.getPayrollReceiptPDFFile({sessionToken:"employee",boletaId:"BOL-A"}).status,"success");
+assert.equal(context.getPayrollReceiptPDFFile({sessionToken:"hrB",boletaId:"BOL-A"}).code,"RESOURCE_NOT_FOUND");
+assert.equal(context.getPayrollReceiptPDFFile({sessionToken:"invalid",boletaId:"BOL-A"}).code,"VERIFIED_IDENTITY_REQUIRED");
+assert.equal(context.getPayrollReceiptPDFFile({sessionToken:"student",boletaId:"BOL-A"}).code,"ROLE_NOT_ALLOWED");
+assert.equal(context.generatePayrollReceiptPDF({sessionToken:"employee",empleadoId:"EXP-B",periodoMes:"2026-02"}).code,"RESOURCE_NOT_FOUND");
+assert.equal(context.generatePayrollReceiptPDF({sessionToken:"hrA",empleadoId:"EXP-B",periodoMes:"2026-02"}).code,"RESOURCE_NOT_FOUND");
+assert.equal(context.generatePayrollReceiptPDF({sessionToken:"invalid",empleadoId:"EXP-A",periodoMes:"2026-02"}).code,"VERIFIED_IDENTITY_REQUIRED");
+assert.equal(context.generatePayrollReceiptPDF({sessionToken:"student",empleadoId:"EXP-A",periodoMes:"2026-02"}).code,"ROLE_NOT_ALLOWED");
+const generatedFile=files[rows.BoletasPago[1][10]];
+generatedFile.getSharingAccess=()=>"ANYONE";
+assert.equal(context.getPayrollReceiptPDFFile({sessionToken:"employee",boletaId:"BOL-A"}).code,"PAYROLL_PDF_NOT_PRIVATE");
+generatedFile.getSharingAccess=()=>"PRIVATE";
+const retry=context.generatePayrollReceiptPDF({sessionToken:"employee",empleadoId:"EXP-A",periodoMes:"2026-02"});
+assert.equal(retry.status,"success");assert.equal(retry.boletaId,"BOL-A");
+assert.equal(Object.keys(files).length,payrollPdfBefore+2,"retry must reuse the same PDF and leave no untracked temporary document");
+const adminPdf=context.generatePayrollReceiptPDF({sessionToken:"admin",empleadoId:"EXP-B",periodoMes:"2026-02"});
+assert.equal(adminPdf.status,"success");
+assert.equal(context.getPayrollReceiptPDFFile({sessionToken:"hrA",boletaId:"BOL-B"}).code,"RESOURCE_NOT_FOUND");
+assert.equal(context.getPayrollReceiptPDFFile({sessionToken:"admin",boletaId:"BOL-B"}).status,"success");
+assert.ok(extractFunction(accounting,"generatePayrollReceiptPDF").includes("assertEmployeeExpedienteScopeAccess_"));
+assert.ok(extractFunction(accounting,"generatePayrollReceiptPDF").includes("DriveApp.Access.PRIVATE"));
+assert.ok(extractFunction(accounting,"getPayrollReceiptPDFFile").includes("assertEmployeeExpedienteScopeAccess_"));
+assert.ok(extractFunction(accounting,"getPayrollReceiptPDFFile").includes("getSharingAccess"));
+assert.ok(!extractFunction(accounting,"generatePayrollReceiptPDF").includes("newgeneration.edu.hn/recibo-pago-"));
+assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getPayrollReceiptPDFFile"'));
+assert.ok(extractFunction(accounting,"validateRolePermission").includes('"generatePayrollReceiptPDF"'));
+assert.equal(context.getStaffPayrollReceipt({sessionToken:"employee"}).boletas.length,1);
+const originalLock=context.LockService;context.LockService={getScriptLock:()=>({tryLock:()=>false,releaseLock:()=>{}})};
+assert.equal(context.generatePayrollReceiptPDF({sessionToken:"employee",periodoMes:"2026-02"}).code,"CONCURRENT_UPDATE_RETRY");
+context.LockService=originalLock;
 
 console.log("Accounting departmental resource and payment voucher access contracts passed.");

@@ -697,3 +697,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 
 
 | C1.670 | IMA-EXEC-20261112-1754Z-03 | recordStaffCheckIn protegido; contrato ACCOUNTING resource access PASS (run 43355125476); workflow global falla después en User Role Membership heredado; BETA-FUNC-048 pendiente | TASK-153 / PM-01 — AUD-NG-390 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.670 | sección final | C1.669 | b9e2084d7dc53ea3f218f1ce0e4a46b3c23bb54d |
+
+| C1.671 | IMA-EXEC-20261112-1754Z-03 | PDF de nómina real y privado; generador/recuperación con identidad firmada y ownership, Drive PRIVATE, Base64 sin URL pública, reintentos idempotentes; contrato focalizado CI pendiente | TASK-153 / PM-01 — AUD-NG-391 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.671 | sección final | C1.670 | Commit/HEAD por confirmar |

@@ -146,7 +146,7 @@ function getOrCreateSheet(ss, name) {
     if (name === "IncidenciasNomina") sheet.appendRow(["IncidenciaID", "PlanillaID", "PeriodoMes", "EmpleadoId", "EmpleadoNombre", "TipoIncidencia", "Descripcion", "FechaRegistro", "Estado"]);
     if (name === "PlanillasNomenclatura") sheet.appendRow(["PlanillaID", "FechaGeneracion", "PeriodoMes", "EmpleadoId", "EmpleadoNombre", "CargoPuesto", "SalarioBase", "HorasExtras", "MontoHorasExtras", "Bonificaciones", "DeduccionIHSS", "DeduccionRAP", "DeduccionISR", "OtrasDeducciones", "SalarioNeto", "Estado", "PatronalIHSS", "PatronalRAP", "PatronalINFOP", "CostoLaboralTotal"]);
     if (name === "DeduccionesAsistencia") sheet.appendRow(["AsistenciaID", "Fecha", "EmpleadoId", "EmpleadoNombre", "HoraEntrada", "HoraSalida", "MinutosTardanza", "EstadoAsistencia", "Observaciones"]);
-    if (name === "BoletasPago") sheet.appendRow(["BoletaID", "PlanillaID", "FechaEmision", "EmpleadoId", "EmpleadoNombre", "PeriodoMes", "TotalDevengado", "TotalDeducciones", "NetoAPagar", "EstadoBoleta"]);
+    if (name === "BoletasPago") sheet.appendRow(["BoletaID", "PlanillaID", "FechaEmision", "EmpleadoId", "EmpleadoNombre", "PeriodoMes", "TotalDevengado", "TotalDeducciones", "NetoAPagar", "EstadoBoleta", "DriveFileId"]);
     if (name === "DocumentosLaborales") sheet.appendRow(["DocumentoID", "ExpedienteID", "CategoriaDoc", "TituloDocumento", "ArchivoUrl", "FechaCarga", "CargadoPor", "EstadoVisibilidad", "Observaciones"]);
     if (name === "AnticiposPrestamosEmpleado") sheet.appendRow(["PrestamoID", "Fecha", "EmpleadoId", "Tipo", "MontoSolicitado", "MontoAprobado", "PlazoCuotas", "CuotaMensual", "SaldoPendiente", "EstadoAprobacion", "AprobadoPor", "Observaciones"]);
     if (name === "InventariosKardex") sheet.appendRow(["KardexID", "Fecha", "ItemCodigo", "ItemNombre", "CategoriaTipo", "TipoMovimiento", "Cantidad", "StockAnterior", "StockNuevo", "StockMinimo", "UbicacionResponsable", "Observaciones"]);
@@ -203,8 +203,8 @@ const ROLE_PERMISSIONS = {
   // REVISIÓN RBAC: Habilitar permiso processFamilyCreditPurchase para personal de tienda, cafetería, tutores y estudiantes
   "EncargadoTienda": ["getStoreProducts", "manageStoreProduct", "createStoreOrder", "getStoreOrders", "updateStoreOrderStatus", "recordInventoryMovement", "getInventoryKardex", "getInstitutionalPolicies", "processFamilyCreditPurchase"],
   "EncargadoCafeteria": ["getCafeteriaMenu", "manageCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "updateCafeteriaOrderStatus", "recordInventoryMovement", "getInventoryKardex", "getInstitutionalPolicies", "processFamilyCreditPurchase"],
-  "RecursosHumanos": ["initializeFinancialDriveStructure", "createEmployeeRecord", "getEmployeeRecords", "manageEmployeeContract", "getEmployeeContracts", "getEmployeeContractAlerts", "manageJobVacancy", "getJobVacancies", "submitJobCandidate", "getJobCandidates", "manageInterviewSchedule", "getInterviewSchedules", "processEmployeeOffboarding", "updateEmployeeLaborStatus", "configureWorkSchedule", "recordStaffCheckIn", "getStaffAttendanceLogs", "submitAttendanceCorrection", "reviewAttendanceCorrection", "submitLeaveVacationRequest", "getLeaveVacationRequests", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "getLoanAmortizationSchedule", "generatePayrollReceiptPDF", "uploadEmployeeDocument", "getEmployeeDocuments", "getHRDashboardAnalytics", "getInstitutionalPolicies", "managePerformancePeriod", "managePerformanceCriteria", "managePerformanceEvaluation", "getPerformanceEvaluations", "manageTrainingCourse", "manageTrainingEnrollment", "getEmployeeTrainingHistory", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "manageLaborIncident", "manageDisciplinaryMeasure", "getLaborIncidentsHistory", "manageStaffingNeeds", "getStaffingNeedsPlanning", "manageWorkShiftAndSubstitution", "getWorkShiftsAndSubstitutionsHistory", "getEmployeeSelfServicePortal", "verifyLaborAndTaxInformation", "runHRIntegrationAndRegressionTests", "runCriticalProcessConcurrencySuite"],
-  "Empleado": ["getEmployeeRecords", "getEmployeeContracts", "getEmployeeContractAlerts", "recordStaffCheckIn", "getStaffAttendanceLogs", "submitAttendanceCorrection", "submitLeaveVacationRequest", "getLeaveVacationRequests", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "generatePayrollReceiptPDF", "getEmployeeDocuments", "getPerformanceEvaluations", "getEmployeeTrainingHistory", "manageProfessionalDevelopmentPlan", "getEmployeeSelfServicePortal"],
+  "RecursosHumanos": ["initializeFinancialDriveStructure", "createEmployeeRecord", "getEmployeeRecords", "manageEmployeeContract", "getEmployeeContracts", "getEmployeeContractAlerts", "manageJobVacancy", "getJobVacancies", "submitJobCandidate", "getJobCandidates", "manageInterviewSchedule", "getInterviewSchedules", "processEmployeeOffboarding", "updateEmployeeLaborStatus", "configureWorkSchedule", "recordStaffCheckIn", "getStaffAttendanceLogs", "submitAttendanceCorrection", "reviewAttendanceCorrection", "submitLeaveVacationRequest", "getLeaveVacationRequests", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "getLoanAmortizationSchedule", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "uploadEmployeeDocument", "getEmployeeDocuments", "getHRDashboardAnalytics", "getInstitutionalPolicies", "managePerformancePeriod", "managePerformanceCriteria", "managePerformanceEvaluation", "getPerformanceEvaluations", "manageTrainingCourse", "manageTrainingEnrollment", "getEmployeeTrainingHistory", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "manageLaborIncident", "manageDisciplinaryMeasure", "getLaborIncidentsHistory", "manageStaffingNeeds", "getStaffingNeedsPlanning", "manageWorkShiftAndSubstitution", "getWorkShiftsAndSubstitutionsHistory", "getEmployeeSelfServicePortal", "verifyLaborAndTaxInformation", "runHRIntegrationAndRegressionTests", "runCriticalProcessConcurrencySuite"],
+  "Empleado": ["getEmployeeRecords", "getEmployeeContracts", "getEmployeeContractAlerts", "recordStaffCheckIn", "getStaffAttendanceLogs", "submitAttendanceCorrection", "submitLeaveVacationRequest", "getLeaveVacationRequests", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getEmployeeDocuments", "getPerformanceEvaluations", "getEmployeeTrainingHistory", "manageProfessionalDevelopmentPlan", "getEmployeeSelfServicePortal"],
   "Padre": ["getStudentAccountStatement", "getAdmissionFinancialStatus", "createAdmissionCharge", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "generatePaymentReceiptPDF", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getTransportAssignments", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "getStoreProducts", "createStoreOrder", "getStoreOrders", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "configureFamilyCreditAuthorization", "processFamilyCreditPurchase"],
   "Tutor": ["getStudentAccountStatement", "getAdmissionFinancialStatus", "createAdmissionCharge", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "generatePaymentReceiptPDF", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getTransportAssignments", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "getStoreProducts", "createStoreOrder", "getStoreOrders", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "configureFamilyCreditAuthorization", "processFamilyCreditPurchase"],
   "Responsable": ["getStudentAccountStatement", "getAdmissionFinancialStatus", "createAdmissionCharge", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "generatePaymentReceiptPDF", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getTransportAssignments", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "getStoreProducts", "createStoreOrder", "getStoreOrders", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "configureFamilyCreditAuthorization", "processFamilyCreditPurchase"],
@@ -576,11 +576,11 @@ function validateRolePermission(action, payload) {
   if (!ctxCheck.authorized) {
     return { authorized: false, role: userRole + " (" + ctxCheck.reason + ")" };
   }
-  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "getLoanAmortizationSchedule", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher", "recordStaffCheckIn", "recordStaffAttendance"];
+  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "getLoanAmortizationSchedule", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher", "recordStaffCheckIn", "recordStaffAttendance", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile"];
   if (resourceScopeActions.indexOf(action) !== -1) {
     const roleKey = String(userRole || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
     const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1 &&
-      (["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getStaffAttendanceLogs", "getEmployeeLoansAdvances", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "recordStaffCheckIn"].indexOf(action) !== -1 && ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1) || (roleKey === "PROFESOR" && action === "getStaffPayrollReceipt");
+      (["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getStaffAttendanceLogs", "getEmployeeLoansAdvances", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "recordStaffCheckIn", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile"].indexOf(action) !== -1 && ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1) || (roleKey === "PROFESOR" && action === "getStaffPayrollReceipt");
     const paymentSelfServiceRole = ["ESTUDIANTE", "ALUMNO", "TUTOR", "PADRE", "MADRE", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(roleKey) !== -1 &&
       ["getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher"].indexOf(action) !== -1;
     if (!employeeSelfRole && !paymentSelfServiceRole) {
@@ -792,6 +792,7 @@ function doPost(e) {
       case "approveEmployeeLoanAdvance": result = approveEmployeeLoanAdvance(payload); break;
       case "getLoanAmortizationSchedule": result = getLoanAmortizationSchedule(payload); break;
       case "generatePayrollReceiptPDF": result = generatePayrollReceiptPDF(payload); break;
+      case "getPayrollReceiptPDFFile": result = getPayrollReceiptPDFFile(payload); break;
       case "uploadEmployeeDocument": result = uploadEmployeeDocument(payload); break;
       case "getEmployeeDocuments": result = getEmployeeDocuments(payload); break;
       case "getHRDashboardAnalytics": result = getHRDashboardAnalytics(payload); break;
@@ -6194,34 +6195,157 @@ function getLoanAmortizationSchedule(payload) {
 }
 
 function generatePayrollReceiptPDF(payload) {
-  const { empleadoId, periodoMes, planillaId } = payload || {};
-  if (!empleadoId) throw new Error("empleadoId requerido.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const planRows = getOrCreateSheet(ss, "PlanillasNomenclatura").getDataRange().getValues().slice(1);
-
-  const receipt = planRows.find(r => String(r[3]).trim() === String(empleadoId).trim() && (!periodoMes || String(r[2]).trim() === String(periodoMes).trim()));
-  if (!receipt) throw new Error("Recibo de pago no encontrado para el empleado especificado.");
-
-  const pdfUrl = `https://newgeneration.edu.hn/recibo-pago-${receipt[0]}-${receipt[3]}.pdf`;
-
-  return {
-    status: "success",
-    pdfUrl: pdfUrl,
-    recibo: {
-      planillaId: receipt[0],
-      periodoMes: receipt[2],
-      empleadoId: receipt[3],
-      empleadoNombre: receipt[4],
-      puesto: receipt[5],
-      salarioBase: parseFloat(receipt[6] || 0),
-      deduccionIHSS: parseFloat(receipt[10] || 0),
-      deduccionRAP: parseFloat(receipt[11] || 0),
-      deduccionISR: parseFloat(receipt[12] || 0),
-      salarioNeto: parseFloat(receipt[14] || 0),
-      institucion: "New Generation Christian Academy"
+  const p=payload||{},actor=getVerifiedAccountingIdentity_(p);
+  if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+  const role=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
+  const selfRole=["EMPLEADO","TRABAJADOR","PERSONAL"].indexOf(role)!==-1;
+  if(!selfRole&&["RECURSOSHUMANOS","ADMINISTRADOR"].indexOf(role)===-1)return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(30000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La generación está ocupada; intente nuevamente."};
+  let temporaryDocumentFile=null,generatedPdfFile=null;
+  try{
+    const ss=SpreadsheetApp.openById(SPREADSHEET_ID),expSheet=ss.getSheetByName("ExpedientesLaborales"),planSheet=ss.getSheetByName("PlanillasNomenclatura");
+    if(!expSheet||!planSheet)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
+    const expData=expSheet.getDataRange().getValues(),expHeaders=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
+    if(!expData.length||JSON.stringify(expData[0].map(String))!==JSON.stringify(expHeaders))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de expedientes laborales no es válida."};
+    const expRows=expData.slice(1),userCounts=Object.create(null),expCounts=Object.create(null);
+    expRows.forEach(r=>{const e=String(r[0]||"").trim(),u=String(r[2]||"").trim();if(e)expCounts[e]=(expCounts[e]||0)+1;if(u)userCounts[u]=(userCounts[u]||0)+1;});
+    let targetExpedienteId="";
+    if(selfRole){
+      const own=expRows.filter(r=>String(r[2]||"").trim()===actor.userId&&expCounts[String(r[0]||"").trim()]===1);
+      if(own.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
+      targetExpedienteId=String(own[0][0]).trim();
+      const supplied=String(p.empleadoId||p.expedienteId||"").trim();
+      if(supplied&&supplied!==actor.userId&&supplied!==targetExpedienteId)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
+    }else{
+      const supplied=String(p.empleadoId||p.expedienteId||"").trim();
+      if(!supplied)return {status:"error",code:"EMPLOYEE_ID_REQUIRED",message:"Seleccione un expediente laboral."};
+      const matches=expRows.filter(r=>String(r[0]||"").trim()===supplied||String(r[2]||"").trim()===supplied);
+      if(matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
+      targetExpedienteId=String(matches[0][0]).trim();
     }
-  };
+    const targetRows=expRows.filter(r=>String(r[0]||"").trim()===targetExpedienteId);
+    if(targetRows.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
+    const targetUserId=String(targetRows[0][2]||"").trim();
+    if(!targetUserId||userCounts[targetUserId]!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
+    const access=assertEmployeeExpedienteScopeAccess_(p,ss,targetExpedienteId);
+    if(!access.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
+
+    const planData=planSheet.getDataRange().getValues(),planHeaders=["PlanillaID","FechaGeneracion","PeriodoMes","EmpleadoId","EmpleadoNombre","CargoPuesto","SalarioBase","HorasExtras","MontoHorasExtras","Bonificaciones","DeduccionIHSS","DeduccionRAP","DeduccionISR","OtrasDeducciones","SalarioNeto","Estado","PatronalIHSS","PatronalRAP","PatronalINFOP","CostoLaboralTotal"];
+    if(!planData.length||JSON.stringify(planData[0].map(String))!==JSON.stringify(planHeaders))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de planillas no es válida."};
+    const planRows=planData.slice(1),requestedPlanilla=String(p.planillaId||"").trim(),requestedPeriod=String(p.periodoMes||"").trim();
+    if(!requestedPlanilla&&!requestedPeriod)return {status:"error",code:"PLANILLA_SELECTION_REQUIRED",message:"Indique el periodo o la planilla."};
+    const matchingPlans=planRows.filter(r=>String(r[3]||"").trim()===targetExpedienteId&&(!requestedPlanilla||String(r[0]||"").trim()===requestedPlanilla)&&(!requestedPeriod||String(r[2]||"").trim()===requestedPeriod));
+    if(matchingPlans.length!==1)return {status:"error",code:matchingPlans.length?"PLANILLA_SELECTION_REQUIRED":"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible o requiere seleccionar una planilla."};
+    const plan=matchingPlans[0],planillaId=String(plan[0]||"").trim();
+    if(!planillaId||planRows.filter(r=>String(r[0]||"").trim()===planillaId).length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
+
+    const boletaSheet=getOrCreateSheet(ss,"BoletasPago");
+    let boletaData=boletaSheet.getDataRange().getValues();
+    const boletaHeaders=["BoletaID","PlanillaID","FechaEmision","EmpleadoId","EmpleadoNombre","PeriodoMes","TotalDevengado","TotalDeducciones","NetoAPagar","EstadoBoleta"],fileHeaders=boletaHeaders.concat(["DriveFileId"]);
+    const actualHeaders=boletaData.length?boletaData[0].map(String):[];
+    if(JSON.stringify(actualHeaders)===JSON.stringify(boletaHeaders)){boletaSheet.getRange(1,11).setValue("DriveFileId");boletaData=boletaSheet.getDataRange().getValues();}
+    else if(JSON.stringify(actualHeaders)!==JSON.stringify(fileHeaders))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de boletas de pago no es válida."};
+    const boletaRows=boletaData.slice(1),matchingBoletas=boletaRows.map((r,i)=>({row:r,rowIndex:i+2})).filter(x=>String(x.row[1]||"").trim()===planillaId&&String(x.row[3]||"").trim()===targetExpedienteId&&String(x.row[5]||"").trim()===String(plan[2]||"").trim());
+    if(matchingBoletas.length>1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
+    const boletaRecord=matchingBoletas.length?matchingBoletas[0]:null;
+    let boletaId=boletaRecord?String(boletaRecord.row[0]||"").trim():"";
+    if(boletaRecord&&(!boletaId||boletaRows.filter(r=>String(r[0]||"").trim()===boletaId).length!==1))return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
+    if(!boletaId)boletaId="BOL-PAY-"+Date.now()+"-"+Math.floor(Math.random()*1000000);
+    const existingFileId=boletaRecord?String(boletaRecord.row[10]||"").trim():"";
+    if(existingFileId){
+      let existing=null;try{existing=DriveApp.getFileById(existingFileId);}catch(_){}
+      if(existing&&!existing.isTrashed()){
+        try{existing.setSharing(DriveApp.Access.PRIVATE,DriveApp.Permission.NONE);if(existing.getSharingAccess()!==DriveApp.Access.PRIVATE)return {status:"error",code:"PAYROLL_PDF_PRIVACY_ENFORCEMENT_FAILED",message:"No fue posible garantizar la privacidad del documento."};}
+        catch(_){return {status:"error",code:"PAYROLL_PDF_PRIVACY_ENFORCEMENT_FAILED",message:"No fue posible garantizar la privacidad del documento."};}
+        const reused=getPayrollReceiptPDFFile({sessionToken:p.sessionToken||p.authToken||p.token,boletaId:boletaId});
+        if(reused.status==="success"){reused.recibo={planillaId:planillaId,periodoMes:plan[2],empleadoId:targetExpedienteId,empleadoNombre:plan[4],puesto:plan[5],salarioBase:Number(plan[6]||0),montoHorasExtras:Number(plan[8]||0),bonificaciones:Number(plan[9]||0),deducciones:Number(plan[10]||0)+Number(plan[11]||0)+Number(plan[12]||0)+Number(plan[13]||0),salarioNeto:Number(plan[14]||0)};return reused;}
+      }
+    }
+
+    const safe=v=>String(v||"").replace(/[^A-Za-z0-9_-]/g,"-").slice(0,48);
+    const fileName="Boleta-"+safe(targetExpedienteId)+"-"+safe(plan[2])+".pdf";
+    const gross=Number(plan[6]||0)+Number(plan[8]||0)+Number(plan[9]||0);
+    const deductions=Number(plan[10]||0)+Number(plan[11]||0)+Number(plan[12]||0)+Number(plan[13]||0);
+    const document=DocumentApp.create("TEMP-"+fileName);
+    temporaryDocumentFile=DriveApp.getFileById(document.getId());
+    temporaryDocumentFile.setSharing(DriveApp.Access.PRIVATE,DriveApp.Permission.NONE);
+    const body=document.getBody();
+    [
+      "BOLETA DE PAGO — DOCUMENTO CONFIDENCIAL",
+      "Institución: "+String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_NAME")||"Institución"),
+      "Empleado: "+String(plan[4]||""),"Expediente: "+targetExpedienteId,"Puesto: "+String(plan[5]||""),"Periodo: "+String(plan[2]||""),
+      "Salario base: L. "+Number(plan[6]||0).toFixed(2),"Horas extras: "+Number(plan[7]||0)+" | Importe: L. "+Number(plan[8]||0).toFixed(2),
+      "Bonificaciones: L. "+Number(plan[9]||0).toFixed(2),"Deducción IHSS: L. "+Number(plan[10]||0).toFixed(2),
+      "Deducción RAP: L. "+Number(plan[11]||0).toFixed(2),"Deducción ISR: L. "+Number(plan[12]||0).toFixed(2),
+      "Otras deducciones: L. "+Number(plan[13]||0).toFixed(2),"Total devengado: L. "+gross.toFixed(2),
+      "Total deducciones: L. "+deductions.toFixed(2),"Salario neto: L. "+Number(plan[14]||0).toFixed(2),
+      "Estado de planilla: "+String(plan[15]||""),"Boleta: "+boletaId,"Este documento contiene información salarial confidencial."
+    ].forEach(line=>body.appendParagraph(line));
+    document.saveAndClose();
+    const pdfBlob=temporaryDocumentFile.getAs(MimeType.PDF);pdfBlob.setName(fileName);
+    const privateFolder=getOrCreateFolderNews(DriveApp.getRootFolder(),"Boletas_Pago_Privadas");
+    privateFolder.setSharing(DriveApp.Access.PRIVATE,DriveApp.Permission.NONE);
+    if(privateFolder.getSharingAccess()!==DriveApp.Access.PRIVATE)throw new Error("PAYROLL_PDF_FOLDER_NOT_PRIVATE");
+    generatedPdfFile=privateFolder.createFile(pdfBlob);
+    generatedPdfFile.setSharing(DriveApp.Access.PRIVATE,DriveApp.Permission.NONE);
+    if(generatedPdfFile.getSharingAccess()!==DriveApp.Access.PRIVATE)throw new Error("PAYROLL_PDF_NOT_PRIVATE");
+    const issuedAt=new Date();
+    if(boletaRecord)boletaSheet.getRange(boletaRecord.rowIndex,11).setValue(generatedPdfFile.getId());
+    else boletaSheet.appendRow([boletaId,planillaId,issuedAt,targetExpedienteId,plan[4],plan[2],gross,deductions,Number(plan[14]||0),"Emitida",generatedPdfFile.getId()]);
+    const result=getPayrollReceiptPDFFile({sessionToken:p.sessionToken||p.authToken||p.token,boletaId:boletaId});
+    if(result.status!=="success")return {status:"error",code:"PAYROLL_PDF_DELIVERY_FAILED",message:"El PDF fue generado pero no pudo recuperarse de forma autorizada."};
+    result.recibo={planillaId:planillaId,periodoMes:plan[2],empleadoId:targetExpedienteId,empleadoNombre:plan[4],puesto:plan[5],salarioBase:Number(plan[6]||0),montoHorasExtras:Number(plan[8]||0),bonificaciones:Number(plan[9]||0),deducciones:deductions,salarioNeto:Number(plan[14]||0)};
+    result.message="Boleta PDF generada y entregada de forma privada.";
+    return result;
+  }catch(error){
+    if(generatedPdfFile){try{generatedPdfFile.setTrashed(true);}catch(_){}}
+    logStructuredEvent("ACCOUNTING","generatePayrollReceiptPDF","ERROR","PAYROLL_PDF_GENERATION_FAILED","No fue posible generar la boleta privada.",{},actor.role);
+    return {status:"error",code:"PAYROLL_PDF_GENERATION_FAILED",message:"No fue posible generar la boleta de pago."};
+  }finally{
+    if(temporaryDocumentFile){try{temporaryDocumentFile.setTrashed(true);}catch(_){}}
+    lock.releaseLock();
+  }
+}
+
+function getPayrollReceiptPDFFile(payload){
+  const p=payload||{},boletaId=String(p.boletaId||"").trim();
+  if(!boletaId)return {status:"error",code:"BOLETA_ID_REQUIRED",message:"Archivo no disponible."};
+  const actor=getVerifiedAccountingIdentity_(p);
+  if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+  const role=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
+  if(["EMPLEADO","TRABAJADOR","PERSONAL","RECURSOSHUMANOS","ADMINISTRADOR"].indexOf(role)===-1)return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),boletaSheet=ss.getSheetByName("BoletasPago"),planSheet=ss.getSheetByName("PlanillasNomenclatura"),expSheet=ss.getSheetByName("ExpedientesLaborales");
+  if(!boletaSheet||!planSheet||!expSheet)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Archivo no disponible."};
+  const boletaData=boletaSheet.getDataRange().getValues(),boletaHeaders=["BoletaID","PlanillaID","FechaEmision","EmpleadoId","EmpleadoNombre","PeriodoMes","TotalDevengado","TotalDeducciones","NetoAPagar","EstadoBoleta","DriveFileId"];
+  if(!boletaData.length||JSON.stringify(boletaData[0].map(String))!==JSON.stringify(boletaHeaders))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de boletas de pago no es válida."};
+  const boletaRows=boletaData.slice(1),selected=boletaRows.filter(r=>String(r[0]||"").trim()===boletaId);
+  if(selected.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Archivo no disponible."};
+  const boleta=selected[0],planillaId=String(boleta[1]||"").trim(),expedienteId=String(boleta[3]||"").trim(),period=String(boleta[5]||"").trim(),fileId=String(boleta[10]||"").trim();
+  if(!planillaId||!expedienteId||!period||!/^[A-Za-z0-9_-]{10,}$/.test(fileId))return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Archivo no disponible."};
+  const planData=planSheet.getDataRange().getValues(),planHeaders=["PlanillaID","FechaGeneracion","PeriodoMes","EmpleadoId","EmpleadoNombre","CargoPuesto","SalarioBase","HorasExtras","MontoHorasExtras","Bonificaciones","DeduccionIHSS","DeduccionRAP","DeduccionISR","OtrasDeducciones","SalarioNeto","Estado","PatronalIHSS","PatronalRAP","PatronalINFOP","CostoLaboralTotal"];
+  if(!planData.length||JSON.stringify(planData[0].map(String))!==JSON.stringify(planHeaders))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de planillas no es válida."};
+  const planRows=planData.slice(1),matches=planRows.filter(r=>String(r[0]||"").trim()===planillaId&&String(r[3]||"").trim()===expedienteId&&String(r[2]||"").trim()===period);
+  if(matches.length!==1||planRows.filter(r=>String(r[0]||"").trim()===planillaId).length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Archivo no disponible."};
+  const expData=expSheet.getDataRange().getValues(),expHeaders=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
+  if(!expData.length||JSON.stringify(expData[0].map(String))!==JSON.stringify(expHeaders))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de expedientes laborales no es válida."};
+  const employeeRows=expData.slice(1).filter(r=>String(r[0]||"").trim()===expedienteId),userId=employeeRows.length===1?String(employeeRows[0][2]||"").trim():"";
+  if(!userId||expData.slice(1).filter(r=>String(r[2]||"").trim()===userId).length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Archivo no disponible."};
+  const access=assertEmployeeExpedienteScopeAccess_(p,ss,expedienteId);
+  if(!access.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Archivo no disponible."};
+  try{
+    const file=DriveApp.getFileById(fileId);
+    if(!file||file.isTrashed()||file.getSharingAccess()!==DriveApp.Access.PRIVATE)return {status:"error",code:"PAYROLL_PDF_NOT_PRIVATE",message:"Archivo no disponible."};
+    const blob=file.getBlob(),bytes=blob.getBytes();
+    if(!bytes||!bytes.length||bytes.length>10*1024*1024)return {status:"error",code:"PAYROLL_PDF_FILE_INVALID",message:"Archivo no disponible."};
+    const mime=String(blob.getContentType()||file.getMimeType()||"").toLowerCase(),name=String(file.getName()||"");
+    const signature=bytes.slice(0,5).map(v=>String.fromCharCode((Number(v)+256)%256)).join("");
+    if(mime!=="application/pdf"||!/\.pdf$/i.test(name)||signature!=="%PDF-")return {status:"error",code:"PAYROLL_PDF_FILE_INVALID",message:"Archivo no disponible."};
+    return {status:"success",boletaId:boletaId,fileName:name,mimeType:mime,encoding:"base64",fileData:Utilities.base64Encode(bytes),fileSizeBytes:bytes.length};
+  }catch(_){
+    logStructuredEvent("ACCOUNTING","getPayrollReceiptPDFFile","WARN","PAYROLL_PDF_UNAVAILABLE","No fue posible recuperar la boleta privada.",{boletaId:boletaId},actor.role);
+    return {status:"error",code:"PAYROLL_PDF_UNAVAILABLE",message:"Archivo no disponible."};
+  }
 }
 
 
@@ -6523,11 +6647,11 @@ function getStaffPayrollReceipt(payload) {
  const self=["EMPLEADO","TRABAJADOR","PERSONAL","PROFESOR"].includes(role);
  if(!self&&!["RECURSOSHUMANOS","DIRECTOR","ADMINISTRADOR","SUBDIRECTOR","CONTADOR"].includes(role))return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),empty=()=>({status:"success",boletas:[]});
- const read=(n,h,opt)=>{const sh=ss.getSheetByName(n);if(!sh)return opt?{rows:[]}:null;const v=sh.getDataRange().getValues();if(!v.length)return {rows:[]};if(v[0].length!==h.length||h.some((x,i)=>String(v[0][i]||"").trim().toUpperCase()!==x.toUpperCase()))return {error:true,rows:[]};return {rows:v.slice(1).filter(r=>Array.isArray(r)&&r.length>=h.length)};};
+ const read=(n,h,opt,alternateHeaders)=>{const sh=ss.getSheetByName(n);if(!sh)return opt?{rows:[]}:null;const v=sh.getDataRange().getValues();if(!v.length)return {rows:[]};const valid=[h].concat(alternateHeaders||[]).some(expected=>v[0].length===expected.length&&expected.every((x,i)=>String(v[0][i]||"").trim().toUpperCase()===x.toUpperCase()));if(!valid)return {error:true,rows:[]};return {rows:v.slice(1).filter(r=>Array.isArray(r)&&r.length>=h.length)};};
  const eh=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
  const ph=["PlanillaID","FechaGeneracion","PeriodoMes","EmpleadoId","EmpleadoNombre","CargoPuesto","SalarioBase","HorasExtras","MontoHorasExtras","Bonificaciones","DeduccionIHSS","DeduccionRAP","DeduccionISR","OtrasDeducciones","SalarioNeto","Estado","PatronalIHSS","PatronalRAP","PatronalINFOP","CostoLaboralTotal"];
  const bh=["BoletaID","PlanillaID","FechaEmision","EmpleadoId","EmpleadoNombre","PeriodoMes","TotalDevengado","TotalDeducciones","NetoAPagar","EstadoBoleta"];
- const em=read("ExpedientesLaborales",eh,false),pl=read("PlanillasNomenclatura",ph,true),bo=read("BoletasPago",bh,true);
+ const em=read("ExpedientesLaborales",eh,false),pl=read("PlanillasNomenclatura",ph,true),bo=read("BoletasPago",bh,true,[bh.concat(["DriveFileId"])]);
  if(!em||em.error||pl.error||bo.error)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de las boletas de pago no es válida."};
  const expCounts=Object.create(null),userCounts=Object.create(null);
  em.rows.forEach(r=>{const e=String(r[0]||"").trim(),u=String(r[2]||"").trim();if(e)expCounts[e]=(expCounts[e]||0)+1;if(u)userCounts[u]=(userCounts[u]||0)+1;});

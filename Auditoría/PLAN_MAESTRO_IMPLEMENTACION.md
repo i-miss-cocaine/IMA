@@ -5237,3 +5237,15 @@ La revisión de requisitos originales confirma cobertura de:
 - **Beta:** BETA-FUNC-048 Pendiente beta; no bloquea el cierre local.
 - **Estado:** C1.670 completada localmente para este callsite; TASK-153 sigue En ejecución y AUD-NG-140 continúa abierto por sus demás requisitos.
 - **Siguiente acción elegible:** revisar el flujo de generación/entrega de PDF de nómina para garantizar propiedad, privacidad y autorización de descarga, conforme al alcance original pendiente de AUD-NG-140.
+
+
+### 10.268 TASK-153 / AUD-NG-391 — ACCOUNTING: generación y entrega privada de PDF de nómina (C1.671)
+
+- **Trazabilidad:** TASK-153 / PM-01; AUD-NG-140 / REQ-EXP-014.
+- `generatePayrollReceiptPDF` exige sesión firmada; Empleado/Trabajador/Personal solo puede generar el expediente derivado de claims. RecursosHumanos y Administrador requieren expediente único, `ResourceOwnership` y ámbito verificado. El cliente no puede seleccionar otro empleado ni cambiar el rol.
+- Se exige una única planilla para expediente/periodo; BoletaID y PlanillaID ambiguos fallan cerrados. El PDF se renderiza mediante DocumentApp, se guarda en `Boletas_Pago_Privadas` bajo raíz de Drive, se fuerza `DriveApp.Access.PRIVATE` y se registra DriveFileId en BoletasPago, con migración compatible desde el encabezado histórico de diez columnas.
+- `getPayrollReceiptPDFFile` vuelve a comprobar vínculo BoletaID→PlanillaID→ExpedienteID, ownership/ámbito, archivo no eliminado, privacidad, MIME application/pdf, extensión, firma %PDF- y tamaño máximo 10 MiB. Devuelve Base64, nunca URL pública ni ID de Drive.
+- ScriptLock protege generación y los reintentos reutilizan el archivo existente. `getStaffPayrollReceipt` acepta encabezado legado y extendido.
+- **Archivos:** backend/accounting-service/Code.gs; tests/security/accounting-departmental-resource-access.test.js; Auditoria.txt; beta_test.txt; changueslogs.txt; Plan Maestro; checkpoint e índice.
+- **Verificación:** contrato focalizado ampliado; checkout local NOT RUN por DNS al resolver github.com. Apps Script/Drive real NOT RUN. BETA-FUNC-049 Pendiente beta.
+- **Estado:** implementación publicada pendiente de CI y revisión del diff; TASK-153/AUD-NG-140 continúan abiertos por otras superficies.
