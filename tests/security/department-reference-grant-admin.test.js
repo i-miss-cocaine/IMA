@@ -81,7 +81,7 @@ function makeRuntime(options={}) {
     getUserVerifiedRole(p){return p && p._verifiedUserId ? (p.role||"Admin") : "NO_ACCESS";},
     getDynamicPermissionsForRole(role,action){return state.permissions[action]===true;},
     getUserContextScope(){return state.context;},
-    logStructuredEvent(...args){state.logs.push(args);},
+    logStructuredEvent(...args){if(options.auditFailure) throw new Error("AUDIT_UNAVAILABLE"); state.logs.push(args);},
     Date, String, JSON, Array, Object, isNaN
   };
   const start=source.indexOf("const DEPARTMENT_REFERENCE_GRANT_SHEET_");
@@ -136,8 +136,13 @@ function validPayload(extra={}) {
 }
 {
   const h=makeRuntime({grants:[GRANT_HEADERS,grantRow("I1","DRG-1","REVOKED")]});
-  assert.equal(h.runtime.createGrant(validPayload()).code,"DEPARTMENT_REFERENCE_GRANT_HISTORY_EXISTS",
-    "revoked grant history is retained and cannot be silently overwritten");
+  const r=h.runtime.createGrant(validPayload());
+  assert.equal(r.status,"success","a new grant may follow a revocation");
+  const rows=h.state.sheets.DepartmentReferenceGrants.snapshot();
+  assert.equal(rows.length,3,"revoked history is appended, never overwritten");
+  assert.equal(rows[1][12],"REVOKED");
+  assert.equal(rows[2][12],"ACTIVE");
+  assert.notEqual(rows[1][1],rows[2][1]);
 }
 {
   const h=makeRuntime({permissions:{manageDepartmentReferenceGrants:false}});
@@ -210,6 +215,21 @@ function validPayload(extra={}) {
 {
   assert.ok(source.includes('case "createDepartmentReferenceGrant": result = createDepartmentReferenceGrant(payload); break;'));
   assert.ok(source.includes('case "getDepartmentReferenceGrants": result = getDepartmentReferenceGrants(payload); break;'));
+{
+  const h=makeRuntime({auditFailure:true});
+  const r=h.runtime.createGrant(validPayload());
+  assert.equal(r.status,"error");
+  assert.equal(r.code,"AUDIT_UNAVAILABLE");
+  assert.equal(h.state.sheets.DepartmentReferenceGrants,undefined,"no grant is persisted if authorization audit fails");
+}
+{
+  const h=makeRuntime({auditFailure:true,grants:[GRANT_HEADERS,grantRow()]});
+  const r=h.runtime.revokeGrant(admin({grantId:"DRG-1"}));
+  assert.equal(r.status,"error");
+  assert.equal(r.code,"AUDIT_UNAVAILABLE");
+  assert.equal(h.state.sheets.DepartmentReferenceGrants.snapshot()[1][12],"ACTIVE",
+    "grant remains active if revocation audit cannot be recorded");
+}
   assert.ok(source.includes('case "revokeDepartmentReferenceGrant": result = revokeDepartmentReferenceGrant(payload); break;'));
 }
 process.stdout.write("Department reference grant administration contract: 25 scenarios PASS.\n");
