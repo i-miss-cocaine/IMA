@@ -1312,7 +1312,7 @@
                         if(!result||result.status!=='success')throw new Error(result&&result.message||'No fue posible procesar la distribución.');
                         totalSent+=Number(result.enviados||0);totalRetry+=Number(result.reintentables||0);totalFailed+=Number(result.fallidos||0);loops++;
                         if(receiptDistributionStatus)receiptDistributionStatus.textContent='Procesados: '+result.procesados+' | Enviados: '+totalSent+' | Reintentables: '+totalRetry+' | Fallidos: '+totalFailed+'.';
-                        if(retry||!result.pendientesRestantes||!result.procesados||loops>=50)break;
+                        if((retry?!result.reintentosRestantes:!result.pendientesRestantes)||!result.procesados||loops>=50)break;
                     }while(true);
                     const preview=await previewPayrollReceiptBatch();
                     if(receiptDistributionStatus)receiptDistributionStatus.textContent='Lote finalizado. Enviados en esta acción: '+totalSent+'. Reintentables: '+totalRetry+'. Fallidos: '+totalFailed+'. Pendientes restantes: '+preview.pendientes+'.';

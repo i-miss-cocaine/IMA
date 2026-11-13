@@ -7228,11 +7228,18 @@ function processPayrollReceiptDistribution(payload) {
         if(updatePayrollReceiptDistributionRow_(ss,item.distributionId,{estado:"FALLIDO",errorCode:latestContext.error||latestRecord&&latestRecord.emailReason||"DISTRIBUTION_CONTEXT_CHANGED"}))failed++;else updateFailures++;return;
       }
       item.email=latestRecord.email;
+      let driveFileId="";
+      const receiptSheet=ss.getSheetByName("BoletasPago");
+      if(receiptSheet){
+        const receiptRows=receiptSheet.getDataRange().getValues().slice(1);
+        const receiptMatches=receiptRows.filter(r=>String(r[0]||"").trim()===String(generated.boletaId||"").trim()&&String(r[1]||"").trim()===planillaId&&String(r[3]||"").trim()===item.expedienteId);
+        if(receiptMatches.length===1)driveFileId=String(receiptMatches[0][10]||"").trim();
+      }
       const portalUrl=getPayrollPortalLoginUrl_();
       const body="Tiene un nuevo comprobante de nómina disponible en su cuenta institucional. Inicie sesión en el Portal Institucional y abra Nómina > Mis boletas:\n"+portalUrl+"\n\nPor seguridad, el comprobante no se adjunta a este correo. El portal requiere autenticación y solo muestra sus propios documentos.";
       const htmlBody='<p>Tiene un nuevo comprobante de nómina disponible en su cuenta institucional.</p><p>Inicie sesión en el <a href="'+portalUrl+'">Portal Institucional</a> y abra <strong>Nómina &gt; Mis boletas</strong>.</p><p>Por seguridad, el comprobante no se adjunta a este correo. El portal requiere autenticación y solo muestra sus propios documentos.</p>';
       MailApp.sendEmail({to:item.email,subject:"Comprobante de nómina disponible",body:body,htmlBody:htmlBody});
-      if(updatePayrollReceiptDistributionRow_(ss,item.distributionId,{boletaId:String(generated.boletaId||""),estado:"ENVIADO",enviadoEn:new Date(),errorCode:""}))sent++;else updateFailures++;
+      if(updatePayrollReceiptDistributionRow_(ss,item.distributionId,{boletaId:String(generated.boletaId||""),estado:"ENVIADO",enviadoEn:new Date(),errorCode:"",driveFileId:driveFileId}))sent++;else updateFailures++;
     }catch(e){
       if(updatePayrollReceiptDistributionRow_(ss,item.distributionId,{boletaId:String(generated&&generated.boletaId||""),estado:"REINTENTABLE",errorCode:"MAIL_SEND_FAILED"}))retryable++;else updateFailures++;
     }
