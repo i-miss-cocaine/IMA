@@ -33,7 +33,7 @@ assert.equal(q2.status,"success");
 const q3=ctx.submitPurchaseQuotation({...payload,proveedorId:"S3",precioTotal:30,detalleItems:[{itemId:"ITEM-A",cantidadCotizada:2,precioUnitario:15,especificacionesCumplidas:true,cumplimientoTecnico:"Cumple"}]});
 assert.equal(q3.status,"success");
 const matrix=ctx.getPurchaseQuotationMatrix(payload);
-assert.equal(matrix.status,"success");assert.equal(matrix.cotizaciones.length,3);assert.equal(matrix.partidas.length,2);
+assert.equal(matrix.status,"success");assert.equal(matrix.cotizaciones.length,3);assert.equal(matrix.cotizaciones[0].proveedorNombre,"Proveedor S1");assert.equal(matrix.partidas.length,2);
 assert.equal(matrix.partidas[0].ofertas.find(x=>x.cotizacionId===q3.cotizacionId).estadoOferta,"PARCIAL");
 assert.equal(matrix.partidas[0].ofertas.find(x=>x.cotizacionId===q1.cotizacionId).menorPrecio,true);
 const award=ctx.adjudicatePurchaseQuotations({...payload,idempotencyKey:"AWARD-REQ-1-0001",dictamen:"Adjudicación por precio y cumplimiento técnico",justificacion:"Se eligen las ofertas de menor costo total que cumplen las especificaciones.",responsablesEvaluacion:["USR-COMPRAS-1"],adjudicaciones:[{itemId:"ITEM-A",cotizacionId:q1.cotizacionId,cantidadAdjudicada:5},{itemId:"ITEM-B",cotizacionId:q2.cotizacionId,cantidadAdjudicada:2}],ofertasDescartadas:[{cotizacionId:q3.cotizacionId,motivo:"Oferta parcial y costo unitario superior."}]});

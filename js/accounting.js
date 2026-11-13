@@ -1095,9 +1095,9 @@ window.renderPurchaseQuotationMatrix=function(matrix,target){
  if(!matrix.cotizaciones.length){addText(target,'No hay cotizaciones registradas para esta solicitud.','div','text-gray-500');return;}
  const wrapper=document.createElement('div');wrapper.className='overflow-x-auto border border-gray-200 rounded-xl';
  const table=document.createElement('table');table.className='min-w-full text-left text-[11px]';
- const head=document.createElement('tr');['Partida solicitada','Cantidad',...matrix.cotizaciones.map(q=>q.proveedorId+' · '+q.cotizacionId)].forEach(v=>addText(head,v,'th','p-2 bg-gray-100 border-b font-black text-gray-700'));table.appendChild(head);
+ const head=document.createElement('tr');['Partida solicitada','Cantidad',...matrix.cotizaciones.map(q=>(q.proveedorNombre||q.proveedorId)+' · '+q.cotizacionId+' · '+money(q.precioTotal)+' · '+q.plazoEntregaDias+' días · '+q.condicionesPago)].forEach(v=>addText(head,v,'th','p-2 bg-gray-100 border-b font-black text-gray-700'));table.appendChild(head);
  matrix.partidas.forEach(part=>{
-  const tr=document.createElement('tr');tr.className='border-b align-top';addText(tr,part.descripcion,'td','p-2 font-bold');addText(tr,part.cantidadSolicitada+' '+part.unidad,'td','p-2');
+  const tr=document.createElement('tr');tr.className='border-b align-top';addText(tr,part.descripcion+(part.especificaciones?' · '+part.especificaciones:''),'td','p-2 font-bold');addText(tr,part.cantidadSolicitada+' '+part.unidad,'td','p-2');
   part.ofertas.forEach(offer=>{
    const cell=document.createElement('td');cell.className='p-2 min-w-44 border-l align-top';
    if(offer.estadoOferta==='NO_COTIZADA'){addText(cell,'No cotizada','div','font-bold text-red-700');}
