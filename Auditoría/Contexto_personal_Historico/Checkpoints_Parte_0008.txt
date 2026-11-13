@@ -679,3 +679,20 @@
 - **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 continúa En ejecución por otras rutas.
 - **Siguiente tarea elegible:** revisar las rutas de asistencia/registro de jornada de personal aún expuestas en ACCOUNTING, en particular recordStaffCheckIn, recordStaffAttendance y getStaffAttendanceLogs, sin asumir que su inclusión en el gate sustituye la verificación interna de ownership.
 ===============================================================================
+
+
+===============================================================================
+### C1.699 — TASK-153 / AUD-NG-386 — ACCOUNTING: marcajes e historial de asistencia
+- **Continuidad:** sesión IMA-EXEC-20261113-1558Z-01; checkpoint anterior C1.698; HEAD inicial 17716fbffc51fb4db40b9b4f8632160901ea45f0; HEAD funcional final bc25ec1cc9274c676e35cc3c4b189545f6d398aa; rama NG_beta_0.0.0.1_work. Rama base 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
+- **Alcance:** recordStaffCheckIn, alias recordStaffAttendance y getStaffAttendanceLogs.
+- **Hallazgos:** el marcaje de administración no revalidaba identidad/expediente/scope después de adquirir el lock; aceptaba empleados inactivos; usaba ID basado en timestamp; actualizaba una fila mediante varias escrituras independientes sin compensación. La consulta de historial no exigía scope de forma explícita cuando ya existía la hoja de asistencia.
+- **Corrección:** identidad firmada y rol permitido; autoservicio limitado al UserID firmado; RR. HH./Dirección/Administración/Subdirección requieren scope y ResourceOwnership WRITE del expediente; empleado debe estar activo y UserID/ExpedienteID ser únicos; identidad, estado y ownership se revalidan bajo ScriptLock con objeto de solicitud nuevo; ID UUID con fallback compatible y colisión fail-closed; esquema y turno vigente validados; entrada/salida usan escritura de fila con compensación; observaciones/nombre se limitan y protegen contra fórmulas.
+- **Lectura:** getStaffAttendanceLogs conserva el contrato de colección vacía cuando la hoja no existe; cuando hay historial, requiere scope institucional/departamental para roles de gestión y filtra cada expediente por ownership; mantiene autoservicio por identidad firmada, fechas inclusivas y exclusión de IDs duplicados. recordStaffAttendance continúa como alias.
+- **Archivos de implementación:** backend/accounting-service/Code.gs; tests/security/accounting-staff-attendance-ownership.test.js (nuevo); .github/workflows/department-scope-contract.yml.
+- **Commits de implementación/corrección:** 6496feeb1d25939fad4c9458d7cdf5f1d463cc46; a15c68ee27356a7e39b3cb214b49369fe5891c12; a236c00966160f9f436f0d92746c9c7f14c0f181; 80c22aeefd763623851bae4baed46c61e11d3e97; bc25ec1cc9274c676e35cc3c4b189545f6d398aa.
+- **Verificación final:** Department Scope run 43457958664 SUCCESS; Identity Mapping run 43457958668 SUCCESS; Department Reference Consumers run 43457958703 SUCCESS (Node.js 24.22.2). Contrato de asistencia, regresión de recursos departamentales ACCOUNTING y syntax-check de servicios Apps Script PASS. Fallos intermedios de compatibilidad con contratos existentes fueron corregidos y la ejecución final pasó.
+- **CLI local:** NOT RUN; el entorno no pudo resolver github.com para obtener checkout. **Apps Script/Sheets real:** NOT RUN; no hubo despliegue ni datos reales.
+- **Beta:** BETA-FUNC-072 agregado a beta_test_Parte_0002.txt; Pendiente beta.
+- **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 continúa En ejecución por otras rutas.
+- **Siguiente tarea elegible:** revisar getEmployeeSelfServicePortal y los vínculos entre expediente, contratos, vacaciones, préstamos, turnos y capacitación, verificando que cada colección vinculada permanezca dentro de la institución/expediente autorizado.
+===============================================================================

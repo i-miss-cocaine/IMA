@@ -5438,3 +5438,11 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - getStaffingNeedsPlanning no crea hojas; filtra planes/vacantes por scope y empleados por ResourceOwnership único de la institución; corrige índices de estado laboral/vacante y filtra también personal/vacantes por departamento solicitado.
 - Department Scope 43454938151, Identity Mapping 43454721673 y Department Reference Consumers 43454721709 SUCCESS (Node 24.22.2). BETA-FUNC-071 Pendiente beta; CLI local y Apps Script/Sheets real NOT RUN; no hubo despliegue ni datos reales.
 - **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 sigue En ejecución. Siguiente: revisar recordStaffCheckIn, recordStaffAttendance y getStaffAttendanceLogs.
+
+
+### C1.699 — TASK-153 / AUD-NG-386 — ACCOUNTING: marcajes e historial de asistencia
+- recordStaffCheckIn exige identidad firmada, rol permitido, UserID firmado para autoservicio, expediente único/activo y, para gestión, scope y ResourceOwnership WRITE. Revalida acceso bajo ScriptLock antes de mutar.
+- IDs UUID/colisión fail-closed; turnos vigentes validados; entrada/salida actualizan la fila con compensación y observaciones protegidas; recordStaffAttendance se mantiene como alias.
+- getStaffAttendanceLogs exige scope cuando hay historial, filtra cada expediente por ownership y conserva colección vacía cuando la hoja no existe.
+- Department Scope 43457958664, Identity Mapping 43457958668 y Department Reference Consumers 43457958703 SUCCESS (Node 24.22.2); contrato focalizado y regresión ACCOUNTING PASS. BETA-FUNC-072 Pendiente beta; CLI local y Apps Script/Sheets real NOT RUN; sin despliegue ni datos reales.
+- **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 sigue En ejecución. Siguiente: revisar getEmployeeSelfServicePortal y el aislamiento de sus colecciones vinculadas.

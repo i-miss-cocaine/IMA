@@ -3448,3 +3448,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Department Scope 43454938151, Identity Mapping 43454721673 y Department Reference Consumers 43454721709 SUCCESS (Node 24.22.2). BETA-FUNC-071 Pendiente beta; sin despliegue ni datos reales.
 - TASK-153/AUD-NG-386 permanece En ejecución.
 - Commits: ca70dc8, 3a26440.
+
+
+[2026-11-13 15:58 UTC] C1.699 — TASK-153 / AUD-NG-386 — ACCOUNTING asistencia
+- Se endurecieron recordStaffCheckIn, recordStaffAttendance y getStaffAttendanceLogs con identidad firmada, expediente único/activo, ownership y revalidación bajo lock.
+- Se sustituyó el ID timestamp por UUID con fallback, se consolidó la actualización de entrada/salida con compensación y se mantuvo la compatibilidad de hojas/lectores existentes.
+- Department Scope 43457958664, Identity Mapping 43457958668 y Department Reference Consumers 43457958703 SUCCESS (Node 24.22.2). BETA-FUNC-072 Pendiente beta; sin despliegue ni datos reales.
+- TASK-153/AUD-NG-386 permanece En ejecución.
+- Commits: 6496fee, a15c68e, a236c00, 80c22ae, bc25ec1.

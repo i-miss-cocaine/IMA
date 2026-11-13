@@ -102,3 +102,14 @@
 - **Evidencia requerida:** snapshots anonimizados, IDs sintéticos, scopes/ownership, respuestas permitidas/denegadas, conteos por departamento y trazas de rollback/concurrencia. No guardar tokens ni PII.
 - **Estado:** Pendiente beta. No se ha desplegado ni ejecutado contra Apps Script/Sheets reales.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-072 — ACCOUNTING: marcajes e historial de asistencia
+- **Objetivo:** verificar marcajes de entrada/salida e historial con identidad firmada, expediente activo, scope/ownership, unicidad y concurrencia.
+- **Precondiciones:** entorno beta aislado; expedientes activos/inactivos y ResourceOwnership en dos departamentos; turnos vigentes; hoja DeduccionesAsistencia canónica; RR. HH. de distintos scopes, empleado autoservicio y administrador. Solo datos sintéticos.
+- **Pasos:** (1) registrar entrada propia y salida en el mismo registro; (2) denegar empleado ajeno, usuario no autorizado y expediente inactivo; (3) comprobar que HR solo marca empleados dentro de su ownership; (4) revocar scope/ownership antes de la revalidación bajo lock y verificar denegación; (5) probar turno inexistente, ambiguo y hora inválida; (6) probar ID duplicado/colisión, entrada/salida duplicada y registros ambiguos por usuario/fecha; (7) simular fallo de actualización y comprobar rollback/compensación; (8) simular lock ocupado y reentrada; (9) consultar historial por HR A/B, administrador y autoservicio, comprobando aislamiento; (10) probar rangos de fechas y hoja de asistencia ausente sin creación; (11) comprobar que recordStaffAttendance conserva el comportamiento del alias.
+- **Resultado esperado:** ninguna escritura sin actor y expediente autorizados; no se admiten empleados inactivos ni transferencias entre departamentos; no hay actualizaciones parciales; historial no filtra empleados de otros ámbitos y no crea hojas al consultar.
+- **Evidencia requerida:** IDs sintéticos, scopes/ownership, snapshots anonimizados, respuestas permitidas/denegadas y trazas de rollback/concurrencia. No guardar tokens ni PII.
+- **Estado:** Pendiente beta. No se ha desplegado ni ejecutado contra Apps Script/Sheets reales.
+===============================================================================
