@@ -647,3 +647,18 @@
 - **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 continúa En ejecución por otras rutas.
 - **Siguiente tarea elegible:** revisar manageWorkShiftAndSubstitution y sus transiciones/ownership, en correspondencia con el historial ya protegido getWorkShiftsAndSubstitutionsHistory.
 ===============================================================================
+
+
+### C1.697 — TASK-153 / AUD-NG-386 — ACCOUNTING: asignación de turnos y sustituciones
+- **Continuidad:** sesión IMA-EXEC-20261113-1525Z-01; checkpoint anterior C1.696; HEAD inicial fad7259ad748c2575d08b7d462c359d87d2d5a5c; HEAD funcional final 3110d75e04771c059317147f954dfb4e5266a451; rama NG_beta_0.0.0.1_work. Rama base 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
+- **Alcance:** endurecimiento de manageWorkShiftAndSubstitution para AsignarTurno y RegistrarSustitucion; se preservó/restauró getWorkShiftsAndSubstitutionsHistory sin alterar su contrato de lectura y ownership.
+- **Autorización:** sesión firmada; HR/Admin; cada empleado se resuelve a un expediente único; ResourceOwnership EXPEDIENTE_LABORAL WRITE verificado para el empleado asignado y, en sustituciones, para ambos participantes; revalidación dentro de ScriptLock.
+- **Integridad:** operación allowlist; IDs UUID y colisión fail-closed; actualización no puede transferir titularidad; sustituto y sustituido deben ser distintos; fechas/horas validadas; departamento se deriva de datos de expediente/ownership, no del payload; esquema exacto, compensación ante fallo de setValues, lock ocupado/reentrada sin duplicados.
+- **Archivos:** backend/accounting-service/Code.gs; tests/security/accounting-work-shift-substitution-ownership.test.js (nuevo); .github/workflows/department-scope-contract.yml (nuevo paso y filtro path).
+- **Commits:** implementación c3581d8575d78a4712b2b3249fae60c09dfeabf0; restauración del lector protegido getWorkShiftsAndSubstitutionsHistory 3110d75e04771c059317147f954dfb4e5266a451.
+- **Verificación CI final:** Department Scope run 43452526608 SUCCESS; Identity mapping/transport run 43452526528 SUCCESS; Department Reference Consumers run 43452526505 SUCCESS. Node.js 24.22.2; contrato focalizado de turnos/sustituciones, regresiones ACCOUNTING, contratos ACADEMIC/USER/ABAC y sintaxis de seis servicios Apps Script PASS.
+- **CLI local:** NOT RUN. **Apps Script/Sheets real:** NOT RUN; no hubo despliegue ni datos reales. La compensación y reentrada se probaron con harness Node.
+- **Beta:** BETA-FUNC-070 agregado a beta_test_Parte_0002.txt; Pendiente beta para turnos solapados, sustituciones interdepartamentales permitidas por scope, persistencia, rollback y concurrencia con datos sintéticos.
+- **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 continúa En ejecución por otras rutas.
+- **Siguiente tarea elegible:** revisar manageStaffingNeeds y getStaffingNeedsPlanning, verificando el alcance institucional/departamental del plan de necesidades y la lectura sin creación de hojas.
+===============================================================================

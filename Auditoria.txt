@@ -2893,3 +2893,15 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Límites:** CLI local y Apps Script/Sheets real NOT RUN; sin despliegue ni datos reales. BETA-FUNC-069 Pendiente beta.
 - **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 sigue En ejecución.
 ===============================================================================
+
+
+===============================================================================
+## C1.697 — TASK-153 / AUD-NG-386 — ACCOUNTING: turnos y sustituciones
+- **Hallazgo:** manageWorkShiftAndSubstitution creaba/actualizaba asignaciones y sustituciones con empleado/estado/creador del payload, sin verificar expedientes, scope, ownership ni concurrencia.
+- **Corrección:** sesión firmada; HR/Admin; UserID↔ExpedienteID único; ResourceOwnership WRITE para cada participante; en sustitución ambos empleados deben pertenecer al ámbito autorizado; operation allowlist; actor real; departamento derivado; fechas/horas validadas; IDs UUID/colisión; titularidad inmutable; ScriptLock, revalidación y compensación.
+- **Regresión:** getWorkShiftsAndSubstitutionsHistory se preservó/restauró y su contrato de acceso existente pasó; el nuevo contrato cubre roles, aislamiento, sustituciones cruzadas, fechas/horas, rollback y reentrada.
+- **CI:** Department Scope 43452526608 SUCCESS; Identity mapping 43452526528 SUCCESS; Department Reference Consumers 43452526505 SUCCESS (Node 24.22.2); contratos ACCOUNTING/ACADEMIC/USER/ABAC y syntax-check Apps Script PASS.
+- **Commits:** c3581d8575d78a4712b2b3249fae60c09dfeabf0; 3110d75e04771c059317147f954dfb4e5266a451.
+- **Límites:** CLI local y Apps Script/Sheets real NOT RUN; sin despliegue ni datos reales. BETA-FUNC-070 Pendiente beta.
+- **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 sigue En ejecución.
+===============================================================================

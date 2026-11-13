@@ -80,3 +80,14 @@
 - **Evidencia requerida:** snapshots anonimizados, IDs sintéticos, scopes/ownership, respuestas permitidas/denegadas, conteos por departamento y trazas de concurrencia/rollback. No guardar tokens, PII ni certificados.
 - **Estado:** Pendiente beta. No se ha desplegado ni ejecutado contra Apps Script/Sheets reales.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-070 — ACCOUNTING: turnos y sustituciones
+- **Objetivo:** verificar asignaciones de turnos y sustituciones de personal con identidad firmada, scope y ownership de cada empleado.
+- **Precondiciones:** entorno beta aislado; expedientes y ResourceOwnership para dos departamentos; hojas de asignaciones y sustituciones con esquemas canónicos; usuarios RR. HH. de distintos ámbitos y administrador. Solo datos sintéticos.
+- **Pasos:** (1) asignar turno a empleado del ámbito; (2) denegar asignación a empleado ajeno; (3) registrar sustitución entre empleados del mismo ámbito; (4) denegar sustitución si uno de los participantes queda fuera del scope; (5) denegar mismo empleado como sustituto y sustituido; (6) intentar actualizar IDs duplicados o cambiar titulares; (7) validar fechas, horas HH:mm y rangos; (8) simular colisión UUID, lock ocupado y dos escrituras concurrentes; (9) simular fallo de setValues y verificar compensación; (10) consultar historial como RR. HH. de distintos departamentos y comprobar que solo aparecen turnos/sustituciones de empleados visibles.
+- **Resultado esperado:** solo actores autorizados modifican registros de todos los participantes; titularidad inmutable; no duplicados ni cambios parciales no compensados; historial no filtra datos interdepartamentales.
+- **Evidencia requerida:** IDs sintéticos, scopes/ownership, snapshots anonimizados, respuestas permitidas/denegadas y trazas de concurrencia/rollback. No usar tokens ni datos personales.
+- **Estado:** Pendiente beta. No se ha desplegado ni ejecutado contra Apps Script/Sheets reales.
+===============================================================================

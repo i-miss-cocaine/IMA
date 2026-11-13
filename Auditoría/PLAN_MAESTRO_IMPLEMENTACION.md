@@ -5421,3 +5421,12 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Department Scope run 43451485260 SUCCESS (Node 24.22.2), contratos de capacitación/desarrollo y regresión ACCOUNTING PASS; Identity mapping 43451147241 y Department Reference Consumers 43451147225 SUCCESS.
 - BETA-FUNC-069 Pendiente beta; no se ejecutó CLI local ni Apps Script/Sheets real; no hubo despliegue ni datos reales.
 - **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 sigue En ejecución. Siguiente: manageWorkShiftAndSubstitution y su ownership/transiciones.
+
+
+### C1.697 — TASK-153 / AUD-NG-386 — ACCOUNTING: turnos y sustituciones
+- manageWorkShiftAndSubstitution ahora exige sesión firmada, HR/Admin, expediente único y ResourceOwnership WRITE para cada participante. Las sustituciones requieren ownership de ambos empleados.
+- Operation allowlist; ID UUID/colisión; titularidad inmutable; departamento derivado; fechas/horas validadas; ScriptLock, revalidación y compensación.
+- getWorkShiftsAndSubstitutionsHistory se preservó/restauró y su contrato de regresión pasó.
+- Department Scope 43452526608, Identity mapping 43452526528 y Department Reference Consumers 43452526505 SUCCESS (Node 24.22.2); contratos ACCOUNTING/ACADEMIC/USER/ABAC y syntax-check Apps Script PASS.
+- BETA-FUNC-070 Pendiente beta; CLI local y Apps Script/Sheets real NOT RUN; no hubo despliegue ni datos reales.
+- **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 sigue En ejecución. Siguiente: manageStaffingNeeds/getStaffingNeedsPlanning.
