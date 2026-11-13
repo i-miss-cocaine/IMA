@@ -613,3 +613,19 @@
 - **Estado:** subalcance implementado y aprobado por CI; TASK-153/AUD-NG-386 continúa En ejecución. No se declara completado el epic ni las demás rutas pendientes.
 - **Siguiente tarea elegible:** inventariar los siguientes handlers ACCOUNTING de TASK-153/AUD-NG-386 que aún carezcan de identidad/ownership verificados y seleccionar el siguiente callsite independiente; no iniciar cambios en otra rama.
 ===============================================================================
+
+
+### C1.695 — TASK-153 / AUD-NG-386 — ACCOUNTING: escritura de incidencias laborales y medidas disciplinarias
+- **Continuidad:** sesión IMA-EXEC-20261113-1502Z-01; checkpoint anterior C1.694; HEAD inicial 0da92efbeb5d5e627976c5b9c9af8c549cbbc503; HEAD funcional final b0126d9881366aaeb486c4fd78620128eaf20d89; rama NG_beta_0.0.0.1_work. Rama base verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Alcance:** endurecimiento de manageLaborIncident y manageDisciplinaryMeasure, manteniendo los esquemas y campos existentes de IncidenciasLaborales y MedidasDisciplinarias.
+- **Autorización:** actor/rol derivados de sesión firmada; solo RecursosHumanos y Administrador para escritura; relación UserID↔ExpedienteID única; scope verificado y ResourceOwnership EXPEDIENTE_LABORAL único/activo con operación WRITE. La comprobación de ownership se refresca antes de revalidar dentro del ScriptLock.
+- **Integridad:** IDs nuevos UUID con detección de colisión; IDs duplicados y expedientes ajenos RESOURCE_NOT_FOUND; medida vinculada solo a incidencia única del mismo empleado; fechas y días de suspensión validados; creador/responsable se derivan del actor y no del payload; historial de aclaraciones inválido falla cerrado; actualización de fila con setValues y compensación ante fallo; bloqueo ocupado y reentrada fallan sin duplicar.
+- **Archivos:** backend/accounting-service/Code.gs; tests/security/accounting-labor-incident-write-ownership.test.js (nuevo); .github/workflows/department-scope-contract.yml (paso de ejecución nuevo).
+- **Commits:** implementación 447d847ba85d600b45af0eb8e5810bbd610d639c; colisión de IDs y fecha f6da8d511ffc265c6ab1f9eecb4c4e4a864db209; atribución de aprobador b0126d9881366aaeb486c4fd78620128eaf20d89.
+- **Verificación CI final:** Department Scope run 43449143792 SUCCESS; Identity mapping/transport security run 43449143799 SUCCESS; Department Reference Consumers run 43449143801 SUCCESS. Node.js 24.22.2. El contrato focalizado de incidencias/medidas, contrato ACCOUNTING de recursos departamentales, contratos ACADEMIC/USER/ABAC y syntax-check de seis servicios Apps Script PASS.
+- **CLI local:** NOT RUN. **Apps Script/Sheets real:** NOT RUN; no hubo despliegue ni datos reales. La compensación se verificó con fallo simulado en Node, no con una hoja productiva.
+- **Beta:** BETA-FUNC-068 agregado a beta_test_Parte_0002.txt; Pendiente beta para persistencia real, privacidad de documentos, scope, vínculos incidencia-medida, rollback y concurrencia con datos sintéticos.
+- **Revisión:** cambios de producto confinados a los dos handlers, helper de ownership y puertas de autorización; no se eliminaron archivos ni se modificó la rama base.
+- **Estado:** subalcance completado en código y CI; TASK-153/AUD-NG-386 permanece En ejecución por otras rutas.
+- **Siguiente tarea elegible:** auditar manageTrainingCourse y manageTrainingEnrollment, separando catálogo institucional de inscripciones asociadas a expedientes y sin conceder ownership implícito.
+===============================================================================

@@ -5404,3 +5404,11 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Department Scope CI 43446574257 SUCCESS (Node 24.22.2): 40 aserciones del nuevo contrato, contrato ACCOUNTING existente, contratos transversales y sintaxis Apps Script PASS.
 - BETA-FUNC-067 Pendiente beta. Node CLI local y Apps Script/Sheets reales NOT RUN; no hubo despliegue ni datos reales.
 - **Estado:** este subalcance queda completado en código/CI; TASK-153/AUD-NG-386 sigue En ejecución. Siguiente: identificar el próximo handler ACCOUNTING pendiente de identidad/ownership y tratarlo como subalcance independiente.
+
+
+### C1.695 — TASK-153 / AUD-NG-386 — ACCOUNTING: incidencias laborales y medidas disciplinarias
+- Se protegieron manageLaborIncident y manageDisciplinaryMeasure con sesión firmada, roles RecursosHumanos/Administrador, expediente único, scope y ResourceOwnership WRITE.
+- ScriptLock y revalidación de ownership dentro del lock; UUID, colisiones/duplicados fail-closed, vínculo incidencia-medida al mismo empleado, validación de fecha/días, actor real en campos de auditoría, historial de aclaraciones y compensación de actualización.
+- Contrato focalizado integrado en Department Scope workflow. Runs 43449143792, 43449143799 y 43449143801 SUCCESS con Node 24.22.2; todos los pasos focalizados y transversales PASS.
+- BETA-FUNC-068 Pendiente beta. No se ejecutó CLI local ni Apps Script/Sheets real; no hubo despliegue ni datos reales.
+- **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 sigue En ejecución. Siguiente: auditar manageTrainingCourse y manageTrainingEnrollment, diferenciando catálogo institucional de inscripciones vinculadas a expedientes.

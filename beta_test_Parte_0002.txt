@@ -58,3 +58,14 @@
 - **Evidencia requerida:** snapshots anonimizados, respuestas permitidas/denegadas, ownership/scope sintéticos, IDs de solicitudes/incapacidades, trazas de concurrencia y resultado de compensación. No registrar tokens, diagnósticos ni datos personales.
 - **Estado:** Pendiente beta. No se ha desplegado ni ejecutado contra Apps Script/Sheets reales.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-068 — ACCOUNTING: incidencias laborales y medidas disciplinarias
+- **Objetivo:** comprobar escritura/actualización de incidencias y medidas con identidad firmada, scope departamental y ownership único del expediente.
+- **Precondiciones:** entorno beta aislado; expedientes, ResourceOwnership, IncidenciasLaborales y MedidasDisciplinarias con datos sintéticos; usuarios RecursosHumanos/Administrador en departamentos distintos. No utilizar PII ni documentos reales.
+- **Pasos:** (1) crear incidencia como RR. HH. del departamento propio; (2) intentar crear/actualizar para empleado de otro departamento; (3) probar identidad inválida, rol Empleado/Director y rol falsificado; (4) actualizar incidencia y comprobar historial de aclaraciones append-only y actor real; (5) probar historial JSON malformado, IDs duplicados y colisión UUID; (6) crear medida vinculada a incidencia del mismo empleado; (7) intentar vincular incidencia de otro empleado, cambiar propietario o usar ID duplicado; (8) validar fecha efectiva y días de suspensión; (9) simular fallo de escritura/compensación; (10) simular lock ocupado y dos mutaciones simultáneas, confirmar sin duplicados ni pérdida de historial; (11) verificar que URLs de documentos permanecen privadas y no se exponen a actores sin scope.
+- **Resultado esperado:** escritura solo sobre expedientes propios del ámbito autorizado; vínculo incidencia-medida consistente; identidad auditada real; sin colisiones, pérdida de historial ni escrituras parciales no compensadas.
+- **Evidencia requerida:** snapshots anonimizados, IDs sintéticos, respuestas permitidas/denegadas, historial previo/nuevo, trazas de concurrencia y resultado de rollback. No registrar tokens, PII ni documentos.
+- **Estado:** Pendiente beta. No se ha desplegado ni ejecutado contra Apps Script/Sheets reales.
+===============================================================================

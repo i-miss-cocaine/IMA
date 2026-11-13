@@ -2869,3 +2869,15 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Límites:** Node CLI local y Apps Script/Sheets real NOT RUN; no hubo despliegue ni uso de datos reales. BETA-FUNC-067 Pendiente beta.
 - **Estado:** subalcance corregido en código y verificado por CI; TASK-153/AUD-NG-386 permanece En ejecución por otras rutas departamentales.
 ===============================================================================
+
+
+===============================================================================
+## C1.695 — TASK-153 / AUD-NG-386 — ACCOUNTING: escritura de incidencias laborales y medidas disciplinarias
+- **Hallazgo:** manageLaborIncident y manageDisciplinaryMeasure modificaban datos sensibles de expedientes sin derivar actor de sesión, comprobar scope/ownership ni serializar escrituras; permitían reutilizar IDs y vínculos de incidencia sin verificar relación con el empleado.
+- **Corrección:** sesión firmada; roles RecursosHumanos/Administrador; mapeo UserID↔ExpedienteID único; ResourceOwnership único/activo con WRITE; revalidación dentro de ScriptLock; IDs UUID y colisiones; vínculo incidencia-medida del mismo empleado; validación de fecha/días; actor real en campos de auditoría; historial inválido fail-closed y compensación ante escritura parcial.
+- **Contrato:** tests/security/accounting-labor-incident-write-ownership.test.js; cubre roles, identidad, aislamiento departamental, propiedad, colisiones, vínculos, esquema, historial, rollback y reentrada.
+- **CI:** Department Scope 43449143792 SUCCESS; Identity mapping/transport 43449143799 SUCCESS; Department Reference Consumers 43449143801 SUCCESS. Node 24.22.2; contratos ACCOUNTING/ACADEMIC/USER/ABAC y parseo Apps Script PASS.
+- **Commits:** 447d847ba85d600b45af0eb8e5810bbd610d639c; f6da8d511ffc265c6ab1f9eecb4c4e4a864db209; b0126d9881366aaeb486c4fd78620128eaf20d89.
+- **Límites:** CLI local y Apps Script/Sheets real NOT RUN; sin despliegue ni datos reales. BETA-FUNC-068 Pendiente beta.
+- **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 sigue En ejecución.
+===============================================================================
