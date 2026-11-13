@@ -5014,6 +5014,9 @@ function updatePayrollPeriodStatus(payload) {
   const payrollMatches = data.slice(1).filter(r => String(r[0]||"").trim() === String(planillaId).trim());
   if (payrollMatches.length !== 1) throw new Error("Planilla no encontrada o duplicada.");
   const requestedState = String(nuevoEstado).trim().toUpperCase();
+  const previousState = String(payrollMatches[0][15] || "").trim().toUpperCase();
+  const terminalStates = ["ANULADA","ANULADO","REVERTIDA","REVERTIDO","CANCELADA","CANCELADO"];
+  if (terminalStates.includes(previousState) && !terminalStates.includes(requestedState)) throw new Error("PAYROLL_TERMINAL_STATE");
   const actor = getVerifiedAccountingIdentity_(payload || {});
   const actorId = actor && actor.authorized ? actor.userId : "SYSTEM_PAYROLL";
   if (requestedState === "APROBADA" || requestedState === "CERRADA") {
