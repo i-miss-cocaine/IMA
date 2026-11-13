@@ -94,6 +94,7 @@ const runtime = {
   getDynamicPermissionsForRole() { return null; }, hasActiveDelegationForAction() { return false; },
   validateContextualAccess() { return { authorized: true }; },
   verifySessionToken(token) { return claims[token] || null; },
+  prepareExamGradeRectificationEvent_() { return null; },
   getVerifiedDepartmentScopeForSession_(payload, spreadsheet, actor) {
     if (!actor || actor.authorized !== true || !actor.userId || !actor.role) return { authorized: false };
     const assignments = scopeRows.slice(1).filter(row => String(row[1] || "").trim() === actor.userId &&
