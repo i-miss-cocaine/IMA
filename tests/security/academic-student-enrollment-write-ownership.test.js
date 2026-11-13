@@ -26,13 +26,14 @@ const users = [
   ["STAFF-1","","Staff","","","","Director","","","P-STAFF","Activo"],
   ["STU-1","","Student","","","","Estudiante","","","P-STU-1","Activo"],
   ["STU-2","","Student 2","","","","Alumno","","","P-STU-2","Activo"],
-  ["STU-2","","Duplicate","","","","Estudiante","","","P-STU-2","Activo"],
+  ["STU-3","","Student 3","","","","Estudiante","","","P-STU-3","Activo"],
   ["STU-INACTIVE","","Inactive","","","","Estudiante","","","P-INACTIVE","Inactiva"]
 ];
 const expedientes = [
   ["ExpedienteID","PersonaID"],
   ["EXP-1","P-STU-1"],
   ["EXP-2","P-STU-2"],
+  ["EXP-3","P-STU-3"],
   ["EXP-3","P-INACTIVE"]
 ];
 function sheet(rows) { return { getDataRange: () => ({ getValues: () => rows.map(r => r.slice()) }) }; }
@@ -56,7 +57,7 @@ const context = {
 vm.runInNewContext(extractFunction("assertAcademicEnrollmentMutationAccess_") + "\nthis.check=assertAcademicEnrollmentMutationAccess_;", context);
 const check = context.check;
 assert.equal(check({sessionToken:"valid"}, "STU-1").authorized, true, "authorized staff can update owned student");
-assert.equal(check({sessionToken:"valid"}, "STU-2").code, "RESOURCE_SCOPE_DENIED", "foreign department ownership is denied");
+assert.equal(check({sessionToken:"valid"}, "STU-3").code, "RESOURCE_SCOPE_DENIED", "foreign department ownership is denied");
 assert.equal(check({sessionToken:"valid"}, "STU-INACTIVE").code, "STUDENT_ACCOUNT_INACTIVE_OR_INVALID", "inactive student account is denied");
 assert.equal(check({sessionToken:"valid"}, "STU-MISSING").code, "RESOURCE_OWNER_UNRESOLVED", "unknown student is denied");
 actor = { authorized: true, userId: "STU-1", role: "Estudiante" };
