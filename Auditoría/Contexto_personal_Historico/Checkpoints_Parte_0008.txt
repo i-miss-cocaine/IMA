@@ -763,3 +763,19 @@
 - **Estado:** TASK-174 implementada y verificada por contratos CI; pendiente validación beta, sin bloqueo de código local restante.
 - **Siguiente tarea elegible:** TASK-175 — catálogo dinámico de conceptos salariales, reglas de cálculo y ajustes.
 ===============================================================================
+
+===============================================================================
+### C1.704 — IMA-EXEC-20261113-1824Z-01 — TASK-175 — catálogo dinámico de conceptos salariales
+- **Continuidad:** C1.703; HEAD inicial 8e6b72bd1fd4da7ca304ad4bb48ab184024e6cd1; rama autorizada NG_beta_0.0.0.1_work; rama base intacta 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Tarea:** TASK-175; catálogo dinámico de conceptos salariales, reglas de cálculo y ajustes.
+- **Revisión de implementación existente:** catálogo CatalogoConceptosPlanilla; asignaciones AsignacionesConceptosPlanilla por empleado/departamento/cargo/estructura/global; fórmulas aritméticas seguras y grafo de dependencias; orden por prioridad/topología; cálculo por fases ingreso/deducción/costo patronal; flags ISR/IHSS/RAP; visibilidad de boleta; cuenta contable; snapshots en DetalleConceptosPlanilla; historial de versiones y bloqueo de ciclos/referencias inexistentes. UI de administración en dashboard-recursos-humanos.html y acceso desde dashboard-contabilidad.html. Se preservan columnas históricas de PlanillasNomenclatura.
+- **Hallazgos corregidos en esta iteración:** expresión regular de período único/no recurrente tenía doble escape y rechazaba YYYY-MM válido; corregida. Edición UI no conservaba estado de conceptos inactivos; se añadió campo de estado preservado al guardar. 
+- **Cobertura ampliada:** pruebas de formato válido/inválido YYYY-MM, aplicación única solo en el período elegido, no recurrencia posterior, elegibilidad por empleado, departamento, cargo y estructura, y aislamiento de asignación individual. Se mantiene cobertura previa de fórmula segura, ciclo, referencias, límites de deducción, tax flags, historial, snapshot, asiento balanceado y boleta.
+- **Archivos modificados:** backend/accounting-service/Code.gs; dashboard-recursos-humanos.html; tests/security/accounting-payroll-concept-catalog.test.js; beta_test_Parte_0002.txt; pendientes/Contabilidad/Pendientes.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; changueslogs.txt; este checkpoint e índice.
+- **Commits de implementación:** 5a29010b8f1093ff14323ab909162e7feca8c95f; aca4ba2f8ec8daaa23125c2f5f49e5500ecc6c29; 11a3edec9f798b61ced49f7e0c26517e9260427d; bc9e01b653ed8793bc74e1ad5dd85b31853dbe9c; 8e6b72bd1fd4da7ca304ad4bb48ab184024e6cd1.
+- **CI final:** Department Scope 43482214476 SUCCESS; contrato accounting-payroll-concept-catalog.test.js PASS (Node.js 24.22.2); sintaxis de Apps Script y scripts HR PASS. Department Scope 43481963368 SUCCESS; Identity Mapping 43481793156 SUCCESS; Department Reference Consumers 43481793198 SUCCESS. Corridas 43481383564 y 43481590657 fallaron durante la ampliación inicial de la prueba de período; se aisló el doble escape y las ejecuciones posteriores confirmaron PASS.
+- **CLI local:** NOT RUN; el checkout local no pudo resolver github.com por DNS del contenedor. GitHub Actions ejecutó los contratos Node y checks de sintaxis sobre checkout aislado. **Apps Script/Sheets real:** NOT RUN; no hubo despliegue ni datos reales.
+- **Beta:** BETA-FUNC-077 Pendiente beta; validar catálogo, asignaciones, conceptos fiscales, asiento, boleta, snapshots y estado inactivo en entorno desplegado.
+- **Estado:** TASK-175 Completada en código y verificaciones locales ejecutadas por CI; beta pendiente no bloquea el cierre.
+- **Siguiente tarea elegible:** TASK-177 — generación masiva y distribución segura de comprobantes de pago; verificar primero su estado real y dependencias antes de implementar.
+===============================================================================

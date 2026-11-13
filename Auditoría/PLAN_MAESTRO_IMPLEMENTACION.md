@@ -5481,3 +5481,10 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - CLI local: no ejecutado; el checkout no pudo resolver github.com por DNS en el contenedor. CI ejecutó las pruebas sobre checkout aislado. Apps Script/Sheets real: no ejecutado; no hubo despliegue ni datos reales.
 - BETA-FUNC-076 Pendiente beta. El ledger nuevo requiere validación de despliegue/migración de hoja en ambiente beta antes de producción.
 - Estado TASK-174: implementación y contratos CI completados; pruebas de entorno beta pendientes.
+
+
+### C1.704 — TASK-175 — catálogo dinámico de conceptos salariales
+- Se verificó la implementación de CatalogoConceptosPlanilla, AsignacionesConceptosPlanilla, motor de fórmulas con grafo acíclico, prioridades, fases de cálculo, tratamiento ISR/IHSS/RAP, asignaciones por ámbito, snapshots históricos, cuentas contables y visibilidad de boleta; interfaz HR y acceso desde Contabilidad.
+- Se corrigió el doble escape en validación YYYY-MM de conceptos no recurrentes y se preservó el estado INACTIVO al editar desde la UI.
+- Contrato accounting-payroll-concept-catalog.test.js ampliado para período único, no recurrencia y elegibilidad por empleado/departamento/cargo/estructura. Department Scope 43482214476 SUCCESS; Node.js 24.22.2; sintaxis Apps Script/HR PASS. Identity Mapping 43481793156 y Department Reference Consumers 43481793198 SUCCESS.
+- TASK-175 Completada en código/CI. BETA-FUNC-077 Pendiente beta.

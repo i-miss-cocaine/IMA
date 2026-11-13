@@ -159,3 +159,14 @@
 - Evidencia: movimientos CALCULADO/APLICADO/REVERSADO/CANCELADO, planillaId, saldo antes/después y cuotas derivadas. Sin PII ni tokens.
 - Estado: Pendiente beta; no desplegado en Apps Script/Sheets real.
 ===============================================================================
+
+===============================================================================
+### BETA-FUNC-077 — Catálogo dinámico de conceptos salariales y reglas de nómina
+- **Roles:** ACCOUNTING / Recursos Humanos, Contabilidad y Administrador; colaboradores de prueba asignados.
+- **Objetivo:** validar catálogo, versiones, reglas, asignaciones, conceptos recurrentes/únicos, cálculos, privacidad de boleta y asiento contable.
+- **Precondiciones:** entorno beta aislado; expedientes, departamentos, cargos, estructuras salariales y cuentas contables sintéticos; hojas CatalogoConceptosPlanilla, AsignacionesConceptosPlanilla, HistorialConceptosPlanilla y DetalleConceptosPlanilla con esquema canónico.
+- **Pasos:** (1) crear/editar/activar/desactivar conceptos de cada categoría; (2) asignar por empleado, departamento, cargo y estructura; verificar que otro empleado no recibe asignaciones individuales; (3) probar fijo, porcentaje, proporcional y fórmula; probar referencias inexistentes, ciclos y división por cero; (4) probar vigencias, ISR/IHSS/RAP y aplicación única en YYYY-MM, incluyendo período malformado; (5) calcular planilla y comprobar que los conceptos patronales no reducen salario neto; (6) cerrar y verificar asiento por cuenta; (7) ocultar conceptos en boleta y comprobar que siguen en detalle contable; (8) modificar/desactivar reglas y verificar que la planilla cerrada conserva su snapshot y monto histórico; (9) editar concepto inactivo desde UI y verificar que sigue inactivo.
+- **Resultado esperado:** solo los empleados elegibles reciben conceptos; fórmulas sin referencias inexistentes ni ciclos; cálculo y tratamiento fiscal correctos; costos patronales contabilizados sin deducción al empleado; conceptos ocultos no aparecen en boleta; versiones/snapshots históricos no cambian; período único no se repite; edición conserva estado.
+- **Evidencia requerida:** IDs sintéticos, versiones, snapshots JSON, DetalleConceptosPlanilla, planilla y asiento balanceado, captura de boleta con conceptos visibles y prueba negativa de concepto oculto. Sin PII ni tokens.
+- **Estado:** Pendiente beta; no desplegado en Apps Script/Sheets real.
+===============================================================================

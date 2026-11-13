@@ -2193,7 +2193,7 @@
 ---
 
 <!-- ID: TASK-175 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [ ] [TASK-175] Implementar un catálogo dinámico de conceptos salariales, reglas de cálculo y ajustes
+### [x] [TASK-175] Implementar un catálogo dinámico de conceptos salariales, reglas de cálculo y ajustes
 - **Origen del Hallazgo:** `AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md` / Sección B (B.2) y Sección G (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Flexibilidad salarial, parametrización de ingresos/deducciones y reglas de negocio)
@@ -2226,7 +2226,7 @@
   - Se vincula cada concepto con su respectiva cuenta contable para el asiento automático.
   - Se bloquean fórmulas con dependencias circulares o parámetros incompletos.
   - Desactivar un concepto no altera los registros de planillas cerradas.
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Completada — motor de conceptos, catálogo, reglas versionadas, asignaciones por ámbito, integración de nómina/asiento y UI HR verificados por Node.js 24 y sintaxis Apps Script en GitHub Actions. Se corrigió validación YYYY-MM para conceptos no recurrentes y preservación de estado inactivo al editar. BETA-FUNC-077 Pendiente beta.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7384-7420; clave TASK-177; asignación única: Contabilidad -->
 

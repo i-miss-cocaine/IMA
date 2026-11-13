@@ -3481,3 +3481,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se añadieron suspensión, reanudación, renegociación y liquidación anticipada con identidad, ownership/scope y justificación documentada.
 - Contrato Node de amortización y sintaxis Apps Script PASS en Department Scope 43476863084 (Node 24.22.2); Identity Mapping 43476720440 y Department Reference Consumers 43476720577 SUCCESS.
 - Dos ejecuciones previas fallaron por fixture reutilizado; fixture corregido y rerun PASS. CLI local bloqueado por DNS del entorno; Apps Script/Sheets real no desplegado. BETA-FUNC-076 Pendiente beta.
+
+
+
+[2026-11-13 18:24 UTC] C1.704 — TASK-175 — catálogo dinámico de conceptos salariales
+- Se corrigió validación YYYY-MM para conceptos no recurrentes y se preservó el estado inactivo al editar conceptos desde UI.
+- Pruebas Node ampliadas: frecuencia única, no recurrencia, elegibilidad por empleado/departamento/cargo/estructura y aislamiento de empleados; fórmulas, snapshots y asiento contable.
+- Department Scope 43482214476 SUCCESS (Node 24.22.2; contrato de catálogo y sintaxis Apps Script/HR PASS); Identity Mapping 43481793156 y Department Reference Consumers 43481793198 SUCCESS.
+- CLI local NOT RUN por DNS; Apps Script/Sheets real NOT RUN. BETA-FUNC-077 Pendiente beta.
