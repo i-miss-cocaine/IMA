@@ -6078,6 +6078,8 @@ function manageEmployeeLoanAdvance(payload) {
     const data=sheet.getDataRange().getValues(),matches=data.slice(1).map((r,i)=>({r,index:i+2})).filter(x=>String(x.r[0]||"").trim()===id);
     if(matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Préstamo no disponible."};
     const current=matches[0],row=current.r.slice(),balance=Number(row[8]),state=String(row[9]||"").trim().toUpperCase();
+    const lockedAccess=resolveEmployeeLoanAdvanceAccess_(p,ss,String(row[2]||"").trim(),true);
+    if(!lockedAccess.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Préstamo no disponible."};
     if(!Number.isFinite(balance)||balance<0)return {status:"error",code:"LOAN_DATA_INVALID",message:"El saldo del préstamo no es válido."};
     const updated=row.slice();let event=action,detail=reason;
     if(action==="SUSPENDER"){
@@ -6099,8 +6101,8 @@ function manageEmployeeLoanAdvance(payload) {
       updated[8]=0;updated[9]="Liquidado";
       detail="Referencia de pago: "+reference+"; monto: "+balance+". Motivo: "+reason;
     }
-    const note=("["+new Date().toISOString()+"] "+action+" por "+String(actor.userId||"")+": "+detail).slice(-500);
-    updated[11]=String(row[11]||"")?String(row[11]||"").slice(-Math.max(0,499-note.length))+"\n"+note:note;
+    const note=("["+new Date().toISOString()+"] "+action+" por "+String(actor.userId||"")+": "+detail).slice(-450);
+    updated[11]=(String(row[11]||"")+"\n"+note).trim().slice(-500);
     const ledger=getPayrollLoanLedger_(ss),duplicateToken=String(p.idempotencyToken||"").trim();
     if(duplicateToken&&ledger.rows.some(r=>String(r[13]||"").includes("IDEMPOTENCY:"+duplicateToken)))return {status:"error",code:"LOAN_MANAGEMENT_DUPLICATE",message:"La operación ya fue registrada."};
     const movement=["PLM-"+Utilities.getUuid(),id,"","",String(row[2]||""),Math.round((balance-Number(updated[8]))*100)/100,balance,Number(updated[8]),0,event,new Date(),String(actor.userId||""),"",detail+(duplicateToken?" | IDEMPOTENCY:"+duplicateToken:"")];
