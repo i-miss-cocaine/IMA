@@ -1123,34 +1123,69 @@ function withAuthorizedExamSubmissionMutation_(payload, action, mutation) {
   }
 }
 
+
+var EXAM_GRADE_RECTIFICATION_HEADERS_ = ["RectificacionID","TipoEntrega","EntregaID","RecursoID","EstudianteID","NotaAnterior","NotaNueva","Motivo","ActorID","RolActor","Fecha"];
+function normalizeExamGradeHistoryValue_(value) {
+  if (value === null || value === undefined || String(value).trim() === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : String(value).trim();
+}
+function getOrCreateExamGradeRectificationHistorySheet_(ss) {
+  const name="HistorialRectificacionesEntregasExamen";
+  let sheet=ss.getSheetByName(name);
+  if(!sheet){try{sheet=ss.insertSheet(name);}catch(error){sheet=ss.getSheetByName(name);if(!sheet)throw new Error("EXAM_GRADE_RECTIFICATION_HISTORY_CREATE_FAILED");}}
+  if(sheet.getLastRow()===0)sheet.appendRow(EXAM_GRADE_RECTIFICATION_HEADERS_);
+  const values=sheet.getDataRange().getValues();
+  if(!values.length||!Array.isArray(values[0])||values[0].length!==EXAM_GRADE_RECTIFICATION_HEADERS_.length||
+    EXAM_GRADE_RECTIFICATION_HEADERS_.some((header,index)=>String(values[0][index]||"").trim()!==header))throw new Error("EXAM_GRADE_RECTIFICATION_HISTORY_SCHEMA_INVALID");
+  return sheet;
+}
+function prepareExamGradeRectificationEvent_(context,previousGrade,nextGrade,reason) {
+  const previous=normalizeExamGradeHistoryValue_(previousGrade), next=normalizeExamGradeHistoryValue_(nextGrade);
+  if(previous===null||previous===next)return null;
+  const reasonValue=typeof reason==="string"?reason.trim():"";
+  if(!reasonValue)throw new Error("GRADE_RECTIFICATION_REASON_REQUIRED");
+  if(reasonValue.length>1000)throw new Error("GRADE_RECTIFICATION_REASON_INVALID");
+  const actorId=String(context&&context.actor&&context.actor.userId||"").trim();
+  const actorRole=String(context&&context.actor&&context.actor.role||"").trim();
+  const deliveryId=String(context&&context.entregaId||"").trim();
+  const examId=String(context&&context.examId||"").trim();
+  const studentId=String(context&&context.delivery&&context.delivery.row&&context.delivery.row[2]||"").trim();
+  if(!actorId||!actorRole||!deliveryId||!examId||!studentId||!context.ss)throw new Error("GRADE_RECTIFICATION_CONTEXT_INVALID");
+  const sheet=getOrCreateExamGradeRectificationHistorySheet_(context.ss);
+  const rows=sheet.getDataRange().getValues();
+  const rectificationId="RECT-EXAM-"+String(Utilities.getUuid()||"").trim();
+  if(rectificationId==="RECT-EXAM-"||rows.slice(1).some(row=>String(row[0]||"").trim()===rectificationId))throw new Error("EXAM_GRADE_RECTIFICATION_ID_COLLISION");
+  return {sheet:sheet,id:rectificationId,row:[rectificationId,"EXAMEN",deliveryId,examId,studentId,
+    previousGrade===null||previousGrade===undefined?"":String(previousGrade),nextGrade===null||nextGrade===undefined?"":String(nextGrade),
+    reasonValue,actorId,actorRole,new Date()]};
+}
+function appendExamGradeRectificationEvent_(event) {
+  if(!event||!event.sheet||!Array.isArray(event.row))throw new Error("EXAM_GRADE_RECTIFICATION_EVENT_INVALID");
+  try{event.sheet.appendRow(event.row);}catch(error){const rows=event.sheet.getDataRange().getValues();const matches=rows.slice(1).filter(row=>String(row[0]||"").trim()===event.id);if(matches.length===1)return;throw new Error("EXAM_GRADE_RECTIFICATION_AUDIT_WRITE_FAILED");}
+  const rows=event.sheet.getDataRange().getValues();const matches=rows.slice(1).filter(row=>String(row[0]||"").trim()===event.id);
+  if(matches.length!==1)throw new Error("EXAM_GRADE_RECTIFICATION_AUDIT_WRITE_FAILED");
+}
+
 function gradeExamSubmission(payload) {
-  return withAuthorizedExamSubmissionMutation_(payload, "gradeExamSubmission", context => {
-    const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
-    const rawScore = p.calificacion;
-    const score = typeof rawScore === "number" ? rawScore :
-      (typeof rawScore === "string" && rawScore.trim() ? Number(rawScore) : NaN);
-    if (!Number.isFinite(score) || score < 0 || score > 100 ||
-        Math.abs(score * 100 - Math.round(score * 100)) > 1e-8) {
-      throw new Error("EXAM_GRADE_INVALID");
-    }
-    const estado = typeof p.estado === "string" ? p.estado.trim() : "";
-    const comentario = p.comentario == null ? "" : p.comentario;
-    const temaAsociado = p.temaAsociado == null ? "" : p.temaAsociado;
-    const asignaturaAsociada = p.asignaturaAsociada == null ? "" : p.asignaturaAsociada;
-    if (!estado || estado.length > 50 || typeof comentario !== "string" || comentario.length > 2000 ||
-        typeof temaAsociado !== "string" || temaAsociado.length > 120 ||
-        typeof asignaturaAsociada !== "string" || asignaturaAsociada.length > 120) {
-      throw new Error("EXAM_GRADE_METADATA_INVALID");
-    }
-    const rowData = context.delivery.row.slice();
-    while (rowData.length < 10) rowData.push("");
-    rowData[5] = score.toFixed(2);
-    rowData[6] = estado;
-    rowData[7] = comentario;
-    rowData[8] = temaAsociado;
-    rowData[9] = asignaturaAsociada;
-    context.deliverySheet.getRange(context.delivery.rowIndex + 1, 1, 1, rowData.length).setValues([rowData]);
-    return { status: "success", message: "Examen calificado." };
+  return withAuthorizedExamSubmissionMutation_(payload,"gradeExamSubmission",context=>{
+    const p=payload&&typeof payload==="object"&&!Array.isArray(payload)?payload:{};
+    const rawScore=p.calificacion;
+    const score=typeof rawScore==="number"?rawScore:(typeof rawScore==="string"&&rawScore.trim()?Number(rawScore):NaN);
+    if(!Number.isFinite(score)||score<0||score>100||Math.abs(score*100-Math.round(score*100))>1e-8)throw new Error("EXAM_GRADE_INVALID");
+    const estado=typeof p.estado==="string"?p.estado.trim():"";
+    const comentario=p.comentario==null?"":p.comentario;
+    const temaAsociado=p.temaAsociado==null?"":p.temaAsociado;
+    const asignaturaAsociada=p.asignaturaAsociada==null?"":p.asignaturaAsociada;
+    if(!estado||estado.length>50||typeof comentario!=="string"||comentario.length>2000||
+      typeof temaAsociado!=="string"||temaAsociado.length>120||typeof asignaturaAsociada!=="string"||asignaturaAsociada.length>120)throw new Error("EXAM_GRADE_METADATA_INVALID");
+    const oldRow=context.delivery.row.slice(), rowData=oldRow.slice();
+    while(rowData.length<10)rowData.push("");
+    const event=prepareExamGradeRectificationEvent_(context,rowData[5],score.toFixed(2),p.motivoRectificacion);
+    rowData[5]=score.toFixed(2);rowData[6]=estado;rowData[7]=comentario;rowData[8]=temaAsociado;rowData[9]=asignaturaAsociada;
+    context.deliverySheet.getRange(context.delivery.rowIndex+1,1,1,rowData.length).setValues([rowData]);
+    if(event){try{appendExamGradeRectificationEvent_(event);}catch(error){const rollbackRow=oldRow.slice();while(rollbackRow.length<rowData.length)rollbackRow.push("");try{context.deliverySheet.getRange(context.delivery.rowIndex+1,1,1,rollbackRow.length).setValues([rollbackRow]);}catch(rollbackError){throw new Error("GRADE_RECTIFICATION_AUDIT_ROLLBACK_FAILED");}throw error;}}
+    return {status:"success",message:"Examen calificado.",rectificacionRegistrada:!!event};
   });
 }
 

@@ -4654,6 +4654,8 @@ window.loadExamGradeDistributionData = async function (examenId) {
         document.getElementById('calificacion').value = entrega.calificacion || '';
         document.getElementById('estado').value = (entrega.estado === 'Revisada' ? 'Completada' : (entrega.estado || 'Completada'));
         document.getElementById('comentario').value = entrega.comentario || '';
+        const rectificationReasonEl = document.getElementById('motivo-rectificacion');
+        if (rectificationReasonEl) rectificationReasonEl.value = '';
 
         // Bloque de metadatos (A-71)
         saveGradeBtn.dataset.type = entrega.tipo;
@@ -4682,6 +4684,7 @@ window.loadExamGradeDistributionData = async function (examenId) {
             calificacion: document.getElementById('calificacion').value,
             estado: document.getElementById('estado').value,
             comentario: document.getElementById('comentario').value,
+            motivoRectificacion: document.getElementById('motivo-rectificacion')?.value || '',
             temaAsociado: temaVal,
             asignaturaAsociada: asigVal
         };
@@ -4693,7 +4696,7 @@ window.loadExamGradeDistributionData = async function (examenId) {
         try {
             const res = await fetchApi(type === 'Tarea' ? 'TASK' : 'EXAM', type === 'Tarea' ? 'gradeSubmission' : 'gradeExamSubmission', payload);
             if (res.status === 'success') {
-                alert('¡Calificación guardada correctamente!');
+                alert(res.rectificacionRegistrada ? '¡Calificación guardada y rectificación registrada!' : '¡Calificación guardada correctamente!');
                 gradeModal.classList.add('hidden');
                 fetchTeacherActivity();
             }

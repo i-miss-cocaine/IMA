@@ -30,7 +30,7 @@ function fixture(options = {}) {
       calls.wrapper++; calls.payload = payload; calls.action = action;
       if (options.denied) throw new Error("RESOURCE_NOT_AVAILABLE");
       return callback({
-        delivery: { row: ["EEX-1", "EXM-1", "STU-1", new Date(), "{}", "0.00", "Pendiente"] , rowIndex: 1 },
+        delivery: { row: ["EEX-1", "EXM-1", "STU-1", new Date(), "{}", "", "Pendiente"] , rowIndex: 1 },
         deliverySheet: { getRange(...args) { return { setValues(rows) { calls.writes.push({ args, rows }); } }; } }
       });
     },
@@ -109,7 +109,7 @@ test(() => {
   const actor = { authorized: true, userId: "TEACHER-1", role: "Profesor" };
   const deliveryRows = [
     ["EntregaID","ExamenID","EstudianteID","Fecha","Respuestas","Calificacion","Estado"],
-    ["EEX-1","EXM-1","STU-1",new Date(),"[]","0.00","Pendiente"]
+    ["EEX-1","EXM-1","STU-1",new Date(),"[]","","Pendiente"]
   ];
   const examRows = [
     ["ID","Titulo","Asignatura","Grado","Seccion","FechaLimite","Tiempo","Estado","ProfesorID"],

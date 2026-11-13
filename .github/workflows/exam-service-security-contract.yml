@@ -24,6 +24,9 @@ on:
       - 'tests/security/exam-service-question-bank-security.test.js'
       - 'tests/security/exam-service-security-cache-purge.test.js'
       - 'tests/security/exam-service-grade-submission-validation.test.js'
+      - 'tests/security/exam-service-grade-submission-history.test.js'
+      - 'teacher-dashboard.html'
+      - 'js/teacher.js'
       - 'tests/security/exam-service-delete-submission-audit.test.js'
       - 'tests/security/exam-service-gradebook-bulk-apply-security.test.js'
       - 'tests/security/exam-service-evaluation-category-mutation-security.test.js'
@@ -71,6 +74,8 @@ jobs:
         run: node tests/security/exam-service-exam-mutation-security.test.js
       - name: Run exam submission mutation security regression
         run: node tests/security/exam-service-submit-mutation-security.test.js
+      - name: Run exam grade rectification history contract
+        run: node tests/security/exam-service-grade-submission-history.test.js
       - name: Run period gradebook submission security regression
         run: node tests/security/exam-service-period-gradebook-submission-security.test.js
       - name: Run period gradebook closure security regression

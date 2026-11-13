@@ -1756,50 +1756,21 @@ function saveSubmissionDraft(payload) {
 }
 
 function gradeSubmissionWithRubric(payload) {
-  const { entregaId, calificacion, estado, comentario, rubricaEvaluacionJSON } = payload || {};
-  assertTaskServiceSubmissionTaskOwnership_(payload, entregaId, "GRADE");
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const entregasSheet = getSheetOrThrow(ss, "Entregas");
-
-  const data = entregasSheet.getDataRange().getValues();
-  const headers = data[0];
-
-  function findColIndex(name) {
-    const normTarget = normalizeString(name);
-    return headers.findIndex(h => normalizeString(h) === normTarget);
-  }
-
-  const calificacionCol = findColIndex("calificacion");
-  const estadoCol = findColIndex("estado");
-  const comentarioCol = findColIndex("comentario");
-
-  if (calificacionCol === -1 || estadoCol === -1 || comentarioCol === -1) {
-    throw new Error("No se encontraron las columnas necesarias en la hoja de Entregas.");
-  }
-
-  const rowIndex = data.findIndex(row => String(row[0]).trim() === String(entregaId).trim());
-
-  if (rowIndex !== -1) {
-    const rowData = data[rowIndex];
-    rowData[calificacionCol] = calificacion;
-    rowData[estadoCol] = estado || "revisada";
-    rowData[comentarioCol] = comentario || "";
-
-    entregasSheet.getRange(rowIndex + 1, 1, 1, rowData.length).setValues([rowData]);
-
-    // Registrar evaluación por rúbrica si se provee
-    if (rubricaEvaluacionJSON) {
-      const rubricaSheet = getOrCreateSheet(ss, "EvaluacionesRubricas");
-      if (rubricaSheet.getLastRow() === 0) {
-        rubricaSheet.appendRow(["ID", "EntregaID", "RubricaJSON", "PuntajeCalculado", "EvaluadoEn"]);
-      }
-      rubricaSheet.appendRow(["EVAL-" + Date.now(), entregaId, JSON.stringify(rubricaEvaluacionJSON), calificacion, new Date()]);
-    }
-
-    return { status: "success", message: "Calificación con rúbrica registrada exitosamente." };
-  }
-
-  throw new Error("Entrega no encontrada.");
+  return withAuthorizedTaskSubmissionMutation_(payload, "gradeSubmissionWithRubric", context => {
+    const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+    const headers = context.deliverySheet.getDataRange().getValues()[0] || [];
+    function findColIndex(name) { const target=normalizeString(name); const matches=[]; headers.forEach((h,i)=>{if(normalizeString(h)===target)matches.push(i);}); return matches.length===1?matches[0]:-1; }
+    const calificacionCol=findColIndex("calificacion"), estadoCol=findColIndex("estado"), comentarioCol=findColIndex("comentario");
+    if (calificacionCol===-1||estadoCol===-1||comentarioCol===-1) throw new Error("TASK_GRADE_SCHEMA_INVALID");
+    const rowData=context.delivery.slice(); while(rowData.length<headers.length)rowData.push("");
+    const oldRow=rowData.slice();
+    const event=prepareTaskGradeRectificationEvent_(context,rowData[calificacionCol],p.calificacion,p.motivoRectificacion);
+    rowData[calificacionCol]=p.calificacion; rowData[estadoCol]=p.estado||"revisada"; rowData[comentarioCol]=p.comentario||"";
+    context.deliverySheet.getRange(context.deliveryRowIndex,1,1,rowData.length).setValues([rowData]);
+    if(event){try{appendTaskGradeRectificationEvent_(event);}catch(error){try{context.deliverySheet.getRange(context.deliveryRowIndex,1,1,oldRow.length).setValues([oldRow]);}catch(rollbackError){throw new Error("GRADE_RECTIFICATION_AUDIT_ROLLBACK_FAILED");}throw error;}}
+    if(p.rubricaEvaluacionJSON){const rubricaSheet=getOrCreateSheet(context.ss,"EvaluacionesRubricas");if(rubricaSheet.getLastRow()===0)rubricaSheet.appendRow(["ID","EntregaID","RubricaJSON","PuntajeCalculado","EvaluadoEn"]);rubricaSheet.appendRow(["EVAL-"+Date.now(),context.deliveryId,JSON.stringify(p.rubricaEvaluacionJSON),p.calificacion,new Date()]);}
+    return {status:"success",message:"Calificación con rúbrica registrada exitosamente.",rectificacionRegistrada:!!event};
+  });
 }
 
 /**
@@ -1851,36 +1822,117 @@ function deleteFile(payload) {
   return { status: "success", message: "Archivo propio no entregado eliminado." };
 }
 
+
+var TASK_GRADE_RECTIFICATION_HEADERS_ = ["RectificacionID","TipoEntrega","EntregaID","RecursoID","EstudianteID","NotaAnterior","NotaNueva","Motivo","ActorID","RolActor","Fecha"];
+function normalizeTaskGradeHistoryValue_(value) {
+  if (value === null || value === undefined || String(value).trim() === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : String(value).trim();
+}
+function getOrCreateTaskGradeRectificationHistorySheet_(ss) {
+  const name = "HistorialRectificacionesEntregas";
+  let sheet = ss.getSheetByName(name);
+  if (!sheet) {
+    try { sheet = ss.insertSheet(name); }
+    catch (error) { sheet = ss.getSheetByName(name); if (!sheet) throw new Error("TASK_GRADE_RECTIFICATION_HISTORY_CREATE_FAILED"); }
+  }
+  if (sheet.getLastRow() === 0) sheet.appendRow(TASK_GRADE_RECTIFICATION_HEADERS_);
+  const values = sheet.getDataRange().getValues();
+  if (!values.length || !Array.isArray(values[0]) || values[0].length !== TASK_GRADE_RECTIFICATION_HEADERS_.length ||
+      TASK_GRADE_RECTIFICATION_HEADERS_.some((header, index) => String(values[0][index] || "").trim() !== header)) {
+    throw new Error("TASK_GRADE_RECTIFICATION_HISTORY_SCHEMA_INVALID");
+  }
+  return sheet;
+}
+function prepareTaskGradeRectificationEvent_(context, previousGrade, nextGrade, reason) {
+  const previous = normalizeTaskGradeHistoryValue_(previousGrade);
+  const next = normalizeTaskGradeHistoryValue_(nextGrade);
+  if (previous === null || previous === next) return null;
+  const reasonValue = typeof reason === "string" ? reason.trim() : "";
+  if (!reasonValue) throw new Error("GRADE_RECTIFICATION_REASON_REQUIRED");
+  if (reasonValue.length > 1000) throw new Error("GRADE_RECTIFICATION_REASON_INVALID");
+  const actorId = String(context && context.actor && context.actor.userId || "").trim();
+  const actorRole = String(context && context.actor && context.actor.role || "").trim();
+  const deliveryId = String(context && context.deliveryId || "").trim();
+  const taskId = String(context && context.taskId || "").trim();
+  const studentId = String(context && context.studentId || "").trim();
+  if (!actorId || !actorRole || !deliveryId || !taskId || !studentId || !context.ss) throw new Error("GRADE_RECTIFICATION_CONTEXT_INVALID");
+  const sheet = getOrCreateTaskGradeRectificationHistorySheet_(context.ss);
+  const rows = sheet.getDataRange().getValues();
+  const rectificationId = "RECT-TASK-" + String(Utilities.getUuid() || "").trim();
+  if (rectificationId === "RECT-TASK-" || rows.slice(1).some(row => String(row[0] || "").trim() === rectificationId)) throw new Error("TASK_GRADE_RECTIFICATION_ID_COLLISION");
+  return {sheet:sheet,id:rectificationId,row:[rectificationId,"TAREA",deliveryId,taskId,studentId,
+    previousGrade === null || previousGrade === undefined ? "" : String(previousGrade),
+    nextGrade === null || nextGrade === undefined ? "" : String(nextGrade),reasonValue,actorId,actorRole,new Date()]};
+}
+function appendTaskGradeRectificationEvent_(event) {
+  if (!event || !event.sheet || !Array.isArray(event.row)) throw new Error("TASK_GRADE_RECTIFICATION_EVENT_INVALID");
+  try { event.sheet.appendRow(event.row); }
+  catch (error) {
+    const rows = event.sheet.getDataRange().getValues();
+    const matches = rows.slice(1).filter(row => String(row[0] || "").trim() === event.id);
+    if (matches.length === 1) return;
+    throw new Error("TASK_GRADE_RECTIFICATION_AUDIT_WRITE_FAILED");
+  }
+  const rows = event.sheet.getDataRange().getValues();
+  const matches = rows.slice(1).filter(row => String(row[0] || "").trim() === event.id);
+  if (matches.length !== 1) throw new Error("TASK_GRADE_RECTIFICATION_AUDIT_WRITE_FAILED");
+}
+function withAuthorizedTaskSubmissionMutation_(payload, action, mutation) {
+  const preflight = validateRolePermission(action, payload);
+  if (!preflight || preflight.authorized !== true) throw new Error("RESOURCE_NOT_FOUND");
+  const identity = getVerifiedTaskIdentity_(payload);
+  if (!identity || identity.authorized !== true || !String(identity.userId || "").trim()) throw new Error("RESOURCE_NOT_FOUND");
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("TASK_SUBMISSION_GRADE_LOCK_TIMEOUT");
+  try {
+    const permission = validateRolePermission(action, payload);
+    if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_FOUND");
+    const access = getTaskServiceSubmissionAccess_(payload, "GRADE");
+    if (!access || access.isStaff !== true || !access.ss || !Array.isArray(access.deliveries) ||
+        !access.identity || String(access.identity.userId || "").trim() !== String(identity.userId).trim()) throw new Error("RESOURCE_NOT_FOUND");
+    const deliveryId = String(payload && payload.entregaId || "").trim();
+    const deliveryMatches = access.deliveries.map((row,index)=>({row:row,index:index})).filter(item=>String(item.row[0]||"").trim()===deliveryId);
+    if (!deliveryId || deliveryMatches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
+    const delivery = deliveryMatches[0].row;
+    const taskId = String(delivery[1] || "").trim();
+    const studentId = String(delivery[2] || "").trim();
+    if (!taskId || !studentId || String(access.taskId || "").trim() !== taskId) throw new Error("RESOURCE_NOT_FOUND");
+    const taskRows = getSheetOrThrow(access.ss,"Tareas").getDataRange().getValues().slice(1);
+    const taskMatches = taskRows.filter(row=>String(row[0]||"").trim()===taskId);
+    if (taskMatches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
+    return mutation({ss:access.ss,actor:access.identity,role:access.role,task:taskMatches[0],taskId:taskId,
+      deliveryId:deliveryId,studentId:studentId,delivery:delivery,deliveryRowIndex:deliveryMatches[0].index+2,
+      deliverySheet:getSheetOrThrow(access.ss,"Entregas")});
+  } finally { try { lock.releaseLock(); } catch (_) {} }
+}
+
 function gradeSubmission(payload) {
-  const { entregaId, calificacion, estado, comentario } = payload || {};
-  assertTaskServiceSubmissionTaskOwnership_(payload, entregaId, "GRADE");
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const entregasSheet = getSheetOrThrow(ss, "Entregas");
-
-  const data = entregasSheet.getDataRange().getValues();
-  const headers = data[0];
-
-  const calificacionCol = headers.indexOf("calificacion");
-  const estadoCol = headers.indexOf("estado");
-  const comentarioCol = headers.indexOf("comentario");
-
-  if (calificacionCol === -1 || estadoCol === -1 || comentarioCol === -1) {
-    throw new Error("No se encontraron las columnas necesarias en la hoja de Entregas.");
-  }
-
-  const rowIndex = data.findIndex(row => row[0] === entregaId);
-
-  if (rowIndex !== -1) {
-    const rowData = data[rowIndex];
-    rowData[calificacionCol] = calificacion;
-    rowData[estadoCol] = estado;
-    rowData[comentarioCol] = comentario;
-
-    entregasSheet.getRange(rowIndex + 1, 1, 1, rowData.length).setValues([rowData]);
-    return { status: "success", message: "Calificación actualizada." };
-  }
-
-  throw new Error("Entrega no encontrada.");
+  return withAuthorizedTaskSubmissionMutation_(payload, "gradeSubmission", context => {
+    const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+    const headers = context.deliverySheet.getDataRange().getValues()[0] || [];
+    const calificacionCol = headers.indexOf("calificacion");
+    const estadoCol = headers.indexOf("estado");
+    const comentarioCol = headers.indexOf("comentario");
+    if (calificacionCol === -1 || estadoCol === -1 || comentarioCol === -1 ||
+        headers.lastIndexOf("calificacion") !== calificacionCol || headers.lastIndexOf("estado") !== estadoCol ||
+        headers.lastIndexOf("comentario") !== comentarioCol) throw new Error("TASK_GRADE_SCHEMA_INVALID");
+    const rowData = context.delivery.slice();
+    while (rowData.length < headers.length) rowData.push("");
+    const oldRow = rowData.slice();
+    const event = prepareTaskGradeRectificationEvent_(context,rowData[calificacionCol],p.calificacion,p.motivoRectificacion);
+    rowData[calificacionCol]=p.calificacion; rowData[estadoCol]=p.estado; rowData[comentarioCol]=p.comentario;
+    context.deliverySheet.getRange(context.deliveryRowIndex,1,1,rowData.length).setValues([rowData]);
+    if (event) {
+      try { appendTaskGradeRectificationEvent_(event); }
+      catch (error) {
+        try { context.deliverySheet.getRange(context.deliveryRowIndex,1,1,oldRow.length).setValues([oldRow]); }
+        catch (rollbackError) { throw new Error("GRADE_RECTIFICATION_AUDIT_ROLLBACK_FAILED"); }
+        throw error;
+      }
+    }
+    return {status:"success",message:"Calificación actualizada.",rectificacionRegistrada:!!event};
+  });
 }
 
 function deleteSubmission(payload) {
