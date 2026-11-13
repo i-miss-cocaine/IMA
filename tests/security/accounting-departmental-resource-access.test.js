@@ -476,6 +476,7 @@ assert.deepEqual(Array.from(loans(actor("hrA")).solicitudes,r=>r.prestamoId),["A
 assert.deepEqual(Array.from(loans(actor("hrB")).solicitudes,r=>r.prestamoId),["ADV-B"]);
 assert.deepEqual(Array.from(loans(actor("admin")).solicitudes,r=>r.prestamoId),["ADV-A","ADV-B"]);
 assert.deepEqual(Array.from(loans(actor("employee")).solicitudes,r=>r.prestamoId),["ADV-A"]);
+assert.deepEqual(Array.from(loans({sessionToken:"employee",empleadoId:"U-EMP",estadoAprobacion:"NoExiste"}).solicitudes),[],"employees with no matching requests retain an empty-list response");
 assert.equal(loans({sessionToken:"employee",empleadoId:"U-B"}).code,"RESOURCE_NOT_FOUND","self-service cannot query another employee");
 assert.equal(loans({sessionToken:"hrA",empleadoId:"U-B"}).code,"RESOURCE_NOT_FOUND","department HR cannot query another department");
 assert.equal(loans({sessionToken:"hrA",prestamoId:"ADV-B"}).code,"RESOURCE_NOT_FOUND","loan ID filters cannot bypass department ownership");
