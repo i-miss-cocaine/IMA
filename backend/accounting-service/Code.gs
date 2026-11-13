@@ -5774,41 +5774,45 @@ function recordStaffAttendance(payload) {
   return recordStaffCheckIn(payload);
 }
 
-function requestEmployeeLoanAdvance(payload) {
-  const { empleadoId, tipo, montoSolicitado, plazoCuotas, motivo, observaciones } = payload || {};
-  const mnt = parseFloat(montoSolicitado || 0);
-  if (!empleadoId || mnt <= 0) throw new Error("empleadoId y montoSolicitado válido son requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "AnticiposPrestamosEmpleado");
-  const now = new Date();
-  const prestamoId = "ADV-" + now.getTime();
-  const cuotas = parseInt(plazoCuotas || 1);
-  const cuotaMnt = mnt / cuotas;
-
-  sheet.appendRow([
-    prestamoId,
-    now,
-    String(empleadoId).trim(),
-    tipo || "AnticipoSalario",
-    mnt,
-    0,
-    cuotas,
-    cuotaMnt,
-    mnt,
-    "PendienteAprobacion",
-    "",
-    motivo || observaciones || "Solicitud formal de anticipo/préstamo"
-  ]);
-
-  return {
-    status: "success",
-    prestamoId: prestamoId,
-    montoSolicitado: mnt,
-    cuotaEstimada: cuotaMnt,
-    estadoAprobacion: "PendienteAprobacion",
-    message: "Solicitud de anticipo / préstamo registrada y enviada a revisión."
-  };
+function resolveEmployeeLoanAdvanceAccess_(payload,ss,targetUserId,requireManager){
+ const actor=getVerifiedAccountingIdentity_(payload);if(!actor.authorized)return actor;
+ const role=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
+ const self=["EMPLEADO","TRABAJADOR","PERSONAL"].includes(role),manager=["RECURSOSHUMANOS","ADMINISTRADOR"].includes(role);
+ if(requireManager?!manager:(!self&&!manager))return {authorized:false,code:"ROLE_NOT_ALLOWED"};
+ const userId=self?actor.userId:String(targetUserId||actor.userId||"").trim();
+ if(!userId||(self&&targetUserId&&String(targetUserId).trim()!==actor.userId))return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+ const sh=ss.getSheetByName("ExpedientesLaborales");if(!sh)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+ const v=sh.getDataRange().getValues(),h=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
+ if(!v.length||!Array.isArray(v[0])||v[0].length!==h.length||h.some((x,i)=>String(v[0][i]||"").trim().toUpperCase()!==x.toUpperCase()))return {authorized:false,code:"RESOURCE_SCHEMA_INVALID"};
+ const rows=v.slice(1),matches=rows.filter(r=>Array.isArray(r)&&String(r[2]||"").trim()===userId);
+ if(matches.length!==1||matches[0].length!==h.length)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+ const expedienteId=String(matches[0][0]||"").trim();
+ if(!expedienteId||rows.filter(r=>Array.isArray(r)&&String(r[0]||"").trim()===expedienteId).length!==1||!["ACTIVO","ACTIVE"].includes(String(matches[0][8]||"").trim().toUpperCase()))return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+ if(self)return {authorized:true,actor,userId,expedienteId,accessType:"SELF"};
+ const scope=getVerifiedAccountingDepartmentScope_(payload,ss,actor);if(!scope.authorized)return {authorized:false,code:scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED"};
+ const ownership=assertResourceOwnershipForScope_(ss,scope,"EXPEDIENTE_LABORAL",expedienteId,"WRITE",payload);
+ return ownership.authorized?{authorized:true,actor,userId,expedienteId,departmentId:ownership.departmentId}:{authorized:false,code:"RESOURCE_NOT_FOUND"};
+}
+function requestEmployeeLoanAdvance(payload){
+ const p=payload||{},actor=getVerifiedAccountingIdentity_(p);if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+ const role=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,""),self=["EMPLEADO","TRABAJADOR","PERSONAL"].includes(role),target=self?actor.userId:String(p.empleadoId||actor.userId||"").trim();
+ const amount=Number(p.montoSolicitado),terms=p.plazoCuotas==null||p.plazoCuotas===""?1:Number(p.plazoCuotas);
+ if(!Number.isFinite(amount)||amount<=0||!Number.isInteger(terms)||terms<1||terms>120)return {status:"error",code:"LOAN_REQUEST_VALUES_INVALID",message:"El monto y el plazo de cuotas deben ser válidos."};
+ const safe=(v,n)=>{let x=String(v||"").trim().slice(0,n);return /^[=+@-]/.test(x)?"'"+x:x;},type=safe(p.tipo||"AnticipoSalario",80),reason=safe(p.motivo||p.observaciones||"Solicitud formal de anticipo/préstamo",500);
+ if(!type)return {status:"error",code:"LOAN_REQUEST_VALUES_INVALID",message:"El tipo de solicitud no es válido."};
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID),pre=resolveEmployeeLoanAdvanceAccess_(p,ss,target,false);
+ if(!pre.authorized)return {status:"error",code:pre.code||"RESOURCE_NOT_FOUND",message:"No existe un expediente laboral disponible."};
+ const lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La operación está ocupada. Intente nuevamente."};
+ try{
+  if(!resolveEmployeeLoanAdvanceAccess_(Object.assign({},p),ss,target,false).authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe un expediente laboral disponible."};
+  const h=["PrestamoID","Fecha","EmpleadoId","Tipo","MontoSolicitado","MontoAprobado","PlazoCuotas","CuotaMensual","SaldoPendiente","EstadoAprobacion","AprobadoPor","Observaciones"],sh=ss.getSheetByName("AnticiposPrestamosEmpleado")||getOrCreateSheet(ss,"AnticiposPrestamosEmpleado");
+  let v=sh.getDataRange().getValues();if(!v.length||!Array.isArray(v[0])||!v[0].length){sh.appendRow(h);v=[h];}
+  if(v[0].length!==h.length||h.some((x,i)=>String(v[0][i]||"").trim().toUpperCase()!==x.toUpperCase()))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de anticipos y préstamos no es válida."};
+  const id="ADV-"+Utilities.getUuid();if(v.slice(1).some(r=>String(r[0]||"").trim()===id))return {status:"error",code:"LOAN_ID_COLLISION",message:"No fue posible registrar la solicitud."};
+  const rounded=Math.round(amount*100)/100,monthly=Math.round(rounded/terms*100)/100;
+  sh.appendRow([id,new Date(),target,type,rounded,0,terms,monthly,rounded,"PendienteAprobacion","",reason]);
+  return {status:"success",prestamoId:id,montoSolicitado:rounded,cuotaEstimada:monthly,estadoAprobacion:"PendienteAprobacion",message:"Solicitud de anticipo / préstamo registrada y enviada a revisión."};
+ }catch(e){return {status:"error",code:"LOAN_REQUEST_WRITE_FAILED",message:"No fue posible registrar la solicitud."};}finally{lock.releaseLock();}
 }
 
 function getEmployeeLoansAdvances(payload) {
@@ -5882,37 +5886,32 @@ function getEmployeeLoansAdvances(payload) {
   return { status: "success", solicitudes: mapped };
 }
 
-function approveEmployeeLoanAdvance(payload) {
-  const { prestamoId, montoAprobado, nuevoEstado, observaciones, authRole } = payload || {};
-  if (!prestamoId || !nuevoEstado) throw new Error("prestamoId y nuevoEstado son requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "AnticiposPrestamosEmpleado");
-  const data = sheet.getDataRange().getValues();
-
-  const idx = data.findIndex(r => String(r[0]).trim() === String(prestamoId).trim());
-  if (idx === -1) throw new Error("Solicitud de préstamo/anticipo no encontrada.");
-
-  const mntAprob = parseFloat(montoAprobado || data[idx][4] || 0);
-  const cuotas = parseInt(data[idx][6] || 1);
-  const cuotaMnt = mntAprob / cuotas;
-
-  sheet.getRange(idx + 1, 6).setValue(mntAprob);
-  sheet.getRange(idx + 1, 8).setValue(cuotaMnt);
-  sheet.getRange(idx + 1, 9).setValue(mntAprob);
-  sheet.getRange(idx + 1, 10).setValue(nuevoEstado);
-  sheet.getRange(idx + 1, 11).setValue(authRole || "Contador/Dirección");
-  if (observaciones) sheet.getRange(idx + 1, 12).setValue(observaciones);
-
-  return {
-    status: "success",
-    prestamoId: prestamoId,
-    montoAprobado: mntAprob,
-    estadoAprobacion: nuevoEstado,
-    message: `Solicitud de anticipo / préstamo ${nuevoEstado}.`
-  };
+function approveEmployeeLoanAdvance(payload){
+ const p=payload||{},actor=getVerifiedAccountingIdentity_(p);if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+ const role=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
+ if(!["RECURSOSHUMANOS","ADMINISTRADOR"].includes(role))return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+ const id=String(p.prestamoId||"").trim(),status=String(p.nuevoEstado||"").trim().toUpperCase();
+ if(!id||!["APROBADO","RECHAZADO"].includes(status))return {status:"error",code:"LOAN_REVIEW_INVALID",message:"La solicitud y el estado de revisión son obligatorios."};
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=ss.getSheetByName("AnticiposPrestamosEmpleado");if(!sh)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Solicitud de préstamo no disponible."};
+ const h=["PrestamoID","Fecha","EmpleadoId","Tipo","MontoSolicitado","MontoAprobado","PlazoCuotas","CuotaMensual","SaldoPendiente","EstadoAprobacion","AprobadoPor","Observaciones"],initial=sh.getDataRange().getValues();
+ if(!initial.length||!Array.isArray(initial[0])||initial[0].length!==h.length||h.some((x,i)=>String(initial[0][i]||"").trim().toUpperCase()!==x.toUpperCase()))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de anticipos y préstamos no es válida."};
+ const found=initial.slice(1).map((r,i)=>({r,i:i+1})).filter(x=>String(x.r[0]||"").trim()===id);
+ if(found.length!==1||found[0].r.length!==h.length)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Solicitud de préstamo no disponible."};
+ const target=String(found[0].r[2]||"").trim();if(!resolveEmployeeLoanAdvanceAccess_(p,ss,target,true).authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Solicitud de préstamo no disponible."};
+ const lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La operación está ocupada. Intente nuevamente."};
+ try{
+  if(!resolveEmployeeLoanAdvanceAccess_(Object.assign({},p),ss,target,true).authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Solicitud de préstamo no disponible."};
+  const data=sh.getDataRange().getValues(),matches=data.slice(1).map((r,i)=>({r,i:i+1})).filter(x=>String(x.r[0]||"").trim()===id);
+  if(matches.length!==1||matches[0].r.length!==h.length)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Solicitud de préstamo no disponible."};
+  const row=matches[0].r.slice(),rowIndex=matches[0].i;if(String(row[9]||"").trim().toUpperCase()!=="PENDIENTEAPROBACION")return {status:"error",code:"LOAN_ALREADY_REVIEWED",message:"La solicitud ya fue revisada."};
+  const requested=Number(row[4]),terms=Number(row[6]);if(!Number.isFinite(requested)||requested<=0||!Number.isInteger(terms)||terms<1||terms>120)return {status:"error",code:"LOAN_DATA_INVALID",message:"Los datos de la solicitud no son válidos."};
+  let approved=0;if(status==="APROBADO"){approved=p.montoAprobado==null||p.montoAprobado===""?requested:Number(p.montoAprobado);if(!Number.isFinite(approved)||approved<=0||approved>requested)return {status:"error",code:"LOAN_APPROVED_AMOUNT_INVALID",message:"El monto aprobado debe ser positivo y no superar el solicitado."};approved=Math.round(approved*100)/100;}
+  const safe=v=>{let x=String(v||"").trim().slice(0,500);return /^[=+@-]/.test(x)?"'"+x:x;},updated=row.slice();
+  updated[5]=approved;updated[7]=status==="APROBADO"?Math.round(approved/terms*100)/100:0;updated[8]=approved;updated[9]=status==="APROBADO"?"Aprobado":"Rechazado";updated[10]=actor.userId;updated[11]=p.observaciones==null?String(row[11]||""):safe(p.observaciones);
+  sh.getRange(rowIndex+1,1,1,updated.length).setValues([updated]);
+  return {status:"success",prestamoId:id,montoAprobado:approved,estadoAprobacion:updated[9],message:"Solicitud de anticipo / préstamo "+updated[9].toLowerCase()+"."};
+ }catch(e){return {status:"error",code:"LOAN_REVIEW_WRITE_FAILED",message:"No fue posible completar la revisión."};}finally{lock.releaseLock();}
 }
-
 function getLoanAmortizationSchedule(payload) {
   const p = payload || {}, prestamoId = String(p.prestamoId || "").trim();
   if (!prestamoId) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Préstamo no disponible." };

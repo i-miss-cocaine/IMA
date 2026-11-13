@@ -5461,3 +5461,10 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - reviewAttendanceCorrection limita revisores a RR. HH./Administrador, revalida ownership bajo ScriptLock, exige estado Pendiente, ID único y actor reviewer firmado; la aprobación actualiza entrada o salida según HoraOriginal y compensa la escritura si falla la actualización de la solicitud.
 - Contrato Node añadido al Department Scope workflow para IDOR, scope, suplantación, integridad, transición, rollback y concurrencia.
 - Department Scope run 43462250820 SUCCESS (Node.js 24.22.2; nuevo contrato, regresiones y sintaxis PASS). BETA-FUNC-074 Pendiente beta; sin despliegue ni datos reales.
+
+
+### C1.702 — TASK-153 / AUD-NG-386 — ACCOUNTING: anticipos y préstamos laborales
+- requestEmployeeLoanAdvance deriva el empleado desde identidad firmada o exige scope/ResourceOwnership WRITE para RecursosHumanos/Administrador; valida monto finito positivo, plazo entero y esquema canónico; protege escritura con ScriptLock y UUID.
+- approveEmployeeLoanAdvance solo permite RecursosHumanos/Administrador; obtiene empleado desde la solicitud única, revalida expediente activo y ownership WRITE bajo lock, acepta solo Aprobado/Rechazado, limita monto aprobado al solicitado y registra actor.userId, no authRole.
+- Actualización de fila completa para mantener consistencia de monto aprobado, cuota, saldo, estado y aprobador; revisión repetida bloqueada.
+- Contrato Node agregado a Department Scope; BETA-FUNC-075 Pendiente beta.

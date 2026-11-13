@@ -3468,3 +3468,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se protegieron submitAttendanceCorrection y reviewAttendanceCorrection con identidad firmada, roles, expediente único/activo, scope y ResourceOwnership WRITE.
 - Se añadieron validación de asistencia/fecha/hora/evidencia, bloqueo de solicitudes pendientes duplicadas, revisión de transición única, reviewer firmado, ScriptLock y rollback compensatorio.
 - Contrato Node agregado al workflow Department Scope; run 43462250820 SUCCESS (Node.js 24.22.2); BETA-FUNC-074 Pendiente beta.
+
+
+[2026-11-13 16:35 UTC] C1.702 — TASK-153 / AUD-NG-386 — ACCOUNTING anticipos y préstamos
+- requestEmployeeLoanAdvance y approveEmployeeLoanAdvance protegidas con identidad, roles, expediente activo, scope/ownership WRITE y ScriptLock.
+- Validación numérica/plazo, transición limitada, monto aprobado ≤ solicitado y aprobador firmado; actualización de fila completa.
+- Contrato Node agregado al workflow Department Scope; BETA-FUNC-075 Pendiente beta.

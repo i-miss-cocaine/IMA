@@ -136,3 +136,14 @@
 - **Evidencia:** IDs sintéticos, respuestas, snapshots anonimizados y rollback. Sin tokens ni PII.
 - **Estado:** Pendiente beta; no desplegado en Apps Script/Sheets real.
 ===============================================================================
+
+===============================================================================
+### BETA-FUNC-075 — Solicitudes y aprobaciones de anticipos/préstamos laborales
+- Roles: ACCOUNTING / Empleado, Recursos Humanos y Administrador.
+- Objetivo: verificar identidad propia, ownership/scope WRITE, validación de montos/plazos, trazabilidad del aprobador y transición única.
+- Precondiciones: beta aislada, expedientes activos en dos departamentos, scopes/ownership sintéticos y hoja AnticiposPrestamosEmpleado canónica.
+- Pasos: probar empleadoId manipulado; solicitudes HR dentro/fuera de scope; montos NaN/Infinity/negativos/cero; plazos fraccionarios/cero; aprobación/rechazo con reviewer manipulado; monto mayor al solicitado; revisión repetida y lock ocupado.
+- Resultado esperado: el empleado solo crea su solicitud; HR/Admin requieren scope/ownership; aprobaciones solo HR/Admin; reviewer firmado; saldos y cuotas correctos; sin doble aprobación.
+- Evidencia: IDs sintéticos, respuestas, valores antes/después y scopes; sin tokens ni PII.
+- Estado: Pendiente beta; no desplegado en Apps Script/Sheets real.
+===============================================================================
