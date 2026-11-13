@@ -7625,7 +7625,7 @@ function catalogEnsureKardexSchema_(ss){const h=["KardexID","Fecha","ItemCodigo"
 function recordInventoryMovement(payload) {
  const p=payload||{},itemCodigo=p.itemCodigo,cantidad=p.cantidad,tipoNorm=String(p.tipoMovimiento||"Entrada").trim(),target=String(p.ubicacionId||p.ubicacionResponsable||p.almacenId||"Bodega General").trim();
  if(!itemCodigo||cantidad===undefined||!Number.isFinite(Number(cantidad))||Number(cantidad)<=0)throw new Error("itemCodigo y cantidad válida requeridos.");
- const code=String(itemCodigo).trim(),inputQty=Number(cantidad),lock=LockService.getScriptLock();lock.waitLock(15000);
+ const code=catalogNormalizeCode_(String(itemCodigo).trim()),inputQty=Number(cantidad),lock=LockService.getScriptLock();lock.waitLock(15000);
  try{
   const ss=SpreadsheetApp.openById(SPREADSHEET_ID),item=catalogFindItem_(ss,code,true),unit=catalogFindUnit_(ss,p.unidadMedida||item.unit);
   if(catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit))throw new Error("CATALOG_UNIT_INCOMPATIBLE_WITH_ITEM");
