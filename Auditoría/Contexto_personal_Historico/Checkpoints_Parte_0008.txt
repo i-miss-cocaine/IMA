@@ -246,3 +246,10 @@
 - **Límites:** navegador real y Apps Script/Google Drive desplegados NOT RUN; BETA-FUNC-049 (backend PDF) y BETA-FUNC-050 (UI descarga) Pendiente beta. Sin despliegue ni datos reales.
 - **Estado:** C1.672 completada para la integración cliente. TASK-153/AUD-NG-140 permanecen En ejecución por otras superficies. **Siguiente acción elegible:** integrar getStaffAttendanceLogs en el autoservicio del empleado, previa comprobación focalizada de consumidores y requisitos. Sesión conservada: IMA-EXEC-20261112-1754Z-03.
 ===============================================================================
+
+
+### C1.672-R1 — conciliación de trazabilidad e índice
+- Se incorpora el segundo intento de CI 43359194452, que falló en otra expectativa estática antigua de la allowlist. La corrección quedó en d740e259; el primer ajuste fue d97b993. Ambos son fallos del contrato estático, no regresiones productivas. El contrato focal final sigue siendo PASS en 43359254980.
+- Se actualiza el resumen del índice al checkpoint C1.672 y el tamaño real del archivo activo.
+- El backlog Dirección conserva AUD-NG-140 En ejecución: el siguiente subalcance es integrar getStaffPayrollReceipt/getStaffAttendanceLogs en el autoservicio tras revisar el consumidor actual. BETA-FUNC-050 sigue pendiente para navegador/Apps Script/Drive reales.
+- No se modificó código funcional en este addendum.

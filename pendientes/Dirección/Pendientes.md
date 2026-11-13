@@ -3068,6 +3068,8 @@
 - **Dependencias Expuestas:** `getEmployeeSelfServicePortal`, `recordStaffCheckIn`, `getStaffAttendanceLogs`, `generatePayrollReceiptPDF`, `_verifiedUserId`, `_verifiedRole`.
 - **Descripción del Alcance:** El autoservicio confía en `authRole` y `authUserId` del cliente; el registro de asistencia acepta `empleadoId` y horario esperado desde payload; el empleado puede consultar logs sin indicar empleadoId y obtener registros globales; la generación de recibo acepta empleadoId arbitrario y devuelve una URL de PDF no generada.
 - **Criterios de Aceptación:** Empleado usa siempre `_verifiedUserId`; el horario esperado proviene de contrato/horario autorizado; solo RRHH/roles autorizados registran asistencia de terceros; el empleado solo consulta su asistencia/boleta; PDF real y privado; pruebas IDOR y suplantación.
+- **Avance C1.672:** el portal integra listado de períodos y descarga/recuperación de boletas PDF privadas. Empleado y RecursosHumanos consultan mediante getStaffPayrollReceipt con identidad firmada y ownership/ámbito; el cliente usa getPayrollReceiptPDFFile/generatePayrollReceiptPDF y descarga Base64 como Blob. Contrato ACCOUNTING PASS en CI run 43359254980.
+- **Pendiente:** integrar getStaffAttendanceLogs en el autoservicio del empleado, previa revisión del consumidor y del requisito original; navegador real y Apps Script/Drive permanecen en BETA-FUNC-050 Pendiente.
 - **Estado:** [ ] Pendiente
 
 ---

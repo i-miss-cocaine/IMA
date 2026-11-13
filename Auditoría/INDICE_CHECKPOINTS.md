@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.665**
+- Último checkpoint: **C1.672**
 - Última sesión: `IMA-EXEC-20261112-1754Z-03`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.665: **25494**
+- Caracteres del archivo activo tras C1.672-R1: **48876**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -701,4 +701,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.671 | IMA-EXEC-20261112-1754Z-03 | PDF de nómina real y privado; generador/recuperación con identidad firmada y ownership, Drive PRIVATE, Base64 sin URL pública, reintentos idempotentes; contrato ACCOUNTING PASS run 43357208066; workflow global falla después en User Role Membership heredado | TASK-153 / PM-01 — AUD-NG-391 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.671 | sección final | C1.670 | c84160155d163cdb86066f873ab28983027fcf02 |
 
 
-| C1.672 | IMA-EXEC-20261112-1754Z-03 | Autoservicio de RR. HH. conectado a consulta, recuperación y generación de boletas PDF; contrato ACCOUNTING PASS; helper local PASS; workflow global falla después en User Role Membership heredado; BETA-FUNC-050 pendiente | TASK-153 / PM-01 — AUD-NG-140 integración UI de boletas | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.672 | sección final | C1.671 | 426108abcdc5a50826167a53afea0bb06ef61999; d740e2597f8fb7ef266585d2c49d0c6589a06c2c |
+| C1.672 | IMA-EXEC-20261112-1754Z-03 | Autoservicio de RR. HH. conectado a consulta, recuperación y generación de boletas PDF; contrato ACCOUNTING PASS run 43359254980; workflow global falla después en User Role Membership heredado; BETA-FUNC-050 pendiente | TASK-153 / PM-01 — AUD-NG-140 integración UI de boletas | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.672 | 237-249 | C1.671 | 5d3da0b03a3c28e0510b6073b173264e91c4d747 (checkpoint); funcionales 426108abcdc5a50826167a53afea0bb06ef61999, d97b99373902b38e2adf457d15b0d81846c87623, d740e2597f8fb7ef266585d2c49d0c6589a06c2c |
