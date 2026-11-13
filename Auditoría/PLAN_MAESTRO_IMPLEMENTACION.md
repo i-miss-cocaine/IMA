@@ -5315,3 +5315,13 @@ La revisión de requisitos originales confirma cobertura de:
 - El harness local disponible en Node.js 22.16.0 y su node --check pasan. La suite completa en checkout local no se ejecutó por fallo DNS hacia github.com. Los workflows ejecutaron los contratos Node pertinentes en runners aislados.
 - BETA-FUNC-050/051 siguen Pendiente beta para navegador y Apps Script/Sheets/Drive desplegados; no bloquean el cierre de código conforme a NDASC.
 - **Estado:** AUD-NG-140 completada en código y CI. TASK-153 permanece En ejecución por los demás subalcances.
+
+
+ 
+### C1.678 — TASK-153 / T153-S03 — aislamiento de getStudentEnrollments
+- **Defecto:** la puerta general de sesión/rol no bastaba; el handler confiaba en payload.userId y leía Matriculas sin validar la relación del actor con el expediente.
+- **Implementación:** actor firmado; estudiante limitado a actor.userId; tutor condicionado a estudiante activo y relación/AccesoPortal; personal condicionado a ámbito y ownership del expediente. Resolución única de UserID/PersonaID, estudiante y expediente; esquema canónico; exclusión de MatriculaID duplicado; lectura sin crear hojas; errores de denegación anti-enumeración.
+- **Contrato:** self, userId spoof, tutor vinculado/no vinculado, staff propietario/cruce departamental, identidad inválida, mapping ambiguo, expediente duplicado, matrícula duplicada, filtro de período, schema inválido y hoja ausente.
+- **CI:** Department Scope 43366522801 SUCCESS en Node.js 24.22.2; Task-Service 43366522824 SUCCESS. Nuevo contrato de matrículas confirmado en el log del primero.
+- **Límite:** checkout completo local no disponible por DNS; no se declara suite local completa. No hubo despliegue ni acceso a datos reales. BETA-FUNC-053 queda Pendiente beta.
+- **Siguiente:** revisar getStudentEnrollmentHistory como endpoint separado; no se presume cubierto por este cambio.
