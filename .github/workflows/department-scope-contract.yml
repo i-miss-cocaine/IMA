@@ -45,6 +45,7 @@ on:
 
 permissions:
   contents: read
+  statuses: write
 
 jobs:
   department-scope-contract:
@@ -116,3 +117,34 @@ jobs:
         run: node --check js/auth.js
       - name: Check HR payroll PDF download helper
         run: node --check js/hr-payroll-pdf.js
+      - name: Publish Department Scope result for API verification
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          node <<'NODE'
+          (async function () {
+            const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
+            const state = process.env.JOB_STATUS === "success" ? "success" : "failure";
+            const response = await fetch(
+              process.env.GITHUB_API_URL + "/repos/" + owner + "/" + repo + "/statuses/" + process.env.GITHUB_SHA,
+              {
+                method: "POST",
+                headers: {
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": "Bearer " + process.env.GH_TOKEN,
+                  "X-GitHub-Api-Version": "2022-11-28",
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                  state: state,
+                  context: "ima/department-scope-contract",
+                  description: state === "success" ? "Node contracts and syntax checks passed" : "A Node contract or syntax check failed"
+                })
+              }
+            );
+            if (!response.ok) throw new Error("Commit status publication failed: HTTP " + response.status);
+            process.stdout.write("Published " + state + " status for " + process.env.GITHUB_SHA + "\\n");
+          })().catch(function (error) { process.stderr.write(error.message + "\\n"); process.exitCode = 1; });
+          NODE
