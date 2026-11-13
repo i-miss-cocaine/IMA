@@ -15,11 +15,11 @@ const report=ctx.buildPayrollVarianceReport_({totalDevengado:1120,totalDeduccion
 const expH=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
 const contractH=["ContratoID","ExpedienteID","TipoContrato","FechaInicio","FechaFin","SalarioBase","Jornada","EstadoContrato","Observaciones"];
 rows.ExpedientesLaborales=[expH,["E1","P1","U1","Analista","D1","CC1","2020-01-01","","Activo",""],["E2","P2","U2","Docente","D2","CC2","2020-01-01","","Activo",""],["E3","P3","U3","Técnico","D1","CC3","2020-01-01","","Activo",""]];
-rows.ContratosLaborales=[contractH,["C1","E1","Indefinido","2020-01-01","",1000,"Completa","Activo",""],["C2","E2","Indefinido","2020-01-01","",900,"Completa","Activo",""]];
+rows.ContratosLaborales=[contractH,["C1","E1","Indefinido","2020-01-01","",1000,"Completa","Activo",""],["C2","E2","Indefinido","2020-01-01","",900,"Completa","Activo",""],["C3","E3","Indefinido","2020-01-01","",0,"Completa","Activo",""]];
 rows.ConfiguracionPagoEmpleado=[ctx.getPayrollEmployeePayConfigHeaders_(),["E1","SALARIO_FIJO","QUINCENAL","","","ACTIVO","HR-1",new Date()]];
 rows.PlanillasNomenclatura=[ctx.getPayrollPlanHeaders_()];
 rows.IncidenciasNomina=[["IncidenciaID"]];
-const preview=ctx.getPayrollBatchPreview({periodoMes:"2026-11"});assert.equal(preview.status,"success");assert.equal(preview.contadores.incluidos,1);assert.equal(preview.contadores.excluidosPorIncidencias,1);assert.equal(preview.grupos[0].frecuenciaPago,"QUINCENAL");assert.deepEqual(Array.from(preview.grupos[0].empleadoIds),["E1"]);
+const preview=ctx.getPayrollBatchPreview({periodoMes:"2026-11"});assert.equal(preview.status,"success");assert.equal(preview.contadores.incluidos,1);assert.equal(preview.contadores.excluidosPorIncidencias,1);assert.ok(preview.incidencias.some(x=>x.motivo==="SALARIO_INVALIDO"),"invalid contractual salary is excluded during preview");assert.equal(preview.grupos[0].frecuenciaPago,"QUINCENAL");assert.deepEqual(Array.from(preview.grupos[0].empleadoIds),["E1"]);
 rows.ConfiguracionPagoEmpleado=[ctx.getPayrollEmployeePayConfigHeaders_()];
 const missingConfig=ctx.getPayrollBatchPreview({periodoMes:"2026-11"});assert.equal(missingConfig.contadores.pendientesValidacion,1);assert.equal(missingConfig.grupos[0].modalidadPago,"NO_CONFIGURADA");
 const configSaved=ctx.savePayrollEmployeePayConfig({empleadoId:"E1",modalidadPago:"MIXTO",frecuenciaPago:"SEMANAL"});assert.equal(configSaved.status,"success");assert.equal(rows.ConfiguracionPagoEmpleado[1][2],"SEMANAL");
