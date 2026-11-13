@@ -2563,8 +2563,8 @@ function monthlyChargeHeaderMap_(headers, required) {
 }
 function normalizeMonthlyChargeMonth_(value) {
   const raw = String(value == null ? "" : value).trim();
-  const match = raw.match(/^(?:\d{4}[-/])?(\d{1,2})$/);
-  if (match) { const month = Number(match[1]); if (month >= 1 && month <= 12) return String(month).padStart(2, "0"); }
+  const parts = raw.split(/[-/]/), numeric = parts[parts.length - 1];
+  if (/^\d+$/.test(numeric) && (parts.length === 1 || (parts.length === 2 && parts[0].length === 4))) { const month = Number(numeric); if (month >= 1 && month <= 12) return String(month).padStart(2, "0"); }
   const normalized = raw.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\./g, "").trim();
   const months = { enero:1, ene:1, febrero:2, feb:2, marzo:3, mar:3, abril:4, abr:4, mayo:5, may:5, junio:6, jun:6, julio:7, jul:7, agosto:8, ago:8, septiembre:9, setiembre:9, sep:9, sept:9, octubre:10, oct:10, noviembre:11, nov:11, diciembre:12, dic:12 };
   if (!months[normalized]) throw new Error("MONTHLY_CHARGE_PERIOD_INVALID");
