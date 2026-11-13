@@ -10893,9 +10893,11 @@ function createDepartmentReferenceGrant(payload) {
           String(row[3] || "").trim() !== resourceId ||
           String(row[4] || "").trim() !== owner.departmentId ||
           String(row[5] || "").trim() !== targetDepartmentId) continue;
-      duplicate.push(row);
+      if (String(row[12] || "").trim().toUpperCase() !== "ACTIVE") continue;
+      var existingExpiry = row[11] ? new Date(row[11]) : null;
+      if (!existingExpiry || isNaN(existingExpiry.getTime()) || existingExpiry.getTime() > Date.now()) duplicate.push(row);
     }
-    if (duplicate.length) return { status: "error", code: duplicate.length > 1 ? "DEPARTMENT_REFERENCE_GRANT_AMBIGUOUS" : (String(duplicate[0][12] || "").trim().toUpperCase() === "REVOKED" ? "DEPARTMENT_REFERENCE_GRANT_HISTORY_EXISTS" : "DEPARTMENT_REFERENCE_GRANT_ALREADY_ACTIVE") };
+    if (duplicate.length) return { status: "error", code: duplicate.length > 1 ? "DEPARTMENT_REFERENCE_GRANT_AMBIGUOUS" : "DEPARTMENT_REFERENCE_GRANT_ALREADY_ACTIVE" };
     var grantId = "DRG-" + Utilities.getUuid();
     var now = new Date().toISOString();
     var rowValues = [
@@ -10903,6 +10905,12 @@ function createDepartmentReferenceGrant(payload) {
       JSON.stringify(fields), JSON.stringify(documents), admin.actorId, now, validFrom.toISOString(),
       expiresAt.toISOString(), "ACTIVE", "", ""
     ];
+    logStructuredEvent("USER", "createDepartmentReferenceGrant", "INFO", "DEPARTMENT_REFERENCE_GRANT_CREATE_AUTHORIZED",
+      "Creación de concesión interdepartamental autorizada antes de persistir.", {
+        institutionId: admin.institutionId, grantId: grantId, resourceType: resourceType,
+        resourceId: resourceId, ownerDepartmentId: owner.departmentId, targetDepartmentId: targetDepartmentId,
+        authorizedBy: admin.actorId, validFrom: validFrom.toISOString(), expiresAt: expiresAt.toISOString()
+      }, admin.role);
     sheet.appendRow(rowValues);
     logStructuredEvent("USER", "createDepartmentReferenceGrant", "INFO", "DEPARTMENT_REFERENCE_GRANT_CREATED",
       "Concesión de referencia interdepartamental creada.", {
@@ -10980,6 +10988,10 @@ function revokeDepartmentReferenceGrant(payload) {
         revokedAt: current[13], revokedBy: current[14] };
     }
     var now = new Date().toISOString();
+    logStructuredEvent("USER", "revokeDepartmentReferenceGrant", "WARN", "DEPARTMENT_REFERENCE_GRANT_REVOKE_AUTHORIZED",
+      "Revocación de concesión interdepartamental autorizada antes de persistir.", {
+        institutionId: admin.institutionId, grantId: grantId, revokedBy: admin.actorId
+      }, admin.role);
     sheet.getRange(matches[0], 13, 1, 3).setValues([["REVOKED", now, admin.actorId]]);
     logStructuredEvent("USER", "revokeDepartmentReferenceGrant", "WARN", "DEPARTMENT_REFERENCE_GRANT_REVOKED",
       "Concesión de referencia interdepartamental revocada.", {
