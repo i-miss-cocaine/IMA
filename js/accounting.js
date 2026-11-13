@@ -872,6 +872,7 @@ function renderComprasModule(container) {
           <button onclick="switchComprasSubtab('ordenes')" id="btn-cmp-ordenes" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Órdenes de Compra</button>
           <button onclick="switchComprasSubtab('recepciones')" id="btn-cmp-recepciones" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Recepciones</button>
           <button onclick="switchComprasSubtab('threeway')" id="btn-cmp-threeway" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Three-Way Match</button>
+          <button onclick="switchComprasSubtab('expediente')" id="btn-cmp-expediente" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Expediente 360°</button>
           <button onclick="switchComprasSubtab('proveedores')" id="btn-cmp-proveedores" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Proveedores</button>
         </div>
       </div>
@@ -908,7 +909,7 @@ function renderComprasModule(container) {
 
 window.switchComprasSubtab = function (subtab) {
   currentComprasSubtab = subtab;
-  const tabs = ['solicitudes', 'cotizaciones', 'ordenes', 'recepciones', 'threeway', 'proveedores'];
+  const tabs = ['solicitudes', 'cotizaciones', 'ordenes', 'recepciones', 'threeway', 'expediente', 'proveedores'];
   tabs.forEach(t => {
     const btn = document.getElementById(`btn-cmp-${t}`);
     if (btn) {
@@ -933,9 +934,32 @@ window.switchComprasSubtab = function (subtab) {
     renderComprasRecepcionesView(subContainer);
   } else if (subtab === 'threeway') {
     renderComprasThreeWayView(subContainer);
+  } else if (subtab === 'expediente') {
+    renderComprasExpedienteView(subContainer);
   } else if (subtab === 'proveedores') {
     renderComprasProveedoresView(subContainer);
   }
+};
+
+function renderComprasExpedienteView(container){
+  container.innerHTML='<div class="bg-white p-5 rounded-2xl border space-y-3"><h5 class="font-black text-sm">Expediente digital de adquisiciones · Trazabilidad 360°</h5><p class="text-xs text-gray-500">Buscar por solicitud, orden, factura o proveedor.</p><div class="flex gap-2"><input id="purchase-dossier-query" class="flex-1 p-3 border rounded-xl" placeholder="Número de solicitud, orden, factura o proveedor"><button onclick="searchPurchaseDossier()" class="px-4 py-3 bg-indigo-600 text-white rounded-xl">Buscar</button></div><div id="purchase-dossier-results"></div></div>';
+}
+window.searchPurchaseDossier=function(){
+  const query=document.getElementById("purchase-dossier-query").value.trim(),host=document.getElementById("purchase-dossier-results");if(!query||!host)return;host.textContent="Consultando...";
+  fetchBackendAccounting("getPurchaseDossier",{query}).then(result=>{
+    host.innerHTML="";
+    (result.expedientes||[]).forEach(exp=>{
+      const card=document.createElement("div");card.className="border rounded-xl p-4 my-3";
+      const title=document.createElement("h6");title.className="font-black";title.textContent=exp.orden.ordenCompraId+" · "+exp.proveedor.nombre;card.appendChild(title);
+      const m=exp.metricas||{},metrics=document.createElement("p");metrics.className="text-xs my-2";metrics.textContent="Pedidas "+m.cantidadPedida+" · Recibidas "+m.cantidadRecibida+" · Facturadas "+m.cantidadFacturada+" · Pendientes "+m.cantidadPendiente+" · Autorizado L "+m.importeAutorizado+" · Facturado L "+m.importeFacturado+" · Pagado L "+m.importePagado+" · Saldo L "+m.saldoPendiente;card.appendChild(metrics);
+      (exp.timeline||[]).forEach(ev=>{const p=document.createElement("p");p.className="text-xs";p.textContent=ev.etapa+" · "+(ev.fecha?new Date(ev.fecha).toLocaleString():"Fecha no registrada")+" · "+ev.estado+" · "+ev.responsable;card.appendChild(p);});
+      (exp.documentos||[]).forEach(doc=>{const a=document.createElement("a");a.href=doc.url;a.target="_blank";a.rel="noopener noreferrer";a.className="block text-xs text-indigo-600 underline";a.textContent=doc.nombre;card.appendChild(a);});
+      if(exp.documentosRestringidos){const note=document.createElement("p");note.className="text-xs text-amber-700";note.textContent="Los enlaces documentales están restringidos para este rol.";card.appendChild(note);}
+      (exp.facturas||[]).forEach(f=>{const p=document.createElement("p");p.className="text-xs";p.textContent="Factura "+f.numeroFactura+" · "+f.estadoPago+" · Total "+f.total+" · Pagado "+f.pagado+" · Saldo "+f.saldo;card.appendChild(p);});
+      host.appendChild(card);
+    });
+    if(!host.childElementCount)host.textContent="No se encontraron expedientes dentro del ámbito autorizado.";
+  }).catch(error=>{host.textContent=error.message||String(error);});
 };
 
 function renderComprasSolicitudesView(container) {
