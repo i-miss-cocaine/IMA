@@ -811,6 +811,7 @@
 - **CLI local:** NOT RUN; el entorno no dispone de checkout/Node local verificado. **Apps Script/Sheets real:** NOT RUN; no hubo despliegue ni acceso a datos institucionales.
 - **Beta:** BETA-FUNC-079 Pendiente beta: ejecutar con planilla sintética desplegada, verificar el catálogo institucional, saldos de préstamos, asiento original y ajuste compensatorio. Catálogos heredados con 2101=Proveedores requieren revisión administrativa antes de activar la contabilización.
 - **Commits de implementación relevantes:** 4e43f06598ae9fb255c832667481c2ecd059e4b7; be33009563db228fb626f28a7f090325fff55383; a4104f203c068bdd99087f0ac1b29ea5e95408fd; c436e6c4b6f8454430f332cb9f13f7bd4d0bcd8f; 1d8b5d1b9c6d34f69bb8c5c794cd5e41e5d6c7ef.
+- **Checkpoint commit:** 7da5723e0188d0dc2ba3a0922dea6e6ac953a8d6.
 - **Estado:** TASK-179 completada en código y CI; BETA-FUNC-079 pendiente de validación desplegada.
 - **Siguiente tarea elegible:** TASK-180 — procesamiento de planillas por lotes y revisión comparativa de resultados.
 ===============================================================================
