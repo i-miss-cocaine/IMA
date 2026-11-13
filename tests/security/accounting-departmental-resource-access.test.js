@@ -370,7 +370,7 @@ assert.deepEqual(Array.from(trainingHistory(actor("admin")).data.inscripciones,r
 const originalPlanRows=rows.PlanesDesarrolloProfesional.map(r=>r.slice());rows.PlanesDesarrolloProfesional.push(rows.PlanesDesarrolloProfesional[1].slice());
 assert.deepEqual(Array.from(trainingHistory(actor("admin")).data.planesDesarrollo,r=>r.planId),["PLAN-B"]);rows.PlanesDesarrolloProfesional.splice(0,rows.PlanesDesarrolloProfesional.length,...originalPlanRows);
 const originalTrainingEmployees=rows.ExpedientesLaborales.map(r=>r.slice());rows.ExpedientesLaborales.push(rows.ExpedientesLaborales[1].slice());
-assert.deepEqual(Array.from(trainingHistory(actor("admin")).data.inscripciones,r=>r.inscripcionId),["CAP-A"]);rows.ExpedientesLaborales.splice(0,rows.ExpedientesLaborales.length,...originalTrainingEmployees);
+assert.deepEqual(Array.from(trainingHistory(actor("admin")).data.inscripciones,r=>r.inscripcionId),["CAP-B"],"ambiguous U-EMP expediente must exclude CAP-A");rows.ExpedientesLaborales.splice(0,rows.ExpedientesLaborales.length,...originalTrainingEmployees);
 const originalTrainingHeader=rows.InscripcionesCapacitacion[0][0];rows.InscripcionesCapacitacion[0][0]="Inscripcion";
 assert.equal(trainingHistory(actor("admin")).code,"RESOURCE_SCHEMA_INVALID");rows.InscripcionesCapacitacion[0][0]=originalTrainingHeader;
 const originalTrainingOpen=context.SpreadsheetApp.openById,originalTrainingGetOrCreate=context.getOrCreateSheet;let trainingSheetCreationAttempts=0;
