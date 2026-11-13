@@ -745,3 +745,21 @@
 - **Estado:** solicitud/aprobación de anticipos y préstamos protegidas y verificadas por CI; TASK-153/AUD-NG-386 continúa En ejecución.
 - **Siguiente elegible:** revisar TASK-175 / amortización de préstamos y su integración con cierre/reversión de nómina, sin duplicar lo ya implementado.
 ===============================================================================
+
+
+===============================================================================
+### C1.703 — IMA-EXEC-20261113-1752Z-01 — TASK-174 — amortización de préstamos en nómina
+- **Continuidad:** C1.702; HEAD inicial 0ba84da34c27cd218a163d06f381b0bdb62c6b52; rama autorizada NG_beta_0.0.0.1_work; rama base intacta 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Tarea original:** TASK-174 (no TASK-175). Se corrige la referencia de siguiente tarea del C1.702: el bloque de amortización está asignado a TASK-174.
+- **Implementación:** cálculo de cuotas de préstamos aprobados y anticipos en una cuota; importe íntegro no superior al saldo ni al neto disponible; sin modificar principal en cálculo preliminar. Ledger append-only AmortizacionPrestamosNomina con CALCULADO/APLICADO/REVERSADO/CANCELADO y detalle de operaciones administrativas.
+- **Cierre/reversión:** updatePayrollPeriodStatus aplica amortización en Aprobada/Cerrada con ScriptLock y autorización verificada RR. HH./Administrador; repetición no duplica; anulación restituye saldo y bloquea reactivación de planilla terminal.
+- **Gestión:** manageEmployeeLoanAdvance permite SUSPENDER, REANUDAR, RENEGOCIAR y LIQUIDAR_ANTICIPADAMENTE con identidad firmada, expediente/scope/ownership WRITE, motivo obligatorio y referencia de pago para liquidación. getLoanAmortizationSchedule deriva cuotas pagadas/restantes del ledger.
+- **Archivos:** backend/accounting-service/Code.gs; tests/security/accounting-payroll-loan-amortization.test.js; .github/workflows/department-scope-contract.yml; beta_test_Parte_0002.txt; pendientes/Contabilidad/Pendientes.md; Plan Maestro; changueslogs.
+- **Commits de implementación:** 0f1d1e4a384f568406afb14ef9c6da0cd45645b2; ac244a9e278287f00abec699a1212f2543714823; 51de5a76e1d3341850066965ef99d3fd48e4c88a; c0e8460d882b65984ff4263192ec364379e78cef; 2ba1b7afd27f364cd8957b3765c0607d84489388; 0a87c569b5ed71bbf78688124919a040c6bc3d7c; 5f6f53f20b3e38ce23e3a570516fc46ba4e12cac; 9a87fff9c44ade260317bf78184da43630f5cd67; 0ba84da34c27cd218a163d06f381b0bdb62c6b52.
+- **CI final:** Department Scope 43476863084 SUCCESS; contrato accounting-payroll-loan-amortization.test.js PASS; sintaxis Apps Script PASS; Identity Mapping 43476720440 SUCCESS; Department Reference Consumers 43476720577 SUCCESS. Node.js 24.22.2.
+- **Incidencia corregida:** runs 43476614516 y 43476720762 fallaron por colisión del período de fixture; se cambió el fixture a un período aislado y 43476863084 confirmó PASS.
+- **CLI local:** NOT RUN; git clone no pudo resolver github.com por DNS del contenedor. CI sí ejecutó Node.js en checkout aislado. **Apps Script/Sheets real:** NOT RUN; no se desplegó ni se modificaron datos reales.
+- **Beta:** BETA-FUNC-076 Pendiente beta; verificar hoja/ledger en entorno aislado, transición Aprobada/Cerrada/Anulada y conciliación real antes de producción.
+- **Estado:** TASK-174 implementada y verificada por contratos CI; pendiente validación beta, sin bloqueo de código local restante.
+- **Siguiente tarea elegible:** TASK-175 — catálogo dinámico de conceptos salariales, reglas de cálculo y ajustes.
+===============================================================================

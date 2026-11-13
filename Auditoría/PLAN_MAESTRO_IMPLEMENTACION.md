@@ -5468,3 +5468,16 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - approveEmployeeLoanAdvance solo permite RecursosHumanos/Administrador; obtiene empleado desde la solicitud única, revalida expediente activo y ownership WRITE bajo lock, acepta solo Aprobado/Rechazado, limita monto aprobado al solicitado y registra actor.userId, no authRole.
 - Actualización de fila completa para mantener consistencia de monto aprobado, cuota, saldo, estado y aprobador; revisión repetida bloqueada.
 - Contrato Node agregado a Department Scope; Department Scope 43463145244, Identity Mapping 43463145440 y Department Reference Consumers 43463145456 SUCCESS (Node 24.22.2; contratos y sintaxis PASS). BETA-FUNC-075 Pendiente beta.
+
+
+### C1.703 — TASK-174 — Amortización de anticipos y préstamos en nómina
+- calculatePayrollPeriod incorpora cuotas de obligaciones aprobadas a otrasDeducciones, con cuota íntegra y límite del neto disponible; los anticipos se cobran en una cuota y las cuotas preliminares no modifican el principal.
+- Se creó AmortizacionPrestamosNomina como ledger append-only de movimientos CALCULADO, APLICADO, REVERSADO, CANCELADO y eventos de gestión; las columnas históricas de PlanillasNomenclatura y AnticiposPrestamosEmpleado se conservan.
+- updatePayrollPeriodStatus aplica amortización al pasar a Aprobada/Cerrada bajo ScriptLock, con identidad verificada de RR. HH./Administrador; bloquea reactivación de planillas anuladas y revierte saldo con evento compensatorio al anular.
+- getLoanAmortizationSchedule deriva cuotas pagadas/restantes desde el ledger. manageEmployeeLoanAdvance permite suspender, reanudar, renegociar y liquidar anticipadamente con actor autenticado, ownership/scope WRITE, motivo documentado y referencia de pago para liquidación.
+- Contrato Node accounting-payroll-loan-amortization.test.js cubre cálculo preliminar, cuota única, límite de neto, duplicidad por período, cierre, idempotencia, reversión, recalculado, última cuota, suspensión, reanudación, renegociación y liquidación anticipada.
+- Department Scope run 43476863084 SUCCESS (Node.js 24.22.2; contrato de amortización y sintaxis de servicios Apps Script PASS); Identity Mapping 43476720440 SUCCESS; Department Reference Consumers 43476720577 SUCCESS.
+- Incidencia de prueba: runs 43476614516 y 43476720762 fallaron por reutilizar en el fixture el período ya amortizado; el fixture se aisló a 2027-03 y el rerun 43476863084 pasó.
+- CLI local: no ejecutado; el checkout no pudo resolver github.com por DNS en el contenedor. CI ejecutó las pruebas sobre checkout aislado. Apps Script/Sheets real: no ejecutado; no hubo despliegue ni datos reales.
+- BETA-FUNC-076 Pendiente beta. El ledger nuevo requiere validación de despliegue/migración de hoja en ambiente beta antes de producción.
+- Estado TASK-174: implementación y contratos CI completados; pruebas de entorno beta pendientes.

@@ -2152,7 +2152,7 @@
 ---
 
 <!-- ID: TASK-174 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [ ] [TASK-174] Automatizar la deducción de anticipos y préstamos y actualizar su amortización al cerrar la planilla
+### [x] [TASK-174] Automatizar la deducción de anticipos y préstamos y actualizar su amortización al cerrar la planilla
 - **Origen del Hallazgo:** `AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md` / Sección B (B.5), Sección E (Brecha E.5) y Sección G (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Recuperación de cuentas por cobrar a empleados y consistencia de amortizaciones)
@@ -2186,7 +2186,7 @@
   - La última cuota de amortización ajusta el saldo restante a exactamente 0.00 marcando el préstamo como `Liquidado`.
   - Reintentar o recalcular la planilla no genera deducciones dobles del mismo préstamo.
   - La anulación de una planilla restituye el saldo del préstamo con auditoría inmutable.
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Implementada y verificada por contratos Node.js 24 y sintaxis Apps Script en GitHub Actions; beta pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7314-7350; clave TASK-175; asignación única: Contabilidad -->
 

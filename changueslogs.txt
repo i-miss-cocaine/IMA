@@ -3474,3 +3474,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - requestEmployeeLoanAdvance y approveEmployeeLoanAdvance protegidas con identidad, roles, expediente activo, scope/ownership WRITE y ScriptLock.
 - Validación numérica/plazo, transición limitada, monto aprobado ≤ solicitado y aprobador firmado; actualización de fila completa.
 - Contrato Node agregado al workflow Department Scope; runs 43463145244, 43463145440 y 43463145456 SUCCESS (Node 24.22.2); BETA-FUNC-075 Pendiente beta.
+
+
+[2026-11-13 17:52 UTC] C1.703 — TASK-174 — amortización de anticipos y préstamos en nómina
+- Se integraron cuotas aprobadas en otrasDeducciones con límite de saldo y salario neto; anticipos de una cuota; ledger append-only; cierre/aprobación idempotentes y reversión auditada.
+- Se añadieron suspensión, reanudación, renegociación y liquidación anticipada con identidad, ownership/scope y justificación documentada.
+- Contrato Node de amortización y sintaxis Apps Script PASS en Department Scope 43476863084 (Node 24.22.2); Identity Mapping 43476720440 y Department Reference Consumers 43476720577 SUCCESS.
+- Dos ejecuciones previas fallaron por fixture reutilizado; fixture corregido y rerun PASS. CLI local bloqueado por DNS del entorno; Apps Script/Sheets real no desplegado. BETA-FUNC-076 Pendiente beta.
