@@ -35,6 +35,7 @@ on:
       - tests/security/accounting-departmental-import-scope.test.js
       - tests/security/user-migrated-resource-ownership-contract.test.js
       - tests/security/resource-ownership-abac.test.js
+      - tests/security/department-reference-policy.test.js
       - .github/workflows/department-scope-contract.yml
 
 permissions:
@@ -82,6 +83,8 @@ jobs:
         run: node tests/security/user-service-signature-ownership.test.js
       - name: Run generic resource ownership ABAC contract
         run: node tests/security/resource-ownership-abac.test.js
+      - name: Run interdepartmental reference policy contract
+        run: node tests/security/department-reference-policy.test.js
       - name: Syntax-check updated Apps Script services
         run: |
           node --check < backend/user-service/Code.gs
