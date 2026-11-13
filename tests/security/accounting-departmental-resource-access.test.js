@@ -392,7 +392,7 @@ context.getOrCreateSheet=originalAlertGetOrCreate;
 assert.ok(extractFunction(accounting,"getEmployeeContractAlerts").includes('getSheetByName("ContratosLaborales")'));
 assert.ok(!extractFunction(accounting,"getEmployeeContractAlerts").includes("getOrCreateSheet"));
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeContractAlerts"'));
-assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getStaffAttendanceLogs", "getEmployeeLoansAdvances", "uploadEmployeeDocument"'));
+assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "uploadEmployeeDocument"'));
 
 
 const trainingHistory=context.getEmployeeTrainingHistory;
@@ -421,7 +421,7 @@ assert.deepEqual(Array.from(trainingHistory(actor("admin")).data.inscripciones),
 context.SpreadsheetApp.openById=originalTrainingOpen;context.getOrCreateSheet=originalTrainingGetOrCreate;
 assert.ok(!extractFunction(accounting,"getEmployeeTrainingHistory").includes("getOrCreateSheet"));
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeTrainingHistory"'));
-assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeTrainingHistory", "getStaffAttendanceLogs", "getEmployeeLoansAdvances", "uploadEmployeeDocument"'));
+assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeTrainingHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "uploadEmployeeDocument"'));
 
 const laborHistory=context.getLaborIncidentsHistory;
 assert.deepEqual(Array.from(laborHistory(actor("staffA")).data.incidencias,r=>r.incidenciaId),["INC-A"]);
@@ -563,7 +563,7 @@ context.SpreadsheetApp.openById=attendanceOpen;context.getOrCreateSheet=attendan
 assert.ok(extractFunction(accounting,"getStaffAttendanceLogs").includes("assertEmployeeExpedienteScopeAccess_"));
 assert.ok(!extractFunction(accounting,"getStaffAttendanceLogs").includes("getOrCreateSheet"));
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getStaffAttendanceLogs"'));
-assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getStaffAttendanceLogs", "getEmployeeLoansAdvances"'),"employees must retain self-service attendance access");
+assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances"'),"employees must retain self-service attendance access");
 
 
 const attendanceShiftTime=rows.AsignacionesTurnosLaborales[1][5];rows.AsignacionesTurnosLaborales[1][5]="23:59";
