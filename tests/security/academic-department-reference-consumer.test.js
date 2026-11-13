@@ -47,6 +47,8 @@ function makeRuntime(options = {}) {
       assert.equal(envelope.action,"authorizeDepartmentReferenceRead");
       assert.equal(envelope.payload.resourceType,"EXPEDIENTE_ESTUDIANTE");assert.equal(envelope.payload.resourceId,"exp-1");
       assert.equal(envelope.payload.sessionToken,"signed-session-token");
+      if(options.expectedActiveDepartmentId !== undefined) assert.equal(envelope.payload.activeDepartmentId,options.expectedActiveDepartmentId);
+      if(options.expectNoActiveDepartment) assert.equal(Object.prototype.hasOwnProperty.call(envelope.payload,"activeDepartmentId"),false);
       const body=envelope.requestId+"|"+envelope.timestamp+"|"+envelope.correlationId+"|"+envelope.sourceService+"|"+envelope.targetService+"|"+envelope.action+"|"+JSON.stringify(envelope.payload);
       assert.equal(envelope.hmacSignature,crypto.createHmac("sha256",secret).update(body).digest("hex"));
       if(options.httpCode)return{getResponseCode(){return options.httpCode;},getContentText(){return"{}";}};
@@ -62,10 +64,10 @@ function makeRuntime(options = {}) {
     helperSource+"\n"+readerSource+"\nthis.read=getStudentDocuments;",context);
   return{context,calls};
 }
-function request(overrides={}){return Object.assign({expedienteId:"EXP-1",sessionToken:"signed-session-token",
+function request(overrides={}){return Object.assign({expedienteId:"EXP-1",sessionToken:"signed-session-token",activeDepartmentId:"DEP-A",
   referenceRequestedFields:defaultFields.slice(),referenceDocumentIds:defaultDocs.slice()},overrides);}
 {
- const h=makeRuntime({referenceMode:true}),r=h.context.read(request());
+ const h=makeRuntime({referenceMode:true,expectedActiveDepartmentId:"DEP-A"}),r=h.context.read(request());
  assert.equal(r.status,"success");assert.equal(r.referenceOnly,true);assert.equal(r.grantId,"GRANT-1");assert.equal(r.auditEventId,"AUDIT-1");
  assert.deepEqual(JSON.parse(JSON.stringify(r.documents)),[{documentoId:"DOC-1",tipoDocumento:"ACTA",nombreArchivo:"Acta de nacimiento.pdf"}]);
  assert.equal(h.calls.length,1);assert.equal(h.calls[0].request.contentType,"application/json");assert.equal(h.calls[0].request.method,"post");
@@ -131,4 +133,12 @@ function request(overrides={}){return Object.assign({expedienteId:"EXP-1",sessio
  const h=makeRuntime({referenceMode:true}),r=h.context.read(request({referenceRequestedFields:[]}));
  assert.equal(r.status,"error");assert.equal(h.calls.length,0);
 }
-process.stdout.write("ACADEMIC department reference consumer contract: 17 scenarios PASS.\n");
+{
+ const h=makeRuntime({referenceMode:true,expectedActiveDepartmentId:"DEP-B"}),r=h.context.read(request({activeDepartmentId:"DEP-B"}));
+ assert.equal(r.status,"success");assert.equal(h.calls.length,1);
+}
+{
+ const h=makeRuntime({referenceMode:true,expectNoActiveDepartment:true}),r=h.context.read(request({activeDepartmentId:undefined}));
+ assert.equal(r.status,"success");assert.equal(h.calls.length,1);
+}
+process.stdout.write("ACADEMIC department reference consumer contract: 19 scenarios PASS.\n");
