@@ -3244,3 +3244,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - CI Department Scope run 43364730161 PASS (Node 24.22.2); CI Task-Service run 43364715823 PASS (Node 22.23.4).
 - Prueba local aislada de scope delegado PASS (Node 22.16.0); checkout local completo NOT RUN por DNS/red.
 - BETA-FUNC-052 agregado; Pendiente beta. Sin despliegue ni datos reales.
+
+
+ 
+[2026-11-13 UTC] [IMA-EXEC-20261112-1754Z-03] C1.677 — cierre de AUD-NG-140
+- Se registra el cierre de implementación de autoservicio, asistencia y boletas de nómina basado en identidad firmada, ownership/ámbito y PDF privado.
+- Department Scope CI 43364730161: Node.js 24.22.2, 19 pasos SUCCESS. Task-Service CI 43364715823: Node.js 22.23.4, dos contratos SUCCESS.
+- Node local 22.16.0: harness delegado y node --check PASS; suite completa local NOT RUN por DNS github.com.
+- BETA-FUNC-050/051 permanecen Pendiente beta; TASK-153 sigue En ejecución.
