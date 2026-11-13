@@ -4976,7 +4976,7 @@ function getPayrollVarianceCauses_(ss,employeeId,currentPeriod,previousPeriod,cu
   const currentSalary=salaryFor(period),priorSalary=salaryFor(prior);
   if(currentSalary!==null&&priorSalary!==null&&currentSalary!==priorSalary)causes.push({codigo:"CAMBIO_SALARIO_CONTRACTUAL",descripcion:"Cambio del salario base contractual vigente",monto:Math.round((currentSalary-priorSalary)*100)/100});
  }
- const attendance=ss.getSheetByName("DeduccionesAsistencia");if(attendance){const rows=attendance.getDataRange().getValues().slice(1),count=rows.filter(r=>(String(r[2]||"").trim()===id||String(r[2]||"").trim()===String(currentRow[3]||""))&&r[1]&&String((r[1] instanceof Date||Object.prototype.toString.call(r[1)==="[object Date]")?r[1].getFullYear()+"-"+String(r[1].getMonth()+1).padStart(2,"0"):r[1])).slice(0,7)===period&&["AUSENTE","INJUSTIFICADA","AUSENCIA INJUSTIFICADA"].includes(normalizePayrollBatchValue_(r[7]))).length;if(count)causes.push({codigo:"AUSENCIAS",descripcion:"Se registraron ausencias en el período",cantidad:count});}
+ const attendance=ss.getSheetByName("DeduccionesAsistencia");if(attendance){const rows=attendance.getDataRange().getValues().slice(1),count=rows.filter(r=>(String(r[2]||"").trim()===id||String(r[2]||"").trim()===String(currentRow[3]||""))&&r[1]&&String((r[1] instanceof Date||Object.prototype.toString.call(r[1])==="[object Date]"?r[1].getFullYear()+"-"+String(r[1].getMonth()+1).padStart(2,"0"):r[1])).slice(0,7)===period&&["AUSENTE","INJUSTIFICADA","AUSENCIA INJUSTIFICADA"].includes(normalizePayrollBatchValue_(r[7]))).length;if(count)causes.push({codigo:"AUSENCIAS",descripcion:"Se registraron ausencias en el período",cantidad:count});}
  return causes;
 }
 
