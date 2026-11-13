@@ -138,3 +138,12 @@
 - **Corrección:** la comparación del objeto devuelto se normaliza con JSON.parse(JSON.stringify(...)); sin cambio de producción.
 - **Estado:** pendiente nueva ejecución CI y revisión del resultado.
 ===============================================================================
+
+
+### C1.666 — cierre de verificación y estado final
+- **HEAD inicial:** 88a823a451c95bb262d7d52f782f643ac879adc8. **HEAD final de esta iteración:** 04e66f9682fe78c12b75b6a41df9cfa8e8437120 (antes del commit documental de cierre). **Rama base:** 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
+- **Commits:** 77abcbc94c0c8d45eeab77202644794de7268457 (implementación y contrato inicial); cf0ffb79825f79b944d081b5c0618b1cc60755d4 (renombre de contador del fixture); 04e66f9682fe78c12b75b6a41df9cfa8e8437120 (normalización cross-realm del fixture).
+- **CI final:** Department Scope Contract run 43349369496; Accounting departmental resource and payment voucher access contracts PASS, incluidos todos los escenarios nuevos de C1.666. Los cuatro contratos anteriores también PASS. El workflow global falla después en User Role Membership contract línea 119 (foreignLegacy nulo al acceder a .role), fallo heredado ya registrado en C1.665 y ajeno a esta tarea; pasos posteriores, incluido syntax-check global, SKIPPED.
+- **Pruebas:** el contrato focalizado Node.js 24 en runner aislado pasó. El harness carga y ejecuta funciones extraídas de Code.gs; no se desplegó Apps Script/Sheets. El checkout local del entorno no estuvo disponible por DNS github.com.
+- **Estado:** C1.666 Completada como subalcance; TASK-153 / AUD-NG-386 continúa En ejecución por otras superficies. BETA-FUNC-044 Pendiente beta.
+===============================================================================

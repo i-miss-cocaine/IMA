@@ -5184,3 +5184,10 @@ La revisión de requisitos originales confirma cobertura de:
 **Addendum C1.666-R2 — comparación cross-realm del fixture**
 - Department Scope run 43349284072 ejecutó satisfactoriamente los escenarios nuevos previos al caso de hojas ausentes; la aserción final de ese caso falló porque deepStrictEqual compara prototipos entre realms VM/host. El objeto real y esperado tenían los mismos campos/valores.
 - Se aplica JSON round-trip a la respuesta antes de deepEqual; no hay cambios de lógica productiva. CI de confirmación pendiente.
+
+
+**Cierre C1.666 — verificación del historial de turnos ACCOUNTING**
+- Department Scope Contract run 43349369496 (commit 04e66f9682fe78c12b75b6a41df9cfa8e8437120): `Accounting departmental resource and payment voucher access contracts passed.` Se ejecutaron y aprobaron los escenarios añadidos para identidad/rol, aislamiento DEP-A/DEP-B/institución, consulta ajena, sustituciones con ambos participantes autorizados, horas extras, IDs duplicados, mappings ambiguos, esquema inválido y ausencia de creación de hojas.
+- Los cuatro contratos previos del workflow también PASS. El workflow global falló después en User Role Membership contract línea 119 (foreignLegacy nulo, acceso a .role); fallo heredado de C1.665, no relacionado con ACCOUNTING. Pasos posteriores, incluido syntax-check global, SKIPPED.
+- Contrato focalizado ejecutado en Node.js 24, runner aislado sin despliegue; checkout local del entorno bloqueado por DNS github.com. Apps Script/Sheets real NOT RUN; BETA-FUNC-044 Pendiente beta.
+- **Estado:** C1.666 Completada. TASK-153 / AUD-NG-386 permanece En ejecución para otros callsites.

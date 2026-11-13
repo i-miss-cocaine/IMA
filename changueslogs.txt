@@ -3147,3 +3147,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-13 UTC] [IMA-EXEC-20261112-1754Z-03] C1.666-R2 — normalización de aserción cross-realm
 - Department Scope run 43349284072 ejecutó las pruebas añadidas de identidad, roles, ámbitos, ambos participantes de sustituciones, overtime, duplicados y mappings ambiguos sin fallos hasta el escenario de hojas ausentes. Ese último escenario comparó directamente un objeto creado en VM con un objeto host mediante deepStrictEqual; Node detectó prototipos de realms distintos pese a la estructura idéntica.
 - Se normaliza la respuesta con JSON.parse(JSON.stringify(...)) antes de deepEqual. Sin cambios al código productivo ni al resultado esperado. Repetición CI pendiente.
+
+
+[2026-11-13 UTC] [IMA-EXEC-20261112-1754Z-03] C1.666 — verificación final del historial de turnos ACCOUNTING
+- Department Scope Contract run 43349369496, commit 04e66f9682fe78c12b75b6a41df9cfa8e8437120: Accounting departmental resource and payment voucher access contracts **PASS**, incluyendo los nuevos escenarios de turnos, sustituciones y horas extras; Department Scope, Internal Responsibility RBAC, Accounting Import Scope y User Migrated Resource Ownership también PASS.
+- El workflow global falló después en User Role Membership contract línea 119: verifySessionToken(foreignLegacy) devolvió null y el test accedió a .role; el fallo heredado ya estaba presente antes de C1.666. Los pasos posteriores (incluido syntax-check global) quedaron SKIPPED. El subcontrato ACCOUNTING pasó íntegramente.
+- Ejecución del contrato en runner aislado Node.js 24, sin despliegue; checkout local en el entorno de trabajo no disponible por fallo DNS al resolver github.com. Apps Script/Sheets real NOT RUN; BETA-FUNC-044 Pendiente beta.
+- **Estado:** subalcance C1.666 completado con contrato focalizado PASS; TASK-153 / AUD-NG-386 continúa En ejecución por otros callsites.
