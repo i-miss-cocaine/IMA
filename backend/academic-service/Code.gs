@@ -3173,7 +3173,7 @@ function getVerifiedDepartmentScopeForSession_(payload, ss, actor, sessionActor,
   var institutionId="";try{institutionId=String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID")||"").trim();}catch(_){}
   if(!institutionId)return {authorized:false,code:"IDENTITY_CONFIGURATION_REQUIRED"};
   var membershipId=delegatedSubject?String(delegatedMembershipId||"").trim():String(claims.membershipId||"").trim(),claimsInstitutionId=String(claims.institutionId||"").trim();
-  if(membershipId&&(!claimsInstitutionId||claimsInstitutionId!==institutionId))return {authorized:false,code:"ROLE_MEMBERSHIP_INSTITUTION_MISMATCH"};
+  if(String(claims.membershipId||"").trim()&&(!claimsInstitutionId||claimsInstitutionId!==institutionId))return {authorized:false,code:"ROLE_MEMBERSHIP_INSTITUTION_MISMATCH"};
   var sheet=ss&&ss.getSheetByName("AsignacionesAmbitosRoles");if(!sheet)return {authorized:false,code:"ROLE_SCOPE_NOT_INITIALIZED"};
   var data=sheet.getDataRange().getValues();
   var legacyHeaders=["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"];
