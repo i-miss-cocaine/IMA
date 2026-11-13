@@ -4684,8 +4684,9 @@ function calculatePayrollConceptPhase_(engine,employee,employeeUserId,period,pla
     if(start&&!isNaN(start.getTime())&&start>now)return false;if(end&&!isNaN(end.getTime())&&end<now)return false;
     const concept=engine.byCode[a.codigo],cs=concept.vigenciaInicio?new Date(concept.vigenciaInicio):null,ce=concept.vigenciaFin?new Date(concept.vigenciaFin):null;
     if(cs&&!isNaN(cs.getTime())&&cs>now)return false;if(ce&&!isNaN(ce.getTime())&&ce<now)return false;
-    const f=a.frecuencia||concept.frecuencia;if(!["MENSUAL","POR_PERIODO","UNICA"].includes(f))return false;
-    if(f==="UNICA"&&a.periodoUnico!==period)return false;
+    const frequencies=[a.frecuencia||"MENSUAL",concept.frecuencia||"MENSUAL"];
+    if(frequencies.some(f=>!["MENSUAL","POR_PERIODO","UNICA"].includes(f)))return false;
+    if(frequencies.includes("UNICA")&&a.periodoUnico!==period)return false;
     if(!concept.recurrente&&a.periodoUnico!==period)return false;
     if(a.tipo==="GLOBAL")return true;
     if(a.tipo==="EMPLEADO")return a.valor===user;
@@ -4746,7 +4747,7 @@ function savePayrollConcept(payload) {
     try{getPayrollConceptEngine_(ss);}catch(validationError){if(oldRow)cat.sheet.getRange(found.index,1,1,oldRow.length).setValues([oldRow]);else cat.sheet.getRange(found.index,1,1,writeRow.length).clearContent();return {status:"error",code:"PAYROLL_CONCEPT_DEPENDENCY_INVALID",message:"No se guardó el concepto: revise referencias, fórmulas y dependencias circulares."};}
     if(oldRow){const history=ensurePayrollConceptSheet_(ss,"HistorialConceptosPlanilla",getPayrollConceptHistoryHeaders_());history.sheet.appendRow(["HCP-"+Utilities.getUuid(),conceptId,oldRow[1],oldRow[20],JSON.stringify(oldRow),now,access.actor.userId,"ACTUALIZADO"]);}
     return {status:"success",conceptoId:conceptId,codigo:code,version:version,message:"Concepto salarial guardado y versión histórica conservada."};
-  }catch(e){if(cat&&found&&oldRow){try{cat.sheet.getRange(found.index,1,1,oldRow.length).setValues([oldRow]);}catch(_){}}return {status:"error",code:"PAYROLL_CONCEPT_SAVE_FAILED",message:"No fue posible guardar el concepto. Revise referencias y dependencias."};}finally{lock.releaseLock();}
+  }catch(e){if(cat&&found){try{if(oldRow)cat.sheet.getRange(found.index,1,1,oldRow.length).setValues([oldRow]);else cat.sheet.getRange(found.index,1,1,writeRow.length).clearContent();}catch(_){}}return {status:"error",code:"PAYROLL_CONCEPT_SAVE_FAILED",message:"No fue posible guardar el concepto. Revise referencias y dependencias."};}finally{lock.releaseLock();}
 }
 function setPayrollConceptStatus(payload) {
   const p=payload||{},access=requirePayrollConceptManager_(p);if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
@@ -4758,7 +4759,8 @@ function setPayrollConceptStatus(payload) {
     const found=matches[0],old=found.r.slice(),updated=old.slice();updated[18]=state;updated[20]=Number(updated[20]||1)+1;updated[23]=new Date();updated[24]=access.actor.userId;
     cat.sheet.getRange(found.index,1,1,updated.length).setValues([updated]);
     try{getPayrollConceptEngine_(ss);}catch(e){cat.sheet.getRange(found.index,1,1,old.length).setValues([old]);return {status:"error",code:"PAYROLL_CONCEPT_DEPENDENCY_INVALID",message:"No se puede desactivar: existen reglas activas que dependen de este concepto."};}
-    history.sheet.appendRow(["HCP-"+Utilities.getUuid(),id,old[1],old[20],JSON.stringify(old),new Date(),access.actor.userId,state]);
+    try{history.sheet.appendRow(["HCP-"+Utilities.getUuid(),id,old[1],old[20],JSON.stringify(old),new Date(),access.actor.userId,state]);}
+    catch(historyError){cat.sheet.getRange(found.index,1,1,old.length).setValues([old]);return {status:"error",code:"PAYROLL_CONCEPT_HISTORY_WRITE_FAILED",message:"No se pudo conservar el historial; el cambio fue revertido."};}
     return {status:"success",conceptoId:id,estado:state,version:updated[20]};
   }catch(e){return {status:"error",code:"PAYROLL_CONCEPT_STATUS_FAILED",message:"No fue posible cambiar el estado del concepto."};}finally{lock.releaseLock();}
 }
