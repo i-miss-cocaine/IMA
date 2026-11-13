@@ -84,6 +84,7 @@ function payload(extra={}) {
   assert.equal(h.sheets.LogsSistema.snapshot().length,2);
   assert.equal(h.sheets.LogsSistema.snapshot()[1][5],"DEPARTMENT_REFERENCE_READ_ALLOWED");
   assert.equal(Object.hasOwn(r,"content"),false,"authorization never returns resource content");
+  assert.ok(source.includes('case "authorizeDepartmentReferenceRead": result = authorizeDepartmentReferenceRead(payload); break;'),"read authorization endpoint is routed through doPost");
 }
 {
   const h=makeRuntime({grants:[GRANT_HEADERS,grantRow()],policy:"BLOQUEO_TOTAL_CROSS_DEPARTAMENTO"});
