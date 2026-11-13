@@ -1,4 +1,4 @@
-name: ACADEMIC Reference Consumer Local Contract
+name: Department Reference Consumers Local Contract
 
 on:
   push:
@@ -6,7 +6,9 @@ on:
       - NG_beta_0.0.0.1_work
     paths:
       - backend/academic-service/Code.gs
+      - backend/accounting-service/Code.gs
       - tests/security/academic-department-reference-consumer.test.js
+      - tests/security/accounting-department-reference-consumer.test.js
       - .github/workflows/academic-reference-consumer.yml
 
 permissions:
@@ -15,7 +17,7 @@ permissions:
 
 jobs:
   consumer-contract:
-    name: ACADEMIC consumer 17-scenario Node contract
+    name: ACADEMIC and ACCOUNTING reference consumer contracts
     runs-on: ubuntu-latest
     steps:
       - name: Checkout authorized work branch
@@ -32,8 +34,12 @@ jobs:
           git log -1 --format='%H'
       - name: Run ACADEMIC reference consumer contract
         run: node tests/security/academic-department-reference-consumer.test.js
+      - name: Run ACCOUNTING reference consumer contract
+        run: node tests/security/accounting-department-reference-consumer.test.js
       - name: Parse ACADEMIC Apps Script service
         run: node --check < backend/academic-service/Code.gs
+      - name: Parse ACCOUNTING Apps Script service
+        run: node --check < backend/accounting-service/Code.gs
       - name: Publish isolated result
         if: always()
         env:
@@ -48,7 +54,7 @@ jobs:
               method: "POST",
               headers: { "Accept": "application/vnd.github+json", "Authorization": "Bearer " + process.env.GH_TOKEN,
                 "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json" },
-              body: JSON.stringify({ state, context: "ima/academic-reference-consumer", description: state === "success" ? "17 Node scenarios and syntax check passed" : "Consumer contract or syntax check failed" })
+              body: JSON.stringify({ state, context: "ima/department-reference-consumers", description: state === "success" ? "Both Node contracts and syntax checks passed" : "A consumer contract or syntax check failed" })
             });
             if (!response.ok) throw new Error("Commit status publication failed: HTTP " + response.status);
           })().catch(function (error) { process.stderr.write(error.message + "\n"); process.exitCode = 1; });
