@@ -5018,6 +5018,10 @@ function updatePayrollPeriodStatus(payload) {
   const terminalStates = ["ANULADA","ANULADO","REVERTIDA","REVERTIDO","CANCELADA","CANCELADO"];
   if (terminalStates.includes(previousState) && !terminalStates.includes(requestedState)) throw new Error("PAYROLL_TERMINAL_STATE");
   const actor = getVerifiedAccountingIdentity_(payload || {});
+  const loanLedgerSheet = ss.getSheetByName("AmortizacionPrestamosNomina");
+  const hasLoanMovements = !!(loanLedgerSheet && loanLedgerSheet.getDataRange().getValues().slice(1).some(r => String(r[2]||"").trim() === String(planillaId).trim() && ["CALCULADO","APLICADO"].includes(String(r[9]||"").trim())));
+  const actorRole = String(actor && actor.role || "").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
+  if (hasLoanMovements && (!actor || !actor.authorized || !["RECURSOSHUMANOS","ADMINISTRADOR"].includes(actorRole))) throw new Error("PAYROLL_LOAN_REVIEW_NOT_AUTHORIZED");
   const actorId = actor && actor.authorized ? actor.userId : "SYSTEM_PAYROLL";
   if (requestedState === "APROBADA" || requestedState === "CERRADA") {
     const loanResult = applyPayrollLoanLedgerForPlanilla_(ss, planillaId, "APLICAR", actorId);
