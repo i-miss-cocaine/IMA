@@ -487,3 +487,19 @@
 - **Commits:** durable audit helper 710510d; tests durable audit 249c588/b7b67a6/cb6d31d; read authorization endpoint bbabe9f; test read authorization 7acbe5c/b7ce58d; workflow 4adf4dd; audit unique ID verification d331f9f; route assertion 1c87a65.
 - **Estado:** auditoría durable de mutaciones y endpoint de decisión/auditoría de lectura implementados y verificados en CI. Siguiente subalcance: transporte interservicio autenticado y callsites consumidores; después UI administrativa.
 ===============================================================================
+
+
+===============================================================================
+## C1.688 — IMA-EXEC-20261113-1205Z-01 — TASK-153 / T153-S05 — consumidor ACADEMIC de referencias documentales auditadas
+- **Checkpoint anterior:** C1.687. **HEAD inicial:** abac5afaf065f11f50dd203dff893473769b14d7. **HEAD de código/CI:** 73feaacb4fe5378cb87c01a18afb99807fb636ba. **Rama:** NG_beta_0.0.0.1_work. **Base:** NG_beta_0.0.0.1, HEAD 44d9891132332e692dbe2ba8602b41f50a508a59 (solo lectura).
+- **Implementación:** getStudentDocuments permite una referencia interdepartamental únicamente para un expediente explícito y cuando el único motivo de denegación es RESOURCE_SCOPE_DENIED. USER valida sobre HMAC, sesión firmada, membresía/tenant, permiso, ResourceOwnership, política, grant y auditoría durable.
+- **Límites de respuesta:** solo DocumentoID y campos aprobados de tipoDocumento, nombreArchivo, fechaRecepcion, fechaVencimiento y estadoRevision. Sin expediente completo, solicitud, DriveFileId/DriveUrl, historial, observaciones ni contenido. No hay fallback para listados generales, solicitudId, escritura o descarga. Se conserva RBAC ordinario y acceso same-department.
+- **Archivos:** backend/academic-service/Code.gs; tests/security/academic-department-reference-consumer.test.js; .github/workflows/department-scope-contract.yml; beta_test_Parte_0002.txt; beta_test.txt; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; changueslogs.txt; este checkpoint e índice.
+- **Commits de código/prueba/workflow:** a0e902a773aa1fedec42329e6796a0302a43b297; 7c4fe208d16062d1c0352388ca3dec2b04f9bff6; 73feaacb4fe5378cb87c01a18afb99807fb636ba.
+- **Pruebas diseñadas:** 17 escenarios Node; cubren firma HMAC, allowlists, respuesta exacta, denegación, fallos HTTP/JSON/red, configuración inválida, no enumeración, no acceso a Drive y compatibilidad de mismo departamento. No se declara que estén ejecutados.
+- **Ejecución:** Node/CLI local NOT RUN por fallo DNS al resolver github.com. Combined status de 73feaacb vacío y lookup de workflow runs vacío; no existe evidencia observable de ejecución Actions para este commit. No se declara PASS local ni CI.
+- **Revisión:** cambio focalizado; ninguna escritura en rama base. Sin datos reales, secretos, despliegues o cambios de configuración productiva.
+- **Beta:** BETA-FUNC-063 Pendiente beta para ACADEMIC/USER desplegados y secreto de transporte configurado en ambos servicios.
+- **Estado:** incremento publicado; **En ejecución** hasta ejecutar y observar el contrato Node/CI. TASK-153 global sigue En ejecución.
+- **Siguiente acción:** verificar la ejecución del contrato; corregir fallos si los hay y continuar con otro consumidor read-only solo después de la aprobación local.
+===============================================================================
