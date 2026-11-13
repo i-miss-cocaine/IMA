@@ -3568,3 +3568,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contratos de catálogo, recepción parcial, capitalización, payroll journal y sintaxis Apps Script/JS PASS en GitHub Actions Node.js 24.22.2. Department Scope 43522764235, Identity 43522567093, Reference Consumers 43522567045 SUCCESS.
 - CLI local y Apps Script/Sheets real NOT RUN. BETA-FUNC-087 pendiente beta.
 - HEAD de cierre: c60464986eef21906e5f0c012b126a67e8dd14ad. Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
+
+[2026-11-13 23:36 UTC] C1.718 — TASK-188 — integración contable de consumos, entregas y mantenimiento
+- Se completó el reconocimiento contable de entregas inmediatas, materiales asignados, consumos efectivos y devoluciones, con cuentas 1301/1302/5201 y centros de costo.
+- Las transferencias internas no generan gasto; los repuestos de mantenimiento descuentan Kardex y se imputan al departamento/costo del custodio o al ámbito autorizado. Se añadieron validaciones de scope, identidad de auditoría, idempotencia con payload, costo real, rollback y esquemas no destructivos.
+- Node.js 24: accounting-catalog.test.js PASS; sintaxis Apps Script/JS PASS. GitHub Actions: Department Scope 43528354275, Department Reference Consumers 43528354359, Identity Mapping 43528354318 SUCCESS.
+- CLI local NOT RUN por fallo DNS de github.com; Apps Script/Sheets real NOT RUN. BETA-FUNC-088 pendiente beta.
+- Commits de implementación: 1e7160f, 331c1ef, 2727e6b, 83ceac2. HEAD de implementación 83ceac214a4429c7809796e94aac973b79348c9a; rama base 44d9891132332e692dbe2ba8602b41f50a508a59 sin cambios.

@@ -2679,7 +2679,7 @@
 ---
 
 <!-- ID: TASK-188 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [ ] [TASK-188] Integración contable de consumos, entregas y movimientos de inventario
+### [x] [TASK-188] Integración contable de consumos, entregas y movimientos de inventario
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E (F19-17), Sección C (2.17) y Plan de Trabajo F19-07
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Control de costos departamentales, exactitud contable en consumo de suministros y seguimiento presupuestario)
@@ -2713,7 +2713,7 @@
   - Los asientos cumplen estricta partida doble (`totalDebe === totalHaber`).
   - No se generan contabilizaciones duplicadas por reintentos.
   - Se concilia el consumo físico en Kardex con el saldo de las cuentas de mayor contable.
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Completada en código y CI; BETA-FUNC-088 pendiente de validación desplegada.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7841-7879; clave TASK-189; asignación única: Contabilidad -->
 

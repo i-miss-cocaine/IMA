@@ -287,3 +287,24 @@
 - **Evidencia requerida:** snapshots de catálogo/categorías/unidades/Kardex/solicitudes antes y después, IDs de movimientos, resultados de conversiones, respuestas de duplicados/denegaciones, importación/exportación y logs de concurrencia; datos sintéticos únicamente.
 - **Estado:** Pendiente beta. GitHub Actions valida contratos Node.js; no se ha desplegado ni probado Apps Script/Sheets real.
 ===============================================================================
+
+===============================================================================
+### BETA-FUNC-088 — Integración contable de consumos, entregas y repuestos de mantenimiento
+- **Relación:** TASK-188; checkpoint C1.718. Ejecutar en entorno beta desplegado con datos sintéticos y hojas respaldadas; no usar datos productivos.
+- **Preparación:** capturar encabezados y filas de MaterialesSolicitudes, InventariosKardex, AsientosContables, DevolucionesMateriales, ConsumosMateriales y MantenimientoOrdenes; confirmar cuentas 1301, 1302 y 5201 activas; comprobar roles y asignaciones de ámbito departamental.
+- **Casos:**
+  1. Crear una requisición con departamento y centro de costo; entregar en modo GASTO_INMEDIATO y comprobar salida física, débito 5201, crédito 1301, importes exactos y responsable tomado de la sesión verificada.
+  2. Crear una requisición ASIGNADO; comprobar transferencia Bodega→Departamento, débito 1302/crédito 1301; confirmar que no se registra gasto hasta consumir efectivamente.
+  3. Registrar consumo asignado; comprobar salida física, débito 5201/crédito 1302 y reducción del saldo asignado.
+  4. Devolver materiales en modo inmediato y asignado; verificar entrada física, reversión 1301/5201 o transferencia 1301/1302 y límites de cantidad no consumida/no devuelta.
+  5. Ejecutar transferencias entre almacenes y confirmar que no generan gasto ni cambian el valor total institucional.
+  6. Resolver una orden de mantenimiento con repuestos; comprobar que el activo/custodio determina el departamento cuando no se proporciona explícitamente, que el scope autoriza el departamento, que el Kardex descuenta del almacén y que el asiento carga 5201/1301 al centro de costo correspondiente.
+  7. Repetir entrega, devolución, consumo y resolución de mantenimiento con la misma clave y payload; confirmar idempotencia. Reutilizar una clave con otro departamento, artículo o cantidad y confirmar rechazo sin mutaciones.
+  8. Simular dos operaciones concurrentes, lock ocupado y fallo después de movimientos parciales; verificar rollback y ausencia de asientos o salidas duplicadas.
+  9. Intentar lectura/escritura desde otro departamento y con rol no autorizado; comprobar denegación y ausencia de filtraciones de existencia de solicitudes ajenas.
+  10. Verificar que el costo referencial no se use para contabilizar; probar costo promedio y fallback a última adquisición. Introducir encabezados inesperados en hojas de prueba y comprobar que no se sobrescriben.
+  11. Conciliar cada movimiento de consumo/devolución con sus líneas de diario por artículo, referencia, cuenta y cantidad base; confirmar Debe=Haber y que transferencias internas no alteran el gasto institucional.
+- **Resultado esperado:** Kardex y contabilidad quedan vinculados por referencias únicas; cada asiento balancea exactamente; no existen duplicados ni movimientos sin asiento; el scope departamental y la identidad auditada son efectivos.
+- **Evidencia requerida:** snapshots antes/después, IDs de requisiciones/órdenes/movimientos/asientos, detalles de costo unitario, logs de autorización, resultados de reintentos/concurrencia/rollback y conciliación por artículo; solo datos sintéticos.
+- **Estado:** Pendiente beta. Contrato Node.js y GitHub Actions aprobados; Apps Script/Sheets real no ejecutado.
+===============================================================================

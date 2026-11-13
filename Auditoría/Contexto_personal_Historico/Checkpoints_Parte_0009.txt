@@ -102,3 +102,17 @@ Continuación del historial activo desde C1.710. Los registros anteriores perman
 - **Estado:** TASK-186 completada en código y CI; F19-TASK05 satisfecha por el mismo alcance. BETA-FUNC-087 pendiente beta.
 - **Siguiente tarea elegible:** TASK-188 — integración contable de entregas y consumo de materiales; sus dependencias de catálogo (TASK-186/F19-TASK05), solicitudes y servicio de asientos ya están disponibles.
 ===============================================================================
+
+===============================================================================
+### C1.718 — IMA-EXEC-20261113-2336Z-01 — TASK-188 — Integración contable de entregas y consumo de materiales
+- **Continuidad:** C1.717; HEAD inicial recuperado 8b66a0c1530b858f95cbc84ac0e955bba2172c08 (18 commits posteriores al checkpoint C1.717, con TASK-188 parcialmente iniciada). Rama exclusiva NG_beta_0.0.0.1_work. Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Alcance completado:** departamento y centro de costo en requisiciones; contabilización inmediata 5201/1301; materiales asignados 1302/1301 hasta consumo; consumo efectivo 5201/1302; devoluciones con reversión contable; transferencias internas sin gasto; repuestos de mantenimiento descontados de Kardex y cargados al departamento/costo del activo custodio o al departamento autorizado explícito.
+- **Integridad y seguridad:** identidad verificada en auditoría de entrega; autorización departamental revalidada dentro de ScriptLock; consultas de requisiciones limitadas al scope; claves de idempotencia validan el payload completo y el asiento; colisiones de asiento/ledger se rechazan; costos referenciales no se usan como costo contable; esquemas de requisición, mantenimiento y ledger se validan sin sobrescribir encabezados desconocidos; fallos revierten filas añadidas de Kardex y diario.
+- **Pruebas añadidas:** consulta de centro de costo/modo; scope positivo/negativo; actor no suplantable; entrega y devolución idempotentes; conflicto por reuso de ID; costo promedio y fallback a última adquisición; rechazo de costo referencial; transferencia sin gasto; consumo de mantenimiento por departamento, reintento, conflicto, lock ocupado y schema conflict.
+- **Commits de implementación:** 1e7160fad1babbc33bd565bcc7d1076fcd1e98d6; 331c1effb7683615827e7bef890c43e6d1b5908a; 2727e6b21785f5afc6cd749d78f59a14b8edcc32; 83ceac214a4429c7809796e94aac973b79348c9a.
+- **GitHub Actions:** Department Scope 43528354275 SUCCESS; Department Reference Consumers 43528354359 SUCCESS; Identity Mapping 43528354318 SUCCESS. El workflow ejecutó node tests/security/accounting-catalog.test.js y los chequeos de sintaxis de backend Apps Script y JavaScript con Node.js 24.
+- **Limitaciones:** CLI local NOT RUN por fallo DNS al clonar github.com; Apps Script/Sheets real NOT RUN. Validación desplegada separada en BETA-FUNC-088.
+- **HEAD de implementación verificado:** 83ceac214a4429c7809796e94aac973b79348c9a. **Archivos de implementación:** backend/accounting-service/Code.gs, js/accounting.js, tests/security/accounting-catalog.test.js.
+- **Estado:** TASK-188 completada en código y CI; BETA-FUNC-088 pendiente.
+- **Siguiente tarea elegible:** TASK-189 — valoración económica PEPS/Promedio ponderado del inventario.
+===============================================================================

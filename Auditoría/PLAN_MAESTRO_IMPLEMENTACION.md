@@ -5549,3 +5549,17 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Contratos Node.js 24.22.2 y GitHub Actions aprobados: Department Scope 43522764235, Identity Mapping 43522567093 y Department Reference Consumers 43522567045.
 - Estado: TASK-186 y F19-TASK05 completadas en código/CI; BETA-FUNC-087 pendiente de validación desplegada.
 - Siguiente tarea elegible: TASK-188 — contabilización de entregas y consumo de materiales.
+
+## Registro de ejecución C1.718 — TASK-188 — Integración contable de entregas y consumo de materiales
+- **Sesión:** IMA-EXEC-20261113-2336Z-01. Continuidad C1.717. La rama autorizada se recuperó en HEAD 8b66a0c1530b858f95cbc84ac0e955bba2172c08, 18 commits después del checkpoint documental C1.717; la implementación TASK-188 ya estaba iniciada y se continuó sin repetir TASK-186.
+- **Rama:** NG_beta_0.0.0.1_work. Rama base de solo lectura NG_beta_0.0.0.1, HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- **Implementación:** requisiciones con departamento canónico y centro de costo; reconocimiento inmediato (5201/1301) o material asignado (1302/1301); consumo efectivo asignado (5201/1302); devoluciones con reversión; transferencias internas sin gasto; repuestos de mantenimiento con cargo al departamento del custodio o al departamento autorizado indicado.
+- **Controles:** scope departamental revalidado dentro de ScriptLock; identidad verificada para auditoría; idempotencia con comparación de payload y asiento; rechazo de claves duplicadas ambiguas; verificación de asientos existentes; costo contable limitado a costo promedio o última adquisición (no costo referencial); migración de esquemas no destructiva y bloqueo ante encabezados incompatibles; rollback de movimientos y asientos ante fallos.
+- **Interfaz:** consulta de requisiciones devuelve centro de costo y modo de reconocimiento; formulario de mantenimiento permite especificar departamento, centro de costo, almacén, estado y repuestos JSON.
+- **Revisión de código:** se revisaron sintaxis, lógica contable, partida doble, scope, identidad, concurrencia, idempotencia, rollback, colisiones de esquema, lectura aislada y conservación de datos existentes. Se añadieron pruebas para conflictos de clave, costos faltantes, scope, lock ocupado, transferencias sin gasto y consumo de mantenimiento.
+- **Archivos de implementación:** backend/accounting-service/Code.gs; js/accounting.js; tests/security/accounting-catalog.test.js.
+- **Commits de implementación:** 1e7160fad1babbc33bd565bcc7d1076fcd1e98d6; 331c1effb7683615827e7bef890c43e6d1b5908a; 2727e6b21785f5afc6cd749d78f59a14b8edcc32; 83ceac214a4429c7809796e94aac973b79348c9a.
+- **Pruebas:** tests/security/accounting-catalog.test.js PASS y syntax-check de backend Apps Script/JS PASS en GitHub Actions Node.js 24; Department Scope 43528354275 SUCCESS; Department Reference Consumers 43528354359 SUCCESS; Identity Mapping 43528354318 SUCCESS. Los contratos generales del workflow también finalizaron correctamente.
+- **Limitaciones:** CLI local NOT RUN; se intentó clonar el repositorio y el contenedor no pudo resolver github.com (DNS). Apps Script/Sheets desplegado NOT RUN. No se usaron datos productivos. BETA-FUNC-088 queda pendiente de validación desplegada.
+- **Estado:** TASK-188 completada en código, revisión y CI. La validación beta permanece separada.
+- **Siguiente tarea elegible:** TASK-189 — sistema integral de valoración económica del inventario (PEPS/Promedio ponderado, capas de costo, transferencias valorizadas, ajustes y conciliación).
