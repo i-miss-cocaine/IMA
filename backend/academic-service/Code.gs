@@ -3397,7 +3397,9 @@ function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow) {
 
   // SELF and GUARDIAN access are relational exceptions to staff RBAC, not
   // exceptions to the institution/department ownership boundary.
-  const scope = getVerifiedAcademicDepartmentScope_(payload, ss, ownershipIdentity);
+  const scope = isGuardian
+    ? getVerifiedAcademicGuardianDepartmentScope_(payload, ss, actor, expedienteId)
+    : getVerifiedAcademicDepartmentScope_(payload, ss, ownershipIdentity);
   if (!scope || !scope.authorized) return scope || { authorized: false, code: "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
   const ownership = assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_ESTUDIANTE", expedienteId, "READ", payload);
   if (!ownership || !ownership.authorized) return ownership || { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
