@@ -48,6 +48,12 @@ const directOrder=ctx.createPurchaseOrder({solicitudId:createdRequest.solicitudI
 const directOrderRow=rows.OrdenesCompra.at(-1),directOrderLine=JSON.parse(directOrderRow[6])[0];
 assert.equal(directOrderLine.clasificacionInventario,"Consumible","direct order must inherit the request classification, not a client override");
 assert.equal(directOrderLine.capitalizable,false);
+vm.runInContext(extract(source,"verifyThreeWayMatch"),ctx);
+const invoiceMatch=ctx.verifyThreeWayMatch({ordenCompraId:"ORD-1",facturaProveedor:{numeroFactura:"INV-CHECK",proveedorId:"SUP-1",partidasFacturadas:[{itemId:"IT-1",cantidad:2,precioUnitario:500,subtotal:1000}]}});
+assert.equal(invoiceMatch.estadoConciliacion,"Conciliada","three-way match must resolve adjudicated itemId through receipt");
+const oldPaymentState=rows.CuentasPorPagarGastos[1][7];rows.CuentasPorPagarGastos[1][7]="Bloqueado Conciliacion";
+assert.equal(ctx.getPurchaseReceiptAssetCandidates({recepcionId:"REC-1"}).facturasDisponibles.length,0,"blocked payable invoices cannot be used to capitalize assets");
+rows.CuentasPorPagarGastos[1][7]=oldPaymentState;
 const preview=ctx.getPurchaseReceiptAssetCandidates({recepcionId:"REC-1"});
 assert.equal(preview.candidatos.length,1);assert.equal(preview.candidatos[0].unidadesDisponibles,2);assert.equal(preview.facturasDisponibles[0].numeroFactura,"INV-001");
 const first={recepcionId:"REC-1",numeroFactura:"INV-001",activos:[{itemId:"IT-1",codigoPatrimonial:"PAT-001",numeroSerie:"SN-001",categoriaPatrimonial:"Equipo computacional",marca:"Marca A",modelo:"Modelo A",ubicacionActual:"Bodega"}]};
