@@ -3265,5 +3265,7 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-13 UTC] [IMA-EXEC-20261112-1754Z-03] C1.679 — protección de getStudentEnrollmentHistory
 - ACADEMIC reemplaza la lectura histórica basada en userId del cliente por identidad firmada, validación de cuenta/mapping, expediente único y ResourceOwnership/ámbito.
 - Tutor: relación/AccesoPortal activos; cargos solo cuando EsResponsableFinanciero está habilitado. IDs duplicados excluidos, esquemas validados y hojas ausentes no se crean.
-- Se añade contrato Node con escenarios positivos/negativos y 25 lecturas concurrentes sin mutación; se integra al workflow Department Scope.
-- BETA-FUNC-054 agregado, Pendiente beta. CI y revisión final pendientes de confirmación.
+- Se añade contrato Node con escenarios positivos/negativos, columnas opcionales compatibles, IDs duplicados y 25 invocaciones repetidas sin mutación; se integra al workflow Department Scope.
+- Department Scope run 43367602682 PASS (Node 24.22.2; 20 pasos, contrato nuevo y sintaxis ACADEMIC); Task-Service run 43367602453 PASS (Node 22.23.4; dos contratos).
+- CLI local NOT RUN por DNS hacia github.com; el runner aislado de CI ejecutó las pruebas locales del código. Revisión manual del diff PASS; detector automatizado de clones NOT RUN/no configurado.
+- BETA-FUNC-054 agregado, Pendiente beta. T153-S04 Completada; TASK-153 sigue En ejecución.

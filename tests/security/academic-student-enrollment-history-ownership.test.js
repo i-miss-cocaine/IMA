@@ -152,14 +152,14 @@ const call=(identity,extra)=>context.run(Object.assign({identity},extra||{}));
 }
 {
  const before=guardCalls;
- const results=await Promise.all(Array.from({length:25},()=>Promise.resolve(call({authorized:true,userId:"STU-1",role:"Estudiante"}))));
- assert.equal(results.every(result=>result.status==="success"),true,"concurrent read-only requests remain consistent");
+ const results=Array.from({length:25},()=>call({authorized:true,userId:"STU-1",role:"Estudiante"}));
+ assert.equal(results.every(result=>result.status==="success"),true,"repeated read-only requests remain consistent without shared mutable state");
  assert.equal(guardCalls-before,25,"every concurrent request independently revalidates ownership");
  assert.equal(createAttempts,0,"concurrent reads have no persistence side effects");
 }
 const fn=extractFunction("getStudentEnrollmentHistory");
 assert(fn.includes("getVerifiedAcademicIdentity_")&&fn.includes("assertStudentExpedienteScopeAccess_"),"history endpoint must use verified identity and expediente ownership");
 assert(!fn.includes("getOrCreateSheet"),"history endpoint must remain read-only and must not create sheets");
-console.log("ACADEMIC student enrollment history identity, guardian, department ownership, financial privacy, schema, duplicate-ID and concurrency contracts passed.");
+console.log("ACADEMIC student enrollment history identity, guardian, department ownership, financial privacy, schema, duplicate-ID and repeat-read and no-side-effect contracts passed.");
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
