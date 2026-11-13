@@ -397,7 +397,7 @@ assert.deepEqual(Array.from(trainingHistory(actor("admin")).data.inscripciones),
 context.SpreadsheetApp.openById=originalTrainingOpen;context.getOrCreateSheet=originalTrainingGetOrCreate;
 assert.ok(!extractFunction(accounting,"getEmployeeTrainingHistory").includes("getOrCreateSheet"));
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeTrainingHistory"'));
-assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeTrainingHistory", "uploadEmployeeDocument"'));
+assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeTrainingHistory", "getEmployeeLoansAdvances", "uploadEmployeeDocument"'));
 
 const laborHistory=context.getLaborIncidentsHistory;
 assert.deepEqual(Array.from(laborHistory(actor("staffA")).data.incidencias,r=>r.incidenciaId),["INC-A"]);
