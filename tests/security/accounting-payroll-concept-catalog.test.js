@@ -77,6 +77,7 @@ assert.ok(src.includes("calculatePayrollConceptPhase_(payrollConceptEngine,e,emp
 assert.ok(src.includes("summarizePayrollConceptDetails_(ss,planillaId)"),"journal consumes concept detail snapshots");
 assert.ok(src.includes("visiblePayrollConcepts.forEach"),"receipt renders visible concepts only");
 assert.ok(hr.includes("payroll-concepts-panel")&&hr.includes("savePayrollConcept")&&hr.includes("assignPayrollConcept"),"HR dashboard exposes catalog and assignments");
+assert.ok(hr.includes('name="estado" value="ACTIVO"')&&hr.includes("payload.estado=conceptField('estado').value"),"editing an inactive concept preserves its status");
 assert.ok(acct.includes("dashboard-recursos-humanos.html#payroll-concepts-panel"),"accounting dashboard links to concept manager");
 const scripts=[...hr.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(s=>s.trim());scripts.forEach(s=>assert.doesNotThrow(()=>new vm.Script(s)));
 console.log("ACCOUNTING dynamic payroll concept catalog contract passed: safe formulas, dependency graph, scoped assignments, phase calculation, tax flags, immutable detail, accounting balance, version history, rollback and UI syntax");

@@ -102,6 +102,7 @@
             </div>
             <form id="payroll-concept-form" class="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 bg-violet-50/50 rounded-2xl border border-violet-100">
                 <input type="hidden" name="conceptoId">
+                <input type="hidden" name="estado" value="ACTIVO">
                 <label class="text-xs font-bold text-gray-700">Código único<input name="codigo" required maxlength="40" pattern="[A-Za-z][A-Za-z0-9_]{1,39}" class="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm" placeholder="BONO_TRANSPORTE"></label>
                 <label class="text-xs font-bold text-gray-700">Nombre<input name="nombre" required maxlength="120" class="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm" placeholder="Bono de transporte"></label>
                 <label class="text-xs font-bold text-gray-700">Cuenta contable<input name="cuentaContable" required class="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm" placeholder="Código de cuenta"></label>
@@ -1158,6 +1159,7 @@
                 if (!payrollConceptForm) return;
                 payrollConceptForm.reset();
                 conceptField('conceptoId').value = '';
+                conceptField('estado').value = 'ACTIVO';
                 conceptField('frecuencia').value = 'MENSUAL';
                 conceptField('prioridad').value = '100';
                 conceptField('visibleBoleta').checked = true;
@@ -1207,7 +1209,7 @@
             if (payrollConceptForm) payrollConceptForm.addEventListener('submit',async event=>{
                 event.preventDefault();
                 const form=new FormData(payrollConceptForm),payload=Object.fromEntries(form.entries());
-                payload.visibleBoleta=conceptField('visibleBoleta').checked;payload.recurrente=conceptField('recurrente').checked;payload.valor=Number(payload.valor);payload.prioridad=Number(payload.prioridad);
+                payload.visibleBoleta=conceptField('visibleBoleta').checked;payload.recurrente=conceptField('recurrente').checked;payload.estado=conceptField('estado').value||'ACTIVO';payload.valor=Number(payload.valor);payload.prioridad=Number(payload.prioridad);
                 try{if(window.showLoading)window.showLoading('Guardando concepto salarial...');const result=await fetchApi('ACCOUNTING','savePayrollConcept',payload);if(window.hideLoading)window.hideLoading();if(!result||result.status!=='success')throw new Error(result&&result.message||'No se pudo guardar el concepto.');alert(result.message);resetPayrollConceptForm();await loadPayrollConceptCatalog();}
                 catch(error){if(window.hideLoading)window.hideLoading();alert(error.message);}
             });
