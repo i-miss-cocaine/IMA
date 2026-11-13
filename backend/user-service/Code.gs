@@ -1933,6 +1933,8 @@ function doPost(e) {
       case "getRetentionPolicies": result = getRetentionPolicies(payload); break;
       case "saveRetentionPolicy": result = saveRetentionPolicy(payload); break;
       case "executeDataRetentionPolicyCheck": result = executeDataRetentionPolicyCheck(payload); break;
+      case "getDepartmentReferencePolicy": result = getDepartmentReferencePolicy(payload); break;
+      case "setDepartmentReferencePolicy": result = setDepartmentReferencePolicy(payload); break;
       case "getPermissionMatrix": result = getPermissionMatrix(payload); break;
       case "savePermissionMatrix": result = savePermissionMatrix(payload); break;
       case "submitPrivacyRightsRequest": result = submitPrivacyRightsRequest(payload); break;
@@ -10638,6 +10640,111 @@ function assertRecordOwnership(payload, resourceType, resourceId, operation) {
  * verificados por el servidor. No lee ni escribe hojas y no sustituye RBAC,
  * autorización estándar del recurso ni persistencia del evento de auditoría.
  */
+const DEPARTMENT_REFERENCE_POLICY_KEY_ = "POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL";
+const DEPARTMENT_REFERENCE_POLICY_STRICT_ = "BLOQUEO_TOTAL_CROSS_DEPARTAMENTO";
+const DEPARTMENT_REFERENCE_POLICY_READ_ONLY_ = "PERMITIR_REFERENCIA_SOLO_LECTURA_INTERDEPARTAMENTAL";
+const DEPARTMENT_REFERENCE_POLICY_HEADERS_ = ["InstitutionID", "ConfigKey", "ConfigValue", "UpdatedBy", "UpdatedAt"];
+
+function ensureDepartmentReferencePolicySheet_(ss) {
+  var sheet = ss.getSheetByName("ConfiguracionInstitucional");
+  if (!sheet) sheet = ss.insertSheet("ConfiguracionInstitucional");
+  if (sheet.getLastRow() === 0) sheet.appendRow(DEPARTMENT_REFERENCE_POLICY_HEADERS_);
+  var actual = sheet.getRange(1, 1, 1, DEPARTMENT_REFERENCE_POLICY_HEADERS_.length).getValues()[0].map(String);
+  if (JSON.stringify(actual) !== JSON.stringify(DEPARTMENT_REFERENCE_POLICY_HEADERS_)) {
+    throw new Error("DEPARTMENT_REFERENCE_POLICY_SCHEMA_MISMATCH");
+  }
+  return sheet;
+}
+
+/** Lectura tenant-scoped y no mutante. Si falta la clave, aplica el default estricto. */
+function getDepartmentReferencePolicy_(institutionId) {
+  try {
+    var tenantId = String(institutionId || "").trim();
+    if (!tenantId) return { status: "error", code: "IDENTITY_CONFIGURATION_REQUIRED" };
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName("ConfiguracionInstitucional");
+    if (!sheet) return { status: "success", institutionId: tenantId, key: DEPARTMENT_REFERENCE_POLICY_KEY_, value: DEPARTMENT_REFERENCE_POLICY_STRICT_, source: "DEFAULT" };
+    if (sheet.getLastRow() < 1) return { status: "error", code: "DEPARTMENT_REFERENCE_POLICY_SCHEMA_MISMATCH" };
+    var actual = sheet.getRange(1, 1, 1, DEPARTMENT_REFERENCE_POLICY_HEADERS_.length).getValues()[0].map(String);
+    if (JSON.stringify(actual) !== JSON.stringify(DEPARTMENT_REFERENCE_POLICY_HEADERS_)) {
+      return { status: "error", code: "DEPARTMENT_REFERENCE_POLICY_SCHEMA_MISMATCH" };
+    }
+    var rows = sheet.getDataRange().getValues(), matches = [];
+    for (var i = 1; i < rows.length; i++) {
+      var row = rows[i] || [];
+      if (String(row[0] || "").trim() === tenantId && String(row[1] || "").trim() === DEPARTMENT_REFERENCE_POLICY_KEY_) matches.push(row);
+    }
+    if (!matches.length) return { status: "success", institutionId: tenantId, key: DEPARTMENT_REFERENCE_POLICY_KEY_, value: DEPARTMENT_REFERENCE_POLICY_STRICT_, source: "DEFAULT" };
+    if (matches.length !== 1) return { status: "error", code: "DEPARTMENT_REFERENCE_POLICY_AMBIGUOUS" };
+    var value = String(matches[0][2] || "").trim();
+    if (value !== DEPARTMENT_REFERENCE_POLICY_STRICT_ && value !== DEPARTMENT_REFERENCE_POLICY_READ_ONLY_) {
+      return { status: "error", code: "DEPARTMENT_REFERENCE_POLICY_UNKNOWN" };
+    }
+    return { status: "success", institutionId: tenantId, key: DEPARTMENT_REFERENCE_POLICY_KEY_, value: value, source: "CONFIGURACION_INSTITUCIONAL", updatedBy: String(matches[0][3] || ""), updatedAt: matches[0][4] || "" };
+  } catch (error) {
+    return { status: "error", code: error.message || "DEPARTMENT_REFERENCE_POLICY_READ_FAILED" };
+  }
+}
+
+function getDepartmentReferencePolicy(payload) {
+  var role = getUserVerifiedRole(payload);
+  var actorId = String((payload && payload._verifiedUserId) || "").trim();
+  if (!actorId || !role || role === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  if (getDynamicPermissionsForRole(role, "getDepartmentReferencePolicy") !== true) return { status: "error", code: "AUTH_PERMISSION_DENIED" };
+  var context = getUserContextScope(payload);
+  if (!context || context.status !== "success") return { status: "error", code: context && context.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+  var result = getDepartmentReferencePolicy_(context.institutionId);
+  if (result.status !== "success") return result;
+  return { status: "success", institutionId: result.institutionId, key: result.key, value: result.value, source: result.source, updatedAt: result.updatedAt || "" };
+}
+
+function setDepartmentReferencePolicy(payload) {
+  var lock = null;
+  try {
+    var role = getUserVerifiedRole(payload);
+    var actorId = String((payload && payload._verifiedUserId) || "").trim();
+    if (!actorId || !role || role === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+    if (getDynamicPermissionsForRole(role, "manageDepartmentReferencePolicy") !== true) return { status: "error", code: "AUTH_PERMISSION_DENIED" };
+    var context = getUserContextScope(payload);
+    if (!context || context.status !== "success") return { status: "error", code: context && context.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+    if (context.institutionWide !== true) return { status: "error", code: "INSTITUTION_WIDE_SCOPE_REQUIRED" };
+    var value = String((payload && payload.value) || "").trim();
+    if (value !== DEPARTMENT_REFERENCE_POLICY_STRICT_ && value !== DEPARTMENT_REFERENCE_POLICY_READ_ONLY_) {
+      return { status: "error", code: "DEPARTMENT_REFERENCE_POLICY_VALUE_INVALID" };
+    }
+    lock = LockService.getScriptLock();
+    if (!lock.tryLock(10000)) return { status: "error", code: "DEPARTMENT_REFERENCE_POLICY_LOCK_TIMEOUT" };
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ensureDepartmentReferencePolicySheet_(ss);
+    var rows = sheet.getDataRange().getValues(), matches = [];
+    for (var i = 1; i < rows.length; i++) {
+      var row = rows[i] || [];
+      if (String(row[0] || "").trim() === String(context.institutionId || "").trim() &&
+          String(row[1] || "").trim() === DEPARTMENT_REFERENCE_POLICY_KEY_) matches.push(i + 1);
+    }
+    if (matches.length > 1) return { status: "error", code: "DEPARTMENT_REFERENCE_POLICY_AMBIGUOUS" };
+    var now = new Date().toISOString();
+    if (matches.length === 1) {
+      var current = String(rows[matches[0] - 1][2] || "").trim();
+      if (current !== DEPARTMENT_REFERENCE_POLICY_STRICT_ && current !== DEPARTMENT_REFERENCE_POLICY_READ_ONLY_) {
+        return { status: "error", code: "DEPARTMENT_REFERENCE_POLICY_UNKNOWN" };
+      }
+      if (current === value) return { status: "success", unchanged: true, institutionId: context.institutionId, key: DEPARTMENT_REFERENCE_POLICY_KEY_, value: value };
+      sheet.getRange(matches[0], 3, 1, 3).setValues([[value, actorId, now]]);
+    } else {
+      sheet.appendRow([context.institutionId, DEPARTMENT_REFERENCE_POLICY_KEY_, value, actorId, now]);
+    }
+    logStructuredEvent("USER", "setDepartmentReferencePolicy", "INFO", "DEPARTMENT_REFERENCE_POLICY_UPDATED", "Política de referencias interdepartamentales actualizada.", {
+      institutionId: context.institutionId, key: DEPARTMENT_REFERENCE_POLICY_KEY_, value: value, updatedBy: actorId
+    }, role);
+    return { status: "success", institutionId: context.institutionId, key: DEPARTMENT_REFERENCE_POLICY_KEY_, value: value, updatedBy: actorId, updatedAt: now };
+  } catch (error) {
+    return { status: "error", code: error.message || "DEPARTMENT_REFERENCE_POLICY_WRITE_FAILED" };
+  } finally {
+    if (lock) { try { lock.releaseLock(); } catch (e) {} }
+  }
+}
+
 function evaluateDepartmentReferenceAccess_(input) {
   var request = input || {};
   var actor = request.actorContext || {};
