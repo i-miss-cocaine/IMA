@@ -114,7 +114,7 @@ const createContext = {
   LockService:{getScriptLock:()=>({tryLock:ms=>{assert.equal(ms,10000);return false;},releaseLock:()=>{throw Error("lock must not be released when not acquired");}})},
   SpreadsheetApp:{openById:()=>{throw Error("persistence must not be touched while lock is contended");}}
 };
-vm.runInNewContext(createFn+"\\nthis.create=createStudentEnrollment;",createContext);
+vm.runInNewContext(createFn+"\nthis.create=createStudentEnrollment;",createContext);
 assert.throws(()=>createContext.create({userId:"STU-1",grado:"1",seccion:"A",skipLock:true}),/Servicio ocupado/,
   "untrusted skipLock cannot bypass a contended create operation");
 let renewedPayload;
@@ -122,7 +122,7 @@ const renewContext={
   createStudentEnrollment:payload=>{renewedPayload=payload;return {status:"success"};},
   getVerifiedAcademicIdentity_:()=>({authorized:true,userId:"STAFF-1",role:"Director"})
 };
-vm.runInNewContext(renewFn+"\\nthis.renew=renewStudentEnrollment;",renewContext);
+vm.runInNewContext(renewFn+"\nthis.renew=renewStudentEnrollment;",renewContext);
 renewContext.renew({userId:"STU-1",nuevoAnoLectivo:"2027",nuevoGrado:"2",sessionToken:"signed",activeDepartmentId:"D-1"});
 assert.equal(renewedPayload.sessionToken,"signed","renewal forwards the signed session token");
 assert.equal(renewedPayload.activeDepartmentId,"D-1","renewal forwards the active department scope");
