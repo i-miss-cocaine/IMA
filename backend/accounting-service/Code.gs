@@ -576,11 +576,11 @@ function validateRolePermission(action, payload) {
   if (!ctxCheck.authorized) {
     return { authorized: false, role: userRole + " (" + ctxCheck.reason + ")" };
   }
-  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "getLoanAmortizationSchedule", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher"];
+  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "getLoanAmortizationSchedule", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher"];
   if (resourceScopeActions.indexOf(action) !== -1) {
     const roleKey = String(userRole || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
     const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1 &&
-      (["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getEmployeeLoansAdvances", "uploadEmployeeDocument", "getEmployeeSelfServicePortal"].indexOf(action) !== -1 && ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1) || (roleKey === "PROFESOR" && action === "getStaffPayrollReceipt");
+      (["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getStaffAttendanceLogs", "getEmployeeLoansAdvances", "uploadEmployeeDocument", "getEmployeeSelfServicePortal"].indexOf(action) !== -1 && ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1) || (roleKey === "PROFESOR" && action === "getStaffPayrollReceipt");
     const paymentSelfServiceRole = ["ESTUDIANTE", "ALUMNO", "TUTOR", "PADRE", "MADRE", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(roleKey) !== -1 &&
       ["getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher"].indexOf(action) !== -1;
     if (!employeeSelfRole && !paymentSelfServiceRole) {
@@ -5798,25 +5798,119 @@ function recordStaffCheckIn(payload) {
 }
 
 function getStaffAttendanceLogs(payload) {
-  const { empleadoId, fechaInicio, fechaFin } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "DeduccionesAsistencia").getDataRange().getValues().slice(1);
+  const request = payload || {}, actor = getVerifiedAccountingIdentity_(request);
+  if (!actor.authorized) return { status: "error", code: actor.code || "VERIFIED_IDENTITY_REQUIRED", message: "Acceso denegado." };
 
-  let filtered = rows;
-  if (empleadoId) filtered = filtered.filter(r => String(r[2]).trim() === String(empleadoId).trim());
+  const roleKey = String(actor.role || "").toUpperCase()
+    .replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I")
+    .replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
+  const self = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1;
+  if (!self && ["RECURSOSHUMANOS", "DIRECTOR", "ADMINISTRADOR", "SUBDIRECTOR"].indexOf(roleKey) === -1) {
+    return { status: "error", code: "ROLE_NOT_ALLOWED", message: "Acceso denegado." };
+  }
 
-  const mapped = filtered.map(r => ({
-    asistenciaId: r[0],
-    fecha: r[1],
-    empleadoId: r[2],
-    empleadoNombre: r[3],
-    horaEntrada: r[4],
-    horaSalida: r[5],
-    minutosTardanza: parseInt(r[6] || 0),
-    estadoAsistencia: r[7],
-    observaciones: r[8]
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID), empty = () => ({ status: "success", asistencias: [] });
+  const employeeSheet = ss.getSheetByName("ExpedientesLaborales");
+  if (!employeeSheet) {
+    return self || String(request.empleadoId || "").trim()
+      ? { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen registros de asistencia disponibles." }
+      : empty();
+  }
+  const employeeData = employeeSheet.getDataRange().getValues();
+  const employeeHeaders = ["ExpedienteID", "PersonaId", "UserId", "Puesto", "Departamento", "CentroCosto", "FechaIngreso", "FechaSalida", "EstadoLaboral", "Observaciones"];
+  if (!employeeData.length || !Array.isArray(employeeData[0]) || employeeData[0].length !== employeeHeaders.length ||
+      employeeHeaders.some((header, index) => String(employeeData[0][index] || "").trim().toUpperCase() !== header.toUpperCase())) {
+    return { status: "error", code: "RESOURCE_SCHEMA_INVALID", message: "La estructura de expedientes laborales no es válida." };
+  }
+
+  const employeeRows = employeeData.slice(1), expedienteCounts = Object.create(null), userCounts = Object.create(null);
+  employeeRows.forEach(row => {
+    const expedienteId = String(row[0] || "").trim(), userId = String(row[2] || "").trim();
+    if (expedienteId) expedienteCounts[expedienteId] = (expedienteCounts[expedienteId] || 0) + 1;
+    if (userId) userCounts[userId] = (userCounts[userId] || 0) + 1;
+  });
+  const expedienteByUser = Object.create(null);
+  employeeRows.forEach(row => {
+    const expedienteId = String(row[0] || "").trim(), userId = String(row[2] || "").trim();
+    if (expedienteId && userId && expedienteCounts[expedienteId] === 1 && userCounts[userId] === 1) expedienteByUser[userId] = expedienteId;
+  });
+
+  const requestedUser = String(request.empleadoId || "").trim();
+  if (self && requestedUser && requestedUser !== actor.userId) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen registros de asistencia disponibles." };
+  }
+  const targetUser = self ? actor.userId : requestedUser;
+  if (targetUser && !expedienteByUser[targetUser]) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen registros de asistencia disponibles." };
+  }
+
+  const accessCache = Object.create(null);
+  const canReadUser = userId => {
+    userId = String(userId || "").trim();
+    if (!userId || !expedienteByUser[userId]) return false;
+    if (!Object.prototype.hasOwnProperty.call(accessCache, userId)) {
+      accessCache[userId] = assertEmployeeExpedienteScopeAccess_(request, ss, expedienteByUser[userId]);
+    }
+    return !!accessCache[userId].authorized;
+  };
+  if (targetUser && !canReadUser(targetUser)) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen registros de asistencia disponibles." };
+  }
+
+  const sheet = ss.getSheetByName("DeduccionesAsistencia");
+  if (!sheet) return empty();
+  const data = sheet.getDataRange().getValues();
+  const headers = ["AsistenciaID", "Fecha", "EmpleadoId", "EmpleadoNombre", "HoraEntrada", "HoraSalida", "MinutosTardanza", "EstadoAsistencia", "Observaciones"];
+  if (!data.length || !Array.isArray(data[0]) || data[0].length !== headers.length ||
+      headers.some((header, index) => String(data[0][index] || "").trim().toUpperCase() !== header.toUpperCase())) {
+    return { status: "error", code: "RESOURCE_SCHEMA_INVALID", message: "La estructura del historial de asistencia no es válida." };
+  }
+
+  const dateKey = value => {
+    if (value instanceof Date) return isNaN(value.getTime()) ? "" : value.toISOString().slice(0, 10);
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    const candidate = raw.slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(candidate)) {
+      const parsed = new Date(candidate + "T00:00:00.000Z");
+      return !isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === candidate ? candidate : "";
+    }
+    const parsed = new Date(value);
+    return isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
+  };
+  const startDate = request.fechaInicio ? dateKey(request.fechaInicio) : "";
+  const endDate = request.fechaFin ? dateKey(request.fechaFin) : "";
+  if ((request.fechaInicio && !startDate) || (request.fechaFin && !endDate) || (startDate && endDate && startDate > endDate)) {
+    return { status: "error", code: "INVALID_DATE_RANGE", message: "El rango de fechas de asistencia no es válido." };
+  }
+
+  const rows = data.slice(1).filter(row => Array.isArray(row) && row.length >= headers.length);
+  const attendanceIdCounts = Object.create(null);
+  rows.forEach(row => {
+    const id = String(row[0] || "").trim();
+    if (id) attendanceIdCounts[id] = (attendanceIdCounts[id] || 0) + 1;
+  });
+  const filtered = rows.filter(row => {
+    const attendanceId = String(row[0] || "").trim(), userId = String(row[2] || "").trim();
+    if (!attendanceId || attendanceIdCounts[attendanceId] !== 1 || !userId || (targetUser && userId !== targetUser) || !canReadUser(userId)) return false;
+    if (startDate || endDate) {
+      const rowDate = dateKey(row[1]);
+      if (!rowDate || (startDate && rowDate < startDate) || (endDate && rowDate > endDate)) return false;
+    }
+    return true;
+  });
+
+  const mapped = filtered.map(row => ({
+    asistenciaId: row[0],
+    fecha: row[1],
+    empleadoId: row[2],
+    empleadoNombre: row[3],
+    horaEntrada: row[4],
+    horaSalida: row[5],
+    minutosTardanza: parseInt(row[6] || 0, 10) || 0,
+    estadoAsistencia: row[7],
+    observaciones: row[8]
   }));
-
   return { status: "success", asistencias: mapped };
 }
 
