@@ -4677,7 +4677,7 @@ function resolvePayrollConceptBase_(baseCode,context,values) {
   const value=Number(variables[key]||0);if(!Number.isFinite(value))throw new Error("PAYROLL_BASE_VALUE_INVALID:"+key);return value;
 }
 function calculatePayrollConceptPhase_(engine,employee,employeeUserId,period,planillaId,context,phase,netAvailable) {
-  const dept=String(employee[4]||"").trim(),position=String(employee[3]||"").trim(),structure=String(employee[5]||"").trim(),user=String(employeeUserId||employee[2]||"").trim(),now=new Date(period+"-01T00:00:00");
+  const dept=String(employee[4]||"").trim(),position=String(employee[3]||"").trim(),structure=String(employee[5]||"").trim(),user=String(employeeUserId||employee[2]||"").trim(),periodKey=String(period||"").slice(0,7),now=new Date(periodKey+"-01T00:00:00");
   const activeAssignments=engine.assignments.filter(a=>{
     if(!engine.byCode[a.codigo]||payrollConceptPhase_(engine.byCode[a.codigo].categoria)!==phase)return false;
     const start=a.fechaInicio?new Date(a.fechaInicio):null,end=a.fechaFin?new Date(a.fechaFin):null;
@@ -4698,7 +4698,7 @@ function calculatePayrollConceptPhase_(engine,employee,employeeUserId,period,pla
   const byConcept=Object.create(null);
   activeAssignments.forEach(a=>{const rank={GLOBAL:1,ESTRUCTURA_SALARIAL:2,CARGO:3,DEPARTAMENTO:4,EMPLEADO:5}[a.tipo]||0;const old=byConcept[a.codigo];if(!old||rank>old.rank)byConcept[a.codigo]={assignment:a,rank};else if(rank===old.rank)throw new Error("PAYROLL_CONCEPT_ASSIGNMENT_DUPLICATE:"+a.codigo);});
   const values=context.conceptValues||Object.create(null),details=[],reserved={BASE:context.salarioBase,SALARIO_BASE:context.salarioBase,DEVENGADO:context.devengado,HORAS_EXTRAS:context.horasExtras,BASE_COTIZABLE:context.baseCotizable,BASE_ISR:context.baseISR,DIAS_TRABAJADOS:context.diasTrabajados,DIAS_PERIODO:context.diasPeriodo,IHSS:context.ihss,RAP:context.rap,ISR:context.isr,SALARIO_NETO:context.salarioNeto};
-  let total=0,taxable=0,cotizable=0;
+  let total=0,taxable=0,cotizable=0,taxableRecurring=0,taxableOneTime=0;
   engine.concepts.filter(c=>payrollConceptPhase_(c.categoria)===phase).forEach(c=>{
     const chosen=byConcept[c.codigo];if(!chosen)return;
     const a=chosen.assignment,base=resolvePayrollConceptBase_(c.baseCalculo||"SALARIO_BASE",context,values),override=a.valorOverride;
@@ -4712,11 +4712,14 @@ function calculatePayrollConceptPhase_(engine,employee,employeeUserId,period,pla
     if(phase===2){const cap=Math.max(0,Number(netAvailable)||0);amount=Math.min(amount,Math.round(cap*100)/100);netAvailable=cap-amount;}
     if(amount<=0)return;
     values[c.codigo]=amount;total=Math.round((total+amount)*100)/100;
-    if(phase===1){if(c.tratamientoISR==="GRAVADO")taxable+=amount;if(c.tratamientoIHSS==="COTIZABLE")cotizable+=amount;}
+    if(phase===1){
+      if(c.tratamientoISR==="GRAVADO"){taxable+=amount;if(c.recurrente&&!((a.frecuencia||"MENSUAL")==="UNICA"||c.frecuencia==="UNICA"))taxableRecurring+=amount;else taxableOneTime+=amount;}
+      if(c.tratamientoIHSS==="COTIZABLE")cotizable+=amount;
+    }
     details.push(["CPTD-"+Utilities.getUuid(),planillaId,period,user,c.codigo,c.nombre,c.categoria,c.naturaleza,c.tipoCalculo,c.valor,amount,c.cuentaContable,c.visibleBoleta,c.tratamientoISR,c.tratamientoIHSS,c.version,a.asignacionId,c.formula,c.baseCalculo,"Calculada"]);
   });
   context.conceptValues=values;
-  return {total,taxableIncome:Math.round(taxable*100)/100,cotizableIncome:Math.round(cotizable*100)/100,details,conceptValues:values};
+  return {total,taxableIncome:Math.round(taxable*100)/100,taxableAnnualized:Math.round((taxableRecurring*12+taxableOneTime)*100)/100,cotizableIncome:Math.round(cotizable*100)/100,details,conceptValues:values};
 }
 function getPayrollConceptCatalog(payload) {
   const access=requirePayrollConceptManager_(payload);if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
@@ -4727,7 +4730,7 @@ function savePayrollConcept(payload) {
   const code=String(p.codigo||"").trim().toUpperCase(),name=String(p.nombre||"").trim().slice(0,120),category=String(p.categoria||"").trim().toUpperCase(),nature=String(p.naturaleza||"").trim().toUpperCase(),type=String(p.tipoCalculo||"").trim().toUpperCase(),base=String(p.baseCalculo||"SALARIO_BASE").trim().toUpperCase(),formula=String(p.formula||"").trim().slice(0,500),account=String(p.cuentaContable||"").trim();
   const value=Number(p.valor),priority=Number(p.prioridad||0),frequency=String(p.frecuencia||"MENSUAL").toUpperCase(),isr=String(p.tratamientoISR||"EXENTO").toUpperCase(),ihss=String(p.tratamientoIHSS||"NO_COTIZABLE").toUpperCase(),status=String(p.estado||"ACTIVO").toUpperCase();
   const bases=["SALARIO_BASE","DEVENGADO","HORAS_EXTRAS","BASE_COTIZABLE","BASE_ISR","DIAS_TRABAJADOS","DIAS_PERIODO","IHSS","RAP","ISR","SALARIO_NETO"];
-  if(!/^[A-Z][A-Z0-9_]{1,39}$/.test(code)||!name||!payrollConceptCategories_().includes(category)||!["DEBE","HABER"].includes(nature)||!["FIJO","PORCENTAJE","PROPORCIONAL","FORMULA"].includes(type)||!Number.isFinite(value)||value<0||!["MENSUAL","POR_PERIODO","UNICA","QUINCENAL","SEMANAL"].includes(frequency)||!["GRAVADO","EXENTO"].includes(isr)||!["COTIZABLE","NO_COTIZABLE"].includes(ihss)||!account||!Number.isInteger(priority)||priority<0||priority>9999||!["ACTIVO","INACTIVO"].includes(status)||(!bases.includes(base)&&!/^CONCEPTO:[A-Z][A-Z0-9_]{1,39}$/.test(base)))return {status:"error",code:"PAYROLL_CONCEPT_INVALID",message:"Revise código, nombre, categoría, naturaleza, cálculo, frecuencia, tratamientos, base y cuenta contable."};
+  if(!/^[A-Z][A-Z0-9_]{1,39}$/.test(code)||!name||!payrollConceptCategories_().includes(category)||!["DEBE","HABER"].includes(nature)||!["FIJO","PORCENTAJE","PROPORCIONAL","FORMULA"].includes(type)||!Number.isFinite(value)||value<0||!["MENSUAL","POR_PERIODO","UNICA"].includes(frequency)||!["GRAVADO","EXENTO"].includes(isr)||!["COTIZABLE","NO_COTIZABLE"].includes(ihss)||!account||!Number.isInteger(priority)||priority<0||priority>9999||!["ACTIVO","INACTIVO"].includes(status)||(!bases.includes(base)&&!/^CONCEPTO:[A-Z][A-Z0-9_]{1,39}$/.test(base)))return {status:"error",code:"PAYROLL_CONCEPT_INVALID",message:"Revise código, nombre, categoría, naturaleza, cálculo, frecuencia, tratamientos, base y cuenta contable."};
   if(nature!==(payrollConceptPhase_(category)===1?"DEBE":"HABER"))return {status:"error",code:"PAYROLL_CONCEPT_NATURE_MISMATCH",message:"La naturaleza contable no corresponde a la categoría del concepto."};
   if(type==="FORMULA"){try{const vars={BASE:1,SALARIO_BASE:1,DEVENGADO:1,HORAS_EXTRAS:1,BASE_COTIZABLE:1,BASE_ISR:1,DIAS_TRABAJADOS:1,DIAS_PERIODO:1,IHSS:1,RAP:1,ISR:1,SALARIO_NETO:1};tokenizePayrollFormula_(formula).filter(t=>/^[A-Za-z_][A-Za-z0-9_]*$/.test(t)).forEach(t=>{vars[t]=1;});evaluatePayrollFormula_(formula,vars);}catch(e){return {status:"error",code:"PAYROLL_FORMULA_INVALID",message:"La fórmula no es válida o contiene operaciones no permitidas."};}}
   const start=p.vigenciaInicio?new Date(p.vigenciaInicio):null,end=p.vigenciaFin?new Date(p.vigenciaFin):null;
@@ -4775,7 +4778,9 @@ function assignPayrollConcept(payload) {
     const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(p,ss,access.actor);
     if(!scope||!scope.authorized)return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"No existe un ámbito autorizado para la asignación."};
     const catalog=ensurePayrollConceptSheet_(ss,"CatalogoConceptosPlanilla",getPayrollConceptHeaders_());
-    if(!catalog.rows.some(r=>String(r[1]||"").trim().toUpperCase()===code&&String(r[18]||"").toUpperCase()==="ACTIVO"))return {status:"error",code:"PAYROLL_CONCEPT_NOT_ACTIVE",message:"El concepto no existe o está inactivo."};
+    const conceptMatches=catalog.rows.filter(r=>String(r[1]||"").trim().toUpperCase()===code&&String(r[18]||"").toUpperCase()==="ACTIVO");
+    if(conceptMatches.length!==1)return {status:"error",code:"PAYROLL_CONCEPT_NOT_ACTIVE",message:"El concepto no existe o está inactivo."};
+    if((String(conceptMatches[0][10]||"").toUpperCase()==="UNICA"||conceptMatches[0][19]===false||String(conceptMatches[0][19]).toUpperCase()==="FALSE")&&!/^d{4}-d{2}$/.test(period))return {status:"error",code:"PAYROLL_CONCEPT_PERIOD_REQUIRED",message:"El concepto único requiere un período YYYY-MM."};
     let departmentScope=String(p.departamentoScope||"").trim();
     if(type==="GLOBAL"&&!scope.institutionWide)return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"La asignación global requiere ámbito institucional."};
     if(type==="EMPLEADO"){
@@ -5106,7 +5111,7 @@ function calculatePayrollPeriod(payload) {
 
       // [TASK-010] [F17-Task04] - Motor de retención progresiva anualizada del Impuesto Sobre la Renta (SAR Art. 22)
       // 1. Proyección de ingresos anuales gravables (12 meses de salario ordinario contractual más horas extras proyectadas)
-      const annualGross = (contractualSalary * 12) + (montoHorasExtras * 12) + (incomeConcepts.taxableIncome * 12);
+      const annualGross = (contractualSalary * 12) + (montoHorasExtras * 12) + incomeConcepts.taxableAnnualized;
 
       // 2. Deducciones de ley autorizadas:
       // - Deducción fija por gastos médicos de ley conforme al Código Tributario / Art. 22: L 40,000.00 anuales
