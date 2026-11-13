@@ -2631,7 +2631,7 @@ function previewBatchMonthlyCharges(payload) {
     if (nivelGrado && grade.toLowerCase() !== String(nivelGrado).trim().toLowerCase()) return;
     if (seccion && section.toLowerCase() !== String(seccion).trim().toLowerCase()) return;
     if (requested && !requested.has(userId.toLowerCase())) return;
-    students.push({ userId, name: String(row[mh.alumno] || "").trim(), grade, section, discount: Math.max(0, Number(row[mh.becadescuento]) || 0) });
+    students.push({ userId, name: String(row[mh.alumno] || "").trim(), grade, section, discountPercent: Math.min(100, Math.max(0, parseFloat(row[mh.becadescuento]) || 0)) });
   });
   const tariffSheet = ss.getSheetByName("TarifasPlanPago"), conceptSheet = ss.getSheetByName("ConceptosCobro"), chargeSheet = ss.getSheetByName("CargosEstudiante");
   if (!tariffSheet || !chargeSheet) throw new Error("MONTHLY_CHARGE_CONFIGURATION_MISSING");
@@ -2652,7 +2652,7 @@ function previewBatchMonthlyCharges(payload) {
       monthlyChargeExistingKey_(row, chargeHeaders, student.userId, tariff.conceptId, tariff.conceptName, month, year) ||
       monthlyChargeExistingKey_(row, chargeHeaders, student.userId, tariff.conceptId, tariff.conceptName, displayMonth, year));
     if (exists) { alreadyGenerated++; result.push({ userId: student.userId, nombre: student.name, grado: student.grade, seccion: student.section, conceptoId: tariff.conceptId, concepto: tariff.conceptName, claveUnicaDedupe: key, montoBase: 0, descuento: 0, montoFinal: 0, estado: "YaGenerado", motivo: "El mismo concepto ya tiene un cargo en este mes y año lectivo." }); return; }
-    const discount = Math.min(tariff.amount, student.discount), finalAmount = Math.max(0, Math.round((tariff.amount - discount) * 100) / 100);
+    const discount = Math.min(tariff.amount, Math.round((tariff.amount * student.discountPercent / 100) * 100) / 100), finalAmount = Math.max(0, Math.round((tariff.amount - discount) * 100) / 100);
     total += finalAmount; eligible++;
     result.push({ userId: student.userId, nombre: student.name, grado: student.grade, seccion: student.section, conceptoId: tariff.conceptId, concepto: tariff.conceptName, tarifaId: tariff.tariffId, claveUnicaDedupe: key, montoBase: tariff.amount, descuento: discount, montoFinal: finalAmount, estado: "PendienteGenerar", fechaVencimiento: dueDate });
   });
