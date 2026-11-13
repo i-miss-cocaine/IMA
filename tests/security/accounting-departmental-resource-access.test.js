@@ -68,7 +68,7 @@ const rows={
  ],
  AnticiposPrestamosEmpleado:[
   ["PrestamoID","Fecha","EmpleadoId","Tipo","MontoSolicitado","MontoAprobado","PlazoCuotas","CuotaMensual","SaldoPendiente","EstadoAprobacion","AprobadoPor","Observaciones"],
-  ["ADV-A","2026-01-01","U-EMP","Anticipo",1000,0,2,500,1000,"Pendiente","","A"],
+  ["ADV-A","2026-01-01","U-EMP","Anticipo",1000,1000,2,500,1000,"Aprobado","","A"],
   ["ADV-B","2026-01-01","U-B","Anticipo",2000,0,4,500,2000,"Pendiente","","B"]
  ],
  AsignacionesTurnosLaborales:[
@@ -479,7 +479,7 @@ assert.deepEqual(Array.from(loans(actor("employee")).solicitudes,r=>r.prestamoId
 assert.equal(loans({sessionToken:"employee",empleadoId:"U-B"}).code,"RESOURCE_NOT_FOUND","self-service cannot query another employee");
 assert.equal(loans({sessionToken:"hrA",empleadoId:"U-B"}).code,"RESOURCE_NOT_FOUND","department HR cannot query another department");
 assert.equal(loans({sessionToken:"hrA",prestamoId:"ADV-B"}).code,"RESOURCE_NOT_FOUND","loan ID filters cannot bypass department ownership");
-assert.deepEqual(Array.from(loans({sessionToken:"hrA",estadoAprobacion:"Pendiente"}).solicitudes,r=>r.prestamoId),["ADV-A"]);
+assert.deepEqual(Array.from(loans({sessionToken:"hrA",estadoAprobacion:"Aprobado"}).solicitudes,r=>r.prestamoId),["ADV-A"]);
 assert.equal(loans({sessionToken:"invalid"}).code,"VERIFIED_IDENTITY_REQUIRED");
 assert.equal(loans({sessionToken:"student"}).code,"ROLE_NOT_ALLOWED");
 assert.deepEqual(Array.from(amortization({sessionToken:"hrA",prestamoId:"ADV-A"}).tablaAmortizacion,r=>r.saldoRestante),[500,0]);
