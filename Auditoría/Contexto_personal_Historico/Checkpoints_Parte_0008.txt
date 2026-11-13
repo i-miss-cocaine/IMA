@@ -124,3 +124,10 @@
 - **Pruebas:** casos añadidos para DEP-A/DEP-B/institución, suplantación, token inválido, consulta ajena, sustitución interdepartamental, IDs/mappings ambiguos, esquema inválido y ausencia de creación de hojas. Ejecución local/CI pendiente.
 - **Estado:** En ejecución hasta verificar localmente; BETA-FUNC-044 Pendiente beta; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+### C1.666-R1 — corrección del test y evidencia CI
+- **CI inicial:** Department Scope Contract run 43349115076, commit 77abcbc94c0c8d45eeab77202644794de7268457. Los contratos Department Scope, Internal Responsibility RBAC, Accounting Import Scope y User Migrated Resource Ownership terminaron PASS. El contrato ACCOUNTING falló al parsear el archivo de pruebas por redeclaración de `creations`; no llegó a ejecutar assertions ni se reportó fallo funcional del endpoint.
+- **Corrección:** contador del escenario de hojas ausentes renombrado a `shiftCreations`; solo cambia el test.
+- **Estado:** pendiente de reejecución CI y revisión del resultado.
+===============================================================================

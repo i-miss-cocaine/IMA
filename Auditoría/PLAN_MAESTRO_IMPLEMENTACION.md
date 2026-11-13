@@ -5174,3 +5174,8 @@ La revisión de requisitos originales confirma cobertura de:
 - Valida encabezados exactos; excluye IDs duplicados y mappings ambiguos; consulta específica fuera de ámbito RESOURCE_NOT_FOUND; hojas ausentes devuelven colecciones vacías sin crearlas. Preserva data.turnos/sustituciones/horasExtras y contadores.
 - Contrato focalizado añadido; ejecución local/CI pendiente. Apps Script/Sheets real no desplegado; BETA-FUNC-044 Pendiente beta.
 - **Estado:** C1.666 en ejecución hasta ejecutar verificaciones locales; TASK-153 / AUD-NG-386 continúa En ejecución.
+
+
+**Addendum C1.666-R1 — corrección del contrato de pruebas**
+- CI Department Scope run 43349115076 confirmó PASS en cuatro contratos previos y detectó SyntaxError en accounting-departmental-resource-access.test.js: redeclaración de `creations` al añadir el escenario de hojas ausentes del historial de turnos. El fallo ocurrió al cargar el archivo de pruebas, antes de ejecutar assertions del nuevo endpoint.
+- Se renombró el contador del escenario a `shiftCreations`; no cambia la lógica productiva. CI de confirmación pendiente.

@@ -2715,3 +2715,8 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Integridad:** encabezados exactos, IDs duplicados y mappings ambiguos excluidos, anti-enumeración RESOURCE_NOT_FOUND y lecturas sin crear hojas. Se conserva data.turnos/sustituciones/horasExtras y totales.
 - **Verificación:** contrato ACCOUNTING focalizado ampliado; ejecución local/CI pendiente. Apps Script/Sheets real no desplegado; BETA-FUNC-044 Pendiente beta.
 ===============================================================================
+
+
+### C1.666-R1 — hallazgo de verificación del contrato
+- Department Scope Contract run 43349115076: pasos Department Scope, Internal Responsibility RBAC, Accounting Import Scope y User Migrated Resource Ownership PASS. El contrato ACCOUNTING terminó antes de ejecutar pruebas por SyntaxError en el archivo de test: `Identifier 'creations' has already been declared`, causado por colisión del contador añadido con el contador existente del bloque de incidencias laborales.
+- Corrección focalizada: renombrar el contador y las referencias del fixture de ausencia de hojas a `shiftCreations`. No se modificó lógica productiva. Repetición CI pendiente.

@@ -3137,3 +3137,8 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-13 UTC] [IMA-EXEC-20261112-1754Z-03] C1.666 — ACCOUNTING getWorkShiftsAndSubstitutionsHistory
 - El historial de turnos, sustituciones y horas extras exige identidad firmada, rol permitido, relación UserID↔ExpedienteID única y ResourceOwnership por empleado; las sustituciones validan ambos participantes.
 - Filtros de cliente no conceden acceso; IDs duplicados/mappings ambiguos excluidos; esquemas validados; lecturas sin crear hojas; contrato de respuesta preservado. Verificación local/CI pendiente; BETA-FUNC-044 Pendiente beta.
+
+
+[2026-11-13 UTC] [IMA-EXEC-20261112-1754Z-03] C1.666-R1 — corrección del contrato local ACCOUNTING
+- CI Department Scope run 43349115076 confirmó que los cuatro contratos previos pasaron; el contrato ACCOUNTING no llegó a ejecutar assertions del nuevo alcance por SyntaxError de test: redeclaración de identificador `creations` ya usado en el bloque de incidencias laborales.
+- Se renombró el contador local del fixture de historial de turnos para eliminar la colisión léxica. Sin cambios a la lógica productiva.
