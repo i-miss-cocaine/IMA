@@ -4956,7 +4956,12 @@ function getPayrollVarianceCauses_(ss,employeeId,currentPeriod,previousPeriod,cu
  const causes=[],id=String(employeeId||"").trim(),period=String(currentPeriod||"").trim(),prior=String(previousPeriod||"").trim();
  if(Number(currentRow[8]||0)>Number(previousRow[8]||0))causes.push({codigo:"HORAS_EXTRAS",descripcion:"Aumento de horas extras",monto:Number(currentRow[8]||0)-Number(previousRow[8]||0)});
  const ledgerSheet=ss.getSheetByName("AmortizacionPrestamosNomina");if(ledgerSheet){const rows=ledgerSheet.getDataRange().getValues().slice(1),current=rows.filter(r=>String(r[3]||"").trim()===period&&String(r[4]||"").trim()===id&&["CALCULADO","APLICADO"].includes(String(r[9]||""))),previous=rows.filter(r=>String(r[3]||"").trim()===prior&&String(r[4]||"").trim()===id&&["CALCULADO","APLICADO"].includes(String(r[9]||"")));const a=Math.round(current.reduce((t,r)=>t+Number(r[5]||0),0)*100)/100,b=Math.round(previous.reduce((t,r)=>t+Number(r[5]||0),0)*100)/100;if(a!==b)causes.push({codigo:"AMORTIZACION_PRESTAMO",descripcion:"Cambio en amortización de préstamos",monto:a-b});}
- if(Number(currentRow[6]||0)!==Number(previousRow[6]||0))causes.push({codigo:"CAMBIO_SALARIO_CONTRACTUAL",descripcion:"Variación del salario base registrado en planilla",monto:Number(currentRow[6]||0)-Number(previousRow[6]||0)});
+ const contracts=ss.getSheetByName("ContratosLaborales");
+ if(contracts){
+  const rows=contracts.getDataRange().getValues().slice(1),salaryFor=month=>{const start=new Date(month+"-01T00:00:00"),end=new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0,23,59,59,999),matches=rows.filter(r=>(String(r[1]||"").trim()===id||String(r[1]||"").trim()===String(currentRow[3]||""))&&!["ANULADO","INACTIVO"].includes(normalizePayrollBatchValue_(r[7]))&&(!r[3]||new Date(r[3])<=end)&&(!r[4]||new Date(r[4])>=start));return matches.length===1?Number(matches[0][5]||0):null;};
+  const currentSalary=salaryFor(period),priorSalary=salaryFor(prior);
+  if(currentSalary!==null&&priorSalary!==null&&currentSalary!==priorSalary)causes.push({codigo:"CAMBIO_SALARIO_CONTRACTUAL",descripcion:"Cambio del salario base contractual vigente",monto:Math.round((currentSalary-priorSalary)*100)/100});
+ }
  const attendance=ss.getSheetByName("DeduccionesAsistencia");if(attendance){const rows=attendance.getDataRange().getValues().slice(1),count=rows.filter(r=>(String(r[2]||"").trim()===id||String(r[2]||"").trim()===String(currentRow[3]||""))&&r[1]&&String(r[1] instanceof Date?r[1].toISOString().slice(0,7):r[1]).slice(0,7)===period&&["AUSENTE","INJUSTIFICADA","AUSENCIA INJUSTIFICADA"].includes(normalizePayrollBatchValue_(r[7]))).length;if(count)causes.push({codigo:"AUSENCIAS",descripcion:"Se registraron ausencias en el período",cantidad:count});}
  return causes;
 }
@@ -5508,7 +5513,7 @@ function validatePayrollJournalAccountMap_(ss) {
 function recordPayrollJournalEntry_(ss,planillaId,planRows,conceptSummary,actorId){
  validatePayrollJournalAccountMap_(ss);
  const sheet=ss.getSheetByName("PlanillasNomenclatura");if(!sheet)throw new Error("RESOURCE_NOT_FOUND: PlanillasNomenclatura");
- const col=ensurePayrollJournalLinkColumn_(sheet),data=sheet.getDataRange().getValues(),matches=data.slice(1).map((r,i)=>({row:r,index:i+2})).filter(x=>String(x.row[0]||"").trim()===String(planillaId).trim());
+ const col=ensurePayrollJournalLinkColumn_(sheet),data=sheet.getDataRange().getValues(),matches=data.slice(1).map((r,i)=>({row:r,index:i+2})).filter(x=>String(x.row[0]||"").trim()===String(planillaId).trim()&&normalizePayrollBatchValue_(x.row[15])!=="REEMPLAZADA");
  if(!matches.length||matches.length!==planRows.length)throw new Error("PAYROLL_JOURNAL_PLANILLA_CHANGED");
  const ids=[...new Set(matches.map(x=>String(x.row[col-1]||"").trim()).filter(Boolean))];if(ids.length>1)throw new Error("PAYROLL_JOURNAL_LINK_AMBIGUOUS");
  const journal=getOrCreateSheet(ss,"AsientosContables"),existing=journal.getDataRange().getValues().slice(1).filter(r=>String(r[3]||"").trim()==="Planillas"&&String(r[4]||"").trim()===String(planillaId).trim());
@@ -5563,7 +5568,7 @@ function updatePayrollPeriodStatus(payload) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "PlanillasNomenclatura");
   const data = sheet.getDataRange().getValues();
-  const payrollMatches = data.slice(1).filter(r => String(r[0]||"").trim() === String(planillaId).trim());
+  const payrollMatches = data.slice(1).filter(r => String(r[0]||"").trim() === String(planillaId).trim() && normalizePayrollBatchValue_(r[15]) !== "REEMPLAZADA");
   if (payrollMatches.length !== 1) throw new Error("Planilla no encontrada o duplicada.");
   const requestedState = String(nuevoEstado).trim().toUpperCase();
   const previousState = String(payrollMatches[0][15] || "").trim().toUpperCase();
@@ -5646,7 +5651,7 @@ function updatePayrollPeriodStatus(payload) {
     asientoRes = recordPayrollJournalEntry_(ss,planillaId,payrollMatches,conceptSummary,actor && actor.authorized ? actor.userId : "SYSTEM_PAYROLL");
   }
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]||"").trim() === String(planillaId).trim()) sheet.getRange(i + 1, 16).setValue(nuevoEstado);
+    if (String(data[i][0]||"").trim() === String(planillaId).trim() && normalizePayrollBatchValue_(data[i][15]) !== "REEMPLAZADA") sheet.getRange(i + 1, 16).setValue(nuevoEstado);
   }
 
   logStructuredEvent("ACCOUNTING", "updatePayrollPeriodStatus", "INFO", "PAYROLL_STATUS_UPDATED", `Planilla ${planillaId} actualizada a estado ${nuevoEstado}`, payload, authRole);
