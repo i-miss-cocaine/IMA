@@ -3163,13 +3163,16 @@ function resolveInternalResponsibilityForRoleScope_(ss, responsibilityId) {
   if(institutionalId&&!institutional)return null;
   return {responsibilityId:id,name:String(r[2]||""),department:String(r[4]||""),academicArea:String(r[5]||""),responsibilityType:String(r[6]||""),institutionalResponsibilityId:institutionalId||null,institutionalResponsibility:institutional};
 }
-function getVerifiedDepartmentScopeForSession_(payload, ss, actor) {
+function getVerifiedDepartmentScopeForSession_(payload, ss, actor, sessionActor, delegatedMembershipId) {
   if(!actor||actor.authorized!==true||!actor.userId||!actor.role)return {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
+  var verifiedSessionActor=sessionActor||actor;
+  if(!verifiedSessionActor||verifiedSessionActor.authorized!==true||!verifiedSessionActor.userId||!verifiedSessionActor.role)return {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
   var token=payload&&(payload.sessionToken||payload.authToken||payload.token),claims=token?verifySessionToken(token):null;
-  if(!claims||String(claims.userId||"").trim()!==String(actor.userId).trim()||String(claims.role||"").trim()!==String(actor.role).trim())return {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
+  if(!claims||String(claims.userId||"").trim()!==String(verifiedSessionActor.userId).trim()||String(claims.role||"").trim()!==String(verifiedSessionActor.role).trim())return {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
+  var delegatedSubject=String(actor.userId).trim()!==String(verifiedSessionActor.userId).trim()||String(actor.role).trim()!==String(verifiedSessionActor.role).trim();
   var institutionId="";try{institutionId=String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID")||"").trim();}catch(_){}
   if(!institutionId)return {authorized:false,code:"IDENTITY_CONFIGURATION_REQUIRED"};
-  var membershipId=String(claims.membershipId||"").trim(),claimsInstitutionId=String(claims.institutionId||"").trim();
+  var membershipId=delegatedSubject?String(delegatedMembershipId||"").trim():String(claims.membershipId||"").trim(),claimsInstitutionId=String(claims.institutionId||"").trim();
   if(membershipId&&(!claimsInstitutionId||claimsInstitutionId!==institutionId))return {authorized:false,code:"ROLE_MEMBERSHIP_INSTITUTION_MISMATCH"};
   var sheet=ss&&ss.getSheetByName("AsignacionesAmbitosRoles");if(!sheet)return {authorized:false,code:"ROLE_SCOPE_NOT_INITIALIZED"};
   var data=sheet.getDataRange().getValues();
@@ -3187,7 +3190,7 @@ function getVerifiedDepartmentScopeForSession_(payload, ss, actor) {
     var row=data[i]||[],assignmentId=String(row[0]||"").trim();
     if(!assignmentId||assignmentCounts[assignmentId]!==1||String(row[1]||"").trim()!==String(actor.userId).trim())continue;
     var rowRole=String(row[2]||"").trim();
-    if(!rowRole||(membershipId?rowRole!==String(claims.role).trim():norm(rowRole)!==norm(claims.role)))continue;
+    if(!rowRole||(membershipId?rowRole!==String(actor.role).trim():norm(rowRole)!==norm(actor.role)))continue;
     var rowInstitution=schema==="legacy"?"":String(row[12]||"").trim(),rowMembership=schema==="legacy"?"":String(row[13]||"").trim();
     var rowResponsibility=schema==="current"?String(row[14]||"").trim():"",responsibility=null;
     if(membershipId){if(rowInstitution!==institutionId||rowMembership!==membershipId||!rowResponsibility)continue;responsibility=resolveInternalResponsibilityForRoleScope_(ss,rowResponsibility);if(!responsibility)continue;}
@@ -3215,8 +3218,52 @@ function getVerifiedAcademicDepartmentScope_(payload, ss, identity) {
   return getVerifiedDepartmentScopeForSession_(payload,ss,actor);
 }
 
-function getVerifiedAcademicGuardianDepartmentScope_(payload, ss, guardian, expedienteId) {
-  if (!guardian || guardian.authorized !== true || !guardian.userId || !guardian.role) {
+function getAcademicDelegatedMembershipForScope_(ss, subject, institutionId) {
+  const sheet = ss && ss.getSheetByName("MembresiasRolesRBAC");
+  if (!sheet) return { membershipId: "", legacy: true };
+  const data = sheet.getDataRange().getValues();
+  const headers = ["MembershipID", "UserID", "RoleID", "InstitutionID", "Status", "StartAt", "EndAt", "CreatedBy", "CreatedAt", "UpdatedAt", "RevokedBy", "RevokedAt"];
+  if (!data.length || JSON.stringify(data[0].map(String)) !== JSON.stringify(headers)) {
+    return { error: "ROLE_MEMBERSHIP_SCHEMA_MISMATCH" };
+  }
+  const allRows = data.slice(1);
+  const subjectRows = allRows.filter(function(row) {
+    return String(row[1] || "").trim() === String(subject.userId).trim() &&
+      String(row[3] || "").trim() === institutionId;
+  });
+  if (!subjectRows.length) return { membershipId: "", legacy: true };
+  const idCounts = {};
+  allRows.forEach(function(row) {
+    const id = String(row[0] || "").trim();
+    if (id) idCounts[id] = (idCounts[id] || 0) + 1;
+  });
+  const now = new Date();
+  const candidates = subjectRows.filter(function(row) {
+    const id = String(row[0] || "").trim();
+    const role = String(row[2] || "").trim();
+    const state = String(row[4] || "").trim().toUpperCase();
+    if (!id || idCounts[id] !== 1 || role !== String(subject.role).trim() ||
+        ["ACTIVE", "ACTIVA", "ACTIVO"].indexOf(state) === -1) return false;
+    const start = row[5] === "" || row[5] === null || row[5] === undefined ? null : new Date(row[5]);
+    const end = row[6] === "" || row[6] === null || row[6] === undefined ? null : new Date(row[6]);
+    if ((start && isNaN(start.getTime())) || (end && isNaN(end.getTime()))) return false;
+    if (start && start.getTime() > now.getTime()) return false;
+    if (end && end.getTime() < now.getTime()) return false;
+    return true;
+  });
+  if (candidates.length !== 1) return { error: candidates.length ? "ROLE_MEMBERSHIP_AMBIGUOUS" : "ROLE_MEMBERSHIP_NOT_ACTIVE" };
+  const roleSheet = ss.getSheetByName("MatrizPermisosRoles");
+  const configured = typeof ROLE_PERMISSIONS !== "undefined" &&
+    Object.prototype.hasOwnProperty.call(ROLE_PERMISSIONS, String(subject.role).trim());
+  const roleExists = configured || (roleSheet && roleSheet.getDataRange().getValues().slice(1)
+    .some(function(row) { return String(row[0] || "").trim() === String(subject.role).trim(); }));
+  if (!roleExists) return { error: "ROLE_MEMBERSHIP_ROLE_NOT_CONFIGURED" };
+  return { membershipId: String(candidates[0][0]).trim(), legacy: false };
+}
+
+function getVerifiedAcademicGuardianDepartmentScope_(payload, ss, guardian, studentIdentity) {
+  if (!guardian || guardian.authorized !== true || !guardian.userId || !guardian.role ||
+      !studentIdentity || !studentIdentity.userId || !studentIdentity.role) {
     return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
   }
   const token = payload && (payload.sessionToken || payload.authToken || payload.token);
@@ -3232,35 +3279,9 @@ function getVerifiedAcademicGuardianDepartmentScope_(payload, ss, guardian, expe
   if (claims.membershipId && (!claimsInstitutionId || claimsInstitutionId !== institutionId)) {
     return { authorized: false, code: "ROLE_MEMBERSHIP_INSTITUTION_MISMATCH" };
   }
-  const id = String(expedienteId || "").trim();
-  if (!id) return { authorized: false, code: "RESOURCE_REFERENCE_INVALID" };
-  const ownershipSheet = ss && ss.getSheetByName("ResourceOwnership");
-  if (!ownershipSheet) return { authorized: false, code: "RESOURCE_OWNERSHIP_NOT_CONFIGURED" };
-  const data = ownershipSheet.getDataRange().getValues();
-  const headers = ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"];
-  if (!data.length || JSON.stringify(data[0].map(String)) !== JSON.stringify(headers)) {
-    return { authorized: false, code: "RESOURCE_OWNERSHIP_SCHEMA_MISMATCH" };
-  }
-  const matches = data.slice(1).filter(function(row) {
-    return String(row[1] || "").trim() === institutionId &&
-      String(row[2] || "").trim().toUpperCase() === "EXPEDIENTE_ESTUDIANTE" &&
-      String(row[3] || "").trim() === id &&
-      String(row[5] || "").trim().toUpperCase() === "ACTIVE";
-  });
-  if (!matches.length) return { authorized: false, code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
-  if (matches.length !== 1) return { authorized: false, code: "RESOURCE_OWNERSHIP_AMBIGUOUS" };
-  const departmentId = String(matches[0][4] || "").trim();
-  if (!departmentId) return { authorized: false, code: "RESOURCE_DEPARTMENT_UNRESOLVED" };
-  return {
-    authorized: true,
-    code: "RESOURCE_SCOPE_ALLOWED",
-    userId: String(guardian.userId).trim(),
-    role: String(guardian.role).trim(),
-    institutionId: institutionId,
-    departmentIds: [departmentId],
-    institutionWide: false,
-    delegatedAccess: "GUARDIAN"
-  };
+  const membership = getAcademicDelegatedMembershipForScope_(ss, studentIdentity, institutionId);
+  if (membership.error) return { authorized: false, code: membership.error };
+  return getVerifiedDepartmentScopeForSession_(payload, ss, studentIdentity, guardian, membership.membershipId);
 }
 
 function getStudentPersonIdForUser_(ss, userId) {
@@ -3398,7 +3419,7 @@ function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow) {
   // SELF and GUARDIAN access are relational exceptions to staff RBAC, not
   // exceptions to the institution/department ownership boundary.
   const scope = isGuardian
-    ? getVerifiedAcademicGuardianDepartmentScope_(payload, ss, actor, expedienteId)
+    ? getVerifiedAcademicGuardianDepartmentScope_(payload, ss, actor, ownershipIdentity)
     : getVerifiedAcademicDepartmentScope_(payload, ss, ownershipIdentity);
   if (!scope || !scope.authorized) return scope || { authorized: false, code: "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
   const ownership = assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_ESTUDIANTE", expedienteId, "READ", payload);
