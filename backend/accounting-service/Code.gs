@@ -576,11 +576,11 @@ function validateRolePermission(action, payload) {
   if (!ctxCheck.authorized) {
     return { authorized: false, role: userRole + " (" + ctxCheck.reason + ")" };
   }
-  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "getLoanAmortizationSchedule", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher", "recordStaffCheckIn", "recordStaffAttendance", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile"];
+  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "getLoanAmortizationSchedule", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher", "recordStaffCheckIn", "recordStaffAttendance", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitLeaveVacationRequest", "submitVacationRequest", "getLeaveVacationRequests", "getVacationRequests", "reviewLeaveVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "recordMedicalLeave"];
   if (resourceScopeActions.indexOf(action) !== -1) {
     const roleKey = String(userRole || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
     const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1 &&
-      (["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "recordStaffCheckIn", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile"].indexOf(action) !== -1 && ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1) || (roleKey === "PROFESOR" && action === "getStaffPayrollReceipt");
+      (["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "recordStaffCheckIn", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitLeaveVacationRequest", "submitVacationRequest", "getLeaveVacationRequests", "getVacationRequests"].indexOf(action) !== -1 && ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1) || (roleKey === "PROFESOR" && ["getStaffPayrollReceipt", "submitVacationRequest", "getVacationRequests"].indexOf(action) !== -1);
     const paymentSelfServiceRole = ["ESTUDIANTE", "ALUMNO", "TUTOR", "PADRE", "MADRE", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(roleKey) !== -1 &&
       ["getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher"].indexOf(action) !== -1;
     if (!employeeSelfRole && !paymentSelfServiceRole) {
@@ -9326,161 +9326,171 @@ function getEmployeeContracts(payload) {
 // PERMISOS Y VACACIONES
 // ---------------------------------------------------------------------------
 
-function submitLeaveVacationRequest(payload) {
-  const { expedienteId, tipo, fechaInicio, fechaFin, diasSolicitados, motivo, evidenciaUrl, observaciones } = payload || {};
-  if (!expedienteId || !fechaInicio || !fechaFin) throw new Error("expedienteId, fechaInicio y fechaFin requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "SolicitudesVacaciones");
-  const now = new Date();
-  const solicitudId = "VAC-" + now.getTime();
-
-  sheet.appendRow([
-    solicitudId,
-    String(expedienteId).trim(),
-    tipo || "Vacaciones Ordinarias",
-    fechaInicio,
-    fechaFin,
-    parseInt(diasSolicitados || 1),
-    "PendienteAprobacion",
-    "",
-    motivo || observaciones || "Solicitud formal desde Portal RRHH"
-  ]);
-
-  return {
-    status: "success",
-    solicitudId: solicitudId,
-    estado: "PendienteAprobacion",
-    message: "Solicitud de permiso / vacaciones registrada y enviada para revisión."
-  };
+function normalizeVacationRole_(value) {
+  return String(value || "").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
 }
-
-function submitVacationRequest(payload) {
-  return submitLeaveVacationRequest(payload);
+function getVacationSheetSnapshot_(ss,name,headers) {
+  const sheet=ss&&ss.getSheetByName(name);
+  if(!sheet)return {missing:true,sheet:null,rows:[]};
+  const data=sheet.getDataRange().getValues();
+  if(!data.length||!Array.isArray(data[0])||data[0].length!==headers.length||headers.some((h,i)=>String(data[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))return {error:true,sheet:sheet,rows:[]};
+  return {missing:false,error:false,sheet:sheet,rows:data.slice(1).filter(Array.isArray)};
 }
-
-function getLeaveVacationRequests(payload) {
-  return getVacationRequests(payload);
+function resolveVacationEmployeeAccess_(payload,ss,requestedId,allowSelf) {
+  const actor=getVerifiedAccountingIdentity_(payload);
+  if(!actor.authorized)return actor;
+  const role=normalizeVacationRole_(actor.role),selfRoles=["EMPLEADO","TRABAJADOR","PERSONAL","PROFESOR"],id=String(requestedId||"").trim();
+  const employees=getVacationSheetSnapshot_(ss,"ExpedientesLaborales",["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"]);
+  if(employees.missing||employees.error)return {authorized:false,code:"RESOURCE_SCHEMA_INVALID"};
+  if(selfRoles.indexOf(role)!==-1){
+    if(!allowSelf)return {authorized:false,code:"ROLE_NOT_ALLOWED"};
+    const own=employees.rows.filter(r=>String(r[2]||"").trim()===actor.userId);
+    if(own.length!==1)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+    const ownId=String(own[0][0]||"").trim();
+    if(!ownId||employees.rows.filter(r=>String(r[0]||"").trim()===ownId).length!==1||(id&&id!==ownId))return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+    return {authorized:true,actor:actor,expedienteId:ownId,accessType:"SELF"};
+  }
+  if(!id||employees.rows.filter(r=>String(r[0]||"").trim()===id).length!==1)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  const access=assertEmployeeExpedienteScopeAccess_(payload,ss,id);
+  if(!access.authorized)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  return {authorized:true,actor:actor,expedienteId:id,accessType:access.accessType};
 }
-
-function reviewLeaveVacationRequest(payload) {
-  return reviewVacationRequest(payload);
+function assertVacationWriteAccess_(payload,ss,access) {
+  if(!access||!access.authorized)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  if(access.accessType==="SELF")return {authorized:true,accessType:"SELF"};
+  const scope=getVerifiedAccountingDepartmentScope_(payload,ss,access.actor);
+  if(!scope.authorized)return {authorized:false,code:scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED"};
+  const owner=assertResourceOwnershipForScope_(ss,scope,"EXPEDIENTE_LABORAL",access.expedienteId,"WRITE",payload);
+  return owner.authorized?{authorized:true,accessType:owner.accessType}:{authorized:false,code:"RESOURCE_NOT_FOUND"};
 }
-
-function calculateVacationBalances(payload) {
-  const { expedienteId } = payload || {};
-  if (!expedienteId) throw new Error("expedienteId requerido.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const vacs = getOrCreateSheet(ss, "SolicitudesVacaciones").getDataRange().getValues().slice(1);
-  const exps = getOrCreateSheet(ss, "ExpedientesLaborales").getDataRange().getValues().slice(1);
-
-  const exp = exps.find(r => String(r[0]).trim() === String(expedienteId).trim());
-  const fechaIngreso = exp && exp[6] ? new Date(exp[6]) : new Date("2024-01-01");
-  const now = new Date();
-
-  const diffYears = Math.max(1, Math.floor((now - fechaIngreso) / (1000 * 60 * 60 * 24 * 365)));
-  // Escala Ley Trabajo Honduras (10 días año 1, 12 días año 2, 15 días año 3, 20 días año 4+)
-  let diasGeneradosAnno = 10;
-  if (diffYears === 2) diasGeneradosAnno = 12;
-  else if (diffYears === 3) diasGeneradosAnno = 15;
-  else if (diffYears >= 4) diasGeneradosAnno = 20;
-
-  const diasUsados = vacs
-    .filter(r => String(r[1]).trim() === String(expedienteId).trim() && (r[6] === "Aprobado" || r[6] === "approved"))
-    .reduce((sum, r) => sum + parseInt(r[5] || 0), 0);
-
-  const saldoDisponible = Math.max(0, diasGeneradosAnno - diasUsados);
-
-  return {
-    status: "success",
-    expedienteId: expedienteId,
-    antiguedadAnos: diffYears,
-    diasDerechoAnual: diasGeneradosAnno,
-    diasGozados: diasUsados,
-    saldoDisponible: saldoDisponible,
-    message: `Saldo acumulado: ${saldoDisponible} días disponibles.`
-  };
+function submitVacationRequestCore_(payload,allowedRoles) {
+  const p=payload||{},actor=getVerifiedAccountingIdentity_(p);
+  if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+  const role=normalizeVacationRole_(actor.role);
+  if(allowedRoles.indexOf(role)===-1)return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+  if(!p.fechaInicio||!p.fechaFin)return {status:"error",code:"VACATION_DATES_REQUIRED",message:"Fecha de inicio y fin requeridas."};
+  const start=new Date(p.fechaInicio),end=new Date(p.fechaFin);
+  if(isNaN(start.getTime())||isNaN(end.getTime())||end<start)return {status:"error",code:"VACATION_DATE_RANGE_INVALID",message:"El rango de fechas no es válido."};
+  const days=p.diasSolicitados===undefined||p.diasSolicitados===null||p.diasSolicitados===""?1:Number(p.diasSolicitados);
+  if(!Number.isInteger(days)||days<1)return {status:"error",code:"VACATION_DAYS_INVALID",message:"Los días solicitados deben ser un entero positivo."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),self=["EMPLEADO","TRABAJADOR","PERSONAL","PROFESOR"].indexOf(role)!==-1;
+  const initial=resolveVacationEmployeeAccess_(p,ss,p.expedienteId,self);
+  if(!initial.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe una solicitud disponible para el expediente indicado."};
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La solicitud está siendo procesada. Intente nuevamente."};
+  try{
+    const current=resolveVacationEmployeeAccess_(p,ss,initial.expedienteId,self);
+    if(!current.authorized||!assertVacationWriteAccess_(p,ss,current).authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe una solicitud disponible para el expediente indicado."};
+    const headers=["SolicitudID","ExpedienteID","Tipo","FechaInicio","FechaFin","DiasSolicitados","Estado","AprobadoPor","Observaciones"];
+    let sheet=ss.getSheetByName("SolicitudesVacaciones");if(!sheet)sheet=getOrCreateSheet(ss,"SolicitudesVacaciones");
+    let data=sheet.getDataRange().getValues();
+    if(!data.length||(data.length===1&&(!Array.isArray(data[0])||!data[0].length))){sheet.appendRow(headers);data=[headers];}
+    if(!Array.isArray(data[0])||data[0].length!==headers.length||headers.some((h,i)=>String(data[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de solicitudes de vacaciones no es válida."};
+    const id="VAC-"+Utilities.getUuid();
+    if(data.slice(1).some(r=>String(r[0]||"").trim()===id))return {status:"error",code:"VACATION_REQUEST_ID_COLLISION",message:"No fue posible registrar la solicitud."};
+    sheet.appendRow([id,current.expedienteId,String(p.tipo||"Vacaciones Ordinarias").trim(),p.fechaInicio,p.fechaFin,days,"PendienteAprobacion","",String(p.motivo||p.observaciones||"Solicitud formal desde Portal RRHH").trim()]);
+    return {status:"success",solicitudId:id,estado:"PendienteAprobacion",message:"Solicitud de permiso / vacaciones registrada y enviada para revisión."};
+  }finally{lock.releaseLock();}
 }
-
-function recordMedicalLeave(payload) {
-  const { expedienteId, centroMedico, diagnosticoPrivadoUrl, fechaInicio, fechaFin, diasOtorgados, observaciones } = payload || {};
-  if (!expedienteId || !fechaInicio || !fechaFin) throw new Error("expedienteId, fechaInicio y fechaFin requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "IncapacidadesMedicas");
-  const now = new Date();
-  const incId = "INC-MED-" + now.getTime();
-
-  sheet.appendRow([
-    incId,
-    String(expedienteId).trim(),
-    centroMedico || "IHSS / Centro de Salud",
-    diagnosticoPrivadoUrl || "PRIVADO_CONFIDENCIAL",
-    fechaInicio,
-    fechaFin,
-    parseInt(diasOtorgados || 1),
-    "AceptadaIHSS",
-    observaciones || "Incapacidad Médica justificada"
-  ]);
-
-  return {
-    status: "success",
-    incapacidadId: incId,
-    message: "Incapacidad médica registrada confidencialmente."
-  };
+function submitLeaveVacationRequest(payload){return submitVacationRequestCore_(payload,["EMPLEADO","TRABAJADOR","PERSONAL","RECURSOSHUMANOS","ADMINISTRADOR"]);}
+function submitVacationRequest(payload){return submitVacationRequestCore_(payload,["PROFESOR","DIRECTOR","SUBDIRECTOR","CONTADOR","ADMINISTRADOR"]);}
+function getLeaveVacationRequests(payload){return getVacationRequests(payload);}
+function reviewLeaveVacationRequest(payload){return reviewVacationRequest(payload);}
+function calculateVacationBalances(payload){
+  const p=payload||{},actor=getVerifiedAccountingIdentity_(p);
+  if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+  if(["RECURSOSHUMANOS","ADMINISTRADOR"].indexOf(normalizeVacationRole_(actor.role))===-1)return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),access=resolveVacationEmployeeAccess_(p,ss,p.expedienteId,false);
+  if(!access.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe un saldo disponible para el expediente indicado."};
+  const vac=getVacationSheetSnapshot_(ss,"SolicitudesVacaciones",["SolicitudID","ExpedienteID","Tipo","FechaInicio","FechaFin","DiasSolicitados","Estado","AprobadoPor","Observaciones"]);
+  if(vac.error)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de solicitudes de vacaciones no es válida."};
+  const emp=getVacationSheetSnapshot_(ss,"ExpedientesLaborales",["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"]);
+  if(emp.error||emp.missing)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de expedientes laborales no es válida."};
+  const matches=emp.rows.filter(r=>String(r[0]||"").trim()===access.expedienteId);
+  if(matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Expediente no disponible."};
+  const raw=matches[0][6],parsed=raw?new Date(raw):new Date("2024-01-01"),start=isNaN(parsed.getTime())?new Date("2024-01-01"):parsed;
+  const years=Math.max(1,Math.floor((new Date()-start)/(1000*60*60*24*365)));
+  const entitlement=years>=4?20:years===3?15:years===2?12:10;
+  const used=vac.rows.filter(r=>String(r[1]||"").trim()===access.expedienteId&&(r[6]==="Aprobado"||r[6]==="approved")).reduce((sum,r)=>sum+(Number.isFinite(Number(r[5]))?Number(r[5]):0),0);
+  const balance=Math.max(0,entitlement-used);
+  return {status:"success",expedienteId:access.expedienteId,antiguedadAnos:years,diasDerechoAnual:entitlement,diasGozados:used,saldoDisponible:balance,message:"Saldo acumulado: "+balance+" días disponibles."};
 }
-
-function getVacationRequests(payload) {
-  const { expedienteId, estado } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "SolicitudesVacaciones").getDataRange().getValues().slice(1);
-
-  let filtered = rows;
-  if (expedienteId) filtered = filtered.filter(r => String(r[1]).trim() === String(expedienteId).trim());
-  if (estado) filtered = filtered.filter(r => String(r[6]).trim() === String(estado).trim());
-
-  const mapped = filtered.map(r => ({
-    solicitudId: r[0],
-    expedienteId: r[1],
-    tipo: r[2],
-    fechaInicio: r[3],
-    fechaFin: r[4],
-    diasSolicitados: parseInt(r[5] || 0),
-    estado: r[6],
-    aprobadoPor: r[7],
-    observaciones: r[8]
-  }));
-
-  return {
-    status: "success",
-    solicitudes: mapped
-  };
+function recordMedicalLeave(payload){
+  const p=payload||{},actor=getVerifiedAccountingIdentity_(p);
+  if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+  if(["RECURSOSHUMANOS","ADMINISTRADOR"].indexOf(normalizeVacationRole_(actor.role))===-1)return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+  const id=String(p.expedienteId||"").trim();
+  if(!id||!p.fechaInicio||!p.fechaFin)return {status:"error",code:"MEDICAL_LEAVE_FIELDS_REQUIRED",message:"Expediente y fechas requeridos."};
+  const start=new Date(p.fechaInicio),end=new Date(p.fechaFin);
+  if(isNaN(start.getTime())||isNaN(end.getTime())||end<start)return {status:"error",code:"MEDICAL_LEAVE_DATE_RANGE_INVALID",message:"El rango de fechas no es válido."};
+  const days=p.diasOtorgados===undefined||p.diasOtorgados===null||p.diasOtorgados===""?1:Number(p.diasOtorgados);
+  if(!Number.isInteger(days)||days<1)return {status:"error",code:"MEDICAL_LEAVE_DAYS_INVALID",message:"Los días otorgados deben ser un entero positivo."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),initial=resolveVacationEmployeeAccess_(p,ss,id,false);
+  if(!initial.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe un expediente disponible."};
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La operación está siendo procesada. Intente nuevamente."};
+  try{
+    const current=resolveVacationEmployeeAccess_(p,ss,initial.expedienteId,false);
+    if(!current.authorized||!assertVacationWriteAccess_(p,ss,current).authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe un expediente disponible."};
+    const headers=["IncapacidadID","ExpedienteID","CentroMedico","DiagnosticoPrivadoUrl","FechaInicio","FechaFin","DiasOtorgados","EstadoIHSS","Observaciones"];
+    let sheet=ss.getSheetByName("IncapacidadesMedicas");if(!sheet)sheet=getOrCreateSheet(ss,"IncapacidadesMedicas");
+    let data=sheet.getDataRange().getValues();
+    if(!data.length||(data.length===1&&(!Array.isArray(data[0])||!data[0].length))){sheet.appendRow(headers);data=[headers];}
+    if(!Array.isArray(data[0])||data[0].length!==headers.length||headers.some((h,i)=>String(data[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de incapacidades médicas no es válida."};
+    const inc="INC-MED-"+Utilities.getUuid();
+    if(data.slice(1).some(r=>String(r[0]||"").trim()===inc))return {status:"error",code:"MEDICAL_LEAVE_ID_COLLISION",message:"No fue posible registrar la incapacidad."};
+    sheet.appendRow([inc,current.expedienteId,String(p.centroMedico||"IHSS / Centro de Salud").trim(),String(p.diagnosticoPrivadoUrl||"PRIVADO_CONFIDENCIAL").trim(),p.fechaInicio,p.fechaFin,days,"AceptadaIHSS",String(p.observaciones||"Incapacidad Médica justificada").trim()]);
+    return {status:"success",incapacidadId:inc,message:"Incapacidad médica registrada confidencialmente."};
+  }finally{lock.releaseLock();}
 }
-
-function reviewVacationRequest(payload) {
-  const { solicitudId, nuevoEstado, observaciones, authRole } = payload || {};
-  if (!solicitudId || !nuevoEstado) throw new Error("solicitudId y nuevoEstado son requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "SolicitudesVacaciones");
-  const data = sheet.getDataRange().getValues();
-
-  const idx = data.findIndex(r => String(r[0]).trim() === String(solicitudId).trim());
-  if (idx === -1) throw new Error("Solicitud no encontrada.");
-
-  sheet.getRange(idx + 1, 7).setValue(nuevoEstado);
-  sheet.getRange(idx + 1, 8).setValue(authRole || "Aprobador");
-  if (observaciones) sheet.getRange(idx + 1, 9).setValue(observaciones);
-
-  return {
-    status: "success",
-    solicitudId: solicitudId,
-    estado: nuevoEstado,
-    message: "Estado de la solicitud de vacaciones actualizado a " + nuevoEstado
-  };
+function getVacationRequests(payload){
+  const p=payload||{},actor=getVerifiedAccountingIdentity_(p);
+  if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+  const role=normalizeVacationRole_(actor.role),self=["EMPLEADO","TRABAJADOR","PERSONAL","PROFESOR"].indexOf(role)!==-1;
+  if(!self&&["RECURSOSHUMANOS","DIRECTOR","SUBDIRECTOR","CONTADOR","ADMINISTRADOR"].indexOf(role)===-1)return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID);let target="";
+  if(self||p.expedienteId){const access=resolveVacationEmployeeAccess_(p,ss,p.expedienteId,true);if(!access.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existen solicitudes disponibles."};target=access.expedienteId;}
+  const snap=getVacationSheetSnapshot_(ss,"SolicitudesVacaciones",["SolicitudID","ExpedienteID","Tipo","FechaInicio","FechaFin","DiasSolicitados","Estado","AprobadoPor","Observaciones"]);
+  if(snap.missing)return {status:"success",solicitudes:[]};
+  if(snap.error)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de solicitudes de vacaciones no es válida."};
+  const counts=Object.create(null);snap.rows.forEach(r=>{const id=String(r[0]||"").trim();if(id)counts[id]=(counts[id]||0)+1;});
+  const cache=Object.create(null),wanted=String(p.estado||"").trim().toLowerCase(),result=[];
+  snap.rows.forEach(r=>{
+    const reqId=String(r[0]||"").trim(),expId=String(r[1]||"").trim();
+    if(!reqId||counts[reqId]!==1||!expId||(target&&target!==expId))return;
+    if(!Object.prototype.hasOwnProperty.call(cache,expId))cache[expId]=resolveVacationEmployeeAccess_(p,ss,expId,self);
+    if(!cache[expId].authorized||(wanted&&String(r[6]||"").trim().toLowerCase()!==wanted))return;
+    result.push({solicitudId:r[0],expedienteId:r[1],tipo:r[2],fechaInicio:r[3],fechaFin:r[4],diasSolicitados:parseInt(r[5]||0,10),estado:r[6],aprobadoPor:r[7],observaciones:r[8]});
+  });
+  return {status:"success",solicitudes:result};
 }
-
+function reviewVacationRequest(payload){
+  const p=payload||{},id=String(p.solicitudId||"").trim(),state=String(p.nuevoEstado||"").trim();
+  if(!id||!state)return {status:"error",code:"VACATION_REVIEW_FIELDS_REQUIRED",message:"Solicitud y estado requeridos."};
+  const actor=getVerifiedAccountingIdentity_(p);
+  if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+  if(["RECURSOSHUMANOS","DIRECTOR","SUBDIRECTOR","CONTADOR","ADMINISTRADOR"].indexOf(normalizeVacationRole_(actor.role))===-1)return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),lock=LockService.getScriptLock();
+  if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La operación está siendo procesada. Intente nuevamente."};
+  try{
+    const snap=getVacationSheetSnapshot_(ss,"SolicitudesVacaciones",["SolicitudID","ExpedienteID","Tipo","FechaInicio","FechaFin","DiasSolicitados","Estado","AprobadoPor","Observaciones"]);
+    if(snap.missing||snap.error)return {status:"error",code:snap.error?"RESOURCE_SCHEMA_INVALID":"RESOURCE_NOT_FOUND",message:"Solicitud no disponible."};
+    const found=snap.rows.map((row,index)=>({row,index})).filter(x=>String(x.row[0]||"").trim()===id);
+    if(found.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Solicitud no disponible."};
+    const access=resolveVacationEmployeeAccess_(p,ss,found[0].row[1],false);
+    if(!access.authorized||!assertVacationWriteAccess_(p,ss,access).authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Solicitud no disponible."};
+    const n=found[0].index+2,previous=found[0].row.slice(6,9);
+    try{
+      snap.sheet.getRange(n,7).setValue(state);snap.sheet.getRange(n,8).setValue(actor.role);
+      if(p.observaciones!==undefined)snap.sheet.getRange(n,9).setValue(String(p.observaciones||""));
+    }catch(writeError){
+      try{snap.sheet.getRange(n,7).setValue(previous[0]);snap.sheet.getRange(n,8).setValue(previous[1]);snap.sheet.getRange(n,9).setValue(previous[2]);}
+      catch(rollbackError){return {status:"error",code:"VACATION_REVIEW_COMPENSATION_REQUIRED",message:"No fue posible completar ni revertir la revisión."};}
+      return {status:"error",code:"VACATION_REVIEW_WRITE_FAILED",message:"No fue posible actualizar la solicitud."};
+    }
+    return {status:"success",solicitudId:id,estado:state,message:"Estado de la solicitud de vacaciones actualizado a "+state};
+  }finally{lock.releaseLock();}
+}
 // ---------------------------------------------------------------------------
 // OPCIONES AVANZADAS DEL CONTADOR: REGLAS Y POLÍTICAS FISCALES
 // ---------------------------------------------------------------------------

@@ -32,6 +32,7 @@ on:
       - tests/security/academic-admission-ownership.test.js
       - tests/security/user-service-signature-ownership.test.js
       - tests/security/accounting-departmental-resource-access.test.js
+      - tests/security/accounting-vacation-medical-leave-ownership.test.js
       - tests/security/accounting-departmental-import-scope.test.js
       - tests/security/user-migrated-resource-ownership-contract.test.js
       - tests/security/resource-ownership-abac.test.js
