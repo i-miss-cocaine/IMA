@@ -11901,6 +11901,11 @@ function getStudentDocuments(payload) {
     else denied.push(access || { authorized: false, code: "RESOURCE_SCOPE_DENIED" });
   }
   if (explicitTarget && denied.length) {
+    const hasReferenceIntent = Object.prototype.hasOwnProperty.call(request, "referenceRequestedFields") ||
+      Object.prototype.hasOwnProperty.call(request, "referenceDocumentIds");
+    if (!hasReferenceIntent) {
+      return { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "No existen documentos disponibles dentro del ámbito autorizado." };
+    }
     if (!cleanExpId || cleanSolId || filtered.length || denied.length !== candidates.length || !candidates.length ||
         denied.some(function(access) { return String(access.code || "") !== "RESOURCE_SCOPE_DENIED"; }) ||
         candidates.some(function(row) { return String(row[1] || "").trim().toLowerCase() !== cleanExpId; })) {

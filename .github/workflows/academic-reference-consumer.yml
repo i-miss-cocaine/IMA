@@ -9,6 +9,7 @@ on:
       - backend/accounting-service/Code.gs
       - tests/security/academic-department-reference-consumer.test.js
       - tests/security/accounting-department-reference-consumer.test.js
+      - tests/security/departmental-resource-access.test.js
       - .github/workflows/academic-reference-consumer.yml
 
 permissions:
@@ -36,6 +37,8 @@ jobs:
         run: node tests/security/academic-department-reference-consumer.test.js
       - name: Run ACCOUNTING reference consumer contract
         run: node tests/security/accounting-department-reference-consumer.test.js
+      - name: Run ACADEMIC departmental resource access regression contract
+        run: node tests/security/departmental-resource-access.test.js
       - name: Parse ACADEMIC Apps Script service
         run: node --check < backend/academic-service/Code.gs
       - name: Parse ACCOUNTING Apps Script service
