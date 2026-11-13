@@ -12979,7 +12979,7 @@ function getEmployeeSelfServicePortal(payload) {
  const selfRoles=["EMPLEADO","TRABAJADOR","PERSONAL","PROFESOR","ASISTENTE"],managerRoles=["RECURSOSHUMANOS","DIRECTOR","ADMINISTRADOR","SUBDIRECTOR"],self=selfRoles.includes(role);
  if(!self&&!managerRoles.includes(role))return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
  const requested=String(p.targetUserId||"").trim();
- if(self&&requested&&requested!==actor.userId)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Expediente no disponible."};
+ // Los campos de destino del cliente se ignoran para autoservicio; prevalece siempre el UserID firmado.
  const target=self?actor.userId:(requested||actor.userId);
  if(!target)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Expediente no disponible."};
  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("ExpedientesLaborales");

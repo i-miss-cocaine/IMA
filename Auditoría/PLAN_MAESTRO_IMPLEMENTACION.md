@@ -5449,7 +5449,7 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 
 
 ### C1.700 — TASK-153 / AUD-NG-386 — ACCOUNTING: aislamiento del portal de autoservicio laboral
-- Allowlist de roles de autoservicio y gestión; autoservicio ligado al UserID firmado y targetUserId ajeno rechazado; consultas de terceros requieren ownership/ámbito.
+- Allowlist de roles de autoservicio y gestión; autoservicio ligado al UserID firmado y targetUserId enviado por el cliente ignorado; prevalece UserID firmado; consultas de terceros requieren ownership/ámbito.
 - Esquema canónico y relación UserID/ExpedienteID única; colecciones filtradas por ExpedienteID o UserID según su contrato, excluyendo IDs vacíos/duplicados y filas malformadas.
 - La UI escapa valores dinámicos y limita certificados a HTTPS en dominios Drive permitidos, con rel=noopener noreferrer.
 - Contrato Node para identidad, IDOR, roles, scope, colecciones, esquemas y XSS integrado al workflow Department Scope.
