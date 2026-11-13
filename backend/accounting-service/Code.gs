@@ -5988,7 +5988,8 @@ function calculatePayrollLoanDeductions_(ss, employeeId, period, planillaId, net
     const paid=paidEvents.filter(x=>!reversedAll.has(String(x[0]||""))).length;
     const isAdvance=String(r[3]||"").toLowerCase().includes("anticipo");
     const installment=isAdvance?balance:Math.min(balance,monthly);
-    const amount=Math.round(Math.min(installment,remaining)*100)/100;
+    if(remaining+0.005<installment)return;
+    const amount=Math.round(installment*100)/100;
     if(amount<=0)return;
     const after=Math.round((balance-amount)*100)/100;
     const movementId="PLM-"+Utilities.getUuid();
@@ -6032,19 +6033,20 @@ function applyPayrollLoanLedgerForPlanilla_(ss,planillaId,action,actorId) {
       loanSheet.getRange(match.index,1,1,updated.length).setValues([updated]);applied++;
     });
   }else if(action==="REVERSAR"){
-    const appliedEvents=rows.filter(r=>String(r[9]||"")==="APLICADO");
+    const appliedEvents=rows.filter(r=>String(r[9]||"")==="APLICADO"),reversedAppliedIds=new Set(events.filter(x=>String(x[9]||"")==="REVERSADO").map(x=>String(x[12]||"")));
     appliedEvents.forEach(event=>{
-      if(events.some(x=>String(x[9]||"")==="REVERSADO"&&String(x[12]||"")===String(event[0])))return;
+      if(reversedAppliedIds.has(String(event[0])))return;
       const match=findLoan(String(event[1]||"").trim());if(!match)throw new Error("LOAN_RESOURCE_NOT_FOUND");
       const amount=Number(event[5]),current=Number(match.r[8]);if(!Number.isFinite(amount)||amount<=0||!Number.isFinite(current))throw new Error("LOAN_DATA_INVALID");
       const after=Math.round((current+amount)*100)/100;
-      append(event,"REVERSADO",current,after,event[0]);
+      append(event,"REVERSADO",current,after,event[0]);reversedAppliedIds.add(String(event[0]));
       const updated=match.r.slice();updated[8]=after;updated[9]=after>0?"Aprobado":"Liquidado";
       loanSheet.getRange(match.index,1,1,updated.length).setValues([updated]);reversed++;
     });
     rows.filter(r=>String(r[9]||"")==="CALCULADO").forEach(preview=>{
       if(events.some(x=>String(x[9]||"")==="CANCELADO"&&String(x[12]||"")===String(preview[0])))return;
-      if(events.some(x=>String(x[9]||"")==="APLICADO"&&String(x[12]||"")===String(preview[0])))return;
+      const appliedEvent=events.find(x=>String(x[9]||"")==="APLICADO"&&String(x[12]||"")===String(preview[0]));
+      if(appliedEvent&&!reversedAppliedIds.has(String(appliedEvent[0])))return;
       append(preview,"CANCELADO",Number(preview[6]),Number(preview[6]),preview[0]);cancelled++;
     });
   }else throw new Error("PAYROLL_LOAN_ACTION_INVALID");
