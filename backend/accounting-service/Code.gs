@@ -576,7 +576,7 @@ function validateRolePermission(action, payload) {
   if (!ctxCheck.authorized) {
     return { authorized: false, role: userRole + " (" + ctxCheck.reason + ")" };
   }
-  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "getLoanAmortizationSchedule", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher", "recordStaffCheckIn", "recordStaffAttendance", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitLeaveVacationRequest", "submitVacationRequest", "getLeaveVacationRequests", "getVacationRequests", "reviewLeaveVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment"];
+  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "getLoanAmortizationSchedule", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher", "recordStaffCheckIn", "recordStaffAttendance", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitLeaveVacationRequest", "submitVacationRequest", "getLeaveVacationRequests", "getVacationRequests", "reviewLeaveVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse"];
   if (resourceScopeActions.indexOf(action) !== -1) {
     const roleKey = String(userRole || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
     const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1 &&
@@ -2915,128 +2915,69 @@ function parseJsonSafe(jsonStr, fallback) {
 }
 
 // [TAREA RH-06] [Fase Recursos Humanos] - Catálogo de capacitaciones, inscripciones, certificados con vencimiento y planes de desarrollo profesional.
-function manageTrainingCourse(payload) {
-  const {
-    cursoId,
-    nombreCurso,
-    categoria,
-    proveedorResponsable,
-    modalidad,
-    duracionHoras,
-    requisitos,
-    dirigidoA,
-    estado,
-    creadoPor
-  } = payload || {};
-
-  if (!nombreCurso) {
-    throw new Error("nombreCurso es un campo obligatorio.");
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CatalogoCursosCapacitacion");
-
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow([
-      "CursoID",
-      "NombreCurso",
-      "Categoria",
-      "ProveedorResponsable",
-      "Modalidad",
-      "DuracionHoras",
-      "Requisitos",
-      "DirigidoA",
-      "Estado",
-      "CreadoPor",
-      "FechaCreacion",
-      "UltimaModificacion"
-    ]);
-  }
-
-  const data = sheet.getDataRange().getValues();
-  const cId = cursoId || ("CURS-CAP-" + Date.now());
-  const nowStr = new Date().toISOString();
-  let foundIndex = -1;
-
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim() === String(cId).trim()) {
-      foundIndex = i + 1;
-      break;
-    }
-  }
-
-  const reqStr = typeof requisitos === "string" ? requisitos : JSON.stringify(requisitos || []);
-
-  if (foundIndex > 0) {
-    sheet.getRange(foundIndex, 2).setValue(nombreCurso);
-    sheet.getRange(foundIndex, 3).setValue(categoria || "General");
-    sheet.getRange(foundIndex, 4).setValue(proveedorResponsable || "Interno");
-    sheet.getRange(foundIndex, 5).setValue(modalidad || "Presencial");
-    sheet.getRange(foundIndex, 6).setValue(duracionHoras || 0);
-    sheet.getRange(foundIndex, 7).setValue(reqStr);
-    sheet.getRange(foundIndex, 8).setValue(dirigidoA || "Todos");
-    sheet.getRange(foundIndex, 9).setValue(estado || "Planificado");
-    sheet.getRange(foundIndex, 12).setValue(nowStr);
-  } else {
-    sheet.appendRow([
-      cId,
-      nombreCurso,
-      categoria || "General",
-      proveedorResponsable || "Interno",
-      modalidad || "Presencial",
-      duracionHoras || 0,
-      reqStr,
-      dirigidoA || "Todos",
-      estado || "Planificado",
-      creadoPor || "RecursosHumanos",
-      nowStr,
-      nowStr
-    ]);
-  }
-
-  return {
-    status: "success",
-    message: "Curso de capacitación registrado exitosamente.",
-    data: { cursoId: cId, nombreCurso, estado: estado || "Planificado" }
-  };
-}
-
-function resolveTrainingEnrollmentEmployeeWriteAccess_(payload,ss,employeeId) {
+function resolveTrainingCatalogWriteAccess_(payload,ss) {
   const actor=getVerifiedAccountingIdentity_(payload);
   if(!actor.authorized)return actor;
   const role=normalizeVacationRole_(actor.role);
   if(["RECURSOSHUMANOS","ADMINISTRADOR"].indexOf(role)===-1)return {authorized:false,code:"ROLE_NOT_ALLOWED"};
-  const id=String(employeeId||"").trim();
-  if(!id)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
-  const headers=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
-  const employees=getVacationSheetSnapshot_(ss,"ExpedientesLaborales",headers);
-  if(employees.missing||employees.error||employees.rows.some(r=>r.length!==headers.length))return {authorized:false,code:"RESOURCE_SCHEMA_INVALID"};
-  const byUser=employees.rows.filter(r=>String(r[2]||"").trim()===id);
-  if(byUser.length!==1)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
-  const expedienteId=String(byUser[0][0]||"").trim();
-  if(!expedienteId||employees.rows.filter(r=>String(r[0]||"").trim()===expedienteId).length!==1)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
-  try{if(payload&&typeof payload==="object")RESOURCE_OWNERSHIP_REQUEST_CACHE_.delete(payload);}catch(_){}
   const scope=getVerifiedAccountingDepartmentScope_(payload,ss,actor);
   if(!scope.authorized)return {authorized:false,code:scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED"};
-  const ownership=assertResourceOwnershipForScope_(ss,scope,"EXPEDIENTE_LABORAL",expedienteId,"WRITE",payload);
-  if(!ownership.authorized)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
-  return {authorized:true,actor:actor,empleadoId:id,expedienteId:expedienteId,accessType:ownership.accessType};
+  if(scope.institutionWide!==true)return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+  return {authorized:true,actor:actor,scope:scope};
 }
-function ensureTrainingEnrollmentWriteSheet_(ss) {
-  const headers=["InscripcionID","CursoID","EmpleadoID","FechaInscripcion","EstadoInscripcion","AsistenciaPorcentaje","ResultadoNota","CertificadoDriveUrl","FechaEmisionCertificado","FechaVencimientoCertificado","Observaciones","CreadoPor","FechaCreacion","UltimaModificacion"];
-  let sheet=ss.getSheetByName("InscripcionesCapacitacion");
-  if(!sheet)sheet=getOrCreateSheet(ss,"InscripcionesCapacitacion");
+function ensureTrainingCourseWriteSheet_(ss) {
+  const headers=["CursoID","NombreCurso","Categoria","ProveedorResponsable","Modalidad","DuracionHoras","Requisitos","DirigidoA","Estado","CreadoPor","FechaCreacion","UltimaModificacion"];
+  let sheet=ss.getSheetByName("CatalogoCursosCapacitacion");
+  if(!sheet)sheet=getOrCreateSheet(ss,"CatalogoCursosCapacitacion");
   if(sheet.getLastRow()===0)sheet.appendRow(headers);
-  const snapshot=getVacationSheetSnapshot_(ss,"InscripcionesCapacitacion",headers);
+  const snapshot=getVacationSheetSnapshot_(ss,"CatalogoCursosCapacitacion",headers);
   if(snapshot.missing||snapshot.error||snapshot.rows.some(r=>r.length!==headers.length))return {error:true,sheet:sheet,rows:[]};
   return {error:false,sheet:snapshot.sheet||sheet,rows:snapshot.rows,headers:headers};
 }
-function resolveTrainingCourseForEnrollment_(ss,courseId) {
-  const headers=["CursoID","NombreCurso","Categoria","ProveedorResponsable","Modalidad","DuracionHoras","Requisitos","DirigidoA","Estado","CreadoPor","FechaCreacion","UltimaModificacion"];
-  const courses=getVacationSheetSnapshot_(ss,"CatalogoCursosCapacitacion",headers);
-  if(courses.missing||courses.error||courses.rows.some(r=>r.length!==headers.length))return {authorized:false,code:"RESOURCE_SCHEMA_INVALID"};
-  const matches=courses.rows.filter(r=>String(r[0]||"").trim()===String(courseId||"").trim());
-  return matches.length===1?{authorized:true,course:matches[0]}:{authorized:false,code:"RESOURCE_NOT_FOUND"};
+function manageTrainingCourse(payload) {
+  const p=payload||{},name=String(p.nombreCurso||"").trim();
+  if(!name)return {status:"error",code:"TRAINING_COURSE_NAME_REQUIRED",message:"El nombre del curso es obligatorio."};
+  const duration=Number(p.duracionHoras===undefined?0:p.duracionHoras);
+  if(!Number.isFinite(duration)||duration<0)return {status:"error",code:"TRAINING_COURSE_DURATION_INVALID",message:"La duración del curso debe ser un número no negativo."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),initial=resolveTrainingCatalogWriteAccess_(p,ss);
+  if(!initial.authorized)return {status:"error",code:initial.code||"RESOURCE_SCOPE_DENIED",message:"No existe autorización para administrar el catálogo de capacitación."};
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La operación está siendo procesada. Intente nuevamente."};
+  try{
+    const access=resolveTrainingCatalogWriteAccess_(p,ss);
+    if(!access.authorized)return {status:"error",code:access.code==="ROLE_NOT_ALLOWED"?"ROLE_NOT_ALLOWED":"RESOURCE_SCOPE_DENIED",message:"No existe autorización para administrar el catálogo de capacitación."};
+    const snapshot=ensureTrainingCourseWriteSheet_(ss);
+    if(snapshot.error)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura del catálogo de capacitación no es válida."};
+    const suppliedId=String(p.cursoId||"").trim(),id=suppliedId||("CURS-CAP-"+Utilities.getUuid());
+    const matches=snapshot.rows.map((row,index)=>({row:row,index:index})).filter(x=>String(x.row[0]||"").trim()===id);
+    if(matches.length>1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe un curso disponible."};
+    if(!suppliedId&&matches.length)return {status:"error",code:"TRAINING_COURSE_ID_COLLISION",message:"No fue posible registrar el curso."};
+    const existing=matches.length===1?matches[0]:null,current=existing?existing.row.slice():null,now=new Date().toISOString();
+    const requirements=typeof p.requisitos==="string"?p.requisitos:JSON.stringify(p.requisitos===undefined?(current?parseJsonSafe(current[6],[]):[]):p.requisitos);
+    const row=[
+      id,name,
+      String(p.categoria!==undefined&&p.categoria!==""?p.categoria:(current?current[2]:"General")),
+      String(p.proveedorResponsable!==undefined&&p.proveedorResponsable!==""?p.proveedorResponsable:(current?current[3]:"Interno")),
+      String(p.modalidad!==undefined&&p.modalidad!==""?p.modalidad:(current?current[4]:"Presencial")),
+      duration,requirements,
+      String(p.dirigidoA!==undefined&&p.dirigidoA!==""?p.dirigidoA:(current?current[7]:"Todos")),
+      String(p.estado!==undefined&&p.estado!==""?p.estado:(current?current[8]:"Planificado")),
+      current?current[9]:access.actor.userId,current?current[10]:now,now
+    ];
+    if(existing){
+      const rowNumber=existing.index+2;
+      try{snapshot.sheet.getRange(rowNumber,1,1,snapshot.headers.length).setValues([row]);}
+      catch(writeError){
+        try{snapshot.sheet.getRange(rowNumber,1,1,snapshot.headers.length).setValues([current]);}
+        catch(rollbackError){return {status:"error",code:"TRAINING_COURSE_COMPENSATION_REQUIRED",message:"No fue posible completar ni revertir el curso."};}
+        return {status:"error",code:"TRAINING_COURSE_WRITE_FAILED",message:"No fue posible actualizar el curso."};
+      }
+    }else{
+      try{snapshot.sheet.appendRow(row);}
+      catch(writeError){return {status:"error",code:"TRAINING_COURSE_WRITE_FAILED",message:"No fue posible registrar el curso."};}
+    }
+    return {status:"success",message:"Curso de capacitación registrado exitosamente.",data:{cursoId:id,nombreCurso:name,estado:row[8]}};
+  }finally{lock.releaseLock();}
 }
 function manageTrainingEnrollment(payload) {
   const p=payload||{},employeeId=String(p.empleadoId||"").trim(),courseId=String(p.cursoId||"").trim();
