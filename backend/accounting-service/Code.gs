@@ -4925,6 +4925,16 @@ function getPayrollBatchPreview(payload){
 }
 
 
+function rollbackPayrollEmployeeRecalculation_(ss,snapshot,actorId){
+ if(!snapshot)return;
+ const restore=(name,items)=>{const sh=ss.getSheetByName(name);if(!sh)return;(items||[]).forEach(x=>sh.getRange(x.index,1,1,x.row.length).setValues([x.row]));};
+ restore("PlanillasNomenclatura",snapshot.planRows);restore("DetalleConceptosPlanilla",snapshot.detailRows);restore("AprobacionHorasExtras",snapshot.overtimeRows);restore("DeduccionesAsistencia",snapshot.attendanceRows);restore("SolicitudesVacaciones",snapshot.vacationRows);restore("IncapacidadesMedicas",snapshot.incapacityRows);
+ const ledger=getPayrollLoanLedger_(ss),originalIds=new Set(snapshot.loanRows.map(r=>String(r[0]||""))),cancelled=new Set(ledger.rows.filter(r=>String(r[9]||"")==="CANCELADO").map(r=>String(r[12]||"")));
+ const fresh=ledger.rows.filter(r=>String(r[2]||"").trim()===snapshot.planillaId&&snapshot.ownerIds.has(String(r[4]||"").trim())&&String(r[9]||"")==="CALCULADO"&&!originalIds.has(String(r[0]||"")));
+ const cancelFresh=fresh.filter(r=>!cancelled.has(String(r[0]||""))).map(r=>["PLM-"+Utilities.getUuid(),r[1],r[2],r[3],r[4],r[5],r[6],r[6],r[8],"CANCELADO",new Date(),String(actorId||"SYSTEM_PAYROLL"),r[0],"Rollback de recálculo fallido"]);
+ const reissue=snapshot.loanRows.filter(r=>cancelled.has(String(r[0]||""))).map(r=>["PLM-"+Utilities.getUuid(),r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8],"CALCULADO",new Date(),String(actorId||"SYSTEM_PAYROLL"),"","Restauración de amortización por rollback"]);
+ if(cancelFresh.length)appendPayrollLoanLedgerEvents_(ss,cancelFresh);if(reissue.length)appendPayrollLoanLedgerEvents_(ss,reissue);
+}
 function preparePayrollEmployeeRecalculation_(ss,planillaId,period,employeeIds,payload){
  const ids=[...new Set((employeeIds||[]).map(x=>String(x||"").trim()).filter(Boolean))];
  if(!ids.length||ids.length!==(employeeIds||[]).length)return {status:"error",code:"PAYROLL_RECALCULATION_EMPLOYEES_INVALID"};
@@ -4943,14 +4953,16 @@ function preparePayrollEmployeeRecalculation_(ss,planillaId,period,employeeIds,p
  const applied=loanRows.filter(r=>String(r[9]||"")==="APLICADO"),reversed=new Set(ledger.rows.filter(r=>String(r[9]||"")==="REVERSADO").map(r=>String(r[12]||"")));
  if(applied.some(r=>!reversed.has(String(r[0]||""))))return {status:"error",code:"PAYROLL_RECALCULATION_LOAN_ALREADY_APPLIED",message:"La amortización ya fue aplicada; use un ajuste compensatorio en lugar de recalcular."};
  const cancelEvents=loanRows.filter(r=>String(r[9]||"")==="CALCULADO"&&!ledger.rows.some(x=>String(x[9]||"")==="CANCELADO"&&String(x[12]||"")===String(r[0]||""))).map(r=>["PLM-"+Utilities.getUuid(),r[1],r[2],r[3],r[4],r[5],r[6],r[6],r[8],"CANCELADO",new Date(),actor.userId,r[0],"Recalculo controlado del colaborador"]);
- const expIds=new Set(ids),userIds=new Set(employees.map(e=>String(e[2]||"").trim()).filter(Boolean));
+ const expIds=new Set(ids),userIds=new Set(employees.map(e=>String(e[2]||"").trim()).filter(Boolean)),ownerIds=new Set(ids.concat([...userIds]));
+ const capture=(name,predicate)=>{const sh=ss.getSheetByName(name);if(!sh)return [];const values=sh.getDataRange().getValues();return values.slice(1).map((row,i)=>({row,index:i+2})).filter(x=>predicate(x.row)).map(x=>({row:x.row.slice(),index:x.index}));};
+ const snapshot={planillaId:String(planillaId),ownerIds,loanRows:loanRows.filter(r=>String(r[9]||"")==="CALCULADO"&&!ledger.rows.some(x=>String(x[9]||"")==="CANCELADO"&&String(x[12]||"")===String(r[0]||""))).map(r=>r.slice()),planRows:selected.map(x=>({row:x.row.slice(),index:x.index})),detailRows:capture("DetalleConceptosPlanilla",r=>String(r[1]||"").trim()===String(planillaId).trim()&&ids.includes(String(r[3]||"").trim())),overtimeRows:capture("AprobacionHorasExtras",r=>(expIds.has(String(r[1]||"").trim())||userIds.has(String(r[1]||"").trim()))&&String(r[9]||"").trim()===String(planillaId).trim()),attendanceRows:capture("DeduccionesAsistencia",r=>(expIds.has(String(r[2]||"").trim())||userIds.has(String(r[2]||"").trim()))&&String(r[8]||"").includes("[PROCESADA_NOMINA_"+planillaId+"]")),vacationRows:capture("SolicitudesVacaciones",r=>(expIds.has(String(r[1]||"").trim())||userIds.has(String(r[1]||"").trim()))&&String(r[8]||"").includes("[PROCESADA_NOMINA_"+planillaId+"]")),incapacityRows:capture("IncapacidadesMedicas",r=>(expIds.has(String(r[1]||"").trim())||userIds.has(String(r[1]||"").trim()))&&String(r[8]||"").includes("[PROCESADA_NOMINA_"+planillaId+"]"))};
  const resetMarkers=(sheetName,idColumn,obsColumn)=>{const sh=ss.getSheetByName(sheetName);if(!sh)return;const values=sh.getDataRange().getValues();for(let i=1;i<values.length;i++){const row=values[i],owner=String(row[idColumn]||"").trim(),obs=String(row[obsColumn]||"");if(!expIds.has(owner)&&!userIds.has(owner))continue;const marker="[PROCESADA_NOMINA_"+planillaId+"]";if(obs.includes(marker))sh.getRange(i+1,obsColumn+1).setValue(obs.replace(marker,"").trim());}};
  const overtime=ss.getSheetByName("AprobacionHorasExtras");if(overtime){const values=overtime.getDataRange().getValues();for(let i=1;i<values.length;i++){const r=values[i],owner=String(r[1]||"").trim();if((expIds.has(owner)||userIds.has(owner))&&String(r[9]||"").trim()===String(planillaId).trim()){overtime.getRange(i+1,10).setValue("");overtime.getRange(i+1,11).setValue("");}}}
  resetMarkers("DeduccionesAsistencia",2,8);resetMarkers("SolicitudesVacaciones",1,8);resetMarkers("IncapacidadesMedicas",1,8);
  selected.forEach(x=>plan.getRange(x.index,16).setValue("REEMPLAZADA"));
  const details=ss.getSheetByName("DetalleConceptosPlanilla");if(details){const values=details.getDataRange().getValues();for(let i=1;i<values.length;i++)if(String(values[i][1]||"").trim()===String(planillaId).trim()&&ids.includes(String(values[i][3]||"").trim()))details.getRange(i+1,20).setValue("CANCELADO");}
  if(cancelEvents.length)appendPayrollLoanLedgerEvents_(ss,cancelEvents);
- return {status:"success",reemplazados:ids.length};
+ return {status:"success",reemplazados:ids.length,snapshot:snapshot,actorId:actor.userId};
 }
 function getPayrollVarianceCauses_(ss,employeeId,currentPeriod,previousPeriod,currentRow,previousRow){
  const causes=[],id=String(employeeId||"").trim(),period=String(currentPeriod||"").trim(),prior=String(previousPeriod||"").trim();
@@ -4979,9 +4991,10 @@ function calculatePayrollPeriod(payload) {
 
   const lock = LockService.getScriptLock();
   lock.waitLock(15000);
+  let ss = null, recalculationSnapshot = null, recalculationActorId = "SYSTEM_PAYROLL";
 
   try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const payrollConceptEngine = getPayrollConceptEngine_(ss);
     const planSheet = getOrCreateSheet(ss, "PlanillasNomenclatura");
     const expsRows = getOrCreateSheet(ss, "ExpedientesLaborales").getDataRange().getValues().slice(1);
@@ -5035,6 +5048,7 @@ function calculatePayrollPeriod(payload) {
     if (Array.isArray(recalculateEmployeeIds) && recalculateEmployeeIds.length) {
       const recalculation = preparePayrollEmployeeRecalculation_(ss,planillaId,periodoMes,recalculateEmployeeIds,payload||{});
       if (!recalculation || recalculation.status!=="success") return recalculation || {status:"error",code:"PAYROLL_RECALCULATION_FAILED"};
+      recalculationSnapshot = recalculation.snapshot;recalculationActorId=recalculation.actorId||"SYSTEM_PAYROLL";
       planData = planSheet.getDataRange().getValues();
     } else if (selectedIds && requestedPlanillaId) {
       const alreadyProcessed = planData.slice(1).some(r=>String(r[0]||"").trim()===planillaId&&selectedIds.includes(String(r[3]||"").trim())&&normalizePayrollBatchValue_(r[15])!=="REEMPLAZADA");
@@ -5379,6 +5393,8 @@ function calculatePayrollPeriod(payload) {
       ]);
     });
 
+    if (Array.isArray(recalculateEmployeeIds) && recalculateEmployeeIds.length && processedRows.length !== recalculateEmployeeIds.length) throw new Error("PAYROLL_RECALCULATION_INCOMPLETE");
+
     if (incidenciasNuevas.length > 0) {
       incidenciasSheet.getRange(incidenciasSheet.getLastRow() + 1, 1, incidenciasNuevas.length, 9).setValues(incidenciasNuevas);
     }
@@ -5438,6 +5454,9 @@ function calculatePayrollPeriod(payload) {
       estadoCiclo: "Calculada",
       message: `Cálculo preliminar de planilla '${periodoMes}' completado con éxito. Empleados procesados: ${processedRows.length}, Incidencias: ${incidenciasNuevas.length}.`
     };
+  } catch (error) {
+    if (recalculationSnapshot) { try { rollbackPayrollEmployeeRecalculation_(ss,recalculationSnapshot,recalculationActorId); } catch (rollbackError) { throw new Error("PAYROLL_RECALCULATION_ROLLBACK_FAILED: "+String(rollbackError&&rollbackError.message||rollbackError)); } }
+    throw error;
   } finally {
     lock.releaseLock();
   }
@@ -5569,7 +5588,8 @@ function updatePayrollPeriodStatus(payload) {
   const sheet = getOrCreateSheet(ss, "PlanillasNomenclatura");
   const data = sheet.getDataRange().getValues();
   const payrollMatches = data.slice(1).filter(r => String(r[0]||"").trim() === String(planillaId).trim() && String(r[15]||"").trim().toUpperCase() !== "REEMPLAZADA");
-  if (payrollMatches.length !== 1) throw new Error("Planilla no encontrada o duplicada.");
+  if (!payrollMatches.length || new Set(payrollMatches.map(r=>String(r[2]||"").trim())).size!==1 || new Set(payrollMatches.map(r=>String(r[3]||"").trim())).size!==payrollMatches.length) throw new Error("Planilla no encontrada, duplicada o inconsistente.");
+  if (new Set(payrollMatches.map(r=>String(r[15]||"").trim().toUpperCase())).size!==1) throw new Error("PAYROLL_BATCH_STATE_INCONSISTENT");
   const requestedState = String(nuevoEstado).trim().toUpperCase();
   const previousState = String(payrollMatches[0][15] || "").trim().toUpperCase();
   const terminalStates = ["ANULADA","ANULADO","REVERTIDA","REVERTIDO","CANCELADA","CANCELADO"];
