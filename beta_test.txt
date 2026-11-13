@@ -1437,3 +1437,14 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Evidencia requerida:** actor/rol, relación y estado de portal sintéticos, MembershipID y asignación vigentes, departamento/InstitutionID, respuesta allow/deny saneada, snapshots de ResourceOwnership y capturas de UI sin PII real ni tokens.
 - **Estado:** Pendiente beta. Los contratos locales/aislados de identidad, membresía, revocación, ambigüedad, institución y ownership pasan; la validación con servicios desplegados queda reservada a beta.
 ===============================================================================
+
+===============================================================================
+## BETA-FUNC-053 — TASK-153 / T153-S03 / ACADEMIC: consulta de matrículas limitada por identidad y ownership
+- **Módulo/servicio:** ACADEMIC — acción getStudentEnrollments.
+- **Objetivo:** comprobar que un estudiante solo consulte sus propias matrículas; que un tutor solo consulte las de un estudiante con relación activa y AccesoPortal; y que el personal solo consulte expedientes con ResourceOwnership y ámbito departamental autorizados.
+- **Precondiciones:** despliegue beta ACADEMIC; dos estudiantes sintéticos en departamentos distintos; tutor con PersonaID y relación a un solo estudiante; cuentas de personal con ámbitos distintos; ResourceOwnership activo/único; matrículas 2025/2026 y casos de IDs duplicados.
+- **Pasos:** (1) estudiante consulta sin userId; (2) envía userId de otro estudiante; (3) tutor consulta estudiante vinculado; (4) tutor intenta consultar estudiante no vinculado; (5) personal consulta expediente de su departamento y luego el de otro; (6) repetir con mapping UserID/PersonaID duplicado, expediente duplicado, estudiante inactivo, ResourceOwnership ausente/duplicado, MatriculaID duplicado y esquema inválido; (7) aplicar filtro por período y comprobar que solo reduce el conjunto; (8) comprobar que la ausencia de hoja Matriculas no crea ni modifica hojas.
+- **Resultado esperado:** el estudiante queda ligado al actor firmado; el tutor necesita relación/portal vigente; el personal necesita ownership/ámbito del expediente; las ambigüedades y cruces fallan cerrados y no revelan existencia de matrículas ajenas.
+- **Evidencia requerida:** actor/rol, relación de tutor sintética, ámbito/DepartmentID, ResourceOwnership, payload saneado, IDs de matrículas sintéticos, respuestas allow/deny y prueba de no mutación.
+- **Estado:** Pendiente beta. El contrato Node/CI de aislamiento sintético pasó en run 43366522801; no se usaron datos reales ni servicios desplegados.
+===============================================================================
