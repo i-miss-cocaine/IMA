@@ -5349,3 +5349,14 @@ La revisión de requisitos originales confirma cobertura de:
 
 #### Corrección CI — 2026-11-13 12:32 UTC
 Consulta posterior confirma `ima/department-scope-contract = failure` también en c04813a74d7a5435692542cf3ca671c834ece10b. No se dispone de URL/logs de job en el conector. El fallo no se atribuye a una causa no observada; aprobación local pendiente por Node NOT RUN y CI FAIL visible.
+
+
+#### Actualización C1.689 — T153-S05 / consumidor ACADEMIC (2026-11-13 12:50 UTC)
+- Se corrigió la expectativa del test de expediente normalizado: getStudentDocuments convierte EXP-1 a exp-1 antes de construir el payload HMAC; la prueba ahora valida el identificador efectivamente enviado.
+- Revisión de USER confirmó que getUserContextScope exige activeDepartmentId para usuarios con varios departamentos, y valida su pertenencia a asignaciones vigentes. El consumidor ACADEMIC ahora transmite el valor opcional dentro del payload HMAC; no se relaja la validación central.
+- El contrato se amplió de 17 a 20 escenarios y se ejecutó localmente con Node.js v22.16.0 sobre las funciones productivas exactas extraídas de la rama: 20 escenarios PASS. node --check PASS para las funciones extraídas y el test. No se declara parseo del Code.gs completo porque no se obtuvo checkout íntegro.
+- Se corrigieron las pruebas que fallaban por la expectativa de mayúsculas; se verificó unicidad de requestId en solicitudes sucesivas con UUIDs distintos. No se encontraron fallos en los 20 escenarios.
+- Se añadió workflow aislado de Node 24 para ejecutar el contrato y parsear el servicio completo en un runner con checkout explícito de la rama autorizada. Los commits nuevos no muestran status/check observable mediante el conector; CI queda sin evidencia observable, no se declara PASS.
+- BETA-FUNC-063 permanece Pendiente beta y ahora incluye actor multi-departamento con activeDepartmentId válido, ausente y no asignado.
+- **Estado del incremento:** consumidor ACADEMIC completado y aprobado localmente. **TASK-153/T153-S05 global continúa En ejecución**: siguiente alcance técnico, consumidor ACCOUNTING y superficie administrativa/configurable; mantener política estricta por defecto y no activar secretos/configuración productiva.
+- Commits de código/pruebas: 7e168853, b77196d, 618a86e, 8822fd9, 55d6b6b. Workflow aislado: c964cb8, 9f76747.
