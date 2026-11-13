@@ -3287,3 +3287,16 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato accounting-enrollment-billing-config.test.js y sintaxis de seis servicios PASS en Department Scope CI 43405537798 (Node 24.22.2; 25 pasos).
 - CLI local NOT RUN: Node 22.16.0 disponible, pero github.com no resuelve por DNS y no se obtuvo checkout. CI no se presenta como prueba local.
 - BETA-FUNC-056 agregado, Pendiente beta. AUD-NG-129 sigue En ejecución: falta consumir la política desde matrícula/rematrícula, aplicar descuentos/becas vigentes y completar idempotencia/recuperación.
+
+[2026-11-13 UTC] [IMA-EXEC-20261113-0951Z-01] AUD-NG-129 — integración de política de cargos con matrícula y rematrícula (C1.682)
+- ACADEMIC consume ConfiguracionCargosMatricula: MANUAL no añade cargos automáticos; MATRICULA_ONLY genera el concepto seleccionado; ALL_ACTIVE_TARIFFS genera los conceptos con tarifa activa del año/grado.
+- Matrícula inicial, registro y renovación comparten la generación por periodo; la repetición de una matrícula existente reconcilia cargos faltantes. Clave persistida ENROLLMENT|student|period|concept; los cargos manuales también incorporan esta clave para permitir el mismo concepto en periodos diferentes.
+- Descuentos/becas aprobados se aplican por concepto y criterios de vigencia, con porcentaje/importe máximo; el descuento se limita al monto base y un saldo cero queda Exonerado.
+- Journal de compensación elimina los cargos insertados si falla la operación académica. La conversión de admisión evita el cargo fijo duplicado cuando la política automática está activa y conserva la referencia de origen, incluso si el esquema tiene Observaciones/ClaveUnicaDedupe; se amplía la resolución de referencia para esquemas mixtos.
+- createStudentEnrollment devuelve CargoID/modo/cantidad y reconcilia cargos también en el reintento de matrícula existente; el historial de matrícula expone el periodo derivado de la clave de cargo.
+- Contrato nuevo tests/security/academic-enrollment-billing-integration.test.js cubre MANUAL, MATRICULA_ONLY, ALL_ACTIVE_TARIFFS, filtro año/grado, dedupe/reintento, compensación, beca con rango/tope, tarifa ausente y referencia de admisión.
+- Regresiones: academic-student-expediente-ownership, academic-student-enrollment-history-ownership, academic-student-enrollment-write-ownership, accounting-enrollment-billing-config y academic-admission ownership; sintaxis de servicios Apps Script.
+- Department Scope CI 43417167222 SUCCESS (Node.js 24.22.2; contratos ACADEMIC/ACCOUNTING y sintaxis PASS). Mock local Node.js 22.16.0 PASS en los escenarios aislables. Task-Service CI 43417063202 SUCCESS; sin cambios de Task-Service.
+- BETA-FUNC-057 agregado, Pendiente beta. Limitación conocida: TarifasPlanPago sigue sin InstitutionID; no se declara aislamiento multiinstitucional del catálogo de tarifas.
+- AUD-NG-129 Completada en código/CI. Siguiente tarea elegible: AUD-NG-132 (motor de cargos mensuales), sujeta a dependencias del Plan Maestro.
+
