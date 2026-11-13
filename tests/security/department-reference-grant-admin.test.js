@@ -240,4 +240,4 @@ function validPayload(extra={}) {
   assert.equal(h.state.sheets.DepartmentReferenceGrants.snapshot()[1][12],"ACTIVE",
     "grant remains active if revocation audit cannot be recorded");
 }
-process.stdout.write("Department reference grant administration contract: 26 scenarios PASS.\\n");
+process.stdout.write("Department reference grant administration contract: 26 scenarios PASS.\n");
