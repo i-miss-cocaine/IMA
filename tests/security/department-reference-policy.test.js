@@ -158,7 +158,7 @@ function evaluate(overrides) { return runtime.evaluate(input(overrides)); }
   assert.equal(result.code, "DEPARTMENT_REFERENCE_POLICY_CONFIG_INVALID");
 }
 {
-  const result = evaluate({ institutionalConfig: { value: "ALLOW_ALL" } });
+  const result = evaluate({ institutionalConfig: { key: "WRONG_POLICY_KEY" } });
   assert.equal(result.authorized, false);
   assert.equal(result.code, "DEPARTMENT_REFERENCE_POLICY_CONFIG_INVALID");
 }
