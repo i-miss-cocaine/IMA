@@ -27,6 +27,7 @@ on:
       - js/accounting.js
       - dashboard-contabilidad.html
       - tests/security/accounting-enrollment-billing-config.test.js
+      - tests/security/accounting-monthly-charge-period.test.js
       - tests/security/academic-enrollment-billing-integration.test.js
       - tests/security/academic-admission-ownership.test.js
       - tests/security/user-service-signature-ownership.test.js
@@ -71,6 +72,8 @@ jobs:
         run: node tests/security/academic-student-enrollment-write-ownership.test.js
       - name: Run accounting enrollment billing configuration contract
         run: node tests/security/accounting-enrollment-billing-config.test.js
+      - name: Run accounting monthly charge period contract
+        run: node tests/security/accounting-monthly-charge-period.test.js
       - name: Run academic enrollment billing integration contract
         run: node tests/security/academic-enrollment-billing-integration.test.js
       - name: Run academic admission ownership contract
