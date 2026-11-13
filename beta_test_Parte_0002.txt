@@ -182,3 +182,15 @@
 - **Evidencia requerida:** IDs sintéticos, estados antes/después, conteos, trazas de entrega MailApp, IDs de boletas/Drive y pruebas de autorización. No registrar direcciones completas, salarios, tokens ni PII.
 - **Estado:** Pendiente beta; no desplegado en Apps Script/Sheets real.
 ===============================================================================
+
+
+===============================================================================
+## BETA-FUNC-080 — TASK-180 — Lotes de nómina y análisis comparativo
+- **Módulo/Roles:** Recursos Humanos / Contabilidad / Administrador / responsables departamentales.
+- **Objetivo:** validar en Apps Script/Sheets desplegado la vista previa por lotes, las comparaciones entre períodos y el recálculo individual sin afectar al resto de la planilla.
+- **Precondiciones:** entorno beta aislado; empleados sintéticos de al menos dos departamentos, cargos, contratos y frecuencias; contratos vigentes, inválidos y superpuestos; incidencias de asistencia, horas extra aprobadas, préstamo en amortización y cambio salarial; planillas de dos períodos distintos.
+- **Pasos:** (1) filtrar por departamento, cargo, tipo de contrato, modalidad y frecuencia; (2) comprobar incluidos, procesados, excluidos y pendientes de validación; (3) procesar un grupo y reanudar los pendientes sin duplicar empleados ni planillas; (4) buscar por nombre/puesto/estado sin recargar; (5) comparar períodos fiscales no consecutivos y verificar importes y porcentajes por rubro; (6) provocar variaciones superiores al umbral y comprobar alertas/causas; (7) corregir un empleado y recalcularlo de forma aislada; (8) forzar error durante recálculo y comprobar rollback de planilla, conceptos, marcadores y ledger de préstamo; (9) probar rol no autorizado, empleado fuera de ámbito, planilla cerrada, amortización aplicada y configuración duplicada/vencida; (10) conciliar sumas individuales y consolidado al céntimo.
+- **Resultado esperado:** lotes y comparativas reproducibles; sin doble procesamiento; alertas justificadas; recálculo individual seguro; datos históricos y empleados ajenos intactos; totales coincidentes a L 0.01.
+- **Evidencia requerida:** IDs sintéticos, snapshots antes/después, totales por rubro, diferencias, causas, estados del ledger y registros de autorización/denegación; sin PII ni salarios reales.
+- **Estado:** Pendiente beta; no desplegado en Apps Script/Sheets real.
+===============================================================================

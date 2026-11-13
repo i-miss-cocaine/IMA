@@ -2347,7 +2347,7 @@
 ---
 
 <!-- ID: TASK-180 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [ ] [TASK-180] Mejorar el procesamiento de planillas por lotes y la revisión comparativa de resultados
+### [x] [TASK-180] Mejorar el procesamiento de planillas por lotes y la revisión comparativa de resultados
 - **Origen del Hallazgo:** `AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md` / Sección B (B.3) y Sección G (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Productividad en Recursos Humanos, detección de variaciones y auditoría previa al cierre)
@@ -2375,7 +2375,7 @@
   - Se puede consultar el desglose de causas que originaron la diferencia salarial de un colaborador.
   - Los totales individuales suman con exactitud milimétrica el consolidado general de la planilla.
   - La interfaz permite buscar y filtrar colaboradores por nombre, puesto o estado de cálculo sin recargar la pantalla.
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Completada en código y CI; validación beta desplegada separada.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7525-7559; clave TASK-181; asignación única: Contabilidad -->
 

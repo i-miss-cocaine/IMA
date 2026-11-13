@@ -815,3 +815,20 @@
 - **Estado:** TASK-179 completada en código y CI; BETA-FUNC-079 pendiente de validación desplegada.
 - **Siguiente tarea elegible:** TASK-180 — procesamiento de planillas por lotes y revisión comparativa de resultados.
 ===============================================================================
+
+
+===============================================================================
+## C1.707 — IMA-EXEC-20261113-2005Z-01 — TASK-180
+- **Objetivo:** procesamiento de nómina por lotes, filtros y comparación de variaciones entre períodos.
+- **HEAD inicial:** 796bc8da6c64435e58b574bc348531f62e5391e6.
+- **HEAD de implementación verificado:** fea7186360323006d709352db8475ea4a28d8028.
+- **Archivos de código/prueba:** backend/accounting-service/Code.gs; dashboard-recursos-humanos.html; dashboard-contabilidad.html; tests/security/accounting-payroll-batch-variance.test.js; .github/workflows/department-scope-contract.yml.
+- **Decisiones:** lotes reanudables dentro de una planilla en borrador; configuración de pago con vigencia; comparación de períodos libres; recálculo por empleado con identidad/scope y rollback; alertas para bases previas cero; contratos y salarios inválidos se excluyen en preview.
+- **Verificación:** contrato TASK-180 PASS; Department Scope 43499960531 SUCCESS; Identity Mapping 43499960527 SUCCESS; ACADEMIC/ACCOUNTING reference consumers 43499960536 SUCCESS. La CI usó Node.js 24 y ejecutó chequeos de sintaxis y contratos.
+- **Riesgos/limitaciones:** CLI local NOT RUN; Apps Script/Sheets real NOT RUN; no se desplegó ni se accedió a datos institucionales. BETA-FUNC-080 queda pendiente.
+- **Investigación de producto:** se revisaron flujos QuickBooks de selección/revisión de empleados y gestión masiva de elementos, y síntesis de reseñas G2; se adoptó preview+filtros y se reforzaron causas/auditoría para evitar opacidad.
+- **Commits de implementación:** 5e16004d6f1018949f96ad419476f6c1f0c064cb; 7abc0789abd691419be5cf2d1c452333e93c1799; 822e59b05a8ff1b8df4441017b51e341a5399349; 5e0bda0ca8e764ced38e8a05f0b5998c86ab82ef; 840bc72f98b1b3c7f14791ddad87f67d5e07a49d; 19bf48a8810f7a6189a3f13506ea81e9bbded350; 6cf819b45c63f7c5c8fa2f6357d6e9392f0cc3e7; c8dee1eba95777729927fadfd86797218575074a; bfc9461a2587ab82103a23d08d167246027bfed6; 88376fb273f7ff4506e5dfc9d66380b9642c9dfa; fea7186360323006d709352db8475ea4a28d8028.
+- **Estado:** TASK-180 completada en código y CI; validación beta pendiente.
+- **Siguiente tarea:** TASK-181 — matriz comparativa de cotizaciones y adjudicación por partidas.
+- **Checkpoint commit:** por confirmar.
+===============================================================================

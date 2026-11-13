@@ -3508,3 +3508,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Ajustes compensatorios de planilla cerrada con referencia única, motivo, actor/scope/ownership, nuevo asiento y conservación del original; UI de ajustes en dashboard de Contabilidad.
 - Catálogo por defecto: 2101–2106 obligaciones laborales, 2107 proveedores; bloqueo de conflicto heredado 2101 sin migración histórica.
 - Department Scope 43493002428 SUCCESS; contratos de nómina y sintaxis Apps Script/JS PASS; Identity Mapping 43491651675 y Department Reference Consumers 43491651567 SUCCESS. BETA-FUNC-079 Pendiente beta; Apps Script/Sheets real NOT RUN.
+
+
+[2026-11-13 20:20 UTC] C1.707 — TASK-180 — lotes de nómina y variaciones
+- Vista previa segmentada por departamento/cargo/contrato/modalidad/frecuencia, filtros locales, contadores y procesamiento de lotes reanudables.
+- Comparación fiscal entre dos períodos, alertas por variación, diferencias por rubro y causas; recálculo de empleados corregidos con autorización/scope y rollback.
+- Se excluyen de la vista previa salarios contractuales inválidos; se corrigió interpretación de fechas Date entre runtimes.
+- Contrato TASK-180 PASS; Department Scope 43499960531, Identity Mapping 43499960527 y Reference Consumers 43499960536 SUCCESS.
+- BETA-FUNC-080 pendiente de despliegue sintético. CLI local y Apps Script/Sheets real NOT RUN.

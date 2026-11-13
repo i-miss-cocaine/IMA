@@ -5509,3 +5509,15 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - **CI:** Department Scope 43493002428 SUCCESS; contratos de amortización, conceptos dinámicos, distribución de comprobantes y TASK-179 PASS; sintaxis Apps Script y js/accounting.js PASS (Node.js 24). Identity Mapping 43491651675 y Department Reference Consumers 43491651567 SUCCESS.
 - **Pendiente beta:** BETA-FUNC-079 requiere prueba desplegada con planilla real sintética, catálogo de cuentas institucional, ajuste compensatorio y conciliación de saldo. No se desplegó Apps Script ni se accedió a datos institucionales.
 - **Siguiente tarea elegible:** TASK-180 — procesamiento de planillas por lotes y revisión comparativa de resultados.
+
+
+### Ejecución C1.707 — TASK-180 — Lotes de nómina y análisis de variaciones
+- Se incorporó vista previa segmentada por departamento, cargo, tipo de contrato, modalidad y frecuencia de pago; grupos reanudables sobre planilla en borrador, contadores de incluidos/procesados/excluidos/pendientes y búsqueda local sin recarga.
+- Se agregó configuración de modalidad/frecuencia por empleado con vigencia, navegación a detalle, comparación entre períodos AAAA-MM, diferencias absolutas/porcentuales por rubro, umbral de variación y causas trazables (horas extra, amortización, salario contractual y ausencias).
+- El recálculo individual está limitado por identidad verificada, rol, ámbito departamental y planilla en borrador; valida estado de amortizaciones y conserva snapshots para rollback de filas, marcadores y eventos de préstamos. No recalcula toda la plantilla.
+- Se reforzó la vista previa para excluir contratos ausentes/superpuestos y salarios contractuales inválidos antes de procesar.
+- Contrato TASK-180: `tests/security/accounting-payroll-batch-variance.test.js` PASS; cubre segmentación, configuración, exclusiones, variaciones, causas, rollback, aportaciones patronales y sintaxis de scripts HR.
+- GitHub Actions en commit `fea7186360323006d709352db8475ea4a28d8028`: Department Scope 43499960531 SUCCESS; Identity Mapping 43499960527 SUCCESS; ACADEMIC/ACCOUNTING reference consumers 43499960536 SUCCESS. El workflow ejecuta Node.js 24, contrato de nómina por lotes/variaciones y chequeos de sintaxis.
+- Revisión de referencias de producto: QuickBooks documenta selección de empleados, revisión previa y filtros de elementos de nómina; reseñas G2 destacan facilidad de uso, pero también problemas de navegación y personalización de informes. IMA conserva el patrón de previsualización y filtros, añadiendo trazabilidad de causas, comparación multi-período y recálculo aislado. Fuentes: https://quickbooks.intuit.com/learn-support/en-us/help-article/payroll-processes/create-paycheck-employee/L5JFzGwNu_US_en_US ; https://quickbooks.intuit.com/r/payroll/bulk-payroll-item-management-article/ ; https://www.g2.com/categories/payroll
+- **Limitaciones:** no se ejecutó CLI local ni Apps Script/Sheets desplegado; no se usaron datos reales. La validación de negocio desplegada se registra como BETA-FUNC-080.
+- **Siguiente tarea elegible:** TASK-181 — matriz comparativa de cotizaciones y adjudicación por partidas.
