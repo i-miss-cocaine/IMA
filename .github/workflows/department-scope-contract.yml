@@ -32,6 +32,7 @@ on:
       - tests/security/academic-admission-ownership.test.js
       - tests/security/user-service-signature-ownership.test.js
       - tests/security/accounting-departmental-resource-access.test.js
+      - tests/security/accounting-purchase-quotation-adjudication.test.js
       - tests/security/accounting-vacation-medical-leave-ownership.test.js
       - tests/security/accounting-labor-incident-write-ownership.test.js
       - tests/security/accounting-training-enrollment-ownership.test.js
@@ -111,6 +112,8 @@ jobs:
         run: node tests/security/accounting-payroll-journal-integration.test.js
       - name: Run accounting payroll batch and variance contract
         run: node tests/security/accounting-payroll-batch-variance.test.js
+      - name: Run accounting purchase quotation matrix and split award contract
+        run: node tests/security/accounting-purchase-quotation-adjudication.test.js
       - name: Run accounting staffing needs ownership and read-isolation contract
         run: node tests/security/accounting-staffing-needs-ownership.test.js
       - name: Run accounting work shift and substitution ownership contract
