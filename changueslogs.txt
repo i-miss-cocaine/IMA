@@ -3260,3 +3260,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se exigen mappings y expediente únicos; MatriculaID duplicados se excluyen; esquema se valida; las lecturas no crean hojas.
 - Department Scope CI 43366522801 (Node 24.22.2) y Task-Service CI 43366522824: SUCCESS. Nuevo contrato ACADEMIC de matrículas PASS.
 - Suite completa en CLI local NOT RUN por DNS github.com; beta BETA-FUNC-053 Pendiente. Sin despliegue/datos reales.
+
+
+[2026-11-13 UTC] [IMA-EXEC-20261112-1754Z-03] C1.679 — protección de getStudentEnrollmentHistory
+- ACADEMIC reemplaza la lectura histórica basada en userId del cliente por identidad firmada, validación de cuenta/mapping, expediente único y ResourceOwnership/ámbito.
+- Tutor: relación/AccesoPortal activos; cargos solo cuando EsResponsableFinanciero está habilitado. IDs duplicados excluidos, esquemas validados y hojas ausentes no se crean.
+- Se añade contrato Node con escenarios positivos/negativos y 25 lecturas concurrentes sin mutación; se integra al workflow Department Scope.
+- BETA-FUNC-054 agregado, Pendiente beta. CI y revisión final pendientes de confirmación.

@@ -342,3 +342,17 @@
 - **Beta:** se agrega BETA-FUNC-053 para validar en beta el listado de matrículas propio, delegado y departamental con cuentas/filas sintéticas.
 - **Siguiente acción:** revisar y proteger getStudentEnrollmentHistory como endpoint distinto (incluye cargos financieros y actualmente no queda cubierto por esta corrección); TASK-153 continúa En ejecución.
 ===============================================================================
+
+
+===============================================================================
+## C1.679 — IMA-EXEC-20261112-1754Z-03 — protección del historial de matrículas y cargos ACADEMIC
+- **Checkpoint anterior:** C1.678. **HEAD inicial:** 4a9720f5a1d0eef739c9ed14441f13d94585478b. **Rama:** NG_beta_0.0.0.1_work. **Base:** 44d9891132332e692dbe2ba8602b41f50a508a59, solo lectura.
+- **Tarea:** TASK-153 / T153-S04 — endurecer getStudentEnrollmentHistory como endpoint independiente de getStudentEnrollments.
+- **Defecto corregido:** el endpoint confiaba en _verifiedRole/_verifiedUserId y userId del payload, y leía matrículas/cargos sin validar sesión, cuenta activa, mapping de estudiante, expediente único ni ResourceOwnership.
+- **Implementación:** identidad firmada obligatoria; estudiante ligado al actor; tutor requiere relación y AccesoPortal activos; cargos de tutor requieren además EsResponsableFinanciero; personal requiere autorización de ámbito/ownership del expediente; IDs duplicados excluidos; esquemas validados; hojas ausentes se leen como vacías sin crearlas; no se exponen cargos a tutor sin facultad financiera.
+- **Archivos:** backend/academic-service/Code.gs; tests/security/academic-student-enrollment-history-ownership.test.js; .github/workflows/department-scope-contract.yml; beta_test.txt; pendientes/Dirección/Pendientes.md; changueslogs.txt; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt; Auditoría/INDICE_CHECKPOINTS.md.
+- **Pruebas de contrato añadidas:** identidad inválida; self vs. spoof; tutor vinculado/no vinculado; permiso financiero; personal dentro/fuera del departamento; mapping/expediente ambiguo; IDs duplicados; esquemas inválidos; hojas ausentes sin escritura; 25 lecturas concurrentes sin efectos laterales.
+- **CLI local:** NOT RUN en este entorno de edición; no se dispone de checkout local del repositorio ni de ejecución Node conectada. Se solicita ejecución en CI del test nuevo y node --check de ACADEMIC. No se declara PASS local.
+- **Beta:** BETA-FUNC-054 agregado, Pendiente beta; no bloquea el cierre local conforme NDASC.
+- **Resultado de implementación:** código y harness preparados; pendiente confirmar CI y revisión final del diff antes de marcar completada.
+===============================================================================

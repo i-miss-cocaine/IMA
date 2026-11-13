@@ -1448,3 +1448,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Evidencia requerida:** actor/rol, relación de tutor sintética, ámbito/DepartmentID, ResourceOwnership, payload saneado, IDs de matrículas sintéticos, respuestas allow/deny y prueba de no mutación.
 - **Estado:** Pendiente beta. El contrato Node/CI de aislamiento sintético pasó en run 43366522801; no se usaron datos reales ni servicios desplegados.
 ===============================================================================
+
+
+===============================================================================
+## BETA-FUNC-054 — TASK-153 / T153-S04 / ACADEMIC: historial de matrículas y cargos bajo identidad y ownership
+- **Módulo/servicio:** ACADEMIC — acción getStudentEnrollmentHistory; hojas Matriculas y CargosEstudiante.
+- **Objetivo:** validar que el historial solo se entregue al estudiante autenticado, a tutor con relación/AccesoPortal vigente (los cargos solo si es responsable financiero) o a personal con ResourceOwnership y ámbito departamental autorizados.
+- **Precondiciones:** despliegue beta ACADEMIC; estudiantes sintéticos en DEP-A/DEP-B; tutor con relación activa y AccesoPortal; variantes con/sin EsResponsableFinanciero; personal con ámbitos separados; filas sintéticas de matrículas y cargos.
+- **Pasos:** (1) estudiante consulta historial propio y envía userId ajeno; (2) tutor vinculado/no vinculado consulta el historial; (3) tutor con y sin EsResponsableFinanciero verifica la visibilidad separada de cargos; (4) personal consulta expediente propio y de otro departamento; (5) repetir con sesión inválida, actor/estudiante duplicados, PersonaID ambiguo, expediente duplicado, ResourceOwnership ausente/duplicado/ajeno, MatriculaID/CargoID duplicados y encabezados inválidos; (6) comprobar hojas ausentes sin creación ni mutación.
+- **Resultado esperado:** identidad derivada de sesión firmada; estudiante fijado al actor; tutor limitado a relación y portal vigentes; cargos visibles al tutor solo con atribución financiera explícita; personal limitado al expediente propio; errores no revelan existencia; IDs duplicados se excluyen y las lecturas no crean datos.
+- **Evidencia requerida:** actor/rol, relación/AccesoPortal y bandera financiera sintéticos, ámbito/InstitutionID, ResourceOwnership, payload saneado, respuestas allow/deny, IDs sintéticos y snapshots de hojas antes/después.
+- **Estado:** Pendiente beta. Los contratos locales/CI de código cubren la lógica aislada; no se han desplegado servicios ni consultado Sheets reales.
+===============================================================================

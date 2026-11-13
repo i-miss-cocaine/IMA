@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.678**
+- Último checkpoint: **C1.679**
 - Última sesión: `IMA-EXEC-20261112-1754Z-03`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.678: **67680**
+- Caracteres del archivo activo tras C1.679: **69993**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -722,3 +722,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.677 | IMA-EXEC-20261112-1754Z-03 | AUD-NG-140 completada en código/CI; Department Scope 43364730161 SUCCESS (Node 24.22.2); Task-Service 43364715823 SUCCESS (Node 22.23.4); CLI local parcial PASS y suite completa local NOT RUN por DNS; BETA-FUNC-050/051 pendientes | TASK-153 / PM-01 — cierre AUD-NG-140 / REQ-EXP-014 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.677 | 314-328 | C1.676 | 35999824c5066f67b45ab260aaab9101a12a3782 |
 
 | C1.678 | IMA-EXEC-20261112-1754Z-03 | getStudentEnrollments protegido por identidad firmada, relación tutor y ResourceOwnership; Department Scope CI 43366522801 PASS (Node 24.22.2); Task-Service CI 43366522824 PASS; suite local completa NOT RUN por DNS; BETA-FUNC-053 pendiente | TASK-153 / T153-S03 — consulta de matrículas ACADEMIC | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.678 | 329-344 | C1.677 | Código 8f72f91f2209d5f3efcb4e5085b128ea636f3c0d; checkpoint bbb7ec79c9bdd03111884bbb6fe08ea227385c9e |
+
+| C1.679 | IMA-EXEC-20261112-1754Z-03 | getStudentEnrollmentHistory protegido por identidad firmada, relación tutor/AccesoPortal, facultad financiera y ResourceOwnership; contrato con duplicados, esquemas, no-mutación y 25 lecturas concurrentes; BETA-FUNC-054 Pendiente beta | TASK-153 / T153-S04 — historial de matrículas y cargos ACADEMIC | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.679 | sección final | C1.678 | pendiente de commit funcional y CI |

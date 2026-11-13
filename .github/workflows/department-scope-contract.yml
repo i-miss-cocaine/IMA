@@ -22,6 +22,7 @@ on:
       - js/auth.js
       - tests/security/departmental-resource-access.test.js
       - tests/security/academic-student-expediente-ownership.test.js
+      - tests/security/academic-student-enrollment-history-ownership.test.js
       - tests/security/academic-admission-ownership.test.js
       - tests/security/user-service-signature-ownership.test.js
       - tests/security/accounting-departmental-resource-access.test.js
@@ -59,6 +60,8 @@ jobs:
         run: node tests/security/departmental-resource-access.test.js
       - name: Run academic student expediente ownership contract
         run: node tests/security/academic-student-expediente-ownership.test.js
+      - name: Run academic student enrollment history ownership contract
+        run: node tests/security/academic-student-enrollment-history-ownership.test.js
       - name: Run academic admission ownership contract
         run: node tests/security/academic-admission-ownership.test.js
       - name: Run user-service signature ownership contract
