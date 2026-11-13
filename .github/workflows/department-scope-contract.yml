@@ -114,6 +114,8 @@ jobs:
         run: node tests/security/accounting-payroll-batch-variance.test.js
       - name: Run accounting purchase quotation matrix and split award contract
         run: node tests/security/accounting-purchase-quotation-adjudication.test.js
+      - name: Run partial purchase receipt and quantity integrity contract
+        run: node tests/security/accounting-purchase-receipt-partial.test.js
       - name: Run accounting staffing needs ownership and read-isolation contract
         run: node tests/security/accounting-staffing-needs-ownership.test.js
       - name: Run accounting work shift and substitution ownership contract
