@@ -3352,3 +3352,14 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-13 12:32 UTC] Corrección de estado: `ima/department-scope-contract = failure` confirmado también para c04813a74d7a5435692542cf3ca671c834ece10b. Sin logs/URL de ejecución accesibles; causa no determinada. Node local NOT RUN por DNS. T153-S05 permanece En ejecución.
+
+
+[2026-11-13 12:50 UTC] TASK-153 / T153-S05 — consumidor ACADEMIC: corrección de contexto y verificación local
+- Se corrigió el contrato de prueba: el expediente se normaliza a minúsculas antes de construir el sobre, por lo que la expectativa HMAC correcta es `exp-1`, no `EXP-1`. El test anterior fallaba por una expectativa inconsistente, no por el resultado del consumidor.
+- Se detectó que ACADEMIC no transmitía `activeDepartmentId`; USER lo requiere cuando el actor tiene varios departamentos y valida que pertenezca a sus asignaciones vigentes. ACADEMIC ahora lo incluye opcionalmente dentro del payload firmado HMAC; USER mantiene la validación de pertenencia y deniega contextos inválidos.
+- El contrato pasó de 17 a 20 escenarios: forwarding de DEP-A/DEP-B, omisión opcional y unicidad de requestId con UUIDs distintos.
+- **Node local:** v22.16.0. Resultado: `ACADEMIC department reference consumer contract: 20 scenarios PASS`. `node --check` pasó sobre las funciones productivas extraídas (helper y getStudentDocuments) y sobre el test. No se obtuvo checkout completo; la sintaxis del Code.gs completo no se declara verificada localmente.
+- **CI:** sin estado/check observable para los commits nuevos mediante las acciones disponibles; no se declara PASS de Actions. Se añadió workflow aislado para ejecución Node 24 al siguiente evento push elegible. La ejecución local cubre el contrato modificado.
+- **Commits:** helper activeDepartmentId 7e168853; expectativa normalizada b77196d; pruebas de contexto 618a86e; escenario de requestId 8822fd9/55d6b6b; workflow aislado c964cb8/9f76747; beta a8ba3db.
+- **Beta:** BETA-FUNC-063 sigue Pendiente beta e incorpora validación de usuarios multi-departamento y contexto activo.
+- **Estado:** incremento ACADEMIC completado y verificado localmente. TASK-153/T153-S05 global permanece En ejecución hasta integrar el siguiente consumidor y superficie administrativa/configurable; no se activa configuración ni secretos productivos.
