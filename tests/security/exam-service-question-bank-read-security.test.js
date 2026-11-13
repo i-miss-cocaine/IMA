@@ -64,6 +64,12 @@ const runtime = {
  SPREADSHEET_ID:"LOCAL", EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_:new WeakMap(), PUBLIC_ACTIONS:[],
  ROLE_PERMISSIONS:{Profesor:["getQuestionBank","manageQuestionBank"],Lector:["getQuestionBank"],Estudiante:[]},
  verifySessionToken(token){return claims[token]||null;}, validateContextualAccess(){return {authorized:true};},
+ getVerifiedDepartmentScopeForSession_(payload,spreadsheet,actor){
+  if(!actor||actor.authorized!==true||!actor.userId||!actor.role)return {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
+  const assignments=scopeRows.slice(1).filter(row=>String(row[1]||"").trim()===actor.userId&&String(row[2]||"").trim()===actor.role&&String(row[5]||"").trim()==="ACTIVO");
+  if(assignments.length!==1)return {authorized:false,code:"ROLE_SCOPE_NOT_ASSIGNED"};
+  return {authorized:true,institutionId:"I1",departmentIds:[String(assignments[0][4]||"").trim()].filter(Boolean)};
+ },
  getDynamicPermissionsForRole(role,action){if(role==="Lector")return action==="getQuestionBank";return null;},
  hasActiveDelegationForAction(){return false;},
  PropertiesService:{getScriptProperties(){return {getProperty(name){return name==="IMA_INSTITUTION_ID"?"I1":null;}};}},
