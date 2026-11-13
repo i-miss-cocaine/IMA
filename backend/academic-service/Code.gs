@@ -14151,6 +14151,12 @@ function registerStudentEnrollmentInternal_(payload) {
         }
         const existingPeriodCharge = existingCargos.slice(1).filter(r => String(r[10] || "").trim().toLowerCase() === dedupeKey);
         if (existingPeriodCharge.length) throw new Error("ADMISSION_CHARGE_CONFLICT");
+        const unkeyedLegacyCharges = existingCargos.slice(1).filter(r =>
+          String(r[2] || "").trim() === sUserId && String(r[3] || "").trim() === concepto &&
+          String(r[7] || "").trim().toUpperCase() !== "ANULADO" && !String(r[10] || "").trim()
+        );
+        if (unkeyedLegacyCharges.length > 1) throw new Error("ADMISSION_CHARGE_AMBIGUOUS");
+        if (unkeyedLegacyCharges.length === 1) throw new Error("ADMISSION_CHARGE_CONFLICT");
       } else {
         const duplicates = existingCargos.slice(1).filter(r => String(r[10] || "").trim().toLowerCase() === dedupeKey);
         if (duplicates.length > 1) throw new Error("ENROLLMENT_CHARGE_AMBIGUOUS");
