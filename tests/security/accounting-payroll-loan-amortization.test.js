@@ -22,8 +22,12 @@ const newPreview=ctx.calculatePayrollLoanDeductions_(ss,"U-1","2026-11","PLN-2",
 ctx.applyPayrollLoanLedgerForPlanilla_(ss,"PLN-2","APLICAR","HR-1");assert.equal(rows.AnticiposPrestamosEmpleado[1][8],450);
 rows.AnticiposPrestamosEmpleado[1][8]=50;
 const last=ctx.calculatePayrollLoanDeductions_(ss,"U-1","2026-12","PLN-3",100);assert.equal(last.total,50);ctx.appendPayrollLoanLedgerEvents_(ss,last.events);ctx.applyPayrollLoanLedgerForPlanilla_(ss,"PLN-3","APLICAR","HR-1");assert.equal(rows.AnticiposPrestamosEmpleado[1][8],0);assert.equal(rows.AnticiposPrestamosEmpleado[1][9],"Liquidado");
+rows.AnticiposPrestamosEmpleado[1][8]=50;rows.AnticiposPrestamosEmpleado[1][9]="Aprobado";
 const noNet=ctx.calculatePayrollLoanDeductions_(ss,"U-1","2027-01","PLN-4",10);assert.equal(noNet.total,0,"do not create a partial installment or negative net salary");
 rows.AnticiposPrestamosEmpleado[1][3]="Anticipo Salario";rows.AnticiposPrestamosEmpleado[1][8]=200;rows.AnticiposPrestamosEmpleado[1][7]=200;rows.AnticiposPrestamosEmpleado[1][9]="Aprobado";
 const advanceInsufficient=ctx.calculatePayrollLoanDeductions_(ss,"U-1","2027-02","PLN-5",100);assert.equal(advanceInsufficient.total,0,"salary advance is a single installment and must not be partially deducted");
 const advanceFull=ctx.calculatePayrollLoanDeductions_(ss,"U-1","2027-02","PLN-5",200);assert.equal(advanceFull.total,200);
+assert.ok(rows.AmortizacionPrestamosNomina.some(r=>r[9]==="CANCELADO"),"reversal must append a cancellation event for its preview");
+assert.ok(src.includes("calculatePayrollLoanDeductions_(ss, empUserId || empExpId"),"payroll must include the loan allocation in other deductions");
+assert.ok(src.includes("applyPayrollLoanLedgerForPlanilla_(ss, planillaId, \"APLICAR\""),"approval/closure must apply amortization");
 console.log("ACCOUNTING payroll loan amortization contract passed: preview, period uniqueness, net cap, approval, retry, schedule, reversal, reissue, final liquidation and single-installment advance");

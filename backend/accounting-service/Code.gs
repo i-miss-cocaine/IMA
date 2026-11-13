@@ -6025,8 +6025,11 @@ function applyPayrollLoanLedgerForPlanilla_(ss,planillaId,action,actorId) {
         return;
       }
       const match=findLoan(String(preview[1]||"").trim());if(!match)throw new Error("LOAN_RESOURCE_NOT_FOUND");
-      const amount=Number(preview[5]),current=Number(match.r[8]);
+      const amount=Number(preview[5]),current=Number(match.r[8]),loanState=String(match.r[9]||"").trim().toUpperCase();
+      if(!["APROBADO","APROBADA","ACTIVE","ACTIVO"].includes(loanState))throw new Error("LOAN_NOT_ACTIVE_RECALCULATE");
+      const isAdvance=String(match.r[3]||"").toLowerCase().includes("anticipo"),monthly=Number(match.r[7]),expectedInstallment=isAdvance?current:Math.min(current,monthly);
       if(!Number.isFinite(amount)||amount<=0||!Number.isFinite(current)||current+0.005<amount)throw new Error("LOAN_BALANCE_CHANGED_RECALCULATE");
+      if(!Number.isFinite(expectedInstallment)||expectedInstallment<=0||Math.abs(amount-expectedInstallment)>0.005)throw new Error("LOAN_TERMS_CHANGED_RECALCULATE");
       const after=Math.round((current-amount)*100)/100;
       append(preview,"APLICADO",current,after,preview[0]);
       const updated=match.r.slice();updated[8]=after;updated[9]=after===0?"Liquidado":"Aprobado";
