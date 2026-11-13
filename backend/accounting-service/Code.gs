@@ -5495,12 +5495,6 @@ function getStaffAttendanceLogs(payload) {
   }
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID), empty = () => ({ status: "success", asistencias: [] });
-  if (!self) {
-    const scope = getVerifiedAccountingDepartmentScope_(request, ss, actor);
-    if (!scope.authorized || (!scope.institutionWide && !(scope.departmentIds || []).length)) {
-      return { status: "error", code: scope.code || "DEPARTMENT_SCOPE_REQUIRED", message: "Acceso denegado." };
-    }
-  }
   const employeeSheet = ss.getSheetByName("ExpedientesLaborales");
   if (!employeeSheet) {
     return self || String(request.empleadoId || "").trim()
