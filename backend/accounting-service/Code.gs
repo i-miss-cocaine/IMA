@@ -5230,6 +5230,26 @@ function calculatePayrollPeriod(payload) {
   }
 }
 
+
+function summarizePayrollConceptDetails_(ss,planillaId) {
+  const sheet=ss.getSheetByName("DetalleConceptosPlanilla");
+  if(!sheet)return {incomeTotal:0,deductionTotal:0,employerTotal:0,journalLines:[]};
+  const headers=getPayrollConceptDetailHeaders_(),data=sheet.getDataRange().getValues();
+  if(!data.length||!data[0]||data[0].length!==headers.length||headers.some((h,i)=>String(data[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))throw new Error("RESOURCE_SCHEMA_INVALID: DetalleConceptosPlanilla");
+  const rows=data.slice(1).filter(r=>String(r[1]||"").trim()===String(planillaId).trim()&&String(r[19]||"").trim().toUpperCase()!=="CANCELADO");
+  let incomeTotal=0,deductionTotal=0,employerTotal=0;const grouped=Object.create(null);
+  rows.forEach(r=>{
+    const amount=Number(r[10]||0),phase=payrollConceptPhase_(r[6]),account=String(r[11]||"").trim(),nature=String(r[7]||"").trim().toUpperCase();
+    if(!Number.isFinite(amount)||amount<0||!account||!["DEBE","HABER"].includes(nature))throw new Error("PAYROLL_CONCEPT_DETAIL_INVALID");
+    if(phase===1)incomeTotal+=amount;else if(phase===2)deductionTotal+=amount;else if(phase===3)employerTotal+=amount;else throw new Error("PAYROLL_CONCEPT_CATEGORY_INVALID");
+    const key=account+"|"+nature;
+    if(!grouped[key])grouped[key]={cuenta:account,nombre:"Conceptos de nómina "+account,naturaleza:nature,monto:0};
+    grouped[key].monto=Math.round((grouped[key].monto+amount)*100)/100;
+  });
+  const journalLines=Object.keys(grouped).sort().map(k=>{const x=grouped[k];return {cuenta:x.cuenta,nombre:x.nombre,debe:x.naturaleza==="DEBE"?x.monto:0,haber:x.naturaleza==="HABER"?x.monto:0};});
+  return {incomeTotal:Math.round(incomeTotal*100)/100,deductionTotal:Math.round(deductionTotal*100)/100,employerTotal:Math.round(employerTotal*100)/100,journalLines};
+}
+
 function updatePayrollPeriodStatus(payload) {
   const { planillaId, nuevoEstado, observaciones, authRole } = payload || {};
   if (!planillaId || !nuevoEstado) throw new Error("planillaId y nuevoEstado son requeridos.");
@@ -5267,6 +5287,7 @@ function updatePayrollPeriodStatus(payload) {
   let totalPatronalRAP = 0;
   let totalPatronalINFOP = 0;
   let totalPatronal = 0;
+  const conceptSummary = summarizePayrollConceptDetails_(ss,planillaId);
 
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim() === String(planillaId).trim()) {
@@ -5306,13 +5327,16 @@ function updatePayrollPeriodStatus(payload) {
   totalBruto = parseFloat(totalBruto.toFixed(2));
   totalDeducciones = parseFloat(totalDeducciones.toFixed(2));
   totalSalarioNeto = parseFloat(totalSalarioNeto.toFixed(2));
-  totalPatronal = parseFloat(totalPatronal.toFixed(2));
+  totalPatronal = parseFloat((totalPatronal + conceptSummary.employerTotal).toFixed(2));
   const totalGastoPatronal = totalPatronal;
   const totalPasivoPatronal = totalPatronal;
+  const fixedGross = Math.max(0,Math.round((totalBruto-conceptSummary.incomeTotal)*100)/100);
+  const fixedDeductions = Math.max(0,Math.round((totalDeducciones-conceptSummary.deductionTotal)*100)/100);
+  const fixedEmployer = Math.max(0,Math.round((totalPatronal-conceptSummary.employerTotal)*100)/100);
 
   // Generar asiento contable automático por partida doble equilibrada al APROBAR o CERRAR la planilla [TASK-009]
   let asientoRes = null;
-  if (nuevoEstado === "Aprobada" || nuevoEstado === "Cerrada" || nuevoEstado === "Contabilizada") {
+  if (["APROBADA","CERRADA","CONTABILIZADA"].includes(requestedState) && !["APROBADA","CERRADA","CONTABILIZADA"].includes(previousState)) {
     try {
       asientoRes = recordAccountingJournalEntry({
         descripcion: `Contabilización de Planilla ${planillaId} (${nuevoEstado}) - Salarios y Aportaciones Patronales`,
@@ -5320,11 +5344,12 @@ function updatePayrollPeriodStatus(payload) {
         referenciaId: planillaId,
         creadoPor: authRole || "RecursosHumanos",
         lineas: [
-          { cuenta: "5101", nombre: "Gasto de Salarios y Planilla", debe: totalBruto, haber: 0 },
-          { cuenta: "5102", nombre: "Gasto de Aportaciones Patronales (IHSS/RAP/INFOP)", debe: totalGastoPatronal, haber: 0 },
-          { cuenta: "2101", nombre: "Retenciones y Deducciones de Empleados por Pagar", debe: 0, haber: totalDeducciones },
-          { cuenta: "2102", nombre: "Obligaciones Patronales por Pagar (IHSS/RAP/INFOP)", debe: 0, haber: totalPasivoPatronal },
+          { cuenta: "5101", nombre: "Gasto de Salarios y Planilla", debe: fixedGross, haber: 0 },
+          { cuenta: "5102", nombre: "Gasto de Aportaciones Patronales (IHSS/RAP/INFOP)", debe: fixedEmployer, haber: 0 },
+          { cuenta: "2101", nombre: "Retenciones y Deducciones de Empleados por Pagar", debe: 0, haber: fixedDeductions },
+          { cuenta: "2102", nombre: "Obligaciones Patronales por Pagar (IHSS/RAP/INFOP)", debe: 0, haber: fixedEmployer },
           { cuenta: "1101", nombre: "Bancos / Sueldos Netos por Pagar", debe: 0, haber: totalSalarioNeto }
+        ].concat(conceptSummary.journalLines)
         ]
       });
     } catch (e) {
