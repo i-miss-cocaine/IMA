@@ -6457,7 +6457,11 @@ function getEmployeeDocuments(payload) {
   if (expedienteId) {
     const requestedAccess = assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId);
     if (!requestedAccess.authorized) {
-      if (String(requestedAccess.code || "") !== "RESOURCE_SCOPE_DENIED") {
+      const actorRoleKey = String(actor.role || "").toUpperCase()
+        .replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I")
+        .replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
+      const selfServiceRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(actorRoleKey) !== -1;
+      if (selfServiceRole || String(requestedAccess.code || "") !== "RESOURCE_SCOPE_DENIED") {
         return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." };
       }
       referenceFallback = true;
