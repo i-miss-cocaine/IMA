@@ -8733,6 +8733,7 @@ function manageEmployeeContract(payload) {
 }
 
 // [TAREA RH-02] [Fase Recursos Humanos y Personal] - Consulta y alertas por vencimiento de contratos y documentos laborales de empleados.
+// Contract alerts are private employee resources: derive the actor from the signed session and filter every row by expediente ownership.
 function getEmployeeContractAlerts(payload) {
   const request = payload || {};
   const requestedExpedienteId = String(request.expedienteId || "").trim();
