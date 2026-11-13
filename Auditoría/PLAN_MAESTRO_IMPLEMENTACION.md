@@ -5345,3 +5345,7 @@ La revisión de requisitos originales confirma cobertura de:
 - HEAD actual: c04813a74d7a5435692542cf3ca671c834ece10b. Se corrigió y luego restauró la expectativa del caso de solicitudId para que refleje el retorno vacío real cuando no hay filas; commits aecf33a y c04813a.
 - CI: el commit 2d25eef0087b49f3ad9c86dd459c26ffb9e05988 tiene estado `ima/department-scope-contract = failure`; los detalles de jobs/logs no están expuestos por las acciones disponibles. El HEAD más reciente no tiene estado visible al momento de esta actualización.
 - Node local: NOT RUN porque el entorno no resuelve github.com y no fue posible clonar el repositorio. La prueba local sigue pendiente; no se cierra T153-S05 y no se inicia el siguiente consumidor antes de resolver esta verificación conforme a NDASC 1.4.
+
+
+#### Corrección CI — 2026-11-13 12:32 UTC
+Consulta posterior confirma `ima/department-scope-contract = failure` también en c04813a74d7a5435692542cf3ca671c834ece10b. No se dispone de URL/logs de job en el conector. El fallo no se atribuye a una causa no observada; aprobación local pendiente por Node NOT RUN y CI FAIL visible.
