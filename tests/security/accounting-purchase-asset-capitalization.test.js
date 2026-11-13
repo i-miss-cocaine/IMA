@@ -31,7 +31,7 @@ const ctx={SPREADSHEET_ID:"TEST",failAssignmentWrite:false,
  LockService:{getScriptLock:()=>({tryLock:()=>!lockBusy,waitLock:()=>{if(lockBusy)throw Error("LOCK_BUSY");},releaseLock:()=>{}})},
  Utilities:{getUuid:()=>"UUID-"+(++uuid)},
  getOrCreateSheet:(ss,name)=>{if(!rows[name]){const headers={ActivosPatrimoniales:["ActivoID","CodigoPatrimonial","Nombre","Categoria","SerieModel","UbicacionActual","CustodioUserId","Estado","Observaciones"],AsignacionesActivos:["AsignacionID","ActivoID","CustodioUserId","FechaEntrega","FechaDevolucion","EstadoActa","Observaciones"]}[name]||[];rows[name]=[headers];}return makeSheet(name);},
- purchaseQuotationAccess_:()=>({authorized:true,actor:{userId:"U-1",role:"Contador"},scope:{institutionWide:true,departmentIds:[]}})
+ purchaseQuotationAccess_:()=>({authorized:true,actor:{userId:"U-1",role:"Contador"},scope:{institutionWide:true,departmentIds:[]}}),supplierEnsureActiveForOrder_:()=>true
 };
 vm.createContext(ctx);
 vm.runInContext(constants[0],ctx);
