@@ -956,6 +956,11 @@ window.searchPurchaseDossier=function(){
       (exp.documentos||[]).forEach(doc=>{const a=document.createElement("a");a.href=doc.url;a.target="_blank";a.rel="noopener noreferrer";a.className="block text-xs text-indigo-600 underline";a.textContent=doc.nombre;card.appendChild(a);});
       if(exp.documentosRestringidos){const note=document.createElement("p");note.className="text-xs text-amber-700";note.textContent="Los enlaces documentales están restringidos para este rol.";card.appendChild(note);}
       (exp.facturas||[]).forEach(f=>{const p=document.createElement("p");p.className="text-xs";p.textContent="Factura "+f.numeroFactura+" · "+f.estadoPago+" · Total "+f.total+" · Pagado "+f.pagado+" · Saldo "+f.saldo;card.appendChild(p);});
+      if(exp.adjudicacion){const a=document.createElement("p");a.className="text-xs";a.textContent="Adjudicación "+exp.adjudicacion.actaId+" · "+exp.adjudicacion.estado+" · "+exp.adjudicacion.justificacion;card.appendChild(a);}
+      (exp.cotizaciones||[]).forEach(q=>{const p=document.createElement("p");p.className="text-xs";p.textContent="Cotización "+q.cotizacionId+" · "+q.estado+" · Total L "+q.precioTotal+" · Entrega "+q.plazoEntregaDias+" días · "+q.condicionesPago;card.appendChild(p);});
+      (exp.cantidades||[]).forEach(q=>{const p=document.createElement("p");p.className="text-xs";p.textContent="Partida "+q.itemId+" · Pedida "+q.cantidadPedida+" · Recibida "+q.cantidadRecibida+" · Facturada "+q.cantidadFacturada+" · Pendiente "+q.cantidadPendiente;card.appendChild(p);});
+      (exp.pagos||[]).forEach(pago=>{const p=document.createElement("p");p.className="text-xs";p.textContent="Pago "+pago.pagoRefId+" · "+pago.fecha+" · L "+pago.monto+" · "+pago.metodoPago+" · "+pago.referencia;card.appendChild(p);});
+      (exp.asientos||[]).forEach(asiento=>{const p=document.createElement("p");p.className="text-xs";p.textContent="Asiento "+asiento.asientoId+" · "+asiento.fecha+" · "+asiento.descripcion+" · "+asiento.estado;card.appendChild(p);});
       host.appendChild(card);
     });
     if(!host.childElementCount)host.textContent="No se encontraron expedientes dentro del ámbito autorizado.";
