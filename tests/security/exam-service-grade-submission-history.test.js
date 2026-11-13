@@ -19,7 +19,7 @@ function makeSheet(rows,options={}){
  };
 }
 function fixture(options={}){
- const deliveryRows=[["EntregaID","ExamenID","EstudianteID","Fecha","Respuestas","Calificacion","Estado","Comentario","Tema","Asignatura"],
+ const deliveryRows=[["EntregaExamenID","ExamenID","UserID","FechaEntrega","RespuestasJSON","NotaTotal","Estado","ComentarioDocente","TemaAsociado","AsignaturaAsociada"],
   ["DEL-1","EX-1","STU-1",new Date(),"[]",options.oldGrade===undefined?"70.00":options.oldGrade,"Calificado","Comentario anterior","",""]];
  const deliverySheet=makeSheet(deliveryRows,{failGradeWrite:options.failGradeWrite});
  if(options.badDeliverySchema)deliverySheet.rows[0][5]="WrongGradeColumn";
