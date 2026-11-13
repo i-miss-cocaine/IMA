@@ -2845,3 +2845,15 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Entre el HEAD probado por los workflows (18c363037290353cd35606aab2639145de73d14e) y el HEAD funcional de cierre (a4214f10f459245031f5cf8d11ac1a53744092e4) solo hay cinco commits documentales.
 - AUD-NG-140 se marca completada en código/CI. BETA-FUNC-050/051 siguen Pendiente beta; no hubo despliegue ni acceso a Sheets/Drive reales. TASK-153 permanece En ejecución por los requisitos restantes.
 ===============================================================================
+
+
+===============================================================================
+## C1.678 — TASK-153 / T153-S03 — getStudentEnrollments: cierre de IDOR por identidad y ownership
+- Se detectó que el dispatcher validaba token/rol, pero getStudentEnrollments confiaba en payload.userId y no validaba el expediente propietario.
+- Se corrigió para derivar identidad firmada, fijar el target del estudiante a sí mismo, exigir relación activa/AccesoPortal para tutores y aplicar assertStudentExpedienteScopeAccess_ para todos los tipos de actor.
+- La resolución requiere usuario/PersonaID activos y únicos, estudiante único, expediente único, ownership departamental vigente y encabezados canónicos. Las filas con MatriculaID duplicado se excluyen y las lecturas no crean hojas.
+- Contrato ampliado en tests/security/academic-student-expediente-ownership.test.js. Department Scope run 43366522801 SUCCESS (Node 24.22.2), incluido “ACADEMIC student enrollment query ResourceOwnership contract passed”; Task-Service run 43366522824 SUCCESS.
+- Commit funcional: 8f72f91f2209d5f3efcb4e5085b128ea636f3c0d. Archivos: backend/academic-service/Code.gs y tests/security/academic-student-expediente-ownership.test.js.
+- Suite completa en CLI local NOT RUN por DNS github.com; CI Node ejecutó el contrato exacto. Sin despliegue ni datos reales. BETA-FUNC-053 Pendiente beta.
+- Siguiente revisión independiente: getStudentEnrollmentHistory (incluye cargos y requiere su propio análisis financiero/relacional). TASK-153 sigue En ejecución.
+===============================================================================
