@@ -27,7 +27,7 @@ const accounting=fs.readFileSync(path.resolve(__dirname,"../../backend/accountin
 const names=[
  "parseJsonSafe","getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentScope_","getVerifiedDepartmentScopeForSession_","assertResourceOwnershipForScope_","resolveEmployeeDepartmentId_","assertEmployeeExpedienteScopeAccess_",
  "getAccountingPersonIdForUser_","resolveStudentExpedienteForAccounting_","assertPaymentVoucherOwnerAccess_",
- "extractDriveFileId","getEmployeeDocuments","getEmployeeContracts","getEmployeeContractAlerts","getEmployeeTrainingHistory","getLaborIncidentsHistory","getWorkShiftsAndSubstitutionsHistory","getStaffAttendanceLogs","getStaffPayrollReceipt","getEmployeeLoansAdvances","getLoanAmortizationSchedule","getEmployeeRecords","getEmployeeSelfServicePortal","uploadEmployeeDocument","uploadPaymentVoucher","getPaymentVouchers","getPaymentVoucherFile","reviewPaymentVoucher","validateRolePermission"
+ "extractDriveFileId","getEmployeeDocuments","getEmployeeContracts","getEmployeeContractAlerts","getEmployeeTrainingHistory","getLaborIncidentsHistory","getWorkShiftsAndSubstitutionsHistory","getStaffAttendanceLogs","recordStaffCheckIn","getStaffPayrollReceipt","getEmployeeLoansAdvances","getLoanAmortizationSchedule","getEmployeeRecords","getEmployeeSelfServicePortal","uploadEmployeeDocument","uploadPaymentVoucher","getPaymentVouchers","getPaymentVoucherFile","reviewPaymentVoucher","validateRolePermission"
 ];
 const code="var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n"+names.map(n=>extractFunction(accounting,n)).join("\n");
 const claims={
@@ -160,12 +160,13 @@ const context={
  PropertiesService:{getScriptProperties:()=>({getProperty:key=>key==="IMA_INSTITUTION_ID"?"INST-1":null})},
  SpreadsheetApp:{openById:()=>ss},
  verifySessionToken:token=>claims[token]||null,
+ LockService:{getScriptLock:()=>({waitLock:()=>{},releaseLock:()=>{}})},
  getOrCreateSheet:(spreadsheet,name)=>spreadsheet.getSheetByName(name)||makeSheet([[]]),
  DriveApp:{Access:{PRIVATE:"PRIVATE"},Permission:{NONE:"NONE"},getFileById:id=>{if(!files[id])throw new Error("File not found");return files[id];}},
  Utilities:{base64Encode:bytes=>Buffer.from(bytes).toString("base64")},
  logStructuredEvent:()=>{}
 };
-vm.runInNewContext(code+"\nthis.assertEmployeeExpedienteScopeAccess_=assertEmployeeExpedienteScopeAccess_;this.assertPaymentVoucherOwnerAccess_=assertPaymentVoucherOwnerAccess_;this.getEmployeeDocuments=getEmployeeDocuments;this.getEmployeeContracts=getEmployeeContracts;this.getEmployeeContractAlerts=getEmployeeContractAlerts;this.getEmployeeTrainingHistory=getEmployeeTrainingHistory;this.getLaborIncidentsHistory=getLaborIncidentsHistory;this.getWorkShiftsAndSubstitutionsHistory=getWorkShiftsAndSubstitutionsHistory;this.getStaffAttendanceLogs=getStaffAttendanceLogs;this.getStaffPayrollReceipt=getStaffPayrollReceipt;this.getEmployeeLoansAdvances=getEmployeeLoansAdvances;this.getLoanAmortizationSchedule=getLoanAmortizationSchedule;this.getEmployeeRecords=getEmployeeRecords;this.getEmployeeSelfServicePortal=getEmployeeSelfServicePortal;this.uploadEmployeeDocument=uploadEmployeeDocument;this.uploadPaymentVoucher=uploadPaymentVoucher;this.getPaymentVouchers=getPaymentVouchers;this.getPaymentVoucherFile=getPaymentVoucherFile;this.reviewPaymentVoucher=reviewPaymentVoucher;",context);
+vm.runInNewContext(code+"\nthis.assertEmployeeExpedienteScopeAccess_=assertEmployeeExpedienteScopeAccess_;this.assertPaymentVoucherOwnerAccess_=assertPaymentVoucherOwnerAccess_;this.getEmployeeDocuments=getEmployeeDocuments;this.getEmployeeContracts=getEmployeeContracts;this.getEmployeeContractAlerts=getEmployeeContractAlerts;this.getEmployeeTrainingHistory=getEmployeeTrainingHistory;this.getLaborIncidentsHistory=getLaborIncidentsHistory;this.getWorkShiftsAndSubstitutionsHistory=getWorkShiftsAndSubstitutionsHistory;this.getStaffAttendanceLogs=getStaffAttendanceLogs;this.recordStaffCheckIn=recordStaffCheckIn;this.getStaffPayrollReceipt=getStaffPayrollReceipt;this.getEmployeeLoansAdvances=getEmployeeLoansAdvances;this.getLoanAmortizationSchedule=getLoanAmortizationSchedule;this.getEmployeeRecords=getEmployeeRecords;this.getEmployeeSelfServicePortal=getEmployeeSelfServicePortal;this.uploadEmployeeDocument=uploadEmployeeDocument;this.uploadPaymentVoucher=uploadPaymentVoucher;this.getPaymentVouchers=getPaymentVouchers;this.getPaymentVoucherFile=getPaymentVoucherFile;this.reviewPaymentVoucher=reviewPaymentVoucher;",context);
 const actor=token=>({sessionToken:token});
 assert.equal(context.assertEmployeeExpedienteScopeAccess_(actor("staffA"),ss,"EXP-A").authorized,true);
 assert.equal(context.assertEmployeeExpedienteScopeAccess_(actor("staffA"),ss,"EXP-B").code,"RESOURCE_SCOPE_DENIED");
@@ -546,5 +547,43 @@ assert.ok(extractFunction(accounting,"getStaffAttendanceLogs").includes("assertE
 assert.ok(!extractFunction(accounting,"getStaffAttendanceLogs").includes("getOrCreateSheet"));
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getStaffAttendanceLogs"'));
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getStaffAttendanceLogs", "getEmployeeLoansAdvances"'),"employees must retain self-service attendance access");
+
+
+const attendanceWritesBefore=rows.DeduccionesAsistencia.length;
+assert.equal(context.recordStaffCheckIn({sessionToken:"invalid",empleadoId:"U-EMP"}).code,"VERIFIED_IDENTITY_REQUIRED","attendance mutation requires signed identity");
+assert.equal(context.recordStaffCheckIn({sessionToken:"student",empleadoId:"U-EMP"}).code,"ROLE_NOT_ALLOWED","non-staff roles cannot register attendance");
+assert.equal(context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-B",tipoRegistro:"Entrada"}).code,"RESOURCE_NOT_FOUND","employee cannot register attendance for another user");
+assert.equal(rows.DeduccionesAsistencia.length,attendanceWritesBefore,"denied attendance writes must not mutate storage");
+const selfEntry=context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",empleadoNombre:"Empleado A",horaEntradaEsperada:"00:01",tipoRegistro:"Entrada"});
+assert.equal(selfEntry.status,"success","employee can register own attendance");
+assert.equal(rows.DeduccionesAsistencia[rows.DeduccionesAsistencia.length-1][2],"U-EMP","attendance owner must be derived from signed identity");
+assert.notEqual(rows.DeduccionesAsistencia[rows.DeduccionesAsistencia.length-1][7],"Tardanza","client-supplied expected time cannot manipulate tardiness; assigned shift is authoritative");
+assert.equal(context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",tipoRegistro:"Entrada"}).code,"ATTENDANCE_ALREADY_RECORDED","duplicate entry must not overwrite the original mark");
+const exitResult=context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",tipoRegistro:"Salida"});
+assert.equal(exitResult.status,"success","employee can register own exit");
+assert.equal(rows.DeduccionesAsistencia[rows.DeduccionesAsistencia.length-1][5]!==""||rows.DeduccionesAsistencia.find(r=>r[2]==="U-EMP"&&r[1] instanceof Date&&r[1].toISOString().slice(0,10)===new Date().toISOString().slice(0,10))[5]!=="",true,"exit must update the same attendance row");
+assert.equal(context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",tipoRegistro:"Salida"}).code,"ATTENDANCE_ALREADY_RECORDED","duplicate exit must not overwrite the original mark");
+const beforeForeign=rows.DeduccionesAsistencia.length;
+assert.equal(context.recordStaffCheckIn({sessionToken:"hrB",empleadoId:"U-EMP",tipoRegistro:"Entrada"}).code,"RESOURCE_NOT_FOUND","HR cannot write attendance outside its verified department");
+assert.equal(rows.DeduccionesAsistencia.length,beforeForeign,"out-of-scope HR attempts must not mutate storage");
+const hrWrite=context.recordStaffCheckIn({sessionToken:"hrA",empleadoId:"U-EMP",tipoRegistro:"Entrada"});
+assert.equal(hrWrite.status,"success","HR with matching department ownership can register attendance for an employee");
+const adminWrite=context.recordStaffCheckIn({sessionToken:"admin",empleadoId:"U-B",tipoRegistro:"Entrada"});
+assert.equal(adminWrite.status,"success","institution-wide manager can register attendance for an owned employee");
+const invalidType=context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",tipoRegistro:"DELETE"});
+assert.equal(invalidType.code,"INVALID_ATTENDANCE_TYPE","unsupported attendance mutations must be rejected");
+const noScope={sessionToken:"staffA",empleadoId:"U-B"};
+assert.equal(context.recordStaffCheckIn(noScope).code,"RESOURCE_NOT_FOUND","department manager cannot write to another department");
+const lockOriginal=context.LockService,lockState={held:false},lockSheet=ss.getSheetByName("DeduccionesAsistencia"),appendOriginal=lockSheet.appendRow;
+let nestedLockResult=null;
+context.LockService={getScriptLock:()=>({waitLock:()=>{if(lockState.held)throw Error("lock busy");lockState.held=true;},releaseLock:()=>{lockState.held=false;}})};
+lockSheet.appendRow=row=>{nestedLockResult=context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",tipoRegistro:"Entrada"});appendOriginal(row);};
+const concurrencyResult=context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",tipoRegistro:"Entrada"});
+assert.equal(concurrencyResult.status,"success");
+assert.equal(nestedLockResult.code,"CONCURRENT_UPDATE_RETRY","a concurrent/reentrant write must fail safely while the script lock is held");
+lockSheet.appendRow=appendOriginal;context.LockService=lockOriginal;
+assert.ok(extractFunction(accounting,"recordStaffCheckIn").includes("assertResourceOwnershipForScope_"));
+assert.ok(extractFunction(accounting,"recordStaffCheckIn").includes("getVerifiedAccountingIdentity_"));
+assert.ok(extractFunction(accounting,"validateRolePermission").includes('"recordStaffCheckIn"'));
 
 console.log("Accounting departmental resource and payment voucher access contracts passed.");
