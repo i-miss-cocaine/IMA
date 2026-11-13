@@ -7060,7 +7060,7 @@ function getPayrollReceiptDistributionHeaders_() {
 function ensurePayrollReceiptDistributionSheet_(ss) {
   const sheet=ss.getSheetByName("DistribucionBoletasPago")||getOrCreateSheet(ss,"DistribucionBoletasPago");
   let data=sheet.getDataRange().getValues(),headers=getPayrollReceiptDistributionHeaders_();
-  if(!data.length||!data[0]||!data[0].length){sheet.getRange(1,1,1,headers.length).setValues([headers]);data=[headers];}
+  if(!data.length||!data[0]||!data[0].length||data[0].every(v=>String(v||"").trim()==="")){sheet.getRange(1,1,1,headers.length).setValues([headers]);data=[headers];}
   if(data[0].length!==headers.length||headers.some((h,i)=>String(data[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))throw new Error("RESOURCE_SCHEMA_INVALID: DistribucionBoletasPago");
   return {sheet,headers,rows:data.slice(1)};
 }
@@ -7213,6 +7213,15 @@ function processPayrollReceiptDistribution(payload) {
         if(retry)retryable++;else failed++;
         return;
       }
+      if(!String(generated.boletaId||"").trim()){
+        updatePayrollReceiptDistributionRow_(ss,item.distributionId,{estado:"REINTENTABLE",errorCode:"PDF_REFERENCE_MISSING"});retryable++;return;
+      }
+      const latestContext=getPayrollReceiptDistributionContext_(p,ss,planillaId);
+      const latestRecord=!latestContext.error&&latestContext.records.find(r=>r.expedienteId===item.expedienteId);
+      if(!latestRecord||!latestRecord.emailValid){
+        updatePayrollReceiptDistributionRow_(ss,item.distributionId,{estado:"FALLIDO",errorCode:latestContext.error||latestRecord&&latestRecord.emailReason||"DISTRIBUTION_CONTEXT_CHANGED"});failed++;return;
+      }
+      item.email=latestRecord.email;
       const portalUrl=getPayrollPortalLoginUrl_();
       const body="Tiene un nuevo comprobante de nómina disponible en su cuenta institucional. Inicie sesión en el Portal Institucional y abra Nómina > Mis boletas:\n"+portalUrl+"\n\nPor seguridad, el comprobante no se adjunta a este correo. El portal requiere autenticación y solo muestra sus propios documentos.";
       const htmlBody='<p>Tiene un nuevo comprobante de nómina disponible en su cuenta institucional.</p><p>Inicie sesión en el <a href="'+portalUrl+'">Portal Institucional</a> y abra <strong>Nómina &gt; Mis boletas</strong>.</p><p>Por seguridad, el comprobante no se adjunta a este correo. El portal requiere autenticación y solo muestra sus propios documentos.</p>';
