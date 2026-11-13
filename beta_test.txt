@@ -1477,4 +1477,22 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Pasos:** abrir Contabilidad > Cargos de Matrícula; consultar cada combinación año/grado; guardar MANUAL; guardar MATRICULA_ONLY con una tarifa activa; guardar ALL_ACTIVE_TARIFFS; volver a consultar y comprobar persistencia; repetir con tarifa ausente/duplicada, esquema inválido, rol no autorizado y otra institución.
 - **Resultado esperado:** lectura sin mutación; configuración única por institución/año/grado; actor derivado de sesión verificada; modos inválidos y tarifas ambiguas/inexistentes rechazados; lock ocupado sin escritura; guardar no crea ni altera cargos existentes.
 - **Evidencia requerida:** respuestas API, InstitutionID sintético, actor/rol, filas antes/después y capturas del panel sin datos personales reales.
-- **Estado:** Pendiente beta. La integración del modo con la generación automática permanece en desarrollo dentro de AUD-NG-129.
+- **Estado:** Pendiente beta. La persistencia de la política está cubierta por contrato local/CI; su consumo automático se implementó y verificó con mocks/CI en C1.682. La validación del comportamiento entre servicios desplegados permanece en BETA-FUNC-057.
+
+## BETA-FUNC-057 — AUD-NG-129 / ACADEMIC + ACCOUNTING: cargos de matrícula y rematrícula por periodo
+- **Objetivo:** validar en despliegue que la política institucional guardada en ACCOUNTING se consume al crear matrícula inicial, rematricular, renovar y convertir una admisión; comprobar idempotencia, descuentos vigentes, compensación y consulta histórica por periodo.
+- **Precondiciones:** ACADEMIC y ACCOUNTING desplegados; misma institución configurada en IMA_INSTITUTION_ID de ambos servicios; usuario sintético de personal con permisos de matrícula y ownership UPDATE; estudiante/expediente sintéticos; ConfiguracionCargosMatricula, TarifasPlanPago y ConceptosCobro con datos de prueba para dos años y grados; solicitud y regla de beca/descuento aprobadas con vigencia controlada. Usar exclusivamente datos sintéticos.
+- **Pasos:**
+  1. Configurar MANUAL y registrar matrícula; confirmar que no se crea cargo automático adicional.
+  2. Configurar MATRICULA_ONLY con un concepto/tarifa activa; crear matrícula y repetir la misma solicitud; confirmar un solo cargo y mismo CargoID en el reintento.
+  3. Configurar ALL_ACTIVE_TARIFFS; crear otra matrícula y confirmar un cargo por cada concepto activo válido del grado/año, sin duplicados.
+  4. Repetir el mismo concepto en otro periodo lectivo; confirmar que se permite el nuevo cargo y no lo bloquea el periodo anterior.
+  5. Ejecutar renovación y conversión de admisión en modos automático; verificar la referencia de origen, el CargoID devuelto y ausencia de un cargo manual duplicado.
+  6. Probar descuento aprobado dentro de vigencia, fuera de vigencia, con tope máximo y exoneración total; revisar monto base, descuento, saldo y estado.
+  7. Provocar un fallo controlado después de insertar matrícula/cargo; confirmar compensación y que el reintento no duplique registros.
+  8. Ejecutar dos solicitudes concurrentes para el mismo estudiante/periodo; consultar historial como estudiante y como responsable financiero autorizado; confirmar periodo asociado a cada cargo.
+- **Resultado esperado:** MANUAL no genera cargos automáticos; MATRICULA_ONLY y ALL_ACTIVE_TARIFFS respetan la configuración; existe una única clave por estudiante+periodo+concepto; las rutas usan lock, reintento idempotente y compensación; becas/descuentos aplican solo dentro de vigencia y con topes; conversión de admisión conserva la referencia exacta; el historial muestra periodo sin exponer cargos a tutores sin facultad financiera.
+- **Limitación conocida:** TarifasPlanPago aún no tiene InstitutionID; ejecutar esta prueba con catálogo de tarifas controlado para la institución de prueba. No inferir aislamiento multiinstitucional del catálogo hasta resolver ese alcance separado.
+- **Evidencia requerida:** respuestas de API, snapshots antes/después de Matriculas/CargosEstudiante, claves de dedupe, referencias de admisión, resultados de descuentos y bitácora de rollback; sin PII real.
+- **Estado:** Pendiente beta.
+
