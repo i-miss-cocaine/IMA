@@ -49,7 +49,10 @@ const directOrderRow=rows.OrdenesCompra.at(-1),directOrderLine=JSON.parse(direct
 assert.equal(directOrderLine.clasificacionInventario,"Consumible","direct order must inherit the request classification, not a client override");
 assert.equal(directOrderLine.capitalizable,false);
 vm.runInContext(extract(source,"verifyThreeWayMatch"),ctx);
+const existingInvoiceObservations=rows.CuentasPorPagarGastos[1][9];
+rows.CuentasPorPagarGastos[1][9]=""; // Isolate the three-way match from the separate already-invoiced capitalization fixture.
 const invoiceMatch=ctx.verifyThreeWayMatch({ordenCompraId:"ORD-1",facturaProveedor:{numeroFactura:"INV-CHECK",proveedorId:"SUP-1",partidasFacturadas:[{itemId:"IT-1",cantidad:2,precioUnitario:500,subtotal:1000}]}});
+rows.CuentasPorPagarGastos[1][9]=existingInvoiceObservations;
 assert.equal(invoiceMatch.estadoConciliacion,"Conciliada","three-way match must resolve adjudicated itemId through receipt");
 const oldPaymentState=rows.CuentasPorPagarGastos[1][7];rows.CuentasPorPagarGastos[1][7]="Bloqueado Conciliacion";
 assert.equal(ctx.getPurchaseReceiptAssetCandidates({recepcionId:"REC-1"}).facturasDisponibles.length,0,"blocked payable invoices cannot be used to capitalize assets");
