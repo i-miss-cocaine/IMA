@@ -5360,3 +5360,10 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - BETA-FUNC-063 permanece Pendiente beta y ahora incluye actor multi-departamento con activeDepartmentId válido, ausente y no asignado.
 - **Estado del incremento:** consumidor ACADEMIC completado y aprobado localmente. **TASK-153/T153-S05 global continúa En ejecución**: siguiente alcance técnico, consumidor ACCOUNTING y superficie administrativa/configurable; mantener política estricta por defecto y no activar secretos/configuración productiva.
 - Commits de código/pruebas: 7e168853, b77196d, 618a86e, 8822fd9, 55d6b6b. Workflow aislado: c964cb8, 9f76747.
+
+
+#### Corrección C1.689 — canonicalización del expediente (2026-11-13 12:55 UTC)
+- La expectativa original del test (EXP-1) era correcta: USER resuelve ResourceOwnership con comparación exacta de ResourceID. El defecto estaba en que ACADEMIC enviaba cleanExpId en minúsculas.
+- La autorización ahora usa el ExpedienteID canónico obtenido de la única fila coincidente de ExpedientesEstudiantes, mientras cleanExpId se conserva para la comparación local insensible a mayúsculas. El test envía exp-1 y verifica que el sobre HMAC contiene EXP-1.
+- Reejecución local: 20 escenarios PASS en Node.js v22.16.0; el archivo de test local coincide por SHA con el blob de la rama. node --check PASS sobre las funciones modificadas extraídas y el test. El checkout completo y CI continúan sin evidencia observable; no se declaran.
+- Commits: 196d4865 y 559e8590. El incremento ACADEMIC se considera completado con evidencia local; TASK-153/T153-S05 global permanece En ejecución para el consumidor ACCOUNTING y la superficie administrativa/configurable.
