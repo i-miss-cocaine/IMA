@@ -34,6 +34,7 @@ on:
       - tests/security/accounting-departmental-resource-access.test.js
       - tests/security/accounting-purchase-quotation-adjudication.test.js
       - tests/security/accounting-purchase-asset-capitalization.test.js
+      - tests/security/accounting-supplier-profile.test.js
       - tests/security/accounting-vacation-medical-leave-ownership.test.js
       - tests/security/accounting-labor-incident-write-ownership.test.js
       - tests/security/accounting-training-enrollment-ownership.test.js
@@ -119,6 +120,8 @@ jobs:
         run: node tests/security/accounting-purchase-receipt-partial.test.js
       - name: Run purchase receipt to fixed asset capitalization contract
         run: node tests/security/accounting-purchase-asset-capitalization.test.js
+      - name: Run supplier profile and protected banking contract
+        run: node tests/security/accounting-supplier-profile.test.js
       - name: Run accounting staffing needs ownership and read-isolation contract
         run: node tests/security/accounting-staffing-needs-ownership.test.js
       - name: Run accounting work shift and substitution ownership contract

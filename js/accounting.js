@@ -1374,59 +1374,15 @@ window.executeThreeWayMatchTest = function () {
 };
 
 function renderComprasProveedoresView(container) {
-  container.innerHTML = `
-    <div class="bg-white p-5 rounded-2xl border border-gray-100 space-y-4">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <h5 class="text-sm font-black uppercase text-gray-800">Directorio de Proveedores Activos</h5>
-        <button onclick="openNewSupplierModal()" class="px-4 py-2 bg-purple-600 text-white rounded-xl font-bold text-xs uppercase hover:bg-purple-700 shadow-sm flex items-center gap-2">
-          <i class="fas fa-truck"></i> Registrar Proveedor
-        </button>
-      </div>
-
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs text-gray-700">
-          <thead class="bg-gray-50 text-gray-500 uppercase font-black">
-            <tr>
-              <th class="p-3">ID Proveedor</th>
-              <th class="p-3">Nombre</th>
-              <th class="p-3">RTN</th>
-              <th class="p-3">Teléfono</th>
-              <th class="p-3">Rubro</th>
-              <th class="p-3">Estado</th>
-            </tr>
-          </thead>
-          <tbody id="tbl-compras-proveedores" class="divide-y divide-gray-100">
-            <tr><td colspan="6" class="p-4 text-center text-gray-400">Cargando proveedores...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-
-  fetchBackendAccounting('getInventoryCatalogAndAlerts', {})
-    .then(res => {
-      const tbody = document.getElementById('tbl-compras-proveedores');
-      if (!tbody) return;
-      const list = res.proveedores || [];
-      if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-400">No hay proveedores registrados en el directorio.</td></tr>`;
-        return;
-      }
-      tbody.innerHTML = list.map(p => `
-        <tr class="hover:bg-gray-50">
-          <td class="p-3 font-bold text-gray-900">${p.proveedorId}</td>
-          <td class="p-3 font-semibold text-gray-800">${p.nombreProveedor}</td>
-          <td class="p-3">${p.rtn || '-'}</td>
-          <td class="p-3">${p.telefono || '-'}</td>
-          <td class="p-3">${p.rubroServicio || '-'}</td>
-          <td class="p-3"><span class="px-2 py-1 rounded-lg text-xs font-bold ${p.estado === 'Activo' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-700'}">${p.estado}</span></td>
-        </tr>
-      `).join('');
-    })
-    .catch(err => {
-      const tbody = document.getElementById('tbl-compras-proveedores');
-      if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${err.message}</td></tr>`;
-    });
+  container.innerHTML=`<div class="bg-white p-5 rounded-2xl border border-gray-100 space-y-4">
+    <div class="flex flex-wrap items-center justify-between gap-3"><h5 class="text-sm font-black uppercase text-gray-800">Directorio de proveedores</h5><button onclick="openNewSupplierModal()" class="px-4 py-2 bg-purple-600 text-white rounded-xl font-bold text-xs">Registrar proveedor</button></div>
+    <div class="overflow-x-auto"><table class="w-full text-left text-xs text-gray-700"><thead class="bg-gray-50 text-gray-500 uppercase font-black"><tr><th class="p-3">Proveedor / RTN</th><th class="p-3">Contactos</th><th class="p-3">Direcciones</th><th class="p-3">Condiciones</th><th class="p-3">Cuenta bancaria</th><th class="p-3">Estado</th><th class="p-3">Acciones</th></tr></thead><tbody id="tbl-compras-proveedores"><tr><td colspan="7" class="p-4 text-center text-gray-400">Cargando...</td></tr></tbody></table></div>
+  </div>`;
+  fetchBackendAccounting("getSuppliers",{}).then(res=>{
+    const tbody=document.getElementById("tbl-compras-proveedores");if(!tbody)return;const list=res.proveedores||[];
+    if(!list.length){tbody.innerHTML='<tr><td colspan="7" class="p-4 text-center text-gray-400">No hay proveedores registrados.</td></tr>';return;}
+    tbody.innerHTML=list.map(p=>{const e=escapePurchaseAssetHtml,terms=p.condicionesComerciales,contactNames=(p.contactos||[]).map(c=>e(c.nombre)+(c.esPrincipal?" (principal)":"")).join("<br>"),addressNames=(p.direcciones||[]).map(a=>e(a.tipoDireccion)+": "+e(a.direccion)).join("<br>");return `<tr class="border-b hover:bg-gray-50"><td class="p-3"><b>${e(p.nombreProveedor)}</b><div class="text-gray-500">${e(p.proveedorId)} · RTN ${e(p.rtn)}</div></td><td class="p-3">${contactNames||"Sin contactos"}<div><button onclick="openSupplierContactModal('${e(p.proveedorId)}')" class="text-indigo-600 font-bold mt-1">+ Contacto</button></div></td><td class="p-3">${addressNames||"Sin direcciones"}</td><td class="p-3">${terms?e(String(terms.plazoCreditoDias))+" días · "+e(terms.moneda)+" · entrega "+e(String(terms.tiempoEntregaDias))+" días":"Sin condiciones"}</td><td class="p-3">${p.tieneCuentaBancaria?e(p.cuentaBancariaEnmascarada):"No registrada"}</td><td class="p-3"><span class="px-2 py-1 rounded bg-gray-100 font-bold">${e(p.estado)}</span></td><td class="p-3 whitespace-nowrap"><button onclick="viewSupplierBankAccount('${e(p.proveedorId)}')" class="text-indigo-600 font-bold">Ver cuenta</button></td></tr>`;}).join("");
+  }).catch(err=>{const tbody=document.getElementById("tbl-compras-proveedores");if(tbody)tbody.innerHTML='<tr><td colspan="7" class="p-4 text-center text-red-500">Error: '+escapePurchaseAssetHtml(err.message)+'</td></tr>';});
 }
 
 function openNewPurchaseRequestModal() {
@@ -1482,15 +1438,63 @@ function viewPurchaseRequestDetails(solId) {
 }
 
 function openNewSupplierModal() {
-  alert("Modal de registro de nuevo proveedor activo. Conectado con registerSupplier.");
+  const existing=document.getElementById("supplier-profile-modal");if(existing)existing.remove();
+  const modal=document.createElement("div");modal.id="supplier-profile-modal";modal.className="fixed inset-0 z-[120] bg-black/60 flex items-center justify-center p-3";
+  modal.innerHTML=`<div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[94vh] overflow-y-auto p-5 space-y-4">
+    <div class="flex justify-between items-center"><h3 class="font-black text-sm uppercase">Registrar proveedor</h3><button type="button" onclick="closeSupplierProfileModal()" class="text-xl">×</button></div>
+    <form id="supplier-profile-form" onsubmit="submitSupplierProfile(event)" class="space-y-4 text-xs">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <label class="font-bold">Nombre comercial *<input id="supplier-name" required class="w-full p-2 border rounded-lg mt-1"></label>
+        <label class="font-bold">RTN (14 dígitos) *<input id="supplier-rtn" required inputmode="numeric" pattern="[0-9]{14}" maxlength="14" class="w-full p-2 border rounded-lg mt-1"></label>
+        <label class="font-bold">Rubro / servicio<input id="supplier-category" class="w-full p-2 border rounded-lg mt-1"></label>
+        <label class="font-bold">Teléfono general<input id="supplier-phone" class="w-full p-2 border rounded-lg mt-1"></label>
+        <label class="font-bold">Correo general<input id="supplier-email" type="email" class="w-full p-2 border rounded-lg mt-1"></label>
+        <label class="font-bold">Estado<select id="supplier-status" class="w-full p-2 border rounded-lg mt-1"><option>Activo</option><option>EnEvaluacion</option><option>Inactivo</option><option>Suspendido</option></select></label>
+      </div>
+      <div class="border-t pt-3"><b>Contacto principal inicial</b><div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
+        <input id="supplier-contact-name" class="p-2 border rounded-lg" placeholder="Nombre del contacto"><input id="supplier-contact-title" class="p-2 border rounded-lg" placeholder="Cargo"><input id="supplier-contact-phone" class="p-2 border rounded-lg" placeholder="Teléfono">
+        <input id="supplier-contact-email" type="email" class="p-2 border rounded-lg" placeholder="Correo"><select id="supplier-contact-area" class="p-2 border rounded-lg"><option value="Ventas">Ventas</option><option value="Cobranzas">Cobranzas</option><option value="Soporte">Soporte</option><option value="Entregas">Entregas</option></select>
+      </div></div>
+      <div class="border-t pt-3"><b>Direcciones</b><div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+        <label>Facturación fiscal<input id="supplier-billing-address" class="w-full p-2 border rounded-lg mt-1" placeholder="Dirección fiscal"></label>
+        <label>Entrega de mercancía<input id="supplier-delivery-address" class="w-full p-2 border rounded-lg mt-1" placeholder="Dirección de entrega"></label>
+        <input id="supplier-city" class="p-2 border rounded-lg" placeholder="Ciudad"><input id="supplier-department" class="p-2 border rounded-lg" placeholder="Departamento">
+      </div></div>
+      <div class="border-t pt-3"><b>Condiciones comerciales</b><div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-2">
+        <label>Crédito (días)<select id="supplier-credit" class="w-full p-2 border rounded-lg mt-1"><option value="0">Contado</option><option value="15">15</option><option value="30">30</option><option value="60">60</option></select></label>
+        <label>Moneda<select id="supplier-currency" class="w-full p-2 border rounded-lg mt-1"><option>HNL</option><option>USD</option><option>EUR</option></select></label>
+        <label>Descuento pronto pago %<input id="supplier-discount" type="number" min="0" max="100" step="0.01" value="0" class="w-full p-2 border rounded-lg mt-1"></label>
+        <label>Días de descuento<input id="supplier-discount-days" type="number" min="0" value="0" class="w-full p-2 border rounded-lg mt-1"></label>
+        <label>Entrega habitual (días)<input id="supplier-delivery-days" type="number" min="0" value="0" class="w-full p-2 border rounded-lg mt-1"></label>
+      </div></div>
+      <div class="border-t pt-3"><b>Cuenta bancaria (opcional; roles autorizados)</b><div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2"><input id="supplier-bank-name" class="p-2 border rounded-lg" placeholder="Banco"><select id="supplier-bank-type" class="p-2 border rounded-lg"><option value="Ahorro">Ahorro</option><option value="Corriente">Corriente</option></select><input id="supplier-bank-number" class="p-2 border rounded-lg" placeholder="Número de cuenta"><input id="supplier-bank-beneficiary" class="p-2 border rounded-lg" placeholder="Beneficiario"><input id="supplier-bank-reason" class="p-2 border rounded-lg" placeholder="Motivo documentado"><input id="supplier-bank-reference" class="p-2 border rounded-lg" placeholder="Referencia de autorización"></div><p class="text-[11px] text-gray-500 mt-1">La cuenta completa no se devuelve en el directorio ni se incluye en auditoría.</p></div>
+      <div class="flex justify-end gap-2"><button type="button" onclick="closeSupplierProfileModal()" class="px-4 py-2 bg-gray-100 rounded-lg">Cancelar</button><button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold">Guardar proveedor</button></div>
+    </form></div>`;
+  document.body.appendChild(modal);
 }
+window.closeSupplierProfileModal=function(){document.getElementById("supplier-profile-modal")?.remove();};
+window.submitSupplierProfile=function(event){
+  event.preventDefault();const val=id=>document.getElementById(id).value.trim();
+  const payload={nombreProveedor:val("supplier-name"),rtn:val("supplier-rtn"),rubroServicio:val("supplier-category"),telefono:val("supplier-phone"),email:val("supplier-email"),estado:val("supplier-status")};
+  if(!/^\d{14}$/.test(payload.rtn)){alert("El RTN debe contener exactamente 14 dígitos.");return;}
+  const btn=document.querySelector("#supplier-profile-form button[type='submit']");if(btn)btn.disabled=true;
+  fetchBackendAccounting("registerSupplier",payload).then(async result=>{
+    const id=result.proveedorId,contactName=val("supplier-contact-name");
+    if(contactName)await fetchBackendAccounting("manageSupplierContact",{proveedorId:id,nombre:contactName,cargo:val("supplier-contact-title"),telefono:val("supplier-contact-phone"),email:val("supplier-contact-email"),area:val("supplier-contact-area"),esPrincipal:true});
+    for(const [field,type] of [["supplier-billing-address","FacturacionFiscal"],["supplier-delivery-address","EntregaMercancia"]])if(val(field))await fetchBackendAccounting("manageSupplierAddress",{proveedorId:id,tipoDireccion:type,direccion:val(field),ciudad:val("supplier-city"),departamento:val("supplier-department"),pais:"Honduras",esPrincipal:true});
+    await fetchBackendAccounting("manageSupplierCommercialTerms",{proveedorId:id,plazoCreditoDias:Number(val("supplier-credit")),moneda:val("supplier-currency"),descuentoProntoPagoPorcentaje:Number(val("supplier-discount")),diasDescuento:Number(val("supplier-discount-days")),tiempoEntregaDias:Number(val("supplier-delivery-days"))});
+    if(val("supplier-bank-number"))await fetchBackendAccounting("manageSupplierBankAccount",{proveedorId:id,banco:val("supplier-bank-name"),tipoCuenta:val("supplier-bank-type"),numeroCuenta:val("supplier-bank-number"),beneficiario:val("supplier-bank-beneficiary"),motivoAutorizacion:val("supplier-bank-reason"),referenciaAutorizacion:val("supplier-bank-reference")});
+    alert("Proveedor y perfil comercial guardados. ID: "+id);closeSupplierProfileModal();switchComprasSubtab("proveedores");
+  }).catch(error=>{if(btn)btn.disabled=false;alert("No se completó el registro del proveedor: "+(error.message||error)+". Revise si el proveedor base ya fue guardado antes de reintentar.");});
+};
+window.openSupplierContactModal=function(proveedorId){
+  const modal=document.createElement("div");modal.id="supplier-contact-modal";modal.className="fixed inset-0 z-[125] bg-black/60 flex items-center justify-center p-3";
+  modal.innerHTML=`<form id="supplier-contact-form" class="bg-white rounded-2xl p-5 w-full max-w-xl space-y-3" onsubmit="submitSupplierContact(event,'${escapePurchaseAssetHtml(proveedorId)}')"><h3 class="font-black text-sm">Agregar contacto</h3><input id="supplier-extra-contact-name" required class="w-full p-2 border rounded-lg" placeholder="Nombre"><input id="supplier-extra-contact-title" class="w-full p-2 border rounded-lg" placeholder="Cargo"><input id="supplier-extra-contact-phone" required class="w-full p-2 border rounded-lg" placeholder="Teléfono"><input id="supplier-extra-contact-email" type="email" required class="w-full p-2 border rounded-lg" placeholder="Correo"><select id="supplier-extra-contact-area" class="w-full p-2 border rounded-lg"><option>Ventas</option><option>Cobranzas</option><option>Soporte</option><option>Entregas</option></select><label><input id="supplier-extra-contact-primary" type="checkbox"> Contacto principal</label><div class="flex justify-end gap-2"><button type="button" onclick="document.getElementById('supplier-contact-modal').remove()" class="px-3 py-2 bg-gray-100 rounded-lg">Cancelar</button><button class="px-3 py-2 bg-indigo-600 text-white rounded-lg">Guardar</button></div></form>`;
+  document.body.appendChild(modal);
+};
+window.submitSupplierContact=function(event,id){event.preventDefault();const val=field=>document.getElementById(field).value.trim();fetchBackendAccounting("manageSupplierContact",{proveedorId:id,nombre:val("supplier-extra-contact-name"),cargo:val("supplier-extra-contact-title"),telefono:val("supplier-extra-contact-phone"),email:val("supplier-extra-contact-email"),area:val("supplier-extra-contact-area"),esPrincipal:document.getElementById("supplier-extra-contact-primary").checked}).then(()=>{document.getElementById("supplier-contact-modal")?.remove();switchComprasSubtab("proveedores");}).catch(error=>alert(error.message||error));};
+window.viewSupplierBankAccount=function(proveedorId){fetchBackendAccounting("getSupplierBankAccount",{proveedorId}).then(result=>{const account=result.cuenta,modal=document.createElement("div");modal.className="fixed inset-0 z-[125] bg-black/60 flex items-center justify-center p-3";modal.innerHTML='<div class="bg-white rounded-2xl p-5 max-w-md w-full space-y-2"><h3 class="font-black">Cuenta bancaria protegida</h3><p class="text-xs">Banco: '+escapePurchaseAssetHtml(account.banco)+'</p><p class="text-xs">Tipo: '+escapePurchaseAssetHtml(account.tipoCuenta)+'</p><p class="text-xs">Cuenta: '+escapePurchaseAssetHtml(account.numeroCuenta)+'</p><p class="text-xs">Beneficiario: '+escapePurchaseAssetHtml(account.beneficiario)+'</p><button class="px-3 py-2 bg-gray-100 rounded-lg" onclick="this.closest(\'div.fixed\').remove()">Cerrar</button></div>';document.body.appendChild(modal);}).catch(error=>alert("Acceso no disponible: "+(error.message||error)));};
 
-
-// ---------------------------------------------------------------------------
-// MÓDULO DE BIBLIOTECA Y RECURSOS EDUCATIVOS (FASE 20)
-// ---------------------------------------------------------------------------
-
-let currentBibliotecaSubtab = 'libros';
 
 function renderBibliotecaModule(container) {
   container.innerHTML = `
