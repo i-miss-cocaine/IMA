@@ -4750,19 +4750,47 @@ function savePayrollConcept(payload) {
 }
 function setPayrollConceptStatus(payload) {
   const p=payload||{},access=requirePayrollConceptManager_(p);if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
-  const id=String(p.conceptoId||"").trim(),status=String(p.estado||"").trim().toUpperCase();if(!id||!["ACTIVO","INACTIVO"].includes(status))return {status:"error",code:"PAYROLL_CONCEPT_STATUS_INVALID",message:"Estado no válido."};
+  const id=String(p.conceptoId||"").trim(),state=String(p.estado||"").trim().toUpperCase();if(!id||!["ACTIVO","INACTIVO"].includes(state))return {status:"error",code:"PAYROLL_CONCEPT_STATUS_INVALID",message:"Estado no válido."};
   const lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"El catálogo está ocupado."};
-  try{const ss=SpreadsheetApp.openById(SPREADSHEET_ID),cat=ensurePayrollConceptSheet_(ss,"CatalogoConceptosPlanilla",getPayrollConceptHeaders_()),history=ensurePayrollConceptSheet_(ss,"HistorialConceptosPlanilla",getPayrollConceptHistoryHeaders_()),matches=cat.rows.map((r,i)=>({r,index:i+2})).filter(x=>String(x.r[0]||"").trim()===id);if(matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Concepto no disponible."};const found=matches[0],updated=found.r.slice();history.sheet.appendRow(["HCP-"+Utilities.getUuid(),id,found.r[1],found.r[20],JSON.stringify(found.r),new Date(),access.actor.userId,status]);updated[18]=status;updated[20]=Number(updated[20]||1)+1;updated[23]=new Date();updated[24]=access.actor.userId;cat.sheet.getRange(found.index,1,1,updated.length).setValues([updated]);return {status:"success",conceptoId:id,estado:status};}catch(e){return {status:"error",code:"PAYROLL_CONCEPT_STATUS_FAILED",message:"No fue posible cambiar el estado del concepto."};}finally{lock.releaseLock();}
+  try{
+    const ss=SpreadsheetApp.openById(SPREADSHEET_ID),cat=ensurePayrollConceptSheet_(ss,"CatalogoConceptosPlanilla",getPayrollConceptHeaders_()),history=ensurePayrollConceptSheet_(ss,"HistorialConceptosPlanilla",getPayrollConceptHistoryHeaders_()),matches=cat.rows.map((r,i)=>({r,index:i+2})).filter(x=>String(x.r[0]||"").trim()===id);
+    if(matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Concepto no disponible."};
+    const found=matches[0],old=found.r.slice(),updated=old.slice();updated[18]=state;updated[20]=Number(updated[20]||1)+1;updated[23]=new Date();updated[24]=access.actor.userId;
+    cat.sheet.getRange(found.index,1,1,updated.length).setValues([updated]);
+    try{getPayrollConceptEngine_(ss);}catch(e){cat.sheet.getRange(found.index,1,1,old.length).setValues([old]);return {status:"error",code:"PAYROLL_CONCEPT_DEPENDENCY_INVALID",message:"No se puede desactivar: existen reglas activas que dependen de este concepto."};}
+    history.sheet.appendRow(["HCP-"+Utilities.getUuid(),id,old[1],old[20],JSON.stringify(old),new Date(),access.actor.userId,state]);
+    return {status:"success",conceptoId:id,estado:state,version:updated[20]};
+  }catch(e){return {status:"error",code:"PAYROLL_CONCEPT_STATUS_FAILED",message:"No fue posible cambiar el estado del concepto."};}finally{lock.releaseLock();}
 }
 function assignPayrollConcept(payload) {
   const p=payload||{},access=requirePayrollConceptManager_(p);if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
-  const code=String(p.codigoConcepto||"").trim().toUpperCase(),type=String(p.tipoAsignacion||"").trim().toUpperCase(),target=String(p.valorAsignacion||"").trim(),deptScope=String(p.departamentoScope||"").trim(),frequency=String(p.frecuencia||"MENSUAL").toUpperCase(),period=String(p.periodoUnico||"").trim();
+  const code=String(p.codigoConcepto||"").trim().toUpperCase(),type=String(p.tipoAsignacion||"").trim().toUpperCase(),target=String(p.valorAsignacion||"").trim(),frequency=String(p.frecuencia||"MENSUAL").toUpperCase(),period=String(p.periodoUnico||"").trim();
   if(!code||!["GLOBAL","EMPLEADO","DEPARTAMENTO","CARGO","ESTRUCTURA_SALARIAL"].includes(type)||!target||!["MENSUAL","POR_PERIODO","UNICA"].includes(frequency)||(frequency==="UNICA"&&!/^\d{4}-\d{2}$/.test(period)))return {status:"error",code:"PAYROLL_CONCEPT_ASSIGNMENT_INVALID",message:"La asignación o frecuencia no es válida."};
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(p,ss,access.actor);if(!scope||!scope.authorized)return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"No existe un ámbito autorizado para la asignación."};
-  if(type==="GLOBAL"&&!scope.institutionWide)return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"La asignación global requiere ámbito institucional."};
-  if(type==="EMPLEADO"){const own=resolveEmployeeLoanAdvanceAccess_(p,ss,target,true);if(!own.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Empleado no disponible."};}
-  if(["DEPARTAMENTO","CARGO","ESTRUCTURA_SALARIAL"].includes(type)&&(!deptScope||(!scope.institutionWide&&!scope.departmentIds.map(String).includes(deptScope))))return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"El departamento no está dentro del ámbito autorizado."};
-  try{const cat=ensurePayrollConceptSheet_(ss,"CatalogoConceptosPlanilla",getPayrollConceptHeaders_());if(!cat.rows.some(r=>String(r[1]||"").trim().toUpperCase()===code&&String(r[18]||"").toUpperCase()==="ACTIVO"))return {status:"error",code:"PAYROLL_CONCEPT_NOT_ACTIVE",message:"El concepto no existe o está inactivo."};const sheet=ensurePayrollConceptSheet_(ss,"AsignacionesConceptosPlanilla",getPayrollAssignmentHeaders_());const row=["ASN-"+Utilities.getUuid(),code,type,target,deptScope,p.valorOverride==null?"":Number(p.valorOverride),p.fechaInicio||"",p.fechaFin||"",frequency,period,"Activo",String(p.observaciones||"").trim().slice(0,500),access.actor.userId,new Date()];sheet.sheet.appendRow(row);return {status:"success",asignacionId:row[0],message:"Asignación de concepto creada."};}catch(e){return {status:"error",code:"PAYROLL_CONCEPT_ASSIGNMENT_SAVE_FAILED",message:"No fue posible guardar la asignación."};}
+  const override=p.valorOverride==null||p.valorOverride===""?null:Number(p.valorOverride);
+  if(override!==null&&(!Number.isFinite(override)||override<0))return {status:"error",code:"PAYROLL_CONCEPT_OVERRIDE_INVALID",message:"El valor de ajuste no es válido."};
+  const lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"Las asignaciones están ocupadas."};
+  try{
+    const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(p,ss,access.actor);
+    if(!scope||!scope.authorized)return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"No existe un ámbito autorizado para la asignación."};
+    const catalog=ensurePayrollConceptSheet_(ss,"CatalogoConceptosPlanilla",getPayrollConceptHeaders_());
+    if(!catalog.rows.some(r=>String(r[1]||"").trim().toUpperCase()===code&&String(r[18]||"").toUpperCase()==="ACTIVO"))return {status:"error",code:"PAYROLL_CONCEPT_NOT_ACTIVE",message:"El concepto no existe o está inactivo."};
+    let departmentScope=String(p.departamentoScope||"").trim();
+    if(type==="GLOBAL"&&!scope.institutionWide)return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"La asignación global requiere ámbito institucional."};
+    if(type==="EMPLEADO"){
+      const own=resolveEmployeeLoanAdvanceAccess_(p,ss,target,true);if(!own.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Empleado no disponible."};
+      const exp=ss.getSheetByName("ExpedientesLaborales");if(!exp)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Empleado no disponible."};
+      const matches=exp.getDataRange().getValues().slice(1).filter(r=>String(r[2]||"").trim()===target);if(matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Empleado no disponible."};
+      departmentScope=String(matches[0][4]||"").trim();
+    }
+    if(type==="DEPARTAMENTO")departmentScope=target;
+    if(["DEPARTAMENTO","CARGO","ESTRUCTURA_SALARIAL"].includes(type)&&(!departmentScope||(!scope.institutionWide&&!scope.departmentIds.map(String).includes(departmentScope))))return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"El departamento no está dentro del ámbito autorizado."};
+    if(type==="GLOBAL")departmentScope="";
+    const sheet=ensurePayrollConceptSheet_(ss,"AsignacionesConceptosPlanilla",getPayrollAssignmentHeaders_());
+    const duplicate=sheet.rows.some(r=>String(r[1]||"").trim().toUpperCase()===code&&String(r[2]||"").trim().toUpperCase()===type&&String(r[3]||"").trim()===target&&String(r[4]||"").trim()===departmentScope&&String(r[10]||"").trim().toUpperCase()==="ACTIVO");
+    if(duplicate)return {status:"error",code:"PAYROLL_CONCEPT_ASSIGNMENT_DUPLICATE",message:"Ya existe una asignación activa equivalente."};
+    const row=["ASN-"+Utilities.getUuid(),code,type,target,departmentScope,override==null?"":override,p.fechaInicio||"",p.fechaFin||"",frequency,period,"Activo",String(p.observaciones||"").trim().slice(0,500),access.actor.userId,new Date()];
+    sheet.sheet.appendRow(row);return {status:"success",asignacionId:row[0],message:"Asignación de concepto creada."};
+  }catch(e){return {status:"error",code:"PAYROLL_CONCEPT_ASSIGNMENT_SAVE_FAILED",message:"No fue posible guardar la asignación."};}finally{lock.releaseLock();}
 }
 function getPayrollConceptAssignments(payload) {
   const p=payload||{},access=requirePayrollConceptManager_(p);if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
