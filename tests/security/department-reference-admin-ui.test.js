@@ -32,7 +32,9 @@ assert.throws(() => api.buildPolicyPayload("ALLOW_ALL"), /política/);
 assert.equal(api.buildPolicyPayload(api.constants.POLICY_STRICT).value, api.constants.POLICY_STRICT);
 assert.equal(api.buildPolicyPayload(api.constants.POLICY_READ_ONLY).value, api.constants.POLICY_READ_ONLY);
 assert.equal(source.includes("innerHTML"), false, "untrusted grant data is rendered with textContent, never HTML interpolation");
+assert.ok(source.includes("var loadSequence = 0;") && source.includes("sequence !== loadSequence"), "older refresh responses cannot overwrite newer state");
+assert.ok(source.includes("finally { if (button) button.disabled = false; }"), "grant revocation button is restored after success or failure");
 for (const action of ["getDepartmentReferencePolicy", "getDepartmentReferenceGrants", "setDepartmentReferencePolicy", "createDepartmentReferenceGrant", "revokeDepartmentReferenceGrant"]) {
   assert.ok(source.includes('api("' + action + '"'), "UI uses USER action " + action);
 }
-process.stdout.write("Department reference admin UI contract: 15 assertions PASS.\\n");
+process.stdout.write("Department reference admin UI contract: 17 assertions PASS.\\n");

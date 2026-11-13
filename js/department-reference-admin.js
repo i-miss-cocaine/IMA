@@ -3,6 +3,7 @@
 
     var POLICY_STRICT = "BLOQUEO_TOTAL_CROSS_DEPARTAMENTO";
     var POLICY_READ_ONLY = "PERMITIR_REFERENCIA_SOLO_LECTURA_INTERDEPARTAMENTAL";
+    var loadSequence = 0;
 
     function parseCsvList(value, label) {
         var raw = String(value || "").trim();
@@ -59,13 +60,14 @@
         node.className = "p-3 rounded-xl border text-xs " + (kind === "error"
             ? "bg-rose-50 border-rose-200 text-rose-800"
             : kind === "warning" ? "bg-amber-50 border-amber-200 text-amber-900"
+            : kind === "info" ? "bg-slate-50 border-slate-200 text-slate-700"
             : "bg-emerald-50 border-emerald-200 text-emerald-800");
     }
 
     function errorMessage(result) {
         var code = result && result.code ? String(result.code) : "REQUEST_FAILED";
         var messages = {
-            AUTH_PERMISSION_DENIED: "Falta el permiso dinámico requerido para esta operación.",
+            AUTH_PERMISSION_DENIED: "Falta el permiso dinámico requerido para esta operación (lectura o administración de política/concesiones).",
             INSTITUTION_WIDE_SCOPE_REQUIRED: "Se requiere un ámbito institucional autorizado.",
             VERIFIED_IDENTITY_REQUIRED: "La sesión no tiene una identidad verificada.",
             DEPARTMENT_REFERENCE_POLICY_LOCK_TIMEOUT: "La configuración está ocupada; vuelve a intentar.",
@@ -134,7 +136,7 @@
                 revoke.type = "button";
                 revoke.className = "shrink-0 px-3 py-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-[10px] font-black uppercase";
                 revoke.textContent = "Revocar";
-                revoke.addEventListener("click", function() { revokeGrant(String(grant.grantId)); });
+                revoke.addEventListener("click", function() { revokeGrant(String(grant.grantId), revoke); });
                 card.appendChild(revoke);
             }
             container.appendChild(card);
@@ -142,12 +144,14 @@
     }
 
     async function load() {
+        var sequence = ++loadSequence;
         setStatus("Consultando política y concesiones de la institución…", "info");
         try {
             var results = await Promise.all([
                 api("getDepartmentReferencePolicy", {}),
                 api("getDepartmentReferenceGrants", {})
             ]);
+            if (sequence !== loadSequence) return null;
             var policyResult = results[0], grantsResult = results[1], errors = [];
             if (policyResult && policyResult.status === "success") {
                 var select = byId("department-reference-policy");
@@ -158,8 +162,11 @@
             if (grantsResult && grantsResult.status === "success") renderGrants(grantsResult.data || []);
             else errors.push(errorMessage(grantsResult));
             setStatus(errors.length ? errors.join(" ") : "Política y concesiones cargadas. El bloqueo total permanece activo salvo configuración institucional explícita.", errors.length ? "error" : "success");
+            return errors.length === 0;
         } catch (error) {
+            if (sequence !== loadSequence) return null;
             setStatus(error.message || "No se pudo consultar la configuración.", "error");
+            return false;
         }
     }
 
@@ -170,8 +177,8 @@
             var select = byId("department-reference-policy");
             var result = await api("setDepartmentReferencePolicy", buildPolicyPayload(select && select.value));
             if (!result || result.status !== "success") throw new Error(errorMessage(result));
-            await load();
-            setStatus(result.unchanged ? "La política seleccionada ya estaba vigente." : "Política institucional actualizada.", "success");
+            var refreshed = await load();
+            setStatus(refreshed === false ? "La política se guardó, pero no se pudo actualizar la vista." : (result.unchanged ? "La política seleccionada ya estaba vigente." : "Política institucional actualizada."), refreshed === false ? "warning" : "success");
         } catch (error) { setStatus(error.message, "error"); }
         finally { if (button) button.disabled = false; }
     }
@@ -194,24 +201,28 @@
             if (!result || result.status !== "success") throw new Error(errorMessage(result));
             var form = byId("department-reference-grant-form");
             if (form) form.reset();
-            await load();
+            var refreshed = await load();
+            var warning = result.auditCompletionRecorded === false || refreshed === false;
             setStatus(result.auditCompletionRecorded === false
                 ? "La concesión se guardó, pero no se confirmó el evento de auditoría posterior. Revisa LogsSistema."
-                : "Concesión creada y autorización previa registrada.", result.auditCompletionRecorded === false ? "warning" : "success");
+                : refreshed === false ? "La concesión se creó, pero no se pudo actualizar la vista." : "Concesión creada y autorización previa registrada.", warning ? "warning" : "success");
         } catch (error) { setStatus(error.message, "error"); }
         finally { if (button) button.disabled = false; }
     }
 
-    async function revokeGrant(grantId) {
+    async function revokeGrant(grantId, button) {
         if (typeof global.confirm === "function" && !global.confirm("¿Revocar esta concesión? El historial se conservará.")) return;
+        if (button) button.disabled = true;
         try {
             var result = await api("revokeDepartmentReferenceGrant", { grantId: grantId });
             if (!result || result.status !== "success") throw new Error(errorMessage(result));
-            await load();
+            var refreshed = await load();
+            var warning = result.auditCompletionRecorded === false || refreshed === false;
             setStatus(result.auditCompletionRecorded === false
                 ? "La concesión fue revocada, pero no se confirmó el evento de auditoría posterior. Revisa LogsSistema."
-                : "Concesión revocada; el historial permanece conservado.", result.auditCompletionRecorded === false ? "warning" : "success");
+                : refreshed === false ? "La concesión se revocó, pero no se pudo actualizar la vista." : "Concesión revocada; el historial permanece conservado.", warning ? "warning" : "success");
         } catch (error) { setStatus(error.message, "error"); }
+        finally { if (button) button.disabled = false; }
     }
 
     function bind() {
