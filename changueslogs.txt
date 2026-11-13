@@ -3220,3 +3220,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - **Revisión:** diff limitado a los tres archivos indicados; sin cambios de rama base. No se declara PASS para la suite completa ni para beta.
 - **Estado:** C1.673 completada para el subalcance de integración cliente con verificaciones aisladas; TASK-153/AUD-NG-140 continúa En ejecución por requisitos restantes.
 - **Siguiente tarea elegible:** revisar el siguiente callsite/requisito independiente pendiente de TASK-153/AUD-NG-140 en Plan Maestro y backlog; no iniciar en este checkpoint.
+
+
+[2026-11-12 UTC] [IMA-EXEC-20261112-1754Z-03] C1.674 — corrección del fixture User Role Membership
+- Se añadió al harness PropertiesService.getScriptProperties().getProperty() con resultado null para representar el ledger de revocación no inicializado. El fallo heredado en la línea 119 provenía de la ausencia de este mock, no de una denegación funcional de membresías.
+- Commit: ab5ce7b84b1c8ed9a1c36e6ceaaa16dc8880e69d. Solo se modificó tests/security/user-role-membership-contract.test.js.
+- Verificación de ejecución pendiente: checkout/Node local NOT RUN por DNS github.com; CI y status checks NOT RUN (sin workflow run/status asociado al commit). No declarar el contrato PASS hasta ejecutarlo.
