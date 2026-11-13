@@ -5491,8 +5491,13 @@ function recordStaffCheckIn(payload) {
   let late=0,state="EntradaPuntual";
   if(isExit){if(current){current[5]=timeStr;current[7]=String(current[4]||"").trim()?"JornadaCompleta":"MarcaIncompleta";if(observation)current[8]=observation;}else{try{sheet.appendRow([id,now,target,employeeName,"",timeStr,0,"MarcaIncompleta",observation||"Salida registrada sin marca de entrada previa"]);}catch(_){return {status:"error",code:"ATTENDANCE_WRITE_FAILED",message:"No fue posible registrar la salida."};}return {status:"success",asistenciaId:id,horaRegistrada:timeStr,tipoRegistro:"Salida",message:"Marcaje de Salida registrado."};}}
   else{const p=expected.split(":").map(Number),t=timeStr.split(":").map(Number);if(t[0]*60+t[1]>p[0]*60+p[1]){late=t[0]*60+t[1]-(p[0]*60+p[1]);state="Tardanza";}if(current){current[4]=timeStr;current[6]=late;current[7]=state;if(observation)current[8]=observation;}else{try{sheet.appendRow([id,now,target,employeeName,timeStr,"",late,state,observation||"Registro de Entrada laboral desde Portal RRHH"]);}catch(_){return {status:"error",code:"ATTENDANCE_WRITE_FAILED",message:"No fue posible registrar la entrada."};}return {status:"success",asistenciaId:id,horaRegistrada:timeStr,minutosTardanza:late,estadoAsistencia:state,message:"Marcaje de Entrada registrado ("+state+")."};}}
-  try{sheet.getRange(ri+1,1,1,headers.length).setValues([current]);}
-  catch(writeError){try{sheet.getRange(ri+1,1,1,headers.length).setValues([data[ri]]);}catch(rollbackError){return {status:"error",code:"ATTENDANCE_COMPENSATION_REQUIRED",message:"No fue posible completar ni revertir el marcaje."};}return {status:"error",code:"ATTENDANCE_WRITE_FAILED",message:"No fue posible actualizar el marcaje."};}
+  const persistRow=(values,original)=>{
+    const range=sheet.getRange(ri+1,1,1,headers.length);
+    if(typeof range.setValues==="function"){range.setValues([values]);return;}
+    for(let col=0;col<headers.length;col++)if(values[col]!==original[col])sheet.getRange(ri+1,col+1).setValue(values[col]);
+  };
+  try{persistRow(current,data[ri]);}
+  catch(writeError){try{persistRow(data[ri],current);}catch(rollbackError){return {status:"error",code:"ATTENDANCE_COMPENSATION_REQUIRED",message:"No fue posible completar ni revertir el marcaje."};}return {status:"error",code:"ATTENDANCE_WRITE_FAILED",message:"No fue posible actualizar el marcaje."};}
   return isExit?{status:"success",asistenciaId:id,horaRegistrada:timeStr,tipoRegistro:"Salida",message:"Marcaje de Salida registrado."}:{status:"success",asistenciaId:id,horaRegistrada:timeStr,minutosTardanza:late,estadoAsistencia:state,message:"Marcaje de Entrada registrado ("+state+")."};
  }finally{lock.releaseLock();}
 }
