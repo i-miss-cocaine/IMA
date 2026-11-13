@@ -1162,9 +1162,9 @@ window.renderPurchaseQuotationMatrix=function(matrix,target){
     addText(cell,'Garantía: '+(offer.garantia||'No indicada'));
     addText(cell,'Técnico: '+(offer.cumplimientoTecnico||'Sin dictamen'));
     addText(cell,offer.menorPrecio?'Menor costo unitario total':(offer.vigente?'':'Oferta vencida'),'div',offer.menorPrecio?'text-emerald-700 font-bold':'text-gray-500');
-    if(!offer.vigente)addText(cell,'No vigente','div','text-red-700 font-bold');
+    if(!offer.vigente)addText(cell,'Oferta vencida','div','text-red-700 font-bold');if(!offer.proveedorActivo)addText(cell,'Proveedor inactivo','div','text-red-700 font-bold');
     const selectLabel=document.createElement('label');selectLabel.className='flex items-center gap-1 mt-2 font-bold';
-    const check=document.createElement('input');check.type='checkbox';check.dataset.quoteId=offer.cotizacionId;check.dataset.itemId=part.itemId;check.disabled=matrix.adjudicada||!offer.vigente||!offer.especificacionesCumplidas;selectLabel.appendChild(check);selectLabel.appendChild(document.createTextNode('Adjudicar'));
+    const check=document.createElement('input');check.type='checkbox';check.dataset.quoteId=offer.cotizacionId;check.dataset.itemId=part.itemId;check.disabled=matrix.adjudicada||!offer.vigente||!offer.proveedorActivo||!offer.especificacionesCumplidas;selectLabel.appendChild(check);selectLabel.appendChild(document.createTextNode('Adjudicar'));
     cell.appendChild(selectLabel);
     const qty=document.createElement('input');qty.type='number';qty.min='0.01';qty.max=String(offer.cantidadCotizada);qty.step='0.01';qty.value=String(Math.min(part.cantidadSolicitada,offer.cantidadCotizada));qty.className='mt-1 w-full rounded border p-1';qty.dataset.quoteId=offer.cotizacionId;qty.dataset.itemId=part.itemId;qty.disabled=check.disabled;addText(cell,'Cantidad a adjudicar','label','mt-1 text-gray-500');cell.appendChild(qty);
    }
