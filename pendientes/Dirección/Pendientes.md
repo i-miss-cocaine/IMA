@@ -3036,7 +3036,7 @@
 ---
 
 <!-- ID: AUD-NG-129 | Fuentes: Pendientes.md -->
-### [ ] [AUD-NG-129] Unificar matrícula y rematrícula con cargos financieros por periodo
+### [x] [AUD-NG-129] Unificar matrícula y rematrícula con cargos financieros por periodo
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-129 (REQ-EXP-009).
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** `backend/academic-service/Code.gs`; `backend/accounting-service/Code.gs`; `js/secretary.js`.
