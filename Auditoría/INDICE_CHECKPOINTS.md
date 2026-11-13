@@ -5,19 +5,19 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.682**
-- Última sesión: `IMA-EXEC-20261113-0951Z-01`
+- Último checkpoint: **C1.693**
+- Última sesión: `IMA-EXEC-20261113-1333Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.682: **82455**
+- Caracteres del archivo activo tras C1.693: **124558**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
-- Último checkpoint: **C1.682**
-- Última sesión: `IMA-EXEC-20261113-0951Z-01`
+- Último checkpoint: **C1.693**
+- Última sesión: `IMA-EXEC-20261113-1333Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.682: **82455**
+- Caracteres del archivo activo tras C1.693: **124558**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -747,3 +747,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.691 | IMA-EXEC-20261113-1205Z-01 | Fallback ACADEMIC exige intención explícita de referencia; sin ella conserva RESOURCE_SCOPE_DENIED; regresión y Department Scope CI 43429425878/43429426602 SUCCESS (Node 24.22.2) | TASK-153 / T153-S05 — corrección de denegación ordinaria ACADEMIC | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.691 | sección final | C1.690 | código bed3dd0; workflow 43429425878; Department Scope 43429426602; docs commit pendiente |
 
 | C1.692 | IMA-EXEC-20261113-1205Z-01 | UI de política/concesiones en Dirección; Node 24 CI 43430108023 SUCCESS (consumidores, regresión, 17 aserciones UI, syntax-check y parseo Apps Script); BETA-FUNC-065 Pendiente beta | TASK-153 / T153-S05 — superficie administrativa/configurable | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.692 | sección final | C1.691 | código 66a9c0e/8dc10cf; CI 43430108023; docs commit pendiente |
+| C1.693 | IMA-EXEC-20261113-1333Z-01 | AUD-NG-124 completada en código; TASK CI 43433109124 SUCCESS (14/14 + node --check); EXAM CI 43434677764 SUCCESS (9/9 + contratos); Department Scope 43433715842 SUCCESS; BETA-FUNC-066 Pendiente beta | AUD-NG-124 — propiedad docente e historial append-only de rectificaciones | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.693 | 585-599 | C1.692 | código c6bc396/3c395f6; pruebas db5f44e/d2f9209; CI 43433109124/43434677764/43433715842; checkpoint documental pendiente |

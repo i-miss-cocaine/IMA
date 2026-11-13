@@ -2932,7 +2932,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 - **Dependencias Expuestas:** `getTeacherActivity`, `getTeacherExamActivity`, `gradeSubmission`, `gradeExamSubmission`, `EntregasVersiones`, `EntregasExamen` y `_verifiedUserId`.
 - **Descripción del Alcance:** Los endpoints de calificación reciben entregaId y actualizan nota/estado/comentario directamente, sin comprobar que el examen o tarea pertenezca al docente autenticado ni conservar el valor anterior de la calificación. La tabla EntregasVersiones conserva versiones de entregas, pero no las rectificaciones de nota; EntregasExamen tampoco registra historial de cambios de calificación. Vincular la operación al docente propietario y añadir historial append-only de cambios.
 - **Criterios de Aceptación:** Un docente no puede calificar entregas de otro docente; cada rectificación conserva valor anterior/nuevo, actor, fecha y motivo; las consultas de actividad usan identidad verificada y ámbito asignado; pruebas cubren cambio de nota y acceso cruzado.
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Completada en código (C1.693); BETA-FUNC-066 Pendiente beta.
 
 ---
 

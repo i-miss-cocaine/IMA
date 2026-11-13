@@ -3398,3 +3398,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - CI Node 24.22.2: run 43430108023 SUCCESS (ACADEMIC, ACCOUNTING, regresión de acceso, UI, syntax-check y parseo Apps Script). General Department Scope 43429426602 SUCCESS.
 - Se registra BETA-FUNC-065 para prueba integrada con Apps Script/Sheets y datos sintéticos; Pendiente beta. No se desplegó ni se modificaron hojas productivas.
 - T153-S05 completada en código. TASK-153 global sigue En ejecución por otras superficies AUD-NG-386. Commits de código: 66a9c0e y 8dc10cf.
+
+[2026-11-13 13:33 UTC] C1.693 — AUD-NG-124 — propiedad docente e historial append-only de rectificaciones
+- TASK: gradeSubmission/gradeSubmissionWithRubric quedan bajo RBAC, identidad verificada, propiedad de tarea/entrega y ScriptLock; cada cambio real de nota exige motivo y agrega evento append-only en HistorialRectificacionesEntregas. Fallos de auditoría disparan rollback de la fila de nota.
+- EXAM: gradeExamSubmission valida esquema canónico de EntregasExamen, conserva ownership/RBAC/lock y agrega HistorialRectificacionesEntregasExamen con nota anterior/nueva, actor, rol, fecha y motivo. El modal de teacher-dashboard solicita motivo para TASK y EXAM.
+- Consultas getTeacherActivity/getTeacherExamActivity revisadas: usan identidad y ámbito verificados, aulas/ownership; no se amplía acceso desde payload.
+- Node CI: Task-Service 43433109124 SUCCESS (14/14 historial, node --check js/teacher.js); Exam-Service 43434677764 SUCCESS (9/9 historial y contratos de regresión); Department Scope 43433715842 SUCCESS. No hubo despliegue ni acceso a datos reales.
+- Se corrigieron fixtures de pruebas preexistentes para incluir el scope verificado y el esquema canónico; no se relajó la autorización productiva. Checkout local CLI NOT RUN por fallo DNS a github.com; GitHub Actions ejecutó los comandos Node en runners aislados.
+- BETA-FUNC-066 Pendiente beta. AUD-NG-124 completada en código. Siguiente: TASK-153/AUD-NG-386, siguiente ruta departamental pendiente.
+- HEAD funcional verificado: d2f92091f5af62fad1a7afe8fbe62716f95747da.
