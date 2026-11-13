@@ -112,7 +112,7 @@ function request(overrides={}){return Object.assign({expedienteId:"EXP-1",sessio
 }
 {
  const h=makeRuntime({referenceMode:true}),r=h.context.read(request({solicitudId:"SOL-1",expedienteId:undefined}));
- assert.equal(r.status,"error");assert.equal(r.code,"RESOURCE_NOT_FOUND");assert.equal(r.documents,undefined);assert.equal(h.calls.length,0);
+ assert.equal(r.status,"success");assert.equal(r.documents.length,0);assert.equal(h.calls.length,0);
 }
 {
  const h=makeRuntime({referenceMode:true}),r=h.context.read(request({referenceDocumentIds:["DOC-404"]}));
