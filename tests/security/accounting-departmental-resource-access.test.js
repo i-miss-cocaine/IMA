@@ -24,6 +24,7 @@ function makeSheet(rows){
  };
 }
 const accounting=fs.readFileSync(path.resolve(__dirname,"../../backend/accounting-service/Code.gs"),"utf8");
+assert.doesNotThrow(()=>new Function(accounting),"the complete ACCOUNTING Code.gs source must parse before running isolated security contracts");
 const names=[
  "parseJsonSafe","getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentScope_","getVerifiedDepartmentScopeForSession_","assertResourceOwnershipForScope_","resolveEmployeeDepartmentId_","assertEmployeeExpedienteScopeAccess_",
  "getAccountingPersonIdForUser_","resolveStudentExpedienteForAccounting_","assertPaymentVoucherOwnerAccess_",
