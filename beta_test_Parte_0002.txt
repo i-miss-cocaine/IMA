@@ -218,3 +218,15 @@
 - **Evidencia requerida:** IDs sintéticos de orden/recepción, snapshots de cantidades solicitadas/recibidas/dañadas/pendientes, estados antes/después, movimientos Kardex, respuestas de errores y trazas de concurrencia. No usar datos reales ni PII.
 - **Estado:** Pendiente beta; no desplegado en Apps Script/Sheets real.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-083 — TASK-182 — Capitalización patrimonial desde recepción de compras
+- **Módulo/roles:** Contabilidad / Compras / Almacén / Contador / Administrador.
+- **Objetivo:** validar en Apps Script/Sheets desplegado la capitalización de bienes duraderos desde una recepción conforme, con trazabilidad completa de adquisición y custodia.
+- **Precondiciones:** entorno beta aislado; solicitud y orden adjudicada con al menos una partida ActivoFijo y otra Consumible; recepción conforme con unidades múltiples; factura de proveedor aprobada, conciliada y vinculada a la orden; usuarios autorizados; inventario patrimonial sintético con series conocidas.
+- **Pasos:** (1) abrir una recepción conforme y comprobar que solo aparecen partidas capitalizables con unidades conformes disponibles; (2) verificar precarga de descripción, proveedor, fecha, costo unitario, orden y recepción; (3) registrar varias unidades con códigos patrimoniales y números de serie independientes; (4) asignar custodio inicial y comprobar historial de asignación; (5) reintentar el mismo registro y verificar idempotencia sin duplicados; (6) intentar repetir código patrimonial y número de serie, comprobar rechazo; (7) intentar capitalizar consumibles, materiales inventariables, unidades dañadas/rechazadas o cantidades superiores a las recibidas y verificar bloqueo; (8) probar factura inexistente, no aprobada, no conciliada o bloqueada para pago; (9) comprobar que una recepción no conforme/en disputa no habilita capitalización; (10) abrir el expediente desde el inventario y verificar vínculos con orden, proveedor, recepción, factura y obligación; (11) probar rol no autorizado, scope ajeno y dos solicitudes simultáneas; (12) simular fallo al crear historial de custodia y comprobar rollback sin activo huérfano.
+- **Resultado esperado:** solo bienes capitalizables recibidos conformes y con factura aprobada/conciliada generan activos; cada unidad tiene identificación única; cantidades no exceden lo recibido; vínculos de adquisición son navegables; operaciones repetidas son idempotentes y los errores no dejan escrituras parciales.
+- **Evidencia requerida:** IDs sintéticos de solicitud/orden/recepción/factura/activo, snapshots de cantidades, campos de adquisición, códigos/series, custodios, estados de conciliación, respuestas de denegación, auditoría y pruebas de concurrencia/rollback. No usar PII ni datos productivos.
+- **Estado:** Pendiente beta; implementación y contrato Node.js validados en CI. No se desplegó Apps Script/Sheets real.
+===============================================================================

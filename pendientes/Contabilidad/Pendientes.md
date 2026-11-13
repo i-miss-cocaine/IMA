@@ -2420,7 +2420,7 @@
 ---
 
 <!-- ID: TASK-182 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [ ] [TASK-182] Integrar la recepción de compras con el registro de activos fijos
+### [x] [TASK-182] Integrar la recepción de compras con el registro de activos fijos
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección B (B.4), Sección D y Sección G (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Control patrimonial institucional, capitalización de bienes y prevención de extravíos)
