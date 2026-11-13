@@ -94,7 +94,7 @@ function makeRuntime(options={}) {
 }
 function admin(extra={}) { return Object.assign({_verifiedUserId:"U1",role:"Admin"},extra); }
 function validPayload(extra={}) {
-  return Object.assign({resourceType:"EXPEDIENTE",resourceId:"DOC-1",targetDepartmentId:"D2",
+  return Object.assign(admin(), {resourceType:"EXPEDIENTE",resourceId:"DOC-1",targetDepartmentId:"D2",
     allowedFields:["nombre","grado"],allowedDocumentIds:["DOC-A"],
     validFrom:new Date(now-1000).toISOString(),expiresAt:new Date(now+86400000).toISOString()},extra);
 }
