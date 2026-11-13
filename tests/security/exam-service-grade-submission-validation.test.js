@@ -34,7 +34,9 @@ function fixture(options = {}) {
         deliverySheet: { getRange(...args) { return { setValues(rows) { calls.writes.push({ args, rows }); } }; } }
       });
     },
-    Number, Math, Error
+    Number, Math, Error,
+    prepareExamGradeRectificationEvent_() { return null; },
+    appendExamGradeRectificationEvent_() { throw new Error("Unexpected rectification append in first-grade validation fixture"); }
   };
   const historyHeader = source.match(/var EXAM_GRADE_RECTIFICATION_HEADERS_ = \[[^\]]+\];/);
   assert.ok(historyHeader, "grade history schema is declared");
