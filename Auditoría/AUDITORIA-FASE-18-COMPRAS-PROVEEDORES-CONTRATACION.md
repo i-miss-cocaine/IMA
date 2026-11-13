@@ -316,8 +316,8 @@ Sin embargo, la fase se encuentra **incompleta e inoperativa para usuarios final
 - **Dependencias/riesgos:** consistencia transaccional de recepciones e inventario; riesgo de pérdida de saldos o cierre prematuro.
 - **Alcance:** recepción parcial y cálculo de saldo por partida; no incluye conciliación de facturas (F18-Task02).
 - **Criterios de aceptación:** permitir varias recepciones por orden; no superar cantidades autorizadas; saldo pendiente correcto; estado total únicamente al completar el 100%.
-- **Prioridad:** P0. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; el informe documenta inspección estática, no implementación correctiva.
+- **Prioridad:** P0. **Estado:** Completada en código y CI (C1.709).
+- **Evidencia de cierre:** `tests/security/accounting-purchase-receipt-partial.test.js`; Department Scope CI (Node.js 24); pruebas de recepción parcial/total, sobreentrega, partida ajena y unidades dañadas. Validación beta de Sheets real pendiente.
 
 ### [F18-Task02] Desarrollar el motor de validación documental y conciliación de tres vías
 - **Hallazgo de origen:** Brecha E.2; facturas sin conciliación entre orden, recepción y cobro.

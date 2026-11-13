@@ -1,0 +1,25 @@
+const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),vm=require("node:vm");
+function extract(source,name){const start=source.indexOf("function "+name+"(");assert.ok(start>=0,"missing "+name);const open=source.indexOf("{",start);let depth=0,quote="",escape=false,line=false,block=false;for(let i=open;i<source.length;i++){const ch=source[i],next=source[i+1];if(line){if(ch==="\n")line=false;continue;}if(block){if(ch==="*"&&next==="/"){block=false;i++;}continue;}if(quote){if(escape){escape=false;continue;}if(ch==="\\"){escape=true;continue;}if(ch===quote)quote="";continue;}if(ch==="/"&&next==="/"){line=true;i++;continue;}if(ch==="/"&&next==="*"){block=true;i++;continue;}if(ch==="'"||ch==='"'||ch.charCodeAt(0)===96){quote=ch;continue;}if(ch==="{")depth++;else if(ch==="}"&&--depth===0)return source.slice(start,i+1);}throw Error("unbalanced "+name);}
+const root=path.resolve(__dirname,"../.."),source=fs.readFileSync(path.join(root,"backend/accounting-service/Code.gs"),"utf8");
+assert.doesNotThrow(()=>new vm.Script(source));
+const rows={
+ OrdenesCompra:[["OrdenCompraID","FechaEmision","FechaEntregaEstimada","ProveedorID","FechaRecepcion","EstadoAprobacion","DetalleItemsJSON","MontoTotal","CentroCosto","EstadoOrden"],["PO-1","","","SUP-1","","Aprobada",JSON.stringify([{codigoItem:"IT-A",cantidad:10},{codigoItem:"IT-B",cantidad:5}]),100,"CC-1","Aprobada"],["PO-2","","","SUP-1","","Aprobada",JSON.stringify([{codigoItem:"IT-A",cantidad:10}]),100,"CC-1","Aprobada"],["PO-3","","","SUP-1","","Aprobada",JSON.stringify([{codigoItem:"IT-A",cantidad:10}]),100,"CC-1","Aprobada"]],
+ RecepcionesCompra:[["RecepcionID","OrdenCompraID","Fecha","ReceptorUserId","DetalleJSON","EstadoConformidad","RegistrarInventario","AsientoID","Observaciones"]]
+};
+function sheet(name){return {getDataRange:()=>({getValues:()=>rows[name].map(r=>r.slice())}),getLastRow:()=>rows[name].length,appendRow:r=>rows[name].push(r.slice()),getRange:(row,col)=>({setValue:v=>{rows[name][row-1][col-1]=v;}})};}
+let inventoryMoves=[];
+const ctx={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>({getSheetByName:n=>rows[n]?sheet(n):null})},LockService:{getScriptLock:()=>({waitLock:()=>{},releaseLock:()=>{}})},getOrCreateSheet:(ss,name)=>sheet(name),recordInventoryMovement:p=>{inventoryMoves.push({...p});return {status:"success"};}};
+vm.createContext(ctx);vm.runInContext(extract(source,"recordPurchaseReceipt"),ctx);
+const partial=ctx.recordPurchaseReceipt({ordenCompraId:"PO-1",detalleRecibido:[{codigoItem:"IT-A",cantidad:4}],estadoConformidad:"Conforme",registrarEnInventario:true});
+assert.equal(partial.estadoOrden,"RecibidaParcial");assert.equal(partial.resumenPartidas.find(x=>x.codigoItem==="IT-A").pendiente,6);assert.equal(partial.resumenPartidas.find(x=>x.codigoItem==="IT-B").pendiente,5);assert.equal(inventoryMoves.length,1);
+const complete=ctx.recordPurchaseReceipt({ordenCompraId:"PO-1",detalleRecibido:[{codigoItem:"IT-A",cantidad:6},{codigoItem:"IT-B",cantidad:5}],estadoConformidad:"Conforme",registrarEnInventario:true});
+assert.equal(complete.estadoOrden,"RecibidaTotal");assert.equal(complete.resumenPartidas.every(x=>x.pendiente===0),true);assert.equal(inventoryMoves.length,3);
+const previous=["REC-PREV","PO-2",new Date(),"TEST",JSON.stringify([{codigoItem:"IT-A",cantidad:8,conforme:true}]),"Conforme",false,"",""];rows.RecepcionesCompra.push(previous);
+const movesBefore=inventoryMoves.length,receiptsBefore=rows.RecepcionesCompra.length;
+assert.throws(()=>ctx.recordPurchaseReceipt({ordenCompraId:"PO-2",detalleRecibido:[{codigoItem:"IT-A",cantidad:3}],estadoConformidad:"Conforme",registrarEnInventario:true}),/PURCHASE_RECEIPT_QUANTITY_EXCEEDED/);
+assert.equal(inventoryMoves.length,movesBefore);assert.equal(rows.RecepcionesCompra.length,receiptsBefore);assert.equal(rows.OrdenesCompra[2][9],"Aprobada");
+assert.throws(()=>ctx.recordPurchaseReceipt({ordenCompraId:"PO-3",detalleRecibido:[{codigoItem:"UNKNOWN",cantidad:1}],estadoConformidad:"Conforme",registrarEnInventario:true}),/PURCHASE_RECEIPT_ITEM_NOT_AUTHORIZED/);
+assert.equal(inventoryMoves.length,movesBefore);assert.equal(rows.RecepcionesCompra.length,receiptsBefore);
+const damaged=ctx.recordPurchaseReceipt({ordenCompraId:"PO-3",detalleRecibido:[{codigoItem:"IT-A",cantidad:2}],estadoConformidad:"Danado",registrarEnInventario:true});
+assert.equal(damaged.estadoOrden,"EnDisputa");assert.equal(damaged.resumenPartidas[0].recibidaConforme,0);assert.equal(damaged.resumenPartidas[0].danadaRechazada,2);assert.equal(inventoryMoves.length,movesBefore);
+console.log("F18-Task01 partial purchase receipt contract PASS: cumulative quantities, partial/total status, over-receipt rejection, unknown item rejection and damaged-unit exclusion.");
