@@ -7095,7 +7095,7 @@ function getPayrollReceiptDistributionContext_(payload,ss,planillaId) {
     const access=assertEmployeeExpedienteScopeAccess_(payload,ss,expedienteId);
     if(!access.authorized){scopeBlocked++;incidents.push({empleadoId:expedienteId,empleadoNombre:"",motivo:"OUT_OF_SCOPE"});return;}
     const userId=String(matches[0][2]||"").trim();
-    if(!userId||userCounts[userId]!==1||userCounts["USER:"+userId]!==1){
+    if(!userId||userCounts[userId]!==1){
       records.push({planillaId,periodoMes:periods[0],expedienteId,userId,empleadoNombre:employeeName,email:"",emailValid:false,emailReason:"USER_AMBIGUOUS"});
       incidents.push({empleadoId:expedienteId,empleadoNombre:employeeName,motivo:"USER_AMBIGUOUS"});return;
     }
