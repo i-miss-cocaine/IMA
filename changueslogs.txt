@@ -3115,3 +3115,8 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se exige identidad firmada y ownership/ámbito por expediente; se filtran listados y resúmenes por recursos autorizados.
 - Se limita autoservicio al empleado autenticado, se ocultan consultas ajenas con RESOURCE_NOT_FOUND y se rechazan esquemas inválidos, IDs duplicados y expedientes ambiguos.
 - La lectura deja de crear hojas. Contrato V8 focalizado y parseo sintáctico PASS; contrato integrado ampliado pendiente CI. BETA-FUNC-041 Pendiente beta.
+
+
+[2026-11-13 UTC] [IMA-EXEC-20261112-1754Z-03] C1.663 — verificación CI
+- Department Scope Contract run 43344297344: contrato ACCOUNTING departmental resource access PASS, incluidos los escenarios getEmployeeContractAlerts.
+- El workflow global falla después en User Role Membership contract por el caso foreignLegacy (verifySessionToken devuelve null y el test accede a .role), fallo previo y ajeno a esta modificación. Syntax-check global SKIPPED.

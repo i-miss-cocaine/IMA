@@ -9,7 +9,7 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 - Última sesión: `IMA-EXEC-20261112-1754Z-03`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.663: **17535**
+- Caracteres del archivo activo tras C1.663: **18720**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -679,4 +679,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.662 | IMA-EXEC-20261112-1754Z-03 | ACCOUNTING getEmployeeContracts: identidad firmada, ámbito/ownership por expediente, autoservicio propio, anti-enumeración, esquema/IDs únicos y lectura sin crear hojas; 12 escenarios V8 y parseo PASS; ACCOUNTING departmental resource access CI PASS (run 43342801024); workflow global FAIL posterior en User Role Membership | PM-01 — TASK-153 / ACCOUNTING | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.662 | sección final | C1.661 | Consulta de contratos laborales protegida; Identity Mapping CI SUCCESS (43342801000); Apps Script/Sheets Pendiente beta (BETA-FUNC-040); workflow global falla en test heredado User Role Membership; TASK-153 sigue En ejecución |
 
 | C1.662 | IMA-EXEC-20261112-1754Z-03 | Publicado | TASK-153 / PM-01 — aislamiento de consulta de contratos laborales (ACCOUNTING) | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — sección C1.662 | 60–69 | C1.661 | `0dfa4dce46941e89869b92db5ce5671a36e8e32d` |
-| C1.663 | IMA-EXEC-20261112-1754Z-03 | Publicado en este commit | TASK-153 / PM-01 — aislamiento de alertas de contratos laborales (ACCOUNTING) | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — sección C1.663 | 71–83 | C1.662 | Este commit; SHA verificado tras publicación |
+| C1.663 | IMA-EXEC-20261112-1754Z-03 | Publicado en este commit | TASK-153 / PM-01 — aislamiento de alertas de contratos laborales (ACCOUNTING) | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — sección C1.663 | 72–85 | C1.662 | Este commit; SHA verificado tras publicación |
