@@ -3226,3 +3226,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se añadió al harness PropertiesService.getScriptProperties().getProperty() con resultado null para representar el ledger de revocación no inicializado. El fallo heredado en la línea 119 provenía de la ausencia de este mock, no de una denegación funcional de membresías.
 - Commit: ab5ce7b84b1c8ed9a1c36e6ceaaa16dc8880e69d. Solo se modificó tests/security/user-role-membership-contract.test.js.
 - Verificación de ejecución pendiente: checkout/Node local NOT RUN por DNS github.com; CI y status checks NOT RUN (sin workflow run/status asociado al commit). No declarar el contrato PASS hasta ejecutarlo.
+
+ 
+[2026-11-13 UTC] [IMA-EXEC-20261112-1754Z-03] C1.675 — verificación del contrato User Role Membership
+- Se completó el harness para simular revocación de sesión y se incluyó el helper de revocación compartida en los cuatro microservicios.
+- Se reordenó el workflow para ejecutar el contrato User Role Membership antes del contrato ACCOUNTING que falla de forma independiente.
+- Node.js 24.22.2 / GitHub Actions run 43362842576: User Role Membership contract PASS.
+- El workflow global termina FAILURE en accounting-departmental-resource-access.test.js:706 (verifyAttendanceClientRendering); el paso objetivo ya había pasado. No se declara PASS global ni se modificó código productivo.
+- Commits de código/prueba/workflow: a8db480d67a4d7ee2732ab98f9717c57b3564f07, 49dde5e534fa6943ccf19d8a72772762cb1adcf6, 6a224861ad00df4fd01878e0c4bd70431f006870, 8d370ba1b0cd989bc55d018b899a8ff3a852e12b.
