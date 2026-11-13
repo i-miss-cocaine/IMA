@@ -265,3 +265,17 @@
 - **Resultado:** subalcance UI implementado y verificado de forma aislada; TASK-153/AUD-NG-140 continúa En ejecución por alcance restante.
 - **Siguiente acción:** identificar siguiente callsite elegible en el Plan Maestro/backlog; no ejecutado en esta iteración.
 ===============================================================================
+
+
+===============================================================================
+## C1.674 — IMA-EXEC-20261112-1754Z-03 — corrección del fixture de revocación en contrato de membresías
+- **Checkpoint anterior:** C1.673. **HEAD inicial:** 9c00faa33ecb7430a02533151ba0aa6aaf35e219. **Rama:** NG_beta_0.0.0.1_work. **Rama base:** 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+- **Tarea única:** corregir el fixture de tests/security/user-role-membership-contract.test.js que provocaba el fallo heredado en la línea 119 al validar una sesión legacy cuando el libro de revocación aún no está inicializado.
+- **Hallazgo:** el harness no proporcionaba PropertiesService; isSessionRevoked_ consulta SESSION_REVOCATION_LEDGER_INITIALIZED cuando no existe la hoja SesionesRevocadas. La referencia ausente lanzaba una excepción capturada por verifySessionToken, que devolvía null y hacía fallar la aserción sobre foreignLegacy.
+- **Cambio:** el fixture ahora simula PropertiesService.getScriptProperties().getProperty() devolviendo null, que representa el ledger no inicializado sin alterar lógica productiva.
+- **Archivo modificado:** tests/security/user-role-membership-contract.test.js.
+- **Commit:** ab5ce7b84b1c8ed9a1c36e6ceaaa16dc8880e69d (test(user): mock uninitialized session revocation properties).
+- **Verificación:** revisión estática del flujo de isSessionRevoked_ y del fixture: corrección coherente con el estado de ledger no inicializado. Ejecución local del contrato: NOT RUN (checkout local bloqueado por DNS: Could not resolve host: github.com). CI/status checks para el commit: NOT RUN / no se devolvieron checks (statuses: []; no se encontró workflow run asociado). No se declara PASS del test ni del workflow.
+- **Estado:** corrección publicada; verificación de ejecución pendiente. No se modificó código productivo ni otra rama.
+- **Siguiente acción exacta:** ejecutar node tests/security/user-role-membership-contract.test.js en Node.js 24 con checkout disponible; corregir únicamente fallos reproducibles y volver a ejecutar el contrato. Mantener la sesión IMA-EXEC-20261112-1754Z-03.
+===============================================================================
