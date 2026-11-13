@@ -8781,7 +8781,7 @@ function generatePurchaseOrderPDF(payload) {
 
 function purchaseDossierRows_(ss,name){const sheet=ss.getSheetByName(name);if(!sheet)return [];const values=sheet.getDataRange().getValues();return values.length>1?values.slice(1):[];}
 function purchaseDossierDate_(value){if(!value)return null;const date=value instanceof Date?value:new Date(value);return isNaN(date.getTime())?null:date.toISOString();}
-function purchaseDossierSafeUrl_(value){const url=String(value||"").trim();return /^https?:\/\//i.test(url)?url:"";}
+function purchaseDossierSafeUrl_(value){const url=String(value||"").trim();return url.indexOf("https://drive.google.com/")===0||url.indexOf("https://docs.google.com/")===0?url:"";}
 
 const PURCHASE_ORDER_CONFIRMATION_HEADERS_=["ConfirmacionID","OrdenCompraID","FechaConfirmacion","ContactoProveedor","Canal","EstadoConfirmacion","DocumentoUrl","Observaciones","RegistradoPor"];
 function recordPurchaseOrderConfirmation(payload){
@@ -8790,7 +8790,7 @@ function recordPurchaseOrderConfirmation(payload){
  const role=normalizePurchaseAwardRole_(access.actor.role);if(["ADMINISTRADOR","DIRECTOR","CONTADOR"].indexOf(role)===-1)return {status:"error",code:"PURCHASE_CONFIRMATION_ROLE_NOT_ALLOWED"};
  const orderId=String(p.ordenCompraId||"").trim(),contact=String(p.contactoProveedor||"").trim(),state=String(p.estadoConfirmacion||"").trim(),channel=String(p.canal||"").trim(),url=String(p.documentoUrl||"").trim();
  if(!orderId||!contact||["Confirmada","Rechazada","SolicitaCambios"].indexOf(state)===-1||["Correo","Portal","Telefono","Otro"].indexOf(channel)===-1)return {status:"error",code:"PURCHASE_CONFIRMATION_FIELDS_INVALID"};
- if(url&&url.indexOf("https://")!==0&&url.indexOf("http://")!==0)return {status:"error",code:"PURCHASE_CONFIRMATION_URL_INVALID"};
+ if(url&&!purchaseDossierSafeUrl_(url))return {status:"error",code:"PURCHASE_CONFIRMATION_URL_INVALID"};
  const orderRows=purchaseDossierRows_(ss,"OrdenesCompra"),matches=orderRows.filter(r=>String(r[0]||"").trim()===orderId);if(matches.length!==1)return {status:"error",code:matches.length?"PURCHASE_ORDER_AMBIGUOUS":"PURCHASE_ORDER_NOT_FOUND"};
  const requestRows=purchaseDossierRows_(ss,"SolicitudesCompra"),request=requestRows.find(r=>String(r[0]||"").trim()===String(matches[0][1]||"").trim());if(!request)return {status:"error",code:"PURCHASE_REQUEST_NOT_FOUND"};
  if(access.scope.institutionWide!==true&&!(access.scope.departmentIds||[]).map(String).includes(String(request[2]||"")))return {status:"error",code:"DEPARTMENT_SCOPE_DENIED"};
@@ -9626,7 +9626,7 @@ function recordAccountsPayableExpense(payload) {
     (ordenCompraId ? `[ORDEN_${ordenCompraId}] ` : "") +
     (partidasFacturadas ? `[ITEMS_JSON:${JSON.stringify(partidasFacturadas)}] ` : "") +
     (conciliacionResultado ? `[MATCH:${conciliacionResultado.estadoConciliacion}]` : "");
-  if (documentoFacturaUrl && (String(documentoFacturaUrl).indexOf("https://")===0 || String(documentoFacturaUrl).indexOf("http://")===0)) obsConMeta += " [FACTURA_URL:" + String(documentoFacturaUrl).trim() + "]";
+  if (documentoFacturaUrl && purchaseDossierSafeUrl_(documentoFacturaUrl)) obsConMeta += " [FACTURA_URL:" + String(documentoFacturaUrl).trim() + "]";
 
   const totalFactura = parseFloat((imp + tax).toFixed(2));
   const saldoInicial = totalFactura;
@@ -9772,7 +9772,7 @@ function recordSupplierPayment(payload) {
 
     const obsPrev = String(row[9] || "");
     const pagoNota = `[ABONO_${pagoRefId}: L ${abono.toFixed(2)} - ${metodoPago || 'Transferencia'} - Ref: ${referenciaBancaria || 'S/R'}]`;
-    const comprobanteMeta = comprobanteUrl && (String(comprobanteUrl).indexOf("https://")===0 || String(comprobanteUrl).indexOf("http://")===0) ? " [COMPROBANTE_URL:" + String(comprobanteUrl).trim() + "]" : "";
+    const comprobanteMeta = comprobanteUrl && purchaseDossierSafeUrl_(comprobanteUrl) ? " [COMPROBANTE_URL:" + String(comprobanteUrl).trim() + "]" : "";
     sheet.getRange(idx + 1, 10).setValue((obsPrev ? obsPrev + " | " : "") + pagoNota + comprobanteMeta);
 
     // Registrar egreso en MovimientosCajaBancos
