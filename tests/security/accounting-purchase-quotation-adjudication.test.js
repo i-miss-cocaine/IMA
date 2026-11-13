@@ -39,7 +39,7 @@ assert.equal(matrix.partidas[0].ofertas.find(x=>x.cotizacionId===q1.cotizacionId
 const award=ctx.adjudicatePurchaseQuotations({...payload,idempotencyKey:"AWARD-REQ-1-0001",dictamen:"Adjudicación por precio y cumplimiento técnico",justificacion:"Se eligen las ofertas de menor costo total que cumplen las especificaciones.",responsablesEvaluacion:["USR-COMPRAS-1"],adjudicaciones:[{itemId:"ITEM-A",cotizacionId:q1.cotizacionId,cantidadAdjudicada:5},{itemId:"ITEM-B",cotizacionId:q2.cotizacionId,cantidadAdjudicada:2}],ofertasDescartadas:[{cotizacionId:q3.cotizacionId,motivo:"Oferta parcial y costo unitario superior."}]});
 assert.equal(award.status,"success");assert.equal(award.ordenes.length,2);assert.equal(rows.OrdenesCompra.length,3);
 assert.equal(rows.OrdenesCompra[1][9],"Borrador");assert.equal(rows.OrdenesCompra[1][7],50);assert.equal(rows.OrdenesCompra[2][7],30);
-assert.equal(rows.SolicitudesCompra[1][9],"Adjudicada");
+assert.equal(rows.SolicitudesCompra[1][9],"Adjudicada");assert.equal(rows.CotizacionesCompra.find(r=>r[0]===q1.cotizacionId)[9],"AdjudicadaParcial");assert.equal(rows.CotizacionesCompra.find(r=>r[0]===q2.cotizacionId)[9],"AdjudicadaParcial");
 assert.ok(rows.ActasAdjudicacionCompra[1][9].includes(q1.cotizacionId),"acta stores immutable quotation snapshot");
 const repeated=ctx.adjudicatePurchaseQuotations({...payload,idempotencyKey:"AWARD-REQ-1-0001",dictamen:"Reintento",justificacion:"Reintento de adjudicación con la misma clave.",adjudicaciones:[{itemId:"ITEM-A",cotizacionId:q1.cotizacionId,cantidadAdjudicada:5}]});
 assert.equal(repeated.status,"success");assert.equal(repeated.idempotente,true);assert.equal(rows.OrdenesCompra.length,3);

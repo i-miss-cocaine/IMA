@@ -8177,7 +8177,7 @@ function adjudicatePurchaseQuotations(payload){
   orderStart=ordersSheet.getLastRow()+1;orders.forEach(o=>ordersSheet.appendRow([o.ordenCompraId,o.solicitudId,o.cotizacionId,o.proveedorId,now,o.fechaEntregaEstimada,JSON.stringify(o.detalleItems),o.montoTotal,String(found.request.row[8]||"Operaciones"),"Borrador","", "Acta "+actaId+"; "+justificacion,String(found.request.row[3]||""),"1.0",""]));
   actaRow=actaSheet.getLastRow()+1;actaSheet.appendRow([actaId,solicitudId,now,JSON.stringify(responsibilities),dictamen,justificacion,totalAwarded,awardJson,rejectedJson,snapshot,"Adjudicada",access.actor.userId,idempotencyKey,ordersJson]);
   quoteStates=quoteObjects.map(q=>({index:q.index,state:q.row[9]}));
-  quoteObjects.forEach(q=>quoteSheet.getRange(q.index,10).setValue(usedQuotes.has(String(q.row[0]))?(normalizedAllocations.filter(a=>a.cotizacionId===String(q.row[0])).length===lineByQuote[String(q.row[0])].length?"Adjudicada":"AdjudicadaParcial"):"Descartada"));
+  quoteObjects.forEach(q=>{const quoteId=String(q.row[0]),quoteLines=lineByQuote[quoteId],fullyAwarded=quoteLines.length>0&&quoteLines.every(line=>normalizedAllocations.filter(a=>a.cotizacionId===quoteId&&a.itemId===String(line[3])).reduce((sum,a)=>sum+a.cantidadAdjudicada,0)+0.000001>=Number(line[7]||0));quoteSheet.getRange(q.index,10).setValue(usedQuotes.has(quoteId)?(fullyAwarded?"Adjudicada":"AdjudicadaParcial"):"Descartada");});
   oldRequestState=found.request.row[9];requestSheet.getRange(found.request.index,10).setValue("Adjudicada");
   return {status:"success",actaId:actaId,solicitudId:solicitudId,montoAdjudicado:totalAwarded,ordenes:orders,dictamen:dictamen,message:"Acta de adjudicación creada y órdenes individuales generadas en borrador."};
  }catch(error){
