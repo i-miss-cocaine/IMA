@@ -1,0 +1,35 @@
+name: ACADEMIC Reference Consumer Local Contract
+
+on:
+  push:
+    branches:
+      - NG_beta_0.0.0.1_work
+    paths:
+      - backend/academic-service/Code.gs
+      - tests/security/academic-department-reference-consumer.test.js
+      - .github/workflows/academic-reference-consumer.yml
+
+permissions:
+  contents: read
+
+jobs:
+  consumer-contract:
+    name: ACADEMIC consumer 17-scenario Node contract
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout authorized work branch
+        uses: actions/checkout@v4
+        with:
+          ref: NG_beta_0.0.0.1_work
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Verify checked-out branch and commit
+        run: |
+          test "$(git branch --show-current)" = "NG_beta_0.0.0.1_work"
+          git log -1 --format='%H'
+      - name: Run ACADEMIC reference consumer contract
+        run: node tests/security/academic-department-reference-consumer.test.js
+      - name: Parse ACADEMIC Apps Script service
+        run: node --check < backend/academic-service/Code.gs
