@@ -5980,7 +5980,7 @@ function getEmployeeLoansAdvances(payload) {
     if (p.estadoAprobacion && String(r[9] || "").trim() !== String(p.estadoAprobacion).trim()) return false;
     return allowedUser(userId);
   });
-  if ((requestedLoan || (self && requestedUser)) && !filtered.length) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen solicitudes disponibles." };
+  if (requestedLoan && !filtered.length) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen solicitudes disponibles." };
 
   const mapped = filtered.map(r => ({
     prestamoId: r[0], fecha: r[1], empleadoId: r[2], tipo: r[3],
