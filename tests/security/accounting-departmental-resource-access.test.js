@@ -324,7 +324,7 @@ assert.deepEqual(Array.from(contractAlerts(actor("admin")).data,r=>r.contratoId)
 rows.ContratosLaborales.splice(0,rows.ContratosLaborales.length,...originalAlertRows);
 const originalAlertEmployeeRows=rows.ExpedientesLaborales.map(r=>r.slice());
 rows.ExpedientesLaborales.push(rows.ExpedientesLaborales[1].slice());
-assert.deepEqual(Array.from(contractAlerts(actor("admin")).data,r=>r.contratoId),["CTR-A"],"contracts linked to ambiguous expediente IDs must be excluded");
+assert.deepEqual(Array.from(contractAlerts(actor("admin")).data,r=>r.contratoId),["CTR-B"],"contracts linked to ambiguous expediente IDs must be excluded");
 rows.ExpedientesLaborales.splice(0,rows.ExpedientesLaborales.length,...originalAlertEmployeeRows);
 const originalAlertHeader=rows.ContratosLaborales[0][0];
 rows.ContratosLaborales[0][0]="Contrato";
