@@ -5488,3 +5488,12 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Se corrigió el doble escape en validación YYYY-MM de conceptos no recurrentes y se preservó el estado INACTIVO al editar desde la UI.
 - Contrato accounting-payroll-concept-catalog.test.js ampliado para período único, no recurrencia y elegibilidad por empleado/departamento/cargo/estructura. Department Scope 43482214476 SUCCESS; Node.js 24.22.2; sintaxis Apps Script/HR PASS. Identity Mapping 43481793156 y Department Reference Consumers 43481793198 SUCCESS.
 - TASK-175 Completada en código/CI. BETA-FUNC-077 Pendiente beta.
+
+
+### C1.705 — TASK-177 — distribución segura de comprobantes de nómina
+- Se verificó y completó el flujo de distribución existente: previewPayrollReceiptDistribution y processPayrollReceiptDistribution limitan la operación a RR. HH./Administrador, planillas CERRADAS y expedientes dentro del scope; detectan expedientes/usuarios/correos ambiguos, duplicados, faltantes e inactivos.
+- La generación PDF se realiza por empleado con _requireClosedForDistribution; el correo individual solo comunica disponibilidad y remite al portal autenticado, sin salario ni PDF adjunto. Los estados PENDIENTE, PROCESANDO, ENVIADO, FALLIDO y REINTENTABLE previenen reclamaciones simultáneas y reenvío de entregas confirmadas.
+- Se corrigió la iteración UI para drenar lotes reintentables; se conserva DriveFileId en el ledger cuando hay una relación única. getStaffPayrollReceipt/getPayrollReceiptPDFFile mantienen descarga histórica con scope.
+- Contrato Node accounting-payroll-receipt-distribution.test.js PASS; cubre preview, planilla abierta, roles, correos, envío, privacidad, reintento, idempotencia, reentrada/concurrencia, scope y descargas históricas. Department Scope 43488044739 SUCCESS; Identity Mapping 43487819815 y Department Reference Consumers 43487819899 SUCCESS.
+- BETA-FUNC-078 Pendiente beta. CLI local NOT RUN por DNS; Apps Script/Sheets real NOT RUN.
+- **Siguiente tarea elegible del Plan Maestro:** TASK-179 — integración contable de obligaciones patronales por partida doble.

@@ -2233,7 +2233,7 @@
 ---
 
 <!-- ID: TASK-177 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [ ] [TASK-177] Implementar la generación masiva y distribución segura de comprobantes de pago
+### [x] [TASK-177] Implementar la generación masiva y distribución segura de comprobantes de pago
 - **Origen del Hallazgo:** `AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md` / Sección B (B.6) y Sección G (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Entrega de comprobantes de pago, privacidad salarial y comunicación al personal)
@@ -2266,7 +2266,7 @@
   - Un fallo de conexión en el servidor de correo permite reintentar solo los envíos pendientes sin duplicados.
   - El sistema impide despachar boletas de planillas que permanezcan en estado preliminar `Calculada`.
   - La boleta continúa accesible y descargable desde el portal de autoservicio del empleado.
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Completada en código y verificada por contratos Node.js 24.22.2 y sintaxis Apps Script/HR en GitHub Actions. Vista previa, aislamiento de ámbito, correos faltantes/duplicados, generación privada, envío individual, reintentos, idempotencia, concurrencia y descarga histórica PASS. BETA-FUNC-078 Pendiente beta.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7421-7456; clave TASK-178; asignación única: Contabilidad -->
 

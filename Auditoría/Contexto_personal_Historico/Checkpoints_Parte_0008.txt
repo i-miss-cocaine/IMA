@@ -779,3 +779,20 @@
 - **Estado:** TASK-175 Completada en código y verificaciones locales ejecutadas por CI; beta pendiente no bloquea el cierre.
 - **Siguiente tarea elegible:** TASK-177 — generación masiva y distribución segura de comprobantes de pago; verificar primero su estado real y dependencias antes de implementar.
 ===============================================================================
+
+
+===============================================================================
+### C1.705 — IMA-EXEC-20261113-1905Z-01 — TASK-177 — distribución segura de comprobantes de nómina
+- **Continuidad:** C1.704; HEAD inicial bdfc7b670f0bc500388b691fbf8beb09fe4bfb14; rama autorizada NG_beta_0.0.0.1_work; rama base intacta 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Tarea:** TASK-177; generación masiva y distribución segura de comprobantes.
+- **Revisión:** el backend ya disponía de preview/proceso por lotes y estados de entrega; se comprobó identidad HR/Admin, cierre de planilla, expediente/usuario/email únicos, scope por empleado, generación individual _requireClosedForDistribution, correo sin datos salariales ni adjunto, acceso por portal autenticado y estados persistidos. El autoservicio mantiene consulta/descarga histórica.
+- **Correcciones:** se persiste DriveFileId en el registro de distribución cuando la relación BoletaID/PlanillaID/EmpleadoId es única. La interfaz itera los lotes REINTENTABLE hasta agotarlos (o no haya progreso/límite operativo), en vez de detenerse tras el primer lote de diez. La prueba ahora simula una llamada reentrante durante MailApp y confirma que el registro PROCESANDO no se reclama dos veces.
+- **Archivos modificados:** backend/accounting-service/Code.gs; dashboard-recursos-humanos.html; tests/security/accounting-payroll-receipt-distribution.test.js; .github/workflows/department-scope-contract.yml (el workflow ya contenía el contrato; se conservó una sola ejecución); pendientes/Contabilidad/Pendientes.md; beta_test_Parte_0002.txt; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; changueslogs.txt; este checkpoint e índice.
+- **Commits:** implementación 7efeda47e3cb1e273f3aa9d4319f7aef49181e6f; limpieza de paso duplicado del workflow 31cf0d2056f2ee28537377f93f8a5fc1bf3389ec; corrección de expectativa histórica del fixture bb41a11896a4998b2a88570487677a702a17acc4.
+- **CI final:** Department Scope run 43488044739 SUCCESS; contrato accounting-payroll-receipt-distribution.test.js PASS; contratos previos de nómina y sintaxis Apps Script/HR PASS. Identity Mapping 43487819815 SUCCESS; Department Reference Consumers 43487819899 SUCCESS. Node.js 24.22.2.
+- **Incidencias de CI:** runs 43487819897 y 43487891332 fallaron por una expectativa errónea de fixture: getStaffPayrollReceipt devuelve cinco filas históricas dentro del ámbito (incluye un período abierto), no cuatro. Se restauró la expectativa correcta; rerun 43488044739 PASS. Se quitó un paso duplicado del workflow; permanece un único paso del contrato.
+- **CLI local:** NOT RUN; el contenedor no resolvió github.com por DNS. Parseo/sintaxis aislada V8 PASS; Node real ejecutado en GitHub Actions. **Apps Script/Sheets real:** NOT RUN; no hubo despliegue ni datos reales.
+- **Beta:** BETA-FUNC-078 Pendiente beta para probar MailApp/Drive, correos reales de prueba, cuotas, acceso autenticado y recuperación de estado PROCESANDO en entorno desplegado.
+- **Estado:** TASK-177 completada en código y verificaciones CI. Los estados PROCESANDO inciertos se excluyen del reintento automático para evitar duplicar un correo cuya aceptación pudo ocurrir antes de una interrupción; requieren conciliación manual.
+- **Siguiente tarea elegible:** TASK-179 — integrar obligaciones patronales con contabilidad por partida doble.
+===============================================================================

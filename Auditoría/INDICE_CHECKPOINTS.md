@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.704**
-- Última sesión: `IMA-EXEC-20261113-1824Z-01`
+- Último checkpoint: **C1.705**
+- Última sesión: `IMA-EXEC-20261113-1905Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.704: **160183**
+- Caracteres del archivo activo tras C1.705: **163589**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -756,3 +756,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 
 | C1.703 | IMA-EXEC-20261113-1752Z-01 | TASK-174 amortización de préstamos en nómina; Department Scope 43476863084 SUCCESS; BETA-FUNC-076 Pendiente beta | TASK-174 — calculatePayrollPeriod / updatePayrollPeriodStatus / manageEmployeeLoanAdvance | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.703 | sección final | C1.702 | implementación 0ba84da; checkpoint 1ebe3c7 |
 | C1.704 | IMA-EXEC-20261113-1824Z-01 | TASK-175 catálogo dinámico de conceptos; Department Scope 43482214476 SUCCESS; BETA-FUNC-077 Pendiente beta | TASK-175 — catálogo, reglas, asignaciones, cálculo y UI | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.704 | sección final | C1.703 | implementación 5a29010/aca4ba2/11a3ede/bc9e01b/8e6b72b; checkpoint por confirmar |
+
+| C1.705 | IMA-EXEC-20261113-1905Z-01 | TASK-177 distribución segura de comprobantes; Department Scope 43488044739 SUCCESS; BETA-FUNC-078 Pendiente beta | TASK-177 — preview, generación privada, envío, reintento e historial | `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt` — C1.705 | sección final | C1.704 | implementación 7efeda47; workflow 31cf0d2; fixture bb41a11; checkpoint por confirmar |

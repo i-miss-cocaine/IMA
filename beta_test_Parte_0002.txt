@@ -170,3 +170,15 @@
 - **Evidencia requerida:** IDs sintéticos, versiones, snapshots JSON, DetalleConceptosPlanilla, planilla y asiento balanceado, captura de boleta con conceptos visibles y prueba negativa de concepto oculto. Sin PII ni tokens.
 - **Estado:** Pendiente beta; no desplegado en Apps Script/Sheets real.
 ===============================================================================
+
+
+===============================================================================
+## BETA-FUNC-078 — TASK-177 — Distribución segura de comprobantes de nómina
+- **Módulo/Roles:** Contabilidad / Recursos Humanos / Administrador / Empleado.
+- **Objetivo:** validar en despliegue la generación masiva de PDF privados y la distribución individual por correo, sin exposición de datos salariales.
+- **Precondiciones:** entorno beta desplegado; planilla sintética en estado Cerrada; empleados de dos departamentos; cuentas institucionales únicas, correos válidos, inválidos y faltantes; Drive y servicio MailApp disponibles.
+- **Pasos:** (1) previsualizar una planilla cerrada y comprobar totales/incidencias; (2) intentar previsualizar/enviar planilla Calculada y verificar bloqueo; (3) enviar lote y verificar destinatario/boleta individual; (4) inspeccionar asunto/cuerpo para confirmar que no contienen salarios; (5) comprobar que el enlace exige sesión y que cada usuario descarga solo su propia boleta; (6) simular error MailApp y reintentar solo REINTENTABLE; (7) repetir envío y comprobar que ENVIADO no se duplica; (8) probar empleados fuera de ámbito, correo duplicado, cuenta inactiva y expediente ambiguo; (9) interrumpir procesamiento en estado PROCESANDO y verificar conciliación manual sin reenvío automático incierto; (10) comprobar descarga histórica tras cierre y distribución.
+- **Resultado esperado:** planilla cerrada únicamente; cada usuario recibe su acceso autenticado y su propio PDF; ningún salario aparece en el correo; los envíos confirmados no se duplican; errores recuperables quedan reintentables; casos ambiguos/fuera de ámbito se bloquean.
+- **Evidencia requerida:** IDs sintéticos, estados antes/después, conteos, trazas de entrega MailApp, IDs de boletas/Drive y pruebas de autorización. No registrar direcciones completas, salarios, tokens ni PII.
+- **Estado:** Pendiente beta; no desplegado en Apps Script/Sheets real.
+===============================================================================
