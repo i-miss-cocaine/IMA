@@ -33,6 +33,7 @@ on:
       - tests/security/user-service-signature-ownership.test.js
       - tests/security/accounting-departmental-resource-access.test.js
       - tests/security/accounting-purchase-quotation-adjudication.test.js
+      - tests/security/accounting-purchase-asset-capitalization.test.js
       - tests/security/accounting-vacation-medical-leave-ownership.test.js
       - tests/security/accounting-labor-incident-write-ownership.test.js
       - tests/security/accounting-training-enrollment-ownership.test.js
