@@ -37,6 +37,7 @@ on:
       - tests/security/resource-ownership-abac.test.js
       - tests/security/department-reference-policy.test.js
       - tests/security/department-reference-policy-storage.test.js
+      - tests/security/department-reference-grant-admin.test.js
       - .github/workflows/department-scope-contract.yml
 
 permissions:
@@ -88,6 +89,8 @@ jobs:
         run: node tests/security/department-reference-policy.test.js
       - name: Run interdepartmental reference policy storage contract
         run: node tests/security/department-reference-policy-storage.test.js
+      - name: Run interdepartmental reference grant administration contract
+        run: node tests/security/department-reference-grant-admin.test.js
       - name: Syntax-check updated Apps Script services
         run: |
           node --check < backend/user-service/Code.gs
