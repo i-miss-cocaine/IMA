@@ -555,6 +555,15 @@ assert.equal(context.recordStaffCheckIn({sessionToken:"invalid",empleadoId:"U-EM
 assert.equal(context.recordStaffCheckIn({sessionToken:"student",empleadoId:"U-EMP"}).code,"ROLE_NOT_ALLOWED","non-staff roles cannot register attendance");
 assert.equal(context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-B",tipoRegistro:"Entrada"}).code,"RESOURCE_NOT_FOUND","employee cannot register attendance for another user");
 assert.equal(rows.DeduccionesAsistencia.length,attendanceWritesBefore,"denied attendance writes must not mutate storage");
+const lockOriginal=context.LockService,lockState={held:false},lockSheet=ss.getSheetByName("DeduccionesAsistencia"),appendOriginal=lockSheet.appendRow;
+let nestedLockResult=null;
+context.LockService={getScriptLock:()=>({waitLock:()=>{if(lockState.held)throw Error("lock busy");lockState.held=true;},releaseLock:()=>{lockState.held=false;}})};
+lockSheet.appendRow=row=>{nestedLockResult=context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",tipoRegistro:"Entrada"});appendOriginal(row);};
+const concurrencyResult=context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",tipoRegistro:"Salida"});
+assert.equal(concurrencyResult.status,"success","first concurrent mark must commit");
+assert.equal(nestedLockResult.code,"CONCURRENT_UPDATE_RETRY","overlapping attendance write must fail closed while the script lock is held");
+lockSheet.appendRow=appendOriginal;context.LockService=lockOriginal;
+
 const selfEntry=context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",empleadoNombre:"Empleado A",horaEntradaEsperada:"00:01",tipoRegistro:"Entrada"});
 assert.equal(selfEntry.status,"success","employee can register own attendance: "+JSON.stringify(selfEntry));
 assert.equal(rows.DeduccionesAsistencia[rows.DeduccionesAsistencia.length-1][2],"U-EMP","attendance owner must be derived from signed identity");
@@ -575,14 +584,6 @@ const invalidType=context.recordStaffCheckIn({sessionToken:"employee",empleadoId
 assert.equal(invalidType.code,"INVALID_ATTENDANCE_TYPE","unsupported attendance mutations must be rejected");
 const noScope={sessionToken:"staffA",empleadoId:"U-B"};
 assert.equal(context.recordStaffCheckIn(noScope).code,"RESOURCE_NOT_FOUND","department manager cannot write to another department");
-const lockOriginal=context.LockService,lockState={held:false},lockSheet=ss.getSheetByName("DeduccionesAsistencia"),appendOriginal=lockSheet.appendRow;
-let nestedLockResult=null;
-context.LockService={getScriptLock:()=>({waitLock:()=>{if(lockState.held)throw Error("lock busy");lockState.held=true;},releaseLock:()=>{lockState.held=false;}})};
-lockSheet.appendRow=row=>{nestedLockResult=context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",tipoRegistro:"Entrada"});appendOriginal(row);};
-const concurrencyResult=context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",tipoRegistro:"Entrada"});
-assert.equal(concurrencyResult.status,"success");
-assert.equal(nestedLockResult.code,"CONCURRENT_UPDATE_RETRY","a concurrent/reentrant write must fail safely while the script lock is held");
-lockSheet.appendRow=appendOriginal;context.LockService=lockOriginal;
 assert.ok(extractFunction(accounting,"recordStaffCheckIn").includes("assertResourceOwnershipForScope_"));
 assert.ok(extractFunction(accounting,"recordStaffCheckIn").includes("getVerifiedAccountingIdentity_"));
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"recordStaffCheckIn"'));
