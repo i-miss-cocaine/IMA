@@ -193,9 +193,19 @@ function payload(value) { return { userId: "U1", role: "Coordinador", value: val
   assert.equal(h.state.sheets.ConfiguracionInstitucional, undefined, "lock timeout must not create the sheet");
 }
 {
+  const h = makeRuntime([HEADERS, row("I1", "UNKNOWN_LEGACY_VALUE")]);
+  const result = h.runtime.setEndpoint(payload(READ_ONLY));
+  assert.equal(result.status, "success", "authorized institution administrator can repair invalid config");
+  assert.equal(h.runtime.getPolicy("I1").value, READ_ONLY);
+}
+{
+  assert.ok(source.includes('case "getDepartmentReferencePolicy": result = getDepartmentReferencePolicy(payload); break;'));
+  assert.ok(source.includes('case "setDepartmentReferencePolicy": result = setDepartmentReferencePolicy(payload); break;'));
+}
+{
   const h = makeRuntime();
   const result = h.runtime.setEndpoint(payload(STRICT));
   assert.equal(result.status, "success");
   assert.equal(h.runtime.getPolicy("I1").value, STRICT);
 }
-process.stdout.write("Department reference policy storage contract: 18 scenarios PASS.\n");
+process.stdout.write("Department reference policy storage contract: 20 scenarios PASS.\\n");
