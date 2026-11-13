@@ -53,6 +53,11 @@ const tooMany=ctx.registerAssetsFromPurchaseReceipt({recepcionId:"REC-1",numeroF
 assert.equal(tooMany.status,"error");assert.match(tooMany.code,/QUANTITY_EXCEEDED/);
 const noInvoice=ctx.registerAssetsFromPurchaseReceipt({recepcionId:"REC-1",numeroFactura:"INV-NO",activos:[{itemId:"IT-1",codigoPatrimonial:"PAT-004",numeroSerie:"SN-004",categoriaPatrimonial:"Equipo",marca:"Marca",modelo:"Modelo",ubicacionActual:"Bodega"}]});
 assert.equal(noInvoice.status,"error");assert.match(noInvoice.code,/INVOICE_NOT_LINKED/);
+const beforeLock=rows.ActivosPatrimoniales.length;lockBusy=true;
+const lockResult=ctx.registerAssetsFromPurchaseReceipt({recepcionId:"REC-1",numeroFactura:"INV-001",activos:[{itemId:"IT-1",codigoPatrimonial:"PAT-LOCK",numeroSerie:"SN-LOCK",categoriaPatrimonial:"Equipo",marca:"Marca",modelo:"Modelo",ubicacionActual:"Bodega"}]});
+lockBusy=false;assert.equal(lockResult.code,"CONCURRENT_UPDATE_RETRY");assert.equal(rows.ActivosPatrimoniales.length,beforeLock);
+const duplicateCode=ctx.registerAssetsFromPurchaseReceipt({recepcionId:"REC-1",numeroFactura:"INV-001",activos:[{itemId:"IT-1",codigoPatrimonial:"PAT-002",numeroSerie:"SN-UNIQUE",categoriaPatrimonial:"Equipo",marca:"Marca",modelo:"Modelo",ubicacionActual:"Bodega"}]});
+assert.equal(duplicateCode.status,"error");assert.match(duplicateCode.code,/ALREADY_EXISTS/);
 const beforeRollback=rows.ActivosPatrimoniales.length;ctx.failAssignmentWrite=true;
 const rollback=ctx.registerAssetsFromPurchaseReceipt({recepcionId:"REC-1",numeroFactura:"INV-001",activos:[{itemId:"IT-1",codigoPatrimonial:"PAT-005",numeroSerie:"SN-005",categoriaPatrimonial:"Equipo",marca:"Marca",modelo:"Modelo",ubicacionActual:"Bodega",custodioUserId:"U-3"}]});
 ctx.failAssignmentWrite=false;assert.equal(rollback.status,"error");assert.equal(rows.ActivosPatrimoniales.length,beforeRollback);
@@ -67,7 +72,7 @@ const damagedSheet={getSheetByName:name=>damagedRows[name]?{getDataRange:()=>({g
 const damagedCtx={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>damagedSheet},purchaseQuotationAccess_:ctx.purchaseQuotationAccess_,purchaseQuotationJsonArray_:ctx.purchaseQuotationJsonArray_,purchaseQuotationItemKey_:ctx.purchaseQuotationItemKey_,normalizePurchaseAwardRole_:ctx.normalizePurchaseAwardRole_,normalizePurchaseAssetClassification_:ctx.normalizePurchaseAssetClassification_};
 vm.createContext(damagedCtx);["purchaseAssetReceiptContext_","getPurchaseReceiptAssetCandidates"].forEach(name=>vm.runInContext(extract(source,name),damagedCtx));
 assert.equal(damagedCtx.getPurchaseReceiptAssetCandidates({recepcionId:"REC-1"}).candidatos.length,0);
-assert.ok(source.includes("clasificacionInventario:a.clasificacionInventario"));
+assert.ok(source.includes("clasificacionInventario:a.clasificacionInventario"));assert.ok(source.includes("clasificacionInventario: normalizePurchaseAssetClassification_(item)"));
 assert.ok(source.includes("item.itemId || item.ItemId"));
 assert.ok(client.includes("registerAssetsFromPurchaseReceipt")&&client.includes("submitNewPurchaseRequest"));
 console.log("TASK-182 purchase-to-fixed-assets contract PASS: classification propagation, receipt eligibility, invoice linkage, per-unit serial/code uniqueness, idempotent retries, quantity bounds, custody history, rollback, read-only empty inventory and client flow.");

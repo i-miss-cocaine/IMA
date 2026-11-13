@@ -8076,7 +8076,7 @@ function registerAssetsFromPurchaseReceipt(payload) {
       const ns=serial.toUpperCase(),nc=code.toUpperCase();
       if(serialSeen.has(ns)||codeSeen.has(nc))throw new Error("PURCHASE_ASSET_DUPLICATE_IN_REQUEST");
       serialSeen.add(ns);codeSeen.add(nc);
-      const duplicate=existingRows.find(row=>String(row[serialIndex]||"").trim().toUpperCase()===ns||String(row[codeIndex]||"").trim().toUpperCase()===nc);
+      const duplicate=existingRows.find(row=>String(row[serialIndex]||"").trim().toUpperCase()===ns||(!String(row[serialIndex]||"").trim()&&String(row[4]||"").trim().toUpperCase()===ns)||String(row[codeIndex]||"").trim().toUpperCase()===nc);
       if(duplicate){
         const sameSource=String(duplicate[receiptIndex]||"").trim()===receiptId&&String(duplicate[itemIndex]||"").trim()===itemId;
         if(sameSource&&String(duplicate[serialIndex]||"").trim().toUpperCase()===ns&&String(duplicate[codeIndex]||"").trim().toUpperCase()===nc)return;
@@ -8086,7 +8086,7 @@ function registerAssetsFromPurchaseReceipt(payload) {
       pending.push({itemId,code,serial,category,brand,model,location,custodian:String(input.custodioUserId||"").trim(),name:String(input.nombre||candidate.descripcion).trim(),candidate});
     });
     Object.keys(newCounts).forEach(itemId=>{const candidate=context.candidates.find(x=>x.itemId===itemId);if(newCounts[itemId]>candidate.unidadesDisponibles)throw new Error("PURCHASE_ASSET_QUANTITY_EXCEEDED:"+itemId);});
-    if(!pending.length)return {status:"success",recepcionId,activos:[],idempotente:true,message:"Los activos de esta solicitud ya estaban registrados."};
+    if(!pending.length)return {status:"success",recepcionId:receiptId,activos:[],idempotente:true,message:"Los activos de esta solicitud ya estaban registrados."};
     const now=new Date(),rowsToAppend=pending.map(item=>{
       const assetId="ACT-CMP-"+Utilities.getUuid(),estado=item.custodian?"assigned":"available",observations="Alta desde recepción "+receiptId+" / orden "+context.orderId;
       return {assetId,custodian:item.custodian,row:[assetId,item.code,item.name,item.category,item.model,item.location,item.custodian,estado,observations,context.supplierId,context.orderId,receiptId,invoice.numeroFactura,invoice.obligacionId,context.receipt[2]||now,item.candidate.costoUnitarioAdquisicion,item.serial,item.brand,item.model,item.itemId,"ActivoFijo"]};
@@ -8097,7 +8097,7 @@ function registerAssetsFromPurchaseReceipt(payload) {
     assetStart=assetSheet.getLastRow()+1;rowsToAppend.forEach(item=>assetSheet.appendRow(item.row));
     const assigned=rowsToAppend.filter(item=>item.custodian);
     if(assigned.length){assignmentStart=assignmentSheet.getLastRow()+1;assigned.forEach(item=>assignmentSheet.appendRow(["ASG-"+Utilities.getUuid(),item.assetId,item.custodian,now,"","Asignación inicial pendiente de acta","Custodia inicial desde recepción de compra "+receiptId]));}
-    return {status:"success",recepcionId,ordenCompraId:context.orderId,numeroFactura:invoice.numeroFactura,activos:rowsToAppend.map(item=>({activoId:item.assetId,codigoPatrimonial:item.row[1],numeroSerie:item.row[16]})),message:rowsToAppend.length+" activo(s) patrimonial(es) registrado(s) desde la recepción."};
+    return {status:"success",recepcionId:receiptId,ordenCompraId:context.orderId,numeroFactura:invoice.numeroFactura,activos:rowsToAppend.map(item=>({activoId:item.assetId,codigoPatrimonial:item.row[1],numeroSerie:item.row[16]})),message:rowsToAppend.length+" activo(s) patrimonial(es) registrado(s) desde la recepción."};
   }catch(error){
     if(assignmentStart&&assignmentSheet)try{const last=assignmentSheet.getLastRow();if(last>=assignmentStart)assignmentSheet.getRange(assignmentStart,1,last-assignmentStart+1,7).clearContent();}catch(_){}
     if(assetStart&&assetSheet)try{const last=assetSheet.getLastRow();if(last>=assetStart)assetSheet.getRange(assetStart,1,last-assetStart+1,21).clearContent();}catch(_){}
@@ -11951,7 +11951,7 @@ function manageAssetItem(payload) {
   let existingIndex=-1;
   if(p.activoId){const matches=data.map((row,index)=>({row,index})).filter(x=>x.index>0&&String(x.row[0]||"").trim()===String(p.activoId).trim());if(matches.length!==1)throw new Error(matches.length?"ASSET_ID_AMBIGUOUS":"ASSET_NOT_FOUND");existingIndex=matches[0].index;}
   const serialIndex=ASSET_BASE_HEADERS_.length+ASSET_ACQUISITION_HEADERS_.indexOf("NumeroSerie");
-  if(serial&&data.slice(1).some((row,index)=>index+1!==existingIndex&&String(row[serialIndex]||"").trim().toUpperCase()===serial.toUpperCase()))throw new Error("ASSET_SERIAL_ALREADY_EXISTS");
+  if(serial&&data.slice(1).some((row,index)=>index+1!==existingIndex&&(String(row[serialIndex]||"").trim().toUpperCase()===serial.toUpperCase()||(!String(row[serialIndex]||"").trim()&&String(row[4]||"").trim().toUpperCase()===serial.toUpperCase()))))throw new Error("ASSET_SERIAL_ALREADY_EXISTS");
   if(data.slice(1).some((row,index)=>index+1!==existingIndex&&String(row[1]||"").trim().toUpperCase()===code.toUpperCase()))throw new Error("ASSET_CODE_ALREADY_EXISTS");
   const assetId=existingIndex>0?String(data[existingIndex][0]):"ACT-"+Utilities.getUuid(),row=existingIndex>0?data[existingIndex].slice(0,21):new Array(21).fill("");
   row[0]=assetId;row[1]=code;row[2]=String(p.nombre).trim();row[3]=p.categoria||"Equipo Computacional";row[4]=p.serieModel||p.modelo||"N/A";row[5]=p.ubicacionActual||"";row[6]=p.custodioUserId||"";row[7]=p.estado||(p.custodioUserId?"assigned":"available");row[8]=p.observaciones||"";
