@@ -4652,7 +4652,7 @@ function getPayrollConceptEngine_(ss) {
     conceptoId:String(r[0]||"").trim(),codigo:String(r[1]||"").trim().toUpperCase(),nombre:String(r[2]||"").trim(),descripcion:String(r[3]||""),categoria:String(r[4]||"").toUpperCase(),naturaleza:String(r[5]||"").toUpperCase(),tipoCalculo:String(r[6]||"").toUpperCase(),valor:Number(r[7]||0),baseCalculo:String(r[8]||"").trim().toUpperCase(),formula:String(r[9]||"").trim(),frecuencia:String(r[10]||"MENSUAL").toUpperCase(),vigenciaInicio:r[11],vigenciaFin:r[12],tratamientoISR:String(r[13]||"EXENTO").toUpperCase(),tratamientoIHSS:String(r[14]||"NO_COTIZABLE").toUpperCase(),cuentaContable:String(r[15]||"").trim(),visibleBoleta:r[16]===true||String(r[16]).toUpperCase()==="TRUE",prioridad:Number(r[17]||0),estado:String(r[18]||""),recurrente:r[19]===true||String(r[19]).toUpperCase()==="TRUE",version:String(r[20]||"1")
   }));
   const byCode=Object.create(null);
-  active.forEach(c=>{if(!/^[A-Z][A-Z0-9_]{1,39}$/.test(c.codigo)||byCode[c.codigo])throw new Error("PAYROLL_CONCEPT_CODE_DUPLICATE_OR_INVALID");if(!payrollConceptPhase_(c.categoria)||!["DEBE","HABER"].includes(c.naturaleza)||!["FIJO","PORCENTAJE","PROPORCIONAL","FORMULA"].includes(c.tipoCalculo)||!Number.isFinite(c.valor)||c.valor<0||!c.cuentaContable)throw new Error("PAYROLL_CONCEPT_CONFIGURATION_INVALID:"+c.codigo);const expectedNature=payrollConceptPhase_(c.categoria)===2?"HABER":"DEBE";if(c.naturaleza!==expectedNature)throw new Error("PAYROLL_CONCEPT_NATURE_MISMATCH:"+c.codigo);if(!["GRAVADO","EXENTO"].includes(c.tratamientoISR)||!["COTIZABLE","NO_COTIZABLE"].includes(c.tratamientoIHSS))throw new Error("PAYROLL_CONCEPT_TAX_TREATMENT_INVALID:"+c.codigo);byCode[c.codigo]=c;});
+  active.forEach(c=>{if(!/^[A-Z][A-Z0-9_]{1,39}$/.test(c.codigo)||byCode[c.codigo])throw new Error("PAYROLL_CONCEPT_CODE_DUPLICATE_OR_INVALID");if(!payrollConceptPhase_(c.categoria)||!["DEBE","HABER"].includes(c.naturaleza)||!["FIJO","PORCENTAJE","PROPORCIONAL","FORMULA"].includes(c.tipoCalculo)||!Number.isFinite(c.valor)||c.valor<0||!c.cuentaContable)throw new Error("PAYROLL_CONCEPT_CONFIGURATION_INVALID:"+c.codigo);const expectedNature=payrollConceptPhase_(c.categoria)===1?"DEBE":"HABER";if(c.naturaleza!==expectedNature)throw new Error("PAYROLL_CONCEPT_NATURE_MISMATCH:"+c.codigo);if(!["GRAVADO","EXENTO"].includes(c.tratamientoISR)||!["COTIZABLE","NO_COTIZABLE"].includes(c.tratamientoIHSS))throw new Error("PAYROLL_CONCEPT_TAX_TREATMENT_INVALID:"+c.codigo);byCode[c.codigo]=c;});
   const reserved=["BASE","SALARIO_BASE","DEVENGADO","HORAS_EXTRAS","BASE_COTIZABLE","BASE_ISR","DIAS_TRABAJADOS","DIAS_PERIODO","IHSS","RAP","ISR","SALARIO_NETO"];
   active.forEach(c=>{
     const refs=tokenizePayrollFormula_(c.formula).filter(t=>/^[A-Za-z_][A-Za-z0-9_]*$/.test(t)&&!reserved.includes(t));
@@ -4727,7 +4727,7 @@ function savePayrollConcept(payload) {
   const value=Number(p.valor),priority=Number(p.prioridad||0),frequency=String(p.frecuencia||"MENSUAL").toUpperCase(),isr=String(p.tratamientoISR||"EXENTO").toUpperCase(),ihss=String(p.tratamientoIHSS||"NO_COTIZABLE").toUpperCase(),status=String(p.estado||"ACTIVO").toUpperCase();
   const bases=["SALARIO_BASE","DEVENGADO","HORAS_EXTRAS","BASE_COTIZABLE","BASE_ISR","DIAS_TRABAJADOS","DIAS_PERIODO","IHSS","RAP","ISR","SALARIO_NETO"];
   if(!/^[A-Z][A-Z0-9_]{1,39}$/.test(code)||!name||!payrollConceptCategories_().includes(category)||!["DEBE","HABER"].includes(nature)||!["FIJO","PORCENTAJE","PROPORCIONAL","FORMULA"].includes(type)||!Number.isFinite(value)||value<0||!["MENSUAL","POR_PERIODO","UNICA","QUINCENAL","SEMANAL"].includes(frequency)||!["GRAVADO","EXENTO"].includes(isr)||!["COTIZABLE","NO_COTIZABLE"].includes(ihss)||!account||!Number.isInteger(priority)||priority<0||priority>9999||!["ACTIVO","INACTIVO"].includes(status)||(!bases.includes(base)&&!/^CONCEPTO:[A-Z][A-Z0-9_]{1,39}$/.test(base)))return {status:"error",code:"PAYROLL_CONCEPT_INVALID",message:"Revise código, nombre, categoría, naturaleza, cálculo, frecuencia, tratamientos, base y cuenta contable."};
-  if(nature!==(payrollConceptPhase_(category)===2?"HABER":"DEBE"))return {status:"error",code:"PAYROLL_CONCEPT_NATURE_MISMATCH",message:"La naturaleza contable no corresponde a la categoría del concepto."};
+  if(nature!==(payrollConceptPhase_(category)===1?"DEBE":"HABER"))return {status:"error",code:"PAYROLL_CONCEPT_NATURE_MISMATCH",message:"La naturaleza contable no corresponde a la categoría del concepto."};
   if(type==="FORMULA"){try{const vars={BASE:1,SALARIO_BASE:1,DEVENGADO:1,HORAS_EXTRAS:1,BASE_COTIZABLE:1,BASE_ISR:1,DIAS_TRABAJADOS:1,DIAS_PERIODO:1,IHSS:1,RAP:1,ISR:1,SALARIO_NETO:1};tokenizePayrollFormula_(formula).filter(t=>/^[A-Za-z_][A-Za-z0-9_]*$/.test(t)).forEach(t=>{vars[t]=1;});evaluatePayrollFormula_(formula,vars);}catch(e){return {status:"error",code:"PAYROLL_FORMULA_INVALID",message:"La fórmula no es válida o contiene operaciones no permitidas."};}}
   const start=p.vigenciaInicio?new Date(p.vigenciaInicio):null,end=p.vigenciaFin?new Date(p.vigenciaFin):null;
   if(start&&isNaN(start.getTime())||end&&isNaN(end.getTime())||start&&end&&start>end)return {status:"error",code:"PAYROLL_CONCEPT_VALIDITY_INVALID",message:"El rango de vigencia no es válido."};
@@ -5332,7 +5332,7 @@ function updatePayrollPeriodStatus(payload) {
   const totalPasivoPatronal = totalPatronal;
   const fixedGross = Math.max(0,Math.round((totalBruto-conceptSummary.incomeTotal)*100)/100);
   const fixedDeductions = Math.max(0,Math.round((totalDeducciones-conceptSummary.deductionTotal)*100)/100);
-  const fixedEmployer = Math.max(0,Math.round((totalPatronal-conceptSummary.employerTotal)*100)/100);
+  const fixedEmployerLiability = Math.max(0,Math.round((totalPatronal-conceptSummary.employerTotal)*100)/100);
 
   // Generar asiento contable automático por partida doble equilibrada al APROBAR o CERRAR la planilla [TASK-009]
   let asientoRes = null;
@@ -5345,9 +5345,9 @@ function updatePayrollPeriodStatus(payload) {
         creadoPor: authRole || "RecursosHumanos",
         lineas: [
           { cuenta: "5101", nombre: "Gasto de Salarios y Planilla", debe: fixedGross, haber: 0 },
-          { cuenta: "5102", nombre: "Gasto de Aportaciones Patronales (IHSS/RAP/INFOP)", debe: fixedEmployer, haber: 0 },
+          { cuenta: "5102", nombre: "Gasto de Aportaciones Patronales (IHSS/RAP/INFOP)", debe: totalGastoPatronal, haber: 0 },
           { cuenta: "2101", nombre: "Retenciones y Deducciones de Empleados por Pagar", debe: 0, haber: fixedDeductions },
-          { cuenta: "2102", nombre: "Obligaciones Patronales por Pagar (IHSS/RAP/INFOP)", debe: 0, haber: fixedEmployer },
+          { cuenta: "2102", nombre: "Obligaciones Patronales por Pagar (IHSS/RAP/INFOP)", debe: 0, haber: fixedEmployerLiability },
           { cuenta: "1101", nombre: "Bancos / Sueldos Netos por Pagar", debe: 0, haber: totalSalarioNeto }
         ].concat(conceptSummary.journalLines)
       });
