@@ -3538,3 +3538,7 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se detectó que el árbol del checkpoint C1.709 no había heredado el código y workflow de la implementación por haberse creado desde un árbol anterior. Se reconstruyó la implementación sobre el HEAD real y se verificaron blobs, workflow, auditoría y prueba.
 - Department Scope 43504666992, Identity Mapping 43504667021 y Department Reference Consumers 43504666993 SUCCESS (Node 24.22.2); contrato F18-Task01 y sintaxis PASS.
 - HEAD final 498a1c197d92466cd7c02331de786d89ac902e7c; rama base sin modificaciones.
+
+[2026-11-13 20:49 UTC] C1.711 — F18-Task01 — compatibilidad itemId
+- Se alinea recordPurchaseReceipt con el esquema de las órdenes de compra generadas por adjudicación: itemId/ItemId aceptado en orden, recepción e historial; movimiento de inventario usa código normalizado.
+- Contrato F18-Task01 y syntax-check PASS; Department Scope 43505043553 SUCCESS (Node.js 24.22.2). CLI local y Apps Script/Sheets real NOT RUN.

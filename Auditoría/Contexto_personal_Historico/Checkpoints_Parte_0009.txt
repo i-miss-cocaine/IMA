@@ -1,0 +1,17 @@
+# Checkpoints — Parte 0009
+
+Continuación del historial activo desde C1.710. Los registros anteriores permanecen íntegros en Checkpoints_Parte_0008.txt.
+
+===============================================================================
+### C1.711 — IMA-EXEC-20261113-2049Z-01 — F18-Task01 — compatibilidad itemId
+- **Continuidad:** C1.710; HEAD inicial 043843bd758249893ceda089cde9b337d83ae6ce; HEAD final de código 798a23a26df3310e669c5646ce7641af8e50f59d; rama NG_beta_0.0.0.1_work.
+- **Hallazgo:** las órdenes generadas por la adjudicación TASK-181 conservan el identificador de partida como itemId; la recepción solo reconocía codigoItem/codigo/id. Las recepciones históricas podían presentar la misma forma.
+- **Corrección:** recordPurchaseReceipt reconoce itemId/ItemId en partidas de orden, detalle de recepción e historial; normaliza el identificador a codigoItem al registrar el movimiento de inventario.
+- **Prueba:** tests/security/accounting-purchase-receipt-partial.test.js verifica partida nueva itemId, recepción histórica itemId y movimiento Kardex normalizado.
+- **CI:** Department Scope 43505043553 SUCCESS (Node.js 24.22.2), incluyendo el contrato F18-Task01 y sintaxis; Identity Mapping 43504993543 SUCCESS; Department Reference Consumers 43504994056 SUCCESS para el commit anterior 239da6a. El commit final 798a23a tiene Department Scope SUCCESS.
+- **Archivos de código/prueba:** backend/accounting-service/Code.gs; tests/security/accounting-purchase-receipt-partial.test.js.
+- **Commits:** 239da6a217a684390ddf373c272b6e9a8328a4b5; 798a23a26df3310e669c5646ce7641af8e50f59d.
+- **CLI local:** NOT RUN. **Apps Script/Sheets real:** NOT RUN.
+- **Estado:** F18-Task01 validada en código y CI; BETA-FUNC-082 pendiente.
+- **Siguiente tarea:** TASK-182 — integración de recepción con activos fijos.
+===============================================================================
