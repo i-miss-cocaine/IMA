@@ -503,3 +503,11 @@
 - **Estado:** incremento publicado; **En ejecución** hasta ejecutar y observar el contrato Node/CI. TASK-153 global sigue En ejecución.
 - **Siguiente acción:** verificar la ejecución del contrato; corregir fallos si los hay y continuar con otro consumidor read-only solo después de la aprobación local.
 ===============================================================================
+
+
+### Actualización de evidencia — 2026-11-13 12:30 UTC
+- **HEAD actual de rama:** c04813a74d7a5435692542cf3ca671c834ece10b. Los cambios de verificación permanecen exclusivamente en NG_beta_0.0.0.1_work; la rama base no recibió cambios.
+- **Corrección de pruebas:** se revisó el caso de consulta con solo solicitudId. Como no existen filas de documentos asociadas a esa solicitud en el fixture, el comportamiento correcto del código es respuesta vacía sin invocar USER; se conservó esa expectativa. Commit de ajuste y restauración: aecf33ac6778c3da58c0efcf790bebe222b804e2 y c04813a74d7a5435692542cf3ca671c834ece10b.
+- **CI:** el commit 2d25eef0087b49f3ad9c86dd459c26ffb9e05988 publicó el estado `ima/department-scope-contract = failure`. No se dispone del detalle de jobs/logs mediante las acciones de GitHub accesibles en esta sesión; el wrapper de consulta de workflow runs disponible solo devuelve ejecuciones asociadas a pull requests. Para el HEAD más reciente c04813a74d7a5435692542cf3ca671c834ece10b, no se observan todavía estados asociados. No se atribuye el fallo a una prueba concreta ni se declara PASS.
+- **Node/CLI local:** NOT RUN. Se intentó clonar la rama para ejecutar el contrato localmente, pero el entorno no pudo resolver github.com (DNS); no se obtuvo checkout. Esto no equivale a un fallo de la prueba ni a un PASS. La ejecución local pertinente sigue pendiente y, conforme a NDASC 1.4, T153-S05 no puede cerrarse hasta ejecutar las verificaciones locales disponibles y corregir cualquier FAIL.
+- **Estado actualizado:** implementación publicada; aprobación local pendiente; BETA-FUNC-063 sigue Pendiente beta. No se inicia otro consumidor mientras el contrato local de este cambio siga sin evidencia PASS.
