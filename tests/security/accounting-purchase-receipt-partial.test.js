@@ -18,10 +18,10 @@ assert.throws(()=>ctx.recordPurchaseReceipt({ordenCompraId:"PO-3",detalleRecibid
 assert.equal(inventoryMoves.length,movesBefore);assert.equal(rows.RecepcionesCompra.length,receiptsBefore);
 const damaged=ctx.recordPurchaseReceipt({ordenCompraId:"PO-3",detalleRecibido:[{codigoItem:"IT-A",cantidad:2}],estadoConformidad:"Danado",registrarEnInventario:true});
 assert.equal(damaged.estadoOrden,"EnDisputa");assert.equal(damaged.resumenPartidas[0].recibidaConforme,0);assert.equal(damaged.resumenPartidas[0].danadaRechazada,2);assert.equal(inventoryMoves.length,movesBefore);
-rows.OrdenesCompra.push(["PO-4","","","SUP-1","","Aprobada",JSON.stringify([{codigo:"IT-C",cantidad:2}]),100,"CC-1","Aprobada"]);
-const aliasReceipt=ctx.recordPurchaseReceipt({ordenCompraId:"PO-4",detalleRecibido:[{codigo:"IT-C",nombreItem:"Item C",cantidad:1}],estadoConformidad:"Conforme",registrarEnInventario:true});
+rows.OrdenesCompra.push(["PO-4","","","SUP-1","","Aprobada",JSON.stringify([{itemId:"IT-C",cantidad:2}]),100,"CC-1","Aprobada"]);
+const aliasReceipt=ctx.recordPurchaseReceipt({ordenCompraId:"PO-4",detalleRecibido:[{itemId:"IT-C",nombreItem:"Item C",cantidad:1}],estadoConformidad:"Conforme",registrarEnInventario:true});
 assert.equal(aliasReceipt.estadoOrden,"RecibidaParcial");assert.equal(inventoryMoves.at(-1).itemCodigo,"IT-C");
 const receiptsBeforeLock=rows.RecepcionesCompra.length,movesBeforeLock=inventoryMoves.length;lockBusy=true;
-assert.throws(()=>ctx.recordPurchaseReceipt({ordenCompraId:"PO-4",detalleRecibido:[{codigo:"IT-C",cantidad:1}],estadoConformidad:"Conforme",registrarEnInventario:true}),/LOCK_BUSY/);
+assert.throws(()=>ctx.recordPurchaseReceipt({ordenCompraId:"PO-4",detalleRecibido:[{itemId:"IT-C",cantidad:1}],estadoConformidad:"Conforme",registrarEnInventario:true}),/LOCK_BUSY/);
 lockBusy=false;assert.equal(rows.RecepcionesCompra.length,receiptsBeforeLock);assert.equal(inventoryMoves.length,movesBeforeLock);assert.equal(rows.OrdenesCompra[4][9],"RecibidaParcial");
 console.log("F18-Task01 partial purchase receipt contract PASS: partial/total status, over-receipt, unknown items, damaged-unit exclusion, code normalization and lock contention.");

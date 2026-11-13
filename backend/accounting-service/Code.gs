@@ -8683,7 +8683,7 @@ function recordPurchaseReceipt(payload) {
     }
     const cumulativeReceived = {};
     authorizedItems.forEach(item => {
-      const code = String(item.codigoItem || item.codigo || item.id || "").trim();
+      const code = String(item.codigoItem || item.codigo || item.id || item.itemId || item.ItemId || "").trim();
       const requested = Number(item.cantidad || item.quantity || item.cantidadSolicitada);
       if (!code || Object.prototype.hasOwnProperty.call(cumulativeReceived, code) || !Number.isFinite(requested) || requested <= 0) {
         throw new Error("PURCHASE_ORDER_ITEMS_INVALID");
@@ -8720,7 +8720,7 @@ function recordPurchaseReceipt(payload) {
     const currentConformingByCode = {};
 
     currentDetail.forEach(item => {
-      const code = String(item.codigoItem || item.codigo || item.id || "").trim();
+      const code = String(item.codigoItem || item.codigo || item.id || item.itemId || item.ItemId || "").trim();
       const qty = Number(item.cantidad);
       if (!code || !Object.prototype.hasOwnProperty.call(cumulativeReceived, code)) throw new Error("PURCHASE_RECEIPT_ITEM_NOT_AUTHORIZED");
       if (!Number.isFinite(qty) || qty <= 0) throw new Error("PURCHASE_RECEIPT_QUANTITY_INVALID");
@@ -8735,7 +8735,7 @@ function recordPurchaseReceipt(payload) {
     });
 
     currentDetail.forEach(item => {
-      const code = String(item.codigoItem || item.codigo || item.id || "").trim();
+      const code = String(item.codigoItem || item.codigo || item.id || item.itemId || item.ItemId || "").trim();
       const qty = Number(item.cantidad);
       const isDamaged = Boolean(item.danado || item.rechazado || item.estado === "Danado" || item.estado === "Rechazado" || item.conforme === false) ||
         estadoConformidad === "EnDisputa" || estadoConformidad === "Danado" || estadoConformidad === "Rechazado";
