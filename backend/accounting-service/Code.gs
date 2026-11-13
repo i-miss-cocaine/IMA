@@ -576,7 +576,7 @@ function validateRolePermission(action, payload) {
   if (!ctxCheck.authorized) {
     return { authorized: false, role: userRole + " (" + ctxCheck.reason + ")" };
   }
-  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "getLoanAmortizationSchedule", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher", "recordStaffCheckIn", "recordStaffAttendance", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitLeaveVacationRequest", "submitVacationRequest", "getLeaveVacationRequests", "getVacationRequests", "reviewLeaveVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "manageWorkShiftAndSubstitution"];
+  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "getLoanAmortizationSchedule", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher", "recordStaffCheckIn", "recordStaffAttendance", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitLeaveVacationRequest", "submitVacationRequest", "getLeaveVacationRequests", "getVacationRequests", "reviewLeaveVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "manageStaffingNeeds", "getStaffingNeedsPlanning", "manageWorkShiftAndSubstitution"];
   if (resourceScopeActions.indexOf(action) !== -1) {
     const roleKey = String(userRole || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
     const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1 &&
@@ -13260,230 +13260,157 @@ function getWorkShiftsAndSubstitutionsHistory(payload) {
   return {status:"success",data:{turnos,sustituciones,horasExtras,totalTurnos:turnos.length,totalSustituciones:sustituciones.length,totalHorasExtras:horasExtras.length}};
 }
 
+function resolveStaffingDepartmentReference_(ss,departmentValue) {
+  const value=String(departmentValue||"").trim();
+  if(!value)return {resolved:false,code:"DEPARTMENT_REFERENCE_REQUIRED"};
+  const sheet=ss&&ss.getSheetByName("DepartamentosAcademicos");
+  if(!sheet)return {resolved:false,code:"DEPARTMENT_REFERENCE_UNAVAILABLE"};
+  const data=sheet.getDataRange().getValues();
+  if(!data||data.length<2)return {resolved:false,code:"DEPARTMENT_REFERENCE_UNAVAILABLE"};
+  const matches=data.slice(1).filter(function(row){return String(row[0]||"").trim()===value||String(row[1]||"").trim().toLowerCase()===value.toLowerCase();});
+  if(matches.length!==1)return {resolved:false,code:matches.length?"DEPARTMENT_REFERENCE_AMBIGUOUS":"DEPARTMENT_REFERENCE_NOT_FOUND"};
+  const id=String(matches[0][0]||"").trim(),name=String(matches[0][1]||"").trim();
+  return id?{resolved:true,departmentId:id,departmentName:name||id}:{resolved:false,code:"DEPARTMENT_REFERENCE_INVALID"};
+}
+function resolveStaffingNeedsAccess_(payload,ss,departmentValue) {
+  const actor=getVerifiedAccountingIdentity_(payload);
+  if(!actor.authorized)return actor;
+  if(["RECURSOSHUMANOS","ADMINISTRADOR"].indexOf(normalizeVacationRole_(actor.role))===-1)return {authorized:false,code:"ROLE_NOT_ALLOWED"};
+  const scope=getVerifiedAccountingDepartmentScope_(payload,ss,actor);
+  if(!scope.authorized||(!scope.institutionWide&&!(scope.departmentIds||[]).length))return {authorized:false,code:scope.code||"DEPARTMENT_SCOPE_REQUIRED"};
+  if(departmentValue!==undefined&&departmentValue!==null&&String(departmentValue).trim()!==""){
+    const department=resolveStaffingDepartmentReference_(ss,departmentValue);
+    if(!department.resolved)return {authorized:false,code:department.code};
+    if(scope.institutionWide!==true&&(scope.departmentIds||[]).indexOf(department.departmentId)===-1)return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+    return {authorized:true,actor:actor,scope:scope,department:department};
+  }
+  return {authorized:true,actor:actor,scope:scope,department:null};
+}
+function ensureStaffingNeedsWriteSheet_(ss) {
+  const headers=["PlanificacionID","PeriodoAcademico","DepartamentoArea","PuestoOFamilia","CantidadRequerida","EscenarioMatricula","MetricaBaseCalculo","ObservacionesJustificacion","VacanteRelacionadaID","CreadoPor","FechaCreacion","UltimaModificacion"];
+  let sheet=ss.getSheetByName("PlanificacionNecesidadesPersonal");
+  if(!sheet)sheet=getOrCreateSheet(ss,"PlanificacionNecesidadesPersonal");
+  if(sheet.getLastRow()===0)sheet.appendRow(headers);
+  const snapshot=getVacationSheetSnapshot_(ss,"PlanificacionNecesidadesPersonal",headers);
+  if(snapshot.missing||snapshot.error||snapshot.rows.some(function(row){return row.length!==headers.length;}))return {error:true,sheet:sheet,rows:[],headers:headers};
+  return {error:false,sheet:snapshot.sheet||sheet,rows:snapshot.rows,headers:headers};
+}
 function manageStaffingNeeds(payload) {
-  const {
-    planificacionId,
-    periodoAcademico,
-    departamentoArea,
-    puestoOFamilia,
-    cantidadRequerida,
-    escenarioMatricula,
-    metricaBaseCalculo,
-    observacionesJustificacion,
-    vacanteRelacionadaId,
-    creadoPor
-  } = payload || {};
-
-  if (!periodoAcademico || !departamentoArea || !puestoOFamilia) {
-    throw new Error("periodoAcademico, departamentoArea y puestoOFamilia son campos obligatorios.");
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "PlanificacionNecesidadesPersonal");
-
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow([
-      "PlanificacionID",
-      "PeriodoAcademico",
-      "DepartamentoArea",
-      "PuestoOFamilia",
-      "CantidadRequerida",
-      "EscenarioMatricula",
-      "MetricaBaseCalculo",
-      "ObservacionesJustificacion",
-      "VacanteRelacionadaID",
-      "CreadoPor",
-      "FechaCreacion",
-      "UltimaModificacion"
-    ]);
-  }
-
-  const data = sheet.getDataRange().getValues();
-  const planId = planificacionId || ("PLAN-NEC-" + Date.now());
-  const nowStr = new Date().toISOString();
-  let foundIndex = -1;
-
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim() === String(planId).trim()) {
-      foundIndex = i + 1;
-      break;
+  const p=payload||{},period=String(p.periodoAcademico||"").trim(),position=String(p.puestoOFamilia||"").trim();
+  if(!period||!position||!p.departamentoArea)return {status:"error",code:"STAFFING_FIELDS_REQUIRED",message:"Periodo, departamento y puesto/familia son obligatorios."};
+  const qty=p.cantidadRequerida===undefined?1:Number(p.cantidadRequerida);
+  if(!Number.isInteger(qty)||qty<1)return {status:"error",code:"STAFFING_QUANTITY_INVALID",message:"La cantidad requerida debe ser un entero mayor que cero."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),preflight=resolveStaffingNeedsAccess_(p,ss,p.departamentoArea);
+  if(!preflight.authorized)return {status:"error",code:preflight.code||"RESOURCE_SCOPE_DENIED",message:"No existe autorización para planificar necesidades en ese departamento."};
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La operación está siendo procesada. Intente nuevamente."};
+  try{
+    const access=resolveStaffingNeedsAccess_(p,ss,p.departamentoArea);
+    if(!access.authorized)return {status:"error",code:access.code==="ROLE_NOT_ALLOWED"?"ROLE_NOT_ALLOWED":"RESOURCE_SCOPE_DENIED",message:"No existe autorización para planificar necesidades en ese departamento."};
+    const snapshot=ensureStaffingNeedsWriteSheet_(ss);
+    if(snapshot.error)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de planificación de personal no es válida."};
+    const suppliedId=String(p.planificacionId||"").trim(),id=suppliedId||("PLAN-NEC-"+Utilities.getUuid());
+    const matches=snapshot.rows.map(function(row,index){return {row:row,index:index};}).filter(function(item){return String(item.row[0]||"").trim()===id;});
+    if(matches.length>1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe una planificación disponible."};
+    if(!suppliedId&&matches.length)return {status:"error",code:"STAFFING_PLAN_ID_COLLISION",message:"No fue posible registrar la planificación."};
+    const existing=matches.length===1?matches[0]:null,current=existing?existing.row.slice():null;
+    if(existing){
+      const owner=resolveStaffingDepartmentReference_(ss,current[2]);
+      if(!owner.resolved||owner.departmentId!==access.department.departmentId)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe una planificación disponible."};
     }
-  }
-
-  const qtyReq = parseInt(cantidadRequerida || 1, 10);
-
-  if (foundIndex > 0) {
-    sheet.getRange(foundIndex, 2).setValue(periodoAcademico);
-    sheet.getRange(foundIndex, 3).setValue(departamentoArea);
-    sheet.getRange(foundIndex, 4).setValue(puestoOFamilia);
-    sheet.getRange(foundIndex, 5).setValue(qtyReq);
-    sheet.getRange(foundIndex, 6).setValue(escenarioMatricula || "BaseMatriculaReal");
-    sheet.getRange(foundIndex, 7).setValue(metricaBaseCalculo || "Manual");
-    sheet.getRange(foundIndex, 8).setValue(observacionesJustificacion || "");
-    sheet.getRange(foundIndex, 9).setValue(vacanteRelacionadaId || "");
-    sheet.getRange(foundIndex, 12).setValue(nowStr);
-  } else {
-    sheet.appendRow([
-      planId,
-      periodoAcademico,
-      departamentoArea,
-      puestoOFamilia,
-      qtyReq,
-      escenarioMatricula || "BaseMatriculaReal",
-      metricaBaseCalculo || "Manual",
-      observacionesJustificacion || "",
-      vacanteRelacionadaId || "",
-      creadoPor || "RecursosHumanos",
-      nowStr,
-      nowStr
-    ]);
-  }
-
-  return {
-    status: "success",
-    message: "Planificación de necesidad de personal registrada correctamente.",
-    data: { planificacionId: planId, periodoAcademico, departamentoArea, puestoOFamilia, cantidadRequerida: qtyReq }
-  };
+    const effectiveVacancyId=p.vacanteRelacionadaId!==undefined?p.vacanteRelacionadaId:(current?current[8]:"");
+    if(effectiveVacancyId){
+      const vacancies=getVacationSheetSnapshot_(ss,"VacantesLaborales",["VacanteID","Puesto","Departamento","Requisitos","CantidadPlazas","FechaPublicacion","FechaLimite","Estado","Observaciones","PublicadoPor","FechaRegistro"]);
+      if(vacancies.missing||vacancies.error||vacancies.rows.some(function(row){return row.length!==11;}))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de vacantes laborales no es válida."};
+      const related=vacancies.rows.filter(function(row){return String(row[0]||"").trim()===String(effectiveVacancyId).trim();});
+      if(related.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe una vacante relacionada disponible."};
+      const relatedDepartment=resolveStaffingDepartmentReference_(ss,related[0][2]);
+      if(!relatedDepartment.resolved||relatedDepartment.departmentId!==access.department.departmentId)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe una vacante relacionada disponible."};
+    }
+    const now=new Date().toISOString();
+    const row=[id,period,access.department.departmentId,position,qty,
+      String(p.escenarioMatricula!==undefined&&p.escenarioMatricula!==""?p.escenarioMatricula:(current?current[5]:"BaseMatriculaReal")),
+      String(p.metricaBaseCalculo!==undefined&&p.metricaBaseCalculo!==""?p.metricaBaseCalculo:(current?current[6]:"Manual")),
+      p.observacionesJustificacion!==undefined?p.observacionesJustificacion:(current?current[7]:""),
+      effectiveVacancyId||"",current?current[9]:access.actor.userId,current?current[10]:now,now];
+    if(existing){
+      try{snapshot.sheet.getRange(existing.index+2,1,1,snapshot.headers.length).setValues([row]);}
+      catch(writeError){
+        try{snapshot.sheet.getRange(existing.index+2,1,1,snapshot.headers.length).setValues([current]);}
+        catch(rollbackError){return {status:"error",code:"STAFFING_PLAN_COMPENSATION_REQUIRED",message:"No fue posible completar ni revertir la planificación."};}
+        return {status:"error",code:"STAFFING_PLAN_WRITE_FAILED",message:"No fue posible actualizar la planificación."};
+      }
+    }else{
+      try{snapshot.sheet.appendRow(row);}
+      catch(writeError){return {status:"error",code:"STAFFING_PLAN_WRITE_FAILED",message:"No fue posible registrar la planificación."};}
+    }
+    return {status:"success",message:"Planificación de necesidad de personal registrada correctamente.",data:{planificacionId:id,periodoAcademico:period,departamentoArea:access.department.departmentId,puestoOFamilia:position,cantidadRequerida:qty}};
+  }finally{lock.releaseLock();}
 }
-
 function getStaffingNeedsPlanning(payload) {
-  const { periodoAcademico, departamentoArea, escenarioMatricula } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-
-  // 1. Proyecciones registradas
-  const planSheet = getOrCreateSheet(ss, "PlanificacionNecesidadesPersonal");
-  const planRows = planSheet.getDataRange().getValues();
-  let proyecciones = [];
-
-  if (planRows.length > 1) {
-    proyecciones = planRows.slice(1).filter(r => {
-      if (periodoAcademico && String(r[1]).trim() !== String(periodoAcademico).trim()) return false;
-      if (departamentoArea && String(r[2]).toLowerCase() !== String(departamentoArea).toLowerCase()) return false;
-      if (escenarioMatricula && String(r[5]).toLowerCase() !== String(escenarioMatricula).toLowerCase()) return false;
-      return true;
-    }).map(r => ({
-      planificacionId: r[0],
-      periodoAcademico: r[1],
-      departamentoArea: r[2],
-      puestoOFamilia: r[3],
-      cantidadRequerida: parseInt(r[4] || 0, 10),
-      escenarioMatricula: r[5],
-      metricaBaseCalculo: r[6],
-      observacionesJustificacion: r[7],
-      vacanteRelacionadaId: r[8],
-      creadoPor: r[9],
-      fechaCreacion: r[10]
-    }));
-  }
-
-  // 2. Personal Activo
-  const empSheet = getOrCreateSheet(ss, "ExpedientesLaborales");
-  const empRows = empSheet.getDataRange().getValues();
-  let personalActivo = [];
-
-  if (empRows.length > 1) {
-    personalActivo = empRows.slice(1).filter(r => {
-      const st = String(r[7] || "").toLowerCase();
-      return st === "active" || st === "activo";
-    }).map(r => ({
-      expedienteId: r[0],
-      puesto: r[2],
-      departamento: r[3],
-      jornada: r[6]
-    }));
-  }
-
-  // 3. Vacantes Publicadas
-  const vacSheet = getOrCreateSheet(ss, "VacantesLaborales");
-  const vacRows = vacSheet.getDataRange().getValues();
-  let vacantesActivas = [];
-
-  if (vacRows.length > 1) {
-    vacantesActivas = vacRows.slice(1).filter(r => {
-      const st = String(r[5] || "").toLowerCase();
-      return st === "abierta" || st === "publicada" || st === "en_proceso";
-    }).map(r => ({
-      vacanteId: r[0],
-      tituloPuesto: r[1],
-      departamento: r[2],
-      plazasDisponibles: parseInt(r[4] || 1, 10)
-    }));
-  }
-
-  // 4. Comparativa Disponibilidad vs Demanda
-  const comparativaMap = {};
-
-  proyecciones.forEach(p => {
-    const key = (p.departamentoArea + "___" + p.puestoOFamilia).toLowerCase();
-    if (!comparativaMap[key]) {
-      comparativaMap[key] = {
-        departamentoArea: p.departamentoArea,
-        puestoOFamilia: p.puestoOFamilia,
-        cantidadRequerida: 0,
-        activosDisponibles: 0,
-        vacantesAbiertas: 0,
-        deficitExcedente: 0,
-        coberturaPorcentaje: 0
-      };
-    }
-    comparativaMap[key].cantidadRequerida += p.cantidadRequerida;
-  });
-
-  personalActivo.forEach(emp => {
-    const dept = emp.departamento || "General";
-    const puesto = emp.puesto || "General";
-    const key = (dept + "___" + puesto).toLowerCase();
-
-    if (!comparativaMap[key]) {
-      comparativaMap[key] = {
-        departamentoArea: dept,
-        puestoOFamilia: puesto,
-        cantidadRequerida: 0,
-        activosDisponibles: 0,
-        vacantesAbiertas: 0,
-        deficitExcedente: 0,
-        coberturaPorcentaje: 0
-      };
-    }
-    comparativaMap[key].activosDisponibles += 1;
-  });
-
-  vacantesActivas.forEach(v => {
-    const dept = v.departamento || "General";
-    const puesto = v.tituloPuesto || "General";
-    const key = (dept + "___" + puesto).toLowerCase();
-
-    if (comparativaMap[key]) {
-      comparativaMap[key].vacantesAbiertas += v.plazasDisponibles;
-    }
-  });
-
-  const comparativa = Object.values(comparativaMap).map(c => {
-    const coberturaActual = c.activosDisponibles + c.vacantesAbiertas;
-    const diff = coberturaActual - c.cantidadRequerida;
-    const porcentaje = c.cantidadRequerida > 0 ? Math.round((c.activosDisponibles / c.cantidadRequerida) * 100) : 100;
-    return {
-      ...c,
-      deficitExcedente: diff,
-      coberturaPorcentaje: Math.min(porcentaje, 100),
-      estadoCobertura: diff < 0 ? "Déficit Cobertura" : (diff === 0 ? "Cobertura Exacta" : "Superávit")
-    };
-  });
-
-  return {
-    status: "success",
-    data: {
-      proyecciones,
-      totalProyecciones: proyecciones.length,
-      personalActivoCount: personalActivo.length,
-      vacantesActivasCount: vacantesActivas.length,
-      comparativa,
-      metricasCompletas: true,
-      notaTrazabilidad: "Planificación basada en datos reales de empleados activos y vacantes abiertas. No modifica horarios ni crea contratos automáticamente."
-    }
+  const p=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),access=resolveStaffingNeedsAccess_(p,ss);
+  if(!access.authorized)return {status:"error",code:access.code||"RESOURCE_SCOPE_DENIED",message:"No existe un ámbito autorizado para consultar la planificación."};
+  const planHeaders=["PlanificacionID","PeriodoAcademico","DepartamentoArea","PuestoOFamilia","CantidadRequerida","EscenarioMatricula","MetricaBaseCalculo","ObservacionesJustificacion","VacanteRelacionadaID","CreadoPor","FechaCreacion","UltimaModificacion"];
+  const employeeHeaders=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
+  const vacancyHeaders=["VacanteID","Puesto","Departamento","Requisitos","CantidadPlazas","FechaPublicacion","FechaLimite","Estado","Observaciones","PublicadoPor","FechaRegistro"];
+  const planSnap=getVacationSheetSnapshot_(ss,"PlanificacionNecesidadesPersonal",planHeaders),employeeSnap=getVacationSheetSnapshot_(ss,"ExpedientesLaborales",employeeHeaders),vacancySnap=getVacationSheetSnapshot_(ss,"VacantesLaborales",vacancyHeaders);
+  if([planSnap,employeeSnap,vacancySnap].some(function(x){return x.error||x.rows.some(function(r){return r.length!==(x===planSnap?12:(x===employeeSnap?10:11));});}))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de planificación de personal no es válida."};
+  const departmentNameById={},departmentSheet=ss.getSheetByName("DepartamentosAcademicos");
+  if(departmentSheet)departmentSheet.getDataRange().getValues().slice(1).forEach(function(r){const id=String(r[0]||"").trim();if(id)departmentNameById[id]=String(r[1]||id).trim()||id;});
+  const isVisibleDepartment=function(value){
+    const dep=resolveStaffingDepartmentReference_(ss,value);
+    return dep.resolved&&(access.scope.institutionWide===true||(access.scope.departmentIds||[]).indexOf(dep.departmentId)!==-1);
   };
+  const selectedDepartment=p.departamentoArea?resolveStaffingDepartmentReference_(ss,p.departamentoArea):null;
+  const visiblePlanRows=(planSnap.rows||[]).filter(function(r){
+    if(!isVisibleDepartment(r[2]))return false;
+    if(p.periodoAcademico&&String(r[1]||"").trim()!==String(p.periodoAcademico).trim())return false;
+    if(selectedDepartment&&(!selectedDepartment.resolved||String(r[2]||"").trim()!==selectedDepartment.departmentId))return false;
+    if(p.escenarioMatricula&&String(r[5]||"").toLowerCase()!==String(p.escenarioMatricula).toLowerCase())return false;
+    return true;
+  }).map(function(r){return {planificacionId:r[0],periodoAcademico:r[1],departamentoArea:r[2],puestoOFamilia:r[3],cantidadRequerida:Number(r[4]||0),escenarioMatricula:r[5],metricaBaseCalculo:r[6],observacionesJustificacion:r[7],vacanteRelacionadaId:r[8],creadoPor:r[9],fechaCreacion:r[10]};});
+  const ownershipHeaders=["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"],ownershipSnap=getVacationSheetSnapshot_(ss,"ResourceOwnership",ownershipHeaders);
+  if(ownershipSnap.error)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de propiedad de recursos no es válida."};
+  const ownershipByResource={};
+  (ownershipSnap.rows||[]).forEach(function(r){
+    if(String(r[1]||"").trim()!==String(access.scope.institutionId||"").trim()||String(r[2]||"").trim().toUpperCase()!=="EXPEDIENTE_LABORAL"||String(r[5]||"").trim().toUpperCase()!=="ACTIVE")return;
+    const id=String(r[3]||"").trim();if(!id)return;
+    if(!ownershipByResource[id])ownershipByResource[id]=[];ownershipByResource[id].push(String(r[4]||"").trim());
+  });
+  const personalActivo=[];
+  (employeeSnap.rows||[]).forEach(function(r){
+    if(["ACTIVE","ACTIVO"].indexOf(String(r[8]||"").trim().toUpperCase())===-1)return;
+    const id=String(r[0]||"").trim(),owners=ownershipByResource[id]||[];
+    if(!id||owners.length!==1||!owners[0])return;
+    const depId=owners[0];
+    if(access.scope.institutionWide!==true&&(access.scope.departmentIds||[]).indexOf(depId)===-1)return;
+    if(selectedDepartment&&(!selectedDepartment.resolved||selectedDepartment.departmentId!==depId))return;
+    personalActivo.push({expedienteId:id,puesto:r[3],departamento:departmentNameById[depId]||depId,jornada:r[6]});
+  });
+  const vacantesActivas=[];
+  (vacancySnap.rows||[]).forEach(function(r){
+    const status=String(r[7]||"").trim().toLowerCase();
+    if(["abierta","publicada","en_proceso"].indexOf(status)===-1||!isVisibleDepartment(r[2]))return;
+    const dep=resolveStaffingDepartmentReference_(ss,r[2]);
+    if(!dep.resolved)return;
+    if(selectedDepartment&&(!selectedDepartment.resolved||selectedDepartment.departmentId!==dep.departmentId))return;
+    vacantesActivas.push({vacanteId:r[0],tituloPuesto:r[1],departamento:departmentNameById[dep.departmentId]||dep.departmentName,plazasDisponibles:Number(r[4]||1)});
+  });
+  const comparativaMap={};
+  const ensureComparison=function(departmentId,departmentName,position){
+    const key=(departmentId+"___"+String(position||"General")).toLowerCase();
+    if(!comparativaMap[key])comparativaMap[key]={departamentoArea:departmentName,puestoOFamilia:position||"General",cantidadRequerida:0,activosDisponibles:0,vacantesAbiertas:0,deficitExcedente:0,coberturaPorcentaje:0};
+    return comparativaMap[key];
+  };
+  visiblePlanRows.forEach(function(x){const dep=resolveStaffingDepartmentReference_(ss,x.departamentoArea);if(dep.resolved)ensureComparison(dep.departmentId,dep.departmentName,x.puestoOFamilia).cantidadRequerida+=x.cantidadRequerida;});
+  personalActivo.forEach(function(emp){const owners=ownershipByResource[emp.expedienteId]||[];ensureComparison(owners[0],emp.departamento,emp.puesto).activosDisponibles+=1;});
+  vacantesActivas.forEach(function(v){const dep=resolveStaffingDepartmentReference_(ss,v.departamento);if(dep.resolved)ensureComparison(dep.departmentId,v.departamento,v.tituloPuesto).vacantesAbiertas+=v.plazasDisponibles;});
+  const comparativa=Object.keys(comparativaMap).map(function(key){
+    const item=comparativaMap[key],coverage=item.activosDisponibles+item.vacantesAbiertas,diff=coverage-item.cantidadRequerida;
+    return {departamentoArea:item.departamentoArea,puestoOFamilia:item.puestoOFamilia,cantidadRequerida:item.cantidadRequerida,activosDisponibles:item.activosDisponibles,vacantesAbiertas:item.vacantesAbiertas,deficitExcedente:diff,coberturaPorcentaje:item.cantidadRequerida>0?Math.min(Math.round(item.activosDisponibles/item.cantidadRequerida*100),100):100,estadoCobertura:diff<0?"Déficit Cobertura":(diff===0?"Cobertura Exacta":"Superávit")};
+  });
+  return {status:"success",data:{proyecciones:visiblePlanRows,totalProyecciones:visiblePlanRows.length,personalActivoCount:personalActivo.length,vacantesActivasCount:vacantesActivas.length,comparativa:comparativa,metricasCompletas:true,notaTrazabilidad:"Planificación basada en empleados activos y vacantes abiertas con propiedad departamental verificada. No modifica horarios ni crea contratos automáticamente."}};
 }
-
 // ---------------------------------------------------------------------------
 // MÓDULO DE ALMUERZOS Y HORAS EXTRAS DE PERSONAL
 // ---------------------------------------------------------------------------
