@@ -21,5 +21,13 @@ assert.equal(ctx.recordPayrollJournalAdjustment({...adjustment,lineas:[{cuenta:"
 const adj=ctx.recordPayrollJournalAdjustment(adjustment);assert.equal(adj.status,"success");assert.equal(adj.asientoOriginalId,first.asientoContable.asientoId);
 const adjAgain=ctx.recordPayrollJournalAdjustment(adjustment);assert.equal(adjAgain.status,"success");assert.equal(adjAgain.idempotent,true);assert.equal(rows.AsientosContables.length,3);assert.equal(rows.PlanillasNomenclatura[1][20],first.asientoContable.asientoId);
 assert.equal(ctx.recordPayrollJournalAdjustment({...adjustment,referenciaAjuste:"AJUSTE-2026-02",sessionToken:"outside"}).code,"RESOURCE_NOT_FOUND");
+const changedReference=ctx.recordPayrollJournalAdjustment({...adjustment,motivo:"Otra corrección documentada y diferente"});assert.equal(changedReference.code,"PAYROLL_ADJUSTMENT_REFERENCE_CONFLICT");
+locked=true;assert.equal(ctx.recordPayrollJournalAdjustment({...adjustment,referenciaAjuste:"AJUSTE-2026-03"}).code,"CONCURRENT_UPDATE_RETRY");locked=false;
+const badRow=planRow.slice();badRow[0]="P-002";badRow[14]=1001;badRow[15]="Calculada";rows.PlanillasNomenclatura.push(badRow);
+rows.AmortizacionPrestamosNomina.push(["PLM-2","ADV-2","P-002","2026-10","U-001",25,100,75,1,"CALCULADO",new Date(),"HR","",""]);
+const appliedBefore=rows.AmortizacionPrestamosNomina.filter(r=>String(r[2]||"")==="P-002"&&String(r[9]||"")==="APLICADO").length;
+assert.throws(()=>ctx.updatePayrollPeriodStatus({sessionToken:"hr",planillaId:"P-002",nuevoEstado:"APROBADA"}),/PAYROLL_JOURNAL_NET_RECONCILIATION_REQUIRED/);
+assert.equal(rows.PlanillasNomenclatura[2][15],"Calculada");
+assert.equal(rows.AmortizacionPrestamosNomina.filter(r=>String(r[2]||"")==="P-002"&&String(r[9]||"")==="APLICADO").length,appliedBefore);
 const originalAccount=rows.PlanCuentas[1][2];rows.PlanCuentas[1][2]="Cuentas por Pagar Proveedores";assert.throws(()=>ctx.validatePayrollJournalAccountMap_(ss),/PAYROLL_ACCOUNT_CODE_CONFLICT:2101/);rows.PlanCuentas[1][2]=originalAccount;
 console.log("TASK-179 payroll journal contract PASS: accounts, balance, AST link, retry idempotency, adjustment, RBAC and ownership");
