@@ -693,17 +693,18 @@ async function verifyAttendanceClientRendering(){
  context.fetchApi=async(service,action,payload)=>{
   assert.equal(service,"ACCOUNTING");
   if(action==="getEmployeeSelfServicePortal"){
-   assert.deepEqual(payload,{});
+   assert.equal(JSON.stringify(payload),"{}","self-service identity lookup must not accept client-supplied identity");
    return {status:"success",data:{effectiveUserId:"U-SELF"}};
   }
   assert.equal(action,"getStaffAttendanceLogs");
-  assert.deepEqual(payload,{empleadoId:"U-SELF"},"attendance queries must be scoped to the user resolved by the verified self-service endpoint");
+  assert.equal(JSON.stringify(payload),JSON.stringify({empleadoId:"U-SELF"}),"attendance queries must be scoped to the user resolved by the verified self-service endpoint");
   return context.attendanceResponse;
  };
- context.console={error(){}};
+ let clientError=null;
+  context.console={error(_message,error){clientError=error||new Error(String(_message));}};
  const attendanceLoader=vm.runInNewContext("(async "+attendanceClientFunction+")",context);
  await attendanceLoader();
- assert.equal(nodes["self-attendance-status"].textContent,"1 registro(s) de asistencia disponible(s).");
+ assert.equal(nodes["self-attendance-status"].textContent,"1 registro(s) de asistencia disponible(s).",clientError?String(clientError.stack||clientError):"attendance client should complete successfully");
  assert.equal(nodes["list-self-attendance"].children.length,1);
  const card=nodes["list-self-attendance"].children[0];
  assert.equal(card.children[0].textContent,"Fecha: 2026-11-12");
