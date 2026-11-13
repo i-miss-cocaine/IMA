@@ -576,11 +576,11 @@ function validateRolePermission(action, payload) {
   if (!ctxCheck.authorized) {
     return { authorized: false, role: userRole + " (" + ctxCheck.reason + ")" };
   }
-  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher"];
+  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "getStaffPayrollReceipt", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher"];
   if (resourceScopeActions.indexOf(action) !== -1) {
     const roleKey = String(userRole || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
     const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1 &&
-      ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "uploadEmployeeDocument", "getEmployeeSelfServicePortal"].indexOf(action) !== -1;
+      ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getStaffPayrollReceipt"].indexOf(action) !== -1 && (["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1 || (roleKey === "PROFESOR" && action === "getStaffPayrollReceipt"));
     const paymentSelfServiceRole = ["ESTUDIANTE", "ALUMNO", "TUTOR", "PADRE", "MADRE", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(roleKey) !== -1 &&
       ["getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher"].indexOf(action) !== -1;
     if (!employeeSelfRole && !paymentSelfServiceRole) {
@@ -6214,7 +6214,7 @@ function assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId) {
   const owner = resolveEmployeeDepartmentId_(ss, expedienteId);
   if (!owner.resolved) return { authorized: false, code: owner.code || "RESOURCE_OWNER_UNRESOLVED" };
   const role = String(actor.role || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
-  if (["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(role) !== -1 && String(owner.employee[2] || "").trim() === actor.userId) {
+  if (["EMPLEADO", "TRABAJADOR", "PERSONAL", "PROFESOR"].indexOf(role) !== -1 && String(owner.employee[2] || "").trim() === actor.userId) {
     return { authorized: true, accessType: "SELF", userId: actor.userId };
   }
   const scope = getVerifiedAccountingDepartmentScope_(payload, ss, actor);
@@ -6334,43 +6334,31 @@ function getEmployeeDocuments(payload) {
 }
 
 function getStaffPayrollReceipt(payload) {
-  const { empleadoId, periodoMes, boletaId } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const bolRows = getOrCreateSheet(ss, "BoletasPago").getDataRange().getValues().slice(1);
-  const planRows = getOrCreateSheet(ss, "PlanillasNomenclatura").getDataRange().getValues().slice(1);
-
-  let targetPlan = planRows;
-  if (boletaId) {
-    const bol = bolRows.find(r => String(r[0]).trim() === String(boletaId).trim());
-    if (bol) targetPlan = targetPlan.filter(r => String(r[0]).trim() === String(bol[1]).trim() && String(r[3]).trim() === String(bol[3]).trim());
-  } else if (empleadoId) {
-    targetPlan = targetPlan.filter(r => String(r[3]).trim() === String(empleadoId).trim());
-    if (periodoMes) targetPlan = targetPlan.filter(r => String(r[2]).trim() === String(periodoMes).trim());
-  }
-
-  const mappedReceipts = targetPlan.map(r => ({
-    planillaId: r[0],
-    fechaGeneracion: r[1],
-    periodoMes: r[2],
-    empleadoId: r[3],
-    empleadoNombre: r[4],
-    puesto: r[5],
-    salarioBase: parseFloat(r[6] || 0),
-    horasExtras: parseFloat(r[7] || 0),
-    montoHorasExtras: parseFloat(r[8] || 0),
-    bonificaciones: parseFloat(r[9] || 0),
-    deduccionIHSS: parseFloat(r[10] || 0),
-    deduccionRAP: parseFloat(r[11] || 0),
-    deduccionISR: parseFloat(r[12] || 0),
-    otrasDeducciones: parseFloat(r[13] || 0),
-    salarioNeto: parseFloat(r[14] || 0),
-    estado: r[15]
-  }));
-
-  return {
-    status: "success",
-    boletas: mappedReceipts
-  };
+ const p=payload||{},actor=getVerifiedAccountingIdentity_(p);
+ if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+ const role=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
+ const self=["EMPLEADO","TRABAJADOR","PERSONAL","PROFESOR"].includes(role);
+ if(!self&&!["RECURSOSHUMANOS","DIRECTOR","ADMINISTRADOR","SUBDIRECTOR","CONTADOR"].includes(role))return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID),empty=()=>({status:"success",boletas:[]});
+ const read=(n,h,opt)=>{const sh=ss.getSheetByName(n);if(!sh)return opt?{rows:[]}:null;const v=sh.getDataRange().getValues();if(!v.length)return {rows:[]};if(v[0].length!==h.length||h.some((x,i)=>String(v[0][i]||"").trim().toUpperCase()!==x.toUpperCase()))return {error:true,rows:[]};return {rows:v.slice(1).filter(r=>Array.isArray(r)&&r.length>=h.length)};};
+ const eh=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
+ const ph=["PlanillaID","FechaGeneracion","PeriodoMes","EmpleadoId","EmpleadoNombre","CargoPuesto","SalarioBase","HorasExtras","MontoHorasExtras","Bonificaciones","DeduccionIHSS","DeduccionRAP","DeduccionISR","OtrasDeducciones","SalarioNeto","Estado","PatronalIHSS","PatronalRAP","PatronalINFOP","CostoLaboralTotal"];
+ const bh=["BoletaID","PlanillaID","FechaEmision","EmpleadoId","EmpleadoNombre","PeriodoMes","TotalDevengado","TotalDeducciones","NetoAPagar","EstadoBoleta"];
+ const em=read("ExpedientesLaborales",eh,false),pl=read("PlanillasNomenclatura",ph,true),bo=read("BoletasPago",bh,true);
+ if(!em||em.error||pl.error||bo.error)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de las boletas de pago no es válida."};
+ const expCounts=Object.create(null),userCounts=Object.create(null);
+ em.rows.forEach(r=>{const e=String(r[0]||"").trim(),u=String(r[2]||"").trim();if(e)expCounts[e]=(expCounts[e]||0)+1;if(u)userCounts[u]=(userCounts[u]||0)+1;});
+ const userExp=Object.create(null);em.rows.forEach(r=>{const e=String(r[0]||"").trim(),u=String(r[2]||"").trim();if(e&&u&&expCounts[e]===1&&userCounts[u]===1)userExp[u]=e;});
+ const requested=String(p.empleadoId||"").trim(),period=String(p.periodoMes||"").trim(),bid=String(p.boletaId||"").trim(),own=self?userExp[actor.userId]||"": "";
+ if(self&&(!own||(requested&&requested!==own)))return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
+ const target=self?own:requested;
+ if(target&&expCounts[target]!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
+ const cache=Object.create(null),allowed=id=>{id=String(id||"").trim();if(!id||expCounts[id]!==1)return false;if(!Object.prototype.hasOwnProperty.call(cache,id))cache[id]=assertEmployeeExpedienteScopeAccess_(p,ss,id);return !!cache[id].authorized;};
+ if(target&&!allowed(target))return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
+ const ids=Object.create(null);pl.rows.forEach(r=>{const id=String(r[0]||"").trim();if(id)ids[id]=(ids[id]||0)+1;});
+ let selected=pl.rows.filter(r=>{const id=String(r[0]||"").trim(),e=String(r[3]||"").trim();return !!id&&ids[id]===1&&!!e&&(!target||e===target)&&(!period||String(r[2]||"").trim()===period)&&allowed(e);});
+ if(bid){const found=bo.rows.filter(r=>String(r[0]||"").trim()===bid);if(found.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};const b=found[0];selected=selected.filter(r=>String(r[0]||"").trim()===String(b[1]||"").trim()&&String(r[3]||"").trim()===String(b[3]||"").trim()&&String(r[2]||"").trim()===String(b[5]||"").trim());}
+ return {status:"success",boletas:selected.map(r=>({planillaId:r[0],fechaGeneracion:r[1],periodoMes:r[2],empleadoId:r[3],empleadoNombre:r[4],puesto:r[5],salarioBase:parseFloat(r[6]||0),horasExtras:parseFloat(r[7]||0),montoHorasExtras:parseFloat(r[8]||0),bonificaciones:parseFloat(r[9]||0),deduccionIHSS:parseFloat(r[10]||0),deduccionRAP:parseFloat(r[11]||0),deduccionISR:parseFloat(r[12]||0),otrasDeducciones:parseFloat(r[13]||0),salarioNeto:parseFloat(r[14]||0),estado:r[15]}))};
 }
 
 // [REQ-EXP-015] [Requerimientos de Expansión y Desarrollo] - Control de inventarios Kardex, activo fijo, custodia, mantenimientos y proveedores.
