@@ -8040,7 +8040,8 @@ function purchaseAssetReceiptContext_(payload,ss) {
   });
   const candidates=Object.keys(receivedByItem).map(key=>{
     const orderItem=orderByKey[key],requestItem=requestByKey[key]||{};
-    const classification=normalizePurchaseAssetClassification_({clasificacionInventario:orderItem.clasificacionInventario||requestItem.clasificacionInventario,tipoBien:orderItem.tipoBien||requestItem.tipoBien,capitalizable:orderItem.capitalizable===true||requestItem.capitalizable===true});
+    const requestClassification=normalizePurchaseAssetClassification_(requestItem),orderClassification=normalizePurchaseAssetClassification_(orderItem);
+    const classification=orderItem.clasificacionInventario&&orderClassification===requestClassification?requestClassification:"MaterialInventariable";
     const orderedQty=Number(orderItem.cantidad||0),lineTotal=Number(orderItem.total),unitPrice=Number(orderItem.precioUnitario||0);
     const unitCost=Number.isFinite(lineTotal)&&lineTotal>=0&&orderedQty>0?lineTotal/orderedQty:unitPrice,already=registeredByItem[key]||0;
     return {itemId:key,descripcion:String(orderItem.descripcion||orderItem.nombreItem||requestItem.descripcion||requestItem.nombreItem||"Bien adquirido"),unidad:String(orderItem.unidad||requestItem.unidad||""),clasificacionInventario:classification,cantidadRecibidaConforme:receivedByItem[key],cantidadRegistrada:already,unidadesDisponibles:Math.max(0,receivedByItem[key]-already),costoUnitarioAdquisicion:Math.round(unitCost*100)/100};
@@ -8382,8 +8383,8 @@ function createPurchaseOrder(payload) {
   sourceItems.forEach((item,index)=>{sourceByKey[purchaseQuotationItemKey_(item,index)]=item;});
   const orderDetails = (Array.isArray(detalleItems) ? detalleItems : sourceItems).map((item,index)=>{
     const key=purchaseQuotationItemKey_(item,index),source=sourceByKey[key]||{};
-    const merged={...source,...item,clasificacionInventario:item.clasificacionInventario||source.clasificacionInventario};
-    const classification=normalizePurchaseAssetClassification_(merged);
+    const merged={...source,...item};
+    const classification=normalizePurchaseAssetClassification_(source);
     return {...merged,clasificacionInventario:classification,capitalizable:classification==="ActivoFijo"};
   });
   const sheet = getOrCreateSheet(ss, "OrdenesCompra");
