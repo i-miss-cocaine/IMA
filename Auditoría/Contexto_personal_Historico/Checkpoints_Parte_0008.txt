@@ -220,3 +220,5 @@
 - **Verificación preliminar:** contrato Node.js 24 aislado ampliado; checkout local NOT RUN por DNS github.com; CI pendiente tras commit; Apps Script/Drive real NOT RUN.
 - **Estado:** implementación pendiente de CI. BETA-FUNC-049 Pendiente beta. TASK-153/AUD-NG-140 siguen abiertos.
 ===============================================================================
+
+- **C1.671-R1 — ajuste del contrato:** CI run 43356975075 aprobó Department Scope, Internal Responsibility RBAC, ACCOUNTING import y USER migrated ownership; el contrato ACCOUNTING falló antes de los nuevos escenarios PDF por una expectativa estática antigua que no incluía los dos endpoints añadidos. Se corrigió la expectativa; ejecutar de nuevo. No atribuir el fallo a la lógica de generación/descarga.

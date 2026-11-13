@@ -3191,3 +3191,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - `generatePayrollReceiptPDF` exige sesión firmada y propiedad/ámbito; genera PDF real y lo guarda privado. `getPayrollReceiptPDFFile` vuelve a autorizar cada recuperación y devuelve Base64 sin URL pública.
 - Se amplía el contrato aislado ACCOUNTING con autoservicio, HR departamental, administrador, IDOR, sesión/rol inválidos, privacidad, reintentos, compatibilidad de esquema y concurrencia.
 - Verificación CI pendiente tras publicación. BETA-FUNC-049 Pendiente beta.
+
+- **C1.671 / CI run 43356975075:** los contratos Department Scope, Internal Responsibility RBAC, ACCOUNTING import y USER migrated ownership PASS; ACCOUNTING se detuvo en la aserción estática del listado de autoservicio de empleados, que aún esperaba la lista anterior a los dos endpoints PDF. No se alcanzaron los escenarios PDF; aserción corregida en el commit siguiente, sin cambio de lógica productiva.

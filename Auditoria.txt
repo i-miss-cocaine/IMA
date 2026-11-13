@@ -2788,3 +2788,5 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Integridad:** ScriptLock serializa generación; la repetición reutiliza el PDF existente; las denegaciones no generan archivo. Se conserva compatibilidad de `BoletasPago` legado mediante ampliación controlada del encabezado.
 - **Límites:** no se inspeccionaron ni revocaron permisos de archivos históricos externos a este flujo; no se encontró callsite de UI específico en los archivos cliente revisados. Drive/Apps Script reales y navegador quedan Pendiente beta.
 - **Estado:** implementación y contrato aislado añadidos; CI pendiente al publicar. TASK-153 y AUD-NG-140 permanecen abiertos.
+
+- **C1.671 / trazabilidad CI:** run 43356975075 falló en el contrato ACCOUNTING por aserción estática desactualizada del listado de acciones self-service; los cuatro contratos previos pasaron. El test no alcanzó los escenarios PDF. Se actualiza la expectativa para reflejar generatePayrollReceiptPDF y getPayrollReceiptPDFFile; no es un fallo funcional observado.
