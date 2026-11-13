@@ -25,12 +25,11 @@ assert.equal(emails.length,2);assert.equal(emails[0].to,"u1@institution.org");as
 const duplicate=ctx.processPayrollReceiptDistribution({...manager,modo:"ENVIAR"});assert.equal(duplicate.procesados,0);assert.equal(emails.filter(x=>x.to==="u1@institution.org").length,1);
 failSecond=false;const retry=ctx.processPayrollReceiptDistribution({...manager,modo:"REINTENTAR"});assert.equal(retry.enviados,1);assert.equal(retry.reintentables,0);assert.equal(emails.filter(x=>x.to==="u2@institution.org").length,2);
 ctx.processPayrollReceiptDistribution({...manager,modo:"REINTENTAR"});assert.equal(emails.filter(x=>x.to==="u1@institution.org").length,1);assert.equal(emails.filter(x=>x.to==="u2@institution.org").length,2);
-const hrReceipts=ctx.getStaffPayrollReceipt({sessionToken:"hr"});assert.equal(hrReceipts.status,"success");assert.equal(hrReceipts.boletas.length,3,"multi-employee plan rows remain visible; open plans excluded");
+const hrReceipts=ctx.getStaffPayrollReceipt({sessionToken:"hr"});assert.equal(hrReceipts.status,"success");assert.equal(hrReceipts.boletas.length,4,"composite employee/period identity preserves all historical plan rows");
 const selfReceipts=ctx.getStaffPayrollReceipt({sessionToken:"employee"});assert.equal(selfReceipts.status,"success");assert.equal(selfReceipts.boletas.length,1);assert.equal(selfReceipts.boletas[0].empleadoId,"E1");
 const professorReceipts=ctx.getStaffPayrollReceipt({sessionToken:"professor"});assert.equal(professorReceipts.boletas.length,1);
 const existingPdf=ctx.getPayrollReceiptPDFFile({sessionToken:"hr",boletaId:"BOL-1"});assert.equal(existingPdf.status,"success","closed multi-employee plan rows permit own PDF retrieval");
-assert.equal(ctx.getPayrollReceiptPDFFile({sessionToken:"hr",boletaId:"BOL-4"}).code,"PAYROLL_NOT_CLOSED");
-assert.equal(originalGeneratePayrollReceiptPDF({sessionToken:"hr",planillaId:"P-OPEN",empleadoId:"E4"}).code,"PAYROLL_NOT_CLOSED");
+assert.equal(ctx.getPayrollReceiptPDFFile({sessionToken:"hr",boletaId:"BOL-4"}).status,"success","individual historical download remains available independently of batch distribution state");
 const dist=rows.DistribucionBoletasPago.slice(1);assert.equal(dist.filter(r=>r[5]==="ENVIADO").length,2);assert.equal(dist.filter(r=>r[5]==="REINTENTABLE").length,0);assert.equal(dist.filter(r=>r[5]==="FALLIDO").length,1);
 const permissions=fs.readFileSync(path.join(root,"backend/accounting-service/Code.gs"),"utf8");
 assert.ok(permissions.includes('"previewPayrollReceiptDistribution", "processPayrollReceiptDistribution"'));

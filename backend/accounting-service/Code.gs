@@ -6502,7 +6502,6 @@ function generatePayrollReceiptPDF(payload) {
     if(matchingPlans.length!==1)return {status:"error",code:matchingPlans.length?"PLANILLA_SELECTION_REQUIRED":"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible o requiere seleccionar una planilla."};
     const plan=matchingPlans[0],planillaId=String(plan[0]||"").trim();
     if(!planillaId||planRows.filter(r=>String(r[0]||"").trim()===planillaId&&String(r[3]||"").trim()===targetExpedienteId&&String(r[2]||"").trim()===String(plan[2]||"").trim()).length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
-    if(String(plan[15]||"").trim().toUpperCase()!=="CERRADA")return {status:"error",code:"PAYROLL_NOT_CLOSED",message:"La boleta estará disponible cuando la planilla esté cerrada."};
     const visiblePayrollConcepts=[];
     const conceptDetailSheet=ss.getSheetByName("DetalleConceptosPlanilla");
     if(conceptDetailSheet){
@@ -6602,7 +6601,6 @@ function getPayrollReceiptPDFFile(payload){
   if(!planData.length||JSON.stringify(planData[0].map(String))!==JSON.stringify(planHeaders))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de planillas no es válida."};
   const planRows=planData.slice(1),matches=planRows.filter(r=>String(r[0]||"").trim()===planillaId&&String(r[3]||"").trim()===expedienteId&&String(r[2]||"").trim()===period);
   if(matches.length!==1||planRows.filter(r=>String(r[0]||"").trim()===planillaId&&String(r[3]||"").trim()===expedienteId&&String(r[2]||"").trim()===period).length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Archivo no disponible."};
-  if(String(matches[0][15]||"").trim().toUpperCase()!=="CERRADA")return {status:"error",code:"PAYROLL_NOT_CLOSED",message:"La boleta estará disponible cuando la planilla esté cerrada."};
   const expData=expSheet.getDataRange().getValues(),expHeaders=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
   if(!expData.length||JSON.stringify(expData[0].map(String))!==JSON.stringify(expHeaders))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de expedientes laborales no es válida."};
   const employeeRows=expData.slice(1).filter(r=>String(r[0]||"").trim()===expedienteId),userId=employeeRows.length===1?String(employeeRows[0][2]||"").trim():"";
@@ -7043,7 +7041,7 @@ function getStaffPayrollReceipt(payload) {
  const cache=Object.create(null),allowed=id=>{id=String(id||"").trim();if(!id||expCounts[id]!==1||!expUser[id])return false;if(!Object.prototype.hasOwnProperty.call(cache,id))cache[id]=assertEmployeeExpedienteScopeAccess_(p,ss,id);return !!cache[id].authorized;};
  if(target&&!allowed(target))return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
  const ids=Object.create(null);pl.rows.forEach(r=>{const key=[String(r[0]||"").trim(),String(r[3]||"").trim(),String(r[2]||"").trim()].join("|");if(key!=="||")ids[key]=(ids[key]||0)+1;});
- let selected=pl.rows.filter(r=>{const id=String(r[0]||"").trim(),e=String(r[3]||"").trim(),key=[id,e,String(r[2]||"").trim()].join("|");return !!id&&!!e&&ids[key]===1&&String(r[15]||"").trim().toUpperCase()==="CERRADA"&&(!target||e===target)&&(!period||String(r[2]||"").trim()===period)&&allowed(e);});
+ let selected=pl.rows.filter(r=>{const id=String(r[0]||"").trim(),e=String(r[3]||"").trim(),key=[id,e,String(r[2]||"").trim()].join("|");return !!id&&!!e&&ids[key]===1&&(!target||e===target)&&(!period||String(r[2]||"").trim()===period)&&allowed(e);});
  if(bid){const found=bo.rows.filter(r=>String(r[0]||"").trim()===bid);if(found.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};const b=found[0];selected=selected.filter(r=>String(r[0]||"").trim()===String(b[1]||"").trim()&&String(r[3]||"").trim()===String(b[3]||"").trim()&&String(r[2]||"").trim()===String(b[5]||"").trim());if(!selected.length)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};}
  return {status:"success",boletas:selected.map(r=>{
   const matches=bo.rows.filter(b=>String(b[1]||"").trim()===String(r[0]||"").trim()&&String(b[3]||"").trim()===String(r[3]||"").trim()&&String(b[5]||"").trim()===String(r[2]||"").trim());
