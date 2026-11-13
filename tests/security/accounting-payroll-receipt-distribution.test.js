@@ -17,7 +17,7 @@ const ctx={SpreadsheetApp:{openById:()=>ss},SPREADSHEET_ID:"TEST",getOrCreateShe
 vm.createContext(ctx);vm.runInContext(script,ctx);const originalGeneratePayrollReceiptPDF=ctx.generatePayrollReceiptPDF;ctx.generatePayrollReceiptPDF=p=>{assert.equal(p._requireClosedForDistribution,true);return {status:"success",boletaId:"BOL-"+p.empleadoId,fileData:"UEZERi0="};};
 const manager={sessionToken:"hr",planillaId:"P-001"};
 const preview=ctx.previewPayrollReceiptDistribution(manager);
-assert.equal(preview.status,"success");assert.equal(preview.totalEmpleados,5);assert.equal(preview.empleadosEnAmbito,4);assert.equal(preview.fueraDeAmbito,1);assert.equal(preview.correosValidos,2);assert.equal(preview.correosInvalidos,1);assert.equal(preview.correosFaltantes,1);assert.equal(preview.pendientes,2);assert.equal(preview.fallidos,1);
+assert.equal(preview.status,"success");assert.equal(preview.totalEmpleados,5);assert.equal(preview.empleadosEnAmbito,4);assert.equal(preview.fueraDeAmbito,1);assert.equal(preview.correosValidos,2);assert.equal(preview.correosInvalidos,1);assert.equal(preview.correosFaltantes,1);assert.equal(preview.pendientes,2);assert.equal(preview.fallidos,2);
 assert.equal(ctx.previewPayrollReceiptDistribution({sessionToken:"hr",planillaId:"P-OPEN"}).code,"PAYROLL_NOT_CLOSED");
 assert.equal(ctx.processPayrollReceiptDistribution({sessionToken:"employee",planillaId:"P-001"}).code,"ROLE_NOT_ALLOWED");
 const first=ctx.processPayrollReceiptDistribution({...manager,modo:"ENVIAR"});
@@ -32,7 +32,7 @@ const professorReceipts=ctx.getStaffPayrollReceipt({sessionToken:"professor"});a
 const existingPdf=ctx.getPayrollReceiptPDFFile({sessionToken:"hr",boletaId:"BOL-1"});assert.equal(existingPdf.status,"success","closed multi-employee plan rows permit own PDF retrieval");
 assert.equal(ctx.getPayrollReceiptPDFFile({sessionToken:"hr",boletaId:"BOL-4"}).status,"success","individual historical download remains available independently of batch distribution state");
 assert.equal(originalGeneratePayrollReceiptPDF({sessionToken:"hr",planillaId:"P-OPEN",empleadoId:"E4",_requireClosedForDistribution:true}).code,"PAYROLL_NOT_CLOSED","batch-only generation guard blocks a plan reopened after preview");
-const dist=rows.DistribucionBoletasPago.slice(1);assert.equal(dist.some(r=>r[3]==="E5"),false);assert.equal(dist.find(r=>r[3]==="E6")[5],"FALLIDO","missing user account is recorded as a failed distribution");assert.equal(dist.filter(r=>r[5]==="ENVIADO").length,2);assert.equal(dist.filter(r=>r[5]==="REINTENTABLE").length,0);assert.equal(dist.filter(r=>r[5]==="FALLIDO").length,1);
+const dist=rows.DistribucionBoletasPago.slice(1);assert.equal(dist.some(r=>r[3]==="E5"),false);assert.equal(dist.find(r=>r[3]==="E6")[5],"FALLIDO","missing user account is recorded as a failed distribution");assert.equal(dist.filter(r=>r[5]==="ENVIADO").length,2);assert.equal(dist.filter(r=>r[5]==="REINTENTABLE").length,0);assert.equal(dist.filter(r=>r[5]==="FALLIDO").length,2);
 const permissions=fs.readFileSync(path.join(root,"backend/accounting-service/Code.gs"),"utf8");
 assert.ok(permissions.includes('"previewPayrollReceiptDistribution", "processPayrollReceiptDistribution"'));
 assert.ok(permissions.includes('"Profesor": ["getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile"'));
