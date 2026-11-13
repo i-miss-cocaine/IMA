@@ -2,14 +2,14 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("n
 function extract(source,name){const s=source.indexOf("function "+name+"(");assert.ok(s>=0,"missing "+name);const o=source.indexOf("{",s);let d=0,q="",esc=false,line=false,block=false;for(let i=o;i<source.length;i++){const c=source[i],n=source[i+1];if(line){if(c==="\n")line=false;continue;}if(block){if(c==="*"&&n==="/"){block=false;i++;}continue;}if(q){if(esc)esc=false;else if(c==="\\")esc=true;else if(c===q)q="";continue;}if(c==="/"&&n==="/"){line=true;i++;continue;}if(c==="/"&&n==="*"){block=true;i++;continue;}if(c==="'"||c==='"'||c.charCodeAt(0)===96){q=c;continue;}if(c==="{")d++;else if(c==="}"&&--d===0)return source.slice(s,i+1);}throw Error("unbalanced "+name);}
 const root=path.resolve(__dirname,"../.."),source=fs.readFileSync(path.join(root,"backend/accounting-service/Code.gs"),"utf8");assert.doesNotThrow(()=>new vm.Script(source));
 const start=source.indexOf("const CATALOG_ITEM_HEADERS_"),end=source.indexOf("\nfunction getInventoryKardex(",start);assert.ok(start>=0&&end>start,"catalog service block missing");
-const names=["recordInventoryMovement","createMaterialRequisition","createPurchaseRequest","transferInventoryStock","confirmTransferReceipt","deliverMaterialRequisition","recordAccountingJournalEntry","inventoryEnsureRequisitionSchema_","inventoryAccount_","inventoryCostPerBaseUnit_","inventoryJournalRows_","inventoryJournalExists_","inventoryPostJournal_","inventoryDeleteAppendedRows_"];
+const names=["recordInventoryMovement","createMaterialRequisition","createPurchaseRequest","transferInventoryStock","confirmTransferReceipt","deliverMaterialRequisition","recordAccountingJournalEntry","inventoryEnsureRequisitionSchema_","inventoryEnsureLedgerSheet_","inventoryFindMovementByRef_","returnMaterialToInventory","recognizeAssignedMaterialConsumption","inventoryAccount_","inventoryCostPerBaseUnit_","inventoryJournalRows_","inventoryJournalExists_","inventoryPostJournal_","inventoryDeleteAppendedRows_"];
 const code=source.slice(start,end)+"\n"+names.map(n=>extract(source,n)).join("\n");
 const rows={};let uuid=0,lockBusy=false,lockAcquisitions=0;
 function makeSheet(name){return {getDataRange:()=>({getValues:()=>rows[name].map(r=>r.slice())}),appendRow:r=>rows[name].push(r.slice()),getRange:(row,col,nr,nc)=>({setValues:values=>{for(let i=0;i<values.length;i++){if(!rows[name][row-1+i])rows[name][row-1+i]=[];for(let j=0;j<values[i].length;j++)rows[name][row-1+i][col-1+j]=values[i][j];}},setValue:v=>{if(!rows[name][row-1])rows[name][row-1]=[];rows[name][row-1][col-1]=v;}}),getLastRow:()=>rows[name].length,deleteRow:r=>rows[name].splice(r-1,1)};}
 const ss={getSheetByName:n=>rows[n]?makeSheet(n):null,insertSheet:n=>{rows[n]=[];return makeSheet(n);}};
 const headers={InventariosKardex:["KardexID","Fecha","ItemCodigo","ItemNombre","CategoriaTipo","TipoMovimiento","Cantidad","StockAnterior","StockNuevo","StockMinimo","UbicacionResponsable","Observaciones"],MaterialesSolicitudes:["SolicitudMatID","Fecha","Departamento","SolicitanteUserId","ArticulosJSON","Motivo","EstadoAprobacion","AprobadoPor","EntregadoPor","Observaciones"],SolicitudesCompra:["SolicitudID","Fecha","Departamento","SolicitanteUserId","Justificacion","Categoria","DetalleItemsJSON","MontoEstimado","CentroCosto","EstadoAprobacion","Observaciones"]};
 Object.keys(headers).forEach(k=>rows[k]=[headers[k]]);rows.PlanCuentas=[["CuentaID","CodigoCuenta","NombreCuenta","TipoCuenta","Naturaleza","Estado","Observaciones"],["A-1301","1301","Inventario de suministros","Activo","Deudora","Activa",""],["A-1302","1302","Materiales asignados","Activo","Deudora","Activa",""],["A-5201","5201","Gasto de materiales","Gasto","Deudora","Activa",""]];rows.AsientosContables=[["AsientoID","Fecha","Descripcion","OrigenModulo","ReferenciaID","LineasJSON","Estado","CreadoPor"]];
-const ctx={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>ss},LockService:{getScriptLock:()=>({waitLock:()=>{lockAcquisitions++;if(lockBusy)throw Error("LOCK_BUSY");},releaseLock:()=>{}})},Utilities:{getUuid:()=>String(++uuid),parseCsv:()=>[]},getVerifiedAccountingIdentity_:()=>({authorized:true,userId:"U-1",role:"CONTADOR"}),getOrCreateSheet:(s,n)=>{if(!rows[n])rows[n]=[headers[n]||[]];return makeSheet(n);},assetDeprMoney_:n=>Math.round((Number(n)||0)*100)/100,normalizePurchaseAssetClassification_:x=>x.clasificacionInventario||"Consumible",logStructuredEvent:()=>{}};
+const ctx={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>ss},LockService:{getScriptLock:()=>({waitLock:()=>{lockAcquisitions++;if(lockBusy)throw Error("LOCK_BUSY");},releaseLock:()=>{}})},Utilities:{getUuid:()=>String(++uuid),parseCsv:()=>[]},getVerifiedAccountingIdentity_:()=>({authorized:true,userId:"U-1",role:"CONTADOR"}),getOrCreateSheet:(s,n)=>{if(!rows[n])rows[n]=[headers[n]||[]];return makeSheet(n);},assetDeprMoney_:n=>Math.round((Number(n)||0)*100)/100,normalizePurchaseAssetClassification_:x=>x.clasificacionInventario||"Consumible",logStructuredEvent:()=>{},getChartOfAccounts:()=>({status:"success"})};
 vm.createContext(ctx);vm.runInContext(code,ctx);
 let readMutations=0;const readOnlySs={getSheetByName:()=>null,insertSheet:()=>{readMutations++;throw Error("read endpoint attempted to create a sheet");}};const readOnlyCtx={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>readOnlySs},getVerifiedAccountingIdentity_:()=>({authorized:true,userId:"U-READ",role:"CONTADOR"})};vm.createContext(readOnlyCtx);vm.runInContext(code,readOnlyCtx);assert.ok(readOnlyCtx.getCatalogCategories({}).categorias.length);assert.ok(readOnlyCtx.getCatalogUnits({}).unidades.length);assert.equal(readMutations,0,"catalog reads must not create sheets or mutate schema");
 const cats=ctx.getCatalogCategories({});assert.ok(cats.categorias.some(x=>x.nombre==="Papelería y oficina"));
@@ -46,6 +46,18 @@ assert.equal(journalLines[0].cuenta,"5201");
 assert.equal(journalLines[1].cuenta,"1301");
 assert.equal(journalLines[0].centroCosto,"Laboratorio");
 assert.equal(journalLines[0].debe,240,"24 base units × L10 average unit cost");
+const returnCountBefore=rows.InventariosKardex.length,returnJournalCount=rows.AsientosContables.length;
+const returned=ctx.returnMaterialToInventory({solicitudMatId:request.solicitudMatId,devolucionId:"RET-001",items:[{itemCodigo:"MAT-001",unidadMedida:"Unidad",cantidad:2}]});
+assert.equal(returned.status,"success");
+const returnLines=JSON.parse(rows.AsientosContables.at(-1)[5]);
+assert.equal(returnLines[0].cuenta,"1301");
+assert.equal(returnLines[1].cuenta,"5201");
+assert.equal(returnLines[0].debe,20);
+assert.equal(rows.InventariosKardex.length,returnCountBefore+1,"immediate-mode returns add inventory back to the source warehouse");
+const returnRetry=ctx.returnMaterialToInventory({solicitudMatId:request.solicitudMatId,devolucionId:"RET-001",items:[{itemCodigo:"MAT-001",unidadMedida:"Unidad",cantidad:2}]});
+assert.equal(returnRetry.idempotent,true);
+assert.equal(rows.AsientosContables.length,returnJournalCount+1,"return retries must not duplicate reversal journals");
+
 const journalCount=rows.AsientosContables.length,kardexCount=rows.InventariosKardex.length;
 assert.throws(()=>ctx.deliverMaterialRequisition({solicitudMatId:request.solicitudMatId}),/ya ha sido entregada/);
 assert.equal(rows.AsientosContables.length,journalCount,"retries must not duplicate journal entries");
@@ -58,6 +70,21 @@ assert.equal(assigned.modoReconocimiento,"ASIGNADO");
 assert.equal(assignedLines[0].cuenta,"1302","assigned materials remain an asset until consumption");
 assert.equal(assignedLines[1].cuenta,"1301");
 assert.equal(assignedLines[0].centroCosto,"CC-LAB-02");
+const consumption=ctx.recognizeAssignedMaterialConsumption({solicitudMatId:assignedRequest.solicitudMatId,consumoId:"CON-001",items:[{itemCodigo:"MAT-001",unidadMedida:"Unidad",cantidad:1}]});
+const consumptionLines=JSON.parse(rows.AsientosContables.at(-1)[5]);
+assert.equal(consumptionLines[0].cuenta,"5201");
+assert.equal(consumptionLines[1].cuenta,"1302");
+assert.equal(consumptionLines[0].debe,10);
+const consumptionRetry=ctx.recognizeAssignedMaterialConsumption({solicitudMatId:assignedRequest.solicitudMatId,consumoId:"CON-001",items:[{itemCodigo:"MAT-001",unidadMedida:"Unidad",cantidad:1}]});
+assert.equal(consumptionRetry.idempotent,true);
+
+ctx.recordInventoryMovement({itemCodigo:"MAT-001",tipoMovimiento:"Entrada",cantidad:5,unidadMedida:"Unidad",ubicacionResponsable:"Bodega General"});
+const assignedReturnRequest=ctx.createMaterialRequisition({departamento:"Laboratorio",centroCosto:"CC-LAB-02",modoReconocimiento:"ASIGNADO",articulosJSON:[{itemCodigo:"MAT-001",unidadMedida:"Unidad",cantidad:2}]});
+ctx.deliverMaterialRequisition({solicitudMatId:assignedReturnRequest.solicitudMatId});
+const assignedReturn=ctx.returnMaterialToInventory({solicitudMatId:assignedReturnRequest.solicitudMatId,devolucionId:"RET-ASSIGNED-01",items:[{itemCodigo:"MAT-001",unidadMedida:"Unidad",cantidad:1}]});
+const assignedReturnLines=JSON.parse(rows.AsientosContables.at(-1)[5]);
+assert.equal(assignedReturnLines[0].cuenta,"1301");
+assert.equal(assignedReturnLines[1].cuenta,"1302");
 const beforeDuplicateKardex=rows.InventariosKardex.length,beforeDuplicateJournals=rows.AsientosContables.length;
 const duplicateRequest=ctx.createMaterialRequisition({departamento:"Laboratorio",articulosJSON:[{itemCodigo:"MAT-001",unidadMedida:"Unidad",cantidad:1},{itemCodigo:"MAT-001",unidadMedida:"Unidad",cantidad:1}]});
 assert.throws(()=>ctx.deliverMaterialRequisition({solicitudMatId:duplicateRequest.solicitudMatId}),/DUPLICATE_ITEM/);
