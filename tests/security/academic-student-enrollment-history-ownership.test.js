@@ -2,6 +2,7 @@ const assert=require("node:assert/strict");
 const fs=require("node:fs");
 const path=require("node:path");
 const vm=require("node:vm");
+async function main(){
 const root=path.resolve(__dirname,"../..");
 const source=fs.readFileSync(path.join(root,"backend/academic-service/Code.gs"),"utf8");
 new vm.Script(source,{filename:"backend/academic-service/Code.gs"});
@@ -152,3 +153,5 @@ const fn=extractFunction("getStudentEnrollmentHistory");
 assert(fn.includes("getVerifiedAcademicIdentity_")&&fn.includes("assertStudentExpedienteScopeAccess_"),"history endpoint must use verified identity and expediente ownership");
 assert(!fn.includes("getOrCreateSheet"),"history endpoint must remain read-only and must not create sheets");
 console.log("ACADEMIC student enrollment history identity, guardian, department ownership, financial privacy, schema, duplicate-ID and concurrency contracts passed.");
+}
+main().catch(error=>{console.error(error);process.exitCode=1;});
