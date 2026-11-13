@@ -85,9 +85,9 @@ assert.ok(createFn.includes("const lock = LockService.getScriptLock();") && crea
 assert.ok(renewFn.includes("Object.assign({}, request"), "renewal preserves signed session/context fields");
 assert.ok(registerFn.indexOf("lock.tryLock") < registerFn.indexOf("assertAcademicEnrollmentMutationAccess_"), "registration checks ownership under the mutation lock");
 const events = [];
-let shouldFail = false, undone = false, internalPayload = null;
+let shouldFail = false, undone = false, internalPayload = null, wrapperLockAvailable = true;
 const wrapperContext = {
-  LockService: { getScriptLock: () => ({ tryLock: ms => { events.push("lock:" + ms); return true; }, releaseLock: () => events.push("release") }) },
+  LockService: { getScriptLock: () => ({ tryLock: ms => { events.push("lock:" + ms); return wrapperLockAvailable; }, releaseLock: () => events.push("release") }) },
   assertAcademicEnrollmentMutationAccess_: (payload,id) => { events.push("authorize:" + id); return { authorized: true }; },
   registerStudentEnrollmentInternal_: payload => {
     internalPayload = payload;
@@ -106,4 +106,25 @@ shouldFail = true;
 assert.throws(() => wrapperContext.register({userId:"STU-1"}), /synthetic-write-failure/);
 assert.equal(undone,true,"failed registration executes compensation");
 assert.equal(events.at(-1),"release","lock is released after rollback");
-console.log("ACADEMIC enrollment write lock, caller bypass rejection, signed context preservation and rollback contracts passed.");
+wrapperLockAvailable = false;
+events.length = 0;
+assert.throws(() => wrapperContext.register({userId:"STU-1"}), /Servicio ocupado/);
+assert.deepEqual(events,["lock:10000"],"a contending registration fails before authorization or persistence");
+const createContext = {
+  LockService:{getScriptLock:()=>({tryLock:ms=>{assert.equal(ms,10000);return false;},releaseLock:()=>{throw Error("lock must not be released when not acquired");}})},
+  SpreadsheetApp:{openById:()=>{throw Error("persistence must not be touched while lock is contended");}}
+};
+vm.runInNewContext(createFn+"\\nthis.create=createStudentEnrollment;",createContext);
+assert.throws(()=>createContext.create({userId:"STU-1",grado:"1",seccion:"A",skipLock:true}),/Servicio ocupado/,
+  "untrusted skipLock cannot bypass a contended create operation");
+let renewedPayload;
+const renewContext={
+  createStudentEnrollment:payload=>{renewedPayload=payload;return {status:"success"};},
+  getVerifiedAcademicIdentity_:()=>({authorized:true,userId:"STAFF-1",role:"Director"})
+};
+vm.runInNewContext(renewFn+"\\nthis.renew=renewStudentEnrollment;",renewContext);
+renewContext.renew({userId:"STU-1",nuevoAnoLectivo:"2027",nuevoGrado:"2",sessionToken:"signed",activeDepartmentId:"D-1"});
+assert.equal(renewedPayload.sessionToken,"signed","renewal forwards the signed session token");
+assert.equal(renewedPayload.activeDepartmentId,"D-1","renewal forwards the active department scope");
+assert.equal(renewedPayload.callerUserId,"STAFF-1","renewal records the verified actor, not the target student");
+console.log("ACADEMIC enrollment write lock, contention, caller bypass rejection, renewal context preservation and rollback contracts passed.");
