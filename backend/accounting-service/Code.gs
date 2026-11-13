@@ -816,6 +816,14 @@ function doPost(e) {
       case "getStaffPayrollReceipt": result = getStaffPayrollReceipt(payload); break;
       case "recordInventoryMovement": result = recordInventoryMovement(payload); break;
       case "getInventoryKardex": result = getInventoryKardex(payload); break;
+      case "manageCatalogItem": result = manageCatalogItem(payload); break;
+      case "getCatalogItems": result = getCatalogItems(payload); break;
+      case "manageCatalogCategory": result = manageCatalogCategory(payload); break;
+      case "getCatalogCategories": result = getCatalogCategories(payload); break;
+      case "manageCatalogUnit": result = manageCatalogUnit(payload); break;
+      case "getCatalogUnits": result = getCatalogUnits(payload); break;
+      case "importCatalogItems": result = importCatalogItems(payload); break;
+      case "exportCatalogItems": result = exportCatalogItems(payload); break;
       case "registerSupplier": result = registerSupplier(payload); break;
       case "getSuppliers": result = getSuppliers(payload); break;
       case "manageSupplierContact": result = manageSupplierContact(payload); break;
@@ -7581,120 +7589,55 @@ function processPayrollReceiptDistribution(payload) {
 
 // [REQ-EXP-015] [Requerimientos de Expansión y Desarrollo] - Control de inventarios Kardex, activo fijo, custodia, mantenimientos y proveedores.
 // [TASK-019] [F19-Task01] - Corrección integral del control de existencias multialmacén
-function recordInventoryMovement(payload) {
-  const {
-    itemCodigo, itemNombre, categoriaTipo, tipoMovimiento, cantidad, stockMinimo,
-    ubicacionResponsable, almacenId, ubicacionId, numeroLote, numeroSerie,
-    observaciones, documentOrigen, referenciaMovimiento
-  } = payload || {};
 
-  if (!itemCodigo || !itemNombre || cantidad === undefined || parseFloat(cantidad) <= 0) {
-    throw new Error("itemCodigo, itemNombre y cantidad válida requeridos.");
-  }
-
-  const sCodigo = String(itemCodigo).trim();
-  const sNombre = String(itemNombre).trim();
-  const tipoNorm = String(tipoMovimiento || "Entrada").trim();
-  const qty = parseFloat(cantidad);
-
-  // Normalización de ubicación física / almacén (Bodega General como estándar para registros históricos)
-  const targetUbicacion = String(ubicacionId || ubicacionResponsable || almacenId || "Bodega General").trim();
-
-  const lock = LockService.getScriptLock();
-  lock.waitLock(15000);
-
-  try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sheet = getOrCreateSheet(ss, "InventariosKardex");
-    const data = sheet.getDataRange().getValues().slice(1);
-
-    // 1. Obtener saldo local exacto de la ubicación física específica
-    let currentStockLocal = 0;
-    const ubicacionesMap = {};
-
-    data.forEach(r => {
-      const rowItem = String(r[2]).trim();
-      const rowUbicacion = String(r[10] || "Bodega General").trim();
-      if (rowItem === sCodigo) {
-        ubicacionesMap[rowUbicacion.toLowerCase()] = parseFloat(r[8] || 0);
-        if (rowUbicacion.toLowerCase() === targetUbicacion.toLowerCase()) {
-          currentStockLocal = parseFloat(r[8] || 0);
-        }
-      }
-    });
-
-    let newStockLocal = currentStockLocal;
-    const esEntrada = (tipoNorm === "Entrada" || tipoNorm === "Devolucion" || tipoNorm === "AjustePositivo");
-    const esSalida = (tipoNorm === "Salida" || tipoNorm === "Prestamo" || tipoNorm === "Baja" || tipoNorm === "TransferenciaSalida" || tipoNorm === "Consumo" || tipoNorm === "AjusteNegativo");
-
-    if (esEntrada) {
-      newStockLocal = parseFloat((currentStockLocal + qty).toFixed(2));
-    } else if (esSalida) {
-      if (currentStockLocal < qty) {
-        throw new Error(`Stock insuficiente para '${sNombre}' (Código: ${sCodigo}) en la ubicación '${targetUbicacion}'. Stock disponible en ubicación: ${currentStockLocal}, Solicitado: ${qty}.`);
-      }
-      newStockLocal = parseFloat((currentStockLocal - qty).toFixed(2));
-    } else {
-      newStockLocal = parseFloat(qty.toFixed(2));
-    }
-
-    // Actualizar mapa local de la bodega y calcular total consolidado institucional
-    ubicacionesMap[targetUbicacion.toLowerCase()] = newStockLocal;
-    let nuevoTotalConsolidado = 0;
-    Object.keys(ubicacionesMap).forEach(k => {
-      nuevoTotalConsolidado += ubicacionesMap[k];
-    });
-    nuevoTotalConsolidado = parseFloat(nuevoTotalConsolidado.toFixed(2));
-
-    const minStock = parseFloat(stockMinimo || 5);
-    const now = new Date();
-    const kardexId = "KDX-" + now.getTime();
-
-    // Metadatos trazables de lote, serie, documentos y referencias
-    let metaObs = observaciones || "";
-    if (numeroLote) metaObs += ` | [LOTE:${numeroLote}]`;
-    if (numeroSerie) metaObs += ` | [SERIE:${numeroSerie}]`;
-    if (documentOrigen) metaObs += ` | [DOC:${documentOrigen}]`;
-    if (referenciaMovimiento) metaObs += ` | [REF:${referenciaMovimiento}]`;
-
-    sheet.appendRow([
-      kardexId,
-      now,
-      sCodigo,
-      sNombre,
-      categoriaTipo || "Consumible",
-      tipoNorm,
-      qty,
-      currentStockLocal,     // Col 8: StockAnterior (Local de la ubicación)
-      newStockLocal,         // Col 9: StockNuevo (Local de la ubicación)
-      minStock,              // Col 10: StockMinimo
-      targetUbicacion,       // Col 11: UbicacionResponsable
-      metaObs.trim()         // Col 12: Observaciones
-    ]);
-
-    const alertStockBajo = newStockLocal <= minStock;
-
-    return {
-      status: "success",
-      kardexId: kardexId,
-      itemCodigo: sCodigo,
-      itemNombre: sNombre,
-      ubicacion: targetUbicacion,
-      stockAnteriorUbicacion: currentStockLocal,
-      stockNuevoUbicacion: newStockLocal,
-      stockConsolidadoInstitucional: nuevoTotalConsolidado,
-      stockMinimo: minStock,
-      alertaStockMinimo: alertStockBajo,
-      message: alertStockBajo
-        ? `Movimiento registrado en '${targetUbicacion}'. ¡ALERTA! El stock de '${sNombre}' (${newStockLocal}) está en o por debajo del mínimo (${minStock}).`
-        : `Movimiento de inventario registrado con éxito en '${targetUbicacion}'.`
-    };
-  } finally {
-    lock.releaseLock();
-  }
+const CATALOG_ITEM_HEADERS_=["ItemID","ItemCodigo","ItemNombre","NombreNormalizado","Descripcion","Categoria","Subcategoria","UnidadMedida","UnidadBase","FactorConversionBase","Marca","ModeloReferencia","ImagenUrl","CodigoBarras","CodigoQR","EspecificacionesTecnicas","ProveedorHabitualId","CostoReferencial","CostoUltimaAdquisicion","CostoPromedio","StockMinimo","StockMaximo","PuntoReposicion","Estado","Observaciones","CreadoPor","FechaCreacion","ActualizadoPor","FechaActualizacion","ActivoFijoRelacionadoId"];
+const CATALOG_CATEGORY_HEADERS_=["CategoriaID","Nombre","NombreNormalizado","Estado","CreadoPor","FechaCreacion","ActualizadoPor","FechaActualizacion"];
+const CATALOG_UNIT_HEADERS_=["UnidadID","Nombre","NombreNormalizado","UnidadBase","FactorConversionBase","Tipo","Estado","CreadoPor","FechaCreacion","ActualizadoPor","FechaActualizacion"];
+function catalogSheet_(ss,name,headers,create){let sh=ss.getSheetByName(name);if(!sh&&!create)return null;if(!sh)sh=ss.insertSheet(name);const v=sh.getDataRange().getValues();if(!v.length||!v[0].some(x=>String(x||"").trim()))sh.getRange(1,1,1,headers.length).setValues([headers.slice()]);else{const a=v[0].map(x=>String(x||"").trim()),prefix=a.length<=headers.length&&a.every((x,i)=>x===headers[i]);if(prefix&&a.length<headers.length)sh.getRange(1,a.length+1,1,headers.length-a.length).setValues([headers.slice(a.length)]);else if(headers.some((h,i)=>String(v[0][i]||"").trim()!==h))throw new Error("CATALOG_SCHEMA_MISMATCH:"+name);}return sh;}
+function catalogActor_(p,write){const a=getVerifiedAccountingIdentity_(p||{});if(!a.authorized)throw new Error(a.code||"VERIFIED_IDENTITY_REQUIRED");if(write){const r=String(a.role||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/[^A-Z0-9]/g,"");if(["ADMINISTRADOR","DIRECTOR","CONTADOR","ALMACENISTA","BODEGUERO","ENCARGADODEBODEGA"].indexOf(r)===-1)throw new Error("CATALOG_ROLE_NOT_ALLOWED");}return a;}
+function catalogNormalizeText_(v){return String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim().replace(/\s+/g," ");}
+function catalogNormalizeCode_(v){return catalogNormalizeText_(v).toUpperCase().replace(/\s+/g,"-");}
+function catalogEnsureDefaults_(ss,a){const c=catalogSheet_(ss,"CatalogoCategoriasArticulos",CATALOG_CATEGORY_HEADERS_,true);if(c.getDataRange().getValues().length<=1)["Material didáctico","Útiles escolares","Papelería y oficina","Equipos tecnológicos","Mobiliario","Material de laboratorio","Insumos de enfermería","Productos de limpieza","Cafetería y tienda","Herramientas","Repuestos","Otros"].forEach(n=>c.appendRow(["CAT-"+Utilities.getUuid(),n,catalogNormalizeText_(n),"Activo",a.userId,new Date(),"",""]));const u=catalogSheet_(ss,"CatalogoUnidadesMedida",CATALOG_UNIT_HEADERS_,true);if(u.getDataRange().getValues().length<=1)[["Unidad","Cantidad"],["Litro","Volumen"],["Kilogramo","Masa"],["Metro","Longitud"]].forEach(x=>u.appendRow(["UND-"+Utilities.getUuid(),x[0],catalogNormalizeText_(x[0]),x[0],1,x[1],"Activo",a.userId,new Date(),"",""]));return {categories:c,units:u};}
+function catalogFindUnit_(ss,n){const sh=catalogSheet_(ss,"CatalogoUnidadesMedida",CATALOG_UNIT_HEADERS_,false);if(!sh)throw new Error("CATALOG_UNITS_NOT_CONFIGURED");const k=catalogNormalizeText_(n),m=sh.getDataRange().getValues().slice(1).filter(r=>catalogNormalizeText_(r[1])===k&&String(r[6]||"Activo")==="Activo");if(m.length!==1)throw new Error(m.length?"CATALOG_UNIT_AMBIGUOUS":"CATALOG_UNIT_NOT_FOUND:"+n);const f=Number(m[0][4]);if(!Number.isFinite(f)||f<=0)throw new Error("CATALOG_UNIT_FACTOR_INVALID");return {id:m[0][0],name:m[0][1],base:m[0][3],factor:f,tipo:m[0][5]};}
+function catalogFindItem_(ss,k,active){const sh=catalogSheet_(ss,"CatalogoArticulos",CATALOG_ITEM_HEADERS_,false);if(!sh)throw new Error("CATALOG_NOT_CONFIGURED");const key=String(k||"").trim(),norm=catalogNormalizeCode_(key),m=sh.getDataRange().getValues().slice(1).filter(r=>String(r[0]||"")===key||catalogNormalizeCode_(r[1])===norm);if(m.length!==1)throw new Error(m.length?"CATALOG_ITEM_AMBIGUOUS":"CATALOG_ITEM_NOT_FOUND:"+key);const r=m[0],state=String(r[23]||"");if(active&&state!=="Activo")throw new Error(state==="PendienteReconciliacion"?"CATALOG_ITEM_RECONCILIATION_REQUIRED":"CATALOG_ITEM_INACTIVE");return {id:r[0],code:r[1],name:r[2],category:r[5],unit:r[7],baseUnit:r[8],factor:Number(r[9]||1),state,row:r};}
+function catalogSimilarItems_(rows,name,code){const n=catalogNormalizeText_(name),c=catalogNormalizeCode_(code),tokens=n.split(" ").filter(x=>x.length>2);return rows.filter(r=>{const rc=catalogNormalizeCode_(r[1]),rn=catalogNormalizeText_(r[2]);if(c&&rc===c)return false;if(n&&rn===n)return false;return (n&&((rn.includes(n)||n.includes(rn))||tokens.filter(t=>rn.includes(t)).length>=Math.max(1,Math.ceil(tokens.length*0.6))));}).slice(0,6).map(r=>({itemId:r[0],itemCodigo:r[1],itemNombre:r[2],categoria:r[5],estado:r[23]}));}
+function catalogBuildItemValues_(ss,p,a,rows){const code=String(p.itemCodigo||p.codigo||"").trim(),name=String(p.itemNombre||p.nombre||"").trim(),ck=catalogNormalizeCode_(code),nk=catalogNormalizeText_(name),cat=String(p.categoria||"").trim(),un=String(p.unidadMedida||"").trim();if(!ck||!nk||!cat||!un)throw new Error("CATALOG_ITEM_REQUIRED_FIELDS");if(!/^[A-Z0-9][A-Z0-9._/-]{1,63}$/.test(ck))throw new Error("CATALOG_ITEM_CODE_INVALID");const cs=catalogSheet_(ss,"CatalogoCategoriasArticulos",CATALOG_CATEGORY_HEADERS_,false);if(!cs||cs.getDataRange().getValues().slice(1).filter(r=>catalogNormalizeText_(r[1])===catalogNormalizeText_(cat)&&String(r[3]||"Activo")==="Activo").length!==1)throw new Error("CATALOG_CATEGORY_NOT_FOUND_OR_AMBIGUOUS");const unit=catalogFindUnit_(ss,un),list=rows||catalogSheet_(ss,"CatalogoArticulos",CATALOG_ITEM_HEADERS_,true).getDataRange().getValues().slice(1),requested=String(p.itemId||p.ItemID||""),existing=list.find(r=>requested&&String(r[0])===requested)||list.find(r=>catalogNormalizeCode_(r[1])===ck);if(list.some(r=>catalogNormalizeCode_(r[1])===ck&&(!existing||String(r[0])!==String(existing[0]))))throw new Error("CATALOG_ITEM_CODE_DUPLICATE");if(list.some(r=>catalogNormalizeText_(r[2])===nk&&catalogNormalizeText_(r[5])===catalogNormalizeText_(cat)&&(!existing||String(r[0])!==String(existing[0]))))throw new Error("CATALOG_ITEM_NAME_DUPLICATE");const num=(v,k)=>{if(v===undefined||v===null||v==="")return 0;const x=Number(v);if(!Number.isFinite(x)||x<0)throw new Error("CATALOG_ITEM_NUMBER_INVALID:"+k);return x;};const now=new Date(),state=String(p.estado||(existing?existing[23]:"Activo"));if(["Activo","Inactivo","PendienteReconciliacion"].indexOf(state)===-1)throw new Error("CATALOG_ITEM_STATE_INVALID");return [existing?existing[0]:"ITM-"+Utilities.getUuid(),code,name,nk,String(p.descripcion||""),cat,String(p.subcategoria||""),unit.name,unit.base,unit.factor,String(p.marca||""),String(p.modeloReferencia||p.modelo||""),String(p.imagenUrl||""),String(p.codigoBarras||""),String(p.codigoQR||""),String(p.especificacionesTecnicas||""),String(p.proveedorHabitualId||""),num(p.costoReferencial,"costoReferencial"),num(p.costoUltimaAdquisicion,"costoUltimaAdquisicion"),num(p.costoPromedio,"costoPromedio"),num(p.stockMinimo,"stockMinimo"),num(p.stockMaximo,"stockMaximo"),num(p.puntoReposicion,"puntoReposicion"),state,String(p.observaciones||""),existing?existing[25]:a.userId,existing?existing[26]:now,a.userId,now,String(p.activoFijoRelacionadoId||"")];}
+function manageCatalogCategory(p){p=p||{};const a=catalogActor_(p,true),ss=SpreadsheetApp.openById(SPREADSHEET_ID),l=LockService.getScriptLock();l.waitLock(15000);try{catalogEnsureDefaults_(ss,a);const sh=catalogSheet_(ss,"CatalogoCategoriasArticulos",CATALOG_CATEGORY_HEADERS_,true),rows=sh.getDataRange().getValues(),name=String(p.nombre||"").trim(),norm=catalogNormalizeText_(name),id=String(p.categoriaId||"");if(!name)throw new Error("CATALOG_CATEGORY_NAME_REQUIRED");const f=rows.slice(1).map((r,i)=>({r,i})).find(x=>id&&String(x.r[0])===id),dup=rows.slice(1).find(r=>catalogNormalizeText_(r[1])===norm&&(!f||String(r[0])!==String(f.r[0])));if(dup)throw new Error("CATALOG_CATEGORY_DUPLICATE");const v=[f?f.r[0]:"CAT-"+Utilities.getUuid(),name,norm,String(p.estado||"Activo"),f?f.r[4]:a.userId,f?f.r[5]:new Date(),a.userId,new Date()];if(f)sh.getRange(f.i+2,1,1,v.length).setValues([v]);else sh.appendRow(v);return {status:"success",categoriaId:v[0],nombre:name};}finally{l.releaseLock();}}
+function getCatalogCategories(p){const a=catalogActor_(p,false),ss=SpreadsheetApp.openById(SPREADSHEET_ID),s=catalogEnsureDefaults_(ss,a);return {status:"success",categorias:s.categories.getDataRange().getValues().slice(1).filter(r=>String(r[3]||"Activo")==="Activo").map(r=>({categoriaId:r[0],nombre:r[1],estado:r[3]}))};}
+function manageCatalogUnit(p){p=p||{};const a=catalogActor_(p,true),ss=SpreadsheetApp.openById(SPREADSHEET_ID),l=LockService.getScriptLock();l.waitLock(15000);try{catalogEnsureDefaults_(ss,a);const sh=catalogSheet_(ss,"CatalogoUnidadesMedida",CATALOG_UNIT_HEADERS_,true),rows=sh.getDataRange().getValues(),name=String(p.nombre||"").trim(),norm=catalogNormalizeText_(name),base=String(p.unidadBase||name).trim(),factor=Number(p.factorConversionBase===undefined?1:p.factorConversionBase),tipo=String(p.tipo||"Cantidad").trim(),id=String(p.unidadId||"");if(!name||!base||!Number.isFinite(factor)||factor<=0)throw new Error("CATALOG_UNIT_VALUES_INVALID");if(catalogNormalizeText_(base)===norm&&Math.abs(factor-1)>0.0000001)throw new Error("CATALOG_BASE_UNIT_FACTOR_MUST_BE_ONE");if(catalogNormalizeText_(base)!==norm){const bu=catalogFindUnit_(ss,base);if(catalogNormalizeText_(bu.base)!==catalogNormalizeText_(base)||catalogNormalizeText_(bu.tipo)!==catalogNormalizeText_(tipo))throw new Error("CATALOG_UNIT_BASE_INCOMPATIBLE");}const f=rows.slice(1).map((r,i)=>({r,i})).find(x=>id&&String(x.r[0])===id),dup=rows.slice(1).find(r=>catalogNormalizeText_(r[1])===norm&&(!f||String(r[0])!==String(f.r[0])));if(dup)throw new Error("CATALOG_UNIT_DUPLICATE");const v=[f?f.r[0]:"UND-"+Utilities.getUuid(),name,norm,base,factor,tipo,String(p.estado||"Activo"),f?f.r[7]:a.userId,f?f.r[8]:new Date(),a.userId,new Date()];if(f)sh.getRange(f.i+2,1,1,v.length).setValues([v]);else sh.appendRow(v);return {status:"success",unidadId:v[0],nombre:name,unidadBase:base,factorConversionBase:factor};}finally{l.releaseLock();}}
+function getCatalogUnits(p){const a=catalogActor_(p,false),ss=SpreadsheetApp.openById(SPREADSHEET_ID),s=catalogEnsureDefaults_(ss,a);return {status:"success",unidades:s.units.getDataRange().getValues().slice(1).filter(r=>String(r[6]||"Activo")==="Activo"&&Number(r[4])>0).map(r=>({unidadId:r[0],nombre:r[1],unidadBase:r[3],factorConversionBase:Number(r[4]),tipo:r[5]}))};}
+function manageCatalogItem(p){p=p||{};const a=catalogActor_(p,true),ss=SpreadsheetApp.openById(SPREADSHEET_ID),l=LockService.getScriptLock();l.waitLock(15000);try{catalogEnsureDefaults_(ss,a);const sh=catalogSheet_(ss,"CatalogoArticulos",CATALOG_ITEM_HEADERS_,true),rows=sh.getDataRange().getValues(),all=rows.slice(1),action=String(p.accion||"guardar").toLowerCase(),key=String(p.itemId||p.ItemID||p.itemCodigo||p.codigo||"").trim();if(action==="desactivar"||action==="activar"){const item=catalogFindItem_(ss,key,false),i=all.findIndex(r=>String(r[0])===String(item.id)),r=all[i];r[23]=action==="activar"?"Activo":"Inactivo";r[27]=a.userId;r[28]=new Date();sh.getRange(i+2,1,1,CATALOG_ITEM_HEADERS_.length).setValues([r.slice(0,CATALOG_ITEM_HEADERS_.length)]);return {status:"success",itemId:item.id,estado:r[23]};}const v=catalogBuildItemValues_(ss,p,a,all),i=all.findIndex(r=>String(r[0])===String(v[0]));const similar=catalogSimilarItems_(all,p.itemNombre||p.nombre,p.itemCodigo||p.codigo).filter(x=>String(x.itemId)!==String(v[0]));if(similar.length&&p.confirmarDuplicado!==true)return {status:"warning",code:"CATALOG_POSSIBLE_DUPLICATES",suggestions:similar};if(i>=0)sh.getRange(i+2,1,1,v.length).setValues([v]);else sh.appendRow(v);return {status:"success",itemId:v[0],itemCodigo:v[1],estado:v[23]};}finally{l.releaseLock();}}
+function getCatalogItems(p){
+ catalogActor_(p,false);p=p||{};const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=catalogSheet_(ss,"CatalogoArticulos",CATALOG_ITEM_HEADERS_,false),rows=sh?sh.getDataRange().getValues().slice(1):[],inactive=p.incluirInactivos===true,q=catalogNormalizeText_(p.query||"");
+ const items=rows.filter(r=>(inactive||String(r[23])==="Activo")&&(!q||catalogNormalizeText_(r[1]).includes(q)||catalogNormalizeText_(r[2]).includes(q)||catalogNormalizeText_(r[5]).includes(q))).map(r=>({itemId:r[0],itemCodigo:r[1],itemNombre:r[2],descripcion:r[4],categoria:r[5],subcategoria:r[6],unidadMedida:r[7],unidadBase:r[8],factorConversionBase:Number(r[9]||1),marca:r[10],modeloReferencia:r[11],imagenUrl:r[12],codigoBarras:r[13],codigoQR:r[14],especificacionesTecnicas:r[15],proveedorHabitualId:r[16],costoReferencial:Number(r[17]||0),costoUltimaAdquisicion:Number(r[18]||0),costoPromedio:Number(r[19]||0),stockMinimo:Number(r[20]||0),stockMaximo:Number(r[21]||0),puntoReposicion:Number(r[22]||0),estado:r[23],observaciones:r[24],activoFijoRelacionadoId:r[29]}));
+ const known=new Set(rows.map(r=>catalogNormalizeCode_(r[1]))),legacyMap={};
+ const addLegacy=(code,name,category)=>{const c=String(code||"").trim(),k=catalogNormalizeCode_(c);if(c&&!known.has(k)&&!legacyMap[k])legacyMap[k]={itemCodigo:c,itemNombre:String(name||c),categoria:String(category||"Otros"),estado:"PendienteReconciliacion"};};
+ const kardex=ss.getSheetByName("InventariosKardex");(kardex?kardex.getDataRange().getValues().slice(1):[]).forEach(r=>addLegacy(r[2],r[3],r[4]));
+ ["SolicitudesCompra","OrdenesCompra","MaterialesSolicitudes"].forEach(name=>{const sheet=ss.getSheetByName(name);if(!sheet)return;sheet.getDataRange().getValues().slice(1).forEach(r=>{let list=[];try{list=typeof r[6]==="string"?JSON.parse(r[6]||"[]"):(r[6]||[]);}catch(_){}if(name==="MaterialesSolicitudes"){try{list=typeof r[4]==="string"?JSON.parse(r[4]||"[]"):(r[4]||[]);}catch(_){list=[];}}if(Array.isArray(list))list.forEach(x=>addLegacy(x.codigoItem||x.itemCodigo||x.itemId||x.ItemId,x.itemNombre||x.nombreItem||x.descripcion,"Otros"));});});
+ return {status:"success",items,pendientesReconciliacion:Object.values(legacyMap),sugerencias:q?catalogSimilarItems_(rows,p.query,p.query):[]};
 }
+function importCatalogItems(p){p=p||{};const a=catalogActor_(p,true),ss=SpreadsheetApp.openById(SPREADSHEET_ID),l=LockService.getScriptLock();l.waitLock(15000);try{catalogEnsureDefaults_(ss,a);let items=Array.isArray(p.items)?p.items:null;if(!items){const csv=String(p.csv||"");if(!csv)throw new Error("CATALOG_IMPORT_CONTENT_REQUIRED");const parsed=Utilities.parseCsv(csv);if(parsed.length<2)throw new Error("CATALOG_IMPORT_EMPTY");const h=parsed.shift().map(catalogNormalizeText_);items=parsed.filter(r=>r.some(v=>String(v||"").trim())).map(r=>{const o={};h.forEach((k,i)=>o[k]=r[i]||"");return {itemCodigo:o.itemcodigo||o.codigo,itemNombre:o.itemnombre||o.nombre,descripcion:o.descripcion,categoria:o.categoria,subcategoria:o.subcategoria,unidadMedida:o.unidadmedida||o.unidad,marca:o.marca,modeloReferencia:o.modeloreferencia||o.modelo,codigoBarras:o.codigobarras,costoReferencial:o.costoreferencial,stockMinimo:o.stockminimo,stockMaximo:o.stockmaximo,puntoReposicion:o.puntoreposicion,observaciones:o.observaciones};});}const sh=catalogSheet_(ss,"CatalogoArticulos",CATALOG_ITEM_HEADERS_,true),rows=sh.getDataRange().getValues().slice(1),prepared=[],codes=new Set(rows.map(r=>catalogNormalizeCode_(r[1]))),names=new Set(rows.map(r=>catalogNormalizeText_(r[2])+"|"+catalogNormalizeText_(r[5])));for(let i=0;i<items.length;i++){const v=catalogBuildItemValues_(ss,items[i],a,rows.concat(prepared)),c=catalogNormalizeCode_(v[1]),n=catalogNormalizeText_(v[2])+"|"+catalogNormalizeText_(v[5]);if(codes.has(c)||names.has(n))throw new Error("CATALOG_IMPORT_DUPLICATE_ROW_"+(i+2));codes.add(c);names.add(n);prepared.push(v);}prepared.forEach(r=>sh.appendRow(r));return {status:"success",importados:prepared.length};}finally{l.releaseLock();}}
+function exportCatalogItems(p){catalogActor_(p,false);const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=catalogSheet_(ss,"CatalogoArticulos",CATALOG_ITEM_HEADERS_,false),rows=sh?sh.getDataRange().getValues():[CATALOG_ITEM_HEADERS_],csv=rows.map(r=>r.map(v=>'"'+String(v===undefined||v===null?"":v).replace(/"/g,'""')+'"').join(",")).join("\r\n");return {status:"success",filename:"catalogo-articulos.csv",csv:"\uFEFF"+csv};}
+function catalogEnsureKardexSchema_(ss){const h=["KardexID","Fecha","ItemCodigo","ItemNombre","CategoriaTipo","TipoMovimiento","Cantidad","StockAnterior","StockNuevo","StockMinimo","UbicacionResponsable","Observaciones","CatalogoItemID","CantidadBase","UnidadMedidaOriginal","FactorConversion"],sh=getOrCreateSheet(ss,"InventariosKardex"),v=sh.getDataRange().getValues();if(!v.length||!v[0].some(x=>String(x||"").trim()))sh.getRange(1,1,1,h.length).setValues([h]);else{const a=v[0].map(x=>String(x||"").trim()),prefix=a.length<=h.length&&a.every((x,i)=>x===h[i]);if(prefix&&a.length<h.length)sh.getRange(1,a.length+1,1,h.length-a.length).setValues([h.slice(a.length)]);else if(h.slice(0,12).some((x,i)=>a[i]!==x))throw new Error("INVENTORY_KARDEX_SCHEMA_MISMATCH");}return sh;}
 
-// [TASK-019] [F19-Task01] - Consulta multidimensional de Kardex y existencias por almacén
+function recordInventoryMovement(payload) {
+ const p=payload||{},itemCodigo=p.itemCodigo,cantidad=p.cantidad,tipoNorm=String(p.tipoMovimiento||"Entrada").trim(),target=String(p.ubicacionId||p.ubicacionResponsable||p.almacenId||"Bodega General").trim();
+ if(!itemCodigo||cantidad===undefined||!Number.isFinite(Number(cantidad))||Number(cantidad)<=0)throw new Error("itemCodigo y cantidad válida requeridos.");
+ const code=String(itemCodigo).trim(),inputQty=Number(cantidad),lock=LockService.getScriptLock();lock.waitLock(15000);
+ try{
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),item=catalogFindItem_(ss,code,true),unit=catalogFindUnit_(ss,p.unidadMedida||item.unit);
+  if(catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit))throw new Error("CATALOG_UNIT_INCOMPATIBLE_WITH_ITEM");
+  const factor=p.cantidadBase===true?1:unit.factor,qty=assetDeprMoney_(inputQty*factor),name=item.name,category=item.category;if(qty<=0)throw new Error("INVENTORY_BASE_QUANTITY_INVALID");
+  const sheet=catalogEnsureKardexSchema_(ss),data=sheet.getDataRange().getValues().slice(1);let current=0;const locations={};
+  data.forEach(r=>{if(String(r[2]||"").trim()===code){const loc=String(r[10]||"Bodega General").trim();locations[loc.toLowerCase()]=Number(r[8]||0);if(loc.toLowerCase()===target.toLowerCase())current=Number(r[8]||0);}});
+  let next=current;const incoming=["Entrada","Devolucion","AjustePositivo"].indexOf(tipoNorm)!==-1,outgoing=["Salida","Prestamo","Baja","TransferenciaSalida","Consumo","AjusteNegativo"].indexOf(tipoNorm)!==-1;
+  if(incoming)next=assetDeprMoney_(current+qty);else if(outgoing){if(current<qty)throw new Error("INSUFFICIENT_LOCAL_STOCK:"+code+":"+target+":"+current+":"+qty);next=assetDeprMoney_(current-qty);}else next=assetDeprMoney_(qty);
+  locations[target.toLowerCase()]=next;let total=0;Object.keys(locations).forEach(k=>total+=Number(locations[k]||0));total=assetDeprMoney_(total);
+  const min=Number(p.stockMinimo===undefined||p.stockMinimo===""?item.row[20]||5:p.stockMinimo),now=new Date(),id="KDX-"+Utilities.getUuid();let obs=String(p.observaciones||"");if(p.numeroLote)obs+=" | [LOTE:"+p.numeroLote+"]";if(p.numeroSerie)obs+=" | [SERIE:"+p.numeroSerie+"]";if(p.documentOrigen)obs+=" | [DOC:"+p.documentOrigen+"]";if(p.referenciaMovimiento)obs+=" | [REF:"+p.referenciaMovimiento+"]";if(p.cantidadBase!==true&&factor!==1)obs+=" | [CONVERSION:"+inputQty+" "+unit.name+" x "+factor+" = "+qty+" "+unit.base+"]";
+  sheet.appendRow([id,now,code,name,category,tipoNorm,qty,current,next,min,target,obs.trim(),item.id,qty,unit.name,factor]);
+  const low=next<=min;return {status:"success",kardexId:id,itemCodigo:code,itemNombre:name,ubicacion:target,cantidadRegistrada:inputQty,cantidadBase:qty,unidadBase:item.baseUnit,stockAnteriorUbicacion:current,stockNuevoUbicacion:next,stockConsolidadoInstitucional:total,stockMinimo:min,alertaStockMinimo:low,message:low?"Movimiento registrado; stock bajo en "+target+".":"Movimiento de inventario registrado correctamente."};
+ }finally{lock.releaseLock();}
+}
 function getInventoryKardex(payload) {
   const { itemCodigo, categoriaTipo, ubicacionId, ubicacionResponsable, almacenId, fechaInicio, fechaFin } = payload || {};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -7782,7 +7725,12 @@ function getInventoryKardex(payload) {
     });
   });
 
+  const catalogRows=catalogSheet_(ss,"CatalogoArticulos",CATALOG_ITEM_HEADERS_,false),catalogByCode=Object.create(null);if(catalogRows)catalogRows.getDataRange().getValues().slice(1).forEach(r=>catalogByCode[catalogNormalizeCode_(r[1])]=r[0]);
   const mapped = filtered.map(r => ({
+    catalogItemId: r[12] || catalogByCode[catalogNormalizeCode_(r[2])] || "",
+    cantidadBase: Number(r[13] || r[6] || 0),
+    unidadMedidaOriginal: r[14] || "",
+    factorConversion: Number(r[15] || 1),
     kardexId: r[0],
     fecha: r[1],
     itemCodigo: r[2],
@@ -8127,30 +8075,11 @@ function registerAssetsFromPurchaseReceipt(payload) {
   }finally{lock.releaseLock();}
 }
 function createPurchaseRequest(payload) {
-  const { departamento, solicitanteUserId, justificacion, categoria, detalleItems, montoEstimado, centroCosto, observaciones } = payload || {};
-  if (!departamento || !justificacion) throw new Error("Departamento y justificación son requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "SolicitudesCompra");
-  const now = new Date();
-  const solId = "REQ-CMP-" + now.getTime();
-
-  const normalizedItems = Array.isArray(detalleItems) ? detalleItems.map(item => ({ ...item, clasificacionInventario: normalizePurchaseAssetClassification_(item) })) : [];
-  sheet.appendRow([
-    solId,
-    now,
-    departamento,
-    solicitanteUserId || "COMPRADOR",
-    justificacion,
-    categoria || "Materiales/Insumos",
-    JSON.stringify(normalizedItems),
-    parseFloat(montoEstimado || 0),
-    centroCosto || "Operaciones",
-    "PendienteAprobacion",
-    observaciones || ""
-  ]);
-
-  return { status: "success", solicitudId: solId, message: "Solicitud de compra registrada exitosamente." };
+ const p=payload||{},actor=catalogActor_(p,false),ss=SpreadsheetApp.openById(SPREADSHEET_ID),{departamento,justificacion,categoria,detalleItems,montoEstimado,centroCosto,observaciones}=p;
+ if(!departamento||!justificacion)throw new Error("Departamento y justificación son requeridos.");if(!Array.isArray(detalleItems)||!detalleItems.length)throw new Error("PURCHASE_REQUEST_ITEMS_REQUIRED");
+ const lock=LockService.getScriptLock();lock.waitLock(15000);try{const normalizedItems=detalleItems.map(x=>{const item=catalogFindItem_(ss,x.catalogItemId||x.codigoItem||x.itemCodigo||x.itemId,true),unit=catalogFindUnit_(ss,x.unidadMedida||x.unidad||item.unit),qty=Number(x.cantidad||x.quantity);if(catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit))throw new Error("CATALOG_UNIT_INCOMPATIBLE_WITH_ITEM");if(!Number.isFinite(qty)||qty<=0)throw new Error("PURCHASE_REQUEST_QUANTITY_INVALID");return {...x,catalogItemId:item.id,codigoItem:item.code,itemId:item.code,descripcion:item.name,unidad:unit.name,unidadMedida:unit.name,cantidad:qty,clasificacionInventario:normalizePurchaseAssetClassification_(x)};});
+ const sh=getOrCreateSheet(ss,"SolicitudesCompra"),now=new Date(),id="REQ-CMP-"+Utilities.getUuid();sh.appendRow([id,now,departamento,actor.userId,justificacion,categoria||"Materiales/Insumos",JSON.stringify(normalizedItems),parseFloat(montoEstimado||0),centroCosto||"Operaciones","PendienteAprobacion",observaciones||""]);return {status:"success",solicitudId:id,message:"Solicitud de compra registrada exitosamente."};
+ }finally{lock.releaseLock();}
 }
 
 function getPurchaseRequests(payload) {
@@ -8999,6 +8928,7 @@ function recordPurchaseReceipt(payload) {
 
     // 4. Registro físico en Kardex únicamente para unidades conformes
     if (registrarEnInventario && itemsToInventory.length > 0) {
+      itemsToInventory.forEach(item => {const ci=catalogFindItem_(ss,item.codigoItem,true),u=catalogFindUnit_(ss,item.unidadMedida||item.unidad||ci.unit);if(catalogNormalizeText_(u.base)!==catalogNormalizeText_(ci.baseUnit))throw new Error("CATALOG_UNIT_INCOMPATIBLE_WITH_ITEM");});
       itemsToInventory.forEach(item => {
         if (item.codigoItem && item.cantidad > 0) {
           recordInventoryMovement({
@@ -9007,6 +8937,7 @@ function recordPurchaseReceipt(payload) {
             categoriaTipo: "Consumible",
             tipoMovimiento: "Entrada",
             cantidad: item.cantidad,
+            unidadMedida: item.unidadMedida || item.unidad || undefined,
             observaciones: `Entrada conforme desde Recepción de Compra ${recId} (Orden: ${ordenCompraId})`
           });
         }
@@ -15123,6 +15054,7 @@ function transferInventoryStock(payload) {
       itemNombre: sNombre || itemCodigo,
       tipoMovimiento: "TransferenciaSalida",
       cantidad: qty,
+      cantidadBase: true,
       ubicacionResponsable: uOrigen,
       documentOrigen: transferBatchId,
       referenciaMovimiento: `Hacia ${uDestino} [Estado: ${estadoTransferencia}]`,
@@ -15137,6 +15069,7 @@ function transferInventoryStock(payload) {
         itemNombre: sNombre || itemCodigo,
         tipoMovimiento: "Entrada",
         cantidad: qty,
+        cantidadBase: true,
         ubicacionResponsable: uDestino,
         documentOrigen: transferBatchId,
         referenciaMovimiento: `Desde ${uOrigen}`,
@@ -15268,6 +15201,7 @@ function confirmTransferReceipt(payload) {
         itemNombre,
         tipoMovimiento: "Entrada",
         cantidad: cantRec,
+        cantidadBase: true,
         ubicacionResponsable: uDestino,
         documentOrigen: transferBatchId,
         referenciaMovimiento: `Recepción desde ${uOrigen} [Discrepancia: ${discrepancia}]`,
@@ -15352,36 +15286,11 @@ function getInventoryTransfers(payload) {
 }
 
 function createMaterialRequisition(payload) {
-  const { departamento, solicitanteUserId, articulosJSON, motivo, observaciones } = payload || {};
-  if (!departamento || !solicitanteUserId || !articulosJSON) {
-    throw new Error("departamento, solicitanteUserId y articulosJSON son requeridos.");
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "MaterialesSolicitudes");
-  const now = new Date();
-  const solId = "REQ-MAT-" + now.getTime();
-
-  let itemsStr = typeof articulosJSON === "string" ? articulosJSON : JSON.stringify(articulosJSON);
-
-  sheet.appendRow([
-    solId,
-    now,
-    departamento,
-    solicitanteUserId,
-    itemsStr,
-    motivo || "Consumo Operativo",
-    "PendienteAprobacion",
-    "",
-    "",
-    observaciones || ""
-  ]);
-
-  return {
-    status: "success",
-    solicitudMatId: solId,
-    message: "Solicitud interna de materiales registrada en estado PendienteAprobacion."
-  };
+ const p=payload||{},actor=catalogActor_(p,false),ss=SpreadsheetApp.openById(SPREADSHEET_ID);if(!p.departamento||!p.articulosJSON)throw new Error("departamento y articulosJSON son requeridos.");
+ let input;try{input=Array.isArray(p.articulosJSON)?p.articulosJSON:JSON.parse(p.articulosJSON);}catch(e){throw new Error("MATERIAL_REQUISITION_ITEMS_INVALID");}if(!Array.isArray(input)||!input.length)throw new Error("MATERIAL_REQUISITION_ITEMS_REQUIRED");
+ const lock=LockService.getScriptLock();lock.waitLock(15000);try{const normalized=input.map(x=>{const item=catalogFindItem_(ss,x.catalogItemId||x.itemCodigo||x.itemId,true),unit=catalogFindUnit_(ss,x.unidadMedida||item.unit),qty=Number(x.cantidad);if(catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit))throw new Error("CATALOG_UNIT_INCOMPATIBLE_WITH_ITEM");if(!Number.isFinite(qty)||qty<=0)throw new Error("MATERIAL_REQUISITION_QUANTITY_INVALID");return {catalogItemId:item.id,itemCodigo:item.code,itemNombre:item.name,unidadMedida:unit.name,unidadBase:item.baseUnit,factorConversionBase:unit.factor,cantidad:qty};});
+ const sh=getOrCreateSheet(ss,"MaterialesSolicitudes"),now=new Date(),id="REQ-MAT-"+Utilities.getUuid();sh.appendRow([id,now,p.departamento,actor.userId,JSON.stringify(normalized),p.motivo||"Consumo Operativo","PendienteAprobacion","","",p.observaciones||""]);return {status:"success",solicitudMatId:id,message:"Solicitud interna de materiales registrada en estado PendienteAprobacion."};
+ }finally{lock.releaseLock();}
 }
 
 function getMaterialRequisitions(payload) {
@@ -15434,6 +15343,7 @@ function deliverMaterialRequisition(payload) {
   }
 
   if (Array.isArray(itemsArr)) {
+    itemsArr.forEach(item => {const ci=catalogFindItem_(ss,item.catalogItemId||item.itemCodigo||item.itemId,true),u=catalogFindUnit_(ss,item.unidadMedida||item.unidad||ci.unit);if(catalogNormalizeText_(u.base)!==catalogNormalizeText_(ci.baseUnit)||!Number.isFinite(Number(item.cantidad))||Number(item.cantidad)<=0)throw new Error("MATERIAL_REQUISITION_ITEM_INVALID");});
     itemsArr.forEach(item => {
       if (item.itemCodigo && item.cantidad) {
         recordInventoryMovement({
@@ -15441,6 +15351,7 @@ function deliverMaterialRequisition(payload) {
           itemNombre: item.itemNombre || item.itemCodigo,
           tipoMovimiento: "Salida",
           cantidad: parseFloat(item.cantidad),
+          unidadMedida: item.unidadMedida || item.unidad || undefined,
           ubicacionResponsable: data[idx][2] || "Departamento Solicitante",
           observaciones: `Entrega por Solicitud ${solicitudMatId}`
         });
@@ -15554,6 +15465,7 @@ function reconcilePhysicalCount(payload) {
           itemNombre: item.itemNombre || code,
           tipoMovimiento: dif > 0 ? "Entrada" : "Baja",
           cantidad: Math.abs(dif),
+          cantidadBase: true,
           ubicacionResponsable: targetAlmacen,
           observaciones: `Ajuste por Conteo Físico ${conteoId}. Diferencia: ${dif}`
         });
@@ -15633,6 +15545,7 @@ function manageMaintenanceOrder(payload) {
             itemNombre: rp.itemNombre || rp.itemCodigo,
             tipoMovimiento: "Salida",
             cantidad: parseFloat(rp.cantidad),
+            unidadMedida: rp.unidadMedida || rp.unidad || undefined,
             ubicacionResponsable: "Mantenimiento / " + activoIdUbicacion,
             observaciones: `Consumo de repuesto por Orden Mantenimiento ${oId}`
           });
@@ -15988,6 +15901,7 @@ function registerAssetDisposal(payload) {
       itemNombre: nombreBien || bienIdCodigo,
       tipoMovimiento: "Baja",
       cantidad: parseFloat(payload.cantidad || 1),
+      cantidadBase: true,
       ubicacionResponsable: "Almacén de Bajas",
       observaciones: `Baja de inventario por acta ${bajaId}. Motivo: ${motivoBaja}`
     });

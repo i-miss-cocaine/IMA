@@ -76,6 +76,7 @@ function renderInventarioModule(container) {
         </h4>
         <div class="flex flex-wrap gap-2 text-xs font-bold uppercase">
           <button onclick="switchInventarioSubtab('kardex')" id="btn-sub-kardex" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-blue-600 text-white">Kardex</button>
+          <button onclick="switchInventarioSubtab('catalogo')" id="btn-sub-catalogo" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Catálogo</button>
           <button onclick="switchInventarioSubtab('almacenes')" id="btn-sub-almacenes" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Almacenes</button>
           <button onclick="switchInventarioSubtab('transferencias')" id="btn-sub-transferencias" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Transferencias</button>
           <button onclick="switchInventarioSubtab('solicitudes')" id="btn-sub-solicitudes" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Solicitudes & Entregas</button>
@@ -95,7 +96,7 @@ function renderInventarioModule(container) {
 
 window.switchInventarioSubtab = function (subtab) {
   currentInventarioSubtab = subtab;
-  ['kardex', 'almacenes', 'transferencias', 'solicitudes', 'activos', 'mantenimiento', 'bajas'].forEach(s => {
+  ['kardex', 'catalogo', 'almacenes', 'transferencias', 'solicitudes', 'activos', 'mantenimiento', 'bajas'].forEach(s => {
     const btn = document.getElementById(`btn-sub-${s}`);
     if (btn) {
       if (s === subtab) {
@@ -110,6 +111,7 @@ window.switchInventarioSubtab = function (subtab) {
   if (!subContainer) return;
 
   if (subtab === 'kardex') renderKardexView(subContainer);
+  else if (subtab === 'catalogo') renderCatalogoView(subContainer);
   else if (subtab === 'almacenes') renderAlmacenesView(subContainer);
   else if (subtab === 'transferencias') renderTransferenciasView(subContainer);
   else if (subtab === 'solicitudes') renderSolicitudesView(subContainer);
@@ -120,6 +122,22 @@ window.switchInventarioSubtab = function (subtab) {
 
 // --- SUB-VISTAS DE INVENTARIO ---
 
+
+function catalogHtmlEscape(value){return String(value===undefined||value===null?"":value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+window.populateCatalogSelect=function(select,selected,unitSelect){if(!select)return;select.innerHTML='<option value="">Cargando catálogo...</option>';fetchApi('ACCOUNTING','getCatalogItems',{}).then(res=>{select.innerHTML='<option value="">Seleccione artículo</option>';(res.items||[]).forEach(item=>{const o=document.createElement('option');o.value=item.itemCodigo;o.textContent=item.itemCodigo+' · '+item.itemNombre;o.dataset.name=item.itemNombre;o.dataset.itemId=item.itemId;o.dataset.unit=item.unidadMedida;if(selected===item.itemCodigo)o.selected=true;select.appendChild(o);});}).catch(()=>{select.innerHTML='<option value="">Error de catálogo</option>';});if(unitSelect){fetchApi('ACCOUNTING','getCatalogUnits',{}).then(res=>{unitSelect.innerHTML=(res.unidades||[]).map(u=>'<option value="'+catalogHtmlEscape(u.nombre)+'">'+catalogHtmlEscape(u.nombre)+' → '+catalogHtmlEscape(u.unidadBase)+'</option>').join('');}).catch(()=>{});}};
+function renderCatalogoView(container){
+ container.innerHTML='<div class="space-y-4"><div class="flex flex-wrap justify-between gap-2"><div><h5 class="font-black text-sm">Catálogo maestro de artículos e insumos</h5><p class="text-xs text-gray-500">Códigos únicos, categorías, unidades y conversiones.</p></div><div class="flex gap-2"><button onclick="exportCatalogItemsUI()" class="px-3 py-2 bg-slate-700 text-white rounded-lg text-xs font-bold">Exportar CSV para Excel</button><label class="px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold cursor-pointer">Importar CSV<input type="file" accept=".csv,text/csv" class="hidden" onchange="importCatalogItemsUI(event)"></label></div></div><form id="catalog-item-form" onsubmit="saveCatalogItemUI(event)" class="grid grid-cols-1 md:grid-cols-3 gap-2 border rounded-xl p-4 text-xs"><input id="cat-code" required class="p-2 border rounded-lg" placeholder="Código institucional *"><input id="cat-name" required class="p-2 border rounded-lg" placeholder="Nombre del artículo *"><select id="cat-category" required class="p-2 border rounded-lg"></select><select id="cat-unit" required class="p-2 border rounded-lg"></select><input id="cat-subcategory" class="p-2 border rounded-lg" placeholder="Subcategoría"><input id="cat-brand" class="p-2 border rounded-lg" placeholder="Marca"><input id="cat-model" class="p-2 border rounded-lg" placeholder="Modelo / referencia"><input id="cat-cost" type="number" min="0" step="0.01" value="0" class="p-2 border rounded-lg" placeholder="Costo referencial"><input id="cat-min" type="number" min="0" step="0.01" value="0" class="p-2 border rounded-lg" placeholder="Stock mínimo"><textarea id="cat-description" class="p-2 border rounded-lg md:col-span-2" placeholder="Descripción / especificaciones"></textarea><button class="p-2 bg-blue-600 text-white rounded-lg font-bold">Guardar artículo</button></form><div class="grid grid-cols-1 md:grid-cols-2 gap-2"><form onsubmit="saveCatalogCategoryUI(event)" class="border rounded-xl p-3 flex gap-2"><input id="cat-new-category" required class="p-2 border rounded-lg flex-1" placeholder="Nueva categoría"><button class="p-2 bg-slate-700 text-white rounded-lg">Agregar</button></form><form onsubmit="saveCatalogUnitUI(event)" class="border rounded-xl p-3 grid grid-cols-2 gap-2"><input id="cat-new-unit" required class="p-2 border rounded-lg" placeholder="Nueva unidad"><select id="cat-unit-base" required class="p-2 border rounded-lg"></select><input id="cat-unit-factor" required type="number" min="0.000001" step="any" class="p-2 border rounded-lg" placeholder="Factor base"><input id="cat-unit-type" value="Cantidad" class="p-2 border rounded-lg"><button class="p-2 bg-slate-700 text-white rounded-lg col-span-2">Guardar conversión</button></form></div><div id="catalog-legacy" class="text-xs"></div><div id="catalog-items-table" class="overflow-x-auto text-xs">Cargando catálogo...</div></div>';
+ loadCatalogoData();
+}
+window.loadCatalogoData=function(){Promise.all([fetchApi('ACCOUNTING','getCatalogItems',{incluirInactivos:true}),fetchApi('ACCOUNTING','getCatalogCategories',{}),fetchApi('ACCOUNTING','getCatalogUnits',{})]).then(([items,cats,units])=>{const cat=document.getElementById('cat-category'),unit=document.getElementById('cat-unit'),base=document.getElementById('cat-unit-base');if(cat)cat.innerHTML=(cats.categorias||[]).map(x=>'<option>'+catalogHtmlEscape(x.nombre)+'</option>').join('');const opts=(units.unidades||[]).map(x=>'<option value="'+catalogHtmlEscape(x.nombre)+'">'+catalogHtmlEscape(x.nombre)+' → '+catalogHtmlEscape(x.unidadBase)+'</option>').join('');if(unit)unit.innerHTML=opts;if(base)base.innerHTML=opts;const legacy=document.getElementById('catalog-legacy');if(legacy){const p=items.pendientesReconciliacion||[];legacy.innerHTML=p.length?'<div class="border border-amber-300 bg-amber-50 rounded-xl p-3"><b>Históricos por reconciliar ('+p.length+')</b>'+p.map(x=>'<div class="flex justify-between py-1"><span>'+catalogHtmlEscape(x.itemCodigo)+' · '+catalogHtmlEscape(x.itemNombre)+'</span><button onclick="reconcileLegacyCatalogItemUI(\\''+catalogHtmlEscape(x.itemCodigo)+'\\',\\''+catalogHtmlEscape(x.itemNombre)+'\\')">Marcar pendiente</button></div>').join('')+'</div>':'';}const host=document.getElementById('catalog-items-table');if(host)host.innerHTML='<table class="w-full text-left"><thead><tr><th>Código</th><th>Artículo</th><th>Categoría</th><th>Unidad</th><th>Estado</th><th></th></tr></thead><tbody>'+(items.items||[]).map(x=>'<tr class="border-b"><td>'+catalogHtmlEscape(x.itemCodigo)+'</td><td>'+catalogHtmlEscape(x.itemNombre)+'</td><td>'+catalogHtmlEscape(x.categoria)+'</td><td>'+catalogHtmlEscape(x.unidadMedida)+' / '+catalogHtmlEscape(x.unidadBase)+'</td><td>'+catalogHtmlEscape(x.estado)+'</td><td><button onclick="toggleCatalogItemUI(\\''+catalogHtmlEscape(x.itemCodigo)+'\\',\\''+(x.estado==='Activo'?'desactivar':'activar')+'\\')">'+(x.estado==='Activo'?'Desactivar':'Activar')+'</button></td></tr>').join('')+'</tbody></table>';}).catch(e=>{const h=document.getElementById('catalog-items-table');if(h)h.textContent=e.message||String(e);});};
+window.saveCatalogItemUI=function(e){e.preventDefault();const p={itemCodigo:document.getElementById('cat-code').value,itemNombre:document.getElementById('cat-name').value,categoria:document.getElementById('cat-category').value,unidadMedida:document.getElementById('cat-unit').value,subcategoria:document.getElementById('cat-subcategory').value,marca:document.getElementById('cat-brand').value,modeloReferencia:document.getElementById('cat-model').value,costoReferencial:document.getElementById('cat-cost').value,stockMinimo:document.getElementById('cat-min').value,descripcion:document.getElementById('cat-description').value};fetchApi('ACCOUNTING','manageCatalogItem',p).then(r=>{if(r.status==='warning'){const detail=(r.suggestions||[]).map(x=>x.itemCodigo+' · '+x.itemNombre).join('\\n');if(!confirm('Posibles artículos duplicados:\\n'+detail+'\\n¿Desea guardar de todos modos?'))return;p.confirmarDuplicado=true;return fetchApi('ACCOUNTING','manageCatalogItem',p);}return r;}).then(()=>{document.getElementById('catalog-item-form').reset();loadCatalogoData();}).catch(x=>alert(x.message||x));};
+window.saveCatalogCategoryUI=function(e){e.preventDefault();fetchApi('ACCOUNTING','manageCatalogCategory',{nombre:document.getElementById('cat-new-category').value}).then(()=>loadCatalogoData()).catch(x=>alert(x.message||x));};
+window.saveCatalogUnitUI=function(e){e.preventDefault();fetchApi('ACCOUNTING','manageCatalogUnit',{nombre:document.getElementById('cat-new-unit').value,unidadBase:document.getElementById('cat-unit-base').value,factorConversionBase:document.getElementById('cat-unit-factor').value,tipo:document.getElementById('cat-unit-type').value}).then(()=>loadCatalogoData()).catch(x=>alert(x.message||x));};
+window.toggleCatalogItemUI=function(code,accion){fetchApi('ACCOUNTING','manageCatalogItem',{itemCodigo:code,accion:accion}).then(()=>loadCatalogoData()).catch(x=>alert(x.message||x));};
+window.reconcileLegacyCatalogItemUI=function(code,name){fetchApi('ACCOUNTING','manageCatalogItem',{itemCodigo:code,itemNombre:name,categoria:'Otros',unidadMedida:'Unidad',estado:'PendienteReconciliacion'}).then(()=>loadCatalogoData()).catch(e=>alert(e.message||e));};
+window.exportCatalogItemsUI=function(){fetchApi('ACCOUNTING','exportCatalogItems',{}).then(r=>{const b=new Blob([r.csv],{type:'text/csv;charset=utf-8;'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=r.filename;a.click();URL.revokeObjectURL(u);}).catch(e=>alert(e.message||e));};
+window.importCatalogItemsUI=function(e){const f=e.target.files&&e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>fetchApi('ACCOUNTING','importCatalogItems',{csv:String(r.result||'')}).then(()=>loadCatalogoData()).catch(x=>alert(x.message||x));r.readAsText(f);};
+
 function renderKardexView(container) {
   container.innerHTML = `
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -127,12 +145,12 @@ function renderKardexView(container) {
         <h5 class="font-black text-xs uppercase text-gray-800 mb-3"><i class="fas fa-plus-circle text-emerald-600"></i> Registrar Movimiento</h5>
         <form id="form-movimiento-kardex" onsubmit="handleMovimientoKardex(event)" class="space-y-3 text-xs">
           <div>
-            <label class="block font-bold text-gray-600 mb-1">Código de Ítem *</label>
-            <input type="text" id="kdx-codigo" required class="w-full p-2 border border-gray-300 rounded-xl font-bold" placeholder="EJ: MAT-PAP-01">
+            <label class="block font-bold text-gray-600 mb-1">Artículo del catálogo *</label>
+            <select id="kdx-codigo" required class="w-full p-2 border border-gray-300 rounded-xl font-bold"></select>
           </div>
           <div>
-            <label class="block font-bold text-gray-600 mb-1">Nombre de Ítem *</label>
-            <input type="text" id="kdx-nombre" required class="w-full p-2 border border-gray-300 rounded-xl" placeholder="EJ: Papel Bond Tamaño Carta">
+            <label class="block font-bold text-gray-600 mb-1">Unidad de movimiento *</label>
+            <select id="kdx-unidad" required class="w-full p-2 border border-gray-300 rounded-xl"></select>
           </div>
           <div>
             <label class="block font-bold text-gray-600 mb-1">Tipo Movimiento</label>
@@ -178,8 +196,11 @@ function renderKardexView(container) {
       </div>
     </div>
   `;
+  loadCatalogSelectOptions("kdx-codigo","kdx-unidad");
   loadKardexData();
 }
+
+window.loadCatalogSelectOptions=function(itemId,unitId){const item=document.getElementById(itemId),unit=document.getElementById(unitId);if(item)populateCatalogSelect(item,"",unit);};
 
 // [TASK-019] [F19-Task01] - Carga y renderizado de existencias multialmacén e historial de Kardex
 window.loadKardexData = function (filtroUbicacion) {
@@ -278,7 +299,7 @@ window.handleMovimientoKardex = function (e) {
   e.preventDefault();
   const payload = {
     itemCodigo: document.getElementById('kdx-codigo').value,
-    itemNombre: document.getElementById('kdx-nombre').value,
+    unidadMedida: document.getElementById('kdx-unidad').value,
     tipoMovimiento: document.getElementById('kdx-tipo').value,
     cantidad: document.getElementById('kdx-cantidad').value,
     stockMinimo: document.getElementById('kdx-minimo').value,
@@ -408,19 +429,11 @@ window.handleSaveAlmacen = function (e) {
 // --- SOLICITUDES & ENTREGAS ---
 
 function renderSolicitudesView(container) {
-  container.innerHTML = `
-    <div class="bg-white p-5 rounded-2xl border border-gray-200">
-      <div class="flex justify-between items-center mb-4">
-        <h5 class="font-black text-xs uppercase text-gray-800"><i class="fas fa-file-signature text-purple-600"></i> Solicitudes Internas de Materiales</h5>
-        <button onclick="loadSolicitudesData()" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200"><i class="fas fa-sync"></i> Actualizar</button>
-      </div>
-      <div id="solicitudes-table-container" class="overflow-x-auto text-xs">
-        <div class="text-center py-6 text-gray-400 font-bold uppercase">Cargando solicitudes...</div>
-      </div>
-    </div>
-  `;
-  loadSolicitudesData();
+ container.innerHTML='<div class="space-y-4"><div class="border rounded-xl p-4 space-y-3"><h5 class="font-black text-xs uppercase">Nueva solicitud interna de materiales</h5><div class="grid grid-cols-1 md:grid-cols-3 gap-2"><input id="mat-departamento" required class="p-2 border rounded-lg" placeholder="Departamento solicitante"><input id="mat-motivo" class="p-2 border rounded-lg" placeholder="Motivo"><button type="button" onclick="addMaterialRequestLine()" class="p-2 bg-slate-700 text-white rounded-lg">Agregar artículo</button></div><div id="mat-request-lines" class="space-y-2"></div><button onclick="submitMaterialRequisition()" class="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold text-xs">Enviar solicitud</button></div><div class="bg-white p-5 rounded-2xl border border-gray-200"><div class="flex justify-between items-center mb-4"><h5 class="font-black text-xs uppercase text-gray-800">Solicitudes internas de materiales</h5><button onclick="loadSolicitudesData()" class="px-3 py-1 bg-gray-100 rounded-lg text-xs font-bold">Actualizar</button></div><div id="solicitudes-table-container" class="overflow-x-auto text-xs">Cargando...</div></div></div>';
+ addMaterialRequestLine();loadSolicitudesData();
 }
+window.addMaterialRequestLine=function(){const host=document.getElementById('mat-request-lines');if(!host)return;const row=document.createElement('div');row.className='grid grid-cols-1 md:grid-cols-4 gap-2 border rounded-lg p-2';row.innerHTML='<select data-field="item" required class="p-2 border rounded-lg"></select><select data-field="unit" required class="p-2 border rounded-lg"></select><input data-field="qty" type="number" min="0.0001" step="any" value="1" class="p-2 border rounded-lg"><button type="button" class="text-rose-600 font-bold" onclick="this.parentElement.remove()">Quitar</button>';host.appendChild(row);populateCatalogSelect(row.querySelector('[data-field="item"]'),"",row.querySelector('[data-field="unit"]'));};
+window.submitMaterialRequisition=function(){const rows=Array.from(document.querySelectorAll('#mat-request-lines > div')),items=rows.map(r=>({itemCodigo:r.querySelector('[data-field="item"]').value,unidadMedida:r.querySelector('[data-field="unit"]').value,cantidad:Number(r.querySelector('[data-field="qty"]').value)}));if(!items.length||items.some(x=>!x.itemCodigo||!x.unidadMedida||!Number.isFinite(x.cantidad)||x.cantidad<=0)){alert('Seleccione artículos del catálogo y cantidades válidas.');return;}fetchApi('ACCOUNTING','createMaterialRequisition',{departamento:document.getElementById('mat-departamento').value,motivo:document.getElementById('mat-motivo').value,articulosJSON:items}).then(r=>{alert(r.message||'Solicitud registrada.');loadSolicitudesData();}).catch(e=>alert(e.message||e));};
 
 window.loadSolicitudesData = function () {
   const container = document.getElementById('solicitudes-table-container');
@@ -1478,32 +1491,15 @@ function openNewPurchaseRequestModal() {
 }
 window.closePurchaseRequestModal=function(){document.getElementById("purchase-request-modal")?.remove();};
 window.addPurchaseRequestLine=function(){
-  const host=document.getElementById("purchase-request-lines");if(!host)return;
-  const row=document.createElement("div");row.className="purchase-request-line border rounded-xl p-3 grid grid-cols-1 md:grid-cols-6 gap-2";
-  row.innerHTML=`<label class="text-[10px] font-bold">ID de partida *<input data-field="itemId" required class="w-full mt-1 p-2 border rounded-lg text-xs" placeholder="ITEM-001"></label>
-    <label class="text-[10px] font-bold md:col-span-2">Descripción *<input data-field="descripcion" required class="w-full mt-1 p-2 border rounded-lg text-xs" placeholder="Descripción del bien"></label>
-    <label class="text-[10px] font-bold">Unidad<input data-field="unidad" class="w-full mt-1 p-2 border rounded-lg text-xs" placeholder="Unidad"></label>
-    <label class="text-[10px] font-bold">Cantidad *<input data-field="cantidad" type="number" min="0.01" step="0.01" value="1" required class="w-full mt-1 p-2 border rounded-lg text-xs"></label>
-    <label class="text-[10px] font-bold">Precio estimado<input data-field="precioUnitario" type="number" min="0" step="0.01" value="0" class="w-full mt-1 p-2 border rounded-lg text-xs"></label>
-    <label class="text-[10px] font-bold md:col-span-2">Clasificación de inventario *
-      <select data-field="clasificacionInventario" required class="w-full mt-1 p-2 border rounded-lg text-xs">
-        <option value="MaterialInventariable">Material inventariable</option><option value="Consumible">Consumible</option><option value="ActivoFijo">Bien capitalizable / Activo fijo</option>
-      </select></label>
-    <div class="md:col-span-4 flex items-end justify-end"><button type="button" onclick="this.closest('.purchase-request-line').remove()" class="px-3 py-2 text-rose-600 text-xs font-bold">Quitar partida</button></div>`;
-  host.appendChild(row);
+ const host=document.getElementById("purchase-request-lines");if(!host)return;const row=document.createElement("div");row.className="purchase-request-line border rounded-xl p-3 grid grid-cols-1 md:grid-cols-6 gap-2";
+ row.innerHTML='<label class="text-[10px] font-bold md:col-span-2">Artículo del catálogo *<select data-field="item" required class="w-full mt-1 p-2 border rounded-lg text-xs"></select></label><label class="text-[10px] font-bold">Unidad *<select data-field="unidad" required class="w-full mt-1 p-2 border rounded-lg text-xs"></select></label><label class="text-[10px] font-bold">Cantidad *<input data-field="cantidad" type="number" min="0.01" step="0.01" value="1" required class="w-full mt-1 p-2 border rounded-lg text-xs"></label><label class="text-[10px] font-bold">Precio estimado<input data-field="precioUnitario" type="number" min="0" step="0.01" value="0" class="w-full mt-1 p-2 border rounded-lg text-xs"></label><label class="text-[10px] font-bold">Clasificación *<select data-field="clasificacionInventario" required class="w-full mt-1 p-2 border rounded-lg text-xs"><option value="MaterialInventariable">Material inventariable</option><option value="Consumible">Consumible</option><option value="ActivoFijo">Activo fijo</option></select></label><div class="md:col-span-6 flex justify-end"><button type="button" onclick="this.closest(\'.purchase-request-line\').remove()" class="px-3 py-2 text-rose-600 text-xs font-bold">Quitar partida</button></div>';
+ host.appendChild(row);populateCatalogSelect(row.querySelector('[data-field="item"]'),"",row.querySelector('[data-field="unidad"]'));
 };
 window.submitNewPurchaseRequest=function(event){
-  event.preventDefault();
-  const lines=Array.from(document.querySelectorAll("#purchase-request-lines .purchase-request-line")).map(row=>{
-    const value=field=>row.querySelector('[data-field="'+field+'"]')?.value?.trim()||"";
-    return {itemId:value("itemId"),descripcion:value("descripcion"),unidad:value("unidad"),cantidad:Number(value("cantidad")),precioUnitario:Number(value("precioUnitario")||0),clasificacionInventario:value("clasificacionInventario")};
-  });
-  if(!lines.length||lines.some(x=>!x.itemId||!x.descripcion||!Number.isFinite(x.cantidad)||x.cantidad<=0||!Number.isFinite(x.precioUnitario)||x.precioUnitario<0)){alert("Revise las partidas y sus cantidades.");return;}
-  const itemIds=lines.map(x=>x.itemId.toUpperCase());if(new Set(itemIds).size!==itemIds.length){alert("Cada partida debe tener un ID único.");return;}
-  const payload={departamento:document.getElementById("purchase-request-department").value.trim(),centroCosto:document.getElementById("purchase-request-cost-center").value.trim(),categoria:document.getElementById("purchase-request-category").value.trim(),justificacion:document.getElementById("purchase-request-justification").value.trim(),solicitanteUserId:(window.currentUser&&window.currentUser.userId)||"",detalleItems:lines,montoEstimado:lines.reduce((sum,x)=>sum+x.cantidad*x.precioUnitario,0)};
-  if(!payload.departamento||!payload.justificacion){alert("Departamento y justificación son obligatorios.");return;}
-  const submit=document.querySelector("#purchase-request-form button[type='submit']");if(submit)submit.disabled=true;
-  fetchBackendAccounting("createPurchaseRequest",payload).then(result=>{alert(result.message||"Solicitud registrada.");closePurchaseRequestModal();switchComprasSubtab("solicitudes");}).catch(error=>{if(submit)submit.disabled=false;alert("No fue posible registrar la solicitud: "+(error.message||error));});
+ event.preventDefault();const lines=Array.from(document.querySelectorAll("#purchase-request-lines .purchase-request-line")).map(row=>{const item=row.querySelector('[data-field="item"]'),option=item.selectedOptions[0];return {catalogItemId:option?.dataset.itemId||"",codigoItem:item.value,itemId:item.value,descripcion:option?.dataset.name||"",unidad:row.querySelector('[data-field="unidad"]').value,unidadMedida:row.querySelector('[data-field="unidad"]').value,cantidad:Number(row.querySelector('[data-field="cantidad"]').value),precioUnitario:Number(row.querySelector('[data-field="precioUnitario"]').value||0),clasificacionInventario:row.querySelector('[data-field="clasificacionInventario"]').value};});
+ if(!lines.length||lines.some(x=>!x.catalogItemId||!x.codigoItem||!x.unidad||!Number.isFinite(x.cantidad)||x.cantidad<=0||!Number.isFinite(x.precioUnitario)||x.precioUnitario<0)){alert("Seleccione artículos del catálogo y revise cantidades/precios.");return;}const ids=lines.map(x=>x.codigoItem.toUpperCase());if(new Set(ids).size!==ids.length){alert("Cada artículo debe aparecer una sola vez en la solicitud.");return;}
+ const payload={departamento:document.getElementById("purchase-request-department").value.trim(),centroCosto:document.getElementById("purchase-request-cost-center").value.trim(),categoria:document.getElementById("purchase-request-category").value.trim(),justificacion:document.getElementById("purchase-request-justification").value.trim(),detalleItems:lines,montoEstimado:lines.reduce((s,x)=>s+x.cantidad*x.precioUnitario,0)};if(!payload.departamento||!payload.justificacion){alert("Departamento y justificación son obligatorios.");return;}
+ const submit=document.querySelector("#purchase-request-form button[type='submit']");if(submit)submit.disabled=true;fetchBackendAccounting("createPurchaseRequest",payload).then(result=>{alert(result.message||"Solicitud registrada.");closePurchaseRequestModal();switchComprasSubtab("solicitudes");}).catch(error=>{if(submit)submit.disabled=false;alert("No fue posible registrar la solicitud: "+(error.message||error));});
 };
 
 function viewPurchaseRequestDetails(solId) {
@@ -2325,12 +2321,10 @@ function renderTransferenciasView(container) {
         <h5 class="font-black text-xs uppercase text-gray-800 mb-3"><i class="fas fa-dolly text-blue-600"></i> Despachar Transferencia</h5>
         <form id="form-transferencia" onsubmit="handleSaveTransferencia(event)" class="space-y-3 text-xs">
           <div>
-            <label class="block font-bold text-gray-600 mb-1">Código del Artículo *</label>
-            <input type="text" id="trf-codigo" required class="w-full p-2 border border-gray-300 rounded-xl" placeholder="EJ: MAT-PAP-01">
+            <label class="block font-bold text-gray-600 mb-1">Artículo del catálogo *</label>
+            <select id="trf-codigo" required class="w-full p-2 border border-gray-300 rounded-xl"></select>
           </div>
-          <div>
-            <label class="block font-bold text-gray-600 mb-1">Nombre / Descripción</label>
-            <input type="text" id="trf-nombre" class="w-full p-2 border border-gray-300 rounded-xl" placeholder="EJ: Resma Papel Bond Carta">
+          <div><label class="block font-bold text-gray-600 mb-1">Cantidad (unidad base) *</label>
           </div>
           <div>
             <label class="block font-bold text-gray-600 mb-1">Cantidad a Transferir *</label>
@@ -2369,6 +2363,7 @@ function renderTransferenciasView(container) {
       </div>
     </div>
   `;
+  populateCatalogSelect(document.getElementById("trf-codigo"));
   loadTransferenciasData();
 }
 
@@ -2431,7 +2426,7 @@ window.handleSaveTransferencia = function (e) {
   e.preventDefault();
   const payload = {
     itemCodigo: document.getElementById('trf-codigo').value,
-    itemNombre: document.getElementById('trf-nombre').value,
+    itemNombre: document.getElementById('trf-codigo').selectedOptions[0]?.dataset.name || '',
     cantidad: document.getElementById('trf-cantidad').value,
     ubicacionOrigen: document.getElementById('trf-origen').value,
     ubicacionDestino: document.getElementById('trf-destino').value,
