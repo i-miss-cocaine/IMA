@@ -3363,3 +3363,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - **Commits:** helper activeDepartmentId 7e168853; expectativa normalizada b77196d; pruebas de contexto 618a86e; escenario de requestId 8822fd9/55d6b6b; workflow aislado c964cb8/9f76747; beta a8ba3db.
 - **Beta:** BETA-FUNC-063 sigue Pendiente beta e incorpora validación de usuarios multi-departamento y contexto activo.
 - **Estado:** incremento ACADEMIC completado y verificado localmente. TASK-153/T153-S05 global permanece En ejecución hasta integrar el siguiente consumidor y superficie administrativa/configurable; no se activa configuración ni secretos productivos.
+
+
+[2026-11-13 12:55 UTC] Corrección C1.689 — identificador canónico de expediente
+- Se rectifica el diagnóstico provisional anterior: la expectativa del test en mayúsculas era correcta. USER compara ResourceOwnership.ResourceID exactamente; el consumidor estaba enviando el ID en minúsculas porque reutilizaba cleanExpId para la autorización.
+- ACADEMIC conserva cleanExpId solo para búsquedas/comparaciones insensibles a mayúsculas y ahora envía a USER el ExpedienteID canónico de la única fila coincidente de ExpedientesEstudiantes. Si no existe o hay más de una fila, ya deniega antes de llamar al servicio.
+- El test ahora solicita con expedienteId exp-1 y comprueba que el payload HMAC dirigido a USER contiene EXP-1, además de verificar activeDepartmentId. Resultado local repetido: 20 escenarios PASS con Node.js v22.16.0; hash del test local coincide con el blob de la rama.
+- Commits de corrección: 196d48659db13011a8547836e533fa0ce6352f04 y 559e85906ea1253e802a8d1dc2d94405214ee571.
+- Se mantiene la limitación: checkout completo y CI no observables; no se declara parseo del servicio completo ni PASS de Actions. El parseo de las funciones modificadas y del test sí pasó localmente.
