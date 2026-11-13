@@ -326,3 +326,19 @@
 - **Estado:** AUD-NG-140 completada en código y verificación aislada/CI; beta pendiente. TASK-153 continúa En ejecución por otros requisitos; no se declara completado el TASK-153 global.
 - **Siguiente acción:** seleccionar y ejecutar el siguiente requisito técnico independiente pendiente de TASK-153, manteniendo el mismo ID de sesión.
 ===============================================================================
+
+
+===============================================================================
+## C1.678 — IMA-EXEC-20261112-1754Z-03 — aislamiento de consulta de matrículas ACADEMIC
+- **Checkpoint anterior:** C1.677. **HEAD inicial:** 9dae03c1709bf4584ca1c8e5b1c5158aedb9ff38. **Commit funcional:** 8f72f91f2209d5f3efcb4e5085b128ea636f3c0d. **Rama:** NG_beta_0.0.0.1_work. **Base:** 44d9891132332e692dbe2ba8602b41f50a508a59, intacta. **Norma:** Normas_Desarollo.md v1.4, SHA 83a4ef47b8552bf47458b7cd0842a43d13fdc5b0.
+- **Tarea única:** proteger getStudentEnrollments frente a IDOR y consultas de matrícula fuera del ownership del expediente, como subalcance independiente de TASK-153/T153-S03.
+- **Hallazgo:** el dispatcher ya verificaba token/rol, pero el handler confiaba en payload.userId y devolvía filas de Matriculas sin verificar la relación del usuario con el expediente ni el ámbito departamental.
+- **Corrección:** identidad firmada obligatoria; estudiante siempre queda fijado a actor.userId e ignora el userId enviado por cliente; tutor requiere estudiante objetivo activo y relación/AccesoPortal válido; personal requiere targetUserId y ownership/ámbito autorizado. Se exige mapping UserID↔PersonaID único, estudiante activo, expediente único, ResourceOwnership y esquema canónico de Matriculas. Las lecturas no crean hojas; IDs de matrícula duplicados se excluyen; respuestas denegadas no revelan existencia.
+- **Pruebas añadidas:** self y spoof de userId; tutor con relación y tutor sin relación; personal en departamento propietario y cruce departamental; identidad no verificada; mapping de usuario duplicado; PersonaID con estudiante ambiguo; expediente duplicado; MatriculaID duplicado; filtro de período; encabezados inválidos y hoja ausente sin mutación.
+- **Department Scope CI:** run 43366522801 SUCCESS, Node.js v24.22.2. El log confirma “ACADEMIC student enrollment query ResourceOwnership contract passed.” Los contratos restantes y los seis parseos Apps Script/cliente del workflow también SUCCESS.
+- **Task-Service CI:** run 43366522824 SUCCESS; el contrato Task-Service security y el contrato Task-Service resource ownership pasaron.
+- **CLI local:** Node.js v22.16.0 está disponible; la suite completa no se ejecutó localmente porque git ls-remote/checkout sigue bloqueado por DNS github.com. La suite del repositorio y el nuevo contrato sí se ejecutaron en GitHub Actions.
+- **Límites:** no se desplegó Apps Script ni se consultaron Sheets/Drive reales. La autoridad institucional de catálogos de T153-S01 sigue bloqueada por falta de decisión aprobada; no se infirió ni migró dato alguno.
+- **Beta:** se agrega BETA-FUNC-053 para validar en beta el listado de matrículas propio, delegado y departamental con cuentas/filas sintéticas.
+- **Siguiente acción:** revisar y proteger getStudentEnrollmentHistory como endpoint distinto (incluye cargos financieros y actualmente no queda cubierto por esta corrección); TASK-153 continúa En ejecución.
+===============================================================================
