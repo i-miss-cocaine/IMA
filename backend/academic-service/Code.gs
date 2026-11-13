@@ -11836,6 +11836,8 @@ function authorizeDepartmentReferenceReadViaUser_(payload, expedienteId, request
   const documents = Array.isArray(requestedDocumentIds) ? requestedDocumentIds.slice() : [];
   if (!sessionToken || !resourceId || !fields.length || !documents.length) return { authorized: false, code: "DEPARTMENT_REFERENCE_REQUEST_INVALID" };
   const referencePayload = { sessionToken: sessionToken, resourceType: "EXPEDIENTE_ESTUDIANTE", resourceId: resourceId, requestedFields: fields, requestedDocumentIds: documents };
+  const activeDepartmentId = String(request.activeDepartmentId || "").trim();
+  if (activeDepartmentId) referencePayload.activeDepartmentId = activeDepartmentId;
   try {
     const properties = PropertiesService.getScriptProperties();
     const url = String(properties.getProperty("IMA_USER_SERVICE_URL") || "").trim();
