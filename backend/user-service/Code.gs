@@ -1938,6 +1938,7 @@ function doPost(e) {
       case "createDepartmentReferenceGrant": result = createDepartmentReferenceGrant(payload); break;
       case "getDepartmentReferenceGrants": result = getDepartmentReferenceGrants(payload); break;
       case "revokeDepartmentReferenceGrant": result = revokeDepartmentReferenceGrant(payload); break;
+      case "authorizeDepartmentReferenceRead": result = authorizeDepartmentReferenceRead(payload); break;
       case "getPermissionMatrix": result = getPermissionMatrix(payload); break;
       case "savePermissionMatrix": result = savePermissionMatrix(payload); break;
       case "submitPrivacyRightsRequest": result = submitPrivacyRightsRequest(payload); break;
@@ -10772,14 +10773,15 @@ function appendDepartmentReferenceAuditEvent_(eventCode, message, payload, role)
   }
   var before = sheet.getLastRow();
   var timestamp = new Date().toISOString();
+  var logId = "LOG-" + Utilities.getUuid();
   var sanitized = typeof sanitizePayloadForLog === "function" ? sanitizePayloadForLog(payload || {}) : JSON.stringify(payload || {});
   sheet.appendRow([
-    "LOG-" + Utilities.getUuid(), timestamp, "USER", "departmentReferenceGrant",
+    logId, timestamp, "USER", "departmentReferenceGrant",
     "INFO", String(eventCode || "DEPARTMENT_REFERENCE_GRANT_EVENT"), String(message || ""),
     sanitized, String(role || "Sistema")
   ]);
   if (sheet.getLastRow() !== before + 1) throw new Error("DEPARTMENT_REFERENCE_AUDIT_WRITE_UNCONFIRMED");
-  return { status: "success", timestamp: timestamp };
+  return { status: "success", id: logId, timestamp: timestamp };
 }
 
 function ensureDepartmentReferenceGrantsSheet_(ss) {
@@ -11027,6 +11029,118 @@ function revokeDepartmentReferenceGrant(payload) {
   } finally {
     if (lock) { try { lock.releaseLock(); } catch (e) {} }
   }
+}
+
+
+function authorizeDepartmentReferenceRead(payload) {
+  var role = getUserVerifiedRole(payload);
+  var actorId = String((payload && payload._verifiedUserId) || "").trim();
+  if (!actorId || !role || role === "NO_ACCESS") return { status: "error", authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
+  if (getDynamicPermissionsForRole(role, "readDepartmentReference") !== true) {
+    return { status: "error", authorized: false, code: "AUTH_PERMISSION_DENIED" };
+  }
+  var context = getUserContextScope(payload);
+  if (!context || context.status !== "success" || context.authorized !== true) {
+    return { status: "error", authorized: false, code: context && context.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+  }
+  var institutionId = String(context.institutionId || "").trim();
+  if (!institutionId) return { status: "error", authorized: false, code: "IDENTITY_CONFIGURATION_REQUIRED" };
+  var activeDepartmentId = String(context.activeDepartmentId || "").trim();
+  var departmentIds = Array.isArray(context.departmentIds) ? context.departmentIds.map(function(value) { return String(value || "").trim(); }).filter(Boolean) : [];
+  if (!activeDepartmentId && !context.institutionWide && departmentIds.length === 1) activeDepartmentId = departmentIds[0];
+  if (!context.institutionWide && !activeDepartmentId) {
+    return { status: "error", authorized: false, code: "ACTIVE_DEPARTMENT_REQUIRED" };
+  }
+  var resourceType = String((payload && payload.resourceType) || "").trim().toUpperCase();
+  var resourceId = String((payload && payload.resourceId) || "").trim();
+  if (!resourceType || !resourceId || resourceId.length > 200) {
+    return { status: "error", authorized: false, code: "DEPARTMENT_REFERENCE_REQUEST_INVALID" };
+  }
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var owner = getDepartmentReferenceOwner_(ss, institutionId, resourceType, resourceId);
+  var ownership = {
+    authorized: owner.status === "success",
+    institutionId: institutionId,
+    departmentId: owner.status === "success" ? owner.departmentId : "",
+    resourceType: resourceType,
+    resourceId: resourceId
+  };
+  var policy = getDepartmentReferencePolicy_(institutionId);
+  var institutionalConfig = policy && policy.status === "success" ? {
+    institutionId: policy.institutionId, key: policy.key, value: policy.value
+  } : { institutionId: institutionId, key: DEPARTMENT_REFERENCE_POLICY_KEY_, value: "INVALID_POLICY" };
+  var grantRows = [];
+  var grantsSheet = ss.getSheetByName(DEPARTMENT_REFERENCE_GRANT_SHEET_);
+  var grantSchemaError = "";
+  if (grantsSheet) {
+    var data = grantsSheet.getDataRange().getValues();
+    if (!data.length || JSON.stringify(data[0].map(String)) !== JSON.stringify(DEPARTMENT_REFERENCE_GRANT_HEADERS_)) {
+      grantSchemaError = "DEPARTMENT_REFERENCE_GRANT_SCHEMA_MISMATCH";
+    } else {
+      for (var i = 1; i < data.length; i++) {
+        var row = data[i] || [];
+        if (String(row[0] || "").trim() !== institutionId) continue;
+        grantRows.push({
+          InstitutionID: row[0], GrantID: row[1], ResourceType: row[2], ResourceID: row[3],
+          OwnerDepartmentID: row[4], TargetDepartmentID: row[5], AllowedFieldsJSON: row[6],
+          AllowedDocumentIDsJSON: row[7], AuthorizedBy: row[8], AuthorizedAt: row[9],
+          ValidFrom: row[10], ExpiresAt: row[11], Status: row[12], RevokedAt: row[13], RevokedBy: row[14]
+        });
+      }
+    }
+  }
+  var decision;
+  if (grantSchemaError) {
+    decision = {
+      authorized: false, code: grantSchemaError, requiresStandardAuthorization: false,
+      auditEvent: {
+        actorUserId: actorId, membershipId: String(context.membershipId || ""), roleId: role,
+        institutionId: institutionId, actorDepartmentId: activeDepartmentId,
+        ownerDepartmentId: ownership.departmentId, resourceType: resourceType, resourceId: resourceId,
+        operation: "READ_REFERENCE", decision: "DENY", reason: grantSchemaError,
+        grantId: "", authorizedBy: "", requestedFields: payload && payload.requestedFields || [],
+        requestedDocumentIds: payload && payload.requestedDocumentIds || [], timestamp: new Date().toISOString()
+      }
+    };
+  } else {
+    decision = evaluateDepartmentReferenceAccess_({
+      actorContext: {
+        status: "success", verified: true, userId: actorId,
+        membershipId: String(context.membershipId || ""), roleId: role,
+        institutionId: institutionId, activeDepartmentId: activeDepartmentId,
+        institutionWide: context.institutionWide === true,
+        institutionWideAuthorized: getDynamicPermissionsForRole(role, "readInstitutionWideDepartmentReferences") === true
+      },
+      resourceOwnership: ownership,
+      institutionalConfig: institutionalConfig,
+      referenceGrants: grantRows,
+      operation: "READ_REFERENCE",
+      requestedFields: payload && payload.requestedFields,
+      requestedDocumentIds: payload && payload.requestedDocumentIds,
+      now: new Date()
+    });
+  }
+  var auditEvent = decision.auditEvent || {};
+  auditEvent.actorUserId = auditEvent.actorUserId || actorId;
+  auditEvent.institutionId = auditEvent.institutionId || institutionId;
+  var eventCode = decision.authorized ? "DEPARTMENT_REFERENCE_READ_ALLOWED" : "DEPARTMENT_REFERENCE_READ_DENIED";
+  var auditRecord;
+  try {
+    auditRecord = appendDepartmentReferenceAuditEvent_(eventCode,
+      decision.authorized ? "Lectura de referencia autorizada; el consumidor aún debe aplicar RBAC estándar." : "Lectura de referencia denegada.",
+      auditEvent, role);
+  } catch (auditError) {
+    return { status: "error", authorized: false, code: "DEPARTMENT_REFERENCE_AUDIT_PERSIST_FAILED" };
+  }
+  if (!decision.authorized) {
+    return { status: "error", authorized: false, code: decision.code, auditEventId: auditRecord.id };
+  }
+  return {
+    status: "success", authorized: true, code: decision.code, auditEventId: auditRecord.id,
+    grantId: auditEvent.grantId || "", requiresStandardAuthorization: true,
+    approvedFields: Array.isArray(payload && payload.requestedFields) ? payload.requestedFields.slice() : [],
+    approvedDocumentIds: Array.isArray(payload && payload.requestedDocumentIds) ? payload.requestedDocumentIds.slice() : []
+  };
 }
 
 function evaluateDepartmentReferenceAccess_(input) {
