@@ -32,7 +32,7 @@ const names=[
 const code="var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n"+names.map(n=>extractFunction(accounting,n)).join("\n");
 const claims={
  staffA:{userId:"U-A",role:"Director"},staffB:{userId:"U-B",role:"Director"},
- employee:{userId:"U-EMP",role:"Empleado"},admin:{userId:"U-ADMIN",role:"Administrador"},
+ employee:{userId:"U-EMP",role:"Empleado"},professor:{userId:"U-EMP",role:"Profesor"},admin:{userId:"U-ADMIN",role:"Administrador"},
  student:{userId:"U-STUDENT",role:"Estudiante"},guardian:{userId:"U-GUARDIAN",role:"Tutor"},invalid:null
 };
 const rows={
