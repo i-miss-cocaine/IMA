@@ -5339,3 +5339,9 @@ La revisión de requisitos originales confirma cobertura de:
 - **Beta:** BETA-FUNC-063 Pendiente beta. Requiere ambos servicios desplegados y secreto coincidente configurado; no es bloqueo de implementación conforme a NDASC.
 - **Estado:** incremento implementado y publicado, pero permanece **En ejecución** hasta observar la ejecución Node/CI pertinente y corregir cualquier fallo. TASK-153 global sigue En ejecución; no se declara T153-S05 completada.
 - **Siguiente acción elegible:** obtener evidencia ejecutada del contrato ACADEMIC en Node/Actions; después integrar un consumidor ACCOUNTING apropiado y la superficie de configuración/administración sin exponer contenido ni habilitar acceso por defecto.
+
+
+#### Actualización C1.688 — estado de verificación (2026-11-13 12:30 UTC)
+- HEAD actual: c04813a74d7a5435692542cf3ca671c834ece10b. Se corrigió y luego restauró la expectativa del caso de solicitudId para que refleje el retorno vacío real cuando no hay filas; commits aecf33a y c04813a.
+- CI: el commit 2d25eef0087b49f3ad9c86dd459c26ffb9e05988 tiene estado `ima/department-scope-contract = failure`; los detalles de jobs/logs no están expuestos por las acciones disponibles. El HEAD más reciente no tiene estado visible al momento de esta actualización.
+- Node local: NOT RUN porque el entorno no resuelve github.com y no fue posible clonar el repositorio. La prueba local sigue pendiente; no se cierra T153-S05 y no se inicia el siguiente consumidor antes de resolver esta verificación conforme a NDASC 1.4.
