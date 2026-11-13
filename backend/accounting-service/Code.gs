@@ -4846,7 +4846,7 @@ function payrollVarianceMetric_(current,previous){
  const c=Number(current||0),p=Number(previous||0);
  if(!Number.isFinite(c)||!Number.isFinite(p))throw new Error("PAYROLL_VARIANCE_VALUE_INVALID");
  const difference=Math.round((c-p)*100)/100;
- return {actual:Math.round(c*100)/100,anterior:Math.round(p*100)/100,diferencia:difference,porcentaje:p===0?(c===0?0:null):Math.round((difference/p)*10000)/100};
+ return {actual:Math.round(c*100)/100,anterior:Math.round(p*100)/100,diferencia:difference,porcentaje:p===0?(c===0?0:null):Math.round((difference/p)*10000)/100,baseCero:p===0&&c!==0};
 }
 function buildPayrollVarianceReport_(current,previous,threshold){
  const fields=["salarioBase","horasExtras","montoHorasExtras","bonificaciones","totalDevengado","deduccionIHSS","deduccionRAP","deduccionISR","otrasDeducciones","totalDeducciones","salarioNeto","costoLaboralTotal"];
@@ -4854,8 +4854,8 @@ function buildPayrollVarianceReport_(current,previous,threshold){
  const limit=Number.isFinite(Number(threshold))?Math.max(0,Math.min(1000,Number(threshold))):10;
  const incomePct=rubros.totalDevengado.porcentaje,deductionPct=rubros.totalDeducciones.porcentaje;
  const alertas=[];
- if(incomePct!==null&&Math.abs(incomePct)>limit)alertas.push({tipo:"INGRESOS",porcentaje:incomePct,umbral:limit});
- if(deductionPct!==null&&Math.abs(deductionPct)>limit)alertas.push({tipo:"DEDUCCIONES",porcentaje:deductionPct,umbral:limit});
+ if((incomePct!==null&&Math.abs(incomePct)>limit)||rubros.totalDevengado.baseCero)alertas.push({tipo:"INGRESOS",porcentaje:incomePct,umbral:limit,nuevoImporte:rubros.totalDevengado.baseCero});
+ if((deductionPct!==null&&Math.abs(deductionPct)>limit)||rubros.totalDeducciones.baseCero)alertas.push({tipo:"DEDUCCIONES",porcentaje:deductionPct,umbral:limit,nuevoImporte:rubros.totalDeducciones.baseCero});
  return {rubros,umbralPorcentaje:limit,alerta:alertas.length>0,alertas};
 }
 function getPayrollEmployeePayConfig(payload){
@@ -4939,7 +4939,7 @@ function preparePayrollEmployeeRecalculation_(ss,planillaId,period,employeeIds,p
  const selected=rows.filter(x=>ids.includes(String(x.row[3]||"").trim()));
  if(selected.length!==ids.length||ids.some(id=>selected.filter(x=>String(x.row[3]||"").trim()===id).length!==1))return {status:"error",code:"PAYROLL_RECALCULATION_EMPLOYEE_NOT_FOUND"};
  const employees=ids.map(id=>{const matches=exps.filter(e=>String(e[0]||"").trim()===id);if(matches.length!==1)throw new Error("PAYROLL_RECALCULATION_EMPLOYEE_NOT_FOUND");const dept=String(matches[0][4]||"").trim();if(scope.institutionWide!==true&&!(scope.departmentIds||[]).map(String).includes(dept))throw new Error("RESOURCE_NOT_FOUND");return matches[0];});
- const ledger=getPayrollLoanLedger_(ss),loanRows=ledger.rows.filter(r=>String(r[2]||"").trim()===String(planillaId).trim()&&ids.includes(String(r[4]||"").trim()));
+ const ledger=getPayrollLoanLedger_(ss),loanOwnerIds=new Set(ids.concat(employees.map(e=>String(e[2]||"").trim()).filter(Boolean))),loanRows=ledger.rows.filter(r=>String(r[2]||"").trim()===String(planillaId).trim()&&loanOwnerIds.has(String(r[4]||"").trim()));
  const applied=loanRows.filter(r=>String(r[9]||"")==="APLICADO"),reversed=new Set(ledger.rows.filter(r=>String(r[9]||"")==="REVERSADO").map(r=>String(r[12]||"")));
  if(applied.some(r=>!reversed.has(String(r[0]||""))))return {status:"error",code:"PAYROLL_RECALCULATION_LOAN_ALREADY_APPLIED",message:"La amortización ya fue aplicada; use un ajuste compensatorio en lugar de recalcular."};
  const cancelEvents=loanRows.filter(r=>String(r[9]||"")==="CALCULADO"&&!ledger.rows.some(x=>String(x[9]||"")==="CANCELADO"&&String(x[12]||"")===String(r[0]||""))).map(r=>["PLM-"+Utilities.getUuid(),r[1],r[2],r[3],r[4],r[5],r[6],r[6],r[8],"CANCELADO",new Date(),actor.userId,r[0],"Recalculo controlado del colaborador"]);
