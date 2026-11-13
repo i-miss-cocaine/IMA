@@ -5276,3 +5276,10 @@ La revisión de requisitos originales confirma cobertura de:
 - **Revisión:** diff limitado a los tres archivos indicados; sin cambios de rama base. No se declara PASS para la suite completa ni para beta.
 - **Estado:** C1.673 completada para el subalcance de integración cliente con verificaciones aisladas; TASK-153/AUD-NG-140 continúa En ejecución por requisitos restantes.
 - **Siguiente tarea elegible:** revisar el siguiente callsite/requisito independiente pendiente de TASK-153/AUD-NG-140 en Plan Maestro y backlog; no iniciar en este checkpoint.
+
+
+### C1.674 — TASK-153 / T153-S02 — corrección del fixture del contrato User Role Membership
+- Se corrigió el harness de tests/security/user-role-membership-contract.test.js: se simula PropertiesService para que isSessionRevoked_ pueda comprobar correctamente el ledger no inicializado cuando la hoja SesionesRevocadas no existe.
+- Commit: ab5ce7b84b1c8ed9a1c36e6ceaaa16dc8880e69d. No se modificó lógica productiva.
+- Ejecución local y CI: NOT RUN; checkout bloqueado por DNS y el commit no presenta workflow run/status checks. No se declara PASS.
+- Estado: corrección publicada pendiente de ejecución del contrato. Siguiente acción: ejecutar el test focalizado en Node.js 24 y corregir fallos reproducibles.
