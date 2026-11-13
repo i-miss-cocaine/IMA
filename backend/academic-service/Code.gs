@@ -2743,14 +2743,16 @@ function findAdmissionConversionCharge_(cargoData, userId, periodo, solicitudId,
   const reference = "ADMISION|" + String(solicitudId || "").trim() + "|" + String(matriculaId || "").trim();
   const concepto = "Matrícula Ordinaria " + String(periodo || "").trim();
   const rows = (Array.isArray(cargoData) ? cargoData : []).slice(1);
+  const headers = Array.isArray(cargoData) && cargoData.length ? cargoData[0].map(function(value){return String(value||"").trim();}) : [];
+  const referenceIndex = headers.indexOf("ReferenciaOrigen") >= 0 ? headers.indexOf("ReferenciaOrigen") : 9;
   const linked = rows.filter(function(row) {
-    return String(row[9] || "").trim() === reference;
+    return String(row[referenceIndex] || "").trim() === reference;
   });
   if (linked.length > 1) throw new Error("ADMISSION_CHARGE_AMBIGUOUS");
   if (linked.length === 1) {
     const charge = linked[0];
     if (String(charge[2] || "").trim() !== String(userId || "").trim() ||
-        String(charge[3] || "").trim() !== concepto) {
+        !String(charge[3] || "").trim()) {
       throw new Error("ADMISSION_CHARGE_CONFLICT");
     }
     const base = parseFloat(charge[4]);
@@ -14015,7 +14017,7 @@ function registerStudentEnrollment(payload) {
 }
 
 function ensureEnrollmentPeriodCharges_(ss,enrollment,rollbackActions){
-const userId=String(enrollment&&enrollment.userId||"").trim(),period=String(enrollment&&enrollment.periodo||"").trim(),grade=String(enrollment&&enrollment.grado||"").trim();if(!userId||!period||!grade)throw new Error("ENROLLMENT_BILLING_CONTEXT_INVALID");
+const userId=String(enrollment&&enrollment.userId||"").trim(),period=String(enrollment&&enrollment.periodo||"").trim(),grade=String(enrollment&&enrollment.grado||"").trim(),chargeReference=String(enrollment&&enrollment.chargeReference||"").trim();if(!userId||!period||!grade)throw new Error("ENROLLMENT_BILLING_CONTEXT_INVALID");
 const institutionId=String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID")||"").trim();if(!institutionId)return{status:"skipped",code:"IDENTITY_CONFIGURATION_REQUIRED",created:0};
 const configSheet=ss.getSheetByName("ConfiguracionCargosMatricula");if(!configSheet)return{status:"skipped",mode:"MANUAL",created:0};
 const configRows=configSheet.getDataRange().getValues(),configHeaders=["ConfiguracionID","InstitutionID","AnoLectivo","NivelGrado","ModoGeneracion","ConceptoMatriculaID","Estado","ActualizadoPor","ActualizadoEn"];
@@ -14032,13 +14034,13 @@ const conceptSheet=ss.getSheetByName("ConceptosCobro"),conceptRows=conceptSheet?
 const names={};conceptRows.slice(1).forEach(row=>{const id=String(row[0]||"").trim();if(id){if(names[id])throw new Error("PAYMENT_CONCEPT_AMBIGUOUS");names[id]=String(row[2]||"").trim();}});
 const unique={};tariffs.forEach(row=>{const id=String(row[3]||"").trim(),amount=Number(row[4]),count=Number(row[5]);if(!id||!isFinite(amount)||amount<=0||!Number.isInteger(count)||count<1)throw new Error("PAYMENT_TARIFF_INVALID");if(unique[id])throw new Error("ENROLLMENT_TARIFF_AMBIGUOUS");unique[id]=true;if(!names[id])throw new Error("PAYMENT_CONCEPT_NOT_CONFIGURED");});
 const charges=getOrCreateSheet(ss,"CargosEstudiante"),rows=charges.getDataRange().getValues();if(!rows.length||String(rows[0][0]||"").trim()!=="CargoID"||rows[0].length<9)throw new Error("STUDENT_CHARGE_SCHEMA_CONFLICT");
-const h10=String(rows[0][9]||"").trim(),h11=String(rows[0][10]||"").trim();if(h10&&h10!=="Observaciones"&&h10!=="ReferenciaOrigen")throw new Error("STUDENT_CHARGE_SCHEMA_CONFLICT");if(h11&&h11!=="ClaveUnicaDedupe")throw new Error("STUDENT_CHARGE_SCHEMA_CONFLICT");if(!h10)charges.getRange(1,10).setValue("Observaciones");if(!h11)charges.getRange(1,11).setValue("ClaveUnicaDedupe");
+const h10=String(rows[0][9]||"").trim(),h11=String(rows[0][10]||"").trim(),h13=String(rows[0][12]||"").trim();if(h10&&h10!=="Observaciones"&&h10!=="ReferenciaOrigen")throw new Error("STUDENT_CHARGE_SCHEMA_CONFLICT");if(h11&&h11!=="ClaveUnicaDedupe")throw new Error("STUDENT_CHARGE_SCHEMA_CONFLICT");if(h13&&h13!=="ReferenciaOrigen")throw new Error("STUDENT_CHARGE_SCHEMA_CONFLICT");if(!h10)charges.getRange(1,10).setValue(chargeReference?"ReferenciaOrigen":"Observaciones");if(!h11)charges.getRange(1,11).setValue("ClaveUnicaDedupe");if(chargeReference&&h10==="Observaciones"&&!h13)charges.getRange(1,13).setValue("ReferenciaOrigen");const referenceIndex=chargeReference?(h10==="ReferenciaOrigen"?9:12):-1;
 const keys={},existingChargeIds={};rows.slice(1).forEach(row=>{const key=String(row[10]||"").trim();if(key){keys[key]=true;existingChargeIds[key]=String(row[0]||"").trim();}});
 const requestSheet=ss.getSheetByName("SolicitudesDescuentoBeca"),requests=requestSheet?requestSheet.getDataRange().getValues().slice(1):[],ruleSheet=ss.getSheetByName("DescuentosBecas"),ruleRows=ruleSheet?ruleSheet.getDataRange().getValues().slice(1):[],rules={};ruleRows.forEach(row=>{const id=String(row[0]||"").trim();if(id)rules[id]=row;});
 const now=new Date(),today=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0"),approved=requests.filter(row=>String(row[4]||"").trim()===userId&&String(row[8]||"").trim().toUpperCase()==="APROBADO");let created=0,firstChargeId="";
 tariffs.forEach(tariff=>{const conceptId=String(tariff[3]).trim(),concept=names[conceptId],key=["ENROLLMENT",userId,period,conceptId].join("|").toLowerCase();if(keys[key]){if(!firstChargeId)firstChargeId=existingChargeIds[key]||"";return;}const base=Number(tariff[4]);let discount=Math.max(0,Number(enrollment.becaDescuento)||0);
 for(let i=0;i<approved.length;i++){const request=approved[i],rule=rules[String(request[2]||"").trim()],requested=String(request[5]||"").trim().toLowerCase();if(requested&&concept.toLowerCase().indexOf(requested)===-1)continue;if(rule&&["APROBADO","ACTIVO"].indexOf(String(rule[12]||"").trim().toUpperCase())===-1)continue;let criteria={};if(rule&&rule[9]){try{criteria=JSON.parse(rule[9]);}catch(_){continue;}}const range=criteria&&criteria.rangoFechas;if(range&&((range.inicio&&today<String(range.inicio).slice(0,10))||(range.fin&&today>String(range.fin).slice(0,10))))continue;let eligible=true;if(rule&&rule[8]){try{const list=JSON.parse(rule[8]);if(Array.isArray(list)&&list.length)eligible=list.some(name=>concept.toLowerCase().indexOf(String(name).toLowerCase())!==-1);}catch(_){eligible=false;}}if(!eligible)continue;let amount=0;if(rule){const type=String(rule[5]||"").trim().toLowerCase(),value=Number(rule[6]||0),cap=Number(rule[7]||0);amount=type==="porcentaje"?Math.round(base*value)/100:value;if(cap>0)amount=Math.min(amount,cap);}else amount=Number(request[6]||0);discount=Math.max(discount,amount);break;}
-discount=Math.min(base,Math.max(0,discount));const finalAmount=Math.round((base-discount)*100)/100;let due="";if(tariff[6]){try{const dates=JSON.parse(tariff[6]);if(Array.isArray(dates)&&dates.length)due=dates[0];}catch(_){throw new Error("PAYMENT_TARIFF_DUE_DATES_INVALID");}}const id="CRG-ENR-"+now.getTime()+"-"+(created+1);if(!firstChargeId)firstChargeId=id;charges.appendRow([id,now,userId,concept,base,discount,finalAmount,finalAmount<=0?"Exonerado":"Pendiente",due,"Matrícula "+period+" tarifa "+String(tariff[0]||""),key]);const rowNumber=charges.getLastRow();if(Array.isArray(rollbackActions))rollbackActions.push(function(){const current=charges.getDataRange().getValues();if(rowNumber>0&&rowNumber<=current.length&&String(current[rowNumber-1][0]||"")===id)charges.deleteRow(rowNumber);});keys[key]=true;created++;});
+discount=Math.min(base,Math.max(0,discount));const finalAmount=Math.round((base-discount)*100)/100;let due="";if(tariff[6]){try{const dates=JSON.parse(tariff[6]);if(Array.isArray(dates)&&dates.length)due=dates[0];}catch(_){throw new Error("PAYMENT_TARIFF_DUE_DATES_INVALID");}}const id="CRG-ENR-"+now.getTime()+"-"+(created+1);if(!firstChargeId)firstChargeId=id;const chargeRow=[id,now,userId,concept,base,discount,finalAmount,finalAmount<=0?"Exonerado":"Pendiente",due,"Matrícula "+period+" tarifa "+String(tariff[0]||""),key];if(chargeReference){if(referenceIndex===9)chargeRow[9]=chargeReference;else chargeRow[12]=chargeReference;}charges.appendRow(chargeRow);const rowNumber=charges.getLastRow();if(Array.isArray(rollbackActions))rollbackActions.push(function(){const current=charges.getDataRange().getValues();if(rowNumber>0&&rowNumber<=current.length&&String(current[rowNumber-1][0]||"")===id)charges.deleteRow(rowNumber);});keys[key]=true;created++;});
 return{status:"success",mode,created,chargeId:firstChargeId};
 }
 
@@ -14103,7 +14105,7 @@ function registerStudentEnrollmentInternal_(payload) {
     ? String(_chargeReferencePrefix).trim() + String(matriculaId).trim()
     : String(_chargeReference || "").trim();
   let admissionChargeId = "";
-  const billingResult = ensureEnrollmentPeriodCharges_(ss, { userId:sUserId, periodo:sPeriodo, grado:sGrado, becaDescuento:becaDescuento }, _rollbackActions);
+  const billingResult = ensureEnrollmentPeriodCharges_(ss, { userId:sUserId, periodo:sPeriodo, grado:sGrado, becaDescuento:becaDescuento, chargeReference:_chargeReferencePrefix ? String(_chargeReferencePrefix).trim()+String(matriculaId).trim() : String(_chargeReference||"").trim() }, _rollbackActions);
   const automaticBilling = billingResult && ["MATRICULA_ONLY","ALL_ACTIVE_TARIFFS"].indexOf(billingResult.mode) !== -1;
   if (Array.isArray(cargos) && cargos.length > 0 && !automaticBilling) {
     let existingCargos = cargosSheet.getDataRange().getValues();
