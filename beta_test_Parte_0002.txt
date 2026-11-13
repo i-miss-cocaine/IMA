@@ -15,3 +15,14 @@
 - **Evidencia requerida:** request/response saneados, GrantID, AuditEventID, decisiones ALLOW/DENY persistidas, snapshots sintéticos de propiedad/concesión, comparación de campos devueltos y ausencia de datos privados. No incluir PII, tokens, secretos ni URLs privadas.
 - **Estado:** Pendiente beta. No se han desplegado servicios ni ejecutado Apps Script/Sheets/Drive reales.
 
+
+
+## BETA-FUNC-064 — TASK-153 / T153-S05 / ACCOUNTING + USER: referencia documental laboral de solo lectura
+
+- **Módulo/servicios:** ACCOUNTING — getEmployeeDocuments; USER — authorizeDepartmentReferenceRead.
+- **Objetivo:** validar una referencia interdepartamental de solo lectura a documentos laborales mediante concesión exacta, sin exponer enlaces privados, títulos sensibles, observaciones ni contenido.
+- **Precondiciones:** ACCOUNTING y USER desplegados; ResourceOwnership único y ACTIVE para EXPEDIENTE_LABORAL; empleado/expediente único; misma InstitutionID; política PERMITIR_REFERENCIA_SOLO_LECTURA_INTERDEPARTAMENTAL; concesión vigente para departamento destino y DocumentoID/campos exactos; permisos getEmployeeDocuments y readDepartmentReference; IMA_USER_SERVICE_URL HTTPS y secreto HMAC coincidente configurados fuera del código. Usar datos sintéticos.
+- **Pasos:** (1) comprobar acceso del mismo departamento y autoservicio del empleado sin cambios; (2) denegar un expediente ajeno con política estricta; (3) crear concesión exacta para READ_REFERENCE con categoriaDoc/fechaCarga/estadoVisibilidad y DocumentoID específico; (4) solicitar esos campos y comprobar referenceOnly; (5) intentar ArchivoUrl, TituloDocumento, CargadoPor, Observaciones, IDs duplicados, otro expediente, documento no concedido y listado sin expediente; (6) comprobar que actor Empleado/Trabajador/Personal no obtiene referencia cruzada aunque exista un payload de referencia; (7) comprobar que ownership ausente, ambiguo, inactivo o expediente duplicado falla cerrado; (8) repetir con activeDepartmentId válido, ausente y no asignado; (9) revocar y expirar concesión; (10) simular URL HTTP, secreto ausente, timeout, HTTP no exitoso, JSON inválido, HMAC inválido y replay; (11) confirmar ALLOW/DENY persistido en LogsSistema antes de respuesta.
+- **Resultado esperado:** USER valida sesión, institución, membresía, permiso, activeDepartmentId, ownership, política y concesión; ACCOUNTING conserva RBAC normal y devuelve solo DocumentoID y metadatos allowlisted. No se devuelve ExpedienteID, ArchivoUrl, TituloDocumento, CargadoPor, Observaciones ni contenido. Cualquier error falla cerrado; no se permite descarga.
+- **Evidencia requerida:** requests/responses saneados, GrantID, AuditEventID, LogsSistema, comparación de campos, evidencia de denegación para autoservicio y ausencia de enlaces/PII. No registrar tokens, secretos ni URLs privadas.
+- **Estado:** Pendiente beta. No se han desplegado servicios ni ejecutado Apps Script/Sheets/Drive reales.
