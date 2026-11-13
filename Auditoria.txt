@@ -2732,3 +2732,13 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Otros pasos:** Department Scope, Internal Responsibility RBAC, Accounting Import Scope y User Migrated Resource Ownership PASS. El workflow global falla después en `tests/security/user-role-membership-contract.test.js:119`, donde `verifySessionToken(foreignLegacy)` devuelve null y el test intenta leer `.role`; el mismo fallo estaba registrado en C1.665 y es ajeno a esta implementación. Pasos posteriores, incluido syntax-check global, SKIPPED.
 - **Ejecución local/aislada:** contrato ejecutado con Node.js 24 en runner GitHub Actions, sin despliegue. Checkout local del entorno no disponible por DNS al resolver github.com. El harness V8 carga las funciones extraídas del servicio y el contrato focalizado pasó.
 - **Estado:** C1.666 Completada para el subalcance; TASK-153 / AUD-NG-386 sigue En ejecución por superficies restantes. Apps Script/Sheets real NOT RUN; BETA-FUNC-044 Pendiente beta.
+
+
+===============================================================================
+## AUD-NG-387 — ACCOUNTING: getStaffPayrollReceipt (C1.667)
+- **Severidad:** ALTA — consulta de salario, deducciones y salario neto mediante empleadoId/boletaId del cliente sin validar identidad firmada ni ownership; las lecturas usaban getOrCreateSheet.
+- **Corrección:** identidad firmada; autoservicio Profesor/alias limitado al expediente UserID único; roles de gestión con assertEmployeeExpedienteScopeAccess_/ResourceOwnership. BoletaID ligado exactamente a PlanillaID/EmpleadoId/PeriodoMes y sometido a la misma autorización. Consultas ajenas RESOURCE_NOT_FOUND.
+- **Integridad:** encabezados exactos; planilla/boleta duplicadas y mappings ambiguos excluidos; filtros no conceden acceso; hojas ausentes vacías y sin creación; contrato status/boletas preservado.
+- **Verificación:** Department Scope Contract run 43350422517, paso ACCOUNTING departmental resource access PASS con el contrato ampliado. Los pasos previos Department Scope, Internal Responsibility RBAC, ACCOUNTING import y USER migrated ownership PASS. Workflow global falla después en User Role Membership contract línea 119 (foreignLegacy nulo), fallo heredado no introducido por C1.667; pasos posteriores SKIPPED. Node.js 24 runner aislado, sin despliegue.
+- **Beta:** BETA-FUNC-045 Pendiente beta; Apps Script/Sheets real NOT RUN.
+===============================================================================

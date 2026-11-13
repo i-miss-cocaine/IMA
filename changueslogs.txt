@@ -3154,3 +3154,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - El workflow global falló después en User Role Membership contract línea 119: verifySessionToken(foreignLegacy) devolvió null y el test accedió a .role; el fallo heredado ya estaba presente antes de C1.666. Los pasos posteriores (incluido syntax-check global) quedaron SKIPPED. El subcontrato ACCOUNTING pasó íntegramente.
 - Ejecución del contrato en runner aislado Node.js 24, sin despliegue; checkout local en el entorno de trabajo no disponible por fallo DNS al resolver github.com. Apps Script/Sheets real NOT RUN; BETA-FUNC-044 Pendiente beta.
 - **Estado:** subalcance C1.666 completado con contrato focalizado PASS; TASK-153 / AUD-NG-386 continúa En ejecución por otros callsites.
+
+
+[2026-11-13 UTC] [IMA-EXEC-20261112-1754Z-03] C1.667 — ACCOUNTING getStaffPayrollReceipt
+- getStaffPayrollReceipt ahora deriva identidad de sesión firmada. Profesor y alias de autoservicio se limitan al expediente UserID único; roles de gestión consultan solo expedientes con ResourceOwnership/ámbito verificado. Filtros por empleado, periodo y BoletaID no amplían permisos.
+- BoletaID se valida contra PlanillaID, EmpleadoId y PeriodoMes; consultas específicas ajenas responden RESOURCE_NOT_FOUND. Esquemas exactos; planillas/boletas duplicadas y mappings ambiguos excluidos; hojas ausentes no se crean; contrato status/boletas preservado.
+- Department Scope Contract run 43350422517: contrato ACCOUNTING departmental resource access PASS, incluido C1.667. Los contratos anteriores de ámbito, RBAC, importación y ownership migrado también PASS. Workflow global FAIL posterior en User Role Membership (línea 119, foreignLegacy null), fallo heredado ya observado antes de este cambio; pasos posteriores SKIPPED.
