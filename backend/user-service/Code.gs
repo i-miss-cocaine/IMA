@@ -1935,6 +1935,9 @@ function doPost(e) {
       case "executeDataRetentionPolicyCheck": result = executeDataRetentionPolicyCheck(payload); break;
       case "getDepartmentReferencePolicy": result = getDepartmentReferencePolicy(payload); break;
       case "setDepartmentReferencePolicy": result = setDepartmentReferencePolicy(payload); break;
+      case "createDepartmentReferenceGrant": result = createDepartmentReferenceGrant(payload); break;
+      case "getDepartmentReferenceGrants": result = getDepartmentReferenceGrants(payload); break;
+      case "revokeDepartmentReferenceGrant": result = revokeDepartmentReferenceGrant(payload); break;
       case "getPermissionMatrix": result = getPermissionMatrix(payload); break;
       case "savePermissionMatrix": result = savePermissionMatrix(payload); break;
       case "submitPrivacyRightsRequest": result = submitPrivacyRightsRequest(payload); break;
@@ -10737,6 +10740,253 @@ function setDepartmentReferencePolicy(payload) {
     return { status: "success", institutionId: context.institutionId, key: DEPARTMENT_REFERENCE_POLICY_KEY_, value: value, updatedBy: actorId, updatedAt: now };
   } catch (error) {
     return { status: "error", code: error.message || "DEPARTMENT_REFERENCE_POLICY_WRITE_FAILED" };
+  } finally {
+    if (lock) { try { lock.releaseLock(); } catch (e) {} }
+  }
+}
+
+
+const DEPARTMENT_REFERENCE_GRANT_SHEET_ = "DepartmentReferenceGrants";
+const DEPARTMENT_REFERENCE_GRANT_HEADERS_ = [
+  "InstitutionID", "GrantID", "ResourceType", "ResourceID", "OwnerDepartmentID",
+  "TargetDepartmentID", "AllowedFieldsJSON", "AllowedDocumentIDsJSON", "AuthorizedBy",
+  "AuthorizedAt", "ValidFrom", "ExpiresAt", "Status", "RevokedAt", "RevokedBy"
+];
+const DEPARTMENT_REFERENCE_GRANT_SCOPE_HEADERS_ = [
+  "AsignacionAmbitoID", "UserID", "RoleID", "ScopeType", "ScopeValues", "Estado",
+  "CreadoPor", "FechaCreacion", "FechaInicio", "FechaFin", "EsSuplente",
+  "SuplenteDeUserID", "InstitutionID", "MembershipID"
+];
+
+function ensureDepartmentReferenceGrantsSheet_(ss) {
+  var sheet = ss.getSheetByName(DEPARTMENT_REFERENCE_GRANT_SHEET_);
+  if (!sheet) sheet = ss.insertSheet(DEPARTMENT_REFERENCE_GRANT_SHEET_);
+  if (sheet.getLastRow() === 0) sheet.appendRow(DEPARTMENT_REFERENCE_GRANT_HEADERS_);
+  var rows = sheet.getDataRange().getValues();
+  if (!rows.length || JSON.stringify(rows[0].map(String)) !== JSON.stringify(DEPARTMENT_REFERENCE_GRANT_HEADERS_)) {
+    throw new Error("DEPARTMENT_REFERENCE_GRANT_SCHEMA_MISMATCH");
+  }
+  return sheet;
+}
+
+function parseDepartmentReferenceAllowlist_(value, required) {
+  var parsed = value;
+  if (typeof value === "string") {
+    try { parsed = JSON.parse(value); } catch (error) { return null; }
+  }
+  if (!Array.isArray(parsed) || (required && parsed.length === 0) || parsed.length > 200) return null;
+  var result = [];
+  for (var i = 0; i < parsed.length; i++) {
+    if (typeof parsed[i] !== "string") return null;
+    var item = parsed[i].trim();
+    if (!item || item.indexOf("*") !== -1 || item.length > 200 || result.indexOf(item) !== -1) return null;
+    result.push(item);
+  }
+  return result;
+}
+
+function isDepartmentReferenceTargetActive_(ss, institutionId, departmentId) {
+  var sheet = ss.getSheetByName("AsignacionesAmbitosRoles");
+  if (!sheet || sheet.getLastRow() <= 1) return false;
+  var data = sheet.getDataRange().getValues();
+  if (!data.length || JSON.stringify(data[0].map(String)) !== JSON.stringify(DEPARTMENT_REFERENCE_GRANT_SCOPE_HEADERS_)) return false;
+  var now = new Date();
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i] || [];
+    if (String(row[12] || "").trim() !== institutionId) continue;
+    if (["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(String(row[5] || "").trim().toUpperCase()) === -1) continue;
+    if (String(row[3] || "").trim().toUpperCase() !== "DEPARTAMENTO") continue;
+    var values = [];
+    try {
+      var raw = row[4];
+      var parsed = Array.isArray(raw) ? raw : JSON.parse(String(raw || "[]"));
+      if (Array.isArray(parsed)) values = parsed.map(function(v) { return String(v || "").trim(); });
+    } catch (error) { continue; }
+    if (values.indexOf(departmentId) === -1) continue;
+    var start = row[8] ? new Date(row[8]) : null;
+    var end = row[9] ? new Date(row[9]) : null;
+    if (start && isNaN(start.getTime())) continue;
+    if (end && isNaN(end.getTime())) continue;
+    if (start && start.getTime() > now.getTime()) continue;
+    if (end && end.getTime() < now.getTime()) continue;
+    return true;
+  }
+  return false;
+}
+
+function getDepartmentReferenceOwner_(ss, institutionId, resourceType, resourceId) {
+  var sheet = ss.getSheetByName("ResourceOwnership");
+  if (!sheet || sheet.getLastRow() <= 1) return { status: "error", code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
+  var data = sheet.getDataRange().getValues(), matches = [];
+  if (!data.length || JSON.stringify(data[0].map(String)) !== JSON.stringify(RESOURCE_OWNERSHIP_HEADERS_)) {
+    return { status: "error", code: "RESOURCE_OWNERSHIP_SCHEMA_MISMATCH" };
+  }
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i] || [];
+    if (String(row[1] || "").trim() !== institutionId) continue;
+    if (String(row[2] || "").trim().toUpperCase() !== resourceType || String(row[3] || "").trim() !== resourceId) continue;
+    if (String(row[5] || "").trim().toUpperCase() !== "ACTIVE") continue;
+    matches.push(row);
+  }
+  if (!matches.length) return { status: "error", code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
+  if (matches.length !== 1) return { status: "error", code: "RESOURCE_OWNERSHIP_AMBIGUOUS" };
+  var ownerDepartmentId = String(matches[0][4] || "").trim();
+  if (!ownerDepartmentId) return { status: "error", code: "RESOURCE_DEPARTMENT_UNRESOLVED" };
+  return { status: "success", departmentId: ownerDepartmentId };
+}
+
+function requireDepartmentReferenceGrantAdmin_(payload, action) {
+  var role = getUserVerifiedRole(payload);
+  var actorId = String((payload && payload._verifiedUserId) || "").trim();
+  if (!actorId || !role || role === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  if (getDynamicPermissionsForRole(role, action) !== true) return { status: "error", code: "AUTH_PERMISSION_DENIED" };
+  var context = getUserContextScope(payload);
+  if (!context || context.status !== "success" || context.authorized !== true) {
+    return { status: "error", code: context && context.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+  }
+  var institutionId = String(context.institutionId || "").trim();
+  var institutionScope = (context.scopes || []).some(function(scope) {
+    return String(scope.scopeType || "").trim().toUpperCase() === "INSTITUCION" &&
+      Array.isArray(scope.scopeValues) && scope.scopeValues.map(function(v) { return String(v || "").trim(); }).indexOf(institutionId) !== -1;
+  });
+  if (!institutionId || context.institutionWide !== true || !institutionScope) {
+    return { status: "error", code: "INSTITUTION_WIDE_SCOPE_REQUIRED" };
+  }
+  return { status: "success", actorId: actorId, role: role, context: context, institutionId: institutionId };
+}
+
+function createDepartmentReferenceGrant(payload) {
+  var lock = null;
+  try {
+    var admin = requireDepartmentReferenceGrantAdmin_(payload, "manageDepartmentReferenceGrants");
+    if (admin.status !== "success") return admin;
+    var resourceType = String((payload && payload.resourceType) || "").trim().toUpperCase();
+    var resourceId = String((payload && payload.resourceId) || "").trim();
+    var targetDepartmentId = String((payload && payload.targetDepartmentId) || "").trim();
+    var fields = parseDepartmentReferenceAllowlist_(payload && payload.allowedFields, true);
+    var documents = parseDepartmentReferenceAllowlist_(payload && payload.allowedDocumentIds, false);
+    var validFrom = payload && payload.validFrom ? new Date(payload.validFrom) : null;
+    var expiresAt = payload && payload.expiresAt ? new Date(payload.expiresAt) : null;
+    if (!resourceType || !/^[A-Z0-9_-]{2,80}$/.test(resourceType) || !resourceId || resourceId.length > 200 ||
+        !targetDepartmentId || targetDepartmentId.length > 200 || !fields || !documents ||
+        !validFrom || !expiresAt || isNaN(validFrom.getTime()) || isNaN(expiresAt.getTime()) ||
+        validFrom.getTime() >= expiresAt.getTime()) {
+      return { status: "error", code: "DEPARTMENT_REFERENCE_GRANT_REQUEST_INVALID" };
+    }
+    lock = LockService.getScriptLock();
+    if (!lock.tryLock(10000)) return { status: "error", code: "DEPARTMENT_REFERENCE_GRANT_LOCK_TIMEOUT" };
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var owner = getDepartmentReferenceOwner_(ss, admin.institutionId, resourceType, resourceId);
+    if (owner.status !== "success") return owner;
+    if (owner.departmentId === targetDepartmentId) return { status: "error", code: "DEPARTMENT_REFERENCE_GRANT_TARGET_IS_OWNER" };
+    if (!isDepartmentReferenceTargetActive_(ss, admin.institutionId, targetDepartmentId)) {
+      return { status: "error", code: "DEPARTMENT_REFERENCE_TARGET_NOT_ACTIVE" };
+    }
+    var sheet = ensureDepartmentReferenceGrantsSheet_(ss);
+    var rows = sheet.getDataRange().getValues();
+    var duplicate = [];
+    for (var i = 1; i < rows.length; i++) {
+      var row = rows[i] || [];
+      if (String(row[0] || "").trim() !== admin.institutionId ||
+          String(row[2] || "").trim().toUpperCase() !== resourceType ||
+          String(row[3] || "").trim() !== resourceId ||
+          String(row[4] || "").trim() !== owner.departmentId ||
+          String(row[5] || "").trim() !== targetDepartmentId) continue;
+      if (String(row[12] || "").trim().toUpperCase() === "ACTIVE" && !row[13]) duplicate.push(row);
+    }
+    if (duplicate.length) return { status: "error", code: duplicate.length > 1 ? "DEPARTMENT_REFERENCE_GRANT_AMBIGUOUS" : "DEPARTMENT_REFERENCE_GRANT_ALREADY_ACTIVE" };
+    var grantId = "DRG-" + Utilities.getUuid();
+    var now = new Date().toISOString();
+    var rowValues = [
+      admin.institutionId, grantId, resourceType, resourceId, owner.departmentId, targetDepartmentId,
+      JSON.stringify(fields), JSON.stringify(documents), admin.actorId, now, validFrom.toISOString(),
+      expiresAt.toISOString(), "ACTIVE", "", ""
+    ];
+    sheet.appendRow(rowValues);
+    logStructuredEvent("USER", "createDepartmentReferenceGrant", "INFO", "DEPARTMENT_REFERENCE_GRANT_CREATED",
+      "Concesión de referencia interdepartamental creada.", {
+        institutionId: admin.institutionId, grantId: grantId, resourceType: resourceType,
+        resourceId: resourceId, ownerDepartmentId: owner.departmentId, targetDepartmentId: targetDepartmentId,
+        authorizedBy: admin.actorId, validFrom: validFrom.toISOString(), expiresAt: expiresAt.toISOString()
+      }, admin.role);
+    return { status: "success", grantId: grantId, institutionId: admin.institutionId, resourceType: resourceType,
+      resourceId: resourceId, ownerDepartmentId: owner.departmentId, targetDepartmentId: targetDepartmentId,
+      allowedFields: fields, allowedDocumentIds: documents, authorizedBy: admin.actorId,
+      authorizedAt: now, validFrom: validFrom.toISOString(), expiresAt: expiresAt.toISOString(), status: "ACTIVE" };
+  } catch (error) {
+    return { status: "error", code: error.message || "DEPARTMENT_REFERENCE_GRANT_CREATE_FAILED" };
+  } finally {
+    if (lock) { try { lock.releaseLock(); } catch (e) {} }
+  }
+}
+
+function getDepartmentReferenceGrants(payload) {
+  try {
+    var admin = requireDepartmentReferenceGrantAdmin_(payload, "getDepartmentReferenceGrants");
+    if (admin.status !== "success") return admin;
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName(DEPARTMENT_REFERENCE_GRANT_SHEET_);
+    if (!sheet) return { status: "success", data: [] };
+    var rows = sheet.getDataRange().getValues();
+    if (!rows.length || JSON.stringify(rows[0].map(String)) !== JSON.stringify(DEPARTMENT_REFERENCE_GRANT_HEADERS_)) {
+      return { status: "error", code: "DEPARTMENT_REFERENCE_GRANT_SCHEMA_MISMATCH" };
+    }
+    var data = [];
+    for (var i = 1; i < rows.length; i++) {
+      var row = rows[i] || [];
+      if (String(row[0] || "").trim() !== admin.institutionId) continue;
+      if (payload && payload.resourceId && String(row[3] || "").trim() !== String(payload.resourceId).trim()) continue;
+      if (payload && payload.targetDepartmentId && String(row[5] || "").trim() !== String(payload.targetDepartmentId).trim()) continue;
+      data.push({
+        institutionId: row[0], grantId: row[1], resourceType: row[2], resourceId: row[3],
+        ownerDepartmentId: row[4], targetDepartmentId: row[5], allowedFields: row[6],
+        allowedDocumentIds: row[7], authorizedBy: row[8], authorizedAt: row[9],
+        validFrom: row[10], expiresAt: row[11], status: row[12], revokedAt: row[13], revokedBy: row[14]
+      });
+    }
+    return { status: "success", data: data };
+  } catch (error) {
+    return { status: "error", code: error.message || "DEPARTMENT_REFERENCE_GRANT_READ_FAILED" };
+  }
+}
+
+function revokeDepartmentReferenceGrant(payload) {
+  var lock = null;
+  try {
+    var admin = requireDepartmentReferenceGrantAdmin_(payload, "manageDepartmentReferenceGrants");
+    if (admin.status !== "success") return admin;
+    var grantId = String((payload && payload.grantId) || "").trim();
+    if (!grantId || grantId.length > 200) return { status: "error", code: "DEPARTMENT_REFERENCE_GRANT_ID_REQUIRED" };
+    lock = LockService.getScriptLock();
+    if (!lock.tryLock(10000)) return { status: "error", code: "DEPARTMENT_REFERENCE_GRANT_LOCK_TIMEOUT" };
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName(DEPARTMENT_REFERENCE_GRANT_SHEET_);
+    if (!sheet) return { status: "error", code: "DEPARTMENT_REFERENCE_GRANT_NOT_FOUND" };
+    var rows = sheet.getDataRange().getValues();
+    if (!rows.length || JSON.stringify(rows[0].map(String)) !== JSON.stringify(DEPARTMENT_REFERENCE_GRANT_HEADERS_)) {
+      return { status: "error", code: "DEPARTMENT_REFERENCE_GRANT_SCHEMA_MISMATCH" };
+    }
+    var matches = [];
+    for (var i = 1; i < rows.length; i++) {
+      var row = rows[i] || [];
+      if (String(row[0] || "").trim() === admin.institutionId && String(row[1] || "").trim() === grantId) matches.push(i + 1);
+    }
+    if (!matches.length) return { status: "error", code: "DEPARTMENT_REFERENCE_GRANT_NOT_FOUND" };
+    if (matches.length !== 1) return { status: "error", code: "DEPARTMENT_REFERENCE_GRANT_AMBIGUOUS" };
+    var current = rows[matches[0] - 1];
+    if (String(current[12] || "").trim().toUpperCase() === "REVOKED" && current[13] && current[14]) {
+      return { status: "success", unchanged: true, grantId: grantId, status: "REVOKED",
+        revokedAt: current[13], revokedBy: current[14] };
+    }
+    var now = new Date().toISOString();
+    sheet.getRange(matches[0], 13, 1, 3).setValues([["REVOKED", now, admin.actorId]]);
+    logStructuredEvent("USER", "revokeDepartmentReferenceGrant", "WARN", "DEPARTMENT_REFERENCE_GRANT_REVOKED",
+      "Concesión de referencia interdepartamental revocada.", {
+        institutionId: admin.institutionId, grantId: grantId, revokedBy: admin.actorId
+      }, admin.role);
+    return { status: "success", grantId: grantId, status: "REVOKED", revokedAt: now, revokedBy: admin.actorId };
+  } catch (error) {
+    return { status: "error", code: error.message || "DEPARTMENT_REFERENCE_GRANT_REVOKE_FAILED" };
   } finally {
     if (lock) { try { lock.releaseLock(); } catch (e) {} }
   }
