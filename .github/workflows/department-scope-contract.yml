@@ -39,6 +39,7 @@ on:
       - tests/security/department-reference-policy-storage.test.js
       - tests/security/department-reference-grant-admin.test.js
       - tests/security/department-reference-read-authorization.test.js
+      - tests/security/department-reference-interservice-envelope.test.js
       - .github/workflows/department-scope-contract.yml
 
 permissions:
@@ -94,6 +95,8 @@ jobs:
         run: node tests/security/department-reference-grant-admin.test.js
       - name: Run audited interdepartmental reference read authorization contract
         run: node tests/security/department-reference-read-authorization.test.js
+      - name: Run signed interservice reference authorization envelope contract
+        run: node tests/security/department-reference-interservice-envelope.test.js
       - name: Syntax-check updated Apps Script services
         run: |
           node --check < backend/user-service/Code.gs
