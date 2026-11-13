@@ -3061,7 +3061,7 @@
 ---
 
 <!-- ID: AUD-NG-140 | Fuentes: Pendientes.md -->
-### [ ] [AUD-NG-140] Vincular autoservicio, asistencia y recibos de nómina a la identidad verificada
+### [x] [AUD-NG-140] Vincular autoservicio, asistencia y recibos de nómina a la identidad verificada
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-140 (REQ-EXP-014).
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** `backend/accounting-service/Code.gs`.
@@ -3070,8 +3070,8 @@
 - **Criterios de Aceptación:** Empleado usa siempre `_verifiedUserId`; el horario esperado proviene de contrato/horario autorizado; solo RRHH/roles autorizados registran asistencia de terceros; el empleado solo consulta su asistencia/boleta; PDF real y privado; pruebas IDOR y suplantación.
 - **Avance C1.672:** el portal integra listado de períodos y descarga/recuperación de boletas PDF privadas. Empleado y RecursosHumanos consultan mediante getStaffPayrollReceipt con identidad firmada y ownership/ámbito; el cliente usa getPayrollReceiptPDFFile/generatePayrollReceiptPDF y descarga Base64 como Blob. Contrato ACCOUNTING PASS en CI run 43359254980.
 - **Avance C1.673:** el autoservicio incorpora la pestaña Mi Asistencia. El cliente resuelve effectiveUserId desde getEmployeeSelfServicePortal y consulta getStaffAttendanceLogs para ese empleado; harness aislado de identidad/render/vacío/error/XSS PASS. Commits f54fb207 y c149f321.
-- **Pendiente:** BETA-FUNC-050 y BETA-FUNC-051 siguen Pendiente beta para navegador/Apps Script/Drive/Sheets reales; la suite Node completa de C1.673 y CI no se ejecutaron.
-- **Estado:** [ ] En ejecución
+- **Verificación C1.676/C1.677:** GitHub Actions Department Scope run 43364730161 (Node.js 24.22.2) ejecutó el contrato ACCOUNTING completo, incluidos autoservicio, identidad, asistencia, PDF y cliente; todos los 19 pasos SUCCESS. El run Task-Service 43364715823 (Node.js 22.23.4) también SUCCESS. La suite completa del repositorio no pudo ejecutarse en el CLI local por DNS; la evidencia CI sí cubre los contratos Node aplicables.
+- **Estado:** [x] Completada en código y CI; pruebas de despliegue/beta pendientes y no bloqueantes.
 
 ---
 
