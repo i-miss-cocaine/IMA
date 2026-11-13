@@ -343,6 +343,16 @@ const runtime = {
   },
   EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_: new WeakMap(),
   verifySessionToken(token) { return claims[token] || null; },
+  getVerifiedDepartmentScopeForSession_(payload, spreadsheet, actor) {
+    if (!actor || actor.authorized !== true || !actor.userId || !actor.role) return { authorized: false };
+    const rows = scopeRows.slice(1).filter(row => String(row[1] || "").trim() === actor.userId &&
+      String(row[2] || "").trim() === actor.role && String(row[5] || "").trim() === "ACTIVO");
+    if (rows.length !== 1) return { authorized: false };
+    const departmentIds = String(rows[0][3] || "").trim() === "INSTITUCION"
+      ? Array.from(new Set(ownershipRows.slice(1).filter(row => row[1] === "I1").map(row => row[4])))
+      : [String(rows[0][4] || "").trim()].filter(Boolean);
+    return { authorized: true, institutionId: "I1", departmentIds };
+  },
   getDynamicPermissionsForRole() { return null; },
   hasActiveDelegationForAction() { return false; },
   Logger: { log() {} },
