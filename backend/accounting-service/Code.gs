@@ -4583,6 +4583,185 @@ function getCashBankSummary(payload) {
 // ---------------------------------------------------------------------------
 
 // [TASK-007] [TASK-008] [F17-Task01] [F17-Task02] [REQ-EXP-014] - Cálculo dinámico de nómina según ContratosLaborales e integración de novedades aprobadas
+
+function ensurePayrollConceptSheet_(ss,name,headers) {
+  const sheet=ss.getSheetByName(name)||getOrCreateSheet(ss,name);
+  let values=sheet.getDataRange().getValues();
+  if(!values.length||!values[0]||!values[0].length){sheet.getRange(1,1,1,headers.length).setValues([headers]);values=[headers];}
+  if(values[0].length!==headers.length||headers.some((h,i)=>String(values[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))throw new Error("RESOURCE_SCHEMA_INVALID: "+name);
+  return {sheet,headers,rows:values.slice(1)};
+}
+function normalizePayrollRole_(role) {
+  return String(role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
+}
+function requirePayrollConceptManager_(payload) {
+  const actor=getVerifiedAccountingIdentity_(payload||{});
+  if(!actor.authorized)return {authorized:false,code:actor.code||"VERIFIED_IDENTITY_REQUIRED"};
+  if(!["RECURSOSHUMANOS","ADMINISTRADOR","CONTADOR","CONTABILIDAD"].includes(normalizePayrollRole_(actor.role)))return {authorized:false,code:"ROLE_NOT_ALLOWED"};
+  return {authorized:true,actor};
+}
+function getPayrollConceptHeaders_() {
+  return ["ConceptoID","Codigo","Nombre","Descripcion","Categoria","Naturaleza","TipoCalculo","Valor","BaseCalculo","Formula","Frecuencia","VigenciaInicio","VigenciaFin","TratamientoISR","TratamientoIHSS","CuentaContable","VisibleBoleta","Prioridad","Estado","Recurrente","Version","FechaCreacion","CreadoPor","FechaActualizacion","ActualizadoPor"];
+}
+function getPayrollAssignmentHeaders_() {
+  return ["AsignacionID","CodigoConcepto","TipoAsignacion","ValorAsignacion","DepartamentoScope","ValorOverride","FechaInicio","FechaFin","Frecuencia","PeriodoUnico","Estado","Observaciones","CreadoPor","FechaCreacion"];
+}
+function getPayrollConceptHistoryHeaders_() {
+  return ["HistorialID","ConceptoID","Codigo","Version","SnapshotJSON","Fecha","ActorId","Accion"];
+}
+function getPayrollConceptDetailHeaders_() {
+  return ["DetalleID","PlanillaID","Periodo","EmpleadoId","Codigo","Nombre","Categoria","Naturaleza","TipoCalculo","Valor","Monto","CuentaContable","VisibleBoleta","TratamientoISR","TratamientoIHSS","Version","AsignacionID","Formula","BaseCalculo","Estado"];
+}
+function payrollConceptCategories_() {
+  return ["INGRESOS_ORDINARIOS","HORAS_EXTRAS","BONIFICACIONES_FIJAS","BONIFICACIONES_VARIABLES","COMISIONES","INCENTIVOS","DEDUCCIONES_LEGALES","DEDUCCIONES_VOLUNTARIAS","APORTACIONES_PATRONALES","BENEFICIOS","AJUSTES_EXTRAORDINARIOS"];
+}
+function payrollConceptPhase_(category) {
+  if(["INGRESOS_ORDINARIOS","HORAS_EXTRAS","BONIFICACIONES_FIJAS","BONIFICACIONES_VARIABLES","COMISIONES","INCENTIVOS","BENEFICIOS","AJUSTES_EXTRAORDINARIOS"].includes(String(category||"").toUpperCase()))return 1;
+  if(["DEDUCCIONES_LEGALES","DEDUCCIONES_VOLUNTARIAS"].includes(String(category||"").toUpperCase()))return 2;
+  if(String(category||"").toUpperCase()==="APORTACIONES_PATRONALES")return 3;
+  return 0;
+}
+function tokenizePayrollFormula_(formula) {
+  const source=String(formula||"").trim(),tokens=[],re=/\s*([A-Za-z_][A-Za-z0-9_]*|\d+(?:\.\d+)?|[()+\-*/])\s*/y;
+  if(!source)return [];
+  let pos=0;
+  while(pos<source.length){re.lastIndex=pos;const m=re.exec(source);if(!m)throw new Error("PAYROLL_FORMULA_SYNTAX_INVALID");tokens.push(m[1]);pos=re.lastIndex;}
+  return tokens;
+}
+function evaluatePayrollFormula_(formula,variables) {
+  const tokens=tokenizePayrollFormula_(formula);let i=0;
+  if(!tokens.length)throw new Error("PAYROLL_FORMULA_REQUIRED");
+  function factor(){
+    const t=tokens[i++];
+    if(t==="+")return factor();
+    if(t==="-")return -factor();
+    if(t==="("){const v=expression();if(tokens[i++]!==")")throw new Error("PAYROLL_FORMULA_SYNTAX_INVALID");return v;}
+    if(t===undefined)throw new Error("PAYROLL_FORMULA_SYNTAX_INVALID");
+    if(/^\d+(?:\.\d+)?$/.test(t))return Number(t);
+    if(/^[A-Za-z_][A-Za-z0-9_]*$/.test(t)){if(!Object.prototype.hasOwnProperty.call(variables,t))throw new Error("PAYROLL_FORMULA_REFERENCE_INVALID:"+t);const v=Number(variables[t]);if(!Number.isFinite(v))throw new Error("PAYROLL_FORMULA_VALUE_INVALID:"+t);return v;}
+    throw new Error("PAYROLL_FORMULA_SYNTAX_INVALID");
+  }
+  function term(){let v=factor();while(tokens[i]==="*"||tokens[i]==="/"){const op=tokens[i++],right=factor();if(op==="/"&&right===0)throw new Error("PAYROLL_FORMULA_DIVISION_BY_ZERO");v=op==="*"?v*right:v/right;}return v;}
+  function expression(){let v=term();while(tokens[i]==="+"||tokens[i]==="-"){const op=tokens[i++],right=term();v=op==="+"?v+right:v-right;}return v;}
+  const result=expression();if(i!==tokens.length||!Number.isFinite(result))throw new Error("PAYROLL_FORMULA_SYNTAX_INVALID");return result;
+}
+function getPayrollConceptEngine_(ss) {
+  const catalog=ensurePayrollConceptSheet_(ss,"CatalogoConceptosPlanilla",getPayrollConceptHeaders_());
+  const assignments=ensurePayrollConceptSheet_(ss,"AsignacionesConceptosPlanilla",getPayrollAssignmentHeaders_());
+  const active=catalog.rows.filter(r=>String(r[18]||"").trim().toUpperCase()==="ACTIVO").map(r=>({
+    conceptoId:String(r[0]||"").trim(),codigo:String(r[1]||"").trim().toUpperCase(),nombre:String(r[2]||"").trim(),descripcion:String(r[3]||""),categoria:String(r[4]||"").toUpperCase(),naturaleza:String(r[5]||"").toUpperCase(),tipoCalculo:String(r[6]||"").toUpperCase(),valor:Number(r[7]||0),baseCalculo:String(r[8]||"").trim().toUpperCase(),formula:String(r[9]||"").trim(),frecuencia:String(r[10]||"MENSUAL").toUpperCase(),vigenciaInicio:r[11],vigenciaFin:r[12],tratamientoISR:String(r[13]||"EXENTO").toUpperCase(),tratamientoIHSS:String(r[14]||"NO_COTIZABLE").toUpperCase(),cuentaContable:String(r[15]||"").trim(),visibleBoleta:r[16]===true||String(r[16]).toUpperCase()==="TRUE",prioridad:Number(r[17]||0),estado:String(r[18]||""),recurrente:r[19]===true||String(r[19]).toUpperCase()==="TRUE",version:String(r[20]||"1")
+  }));
+  const byCode=Object.create(null);
+  active.forEach(c=>{if(!/^[A-Z][A-Z0-9_]{1,39}$/.test(c.codigo)||byCode[c.codigo])throw new Error("PAYROLL_CONCEPT_CODE_DUPLICATE_OR_INVALID");if(!payrollConceptPhase_(c.categoria)||!["DEBE","HABER"].includes(c.naturaleza)||!["FIJO","PORCENTAJE","PROPORCIONAL","FORMULA"].includes(c.tipoCalculo)||!Number.isFinite(c.valor)||c.valor<0||!c.cuentaContable)throw new Error("PAYROLL_CONCEPT_CONFIGURATION_INVALID:"+c.codigo);const expectedNature=payrollConceptPhase_(c.categoria)===2?"HABER":"DEBE";if(c.naturaleza!==expectedNature)throw new Error("PAYROLL_CONCEPT_NATURE_MISMATCH:"+c.codigo);if(!["GRAVADO","EXENTO"].includes(c.tratamientoISR)||!["COTIZABLE","NO_COTIZABLE"].includes(c.tratamientoIHSS))throw new Error("PAYROLL_CONCEPT_TAX_TREATMENT_INVALID:"+c.codigo);byCode[c.codigo]=c;});
+  const reserved=["BASE","SALARIO_BASE","DEVENGADO","HORAS_EXTRAS","BASE_COTIZABLE","BASE_ISR","DIAS_TRABAJADOS","DIAS_PERIODO","IHSS","RAP","ISR","SALARIO_NETO"];
+  active.forEach(c=>{
+    const refs=tokenizePayrollFormula_(c.formula).filter(t=>/^[A-Za-z_][A-Za-z0-9_]*$/.test(t)&&!reserved.includes(t));
+    if(c.tipoCalculo==="FORMULA"&&!c.formula)throw new Error("PAYROLL_FORMULA_REQUIRED:"+c.codigo);
+    refs.forEach(ref=>{if(!byCode[ref])throw new Error("PAYROLL_FORMULA_REFERENCE_INVALID:"+c.codigo+":"+ref);if(payrollConceptPhase_(byCode[ref].categoria)>payrollConceptPhase_(c.categoria))throw new Error("PAYROLL_FORMULA_PHASE_INVALID:"+c.codigo+":"+ref);});
+    if(c.baseCalculo.startsWith("CONCEPTO:")){const ref=c.baseCalculo.slice(9);if(!byCode[ref])throw new Error("PAYROLL_BASE_REFERENCE_INVALID:"+c.codigo+":"+ref);if(payrollConceptPhase_(byCode[ref].categoria)>payrollConceptPhase_(c.categoria))throw new Error("PAYROLL_FORMULA_PHASE_INVALID:"+c.codigo+":"+ref);}
+  });
+  const state=Object.create(null),ordered=[];
+  function visit(code){if(state[code]===1)throw new Error("PAYROLL_FORMULA_CYCLE:"+code);if(state[code]===2)return;state[code]=1;const c=byCode[code],refs=tokenizePayrollFormula_(c.formula).filter(t=>/^[A-Za-z_][A-Za-z0-9_]*$/.test(t)&&!reserved.includes(t));if(c.baseCalculo.startsWith("CONCEPTO:"))refs.push(c.baseCalculo.slice(9));refs.forEach(visit);state[code]=2;ordered.push(c);}
+  active.slice().sort((a,b)=>a.prioridad-b.prioridad||a.codigo.localeCompare(b.codigo)).forEach(c=>visit(c.codigo));
+  const assignmentRows=assignments.rows.filter(r=>String(r[10]||"").trim().toUpperCase()==="ACTIVO").map(r=>({asignacionId:String(r[0]||""),codigo:String(r[1]||"").trim().toUpperCase(),tipo:String(r[2]||"").toUpperCase(),valor:String(r[3]||"").trim(),departamentoScope:String(r[4]||"").trim(),valorOverride:r[5]===""||r[5]==null?null:Number(r[5]),fechaInicio:r[6],fechaFin:r[7],frecuencia:String(r[8]||"MENSUAL").toUpperCase(),periodoUnico:String(r[9]||"").trim(),estado:String(r[10]||"")}));
+  assignmentRows.forEach(a=>{if(!byCode[a.codigo]||!["GLOBAL","EMPLEADO","DEPARTAMENTO","CARGO","ESTRUCTURA_SALARIAL"].includes(a.tipo)||!a.valor)throw new Error("PAYROLL_CONCEPT_ASSIGNMENT_INVALID:"+a.asignacionId);});
+  return {concepts:ordered,byCode,assignments:assignmentRows};
+}
+function resolvePayrollConceptBase_(baseCode,context,values) {
+  const key=String(baseCode||"SALARIO_BASE").trim().toUpperCase();
+  if(key.startsWith("CONCEPTO:"))return Number(values[key.slice(9)]||0);
+  const variables={SALARIO_BASE:context.salarioBase,DEVENGADO:context.devengado,HORAS_EXTRAS:context.horasExtras,BASE_COTIZABLE:context.baseCotizable,BASE_ISR:context.baseISR,DIAS_TRABAJADOS:context.diasTrabajados,DIAS_PERIODO:context.diasPeriodo,IHSS:context.ihss,RAP:context.rap,ISR:context.isr,SALARIO_NETO:context.salarioNeto};
+  if(!Object.prototype.hasOwnProperty.call(variables,key))throw new Error("PAYROLL_BASE_REFERENCE_INVALID:"+key);
+  const value=Number(variables[key]||0);if(!Number.isFinite(value))throw new Error("PAYROLL_BASE_VALUE_INVALID:"+key);return value;
+}
+function calculatePayrollConceptPhase_(engine,employee,employeeUserId,period,planillaId,context,phase,netAvailable) {
+  const dept=String(employee[4]||"").trim(),position=String(employee[3]||"").trim(),structure=String(employee[5]||"").trim(),user=String(employeeUserId||employee[2]||"").trim(),now=new Date(period+"-01T00:00:00");
+  const activeAssignments=engine.assignments.filter(a=>{
+    if(!engine.byCode[a.codigo]||payrollConceptPhase_(engine.byCode[a.codigo].categoria)!==phase)return false;
+    const start=a.fechaInicio?new Date(a.fechaInicio):null,end=a.fechaFin?new Date(a.fechaFin):null;
+    if(start&&!isNaN(start.getTime())&&start>now)return false;if(end&&!isNaN(end.getTime())&&end<now)return false;
+    const concept=engine.byCode[a.codigo],cs=concept.vigenciaInicio?new Date(concept.vigenciaInicio):null,ce=concept.vigenciaFin?new Date(concept.vigenciaFin):null;
+    if(cs&&!isNaN(cs.getTime())&&cs>now)return false;if(ce&&!isNaN(ce.getTime())&&ce<now)return false;
+    const f=a.frecuencia||concept.frecuencia;if(!["MENSUAL","POR_PERIODO","UNICA"].includes(f))return false;
+    if(f==="UNICA"&&a.periodoUnico!==period)return false;
+    if(!concept.recurrente&&a.periodoUnico!==period)return false;
+    if(a.tipo==="GLOBAL")return true;
+    if(a.tipo==="EMPLEADO")return a.valor===user;
+    if(a.tipo==="DEPARTAMENTO")return a.valor===dept;
+    if(a.tipo==="CARGO")return a.valor===position&&a.departamentoScope===dept;
+    if(a.tipo==="ESTRUCTURA_SALARIAL")return a.valor===structure&&a.departamentoScope===dept;
+    return false;
+  });
+  const byConcept=Object.create(null);
+  activeAssignments.forEach(a=>{const rank={GLOBAL:1,ESTRUCTURA_SALARIAL:2,CARGO:3,DEPARTAMENTO:4,EMPLEADO:5}[a.tipo]||0;const old=byConcept[a.codigo];if(!old||rank>old.rank)byConcept[a.codigo]={assignment:a,rank};else if(rank===old.rank)throw new Error("PAYROLL_CONCEPT_ASSIGNMENT_DUPLICATE:"+a.codigo);});
+  const values=context.conceptValues||Object.create(null),details=[],reserved={BASE:context.salarioBase,SALARIO_BASE:context.salarioBase,DEVENGADO:context.devengado,HORAS_EXTRAS:context.horasExtras,BASE_COTIZABLE:context.baseCotizable,BASE_ISR:context.baseISR,DIAS_TRABAJADOS:context.diasTrabajados,DIAS_PERIODO:context.diasPeriodo,IHSS:context.ihss,RAP:context.rap,ISR:context.isr,SALARIO_NETO:context.salarioNeto};
+  let total=0,taxable=0,cotizable=0;
+  engine.concepts.filter(c=>payrollConceptPhase_(c.categoria)===phase).forEach(c=>{
+    const chosen=byConcept[c.codigo];if(!chosen)return;
+    const a=chosen.assignment,base=resolvePayrollConceptBase_(c.baseCalculo||"SALARIO_BASE",context,values),override=a.valorOverride;
+    let amount=0;
+    if(c.tipoCalculo==="FIJO")amount=override==null?c.valor:override;
+    else if(c.tipoCalculo==="PORCENTAJE")amount=base*((override==null?c.valor:override)/100);
+    else if(c.tipoCalculo==="PROPORCIONAL")amount=base*((override==null?c.valor:override)/100)*(Number(context.diasTrabajados||0)/Math.max(1,Number(context.diasPeriodo||1)));
+    else {const vars=Object.assign({},reserved,values,{BASE:base});amount=evaluatePayrollFormula_(c.formula,vars);}
+    if(!Number.isFinite(amount)||amount<0)throw new Error("PAYROLL_CONCEPT_AMOUNT_INVALID:"+c.codigo);
+    amount=Math.round(amount*100)/100;
+    if(phase===2){const cap=Math.max(0,Number(netAvailable)||0);amount=Math.min(amount,Math.round(cap*100)/100);netAvailable=cap-amount;}
+    if(amount<=0)return;
+    values[c.codigo]=amount;total=Math.round((total+amount)*100)/100;
+    if(phase===1){if(c.tratamientoISR==="GRAVADO")taxable+=amount;if(c.tratamientoIHSS==="COTIZABLE")cotizable+=amount;}
+    details.push(["CPTD-"+Utilities.getUuid(),planillaId,period,user,c.codigo,c.nombre,c.categoria,c.naturaleza,c.tipoCalculo,c.valor,amount,c.cuentaContable,c.visibleBoleta,c.tratamientoISR,c.tratamientoIHSS,c.version,a.asignacionId,c.formula,c.baseCalculo,"Calculada"]);
+  });
+  context.conceptValues=values;
+  return {total,taxableIncome:Math.round(taxable*100)/100,cotizableIncome:Math.round(cotizable*100)/100,details,conceptValues:values};
+}
+function getPayrollConceptCatalog(payload) {
+  const access=requirePayrollConceptManager_(payload);if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
+  try{const ss=SpreadsheetApp.openById(SPREADSHEET_ID),catalog=ensurePayrollConceptSheet_(ss,"CatalogoConceptosPlanilla",getPayrollConceptHeaders_());return {status:"success",conceptos:catalog.rows.map(r=>({conceptoId:r[0],codigo:r[1],nombre:r[2],descripcion:r[3],categoria:r[4],naturaleza:r[5],tipoCalculo:r[6],valor:Number(r[7]||0),baseCalculo:r[8],formula:r[9],frecuencia:r[10],vigenciaInicio:r[11],vigenciaFin:r[12],tratamientoISR:r[13],tratamientoIHSS:r[14],cuentaContable:r[15],visibleBoleta:r[16]===true||String(r[16]).toUpperCase()==="TRUE",prioridad:Number(r[17]||0),estado:r[18],recurrente:r[19]===true||String(r[19]).toUpperCase()==="TRUE",version:r[20]}))};}catch(e){return {status:"error",code:"PAYROLL_CONCEPT_CATALOG_INVALID",message:"No fue posible leer el catálogo de conceptos."};}
+}
+function savePayrollConcept(payload) {
+  const p=payload||{},access=requirePayrollConceptManager_(p);if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
+  const code=String(p.codigo||"").trim().toUpperCase(),name=String(p.nombre||"").trim().slice(0,120),category=String(p.categoria||"").trim().toUpperCase(),nature=String(p.naturaleza||"").trim().toUpperCase(),type=String(p.tipoCalculo||"").trim().toUpperCase(),base=String(p.baseCalculo||"SALARIO_BASE").trim().toUpperCase(),formula=String(p.formula||"").trim().slice(0,500),account=String(p.cuentaContable||"").trim();
+  const value=Number(p.valor),priority=Number(p.prioridad||0),frequency=String(p.frecuencia||"MENSUAL").toUpperCase(),isr=String(p.tratamientoISR||"EXENTO").toUpperCase(),ihss=String(p.tratamientoIHSS||"NO_COTIZABLE").toUpperCase();
+  if(!/^[A-Z][A-Z0-9_]{1,39}$/.test(code)||!name||!payrollConceptCategories_().includes(category)||!["DEBE","HABER"].includes(nature)||!["FIJO","PORCENTAJE","PROPORCIONAL","FORMULA"].includes(type)||!Number.isFinite(value)||value<0||!["MENSUAL","POR_PERIODO","UNICA","QUINCENAL","SEMANAL"].includes(frequency)||!["GRAVADO","EXENTO"].includes(isr)||!["COTIZABLE","NO_COTIZABLE"].includes(ihss)||!account||!Number.isInteger(priority)||priority<0||priority>9999)return {status:"error",code:"PAYROLL_CONCEPT_INVALID",message:"Revise código, nombre, categoría, naturaleza, cálculo, frecuencia, tratamientos y cuenta contable."};
+  if(nature!==(payrollConceptPhase_(category)===2?"HABER":"DEBE"))return {status:"error",code:"PAYROLL_CONCEPT_NATURE_MISMATCH",message:"La naturaleza contable no corresponde a la categoría del concepto."};
+  if(type==="FORMULA"){try{const vars={BASE:1,SALARIO_BASE:1,DEVENGADO:1,HORAS_EXTRAS:1,BASE_COTIZABLE:1,BASE_ISR:1,DIAS_TRABAJADOS:1,DIAS_PERIODO:1,IHSS:1,RAP:1,ISR:1,SALARIO_NETO:1};tokenizePayrollFormula_(formula).filter(t=>/^[A-Za-z_][A-Za-z0-9_]*$/.test(t)).forEach(t=>{vars[t]=1;});evaluatePayrollFormula_(formula,vars);}catch(e){return {status:"error",code:"PAYROLL_FORMULA_INVALID",message:"La fórmula no es válida o contiene operaciones no permitidas."};}}
+  const lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"El catálogo está ocupado."};
+  try{
+    const ss=SpreadsheetApp.openById(SPREADSHEET_ID),cat=ensurePayrollConceptSheet_(ss,"CatalogoConceptosPlanilla",getPayrollConceptHeaders_()),history=ensurePayrollConceptSheet_(ss,"HistorialConceptosPlanilla",getPayrollConceptHistoryHeaders_()),id=String(p.conceptoId||"").trim();
+    const matches=cat.rows.map((r,i)=>({r,index:i+2})).filter(x=>String(x.r[0]||"").trim()===id&&id||String(x.r[1]||"").trim().toUpperCase()===code);
+    if(matches.length>1)return {status:"error",code:"PAYROLL_CONCEPT_DUPLICATE",message:"El código o concepto está duplicado."};
+    const found=matches[0]||null;
+    if(found&&String(found.r[1]||"").trim().toUpperCase()!==code&&cat.rows.some(r=>String(r[1]||"").trim().toUpperCase()===code))return {status:"error",code:"PAYROLL_CONCEPT_CODE_DUPLICATE",message:"El código ya está asignado."};
+    const conceptId=found?String(found.r[0]):"CPT-"+Utilities.getUuid(),version=found?Number(found.r[20]||1)+1:1,now=new Date();
+    if(found)history.sheet.appendRow(["HCP-"+Utilities.getUuid(),conceptId,found.r[1],found.r[20],JSON.stringify(found.r),now,access.actor.userId,"ACTUALIZADO"]);
+    const row=[conceptId,code,name,String(p.descripcion||"").trim().slice(0,500),category,nature,type,value,base,formula,frequency,p.vigenciaInicio||"",p.vigenciaFin||"",isr,ihss,account,!!p.visibleBoleta,priority,String(p.estado||"Activo").toUpperCase(),p.recurrente!==false,version,found?found.r[21]:now,found?found.r[22]:access.actor.userId,now,access.actor.userId];
+    if(found)cat.sheet.getRange(found.index,1,1,row.length).setValues([row]);else cat.sheet.appendRow(row);
+    const engine=getPayrollConceptEngine_(ss);
+    return {status:"success",conceptoId:conceptId,codigo:code,version:version,message:"Concepto salarial guardado y versión histórica conservada."};
+  }catch(e){return {status:"error",code:"PAYROLL_CONCEPT_SAVE_FAILED",message:"No fue posible guardar el concepto. Revise referencias y dependencias."};}finally{lock.releaseLock();}
+}
+function setPayrollConceptStatus(payload) {
+  const p=payload||{},access=requirePayrollConceptManager_(p);if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
+  const id=String(p.conceptoId||"").trim(),status=String(p.estado||"").trim().toUpperCase();if(!id||!["ACTIVO","INACTIVO"].includes(status))return {status:"error",code:"PAYROLL_CONCEPT_STATUS_INVALID",message:"Estado no válido."};
+  const lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"El catálogo está ocupado."};
+  try{const ss=SpreadsheetApp.openById(SPREADSHEET_ID),cat=ensurePayrollConceptSheet_(ss,"CatalogoConceptosPlanilla",getPayrollConceptHeaders_()),history=ensurePayrollConceptSheet_(ss,"HistorialConceptosPlanilla",getPayrollConceptHistoryHeaders_()),matches=cat.rows.map((r,i)=>({r,index:i+2})).filter(x=>String(x.r[0]||"").trim()===id);if(matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Concepto no disponible."};const found=matches[0],updated=found.r.slice();history.sheet.appendRow(["HCP-"+Utilities.getUuid(),id,found.r[1],found.r[20],JSON.stringify(found.r),new Date(),access.actor.userId,status]);updated[18]=status;updated[20]=Number(updated[20]||1)+1;updated[23]=new Date();updated[24]=access.actor.userId;cat.sheet.getRange(found.index,1,1,updated.length).setValues([updated]);return {status:"success",conceptoId:id,estado:status};}catch(e){return {status:"error",code:"PAYROLL_CONCEPT_STATUS_FAILED",message:"No fue posible cambiar el estado del concepto."};}finally{lock.releaseLock();}
+}
+function assignPayrollConcept(payload) {
+  const p=payload||{},access=requirePayrollConceptManager_(p);if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
+  const code=String(p.codigoConcepto||"").trim().toUpperCase(),type=String(p.tipoAsignacion||"").trim().toUpperCase(),target=String(p.valorAsignacion||"").trim(),deptScope=String(p.departamentoScope||"").trim(),frequency=String(p.frecuencia||"MENSUAL").toUpperCase(),period=String(p.periodoUnico||"").trim();
+  if(!code||!["GLOBAL","EMPLEADO","DEPARTAMENTO","CARGO","ESTRUCTURA_SALARIAL"].includes(type)||!target||!["MENSUAL","POR_PERIODO","UNICA"].includes(frequency)||(frequency==="UNICA"&&!/^\d{4}-\d{2}$/.test(period)))return {status:"error",code:"PAYROLL_CONCEPT_ASSIGNMENT_INVALID",message:"La asignación o frecuencia no es válida."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(p,ss,access.actor);if(!scope||!scope.authorized)return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"No existe un ámbito autorizado para la asignación."};
+  if(type==="GLOBAL"&&!scope.institutionWide)return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"La asignación global requiere ámbito institucional."};
+  if(type==="EMPLEADO"){const own=resolveEmployeeLoanAdvanceAccess_(p,ss,target,true);if(!own.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Empleado no disponible."};}
+  if(["DEPARTAMENTO","CARGO","ESTRUCTURA_SALARIAL"].includes(type)&&(!deptScope||(!scope.institutionWide&&!scope.departmentIds.map(String).includes(deptScope))))return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"El departamento no está dentro del ámbito autorizado."};
+  try{const cat=ensurePayrollConceptSheet_(ss,"CatalogoConceptosPlanilla",getPayrollConceptHeaders_());if(!cat.rows.some(r=>String(r[1]||"").trim().toUpperCase()===code&&String(r[18]||"").toUpperCase()==="ACTIVO"))return {status:"error",code:"PAYROLL_CONCEPT_NOT_ACTIVE",message:"El concepto no existe o está inactivo."};const sheet=ensurePayrollConceptSheet_(ss,"AsignacionesConceptosPlanilla",getPayrollAssignmentHeaders_());const row=["ASN-"+Utilities.getUuid(),code,type,target,deptScope,p.valorOverride==null?"":Number(p.valorOverride),p.fechaInicio||"",p.fechaFin||"",frequency,period,"Activo",String(p.observaciones||"").trim().slice(0,500),access.actor.userId,new Date()];sheet.sheet.appendRow(row);return {status:"success",asignacionId:row[0],message:"Asignación de concepto creada."};}catch(e){return {status:"error",code:"PAYROLL_CONCEPT_ASSIGNMENT_SAVE_FAILED",message:"No fue posible guardar la asignación."};}
+}
+function getPayrollConceptAssignments(payload) {
+  const p=payload||{},access=requirePayrollConceptManager_(p);if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
+  try{const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(p,ss,access.actor),data=ensurePayrollConceptSheet_(ss,"AsignacionesConceptosPlanilla",getPayrollAssignmentHeaders_());const rows=data.rows.filter(r=>scope&&scope.institutionWide||String(r[4]||"")&&scope&&scope.departmentIds.map(String).includes(String(r[4]||""))||String(r[2]||"")==="EMPLEADO"&&String(r[3]||"")===access.actor.userId);return {status:"success",asignaciones:rows.map(r=>({asignacionId:r[0],codigoConcepto:r[1],tipoAsignacion:r[2],valorAsignacion:r[3],departamentoScope:r[4],valorOverride:r[5],fechaInicio:r[6],fechaFin:r[7],frecuencia:r[8],periodoUnico:r[9],estado:r[10],observaciones:r[11]}))};}catch(e){return {status:"error",code:"PAYROLL_CONCEPT_ASSIGNMENTS_INVALID",message:"No fue posible leer las asignaciones."};}
+}
+
 function calculatePayrollPeriod(payload) {
   const { periodoMes, idempotencyToken } = payload || {};
   if (!periodoMes) throw new Error("periodoMes requerido.");
