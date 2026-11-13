@@ -10789,7 +10789,8 @@ function isDepartmentReferenceTargetActive_(ss, institutionId, departmentId) {
   var sheet = ss.getSheetByName("AsignacionesAmbitosRoles");
   if (!sheet || sheet.getLastRow() <= 1) return false;
   var data = sheet.getDataRange().getValues();
-  if (!data.length || JSON.stringify(data[0].map(String)) !== JSON.stringify(DEPARTMENT_REFERENCE_GRANT_SCOPE_HEADERS_)) return false;
+  var currentHeaders = DEPARTMENT_REFERENCE_GRANT_SCOPE_HEADERS_.concat(["ResponsibilityID"]);
+  if (!data.length || (JSON.stringify(data[0].map(String)) !== JSON.stringify(DEPARTMENT_REFERENCE_GRANT_SCOPE_HEADERS_) && JSON.stringify(data[0].map(String)) !== JSON.stringify(currentHeaders))) return false;
   var now = new Date();
   for (var i = 1; i < data.length; i++) {
     var row = data[i] || [];
@@ -10892,9 +10893,9 @@ function createDepartmentReferenceGrant(payload) {
           String(row[3] || "").trim() !== resourceId ||
           String(row[4] || "").trim() !== owner.departmentId ||
           String(row[5] || "").trim() !== targetDepartmentId) continue;
-      if (String(row[12] || "").trim().toUpperCase() === "ACTIVE" && !row[13]) duplicate.push(row);
+      duplicate.push(row);
     }
-    if (duplicate.length) return { status: "error", code: duplicate.length > 1 ? "DEPARTMENT_REFERENCE_GRANT_AMBIGUOUS" : "DEPARTMENT_REFERENCE_GRANT_ALREADY_ACTIVE" };
+    if (duplicate.length) return { status: "error", code: duplicate.length > 1 ? "DEPARTMENT_REFERENCE_GRANT_AMBIGUOUS" : (String(duplicate[0][12] || "").trim().toUpperCase() === "REVOKED" ? "DEPARTMENT_REFERENCE_GRANT_HISTORY_EXISTS" : "DEPARTMENT_REFERENCE_GRANT_ALREADY_ACTIVE") };
     var grantId = "DRG-" + Utilities.getUuid();
     var now = new Date().toISOString();
     var rowValues = [
