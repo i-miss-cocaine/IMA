@@ -7095,9 +7095,16 @@ function getPayrollReceiptDistributionContext_(payload,ss,planillaId) {
     const access=assertEmployeeExpedienteScopeAccess_(payload,ss,expedienteId);
     if(!access.authorized){scopeBlocked++;incidents.push({empleadoId:expedienteId,empleadoNombre:"",motivo:"OUT_OF_SCOPE"});return;}
     const userId=String(matches[0][2]||"").trim();
-    if(!userId||userCounts[userId]!==1||userCounts["USER:"+userId]!==1){incidents.push({empleadoId:expedienteId,empleadoNombre:employeeName,motivo:"USER_AMBIGUOUS"});return;}
+    if(!userId||userCounts[userId]!==1||userCounts["USER:"+userId]!==1){
+      records.push({planillaId,periodoMes:periods[0],expedienteId,userId,empleadoNombre:employeeName,email:"",emailValid:false,emailReason:"USER_AMBIGUOUS"});
+      incidents.push({empleadoId:expedienteId,empleadoNombre:employeeName,motivo:"USER_AMBIGUOUS"});return;
+    }
     const userMatches=users.filter(x=>String(x[0]||"").trim()===userId);
-    if(userMatches.length!==1){incidents.push({empleadoId:expedienteId,empleadoNombre:employeeName,motivo:"USER_NOT_FOUND"});return;}
+    if(userMatches.length!==1){
+      const reason=userMatches.length?"USER_AMBIGUOUS":"USER_NOT_FOUND";
+      records.push({planillaId,periodoMes:periods[0],expedienteId,userId,empleadoNombre:employeeName,email:"",emailValid:false,emailReason:reason});
+      incidents.push({empleadoId:expedienteId,empleadoNombre:employeeName,motivo:reason});return;
+    }
     const user=userMatches[0],email=String(user[4]||"").trim(),accountState=String(user[10]||"Activa").trim().toUpperCase();
     let emailReason="";
     if(accountState!=="ACTIVA")emailReason="USER_INACTIVE";
