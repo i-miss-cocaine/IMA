@@ -4905,9 +4905,9 @@ function getPayrollBatchPreview(payload){
   const groups=Object.create(null),excluded=[],included=[];const filters={departamento:String(p.departamento||"").trim(),cargo:String(p.cargo||"").trim(),tipoContrato:String(p.tipoContrato||"").trim(),modalidadPago:String(p.modalidadPago||"").trim(),frecuenciaPago:String(p.frecuenciaPago||"").trim(),search:normalizePayrollBatchValue_(p.search)};
   active.forEach(e=>{
    const id=String(e[0]||"").trim(),name=String(e[9]||e[3]||"Empleado"),position=String(e[3]||"Personal"),department=String(e[4]||"").trim();
-   const contractsForEmployee=contracts.filter(c=>(String(c[1]||"").trim()===id||String(c[1]||"").trim()===String(e[2]||"").trim())&&!["ANULADO","INACTIVO"].includes(normalizePayrollBatchValue_(c[7]))&&(!parseDate(c[3])||parseDate(c[3])<=end)&&(!parseDate(c[4])||parseDate(c[4])>=start));
+   const contractsForEmployee=contracts.filter(c=>(String(c[1]||"").trim()===id||String(c[1]||"").trim()===String(e[2]||"").trim())&&!["ANULADO","INACTIVO"].includes(normalizePayrollBatchValue_(c[7]))&&(!c[3]||parseDate(c[3])&&parseDate(c[3])<=end)&&(!c[4]||parseDate(c[4])&&parseDate(c[4])>=start));
    if(contractsForEmployee.length!==1){excluded.push({empleadoId:id,empleadoNombre:name,motivo:contractsForEmployee.length?"CONTRATOS_SUPERPUESTOS":"SIN_CONTRATO_VIGENTE"});return;}
-   const contract=contractsForEmployee[0],cfg=configByEmployee[id],cfgValid=!!(cfg&&!cfg.duplicate&&normalizePayrollBatchValue_(cfg[5])==="ACTIVO"&&(!parseDate(cfg[3])||parseDate(cfg[3])<=end)&&(!parseDate(cfg[4])||parseDate(cfg[4])>=start));
+   const contract=contractsForEmployee[0],cfg=configByEmployee[id],cfgValid=!!(cfg&&!cfg.duplicate&&normalizePayrollBatchValue_(cfg[5])==="ACTIVO"&&(!cfg[3]||parseDate(cfg[3])&&parseDate(cfg[3])<=end)&&(!cfg[4]||parseDate(cfg[4])&&parseDate(cfg[4])>=start));
    const modality=cfgValid?String(cfg[1]):"NO_CONFIGURADA",frequency=cfgValid?String(cfg[2]):"MENSUAL",contractType=String(contract[2]||"NO_DEFINIDO");
    const candidate={empleadoId:id,empleadoNombre:name,puesto:position,departamento:department,tipoContrato:contractType,modalidadPago:modality,frecuenciaPago:frequency,pendienteValidacion:!cfgValid};
    if(filters.departamento&&department!==filters.departamento||filters.cargo&&position!==filters.cargo||filters.tipoContrato&&contractType!==filters.tipoContrato||filters.modalidadPago&&modality!==filters.modalidadPago||filters.frecuenciaPago&&frequency!==filters.frecuenciaPago||filters.search&&!normalizePayrollBatchValue_(name+" "+position+" "+id).includes(filters.search))return;
@@ -5006,7 +5006,7 @@ function calculatePayrollPeriod(payload) {
     let planData = planSheet.getDataRange().getValues();
 
     // Una planilla admite lotes sucesivos únicamente mientras permanezca en borrador.
-    const existingPeriodRows = planData.slice(1).filter(r => String(r[2]||"").trim() === String(periodoMes).trim() && !["ANULADA","ANULADO","REEMPLAZADA"].includes(normalizePayrollBatchValue_(r[15])));
+    const existingPeriodRows = planData.slice(1).filter(r => String(r[2]||"").trim() === String(periodoMes).trim() && !["ANULADA","ANULADO","REVERTIDA","REVERTIDO","CANCELADA","CANCELADO","REEMPLAZADA"].includes(normalizePayrollBatchValue_(r[15])));
     const existingPlanIds = [...new Set(existingPeriodRows.map(r=>String(r[0]||"").trim()).filter(Boolean))];
     const existingPlan = existingPeriodRows[0] || null;
     if (requestedPlanillaId) {
@@ -5622,7 +5622,7 @@ function updatePayrollPeriodStatus(payload) {
   const conceptSummary = summarizePayrollConceptDetails_(ss,planillaId);
 
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim() === String(planillaId).trim()) {
+    if (String(data[i][0]).trim() === String(planillaId).trim() && String(data[i][15]||"").trim().toUpperCase() !== "REEMPLAZADA") {
       const sBase = parseFloat(data[i][6] || 0);
       const mHE = parseFloat(data[i][8] || 0);
       const bonif = parseFloat(data[i][9] || 0);
@@ -5697,12 +5697,21 @@ function updatePayrollPeriodStatus(payload) {
   }
 }
 
+function getPayrollEmployerConceptTotalsByEmployee_(ss,planillaIds){
+ const sheet=ss.getSheetByName("DetalleConceptosPlanilla"),totals=Object.create(null);if(!sheet)return totals;
+ const headers=getPayrollConceptDetailHeaders_(),data=sheet.getDataRange().getValues();
+ if(!data.length||!data[0]||data[0].length!==headers.length||headers.some((h,i)=>String(data[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))throw new Error("RESOURCE_SCHEMA_INVALID: DetalleConceptosPlanilla");
+ const ids=new Set((Array.isArray(planillaIds)?planillaIds:[planillaIds]).map(x=>String(x||"").trim()).filter(Boolean));
+ data.slice(1).forEach(r=>{if(!ids.has(String(r[1]||"").trim())||String(r[19]||"").trim().toUpperCase()==="CANCELADO"||payrollConceptPhase_(r[6])!==3)return;const employee=String(r[3]||"").trim(),amount=Number(r[10]||0);if(!employee||!Number.isFinite(amount)||amount<0)throw new Error("PAYROLL_EMPLOYER_CONCEPT_INVALID");totals[employee]=Math.round(((totals[employee]||0)+amount)*100)/100;});
+ return totals;
+}
+
 function getPayrollPeriodSummary(payload) {
   const { periodoMes, planillaId, employeeId, compararConPeriodo, umbralVariacion } = payload || {};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const rows = getOrCreateSheet(ss, "PlanillasNomenclatura").getDataRange().getValues().slice(1);
 
-  let filtered = rows.filter(r=>normalizePayrollBatchValue_(r[15])!=="REEMPLAZADA");
+  let filtered = rows.filter(r=>!["REEMPLAZADA","ANULADA","ANULADO","REVERTIDA","REVERTIDO","CANCELADA","CANCELADO"].includes(normalizePayrollBatchValue_(r[15])));
   if (planillaId) filtered = filtered.filter(r => String(r[0]).trim() === String(planillaId).trim());
   if (employeeId) filtered = filtered.filter(r => String(r[3]||"").trim() === String(employeeId).trim());
   if (periodoMes) filtered = filtered.filter(r => String(r[2]).trim() === String(periodoMes).trim());
@@ -5715,6 +5724,7 @@ function getPayrollPeriodSummary(payload) {
   let totalPatronalINFOP = 0;
   let totalPatronal = 0;
   let totalCostoLaboralInstitucional = 0;
+  const employerConceptTotals=getPayrollEmployerConceptTotalsByEmployee_(ss,[...new Set(filtered.map(r=>String(r[0]||"").trim()))]);
 
   const mapped = filtered.map(r => {
     const sBase = parseFloat(r[6] || 0);
@@ -5734,7 +5744,7 @@ function getPayrollPeriodSummary(payload) {
     const pIHSS = parseFloat(r[16] || (Math.min(sBase, 10317.38) * 0.072));
     const pRAP = parseFloat(r[17] || (Math.max(0, sBase - 10317.38) * 0.015));
     const pINFOP = parseFloat(r[18] || (sBase * 0.01));
-    const pTot = pIHSS + pRAP + pINFOP;
+    const pTot = Math.round((pIHSS + pRAP + pINFOP + Number(employerConceptTotals[String(r[3]||"").trim()]||0))*100)/100;
     const cLaboral = parseFloat(r[19] || (dev + pTot));
 
     totalBruto += dev;
