@@ -27,11 +27,11 @@ const accounting=fs.readFileSync(path.resolve(__dirname,"../../backend/accountin
 const names=[
  "parseJsonSafe","getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentScope_","getVerifiedDepartmentScopeForSession_","assertResourceOwnershipForScope_","resolveEmployeeDepartmentId_","assertEmployeeExpedienteScopeAccess_",
  "getAccountingPersonIdForUser_","resolveStudentExpedienteForAccounting_","assertPaymentVoucherOwnerAccess_",
- "extractDriveFileId","getEmployeeDocuments","getEmployeeContracts","getEmployeeContractAlerts","getEmployeeTrainingHistory","getLaborIncidentsHistory","getWorkShiftsAndSubstitutionsHistory","getStaffPayrollReceipt","getEmployeeRecords","getEmployeeSelfServicePortal","uploadEmployeeDocument","uploadPaymentVoucher","getPaymentVouchers","getPaymentVoucherFile","reviewPaymentVoucher","validateRolePermission"
+ "extractDriveFileId","getEmployeeDocuments","getEmployeeContracts","getEmployeeContractAlerts","getEmployeeTrainingHistory","getLaborIncidentsHistory","getWorkShiftsAndSubstitutionsHistory","getStaffPayrollReceipt","getEmployeeLoansAdvances","getLoanAmortizationSchedule","getEmployeeRecords","getEmployeeSelfServicePortal","uploadEmployeeDocument","uploadPaymentVoucher","getPaymentVouchers","getPaymentVoucherFile","reviewPaymentVoucher","validateRolePermission"
 ];
 const code="var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n"+names.map(n=>extractFunction(accounting,n)).join("\n");
 const claims={
- staffA:{userId:"U-A",role:"Director"},staffB:{userId:"U-B",role:"Director"},
+ staffA:{userId:"U-A",role:"Director"},staffB:{userId:"U-B",role:"Director"},hrA:{userId:"U-A",role:"RecursosHumanos"},hrB:{userId:"U-B",role:"RecursosHumanos"},
  employee:{userId:"U-EMP",role:"Empleado"},professor:{userId:"U-EMP",role:"Profesor"},admin:{userId:"U-ADMIN",role:"Administrador"},
  student:{userId:"U-STUDENT",role:"Estudiante"},guardian:{userId:"U-GUARDIAN",role:"Tutor"},invalid:null
 };
@@ -40,6 +40,8 @@ const rows={
   ["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"],
   ["S-A","U-A","Director","DEPARTAMENTO",'["DEP-A"]',"Activo","","","","","",""],
   ["S-B","U-B","Director","DEPARTAMENTO",'["DEP-B"]',"Activo","","","","","",""],
+  ["S-HR-A","U-A","RecursosHumanos","DEPARTAMENTO",'["DEP-A"]',"Activo","","","","","",""],
+  ["S-HR-B","U-B","RecursosHumanos","DEPARTAMENTO",'["DEP-B"]',"Activo","","","","","",""],
   ["S-ADMIN","U-ADMIN","Administrador","INSTITUCION",'["INST-1"]',"Activo","","","","","",""]
  ],
  ExpedientesLaborales:[
@@ -157,7 +159,7 @@ const context={
  Utilities:{base64Encode:bytes=>Buffer.from(bytes).toString("base64")},
  logStructuredEvent:()=>{}
 };
-vm.runInNewContext(code+"\nthis.assertEmployeeExpedienteScopeAccess_=assertEmployeeExpedienteScopeAccess_;this.assertPaymentVoucherOwnerAccess_=assertPaymentVoucherOwnerAccess_;this.getEmployeeDocuments=getEmployeeDocuments;this.getEmployeeContracts=getEmployeeContracts;this.getEmployeeContractAlerts=getEmployeeContractAlerts;this.getEmployeeTrainingHistory=getEmployeeTrainingHistory;this.getLaborIncidentsHistory=getLaborIncidentsHistory;this.getWorkShiftsAndSubstitutionsHistory=getWorkShiftsAndSubstitutionsHistory;this.getStaffPayrollReceipt=getStaffPayrollReceipt;this.getEmployeeRecords=getEmployeeRecords;this.getEmployeeSelfServicePortal=getEmployeeSelfServicePortal;this.uploadEmployeeDocument=uploadEmployeeDocument;this.uploadPaymentVoucher=uploadPaymentVoucher;this.getPaymentVouchers=getPaymentVouchers;this.getPaymentVoucherFile=getPaymentVoucherFile;this.reviewPaymentVoucher=reviewPaymentVoucher;",context);
+vm.runInNewContext(code+"\nthis.assertEmployeeExpedienteScopeAccess_=assertEmployeeExpedienteScopeAccess_;this.assertPaymentVoucherOwnerAccess_=assertPaymentVoucherOwnerAccess_;this.getEmployeeDocuments=getEmployeeDocuments;this.getEmployeeContracts=getEmployeeContracts;this.getEmployeeContractAlerts=getEmployeeContractAlerts;this.getEmployeeTrainingHistory=getEmployeeTrainingHistory;this.getLaborIncidentsHistory=getLaborIncidentsHistory;this.getWorkShiftsAndSubstitutionsHistory=getWorkShiftsAndSubstitutionsHistory;this.getStaffPayrollReceipt=getStaffPayrollReceipt;this.getEmployeeLoansAdvances=getEmployeeLoansAdvances;this.getLoanAmortizationSchedule=getLoanAmortizationSchedule;this.getEmployeeRecords=getEmployeeRecords;this.getEmployeeSelfServicePortal=getEmployeeSelfServicePortal;this.uploadEmployeeDocument=uploadEmployeeDocument;this.uploadPaymentVoucher=uploadPaymentVoucher;this.getPaymentVouchers=getPaymentVouchers;this.getPaymentVoucherFile=getPaymentVoucherFile;this.reviewPaymentVoucher=reviewPaymentVoucher;",context);
 const actor=token=>({sessionToken:token});
 assert.equal(context.assertEmployeeExpedienteScopeAccess_(actor("staffA"),ss,"EXP-A").authorized,true);
 assert.equal(context.assertEmployeeExpedienteScopeAccess_(actor("staffA"),ss,"EXP-B").code,"RESOURCE_SCOPE_DENIED");
@@ -468,5 +470,39 @@ const payrollEmployeeOriginal=rows.ExpedientesLaborales.map(r=>r.slice()),ambPay
 const payrollHeader=rows.PlanillasNomenclatura[0][0];rows.PlanillasNomenclatura[0][0]="Planilla";assert.equal(payroll(actor("admin")).code,"RESOURCE_SCHEMA_INVALID");rows.PlanillasNomenclatura[0][0]=payrollHeader;
 const payrollOpen=context.SpreadsheetApp.openById,payrollCreate=context.getOrCreateSheet;let payrollCreations=0;context.SpreadsheetApp.openById=()=>({getSheetByName:n=>n==="ExpedientesLaborales"?makeSheet(rows.ExpedientesLaborales):null});context.getOrCreateSheet=()=>{payrollCreations++;throw Error("payroll reads must not create sheets");};assert.deepEqual(JSON.parse(JSON.stringify(payroll(actor("admin")))),{status:"success",boletas:[]});assert.equal(payrollCreations,0);context.SpreadsheetApp.openById=payrollOpen;context.getOrCreateSheet=payrollCreate;
 assert.ok(extractFunction(accounting,"getStaffPayrollReceipt").includes("assertEmployeeExpedienteScopeAccess_"));assert.ok(!extractFunction(accounting,"getStaffPayrollReceipt").includes("getOrCreateSheet"));assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getStaffPayrollReceipt"'));
+
+const loans=context.getEmployeeLoansAdvances, amortization=context.getLoanAmortizationSchedule;
+assert.deepEqual(Array.from(loans(actor("hrA")).solicitudes,r=>r.prestamoId),["ADV-A"]);
+assert.deepEqual(Array.from(loans(actor("hrB")).solicitudes,r=>r.prestamoId),["ADV-B"]);
+assert.deepEqual(Array.from(loans(actor("admin")).solicitudes,r=>r.prestamoId),["ADV-A","ADV-B"]);
+assert.deepEqual(Array.from(loans(actor("employee")).solicitudes,r=>r.prestamoId),["ADV-A"]);
+assert.equal(loans({sessionToken:"employee",empleadoId:"U-B"}).code,"RESOURCE_NOT_FOUND","self-service cannot query another employee");
+assert.equal(loans({sessionToken:"hrA",empleadoId:"U-B"}).code,"RESOURCE_NOT_FOUND","department HR cannot query another department");
+assert.equal(loans({sessionToken:"hrA",prestamoId:"ADV-B"}).code,"RESOURCE_NOT_FOUND","loan ID filters cannot bypass department ownership");
+assert.deepEqual(Array.from(loans({sessionToken:"hrA",estadoAprobacion:"Pendiente"}).solicitudes,r=>r.prestamoId),["ADV-A"]);
+assert.equal(loans({sessionToken:"invalid"}).code,"VERIFIED_IDENTITY_REQUIRED");
+assert.equal(loans({sessionToken:"student"}).code,"ROLE_NOT_ALLOWED");
+assert.deepEqual(Array.from(amortization({sessionToken:"hrA",prestamoId:"ADV-A"}).tablaAmortizacion,r=>r.saldoRestante),[500,0]);
+assert.equal(amortization({sessionToken:"hrA",prestamoId:"ADV-B"}).code,"RESOURCE_NOT_FOUND");
+assert.equal(amortization({sessionToken:"invalid",prestamoId:"ADV-A"}).code,"VERIFIED_IDENTITY_REQUIRED");
+const loanRowsOriginal=rows.AnticiposPrestamosEmpleado.map(r=>r.slice());rows.AnticiposPrestamosEmpleado.push(rows.AnticiposPrestamosEmpleado[1].slice());
+assert.deepEqual(Array.from(loans(actor("admin")).solicitudes,r=>r.prestamoId),["ADV-B"],"duplicate loan IDs must be excluded");
+assert.equal(amortization({sessionToken:"admin",prestamoId:"ADV-A"}).code,"RESOURCE_NOT_FOUND","amortization must not resolve an ambiguous loan ID");
+rows.AnticiposPrestamosEmpleado.splice(0,rows.AnticiposPrestamosEmpleado.length,...loanRowsOriginal);
+const loanEmployeeOriginal=rows.ExpedientesLaborales.map(r=>r.slice()),ambLoanEmployee=rows.ExpedientesLaborales[1].slice();ambLoanEmployee[0]="EXP-LOAN-AMB";ambLoanEmployee[2]="U-EMP";rows.ExpedientesLaborales.push(ambLoanEmployee);
+assert.deepEqual(Array.from(loans(actor("admin")).solicitudes,r=>r.prestamoId),["ADV-B"],"ambiguous employee mappings must exclude loan records");
+rows.ExpedientesLaborales.splice(0,rows.ExpedientesLaborales.length,...loanEmployeeOriginal);
+const loanHeader=rows.AnticiposPrestamosEmpleado[0][0];rows.AnticiposPrestamosEmpleado[0][0]="LoanID";
+assert.equal(loans(actor("admin")).code,"RESOURCE_SCHEMA_INVALID");rows.AnticiposPrestamosEmpleado[0][0]=loanHeader;
+const loanOpen=context.SpreadsheetApp.openById,loanCreate=context.getOrCreateSheet;let loanCreations=0;
+context.SpreadsheetApp.openById=()=>({getSheetByName:n=>n==="ExpedientesLaborales"?makeSheet(rows.ExpedientesLaborales):null});
+context.getOrCreateSheet=()=>{loanCreations++;throw Error("loan reads must not create sheets");};
+assert.deepEqual(JSON.parse(JSON.stringify(loans(actor("admin")))),{status:"success",solicitudes:[]});assert.equal(loanCreations,0);
+context.SpreadsheetApp.openById=loanOpen;context.getOrCreateSheet=loanCreate;
+assert.ok(extractFunction(accounting,"getEmployeeLoansAdvances").includes("assertEmployeeExpedienteScopeAccess_"));
+assert.ok(!extractFunction(accounting,"getEmployeeLoansAdvances").includes("getOrCreateSheet"));
+assert.ok(extractFunction(accounting,"getLoanAmortizationSchedule").includes("getEmployeeLoansAdvances"));
+assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeLoansAdvances"'));
+assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getLoanAmortizationSchedule"'));
 
 console.log("Accounting departmental resource and payment voucher access contracts passed.");
