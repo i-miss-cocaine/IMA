@@ -3252,3 +3252,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Department Scope CI 43364730161: Node.js 24.22.2, 19 pasos SUCCESS. Task-Service CI 43364715823: Node.js 22.23.4, dos contratos SUCCESS.
 - Node local 22.16.0: harness delegado y node --check PASS; suite completa local NOT RUN por DNS github.com.
 - BETA-FUNC-050/051 permanecen Pendiente beta; TASK-153 sigue En ejecución.
+
+
+ 
+[2026-11-13 UTC] [IMA-EXEC-20261112-1754Z-03] C1.678 — protección de getStudentEnrollments
+- Se reemplaza la lectura basada en userId de cliente por identidad firmada, relación tutor-estudiante y ownership/ámbito de expediente.
+- Se exigen mappings y expediente únicos; MatriculaID duplicados se excluyen; esquema se valida; las lecturas no crean hojas.
+- Department Scope CI 43366522801 (Node 24.22.2) y Task-Service CI 43366522824: SUCCESS. Nuevo contrato ACADEMIC de matrículas PASS.
+- Suite completa en CLI local NOT RUN por DNS github.com; beta BETA-FUNC-053 Pendiente. Sin despliegue/datos reales.
