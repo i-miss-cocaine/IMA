@@ -6397,6 +6397,51 @@ function uploadEmployeeDocument(payload) {
   };
 }
 
+function authorizeAccountingDepartmentReferenceReadViaUser_(payload, expedienteId, requestedFields, requestedDocumentIds) {
+  const request = payload || {};
+  const sessionToken = String(request.sessionToken || request.authToken || request.token || "").trim();
+  const resourceId = String(expedienteId || "").trim();
+  const fields = Array.isArray(requestedFields) ? requestedFields.slice() : [];
+  const documents = Array.isArray(requestedDocumentIds) ? requestedDocumentIds.slice() : [];
+  if (!sessionToken || !resourceId || !fields.length || !documents.length) return { authorized: false, code: "DEPARTMENT_REFERENCE_REQUEST_INVALID" };
+  const referencePayload = { sessionToken: sessionToken, resourceType: "EXPEDIENTE_LABORAL", resourceId: resourceId, requestedFields: fields, requestedDocumentIds: documents };
+  const activeDepartmentId = String(request.activeDepartmentId || "").trim();
+  if (activeDepartmentId) referencePayload.activeDepartmentId = activeDepartmentId;
+  try {
+    const properties = PropertiesService.getScriptProperties();
+    const url = String(properties.getProperty("IMA_USER_SERVICE_URL") || "").trim();
+    const secret = String(properties.getProperty("IMA_DEPARTMENT_REFERENCE_HMAC_SECRET") || "").trim();
+    if (!url || url.indexOf("https://") !== 0 || secret.length < 32) return { authorized: false, code: "DEPARTMENT_REFERENCE_TRANSPORT_CONFIGURATION_REQUIRED" };
+    const timestamp = Date.now();
+    const requestId = "REQ-" + timestamp + "-" + String(Utilities.getUuid()).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 12);
+    const correlationId = String(request.correlationId || ("CORR-" + timestamp)).trim();
+    if (!/^[A-Za-z0-9_.:-]{1,128}$/.test(correlationId) || !/^REQ-[0-9]{10,16}-[A-Za-z0-9_-]{1,32}$/.test(requestId)) return { authorized: false, code: "DEPARTMENT_REFERENCE_ENVELOPE_INVALID" };
+    const bodyToSign = requestId + "|" + timestamp + "|" + correlationId + "|ACCOUNTING|USER|authorizeDepartmentReferenceRead|" + JSON.stringify(referencePayload);
+    const signatureBytes = Utilities.computeHmacSignature(Utilities.MacAlgorithm.HMAC_SHA_256, bodyToSign, secret);
+    const signature = Array.prototype.map.call(signatureBytes, function(byte) { return ("0" + (byte & 0xFF).toString(16)).slice(-2); }).join("");
+    const envelope = { sourceService: "ACCOUNTING", targetService: "USER", action: "authorizeDepartmentReferenceRead", requestId: requestId, timestamp: timestamp, correlationId: correlationId, payload: referencePayload, hmacSignature: signature };
+    const response = UrlFetchApp.fetch(url, { method: "post", contentType: "application/json", payload: JSON.stringify(envelope), muteHttpExceptions: true });
+    const httpCode = response.getResponseCode();
+    if (httpCode < 200 || httpCode >= 300) return { authorized: false, code: "DEPARTMENT_REFERENCE_AUTHORITY_UNAVAILABLE" };
+    let result;
+    try { result = JSON.parse(response.getContentText()); }
+    catch (parseError) { return { authorized: false, code: "DEPARTMENT_REFERENCE_AUTHORITY_RESPONSE_INVALID" }; }
+    if (!result || result.status !== "success" || result.authorized !== true || result.requiresStandardAuthorization !== true) {
+      return { authorized: false, code: String(result && result.code || "DEPARTMENT_REFERENCE_NOT_AUTHORIZED") };
+    }
+    if (!Array.isArray(result.approvedFields) || !Array.isArray(result.approvedDocumentIds) ||
+        JSON.stringify(result.approvedFields) !== JSON.stringify(fields) ||
+        JSON.stringify(result.approvedDocumentIds) !== JSON.stringify(documents) ||
+        !String(result.grantId || "").trim() || !String(result.auditEventId || "").trim()) {
+      return { authorized: false, code: "DEPARTMENT_REFERENCE_AUTHORITY_RESPONSE_INVALID" };
+    }
+    return { authorized: true, code: String(result.code || "DEPARTMENT_REFERENCE_ALLOWED"), approvedFields: result.approvedFields.slice(),
+      approvedDocumentIds: result.approvedDocumentIds.slice(), grantId: String(result.grantId), auditEventId: String(result.auditEventId) };
+  } catch (error) {
+    return { authorized: false, code: "DEPARTMENT_REFERENCE_TRANSPORT_FAILED" };
+  }
+}
+
 function getEmployeeDocuments(payload) {
   const request = payload || {};
   const expedienteId = String(request.expedienteId || "").trim();
@@ -6407,15 +6452,27 @@ function getEmployeeDocuments(payload) {
   }
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let referenceFallback = false;
+  let canonicalExpedienteId = expedienteId;
   if (expedienteId) {
     const requestedAccess = assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId);
     if (!requestedAccess.authorized) {
-      return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." };
+      if (String(requestedAccess.code || "") !== "RESOURCE_SCOPE_DENIED") {
+        return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." };
+      }
+      referenceFallback = true;
+      const employeeSheet = ss.getSheetByName("ExpedientesLaborales");
+      const employeeRows = employeeSheet ? employeeSheet.getDataRange().getValues().slice(1) : [];
+      const matchingEmployees = employeeRows.filter(function(row) { return String(row && row[0] || "").trim() === expedienteId; });
+      if (matchingEmployees.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." };
+      canonicalExpedienteId = String(matchingEmployees[0][0] || "").trim();
     }
   }
 
   const sheet = ss.getSheetByName("DocumentosLaborales");
-  if (!sheet) return { status: "success", documentos: [] };
+  if (!sheet) return referenceFallback
+    ? { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." }
+    : { status: "success", documentos: [] };
 
   const data = sheet.getDataRange().getValues();
   const expectedHeaders = [
@@ -6424,7 +6481,9 @@ function getEmployeeDocuments(payload) {
   ];
   if (!data.length || !Array.isArray(data[0]) || data[0].length !== expectedHeaders.length ||
       expectedHeaders.some((header, index) => String(data[0][index] || "").trim() !== header)) {
-    return { status: "error", code: "RESOURCE_SCHEMA_INVALID", message: "La estructura de documentos laborales no es válida." };
+    return referenceFallback
+      ? { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." }
+      : { status: "error", code: "RESOURCE_SCHEMA_INVALID", message: "La estructura de documentos laborales no es válida." };
   }
 
   const rows = data.slice(1);
@@ -6433,6 +6492,46 @@ function getEmployeeDocuments(payload) {
     const documentId = String(row && row[0] || "").trim();
     if (documentId) documentIdCounts[documentId] = (documentIdCounts[documentId] || 0) + 1;
   });
+
+  if (referenceFallback) {
+    const safeFields = ["categoriaDoc", "fechaCarga", "estadoVisibilidad"];
+    const requestedFields = Array.isArray(request.referenceRequestedFields)
+      ? request.referenceRequestedFields.map(function(value) { return String(value || "").trim(); }) : [];
+    const requestedDocumentIds = Array.isArray(request.referenceDocumentIds)
+      ? request.referenceDocumentIds.map(function(value) { return String(value || "").trim(); }) : [];
+    if (!requestedFields.length || !requestedDocumentIds.length ||
+        requestedFields.some(function(field, index) { return !field || safeFields.indexOf(field) === -1 || requestedFields.indexOf(field) !== index; }) ||
+        requestedDocumentIds.some(function(id, index) { return !id || requestedDocumentIds.indexOf(id) !== index; })) {
+      return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." };
+    }
+    const candidates = rows.filter(function(row) {
+      if (!Array.isArray(row) || row.length < expectedHeaders.length) return false;
+      const documentId = String(row[0] || "").trim();
+      if (!documentId || documentIdCounts[documentId] !== 1 || String(row[1] || "").trim() !== expedienteId) return false;
+      return !categoriaDoc || String(row[2] || "").trim().toLowerCase() === categoriaDoc;
+    });
+    const candidateCounts = Object.create(null);
+    candidates.forEach(function(row) { const id = String(row[0] || "").trim(); candidateCounts[id] = (candidateCounts[id] || 0) + 1; });
+    if (requestedDocumentIds.some(function(id) { return documentIdCounts[id] !== 1 || candidateCounts[id] !== 1; })) {
+      return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." };
+    }
+    const authorization = authorizeAccountingDepartmentReferenceReadViaUser_(request, canonicalExpedienteId, requestedFields, requestedDocumentIds);
+    if (!authorization.authorized) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." };
+    const requestedSet = Object.create(null), fieldSet = Object.create(null);
+    authorization.approvedDocumentIds.forEach(function(id) { requestedSet[String(id)] = true; });
+    authorization.approvedFields.forEach(function(field) { fieldSet[String(field)] = true; });
+    const referenceDocuments = candidates.filter(function(row) { return !!requestedSet[String(row[0] || "").trim()]; }).map(function(row) {
+      const item = { documentoId: String(row[0]) };
+      if (fieldSet.categoriaDoc) item.categoriaDoc = row[2];
+      if (fieldSet.fechaCarga) item.fechaCarga = row[5];
+      if (fieldSet.estadoVisibilidad) item.estadoVisibilidad = row[7];
+      return item;
+    });
+    if (referenceDocuments.length !== authorization.approvedDocumentIds.length) {
+      return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." };
+    }
+    return { status: "success", documentos: referenceDocuments, referenceOnly: true, grantId: authorization.grantId, auditEventId: authorization.auditEventId };
+  }
 
   const accessByExpediente = Object.create(null);
   const mapped = [];
