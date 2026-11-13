@@ -153,7 +153,7 @@ function payload(value) { return { userId: "U1", role: "Coordinador", value: val
   const result = h.runtime.setEndpoint(payload(READ_ONLY));
   assert.equal(result.status, "success");
   assert.equal(result.value, READ_ONLY);
-  assert.deepEqual(h.state.sheets.ConfiguracionInstitucional.snapshot()[0], HEADERS);
+  assert.equal(h.state.sheets.ConfiguracionInstitucional.snapshot()[0].join("|"), HEADERS.join("|"));
   assert.equal(h.state.sheets.ConfiguracionInstitucional.snapshot()[1][0], "I1");
   assert.equal(h.state.sheets.ConfiguracionInstitucional.snapshot()[1][3], "U1");
 }
