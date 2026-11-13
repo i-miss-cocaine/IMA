@@ -2939,3 +2939,13 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Estado:** subalcance completado en código/CI; TASK-153/AUD-NG-386 continúa En ejecución por otras rutas.
 - **Siguiente tarea elegible:** revisar getEmployeeSelfServicePortal y los vínculos entre expediente, contratos, vacaciones, préstamos, turnos y capacitación, verificando que cada colección vinculada permanezca dentro de la institución/expediente autorizado.
 ===============================================================================
+
+
+===============================================================================
+### C1.715 — Hallazgos y correcciones de TASK-184
+- **Alto — privacidad:** las URLs probatorias podían reaparecer dentro de observaciones anidadas aunque la colección de documentos estuviera vacía para roles restringidos. Corregido con redacción recursiva de URLs en toda la respuesta del expediente y prueba negativa de serialización.
+- **Alto — concurrencia/integridad:** el registro de confirmación podía competir con la cancelación de una orden porque la condición se validaba antes del lock. Corregido mediante revalidación de identidad, rol, scope, relación solicitud/orden y estado dentro de ScriptLock; prueba determinista de cancelación intercalada.
+- **Medio — búsqueda:** una búsqueda parcial de factura no asociaba el registro encontrado al expediente ya localizado. Corregido por ID de obligación.
+- **Medio — trazabilidad:** el detalle por partida de las cotizaciones se cargaba pero no se devolvía ni mostraba. Corregido en backend/UI.
+- **Evidencia:** commit 828421d83bf9d2e0a032af4ab41e2e4a874b862c; Department Scope 43514861936, Identity Mapping 43514861917 y Department Reference Consumers 43514861918 SUCCESS; contrato y syntax-check PASS.
+===============================================================================

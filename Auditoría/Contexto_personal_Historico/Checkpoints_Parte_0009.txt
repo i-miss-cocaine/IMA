@@ -58,3 +58,16 @@ Continuación del historial activo desde C1.710. Los registros anteriores perman
 - **Estado:** TASK-184 completada en código y CI; BETA-FUNC-085 pendiente de validación en entorno beta.
 - **Siguiente tarea elegible:** TASK-185 — motor integral de depreciación y gestión contable de activos fijos.
 ===============================================================================
+
+
+===============================================================================
+### C1.715 — IMA-EXEC-20261113-2155Z-01 — TASK-184 — revisión correctiva de privacidad, detalle y concurrencia
+- **Continuidad:** C1.714; HEAD de inicio 828421d83bf9d2e0a032af4ab41e2e4a874b862c; rama NG_beta_0.0.0.1_work. La rama base permaneció en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Hallazgos confirmados en revisión del diff:** el filtrado de documentos no eliminaba URLs incrustadas en observaciones anidadas; el contrato sustituía el helper real de allowlist por una copia de prueba; la confirmación de proveedor comprobaba la orden antes del lock pero no revalidaba estado/scope/identidad dentro de la sección crítica; la búsqueda parcial por número de factura podía localizar la orden sin adjuntar la factura; el backend cargaba detalle de cotizaciones pero no lo exponía ni renderizaba.
+- **Correcciones:** sanitización recursiva de URLs para roles sin permiso documental; prueba directa de purchaseDossierSafeUrl_ de producción; revalidación de actor, rol, scope, orden y solicitud después de adquirir ScriptLock; asociación de facturas por ID de obligación encontrado en la búsqueda; exposición de detalle comparativo por partida y presentación en UI.
+- **Pruebas ampliadas:** allowlist real HTTPS Drive/Docs, URLs externas/HTTP/javascript, scope positivo y negativo, búsqueda parcial de factura, ausencia de URLs en datos anidados de rol restringido, detalle de cotizaciones y carrera reproducible donde la orden se cancela entre validación inicial y adquisición del lock.
+- **CI:** Department Scope Contract run 43514861936 SUCCESS; Identity Mapping run 43514861917 SUCCESS; Department Reference Consumers run 43514861918 SUCCESS; contrato TASK-184 y sintaxis Apps Script/JS PASS (Node.js 24).
+- **Commit correctivo:** 828421d83bf9d2e0a032af4ab41e2e4a874b862c. CLI local NOT RUN; Apps Script/Sheets real NOT RUN.
+- **Estado:** TASK-184 permanece Completada en código/CI; BETA-FUNC-085 Pendiente beta.
+- **Siguiente tarea elegible:** TASK-185 — motor integral de depreciación y gestión contable de activos fijos.
+===============================================================================

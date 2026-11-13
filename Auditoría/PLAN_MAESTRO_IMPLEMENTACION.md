@@ -5521,3 +5521,12 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Revisión de referencias de producto: QuickBooks documenta selección de empleados, revisión previa y filtros de elementos de nómina; reseñas G2 destacan facilidad de uso, pero también problemas de navegación y personalización de informes. IMA conserva el patrón de previsualización y filtros, añadiendo trazabilidad de causas, comparación multi-período y recálculo aislado. Fuentes: https://quickbooks.intuit.com/learn-support/en-us/help-article/payroll-processes/create-paycheck-employee/L5JFzGwNu_US_en_US ; https://quickbooks.intuit.com/r/payroll/bulk-payroll-item-management-article/ ; https://www.g2.com/categories/payroll
 - **Limitaciones:** no se ejecutó CLI local ni Apps Script/Sheets desplegado; no se usaron datos reales. La validación de negocio desplegada se registra como BETA-FUNC-080.
 - **Siguiente tarea elegible:** TASK-181 — matriz comparativa de cotizaciones y adjudicación por partidas.
+
+
+### C1.715 — TASK-184 — corrección posterior a revisión de código
+- Se detectó y corrigió una vía de exposición indirecta de URLs de evidencia en observaciones anidadas para roles restringidos; la respuesta completa se sanitiza recursivamente cuando el rol no puede ver documentos.
+- El registro de confirmaciones revalida identidad, rol, scope, relación solicitud/orden y estado después de adquirir ScriptLock, evitando confirmar una orden cancelada durante la espera.
+- La búsqueda parcial por número de factura ahora asocia la obligación localizada al expediente; se incorporó el detalle comparativo por partida de las cotizaciones al contrato y a la interfaz.
+- El contrato local cubre el helper real de allowlist, entradas no permitidas, scope positivo/negativo, redacción anidada, detalle de cotización, búsqueda parcial y carrera determinista. GitHub Actions Node.js 24 y syntax-check PASS: Department Scope 43514861936, Identity Mapping 43514861917, Reference Consumers 43514861918.
+- Commit correctivo: 828421d83bf9d2e0a032af4ab41e2e4a874b862c. CLI local y Apps Script/Sheets real NOT RUN; BETA-FUNC-085 Pendiente beta.
+- **Siguiente tarea elegible:** TASK-185 — motor integral de depreciación y gestión contable de activos fijos.

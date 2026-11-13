@@ -3542,3 +3542,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-13 20:49 UTC] C1.711 — F18-Task01 — compatibilidad itemId
 - Se alinea recordPurchaseReceipt con el esquema de las órdenes de compra generadas por adjudicación: itemId/ItemId aceptado en orden, recepción e historial; movimiento de inventario usa código normalizado.
 - Contrato F18-Task01 y syntax-check PASS; Department Scope 43505043553 SUCCESS (Node.js 24.22.2). CLI local y Apps Script/Sheets real NOT RUN.
+
+
+[2026-11-13 21:55 UTC] C1.715 — TASK-184 — hardening del expediente 360°
+- Se corrigió exposición indirecta de URLs Drive en observaciones anidadas para roles sin permiso documental mediante redacción recursiva.
+- Se revalidan identidad, rol, scope, relación solicitud/orden y estado de cancelación dentro de ScriptLock al registrar confirmaciones.
+- Se corrige la asociación de facturas en búsquedas parciales y se expone/renderiza el detalle comparativo de cotizaciones por partida.
+- El contrato prueba el helper real de allowlist, URLs no permitidas, scope positivo/negativo, privacidad anidada, factura parcial, detalle de cotización y carrera de cancelación.
+- CI: Department Scope 43514861936, Identity Mapping 43514861917, Reference Consumers 43514861918 SUCCESS; Node.js 24; sintaxis Apps Script/JS PASS.
+- Commit: 828421d83bf9d2e0a032af4ab41e2e4a874b862c. CLI local y Apps Script/Sheets real NOT RUN. BETA-FUNC-085 Pendiente beta.
