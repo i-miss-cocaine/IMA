@@ -351,7 +351,7 @@ context.getOrCreateSheet=originalAlertGetOrCreate;
 assert.ok(extractFunction(accounting,"getEmployeeContractAlerts").includes('getSheetByName("ContratosLaborales")'));
 assert.ok(!extractFunction(accounting,"getEmployeeContractAlerts").includes("getOrCreateSheet"));
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeContractAlerts"'));
-assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeContractAlerts", "uploadEmployeeDocument"'));
+assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeContractAlerts", "getEmployeeTrainingHistory", "uploadEmployeeDocument"'));
 
 
 const trainingHistory=context.getEmployeeTrainingHistory;
