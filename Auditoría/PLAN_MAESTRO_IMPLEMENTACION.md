@@ -5137,3 +5137,10 @@ La revisión de requisitos originales confirma cobertura de:
 - CI run 43293372396: 28 aserciones C1.651 y 40 C1.650 PASS. Workflow general falla después en User Role Membership línea 119 (TypeError al leer role de null), reproducido en runs anteriores a estos cambios. Local focalizado: node --check y 8 aserciones PASS con Node v22.16.0; suite completa local NOT RUN.
 - Los helpers no tienen callsites productivos: no se afirma todavía que los endpoints ni importadores existentes apliquen estas reglas. TASK-153 sigue En ejecución.
 - **Siguiente acción:** integrar los contratos en un endpoint de consulta/listado y en validateImportPreview, tras revisar sus lectores de ownership, RBAC, paginación y rollback. No tocar datos reales ni escoger autoridad departamental.
+
+**Addendum C1.661 — consulta de documentos laborales ACCOUNTING (TASK-153)**
+- `getEmployeeDocuments` exige identidad derivada de sesión firmada antes de consultar. Una consulta por ExpedienteID valida ownership/ámbito antes de enumerar y normaliza recursos ajenos a RESOURCE_NOT_FOUND para evitar revelar existencia.
+- La lectura usa `getSheetByName` y no crea hojas; exige el esquema exacto de DocumentosLaborales. Filas sin DocumentoID/ExpedienteID o con DocumentoID duplicado se omiten; la autorización se resuelve una vez por expediente y filtros de categoría no conceden acceso.
+- El contrato `accounting-departmental-resource-access.test.js` cubre ámbito DEP-A/DEP-B, autoservicio, institutionWide, spoof de identidad, identidad inválida, anti-enumeración, IDs duplicados, encabezados incorrectos y hoja ausente sin escrituras.
+- Verificación local: 8 escenarios V8 aislados PASS; parseo completo Code.gs/test PASS. Node CLI NOT RUN; CI pendiente de observación; Apps Script/Sheets real BETA-FUNC-039 Pendiente beta. No se usaron datos reales.
+- **Estado:** incremento de consulta documental completado; TASK-153 continúa En ejecución. Siguiente: otro callsite elegible de consulta/descarga ACCOUNTING.

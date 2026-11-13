@@ -3091,3 +3091,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - CI Department Scope run 43329951229: Department Scope, Internal Responsibility RBAC, ACCOUNTING departmental import, USER migrated ownership y ACCOUNTING departmental resource access PASS; falla después en User Role Membership test línea 119 por foreignLegacy null al leer role (mismo fallo ya registrado). Identity mapping run 43329951362 SUCCESS.
 - Parseo V8 local de Code.gs y contrato de pruebas PASS. Apps Script/Sheets real y prueba de integración permanecen Pendiente beta en BETA-FUNC-038.
 ===============================================================================
+
+===============================================================================
+[2026-11-12] C1.661 — IMA-EXEC-20261112-1754Z-03 — aislamiento de consulta de documentos laborales (ACCOUNTING)
+- getEmployeeDocuments ahora exige identidad verificada desde sesión firmada. Las consultas por ExpedienteID validan ownership/ámbito antes de enumerar y responden RESOURCE_NOT_FOUND para recursos ajenos, evitando revelar existencia.
+- La ruta de lectura usa getSheetByName, no crea DocumentosLaborales y valida sus nueve encabezados exactos. Se excluyen filas sin DocumentoID/ExpedienteID y todos los registros con DocumentoID duplicado; autorización cacheada por expediente durante la consulta. categoriaDoc solo filtra resultados.
+- Se amplía accounting-departmental-resource-access.test.js con ámbito DEP-A/DEP-B, autoservicio, institutionWide, spoof de identidad, sesión inválida, anti-enumeración, categoría, IDs duplicados, encabezados incorrectos y hoja ausente sin escritura.
+- Verificación local: 8 escenarios V8 aislados PASS; parseo completo Code.gs y test PASS. Node CLI NOT RUN. CI pendiente de observación; Apps Script/Sheets real Pendiente beta en BETA-FUNC-039.
+- Commit de implementación/pruebas: e7b9853e219734a9a5c8f6273c3c424ec0712c6a. TASK-153 continúa En ejecución.
+===============================================================================

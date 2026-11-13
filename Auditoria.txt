@@ -2654,3 +2654,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **UI:** `admision.html` no contiene referencias directas a estos nombres. No se declara exhaustiva la inspección de todos los archivos frontend.
 - **Límite de evidencia:** inspección estática de código y headers inicializadores; no se leyeron filas productivas de Sheets ni se modificaron datos.
 ===============================================================================
+
+===============================================================================
+### C1.661 — aislamiento de consulta de documentos laborales (ACCOUNTING)
+- **Severidad:** Alto — privacidad de expedientes y documentos laborales.
+- **Hallazgo:** `getEmployeeDocuments` dependía del payload de la solicitud para resolver filtros sin validar identidad al inicio; usaba `getOrCreateSheet` en una ruta de lectura; la consulta específica ajena respondía RESOURCE_SCOPE_DENIED y permitía inferir existencia; el esquema no se validaba y los DocumentoID duplicados podían producir atribución ambigua.
+- **Corrección:** identidad firmada obligatoria, validación de ámbito/ownership antes de consultar un expediente concreto, RESOURCE_NOT_FOUND para recursos ajenos, getSheetByName sin escrituras, validación exacta de encabezados y exclusión de IDs duplicados/filas sin clave.
+- **Evidencia:** 8 escenarios V8 aislados PASS y parseo de Code.gs/contrato PASS. Apps Script/Sheets real Pendiente beta (BETA-FUNC-039). **Estado del hallazgo:** corregido en e7b9853e219734a9a5c8f6273c3c424ec0712c6a.
+===============================================================================
