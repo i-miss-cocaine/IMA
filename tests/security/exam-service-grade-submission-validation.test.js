@@ -118,7 +118,7 @@ test(() => {
   let grade;
   const actor = { authorized: true, userId: "TEACHER-1", role: "Profesor" };
   const deliveryRows = [
-    ["EntregaID","ExamenID","EstudianteID","Fecha","Respuestas","Calificacion","Estado"],
+    ["EntregaExamenID","ExamenID","UserID","FechaEntrega","RespuestasJSON","NotaTotal","Estado","ComentarioDocente","TemaAsociado","AsignaturaAsociada"],
     ["EEX-1","EXM-1","STU-1",new Date(),"[]","","Pendiente"]
   ];
   const examRows = [
