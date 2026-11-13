@@ -99,7 +99,7 @@ assert.deepEqual(JSON.parse(JSON.stringify(absentCtx.getAssetItems({}))),{status
 const damagedRows=JSON.parse(JSON.stringify(rows));damagedRows.RecepcionesCompra[1][5]="EnDisputa";
 const damagedSheet={getSheetByName:name=>damagedRows[name]?{getDataRange:()=>({getValues:()=>damagedRows[name]})}:null};
 const damagedCtx={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>damagedSheet},purchaseQuotationAccess_:ctx.purchaseQuotationAccess_,purchaseQuotationJsonArray_:ctx.purchaseQuotationJsonArray_,purchaseQuotationItemKey_:ctx.purchaseQuotationItemKey_,normalizePurchaseAwardRole_:ctx.normalizePurchaseAwardRole_,normalizePurchaseAssetClassification_:ctx.normalizePurchaseAssetClassification_};
-vm.createContext(damagedCtx);["purchaseAssetReceiptContext_","getPurchaseReceiptAssetCandidates"].forEach(name=>vm.runInContext(extract(source,name),damagedCtx));
+vm.createContext(damagedCtx);vm.runInContext(constants[0],damagedCtx);["purchaseAssetReceiptContext_","getPurchaseReceiptAssetCandidates"].forEach(name=>vm.runInContext(extract(source,name),damagedCtx));
 assert.equal(damagedCtx.getPurchaseReceiptAssetCandidates({recepcionId:"REC-1"}).candidatos.length,0);
 assert.ok(source.includes("clasificacionInventario:a.clasificacionInventario"));assert.ok(source.includes("clasificacionInventario: normalizePurchaseAssetClassification_(item)"));assert.ok(source.includes("const classification=normalizePurchaseAssetClassification_(source)"));
 assert.ok(source.includes("item.itemId || item.ItemId"));
