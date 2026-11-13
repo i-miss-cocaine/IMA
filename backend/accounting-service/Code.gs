@@ -5670,12 +5670,13 @@ function updatePayrollPeriodStatus(payload) {
 }
 
 function getPayrollPeriodSummary(payload) {
-  const { periodoMes, planillaId, compararConPeriodo, umbralVariacion } = payload || {};
+  const { periodoMes, planillaId, employeeId, compararConPeriodo, umbralVariacion } = payload || {};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const rows = getOrCreateSheet(ss, "PlanillasNomenclatura").getDataRange().getValues().slice(1);
 
   let filtered = rows.filter(r=>normalizePayrollBatchValue_(r[15])!=="REEMPLAZADA");
   if (planillaId) filtered = filtered.filter(r => String(r[0]).trim() === String(planillaId).trim());
+  if (employeeId) filtered = filtered.filter(r => String(r[3]||"").trim() === String(employeeId).trim());
   if (periodoMes) filtered = filtered.filter(r => String(r[2]).trim() === String(periodoMes).trim());
 
   let totalBruto = 0;
