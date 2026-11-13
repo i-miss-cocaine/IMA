@@ -712,3 +712,20 @@
 - **Estado:** subalcance del portal completado en código y CI; TASK-153/AUD-NG-386 continúa En ejecución por otras superficies.
 - **Siguiente acción:** continuar inventario de handlers de TASK-153/AUD-NG-386; no inferir que el epic está cerrado.
 ===============================================================================
+
+
+===============================================================================
+### C1.701 — IMA-EXEC-20261113-1625Z-01 — TASK-153 / AUD-NG-386 — correcciones de asistencia
+- **Continuidad:** C1.700; HEAD inicial a46bb49aa74b7660a6d29342651273e2de30ef0f; rama NG_beta_0.0.0.1_work; base sin cambios 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Hallazgo:** submitAttendanceCorrection confiaba en empleadoId del payload y escribía sin identidad/ownership; reviewAttendanceCorrection confiaba en authRole del cliente, no verificaba ámbito y actualizaba corrección/marcación en escrituras independientes.
+- **Implementación:** helper resolveAttendanceCorrectionEmployeeAccess_ exige identidad firmada, expediente único y activo; Empleado queda vinculado a su UserID; RecursosHumanos/Administrador requieren scope y ResourceOwnership WRITE. Solicitud valida registro de asistencia, propietario, fecha, hora, motivo, evidencia HTTPS autorizada y duplicados pendientes.
+- **Revisión:** solo RecursosHumanos/Administrador; la solicitud debe ser única y Pendiente; reviewer se deriva de actor.userId; entrada/salida se determina comparando HoraOriginal; lock de script y revalidación bajo lock; rollback compensatorio si falla la escritura de la solicitud después de actualizar asistencia.
+- **Archivos:** backend/accounting-service/Code.gs; tests/security/accounting-attendance-correction-ownership.test.js; .github/workflows/department-scope-contract.yml; beta_test_Parte_0002.txt; Plan Maestro y changueslogs.txt.
+- **Commits:** implementación 8d121e312262d97900dfe78930048d54bdc6ce46; ajuste de fixture de concurrencia bae1250a14087ff7ebeb53e44ff6c046c0d8bc87.
+- **CI final:** Department Scope run 43462250820 SUCCESS (Node.js 24.22.2; portal autoservicio PASS; contrato correcciones PASS; regresión departmental resource access PASS; sintaxis Apps Script PASS). Identity Mapping y Department Reference Consumers del commit anterior 8d121e3 también SUCCESS (runs 43462059201 y 43462059193).
+- **Incidencia de prueba:** run 43462059222 falló por el fixture: la prueba intentaba reusar el mismo registro con una solicitud aún Pendiente; el fixture se corrigió para usar AST-A2 y liberar el lock con una revisión rechazada. El rerun 43462250820 pasó.
+- **CLI local:** NOT RUN; no se dispuso de checkout local. **Apps Script/Sheets real:** NOT RUN; no hubo despliegue ni datos reales.
+- **Beta:** BETA-FUNC-074 Pendiente beta para pruebas reales con datos sintéticos, roles y scope.
+- **Estado:** subalcance de correcciones de asistencia implementado y verificado por CI; TASK-153/AUD-NG-386 sigue En ejecución.
+- **Siguiente elegible:** requestEmployeeLoanAdvance / approveEmployeeLoanAdvance; operaciones financieras aún sin identidad/ownership en el código inspeccionado.
+===============================================================================

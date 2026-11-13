@@ -5460,4 +5460,4 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - submitAttendanceCorrection ahora vincula el empleado a la identidad firmada o, para RR. HH./Administrador, al expediente con scope y ResourceOwnership WRITE; valida asistencia, fecha, hora, motivo, evidencia y solicitudes pendientes duplicadas.
 - reviewAttendanceCorrection limita revisores a RR. HH./Administrador, revalida ownership bajo ScriptLock, exige estado Pendiente, ID único y actor reviewer firmado; la aprobación actualiza entrada o salida según HoraOriginal y compensa la escritura si falla la actualización de la solicitud.
 - Contrato Node añadido al Department Scope workflow para IDOR, scope, suplantación, integridad, transición, rollback y concurrencia.
-- BETA-FUNC-074 Pendiente beta; sin despliegue ni datos reales.
+- Department Scope run 43462250820 SUCCESS (Node.js 24.22.2; nuevo contrato, regresiones y sintaxis PASS). BETA-FUNC-074 Pendiente beta; sin despliegue ni datos reales.

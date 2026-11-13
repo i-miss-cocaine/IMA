@@ -3467,4 +3467,4 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-13 16:25 UTC] C1.701 — TASK-153 / AUD-NG-386 — ACCOUNTING correcciones de asistencia
 - Se protegieron submitAttendanceCorrection y reviewAttendanceCorrection con identidad firmada, roles, expediente único/activo, scope y ResourceOwnership WRITE.
 - Se añadieron validación de asistencia/fecha/hora/evidencia, bloqueo de solicitudes pendientes duplicadas, revisión de transición única, reviewer firmado, ScriptLock y rollback compensatorio.
-- Contrato Node agregado al workflow Department Scope; BETA-FUNC-074 Pendiente beta.
+- Contrato Node agregado al workflow Department Scope; run 43462250820 SUCCESS (Node.js 24.22.2); BETA-FUNC-074 Pendiente beta.
