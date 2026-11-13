@@ -232,4 +232,4 @@ function validPayload(extra={}) {
 }
   assert.ok(source.includes('case "revokeDepartmentReferenceGrant": result = revokeDepartmentReferenceGrant(payload); break;'));
 }
-process.stdout.write("Department reference grant administration contract: 25 scenarios PASS.\n");
+process.stdout.write("Department reference grant administration contract: 26 scenarios PASS.\n");
