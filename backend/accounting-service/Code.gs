@@ -15303,39 +15303,42 @@ function getInventoryTransfers(payload) {
 }
 
 function createMaterialRequisition(payload) {
- const p=payload||{},actor=catalogActor_(p,false),ss=SpreadsheetApp.openById(SPREADSHEET_ID);if(!p.departamento||!p.articulosJSON)throw new Error("departamento y articulosJSON son requeridos.");
- let input;try{input=Array.isArray(p.articulosJSON)?p.articulosJSON:JSON.parse(p.articulosJSON);}catch(e){throw new Error("MATERIAL_REQUISITION_ITEMS_INVALID");}if(!Array.isArray(input)||!input.length)throw new Error("MATERIAL_REQUISITION_ITEMS_REQUIRED");
- const lock=LockService.getScriptLock();lock.waitLock(15000);try{const normalized=input.map(x=>{const item=catalogFindItem_(ss,x.catalogItemId||x.itemCodigo||x.itemId,true),unit=catalogFindUnit_(ss,x.unidadMedida||item.unit),qty=Number(x.cantidad);if(catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit))throw new Error("CATALOG_UNIT_INCOMPATIBLE_WITH_ITEM");if(!Number.isFinite(qty)||qty<=0)throw new Error("MATERIAL_REQUISITION_QUANTITY_INVALID");return {catalogItemId:item.id,itemCodigo:item.code,itemNombre:item.name,unidadMedida:unit.name,unidadBase:item.baseUnit,factorConversionBase:unit.factor,cantidad:qty};});
- const sh=getOrCreateSheet(ss,"MaterialesSolicitudes");inventoryEnsureRequisitionSchema_(sh);const now=new Date(),id="REQ-MAT-"+Utilities.getUuid(),centroCosto=String(p.centroCosto||p.departamento).trim(),modo=String(p.modoReconocimiento||"GASTO_INMEDIATO").trim().toUpperCase(),source=String(p.ubicacionOrigen||"Bodega General").trim();if(["GASTO_INMEDIATO","ASIGNADO"].indexOf(modo)===-1||!source)throw new Error("INVENTORY_RECOGNITION_MODE_INVALID");sh.appendRow([id,now,p.departamento,actor.userId,JSON.stringify(normalized),p.motivo||"Consumo Operativo","PendienteAprobacion","","",p.observaciones||"",centroCosto,modo,"","",source]);return {status:"success",solicitudMatId:id,centroCosto:centroCosto,modoReconocimiento:modo,ubicacionOrigen:source,message:"Solicitud interna de materiales registrada en estado PendienteAprobacion."};
+ const p=payload||{},actor=catalogActor_(p,false),ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+ if(!p.departamento||!p.articulosJSON)throw new Error("departamento y articulosJSON son requeridos.");
+ let input;try{input=Array.isArray(p.articulosJSON)?p.articulosJSON:JSON.parse(p.articulosJSON);}catch(e){throw new Error("MATERIAL_REQUISITION_ITEMS_INVALID");}
+ if(!Array.isArray(input)||!input.length)throw new Error("MATERIAL_REQUISITION_ITEMS_REQUIRED");
+ const lock=LockService.getScriptLock();lock.waitLock(15000);
+ try{
+  const scoped=inventoryAssertDepartmentScope_(p,ss,actor,p.departamento),department=scoped.department;
+  const normalized=input.map(x=>{const item=catalogFindItem_(ss,x.catalogItemId||x.itemCodigo||x.itemId,true),unit=catalogFindUnit_(ss,x.unidadMedida||item.unit),qty=Number(x.cantidad);if(catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit))throw new Error("CATALOG_UNIT_INCOMPATIBLE_WITH_ITEM");if(!Number.isFinite(qty)||qty<=0)throw new Error("MATERIAL_REQUISITION_QUANTITY_INVALID");return {catalogItemId:item.id,itemCodigo:item.code,itemNombre:item.name,unidadMedida:unit.name,unidadBase:item.baseUnit,factorConversionBase:unit.factor,cantidad:qty};});
+  const sh=getOrCreateSheet(ss,"MaterialesSolicitudes");inventoryEnsureRequisitionSchema_(sh);
+  const now=new Date(),id="REQ-MAT-"+Utilities.getUuid(),centroCosto=String(p.centroCosto||department.departmentName||department.departmentId).trim(),modo=String(p.modoReconocimiento||"GASTO_INMEDIATO").trim().toUpperCase(),source=String(p.ubicacionOrigen||"Bodega General").trim();
+  if(!centroCosto||["GASTO_INMEDIATO","ASIGNADO"].indexOf(modo)===-1||!source)throw new Error("INVENTORY_RECOGNITION_MODE_INVALID");
+  sh.appendRow([id,now,department.departmentId,actor.userId,JSON.stringify(normalized),p.motivo||"Consumo Operativo","PendienteAprobacion","","",p.observaciones||"",centroCosto,modo,"","",source]);
+  return {status:"success",solicitudMatId:id,departamento:department.departmentName||department.departmentId,centroCosto:centroCosto,modoReconocimiento:modo,ubicacionOrigen:source,message:"Solicitud interna de materiales registrada en estado PendienteAprobacion."};
  }finally{lock.releaseLock();}
 }
 
 function getMaterialRequisitions(payload) {
-  const { departamento, estadoAprobacion } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "MaterialesSolicitudes").getDataRange().getValues().slice(1);
-
-  let filtered = rows;
-  if (departamento) filtered = filtered.filter(r => String(r[2]).toLowerCase().trim() === String(departamento).toLowerCase().trim());
-  if (estadoAprobacion) filtered = filtered.filter(r => String(r[6]).trim() === String(estadoAprobacion).trim());
-
-  const mapped = filtered.map(r => ({
-    solicitudMatId: r[0],
-    fecha: r[1],
-    departamento: r[2],
-    solicitanteUserId: r[3],
-    articulosJSON: r[4],
-    motivo: r[5],
-    estadoAprobacion: r[6],
-    aprobadoPor: r[7],
-    entregadoPor: r[8],
-    observaciones: r[9]
-  }));
-
-  return {
-    status: "success",
-    solicitudes: mapped
-  };
+  const p=payload||{},actor=getVerifiedAccountingIdentity_(p);
+  if(!actor||actor.authorized!==true)throw new Error(actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED");
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(p,ss,actor);
+  if(!scope||scope.authorized!==true)throw new Error(scope&&scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED");
+  const sheet=ss.getSheetByName("MaterialesSolicitudes"),rows=sheet?sheet.getDataRange().getValues().slice(1):[];
+  const allowed=(scope.departmentIds||[]).map(String);
+  let requested=null;
+  if(p.departamento){requested=resolveStaffingDepartmentReference_(ss,p.departamento);if(!requested||!requested.resolved)throw new Error(requested&&requested.code||"DEPARTMENT_REFERENCE_INVALID");if(scope.institutionWide!==true&&!allowed.includes(String(requested.departmentId)))throw new Error("RESOURCE_NOT_FOUND");}
+  const filtered=rows.filter(r=>{
+    const department=resolveStaffingDepartmentReference_(ss,r[2]);
+    if(!department||!department.resolved)return false;
+    if(scope.institutionWide!==true&&!allowed.includes(String(department.departmentId)))return false;
+    if(requested&&String(department.departmentId)!==String(requested.departmentId))return false;
+    return !p.estadoAprobacion||String(r[6]||"").trim()===String(p.estadoAprobacion).trim();
+  });
+  return {status:"success",solicitudes:filtered.map(r=>{
+    const department=resolveStaffingDepartmentReference_(ss,r[2]);
+    return {solicitudMatId:r[0],fecha:r[1],departamento:department.departmentName||department.departmentId,departamentoId:department.departmentId,solicitanteUserId:r[3],articulosJSON:r[4],motivo:r[5],estadoAprobacion:r[6],aprobadoPor:r[7],entregadoPor:r[8],observaciones:r[9],centroCosto:r[10]||department.departmentName||department.departmentId,modoReconocimiento:r[11]||"GASTO_INMEDIATO",asientoContableId:r[12]||"",detalleEntregaJSON:r[13]||"",ubicacionOrigen:r[14]||"Bodega General"};
+  })};
 }
 
 function inventoryEnsureRequisitionSchema_(sheet) {
@@ -15348,13 +15351,22 @@ function inventoryEnsureLedgerSheet_(ss,name,headers) {
  const rows=sh.getDataRange().getValues();if(!rows.length||!rows[0].some(x=>String(x||"").trim()))sh.getRange(1,1,1,headers.length).setValues([headers]);
  return sh;
 }
+function inventoryAssertDepartmentScope_(payload,ss,actor,departmentValue) {
+ const scope=getVerifiedAccountingDepartmentScope_(payload,ss,actor);
+ if(!scope||scope.authorized!==true)throw new Error(scope&&scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED");
+ const department=resolveStaffingDepartmentReference_(ss,departmentValue);
+ if(!department||department.resolved!==true)throw new Error(department&&department.code||"DEPARTMENT_REFERENCE_INVALID");
+ const allowed=(scope.departmentIds||[]).map(String);
+ if(scope.institutionWide!==true&&!allowed.includes(String(department.departmentId)))throw new Error("RESOURCE_NOT_FOUND");
+ return {scope:scope,department:department};
+}
 function inventoryAccount_(ss,code,expectedType) {
  const sh=getOrCreateSheet(ss,"PlanCuentas"),rows=sh.getDataRange().getValues().slice(1),matches=rows.filter(r=>String(r[1]||"").trim()===String(code));
  if(matches.length!==1||String(matches[0][5]||"Activa")!=="Activa"||String(matches[0][3]||"").toLowerCase()!==String(expectedType).toLowerCase())throw new Error("INVENTORY_ACCOUNT_NOT_CONFIGURED:"+code);
  return {code:String(matches[0][1]),name:String(matches[0][2])};
 }
 function inventoryCostPerBaseUnit_(item) {
- const row=item.row||[],cost=Number(row[19]||row[18]||row[17]||0);
+ const row=item.row||[],cost=Number(row[19]||row[18]||0);
  if(!Number.isFinite(cost)||cost<=0)throw new Error("INVENTORY_ITEM_COST_REQUIRED:"+item.code);
  return assetDeprMoney_(cost);
 }
@@ -15365,13 +15377,46 @@ function inventoryJournalRows_(ss) {
 function inventoryJournalExists_(ss,id) {
  return inventoryJournalRows_(ss).some((r,i)=>i>0&&String(r[0])===String(id));
 }
+function inventoryFindJournalById_(ss,id) {
+ const matches=inventoryJournalRows_(ss).slice(1).filter(r=>String(r[0]||"")===String(id||""));
+ if(matches.length>1)throw new Error("INVENTORY_JOURNAL_ID_AMBIGUOUS:"+id);
+ return matches[0]||null;
+}
+function inventoryAssertExistingJournal_(ss,id) {
+ const row=inventoryFindJournalById_(ss,id);
+ if(!row||String(row[6]||"")!=="Asentado")throw new Error("INVENTORY_LEDGER_JOURNAL_MISSING:"+id);
+ return row;
+}
 function inventoryPostJournal_(ss,payload) {
- if(inventoryJournalExists_(ss,payload.asientoId))return {status:"success",asientoId:payload.asientoId,idempotent:true};
+ const existing=inventoryFindJournalById_(ss,payload.asientoId);
+ if(existing){
+  if(String(existing[2]||"")!==String(payload.descripcion||"")||String(existing[3]||"")!==String(payload.origenModulo||"")||String(existing[4]||"")!==String(payload.referenciaId||"")||String(existing[5]||"")!==JSON.stringify(payload.lineas))throw new Error("INVENTORY_JOURNAL_IDEMPOTENCY_CONFLICT:"+payload.asientoId);
+  return {status:"success",asientoId:payload.asientoId,idempotent:true};
+ }
  return recordAccountingJournalEntry(payload);
 }
 function inventoryDeleteAppendedRows_(sheet,firstRow) {
  if(!sheet||typeof sheet.deleteRow!=="function")return;
  while(sheet.getLastRow()>=firstRow)sheet.deleteRow(sheet.getLastRow());
+}
+
+function inventoryLedgerPayloadMatches_(ss,delivery,items,savedJson) {
+ let saved;try{saved=typeof savedJson==="string"?JSON.parse(savedJson):savedJson;}catch(_){return false;}
+ if(!Array.isArray(items)||!Array.isArray(saved)||items.length!==saved.length)return false;
+ const seen=Object.create(null);
+ for(let i=0;i<items.length;i++){
+  const raw=items[i]||{},item=catalogFindItem_(ss,raw.catalogItemId||raw.itemCodigo||raw.itemId,false),line=saved[i];
+  if(!line||String(line.itemCodigo||"")!==String(item.code)||seen[item.code])return false;seen[item.code]=true;
+  const unitName=String(raw.unidadMedida||raw.unidad||item.unit),qty=Number(raw.cantidad);
+  if(!Number.isFinite(qty)||qty<=0)return false;
+  if(line.unidadOriginal!==undefined){
+   if(catalogNormalizeText_(line.unidadOriginal)!==catalogNormalizeText_(unitName)||Math.abs(Number(line.cantidadOriginal)-qty)>0.000001)return false;
+  }else{
+   const unit=catalogFindUnit_(ss,unitName);
+   if(catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit)||Math.abs(Number(line.cantidadBase)-assetDeprMoney_(qty*unit.factor))>0.000001)return false;
+  }
+ }
+ return true;
 }
 
 function deliverMaterialRequisition(payload) {
@@ -15384,6 +15429,7 @@ function deliverMaterialRequisition(payload) {
   let items;try{items=typeof row[4]==="string"?JSON.parse(row[4]):row[4];}catch(e){throw new Error("MATERIAL_REQUISITION_ITEMS_INVALID");}
   if(!Array.isArray(items)||!items.length)throw new Error("MATERIAL_REQUISITION_ITEMS_REQUIRED");
   const department=String(row[2]||"").trim(),costCenter=String(row[10]||department).trim(),mode=String(row[11]||"GASTO_INMEDIATO").toUpperCase(),source=String(row[14]||"Bodega General").trim();
+  inventoryAssertDepartmentScope_(p,ss,actor,department);
   if(!department||!costCenter||!source||["GASTO_INMEDIATO","ASIGNADO"].indexOf(mode)===-1)throw new Error("INVENTORY_COST_CENTER_OR_MODE_REQUIRED");
   getChartOfAccounts({});const inventory=inventoryAccount_(ss,"1301","Activo"),debit=mode==="ASIGNADO"?inventoryAccount_(ss,"1302","Activo"):inventoryAccount_(ss,"5201","Gasto");
   const kardex=getOrCreateSheet(ss,"InventariosKardex"),journal=getOrCreateSheet(ss,"AsientosContables");movementStart=kardex.getLastRow()+1;journalStart=journal.getLastRow()+1;
@@ -15401,7 +15447,7 @@ function deliverMaterialRequisition(payload) {
    details.push({itemId:item.id,itemCodigo:item.code,cantidadBase:baseQty,costoUnitarioBase:cost,importe:amount,kardexId:outMove.kardexId,kardexDestinoId:inMove&&inMove.kardexId,ubicacionOrigen:source,ubicacionDestino:department});
   });
   const asientoId="AST-INV-REQ-"+requestId;inventoryPostJournal_(ss,{descripcion:"Entrega de materiales "+requestId,origenModulo:"INVENTARIO",referenciaId:requestId,asientoId,lineas:lines,creadoPor:actor.userId});
-  requestSheet.getRange(idx+1,7).setValue("Entregado");requestSheet.getRange(idx+1,9).setValue(p.entregadoPorUserId||actor.userId||"Bodega");if(p.observaciones)requestSheet.getRange(idx+1,10).setValue(p.observaciones);requestSheet.getRange(idx+1,13).setValue(asientoId);requestSheet.getRange(idx+1,14).setValue(JSON.stringify(details));
+  requestSheet.getRange(idx+1,7).setValue("Entregado");requestSheet.getRange(idx+1,9).setValue(actor.userId);if(p.observaciones)requestSheet.getRange(idx+1,10).setValue(p.observaciones);requestSheet.getRange(idx+1,13).setValue(asientoId);requestSheet.getRange(idx+1,14).setValue(JSON.stringify(details));
   return {status:"success",solicitudMatId:requestId,asientoId,centroCosto:costCenter,modoReconocimiento:mode,detalle:details,message:"Materiales entregados, descontados/asignados y contabilizados por partida doble."};
  } catch(e) {
   const ss=SpreadsheetApp.openById(SPREADSHEET_ID);if(movementStart){const sh=ss.getSheetByName("InventariosKardex");if(sh)inventoryDeleteAppendedRows_(sh,movementStart);}if(journalStart){const sh=ss.getSheetByName("AsientosContables");if(sh)inventoryDeleteAppendedRows_(sh,journalStart);}throw e;
@@ -15414,13 +15460,16 @@ function returnMaterialToInventory(payload) {
  const lock=LockService.getScriptLock();lock.waitLock(15000);let movementStart=0,journalStart=0,ledgerStart=0;
  try{
   const ss=SpreadsheetApp.openById(SPREADSHEET_ID),req=getOrCreateSheet(ss,"MaterialesSolicitudes"),data=req.getDataRange().getValues(),idx=data.findIndex((r,i)=>i>0&&String(r[0])===requestId);if(idx<0||String(data[idx][6])!=="Entregado")throw new Error("MATERIAL_RETURN_REQUEST_NOT_DELIVERED");
-  const ledger=inventoryEnsureLedgerSheet_(ss,"DevolucionesMateriales",["DevolucionID","SolicitudMatID","Fecha","ItemsJSON","AsientoID","ActorUserId","Observaciones"]);const existing=ledger.getDataRange().getValues().slice(1).find(r=>String(r[0])===returnId);if(existing)return {status:"success",devolucionId:returnId,asientoId:existing[4],idempotent:true};
+  const ledger=inventoryEnsureLedgerSheet_(ss,"DevolucionesMateriales",["DevolucionID","SolicitudMatID","Fecha","ItemsJSON","AsientoID","ActorUserId","Observaciones"]);
   const delivery=JSON.parse(String(data[idx][13]||"[]")),department=String(data[idx][2]),center=String(data[idx][10]||department),mode=String(data[idx][11]||"GASTO_INMEDIATO").toUpperCase(),source=String(data[idx][14]||"Bodega General");
+  inventoryAssertDepartmentScope_(p,ss,actor,department);
+  const existing=ledger.getDataRange().getValues().slice(1).find(r=>String(r[0])===returnId);
+  if(existing){if(String(existing[1])!==requestId||!inventoryLedgerPayloadMatches_(ss,delivery,items,existing[3]))throw new Error("MATERIAL_RETURN_IDEMPOTENCY_CONFLICT");inventoryAssertExistingJournal_(ss,existing[4]);return {status:"success",devolucionId:returnId,asientoId:existing[4],idempotent:true};}
   const previous=ledger.getDataRange().getValues().slice(1).filter(r=>String(r[1])===requestId),consumedSheet=ss.getSheetByName("ConsumosMateriales"),consumed=consumedSheet?consumedSheet.getDataRange().getValues().slice(1).filter(r=>String(r[1])===requestId):[];
   const returnedByCode={},consumedByCode={};previous.forEach(r=>{try{JSON.parse(r[3]).forEach(x=>returnedByCode[x.itemCodigo]=(returnedByCode[x.itemCodigo]||0)+Number(x.cantidadBase||0));}catch(_){}});consumed.forEach(r=>{try{JSON.parse(r[3]).forEach(x=>consumedByCode[x.itemCodigo]=(consumedByCode[x.itemCodigo]||0)+Number(x.cantidadBase||0));}catch(_){}});
   getChartOfAccounts({});const inventory=inventoryAccount_(ss,"1301","Activo"),credit=mode==="ASIGNADO"?inventoryAccount_(ss,"1302","Activo"):inventoryAccount_(ss,"5201","Gasto"),kardex=getOrCreateSheet(ss,"InventariosKardex"),journal=getOrCreateSheet(ss,"AsientosContables");movementStart=kardex.getLastRow()+1;journalStart=journal.getLastRow()+1;ledgerStart=ledger.getLastRow()+1;
   const lines=[],saved=[],seen={};
-  items.forEach((raw,i)=>{const item=catalogFindItem_(ss,raw.catalogItemId||raw.itemCodigo,true),unit=catalogFindUnit_(ss,raw.unidadMedida||item.unit),qty=Number(raw.cantidad),d=delivery.find(x=>x.itemCodigo===item.code);if(!d||!Number.isFinite(qty)||qty<=0||catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit))throw new Error("MATERIAL_RETURN_ITEM_INVALID");if(seen[item.code])throw new Error("MATERIAL_RETURN_DUPLICATE_ITEM");seen[item.code]=true;const base=assetDeprMoney_(qty*unit.factor),available=Number(d.cantidadBase||0)-Number(returnedByCode[item.code]||0)-Number(consumedByCode[item.code]||0);if(base>available+0.000001)throw new Error("MATERIAL_RETURN_EXCEEDS_AVAILABLE:"+item.code);const ref="MATRET:"+returnId+":"+i,outRow=mode==="ASIGNADO"?inventoryFindMovementByRef_(ss,ref+":OUT"):null,inRow=inventoryFindMovementByRef_(ss,ref+":IN"),out=mode==="ASIGNADO"?(outRow?{kardexId:outRow[0]}:recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:"TransferenciaSalida",cantidad:base,cantidadBase:true,ubicacionResponsable:department,observaciones:"Devolución de solicitud "+requestId+" [REF:"+ref+":OUT]"})):null,incoming=inRow?{kardexId:inRow[0]}:recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:"Entrada",cantidad:base,cantidadBase:true,ubicacionResponsable:source,observaciones:"Devolución de solicitud "+requestId+" [REF:"+ref+":IN]"}),amount=assetDeprMoney_(base*Number(d.costoUnitarioBase||0));if(amount<=0)throw new Error("MATERIAL_RETURN_COST_INVALID");lines.push({cuenta:inventory.code,nombre:inventory.name,debe:amount,haber:0,centroCosto:center,departamento:department,itemCodigo:item.code,referenciaId:returnId},{cuenta:credit.code,nombre:credit.name,debe:0,haber:amount,centroCosto:center,departamento:department,itemCodigo:item.code,referenciaId:returnId});saved.push({itemCodigo:item.code,cantidadBase:base,importe:amount,kardexSalidaId:out&&out.kardexId,kardexEntradaId:incoming.kardexId});});
+  items.forEach((raw,i)=>{const item=catalogFindItem_(ss,raw.catalogItemId||raw.itemCodigo,true),unit=catalogFindUnit_(ss,raw.unidadMedida||item.unit),qty=Number(raw.cantidad),d=delivery.find(x=>x.itemCodigo===item.code);if(!d||!Number.isFinite(qty)||qty<=0||catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit))throw new Error("MATERIAL_RETURN_ITEM_INVALID");if(seen[item.code])throw new Error("MATERIAL_RETURN_DUPLICATE_ITEM");seen[item.code]=true;const base=assetDeprMoney_(qty*unit.factor),available=Number(d.cantidadBase||0)-Number(returnedByCode[item.code]||0)-Number(consumedByCode[item.code]||0);if(base>available+0.000001)throw new Error("MATERIAL_RETURN_EXCEEDS_AVAILABLE:"+item.code);const ref="MATRET:"+returnId+":"+i,outRow=mode==="ASIGNADO"?inventoryFindMovementByRef_(ss,ref+":OUT"):null,inRow=inventoryFindMovementByRef_(ss,ref+":IN"),out=mode==="ASIGNADO"?(outRow?{kardexId:outRow[0]}:recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:"TransferenciaSalida",cantidad:base,cantidadBase:true,ubicacionResponsable:department,observaciones:"Devolución de solicitud "+requestId+" [REF:"+ref+":OUT]"})):null,incoming=inRow?{kardexId:inRow[0]}:recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:"Entrada",cantidad:base,cantidadBase:true,ubicacionResponsable:source,observaciones:"Devolución de solicitud "+requestId+" [REF:"+ref+":IN]"}),amount=assetDeprMoney_(base*Number(d.costoUnitarioBase||0));if(amount<=0)throw new Error("MATERIAL_RETURN_COST_INVALID");lines.push({cuenta:inventory.code,nombre:inventory.name,debe:amount,haber:0,centroCosto:center,departamento:department,itemCodigo:item.code,referenciaId:returnId},{cuenta:credit.code,nombre:credit.name,debe:0,haber:amount,centroCosto:center,departamento:department,itemCodigo:item.code,referenciaId:returnId});saved.push({itemCodigo:item.code,cantidadBase:base,importe:amount,kardexSalidaId:out&&out.kardexId,kardexEntradaId:incoming.kardexId,unidadOriginal:unit.name,cantidadOriginal:qty,factorConversionBase:unit.factor});});
   const asientoId="AST-INV-RET-"+returnId;inventoryPostJournal_(ss,{descripcion:"Devolución de materiales "+returnId,origenModulo:"INVENTARIO",referenciaId:returnId,asientoId,lineas:lines,creadoPor:actor.userId});ledger.appendRow([returnId,requestId,new Date(),JSON.stringify(saved),asientoId,actor.userId,p.observaciones||""]);return {status:"success",devolucionId:returnId,asientoId,detalle:saved};
  }catch(e){const ss=SpreadsheetApp.openById(SPREADSHEET_ID);if(movementStart)inventoryDeleteAppendedRows_(ss.getSheetByName("InventariosKardex"),movementStart);if(journalStart)inventoryDeleteAppendedRows_(ss.getSheetByName("AsientosContables"),journalStart);if(ledgerStart)inventoryDeleteAppendedRows_(ss.getSheetByName("DevolucionesMateriales"),ledgerStart);throw e;}finally{lock.releaseLock();}
 }
@@ -15430,12 +15479,16 @@ function recognizeAssignedMaterialConsumption(payload) {
  const lock=LockService.getScriptLock();lock.waitLock(15000);let movementStart=0,journalStart=0,ledgerStart=0;
  try{
   const ss=SpreadsheetApp.openById(SPREADSHEET_ID),req=getOrCreateSheet(ss,"MaterialesSolicitudes"),data=req.getDataRange().getValues(),idx=data.findIndex((r,i)=>i>0&&String(r[0])===requestId);if(idx<0||String(data[idx][6])!=="Entregado"||String(data[idx][11])!=="ASIGNADO")throw new Error("ASSIGNED_CONSUMPTION_REQUEST_INVALID");
-  const ledger=inventoryEnsureLedgerSheet_(ss,"ConsumosMateriales",["ConsumoID","SolicitudMatID","Fecha","ItemsJSON","AsientoID","ActorUserId","Observaciones"]);const existing=ledger.getDataRange().getValues().slice(1).find(r=>String(r[0])===consumptionId);if(existing)return {status:"success",consumoId:consumptionId,asientoId:existing[4],idempotent:true};
-  const delivery=JSON.parse(String(data[idx][13]||"[]")),department=String(data[idx][2]),center=String(data[idx][10]||department),returns=ss.getSheetByName("DevolucionesMateriales"),returnRows=returns?returns.getDataRange().getValues().slice(1).filter(r=>String(r[1])===requestId):[],prior=ledger.getDataRange().getValues().slice(1).filter(r=>String(r[1])===requestId),returnedByCode={},consumedByCode={};
+  const ledger=inventoryEnsureLedgerSheet_(ss,"ConsumosMateriales",["ConsumoID","SolicitudMatID","Fecha","ItemsJSON","AsientoID","ActorUserId","Observaciones"]);
+  const delivery=JSON.parse(String(data[idx][13]||"[]")),department=String(data[idx][2]),center=String(data[idx][10]||department);
+  inventoryAssertDepartmentScope_(p,ss,actor,department);
+  const existing=ledger.getDataRange().getValues().slice(1).find(r=>String(r[0])===consumptionId);
+  if(existing){if(String(existing[1])!==requestId||!inventoryLedgerPayloadMatches_(ss,delivery,items,existing[3]))throw new Error("ASSIGNED_CONSUMPTION_IDEMPOTENCY_CONFLICT");inventoryAssertExistingJournal_(ss,existing[4]);return {status:"success",consumoId:consumptionId,asientoId:existing[4],idempotent:true};}
+  const returns=ss.getSheetByName("DevolucionesMateriales"),returnRows=returns?returns.getDataRange().getValues().slice(1).filter(r=>String(r[1])===requestId):[],prior=ledger.getDataRange().getValues().slice(1).filter(r=>String(r[1])===requestId),returnedByCode={},consumedByCode={};
   returnRows.forEach(r=>{try{JSON.parse(r[3]).forEach(x=>returnedByCode[x.itemCodigo]=(returnedByCode[x.itemCodigo]||0)+Number(x.cantidadBase||0));}catch(_){}});prior.forEach(r=>{try{JSON.parse(r[3]).forEach(x=>consumedByCode[x.itemCodigo]=(consumedByCode[x.itemCodigo]||0)+Number(x.cantidadBase||0));}catch(_){}});
   getChartOfAccounts({});const expense=inventoryAccount_(ss,"5201","Gasto"),assigned=inventoryAccount_(ss,"1302","Activo"),kardex=getOrCreateSheet(ss,"InventariosKardex"),journal=getOrCreateSheet(ss,"AsientosContables");movementStart=kardex.getLastRow()+1;journalStart=journal.getLastRow()+1;ledgerStart=ledger.getLastRow()+1;
   const lines=[],saved=[],seen={};
-  items.forEach((raw,i)=>{const item=catalogFindItem_(ss,raw.catalogItemId||raw.itemCodigo,true),unit=catalogFindUnit_(ss,raw.unidadMedida||item.unit),qty=Number(raw.cantidad),d=delivery.find(x=>x.itemCodigo===item.code);if(!d||!Number.isFinite(qty)||qty<=0||catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit))throw new Error("ASSIGNED_CONSUMPTION_ITEM_INVALID");if(seen[item.code])throw new Error("ASSIGNED_CONSUMPTION_DUPLICATE_ITEM");seen[item.code]=true;const base=assetDeprMoney_(qty*unit.factor),available=Number(d.cantidadBase||0)-Number(returnedByCode[item.code]||0)-Number(consumedByCode[item.code]||0);if(base>available+0.000001)throw new Error("ASSIGNED_CONSUMPTION_EXCEEDS_AVAILABLE:"+item.code);const ref="MATCON:"+consumptionId+":"+i,existingMove=inventoryFindMovementByRef_(ss,ref),movement=existingMove?{kardexId:existingMove[0]}:recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:"Consumo",cantidad:base,cantidadBase:true,ubicacionResponsable:department,observaciones:"Consumo efectivo de solicitud "+requestId+" [REF:"+ref+"]"}),amount=assetDeprMoney_(base*Number(d.costoUnitarioBase||0));if(amount<=0)throw new Error("ASSIGNED_CONSUMPTION_COST_INVALID");lines.push({cuenta:expense.code,nombre:expense.name,debe:amount,haber:0,centroCosto:center,departamento:department,itemCodigo:item.code,referenciaId:consumptionId},{cuenta:assigned.code,nombre:assigned.name,debe:0,haber:amount,centroCosto:center,departamento:department,itemCodigo:item.code,referenciaId:consumptionId});saved.push({itemCodigo:item.code,cantidadBase:base,importe:amount,kardexId:movement.kardexId});});
+  items.forEach((raw,i)=>{const item=catalogFindItem_(ss,raw.catalogItemId||raw.itemCodigo,true),unit=catalogFindUnit_(ss,raw.unidadMedida||item.unit),qty=Number(raw.cantidad),d=delivery.find(x=>x.itemCodigo===item.code);if(!d||!Number.isFinite(qty)||qty<=0||catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit))throw new Error("ASSIGNED_CONSUMPTION_ITEM_INVALID");if(seen[item.code])throw new Error("ASSIGNED_CONSUMPTION_DUPLICATE_ITEM");seen[item.code]=true;const base=assetDeprMoney_(qty*unit.factor),available=Number(d.cantidadBase||0)-Number(returnedByCode[item.code]||0)-Number(consumedByCode[item.code]||0);if(base>available+0.000001)throw new Error("ASSIGNED_CONSUMPTION_EXCEEDS_AVAILABLE:"+item.code);const ref="MATCON:"+consumptionId+":"+i,existingMove=inventoryFindMovementByRef_(ss,ref),movement=existingMove?{kardexId:existingMove[0]}:recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:"Consumo",cantidad:base,cantidadBase:true,ubicacionResponsable:department,observaciones:"Consumo efectivo de solicitud "+requestId+" [REF:"+ref+"]"}),amount=assetDeprMoney_(base*Number(d.costoUnitarioBase||0));if(amount<=0)throw new Error("ASSIGNED_CONSUMPTION_COST_INVALID");lines.push({cuenta:expense.code,nombre:expense.name,debe:amount,haber:0,centroCosto:center,departamento:department,itemCodigo:item.code,referenciaId:consumptionId},{cuenta:assigned.code,nombre:assigned.name,debe:0,haber:amount,centroCosto:center,departamento:department,itemCodigo:item.code,referenciaId:consumptionId});saved.push({itemCodigo:item.code,cantidadBase:base,importe:amount,kardexId:movement.kardexId,unidadOriginal:unit.name,cantidadOriginal:qty,factorConversionBase:unit.factor});});
   const asientoId="AST-INV-CONS-"+consumptionId;inventoryPostJournal_(ss,{descripcion:"Consumo efectivo de materiales "+consumptionId,origenModulo:"INVENTARIO",referenciaId:consumptionId,asientoId,lineas:lines,creadoPor:actor.userId});ledger.appendRow([consumptionId,requestId,new Date(),JSON.stringify(saved),asientoId,actor.userId,p.observaciones||""]);return {status:"success",consumoId:consumptionId,asientoId,detalle:saved};
  }catch(e){const ss=SpreadsheetApp.openById(SPREADSHEET_ID);if(movementStart)inventoryDeleteAppendedRows_(ss.getSheetByName("InventariosKardex"),movementStart);if(journalStart)inventoryDeleteAppendedRows_(ss.getSheetByName("AsientosContables"),journalStart);if(ledgerStart)inventoryDeleteAppendedRows_(ss.getSheetByName("ConsumosMateriales"),ledgerStart);throw e;}finally{lock.releaseLock();}
 }

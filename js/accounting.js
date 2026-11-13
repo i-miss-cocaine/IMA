@@ -468,8 +468,8 @@ window.loadSolicitudesData = function () {
         html += `
           <tr class="hover:bg-gray-50">
             <td class="p-2 font-mono font-bold text-purple-600">${s.solicitudMatId}</td>
-            <td class="p-2 font-bold text-gray-800">${s.departamento}</td>
-            <td class="p-2 text-gray-700">${s.centroCosto || s.departamento}</td>
+            <td class="p-2 font-bold text-gray-800">${catalogHtmlEscape(s.departamento)}</td>
+            <td class="p-2 text-gray-700">${catalogHtmlEscape(s.centroCosto || s.departamento)}</td>
             <td class="p-2 text-gray-600">${s.modoReconocimiento === "ASIGNADO" ? "Material asignado" : "Gasto inmediato"}</td>
             <td class="p-2 text-gray-600">${s.solicitanteUserId}</td>
             <td class="p-2 text-gray-500">${s.motivo || 'Consumo'}</td>
@@ -491,7 +491,7 @@ window.loadSolicitudesData = function () {
 window.handleEntregarSolicitud = function (solId) {
   if (!confirm(`¿Confirmar la entrega física de los materiales para la solicitud ${solId}?`)) return;
 
-  fetchApi('ACCOUNTING', 'deliverMaterialRequisition', { solicitudMatId: solId, entregadoPorUserId: 'Bodega' })
+  fetchApi('ACCOUNTING', 'deliverMaterialRequisition', { solicitudMatId: solId })
     .then(res => {
       alert(res.message || "Entrega de materiales procesada con éxito.");
       loadSolicitudesData();
