@@ -357,5 +357,6 @@
 - **CLI local del contenedor:** Node.js v22.16.0 disponible; git ls-remote NOT RUN por DNS (github.com no resuelve), por lo que no se obtuvo checkout local. La suite aislada se ejecutó en los runners Node de GitHub Actions; no se afirma que el CLI del contenedor local haya pasado.
 - **Revisión del diff:** 8 archivos previstos; el cambio productivo se limita a getStudentEnrollmentHistory y la compatibilidad de columnas opcionales de cargos; sin cambios en la rama base ni archivos ajenos. Revisión manual de líneas eliminadas/añadidas PASS; detector automatizado de clones no configurado/NOT RUN.
 - **Beta:** BETA-FUNC-054 agregado, Pendiente beta; no bloquea el cierre de implementación conforme NDASC.
+- **Commits:** implementación 778ef2e; corrección del runner e7449f2; compatibilidad de columnas opcionales y revalidación 7e7750e; checkpoint/documentación 8cbc8f0. Reejecución final Department Scope 43367811579 SUCCESS (Node.js v24.22.2), incluidos el contrato ajustado y los 20 pasos del workflow.
 - **Estado:** implementación y verificaciones locales aisladas de CI completadas. La tarea T153-S04 queda Completada; TASK-153 permanece En ejecución por otros subalcances.
 ===============================================================================
