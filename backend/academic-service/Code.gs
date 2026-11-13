@@ -12380,6 +12380,7 @@ function createStudentEnrollment(payload) {
         matSheet.deleteRow(insertedEnrollmentRow);
       }
     });
+    ensureEnrollmentPeriodCharges_(ss, { userId:sUserId, periodo:targetAno, grado:grado, becaDescuento:becaDescuento }, rollbackActions);
 
     // Actualizar EstadoExpediente a Activo si estaba Inactivo/Retirado/Trasladado/Suspendido
     if (expRowIdx !== -1) {
@@ -14013,6 +14014,34 @@ function registerStudentEnrollment(payload) {
   }
 }
 
+function ensureEnrollmentPeriodCharges_(ss,enrollment,rollbackActions){
+const userId=String(enrollment&&enrollment.userId||"").trim(),period=String(enrollment&&enrollment.periodo||"").trim(),grade=String(enrollment&&enrollment.grado||"").trim();if(!userId||!period||!grade)throw new Error("ENROLLMENT_BILLING_CONTEXT_INVALID");
+const institutionId=String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID")||"").trim();if(!institutionId)return{status:"skipped",code:"IDENTITY_CONFIGURATION_REQUIRED",created:0};
+const configSheet=ss.getSheetByName("ConfiguracionCargosMatricula");if(!configSheet)return{status:"skipped",mode:"MANUAL",created:0};
+const configRows=configSheet.getDataRange().getValues(),configHeaders=["ConfiguracionID","InstitutionID","AnoLectivo","NivelGrado","ModoGeneracion","ConceptoMatriculaID","Estado","ActualizadoPor","ActualizadoEn"];
+if(!configRows.length||JSON.stringify(configRows[0].map(v=>String(v||"").trim()))!==JSON.stringify(configHeaders))throw new Error("ENROLLMENT_BILLING_CONFIG_SCHEMA_MISMATCH");
+const configs=configRows.slice(1).filter(row=>String(row[1]||"").trim()===institutionId&&String(row[2]||"").trim()===period&&String(row[3]||"").trim().toLowerCase()===grade.toLowerCase()&&String(row[6]||"").trim().toUpperCase()==="ACTIVE");
+if(configs.length>1)throw new Error("ENROLLMENT_BILLING_CONFIG_AMBIGUOUS");if(!configs.length)return{status:"skipped",mode:"MANUAL",created:0};
+const config=configs[0],mode=String(config[4]||"").trim().toUpperCase();if(mode==="MANUAL")return{status:"skipped",mode,created:0};if(mode!=="MATRICULA_ONLY"&&mode!=="ALL_ACTIVE_TARIFFS")throw new Error("ENROLLMENT_BILLING_MODE_INVALID");
+const tariffSheet=ss.getSheetByName("TarifasPlanPago");if(!tariffSheet)throw new Error("ENROLLMENT_TARIFF_NOT_CONFIGURED");
+const tariffRows=tariffSheet.getDataRange().getValues(),tariffHeaders=["TarifaID","AnoLectivo","NivelGrado","ConceptoID","MontoTotal","CuotasNum","VencimientoJSON","Estado","Observaciones"];
+if(!tariffRows.length||JSON.stringify(tariffRows[0].slice(0,9).map(v=>String(v||"").trim()))!==JSON.stringify(tariffHeaders))throw new Error("PAYMENT_TARIFF_SCHEMA_MISMATCH");
+let tariffs=tariffRows.slice(1).filter(row=>String(row[1]||"").trim()===period&&String(row[2]||"").trim().toLowerCase()===grade.toLowerCase()&&String(row[7]||"").trim().toUpperCase()==="ACTIVA");
+if(mode==="MATRICULA_ONLY"){const selected=String(config[5]||"").trim();if(!selected)throw new Error("ENROLLMENT_CONCEPT_REQUIRED");tariffs=tariffs.filter(row=>String(row[3]||"").trim()===selected);if(!tariffs.length)throw new Error("ENROLLMENT_TARIFF_NOT_CONFIGURED");}if(!tariffs.length)throw new Error("ACTIVE_PAYMENT_TARIFFS_REQUIRED");
+const conceptSheet=ss.getSheetByName("ConceptosCobro"),conceptRows=conceptSheet?conceptSheet.getDataRange().getValues():[];if(conceptRows.length&&String(conceptRows[0][0]||"").trim()!=="ConceptoID")throw new Error("PAYMENT_CONCEPT_SCHEMA_MISMATCH");
+const names={};conceptRows.slice(1).forEach(row=>{const id=String(row[0]||"").trim();if(id){if(names[id])throw new Error("PAYMENT_CONCEPT_AMBIGUOUS");names[id]=String(row[2]||"").trim();}});
+const unique={};tariffs.forEach(row=>{const id=String(row[3]||"").trim(),amount=Number(row[4]),count=Number(row[5]);if(!id||!isFinite(amount)||amount<=0||!Number.isInteger(count)||count<1)throw new Error("PAYMENT_TARIFF_INVALID");if(unique[id])throw new Error("ENROLLMENT_TARIFF_AMBIGUOUS");unique[id]=true;if(!names[id])throw new Error("PAYMENT_CONCEPT_NOT_CONFIGURED");});
+const charges=getOrCreateSheet(ss,"CargosEstudiante"),rows=charges.getDataRange().getValues();if(!rows.length||String(rows[0][0]||"").trim()!=="CargoID"||rows[0].length<9)throw new Error("STUDENT_CHARGE_SCHEMA_CONFLICT");
+const h10=String(rows[0][9]||"").trim(),h11=String(rows[0][10]||"").trim();if(h10&&h10!=="Observaciones"&&h10!=="ReferenciaOrigen")throw new Error("STUDENT_CHARGE_SCHEMA_CONFLICT");if(h11&&h11!=="ClaveUnicaDedupe")throw new Error("STUDENT_CHARGE_SCHEMA_CONFLICT");if(!h10)charges.getRange(1,10).setValue("Observaciones");if(!h11)charges.getRange(1,11).setValue("ClaveUnicaDedupe");
+const keys={};rows.slice(1).forEach(row=>{const key=String(row[10]||"").trim();if(key)keys[key]=true;});
+const requestSheet=ss.getSheetByName("SolicitudesDescuentoBeca"),requests=requestSheet?requestSheet.getDataRange().getValues().slice(1):[],ruleSheet=ss.getSheetByName("DescuentosBecas"),ruleRows=ruleSheet?ruleSheet.getDataRange().getValues().slice(1):[],rules={};ruleRows.forEach(row=>{const id=String(row[0]||"").trim();if(id)rules[id]=row;});
+const now=new Date(),today=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0"),approved=requests.filter(row=>String(row[4]||"").trim()===userId&&String(row[8]||"").trim().toUpperCase()==="APROBADO");let created=0;
+tariffs.forEach(tariff=>{const conceptId=String(tariff[3]).trim(),concept=names[conceptId],key=["ENROLLMENT",userId,period,conceptId].join("|").toLowerCase();if(keys[key])return;const base=Number(tariff[4]);let discount=Math.max(0,Number(enrollment.becaDescuento)||0);
+for(let i=0;i<approved.length;i++){const request=approved[i],rule=rules[String(request[2]||"").trim()],requested=String(request[5]||"").trim().toLowerCase();if(requested&&concept.toLowerCase().indexOf(requested)===-1)continue;if(rule&&["APROBADO","ACTIVO"].indexOf(String(rule[12]||"").trim().toUpperCase())===-1)continue;let criteria={};if(rule&&rule[9]){try{criteria=JSON.parse(rule[9]);}catch(_){continue;}}const range=criteria&&criteria.rangoFechas;if(range&&((range.inicio&&today<String(range.inicio).slice(0,10))||(range.fin&&today>String(range.fin).slice(0,10))))continue;let eligible=true;if(rule&&rule[8]){try{const list=JSON.parse(rule[8]);if(Array.isArray(list)&&list.length)eligible=list.some(name=>concept.toLowerCase().indexOf(String(name).toLowerCase())!==-1);}catch(_){eligible=false;}}if(!eligible)continue;let amount=0;if(rule){const type=String(rule[5]||"").trim().toLowerCase(),value=Number(rule[6]||0),cap=Number(rule[7]||0);amount=type==="porcentaje"?Math.round(base*value)/100:value;if(cap>0)amount=Math.min(amount,cap);}else amount=Number(request[6]||0);discount=Math.max(discount,amount);break;}
+discount=Math.min(base,Math.max(0,discount));const finalAmount=Math.round((base-discount)*100)/100;let due="";if(tariff[6]){try{const dates=JSON.parse(tariff[6]);if(Array.isArray(dates)&&dates.length)due=dates[0];}catch(_){throw new Error("PAYMENT_TARIFF_DUE_DATES_INVALID");}}const id="CRG-ENR-"+now.getTime()+"-"+(created+1);charges.appendRow([id,now,userId,concept,base,discount,finalAmount,finalAmount<=0?"Exonerado":"Pendiente",due,"Matrícula "+period+" tarifa "+String(tariff[0]||""),key]);const rowNumber=charges.getLastRow();if(Array.isArray(rollbackActions))rollbackActions.push(function(){const current=charges.getDataRange().getValues();if(rowNumber>0&&rowNumber<=current.length&&String(current[rowNumber-1][0]||"")===id)charges.deleteRow(rowNumber);});keys[key]=true;created++;});
+return{status:"success",mode,created};
+}
+
 function registerStudentEnrollmentInternal_(payload) {
   const { userId, alumno, grado, seccion, periodo, tipo, becaDescuento, observaciones, cargos, _rollbackActions, _chargeReference, _chargeReferencePrefix } = payload || {};
   if (!userId || !grado || !periodo) throw new Error("Datos de matrícula incompletos.");
@@ -14146,6 +14175,8 @@ function registerStudentEnrollmentInternal_(payload) {
       });
     });
   }
+
+  ensureEnrollmentPeriodCharges_(ss, { userId:sUserId, periodo:sPeriodo, grado:sGrado, becaDescuento:becaDescuento }, _rollbackActions);
 
   return { status: "success", matriculaId: matriculaId, cargoId: admissionChargeId, message: "Matrícula registrada exitosamente." };
 }
