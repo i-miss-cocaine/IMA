@@ -1026,6 +1026,7 @@ function renderComprasCotizacionesView(container) {
         <h5 class="text-sm font-black uppercase text-gray-800">Cotizaciones & Cuadro Comparativo de Ofertas</h5>
       </div>
       <p class="text-xs text-gray-600">Registro de ofertas de proveedores, comparación de precios y adjudicación formal.</p>
+      <div class="rounded-xl border border-gray-200 p-4 space-y-3"><h6 class="font-black text-xs uppercase text-gray-700">Registrar cotización detallada</h6><div class="grid md:grid-cols-4 gap-2"><label class="text-xs font-bold">Solicitud<input id="cmp-entry-request-id" class="mt-1 w-full rounded-lg border p-2" placeholder="REQ-CMP-..."></label><label class="text-xs font-bold">Proveedor ID<input id="cmp-entry-supplier-id" class="mt-1 w-full rounded-lg border p-2" placeholder="PRV-..."></label><label class="text-xs font-bold">Entrega (días)<input id="cmp-entry-delivery-days" type="number" min="0" value="5" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold">Vigencia<input id="cmp-entry-validity" value="30 días" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold md:col-span-2">Condiciones de pago<input id="cmp-entry-payment-terms" value="Contado" class="mt-1 w-full rounded-lg border p-2"></label></div><button id="btn-cmp-entry-load" class="px-3 py-2 rounded-lg bg-gray-800 text-white text-xs font-bold">Cargar partidas de la solicitud</button><div id="cmp-entry-lines" class="space-y-2"></div></div>
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs text-gray-700">
           <thead class="bg-gray-50 text-gray-500 uppercase font-black">
@@ -1047,6 +1048,7 @@ function renderComprasCotizacionesView(container) {
     </div>
   `;
 
+  const entryLoad=document.getElementById('btn-cmp-entry-load');if(entryLoad)entryLoad.addEventListener('click',()=>window.loadPurchaseQuotationEntry());
   const matrixButton=document.getElementById('btn-cmp-load-matrix');
   if(matrixButton)matrixButton.addEventListener('click',()=>window.loadPurchaseQuotationMatrix());
   const requestInput=document.getElementById('cmp-matrix-request-id');
@@ -1077,6 +1079,55 @@ function renderComprasCotizacionesView(container) {
     });
 }
 
+
+
+window.loadPurchaseQuotationEntry=async function(){
+ const requestId=document.getElementById('cmp-entry-request-id'),supplierId=document.getElementById('cmp-entry-supplier-id'),target=document.getElementById('cmp-entry-lines');
+ if(!target||!String(requestId&&requestId.value||'').trim()||!String(supplierId&&supplierId.value||'').trim()){if(target)target.textContent='Ingrese la solicitud y el proveedor.';return;}
+ target.textContent='Cargando partidas solicitadas...';
+ try{const matrix=await fetchBackendAccounting('getPurchaseQuotationMatrix',{solicitudId:requestId.value.trim()});if(!matrix||matrix.status!=='success')throw new Error(matrix&&matrix.message||'No se pudo cargar la solicitud.');window.renderPurchaseQuotationEntry(matrix,target);}
+ catch(error){target.textContent=error.message||'Error al cargar las partidas.';}
+};
+window.renderPurchaseQuotationEntry=function(matrix,target){
+ target.replaceChildren();
+ const addText=(parent,value,tag='div',cls='')=>{const el=document.createElement(tag);el.className=cls;el.textContent=String(value==null?'':value);parent.appendChild(el);return el;};
+ if(matrix.adjudicada){addText(target,'La solicitud ya fue adjudicada; no admite nuevas cotizaciones.','div','text-amber-700 font-bold');return;}
+ const tableWrap=document.createElement('div');tableWrap.className='overflow-x-auto';
+ const table=document.createElement('table');table.className='min-w-full text-left text-[11px]';
+ const header=document.createElement('tr');['Partida','Cantidad solicitada','Cantidad ofertada','Precio unitario','Descuento','Impuestos','Flete','Garantía','Cumplimiento técnico','Total'].forEach(v=>addText(header,v,'th','p-2 bg-gray-100'));table.appendChild(header);
+ matrix.partidas.forEach(part=>{
+  const tr=document.createElement('tr');tr.className='cmp-quote-line border-b';tr.dataset.itemId=part.itemId;
+  addText(tr,part.descripcion+' · '+part.itemId,'td','p-2 font-bold');
+  addText(tr,part.cantidadSolicitada+' '+part.unidad,'td','p-2');
+  const makeInput=(type,value)=>{const input=document.createElement('input');input.type=type;input.value=String(value);input.className='w-24 rounded border p-1';if(type==='number'){input.min='0';input.step='0.01';}input.addEventListener('input',()=>window.updatePurchaseQuotationEntryTotal(tr));return input;};
+  const qty=makeInput('number',part.cantidadSolicitada);qty.max=String(part.cantidadSolicitada);qty.dataset.field='cantidadCotizada';
+  const unit=makeInput('number','0');unit.dataset.field='precioUnitario';
+  const discount=makeInput('number','0');discount.dataset.field='descuento';
+  const tax=makeInput('number','0');tax.dataset.field='impuestos';
+  const freight=makeInput('number','0');freight.dataset.field='flete';
+  [qty,unit,discount,tax,freight].forEach((input,index)=>{if(index===0){const cell=document.createElement('td');cell.className='p-2';cell.appendChild(input);tr.appendChild(cell);}else{const cell=document.createElement('td');cell.className='p-2';cell.appendChild(input);tr.appendChild(cell);}});
+  const warrantyCell=document.createElement('td');warrantyCell.className='p-2';const warranty=document.createElement('input');warranty.className='w-28 rounded border p-1';warranty.placeholder='Garantía';warranty.dataset.field='garantia';warrantyCell.appendChild(warranty);tr.appendChild(warrantyCell);
+  const complianceCell=document.createElement('td');complianceCell.className='p-2';const compliance=document.createElement('select');compliance.className='rounded border p-1';compliance.dataset.field='cumplimientoTecnico';[['','Evaluar'],['Cumple','Cumple'],['No cumple','No cumple'],['Parcial','Parcial']].forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=l;compliance.appendChild(o);});complianceCell.appendChild(compliance);tr.appendChild(complianceCell);
+  const totalCell=document.createElement('td');totalCell.className='p-2 font-bold';totalCell.dataset.lineTotal='1';totalCell.textContent='L 0.00';tr.appendChild(totalCell);table.appendChild(tr);
+ });
+ tableWrap.appendChild(table);target.appendChild(tableWrap);
+ const total=document.createElement('div');total.id='cmp-entry-grand-total';total.className='text-right font-black text-gray-800';total.textContent='Total ofertado: L 0.00';target.appendChild(total);
+ const submit=document.createElement('button');submit.type='button';submit.className='px-4 py-2 rounded-lg bg-purple-700 text-white text-xs font-bold';submit.textContent='Registrar cotización';submit.addEventListener('click',()=>window.submitPurchaseQuotationEntry(matrix,target,submit));target.appendChild(submit);
+};
+window.updatePurchaseQuotationEntryTotal=function(row){
+ const get=name=>Number(row.querySelector('[data-field="'+name+'"]').value||0),qty=get('cantidadCotizada'),unit=get('precioUnitario'),discount=get('descuento'),tax=get('impuestos'),freight=get('flete'),total=Math.round((qty*unit-discount+tax+freight)*100)/100;
+ row.querySelector('[data-line-total]').textContent='L '+total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+ const grand=[...document.querySelectorAll('#cmp-entry-lines [data-line-total]')].reduce((sum,cell)=>sum+Number(cell.closest('tr').querySelector('[data-field="cantidadCotizada"]').value||0)*Number(cell.closest('tr').querySelector('[data-field="precioUnitario"]').value||0)-Number(cell.closest('tr').querySelector('[data-field="descuento"]').value||0)+Number(cell.closest('tr').querySelector('[data-field="impuestos"]').value||0)+Number(cell.closest('tr').querySelector('[data-field="flete"]').value||0),0);
+ const target=document.getElementById('cmp-entry-grand-total');if(target)target.textContent='Total ofertado: L '+Math.round(grand*100)/100;
+};
+window.submitPurchaseQuotationEntry=async function(matrix,target,button){
+ const rows=[...target.querySelectorAll('.cmp-quote-line')],details=rows.map(row=>{const value=name=>row.querySelector('[data-field="'+name+'"]').value;return {itemId:row.dataset.itemId,cantidadCotizada:Number(value('cantidadCotizada')),precioUnitario:Number(value('precioUnitario')),descuento:Number(value('descuento')||0),impuestos:Number(value('impuestos')||0),flete:Number(value('flete')||0),garantia:value('garantia'),cumplimientoTecnico:value('cumplimientoTecnico'),especificacionesCumplidas:value('cumplimientoTecnico')==='Cumple'};});
+ const total=Math.round(details.reduce((sum,line)=>sum+line.cantidadCotizada*line.precioUnitario-line.descuento+line.impuestos+line.flete,0)*100)/100;
+ const payload={solicitudId:matrix.solicitud.solicitudId,proveedorId:document.getElementById('cmp-entry-supplier-id').value.trim(),precioTotal:total,detalleItems:details,plazoEntregaDias:Number(document.getElementById('cmp-entry-delivery-days').value||5),vigenciaOferta:document.getElementById('cmp-entry-validity').value.trim(),condicionesPago:document.getElementById('cmp-entry-payment-terms').value.trim()};
+ button.disabled=true;button.textContent='Registrando...';
+ try{const result=await fetchBackendAccounting('submitPurchaseQuotation',payload);if(!result||result.status!=='success')throw new Error(result&&result.message||result&&result.code||'No se pudo registrar la cotización.');const message=document.createElement('div');message.className='rounded-lg bg-emerald-50 text-emerald-800 p-2 font-bold';message.textContent='Cotización '+result.cotizacionId+' registrada. Total: L '+total.toFixed(2);target.appendChild(message);window.switchComprasSubtab('cotizaciones');}
+ catch(error){const message=document.createElement('div');message.className='rounded-lg bg-red-50 text-red-700 p-2';message.textContent=error.message||'Error al registrar cotización.';target.appendChild(message);button.disabled=false;button.textContent='Registrar cotización';}
+};
 
 window.loadPurchaseQuotationMatrix=async function(){
  const requestInput=document.getElementById('cmp-matrix-request-id'),target=document.getElementById('cmp-matrix-result'),solicitudId=String(requestInput&&requestInput.value||'').trim();
