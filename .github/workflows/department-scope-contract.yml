@@ -41,6 +41,7 @@ on:
       - tests/security/department-reference-read-authorization.test.js
       - tests/security/department-reference-interservice-envelope.test.js
       - tests/security/academic-department-reference-consumer.test.js
+      - tests/security/accounting-department-reference-consumer.test.js
       - .github/workflows/department-scope-contract.yml
 
 permissions:
@@ -101,6 +102,8 @@ jobs:
         run: node tests/security/department-reference-interservice-envelope.test.js
       - name: Run ACADEMIC department reference consumer contract
         run: node tests/security/academic-department-reference-consumer.test.js
+      - name: Run ACCOUNTING department reference consumer contract
+        run: node tests/security/accounting-department-reference-consumer.test.js
       - name: Syntax-check updated Apps Script services
         run: |
           node --check < backend/user-service/Code.gs
