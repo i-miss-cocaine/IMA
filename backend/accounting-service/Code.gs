@@ -203,13 +203,13 @@ const ROLE_PERMISSIONS = {
   // REVISIÓN RBAC: Habilitar permiso processFamilyCreditPurchase para personal de tienda, cafetería, tutores y estudiantes
   "EncargadoTienda": ["getStoreProducts", "manageStoreProduct", "createStoreOrder", "getStoreOrders", "updateStoreOrderStatus", "recordInventoryMovement", "getInventoryKardex", "getInstitutionalPolicies", "processFamilyCreditPurchase"],
   "EncargadoCafeteria": ["getCafeteriaMenu", "manageCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "updateCafeteriaOrderStatus", "recordInventoryMovement", "getInventoryKardex", "getInstitutionalPolicies", "processFamilyCreditPurchase"],
-  "RecursosHumanos": ["initializeFinancialDriveStructure", "createEmployeeRecord", "getEmployeeRecords", "manageEmployeeContract", "getEmployeeContracts", "getEmployeeContractAlerts", "manageJobVacancy", "getJobVacancies", "submitJobCandidate", "getJobCandidates", "manageInterviewSchedule", "getInterviewSchedules", "processEmployeeOffboarding", "updateEmployeeLaborStatus", "configureWorkSchedule", "recordStaffCheckIn", "getStaffAttendanceLogs", "submitAttendanceCorrection", "reviewAttendanceCorrection", "submitLeaveVacationRequest", "getLeaveVacationRequests", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "getLoanAmortizationSchedule", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "uploadEmployeeDocument", "getEmployeeDocuments", "getHRDashboardAnalytics", "getInstitutionalPolicies", "managePerformancePeriod", "managePerformanceCriteria", "managePerformanceEvaluation", "getPerformanceEvaluations", "manageTrainingCourse", "manageTrainingEnrollment", "getEmployeeTrainingHistory", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "manageLaborIncident", "manageDisciplinaryMeasure", "getLaborIncidentsHistory", "manageStaffingNeeds", "getStaffingNeedsPlanning", "manageWorkShiftAndSubstitution", "getWorkShiftsAndSubstitutionsHistory", "getEmployeeSelfServicePortal", "verifyLaborAndTaxInformation", "runHRIntegrationAndRegressionTests", "runCriticalProcessConcurrencySuite"],
+  "RecursosHumanos": ["initializeFinancialDriveStructure", "createEmployeeRecord", "getEmployeeRecords", "manageEmployeeContract", "getEmployeeContracts", "getEmployeeContractAlerts", "manageJobVacancy", "getJobVacancies", "submitJobCandidate", "getJobCandidates", "manageInterviewSchedule", "getInterviewSchedules", "processEmployeeOffboarding", "updateEmployeeLaborStatus", "configureWorkSchedule", "recordStaffCheckIn", "getStaffAttendanceLogs", "submitAttendanceCorrection", "reviewAttendanceCorrection", "submitLeaveVacationRequest", "getLeaveVacationRequests", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "getLoanAmortizationSchedule", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "uploadEmployeeDocument", "getEmployeeDocuments", "getHRDashboardAnalytics", "getInstitutionalPolicies", "managePerformancePeriod", "managePerformanceCriteria", "managePerformanceEvaluation", "getPerformanceEvaluations", "manageTrainingCourse", "manageTrainingEnrollment", "getEmployeeTrainingHistory", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "manageLaborIncident", "manageDisciplinaryMeasure", "getLaborIncidentsHistory", "manageStaffingNeeds", "getStaffingNeedsPlanning", "manageWorkShiftAndSubstitution", "getWorkShiftsAndSubstitutionsHistory", "getEmployeeSelfServicePortal", "verifyLaborAndTaxInformation", "runHRIntegrationAndRegressionTests", "runCriticalProcessConcurrencySuite"],
   "Empleado": ["getEmployeeRecords", "getEmployeeContracts", "getEmployeeContractAlerts", "recordStaffCheckIn", "getStaffAttendanceLogs", "submitAttendanceCorrection", "submitLeaveVacationRequest", "getLeaveVacationRequests", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getEmployeeDocuments", "getPerformanceEvaluations", "getEmployeeTrainingHistory", "manageProfessionalDevelopmentPlan", "getEmployeeSelfServicePortal"],
   "Padre": ["getStudentAccountStatement", "getAdmissionFinancialStatus", "createAdmissionCharge", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "generatePaymentReceiptPDF", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getTransportAssignments", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "getStoreProducts", "createStoreOrder", "getStoreOrders", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "configureFamilyCreditAuthorization", "processFamilyCreditPurchase"],
   "Tutor": ["getStudentAccountStatement", "getAdmissionFinancialStatus", "createAdmissionCharge", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "generatePaymentReceiptPDF", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getTransportAssignments", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "getStoreProducts", "createStoreOrder", "getStoreOrders", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "configureFamilyCreditAuthorization", "processFamilyCreditPurchase"],
   "Responsable": ["getStudentAccountStatement", "getAdmissionFinancialStatus", "createAdmissionCharge", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "generatePaymentReceiptPDF", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getTransportAssignments", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "getStoreProducts", "createStoreOrder", "getStoreOrders", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "configureFamilyCreditAuthorization", "processFamilyCreditPurchase"],
   "Consejeros": ["getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments"],
-  "Profesor": ["getStaffPayrollReceipt", "submitVacationRequest", "getVacationRequests", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "verifySACETemplateCompatibility", "generateSACEReportFile", "fillAndExportSACETemplate", "validateSACETemplateFile", "getEmployeeSelfServicePortal"],
+  "Profesor": ["getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitVacationRequest", "getVacationRequests", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "verifySACETemplateCompatibility", "generateSACEReportFile", "fillAndExportSACETemplate", "validateSACETemplateFile", "getEmployeeSelfServicePortal"],
   "Asistente": ["getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "getDigitalResources", "getSchoolDocumentTemplates"],
   "Estudiante": ["getStudentAccountStatement", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "generatePaymentReceiptPDF", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getTransportAssignments", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "getStoreProducts", "createStoreOrder", "getStoreOrders", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase"],
   "Alumno": ["getStudentAccountStatement", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "generatePaymentReceiptPDF", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getTransportAssignments", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "getStoreProducts", "createStoreOrder", "getStoreOrders", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase"],
@@ -6461,7 +6461,7 @@ function generatePayrollReceiptPDF(payload) {
   const p=payload||{},actor=getVerifiedAccountingIdentity_(p);
   if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
   const role=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
-  const selfRole=["EMPLEADO","TRABAJADOR","PERSONAL"].indexOf(role)!==-1;
+  const selfRole=["EMPLEADO","TRABAJADOR","PERSONAL","PROFESOR"].indexOf(role)!==-1;
   if(!selfRole&&["RECURSOSHUMANOS","ADMINISTRADOR"].indexOf(role)===-1)return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
   const lock=LockService.getScriptLock();
   if(!lock.tryLock(30000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La generación está ocupada; intente nuevamente."};
@@ -6501,7 +6501,8 @@ function generatePayrollReceiptPDF(payload) {
     const matchingPlans=planRows.filter(r=>String(r[3]||"").trim()===targetExpedienteId&&(!requestedPlanilla||String(r[0]||"").trim()===requestedPlanilla)&&(!requestedPeriod||String(r[2]||"").trim()===requestedPeriod));
     if(matchingPlans.length!==1)return {status:"error",code:matchingPlans.length?"PLANILLA_SELECTION_REQUIRED":"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible o requiere seleccionar una planilla."};
     const plan=matchingPlans[0],planillaId=String(plan[0]||"").trim();
-    if(!planillaId||planRows.filter(r=>String(r[0]||"").trim()===planillaId).length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
+    if(!planillaId||planRows.filter(r=>String(r[0]||"").trim()===planillaId&&String(r[3]||"").trim()===targetExpedienteId&&String(r[2]||"").trim()===String(plan[2]||"").trim()).length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
+    if(String(plan[15]||"").trim().toUpperCase()!=="CERRADA")return {status:"error",code:"PAYROLL_NOT_CLOSED",message:"La boleta estará disponible cuando la planilla esté cerrada."};
     const visiblePayrollConcepts=[];
     const conceptDetailSheet=ss.getSheetByName("DetalleConceptosPlanilla");
     if(conceptDetailSheet){
@@ -6588,7 +6589,7 @@ function getPayrollReceiptPDFFile(payload){
   const actor=getVerifiedAccountingIdentity_(p);
   if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
   const role=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
-  if(["EMPLEADO","TRABAJADOR","PERSONAL","RECURSOSHUMANOS","ADMINISTRADOR"].indexOf(role)===-1)return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+  if(["EMPLEADO","TRABAJADOR","PERSONAL","PROFESOR","RECURSOSHUMANOS","ADMINISTRADOR"].indexOf(role)===-1)return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
   const ss=SpreadsheetApp.openById(SPREADSHEET_ID),boletaSheet=ss.getSheetByName("BoletasPago"),planSheet=ss.getSheetByName("PlanillasNomenclatura"),expSheet=ss.getSheetByName("ExpedientesLaborales");
   if(!boletaSheet||!planSheet||!expSheet)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Archivo no disponible."};
   const boletaData=boletaSheet.getDataRange().getValues(),boletaHeaders=["BoletaID","PlanillaID","FechaEmision","EmpleadoId","EmpleadoNombre","PeriodoMes","TotalDevengado","TotalDeducciones","NetoAPagar","EstadoBoleta","DriveFileId"];
@@ -6600,7 +6601,8 @@ function getPayrollReceiptPDFFile(payload){
   const planData=planSheet.getDataRange().getValues(),planHeaders=["PlanillaID","FechaGeneracion","PeriodoMes","EmpleadoId","EmpleadoNombre","CargoPuesto","SalarioBase","HorasExtras","MontoHorasExtras","Bonificaciones","DeduccionIHSS","DeduccionRAP","DeduccionISR","OtrasDeducciones","SalarioNeto","Estado","PatronalIHSS","PatronalRAP","PatronalINFOP","CostoLaboralTotal"];
   if(!planData.length||JSON.stringify(planData[0].map(String))!==JSON.stringify(planHeaders))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de planillas no es válida."};
   const planRows=planData.slice(1),matches=planRows.filter(r=>String(r[0]||"").trim()===planillaId&&String(r[3]||"").trim()===expedienteId&&String(r[2]||"").trim()===period);
-  if(matches.length!==1||planRows.filter(r=>String(r[0]||"").trim()===planillaId).length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Archivo no disponible."};
+  if(matches.length!==1||planRows.filter(r=>String(r[0]||"").trim()===planillaId&&String(r[3]||"").trim()===expedienteId&&String(r[2]||"").trim()===period).length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Archivo no disponible."};
+  if(String(matches[0][15]||"").trim().toUpperCase()!=="CERRADA")return {status:"error",code:"PAYROLL_NOT_CLOSED",message:"La boleta estará disponible cuando la planilla esté cerrada."};
   const expData=expSheet.getDataRange().getValues(),expHeaders=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
   if(!expData.length||JSON.stringify(expData[0].map(String))!==JSON.stringify(expHeaders))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de expedientes laborales no es válida."};
   const employeeRows=expData.slice(1).filter(r=>String(r[0]||"").trim()===expedienteId),userId=employeeRows.length===1?String(employeeRows[0][2]||"").trim():"";
@@ -7040,8 +7042,8 @@ function getStaffPayrollReceipt(payload) {
  if(target&&expCounts[target]!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
  const cache=Object.create(null),allowed=id=>{id=String(id||"").trim();if(!id||expCounts[id]!==1||!expUser[id])return false;if(!Object.prototype.hasOwnProperty.call(cache,id))cache[id]=assertEmployeeExpedienteScopeAccess_(p,ss,id);return !!cache[id].authorized;};
  if(target&&!allowed(target))return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};
- const ids=Object.create(null);pl.rows.forEach(r=>{const id=String(r[0]||"").trim();if(id)ids[id]=(ids[id]||0)+1;});
- let selected=pl.rows.filter(r=>{const id=String(r[0]||"").trim(),e=String(r[3]||"").trim();return !!id&&ids[id]===1&&!!e&&(!target||e===target)&&(!period||String(r[2]||"").trim()===period)&&allowed(e);});
+ const ids=Object.create(null);pl.rows.forEach(r=>{const key=[String(r[0]||"").trim(),String(r[3]||"").trim(),String(r[2]||"").trim()].join("|");if(key!=="||")ids[key]=(ids[key]||0)+1;});
+ let selected=pl.rows.filter(r=>{const id=String(r[0]||"").trim(),e=String(r[3]||"").trim(),key=[id,e,String(r[2]||"").trim()].join("|");return !!id&&!!e&&ids[key]===1&&String(r[15]||"").trim().toUpperCase()==="CERRADA"&&(!target||e===target)&&(!period||String(r[2]||"").trim()===period)&&allowed(e);});
  if(bid){const found=bo.rows.filter(r=>String(r[0]||"").trim()===bid);if(found.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};const b=found[0];selected=selected.filter(r=>String(r[0]||"").trim()===String(b[1]||"").trim()&&String(r[3]||"").trim()===String(b[3]||"").trim()&&String(r[2]||"").trim()===String(b[5]||"").trim());if(!selected.length)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Boleta de pago no disponible."};}
  return {status:"success",boletas:selected.map(r=>{
   const matches=bo.rows.filter(b=>String(b[1]||"").trim()===String(r[0]||"").trim()&&String(b[3]||"").trim()===String(r[3]||"").trim()&&String(b[5]||"").trim()===String(r[2]||"").trim());
@@ -7049,6 +7051,183 @@ function getStaffPayrollReceipt(payload) {
   const boletaId=storedFileId?String(matches[0][0]||"").trim():"";
   return {planillaId:r[0],fechaGeneracion:r[1],periodoMes:r[2],empleadoId:r[3],empleadoNombre:r[4],puesto:r[5],salarioBase:parseFloat(r[6]||0),horasExtras:parseFloat(r[7]||0),montoHorasExtras:parseFloat(r[8]||0),bonificaciones:parseFloat(r[9]||0),deduccionIHSS:parseFloat(r[10]||0),deduccionRAP:parseFloat(r[11]||0),deduccionISR:parseFloat(r[12]||0),otrasDeducciones:parseFloat(r[13]||0),salarioNeto:parseFloat(r[14]||0),estado:r[15],boletaId:boletaId};
  })};
+}
+
+
+function getPayrollReceiptDistributionHeaders_() {
+  return ["DistribucionID","PlanillaID","BoletaID","ExpedienteID","UserId","Estado","Intentos","UltimoIntento","EnviadoEn","EnviadoPor","ErrorCode","DriveFileId"];
+}
+function ensurePayrollReceiptDistributionSheet_(ss) {
+  const sheet=ss.getSheetByName("DistribucionBoletasPago")||getOrCreateSheet(ss,"DistribucionBoletasPago");
+  let data=sheet.getDataRange().getValues(),headers=getPayrollReceiptDistributionHeaders_();
+  if(!data.length||!data[0]||!data[0].length){sheet.getRange(1,1,1,headers.length).setValues([headers]);data=[headers];}
+  if(data[0].length!==headers.length||headers.some((h,i)=>String(data[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))throw new Error("RESOURCE_SCHEMA_INVALID: DistribucionBoletasPago");
+  return {sheet,headers,rows:data.slice(1)};
+}
+function requirePayrollReceiptDistributionManager_(payload) {
+  const actor=getVerifiedAccountingIdentity_(payload||{});
+  if(!actor.authorized)return {authorized:false,code:actor.code||"VERIFIED_IDENTITY_REQUIRED"};
+  if(!["RECURSOSHUMANOS","ADMINISTRADOR"].includes(normalizePayrollRole_(actor.role)))return {authorized:false,code:"ROLE_NOT_ALLOWED"};
+  return {authorized:true,actor};
+}
+function getPayrollReceiptDistributionContext_(payload,ss,planillaId) {
+  const planSheet=ss.getSheetByName("PlanillasNomenclatura"),expSheet=ss.getSheetByName("ExpedientesLaborales"),userSheet=ss.getSheetByName("Usuarios");
+  if(!planSheet||!expSheet||!userSheet)return {error:"RESOURCE_NOT_FOUND",message:"No hay datos suficientes para distribuir las boletas."};
+  const planHeaders=["PlanillaID","FechaGeneracion","PeriodoMes","EmpleadoId","EmpleadoNombre","CargoPuesto","SalarioBase","HorasExtras","MontoHorasExtras","Bonificaciones","DeduccionIHSS","DeduccionRAP","DeduccionISR","OtrasDeducciones","SalarioNeto","Estado","PatronalIHSS","PatronalRAP","PatronalINFOP","CostoLaboralTotal"];
+  const expHeaders=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
+  const planData=planSheet.getDataRange().getValues(),expData=expSheet.getDataRange().getValues(),userData=userSheet.getDataRange().getValues();
+  if(!planData.length||planData[0].length!==planHeaders.length||planHeaders.some((h,i)=>String(planData[0][i]||"").trim().toUpperCase()!==h.toUpperCase())||!expData.length||expData[0].length!==expHeaders.length||expHeaders.some((h,i)=>String(expData[0][i]||"").trim().toUpperCase()!==h.toUpperCase())||!userData.length||!userData[0]||userData[0].length<11)return {error:"RESOURCE_SCHEMA_INVALID",message:"La estructura de planillas, expedientes o usuarios no es válida."};
+  const plans=planData.slice(1).filter(r=>String(r[0]||"").trim()===planillaId);
+  if(!plans.length)return {error:"RESOURCE_NOT_FOUND",message:"La planilla seleccionada no está disponible."};
+  if(plans.some(r=>!Array.isArray(r)||r.length!==planHeaders.length))return {error:"RESOURCE_SCHEMA_INVALID",message:"La estructura de la planilla no es válida."};
+  if(plans.some(r=>String(r[15]||"").trim().toUpperCase()!=="CERRADA"))return {error:"PAYROLL_NOT_CLOSED",message:"La distribución solo está permitida cuando toda la planilla está cerrada."};
+  const periods=Array.from(new Set(plans.map(r=>String(r[2]||"").trim())));
+  if(periods.length!==1||!periods[0])return {error:"PAYROLL_PERIOD_CONFLICT",message:"La planilla contiene períodos inconsistentes."};
+  const expRows=expData.slice(1),users=userData.slice(1),expCounts=Object.create(null),userCounts=Object.create(null),emailCounts=Object.create(null),planKeyCounts=Object.create(null);
+  expRows.forEach(r=>{const id=String(r[0]||"").trim(),u=String(r[2]||"").trim();if(id)expCounts[id]=(expCounts[id]||0)+1;if(u)userCounts[u]=(userCounts[u]||0)+1;});
+  users.forEach(r=>{const id=String(r[0]||"").trim(),email=String(r[4]||"").trim().toLowerCase();if(id)userCounts["USER:"+id]=(userCounts["USER:"+id]||0)+1;if(email)emailCounts[email]=(emailCounts[email]||0)+1;});
+  plans.forEach(r=>{const key=[String(r[0]||"").trim(),String(r[3]||"").trim(),String(r[2]||"").trim()].join("|");planKeyCounts[key]=(planKeyCounts[key]||0)+1;});
+  const records=[],incidents=[];let scopeBlocked=0;
+  plans.forEach(r=>{
+    const expedienteId=String(r[3]||"").trim(),employeeName=String(r[4]||"").trim(),key=[planillaId,expedienteId,String(r[2]||"").trim()].join("|");
+    if(!expedienteId||planKeyCounts[key]!==1){incidents.push({empleadoId:expedienteId,empleadoNombre:employeeName,motivo:"PLANILLA_ROW_AMBIGUOUS"});return;}
+    const matches=expRows.filter(x=>String(x[0]||"").trim()===expedienteId);
+    if(matches.length!==1||expCounts[expedienteId]!==1){incidents.push({empleadoId:expedienteId,empleadoNombre:employeeName,motivo:"EXPEDIENTE_AMBIGUOUS"});return;}
+    const access=assertEmployeeExpedienteScopeAccess_(payload,ss,expedienteId);
+    if(!access.authorized){scopeBlocked++;incidents.push({empleadoId:expedienteId,empleadoNombre:"",motivo:"OUT_OF_SCOPE"});return;}
+    const userId=String(matches[0][2]||"").trim();
+    if(!userId||userCounts[userId]!==1||userCounts["USER:"+userId]!==1){incidents.push({empleadoId:expedienteId,empleadoNombre:employeeName,motivo:"USER_AMBIGUOUS"});return;}
+    const userMatches=users.filter(x=>String(x[0]||"").trim()===userId);
+    if(userMatches.length!==1){incidents.push({empleadoId:expedienteId,empleadoNombre:employeeName,motivo:"USER_NOT_FOUND"});return;}
+    const user=userMatches[0],email=String(user[4]||"").trim(),accountState=String(user[10]||"Activa").trim().toUpperCase();
+    let emailReason="";
+    if(accountState!=="ACTIVA")emailReason="USER_INACTIVE";
+    else if(!email)emailReason="EMAIL_MISSING";
+    else if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))emailReason="EMAIL_INVALID";
+    else if(emailCounts[email.toLowerCase()]!==1)emailReason="EMAIL_DUPLICATE";
+    records.push({planillaId,periodoMes:periods[0],expedienteId,userId,empleadoNombre:employeeName,email,emailValid:!emailReason,emailReason});
+    if(emailReason)incidents.push({empleadoId:expedienteId,empleadoNombre:employeeName,motivo:emailReason});
+  });
+  return {planillaId,periodoMes:periods[0],total:plans.length,records,incidents,scopeBlocked};
+}
+function preparePayrollReceiptDistributionRows_(ss,context,actor) {
+  const dist=ensurePayrollReceiptDistributionSheet_(ss),rows=dist.rows;
+  context.records.forEach(record=>{
+    const matches=rows.map((r,i)=>({r,index:i+2})).filter(x=>String(x.r[1]||"").trim()===record.planillaId&&String(x.r[3]||"").trim()===record.expedienteId);
+    if(matches.length>1)throw new Error("PAYROLL_DISTRIBUTION_DUPLICATE");
+    if(!matches.length){
+      const state=record.emailValid?"PENDIENTE":"FALLIDO";
+      dist.sheet.appendRow(["DIST-"+Utilities.getUuid(),record.planillaId,"",record.expedienteId,record.userId,state,0,"","",actor.userId,record.emailReason||"",""]);
+      return;
+    }
+    const found=matches[0],old=found.r.slice(),state=String(old[5]||"").trim().toUpperCase(),error=String(old[10]||"").trim();
+    if(state==="ENVIADO"||state==="PROCESANDO")return;
+    if(!record.emailValid){old[5]="FALLIDO";old[10]=record.emailReason;old[4]=record.userId;}
+    else if(state==="FALLIDO"&&/^(EMAIL_|USER_INACTIVE)/.test(error)){old[5]="PENDIENTE";old[10]="";old[4]=record.userId;}
+    else if(state==="PENDIENTE"||state==="REINTENTABLE"){old[4]=record.userId;}
+    dist.sheet.getRange(found.index,1,1,dist.headers.length).setValues([old]);
+  });
+  return ensurePayrollReceiptDistributionSheet_(ss);
+}
+function getPayrollReceiptDistributionSummary_(ss,context) {
+  const dist=ensurePayrollReceiptDistributionSheet_(ss),allowed=Object.create(null);
+  context.records.forEach(r=>{allowed[r.expedienteId]=true;});
+  const rows=dist.rows.filter(r=>String(r[1]||"").trim()===context.planillaId&&allowed[String(r[3]||"").trim()]);
+  const count=state=>rows.filter(r=>String(r[5]||"").trim().toUpperCase()===state).length;
+  return {status:"success",planillaId:context.planillaId,periodoMes:context.periodoMes,totalEmpleados:context.total,empleadosEnAmbito:context.records.length,correosValidos:context.records.filter(r=>r.emailValid).length,correosFaltantes:context.records.filter(r=>r.emailReason==="EMAIL_MISSING").length,correosInvalidos:context.records.filter(r=>r.emailReason&&r.emailReason!=="EMAIL_MISSING").length,fueraDeAmbito:context.scopeBlocked,yaEnviados:count("ENVIADO"),pendientes:count("PENDIENTE"),reintentables:count("REINTENTABLE"),fallidos:count("FALLIDO"),enProceso:count("PROCESANDO"),incidencias:context.incidents.slice(0,100)};
+}
+function previewPayrollReceiptDistribution(payload) {
+  const p=payload||{},access=requirePayrollReceiptDistributionManager_(p);
+  if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
+  const planillaId=String(p.planillaId||"").trim();if(!planillaId)return {status:"error",code:"PLANILLA_SELECTION_REQUIRED",message:"Seleccione una planilla."};
+  const lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La distribución está ocupada."};
+  try{
+    const ss=SpreadsheetApp.openById(SPREADSHEET_ID),context=getPayrollReceiptDistributionContext_(p,ss,planillaId);
+    if(context.error)return {status:"error",code:context.error,message:context.message};
+    preparePayrollReceiptDistributionRows_(ss,context,access.actor);
+    return getPayrollReceiptDistributionSummary_(ss,context);
+  }catch(e){return {status:"error",code:e.message==="PAYROLL_DISTRIBUTION_DUPLICATE"?e.message:"PAYROLL_DISTRIBUTION_PREVIEW_FAILED",message:"No fue posible preparar la vista previa de distribución."};}
+  finally{lock.releaseLock();}
+}
+function getPayrollPortalLoginUrl_() {
+  let configured="";
+  try{const props=PropertiesService.getScriptProperties();configured=String(props.getProperty("IMA_FRONTEND_URL")||props.getProperty("FRONTEND_URL")||"").trim();}catch(_){}
+  if(!/^https:\/\/[^/]+/.test(configured))configured="https://informatica0101.github.io";
+  return /\/login\.html$/i.test(configured)?configured:configured.replace(/\/+$/,"")+"/login.html";
+}
+function updatePayrollReceiptDistributionRow_(ss,distributionId,changes) {
+  const lock=LockService.getScriptLock();if(!lock.tryLock(5000))return false;
+  try{
+    const dist=ensurePayrollReceiptDistributionSheet_(ss),matches=dist.rows.map((r,i)=>({r,index:i+2})).filter(x=>String(x.r[0]||"").trim()===distributionId);
+    if(matches.length!==1||String(matches[0].r[5]||"").trim().toUpperCase()!=="PROCESANDO")return false;
+    const updated=matches[0].r.slice();
+    if(changes.boletaId!==undefined)updated[2]=changes.boletaId;
+    if(changes.estado!==undefined)updated[5]=changes.estado;
+    if(changes.ultimoIntento!==undefined)updated[7]=changes.ultimoIntento;
+    if(changes.enviadoEn!==undefined)updated[8]=changes.enviadoEn;
+    if(changes.enviadoPor!==undefined)updated[9]=changes.enviadoPor;
+    if(changes.errorCode!==undefined)updated[10]=changes.errorCode;
+    if(changes.driveFileId!==undefined)updated[11]=changes.driveFileId;
+    dist.sheet.getRange(matches[0].index,1,1,dist.headers.length).setValues([updated]);
+    return true;
+  }catch(_){return false;}finally{lock.releaseLock();}
+}
+function processPayrollReceiptDistribution(payload) {
+  const p=payload||{},access=requirePayrollReceiptDistributionManager_(p);
+  if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
+  const planillaId=String(p.planillaId||"").trim(),mode=String(p.modo||"ENVIAR").trim().toUpperCase();
+  if(!planillaId||!["ENVIAR","REINTENTAR"].includes(mode))return {status:"error",code:"PAYROLL_DISTRIBUTION_REQUEST_INVALID",message:"Planilla o modo de distribución no válido."};
+  const preview=previewPayrollReceiptDistribution(p);if(preview.status!=="success")return preview;
+  if(typeof MailApp==="undefined"||typeof MailApp.sendEmail!=="function")return {status:"error",code:"MAIL_SERVICE_UNAVAILABLE",message:"El servicio de correo no está disponible."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),lock=LockService.getScriptLock();
+  if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La distribución está ocupada."};
+  let claimed=[];
+  try{
+    const context=getPayrollReceiptDistributionContext_(p,ss,planillaId);if(context.error)return {status:"error",code:context.error,message:context.message};
+    const dist=ensurePayrollReceiptDistributionSheet_(ss),byEmployee=Object.create(null);
+    context.records.forEach(r=>{byEmployee[r.expedienteId]=r;});
+    const candidates=dist.rows.map((r,i)=>({r,index:i+2})).filter(x=>String(x.r[1]||"").trim()===planillaId&&String(x.r[5]||"").trim().toUpperCase()===(mode==="ENVIAR"?"PENDIENTE":"REINTENTABLE")&&byEmployee[String(x.r[3]||"").trim()]&&byEmployee[String(x.r[3]||"").trim()].emailValid);
+    let limit=Math.max(1,Math.min(20,Number(p.limite)||10));
+    if(typeof MailApp.getRemainingDailyQuota==="function"){
+      const quota=Number(MailApp.getRemainingDailyQuota());
+      if(!Number.isFinite(quota)||quota<=0)return {status:"error",code:"MAIL_QUOTA_EXCEEDED",message:"No hay cuota diaria de correo disponible."};
+      limit=Math.min(limit,quota);
+    }
+    candidates.slice(0,limit).forEach(item=>{
+      const updated=item.r.slice();updated[5]="PROCESANDO";updated[6]=Number(updated[6]||0)+1;updated[7]=new Date();updated[9]=access.actor.userId;updated[10]="";
+      dist.sheet.getRange(item.index,1,1,dist.headers.length).setValues([updated]);
+      const record=byEmployee[String(updated[3]||"").trim()];
+      claimed.push({distributionId:String(updated[0]),expedienteId:record.expedienteId,email:record.email,record});
+    });
+  }catch(e){return {status:"error",code:"PAYROLL_DISTRIBUTION_CLAIM_FAILED",message:"No fue posible reservar los envíos."};}
+  finally{lock.releaseLock();}
+  let sent=0,retryable=0,failed=0;
+  claimed.forEach(item=>{
+    let generated;
+    try{
+      generated=generatePayrollReceiptPDF(Object.assign({},p,{planillaId:planillaId,empleadoId:item.expedienteId}));
+      if(!generated||generated.status!=="success"){
+        const code=String(generated&&generated.code||"PAYROLL_PDF_GENERATION_FAILED");
+        const retry=["CONCURRENT_UPDATE_RETRY","PAYROLL_PDF_GENERATION_FAILED","PAYROLL_PDF_DELIVERY_FAILED","PAYROLL_PDF_UNAVAILABLE"].includes(code);
+        updatePayrollReceiptDistributionRow_(ss,item.distributionId,{estado:retry?"REINTENTABLE":"FALLIDO",errorCode:retry?"PDF_GENERATION_RETRYABLE":code});
+        if(retry)retryable++;else failed++;
+        return;
+      }
+      const portalUrl=getPayrollPortalLoginUrl_();
+      const body="Tiene un nuevo comprobante de nómina disponible en su cuenta institucional. Inicie sesión en el Portal Institucional y abra Nómina > Mis boletas:\n"+portalUrl+"\n\nPor seguridad, el comprobante no se adjunta a este correo. El portal requiere autenticación y solo muestra sus propios documentos.";
+      const htmlBody='<p>Tiene un nuevo comprobante de nómina disponible en su cuenta institucional.</p><p>Inicie sesión en el <a href="'+portalUrl+'">Portal Institucional</a> y abra <strong>Nómina &gt; Mis boletas</strong>.</p><p>Por seguridad, el comprobante no se adjunta a este correo. El portal requiere autenticación y solo muestra sus propios documentos.</p>';
+      MailApp.sendEmail({to:item.email,subject:"Comprobante de nómina disponible",body:body,htmlBody:htmlBody});
+      updatePayrollReceiptDistributionRow_(ss,item.distributionId,{boletaId:String(generated.boletaId||""),estado:"ENVIADO",enviadoEn:new Date(),errorCode:""});
+      sent++;
+    }catch(e){
+      updatePayrollReceiptDistributionRow_(ss,item.distributionId,{estado:"REINTENTABLE",errorCode:"MAIL_SEND_FAILED"});
+      retryable++;
+    }
+    if(generated&&generated.fileData)generated.fileData="";
+  });
+  const finalSheet=ensurePayrollReceiptDistributionSheet_(ss),rows=finalSheet.rows.filter(r=>String(r[1]||"").trim()===planillaId);
+  const count=state=>rows.filter(r=>String(r[5]||"").trim().toUpperCase()===state).length;
+  return {status:"success",planillaId:planillaId,modo:mode,procesados:claimed.length,enviados:sent,reintentables:retryable,fallidos:failed,pendientesRestantes:count("PENDIENTE"),reintentosRestantes:count("REINTENTABLE"),enProceso:count("PROCESANDO"),message:"Lote de distribución procesado. Los envíos exitosos no se vuelven a enviar."};
 }
 
 // [REQ-EXP-015] [Requerimientos de Expansión y Desarrollo] - Control de inventarios Kardex, activo fijo, custodia, mantenimientos y proveedores.
