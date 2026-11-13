@@ -4769,6 +4769,13 @@ function getPayrollConceptAssignments(payload) {
   try{const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(p,ss,access.actor),data=ensurePayrollConceptSheet_(ss,"AsignacionesConceptosPlanilla",getPayrollAssignmentHeaders_());const rows=data.rows.filter(r=>scope&&scope.institutionWide||String(r[4]||"")&&scope&&scope.departmentIds.map(String).includes(String(r[4]||""))||String(r[2]||"")==="EMPLEADO"&&String(r[3]||"")===access.actor.userId);return {status:"success",asignaciones:rows.map(r=>({asignacionId:r[0],codigoConcepto:r[1],tipoAsignacion:r[2],valorAsignacion:r[3],departamentoScope:r[4],valorOverride:r[5],fechaInicio:r[6],fechaFin:r[7],frecuencia:r[8],periodoUnico:r[9],estado:r[10],observaciones:r[11]}))};}catch(e){return {status:"error",code:"PAYROLL_CONCEPT_ASSIGNMENTS_INVALID",message:"No fue posible leer las asignaciones."};}
 }
 
+function appendPayrollConceptDetailRows_(ss,rows) {
+  if(!rows||!rows.length)return 0;
+  const detail=ensurePayrollConceptSheet_(ss,"DetalleConceptosPlanilla",getPayrollConceptDetailHeaders_());
+  const start=detail.sheet.getLastRow()+1;
+  detail.sheet.getRange(start,1,rows.length,detail.headers.length).setValues(rows);
+  return rows.length;
+}
 function calculatePayrollPeriod(payload) {
   const { periodoMes, idempotencyToken } = payload || {};
   if (!periodoMes) throw new Error("periodoMes requerido.");
@@ -4778,6 +4785,7 @@ function calculatePayrollPeriod(payload) {
 
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const payrollConceptEngine = getPayrollConceptEngine_(ss);
     const planSheet = getOrCreateSheet(ss, "PlanillasNomenclatura");
     const expsRows = getOrCreateSheet(ss, "ExpedientesLaborales").getDataRange().getValues().slice(1);
     const ctrsSheet = getOrCreateSheet(ss, "ContratosLaborales");
@@ -4846,6 +4854,7 @@ function calculatePayrollPeriod(payload) {
     const vacUpdates = [];
     const incUpdates = [];
     const payrollLoanLedgerEvents = [];
+    const payrollConceptDetailRows = [];
 
     // Función auxiliar para parsear fechas de forma segura
     function parseSafeDate(val) {
@@ -5044,16 +5053,30 @@ function calculatePayrollPeriod(payload) {
         }
       });
 
-      const bonificaciones = 0;
-      const otrasDedBase = parseFloat((deduccionTardanzas + deduccionAusencias + deduccionPermisosSinSueldo).toFixed(2));
+      const conceptContext = {
+        salarioBase: salarioBase,
+        devengado: salarioBase + montoHorasExtras,
+        horasExtras: montoHorasExtras,
+        baseCotizable: salarioBase + montoHorasExtras,
+        baseISR: salarioBase + montoHorasExtras,
+        diasTrabajados: workedDays,
+        diasPeriodo: daysInPeriod,
+        ihss: 0, rap: 0, isr: 0, salarioNeto: 0,
+        conceptValues: Object.create(null)
+      };
+      const incomeConcepts = calculatePayrollConceptPhase_(payrollConceptEngine,e,empUserId,periodoMes,planillaId,conceptContext,1,Infinity);
+      const bonificaciones = incomeConcepts.total;
+      const conceptDetails = incomeConcepts.details.slice();
+      const otrasDedExisting = parseFloat((deduccionTardanzas + deduccionAusencias + deduccionPermisosSinSueldo).toFixed(2));
 
-      // Deducciones de Ley Honduras (IHSS, RAP)
-      const dedIHSS = parseFloat((Math.min(salarioBase, 10317.38) * 0.035).toFixed(2));
-      const dedRAP = parseFloat((Math.max(0, salarioBase - 10317.38) * 0.015).toFixed(2));
+      // Deducciones de Ley Honduras (IHSS, RAP), incluyendo conceptos dinámicos cotizables.
+      const baseCotizable = parseFloat((salarioBase + montoHorasExtras + incomeConcepts.cotizableIncome).toFixed(2));
+      const dedIHSS = parseFloat((Math.min(baseCotizable, 10317.38) * 0.035).toFixed(2));
+      const dedRAP = parseFloat((Math.max(0, baseCotizable - 10317.38) * 0.015).toFixed(2));
 
       // [TASK-010] [F17-Task04] - Motor de retención progresiva anualizada del Impuesto Sobre la Renta (SAR Art. 22)
       // 1. Proyección de ingresos anuales gravables (12 meses de salario ordinario contractual más horas extras proyectadas)
-      const annualGross = (contractualSalary * 12) + (montoHorasExtras * 12);
+      const annualGross = (contractualSalary * 12) + (montoHorasExtras * 12) + (incomeConcepts.taxableIncome * 12);
 
       // 2. Deducciones de ley autorizadas:
       // - Deducción fija por gastos médicos de ley conforme al Código Tributario / Art. 22: L 40,000.00 anuales
@@ -5094,11 +5117,22 @@ function calculatePayrollPeriod(payload) {
       const dedISR = parseFloat((annualTax > 0 ? (annualTax / 12) : 0).toFixed(2));
 
       const totalDevengado = parseFloat((salarioBase + montoHorasExtras + bonificaciones).toFixed(2));
+      conceptContext.devengado = totalDevengado;
+      conceptContext.baseCotizable = baseCotizable;
+      conceptContext.baseISR = parseFloat((salarioBase + montoHorasExtras + incomeConcepts.taxableIncome).toFixed(2));
+      conceptContext.ihss = dedIHSS;conceptContext.rap = dedRAP;conceptContext.isr = dedISR;
+      conceptContext.salarioNeto = Math.max(0,totalDevengado-dedIHSS-dedRAP-dedISR-otrasDedExisting);
+      const deductionConcepts = calculatePayrollConceptPhase_(payrollConceptEngine,e,empUserId,periodoMes,planillaId,conceptContext,2,Math.max(0,conceptContext.salarioNeto));
+      conceptDetails.push.apply(conceptDetails,deductionConcepts.details);
+      const otrasDedBase = parseFloat((otrasDedExisting + deductionConcepts.total).toFixed(2));
       const loanAllocation = calculatePayrollLoanDeductions_(ss, empUserId || empExpId, periodoMes, planillaId, Math.max(0, totalDevengado - dedIHSS - dedRAP - dedISR - otrasDedBase));
       const otrasDed = parseFloat((otrasDedBase + loanAllocation.total).toFixed(2));
       if (loanAllocation.events.length) payrollLoanLedgerEvents.push.apply(payrollLoanLedgerEvents, loanAllocation.events);
-      const totalDeducciones = parseFloat((dedIHSS + dedRAP + dedISR + otrasDed).toFixed(2));
-      const salarioNeto = parseFloat(Math.max(0, totalDevengado - totalDeducciones).toFixed(2));
+      const salarioNeto = parseFloat(Math.max(0, totalDevengado - dedIHSS - dedRAP - dedISR - otrasDed).toFixed(2));
+      conceptContext.salarioNeto = salarioNeto;
+      const employerConcepts = calculatePayrollConceptPhase_(payrollConceptEngine,e,empUserId,periodoMes,planillaId,conceptContext,3,Infinity);
+      conceptDetails.push.apply(conceptDetails,employerConcepts.details);
+      if(conceptDetails.length)payrollConceptDetailRows.push.apply(payrollConceptDetailRows,conceptDetails);
 
       // [TASK-009] [F17-Task03] - Aportaciones patronales independientes y costo laboral institucional total
       // Legislación de Honduras:
@@ -5108,7 +5142,7 @@ function calculatePayrollPeriod(payload) {
       const patronalIHSS = parseFloat((Math.min(salarioBase, 10317.38) * 0.072).toFixed(2));
       const patronalRAP = parseFloat((Math.max(0, salarioBase - 10317.38) * 0.015).toFixed(2));
       const patronalINFOP = parseFloat((salarioBase * 0.01).toFixed(2));
-      const costoLaboralTotal = parseFloat((totalDevengado + patronalIHSS + patronalRAP + patronalINFOP).toFixed(2));
+      const costoLaboralTotal = parseFloat((totalDevengado + patronalIHSS + patronalRAP + patronalINFOP + employerConcepts.total).toFixed(2));
 
       processedRows.push([
         planillaId,
@@ -5140,9 +5174,18 @@ function calculatePayrollPeriod(payload) {
 
     if (processedRows.length > 0) {
       if (payrollLoanLedgerEvents.length) appendPayrollLoanLedgerEvents_(ss, payrollLoanLedgerEvents);
+      const planStartRow = planSheet.getLastRow() + 1;
+      let detailStartRow = 0, detailSheet = null;
       try {
-        planSheet.getRange(planSheet.getLastRow() + 1, 1, processedRows.length, 20).setValues(processedRows);
+        planSheet.getRange(planStartRow, 1, processedRows.length, 20).setValues(processedRows);
+        if (payrollConceptDetailRows.length) {
+          const detail = ensurePayrollConceptSheet_(ss,"DetalleConceptosPlanilla",getPayrollConceptDetailHeaders_());
+          detailSheet = detail.sheet;detailStartRow = detail.sheet.getLastRow() + 1;
+          detail.sheet.getRange(detailStartRow,1,payrollConceptDetailRows.length,detail.headers.length).setValues(payrollConceptDetailRows);
+        }
       } catch (writeError) {
+        try { planSheet.getRange(planStartRow,1,processedRows.length,20).clearContent(); } catch (_) {}
+        if(detailSheet&&detailStartRow){try{detailSheet.getRange(detailStartRow,1,payrollConceptDetailRows.length,getPayrollConceptDetailHeaders_().length).clearContent();}catch(_){}}
         if (payrollLoanLedgerEvents.length) {
           const cancellations = payrollLoanLedgerEvents.map(r => ["PLM-"+Utilities.getUuid(),r[1],r[2],r[3],r[4],r[5],r[6],r[6],r[8],"CANCELADO",new Date(),"SYSTEM_ROLLBACK",r[0],"Planilla write rollback"]);
           appendPayrollLoanLedgerEvents_(ss,cancellations);
