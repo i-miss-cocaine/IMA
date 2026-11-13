@@ -869,3 +869,15 @@
 - **Estado:** F18-Task01 completada en código y CI; la dependencia técnica indicada por TASK-182 queda satisfecha en el entorno local/CI. La validación de Sheets desplegado permanece separada.
 - **Siguiente tarea elegible:** TASK-182 — integrar la recepción de compras con el registro de activos fijos; verificar contratos de recepción, clasificación capitalizable, serie única, ownership y trazabilidad de orden/proveedor/factura.
 ===============================================================================
+
+
+===============================================================================
+### C1.710 — IMA-EXEC-20261113-2047Z-01 — corrección de continuidad F18-Task01
+- **Continuidad:** C1.709; se detectó durante la auditoría posterior que el commit documental C1.709 se construyó desde el árbol de C1.708 y no heredó el commit de implementación F18-Task01; por ello, aunque el historial contenía fd47a23/5c5d26c, el árbol alcanzable desde el HEAD no contenía esos cambios. No se conserva la afirmación de cierre de C1.709 como evidencia válida de código.
+- **HEAD de recuperación inicial:** 43c1b5c03ab79cbf1075e4ce33e6f436e5d2142e; **HEAD final verificado:** 498a1c197d92466cd7c02331de786d89ac902e7c.
+- **Corrección:** se reconstruyeron los cambios de F18-Task01 sobre el árbol real de 43c1b5c, incluyendo backend, contrato Node, paso CI y estado del hallazgo. Se verificaron explícitamente los blobs del árbol final: backend/accounting-service/Code.gs (031716af769328aab7ea02de4fb960782422f3dd), test (4cd2958413528baa8ba15d4b022a18208200d873), workflow con el paso activo y auditoría con estado Completada.
+- **Verificación final:** Department Scope 43504666992 SUCCESS; Identity Mapping 43504667021 SUCCESS; Department Reference Consumers 43504666993 SUCCESS. El paso de contrato F18-Task01 y syntax-check de Apps Script PASS en Node.js 24.22.2. No se declara CLI local ni Apps Script/Sheets real.
+- **Commit de recuperación:** 498a1c197d92466cd7c02331de786d89ac902e7c.
+- **Estado:** F18-Task01 queda verificada por el árbol alcanzable desde HEAD y por CI. C1.709 se conserva como registro histórico con esta rectificación explícita; no se reescribió ni eliminó.
+- **Siguiente tarea elegible:** TASK-182, sujeta a inspección de autorización, esquema patrimonial, recibos conformes, factura vinculada, serie única y rollback.
+===============================================================================
