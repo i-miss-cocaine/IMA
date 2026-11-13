@@ -18,7 +18,10 @@ const dep=["AS-1","USER-1","Administrador","DEPARTAMENTO",'["DEP-A"]',"Activo","
 const create=extractFunction("createTask"),guard=extractFunction("assertTaskServiceTeacherCanManageTask"),list=extractFunction("getStudentTasks"),all=extractFunction("getAllTasks"),activity=extractFunction("getTeacherActivity"),ensure=extractFunction("ensureTaskServiceResourceOwnershipSheet_");
 assert(create.includes('registerTaskServiceResourceOwnership_(scope,"TAREA",id,department.departmentId,ss)'));assert(create.includes("resolveTaskServiceOwnershipDepartment_(payload,scope)"));assert(extractFunction("registerTaskServiceResourceOwnership_").includes("ensureTaskServiceResourceOwnershipSheet_"),"registry initialization occurs inside locked registration");assert(guard.includes('assertTaskServiceResourceOwnership_(payload,"TAREA",row[0]'));
 for(const [name,fn] of [["getStudentTasks",list],["getAllTasks",all],["getTeacherActivity",activity]])assert(fn.includes('assertTaskServiceResourceOwnership_(payload, "TAREA"'),name+" filters departmental ownership");
-for(const name of ["gradeSubmission","gradeSubmissionWithRubric","returnSubmissionForRevision"])assert(extractFunction(name).includes("assertTaskServiceSubmissionTaskOwnership_"),name+" checks ownership");
+for(const name of ["gradeSubmission","gradeSubmissionWithRubric"])assert(extractFunction(name).includes("withAuthorizedTaskSubmissionMutation_"),name+" executes the locked, verified grade mutation wrapper");
+assert(extractFunction("withAuthorizedTaskSubmissionMutation_").includes('getTaskServiceSubmissionAccess_(payload, "GRADE")'),"grade mutation revalidates task ownership and scope");
+assert(extractFunction("withAuthorizedTaskSubmissionMutation_").includes("LockService.getScriptLock()"),"grade mutation serializes changes with ScriptLock");
+assert(extractFunction("returnSubmissionForRevision").includes("assertTaskServiceSubmissionTaskOwnership_"),"return-for-revision keeps the direct ownership guard");
 assert(extractFunction("deleteSubmission").includes('assertTaskServiceTeacherCanManageTask(payload,task,"DELETE_SUBMISSION")'));
 assert(extractFunction("getSubmissionDocumentPreviewUrl").includes('"READ_CONTENT"'));
 console.log("TASK-153 Task-Service ownership contract passed: scope, owner isolation, institutional access, ambiguity, validated assignment and staff read/mutation gates.");

@@ -29,7 +29,8 @@ function fixture(options={}){
   delivery:{row:deliveryRows[1].slice(),rowIndex:1},deliverySheet,scope:{institutionId:"INST-1",departmentIds:["DEP-1"]}};
  const runtime={withAuthorizedExamSubmissionMutation_(payload,action,callback){assert.equal(action,"gradeExamSubmission");if(options.denied)throw new Error("RESOURCE_NOT_AVAILABLE");return callback(context);},
   Utilities:{getUuid:()=>"uuid-1"},Date,Number,Math,String,Error,isNaN};
- const code=[extract("normalizeExamGradeHistoryValue_"),extract("getOrCreateExamGradeRectificationHistorySheet_"),
+ const headerDeclaration=source.match(/var EXAM_GRADE_RECTIFICATION_HEADERS_ = \[[^\]]+\];/);assert.ok(headerDeclaration,"history schema declaration exists");
+ const code=[headerDeclaration[0],extract("normalizeExamGradeHistoryValue_"),extract("getOrCreateExamGradeRectificationHistorySheet_"),
   extract("prepareExamGradeRectificationEvent_"),extract("appendExamGradeRectificationEvent_"),extract("gradeExamSubmission")].join("\n");
  vm.runInNewContext(code,runtime);
  return {runtime,context,deliverySheet,history:()=>historySheet,call(payload){return runtime.gradeExamSubmission(payload);}};

@@ -41,8 +41,8 @@ function fixture(options={}){
   Utilities:{getUuid:()=>"uuid-1"},normalizeString:value=>String(value||"").trim().toLowerCase(),
   getOrCreateSheet(){return rubricSheet;},Date,Number,Math,String,Error,JSON
  };
- const code=["normalizeTaskGradeHistoryValue_","getOrCreateTaskGradeRectificationHistorySheet_","prepareTaskGradeRectificationEvent_",
-  "appendTaskGradeRectificationEvent_","withAuthorizedTaskSubmissionMutation_","gradeSubmission","gradeSubmissionWithRubric"].map(extract).join("\n");
+ const headerDeclaration=source.match(/var TASK_GRADE_RECTIFICATION_HEADERS_ = \[[^\]]+\];/);assert.ok(headerDeclaration,"history schema declaration exists");
+ const code=[headerDeclaration[0],...["normalizeTaskGradeHistoryValue_","getOrCreateTaskGradeRectificationHistorySheet_","prepareTaskGradeRectificationEvent_","appendTaskGradeRectificationEvent_","withAuthorizedTaskSubmissionMutation_","gradeSubmission","gradeSubmissionWithRubric"].map(extract)].join("\n");
  vm.runInNewContext(code,runtime);
  return {runtime,state,deliverySheet,history:()=>historySheet,rubricSheet,call(payload){return runtime.gradeSubmission(payload);},callRubric(payload){return runtime.gradeSubmissionWithRubric(payload);}};
 }
