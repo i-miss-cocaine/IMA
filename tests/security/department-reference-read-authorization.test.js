@@ -170,7 +170,7 @@ function payload(extra={}) {
   assert.equal(h.runtime.authorizeRead(payload({requestedFields:["*"]})).code,"REFERENCE_WILDCARD_NOT_ALLOWED");
 }
 {
-  const h=makeRuntime({grants:[GRANT_HEADERS,grantRow("I2")]});
+  const h=makeRuntime({grants:[GRANT_HEADERS,grantRow({InstitutionID:"I2"})]});
   assert.equal(h.runtime.authorizeRead(payload()).code,"DEPARTMENT_REFERENCE_GRANT_NOT_FOUND");
 }
 {
