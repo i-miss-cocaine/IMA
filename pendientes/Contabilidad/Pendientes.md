@@ -2413,7 +2413,7 @@
   - Las órdenes de compra resultantes conservan los importes, partidas y condiciones adjudicadas.
   - La decisión de adjudicación registra el responsable, fecha y justificación técnica.
   - Una cotización modificada con posterioridad no altera silenciosamente una adjudicación ya aprobada.
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Completada en código y CI; validación beta desplegada separada.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7560-7593; clave TASK-182; asignación única: Contabilidad -->
 

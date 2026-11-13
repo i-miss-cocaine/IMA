@@ -6,3 +6,4 @@ Los checkpoints posteriores se registran aquí.
 | Checkpoint | Sesión | Hito y evidencia | Registro | Anterior | Commit |
 |---|---|---|---|---|---|
 | C1.707 | IMA-EXEC-20261113-2005Z-01 | TASK-180 lotes/variaciones; Department Scope 43499960531 SUCCESS; Identity Mapping 43499960527 SUCCESS; Reference Consumers 43499960536 SUCCESS; BETA-FUNC-080 pendiente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.707 | C1.706 | implementación fea7186; checkpoint ec1853bc017b98087fdd0d447001fc4fe2f1f253 |
+| C1.708 | IMA-EXEC-20261113-2040Z-01 | TASK-181 matriz de cotizaciones/adjudicación; Department Scope 43503615191 SUCCESS; Node.js 24.22.2; BETA-FUNC-081 pendiente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.708 | C1.707 | implementación 555c516–039273e; checkpoint documental en esta sesión |
