@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.663**
+- Último checkpoint: **C1.665**
 - Última sesión: `IMA-EXEC-20261112-1754Z-03`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.663: **18720**
+- Caracteres del archivo activo tras C1.665: **25091**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -683,4 +683,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 
 | C1.664 | IMA-EXEC-20261112-1754Z-03 | Implementado; contrato ACCOUNTING CI PASS; workflow global bloqueado por User Role Membership heredado | TASK-153 / PM-01 — aislamiento de historial de capacitación ACCOUNTING | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.664 | 88–100 | C1.663 | Commit documental por confirmar |
 
-| C1.665 | IMA-EXEC-20261112-1754Z-03 | Implementación local completada; contrato ACCOUNTING aislado PASS; CI NOT RUN para nuevos commits | TASK-153 / PM-01 — aislamiento de incidencias laborales y medidas disciplinarias ACCOUNTING | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.665 | 103–115 | C1.664 | Commit documental por confirmar |
+| C1.665 | IMA-EXEC-20261112-1754Z-03 | Implementación local PASS; contrato ACCOUNTING CI PASS (run 43346646478); workflow global FAIL posterior en User Role Membership heredado | TASK-153 / PM-01 — aislamiento de incidencias laborales y medidas disciplinarias ACCOUNTING | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0008.txt — C1.665 | 103–115 | C1.664 | Código final 648d4654916f694c41eb55bb8b32c7099af85798 |

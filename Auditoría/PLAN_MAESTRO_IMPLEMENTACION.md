@@ -5164,5 +5164,5 @@ La revisión de requisitos originales confirma cobertura de:
 **Addendum C1.665 — incidencias laborales y medidas disciplinarias ACCOUNTING (TASK-153)**
 - getLaborIncidentsHistory exige sesión firmada y rol permitido; el endpoint pasa a resourceScopeActions y cada EmpleadoID debe resolver a un único expediente con ResourceOwnership autorizado.
 - Incidencias y medidas se filtran por departamento/institución; consultas específicas ajenas usan RESOURCE_NOT_FOUND; IDs duplicados, mappings ambiguos y medidas ligadas a incidencias huérfanas/ambiguas se excluyen. Se valida el esquema y la lectura no crea hojas.
-- Se conserva la forma data.incidencias/medidasDisciplinarias y los filtros de presentación. El contrato completo local aislado PASS. CI para commits C1.665 NOT RUN; Apps Script/Sheets real no desplegado.
+- Se conserva la forma data.incidencias/medidasDisciplinarias y los filtros de presentación. El contrato completo local aislado PASS. Department Scope Contract run 43346646478: contrato ACCOUNTING PASS; workflow global FAIL posterior en User Role Membership contract (línea 119, foreignLegacy nulo), pasos posteriores SKIPPED. Apps Script/Sheets real no desplegado.
 - BETA-FUNC-043 Pendiente beta. TASK-153 / AUD-NG-386 continúa En ejecución. Siguiente callsite elegible: getWorkShiftsAndSubstitutionsHistory.

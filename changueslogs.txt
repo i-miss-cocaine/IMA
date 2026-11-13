@@ -3131,4 +3131,4 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-13 UTC] [IMA-EXEC-20261112-1754Z-03] C1.665 — ACCOUNTING getLaborIncidentsHistory
 - El historial de incidencias laborales y medidas disciplinarias exige identidad/rol de sesión firmada, rol autorizado y ownership único por expediente y departamento.
 - Excluye mappings/IDs ambiguos y medidas huérfanas; oculta consultas ajenas con RESOURCE_NOT_FOUND; valida encabezados y lee sin crear hojas; conserva filtros y data.incidencias/medidasDisciplinarias.
-- Parseo y contrato local aislado completo PASS. CI para los nuevos commits NOT RUN; Apps Script/Sheets real no desplegado. BETA-FUNC-043 Pendiente beta.
+- Parseo y contrato local aislado completo PASS. Department Scope Contract run 43346646478: contrato ACCOUNTING PASS; workflow global FAIL posterior en User Role Membership contract (línea 119, foreignLegacy nulo), pasos posteriores SKIPPED. Apps Script/Sheets real no desplegado. BETA-FUNC-043 Pendiente beta.
