@@ -8699,7 +8699,7 @@ function recordPurchaseReceipt(payload) {
       try { d = typeof pr[4] === "string" ? JSON.parse(pr[4]) : (pr[4] || []); } catch (e) {}
       const prConformidad = String(pr[5] || "Conforme").trim();
       d.forEach(it => {
-        const c = String(it.codigoItem || it.codigo || it.id || "").trim();
+        const c = String(it.codigoItem || it.codigo || it.id || it.itemId || it.ItemId || "").trim();
         if (cumulativeReceived[c]) {
           const qty = parseFloat(it.cantidad || 0);
           const esConforme = it.conforme !== undefined ? Boolean(it.conforme) : (prConformidad === "Conforme");

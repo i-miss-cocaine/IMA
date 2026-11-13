@@ -10,7 +10,7 @@ const partial=ctx.recordPurchaseReceipt({ordenCompraId:"PO-1",detalleRecibido:[{
 assert.equal(partial.estadoOrden,"RecibidaParcial");assert.equal(partial.resumenPartidas.find(x=>x.codigoItem==="IT-A").pendiente,6);assert.equal(partial.resumenPartidas.find(x=>x.codigoItem==="IT-B").pendiente,5);assert.equal(inventoryMoves.length,1);
 const complete=ctx.recordPurchaseReceipt({ordenCompraId:"PO-1",detalleRecibido:[{codigoItem:"IT-A",cantidad:6},{codigoItem:"IT-B",cantidad:5}],estadoConformidad:"Conforme",registrarEnInventario:true});
 assert.equal(complete.estadoOrden,"RecibidaTotal");assert.equal(complete.resumenPartidas.every(x=>x.pendiente===0),true);assert.equal(inventoryMoves.length,3);
-rows.RecepcionesCompra.push(["REC-PREV","PO-2",new Date(),"TEST",JSON.stringify([{codigoItem:"IT-A",cantidad:8,conforme:true}]),"Conforme",false,"",""]);
+rows.RecepcionesCompra.push(["REC-PREV","PO-2",new Date(),"TEST",JSON.stringify([{itemId:"IT-A",cantidad:8,conforme:true}]),"Conforme",false,"",""]);
 const movesBefore=inventoryMoves.length,receiptsBefore=rows.RecepcionesCompra.length;
 assert.throws(()=>ctx.recordPurchaseReceipt({ordenCompraId:"PO-2",detalleRecibido:[{codigoItem:"IT-A",cantidad:3}],estadoConformidad:"Conforme",registrarEnInventario:true}),/PURCHASE_RECEIPT_QUANTITY_EXCEEDED/);
 assert.equal(inventoryMoves.length,movesBefore);assert.equal(rows.RecepcionesCompra.length,receiptsBefore);assert.equal(rows.OrdenesCompra[2][9],"Aprobada");
