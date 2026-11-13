@@ -18,8 +18,8 @@ rows.SolicitudesCompra.push(["REQ-1",new Date(),"D1","USR-REQ","Reposición de m
 ["S1","S2","S3"].forEach((id,i)=>rows.ProveedoresActivos.push([id,new Date(),"Proveedor "+id,"","","","General","Activo",""]));
 function sheet(name){return {getDataRange:()=>({getValues:()=>rows[name].map(r=>r.slice())}),getLastRow:()=>rows[name].length,appendRow:r=>{if(name==="DetalleCotizacionesCompra"){detailAppendCount++;if(failDetailAppendAt===detailAppendCount){failDetailAppendAt=0;throw new Error("SIMULATED_DETAIL_WRITE_FAILURE");}}rows[name].push(r.slice());},getRange:(row,col,nr=1,nc=1)=>({setValue:v=>{if(name==="SolicitudesCompra"&&col===10&&v==="Adjudicada"&&failRequestStatusWriteOnce){failRequestStatusWriteOnce=false;throw new Error("SIMULATED_REQUEST_STATUS_WRITE_FAILURE");}rows[name][row-1][col-1]=v;},clearContent:()=>{for(let y=0;y<nr;y++)for(let x=0;x<nc;x++)if(rows[name][row-1+y])rows[name][row-1+y][col-1+x]="";}})};}
 const ss={getSheetByName:n=>rows[n]?sheet(n):null};
-let uuid=0,failRequestStatusWriteOnce=false,failDetailAppendAt=0,detailAppendCount=0,actor={authorized:true,userId:"USR-REVIEWER",role:"Contador"};
-const ctx={SpreadsheetApp:{openById:()=>ss},SPREADSHEET_ID:"TEST",Utilities:{getUuid:()=>"UUID-"+(++uuid)},LockService:{getScriptLock:()=>({tryLock:()=>true,waitLock:()=>{},releaseLock:()=>{}})},getVerifiedAccountingIdentity_:()=>actor,getVerifiedAccountingDepartmentScope_:()=>({authorized:true,institutionWide:false,departmentIds:["D1"]}),getOrCreateSheet:(spreadsheet,name)=>{if(!rows[name])rows[name]=[headers[name]];return sheet(name);}};
+let uuid=0,lockBusy=false,failRequestStatusWriteOnce=false,failDetailAppendAt=0,detailAppendCount=0,actor={authorized:true,userId:"USR-REVIEWER",role:"Contador"};
+const ctx={SpreadsheetApp:{openById:()=>ss},SPREADSHEET_ID:"TEST",Utilities:{getUuid:()=>"UUID-"+(++uuid)},LockService:{getScriptLock:()=>({tryLock:()=>!lockBusy,waitLock:()=>{},releaseLock:()=>{}})},getVerifiedAccountingIdentity_:()=>actor,getVerifiedAccountingDepartmentScope_:()=>({authorized:true,institutionWide:false,departmentIds:["D1"]}),getOrCreateSheet:(spreadsheet,name)=>{if(!rows[name])rows[name]=[headers[name]];return sheet(name);}};
 vm.createContext(ctx);vm.runInContext(code,ctx);
 const payload={sessionToken:"verified",solicitudId:"REQ-1"};
 const makeLines=(a,b)=>[
@@ -68,6 +68,9 @@ const rollback=ctx.adjudicatePurchaseQuotations({sessionToken:"verified",solicit
 assert.equal(rollback.status,"error");assert.equal(rows.SolicitudesCompra.find(r=>r[0]==="REQ-4")[9],"Aprobada");
 assert.equal(rows.CotizacionesCompra.find(r=>r[0]===q6.cotizacionId)[9],"EnRevision");assert.equal(rows.CotizacionesCompra.find(r=>r[0]===q7.cotizacionId)[9],"EnRevision");
 assert.equal(rows.ActasAdjudicacionCompra.some(r=>r[1]==="REQ-4"),false);assert.ok(rows.OrdenesCompra.slice(3).every(r=>r.every(v=>v==="")),"failed award clears partially written purchase orders");
+const orderCountBeforeContention=rows.OrdenesCompra.length,actaCountBeforeContention=rows.ActasAdjudicacionCompra.length;lockBusy=true;
+const contended=ctx.adjudicatePurchaseQuotations({sessionToken:"verified",solicitudId:"REQ-4",idempotencyKey:"AWARD-REQ-4-BUSY-0001",dictamen:"Dictamen de adjudicación",justificacion:"Se seleccionan ofertas conformes y competitivas.",adjudicaciones:[{itemId:"ITEM-A",cotizacionId:q6.cotizacionId,cantidadAdjudicada:5},{itemId:"ITEM-B",cotizacionId:q7.cotizacionId,cantidadAdjudicada:2}]});
+lockBusy=false;assert.equal(contended.code,"CONCURRENT_UPDATE_RETRY");assert.equal(rows.OrdenesCompra.length,orderCountBeforeContention);assert.equal(rows.ActasAdjudicacionCompra.length,actaCountBeforeContention);assert.equal(rows.SolicitudesCompra.find(r=>r[0]==="REQ-4")[9],"Aprobada","lock contention must not mutate the request");
 
 
 // A partial detail write must clear both the quotation header and already-appended line rows.
