@@ -708,6 +708,7 @@ function doPost(e) {
   try {
     if (!e || !e.postData || !e.postData.contents) return textResponse({ status: "error", message: "No se recibieron datos." });
     const { action, payload } = JSON.parse(e.postData.contents);
+    if (action === "recordInventoryMovement" && payload) delete payload.cantidadBase;
     if (payload && payload.skipLock && !payload.isInternalCall) {
       delete payload.skipLock;
     }
@@ -7622,23 +7623,25 @@ function importCatalogItems(p){p=p||{};const a=catalogActor_(p,true),ss=Spreadsh
 function exportCatalogItems(p){catalogActor_(p,false);const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=catalogSheet_(ss,"CatalogoArticulos",CATALOG_ITEM_HEADERS_,false),rows=sh?sh.getDataRange().getValues():[CATALOG_ITEM_HEADERS_],csv=rows.map(r=>r.map(v=>'"'+String(v===undefined||v===null?"":v).replace(/"/g,'""')+'"').join(",")).join("\r\n");return {status:"success",filename:"catalogo-articulos.csv",csv:"\uFEFF"+csv};}
 function catalogEnsureKardexSchema_(ss){const h=["KardexID","Fecha","ItemCodigo","ItemNombre","CategoriaTipo","TipoMovimiento","Cantidad","StockAnterior","StockNuevo","StockMinimo","UbicacionResponsable","Observaciones","CatalogoItemID","CantidadBase","UnidadMedidaOriginal","FactorConversion"],sh=getOrCreateSheet(ss,"InventariosKardex"),v=sh.getDataRange().getValues();if(!v.length||!v[0].some(x=>String(x||"").trim()))sh.getRange(1,1,1,h.length).setValues([h]);else{const a=v[0].map(x=>String(x||"").trim()),prefix=a.length<=h.length&&a.every((x,i)=>x===h[i]);if(prefix&&a.length<h.length)sh.getRange(1,a.length+1,1,h.length-a.length).setValues([h.slice(a.length)]);else if(h.slice(0,12).some((x,i)=>a[i]!==x))throw new Error("INVENTORY_KARDEX_SCHEMA_MISMATCH");}return sh;}
 
-function recordInventoryMovement(payload) {
+function recordInventoryMovementLocked_(ss,payload) {
  const p=payload||{},itemCodigo=p.itemCodigo,cantidad=p.cantidad,tipoNorm=String(p.tipoMovimiento||"Entrada").trim(),target=String(p.ubicacionId||p.ubicacionResponsable||p.almacenId||"Bodega General").trim();
  if(!itemCodigo||cantidad===undefined||!Number.isFinite(Number(cantidad))||Number(cantidad)<=0)throw new Error("itemCodigo y cantidad válida requeridos.");
- const code=catalogNormalizeCode_(String(itemCodigo).trim()),inputQty=Number(cantidad),lock=LockService.getScriptLock();lock.waitLock(15000);
- try{
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),item=catalogFindItem_(ss,code,true),unit=catalogFindUnit_(ss,p.unidadMedida||item.unit);
-  if(catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit))throw new Error("CATALOG_UNIT_INCOMPATIBLE_WITH_ITEM");
-  const factor=p.cantidadBase===true?1:unit.factor,qty=assetDeprMoney_(inputQty*factor),name=item.name,category=item.category;if(qty<=0)throw new Error("INVENTORY_BASE_QUANTITY_INVALID");
-  const sheet=catalogEnsureKardexSchema_(ss),data=sheet.getDataRange().getValues().slice(1);let current=0;const locations={};
-  data.forEach(r=>{if(String(r[2]||"").trim()===code){const loc=String(r[10]||"Bodega General").trim();locations[loc.toLowerCase()]=Number(r[8]||0);if(loc.toLowerCase()===target.toLowerCase())current=Number(r[8]||0);}});
-  let next=current;const incoming=["Entrada","Devolucion","AjustePositivo"].indexOf(tipoNorm)!==-1,outgoing=["Salida","Prestamo","Baja","TransferenciaSalida","Consumo","AjusteNegativo"].indexOf(tipoNorm)!==-1;
-  if(incoming)next=assetDeprMoney_(current+qty);else if(outgoing){if(current<qty)throw new Error("INSUFFICIENT_LOCAL_STOCK:"+code+":"+target+":"+current+":"+qty);next=assetDeprMoney_(current-qty);}else next=assetDeprMoney_(qty);
-  locations[target.toLowerCase()]=next;let total=0;Object.keys(locations).forEach(k=>total+=Number(locations[k]||0));total=assetDeprMoney_(total);
-  const min=Number(p.stockMinimo===undefined||p.stockMinimo===""?item.row[20]||5:p.stockMinimo),now=new Date(),id="KDX-"+Utilities.getUuid();let obs=String(p.observaciones||"");if(p.numeroLote)obs+=" | [LOTE:"+p.numeroLote+"]";if(p.numeroSerie)obs+=" | [SERIE:"+p.numeroSerie+"]";if(p.documentOrigen)obs+=" | [DOC:"+p.documentOrigen+"]";if(p.referenciaMovimiento)obs+=" | [REF:"+p.referenciaMovimiento+"]";if(p.cantidadBase!==true&&factor!==1)obs+=" | [CONVERSION:"+inputQty+" "+unit.name+" x "+factor+" = "+qty+" "+unit.base+"]";
-  sheet.appendRow([id,now,code,name,category,tipoNorm,qty,current,next,min,target,obs.trim(),item.id,qty,unit.name,factor]);
-  const low=next<=min;return {status:"success",kardexId:id,itemCodigo:code,itemNombre:name,ubicacion:target,cantidadRegistrada:inputQty,cantidadBase:qty,unidadBase:item.baseUnit,stockAnteriorUbicacion:current,stockNuevoUbicacion:next,stockConsolidadoInstitucional:total,stockMinimo:min,alertaStockMinimo:low,message:low?"Movimiento registrado; stock bajo en "+target+".":"Movimiento de inventario registrado correctamente."};
- }finally{lock.releaseLock();}
+ const code=catalogNormalizeCode_(String(itemCodigo).trim()),inputQty=Number(cantidad),item=catalogFindItem_(ss,code,true),unit=catalogFindUnit_(ss,p.cantidadBase===true?item.baseUnit:(p.unidadMedida||item.unit));
+ if(catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit))throw new Error("CATALOG_UNIT_INCOMPATIBLE_WITH_ITEM");
+ const factor=unit.factor,qty=assetDeprMoney_(inputQty*factor),name=item.name,category=item.category;if(qty<=0)throw new Error("INVENTORY_BASE_QUANTITY_INVALID");
+ const sheet=catalogEnsureKardexSchema_(ss),data=sheet.getDataRange().getValues().slice(1);let current=0;const locations={};
+ data.forEach(r=>{if(catalogNormalizeCode_(r[2])===code){const loc=String(r[10]||"Bodega General").trim();locations[loc.toLowerCase()]=Number(r[8]||0);if(loc.toLowerCase()===target.toLowerCase())current=Number(r[8]||0);}});
+ let next=current;const incoming=["Entrada","Devolucion","AjustePositivo"].indexOf(tipoNorm)!==-1,outgoing=["Salida","Prestamo","Baja","TransferenciaSalida","Consumo","AjusteNegativo"].indexOf(tipoNorm)!==-1;
+ if(incoming)next=assetDeprMoney_(current+qty);else if(outgoing){if(current<qty)throw new Error("INSUFFICIENT_LOCAL_STOCK:"+code+":"+target+":"+current+":"+qty);next=assetDeprMoney_(current-qty);}else next=assetDeprMoney_(qty);
+ locations[target.toLowerCase()]=next;let total=0;Object.keys(locations).forEach(k=>total+=Number(locations[k]||0));total=assetDeprMoney_(total);
+ const min=Number(p.stockMinimo===undefined||p.stockMinimo===""?item.row[20]||5:p.stockMinimo),now=new Date(),id="KDX-"+Utilities.getUuid();let obs=String(p.observaciones||"");if(p.numeroLote)obs+=" | [LOTE:"+p.numeroLote+"]";if(p.numeroSerie)obs+=" | [SERIE:"+p.numeroSerie+"]";if(p.documentOrigen)obs+=" | [DOC:"+p.documentOrigen+"]";if(p.referenciaMovimiento)obs+=" | [REF:"+p.referenciaMovimiento+"]";if(p.cantidadBase!==true&&factor!==1)obs+=" | [CONVERSION:"+inputQty+" "+unit.name+" x "+factor+" = "+qty+" "+unit.base+"]";
+ sheet.appendRow([id,now,code,name,category,tipoNorm,qty,current,next,min,target,obs.trim(),item.id,qty,unit.name,factor]);
+ const low=next<=min;return {status:"success",kardexId:id,itemCodigo:code,itemNombre:name,ubicacion:target,cantidadRegistrada:inputQty,cantidadBase:qty,unidadBase:item.baseUnit,stockAnteriorUbicacion:current,stockNuevoUbicacion:next,stockConsolidadoInstitucional:total,stockMinimo:min,alertaStockMinimo:low,message:low?"Movimiento registrado; stock bajo en "+target+".":"Movimiento de inventario registrado correctamente."};
+}
+function recordInventoryMovement(payload) {
+ const lock=LockService.getScriptLock();lock.waitLock(15000);
+ try{return recordInventoryMovementLocked_(SpreadsheetApp.openById(SPREADSHEET_ID),payload||{});}
+ finally{lock.releaseLock();}
 }
 function getInventoryKardex(payload) {
   const { itemCodigo, categoriaTipo, ubicacionId, ubicacionResponsable, almacenId, fechaInicio, fechaFin } = payload || {};
@@ -8933,7 +8936,7 @@ function recordPurchaseReceipt(payload) {
       itemsToInventory.forEach(item => {const ci=catalogFindItem_(ss,item.codigoItem,true),u=catalogFindUnit_(ss,item.unidadMedida||item.unidad||ci.unit);if(catalogNormalizeText_(u.base)!==catalogNormalizeText_(ci.baseUnit))throw new Error("CATALOG_UNIT_INCOMPATIBLE_WITH_ITEM");});
       itemsToInventory.forEach(item => {
         if (item.codigoItem && item.cantidad > 0) {
-          recordInventoryMovement({
+          recordInventoryMovementLocked_(ss,{
             itemCodigo: item.codigoItem,
             itemNombre: item.nombreItem || "Artículo de Compra",
             categoriaTipo: "Consumible",
@@ -15016,7 +15019,9 @@ function transferInventoryStock(payload) {
 
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const kardexSheet = getOrCreateSheet(ss, "InventariosKardex");
+    const catalogItem = catalogFindItem_(ss, itemCodigo, true);
+    const canonicalCode = catalogItem.code;
+    const kardexSheet = catalogEnsureKardexSchema_(ss);
     const kData = kardexSheet.getDataRange().getValues().slice(1);
 
     // 1. Validar existencia y stock disponible local en el almacén de origen
@@ -15026,7 +15031,7 @@ function transferInventoryStock(payload) {
     kData.forEach(r => {
       const rowItem = String(r[2]).trim();
       const rowUbicacion = String(r[10] || "Bodega General").trim();
-      if (rowItem === String(itemCodigo).trim()) {
+      if (rowItem === canonicalCode) {
         if (!sNombre) sNombre = String(r[3] || itemCodigo).trim();
         if (rowUbicacion.toLowerCase() === uOrigen.toLowerCase()) {
           stockDisponibleOrigen = parseFloat(r[8] || 0);
@@ -15051,8 +15056,8 @@ function transferInventoryStock(payload) {
     const estadoTransferencia = esperaConfirmacion ? "EnTransito" : "RecibidaTotal";
 
     // 2. Registrar Salida en almacén de origen
-    const salidaRes = recordInventoryMovement({
-      itemCodigo,
+    const salidaRes = recordInventoryMovementLocked_(ss,{
+      itemCodigo: canonicalCode,
       itemNombre: sNombre || itemCodigo,
       tipoMovimiento: "TransferenciaSalida",
       cantidad: qty,
@@ -15066,8 +15071,8 @@ function transferInventoryStock(payload) {
     let entradaRes = null;
     if (!esperaConfirmacion) {
       // Si no espera confirmación física, entra inmediatamente a destino
-      entradaRes = recordInventoryMovement({
-        itemCodigo,
+      entradaRes = recordInventoryMovementLocked_(ss,{
+      itemCodigo: canonicalCode,
         itemNombre: sNombre || itemCodigo,
         tipoMovimiento: "Entrada",
         cantidad: qty,
@@ -15084,8 +15089,8 @@ function transferInventoryStock(payload) {
     trfSheet.appendRow([
       transferBatchId,
       now,
-      String(itemCodigo).trim(),
-      sNombre || String(itemCodigo).trim(),
+      canonicalCode,
+      sNombre || canonicalCode,
       qty,
       uOrigen,
       uDestino,
@@ -15104,14 +15109,14 @@ function transferInventoryStock(payload) {
       "INFO",
       "STOCK_TRANSFERRED",
       `Transferencia ${transferBatchId}: ${qty} unidades de ${itemCodigo} de ${uOrigen} a ${uDestino}. Estado: ${estadoTransferencia}`,
-      { transferBatchId, itemCodigo, qty, uOrigen, uDestino, estadoTransferencia },
+      { transferBatchId, itemCodigo: canonicalCode, qty, uOrigen, uDestino, estadoTransferencia },
       solicitanteId
     );
 
     return {
       status: "success",
       transferBatchId: transferBatchId,
-      itemCodigo: itemCodigo,
+      itemCodigo: canonicalCode,
       itemNombre: sNombre,
       cantidadTransferida: qty,
       ubicacionOrigen: uOrigen,
@@ -15198,7 +15203,7 @@ function confirmTransferReceipt(payload) {
     // 1. Ingresar en Kardex únicamente las unidades físicas efectivamente recibidas en destino
     let entradaRes = null;
     if (cantRec > 0) {
-      entradaRes = recordInventoryMovement({
+      entradaRes = recordInventoryMovementLocked_(ss,{
         itemCodigo,
         itemNombre,
         tipoMovimiento: "Entrada",
