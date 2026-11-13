@@ -27,7 +27,7 @@ const accounting=fs.readFileSync(path.resolve(__dirname,"../../backend/accountin
 const names=[
  "parseJsonSafe","getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentScope_","getVerifiedDepartmentScopeForSession_","assertResourceOwnershipForScope_","resolveEmployeeDepartmentId_","assertEmployeeExpedienteScopeAccess_",
  "getAccountingPersonIdForUser_","resolveStudentExpedienteForAccounting_","assertPaymentVoucherOwnerAccess_",
- "extractDriveFileId","getEmployeeDocuments","getEmployeeContracts","getEmployeeContractAlerts","getEmployeeTrainingHistory","getEmployeeRecords","getEmployeeSelfServicePortal","uploadEmployeeDocument","uploadPaymentVoucher","getPaymentVouchers","getPaymentVoucherFile","reviewPaymentVoucher","validateRolePermission"
+ "extractDriveFileId","getEmployeeDocuments","getEmployeeContracts","getEmployeeContractAlerts","getEmployeeTrainingHistory","getLaborIncidentsHistory","getEmployeeRecords","getEmployeeSelfServicePortal","uploadEmployeeDocument","uploadPaymentVoucher","getPaymentVouchers","getPaymentVoucherFile","reviewPaymentVoucher","validateRolePermission"
 ];
 const code="var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n"+names.map(n=>extractFunction(accounting,n)).join("\n");
 const claims={
@@ -83,6 +83,16 @@ const rows={
   ["InscripcionID","CursoID","EmpleadoID","FechaInscripcion","EstadoInscripcion","AsistenciaPorcentaje","ResultadoNota","CertificadoDriveUrl","FechaEmisionCertificado","FechaVencimientoCertificado","Observaciones","CreadoPor","FechaCreacion","UltimaModificacion"],
   ["CAP-A","CUR-A","U-EMP","2026-01-01","Finalizado",100,95,"private-a","","","","","",""],
   ["CAP-B","CUR-B","U-B","2026-01-01","Finalizado",100,90,"private-b","","","","","",""]
+ ],
+ IncidenciasLaborales:[
+  ["IncidenciaID","EmpleadoID","Fecha","Categoria","DescripcionObjetiva","ResponsableRegistro","Estado","ResponsabilidadEstablecida","DocumentacionDriveUrl","ObservacionesAclaraciones","HistorialAclaracionesJSON","CreadoPor","FechaCreacion","UltimaModificacion"],
+  ["INC-A","U-EMP","2026-01-10","Seguridad","Incidencia A","U-A","Registrada",false,"private-a","Aclaración A","[]","U-A","2026-01-10",""],
+  ["INC-B","U-B","2026-01-11","Conducta","Incidencia B","U-B","Cerrada",true,"private-b","Aclaración B","[]","U-B","2026-01-11",""]
+ ],
+ MedidasDisciplinarias:[
+  ["MedidaID","IncidenciaID","EmpleadoID","TipoMedida","FundamentoDocumentado","FechaEfectiva","ResponsableAprobacion","EstadoMedida","DiasSuspension","ActaFirmadaDriveUrl","CreadoPor","FechaCreacion","UltimaModificacion"],
+  ["MED-A","INC-A","U-EMP","Amonestación","Fundamento A","2026-01-12","U-A","Aprobada",0,"private-med-a","U-A","2026-01-12",""],
+  ["MED-B","INC-B","U-B","Suspensión","Fundamento B","2026-01-13","U-B","Aprobada",2,"private-med-b","U-B","2026-01-13",""]
  ],
  PlanesDesarrolloProfesional:[
   ["PlanID","EmpleadoID","TituloObjetivo","Descripcion","MetasAccionesJSON","FechaInicio","FechaMeta","EstadoObjetivo","EvaluacionSeguimiento","CreadoPor","FechaCreacion","UltimaModificacion"],
@@ -142,7 +152,7 @@ const context={
  Utilities:{base64Encode:bytes=>Buffer.from(bytes).toString("base64")},
  logStructuredEvent:()=>{}
 };
-vm.runInNewContext(code+"\nthis.assertEmployeeExpedienteScopeAccess_=assertEmployeeExpedienteScopeAccess_;this.assertPaymentVoucherOwnerAccess_=assertPaymentVoucherOwnerAccess_;this.getEmployeeDocuments=getEmployeeDocuments;this.getEmployeeContracts=getEmployeeContracts;this.getEmployeeContractAlerts=getEmployeeContractAlerts;this.getEmployeeTrainingHistory=getEmployeeTrainingHistory;this.getEmployeeRecords=getEmployeeRecords;this.getEmployeeSelfServicePortal=getEmployeeSelfServicePortal;this.uploadEmployeeDocument=uploadEmployeeDocument;this.uploadPaymentVoucher=uploadPaymentVoucher;this.getPaymentVouchers=getPaymentVouchers;this.getPaymentVoucherFile=getPaymentVoucherFile;this.reviewPaymentVoucher=reviewPaymentVoucher;",context);
+vm.runInNewContext(code+"\nthis.assertEmployeeExpedienteScopeAccess_=assertEmployeeExpedienteScopeAccess_;this.assertPaymentVoucherOwnerAccess_=assertPaymentVoucherOwnerAccess_;this.getEmployeeDocuments=getEmployeeDocuments;this.getEmployeeContracts=getEmployeeContracts;this.getEmployeeContractAlerts=getEmployeeContractAlerts;this.getEmployeeTrainingHistory=getEmployeeTrainingHistory;this.getLaborIncidentsHistory=getLaborIncidentsHistory;this.getEmployeeRecords=getEmployeeRecords;this.getEmployeeSelfServicePortal=getEmployeeSelfServicePortal;this.uploadEmployeeDocument=uploadEmployeeDocument;this.uploadPaymentVoucher=uploadPaymentVoucher;this.getPaymentVouchers=getPaymentVouchers;this.getPaymentVoucherFile=getPaymentVoucherFile;this.reviewPaymentVoucher=reviewPaymentVoucher;",context);
 const actor=token=>({sessionToken:token});
 assert.equal(context.assertEmployeeExpedienteScopeAccess_(actor("staffA"),ss,"EXP-A").authorized,true);
 assert.equal(context.assertEmployeeExpedienteScopeAccess_(actor("staffA"),ss,"EXP-B").code,"RESOURCE_SCOPE_DENIED");
@@ -382,4 +392,32 @@ assert.ok(!extractFunction(accounting,"getEmployeeTrainingHistory").includes("ge
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeTrainingHistory"'));
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getEmployeeTrainingHistory", "uploadEmployeeDocument"'));
 
+const laborHistory=context.getLaborIncidentsHistory;
+assert.deepEqual(Array.from(laborHistory(actor("staffA")).data.incidencias,r=>r.incidenciaId),["INC-A"]);
+assert.deepEqual(Array.from(laborHistory(actor("staffB")).data.incidencias,r=>r.incidenciaId),["INC-B"]);
+assert.deepEqual(Array.from(laborHistory(actor("admin")).data.incidencias,r=>r.incidenciaId),["INC-A","INC-B"]);
+assert.deepEqual(Array.from(laborHistory(actor("staffA")).data.medidasDisciplinarias,r=>r.medidaId),["MED-A"]);
+assert.equal(laborHistory({sessionToken:"employee",userRole:"Administrador",empleadoId:"U-B"}).code,"ROLE_NOT_ALLOWED");
+assert.equal(laborHistory({sessionToken:"invalid"}).code,"VERIFIED_IDENTITY_REQUIRED");
+assert.equal(laborHistory({sessionToken:"staffA",empleadoId:"U-B"}).code,"RESOURCE_NOT_FOUND");
+assert.equal(laborHistory({sessionToken:"staffA",incidenciaId:"INC-B"}).code,"RESOURCE_NOT_FOUND");
+assert.deepEqual(Array.from(laborHistory({sessionToken:"staffA",categoria:"seguridad"}).data.incidencias,r=>r.incidenciaId),["INC-A"]);
+assert.deepEqual(Array.from(laborHistory({sessionToken:"staffA",incidenciaId:"INC-A"}).data.medidasDisciplinarias,r=>r.medidaId),["MED-A"]);
+const origInc=rows.IncidenciasLaborales.map(r=>r.slice());rows.IncidenciasLaborales.push(rows.IncidenciasLaborales[1].slice());
+assert.deepEqual(Array.from(laborHistory(actor("admin")).data.incidencias,r=>r.incidenciaId),["INC-B"]);
+assert.deepEqual(Array.from(laborHistory(actor("admin")).data.medidasDisciplinarias,r=>r.medidaId),["MED-B"]);
+rows.IncidenciasLaborales.splice(0,rows.IncidenciasLaborales.length,...origInc);
+const origMed=rows.MedidasDisciplinarias.map(r=>r.slice());rows.MedidasDisciplinarias.push(rows.MedidasDisciplinarias[1].slice());
+assert.deepEqual(Array.from(laborHistory(actor("admin")).data.medidasDisciplinarias,r=>r.medidaId),["MED-B"]);
+rows.MedidasDisciplinarias.splice(0,rows.MedidasDisciplinarias.length,...origMed);
+const origHeader=rows.IncidenciasLaborales[0][0];rows.IncidenciasLaborales[0][0]="Incidente";
+assert.equal(laborHistory(actor("admin")).code,"RESOURCE_SCHEMA_INVALID");rows.IncidenciasLaborales[0][0]=origHeader;
+const origOpen=context.SpreadsheetApp.openById,origCreate=context.getOrCreateSheet;let creations=0;
+context.SpreadsheetApp.openById=()=>({getSheetByName:n=>n==="ExpedientesLaborales"?makeSheet(rows.ExpedientesLaborales):null});
+context.getOrCreateSheet=()=>{creations++;throw Error("read must not create sheets");};
+assert.deepEqual(Array.from(laborHistory(actor("admin")).data.incidencias),[]);assert.equal(creations,0);
+context.SpreadsheetApp.openById=origOpen;context.getOrCreateSheet=origCreate;
+assert.ok(extractFunction(accounting,"getLaborIncidentsHistory").includes("assertEmployeeExpedienteScopeAccess_"));
+assert.ok(!extractFunction(accounting,"getLaborIncidentsHistory").includes("getOrCreateSheet"));
+assert.ok(extractFunction(accounting,"validateRolePermission").includes('"getLaborIncidentsHistory"'));
 console.log("Accounting departmental resource and payment voucher access contracts passed.");

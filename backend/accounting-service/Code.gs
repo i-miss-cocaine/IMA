@@ -576,7 +576,7 @@ function validateRolePermission(action, payload) {
   if (!ctxCheck.authorized) {
     return { authorized: false, role: userRole + " (" + ctxCheck.reason + ")" };
   }
-  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher"];
+  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher"];
   if (resourceScopeActions.indexOf(action) !== -1) {
     const roleKey = String(userRole || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
     const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1 &&
@@ -3112,83 +3112,29 @@ function manageDisciplinaryMeasure(payload) {
 }
 
 function getLaborIncidentsHistory(payload) {
-  const {
-    empleadoId,
-    incidenciaId,
-    estado,
-    categoria,
-    userRole
-  } = payload || {};
-
-  // Restringir acceso solo a roles autorizados de RRHH / Dirección
-  const allowedRoles = ["RecursosHumanos", "Director", "Administrador", "Subdirector"];
-  if (userRole && !allowedRoles.includes(userRole)) {
-    throw new Error("Acceso denegado. Los registros de incidencias laborales y medidas disciplinarias están restringidos a la Oficina de Recursos Humanos y Dirección.");
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-
-  // Incidencias
-  const incSheet = getOrCreateSheet(ss, "IncidenciasLaborales");
-  const incData = incSheet.getDataRange().getValues();
-  let incidencias = [];
-
-  if (incData.length > 1) {
-    incidencias = incData.slice(1).filter(r => {
-      if (empleadoId && String(r[1]).trim() !== String(empleadoId).trim()) return false;
-      if (incidenciaId && String(r[0]).trim() !== String(incidenciaId).trim()) return false;
-      if (categoria && String(r[3]).toLowerCase() !== String(categoria).toLowerCase()) return false;
-      if (estado && String(r[6]).toLowerCase() !== String(estado).toLowerCase()) return false;
-      return true;
-    }).map(r => ({
-      incidenciaId: r[0],
-      empleadoId: r[1],
-      fecha: r[2],
-      categoria: r[3],
-      descripcionObjetiva: r[4],
-      responsableRegistro: r[5],
-      estado: r[6],
-      responsabilidadEstablecida: Boolean(r[7]),
-      documentacionDriveUrl: r[8],
-      observacionesAclaraciones: r[9],
-      historialAclaraciones: parseJsonSafe(r[10], []),
-      creadoPor: r[11],
-      fechaCreacion: r[12]
-    }));
-  }
-
-  // Medidas Disciplinarias
-  const medSheet = getOrCreateSheet(ss, "MedidasDisciplinarias");
-  const medData = medSheet.getDataRange().getValues();
-  let medidasDisciplinarias = [];
-
-  if (medData.length > 1) {
-    medidasDisciplinarias = medData.slice(1).filter(r => {
-      if (empleadoId && String(r[2]).trim() !== String(empleadoId).trim()) return false;
-      if (incidenciaId && String(r[1]).trim() !== String(incidenciaId).trim()) return false;
-      return true;
-    }).map(r => ({
-      medidaId: r[0],
-      incidenciaId: r[1],
-      empleadoId: r[2],
-      tipoMedida: r[3],
-      fundamentoDocumentado: r[4],
-      fechaEfectiva: r[5],
-      responsableAprobacion: r[6],
-      estadoMedida: r[7],
-      diasSuspension: parseInt(r[8] || 0, 10),
-      actaFirmadaDriveUrl: r[9],
-      fechaCreacion: r[11]
-    }));
-  }
-
-  return {
-    status: "success",
-    data: {
-      incidencias,
-      medidasDisciplinarias
-    }
-  };
+ const request=payload||{},actor=getVerifiedAccountingIdentity_(payload);
+ if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+ const roleKey=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
+ if(["RECURSOSHUMANOS","DIRECTOR","ADMINISTRADOR","SUBDIRECTOR"].indexOf(roleKey)===-1)return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID),result=(incidencias,medidasDisciplinarias)=>({status:"success",data:{incidencias:incidencias||[],medidasDisciplinarias:medidasDisciplinarias||[]}});
+ const read=(name,headers)=>{const sh=ss.getSheetByName(name);if(!sh)return {missing:true,rows:[]};const v=sh.getDataRange().getValues();if(!v.length||!Array.isArray(v[0])||v[0].length!==headers.length||headers.some((h,i)=>String(v[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))return {error:true,rows:[]};return {rows:v.slice(1).filter(r=>Array.isArray(r)&&r.length>=headers.length)};};
+ const eh=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
+ const ih=["IncidenciaID","EmpleadoID","Fecha","Categoria","DescripcionObjetiva","ResponsableRegistro","Estado","ResponsabilidadEstablecida","DocumentacionDriveUrl","ObservacionesAclaraciones","HistorialAclaracionesJSON","CreadoPor","FechaCreacion","UltimaModificacion"];
+ const mh=["MedidaID","IncidenciaID","EmpleadoID","TipoMedida","FundamentoDocumentado","FechaEfectiva","ResponsableAprobacion","EstadoMedida","DiasSuspension","ActaFirmadaDriveUrl","CreadoPor","FechaCreacion","UltimaModificacion"];
+ const employees=read("ExpedientesLaborales",eh),incidents=read("IncidenciasLaborales",ih),measures=read("MedidasDisciplinarias",mh);
+ if(employees.error||incidents.error||measures.error)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de los registros de incidencias laborales no es válida."};
+ if(employees.missing)return result([],[]);
+ const xc=Object.create(null),uc=Object.create(null);employees.rows.forEach(r=>{const x=String(r[0]||"").trim(),u=String(r[2]||"").trim();if(x)xc[x]=(xc[x]||0)+1;if(u)uc[u]=(uc[u]||0)+1;});
+ const byUser=Object.create(null);employees.rows.forEach(r=>{const x=String(r[0]||"").trim(),u=String(r[2]||"").trim();if(x&&u&&xc[x]===1&&uc[u]===1)byUser[u]=x;});
+ const access=Object.create(null),canRead=u=>{u=String(u||"").trim();if(!u||!byUser[u])return false;if(!Object.prototype.hasOwnProperty.call(access,u))access[u]=assertEmployeeExpedienteScopeAccess_(payload,ss,byUser[u]);return !!access[u].authorized;};
+ const target=String(request.empleadoId||"").trim(),wanted=String(request.incidenciaId||"").trim(),cat=String(request.categoria||"").trim().toLowerCase(),state=String(request.estado||"").trim().toLowerCase();
+ if(target&&!canRead(target))return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existen registros de incidencias disponibles."};
+ const ic=Object.create(null);incidents.rows.forEach(r=>{const id=String(r[0]||"").trim();if(id)ic[id]=(ic[id]||0)+1;});
+ const visible=Object.create(null),inc=[];if(!incidents.missing)incidents.rows.forEach(r=>{const id=String(r[0]||"").trim(),u=String(r[1]||"").trim();if(!id||ic[id]!==1||!canRead(u)||(target&&u!==target)||(wanted&&id!==wanted)||(cat&&String(r[3]||"").trim().toLowerCase()!==cat)||(state&&String(r[6]||"").trim().toLowerCase()!==state))return;visible[id]=u;inc.push({incidenciaId:r[0],empleadoId:r[1],fecha:r[2],categoria:r[3],descripcionObjetiva:r[4],responsableRegistro:r[5],estado:r[6],responsabilidadEstablecida:Boolean(r[7]),documentacionDriveUrl:r[8],observacionesAclaraciones:r[9],historialAclaraciones:parseJsonSafe(r[10],[]),creadoPor:r[11],fechaCreacion:r[12]});});
+ if(wanted&&!Object.prototype.hasOwnProperty.call(visible,wanted))return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existen registros de incidencias disponibles."};
+ const mc=Object.create(null);measures.rows.forEach(r=>{const id=String(r[0]||"").trim();if(id)mc[id]=(mc[id]||0)+1;});
+ const med=[];if(!measures.missing)measures.rows.forEach(r=>{const id=String(r[0]||"").trim(),incId=String(r[1]||"").trim(),u=String(r[2]||"").trim();if(!id||mc[id]!==1||!canRead(u)||(target&&u!==target)||(wanted&&incId!==wanted))return;if(incId&&(ic[incId]!==1||!Object.prototype.hasOwnProperty.call(visible,incId)||visible[incId]!==u))return;med.push({medidaId:r[0],incidenciaId:r[1],empleadoId:r[2],tipoMedida:r[3],fundamentoDocumentado:r[4],fechaEfectiva:r[5],responsableAprobacion:r[6],estadoMedida:r[7],diasSuspension:parseInt(r[8]||0,10),actaFirmadaDriveUrl:r[9],fechaCreacion:r[11]});});
+ return result(inc,med);
 }
 
 function parseJsonSafe(jsonStr, fallback) {
