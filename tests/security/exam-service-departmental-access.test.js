@@ -94,6 +94,16 @@ const runtime = {
   getDynamicPermissionsForRole() { return null; }, hasActiveDelegationForAction() { return false; },
   validateContextualAccess() { return { authorized: true }; },
   verifySessionToken(token) { return claims[token] || null; },
+  getVerifiedDepartmentScopeForSession_(payload, spreadsheet, actor) {
+    if (!actor || actor.authorized !== true || !actor.userId || !actor.role) return { authorized: false };
+    const assignments = scopeRows.slice(1).filter(row => String(row[1] || "").trim() === actor.userId &&
+      String(row[2] || "").trim() === actor.role && String(row[5] || "").trim() === "ACTIVO");
+    if (assignments.length !== 1) return { authorized: false };
+    const institutionWide = String(assignments[0][3] || "").trim() === "INSTITUCION";
+    const departmentIds = institutionWide ? [] : [String(assignments[0][4] || "").trim()].filter(Boolean);
+    return { authorized: true, institutionId: "I1", departmentIds, institutionWide,
+      userId: actor.userId, role: actor.role };
+  },
   PropertiesService: { getScriptProperties() { return { getProperty(name) { return name === "IMA_INSTITUTION_ID" ? "I1" : null; } }; } },
   SpreadsheetApp: { openById() { return ss; } },
   getSheetOrThrow(spreadsheet, name) { const sheet = spreadsheet.getSheetByName(name); if (!sheet) throw new Error("Missing sheet " + name); return sheet; },
