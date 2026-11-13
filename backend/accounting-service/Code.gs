@@ -924,6 +924,11 @@ function doPost(e) {
       case "getPurchaseReceiptAssetCandidates": result = getPurchaseReceiptAssetCandidates(payload); break;
       case "registerAssetsFromPurchaseReceipt": result = registerAssetsFromPurchaseReceipt(payload); break;
       case "getAssetItems": result = getAssetItems(payload); break;
+      case "saveAssetDepreciationPolicy": result = saveAssetDepreciationPolicy(payload); break;
+      case "configureAssetDepreciationProfile": result = configureAssetDepreciationProfile(payload); break;
+      case "registerCapitalizableAssetImprovement": result = registerCapitalizableAssetImprovement(payload); break;
+      case "calculateAssetDepreciation": result = calculateAssetDepreciation(payload); break;
+      case "getAssetDepreciationSchedule": result = getAssetDepreciationSchedule(payload); break;
       case "assignAssetCustody": result = assignAssetCustody(payload); break;
       case "returnAssetCustody": result = returnAssetCustody(payload); break;
       case "getAssetAssignments": result = getAssetAssignments(payload); break;
@@ -15691,6 +15696,162 @@ function getMaintenanceOrders(payload) {
     status: "success",
     ordenes: mapped
   };
+}
+
+
+// [TASK-185] Motor de depreciación configurable, idempotente y auditable.
+const ASSET_DEPR_POLICY_HEADERS_=["PoliticaID","Categoria","Metodo","VidaUtilMeses","ValorResidualPorcentaje","TasaAnual","UnidadesTotales","CuentaActivo","CuentaDepreciacionAcumulada","CuentaGastoDepreciacion","CuentaGananciaBaja","CuentaPerdidaBaja","CuentaEfectivoBaja","CentroCosto","Moneda","Estado","ActualizadoPor","FechaActualizacion"];
+const ASSET_DEPR_PROFILE_HEADERS_=["ActivoID","CategoriaContable","FechaPuestaFuncionamiento","CostoCapitalizado","CostoAdicionalCapitalizable","ValorResidual","VidaUtilMeses","Metodo","TasaAnual","FechaInicioDepreciacion","CuentaActivo","CuentaDepreciacionAcumulada","CuentaGastoDepreciacion","CuentaGananciaBaja","CuentaPerdidaBaja","CuentaEfectivoBaja","CentroCosto","Moneda","DepreciacionAcumuladaInicial","FechaCorteApertura","ValorNetoApertura","UnidadesTotales","UnidadesAcumuladasInicial","Estado","ActualizadoPor","FechaActualizacion"];
+const ASSET_DEPR_IMPROVEMENT_HEADERS_=["MejoraID","ActivoID","FechaCapitalizacion","Descripcion","Importe","ValorResidual","VidaUtilMeses","Metodo","TasaAnual","RegistradoPor","FechaRegistro","Estado"];
+const ASSET_DEPR_HEADERS_=["DepreciacionID","ActivoID","Periodo","FechaCalculo","Metodo","BaseCosto","DepreciacionPeriodo","DepreciacionAcumulada","ValorNetoLibros","UnidadesPeriodo","ComponentesJSON","AsientoID","Estado","IdempotencyKey","RegistradoPor"];
+function assetDeprSheet_(ss,name,headers,create){
+ let sh=ss.getSheetByName(name);if(!sh&&!create)return null;if(!sh)sh=ss.insertSheet(name);
+ let values=sh.getDataRange().getValues();if(!values.length||!values[0].some(v=>String(v||"").trim())){sh.getRange(1,1,1,headers.length).setValues([headers.slice()]);values=[headers.slice()];}
+ if(headers.some((h,i)=>String(values[0][i]||"").trim()!==h))throw new Error("ASSET_DEPRECIATION_SCHEMA_MISMATCH:"+name);
+ return sh;
+}
+function assetDeprActor_(payload){
+ const actor=getVerifiedAccountingIdentity_(payload||{});if(!actor.authorized)throw new Error(actor.code||"VERIFIED_IDENTITY_REQUIRED");
+ const role=String(actor.role||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+ if(["ADMINISTRADOR","DIRECTOR","CONTADOR"].indexOf(role)===-1)throw new Error("ASSET_DEPRECIATION_ROLE_NOT_ALLOWED");
+ return actor;
+}
+function assetDeprAccount_(ss,code){
+ const key=String(code||"").trim();if(!key)throw new Error("ASSET_DEPRECIATION_ACCOUNT_REQUIRED");
+ const sh=ss.getSheetByName("PlanCuentas");if(!sh)throw new Error("ASSET_DEPRECIATION_CHART_OF_ACCOUNTS_MISSING");
+ const rows=sh.getDataRange().getValues().slice(1),matches=rows.filter(r=>String(r[1]||"").trim()===key);
+ if(matches.length!==1)throw new Error(matches.length?"ASSET_DEPRECIATION_ACCOUNT_AMBIGUOUS":"ASSET_DEPRECIATION_ACCOUNT_NOT_FOUND:"+key);
+ const state=String(matches[0][5]||"Activo").trim().toUpperCase();if(["INACTIVO","INACTIVE","ELIMINADA","CERRADA"].indexOf(state)!==-1)throw new Error("ASSET_DEPRECIATION_ACCOUNT_INACTIVE:"+key);
+ return {code:key,name:String(matches[0][2]||key)};
+}
+function assetDeprDate_(value,field){
+ const d=value instanceof Date?new Date(value.getTime()):new Date(value);if(!value||isNaN(d.getTime()))throw new Error("ASSET_DEPRECIATION_DATE_INVALID:"+field);return d;
+}
+function assetDeprMonth_(value){
+ const s=String(value||"").trim();if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(s))throw new Error("ASSET_DEPRECIATION_PERIOD_INVALID");
+ return {key:s,start:new Date(Number(s.slice(0,4)),Number(s.slice(5,7))-1,1),end:new Date(Number(s.slice(0,4)),Number(s.slice(5,7)),0)};
+}
+function assetDeprMonthsBetween_(a,b){return (b.getFullYear()-a.getFullYear())*12+b.getMonth()-a.getMonth();}
+function assetDeprMoney_(n){return Math.round((Number(n)||0)*100)/100;}
+function assetDeprProfileMap_(headers,row){const o={};headers.forEach((h,i)=>o[h]=row[i]===undefined?"":row[i]);return o;}
+function assetDeprRequireAsset_(ss,assetId){
+ const sh=ss.getSheetByName("ActivosPatrimoniales");if(!sh)throw new Error("ASSET_NOT_FOUND");
+ const rows=sh.getDataRange().getValues(),matches=rows.slice(1).filter(r=>String(r[0]||"").trim()===String(assetId||"").trim()||String(r[1]||"").trim()===String(assetId||"").trim());
+ if(matches.length!==1)throw new Error(matches.length?"ASSET_ID_AMBIGUOUS":"ASSET_NOT_FOUND");return {sheet:sh,row:matches[0],headers:rows[0].map(String)};
+}
+function saveAssetDepreciationPolicy(payload){
+ const p=payload||{},actor=assetDeprActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),category=String(p.categoria||"").trim(),method=String(p.metodo||"").trim();
+ if(!category||["LineaRecta","SaldoDecreciente","UnidadesProduccion"].indexOf(method)===-1)throw new Error("ASSET_DEPRECIATION_POLICY_INVALID");
+ const life=Math.floor(Number(p.vidaUtilMeses)),residual=Number(p.valorResidualPorcentaje||0),rate=Number(p.tasaAnual||0),units=Number(p.unidadesTotales||0);
+ if(!Number.isFinite(life)||life<1||!Number.isFinite(residual)||residual<0||residual>=100||(method==="SaldoDecreciente"&&(!Number.isFinite(rate)||rate<=0||rate>=1))||(method==="UnidadesProduccion"&&(!Number.isFinite(units)||units<=0)))throw new Error("ASSET_DEPRECIATION_POLICY_VALUES_INVALID");
+ const accounts={asset:assetDeprAccount_(ss,p.cuentaActivo),accum:assetDeprAccount_(ss,p.cuentaDepreciacionAcumulada),expense:assetDeprAccount_(ss,p.cuentaGastoDepreciacion)};
+ const sh=assetDeprSheet_(ss,"PoliticasDepreciacionActivos",ASSET_DEPR_POLICY_HEADERS_,true),rows=sh.getDataRange().getValues(),found=rows.map((r,i)=>({r,i})).filter(x=>String(x.r[1]||"").trim().toLowerCase()===category.toLowerCase());
+ if(found.length>1)throw new Error("ASSET_DEPRECIATION_POLICY_AMBIGUOUS");
+ const values=["POL-"+Utilities.getUuid(),category,method,life,residual,rate,units,accounts.asset.code,accounts.accum.code,accounts.expense.code,String(p.cuentaGananciaBaja||""),String(p.cuentaPerdidaBaja||""),String(p.cuentaEfectivoBaja||""),String(p.centroCosto||""),String(p.moneda||"HNL"),"Activo",actor.userId,new Date()];
+ if(found.length===1)sh.getRange(found[0].i+1,1,1,values.length).setValues([values]);else sh.appendRow(values);
+ logStructuredEvent("ACCOUNTING","saveAssetDepreciationPolicy","INFO","ASSET_DEPRECIATION_POLICY_SAVED","Política de depreciación actualizada.",{categoria:category,metodo:method,actorUserId:actor.userId},actor.role);
+ return {status:"success",categoria:category,metodo:method,vidaUtilMeses:life};
+}
+function configureAssetDepreciationProfile(payload){
+ const p=payload||{},actor=assetDeprActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),asset=assetDeprRequireAsset_(ss,p.activoId),assetId=String(asset.row[0]).trim();
+ const sh=assetDeprSheet_(ss,"ConfiguracionDepreciacionActivos",ASSET_DEPR_PROFILE_HEADERS_,true),rows=sh.getDataRange().getValues(),existing=rows.slice(1).filter(r=>String(r[0]||"").trim()===assetId);
+ if(existing.length>1)throw new Error("ASSET_DEPRECIATION_PROFILE_AMBIGUOUS");
+ const policies=ss.getSheetByName("PoliticasDepreciacionActivos"),category=String(p.categoriaContable||asset.row[3]||"").trim();
+ let policy=null;if(policies){const matches=policies.getDataRange().getValues().slice(1).filter(r=>String(r[1]||"").trim().toLowerCase()===category.toLowerCase()&&String(r[15]||"Activo")==="Activo");if(matches.length>1)throw new Error("ASSET_DEPRECIATION_POLICY_AMBIGUOUS");if(matches.length===1)policy=assetDeprProfileMap_(ASSET_DEPR_POLICY_HEADERS_,matches[0]);}
+ const get=(key,policyKey,def)=>p[key]!==undefined&&p[key]!==""?p[key]:(policy&&policy[policyKey]!==undefined&&policy[policyKey]!==""?policy[policyKey]:def);
+ const headers=asset.headers.map(String),idx=headers.indexOf("CostoAdquisicion"),acquisition=idx>=0?Number(asset.row[idx]||0):0;
+ const cost=Number(get("costoCapitalizado",null,acquisition)),life=Math.floor(Number(get("vidaUtilMeses","VidaUtilMeses",0))),residual=Number(get("valorResidual",null,0)),method=String(get("metodo","Metodo","LineaRecta"));
+ const start=assetDeprDate_(get("fechaInicioDepreciacion",null,p.fechaPuestaFuncionamiento),"fechaInicioDepreciacion"),placed=assetDeprDate_(get("fechaPuestaFuncionamiento",null,start),"fechaPuestaFuncionamiento");
+ if(!Number.isFinite(cost)||cost<=0||!Number.isFinite(life)||life<1||!Number.isFinite(residual)||residual<0||residual>=cost||["LineaRecta","SaldoDecreciente","UnidadesProduccion"].indexOf(method)===-1)throw new Error("ASSET_DEPRECIATION_PROFILE_INVALID");
+ const opening=Number(p.depreciacionAcumuladaInicial||0),units=Number(get("unidadesTotales","UnidadesTotales",0)),rate=Number(get("tasaAnual","TasaAnual",0));
+ if(!Number.isFinite(opening)||opening<0||opening>cost-residual||method==="UnidadesProduccion"&&(!Number.isFinite(units)||units<=0)||method==="SaldoDecreciente"&&(!Number.isFinite(rate)||rate<=0||rate>=1))throw new Error("ASSET_DEPRECIATION_OPENING_BALANCE_INVALID");
+ const accounts={asset:assetDeprAccount_(ss,get("cuentaActivo","CuentaActivo","")),accum:assetDeprAccount_(ss,get("cuentaDepreciacionAcumulada","CuentaDepreciacionAcumulada","")),expense:assetDeprAccount_(ss,get("cuentaGastoDepreciacion","CuentaGastoDepreciacion",""))};
+ const optional=(v)=>String(v||"").trim();
+ const values=[assetId,category,placed,cost,Number(p.costoAdicionalCapitalizable||0),residual,life,method,rate,start,accounts.asset.code,accounts.accum.code,accounts.expense.code,optional(get("cuentaGananciaBaja","CuentaGananciaBaja","")),optional(get("cuentaPerdidaBaja","CuentaPerdidaBaja","")),optional(get("cuentaEfectivoBaja","CuentaEfectivoBaja","")),optional(get("centroCosto","CentroCosto","")),optional(get("moneda","Moneda","HNL")),opening,p.fechaCorteApertura?assetDeprDate_(p.fechaCorteApertura,"fechaCorteApertura"):"",Number(p.valorNetoApertura!==undefined?p.valorNetoApertura:cost+Number(p.costoAdicionalCapitalizable||0)-opening),units,Number(p.unidadesAcumuladasInicial||0),"Activo",actor.userId,new Date()];
+ if(values[4]<0||values[20]<0||values[20]>cost+values[4]||Math.abs(values[20]-(cost+values[4]-opening))>0.01||values[22]<0||values[22]>units)throw new Error("ASSET_DEPRECIATION_PROFILE_VALUES_INVALID");
+ if(existing.length===1)sh.getRange(rows.indexOf(existing[0])+1,1,1,values.length).setValues([values]);else sh.appendRow(values);
+ logStructuredEvent("ACCOUNTING","configureAssetDepreciationProfile","INFO","ASSET_DEPRECIATION_PROFILE_CONFIGURED","Ficha financiera de activo actualizada.",{activoId,actorUserId:actor.userId},actor.role);
+ return {status:"success",activoId,metodo:method,vidaUtilMeses:life};
+}
+function registerCapitalizableAssetImprovement(payload){
+ const p=payload||{},actor=assetDeprActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),asset=assetDeprRequireAsset_(ss,p.activoId),assetId=String(asset.row[0]).trim();
+ const profiles=assetDeprSheet_(ss,"ConfiguracionDepreciacionActivos",ASSET_DEPR_PROFILE_HEADERS_,false);if(!profiles)throw new Error("ASSET_DEPRECIATION_PROFILE_REQUIRED");
+ const profileRows=profiles.getDataRange().getValues(),matches=profileRows.slice(1).filter(r=>String(r[0]||"").trim()===assetId);if(matches.length!==1)throw new Error("ASSET_DEPRECIATION_PROFILE_REQUIRED");
+ const amount=Number(p.importe),date=assetDeprDate_(p.fechaCapitalizacion,"fechaCapitalizacion");if(!Number.isFinite(amount)||amount<=0||!String(p.descripcion||"").trim())throw new Error("ASSET_CAPITALIZABLE_IMPROVEMENT_INVALID");
+ const sh=assetDeprSheet_(ss,"MejorasCapitalizablesActivos",ASSET_DEPR_IMPROVEMENT_HEADERS_,true);
+ const improvementId="MEJ-"+Utilities.getUuid();sh.appendRow([improvementId,assetId,date,String(p.descripcion).trim(),amount,Number(p.valorResidual||0),Math.floor(Number(p.vidaUtilMeses||matches[1][6])),String(p.metodo||"LineaRecta"),Number(p.tasaAnual||0),actor.userId,new Date(),"Activo"]);
+ logStructuredEvent("ACCOUNTING","registerCapitalizableAssetImprovement","INFO","ASSET_CAPITALIZABLE_IMPROVEMENT_RECORDED","Mejora capitalizable registrada como componente independiente.",{activoId,improvementId,importe:amount,actorUserId:actor.userId},actor.role);
+ return {status:"success",activoId,mejoraId:improvementId,importe:amount};
+}
+function assetDeprComponentAmount_(component,period,priorAccum,unitsUsed){
+ const start=assetDeprDate_(component.start,"component.start"),life=Math.floor(Number(component.life)),cost=Number(component.cost),residual=Number(component.residual||0),method=String(component.method||"LineaRecta");
+ if(!Number.isFinite(cost)||cost<=0||life<1||residual<0||residual>=cost||period.end<start)return 0;
+ const elapsed=assetDeprMonthsBetween_(new Date(start.getFullYear(),start.getMonth(),1),period.start);if(elapsed>=life)return 0;
+ const remaining=Math.max(0,cost-residual-priorAccum);if(remaining<=0)return 0;
+ let amount=0;
+ if(method==="LineaRecta")amount=remaining/Math.max(1,life-elapsed);
+ else if(method==="SaldoDecreciente"){const annual=Number(component.rate);if(!(annual>0&&annual<1))throw new Error("ASSET_DEPRECIATION_RATE_INVALID");amount=(cost-priorAccum)* (1-Math.pow(1-annual,1/12));}
+ else if(method==="UnidadesProduccion"){const total=Number(component.units);if(!(total>0)||!(unitsUsed>0))throw new Error("ASSET_DEPRECIATION_UNITS_REQUIRED");amount=(cost-residual)/total*unitsUsed;}
+ else throw new Error("ASSET_DEPRECIATION_METHOD_INVALID");
+ return assetDeprMoney_(Math.min(remaining,Math.max(0,amount)));
+}
+function assetDeprPriorComponent_(records,key,opening){
+ let total=Number(opening||0);
+ records.forEach(r=>{let parts=[];try{parts=JSON.parse(r[10]||"[]");}catch(_){}
+ const part=parts.find(x=>String(x.key)===key);if(part)total+=Number(part.amount||0);else if(key==="BASE"&&!parts.length)total+=Number(r[6]||0);});
+ return assetDeprMoney_(total);
+}
+function calculateAssetDepreciation(payload){
+ const p=payload||{},actor=assetDeprActor_(p),period=assetDeprMonth_(p.periodo),post=p.post===true,ss=SpreadsheetApp.openById(SPREADSHEET_ID),lock=LockService.getScriptLock();
+ lock.waitLock(15000);
+ try{
+  const config=assetDeprSheet_(ss,"ConfiguracionDepreciacionActivos",ASSET_DEPR_PROFILE_HEADERS_,false);if(!config)return {status:"success",periodo:period.key,resultados:[],totalDepreciacion:0};
+  const profiles=config.getDataRange().getValues().slice(1).filter(r=>String(r[23]||"Activo")==="Activo"&&(!p.activoId||String(r[0])===String(p.activoId)));
+  const assets=ss.getSheetByName("ActivosPatrimoniales");if(!assets)throw new Error("ASSET_NOT_FOUND");
+  const assetRows=assets.getDataRange().getValues(),depr=assetDeprSheet_(ss,"DepreciacionesActivos",ASSET_DEPR_HEADERS_,post),deprRows=depr?depr.getDataRange().getValues():[ASSET_DEPR_HEADERS_];
+  const improvements=assetDeprSheet_(ss,"MejorasCapitalizablesActivos",ASSET_DEPR_IMPROVEMENT_HEADERS_,false),improvementRows=improvements?improvements.getDataRange().getValues().slice(1):[];
+  const journal=getOrCreateSheet(ss,"AsientosContables"),journalRows=journal.getDataRange().getValues(),results=[];let total=0;
+  profiles.forEach(profile=>{
+   const asset=assetRows.slice(1).find(r=>String(r[0]||"").trim()===String(profile[0]));if(!asset)return;
+   if(["disposed","retirado","baja","dado de baja"].indexOf(String(asset[7]||"").trim().toLowerCase())!==-1)return;
+   const duplicate=deprRows.slice(1).find(r=>String(r[1])===String(profile[0])&&String(r[2])===period.key&&String(r[12])==="Contabilizada");
+   if(duplicate){results.push({activoId:profile[0],status:"already_posted",importe:Number(duplicate[6]||0)});return;}
+   const prior=deprRows.slice(1).filter(r=>String(r[1])===String(profile[0])&&String(r[2])<period.key&&String(r[12])==="Contabilizada");
+   const cutoff=profile[19]?assetDeprDate_(profile[19],"FechaCorteApertura"):null;if(cutoff&&period.end<=cutoff){results.push({activoId:profile[0],status:"before_opening_cutoff",importe:0});return;}
+   const components=[],baseStart=profile[9]||profile[2],basePrior=assetDeprPriorComponent_(prior,"BASE",profile[18]);
+   const unitsMap=p.unidadesPorActivo||{},unitsUsed=Number(unitsMap[String(profile[0])]!==undefined?unitsMap[String(profile[0])]:p.unidadesPeriodo||0);
+   const base={key:"BASE",start:baseStart,cost:Number(profile[3])+Number(profile[4]||0),residual:Number(profile[5]),life:Number(profile[6]),method:String(profile[7]),rate:Number(profile[8]),units:Number(profile[21])};
+   if(base.method==="UnidadesProduccion"&&unitsUsed<=0){results.push({activoId:profile[0],status:"units_required",importe:0});return;}const usedBefore=profile[22]+prior.reduce((sum,r)=>sum+Number(r[9]||0),0);if(base.method==="UnidadesProduccion"&&unitsUsed>Math.max(0,Number(profile[21])-usedBefore))throw new Error("ASSET_DEPRECIATION_UNITS_EXCEED_REMAINING");const baseAmount=assetDeprComponentAmount_(base,period,basePrior,unitsUsed);if(baseAmount>0)components.push({key:"BASE",amount:baseAmount});
+   improvementRows.filter(r=>String(r[1])===String(profile[0])&&String(r[11]||"Activo")==="Activo"&&new Date(r[2])<=period.end).forEach(r=>{
+    const key=String(r[0]),component={key,start:r[2],cost:Number(r[4]),residual:Number(r[5]),life:Number(r[6]),method:String(r[7]),rate:Number(r[8]),units:0};
+    const amount=assetDeprComponentAmount_(component,period,assetDeprPriorComponent_(prior,key,0),0);if(amount>0)components.push({key,amount});
+   });
+   const eligibleImprovements=improvementRows.filter(r=>String(r[1])===String(profile[0])&&String(r[11]||"Activo")==="Activo"&&new Date(r[2])<=period.end);const amount=assetDeprMoney_(components.reduce((sum,x)=>sum+x.amount,0));if(amount<=0){results.push({activoId:profile[0],status:"no_depreciation_due",importe:0});return;}
+   const accumulated=assetDeprMoney_(Number(profile[18]||0)+prior.reduce((sum,r)=>sum+Number(r[6]||0),0)+amount),baseCost=assetDeprMoney_(base.cost+eligibleImprovements.reduce((sum,r)=>sum+Number(r[4]||0),0)),residualTotal=assetDeprMoney_(Number(profile[5]||0)+eligibleImprovements.reduce((sum,r)=>sum+Number(r[5]||0),0)),net=assetDeprMoney_(Math.max(residualTotal,baseCost-accumulated)),result={activoId:profile[0],codigoPatrimonial:asset[1],nombre:asset[2],periodo:period.key,metodo:profile[7],baseCosto:baseCost,depreciacionPeriodo:amount,depreciacionAcumulada:accumulated,valorNetoLibros:net,unidadesPeriodo:unitsUsed,componentes:components,status:post?"pending_post":"preview"};
+   if(post){
+    const existingIndex=deprRows.findIndex((r,i)=>i>0&&String(r[1])===String(profile[0])&&String(r[2])===period.key);
+    if(existingIndex>0&&String(deprRows[existingIndex][12])==="Contabilizada"){results.push({activoId:profile[0],status:"already_posted",importe:Number(deprRows[existingIndex][6]||0)});return;}
+    const ref="DEPRECIACION:"+String(profile[0])+":"+period.key,existingJournal=journalRows.slice(1).find(r=>String(r[4]||"")===ref);
+    const expense=assetDeprAccount_(ss,profile[12]),accum=assetDeprAccount_(ss,profile[11]);
+    let rowIndex=existingIndex;
+    const row=["DEP-"+Utilities.getUuid(),profile[0],period.key,new Date(),profile[7],baseCost,amount,accumulated,net,unitsUsed,JSON.stringify(components),existingJournal?existingJournal[0]:"","Preparando",ref,actor.userId];
+    if(rowIndex>0)depr.getRange(rowIndex+1,1,1,row.length).setValues([row]);else{depr.appendRow(row);rowIndex=depr.getLastRow()-1;}
+    let journalId=existingJournal?existingJournal[0]:"";
+    if(!journalId){journalId="AST-"+Utilities.getUuid();const lines=[{codigoCuenta:expense.code,nombreCuenta:expense.name,debe:amount,haber:0,centroCosto:String(profile[16]||""),descripcion:"Depreciación "+profile[0]+" "+period.key},{codigoCuenta:accum.code,nombreCuenta:accum.name,debe:0,haber:amount,centroCosto:String(profile[16]||""),descripcion:"Depreciación acumulada "+profile[0]+" "+period.key}];const sumD=lines.reduce((s,x)=>s+Number(x.debe||0),0),sumH=lines.reduce((s,x)=>s+Number(x.haber||0),0);if(Math.abs(sumD-sumH)>0.01)throw new Error("ASSET_DEPRECIATION_UNBALANCED_JOURNAL");journal.appendRow([journalId,new Date(),"Depreciación de activo "+profile[0]+" periodo "+period.key,"ActivosFijos",ref,JSON.stringify(lines),"Asentado",actor.userId]);}
+    depr.getRange(rowIndex+1,12).setValue(journalId);depr.getRange(rowIndex+1,13).setValue("Contabilizada");result.asientoId=journalId;result.status="posted";logStructuredEvent("ACCOUNTING","calculateAssetDepreciation","INFO","ASSET_DEPRECIATION_POSTED","Depreciación periódica contabilizada.",{activoId:profile[0],periodo:period.key,importe:amount,asientoId:journalId,actorUserId:actor.userId},actor.role);
+   }
+   total+=amount;results.push(result);
+  });
+  return {status:"success",periodo:period.key,post, totalDepreciacion:assetDeprMoney_(total),resultados:results};
+ }finally{lock.releaseLock();}
+}
+function getAssetDepreciationSchedule(payload){
+ const p=payload||{},actor=assetDeprActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),config=assetDeprSheet_(ss,"ConfiguracionDepreciacionActivos",ASSET_DEPR_PROFILE_HEADERS_,false),depr=assetDeprSheet_(ss,"DepreciacionesActivos",ASSET_DEPR_HEADERS_,false);
+ if(!config)return {status:"success",activos:[],calendario:[],totales:{costo:0,depreciacionAcumulada:0,valorNeto:0}};
+ const profiles=config.getDataRange().getValues().slice(1).filter(r=>!p.activoId||String(r[0])===String(p.activoId)),records=depr?depr.getDataRange().getValues().slice(1):[];
+ const filtered=records.filter(r=>(!p.activoId||String(r[1])===String(p.activoId))&&(!p.periodoDesde||String(r[2])>=String(p.periodoDesde))&&(!p.periodoHasta||String(r[2])<=String(p.periodoHasta)));
+ const activos=profiles.map(r=>({activoId:r[0],categoria:r[1],fechaPuestaFuncionamiento:r[2],costoCapitalizado:Number(r[3]||0)+Number(r[4]||0),valorResidual:Number(r[5]||0),vidaUtilMeses:Number(r[6]||0),metodo:r[7],depreciacionAcumuladaInicial:Number(r[18]||0),valorNetoApertura:Number(r[20]||0),moneda:r[17]}));
+ return {status:"success",activos,calendario:filtered.map(r=>({depreciacionId:r[0],activoId:r[1],periodo:r[2],metodo:r[4],baseCosto:Number(r[5]||0),depreciacionPeriodo:Number(r[6]||0),depreciacionAcumulada:Number(r[7]||0),valorNetoLibros:Number(r[8]||0),asientoId:r[11],estado:r[12]})),totales:{costo:assetDeprMoney_(activos.reduce((s,x)=>s+x.costoCapitalizado,0)),depreciacionAcumulada:assetDeprMoney_(filtered.reduce((s,r)=>s+Number(r[6]||0),0)+activos.reduce((s,x)=>s+x.depreciacionAcumuladaInicial,0)),valorNeto:assetDeprMoney_(activos.reduce((s,x)=>s+x.costoCapitalizado,0)-filtered.reduce((s,r)=>s+Number(r[6]||0),0)-activos.reduce((s,x)=>s+x.depreciacionAcumuladaInicial,0))}};
 }
 
 function registerAssetDisposal(payload) {

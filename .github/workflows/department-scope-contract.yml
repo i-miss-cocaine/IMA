@@ -34,6 +34,7 @@ on:
       - tests/security/accounting-departmental-resource-access.test.js
       - tests/security/accounting-purchase-quotation-adjudication.test.js
       - tests/security/accounting-purchase-asset-capitalization.test.js
+      - tests/security/accounting-asset-depreciation.test.js
       - tests/security/accounting-supplier-profile.test.js
       - tests/security/accounting-purchase-dossier.test.js
       - tests/security/accounting-vacation-medical-leave-ownership.test.js
@@ -121,6 +122,8 @@ jobs:
         run: node tests/security/accounting-purchase-receipt-partial.test.js
       - name: Run purchase receipt to fixed asset capitalization contract
         run: node tests/security/accounting-purchase-asset-capitalization.test.js
+      - name: Run fixed asset depreciation and double-entry contract
+        run: node tests/security/accounting-asset-depreciation.test.js
       - name: Run supplier profile and protected banking contract
         run: node tests/security/accounting-supplier-profile.test.js
       - name: Run unified purchase dossier traceability contract
