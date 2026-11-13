@@ -580,7 +580,7 @@ function validateRolePermission(action, payload) {
   if (resourceScopeActions.indexOf(action) !== -1) {
     const roleKey = String(userRole || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
     const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1 &&
-      ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getStaffPayrollReceipt"].indexOf(action) !== -1 && (["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1 || (roleKey === "PROFESOR" && action === "getStaffPayrollReceipt"));
+      (["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "uploadEmployeeDocument", "getEmployeeSelfServicePortal"].indexOf(action) !== -1 && ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1) || (roleKey === "PROFESOR" && action === "getStaffPayrollReceipt");
     const paymentSelfServiceRole = ["ESTUDIANTE", "ALUMNO", "TUTOR", "PADRE", "MADRE", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(roleKey) !== -1 &&
       ["getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher"].indexOf(action) !== -1;
     if (!employeeSelfRole && !paymentSelfServiceRole) {
