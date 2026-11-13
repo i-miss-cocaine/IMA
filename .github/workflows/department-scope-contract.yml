@@ -77,6 +77,8 @@ jobs:
         run: node tests/security/accounting-training-enrollment-ownership.test.js
       - name: Run accounting training course catalog ownership contract
         run: node tests/security/accounting-training-course-catalog-ownership.test.js
+      - name: Run accounting professional development and training analytics ownership contract
+        run: node tests/security/accounting-professional-development-analytics-ownership.test.js
       - name: Run accounting departmental resource access contract
         run: node tests/security/accounting-departmental-resource-access.test.js
       - name: Run academic departmental resource access contract

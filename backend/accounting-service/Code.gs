@@ -576,11 +576,11 @@ function validateRolePermission(action, payload) {
   if (!ctxCheck.authorized) {
     return { authorized: false, role: userRole + " (" + ctxCheck.reason + ")" };
   }
-  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "getLoanAmortizationSchedule", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher", "recordStaffCheckIn", "recordStaffAttendance", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitLeaveVacationRequest", "submitVacationRequest", "getLeaveVacationRequests", "getVacationRequests", "reviewLeaveVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse"];
+  const resourceScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "getLoanAmortizationSchedule", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher", "reviewPaymentVoucher", "recordStaffCheckIn", "recordStaffAttendance", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitLeaveVacationRequest", "submitVacationRequest", "getLeaveVacationRequests", "getVacationRequests", "reviewLeaveVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport"];
   if (resourceScopeActions.indexOf(action) !== -1) {
     const roleKey = String(userRole || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
     const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1 &&
-      (["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "recordStaffCheckIn", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitLeaveVacationRequest", "submitVacationRequest", "getLeaveVacationRequests", "getVacationRequests"].indexOf(action) !== -1 && ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1) || (roleKey === "PROFESOR" && ["getStaffPayrollReceipt", "submitVacationRequest", "getVacationRequests"].indexOf(action) !== -1);
+      (["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "recordStaffCheckIn", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitLeaveVacationRequest", "submitVacationRequest", "getLeaveVacationRequests", "getVacationRequests", "manageProfessionalDevelopmentPlan"].indexOf(action) !== -1 && ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1) || (roleKey === "PROFESOR" && ["getStaffPayrollReceipt", "submitVacationRequest", "getVacationRequests"].indexOf(action) !== -1);
     const paymentSelfServiceRole = ["ESTUDIANTE", "ALUMNO", "TUTOR", "PADRE", "MADRE", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(roleKey) !== -1 &&
       ["getPaymentVouchers", "getPaymentVoucherFile", "uploadPaymentVoucher"].indexOf(action) !== -1;
     if (!employeeSelfRole && !paymentSelfServiceRole) {
@@ -3097,137 +3097,123 @@ function getEmployeeTrainingHistory(payload) {
   return {status:"success",data:{cursos:courses,inscripciones:history,planesDesarrollo:development}};
 }
 
+function resolveProfessionalDevelopmentPlanWriteAccess_(payload,ss,requestedEmployeeId) {
+  const actor=getVerifiedAccountingIdentity_(payload);
+  if(!actor.authorized)return actor;
+  const role=normalizeVacationRole_(actor.role),selfRoles=["EMPLEADO","TRABAJADOR","PERSONAL"],self=selfRoles.indexOf(role)!==-1;
+  if(!self&&["RECURSOSHUMANOS","ADMINISTRADOR"].indexOf(role)===-1)return {authorized:false,code:"ROLE_NOT_ALLOWED"};
+  const requested=String(requestedEmployeeId||"").trim();
+  if(self&&requested&&requested!==actor.userId)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  const employeeId=self?actor.userId:requested;
+  if(!employeeId)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  const headers=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
+  const employees=getVacationSheetSnapshot_(ss,"ExpedientesLaborales",headers);
+  if(employees.missing||employees.error||employees.rows.some(r=>r.length!==headers.length))return {authorized:false,code:"RESOURCE_SCHEMA_INVALID"};
+  const byUser=employees.rows.filter(r=>String(r[2]||"").trim()===employeeId);
+  if(byUser.length!==1)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  const expedienteId=String(byUser[0][0]||"").trim();
+  if(!expedienteId||employees.rows.filter(r=>String(r[0]||"").trim()===expedienteId).length!==1)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  if(self)return {authorized:true,actor:actor,empleadoId:employeeId,expedienteId:expedienteId,accessType:"SELF"};
+  try{if(payload&&typeof payload==="object")RESOURCE_OWNERSHIP_REQUEST_CACHE_.delete(payload);}catch(_){}
+  const scope=getVerifiedAccountingDepartmentScope_(payload,ss,actor);
+  if(!scope.authorized)return {authorized:false,code:scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED"};
+  const ownership=assertResourceOwnershipForScope_(ss,scope,"EXPEDIENTE_LABORAL",expedienteId,"WRITE",payload);
+  if(!ownership.authorized)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  return {authorized:true,actor:actor,empleadoId:employeeId,expedienteId:expedienteId,accessType:ownership.accessType};
+}
+function ensureProfessionalDevelopmentPlanWriteSheet_(ss) {
+  const headers=["PlanID","EmpleadoID","TituloObjetivo","Descripcion","MetasAccionesJSON","FechaInicio","FechaMeta","EstadoObjetivo","EvaluacionSeguimiento","CreadoPor","FechaCreacion","UltimaModificacion"];
+  let sheet=ss.getSheetByName("PlanesDesarrolloProfesional");
+  if(!sheet)sheet=getOrCreateSheet(ss,"PlanesDesarrolloProfesional");
+  if(sheet.getLastRow()===0)sheet.appendRow(headers);
+  const snapshot=getVacationSheetSnapshot_(ss,"PlanesDesarrolloProfesional",headers);
+  if(snapshot.missing||snapshot.error||snapshot.rows.some(r=>r.length!==headers.length))return {error:true,sheet:sheet,rows:[]};
+  return {error:false,sheet:snapshot.sheet||sheet,rows:snapshot.rows,headers:headers};
+}
 function manageProfessionalDevelopmentPlan(payload) {
-  const {
-    planId,
-    empleadoId,
-    tituloObjetivo,
-    descripcion,
-    metasAcciones,
-    fechaInicio,
-    fechaMeta,
-    estadoObjetivo,
-    evaluacionSeguimiento,
-    creadoPor
-  } = payload || {};
-
-  if (!empleadoId || !tituloObjetivo) {
-    throw new Error("empleadoId y tituloObjetivo son campos obligatorios.");
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "PlanesDesarrolloProfesional");
-
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow([
-      "PlanID",
-      "EmpleadoID",
-      "TituloObjetivo",
-      "Descripcion",
-      "MetasAccionesJSON",
-      "FechaInicio",
-      "FechaMeta",
-      "EstadoObjetivo",
-      "EvaluacionSeguimiento",
-      "CreadoPor",
-      "FechaCreacion",
-      "UltimaModificacion"
-    ]);
-  }
-
-  const data = sheet.getDataRange().getValues();
-  const pId = planId || ("PLAN-DEV-" + Date.now());
-  const nowStr = new Date().toISOString();
-  let foundIndex = -1;
-
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim() === String(pId).trim()) {
-      foundIndex = i + 1;
-      break;
-    }
-  }
-
-  const metasStr = typeof metasAcciones === "string" ? metasAcciones : JSON.stringify(metasAcciones || []);
-
-  if (foundIndex > 0) {
-    sheet.getRange(foundIndex, 2).setValue(empleadoId);
-    sheet.getRange(foundIndex, 3).setValue(tituloObjetivo);
-    sheet.getRange(foundIndex, 4).setValue(descripcion || "");
-    sheet.getRange(foundIndex, 5).setValue(metasStr);
-    sheet.getRange(foundIndex, 6).setValue(fechaInicio || nowStr.split("T")[0]);
-    sheet.getRange(foundIndex, 7).setValue(fechaMeta || "");
-    sheet.getRange(foundIndex, 8).setValue(estadoObjetivo || "EnProgreso");
-    sheet.getRange(foundIndex, 9).setValue(evaluacionSeguimiento || "");
-    sheet.getRange(foundIndex, 12).setValue(nowStr);
-  } else {
-    sheet.appendRow([
-      pId,
-      empleadoId,
-      tituloObjetivo,
-      descripcion || "",
-      metasStr,
-      fechaInicio || nowStr.split("T")[0],
-      fechaMeta || "",
-      estadoObjetivo || "EnProgreso",
-      evaluacionSeguimiento || "",
-      creadoPor || "RecursosHumanos",
-      nowStr,
-      nowStr
-    ]);
-  }
-
-  return {
-    status: "success",
-    message: "Plan de desarrollo profesional guardado exitosamente.",
-    data: { planId: pId, empleadoId, tituloObjetivo }
-  };
-}
-
-function getTrainingAnalyticsReport(payload) {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-
-  const courseSheet = getOrCreateSheet(ss, "CatalogoCursosCapacitacion");
-  const courseData = courseSheet.getDataRange().getValues();
-
-  const insSheet = getOrCreateSheet(ss, "InscripcionesCapacitacion");
-  const insData = insSheet.getDataRange().getValues();
-
-  const totalCursos = Math.max(0, courseData.length - 1);
-  const totalInscripciones = Math.max(0, insData.length - 1);
-
-  let completados = 0;
-  let enCurso = 0;
-  let certificadosPorVencer = 0;
-  const now = new Date();
-
-  if (insData.length > 1) {
-    insData.slice(1).forEach(r => {
-      const estado = String(r[4]).trim();
-      if (estado === "Finalizado" || estado === "Asistio") completados++;
-      if (estado === "EnCurso" || estado === "Inscrito") enCurso++;
-
-      const fechaVenc = r[9] ? new Date(r[9]) : null;
-      if (fechaVenc && !isNaN(fechaVenc.getTime())) {
-        const diffDays = Math.ceil((fechaVenc - now) / (1000 * 60 * 60 * 24));
-        if (diffDays >= 0 && diffDays <= 30) certificadosPorVencer++;
+  const p=payload||{},employeeId=String(p.empleadoId||"").trim(),title=String(p.tituloObjetivo||"").trim();
+  if(!title)return {status:"error",code:"DEVELOPMENT_PLAN_TITLE_REQUIRED",message:"El título del objetivo es obligatorio."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),initial=resolveProfessionalDevelopmentPlanWriteAccess_(p,ss,employeeId);
+  if(!initial.authorized)return {status:"error",code:initial.code||"RESOURCE_NOT_FOUND",message:"No existe un expediente disponible para el plan."};
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La operación está siendo procesada. Intente nuevamente."};
+  try{
+    const access=resolveProfessionalDevelopmentPlanWriteAccess_(p,ss,employeeId);
+    if(!access.authorized)return {status:"error",code:access.code==="ROLE_NOT_ALLOWED"?"ROLE_NOT_ALLOWED":"RESOURCE_NOT_FOUND",message:"No existe un expediente disponible para el plan."};
+    const snapshot=ensureProfessionalDevelopmentPlanWriteSheet_(ss);
+    if(snapshot.error)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de planes de desarrollo no es válida."};
+    const suppliedId=String(p.planId||"").trim(),id=suppliedId||("PLAN-DEV-"+Utilities.getUuid());
+    const matches=snapshot.rows.map((row,index)=>({row:row,index:index})).filter(x=>String(x.row[0]||"").trim()===id);
+    if(matches.length>1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe un plan disponible."};
+    if(!suppliedId&&matches.length)return {status:"error",code:"DEVELOPMENT_PLAN_ID_COLLISION",message:"No fue posible registrar el plan."};
+    const existing=matches.length===1?matches[0]:null,current=existing?existing.row.slice():null;
+    if(existing&&String(current[1]||"").trim()!==access.empleadoId)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe un plan disponible."};
+    const now=new Date().toISOString(),today=now.split("T")[0],start=p.fechaInicio!==undefined&&p.fechaInicio!==""?p.fechaInicio:(current?current[5]:today),target=p.fechaMeta!==undefined?p.fechaMeta:(current?current[6]:"");
+    if(isNaN(new Date(start).getTime()))return {status:"error",code:"DEVELOPMENT_PLAN_DATE_INVALID",message:"La fecha de inicio no es válida."};
+    if(target&&isNaN(new Date(target).getTime()))return {status:"error",code:"DEVELOPMENT_PLAN_DATE_INVALID",message:"La fecha meta no es válida."};
+    if(target&&new Date(target)<new Date(start))return {status:"error",code:"DEVELOPMENT_PLAN_DATE_RANGE_INVALID",message:"La fecha meta no puede ser anterior al inicio."};
+    const rawGoals=p.metasAcciones===undefined?(current?current[4]:[]):p.metasAcciones;
+    let goals;
+    if(typeof rawGoals==="string"){
+      try{const parsed=JSON.parse(rawGoals||"[]");if(!Array.isArray(parsed))return {status:"error",code:"DEVELOPMENT_PLAN_GOALS_INVALID",message:"Las metas deben ser una lista JSON."};goals=JSON.stringify(parsed);}
+      catch(_){return {status:"error",code:"DEVELOPMENT_PLAN_GOALS_INVALID",message:"Las metas deben ser una lista JSON válida."};}
+    }else if(Array.isArray(rawGoals))goals=JSON.stringify(rawGoals);
+    else return {status:"error",code:"DEVELOPMENT_PLAN_GOALS_INVALID",message:"Las metas deben ser una lista."};
+    const evaluation=access.accessType==="SELF"?(current?current[8]:""):(p.evaluacionSeguimiento!==undefined?p.evaluacionSeguimiento:(current?current[8]:""));
+    const row=[
+      id,access.empleadoId,title,
+      p.descripcion!==undefined?p.descripcion:(current?current[3]:""),
+      goals,start,target,
+      String(p.estadoObjetivo!==undefined&&p.estadoObjetivo!==""?p.estadoObjetivo:(current?current[7]:"EnProgreso")),
+      evaluation,current?current[9]:access.actor.userId,current?current[10]:now,now
+    ];
+    if(existing){
+      const rowNumber=existing.index+2;
+      try{snapshot.sheet.getRange(rowNumber,1,1,snapshot.headers.length).setValues([row]);}
+      catch(writeError){
+        try{snapshot.sheet.getRange(rowNumber,1,1,snapshot.headers.length).setValues([current]);}
+        catch(rollbackError){return {status:"error",code:"DEVELOPMENT_PLAN_COMPENSATION_REQUIRED",message:"No fue posible completar ni revertir el plan."};}
+        return {status:"error",code:"DEVELOPMENT_PLAN_WRITE_FAILED",message:"No fue posible actualizar el plan."};
       }
-    });
-  }
-
-  return {
-    status: "success",
-    data: {
-      totalCursos,
-      totalInscripciones,
-      completados,
-      enCurso,
-      certificadosPorVencer,
-      tasaFinalizacion: totalInscripciones > 0 ? Math.round((completados / totalInscripciones) * 100) : 0
+    }else{
+      try{snapshot.sheet.appendRow(row);}
+      catch(writeError){return {status:"error",code:"DEVELOPMENT_PLAN_WRITE_FAILED",message:"No fue posible registrar el plan."};}
     }
-  };
+    return {status:"success",message:"Plan de desarrollo profesional guardado exitosamente.",data:{planId:id,empleadoId:access.empleadoId,tituloObjetivo:title}};
+  }finally{lock.releaseLock();}
+}
+function getTrainingAnalyticsReport(payload) {
+  const p=payload||{},actor=getVerifiedAccountingIdentity_(p);
+  if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+  if(["RECURSOSHUMANOS","ADMINISTRADOR"].indexOf(normalizeVacationRole_(actor.role))===-1)return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(p,ss,actor);
+  if(!scope.authorized||(!scope.institutionWide&&!scope.departmentIds.length))return {status:"error",code:scope.code||"DEPARTMENT_SCOPE_REQUIRED",message:"No existe un ámbito autorizado para el reporte."};
+  const courseHeaders=["CursoID","NombreCurso","Categoria","ProveedorResponsable","Modalidad","DuracionHoras","Requisitos","DirigidoA","Estado","CreadoPor","FechaCreacion","UltimaModificacion"];
+  const enrollmentHeaders=["InscripcionID","CursoID","EmpleadoID","FechaInscripcion","EstadoInscripcion","AsistenciaPorcentaje","ResultadoNota","CertificadoDriveUrl","FechaEmisionCertificado","FechaVencimientoCertificado","Observaciones","CreadoPor","FechaCreacion","UltimaModificacion"];
+  const employeeHeaders=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
+  const courses=getVacationSheetSnapshot_(ss,"CatalogoCursosCapacitacion",courseHeaders),enrollments=getVacationSheetSnapshot_(ss,"InscripcionesCapacitacion",enrollmentHeaders),employees=getVacationSheetSnapshot_(ss,"ExpedientesLaborales",employeeHeaders);
+  if(courses.error||enrollments.error||employees.error||courses.rows.some(r=>r.length!==courseHeaders.length)||enrollments.rows.some(r=>r.length!==enrollmentHeaders.length)||employees.rows.some(r=>r.length!==employeeHeaders.length))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de los datos de capacitación no es válida."};
+  const courseCounts=Object.create(null);courses.rows.forEach(r=>{const id=String(r[0]||"").trim();if(id)courseCounts[id]=(courseCounts[id]||0)+1;});
+  const totalCursos=courses.rows.filter(r=>{const id=String(r[0]||"").trim();return !!id&&courseCounts[id]===1;}).length;
+  const userCounts=Object.create(null),expCounts=Object.create(null);employees.rows.forEach(r=>{const u=String(r[2]||"").trim(),x=String(r[0]||"").trim();if(u)userCounts[u]=(userCounts[u]||0)+1;if(x)expCounts[x]=(expCounts[x]||0)+1;});
+  const allowed=Object.create(null);
+  employees.rows.forEach(r=>{const u=String(r[2]||"").trim(),x=String(r[0]||"").trim();if(!u||!x||userCounts[u]!==1||expCounts[x]!==1)return;if(!Object.prototype.hasOwnProperty.call(allowed,u))allowed[u]=assertEmployeeExpedienteScopeAccess_(p,ss,x).authorized;});
+  const enrollmentCounts=Object.create(null);enrollments.rows.forEach(r=>{const id=String(r[0]||"").trim();if(id)enrollmentCounts[id]=(enrollmentCounts[id]||0)+1;});
+  let totalInscripciones=0,completados=0,enCurso=0,certificadosPorVencer=0;
+  const now=new Date();
+  enrollments.rows.forEach(r=>{
+    const id=String(r[0]||"").trim(),userId=String(r[2]||"").trim();
+    if(!id||enrollmentCounts[id]!==1||!userId||allowed[userId]!==true)return;
+    totalInscripciones++;
+    const state=String(r[4]||"").trim();
+    if(state==="Finalizado"||state==="Asistio")completados++;
+    if(state==="EnCurso"||state==="Inscrito")enCurso++;
+    const expiry=r[9]?new Date(r[9]):null;
+    if(expiry&&!isNaN(expiry.getTime())){const days=Math.ceil((expiry.getTime()-now.getTime())/86400000);if(days>=0&&days<=30)certificadosPorVencer++;}
+  });
+  return {status:"success",data:{totalCursos:totalCursos,totalInscripciones:totalInscripciones,completados:completados,enCurso:enCurso,certificadosPorVencer:certificadosPorVencer,tasaFinalizacion:totalInscripciones>0?Math.round((completados/totalInscripciones)*100):0}};
 }
 
-// [TAREA RH-04] [Fase Reclutamiento y Selección] - Programación, reprogramación, seguimiento de asistencia y evaluación confidencial de entrevistas laborales.
 function manageInterviewSchedule(payload) {
   const {
     entrevistaId,
