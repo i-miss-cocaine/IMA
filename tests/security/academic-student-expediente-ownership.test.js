@@ -47,6 +47,11 @@ const context={
     const departmentIds=identity.userId==="STU-2"?["D2"]:["D1"];
     return {authorized:true,userId:identity.userId,role:identity.role,institutionId:"INST-1",departmentIds,institutionWide:false};
   },
+  getVerifiedAcademicGuardianDepartmentScope_:(_payload,_ss,guardian,studentIdentity)=>{
+    scopeCalls.push({userId:studentIdentity.userId,role:studentIdentity.role,delegatedBy:guardian.userId});
+    const departmentIds=studentIdentity.userId==="STU-2"?["D2"]:["D1"];
+    return {authorized:true,userId:studentIdentity.userId,role:studentIdentity.role,institutionId:"INST-1",departmentIds,institutionWide:false};
+  },
   assertResourceOwnershipForScope_:(_ss,scope,type,id,operation)=>{
     const owner=ownershipByExam[id];
     return {authorized:type==="EXPEDIENTE_ESTUDIANTE"&&operation==="READ"&&!!owner&&scope.departmentIds.includes(owner),
