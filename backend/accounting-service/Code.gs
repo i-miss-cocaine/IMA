@@ -2979,6 +2979,43 @@ function manageTrainingCourse(payload) {
     return {status:"success",message:"Curso de capacitación registrado exitosamente.",data:{cursoId:id,nombreCurso:name,estado:row[8]}};
   }finally{lock.releaseLock();}
 }
+function resolveTrainingEnrollmentEmployeeWriteAccess_(payload,ss,employeeId) {
+  const actor=getVerifiedAccountingIdentity_(payload);
+  if(!actor.authorized)return actor;
+  const role=normalizeVacationRole_(actor.role);
+  if(["RECURSOSHUMANOS","ADMINISTRADOR"].indexOf(role)===-1)return {authorized:false,code:"ROLE_NOT_ALLOWED"};
+  const id=String(employeeId||"").trim();
+  if(!id)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  const headers=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"];
+  const employees=getVacationSheetSnapshot_(ss,"ExpedientesLaborales",headers);
+  if(employees.missing||employees.error||employees.rows.some(r=>r.length!==headers.length))return {authorized:false,code:"RESOURCE_SCHEMA_INVALID"};
+  const byUser=employees.rows.filter(r=>String(r[2]||"").trim()===id);
+  if(byUser.length!==1)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  const expedienteId=String(byUser[0][0]||"").trim();
+  if(!expedienteId||employees.rows.filter(r=>String(r[0]||"").trim()===expedienteId).length!==1)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  try{if(payload&&typeof payload==="object")RESOURCE_OWNERSHIP_REQUEST_CACHE_.delete(payload);}catch(_){}
+  const scope=getVerifiedAccountingDepartmentScope_(payload,ss,actor);
+  if(!scope.authorized)return {authorized:false,code:scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED"};
+  const ownership=assertResourceOwnershipForScope_(ss,scope,"EXPEDIENTE_LABORAL",expedienteId,"WRITE",payload);
+  if(!ownership.authorized)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  return {authorized:true,actor:actor,empleadoId:id,expedienteId:expedienteId,accessType:ownership.accessType};
+}
+function ensureTrainingEnrollmentWriteSheet_(ss) {
+  const headers=["InscripcionID","CursoID","EmpleadoID","FechaInscripcion","EstadoInscripcion","AsistenciaPorcentaje","ResultadoNota","CertificadoDriveUrl","FechaEmisionCertificado","FechaVencimientoCertificado","Observaciones","CreadoPor","FechaCreacion","UltimaModificacion"];
+  let sheet=ss.getSheetByName("InscripcionesCapacitacion");
+  if(!sheet)sheet=getOrCreateSheet(ss,"InscripcionesCapacitacion");
+  if(sheet.getLastRow()===0)sheet.appendRow(headers);
+  const snapshot=getVacationSheetSnapshot_(ss,"InscripcionesCapacitacion",headers);
+  if(snapshot.missing||snapshot.error||snapshot.rows.some(r=>r.length!==headers.length))return {error:true,sheet:sheet,rows:[]};
+  return {error:false,sheet:snapshot.sheet||sheet,rows:snapshot.rows,headers:headers};
+}
+function resolveTrainingCourseForEnrollment_(ss,courseId) {
+  const headers=["CursoID","NombreCurso","Categoria","ProveedorResponsable","Modalidad","DuracionHoras","Requisitos","DirigidoA","Estado","CreadoPor","FechaCreacion","UltimaModificacion"];
+  const courses=getVacationSheetSnapshot_(ss,"CatalogoCursosCapacitacion",headers);
+  if(courses.missing||courses.error||courses.rows.some(r=>r.length!==headers.length))return {authorized:false,code:"RESOURCE_SCHEMA_INVALID"};
+  const matches=courses.rows.filter(r=>String(r[0]||"").trim()===String(courseId||"").trim());
+  return matches.length===1?{authorized:true,course:matches[0]}:{authorized:false,code:"RESOURCE_NOT_FOUND"};
+}
 function manageTrainingEnrollment(payload) {
   const p=payload||{},employeeId=String(p.empleadoId||"").trim(),courseId=String(p.cursoId||"").trim();
   if(!employeeId||!courseId)return {status:"error",code:"TRAINING_ENROLLMENT_FIELDS_REQUIRED",message:"Curso y empleado son requeridos."};
