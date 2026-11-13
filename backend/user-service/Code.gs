@@ -10726,9 +10726,6 @@ function setDepartmentReferencePolicy(payload) {
     var now = new Date().toISOString();
     if (matches.length === 1) {
       var current = String(rows[matches[0] - 1][2] || "").trim();
-      if (current !== DEPARTMENT_REFERENCE_POLICY_STRICT_ && current !== DEPARTMENT_REFERENCE_POLICY_READ_ONLY_) {
-        return { status: "error", code: "DEPARTMENT_REFERENCE_POLICY_UNKNOWN" };
-      }
       if (current === value) return { status: "success", unchanged: true, institutionId: context.institutionId, key: DEPARTMENT_REFERENCE_POLICY_KEY_, value: value };
       sheet.getRange(matches[0], 3, 1, 3).setValues([[value, actorId, now]]);
     } else {
