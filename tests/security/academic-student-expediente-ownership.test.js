@@ -609,7 +609,8 @@ console.log("ACADEMIC converted admission reconciliation contract passed.");
         appendRow:()=>{},getLastRow:()=>1
       },
       Date,
-      Math
+      Math,
+      PropertiesService:{getScriptProperties:()=>({getProperty:()=>""})}
     };
     vm.runInNewContext(extractFunction("ensureEnrollmentPeriodCharges_")+"\n"+extractFunction("registerStudentEnrollmentInternal_")+"\nthis.register=registerStudentEnrollmentInternal_;",context);
     const rollback=[];
