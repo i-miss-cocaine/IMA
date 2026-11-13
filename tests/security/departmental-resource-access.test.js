@@ -22,7 +22,7 @@ function extractFunction(source, name) {
 }
 function makeSheet(rows) { return { getLastRow: () => rows.length, getDataRange: () => ({ getValues: () => rows.map(r => r.slice()) }), appendRow: row => rows.push(row.slice()), getRange: () => ({ setValue: () => {} }) }; }
 const academic = fs.readFileSync(path.resolve(__dirname, "../../backend/academic-service/Code.gs"), "utf8");
-const names = ["getVerifiedAcademicIdentity_","getVerifiedDepartmentScopeForSession_","getVerifiedAcademicDepartmentScope_","getAcademicDelegatedMembershipForScope_","getVerifiedAcademicGuardianDepartmentScope_","assertResourceOwnershipForScope_","getStudentPersonIdForUser_","getStudentIdentityForPerson_","assertStudentExpedienteScopeAccess_","assertStudentDocumentScopeAccess_","assertStudentRequestScopeAccess_","resolveAcademicRequestDepartment_","hasActiveTeacherAssignment_","validateAcademicResponsibilityAndScopeAccess","getStudentFile","getStudentDocuments","getSecureDocumentStream","validateEvidenceFileAndPermissions","assertRecordOwnership","getStudentFileSummary","getStudentTimeline","restoreDocumentVersion"];
+const names = ["getVerifiedAcademicIdentity_","getVerifiedDepartmentScopeForSession_","getVerifiedAcademicDepartmentScope_","getAcademicDelegatedMembershipForScope_","resolveInternalResponsibilityForRoleScope_","getVerifiedAcademicGuardianDepartmentScope_","assertResourceOwnershipForScope_","getStudentPersonIdForUser_","getStudentIdentityForPerson_","assertStudentExpedienteScopeAccess_","assertStudentDocumentScopeAccess_","assertStudentRequestScopeAccess_","resolveAcademicRequestDepartment_","hasActiveTeacherAssignment_","validateAcademicResponsibilityAndScopeAccess","getStudentFile","getStudentDocuments","getSecureDocumentStream","validateEvidenceFileAndPermissions","assertRecordOwnership","getStudentFileSummary","getStudentTimeline","restoreDocumentVersion"];
 const code = "var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n" + names.map(n => extractFunction(academic, n)).join("\n");
 const claims = {
   staffA:{userId:"U-A",role:"Director"}, staffB:{userId:"U-B",role:"Director"},
@@ -123,6 +123,31 @@ claims.guardian.institutionId = "INST-OTHER";
 assert.equal(context.assertStudentExpedienteScopeAccess_(actor("guardian"),ss,expSheet,rows.ExpedientesEstudiantes[1]).code,"ROLE_MEMBERSHIP_INSTITUTION_MISMATCH","guardian session membership must match the current institution");
 delete claims.guardian.membershipId;
 delete claims.guardian.institutionId;
+
+const legacyScopeRows = rows.AsignacionesAmbitosRoles;
+rows.AsignacionesAmbitosRoles = [
+  ["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID","InstitutionID","MembershipID","ResponsibilityID"],
+  ["S-STUDENT-MEM","U-STUDENT-A","Estudiante","DEPARTAMENTO",'["DEP-A"]',"Activo","","","","","","","INST-1","MEM-STUDENT-A","RESP-STUDENT-A"]
+];
+rows.MembresiasRolesRBAC = [
+  ["MembershipID","UserID","RoleID","InstitutionID","Status","StartAt","EndAt","CreatedBy","CreatedAt","UpdatedAt","RevokedBy","RevokedAt"],
+  ["MEM-STUDENT-A","U-STUDENT-A","Estudiante","INST-1","ACTIVE","","","","","","",""]
+];
+rows.MatrizPermisosRoles = [["RoleID"],["Estudiante"]];
+rows.CatalogoRolesInternos = [
+  ["RolInternoID","CodigoInterno","NombreResponsabilidad","Descripcion","Departamento","AreaAcademica","TipoResponsabilidad","VigenciaMeses","PermiteSuplencia","Estado","CreadoPor","FechaCreacion","FechaActualizacion"],
+  ["RESP-STUDENT-A","","Estudiante","","","","","","","ACTIVO","","",""]
+];
+assert.equal(context.assertStudentExpedienteScopeAccess_(actor("guardian"),ss,expSheet,rows.ExpedientesEstudiantes[1]).accessType,"GUARDIAN","guardian delegation must resolve the linked student's active RBAC membership and department assignment");
+rows.MembresiasRolesRBAC[1][4] = "REVOKED";
+assert.equal(context.assertStudentExpedienteScopeAccess_(actor("guardian"),ss,expSheet,rows.ExpedientesEstudiantes[1]).code,"ROLE_MEMBERSHIP_NOT_ACTIVE","guardian access must not use a revoked linked-student membership");
+rows.MembresiasRolesRBAC[1][4] = "ACTIVE";
+rows.MembresiasRolesRBAC.push(["MEM-STUDENT-A-2","U-STUDENT-A","Estudiante","INST-1","ACTIVE","","","","","","",""]);
+assert.equal(context.assertStudentExpedienteScopeAccess_(actor("guardian"),ss,expSheet,rows.ExpedientesEstudiantes[1]).code,"ROLE_MEMBERSHIP_AMBIGUOUS","guardian access must fail closed when linked-student role membership is ambiguous");
+rows.AsignacionesAmbitosRoles = legacyScopeRows;
+delete rows.MembresiasRolesRBAC;
+delete rows.MatrizPermisosRoles;
+delete rows.CatalogoRolesInternos;
 assert.equal(context.assertStudentExpedienteScopeAccess_({sessionToken:"invalid"},ss,expSheet,rows.ExpedientesEstudiantes[1]).code,"VERIFIED_IDENTITY_REQUIRED");
 const noDept=makeSheet([["ExpedienteID","PersonaID"],["EXP-X","P-X"]]);
 assert.equal(context.assertStudentExpedienteScopeAccess_(actor("staffA"),ss,noDept,["EXP-X","P-X"]).code,"RESOURCE_OWNERSHIP_UNVERIFIED");
