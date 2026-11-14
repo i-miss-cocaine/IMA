@@ -155,6 +155,13 @@ assert.throws(() => context.saveExtracurricularActivity({
   _verifiedRole: "Director", nombre: "Cupo inválido", categoria: "Deportiva", cupoMaximo: -1
 }), /EXTRACURRICULAR_CAPACITY_INVALID/);
 assert.throws(() => context.saveExtracurricularActivity({
+  _verifiedRole: "Director", nombre: "Horario inválido", categoria: "Deportiva", horarioJSON: "{no-json"
+}), /EXTRACURRICULAR_SCHEDULE_JSON_INVALID/);
+assert.throws(() => context.saveExtracurricularActivity({
+  _verifiedRole: "Director", nombre: "Fechas inválidas", categoria: "Deportiva",
+  fechaInicio: "2027-05-01", fechaFin: "2027-01-01"
+}), /EXTRACURRICULAR_DATE_RANGE_INVALID/);
+assert.throws(() => context.saveExtracurricularActivity({
   _verifiedRole: "Director", nombre: "Ruta inválida", categoria: "Deportiva", cupoMaximo: 2,
   transporteExtraordinarioJSON: { requiereTransporte: true, fechaEvento: "2027-02-10", destino: "Estadio", rutaId: "NO-EXISTE" }
 }), /EXTRACURRICULAR_TRANSPORT_ROUTE_NOT_AVAILABLE/);
