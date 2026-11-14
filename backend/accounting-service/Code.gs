@@ -2002,8 +2002,19 @@ function familyCreditEnsureAuthorizationSheet_(ss) {
   return sheet;
 }
 
+function familyCreditPinSecret_() {
+  const properties = PropertiesService.getScriptProperties();
+  let secret = String(properties.getProperty("FAMILY_CREDIT_PIN_SECRET") || "").trim();
+  if (!secret) {
+    secret = Utilities.getUuid() + "." + Utilities.getUuid() + "." + Utilities.getUuid();
+    properties.setProperty("FAMILY_CREDIT_PIN_SECRET", secret);
+  }
+  if (secret.length < 32) throw new Error("FAMILY_CREDIT_PIN_SECRET_NOT_CONFIGURED");
+  return secret;
+}
+
 function familyCreditPinDigest_(salt, pin) {
-  return computeHmacSignature(String(salt) + "|" + String(pin), getAuthTokenSecret());
+  return computeHmacSignature(String(salt) + "|" + String(pin), familyCreditPinSecret_());
 }
 
 function familyCreditConstantTimeEquals_(left, right) {
@@ -3795,57 +3806,90 @@ function configurePaymentConcept(payload) {
 }
 
 // [TAREA-F4-P0-02] [Fase 4: Protección IDOR y ABAC] - Aislamiento estricto de estado de cuenta por estudiante
-function getStudentAccountStatement(payload) {
-  const callerRole = (payload && payload._verifiedRole) || "Estudiante";
-  let targetUserId = payload && payload.userId;
+function familyCreditGetStatementMovements_(ss, studentUserId) {
+  const sheet = ss.getSheetByName("CreditoFamiliarMovimientos");
+  if (!sheet) return { movimientos: [], total: 0 };
+  const values = sheet.getDataRange().getValues();
+  if (!values.length) return { movimientos: [], total: 0 };
+  const expected = ["MovimientoCreditoID", "Fecha", "AutorizacionID", "EstudianteUserId", "ResponsableUserId", "Establecimiento", "Monto", "OrigenRefId", "Estado", "Observaciones"];
+  const headers = values[0].map(String);
+  if (expected.some(function(header, index) { return headers[index] !== header; })) {
+    throw new Error("FAMILY_CREDIT_MOVEMENT_SCHEMA_MISMATCH");
+  }
+  const seen = Object.create(null);
+  const movements = [];
+  let total = 0;
+  values.slice(1).forEach(function(row) {
+    if (String(row[3] || "").trim() !== String(studentUserId).trim()) return;
+    const state = String(row[8] || "").trim().toLowerCase();
+    if (state !== "aprobado" && state !== "reversado") return;
+    const id = String(row[0] || "").trim();
+    if (!id || seen[id]) throw new Error("FAMILY_CREDIT_MOVEMENT_DUPLICATE_OR_INVALID");
+    seen[id] = true;
+    const rawAmount = Number(row[6]);
+    if (!Number.isFinite(rawAmount) || rawAmount === 0) throw new Error("FAMILY_CREDIT_MOVEMENT_AMOUNT_INVALID");
+    const amount = state === "reversado" ? -Math.abs(rawAmount) : rawAmount;
+    total += amount;
+    movements.push({
+      movimientoCreditoId: id,
+      fecha: row[1],
+      autorizacionId: row[2],
+      estudianteUserId: row[3],
+      responsableUserId: row[4],
+      establecimiento: row[5],
+      monto: amount,
+      origenRefId: row[7],
+      estado: row[8],
+      observaciones: row[9]
+    });
+  });
+  return { movimientos: movements, total: Math.round(total * 100) / 100 };
+}
 
-  if ((callerRole === "Estudiante" || callerRole === "Alumno") && payload._verifiedUserId) {
-    targetUserId = payload._verifiedUserId;
+function getStudentAccountStatement(payload) {
+  const callerRole = String(payload && payload._verifiedRole || "Estudiante").trim();
+  const roleKey = callerRole.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z]/g, "");
+  const actorId = String(payload && payload._verifiedUserId || "").trim();
+  let targetUserId = payload && payload.userId;
+  const guardianRoles = ["PADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"];
+  const studentRoles = ["ESTUDIANTE", "ALUMNO", "STUDENT"];
+  if (studentRoles.indexOf(roleKey) !== -1) {
+    if (!actorId) throw new Error("FAMILY_CREDIT_VERIFIED_IDENTITY_REQUIRED");
+    targetUserId = actorId;
   }
-  if (!targetUserId && payload && payload._verifiedUserId) {
-    targetUserId = payload._verifiedUserId;
-  }
-  if (!targetUserId) throw new Error("userId requerido.");
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  if (guardianRoles.indexOf(roleKey) !== -1) {
+    if (!actorId || !targetUserId || !familyCreditGuardianCanAuthorizeStudent_(ss, actorId, targetUserId)) {
+      throw new Error("FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED");
+    }
+  }
+  if (!targetUserId && actorId) targetUserId = actorId;
+  if (!targetUserId) throw new Error("userId requerido.");
+
   const sUserId = String(targetUserId).trim();
   try { applyApprovedScholarshipsToCharges({ userId: sUserId }); } catch (_) {}
 
   const cargosRows = getOrCreateSheet(ss, "CargosEstudiante").getDataRange().getValues().slice(1);
   const pagosRows = getOrCreateSheet(ss, "PagosAbonos").getDataRange().getValues().slice(1);
+  const creditMovements = familyCreditGetStatementMovements_(ss, sUserId);
 
   const userCargos = cargosRows.filter(r => String(r[2]).trim() === sUserId && String(r[7]) !== "Anulado").map(r => ({
-    cargoId: r[0],
-    fecha: r[1],
-    userId: r[2],
-    concepto: r[3],
-    montoBase: parseFloat(r[4] || 0),
-    descuento: parseFloat(r[5] || 0),
-    montoFinal: parseFloat(r[6] || 0),
-    estado: r[7],
-    fechaVencimiento: r[8]
+    cargoId: r[0], fecha: r[1], userId: r[2], concepto: r[3],
+    montoBase: parseFloat(r[4] || 0), descuento: parseFloat(r[5] || 0),
+    montoFinal: parseFloat(r[6] || 0), estado: r[7], fechaVencimiento: r[8]
   }));
 
   const userPagos = pagosRows.filter(r => String(r[2]).trim() === sUserId && String(r[8]) !== "Anulado").map(r => ({
-    pagoId: r[0],
-    fecha: r[1],
-    userId: r[2],
-    cargoId: r[3],
-    concepto: r[4],
-    montoAbono: parseFloat(r[5] || 0),
-    metodoPago: r[6],
-    referencia: r[7],
-    estado: r[8],
-    reciboId: r[9],
-    observaciones: r[10]
+    pagoId: r[0], fecha: r[1], userId: r[2], cargoId: r[3], concepto: r[4],
+    montoAbono: parseFloat(r[5] || 0), metodoPago: r[6], referencia: r[7],
+    estado: r[8], reciboId: r[9], observaciones: r[10]
   }));
 
   let totalCargos = 0;
   let totalPagado = 0;
-
   userCargos.forEach(c => { totalCargos += c.montoFinal; });
   userPagos.forEach(p => { totalPagado += p.montoAbono; });
-
   const saldoPendiente = Math.max(0, totalCargos - totalPagado);
 
   return {
@@ -3856,7 +3900,9 @@ function getStudentAccountStatement(payload) {
       totalPagado: totalPagado,
       saldoPendiente: saldoPendiente,
       cargos: userCargos,
-      pagos: userPagos
+      pagos: userPagos,
+      consumosCreditoFamiliar: creditMovements.movimientos,
+      totalConsumoCreditoFamiliar: creditMovements.total
     }
   };
 }

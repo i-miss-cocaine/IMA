@@ -3636,3 +3636,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Migración compatible de CreditoFamiliarConfiguracion (5→10 columnas) y CreditoFamiliarAutorizaciones (10→13 columnas). POR_CUPO requiere PIN para autorizar el cupo y guarda aprobador/fecha; POR_COMPRA aún requiere integrar verificación en cada pedido.
 - Se sanitizan campos PIN en logs; doPost deja de registrar el cuerpo HTTP crudo y omite por completo el payload de las acciones que transportan PIN.
 - Crédito familiar sigue deshabilitado en pedidos mientras no estén integrados PIN por compra, ledger, idempotencia durable, stock transaccional y reversos.
+
+
+[2026-11-14] TASK-210 — aislamiento del estado de cuenta y lectura del ledger familiar (C1.729)
+- Se separó el secreto HMAC del PIN familiar del secreto de autenticación de sesión mediante ScriptProperties persistente.
+- El estado de cuenta ahora incluye movimientos de crédito familiar aprobados y reversados como sección independiente, sin alterar el saldo pendiente de colegiatura ni duplicar cargos.
+- Se agregó verificación de relación familiar activa aprobada para consultas de padres/tutores; el alumno queda limitado a su propio estado de cuenta.
+- Se amplió el contrato Node para cobertura de secreto separado, movimientos/reversos y ownership.
+- TASK-210 permanece Pendiente: aprobación POR_COMPRA, débito coordinado, inventario, idempotencia persistente y reversos de pedidos aún no implementados.

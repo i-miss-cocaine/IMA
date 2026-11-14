@@ -270,3 +270,18 @@ C1.721 — IMA-EXEC-20261114-TASK200-01 — TASK-200 — Facturación automátic
 - **HEAD final:** se verificará tras publicar el commit. Rama base no se modifica.
 - **Siguiente acción:** integrar el PIN POR_COMPRA en los flujos reales de pedidos; aplicar transacción coordinada de inventario/orden/ledger con idempotencia persistente, reversos y pruebas de carrera; luego habilitar solo las modalidades completas.
 ===============================================================================
+
+
+===============================================================================
+### C1.729 — IMA-EXEC-20261114-TASK210-STATEMENT-LEDGER-01 — Aislamiento de estado de cuenta y lectura de consumos de crédito familiar
+- **Continuidad:** C1.728; HEAD inicial e33b482b3a65c04d97ff06bdd30c599d0e0362f7; rama exclusiva NG_beta_0.0.0.1_work; rama base 44d9891132332e692dbe2ba8602b41f50a508a59 sin cambios.
+- **Corrección criptográfica:** el HMAC del PIN ahora utiliza un secreto dedicado persistente `FAMILY_CREDIT_PIN_SECRET`, separado de `AUTH_TOKEN_SECRET`; la rotación de la clave de sesión no invalida los PIN familiares. La clave dedicada se inicializa una sola vez en ScriptProperties y se valida antes de usarla.
+- **Estado de cuenta:** `getStudentAccountStatement` ahora limita la consulta del padre/tutor a estudiantes con relación familiar activa aprobada; el estudiante siempre consulta su propio expediente aunque envíe otro ID.
+- **Conciliación de lectura:** se incorporan movimientos de crédito familiar aprobados y reversados en una sección separada del estado de cuenta. Los reversos se presentan como importes negativos y se netean en `totalConsumoCreditoFamiliar`; no se suman a cargos ni se alteran el saldo de colegiatura, evitando doble contabilización.
+- **Pruebas agregadas:** secreto PIN separado; lectura de movimientos aprobados/reversos; exclusión de pendientes; saldo de colegiatura independiente; aislamiento positivo/negativo de tutor y estudiante. Resultado CI se verificará tras el commit.
+- **Limitaciones:** todavía no existe el flujo POR_COMPRA ni el débito coordinado de orden, stock y ledger; no se ejecutan reversos de pedidos ni idempotencia financiera durable. Las compras a crédito continúan bloqueadas. TASK-210 permanece Pendiente.
+- **Archivos:** backend/accounting-service/Code.gs; tests/security/accounting-family-credit-preference.test.js; backlog del padre; changelog; índice y este checkpoint.
+- **Estado:** implementación parcial; no se habilitan débitos familiares.
+- **HEAD final:** se verificará tras publicar el commit; rama base sin cambios.
+- **Siguiente acción:** diseñar e implementar el flujo de pedido pendiente y aprobación POR_COMPRA, seguido de transacción coordinada, stock, idempotencia persistente, reversos y pruebas concurrentes.
+===============================================================================

@@ -65,7 +65,12 @@ const context = {
   Utilities: { getUuid() { return "UUID-" + (++uuid); } },
   getOrCreateSheet(db, name) { return makeSheet(name); },
   computeHmacSignature(message, secret) { return "HMAC:" + secret + ":" + message; },
-  getAuthTokenSecret() { return "test-secret-012345678901234567890123456789"; },
+  getAuthTokenSecret() { return "test-auth-secret-012345678901234567890123456789"; },
+  PropertiesService: { getScriptProperties() { return {
+    getProperty(key) { return key === "FAMILY_CREDIT_PIN_SECRET" ? "test-family-credit-pin-secret-0123456789" : ""; },
+    setProperty(key, value) { this[key] = value; }
+  }; } },
+  applyApprovedScholarshipsToCharges() { return { status: "success" }; },
   transportParseDate_(value) {
     if (!value) return null;
     const date = value instanceof Date ? value : new Date(value);
@@ -74,13 +79,14 @@ const context = {
   Date, String, Object, Array, JSON, Error, console
 };
 vm.createContext(context);
-const names = ["sanitizePayloadForLog", "familyCreditEnsureConfigSheet_", "familyCreditEnsureAuthorizationSheet_", "familyCreditPinDigest_", "familyCreditConstantTimeEquals_", "familyCreditVerifyPinInConfig_", "familyCreditApprovalActor_", "familyCreditGuardianHasActiveStudentRelation_", "familyCreditGuardianCanAuthorizeStudent_", "familyCreditIsRequested_", "getFamilyCreditApprovalPreference", "configureFamilyCreditApprovalPreference", "configureFamilyCreditPin", "configureFamilyCreditAuthorization", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase", "createStoreOrder", "createCafeteriaOrder"];
+const names = ["sanitizePayloadForLog", "familyCreditPinSecret_", "familyCreditGetStatementMovements_", "getStudentAccountStatement", "familyCreditEnsureConfigSheet_", "familyCreditEnsureAuthorizationSheet_", "familyCreditPinDigest_", "familyCreditConstantTimeEquals_", "familyCreditVerifyPinInConfig_", "familyCreditApprovalActor_", "familyCreditGuardianHasActiveStudentRelation_", "familyCreditGuardianCanAuthorizeStudent_", "familyCreditIsRequested_", "getFamilyCreditApprovalPreference", "configureFamilyCreditApprovalPreference", "configureFamilyCreditPin", "configureFamilyCreditAuthorization", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase", "createStoreOrder", "createCafeteriaOrder"];
 vm.runInContext(names.map(extractFunction).join("\n"), context);
 const sanitizedPinPayload = context.sanitizePayloadForLog({ familyPin: "123456", currentPin: "654321", newPin: "111111", nested: { pinHash: "HASH-ONLY", authToken: "SESSION-TOKEN" } });
 assert.equal(sanitizedPinPayload.includes("123456"), false);
 assert.equal(sanitizedPinPayload.includes("654321"), false);
 assert.equal(sanitizedPinPayload.includes("111111"), false);
 assert.match(sanitizedPinPayload, /MASKED/);
+assert.equal(context.familyCreditPinSecret_(), "test-family-credit-pin-secret-0123456789", "family PIN pepper must be independent from AUTH_TOKEN_SECRET");
 
 rows.Usuarios = [
   headers.Usuarios,
@@ -154,6 +160,30 @@ assert.equal(reloaded.modalidadAprobacion, "POR_CUPO");
 assert.equal(lockReleased, true);
 assert.equal(context.familyCreditGuardianCanAuthorizeStudent_(ss, "GUARD-1", "STU-1"), true);
 assert.equal(context.familyCreditGuardianCanAuthorizeStudent_(ss, "GUARD-1", "STU-2"), false);
+
+rows.CargosEstudiante = [
+  ["CargoID","Fecha","UserId","Concepto","MontoBase","Descuento","MontoFinal","Estado","FechaVencimiento","Observaciones","ClaveUnicaDedupe","BatchId"],
+  ["CH-1",new Date(),"STU-1","Colegiatura",100,0,100,"Pendiente","","","",""]
+];
+rows.PagosAbonos = [
+  ["PagoID","Fecha","UserId","CargoID","Concepto","MontoAbono","MetodoPago","Referencia","Estado","ReciboID","Observaciones"],
+  ["PAY-1",new Date(),"STU-1","CH-1","Colegiatura",40,"Transferencia","REF-1","Confirmado","",""]
+];
+rows.CreditoFamiliarMovimientos = [
+  ["MovimientoCreditoID","Fecha","AutorizacionID","EstudianteUserId","ResponsableUserId","Establecimiento","Monto","OrigenRefId","Estado","Observaciones"],
+  ["MOV-1",new Date(),"AUT-1","STU-1","GUARD-1","Tienda",25,"ORD-1","Aprobado",""],
+  ["MOV-2",new Date(),"AUT-1","STU-1","GUARD-1","Tienda",12,"ORD-2","Pendiente",""],
+  ["MOV-3",new Date(),"AUT-1","STU-1","GUARD-1","Tienda",5,"ORD-1-REV","Reversado",""],
+  ["MOV-4",new Date(),"AUT-2","STU-2","OTHER-G","Cafetería",20,"CAF-1","Aprobado",""]
+];
+const guardianStatement = context.getStudentAccountStatement({ userId: "STU-1", _verifiedUserId: "GUARD-1", _verifiedRole: "Padre" });
+assert.equal(guardianStatement.data.consumosCreditoFamiliar.length, 2);
+assert.equal(guardianStatement.data.totalConsumoCreditoFamiliar, 20, "approved consumption and reversals must net without creating a second school charge");
+assert.equal(guardianStatement.data.saldoPendiente, 60, "family credit consumption remains separate from tuition balance");
+assert.throws(() => context.getStudentAccountStatement({ userId: "STU-2", _verifiedUserId: "GUARD-1", _verifiedRole: "Padre" }), /FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED/);
+const studentStatement = context.getStudentAccountStatement({ userId: "STU-2", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante" });
+assert.equal(studentStatement.data.userId, "STU-1", "students cannot request another student's statement");
+assert.equal(studentStatement.data.totalConsumoCreditoFamiliar, 20);
 assert.equal(context.familyCreditIsRequested_("Crédito Familiar"), true, "accented payment method must still be recognized as family credit");
 assert.equal(context.familyCreditIsRequested_("Credito Familiar"), true);
 assert.throws(() => context.configureFamilyCreditAuthorization({ responsableUserId: "OTHER-G", estudianteUserId: "STU-1", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante" }), /FAMILY_CREDIT_GUARDIAN_ROLE_REQUIRED/);
