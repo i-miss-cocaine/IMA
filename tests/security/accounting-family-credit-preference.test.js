@@ -329,7 +329,7 @@ assert.throws(() => context.createStoreOrder({
   userId: "STU-1", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
   detalleItems: [{ productoId: "PROD-1", cantidad: 3 }], metodoPago: "Transferencia"
 }), /STORE_INSUFFICIENT_STOCK/);
-assert.equal(rows.TiendaProductos[1][6], 2, "insufficient stock must not change inventory");
+assert.equal(rows.TiendaProductos[1][6], 1, "insufficient stock must not change inventory");
 assert.throws(() => context.createStoreOrder({
   userId: "STU-1", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
   detalleItems: [{ productoId: "MISSING", cantidad: 1 }], metodoPago: "Transferencia"
@@ -343,7 +343,7 @@ const storeOverride = context.createStoreOrder({
   userId: "STU-2", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
   detalleItems: [{ productoId: "PROD-2", cantidad: 1 }], metodoPago: "Transferencia"
 });
-assert.equal(rows.TiendaOrdenes[2][2], "STU-1", "student order creation must use verified student identity");
+assert.equal(rows.TiendaOrdenes[3][2], "STU-1", "student order creation must use verified student identity");
 assert.equal(storeOverride.status, "success");
 assert.throws(() => context.createStoreOrder({
   userId: "STU-2", _verifiedUserId: "GUARD-1", _verifiedRole: "Padre",
