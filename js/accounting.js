@@ -52,6 +52,8 @@ window.switchTab = function (tab) {
     renderPresupuestosModule(container);
   } else if (tab === 'descuentos') {
     renderDescuentosModule(container);
+  } else if (tab === 'tarifas-servicios') {
+    renderServiceTariffsModule(container);
   } else if (tab === 'matricula') {
     renderEnrollmentBillingConfigurationModule(container);
   } else {
@@ -2336,6 +2338,24 @@ window.saveEnrollmentBillingConfiguration = async function() {
   } catch (error) {
     feedback.textContent = "Error: " + String(error.message || error);
   }
+};
+
+
+function serviceTariffEscape_(value){return String(value===undefined||value===null?"":value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function renderServiceTariffsModule(container){
+ container.innerHTML='<div class="space-y-5"><div><h4 class="text-base font-black uppercase text-gray-800">Tarifas centralizadas de servicios</h4><p class="text-xs text-gray-500 mt-1">Administre importes, modalidades, vigencias, descuentos familiares y reglas de prorrateo. Las nuevas vigencias no modifican cargos históricos.</p></div><section class="border rounded-2xl p-4 space-y-3"><h5 class="text-xs font-black uppercase">Registrar tarifa o nueva vigencia</h5><div class="grid grid-cols-1 md:grid-cols-4 gap-2"><select id="service-tariff-service" class="p-2 border rounded-lg"><option value="TRANSPORTE">Transporte escolar</option><option value="CAFETERIA">Cafetería</option><option value="TIENDA">Tienda</option><option value="EXTRACURRICULAR">Actividades extracurriculares</option><option value="OTRO">Otro servicio</option></select><select id="service-tariff-mode" class="p-2 border rounded-lg"><option value="COMPLETA">Completa</option><option value="MEDIA">Media</option><option value="GENERAL">General</option></select><input id="service-tariff-route" class="p-2 border rounded-lg" placeholder="ID de ruta (obligatorio en transporte)"><select id="service-tariff-period" class="p-2 border rounded-lg"><option value="MENSUAL">Mensual</option><option value="DIARIO">Diario</option><option value="ANUAL">Anual</option><option value="EVENTO">Por evento</option><option value="POR_PERIODO">Por período</option></select><input id="service-tariff-amount" type="number" min="0.01" step="0.01" class="p-2 border rounded-lg" placeholder="Importe"><input id="service-tariff-start" type="date" class="p-2 border rounded-lg"><input id="service-tariff-end" type="date" class="p-2 border rounded-lg" placeholder="Fin de vigencia (opcional)"><input id="service-tariff-sibling" type="number" min="0" max="100" step="0.01" value="0" class="p-2 border rounded-lg" placeholder="Descuento hermanos %"><input id="service-tariff-cap" type="number" min="0" max="100" step="0.01" value="100" class="p-2 border rounded-lg" placeholder="Descuento máximo %"></div><div class="flex flex-wrap gap-4 text-xs"><label class="flex items-center gap-2"><input id="service-tariff-prorate-start" type="checkbox" checked> Prorratear altas</label><label class="flex items-center gap-2"><input id="service-tariff-prorate-end" type="checkbox" checked> Prorratear bajas</label></div><div class="flex gap-2"><button onclick="saveServiceTariff()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold">Guardar tarifa / vigencia</button><button onclick="loadServiceTariffs()" class="px-4 py-2 bg-gray-100 rounded-lg text-xs font-bold">Actualizar listado</button></div><p id="service-tariff-message" class="text-xs text-gray-500"></p></section><section class="border rounded-2xl p-4"><h5 class="text-xs font-black uppercase mb-3">Tarifas registradas</h5><div id="service-tariffs-list" class="overflow-x-auto text-xs">Cargando tarifas...</div></section><p class="text-xs text-gray-500">Las becas aprobadas se aplican según las reglas de Descuentos/Becas; el descuento por hermanos utiliza relaciones familiares autorizadas y el límite máximo configurado en la tarifa.</p></div>';
+ loadServiceTariffs();
+}
+window.saveServiceTariff=function(){
+ const val=id=>document.getElementById(id).value,payload={servicio:val("service-tariff-service"),modalidad:val("service-tariff-mode"),rutaId:val("service-tariff-route"),periodo:val("service-tariff-period"),monto:Number(val("service-tariff-amount")),fechaVigenciaInicio:val("service-tariff-start"),fechaVigenciaFin:val("service-tariff-end"),descuentoHermanosPct:Number(val("service-tariff-sibling")||0),descuentoMaximoPct:Number(val("service-tariff-cap")||100),prorrateoAlta:document.getElementById("service-tariff-prorate-start").checked,prorrateoBaja:document.getElementById("service-tariff-prorate-end").checked},host=document.getElementById("service-tariff-message");
+ host.textContent="Guardando...";fetchApi("ACCOUNTING","manageServiceTariff",payload).then(r=>{host.textContent=r.message||"Tarifa guardada.";loadServiceTariffs();}).catch(e=>{host.textContent=e.message||String(e);});
+};
+window.loadServiceTariffs=function(){
+ const host=document.getElementById("service-tariffs-list");if(!host)return;host.textContent="Consultando tarifas...";
+ fetchApi("ACCOUNTING","getServiceTariffs",{}).then(r=>{const rows=r.tarifas||[];if(!rows.length){host.textContent="No hay tarifas registradas.";return;}let h='<table class="w-full text-left border-collapse"><thead><tr class="bg-gray-50"><th class="p-2">Servicio</th><th class="p-2">Modalidad</th><th class="p-2">Ruta</th><th class="p-2">Período</th><th class="p-2">Importe</th><th class="p-2">Vigencia</th><th class="p-2">Hermanos</th><th class="p-2">Máx. descuento</th><th class="p-2">Prorrateo</th><th class="p-2">Estado</th></tr></thead><tbody>';
+ rows.forEach(x=>{const start=x.fechaVigenciaInicio?new Date(x.fechaVigenciaInicio).toLocaleDateString():"—",end=x.fechaVigenciaFin?new Date(x.fechaVigenciaFin).toLocaleDateString():"Abierta";h+='<tr class="border-t"><td class="p-2">'+serviceTariffEscape_(x.servicio)+'</td><td class="p-2">'+serviceTariffEscape_(x.modalidad)+'</td><td class="p-2">'+serviceTariffEscape_(x.rutaId||"—")+'</td><td class="p-2">'+serviceTariffEscape_(x.periodo)+'</td><td class="p-2 font-bold">'+Number(x.monto||0).toFixed(2)+'</td><td class="p-2">'+start+' – '+end+'</td><td class="p-2">'+Number(x.descuentoHermanosPct||0)+'%</td><td class="p-2">'+Number(x.descuentoMaximoPct||0)+'%</td><td class="p-2">'+(x.prorrateoAlta?"Alta":"—")+' / '+(x.prorrateoBaja?"Baja":"—")+'</td><td class="p-2">'+serviceTariffEscape_(x.estado)+'</td></tr>';});
+ host.innerHTML=h+'</tbody></table>';
+ }).catch(e=>{host.textContent=e.message||String(e);});
 };
 
 function renderDescuentosModule(container) {
