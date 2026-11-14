@@ -505,6 +505,10 @@ const inconsistentReconciliation = context.getFamilyCreditSalesReconciliation({ 
 assert.equal(inconsistentReconciliation.coincide, false);
 assert.ok(inconsistentReconciliation.discrepancias.some(item => item.codigo === "ORPHAN_APPROVED_MOVEMENT"));
 assert.match(source, /case "getFamilyCreditSalesReconciliation"/);
+const contadorPermissions = source.slice(source.indexOf('  "Contador": ['), source.indexOf('\n  "EncargadoTienda": ['));
+assert.ok(contadorPermissions.includes('"getFamilyCreditSalesReconciliation"'), "Contador must have permission to open the reconciliation report");
+const directorPermissions = source.slice(source.indexOf('  "Director": ['), source.indexOf('\n  "Subdirector": ['));
+assert.ok(directorPermissions.includes('"getFamilyCreditSalesReconciliation"'), "Director must have permission to open the reconciliation report");
 assert.match(accountingUiSource, /renderFamilyCreditSalesReconciliationModule/);
 assert.match(accountingUiSource, /getFamilyCreditSalesReconciliation/);
 
