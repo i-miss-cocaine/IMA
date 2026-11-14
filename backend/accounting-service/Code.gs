@@ -1829,10 +1829,11 @@ function saveInstitutionalComplementaryService(payload) {
   const name = String(data.nombre || "").trim(), category = String(data.categoria || "").trim();
   const key = String(data.servicioClave || name).trim().toUpperCase().normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9_-]/g, "_").replace(/^_+|_+$/g, "");
-  const modality = institutionalServiceRoleKey_(data.modalidad);
-  const allowedModalities = ["RECURRENTE", "POR_CONSUMO", "POR_EVENTO"];
+  const modalityKey = institutionalServiceRoleKey_(data.modalidad);
+  const modalityMap = { RECURRENTE: "RECURRENTE", PORCONSUMO: "POR_CONSUMO", POREVENTO: "POR_EVENTO" };
+  const modality = modalityMap[modalityKey] || "";
   if (!name || !category || !key) throw new Error("INSTITUTIONAL_SERVICE_NAME_CATEGORY_KEY_REQUIRED");
-  if (allowedModalities.indexOf(modality) === -1) throw new Error("INSTITUTIONAL_SERVICE_MODALITY_INVALID");
+  if (!modality) throw new Error("INSTITUTIONAL_SERVICE_MODALITY_INVALID");
   const capacity = data.cupoMaximo === undefined || data.cupoMaximo === "" ? 0 : Number(data.cupoMaximo);
   const fee = data.tarifa === undefined || data.tarifa === "" ? 0 : Number(data.tarifa);
   if (!Number.isSafeInteger(capacity) || capacity < 0) throw new Error("INSTITUTIONAL_SERVICE_CAPACITY_INVALID");
