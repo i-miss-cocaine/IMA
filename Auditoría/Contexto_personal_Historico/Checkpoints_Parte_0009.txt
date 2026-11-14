@@ -371,3 +371,23 @@ C1.721 — IMA-EXEC-20261114-TASK200-01 — TASK-200 — Facturación automátic
 - **HEAD final:** se verificará tras el commit documental; rama base debe permanecer en 44d9891132332e692dbe2ba8602b41f50a508a59.
 - **Siguiente tarea elegible:** TASK-211 — ampliación del sistema de actividades extracurriculares y sus servicios asociados (PM-05).
 ===============================================================================
+
+
+===============================================================================
+### C1.736 — IMA-EXEC-20261114-TASK211-EXTRACURRICULAR-01 — Actividades extracurriculares e inscripciones familiares
+- **Continuidad:** C1.735; HEAD inicial 6e6604c406ce9b6adff4a41563bc49e6609ba37e; rama exclusiva NG_beta_0.0.0.1_work; rama base verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Backend académico:** se extendió ActividadesExtracurriculares de forma compatible, preservando columnas históricas y agregando cupo máximo, tarifa, transporte extraordinario, fecha de inicio y fin. Guardado tipo upsert; actualizaciones parciales conservan horarios, responsables, supervisores, cupos, tarifas y ruta existentes. Se validan JSON, rangos de fechas y reducción de cupo por debajo de inscripciones activas.
+- **ServiciosInscripciones:** nuevo esquema con estudiante, responsable, estado, cargo, importe, transporte y posición de lista de espera. Los padres/tutores/responsables solo pueden gestionar estudiantes con relación familiar activa y aprobada, verificada en servidor.
+- **Capacidad y concurrencia:** ScriptLock en configuración, inscripción, consulta familiar y cancelación. La capacidad se cuenta bajo lock; al llenarse, la inscripción pasa a ListaEspera sin cargo. Al liberarse una plaza se promueve el primer registro, crea su cargo si corresponde y recalcula posiciones. La repetición de cancelación no sobreasigna plazas ni crea cargos duplicados.
+- **Contabilidad:** los cargos se insertan en CargosEstudiante con el encabezado contable de 12 columnas, CargoID determinista y ClaveUnicaDedupe. Las inscripciones pagadas se presentan como Confirmadas; el portal no cancela ni anula cargos pagados y remite la devolución a administración.
+- **Transporte:** una actividad que requiera transporte debe asociar rutaId, fecha de evento y destino; la ruta debe existir y estar activa en TransporteRutas. La vigencia se vuelve a validar al inscribir. El identificador y detalles se copian a la inscripción.
+- **UI:** js/ui-common.js y app/html/dashboards/dynamic-dashboard.html incorporan panel de configuración para Director/Subdirector/Administrador y panel familiar para Padre/Tutor/Responsable, con consulta, inscripción, lista de espera y cancelación de cargos no pagados.
+- **Permisos:** se añadieron rutas y permisos explícitos para Director/Subdirector y Padre/Tutor/Responsable; el catálogo de actividades se habilita para estos roles. Las funciones validan además la identidad/rol verificados.
+- **Pruebas:** tests/security/academic-extracurricular-enrollment.test.js cubre capacidad, rebaja de cupo, ruta activa/inactiva, relación familiar, idempotencia, lista de espera, promoción, cargo único, pago, cancelación, fechas/JSON y UI wiring. Node.js 24.22.2 PASS; syntax-check Apps Script y JS PASS.
+- **CI:** Department Scope Contract 43628920481 SUCCESS (HEAD final); Department Scope 43628902385 SUCCESS; Department Reference Consumers 43628902415 SUCCESS; Task-Service security 43628902373 SUCCESS.
+- **Archivos modificados desde C1.735:** .github/workflows/department-scope-contract.yml, app/html/dashboards/dynamic-dashboard.html, backend/academic-service/Code.gs, js/ui-common.js, tests/security/academic-extracurricular-enrollment.test.js; backlog, changelog, índice y este checkpoint.
+- **Límites:** no se ejecutó un CLI específico (no se encontró CLI del proyecto); la UI tiene contrato estático y no prueba E2E real; Apps Script/Sheets productivo no se ejecutó. La validación beta desplegada queda pendiente y no se declara realizada.
+- **Estado:** TASK-211 completada en código, revisión y CI.
+- **HEAD previo al commit documental:** 7c84f1febadaed2544db4911836efa29f4d523af; rama base 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Siguiente tarea elegible del Plan Maestro PM-05:** TASK-392 — configuración centralizada de servicios complementarios institucionales (P2).
+===============================================================================

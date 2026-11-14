@@ -3690,3 +3690,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato Node.js 24.22.2 PASS; sintaxis Apps Script PASS; CI de Department Scope, Identity Mapping y Department Reference Consumers SUCCESS en los commits finales.
 - TASK-210 se marca completada en código, revisión y CI. La validación beta real de Apps Script/Sheets queda separada del cierre de código.
 - Siguiente tarea elegible del Plan Maestro: TASK-211 — ampliación del sistema de actividades extracurriculares y servicios asociados.
+
+
+[2026-11-14] TASK-211 — actividades extracurriculares, inscripciones familiares y facturación (C1.736)
+- Se amplió ActividadesExtracurriculares con cupo, tarifa, vigencia y transporte extraordinario; actualización parcial preserva los datos no enviados.
+- Se incorporó ServiciosInscripciones con control de cupos bajo ScriptLock, lista de espera, promoción idempotente y gestión familiar basada en relaciones activas verificadas.
+- Las plazas confirmadas con tarifa generan un cargo único CEX-* en CargosEstudiante (esquema contable de 12 columnas y ClaveUnicaDedupe); los cargos pagados se muestran como inscripción confirmada y no se anulan desde el portal familiar.
+- Se agregaron paneles de configuración administrativa y gestión familiar al dashboard dinámico; rutas extraordinarias deben existir y estar activas en TransporteRutas.
+- Node.js 24.22.2 contract PASS; sintaxis Apps Script/JS PASS; GitHub Actions Department Scope, Department Reference Consumers y Task-Service security SUCCESS.
+- TASK-211 completada en código, revisión y CI; beta real y E2E navegador pendientes.
+- Siguiente tarea elegible PM-05: TASK-392 — configuración centralizada de servicios complementarios institucionales (P2).

@@ -398,7 +398,16 @@
   - Las actividades controlan cupos máximos de inscripción.
   - Las inscripciones pagadas generan el cargo en el estado de cuenta del estudiante.
   - Los padres pueden consultar y gestionar las actividades de sus hijos.
-- **Estado:** [ ] Pendiente
+- **Implementación C1.736:** configuración y edición de actividades con horario, responsables, supervisores, fechas, cupo máximo y tarifa; preservación de valores en actualizaciones parciales; validación de JSON, fechas y capacidad ya comprometida.
+- **Inscripciones familiares:** nuevo registro ServiciosInscripciones con verificación de relación activa Padre/Tutor/Responsable ↔ estudiante, límite de cupos bajo ScriptLock, lista de espera, promoción ordenada, cancelación segura e idempotencia.
+- **Facturación:** cada inscripción con tarifa crea un cargo CEX-* en CargosEstudiante usando el esquema contable de 12 columnas y ClaveUnicaDedupe; la lista de espera no genera cargo hasta obtener plaza. El estado pagado se refleja como inscripción confirmada. Cancelar una inscripción pagada requiere gestión administrativa y no anula el cargo pagado.
+- **Transporte extraordinario:** asociación de actividad/inscripción a una ruta existente y activa de TransporteRutas, con fecha de evento y destino obligatorios; se vuelve a validar al inscribir.
+- **Interfaz:** panel administrativo en el dashboard dinámico para configurar/editar actividades y panel familiar para consultar estudiantes vinculados, inscribir, ver estados y cancelar inscripciones no pagadas.
+- **Seguridad y concurrencia:** permisos explícitos para Director/Subdirector y Padre/Tutor/Responsable; identidad verificada del servidor; relación familiar activa; ScriptLock en configuración, inscripción, consulta familiar y cancelación; protección de cupos, cargos duplicados y doble promoción de lista de espera.
+- **Pruebas:** tests/security/academic-extracurricular-enrollment.test.js valida configuración, preservación de actualizaciones parciales, JSON/fechas, ruta activa, permisos, capacidad, lista de espera, promoción, facturación deduplicada, pago, cancelación y acceso familiar. Node.js 24.22.2 PASS; sintaxis Apps Script y JavaScript PASS.
+- **GitHub Actions:** Department Scope Contract 43628920481 SUCCESS en HEAD final; Department Scope 43628902385 SUCCESS, Department Reference Consumers 43628902415 SUCCESS y Task-Service security 43628902373 SUCCESS para el cambio de permisos/backend.
+- **Cierre:** TASK-211 satisfecha en código, revisión y CI. Validación funcional con una implementación beta real de Apps Script/Sheets y prueba E2E en navegador quedan pendientes de despliegue.
+- **Estado:** [x] Completada en código, revisión y CI; pendiente validación beta desplegada.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 8633-8681; clave TASK-216; asignación única: Docente -->
 
