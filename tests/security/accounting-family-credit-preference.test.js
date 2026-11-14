@@ -79,7 +79,7 @@ const context = {
   Date, String, Object, Array, JSON, Error, console
 };
 vm.createContext(context);
-const names = ["sanitizePayloadForLog", "familyCreditPinSecret_", "familyCreditGetStatementMovements_", "familyCreditGetActiveStudentUserIdsForGuardian_", "getStoreOrders", "getCafeteriaOrders", "getStudentAccountStatement", "familyCreditEnsureConfigSheet_", "familyCreditEnsureAuthorizationSheet_", "familyCreditPinDigest_", "familyCreditConstantTimeEquals_", "familyCreditVerifyPinInConfig_", "familyCreditApprovalActor_", "familyCreditEnsurePurchaseAuthorization_", "familyCreditRequirePurchaseAuthorizationForStudent_", "familyCreditGuardianHasActiveStudentRelation_", "familyCreditGuardianCanAuthorizeStudent_", "familyCreditIsRequested_", "familyCreditIsCancellationStatus_", "familyCreditReverseApprovedOrder_", "updateStoreOrderStatus", "updateCafeteriaOrderStatus", "getFamilyCreditApprovalPreference", "configureFamilyCreditApprovalPreference", "configureFamilyCreditPin", "configureFamilyCreditAuthorization", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase", "createStoreOrder", "createCafeteriaOrder"];
+const names = ["sanitizePayloadForLog", "familyCreditPinSecret_", "familyCreditGetStatementMovements_", "familyCreditGetActiveStudentUserIdsForGuardian_", "getStoreOrders", "getCafeteriaOrders", "getStudentAccountStatement", "familyCreditEnsureConfigSheet_", "familyCreditEnsureAuthorizationSheet_", "familyCreditPinDigest_", "familyCreditConstantTimeEquals_", "familyCreditVerifyPinInConfig_", "familyCreditApprovalActor_", "familyCreditEnsurePurchaseAuthorization_", "familyCreditRequirePurchaseAuthorizationForStudent_", "familyCreditGuardianHasActiveStudentRelation_", "familyCreditGuardianCanAuthorizeStudent_", "familyCreditIsRequested_", "familyCreditIsCancellationStatus_", "familyCreditReverseApprovedOrder_", "familyCreditApplyCupoPurchase_", "updateStoreOrderStatus", "updateCafeteriaOrderStatus", "getFamilyCreditApprovalPreference", "configureFamilyCreditApprovalPreference", "configureFamilyCreditPin", "configureFamilyCreditAuthorization", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase", "createStoreOrder", "createCafeteriaOrder"];
 vm.runInContext(names.map(extractFunction).join("\n"), context);
 const sanitizedPinPayload = context.sanitizePayloadForLog({ familyPin: "123456", currentPin: "654321", newPin: "111111", nested: { pinHash: "HASH-ONLY", authToken: "SESSION-TOKEN" } });
 assert.equal(sanitizedPinPayload.includes("123456"), false);
@@ -418,5 +418,37 @@ assert.throws(() => context.createCafeteriaOrder({
   detalleItems: [{ platoId: "FOOD-1", cantidad: 3 }], metodoPago: "Efectivo"
 }), /CAFETERIA_INSUFFICIENT_STOCK/);
 assert.equal(rows.CafeteriaMenu[1][4], 1, "cafeteria stock must remain unchanged after rejection");
+
+
+rows.CreditoFamiliarConfiguracion[1][8] = 0;
+rows.CreditoFamiliarConfiguracion[1][9] = "";
+const cupoMode = context.configureFamilyCreditApprovalPreference({
+  _verifiedUserId: "GUARD-1", _verifiedRole: "Padre", modalidadAprobacion: "POR_CUPO"
+});
+assert.equal(cupoMode.modalidadAprobacion, "POR_CUPO");
+const cupoAuthorization = context.configureFamilyCreditAuthorization({
+  responsableUserId: "GUARD-1", estudianteUserId: "STU-1", limiteDiario: 100, limiteMensual: 500,
+  familyPin: "654321", _verifiedUserId: "GUARD-1", _verifiedRole: "Padre"
+});
+assert.equal(cupoAuthorization.pinAprobado, true);
+const cupoStoreOrder = context.createStoreOrder({
+  userId: "STU-1", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
+  detalleItems: [{ productoId: "PROD-2", cantidad: 1 }], metodoPago: "CreditoFamiliar"
+});
+assert.equal(cupoStoreOrder.status, "success");
+const cupoStoreRow = rows.TiendaOrdenes.find(row => row[0] === cupoStoreOrder.ordenId);
+assert.equal(cupoStoreRow[7], "AprobadoCreditoFamiliar", "POR_CUPO must debit without per-purchase PIN prompt");
+assert.equal(rows.CreditoFamiliarMovimientos.find(row => row[7] === cupoStoreOrder.ordenId)[8], "Aprobado");
+assert.equal(rows.CreditoFamiliarAutorizaciones[1][6], 22);
+
+const cupoCafeOrder = context.createCafeteriaOrder({
+  estudianteUserId: "STU-1", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
+  detalleItems: [{ platoId: "FOOD-1", cantidad: 1 }], metodoPago: "CreditoFamiliar"
+});
+assert.equal(cupoCafeOrder.status, "success");
+const cupoCafeRow = rows.CafeteriaPedidos.find(row => row[0] === cupoCafeOrder.pedidoId);
+assert.equal(cupoCafeRow[8], "AprobadoCreditoFamiliar", "POR_CUPO cafeteria purchases must debit automatically");
+assert.equal(cupoCafeRow[3], "GUARD-1", "family credit cafeteria orders must retain the financial guardian");
+assert.equal(rows.CreditoFamiliarAutorizaciones[1][6], 47);
 
 console.log("TASK-210 family credit approval preference contract: PASS");
