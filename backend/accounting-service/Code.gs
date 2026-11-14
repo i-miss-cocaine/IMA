@@ -1635,6 +1635,106 @@ function getStoreProducts(payload) {
   };
 }
 
+
+function familyCreditApplyCupoPurchase_(ss, policy, studentUserId, establishment, sourceId, amount, orderSheet, orderRowNumber, statusColumn) {
+  if (!policy || policy.mode !== "POR_CUPO" || !policy.guardianId || !policy.authorizationId) {
+    throw new Error("FAMILY_CREDIT_CUPO_AUTHORIZATION_REQUIRED");
+  }
+  if (!Number.isFinite(Number(amount)) || Number(amount) <= 0) throw new Error("FAMILY_CREDIT_ORDER_AMOUNT_INVALID");
+  const authorizationRows = policy.authorizationSheet.getDataRange().getValues();
+  const authMatches = authorizationRows.map((row, i) => ({ row: row, rowNumber: i + 1 }))
+    .filter(item => String(item.row[0] || "").trim() === policy.authorizationId &&
+      String(item.row[2] || "").trim() === policy.guardianId &&
+      String(item.row[3] || "").trim() === String(studentUserId).trim());
+  if (authMatches.length !== 1) throw new Error(authMatches.length ? "FAMILY_CREDIT_AUTHORIZATION_DUPLICATE" : "FAMILY_CREDIT_AUTHORIZATION_NOT_FOUND");
+  const auth = authMatches[0];
+  if (String(auth.row[7] || "").trim().toLowerCase() !== "activa" ||
+      String(auth.row[10] || "").trim() !== "POR_CUPO" ||
+      String(auth.row[11] || "").trim() !== policy.guardianId ||
+      !transportParseDate_(auth.row[12])) throw new Error("FAMILY_CREDIT_CUPO_APPROVAL_INVALID");
+  const configRows = policy.configSheet.getDataRange().getValues();
+  const configMatches = configRows.map((row, i) => ({ row: row, rowNumber: i + 1 }))
+    .filter(item => String(item.row[1] || "").trim() === policy.guardianId);
+  if (configMatches.length !== 1 || String(configMatches[0].row[2] || "").trim() !== "POR_CUPO" ||
+      !configMatches[0].row[5] || !configMatches[0].row[6]) throw new Error("FAMILY_CREDIT_APPROVAL_MODE_NOT_CONFIGURED");
+
+  const movementSheet = getOrCreateSheet(ss, "CreditoFamiliarMovimientos");
+  const movementRows = movementSheet.getDataRange().getValues();
+  const expected = ["MovimientoCreditoID", "Fecha", "AutorizacionID", "EstudianteUserId", "ResponsableUserId",
+    "Establecimiento", "Monto", "OrigenRefId", "Estado", "Observaciones"];
+  if (!movementRows.length || expected.some((h, i) => String(movementRows[0][i] || "") !== h) ||
+      movementRows[0].length !== expected.length) throw new Error("FAMILY_CREDIT_MOVEMENT_SCHEMA_MISMATCH");
+  const prior = movementRows.slice(1).filter(row => String(row[7] || "").trim() === String(sourceId).trim() &&
+    String(row[5] || "").trim().toLowerCase() === String(establishment).trim().toLowerCase());
+  if (prior.length > 1) throw new Error("FAMILY_CREDIT_MOVEMENT_DUPLICATE_OR_INVALID");
+  if (prior.length === 1) {
+    const row = prior[0];
+    if (String(row[2] || "").trim() === policy.authorizationId &&
+        String(row[3] || "").trim() === String(studentUserId).trim() &&
+        String(row[4] || "").trim() === policy.guardianId &&
+        Number(row[6]) === Number(amount) && String(row[8] || "").trim() === "Aprobado") {
+      orderSheet.getRange(orderRowNumber, statusColumn).setValue("AprobadoCreditoFamiliar");
+      return { approved: true, idempotent: true, movimientoCreditoId: row[0] };
+    }
+    throw new Error("FAMILY_CREDIT_MOVEMENT_REFERENCE_ALREADY_USED");
+  }
+
+  const now = new Date(), dailyStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const monthlyStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const reversedMovementIds = Object.create(null);
+  movementRows.slice(1).forEach(function(row) {
+    const reference = String(row[7] || "").trim();
+    if (String(row[8] || "").trim().toLowerCase() === "reversado" && reference.indexOf("REV:") === 0) {
+      reversedMovementIds[reference.slice(4)] = true;
+    }
+  });
+  let dailyUsed = 0, monthlyUsed = 0;
+  movementRows.slice(1).forEach(function(row) {
+    if (String(row[3] || "").trim() !== String(studentUserId).trim() ||
+        String(row[4] || "").trim() !== policy.guardianId ||
+        String(row[8] || "").trim().toLowerCase() !== "aprobado" ||
+        reversedMovementIds[String(row[0] || "").trim()]) return;
+    const movementDate = transportParseDate_(row[1]), movementAmount = Number(row[6]);
+    if (!movementDate || !Number.isFinite(movementAmount) || movementAmount <= 0) return;
+    if (movementDate >= dailyStart && movementDate <= now) dailyUsed += movementAmount;
+    if (movementDate >= monthlyStart && movementDate <= now) monthlyUsed += movementAmount;
+  });
+  const purchaseAmount = Number(amount), dailyLimit = Number(auth.row[4]), monthlyLimit = Number(auth.row[5]);
+  if (!Number.isFinite(dailyLimit) || !Number.isFinite(monthlyLimit) || dailyLimit <= 0 || monthlyLimit < dailyLimit) {
+    throw new Error("FAMILY_CREDIT_LIMITS_INVALID");
+  }
+  if (Math.round((dailyUsed + purchaseAmount) * 100) / 100 > dailyLimit) throw new Error("FAMILY_CREDIT_DAILY_LIMIT_EXCEEDED");
+  if (Math.round((monthlyUsed + purchaseAmount) * 100) / 100 > monthlyLimit) throw new Error("FAMILY_CREDIT_MONTHLY_LIMIT_EXCEEDED");
+  const previousUsed = Number(auth.row[6] || 0);
+  if (!Number.isFinite(previousUsed) || previousUsed < 0) throw new Error("FAMILY_CREDIT_BALANCE_INVALID");
+  const movementId = "MOV-CRD-" + Utilities.getUuid(), movementRowNumber = movementRows.length + 1;
+  const orderData = orderSheet.getDataRange().getValues();
+  const previousStatus = String(orderData[orderRowNumber - 1][statusColumn - 1] || "");
+  let appended = false, balanceUpdated = false, statusUpdated = false;
+  try {
+    movementSheet.appendRow([movementId, now, policy.authorizationId, String(studentUserId).trim(),
+      policy.guardianId, establishment, purchaseAmount, sourceId, "Aprobado", "Compra autorizada previamente por PIN de cupo"]);
+    appended = true;
+    policy.authorizationSheet.getRange(auth.rowNumber, 7).setValue(Math.round((previousUsed + purchaseAmount) * 100) / 100);
+    balanceUpdated = true;
+    orderSheet.getRange(orderRowNumber, statusColumn).setValue("AprobadoCreditoFamiliar");
+    statusUpdated = true;
+  } catch (error) {
+    let rollbackFailed = false;
+    if (statusUpdated) { try { orderSheet.getRange(orderRowNumber, statusColumn).setValue(previousStatus); } catch (_) { rollbackFailed = true; } }
+    if (balanceUpdated) { try { policy.authorizationSheet.getRange(auth.rowNumber, 7).setValue(previousUsed); } catch (_) { rollbackFailed = true; } }
+    if (appended) {
+      try {
+        movementSheet.getRange(movementRowNumber, 9).setValue("Anulado");
+        movementSheet.getRange(movementRowNumber, 10).setValue("Rollback de compra por cupo: " + String(error && error.message || error).slice(0, 160));
+      } catch (_) { rollbackFailed = true; }
+    }
+    if (rollbackFailed) throw new Error("FAMILY_CREDIT_CUPO_ROLLBACK_FAILED");
+    throw new Error("FAMILY_CREDIT_CUPO_WRITE_FAILED: " + String(error && error.message || error));
+  }
+  return { approved: true, idempotent: false, movimientoCreditoId: movementId };
+}
+
 function createStoreOrder(payload) {
   const { userId: requestedUserId, compradorNombre, detalleItems, metodoPago, metodoEntrega, observaciones } = payload || {};
   const usesFamilyCredit = familyCreditIsRequested_(metodoPago);
@@ -1657,12 +1757,12 @@ function createStoreOrder(payload) {
 
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
-  let prodSheet = null;
+  let prodSheet = null, orderSheet = null, creditPolicy = null, createdOrderRowNumber = null;
   const changedStocks = [];
   try {
     prodSheet = getOrCreateSheet(ss, "TiendaProductos");
-    const orderSheet = getOrCreateSheet(ss, "TiendaOrdenes");
-    if (usesFamilyCredit) familyCreditRequirePurchaseAuthorizationForStudent_(ss, userId);
+    orderSheet = getOrCreateSheet(ss, "TiendaOrdenes");
+    if (usesFamilyCredit) creditPolicy = familyCreditRequirePurchaseAuthorizationForStudent_(ss, userId);
     const prodsData = prodSheet.getDataRange().getValues();
     const grouped = Object.create(null), order = [];
     detalleItems.forEach(function(item) {
@@ -1704,13 +1804,23 @@ function createStoreOrder(payload) {
         changedStocks[changedStocks.length - 1].oldStatus = oldStatus;
       }
     });
+    const initialPaymentState = usesFamilyCredit
+      ? (creditPolicy.mode === "POR_CUPO" ? "PendienteRegistroCreditoFamiliar" : "PendienteAprobacionFamiliar")
+      : "Pendiente";
     orderSheet.appendRow([ordenId, now, userId, compradorNombre || "Comprador", JSON.stringify(processedItems),
-      totalCalculado, metodoPago || "Transferencia", usesFamilyCredit ? "PendienteAprobacionFamiliar" : "Pendiente", "PendientePreparacion",
+      totalCalculado, metodoPago || "Transferencia", initialPaymentState, "PendientePreparacion",
       metodoEntrega || "RecogidaEnTienda", pdfUrl, observaciones || ""]);
+    createdOrderRowNumber = orderSheet.getLastRow();
+    if (usesFamilyCredit && creditPolicy.mode === "POR_CUPO") {
+      familyCreditApplyCupoPurchase_(ss, creditPolicy, userId, "Tienda", ordenId, totalCalculado, orderSheet, createdOrderRowNumber, 8);
+    }
     return { status: "success", ordenId: ordenId, totalCalculado: totalCalculado, itemsProcesados: processedItems.length,
       pdfComprobanteUrl: pdfUrl, message: "Orden de tienda escolar registrada exitosamente." };
   } catch (error) {
     let rollbackFailed = false;
+    if (createdOrderRowNumber && usesFamilyCredit && creditPolicy && creditPolicy.mode === "POR_CUPO") {
+      try { orderSheet.getRange(createdOrderRowNumber, 8).setValue("Anulado"); } catch (_) { rollbackFailed = true; }
+    }
     changedStocks.slice().reverse().forEach(function(change) {
       try {
         prodSheet.getRange(change.rowNumber, 7).setValue(change.oldStock);
@@ -2038,12 +2148,15 @@ function createCafeteriaOrder(payload) {
 
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
-  let menuSheet = null;
+  let menuSheet = null, orderSheet = null, creditPolicy = null, createdOrderRowNumber = null;
   const changedStocks = [];
   try {
     menuSheet = getOrCreateSheet(ss, "CafeteriaMenu");
-    const orderSheet = getOrCreateSheet(ss, "CafeteriaPedidos");
-    if (usesFamilyCredit) familyCreditRequirePurchaseAuthorizationForStudent_(ss, estudianteUserId);
+    orderSheet = getOrCreateSheet(ss, "CafeteriaPedidos");
+    if (usesFamilyCredit) {
+      creditPolicy = familyCreditRequirePurchaseAuthorizationForStudent_(ss, estudianteUserId);
+      responsableUserId = creditPolicy.guardianId;
+    }
     const menuData = menuSheet.getDataRange().getValues();
     const grouped = Object.create(null), order = [];
     detalleItems.forEach(function(item) {
@@ -2084,12 +2197,22 @@ function createCafeteriaOrder(payload) {
         changedStocks[changedStocks.length - 1].oldStatus = oldStatus;
       }
     });
+    const initialState = usesFamilyCredit
+      ? (creditPolicy.mode === "POR_CUPO" ? "PendienteRegistroCreditoFamiliar" : "PendienteAprobacionFamiliar")
+      : "Confirmado";
     orderSheet.appendRow([pedidoId, now, estudianteUserId, responsableUserId, JSON.stringify(processedItems),
-      turnoEntrega || "Almuerzo Principal", totalCalculado, paymentMethod, usesFamilyCredit ? "PendienteAprobacionFamiliar" : "Confirmado", observaciones || ""]);
+      turnoEntrega || "Almuerzo Principal", totalCalculado, paymentMethod, initialState, observaciones || ""]);
+    createdOrderRowNumber = orderSheet.getLastRow();
+    if (usesFamilyCredit && creditPolicy.mode === "POR_CUPO") {
+      familyCreditApplyCupoPurchase_(ss, creditPolicy, estudianteUserId, "Cafetería", pedidoId, totalCalculado, orderSheet, createdOrderRowNumber, 9);
+    }
     return { status: "success", pedidoId: pedidoId, montoTotal: totalCalculado, itemsProcesados: processedItems.length,
       message: "Pedido de cafetería registrado exitosamente." };
   } catch (error) {
     let rollbackFailed = false;
+    if (createdOrderRowNumber && usesFamilyCredit && creditPolicy && creditPolicy.mode === "POR_CUPO") {
+      try { orderSheet.getRange(createdOrderRowNumber, 9).setValue("Anulado"); } catch (_) { rollbackFailed = true; }
+    }
     changedStocks.slice().reverse().forEach(function(change) {
       try {
         menuSheet.getRange(change.rowNumber, 5).setValue(change.oldStock);
@@ -3992,20 +4115,35 @@ function familyCreditRequirePurchaseAuthorizationForStudent_(ss, studentUserId) 
   const configSheet = familyCreditEnsureConfigSheet_(ss);
   const configRows = configSheet.getDataRange().getValues();
   const now = new Date();
-  const candidates = authorizationRows.slice(1).filter(function(row) {
+  const eligible = [];
+  authorizationRows.slice(1).forEach(function(row, index) {
     if (String(row[3] || "").trim() !== String(studentUserId).trim() ||
-        String(row[7] || "").trim().toLowerCase() !== "activa") return false;
+        String(row[7] || "").trim().toLowerCase() !== "activa") return;
     const expiration = row[8] ? transportParseDate_(row[8]) : null;
-    return !row[8] || (expiration && expiration >= now);
+    if (row[8] && (!expiration || expiration < now)) return;
+    const guardianId = String(row[2] || "").trim();
+    const configs = configRows.slice(1).map((config, configIndex) => ({ row: config, rowNumber: configIndex + 2 }))
+      .filter(item => String(item.row[1] || "").trim() === guardianId);
+    if (configs.length !== 1 || !guardianId) return;
+    const config = configs[0], mode = String(config.row[2] || "").trim();
+    if (!config.row[5] || !config.row[6] || String(row[10] || "").trim() !== mode) return;
+    if (mode === "POR_COMPRA") {
+      eligible.push({ mode: mode, guardianId: guardianId, authorizationId: String(row[0] || "").trim(),
+        authorizationSheet: authorizationSheet, authorizationRowNumber: index + 2,
+        configSheet: configSheet, configRowNumber: config.rowNumber });
+      return;
+    }
+    if (mode === "POR_CUPO") {
+      const approvedAt = transportParseDate_(row[12]);
+      if (String(row[11] || "").trim() !== guardianId || !approvedAt || approvedAt > now) return;
+      eligible.push({ mode: mode, guardianId: guardianId, authorizationId: String(row[0] || "").trim(),
+        authorizationSheet: authorizationSheet, authorizationRowNumber: index + 2,
+        configSheet: configSheet, configRowNumber: config.rowNumber });
+    }
   });
-  for (let i = 0; i < candidates.length; i++) {
-    const guardianId = String(candidates[i][2] || "").trim();
-    const configs = configRows.slice(1).filter(function(row) { return String(row[1] || "").trim() === guardianId; });
-    if (configs.length !== 1) continue;
-    if (String(configs[0][2] || "").trim() === "POR_COMPRA" && configs[0][5] && configs[0][6] &&
-        (!candidates[i][10] || String(candidates[i][10]).trim() === "POR_COMPRA")) return true;
-  }
-  throw new Error("FAMILY_CREDIT_PURCHASE_AUTHORIZATION_REQUIRED");
+  if (eligible.length > 1) throw new Error("FAMILY_CREDIT_PURCHASE_AUTHORIZATION_AMBIGUOUS");
+  if (!eligible.length) throw new Error("FAMILY_CREDIT_PURCHASE_AUTHORIZATION_REQUIRED");
+  return eligible[0];
 }
 
 
