@@ -146,6 +146,15 @@ assert.match(uiSource, /loadFamilyExtracurricularPanel/);
 assert.match(uiSource, /loadExtracurricularAdminPanel/);
 assert.match(uiSource, /saveExtracurricularActivity/);
 assert.match(dashboardSource, /extracurricular-admin-panel/);
+const roleMapStart = source.indexOf("const ROLE_PERMISSIONS");
+const padreRole = source.slice(source.indexOf('  "Padre": [', roleMapStart), source.indexOf('\n  "Tutor": [', roleMapStart));
+const directorRole = source.slice(source.indexOf('  "Director": [', roleMapStart), source.indexOf('\n  "Subdirector": [', roleMapStart));
+assert.ok(padreRole.includes('"getExtracurricularActivities"'));
+assert.ok(padreRole.includes('"getStudentExtracurricularEnrollments"'));
+assert.ok(padreRole.includes('"enrollStudentInExtracurricular"'));
+assert.ok(padreRole.includes('"cancelExtracurricularEnrollment"'));
+assert.ok(directorRole.includes('"saveExtracurricularActivity"'));
+assert.ok(directorRole.includes('"getExtracurricularActivities"'));
 assert.match(uiSource, /enrollStudentInExtracurricular/);
 assert.match(dashboardSource, /family-extracurricular-panel/);
 assert.throws(() => context.saveExtracurricularActivity({
