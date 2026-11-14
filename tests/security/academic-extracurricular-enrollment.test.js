@@ -64,7 +64,7 @@ function makeSheet(rows) {
 
 const activityHeaders = ["ExtracurricularID", "AnoID", "Nombre", "Categoria", "HorarioJSON", "EncargadosJSON",
   "SupervisoresJSON", "Estado", "EvidenciasDriveFolderId", "EvidenciasJSON"];
-const chargeHeaders = ["CargoID", "Fecha", "UserId", "Concepto", "MontoBase", "Descuento", "MontoFinal", "Estado", "FechaVencimiento"];
+const chargeHeaders = ["CargoID", "Fecha", "UserId", "Concepto", "MontoBase", "Descuento", "MontoFinal", "Estado", "FechaVencimiento", "Observaciones", "ClaveUnicaDedupe", "BatchId"];
 const users = [
   ["UserId", "Nombre", "", "", "", "", "Rol", "", "", "PersonaID", "Estado"],
   ["G1", "Tutor Uno", "", "", "", "", "Padre", "", "", "P-G1", "Activo"],
@@ -108,7 +108,7 @@ const context = {
   Date, Math, JSON, Number, String, Object, Set, Array, isFinite
 };
 const names = [
-  "ensureExtracurricularActivitySchema_", "ensureExtracurricularEnrollmentSheet_",
+  "ensureExtracurricularActivitySchema_", "ensureExtracurricularEnrollmentSheet_", "ensureExtracurricularChargeSheet_",
   "extracurricularRoleKey_", "extracurricularGuardianCanManageStudent_", "createExtracurricularCharge_",
   "promoteNextExtracurricularWaitlist_", "saveExtracurricularActivity", "getExtracurricularActivities",
   "enrollStudentInExtracurricular", "getStudentExtracurricularEnrollments", "cancelExtracurricularEnrollment"
