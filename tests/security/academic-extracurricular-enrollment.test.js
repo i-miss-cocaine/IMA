@@ -112,7 +112,7 @@ const context = {
 };
 const names = [
   "ensureExtracurricularActivitySchema_", "ensureExtracurricularEnrollmentSheet_", "ensureExtracurricularChargeSheet_",
-  "extracurricularRoleKey_", "extracurricularGuardianCanManageStudent_", "createExtracurricularCharge_",
+  "extracurricularRoleKey_", "extracurricularGuardianCanManageStudent_", "extracurricularTransportRouteIsActive_", "reindexExtracurricularWaitlist_", "createExtracurricularCharge_",
   "promoteNextExtracurricularWaitlist_", "saveExtracurricularActivity", "getExtracurricularActivities",
   "enrollStudentInExtracurricular", "getStudentExtracurricularEnrollments", "cancelExtracurricularEnrollment"
 ];
@@ -163,6 +163,17 @@ const first = context.enrollStudentInExtracurricular({
   _verifiedUserId: "G1", _verifiedRole: "Padre", estudianteUserId: "S1", extracurricularId: "EXTRA-1"
 });
 assert.equal(first.estado, "PendientePago");
+const overCapacityRow = ["INS-FAKE", "EXTRA-1", "S2", "G1", new Date(), "Confirmada", "", 0, "{}", "", ""];
+sheets.ServiciosInscripciones.rows.push(overCapacityRow);
+assert.throws(() => context.saveExtracurricularActivity({
+  _verifiedRole: "Director", extracurricularId: "EXTRA-1", nombre: "Fútbol", categoria: "Deportiva", cupoMaximo: 1
+}), /EXTRACURRICULAR_CAPACITY_BELOW_ENROLLED/);
+sheets.ServiciosInscripciones.rows.pop();
+sheets.TransporteRutas.rows[1][6] = "Inactiva";
+assert.throws(() => context.enrollStudentInExtracurricular({
+  _verifiedUserId: "G1", _verifiedRole: "Padre", estudianteUserId: "S2", extracurricularId: "EXTRA-1"
+}), /EXTRACURRICULAR_TRANSPORT_ROUTE_NOT_AVAILABLE/);
+sheets.TransporteRutas.rows[1][6] = "Activa";
 assert.ok(first.cargoId);
 assert.equal(sheets.CargosEstudiante.rows.length, 2);
 assert.match(sheets.CargosEstudiante.rows[1][10], /EXTRACURRICULAR\|EXTRA-1\|S1/);
@@ -187,6 +198,7 @@ assert.equal(cancelled.siguienteEnLista.estado, "PendientePago");
 assert.equal(sheets.CargosEstudiante.rows.length, 3);
 assert.equal(sheets.CargosEstudiante.rows[1][7], "Anulado", "cancelled pending charge must be annulled");
 assert.equal(sheets.ServiciosInscripciones.rows[2][5], "PendientePago", "waitlist promotion must reserve the released place");
+assert.equal(sheets.ServiciosInscripciones.rows[2][7], 500, "promoted enrollment must receive the activity fee");
 const repeatedCancel = context.cancelExtracurricularEnrollment({
   _verifiedUserId: "G1", _verifiedRole: "Padre", inscripcionId: first.inscripcionId
 });
