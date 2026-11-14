@@ -3615,3 +3615,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Priorizar rendimiento en Apps Script: evitar verificaciones costosas/redundantes por acción, reutilizar el contexto de sesión y mantener controles esenciales ligeros del lado servidor, sin reautenticación visible por operación.
 - Se confirma PIN familiar separado para que un padre/madre/tutor legítimo apruebe el uso/autorización del crédito; el alumno no puede autoaprobar su crédito. No se ha definido aún si el PIN se solicita por compra o al autorizar un cupo, ni el flujo de recuperación/cambio.
 - El PIN nunca se almacenará en texto claro. TASK-210 continúa pendiente; no hubo cambios de código ni pruebas en este registro.
+
+
+[2026-11-14] Decisión de producto — configuración de PIN familiar desde el panel del tutor (C1.726)
+- La modalidad de autorización se configura desde Configuración → Opciones del Rol del panel del padre/tutor.
+- `POR_COMPRA`: cada pedido requiere aprobación del tutor con PIN antes del débito. `POR_CUPO`: el tutor autoriza el cupo con PIN y las compras posteriores respetan los límites aprobados sin solicitarlo nuevamente.
+- La política se persiste y valida en servidor; el alumno no puede cambiarla ni autoaprobarse. Sin configuración/relación válida, se deniega el débito. El PIN nunca se almacena en texto claro.
+- El flujo de alta, cambio y recuperación del PIN se resolverá durante la implementación segura. TASK-210 sigue Pendiente; este registro no contiene código ni pruebas.

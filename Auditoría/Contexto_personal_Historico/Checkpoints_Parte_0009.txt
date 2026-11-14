@@ -224,3 +224,17 @@ C1.721 — IMA-EXEC-20261114-TASK200-01 — TASK-200 — Facturación automátic
 - **Archivos previstos para registro:** checkpoint, índice, changelog y backlog maestro del padre. Rama base no debe modificarse.
 - **Siguiente acción:** revisar el diseño existente de sesiones y la autorización familiar; proponer/implementar límites configurables de sesiones activas y flujo PIN tutor de forma ligera, con pruebas de rendimiento/seguridad e integración en TASK-210.
 ===============================================================================
+
+
+===============================================================================
+### C1.726 — IMA-REQ-20261114-FAMILY-CREDIT-APPROVAL-02 — Configuración de modalidad PIN familiar
+- **Continuidad:** C1.725; HEAD inicial verificado 3bd228bbd9499011295657fda512b3d7a6549938; rama exclusiva NG_beta_0.0.0.1_work; rama base 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Decisión explícita del usuario:** la modalidad de aprobación PIN debe ser configurable desde Configuración → Opciones del Rol del panel del padre/tutor.
+- **Modalidades funcionales:** `POR_COMPRA` requiere aprobación explícita del tutor con PIN para cada pedido antes del débito; `POR_CUPO` requiere PIN al autorizar/activar el cupo y permite compras posteriores dentro de los límites diario/mensual aprobados sin volver a solicitar el PIN en cada compra.
+- **Autoridad y seguridad:** la preferencia se persiste y aplica en el servidor, vinculada al tutor autenticado y a sus relaciones familiares aprobadas. El alumno no puede establecer ni cambiar la política del tutor, ni autoaprobar consumos. Ante configuración ausente/inválida o identidad/relación no verificable, se deniega el débito. PIN separado de la sesión y nunca en texto claro.
+- **Pendiente de diseño técnico:** alta, cambio y recuperación del PIN; la implementación no debe inventar un mecanismo de recuperación que debilite la autorización.
+- **Alcance del checkpoint:** decisión de producto y actualización documental; no hubo cambios de código ni pruebas. TASK-210 permanece Pendiente.
+- **Archivos:** pendientes/Padre/Pendientes.md, changueslogs.txt, índice de checkpoints y este archivo.
+- **HEAD final:** se verificará tras el commit. Rama base sin cambios.
+- **Siguiente acción:** implementar persistencia server-side de la política, PIN seguro y UI en panel del tutor; integrar las compras y reversiones de cafetería/tienda con ledger transaccional, idempotencia persistente y control de concurrencia.
+===============================================================================

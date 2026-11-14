@@ -339,7 +339,9 @@
   - Incorporar PIN familiar separado para que un padre/madre/tutor autorizado apruebe el uso o autorización del crédito. El alumno no puede autoaprobar su propio crédito. No confundir este PIN con la autenticación de inicio de sesión.
   - El PIN no se almacena en texto claro. Aún debe definirse si la aprobación se realiza por compra o al autorizar un cupo, y el procedimiento de recuperación/cambio.
 - **Auditoría de preparación C1.723:** los callsites actuales no implementan validación PIN, ownership del responsable, idempotencia financiera persistente ni reversión coordinada de crédito. Sin cambios de código en C1.723/C1.725.
-- **Estado:** [ ] Pendiente; se confirma la necesidad del PIN y el actor aprobador, pero el momento/frecuencia de aprobación debe concretarse durante el diseño antes de activar débitos.
+- **Configuración de aprobación familiar (decisión C1.726):** desde Configuración → Opciones del Rol del panel del padre/tutor se podrá seleccionar la modalidad `POR_COMPRA` (cada pedido requiere aprobación explícita del tutor mediante PIN antes de aplicar el débito) o `POR_CUPO` (el tutor usa el PIN al autorizar/activar el cupo; las compras posteriores se permiten dentro de los límites aprobados sin solicitar el PIN en cada compra). La preferencia se guarda y aplica en servidor, asociada al tutor; no se confía en valores enviados por el estudiante ni en almacenamiento local del navegador. Si falta una configuración válida o la autorización no puede verificarse, el débito se deniega. El alumno nunca puede aprobar su propio consumo ni modificar la política del tutor.
+- **PIN:** permanece separado de la sesión de inicio; nunca se almacena en texto claro. El procedimiento exacto de alta, cambio y recuperación del PIN se definirá dentro de la implementación segura sin habilitar vías de autoaprobación.
+- **Estado:** [ ] Pendiente; modalidad configurable definida, implementación financiera y de PIN pendiente.
 
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 9572-9642; clave TASK-245; asignación única: Contabilidad -->
