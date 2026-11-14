@@ -363,7 +363,12 @@
 - **Estado:** hito parcial verificado; TASK-210 permanece Pendiente hasta completar/verificar conciliación de reportes de ventas y cierre integral de la consolidación financiera.
 - **Siguiente acción:** localizar los reportes de ventas y hacer que sus totales netos coincidan con movimientos aprobados menos reversos; ampliar contrato de conciliación antes de cerrar TASK-210.
 
-- **Estado:** [ ] Pendiente; aprobación POR_COMPRA/POR_CUPO, ledger y reversos implementados parcialmente; conciliación de reportes de ventas pendiente.
+- **Implementación C1.735 — conciliación de ventas:** se añadió el endpoint de solo lectura getFamilyCreditSalesReconciliation y la vista Contabilidad → Informes. El reporte concilia pedidos familiares de tienda/cafetería con movimientos aprobados y reversos, calcula ventas brutas/devoluciones/netas, identifica pedidos pendientes y detecta débitos duplicados, movimientos huérfanos, pedidos aprobados sin movimiento, importes discordantes, responsables diferentes y reversos múltiples o inconsistentes. Acceso restringido a Contador, Director, Subdirector y Administrador; lectura serializada con ScriptLock.
+- **Criterio financiero:** el estado de cuenta familiar muestra el consumo una sola vez en su sección de crédito familiar, sin generar un segundo cargo de colegiatura en CargosEstudiante. Las compras POR_COMPRA y POR_CUPO quedan en el ledger; las devoluciones revierten el saldo y el reporte las resta del neto.
+- **Pruebas C1.735:** contrato Node valida conciliación exacta tienda/cafetería, pedido pendiente, devolución, movimiento huérfano, discrepancia de responsable, denegación por rol y contención de lock; también comprueba la ruta API, RBAC y la vista UI.
+- **CI final:** código de reporte f425ceb2ea5ad350554beaf075906a7bb1952b7c: Department Scope 43626290445 SUCCESS; Identity Mapping 43626290452 SUCCESS; Department Reference Consumers 43626290390 SUCCESS. Corrección de validación 33b42763798b3e6aa1e154160ad4cd81faf6a94e: Department Scope 43626558232 SUCCESS; Identity Mapping 43626558231 SUCCESS; Department Reference Consumers 43626558236 SUCCESS. UI c5d6135a41a3d5e9bddec6b533e9c33fe47e6d0b: Department Scope 43626395382 SUCCESS. Contrato final e656660e7fb1c56fa3afe8fa1ee8d7b8b47c13cc: Department Scope 43626679591 SUCCESS. Node.js 24.22.2 y syntax-check Apps Script PASS.
+- **Cierre:** TASK-210 satisfecha en código, revisión y CI. La validación funcional contra una implementación beta real de Apps Script/Sheets queda como validación posterior al despliegue, no como bloqueo de código.
+- **Estado:** [x] Completada en código, revisión y CI; pendiente validación beta desplegada.
 
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 9572-9642; clave TASK-245; asignación única: Contabilidad -->

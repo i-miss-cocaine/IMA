@@ -355,3 +355,19 @@ C1.721 — IMA-EXEC-20261114-TASK200-01 — TASK-200 — Facturación automátic
 - **HEAD final:** se verificará tras publicar el commit documental; rama base debe permanecer en 44d9891132332e692dbe2ba8602b41f50a508a59.
 - **Siguiente acción:** localizar reportes de ventas y conciliar sus totales netos con movimientos aprobados menos reversos; ampliar pruebas y cerrar TASK-210 solo con evidencia.
 ===============================================================================
+
+
+===============================================================================
+### C1.735 — IMA-EXEC-20261114-TASK210-SALES-RECONCILIATION-01 — Conciliación de ventas y cierre de TASK-210
+- **Continuidad:** C1.734; HEAD inicial `62f98c50f84b041a2561c2b08483227b2745eee8`; rama exclusiva `NG_beta_0.0.0.1_work`; rama base `44d9891132332e692dbe2ba8602b41f50a508a59` sin cambios.
+- **Reporte:** se implementó getFamilyCreditSalesReconciliation con acceso de Contador, Director, Subdirector y Administrador; usa ScriptLock para una lectura consistente de pedidos y movimientos.
+- **Conciliación:** verifica que cada pedido de crédito familiar de tienda/cafetería tenga como máximo un débito aprobado; compara estudiante, responsable, establecimiento e importe; enlaza reversos por ID del movimiento original; calcula ventas brutas, devoluciones y netas; informa pendientes, huérfanos, débitos faltantes/duplicados, importes inconsistentes y reversos con titular o importe discordante.
+- **Interfaz:** la pestaña Contabilidad → Informes ahora presenta la conciliación de crédito familiar por tienda, cafetería y total, con diferencias identificadas.
+- **Pruebas:** el contrato Node cubre coincidencia correcta, pedido pendiente, devolución completa, movimiento huérfano, responsable de reverso discordante, rol no autorizado y bloqueo por ScriptLock; comprueba router, RBAC y UI. Node.js 24.22.2 PASS; node --check para Code.gs y JS afectados PASS.
+- **CI:** reporte f425ceb2ea5ad350554beaf075906a7bb1952b7c: Department Scope 43626290445 SUCCESS, Identity Mapping 43626290452 SUCCESS, Department Reference Consumers 43626290390 SUCCESS. Corrección 33b42763798b3e6aa1e154160ad4cd81faf6a94e: Department Scope 43626558232 SUCCESS, Identity Mapping 43626558231 SUCCESS, Department Reference Consumers 43626558236 SUCCESS. UI c5d6135a41a3d5e9bddec6b533e9c33fe47e6d0b: Department Scope 43626395382 SUCCESS. Contrato final e656660e7fb1c56fa3afe8fa1ee8d7b8b47c13cc: Department Scope 43626679591 SUCCESS.
+- **Archivos:** backend/accounting-service/Code.gs; js/ui-common.js; js/accounting.js; tests/security/accounting-family-credit-preference.test.js; backlog del padre; changelog; índice y este checkpoint.
+- **Límites:** pruebas Node y sintaxis se ejecutaron en GitHub Actions; no se ejecutó una segunda copia local independiente ni un CLI específico porque no se encontró paquete/comando CLI de proyecto. Apps Script/Sheets reales no se ejecutaron; validación beta pendiente.
+- **Estado:** TASK-210 completada en código, revisión y CI. No se considera que la validación beta haya sido ejecutada.
+- **HEAD final:** se verificará tras el commit documental; rama base debe permanecer en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Siguiente tarea elegible:** TASK-211 — ampliación del sistema de actividades extracurriculares y sus servicios asociados (PM-05).
+===============================================================================

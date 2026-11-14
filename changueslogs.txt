@@ -3682,3 +3682,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato Node.js 24.22.2 PASS y sintaxis Apps Script PASS en GitHub Actions. CI final de código: 43625477144/146/154 SUCCESS; contrato ampliado: 43625761904 SUCCESS.
 - Queda pendiente verificar/construir conciliación de reportes de ventas contra movimientos aprobados y reversos; Apps Script/Sheets reales y CLI no ejecutados.
 - TASK-210 continúa Pendiente; no se declara cerrada.
+
+
+[2026-11-14] TASK-210 — conciliación de ventas y cierre en código (C1.735)
+- Se añadió getFamilyCreditSalesReconciliation, con RBAC de Contador/Director/Subdirector/Administrador y lectura consistente bajo ScriptLock.
+- El informe de Contabilidad → Informes concilia pedidos de crédito familiar de tienda/cafetería con débitos y reversos; calcula ventas brutas, devoluciones y netas; detecta huérfanos, faltantes, duplicados, importes/propietarios discordantes y reversos inconsistentes.
+- Contrato Node.js 24.22.2 PASS; sintaxis Apps Script PASS; CI de Department Scope, Identity Mapping y Department Reference Consumers SUCCESS en los commits finales.
+- TASK-210 se marca completada en código, revisión y CI. La validación beta real de Apps Script/Sheets queda separada del cierre de código.
+- Siguiente tarea elegible del Plan Maestro: TASK-211 — ampliación del sistema de actividades extracurriculares y servicios asociados.
