@@ -3212,7 +3212,7 @@
 ---
 
 <!-- ID: TASK-209 | Fuentes: Pendientes.md ; pendientes/Secretaria/Pendientes.md -->
-### [ ] [TASK-209] Optimización de rutas, orden de paradas y planificación de recorridos
+### [x] [TASK-209] Optimización de rutas, orden de paradas y planificación de recorridos
 - **Origen del Hallazgo:** `AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md` / Sección C (1.4) y Plan de Implementación TAREA 21
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Reducción de tiempos de viaje, ahorro de combustible y ordenamiento lógico de paradas)
@@ -3233,7 +3233,12 @@
   - Las paradas poseen coordenadas geográficas válidas.
   - Se generan propuestas de ordenamiento lógico de paradas.
   - La propuesta requiere aprobación directiva antes de aplicarse oficialmente.
-- **Estado:** [ ] Pendiente
+- **Evidencia de implementación y verificación:** se incorporaron optimizeRouteStopsSequence, getRouteOptimizationProposals, approveRouteStopsOptimization y rejectRouteStopsOptimization. El optimizador valida coordenadas, ventanas horarias, velocidad promedio configurada y duración de paradas; calcula distancias con Haversine y tiempo estimado; conserva origen y destino; genera una propuesta sin modificar la ruta activa.
+- **Control de cambios:** aprobación/rechazo explícitos por Dirección/Subdirección/Administrador; la aprobación comprueba que la ruta no haya cambiado desde la propuesta. manageTransportRoute comparte ScriptLock para evitar carreras con la aprobación.
+- **Pruebas:** tests/security/accounting-transport-route-optimization.test.js PASS en Node.js 24.22.2; cubre orden optimizado, ventanas, coordenadas inválidas, propuesta sin mutación, aprobación, rechazo, idempotencia de decisión, conflicto por ruta obsoleta, RBAC y lock. Syntax-check Apps Script PASS.
+- **CI final:** Department Scope Contract 43615291620 SUCCESS; Identity Mapping 43615291629 SUCCESS; Department Reference Consumers 43615291613 SUCCESS. El primer run 43615033670 detectó una variable const reasignada; se corrigió y el run final aprobó.
+- **Limitaciones:** no se integró geocodificación externa; cada parada debe recibir lat/lng válidos mediante la gestión de rutas. La velocidad promedio se proporciona en la solicitud, sin asumir una velocidad predeterminada. Apps Script/Sheets real NOT RUN. BETA-FUNC-093 pendiente.
+- **Estado:** [x] Completada en código, revisión y CI; pendiente validación beta y carga de coordenadas reales.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 8477-8514; clave TASK-212; asignación única: Secretaria -->
 

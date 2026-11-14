@@ -3600,3 +3600,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - No existe implementación de PIN en los módulos y pantallas revisados. TASK-210 permanece Pendiente; no se modificó código ni se declararon pruebas PASS.
 - F15-Task01 corresponde a facturación fiscal SAR y no bloquea técnicamente el subflujo. F15-Task04 (billetera familiar) figura pendiente en el backlog recuperado.
 - Siguiente paso: definir la política de PIN antes de habilitar cargos o débitos financieros y crear contratos locales de autorización, concurrencia, idempotencia y reversión.
+
+[2026-11-14] TASK-209 — optimización de rutas y secuencia de paradas
+- Se añadieron propuestas de optimización basadas en coordenadas geográficas, distancia Haversine, velocidad promedio configurada, ventanas horarias y duración de parada.
+- Las propuestas no modifican rutas activas; Dirección/Subdirección puede comparar, aprobar o rechazar. La aprobación exige que la ruta no haya cambiado desde la propuesta; manageTransportRoute y la aprobación comparten ScriptLock.
+- Contrato Node.js 24.22.2 y syntax-check Apps Script PASS. Department Scope 43615291620, Identity Mapping 43615291629 y Department Reference Consumers 43615291613 SUCCESS.
+- Primer run falló por reasignación de const; corregido y verificado en runs finales. No se ejecutó geocodificación externa ni Apps Script/Sheets real. BETA-FUNC-093 pendiente.
+- Commits: 7717edd002d14040d65adbc80d5719c4be686a23, 9989a11b837f29d0fa6c6380b366e4f59bf0147a, f5932ee2fb4928d926041cdac2e4997fb8592db5.

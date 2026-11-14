@@ -393,3 +393,22 @@
 - **Evidencia requerida:** snapshots sintéticos antes/después de ServiciosTarifas y CargosEstudiante; IDs de tarifas/conceptos; importes, vigencias y descuentos; actor autorizado; logs de denegación y concurrencia. No usar datos reales.
 - **Estado:** Pendiente beta. Contrato Node.js 24 y syntax-check Apps Script aprobados en GitHub Actions; Apps Script/Sheets reales no ejecutados.
 ===============================================================================
+
+===============================================================================
+### BETA-FUNC-093 — TASK-209 — Optimización de secuencia de paradas con aprobación
+- **Módulo/roles:** Transporte / Director / Subdirector / Administrador.
+- **Objetivo:** validar que las propuestas de optimización reducen distancia, respetan ventanas horarias y nunca alteran una ruta activa sin aprobación explícita.
+- **Precondiciones:** versión beta desplegada; ruta sintética con al menos dos paradas; cada parada con ID único, latitud/longitud válidas y ventanas horarias cuando correspondan; velocidad promedio operativa conocida.
+- **Pasos:**
+  1. Crear una ruta con origen fijo, paradas intermedias y destino marcado; registrar coordenadas y ventanas de atención.
+  2. Ejecutar optimizeRouteStopsSequence con velocidad promedio; comprobar distancia actual/propuesta, tiempo estimado y secuencia sugerida.
+  3. Confirmar que la ruta original permanece sin cambios mientras la propuesta está PENDIENTE.
+  4. Consultar getRouteOptimizationProposals; comparar la secuencia actual y propuesta.
+  5. Rechazar una propuesta con motivo y verificar que la ruta permanece intacta; repetir el rechazo y comprobar idempotencia.
+  6. Crear otra propuesta y aprobarla explícitamente; verificar que solo entonces cambia ParadasJSON y que el estado pasa a APROBADA.
+  7. Crear una propuesta, modificar la ruta por otra operación y tratar de aprobar la propuesta obsoleta; debe rechazarse con ROUTE_OPTIMIZATION_STALE_ROUTE.
+  8. Probar coordenadas faltantes/fuera de rango, ventanas imposibles, velocidad inválida, rol no autorizado y lock ocupado; comprobar rechazo sin escritura parcial.
+- **Resultado esperado:** propuesta reproducible y trazable, origen/destino preservados, ventanas horarias respetadas, ruta activa inalterada hasta aprobación y rechazo sin mutaciones.
+- **Evidencia requerida:** snapshots sintéticos de TransporteRutas y TransporteOptimizaciones; propuesta, secuencia y distancias; actor que aprueba/rechaza; motivo de rechazo; conflicto de versión y logs de lock. No usar datos reales.
+- **Estado:** Pendiente beta. Contrato Node.js 24.22.2 y syntax-check Apps Script aprobados en GitHub Actions; geocodificación real y Maps API no ejecutados.
+===============================================================================

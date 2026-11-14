@@ -193,3 +193,20 @@ C1.721 — IMA-EXEC-20261114-TASK200-01 — TASK-200 — Facturación automátic
 - **HEAD final de documentación:** se verificará tras publicar este checkpoint. Rama base sin cambios esperados.
 - **Siguiente acción:** definir la política de PIN familiar y luego implementar el flujo transaccional con identidad/relación verificadas, límites diario/mensual, idempotencia persistente, conciliación de cargos y reversos; añadir pruebas locales de concurrencia, duplicados, rollback, autorización y sintaxis antes de cerrar TASK-210.
 ===============================================================================
+
+===============================================================================
+### C1.724 — IMA-EXEC-20261114-TASK209-01 — TASK-209 — Optimización de rutas, orden de paradas y planificación de recorridos
+- **Continuidad:** C1.723; HEAD inicial 86b0ddc7836c56c95b92846c6e60ab2ad3bedf27; rama exclusiva NG_beta_0.0.0.1_work; rama base 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Elegibilidad:** F21-Task09 (integración financiera automática de transporte) ya está cubierta por TASK-200/C1.721. La dependencia geográfica se resuelve con coordenadas explícitas en ParadasJSON; no se presupone ni inventa geocodificación.
+- **Implementación:** optimizeRouteStopsSequence genera propuestas con distancia Haversine, tiempo aproximado basado en velocidad promedio configurada, ventanas horarias y duración de paradas. Mantiene fijo el origen y el destino y aplica búsqueda de vecino más cercano con mejora 2-opt validada contra las ventanas.
+- **Gobierno de cambios:** getRouteOptimizationProposals permite comparar; approveRouteStopsOptimization aplica solo con aprobación explícita y snapshot vigente; rejectRouteStopsOptimization registra rechazo y motivo. Ninguna propuesta modifica la ruta activa al crearse. manageTransportRoute y la aprobación comparten ScriptLock; una propuesta obsoleta falla cerrada.
+- **Pruebas:** tests/security/accounting-transport-route-optimization.test.js PASS en Node.js 24.22.2; cubre distancias, ventanas, coordenadas inválidas, origen/destino, propuesta sin mutación, aprobación, rechazo, idempotencia, ruta obsoleta, RBAC y lock. Syntax-check Apps Script PASS.
+- **CI final:** Department Scope Contract run 43615291620 SUCCESS; Identity Mapping run 43615291629 SUCCESS; Department Reference Consumers run 43615291613 SUCCESS. El primer run 43615033670 falló por reasignación de const en el optimizador; se corrigió en 9989a11 y la suite final pasó. El contrato se amplió con rechazo en f5932ee y volvió a pasar.
+- **Code review:** se revisaron parseo de JSON/coordenadas, rangos lat/lng, ventanas, tiempos AM/PM, origen/destino, permisos, no mutación hasta aprobación, optimistic concurrency, ScriptLock y rollback de la decisión. No se modificaron otras ramas.
+- **Archivos:** backend/accounting-service/Code.gs; tests/security/accounting-transport-route-optimization.test.js; .github/workflows/department-scope-contract.yml; pendientes/Secretaria/Pendientes.md; beta_test_Parte_0002.txt; changueslogs.txt; índice y este checkpoint.
+- **Commits:** 7717edd002d14040d65adbc80d5719c4be686a23; 9989a11b837f29d0fa6c6380b366e4f59bf0147a; f5932ee2fb4928d926041cdac2e4997fb8592db5.
+- **Limitaciones:** no hay geocodificación externa; las rutas existentes sin coordenadas deben actualizarse antes de optimizarlas. Velocidad media debe indicarse por solicitud. Apps Script/Sheets real NOT RUN; BETA-FUNC-093 pendiente. No se ejecutó CLI local independiente.
+- **Estado:** TASK-209 completada en código, revisión y CI; validación beta y coordenadas reales pendientes.
+- **HEAD de código:** f5932ee2fb4928d926041cdac2e4997fb8592db5. Rama base sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Siguiente preflight:** TASK-206 — necesidades especiales de movilidad/accesibilidad. Confirmar disponibilidad y permisos del expediente médico; la revisión inicial no encontró esquema ExpedientesMedicos en los servicios backend. TASK-210 continúa pendiente por ausencia de política PIN familiar (C1.723).
+===============================================================================
