@@ -21,7 +21,7 @@ assert.equal(context.transportFindTariff_(db,"R1","COMPLETA",new Date(year,now.g
 assert.equal(context.transportFindTariff_(db,"R1","COMPLETA",new Date(nextYear,nextMonth-1,5)).amount,400,"effective tariff periods must not overlap");
 const full=context.assignStudentTransport({rutaId:"R1",estudianteUserId:"STU-001",modalidadServicio:"COMPLETA",fechaInicioServicio:firstDay});
 assert.equal(full.status,"success");assert.equal(full.billingStatus,"PROCESADA");
-const fullKey="TRN-"+month+"-"+year+"-STU-001",fullCharge=rows.CargosEstudiante.find(r=>r[10]===fullKey);assert.ok(fullCharge);assert.equal(Number(fullCharge[6]),300);
+const fullKey="TRN-"+month+"-"+year+"-STU-001",fullCharge=rows.CargosEstudiante.find(r=>r[10]===fullKey);assert.ok(fullCharge);const expectedFull=Math.round(300*14/daysInMonth*100)/100+Math.round(350*(daysInMonth-14)/daysInMonth*100)/100;assert.equal(Number(fullCharge[6]),expectedFull);
 const replay=context.generateTransportMonthlyCharges({ano:year,mesPeriodo:month});assert.equal(replay.status,"success");assert.equal(rows.CargosEstudiante.filter(r=>r[10]===fullKey).length,1);
 const half=context.assignStudentTransport({rutaId:"R1",estudianteUserId:"STU-002",modalidadServicio:"MEDIA",fechaInicioServicio:firstDay});assert.equal(half.status,"success");assert.equal(Number(rows.CargosEstudiante.find(r=>r[10]==="TRN-"+month+"-"+year+"-STU-002")[6]),150);
 const midDate=new Date(year,now.getMonth(),15),mid=context.assignStudentTransport({rutaId:"R1",estudianteUserId:"STU-004",modalidadServicio:"MEDIA",fechaInicioServicio:midDate});assert.equal(mid.status,"success");assert.equal(Number(rows.CargosEstudiante.find(r=>r[10]==="TRN-"+month+"-"+year+"-STU-004")[6]),Math.round(150*(daysInMonth-14)/daysInMonth*100)/100);
