@@ -194,7 +194,7 @@ const ROLE_PERMISSIONS = {
     "changeStudentSection", "recordStudentTransfer", "recordStudentWithdrawal", "processStudentReentry", "processStudentPromotion", "processStudentGraduation", "updateStudentLifecycleStatus", "reconcileStudentLifecycleState", "runStudentLifecycleRegressionSuite", "getAcademicAreaTemplateCatalog", "assignTeacherToAcademicArea", "getTeachersByAcademicArea", "getAcademicAreasByTeacher", "removeTeacherFromAcademicArea", "getAcademicAreaCoordinationScope", "deployAcademicMicroserviceInstance", "getAcademicMicroserviceDeployments", "previewBackupRestoreImpact", "getStorageQuotaMetricsReport", "reconcileDocumentStorageIntegrity", "reconcileInstitutionalModulesMatrix",
     "openAttendanceSession", "saveClassAttendance", "bulkApplyAttendanceStatus", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary", "checkAndDispatchAttendanceAlerts", "getAttendanceConfig", "saveAttendanceConfig",
     "createTeacherSupervision", "getTeacherSupervisions", "updateSupervisionStatus", "saveSupervisionObservation", "getSupervisionObservation", "saveTeacherImprovementPlan", "getTeacherImprovementPlans", "purgeSecurityCaches", "scheduleGuidanceAppointment", "getGuidanceAppointments", "updateGuidanceAppointmentStatus", "evaluateAndDispatchEarlyWarningAlerts", "getEarlyWarningAlerts", "savePedagogicalPlanning", "getPedagogicalPlannings", "submitPlanningForReview", "reviewPedagogicalPlanning", "getPlanningReviewHistory", "saveSupervisionRubric", "getSupervisionRubrics"
-  ],
+  , "saveExtracurricularActivity"],
   "Subdirector": [
     "registerSpreadsheetSource", "resolveSpreadsheetSource", "getSpreadsheetCatalog",
     "getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getQuestionBank", "registerStudentEnrollment", "getStudentEnrollmentHistory",
@@ -205,7 +205,7 @@ const ROLE_PERMISSIONS = {
     "getStudentGuardians", "getStudentDocuments", "getStudentEnrollments", "checkEnrollmentCapacity",
     "openAttendanceSession", "saveClassAttendance", "bulkApplyAttendanceStatus", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary",
     "createTeacherSupervision", "getTeacherSupervisions", "updateSupervisionStatus", "saveSupervisionObservation", "getSupervisionObservation", "saveTeacherImprovementPlan", "getTeacherImprovementPlans", "savePedagogicalPlanning", "getPedagogicalPlannings", "submitPlanningForReview", "reviewPedagogicalPlanning", "getPlanningReviewHistory", "saveSupervisionRubric", "getSupervisionRubrics"
-  ],
+  , "saveExtracurricularActivity"],
   "Secretaría": [
     "registerSpreadsheetSource", "resolveSpreadsheetSource", "getSpreadsheetCatalog",
     "getAcademicConfig", "getAsignaturasActivas", "registerStudentEnrollment", "getStudentEnrollmentHistory",
@@ -241,17 +241,17 @@ const ROLE_PERMISSIONS = {
     "getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getStudentEnrollmentHistory",
     "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentFileSummary", "getStudentTimeline", "getStudentDocuments", "getStudentEnrollments",
     "getClassAttendance", "getDailyAttendance", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents"
-  ],
+  , "getStudentExtracurricularEnrollments", "enrollStudentInExtracurricular", "cancelExtracurricularEnrollment"],
   "Tutor": [
     "getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getStudentEnrollmentHistory",
     "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentEnrollments",
     "getClassAttendance", "getDailyAttendance", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents"
-  ],
+  , "getStudentExtracurricularEnrollments", "enrollStudentInExtracurricular", "cancelExtracurricularEnrollment"],
   "Responsable": [
     "getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getStudentEnrollmentHistory",
     "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentEnrollments",
     "getClassAttendance", "getDailyAttendance", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents"
-  ],
+  , "getStudentExtracurricularEnrollments", "enrollStudentInExtracurricular", "cancelExtracurricularEnrollment"],
   "Profesor": [
     "getAcademicConfig", "updateAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "updateAsignaturasActivas", "saveWhatsAppLink", "getWhatsAppLink", "getQuestionBank", "saveQuestion", "generateMigrationReport",
     "getAcademicYears", "getAcademicPeriods", "getSubjectCatalog", "getAcademicOffers", "getTeacherAssignments", "createTeacherSubstitution", "getTeacherSubstitutions",
@@ -978,6 +978,9 @@ function doPost(e) {
       case "saveInstitutionalActivity": result = saveInstitutionalActivity(payload); break;
       case "getInstitutionalActivities": result = getInstitutionalActivities(payload); break;
       case "saveExtracurricularActivity": result = saveExtracurricularActivity(payload); break;
+      case "enrollStudentInExtracurricular": result = enrollStudentInExtracurricular(payload); break;
+      case "getStudentExtracurricularEnrollments": result = getStudentExtracurricularEnrollments(payload); break;
+      case "cancelExtracurricularEnrollment": result = cancelExtracurricularEnrollment(payload); break;
       case "getExtracurricularActivities": result = getExtracurricularActivities(payload); break;
       case "getUnifiedInstitutionalCalendar": result = getUnifiedInstitutionalCalendar(payload); break;
 
@@ -6023,67 +6026,404 @@ function getInstitutionalActivities(payload) {
   }
 }
 
-function saveExtracurricularActivity(payload) {
-  try {
-    const verifiedRole = (payload && payload.authRole) || "Director";
-    const { extracurricularId, anoId, nombre, categoria, horarioJSON, encargadosJSON, supervisoresJSON, evidenciasDriveFolderId, estado } = payload || {};
+function ensureExtracurricularActivitySchema_(ss) {
+  const sheet = getOrCreateSheet(ss, "ActividadesExtracurriculares");
+  const headers = ["ExtracurricularID", "AnoID", "Nombre", "Categoria", "HorarioJSON", "EncargadosJSON",
+    "SupervisoresJSON", "Estado", "EvidenciasDriveFolderId", "EvidenciasJSON", "CupoMaximo", "Tarifa",
+    "TransporteExtraordinarioJSON", "FechaInicio", "FechaFin"];
+  const current = sheet.getRange(1, 1, 1, headers.length).getValues()[0];
+  headers.forEach(function(header, index) {
+    if (current[index] && String(current[index]).trim() !== header) throw new Error("EXTRACURRICULAR_SCHEMA_MISMATCH");
+    if (!current[index]) sheet.getRange(1, index + 1).setValue(header);
+  });
+  return sheet;
+}
 
-    if (!nombre || !categoria) {
-      return { status: "error", code: "VALIDATION_ERROR", message: "Nombre y Categoría son obligatorios." };
+function ensureExtracurricularEnrollmentSheet_(ss) {
+  const sheet = getOrCreateSheet(ss, "ServiciosInscripciones");
+  const headers = ["InscripcionID", "ExtracurricularID", "EstudianteUserId", "ResponsableUserId",
+    "FechaRegistro", "Estado", "CargoID", "Monto", "TransporteExtraordinarioJSON", "Observaciones", "PosicionListaEspera"];
+  const data = sheet.getDataRange().getValues();
+  if (!data.length || !data[0].length || !String(data[0][0] || "").trim()) {
+    sheet.appendRow(headers);
+    return sheet;
+  }
+  if (headers.some((header, index) => String(data[0][index] || "").trim() !== header)) {
+    throw new Error("EXTRACURRICULAR_ENROLLMENT_SCHEMA_MISMATCH");
+  }
+  return sheet;
+}
+
+function extracurricularRoleKey_(value) {
+  return String(value || "").trim().toUpperCase().normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z]/g, "");
+}
+
+function extracurricularGuardianCanManageStudent_(ss, guardianUserId, studentUserId) {
+  const usersSheet = ss.getSheetByName("Usuarios");
+  const relationsSheet = ss.getSheetByName("RelacionesFamiliares");
+  if (!usersSheet || !relationsSheet) return false;
+  const users = usersSheet.getDataRange().getValues().slice(1);
+  const guardian = users.find(row => String(row[0] || "").trim() === String(guardianUserId).trim());
+  const student = users.find(row => String(row[0] || "").trim() === String(studentUserId).trim());
+  if (!guardian || !student) return false;
+  const guardianPersonId = String(guardian[9] || "").trim();
+  const studentPersonId = String(student[9] || "").trim();
+  const studentRole = extracurricularRoleKey_(student[6]);
+  const studentState = extracurricularRoleKey_(student[10] || "Activo");
+  if (!guardianPersonId || !studentPersonId ||
+      ["ESTUDIANTE", "ALUMNO", "STUDENT"].indexOf(studentRole) === -1 ||
+      ["INACTIVO", "INACTIVE", "BAJA"].indexOf(studentState) !== -1) return false;
+  const now = new Date();
+  return relationsSheet.getDataRange().getValues().slice(1).some(function(row) {
+    const state = extracurricularRoleKey_(row[4]);
+    if (String(row[1] || "").trim() !== studentPersonId ||
+        String(row[2] || "").trim() !== guardianPersonId ||
+        ["APROBADO", "AUTORIZADO", "ACTIVO", "ACTIVE"].indexOf(state) === -1) return false;
+    const from = row[5] ? new Date(row[5]) : null;
+    const to = row[6] ? new Date(row[6]) : null;
+    if ((from && (!Number.isFinite(from.getTime()) || from > now)) ||
+        (to && (!Number.isFinite(to.getTime()) || to < now))) return false;
+    return true;
+  });
+}
+
+function createExtracurricularCharge_(ss, activity, studentUserId, amount) {
+  const charges = getOrCreateSheet(ss, "CargosEstudiante");
+  const rows = charges.getDataRange().getValues();
+  const headers = ["CargoID", "Fecha", "UserId", "Concepto", "MontoBase", "Descuento", "MontoFinal", "Estado", "FechaVencimiento"];
+  if (!rows.length || headers.some((header, index) => String(rows[0][index] || "").trim() !== header)) {
+    throw new Error("EXTRACURRICULAR_STUDENT_CHARGE_SCHEMA_MISMATCH");
+  }
+  const safeActivity = String(activity[0]).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 24);
+  const safeStudent = String(studentUserId).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 24);
+  const chargeId = "CEX-" + safeActivity + "-" + safeStudent;
+  const existing = rows.find(row => String(row[0] || "").trim() === chargeId);
+  if (existing) {
+    if (String(existing[7] || "").trim().toLowerCase() === "anulado") {
+      throw new Error("EXTRACURRICULAR_CHARGE_ORPHANED");
     }
+    return chargeId;
+  }
+  const now = new Date();
+  const due = activity[13] ? new Date(activity[13]) : new Date(now.getTime() + 15 * 86400000);
+  charges.appendRow([chargeId, now, studentUserId, "Inscripción extracurricular: " + String(activity[2] || ""),
+    amount, 0, amount, "Pendiente", due]);
+  return chargeId;
+}
 
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sheet = getOrCreateSheet(ss, "ActividadesExtracurriculares");
-    const targetId = extracurricularId || ("EXTRA-" + Math.floor(100000 + Math.random() * 900000));
+function promoteNextExtracurricularWaitlist_(ss, activity, enrollmentSheet) {
+  const rows = enrollmentSheet.getDataRange().getValues();
+  const waiting = rows.slice(1).map((row, index) => ({ row: row, rowNumber: index + 2 }))
+    .filter(item => String(item.row[1] || "").trim() === String(activity[0]).trim() &&
+      String(item.row[5] || "").trim() === "ListaEspera")
+    .sort((a, b) => new Date(a.row[4]).getTime() - new Date(b.row[4]).getTime());
+  if (!waiting.length) return null;
+  const next = waiting[0], fee = Number(activity[11] || 0);
+  let chargeId = "", nextState = "Confirmada";
+  if (fee > 0) {
+    chargeId = createExtracurricularCharge_(ss, activity, String(next.row[2]).trim(), fee);
+    nextState = "PendientePago";
+  }
+  enrollmentSheet.getRange(next.rowNumber, 6).setValue(nextState);
+  enrollmentSheet.getRange(next.rowNumber, 7).setValue(chargeId);
+  enrollmentSheet.getRange(next.rowNumber, 11).setValue("");
+  return { inscripcionId: next.row[0], estado: nextState, cargoId: chargeId };
+}
 
-    sheet.appendRow([
-      targetId,
-      anoId || "2026",
-      nombre,
-      categoria,
-      typeof horarioJSON === "object" ? JSON.stringify(horarioJSON) : (horarioJSON || "{}"),
-      typeof encargadosJSON === "object" ? JSON.stringify(encargadosJSON) : (encargadosJSON || "[]"),
-      typeof supervisoresJSON === "object" ? JSON.stringify(supervisoresJSON) : (supervisoresJSON || "[]"),
-      estado || "Programada",
-      evidenciasDriveFolderId || "",
-      "[]"
-    ]);
-
-    return { status: "success", extracurricularId: targetId, message: "Actividad extracurricular registrada exitosamente." };
-  } catch (error) {
-    return { status: "error", message: error.message };
+function saveExtracurricularActivity(payload) {
+  const role = extracurricularRoleKey_(payload && payload._verifiedRole);
+  if (["ADMINISTRADOR", "DIRECTOR", "SUBDIRECTOR", "COORDINADORACTIVIDADES"].indexOf(role) === -1) {
+    throw new Error("EXTRACURRICULAR_CONFIG_ROLE_NOT_ALLOWED");
+  }
+  const data = payload || {};
+  const name = String(data.nombre || "").trim(), category = String(data.categoria || "").trim();
+  if (!name || !category) throw new Error("EXTRACURRICULAR_NAME_AND_CATEGORY_REQUIRED");
+  const capacity = data.cupoMaximo === undefined || data.cupoMaximo === null || data.cupoMaximo === "" ? 0 : Number(data.cupoMaximo);
+  const fee = data.tarifa === undefined || data.tarifa === null || data.tarifa === "" ? 0 : Number(data.tarifa);
+  if (!Number.isSafeInteger(capacity) || capacity < 0) throw new Error("EXTRACURRICULAR_CAPACITY_INVALID");
+  if (!Number.isFinite(fee) || fee < 0) throw new Error("EXTRACURRICULAR_FEE_INVALID");
+  let transport = {};
+  try {
+    transport = typeof data.transporteExtraordinarioJSON === "string"
+      ? JSON.parse(data.transporteExtraordinarioJSON || "{}")
+      : (data.transporteExtraordinarioJSON || {});
+  } catch (_) { throw new Error("EXTRACURRICULAR_TRANSPORT_JSON_INVALID"); }
+  if (transport && transport.requiereTransporte &&
+      (!String(transport.fechaEvento || "").trim() || !String(transport.destino || "").trim())) {
+    throw new Error("EXTRACURRICULAR_TRANSPORT_DETAILS_REQUIRED");
+  }
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sheet = ensureExtracurricularActivitySchema_(ss);
+    const rows = sheet.getDataRange().getValues();
+    const targetId = String(data.extracurricularId || ("EXTRA-" + Utilities.getUuid())).trim();
+    const existingIndex = rows.findIndex((row, index) => index > 0 && String(row[0] || "").trim() === targetId);
+    const previous = existingIndex > 0 ? rows[existingIndex] : [];
+    const values = [
+      targetId, data.anoId || "2026", name, category,
+      typeof data.horarioJSON === "object" ? JSON.stringify(data.horarioJSON) : (data.horarioJSON || "{}"),
+      typeof data.encargadosJSON === "object" ? JSON.stringify(data.encargadosJSON) : (data.encargadosJSON || "[]"),
+      typeof data.supervisoresJSON === "object" ? JSON.stringify(data.supervisoresJSON) : (data.supervisoresJSON || "[]"),
+      data.estado || previous[7] || "Programada", data.evidenciasDriveFolderId || previous[8] || "",
+      previous[9] || "[]", capacity, fee, JSON.stringify(transport), data.fechaInicio || previous[13] || "",
+      data.fechaFin || previous[14] || ""
+    ];
+    if (existingIndex > 0) sheet.getRange(existingIndex + 1, 1, 1, values.length).setValues([values]);
+    else sheet.appendRow(values);
+    return { status: "success", extracurricularId: targetId, actualizado: existingIndex > 0,
+      cupoMaximo: capacity, tarifa: fee, message: "Actividad extracurricular guardada correctamente." };
+  } finally {
+    lock.releaseLock();
   }
 }
 
 function getExtracurricularActivities(payload) {
-  try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sheet = getOrCreateSheet(ss, "ActividadesExtracurriculares");
-    const data = sheet.getDataRange().getValues();
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ensureExtracurricularActivitySchema_(ss);
+  const data = sheet.getDataRange().getValues();
+  const enrollmentSheet = ss.getSheetByName("ServiciosInscripciones");
+  const enrollments = enrollmentSheet ? enrollmentSheet.getDataRange().getValues().slice(1) : [];
+  const activities = data.slice(1).filter(row => String(row[0] || "").trim()).map(function(row) {
+    const capacity = Number(row[10] || 0);
+    const registered = enrollments.filter(item => String(item[1] || "").trim() === String(row[0]).trim() &&
+      ["Confirmada", "PendientePago"].indexOf(String(item[5] || "").trim()) !== -1).length;
+    return {
+      extracurricularId: row[0], anoId: row[1], nombre: row[2], categoria: row[3], horario: row[4],
+      encargados: row[5], supervisores: row[6], estado: row[7], evidenciasFolderId: row[8], evidencias: row[9],
+      cupoMaximo: capacity, inscritos: registered, cuposDisponibles: capacity > 0 ? Math.max(0, capacity - registered) : null,
+      tarifa: Number(row[11] || 0), transporteExtraordinarioJSON: row[12] || "{}",
+      fechaInicio: row[13] || "", fechaFin: row[14] || ""
+    };
+  });
+  return { status: "success", activities: activities };
+}
 
-    if (data.length <= 1) return { status: "success", activities: [] };
-
-    const activities = [];
-    for (let i = 1; i < data.length; i++) {
-      const r = data[i];
-      activities.push({
-        extracurricularId: r[0],
-        anoId: r[1],
-        nombre: r[2],
-        categoria: r[3],
-        horario: r[4],
-        encargados: r[5],
-        supervisores: r[6],
-        estado: r[7],
-        evidenciasFolderId: r[8],
-        evidencias: r[9]
-      });
-    }
-
-    return { status: "success", activities: activities };
-  } catch (error) {
-    return { status: "error", message: error.message };
+function enrollStudentInExtracurricular(payload) {
+  const role = extracurricularRoleKey_(payload && payload._verifiedRole);
+  const guardianId = String(payload && payload._verifiedUserId || "").trim();
+  const studentId = String(payload && payload.estudianteUserId || "").trim();
+  const activityId = String(payload && payload.extracurricularId || "").trim();
+  if (["PADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(role) === -1 || !guardianId) {
+    throw new Error("EXTRACURRICULAR_GUARDIAN_ROLE_REQUIRED");
   }
+  if (!studentId || !activityId) throw new Error("EXTRACURRICULAR_STUDENT_AND_ACTIVITY_REQUIRED");
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    if (!extracurricularGuardianCanManageStudent_(ss, guardianId, studentId)) {
+      throw new Error("EXTRACURRICULAR_ACTIVE_FAMILY_RELATION_REQUIRED");
+    }
+    const activities = ensureExtracurricularActivitySchema_(ss).getDataRange().getValues();
+    const activity = activities.find((row, index) => index > 0 && String(row[0] || "").trim() === activityId);
+    if (!activity || ["CANCELADA", "INACTIVA", "CERRADA"].indexOf(extracurricularRoleKey_(activity[7])) !== -1) {
+      throw new Error("EXTRACURRICULAR_ACTIVITY_NOT_AVAILABLE");
+    }
+    const enrollments = ensureExtracurricularEnrollmentSheet_(ss);
+    const rows = enrollments.getDataRange().getValues();
+    const existing = rows.map((row, index) => ({ row: row, rowNumber: index + 1 }))
+      .find(item => item.rowNumber > 1 && String(item.row[1] || "").trim() === activityId &&
+        String(item.row[2] || "").trim() === studentId);
+    if (existing) {
+      if (["CANCELADA", "ANULADA"].indexOf(extracurricularRoleKey_(existing.row[5])) !== -1) {
+        throw new Error("EXTRACURRICULAR_ENROLLMENT_ALREADY_CANCELLED");
+      }
+      return { status: "success", inscripcionId: existing.row[0], estado: existing.row[5],
+        cargoId: existing.row[6] || "", idempotent: true };
+    }
+    const capacity = Number(activity[10] || 0);
+    const registered = rows.slice(1).filter(row => String(row[1] || "").trim() === activityId &&
+      ["CONFIRMADA", "PENDIENTEPAGO"].indexOf(extracurricularRoleKey_(row[5])) !== -1).length;
+    const waiting = rows.slice(1).filter(row => String(row[1] || "").trim() === activityId &&
+      extracurricularRoleKey_(row[5]) === "LISTAESPERA").length;
+    const waitlisted = capacity > 0 && registered >= capacity;
+    const fee = Number(activity[11] || 0);
+    if (!Number.isFinite(fee) || fee < 0) throw new Error("EXTRACURRICULAR_FEE_INVALID");
+    const enrollmentId = "INS-EXT-" + Utilities.getUuid();
+    let chargeId = "", state = waitlisted ? "ListaEspera" : (fee > 0 ? "PendientePago" : "Confirmada");
+    let chargeRowNumber = null;
+    if (!waitlisted && fee > 0) {
+      const chargeRows = getOrCreateSheet(ss, "CargosEstudiante").getDataRange().getValues();
+      const safeActivity = activityId.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 24);
+      const safeStudent = studentId.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 24);
+      chargeId = "CEX-" + safeActivity + "-" + safeStudent;
+      if (chargeRows.some(row => String(row[0] || "").trim() === chargeId)) throw new Error("EXTRACURRICULAR_CHARGE_ORPHANED");
+      chargeId = createExtracurricularCharge_(ss, activity, studentId, fee);
+      chargeRowNumber = getOrCreateSheet(ss, "CargosEstudiante").getLastRow();
+    }
+    const waitPosition = waitlisted ? waiting + 1 : "";
+    const transportJson = String(activity[12] || "{}");
+    try {
+      enrollments.appendRow([enrollmentId, activityId, studentId, guardianId, new Date(), state,
+        chargeId, waitlisted ? 0 : fee, transportJson, String(payload.observaciones || ""), waitPosition]);
+    } catch (error) {
+      if (chargeRowNumber) {
+        try { getOrCreateSheet(ss, "CargosEstudiante").getRange(chargeRowNumber, 8).setValue("Anulado"); } catch (_) {}
+      }
+      throw error;
+    }
+    return { status: "success", inscripcionId: enrollmentId, estado: state, cargoId: chargeId,
+      posicionListaEspera: waitPosition || null, message: waitlisted ? "Se agregó a la lista de espera." : "Inscripción registrada." };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function getStudentExtracurricularEnrollments(payload) {
+  const role = extracurricularRoleKey_(payload && payload._verifiedRole);
+  const guardianId = String(payload && payload._verifiedUserId || "").trim();
+  if (["PADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(role) === -1 || !guardianId) {
+    throw new Error("EXTRACURRICULAR_GUARDIAN_ROLE_REQUIRED");
+  }
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const usersSheet = ss.getSheetByName("Usuarios");
+  const relationsSheet = ss.getSheetByName("RelacionesFamiliares");
+  if (!usersSheet || !relationsSheet) return { status: "success", children: [], enrollments: [] };
+  const users = usersSheet.getDataRange().getValues();
+  const guardian = users.slice(1).find(row => String(row[0] || "").trim() === guardianId);
+  if (!guardian) throw new Error("EXTRACURRICULAR_GUARDIAN_NOT_FOUND");
+  const guardianPersonId = String(guardian[9] || "").trim(), now = new Date();
+  const studentPersonIds = new Set();
+  relationsSheet.getDataRange().getValues().slice(1).forEach(row => {
+    const state = extracurricularRoleKey_(row[4]);
+    const from = row[5] ? new Date(row[5]) : null, to = row[6] ? new Date(row[6]) : null;
+    if (String(row[2] || "").trim() === guardianPersonId &&
+        ["APROBADO", "AUTORIZADO", "ACTIVO", "ACTIVE"].indexOf(state) !== -1 &&
+        (!from || from <= now) && (!to || to >= now)) studentPersonIds.add(String(row[1] || "").trim());
+  });
+  const children = users.slice(1).filter(row => studentPersonIds.has(String(row[9] || "").trim()) &&
+    ["ESTUDIANTE", "ALUMNO", "STUDENT"].indexOf(extracurricularRoleKey_(row[6])) !== -1 &&
+    ["INACTIVO", "INACTIVE", "BAJA"].indexOf(extracurricularRoleKey_(row[10] || "Activo")) === -1)
+    .map(row => ({ userId: String(row[0] || "").trim(), nombre: String(row[1] || row[0] || "").trim() }));
+  const childIds = new Set(children.map(item => item.userId));
+  const enrollmentSheet = ss.getSheetByName("ServiciosInscripciones");
+  const enrollments = enrollmentSheet ? enrollmentSheet.getDataRange().getValues().slice(1)
+    .filter(row => childIds.has(String(row[2] || "").trim()))
+    .map(row => ({ inscripcionId: row[0], extracurricularId: row[1], estudianteUserId: row[2],
+      responsableUserId: row[3], fechaRegistro: row[4], estado: row[5], cargoId: row[6],
+      monto: Number(row[7] || 0), transporteExtraordinarioJSON: row[8] || "{}", posicionListaEspera: row[10] || "" })) : [];
+  return { status: "success", children: children, enrollments: enrollments };
+}
+
+function cancelExtracurricularEnrollment(payload) {
+  const role = extracurricularRoleKey_(payload && payload._verifiedRole);
+  const guardianId = String(payload && payload._verifiedUserId || "").trim();
+  const enrollmentId = String(payload && payload.inscripcionId || "").trim();
+  if (["PADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(role) === -1 || !guardianId) {
+    throw new Error("EXTRACURRICULAR_GUARDIAN_ROLE_REQUIRED");
+  }
+  if (!enrollmentId) throw new Error("EXTRACURRICULAR_ENROLLMENT_ID_REQUIRED");
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sheet = ensureExtracurricularEnrollmentSheet_(ss), rows = sheet.getDataRange().getValues();
+    const match = rows.map((row, index) => ({ row: row, rowNumber: index + 1 }))
+      .find(item => item.rowNumber > 1 && String(item.row[0] || "").trim() === enrollmentId);
+    if (!match) throw new Error("EXTRACURRICULAR_ENROLLMENT_NOT_FOUND");
+    if (String(match.row[3] || "").trim() !== guardianId ||
+        !extracurricularGuardianCanManageStudent_(ss, guardianId, String(match.row[2] || "").trim())) {
+      throw new Error("EXTRACURRICULAR_ENROLLMENT_OWNERSHIP_REQUIRED");
+    }
+    const currentState = extracurricularRoleKey_(match.row[5]);
+    if (currentState === "CANCELADA") return { status: "success", idempotent: true, inscripcionId: enrollmentId };
+    if (currentState === "PENDIENTEPAGO" && match.row[6]) {
+      const chargeSheet = ss.getSheetByName("CargosEstudiante");
+      if (chargeSheet) {
+        const charges = chargeSheet.getDataRange().getValues();
+        const chargeIndex = charges.findIndex((row, index) => index > 0 && String(row[0] || "").trim() === String(match.row[6]).trim());
+        if (chargeIndex > 0) {
+          const paymentState = extracurricularRoleKey_(charges[chargeIndex][7]);
+          if (["PAGADO", "PAID"].indexOf(paymentState) !== -1) throw new Error("EXTRACURRICULAR_PAID_ENROLLMENT_REFUND_REQUIRED");
+          chargeSheet.getRange(chargeIndex + 1, 8).setValue("Anulado");
+        }
+      }
+    }
+    const activitySheet = ensureExtracurricularActivitySchema_(ss);
+    const activity = activitySheet.getDataRange().getValues().find((row, index) => index > 0 && String(row[0] || "").trim() === String(match.row[1]).trim());
+    sheet.getRange(match.rowNumber, 6).setValue("Cancelada");
+    let promoted = null;
+    if (["CONFIRMADA", "PENDIENTEPAGO"].indexOf(currentState) !== -1 && activity) {
+      promoted = promoteNextExtracurricularWaitlist_(ss, activity, sheet);
+    }
+    return { status: "success", inscripcionId: enrollmentId, estado: "Cancelada",
+      siguienteEnLista: promoted, message: "Inscripción cancelada correctamente." };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function saveExtracurricularActivity(payload) {
+  const role = extracurricularRoleKey_(payload && payload._verifiedRole);
+  if (["ADMINISTRADOR", "DIRECTOR", "SUBDIRECTOR", "COORDINADORACTIVIDADES"].indexOf(role) === -1) {
+    throw new Error("EXTRACURRICULAR_CONFIG_ROLE_NOT_ALLOWED");
+  }
+  const data = payload || {};
+  const name = String(data.nombre || "").trim(), category = String(data.categoria || "").trim();
+  if (!name || !category) throw new Error("EXTRACURRICULAR_NAME_AND_CATEGORY_REQUIRED");
+  const capacity = data.cupoMaximo === undefined || data.cupoMaximo === null || data.cupoMaximo === "" ? 0 : Number(data.cupoMaximo);
+  const fee = data.tarifa === undefined || data.tarifa === null || data.tarifa === "" ? 0 : Number(data.tarifa);
+  if (!Number.isSafeInteger(capacity) || capacity < 0) throw new Error("EXTRACURRICULAR_CAPACITY_INVALID");
+  if (!Number.isFinite(fee) || fee < 0) throw new Error("EXTRACURRICULAR_FEE_INVALID");
+  let transport = {};
+  try {
+    transport = typeof data.transporteExtraordinarioJSON === "string"
+      ? JSON.parse(data.transporteExtraordinarioJSON || "{}")
+      : (data.transporteExtraordinarioJSON || {});
+  } catch (_) { throw new Error("EXTRACURRICULAR_TRANSPORT_JSON_INVALID"); }
+  if (transport && transport.requiereTransporte &&
+      (!String(transport.fechaEvento || "").trim() || !String(transport.destino || "").trim())) {
+    throw new Error("EXTRACURRICULAR_TRANSPORT_DETAILS_REQUIRED");
+  }
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sheet = ensureExtracurricularActivitySchema_(ss);
+    const rows = sheet.getDataRange().getValues();
+    const targetId = String(data.extracurricularId || ("EXTRA-" + Utilities.getUuid())).trim();
+    const existingIndex = rows.findIndex((row, index) => index > 0 && String(row[0] || "").trim() === targetId);
+    const previous = existingIndex > 0 ? rows[existingIndex] : [];
+    const values = [
+      targetId, data.anoId || "2026", name, category,
+      typeof data.horarioJSON === "object" ? JSON.stringify(data.horarioJSON) : (data.horarioJSON || "{}"),
+      typeof data.encargadosJSON === "object" ? JSON.stringify(data.encargadosJSON) : (data.encargadosJSON || "[]"),
+      typeof data.supervisoresJSON === "object" ? JSON.stringify(data.supervisoresJSON) : (data.supervisoresJSON || "[]"),
+      data.estado || previous[7] || "Programada", data.evidenciasDriveFolderId || previous[8] || "",
+      previous[9] || "[]", capacity, fee, JSON.stringify(transport), data.fechaInicio || previous[13] || "",
+      data.fechaFin || previous[14] || ""
+    ];
+    if (existingIndex > 0) sheet.getRange(existingIndex + 1, 1, 1, values.length).setValues([values]);
+    else sheet.appendRow(values);
+    return { status: "success", extracurricularId: targetId, actualizado: existingIndex > 0,
+      cupoMaximo: capacity, tarifa: fee, message: "Actividad extracurricular guardada correctamente." };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function getExtracurricularActivities(payload) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ensureExtracurricularActivitySchema_(ss);
+  const data = sheet.getDataRange().getValues();
+  const enrollmentSheet = ss.getSheetByName("ServiciosInscripciones");
+  const enrollments = enrollmentSheet ? enrollmentSheet.getDataRange().getValues().slice(1) : [];
+  const activities = data.slice(1).filter(row => String(row[0] || "").trim()).map(function(row) {
+    const capacity = Number(row[10] || 0);
+    const registered = enrollments.filter(item => String(item[1] || "").trim() === String(row[0]).trim() &&
+      ["Confirmada", "PendientePago"].indexOf(String(item[5] || "").trim()) !== -1).length;
+    return {
+      extracurricularId: row[0], anoId: row[1], nombre: row[2], categoria: row[3], horario: row[4],
+      encargados: row[5], supervisores: row[6], estado: row[7], evidenciasFolderId: row[8], evidencias: row[9],
+      cupoMaximo: capacity, inscritos: registered, cuposDisponibles: capacity > 0 ? Math.max(0, capacity - registered) : null,
+      tarifa: Number(row[11] || 0), transporteExtraordinarioJSON: row[12] || "{}",
+      fechaInicio: row[13] || "", fechaFin: row[14] || ""
+    };
+  });
+  return { status: "success", activities: activities };
 }
 
 function getUnifiedInstitutionalCalendar(payload) {
