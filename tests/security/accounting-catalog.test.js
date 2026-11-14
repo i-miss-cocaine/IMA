@@ -128,6 +128,15 @@ const fifoLayers=rows.InventoryValuationLayers.slice(1).filter(x=>x[3]==="VAL-FI
 assert.throws(()=>ctx.configureInventoryValuationPolicy({categoria:"Papelería y oficina",metodo:"PROMEDIO_PONDERADO"}),/INVENTORY_VALUATION_METHOD_CHANGE_REQUIRES_MIGRATION/,"changing a category method with positive valued stock must require a controlled migration");
 assert.equal(ctx.inventoryValuationMethod_(ss,"Papelería y oficina"),"PEPS","a rejected method change must leave the active policy unchanged");
 
+const adjustmentItem=ctx.manageCatalogItem({itemCodigo:"VAL-ADJUST",itemNombre:"Ajuste de conteo",categoria:"Papelería y oficina",unidadMedida:"Unidad"});assert.equal(adjustmentItem.status,"success");
+ctx.recordInventoryMovement({itemCodigo:"VAL-ADJUST",tipoMovimiento:"Entrada",cantidad:2,costoUnitario:10,unidadMedida:"Unidad",ubicacionResponsable:"Bodega Conteo"});
+const adjustmentGain=ctx.recordInventoryMovement({itemCodigo:"VAL-ADJUST",tipoMovimiento:"AjustePositivo",cantidad:1,costoUnitario:15,unidadMedida:"Unidad",ubicacionResponsable:"Bodega Conteo",documentOrigen:"CONTEO-001"});
+assert.equal(adjustmentGain.costoTotalValoracion,15,"positive count adjustment must add its monetary value");
+const adjustmentLoss=ctx.recordInventoryMovement({itemCodigo:"VAL-ADJUST",tipoMovimiento:"AjusteNegativo",cantidad:1,unidadMedida:"Unidad",ubicacionResponsable:"Bodega Conteo",documentOrigen:"CONTEO-002"});
+assert.equal(adjustmentLoss.costoTotalValoracion,10,"negative count adjustment must consume the oldest PEPS cost layer");
+const adjustmentRow=ctx.getValuatedInventoryReport({categoria:"Papelería y oficina",ubicacion:"Bodega Conteo"}).detalle.find(x=>x.itemCodigo==="VAL-ADJUST");
+assert.equal(adjustmentRow.cantidad,2);assert.equal(adjustmentRow.valor,25,"count adjustments must reflect their exact monetary effect in the valuation report");
+
 const avgPolicy=ctx.configureInventoryValuationPolicy({categoria:"Herramientas",metodo:"PROMEDIO_PONDERADO"});assert.equal(avgPolicy.status,"success");
 const avgItem=ctx.manageCatalogItem({itemCodigo:"VAL-AVG",itemNombre:"Artículo promedio",categoria:"Herramientas",unidadMedida:"Unidad"});assert.equal(avgItem.status,"success");
 ctx.recordInventoryMovement({itemCodigo:"VAL-AVG",tipoMovimiento:"Entrada",cantidad:2,costoUnitario:10,documentOrigen:"OC-AVG-1",unidadMedida:"Unidad",ubicacionResponsable:"Bodega Valoración"});
