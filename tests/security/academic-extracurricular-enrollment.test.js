@@ -170,15 +170,16 @@ assert.equal(sheets.CargosEstudiante.rows.length, 3);
 assert.equal(sheets.CargosEstudiante.rows[1][7], "Anulado", "cancelled pending charge must be annulled");
 assert.equal(sheets.ServiciosInscripciones.rows[2][5], "PendientePago", "waitlist promotion must reserve the released place");
 
+sheets.CargosEstudiante.rows[2][7] = "Pagado";
 const family = context.getStudentExtracurricularEnrollments({ _verifiedUserId: "G1", _verifiedRole: "Padre" });
 assert.equal(family.children.length, 2);
 assert.equal(family.enrollments.length, 2);
-assert.equal(family.enrollments.find(row => row.estudianteUserId === "S2").estado, "PendientePago");
+assert.equal(family.enrollments.find(row => row.estudianteUserId === "S2").estado, "Confirmada");
+assert.equal(family.enrollments.find(row => row.estudianteUserId === "S2").cargoEstado, "Pagado");
 
 assert.throws(() => context.enrollStudentInExtracurricular({
   _verifiedUserId: "G2", _verifiedRole: "Padre", estudianteUserId: "S1", extracurricularId: "EXTRA-1"
 }), /EXTRACURRICULAR_ACTIVE_FAMILY_RELATION_REQUIRED/);
-sheets.CargosEstudiante.rows[2][7] = "Pagado";
 assert.throws(() => context.cancelExtracurricularEnrollment({
   _verifiedUserId: "G1", _verifiedRole: "Padre", inscripcionId: cancelled.siguienteEnLista.inscripcionId
 }), /EXTRACURRICULAR_PAID_ENROLLMENT_REFUND_REQUIRED/);
