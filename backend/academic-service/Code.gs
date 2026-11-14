@@ -6147,8 +6147,30 @@ function promoteNextExtracurricularWaitlist_(ss, activity, enrollmentSheet) {
   }
   enrollmentSheet.getRange(next.rowNumber, 6).setValue(nextState);
   enrollmentSheet.getRange(next.rowNumber, 7).setValue(chargeId);
+  enrollmentSheet.getRange(next.rowNumber, 8).setValue(fee);
   enrollmentSheet.getRange(next.rowNumber, 11).setValue("");
+  reindexExtracurricularWaitlist_(String(activity[0]), enrollmentSheet);
   return { inscripcionId: next.row[0], estado: nextState, cargoId: chargeId };
+}
+
+function extracurricularTransportRouteIsActive_(ss, transport) {
+  if (!transport || !transport.requiereTransporte) return true;
+  if (!String(transport.rutaId || "").trim() || !String(transport.fechaEvento || "").trim() ||
+      !String(transport.destino || "").trim()) return false;
+  const routesSheet = ss.getSheetByName("TransporteRutas");
+  const routes = routesSheet ? routesSheet.getDataRange().getValues().slice(1) : [];
+  const route = routes.find(row => String(row[0] || "").trim() === String(transport.rutaId).trim());
+  const routeState = extracurricularRoleKey_(route && route[6]);
+  return !!route && ["ACTIVA", "ACTIVO", "DISPONIBLE", "OPERATIVA"].indexOf(routeState) !== -1;
+}
+
+function reindexExtracurricularWaitlist_(activityId, enrollmentSheet) {
+  const rows = enrollmentSheet.getDataRange().getValues();
+  const waiting = rows.slice(1).map((row, index) => ({ row: row, rowNumber: index + 2 }))
+    .filter(item => String(item.row[1] || "").trim() === String(activityId).trim() &&
+      extracurricularRoleKey_(item.row[5]) === "LISTAESPERA")
+    .sort((a, b) => new Date(a.row[4]).getTime() - new Date(b.row[4]).getTime());
+  waiting.forEach((item, index) => enrollmentSheet.getRange(item.rowNumber, 11).setValue(index + 1));
 }
 
 function saveExtracurricularActivity(payload) {
@@ -6174,23 +6196,20 @@ function saveExtracurricularActivity(payload) {
       ? Number(previous[11] || 0) : Number(data.tarifa);
     if (!Number.isSafeInteger(capacity) || capacity < 0) throw new Error("EXTRACURRICULAR_CAPACITY_INVALID");
     if (!Number.isFinite(fee) || fee < 0) throw new Error("EXTRACURRICULAR_FEE_INVALID");
+    if (capacity > 0) {
+      const enrollSheet = ss.getSheetByName("ServiciosInscripciones");
+      const active = enrollSheet ? enrollSheet.getDataRange().getValues().slice(1).filter(row =>
+        String(row[1] || "").trim() === targetId &&
+        ["CONFIRMADA", "PENDIENTEPAGO"].indexOf(extracurricularRoleKey_(row[5])) !== -1).length : 0;
+      if (active > capacity) throw new Error("EXTRACURRICULAR_CAPACITY_BELOW_ENROLLED");
+    }
     let transport = {};
     try {
       const transportInput = data.transporteExtraordinarioJSON === undefined ? previous[12] : data.transporteExtraordinarioJSON;
       transport = typeof transportInput === "string" ? JSON.parse(transportInput || "{}") : (transportInput || {});
     } catch (_) { throw new Error("EXTRACURRICULAR_TRANSPORT_JSON_INVALID"); }
-    if (transport && transport.requiereTransporte) {
-      if (!String(transport.rutaId || "").trim() ||
-          !String(transport.fechaEvento || "").trim() || !String(transport.destino || "").trim()) {
-        throw new Error("EXTRACURRICULAR_TRANSPORT_DETAILS_REQUIRED");
-      }
-      const routesSheet = ss.getSheetByName("TransporteRutas");
-      const routes = routesSheet ? routesSheet.getDataRange().getValues().slice(1) : [];
-      const route = routes.find(row => String(row[0] || "").trim() === String(transport.rutaId).trim());
-      const routeState = extracurricularRoleKey_(route && route[6]);
-      if (!route || ["ACTIVA", "ACTIVO", "DISPONIBLE", "OPERATIVA"].indexOf(routeState) === -1) {
-        throw new Error("EXTRACURRICULAR_TRANSPORT_ROUTE_NOT_AVAILABLE");
-      }
+    if (transport && transport.requiereTransporte && !extracurricularTransportRouteIsActive_(ss, transport)) {
+      throw new Error("EXTRACURRICULAR_TRANSPORT_ROUTE_NOT_AVAILABLE");
     }
     const encode = function(value, fallback) {
       if (value === undefined || value === null || value === "") return fallback;
@@ -6256,6 +6275,11 @@ function enrollStudentInExtracurricular(payload) {
     const activity = activities.find((row, index) => index > 0 && String(row[0] || "").trim() === activityId);
     if (!activity || ["CANCELADA", "INACTIVA", "CERRADA"].indexOf(extracurricularRoleKey_(activity[7])) !== -1) {
       throw new Error("EXTRACURRICULAR_ACTIVITY_NOT_AVAILABLE");
+    }
+    let activityTransport = {};
+    try { activityTransport = JSON.parse(String(activity[12] || "{}")); } catch (_) { throw new Error("EXTRACURRICULAR_TRANSPORT_JSON_INVALID"); }
+    if (activityTransport.requiereTransporte && !extracurricularTransportRouteIsActive_(ss, activityTransport)) {
+      throw new Error("EXTRACURRICULAR_TRANSPORT_ROUTE_NOT_AVAILABLE");
     }
     const enrollments = ensureExtracurricularEnrollmentSheet_(ss);
     const rows = enrollments.getDataRange().getValues();
@@ -6405,6 +6429,7 @@ function cancelExtracurricularEnrollment(payload) {
     const activitySheet = ensureExtracurricularActivitySchema_(ss);
     const activity = activitySheet.getDataRange().getValues().find((row, index) => index > 0 && String(row[0] || "").trim() === String(match.row[1]).trim());
     sheet.getRange(match.rowNumber, 6).setValue("Cancelada");
+    reindexExtracurricularWaitlist_(String(match.row[1]), sheet);
     let promoted = null;
     if (["CONFIRMADA", "PENDIENTEPAGO"].indexOf(currentState) !== -1 && activity) {
       promoted = promoteNextExtracurricularWaitlist_(ss, activity, sheet);
