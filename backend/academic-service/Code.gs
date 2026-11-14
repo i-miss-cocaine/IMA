@@ -6211,19 +6211,34 @@ function saveExtracurricularActivity(payload) {
     if (transport && transport.requiereTransporte && !extracurricularTransportRouteIsActive_(ss, transport)) {
       throw new Error("EXTRACURRICULAR_TRANSPORT_ROUTE_NOT_AVAILABLE");
     }
-    const encode = function(value, fallback) {
-      if (value === undefined || value === null || value === "") return fallback;
-      return typeof value === "object" ? JSON.stringify(value) : String(value);
+    const parseStructured = function(value, fallback, expectArray, errorCode) {
+      let parsed;
+      try {
+        const input = value === undefined || value === null || value === "" ? fallback : value;
+        parsed = typeof input === "string" ? JSON.parse(input || (expectArray ? "[]" : "{}")) : input;
+      } catch (_) { throw new Error(errorCode); }
+      if (!parsed || typeof parsed !== "object" || (expectArray ? !Array.isArray(parsed) : Array.isArray(parsed))) {
+        throw new Error(errorCode);
+      }
+      return parsed;
     };
+    const schedule = parseStructured(data.horarioJSON, previous[4] || "{}", false, "EXTRACURRICULAR_SCHEDULE_JSON_INVALID");
+    const owners = parseStructured(data.encargadosJSON, previous[5] || "[]", true, "EXTRACURRICULAR_OWNERS_JSON_INVALID");
+    const supervisors = parseStructured(data.supervisoresJSON, previous[6] || "[]", true, "EXTRACURRICULAR_SUPERVISORS_JSON_INVALID");
+    if (!transport || typeof transport !== "object" || Array.isArray(transport)) throw new Error("EXTRACURRICULAR_TRANSPORT_JSON_INVALID");
+    const startDate = data.fechaInicio || previous[13] || "";
+    const endDate = data.fechaFin || previous[14] || "";
+    const parsedStart = startDate ? new Date(startDate) : null;
+    const parsedEnd = endDate ? new Date(endDate) : null;
+    if ((parsedStart && !Number.isFinite(parsedStart.getTime())) ||
+        (parsedEnd && !Number.isFinite(parsedEnd.getTime())) ||
+        (parsedStart && parsedEnd && parsedEnd < parsedStart)) throw new Error("EXTRACURRICULAR_DATE_RANGE_INVALID");
     const values = [
       targetId, data.anoId || previous[1] || "2026", name, category,
-      encode(data.horarioJSON, previous[4] || "{}"),
-      encode(data.encargadosJSON, previous[5] || "[]"),
-      encode(data.supervisoresJSON, previous[6] || "[]"),
+      JSON.stringify(schedule), JSON.stringify(owners), JSON.stringify(supervisors),
       data.estado || previous[7] || "Programada",
       data.evidenciasDriveFolderId || previous[8] || "",
-      previous[9] || "[]", capacity, fee, JSON.stringify(transport),
-      data.fechaInicio || previous[13] || "", data.fechaFin || previous[14] || ""
+      previous[9] || "[]", capacity, fee, JSON.stringify(transport), startDate, endDate
     ];
     if (existingIndex > 0) sheet.getRange(existingIndex + 1, 1, 1, values.length).setValues([values]);
     else sheet.appendRow(values);
