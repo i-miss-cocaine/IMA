@@ -6110,8 +6110,8 @@ function ensureExtracurricularChargeSheet_(ss) {
 function createExtracurricularCharge_(ss, activity, studentUserId, amount) {
   const charges = ensureExtracurricularChargeSheet_(ss);
   const rows = charges.getDataRange().getValues();
-  const safeActivity = String(activity[0]).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 24);
-  const safeStudent = String(studentUserId).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 24);
+  const safeActivity = String(activity[0]).replace(/[^A-Za-z0-9_-]/g, "");
+  const safeStudent = String(studentUserId).replace(/[^A-Za-z0-9_-]/g, "");
   const chargeId = "CEX-" + safeActivity + "-" + safeStudent;
   const dedupeKey = "EXTRACURRICULAR|" + String(activity[0]).trim() + "|" + String(studentUserId).trim();
   const existing = rows.find(row => String(row[0] || "").trim() === chargeId ||
@@ -6130,6 +6130,10 @@ function createExtracurricularCharge_(ss, activity, studentUserId, amount) {
 }
 function promoteNextExtracurricularWaitlist_(ss, activity, enrollmentSheet) {
   const rows = enrollmentSheet.getDataRange().getValues();
+  const capacity = Number(activity[10] || 0);
+  const activeCount = rows.slice(1).filter(row => String(row[1] || "").trim() === String(activity[0]).trim() &&
+    ["CONFIRMADA", "PENDIENTEPAGO"].indexOf(extracurricularRoleKey_(row[5])) !== -1).length;
+  if (capacity > 0 && activeCount >= capacity) return null;
   const waiting = rows.slice(1).map((row, index) => ({ row: row, rowNumber: index + 2 }))
     .filter(item => String(item.row[1] || "").trim() === String(activity[0]).trim() &&
       String(item.row[5] || "").trim() === "ListaEspera")
@@ -6278,10 +6282,12 @@ function enrollStudentInExtracurricular(payload) {
     let chargeRowNumber = null;
     if (!waitlisted && fee > 0) {
       const chargeRows = ensureExtracurricularChargeSheet_(ss).getDataRange().getValues();
-      const safeActivity = activityId.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 24);
-      const safeStudent = studentId.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 24);
+      const safeActivity = activityId.replace(/[^A-Za-z0-9_-]/g, "");
+      const safeStudent = studentId.replace(/[^A-Za-z0-9_-]/g, "");
       chargeId = "CEX-" + safeActivity + "-" + safeStudent;
-      if (chargeRows.some(row => String(row[0] || "").trim() === chargeId)) throw new Error("EXTRACURRICULAR_CHARGE_ORPHANED");
+      const dedupeKey = "EXTRACURRICULAR|" + activityId + "|" + studentId;
+      if (chargeRows.some(row => String(row[0] || "").trim() === chargeId ||
+          String(row[10] || "").trim() === dedupeKey)) throw new Error("EXTRACURRICULAR_CHARGE_ORPHANED");
       chargeId = createExtracurricularCharge_(ss, activity, studentId, fee);
       chargeRowNumber = ensureExtracurricularChargeSheet_(ss).getLastRow();
     }
@@ -6379,7 +6385,12 @@ function cancelExtracurricularEnrollment(payload) {
       throw new Error("EXTRACURRICULAR_ENROLLMENT_OWNERSHIP_REQUIRED");
     }
     const currentState = extracurricularRoleKey_(match.row[5]);
-    if (currentState === "CANCELADA") return { status: "success", idempotent: true, inscripcionId: enrollmentId };
+    if (currentState === "CANCELADA") {
+      const existingActivity = ensureExtracurricularActivitySchema_(ss).getDataRange().getValues()
+        .find((row, index) => index > 0 && String(row[0] || "").trim() === String(match.row[1]).trim());
+      const promotedAgain = existingActivity ? promoteNextExtracurricularWaitlist_(ss, existingActivity, sheet) : null;
+      return { status: "success", idempotent: true, inscripcionId: enrollmentId, siguienteEnLista: promotedAgain };
+    }
     if (currentState === "PENDIENTEPAGO" && match.row[6]) {
       const chargeSheet = ss.getSheetByName("CargosEstudiante");
       if (chargeSheet) {
