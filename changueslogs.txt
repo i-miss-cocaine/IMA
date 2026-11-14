@@ -3607,3 +3607,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato Node.js 24.22.2 y syntax-check Apps Script PASS. Department Scope 43615291620, Identity Mapping 43615291629 y Department Reference Consumers 43615291613 SUCCESS.
 - Primer run falló por reasignación de const; corregido y verificado en runs finales. No se ejecutó geocodificación externa ni Apps Script/Sheets real. BETA-FUNC-093 pendiente.
 - Commits: 7717edd002d14040d65adbc80d5719c4be686a23, 9989a11b837f29d0fa6c6380b366e4f59bf0147a, f5932ee2fb4928d926041cdac2e4997fb8592db5.
+
+
+[2026-11-14] Decisión de producto — sesiones ágiles y PIN familiar (C1.725)
+- Autenticación de credenciales al iniciar sesión y sesión persistente en el dispositivo; evitar cierres por actualizaciones ordinarias y solicitudes repetidas de credenciales.
+- Definir máximo configurable de sesiones/dispositivos activos por usuario y política sencilla al alcanzar el límite.
+- Priorizar rendimiento en Apps Script: evitar verificaciones costosas/redundantes por acción, reutilizar el contexto de sesión y mantener controles esenciales ligeros del lado servidor, sin reautenticación visible por operación.
+- Se confirma PIN familiar separado para que un padre/madre/tutor legítimo apruebe el uso/autorización del crédito; el alumno no puede autoaprobar su crédito. No se ha definido aún si el PIN se solicita por compra o al autorizar un cupo, ni el flujo de recuperación/cambio.
+- El PIN nunca se almacenará en texto claro. TASK-210 continúa pendiente; no hubo cambios de código ni pruebas en este registro.

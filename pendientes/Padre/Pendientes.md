@@ -332,8 +332,14 @@
   - Toda compra autorizada se asienta una sola vez en el estado de cuenta o crédito familiar.
   - Se impiden cobros duplicados por el mismo consumo.
   - Los reportes de ventas coinciden exactamente con los movimientos registrados.
-- **Estado:** [ ] Pendiente
-- **Auditoría de preparación C1.723:** permanece pendiente. Los callsites actuales no implementan validación PIN, ownership del responsable, idempotencia financiera persistente ni reversión coordinada de crédito; no se modificó código. Definir la política de PIN antes de habilitar la integración de débitos.
+- **Requisitos de autorización y experiencia (decisión de producto C1.725):**
+  - Mantener autenticación de credenciales al iniciar sesión y sesión persistente en el dispositivo; no exigir reingreso por consultas, transacciones ni actualizaciones ordinarias.
+  - Definir un máximo configurable de sesiones/dispositivos activos por usuario y una política clara al alcanzar el límite.
+  - Evitar verificaciones costosas o redundantes por acción; reutilizar el contexto de sesión validado y conservar controles esenciales de servidor ligeros, sin reautenticación visible por operación.
+  - Incorporar PIN familiar separado para que un padre/madre/tutor autorizado apruebe el uso o autorización del crédito. El alumno no puede autoaprobar su propio crédito. No confundir este PIN con la autenticación de inicio de sesión.
+  - El PIN no se almacena en texto claro. Aún debe definirse si la aprobación se realiza por compra o al autorizar un cupo, y el procedimiento de recuperación/cambio.
+- **Auditoría de preparación C1.723:** los callsites actuales no implementan validación PIN, ownership del responsable, idempotencia financiera persistente ni reversión coordinada de crédito. Sin cambios de código en C1.723/C1.725.
+- **Estado:** [ ] Pendiente; se confirma la necesidad del PIN y el actor aprobador, pero el momento/frecuencia de aprobación debe concretarse durante el diseño antes de activar débitos.
 
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 9572-9642; clave TASK-245; asignación única: Contabilidad -->
