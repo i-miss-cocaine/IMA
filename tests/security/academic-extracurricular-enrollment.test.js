@@ -187,6 +187,13 @@ assert.equal(cancelled.siguienteEnLista.estado, "PendientePago");
 assert.equal(sheets.CargosEstudiante.rows.length, 3);
 assert.equal(sheets.CargosEstudiante.rows[1][7], "Anulado", "cancelled pending charge must be annulled");
 assert.equal(sheets.ServiciosInscripciones.rows[2][5], "PendientePago", "waitlist promotion must reserve the released place");
+const repeatedCancel = context.cancelExtracurricularEnrollment({
+  _verifiedUserId: "G1", _verifiedRole: "Padre", inscripcionId: first.inscripcionId
+});
+assert.equal(repeatedCancel.idempotent, true);
+assert.equal(sheets.ServiciosInscripciones.rows.filter(row => ["Confirmada", "PendientePago"].indexOf(row[5]) !== -1).length, 1,
+  "repeated cancellation must not overfill capacity");
+assert.equal(sheets.CargosEstudiante.rows.length, 3, "repeated cancellation must not create another charge");
 
 sheets.CargosEstudiante.rows[2][7] = "Pagado";
 const family = context.getStudentExtracurricularEnrollments({ _verifiedUserId: "G1", _verifiedRole: "Padre" });
