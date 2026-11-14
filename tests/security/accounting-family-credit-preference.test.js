@@ -225,6 +225,15 @@ assert.equal(perPurchaseAuthorization.pinAprobado, false);
 assert.equal(rows.CreditoFamiliarAutorizaciones[1][11], "");
 rows.TiendaOrdenes.push(["ORD-3", new Date(), "STU-1", "Alumno Uno", "[]", 10, "CreditoFamiliar", "PendienteAprobacionFamiliar", "Pendiente", "", "", ""]);
 rows.CafeteriaPedidos.push(["CAF-3", new Date(), "STU-1", "GUARD-1", "[]", "Almuerzo", 10, "CreditoFamiliar", "PendienteAprobacionFamiliar", ""]);
+
+lockBusy = true;
+assert.throws(() => context.processFamilyCreditPurchase({
+  _verifiedUserId: "GUARD-1", _verifiedRole: "Padre", estudianteUserId: "STU-1",
+  establecimiento: "TIENDA", origenRefId: "ORD-3", familyPin: "654321"
+}), /LOCK_BUSY/);
+lockBusy = false;
+assert.equal(rows.TiendaOrdenes.find(row => row[0] === "ORD-3")[7], "PendienteAprobacionFamiliar");
+assert.equal(rows.CreditoFamiliarMovimientos.filter(row => row[7] === "ORD-3").length, 0, "lock contention must not create a debit");
 const approvedStore = context.processFamilyCreditPurchase({
   _verifiedUserId: "GUARD-1", _verifiedRole: "Padre", estudianteUserId: "STU-1",
   establecimiento: "TIENDA", origenRefId: "ORD-3", familyPin: "654321"
@@ -252,6 +261,15 @@ assert.throws(() => context.processFamilyCreditPurchase({
 }), /FAMILY_CREDIT_DAILY_LIMIT_EXCEEDED/);
 assert.equal(rows.TiendaOrdenes.find(row => row[0] === "ORD-4")[7], "PendienteAprobacionFamiliar");
 
+lockBusy = true;
+assert.throws(() => context.updateStoreOrderStatus({ ordenId: "ORD-3", estadoPago: "Cancelado" }), /LOCK_BUSY/);
+lockBusy = false;
+assert.equal(rows.TiendaOrdenes.find(row => row[0] === "ORD-3")[7], "AprobadoCreditoFamiliar");
+assert.equal(rows.CreditoFamiliarAutorizaciones[1][6], 30, "lock contention must not reverse the balance");
+failNextAppend = true;
+assert.throws(() => context.updateStoreOrderStatus({ ordenId: "ORD-3", estadoPago: "Cancelado" }), /FAMILY_CREDIT_REVERSAL_WRITE_FAILED/);
+assert.equal(rows.TiendaOrdenes.find(row => row[0] === "ORD-3")[7], "AprobadoCreditoFamiliar");
+assert.equal(rows.CreditoFamiliarAutorizaciones[1][6], 30, "failed refund persistence must preserve the debit balance");
 const storeRefund = context.updateStoreOrderStatus({ ordenId: "ORD-3", estadoPago: "Cancelado" });
 assert.equal(storeRefund.status, "success");
 assert.equal(rows.TiendaOrdenes.find(row => row[0] === "ORD-3")[7], "Cancelado");
