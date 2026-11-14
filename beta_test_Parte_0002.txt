@@ -332,3 +332,27 @@
 - **Evidencia requerida:** snapshots sintéticos de Kardex, InventoryValuationLayers, InventoryValuationMovements, InventoryValuationPolicies y AsientosContables; IDs de transferencias y movimientos; cálculo PEPS/promedio; consultas a cortes históricos; conciliación 1301/1302; CSV y PDF con URL Drive; respuestas de permisos; logs de lock/rollback. No usar datos reales.
 - **Estado:** Pendiente beta. Contratos Node.js 24 y sintaxis aprobados en GitHub Actions; Apps Script/Sheets/Drive reales no ejecutados.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-090 — TASK-190 — Reservas, disponibilidad y reposición inteligente de materiales
+- **Módulo/roles:** Contabilidad / Almacén / Bodeguero / Contador / Administrador.
+- **Objetivo:** validar en Apps Script y Google Sheets desplegados la separación entre existencias físicas, reservadas, disponibles, pendientes de recepción y en tránsito; la aprobación/liberación de reservas; y el motor de reposición.
+- **Precondiciones:** entorno beta aislado; copia de respaldo de MaterialesSolicitudes, InventariosKardex, CatalogoArticulos, OrdenesCompra, RecepcionesCompra y TransferenciasInventario; artículos, unidades, departamentos y usuarios sintéticos; cuentas contables activas 1301 y 5201.
+- **Pasos:**
+  1. Configurar política por artículo y almacén con StockMinimo, StockMaximo, StockObjetivo y plazo de entrega; probar límites inválidos y usuario/departamento sin permiso.
+  2. Registrar existencia física y crear una requisición pendiente; comprobar que no altera Kardex ni crea reservas.
+  3. Aprobar la requisición; comprobar ledger InventoryReservations, disminución de disponibilidad y conservación de existencia física. Repetir la aprobación y verificar idempotencia.
+  4. Aprobar una segunda requisición que exceda el saldo físico menos reservas; verificar rechazo sin estado aprobado ni filas parciales en el ledger.
+  5. Aprobar y cancelar otra solicitud; aprobar y rechazar otra; aprobar y modificar otra. Comprobar liberación de reservas y que la modificación vuelve a PendienteAprobacion.
+  6. Entregar una solicitud aprobada; verificar que Kardex se descuenta una sola vez, la reserva pasa a Consumida y el asiento 5201/1301 balancea. Reintentar y verificar que no duplica movimientos, reservas ni asiento.
+  7. Simular lock ocupado, dos aprobaciones concurrentes y fallo durante la escritura de reservas/entrega; comprobar serialización, rollback de filas parciales, restauración de la reserva y conservación del estado original.
+  8. Configurar consumo histórico sintético y órdenes emitidas con recepciones parciales; verificar consumo promedio, días de cobertura, rotación, pendiente de recepción y cantidad sugerida.
+  9. Crear transferencia en tránsito hacia el almacén; verificar que se descuenta de la necesidad sugerida. Confirmar recepción parcial y comprobar que el saldo restante sigue en tránsito.
+  10. Crear una orden abierta que cubra la necesidad; comprobar que no se genera una segunda sugerencia. Cancelar la orden y comprobar que la sugerencia se recalcula.
+  11. Probar escenarios de exceso de existencias y riesgo de quiebre; verificar cantidades sugeridas y conversión con un clic en solicitud interna de compra, sin modificar órdenes aprobadas.
+  12. Consultar desde otro departamento y con rol no autorizado; comprobar denegación sin filtración de artículos, existencias, costos ni requisiciones.
+- **Resultado esperado:** las reservas no alteran Kardex hasta la entrega; ningún compromiso excede las unidades disponibles; cancelaciones, rechazos y modificaciones liberan reservas; los pedidos en tránsito y recepciones parciales evitan sobrecompras; las sugerencias son trazables y se convierten en solicitudes internas idempotentes.
+- **Evidencia requerida:** snapshots sintéticos de Kardex, InventoryReservations, InventoryReplenishmentPolicies, requisiciones, órdenes/recepciones/transferencias y asientos; IDs de solicitud/reserva; cantidades físicas y comprometidas; cálculos de consumo, rotación y cobertura; logs de autorización, lock, reintento y rollback. No usar datos reales.
+- **Estado:** Pendiente beta. Contratos Node.js 24.22.2 y sintaxis de Apps Script/JavaScript aprobados en GitHub Actions; Apps Script/Sheets reales no ejecutados.
+===============================================================================

@@ -2762,7 +2762,7 @@
 ---
 
 <!-- ID: TASK-190 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [ ] [TASK-190] Implementación de reservas, disponibilidad y reposición inteligente de materiales
+### [x] [TASK-190] Implementación de reservas, disponibilidad y reposición inteligente de materiales
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E (F19-04, F19-10) y Plan de Trabajo F19-09
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Continuidad operativa, abastecimiento oportuno, prevención de sobrecompras y gestión de compromisos)
@@ -2794,7 +2794,7 @@
   - Las sugerencias de reposición descuentan las compras en tránsito evitando sobrecompras.
   - Las sugerencias pueden convertirse en solicitudes de compra internas sin alterar órdenes aprobadas.
   - Se identifican oportunamente artículos con exceso de existencias y artículos con riesgo de quiebre.
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Completada en código y CI; BETA-FUNC-090 pendiente de validación desplegada.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 8172-8198; clave TASK-200; asignación única: Contabilidad -->
 
