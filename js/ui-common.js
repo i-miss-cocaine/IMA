@@ -2288,6 +2288,30 @@ window.renderRoleSettingsInModal = function(role, user) {
                 </div>
             </div>
         `;
+    } else if (['Padre', 'Tutor', 'Responsable'].indexOf(role) !== -1) {
+        html = `
+            <div class="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-start gap-3">
+                <i class="fa-solid fa-shield-halved text-indigo-600 text-lg mt-0.5"></i>
+                <div class="text-xs text-indigo-900 leading-relaxed font-medium">
+                    <strong>Aprobación del crédito familiar:</strong> Elija cuándo debe intervenir el padre, madre o tutor con su PIN. Esta preferencia se guarda en el servidor y no puede cambiarla el estudiante. Guardar la modalidad no habilita débitos: estos seguirán bloqueados hasta completar la verificación del PIN.
+                </div>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label for="role-cfg-family-credit-mode" class="block font-bold text-slate-700 mb-1">Modalidad de aprobación</label>
+                    <select id="role-cfg-family-credit-mode" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                        <option value="POR_COMPRA">Por compra: PIN en cada pedido</option>
+                        <option value="POR_CUPO">Por cupo: PIN al autorizar el cupo</option>
+                    </select>
+                    <p class="text-[11px] text-slate-500 mt-2">Por compra solicita aprobación del tutor en cada pedido. Por cupo permite compras dentro de los límites que el tutor haya autorizado previamente.</p>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                    <span id="family-credit-mode-status" class="text-xs text-slate-500">Cargando configuración...</span>
+                    <button id="btn-save-family-credit-mode" type="button" onclick="window.saveFamilyCreditApprovalPreference()" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 disabled:opacity-50">Guardar modalidad</button>
+                </div>
+            </div>
+        `;
+        window.loadFamilyCreditApprovalPreference();
     } else if (role === 'Contador') {
         html = `
             <div class="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-start gap-3">
@@ -2391,6 +2415,50 @@ window.loadProviderIntegrationsInModal = function() {
     } else {
         window.renderProviderCardsInModal(defaultProviders);
     }
+};
+
+window.loadFamilyCreditApprovalPreference = function() {
+    var select = document.getElementById('role-cfg-family-credit-mode');
+    var status = document.getElementById('family-credit-mode-status');
+    if (!select || !window.fetchApi) return;
+    if (status) status.textContent = 'Cargando configuración...';
+    fetchApi('ACCOUNTING', 'getFamilyCreditApprovalPreference', {}).then(function(res) {
+        if (!res || res.status !== 'success') throw new Error((res && res.message) || 'No se pudo cargar la configuración.');
+        if (res.configured && ['POR_COMPRA', 'POR_CUPO'].indexOf(res.modalidadAprobacion) !== -1) {
+            select.value = res.modalidadAprobacion;
+            if (status) status.textContent = 'Configuración guardada en el servidor.';
+        } else {
+            select.value = 'POR_COMPRA';
+            if (status) status.textContent = 'Aún no configurada. Guarda una modalidad para activarla.';
+        }
+    }).catch(function(err) {
+        if (status) status.textContent = 'No se pudo verificar la configuración. Los débitos permanecen bloqueados.';
+        console.warn('Family credit preference load failed:', err);
+    });
+};
+
+window.saveFamilyCreditApprovalPreference = function() {
+    var select = document.getElementById('role-cfg-family-credit-mode');
+    var button = document.getElementById('btn-save-family-credit-mode');
+    var status = document.getElementById('family-credit-mode-status');
+    if (!select || !window.fetchApi) return;
+    var mode = String(select.value || '').toUpperCase();
+    if (['POR_COMPRA', 'POR_CUPO'].indexOf(mode) === -1) {
+        if (status) status.textContent = 'Selecciona una modalidad válida.';
+        return;
+    }
+    if (button) { button.disabled = true; button.textContent = 'Guardando...'; }
+    fetchApi('ACCOUNTING', 'configureFamilyCreditApprovalPreference', { modalidadAprobacion: mode }).then(function(res) {
+        if (!res || res.status !== 'success') throw new Error((res && res.message) || 'No se pudo guardar la configuración.');
+        if (status) status.textContent = 'Modalidad guardada correctamente en el servidor.';
+        if (window.Swal) Swal.fire({ icon: 'success', title: 'Configuración guardada', text: res.message || 'La modalidad de aprobación quedó guardada.' });
+    }).catch(function(err) {
+        if (status) status.textContent = 'No se pudo guardar. No se modificó la autorización financiera.';
+        if (window.Swal) Swal.fire({ icon: 'error', title: 'No se pudo guardar', text: err.message || 'Error de configuración.' });
+        else alert('Error al guardar: ' + (err.message || err));
+    }).finally(function() {
+        if (button) { button.disabled = false; button.textContent = 'Guardar modalidad'; }
+    });
 };
 
 window.renderProviderCardsInModal = function(list) {

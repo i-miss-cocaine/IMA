@@ -120,6 +120,7 @@ function getOrCreateSheet(ss, name) {
     if (name === "AprobacionHorasExtras") sheet.appendRow(["OvertimeID", "UserId", "NombreEmpleado", "FechaTrabajada", "HorasRegistradas", "HorasAprobadas", "Motivo", "EstadoAprobacion", "AprobadoPor", "PeriodoNominaId", "EstadoPago", "Timestamp"]);
     if (name === "ConceptosCobro") sheet.appendRow(["ConceptoID", "Fecha", "NombreConcepto", "MontoBase", "AplicaAGrado", "PeriodoVigencia", "Estado", "Observaciones"]);
     if (name === "CreditoFamiliarAutorizaciones") sheet.appendRow(["AutorizacionID", "Fecha", "ResponsableUserId", "EstudianteUserId", "LimiteDiario", "LimiteMensual", "SaldoUsado", "Estado", "FechaVencimiento", "Observaciones"]);
+    if (name === "CreditoFamiliarConfiguracion") sheet.appendRow(["ConfiguracionID", "ResponsableUserID", "ModalidadAprobacion", "FechaActualizacion", "ActualizadoPor"]);
     if (name === "CreditoFamiliarMovimientos") sheet.appendRow(["MovimientoCreditoID", "Fecha", "AutorizacionID", "EstudianteUserId", "ResponsableUserId", "Establecimiento", "Monto", "OrigenRefId", "Estado", "Observaciones"]);
     if (name === "CafeteriaMenu") sheet.appendRow(["PlatoID", "FechaPublicacion", "NombrePlato", "Precio", "StockDiario", "Categoria", "ImagenUrl", "Allergenos", "HorariosDisponibilidad", "Estado", "Observaciones"]);
     if (name === "CafeteriaPedidos") sheet.appendRow(["PedidoID", "Fecha", "EstudianteUserId", "ResponsableUserId", "DetalleJSON", "TurnoEntrega", "MontoTotal", "MetodoPago", "Estado", "Observaciones"]);
@@ -207,9 +208,9 @@ const ROLE_PERMISSIONS = {
   "EncargadoCafeteria": ["getCafeteriaMenu", "manageCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "updateCafeteriaOrderStatus", "recordInventoryMovement", "getInventoryKardex", "getInstitutionalPolicies", "processFamilyCreditPurchase"],
   "RecursosHumanos": ["initializeFinancialDriveStructure", "createEmployeeRecord", "getEmployeeRecords", "manageEmployeeContract", "getEmployeeContracts", "getEmployeeContractAlerts", "manageJobVacancy", "getJobVacancies", "submitJobCandidate", "getJobCandidates", "manageInterviewSchedule", "getInterviewSchedules", "processEmployeeOffboarding", "updateEmployeeLaborStatus", "configureWorkSchedule", "recordStaffCheckIn", "getStaffAttendanceLogs", "submitAttendanceCorrection", "reviewAttendanceCorrection", "submitLeaveVacationRequest", "getLeaveVacationRequests", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "getLoanAmortizationSchedule", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "uploadEmployeeDocument", "getEmployeeDocuments", "getHRDashboardAnalytics", "getInstitutionalPolicies", "managePerformancePeriod", "managePerformanceCriteria", "managePerformanceEvaluation", "getPerformanceEvaluations", "manageTrainingCourse", "manageTrainingEnrollment", "getEmployeeTrainingHistory", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "manageLaborIncident", "manageDisciplinaryMeasure", "getLaborIncidentsHistory", "manageStaffingNeeds", "getStaffingNeedsPlanning", "manageWorkShiftAndSubstitution", "getWorkShiftsAndSubstitutionsHistory", "getEmployeeSelfServicePortal", "verifyLaborAndTaxInformation", "runHRIntegrationAndRegressionTests", "runCriticalProcessConcurrencySuite"],
   "Empleado": ["getEmployeeRecords", "getEmployeeContracts", "getEmployeeContractAlerts", "recordStaffCheckIn", "getStaffAttendanceLogs", "submitAttendanceCorrection", "submitLeaveVacationRequest", "getLeaveVacationRequests", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getEmployeeDocuments", "getPerformanceEvaluations", "getEmployeeTrainingHistory", "manageProfessionalDevelopmentPlan", "getEmployeeSelfServicePortal"],
-  "Padre": ["getStudentAccountStatement", "getAdmissionFinancialStatus", "createAdmissionCharge", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "generatePaymentReceiptPDF", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getTransportAssignments", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "getStoreProducts", "createStoreOrder", "getStoreOrders", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "configureFamilyCreditAuthorization", "processFamilyCreditPurchase"],
-  "Tutor": ["getStudentAccountStatement", "getAdmissionFinancialStatus", "createAdmissionCharge", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "generatePaymentReceiptPDF", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getTransportAssignments", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "getStoreProducts", "createStoreOrder", "getStoreOrders", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "configureFamilyCreditAuthorization", "processFamilyCreditPurchase"],
-  "Responsable": ["getStudentAccountStatement", "getAdmissionFinancialStatus", "createAdmissionCharge", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "generatePaymentReceiptPDF", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getTransportAssignments", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "getStoreProducts", "createStoreOrder", "getStoreOrders", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "configureFamilyCreditAuthorization", "processFamilyCreditPurchase"],
+  "Padre": ["getStudentAccountStatement", "getAdmissionFinancialStatus", "createAdmissionCharge", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "generatePaymentReceiptPDF", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getTransportAssignments", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "getStoreProducts", "createStoreOrder", "getStoreOrders", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "configureFamilyCreditAuthorization", "getFamilyCreditApprovalPreference", "configureFamilyCreditApprovalPreference", "processFamilyCreditPurchase"],
+  "Tutor": ["getStudentAccountStatement", "getAdmissionFinancialStatus", "createAdmissionCharge", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "generatePaymentReceiptPDF", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getTransportAssignments", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "getStoreProducts", "createStoreOrder", "getStoreOrders", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "configureFamilyCreditAuthorization", "getFamilyCreditApprovalPreference", "configureFamilyCreditApprovalPreference", "processFamilyCreditPurchase"],
+  "Responsable": ["getStudentAccountStatement", "getAdmissionFinancialStatus", "createAdmissionCharge", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "generatePaymentReceiptPDF", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getTransportAssignments", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "getStoreProducts", "createStoreOrder", "getStoreOrders", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "configureFamilyCreditAuthorization", "getFamilyCreditApprovalPreference", "configureFamilyCreditApprovalPreference", "processFamilyCreditPurchase"],
   "Consejeros": ["getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments"],
   "Profesor": ["getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitVacationRequest", "getVacationRequests", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "verifySACETemplateCompatibility", "generateSACEReportFile", "fillAndExportSACETemplate", "validateSACETemplateFile", "getEmployeeSelfServicePortal"],
   "Asistente": ["getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "getDigitalResources", "getSchoolDocumentTemplates"],
@@ -1010,6 +1011,8 @@ function doPost(e) {
       case "createCafeteriaOrder": result = createCafeteriaOrder(payload); break;
       case "getCafeteriaOrders": result = getCafeteriaOrders(payload); break;
       case "updateCafeteriaOrderStatus": result = updateCafeteriaOrderStatus(payload); break;
+      case "getFamilyCreditApprovalPreference": result = getFamilyCreditApprovalPreference(payload); break;
+      case "configureFamilyCreditApprovalPreference": result = configureFamilyCreditApprovalPreference(payload); break;
       case "configureFamilyCreditAuthorization": result = configureFamilyCreditAuthorization(payload); break;
       case "getFamilyCreditAuthorizations": result = getFamilyCreditAuthorizations(payload); break;
       case "createFamilyPaymentAgreement": result = createFamilyPaymentAgreement(payload); break;
@@ -1618,6 +1621,7 @@ function getStoreProducts(payload) {
 
 function createStoreOrder(payload) {
   const { userId, compradorNombre, detalleItems, metodoPago, metodoEntrega, observaciones } = payload || {};
+  if (familyCreditIsRequested_(metodoPago)) throw new Error("FAMILY_CREDIT_PIN_APPROVAL_REQUIRED");
   if (!userId || !Array.isArray(detalleItems) || detalleItems.length === 0) {
     throw new Error("userId y lista de productos (detalleItems) son requeridos.");
   }
@@ -1841,6 +1845,7 @@ function getCafeteriaMenu(payload) {
 
 function createCafeteriaOrder(payload) {
   const { estudianteUserId, responsableUserId, detalleItems, turnoEntrega, metodoPago, observaciones } = payload || {};
+  if (familyCreditIsRequested_(metodoPago || "CreditoFamiliar")) throw new Error("FAMILY_CREDIT_PIN_APPROVAL_REQUIRED");
   if (!estudianteUserId || !Array.isArray(detalleItems) || detalleItems.length === 0) {
     throw new Error("estudianteUserId y lista de alimentos (detalleItems) son requeridos.");
   }
@@ -1957,84 +1962,212 @@ function updateCafeteriaOrderStatus(payload) {
 // FASE 4: CRÉDITO FAMILIAR Y AUTORIZACIONES
 // ---------------------------------------------------------------------------
 
+function familyCreditApprovalActor_(payload) {
+  const userId = String(payload && payload._verifiedUserId || "").trim();
+  const role = String(payload && payload._verifiedRole || "").trim();
+  const roleKey = role.toUpperCase().replace(/[^A-Z]/g, "");
+  if (!userId) throw new Error("FAMILY_CREDIT_VERIFIED_IDENTITY_REQUIRED");
+  if (["PADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(roleKey) === -1) {
+    throw new Error("FAMILY_CREDIT_GUARDIAN_ROLE_REQUIRED");
+  }
+  return { userId: userId, role: role };
+}
+
+function familyCreditGuardianHasActiveStudentRelation_(ss, guardianUserId) {
+  const usersSheet = ss.getSheetByName("Usuarios");
+  const relationsSheet = ss.getSheetByName("RelacionesFamiliares");
+  if (!usersSheet || !relationsSheet) return false;
+  const users = usersSheet.getDataRange().getValues();
+  const guardian = users.slice(1).find(function(row) {
+    return String(row[0] || "").trim() === String(guardianUserId).trim();
+  });
+  const guardianPersonId = guardian && String(guardian[9] || "").trim();
+  if (!guardianPersonId) return false;
+  const now = new Date();
+  const relations = relationsSheet.getDataRange().getValues().slice(1);
+  return relations.some(function(row) {
+    const state = String(row[4] || "").trim().toLowerCase();
+    if (String(row[2] || "").trim() !== guardianPersonId ||
+        ["aprobado", "autorizado", "activo", "active"].indexOf(state) === -1) return false;
+    const from = transportParseDate_(row[5]);
+    const to = transportParseDate_(row[6]);
+    if (from && from > now) return false;
+    if (to && to < now) return false;
+    const studentPersonId = String(row[1] || "").trim();
+    return !!studentPersonId && users.slice(1).some(function(userRow) {
+      const studentRole = String(userRow[6] || "").trim().toLowerCase();
+      const studentState = String(userRow[10] || "Activo").trim().toLowerCase();
+      return String(userRow[9] || "").trim() === studentPersonId &&
+        ["estudiante", "alumno", "student"].indexOf(studentRole) !== -1 &&
+        ["inactivo", "inactive", "baja"].indexOf(studentState) === -1;
+    });
+  });
+}
+
+function familyCreditGuardianCanAuthorizeStudent_(ss, guardianUserId, studentUserId) {
+  const usersSheet = ss.getSheetByName("Usuarios");
+  const relationsSheet = ss.getSheetByName("RelacionesFamiliares");
+  if (!usersSheet || !relationsSheet) return false;
+  const users = usersSheet.getDataRange().getValues().slice(1);
+  const guardian = users.find(function(row) { return String(row[0] || "").trim() === String(guardianUserId).trim(); });
+  const student = users.find(function(row) { return String(row[0] || "").trim() === String(studentUserId).trim(); });
+  if (!guardian || !student) return false;
+  const guardianPersonId = String(guardian[9] || "").trim();
+  const studentPersonId = String(student[9] || "").trim();
+  const studentRole = String(student[6] || "").trim().toLowerCase();
+  const studentState = String(student[10] || "Activo").trim().toLowerCase();
+  if (!guardianPersonId || !studentPersonId ||
+      ["estudiante", "alumno", "student"].indexOf(studentRole) === -1 ||
+      ["inactivo", "inactive", "baja"].indexOf(studentState) !== -1) return false;
+  const now = new Date();
+  return relationsSheet.getDataRange().getValues().slice(1).some(function(row) {
+    const state = String(row[4] || "").trim().toLowerCase();
+    if (String(row[1] || "").trim() !== studentPersonId ||
+        String(row[2] || "").trim() !== guardianPersonId ||
+        ["aprobado", "autorizado", "activo", "active"].indexOf(state) === -1) return false;
+    const from = transportParseDate_(row[5]);
+    const to = transportParseDate_(row[6]);
+    return (!from || from <= now) && (!to || to >= now);
+  });
+}
+
+function familyCreditIsRequested_(method) {
+  return String(method || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase().replace(/[\s_-]/g, "") === "CREDITOFAMILIAR";
+}
+
+function getFamilyCreditApprovalPreference(payload) {
+  const actor = familyCreditApprovalActor_(payload);
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  if (!familyCreditGuardianHasActiveStudentRelation_(ss, actor.userId)) {
+    throw new Error("FAMILY_CREDIT_ACTIVE_GUARDIAN_RELATION_REQUIRED");
+  }
+  const rows = getOrCreateSheet(ss, "CreditoFamiliarConfiguracion").getDataRange().getValues().slice(1);
+  const matches = rows.filter(function(row) {
+    return String(row[1] || "").trim() === actor.userId;
+  });
+  if (matches.length > 1) throw new Error("FAMILY_CREDIT_CONFIGURATION_DUPLICATE");
+  if (!matches.length) {
+    return { status: "success", configured: false, modalidadAprobacion: null };
+  }
+  const mode = String(matches[0][2] || "").trim();
+  if (["POR_COMPRA", "POR_CUPO"].indexOf(mode) === -1) {
+    return { status: "success", configured: false, modalidadAprobacion: null };
+  }
+  return { status: "success", configured: true, modalidadAprobacion: mode };
+}
+
+function configureFamilyCreditApprovalPreference(payload) {
+  const actor = familyCreditApprovalActor_(payload);
+  const mode = String(payload && payload.modalidadAprobacion || "").trim().toUpperCase();
+  if (["POR_COMPRA", "POR_CUPO"].indexOf(mode) === -1) {
+    throw new Error("FAMILY_CREDIT_APPROVAL_MODE_INVALID");
+  }
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    if (!familyCreditGuardianHasActiveStudentRelation_(ss, actor.userId)) {
+      throw new Error("FAMILY_CREDIT_ACTIVE_GUARDIAN_RELATION_REQUIRED");
+    }
+    const sheet = getOrCreateSheet(ss, "CreditoFamiliarConfiguracion");
+    const rows = sheet.getDataRange().getValues();
+    const matches = [];
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][1] || "").trim() === actor.userId) matches.push(i + 1);
+    }
+    if (matches.length > 1) throw new Error("FAMILY_CREDIT_CONFIGURATION_DUPLICATE");
+    const now = new Date();
+    if (matches.length === 1) {
+      sheet.getRange(matches[0], 3, 1, 3).setValues([[mode, now, actor.userId]]);
+    } else {
+      sheet.appendRow(["CFG-CRD-" + Utilities.getUuid(), actor.userId, mode, now, actor.userId]);
+    }
+    return { status: "success", configured: true, modalidadAprobacion: mode,
+      message: "Preferencia de aprobación de crédito familiar guardada." };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function configureFamilyCreditAuthorization(payload) {
   const { responsableUserId, estudianteUserId, limiteDiario, limiteMensual, fechaVencimiento, estado, observaciones } = payload || {};
   if (!responsableUserId || !estudianteUserId) throw new Error("responsableUserId y estudianteUserId son requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CreditoFamiliarAutorizaciones");
-  const data = sheet.getDataRange().getValues();
-  const now = new Date();
-
-  const sResp = String(responsableUserId).trim();
-  const sEst = String(estudianteUserId).trim();
-
-  let existingIndex = data.findIndex(r => String(r[2]).trim() === sResp && String(r[3]).trim() === sEst);
-  let autId;
-
-  if (existingIndex !== -1) {
-    autId = data[existingIndex][0];
-    sheet.getRange(existingIndex + 1, 1, 1, 10).setValues([[
-      autId,
-      now,
-      sResp,
-      sEst,
-      parseFloat(limiteDiario || 100),
-      parseFloat(limiteMensual || 1500),
-      parseFloat(data[existingIndex][6] || 0),
-      estado || "Activa",
-      fechaVencimiento || "",
-      observaciones || ""
-    ]]);
-  } else {
-    autId = "AUT-CRD-" + now.getTime();
-    sheet.appendRow([
-      autId,
-      now,
-      sResp,
-      sEst,
-      parseFloat(limiteDiario || 100),
-      parseFloat(limiteMensual || 1500),
-      0,
-      estado || "Activa",
-      fechaVencimiento || "",
-      observaciones || ""
-    ]);
+  const actor = familyCreditApprovalActor_(payload);
+  if (String(responsableUserId).trim() !== actor.userId) throw new Error("FAMILY_CREDIT_GUARDIAN_OWNERSHIP_REQUIRED");
+  const daily = limiteDiario === undefined || limiteDiario === null || limiteDiario === "" ? 100 : Number(limiteDiario);
+  const monthly = limiteMensual === undefined || limiteMensual === null || limiteMensual === "" ? 1500 : Number(limiteMensual);
+  if (!Number.isFinite(daily) || !Number.isFinite(monthly) || daily <= 0 || monthly <= 0 || monthly < daily) {
+    throw new Error("FAMILY_CREDIT_LIMITS_INVALID");
   }
-
-  return {
-    status: "success",
-    autorizacionId: autId,
-    message: "Autorización de crédito familiar configurada con éxito."
-  };
+  const state = String(estado || "Activa").trim();
+  if (["Activa", "Inactiva"].indexOf(state) === -1) throw new Error("FAMILY_CREDIT_STATE_INVALID");
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    if (!familyCreditGuardianCanAuthorizeStudent_(ss, actor.userId, estudianteUserId)) {
+      throw new Error("FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED");
+    }
+    const sheet = getOrCreateSheet(ss, "CreditoFamiliarAutorizaciones");
+    const data = sheet.getDataRange().getValues();
+    const sEst = String(estudianteUserId).trim();
+    const matches = [];
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][2] || "").trim() === actor.userId && String(data[i][3] || "").trim() === sEst) matches.push(i + 1);
+    }
+    if (matches.length > 1) throw new Error("FAMILY_CREDIT_AUTHORIZATION_DUPLICATE");
+    const now = new Date();
+    let autId;
+    if (matches.length === 1) {
+      const row = matches[0];
+      autId = data[row - 1][0];
+      sheet.getRange(row, 1, 1, 10).setValues([[
+        autId, now, actor.userId, sEst, daily, monthly, Number(data[row - 1][6] || 0),
+        state, fechaVencimiento || "", observaciones || ""
+      ]]);
+    } else {
+      autId = "AUT-CRD-" + Utilities.getUuid();
+      sheet.appendRow([autId, now, actor.userId, sEst, daily, monthly, 0, state, fechaVencimiento || "", observaciones || ""]);
+    }
+    return { status: "success", autorizacionId: autId, message: "Autorización de crédito familiar configurada con éxito." };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function getFamilyCreditAuthorizations(payload) {
-  const { responsableUserId, estudianteUserId } = payload || {};
+  const actorId = String(payload && payload._verifiedUserId || "").trim();
+  const roleKey = String(payload && payload._verifiedRole || "").trim().toUpperCase().replace(/[^A-Z]/g, "");
+  if (!actorId || !roleKey) throw new Error("FAMILY_CREDIT_VERIFIED_IDENTITY_REQUIRED");
+  let responsableUserId = payload && payload.responsableUserId;
+  let estudianteUserId = payload && payload.estudianteUserId;
+  const guardianRoles = ["PADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"];
+  const studentRoles = ["ESTUDIANTE", "ALUMNO", "STUDENT"];
+  const privilegedRoles = ["ADMINISTRADOR", "DIRECTOR", "SUBDIRECTOR", "CONTADOR"];
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  if (guardianRoles.indexOf(roleKey) !== -1) {
+    if (responsableUserId && String(responsableUserId).trim() !== actorId) throw new Error("FAMILY_CREDIT_GUARDIAN_OWNERSHIP_REQUIRED");
+    responsableUserId = actorId;
+    if (estudianteUserId && !familyCreditGuardianCanAuthorizeStudent_(ss, actorId, estudianteUserId)) {
+      throw new Error("FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED");
+    }
+  } else if (studentRoles.indexOf(roleKey) !== -1) {
+    if (estudianteUserId && String(estudianteUserId).trim() !== actorId) throw new Error("FAMILY_CREDIT_STUDENT_OWNERSHIP_REQUIRED");
+    estudianteUserId = actorId;
+    responsableUserId = null;
+  } else if (privilegedRoles.indexOf(roleKey) === -1) {
+    throw new Error("FAMILY_CREDIT_READ_ROLE_NOT_ALLOWED");
+  }
   const rows = getOrCreateSheet(ss, "CreditoFamiliarAutorizaciones").getDataRange().getValues().slice(1);
-
   let filtered = rows;
-  if (responsableUserId) filtered = filtered.filter(r => String(r[2]).trim() === String(responsableUserId).trim());
-  if (estudianteUserId) filtered = filtered.filter(r => String(r[3]).trim() === String(estudianteUserId).trim());
-
+  if (responsableUserId) filtered = filtered.filter(r => String(r[2] || "").trim() === String(responsableUserId).trim());
+  if (estudianteUserId) filtered = filtered.filter(r => String(r[3] || "").trim() === String(estudianteUserId).trim());
   const mapped = filtered.map(r => ({
-    autorizacionId: r[0],
-    fecha: r[1],
-    responsableUserId: r[2],
-    estudianteUserId: r[3],
-    limiteDiario: parseFloat(r[4] || 0),
-    limiteMensual: parseFloat(r[5] || 0),
-    saldoUsado: parseFloat(r[6] || 0),
-    estado: r[7],
-    fechaVencimiento: r[8],
-    observaciones: r[9]
+    autorizacionId: r[0], fecha: r[1], responsableUserId: r[2], estudianteUserId: r[3],
+    limiteDiario: parseFloat(r[4] || 0), limiteMensual: parseFloat(r[5] || 0),
+    saldoUsado: parseFloat(r[6] || 0), estado: r[7], fechaVencimiento: r[8], observaciones: r[9]
   }));
-
-  return {
-    status: "success",
-    autorizaciones: mapped
-  };
+  return { status: "success", autorizaciones: mapped };
 }
 
 // [TAREA 1] [Fase Contabilidad y Finanzas] - Reestructuración de convenios y planes de pago familiares con cuotas personalizadas y trazabilidad.
@@ -3464,54 +3597,8 @@ function getInterviewSchedules(payload) {
   return { status: "success", data: filtered };
 }
 
-function processFamilyCreditPurchase(payload) {
-  const { estudianteUserId, monto, establecimiento, origenRefId, observaciones } = payload || {};
-  const mnt = parseFloat(monto || 0);
-  if (!estudianteUserId || mnt <= 0) throw new Error("estudianteUserId y monto válido requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const authSheet = getOrCreateSheet(ss, "CreditoFamiliarAutorizaciones");
-  const movSheet = getOrCreateSheet(ss, "CreditoFamiliarMovimientos");
-  const auths = authSheet.getDataRange().getValues();
-
-  const sEst = String(estudianteUserId).trim();
-  const idx = auths.findIndex(r => String(r[3]).trim() === sEst && r[7] === "Activa");
-
-  if (idx === -1) throw new Error("El alumno no cuenta con una autorización de crédito familiar activa.");
-
-  const limDiario = parseFloat(auths[idx][4] || 0);
-  const limMensual = parseFloat(auths[idx][5] || 0);
-  const saldoUsadoCur = parseFloat(auths[idx][6] || 0);
-
-  if (mnt > limDiario) throw new Error(`La compra de L. ${mnt.toFixed(2)} excede el límite diario autorizado de L. ${limDiario.toFixed(2)}.`);
-  if (saldoUsadoCur + mnt > limMensual) throw new Error(`La compra excede el límite mensual autorizado.`);
-
-  const newSaldoUsado = saldoUsadoCur + mnt;
-  authSheet.getRange(idx + 1, 7).setValue(newSaldoUsado);
-
-  const now = new Date();
-  const movId = "MOV-CRD-" + now.getTime();
-
-  movSheet.appendRow([
-    movId,
-    now,
-    auths[idx][0],
-    sEst,
-    auths[idx][2],
-    establecimiento || "Cafetería/Tienda",
-    mnt,
-    origenRefId || "COMPRA-OK",
-    "Aprobado",
-    observaciones || ""
-  ]);
-
-  return {
-    status: "success",
-    movimientoCreditoId: movId,
-    saldoUsado: newSaldoUsado,
-    limiteMensual: limMensual,
-    message: "Compra a crédito procesada correctamente."
-  };
+function processFamilyCreditPurchase() {
+  throw new Error("FAMILY_CREDIT_PIN_APPROVAL_REQUIRED");
 }
 
 // ---------------------------------------------------------------------------

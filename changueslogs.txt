@@ -3622,3 +3622,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - `POR_COMPRA`: cada pedido requiere aprobación del tutor con PIN antes del débito. `POR_CUPO`: el tutor autoriza el cupo con PIN y las compras posteriores respetan los límites aprobados sin solicitarlo nuevamente.
 - La política se persiste y valida en servidor; el alumno no puede cambiarla ni autoaprobarse. Sin configuración/relación válida, se deniega el débito. El PIN nunca se almacena en texto claro.
 - El flujo de alta, cambio y recuperación del PIN se resolverá durante la implementación segura. TASK-210 sigue Pendiente; este registro no contiene código ni pruebas.
+
+[2026-11-14] TASK-210 — modalidad de aprobación familiar configurable y bloqueo seguro (C1.727)
+- Se añadió persistencia server-side por tutor de la modalidad POR_COMPRA o POR_CUPO y controles desde Configuración → Opciones del Rol del panel padre/tutor.
+- El backend toma identidad/rol de la sesión verificada y exige una relación familiar activa; la configuración no acepta un tutor o estudiante elegido arbitrariamente por el payload. La autorización de cupo exige que el actor sea el responsable autenticado y que el vínculo con el estudiante esté aprobado y vigente. Las consultas de autorizaciones se limitan al tutor autenticado o al propio estudiante; los límites deben ser positivos, el mensual no puede ser menor al diario y las escrituras usan ScriptLock.
+- Hasta implementar y verificar el PIN, las compras con crédito familiar se rechazan en processFamilyCreditPurchase, createStoreOrder y createCafeteriaOrder. No se habilitan débitos por el solo hecho de guardar la modalidad.
+- Contrato Node aislado para preferencias, identidad, relación familiar, propiedad y fallo seguro PASS en Node.js 22.16.0. Test integrado al workflow Department Scope; ejecución CI y sintaxis completa pendientes.
+- TASK-210 permanece Pendiente: falta alta/cambio/recuperación y verificación segura del PIN, integración financiera de pedidos, ledger persistente, idempotencia, concurrencia, conciliación y reversos.

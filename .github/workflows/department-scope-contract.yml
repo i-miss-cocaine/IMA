@@ -12,6 +12,7 @@ on:
       - backend/exam-service/Code.gs
       - backend/developer-service/Code.gs
       - js/student.js
+      - js/ui-common.js
       - dashboard-recursos-humanos.html
       - js/hr-payroll-pdf.js
       - tests/security/student-payment-voucher-client.test.js
@@ -39,6 +40,7 @@ on:
       - tests/security/accounting-transport-monthly-charges.test.js
       - tests/security/accounting-transport-route-optimization.test.js
       - tests/security/accounting-service-tariffs.test.js
+      - tests/security/accounting-family-credit-preference.test.js
       - tests/security/accounting-purchase-receipt-partial.test.js
       - tests/security/accounting-supplier-profile.test.js
       - tests/security/accounting-purchase-dossier.test.js
@@ -137,6 +139,8 @@ jobs:
         run: node tests/security/accounting-transport-route-optimization.test.js
       - name: Run centralized service tariff, versioning and discount contract
         run: node tests/security/accounting-service-tariffs.test.js
+      - name: Run family credit guardian approval preference and fail-closed contract
+        run: node tests/security/accounting-family-credit-preference.test.js
       - name: Run supplier profile and protected banking contract
         run: node tests/security/accounting-supplier-profile.test.js
       - name: Run unified purchase dossier traceability contract
@@ -187,6 +191,7 @@ jobs:
           node --check < backend/academic-service/Code.gs
           node --check < backend/accounting-service/Code.gs
           node --check js/accounting.js
+          node --check js/ui-common.js
           node --check < backend/task-service/Code.gs
           node --check < backend/exam-service/Code.gs
           node --check < backend/developer-service/Code.gs
