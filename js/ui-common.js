@@ -2541,7 +2541,7 @@ window.loadFamilyCreditPendingOrders = function() {
     ]).then(function(results) {
         var store = results[0] && Array.isArray(results[0].ordenes) ? results[0].ordenes : [];
         var cafe = results[1] && Array.isArray(results[1].pedidos) ? results[1].pedidos : [];
-        var normalize = function(value) { return String(value || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').replace(/[\\s_-]/g, '').toUpperCase(); };
+        var normalize = function(value) { return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[\s_-]/g, '').toUpperCase(); };
         var escapeHtml = function(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]); }); };
         var pending = [];
         store.forEach(function(order) {
@@ -2575,7 +2575,7 @@ window.loadFamilyCreditPendingOrders = function() {
 window.approveFamilyCreditOrder = function(establishment, orderId, studentId) {
     var pinInput = document.getElementById('role-cfg-family-credit-approval-pin');
     var pin = pinInput ? String(pinInput.value || '').trim() : '';
-    if (!/^\\d{6}$/.test(pin)) {
+    if (!/^\d{6}$/.test(pin)) {
         if (window.Swal) Swal.fire({ icon: 'warning', title: 'PIN requerido', text: 'Introduce tu PIN familiar de seis dígitos.' });
         else alert('Introduce tu PIN familiar de seis dígitos.');
         return;
