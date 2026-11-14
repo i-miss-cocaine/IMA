@@ -7630,6 +7630,156 @@ function importCatalogItems(p){p=p||{};const a=catalogActor_(p,true),ss=Spreadsh
 function exportCatalogItems(p){catalogActor_(p,false);const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=catalogSheet_(ss,"CatalogoArticulos",CATALOG_ITEM_HEADERS_,false),rows=sh?sh.getDataRange().getValues():[CATALOG_ITEM_HEADERS_],csv=rows.map(r=>r.map(v=>'"'+String(v===undefined||v===null?"":v).replace(/"/g,'""')+'"').join(",")).join("\r\n");return {status:"success",filename:"catalogo-articulos.csv",csv:"\uFEFF"+csv};}
 function catalogEnsureKardexSchema_(ss){const h=["KardexID","Fecha","ItemCodigo","ItemNombre","CategoriaTipo","TipoMovimiento","Cantidad","StockAnterior","StockNuevo","StockMinimo","UbicacionResponsable","Observaciones","CatalogoItemID","CantidadBase","UnidadMedidaOriginal","FactorConversion"],sh=getOrCreateSheet(ss,"InventariosKardex"),v=sh.getDataRange().getValues();if(!v.length||!v[0].some(x=>String(x||"").trim()))sh.getRange(1,1,1,h.length).setValues([h]);else{const a=v[0].map(x=>String(x||"").trim()),prefix=a.length<=h.length&&a.every((x,i)=>x===h[i]);if(prefix&&a.length<h.length)sh.getRange(1,a.length+1,1,h.length-a.length).setValues([h.slice(a.length)]);else if(h.slice(0,12).some((x,i)=>a[i]!==x))throw new Error("INVENTORY_KARDEX_SCHEMA_MISMATCH");}return sh;}
 
+
+const INVENTORY_VALUATION_LAYER_HEADERS_=["CapaID","FechaAdquisicion","ItemID","ItemCodigo","Ubicacion","KardexOrigenID","DocumentoOrigen","Metodo","CantidadInicial","CantidadDisponible","CostoUnitario","ValorInicial","EstadoCosto","FechaRegistro","Referencia"];
+const INVENTORY_VALUATION_MOVEMENT_HEADERS_=["ValoracionMovimientoID","KardexID","Fecha","ItemID","ItemCodigo","Ubicacion","TipoMovimiento","Cantidad","CostoUnitario","CostoTotal","Metodo","AsignacionesJSON","CapasAgregadasJSON","DocumentoOrigen","EstadoCosto","CreadoPor"];
+const INVENTORY_VALUATION_POLICY_HEADERS_=["Categoria","Metodo","ActualizadoPor","FechaActualizacion"];
+function inventoryValuationMoney_(n){return Math.round((Number(n)||0)*100)/100;}
+function inventoryValuationSheet_(ss,name,headers,create){
+ let sh=ss.getSheetByName(name);if(!sh&&!create)return null;if(!sh)sh=ss.insertSheet(name);
+ const v=sh.getDataRange().getValues();if(!v.length||!v[0].some(x=>String(x||"").trim()))sh.getRange(1,1,1,headers.length).setValues([headers.slice()]);
+ else{const a=v[0].map(x=>String(x||"").trim()),prefix=a.length<=headers.length&&a.every((x,i)=>x===headers[i]);if(prefix&&a.length<headers.length)sh.getRange(1,a.length+1,1,headers.length-a.length).setValues([headers.slice(a.length)]);else if(headers.some((h,i)=>a[i]!==h))throw new Error("INVENTORY_VALUATION_SCHEMA_MISMATCH:"+name);}
+ return sh;
+}
+function inventoryValuationMethod_(ss,category){
+ const sh=inventoryValuationSheet_(ss,"InventoryValuationPolicies",INVENTORY_VALUATION_POLICY_HEADERS_,true),key=catalogNormalizeText_(category),rows=sh.getDataRange().getValues().slice(1),matches=rows.filter(r=>catalogNormalizeText_(r[0])===key);
+ if(matches.length>1)throw new Error("INVENTORY_VALUATION_POLICY_AMBIGUOUS:"+category);
+ const method=matches.length?String(matches[0][1]||""):"PEPS";
+ if(["PEPS","PROMEDIO_PONDERADO"].indexOf(method)===-1)throw new Error("INVENTORY_VALUATION_METHOD_INVALID:"+method);
+ return method;
+}
+function configureInventoryValuationPolicy(p){
+ p=p||{};const actor=catalogActor_(p,true),category=String(p.categoria||"").trim(),method=String(p.metodo||"").trim().toUpperCase();
+ if(!category||["PEPS","PROMEDIO_PONDERADO"].indexOf(method)===-1)throw new Error("INVENTORY_VALUATION_POLICY_FIELDS_INVALID");
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID),lock=LockService.getScriptLock();lock.waitLock(15000);
+ try{const sh=inventoryValuationSheet_(ss,"InventoryValuationPolicies",INVENTORY_VALUATION_POLICY_HEADERS_,true),rows=sh.getDataRange().getValues(),matches=rows.map((r,i)=>({r,i})).filter(x=>x.i>0&&catalogNormalizeText_(x.r[0])===catalogNormalizeText_(category));if(matches.length>1)throw new Error("INVENTORY_VALUATION_POLICY_AMBIGUOUS");const row=[category,method,actor.userId,new Date()];if(matches.length)sh.getRange(matches[0].i+1,1,1,row.length).setValues([row]);else sh.appendRow(row);return {status:"success",categoria:category,metodo:method};}finally{lock.releaseLock();}
+}
+function inventoryValuationFindMovement_(ss,kardexId){
+ const sh=inventoryValuationSheet_(ss,"InventoryValuationMovements",INVENTORY_VALUATION_MOVEMENT_HEADERS_,false);if(!sh)return null;
+ const rows=sh.getDataRange().getValues().slice(1),matches=rows.filter(r=>String(r[1])===String(kardexId));
+ if(matches.length>1)throw new Error("INVENTORY_VALUATION_MOVEMENT_AMBIGUOUS:"+kardexId);
+ return matches[0]||null;
+}
+function inventoryValuationEnsureCoverage_(ss,item,location,currentStock,method,layerSheet){
+ const rows=layerSheet.getDataRange().getValues().slice(1),code=catalogNormalizeCode_(item.code),loc=String(location||"Bodega General").trim().toLowerCase();
+ let layers=rows.filter(r=>catalogNormalizeCode_(r[3])===code&&String(r[4]||"").trim().toLowerCase()===loc&&Number(r[9]||0)>0);
+ const knownQty=layers.reduce((n,r)=>n+Number(r[9]||0),0),delta=inventoryValuationMoney_(Number(currentStock||0)-knownQty);
+ if(delta<-.01)throw new Error("INVENTORY_VALUATION_STOCK_MISMATCH:"+code+":"+location+":"+knownQty+":"+currentStock);
+ if(delta>.01){
+  const avg=Number(item.row&&item.row[19]||0),last=Number(item.row&&item.row[18]||0),cost=avg>0?avg:last>0?last:0,status=cost>0?"ConciliacionInicial":"PendienteCosto",now=new Date(),id=method==="PROMEDIO_PONDERADO"?"AVG:"+code+":"+loc:"IVL-LEGACY-"+Utilities.getUuid();
+  const row=[id,now,item.id,code,String(location||"Bodega General"),"LEGACY:"+code,"APERTURA_LEGACY",method,delta,delta,cost,inventoryValuationMoney_(delta*cost),status,now,"Saldo previo a valoración; requiere conciliación de costo"];
+  layerSheet.appendRow(row);layers.push(row);
+ }
+ return layers;
+}
+function inventoryValuationApplyMovement_(ss,item,p,kardexId,qty,type,location,currentStock){
+ const layerSheet=inventoryValuationSheet_(ss,"InventoryValuationLayers",INVENTORY_VALUATION_LAYER_HEADERS_,true),movementSheet=inventoryValuationSheet_(ss,"InventoryValuationMovements",INVENTORY_VALUATION_MOVEMENT_HEADERS_,true);
+ const prior=inventoryValuationFindMovement_(ss,kardexId);
+ if(prior)return {costoUnitario:Number(prior[8]||0),costoTotal:Number(prior[9]||0),metodo:prior[10],asignaciones:JSON.parse(String(prior[11]||"[]")),capasAgregadas:JSON.parse(String(prior[12]||"[]")),estadoCosto:prior[14]||"Valorado",idempotent:true};
+ const method=inventoryValuationMethod_(ss,item.category),code=catalogNormalizeCode_(item.code),loc=String(location||"Bodega General").trim(),outgoing=["Salida","Prestamo","Baja","TransferenciaSalida","Consumo","AjusteNegativo"].indexOf(type)!==-1,incoming=["Entrada","Devolucion","AjustePositivo"].indexOf(type)!==-1;
+ let assignments=[],adds=[],total=0,status="Valorado",unitCost=0;
+ let layers=inventoryValuationEnsureCoverage_(ss,item,loc,currentStock,method,layerSheet);
+ if(outgoing){
+  if(method==="PEPS"){
+   layers=layers.slice().sort((a,b)=>new Date(a[1]).getTime()-new Date(b[1]).getTime()||String(a[0]).localeCompare(String(b[0])));
+   let remaining=qty;
+   for(const layer of layers){if(remaining<=0.000001)break;if(String(layer[12])==="PendienteCosto"||Number(layer[10]||0)<=0)throw new Error("INVENTORY_ITEM_COST_REQUIRED:"+code);const take=Math.min(remaining,Number(layer[9]||0));if(take<=0)continue;const amount=inventoryValuationMoney_(take*Number(layer[10]));assignments.push({capaId:layer[0],cantidad:take,costoUnitario:Number(layer[10]),fechaAdquisicion:layer[1],documentoOrigen:layer[6]});total+=amount;const idx=layerSheet.getDataRange().getValues().findIndex((r,i)=>i>0&&String(r[0])===String(layer[0]));layerSheet.getRange(idx+1,10).setValue(inventoryValuationMoney_(Number(layer[9])-take));remaining=inventoryValuationMoney_(remaining-take);}
+   if(remaining>.000001)throw new Error("INVENTORY_VALUATION_LAYERS_INSUFFICIENT:"+code+":"+remaining);
+  }else{
+   const layer=layers.find(x=>String(x[8])==="PROMEDIO"||String(x[7])==="PROMEDIO_PONDERADO")||layers[0];
+   if(!layer||String(layer[12])==="PendienteCosto"||Number(layer[10]||0)<=0)throw new Error("INVENTORY_ITEM_COST_REQUIRED:"+code);
+   unitCost=Number(layer[10]);total=inventoryValuationMoney_(qty*unitCost);assignments=[{capaId:layer[0],cantidad:qty,costoUnitario:unitCost,fechaAdquisicion:layer[1],documentoOrigen:layer[6]}];
+   const idx=layerSheet.getDataRange().getValues().findIndex((r,i)=>i>0&&String(r[0])===String(layer[0]));layerSheet.getRange(idx+1,10).setValue(inventoryValuationMoney_(Number(layer[9])-qty));
+  }
+  unitCost=qty?inventoryValuationMoney_(total/qty):0;
+ }else if(incoming){
+  const transferred=Array.isArray(p.capasTransferencia)?p.capasTransferencia:null;
+  if(transferred&&transferred.length){
+   let transferredQty=0;
+   transferred.forEach((x,i)=>{const q=Number(x.cantidad),c=Number(x.costoUnitario);if(!Number.isFinite(q)||q<=0||!Number.isFinite(c)||c<=0)throw new Error("INVENTORY_TRANSFER_VALUATION_INVALID");transferredQty+=q;const add={capaId:"IVL-"+Utilities.getUuid(),fechaAdquisicion:x.fechaAdquisicion||new Date(),cantidad:q,costoUnitario:c,documentoOrigen:x.documentoOrigen||p.documentOrigen||"",metodo:method};adds.push(add);});
+   if(Math.abs(transferredQty-qty)>.01)throw new Error("INVENTORY_TRANSFER_VALUATION_QUANTITY_MISMATCH");
+   total=inventoryValuationMoney_(adds.reduce((n,x)=>n+x.cantidad*x.costoUnitario,0));unitCost=inventoryValuationMoney_(total/qty);
+  }else{
+   const explicit=Number(p.costoUnitario!==undefined?p.costoUnitario:(p.precioUnitario!==undefined?p.precioUnitario:(p.costoTotal!==undefined?Number(p.costoTotal)/qty:0)));
+   const catalogAverage=Number(item.row&&item.row[19]||0),catalogLast=Number(item.row&&item.row[18]||0),catalogCost=catalogAverage>0?catalogAverage:catalogLast;
+   unitCost=Number.isFinite(explicit)&&explicit>0?explicit:catalogCost>0?catalogCost:0;
+   if(unitCost>0){total=inventoryValuationMoney_(qty*unitCost);adds=[{capaId:"IVL-"+Utilities.getUuid(),fechaAdquisicion:p.fechaAdquisicion||new Date(),cantidad:qty,costoUnitario:unitCost,documentoOrigen:p.ordenCompraId||p.facturaId||p.documentOrigen||"",metodo:method}];}
+   else{status="PendienteCosto";total=0;unitCost=0;adds=[{capaId:"IVL-"+Utilities.getUuid(),fechaAdquisicion:p.fechaAdquisicion||new Date(),cantidad:qty,costoUnitario:0,documentoOrigen:p.ordenCompraId||p.facturaId||p.documentOrigen||"",metodo:method,estadoCosto:"PendienteCosto"}];}
+  }
+  if(method==="PROMEDIO_PONDERADO"&&adds.length){
+   const pool=layers.find(x=>String(x[0]).indexOf("AVG:")===0),validQty=pool?Number(pool[9]||0):0,validValue=pool?validQty*Number(pool[10]||0):0,addedValue=adds.reduce((n,x)=>n+x.cantidad*x.costoUnitario,0),newQty=validQty+qty;
+   if(adds.some(x=>x.costoUnitario<=0)||(pool&&String(pool[12])==="PendienteCosto")){status="PendienteCosto";unitCost=0;total=0;
+    if(pool){const idx=layerSheet.getDataRange().getValues().findIndex((r,i)=>i>0&&String(r[0])===String(pool[0]));layerSheet.getRange(idx+1,9).setValue(newQty);layerSheet.getRange(idx+1,10).setValue(newQty);layerSheet.getRange(idx+1,13).setValue("PendienteCosto");}
+    else{const id="AVG:"+code+":"+loc.toLowerCase();layerSheet.appendRow([id,new Date(),item.id,code,loc,kardexId,p.documentOrigen||"","PROMEDIO_PONDERADO",newQty,newQty,0,0,"PendienteCosto",new Date(),"Costo pendiente de conciliación"]);}
+    adds=[];
+   }else{
+    const newAvg=inventoryValuationMoney_((validValue+addedValue)/newQty);
+    if(pool){const idx=layerSheet.getDataRange().getValues().findIndex((r,i)=>i>0&&String(r[0])===String(pool[0]));layerSheet.getRange(idx+1,9).setValue(newQty);layerSheet.getRange(idx+1,10).setValue(newQty);layerSheet.getRange(idx+1,11).setValue(newAvg);layerSheet.getRange(idx+1,12).setValue(inventoryValuationMoney_(newQty*newAvg));}
+    else{const id="AVG:"+code+":"+loc.toLowerCase();layerSheet.appendRow([id,new Date(),item.id,code,loc,kardexId,p.documentOrigen||"","PROMEDIO_PONDERADO",newQty,newQty,newAvg,inventoryValuationMoney_(newQty*newAvg),"Valorado",new Date(),""]);adds=[];}
+    total=inventoryValuationMoney_(qty*newAvg);unitCost=newAvg;
+   }
+  }
+ }else throw new Error("INVENTORY_VALUATION_MOVEMENT_TYPE_UNSUPPORTED:"+type);
+ if(method==="PEPS"&&incoming||method==="PROMEDIO_PONDERADO"&&incoming&&status==="PendienteCosto"){
+  adds.forEach(x=>{const row=[x.capaId,x.fechaAdquisicion,item.id,code,loc,kardexId,x.documentoOrigen||p.documentOrigen||"",method,x.cantidad,x.cantidad,x.costoUnitario,inventoryValuationMoney_(x.cantidad*x.costoUnitario),x.estadoCosto||status,new Date(),p.referenciaMovimiento||""];layerSheet.appendRow(row);});
+ }
+ if(method==="PROMEDIO_PONDERADO"&&incoming&&status==="Valorado"&&!adds.length){
+  // The weighted-average pool was updated above; no acquisition layer is retained.
+ }
+ const movementId="IVM-"+Utilities.getUuid(),savedAssignments=assignments.map(x=>({capaId:x.capaId,cantidad:x.cantidad,costoUnitario:x.costoUnitario,fechaAdquisicion:x.fechaAdquisicion,documentoOrigen:x.documentoOrigen}));
+ movementSheet.appendRow([movementId,kardexId,new Date(),item.id,code,loc,type,qty,unitCost,total,method,JSON.stringify(savedAssignments),JSON.stringify(adds),p.ordenCompraId||p.facturaId||p.documentOrigen||"",status,p.creadoPor||p.authenticatedUserId||p.userId||""]);
+ return {costoUnitario:unitCost,costoTotal:total,metodo:method,asignaciones:savedAssignments,capasAgregadas:adds,estadoCosto:status,idempotent:false};
+}
+function inventoryValuationMovementResult_(ss,kardexId){
+ const r=inventoryValuationFindMovement_(ss,kardexId);if(!r)throw new Error("INVENTORY_VALUATION_MOVEMENT_MISSING:"+kardexId);
+ return {kardexId:kardexId,costoUnitarioValoracion:Number(r[8]||0),costoTotalValoracion:Number(r[9]||0),metodoValoracion:r[10],capasTransferencia:JSON.parse(String(r[11]||"[]")),estadoCosto:r[14]||"Valorado"};
+}
+function inventoryValuationSliceLayers_(layers,quantity){
+ let left=Number(quantity),out=[];for(const x of (layers||[])){if(left<=.000001)break;const take=Math.min(left,Number(x.cantidad||0));if(take>0){out.push({cantidad:take,costoUnitario:Number(x.costoUnitario),fechaAdquisicion:x.fechaAdquisicion,documentoOrigen:x.documentoOrigen});left=inventoryValuationMoney_(left-take);}}
+ if(left>.01)throw new Error("INVENTORY_RETURN_VALUATION_LAYERS_INSUFFICIENT");return out;
+}
+function inventoryValuationTransferLayers_(ss,documentId){
+ const sh=inventoryValuationSheet_(ss,"InventoryValuationMovements",INVENTORY_VALUATION_MOVEMENT_HEADERS_,false);if(!sh)return [];
+ const rows=sh.getDataRange().getValues().slice(1),matches=rows.filter(r=>String(r[13]||"")===String(documentId)&&String(r[6])==="TransferenciaSalida");
+ if(matches.length!==1)throw new Error(matches.length?"INVENTORY_TRANSFER_VALUATION_AMBIGUOUS":"INVENTORY_TRANSFER_VALUATION_MISSING");
+ return JSON.parse(String(matches[0][11]||"[]")).map(x=>({cantidad:Number(x.cantidad),costoUnitario:Number(x.costoUnitario),fechaAdquisicion:x.fechaAdquisicion,documentoOrigen:x.documentoOrigen}));
+}
+function inventoryValuationReportRows_(ss,p){
+ const k=ss.getSheetByName("InventariosKardex"),v=inventoryValuationSheet_(ss,"InventoryValuationMovements",INVENTORY_VALUATION_MOVEMENT_HEADERS_,false);if(!k||!v)return [];
+ const catalog=catalogSheet_(ss,"CatalogoArticulos",CATALOG_ITEM_HEADERS_,false),catalogRows=catalog?catalog.getDataRange().getValues().slice(1):[],catalogMap={};catalogRows.forEach(r=>catalogMap[catalogNormalizeCode_(r[1])]={name:r[2],category:r[5]});
+ const kardexRows=k.getDataRange().getValues().slice(1),info={};kardexRows.forEach(r=>{const code=catalogNormalizeCode_(r[2]);info[code]={name:r[3],category:r[4]};});
+ const cutoff=p.fechaCorte?new Date(String(p.fechaCorte)+"T23:59:59.999"):null;if(cutoff&&isNaN(cutoff.getTime()))throw new Error("INVENTORY_VALUATION_CUTOFF_INVALID");
+ const map={};v.getDataRange().getValues().slice(1).forEach(r=>{
+  const d=new Date(r[2]);if(cutoff&&d>cutoff)return;if(p.fechaInicio&&d<new Date(p.fechaInicio))return;if(p.fechaFin&&d>new Date(String(p.fechaFin)+"T23:59:59.999"))return;
+  const code=catalogNormalizeCode_(r[4]),loc=String(r[5]||"Bodega General"),type=String(r[6]||""),qty=Number(r[7]||0),cost=Number(r[9]||0),incoming=["Entrada","Devolucion","AjustePositivo"].indexOf(type)!==-1,outgoing=["Salida","Prestamo","Baja","TransferenciaSalida","Consumo","AjusteNegativo"].indexOf(type)!==-1;
+  const key=code+"|"+loc.toLowerCase();if(!map[key])map[key]={itemCodigo:code,itemNombre:(catalogMap[code]&&catalogMap[code].name)||info[code]?.name||code,categoria:(catalogMap[code]&&catalogMap[code].category)||info[code]?.category||"Otros",ubicacion:loc,cantidad:0,valor:0,valorIncompleto:false,metodo:r[10]||"PEPS",movimientos:0};
+  const x=map[key];if(incoming)x.cantidad+=qty;else if(outgoing)x.cantidad-=qty;
+  if(incoming)x.valor+=cost;else if(outgoing)x.valor-=cost;
+  if(String(r[14])==="PendienteCosto")x.valorIncompleto=true;x.movimientos++;
+ });
+ return Object.values(map).filter(x=>(!p.ubicacion||x.ubicacion.toLowerCase()===String(p.ubicacion).toLowerCase())&&(!p.categoria||catalogNormalizeText_(x.categoria)===catalogNormalizeText_(p.categoria))).map(x=>({...x,cantidad:inventoryValuationMoney_(x.cantidad),valor:inventoryValuationMoney_(x.valor),costoUnitario:x.cantidad>0?inventoryValuationMoney_(x.valor/x.cantidad):0})).filter(x=>Math.abs(x.cantidad)>.0001||Math.abs(x.valor)>.009);
+}
+function inventoryValuationLedgerBalance_(ss,cutoff){
+ const sh=ss.getSheetByName("AsientosContables");if(!sh)return {cuentas:{},saldoTotal:null};const rows=sh.getDataRange().getValues().slice(1),accounts={"1301":0,"1302":0};
+ rows.forEach(r=>{if(String(r[6]||"")!=="Asentado")return;if(cutoff&&new Date(r[1])>cutoff)return;let lines=[];try{lines=JSON.parse(String(r[5]||"[]"));}catch(_){return;}if(!Array.isArray(lines))return;lines.forEach(x=>{const code=String(x.cuenta||x.codigoCuenta||x.cuentaCodigo||x.accountCode||"").trim();if(Object.prototype.hasOwnProperty.call(accounts,code))accounts[code]+=Number(x.debe||0)-Number(x.haber||0);});});
+ return {cuentas:accounts,saldoTotal:inventoryValuationMoney_(accounts["1301"]+accounts["1302"])};
+}
+function getValuatedInventoryReport(p){
+ p=p||{};catalogActor_(p,false);const ss=SpreadsheetApp.openById(SPREADSHEET_ID),rows=inventoryValuationReportRows_(ss,p),totalCantidad=inventoryValuationMoney_(rows.reduce((n,x)=>n+x.cantidad,0)),totalValor=inventoryValuationMoney_(rows.reduce((n,x)=>n+x.valor,0)),incompleto=rows.some(x=>x.valorIncompleto),ledger=inventoryValuationLedgerBalance_(ss,p.fechaCorte?new Date(String(p.fechaCorte)+"T23:59:59.999"):null);
+ return {status:"success",fechaCorte:p.fechaCorte||p.fechaFin||new Date().toISOString().slice(0,10),metodoPorCategoria:"Configurado por política institucional",detalle:rows,resumen:{articulos:rows.length,cantidad:totalCantidad,valor:totalValor,valorIncompleto:incompleto},conciliacion:{cuentasInventario:ledger.cuentas,saldoContable:ledger.saldoTotal,diferencia:ledger.saldoTotal===null?null:inventoryValuationMoney_(totalValor-ledger.saldoTotal),conciliado:ledger.saldoTotal===null?false:Math.abs(totalValor-ledger.saldoTotal)<=0.01&& !incompleto}};
+}
+function exportValuatedInventoryReportCSV(p){
+ const r=getValuatedInventoryReport(p||{}),head=["Código","Artículo","Categoría","Ubicación","Cantidad","Costo unitario","Valor total","Método","Costo pendiente"],rows=r.detalle.map(x=>[x.itemCodigo,x.itemNombre,x.categoria,x.ubicacion,x.cantidad,x.costoUnitario,x.valor,x.metodo,x.valorIncompleto?"Sí":"No"]),csv=[head,...rows].map(row=>row.map(v=>'"'+String(v===undefined||v===null?"":v).replace(/"/g,'""')+'"').join(",")).join("\r\n");
+ return {status:"success",filename:"inventario-valorizado-"+r.fechaCorte+".csv",csv:"\uFEFF"+csv,resumen:r.resumen,conciliacion:r.conciliacion};
+}
+function exportValuatedInventoryReportPDF(p){
+ const r=getValuatedInventoryReport(p||{}),esc=v=>String(v===undefined||v===null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+ const rows=r.detalle.map(x=>"<tr><td>"+esc(x.itemCodigo)+"</td><td>"+esc(x.itemNombre)+"</td><td>"+esc(x.ubicacion)+"</td><td>"+esc(x.cantidad)+"</td><td>"+esc(x.costoUnitario)+"</td><td>"+esc(x.valor)+"</td></tr>").join("");
+ const html="<html><head><meta charset='utf-8'><style>body{font-family:Arial,sans-serif;font-size:9px}h1{font-size:16px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #bbb;padding:5px;text-align:left}th{background:#eee}.total{font-weight:bold}</style></head><body><h1>Inventario valorizado</h1><p>Fecha de corte: "+esc(r.fechaCorte)+"</p><table><thead><tr><th>Código</th><th>Artículo</th><th>Ubicación</th><th>Cantidad</th><th>Costo unitario</th><th>Valor</th></tr></thead><tbody>"+rows+"</tbody></table><p class='total'>Cantidad: "+esc(r.resumen.cantidad)+" | Valor: "+esc(r.resumen.valor)+"</p><p>Conciliación: "+esc(r.conciliacion.conciliado?"Conciliado":"Pendiente / diferencia")+"</p></body></html>";
+ const blob=HtmlService.createHtmlOutput(html).getAs(MimeType.PDF).setName("inventario-valorizado-"+r.fechaCorte+".pdf"),file=getParentDriveFolder().createFile(blob);
+ return {status:"success",fileId:file.getId(),url:file.getUrl(),filename:file.getName(),resumen:r.resumen,conciliacion:r.conciliacion};
+}
+
 function recordInventoryMovementLocked_(ss,payload) {
  const p=payload||{},itemCodigo=p.itemCodigo,cantidad=p.cantidad,tipoNorm=String(p.tipoMovimiento||"Entrada").trim(),target=String(p.ubicacionId||p.ubicacionResponsable||p.almacenId||"Bodega General").trim();
  if(!itemCodigo||cantidad===undefined||!Number.isFinite(Number(cantidad))||Number(cantidad)<=0)throw new Error("itemCodigo y cantidad válida requeridos.");
@@ -7639,11 +7789,14 @@ function recordInventoryMovementLocked_(ss,payload) {
  const sheet=catalogEnsureKardexSchema_(ss),data=sheet.getDataRange().getValues().slice(1);let current=0;const locations={};
  data.forEach(r=>{if(catalogNormalizeCode_(r[2])===code){const loc=String(r[10]||"Bodega General").trim();locations[loc.toLowerCase()]=Number(r[8]||0);if(loc.toLowerCase()===target.toLowerCase())current=Number(r[8]||0);}});
  let next=current;const incoming=["Entrada","Devolucion","AjustePositivo"].indexOf(tipoNorm)!==-1,outgoing=["Salida","Prestamo","Baja","TransferenciaSalida","Consumo","AjusteNegativo"].indexOf(tipoNorm)!==-1;
- if(incoming)next=assetDeprMoney_(current+qty);else if(outgoing){if(current<qty)throw new Error("INSUFFICIENT_LOCAL_STOCK:"+code+":"+target+":"+current+":"+qty);next=assetDeprMoney_(current-qty);}else next=assetDeprMoney_(qty);
- locations[target.toLowerCase()]=next;let total=0;Object.keys(locations).forEach(k=>total+=Number(locations[k]||0));total=assetDeprMoney_(total);
+ if(incoming)next=assetDeprMoney_(current+qty);else if(outgoing){if(current<qty)throw new Error("INSUFFICIENT_LOCAL_STOCK:"+code+":"+target+":"+current+":"+qty);}else throw new Error("INVENTORY_MOVEMENT_TYPE_UNSUPPORTED:"+tipoNorm);
  const storedMin=item.row[20],min=Number(p.stockMinimo===undefined||p.stockMinimo===""?(storedMin===undefined||storedMin===""?5:storedMin):p.stockMinimo),now=new Date(),id="KDX-"+Utilities.getUuid();let obs=String(p.observaciones||"");if(p.numeroLote)obs+=" | [LOTE:"+p.numeroLote+"]";if(p.numeroSerie)obs+=" | [SERIE:"+p.numeroSerie+"]";if(p.documentOrigen)obs+=" | [DOC:"+p.documentOrigen+"]";if(p.referenciaMovimiento)obs+=" | [REF:"+p.referenciaMovimiento+"]";if(p.cantidadBase!==true&&factor!==1)obs+=" | [CONVERSION:"+inputQty+" "+unit.name+" x "+factor+" = "+qty+" "+unit.base+"]";
- sheet.appendRow([id,now,code,name,category,tipoNorm,qty,current,next,min,target,obs.trim(),item.id,qty,unit.name,factor]);
- const low=next<=min;return {status:"success",kardexId:id,itemCodigo:code,itemNombre:name,ubicacion:target,cantidadRegistrada:inputQty,cantidadBase:qty,unidadBase:item.baseUnit,stockAnteriorUbicacion:current,stockNuevoUbicacion:next,stockConsolidadoInstitucional:total,stockMinimo:min,alertaStockMinimo:low,message:low?"Movimiento registrado; stock bajo en "+target+".":"Movimiento de inventario registrado correctamente."};
+ const valuation=inventoryValuationApplyMovement_(ss,item,p,id,qty,tipoNorm,target,current);
+ if(outgoing)next=assetDeprMoney_(current-qty);
+ locations[target.toLowerCase()]=next;let total=0;Object.keys(locations).forEach(k=>total+=Number(locations[k]||0));total=assetDeprMoney_(total);
+ try{sheet.appendRow([id,now,code,name,category,tipoNorm,qty,current,next,min,target,obs.trim(),item.id,qty,unit.name,factor,valuation.costoUnitario,valuation.costoTotal,valuation.metodo,valuation.estadoCosto]);}
+ catch(e){throw new Error("INVENTORY_VALUATION_KARDEX_WRITE_FAILED:"+e.message);}
+ const low=next<=min;return {status:"success",kardexId:id,itemCodigo:code,itemNombre:name,ubicacion:target,cantidadRegistrada:inputQty,cantidadBase:qty,unidadBase:item.baseUnit,stockAnteriorUbicacion:current,stockNuevoUbicacion:next,stockConsolidadoInstitucional:total,stockMinimo:min,alertaStockMinimo:low,costoUnitarioValoracion:valuation.costoUnitario,costoTotalValoracion:valuation.costoTotal,metodoValoracion:valuation.metodo,estadoCosto:valuation.estadoCosto,capasTransferencia:valuation.asignaciones,message:low?"Movimiento registrado; stock bajo en "+target+".":"Movimiento de inventario registrado correctamente."};
 }
 function recordInventoryMovement(payload) {
  const lock=LockService.getScriptLock();lock.waitLock(15000);
@@ -15087,6 +15240,7 @@ function transferInventoryStock(payload) {
         tipoMovimiento: "Entrada",
         cantidad: qty,
         cantidadBase: true,
+        capasTransferencia: salidaRes.capasTransferencia,
         ubicacionResponsable: uDestino,
         documentOrigen: transferBatchId,
         referenciaMovimiento: `Desde ${uOrigen}`,
@@ -15219,6 +15373,7 @@ function confirmTransferReceipt(payload) {
         tipoMovimiento: "Entrada",
         cantidad: cantRec,
         cantidadBase: true,
+        capasTransferencia: inventoryValuationSliceLayers_(inventoryValuationTransferLayers_(ss,transferBatchId),cantRec),
         ubicacionResponsable: uDestino,
         documentOrigen: transferBatchId,
         referenciaMovimiento: `Recepción desde ${uOrigen} [Discrepancia: ${discrepancia}]`,
@@ -15446,12 +15601,12 @@ function deliverMaterialRequisition(payload) {
    if(catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit)||!Number.isFinite(qty)||qty<=0)throw new Error("MATERIAL_REQUISITION_ITEM_INVALID");
    if(seen[item.id])throw new Error("MATERIAL_REQUISITION_DUPLICATE_ITEM:"+item.code);seen[item.id]=true;
    const ref="REQMAT:"+requestId+":"+i,rows=kardex.getDataRange().getValues().slice(1),findRef=suffix=>rows.find(r=>String(r[11]||"").indexOf("[REF:"+ref+suffix+"]")!==-1);
-   const out=findRef(":OUT")||findRef(""),outMove=out?{kardexId:out[0],cantidadBase:Number(out[13]||out[6]||0)}:recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:mode==="ASIGNADO"?"TransferenciaSalida":"Salida",cantidad:qty,unidadMedida:unit.name,ubicacionResponsable:source,observaciones:"Entrega por solicitud "+requestId+" [REF:"+ref+":OUT]"});
-   let inMove=null;if(mode==="ASIGNADO"){const incoming=findRef(":IN");inMove=incoming?{kardexId:incoming[0],cantidadBase:Number(incoming[13]||incoming[6]||0)}:recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:"Entrada",cantidad:outMove.cantidadBase,cantidadBase:true,ubicacionResponsable:department,observaciones:"Asignación por solicitud "+requestId+" [REF:"+ref+":IN]"});}
-   const baseQty=Number(outMove.cantidadBase||0),cost=inventoryCostPerBaseUnit_(item),amount=assetDeprMoney_(baseQty*cost);if(baseQty<=0||amount<=0)throw new Error("INVENTORY_CONSUMPTION_AMOUNT_INVALID");
+   const out=findRef(":OUT")||findRef(""),outMove=out?Object.assign({cantidadBase:Number(out[13]||out[6]||0)},inventoryValuationMovementResult_(ss,out[0])):recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:mode==="ASIGNADO"?"TransferenciaSalida":"Salida",cantidad:qty,unidadMedida:unit.name,ubicacionResponsable:source,documentOrigen:requestId,observaciones:"Entrega por solicitud "+requestId+" [REF:"+ref+":OUT]"});
+   let inMove=null;if(mode==="ASIGNADO"){const incoming=findRef(":IN");inMove=incoming?{kardexId:incoming[0],cantidadBase:Number(incoming[13]||incoming[6]||0)}:recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:"Entrada",cantidad:outMove.cantidadBase,cantidadBase:true,capasTransferencia:outMove.capasTransferencia,documentOrigen:requestId,ubicacionResponsable:department,observaciones:"Asignación por solicitud "+requestId+" [REF:"+ref+":IN]"});}
+   const baseQty=Number(outMove.cantidadBase||0),amount=inventoryValuationMoney_(outMove.costoTotalValoracion),cost=baseQty>0?inventoryValuationMoney_(amount/baseQty):0;if(baseQty<=0||amount<=0)throw new Error("INVENTORY_CONSUMPTION_AMOUNT_INVALID");
    lines.push({cuenta:debit.code,nombre:debit.name,debe:amount,haber:0,centroCosto:costCenter,departamento:department,itemCodigo:item.code,referenciaId:requestId});
    lines.push({cuenta:inventory.code,nombre:inventory.name,debe:0,haber:amount,centroCosto:costCenter,departamento:department,itemCodigo:item.code,referenciaId:requestId});
-   details.push({itemId:item.id,itemCodigo:item.code,cantidadBase:baseQty,costoUnitarioBase:cost,importe:amount,kardexId:outMove.kardexId,kardexDestinoId:inMove&&inMove.kardexId,ubicacionOrigen:source,ubicacionDestino:department});
+   details.push({itemId:item.id,itemCodigo:item.code,cantidadBase:baseQty,costoUnitarioBase:cost,importe:amount,capasTransferencia:outMove.capasTransferencia||[],kardexId:outMove.kardexId,kardexDestinoId:inMove&&inMove.kardexId,ubicacionOrigen:source,ubicacionDestino:department});
   });
   const asientoId="AST-INV-REQ-"+requestId;inventoryPostJournal_(ss,{descripcion:"Entrega de materiales "+requestId,origenModulo:"INVENTARIO",referenciaId:requestId,asientoId,lineas:lines,creadoPor:actor.userId});
   requestSheet.getRange(idx+1,7).setValue("Entregado");requestSheet.getRange(idx+1,9).setValue(actor.userId);if(p.observaciones)requestSheet.getRange(idx+1,10).setValue(p.observaciones);requestSheet.getRange(idx+1,13).setValue(asientoId);requestSheet.getRange(idx+1,14).setValue(JSON.stringify(details));
@@ -15477,7 +15632,7 @@ function returnMaterialToInventory(payload) {
   const returnedByCode={},consumedByCode={};previous.forEach(r=>{try{JSON.parse(r[3]).forEach(x=>returnedByCode[x.itemCodigo]=(returnedByCode[x.itemCodigo]||0)+Number(x.cantidadBase||0));}catch(_){}});consumed.forEach(r=>{try{JSON.parse(r[3]).forEach(x=>consumedByCode[x.itemCodigo]=(consumedByCode[x.itemCodigo]||0)+Number(x.cantidadBase||0));}catch(_){}});
   getChartOfAccounts({});const inventory=inventoryAccount_(ss,"1301","Activo"),credit=mode==="ASIGNADO"?inventoryAccount_(ss,"1302","Activo"):inventoryAccount_(ss,"5201","Gasto"),kardex=getOrCreateSheet(ss,"InventariosKardex"),journal=getOrCreateSheet(ss,"AsientosContables");movementStart=kardex.getLastRow()+1;journalStart=journal.getLastRow()+1;ledgerStart=ledger.getLastRow()+1;
   const lines=[],saved=[],seen={};
-  items.forEach((raw,i)=>{const item=catalogFindItem_(ss,raw.catalogItemId||raw.itemCodigo,true),unit=catalogFindUnit_(ss,raw.unidadMedida||item.unit),qty=Number(raw.cantidad),d=delivery.find(x=>x.itemCodigo===item.code);if(!d||!Number.isFinite(qty)||qty<=0||catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit))throw new Error("MATERIAL_RETURN_ITEM_INVALID");if(seen[item.code])throw new Error("MATERIAL_RETURN_DUPLICATE_ITEM");seen[item.code]=true;const base=assetDeprMoney_(qty*unit.factor),available=Number(d.cantidadBase||0)-Number(returnedByCode[item.code]||0)-Number(consumedByCode[item.code]||0);if(base>available+0.000001)throw new Error("MATERIAL_RETURN_EXCEEDS_AVAILABLE:"+item.code);const ref="MATRET:"+returnId+":"+i,outRow=mode==="ASIGNADO"?inventoryFindMovementByRef_(ss,ref+":OUT"):null,inRow=inventoryFindMovementByRef_(ss,ref+":IN"),out=mode==="ASIGNADO"?(outRow?{kardexId:outRow[0]}:recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:"TransferenciaSalida",cantidad:base,cantidadBase:true,ubicacionResponsable:department,observaciones:"Devolución de solicitud "+requestId+" [REF:"+ref+":OUT]"})):null,incoming=inRow?{kardexId:inRow[0]}:recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:"Entrada",cantidad:base,cantidadBase:true,ubicacionResponsable:source,observaciones:"Devolución de solicitud "+requestId+" [REF:"+ref+":IN]"}),amount=assetDeprMoney_(base*Number(d.costoUnitarioBase||0));if(amount<=0)throw new Error("MATERIAL_RETURN_COST_INVALID");lines.push({cuenta:inventory.code,nombre:inventory.name,debe:amount,haber:0,centroCosto:center,departamento:department,itemCodigo:item.code,referenciaId:returnId},{cuenta:credit.code,nombre:credit.name,debe:0,haber:amount,centroCosto:center,departamento:department,itemCodigo:item.code,referenciaId:returnId});saved.push({itemCodigo:item.code,cantidadBase:base,importe:amount,kardexSalidaId:out&&out.kardexId,kardexEntradaId:incoming.kardexId,unidadOriginal:unit.name,cantidadOriginal:qty,factorConversionBase:unit.factor});});
+  items.forEach((raw,i)=>{const item=catalogFindItem_(ss,raw.catalogItemId||raw.itemCodigo,true),unit=catalogFindUnit_(ss,raw.unidadMedida||item.unit),qty=Number(raw.cantidad),d=delivery.find(x=>x.itemCodigo===item.code);if(!d||!Number.isFinite(qty)||qty<=0||catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit))throw new Error("MATERIAL_RETURN_ITEM_INVALID");if(seen[item.code])throw new Error("MATERIAL_RETURN_DUPLICATE_ITEM");seen[item.code]=true;const base=assetDeprMoney_(qty*unit.factor),available=Number(d.cantidadBase||0)-Number(returnedByCode[item.code]||0)-Number(consumedByCode[item.code]||0);if(base>available+0.000001)throw new Error("MATERIAL_RETURN_EXCEEDS_AVAILABLE:"+item.code);const ref="MATRET:"+returnId+":"+i,outRow=mode==="ASIGNADO"?inventoryFindMovementByRef_(ss,ref+":OUT"):null,inRow=inventoryFindMovementByRef_(ss,ref+":IN"),out=mode==="ASIGNADO"?(outRow?{kardexId:outRow[0]}:recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:"TransferenciaSalida",cantidad:base,cantidadBase:true,ubicacionResponsable:department,observaciones:"Devolución de solicitud "+requestId+" [REF:"+ref+":OUT]"})):null,incoming=inRow?{kardexId:inRow[0]}:recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:"Entrada",cantidad:base,cantidadBase:true,costoUnitario:Number(d.costoUnitarioBase||0),capasTransferencia:inventoryValuationSliceLayers_(d.capasTransferencia||[{cantidad:Number(d.cantidadBase||0),costoUnitario:Number(d.costoUnitarioBase||0)}],base),documentOrigen:returnId,ubicacionResponsable:source,observaciones:"Devolución de solicitud "+requestId+" [REF:"+ref+":IN]"}),amount=assetDeprMoney_(base*Number(d.costoUnitarioBase||0));if(amount<=0)throw new Error("MATERIAL_RETURN_COST_INVALID");lines.push({cuenta:inventory.code,nombre:inventory.name,debe:amount,haber:0,centroCosto:center,departamento:department,itemCodigo:item.code,referenciaId:returnId},{cuenta:credit.code,nombre:credit.name,debe:0,haber:amount,centroCosto:center,departamento:department,itemCodigo:item.code,referenciaId:returnId});saved.push({itemCodigo:item.code,cantidadBase:base,importe:amount,kardexSalidaId:out&&out.kardexId,kardexEntradaId:incoming.kardexId,unidadOriginal:unit.name,cantidadOriginal:qty,factorConversionBase:unit.factor});});
   const asientoId="AST-INV-RET-"+returnId;inventoryPostJournal_(ss,{descripcion:"Devolución de materiales "+returnId,origenModulo:"INVENTARIO",referenciaId:returnId,asientoId,lineas:lines,creadoPor:actor.userId});ledger.appendRow([returnId,requestId,new Date(),JSON.stringify(saved),asientoId,actor.userId,p.observaciones||""]);return {status:"success",devolucionId:returnId,asientoId,detalle:saved};
  }catch(e){const ss=SpreadsheetApp.openById(SPREADSHEET_ID);if(movementStart)inventoryDeleteAppendedRows_(ss.getSheetByName("InventariosKardex"),movementStart);if(journalStart)inventoryDeleteAppendedRows_(ss.getSheetByName("AsientosContables"),journalStart);if(ledgerStart)inventoryDeleteAppendedRows_(ss.getSheetByName("DevolucionesMateriales"),ledgerStart);throw e;}finally{lock.releaseLock();}
 }
@@ -15497,7 +15652,7 @@ function recognizeAssignedMaterialConsumption(payload) {
   returnRows.forEach(r=>{try{JSON.parse(r[3]).forEach(x=>returnedByCode[x.itemCodigo]=(returnedByCode[x.itemCodigo]||0)+Number(x.cantidadBase||0));}catch(_){}});prior.forEach(r=>{try{JSON.parse(r[3]).forEach(x=>consumedByCode[x.itemCodigo]=(consumedByCode[x.itemCodigo]||0)+Number(x.cantidadBase||0));}catch(_){}});
   getChartOfAccounts({});const expense=inventoryAccount_(ss,"5201","Gasto"),assigned=inventoryAccount_(ss,"1302","Activo"),kardex=getOrCreateSheet(ss,"InventariosKardex"),journal=getOrCreateSheet(ss,"AsientosContables");movementStart=kardex.getLastRow()+1;journalStart=journal.getLastRow()+1;ledgerStart=ledger.getLastRow()+1;
   const lines=[],saved=[],seen={};
-  items.forEach((raw,i)=>{const item=catalogFindItem_(ss,raw.catalogItemId||raw.itemCodigo,true),unit=catalogFindUnit_(ss,raw.unidadMedida||item.unit),qty=Number(raw.cantidad),d=delivery.find(x=>x.itemCodigo===item.code);if(!d||!Number.isFinite(qty)||qty<=0||catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit))throw new Error("ASSIGNED_CONSUMPTION_ITEM_INVALID");if(seen[item.code])throw new Error("ASSIGNED_CONSUMPTION_DUPLICATE_ITEM");seen[item.code]=true;const base=assetDeprMoney_(qty*unit.factor),available=Number(d.cantidadBase||0)-Number(returnedByCode[item.code]||0)-Number(consumedByCode[item.code]||0);if(base>available+0.000001)throw new Error("ASSIGNED_CONSUMPTION_EXCEEDS_AVAILABLE:"+item.code);const ref="MATCON:"+consumptionId+":"+i,existingMove=inventoryFindMovementByRef_(ss,ref),movement=existingMove?{kardexId:existingMove[0]}:recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:"Consumo",cantidad:base,cantidadBase:true,ubicacionResponsable:department,observaciones:"Consumo efectivo de solicitud "+requestId+" [REF:"+ref+"]"}),amount=assetDeprMoney_(base*Number(d.costoUnitarioBase||0));if(amount<=0)throw new Error("ASSIGNED_CONSUMPTION_COST_INVALID");lines.push({cuenta:expense.code,nombre:expense.name,debe:amount,haber:0,centroCosto:center,departamento:department,itemCodigo:item.code,referenciaId:consumptionId},{cuenta:assigned.code,nombre:assigned.name,debe:0,haber:amount,centroCosto:center,departamento:department,itemCodigo:item.code,referenciaId:consumptionId});saved.push({itemCodigo:item.code,cantidadBase:base,importe:amount,kardexId:movement.kardexId,unidadOriginal:unit.name,cantidadOriginal:qty,factorConversionBase:unit.factor});});
+  items.forEach((raw,i)=>{const item=catalogFindItem_(ss,raw.catalogItemId||raw.itemCodigo,true),unit=catalogFindUnit_(ss,raw.unidadMedida||item.unit),qty=Number(raw.cantidad),d=delivery.find(x=>x.itemCodigo===item.code);if(!d||!Number.isFinite(qty)||qty<=0||catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit))throw new Error("ASSIGNED_CONSUMPTION_ITEM_INVALID");if(seen[item.code])throw new Error("ASSIGNED_CONSUMPTION_DUPLICATE_ITEM");seen[item.code]=true;const base=assetDeprMoney_(qty*unit.factor),available=Number(d.cantidadBase||0)-Number(returnedByCode[item.code]||0)-Number(consumedByCode[item.code]||0);if(base>available+0.000001)throw new Error("ASSIGNED_CONSUMPTION_EXCEEDS_AVAILABLE:"+item.code);const ref="MATCON:"+consumptionId+":"+i,existingMove=inventoryFindMovementByRef_(ss,ref),movement=existingMove?inventoryValuationMovementResult_(ss,existingMove[0]):recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:"Consumo",cantidad:base,cantidadBase:true,ubicacionResponsable:department,documentOrigen:consumptionId,observaciones:"Consumo efectivo de solicitud "+requestId+" [REF:"+ref+"]"}),amount=inventoryValuationMoney_(movement.costoTotalValoracion);if(amount<=0)throw new Error("ASSIGNED_CONSUMPTION_COST_INVALID");lines.push({cuenta:expense.code,nombre:expense.name,debe:amount,haber:0,centroCosto:center,departamento:department,itemCodigo:item.code,referenciaId:consumptionId},{cuenta:assigned.code,nombre:assigned.name,debe:0,haber:amount,centroCosto:center,departamento:department,itemCodigo:item.code,referenciaId:consumptionId});saved.push({itemCodigo:item.code,cantidadBase:base,importe:amount,kardexId:movement.kardexId,unidadOriginal:unit.name,cantidadOriginal:qty,factorConversionBase:unit.factor});});
   const asientoId="AST-INV-CONS-"+consumptionId;inventoryPostJournal_(ss,{descripcion:"Consumo efectivo de materiales "+consumptionId,origenModulo:"INVENTARIO",referenciaId:consumptionId,asientoId,lineas:lines,creadoPor:actor.userId});ledger.appendRow([consumptionId,requestId,new Date(),JSON.stringify(saved),asientoId,actor.userId,p.observaciones||""]);return {status:"success",consumoId:consumptionId,asientoId,detalle:saved};
  }catch(e){const ss=SpreadsheetApp.openById(SPREADSHEET_ID);if(movementStart)inventoryDeleteAppendedRows_(ss.getSheetByName("InventariosKardex"),movementStart);if(journalStart)inventoryDeleteAppendedRows_(ss.getSheetByName("AsientosContables"),journalStart);if(ledgerStart)inventoryDeleteAppendedRows_(ss.getSheetByName("ConsumosMateriales"),ledgerStart);throw e;}finally{lock.releaseLock();}
 }
@@ -15689,9 +15844,9 @@ function manageMaintenanceOrder(payload) {
     if(seen[item.code])throw new Error("MAINTENANCE_PART_DUPLICATE:"+item.code);seen[item.code]=true;
     const base=assetDeprMoney_(qty*unit.factor),ref="MNTMAT:"+oId+":"+i,prior=inventoryFindMovementByRef_(ss,ref);
     let movement;
-    if(prior){if(String(prior[2]||"")!==String(item.code)||Math.abs(Number(prior[13]||prior[6]||0)-base)>0.000001||String(prior[10]||"")!==departmentInfo.ubicacionOrigen)throw new Error("MAINTENANCE_MOVEMENT_IDEMPOTENCY_CONFLICT");movement={kardexId:prior[0],cantidadBase:base};}
+    if(prior){if(String(prior[2]||"")!==String(item.code)||Math.abs(Number(prior[13]||prior[6]||0)-base)>0.000001||String(prior[10]||"")!==departmentInfo.ubicacionOrigen)throw new Error("MAINTENANCE_MOVEMENT_IDEMPOTENCY_CONFLICT");movement=Object.assign({cantidadBase:base},inventoryValuationMovementResult_(ss,prior[0]));}
     else movement=recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:"Salida",cantidad:qty,unidadMedida:unit.name,ubicacionResponsable:departmentInfo.ubicacionOrigen,observaciones:"Consumo de repuesto por Orden Mantenimiento "+oId+" [REF:"+ref+"]"});
-    const cost=inventoryCostPerBaseUnit_(item),amount=assetDeprMoney_(base*cost);if(base<=0||amount<=0)throw new Error("MAINTENANCE_PART_COST_INVALID");
+    const amount=inventoryValuationMoney_(movement.costoTotalValoracion),cost=base>0?inventoryValuationMoney_(amount/base):0;if(base<=0||amount<=0)throw new Error("MAINTENANCE_PART_COST_INVALID");
     lines.push({cuenta:expense.code,nombre:expense.name,debe:amount,haber:0,centroCosto:departmentInfo.centroCosto,departamento:departmentInfo.departmentId,itemCodigo:item.code,referenciaId:oId},{cuenta:inventory.code,nombre:inventory.name,debe:0,haber:amount,centroCosto:departmentInfo.centroCosto,departamento:departmentInfo.departmentId,itemCodigo:item.code,referenciaId:oId});
     saved.push({itemCodigo:item.code,cantidadBase:base,costoUnitarioBase:cost,importe:amount,kardexId:movement.kardexId,unidadOriginal:unit.name,cantidadOriginal:qty,factorConversionBase:unit.factor});
    });

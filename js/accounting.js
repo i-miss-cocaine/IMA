@@ -256,6 +256,25 @@ window.loadKardexData = function (filtroUbicacion) {
         html += `</div></div>`;
       }
 
+      // TASK-189: informe de valoración económica por fecha, categoría y almacén.
+      html += `
+        <section class="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 p-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div><h5 class="font-black text-xs uppercase text-indigo-900">Valoración económica del inventario</h5><p class="text-[11px] text-indigo-700">PEPS / promedio ponderado · corte histórico · conciliación contable</p></div>
+            <button type="button" onclick="loadValuatedInventoryReport()" class="rounded-lg bg-indigo-700 px-3 py-2 text-[11px] font-bold text-white">Consultar valoración</button>
+          </div>
+          <div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <label class="text-[11px] font-bold text-gray-700">Fecha de corte<input id="valuation-cutoff" type="date" class="mt-1 w-full rounded-lg border border-gray-300 bg-white p-2 text-xs"></label>
+            <label class="text-[11px] font-bold text-gray-700">Categoría<input id="valuation-category" type="text" class="mt-1 w-full rounded-lg border border-gray-300 bg-white p-2 text-xs" placeholder="Todas las categorías"></label>
+            <label class="text-[11px] font-bold text-gray-700">Almacén / ubicación<input id="valuation-location" type="text" class="mt-1 w-full rounded-lg border border-gray-300 bg-white p-2 text-xs" placeholder="Todas las ubicaciones"></label>
+          </div>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <button type="button" onclick="exportValuatedInventoryCSV()" class="rounded-lg border border-indigo-300 bg-white px-3 py-2 text-[11px] font-bold text-indigo-800">Exportar Excel (CSV)</button>
+            <button type="button" onclick="exportValuatedInventoryPDF()" class="rounded-lg border border-indigo-300 bg-white px-3 py-2 text-[11px] font-bold text-indigo-800">Generar PDF</button>
+          </div>
+          <div id="inventory-valuation-results" class="mt-3 text-xs text-gray-700">Selecciona filtros y consulta para generar el informe.</div>
+        </section>
+      `;
       // 2. Tabla detallada de movimientos Kardex
       html += `
         <table class="w-full text-left border-collapse">
@@ -294,6 +313,39 @@ window.loadKardexData = function (filtroUbicacion) {
     .catch(err => {
       container.innerHTML = `<div class="p-4 text-rose-600 font-bold text-center">Error al cargar Kardex: ${err.message}</div>`;
     });
+};
+
+window.inventoryValuationPayload = function () {
+  const value = id => { const el=document.getElementById(id); return el ? String(el.value||"").trim() : ""; };
+  const payload={};
+  const cutoff=value("valuation-cutoff"),category=value("valuation-category"),location=value("valuation-location");
+  if(cutoff)payload.fechaCorte=cutoff;if(category)payload.categoria=category;if(location)payload.ubicacion=location;
+  return payload;
+};
+window.loadValuatedInventoryReport = function () {
+  const target=document.getElementById("inventory-valuation-results");if(!target)return;
+  target.innerHTML='<div class="p-3 text-center text-gray-500">Calculando valoración…</div>';
+  fetchApi("ACCOUNTING","getValuatedInventoryReport",inventoryValuationPayload()).then(res=>{
+    const rows=Array.isArray(res.detalle)?res.detalle:[],money=n=>Number(n||0).toLocaleString("es-HN",{minimumFractionDigits:2,maximumFractionDigits:2}),safe=v=>String(v===undefined||v===null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    const rec=res.conciliacion||{},summary=res.resumen||{};
+    let html='<div class="grid grid-cols-1 gap-2 sm:grid-cols-3"><div class="rounded-lg bg-white p-2"><div class="text-[10px] text-gray-500">Artículos</div><b>'+safe(summary.articulos||0)+'</b></div><div class="rounded-lg bg-white p-2"><div class="text-[10px] text-gray-500">Cantidad total</div><b>'+safe(summary.cantidad||0)+'</b></div><div class="rounded-lg bg-white p-2"><div class="text-[10px] text-gray-500">Valor total</div><b>L '+money(summary.valor)+'</b></div></div>';
+    html+='<div class="mt-2 rounded-lg '+(rec.conciliado?'bg-emerald-50 text-emerald-800':'bg-amber-50 text-amber-900')+' p-2 text-[11px] font-bold">Conciliación: '+(rec.conciliado?'Conciliado':'Pendiente de conciliación')+(rec.diferencia===null?'':' · Diferencia: L '+money(rec.diferencia))+(summary.valorIncompleto?' · Existen costos pendientes':'')+'</div>';
+    html+='<div class="mt-2 overflow-x-auto"><table class="w-full min-w-[620px] text-left text-[11px]"><thead><tr class="border-b bg-white"><th class="p-2">Código</th><th class="p-2">Artículo</th><th class="p-2">Ubicación</th><th class="p-2 text-right">Cantidad</th><th class="p-2 text-right">Costo unit.</th><th class="p-2 text-right">Valor</th></tr></thead><tbody>';
+    rows.forEach(x=>{html+='<tr class="border-b border-gray-200"><td class="p-2">'+safe(x.itemCodigo)+'</td><td class="p-2">'+safe(x.itemNombre)+'</td><td class="p-2">'+safe(x.ubicacion)+'</td><td class="p-2 text-right">'+safe(x.cantidad)+'</td><td class="p-2 text-right">'+money(x.costoUnitario)+'</td><td class="p-2 text-right">'+money(x.valor)+(x.valorIncompleto?' *':'')+'</td></tr>';});
+    html+='</tbody></table></div>';if(!rows.length)html+='<p class="p-3 text-center text-gray-500">No hay existencias valorizadas para los filtros seleccionados.</p>';
+    target.innerHTML=html;
+  }).catch(err=>{target.innerHTML='<div class="rounded-lg bg-rose-50 p-3 text-rose-700">No se pudo generar el informe: '+String(err.message||err)+'</div>';});
+};
+window.exportValuatedInventoryCSV = function () {
+  fetchApi("ACCOUNTING","exportValuatedInventoryReportCSV",inventoryValuationPayload()).then(res=>{
+    const blob=new Blob(["\\uFEFF",res.csv||""],{type:"text/csv;charset=utf-8;"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=url;a.download=res.filename||"inventario-valorizado.csv";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+  }).catch(err=>alert("No se pudo exportar el informe: "+err.message));
+};
+window.exportValuatedInventoryPDF = function () {
+  fetchApi("ACCOUNTING","exportValuatedInventoryReportPDF",inventoryValuationPayload()).then(res=>{
+    if(!res||!res.url)throw new Error("PDF_URL_NOT_RETURNED");window.open(res.url,"_blank","noopener");
+  }).catch(err=>alert("No se pudo generar el PDF: "+err.message));
 };
 
 window.handleMovimientoKardex = function (e) {
