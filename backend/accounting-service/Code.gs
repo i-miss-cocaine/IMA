@@ -7716,8 +7716,12 @@ function inventoryValuationApplyMovement_(ss,item,p,kardexId,qty,type,location,c
    else{status="PendienteCosto";total=0;unitCost=0;adds=[{capaId:"IVL-"+Utilities.getUuid(),fechaAdquisicion:p.fechaAdquisicion||new Date(),cantidad:qty,costoUnitario:0,documentoOrigen:p.ordenCompraId||p.facturaId||p.documentOrigen||"",metodo:method,estadoCosto:"PendienteCosto"}];}
   }
   if(method==="PROMEDIO_PONDERADO"&&adds.length){
-   const pool=layers.find(x=>String(x[0]).indexOf("AVG:")===0),validQty=pool?Number(pool[9]||0):0,validValue=pool?validQty*Number(pool[10]||0):0,addedValue=adds.reduce((n,x)=>n+x.cantidad*x.costoUnitario,0),newQty=validQty+qty;
-   if(adds.some(x=>x.costoUnitario<=0)||(pool&&String(pool[12])==="PendienteCosto")){status="PendienteCosto";unitCost=0;total=0;
+   const pool=layers.find(x=>String(x[0]).indexOf("AVG:")===0),validQty=pool?Number(pool[9]||0):0,validValue=pool?validQty*Number(pool[10]||0):0,addedValue=inventoryValuationMoney_(adds.reduce((n,x)=>n+x.cantidad*x.costoUnitario,0)),newQty=validQty+qty;
+   // El movimiento conserva el costo real de la entrada; el promedio solo actualiza el costo de las existencias restantes.
+   assignments=adds.map(x=>({capaId:x.capaId,cantidad:x.cantidad,costoUnitario:x.costoUnitario,fechaAdquisicion:x.fechaAdquisicion,documentoOrigen:x.documentoOrigen}));
+   total=addedValue;unitCost=qty?inventoryValuationMoney_(addedValue/qty):0;
+   if(adds.some(x=>x.costoUnitario<=0)||(pool&&String(pool[12])==="PendienteCosto")){
+    status="PendienteCosto";
     if(pool){const idx=layerSheet.getDataRange().getValues().findIndex((r,i)=>i>0&&String(r[0])===String(pool[0]));layerSheet.getRange(idx+1,9).setValue(newQty);layerSheet.getRange(idx+1,10).setValue(newQty);layerSheet.getRange(idx+1,13).setValue("PendienteCosto");}
     else{const id="AVG:"+code+":"+loc.toLowerCase();layerSheet.appendRow([id,new Date(),item.id,code,loc,kardexId,p.documentOrigen||"","PROMEDIO_PONDERADO",newQty,newQty,0,0,"PendienteCosto",new Date(),"Costo pendiente de conciliación"]);}
     adds=[];
@@ -7725,7 +7729,6 @@ function inventoryValuationApplyMovement_(ss,item,p,kardexId,qty,type,location,c
     const newAvg=inventoryValuationMoney_((validValue+addedValue)/newQty);
     if(pool){const idx=layerSheet.getDataRange().getValues().findIndex((r,i)=>i>0&&String(r[0])===String(pool[0]));layerSheet.getRange(idx+1,9).setValue(newQty);layerSheet.getRange(idx+1,10).setValue(newQty);layerSheet.getRange(idx+1,11).setValue(newAvg);layerSheet.getRange(idx+1,12).setValue(inventoryValuationMoney_(newQty*newAvg));}
     else{const id="AVG:"+code+":"+loc.toLowerCase();layerSheet.appendRow([id,new Date(),item.id,code,loc,kardexId,p.documentOrigen||"","PROMEDIO_PONDERADO",newQty,newQty,newAvg,inventoryValuationMoney_(newQty*newAvg),"Valorado",new Date(),""]);adds=[];}
-    total=inventoryValuationMoney_(qty*newAvg);unitCost=newAvg;
    }
   }
  }else throw new Error("INVENTORY_VALUATION_MOVEMENT_TYPE_UNSUPPORTED:"+type);
@@ -7758,14 +7761,28 @@ function inventoryValuationReportRows_(ss,p){
  const catalog=catalogSheet_(ss,"CatalogoArticulos",CATALOG_ITEM_HEADERS_,false),catalogRows=catalog?catalog.getDataRange().getValues().slice(1):[],catalogMap={};catalogRows.forEach(r=>catalogMap[catalogNormalizeCode_(r[1])]={name:r[2],category:r[5]});
  const kardexRows=k.getDataRange().getValues().slice(1),info={};kardexRows.forEach(r=>{const code=catalogNormalizeCode_(r[2]);info[code]={name:r[3],category:r[4]};});
  const cutoff=p.fechaCorte?new Date(String(p.fechaCorte)+"T23:59:59.999"):null;if(cutoff&&isNaN(cutoff.getTime()))throw new Error("INVENTORY_VALUATION_CUTOFF_INVALID");
- const map={};v.getDataRange().getValues().slice(1).forEach(r=>{
-  const d=new Date(r[2]);if(cutoff&&d>cutoff)return;if(p.fechaInicio&&d<new Date(p.fechaInicio))return;if(p.fechaFin&&d>new Date(String(p.fechaFin)+"T23:59:59.999"))return;
+ const movementRows=v.getDataRange().getValues().slice(1),eligible=movementRows.filter(r=>!cutoff||new Date(r[2])<=cutoff),map={};
+ function ensureRow(code,loc,method){
+  const key=code+"|"+loc.toLowerCase();if(!map[key])map[key]={itemCodigo:code,itemNombre:(catalogMap[code]&&catalogMap[code].name)||info[code]?.name||code,categoria:(catalogMap[code]&&catalogMap[code].category)||info[code]?.category||"Otros",ubicacion:loc,cantidad:0,valor:0,valorIncompleto:false,metodo:method||"PEPS",movimientos:0};return map[key];
+ }
+ eligible.forEach(r=>{
   const code=catalogNormalizeCode_(r[4]),loc=String(r[5]||"Bodega General"),type=String(r[6]||""),qty=Number(r[7]||0),cost=Number(r[9]||0),incoming=["Entrada","Devolucion","AjustePositivo"].indexOf(type)!==-1,outgoing=["Salida","Prestamo","Baja","TransferenciaSalida","Consumo","AjusteNegativo"].indexOf(type)!==-1;
-  const key=code+"|"+loc.toLowerCase();if(!map[key])map[key]={itemCodigo:code,itemNombre:(catalogMap[code]&&catalogMap[code].name)||info[code]?.name||code,categoria:(catalogMap[code]&&catalogMap[code].category)||info[code]?.category||"Otros",ubicacion:loc,cantidad:0,valor:0,valorIncompleto:false,metodo:r[10]||"PEPS",movimientos:0};
-  const x=map[key];if(incoming)x.cantidad+=qty;else if(outgoing)x.cantidad-=qty;
-  if(incoming)x.valor+=cost;else if(outgoing)x.valor-=cost;
-  if(String(r[14])==="PendienteCosto")x.valorIncompleto=true;x.movimientos++;
+  const x=ensureRow(code,loc,r[10]);if(incoming)x.cantidad+=qty;else if(outgoing)x.cantidad-=qty;if(incoming)x.valor+=cost;else if(outgoing)x.valor-=cost;if(String(r[14])==="PendienteCosto")x.valorIncompleto=true;x.movimientos++;
  });
+ // Una transferencia despachada pero aún no recibida sigue siendo un activo institucional en tránsito.
+ const transferSheet=ss.getSheetByName("TransferenciasInventario");
+ if(transferSheet){
+  transferSheet.getDataRange().getValues().slice(1).forEach(t=>{
+   const id=String(t[0]||"").trim(),sentAt=new Date(t[1]),code=catalogNormalizeCode_(t[2]),sentQty=Number(t[4]||0),destination=String(t[6]||"Destino no especificado").trim();
+   if(!id||!Number.isFinite(sentQty)||sentQty<=0||isNaN(sentAt.getTime())||(cutoff&&sentAt>cutoff))return;
+   const outs=eligible.filter(r=>String(r[13]||"")===id&&String(r[6])==="TransferenciaSalida");
+   if(outs.length!==1)throw new Error(outs.length?"INVENTORY_TRANSFER_VALUATION_AMBIGUOUS:"+id:"INVENTORY_TRANSFER_VALUATION_MISSING:"+id);
+   const receipts=eligible.filter(r=>String(r[13]||"")===id&&String(r[6])==="Entrada"),receivedQty=receipts.reduce((n,r)=>n+Number(r[7]||0),0),receivedValue=inventoryValuationMoney_(receipts.reduce((n,r)=>n+Number(r[9]||0),0)),pendingQty=inventoryValuationMoney_(Math.max(0,sentQty-receivedQty));
+   if(pendingQty<=.0001)return;
+   const sentValue=Number(outs[0][9]||0),pendingValue=inventoryValuationMoney_(sentValue-receivedValue),loc="En tránsito → "+destination,x=ensureRow(code,loc,outs[0][10]);
+   x.cantidad+=pendingQty;x.valor+=pendingValue;x.movimientos++;if(String(outs[0][14])==="PendienteCosto"||receipts.some(r=>String(r[14])==="PendienteCosto")||pendingValue<-.01)x.valorIncompleto=true;
+  });
+ }
  return Object.values(map).filter(x=>(!p.ubicacion||x.ubicacion.toLowerCase()===String(p.ubicacion).toLowerCase())&&(!p.categoria||catalogNormalizeText_(x.categoria)===catalogNormalizeText_(p.categoria))).map(x=>({...x,cantidad:inventoryValuationMoney_(x.cantidad),valor:inventoryValuationMoney_(x.valor),costoUnitario:x.cantidad>0?inventoryValuationMoney_(x.valor/x.cantidad):0})).filter(x=>Math.abs(x.cantidad)>.0001||Math.abs(x.valor)>.009);
 }
 function inventoryValuationLedgerBalance_(ss,cutoff){
@@ -15212,6 +15229,11 @@ function transferInventoryStock(payload) {
     const canonicalCode = catalogItem.code;
     const kardexSheet = catalogEnsureKardexSchema_(ss);
     const kData = kardexSheet.getDataRange().getValues().slice(1);
+    const movementStart = kardexSheet.getLastRow() + 1;
+    const valuationSnapshot = inventoryValuationSnapshot_(ss);
+    const transferSheetBefore = ss.getSheetByName("TransferenciasInventario");
+    const transferRowsBefore = transferSheetBefore ? transferSheetBefore.getDataRange().getValues().map(r => r.slice()) : null;
+    try {
 
     // 1. Validar existencia y stock disponible local en el almacén de origen
     let stockDisponibleOrigen = 0;
@@ -15319,6 +15341,19 @@ function transferInventoryStock(payload) {
         ? `Transferencia ${transferBatchId} despachada. ${qty} unidades en tránsito desde '${uOrigen}' hacia '${uDestino}' pendientes de recepción.`
         : `Transferencia ${transferBatchId} completada. ${qty} unidades transferidas de '${uOrigen}' a '${uDestino}'.`
     };
+    } catch (e) {
+      while (kardexSheet.getLastRow() >= movementStart) kardexSheet.deleteRow(kardexSheet.getLastRow());
+      inventoryValuationRestore_(ss, valuationSnapshot);
+      const transferSheet = ss.getSheetByName("TransferenciasInventario");
+      if (transferSheet) {
+        while (transferSheet.getLastRow() > (transferRowsBefore ? transferRowsBefore.length : 0)) transferSheet.deleteRow(transferSheet.getLastRow());
+        if (transferRowsBefore && transferRowsBefore.length) {
+          const width = Math.max(...transferRowsBefore.map(r => r.length));
+          transferSheet.getRange(1, 1, transferRowsBefore.length, width).setValues(transferRowsBefore.map(r => { const row = r.slice(); while (row.length < width) row.push(""); return row; }));
+        }
+      }
+      throw new Error("INVENTORY_TRANSFER_ATOMIC_FAILURE:" + e.message);
+    }
   } finally {
     lock.releaseLock();
   }
@@ -15383,6 +15418,9 @@ function confirmTransferReceipt(payload) {
     const cantRec = cantidadRecibida !== undefined ? parseFloat(cantidadRecibida) : cantDespachada;
     if (isNaN(cantRec) || cantRec < 0) {
       throw new Error("La cantidad recibida no puede ser negativa.");
+    }
+    if (cantRec > cantDespachada + 0.000001) {
+      throw new Error("TRANSFER_RECEIPT_EXCEEDS_DISPATCHED_QUANTITY");
     }
 
     const discrepancia = parseFloat((cantDespachada - cantRec).toFixed(2));
