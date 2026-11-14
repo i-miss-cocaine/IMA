@@ -73,6 +73,7 @@ assert.equal(journalLines[1].cuenta,"1301");
 assert.equal(journalLines[0].centroCosto,"Laboratorio");
 assert.equal(journalLines[0].debe,240,"24 base units × L10 average unit cost");
 assert.equal(rows.InventoryReservations.filter(r=>r[1]===request.solicitudMatId&&r[6]==="Consumida").reduce((n,r)=>n+Number(r[5]),0),24,"delivery must consume the reservation exactly once");
+const savedTransferRows=rows.TransferenciasInventario.map(r=>r.slice()),savedOrderRows=rows.OrdenesCompra&&rows.OrdenesCompra.map(r=>r.slice()),savedReceiptRows=rows.RecepcionesCompra&&rows.RecepcionesCompra.map(r=>r.slice());
 ctx.manageInventoryReplenishmentPolicy({departamento:"Laboratorio",itemCodigo:"MAT-001",ubicacion:"Bodega General",stockMinimo:10,stockMaximo:50,stockObjetivo:20,plazoEntregaDias:10});
 rows.TransferenciasInventario=[["TransferBatchID","FechaCreacion","ItemCodigo","ItemNombre","CantidadDespachada","UbicacionOrigen","UbicacionDestino","SolicitanteUserId","EstadoTransferencia","ReceptorUserId","FechaRecepcion","CantidadRecibida","Discrepancia","Observaciones"],["TRF-IN",new Date(),"MAT-001","Papel bond",8,"Proveedor","Bodega General","U-1","EnTransito","", "",0,0,""]];
 let replenishment=ctx.getInventoryReplenishmentSuggestions({departamento:"Laboratorio",ubicacion:"Bodega General"}).sugerencias[0];
@@ -86,6 +87,7 @@ assert.equal(replenishment.cantidadSugerida,0,"open purchase orders must prevent
 rows.OrdenesCompra[1][9]="Cancelada";
 replenishment=ctx.getInventoryReplenishmentSuggestions({departamento:"Laboratorio",ubicacion:"Bodega General"}).sugerencias[0];
 assert.equal(replenishment.cantidadSugerida,14,"replenishment must target the configured stock objective after reservations and inbound quantities");
+rows.TransferenciasInventario=savedTransferRows;if(savedOrderRows)rows.OrdenesCompra=savedOrderRows;else delete rows.OrdenesCompra;if(savedReceiptRows)rows.RecepcionesCompra=savedReceiptRows;else delete rows.RecepcionesCompra;
 const returnCountBefore=rows.InventariosKardex.length,returnJournalCount=rows.AsientosContables.length;
 const returned=ctx.returnMaterialToInventory({solicitudMatId:request.solicitudMatId,devolucionId:"RET-001",items:[{itemCodigo:"MAT-001",unidadMedida:"Unidad",cantidad:2}]});
 assert.equal(returned.status,"success");
