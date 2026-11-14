@@ -244,7 +244,7 @@ const approvedCafe = context.processFamilyCreditPurchase({
 });
 assert.equal(approvedCafe.approved, true);
 assert.equal(rows.CafeteriaPedidos.find(row => row[0] === "CAF-3")[8], "AprobadoCreditoFamiliar");
-assert.equal(rows.CreditoFamiliarAutorizaciones[1][6], 20, "approved purchases update the authorization's used balance");
+assert.equal(rows.CreditoFamiliarAutorizaciones[1][6], 30, "approved purchases add to the existing used balance");
 rows.TiendaOrdenes.push(["ORD-4", new Date(), "STU-1", "Alumno Uno", "[]", 10, "CreditoFamiliar", "PendienteAprobacionFamiliar", "Pendiente", "", "", ""]);
 assert.throws(() => context.processFamilyCreditPurchase({
   _verifiedUserId: "GUARD-1", _verifiedRole: "Padre", estudianteUserId: "STU-1",
