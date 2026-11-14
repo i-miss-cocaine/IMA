@@ -267,6 +267,17 @@ assert.equal(rows.CafeteriaPedidos.find(row => row[0] === "CAF-3")[8], "Devuelto
 const cafeOriginalMovement = rows.CreditoFamiliarMovimientos.find(row => row[7] === "CAF-3");
 assert.equal(rows.CreditoFamiliarMovimientos.filter(row => row[7] === "REV:" + cafeOriginalMovement[0] && row[8] === "Reversado").length, 1);
 assert.equal(rows.CreditoFamiliarAutorizaciones[1][6], 10, "cafeteria refund must restore the used family-credit balance");
+
+rows.TiendaOrdenes.push(["ORD-5", new Date(), "STU-1", "Alumno Uno", "[]", 10, "CreditoFamiliar", "PendienteAprobacionFamiliar", "Pendiente", "", "", ""]);
+const approvedAfterRefund = context.processFamilyCreditPurchase({
+  _verifiedUserId: "GUARD-1", _verifiedRole: "Padre", estudianteUserId: "STU-1",
+  establecimiento: "TIENDA", origenRefId: "ORD-5", familyPin: "654321"
+});
+assert.equal(approvedAfterRefund.approved, true, "refunded purchases must release daily and monthly credit limits");
+assert.equal(rows.CreditoFamiliarAutorizaciones[1][6], 20, "new approval after refunds must add only the new debit");
+assert.throws(() => context.updateStoreOrderStatus({
+  ordenId: "ORD-4", estadoPago: "Pagado"
+}), /FAMILY_CREDIT_PAYMENT_STATE_SERVER_MANAGED/);
 context.updateCafeteriaOrderStatus({ pedidoId: "CAF-3", nuevoEstado: "Devuelto" });
 assert.equal(rows.CreditoFamiliarMovimientos.filter(row => row[7] === "REV:" + cafeOriginalMovement[0] && row[8] === "Reversado").length, 1, "repeated refund must remain idempotent");
 
