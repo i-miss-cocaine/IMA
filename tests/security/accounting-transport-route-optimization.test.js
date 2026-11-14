@@ -25,11 +25,11 @@ const names = [
   "transportOptimizationActor_", "transportOptimizationTime_", "transportOptimizationDistanceKm_",
   "transportOptimizationNormalizeStops_", "transportOptimizationEvaluate_", "transportOptimizationOrder_",
   "transportOptimizationSheet_", "optimizeRouteStopsSequence", "getRouteOptimizationProposals",
-  "approveRouteStopsOptimization"
+  "approveRouteStopsOptimization", "rejectRouteStopsOptimization"
 ];
 const rows = Object.create(null);
 const routeHeaders = ["RutaID","NombreRuta","UnidadCodigo","ConductorEmpleadoId","Capacidad","ParadasJSON","Estado","Observaciones","HoraInicio","HoraFin","Jornada"];
-const proposalHeaders = ["PropuestaID","RutaID","FechaCreacion","CreadoPor","VelocidadPromedioKmh","HoraInicio","DistanciaActualKm","DistanciaPropuestaKm","TiempoEstimadoMinutos","ParadasOriginalesJSON","ParadasPropuestasJSON","Estado","AprobadoPor","FechaAprobacion","Observaciones"];
+const proposalHeaders = ["PropuestaID","RutaID","FechaCreacion","CreadoPor","VelocidadPromedioKmh","HoraInicio","DistanciaActualKm","DistanciaPropuestaKm","TiempoEstimadoMinutos","ParadasOriginalesJSON","ParadasPropuestasJSON","Estado","ResueltoPor","FechaResolucion","Observaciones"];
 rows.TransporteRutas = [routeHeaders];
 rows.TransporteOptimizaciones = [proposalHeaders];
 function makeSheet(name) {
@@ -91,6 +91,11 @@ assert.deepEqual(approvedStops.map(x=>x.orden),[1,2,3,4]);
 const stale=context.optimizeRouteStopsSequence(payload);
 rows.TransporteRutas[1][5]=JSON.stringify(approvedStops.concat([{id:"extra",parada:"Extra",lat:14.13,lng:-87.18}]));
 assert.throws(()=>context.approveRouteStopsOptimization({propuestaId:stale.propuestaId,_verifiedUserId:"DIR-1",_verifiedRole:"Director"}),/ROUTE_OPTIMIZATION_STALE_ROUTE/);
+const routeBeforeReject=rows.TransporteRutas[1][5];
+const rejected=context.rejectRouteStopsOptimization({propuestaId:stale.propuestaId,motivo:"La propuesta incumple la ventana operativa.",_verifiedUserId:"DIR-1",_verifiedRole:"Director"});
+assert.equal(rejected.estado,"RECHAZADA");
+assert.equal(rows.TransporteRutas[1][5],routeBeforeReject,"rejection must never modify the active route");
+assert.equal(context.rejectRouteStopsOptimization({propuestaId:stale.propuestaId,motivo:"Repetir rechazo.",_verifiedUserId:"DIR-1",_verifiedRole:"Director"}).idempotent,true);
 const invalid=JSON.stringify([{id:"a",lat:14,lng:-87},{id:"b",lat:null,lng:""}]);
 rows.TransporteRutas.push(["R2","Ruta sin coordenadas","BUS-2","DRV-2",10,invalid,"active","","06:30","07:30","Matutina"]);
 assert.throws(()=>context.optimizeRouteStopsSequence({...payload,rutaId:"R2"}),/ROUTE_STOP_COORDINATES_INVALID/);
