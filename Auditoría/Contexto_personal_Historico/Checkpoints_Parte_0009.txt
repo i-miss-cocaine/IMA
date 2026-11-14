@@ -301,3 +301,13 @@ C1.721 — IMA-EXEC-20261114-TASK200-01 — TASK-200 — Facturación automátic
 - **HEAD final:** se verificará tras el commit; rama base sin cambios.
 - **Siguiente acción:** implementar el pedido familiar pendiente y la aprobación del tutor con PIN por compra, manteniendo el cargo bloqueado hasta el registro financiero idempotente y la actualización consistente del inventario.
 ===============================================================================
+
+
+===============================================================================
+### C1.731 — IMA-EXEC-20261114-TASK210-CAFETERIA-READ-COMPAT-01 — Compatibilidad de consulta familiar de cafetería
+- **Continuidad:** C1.730; HEAD inicial 29882555d1382a730b054e69af90606be9615977; rama exclusiva NG_beta_0.0.0.1_work; rama base 44d9891132332e692dbe2ba8602b41f50a508a59 sin cambios.
+- **Code review:** las órdenes históricas de cafetería pueden registrar al propio estudiante en la columna ResponsableUserId cuando el pedido se crea sin responsable explícito. Filtrar la consulta del tutor por esa columna habría ocultado pedidos válidos de sus representados.
+- **Corrección:** la consulta de tutor verifica el parámetro de responsable si se envía, pero filtra los pedidos por el conjunto de estudiantes vinculados y no por el valor histórico de ResponsableUserId. Se conserva compatibilidad con pedidos anteriores.
+- **Prueba:** el fixture de cafetería usa ResponsableUserId igual al estudiante y verifica que el tutor vinculado pueda consultar el pedido. CI de esta corrección queda pendiente.
+- **Estado:** TASK-210 sigue Pendiente; no hay aprobación POR_COMPRA ni débitos familiares habilitados.
+===============================================================================

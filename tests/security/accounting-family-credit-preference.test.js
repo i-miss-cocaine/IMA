@@ -183,7 +183,7 @@ rows.TiendaOrdenes = [
 ];
 rows.CafeteriaPedidos = [
   ["PedidoID","Fecha","EstudianteUserId","ResponsableUserId","DetalleJSON","TurnoEntrega","MontoTotal","MetodoPago","Estado","Observaciones"],
-  ["CAF-1",new Date(),"STU-1","GUARD-1","[]","Almuerzo",25,"CreditoFamiliar","PendienteAprobacionFamiliar",""],
+  ["CAF-1",new Date(),"STU-1","STU-1","[]","Almuerzo",25,"CreditoFamiliar","PendienteAprobacionFamiliar",""],
   ["CAF-2",new Date(),"STU-2","OTHER-G","[]","Almuerzo",20,"CreditoFamiliar","PendienteAprobacionFamiliar",""]
 ];
 assert.equal(context.getStoreOrders({ _verifiedUserId: "GUARD-1", _verifiedRole: "Padre" }).ordenes.length, 1);

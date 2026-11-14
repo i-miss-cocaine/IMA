@@ -3651,3 +3651,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Los padres/tutores solo consultan pedidos de estudiantes vinculados mediante relaciones activas aprobadas; estudiantes solo consultan sus propios pedidos.
 - Se agregó un helper que resuelve el conjunto de estudiantes vinculados con una lectura de Usuarios y RelacionesFamiliares, evitando repetir lecturas por cada pedido.
 - Se amplió el contrato Node con casos positivos y negativos de tienda/cafetería. TASK-210 sigue Pendiente; compras con crédito continúan bloqueadas.
+
+
+[2026-11-14] TASK-210 — compatibilidad de consultas familiares de cafetería (C1.731)
+- Se corrigió el filtro de tutor para pedidos históricos cuya columna ResponsableUserId contiene el ID del estudiante.
+- El aislamiento se basa en las relaciones familiares activas aprobadas y no en ese campo legado.
+- Se amplió el contrato con un pedido de cafetería que conserva el responsable histórico igual al estudiante.

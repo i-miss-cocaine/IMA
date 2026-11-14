@@ -1945,7 +1945,7 @@ function getCafeteriaOrders(payload) {
     if (!allowedStudentIds.size) throw new Error("FAMILY_CREDIT_ACTIVE_GUARDIAN_RELATION_REQUIRED");
     if (estudianteUserId && !allowedStudentIds.has(String(estudianteUserId).trim())) throw new Error("FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED");
     if (responsableUserId && String(responsableUserId).trim() !== actorId) throw new Error("FAMILY_CREDIT_GUARDIAN_OWNERSHIP_REQUIRED");
-    responsableUserId = actorId;
+    responsableUserId = null;
   }
 
   let filtered = rows;
