@@ -2413,6 +2413,119 @@ window.renderRoleSettingsInModal = function(role, user) {
     container.innerHTML = html;
 };
 
+window.loadFamilyExtracurricularPanel = async function() {
+    const panel = document.getElementById("family-extracurricular-panel");
+    if (!panel || !window.fetchApi) return;
+    panel.classList.remove("hidden");
+    panel.innerHTML = '<div class="rounded-2xl border bg-white p-5 text-sm text-slate-500">Cargando actividades extracurriculares...</div>';
+    const escape = value => String(value === undefined || value === null ? "" : value)
+        .replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    try {
+        const results = await Promise.all([
+            fetchApi("ACADEMIC", "getExtracurricularActivities", {}),
+            fetchApi("ACADEMIC", "getStudentExtracurricularEnrollments", {})
+        ]);
+        const activitiesResult = results[0], familyResult = results[1];
+        if (!activitiesResult || activitiesResult.status !== "success" ||
+            !familyResult || familyResult.status !== "success") {
+            throw new Error("No fue posible cargar actividades o estudiantes vinculados.");
+        }
+        const children = familyResult.children || [];
+        const enrollments = familyResult.enrollments || [];
+        const activities = (activitiesResult.activities || []).filter(item =>
+            ["CANCELADA", "INACTIVA", "CERRADA"].indexOf(String(item.estado || "").toUpperCase()) === -1
+        );
+        const childOptions = children.map(child =>
+            '<option value="' + escape(child.userId) + '">' + escape(child.nombre || child.userId) + '</option>'
+        ).join("");
+        const activityCards = activities.map(activity => {
+            let transport = {};
+            try { transport = typeof activity.transporteExtraordinarioJSON === "string"
+                ? JSON.parse(activity.transporteExtraordinarioJSON || "{}") : (activity.transporteExtraordinarioJSON || {}); } catch (_) {}
+            const full = Number(activity.cupoMaximo || 0) > 0 && Number(activity.cuposDisponibles || 0) <= 0;
+            const schedule = typeof activity.horario === "string" ? activity.horario : JSON.stringify(activity.horario || {});
+            const capacity = Number(activity.cupoMaximo || 0) > 0
+                ? Number(activity.cuposDisponibles || 0) + " cupos disponibles de " + Number(activity.cupoMaximo)
+                : "Cupo abierto";
+            const transportLabel = transport && transport.requiereTransporte
+                ? '<p class="mt-2 text-[11px] text-indigo-700">Transporte extraordinario: ' + escape(transport.destino) +
+                  (transport.fechaEvento ? " · " + escape(transport.fechaEvento) : "") + '</p>' : "";
+            return '<article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm" data-activity-card>' +
+                '<div class="flex flex-wrap items-start justify-between gap-3"><div>' +
+                '<h4 class="text-sm font-black text-slate-800">' + escape(activity.nombre) + '</h4>' +
+                '<p class="mt-1 text-xs text-slate-500">' + escape(activity.categoria) + ' · ' + escape(activity.estado) + '</p></div>' +
+                '<span class="rounded-lg bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">' + escape(capacity) + '</span></div>' +
+                '<p class="mt-2 text-[11px] text-slate-600">Horario: ' + escape(schedule) + '</p>' +
+                '<p class="mt-1 text-[11px] font-bold text-slate-700">Tarifa: L ' + Number(activity.tarifa || 0).toFixed(2) + '</p>' +
+                transportLabel +
+                '<div class="mt-3 flex flex-wrap gap-2"><select class="min-w-0 flex-1 rounded-xl border border-slate-200 p-2 text-xs" data-child-select>' +
+                childOptions + '</select><button type="button" data-enroll-activity="' + escape(activity.extracurricularId) +
+                '" class="rounded-xl bg-indigo-700 px-4 py-2 text-xs font-bold text-white">' +
+                (full ? "Unirse a lista de espera" : "Inscribir estudiante") + '</button></div></article>';
+        }).join("");
+        const enrollmentCards = enrollments.map(enrollment => {
+            const activity = activities.find(item => String(item.extracurricularId) === String(enrollment.extracurricularId));
+            const child = children.find(item => String(item.userId) === String(enrollment.estudianteUserId));
+            const cancelled = String(enrollment.estado || "").toUpperCase() === "CANCELADA";
+            return '<div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 py-3">' +
+                '<div><p class="text-xs font-bold text-slate-800">' + escape(activity ? activity.nombre : enrollment.extracurricularId) +
+                '</p><p class="text-[11px] text-slate-500">' + escape(child ? child.nombre : enrollment.estudianteUserId) +
+                ' · ' + escape(enrollment.estado) + (enrollment.monto ? ' · L ' + Number(enrollment.monto).toFixed(2) : '') + '</p></div>' +
+                (cancelled ? '' : '<button type="button" data-cancel-enrollment="' + escape(enrollment.inscripcionId) +
+                '" class="rounded-lg border border-rose-200 px-3 py-1.5 text-[11px] font-bold text-rose-700">Cancelar</button>') +
+                '</div>';
+        }).join("");
+        panel.innerHTML = '<div class="space-y-5"><div class="flex flex-wrap items-center justify-between gap-3">' +
+            '<div><h2 class="text-lg font-black text-slate-800">Actividades extracurriculares</h2>' +
+            '<p class="text-xs text-slate-500">Administra las inscripciones de tus estudiantes vinculados.</p></div>' +
+            '<button type="button" data-refresh-family-extras class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold">Actualizar</button></div>' +
+            (children.length ? '<div class="grid grid-cols-1 gap-3 md:grid-cols-2">' + activityCards + '</div>' :
+                '<div class="rounded-2xl border bg-white p-5 text-xs text-slate-500">No se encontraron estudiantes con una relación familiar activa.</div>') +
+            '<div class="rounded-2xl border border-slate-200 bg-white p-4"><h3 class="mb-2 text-xs font-black uppercase text-slate-700">Inscripciones familiares</h3>' +
+            (enrollmentCards || '<p class="py-3 text-xs text-slate-500">Aún no hay inscripciones registradas.</p>') + '</div></div>';
+        panel.querySelectorAll("[data-enroll-activity]").forEach(button => {
+            button.addEventListener("click", async function() {
+                const card = button.closest("[data-activity-card]");
+                const select = card && card.querySelector("[data-child-select]");
+                if (!select || !select.value) return;
+                button.disabled = true;
+                try {
+                    const response = await fetchApi("ACADEMIC", "enrollStudentInExtracurricular", {
+                        extracurricularId: button.getAttribute("data-enroll-activity"), estudianteUserId: select.value
+                    });
+                    if (!response || response.status !== "success") throw new Error((response && response.message) || "No se pudo inscribir.");
+                    if (window.Swal) await Swal.fire({ icon: "success", title: "Inscripción registrada", text: response.message || response.estado });
+                    window.loadFamilyExtracurricularPanel();
+                } catch (error) {
+                    if (window.Swal) Swal.fire({ icon: "error", title: "No se pudo inscribir", text: error.message || "Error." });
+                    else alert(error.message || "Error al inscribir.");
+                } finally { button.disabled = false; }
+            });
+        });
+        panel.querySelectorAll("[data-cancel-enrollment]").forEach(button => {
+            button.addEventListener("click", async function() {
+                button.disabled = true;
+                try {
+                    const response = await fetchApi("ACADEMIC", "cancelExtracurricularEnrollment", {
+                        inscripcionId: button.getAttribute("data-cancel-enrollment")
+                    });
+                    if (!response || response.status !== "success") throw new Error((response && response.message) || "No se pudo cancelar.");
+                    if (window.Swal) await Swal.fire({ icon: "success", title: "Inscripción cancelada", text: response.message || "La plaza fue liberada." });
+                    window.loadFamilyExtracurricularPanel();
+                } catch (error) {
+                    if (window.Swal) Swal.fire({ icon: "error", title: "No se pudo cancelar", text: error.message || "Error." });
+                    else alert(error.message || "Error al cancelar.");
+                } finally { button.disabled = false; }
+            });
+        });
+        const refresh = panel.querySelector("[data-refresh-family-extras]");
+        if (refresh) refresh.addEventListener("click", window.loadFamilyExtracurricularPanel);
+    } catch (error) {
+        panel.innerHTML = '<div class="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-700">' +
+            escape(error.message || "No se pudieron cargar las actividades.") + '</div>';
+    }
+};
+
 window.loadProviderIntegrationsInModal = function() {
     var listContainer = document.getElementById('provider-integrations-list');
     if (!listContainer) return;
@@ -6044,6 +6157,11 @@ window.loadDynamicDashboard = async function() {
 
             const mods = res.modulosAutorizados || [];
             if (!grid) return;
+            const roleKey = String(user.authRole || user.rol || user.role || "").trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z]/g, "");
+            if (["PADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(roleKey) !== -1 &&
+                typeof window.loadFamilyExtracurricularPanel === "function") {
+                window.loadFamilyExtracurricularPanel();
+            }
 
             if (mods.length === 0) {
                 grid.innerHTML = '<div class="col-span-3 text-center py-8 p-6 bg-white rounded-2xl border text-slate-400 italic">No hay módulos o herramientas asignadas para esta cuenta o rol.</div>';
