@@ -315,9 +315,6 @@ window.loadKardexData = function (filtroUbicacion) {
       });
       html += `</tbody></table>`;
       container.innerHTML = html;
-      container.querySelectorAll('.req-approve').forEach(b=>b.addEventListener('click',()=>handleApproveMaterialRequisition(b.dataset.requestId)));
-      container.querySelectorAll('.req-deliver').forEach(b=>b.addEventListener('click',()=>handleEntregarSolicitud(b.dataset.requestId)));
-      container.querySelectorAll('.req-cancel').forEach(b=>b.addEventListener('click',()=>handleCancelMaterialRequisition(b.dataset.requestId)));
     })
     .catch(err => {
       container.innerHTML = `<div class="p-4 text-rose-600 font-bold text-center">Error al cargar Kardex: ${err.message}</div>`;
@@ -543,12 +540,17 @@ window.loadSolicitudesData = function () {
             <td class="p-2 text-gray-600">${s.solicitanteUserId}</td>
             <td class="p-2 text-gray-500">${s.motivo || 'Consumo'}</td>
             <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${s.estadoAprobacion === 'Entregado' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${s.estadoAprobacion}</span></td>
-            <td class='p-2 text-right'>${s.estadoAprobacion === 'PendienteAprobacion' ? `<button type='button' class='req-approve px-3 py-1 bg-blue-600 text-white rounded-lg font-bold text-[10px] uppercase' data-request-id='${catalogHtmlEscape(s.solicitudMatId)}'>Aprobar y reservar</button>` : s.estadoAprobacion === 'Aprobada' ? `<button type='button' class='req-deliver px-3 py-1 bg-emerald-600 text-white rounded-lg font-bold text-[10px] uppercase' data-request-id='${catalogHtmlEscape(s.solicitudMatId)}'>Entregar</button>` : `<span class='text-gray-400 text-[10px]'>${catalogHtmlEscape(s.estadoAprobacion)}</span>`} ${isPend ? `<button type='button' class='req-cancel px-2 py-1 bg-rose-50 text-rose-700 rounded-lg font-bold text-[10px] uppercase' data-request-id='${catalogHtmlEscape(s.solicitudMatId)}'>Cancelar</button>` : ''}</td>
+            <td class='p-2 text-right'>${s.estadoAprobacion === 'PendienteAprobacion' ? `<button type='button' class='req-approve px-3 py-1 bg-blue-600 text-white rounded-lg font-bold text-[10px] uppercase' data-request-id='${catalogHtmlEscape(s.solicitudMatId)}'>Aprobar y reservar</button>` : s.estadoAprobacion === 'Aprobada' ? `<button type='button' class='req-deliver px-3 py-1 bg-emerald-600 text-white rounded-lg font-bold text-[10px] uppercase' data-request-id='${catalogHtmlEscape(s.solicitudMatId)}'>Entregar</button>` : `<span class='text-gray-400 text-[10px]'>${catalogHtmlEscape(s.estadoAprobacion)}</span>`} ${isPend ? `<button type='button' class='req-modify px-2 py-1 bg-sky-50 text-sky-700 rounded-lg font-bold text-[10px] uppercase' data-request-id='${catalogHtmlEscape(s.solicitudMatId)}' data-items='${catalogHtmlEscape(s.articulosJSON)}'>Modificar</button><button type='button' class='req-cancel px-2 py-1 bg-rose-50 text-rose-700 rounded-lg font-bold text-[10px] uppercase' data-request-id='${catalogHtmlEscape(s.solicitudMatId)}'>Cancelar</button>` : ''} ${s.estadoAprobacion === 'PendienteAprobacion' ? `<button type='button' class='req-reject px-2 py-1 bg-rose-700 text-white rounded-lg font-bold text-[10px] uppercase' data-request-id='${catalogHtmlEscape(s.solicitudMatId)}'>Rechazar</button>` : ''}</td>
           </tr>
         `;
       });
       html += `</tbody></table>`;
       container.innerHTML = html;
+      container.querySelectorAll('.req-approve').forEach(b=>b.addEventListener('click',()=>handleApproveMaterialRequisition(b.dataset.requestId)));
+      container.querySelectorAll('.req-deliver').forEach(b=>b.addEventListener('click',()=>handleEntregarSolicitud(b.dataset.requestId)));
+      container.querySelectorAll('.req-cancel').forEach(b=>b.addEventListener('click',()=>handleCancelMaterialRequisition(b.dataset.requestId)));
+      container.querySelectorAll('.req-reject').forEach(b=>b.addEventListener('click',()=>handleRejectMaterialRequisition(b.dataset.requestId)));
+      container.querySelectorAll('.req-modify').forEach(b=>b.addEventListener('click',()=>handleModifyMaterialRequisition(b.dataset.requestId,b.dataset.items)));
     })
     .catch(err => {
       container.innerHTML = `<div class="p-4 text-rose-600 font-bold text-center">Error al cargar solicitudes: ${err.message}</div>`;
@@ -570,6 +572,16 @@ window.handleEntregarSolicitud = function (solId) {
 window.handleApproveMaterialRequisition=function(solId){
  if(!confirm("¿Aprobar y reservar las existencias disponibles para "+solId+"?"))return;
  fetchApi("ACCOUNTING","manageMaterialRequisition",{solicitudMatId:solId,operacion:"aprobar"}).then(r=>{alert(r.message||"Solicitud aprobada y reservada.");loadSolicitudesData();}).catch(e=>alert(e.message||e));
+};
+window.handleRejectMaterialRequisition=function(solId){
+ if(!confirm("¿Rechazar la solicitud "+solId+" y liberar sus reservas?"))return;
+ fetchApi("ACCOUNTING","manageMaterialRequisition",{solicitudMatId:solId,operacion:"rechazar"}).then(r=>{alert(r.message||"Solicitud rechazada.");loadSolicitudesData();}).catch(e=>alert(e.message||e));
+};
+window.handleModifyMaterialRequisition=function(solId,raw){
+ let initial;try{initial=JSON.parse(raw||"[]");}catch(_){alert("El detalle guardado no es válido.");return;}
+ const value=prompt("Edite las partidas como JSON. La modificación libera las reservas y requiere nueva aprobación.",JSON.stringify(initial,null,2));if(value===null)return;
+ let items;try{items=JSON.parse(value);}catch(_){alert("JSON inválido; no se modificó la solicitud.");return;}
+ fetchApi("ACCOUNTING","manageMaterialRequisition",{solicitudMatId:solId,operacion:"modificar",articulosJSON:items}).then(r=>{alert(r.message||"Solicitud modificada.");loadSolicitudesData();}).catch(e=>alert(e.message||e));
 };
 window.handleCancelMaterialRequisition=function(solId){
  if(!confirm("¿Cancelar la solicitud "+solId+" y liberar sus reservas?"))return;
