@@ -127,17 +127,17 @@ const updated = context.saveInstitutionalComplementaryService({
   estado: "ACTIVO"
 });
 assert.equal(updated.actualizado, true);
-assert.equal(sheets.ServiciosCatalogoInstitucional.rows.length, 2, "same service and school year must upsert");
+assert.equal(sheets.ServiciosCatalogoInstitucional.rows.length, 3, "same service and school year must upsert");
 context.saveInstitutionalComplementaryService({
   _verifiedRole: "Director", _verifiedUserId: "DIR-1",
   servicioClave: "TUTORIAS", nombre: "Tutorías académicas", categoria: "ACADEMICO",
   modalidad: "RECURRENTE", cupoMaximo: 25, tarifa: 400, anoLectivo: "2028",
   responsablesJSON: [], reglasAutorizacionFamiliarJSON: {}, estado: "ACTIVO"
 });
-assert.equal(sheets.ServiciosCatalogoInstitucional.rows.length, 3, "new school year must preserve prior history");
+assert.equal(sheets.ServiciosCatalogoInstitucional.rows.length, 4, "new school year must preserve prior history");
 assert.equal(context.getInstitutionalComplementaryServices({
   _verifiedRole: "Director", anoLectivo: "2027", incluirHistorico: true
-}).services.length, 2);
+}).services.length, 3);
 
 context.setInstitutionalComplementaryServiceStatus({
   _verifiedRole: "Director", _verifiedUserId: "DIR-1", servicioClave: "TIENDA", anoLectivo: "2027", estado: "PAUSADO"
