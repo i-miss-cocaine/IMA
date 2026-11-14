@@ -79,7 +79,7 @@ const context = {
   Date, String, Object, Array, JSON, Error, console
 };
 vm.createContext(context);
-const names = ["sanitizePayloadForLog", "familyCreditPinSecret_", "familyCreditGetStatementMovements_", "familyCreditGetActiveStudentUserIdsForGuardian_", "getStoreOrders", "getCafeteriaOrders", "getStudentAccountStatement", "familyCreditEnsureConfigSheet_", "familyCreditEnsureAuthorizationSheet_", "familyCreditPinDigest_", "familyCreditConstantTimeEquals_", "familyCreditVerifyPinInConfig_", "familyCreditApprovalActor_", "familyCreditEnsurePurchaseAuthorization_", "familyCreditRequirePurchaseAuthorizationForStudent_", "familyCreditGuardianHasActiveStudentRelation_", "familyCreditGuardianCanAuthorizeStudent_", "familyCreditIsRequested_", "getFamilyCreditApprovalPreference", "configureFamilyCreditApprovalPreference", "configureFamilyCreditPin", "configureFamilyCreditAuthorization", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase", "createStoreOrder", "createCafeteriaOrder"];
+const names = ["sanitizePayloadForLog", "familyCreditPinSecret_", "familyCreditGetStatementMovements_", "familyCreditGetActiveStudentUserIdsForGuardian_", "getStoreOrders", "getCafeteriaOrders", "getStudentAccountStatement", "familyCreditEnsureConfigSheet_", "familyCreditEnsureAuthorizationSheet_", "familyCreditPinDigest_", "familyCreditConstantTimeEquals_", "familyCreditVerifyPinInConfig_", "familyCreditApprovalActor_", "familyCreditEnsurePurchaseAuthorization_", "familyCreditRequirePurchaseAuthorizationForStudent_", "familyCreditGuardianHasActiveStudentRelation_", "familyCreditGuardianCanAuthorizeStudent_", "familyCreditIsRequested_", "familyCreditIsCancellationStatus_", "familyCreditReverseApprovedOrder_", "updateStoreOrderStatus", "updateCafeteriaOrderStatus", "getFamilyCreditApprovalPreference", "configureFamilyCreditApprovalPreference", "configureFamilyCreditPin", "configureFamilyCreditAuthorization", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase", "createStoreOrder", "createCafeteriaOrder"];
 vm.runInContext(names.map(extractFunction).join("\n"), context);
 const sanitizedPinPayload = context.sanitizePayloadForLog({ familyPin: "123456", currentPin: "654321", newPin: "111111", nested: { pinHash: "HASH-ONLY", authToken: "SESSION-TOKEN" } });
 assert.equal(sanitizedPinPayload.includes("123456"), false);
@@ -251,6 +251,24 @@ assert.throws(() => context.processFamilyCreditPurchase({
   establecimiento: "TIENDA", origenRefId: "ORD-4", familyPin: "654321"
 }), /FAMILY_CREDIT_DAILY_LIMIT_EXCEEDED/);
 assert.equal(rows.TiendaOrdenes.find(row => row[0] === "ORD-4")[7], "PendienteAprobacionFamiliar");
+
+const storeRefund = context.updateStoreOrderStatus({ ordenId: "ORD-3", estadoPago: "Cancelado" });
+assert.equal(storeRefund.status, "success");
+assert.equal(rows.TiendaOrdenes.find(row => row[0] === "ORD-3")[7], "Cancelado");
+const storeOriginalMovement = rows.CreditoFamiliarMovimientos.find(row => row[7] === "ORD-3");
+assert.equal(rows.CreditoFamiliarMovimientos.filter(row => row[7] === "REV:" + storeOriginalMovement[0] && row[8] === "Reversado").length, 1);
+assert.equal(rows.CreditoFamiliarAutorizaciones[1][6], 20, "store refund must restore the used family-credit balance");
+context.updateStoreOrderStatus({ ordenId: "ORD-3", estadoPago: "Cancelado" });
+assert.equal(rows.CreditoFamiliarMovimientos.filter(row => row[7] === "REV:" + storeOriginalMovement[0] && row[8] === "Reversado").length, 1, "repeated cancellation must not duplicate a refund");
+
+const cafeRefund = context.updateCafeteriaOrderStatus({ pedidoId: "CAF-3", nuevoEstado: "Devuelto" });
+assert.equal(cafeRefund.status, "success");
+assert.equal(rows.CafeteriaPedidos.find(row => row[0] === "CAF-3")[8], "Devuelto");
+const cafeOriginalMovement = rows.CreditoFamiliarMovimientos.find(row => row[7] === "CAF-3");
+assert.equal(rows.CreditoFamiliarMovimientos.filter(row => row[7] === "REV:" + cafeOriginalMovement[0] && row[8] === "Reversado").length, 1);
+assert.equal(rows.CreditoFamiliarAutorizaciones[1][6], 10, "cafeteria refund must restore the used family-credit balance");
+context.updateCafeteriaOrderStatus({ pedidoId: "CAF-3", nuevoEstado: "Devuelto" });
+assert.equal(rows.CreditoFamiliarMovimientos.filter(row => row[7] === "REV:" + cafeOriginalMovement[0] && row[8] === "Reversado").length, 1, "repeated refund must remain idempotent");
 
 
 for (let attempt = 0; attempt < 5; attempt++) {
