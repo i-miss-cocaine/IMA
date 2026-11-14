@@ -1637,7 +1637,7 @@ function getStoreProducts(payload) {
 
 function createStoreOrder(payload) {
   const { userId: requestedUserId, compradorNombre, detalleItems, metodoPago, metodoEntrega, observaciones } = payload || {};
-  if (familyCreditIsRequested_(metodoPago)) throw new Error("FAMILY_CREDIT_PIN_APPROVAL_REQUIRED");
+  const usesFamilyCredit = familyCreditIsRequested_(metodoPago);
   if (!requestedUserId || !Array.isArray(detalleItems) || detalleItems.length === 0) throw new Error("userId y lista de productos (detalleItems) son requeridos.");
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -1653,6 +1653,7 @@ function createStoreOrder(payload) {
     if (!actorId) throw new Error("FAMILY_CREDIT_VERIFIED_IDENTITY_REQUIRED");
     if (familyCreditGetActiveStudentUserIdsForGuardian_(ss, actorId).indexOf(userId) === -1) throw new Error("FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED");
   }
+  if (usesFamilyCredit && (!actorId || (studentRoles.indexOf(roleKey) === -1 && guardianRoles.indexOf(roleKey) === -1))) throw new Error("FAMILY_CREDIT_REQUEST_ROLE_NOT_ALLOWED");
 
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
@@ -1661,6 +1662,7 @@ function createStoreOrder(payload) {
   try {
     prodSheet = getOrCreateSheet(ss, "TiendaProductos");
     const orderSheet = getOrCreateSheet(ss, "TiendaOrdenes");
+    if (usesFamilyCredit) familyCreditRequirePurchaseAuthorizationForStudent_(ss, userId);
     const prodsData = prodSheet.getDataRange().getValues();
     const grouped = Object.create(null), order = [];
     detalleItems.forEach(function(item) {
@@ -1703,7 +1705,7 @@ function createStoreOrder(payload) {
       }
     });
     orderSheet.appendRow([ordenId, now, userId, compradorNombre || "Comprador", JSON.stringify(processedItems),
-      totalCalculado, metodoPago || "Transferencia", "Pendiente", "PendientePreparacion",
+      totalCalculado, metodoPago || "Transferencia", usesFamilyCredit ? "PendienteAprobacionFamiliar" : "Pendiente", "PendientePreparacion",
       metodoEntrega || "RecogidaEnTienda", pdfUrl, observaciones || ""]);
     return { status: "success", ordenId: ordenId, totalCalculado: totalCalculado, itemsProcesados: processedItems.length,
       pdfComprobanteUrl: pdfUrl, message: "Orden de tienda escolar registrada exitosamente." };
@@ -1887,7 +1889,8 @@ function getCafeteriaMenu(payload) {
 
 function createCafeteriaOrder(payload) {
   const { estudianteUserId: requestedStudentId, responsableUserId: requestedGuardianId, detalleItems, turnoEntrega, metodoPago, observaciones } = payload || {};
-  if (familyCreditIsRequested_(metodoPago || "CreditoFamiliar")) throw new Error("FAMILY_CREDIT_PIN_APPROVAL_REQUIRED");
+  const paymentMethod = metodoPago || "CreditoFamiliar";
+  const usesFamilyCredit = familyCreditIsRequested_(paymentMethod);
   if (!requestedStudentId || !Array.isArray(detalleItems) || detalleItems.length === 0) throw new Error("estudianteUserId y lista de alimentos (detalleItems) son requeridos.");
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -1906,6 +1909,7 @@ function createCafeteriaOrder(payload) {
     if (familyCreditGetActiveStudentUserIdsForGuardian_(ss, actorId).indexOf(estudianteUserId) === -1) throw new Error("FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED");
     responsableUserId = actorId;
   }
+  if (usesFamilyCredit && (!actorId || (studentRoles.indexOf(roleKey) === -1 && guardianRoles.indexOf(roleKey) === -1))) throw new Error("FAMILY_CREDIT_REQUEST_ROLE_NOT_ALLOWED");
 
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
@@ -1914,6 +1918,7 @@ function createCafeteriaOrder(payload) {
   try {
     menuSheet = getOrCreateSheet(ss, "CafeteriaMenu");
     const orderSheet = getOrCreateSheet(ss, "CafeteriaPedidos");
+    if (usesFamilyCredit) familyCreditRequirePurchaseAuthorizationForStudent_(ss, estudianteUserId);
     const menuData = menuSheet.getDataRange().getValues();
     const grouped = Object.create(null), order = [];
     detalleItems.forEach(function(item) {
@@ -1955,7 +1960,7 @@ function createCafeteriaOrder(payload) {
       }
     });
     orderSheet.appendRow([pedidoId, now, estudianteUserId, responsableUserId, JSON.stringify(processedItems),
-      turnoEntrega || "Almuerzo Principal", totalCalculado, metodoPago || "Transferencia", "Confirmado", observaciones || ""]);
+      turnoEntrega || "Almuerzo Principal", totalCalculado, paymentMethod, usesFamilyCredit ? "PendienteAprobacionFamiliar" : "Confirmado", observaciones || ""]);
     return { status: "success", pedidoId: pedidoId, montoTotal: totalCalculado, itemsProcesados: processedItems.length,
       message: "Pedido de cafetería registrado exitosamente." };
   } catch (error) {
@@ -3816,9 +3821,167 @@ function getInterviewSchedules(payload) {
   return { status: "success", data: filtered };
 }
 
-function processFamilyCreditPurchase() {
-  throw new Error("FAMILY_CREDIT_PIN_APPROVAL_REQUIRED");
+
+function familyCreditEnsurePurchaseAuthorization_(ss, guardianUserId, studentUserId) {
+  const configSheet = familyCreditEnsureConfigSheet_(ss);
+  const configRows = configSheet.getDataRange().getValues();
+  const configMatches = [];
+  for (let i = 1; i < configRows.length; i++) {
+    if (String(configRows[i][1] || "").trim() === String(guardianUserId).trim()) configMatches.push(i + 1);
+  }
+  if (configMatches.length !== 1) throw new Error(configMatches.length ? "FAMILY_CREDIT_CONFIGURATION_DUPLICATE" : "FAMILY_CREDIT_APPROVAL_MODE_NOT_CONFIGURED");
+  const configRowNumber = configMatches[0], configRow = configRows[configRowNumber - 1];
+  const mode = String(configRow[2] || "").trim();
+  if (mode !== "POR_COMPRA") throw new Error(mode === "POR_CUPO" ? "FAMILY_CREDIT_CUPO_FLOW_NOT_READY" : "FAMILY_CREDIT_APPROVAL_MODE_NOT_CONFIGURED");
+  if (!configRow[5] || !configRow[6]) throw new Error("FAMILY_CREDIT_PIN_NOT_CONFIGURED");
+
+  const authorizationSheet = familyCreditEnsureAuthorizationSheet_(ss);
+  const rows = authorizationSheet.getDataRange().getValues();
+  const matches = [];
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][2] || "").trim() === String(guardianUserId).trim() &&
+        String(rows[i][3] || "").trim() === String(studentUserId).trim()) matches.push(i + 1);
+  }
+  if (matches.length !== 1) throw new Error(matches.length ? "FAMILY_CREDIT_AUTHORIZATION_DUPLICATE" : "FAMILY_CREDIT_AUTHORIZATION_REQUIRED");
+  const rowNumber = matches[0], row = rows[rowNumber - 1];
+  if (String(row[7] || "").trim().toLowerCase() !== "activa") throw new Error("FAMILY_CREDIT_AUTHORIZATION_INACTIVE");
+  const expiration = row[8] ? transportParseDate_(row[8]) : null;
+  if (row[8] && (!expiration || expiration < new Date())) throw new Error("FAMILY_CREDIT_AUTHORIZATION_EXPIRED");
+  if (row[10] && String(row[10]).trim() !== mode) throw new Error("FAMILY_CREDIT_AUTHORIZATION_MODE_MISMATCH");
+  return { configSheet: configSheet, configRowNumber: configRowNumber, configRow: configRow,
+    authorizationSheet: authorizationSheet, authorizationRowNumber: rowNumber, authorizationRow: row,
+    authorizationId: String(row[0] || "").trim(), mode: mode };
 }
+
+function familyCreditRequirePurchaseAuthorizationForStudent_(ss, studentUserId) {
+  const authorizationSheet = familyCreditEnsureAuthorizationSheet_(ss);
+  const authorizationRows = authorizationSheet.getDataRange().getValues();
+  const configSheet = familyCreditEnsureConfigSheet_(ss);
+  const configRows = configSheet.getDataRange().getValues();
+  const now = new Date();
+  const candidates = authorizationRows.slice(1).filter(function(row) {
+    if (String(row[3] || "").trim() !== String(studentUserId).trim() ||
+        String(row[7] || "").trim().toLowerCase() !== "activa") return false;
+    const expiration = row[8] ? transportParseDate_(row[8]) : null;
+    return !row[8] || (expiration && expiration >= now);
+  });
+  for (let i = 0; i < candidates.length; i++) {
+    const guardianId = String(candidates[i][2] || "").trim();
+    const configs = configRows.slice(1).filter(function(row) { return String(row[1] || "").trim() === guardianId; });
+    if (configs.length !== 1) continue;
+    if (String(configs[0][2] || "").trim() === "POR_COMPRA" && configs[0][5] && configs[0][6] &&
+        (!candidates[i][10] || String(candidates[i][10]).trim() === "POR_COMPRA")) return true;
+  }
+  throw new Error("FAMILY_CREDIT_PURCHASE_AUTHORIZATION_REQUIRED");
+}
+
+
+function processFamilyCreditPurchase(payload) {
+  const actor = familyCreditApprovalActor_(payload);
+  const studentId = String(payload && payload.estudianteUserId || "").trim();
+  const establishment = String(payload && payload.establecimiento || "").trim().toUpperCase();
+  const sourceId = String(payload && payload.origenRefId || "").trim();
+  const pin = String(payload && payload.familyPin || "").trim();
+  if (!studentId || !sourceId || ["TIENDA", "CAFETERIA"].indexOf(establishment) === -1) throw new Error("FAMILY_CREDIT_PURCHASE_REFERENCE_INVALID");
+  if (!/^\d{6}$/.test(pin)) throw new Error("FAMILY_CREDIT_PIN_FORMAT_INVALID");
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    if (!familyCreditGuardianCanAuthorizeStudent_(ss, actor.userId, studentId)) throw new Error("FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED");
+    const authorization = familyCreditEnsurePurchaseAuthorization_(ss, actor.userId, studentId);
+    const orderSheet = getOrCreateSheet(ss, establishment === "TIENDA" ? "TiendaOrdenes" : "CafeteriaPedidos");
+    const orderRows = orderSheet.getDataRange().getValues();
+    const orderMatches = [];
+    for (let i = 1; i < orderRows.length; i++) {
+      if (String(orderRows[i][0] || "").trim() === sourceId) orderMatches.push(i + 1);
+    }
+    if (orderMatches.length !== 1) throw new Error(orderMatches.length ? "FAMILY_CREDIT_ORDER_REFERENCE_DUPLICATE" : "FAMILY_CREDIT_ORDER_NOT_FOUND");
+    const orderRowNumber = orderMatches[0], orderRow = orderRows[orderRowNumber - 1];
+    const orderStudentId = String(orderRow[2] || "").trim();
+    const method = establishment === "TIENDA" ? String(orderRow[6] || "") : String(orderRow[7] || "");
+    const stateColumn = establishment === "TIENDA" ? 8 : 9;
+    const orderState = String(orderRow[stateColumn - 1] || "").trim();
+    const amount = Number(establishment === "TIENDA" ? orderRow[5] : orderRow[6]);
+    if (orderStudentId !== studentId) throw new Error("FAMILY_CREDIT_ORDER_STUDENT_MISMATCH");
+    if (!familyCreditIsRequested_(method)) throw new Error("FAMILY_CREDIT_ORDER_METHOD_MISMATCH");
+    if (!Number.isFinite(amount) || amount <= 0) throw new Error("FAMILY_CREDIT_ORDER_AMOUNT_INVALID");
+
+    const movementSheet = getOrCreateSheet(ss, "CreditoFamiliarMovimientos");
+    const expectedHeaders = ["MovimientoCreditoID", "Fecha", "AutorizacionID", "EstudianteUserId", "ResponsableUserId", "Establecimiento", "Monto", "OrigenRefId", "Estado", "Observaciones"];
+    let movementRows = movementSheet.getDataRange().getValues();
+    if (!movementRows.length) {
+      movementSheet.appendRow(expectedHeaders);
+      movementRows = [expectedHeaders];
+    }
+    const actualHeaders = movementRows[0].map(String);
+    if (expectedHeaders.some(function(header, index) { return actualHeaders[index] !== header; }) || actualHeaders.length !== expectedHeaders.length) {
+      throw new Error("FAMILY_CREDIT_MOVEMENT_SCHEMA_MISMATCH");
+    }
+    const priorMovements = movementRows.slice(1).filter(function(row) {
+      return String(row[7] || "").trim() === sourceId && String(row[5] || "").trim().toUpperCase() === establishment;
+    });
+    if (priorMovements.length > 1) throw new Error("FAMILY_CREDIT_MOVEMENT_DUPLICATE_OR_INVALID");
+    if (priorMovements.length === 1) {
+      const prior = priorMovements[0];
+      if (String(prior[2] || "").trim() === authorization.authorizationId &&
+          String(prior[3] || "").trim() === studentId && String(prior[4] || "").trim() === actor.userId &&
+          Number(prior[6]) === amount && String(prior[8] || "").trim() === "Aprobado" &&
+          orderState === "AprobadoCreditoFamiliar") {
+        return { status: "success", approved: true, idempotent: true, movimientoCreditoId: prior[0],
+          message: "La compra ya había sido aprobada; no se aplicó un segundo débito." };
+      }
+      throw new Error("FAMILY_CREDIT_MOVEMENT_REFERENCE_ALREADY_USED");
+    }
+    if (orderState !== "PendienteAprobacionFamiliar") throw new Error("FAMILY_CREDIT_ORDER_NOT_PENDING_APPROVAL");
+
+    familyCreditVerifyPinInConfig_(authorization.configSheet, authorization.configRowNumber, pin);
+    const now = new Date(), dailyStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const monthlyStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    let dailyUsed = 0, monthlyUsed = 0;
+    movementRows.slice(1).forEach(function(row) {
+      if (String(row[3] || "").trim() !== studentId || String(row[4] || "").trim() !== actor.userId ||
+          String(row[8] || "").trim().toLowerCase() !== "aprobado") return;
+      const movementDate = transportParseDate_(row[1]), movementAmount = Number(row[6]);
+      if (!movementDate || !Number.isFinite(movementAmount) || movementAmount <= 0) return;
+      if (movementDate >= dailyStart && movementDate <= now) dailyUsed += movementAmount;
+      if (movementDate >= monthlyStart && movementDate <= now) monthlyUsed += movementAmount;
+    });
+    const dailyLimit = Number(authorization.authorizationRow[4]);
+    const monthlyLimit = Number(authorization.authorizationRow[5]);
+    if (!Number.isFinite(dailyLimit) || !Number.isFinite(monthlyLimit) || dailyLimit <= 0 || monthlyLimit < dailyLimit) {
+      throw new Error("FAMILY_CREDIT_LIMITS_INVALID");
+    }
+    if (Math.round((dailyUsed + amount) * 100) / 100 > dailyLimit) throw new Error("FAMILY_CREDIT_DAILY_LIMIT_EXCEEDED");
+    if (Math.round((monthlyUsed + amount) * 100) / 100 > monthlyLimit) throw new Error("FAMILY_CREDIT_MONTHLY_LIMIT_EXCEEDED");
+
+    const movementId = "MOV-CRD-" + Utilities.getUuid();
+    movementSheet.appendRow([movementId, now, authorization.authorizationId, studentId, actor.userId,
+      establishment === "TIENDA" ? "Tienda" : "Cafetería", amount, sourceId, "Aprobado", "Aprobación PIN por compra"]);
+    const movementRowNumber = movementRows.length + 1;
+    const previousUsed = Number(authorization.authorizationRow[6] || 0);
+    try {
+      orderSheet.getRange(orderRowNumber, stateColumn).setValue("AprobadoCreditoFamiliar");
+      authorization.authorizationSheet.getRange(authorization.authorizationRowNumber, 7).setValue(previousUsed + amount);
+    } catch (error) {
+      let rollbackFailed = false;
+      try { orderSheet.getRange(orderRowNumber, stateColumn).setValue("PendienteAprobacionFamiliar"); } catch (_) { rollbackFailed = true; }
+      try { authorization.authorizationSheet.getRange(authorization.authorizationRowNumber, 7).setValue(previousUsed); } catch (_) { rollbackFailed = true; }
+      try {
+        movementSheet.getRange(movementRowNumber, 9).setValue("Reversado");
+        movementSheet.getRange(movementRowNumber, 10).setValue("Rollback de aprobación: " + String(error && error.message || error).slice(0, 180));
+      } catch (_) { rollbackFailed = true; }
+      if (rollbackFailed) throw new Error("FAMILY_CREDIT_APPROVAL_ROLLBACK_FAILED");
+      throw new Error("FAMILY_CREDIT_APPROVAL_WRITE_FAILED: " + String(error && error.message || error));
+    }
+    return { status: "success", approved: true, idempotent: false, movimientoCreditoId: movementId,
+      message: "Compra aprobada y débito familiar registrado una sola vez." };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 
 // ---------------------------------------------------------------------------
 // CONCEPTOS, MENSUALIDADES Y OBLIGACIONES DE PAGO

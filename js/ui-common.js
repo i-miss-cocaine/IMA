@@ -2331,6 +2331,14 @@ window.renderRoleSettingsInModal = function(role, user) {
                     <span id="family-credit-mode-status" class="text-xs text-slate-500">Cargando configuración...</span>
                     <button id="btn-save-family-credit-mode" type="button" onclick="window.saveFamilyCreditApprovalPreference()" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 disabled:opacity-50">Guardar modalidad</button>
                 </div>
+                <div class="space-y-3 rounded-xl border border-indigo-100 bg-indigo-50 p-4">
+                    <div class="font-bold text-indigo-900">Pedidos que requieren tu aprobación</div>
+                    <p class="text-[11px] text-indigo-800">Revisa los pedidos de tus estudiantes vinculados. El débito solo se registra después de aprobar cada pedido con tu PIN.</p>
+                    <label for="role-cfg-family-credit-approval-pin" class="block text-xs font-semibold text-slate-700">PIN para aprobar pedidos</label>
+                    <input id="role-cfg-family-credit-approval-pin" type="password" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" class="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm tracking-widest" placeholder="6 dígitos">
+                    <div id="family-credit-pending-orders" class="space-y-2 text-xs text-slate-600">Cargando pedidos pendientes...</div>
+                    <button id="btn-refresh-family-credit-orders" type="button" onclick="window.loadFamilyCreditPendingOrders()" class="px-3 py-2 bg-white border border-indigo-200 text-indigo-800 rounded-lg text-xs font-bold">Actualizar pedidos</button>
+                </div>
             </div>
         `;
         window.loadFamilyCreditApprovalPreference();
@@ -2454,6 +2462,7 @@ window.loadFamilyCreditApprovalPreference = function() {
             if (status) status.textContent = 'Aún no configurada. Guarda una modalidad para activarla.';
         }
         var currentWrap = document.getElementById('family-credit-pin-current-wrap');
+        window.loadFamilyCreditPendingOrders();
         var pinStatus = document.getElementById('family-credit-pin-status');
         if (currentWrap) currentWrap.classList.toggle('hidden', !res.pinConfigured);
         if (pinStatus) pinStatus.textContent = res.pinConfigured ? 'PIN configurado. Para cambiarlo, introduce el PIN actual.' : 'PIN pendiente de configurar.';
@@ -2518,6 +2527,69 @@ window.saveFamilyCreditApprovalPreference = function() {
         else alert('Error al guardar: ' + (err.message || err));
     }).finally(function() {
         if (button) { button.disabled = false; button.textContent = 'Guardar modalidad'; }
+    });
+};
+
+
+window.loadFamilyCreditPendingOrders = function() {
+    var container = document.getElementById('family-credit-pending-orders');
+    if (!container || !window.fetchApi) return;
+    container.textContent = 'Consultando pedidos pendientes...';
+    Promise.all([
+        fetchApi('ACCOUNTING', 'getStoreOrders', {}),
+        fetchApi('ACCOUNTING', 'getCafeteriaOrders', {})
+    ]).then(function(results) {
+        var store = results[0] && Array.isArray(results[0].ordenes) ? results[0].ordenes : [];
+        var cafe = results[1] && Array.isArray(results[1].pedidos) ? results[1].pedidos : [];
+        var normalize = function(value) { return String(value || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').replace(/[\\s_-]/g, '').toUpperCase(); };
+        var escapeHtml = function(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]); }); };
+        var pending = [];
+        store.forEach(function(order) {
+            if (normalize(order.metodoPago) === 'CREDITOFAMILIAR' && normalize(order.estadoPago) === 'PENDIENTEAPROBACIONFAMILIAR') {
+                pending.push({ kind: 'TIENDA', id: order.ordenId, student: order.userId, amount: order.montoTotal });
+            }
+        });
+        cafe.forEach(function(order) {
+            if (normalize(order.metodoPago) === 'CREDITOFAMILIAR' && normalize(order.estado) === 'PENDIENTEAPROBACIONFAMILIAR') {
+                pending.push({ kind: 'CAFETERIA', id: order.pedidoId, student: order.estudianteUserId, amount: order.montoTotal });
+            }
+        });
+        if (!pending.length) { container.textContent = 'No hay pedidos pendientes de aprobación.'; return; }
+        container.innerHTML = pending.map(function(item) {
+            return '<div class="flex items-center justify-between gap-3 rounded-lg bg-white border border-indigo-100 p-3">' +
+                '<div><div class="font-bold text-slate-800">' + escapeHtml(item.kind) + ' · ' + escapeHtml(item.id) + '</div>' +
+                '<div class="text-[11px] text-slate-500">Estudiante: ' + escapeHtml(item.student) + ' · Total: ' + escapeHtml(item.amount) + '</div></div>' +
+                '<button type="button" data-family-credit-approve="1" data-kind="' + escapeHtml(item.kind) + '" data-id="' + escapeHtml(item.id) + '" data-student="' + escapeHtml(item.student) + '" class="shrink-0 px-3 py-2 bg-indigo-600 text-white rounded-lg text-[11px] font-bold">Aprobar</button></div>';
+        }).join('');
+        container.querySelectorAll('[data-family-credit-approve]').forEach(function(button) {
+            button.addEventListener('click', function() {
+                window.approveFamilyCreditOrder(button.getAttribute('data-kind'), button.getAttribute('data-id'), button.getAttribute('data-student'));
+            });
+        });
+    }).catch(function(error) {
+        container.textContent = 'No se pudieron cargar los pedidos pendientes. Verifica tu sesión e inténtalo de nuevo.';
+        console.warn('Family credit pending orders load failed:', error);
+    });
+};
+
+window.approveFamilyCreditOrder = function(establishment, orderId, studentId) {
+    var pinInput = document.getElementById('role-cfg-family-credit-approval-pin');
+    var pin = pinInput ? String(pinInput.value || '').trim() : '';
+    if (!/^\\d{6}$/.test(pin)) {
+        if (window.Swal) Swal.fire({ icon: 'warning', title: 'PIN requerido', text: 'Introduce tu PIN familiar de seis dígitos.' });
+        else alert('Introduce tu PIN familiar de seis dígitos.');
+        return;
+    }
+    fetchApi('ACCOUNTING', 'processFamilyCreditPurchase', {
+        establecimiento: establishment, origenRefId: orderId, estudianteUserId: studentId, familyPin: pin
+    }).then(function(result) {
+        if (!result || result.status !== 'success' || !result.approved) throw new Error((result && result.message) || 'No se pudo aprobar el pedido.');
+        if (pinInput) pinInput.value = '';
+        if (window.Swal) Swal.fire({ icon: 'success', title: 'Compra aprobada', text: result.message || 'El débito se registró correctamente.' });
+        window.loadFamilyCreditPendingOrders();
+    }).catch(function(error) {
+        if (window.Swal) Swal.fire({ icon: 'error', title: 'No se pudo aprobar', text: error.message || 'Verifica el PIN, la autorización y los límites.' });
+        else alert('No se pudo aprobar: ' + (error.message || error));
     });
 };
 
