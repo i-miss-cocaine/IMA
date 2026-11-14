@@ -178,3 +178,18 @@ C1.721 — IMA-EXEC-20261114-TASK200-01 — TASK-200 — Facturación automátic
 - **HEAD de código revisado:** 8b6e885080401344de86922f9ebb4d5449ea6617. Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
 - **Siguiente tarea elegible:** TASK-210 — consolidación de cafetería y tienda con estados de cuenta familiares; confirmar callsites y la dependencia F15-Task01 antes de modificar.
 ===============================================================================
+
+
+===============================================================================
+### C1.723 — IMA-EXEC-20261114-TASK210-PREFLIGHT-01 — TASK-210 — Auditoría de preparación y bloqueo de seguridad
+- **Continuidad:** C1.722; HEAD inicial 27ed8ae879911601d75efe0d52ce253f5e2393c2; rama exclusiva NG_beta_0.0.0.1_work; rama base NG_beta_0.0.0.1 verificada en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Alcance de esta iteración:** auditoría de requisitos y callsites de TASK-210. No se modificó código productivo ni se alteraron datos.
+- **Hallazgos verificados:** createCafeteriaOrder y createStoreOrder no integran el consumo con CargosEstudiante ni con el ledger de crédito familiar; processFamilyCreditPurchase no valida PIN, identidad del responsable ni relación familiar, no usa lock y no impide movimientos duplicados persistentes; configureFamilyCreditAuthorization tampoco vincula el actor firmado al responsable. Las anulaciones/devoluciones no revierten de forma coordinada el saldo de crédito. Las órdenes no validan íntegramente IDs/cantidades/stock y las mutaciones de inventario no están serializadas en estos callsites.
+- **PIN:** no existe verificador, hash, salt, flujo de alta/cambio ni campo PIN en CreditoFamiliarAutorizaciones (esquema actual de 10 columnas). Tampoco se encontró flujo de PIN en los módulos ACCOUNTING, USER, js/student.js, js/ui-common.js ni dashboards de cafetería/tienda revisados. La exigencia funcional de autorización por PIN no puede preservarse ni probarse contra una implementación existente.
+- **Idempotencia:** el middleware genérico de doPost usa CacheService con ventana temporal de 6 horas; no sustituye una clave persistente y única en el libro de movimientos para compras financieras.
+- **Dependencias:** F15-Task01 corresponde a facturación fiscal SAR y no es un prerrequisito técnico directo del ledger de crédito familiar. F15-Task04 (billetera familiar) aparece pendiente en el backlog recuperado; no se asumió que su implementación estuviera disponible.
+- **Pruebas:** revisión estática de fuentes, permisos, dispatch, callsites y backlogs realizada. No se ejecutaron pruebas de código porque no hubo cambios de implementación. Los workflows de TASK-205 en Node.js 24.22.2 y sintaxis Apps Script permanecen SUCCESS en los runs 43614101832, 43614101542 y 43614101548; no son evidencia de TASK-210.
+- **Estado:** TASK-210 continúa Pendiente; no se marca completada. La integración de compras/crédito requiere definir la política de PIN que no está implementada ni especificada en el repositorio, antes de habilitar débitos financieros.
+- **HEAD final de documentación:** se verificará tras publicar este checkpoint. Rama base sin cambios esperados.
+- **Siguiente acción:** definir la política de PIN familiar y luego implementar el flujo transaccional con identidad/relación verificadas, límites diario/mensual, idempotencia persistente, conciliación de cargos y reversos; añadir pruebas locales de concurrencia, duplicados, rollback, autorización y sintaxis antes de cerrar TASK-210.
+===============================================================================

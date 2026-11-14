@@ -333,6 +333,8 @@
   - Se impiden cobros duplicados por el mismo consumo.
   - Los reportes de ventas coinciden exactamente con los movimientos registrados.
 - **Estado:** [ ] Pendiente
+- **Auditoría de preparación C1.723:** permanece pendiente. Los callsites actuales no implementan validación PIN, ownership del responsable, idempotencia financiera persistente ni reversión coordinada de crédito; no se modificó código. Definir la política de PIN antes de habilitar la integración de débitos.
+
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 9572-9642; clave TASK-245; asignación única: Contabilidad -->
 

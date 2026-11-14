@@ -3592,3 +3592,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato Node.js 24.22.2 y syntax-check Apps Script PASS. Department Scope 43614101832, Identity Mapping 43614101542 y Department Reference Consumers 43614101548 SUCCESS.
 - CLI local independiente NOT RUN; Apps Script/Sheets real NOT RUN. BETA-FUNC-092 pendiente beta.
 - Commits previos de implementación: 8ddbc7ce239864bd5325f5f3be20939397b5142f, f6e65cfca61092e20ffc4072d3cac8f1def05407, e69dcfb5d146ae7f135c398ac198cc25af486eef; corrección de solapamiento: 8b6e885080401344de86922f9ebb4d5449ea6617.
+
+
+[2026-11-14] TASK-210 — auditoría de preparación (C1.723; sin implementación)
+- Se verificó que los pedidos de cafetería y tienda no se integran con el estado de cuenta ni con el ledger de crédito familiar.
+- Se detectó que el proceso de crédito no valida PIN, identidad del responsable ni relación familiar; carece de lock y deduplicación financiera persistente; las anulaciones no revierten el crédito de forma coordinada.
+- No existe implementación de PIN en los módulos y pantallas revisados. TASK-210 permanece Pendiente; no se modificó código ni se declararon pruebas PASS.
+- F15-Task01 corresponde a facturación fiscal SAR y no bloquea técnicamente el subflujo. F15-Task04 (billetera familiar) figura pendiente en el backlog recuperado.
+- Siguiente paso: definir la política de PIN antes de habilitar cargos o débitos financieros y crear contratos locales de autorización, concurrencia, idempotencia y reversión.
