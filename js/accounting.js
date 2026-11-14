@@ -80,6 +80,7 @@ function renderInventarioModule(container) {
           <button onclick="switchInventarioSubtab('almacenes')" id="btn-sub-almacenes" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Almacenes</button>
           <button onclick="switchInventarioSubtab('transferencias')" id="btn-sub-transferencias" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Transferencias</button>
           <button onclick="switchInventarioSubtab('solicitudes')" id="btn-sub-solicitudes" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Solicitudes & Entregas</button>
+          <button onclick="switchInventarioSubtab('reposicion')" id="btn-sub-reposicion" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Reposición inteligente</button>
           <button onclick="switchInventarioSubtab('activos')" id="btn-sub-activos" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Activos Fijos</button>
           <button onclick="switchInventarioSubtab('mantenimiento')" id="btn-sub-mantenimiento" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Mantenimiento</button>
           <button onclick="switchInventarioSubtab('bajas')" id="btn-sub-bajas" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Bajas</button>
@@ -96,7 +97,7 @@ function renderInventarioModule(container) {
 
 window.switchInventarioSubtab = function (subtab) {
   currentInventarioSubtab = subtab;
-  ['kardex', 'catalogo', 'almacenes', 'transferencias', 'solicitudes', 'activos', 'mantenimiento', 'bajas'].forEach(s => {
+  ['kardex', 'catalogo', 'almacenes', 'transferencias', 'solicitudes', 'reposicion', 'activos', 'mantenimiento', 'bajas'].forEach(s => {
     const btn = document.getElementById(`btn-sub-${s}`);
     if (btn) {
       if (s === subtab) {
@@ -115,6 +116,7 @@ window.switchInventarioSubtab = function (subtab) {
   else if (subtab === 'almacenes') renderAlmacenesView(subContainer);
   else if (subtab === 'transferencias') renderTransferenciasView(subContainer);
   else if (subtab === 'solicitudes') renderSolicitudesView(subContainer);
+  else if (subtab === 'reposicion') renderReposicionView(subContainer);
   else if (subtab === 'activos') renderActivosView(subContainer);
   else if (subtab === 'mantenimiento') renderMantenimientoView(subContainer);
   else if (subtab === 'bajas') renderBajasView(subContainer);
@@ -313,6 +315,9 @@ window.loadKardexData = function (filtroUbicacion) {
       });
       html += `</tbody></table>`;
       container.innerHTML = html;
+      container.querySelectorAll('.req-approve').forEach(b=>b.addEventListener('click',()=>handleApproveMaterialRequisition(b.dataset.requestId)));
+      container.querySelectorAll('.req-deliver').forEach(b=>b.addEventListener('click',()=>handleEntregarSolicitud(b.dataset.requestId)));
+      container.querySelectorAll('.req-cancel').forEach(b=>b.addEventListener('click',()=>handleCancelMaterialRequisition(b.dataset.requestId)));
     })
     .catch(err => {
       container.innerHTML = `<div class="p-4 text-rose-600 font-bold text-center">Error al cargar Kardex: ${err.message}</div>`;
@@ -538,9 +543,7 @@ window.loadSolicitudesData = function () {
             <td class="p-2 text-gray-600">${s.solicitanteUserId}</td>
             <td class="p-2 text-gray-500">${s.motivo || 'Consumo'}</td>
             <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${s.estadoAprobacion === 'Entregado' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${s.estadoAprobacion}</span></td>
-            <td class="p-2 text-right">
-              ${isPend ? `<button onclick="handleEntregarSolicitud('${s.solicitudMatId}')" class="px-3 py-1 bg-emerald-600 text-white rounded-lg font-bold text-[10px] uppercase hover:bg-emerald-700">Entregar</button>` : `<span class="text-gray-400 text-[10px]">Entregado</span>`}
-            </td>
+            <td class='p-2 text-right'>${s.estadoAprobacion === 'PendienteAprobacion' ? `<button type='button' class='req-approve px-3 py-1 bg-blue-600 text-white rounded-lg font-bold text-[10px] uppercase' data-request-id='${catalogHtmlEscape(s.solicitudMatId)}'>Aprobar y reservar</button>` : s.estadoAprobacion === 'Aprobada' ? `<button type='button' class='req-deliver px-3 py-1 bg-emerald-600 text-white rounded-lg font-bold text-[10px] uppercase' data-request-id='${catalogHtmlEscape(s.solicitudMatId)}'>Entregar</button>` : `<span class='text-gray-400 text-[10px]'>${catalogHtmlEscape(s.estadoAprobacion)}</span>`} ${isPend ? `<button type='button' class='req-cancel px-2 py-1 bg-rose-50 text-rose-700 rounded-lg font-bold text-[10px] uppercase' data-request-id='${catalogHtmlEscape(s.solicitudMatId)}'>Cancelar</button>` : ''}</td>
           </tr>
         `;
       });
@@ -561,6 +564,40 @@ window.handleEntregarSolicitud = function (solId) {
       loadSolicitudesData();
     })
     .catch(err => alert("Error: " + err.message));
+};
+
+
+window.handleApproveMaterialRequisition=function(solId){
+ if(!confirm("¿Aprobar y reservar las existencias disponibles para "+solId+"?"))return;
+ fetchApi("ACCOUNTING","manageMaterialRequisition",{solicitudMatId:solId,operacion:"aprobar"}).then(r=>{alert(r.message||"Solicitud aprobada y reservada.");loadSolicitudesData();}).catch(e=>alert(e.message||e));
+};
+window.handleCancelMaterialRequisition=function(solId){
+ if(!confirm("¿Cancelar la solicitud "+solId+" y liberar sus reservas?"))return;
+ fetchApi("ACCOUNTING","manageMaterialRequisition",{solicitudMatId:solId,operacion:"cancelar"}).then(r=>{alert(r.message||"Solicitud cancelada.");loadSolicitudesData();}).catch(e=>alert(e.message||e));
+};
+function renderReposicionView(container){
+ container.innerHTML='<div class="space-y-4"><div class="rounded-xl border p-4"><h5 class="font-black text-sm mb-2">Política de reposición por artículo y almacén</h5><form id="inventory-replenishment-policy" class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs"><select id="rep-item" required class="p-2 border rounded-lg"></select><input id="rep-location" required class="p-2 border rounded-lg" value="Bodega General" placeholder="Almacén / ubicación"><input id="rep-min" type="number" min="0" step="any" required class="p-2 border rounded-lg" placeholder="Stock mínimo"><input id="rep-max" type="number" min="0" step="any" required class="p-2 border rounded-lg" placeholder="Stock máximo"><input id="rep-target" type="number" min="0" step="any" required class="p-2 border rounded-lg" placeholder="Stock objetivo"><input id="rep-lead" type="number" min="0" max="365" step="1" required class="p-2 border rounded-lg" placeholder="Plazo de entrega (días)"><input id="rep-department" required class="p-2 border rounded-lg" placeholder="Departamento autorizado"><button type="submit" class="px-3 py-2 bg-blue-600 text-white rounded-lg font-bold">Guardar política</button><button type="button" onclick="loadInventoryReplenishmentSuggestions()" class="px-3 py-2 bg-slate-700 text-white rounded-lg font-bold">Actualizar sugerencias</button></form></div><div class="rounded-xl border p-4"><h5 class="font-black text-sm mb-2">Disponibilidad y reposición sugerida</h5><div id="inventory-replenishment-results" class="overflow-x-auto text-xs">Cargando sugerencias...</div></div></div>';
+ populateCatalogSelect(document.getElementById("rep-item"),"");
+ document.getElementById("inventory-replenishment-policy").addEventListener("submit",saveInventoryReplenishmentPolicy);
+ loadInventoryReplenishmentSuggestions();
+}
+window.saveInventoryReplenishmentPolicy=function(event){
+ if(event)event.preventDefault();
+ const p={itemCodigo:document.getElementById("rep-item").value,departamento:document.getElementById("rep-department").value,ubicacion:document.getElementById("rep-location").value,stockMinimo:Number(document.getElementById("rep-min").value),stockMaximo:Number(document.getElementById("rep-max").value),stockObjetivo:Number(document.getElementById("rep-target").value),plazoEntregaDias:Number(document.getElementById("rep-lead").value)};
+ fetchApi("ACCOUNTING","manageInventoryReplenishmentPolicy",p).then(r=>{alert("Política guardada para "+r.itemCodigo+".");loadInventoryReplenishmentSuggestions();}).catch(e=>alert(e.message||e));
+};
+window.loadInventoryReplenishmentSuggestions=function(){
+ const host=document.getElementById("inventory-replenishment-results");if(!host)return;
+ const department=String((document.getElementById("rep-department")||{}).value||"").trim(),location=String((document.getElementById("rep-location")||{}).value||"").trim();
+ if(!department){host.innerHTML='<p class="text-amber-700">Indique el departamento autorizado para consultar las políticas.</p>';return;}
+ fetchApi("ACCOUNTING","getInventoryReplenishmentSuggestions",{departamento:department,ubicacion:location}).then(r=>{
+  const items=r.sugerencias||[];if(!items.length){host.innerHTML='<p class="text-gray-500">No hay políticas activas para esta ubicación.</p>';return;}
+  host.innerHTML='<table class="w-full text-left"><thead><tr><th class="p-2">Artículo</th><th class="p-2">Físico</th><th class="p-2">Reservado</th><th class="p-2">Disponible</th><th class="p-2">En tránsito</th><th class="p-2">Pendiente recepción</th><th class="p-2">Consumo/día</th><th class="p-2">Cobertura</th><th class="p-2">Sugerido</th><th class="p-2">Estado</th><th class="p-2">Acción</th></tr></thead><tbody>'+items.map(x=>'<tr class="border-t"><td class="p-2">'+catalogHtmlEscape(x.itemCodigo)+' · '+catalogHtmlEscape(x.itemNombre)+'</td><td class="p-2">'+x.existenciaFisica+'</td><td class="p-2">'+x.reservada+'</td><td class="p-2">'+x.disponible+'</td><td class="p-2">'+x.enTransito+'</td><td class="p-2">'+x.pendienteRecepcion+'</td><td class="p-2">'+x.consumoPromedioDiario+'</td><td class="p-2">'+(x.diasCobertura===null?"—":x.diasCobertura+" d")+'</td><td class="p-2 font-bold">'+x.cantidadSugerida+'</td><td class="p-2">'+catalogHtmlEscape(x.estado)+'</td><td class="p-2">'+(x.cantidadSugerida>0?'<button type="button" class="rep-create-purchase px-2 py-1 bg-emerald-600 text-white rounded" data-code="'+catalogHtmlEscape(x.itemCodigo)+'" data-id="'+catalogHtmlEscape(x.catalogItemId)+'" data-qty="'+x.cantidadSugerida+'" data-unit="'+catalogHtmlEscape(x.unidadMedida||"Unidad")+'" data-cost="'+Number(x.costoUnitarioEstimado||0)+'">Crear compra</button>':"—")+'</td></tr>').join("")+'</tbody></table>';
+  host.querySelectorAll(".rep-create-purchase").forEach(btn=>btn.addEventListener("click",()=>createPurchaseRequestFromSuggestion(btn.dataset.id,btn.dataset.code,Number(btn.dataset.qty),btn.dataset.unit,Number(btn.dataset.cost),department,location)));
+ }).catch(e=>{host.innerHTML='<p class="text-rose-600">'+catalogHtmlEscape(e.message||e)+'</p>';});
+};
+window.createPurchaseRequestFromSuggestion=function(itemId,itemCode,qty,unit,cost,department,location){
+ fetchApi("ACCOUNTING","createPurchaseRequest",{departamento:department,justificacion:"Reposición sugerida por el motor de inventario para "+itemCode+" en "+location,categoria:"Materiales/Insumos",detalleItems:[{catalogItemId:itemId,codigoItem:itemCode,unidadMedida:unit,cantidad:qty,clasificacionInventario:"Consumible"}],montoEstimado:Math.round(Number(cost||0)*qty*100)/100,centroCosto:department}).then(r=>alert(r.message||"Solicitud de compra creada: "+r.solicitudId)).catch(e=>alert(e.message||e));
 };
 
 // --- ACTIVOS FIJOS & CUSTODIAS ---
