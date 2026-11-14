@@ -3,6 +3,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 const source = fs.readFileSync(path.join(__dirname, "../../backend/academic-service/Code.gs"), "utf8");
+const uiSource = fs.readFileSync(path.join(__dirname, "../../js/ui-common.js"), "utf8");
+const dashboardSource = fs.readFileSync(path.join(__dirname, "../../app/html/dashboards/dynamic-dashboard.html"), "utf8");
 new vm.Script(source);
 
 function extract(name) {
@@ -131,6 +133,18 @@ const activities = context.getExtracurricularActivities({});
 assert.equal(activities.activities[0].cupoMaximo, 1);
 assert.equal(activities.activities[0].tarifa, 500);
 assert.match(activities.activities[0].transporteExtraordinarioJSON, /RUTA-ESPECIAL-1/);
+const updatedActivity = context.saveExtracurricularActivity({
+  _verifiedRole: "Director", extracurricularId: "EXTRA-1", nombre: "Fútbol actualizado", categoria: "Deportiva"
+});
+assert.equal(updatedActivity.actualizado, true);
+const preservedActivity = context.getExtracurricularActivities({}).activities[0];
+assert.equal(preservedActivity.cupoMaximo, 1, "partial updates must preserve capacity");
+assert.equal(preservedActivity.tarifa, 500, "partial updates must preserve the fee");
+assert.match(preservedActivity.horario, /Lunes/, "partial updates must preserve the schedule");
+assert.match(preservedActivity.transporteExtraordinarioJSON, /RUTA-ESPECIAL-1/, "partial updates must preserve the extraordinary route");
+assert.match(uiSource, /loadFamilyExtracurricularPanel/);
+assert.match(uiSource, /enrollStudentInExtracurricular/);
+assert.match(dashboardSource, /family-extracurricular-panel/);
 assert.throws(() => context.saveExtracurricularActivity({
   _verifiedRole: "Padre", nombre: "No autorizada", categoria: "Deportiva"
 }), /EXTRACURRICULAR_CONFIG_ROLE_NOT_ALLOWED/);
@@ -148,6 +162,7 @@ const first = context.enrollStudentInExtracurricular({
 assert.equal(first.estado, "PendientePago");
 assert.ok(first.cargoId);
 assert.equal(sheets.CargosEstudiante.rows.length, 2);
+assert.match(sheets.CargosEstudiante.rows[1][10], /EXTRACURRICULAR\|EXTRA-1\|S1/);
 const duplicate = context.enrollStudentInExtracurricular({
   _verifiedUserId: "G1", _verifiedRole: "Padre", estudianteUserId: "S1", extracurricularId: "EXTRA-1"
 });
