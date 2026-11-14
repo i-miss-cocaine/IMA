@@ -15603,11 +15603,15 @@ function inventoryNormalizeRequisitionItems_(ss,rawItems){
   return {catalogItemId:item.id,itemCodigo:item.code,itemNombre:item.name,unidadMedida:unit.name,unidadBase:item.baseUnit,factorConversionBase:unit.factor,cantidad:qty};
  });
 }
-function inventorySetReservationState_(ss,requestId,state,actorId){
+function inventorySetReservationState_(ss,requestId,state,actorId,fromStates){
  const sh=ss.getSheetByName("InventoryReservations");if(!sh)return 0;
- const rows=sh.getDataRange().getValues(),now=new Date();let changed=0;
- rows.slice(1).forEach((r,i)=>{if(String(r[1])===String(requestId)&&String(r[6])==="Activa"){sh.getRange(i+2,7).setValue(state);sh.getRange(i+2,9).setValue(now);if(actorId)sh.getRange(i+2,10).setValue(actorId);changed++;}});
- return changed;
+ const rows=sh.getDataRange().getValues(),allowed=Array.isArray(fromStates)?fromStates:["Activa"],now=new Date(),matches=[];
+ rows.slice(1).forEach((r,i)=>{if(String(r[1])===String(requestId)&&allowed.indexOf(String(r[6]))!==-1)matches.push({row:i+2,created:r[7],actor:r[9]});});
+ if(!matches.length)return 0;
+ const values=matches.map(x=>[state,x.created,now,actorId||x.actor||""]),first=matches[0].row,contiguous=matches.every((x,i)=>x.row===first+i);
+ if(contiguous)sh.getRange(first,7,values.length,4).setValues(values);
+ else matches.forEach((x,i)=>sh.getRange(x.row,7,1,4).setValues([values[i]]));
+ return matches.length;
 }
 function inventoryReserveRequisition_(ss,requestId,items,location,actorId){
  const sh=inventoryEnsureReservations_(ss),rows=sh.getDataRange().getValues().slice(1);
@@ -15623,7 +15627,7 @@ function inventoryReserveRequisition_(ss,requestId,items,location,actorId){
   if(qty>available+0.000001)throw new Error("INSUFFICIENT_AVAILABLE_STOCK:"+x.itemCodigo+":available="+available+":requested="+qty);
   return {item:x,qty};
  });
- const now=new Date();plan.forEach(x=>sh.appendRow(["RSV-"+Utilities.getUuid(),requestId,x.item.catalogItemId,x.item.itemCodigo,location,x.qty,"Activa",now,now,actorId]));
+ const now=new Date(),startRow=sh.getLastRow()+1;try{plan.forEach(x=>sh.appendRow(["RSV-"+Utilities.getUuid(),requestId,x.item.catalogItemId,x.item.itemCodigo,location,x.qty,"Activa",now,now,actorId]));}catch(e){inventoryDeleteAppendedRows_(sh,startRow);throw e;}
  return {idempotent:false,reservadas:plan.reduce((n,x)=>n+x.qty,0)};
 }
 function manageMaterialRequisition(payload){
@@ -15671,7 +15675,8 @@ function manageInventoryReplenishmentPolicy(payload){
   return {status:"success",politicaId:values[0],itemCodigo:item.code,ubicacion:location};
  }finally{lock.releaseLock();}
 }
-function getInventoryReplenishmentSuggestions(payload){
+function getInventoryReplenishmentSuggestions(payload){const lock=LockService.getScriptLock();lock.waitLock(10000);try{return getInventoryReplenishmentSuggestionsLocked_(payload);}finally{lock.releaseLock();}}
+function getInventoryReplenishmentSuggestionsLocked_(payload){
  const p=payload||{},actor=getVerifiedAccountingIdentity_(p);if(!actor||actor.authorized!==true)throw new Error(actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED");
  const ss=SpreadsheetApp.openById(SPREADSHEET_ID);inventoryAssertDepartmentScope_(p,ss,actor,p.departamento);
  const policySheet=ss.getSheetByName("InventoryReplenishmentPolicies");if(!policySheet)return {status:"success",sugerencias:[]};
@@ -15779,11 +15784,11 @@ function inventoryLedgerPayloadMatches_(ss,delivery,items,savedJson) {
 
 function deliverMaterialRequisition(payload) {
  const p=payload||{},actor=catalogActor_(p,true),requestId=String(p.solicitudMatId||"").trim();if(!requestId)throw new Error("solicitudMatId es requerido.");
- const lock=LockService.getScriptLock();lock.waitLock(15000);let movementStart=0,journalStart=0,valuationSnapshot=null;
+ const lock=LockService.getScriptLock();lock.waitLock(15000);let movementStart=0,journalStart=0,valuationSnapshot=null,reservationConsumed=false,requestSheetRef=null,requestRowNumber=0,requestSnapshot=null;
  try {
   const ss=SpreadsheetApp.openById(SPREADSHEET_ID);valuationSnapshot=inventoryValuationSnapshot_(ss);const requestSheet=getOrCreateSheet(ss,"MaterialesSolicitudes");inventoryEnsureRequisitionSchema_(requestSheet);
   const data=requestSheet.getDataRange().getValues(),idx=data.findIndex((r,i)=>i>0&&String(r[0]).trim()===requestId);if(idx<0)throw new Error("Solicitud de material no encontrada.");
-  const row=data[idx];inventoryAssertDepartmentScope_(p,ss,actor,row[2]);if(String(row[6]||"").trim()==="Entregado")throw new Error("La solicitud ya ha sido entregada previamente.");if(String(row[6]||"").trim()!=="Aprobada")throw new Error("MATERIAL_REQUISITION_NOT_APPROVED");const reservationSheet=inventoryEnsureReservations_(ss);let activeReservations=reservationSheet.getDataRange().getValues().slice(1).filter(r=>String(r[1])===requestId&&String(r[6])==="Activa");if(!activeReservations.length){const legacyItems=inventoryNormalizeRequisitionItems_(ss,row[4]);inventoryReserveRequisition_(ss,requestId,legacyItems,String(row[14]||"Bodega General"),actor.userId);activeReservations=reservationSheet.getDataRange().getValues().slice(1).filter(r=>String(r[1])===requestId&&String(r[6])==="Activa");}
+  const row=data[idx];requestSheetRef=requestSheet;requestRowNumber=idx+1;requestSnapshot=row.slice();inventoryAssertDepartmentScope_(p,ss,actor,row[2]);if(String(row[6]||"").trim()==="Entregado")throw new Error("La solicitud ya ha sido entregada previamente.");if(String(row[6]||"").trim()!=="Aprobada")throw new Error("MATERIAL_REQUISITION_NOT_APPROVED");const reservationSheet=inventoryEnsureReservations_(ss);let activeReservations=reservationSheet.getDataRange().getValues().slice(1).filter(r=>String(r[1])===requestId&&String(r[6])==="Activa");if(!activeReservations.length){const legacyItems=inventoryNormalizeRequisitionItems_(ss,row[4]);inventoryReserveRequisition_(ss,requestId,legacyItems,String(row[14]||"Bodega General"),actor.userId);activeReservations=reservationSheet.getDataRange().getValues().slice(1).filter(r=>String(r[1])===requestId&&String(r[6])==="Activa");}
   let items;try{items=typeof row[4]==="string"?JSON.parse(row[4]):row[4];}catch(e){throw new Error("MATERIAL_REQUISITION_ITEMS_INVALID");}
   if(!Array.isArray(items)||!items.length)throw new Error("MATERIAL_REQUISITION_ITEMS_REQUIRED");
   const expectedReservationItems=inventoryNormalizeRequisitionItems_(ss,items),reservationLocation=String(row[14]||"Bodega General");
@@ -15806,10 +15811,11 @@ function deliverMaterialRequisition(payload) {
    details.push({itemId:item.id,itemCodigo:item.code,cantidadBase:baseQty,costoUnitarioBase:cost,importe:amount,capasTransferencia:outMove.capasTransferencia||[],kardexId:outMove.kardexId,kardexDestinoId:inMove&&inMove.kardexId,ubicacionOrigen:source,ubicacionDestino:department});
   });
   const asientoId="AST-INV-REQ-"+requestId;inventoryPostJournal_(ss,{descripcion:"Entrega de materiales "+requestId,origenModulo:"INVENTARIO",referenciaId:requestId,asientoId,lineas:lines,creadoPor:actor.userId});
-  requestSheet.getRange(idx+1,7).setValue("Entregado");requestSheet.getRange(idx+1,9).setValue(actor.userId);if(p.observaciones)requestSheet.getRange(idx+1,10).setValue(p.observaciones);requestSheet.getRange(idx+1,13).setValue(asientoId);requestSheet.getRange(idx+1,14).setValue(JSON.stringify(details));inventorySetReservationState_(ss,requestId,"Consumida",actor.userId);
+  inventorySetReservationState_(ss,requestId,"Consumida",actor.userId);reservationConsumed=true;
+  requestSheet.getRange(idx+1,9).setValue(actor.userId);if(p.observaciones)requestSheet.getRange(idx+1,10).setValue(p.observaciones);requestSheet.getRange(idx+1,13).setValue(asientoId);requestSheet.getRange(idx+1,14).setValue(JSON.stringify(details));requestSheet.getRange(idx+1,7).setValue("Entregado");
   return {status:"success",solicitudMatId:requestId,asientoId,centroCosto:costCenter,modoReconocimiento:mode,detalle:details,message:"Materiales entregados, descontados/asignados y contabilizados por partida doble."};
  } catch(e) {
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID);inventoryValuationRestore_(ss,valuationSnapshot);if(movementStart){const sh=ss.getSheetByName("InventariosKardex");if(sh)inventoryDeleteAppendedRows_(sh,movementStart);}if(journalStart){const sh=ss.getSheetByName("AsientosContables");if(sh)inventoryDeleteAppendedRows_(sh,journalStart);}throw e;
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID);if(reservationConsumed){try{inventorySetReservationState_(ss,requestId,"Activa",actor.userId,["Consumida"]);}catch(restoreReservationError){e.message+="; RESERVATION_RESTORE_FAILED:"+restoreReservationError.message;}}if(requestSheetRef&&requestSnapshot){try{requestSheetRef.getRange(requestRowNumber,7,1,8).setValues([requestSnapshot.slice(6,14)]);}catch(restoreRequestError){e.message+="; REQUEST_RESTORE_FAILED:"+restoreRequestError.message;}}inventoryValuationRestore_(ss,valuationSnapshot);if(movementStart){const sh=ss.getSheetByName("InventariosKardex");if(sh)inventoryDeleteAppendedRows_(sh,movementStart);}if(journalStart){const sh=ss.getSheetByName("AsientosContables");if(sh)inventoryDeleteAppendedRows_(sh,journalStart);}throw e;
  } finally {lock.releaseLock();}
 }
 
