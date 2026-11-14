@@ -3657,3 +3657,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se corrigió el filtro de tutor para pedidos históricos cuya columna ResponsableUserId contiene el ID del estudiante.
 - El aislamiento se basa en las relaciones familiares activas aprobadas y no en ese campo legado.
 - Se amplió el contrato con un pedido de cafetería que conserva el responsable histórico igual al estudiante.
+
+
+[2026-11-14] TASK-210 — corrección de aislamiento de consultas del alumno (C1.732)
+- Se ajustaron getStoreOrders y getCafeteriaOrders para reemplazar siempre los IDs enviados por el cliente con el ID verificado de la sesión estudiantil.
+- Se resolvió el fallo del contrato Node que detectó diferencia entre rechazo explícito y resolución segura al propio alumno.
+- TASK-210 permanece Pendiente; no se habilitaron débitos.

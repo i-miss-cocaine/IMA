@@ -311,3 +311,13 @@ C1.721 — IMA-EXEC-20261114-TASK200-01 — TASK-200 — Facturación automátic
 - **Prueba:** el fixture de cafetería usa ResponsableUserId igual al estudiante y verifica que el tutor vinculado pueda consultar el pedido. CI de esta corrección queda pendiente.
 - **Estado:** TASK-210 sigue Pendiente; no hay aprobación POR_COMPRA ni débitos familiares habilitados.
 ===============================================================================
+
+
+===============================================================================
+### C1.732 — IMA-EXEC-20261114-TASK210-STUDENT-READ-OVERRIDE-01 — Forzar identidad verificada en consultas de pedidos
+- **Continuidad:** C1.731; HEAD inicial e5c9e26d01d3332db48dbf1946cf839442d97cbc; rama exclusiva NG_beta_0.0.0.1_work; rama base 44d9891132332e692dbe2ba8602b41f50a508a59 sin cambios.
+- **Hallazgo de pruebas:** el contrato Node detectó que las funciones de consulta de pedidos rechazaban el ID ajeno enviado por un alumno, mientras el comportamiento seguro requerido es ignorar el filtro del cliente y resolver siempre al alumno autenticado. El middleware ya valida la petición, pero la función conserva el mismo comportamiento fail-safe en llamada directa.
+- **Corrección:** getStoreOrders y getCafeteriaOrders sustituyen cualquier ID de estudiante suministrado por el ID de sesión verificado, sin devolver ni consultar registros de terceros.
+- **Verificación:** el primer workflow C1.730 falló en el contrato de lectura estudiantil por este desacuerdo; el test existente comprueba que el resultado se limita al actor autenticado. CI de la corrección queda pendiente.
+- **Estado:** TASK-210 sigue Pendiente; débitos familiares continúan bloqueados.
+===============================================================================

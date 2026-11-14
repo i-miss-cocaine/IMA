@@ -1710,7 +1710,6 @@ function getStoreOrders(payload) {
   let allowedStudentIds = null;
   if (studentRoles.indexOf(roleKey) !== -1) {
     if (!actorId) throw new Error("FAMILY_CREDIT_VERIFIED_IDENTITY_REQUIRED");
-    if (userId && String(userId).trim() !== actorId) throw new Error("FAMILY_CREDIT_STUDENT_OWNERSHIP_REQUIRED");
     userId = actorId;
   } else if (guardianRoles.indexOf(roleKey) !== -1) {
     if (!actorId) throw new Error("FAMILY_CREDIT_VERIFIED_IDENTITY_REQUIRED");
@@ -1936,7 +1935,6 @@ function getCafeteriaOrders(payload) {
   let allowedStudentIds = null;
   if (studentRoles.indexOf(roleKey) !== -1) {
     if (!actorId) throw new Error("FAMILY_CREDIT_VERIFIED_IDENTITY_REQUIRED");
-    if (estudianteUserId && String(estudianteUserId).trim() !== actorId) throw new Error("FAMILY_CREDIT_STUDENT_OWNERSHIP_REQUIRED");
     estudianteUserId = actorId;
     responsableUserId = null;
   } else if (guardianRoles.indexOf(roleKey) !== -1) {
