@@ -2413,6 +2413,130 @@ window.renderRoleSettingsInModal = function(role, user) {
     container.innerHTML = html;
 };
 
+window.loadInstitutionalComplementaryServicesAdmin = async function() {
+    const panel = document.getElementById("service-catalog-admin-panel");
+    if (!panel || !window.fetchApi) return;
+    panel.classList.remove("hidden");
+    panel.innerHTML = '<div class="rounded-2xl border bg-white p-5 text-sm text-slate-500">Cargando catálogo de servicios...</div>';
+    const escape = value => String(value === undefined || value === null ? "" : value)
+        .replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const year = String(new Date().getFullYear());
+    try {
+        const response = await fetchApi("ACCOUNTING", "getInstitutionalComplementaryServices", { anoLectivo: year });
+        if (!response || response.status !== "success") throw new Error((response && response.message) || "No se pudo cargar el catálogo.");
+        const services = response.services || [], legacy = response.legacyServices || [];
+        panel.innerHTML = '<div class="space-y-5"><div><h2 class="text-lg font-black text-slate-800">Catálogo institucional de servicios complementarios</h2>' +
+          '<p class="text-xs text-slate-500">Configura ofertas por período lectivo sin sustituir los módulos existentes de tienda, cafetería o actividades.</p></div>' +
+          '<form id="institutional-service-form" class="grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 bg-white p-4 md:grid-cols-2">' +
+          '<input type="hidden" id="service-catalog-id">' +
+          '<label class="text-xs font-bold text-slate-600">Clave del servicio<input id="service-catalog-key" required class="mt-1 w-full rounded-xl border p-2" placeholder="TUTORIAS" /></label>' +
+          '<label class="text-xs font-bold text-slate-600">Nombre<input id="service-catalog-name" required class="mt-1 w-full rounded-xl border p-2" /></label>' +
+          '<label class="text-xs font-bold text-slate-600">Categoría<input id="service-catalog-category" required class="mt-1 w-full rounded-xl border p-2" placeholder="ACADEMICO" /></label>' +
+          '<label class="text-xs font-bold text-slate-600">Modalidad<select id="service-catalog-modality" class="mt-1 w-full rounded-xl border p-2"><option value="RECURRENTE">Recurrente</option><option value="POR_CONSUMO">Por consumo</option><option value="POR_EVENTO">Por evento</option></select></label>' +
+          '<label class="text-xs font-bold text-slate-600">Cupo máximo (0 = ilimitado)<input id="service-catalog-capacity" type="number" min="0" step="1" value="0" class="mt-1 w-full rounded-xl border p-2" /></label>' +
+          '<label class="text-xs font-bold text-slate-600">Tarifa (L)<input id="service-catalog-fee" type="number" min="0" step="0.01" value="0" class="mt-1 w-full rounded-xl border p-2" /></label>' +
+          '<label class="text-xs font-bold text-slate-600">Año lectivo<input id="service-catalog-year" required class="mt-1 w-full rounded-xl border p-2" value="' + year + '" /></label>' +
+          '<label class="text-xs font-bold text-slate-600">Estado<select id="service-catalog-state" class="mt-1 w-full rounded-xl border p-2"><option value="ACTIVO">Activo</option><option value="PAUSADO">Pausado</option><option value="INACTIVO">Inactivo</option></select></label>' +
+          '<label class="text-xs font-bold text-slate-600">Fecha de inicio<input id="service-catalog-start" type="date" class="mt-1 w-full rounded-xl border p-2" /></label>' +
+          '<label class="text-xs font-bold text-slate-600">Fecha de fin<input id="service-catalog-end" type="date" class="mt-1 w-full rounded-xl border p-2" /></label>' +
+          '<label class="text-xs font-bold text-slate-600">Responsables (JSON array)<textarea id="service-catalog-responsibles" rows="2" class="mt-1 w-full rounded-xl border p-2">[]</textarea></label>' +
+          '<label class="text-xs font-bold text-slate-600">Reglas de autorización familiar (JSON object)<textarea id="service-catalog-family-rules" rows="2" class="mt-1 w-full rounded-xl border p-2">{"requiereAutorizacionTutor":true}</textarea></label>' +
+          '<div class="flex flex-wrap gap-2 md:col-span-2"><button id="service-catalog-save" type="submit" class="rounded-xl bg-indigo-700 px-4 py-2 text-xs font-bold text-white">Guardar servicio</button>' +
+          '<button id="service-catalog-reset" type="button" class="rounded-xl border px-4 py-2 text-xs font-bold">Limpiar</button></div></form>' +
+          '<div class="grid grid-cols-1 gap-3 md:grid-cols-2"><div class="rounded-2xl border bg-white p-4"><h3 class="mb-3 text-xs font-black uppercase text-slate-700">Servicios existentes</h3>' +
+          (legacy.length ? legacy.map(item => '<div class="flex items-center justify-between gap-3 border-b py-3"><div><p class="text-xs font-bold">' + escape(item.nombre) +
+            '</p><p class="text-[11px] text-slate-500">' + escape(item.servicioClave) + ' · ' + Number(item.totalElementos || 0) +
+            ' elementos · ' + escape(item.estado) + '</p></div><button type="button" data-service-status="' + escape(item.servicioClave) +
+            '" data-service-state="' + escape(item.estado) + '" class="rounded-lg border px-3 py-1.5 text-[11px] font-bold">' +
+            (String(item.estado).toUpperCase() === "ACTIVO" ? "Pausar" : "Activar") + '</button></div>').join("") :
+            '<p class="text-xs text-slate-500">Sin módulos heredados.</p>') +
+          '</div><div class="rounded-2xl border bg-white p-4"><h3 class="mb-3 text-xs font-black uppercase text-slate-700">Servicios configurados</h3>' +
+          (services.length ? services.map(item => '<div class="flex items-center justify-between gap-3 border-b py-3"><div><p class="text-xs font-bold">' + escape(item.nombre) +
+            '</p><p class="text-[11px] text-slate-500">' + escape(item.servicioClave) + ' · ' + escape(item.modalidad) +
+            ' · L ' + Number(item.tarifa || 0).toFixed(2) + ' · ' + escape(item.estado) + '</p></div><div class="flex gap-2">' +
+            '<button type="button" data-edit-service="' + escape(item.servicioId) + '" class="rounded-lg border px-3 py-1.5 text-[11px] font-bold">Editar</button>' +
+            '<button type="button" data-service-status="' + escape(item.servicioClave) + '" data-service-state="' + escape(item.estado) +
+            '" class="rounded-lg border px-3 py-1.5 text-[11px] font-bold">' + (String(item.estado).toUpperCase() === "ACTIVO" ? "Pausar" : "Activar") +
+            '</button></div></div>').join("") : '<p class="text-xs text-slate-500">No hay servicios personalizados para este período.</p>') +
+          '</div></div></div>';
+
+        const form = panel.querySelector("#institutional-service-form");
+        const field = id => panel.querySelector("#" + id);
+        const reset = function() {
+            form.reset(); field("service-catalog-id").value = ""; field("service-catalog-year").value = year;
+            field("service-catalog-capacity").value = "0"; field("service-catalog-fee").value = "0";
+            field("service-catalog-responsibles").value = "[]";
+            field("service-catalog-family-rules").value = '{"requiereAutorizacionTutor":true}';
+            field("service-catalog-state").value = "ACTIVO";
+        };
+        field("service-catalog-reset").addEventListener("click", reset);
+        panel.querySelectorAll("[data-edit-service]").forEach(button => button.addEventListener("click", function() {
+            const item = services.find(service => String(service.servicioId) === String(button.getAttribute("data-edit-service")));
+            if (!item) return;
+            field("service-catalog-id").value = item.servicioId || "";
+            field("service-catalog-key").value = item.servicioClave || "";
+            field("service-catalog-name").value = item.nombre || "";
+            field("service-catalog-category").value = item.categoria || "";
+            field("service-catalog-modality").value = item.modalidad || "POR_EVENTO";
+            field("service-catalog-capacity").value = Number(item.cupoMaximo || 0);
+            field("service-catalog-fee").value = Number(item.tarifa || 0);
+            field("service-catalog-year").value = item.anoLectivo || year;
+            field("service-catalog-state").value = item.estado || "ACTIVO";
+            field("service-catalog-start").value = item.fechaInicio || "";
+            field("service-catalog-end").value = item.fechaFin || "";
+            field("service-catalog-responsibles").value = typeof item.responsables === "string" ? item.responsables : JSON.stringify(item.responsables || []);
+            field("service-catalog-family-rules").value = typeof item.reglasAutorizacionFamiliar === "string" ? item.reglasAutorizacionFamiliar : JSON.stringify(item.reglasAutorizacionFamiliar || {});
+            form.scrollIntoView({ behavior: "smooth", block: "start" });
+        }));
+        form.addEventListener("submit", async function(event) {
+            event.preventDefault();
+            const button = field("service-catalog-save");
+            button.disabled = true;
+            try {
+                const responsibles = JSON.parse(field("service-catalog-responsibles").value || "[]");
+                const rules = JSON.parse(field("service-catalog-family-rules").value || "{}");
+                const result = await fetchApi("ACCOUNTING", "saveInstitutionalComplementaryService", {
+                    servicioId: field("service-catalog-id").value || undefined,
+                    servicioClave: field("service-catalog-key").value.trim(),
+                    nombre: field("service-catalog-name").value.trim(),
+                    categoria: field("service-catalog-category").value.trim(),
+                    modalidad: field("service-catalog-modality").value,
+                    cupoMaximo: Number(field("service-catalog-capacity").value || 0),
+                    tarifa: Number(field("service-catalog-fee").value || 0),
+                    anoLectivo: field("service-catalog-year").value.trim(),
+                    estado: field("service-catalog-state").value,
+                    fechaInicio: field("service-catalog-start").value,
+                    fechaFin: field("service-catalog-end").value,
+                    responsablesJSON: responsibles, reglasAutorizacionFamiliarJSON: rules
+                });
+                if (!result || result.status !== "success") throw new Error((result && result.message) || "No se pudo guardar el servicio.");
+                if (window.Swal) await Swal.fire({ icon: "success", title: "Servicio guardado", text: result.message });
+                window.loadInstitutionalComplementaryServicesAdmin();
+            } catch (error) {
+                if (window.Swal) Swal.fire({ icon: "error", title: "No se pudo guardar", text: error.message || "Verifica los datos." });
+                else alert(error.message || "Error al guardar.");
+            } finally { button.disabled = false; }
+        });
+        panel.querySelectorAll("[data-service-status]").forEach(button => button.addEventListener("click", async function() {
+            button.disabled = true;
+            try {
+                const nextState = String(button.getAttribute("data-service-state")).toUpperCase() === "ACTIVO" ? "PAUSADO" : "ACTIVO";
+                const result = await fetchApi("ACCOUNTING", "setInstitutionalComplementaryServiceStatus", {
+                    servicioClave: button.getAttribute("data-service-status"), anoLectivo: year, estado: nextState
+                });
+                if (!result || result.status !== "success") throw new Error((result && result.message) || "No se pudo actualizar el servicio.");
+                window.loadInstitutionalComplementaryServicesAdmin();
+            } catch (error) {
+                if (window.Swal) Swal.fire({ icon: "error", title: "No se pudo actualizar", text: error.message || "Error." });
+                else alert(error.message || "Error al actualizar.");
+            } finally { button.disabled = false; }
+        }));
+    } catch (error) {
+        panel.innerHTML = '<div class="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-700">' +
+            escape(error.message || "No se pudo cargar el catálogo.") + '</div>';
+    }
+};
+
 window.loadExtracurricularAdminPanel = async function() {
     const panel = document.getElementById("extracurricular-admin-panel");
     if (!panel || !window.fetchApi) return;
@@ -6276,6 +6400,10 @@ window.loadDynamicDashboard = async function() {
             if (["ADMINISTRADOR", "DIRECTOR", "SUBDIRECTOR"].indexOf(roleKey) !== -1 &&
                 typeof window.loadExtracurricularAdminPanel === "function") {
                 window.loadExtracurricularAdminPanel();
+            }
+            if (["ADMINISTRADOR", "DIRECTOR", "SUBDIRECTOR", "CONTADOR"].indexOf(roleKey) !== -1 &&
+                typeof window.loadInstitutionalComplementaryServicesAdmin === "function") {
+                window.loadInstitutionalComplementaryServicesAdmin();
             }
 
             if (mods.length === 0) {
