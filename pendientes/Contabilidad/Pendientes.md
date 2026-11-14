@@ -2720,7 +2720,7 @@
 ---
 
 <!-- ID: TASK-189 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [ ] [TASK-189] Implementación de un sistema integral de valoración económica del inventario
+### [x] [TASK-189] Implementación de un sistema integral de valoración económica del inventario
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E (F19-19) y Plan de Trabajo F19-08
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Valuación de existencias, estados financieros precisos, métodos PEPS/Promedio y auditoría contable)
@@ -2755,7 +2755,7 @@
   - Se generan reportes de inventario valorizado a fechas históricas de corte.
   - Los totales valorizados coinciden con los balances contables de inventario.
   - Se exportan informes estructurados a Excel y PDF sin discrepancias.
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Completada en código y CI; BETA-FUNC-089 pendiente de validación desplegada.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7880-7915; clave TASK-190; asignación única: Contabilidad -->
 

@@ -308,3 +308,27 @@
 - **Evidencia requerida:** snapshots antes/después, IDs de requisiciones/órdenes/movimientos/asientos, detalles de costo unitario, logs de autorización, resultados de reintentos/concurrencia/rollback y conciliación por artículo; solo datos sintéticos.
 - **Estado:** Pendiente beta. Contrato Node.js y GitHub Actions aprobados; Apps Script/Sheets real no ejecutado.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-089 — TASK-189 — Valoración económica integral del inventario
+- **Módulo/roles:** Contabilidad / Almacén / Contador / Administrador.
+- **Objetivo:** validar en Apps Script y Google Sheets desplegados la valoración PEPS y promedio ponderado, la conservación de costo entre almacenes, los ajustes de conteo, los cortes históricos, la conciliación y las exportaciones.
+- **Precondiciones:** entorno beta aislado; copia de respaldo de las hojas; artículos y categorías sintéticos; cuentas activas 1301 (Inventario), 1302 (Materiales asignados) y 5201 (Gasto de materiales); carpeta Drive institucional autorizada; usuarios con roles y scopes diferenciados.
+- **Pasos:**
+  1. Configurar PEPS para una categoría sin capas existentes; registrar dos entradas con costos distintos y verificar consumo por antigüedad y costo exacto de salida.
+  2. Configurar promedio ponderado para otra categoría antes de ingresar existencias; registrar compras con costos distintos y comprobar el costo medio, el valor total y la salida calculada al promedio.
+  3. Intentar cambiar el método de una categoría con existencias valorizadas positivas; comprobar que la operación se bloquea y no modifica capas ni movimientos. Confirmar que un cambio solo puede realizarse mediante una migración/ajuste controlado y trazable.
+  4. Registrar entradas provenientes de órdenes/facturas y comprobar que se usa el costo real autorizado; introducir únicamente costo referencial y verificar que no se convierte en costo contable.
+  5. Ejecutar transferencia automática entre almacenes y transferencia con recepción pendiente; comparar el valor institucional antes/después y comprobar que el importe pendiente aparece en la ubicación «En tránsito».
+  6. Confirmar una recepción parcial; comprobar que el costo recibido conserva el origen y que el saldo restante continúa en tránsito. Intentar recibir más unidades que las despachadas y comprobar rechazo sin mutación.
+  7. Registrar ajustes positivos y negativos por conteo con documento y motivo; verificar variación de cantidad, capa PEPS consumida y efecto monetario exacto. Conciliar el asiento compensatorio correspondiente con 1301/1302 y la cuenta de contrapartida configurada.
+  8. Consultar el informe a una fecha de corte anterior y posterior a una recepción; filtrar por categoría y almacén; comprobar cantidades, costos unitarios y valores por artículo, ubicación y total institucional.
+  9. Comparar el auxiliar valorizado con los saldos asentados de 1301/1302; comprobar que diferencias y costos pendientes se muestran explícitamente y que no se informa conciliación falsa.
+  10. Exportar CSV compatible con Excel y abrirlo verificando UTF-8, acentos, códigos, columnas y sumatorias; generar PDF, comprobar el archivo en la carpeta Drive institucional y validar que la URL solo sea visible para roles autorizados.
+  11. Repetir consultas y configuraciones con roles sin permiso y scopes no autorizados; comprobar denegación sin mutaciones ni exposición de costos restringidos.
+  12. Simular lock ocupado y fallo durante una transferencia compuesta; comprobar rollback de Kardex, capas y movimientos de valoración sin pérdida ni duplicidad.
+- **Resultado esperado:** PEPS y promedio ponderado aplican el costo correcto; los traslados no alteran el valor institucional y las cantidades pendientes se muestran en tránsito; los ajustes reflejan su importe; los cortes históricos y la conciliación son matemáticamente consistentes; CSV/PDF se generan y protegen correctamente; cambios de método con existencias no se aplican retroactivamente.
+- **Evidencia requerida:** snapshots sintéticos de Kardex, InventoryValuationLayers, InventoryValuationMovements, InventoryValuationPolicies y AsientosContables; IDs de transferencias y movimientos; cálculo PEPS/promedio; consultas a cortes históricos; conciliación 1301/1302; CSV y PDF con URL Drive; respuestas de permisos; logs de lock/rollback. No usar datos reales.
+- **Estado:** Pendiente beta. Contratos Node.js 24 y sintaxis aprobados en GitHub Actions; Apps Script/Sheets/Drive reales no ejecutados.
+===============================================================================
