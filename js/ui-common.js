@@ -2413,6 +2413,114 @@ window.renderRoleSettingsInModal = function(role, user) {
     container.innerHTML = html;
 };
 
+window.loadExtracurricularAdminPanel = async function() {
+    const panel = document.getElementById("extracurricular-admin-panel");
+    if (!panel || !window.fetchApi) return;
+    panel.classList.remove("hidden");
+    panel.innerHTML = '<div class="rounded-2xl border bg-white p-5 text-sm text-slate-500">Cargando actividades...</div>';
+    const escape = value => String(value === undefined || value === null ? "" : value)
+        .replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    try {
+        const response = await fetchApi("ACADEMIC", "getExtracurricularActivities", {});
+        if (!response || response.status !== "success") throw new Error((response && response.message) || "No se pudieron cargar las actividades.");
+        const activities = response.activities || [];
+        panel.innerHTML = '<div class="space-y-5"><div><h2 class="text-lg font-black text-slate-800">Administración de actividades extracurriculares</h2>' +
+          '<p class="text-xs text-slate-500">Configura sesiones, responsables, cupos, tarifas y rutas extraordinarias.</p></div>' +
+          '<form id="extracurricular-admin-form" class="grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 bg-white p-4 md:grid-cols-2">' +
+          '<input type="hidden" id="extra-admin-id">' +
+          '<label class="text-xs font-bold text-slate-600">Nombre<input id="extra-admin-name" required class="mt-1 w-full rounded-xl border p-2" /></label>' +
+          '<label class="text-xs font-bold text-slate-600">Categoría<input id="extra-admin-category" required class="mt-1 w-full rounded-xl border p-2" /></label>' +
+          '<label class="text-xs font-bold text-slate-600">Cupo máximo (0 = ilimitado)<input id="extra-admin-capacity" type="number" min="0" step="1" value="0" class="mt-1 w-full rounded-xl border p-2" /></label>' +
+          '<label class="text-xs font-bold text-slate-600">Tarifa (L)<input id="extra-admin-fee" type="number" min="0" step="0.01" value="0" class="mt-1 w-full rounded-xl border p-2" /></label>' +
+          '<label class="text-xs font-bold text-slate-600">Fecha de inicio<input id="extra-admin-start" type="date" class="mt-1 w-full rounded-xl border p-2" /></label>' +
+          '<label class="text-xs font-bold text-slate-600">Fecha de finalización<input id="extra-admin-end" type="date" class="mt-1 w-full rounded-xl border p-2" /></label>' +
+          '<label class="text-xs font-bold text-slate-600 md:col-span-2">Horario JSON<textarea id="extra-admin-schedule" rows="2" class="mt-1 w-full rounded-xl border p-2">{"dias":[],"horaInicio":"","horaFin":""}</textarea></label>' +
+          '<label class="text-xs font-bold text-slate-600">Encargados (JSON)<textarea id="extra-admin-owners" rows="2" class="mt-1 w-full rounded-xl border p-2">[]</textarea></label>' +
+          '<label class="text-xs font-bold text-slate-600">Supervisores (JSON)<textarea id="extra-admin-supervisors" rows="2" class="mt-1 w-full rounded-xl border p-2">[]</textarea></label>' +
+          '<label class="text-xs font-bold text-slate-600">Estado<select id="extra-admin-state" class="mt-1 w-full rounded-xl border p-2"><option>Programada</option><option>Activa</option><option>Cerrada</option><option>Cancelada</option></select></label>' +
+          '<div class="rounded-xl border border-indigo-100 bg-indigo-50 p-3"><label class="flex items-center gap-2 text-xs font-bold text-indigo-900"><input id="extra-admin-transport-enabled" type="checkbox" /> Requiere transporte extraordinario</label>' +
+          '<div class="mt-2 grid grid-cols-1 gap-2"><input id="extra-admin-route" placeholder="ID de ruta activa" class="w-full rounded-lg border p-2 text-xs" />' +
+          '<input id="extra-admin-event-date" type="date" class="w-full rounded-lg border p-2 text-xs" />' +
+          '<input id="extra-admin-destination" placeholder="Destino del evento" class="w-full rounded-lg border p-2 text-xs" /></div></div>' +
+          '<div class="flex flex-wrap gap-2 md:col-span-2"><button type="submit" id="extra-admin-save" class="rounded-xl bg-indigo-700 px-4 py-2 text-xs font-bold text-white">Guardar actividad</button>' +
+          '<button type="button" id="extra-admin-reset" class="rounded-xl border px-4 py-2 text-xs font-bold">Limpiar formulario</button></div></form>' +
+          '<div class="rounded-2xl border border-slate-200 bg-white p-4"><h3 class="mb-3 text-xs font-black uppercase text-slate-700">Actividades registradas</h3>' +
+          (activities.length ? activities.map(activity =>
+            '<div class="flex flex-wrap items-center justify-between gap-3 border-b py-3"><div><p class="text-xs font-bold text-slate-800">' +
+            escape(activity.nombre) + '</p><p class="text-[11px] text-slate-500">' + escape(activity.categoria) + ' · Cupo: ' +
+            (Number(activity.cupoMaximo || 0) > 0 ? Number(activity.cupoMaximo) : "Ilimitado") + ' · Tarifa: L ' +
+            Number(activity.tarifa || 0).toFixed(2) + ' · ' + escape(activity.estado) + '</p></div><button type="button" data-edit-extracurricular="' +
+            escape(activity.extracurricularId) + '" class="rounded-lg border px-3 py-1.5 text-[11px] font-bold">Editar</button></div>'
+          ).join("") : '<p class="text-xs text-slate-500">No hay actividades registradas.</p>') + '</div></div>';
+
+        const form = panel.querySelector("#extracurricular-admin-form");
+        const fields = {
+          id: panel.querySelector("#extra-admin-id"), name: panel.querySelector("#extra-admin-name"),
+          category: panel.querySelector("#extra-admin-category"), capacity: panel.querySelector("#extra-admin-capacity"),
+          fee: panel.querySelector("#extra-admin-fee"), start: panel.querySelector("#extra-admin-start"),
+          end: panel.querySelector("#extra-admin-end"), schedule: panel.querySelector("#extra-admin-schedule"),
+          owners: panel.querySelector("#extra-admin-owners"), supervisors: panel.querySelector("#extra-admin-supervisors"),
+          state: panel.querySelector("#extra-admin-state"), transportEnabled: panel.querySelector("#extra-admin-transport-enabled"),
+          route: panel.querySelector("#extra-admin-route"), eventDate: panel.querySelector("#extra-admin-event-date"),
+          destination: panel.querySelector("#extra-admin-destination")
+        };
+        const reset = function() {
+          form.reset(); fields.id.value = ""; fields.capacity.value = "0"; fields.fee.value = "0";
+          fields.schedule.value = '{"dias":[],"horaInicio":"","horaFin":""}'; fields.owners.value = "[]"; fields.supervisors.value = "[]";
+          fields.state.value = "Programada";
+        };
+        panel.querySelector("#extra-admin-reset").addEventListener("click", reset);
+        panel.querySelectorAll("[data-edit-extracurricular]").forEach(button => button.addEventListener("click", function() {
+          const item = activities.find(activity => String(activity.extracurricularId) === String(button.getAttribute("data-edit-extracurricular")));
+          if (!item) return;
+          let transport = {};
+          try { transport = typeof item.transporteExtraordinarioJSON === "string" ? JSON.parse(item.transporteExtraordinarioJSON || "{}") : (item.transporteExtraordinarioJSON || {}); } catch (_) {}
+          fields.id.value = item.extracurricularId || ""; fields.name.value = item.nombre || ""; fields.category.value = item.categoria || "";
+          fields.capacity.value = Number(item.cupoMaximo || 0); fields.fee.value = Number(item.tarifa || 0);
+          fields.start.value = item.fechaInicio || ""; fields.end.value = item.fechaFin || "";
+          fields.schedule.value = typeof item.horario === "string" ? item.horario : JSON.stringify(item.horario || {});
+          fields.owners.value = typeof item.encargados === "string" ? item.encargados : JSON.stringify(item.encargados || []);
+          fields.supervisors.value = typeof item.supervisores === "string" ? item.supervisores : JSON.stringify(item.supervisores || []);
+          fields.state.value = item.estado || "Programada"; fields.transportEnabled.checked = !!transport.requiereTransporte;
+          fields.route.value = transport.rutaId || ""; fields.eventDate.value = transport.fechaEvento || "";
+          fields.destination.value = transport.destino || "";
+          form.scrollIntoView({ behavior: "smooth", block: "start" });
+        }));
+        form.addEventListener("submit", async function(event) {
+          event.preventDefault();
+          const button = fields.name.form.querySelector("#extra-admin-save");
+          button.disabled = true;
+          try {
+            const schedule = JSON.parse(fields.schedule.value || "{}");
+            const owners = JSON.parse(fields.owners.value || "[]");
+            const supervisors = JSON.parse(fields.supervisors.value || "[]");
+            const transport = { requiereTransporte: fields.transportEnabled.checked };
+            if (transport.requiereTransporte) {
+              transport.rutaId = fields.route.value.trim();
+              transport.fechaEvento = fields.eventDate.value;
+              transport.destino = fields.destination.value.trim();
+            }
+            const result = await fetchApi("ACADEMIC", "saveExtracurricularActivity", {
+              extracurricularId: fields.id.value || undefined, nombre: fields.name.value.trim(),
+              categoria: fields.category.value.trim(), cupoMaximo: Number(fields.capacity.value || 0),
+              tarifa: Number(fields.fee.value || 0), fechaInicio: fields.start.value, fechaFin: fields.end.value,
+              horarioJSON: schedule, encargadosJSON: owners, supervisoresJSON: supervisors,
+              estado: fields.state.value, transporteExtraordinarioJSON: transport
+            });
+            if (!result || result.status !== "success") throw new Error((result && result.message) || "No se pudo guardar la actividad.");
+            if (window.Swal) await Swal.fire({ icon: "success", title: "Actividad guardada", text: result.message });
+            window.loadExtracurricularAdminPanel();
+          } catch (error) {
+            if (window.Swal) Swal.fire({ icon: "error", title: "No se pudo guardar", text: error.message || "Verifica los datos." });
+            else alert(error.message || "Error al guardar.");
+          } finally { button.disabled = false; }
+        });
+    } catch (error) {
+        panel.innerHTML = '<div class="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-700">' +
+            escape(error.message || "No se pudieron cargar las actividades.") + '</div>';
+    }
+};
+
 window.loadFamilyExtracurricularPanel = async function() {
     const panel = document.getElementById("family-extracurricular-panel");
     if (!panel || !window.fetchApi) return;
@@ -6164,6 +6272,10 @@ window.loadDynamicDashboard = async function() {
             if (["PADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(roleKey) !== -1 &&
                 typeof window.loadFamilyExtracurricularPanel === "function") {
                 window.loadFamilyExtracurricularPanel();
+            }
+            if (["ADMINISTRADOR", "DIRECTOR", "SUBDIRECTOR"].indexOf(roleKey) !== -1 &&
+                typeof window.loadExtracurricularAdminPanel === "function") {
+                window.loadExtracurricularAdminPanel();
             }
 
             if (mods.length === 0) {
