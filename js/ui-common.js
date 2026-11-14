@@ -2467,13 +2467,16 @@ window.loadFamilyExtracurricularPanel = async function() {
             const activity = activities.find(item => String(item.extracurricularId) === String(enrollment.extracurricularId));
             const child = children.find(item => String(item.userId) === String(enrollment.estudianteUserId));
             const cancelled = String(enrollment.estado || "").toUpperCase() === "CANCELADA";
+            const paid = String(enrollment.cargoEstado || "").toUpperCase() === "PAGADO";
+            const action = cancelled ? "" : paid
+                ? '<span class="text-[10px] font-bold text-emerald-700">Pagada · cancelación con administración</span>'
+                : '<button type="button" data-cancel-enrollment="' + escape(enrollment.inscripcionId) +
+                  '" class="rounded-lg border border-rose-200 px-3 py-1.5 text-[11px] font-bold text-rose-700">Cancelar</button>';
             return '<div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 py-3">' +
                 '<div><p class="text-xs font-bold text-slate-800">' + escape(activity ? activity.nombre : enrollment.extracurricularId) +
                 '</p><p class="text-[11px] text-slate-500">' + escape(child ? child.nombre : enrollment.estudianteUserId) +
                 ' · ' + escape(enrollment.estado) + (enrollment.monto ? ' · L ' + Number(enrollment.monto).toFixed(2) : '') + '</p></div>' +
-                (cancelled ? '' : '<button type="button" data-cancel-enrollment="' + escape(enrollment.inscripcionId) +
-                '" class="rounded-lg border border-rose-200 px-3 py-1.5 text-[11px] font-bold text-rose-700">Cancelar</button>') +
-                '</div>';
+                action + '</div>';
         }).join("");
         panel.innerHTML = '<div class="space-y-5"><div class="flex flex-wrap items-center justify-between gap-3">' +
             '<div><h2 class="text-lg font-black text-slate-800">Actividades extracurriculares</h2>' +
