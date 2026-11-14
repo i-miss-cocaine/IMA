@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 const source = fs.readFileSync("backend/accounting-service/Code.gs", "utf8");
 const uiSource = fs.readFileSync("js/ui-common.js", "utf8");
+const accountingUiSource = fs.readFileSync("js/accounting.js", "utf8");
 
 function extractFunction(name) {
   const start = source.indexOf("function " + name + "(");
@@ -79,7 +80,7 @@ const context = {
   Date, String, Object, Array, JSON, Error, console
 };
 vm.createContext(context);
-const names = ["sanitizePayloadForLog", "familyCreditPinSecret_", "familyCreditGetStatementMovements_", "familyCreditGetActiveStudentUserIdsForGuardian_", "getStoreOrders", "getCafeteriaOrders", "getStudentAccountStatement", "familyCreditEnsureConfigSheet_", "familyCreditEnsureAuthorizationSheet_", "familyCreditPinDigest_", "familyCreditConstantTimeEquals_", "familyCreditVerifyPinInConfig_", "familyCreditApprovalActor_", "familyCreditEnsurePurchaseAuthorization_", "familyCreditRequirePurchaseAuthorizationForStudent_", "familyCreditGuardianHasActiveStudentRelation_", "familyCreditGuardianCanAuthorizeStudent_", "familyCreditIsRequested_", "familyCreditIsCancellationStatus_", "familyCreditReverseApprovedOrder_", "familyCreditApplyCupoPurchase_", "updateStoreOrderStatus", "updateCafeteriaOrderStatus", "getFamilyCreditApprovalPreference", "configureFamilyCreditApprovalPreference", "configureFamilyCreditPin", "configureFamilyCreditAuthorization", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase", "createStoreOrder", "createCafeteriaOrder"];
+const names = ["sanitizePayloadForLog", "familyCreditPinSecret_", "familyCreditGetStatementMovements_", "familyCreditGetActiveStudentUserIdsForGuardian_", "getStoreOrders", "getCafeteriaOrders", "getStudentAccountStatement", "familyCreditEnsureConfigSheet_", "familyCreditEnsureAuthorizationSheet_", "familyCreditPinDigest_", "familyCreditConstantTimeEquals_", "familyCreditVerifyPinInConfig_", "familyCreditApprovalActor_", "familyCreditEnsurePurchaseAuthorization_", "familyCreditRequirePurchaseAuthorizationForStudent_", "familyCreditGuardianHasActiveStudentRelation_", "familyCreditGuardianCanAuthorizeStudent_", "familyCreditIsRequested_", "familyCreditIsCancellationStatus_", "familyCreditReverseApprovedOrder_", "familyCreditApplyCupoPurchase_", "getFamilyCreditSalesReconciliation", "updateStoreOrderStatus", "updateCafeteriaOrderStatus", "getFamilyCreditApprovalPreference", "configureFamilyCreditApprovalPreference", "configureFamilyCreditPin", "configureFamilyCreditAuthorization", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase", "createStoreOrder", "createCafeteriaOrder"];
 vm.runInContext(names.map(extractFunction).join("\n"), context);
 const sanitizedPinPayload = context.sanitizePayloadForLog({ familyPin: "123456", currentPin: "654321", newPin: "111111", nested: { pinHash: "HASH-ONLY", authToken: "SESSION-TOKEN" } });
 assert.equal(sanitizedPinPayload.includes("123456"), false);
@@ -468,5 +469,38 @@ const cupoCafeRow = rows.CafeteriaPedidos.find(row => row[0] === cupoCafeOrder.p
 assert.equal(cupoCafeRow[8], "AprobadoCreditoFamiliar", "POR_CUPO cafeteria purchases must debit automatically");
 assert.equal(cupoCafeRow[3], "GUARD-1", "family credit cafeteria orders must retain the financial guardian");
 assert.equal(rows.CreditoFamiliarAutorizaciones[1][6], 47);
+
+rows.TiendaOrdenes = [
+  ["OrdenID","Fecha","UserId","CompradorNombre","DetalleJSON","MontoTotal","MetodoPago","EstadoPago","EstadoEntrega","MetodoEntrega","PdfComprobanteUrl","Observaciones"],
+  ["RPT-STORE-1", new Date(), "STU-1", "Alumno", "[]", 10, "CreditoFamiliar", "AprobadoCreditoFamiliar", "PendientePreparacion", "Recogida", "", ""],
+  ["RPT-STORE-2", new Date(), "STU-1", "Alumno", "[]", 5, "CreditoFamiliar", "PendienteAprobacionFamiliar", "PendientePreparacion", "Recogida", "", ""]
+];
+rows.CafeteriaPedidos = [
+  ["PedidoID","Fecha","EstudianteUserId","ResponsableUserId","DetalleJSON","TurnoEntrega","MontoTotal","MetodoPago","Estado","Observaciones"],
+  ["RPT-CAFE-1", new Date(), "STU-1", "GUARD-1", "[]", "Almuerzo", 20, "CreditoFamiliar", "Devuelto", ""]
+];
+rows.CreditoFamiliarMovimientos = [
+  ["MovimientoCreditoID","Fecha","AutorizacionID","EstudianteUserId","ResponsableUserId","Establecimiento","Monto","OrigenRefId","Estado","Observaciones"],
+  ["RPT-MOV-1", new Date(), "AUT-1", "STU-1", "GUARD-1", "Tienda", 10, "RPT-STORE-1", "Aprobado", ""],
+  ["RPT-MOV-2", new Date(), "AUT-1", "STU-1", "GUARD-1", "Cafetería", 20, "RPT-CAFE-1", "Aprobado", ""],
+  ["RPT-REV-2", new Date(), "AUT-1", "STU-1", "GUARD-1", "Cafetería", 20, "REV:RPT-MOV-2", "Reversado", ""]
+];
+const salesReconciliation = context.getFamilyCreditSalesReconciliation({ _verifiedRole: "Contador" });
+assert.equal(salesReconciliation.coincide, true);
+assert.equal(salesReconciliation.resumen.TIENDA.ventasNetas, 10);
+assert.equal(salesReconciliation.resumen.CAFETERIA.ventasNetas, 0);
+assert.equal(salesReconciliation.total.ventasNetas, 10);
+assert.equal(salesReconciliation.total.pedidosPendientes, 1);
+assert.throws(() => context.getFamilyCreditSalesReconciliation({ _verifiedRole: "Estudiante" }), /FAMILY_CREDIT_SALES_REPORT_ROLE_NOT_ALLOWED/);
+lockBusy = true;
+assert.throws(() => context.getFamilyCreditSalesReconciliation({ _verifiedRole: "Contador" }), /LOCK_BUSY/);
+lockBusy = false;
+rows.CreditoFamiliarMovimientos.push(["RPT-ORPHAN", new Date(), "AUT-1", "STU-1", "GUARD-1", "Tienda", 3, "MISSING-ORDER", "Aprobado", ""]);
+const inconsistentReconciliation = context.getFamilyCreditSalesReconciliation({ _verifiedRole: "Contador" });
+assert.equal(inconsistentReconciliation.coincide, false);
+assert.ok(inconsistentReconciliation.discrepancias.some(item => item.codigo === "ORPHAN_APPROVED_MOVEMENT"));
+assert.match(source, /case "getFamilyCreditSalesReconciliation"/);
+assert.match(accountingUiSource, /renderFamilyCreditSalesReconciliationModule/);
+assert.match(accountingUiSource, /getFamilyCreditSalesReconciliation/);
 
 console.log("TASK-210 family credit approval preference contract: PASS");
