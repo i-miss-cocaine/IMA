@@ -84,7 +84,8 @@ const sheets = {
   RelacionesFamiliares: makeSheet(relations),
   ActividadesExtracurriculares: makeSheet([activityHeaders]),
   CargosEstudiante: makeSheet([chargeHeaders]),
-  TransporteRutas: makeSheet([["RutaID", "NombreRuta", "UnidadCodigo", "ConductorEmpleadoId", "Capacidad", "ParadasJSON", "Estado", "Observaciones"], ["RUTA-ESPECIAL-1", "Ruta evento", "BUS-1", "DRV-1", 30, "[]", "Activa", ""]])
+  TransporteRutas: makeSheet([["RutaID", "NombreRuta", "UnidadCodigo", "ConductorEmpleadoId", "Capacidad", "ParadasJSON", "Estado", "Observaciones"], ["RUTA-ESPECIAL-1", "Ruta evento", "BUS-1", "DRV-1", 30, "[]", "Activa", ""]]),
+  ServiciosCatalogoInstitucional: makeSheet([["ServicioID","ServicioClave","Nombre","Categoria","Modalidad","CupoMaximo","ResponsablesJSON","Tarifa","ReglasAutorizacionFamiliarJSON","AnoLectivo","Estado","FechaInicio","FechaFin","OrigenSistema","ReferenciaOrigen","MetadataJSON","FechaCreacion","CreadoPor","FechaActualizacion","ActualizadoPor"], ["SVC-EXT","ACTIVIDADES_EXTRACURRICULARES","Actividades extracurriculares","EDUCACION_COMPLEMENTARIA","RECURRENTE",0,"[]",0,"{}","2027","ACTIVO","","","PLATAFORMA","","{}",new Date(),"ADMIN",new Date(),"ADMIN"]])
 };
 const ss = {
   getSheetByName(name) { return sheets[name] || null; },
@@ -112,7 +113,7 @@ const context = {
 };
 const names = [
   "ensureExtracurricularActivitySchema_", "ensureExtracurricularEnrollmentSheet_", "ensureExtracurricularChargeSheet_",
-  "extracurricularRoleKey_", "extracurricularGuardianCanManageStudent_", "extracurricularTransportRouteIsActive_", "reindexExtracurricularWaitlist_", "createExtracurricularCharge_",
+  "extracurricularRoleKey_", "extracurricularInstitutionalServiceIsActive_", "extracurricularGuardianCanManageStudent_", "extracurricularTransportRouteIsActive_", "reindexExtracurricularWaitlist_", "createExtracurricularCharge_",
   "promoteNextExtracurricularWaitlist_", "saveExtracurricularActivity", "getExtracurricularActivities",
   "enrollStudentInExtracurricular", "getStudentExtracurricularEnrollments", "cancelExtracurricularEnrollment"
 ];
@@ -174,6 +175,14 @@ assert.throws(() => context.saveExtracurricularActivity({
   _verifiedRole: "Director", nombre: "Ruta inválida", categoria: "Deportiva", cupoMaximo: 2,
   transporteExtraordinarioJSON: { requiereTransporte: true, fechaEvento: "2027-02-10", destino: "Estadio", rutaId: "NO-EXISTE" }
 }), /EXTRACURRICULAR_TRANSPORT_ROUTE_NOT_AVAILABLE/);
+
+sheets.ServiciosCatalogoInstitucional.rows[1][10] = "PAUSADO";
+assert.equal(context.getExtracurricularActivities({}).activities[0].servicioDisponible, false);
+assert.throws(() => context.enrollStudentInExtracurricular({
+  _verifiedUserId: "G1", _verifiedRole: "Padre", estudianteUserId: "S1", extracurricularId: "EXTRA-1"
+}), /INSTITUTIONAL_SERVICE_PAUSED/);
+sheets.ServiciosCatalogoInstitucional.rows[1][10] = "ACTIVO";
+assert.equal(context.getExtracurricularActivities({}).activities[0].servicioDisponible, true);
 
 const first = context.enrollStudentInExtracurricular({
   _verifiedUserId: "G1", _verifiedRole: "Padre", estudianteUserId: "S1", extracurricularId: "EXTRA-1"
