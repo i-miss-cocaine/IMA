@@ -1756,26 +1756,151 @@ function getStoreOrders(payload) {
   return { status: "success", ordenes: mapped };
 }
 
+function familyCreditIsCancellationStatus_(value) {
+  const normalized = String(value || "").trim().toLowerCase().normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "").replace(/[\s_-]/g, "");
+  return ["cancelado", "cancelada", "anulado", "anulada", "devuelto", "devuelta",
+    "reembolsado", "reembolsada", "refund", "refunded", "rechazado", "rechazada"].indexOf(normalized) !== -1;
+}
+
+function familyCreditReverseApprovedOrder_(ss, establishment, sourceId, orderSheet, orderRowNumber,
+    statusColumn, nextState, approvalState, paymentStateColumn) {
+  if (!familyCreditIsCancellationStatus_(nextState)) {
+    orderSheet.getRange(orderRowNumber, statusColumn).setValue(nextState);
+    return { reversed: false };
+  }
+  const movementSheet = ss.getSheetByName("CreditoFamiliarMovimientos");
+  if (!movementSheet) {
+    if (String(approvalState || "").trim() === "AprobadoCreditoFamiliar") {
+      throw new Error("FAMILY_CREDIT_APPROVED_MOVEMENT_MISSING");
+    }
+    orderSheet.getRange(orderRowNumber, statusColumn).setValue(nextState);
+    if (paymentStateColumn && paymentStateColumn !== statusColumn) {
+      orderSheet.getRange(orderRowNumber, paymentStateColumn).setValue(nextState);
+    }
+    return { reversed: false };
+  }
+  const movementRows = movementSheet.getDataRange().getValues();
+  const expected = ["MovimientoCreditoID", "Fecha", "AutorizacionID", "EstudianteUserId", "ResponsableUserId",
+    "Establecimiento", "Monto", "OrigenRefId", "Estado", "Observaciones"];
+  if (!movementRows.length || expected.some((h, i) => String(movementRows[0][i] || "") !== h) ||
+      movementRows[0].length !== expected.length) throw new Error("FAMILY_CREDIT_MOVEMENT_SCHEMA_MISMATCH");
+  const normalizedEstablishment = String(establishment || "").trim().toLowerCase().normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  const matching = movementRows.slice(1).map((row, i) => ({ row: row, rowNumber: i + 2 }))
+    .filter(item => String(item.row[7] || "").trim() === sourceId &&
+      String(item.row[5] || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === normalizedEstablishment);
+  const approved = matching.filter(item => String(item.row[8] || "").trim() === "Aprobado");
+  if (approved.length > 1) throw new Error("FAMILY_CREDIT_MOVEMENT_DUPLICATE_OR_INVALID");
+  if (!approved.length) {
+    if (String(approvalState || "").trim() === "AprobadoCreditoFamiliar" &&
+        !matching.some(item => String(item.row[8] || "").trim() === "Reversado")) {
+      throw new Error("FAMILY_CREDIT_APPROVED_MOVEMENT_MISSING");
+    }
+    orderSheet.getRange(orderRowNumber, statusColumn).setValue(nextState);
+    if (paymentStateColumn && paymentStateColumn !== statusColumn) {
+      orderSheet.getRange(orderRowNumber, paymentStateColumn).setValue(nextState);
+    }
+    return { reversed: false, idempotent: matching.some(item => String(item.row[8] || "").trim() === "Reversado") };
+  }
+  const original = approved[0], originalId = String(original.row[0] || "").trim();
+  if (!originalId) throw new Error("FAMILY_CREDIT_MOVEMENT_ID_INVALID");
+  const reversalRef = "REV:" + originalId;
+  const reversals = movementRows.slice(1).filter(row => String(row[7] || "").trim() === reversalRef &&
+    String(row[8] || "").trim() === "Reversado");
+  if (reversals.length > 1) throw new Error("FAMILY_CREDIT_REVERSAL_DUPLICATE");
+  if (reversals.length === 1) {
+    orderSheet.getRange(orderRowNumber, statusColumn).setValue(nextState);
+    if (paymentStateColumn && paymentStateColumn !== statusColumn) {
+      orderSheet.getRange(orderRowNumber, paymentStateColumn).setValue("ReversadoCreditoFamiliar");
+    }
+    return { reversed: false, idempotent: true };
+  }
+
+  const authorizationId = String(original.row[2] || "").trim();
+  const amount = Number(original.row[6]);
+  if (!authorizationId || !Number.isFinite(amount) || amount <= 0) throw new Error("FAMILY_CREDIT_REVERSAL_AMOUNT_INVALID");
+  const authorizationSheet = ss.getSheetByName("CreditoFamiliarAutorizaciones");
+  if (!authorizationSheet) throw new Error("FAMILY_CREDIT_AUTHORIZATION_NOT_FOUND");
+  const authorizationRows = authorizationSheet.getDataRange().getValues();
+  const authMatches = authorizationRows.map((row, i) => ({ row: row, rowNumber: i + 1 }))
+    .filter(item => String(item.row[0] || "").trim() === authorizationId);
+  if (authMatches.length !== 1) throw new Error(authMatches.length ? "FAMILY_CREDIT_AUTHORIZATION_DUPLICATE" : "FAMILY_CREDIT_AUTHORIZATION_NOT_FOUND");
+  const auth = authMatches[0], previousUsed = Number(auth.row[6]);
+  if (!Number.isFinite(previousUsed) || previousUsed < amount) throw new Error("FAMILY_CREDIT_BALANCE_REVERSAL_INVALID");
+
+  const reversalId = "MOV-CRD-" + Utilities.getUuid();
+  const reversalRowNumber = movementRows.length + 1;
+  const orderRow = orderSheet.getDataRange().getValues()[orderRowNumber - 1];
+  const previousStatus = String(orderRow[statusColumn - 1] || "");
+  const previousPaymentState = paymentStateColumn ? String(orderRow[paymentStateColumn - 1] || "") : "";
+  let reversalAppended = false, balanceUpdated = false, statusUpdated = false, paymentUpdated = false;
+  try {
+    movementSheet.appendRow([reversalId, new Date(), authorizationId, original.row[3], original.row[4],
+      original.row[5], amount, reversalRef, "Reversado", "Reversión de compra " + sourceId]);
+    reversalAppended = true;
+    authorizationSheet.getRange(auth.rowNumber, 7).setValue(Math.round((previousUsed - amount) * 100) / 100);
+    balanceUpdated = true;
+    orderSheet.getRange(orderRowNumber, statusColumn).setValue(nextState);
+    statusUpdated = true;
+    if (paymentStateColumn && paymentStateColumn !== statusColumn) {
+      orderSheet.getRange(orderRowNumber, paymentStateColumn).setValue("ReversadoCreditoFamiliar");
+      paymentUpdated = true;
+    }
+  } catch (error) {
+    let rollbackFailed = false;
+    if (paymentUpdated) { try { orderSheet.getRange(orderRowNumber, paymentStateColumn).setValue(previousPaymentState); } catch (_) { rollbackFailed = true; } }
+    if (statusUpdated) { try { orderSheet.getRange(orderRowNumber, statusColumn).setValue(previousStatus); } catch (_) { rollbackFailed = true; } }
+    if (balanceUpdated) { try { authorizationSheet.getRange(auth.rowNumber, 7).setValue(previousUsed); } catch (_) { rollbackFailed = true; } }
+    if (reversalAppended) {
+      try {
+        movementSheet.getRange(reversalRowNumber, 9).setValue("Anulado");
+        movementSheet.getRange(reversalRowNumber, 10).setValue("Rollback de reversión: " + String(error && error.message || error).slice(0, 160));
+      } catch (_) { rollbackFailed = true; }
+    }
+    if (rollbackFailed) throw new Error("FAMILY_CREDIT_REVERSAL_ROLLBACK_FAILED");
+    throw new Error("FAMILY_CREDIT_REVERSAL_WRITE_FAILED: " + String(error && error.message || error));
+  }
+  return { reversed: true, movimientoCreditoId: reversalId };
+}
+
 function updateStoreOrderStatus(payload) {
   const { ordenId, estadoPago, estadoEntrega, observaciones } = payload || {};
   if (!ordenId) throw new Error("ordenId requerido.");
-
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "TiendaOrdenes");
-  const data = sheet.getDataRange().getValues();
-
-  const idx = data.findIndex(r => String(r[0]).trim() === String(ordenId).trim());
-  if (idx === -1) throw new Error("Orden no encontrada.");
-
-  if (estadoPago) sheet.getRange(idx + 1, 8).setValue(estadoPago);
-  if (estadoEntrega) sheet.getRange(idx + 1, 9).setValue(estadoEntrega);
-  if (observaciones) sheet.getRange(idx + 1, 12).setValue(observaciones);
-
-  return {
-    status: "success",
-    ordenId: ordenId,
-    message: "Estado de orden de tienda actualizado correctamente."
-  };
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sheet = getOrCreateSheet(ss, "TiendaOrdenes");
+    const data = sheet.getDataRange().getValues();
+    const idx = data.findIndex(r => String(r[0] || "").trim() === String(ordenId).trim());
+    if (idx === -1) throw new Error("Orden no encontrada.");
+    const row = data[idx], isFamilyCredit = familyCreditIsRequested_(row[6]);
+    const paymentCancellation = estadoPago && familyCreditIsCancellationStatus_(estadoPago);
+    const deliveryCancellation = estadoEntrega && familyCreditIsCancellationStatus_(estadoEntrega);
+    if (isFamilyCredit) {
+      if (estadoPago && !paymentCancellation) throw new Error("FAMILY_CREDIT_PAYMENT_STATE_SERVER_MANAGED");
+      if (deliveryCancellation) {
+        familyCreditReverseApprovedOrder_(ss, "Tienda", String(ordenId).trim(), sheet, idx + 1,
+          9, estadoEntrega, String(row[7] || ""), 8);
+      } else if (paymentCancellation) {
+        familyCreditReverseApprovedOrder_(ss, "Tienda", String(ordenId).trim(), sheet, idx + 1,
+          8, estadoPago, String(row[7] || ""), null);
+      } else if (estadoEntrega) {
+        if (String(row[7] || "").trim() === "PendienteAprobacionFamiliar") {
+          throw new Error("FAMILY_CREDIT_ORDER_PENDING_APPROVAL");
+        }
+        sheet.getRange(idx + 1, 9).setValue(estadoEntrega);
+      }
+    } else {
+      if (estadoPago) sheet.getRange(idx + 1, 8).setValue(estadoPago);
+      if (estadoEntrega) sheet.getRange(idx + 1, 9).setValue(estadoEntrega);
+    }
+    if (observaciones) sheet.getRange(idx + 1, 12).setValue(observaciones);
+    return { status: "success", ordenId: ordenId, message: "Estado de orden de tienda actualizado correctamente." };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -2020,23 +2145,31 @@ function getCafeteriaOrders(payload) {
 function updateCafeteriaOrderStatus(payload) {
   const { pedidoId, nuevoEstado, observaciones } = payload || {};
   if (!pedidoId || !nuevoEstado) throw new Error("pedidoId y nuevoEstado son requeridos.");
-
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CafeteriaPedidos");
-  const data = sheet.getDataRange().getValues();
-
-  const idx = data.findIndex(r => String(r[0]).trim() === String(pedidoId).trim());
-  if (idx === -1) throw new Error("Pedido no encontrado.");
-
-  sheet.getRange(idx + 1, 9).setValue(nuevoEstado);
-  if (observaciones) sheet.getRange(idx + 1, 10).setValue(observaciones);
-
-  return {
-    status: "success",
-    pedidoId: pedidoId,
-    estado: nuevoEstado,
-    message: "Estado de pedido de cafetería actualizado a " + nuevoEstado
-  };
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sheet = getOrCreateSheet(ss, "CafeteriaPedidos");
+    const data = sheet.getDataRange().getValues();
+    const idx = data.findIndex(r => String(r[0] || "").trim() === String(pedidoId).trim());
+    if (idx === -1) throw new Error("Pedido no encontrado.");
+    const row = data[idx], isFamilyCredit = familyCreditIsRequested_(row[7]);
+    if (isFamilyCredit) {
+      const currentState = String(row[8] || "").trim();
+      if (currentState === "PendienteAprobacionFamiliar" && !familyCreditIsCancellationStatus_(nuevoEstado)) {
+        throw new Error("FAMILY_CREDIT_ORDER_PENDING_APPROVAL");
+      }
+      familyCreditReverseApprovedOrder_(ss, "Cafetería", String(pedidoId).trim(), sheet, idx + 1,
+        9, nuevoEstado, currentState, null);
+    } else {
+      sheet.getRange(idx + 1, 9).setValue(nuevoEstado);
+    }
+    if (observaciones) sheet.getRange(idx + 1, 10).setValue(observaciones);
+    return { status: "success", pedidoId: pedidoId, estado: nuevoEstado,
+      message: "Estado de pedido de cafetería actualizado a " + nuevoEstado };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // ---------------------------------------------------------------------------
