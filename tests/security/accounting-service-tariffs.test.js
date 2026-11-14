@@ -9,7 +9,7 @@ const context={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById(){return ss;}},Loc
 vm.createContext(context);vm.runInContext(names.map(extractFunction).join("\n"),context);
 const now=new Date(),year=now.getFullYear(),month=now.getMonth(),start=new Date(year,month,1),nextStart=new Date(year,month+1,1);
 const old=context.manageServiceTariff({servicio:"CAFETERIA",modalidad:"GENERAL",periodo:"MENSUAL",monto:100,fechaVigenciaInicio:start,descuentoHermanosPct:10,descuentoMaximoPct:30,prorrateoAlta:true,prorrateoBaja:true});assert.equal(old.status,"success");
-rows.CargosEstudiante.push(["OLD-CARGO",new Date(),"STU-X","Servicio: CAFETERIA",100,0,100,"Pendiente","","Cargo histórico","OLD-KEY",""]);
+rows.CargosEstudiante=[headers.CargosEstudiante.slice()];rows.CargosEstudiante.push(["OLD-CARGO",new Date(),"STU-X","Servicio: CAFETERIA",100,0,100,"Pendiente","","Cargo histórico","OLD-KEY",""]);
 const newer=context.manageServiceTariff({servicio:"CAFETERIA",modalidad:"GENERAL",periodo:"MENSUAL",monto:120,fechaVigenciaInicio:nextStart,descuentoHermanosPct:5,descuentoMaximoPct:25,prorrateoAlta:false,prorrateoBaja:true});assert.equal(newer.status,"success");
 const tariffs=rows.ServiciosTarifas.slice(1);assert.equal(tariffs.length,2);assert.equal(new Date(tariffs[0][7]).getDate(),new Date(year,month+1,0).getDate());assert.equal(Number(tariffs[1][5]),120);assert.equal(rows.CargosEstudiante[1][6],100,"new tariff versions must not rewrite historical charges");
 assert.equal(context.getServiceTariffs({servicio:"CAFETERIA"}).tarifas.length,2);
