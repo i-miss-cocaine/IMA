@@ -1699,33 +1699,38 @@ function createStoreOrder(payload) {
 }
 
 function getStoreOrders(payload) {
-  const { userId, ordenId } = payload || {};
+  const actorId = String(payload && payload._verifiedUserId || "").trim();
+  const roleKey = String(payload && payload._verifiedRole || "").trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z]/g, "");
+  const guardianRoles = ["PADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"];
+  const studentRoles = ["ESTUDIANTE", "ALUMNO", "STUDENT"];
+  let userId = payload && payload.userId;
+  const ordenId = payload && payload.ordenId;
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const rows = getOrCreateSheet(ss, "TiendaOrdenes").getDataRange().getValues().slice(1);
+  let allowedStudentIds = null;
+  if (studentRoles.indexOf(roleKey) !== -1) {
+    if (!actorId) throw new Error("FAMILY_CREDIT_VERIFIED_IDENTITY_REQUIRED");
+    if (userId && String(userId).trim() !== actorId) throw new Error("FAMILY_CREDIT_STUDENT_OWNERSHIP_REQUIRED");
+    userId = actorId;
+  } else if (guardianRoles.indexOf(roleKey) !== -1) {
+    if (!actorId) throw new Error("FAMILY_CREDIT_VERIFIED_IDENTITY_REQUIRED");
+    allowedStudentIds = new Set(familyCreditGetActiveStudentUserIdsForGuardian_(ss, actorId));
+    if (!allowedStudentIds.size) throw new Error("FAMILY_CREDIT_ACTIVE_GUARDIAN_RELATION_REQUIRED");
+    if (userId && !allowedStudentIds.has(String(userId).trim())) throw new Error("FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED");
+  }
 
   let filtered = rows;
   if (ordenId) filtered = filtered.filter(r => String(r[0]).trim() === String(ordenId).trim());
   if (userId) filtered = filtered.filter(r => String(r[2]).trim() === String(userId).trim());
+  if (allowedStudentIds) filtered = filtered.filter(r => allowedStudentIds.has(String(r[2] || "").trim()));
 
   const mapped = filtered.map(r => ({
-    ordenId: r[0],
-    fecha: r[1],
-    userId: r[2],
-    compradorNombre: r[3],
-    detalleJSON: r[4],
-    montoTotal: parseFloat(r[5] || 0),
-    metodoPago: r[6],
-    estadoPago: r[7],
-    estadoEntrega: r[8],
-    metodoEntrega: r[9],
-    pdfComprobanteUrl: r[10],
-    observaciones: r[11]
+    ordenId: r[0], fecha: r[1], userId: r[2], compradorNombre: r[3],
+    detalleJSON: r[4], montoTotal: parseFloat(r[5] || 0), metodoPago: r[6],
+    estadoPago: r[7], estadoEntrega: r[8], metodoEntrega: r[9],
+    pdfComprobanteUrl: r[10], observaciones: r[11]
   }));
-
-  return {
-    status: "success",
-    ordenes: mapped
-  };
+  return { status: "success", ordenes: mapped };
 }
 
 function updateStoreOrderStatus(payload) {
@@ -1919,37 +1924,45 @@ function createCafeteriaOrder(payload) {
 }
 
 function getCafeteriaOrders(payload) {
-  const { estudianteUserId, responsableUserId, pedidoId } = payload || {};
+  const actorId = String(payload && payload._verifiedUserId || "").trim();
+  const roleKey = String(payload && payload._verifiedRole || "").trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z]/g, "");
+  const guardianRoles = ["PADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"];
+  const studentRoles = ["ESTUDIANTE", "ALUMNO", "STUDENT"];
+  let estudianteUserId = payload && payload.estudianteUserId;
+  let responsableUserId = payload && payload.responsableUserId;
+  const pedidoId = payload && payload.pedidoId;
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const rows = getOrCreateSheet(ss, "CafeteriaPedidos").getDataRange().getValues().slice(1);
+  let allowedStudentIds = null;
+  if (studentRoles.indexOf(roleKey) !== -1) {
+    if (!actorId) throw new Error("FAMILY_CREDIT_VERIFIED_IDENTITY_REQUIRED");
+    if (estudianteUserId && String(estudianteUserId).trim() !== actorId) throw new Error("FAMILY_CREDIT_STUDENT_OWNERSHIP_REQUIRED");
+    estudianteUserId = actorId;
+    responsableUserId = null;
+  } else if (guardianRoles.indexOf(roleKey) !== -1) {
+    if (!actorId) throw new Error("FAMILY_CREDIT_VERIFIED_IDENTITY_REQUIRED");
+    allowedStudentIds = new Set(familyCreditGetActiveStudentUserIdsForGuardian_(ss, actorId));
+    if (!allowedStudentIds.size) throw new Error("FAMILY_CREDIT_ACTIVE_GUARDIAN_RELATION_REQUIRED");
+    if (estudianteUserId && !allowedStudentIds.has(String(estudianteUserId).trim())) throw new Error("FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED");
+    if (responsableUserId && String(responsableUserId).trim() !== actorId) throw new Error("FAMILY_CREDIT_GUARDIAN_OWNERSHIP_REQUIRED");
+    responsableUserId = actorId;
+  }
 
   let filtered = rows;
   if (pedidoId) filtered = filtered.filter(r => String(r[0]).trim() === String(pedidoId).trim());
   if (estudianteUserId) filtered = filtered.filter(r => String(r[2]).trim() === String(estudianteUserId).trim());
   if (responsableUserId) filtered = filtered.filter(r => String(r[3]).trim() === String(responsableUserId).trim());
+  if (allowedStudentIds) filtered = filtered.filter(r => allowedStudentIds.has(String(r[2] || "").trim()));
 
   const mapped = filtered.map(r => ({
-    pedidoId: r[0],
-    fecha: r[1],
-    estudianteUserId: r[2],
-    responsableUserId: r[3],
-    detalleJSON: r[4],
-    turnoEntrega: r[5],
-    montoTotal: parseFloat(r[6] || 0),
-    metodoPago: r[7],
-    estado: r[8],
-    observaciones: r[9],
-    centroCosto: r[10] || r[2],
-    modoReconocimiento: r[11] || "GASTO_INMEDIATO",
-    asientoContableId: r[12] || "",
-    detalleEntregaJSON: r[13] || "[]",
+    pedidoId: r[0], fecha: r[1], estudianteUserId: r[2], responsableUserId: r[3],
+    detalleJSON: r[4], turnoEntrega: r[5], montoTotal: parseFloat(r[6] || 0),
+    metodoPago: r[7], estado: r[8], observaciones: r[9],
+    centroCosto: r[10] || r[2], modoReconocimiento: r[11] || "GASTO_INMEDIATO",
+    asientoContableId: r[12] || "", detalleEntregaJSON: r[13] || "[]",
     ubicacionOrigen: r[14] || "Bodega General"
   }));
-
-  return {
-    status: "success",
-    pedidos: mapped
-  };
+  return { status: "success", pedidos: mapped };
 }
 
 function updateCafeteriaOrderStatus(payload) {
@@ -2053,6 +2066,37 @@ function familyCreditApprovalActor_(payload) {
     throw new Error("FAMILY_CREDIT_GUARDIAN_ROLE_REQUIRED");
   }
   return { userId: userId, role: role };
+}
+
+function familyCreditGetActiveStudentUserIdsForGuardian_(ss, guardianUserId) {
+  const usersSheet = ss.getSheetByName("Usuarios");
+  const relationsSheet = ss.getSheetByName("RelacionesFamiliares");
+  if (!usersSheet || !relationsSheet) return [];
+  const users = usersSheet.getDataRange().getValues().slice(1);
+  const guardian = users.find(function(row) {
+    return String(row[0] || "").trim() === String(guardianUserId).trim();
+  });
+  const guardianPersonId = guardian && String(guardian[9] || "").trim();
+  if (!guardianPersonId) return [];
+  const now = new Date();
+  const studentPersons = new Set();
+  relationsSheet.getDataRange().getValues().slice(1).forEach(function(row) {
+    const state = String(row[4] || "").trim().toLowerCase();
+    if (String(row[2] || "").trim() !== guardianPersonId ||
+        ["aprobado", "autorizado", "activo", "active"].indexOf(state) === -1) return;
+    const from = transportParseDate_(row[5]);
+    const to = transportParseDate_(row[6]);
+    if ((from && from > now) || (to && to < now)) return;
+    const personId = String(row[1] || "").trim();
+    if (personId) studentPersons.add(personId);
+  });
+  return [...new Set(users.filter(function(row) {
+    const role = String(row[6] || "").trim().toLowerCase();
+    const state = String(row[10] || "Activo").trim().toLowerCase();
+    return studentPersons.has(String(row[9] || "").trim()) &&
+      ["estudiante", "alumno", "student"].indexOf(role) !== -1 &&
+      ["inactivo", "inactive", "baja"].indexOf(state) === -1;
+  }).map(function(row) { return String(row[0] || "").trim(); }).filter(Boolean))];
 }
 
 function familyCreditGuardianHasActiveStudentRelation_(ss, guardianUserId) {

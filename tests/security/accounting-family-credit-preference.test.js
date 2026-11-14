@@ -79,7 +79,7 @@ const context = {
   Date, String, Object, Array, JSON, Error, console
 };
 vm.createContext(context);
-const names = ["sanitizePayloadForLog", "familyCreditPinSecret_", "familyCreditGetStatementMovements_", "getStudentAccountStatement", "familyCreditEnsureConfigSheet_", "familyCreditEnsureAuthorizationSheet_", "familyCreditPinDigest_", "familyCreditConstantTimeEquals_", "familyCreditVerifyPinInConfig_", "familyCreditApprovalActor_", "familyCreditGuardianHasActiveStudentRelation_", "familyCreditGuardianCanAuthorizeStudent_", "familyCreditIsRequested_", "getFamilyCreditApprovalPreference", "configureFamilyCreditApprovalPreference", "configureFamilyCreditPin", "configureFamilyCreditAuthorization", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase", "createStoreOrder", "createCafeteriaOrder"];
+const names = ["sanitizePayloadForLog", "familyCreditPinSecret_", "familyCreditGetStatementMovements_", "familyCreditGetActiveStudentUserIdsForGuardian_", "getStoreOrders", "getCafeteriaOrders", "getStudentAccountStatement", "familyCreditEnsureConfigSheet_", "familyCreditEnsureAuthorizationSheet_", "familyCreditPinDigest_", "familyCreditConstantTimeEquals_", "familyCreditVerifyPinInConfig_", "familyCreditApprovalActor_", "familyCreditGuardianHasActiveStudentRelation_", "familyCreditGuardianCanAuthorizeStudent_", "familyCreditIsRequested_", "getFamilyCreditApprovalPreference", "configureFamilyCreditApprovalPreference", "configureFamilyCreditPin", "configureFamilyCreditAuthorization", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase", "createStoreOrder", "createCafeteriaOrder"];
 vm.runInContext(names.map(extractFunction).join("\n"), context);
 const sanitizedPinPayload = context.sanitizePayloadForLog({ familyPin: "123456", currentPin: "654321", newPin: "111111", nested: { pinHash: "HASH-ONLY", authToken: "SESSION-TOKEN" } });
 assert.equal(sanitizedPinPayload.includes("123456"), false);
@@ -176,6 +176,23 @@ rows.CreditoFamiliarMovimientos = [
   ["MOV-3",new Date(),"AUT-1","STU-1","GUARD-1","Tienda",5,"ORD-1-REV","Reversado",""],
   ["MOV-4",new Date(),"AUT-2","STU-2","OTHER-G","Cafetería",20,"CAF-1","Aprobado",""]
 ];
+rows.TiendaOrdenes = [
+  ["OrdenID","Fecha","UserId","CompradorNombre","DetalleJSON","MontoTotal","MetodoPago","EstadoPago","EstadoEntrega","MetodoEntrega","PDFComprobanteUrl","Observaciones"],
+  ["ORD-1",new Date(),"STU-1","Alumno Uno","[]",25,"CreditoFamiliar","PendienteAprobacionFamiliar","Pendiente","","",""],
+  ["ORD-2",new Date(),"STU-2","Alumno Dos","[]",20,"CreditoFamiliar","PendienteAprobacionFamiliar","Pendiente","","",""]
+];
+rows.CafeteriaPedidos = [
+  ["PedidoID","Fecha","EstudianteUserId","ResponsableUserId","DetalleJSON","TurnoEntrega","MontoTotal","MetodoPago","Estado","Observaciones"],
+  ["CAF-1",new Date(),"STU-1","GUARD-1","[]","Almuerzo",25,"CreditoFamiliar","PendienteAprobacionFamiliar",""],
+  ["CAF-2",new Date(),"STU-2","OTHER-G","[]","Almuerzo",20,"CreditoFamiliar","PendienteAprobacionFamiliar",""]
+];
+assert.equal(context.getStoreOrders({ _verifiedUserId: "GUARD-1", _verifiedRole: "Padre" }).ordenes.length, 1);
+assert.throws(() => context.getStoreOrders({ userId: "STU-2", _verifiedUserId: "GUARD-1", _verifiedRole: "Padre" }), /FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED/);
+assert.equal(context.getStoreOrders({ userId: "STU-2", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante" }).ordenes[0].userId, "STU-1");
+assert.equal(context.getCafeteriaOrders({ _verifiedUserId: "GUARD-1", _verifiedRole: "Padre" }).pedidos.length, 1);
+assert.throws(() => context.getCafeteriaOrders({ estudianteUserId: "STU-2", _verifiedUserId: "GUARD-1", _verifiedRole: "Padre" }), /FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED/);
+assert.equal(context.getCafeteriaOrders({ estudianteUserId: "STU-2", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante" }).pedidos[0].estudianteUserId, "STU-1");
+
 const guardianStatement = context.getStudentAccountStatement({ userId: "STU-1", _verifiedUserId: "GUARD-1", _verifiedRole: "Padre" });
 assert.equal(guardianStatement.data.consumosCreditoFamiliar.length, 2);
 assert.equal(guardianStatement.data.totalConsumoCreditoFamiliar, 20, "approved consumption and reversals must net without creating a second school charge");

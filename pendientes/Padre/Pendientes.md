@@ -345,6 +345,7 @@
 
 - **Implementación parcial C1.728:** PIN familiar de 6 dígitos almacenado como HMAC-SHA256 con salt individual; cambio requiere PIN actual; cinco fallos bloquean 15 minutos; aprobación POR_CUPO verifica PIN y registra tutor/fecha; migración de esquemas y sanitización de logs. POR_COMPRA y la integración de débito/ledger continúan bloqueadas; no se habilita crédito todavía.
 - **Implementación parcial C1.729:** el HMAC de PIN usa un secreto dedicado persistente distinto del secreto de sesión. El estado de cuenta incorpora consumos aprobados y reversos en sección separada, sin sumarlos a cargos de colegiatura; el padre/tutor solo consulta estudiantes vinculados por relación activa aprobada y el alumno solo su propia cuenta. POR_COMPRA, débito coordinado y reversos de pedidos siguen pendientes.
+- **Implementación parcial C1.730:** `getStoreOrders` y `getCafeteriaOrders` validan los estudiantes vinculados al tutor antes de devolver pedidos; el estudiante no puede consultar pedidos de otro ID. Roles operativos mantienen su consulta existente. Contratos de ownership agregados; CI del commit de esta corrección pendiente.
 
 - **Estado:** [ ] Pendiente; modalidad configurable definida, implementación financiera y de PIN pendiente.
 

@@ -285,3 +285,19 @@ C1.721 — IMA-EXEC-20261114-TASK200-01 — TASK-200 — Facturación automátic
 - **HEAD final:** se verificará tras publicar el commit; rama base sin cambios.
 - **Siguiente acción:** diseñar e implementar el flujo de pedido pendiente y aprobación POR_COMPRA, seguido de transacción coordinada, stock, idempotencia persistente, reversos y pruebas concurrentes.
 ===============================================================================
+
+
+===============================================================================
+### C1.730 — IMA-EXEC-20261114-TASK210-ORDER-READ-OWNERSHIP-01 — Aislamiento de consultas de pedidos familiares
+- **Continuidad:** C1.729; HEAD inicial c08e391f40130b1cfae9ac4a1c5d7ae8e2c5efe1; rama exclusiva NG_beta_0.0.0.1_work; rama base 44d9891132332e692dbe2ba8602b41f50a508a59 sin cambios.
+- **Code review:** se detectó que las consultas getStoreOrders y getCafeteriaOrders aceptaban filtros de estudiante/responsable enviados por el cliente sin verificar relación familiar; la consulta podía exponer pedidos de otros alumnos.
+- **Corrección:** se agregó resolución única de estudiantes vinculados a un tutor desde Usuarios/RelacionesFamiliares y se limitan las lecturas de tienda y cafetería a esos estudiantes. El alumno queda restringido a su propio ID, ignorando filtros de terceros; los roles operativos conservan su alcance existente.
+- **Normalización:** la expresión de eliminación de diacríticos en el control de rol usa el rango Unicode correcto.
+- **Pruebas agregadas:** tutor consulta pedidos de estudiante vinculado; tutor recibe rechazo al consultar otro estudiante; estudiante no puede forzar ID ajeno en tienda ni cafetería.
+- **CI C1.729:** Node.js 24.22.2, contrato familiar y sintaxis Apps Script PASS; Department Scope 43621207245 SUCCESS; Identity Mapping 43621207229 SUCCESS; Department Reference Consumers 43621207258 SUCCESS. C1.728 también quedó verificado por Department Scope 43619960458 SUCCESS (incluye contrato PIN y syntax-check).
+- **Limitaciones:** CLI local independiente NOT RUN; Apps Script/Google Sheets desplegado NOT RUN. El débito POR_COMPRA, la aprobación de pedido, el ledger financiero durable, stock transaccional y reversos continúan pendientes. TASK-210 sigue Pendiente y los débitos permanecen bloqueados.
+- **Archivos:** backend/accounting-service/Code.gs; tests/security/accounting-family-credit-preference.test.js; backlog del padre; changelog; índice y este checkpoint.
+- **Estado:** implementación parcial; sin habilitación de cargos.
+- **HEAD final:** se verificará tras el commit; rama base sin cambios.
+- **Siguiente acción:** implementar el pedido familiar pendiente y la aprobación del tutor con PIN por compra, manteniendo el cargo bloqueado hasta el registro financiero idempotente y la actualización consistente del inventario.
+===============================================================================

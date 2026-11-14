@@ -3644,3 +3644,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se agregó verificación de relación familiar activa aprobada para consultas de padres/tutores; el alumno queda limitado a su propio estado de cuenta.
 - Se amplió el contrato Node para cobertura de secreto separado, movimientos/reversos y ownership.
 - TASK-210 permanece Pendiente: aprobación POR_COMPRA, débito coordinado, inventario, idempotencia persistente y reversos de pedidos aún no implementados.
+
+
+[2026-11-14] TASK-210 — aislamiento de consultas de pedidos de tienda y cafetería (C1.730)
+- Se detectó y corrigió exposición de pedidos al aceptar identificadores de estudiante/responsable sin validar la relación familiar.
+- Los padres/tutores solo consultan pedidos de estudiantes vinculados mediante relaciones activas aprobadas; estudiantes solo consultan sus propios pedidos.
+- Se agregó un helper que resuelve el conjunto de estudiantes vinculados con una lectura de Usuarios y RelacionesFamiliares, evitando repetir lecturas por cada pedido.
+- Se amplió el contrato Node con casos positivos y negativos de tienda/cafetería. TASK-210 sigue Pendiente; compras con crédito continúan bloqueadas.
