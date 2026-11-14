@@ -2675,6 +2675,7 @@ window.loadFamilyExtracurricularPanel = async function() {
             try { transport = typeof activity.transporteExtraordinarioJSON === "string"
                 ? JSON.parse(activity.transporteExtraordinarioJSON || "{}") : (activity.transporteExtraordinarioJSON || {}); } catch (_) {}
             const full = Number(activity.cupoMaximo || 0) > 0 && Number(activity.cuposDisponibles || 0) <= 0;
+            const unavailable = activity.servicioDisponible === false;
             const schedule = typeof activity.horario === "string" ? activity.horario : JSON.stringify(activity.horario || {});
             const capacity = Number(activity.cupoMaximo || 0) > 0
                 ? Number(activity.cuposDisponibles || 0) + " cupos disponibles de " + Number(activity.cupoMaximo)
@@ -2692,8 +2693,8 @@ window.loadFamilyExtracurricularPanel = async function() {
                 transportLabel +
                 '<div class="mt-3 flex flex-wrap gap-2"><select class="min-w-0 flex-1 rounded-xl border border-slate-200 p-2 text-xs" data-child-select>' +
                 childOptions + '</select><button type="button" data-enroll-activity="' + escape(activity.extracurricularId) +
-                '" class="rounded-xl bg-indigo-700 px-4 py-2 text-xs font-bold text-white">' +
-                (full ? "Unirse a lista de espera" : "Inscribir estudiante") + '</button></div></article>';
+                '" ' + (unavailable ? "disabled" : "") + ' class="rounded-xl bg-indigo-700 px-4 py-2 text-xs font-bold text-white disabled:opacity-50">' +
+                (unavailable ? "Servicio pausado" : (full ? "Unirse a lista de espera" : "Inscribir estudiante")) + '</button></div></article>';
         }).join("");
         const enrollmentCards = enrollments.map(enrollment => {
             const activity = activities.find(item => String(item.extracurricularId) === String(enrollment.extracurricularId));
