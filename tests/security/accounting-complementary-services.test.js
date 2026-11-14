@@ -108,6 +108,16 @@ assert.equal(current.legacyServices.length, 3);
 assert.equal(current.legacyServices.find(item => item.servicioClave === "CAFETERIA").totalElementos, 1);
 assert.equal(current.legacyServices.find(item => item.servicioClave === "TIENDA").totalElementos, 1);
 assert.equal(current.legacyServices.find(item => item.servicioClave === "ACTIVIDADES_EXTRACURRICULARES").totalElementos, 1);
+const consumption = context.saveInstitutionalComplementaryService({
+  _verifiedRole: "Director", _verifiedUserId: "DIR-1", servicioClave: "COMIDAS",
+  nombre: "Comidas especiales", categoria: "ALIMENTACION", modalidad: "POR_CONSUMO",
+  cupoMaximo: 0, tarifa: 75, anoLectivo: "2027", responsablesJSON: [],
+  reglasAutorizacionFamiliarJSON: {}, estado: "ACTIVO"
+});
+assert.equal(consumption.status, "success");
+assert.equal(context.getInstitutionalComplementaryServices({
+  _verifiedRole: "Director", anoLectivo: "2027"
+}).services.find(item => item.servicioClave === "COMIDAS").modalidad, "POR_CONSUMO");
 
 const updated = context.saveInstitutionalComplementaryService({
   _verifiedRole: "Director", _verifiedUserId: "DIR-1",
