@@ -56,6 +56,8 @@ window.switchTab = function (tab) {
     renderServiceTariffsModule(container);
   } else if (tab === 'matricula') {
     renderEnrollmentBillingConfigurationModule(container);
+  } else if (tab === 'reportes') {
+    renderFamilyCreditSalesReconciliationModule(container);
   } else {
     renderResumenModule(container);
   }
@@ -63,6 +65,57 @@ window.switchTab = function (tab) {
 
 window.initAccountingDashboard = function () {
   window.switchTab('resumen');
+};
+
+
+function renderFamilyCreditSalesReconciliationModule(container) {
+  container.innerHTML = '<div class="space-y-5">' +
+    '<div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-100 bg-indigo-50 p-4">' +
+      '<div><h4 class="text-sm font-black uppercase text-indigo-950">Conciliación de ventas con crédito familiar</h4>' +
+      '<p class="mt-1 text-xs text-indigo-800">Tienda y cafetería · movimientos aprobados, devoluciones y pedidos pendientes</p></div>' +
+      '<button type="button" onclick="loadFamilyCreditSalesReconciliation()" class="rounded-xl bg-indigo-700 px-4 py-2 text-xs font-bold text-white">Actualizar conciliación</button>' +
+    '</div><div id="family-credit-sales-reconciliation-result" class="space-y-4">' +
+      '<div class="py-8 text-center text-xs font-bold uppercase text-gray-400">Consultando movimientos y pedidos...</div>' +
+    '</div></div>';
+  window.loadFamilyCreditSalesReconciliation();
+}
+
+window.loadFamilyCreditSalesReconciliation = function() {
+  const host = document.getElementById("family-credit-sales-reconciliation-result");
+  if (!host || !window.fetchApi) return;
+  host.textContent = "Consultando movimientos y pedidos...";
+  const escape = value => String(value === undefined || value === null ? "" : value)
+    .replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const money = value => "L " + Number(value || 0).toFixed(2);
+  fetchApi("ACCOUNTING", "getFamilyCreditSalesReconciliation", {}).then(res => {
+    if (!res || res.status !== "success") throw new Error((res && res.message) || "No se pudo conciliar el crédito familiar.");
+    const store = res.resumen && res.resumen.TIENDA || {};
+    const cafe = res.resumen && res.resumen.CAFETERIA || {};
+    const total = res.total || {};
+    const statusClass = res.coincide ? "text-emerald-700 bg-emerald-50 border-emerald-200" : "text-rose-700 bg-rose-50 border-rose-200";
+    const statusText = res.coincide ? "Conciliación sin diferencias" : "Se detectaron diferencias";
+    const card = (label, data) => '<div class="rounded-2xl border border-gray-200 bg-white p-4">' +
+      '<div class="mb-3 text-xs font-black uppercase text-gray-700">' + label + '</div>' +
+      '<div class="grid grid-cols-2 gap-3 text-xs">' +
+      '<div><div class="text-gray-500">Ventas brutas</div><strong>' + money(data.ventasBrutas) + '</strong></div>' +
+      '<div><div class="text-gray-500">Devoluciones</div><strong>' + money(data.devoluciones) + '</strong></div>' +
+      '<div><div class="text-gray-500">Ventas netas</div><strong>' + money(data.ventasNetas) + '</strong></div>' +
+      '<div><div class="text-gray-500">Pendientes</div><strong>' + Number(data.pedidosPendientes || 0) + '</strong></div>' +
+      '</div></div>';
+    const issues = (res.discrepancias || []).slice(0, 25).map(item =>
+      '<li class="border-b border-rose-100 py-2 text-xs">' + escape(item.codigo) + ' · ' +
+      escape(item.establecimiento || "Ledger") + ' · ' + escape(item.referencia) + '</li>'
+    ).join("");
+    host.innerHTML = '<div class="rounded-xl border px-4 py-3 text-sm font-bold ' + statusClass + '">' +
+      statusText + ' · ' + Number(res.totalDiscrepancias || 0) + ' diferencias</div>' +
+      '<div class="grid grid-cols-1 gap-3 md:grid-cols-3">' + card("Tienda", store) +
+      card("Cafetería", cafe) + card("Total", total) + '</div>' +
+      (issues ? '<div class="rounded-2xl border border-rose-200 bg-white p-4"><h5 class="mb-2 text-xs font-black uppercase text-rose-800">Diferencias detectadas</h5><ul>' + issues + '</ul></div>' : '') +
+      '<p class="text-[11px] text-gray-500">' + escape(res.message || "") + '</p>';
+  }).catch(err => {
+    host.innerHTML = '<div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-700">' +
+      escape(err.message || "Error de conciliación.") + '</div>';
+  });
 };
 
 // ---------------------------------------------------------------------------
