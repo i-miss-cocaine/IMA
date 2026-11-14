@@ -97,7 +97,7 @@ const saved = context.saveInstitutionalComplementaryService({
   modalidad: "RECURRENTE", cupoMaximo: 20, tarifa: 350, anoLectivo: "2027",
   responsablesJSON: ["DOC-1", "DOC-2"],
   reglasAutorizacionFamiliarJSON: { requiereAutorizacionTutor: true, requierePIN: false },
-  fechaInicio: "2027-01-15", fechaFin: "2027-11-30", estado: "ACTIVO"
+  fechaInicio: "2026-01-15", fechaFin: "2027-11-30", estado: "ACTIVO"
 });
 assert.equal(saved.status, "success");
 assert.equal(context.institutionalServiceIsActive_(ss, "TUTORIAS", "2027"), true);
