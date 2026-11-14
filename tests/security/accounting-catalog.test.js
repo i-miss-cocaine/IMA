@@ -132,7 +132,7 @@ const avgOut=ctx.recordInventoryMovement({itemCodigo:"VAL-AVG",tipoMovimiento:"S
 const avgPool=rows.InventoryValuationLayers.slice(1).find(x=>String(x[0]).startsWith("AVG:")&&x[3]==="VAL-AVG");assert.equal(avgPool[9],2);assert.equal(avgPool[10],15);
 const valuationReport=ctx.getValuatedInventoryReport({});assert.equal(valuationReport.status,"success");assert.ok(valuationReport.resumen.valor>=50);assert.equal(valuationReport.resumen.valorIncompleto,true,"legacy inventory with missing acquisition cost must be flagged rather than silently valued");
 const valuationCsv=ctx.exportValuatedInventoryReportCSV({});assert.equal(valuationCsv.status,"success");assert.ok(valuationCsv.csv.includes("VAL-FIFO"));assert.ok(valuationCsv.csv.includes("VAL-AVG"));
-const valuationPdf=ctx.exportValuatedInventoryReportPDF({});assert.equal(valuationPdf.status,"success");assert.equal(valuationPdf.fileId,"FILE-VALUATION-1");assert.match(valuationPdf.url,/drive\\.google\\.com/);assert.ok(lastPdfHtml.includes("Inventario valorizado"));assert.ok(lastPdfHtml.includes("VAL-FIFO"));
+const valuationPdf=ctx.exportValuatedInventoryReportPDF({});assert.equal(valuationPdf.status,"success");assert.equal(valuationPdf.fileId,"FILE-VALUATION-1");assert.match(valuationPdf.url,/drive\.google\.com/);assert.ok(lastPdfHtml.includes("Inventario valorizado"));assert.ok(lastPdfHtml.includes("VAL-FIFO"));
 
 const avgValuationRow=ctx.getValuatedInventoryReport({categoria:"Herramientas",ubicacion:"Bodega Valoración"}).detalle.find(x=>x.itemCodigo==="VAL-AVG");
 assert.equal(avgValuationRow.valor,30,"weighted-average report must retain the real remaining inventory value, not revalue the purchase receipt at the new average");
