@@ -18406,7 +18406,7 @@ function transportOptimizationOrder_(stops,speed,startTime){
  const destination=stops.filter(s=>s.destination);if(destination.length>1)throw new Error("ROUTE_OPTIMIZATION_MULTIPLE_DESTINATIONS");
  const fixedEnd=destination.length?destination[0]:stops[stops.length-1],start=stops[0];
  if(fixedEnd.id===start.id)throw new Error("ROUTE_OPTIMIZATION_ORIGIN_DESTINATION_CONFLICT");
- const middle=stops.filter(s=>s.id!==start.id&&s.id!==fixedEnd.id),ordered=[start],remaining=middle.slice(),currentTime=startTime;
+ const middle=stops.filter(s=>s.id!==start.id&&s.id!==fixedEnd.id),ordered=[start],remaining=middle.slice();let currentTime=startTime;
  while(remaining.length){
   const candidates=remaining.map(s=>{const leg=transportOptimizationDistanceKm_(ordered[ordered.length-1],s),arrival=currentTime+leg/speed*60,wait=s.windowStart!==null?Math.max(0,s.windowStart-arrival):0,after=arrival+wait;return {stop:s,leg:leg,arrival:after,valid:s.windowEnd===null||after<=s.windowEnd+0.0001};}).filter(x=>x.valid).sort((a,b)=>a.leg-b.leg||a.stop.id.localeCompare(b.stop.id));
   if(!candidates.length)throw new Error("ROUTE_OPTIMIZATION_TIME_WINDOW_CONFLICT");
