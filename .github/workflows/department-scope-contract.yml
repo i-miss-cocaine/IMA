@@ -36,6 +36,7 @@ on:
       - tests/security/accounting-purchase-asset-capitalization.test.js
       - tests/security/accounting-asset-depreciation.test.js
       - tests/security/accounting-catalog.test.js
+      - tests/security/accounting-transport-monthly-charges.test.js
       - tests/security/accounting-purchase-receipt-partial.test.js
       - tests/security/accounting-supplier-profile.test.js
       - tests/security/accounting-purchase-dossier.test.js
@@ -128,6 +129,8 @@ jobs:
         run: node tests/security/accounting-asset-depreciation.test.js
       - name: Run accounting master catalog and unit conversion contract
         run: node tests/security/accounting-catalog.test.js
+      - name: Run transport monthly charge, proration, cancellation and idempotency contract
+        run: node tests/security/accounting-transport-monthly-charges.test.js
       - name: Run supplier profile and protected banking contract
         run: node tests/security/accounting-supplier-profile.test.js
       - name: Run unified purchase dossier traceability contract
