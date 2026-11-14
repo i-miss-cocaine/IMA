@@ -6338,11 +6338,20 @@ function getStudentExtracurricularEnrollments(payload) {
       .map(row => ({ userId: String(row[0] || "").trim(), nombre: String(row[1] || row[0] || "").trim() }));
     const childIds = new Set(children.map(item => item.userId));
     const enrollmentSheet = ss.getSheetByName("ServiciosInscripciones");
+    const chargeSheet = ss.getSheetByName("CargosEstudiante");
+    const chargeRows = chargeSheet ? chargeSheet.getDataRange().getValues().slice(1) : [];
+    const chargeById = Object.create(null);
+    chargeRows.forEach(row => { chargeById[String(row[0] || "").trim()] = String(row[7] || "").trim(); });
     const enrollments = enrollmentSheet ? enrollmentSheet.getDataRange().getValues().slice(1)
       .filter(row => childIds.has(String(row[2] || "").trim()))
-      .map(row => ({ inscripcionId: row[0], extracurricularId: row[1], estudianteUserId: row[2],
-        responsableUserId: row[3], fechaRegistro: row[4], estado: row[5], cargoId: row[6],
-        monto: Number(row[7] || 0), transporteExtraordinarioJSON: row[8] || "{}", posicionListaEspera: row[10] || "" })) : [];
+      .map(row => {
+        const chargeId = String(row[6] || "").trim(), chargeState = chargeById[chargeId] || "";
+        const state = chargeId && extracurricularRoleKey_(chargeState) === "PAGADO" ? "Confirmada" : row[5];
+        return { inscripcionId: row[0], extracurricularId: row[1], estudianteUserId: row[2],
+          responsableUserId: row[3], fechaRegistro: row[4], estado: state, cargoId: chargeId,
+          cargoEstado: chargeState, monto: Number(row[7] || 0),
+          transporteExtraordinarioJSON: row[8] || "{}", posicionListaEspera: row[10] || "" };
+      }) : [];
     return { status: "success", children: children, enrollments: enrollments };
   } finally {
     lock.releaseLock();
