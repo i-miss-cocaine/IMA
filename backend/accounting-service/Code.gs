@@ -1636,66 +1636,88 @@ function getStoreProducts(payload) {
 }
 
 function createStoreOrder(payload) {
-  const { userId, compradorNombre, detalleItems, metodoPago, metodoEntrega, observaciones } = payload || {};
+  const { userId: requestedUserId, compradorNombre, detalleItems, metodoPago, metodoEntrega, observaciones } = payload || {};
   if (familyCreditIsRequested_(metodoPago)) throw new Error("FAMILY_CREDIT_PIN_APPROVAL_REQUIRED");
-  if (!userId || !Array.isArray(detalleItems) || detalleItems.length === 0) {
-    throw new Error("userId y lista de productos (detalleItems) son requeridos.");
-  }
+  if (!requestedUserId || !Array.isArray(detalleItems) || detalleItems.length === 0) throw new Error("userId y lista de productos (detalleItems) son requeridos.");
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const prodSheet = getOrCreateSheet(ss, "TiendaProductos");
-  const orderSheet = getOrCreateSheet(ss, "TiendaOrdenes");
-  const prodsData = prodSheet.getDataRange().getValues();
-  const now = new Date();
+  const actorId = String(payload && payload._verifiedUserId || "").trim();
+  const roleKey = String(payload && payload._verifiedRole || "").trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z]/g, "");
+  const studentRoles = ["ESTUDIANTE", "ALUMNO", "STUDENT"];
+  const guardianRoles = ["PADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"];
+  let userId = String(requestedUserId).trim();
+  if (studentRoles.indexOf(roleKey) !== -1) {
+    if (!actorId) throw new Error("FAMILY_CREDIT_VERIFIED_IDENTITY_REQUIRED");
+    userId = actorId;
+  } else if (guardianRoles.indexOf(roleKey) !== -1) {
+    if (!actorId) throw new Error("FAMILY_CREDIT_VERIFIED_IDENTITY_REQUIRED");
+    if (familyCreditGetActiveStudentUserIdsForGuardian_(ss, actorId).indexOf(userId) === -1) throw new Error("FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED");
+  }
 
-  let totalCalculado = 0;
-  const processedItems = [];
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  let prodSheet = null;
+  const changedStocks = [];
+  try {
+    prodSheet = getOrCreateSheet(ss, "TiendaProductos");
+    const orderSheet = getOrCreateSheet(ss, "TiendaOrdenes");
+    const prodsData = prodSheet.getDataRange().getValues();
+    const grouped = Object.create(null), order = [];
+    detalleItems.forEach(function(item) {
+      const productId = String(item && item.productoId || "").trim();
+      const quantity = item && item.cantidad !== undefined ? Number(item.cantidad) : 1;
+      if (!productId) throw new Error("PRODUCT_ID_REQUIRED");
+      if (!Number.isSafeInteger(quantity) || quantity <= 0) throw new Error("ORDER_QUANTITY_INVALID");
+      const productIndex = prodsData.findIndex(function(row, index) { return index > 0 && String(row[0] || "").trim() === productId; });
+      if (productIndex === -1) throw new Error("STORE_PRODUCT_NOT_FOUND");
+      const row = prodsData[productIndex], price = Number(row[5]), stock = Number(row[6]);
+      if (!Number.isFinite(price) || price < 0) throw new Error("STORE_PRODUCT_PRICE_INVALID");
+      if (!Number.isSafeInteger(stock) || stock < 0) throw new Error("STORE_PRODUCT_STOCK_INVALID");
+      if (!grouped[productId]) {
+        grouped[productId] = { productoId: productId, nombre: row[4], precio: price, cantidad: 0, stock: stock, rowNumber: productIndex + 1 };
+        order.push(productId);
+      }
+      grouped[productId].cantidad += quantity;
+      if (!Number.isSafeInteger(grouped[productId].cantidad)) throw new Error("ORDER_QUANTITY_INVALID");
+    });
+    let totalCalculado = 0;
+    const processedItems = order.map(function(productId) {
+      const item = grouped[productId];
+      if (item.cantidad > item.stock) throw new Error("STORE_INSUFFICIENT_STOCK");
+      item.subtotal = Math.round(item.precio * item.cantidad * 100) / 100;
+      totalCalculado += item.subtotal;
+      return { productoId: item.productoId, nombre: item.nombre, precio: item.precio, cantidad: item.cantidad, subtotal: item.subtotal };
+    });
+    if (!Number.isFinite(totalCalculado) || totalCalculado <= 0) throw new Error("ORDER_TOTAL_INVALID");
 
-  detalleItems.forEach(item => {
-    const pIdx = prodsData.findIndex(r => String(r[0]).trim() === String(item.productoId).trim());
-    if (pIdx !== -1) {
-      const pName = prodsData[pIdx][4];
-      const pPrice = parseFloat(prodsData[pIdx][5] || 0);
-      const qty = parseInt(item.cantidad || 1);
-      const sub = pPrice * qty;
-      totalCalculado += sub;
-
-      // Descontar inventario
-      const stockCur = parseInt(prodsData[pIdx][6] || 0);
-      const stockNew = Math.max(0, stockCur - qty);
-      prodSheet.getRange(pIdx + 1, 7).setValue(stockNew);
-      if (stockNew === 0) prodSheet.getRange(pIdx + 1, 9).setValue("agotado");
-
-      processedItems.push({ productoId: item.productoId, nombre: pName, precio: pPrice, cantidad: qty, subtotal: sub });
-    }
-  });
-
-  const ordenId = "ORD-" + now.getTime();
-  const pdfUrl = "https://newgeneration.edu.hn/comprobante-orden-" + ordenId + ".pdf";
-
-  orderSheet.appendRow([
-    ordenId,
-    now,
-    String(userId).trim(),
-    compradorNombre || "Comprador",
-    JSON.stringify(processedItems),
-    totalCalculado,
-    metodoPago || "Transferencia",
-    metodoPago === "CreditoFamiliar" ? "Confirmado" : "Pendiente",
-    "PendientePreparacion",
-    metodoEntrega || "RecogidaEnTienda",
-    pdfUrl,
-    observaciones || ""
-  ]);
-
-  return {
-    status: "success",
-    ordenId: ordenId,
-    totalCalculado: totalCalculado,
-    itemsProcesados: processedItems.length,
-    pdfComprobanteUrl: pdfUrl,
-    message: "Orden de tienda escolar registrada exitosamente."
-  };
+    const now = new Date(), ordenId = "ORD-" + Utilities.getUuid();
+    const pdfUrl = "https://newgeneration.edu.hn/comprobante-orden-" + ordenId + ".pdf";
+    Object.keys(grouped).forEach(function(productId) {
+      const item = grouped[productId], nextStock = item.stock - item.cantidad;
+      prodSheet.getRange(item.rowNumber, 7).setValue(nextStock);
+      changedStocks.push({ rowNumber: item.rowNumber, oldStock: item.stock });
+      if (nextStock === 0) {
+        const oldStatus = prodsData[item.rowNumber - 1][8];
+        prodSheet.getRange(item.rowNumber, 9).setValue("agotado");
+        changedStocks[changedStocks.length - 1].oldStatus = oldStatus;
+      }
+    });
+    orderSheet.appendRow([ordenId, now, userId, compradorNombre || "Comprador", JSON.stringify(processedItems),
+      totalCalculado, metodoPago || "Transferencia", "Pendiente", "PendientePreparacion",
+      metodoEntrega || "RecogidaEnTienda", pdfUrl, observaciones || ""]);
+    return { status: "success", ordenId: ordenId, totalCalculado: totalCalculado, itemsProcesados: processedItems.length,
+      pdfComprobanteUrl: pdfUrl, message: "Orden de tienda escolar registrada exitosamente." };
+  } catch (error) {
+    let rollbackFailed = false;
+    changedStocks.slice().reverse().forEach(function(change) {
+      try {
+        prodSheet.getRange(change.rowNumber, 7).setValue(change.oldStock);
+        if (change.oldStatus !== undefined) prodSheet.getRange(change.rowNumber, 9).setValue(change.oldStatus);
+      } catch (_) { rollbackFailed = true; }
+    });
+    if (rollbackFailed) throw new Error("STORE_ORDER_STOCK_ROLLBACK_FAILED: " + error.message);
+    throw error;
+  } finally { lock.releaseLock(); }
 }
 
 function getStoreOrders(payload) {
@@ -1864,62 +1886,89 @@ function getCafeteriaMenu(payload) {
 }
 
 function createCafeteriaOrder(payload) {
-  const { estudianteUserId, responsableUserId, detalleItems, turnoEntrega, metodoPago, observaciones } = payload || {};
+  const { estudianteUserId: requestedStudentId, responsableUserId: requestedGuardianId, detalleItems, turnoEntrega, metodoPago, observaciones } = payload || {};
   if (familyCreditIsRequested_(metodoPago || "CreditoFamiliar")) throw new Error("FAMILY_CREDIT_PIN_APPROVAL_REQUIRED");
-  if (!estudianteUserId || !Array.isArray(detalleItems) || detalleItems.length === 0) {
-    throw new Error("estudianteUserId y lista de alimentos (detalleItems) son requeridos.");
-  }
+  if (!requestedStudentId || !Array.isArray(detalleItems) || detalleItems.length === 0) throw new Error("estudianteUserId y lista de alimentos (detalleItems) son requeridos.");
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const menuSheet = getOrCreateSheet(ss, "CafeteriaMenu");
-  const orderSheet = getOrCreateSheet(ss, "CafeteriaPedidos");
-  const menuData = menuSheet.getDataRange().getValues();
-  const now = new Date();
+  const actorId = String(payload && payload._verifiedUserId || "").trim();
+  const roleKey = String(payload && payload._verifiedRole || "").trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z]/g, "");
+  const studentRoles = ["ESTUDIANTE", "ALUMNO", "STUDENT"];
+  const guardianRoles = ["PADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"];
+  let estudianteUserId = String(requestedStudentId).trim();
+  let responsableUserId = requestedGuardianId ? String(requestedGuardianId).trim() : estudianteUserId;
+  if (studentRoles.indexOf(roleKey) !== -1) {
+    if (!actorId) throw new Error("FAMILY_CREDIT_VERIFIED_IDENTITY_REQUIRED");
+    estudianteUserId = actorId; responsableUserId = actorId;
+  } else if (guardianRoles.indexOf(roleKey) !== -1) {
+    if (!actorId) throw new Error("FAMILY_CREDIT_VERIFIED_IDENTITY_REQUIRED");
+    if (requestedGuardianId && String(requestedGuardianId).trim() !== actorId) throw new Error("FAMILY_CREDIT_GUARDIAN_OWNERSHIP_REQUIRED");
+    if (familyCreditGetActiveStudentUserIdsForGuardian_(ss, actorId).indexOf(estudianteUserId) === -1) throw new Error("FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED");
+    responsableUserId = actorId;
+  }
 
-  let totalCalculado = 0;
-  const processedItems = [];
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  let menuSheet = null;
+  const changedStocks = [];
+  try {
+    menuSheet = getOrCreateSheet(ss, "CafeteriaMenu");
+    const orderSheet = getOrCreateSheet(ss, "CafeteriaPedidos");
+    const menuData = menuSheet.getDataRange().getValues();
+    const grouped = Object.create(null), order = [];
+    detalleItems.forEach(function(item) {
+      const dishId = String(item && item.platoId || "").trim();
+      const quantity = item && item.cantidad !== undefined ? Number(item.cantidad) : 1;
+      if (!dishId) throw new Error("CAFETERIA_ITEM_ID_REQUIRED");
+      if (!Number.isSafeInteger(quantity) || quantity <= 0) throw new Error("ORDER_QUANTITY_INVALID");
+      const itemIndex = menuData.findIndex(function(row, index) { return index > 0 && String(row[0] || "").trim() === dishId; });
+      if (itemIndex === -1) throw new Error("CAFETERIA_ITEM_NOT_FOUND");
+      const row = menuData[itemIndex], price = Number(row[3]), stock = Number(row[4]);
+      if (!Number.isFinite(price) || price < 0) throw new Error("CAFETERIA_ITEM_PRICE_INVALID");
+      if (!Number.isSafeInteger(stock) || stock < 0) throw new Error("CAFETERIA_ITEM_STOCK_INVALID");
+      if (!grouped[dishId]) {
+        grouped[dishId] = { platoId: dishId, nombre: row[2], precio: price, cantidad: 0, stock: stock, rowNumber: itemIndex + 1 };
+        order.push(dishId);
+      }
+      grouped[dishId].cantidad += quantity;
+      if (!Number.isSafeInteger(grouped[dishId].cantidad)) throw new Error("ORDER_QUANTITY_INVALID");
+    });
+    let totalCalculado = 0;
+    const processedItems = order.map(function(dishId) {
+      const item = grouped[dishId];
+      if (item.cantidad > item.stock) throw new Error("CAFETERIA_INSUFFICIENT_STOCK");
+      item.subtotal = Math.round(item.precio * item.cantidad * 100) / 100;
+      totalCalculado += item.subtotal;
+      return { platoId: item.platoId, nombre: item.nombre, precio: item.precio, cantidad: item.cantidad, subtotal: item.subtotal };
+    });
+    if (!Number.isFinite(totalCalculado) || totalCalculado <= 0) throw new Error("ORDER_TOTAL_INVALID");
 
-  detalleItems.forEach(item => {
-    const pIdx = menuData.findIndex(r => String(r[0]).trim() === String(item.platoId).trim());
-    if (pIdx !== -1) {
-      const pName = menuData[pIdx][2];
-      const pPrice = parseFloat(menuData[pIdx][3] || 0);
-      const qty = parseInt(item.cantidad || 1);
-      const sub = pPrice * qty;
-      totalCalculado += sub;
-
-      // Descontar inventario del menú diario
-      const stockCur = parseInt(menuData[pIdx][4] || 0);
-      const stockNew = Math.max(0, stockCur - qty);
-      menuSheet.getRange(pIdx + 1, 5).setValue(stockNew);
-      if (stockNew === 0) menuSheet.getRange(pIdx + 1, 10).setValue("agotado");
-
-      processedItems.push({ platoId: item.platoId, nombre: pName, precio: pPrice, cantidad: qty, subtotal: sub });
-    }
-  });
-
-  const pedidoId = "CAF-" + now.getTime();
-
-  orderSheet.appendRow([
-    pedidoId,
-    now,
-    String(estudianteUserId).trim(),
-    responsableUserId ? String(responsableUserId).trim() : String(estudianteUserId).trim(),
-    JSON.stringify(processedItems),
-    turnoEntrega || "Almuerzo Principal",
-    totalCalculado,
-    metodoPago || "CreditoFamiliar",
-    "Confirmado",
-    observaciones || ""
-  ]);
-
-  return {
-    status: "success",
-    pedidoId: pedidoId,
-    montoTotal: totalCalculado,
-    itemsProcesados: processedItems.length,
-    message: "Pedido de cafetería registrado exitosamente."
-  };
+    const now = new Date(), pedidoId = "CAF-" + Utilities.getUuid();
+    Object.keys(grouped).forEach(function(dishId) {
+      const item = grouped[dishId], nextStock = item.stock - item.cantidad;
+      menuSheet.getRange(item.rowNumber, 5).setValue(nextStock);
+      changedStocks.push({ rowNumber: item.rowNumber, oldStock: item.stock });
+      if (nextStock === 0) {
+        const oldStatus = menuData[item.rowNumber - 1][9];
+        menuSheet.getRange(item.rowNumber, 10).setValue("agotado");
+        changedStocks[changedStocks.length - 1].oldStatus = oldStatus;
+      }
+    });
+    orderSheet.appendRow([pedidoId, now, estudianteUserId, responsableUserId, JSON.stringify(processedItems),
+      turnoEntrega || "Almuerzo Principal", totalCalculado, metodoPago || "Transferencia", "Confirmado", observaciones || ""]);
+    return { status: "success", pedidoId: pedidoId, montoTotal: totalCalculado, itemsProcesados: processedItems.length,
+      message: "Pedido de cafetería registrado exitosamente." };
+  } catch (error) {
+    let rollbackFailed = false;
+    changedStocks.slice().reverse().forEach(function(change) {
+      try {
+        menuSheet.getRange(change.rowNumber, 5).setValue(change.oldStock);
+        if (change.oldStatus !== undefined) menuSheet.getRange(change.rowNumber, 10).setValue(change.oldStatus);
+      } catch (_) { rollbackFailed = true; }
+    });
+    if (rollbackFailed) throw new Error("CAFETERIA_ORDER_STOCK_ROLLBACK_FAILED: " + error.message);
+    throw error;
+  } finally { lock.releaseLock(); }
 }
 
 function getCafeteriaOrders(payload) {

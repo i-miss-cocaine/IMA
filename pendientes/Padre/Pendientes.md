@@ -349,6 +349,8 @@
 - **Corrección C1.732:** las consultas de tienda/cafetería fuerzan siempre el ID del alumno autenticado, ignorando cualquier ID de estudiante enviado por el cliente; el contrato comprueba que el resultado permanece limitado al actor.
 - **Corrección C1.731:** la consulta de tutor en cafetería filtra por estudiantes vinculados y no depende de `ResponsableUserId`, que en registros históricos puede ser el estudiante; se conserva compatibilidad con pedidos existentes.
 
+- **Mejora parcial C1.733:** creación de pedidos de tienda/cafetería protegida con `ScriptLock`; se valida catálogo, precio, cantidad y stock completo antes de descontar; los renglones duplicados se agregan; no se permite stock negativo; ante fallo al guardar el pedido se intenta restaurar el stock. El ID del pedido usa UUID. En creación, el estudiante queda asociado al ID verificado y el tutor solo puede crear pedidos para estudiantes vinculados. El crédito familiar sigue bloqueado; no se habilitaron débitos ni se declara completada TASK-210.
+
 - **Estado:** [ ] Pendiente; modalidad configurable definida, implementación financiera y de PIN pendiente.
 
 

@@ -321,3 +321,19 @@ C1.721 — IMA-EXEC-20261114-TASK200-01 — TASK-200 — Facturación automátic
 - **Verificación:** el primer workflow C1.730 falló en el contrato de lectura estudiantil por este desacuerdo; el test existente comprueba que el resultado se limita al actor autenticado. CI de la corrección queda pendiente.
 - **Estado:** TASK-210 sigue Pendiente; débitos familiares continúan bloqueados.
 ===============================================================================
+
+
+===============================================================================
+### C1.733 — IMA-EXEC-20261114-TASK210-ORDER-STOCK-GUARD-01 — Validación y concurrencia en creación de pedidos
+- **Continuidad:** C1.732; HEAD inicial `956793bb91efa121bfe9f1e84d2906c0aa76a5f7`; rama exclusiva `NG_beta_0.0.0.1_work`; rama base `44d9891132332e692dbe2ba8602b41f50a508a59` sin cambios.
+- **Implementación:** `createStoreOrder` y `createCafeteriaOrder` toman `ScriptLock` antes de leer existencias y mantienen el bloqueo hasta registrar pedido/stock. Se valida catálogo completo, cantidades enteras positivas, precio y stock numéricos, y disponibilidad de todas las líneas antes de descontar. Las líneas repetidas se agrupan; los IDs usan `Utilities.getUuid()`.
+- **Recuperación:** si falla el append del pedido después de descontar existencias, se restauran las cantidades/estados de stock modificados; si la restauración falla, se informa explícitamente `*_STOCK_ROLLBACK_FAILED`.
+- **Ownership:** las funciones de creación sustituyen el estudiante objetivo por `_verifiedUserId` para alumno; padre/tutor solo puede crear para estudiantes dentro de sus relaciones activas aprobadas. Los roles operativos conservan el alcance previo.
+- **Seguridad financiera:** las compras con `CreditoFamiliar` siguen rechazándose con `FAMILY_CREDIT_PIN_APPROVAL_REQUIRED`; `processFamilyCreditPurchase` continúa cerrado. No se habilita débito hasta terminar aprobación POR_COMPRA/POR_CUPO, ledger persistente, idempotencia, reversos y conciliación.
+- **Pruebas agregadas:** contrato Node cubre líneas duplicadas, stock insuficiente, producto inexistente, cantidad inválida, lock ocupado, rollback tras error de append, identidad del alumno y relación tutor-estudiante. **Ejecución local:** NOT RUN en este entorno; CI se dispara al publicar el commit y se verificará por separado. Apps Script/Sheets reales: NOT RUN.
+- **Revisión:** cambio limitado a las dos funciones de creación y al contrato relacionado; no se modificaron esquemas ni se eliminaron líneas de otros módulos.
+- **Estado:** hito parcial; TASK-210 permanece Pendiente y sin débitos familiares habilitados.
+- **Archivos:** `backend/accounting-service/Code.gs`; `tests/security/accounting-family-credit-preference.test.js`; backlog del padre; changelog; índice y este checkpoint.
+- **HEAD final:** se verificará tras el commit; rama base sin cambios.
+- **Siguiente acción:** implementar solicitud/aprobación POR_COMPRA con PIN desde el panel del tutor; luego débito/ledger durable, idempotencia persistente, conciliación y reversos de pedidos con pruebas de carrera y recuperación.
+===============================================================================

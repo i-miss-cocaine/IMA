@@ -36,7 +36,7 @@ function makeSheet(name) {
   return {
     getDataRange() { return { getValues() { return rows[name].map(r => r.slice()); } }; },
     getLastRow() { return rows[name].length; },
-    appendRow(row) { rows[name].push(row.slice()); },
+    appendRow(row) { if (failNextAppend) { failNextAppend = false; throw new Error('APPEND_FAIL'); } rows[name].push(row.slice()); },
     getRange(row, col) {
       return {
         setValue(value) {
@@ -57,7 +57,7 @@ function makeSheet(name) {
   };
 }
 const ss = { getSheetByName(name) { return rows[name] ? makeSheet(name) : null; } };
-let lockBusy = false, uuid = 0, lockReleased = false;
+let lockBusy = false, uuid = 0, lockReleased = false, failNextAppend = false;
 const context = {
   SPREADSHEET_ID: "TEST",
   SpreadsheetApp: { openById() { return ss; } },
@@ -271,4 +271,83 @@ assert.match(source, /FAMILY_CREDIT_PIN_TEMPORARILY_LOCKED/);
 assert.match(source, /safeRequestMeta/);
 assert.match(source, /pinSensitiveActions/);
 assert.doesNotMatch(source, /e \? e\.postData : null/);
+
+rows.TiendaProductos = [
+  ["ProductoID","Categoria","Codigo","Unidad","Nombre","Precio","Stock","Estado","Disponibilidad"],
+  ["PROD-1","","","","Cuaderno",10,5,"","Disponible"],
+  ["PROD-2","","","","Lápiz",2,2,"","Disponible"]
+];
+rows.TiendaOrdenes = [["OrdenID","Fecha","UserId","CompradorNombre","DetalleJSON","MontoTotal","MetodoPago","EstadoPago","EstadoEntrega","MetodoEntrega","PDF","Observaciones"]];
+const storeCreated = context.createStoreOrder({
+  userId: "STU-1", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
+  detalleItems: [{ productoId: "PROD-1", cantidad: 2 }, { productoId: "PROD-1", cantidad: 1 }],
+  metodoPago: "Transferencia"
+});
+assert.equal(storeCreated.status, "success");
+assert.equal(rows.TiendaProductos[1][6], 2, "duplicate line items must be aggregated before stock deduction");
+assert.equal(rows.TiendaOrdenes.length, 2);
+assert.equal(rows.TiendaOrdenes[1][7], "Pendiente");
+assert.throws(() => context.createStoreOrder({
+  userId: "STU-1", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
+  detalleItems: [{ productoId: "PROD-1", cantidad: 3 }], metodoPago: "Transferencia"
+}), /STORE_INSUFFICIENT_STOCK/);
+assert.equal(rows.TiendaProductos[1][6], 2, "insufficient stock must not change inventory");
+assert.throws(() => context.createStoreOrder({
+  userId: "STU-1", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
+  detalleItems: [{ productoId: "MISSING", cantidad: 1 }], metodoPago: "Transferencia"
+}), /STORE_PRODUCT_NOT_FOUND/);
+assert.throws(() => context.createStoreOrder({
+  userId: "STU-1", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
+  detalleItems: [{ productoId: "PROD-1", cantidad: -1 }], metodoPago: "Transferencia"
+}), /ORDER_QUANTITY_INVALID/);
+
+const storeOverride = context.createStoreOrder({
+  userId: "STU-2", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
+  detalleItems: [{ productoId: "PROD-2", cantidad: 1 }], metodoPago: "Transferencia"
+});
+assert.equal(rows.TiendaOrdenes[2][2], "STU-1", "student order creation must use verified student identity");
+assert.equal(storeOverride.status, "success");
+assert.throws(() => context.createStoreOrder({
+  userId: "STU-2", _verifiedUserId: "GUARD-1", _verifiedRole: "Padre",
+  detalleItems: [{ productoId: "PROD-2", cantidad: 1 }], metodoPago: "Transferencia"
+}), /FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED/);
+const stockBeforeAppendFailure = rows.TiendaProductos[2][6];
+failNextAppend = true;
+assert.throws(() => context.createStoreOrder({
+  userId: "STU-1", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
+  detalleItems: [{ productoId: "PROD-2", cantidad: 1 }], metodoPago: "Transferencia"
+}), /APPEND_FAIL/);
+assert.equal(rows.TiendaProductos[2][6], stockBeforeAppendFailure, "failed order persistence must roll back stock");
+
+const storeStockBeforeLock = rows.TiendaProductos[1][6];
+lockBusy = true;
+assert.throws(() => context.createStoreOrder({
+  userId: "STU-1", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
+  detalleItems: [{ productoId: "PROD-1", cantidad: 1 }], metodoPago: "Transferencia"
+}), /LOCK_BUSY/);
+lockBusy = false;
+assert.equal(rows.TiendaProductos[1][6], storeStockBeforeLock, "lock contention must not change stock");
+
+rows.CafeteriaMenu = [
+  ["PlatoID","Categoria","Nombre","Precio","Stock","","","","","Estado"],
+  ["FOOD-1","","Almuerzo",25,4,"","","","","Disponible"]
+];
+rows.CafeteriaPedidos = [["PedidoID","Fecha","EstudianteUserId","ResponsableUserId","DetalleJSON","Turno","Monto","MetodoPago","Estado","Observaciones"]];
+const cafeCreated = context.createCafeteriaOrder({
+  estudianteUserId: "STU-1", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
+  detalleItems: [{ platoId: "FOOD-1", cantidad: 2 }], metodoPago: "Efectivo"
+});
+assert.equal(cafeCreated.status, "success");
+assert.equal(rows.CafeteriaMenu[1][4], 2);
+assert.equal(rows.CafeteriaPedidos.length, 2);
+assert.throws(() => context.createCafeteriaOrder({
+  estudianteUserId: "STU-1", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
+  detalleItems: [{ platoId: "FOOD-1", cantidad: 3 }], metodoPago: "Efectivo"
+}), /CAFETERIA_INSUFFICIENT_STOCK/);
+assert.equal(rows.CafeteriaMenu[1][4], 2, "cafeteria stock must remain unchanged after rejection");
+assert.throws(() => context.createCafeteriaOrder({
+  estudianteUserId: "STU-1", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
+  detalleItems: [{ platoId: "FOOD-1", cantidad: 1 }], metodoPago: "CreditoFamiliar"
+}), /FAMILY_CREDIT_PIN_APPROVAL_REQUIRED/);
+
 console.log("TASK-210 family credit approval preference contract: PASS");
