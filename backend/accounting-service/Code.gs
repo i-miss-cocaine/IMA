@@ -15578,10 +15578,8 @@ function inventoryEnsureRequisitionSchema_(sheet) {
  headers.forEach((h,i)=>{if(!String(row[10+i]||"").trim())sheet.getRange(1,11+i).setValue(h);});
 }
 
-const INVENTORY_RESERVATION_HEADERS_=["ReservaID","SolicitudMatID","ItemID","ItemCodigo","Ubicacion","CantidadBase","Estado","CreadoEn","ActualizadoEn","ActorUserId"];
-const INVENTORY_REPLENISHMENT_HEADERS_=["PoliticaID","ItemID","ItemCodigo","Ubicacion","StockMinimo","StockMaximo","StockObjetivo","PlazoEntregaDias","Estado","ActualizadoPor","FechaActualizacion"];
-function inventoryEnsureReservations_(ss){return inventoryEnsureLedgerSheet_(ss,"InventoryReservations",INVENTORY_RESERVATION_HEADERS_);}
-function inventoryEnsureReplenishmentPolicies_(ss){return inventoryEnsureLedgerSheet_(ss,"InventoryReplenishmentPolicies",INVENTORY_REPLENISHMENT_HEADERS_);}
+function inventoryEnsureReservations_(ss){return inventoryEnsureLedgerSheet_(ss,"InventoryReservations",["ReservaID","SolicitudMatID","ItemID","ItemCodigo","Ubicacion","CantidadBase","Estado","CreadoEn","ActualizadoEn","ActorUserId"]);}
+function inventoryEnsureReplenishmentPolicies_(ss){return inventoryEnsureLedgerSheet_(ss,"InventoryReplenishmentPolicies",["PoliticaID","ItemID","ItemCodigo","Ubicacion","StockMinimo","StockMaximo","StockObjetivo","PlazoEntregaDias","Estado","ActualizadoPor","FechaActualizacion"]);}
 function inventoryPhysicalStock_(ss,itemCode,location){
  const sh=ss.getSheetByName("InventariosKardex");if(!sh)return 0;
  const rows=sh.getDataRange().getValues().slice(1),key=catalogNormalizeCode_(itemCode),loc=catalogNormalizeText_(location);let stock=0;
