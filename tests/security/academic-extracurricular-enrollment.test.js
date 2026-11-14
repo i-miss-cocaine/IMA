@@ -81,7 +81,8 @@ const sheets = {
   Usuarios: makeSheet(users),
   RelacionesFamiliares: makeSheet(relations),
   ActividadesExtracurriculares: makeSheet([activityHeaders]),
-  CargosEstudiante: makeSheet([chargeHeaders])
+  CargosEstudiante: makeSheet([chargeHeaders]),
+  TransporteRutas: makeSheet([["RutaID", "NombreRuta", "UnidadCodigo", "ConductorEmpleadoId", "Capacidad", "ParadasJSON", "Estado", "Observaciones"], ["RUTA-ESPECIAL-1", "Ruta evento", "BUS-1", "DRV-1", 30, "[]", "Activa", ""]])
 };
 const ss = {
   getSheetByName(name) { return sheets[name] || null; },
@@ -136,6 +137,10 @@ assert.throws(() => context.saveExtracurricularActivity({
 assert.throws(() => context.saveExtracurricularActivity({
   _verifiedRole: "Director", nombre: "Cupo inválido", categoria: "Deportiva", cupoMaximo: -1
 }), /EXTRACURRICULAR_CAPACITY_INVALID/);
+assert.throws(() => context.saveExtracurricularActivity({
+  _verifiedRole: "Director", nombre: "Ruta inválida", categoria: "Deportiva", cupoMaximo: 2,
+  transporteExtraordinarioJSON: { requiereTransporte: true, fechaEvento: "2027-02-10", destino: "Estadio", rutaId: "NO-EXISTE" }
+}), /EXTRACURRICULAR_TRANSPORT_ROUTE_NOT_AVAILABLE/);
 
 const first = context.enrollStudentInExtracurricular({
   _verifiedUserId: "G1", _verifiedRole: "Padre", estudianteUserId: "S1", extracurricularId: "EXTRA-1"
