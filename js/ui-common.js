@@ -2422,7 +2422,7 @@ window.loadInstitutionalComplementaryServicesAdmin = async function() {
         .replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
     const year = String(new Date().getFullYear());
     try {
-        const response = await fetchApi("ACCOUNTING", "getInstitutionalComplementaryServices", { anoLectivo: year });
+        const response = await fetchApi("ACCOUNTING", "getInstitutionalComplementaryServices", { anoLectivo: year, incluirHistorico: true });
         if (!response || response.status !== "success") throw new Error((response && response.message) || "No se pudo cargar el catálogo.");
         const services = response.services || [], legacy = response.legacyServices || [];
         panel.innerHTML = '<div class="space-y-5"><div><h2 class="text-lg font-black text-slate-800">Catálogo institucional de servicios complementarios</h2>' +
@@ -2456,7 +2456,7 @@ window.loadInstitutionalComplementaryServicesAdmin = async function() {
             ' · L ' + Number(item.tarifa || 0).toFixed(2) + ' · ' + escape(item.estado) + '</p></div><div class="flex gap-2">' +
             '<button type="button" data-edit-service="' + escape(item.servicioId) + '" class="rounded-lg border px-3 py-1.5 text-[11px] font-bold">Editar</button>' +
             '<button type="button" data-service-status="' + escape(item.servicioClave) + '" data-service-state="' + escape(item.estado) +
-            '" class="rounded-lg border px-3 py-1.5 text-[11px] font-bold">' + (String(item.estado).toUpperCase() === "ACTIVO" ? "Pausar" : "Activar") +
+            '" data-service-year="' + escape(item.anoLectivo || year) + '" class="rounded-lg border px-3 py-1.5 text-[11px] font-bold">' + (String(item.estado).toUpperCase() === "ACTIVO" ? "Pausar" : "Activar") +
             '</button></div></div>').join("") : '<p class="text-xs text-slate-500">No hay servicios personalizados para este período.</p>') +
           '</div></div></div>';
 
@@ -2522,7 +2522,7 @@ window.loadInstitutionalComplementaryServicesAdmin = async function() {
             try {
                 const nextState = String(button.getAttribute("data-service-state")).toUpperCase() === "ACTIVO" ? "PAUSADO" : "ACTIVO";
                 const result = await fetchApi("ACCOUNTING", "setInstitutionalComplementaryServiceStatus", {
-                    servicioClave: button.getAttribute("data-service-status"), anoLectivo: year, estado: nextState
+                    servicioClave: button.getAttribute("data-service-status"), anoLectivo: button.getAttribute("data-service-year") || year, estado: nextState
                 });
                 if (!result || result.status !== "success") throw new Error((result && result.message) || "No se pudo actualizar el servicio.");
                 window.loadInstitutionalComplementaryServicesAdmin();
