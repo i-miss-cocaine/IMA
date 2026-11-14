@@ -356,3 +356,23 @@
 - **Evidencia requerida:** snapshots sintéticos de Kardex, InventoryReservations, InventoryReplenishmentPolicies, requisiciones, órdenes/recepciones/transferencias y asientos; IDs de solicitud/reserva; cantidades físicas y comprometidas; cálculos de consumo, rotación y cobertura; logs de autorización, lock, reintento y rollback. No usar datos reales.
 - **Estado:** Pendiente beta. Contratos Node.js 24.22.2 y sintaxis de Apps Script/JavaScript aprobados en GitHub Actions; Apps Script/Sheets reales no ejecutados.
 ===============================================================================
+
+===============================================================================
+### BETA-FUNC-091 — TASK-200 — Facturación automática de transporte escolar
+- **Módulo/roles:** Transporte / Contabilidad / Director / Subdirector / Contador.
+- **Objetivo:** validar en Apps Script y Google Sheets desplegados la configuración de tarifas por ruta/modalidad, generación de cargos recurrentes, prorrateo y cancelación del servicio.
+- **Precondiciones:** entorno beta aislado; copia de respaldo de TransporteRutas, TransporteAsignaciones, TransporteTarifas, ConceptosCobro y CargosEstudiante; rutas, estudiantes y usuarios sintéticos; roles Director, Subdirector, Contador y un rol no autorizado.
+- **Pasos:**
+  1. Configurar tarifas vigentes de modalidad COMPLETA y MEDIA para una ruta; comprobar asociación con ConceptosCobro y rechazo de importes/roles inválidos.
+  2. Asignar un estudiante con tarifa vigente; comprobar que se crea un cargo en CargosEstudiante con clave TRN-MM-YYYY-ESTUDIANTE.
+  3. Asignar con fecha de inicio a mitad de mes y verificar el prorrateo por días activos.
+  4. Reprocesar el mismo mes; verificar que no duplica cargos.
+  5. Cancelar un servicio a mitad de mes; verificar ajuste prorrateado, estado cancelado y ausencia de cargos en períodos posteriores.
+  6. Repetir la cancelación y la generación mensual; comprobar idempotencia.
+  7. Probar ruta sin tarifa, configuración posterior y reprocesamiento; comprobar advertencia inicial y cargo al existir tarifa vigente.
+  8. Simular lock ocupado y dos operaciones concurrentes; verificar serialización y ausencia de cargos duplicados.
+  9. Probar sobrecapacidad de ruta y rol no autorizado; verificar denegación sin asignación ni cargo parcial.
+- **Resultado esperado:** cada asignación con tarifa vigente genera el cargo mensual correspondiente; los cargos se prorratean en altas/bajas, no se duplican y cesan en períodos posteriores a la cancelación.
+- **Evidencia requerida:** snapshots sintéticos de TransporteRutas, TransporteAsignaciones, TransporteTarifas, ConceptosCobro y CargosEstudiante; IDs de asignación/tarifa/cargo; importes y días prorrateados; claves idempotentes; logs de autorización, lock y rollback. No usar datos reales.
+- **Estado:** Pendiente beta. Contrato Node.js 24.22.2 y sintaxis Apps Script aprobados en GitHub Actions; Apps Script/Sheets reales no ejecutados.
+===============================================================================

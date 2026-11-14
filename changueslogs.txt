@@ -3575,3 +3575,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Node.js 24: accounting-catalog.test.js PASS; sintaxis Apps Script/JS PASS. GitHub Actions: Department Scope 43528354275, Department Reference Consumers 43528354359, Identity Mapping 43528354318 SUCCESS.
 - CLI local NOT RUN por fallo DNS de github.com; Apps Script/Sheets real NOT RUN. BETA-FUNC-088 pendiente beta.
 - Commits de implementación: 1e7160f, 331c1ef, 2727e6b, 83ceac2. HEAD de implementación 83ceac214a4429c7809796e94aac973b79348c9a; rama base 44d9891132332e692dbe2ba8602b41f50a508a59 sin cambios.
+
+[2026-11-14] TASK-200 — facturación automática de transporte escolar
+- Se incorporó TransporteTarifas por ruta/modalidad con vigencias y vínculo al concepto Transporte escolar en ConceptosCobro.
+- assignStudentTransport crea el cargo mensual correspondiente cuando existe tarifa vigente; generateTransportMonthlyCharges reprocesa por período con clave TRN-MM-YYYY-ESTUDIANTE e idempotencia.
+- Las altas y cancelaciones de mitad de mes calculan importes prorrateados; las cancelaciones detienen períodos futuros y registran ajustes trazables.
+- Se incorporaron control de permisos, ScriptLock, rollback de cargos y contratos Node para tarifa completa/media, alta, prorrateo, idempotencia, cancelación, capacidad, ruta sin tarifa y concurrencia.
+- CI final: Department Scope Contract 43603405636 SUCCESS; Identity Mapping and Transport Security 43603216507 SUCCESS; Department Reference Consumers 43603216493 SUCCESS. El primer run de Department Scope 43603216482 falló por sintaxis del nuevo fixture y se corrigió antes del run final.
+- Node.js 24.22.2 y syntax-check Apps Script PASS. CLI local NOT RUN; no se encontró package.json ni suite CLI independiente. Apps Script/Sheets real NOT RUN; BETA-FUNC-091 pendiente beta.
+- Commits de implementación y corrección de pruebas: adf8293f78c4dae974c98aafe30ca4ab65c61542, 6a621fb069f9acfd4b2c120fd78c8d46a50e289b. Rama base sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.

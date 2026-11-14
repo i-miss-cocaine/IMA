@@ -2801,7 +2801,7 @@
 ---
 
 <!-- ID: TASK-200 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [ ] [TASK-200] Facturación automática de servicios y cargos recurrentes en estados de cuenta
+### [x] [TASK-200] Facturación automática de servicios y cargos recurrentes en estados de cuenta
 - **Origen del Hallazgo:** `AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md` / Sección E (PT-21-44), Sección C (1.16) y Plan de Implementación TAREA 12
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Automatización de cobros mensuales, integridad financiera y conciliación de servicios)
@@ -2824,7 +2824,8 @@
   - Asignar transporte genera el cargo correspondiente en el estado de cuenta mensual.
   - Reprocesar la facturación no duplica cargos del mismo mes.
   - Cancelar el servicio detiene los cobros futuros de manera transparente.
-- **Estado:** [ ] Pendiente
+- **Evidencia de implementación y verificación:** TransporteTarifas por ruta/modalidad; asignación vinculada a ConceptosCobro/CargosEstudiante; clave idempotente TRN-MM-YYYY-ESTUDIANTE; prorrateo de altas y cancelaciones con ajustes; cancelación bloquea períodos futuros. Contrato Node.js 24.22.2 y sintaxis Apps Script PASS en GitHub Actions.
+- **Estado:** [x] Completada en código, revisión y CI; pendiente validación beta desplegada.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 8300-8322; clave TASK-205; asignación única: Contabilidad -->
 
