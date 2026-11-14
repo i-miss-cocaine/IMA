@@ -261,8 +261,6 @@ assert.ok(rows.CreditoFamiliarConfiguracion[1][9] instanceof Date, "five failed 
 assert.throws(() => context.configureFamilyCreditPin({ _verifiedUserId: "GUARD-1", _verifiedRole: "Padre", currentPin: "654321", newPin: "111111", confirmPin: "111111" }), /FAMILY_CREDIT_PIN_TEMPORARILY_LOCKED/);
 
 assert.throws(() => context.processFamilyCreditPurchase({ _verifiedUserId: "GUARD-1", _verifiedRole: "Padre", estudianteUserId: "STU-1", establecimiento: "TIENDA", origenRefId: "ORD-4", familyPin: "654321" }), /FAMILY_CREDIT_PIN_TEMPORARILY_LOCKED/);
-assert.throws(() => context.createStoreOrder({ userId: "STU-1", metodoPago: "CreditoFamiliar", detalleItems: [] }), /FAMILY_CREDIT_PIN_APPROVAL_REQUIRED/);
-assert.throws(() => context.createCafeteriaOrder({ estudianteUserId: "STU-1", detalleItems: [] }), /FAMILY_CREDIT_PIN_APPROVAL_REQUIRED/);
 
 assert.throws(() => context.configureFamilyCreditApprovalPreference({
   _verifiedUserId: "GUARD-1", _verifiedRole: "Padre", modalidadAprobacion: "CUALQUIERA"
@@ -321,6 +319,12 @@ assert.equal(storeCreated.status, "success");
 assert.equal(rows.TiendaProductos[1][6], 2, "duplicate line items must be aggregated before stock deduction");
 assert.equal(rows.TiendaOrdenes.length, 2);
 assert.equal(rows.TiendaOrdenes[1][7], "Pendiente");
+const storeCreditCreated = context.createStoreOrder({
+  userId: "STU-1", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
+  detalleItems: [{ productoId: "PROD-1", cantidad: 1 }], metodoPago: "CreditoFamiliar"
+});
+assert.equal(storeCreditCreated.status, "success");
+assert.equal(rows.TiendaOrdenes[2][7], "PendienteAprobacionFamiliar", "family credit orders must await guardian PIN approval");
 assert.throws(() => context.createStoreOrder({
   userId: "STU-1", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
   detalleItems: [{ productoId: "PROD-1", cantidad: 3 }], metodoPago: "Transferencia"
@@ -374,6 +378,12 @@ const cafeCreated = context.createCafeteriaOrder({
 assert.equal(cafeCreated.status, "success");
 assert.equal(rows.CafeteriaMenu[1][4], 2);
 assert.equal(rows.CafeteriaPedidos.length, 2);
+const cafeCreditCreated = context.createCafeteriaOrder({
+  estudianteUserId: "STU-1", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
+  detalleItems: [{ platoId: "FOOD-1", cantidad: 1 }], metodoPago: "CreditoFamiliar"
+});
+assert.equal(cafeCreditCreated.status, "success");
+assert.equal(rows.CafeteriaPedidos[2][8], "PendienteAprobacionFamiliar", "family credit cafeteria orders must await guardian PIN approval");
 assert.throws(() => context.createCafeteriaOrder({
   estudianteUserId: "STU-1", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
   detalleItems: [{ platoId: "FOOD-1", cantidad: 3 }], metodoPago: "Efectivo"
