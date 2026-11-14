@@ -3672,3 +3672,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - En creación, el alumno usa siempre su ID de sesión verificado; padre/tutor solo puede crear pedidos para estudiantes con relación activa aprobada.
 - Se amplió el contrato Node para stock insuficiente, producto inexistente, cantidad inválida, duplicados, lock ocupado, rollback ante error de append y ownership.
 - El crédito familiar continúa bloqueado en ambos callsites y `processFamilyCreditPurchase`; no se habilitaron débitos ni se completó TASK-210.
+
+
+[2026-11-14] TASK-210 — aprobación POR_COMPRA/POR_CUPO, ledger y reversos familiares (C1.734)
+- POR_COMPRA: pedidos de tienda/cafetería esperan aprobación explícita del tutor con PIN; la aprobación valida identidad/relación, autorización, límites y referencia única bajo ScriptLock.
+- POR_CUPO: el tutor aprueba el cupo con PIN; compras posteriores registran débito automáticamente dentro de límites y quedan vinculadas al responsable financiero.
+- Cancelaciones, rechazos, devoluciones y reembolsos crean movimientos de reversión idempotentes, restauran saldo usado y liberan límites de consumo; los errores de persistencia no dejan un débito parcial silencioso.
+- El estado de cuenta presenta crédito familiar por separado de colegiatura para evitar duplicar cargos en CargosEstudiante.
+- Contrato Node.js 24.22.2 PASS y sintaxis Apps Script PASS en GitHub Actions. CI final de código: 43625477144/146/154 SUCCESS; contrato ampliado: 43625761904 SUCCESS.
+- Queda pendiente verificar/construir conciliación de reportes de ventas contra movimientos aprobados y reversos; Apps Script/Sheets reales y CLI no ejecutados.
+- TASK-210 continúa Pendiente; no se declara cerrada.

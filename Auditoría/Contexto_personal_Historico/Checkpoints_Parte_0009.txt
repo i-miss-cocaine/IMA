@@ -337,3 +337,21 @@ C1.721 — IMA-EXEC-20261114-TASK200-01 — TASK-200 — Facturación automátic
 - **HEAD final:** se verificará tras el commit; rama base sin cambios.
 - **Siguiente acción:** implementar solicitud/aprobación POR_COMPRA con PIN desde el panel del tutor; luego débito/ledger durable, idempotencia persistente, conciliación y reversos de pedidos con pruebas de carrera y recuperación.
 ===============================================================================
+
+
+===============================================================================
+### C1.734 — IMA-EXEC-20261114-TASK210-FAMILY-CREDIT-FLOW-02 — Aprobación y reversión de crédito familiar
+- **Continuidad:** C1.733; HEAD inicial 99f0c2a195d648a7d112f5faa34c1b42ad8c6da8; rama exclusiva NG_beta_0.0.0.1_work; rama base 44d9891132332e692dbe2ba8602b41f50a508a59 sin cambios.
+- **Implementación POR_COMPRA:** pedidos de tienda y cafetería quedan en PendienteAprobacionFamiliar; el tutor vinculado revisa y aprueba con PIN. processFamilyCreditPurchase verifica actor, relación activa, autorización, modalidad, PIN, límites diario/mensual y referencia persistente; registra un solo movimiento y actualiza saldo. Reintentos idénticos devuelven resultado idempotente.
+- **Implementación POR_CUPO:** la autorización del cupo exige PIN del tutor y registra PinApprovedBy/PinApprovedAt; las compras posteriores validan la autorización vigente y registran el débito sin solicitar PIN en cada pedido. El tutor financiero se obtiene de la autorización server-side.
+- **Reversos:** updateStoreOrderStatus y updateCafeteriaOrderStatus procesan cancelaciones/rechazos/devoluciones/reembolsos. Se crea un movimiento negativo vinculado al movimiento aprobado, se restaura el saldo usado y la repetición no duplica el reverso. Los consumos reembolsados se excluyen de límites diario/mensual. Si falla la escritura del reverso, se conserva el estado financiero original o se marca el intento de reversión como anulado.
+- **Estado de cuenta:** los movimientos aprobados y reversados se muestran en sección familiar separada y no se suman de nuevo a CargosEstudiante ni al saldo pendiente de colegiatura; el contrato verifica que el saldo escolar permanezca intacto.
+- **Interfaz:** se corrigieron las expresiones regulares de PIN y normalización de estado para la bandeja de pedidos pendientes del tutor.
+- **Pruebas:** tests/security/accounting-family-credit-preference.test.js cubre almacenamiento HMAC/salt, roles/relaciones, POR_COMPRA, POR_CUPO, pedidos de ambos establecimientos, límites, idempotencia, reversos, bloqueo por ScriptLock, rollback y stock. Node.js 24.22.2 PASS en GitHub Actions; syntax-check Apps Script PASS.
+- **CI:** código 48650223c8d315cd7b68115379f0554d762f46d6: Department Scope run 43625477144 SUCCESS; Identity Mapping 43625477146 SUCCESS; Department Reference Consumers 43625477154 SUCCESS. Contrato extendido commit 5f8f5f2619789061e8c20fc4b162f540b32acced: Department Scope run 43625761904 SUCCESS.
+- **Archivos de código/prueba:** backend/accounting-service/Code.gs, js/ui-common.js, tests/security/accounting-family-credit-preference.test.js. Se actualizaron además backlog del padre, changelog, índice y este checkpoint.
+- **Límites:** Node se ejecutó en CI, no en una segunda ejecución local independiente; no hay paquete/comando CLI de proyecto identificado; Apps Script/Sheets reales no se ejecutaron. No se verificó aún un reporte consolidado de ventas que concilie exactamente pedidos, movimientos aprobados y reversos.
+- **Estado:** hito parcial verificado; TASK-210 permanece Pendiente por conciliación de reportes de ventas y cierre integral. No se marca completada.
+- **HEAD final:** se verificará tras publicar el commit documental; rama base debe permanecer en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Siguiente acción:** localizar reportes de ventas y conciliar sus totales netos con movimientos aprobados menos reversos; ampliar pruebas y cerrar TASK-210 solo con evidencia.
+===============================================================================
