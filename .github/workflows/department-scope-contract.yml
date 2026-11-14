@@ -31,6 +31,7 @@ on:
       - tests/security/accounting-monthly-charge-period.test.js
       - tests/security/academic-enrollment-billing-integration.test.js
       - tests/security/academic-extracurricular-enrollment.test.js
+      - tests/security/accounting-complementary-services.test.js
       - tests/security/academic-admission-ownership.test.js
       - tests/security/user-service-signature-ownership.test.js
       - tests/security/accounting-departmental-resource-access.test.js
@@ -168,6 +169,8 @@ jobs:
         run: node tests/security/academic-enrollment-billing-integration.test.js
       - name: Run extracurricular capacity, family enrollment and billing contract
         run: node tests/security/academic-extracurricular-enrollment.test.js
+      - name: Run institutional complementary services catalog contract
+        run: node tests/security/accounting-complementary-services.test.js
       - name: Run academic admission ownership contract
         run: node tests/security/academic-admission-ownership.test.js
       - name: Run user-service signature ownership contract
