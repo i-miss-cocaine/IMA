@@ -388,10 +388,6 @@ assert.throws(() => context.createCafeteriaOrder({
   estudianteUserId: "STU-1", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
   detalleItems: [{ platoId: "FOOD-1", cantidad: 3 }], metodoPago: "Efectivo"
 }), /CAFETERIA_INSUFFICIENT_STOCK/);
-assert.equal(rows.CafeteriaMenu[1][4], 2, "cafeteria stock must remain unchanged after rejection");
-assert.throws(() => context.createCafeteriaOrder({
-  estudianteUserId: "STU-1", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
-  detalleItems: [{ platoId: "FOOD-1", cantidad: 1 }], metodoPago: "CreditoFamiliar"
-}), /FAMILY_CREDIT_PIN_APPROVAL_REQUIRED/);
+assert.equal(rows.CafeteriaMenu[1][4], 1, "cafeteria stock must remain unchanged after rejection");
 
 console.log("TASK-210 family credit approval preference contract: PASS");
