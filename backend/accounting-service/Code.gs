@@ -2567,7 +2567,9 @@ function getFamilyCreditSalesReconciliation(payload) {
         return;
       }
       if (!originals.length) {
-        if (isPending) summary[order.establishment].pedidosPendientes++;
+        if (order.state === "ReversadoCreditoFamiliar") {
+          discrepancies.push({ codigo: "REVERSED_ORDER_WITHOUT_MOVEMENT", establecimiento: order.establishment, referencia: order.id });
+        } else if (isPending) summary[order.establishment].pedidosPendientes++;
         else if (!isCancelled) discrepancies.push({ codigo: "APPROVED_ORDER_WITHOUT_MOVEMENT", establecimiento: order.establishment, referencia: order.id });
         return;
       }
@@ -2585,10 +2587,14 @@ function getFamilyCreditSalesReconciliation(payload) {
         return;
       }
       if (reversalRows.length === 1) {
-        const reversal = reversalRows[0], reversalAmount = Number(reversal[6]);
-        if (!Number.isFinite(reversalAmount) || Math.round(reversalAmount * 100) !== Math.round(amount * 100) ||
-            normalizeEstablishment(reversal[5]) !== order.establishment) {
-          discrepancies.push({ codigo: "REVERSAL_AMOUNT_OR_ESTABLISHMENT_MISMATCH", establecimiento: order.establishment, referencia: order.id });
+        const reversal = reversalRows[0], rawReversalAmount = Number(reversal[6]);
+        const reversalAmount = Number.isFinite(rawReversalAmount) && rawReversalAmount > 0 ? rawReversalAmount : 0;
+        if (!reversalAmount || Math.round(reversalAmount * 100) !== Math.round(amount * 100) ||
+            normalizeEstablishment(reversal[5]) !== order.establishment ||
+            String(reversal[2] || "").trim() !== String(original[2] || "").trim() ||
+            String(reversal[3] || "").trim() !== String(original[3] || "").trim() ||
+            String(reversal[4] || "").trim() !== String(original[4] || "").trim()) {
+          discrepancies.push({ codigo: "REVERSAL_AMOUNT_OR_OWNER_MISMATCH", establecimiento: order.establishment, referencia: order.id });
         }
         if (!isCancelled) discrepancies.push({ codigo: "REVERSED_ORDER_NOT_CANCELLED", establecimiento: order.establishment, referencia: order.id });
         summary[order.establishment].pedidosReversados++;
