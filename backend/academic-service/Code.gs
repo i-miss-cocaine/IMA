@@ -6069,9 +6069,11 @@ function extracurricularGuardianCanManageStudent_(ss, guardianUserId, studentUse
   if (!guardian || !student) return false;
   const guardianPersonId = String(guardian[9] || "").trim();
   const studentPersonId = String(student[9] || "").trim();
+  const guardianRole = extracurricularRoleKey_(guardian[6]);
   const studentRole = extracurricularRoleKey_(student[6]);
   const studentState = extracurricularRoleKey_(student[10] || "Activo");
   if (!guardianPersonId || !studentPersonId ||
+      ["PADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(guardianRole) === -1 ||
       ["ESTUDIANTE", "ALUMNO", "STUDENT"].indexOf(studentRole) === -1 ||
       ["INACTIVO", "INACTIVE", "BAJA"].indexOf(studentState) !== -1) return false;
   const now = new Date();
@@ -6139,20 +6141,6 @@ function saveExtracurricularActivity(payload) {
   const data = payload || {};
   const name = String(data.nombre || "").trim(), category = String(data.categoria || "").trim();
   if (!name || !category) throw new Error("EXTRACURRICULAR_NAME_AND_CATEGORY_REQUIRED");
-  const capacity = data.cupoMaximo === undefined || data.cupoMaximo === null || data.cupoMaximo === "" ? 0 : Number(data.cupoMaximo);
-  const fee = data.tarifa === undefined || data.tarifa === null || data.tarifa === "" ? 0 : Number(data.tarifa);
-  if (!Number.isSafeInteger(capacity) || capacity < 0) throw new Error("EXTRACURRICULAR_CAPACITY_INVALID");
-  if (!Number.isFinite(fee) || fee < 0) throw new Error("EXTRACURRICULAR_FEE_INVALID");
-  let transport = {};
-  try {
-    transport = typeof data.transporteExtraordinarioJSON === "string"
-      ? JSON.parse(data.transporteExtraordinarioJSON || "{}")
-      : (data.transporteExtraordinarioJSON || {});
-  } catch (_) { throw new Error("EXTRACURRICULAR_TRANSPORT_JSON_INVALID"); }
-  if (transport && transport.requiereTransporte &&
-      (!String(transport.fechaEvento || "").trim() || !String(transport.destino || "").trim())) {
-    throw new Error("EXTRACURRICULAR_TRANSPORT_DETAILS_REQUIRED");
-  }
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
@@ -6162,14 +6150,34 @@ function saveExtracurricularActivity(payload) {
     const targetId = String(data.extracurricularId || ("EXTRA-" + Utilities.getUuid())).trim();
     const existingIndex = rows.findIndex((row, index) => index > 0 && String(row[0] || "").trim() === targetId);
     const previous = existingIndex > 0 ? rows[existingIndex] : [];
+    const capacity = data.cupoMaximo === undefined || data.cupoMaximo === null || data.cupoMaximo === ""
+      ? Number(previous[10] || 0) : Number(data.cupoMaximo);
+    const fee = data.tarifa === undefined || data.tarifa === null || data.tarifa === ""
+      ? Number(previous[11] || 0) : Number(data.tarifa);
+    if (!Number.isSafeInteger(capacity) || capacity < 0) throw new Error("EXTRACURRICULAR_CAPACITY_INVALID");
+    if (!Number.isFinite(fee) || fee < 0) throw new Error("EXTRACURRICULAR_FEE_INVALID");
+    let transport = {};
+    try {
+      const transportInput = data.transporteExtraordinarioJSON === undefined ? previous[12] : data.transporteExtraordinarioJSON;
+      transport = typeof transportInput === "string" ? JSON.parse(transportInput || "{}") : (transportInput || {});
+    } catch (_) { throw new Error("EXTRACURRICULAR_TRANSPORT_JSON_INVALID"); }
+    if (transport && transport.requiereTransporte &&
+        (!String(transport.fechaEvento || "").trim() || !String(transport.destino || "").trim())) {
+      throw new Error("EXTRACURRICULAR_TRANSPORT_DETAILS_REQUIRED");
+    }
+    const encode = function(value, fallback) {
+      if (value === undefined || value === null || value === "") return fallback;
+      return typeof value === "object" ? JSON.stringify(value) : String(value);
+    };
     const values = [
-      targetId, data.anoId || "2026", name, category,
-      typeof data.horarioJSON === "object" ? JSON.stringify(data.horarioJSON) : (data.horarioJSON || "{}"),
-      typeof data.encargadosJSON === "object" ? JSON.stringify(data.encargadosJSON) : (data.encargadosJSON || "[]"),
-      typeof data.supervisoresJSON === "object" ? JSON.stringify(data.supervisoresJSON) : (data.supervisoresJSON || "[]"),
-      data.estado || previous[7] || "Programada", data.evidenciasDriveFolderId || previous[8] || "",
-      previous[9] || "[]", capacity, fee, JSON.stringify(transport), data.fechaInicio || previous[13] || "",
-      data.fechaFin || previous[14] || ""
+      targetId, data.anoId || previous[1] || "2026", name, category,
+      encode(data.horarioJSON, previous[4] || "{}"),
+      encode(data.encargadosJSON, previous[5] || "[]"),
+      encode(data.supervisoresJSON, previous[6] || "[]"),
+      data.estado || previous[7] || "Programada",
+      data.evidenciasDriveFolderId || previous[8] || "",
+      previous[9] || "[]", capacity, fee, JSON.stringify(transport),
+      data.fechaInicio || previous[13] || "", data.fechaFin || previous[14] || ""
     ];
     if (existingIndex > 0) sheet.getRange(existingIndex + 1, 1, 1, values.length).setValues([values]);
     else sheet.appendRow(values);
