@@ -3629,3 +3629,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Hasta implementar y verificar el PIN, las compras con crédito familiar se rechazan en processFamilyCreditPurchase, createStoreOrder y createCafeteriaOrder. No se habilitan débitos por el solo hecho de guardar la modalidad.
 - Contrato Node aislado para preferencias, identidad, relación familiar, propiedad y fallo seguro PASS en Node.js 22.16.0. Test integrado al workflow Department Scope; ejecución CI y sintaxis completa pendientes.
 - TASK-210 permanece Pendiente: falta alta/cambio/recuperación y verificación segura del PIN, integración financiera de pedidos, ledger persistente, idempotencia, concurrencia, conciliación y reversos.
+
+[2026-11-14] TASK-210 — PIN familiar protegido y aprobación de cupo (C1.728)
+- Alta de PIN de 6 dígitos desde el panel del tutor; cambios posteriores requieren PIN actual. Hash HMAC-SHA256 con salt por tutor y AUTH_TOKEN_SECRET; sin PIN en texto claro.
+- Protección por intentos: quinto PIN incorrecto bloquea durante 15 minutos; contador y bloqueo persisten bajo ScriptLock.
+- Migración compatible de CreditoFamiliarConfiguracion (5→10 columnas) y CreditoFamiliarAutorizaciones (10→13 columnas). POR_CUPO requiere PIN para autorizar el cupo y guarda aprobador/fecha; POR_COMPRA aún requiere integrar verificación en cada pedido.
+- Se sanitizan campos PIN en logs; doPost deja de registrar el cuerpo HTTP crudo y omite por completo el payload de las acciones que transportan PIN.
+- Crédito familiar sigue deshabilitado en pedidos mientras no estén integrados PIN por compra, ledger, idempotencia durable, stock transaccional y reversos.

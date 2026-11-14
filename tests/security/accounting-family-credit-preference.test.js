@@ -28,8 +28,8 @@ const rows = Object.create(null);
 const headers = {
   Usuarios: ["UserId","Nombre","Grado","Seccion","Email","PasswordHash","Rol","Telefono","NumeroLista","PersonaID","Estado"],
   RelacionesFamiliares: ["RelacionID","PersonaEstudianteID","PersonaResponsableID","TipoParentesco","EstadoAutorizacion","FechaInicio","FechaFin","Observaciones"],
-  CreditoFamiliarConfiguracion: ["ConfiguracionID","ResponsableUserID","ModalidadAprobacion","FechaActualizacion","ActualizadoPor"],
-  CreditoFamiliarAutorizaciones: ["AutorizacionID","Fecha","ResponsableUserId","EstudianteUserId","LimiteDiario","LimiteMensual","SaldoUsado","Estado","FechaVencimiento","Observaciones"]
+  CreditoFamiliarConfiguracion: ["ConfiguracionID","ResponsableUserID","ModalidadAprobacion","FechaActualizacion","ActualizadoPor","PinSalt","PinHash","PinUpdatedAt","FailedAttempts","LockedUntil"],
+  CreditoFamiliarAutorizaciones: ["AutorizacionID","Fecha","ResponsableUserId","EstudianteUserId","LimiteDiario","LimiteMensual","SaldoUsado","Estado","FechaVencimiento","Observaciones","ModalidadAprobacion","PinApprovedBy","PinApprovedAt"]
 };
 function makeSheet(name) {
   if (!rows[name]) rows[name] = headers[name] ? [headers[name].slice()] : [];
@@ -64,6 +64,8 @@ const context = {
   LockService: { getScriptLock() { return { waitLock() { if (lockBusy) throw new Error("LOCK_BUSY"); }, releaseLock() { lockReleased = true; } }; } },
   Utilities: { getUuid() { return "UUID-" + (++uuid); } },
   getOrCreateSheet(db, name) { return makeSheet(name); },
+  computeHmacSignature(message, secret) { return "HMAC:" + secret + ":" + message; },
+  getAuthTokenSecret() { return "test-secret-012345678901234567890123456789"; },
   transportParseDate_(value) {
     if (!value) return null;
     const date = value instanceof Date ? value : new Date(value);
@@ -72,8 +74,13 @@ const context = {
   Date, String, Object, Array, JSON, Error, console
 };
 vm.createContext(context);
-const names = ["familyCreditApprovalActor_", "familyCreditGuardianHasActiveStudentRelation_", "familyCreditGuardianCanAuthorizeStudent_", "familyCreditIsRequested_", "getFamilyCreditApprovalPreference", "configureFamilyCreditApprovalPreference", "configureFamilyCreditAuthorization", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase", "createStoreOrder", "createCafeteriaOrder"];
+const names = ["sanitizePayloadForLog", "familyCreditEnsureConfigSheet_", "familyCreditEnsureAuthorizationSheet_", "familyCreditPinDigest_", "familyCreditConstantTimeEquals_", "familyCreditVerifyPinInConfig_", "familyCreditApprovalActor_", "familyCreditGuardianHasActiveStudentRelation_", "familyCreditGuardianCanAuthorizeStudent_", "familyCreditIsRequested_", "getFamilyCreditApprovalPreference", "configureFamilyCreditApprovalPreference", "configureFamilyCreditPin", "configureFamilyCreditAuthorization", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase", "createStoreOrder", "createCafeteriaOrder"];
 vm.runInContext(names.map(extractFunction).join("\n"), context);
+const sanitizedPinPayload = context.sanitizePayloadForLog({ familyPin: "123456", currentPin: "654321", newPin: "111111", nested: { pinHash: "HASH-ONLY", authToken: "SESSION-TOKEN" } });
+assert.equal(sanitizedPinPayload.includes("123456"), false);
+assert.equal(sanitizedPinPayload.includes("654321"), false);
+assert.equal(sanitizedPinPayload.includes("111111"), false);
+assert.match(sanitizedPinPayload, /MASKED/);
 
 rows.Usuarios = [
   headers.Usuarios,
@@ -87,13 +94,18 @@ rows.RelacionesFamiliares = [
   ["REL-1","PERSON-S","PERSON-G","Madre","Aprobado","","",""],
   ["REL-2","PERSON-S2","PERSON-OTHER","Madre","Aprobado","","",""]
 ];
+rows.CreditoFamiliarConfiguracion = [
+  headers.CreditoFamiliarConfiguracion.slice(0, 5),
+  ["CFG-LEGACY", "GUARD-1", "", new Date(), "GUARD-1"]
+];
 
 rows.CreditoFamiliarAutorizaciones = [
-  headers.CreditoFamiliarAutorizaciones,
+  headers.CreditoFamiliarAutorizaciones.slice(0, 10),
   ["AUT-1", new Date(), "GUARD-1", "STU-1", 50, 500, 10, "Activa", "", ""],
   ["AUT-2", new Date(), "OTHER-G", "STU-2", 60, 600, 20, "Activa", "", ""]
 ];
 const guardianAuthorizations = context.getFamilyCreditAuthorizations({ _verifiedUserId: "GUARD-1", _verifiedRole: "Padre" });
+assert.equal(rows.CreditoFamiliarAutorizaciones[0].length, 13, "legacy ten-column authorization sheet must be migrated");
 assert.equal(guardianAuthorizations.autorizaciones.length, 1);
 assert.equal(guardianAuthorizations.autorizaciones[0].estudianteUserId, "STU-1");
 const studentAuthorizations = context.getFamilyCreditAuthorizations({ _verifiedUserId: "STU-1", _verifiedRole: "Estudiante" });
@@ -104,8 +116,11 @@ assert.throws(() => context.getFamilyCreditAuthorizations({ _verifiedUserId: "GU
 
 
 const loaded = context.getFamilyCreditApprovalPreference({ _verifiedUserId: "GUARD-1", _verifiedRole: "Padre" });
+assert.equal(rows.CreditoFamiliarConfiguracion[0].length, 10, "legacy five-column config sheet must be migrated");
+assert.equal(rows.CreditoFamiliarConfiguracion[0][5], "PinSalt");
 assert.equal(loaded.configured, false);
 assert.equal(loaded.modalidadAprobacion, null);
+assert.equal(loaded.pinConfigured, false);
 
 const saved = context.configureFamilyCreditApprovalPreference({
   _verifiedUserId: "GUARD-1", _verifiedRole: "Padre",
@@ -115,6 +130,23 @@ assert.equal(saved.status, "success");
 assert.equal(saved.modalidadAprobacion, "POR_CUPO");
 assert.equal(rows.CreditoFamiliarConfiguracion[1][1], "GUARD-1", "actor must come from verified session, never caller payload");
 assert.equal(rows.CreditoFamiliarConfiguracion[1][4], "GUARD-1");
+const pinSaved = context.configureFamilyCreditPin({
+  _verifiedUserId: "GUARD-1", _verifiedRole: "Padre", newPin: "123456", confirmPin: "123456"
+});
+assert.equal(pinSaved.pinConfigured, true);
+assert.notEqual(rows.CreditoFamiliarConfiguracion[1][6], "123456", "PIN must never be stored in plaintext");
+assert.equal(rows.CreditoFamiliarConfiguracion[1][5].length > 0, true, "PIN salt must be stored");
+assert.equal(context.getFamilyCreditApprovalPreference({ _verifiedUserId: "GUARD-1", _verifiedRole: "Padre" }).pinConfigured, true);
+assert.throws(() => context.configureFamilyCreditPin({
+  _verifiedUserId: "GUARD-1", _verifiedRole: "Padre", newPin: "654321", confirmPin: "654321"
+}), /FAMILY_CREDIT_CURRENT_PIN_REQUIRED/);
+assert.throws(() => context.configureFamilyCreditPin({
+  _verifiedUserId: "GUARD-1", _verifiedRole: "Padre", currentPin: "000000", newPin: "654321", confirmPin: "654321"
+}), /FAMILY_CREDIT_PIN_INVALID/);
+const pinChanged = context.configureFamilyCreditPin({
+  _verifiedUserId: "GUARD-1", _verifiedRole: "Padre", currentPin: "123456", newPin: "654321", confirmPin: "654321"
+});
+assert.equal(pinChanged.pinConfigured, true);
 
 const reloaded = context.getFamilyCreditApprovalPreference({ _verifiedUserId: "GUARD-1", _verifiedRole: "Padre" });
 assert.equal(reloaded.configured, true);
@@ -126,9 +158,31 @@ assert.equal(context.familyCreditIsRequested_("Crédito Familiar"), true, "accen
 assert.equal(context.familyCreditIsRequested_("Credito Familiar"), true);
 assert.throws(() => context.configureFamilyCreditAuthorization({ responsableUserId: "OTHER-G", estudianteUserId: "STU-1", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante" }), /FAMILY_CREDIT_GUARDIAN_ROLE_REQUIRED/);
 assert.throws(() => context.configureFamilyCreditAuthorization({ responsableUserId: "GUARD-1", estudianteUserId: "STU-1", limiteDiario: 100, limiteMensual: 50, _verifiedUserId: "GUARD-1", _verifiedRole: "Padre" }), /FAMILY_CREDIT_LIMITS_INVALID/);
-const configuredCredit = context.configureFamilyCreditAuthorization({ responsableUserId: "GUARD-1", estudianteUserId: "STU-1", limiteDiario: 50, limiteMensual: 500, _verifiedUserId: "GUARD-1", _verifiedRole: "Padre" });
+assert.throws(() => context.configureFamilyCreditAuthorization({ responsableUserId: "GUARD-1", estudianteUserId: "STU-1", limiteDiario: 50, limiteMensual: 500, familyPin: "000000", _verifiedUserId: "GUARD-1", _verifiedRole: "Padre" }), /FAMILY_CREDIT_PIN_INVALID/);
+const configuredCredit = context.configureFamilyCreditAuthorization({ responsableUserId: "GUARD-1", estudianteUserId: "STU-1", limiteDiario: 50, limiteMensual: 500, familyPin: "654321", _verifiedUserId: "GUARD-1", _verifiedRole: "Padre" });
 assert.equal(configuredCredit.status, "success");
 assert.equal(rows.CreditoFamiliarAutorizaciones[1][2], "GUARD-1");
+assert.equal(rows.CreditoFamiliarAutorizaciones[1][10], "POR_CUPO");
+assert.equal(rows.CreditoFamiliarAutorizaciones[1][11], "GUARD-1");
+assert.ok(rows.CreditoFamiliarAutorizaciones[1][12]);
+const switchedToPerPurchase = context.configureFamilyCreditApprovalPreference({
+  _verifiedUserId: "GUARD-1", _verifiedRole: "Padre", modalidadAprobacion: "POR_COMPRA"
+});
+assert.equal(switchedToPerPurchase.modalidadAprobacion, "POR_COMPRA");
+const perPurchaseAuthorization = context.configureFamilyCreditAuthorization({
+  responsableUserId: "GUARD-1", estudianteUserId: "STU-1", limiteDiario: 50, limiteMensual: 500,
+  _verifiedUserId: "GUARD-1", _verifiedRole: "Padre"
+});
+assert.equal(perPurchaseAuthorization.modalidadAprobacion, "POR_COMPRA");
+assert.equal(perPurchaseAuthorization.pinAprobado, false);
+assert.equal(rows.CreditoFamiliarAutorizaciones[1][11], "");
+
+for (let attempt = 0; attempt < 5; attempt++) {
+  const expected = attempt === 4 ? /FAMILY_CREDIT_PIN_TEMPORARILY_LOCKED/ : /FAMILY_CREDIT_PIN_INVALID/;
+  assert.throws(() => context.configureFamilyCreditPin({ _verifiedUserId: "GUARD-1", _verifiedRole: "Padre", currentPin: "000000", newPin: "111111", confirmPin: "111111" }), expected);
+}
+assert.ok(rows.CreditoFamiliarConfiguracion[1][9] instanceof Date, "five failed PIN attempts must set a temporary lock");
+assert.throws(() => context.configureFamilyCreditPin({ _verifiedUserId: "GUARD-1", _verifiedRole: "Padre", currentPin: "654321", newPin: "111111", confirmPin: "111111" }), /FAMILY_CREDIT_PIN_TEMPORARILY_LOCKED/);
 
 assert.throws(() => context.processFamilyCreditPurchase({ estudianteUserId: "STU-1", monto: 10 }), /FAMILY_CREDIT_PIN_APPROVAL_REQUIRED/);
 assert.throws(() => context.createStoreOrder({ userId: "STU-1", metodoPago: "CreditoFamiliar", detalleItems: [] }), /FAMILY_CREDIT_PIN_APPROVAL_REQUIRED/);
@@ -157,10 +211,17 @@ assert.throws(() => context.configureFamilyCreditApprovalPreference({
 lockBusy = false;
 
 assert.match(uiSource, /role-cfg-family-credit-mode/);
+assert.match(uiSource, /configureFamilyCreditPin/);
+assert.match(uiSource, /role-cfg-family-credit-new-pin/);
 assert.match(uiSource, /fetchApi\('ACCOUNTING', 'configureFamilyCreditApprovalPreference'/);
 assert.match(source, /case "getFamilyCreditApprovalPreference"/);
 assert.match(source, /case "configureFamilyCreditApprovalPreference"/);
 assert.match(source, /FAMILY_CREDIT_PIN_APPROVAL_REQUIRED/);
 assert.match(source, /FAMILY_CREDIT_GUARDIAN_OWNERSHIP_REQUIRED/);
 assert.match(source, /FAMILY_CREDIT_STUDENT_OWNERSHIP_REQUIRED/);
+assert.match(source, /case "configureFamilyCreditPin"/);
+assert.match(source, /FAMILY_CREDIT_PIN_TEMPORARILY_LOCKED/);
+assert.match(source, /safeRequestMeta/);
+assert.match(source, /pinSensitiveActions/);
+assert.doesNotMatch(source, /e \? e\.postData : null/);
 console.log("TASK-210 family credit approval preference contract: PASS");

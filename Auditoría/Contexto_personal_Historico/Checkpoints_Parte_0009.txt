@@ -253,3 +253,20 @@ C1.721 — IMA-EXEC-20261114-TASK200-01 — TASK-200 — Facturación automátic
 - **HEAD final:** se verificará tras publicar el commit. Rama base no se modifica.
 - **Siguiente acción:** implementar PIN con HMAC-SHA256 y salt por tutor, flujo de alta/cambio seguro; aplicar POR_COMPRA/POR_CUPO en la autorización del cupo y pedido; consolidar cafetería/tienda con stock, ledger, idempotencia persistente, concurrencia, conciliación y reversos; ampliar contratos Node y verificar CI.
 ===============================================================================
+
+===============================================================================
+### C1.728 — IMA-EXEC-20261114-TASK210-FAMILY-PIN-01 — PIN familiar protegido y aprobación de cupo
+- **Continuidad:** C1.727; HEAD inicial 54374c8dba278c0671ba2e0df03fb170ae60ef49; rama exclusiva NG_beta_0.0.0.1_work; rama base NG_beta_0.0.0.1 verificada sin cambios en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **PIN:** alta inicial desde el panel del tutor con PIN numérico de 6 dígitos y confirmación; el cambio de un PIN existente exige el PIN actual. Se guarda un HMAC-SHA256 con salt individual por tutor y clave AUTH_TOKEN_SECRET; nunca se almacena el PIN en texto claro. La comparación se realiza en tiempo constante para hashes de igual longitud.
+- **Protección contra fuerza bruta:** contador persistente de intentos fallidos; al quinto intento incorrecto se aplica bloqueo temporal de 15 minutos. El estado de bloqueo se actualiza bajo ScriptLock.
+- **Migración compatible:** CreditoFamiliarConfiguracion amplía su esquema de 5 a 10 columnas para salt/hash/fecha/intentos/bloqueo; CreditoFamiliarAutorizaciones amplía de 10 a 13 columnas para modalidad y metadatos de aprobación PIN. La migración valida prefijos de encabezados y falla si encuentra esquemas incompatibles.
+- **Autorización POR_CUPO:** configureFamilyCreditAuthorization exige PIN configurado y, cuando la modalidad es POR_CUPO, verifica el PIN antes de activar/actualizar el cupo y persiste aprobador/fecha. En POR_COMPRA exige que el tutor tenga PIN configurado; la verificación por pedido queda pendiente.
+- **Privacidad de registros:** sanitizePayloadForLog oculta cualquier campo cuyo nombre contenga PIN. doPost deja de registrar e.postData.contents sin filtrar; en acciones de PIN/crédito omite por completo el payload del registro y en otros errores registra solo payload sanitizable; cuerpos no parseables se omiten.
+- **UI:** el panel del padre/tutor permite establecer/cambiar el PIN; el PIN actual solo se solicita si ya existe. No se implementó recuperación/reset; el cambio normal exige PIN actual.
+- **Pruebas:** el contrato se amplió para probar migración de esquemas, almacenamiento no reversible/plaintext, cambio con PIN actual, rechazo de PIN incorrecto, bloqueo al quinto intento, aprobación POR_CUPO, aislamiento de lecturas y ausencia de PIN en logs. Resultado local y CI se registrarán después de ejecutar el workflow para este commit.
+- **Limitaciones:** processFamilyCreditPurchase y los pedidos de tienda/cafetería continúan rechazando crédito familiar. Aún falta verificación PIN por compra POR_COMPRA, conciliación de débito, ledger financiero persistente, idempotencia durable, stock transaccional, control de concurrencia coordinado con pedidos y reversos. TASK-210 permanece Pendiente. Apps Script/Sheets reales y CLI de repositorio completo NOT RUN.
+- **Archivos:** backend/accounting-service/Code.gs; js/ui-common.js; tests/security/accounting-family-credit-preference.test.js; pendientes/Padre/Pendientes.md; changueslogs.txt; índice y este checkpoint.
+- **Estado:** implementación parcial de PIN y aprobación de cupo; no se habilitan débitos familiares.
+- **HEAD final:** se verificará tras publicar el commit. Rama base no se modifica.
+- **Siguiente acción:** integrar el PIN POR_COMPRA en los flujos reales de pedidos; aplicar transacción coordinada de inventario/orden/ledger con idempotencia persistente, reversos y pruebas de carrera; luego habilitar solo las modalidades completas.
+===============================================================================

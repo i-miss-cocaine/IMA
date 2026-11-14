@@ -2305,6 +2305,28 @@ window.renderRoleSettingsInModal = function(role, user) {
                     </select>
                     <p class="text-[11px] text-slate-500 mt-2">Por compra solicita aprobación del tutor en cada pedido. Por cupo permite compras dentro de los límites que el tutor haya autorizado previamente.</p>
                 </div>
+                <div class="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+                    <div class="font-bold text-slate-700">PIN familiar de seguridad (6 dígitos)</div>
+                    <div id="family-credit-pin-current-wrap" class="hidden">
+                        <label for="role-cfg-family-credit-current-pin" class="block text-xs font-semibold text-slate-600 mb-1">PIN actual (solo para cambiar uno existente)</label>
+                        <input id="role-cfg-family-credit-current-pin" type="password" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm tracking-widest" placeholder="••••••">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label for="role-cfg-family-credit-new-pin" class="block text-xs font-semibold text-slate-600 mb-1">Nuevo PIN</label>
+                            <input id="role-cfg-family-credit-new-pin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" pattern="[0-9]{6}" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm tracking-widest" placeholder="6 dígitos">
+                        </div>
+                        <div>
+                            <label for="role-cfg-family-credit-confirm-pin" class="block text-xs font-semibold text-slate-600 mb-1">Confirmar PIN</label>
+                            <input id="role-cfg-family-credit-confirm-pin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" pattern="[0-9]{6}" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm tracking-widest" placeholder="Repite el PIN">
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between gap-3">
+                        <span id="family-credit-pin-status" class="text-xs text-slate-500">Verificando PIN...</span>
+                        <button id="btn-save-family-credit-pin" type="button" onclick="window.saveFamilyCreditPin()" class="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-900 disabled:opacity-50">Guardar PIN</button>
+                    </div>
+                    <p class="text-[11px] text-slate-500">El PIN se guarda como un verificador criptográfico, nunca en texto claro. Para cambiar un PIN existente se solicita el PIN actual.</p>
+                </div>
                 <div class="flex items-center justify-between gap-3">
                     <span id="family-credit-mode-status" class="text-xs text-slate-500">Cargando configuración...</span>
                     <button id="btn-save-family-credit-mode" type="button" onclick="window.saveFamilyCreditApprovalPreference()" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 disabled:opacity-50">Guardar modalidad</button>
@@ -2431,9 +2453,47 @@ window.loadFamilyCreditApprovalPreference = function() {
             select.value = 'POR_COMPRA';
             if (status) status.textContent = 'Aún no configurada. Guarda una modalidad para activarla.';
         }
+        var currentWrap = document.getElementById('family-credit-pin-current-wrap');
+        var pinStatus = document.getElementById('family-credit-pin-status');
+        if (currentWrap) currentWrap.classList.toggle('hidden', !res.pinConfigured);
+        if (pinStatus) pinStatus.textContent = res.pinConfigured ? 'PIN configurado. Para cambiarlo, introduce el PIN actual.' : 'PIN pendiente de configurar.';
+
     }).catch(function(err) {
         if (status) status.textContent = 'No se pudo verificar la configuración. Los débitos permanecen bloqueados.';
         console.warn('Family credit preference load failed:', err);
+    });
+};
+
+window.saveFamilyCreditPin = function() {
+    var current = document.getElementById('role-cfg-family-credit-current-pin');
+    var next = document.getElementById('role-cfg-family-credit-new-pin');
+    var confirm = document.getElementById('role-cfg-family-credit-confirm-pin');
+    var button = document.getElementById('btn-save-family-credit-pin');
+    var status = document.getElementById('family-credit-pin-status');
+    if (!next || !confirm || !window.fetchApi) return;
+    var currentPin = current ? String(current.value || '').trim() : '';
+    var newPin = String(next.value || '').trim();
+    var confirmPin = String(confirm.value || '').trim();
+    if (!/^\d{6}$/.test(newPin) || newPin !== confirmPin) {
+        if (status) status.textContent = 'El PIN debe tener 6 dígitos y coincidir con la confirmación.';
+        return;
+    }
+    if (button) { button.disabled = true; button.textContent = 'Guardando...'; }
+    fetchApi('ACCOUNTING', 'configureFamilyCreditPin', { currentPin: currentPin, newPin: newPin, confirmPin: confirmPin }).then(function(res) {
+        if (!res || res.status !== 'success' || !res.pinConfigured) throw new Error((res && res.message) || 'No se pudo guardar el PIN.');
+        if (current) current.value = '';
+        next.value = '';
+        confirm.value = '';
+        if (status) status.textContent = 'PIN configurado. Para cambiarlo necesitarás el PIN actual.';
+        var currentWrap = document.getElementById('family-credit-pin-current-wrap');
+        if (currentWrap) currentWrap.classList.remove('hidden');
+        if (window.Swal) Swal.fire({ icon: 'success', title: 'PIN guardado', text: res.message || 'El PIN familiar se guardó de forma protegida.' });
+    }).catch(function(err) {
+        if (status) status.textContent = 'No se pudo guardar el PIN. Revisa el PIN actual o inténtalo más tarde.';
+        if (window.Swal) Swal.fire({ icon: 'error', title: 'No se pudo guardar el PIN', text: err.message || 'Error de configuración.' });
+        else alert('Error al guardar el PIN: ' + (err.message || err));
+    }).finally(function() {
+        if (button) { button.disabled = false; button.textContent = 'Guardar PIN'; }
     });
 };
 

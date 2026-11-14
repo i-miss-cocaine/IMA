@@ -343,6 +343,8 @@
 - **PIN:** permanece separado de la sesión de inicio; nunca se almacena en texto claro. El procedimiento exacto de alta, cambio y recuperación del PIN se definirá dentro de la implementación segura sin habilitar vías de autoaprobación.
 - **Implementación parcial C1.727:** modalidad POR_COMPRA/POR_CUPO persistida por tutor autenticado desde Opciones del Rol; validación server-side de rol y relación familiar; autorización de cupo limitada al tutor vinculado; lectura de autorizaciones aislada por tutor/estudiante; límites positivos y escritura serializada. Mientras el flujo PIN no esté implementado y verificado, los tres puntos de entrada de débito por crédito familiar rechazan la operación (fail-closed). No se marca completada la tarea.
 
+- **Implementación parcial C1.728:** PIN familiar de 6 dígitos almacenado como HMAC-SHA256 con salt individual; cambio requiere PIN actual; cinco fallos bloquean 15 minutos; aprobación POR_CUPO verifica PIN y registra tutor/fecha; migración de esquemas y sanitización de logs. POR_COMPRA y la integración de débito/ledger continúan bloqueadas; no se habilita crédito todavía.
+
 - **Estado:** [ ] Pendiente; modalidad configurable definida, implementación financiera y de PIN pendiente.
 
 
