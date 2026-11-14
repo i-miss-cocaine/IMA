@@ -143,6 +143,9 @@ assert.equal(preservedActivity.tarifa, 500, "partial updates must preserve the f
 assert.match(preservedActivity.horario, /Lunes/, "partial updates must preserve the schedule");
 assert.match(preservedActivity.transporteExtraordinarioJSON, /RUTA-ESPECIAL-1/, "partial updates must preserve the extraordinary route");
 assert.match(uiSource, /loadFamilyExtracurricularPanel/);
+assert.match(uiSource, /loadExtracurricularAdminPanel/);
+assert.match(uiSource, /saveExtracurricularActivity/);
+assert.match(dashboardSource, /extracurricular-admin-panel/);
 assert.match(uiSource, /enrollStudentInExtracurricular/);
 assert.match(dashboardSource, /family-extracurricular-panel/);
 assert.throws(() => context.saveExtracurricularActivity({
