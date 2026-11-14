@@ -160,3 +160,21 @@ C1.721 — IMA-EXEC-20261114-TASK200-01 — TASK-200 — Facturación automátic
 - **HEAD de implementación:** 6a621fb069f9acfd4b2c120fd78c8d46a50e289b. Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
 - **Siguiente tarea candidata:** TASK-205 — administración centralizada de tarifas, contratos y condiciones de servicios; revisar dependencia F21-Task13 y confirmar el alcance ya implementado antes de modificar.
 ===============================================================================
+
+===============================================================================
+### C1.722 — IMA-EXEC-20261114-TASK205-01 — TASK-205 — Tarifas centralizadas, vigencias y condiciones de servicios
+- **Continuidad:** C1.721; HEAD inicial de esta iteración e69dcfb5d146ae7f135c398ac198cc25af486eef; rama exclusiva NG_beta_0.0.0.1_work; rama base verificada sin cambios en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Alcance revisado:** catálogo ServiciosTarifas con administración desde panel contable; tarifas por servicio, modalidad, ruta, período y vigencia; concepto financiero; descuentos por hermanos y becas aprobadas con límite; políticas de prorrateo de altas/bajas; integración del catálogo central con el cálculo de transporte. Se preservan cargos ya emitidos ante cambios de tarifa.
+- **Corrección de revisión:** se detectó que editar una tarifa con la misma fecha de inicio podía extender su fecha final más allá de la siguiente versión futura. Se ajustó manageServiceTariffLocked_ para limitar la versión anterior al día previo a la siguiente vigencia y se agregó regresión explícita.
+- **Pruebas:** tests/security/accounting-service-tariffs.test.js PASS en Node.js 24.22.2 dentro de GitHub Actions; cubre versionado, ausencia de solapamiento al editar la versión previa, inmutabilidad de cargos históricos, descuento por hermanos/beca y tope, rechazo de entrada/rol inválidos y lock ocupado. Syntax-check de servicios Apps Script PASS.
+- **CI final:** Department Scope Contract run 43614101832 SUCCESS; Department Reference Consumers run 43614101548 SUCCESS; Identity Mapping run 43614101542 SUCCESS. El test de tarifas centralizadas y el contrato de transporte terminaron SUCCESS.
+- **Code review:** revisión focalizada de manageServiceTariffLocked_, manageServiceTariff, getServiceTariffs, transportFindTariff_, transportRecalculateStudentMonthlyChargeLocked_, permisos, dispatch, UI y contrato Node. El diff correctivo de esta iteración se limitó al servicio contable y su prueba; no se reescribieron archivos ajenos.
+- **Dependencia:** F21-Task13 en el informe de Fase 21 corresponde a transporte extraordinario/excursiones; no es un prerrequisito técnico del catálogo de tarifas. Se clasifica como informativa/no bloqueante.
+- **Archivos de implementación de TASK-205:** backend/accounting-service/Code.gs, js/accounting.js, dashboard-contabilidad.html, tests/security/accounting-service-tariffs.test.js, .github/workflows/department-scope-contract.yml.
+- **Archivos de cierre:** pendientes/Contabilidad/Pendientes.md, beta_test_Parte_0002.txt, changueslogs.txt, Auditoría/INDICE_CHECKPOINTS.md y este checkpoint.
+- **Commits de implementación/corrección:** 8ddbc7ce239864bd5325f5f3be20939397b5142f, f6e65cfca61092e20ffc4072d3cac8f1def05407, e69dcfb5d146ae7f135c398ac198cc25af486eef, 8b6e885080401344de86922f9ebb4d5449ea6617.
+- **Limitaciones:** no hay checkout/runner CLI local disponible en esta sesión; CLI independiente NOT RUN. Apps Script/Google Sheets reales NOT RUN; no se desplegó. BETA-FUNC-092 queda pendiente de validación en entorno beta aislado. El lock ocupado se probó; una prueba de estrés concurrente contra Apps Script real queda en beta.
+- **Estado:** TASK-205 completada en código, revisión y CI; validación beta separada.
+- **HEAD de código revisado:** 8b6e885080401344de86922f9ebb4d5449ea6617. Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
+- **Siguiente tarea elegible:** TASK-210 — consolidación de cafetería y tienda con estados de cuenta familiares; confirmar callsites y la dependencia F15-Task01 antes de modificar.
+===============================================================================

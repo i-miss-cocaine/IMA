@@ -376,3 +376,20 @@
 - **Evidencia requerida:** snapshots sintéticos de TransporteRutas, TransporteAsignaciones, TransporteTarifas, ConceptosCobro y CargosEstudiante; IDs de asignación/tarifa/cargo; importes y días prorrateados; claves idempotentes; logs de autorización, lock y rollback. No usar datos reales.
 - **Estado:** Pendiente beta. Contrato Node.js 24.22.2 y sintaxis Apps Script aprobados en GitHub Actions; Apps Script/Sheets reales no ejecutados.
 ===============================================================================
+
+===============================================================================
+### BETA-FUNC-092 — TASK-205 — Tarifas centralizadas, vigencias y condiciones comerciales
+- **Módulo/roles:** Contabilidad / Director / Subdirector / Contador.
+- **Objetivo:** validar en el entorno beta que el catálogo de tarifas permite administrar servicios, modalidades, rutas, períodos, vigencias, descuentos familiares y reglas de prorrateo sin alterar cargos ya emitidos.
+- **Precondiciones:** versión beta desplegada; hojas sintéticas ServiciosTarifas, ConceptosCobro, CargosEstudiante, DescuentosBecas, SolicitudesDescuentoBeca, Usuarios y RelacionesFamiliares; roles de prueba autorizados y no autorizados.
+- **Pasos:**
+  1. Abrir el panel contable y consultar el catálogo de tarifas; crear una tarifa por servicio/modalidad/período y una tarifa de transporte asociada a ruta.
+  2. Registrar una segunda versión con fecha futura y comprobar que la vigencia anterior termina el día previo; editar la primera versión y comprobar que no se solapa con la futura.
+  3. Emitir o conservar cargos históricos antes de cambiar la tarifa; comparar sus importes, conceptos, claves y estados después de la modificación.
+  4. Configurar descuento por hermanos, una beca aprobada y un límite máximo; comprobar el cálculo y que relaciones familiares no autorizadas o becas no aprobadas no se apliquen.
+  5. Probar fechas inválidas, rangos invertidos, importes inválidos, concepto inactivo/ajeno y rol sin autorización; comprobar rechazo sin cambios parciales.
+  6. Simular dos administradores guardando versiones consecutivas y comprobar serialización, vigencias no solapadas y trazabilidad del actor.
+- **Resultado esperado:** el catálogo presenta una sola tarifa vigente para cada combinación y fecha; las versiones no se solapan; descuentos respetan aprobaciones y topes; los cargos históricos permanecen inalterados; operaciones no autorizadas o inválidas no producen escrituras parciales.
+- **Evidencia requerida:** snapshots sintéticos antes/después de ServiciosTarifas y CargosEstudiante; IDs de tarifas/conceptos; importes, vigencias y descuentos; actor autorizado; logs de denegación y concurrencia. No usar datos reales.
+- **Estado:** Pendiente beta. Contrato Node.js 24 y syntax-check Apps Script aprobados en GitHub Actions; Apps Script/Sheets reales no ejecutados.
+===============================================================================

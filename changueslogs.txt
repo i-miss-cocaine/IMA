@@ -3584,3 +3584,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - CI final: Department Scope Contract 43603405636 SUCCESS; Identity Mapping and Transport Security 43603216507 SUCCESS; Department Reference Consumers 43603216493 SUCCESS. El primer run de Department Scope 43603216482 falló por sintaxis del nuevo fixture y se corrigió antes del run final.
 - Node.js 24.22.2 y syntax-check Apps Script PASS. CLI local NOT RUN; no se encontró package.json ni suite CLI independiente. Apps Script/Sheets real NOT RUN; BETA-FUNC-091 pendiente beta.
 - Commits de implementación y corrección de pruebas: adf8293f78c4dae974c98aafe30ca4ab65c61542, 6a621fb069f9acfd4b2c120fd78c8d46a50e289b. Rama base sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+[2026-11-14] TASK-205 — tarifas centralizadas, vigencias y condiciones de servicios
+- Se completó la administración de tarifas desde el panel contable por servicio, modalidad, ruta, período y fechas de vigencia, con concepto financiero asociado.
+- Se integraron descuentos por hermanos y becas aprobadas con límite máximo, así como reglas de prorrateo de altas y bajas; los cambios de tarifa no reescriben cargos históricos.
+- Code review detectó y corrigió una extensión de vigencia que podía solaparse con la siguiente versión al editar una tarifa existente.
+- Contrato Node.js 24.22.2 y syntax-check Apps Script PASS. Department Scope 43614101832, Identity Mapping 43614101542 y Department Reference Consumers 43614101548 SUCCESS.
+- CLI local independiente NOT RUN; Apps Script/Sheets real NOT RUN. BETA-FUNC-092 pendiente beta.
+- Commits previos de implementación: 8ddbc7ce239864bd5325f5f3be20939397b5142f, f6e65cfca61092e20ffc4072d3cac8f1def05407, e69dcfb5d146ae7f135c398ac198cc25af486eef; corrección de solapamiento: 8b6e885080401344de86922f9ebb4d5449ea6617.

@@ -2832,7 +2832,7 @@
 ---
 
 <!-- ID: TASK-205 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [ ] [TASK-205] Administración centralizada de tarifas, contratos y condiciones de servicios
+### [x] [TASK-205] Administración centralizada de tarifas, contratos y condiciones de servicios
 - **Origen del Hallazgo:** `AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md` / Sección C (1.16) y Plan de Implementación TAREA 17
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Políticas tarifarias configurables, vigencias contractuales y descuentos institucionales)
@@ -2851,7 +2851,12 @@
 - **Criterios de Aceptación:**
   - Se administran tarifas con vigencia desde el panel contable.
   - Los cargos históricos permanecen inalterables ante cambios de tarifas.
-- **Estado:** [ ] Pendiente
+- **Evidencia de implementación y verificación:** catálogo ServiciosTarifas administrable desde el panel contable; tarifas por servicio/modalidad/ruta/período y vigencias; descuentos familiares por hermanos y becas aprobadas con límite máximo; reglas de prorrateo de altas/bajas; integración de tarifas centralizadas al cálculo de transporte; conservación de cargos históricos. Se corrigió la actualización de una versión existente para que su vigencia no se solape con la siguiente versión.
+- **Pruebas locales aisladas:** tests/security/accounting-service-tariffs.test.js PASS en Node.js 24; cubre versionado, inmutabilidad de cargos históricos, descuentos por hermanos/beca y límite, validación de entradas/rol y rechazo ante lock ocupado. Syntax-check Apps Script PASS.
+- **CI:** Department Scope Contract 43614101832 SUCCESS; Department Reference Consumers 43614101548 SUCCESS; Identity Mapping 43614101542 SUCCESS.
+- **Limitaciones:** CLI local independiente NOT RUN (sin checkout/runner local disponible); Apps Script/Google Sheets reales NOT RUN. BETA-FUNC-092 queda Pendiente beta.
+- **Dependencias:** F21-Task13 describe transporte extraordinario/excursiones y no es prerrequisito técnico del catálogo de tarifas; se trata como referencia informativa, no bloqueante.
+- **Estado:** [x] Completada en código, revisión y CI; pendiente validación beta desplegada.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 8425-8450; clave TASK-210; asignación única: Contabilidad -->
 
