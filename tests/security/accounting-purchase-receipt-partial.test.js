@@ -24,4 +24,7 @@ assert.equal(aliasReceipt.estadoOrden,"RecibidaParcial");assert.equal(inventoryM
 const receiptsBeforeLock=rows.RecepcionesCompra.length,movesBeforeLock=inventoryMoves.length;lockBusy=true;
 assert.throws(()=>ctx.recordPurchaseReceipt({ordenCompraId:"PO-4",detalleRecibido:[{itemId:"IT-C",cantidad:1}],estadoConformidad:"Conforme",registrarEnInventario:true}),/LOCK_BUSY/);
 lockBusy=false;assert.equal(rows.RecepcionesCompra.length,receiptsBeforeLock);assert.equal(inventoryMoves.length,movesBeforeLock);assert.equal(rows.OrdenesCompra[4][9],"RecibidaParcial");
+rows.OrdenesCompra.push(["PO-5","","","SUP-1","","Aprobada",JSON.stringify([{codigoItem:"IT-D",cantidad:4,unidadMedida:"Unidad",precioUnitario:30}]),120,"CC-1","Aprobada"]);
+const priced=ctx.recordPurchaseReceipt({ordenCompraId:"PO-5",detalleRecibido:[{codigoItem:"IT-D",cantidad:2,unidadMedida:"Unidad"}],estadoConformidad:"Conforme",registrarEnInventario:true,facturaId:"FAC-5"});
+assert.equal(priced.estadoOrden,"RecibidaParcial");assert.equal(inventoryMoves.at(-1).costoUnitario,30,"purchase receipt must use the authorized order unit cost");assert.equal(inventoryMoves.at(-1).ordenCompraId,"PO-5");assert.equal(inventoryMoves.at(-1).exigirCostoDocumento,true);assert.ok(inventoryMoves.at(-1).documentOrigen.includes("PO-5"));
 console.log("F18-Task01 partial purchase receipt contract PASS: partial/total status, over-receipt, unknown items, damaged-unit exclusion, code normalization and lock contention.");

@@ -7701,7 +7701,7 @@ function inventoryValuationApplyMovement_(ss,item,p,kardexId,qty,type,location,c
    total=inventoryValuationMoney_(adds.reduce((n,x)=>n+x.cantidad*x.costoUnitario,0));unitCost=inventoryValuationMoney_(total/qty);
   }else{
    const explicit=Number(p.costoUnitario!==undefined?p.costoUnitario:(p.precioUnitario!==undefined?p.precioUnitario:(p.costoTotal!==undefined?Number(p.costoTotal)/qty:0)));
-   const catalogAverage=Number(item.row&&item.row[19]||0),catalogLast=Number(item.row&&item.row[18]||0),catalogCost=catalogAverage>0?catalogAverage:catalogLast;
+   const catalogAverage=Number(item.row&&item.row[19]||0),catalogLast=Number(item.row&&item.row[18]||0),catalogCost=p.exigirCostoDocumento?0:(catalogAverage>0?catalogAverage:catalogLast);
    unitCost=Number.isFinite(explicit)&&explicit>0?explicit:catalogCost>0?catalogCost:0;
    if(unitCost>0){total=inventoryValuationMoney_(qty*unitCost);adds=[{capaId:"IVL-"+Utilities.getUuid(),fechaAdquisicion:p.fechaAdquisicion||new Date(),cantidad:qty,costoUnitario:unitCost,documentoOrigen:p.ordenCompraId||p.facturaId||p.documentOrigen||"",metodo:method}];}
    else{status="PendienteCosto";total=0;unitCost=0;adds=[{capaId:"IVL-"+Utilities.getUuid(),fechaAdquisicion:p.fechaAdquisicion||new Date(),cantidad:qty,costoUnitario:0,documentoOrigen:p.ordenCompraId||p.facturaId||p.documentOrigen||"",metodo:method,estadoCosto:"PendienteCosto"}];}
@@ -9096,13 +9096,27 @@ function recordPurchaseReceipt(payload) {
       itemsToInventory.forEach(item => {const ci=catalogFindItem_(ss,item.codigoItem,true),u=catalogFindUnit_(ss,item.unidadMedida||item.unidad||ci.unit);if(catalogNormalizeText_(u.base)!==catalogNormalizeText_(ci.baseUnit))throw new Error("CATALOG_UNIT_INCOMPATIBLE_WITH_ITEM");});
       itemsToInventory.forEach(item => {
         if (item.codigoItem && item.cantidad > 0) {
+          const orderLine=authorizedItems.find(x=>String(x.codigoItem||x.codigo||x.id||x.itemId||x.ItemId||"").trim()===String(item.codigoItem).trim())||{};
+          const unitName=item.unidadMedida||item.unidad||orderLine.unidadMedida||orderLine.unidad||undefined;
+          const unit=catalogFindUnit_(ss,unitName||catalogFindItem_(ss,item.codigoItem,true).unit);
+          const rawBase=item.costoUnitarioBase!==undefined?Number(item.costoUnitarioBase):null;
+          const rawUnit=item.costoUnitario!==undefined?Number(item.costoUnitario):(item.precioUnitario!==undefined?Number(item.precioUnitario):(orderLine.costoUnitario!==undefined?Number(orderLine.costoUnitario):(orderLine.precioUnitario!==undefined?Number(orderLine.precioUnitario):(orderLine.precio!==undefined?Number(orderLine.precio):0))));
+          const orderQty=Number(orderLine.cantidad||orderLine.quantity||orderLine.cantidadSolicitada||item.cantidad||0);
+          const orderTotal=Number(orderLine.total||orderLine.importeTotal||orderLine.montoTotal||orderLine.subtotal||0);
+          const unitCostBase=rawBase!==null&&Number.isFinite(rawBase)&&rawBase>0?rawBase:(Number.isFinite(rawUnit)&&rawUnit>0?rawUnit/unit.factor:(orderTotal>0&&orderQty>0?orderTotal/orderQty/unit.factor:0));
           recordInventoryMovementLocked_(ss,{
             itemCodigo: item.codigoItem,
-            itemNombre: item.nombreItem || "Artículo de Compra",
+            itemNombre: item.nombreItem || orderLine.descripcion || "Artículo de Compra",
             categoriaTipo: "Consumible",
             tipoMovimiento: "Entrada",
             cantidad: item.cantidad,
-            unidadMedida: item.unidadMedida || item.unidad || undefined,
+            unidadMedida: unitName,
+            costoUnitario: unitCostBase,
+            exigirCostoDocumento: true,
+            ordenCompraId: ordenCompraId,
+            facturaId: payload && payload.facturaId || "",
+            documentOrigen: "ORDEN:"+ordenCompraId+":RECEPCION:"+recId,
+            fechaAdquisicion: now,
             observaciones: `Entrada conforme desde Recepción de Compra ${recId} (Orden: ${ordenCompraId})`
           });
         }
