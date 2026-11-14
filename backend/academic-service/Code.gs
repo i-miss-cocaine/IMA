@@ -6149,7 +6149,7 @@ function promoteNextExtracurricularWaitlist_(ss, activity, enrollmentSheet) {
 
 function saveExtracurricularActivity(payload) {
   const role = extracurricularRoleKey_(payload && payload._verifiedRole);
-  if (["ADMINISTRADOR", "DIRECTOR", "SUBDIRECTOR", "COORDINADORACTIVIDADES"].indexOf(role) === -1) {
+  if (["ADMINISTRADOR", "DIRECTOR", "SUBDIRECTOR"].indexOf(role) === -1) {
     throw new Error("EXTRACURRICULAR_CONFIG_ROLE_NOT_ALLOWED");
   }
   const data = payload || {};
@@ -6175,9 +6175,18 @@ function saveExtracurricularActivity(payload) {
       const transportInput = data.transporteExtraordinarioJSON === undefined ? previous[12] : data.transporteExtraordinarioJSON;
       transport = typeof transportInput === "string" ? JSON.parse(transportInput || "{}") : (transportInput || {});
     } catch (_) { throw new Error("EXTRACURRICULAR_TRANSPORT_JSON_INVALID"); }
-    if (transport && transport.requiereTransporte &&
-        (!String(transport.fechaEvento || "").trim() || !String(transport.destino || "").trim())) {
-      throw new Error("EXTRACURRICULAR_TRANSPORT_DETAILS_REQUIRED");
+    if (transport && transport.requiereTransporte) {
+      if (!String(transport.rutaId || "").trim() ||
+          !String(transport.fechaEvento || "").trim() || !String(transport.destino || "").trim()) {
+        throw new Error("EXTRACURRICULAR_TRANSPORT_DETAILS_REQUIRED");
+      }
+      const routesSheet = ss.getSheetByName("TransporteRutas");
+      const routes = routesSheet ? routesSheet.getDataRange().getValues().slice(1) : [];
+      const route = routes.find(row => String(row[0] || "").trim() === String(transport.rutaId).trim());
+      const routeState = extracurricularRoleKey_(route && route[6]);
+      if (!route || ["ACTIVA", "ACTIVO", "DISPONIBLE", "OPERATIVA"].indexOf(routeState) === -1) {
+        throw new Error("EXTRACURRICULAR_TRANSPORT_ROUTE_NOT_AVAILABLE");
+      }
     }
     const encode = function(value, fallback) {
       if (value === undefined || value === null || value === "") return fallback;
@@ -6301,33 +6310,43 @@ function getStudentExtracurricularEnrollments(payload) {
     throw new Error("EXTRACURRICULAR_GUARDIAN_ROLE_REQUIRED");
   }
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const usersSheet = ss.getSheetByName("Usuarios");
-  const relationsSheet = ss.getSheetByName("RelacionesFamiliares");
-  if (!usersSheet || !relationsSheet) return { status: "success", children: [], enrollments: [] };
-  const users = usersSheet.getDataRange().getValues();
-  const guardian = users.slice(1).find(row => String(row[0] || "").trim() === guardianId);
-  if (!guardian) throw new Error("EXTRACURRICULAR_GUARDIAN_NOT_FOUND");
-  const guardianPersonId = String(guardian[9] || "").trim(), now = new Date();
-  const studentPersonIds = new Set();
-  relationsSheet.getDataRange().getValues().slice(1).forEach(row => {
-    const state = extracurricularRoleKey_(row[4]);
-    const from = row[5] ? new Date(row[5]) : null, to = row[6] ? new Date(row[6]) : null;
-    if (String(row[2] || "").trim() === guardianPersonId &&
-        ["APROBADO", "AUTORIZADO", "ACTIVO", "ACTIVE"].indexOf(state) !== -1 &&
-        (!from || from <= now) && (!to || to >= now)) studentPersonIds.add(String(row[1] || "").trim());
-  });
-  const children = users.slice(1).filter(row => studentPersonIds.has(String(row[9] || "").trim()) &&
-    ["ESTUDIANTE", "ALUMNO", "STUDENT"].indexOf(extracurricularRoleKey_(row[6])) !== -1 &&
-    ["INACTIVO", "INACTIVE", "BAJA"].indexOf(extracurricularRoleKey_(row[10] || "Activo")) === -1)
-    .map(row => ({ userId: String(row[0] || "").trim(), nombre: String(row[1] || row[0] || "").trim() }));
-  const childIds = new Set(children.map(item => item.userId));
-  const enrollmentSheet = ss.getSheetByName("ServiciosInscripciones");
-  const enrollments = enrollmentSheet ? enrollmentSheet.getDataRange().getValues().slice(1)
-    .filter(row => childIds.has(String(row[2] || "").trim()))
-    .map(row => ({ inscripcionId: row[0], extracurricularId: row[1], estudianteUserId: row[2],
-      responsableUserId: row[3], fechaRegistro: row[4], estado: row[5], cargoId: row[6],
-      monto: Number(row[7] || 0), transporteExtraordinarioJSON: row[8] || "{}", posicionListaEspera: row[10] || "" })) : [];
-  return { status: "success", children: children, enrollments: enrollments };
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const usersSheet = ss.getSheetByName("Usuarios");
+    const relationsSheet = ss.getSheetByName("RelacionesFamiliares");
+    if (!usersSheet || !relationsSheet) return { status: "success", children: [], enrollments: [] };
+    const users = usersSheet.getDataRange().getValues();
+    const guardian = users.slice(1).find(row => String(row[0] || "").trim() === guardianId);
+    if (!guardian || ["PADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(extracurricularRoleKey_(guardian[6])) === -1 ||
+        ["INACTIVO", "INACTIVE", "BAJA"].indexOf(extracurricularRoleKey_(guardian[10] || "Activo")) !== -1) {
+      throw new Error("EXTRACURRICULAR_GUARDIAN_NOT_FOUND_OR_INACTIVE");
+    }
+    const guardianPersonId = String(guardian[9] || "").trim(), now = new Date();
+    const studentPersonIds = new Set();
+    relationsSheet.getDataRange().getValues().slice(1).forEach(row => {
+      const state = extracurricularRoleKey_(row[4]);
+      const from = row[5] ? new Date(row[5]) : null, to = row[6] ? new Date(row[6]) : null;
+      if (String(row[2] || "").trim() === guardianPersonId &&
+          ["APROBADO", "AUTORIZADO", "ACTIVO", "ACTIVE"].indexOf(state) !== -1 &&
+          (!from || (Number.isFinite(from.getTime()) && from <= now)) &&
+          (!to || (Number.isFinite(to.getTime()) && to >= now))) studentPersonIds.add(String(row[1] || "").trim());
+    });
+    const children = users.slice(1).filter(row => studentPersonIds.has(String(row[9] || "").trim()) &&
+      ["ESTUDIANTE", "ALUMNO", "STUDENT"].indexOf(extracurricularRoleKey_(row[6])) !== -1 &&
+      ["INACTIVO", "INACTIVE", "BAJA"].indexOf(extracurricularRoleKey_(row[10] || "Activo")) === -1)
+      .map(row => ({ userId: String(row[0] || "").trim(), nombre: String(row[1] || row[0] || "").trim() }));
+    const childIds = new Set(children.map(item => item.userId));
+    const enrollmentSheet = ss.getSheetByName("ServiciosInscripciones");
+    const enrollments = enrollmentSheet ? enrollmentSheet.getDataRange().getValues().slice(1)
+      .filter(row => childIds.has(String(row[2] || "").trim()))
+      .map(row => ({ inscripcionId: row[0], extracurricularId: row[1], estudianteUserId: row[2],
+        responsableUserId: row[3], fechaRegistro: row[4], estado: row[5], cargoId: row[6],
+        monto: Number(row[7] || 0), transporteExtraordinarioJSON: row[8] || "{}", posicionListaEspera: row[10] || "" })) : [];
+    return { status: "success", children: children, enrollments: enrollments };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function cancelExtracurricularEnrollment(payload) {
@@ -6357,11 +6376,10 @@ function cancelExtracurricularEnrollment(payload) {
       if (chargeSheet) {
         const charges = chargeSheet.getDataRange().getValues();
         const chargeIndex = charges.findIndex((row, index) => index > 0 && String(row[0] || "").trim() === String(match.row[6]).trim());
-        if (chargeIndex > 0) {
-          const paymentState = extracurricularRoleKey_(charges[chargeIndex][7]);
-          if (["PAGADO", "PAID"].indexOf(paymentState) !== -1) throw new Error("EXTRACURRICULAR_PAID_ENROLLMENT_REFUND_REQUIRED");
-          chargeSheet.getRange(chargeIndex + 1, 8).setValue("Anulado");
-        }
+        if (chargeIndex <= 0) throw new Error("EXTRACURRICULAR_CHARGE_NOT_FOUND");
+        const paymentState = extracurricularRoleKey_(charges[chargeIndex][7]);
+        if (["PAGADO", "PAID"].indexOf(paymentState) !== -1) throw new Error("EXTRACURRICULAR_PAID_ENROLLMENT_REFUND_REQUIRED");
+        chargeSheet.getRange(chargeIndex + 1, 8).setValue("Anulado");
       }
     }
     const activitySheet = ensureExtracurricularActivitySchema_(ss);
