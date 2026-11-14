@@ -293,7 +293,7 @@ assert.match(uiSource, /role-cfg-family-credit-new-pin/);
 assert.match(uiSource, /fetchApi\('ACCOUNTING', 'configureFamilyCreditApprovalPreference'/);
 assert.match(source, /case "getFamilyCreditApprovalPreference"/);
 assert.match(source, /case "configureFamilyCreditApprovalPreference"/);
-assert.match(source, /FAMILY_CREDIT_PIN_APPROVAL_REQUIRED/);
+assert.match(source, /FAMILY_CREDIT_PIN_NOT_CONFIGURED/);
 assert.match(source, /FAMILY_CREDIT_DAILY_LIMIT_EXCEEDED/);
 assert.match(source, /PendienteAprobacionFamiliar/);
 assert.match(source, /FAMILY_CREDIT_GUARDIAN_OWNERSHIP_REQUIRED/);
