@@ -4072,10 +4072,18 @@ function processFamilyCreditPurchase(payload) {
     familyCreditVerifyPinInConfig_(authorization.configSheet, authorization.configRowNumber, pin);
     const now = new Date(), dailyStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const monthlyStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const reversedMovementIds = Object.create(null);
+    movementRows.slice(1).forEach(function(row) {
+      const reference = String(row[7] || "").trim();
+      if (String(row[8] || "").trim().toLowerCase() === "reversado" && reference.indexOf("REV:") === 0) {
+        reversedMovementIds[reference.slice(4)] = true;
+      }
+    });
     let dailyUsed = 0, monthlyUsed = 0;
     movementRows.slice(1).forEach(function(row) {
       if (String(row[3] || "").trim() !== studentId || String(row[4] || "").trim() !== actor.userId ||
-          String(row[8] || "").trim().toLowerCase() !== "aprobado") return;
+          String(row[8] || "").trim().toLowerCase() !== "aprobado" ||
+          reversedMovementIds[String(row[0] || "").trim()]) return;
       const movementDate = transportParseDate_(row[1]), movementAmount = Number(row[6]);
       if (!movementDate || !Number.isFinite(movementAmount) || movementAmount <= 0) return;
       if (movementDate >= dailyStart && movementDate <= now) dailyUsed += movementAmount;
@@ -4102,7 +4110,7 @@ function processFamilyCreditPurchase(payload) {
       try { orderSheet.getRange(orderRowNumber, stateColumn).setValue("PendienteAprobacionFamiliar"); } catch (_) { rollbackFailed = true; }
       try { authorization.authorizationSheet.getRange(authorization.authorizationRowNumber, 7).setValue(previousUsed); } catch (_) { rollbackFailed = true; }
       try {
-        movementSheet.getRange(movementRowNumber, 9).setValue("Reversado");
+        movementSheet.getRange(movementRowNumber, 9).setValue("Anulado");
         movementSheet.getRange(movementRowNumber, 10).setValue("Rollback de aprobación: " + String(error && error.message || error).slice(0, 180));
       } catch (_) { rollbackFailed = true; }
       if (rollbackFailed) throw new Error("FAMILY_CREDIT_APPROVAL_ROLLBACK_FAILED");
