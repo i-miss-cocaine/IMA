@@ -6173,6 +6173,22 @@ function reindexExtracurricularWaitlist_(activityId, enrollmentSheet) {
   waiting.forEach((item, index) => enrollmentSheet.getRange(item.rowNumber, 11).setValue(index + 1));
 }
 
+function extracurricularInstitutionalServiceIsActive_(ss, schoolYear) {
+  const sheet = ss.getSheetByName("ServiciosCatalogoInstitucional");
+  if (!sheet) return true;
+  const year = String(schoolYear || new Date().getFullYear()).trim();
+  const matches = sheet.getDataRange().getValues().slice(1).filter(row =>
+    String(row[1] || "").trim().toUpperCase() === "ACTIVIDADES_EXTRACURRICULARES" &&
+    String(row[9] || "").trim() === year);
+  if (!matches.length) return true;
+  if (matches.length > 1) throw new Error("INSTITUTIONAL_SERVICE_CONFIGURATION_DUPLICATE");
+  const row = matches[0];
+  if (extracurricularRoleKey_(row[10] || "ACTIVO") !== "ACTIVO") return false;
+  const now = new Date(), start = row[11] ? new Date(row[11]) : null, end = row[12] ? new Date(row[12]) : null;
+  return !((start && (!Number.isFinite(start.getTime()) || start > now)) ||
+    (end && (!Number.isFinite(end.getTime()) || end < now)));
+}
+
 function saveExtracurricularActivity(payload) {
   const role = extracurricularRoleKey_(payload && payload._verifiedRole);
   if (["ADMINISTRADOR", "DIRECTOR", "SUBDIRECTOR"].indexOf(role) === -1) {
@@ -6264,7 +6280,8 @@ function getExtracurricularActivities(payload) {
       encargados: row[5], supervisores: row[6], estado: row[7], evidenciasFolderId: row[8], evidencias: row[9],
       cupoMaximo: capacity, inscritos: registered, cuposDisponibles: capacity > 0 ? Math.max(0, capacity - registered) : null,
       tarifa: Number(row[11] || 0), transporteExtraordinarioJSON: row[12] || "{}",
-      fechaInicio: row[13] || "", fechaFin: row[14] || ""
+      fechaInicio: row[13] || "", fechaFin: row[14] || "",
+      servicioDisponible: extracurricularInstitutionalServiceIsActive_(ss, row[1] || new Date().getFullYear())
     };
   });
   return { status: "success", activities: activities };
@@ -6290,6 +6307,9 @@ function enrollStudentInExtracurricular(payload) {
     const activity = activities.find((row, index) => index > 0 && String(row[0] || "").trim() === activityId);
     if (!activity || ["CANCELADA", "INACTIVA", "CERRADA"].indexOf(extracurricularRoleKey_(activity[7])) !== -1) {
       throw new Error("EXTRACURRICULAR_ACTIVITY_NOT_AVAILABLE");
+    }
+    if (!extracurricularInstitutionalServiceIsActive_(ss, activity[1] || new Date().getFullYear())) {
+      throw new Error("INSTITUTIONAL_SERVICE_PAUSED");
     }
     let activityTransport = {};
     try { activityTransport = JSON.parse(String(activity[12] || "{}")); } catch (_) { throw new Error("EXTRACURRICULAR_TRANSPORT_JSON_INVALID"); }
