@@ -7634,6 +7634,15 @@ function catalogEnsureKardexSchema_(ss){const h=["KardexID","Fecha","ItemCodigo"
 const INVENTORY_VALUATION_LAYER_HEADERS_=["CapaID","FechaAdquisicion","ItemID","ItemCodigo","Ubicacion","KardexOrigenID","DocumentoOrigen","Metodo","CantidadInicial","CantidadDisponible","CostoUnitario","ValorInicial","EstadoCosto","FechaRegistro","Referencia"];
 const INVENTORY_VALUATION_MOVEMENT_HEADERS_=["ValoracionMovimientoID","KardexID","Fecha","ItemID","ItemCodigo","Ubicacion","TipoMovimiento","Cantidad","CostoUnitario","CostoTotal","Metodo","AsignacionesJSON","CapasAgregadasJSON","DocumentoOrigen","EstadoCosto","CreadoPor"];
 const INVENTORY_VALUATION_POLICY_HEADERS_=["Categoria","Metodo","ActualizadoPor","FechaActualizacion"];
+function inventoryValuationSnapshot_(ss){
+ const snapshot={};["InventoryValuationLayers","InventoryValuationMovements"].forEach(name=>{const sh=ss.getSheetByName(name);snapshot[name]=sh?sh.getDataRange().getValues().map(r=>r.slice()):null;});return snapshot;
+}
+function inventoryValuationRestore_(ss,snapshot){
+ if(!snapshot)return;Object.keys(snapshot).forEach(name=>{const saved=snapshot[name];let sh=ss.getSheetByName(name);if(!sh)return;
+  while(sh.getLastRow()>(saved?saved.length:0))sh.deleteRow(sh.getLastRow());
+  if(saved&&saved.length){const width=Math.max(...saved.map(r=>r.length));const values=saved.map(r=>{const row=r.slice();while(row.length<width)row.push("");return row;});sh.getRange(1,1,values.length,width).setValues(values);}
+ });
+}
 function inventoryValuationMoney_(n){return Math.round((Number(n)||0)*100)/100;}
 function inventoryValuationSheet_(ss,name,headers,create){
  let sh=ss.getSheetByName(name);if(!sh&&!create)return null;if(!sh)sh=ss.insertSheet(name);
@@ -7791,11 +7800,14 @@ function recordInventoryMovementLocked_(ss,payload) {
  let next=current;const incoming=["Entrada","Devolucion","AjustePositivo"].indexOf(tipoNorm)!==-1,outgoing=["Salida","Prestamo","Baja","TransferenciaSalida","Consumo","AjusteNegativo"].indexOf(tipoNorm)!==-1;
  if(incoming)next=assetDeprMoney_(current+qty);else if(outgoing){if(current<qty)throw new Error("INSUFFICIENT_LOCAL_STOCK:"+code+":"+target+":"+current+":"+qty);}else throw new Error("INVENTORY_MOVEMENT_TYPE_UNSUPPORTED:"+tipoNorm);
  const storedMin=item.row[20],min=Number(p.stockMinimo===undefined||p.stockMinimo===""?(storedMin===undefined||storedMin===""?5:storedMin):p.stockMinimo),now=new Date(),id="KDX-"+Utilities.getUuid();let obs=String(p.observaciones||"");if(p.numeroLote)obs+=" | [LOTE:"+p.numeroLote+"]";if(p.numeroSerie)obs+=" | [SERIE:"+p.numeroSerie+"]";if(p.documentOrigen)obs+=" | [DOC:"+p.documentOrigen+"]";if(p.referenciaMovimiento)obs+=" | [REF:"+p.referenciaMovimiento+"]";if(p.cantidadBase!==true&&factor!==1)obs+=" | [CONVERSION:"+inputQty+" "+unit.name+" x "+factor+" = "+qty+" "+unit.base+"]";
- const valuation=inventoryValuationApplyMovement_(ss,item,p,id,qty,tipoNorm,target,current);
- if(outgoing)next=assetDeprMoney_(current-qty);
- locations[target.toLowerCase()]=next;let total=0;Object.keys(locations).forEach(k=>total+=Number(locations[k]||0));total=assetDeprMoney_(total);
- try{sheet.appendRow([id,now,code,name,category,tipoNorm,qty,current,next,min,target,obs.trim(),item.id,qty,unit.name,factor,valuation.costoUnitario,valuation.costoTotal,valuation.metodo,valuation.estadoCosto]);}
- catch(e){throw new Error("INVENTORY_VALUATION_KARDEX_WRITE_FAILED:"+e.message);}
+ const valuationSnapshot=inventoryValuationSnapshot_(ss);let valuation;
+ try{
+  valuation=inventoryValuationApplyMovement_(ss,item,p,id,qty,tipoNorm,target,current);
+  if(outgoing)next=assetDeprMoney_(current-qty);
+  locations[target.toLowerCase()]=next;let total=0;Object.keys(locations).forEach(k=>total+=Number(locations[k]||0));total=assetDeprMoney_(total);
+  sheet.appendRow([id,now,code,name,category,tipoNorm,qty,current,next,min,target,obs.trim(),item.id,qty,unit.name,factor,valuation.costoUnitario,valuation.costoTotal,valuation.metodo,valuation.estadoCosto]);
+ }catch(e){inventoryValuationRestore_(ss,valuationSnapshot);throw new Error("INVENTORY_VALUATION_MOVEMENT_ATOMIC_FAILURE:"+e.message);}
+ let total=0;Object.keys(locations).forEach(k=>total+=Number(locations[k]||0));total=assetDeprMoney_(total);
  const low=next<=min;return {status:"success",kardexId:id,itemCodigo:code,itemNombre:name,ubicacion:target,cantidadRegistrada:inputQty,cantidadBase:qty,unidadBase:item.baseUnit,stockAnteriorUbicacion:current,stockNuevoUbicacion:next,stockConsolidadoInstitucional:total,stockMinimo:min,alertaStockMinimo:low,costoUnitarioValoracion:valuation.costoUnitario,costoTotalValoracion:valuation.costoTotal,metodoValoracion:valuation.metodo,estadoCosto:valuation.estadoCosto,capasTransferencia:valuation.asignaciones,message:low?"Movimiento registrado; stock bajo en "+target+".":"Movimiento de inventario registrado correctamente."};
 }
 function recordInventoryMovement(payload) {
@@ -15598,9 +15610,9 @@ function inventoryLedgerPayloadMatches_(ss,delivery,items,savedJson) {
 
 function deliverMaterialRequisition(payload) {
  const p=payload||{},actor=catalogActor_(p,true),requestId=String(p.solicitudMatId||"").trim();if(!requestId)throw new Error("solicitudMatId es requerido.");
- const lock=LockService.getScriptLock();lock.waitLock(15000);let movementStart=0,journalStart=0;
+ const lock=LockService.getScriptLock();lock.waitLock(15000);let movementStart=0,journalStart=0,valuationSnapshot=null;
  try {
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),requestSheet=getOrCreateSheet(ss,"MaterialesSolicitudes");inventoryEnsureRequisitionSchema_(requestSheet);
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID);valuationSnapshot=inventoryValuationSnapshot_(ss);const requestSheet=getOrCreateSheet(ss,"MaterialesSolicitudes");inventoryEnsureRequisitionSchema_(requestSheet);
   const data=requestSheet.getDataRange().getValues(),idx=data.findIndex((r,i)=>i>0&&String(r[0]).trim()===requestId);if(idx<0)throw new Error("Solicitud de material no encontrada.");
   const row=data[idx];inventoryAssertDepartmentScope_(p,ss,actor,row[2]);if(String(row[6]||"").trim()==="Entregado")throw new Error("La solicitud ya ha sido entregada previamente.");
   let items;try{items=typeof row[4]==="string"?JSON.parse(row[4]):row[4];}catch(e){throw new Error("MATERIAL_REQUISITION_ITEMS_INVALID");}
@@ -15626,16 +15638,16 @@ function deliverMaterialRequisition(payload) {
   requestSheet.getRange(idx+1,7).setValue("Entregado");requestSheet.getRange(idx+1,9).setValue(actor.userId);if(p.observaciones)requestSheet.getRange(idx+1,10).setValue(p.observaciones);requestSheet.getRange(idx+1,13).setValue(asientoId);requestSheet.getRange(idx+1,14).setValue(JSON.stringify(details));
   return {status:"success",solicitudMatId:requestId,asientoId,centroCosto:costCenter,modoReconocimiento:mode,detalle:details,message:"Materiales entregados, descontados/asignados y contabilizados por partida doble."};
  } catch(e) {
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID);if(movementStart){const sh=ss.getSheetByName("InventariosKardex");if(sh)inventoryDeleteAppendedRows_(sh,movementStart);}if(journalStart){const sh=ss.getSheetByName("AsientosContables");if(sh)inventoryDeleteAppendedRows_(sh,journalStart);}throw e;
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID);inventoryValuationRestore_(ss,valuationSnapshot);if(movementStart){const sh=ss.getSheetByName("InventariosKardex");if(sh)inventoryDeleteAppendedRows_(sh,movementStart);}if(journalStart){const sh=ss.getSheetByName("AsientosContables");if(sh)inventoryDeleteAppendedRows_(sh,journalStart);}throw e;
  } finally {lock.releaseLock();}
 }
 
 function returnMaterialToInventory(payload) {
  const p=payload||{},actor=catalogActor_(p,true),requestId=String(p.solicitudMatId||"").trim(),returnId=String(p.devolucionId||"").trim(),items=Array.isArray(p.items)?p.items:[];
  if(!requestId||!returnId||!items.length)throw new Error("MATERIAL_RETURN_FIELDS_REQUIRED");
- const lock=LockService.getScriptLock();lock.waitLock(15000);let movementStart=0,journalStart=0,ledgerStart=0;
+ const lock=LockService.getScriptLock();lock.waitLock(15000);let movementStart=0,journalStart=0,ledgerStart=0,valuationSnapshot=null;
  try{
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),req=getOrCreateSheet(ss,"MaterialesSolicitudes"),data=req.getDataRange().getValues(),idx=data.findIndex((r,i)=>i>0&&String(r[0])===requestId);if(idx<0)throw new Error("RESOURCE_NOT_FOUND");
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID);valuationSnapshot=inventoryValuationSnapshot_(ss);const req=getOrCreateSheet(ss,"MaterialesSolicitudes"),data=req.getDataRange().getValues(),idx=data.findIndex((r,i)=>i>0&&String(r[0])===requestId);if(idx<0)throw new Error("RESOURCE_NOT_FOUND");
   const department=String(data[idx][2]||"");inventoryAssertDepartmentScope_(p,ss,actor,department);
   if(String(data[idx][6])!=="Entregado")throw new Error("MATERIAL_RETURN_REQUEST_NOT_DELIVERED");
   const ledger=inventoryEnsureLedgerSheet_(ss,"DevolucionesMateriales",["DevolucionID","SolicitudMatID","Fecha","ItemsJSON","AsientoID","ActorUserId","Observaciones"]);
@@ -15648,14 +15660,14 @@ function returnMaterialToInventory(payload) {
   const lines=[],saved=[],seen={};
   items.forEach((raw,i)=>{const item=catalogFindItem_(ss,raw.catalogItemId||raw.itemCodigo,true),unit=catalogFindUnit_(ss,raw.unidadMedida||item.unit),qty=Number(raw.cantidad),d=delivery.find(x=>x.itemCodigo===item.code);if(!d||!Number.isFinite(qty)||qty<=0||catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit))throw new Error("MATERIAL_RETURN_ITEM_INVALID");if(seen[item.code])throw new Error("MATERIAL_RETURN_DUPLICATE_ITEM");seen[item.code]=true;const base=assetDeprMoney_(qty*unit.factor),available=Number(d.cantidadBase||0)-Number(returnedByCode[item.code]||0)-Number(consumedByCode[item.code]||0);if(base>available+0.000001)throw new Error("MATERIAL_RETURN_EXCEEDS_AVAILABLE:"+item.code);const ref="MATRET:"+returnId+":"+i,outRow=mode==="ASIGNADO"?inventoryFindMovementByRef_(ss,ref+":OUT"):null,inRow=inventoryFindMovementByRef_(ss,ref+":IN"),out=mode==="ASIGNADO"?(outRow?{kardexId:outRow[0]}:recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:"TransferenciaSalida",cantidad:base,cantidadBase:true,ubicacionResponsable:department,observaciones:"Devolución de solicitud "+requestId+" [REF:"+ref+":OUT]"})):null,incoming=inRow?{kardexId:inRow[0]}:recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:"Entrada",cantidad:base,cantidadBase:true,costoUnitario:Number(d.costoUnitarioBase||0),capasTransferencia:inventoryValuationSliceLayers_(d.capasTransferencia||[{cantidad:Number(d.cantidadBase||0),costoUnitario:Number(d.costoUnitarioBase||0)}],base),documentOrigen:returnId,ubicacionResponsable:source,observaciones:"Devolución de solicitud "+requestId+" [REF:"+ref+":IN]"}),amount=assetDeprMoney_(base*Number(d.costoUnitarioBase||0));if(amount<=0)throw new Error("MATERIAL_RETURN_COST_INVALID");lines.push({cuenta:inventory.code,nombre:inventory.name,debe:amount,haber:0,centroCosto:center,departamento:department,itemCodigo:item.code,referenciaId:returnId},{cuenta:credit.code,nombre:credit.name,debe:0,haber:amount,centroCosto:center,departamento:department,itemCodigo:item.code,referenciaId:returnId});saved.push({itemCodigo:item.code,cantidadBase:base,importe:amount,kardexSalidaId:out&&out.kardexId,kardexEntradaId:incoming.kardexId,unidadOriginal:unit.name,cantidadOriginal:qty,factorConversionBase:unit.factor});});
   const asientoId="AST-INV-RET-"+returnId;inventoryPostJournal_(ss,{descripcion:"Devolución de materiales "+returnId,origenModulo:"INVENTARIO",referenciaId:returnId,asientoId,lineas:lines,creadoPor:actor.userId});ledger.appendRow([returnId,requestId,new Date(),JSON.stringify(saved),asientoId,actor.userId,p.observaciones||""]);return {status:"success",devolucionId:returnId,asientoId,detalle:saved};
- }catch(e){const ss=SpreadsheetApp.openById(SPREADSHEET_ID);if(movementStart)inventoryDeleteAppendedRows_(ss.getSheetByName("InventariosKardex"),movementStart);if(journalStart)inventoryDeleteAppendedRows_(ss.getSheetByName("AsientosContables"),journalStart);if(ledgerStart)inventoryDeleteAppendedRows_(ss.getSheetByName("DevolucionesMateriales"),ledgerStart);throw e;}finally{lock.releaseLock();}
+ }catch(e){const ss=SpreadsheetApp.openById(SPREADSHEET_ID);inventoryValuationRestore_(ss,valuationSnapshot);if(movementStart)inventoryDeleteAppendedRows_(ss.getSheetByName("InventariosKardex"),movementStart);if(journalStart)inventoryDeleteAppendedRows_(ss.getSheetByName("AsientosContables"),journalStart);if(ledgerStart)inventoryDeleteAppendedRows_(ss.getSheetByName("DevolucionesMateriales"),ledgerStart);throw e;}finally{lock.releaseLock();}
 }
 function recognizeAssignedMaterialConsumption(payload) {
  const p=payload||{},actor=catalogActor_(p,true),requestId=String(p.solicitudMatId||"").trim(),consumptionId=String(p.consumoId||"").trim(),items=Array.isArray(p.items)?p.items:[];
  if(!requestId||!consumptionId||!items.length)throw new Error("ASSIGNED_CONSUMPTION_FIELDS_REQUIRED");
- const lock=LockService.getScriptLock();lock.waitLock(15000);let movementStart=0,journalStart=0,ledgerStart=0;
+ const lock=LockService.getScriptLock();lock.waitLock(15000);let movementStart=0,journalStart=0,ledgerStart=0,valuationSnapshot=null;
  try{
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),req=getOrCreateSheet(ss,"MaterialesSolicitudes"),data=req.getDataRange().getValues(),idx=data.findIndex((r,i)=>i>0&&String(r[0])===requestId);if(idx<0)throw new Error("RESOURCE_NOT_FOUND");
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID);valuationSnapshot=inventoryValuationSnapshot_(ss);const req=getOrCreateSheet(ss,"MaterialesSolicitudes"),data=req.getDataRange().getValues(),idx=data.findIndex((r,i)=>i>0&&String(r[0])===requestId);if(idx<0)throw new Error("RESOURCE_NOT_FOUND");
   const department=String(data[idx][2]||"");inventoryAssertDepartmentScope_(p,ss,actor,department);
   if(String(data[idx][6])!=="Entregado"||String(data[idx][11])!=="ASIGNADO")throw new Error("ASSIGNED_CONSUMPTION_REQUEST_INVALID");
   const ledger=inventoryEnsureLedgerSheet_(ss,"ConsumosMateriales",["ConsumoID","SolicitudMatID","Fecha","ItemsJSON","AsientoID","ActorUserId","Observaciones"]);
@@ -15668,7 +15680,7 @@ function recognizeAssignedMaterialConsumption(payload) {
   const lines=[],saved=[],seen={};
   items.forEach((raw,i)=>{const item=catalogFindItem_(ss,raw.catalogItemId||raw.itemCodigo,true),unit=catalogFindUnit_(ss,raw.unidadMedida||item.unit),qty=Number(raw.cantidad),d=delivery.find(x=>x.itemCodigo===item.code);if(!d||!Number.isFinite(qty)||qty<=0||catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit))throw new Error("ASSIGNED_CONSUMPTION_ITEM_INVALID");if(seen[item.code])throw new Error("ASSIGNED_CONSUMPTION_DUPLICATE_ITEM");seen[item.code]=true;const base=assetDeprMoney_(qty*unit.factor),available=Number(d.cantidadBase||0)-Number(returnedByCode[item.code]||0)-Number(consumedByCode[item.code]||0);if(base>available+0.000001)throw new Error("ASSIGNED_CONSUMPTION_EXCEEDS_AVAILABLE:"+item.code);const ref="MATCON:"+consumptionId+":"+i,existingMove=inventoryFindMovementByRef_(ss,ref),movement=existingMove?inventoryValuationMovementResult_(ss,existingMove[0]):recordInventoryMovementLocked_(ss,{itemCodigo:item.code,tipoMovimiento:"Consumo",cantidad:base,cantidadBase:true,ubicacionResponsable:department,documentOrigen:consumptionId,observaciones:"Consumo efectivo de solicitud "+requestId+" [REF:"+ref+"]"}),amount=inventoryValuationMoney_(movement.costoTotalValoracion);if(amount<=0)throw new Error("ASSIGNED_CONSUMPTION_COST_INVALID");lines.push({cuenta:expense.code,nombre:expense.name,debe:amount,haber:0,centroCosto:center,departamento:department,itemCodigo:item.code,referenciaId:consumptionId},{cuenta:assigned.code,nombre:assigned.name,debe:0,haber:amount,centroCosto:center,departamento:department,itemCodigo:item.code,referenciaId:consumptionId});saved.push({itemCodigo:item.code,cantidadBase:base,importe:amount,kardexId:movement.kardexId,unidadOriginal:unit.name,cantidadOriginal:qty,factorConversionBase:unit.factor});});
   const asientoId="AST-INV-CONS-"+consumptionId;inventoryPostJournal_(ss,{descripcion:"Consumo efectivo de materiales "+consumptionId,origenModulo:"INVENTARIO",referenciaId:consumptionId,asientoId,lineas:lines,creadoPor:actor.userId});ledger.appendRow([consumptionId,requestId,new Date(),JSON.stringify(saved),asientoId,actor.userId,p.observaciones||""]);return {status:"success",consumoId:consumptionId,asientoId,detalle:saved};
- }catch(e){const ss=SpreadsheetApp.openById(SPREADSHEET_ID);if(movementStart)inventoryDeleteAppendedRows_(ss.getSheetByName("InventariosKardex"),movementStart);if(journalStart)inventoryDeleteAppendedRows_(ss.getSheetByName("AsientosContables"),journalStart);if(ledgerStart)inventoryDeleteAppendedRows_(ss.getSheetByName("ConsumosMateriales"),ledgerStart);throw e;}finally{lock.releaseLock();}
+ }catch(e){const ss=SpreadsheetApp.openById(SPREADSHEET_ID);inventoryValuationRestore_(ss,valuationSnapshot);if(movementStart)inventoryDeleteAppendedRows_(ss.getSheetByName("InventariosKardex"),movementStart);if(journalStart)inventoryDeleteAppendedRows_(ss.getSheetByName("AsientosContables"),journalStart);if(ledgerStart)inventoryDeleteAppendedRows_(ss.getSheetByName("ConsumosMateriales"),ledgerStart);throw e;}finally{lock.releaseLock();}
 }
 function createPhysicalInventoryCount(payload) {
   const { almacenUbicacionId, responsableUserId, observaciones } = payload || {};
@@ -15831,9 +15843,9 @@ function inventoryResolveMaintenanceDepartment_(ss,p,assetRef,actor,existingRow)
 function manageMaintenanceOrder(payload) {
  const p=payload||{},actor=catalogActor_(p,false),assetRef=String(p.activoIdUbicacion||"").trim(),description=String(p.descripcionFalla||"").trim();
  if(!assetRef||!description)throw new Error("activoIdUbicacion y descripcionFalla son requeridos.");
- const lock=LockService.getScriptLock();lock.waitLock(15000);let movementStart=0,journalStart=0;
+ const lock=LockService.getScriptLock();lock.waitLock(15000);let movementStart=0,journalStart=0,valuationSnapshot=null;
  try{
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getOrCreateSheet(ss,"MantenimientoOrdenes");inventoryEnsureMaintenanceSchema_(sheet);
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID);valuationSnapshot=inventoryValuationSnapshot_(ss);const sheet=getOrCreateSheet(ss,"MantenimientoOrdenes");inventoryEnsureMaintenanceSchema_(sheet);
   const data=sheet.getDataRange().getValues(),oId=String(p.ordenMaintId||("MNT-"+Utilities.getUuid())).trim(),matches=data.map((r,i)=>({row:r,index:i})).filter(x=>x.index>0&&String(x.row[0]||"").trim()===oId);
   if(matches.length>1)throw new Error("MAINTENANCE_ORDER_ID_AMBIGUOUS");
   const found=matches[0]||null,existing=found?found.row:null,idx=found?found.index:-1,now=new Date(),state=String(p.estadoOrden||(existing&&existing[11])||"Reportado").trim(),complete=["RESUELTO","COMPLETADO"].includes(state.toUpperCase());
@@ -15877,7 +15889,7 @@ function manageMaintenanceOrder(payload) {
   }catch(_){}
   return {status:"success",ordenMaintId:oId,asientoId:asientoId||null,idempotent:idempotent,detalleRepuestos:repArr.length?JSON.parse(details):[],message:idempotent?"Orden de mantenimiento y consumo contable ya registrados.":"Orden de mantenimiento registrada/actualizada correctamente."};
  }catch(e){
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID);inventoryValuationRestore_(ss,valuationSnapshot);
   if(movementStart){const sh=ss.getSheetByName("InventariosKardex");if(sh)inventoryDeleteAppendedRows_(sh,movementStart);}
   if(journalStart){const sh=ss.getSheetByName("AsientosContables");if(sh)inventoryDeleteAppendedRows_(sh,journalStart);}
   throw e;
