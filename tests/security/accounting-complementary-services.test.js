@@ -88,6 +88,9 @@ vm.runInNewContext(names.map(extract).join("\n"), context);
 
 assert.equal(context.institutionalServiceIsActive_(ss, "TIENDA", "2027"), true,
   "legacy services remain enabled when no catalog override exists");
+assert.throws(() => context.setInstitutionalComplementaryServiceStatus({
+  _verifiedRole: "Padre", _verifiedUserId: "G1", servicioClave: "TIENDA", anoLectivo: "2027", estado: "PAUSADO"
+}), /INSTITUTIONAL_SERVICE_CONFIG_ROLE_NOT_ALLOWED/);
 const saved = context.saveInstitutionalComplementaryService({
   _verifiedRole: "Director", _verifiedUserId: "DIR-1",
   servicioClave: "TUTORIAS", nombre: "Tutorías académicas", categoria: "ACADEMICO",
@@ -158,5 +161,12 @@ assert.match(source, /institutionalServiceIsActive_\(ss, "TIENDA"/);
 assert.match(source, /institutionalServiceIsActive_\(ss, "CAFETERIA"/);
 assert.match(uiSource, /loadInstitutionalComplementaryServicesAdmin/);
 assert.match(dashboardSource, /service-catalog-admin-panel/);
+const roleMapStart = source.indexOf("const ROLE_PERMISSIONS");
+const directorRole = source.slice(source.indexOf('  "Director": [', roleMapStart), source.indexOf('\n  "Subdirector": [', roleMapStart));
+const parentRole = source.slice(source.indexOf('  "Padre": [', roleMapStart), source.indexOf('\n  "Tutor": [', roleMapStart));
+assert.ok(directorRole.includes('"saveInstitutionalComplementaryService"'));
+assert.ok(directorRole.includes('"setInstitutionalComplementaryServiceStatus"'));
+assert.ok(directorRole.includes('"getInstitutionalComplementaryServices"'));
+assert.ok(parentRole.includes('"getInstitutionalComplementaryServices"'));
 assert.ok(released);
 console.log("ACCOUNTING institutional complementary services catalog contract PASS.");
