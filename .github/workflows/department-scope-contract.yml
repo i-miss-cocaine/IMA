@@ -37,6 +37,7 @@ on:
       - tests/security/accounting-asset-depreciation.test.js
       - tests/security/accounting-catalog.test.js
       - tests/security/accounting-transport-monthly-charges.test.js
+      - tests/security/accounting-transport-route-optimization.test.js
       - tests/security/accounting-service-tariffs.test.js
       - tests/security/accounting-purchase-receipt-partial.test.js
       - tests/security/accounting-supplier-profile.test.js
@@ -132,6 +133,8 @@ jobs:
         run: node tests/security/accounting-catalog.test.js
       - name: Run transport monthly charge, proration, cancellation and idempotency contract
         run: node tests/security/accounting-transport-monthly-charges.test.js
+      - name: Run transport route optimization, approval and stale-write contract
+        run: node tests/security/accounting-transport-route-optimization.test.js
       - name: Run centralized service tariff, versioning and discount contract
         run: node tests/security/accounting-service-tariffs.test.js
       - name: Run supplier profile and protected banking contract
