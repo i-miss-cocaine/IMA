@@ -17,15 +17,21 @@ add("LEGACY","persona","PER-1","PERSONA-1");
 const sheet={getRange(r,c,n,m){return{getValues(){return identityRows.slice(r-1,r-1+n).map(row=>row.slice(c-1,c-1+m));}};},getDataRange(){return{getValues(){return identityRows.map(row=>row.slice());}};}};
 const ss={getSheetByName(name){return name==="CorrespondenciaIdentificadores"?sheet:null;}};
 const schemas={curso:{service:"ACCOUNTING",sheet:"Cursos",headers:["CursoID","Nombre","Nota","FechaInicio"]},estudiante:{service:"ACADEMIC",sheet:"Estudiantes",headers:["EstudianteID","PersonaID"]}};
+const auditRows=[],writeCalls=[],rollbackCalls=[];
+let failWriteAt=0,runCounter=0;
+const audit={appendRow(row){auditRows.push(row);}};
 const context={SPREADSHEET_ID:"TEST",MIGRATION_OWNER_SCHEMAS_:schemas,
  SpreadsheetApp:{openById(){return ss;}},PropertiesService:{getScriptProperties(){return{getProperty(){return"INST-1";}};}},
+ getOrCreateSheet(){return audit;},Utilities:{getUuid(){return"RUN-"+(++runCounter);}},
+ sendMigrationOwnerRequest_(type,action,payload){assert.equal(action,"writeMigratedEntity");writeCalls.push({type,payload});if(failWriteAt&&writeCalls.length===failWriteAt)throw new Error("MOCK_OWNER_WRITE_FAILED");return{status:"success",idempotent:false};},
+ rollbackMigrationOwnerWrites_(applied){rollbackCalls.push(applied.slice());return[];},
  getVerifiedAccountingIdentity_(){return{authorized:true,userId:"U-1",role:"Administrador"};},
  buildAccountingDepartmentalImportPreflight_(){return{valid:true,applicable:false,institutionId:"INST-1",rows:[]};},
  mapMigrationRowToTarget_(row,mapping){const out={};Object.keys(mapping.campos||{}).forEach(field=>out[field]=row[mapping.campos[field]]);return out;},
  migrationStableJson_:value=>JSON.stringify(value),migrationHash_:value=>crypto.createHash("sha256").update(String(value)).digest("hex"),
  Date,String,Number,Array,Object,JSON,RegExp,Error,isFinite};
-const funcs=["buildAccountingIdentityMapSnapshot_","resolveAccountingIdentityFromSnapshot_","buildImportPreview_","validateImportPreview"].map(extract);
-vm.createContext(context);vm.runInContext(header+"\n"+funcs.join("\n")+"\nthis.preview=buildImportPreview_;this.validate=validateImportPreview;",context);
+const funcs=["buildAccountingIdentityMapSnapshot_","resolveAccountingIdentityFromSnapshot_","buildImportPreview_","validateImportPreview","importDataWithColumnMapping"].map(extract);
+vm.createContext(context);vm.runInContext(header+"\n"+funcs.join("\n")+"\nthis.preview=buildImportPreview_;this.validate=validateImportPreview;this.import=importDataWithColumnMapping;",context);
 const base={nombreArchivo:"cursos.xlsx",destinoModulo:"Cursos",sistemaOrigen:"LEGACY",tipoEntidad:"curso",sessionToken:"signed",
  columnaMapeo:{identificador:"legacyId",campos:{Nombre:"nombre",Nota:"nota",FechaInicio:"fechaInicio"}},
  filasData:[{legacyId:"CUR-1",nombre:"Matemáticas",nota:90,fechaInicio:"2026-02-01"}]};
@@ -33,6 +39,39 @@ const valid=context.preview(base);assert.equal(valid.status,"success");assert.eq
 assert.equal(valid.preparedRows[0].Nombre,"Matemáticas");assert.equal(valid.identityResolutions[0].idNuevoPlataforma,"CURSO-1");assert.match(valid.previewHash,/^[a-f0-9]{64}$/);
 assert.equal(context.validate(base).validForImport,true);
 assert.notEqual(context.preview({...base,filasData:[{...base.filasData[0],nota:91}]}).previewHash,valid.previewHash);
+const partialPayload={...base,filasData:[base.filasData[0],{...base.filasData[0],legacyId:"CUR-2",fechaInicio:"fecha-invalida"}]};
+const partialPreview=context.preview(partialPayload);
+assert.equal(partialPreview.validForImport,false);
+assert.equal(partialPreview.validForPartialImport,true);
+assert.deepEqual(Array.from(partialPreview.validRowIndexes),[0]);
+assert.equal(context.validate(partialPayload).validForPartialImport,true);
+assert.equal(context.validate(partialPayload).resumenValidation.requiereConfirmacion,true);
+assert.throws(()=>context.import({...partialPayload,previewConfirmed:true,previewHash:partialPreview.previewHash}),/IMPORT_PREVIEW_INVALID_OR_STALE/);
+assert.equal(writeCalls.length,0);
+const partialResult=context.import({...partialPayload,previewConfirmed:true,previewHash:partialPreview.previewHash,allowPartialImport:true});
+assert.equal(partialResult.status,"success");
+assert.equal(partialResult.estado,"partial");
+assert.equal(partialResult.registrosEscritos,1);
+assert.equal(partialResult.filasOmitidasPorValidacion,1);
+assert.ok(partialResult.errores.some(item=>item.error==="INVALID_DATE_VALUE"));
+assert.equal(writeCalls.length,1);
+assert.equal(auditRows.length,1);
+const structurallyBlocked=context.preview({...partialPayload,analisisEstructural:{duplicateHeaders:["Nombre"]}});
+assert.equal(structurallyBlocked.validForPartialImport,false);
+assert.throws(()=>context.import({...partialPayload,analisisEstructural:{duplicateHeaders:["Nombre"]},previewConfirmed:true,previewHash:structurallyBlocked.previewHash,allowPartialImport:true}),/IMPORT_PREVIEW_INVALID_OR_STALE/);
+assert.equal(writeCalls.length,1);
+const rollbackBatch={...base,filasData:[base.filasData[0],{...base.filasData[0],legacyId:"CUR-2",nombre:"Otro curso"}]};
+const rollbackPreview=context.preview(rollbackBatch);
+failWriteAt=3;
+const beforeRollbackWrites=writeCalls.length;
+const rollbackResult=context.import({...rollbackBatch,previewConfirmed:true,previewHash:rollbackPreview.previewHash});
+assert.equal(rollbackResult.status,"error");
+assert.equal(rollbackResult.estado,"rolled_back");
+assert.equal(rollbackResult.registrosEscritos,0);
+assert.equal(rollbackCalls.length,1);
+assert.equal(rollbackCalls[0].length,1);
+assert.equal(writeCalls.length-beforeRollbackWrites,2);
+assert.equal(auditRows.length,2);
 const duplicate=context.preview({...base,filasData:[base.filasData[0],{...base.filasData[0]}]});
 assert.equal(duplicate.validForImport,false);assert.ok(duplicate.errores.some(x=>x.codigo==="DUPLICATE_IDENTIFIER_IN_FILE"));
 const missing=context.preview({...base,filasData:[{nombre:"Sin ID",nota:80,fechaInicio:"2026-02-01"}]});
