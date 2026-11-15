@@ -7646,6 +7646,120 @@ function toBase64(file) {
     let selectedWorkbookExcel = null;
     let selectedExcelFileName = '';
     let latestExcelAnalysis = null;
+    let latestExcelSemanticPreview = null;
+    let latestExcelReviewConfirmedHash = '';
+    let excelPreflightRequestSequence = 0;
+    let excelPreflightInFlight = false;
+
+    function buildExcelImportPreflightPayload_(config) {
+        const input = config || {};
+        const targets = {
+            curso: { destination: 'ACCOUNTING', fields: ['Nombre', 'Nota', 'FechaInicio'], required: ['Nombre'] },
+            estudiante: { destination: 'ACADEMIC', fields: ['PersonaID'], required: ['PersonaID'] },
+            empleado: { destination: 'ACCOUNTING', fields: ['PersonaId', 'UserId', 'Puesto', 'Departamento', 'CentroCosto', 'FechaIngreso', 'FechaSalida', 'EstadoLaboral', 'Observaciones'], required: ['PersonaId', 'Puesto', 'Departamento'] }
+        };
+        const entityType = String(input.tipoEntidad || '').trim().toLowerCase();
+        const target = targets[entityType];
+        if (!target) throw new Error('ENTITY_TYPE_NOT_SUPPORTED');
+        const sourceName = String(input.sistemaOrigen || '').trim();
+        const identifierColumn = String(input.identificador || '').trim();
+        const rows = input.filasData;
+        if (!sourceName) throw new Error('SOURCE_SYSTEM_REQUIRED');
+        if (!identifierColumn) throw new Error('LEGACY_IDENTIFIER_COLUMN_REQUIRED');
+        if (!Array.isArray(rows) || !rows.length) throw new Error('IMPORT_ROWS_REQUIRED');
+        const selectedFields = input.campos && typeof input.campos === 'object' ? input.campos : {};
+        const mappedFields = {};
+        target.fields.forEach(function(field) {
+            const sourceColumn = String(selectedFields[field] || '').trim();
+            if (target.required.indexOf(field) !== -1 && !sourceColumn) throw new Error('REQUIRED_FIELD_MAPPING_MISSING:' + field);
+            if (sourceColumn) mappedFields[field] = sourceColumn;
+        });
+        const activeDepartmentId = String(input.activeDepartmentId || '').trim();
+        if (entityType === 'empleado' && !activeDepartmentId) throw new Error('ACTIVE_DEPARTMENT_REQUIRED');
+        return { nombreArchivo: String(input.nombreArchivo || ''), sistemaOrigen: sourceName, tipoEntidad: entityType,
+            destinoModulo: target.destination, hojaSeleccionada: String(input.hojaSeleccionada || ''), activeDepartmentId: activeDepartmentId,
+            columnaMapeo: { identificador: identifierColumn, campos: mappedFields }, filasData: rows,
+            analisisEstructural: input.analisisEstructural && typeof input.analisisEstructural === 'object' ? input.analisisEstructural : {} };
+    }
+    window.buildExcelImportPreflightPayload = buildExcelImportPreflightPayload_;
+
+    function resetExcelSemanticPreflight_() {
+        excelPreflightRequestSequence++; excelPreflightInFlight = false; latestExcelSemanticPreview = null; latestExcelReviewConfirmedHash = '';
+        const result = document.getElementById('excel-semantic-result');
+        const confirmation = document.getElementById('excel-semantic-confirmation');
+        const checkbox = document.getElementById('excel-confirm-preflight-check');
+        const confirmButton = document.getElementById('btn-confirm-excel-preflight');
+        const progress = document.getElementById('excel-preflight-progress');
+        if (result) result.classList.add('hidden');
+        if (confirmation) confirmation.classList.add('hidden');
+        if (checkbox) checkbox.checked = false;
+        if (confirmButton) confirmButton.disabled = true;
+        if (progress) progress.textContent = '';
+        const runButton = document.getElementById('btn-run-excel-preflight');
+        if (runButton) runButton.disabled = !latestExcelAnalysis || !latestExcelAnalysis.valid || !parsedExcelData.length;
+        const status = document.getElementById('excel-semantic-confirmation-status');
+        if (status) status.textContent = 'La confirmación solo registra la revisión en esta pantalla; no escribe ni modifica datos.';
+    }
+
+    function populateExcelImportMappingControls_() {
+        const identifierSelect = document.getElementById('excel-import-identifier-column');
+        const mappingContainer = document.getElementById('excel-import-field-mappings');
+        const entitySelect = document.getElementById('excel-import-entity-type');
+        const departmentContainer = document.getElementById('excel-import-active-department-container');
+        if (!identifierSelect || !mappingContainer || !entitySelect) return;
+        const targets = {
+            curso: { fields: ['Nombre', 'Nota', 'FechaInicio'], required: ['Nombre'] },
+            estudiante: { fields: ['PersonaID'], required: ['PersonaID'] },
+            empleado: { fields: ['PersonaId', 'UserId', 'Puesto', 'Departamento', 'CentroCosto', 'FechaIngreso', 'FechaSalida', 'EstadoLaboral', 'Observaciones'], required: ['PersonaId', 'Puesto', 'Departamento'] }
+        };
+        const target = targets[String(entitySelect.value || 'curso')];
+        const headers = latestExcelAnalysis && Array.isArray(latestExcelAnalysis.headers) ? latestExcelAnalysis.headers.map(function(value) { return String(value || '').trim(); }).filter(Boolean) : [];
+        identifierSelect.replaceChildren();
+        const placeholder = document.createElement('option'); placeholder.value = ''; placeholder.textContent = headers.length ? 'Seleccione la columna identificadora…' : 'Primero valide la estructura del libro'; identifierSelect.appendChild(placeholder);
+        headers.forEach(function(header) { const option = document.createElement('option'); option.value = header; option.textContent = header; identifierSelect.appendChild(option); });
+        mappingContainer.replaceChildren();
+        if (!target || !headers.length) {
+            const empty = document.createElement('p'); empty.className = 'text-xs text-slate-500'; empty.textContent = 'Seleccione un libro válido para configurar el mapeo.'; mappingContainer.appendChild(empty);
+        } else {
+            target.fields.forEach(function(field) {
+                const wrapper = document.createElement('div'), label = document.createElement('label'), select = document.createElement('select');
+                const required = target.required.indexOf(field) !== -1, id = 'excel-import-map-' + field.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                label.htmlFor = id; label.className = 'block text-xs font-semibold text-slate-700 mb-1'; label.textContent = field + (required ? ' *' : ' (opcional)');
+                select.id = id; select.dataset.targetField = field; select.required = required; select.className = 'w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm';
+                const none = document.createElement('option'); none.value = ''; none.textContent = required ? 'Seleccione una columna…' : 'No importar este campo'; select.appendChild(none);
+                headers.forEach(function(header) { const option = document.createElement('option'); option.value = header; option.textContent = header; select.appendChild(option); });
+                wrapper.appendChild(label); wrapper.appendChild(select); mappingContainer.appendChild(wrapper);
+            });
+        }
+        if (departmentContainer) departmentContainer.classList.toggle('hidden', String(entitySelect.value) !== 'empleado');
+        const runButton = document.getElementById('btn-run-excel-preflight');
+        if (runButton) runButton.disabled = !latestExcelAnalysis || !latestExcelAnalysis.valid || !parsedExcelData.length;
+    }
+
+    function renderExcelSemanticPreflightResult_(preview) {
+        const resultBox = document.getElementById('excel-semantic-result'), summary = document.getElementById('excel-semantic-summary');
+        const diagnostics = document.getElementById('excel-semantic-diagnostics'), confirmation = document.getElementById('excel-semantic-confirmation');
+        const checkbox = document.getElementById('excel-confirm-preflight-check'), confirmButton = document.getElementById('btn-confirm-excel-preflight');
+        if (!resultBox || !summary || !diagnostics) return;
+        resultBox.classList.remove('hidden'); diagnostics.replaceChildren();
+        const snapshot = preview && preview.targetExistenceSnapshot || {}, destinationVerified = snapshot.verified === true;
+        summary.textContent = preview && preview.status === 'success'
+            ? 'Filas válidas: ' + Number(preview.filasValidas || 0) + ' de ' + Number(preview.totalFilas || 0) + ' · Destino: ' + (destinationVerified ? 'verificado' : 'NO VERIFICADO')
+            : 'La prevalidación no pudo completarse: ' + String(preview && (preview.message || preview.code) || 'respuesta inválida');
+        const entries = [];
+        (Array.isArray(preview && preview.errores) ? preview.errores : []).forEach(function(item) { entries.push({ severity: 'ERROR', message: String(item.mensaje || item.message || item.codigo || 'Error de validación') + (item.fila ? ' · fila ' + item.fila : '') }); });
+        (Array.isArray(preview && preview.advertencias) ? preview.advertencias : []).forEach(function(item) { entries.push({ severity: 'ADVERTENCIA', message: String(item.mensaje || item.message || item.codigo || 'Advertencia') }); });
+        if (!destinationVerified) entries.push({ severity: 'BLOQUEO', message: 'No se verificó la existencia del destino remoto o la hoja de destino. La revisión no puede habilitar una incorporación.' });
+        if (!entries.length) entries.push({ severity: 'OK', message: 'La validación semántica no reportó errores ni advertencias.' });
+        entries.forEach(function(item) { const line = document.createElement('li'); line.className = item.severity === 'ERROR' || item.severity === 'BLOQUEO' ? 'text-red-700' : item.severity === 'ADVERTENCIA' ? 'text-amber-700' : 'text-emerald-700'; line.textContent = item.severity + ': ' + item.message; diagnostics.appendChild(line); });
+        const canConfirm = !!(preview && preview.status === 'success' && preview.previewHash && destinationVerified && (preview.validForImport === true || preview.validForPartialImport === true));
+        if (confirmation) confirmation.classList.toggle('hidden', !preview || !preview.previewHash);
+        if (checkbox) checkbox.checked = false;
+        if (confirmButton) confirmButton.disabled = !canConfirm;
+        const status = document.getElementById('excel-semantic-confirmation-status');
+        if (status) status.textContent = canConfirm ? 'La confirmación registra únicamente que revisó este resultado. No ejecuta una importación.' : 'No se puede confirmar: corrija los errores o espere a que el destino pueda verificarse.';
+    }
+
 
     function validateExcelFileEnvelope(file, bytes) {
         const errors = [], warnings = [];
@@ -7856,7 +7970,9 @@ function toBase64(file) {
         const headerRow = headerRowSelectExcel ? Number(headerRowSelectExcel.value || 0) : 0;
         latestExcelAnalysis = analyzeExcelWorkbook(selectedWorkbookExcel, sheetName, headerRow);
         parsedExcelData = latestExcelAnalysis.valid ? latestExcelAnalysis.data : [];
+        resetExcelSemanticPreflight_();
         renderExcelValidationResult(latestExcelAnalysis, selectedExcelFileName);
+        populateExcelImportMappingControls_();
         if (previewContainerExcel) previewContainerExcel.classList.remove('hidden');
     }
 
@@ -7905,6 +8021,8 @@ function toBase64(file) {
         selectedWorkbookExcel = null;
         selectedExcelFileName = '';
         latestExcelAnalysis = null;
+        resetExcelSemanticPreflight_();
+        populateExcelImportMappingControls_();
         if (fileInputExcel) fileInputExcel.value = '';
         if (previewContainerExcel) previewContainerExcel.classList.add('hidden');
         if (previewDiagnosticsExcel) previewDiagnosticsExcel.replaceChildren();
@@ -7912,12 +8030,13 @@ function toBase64(file) {
         modalExcelImporter?.classList.remove('hidden');
     });
 
-    document.getElementById('btn-close-excel-importer')?.addEventListener('click', () => modalExcelImporter?.classList.add('hidden'));
-    document.getElementById('btn-cancel-excel-import')?.addEventListener('click', () => modalExcelImporter?.classList.add('hidden'));
+    document.getElementById('btn-close-excel-importer')?.addEventListener('click', () => { resetExcelSemanticPreflight_(); modalExcelImporter?.classList.add('hidden'); });
+    document.getElementById('btn-cancel-excel-import')?.addEventListener('click', () => { resetExcelSemanticPreflight_(); modalExcelImporter?.classList.add('hidden'); });
     sheetSelectExcel?.addEventListener('change', refreshExcelWorkbookPreview);
     headerRowSelectExcel?.addEventListener('change', refreshExcelWorkbookPreview);
 
     fileInputExcel?.addEventListener('change', event => {
+        resetExcelSemanticPreflight_();
         const file = event.target.files && event.target.files[0];
         if (!file) return;
         const reader = new FileReader();
@@ -7959,12 +8078,70 @@ function toBase64(file) {
         reader.readAsArrayBuffer(file);
     });
 
-    const submitExcelImportButton = document.getElementById('btn-submit-excel-import');
-    if (submitExcelImportButton) {
-        submitExcelImportButton.disabled = true;
-        submitExcelImportButton.title = 'La persistencia requiere un mapeo y una confirmación emitidos por el servicio propietario.';
-        submitExcelImportButton.textContent = 'Importación no habilitada';
-    }
+    const runExcelPreflightButton = document.getElementById('btn-run-excel-preflight');
+    const confirmExcelPreflightButton = document.getElementById('btn-confirm-excel-preflight');
+    const confirmExcelPreflightCheck = document.getElementById('excel-confirm-preflight-check');
+    const entityTypeExcelSelect = document.getElementById('excel-import-entity-type');
+    const sourceSystemExcelInput = document.getElementById('excel-import-source-system');
+    const activeDepartmentExcelInput = document.getElementById('excel-import-active-department');
+    const mappingExcelContainer = document.getElementById('excel-import-field-mappings');
+    entityTypeExcelSelect?.addEventListener('change', function() { resetExcelSemanticPreflight_(); populateExcelImportMappingControls_(); });
+    sourceSystemExcelInput?.addEventListener('input', resetExcelSemanticPreflight_);
+    activeDepartmentExcelInput?.addEventListener('input', resetExcelSemanticPreflight_);
+    document.getElementById('excel-import-identifier-column')?.addEventListener('change', resetExcelSemanticPreflight_);
+    mappingExcelContainer?.addEventListener('change', resetExcelSemanticPreflight_);
+    confirmExcelPreflightCheck?.addEventListener('change', function() {
+        if (confirmExcelPreflightButton) confirmExcelPreflightButton.disabled = !confirmExcelPreflightCheck.checked || !latestExcelSemanticPreview || latestExcelSemanticPreview.targetExistenceSnapshot?.verified !== true || !latestExcelSemanticPreview.previewHash;
+    });
+    runExcelPreflightButton?.addEventListener('click', async function() {
+        if (excelPreflightInFlight || !latestExcelAnalysis || !latestExcelAnalysis.valid || !parsedExcelData.length) return;
+        const mappingFields = {};
+        mappingExcelContainer?.querySelectorAll('select[data-target-field]').forEach(function(select) { mappingFields[select.dataset.targetField] = select.value; });
+        let payload;
+        try {
+            payload = buildExcelImportPreflightPayload_({
+                nombreArchivo: selectedExcelFileName, sistemaOrigen: sourceSystemExcelInput && sourceSystemExcelInput.value,
+                tipoEntidad: entityTypeExcelSelect && entityTypeExcelSelect.value, identificador: document.getElementById('excel-import-identifier-column')?.value,
+                campos: mappingFields, activeDepartmentId: activeDepartmentExcelInput && activeDepartmentExcelInput.value,
+                hojaSeleccionada: latestExcelAnalysis.selectedSheet, filasData: parsedExcelData, analisisEstructural: latestExcelAnalysis.analysis
+            });
+        } catch (error) {
+            if (window.showApiToast) window.showApiToast('Mapeo incompleto', String(error && error.message || error), 'validation');
+            return;
+        }
+        resetExcelSemanticPreflight_();
+        const requestSequence = excelPreflightRequestSequence;
+        excelPreflightInFlight = true;
+        if (runExcelPreflightButton) runExcelPreflightButton.disabled = true;
+        const progress = document.getElementById('excel-preflight-progress');
+        if (progress) progress.textContent = 'Consultando validación institucional…';
+        try {
+            if (typeof window.fetchApi !== 'function') throw new Error('API_CLIENT_UNAVAILABLE');
+            const response = await window.fetchApi('ACCOUNTING', 'validateImportPreview', payload);
+            if (requestSequence !== excelPreflightRequestSequence) return;
+            const previewData = response && response.data && typeof response.data === 'object' ? response.data : response;
+            const preview = Object.assign({}, previewData || {}, { status: response && response.status || previewData && previewData.status || 'error' });
+            latestExcelSemanticPreview = preview;
+            renderExcelSemanticPreflightResult_(preview);
+            if (progress) progress.textContent = preview.status === 'success' ? 'Prevalidación recibida. No se han escrito datos.' : 'La prevalidación fue rechazada o el servicio no está disponible.';
+        } catch (error) {
+            if (requestSequence !== excelPreflightRequestSequence) return;
+            renderExcelSemanticPreflightResult_({ status: 'error', code: String(error && error.message || error) });
+            if (progress) progress.textContent = 'No se pudo consultar el servicio.';
+        } finally {
+            if (requestSequence === excelPreflightRequestSequence) {
+                excelPreflightInFlight = false;
+                if (runExcelPreflightButton) runExcelPreflightButton.disabled = !latestExcelAnalysis || !latestExcelAnalysis.valid || !parsedExcelData.length;
+            }
+        }
+    });
+    confirmExcelPreflightButton?.addEventListener('click', function() {
+        if (!latestExcelSemanticPreview || !latestExcelSemanticPreview.previewHash || !latestExcelSemanticPreview.targetExistenceSnapshot || latestExcelSemanticPreview.targetExistenceSnapshot.verified !== true || !confirmExcelPreflightCheck || !confirmExcelPreflightCheck.checked) return;
+        latestExcelReviewConfirmedHash = latestExcelSemanticPreview.previewHash;
+        const status = document.getElementById('excel-semantic-confirmation-status');
+        if (status) status.textContent = 'Revisión confirmada para este archivo y mapeo. No se guardó, importó ni modificó ningún registro.';
+        confirmExcelPreflightButton.disabled = true;
+    });
 });
 /**
  * REQ: Soporte para copia de código en el panel del profesor (v7.6.4)
