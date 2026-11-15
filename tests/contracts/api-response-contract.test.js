@@ -109,11 +109,16 @@ async function main() {
   const server = http.createServer((req, res) => {
     const pathname = new URL(req.url, "http://localhost").pathname;
     req.resume();
+    const send = (status, type, body) => { res.writeHead(status, { "content-type": type }); res.end(body); };
     if (pathname === "/timeout") {
-      req.on("close", () => { if (!res.writableEnded) res.destroy(); });
+      setTimeout(() => {
+        if (!res.destroyed && !res.writableEnded) {
+          const delayedMeta = { timestamp: new Date().toISOString(), correlationId: "DELAYED-CORRELATION-123456" };
+          send(200, "text/plain", JSON.stringify({ apiVersion: "1.0.0", status: "success", data: [], meta: delayedMeta }));
+        }
+      }, 250);
       return;
     }
-    const send = (status, type, body) => { res.writeHead(status, { "content-type": type }); res.end(body); };
     const meta = { timestamp: new Date().toISOString(), correlationId: "SERVER-CORRELATION-123456" };
     if (pathname === "/success") return send(200, "text/plain", JSON.stringify({ apiVersion: "1.0.0", status: "success", data: [{ id: 1 }], meta }));
     if (pathname === "/empty") return send(200, "text/plain", JSON.stringify({ apiVersion: "1.0.0", status: "success", data: [], meta }));
@@ -128,6 +133,7 @@ async function main() {
   });
   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
   const base = "http://127.0.0.1:" + server.address().port;
+  try {
   const client = makeClient(base + "/success");
   async function call(pathname, service) {
     client.SERVICE_URLS[service || "ACADEMIC"] = base + pathname;
@@ -193,10 +199,12 @@ async function main() {
   assert.equal(networkFailure.code, "NETWORK_ERROR");
   assert.equal(Object.prototype.hasOwnProperty.call(networkFailure, "data"), false);
 
-  server.closeAllConnections();
-  await new Promise(resolve => server.close(resolve));
   assert.doesNotMatch(clientSourceForStaticCheck(apiSource), /innerHTML\s*=/, "API error messages must be rendered as text");
   console.log("PASS: versioned response envelope, both backend services, strict client validation and local HTTP success/error/empty/invalid JSON/HTML/HTTP 503/timeout/network failure");
+  } finally {
+    server.closeAllConnections();
+    await new Promise(resolve => server.close(resolve));
+  }
 }
 function clientSourceForStaticCheck(source) { return source.slice(source.indexOf("function fetchApi("), source.indexOf("/**\n * REQ-EXP-017")); }
 main().catch(error => { console.error(error); process.exitCode = 1; });
