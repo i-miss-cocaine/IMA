@@ -514,10 +514,10 @@ console.log("USER manual conformity signer identity, ownership, idempotency and 
 
 function makeAuditCertificateHarness(options = {}) {
   const rows = [
-    ["FirmaID","SolicitudID","DocumentoID","FirmanteID","RolFirmante","TipoFirma","TokenVerificacion","FechaFirma","IPOrigen","DocumentoHash","SignatureHash"],
-    ["SIG-1","SOL-1","DOC-1","U-1","Director","Conformidad manual","TOK-1","2026-11-10T10:00:00Z","10.0.0.1","HASH-DOC","HASH-SIG-1"],
-    ["SIG-2","SOL-1","DOC-2","U-2","Secretaría","Conformidad manual","TOK-2","2026-11-10T11:00:00Z","10.0.0.2","HASH-DOC-2","HASH-SIG-2"],
-    ["SIG-3","SOL-2","DOC-1","U-3","Director","Conformidad manual","TOK-3","","","",""]
+    ["FirmaID","SolicitudID","DocumentoID","FirmanteID","RolFirmante","TipoFirma","TokenVerificacion","FechaFirma","IPOrigen","DocumentoHash","SignatureHash","VersionDocumento","MetodoAutenticacion","TransaccionID"],
+    ["SIG-1","SOL-1","DOC-1","U-1","Director","Conformidad manual","TOK-1","2026-11-10T10:00:00Z","10.0.0.1","HASH-DOC","HASH-SIG-1","v1","SESION_VERIFICADA","SIG-1"],
+    ["SIG-2","SOL-1","DOC-2","U-2","Secretaría","Conformidad manual","TOK-2","2026-11-10T11:00:00Z","10.0.0.2","HASH-DOC-2","HASH-SIG-2","v1","SESION_VERIFICADA","SIG-2"],
+    ["SIG-3","SOL-2","DOC-1","U-3","Director","Conformidad manual","TOK-3","","","HASH-DOC","","v1","SESION_VERIFICADA","SIG-3"]
   ];
   if (options.extraRows) options.extraRows.forEach(row=>rows.push(row.slice()));
   const state = { held:false, opens:0, fullReads:0, keyReads:0, releases:0, scopes:[], events:[], requestOwnershipCalls:0 };
@@ -542,7 +542,8 @@ function makeAuditCertificateHarness(options = {}) {
     assertAdvancedSignatureDocumentScope_:(_payload,_ss,doc,req,op)=>{
       state.scopes.push({doc,req,op});
       return options.owner===false?{authorized:false,code:"RESOURCE_SCOPE_DENIED"}:
-        {authorized:true,documentId:doc,solicitudId:req||"SOL-1",departmentId:"D1",role:"Director"};
+        {authorized:true,documentId:doc,solicitudId:req||"SOL-1",departmentId:"D1",role:"Director",
+          documentVersion:options.missingDocumentVersion?"":"v1",storedDocumentHash:options.storedDocumentHash||"HASH-DOC"};
     },
     computeDocumentSHA256:value=>"HASH-CERT:"+value,
     logStructuredEvent:(_s,_a,_l,code,_m,data)=>state.events.push({code,data}),
@@ -555,7 +556,9 @@ function makeAuditCertificateHarness(options = {}) {
 {
   const valid=makeAuditCertificateHarness();
   const certificate=valid.run({documentoId:"DOC-1",solicitudId:"SOL-1"});
-  assert.equal(certificate.totalFirmantes,1,"certificate must include only the exact request/document pair");
+  assert.equal(certificate.totalFirmantes,1,"certificate must include only the exact request/document pair and exact version/hash");
+  assert.equal(certificate.versionDocumento,"v1");
+  assert.equal(certificate.pistaAuditoriaFirmantes[0].versionDocumento,"v1");
   assert.equal(certificate.pistaAuditoriaFirmantes[0].firmaId,"SIG-1");
   assert.equal(certificate.pistaAuditoriaFirmantes[0].tokenVerificacion,undefined,"verification tokens must not be exposed");
   assert.equal(valid.state.scopes[0].op,"READ");
@@ -573,6 +576,17 @@ function makeAuditCertificateHarness(options = {}) {
 
   const documentOnly=makeAuditCertificateHarness();
   assert.equal(documentOnly.run({documentoId:"DOC-1"}).solicitudId,"SOL-1");
+
+  const historicalVersion=makeAuditCertificateHarness({extraRows:[
+    ["SIG-OLD","SOL-1","DOC-1","U-OLD","Director","Conformidad manual","TOK-OLD","2026-11-09T10:00:00Z","","OLD-HASH","OLD-SIG","v0","SESION_VERIFICADA","SIG-OLD"]
+  ]});
+  const currentOnly=historicalVersion.run({documentoId:"DOC-1",solicitudId:"SOL-1"});
+  assert.equal(currentOnly.totalFirmantes,1,"historical version signatures must not enter the current version summary");
+  assert.equal(currentOnly.documentoOriginalSHA256,"HASH-DOC");
+  const wrongStoredHash=makeAuditCertificateHarness({storedDocumentHash:"f".repeat(64)});
+  assert.throws(()=>wrongStoredHash.run({documentoId:"DOC-1",solicitudId:"SOL-1"}),/NO_SIGNATURES_FOUND/);
+  const missingVersion=makeAuditCertificateHarness({missingDocumentVersion:true});
+  assert.throws(()=>missingVersion.run({documentoId:"DOC-1",solicitudId:"SOL-1"}),/DOCUMENT_BINARY_METADATA_MISSING/);
 
   const missingSheet=makeAuditCertificateHarness({sheetMissing:true});
   assert.throws(()=>missingSheet.run({documentoId:"DOC-1",solicitudId:"SOL-1"}),/NO_SIGNATURES_FOUND/);
@@ -632,7 +646,7 @@ function makeAuditCertificateHarness(options = {}) {
 
   const noEvidence=makeAuditCertificateHarness();
   const noEvidenceCertificate=noEvidence.run({transactionId:"TOK-3"});
-  assert.equal(noEvidenceCertificate.documentoOriginalSHA256,null);
+  assert.equal(noEvidenceCertificate.documentoOriginalSHA256,"HASH-DOC");
   assert.equal(noEvidenceCertificate.pistaAuditoriaFirmantes[0].timestampUTC,null);
   assert.equal("ipOrigen" in noEvidenceCertificate.pistaAuditoriaFirmantes[0],false);
   assert.equal(noEvidenceCertificate.pistaAuditoriaFirmantes[0].signatureHash,null);

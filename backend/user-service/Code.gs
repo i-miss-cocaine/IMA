@@ -8173,11 +8173,18 @@ function generateSignatureAuditCertificate(payload) {
       resolvedSolicitudId = requestIds[0];
     }
 
+    const expectedDocumentVersion = String(documentAccess.documentVersion || "").trim();
+    const expectedDocumentHash = String(documentAccess.storedDocumentHash || "").trim().toLowerCase();
+    if (!expectedDocumentVersion || !/^[a-f0-9]{64}$/.test(expectedDocumentHash)) {
+      throw new Error("DOCUMENT_BINARY_METADATA_MISSING");
+    }
     if (!firmSheet) throw new Error("NO_SIGNATURES_FOUND");
     const firmData = firmSheet.getDataRange().getValues();
     const matches = firmData.slice(1).filter(function(row) {
       return String(row[1] || "").trim() === resolvedSolicitudId &&
-        String(row[2] || "").trim() === resolvedDocumentId;
+        String(row[2] || "").trim() === resolvedDocumentId &&
+        String(row[9] || "").trim().toLowerCase() === expectedDocumentHash &&
+        String(row[11] || "").trim() === expectedDocumentVersion;
     });
     if (matches.length === 0) throw new Error("NO_SIGNATURES_FOUND");
     if (requestedTransactionId && !matches.some(function(row) {
@@ -8206,6 +8213,7 @@ function generateSignatureAuditCertificate(payload) {
         tipoMecanismo: row[5] || null,
         timestampUTC: timestampUTC,
         documentoHashVinculado: row[9] || null,
+        versionDocumento: row[11] || null,
         signatureHash: row[10] || null
       };
     });
@@ -8215,6 +8223,7 @@ function generateSignatureAuditCertificate(payload) {
       certificadoId: "CERT-AUDIT-" + Date.now(),
       solicitudId: resolvedSolicitudId,
       documentoId: resolvedDocumentId,
+      versionDocumento: expectedDocumentVersion,
       documentoOriginalSHA256: documentHashes.length === 1 ? documentHashes[0] : null,
       fechaEmisionUTC: issuedAt,
       naturalezaCertificado: "RESUMEN_AUDITORIA_NO_PROBATORIO",
