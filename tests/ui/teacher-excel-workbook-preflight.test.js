@@ -81,6 +81,7 @@ assert.ok(chosen.warnings.some(x => x.code === "HIDDEN_SHEETS_PRESENT"));
 const shifted = context.analyze(workbook([["Reporte institucional"],["ID","Nombre"],["A-2","Luis"]]), "Datos", 1);
 assert.equal(shifted.valid, true);
 assert.ok(shifted.warnings.some(x => x.code === "HEADER_ROW_SHIFTED"));
+assert.equal(shifted.dataRowNumbers[0], 3);
 
 const duplicate = context.analyze(workbook([["ID","Nombre","Nombre"],["A-1","Ana","Ana"]]), "Datos", 0);
 assert.equal(duplicate.valid, false);
@@ -97,6 +98,7 @@ assert.equal(blankAndMixed.valid, true);
 assert.ok(blankAndMixed.warnings.some(x => x.code === "BLANK_ROWS_PRESENT"));
 assert.ok(blankAndMixed.warnings.some(x => x.code === "MERGED_CELLS_PRESENT"));
 assert.ok(blankAndMixed.warnings.some(x => x.code === "COLUMN_TYPE_INCONSISTENCY"));
+assert.deepEqual(Array.from(blankAndMixed.dataRowNumbers), [2, 4]);
 
 const unresolved = workbook([["ID","Valor"],["A-1",null]], { sheet: { C2: { f: "SUM(A1:A1)" } } });
 const unresolvedResult = context.analyze(unresolved, "Datos", 0);
