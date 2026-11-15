@@ -17,7 +17,7 @@ add("LEGACY","persona","PER-1","PERSONA-1");
 const sheet={getRange(r,c,n,m){return{getValues(){return identityRows.slice(r-1,r-1+n).map(row=>row.slice(c-1,c-1+m));}};},getDataRange(){return{getValues(){return identityRows.map(row=>row.slice());}};}};
 const ss={getSheetByName(name){return name==="CorrespondenciaIdentificadores"?sheet:null;}};
 const schemas={curso:{service:"ACCOUNTING",sheet:"Cursos",headers:["CursoID","Nombre","Nota","FechaInicio"]},estudiante:{service:"ACADEMIC",sheet:"Estudiantes",headers:["EstudianteID","PersonaID"]}};
-const context={SPREADSHEET_ID:"TEST",ACCOUNTING_IDENTITY_MAPPING_HEADERS_:identityHeaders,MIGRATION_OWNER_SCHEMAS_:schemas,
+const context={SPREADSHEET_ID:"TEST",MIGRATION_OWNER_SCHEMAS_:schemas,
  SpreadsheetApp:{openById(){return ss;}},PropertiesService:{getScriptProperties(){return{getProperty(){return"INST-1";}};}},
  getVerifiedAccountingIdentity_(){return{authorized:true,userId:"U-1",role:"Administrador"};},
  buildAccountingDepartmentalImportPreflight_(){return{valid:true,applicable:false,institutionId:"INST-1",rows:[]};},
