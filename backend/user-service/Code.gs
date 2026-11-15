@@ -8632,12 +8632,31 @@ function createAdvancedSignatureRequest(payload) {
 
     const now = new Date();
     const txId = "TX-SIG-ADV-" + Utilities.getUuid();
-    // Hash actual Drive bytes only after ownership has been verified.
+    // Snapshot exact, previously persisted document version and hash after ownership verification.
     const sourceFileId = String(documentAccess.driveFileId || "").trim();
+    const sourceVersion = String(documentAccess.documentVersion || "").trim();
+    const expectedStoredHash = String(documentAccess.storedDocumentHash || "").trim().toLowerCase();
     if (!sourceFileId) throw new Error("SIGNATURE_SOURCE_FILE_UNAVAILABLE");
+    if (!sourceVersion || !/^[a-f0-9]{64}$/.test(expectedStoredHash)) {
+      throw new Error("DOCUMENT_BINARY_METADATA_MISSING");
+    }
+    let sourceFile;
+    try {
+      sourceFile = DriveApp.getFileById(sourceFileId);
+    } catch (_) {
+      throw new Error("SIGNATURE_SOURCE_FILE_UNAVAILABLE");
+    }
+    if (!sourceFile || (sourceFile.isTrashed && sourceFile.isTrashed())) {
+      throw new Error("SIGNATURE_SOURCE_FILE_UNAVAILABLE");
+    }
+    if (!sourceFile.getSharingAccess || sourceFile.getSharingAccess() !== DriveApp.Access.PRIVATE) {
+      throw new Error("DOCUMENT_FILE_NOT_PRIVATE");
+    }
+    const sourceFileName = String(sourceFile.getName ? sourceFile.getName() : documentAccess.fileName || "").trim();
+    if (!/\\.pdf$/i.test(sourceFileName)) throw new Error("SIGNATURE_DOCUMENT_MUST_BE_PDF");
     let sourceBytes;
     try {
-      sourceBytes = DriveApp.getFileById(sourceFileId).getBlob().getBytes();
+      sourceBytes = sourceFile.getBlob().getBytes();
     } catch (_) {
       throw new Error("SIGNATURE_SOURCE_FILE_UNAVAILABLE");
     }
@@ -8646,6 +8665,7 @@ function createAdvancedSignatureRequest(payload) {
     const resolvedDocumentHash = digestBytes.map(function(value) {
       return ("0" + (value & 0xFF).toString(16)).slice(-2);
     }).join("");
+    if (resolvedDocumentHash !== expectedStoredHash) throw new Error("DOCUMENT_INTEGRITY_MISMATCH");
     const suppliedHash = String(documentoHash || "").trim().replace(/^sha256:/i, "").toLowerCase();
     if (suppliedHash && !/^[a-f0-9]{64}$/.test(suppliedHash)) {
       throw new Error("DOCUMENT_HASH_FORMAT_INVALID");
@@ -8653,6 +8673,25 @@ function createAdvancedSignatureRequest(payload) {
     if (suppliedHash && suppliedHash !== resolvedDocumentHash) {
       throw new Error("DOCUMENT_HASH_MISMATCH");
     }
+    let secondFile;
+    try {
+      secondFile = DriveApp.getFileById(sourceFileId);
+    } catch (_) {
+      throw new Error("SIGNATURE_SOURCE_FILE_UNAVAILABLE");
+    }
+    if (!secondFile || (secondFile.isTrashed && secondFile.isTrashed())) {
+      throw new Error("SIGNATURE_SOURCE_FILE_UNAVAILABLE");
+    }
+    if (!secondFile.getSharingAccess || secondFile.getSharingAccess() !== DriveApp.Access.PRIVATE) {
+      throw new Error("DOCUMENT_FILE_NOT_PRIVATE");
+    }
+    const secondBytes = secondFile.getBlob().getBytes();
+    const secondDigest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, secondBytes)
+      .map(function(value) { return ("0" + (value & 0xFF).toString(16)).slice(-2); }).join("");
+    if (secondDigest !== resolvedDocumentHash) throw new Error("DOCUMENT_CHANGED_DURING_SIGNING");
+    const versionHeader = String(txSheet.getRange(1,14).getValue() || "").trim();
+    if (!versionHeader) txSheet.getRange(1,14).setValue("VersionDocumento");
+    else if (versionHeader !== "VersionDocumento") throw new Error("SIGNATURE_TRANSACTION_SCHEMA_MISMATCH");
     txSheet.appendRow([
       txId,
       documentAccess.documentId,
@@ -8666,7 +8705,8 @@ function createAdvancedSignatureRequest(payload) {
       "Pendiente",
       now.toISOString(),
       "",
-      ""
+      "",
+      sourceVersion
     ]);
 
     logStructuredEvent("USER", "createAdvancedSignatureRequest", "INFO", "ADVANCED_SIGNATURE_REQUEST_CREATED",
@@ -8685,7 +8725,8 @@ function createAdvancedSignatureRequest(payload) {
       proveedorId: sProveedor,
       estadoTransaccion: "Pendiente",
       documentoHash: resolvedDocumentHash,
-      message: "Solicitud de firma creada en estado Pendiente; el hash corresponde a los bytes del archivo fuente consultado."
+      versionDocumento: sourceVersion,
+      message: "Solicitud de firma creada en estado Pendiente y vinculada al hash de los bytes privados y a su versión documental exacta."
     };
   } finally {
     if (hasLock) {
@@ -8729,7 +8770,7 @@ function checkAdvancedSignatureStatus(payload) {
     if (!documentAccess || documentAccess.authorized !== true) {
       throw new Error(documentAccess && documentAccess.code || "RESOURCE_SCOPE_DENIED");
     }
-    const row = txSheet.getRange(rowNumber, 1, 1, 13).getValues()[0];
+    const row = txSheet.getRange(rowNumber, 1, 1, 14).getValues()[0];
     if (String(row[0] || "").trim() !== transactionId ||
         String(row[1] || "").trim() !== documentId || String(row[2] || "").trim() !== requestId) {
       throw new Error("RESOURCE_NOT_FOUND");
@@ -8742,7 +8783,7 @@ function checkAdvancedSignatureStatus(payload) {
     const completedAwaitingVerification = String(row[9] || "").trim() === "Completada";
     return { status: "success", transaccionId: row[0], documentoId: row[1],
       firmanteId: row[3], mecanismoFirma: row[6], proveedorId: row[7],
-      estadoTransaccion: row[9], esFirmadoValido: false,
+      estadoTransaccion: row[9], versionDocumento: String(row[13] || "").trim() || null, esFirmadoValido: false,
       verificacionCriptograficaPendiente: completedAwaitingVerification,
       requiereValidacionAutenticadaProveedor: true };
   } finally {

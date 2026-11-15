@@ -1,4 +1,5 @@
 const assert = require("node:assert/strict");
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const vm = require("node:vm");
 
@@ -12,10 +13,11 @@ function extractFunction(name) {
 
 function makeHarness(options = {}) {
   const documentRows = [
-    ["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileID"],
+    ["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileID","","","","","","","","VersionDocumento","SHA256"],
     [options.documentId || "DOC-1", options.expedienteId === undefined ? "EXP-1" : options.expedienteId,
       options.storedSolicitudId === undefined ? "SOL-1" : options.storedSolicitudId,
-      "Identidad","identidad.pdf",options.driveFileId === undefined ? "DRIVE-1" : options.driveFileId]
+      "Identidad","identidad.pdf",options.driveFileId === undefined ? "DRIVE-1" : options.driveFileId,
+      "","","","","","","",options.documentVersion || "v1",options.storedHash || crypto.createHash("sha256").update(Buffer.from([1,2,3])).digest("hex")]
   ];
   const admissionRows = [
     ["SolicitudID","SolicitanteID","EstudianteID","TipoTramite","Descripcion","Fecha","Estado","","","","","","","","ExpedienteID"],
@@ -39,10 +41,11 @@ function makeHarness(options = {}) {
     getDataRange:()=>({getValues:()=>providerRows.map(row=>row.slice())})
   };
   const transactions = {
-    rows:[["TransaccionID","DocumentoID","SolicitudID","FirmanteID","FirmanteNombre","FirmanteEmail","MecanismoFirma","ProveedorID","DocumentoHash","Estado","FechaSolicitud","FechaRespuesta","CertificadoX509Ref"]],
+    rows:[["TransaccionID","DocumentoID","SolicitudID","FirmanteID","FirmanteNombre","FirmanteEmail","MecanismoFirma","ProveedorID","DocumentoHash","Estado","FechaSolicitud","FechaRespuesta","CertificadoX509Ref","VersionDocumento"]],
     reads:0,appends:[],
     getDataRange(){this.reads++;const self=this;return {getValues(){return self.rows.map(row=>row.slice());}};},
-    appendRow(row){assert.equal(state.held,true,"transaction append must occur while lock is held");this.appends.push(row.slice());if(options.onAppend)options.onAppend(row.slice());this.rows.push(row.slice());}
+    appendRow(row){assert.equal(state.held,true,"transaction append must occur while lock is held");this.appends.push(row.slice());if(options.onAppend)options.onAppend(row.slice());this.rows.push(row.slice());},
+    getRange(row,column){return {getValue:()=>transactions.rows[0][column-1] || "",setValue:value=>{transactions.rows[0][column-1]=value;}};}
   };
   const state={held:false,lockAttempts:0,releases:0,spreadsheetOpens:0,txSheetRequests:0,
     ownershipCalls:[],events:[],permissionCalls:0,driveReads:0,providerConfigReads:0};
@@ -94,14 +97,15 @@ function makeHarness(options = {}) {
     Utilities:{
       getUuid:()=>"UUID-1",
       DigestAlgorithm:{SHA_256:"SHA_256"},
-      computeDigest:(algorithm,bytes)=>{assert.equal(algorithm,"SHA_256");assert.deepEqual(Array.from(bytes),[1,2,3]);return Array(32).fill(1);}
+      computeDigest:(algorithm,bytes)=>{assert.equal(algorithm,"SHA_256");return Array.from(crypto.createHash("sha256").update(Buffer.from(bytes)).digest());}
     },
-    DriveApp:{getFileById:fileId=>{
+    DriveApp:{Access:{PRIVATE:"PRIVATE"},getFileById:fileId=>{
       assert.equal(state.held,true,"Drive file bytes must be read while the lock is held");
       assert.equal(state.ownershipCalls.length,1,"Drive bytes must not be read before ownership verification");
       state.driveReads++;assert.equal(fileId,"DRIVE-1");
       if(options.driveReadFails)throw new Error("drive access denied");
-      return {getBlob:()=>({getBytes:()=>options.fileBytes===undefined?[1,2,3]:options.fileBytes})};
+      return {isTrashed:()=>options.fileTrashed===true,getSharingAccess:()=>options.fileSharing||"PRIVATE",getName:()=>"identidad.pdf",
+        getBlob:()=>({getBytes:()=>options.mutateOnSecondRead&&state.driveReads===2?[4,5,6]:(options.fileBytes===undefined?[1,2,3]:options.fileBytes)})};
     }},
     logStructuredEvent:(_service,_action,_level,code,_message,data,role)=>state.events.push({code,data,role}),
     Date
@@ -125,9 +129,12 @@ function makeHarness(options = {}) {
   assert.equal(valid.transactions.appends[0][4],"Nombre canónico","signer name must come from the trusted user record");
   assert.equal(valid.transactions.appends[0][5],"canonico@example.test","signer email must come from the trusted user record");
   assert.equal(valid.transactions.appends[0][7],"PSC_TEST","persist the explicitly configured provider ID");
-  assert.equal(valid.transactions.appends[0][8],"01".repeat(32),"persist the SHA-256 digest of the actual source bytes");
-  assert.equal(result.documentoHash,"01".repeat(32));
-  assert.equal(valid.state.driveReads,1);
+  const expectedSourceHash=crypto.createHash("sha256").update(Buffer.from([1,2,3])).digest("hex");
+  assert.equal(valid.transactions.appends[0][8],expectedSourceHash,"persist the SHA-256 digest of the actual source bytes");
+  assert.equal(valid.transactions.appends[0][13],"v1","persist the exact source document version");
+  assert.equal(result.documentoHash,expectedSourceHash);
+  assert.equal(result.versionDocumento,"v1");
+  assert.equal(valid.state.driveReads,2,"read the same private file twice to detect a change during request creation");
   assert.equal(valid.state.ownershipCalls.length,1);
   assert.deepEqual(valid.state.ownershipCalls[0],{type:"EXPEDIENTE_ESTUDIANTE",id:"EXP-1",operation:"UPDATE"});
   assert.equal(valid.state.events[0].code,"ADVANCED_SIGNATURE_REQUEST_CREATED");
@@ -145,7 +152,7 @@ function makeHarness(options = {}) {
   assert.equal(reentrant.state.lockAttempts, 2, "outer and nested advanced signature requests must contend for the same lock");
   assert.equal(reentrant.state.spreadsheetOpens, 1, "nested request must time out before opening Sheets");
   assert.equal(reentrant.state.ownershipCalls.length, 1, "only outer request may revalidate document ownership");
-  assert.equal(reentrant.state.driveReads, 1, "nested request must not read source bytes");
+  assert.equal(reentrant.state.driveReads, 2, "nested request must not read source bytes");
   assert.equal(reentrant.transactions.appends.length, 1, "only one advanced signature transaction may be appended");
   assert.equal(reentrant.transactions.rows.length, 2, "header plus exactly one transaction must remain");
   assert.equal(reentrant.state.releases, 1);
@@ -193,12 +200,28 @@ function makeHarness(options = {}) {
   forgedHash.payload.documentoHash="0".repeat(64);
   assert.throws(()=>forgedHash.execute(),/DOCUMENT_HASH_MISMATCH/);
   assert.equal(forgedHash.transactions.appends.length,0);
-  assert.equal(forgedHash.state.driveReads,1);
+  assert.equal(forgedHash.state.driveReads,2);
 
   const malformedHash=makeHarness();
   malformedHash.payload.documentoHash="not-a-sha256";
   assert.throws(()=>malformedHash.execute(),/DOCUMENT_HASH_FORMAT_INVALID/);
   assert.equal(malformedHash.transactions.appends.length,0);
+
+  const mismatchedStoredHash=makeHarness({storedHash:"0".repeat(64)});
+  assert.throws(()=>mismatchedStoredHash.execute(),/DOCUMENT_INTEGRITY_MISMATCH/);
+  assert.equal(mismatchedStoredHash.transactions.appends.length,0);
+  const publicSource=makeHarness({fileSharing:"ANYONE_WITH_LINK"});
+  assert.throws(()=>publicSource.execute(),/DOCUMENT_FILE_NOT_PRIVATE/);
+  assert.equal(publicSource.transactions.appends.length,0);
+  const trashedSource=makeHarness({fileTrashed:true});
+  assert.throws(()=>trashedSource.execute(),/SIGNATURE_SOURCE_FILE_UNAVAILABLE/);
+  assert.equal(trashedSource.transactions.appends.length,0);
+  const changedDuringRequest=makeHarness({mutateOnSecondRead:true});
+  assert.throws(()=>changedDuringRequest.execute(),/DOCUMENT_CHANGED_DURING_SIGNING/);
+  assert.equal(changedDuringRequest.transactions.appends.length,0);
+  const missingVersion=makeHarness({documentVersion:""});
+  assert.throws(()=>missingVersion.execute(),/DOCUMENT_BINARY_METADATA_MISSING/);
+  assert.equal(missingVersion.state.driveReads,0);
 
   const missingFile=makeHarness({driveFileId:"",requestDocumentId:"DOC-1"});
   assert.throws(()=>missingFile.execute(),/SIGNATURE_SOURCE_FILE_UNAVAILABLE/);
@@ -310,7 +333,7 @@ function makeStatusHarness(options = {}) {
     getRange:(row,col,numRows,numCols)=>({
       getValues:()=>{
         if(row===2&&col===1&&numCols===3){state.keyReads++;return [[transactionRow[0],transactionRow[1],transactionRow[2]]];}
-        if(row===2&&col===1&&numCols===13){state.detailReads++;return [transactionRow.slice()];}
+        if(row===2&&col===1&&numCols===14){state.detailReads++;return [transactionRow.concat(["DOC-1:v1"])];}
         throw new Error("Unexpected transaction range read");
       }
     })
@@ -348,6 +371,7 @@ function makeStatusHarness(options = {}) {
   assert.equal(result.verificacionCriptograficaPendiente,true);
   assert.equal(result.requiereValidacionAutenticadaProveedor,true);
   assert.equal(result.documentoId,"DOC-1");
+  assert.equal(result.versionDocumento,"DOC-1:v1");
   assert.equal("certificadoX509Ref" in result,false,"private certificate reference must not be exposed");
   assert.equal(valid.state.detailReads,1);
   assert.equal(valid.state.ownershipCalls,1);
