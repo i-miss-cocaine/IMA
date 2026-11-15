@@ -7859,9 +7859,13 @@ function validateOpenXmlPackageStructure_(rawBytes, format, entries, maxExpanded
   }
   const expandedLimit = Number(maxExpandedBytes) > 0 ? Number(maxExpandedBytes) : 50 * 1024 * 1024;
   let blobs;
-  try { blobs = Utilities.unzip(Utilities.newBlob(rawBytes)); }
-  catch (error) { throw new Error("OPENXML_DECOMPRESSION_FAILED: El paquete no pudo descomprimirse; puede estar cifrado o dañado."); }
+  try {
+    blobs = Utilities.unzip(Utilities.newBlob(rawBytes));
+  } catch (error) {
+    throw new Error("OPENXML_DECOMPRESSION_FAILED: El paquete no pudo descomprimirse; puede estar cifrado o dañado.");
+  }
   if (!Array.isArray(blobs) || !blobs.length) throw new Error("OPENXML_DECOMPRESSION_EMPTY: El paquete no contiene entradas legibles.");
+
   const byName = Object.create(null);
   let expandedBytes = 0;
   blobs.forEach(function(blob) {
@@ -7878,17 +7882,23 @@ function validateOpenXmlPackageStructure_(rawBytes, format, entries, maxExpanded
     byName[name] = blob;
   });
   Object.keys(entries).forEach(function(name) {
-    if (name.charAt(name.length - 1) !== "/" && !Object.prototype.hasOwnProperty.call(byName, name)) throw new Error("OPENXML_DECOMPRESSION_INCOMPLETE: " + name);
+    if (name.charAt(name.length - 1) !== "/" && !Object.prototype.hasOwnProperty.call(byName, name)) {
+      throw new Error("OPENXML_DECOMPRESSION_INCOMPLETE: " + name);
+    }
   });
+
   function parsePart(name, expectedRoot) {
     const blob = byName[name];
     if (!blob) throw new Error("OPENXML_REQUIRED_PART_MISSING: " + name);
     const xml = String(blob.getDataAsString ? blob.getDataAsString("UTF-8") : "");
     if (!xml.trim()) throw new Error("OPENXML_XML_EMPTY: " + name);
     let document;
-    try { document = XmlService.parse(xml); } catch (_) { throw new Error("OPENXML_XML_INVALID: " + name); }
+    try { document = XmlService.parse(xml); }
+    catch (_) { throw new Error("OPENXML_XML_INVALID: " + name); }
     const root = document && document.getRootElement ? document.getRootElement() : null;
-    if (!root || String(root.getName()).toLowerCase() !== String(expectedRoot).toLowerCase()) throw new Error("OPENXML_XML_ROOT_INVALID: " + name);
+    if (!root || String(root.getName()).toLowerCase() !== String(expectedRoot).toLowerCase()) {
+      throw new Error("OPENXML_XML_ROOT_INVALID: " + name);
+    }
     return root;
   }
   function countElements(element, targetName) {
@@ -7898,23 +7908,31 @@ function validateOpenXmlPackageStructure_(rawBytes, format, entries, maxExpanded
     (children || []).forEach(function(child) { count += countElements(child, targetName); });
     return count;
   }
+
   parsePart("[Content_Types].xml", "Types");
   if (kind === "docx") {
     const documentRoot = parsePart("word/document.xml", "document");
     const relationships = byName["word/_rels/document.xml.rels"] ? parsePart("word/_rels/document.xml.rels", "Relationships") : null;
-    return { verified: true, format: "docx", entryCount: Object.keys(byName).length, expandedBytes: expandedBytes,
-      paragraphs: countElements(documentRoot, "p"), tables: countElements(documentRoot, "tbl"),
-      contentControls: countElements(documentRoot, "sdt"), formFields: countElements(documentRoot, "ffData") + countElements(documentRoot, "fldChar"),
-      relationshipsVerified: !!relationships };
+    return {
+      verified: true, format: "docx", entryCount: Object.keys(byName).length, expandedBytes: expandedBytes,
+      paragraphs: countElements(documentRoot, "p"),
+      tables: countElements(documentRoot, "tbl"),
+      contentControls: countElements(documentRoot, "sdt"),
+      formFields: countElements(documentRoot, "ffData") + countElements(documentRoot, "fldChar"),
+      relationshipsVerified: !!relationships
+    };
   }
+
   const workbookRoot = parsePart("xl/workbook.xml", "workbook");
   const sheetCount = countElements(workbookRoot, "sheet");
   const worksheetNames = Object.keys(byName).filter(function(name) { return /^xl\/worksheets\/sheet\d+\.xml$/i.test(name); });
   if (!sheetCount || !worksheetNames.length) throw new Error("XLSX_STRUCTURE_INVALID: No hay hojas de cálculo legibles.");
   worksheetNames.forEach(function(name) { parsePart(name, "worksheet"); });
   if (byName["xl/sharedStrings.xml"]) parsePart("xl/sharedStrings.xml", "sst");
-  return { verified: true, format: "xlsx", entryCount: Object.keys(byName).length, expandedBytes: expandedBytes,
-    sheetCount: sheetCount, worksheetCount: worksheetNames.length };
+  return {
+    verified: true, format: "xlsx", entryCount: Object.keys(byName).length, expandedBytes: expandedBytes,
+    sheetCount: sheetCount, worksheetCount: worksheetNames.length
+  };
 }
 
 function validateFileBinaryIntegrity(fileData, fileName, options) {
