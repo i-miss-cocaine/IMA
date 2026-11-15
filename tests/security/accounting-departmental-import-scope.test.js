@@ -64,6 +64,25 @@ const context = {
   rollbackMigrationOwnerWrites_: applied => { rollbackBatches.push(applied.slice()); return []; }
 };
 vm.runInNewContext(snapshotSchema + "\n" + functions.join("\n") + "\nthis.api = { build: buildAccountingDepartmentalImportPreflight_, preview: validateImportPreview, run: importDataWithColumnMapping };", context);
+context.buildImportPreview_ = function(payload) {
+  const targetSchema = context.MIGRATION_OWNER_SCHEMAS_[payload.tipoEntidad];
+  const departmentPreflight = context.buildAccountingDepartmentalImportPreflight_(payload, spreadsheet, targetSchema);
+  if (!departmentPreflight || departmentPreflight.valid !== true) {
+    return { status: "error", code: departmentPreflight && departmentPreflight.code || "DEPARTMENT_IMPORT_SCOPE_DENIED" };
+  }
+  const identifierField = String(payload.columnaMapeo && payload.columnaMapeo.identificador || "legacyId");
+  const identityResolutions = payload.filasData.map(row => {
+    const identity = context.resolveCrossReferenceIdentifier({ sistemaOrigen: payload.sistemaOrigen, tipoEntidad: payload.tipoEntidad, idOriginalLegado: row[identifierField] });
+    return identity && identity.status === "success" ? { status: "success", idNuevoPlataforma: identity.idNuevoPlataforma } : null;
+  });
+  const preparedRows = payload.filasData.map((row, index) => departmentPreflight.applicable
+    ? departmentPreflight.rows[index]
+    : context.mapMigrationRowToTarget_(row, payload.columnaMapeo, targetSchema));
+  return { status: "success", validForImport: true, previewHash: "SCOPE-FIXTURE", departmentPreflight, identityResolutions, preparedRows,
+    totalFilas: payload.filasData.length, filasValidas: payload.filasData.length, filasFallidas: 0, errores: [], advertencias: [] };
+};
+const originalRun = context.api.run;
+context.api.run = payload => originalRun(Object.assign({}, payload, { previewConfirmed: true, previewHash: "SCOPE-FIXTURE" }));
 const base = { sessionToken: "signed", activeDepartmentId: "DEP-A", tipoEntidad: "empleado", sistemaOrigen: "Legacy", destinoModulo: "ExpedientesLaborales", columnaMapeo: { identificador: "legacyId", campos: { Puesto: "Puesto", Departamento: "Departamento" } }, filasData: [{ legacyId: "LEG-1", Puesto: "Docente" }] };
 const preflight = context.api.build(base, spreadsheet, schema);
 assert.equal(preflight.valid, true);
@@ -79,7 +98,7 @@ const freeText = context.api.build({ ...base, filasData: [{ legacyId: "LEG-1", P
 assert.equal(freeText.valid, false);
 const deniedPreview = context.api.preview({ ...base, activeDepartmentId: "DEP-X" });
 assert.equal(deniedPreview.status, "error");
-assert.equal(deniedPreview.resumenValidation.filasValidas, 0);
+assert.equal(deniedPreview.code, "ACTIVE_SCOPE_NOT_ASSIGNED");
 assignmentRows = [assignmentHeaders, ["ASG-2", "U-1", "Director", "INSTITUCION", '["INST-1"]', "Activo", "U-ADMIN", "", "", "", "No", "", "INST-1", "MEM-1", "RESP-1"]];
 const institutionWide = context.api.build({ ...base, activeDepartmentId: "" }, spreadsheet, schema);
 assert.equal(institutionWide.valid, false);
@@ -91,7 +110,7 @@ const nonDepartmentEntity = context.api.build({ ...base, tipoEntidad: "curso" },
 assert.equal(nonDepartmentEntity.valid, true);
 assert.equal(nonDepartmentEntity.applicable, false);
 let denied = false;
-try { context.api.run({ ...base, activeDepartmentId: "DEP-X" }); } catch (error) { denied = String(error.message).includes("ACTIVE_SCOPE_NOT_ASSIGNED"); }
+try { context.api.run({ ...base, activeDepartmentId: "DEP-X" }); } catch (error) { denied = String(error.message).includes("IMPORT_PREVIEW_INVALID_OR_STALE"); }
 assert.equal(denied, true);
 assert.equal(auditRows.length, 0);
 assert.equal(writes.length, 0);
@@ -116,7 +135,7 @@ try {
     { legacyId: "LEG-1", Puesto: "Docente", Departamento: "DEP-A" },
     { legacyId: "LEG-2", Puesto: "Docente", Departamento: "DEP-B" }
   ] });
-} catch (error) { mixedImportDenied = String(error.message).includes("DEPARTMENT_IMPORT_MIXED_DEPARTMENTS"); }
+} catch (error) { mixedImportDenied = String(error.message).includes("IMPORT_PREVIEW_INVALID_OR_STALE"); }
 assert.equal(mixedImportDenied, true);
 assert.equal(writerAttempts, beforeMixedWriters, "the entire mixed batch is rejected before the first writer");
 assert.equal(auditRows.length, beforeMixedAudit, "a rejected batch creates no migration audit row");
@@ -173,7 +192,8 @@ const institutionalBase={...base,activeDepartmentId:"",importBatchId:"BATCH-1",f
 const ip=context.api.build(institutionalBase,spreadsheet,schema);assert.equal(ip.valid,true);assert.equal(ip.institutionWide,true);assert.equal(ip.snapshotId,"SNAP-1");assert.deepEqual(Array.from(ip.rows,r=>r.Departamento),["DEP-A","DEP-B"]);assert.deepEqual(Array.from(ip.departmentIds).sort(),["DEP-A","DEP-B"]);
 const iv=context.api.preview(institutionalBase);assert.equal(iv.status,"success");assert.deepEqual(Array.from(iv.departamentosDestino).sort(),["DEP-A","DEP-B"]);assert.equal(iv.snapshotId,"SNAP-1");
 const ii=context.api.run(institutionalBase);assert.equal(ii.status,"success");assert.equal(ownershipCalls.at(-2).departmentId,"DEP-A");assert.equal(ownershipCalls.at(-2).rowDepartmentSnapshotId,"SNAP-1");assert.equal(ownershipCalls.at(-2).rowDepartmentSnapshotRowId,"ROW-1");assert.equal(ownershipCalls.at(-1).departmentId,"DEP-B");assert.equal(ownershipCalls.at(-1).rowDepartmentSnapshotRowId,"ROW-2");
-const beforeW=writerAttempts,beforeA=auditRows.length;let missing=false;try{context.api.run({...institutionalBase,importBatchId:"MISSING"});}catch(e){missing=String(e.message).includes("DEPARTMENT_IMPORT_ROW_SNAPSHOT_NOT_FOUND");}assert.equal(missing,true);assert.equal(writerAttempts,beforeW);assert.equal(auditRows.length,beforeA);
+const beforeW=writerAttempts,beforeA=auditRows.length;assert.equal(context.api.build({...institutionalBase,importBatchId:"MISSING"},spreadsheet,schema).code,"DEPARTMENT_IMPORT_ROW_SNAPSHOT_NOT_FOUND");
+let missing=false;try{context.api.run({...institutionalBase,importBatchId:"MISSING"});}catch(e){missing=String(e.message).includes("IMPORT_PREVIEW_INVALID_OR_STALE");}assert.equal(missing,true);assert.equal(writerAttempts,beforeW);assert.equal(auditRows.length,beforeA);
 const forged=context.api.build({...institutionalBase,importBatchId:"FORGED",rowDepartmentAssignments:[{rowId:"ROW-1",departmentId:"DEP-A",verified:true,institutionId:"INST-1",domain:"ACCOUNTING",snapshotId:"SNAP-X"}],rowDepartmentSnapshotVerified:true},spreadsheet,schema);assert.equal(forged.valid,false);assert.equal(forged.code,"DEPARTMENT_IMPORT_ROW_SNAPSHOT_NOT_FOUND");
 assert.equal(context.api.build({...institutionalBase,filasData:[{legacyId:"LEG-9",Puesto:"Docente"}]},spreadsheet,schema).code,"DEPARTMENT_IMPORT_ROW_ID_REQUIRED");
 assert.equal(context.api.build({...institutionalBase,filasData:[{legacyId:"LEG-9",RowID:"ROW-1",Puesto:"Docente"},{legacyId:"LEG-10",RowID:"ROW-1",Puesto:"Docente"}]},spreadsheet,schema).code,"DEPARTMENT_IMPORT_ROW_ID_DUPLICATE");
