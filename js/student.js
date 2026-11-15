@@ -3399,3 +3399,21 @@ window.getPublicAdmissionStatus = async function(accessReference) {
         return { status: "error", message: "Error al consultar el estado de la admisión: " + err.message };
     }
 };
+
+
+/* [TASK-130] Ayuda persistente en el formulario público de matrícula/admisión. */
+(function initAdmissionFieldHelp() {
+    var apply = function() {
+        var identityFields = document.querySelectorAll('input[name="identificacion"],input#identificacion,input#dni');
+        for (var i = 0; i < identityFields.length; i++) {
+            identityFields[i].setAttribute("data-ui-help-key", "matricula.identidad");
+        }
+        var birthFields = document.querySelectorAll('input[name="fechaNacimiento"],input#fechaNacimiento,input#fecha-nacimiento');
+        for (var j = 0; j < birthFields.length; j++) {
+            birthFields[j].setAttribute("data-ui-help-key", "matricula.fechaNacimiento");
+        }
+        if (window.applyPermanentFieldHelp) window.applyPermanentFieldHelp(document);
+    };
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", apply);
+    else apply();
+})();
