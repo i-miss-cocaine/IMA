@@ -118,7 +118,7 @@ function makeIsolatedHarness(options = {}) {
     },
     DriveApp:{Access:{PRIVATE:"PRIVATE"},Permission:{NONE:"NONE"},getRootFolder:()=>driveRoot,
       getFileById:id=>{if(!state.files.has(id))throw new Error("FILE_NOT_FOUND");return state.files.get(id);}},
-    HtmlService:{createHtmlOutput:html=>({getAs:()=>({name:"",getBytes:()=>Array.from(Buffer.from("%PDF-1.4\\n1 0 obj\\n<< /Type /Catalog >>\\nendobj\\n%"+html+"\\nstartxref\\n9\\n%%EOF\\n","utf8")),setName(name){this.name=name;return this;}})})},
+    HtmlService:{createHtmlOutput:html=>({getAs:()=>({name:"",getBytes:()=>Array.from(Buffer.from("%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%"+html+"\nstartxref\n9\n%%EOF\n","utf8")),setName(name){this.name=name;return this;}})})},
     MimeType:{PDF:"application/pdf"},
     enqueueDriveRecovery_:()=>{},logStructuredEvent:()=>{}
   };
