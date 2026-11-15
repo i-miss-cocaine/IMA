@@ -81,6 +81,9 @@ on:
       - tests/security/user-service-departmental-outbox.test.js
       - tests/security/user-service-workflow-notifications.test.js
       - tests/security/user-service-ui-metadata.test.js
+      - tests/security/academic-admission-identity.test.js
+      - tests/security/task-service-grade-validation.test.js
+      - tests/security/task-service-upload-contract.test.js
       - tests/ui/**
       - student-dashboard.html
       - .github/workflows/ui-accessibility-contract.yml
@@ -157,6 +160,10 @@ jobs:
         run: node tests/ui/permanent-form-help.test.js
       - name: Run Honduran admission identity validation contract
         run: node tests/security/academic-admission-identity.test.js
+      - name: Run task grade validation contract
+        run: node tests/security/task-service-grade-validation.test.js
+      - name: Run task upload MIME and size contract
+        run: node tests/security/task-service-upload-contract.test.js
       - name: Run accounting employee loan request and approval ownership contract
         run: node tests/security/accounting-employee-loan-advance-ownership.test.js
       - name: Run accounting payroll loan amortization and reversal contract
