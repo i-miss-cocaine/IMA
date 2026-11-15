@@ -26,6 +26,7 @@ function extractFunction(source, name) {
 const base64 = Buffer.from("%PDF-test").toString("base64");
 const originalBytes = Buffer.from("%PDF-test");
 let storedBytes = Buffer.from(originalBytes);
+let tamperOnCreate = false;
 let sharing = "PRIVATE", trashed = false, folderExists = false, events = [];
 const fileId = "file-id-123456789012345678901";
 const file = {
@@ -42,7 +43,7 @@ const file = {
 const folder = {
   getSharingAccess() { return "PRIVATE"; },
   setSharing() {},
-  createFile(blob) { storedBytes = Buffer.from(blob.bytes); sharing = "PRIVATE"; trashed = false; return file; }
+  createFile(blob) { storedBytes = Buffer.from(blob.bytes); if (tamperOnCreate) storedBytes[storedBytes.length - 1] ^= 1; sharing = "PRIVATE"; trashed = false; return file; }
 };
 const root = {
   getFoldersByName() { return { hasNext() { return folderExists; }, next() { return folder; } }; },
@@ -106,6 +107,17 @@ assert.equal(created.mimeType,"application/pdf");
 assert.equal(created.integrityStatus,"VERIFICADO");
 assert.equal(sharing,"PRIVATE");
 assert.equal(trashed,false);
+
+// La carga debe comparar los bytes persistidos con el origen y retirar el archivo si Drive devuelve contenido distinto.
+tamperOnCreate = true;
+assert.throws(
+  () => context.createPrivateRequestAttachmentWithIntegrity_(base64,"evidence.pdf","Tramites_Adjuntos_Privados_v1",[".pdf"]),
+  /ATTACHMENT_STORAGE_INTEGRITY_MISMATCH/
+);
+assert.equal(trashed,true,"a file whose read-back hash differs must be rolled back");
+tamperOnCreate = false;
+storedBytes = Buffer.from(originalBytes);
+trashed = false;
 
 let result=context.getAdministrativeRequestAttachment({_verifiedUserId:"STU-1",solicitudId:"REQ-1"});
 assert.equal(result.status,"success");
