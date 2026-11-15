@@ -19437,6 +19437,7 @@ function buildImportPreview_(payload) {
   const errors = [], warnings = [], preparedRows = [], identityResolutions = [], validRowIndexes = [];
   const seenIdentifiers = Object.create(null);
   const sourceColumnTypes = Object.create(null);
+  const sourceRowNumbers = Array.isArray(structure.dataRowNumbers) ? structure.dataRowNumbers : [];
   const structuralCount = function(value) {
     return Array.isArray(value) ? value.length : Math.max(0, Number(value) || 0);
   };
@@ -19470,7 +19471,7 @@ function buildImportPreview_(payload) {
   };
   let validRows = 0;
   rows.forEach(function(row, index) {
-    const rowNumber = index + 1;
+    const rowNumber = Number(sourceRowNumbers[index]) || (index + 1);
     const errorsBefore = errors.length;
     if (!row || typeof row !== "object" || Array.isArray(row)) {
       errors.push({ filaNum: rowNumber, campo: "Fila", codigo: "IMPORT_ROW_INVALID", mensaje: "La fila no contiene un objeto de datos válido." });
