@@ -38,6 +38,7 @@ function makeRuntime(options = {}) {
   };
   const context = {
     Date,String,Array,Object,Number,Math,JSON,isNaN,SPREADSHEET_ID:"TEST",
+    isAccountingTrustedAppsScriptEndpoint_(url){return /^https:\/\/user\.example\/exec$/.test(url);},
     SpreadsheetApp:{openById(){return{getSheetByName(name){return sheets[name]||null;}};}},
     PropertiesService:{getScriptProperties(){return{getProperty(name){
       if(name==="IMA_USER_SERVICE_URL")return options.url===undefined?"https://user.example/exec":options.url;
