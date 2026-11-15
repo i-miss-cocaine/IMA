@@ -45,7 +45,7 @@ function extractConst(name, text = source) {
 }
 
 const store = Object.create(null);
-let lockBusy = false, uuid = 0, driveSharing = "PRIVATE", beforeLock = null;
+let lockBusy = false, uuid = 0, driveSharing = "PRIVATE", beforeLock = null, driveBytes = Buffer.from("%PDF-test");
 function sheet(name) {
   if (!store[name]) store[name] = [];
   const rows = store[name];
@@ -78,7 +78,7 @@ const context = {
   Utilities:{
     formatDate(date){return date.toISOString().slice(0,10);},
     getUuid(){uuid++;return "00000000-0000-4000-8000-"+String(uuid).padStart(12,"0");},
-    computeDigest(_alg,value){return Array.from(crypto.createHash("sha256").update(String(value)).digest()).map(v=>v>127?v-256:v);},
+    computeDigest(_alg,value){const bytes=Array.isArray(value)?Buffer.from(value.map(v=>v<0?v+256:v)):Buffer.from(String(value));return Array.from(crypto.createHash("sha256").update(bytes).digest()).map(v=>v>127?v-256:v);},
     base64Encode(bytes){return Buffer.from(bytes).toString("base64");},
     DigestAlgorithm:{SHA_256:"SHA_256"},Charset:{UTF_8:"UTF-8"}
   },
@@ -86,7 +86,7 @@ const context = {
     Access:{PRIVATE:"PRIVATE"},
     getFileById(id){
       if(id!=="FILE-1")throw new Error("NOT_FOUND");
-      return {isTrashed(){return false;},getSharingAccess(){return driveSharing;},getBlob(){return {getContentType(){return "application/pdf";},getBytes(){return Buffer.from("%PDF-test");}};},getSize(){return 9;},getMimeType(){return "application/pdf";},getName(){return "constancia.pdf";}};
+      return {isTrashed(){return false;},getSharingAccess(){return driveSharing;},getBlob(){return {getContentType(){return "application/pdf";},getBytes(){return driveBytes;}};},getSize(){return driveBytes.length;},getMimeType(){return "application/pdf";},getName(){return "constancia.pdf";}};
     }
   },
   getVerifiedAcademicIdentity_(payload){return payload && payload.actor || {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};},
@@ -99,7 +99,7 @@ const functions=[
   "ensureAbsenceHeaders_","absenceDateKey_","absenceSheetMap_","getAcademicOfferColumnMap","getAcademicOfferValue",
   "teacherJustificationNormalizeRole_","teacherJustificationHeaderMap_","teacherJustificationActiveState_",
   "teacherJustificationAssignmentAllowsDate_","teacherJustificationEvidencePolicy_","logTeacherJustificationAccessEvent_","auditTeacherJustificationDenied_",
-  "resolveTeacherJustificationScope_","teacherJustificationSha256_","getTeacherStudentJustifications",
+  "resolveTeacherJustificationScope_","teacherJustificationSha256_","teacherJustificationEvidenceMetadataValid_","computeDocumentSHA256","getTeacherStudentJustifications",
   "acknowledgeTeacherStudentJustification","getTeacherJustificationEvidence","saveTeacherJustificationEvidencePolicy"
 ];
 vm.runInContext(constants+"\n"+functions.map(name=>extractFunction(name)).join("\n"),context);
@@ -142,8 +142,8 @@ attendance.appendRow(["REG-4","SESSION-NO-ENROLL","STUDENT-3","Ausente","","",fa
 attendance.appendRow(["REG-5","SESSION-MATH","STUDENT-4","Ausente","","",false,"",new Date("2026-11-10"),""]);
 attendance.appendRow(["REG-6","SESSION-EXPIRED-PERIOD","STUDENT-1","Ausente","","",false,"",new Date("2026-05-15"),""]);
 const justifications=sheet("JustificacionesAsistencia");
-justifications.appendRow(["JustificacionID","UserId","FechaAfectada","Periodo","MotivoDeclarado","AdjuntoUrl","PresentadoPor","EstadoRevision","RevisadoPor","ObservacionesAdmin","FechaResolucion","SolicitudID","SesionIDsJSON","DecisionHistoryJSON","SyncEstado","UltimoError","CreadoPorUserId","ActualizadoEn","ObservacionesPublicas"]);
-justifications.appendRow(["JUST-00000001","STUDENT-1","2026-11-10","P-2026","Diagnóstico médico reservado","FILE-1","GUARDIAN-1","Aprobada","SECRETARY-1","PRIVATE INTERNAL NOTE","","JUST-00000001",'["SESSION-MATH","SESSION-ENG","SESSION-OTHER-STUDENT","SESSION-OLD"]',"[]","SINCRONIZADO","", "GUARDIAN-1",new Date(),"Aprobado por Secretaría"]);
+justifications.appendRow(["JustificacionID","UserId","FechaAfectada","Periodo","MotivoDeclarado","AdjuntoUrl","PresentadoPor","EstadoRevision","RevisadoPor","ObservacionesAdmin","FechaResolucion","SolicitudID","SesionIDsJSON","DecisionHistoryJSON","SyncEstado","UltimoError","CreadoPorUserId","ActualizadoEn","ObservacionesPublicas","AdjuntoSHA256","AdjuntoVersion","AdjuntoSizeBytes","AdjuntoMimeType","AdjuntoFechaRecepcion","AdjuntoIntegridadEstado"]);
+justifications.appendRow(["JUST-00000001","STUDENT-1","2026-11-10","P-2026","Diagnóstico médico reservado","FILE-1","GUARDIAN-1","Aprobada","SECRETARY-1","PRIVATE INTERNAL NOTE","","JUST-00000001",'["SESSION-MATH","SESSION-ENG","SESSION-OTHER-STUDENT","SESSION-OLD"]',"[]","SINCRONIZADO","", "GUARDIAN-1",new Date(),"Aprobado por Secretaría",crypto.createHash("sha256").update("%PDF-test").digest("hex"),1,9,"application/pdf","2026-11-10T10:00:00.000Z","VERIFICADO"]);
 justifications.appendRow(["JUST-NO-ENROLL","STUDENT-3","2026-11-10","P-2026","Dato privado","", "GUARDIAN-1","Aprobada","SECRETARY-1","PRIVATE","","JUST-NO-ENROLL",'["SESSION-NO-ENROLL"]',"[]","SINCRONIZADO","", "GUARDIAN-1",new Date(),""]);
 justifications.appendRow(["JUST-RETIRED","STUDENT-4","2026-11-10","P-2026","No debe exponer matrícula retirada","", "GUARDIAN-1","Aprobada","SECRETARY-1","PRIVATE","","JUST-RETIRED",'["SESSION-MATH"]',"[]","SINCRONIZADO","", "GUARDIAN-1",new Date(),""]);
 justifications.appendRow(["JUST-EXPIRED-PERIOD","STUDENT-1","2026-05-15","P-EXPIRED","No debe exponer período vencido","", "GUARDIAN-1","Aprobada","SECRETARY-1","PRIVATE","","JUST-EXPIRED-PERIOD",'["SESSION-EXPIRED-PERIOD"]',"[]","SINCRONIZADO","", "GUARDIAN-1",new Date(),""]);
@@ -228,6 +228,11 @@ const evidence=context.getTeacherJustificationEvidence(Object.assign({},teacher1
 assert.equal(evidence.status,"success");
 assert.equal(evidence.data.mimeType,"application/pdf");
 assert.equal(evidence.data.fileName,"constancia.pdf");
+assert.equal(evidence.data.integrityVerified,true);
+assert.equal(evidence.data.sha256,crypto.createHash("sha256").update("%PDF-test").digest("hex"));
+driveBytes=Buffer.from("%PDF-tampered");
+assert.equal(context.getTeacherJustificationEvidence(Object.assign({},teacher1,{justificacionId:"JUST-00000001"})).code,"TEACHER_EVIDENCE_INTEGRITY_MISMATCH","tampered evidence must never be exposed");
+driveBytes=Buffer.from("%PDF-test");
 driveSharing="ANYONE_WITH_LINK";
 assert.equal(context.getTeacherJustificationEvidence(Object.assign({},teacher1,{justificacionId:"JUST-00000001"})).code,"TEACHER_EVIDENCE_NOT_PRIVATE");
 driveSharing="PRIVATE";

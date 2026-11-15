@@ -39,6 +39,7 @@ on:
       - tests/security/user-service-signature-provider-callback.test.js
       - tests/security/file-binary-validation-contract.test.js
       - tests/security/file-attachment-persistence-contract.test.js
+      - tests/security/user-service-request-attachment-integrity.test.js
       - tests/security/accounting-departmental-resource-access.test.js
       - tests/security/accounting-purchase-quotation-adjudication.test.js
       - tests/security/accounting-purchase-asset-capitalization.test.js
@@ -214,6 +215,8 @@ jobs:
         run: node tests/security/file-binary-validation-contract.test.js
       - name: Run private attachment persistence and authorization contract
         run: node tests/security/file-attachment-persistence-contract.test.js
+      - name: Run request attachment SHA-256 integrity and tamper detection contract
+        run: node tests/security/user-service-request-attachment-integrity.test.js
       - name: Run Phase 22 document management suite contract
         run: node tests/regression/phase22-document-management-suite-contract.test.js
       - name: Run user-service signature document integrity contract

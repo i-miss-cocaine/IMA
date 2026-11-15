@@ -4707,6 +4707,86 @@ function createPrivateRequestAttachment_(fileData, fileName, folderName, allowed
   }
 }
 
+
+function createPrivateRequestAttachmentWithIntegrity_(fileData, fileName, folderName, allowedExtensions) {
+  const file = createPrivateRequestAttachment_(fileData, fileName, folderName, allowedExtensions);
+  if (!file) return null;
+  try {
+    const base64 = fileData.indexOf(",") >= 0 ? fileData.slice(fileData.indexOf(",") + 1) : fileData;
+    const sourceBytes = Utilities.base64Decode(base64);
+    const storedBlob = file.getBlob();
+    const storedBytes = storedBlob.getBytes();
+    const sourceHash = computeDocumentSHA256(sourceBytes).toLowerCase();
+    const storedHash = computeDocumentSHA256(storedBytes).toLowerCase();
+    const validation = validateFileBinaryIntegrity(fileData, fileName, {
+      maxSizeBytes: 10 * 1024 * 1024,
+      allowedExtensions: allowedExtensions || [".pdf", ".jpg", ".jpeg", ".png", ".webp", ".docx", ".xlsx"]
+    });
+    const storedMime = String(storedBlob.getContentType() || file.getMimeType() || "").toLowerCase();
+    if (!storedBytes || storedBytes.length !== sourceBytes.length || storedHash !== sourceHash) {
+      throw new Error("ATTACHMENT_STORAGE_INTEGRITY_MISMATCH");
+    }
+    if (storedBytes.length !== validation.byteLength || (storedMime && storedMime !== validation.mimeType)) {
+      throw new Error("ATTACHMENT_STORAGE_METADATA_MISMATCH");
+    }
+    if (file.isTrashed() || file.getSharingAccess() !== DriveApp.Access.PRIVATE) {
+      throw new Error("ATTACHMENT_FILE_NOT_PRIVATE");
+    }
+    return {
+      file: file,
+      fileId: file.getId(),
+      sha256: storedHash,
+      version: 1,
+      sizeBytes: storedBytes.length,
+      mimeType: validation.mimeType,
+      receivedAt: new Date().toISOString(),
+      integrityStatus: "VERIFICADO"
+    };
+  } catch (error) {
+    rollbackPrivateAttachment_(file, "createPrivateRequestAttachmentWithIntegrity_");
+    throw new Error(error.message || "ATTACHMENT_STORAGE_INTEGRITY_FAILED");
+  }
+}
+
+function requestAttachmentHeaderMap_(sheet) {
+  if (!sheet || sheet.getLastRow() < 1 || sheet.getLastColumn() < 1) throw new Error("REQUEST_ATTACHMENT_SCHEMA_INVALID");
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(function(value) { return String(value || "").trim(); });
+  const map = {};
+  headers.forEach(function(name, index) {
+    if (!name) return;
+    if (Object.prototype.hasOwnProperty.call(map, name)) throw new Error("REQUEST_ATTACHMENT_SCHEMA_DUPLICATE_HEADER");
+    map[name] = index;
+  });
+  return map;
+}
+
+function ensureRequestAttachmentIntegritySchema_(sheet) {
+  if (!sheet) throw new Error("REQUEST_ATTACHMENT_SCHEMA_INVALID");
+  const baseHeaders = ["SolicitudID","UserId","EstudianteID","TipoTramite","Descripcion","AdjuntoUrl","Estado","AsignadoA","ObservacionesAdmin","FechaSolicitud","FechaResolucion"];
+  if (sheet.getLastRow() === 0) sheet.appendRow(baseHeaders.slice());
+  let headers = sheet.getRange(1, 1, 1, Math.max(1, sheet.getLastColumn())).getValues()[0].map(function(value) { return String(value || "").trim(); });
+  baseHeaders.concat(REQUEST_ATTACHMENT_INTEGRITY_HEADERS_).forEach(function(header) {
+    if (headers.indexOf(header) === -1) {
+      sheet.getRange(1, sheet.getLastColumn() + 1).setValue(header);
+      headers.push(header);
+    }
+  });
+  return requestAttachmentHeaderMap_(sheet);
+}
+
+function setRequestAttachmentIntegrity_(row, map, attachment) {
+  if (!attachment) {
+    row[map.AdjuntoIntegridadEstado] = "SIN_ADJUNTO";
+    return;
+  }
+  row[map.AdjuntoSHA256] = attachment.sha256;
+  row[map.AdjuntoVersion] = attachment.version;
+  row[map.AdjuntoSizeBytes] = attachment.sizeBytes;
+  row[map.AdjuntoMimeType] = attachment.mimeType;
+  row[map.AdjuntoFechaRecepcion] = attachment.receivedAt;
+  row[map.AdjuntoIntegridadEstado] = "VERIFICADO";
+}
+
 function resolveVerifiedRequestSubmitter_(payload, requestedStudentId, requireStudent, permissionKey) {
   const role = getUserVerifiedRole(payload);
   const actorId = String(payload && payload._verifiedUserId || "").trim();
@@ -4739,20 +4819,22 @@ function getAdministrativeRequestAttachment(payload) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName("SolicitudesTramites");
   if (!sheet) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Archivo no disponible." };
+  let map;
+  try { map = requestAttachmentHeaderMap_(sheet); } catch (_) { return { status: "error", code: "REQUEST_ATTACHMENT_SCHEMA_INVALID" }; }
   const rows = sheet.getDataRange().getValues();
-  const index = rows.findIndex(function(row, i) { return i > 0 && String(row[0] || "").trim() === solicitudId; });
+  const index = rows.findIndex(function(row, i) { return i > 0 && String(row[map.SolicitudID] || "").trim() === solicitudId; });
   if (index < 1) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Archivo no disponible." };
   const row = rows[index];
   const normalizedRole = String(role).toUpperCase().replace(/[^A-Z0-9]/g, "");
   const studentRoles = ["ESTUDIANTE", "ALUMNO"];
   const guardianRoles = ["PADRE", "MADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"];
-  let authorized = String(row[1] || "").trim() === actorId ||
-    (studentRoles.indexOf(normalizedRole) !== -1 && String(row[2] || "").trim() === actorId);
+  let authorized = String(row[map.UserId] || "").trim() === actorId ||
+    (studentRoles.indexOf(normalizedRole) !== -1 && String(row[map.EstudianteID] || "").trim() === actorId);
   if (!authorized && guardianRoles.indexOf(normalizedRole) !== -1) {
     const linkedResult = getGuardianStudents({ userId: actorId, sessionToken: payload.sessionToken || payload.authToken || payload.token });
     authorized = (linkedResult.data || []).some(function(student) {
       const permissions = student.permisos || {};
-      const targetStudentId = String(row[2] || "").trim();
+      const targetStudentId = String(row[map.EstudianteID] || "").trim();
       const linkedUserId = String(student.studentUserId || student.userId || "").trim();
       const linkedExpedienteId = String(student.expedienteEstudianteId || "").trim();
       return (linkedUserId === targetStudentId || linkedExpedienteId === targetStudentId) &&
@@ -4767,7 +4849,7 @@ function getAdministrativeRequestAttachment(payload) {
       "Se rechazó una descarga sin relación o permiso institucional.",{solicitudId:solicitudId,actorId:actorId,role:role},role);
     return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Archivo no disponible." };
   }
-  const stored = String(row[5] || "").trim();
+  const stored = String(row[map.AdjuntoUrl] || "").trim();
   const match = stored.match(/\/d\/([A-Za-z0-9_-]+)/) || stored.match(/[?&]id=([A-Za-z0-9_-]+)/);
   const fileId = match ? match[1] : (/^[A-Za-z0-9_-]{25,}$/.test(stored) ? stored : "");
   if (!fileId) return { status: "error", code: "ATTACHMENT_NOT_FOUND", message: "Archivo no disponible." };
@@ -4788,10 +4870,41 @@ function getAdministrativeRequestAttachment(payload) {
     });
     const mimeType = String(blob.getContentType() || file.getMimeType() || "").toLowerCase();
     if (mimeType && mimeType !== validation.mimeType) return { status: "error", code: "ATTACHMENT_MIME_MISMATCH", message: "Archivo no disponible." };
-    logStructuredEvent("USER","getAdministrativeRequestAttachment","INFO","ATTACHMENT_DELIVERED",
-      "Adjunto privado entregado tras autorización.",{solicitudId:solicitudId,actorId:actorId,fileId:fileId,fileSizeBytes:bytes.length},role);
+    const expectedHash = map.AdjuntoSHA256 === undefined ? "" : String(row[map.AdjuntoSHA256] || "").trim().toLowerCase();
+    let integrityStatus = "LEGACY_UNVERIFIED", integrityVerified = false, verifiedHash = "";
+    if (expectedHash) {
+      const expectedVersion = map.AdjuntoVersion === undefined ? 0 : Number(row[map.AdjuntoVersion] || 0);
+      const expectedSize = map.AdjuntoSizeBytes === undefined ? 0 : Number(row[map.AdjuntoSizeBytes] || 0);
+      const expectedMime = map.AdjuntoMimeType === undefined ? "" : String(row[map.AdjuntoMimeType] || "").trim().toLowerCase();
+      const expectedState = map.AdjuntoIntegridadEstado === undefined ? "" : String(row[map.AdjuntoIntegridadEstado] || "").trim().toUpperCase();
+      if (!/^[a-f0-9]{64}$/.test(expectedHash) || expectedVersion !== 1 || !Number.isFinite(expectedSize) ||
+          expectedSize < 1 || !expectedMime || expectedState !== "VERIFICADO") {
+        return { status: "error", code: "ATTACHMENT_INTEGRITY_METADATA_INVALID", message: "Archivo no disponible." };
+      }
+      const actualHash = computeDocumentSHA256(bytes).toLowerCase();
+      if (actualHash !== expectedHash || bytes.length !== expectedSize || validation.mimeType !== expectedMime) {
+        logStructuredEvent("USER","getAdministrativeRequestAttachment","ERROR","ATTACHMENT_INTEGRITY_MISMATCH",
+          "El adjunto no coincide con la huella y metadatos registrados al recibirlo.",{solicitudId:solicitudId,fileSizeBytes:bytes.length},role);
+        return { status: "error", code: "ATTACHMENT_INTEGRITY_MISMATCH", message: "El archivo cambió desde su recepción y no puede entregarse como evidencia." };
+      }
+      integrityStatus = "VERIFICADO";
+      integrityVerified = true;
+      verifiedHash = actualHash;
+    } else if (map.AdjuntoIntegridadEstado !== undefined) {
+      const legacyState = String(row[map.AdjuntoIntegridadEstado] || "").trim().toUpperCase();
+      if (legacyState === "VERIFICADO" || legacyState === "SIN_ADJUNTO" ||
+          (legacyState && legacyState !== "LEGACY_UNVERIFIED")) {
+        return { status: "error", code: "ATTACHMENT_INTEGRITY_METADATA_INVALID", message: "Archivo no disponible." };
+      }
+    }
+    logStructuredEvent("USER","getAdministrativeRequestAttachment","INFO",
+      integrityVerified ? "ATTACHMENT_DELIVERED_VERIFIED" : "ATTACHMENT_DELIVERED_LEGACY_UNVERIFIED",
+      "Adjunto privado entregado tras autorización; el nivel de integridad queda explícito.",
+      {solicitudId:solicitudId,actorId:actorId,fileId:fileId,fileSizeBytes:bytes.length,integrityStatus:integrityStatus},role);
     return { status: "success", solicitudId: solicitudId, fileName: fileName, mimeType: validation.mimeType,
-      encoding: "base64", fileData: Utilities.base64Encode(bytes), fileSizeBytes: bytes.length };
+      encoding: "base64", fileData: Utilities.base64Encode(bytes), fileSizeBytes: bytes.length,
+      integrityStatus: integrityStatus, integrityVerified: integrityVerified, sha256: verifiedHash,
+      attachmentVersion: integrityVerified ? 1 : null };
   } catch (error) {
     logStructuredEvent("USER", "getAdministrativeRequestAttachment", "WARN", "ATTACHMENT_UNAVAILABLE",
       "No fue posible recuperar un adjunto privado.", { solicitudId: solicitudId }, role);
@@ -6667,38 +6780,34 @@ function getAdministrativeRequests(payload) {
   const sheet = getOrCreateSheet(ss, "SolicitudesTramites");
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return { status:"success", data:[] };
+  let attachmentMap = {};
+  try { attachmentMap = requestAttachmentHeaderMap_(sheet); } catch (_) {}
   const requests = data.slice(1).filter(function(row) {
     if (userId && String(row[1]).trim() !== String(userId).trim()) return false;
     if (estudianteId && String(row[2]).trim() !== String(estudianteId).trim()) return false;
     return true;
   }).map(function(row) {
     const stored = String(row[5] || "").trim();
+    const integrityState = attachmentMap.AdjuntoIntegridadEstado === undefined ? "" : String(row[attachmentMap.AdjuntoIntegridadEstado] || "").trim();
     return { solicitudId:row[0], userId:row[1], estudianteId:row[2], tipoTramite:row[3], descripcion:row[4],
-      adjuntoUrl:"", tieneAdjunto:!!stored, estado:row[6]||"Enviada", asignadoA:row[7]||"Secretaría",
+      adjuntoUrl:"", tieneAdjunto:!!stored, integridadAdjunto:stored ? (integrityState || "LEGACY_UNVERIFIED") : "SIN_ADJUNTO",
+      estado:row[6]||"Enviada", asignadoA:row[7]||"Secretaría",
       observacionesAdmin:row[8]||"", fechaSolicitud:row[9]?new Date(row[9]).toISOString():null,
       fechaResolucion:row[10]?new Date(row[10]).toISOString():null };
   });
   return { status:"success", data:requests };
 }
-const USER_ABSENCE_REQUEST_EXTRA_HEADERS_ = ["JustificacionID","FechaAfectada","Periodo","SesionIDsJSON","SyncEstado","MotivoJustificacion","UltimoError"];
+const REQUEST_ATTACHMENT_INTEGRITY_HEADERS_ = ["AdjuntoSHA256","AdjuntoVersion","AdjuntoSizeBytes","AdjuntoMimeType","AdjuntoFechaRecepcion","AdjuntoIntegridadEstado"];
+const USER_ABSENCE_REQUEST_EXTRA_HEADERS_ = ["JustificacionID","FechaAfectada","Periodo","SesionIDsJSON","SyncEstado","MotivoJustificacion","UltimoError"].concat(REQUEST_ATTACHMENT_INTEGRITY_HEADERS_);
 
 function ensureUserAbsenceRequestSchema_(sheet) {
-  if (sheet.getLastRow() === 0) sheet.appendRow(["SolicitudID","UserId","EstudianteID","TipoTramite","Descripcion","AdjuntoUrl","Estado","AsignadoA","ObservacionesAdmin","FechaSolicitud","FechaResolucion"]);
-  var lastCol = Math.max(1, sheet.getLastColumn());
-  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function(v) { return String(v || "").trim(); });
+  const map = ensureRequestAttachmentIntegritySchema_(sheet);
   USER_ABSENCE_REQUEST_EXTRA_HEADERS_.forEach(function(header) {
-    if (headers.indexOf(header) === -1) {
+    if (map[header] === undefined) {
       sheet.getRange(1, sheet.getLastColumn() + 1).setValue(header);
-      headers.push(header);
     }
   });
-  var map = {};
-  headers.forEach(function(header, index) {
-    if (!header) return;
-    if (Object.prototype.hasOwnProperty.call(map, header)) throw new Error("ABSENCE_REQUEST_SCHEMA_DUPLICATE_HEADER:" + header);
-    map[header] = index;
-  });
-  return map;
+  return requestAttachmentHeaderMap_(sheet);
 }
 
 function callAcademicAbsenceService_(action, payload) {
@@ -6749,10 +6858,20 @@ function submitStudentAbsenceJustification(payload) {
   if (existing && String(existing.row[map.MotivoJustificacion] || "").trim() !== motivo) {
     return { status: "error", code: "IDEMPOTENCY_CONFLICT", solicitudId: id };
   }
-  var attachment = null, fileId = existing ? String(existing.row[5] || "") : "";
+  var attachment = null, attachmentRecord = null, fileId = existing ? String(existing.row[5] || "") : "";
+  var attachmentMetadata = existing ? {
+    sha256: String(existing.row[map.AdjuntoSHA256] || ""),
+    version: Number(existing.row[map.AdjuntoVersion] || 0),
+    sizeBytes: Number(existing.row[map.AdjuntoSizeBytes] || 0),
+    mimeType: String(existing.row[map.AdjuntoMimeType] || ""),
+    receivedAt: String(existing.row[map.AdjuntoFechaRecepcion] || ""),
+    integrityStatus: String(existing.row[map.AdjuntoIntegridadEstado] || (fileId ? "LEGACY_UNVERIFIED" : "SIN_ADJUNTO"))
+  } : null;
   if (!existing) {
-    attachment = createPrivateRequestAttachment_(p.adjuntoData, p.adjuntoNombre, "Tramites_Adjuntos_Privados_v1");
-    fileId = attachment ? attachment.getId() : "";
+    attachmentRecord = createPrivateRequestAttachmentWithIntegrity_(p.adjuntoData, p.adjuntoNombre, "Tramites_Adjuntos_Privados_v1", [".pdf", ".jpg", ".jpeg", ".png"]);
+    attachment = attachmentRecord ? attachmentRecord.file : null;
+    fileId = attachmentRecord ? attachmentRecord.fileId : "";
+    attachmentMetadata = attachmentRecord;
     var description = "Justificación de ausencia para la fecha " + fechaAusencia + ". Motivo: " + motivo + ". Observaciones: " + (p.observaciones || "N/A");
     var newRow = new Array(sheet.getLastColumn()).fill("");
     newRow[map.SolicitudID] = id;
@@ -6772,12 +6891,18 @@ function submitStudentAbsenceJustification(payload) {
     newRow[map.SesionIDsJSON] = "[]";
     newRow[map.SyncEstado] = "PENDIENTE";
     newRow[map.MotivoJustificacion] = motivo;
+    setRequestAttachmentIntegrity_(newRow, map, attachmentRecord);
     try { sheet.appendRow(newRow); }
     catch (writeError) { rollbackPrivateAttachment_(attachment, "submitStudentAbsenceJustification"); throw writeError; }
   }
   var sync = callAcademicAbsenceService_("createCanonicalAbsenceJustification", {
     justificacionId: id, solicitudId: id, studentId: submitter.estudianteId, fechaAfectada: fechaAusencia,
     periodo: periodo, motivoDeclarado: motivo, adjuntoUrl: fileId,
+    adjuntoSHA256: attachmentMetadata && attachmentMetadata.sha256 || "",
+    adjuntoVersion: attachmentMetadata && attachmentMetadata.version || "",
+    adjuntoSizeBytes: attachmentMetadata && attachmentMetadata.sizeBytes || "",
+    adjuntoMimeType: attachmentMetadata && attachmentMetadata.mimeType || "",
+    adjuntoFechaRecepcion: attachmentMetadata && attachmentMetadata.receivedAt || "",
     actorId: submitter.userId, actorRole: submitter.role, correlationId: String(p.correlationId || "")
   });
   if (!sync || sync.status !== "success") {
@@ -6836,7 +6961,13 @@ function reviewAbsenceJustification(payload) {
       fechaAfectada: row[map.FechaAfectada] || (legacyDateMatch && legacyDateMatch[1]),
       periodo: row[map.Periodo] || "",
       motivoDeclarado: row[map.MotivoJustificacion] || (legacyReasonMatch && legacyReasonMatch[1]) || legacyDescription,
-      adjuntoUrl: row[5] || "", actorId: String(row[1] || "").trim(), actorRole: "Solicitante"
+      adjuntoUrl: row[5] || "",
+      adjuntoSHA256: String(row[map.AdjuntoSHA256] || ""),
+      adjuntoVersion: row[map.AdjuntoVersion] || "",
+      adjuntoSizeBytes: row[map.AdjuntoSizeBytes] || "",
+      adjuntoMimeType: String(row[map.AdjuntoMimeType] || ""),
+      adjuntoFechaRecepcion: String(row[map.AdjuntoFechaRecepcion] || ""),
+      actorId: String(row[1] || "").trim(), actorRole: "Solicitante"
     });
     if (!create || create.status !== "success") return { status: "error", code: create && create.code || "ATTENDANCE_SYNC_PENDING", retryable: true };
   }
@@ -6859,13 +6990,21 @@ function submitAdministrativeRequest(payload) {
   if (!tipoTramite || !descripcion) throw new Error("tipoTramite y descripcion son requeridos.");
   if (String(adjuntoUrl || "").trim() || String(adjuntoFileId || "").trim()) throw new Error("UNTRUSTED_ATTACHMENT_REFERENCE");
   const submitter = resolveVerifiedRequestSubmitter_(payload, estudianteId, false, "permisoDocumental");
-  const attachment = createPrivateRequestAttachment_(adjuntoData, adjuntoNombre, "Tramites_Adjuntos_Privados_v1");
-  const fileId = attachment ? attachment.getId() : "";
+  const attachmentRecord = createPrivateRequestAttachmentWithIntegrity_(adjuntoData, adjuntoNombre, "Tramites_Adjuntos_Privados_v1");
+  const attachment = attachmentRecord ? attachmentRecord.file : null;
+  const fileId = attachmentRecord ? attachmentRecord.fileId : "";
   const id = "TRAM-" + Utilities.getUuid(), now = new Date();
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = getOrCreateSheet(ss, "SolicitudesTramites");
-    sheet.appendRow([id,submitter.userId,submitter.estudianteId||"",tipoTramite,descripcion,fileId,"Enviada","Secretaría","",now,""]);
+    const map = ensureRequestAttachmentIntegritySchema_(sheet);
+    const row = new Array(sheet.getLastColumn()).fill("");
+    row[map.SolicitudID]=id; row[map.UserId]=submitter.userId; row[map.EstudianteID]=submitter.estudianteId||"";
+    row[map.TipoTramite]=tipoTramite; row[map.Descripcion]=descripcion; row[map.AdjuntoUrl]=fileId;
+    row[map.Estado]="Enviada"; row[map.AsignadoA]="Secretaría"; row[map.ObservacionesAdmin]="";
+    row[map.FechaSolicitud]=now; row[map.FechaResolucion]="";
+    setRequestAttachmentIntegrity_(row,map,attachmentRecord);
+    sheet.appendRow(row);
   } catch (error) {
     rollbackPrivateAttachment_(attachment,"submitAdministrativeRequest");
     throw error;
@@ -7149,15 +7288,23 @@ function submitInstitutionalFormRequest(payload) {
   if (!tipoTramite) throw new Error("tipoTramite es requerido.");
   if (String(adjuntoUrl||"").trim() || String(adjuntoFileId||"").trim()) throw new Error("UNTRUSTED_ATTACHMENT_REFERENCE");
   const submitter = resolveVerifiedRequestSubmitter_(payload,estudianteId,false,"permisoDocumental");
-  const attachment = createPrivateRequestAttachment_(adjuntoData,adjuntoNombre,"Tramites_Adjuntos_Privados_v1");
-  const fileId = attachment ? attachment.getId() : "";
+  const attachmentRecord = createPrivateRequestAttachmentWithIntegrity_(adjuntoData,adjuntoNombre,"Tramites_Adjuntos_Privados_v1");
+  const attachment = attachmentRecord ? attachmentRecord.file : null;
+  const fileId = attachmentRecord ? attachmentRecord.fileId : "";
   const id = "SOL-FRM-" + Utilities.getUuid(), now = new Date();
   const responseText = typeof respuestasFormularioJSON === "object" ? JSON.stringify(respuestasFormularioJSON) : (respuestasFormularioJSON||"{}");
   const description = "Solicitud mediante formulario ["+(formId||"N/A")+"]: "+responseText+". Observaciones: "+(observaciones||"Sin observaciones");
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = getOrCreateSheet(ss,"SolicitudesTramites");
-    sheet.appendRow([id,submitter.userId,submitter.estudianteId||"N/A",tipoTramite,description,fileId,"Enviada","Secretaría/Orientación","",now.toISOString(),""]);
+    const map = ensureRequestAttachmentIntegritySchema_(sheet);
+    const row = new Array(sheet.getLastColumn()).fill("");
+    row[map.SolicitudID]=id; row[map.UserId]=submitter.userId; row[map.EstudianteID]=submitter.estudianteId||"N/A";
+    row[map.TipoTramite]=tipoTramite; row[map.Descripcion]=description; row[map.AdjuntoUrl]=fileId;
+    row[map.Estado]="Enviada"; row[map.AsignadoA]="Secretaría/Orientación"; row[map.ObservacionesAdmin]="";
+    row[map.FechaSolicitud]=now.toISOString(); row[map.FechaResolucion]="";
+    setRequestAttachmentIntegrity_(row,map,attachmentRecord);
+    sheet.appendRow(row);
   } catch (error) {
     rollbackPrivateAttachment_(attachment,"submitInstitutionalFormRequest");
     throw error;

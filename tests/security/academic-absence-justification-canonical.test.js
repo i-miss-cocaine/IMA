@@ -2,6 +2,7 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
+const crypto = require("node:crypto");
 const source = fs.readFileSync("backend/academic-service/Code.gs", "utf8");
 const userSource = fs.readFileSync("backend/user-service/Code.gs", "utf8");
 
@@ -26,6 +27,7 @@ function extractFunction(name, fromSource = source) {
 
 const store = Object.create(null);
 let lockBusy = false;
+let evidenceBytes = Buffer.from("%PDF-test");
 let failNext = null;
 function sheet(name) {
   if (!store[name]) store[name] = [];
@@ -68,7 +70,22 @@ const context = {
   SPREADSHEET_ID: "TEST",
   SpreadsheetApp: { openById() { return { getSheetByName(name) { return store[name] ? sheet(name) : null; } }; } },
   LockService: { getScriptLock() { return { waitLock() { if (lockBusy) throw new Error("LOCK_BUSY"); }, releaseLock() {} }; } },
-  Utilities: { formatDate(date) { return date.toISOString().slice(0, 10); }, getUuid() { return "UUID-ACADEMIC-00000001"; } },
+  Utilities: {
+    formatDate(date) { return date.toISOString().slice(0, 10); },
+    getUuid() { return "UUID-ACADEMIC-00000001"; },
+    computeDigest(_algorithm,value) {
+      const bytes=Array.isArray(value)?Buffer.from(value.map(v=>v<0?v+256:v)):Buffer.from(String(value));
+      return Array.from(crypto.createHash("sha256").update(bytes).digest()).map(v=>v>127?v-256:v);
+    },
+    DigestAlgorithm:{SHA_256:"SHA_256"}
+  },
+  DriveApp: {
+    Access:{PRIVATE:"PRIVATE"},
+    getFileById(id) {
+      if(id!=="DRIVE-FILE-ATTACH-001") throw new Error("NOT_FOUND");
+      return {isTrashed(){return false;},getSharingAccess(){return "PRIVATE";},getBlob(){return {getBytes(){return evidenceBytes;},getContentType(){return "application/pdf";}};},getMimeType(){return "application/pdf";}};
+    }
+  },
   Session: { getScriptTimeZone() { return "UTC"; } },
   getOrCreateSheet(_ss, name) { return sheet(name); },
   logStructuredEvent() {},
@@ -78,7 +95,7 @@ const names = [
   "ensureAbsenceHeaders_", "absenceDateKey_", "absenceResolvePeriod_", "absenceResolveSessions_",
   "absenceSheetMap_", "createCanonicalAbsenceJustification_", "createCanonicalAbsenceJustificationUnlocked_",
   "absenceUpdateRequestProjection_", "absenceAttendanceSync_", "reviewCanonicalAbsenceJustification_",
-  "reconcilePendingAttendanceJustifications", "submitAttendanceJustification"
+  "reconcilePendingAttendanceJustifications", "submitAttendanceJustification", "computeDocumentSHA256"
 ];
 vm.createContext(context);
 const constants = source.split("\n").filter(line => /^const ABSENCE_(JUSTIFICATION_HEADERS_|ATTENDANCE_HEADERS_|REQUEST_EXTRA_HEADERS_)/.test(line)).join("\n");
@@ -164,6 +181,38 @@ assert.equal(regRows[1][9], "");
 assert.equal(regRows[2][6], false);
 assert.equal(regRows[2][9], "");
 
+const attachmentPayload = {
+  justificacionId: "JUST-ATTACH001", solicitudId: "JUST-ATTACH001", studentId: "STU-1",
+  fechaAfectada: "2026-11-10", periodo: "I parcial", motivoDeclarado: "Evidencia adjunta",
+  adjuntoUrl: "DRIVE-FILE-ATTACH-001", adjuntoSHA256: crypto.createHash("sha256").update("%PDF-test").digest("hex"), adjuntoVersion: 1,
+  adjuntoSizeBytes: 9, adjuntoMimeType: "application/pdf",
+  adjuntoFechaRecepcion: "2026-11-15T10:00:00.000Z", actorId: "ACT-1", actorRole: "Estudiante"
+};
+const attachmentCreated = context.createCanonicalAbsenceJustification_(attachmentPayload);
+assert.equal(attachmentCreated.status, "success");
+const attachmentRows = sheet("JustificacionesAsistencia").getDataRange().getValues();
+const attachmentMap = {};
+attachmentRows[0].forEach((header,index)=>{attachmentMap[header]=index;});
+const attachmentRow = attachmentRows.find((row,index)=>index>0 && row[attachmentMap.JustificacionID]==="JUST-ATTACH001");
+assert.equal(attachmentRow[attachmentMap.AdjuntoSHA256], crypto.createHash("sha256").update("%PDF-test").digest("hex"));
+assert.equal(attachmentRow[attachmentMap.AdjuntoVersion], 1);
+assert.equal(attachmentRow[attachmentMap.AdjuntoSizeBytes], 9);
+assert.equal(attachmentRow[attachmentMap.AdjuntoMimeType], "application/pdf");
+assert.equal(attachmentRow[attachmentMap.AdjuntoIntegridadEstado], "VERIFICADO");
+assert.equal(context.createCanonicalAbsenceJustification_(Object.assign({},attachmentPayload)).idempotent, true);
+assert.equal(context.createCanonicalAbsenceJustification_(Object.assign({},attachmentPayload,{adjuntoFechaRecepcion:"2026-11-15T10:00:01.000Z"})).code, "IDEMPOTENCY_CONFLICT");
+evidenceBytes=Buffer.from("%PDF-tampered");
+assert.equal(context.createCanonicalAbsenceJustification_(Object.assign({},attachmentPayload,{justificacionId:"JUST-ATTACHBAD",solicitudId:"JUST-ATTACHBAD"})).code,"ATTACHMENT_INTEGRITY_MISMATCH");
+evidenceBytes=Buffer.from("%PDF-test");
+const legacyAttachment = context.createCanonicalAbsenceJustification_(Object.assign({},attachmentPayload,{
+  justificacionId:"JUST-LEGACY001",solicitudId:"JUST-LEGACY001",adjuntoUrl:"DRIVE-FILE-LEGACY",adjuntoSHA256:"",
+  adjuntoVersion:"",adjuntoSizeBytes:"",adjuntoMimeType:"",adjuntoFechaRecepcion:""
+}));
+assert.equal(legacyAttachment.status,"success");
+const legacyRow=sheet("JustificacionesAsistencia").getDataRange().getValues().find((row,index)=>index>0 && row[attachmentMap.JustificacionID]==="JUST-LEGACY001");
+assert.equal(legacyRow[attachmentMap.AdjuntoIntegridadEstado],"LEGACY_UNVERIFIED");
+assert.equal(context.submitAttendanceJustification({_verifiedUserId:"STU-1",_verifiedRole:"Estudiante",adjuntoUrl:"DRIVE-FILE-SPOOF"}).code,"UNTRUSTED_ATTACHMENT_REFERENCE");
+
 const rejectedCreate = create("JUST-REJECT001", "2026-11-11", "STU-1");
 assert.equal(rejectedCreate.status, "success");
 const rejected = context.reviewCanonicalAbsenceJustification_({
@@ -220,9 +269,13 @@ const userContext = {
   logStructuredEvent() {},
   Date, Math, JSON, String, Number, Array, Object, Error
 };
-const userNames = ["ensureUserAbsenceRequestSchema_", "submitStudentAbsenceJustification", "reviewAbsenceJustification", "updateRequestStatus", "processWorkflowDecision"];
+const userNames = [
+  "requestAttachmentHeaderMap_","ensureRequestAttachmentIntegritySchema_","setRequestAttachmentIntegrity_",
+  "ensureUserAbsenceRequestSchema_","createPrivateRequestAttachment_","createPrivateRequestAttachmentWithIntegrity_",
+  "submitStudentAbsenceJustification","reviewAbsenceJustification","updateRequestStatus","processWorkflowDecision"
+];
 vm.createContext(userContext);
-const userConstants = userSource.split("\n").filter(line => /^const USER_ABSENCE_REQUEST_EXTRA_HEADERS_/.test(line)).join("\n");
+const userConstants = userSource.split("\n").filter(line => /^const (REQUEST_ATTACHMENT_INTEGRITY_HEADERS_|USER_ABSENCE_REQUEST_EXTRA_HEADERS_)/.test(line)).join("\n");
 vm.runInContext(userConstants + "\n" + userNames.map(name => extractFunction(name, userSource)).join("\n"), userContext);
 const userPayload = {
   _userId: "STU-USER", _role: "Estudiante", estudianteId: "STU-USER",

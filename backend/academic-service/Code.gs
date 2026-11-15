@@ -10194,9 +10194,9 @@ function getDailyAttendance(payload) {
 }
 
 
-const ABSENCE_JUSTIFICATION_HEADERS_ = ["JustificacionID","UserId","FechaAfectada","Periodo","MotivoDeclarado","AdjuntoUrl","PresentadoPor","EstadoRevision","RevisadoPor","ObservacionesAdmin","FechaResolucion","SolicitudID","SesionIDsJSON","DecisionHistoryJSON","SyncEstado","UltimoError","CreadoPorUserId","ActualizadoEn","ObservacionesPublicas"];
+const ABSENCE_JUSTIFICATION_HEADERS_ = ["JustificacionID","UserId","FechaAfectada","Periodo","MotivoDeclarado","AdjuntoUrl","PresentadoPor","EstadoRevision","RevisadoPor","ObservacionesAdmin","FechaResolucion","SolicitudID","SesionIDsJSON","DecisionHistoryJSON","SyncEstado","UltimoError","CreadoPorUserId","ActualizadoEn","ObservacionesPublicas","AdjuntoSHA256","AdjuntoVersion","AdjuntoSizeBytes","AdjuntoMimeType","AdjuntoFechaRecepcion","AdjuntoIntegridadEstado"];
 const ABSENCE_ATTENDANCE_HEADERS_ = ["RegistroID","SesionID","UserId","EstadoAsistencia","HoraLlegada","MinutosTardanza","Justificado","ObservacionDocente","FechaRegistro","JustificacionID"];
-const ABSENCE_REQUEST_EXTRA_HEADERS_ = ["JustificacionID","FechaAfectada","Periodo","SesionIDsJSON","SyncEstado","MotivoJustificacion","UltimoError"];
+const ABSENCE_REQUEST_EXTRA_HEADERS_ = ["JustificacionID","FechaAfectada","Periodo","SesionIDsJSON","SyncEstado","MotivoJustificacion","UltimoError","AdjuntoSHA256","AdjuntoVersion","AdjuntoSizeBytes","AdjuntoMimeType","AdjuntoFechaRecepcion","AdjuntoIntegridadEstado"];
 
 function ensureAbsenceHeaders_(sheet, headers) {
   if (!sheet) throw new Error("ABSENCE_SHEET_UNAVAILABLE");
@@ -10333,8 +10333,45 @@ function createCanonicalAbsenceJustificationUnlocked_(payload) {
   var actorRole = String(p.actorRole || "").trim();
   var dateKey = absenceDateKey_(p.fechaAfectada || p.fechaAusencia);
   var reason = String(p.motivoDeclarado || p.motivo || "").trim();
+  var attachmentFileId = String(p.adjuntoUrl || "").trim();
+  var attachmentHash = String(p.adjuntoSHA256 || "").trim().toLowerCase();
+  var attachmentVersion = Number(p.adjuntoVersion || 0);
+  var attachmentSizeBytes = Number(p.adjuntoSizeBytes || 0);
+  var attachmentMimeType = String(p.adjuntoMimeType || "").trim().toLowerCase();
+  var attachmentReceivedAt = String(p.adjuntoFechaRecepcion || "").trim();
+  var attachmentIntegrityStatus = attachmentFileId ? "LEGACY_UNVERIFIED" : "SIN_ADJUNTO";
   if (!/^JUST-[A-Za-z0-9-]{8,100}$/.test(id) || !studentId || !actorId || !actorRole || !dateKey || !reason || reason.length > 2000) {
     return { status: "error", code: "ABSENCE_JUSTIFICATION_INVALID" };
+  }
+  if (attachmentFileId && attachmentHash) {
+    if (!/^[a-f0-9]{64}$/.test(attachmentHash) || attachmentVersion !== 1 ||
+        !Number.isFinite(attachmentSizeBytes) || attachmentSizeBytes < 1 ||
+        !attachmentMimeType || !attachmentReceivedAt || isNaN(Date.parse(attachmentReceivedAt))) {
+      return { status: "error", code: "ATTACHMENT_INTEGRITY_METADATA_INVALID" };
+    }
+    if (["application/pdf","image/jpeg","image/png"].indexOf(attachmentMimeType) === -1) {
+      return { status: "error", code: "ATTACHMENT_INTEGRITY_METADATA_INVALID" };
+    }
+    try {
+      var evidenceFile = DriveApp.getFileById(attachmentFileId);
+      if (!evidenceFile || evidenceFile.isTrashed() || evidenceFile.getSharingAccess() !== DriveApp.Access.PRIVATE) {
+        return { status: "error", code: "ATTACHMENT_NOT_PRIVATE" };
+      }
+      var evidenceBlob = evidenceFile.getBlob();
+      var evidenceBytes = evidenceBlob.getBytes();
+      var actualMime = String(evidenceBlob.getContentType() || evidenceFile.getMimeType() || "").trim().toLowerCase();
+      var actualHash = computeDocumentSHA256(evidenceBytes).toLowerCase();
+      if (!evidenceBytes || evidenceBytes.length !== attachmentSizeBytes || actualMime !== attachmentMimeType || actualHash !== attachmentHash) {
+        return { status: "error", code: "ATTACHMENT_INTEGRITY_MISMATCH" };
+      }
+    } catch (_) {
+      return { status: "error", code: "ATTACHMENT_INTEGRITY_VALIDATION_FAILED" };
+    }
+    attachmentIntegrityStatus = "VERIFICADO";
+  } else if (!attachmentFileId && (attachmentHash || attachmentVersion || attachmentSizeBytes || attachmentMimeType || attachmentReceivedAt)) {
+    return { status: "error", code: "ATTACHMENT_INTEGRITY_METADATA_INVALID" };
+  } else if (attachmentFileId && (attachmentVersion || attachmentSizeBytes || attachmentMimeType || attachmentReceivedAt)) {
+    return { status: "error", code: "ATTACHMENT_INTEGRITY_METADATA_INCOMPLETE" };
   }
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var justSheet = getOrCreateSheet(ss, "JustificacionesAsistencia");
@@ -10350,7 +10387,13 @@ function createCanonicalAbsenceJustificationUnlocked_(payload) {
     var same = String(existing[i][justMap.UserId] || "").trim() === studentId &&
       absenceDateKey_(existing[i][justMap.FechaAfectada]) === dateKey &&
       String(existing[i][justMap.Periodo] || "").trim() === period &&
-      String(existing[i][justMap.MotivoDeclarado] || "").trim() === reason;
+      String(existing[i][justMap.MotivoDeclarado] || "").trim() === reason &&
+      String(existing[i][justMap.AdjuntoUrl] || "").trim() === attachmentFileId &&
+      String(existing[i][justMap.AdjuntoSHA256] || "").trim().toLowerCase() === attachmentHash &&
+      Number(existing[i][justMap.AdjuntoVersion] || 0) === attachmentVersion &&
+      Number(existing[i][justMap.AdjuntoSizeBytes] || 0) === attachmentSizeBytes &&
+      String(existing[i][justMap.AdjuntoMimeType] || "").trim().toLowerCase() === attachmentMimeType &&
+      String(existing[i][justMap.AdjuntoFechaRecepcion] || "").trim() === attachmentReceivedAt;
     if (!same) return { status: "error", code: "IDEMPOTENCY_CONFLICT" };
     return { status: "success", idempotent: true, data: { justificacionId: id, sesionIds: JSON.parse(String(existing[i][justMap.SesionIDsJSON] || "[]")) } };
   }
@@ -10364,7 +10407,13 @@ function createCanonicalAbsenceJustificationUnlocked_(payload) {
   newRow[justMap.FechaAfectada] = dateKey;
   newRow[justMap.Periodo] = period;
   newRow[justMap.MotivoDeclarado] = reason;
-  newRow[justMap.AdjuntoUrl] = String(p.adjuntoUrl || "");
+  newRow[justMap.AdjuntoUrl] = attachmentFileId;
+  newRow[justMap.AdjuntoSHA256] = attachmentHash;
+  newRow[justMap.AdjuntoVersion] = attachmentVersion || "";
+  newRow[justMap.AdjuntoSizeBytes] = attachmentSizeBytes || "";
+  newRow[justMap.AdjuntoMimeType] = attachmentMimeType;
+  newRow[justMap.AdjuntoFechaRecepcion] = attachmentReceivedAt;
+  newRow[justMap.AdjuntoIntegridadEstado] = attachmentIntegrityStatus;
   newRow[justMap.PresentadoPor] = actorId;
   newRow[justMap.EstadoRevision] = "Pendiente";
   newRow[justMap.RevisadoPor] = "";
@@ -10583,6 +10632,11 @@ function reconcilePendingAttendanceJustifications(payload) {
           periodo: requestRow[requestMap.Periodo],
           motivoDeclarado: requestRow[requestMap.MotivoJustificacion],
           adjuntoUrl: requestRow[requestMap.AdjuntoUrl] || "",
+          adjuntoSHA256: String(requestRow[requestMap.AdjuntoSHA256] || ""),
+          adjuntoVersion: requestRow[requestMap.AdjuntoVersion] || "",
+          adjuntoSizeBytes: requestRow[requestMap.AdjuntoSizeBytes] || "",
+          adjuntoMimeType: String(requestRow[requestMap.AdjuntoMimeType] || ""),
+          adjuntoFechaRecepcion: String(requestRow[requestMap.AdjuntoFechaRecepcion] || ""),
           actorId: String(requestRow[requestMap.UserId] || "").trim(),
           actorRole: "Solicitante"
         });
@@ -10919,7 +10973,7 @@ function resolveTeacherJustificationScope_(payload, requestedJustificationId) {
       justificacionId:justId,estudianteNombre:String(enrollmentRecord.row[enrollmentMap.Alumno]||""),
       fechaAfectada:dateKey,periodo:period.name||periodId,estado:String(row[justMap.EstadoRevision]||"Pendiente"),
       observacionesPublicas:publicNotes,sesiones:visibleSessions,
-      evidenciaDisponible:policy==="PERMITIR_VER_CONSTANCIA_MEDICA_COMPLETA" && !!String(row[justMap.AdjuntoUrl]||"").trim(),
+      evidenciaDisponible:policy==="PERMITIR_VER_CONSTANCIA_MEDICA_COMPLETA" && teacherJustificationEvidenceMetadataValid_(row,justMap),
       grado:firstSession.grade,seccion:firstSession.section
     };
     dto.asignaturas=Array.from(new Set(visibleSessions.map(function(item){return item.asignaturaId;})));
@@ -10933,6 +10987,20 @@ function resolveTeacherJustificationScope_(payload, requestedJustificationId) {
 function teacherJustificationSha256_(value) {
   var bytes=Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,String(value||""),Utilities.Charset.UTF_8);
   return bytes.map(function(b){return ("0"+(b&255).toString(16)).slice(-2);}).join("");
+}
+
+function teacherJustificationEvidenceMetadataValid_(row, map) {
+  var fileId=String(row[map.AdjuntoUrl]||"").trim();
+  var hash=String(row[map.AdjuntoSHA256]||"").trim().toLowerCase();
+  var version=Number(row[map.AdjuntoVersion]||0);
+  var size=Number(row[map.AdjuntoSizeBytes]||0);
+  var mime=String(row[map.AdjuntoMimeType]||"").trim().toLowerCase();
+  var received=String(row[map.AdjuntoFechaRecepcion]||"").trim();
+  var state=String(row[map.AdjuntoIntegridadEstado]||"").trim().toUpperCase();
+  return !!fileId && /^[a-f0-9]{64}$/.test(hash) && version===1 &&
+    Number.isFinite(size) && size>0 && size<=2*1024*1024 &&
+    ["application/pdf","image/jpeg","image/png"].indexOf(mime)!==-1 &&
+    !!received && !isNaN(Date.parse(received)) && state==="VERIFICADO";
 }
 
 function getTeacherStudentJustifications(payload) {
@@ -11028,18 +11096,31 @@ function getTeacherJustificationEvidence(payload) {
   var map=absenceSheetMap_(sheet,ABSENCE_JUSTIFICATION_HEADERS_),rows=sheet.getDataRange().getValues();
   var matchingRows=rows.slice(1).filter(function(item){return String(item[map.JustificacionID]||"").trim()===justId;});
   if(matchingRows.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",httpStatus:403};
-  var fileId=String(matchingRows[0][map.AdjuntoUrl]||"").trim();
-  if(!fileId)return {status:"error",code:"TEACHER_EVIDENCE_NOT_AVAILABLE"};
+  var row=matchingRows[0];
+  if(!String(row[map.AdjuntoUrl]||"").trim())return {status:"error",code:"TEACHER_EVIDENCE_NOT_AVAILABLE"};
+  if(!teacherJustificationEvidenceMetadataValid_(row,map))return {status:"error",code:"TEACHER_EVIDENCE_INTEGRITY_UNVERIFIED"};
+  var fileId=String(row[map.AdjuntoUrl]||"").trim();
+  var expectedHash=String(row[map.AdjuntoSHA256]||"").trim().toLowerCase();
+  var expectedSize=Number(row[map.AdjuntoSizeBytes]||0);
+  var expectedMime=String(row[map.AdjuntoMimeType]||"").trim().toLowerCase();
   try{
     var file=DriveApp.getFileById(fileId);
     if(file.isTrashed() || file.getSharingAccess()!==DriveApp.Access.PRIVATE)return {status:"error",code:"TEACHER_EVIDENCE_NOT_PRIVATE"};
-    var size=file.getSize();
-    if(size>2*1024*1024)return {status:"error",code:"TEACHER_EVIDENCE_FORMAT_RESTRICTED"};
-    var blob=file.getBlob(),mime=String(blob.getContentType()||file.getMimeType()||"").toLowerCase();
-    if(["application/pdf","image/jpeg","image/png"].indexOf(mime)===-1)return {status:"error",code:"TEACHER_EVIDENCE_FORMAT_RESTRICTED"};
-    var base64=Utilities.base64Encode(blob.getBytes());
-    logTeacherJustificationAccessEvent_(ss,"getTeacherJustificationEvidence",p._verifiedUserId,p._verifiedRole,"TEACHER_EVIDENCE_VIEWED",justId,"SUCCESS");
-    return {status:"success",data:{fileName:file.getName(),mimeType:mime,base64:base64}};
+    var blob=file.getBlob(),bytes=blob.getBytes();
+    var mime=String(blob.getContentType()||file.getMimeType()||"").toLowerCase();
+    if(!bytes || !bytes.length || bytes.length>2*1024*1024 || bytes.length!==expectedSize ||
+       ["application/pdf","image/jpeg","image/png"].indexOf(mime)===-1 || mime!==expectedMime) {
+      logTeacherJustificationAccessEvent_(ss,"getTeacherJustificationEvidence",p._verifiedUserId,p._verifiedRole,"TEACHER_EVIDENCE_INTEGRITY_MISMATCH",justId,"DENIED");
+      return {status:"error",code:"TEACHER_EVIDENCE_INTEGRITY_MISMATCH"};
+    }
+    var actualHash=computeDocumentSHA256(bytes).toLowerCase();
+    if(actualHash!==expectedHash) {
+      logTeacherJustificationAccessEvent_(ss,"getTeacherJustificationEvidence",p._verifiedUserId,p._verifiedRole,"TEACHER_EVIDENCE_INTEGRITY_MISMATCH",justId,"DENIED");
+      return {status:"error",code:"TEACHER_EVIDENCE_INTEGRITY_MISMATCH"};
+    }
+    var base64=Utilities.base64Encode(bytes);
+    logTeacherJustificationAccessEvent_(ss,"getTeacherJustificationEvidence",p._verifiedUserId,p._verifiedRole,"TEACHER_EVIDENCE_VIEWED_VERIFIED",justId,"SUCCESS");
+    return {status:"success",data:{fileName:file.getName(),mimeType:mime,base64:base64,sha256:actualHash,version:1,integrityVerified:true}};
   }catch(error){
     logTeacherJustificationAccessEvent_(ss,"getTeacherJustificationEvidence",p._verifiedUserId,p._verifiedRole,"TEACHER_EVIDENCE_READ_FAILED",justId,"FAILED");
     return {status:"error",code:"TEACHER_EVIDENCE_UNAVAILABLE"};
@@ -11053,6 +11134,9 @@ function submitAttendanceJustification(payload) {
   const actorRole = String(p._verifiedRole || "").trim();
   const targetUserId = String(p.userId || actorId).trim();
   if (!actorId || !actorRole) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  if (String(p.adjuntoUrl || "").trim() || String(p.adjuntoFileId || "").trim() || String(p.adjuntoData || "").trim()) {
+    return { status: "error", code: "UNTRUSTED_ATTACHMENT_REFERENCE" };
+  }
   if (["estudiante","alumno"].indexOf(actorRole.toLowerCase()) !== -1 && targetUserId !== actorId) {
     return { status: "error", code: "STUDENT_OWNERSHIP_MISMATCH" };
   }

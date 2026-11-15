@@ -158,7 +158,7 @@ assert.equal(rollbackCount, 2);
   "submitJointFamilyPayment"
 ].forEach(function(name) {
   const fn = extractFunction(user, name);
-  assert.match(fn, /createPrivateRequestAttachment_/, name + " must persist through the private attachment helper");
+  assert.match(fn, /createPrivateRequestAttachment(?:WithIntegrity)?_/, name + " must persist through the private attachment helper");
   assert.match(fn, /UNTRUSTED_ATTACHMENT_REFERENCE/, name + " must reject client-supplied URLs/IDs");
   assert.match(fn, /rollbackPrivateAttachment_/, name + " must compensate failed persistence");
 });
