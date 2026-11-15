@@ -154,6 +154,8 @@ function makeMigrationOrchestrationFixture(options){
   SPREADSHEET_ID:"LOCAL",
   SpreadsheetApp:{openById:()=>ss},
   getOrCreateSheet:()=>audit,
+  getVerifiedAccountingIdentity_:()=>({authorized:true,userId:"U-1",role:"Director",institutionId:"INST-1"}),
+  accountingHasInstitutionalImportPermission_:()=>true,
   Utilities:{DigestAlgorithm:{SHA_256:"SHA-256"},Charset:{UTF_8:"UTF-8"},getUuid:()=> "RUN-"+(++state.uuid),computeDigest:(alg,value)=>Array.from(crypto.createHash("sha256").update(String(value)).digest()).map(b=>b>127?b-256:b)},
   resolveCrossReferenceIdentifier:p=>p.idOriginalLegado==="PENDING"?{status:"pending_review",code:"IDENTITY_REVIEW_REQUIRED"}:{status:"success",idMapeo:"MAP-"+p.idOriginalLegado,idNuevoPlataforma:"PER-SHARED"},
   sendMigrationOwnerRequest_:(entity,action,payload)=>{calls.push({entity,action,payload});if(action==="writeMigratedEntity"){state.writes++;if(options.failWriteAt===state.writes)throw new Error("MOCK_OWNER_WRITE_FAILED");return{status:"success"};}if(action==="compensateMigratedEntity"){if(options.failCompensation)throw new Error("MOCK_COMPENSATION_FAILED");return{status:"success",compensated:true};}throw new Error("unexpected action");},
