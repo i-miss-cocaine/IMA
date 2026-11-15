@@ -21,12 +21,12 @@ function extractFunction(name) {
   let depth=0,quote="",escaped=false,lineComment=false,blockComment=false;
   for(let i=open;i<source.length;i++){
     const c=source[i],next=source[i+1];
-    if(lineComment){if(c==="\\n")lineComment=false;continue;}
+    if(lineComment){if(c==="\n")lineComment=false;continue;}
     if(blockComment){if(c==="*"&&next==="/"){blockComment=false;i++;}continue;}
-    if(quote){if(escaped)escaped=false;else if(c==="\\\\")escaped=true;else if(c===quote)quote="";continue;}
+    if(quote){if(escaped)escaped=false;else if(c==="\\")escaped=true;else if(c===quote)quote="";continue;}
     if(c==="/"&&next==="/"){lineComment=true;i++;continue;}
     if(c==="/"&&next==="*"){blockComment=true;i++;continue;}
-    if(c==="'"||c==='"'||c==="\x60"){quote=c;continue;}
+    if(c==="'"||c==='"'||c.charCodeAt(0)===96){quote=c;continue;}
     if(c==="{")depth++;
     else if(c==="}"&&--depth===0)return source.slice(start,i+1);
   }
@@ -41,7 +41,7 @@ function loadContext(extra={}) {
     extractFunction("sendMultiChannelNotification"),
     extractFunction("dispatchWorkflowStatusNotification_"),
     extractFunction("processWorkflowDecision")
-  ].join("\\n");
+  ].join("\n");
   vm.runInNewContext(isolatedSource,context,{timeout:10000});
   Object.keys(extra).forEach(key=>{context[key]=extra[key];});
   return context;
