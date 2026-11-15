@@ -426,6 +426,8 @@ assert.equal(userMultiReview.status,"success");
 regRows = attendance.getDataRange().getValues();
 assert.equal(regRows.find(row=>row[0]==="REG-USER-MULTI-A")[6],true);
 assert.equal(regRows.find(row=>row[0]==="REG-USER-MULTI-B")[6],false,"the USER review bridge must forward and enforce the partial session selection");
+const unauthorizedReview = userContext.reviewAbsenceJustification({_userId:"TEACHER-1",_role:"Profesor",solicitudId:userMultiSubmit.solicitudId,nuevoEstado:"Aprobada"});
+assert.equal(unauthorizedReview.code,"AUTH_PERMISSION_DENIED","teachers cannot exercise secretariat review authority through USER");
 const secretaryQueue = userContext.getAdministrativeRequests({_userId:"SEC-USER",_role:"Secretaría"});
 assert.equal(secretaryQueue.status,"success");
 assert.ok(secretaryQueue.data.some(item=>item.solicitudId===userMultiSubmit.solicitudId),"secretariat must see the institution-wide justification queue");
