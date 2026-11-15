@@ -1110,3 +1110,46 @@ TASK-106 — Integridad criptográfica, versionado y protección contra sustituc
 - TASK-108: parcial avanzado en código/CI; no se marca completada por los criterios externos pendientes.
 - Siguiente tarea elegible independiente: TASK-130 (ayudas permanentes y descripciones de formularios), sujeto a verificar F38-Task01/F38-Task02 y Normas_Desarollo.md.
 ===============================================================================
+
+
+===============================================================================
+## C1.758 — IMA-EXEC-20261115-TASK130-PERMANENT-FIELD-HELP-01
+- **Fecha:** 2026-11-15
+- **Rama exclusiva:** NG_beta_0.0.0.1_work
+- **HEAD antes del checkpoint:** 8ebde86683e10ad2bb1eb6130a9de89fd696aa82
+- **Normativa leída:** Normas_Desarollo.md v1.4.
+- **Tarea:** TASK-130 — ayudas permanentes, descripciones completas y confirmaciones independientes.
+
+### Cambios
+- js/ui-common.js: required marker visible; setFieldValidationError/clearFieldValidationError; los errores se asocian con role=alert, aria-live, aria-invalid y aria-describedby. El clear preserva la ayuda permanente y las descripciones anteriores.
+- teacher-dashboard.html: dos campos de calificación enlazados a calificaciones.nota y restricciones min=0/max=100/step=0.01, compatibles con auditoría backend.
+- tests/security/ui-common-permanent-help.test.js: fixture DOM para fallback, idempotencia, required marker, ARIA, error inline y confirmación crítica.
+- Confirmaciones críticas inspeccionadas: deleteScheduleBlock retorna antes de la mutación al cancelar; voidCharge aplica confirmAccountingSensitiveOperation_ antes de callApi.
+- El catálogo getUIMetadataCatalog y su fallback ya existentes se preservan; no se convierten metadatos en controles de autorización.
+
+### Archivos
+- js/ui-common.js
+- teacher-dashboard.html
+- tests/security/ui-common-permanent-help.test.js
+- pendientes/Secretaria/Pendientes.md
+- Auditoría/AUDITORIA_FASE_38_AYUDA_CONTEXTUAL_METADATOS_APRENDIZAJE.md
+- changueslogs.txt
+- beta_test_Parte_0002.txt
+
+### Verificación
+- Compilación sintáctica V8 PASS: js/ui-common.js, tests/security/ui-common-permanent-help.test.js, tests/security/user-service-ui-metadata.test.js, js/teacher.js y js/accounting.js.
+- Revisión estática: calificaciones 0–100 consistente con auditAcademicGradesIntegrity; cancelaciones de horario/pago preceden llamadas al backend.
+- Node CLI test suite: NO EJECUTADA en esta sesión; no se obtuvo un workflow run/estado de Actions para este commit. No se declara PASS.
+- Pruebas manuales de teclado, lector de pantalla, móvil, zoom y formularios reales pendientes.
+
+### Brechas que mantienen TASK-130 abierto
+- No están etiquetados todos los campos reales de matrícula/admisión, importación y adjuntos con límites contrastados con sus validadores.
+- Falta verificar el handler real de cierre de actas de calificaciones.
+- El test DOM agregado aún requiere ejecución Node CLI y validación beta.
+- F38-Task01/02 continúan figurando pendientes en la auditoría maestra, aunque hay implementaciones parciales verificables de tooltip y catálogo.
+
+### Estado y continuidad
+- TASK-130: avance parcial, no se marca completada.
+- Rama base NG_beta_0.0.0.1 no fue modificada.
+- Siguiente paso elegible: ampliar mapeo de metadatos en los formularios reales de Secretaría/Admisión y las importaciones, verificando primero cada restricción contra el backend correspondiente; después ejecutar suite Node y CI.
+===============================================================================
