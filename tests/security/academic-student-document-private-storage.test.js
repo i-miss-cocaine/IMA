@@ -19,7 +19,8 @@ const names=[
   "nextStudentDocumentVersion_","uploadStudentDocument","verifyDocumentIntegritySha256","getStudentDocumentFile_",
   "getStudentDocumentAccessTokenSecret_","studentDocumentTokenHex_","studentDocumentTokenConstantTimeEqual_",
   "studentDocumentTokenDigest_","studentDocumentTokenSignature_","createStudentDocumentAccessToken",
-  "decodeStudentDocumentAccessToken_","getSecureDocumentStream","getStudentDocuments","restoreDocumentVersion"
+  "decodeStudentDocumentAccessToken_","logStudentDocumentAccessDecision_","studentDocumentAccessError_",
+  "consumeStudentDocumentAccessToken_","getSecureDocumentStream","getStudentDocuments","restoreDocumentVersion"
 ];
 const functions=names.map(extractFunction);
 const pdf1=Buffer.from("%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Name (first) >>\nendobj\nstartxref\n9\n%%EOF\n","utf8");
@@ -94,7 +95,7 @@ function makeHarness(options={}) {
   };
   const lock={
     tryLock:()=>{if(state.lockHeld)return false;state.lockHeld=true;return true;},
-    waitLock:ms=>{assert.equal(ms,10000);if(state.lockHeld)throw new Error("LOCK_BUSY");state.lockHeld=true;},
+    waitLock:ms=>{assert.ok(ms===5000||ms===10000);if(state.lockHeld)throw new Error("LOCK_BUSY");state.lockHeld=true;},
     releaseLock:()=>{assert.equal(state.lockHeld,true);state.lockHeld=false;state.lockReleases++;}
   };
   class TestDate extends Date {
@@ -103,8 +104,8 @@ function makeHarness(options={}) {
   }
   const scriptCache={
     put(key,value,ttl){state.tokenCache.set(key,{value,expiresAt:state.now+Number(ttl)*1000});},
-    get(key){const item=state.tokenCache.get(key);if(!item||item.expiresAt<=state.now){state.tokenCache.delete(key);return null;}return item.value;},
-    remove(key){state.tokenCache.delete(key);}
+    get(key){assert.equal(state.lockHeld,true,"one-use token lookup is serialized");const item=state.tokenCache.get(key);if(!item||item.expiresAt<=state.now){state.tokenCache.delete(key);return null;}return item.value;},
+    remove(key){assert.equal(state.lockHeld,true,"one-use token removal is serialized");state.tokenCache.delete(key);}
   };
   const context={
     STUDENT_DOCUMENT_ACCESS_TOKEN_TTL_SECONDS_:60,
@@ -120,6 +121,7 @@ function makeHarness(options={}) {
       return sheets[name];
     },
     LockService:{getScriptLock:()=>lock},
+    validateRolePermission:()=>({authorized:true}),
     CacheService:{getScriptCache:()=>scriptCache},
     PropertiesService:{getScriptProperties:()=>({
       getProperty:key=>state.scriptProperties.get(key)||"",
@@ -212,6 +214,13 @@ function upload(h,pdf,label="ACTA") {
   const wrongDocument=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1"});
   assert.equal(h.context.stream({documentoId:"DOC-OTHER",solicitudId:"SOL-1",accessToken:wrongDocument.accessToken}).code,
     "DOCUMENT_ACCESS_TOKEN_BINDING_MISMATCH","a token cannot be transferred to another document");
+  const contentionToken=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1"});
+  h.state.lockHeld=true;
+  assert.equal(h.context.stream({documentoId:row[0],solicitudId:"SOL-1",accessToken:contentionToken.accessToken}).code,
+    "DOCUMENT_ACCESS_TOKEN_REVOKED_OR_REPLAYED","lock contention fails closed without consuming a token");
+  h.state.lockHeld=false;
+  assert.equal(h.context.stream({documentoId:row[0],solicitudId:"SOL-1",accessToken:contentionToken.accessToken}).status,"success",
+    "a token survives a lock timeout and can be consumed once the lock is available");
   const expired=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1"});
   h.state.now+=61000;
   assert.equal(h.context.stream({documentoId:row[0],solicitudId:"SOL-1",accessToken:expired.accessToken}).code,
@@ -424,4 +433,5 @@ assert.match(source,/case "createStudentDocumentAccessToken": result = createStu
 assert.match(source,/const permissionAction = \["createStudentDocumentAccessToken", "getSecureDocumentStream"\]/);
 assert.match(source,/validateContextualAccess\(permissionAction, payload, verifiedUserId, userRole\)/);
 assert.doesNotMatch(source,/getDownloadUrl\(\)/);
+assert.match(source,/function consumeStudentDocumentAccessToken_\(tokenId, token\)[\s\S]*lock\.waitLock\(5000\)[\s\S]*cache\.remove\(key\)/);
 console.log("academic-student-document-private-storage: PASS");
