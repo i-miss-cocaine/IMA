@@ -539,7 +539,8 @@ function buildImportPreview_(payload) {
   var legacyIds = input.filasData.map(function(row) {
     return String(row && legacyIdColumn ? row[legacyIdColumn] || "" : "").trim();
   }).filter(Boolean);
-  var identityLookups = [{ sourceName: sourceName, entityType: entityType, legacyIds: legacyIds }];
+  var identityLookups = [];
+  if (legacyIds.length) identityLookups.push({ sourceName: sourceName, entityType: entityType, legacyIds: legacyIds });
   var relatedPersonField = entityType === "estudiante" ? "PersonaID" : (entityType === "empleado" ? "PersonaId" : "");
   var relatedPersonSourceField = relatedPersonField ? String(fields[relatedPersonField] || "") : "";
   if (relatedPersonSourceField) {
@@ -548,10 +549,11 @@ function buildImportPreview_(payload) {
     }).filter(Boolean);
     if (relatedPersonIds.length) identityLookups.push({ sourceName: sourceName, entityType: "persona", legacyIds: relatedPersonIds });
   }
-  var identitySnapshot = requestAccountingIdentityMapSnapshot_({
+  var identitySnapshot = identityLookups.length ? requestAccountingIdentityMapSnapshot_({
     sessionToken: input.sessionToken, institutionId: institutionId, correlationId: input.correlationId,
     lookups: identityLookups
-  });
+  }) : { status: "success", verified: true, service: "USER", institutionId: institutionId,
+    entries: [], uniquenessViolations: [] };
   if (!identitySnapshot || identitySnapshot.status !== "success" || identitySnapshot.verified !== true) {
     return { status: "error", code: identitySnapshot && identitySnapshot.code || "IDENTITY_MAPPING_SNAPSHOT_UNAVAILABLE",
       validForImport: false, errores: [] };
