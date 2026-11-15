@@ -138,6 +138,16 @@ const payload = {
   assert.deepEqual(target.rows[1], schemas.curso.headers.map((header, index) => expectedBefore[header] === undefined ? "" : expectedBefore[header]), "update compensation restores the exact prior row");
 }
 {
+  const routedPayload = { ...payload, idNuevoPlataforma: "CURSO-ROUTE", idempotencyKey: "KEY-ROUTE",
+    expectedTargetPresent: false, datos: { NombreCurso: "Routed", Categoria: "Gestión" } };
+  const routed = runtime.api.send("ACCOUNTING", "writeMigratedEntity", routedPayload);
+  assert.equal(routed.status, "success");
+  assert.equal(routed.accion, "INSERT", "ACCOUNTING owner dispatch reaches the journaled local writer");
+  const routedCompensation = runtime.api.send("ACCOUNTING", "compensateMigratedEntity", { idempotencyKey: "KEY-ROUTE" });
+  assert.equal(routedCompensation.compensated, true);
+  assert.equal(sheets.get("Cursos").rows.some(row => row[0] === "CURSO-ROUTE"), false);
+}
+{
   const expected = { CursoID: "CURSO-3", NombreCurso: "Original", Categoria: "Capacitación", ProveedorResponsable: "", Modalidad: "Virtual", DuracionHoras: "", Requisitos: "", DirigidoA: "", Estado: "Activo", CreadoPor: "", FechaCreacion: "", UltimaModificacion: "" };
   const target = new Sheet([schemas.curso.headers, schemas.curso.headers.map(header => expected[header] === undefined ? "" : expected[header])]);
   sheets.set("Cursos", target);
