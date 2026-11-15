@@ -5258,11 +5258,11 @@ function uploadPaymentVoucher(payload) {
   const {userId,alumno,cargoId,montoReportado,metodoPago,referencia,fileData,fileName,observaciones}=payload||{};
   const amount=Number(montoReportado);
   if(!userId||!Number.isFinite(amount)||amount<=0) throw new Error("userId y monto reportado válido son requeridos.");
-  if(typeof fileData!=="string"||!fileData.trim()||typeof fileName!=="string"||!fileName.trim()) throw new Error("ATTACHMENT_PAIR_REQUIRED");
   const actor=getVerifiedAccountingIdentity_(payload);
   if(!actor.authorized) return {status:"error",code:actor.code,message:"Acceso denegado."};
   const access=assertPaymentVoucherOwnerAccess_(payload,userId,{});
   if(!access.authorized) return {status:"error",code:access.code||"RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
+  if(typeof fileData!=="string"||!fileData.trim()||typeof fileName!=="string"||!fileName.trim()) throw new Error("ATTACHMENT_PAIR_REQUIRED");
   const file=createPrivatePaymentAttachment_(fileData,fileName),fileId=file.getId();
   const lock=LockService.getScriptLock();
   if(!lock.tryLock(30000)){rollbackPrivatePaymentAttachment_(file);throw new Error("LOCK_TIMEOUT");}

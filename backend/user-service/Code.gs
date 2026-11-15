@@ -4734,7 +4734,10 @@ function getAdministrativeRequestAttachment(payload) {
     const linkedResult = getGuardianStudents({ userId: actorId, sessionToken: payload.sessionToken || payload.authToken || payload.token });
     authorized = (linkedResult.data || []).some(function(student) {
       const permissions = student.permisos || {};
-      return String(student.studentUserId || student.userId || "").trim() === String(row[2] || "").trim() &&
+      const targetStudentId = String(row[2] || "").trim();
+      const linkedUserId = String(student.studentUserId || student.userId || "").trim();
+      const linkedExpedienteId = String(student.expedienteEstudianteId || "").trim();
+      return (linkedUserId === targetStudentId || linkedExpedienteId === targetStudentId) &&
         permissions.permisoDocumental !== false;
     });
   }
