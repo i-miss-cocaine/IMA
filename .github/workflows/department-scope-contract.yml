@@ -153,6 +153,8 @@ jobs:
         run: node tests/security/user-service-ui-metadata.test.js
       - name: Run accessible tooltip positioning and interaction contract
         run: node tests/ui/accessible-tooltips.test.js
+      - name: Run permanent form help metadata contract
+        run: node tests/ui/permanent-form-help.test.js
       - name: Run accounting employee loan request and approval ownership contract
         run: node tests/security/accounting-employee-loan-advance-ownership.test.js
       - name: Run accounting payroll loan amortization and reversal contract
