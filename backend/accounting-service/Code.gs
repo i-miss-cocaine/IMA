@@ -19498,6 +19498,77 @@ function resolveAccountingIdentityFromSnapshot_(snapshot, legacyId) {
   return { status: "success", idMapeo: found.idMapeo, idNuevoPlataforma: found.idNuevoPlataforma };
 }
 
+function buildMigrationTargetExistenceSnapshot_(ss, schema, rows, identityResolutions, mapping, rowNumbers) {
+  const snapshot = { service: String(schema.service || ""), verified: false, reason: "", existingTargetIds: [], existingTargetHashes: {} };
+  const warnings = [];
+  if (schema.service !== "ACCOUNTING") {
+    snapshot.reason = "REMOTE_OWNER_NOT_QUERIED";
+    if (rows.length) warnings.push({
+      codigo: "TARGET_EXISTENCE_NOT_VERIFIED", filaNum: null,
+      mensaje: "El destino pertenece a otro servicio propietario; su existencia no se consultó en esta previsualización. Confirme posibles sobrescrituras antes de importar."
+    });
+    return { snapshot: snapshot, warnings: warnings };
+  }
+  const sheet = ss && ss.getSheetByName ? ss.getSheetByName(schema.sheet) : null;
+  if (!sheet || !sheet.getDataRange) {
+    snapshot.reason = "TARGET_SHEET_UNAVAILABLE";
+    if (rows.length) warnings.push({
+      codigo: "TARGET_EXISTENCE_NOT_VERIFIED", filaNum: null,
+      mensaje: "No se pudo verificar la hoja destino " + String(schema.sheet || "") + "; no se descartan posibles sobrescrituras."
+    });
+    return { snapshot: snapshot, warnings: warnings };
+  }
+  const values = sheet.getDataRange().getValues();
+  if (!values || !values.length) {
+    snapshot.reason = "TARGET_HEADER_MISSING";
+    if (rows.length) warnings.push({
+      codigo: "TARGET_EXISTENCE_NOT_VERIFIED", filaNum: null,
+      mensaje: "La hoja destino no contiene encabezados; no se descartan posibles sobrescrituras."
+    });
+    return { snapshot: snapshot, warnings: warnings };
+  }
+  const headers = values[0].map(function(value) { return String(value || "").trim(); });
+  const idField = String(schema.headers && schema.headers[0] || "");
+  const idIndex = headers.indexOf(idField);
+  if (idIndex < 0) {
+    snapshot.reason = "TARGET_ID_COLUMN_MISSING";
+    if (rows.length) warnings.push({
+      codigo: "TARGET_EXISTENCE_NOT_VERIFIED", filaNum: null,
+      mensaje: "No se encontró la columna clave " + idField + " en la hoja destino; no se descartan posibles sobrescrituras."
+    });
+    return { snapshot: snapshot, warnings: warnings };
+  }
+
+  snapshot.verified = true;
+  const mappedFields = Object.keys(mapping && mapping.campos || {}).sort();
+  (identityResolutions || []).forEach(function(identity, index) {
+    if (!identity || identity.status !== "success") return;
+    const targetId = String(identity.idNuevoPlataforma || "").trim();
+    if (!targetId) return;
+    const matches = [];
+    for (let rowIndex = 1; rowIndex < values.length; rowIndex++) {
+      if (String(values[rowIndex][idIndex] || "").trim() === targetId) matches.push(values[rowIndex]);
+    }
+    if (!matches.length) return;
+    snapshot.existingTargetIds.push(targetId);
+    const currentValues = {};
+    mappedFields.forEach(function(field) {
+      const column = headers.indexOf(field);
+      currentValues[field] = column < 0 ? null : matches[0][column];
+    });
+    snapshot.existingTargetHashes[targetId] = migrationHash_(migrationStableJson_(currentValues));
+    warnings.push({
+      codigo: matches.length > 1 ? "TARGET_IDENTIFIER_DUPLICATED" : "TARGET_RECORD_OVERWRITE",
+      filaNum: Number(rowNumbers && rowNumbers[index]) || (index + 1),
+      mensaje: matches.length > 1
+        ? "El identificador destino " + targetId + " aparece varias veces; revise el catálogo antes de importar."
+        : "El registro destino " + targetId + " ya existe; revise los campos mapeados que podrían sobrescribirse antes de confirmar."
+    });
+  });
+  snapshot.existingTargetIds.sort();
+  return { snapshot: snapshot, warnings: warnings };
+}
+
 function buildImportPreview_(payload) {
   const p = payload || {};
   const nombreArchivo = String(p.nombreArchivo || "archivo.xlsx");
@@ -19669,6 +19740,10 @@ function buildImportPreview_(payload) {
     if (errors.length === errorsBefore) { validRows++; validRowIndexes.push(index); }
   });
 
+  const targetExistenceResult = buildMigrationTargetExistenceSnapshot_(ss, schema, rows, identityResolutions, mapping, sourceRowNumbers);
+  const targetExistenceSnapshot = targetExistenceResult.snapshot;
+  (targetExistenceResult.warnings || []).forEach(function(item) { warnings.push(item); });
+
   Object.keys(sourceColumnTypes).forEach(function(column) {
     if (Object.keys(sourceColumnTypes[column]).length > 1) {
       warnings.push({ filaNum: 0, campo: column, codigo: "COLUMN_TYPE_INCONSISTENCY", mensaje: "La columna contiene más de un tipo de dato." });
@@ -19684,12 +19759,12 @@ function buildImportPreview_(payload) {
   const previewHash = migrationHash_(migrationStableJson_({
     actorId: actor.userId, institutionId: institutionId, source: source, type: type,
     destination: destinoModulo, mapping: mapping, rows: rows, structure: structure,
-    preparedRows: preparedRows, identityResolutions: identityResolutions, validRowIndexes: validRowIndexes, scope: scopeFingerprint
+    preparedRows: preparedRows, identityResolutions: identityResolutions, validRowIndexes: validRowIndexes, targetExistenceSnapshot: targetExistenceSnapshot, scope: scopeFingerprint
   }));
   return {
     status: "success", validForImport: errors.length === 0 && validRows === rows.length,
     validForPartialImport: blockingStructuralErrorCount === 0 && validRowIndexes.length > 0 && validRowIndexes.length < rows.length,
-    validRowIndexes: validRowIndexes,
+    validRowIndexes: validRowIndexes, targetExistenceSnapshot: targetExistenceSnapshot,
     previewHash: previewHash, nombreArchivo: nombreArchivo, destinoModulo: destinoModulo,
     tipoEntidad: type, sistemaOrigen: source, filasValidas: validRows, filasFallidas: rows.length - validRows,
     totalFilas: rows.length, errores: errors, advertencias: warnings,
@@ -19713,6 +19788,8 @@ function validateImportPreview(payload) {
       totalFilas: preview.totalFilas, filasValidas: preview.filasValidas,
       filasFallidas: preview.filasFallidas, filasImportables: (preview.validRowIndexes || []).length,
       filasOmitidas: preview.totalFilas - (preview.validRowIndexes || []).length,
+      sobrescriturasDetectadas: (preview.targetExistenceSnapshot && preview.targetExistenceSnapshot.existingTargetIds || []).length,
+      existenciaDestinoVerificada: !!(preview.targetExistenceSnapshot && preview.targetExistenceSnapshot.verified),
       mapeoConfirmado: (payload && payload.columnaMapeo) || {},
       erroresLista: preview.errores.slice(0, 50), advertenciasLista: preview.advertencias.slice(0, 50),
       requiereConfirmacion: preview.advertencias.length > 0 || preview.validForPartialImport === true
