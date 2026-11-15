@@ -6621,7 +6621,7 @@ window.__imaUIMetadataFallback = {
         "cobros.comprobante": { help: "Adjunta una imagen o PDF completo y legible; deben distinguirse importe, fecha, referencia y entidad emisora." },
         "fechas.calendario": { help: "Selecciona la fecha en el calendario y comprueba el día, mes y año." },
         "calificaciones.nota": { help: "Ingresa una calificación numérica entre 0 y 100, conforme a la escala de la actividad." },
-        "tramites.adjunto": { help: "Adjunta archivos completos y legibles en los formatos aceptados por el formulario." }
+        "tramites.adjunto": { help: "Adjunta archivos completos y legibles en PDF, PNG, JPG, GIF, WEBP, HEIC, HTML, CSS, JS, PSC o XLSX. El tamaño máximo validado por el servidor es 50 MB por archivo." }
     }
 };
 
