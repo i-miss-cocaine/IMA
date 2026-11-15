@@ -3746,3 +3746,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Dashboard diferencia loading, empty, error, respuesta incompleta y caída; contador Pendiente se basa en estado normalizado. DOM/textContent, sin interpolación HTML.
 - Tests Node de dashboard y propiedad/privacidad PASS. CI final: Department Scope 43675596189, Department Reference 43675596202, Identity Mapping 43675596211 — SUCCESS.
 - TASK-489 completada en código/CI; BETA-FUNC-098 pendiente.
+
+
+[2026-11-15] F22-TASK04 — contrato local del callback autenticado de firma avanzada (C1.743)
+- Se añadió tests/security/user-service-signature-provider-callback.test.js y se integró al workflow Department Scope Contract.
+- El contrato cubre HMAC, secreto ausente/no disponible, envelope, allowlist, timestamp, anti-replay, lock ocupado y reentrada; verifica que un callback autenticado permanece pendiente de validación y no modifica el estado transaccional.
+- Node.js v22.16.0 local aislado y sintaxis PASS; GitHub Actions run 43678080608 con pasos ejecutados SUCCESS (estado terminal: SUCCESS).
+- No se modificó lógica productiva ni se simuló un PSC. F22-TASK04 sigue Pendiente para integración real, protocolo/endpoint/credenciales autorizados y validación X.509/sello de tiempo. BETA-FUNC-027 Pendiente beta.

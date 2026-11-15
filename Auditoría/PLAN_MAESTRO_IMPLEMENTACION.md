@@ -5563,3 +5563,11 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - **Limitaciones:** CLI local NOT RUN; se intentó clonar el repositorio y el contenedor no pudo resolver github.com (DNS). Apps Script/Sheets desplegado NOT RUN. No se usaron datos productivos. BETA-FUNC-088 queda pendiente de validación desplegada.
 - **Estado:** TASK-188 completada en código, revisión y CI. La validación beta permanece separada.
 - **Siguiente tarea elegible:** TASK-189 — sistema integral de valoración económica del inventario (PEPS/Promedio ponderado, capas de costo, transferencias valorizadas, ajustes y conciliación).
+
+
+### C1.743 — F22-TASK04 — contrato local del callback autenticado de firma avanzada
+- Se añadió un contrato Node independiente para handleSignatureProviderCallback_: HMAC y secreto Script Properties, envelope/allowlist, timestamp, anti-replay, lock ocupado y reentrada; confirma que la respuesta queda AUTHENTICATED_PENDING_VALIDATION y no muta el estado transaccional.
+- Se integró al workflow Department Scope Contract. Pruebas locales aisladas con Node.js v22.16.0 y node --check PASS. No hubo checkout completo local por fallo DNS de github.com; CI Node.js 24 ejecutó el nuevo contrato y el chequeo de sintaxis (run 43678080608: SUCCESS).
+- AUD-NG-063 ya estaba completada en C1.474; la exigencia de proveedor explícito/activo en createAdvancedSignatureRequest ya estaba implementada y cubierta. No se repitió.
+- **Estado:** subalcance local completado; F22-TASK04 permanece Pendiente para integración PSC real. No se inventan proveedor, protocolo, endpoint, credenciales ni cadena de confianza. BETA-FUNC-027 continúa Pendiente beta.
+- **Siguiente acción:** con PSC y especificación técnica/credenciales autorizadas, implementar adaptador real y validación de firma/certificado X.509, cadena, sello de tiempo, hash del PDF y transición transaccional.
