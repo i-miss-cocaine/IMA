@@ -3365,6 +3365,7 @@
 - **Pendiente para cierre:** UI de mapeo/confirmación en Secretaría/Contabilidad; snapshot remoto de existencia para USER/ACADEMIC; OCR operativo; validación Node 24 y Actions verde en el HEAD actual; beta real en Apps Script/Drive/Sheets/Mail; pruebas de teclado/lector de pantalla. TASK-133 permanece abierto.
 
 - **Avance C1.765 (2026-11-15):** el contrato accounting-import-semantic-preflight ahora repite una importación parcial válida y comprueba que el idempotencyKey de cada fila permanece estable entre reintentos. Harness V8 aislado PASS. No hay workflow run reportado para el HEAD de prueba; no se declara Node CLI ni Actions SUCCESS.
+- **Hallazgo C1.766 (2026-11-15):** el servicio ACCOUNTING no tiene doPost/textResponse ni un router que exponga validateImportPreview/importDataWithColumnMapping; tampoco define localmente verifySessionToken, createInterServiceEnvelope o assertEmployeeExpedienteScopeAccess_. fetchApi requiere ese endpoint y contrato. Por tanto, los helpers y contratos de preflight permanecen aislados/fail-closed y no se conecta una UI que aparentaría persistir sin backend autenticado. La restauración del router y sus adaptadores es requisito técnico previo a UI.
 
 ### [ ] [TASK-134] [P0] Implementación de detección criptográfica de duplicados mediante SHA-256
 - **Prioridad:** P0 (Prioridad crítica / Bloqueante)
