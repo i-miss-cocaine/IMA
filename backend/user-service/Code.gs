@@ -8111,6 +8111,7 @@ function validateFileBinaryIntegrity(fileData, fileName, options) {
     if(cursor!==centralOffset+centralSize||!entries["[Content_Types].xml"]||entries["[Content_Types].xml"].size<1)throw new Error("OPENXML_STRUCTURE_INVALID: [Content_Types].xml ausente.");
     if(policy.format==="docx"&&(!entries["word/document.xml"]||entries["word/document.xml"].size<1))throw new Error("DOCX_STRUCTURE_INVALID: word/document.xml ausente.");
     if(policy.format==="xlsx"&&(!entries["xl/workbook.xml"]||entries["xl/workbook.xml"].size<1))throw new Error("XLSX_STRUCTURE_INVALID: xl/workbook.xml ausente.");
+    if(policy.format==="xlsx"&&Object.keys(entries).some(function(name){return /vbaProject\.bin$/i.test(name);}))throw new Error("XLSX_MACROS_NOT_ALLOWED");
     openXmlStructure=validateOpenXmlPackageStructure_(rawBytes,policy.format,entries,maxExpandedBytes);
   }
   return {valid:true,fileName:normalizedName,detectedFormat:policy.format,byteLength:byteLength,mimeType:policy.mime,openXmlStructure:openXmlStructure};
