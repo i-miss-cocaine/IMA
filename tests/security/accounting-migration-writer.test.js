@@ -98,7 +98,7 @@ const payload = {
   tipoEntidad: "curso", idNuevoPlataforma: "CURSO-1", idempotencyKey: "KEY-1",
   institutionId: "INST-1", sessionToken: "SIGNED", correlationId: "CORR-0001",
   targetSnapshotVerified: true, expectedTargetPresent: false, expectedTargetRowHash: "",
-  datos: { NombreCurso: "=HYPERLINK(\"https://evil.test\")", Categoria: "Capacitación", Modalidad: "Virtual", Estado: "Activo" }
+  datos: { NombreCurso: "=HYPERLINK(\"https://evil.test\")", Categoria: "Capacitación", Modalidad: "Virtual", Estado: "Activo", FechaCreacion: "2026-02-01" }
 };
 {
   const inserted = runtime.api.write(payload);
@@ -108,8 +108,8 @@ const payload = {
   assert.equal(target.rows.length, 2);
   assert.equal(target.rows[1][0], "CURSO-1");
   assert.equal(target.rows[1][1], "'=HYPERLINK(\"https://evil.test\")", "formula-like imported text is neutralized");
-  assert.ok(target.rows[1][3] instanceof Date, "ISO date values are stored as spreadsheet dates");
-  assert.equal(target.rows[1][3].toISOString(), "2026-02-01T00:00:00.000Z");
+  assert.ok(target.rows[1][10] instanceof Date, "ISO date values are stored as spreadsheet dates");
+  assert.equal(target.rows[1][10].toISOString(), "2026-02-01T00:00:00.000Z");
   assert.equal(sheets.get("MigracionEscrituras_ACCOUNTING").rows.length, 2);
   const retry = runtime.api.write(payload);
   assert.equal(retry.idempotent, true);
