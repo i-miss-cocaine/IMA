@@ -1896,6 +1896,10 @@ function getTrustedMigrationIdentityMapSnapshot_(payload) {
       sistemaOrigen: source, tipoEntidad: type, idOriginalLegado: legacy,
       idNuevoPlataforma: String(row[index.idNuevoPlataforma] || "").trim(),
       institucionId: tenant,
+      hashRegistroOrigen: String(row[index.hashRegistroOrigen] || "").trim(),
+      versionMapeo: String(row[index.versionMapeo] || "").trim(),
+      metodoCoincidencia: String(row[index.metodoCoincidencia] || "").trim(),
+      nivelConfianza: String(row[index.nivelConfianza] || "").trim(),
       estadoCorrespondencia: String(row[index.estadoCorrespondencia] || "").trim().toUpperCase()
     });
   }
