@@ -47,7 +47,7 @@ function makeRuntime(options = {}) {
         getSharingAccess() { return "PRIVATE"; } };
     } },
     PropertiesService:{getScriptProperties(){return{getProperty(name){
-      if(name==="IMA_USER_SERVICE_URL")return options.url===undefined?"https://user.example/exec":options.url;
+      if(name==="IMA_USER_SERVICE_URL")return options.url===undefined?"https://script.google.com/macros/s/AKfycbUSER123/exec":options.url;
       if(name==="IMA_DEPARTMENT_REFERENCE_HMAC_SECRET")return options.secret===undefined?secret:options.secret;
       return null;
     }};}},
@@ -56,7 +56,7 @@ function makeRuntime(options = {}) {
     UrlFetchApp:{fetch(url,request){
       calls.push({url,request});
       if(options.fetchError)throw new Error("network unavailable");
-      if(url!=="https://user.example/exec")throw new Error("unexpected URL");
+      if(url!=="https://script.google.com/macros/s/AKfycbUSER123/exec")throw new Error("unexpected URL");
       const envelope=JSON.parse(request.payload);
       assert.equal(envelope.sourceService,"ACCOUNTING");assert.equal(envelope.targetService,"USER");
       assert.equal(envelope.action,"authorizeDepartmentReferenceRead");
