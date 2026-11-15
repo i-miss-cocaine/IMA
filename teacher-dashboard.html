@@ -1270,7 +1270,7 @@
             <div class="space-y-6">
                 <div>
                     <label for="calificacion" class="block font-medium text-gray-700 mb-2">Calificación (0-100)</label>
-                    <input type="number" id="calificacion" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
+                    <input type="number" id="calificacion" min="0" max="100" step="0.01" data-ui-help-key="calificaciones.nota" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
                 </div>
 
                 <div>
@@ -1473,7 +1473,7 @@
                     </div>
                     <div>
                         <label class="block font-medium text-gray-700 mb-1">Puntaje Máximo</label>
-                        <input type="number" id="edit-puntaje" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" min="1" max="100">
+                        <input type="number" id="edit-puntaje" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" min="0" max="100" step="0.01" data-ui-help-key="calificaciones.nota">
                     </div>
                     <div class="md:col-span-2">
                         <label class="block font-medium text-gray-700 mb-1">URL de Archivo/Guía (Drive)</label>
