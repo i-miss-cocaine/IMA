@@ -37,7 +37,7 @@ const context={SPREADSHEET_ID:"TEST",MIGRATION_OWNER_SCHEMAS_:schemas,
   if(!payload||!payload.sessionToken)return{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"};
   const requested={};(payload.lookups||[]).forEach(lookup=>(lookup.legacyIds||[]).forEach(id=>requested[[lookup.sourceName,lookup.entityType,id].join("|")]=true));
   const entries=identityRows.slice(1).filter(row=>requested[[row[1],row[2],row[3]].join("|")]&&row[5]==="INST-1")
-   .map(row=>({sistemaOrigen:row[1],tipoEntidad:row[2],idOriginalLegado:row[3],idNuevoPlataforma:row[4],institucionId:row[5],estadoCorrespondencia:row[9]}));
+   .map(row=>({sistemaOrigen:row[1],tipoEntidad:row[2],idOriginalLegado:row[3],idNuevoPlataforma:row[4],institucionId:row[5],hashRegistroOrigen:row[6],versionMapeo:row[8],estadoCorrespondencia:row[9]}));
   const counts={};entries.forEach(entry=>{const key=[entry.sistemaOrigen,entry.tipoEntidad,entry.idOriginalLegado].join("|");counts[key]=(counts[key]||0)+1;});
   return{status:"success",verified:true,service:"USER",institutionId:"INST-1",entries,
    uniquenessViolations:Object.keys(counts).filter(key=>counts[key]>1).map(key=>({key,count:counts[key]}))};
