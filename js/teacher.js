@@ -7734,7 +7734,7 @@ function toBase64(file) {
         if (unresolvedFormulas.length) errors.push({ code: 'FORMULAS_WITHOUT_CACHED_VALUES', message: 'Hay fórmulas sin resultado calculado en: ' + unresolvedFormulas.slice(0, 12).join(', ') + '.' });
         if (formulaErrors.length) errors.push({ code: 'FORMULA_CELL_ERRORS', message: 'Hay celdas con errores de fórmula en: ' + formulaErrors.slice(0, 12).join(', ') + '.' });
 
-        const blankRows = [], repeatedHeaderRows = [], typeInconsistencies = [], previewRows = [];
+        const blankRows = [], repeatedHeaderRows = [], typeInconsistencies = [], previewRows = [], dataRowNumbers = [];
         const columnTypes = headers.map(() => Object.create(null));
         const data = [];
         for (let rowOffset = 1; rowOffset < grid.length; rowOffset++) {
@@ -7753,6 +7753,7 @@ function toBase64(file) {
                 continue;
             }
             previewRows.push(values.slice());
+            dataRowNumbers.push(rowIndex + rowOffset + 1);
             const record = {};
             headers.forEach((header, column) => {
                 if (!header) return;
@@ -7784,9 +7785,10 @@ function toBase64(file) {
             unresolvedFormulas: unresolvedFormulas,
             formulaErrors: formulaErrors,
             typeInconsistencies: typeInconsistencies,
+            dataRowNumbers: dataRowNumbers,
             errors: errors.map(item => ({ code: item.code, message: item.message }))
         };
-        return { valid: errors.length === 0, errors: errors, warnings: warnings, data: data, headers: headers, previewRows: previewRows, analysis: analysis, selectedSheet: effectiveSheetName, headerRowIndex: rowIndex };
+        return { valid: errors.length === 0, errors: errors, warnings: warnings, data: data, headers: headers, previewRows: previewRows, dataRowNumbers: dataRowNumbers, analysis: analysis, selectedSheet: effectiveSheetName, headerRowIndex: rowIndex };
     }
 
     window.validateExcelFileEnvelope = validateExcelFileEnvelope;
