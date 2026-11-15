@@ -296,6 +296,7 @@ function getVerifiedAccountingDepartmentScope_(payload, ss, identityOverride) {
     });
     if (scope.scopeType === "INSTITUCION" && scope.scopeValues.indexOf(actor.institutionId) !== -1) institutionWide = true;
   });
+  var allDepartmentIds = departments.slice();
   var activeDepartmentId = String(payload && payload.activeDepartmentId || "").trim();
   if (activeDepartmentId) {
     if (departments.indexOf(activeDepartmentId) === -1) return { valid: false, authorized: false, code: "ACTIVE_SCOPE_NOT_ASSIGNED" };
@@ -309,7 +310,8 @@ function getVerifiedAccountingDepartmentScope_(payload, ss, identityOverride) {
   }
   return { valid: true, authorized: true, userId: actor.userId, roleId: actor.roleId,
     membershipId: actor.membershipId, institutionId: actor.institutionId, scopes: scopes,
-    departmentIds: departments, institutionWide: institutionWide, activeDepartmentId: activeDepartmentId || null };
+    departmentIds: departments, allDepartmentIds: allDepartmentIds,
+    institutionWide: institutionWide, activeDepartmentId: activeDepartmentId || null };
 }
 
 function mapMigrationRowToTarget_(row, mapping, schema, sessionToken) {
@@ -438,7 +440,7 @@ function buildAccountingDepartmentalImportPreflight_(payload, ss, schema) {
   var rows = (input.filasData || []).map(function(row) {
     var explicit = String(row && row.Departamento || "").trim();
     if (explicit && explicit !== active) {
-      return { __departmentError: scope.departmentIds.indexOf(explicit) !== -1 ?
+      return { __departmentError: (scope.allDepartmentIds || scope.departmentIds).indexOf(explicit) !== -1 ?
         "DEPARTMENT_IMPORT_MIXED_DEPARTMENTS" : "DEPARTMENT_IMPORT_DEPARTMENT_UNKNOWN" };
     }
     return Object.assign({}, row || {}, { Departamento: active });
