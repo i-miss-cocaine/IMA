@@ -1029,11 +1029,9 @@ function doPost(e) {
         !request.payload || typeof request.payload !== "object" || Array.isArray(request.payload)) {
       return respond({ status: "error", code: "REQUEST_SCHEMA_INVALID" });
     }
-    if (request.action === "validateImportPreview") return respond(validateImportPreview(request.payload));
-    if (request.action === "importDataWithColumnMapping") {
-      return respond({ status: "error", code: "IMPORT_COMMIT_NOT_EXPOSED",
-        message: "La escritura de importaciones aún no está habilitada en este servicio." });
-    }
+    var actionPayload = Object.assign({}, request.payload, { correlationId: correlationId });
+    if (request.action === "validateImportPreview") return respond(validateImportPreview(actionPayload));
+    if (request.action === "importDataWithColumnMapping") return respond(importDataWithColumnMapping(actionPayload));
     return respond({ status: "error", code: "ACTION_NOT_ALLOWED" });
   } catch (error) {
     return respond({ status: "error", code: "INTERNAL_ERROR",
