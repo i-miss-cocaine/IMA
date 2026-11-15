@@ -357,3 +357,8 @@ Se evaluó el recorrido de extremo a extremo:
 - Se añadió un caso de regresión para bytes modificados durante la lectura posterior a la carga; exige fallo de integridad y rollback.
 - Department Scope Contract run 43740294235 SUCCESS; Node.js 24 y sintaxis Apps Script/JS PASS.
 - La validación con Drive/Sheets desplegados permanece pendiente. TASK-106 conserva el alcance adicional de múltiples versiones/adjuntos, inmutabilidad vinculada a decisiones y política configurable de discrepancias.
+
+## G. ACTUALIZACIÓN DE EJECUCIÓN — C1.754 (2026-11-15)
+- TASK-105 completada en código/CI: ciclo canónico USER→ACADEMIC, fechas múltiples, sesiones exactas, aprobación parcial, políticas institucionales, conformidad docente con hash, reconciliación/revocación y bandeja administrativa de Secretaría.
+- Department Scope Contract run 43742077374 SUCCESS; Identity Mapping and Transport Security run 43742077382 SUCCESS. Node.js 24 y sintaxis Apps Script/JS/clients PASS.
+- BETA-FUNC-103 permanece pendiente de validación en entorno beta. La siguiente P0 elegible es TASK-106.
