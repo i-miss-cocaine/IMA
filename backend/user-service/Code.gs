@@ -7336,6 +7336,11 @@ function reviewAbsenceJustification(payload) {
   if (rowIndex < 1 || String(rows[rowIndex][3] || "") !== "Justificación de Ausencia") return { status: "error", code: "RESOURCE_NOT_FOUND" };
   var row = rows[rowIndex];
   var justId = String(row[map.JustificacionID] || row[map.SolicitudID] || "").trim();
+  var evidenceIds = [];
+  try { evidenceIds = JSON.parse(String(map.EvidenciaIDsJSON === undefined ? "[]" : row[map.EvidenciaIDsJSON] || "[]")); } catch (_) { return { status: "error", code: "EVIDENCE_LINKAGE_CORRUPT" }; }
+  if (!Array.isArray(evidenceIds)) return { status: "error", code: "EVIDENCE_LINKAGE_CORRUPT" };
+  if (!evidenceIds.length) evidenceIds = getEvidenceRecordsForRequest_(ss, solicitudId, true).map(function(item) { return String(item.EvidenciaID); });
+  var hasParentAttachment = !!String(row[map.AdjuntoUrl] || "").trim();
   if (String(row[map.SyncEstado] || "") !== "SINCRONIZADO") {
     var legacyDescription = String(row[4] || "");
     var legacyDateMatch = /fecha\s+(\d{4}-\d{2}-\d{2})/i.exec(legacyDescription);
@@ -7353,20 +7358,38 @@ function reviewAbsenceJustification(payload) {
       adjuntoVersion: row[map.AdjuntoVersion] || "",
       adjuntoSizeBytes: row[map.AdjuntoSizeBytes] || "",
       adjuntoMimeType: String(row[map.AdjuntoMimeType] || ""),
-      adjuntoFechaRecepcion: String(row[map.AdjuntoFechaRecepcion] || ""),
+      adjuntoFechaRecepcion: String(row[map.AdjuntoFechaRecepcion] || ""), evidenciaIds: evidenceIds,
       actorId: String(row[1] || "").trim(), actorRole: "Solicitante"
     });
     if (!create || create.status !== "success") return { status: "error", code: create && create.code || "ATTENDANCE_SYNC_PENDING", retryable: true };
+  }
+  var evidenceSnapshot = { status: "success", evidenceIds: evidenceIds, snapshotHash: "", integrityWarning: false };
+  if (String(p.nuevoEstado).trim() === "Aprobada") {
+    try { evidenceSnapshot = getEvidenceSnapshotForDecision_(ss, solicitudId, evidenceIds, actorId, actorRole, hasParentAttachment); }
+    catch (evidenceError) { return { status: "error", code: evidenceError.message || "EVIDENCE_INTEGRITY_VERIFICATION_FAILED" }; }
+    if (!evidenceSnapshot || evidenceSnapshot.status !== "success") return evidenceSnapshot || { status: "error", code: "EVIDENCE_INTEGRITY_VERIFICATION_FAILED" };
   }
   var result = callAcademicAbsenceService_("reviewCanonicalAbsenceJustification", {
     justificacionId: justId, nuevoEstado: p.nuevoEstado,
     observacionesAdmin: p.observacionesAdmin || "", observacionesPublicas: p.observacionesPublicas || "",
     actorId: actorId, actorRole: actorRole, sesionIdsAprobadas: Array.isArray(p.sesionIdsAprobadas) ? p.sesionIdsAprobadas : undefined,
+    evidenceIds: evidenceSnapshot.evidenceIds, evidenceSnapshotHash: evidenceSnapshot.snapshotHash,
+    evidenceIntegrityWarning: evidenceSnapshot.integrityWarning,
     correlationId: String(p.correlationId || "")
   });
   if (!result || result.status !== "success") return result || { status: "error", code: "ABSENCE_INTERSERVICE_FAILED" };
+  if (String(p.nuevoEstado).trim() === "Aprobada" && evidenceIds.length) {
+    try { markEvidenceDecision_(ss, solicitudId, evidenceIds, evidenceSnapshot.snapshotHash, justId + ":APPROVAL", evidenceSnapshot.integrityWarning); }
+    catch (bindingError) {
+      logStructuredEvent("USER", "reviewAbsenceJustification", "ERROR", "EVIDENCE_DECISION_BINDING_FAILED",
+        "La decisión canónica se registró, pero la vinculación de la huella de evidencias requiere reconciliación.",
+        { solicitudId: solicitudId, evidenceIds: evidenceIds, code: bindingError.message || "BINDING_FAILED" }, actorRole);
+      return { status: "error", code: "EVIDENCE_DECISION_BINDING_FAILED", decisionRecorded: true };
+    }
+  }
   var reviewData = result.data && result.data.data ? result.data.data : result.data;
-  return { status: "success", message: "Decisión registrada en el ciclo canónico; la asistencia se sincronizó cuando correspondía.", data: reviewData || {} };
+  return { status: "success", message: "Decisión registrada en el ciclo canónico; la asistencia se sincronizó cuando correspondía.",
+    evidenceIntegrityWarning: evidenceSnapshot.integrityWarning === true, data: reviewData || {} };
 }
 
 function getAdministrativeRequestsHistory(payload) {
