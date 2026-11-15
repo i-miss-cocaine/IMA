@@ -374,7 +374,7 @@ const userContext = {
 const userNames = [
   "requestAttachmentHeaderMap_","ensureRequestAttachmentIntegritySchema_","setRequestAttachmentIntegrity_",
   "ensureUserAbsenceRequestSchema_","createPrivateRequestAttachment_","createPrivateRequestAttachmentWithIntegrity_",
-  "submitStudentAbsenceJustification","reviewAbsenceJustification","updateRequestStatus","processWorkflowDecision"
+  "submitStudentAbsenceJustification","reviewAbsenceJustification","getAdministrativeRequests","updateRequestStatus","processWorkflowDecision"
 ];
 vm.createContext(userContext);
 const userConstants = userSource.split("\n").filter(line => /^const (REQUEST_ATTACHMENT_INTEGRITY_HEADERS_|USER_ABSENCE_REQUEST_EXTRA_HEADERS_)/.test(line)).join("\n");
@@ -426,6 +426,12 @@ assert.equal(userMultiReview.status,"success");
 regRows = attendance.getDataRange().getValues();
 assert.equal(regRows.find(row=>row[0]==="REG-USER-MULTI-A")[6],true);
 assert.equal(regRows.find(row=>row[0]==="REG-USER-MULTI-B")[6],true);
+const secretaryQueue = userContext.getAdministrativeRequests({_userId:"SEC-USER",_role:"Secretaría"});
+assert.equal(secretaryQueue.status,"success");
+assert.ok(secretaryQueue.data.some(item=>item.solicitudId===userMultiSubmit.solicitudId),"secretariat must see the institution-wide justification queue");
+assert.deepEqual(Array.from(secretaryQueue.data.find(item=>item.solicitudId===userMultiSubmit.solicitudId).fechasAfectadas),["2026-11-20","2026-11-21"]);
+const studentQueue = userContext.getAdministrativeRequests({_userId:"STU-USER",_role:"Estudiante"});
+assert.ok(studentQueue.data.every(item=>item.userId==="STU-USER"),"student request history must remain scoped to the authenticated student");
 assert.throws(() => userContext.updateRequestStatus({ solicitudId: userSubmit.solicitudId, nuevoEstado: "Rechazada" }), /ABSENCE_REVIEW_REQUIRES_CANONICAL_WORKFLOW/);
 assert.throws(() => userContext.processWorkflowDecision({
   solicitudId: userSubmit.solicitudId, accionDecision: "RECHAZADO",
