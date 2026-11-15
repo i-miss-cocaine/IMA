@@ -24,18 +24,20 @@ for (let i = open; i < source.length; i++) {
 }
 assert.ok(end > start);
 const fn = source.slice(start, end);
-
-let entries = [
-  "[Content_Types].xml", "xl/workbook.xml", "xl/worksheets/sheet1.xml"
-].map(name => ({ getName: () => name, getBytes: () => [1,2,3] }));
-let unzipError = false;
+let validationError = "";
 const runtime = {
   Utilities: {
     DigestAlgorithm: { SHA_256: "SHA_256" },
     base64Decode: value => Array.from(Buffer.from(value, "base64")),
-    newBlob: (bytes, mime, name) => ({ bytes, mime, name }),
-    unzip: () => { if (unzipError) throw new Error("bad zip"); return entries; },
     computeDigest: (_algorithm, bytes) => Array.from(crypto.createHash("sha256").update(Buffer.from(bytes)).digest())
+  },
+  validateFileBinaryIntegrity: (encoded, name, options) => {
+    assert.equal(name, "cursos.xlsx");
+    assert.equal(options.maxSizeBytes, 10 * 1024 * 1024);
+    assert.deepEqual(Array.from(options.allowedExtensions), [".xlsx"]);
+    if (validationError) throw new Error(validationError);
+    return { valid: true, byteLength: Buffer.from(encoded, "base64").length,
+      openXmlStructure: { verified: true, format: "xlsx", expandedBytes: 123 } };
   }
 };
 vm.runInNewContext(fn + "\nthis.validate = validateImportWorkbookBinary_;", runtime);
@@ -46,20 +48,21 @@ const base = { nombreArchivo: "cursos.xlsx", mimeTypeArchivo: "application/vnd.o
   const result = runtime.validate(base);
   assert.equal(result.valid, true);
   assert.equal(result.sizeBytes, validBytes.length);
+  assert.equal(result.uncompressedBytes, 123);
   assert.equal(result.fileHash, crypto.createHash("sha256").update(validBytes).digest("hex"));
 }
 assert.equal(runtime.validate({ ...base, nombreArchivo: "cursos.xlsm" }).code, "IMPORT_FILE_INVALID");
 assert.equal(runtime.validate({ ...base, mimeTypeArchivo: "application/pdf" }).code, "IMPORT_FILE_MIME_INVALID");
+validationError = "FILE_BASE64_INVALID: malformed";
 assert.equal(runtime.validate({ ...base, fileDataBase64: "not base64!" }).code, "IMPORT_FILE_BASE64_INVALID");
-assert.equal(runtime.validate({ ...base, fileDataBase64: Buffer.from("not zip").toString("base64") }).code, "IMPORT_FILE_SIGNATURE_INVALID");
-entries = [...entries, { getName: () => "xl/vbaProject.bin", getBytes: () => [1] }];
+validationError = "OPENXML_ZIP_INVALID: invalid";
+assert.equal(runtime.validate({ ...base, fileDataBase64: Buffer.from("not zip").toString("base64") }).code, "IMPORT_FILE_PACKAGE_INVALID");
+validationError = "XLSX_MACROS_NOT_ALLOWED";
 assert.equal(runtime.validate(base).code, "IMPORT_FILE_MACROS_NOT_ALLOWED");
-entries = [{ getName: () => "../evil.xml", getBytes: () => [1] }];
+validationError = "XLSX_STRUCTURE_INVALID: workbook missing";
 assert.equal(runtime.validate(base).code, "IMPORT_FILE_PACKAGE_INVALID");
-entries = [{ getName: () => "[Content_Types].xml", getBytes: () => [1] }];
-assert.equal(runtime.validate(base).code, "IMPORT_FILE_PACKAGE_INVALID");
-entries = [{ getName: () => "[Content_Types].xml", getBytes: () => new Array(15 * 1024 * 1024 + 1).fill(1) }];
+validationError = "OPENXML_EXPANDED_SIZE_EXCEEDED";
 assert.equal(runtime.validate(base).code, "IMPORT_FILE_UNCOMPRESSED_SIZE_LIMIT");
-unzipError = true;
+validationError = "OPENXML_DECOMPRESSION_FAILED";
 assert.equal(runtime.validate(base).code, "IMPORT_FILE_PACKAGE_INVALID");
-process.stdout.write("Accounting XLSX binary envelope: signature, MIME, package, macros, decompression limits and SHA-256 PASS.\n");
+process.stdout.write("Accounting XLSX envelope: MIME, file size, full OpenXML validation, macros rejection and SHA-256 preview binding PASS.\n");
