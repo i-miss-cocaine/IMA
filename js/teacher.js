@@ -801,7 +801,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.deleteScheduleBlock = async function(horarioId) {
-        if (!confirm("¿Desea desactivar este bloque de horario?")) return;
+        const confirmed = window.confirmCriticalOperation
+            ? window.confirmCriticalOperation({
+                title: "Desactivar bloque de horario",
+                details: "Se cambiará a Inactivo el bloque " + String(horarioId || "") + ".",
+                consequence: "El bloque dejará de estar disponible para la programación; el registro histórico se conserva y no se borra."
+            })
+            : confirm("Se desactivará el bloque de horario. El historial se conservará. ¿Desea continuar?");
+        if (!confirmed) return;
         try {
             const res = await fetchApi('ACADEMIC', 'deleteClassSchedule', { horarioId });
             if (res.status === 'success') {
@@ -3592,7 +3599,14 @@ window.triggerRestoreSystemBackup = async function(fileId, fileName) {
         const item = allTasksExams[idx];
         const tipo = item.tipoReal;
 
-        if (confirm(`¿Está seguro de eliminar esta ${tipo}?`)) {
+        const confirmed = window.confirmCriticalOperation
+            ? window.confirmCriticalOperation({
+                title: "Eliminar o desactivar " + tipo,
+                details: "Se procesará la eliminación de la actividad " + String(item.titulo || item.tareaId || item.examenId || "") + ".",
+                consequence: "Si existen entregas, la tarea se marcará Inactiva; si no existen, el registro podrá eliminarse. Verifique que seleccionó la actividad correcta."
+            })
+            : confirm("La actividad se eliminará o desactivará según sus entregas asociadas. ¿Desea continuar?");
+        if (confirmed) {
             const btn = document.getElementById('delete-task-btn');
             btn.classList.add('btn-loading');
             btn.disabled = true;
@@ -4603,12 +4617,32 @@ window.loadExamGradeDistributionData = async function (examenId) {
                 const idx = target.dataset.index;
                 const item = currentFilteredItems[idx];
                 if (!item) return;
-                if (confirm(`¿Eliminar entrega de "${item.titulo}"?`)) {
+                let deletionReason = "";
+                if (item.tipo === "Examen") {
+                    deletionReason = String(prompt("Indique el motivo de eliminación de la entrega de examen (10 a 2000 caracteres):", "") || "").trim();
+                    if (deletionReason.length < 10 || deletionReason.length > 2000) {
+                        alert("El motivo debe contener entre 10 y 2000 caracteres.");
+                        return;
+                    }
+                }
+                const confirmed = window.confirmCriticalOperation
+                    ? window.confirmCriticalOperation({
+                        title: "Eliminar entrega de " + String(item.titulo || "actividad"),
+                        details: "Se eliminará el registro de entrega del estudiante.",
+                        consequence: item.tipo === "Tarea"
+                            ? "El archivo asociado se moverá a la papelera de Drive y el registro de entrega se eliminará."
+                            : "El registro de entrega de examen se eliminará y quedará evidencia de auditoría junto con el motivo indicado.",
+                        irreversible: true
+                    })
+                    : confirm("La eliminación retirará el registro de entrega y, para tareas, el archivo asociado. ¿Desea continuar?");
+                if (confirmed) {
                     target.disabled = true; target.textContent = "...";
                     try {
                         const service = item.tipo === 'Tarea' ? 'TASK' : 'EXAM';
                         const action = item.tipo === 'Tarea' ? 'deleteSubmission' : 'deleteExamSubmission';
-                        const res = await fetchApi(service, action, { entregaId: item.entregaId });
+                        const deletePayload = { entregaId: item.entregaId };
+                        if (item.tipo === "Examen") deletePayload.motivo = deletionReason;
+                        const res = await fetchApi(service, action, deletePayload);
                         if (res.status === 'success') {
                             alert(res.message);
                             await fetchTeacherActivity();
@@ -5524,9 +5558,14 @@ function toBase64(file) {
         const selAsignatura = document.getElementById('gb-filter-asignatura')?.value;
         const selParcial = document.getElementById('gb-filter-parcial')?.value;
 
-        if (!confirm(`¿Confirma el CIERRE OFICIAL y PUBLICACIÓN del período ${selParcial} para la asignatura ${selAsignatura} (${selGrado} ${selSeccion})?\n\nLas calificaciones deben estar guardadas y publicadas previamente. El cierre no publicará calificaciones de otras asignaturas o períodos.`)) {
-            return;
-        }
+        const closeConfirmed = window.confirmCriticalOperation
+            ? window.confirmCriticalOperation({
+                title: "Cierre oficial y publicación del libro de calificaciones",
+                details: "Se cerrará el período " + selParcial + " para " + selAsignatura + " (" + selGrado + " " + selSeccion + ").",
+                consequence: "El período quedará cerrado oficialmente. Verifique que todas las calificaciones estén guardadas y publicadas; otros períodos y asignaturas no serán publicados."
+            })
+            : confirm("Confirme el cierre oficial del período. Verifique las calificaciones guardadas y publicadas. ¿Continuar?");
+        if (!closeConfirmed) return;
 
         try {
             const res = await fetchApi('EXAM', 'closePeriodGradebook', {
