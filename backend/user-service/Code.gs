@@ -1966,7 +1966,8 @@ function handleTrustedMigrationEnvelope_(envelope){
  if(secret.length<32)throw new Error("MIGRATION_TRANSPORT_SECRET_REQUIRED");
  const verified=verifyInterServiceEnvelope(envelope,"USER",secret);
  if(verified.sourceService!=="ACCOUNTING")throw new Error("MIGRATION_SOURCE_NOT_ALLOWED");
- if(verified.action==="verifyAccountingSession" || verified.action==="authorizeAccountingImport") {
+ if(verified.action==="verifyAccountingSession" || verified.action==="authorizeAccountingImport" ||
+    verified.action==="authorizeAccountingAuditRead") {
   var request = verified.payload || {};
   var claims = verifySessionToken(String(request.sessionToken || ""));
   if (!claims || !claims.userId || !claims.role || !claims.institutionId) {
@@ -1977,8 +1978,18 @@ function handleTrustedMigrationEnvelope_(envelope){
    var permission = getDynamicPermissionsForRole(String(claims.role), "importDataWithColumnMapping");
    if (permission !== true) return { status: "error", code: "IMPORT_PERMISSION_DENIED" };
   }
+  if (verified.action === "authorizeAccountingAuditRead") {
+   if (String(claims.role) !== "Auditor") return { status: "error", code: "AUDIT_READ_PERMISSION_DENIED" };
+   var auditScope = getUserContextScope(request);
+   if (!auditScope || auditScope.status !== "success" || auditScope.authorized !== true ||
+       auditScope.institutionWide !== true ||
+       String(request.institutionId || claims.institutionId) !== String(claims.institutionId)) {
+    return { status: "error", code: "INSTITUTION_SCOPE_DENIED" };
+   }
+  }
   return { status: "success", authorized: true,
    importPermissionVerified: verified.action === "authorizeAccountingImport",
+   auditReadPermissionVerified: verified.action === "authorizeAccountingAuditRead",
    userId: String(claims.userId), role: String(claims.role),
    membershipId: String(claims.membershipId || ""), institutionId: String(claims.institutionId) };
  }
