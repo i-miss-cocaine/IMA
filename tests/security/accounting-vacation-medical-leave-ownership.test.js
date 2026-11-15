@@ -19,14 +19,14 @@ LockService:{getScriptLock:()=>({tryLock:()=>{if(!available||locked)return false
 vm.createContext(ctx);vm.runInContext(code,ctx);const p=t=>({sessionToken:t}),count=rows.SolicitudesVacaciones.length;
 const ownRecords=ctx.getEmployeeRecords(p("emp"));
 assert.equal(ownRecords.status,"success");
-assert.deepEqual(ownRecords.expedientes.map(r=>r.expedienteId),["EA"]);
+assert.deepEqual(Array.from(ownRecords.expedientes,r=>r.expedienteId),["EA"]);
 assert.equal(ownRecords.expedientes[0].observaciones,"","self-service must not expose internal HR notes");
 assert.equal(ctx.getEmployeeRecords({...p("emp"),userId:"U-OTHER"}).code,"RESOURCE_NOT_FOUND");
 assert.equal(ctx.getEmployeeRecords({...p("emp"),expedienteId:"EB"}).code,"RESOURCE_NOT_FOUND");
 assert.equal(ctx.getEmployeeRecords({...p("emp"),userId:"U-EMP",expedienteId:"EB"}).code,"RESOURCE_NOT_FOUND");
-assert.deepEqual(ctx.getEmployeeRecords(p("ha")).expedientes.map(r=>r.expedienteId).sort(),["EA","EP"]);
-assert.deepEqual(ctx.getEmployeeRecords(p("hb")).expedientes.map(r=>r.expedienteId),["EB"]);
-assert.deepEqual(ctx.getEmployeeRecords(p("admin")).expedientes.map(r=>r.expedienteId).sort(),["EA","EB","EP"]);
+assert.deepEqual(Array.from(ctx.getEmployeeRecords(p("ha")).expedientes,r=>r.expedienteId).sort(),["EA","EP"]);
+assert.deepEqual(Array.from(ctx.getEmployeeRecords(p("hb")).expedientes,r=>r.expedienteId),["EB"]);
+assert.deepEqual(Array.from(ctx.getEmployeeRecords(p("admin")).expedientes,r=>r.expedienteId).sort(),["EA","EB","EP"]);
 assert.equal(ctx.getEmployeeRecords(p("bad")).code,"VERIFIED_IDENTITY_REQUIRED");
 assert.equal(ctx.getEmployeeRecords(p("emp")).expedientes[0].observaciones,"");
 assert.equal(ctx.submitLeaveVacationRequest(p("bad")).code,"VERIFIED_IDENTITY_REQUIRED");
@@ -41,6 +41,7 @@ let reentrantResult=null;const beforeRace=rows.SolicitudesVacaciones.length;onAp
 const hrRequests=ctx.getLeaveVacationRequests(p("ha")).solicitudes;assert.ok(hrRequests.every(x=>["EA","EP"].includes(x.expedienteId)));assert.ok(hrRequests.some(x=>x.expedienteId==="EA")&&hrRequests.some(x=>x.expedienteId==="EP"));assert.ok(!hrRequests.some(x=>x.expedienteId==="EB"));
 assert.equal(ctx.getVacationRequests({...p("ha"),expedienteId:"EB"}).code,"RESOURCE_NOT_FOUND");
 assert.ok(ctx.getLeaveVacationRequests(p("emp")).solicitudes.every(x=>x.expedienteId==="EA"));
+assert.ok(ctx.getLeaveVacationRequests({...p("emp"),userId:"U-OTHER"}).solicitudes.every(x=>x.expedienteId==="EA"),"client userId must not override the signed employee identity");
 assert.equal(ctx.getVacationRequests({...p("emp"),expedienteId:"EB"}).code,"RESOURCE_NOT_FOUND");
 assert.ok(auditEvents.some(event=>event[3]==="UNAUTHORIZED_EMPLOYEE_RESOURCE_ACCESS"),"foreign employee resource probes must be audited");
 assert.ok(auditEvents.every(event=>!JSON.stringify(event[5]||{}).includes("EB")&&!JSON.stringify(event[5]||{}).includes("U-OTHER")),"audit must not persist attacker-supplied target IDs");
