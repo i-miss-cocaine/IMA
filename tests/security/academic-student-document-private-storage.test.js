@@ -402,7 +402,9 @@ function upload(h,pdf,label="ACTA") {
 }
 
 const secretary = fs.readFileSync(path.join(__dirname,"../../js/secretary.js"),"utf8");
-assert.ok(secretary.includes("getStudentDocumentFile"));
+assert.ok(secretary.includes("createStudentDocumentAccessToken"));
+assert.ok(secretary.includes("getSecureDocumentStream"));
+assert.ok(!secretary.includes("'getStudentDocumentFile'"),"legacy direct download action is not used by the client");
 assert.ok(!secretary.includes("d.driveUrl"),"student-document UI must not render direct Drive URLs");
 
 assert.match(source,/case "getSecureDocumentStream": result = getSecureDocumentStream\\(payload\\); break;/);
