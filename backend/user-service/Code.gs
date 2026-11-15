@@ -7108,13 +7108,27 @@ function submitStudentAbsenceJustification(payload) {
   }
 
   // Drive folder setup acquires ScriptLock internally; create/read-back the file before taking the row-serialization lock.
-  var attachmentRecord = createPrivateRequestAttachmentWithIntegrity_(p.adjuntoData, p.adjuntoNombre, "Tramites_Adjuntos_Privados_v1", [".pdf", ".jpg", ".jpeg", ".png"]);
+  var attachmentInputs = Array.isArray(p.adjuntos) && p.adjuntos.length ? p.adjuntos :
+    (p.adjuntoData ? [{ data: p.adjuntoData, nombre: p.adjuntoNombre, evidenciaGrupoId: "ADJUNTO-1" }] : []);
+  var attachmentRecords = attachmentInputs.map(function(item, index) {
+    var data = item && (item.data || item.fileData), name = item && (item.nombre || item.fileName || item.name);
+    var groupId = String(item && item.evidenciaGrupoId || ("ADJUNTO-" + (index + 1))).trim();
+    if (!data || !groupId) throw new Error("EVIDENCE_ATTACHMENT_INVALID");
+    return { evidenciaGrupoId: groupId, attachment: createPrivateRequestAttachmentWithIntegrity_(data, name, "Tramites_Adjuntos_Privados_v1", [".pdf", ".jpg", ".jpeg", ".png"]) };
+  });
+  if (new Set(attachmentRecords.map(function(item) { return item.evidenciaGrupoId; })).size !== attachmentRecords.length ||
+      attachmentRecords.some(function(item) { return !item.attachment; })) {
+    attachmentRecords.forEach(function(item) { if (item.attachment) rollbackPrivateAttachment_(item.attachment.file, "submitStudentAbsenceJustification-invalid"); });
+    throw new Error("EVIDENCE_ATTACHMENT_INVALID");
+  }
+  var attachmentRecord = attachmentRecords.length ? attachmentRecords[0].attachment : null;
   var attachment = attachmentRecord ? attachmentRecord.file : null;
+  var evidenceRecords = [], evidenceIds = [];
   var attachmentPersisted = false, existing = null, id = "", fileId = "", attachmentMetadata = null;
   var submitLock = LockService.getScriptLock();
   try { submitLock.waitLock(10000); }
   catch (_) {
-    if (attachment) rollbackPrivateAttachment_(attachment, "submitStudentAbsenceJustification");
+    attachmentRecords.forEach(function(item) { rollbackPrivateAttachment_(item.attachment.file, "submitStudentAbsenceJustification-lock"); });
     return { status: "error", code: "ABSENCE_SUBMISSION_LOCK_TIMEOUT", retryable: true };
   }
   try {
@@ -7139,12 +7153,14 @@ function submitStudentAbsenceJustification(payload) {
       id = existing.id;
       if (!/^JUST-[A-Za-z0-9-]{8,100}$/.test(id)) throw new Error("ABSENCE_REQUEST_ID_INVALID");
       var existingHash = String(existing.row[map.AdjuntoSHA256] || "").trim().toLowerCase();
-      if (String(existing.row[map.MotivoJustificacion] || "").trim() !== motivo ||
-          (attachmentRecord && existingHash !== String(attachmentRecord.sha256 || "").trim().toLowerCase())) {
-        if (attachment) { rollbackPrivateAttachment_(attachment, "submitStudentAbsenceJustification"); attachmentPersisted = true; }
+      var sameEvidence = !attachmentRecords.length || compareEvidenceRetry_(ss, id, attachmentRecords);
+      if (!sameEvidence && attachmentRecords.length === 1 && existingHash === String(attachmentRecord.sha256 || "").trim().toLowerCase() &&
+          getEvidenceRecordsForRequest_(ss, id, true).length === 0) sameEvidence = true;
+      if (String(existing.row[map.MotivoJustificacion] || "").trim() !== motivo || !sameEvidence) {
+        attachmentRecords.forEach(function(item) { rollbackPrivateAttachment_(item.attachment.file, "submitStudentAbsenceJustification-idempotency"); });
         return { status: "error", code: "IDEMPOTENCY_CONFLICT", solicitudId: id };
       }
-      if (attachment) { rollbackPrivateAttachment_(attachment, "submitStudentAbsenceJustification"); attachmentPersisted = true; }
+      attachmentRecords.forEach(function(item) { rollbackPrivateAttachment_(item.attachment.file, "submitStudentAbsenceJustification-retry"); });
       fileId = String(existing.row[5] || "");
       attachmentMetadata = {
         sha256: String(existing.row[map.AdjuntoSHA256] || ""),
@@ -7154,11 +7170,19 @@ function submitStudentAbsenceJustification(payload) {
         receivedAt: String(existing.row[map.AdjuntoFechaRecepcion] || ""),
         integrityStatus: String(existing.row[map.AdjuntoIntegridadEstado] || (fileId ? "LEGACY_UNVERIFIED" : "SIN_ADJUNTO"))
       };
+      try { evidenceIds = JSON.parse(String(existing.row[map.EvidenciaIDsJSON] || "[]")); } catch (_) { evidenceIds = []; }
+      if (!Array.isArray(evidenceIds)) evidenceIds = [];
     } else {
       id = "JUST-" + Utilities.getUuid();
       if (!/^JUST-[A-Za-z0-9-]{8,100}$/.test(id)) throw new Error("ABSENCE_REQUEST_ID_INVALID");
       fileId = attachmentRecord ? attachmentRecord.fileId : "";
       attachmentMetadata = attachmentRecord;
+      evidenceRecords = attachmentRecords.map(function(item) {
+        return registerDocumentEvidence_(ss, { solicitudId: id, evidenciaGrupoId: item.evidenciaGrupoId,
+          userId: submitter.userId, attachment: item.attachment, nombreOriginal: item.attachment.fileName || item.attachment.file.getName(),
+          tipoEvidencia: "JUSTIFICACION_ASISTENCIA", correlationId: String(p.correlationId || "") });
+      });
+      evidenceIds = evidenceRecords.map(function(item) { return item.EvidenciaID; });
       var description = "Justificación de ausencia para las fechas " + fechasAusencia.join(", ") + ". Motivo: " + motivo + ". Observaciones: " + (p.observaciones || "N/A");
       var newRow = new Array(sheet.getLastColumn()).fill("");
       newRow[map.SolicitudID] = id;
@@ -7179,12 +7203,14 @@ function submitStudentAbsenceJustification(payload) {
       newRow[map.SesionIDsJSON] = "[]";
       newRow[map.SyncEstado] = "PENDIENTE";
       newRow[map.MotivoJustificacion] = motivo;
+      if (map.EvidenciaIDsJSON !== undefined) newRow[map.EvidenciaIDsJSON] = JSON.stringify(evidenceIds);
       setRequestAttachmentIntegrity_(newRow, map, attachmentRecord);
       sheet.appendRow(newRow);
       attachmentPersisted = true;
     }
   } catch (error) {
-    if (attachment && !attachmentPersisted) rollbackPrivateAttachment_(attachment, "submitStudentAbsenceJustification");
+    evidenceRecords.forEach(function(item) { rollbackDocumentEvidence_(ss, item.EvidenciaID, "ABSENCE_REQUEST_ROW_WRITE_FAILED"); });
+    attachmentRecords.forEach(function(item) { if (!attachmentPersisted) rollbackPrivateAttachment_(item.attachment.file, "submitStudentAbsenceJustification"); });
     throw error;
   } finally {
     submitLock.releaseLock();
@@ -7198,6 +7224,7 @@ function submitStudentAbsenceJustification(payload) {
     adjuntoSizeBytes: attachmentMetadata && attachmentMetadata.sizeBytes || "",
     adjuntoMimeType: attachmentMetadata && attachmentMetadata.mimeType || "",
     adjuntoFechaRecepcion: attachmentMetadata && attachmentMetadata.receivedAt || "",
+    evidenciaIds: evidenceIds,
     actorId: submitter.userId, actorRole: submitter.role, correlationId: String(p.correlationId || "")
   });
   if (!sync || sync.status !== "success") {
