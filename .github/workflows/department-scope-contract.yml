@@ -128,6 +128,8 @@ jobs:
         run: node tests/security/internal-responsibility-rbac-contract.test.js
       - name: Run accounting departmental import scope contract
         run: node tests/security/accounting-departmental-import-scope.test.js
+      - name: Run accounting semantic import preflight contract
+        run: node tests/security/accounting-import-semantic-preflight.test.js
       - name: Run user migrated resource ownership contract
         run: node tests/security/user-migrated-resource-ownership-contract.test.js
       - name: Run user role membership contract
