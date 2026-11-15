@@ -362,3 +362,15 @@ Se evaluó el recorrido de extremo a extremo:
 - TASK-105 completada en código/CI: ciclo canónico USER→ACADEMIC, fechas múltiples, sesiones exactas, aprobación parcial, políticas institucionales, conformidad docente con hash, reconciliación/revocación y bandeja administrativa de Secretaría.
 - Department Scope Contract run 43742077374 SUCCESS; Identity Mapping and Transport Security run 43742077382 SUCCESS. Node.js 24 y sintaxis Apps Script/JS/clients PASS.
 - BETA-FUNC-103 permanece pendiente de validación en entorno beta. La siguiente P0 elegible es TASK-106.
+
+
+## H. EJECUCIÓN — C1.756 — F34-TASK06 (2026-11-15)
+- `processWorkflowDecision` ahora prepara el contexto de aviso tras persistir la decisión y ejecuta el despacho únicamente después de liberar el ScriptLock. Se notifican los estados `Requiere Corrección`, `Aprobada` y `Rechazada` al `UserId` solicitante tomado de la fila de la solicitud.
+- `dispatchWorkflowStatusNotification_` usa exclusivamente observaciones públicas, incorpora fecha límite solo cuando existe un campo reconocido y enlaza al portal HTTPS. El correo se habilita solo si existe consentimiento explícito persistido en el registro de usuario; sin ese dato, se conserva el canal interno.
+- `sendMultiChannelNotification` reserva la clave de deduplicación bajo ScriptLock antes del envío externo; las colisiones devuelven la notificación previa. Los errores/cuotas de correo dejan `Pendiente_Reintento` y la notificación permanece en la bandeja interna. Se conserva compatibilidad con consumidores históricos que envían un email como `userId`.
+- Se escapan valores dinámicos HTML y se valida el enlace HTTPS. La apertura de correo se declara expresamente no equivalente a acuse formal documental.
+- **Archivos:** `backend/user-service/Code.gs`; `tests/security/user-service-workflow-notifications.test.js`; `.github/workflows/department-scope-contract.yml`; `beta_test_Parte_0002.txt`; backlog Secretaría.
+- **Verificación:** Node local v22, harness aislado con mocks — PASS (transiciones, privacidad, consentimiento, post-lock, deduplicación, cuota/reintento y compatibilidad); parseo del archivo USER — PASS. GitHub Actions `ima/department-scope-contract` — SUCCESS, Node 24; incluye el contrato nuevo y la suite existente.
+- **Revisión:** diff focalizado en motor de notificaciones y salida de `processWorkflowDecision`. No se cambió la transición canónica ni el contenido de notas internas. No se detectaron llamadas al notificador dentro del lock de workflow.
+- **Límite beta:** `BETA-FUNC-105` pendiente para validar Apps Script/Sheets/MailApp reales, consentimiento, cuotas y reintentos desplegados. TASK-316/TASK-227/TASK-064 se reutilizan como dependencias existentes; no se declara integración con WhatsApp ni con un proveedor externo no configurado.
+- **Estado:** F34-TASK06 completada en código/CI; prueba beta pendiente.
