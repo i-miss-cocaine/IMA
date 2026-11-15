@@ -3734,7 +3734,8 @@ function validateEvidenceFileAndPermissions(payload) {
   }
   try {
     const file = DriveApp.getFileById(fileId);
-    const actualMime = String(file.getMimeType() || "").toLowerCase().trim();
+    const actualMimeRaw = String(file.getMimeType() || "").toLowerCase().trim();
+    const actualMime = actualMimeRaw === "image/jpg" ? "image/jpeg" : actualMimeRaw;
     const actualSize = Number(file.getSize()) || 0;
     const actualName = String(file.getName() || "").trim();
     if (actualSize <= 0) return { status: "error", code: "EMPTY_FILE_REJECTED", message: "El archivo almacenado está vacío." };
@@ -3742,7 +3743,8 @@ function validateEvidenceFileAndPermissions(payload) {
     if (allowedMimeTypes.indexOf(actualMime) === -1) {
       return { status: "error", code: "UNSUPPORTED_FILE_TYPE", message: "El tipo MIME real del archivo no está permitido." };
     }
-    if (mimeType && String(mimeType).toLowerCase().trim() !== actualMime) {
+    const declaredMime = String(mimeType || "").toLowerCase().trim();
+    if (declaredMime && (declaredMime === "image/jpg" ? "image/jpeg" : declaredMime) !== actualMime) {
       return { status: "error", code: "FILE_MIME_MISMATCH", message: "El MIME declarado no coincide con el tipo real almacenado." };
     }
     if (typeof Utilities === "undefined" || typeof Utilities.base64Encode !== "function" ||
@@ -3770,7 +3772,19 @@ function validateEvidenceFileAndPermissions(payload) {
       message: "Archivo de evidencia verificado por ámbito, MIME real y estructura binaria."
     };
   } catch (e) {
-    return { status: "error", message: "Error al verificar archivo de evidencia en Google Drive: " + e.message };
+    const detail = String(e && e.message || "");
+    const match = detail.match(/^([A-Z0-9_]+):/);
+    const code = match ? match[1] : "FILE_READ_FAILED";
+    const messages = {
+      PDF_STRUCTURE_INVALID: "El PDF está dañado, truncado o carece de estructura válida.",
+      JPEG_STRUCTURE_INVALID: "La imagen JPEG está dañada o truncada.",
+      PNG_STRUCTURE_INVALID: "La imagen PNG está dañada o truncada.",
+      WEBP_STRUCTURE_INVALID: "La imagen WEBP está dañada o truncada.",
+      FILE_BASE64_INVALID: "No fue posible leer íntegramente el contenido binario.",
+      FILE_SIZE_EXCEEDED: "El archivo excede el tamaño máximo permitido.",
+      FILE_READ_FAILED: "No fue posible leer el archivo almacenado."
+    };
+    return { status: "error", code: code, message: messages[code] || "No fue posible validar el archivo almacenado." };
   }
 }
 
