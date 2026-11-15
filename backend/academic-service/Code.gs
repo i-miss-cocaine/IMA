@@ -1256,6 +1256,20 @@ function doPost(e) {
 // FASE 4: 1. ADMISIONES Y SOLICITUDES DE INGRESO
 // ---------------------------------------------------------------------------
 
+function normalizeHonduranIdentity_(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (/^\d{13}$/.test(raw)) return raw;
+  if (/^\d{4}-\d{4}-\d{5}$/.test(raw)) return raw.replace(/-/g, "");
+  throw new Error("DNI_HONDURAS_FORMAT_INVALID: use 13 digits or 0801-1990-12345 format.");
+}
+function normalizeHonduranIdentityForComparison_(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const digits = raw.replace(/-/g, "");
+  return /^\d{13}$/.test(digits) ? digits : raw;
+}
+
 // [TAREA-F5-003] [Fase 5: Admisiones y Matrícula] - Creación atómica de solicitudes con generador de IDs secuencial, candado LockService, detección de duplicados e idempotencia
 function createAdmissionRequest(payload) {
   const { anolectivo, gradoSolicitado, nombresAspirante, apellidosAspirante, identificacion, fechaNacimiento, nombreResponsable, telefonoContacto, emailContacto, observaciones, canalIngreso, draftAccessToken } = payload || {};
@@ -1284,7 +1298,7 @@ function createAdmissionRequest(payload) {
     const data = sheet.getDataRange().getValues();
 
     const targetAno = String(anolectivo || "2026").trim();
-    const cleanIdent = identificacion ? String(identificacion).trim() : "";
+    const cleanIdent = normalizeHonduranIdentity_(identificacion);
     const cleanEmail = emailContacto ? String(emailContacto).trim().toLowerCase() : "";
     const normName = normalizeString(`${nombresAspirante} ${apellidosAspirante}`);
 
@@ -1296,7 +1310,7 @@ function createAdmissionRequest(payload) {
         if (rEstado === "Rechazada" || rEstado === "Retirada") return false;
 
         const rAno = String(r[2] || "").trim();
-        const rIdent = String(r[6] || "").trim();
+        const rIdent = normalizeHonduranIdentityForComparison_(r[6]);
         const rName = normalizeString(`${r[4] || ''} ${r[5] || ''}`);
 
         if (rAno === targetAno) {
