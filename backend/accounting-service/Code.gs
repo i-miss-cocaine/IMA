@@ -5313,7 +5313,12 @@ function verifyPaymentVoucherEvidence_(ss,row,map) {
     const blob=file.getBlob(),bytes=blob.getBytes(),fileName=String(file.getName()||"comprobante");
     if(!bytes||!bytes.length||bytes.length>10*1024*1024)return {status:"error",code:"VOUCHER_FILE_SIZE_INVALID"};
     const mime=String(blob.getContentType()||file.getMimeType()||"").toLowerCase();
-    const validation=validateFileBinaryIntegrity(Utilities.base64Encode(bytes),fileName,{maxSizeBytes:10*1024*1024,allowedExtensions:[".pdf",".jpg",".jpeg",".png",".webp"]});
+    let validation;
+    try { validation=validateFileBinaryIntegrity(Utilities.base64Encode(bytes),fileName,{maxSizeBytes:10*1024*1024,allowedExtensions:[".pdf",".jpg",".jpeg",".png",".webp"]}); }
+    catch(validationError) {
+      const message=String(validationError&&validationError.message||validationError);
+      return {status:"error",code:/UNSUPPORTED_FILE_FORMAT|INVALID_FILE_EXTENSION|DANGEROUS_FILE_EXTENSION/.test(message)?"VOUCHER_FILE_TYPE_NOT_ALLOWED":"VOUCHER_FILE_CONTENT_MISMATCH"};
+    }
     if(validation.mimeType!==mime)return {status:"error",code:"VOUCHER_FILE_CONTENT_MISMATCH"};
     const actualHash=computeDocumentSHA256(bytes).toLowerCase();
     const expectedHash=String(row[map.SHA256]||"").trim().toLowerCase();
