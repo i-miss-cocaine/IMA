@@ -353,6 +353,66 @@ function accountingHasInstitutionalImportPermission_(actor) {
     String(verified.role || "") === String(actor.roleId || ""));
 }
 
+function accountingHasInstitutionalAuditReadPermission_(actor) {
+  if (!actor || !actor.sessionToken || String(actor.role || actor.roleId || "") !== "Auditor") return false;
+  var verified = requestAccountingUserAuthorization_("authorizeAccountingAuditRead", {
+    sessionToken: String(actor.sessionToken), institutionId: String(actor.institutionId || "")
+  });
+  return !!(verified && verified.status === "success" && verified.authorized === true &&
+    verified.auditReadPermissionVerified === true &&
+    String(verified.userId || "") === String(actor.userId || "") &&
+    String(verified.role || "") === "Auditor" &&
+    String(verified.institutionId || "") === String(actor.institutionId || ""));
+}
+
+function getAccountingMigrationFileAudit(payload) {
+  var input = payload || {};
+  var actor = getVerifiedAccountingIdentity_({ sessionToken: input.sessionToken });
+  if (!actor || actor.authorized !== true) {
+    return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED",
+      message: "No fue posible verificar el acceso al registro de auditoría." };
+  }
+  if (actor.role !== "Auditor" ||
+      (input.institutionId && String(input.institutionId) !== String(actor.institutionId)) ||
+      !accountingHasInstitutionalAuditReadPermission_({
+        sessionToken: input.sessionToken, userId: actor.userId, role: actor.role,
+        institutionId: actor.institutionId
+      })) {
+    return { status: "error", code: "AUDIT_READ_PERMISSION_DENIED",
+      message: "No tiene alcance institucional de solo lectura para consultar esta auditoría." };
+  }
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = ss.getSheetByName("AuditoriaMigracionesArchivos");
+  if (!sheet) return { status: "success", institutionId: actor.institutionId, total: 0, data: [] };
+  var values = sheet.getDataRange().getValues();
+  var headers = values.length ? values[0].map(function(value) { return String(value || "").trim(); }) : [];
+  var expected = ["RunId","InstitutionID","NombreArchivo","HashSHA256","PreviewHash","SistemaOrigen",
+    "TipoEntidad","DestinoModulo","ActorUserId","Fecha","Estado","RegistrosEscritos","CorrelationId"];
+  if (JSON.stringify(headers.slice(0, expected.length)) !== JSON.stringify(expected)) {
+    return { status: "error", code: "MIGRATION_FILE_HASH_AUDIT_SCHEMA_MISMATCH",
+      message: "El registro de auditoría no tiene un esquema verificable." };
+  }
+  var entries = values.slice(1).filter(function(row) {
+    return String(row[1] || "").trim() === String(actor.institutionId);
+  }).map(function(row) {
+    var createdAt = row[9] instanceof Date ? row[9].toISOString() : String(row[9] || "");
+    return {
+      runId: String(row[0] || ""), fileName: String(row[2] || ""),
+      hashSHA256: String(row[3] || ""), previewHash: String(row[4] || ""),
+      sourceSystem: String(row[5] || ""), entityType: String(row[6] || ""),
+      destination: String(row[7] || ""), actorUserId: String(row[8] || ""),
+      createdAt: createdAt, status: String(row[10] || ""),
+      recordsWritten: row[11] === "" ? null : Number(row[11] || 0),
+      correlationId: String(row[12] || "")
+    };
+  });
+  entries.sort(function(a, b) { return String(b.createdAt).localeCompare(String(a.createdAt)); });
+  var requestedLimit = Number(input.limit || 100);
+  var limit = isFinite(requestedLimit) ? Math.max(1, Math.min(100, Math.floor(requestedLimit))) : 100;
+  return { status: "success", institutionId: actor.institutionId,
+    total: entries.length, limit: limit, data: entries.slice(0, limit) };
+}
+
 function resolveAccountingImportRowDepartmentSnapshot_(payload, ss, actor) {
   var batchId = String(payload && payload.importBatchId || "").trim();
   if (!batchId) return { valid: false, code: "DEPARTMENT_IMPORT_ROW_SNAPSHOT_NOT_FOUND" };
@@ -1507,6 +1567,7 @@ function doPost(e) {
     }
     var actionPayload = Object.assign({}, request.payload, { correlationId: correlationId });
     if (request.action === "validateImportPreview") return respond(validateImportPreview(actionPayload));
+    if (request.action === "getAccountingMigrationFileAudit") return respond(getAccountingMigrationFileAudit(actionPayload));
     if (request.action === "importDataWithColumnMapping") return respond(importDataWithColumnMapping(actionPayload));
     return respond({ status: "error", code: "ACTION_NOT_ALLOWED" });
   } catch (error) {
