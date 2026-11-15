@@ -6958,11 +6958,14 @@ function retryFailedNotificationsQueue(payload) {
           '<p style="font-size:12px;color:#6b7280">Aviso automático. La apertura del correo no constituye acuse formal de recepción documental.</p></div>';
         MailApp.sendEmail({ to: targetEmail, subject: "[IMA] " + titulo, body: mensaje, htmlBody: html });
         sheet.getRange(i + 1, 11).setValue("Entregado");
-        var deliverySync = syncDepartmentalDocumentEmailRetry_(ss, String(current[9] || ""), notifId);
-        if (deliverySync.status === "error") {
-          logStructuredEvent("USER", "retryFailedNotificationsQueue", "WARN", "DOCUMENT_EMAIL_STATUS_SYNC_FAILED",
-            "Correo enviado, pero el estado de la bandeja documental requiere reconciliación.",
-            { notifId: notifId, deliveryId: deliverySync.deliveryId || "" }, "Sistema");
+        var deduplicationKey = String(current[9] || "");
+        if (deduplicationKey.indexOf("ENTREGA_DOCUMENTAL:") === 0) {
+          var deliverySync = syncDepartmentalDocumentEmailRetry_(ss, deduplicationKey, notifId);
+          if (deliverySync.status === "error") {
+            logStructuredEvent("USER", "retryFailedNotificationsQueue", "WARN", "DOCUMENT_EMAIL_STATUS_SYNC_FAILED",
+              "Correo enviado, pero el estado de la bandeja documental requiere reconciliación.",
+              { notifId: notifId, deliveryId: deliverySync.deliveryId || "" }, "Sistema");
+          }
         }
         resolvedCount++;
       } catch (error) {
