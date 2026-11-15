@@ -24,6 +24,7 @@ assert.equal(fields["matricula.anoLectivo"].min, 2000);
 assert.equal(fields["matricula.anoLectivo"].max, 2200);
 assert.equal(fields["matricula.grado"].maxLength, 80);
 assert.ok(fields["cobros.cargoId"].help.includes("CHG-"));
+assert.equal(fields["cobros.monto"].min, 0.01);
 assert.equal(fields["cobros.monto"].step, 0.01);
 assert.deepEqual(Array.from(fields["cobros.comprobante"].acceptedTypes), ["image/*", ".pdf"]);
 assert.equal(fields["tramites.adjunto"].multiple, true);
