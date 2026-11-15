@@ -4,7 +4,7 @@
  * los datos del navegador solo describen el archivo y el mapeo propuesto.
  */
 function buildAccountingIdentityMapSnapshot_(payload, ss) {
-  var institutionId = String(PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID") || "").trim();
+  var institutionId = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID") || "").trim();
   var sheet = ss.getSheetByName("CorrespondenciaIdentificadores");
   var rows = sheet ? sheet.getDataRange().getValues() : [];
   var headers = rows.length ? rows[0].map(function(value) { return String(value || "").trim(); }) : [];
@@ -235,10 +235,12 @@ function buildAccountingDepartmentalImportPreflight_(payload, ss, schema) {
   if (!departmentScoped) return { valid: true, applicable: false, rows: input.filasData || [] };
   var scope = getVerifiedAccountingDepartmentScope_(input, ss);
   if (!scope.valid) return { valid: false, code: scope.code };
+  var hasImportPermission = accountingHasInstitutionalImportPermission_({ roleId: scope.roleId, userId: scope.userId });
+  if (!hasImportPermission) {
+    return { valid: false, code: scope.institutionWide ?
+      "DEPARTMENT_IMPORT_INSTITUTION_WIDE_UNAUTHORIZED" : "DEPARTMENT_IMPORT_PERMISSION_DENIED" };
+  }
   if (scope.institutionWide) {
-    if (!accountingHasInstitutionalImportPermission_({ roleId: scope.roleId, userId: scope.userId })) {
-      return { valid: false, code: "DEPARTMENT_IMPORT_INSTITUTION_WIDE_UNAUTHORIZED" };
-    }
     var snapshot = resolveAccountingImportRowDepartmentSnapshot_(input, ss, scope);
     if (!snapshot.valid) return snapshot;
     var contract = validateDepartmentalImportScope_({
@@ -287,7 +289,7 @@ function buildImportPreview_(payload) {
   var input = payload || {};
   var auth = getVerifiedAccountingIdentity_(input);
   if (!auth || auth.authorized !== true) return { status: "error", code: "AUTH_PERMISSION_DENIED", validForImport: false, errores: [] };
-  var institutionId = String(PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID") || "").trim();
+  var institutionId = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID") || "").trim();
   if (!institutionId) return { status: "error", code: "INSTITUTION_CONTEXT_REQUIRED", validForImport: false, errores: [] };
   var sourceName = String(input.sistemaOrigen || "").trim();
   var entityType = String(input.tipoEntidad || "").trim().toLowerCase();
@@ -763,7 +765,9 @@ function sendMigrationOwnerRequest_(service, action, payload) {
   if (target !== "USER") throw new Error("MIGRATION_OWNER_SERVICE_NOT_CONFIGURED");
   var properties = PropertiesService.getScriptProperties();
   var endpoint = String(properties.getProperty("IMA_USER_SERVICE_URL") || "").trim();
-  if (!/^https:\/\/[^/]+\/exec$/i.test(endpoint) || typeof createInterServiceEnvelope !== "function" || typeof UrlFetchApp === "undefined") {
+  var signingSecret = String(properties.getProperty("IMA_DEPARTMENT_REFERENCE_HMAC_SECRET") || "");
+  if (!/^https:\/\/[^/]+\/exec$/i.test(endpoint) || signingSecret.length < 32 ||
+      typeof createInterServiceEnvelope !== "function" || typeof UrlFetchApp === "undefined") {
     throw new Error("MIGRATION_OWNER_SERVICE_NOT_CONFIGURED");
   }
   var envelope = createInterServiceEnvelope("ACCOUNTING", "USER", action, payload || {});
