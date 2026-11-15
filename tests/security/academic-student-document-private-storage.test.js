@@ -203,6 +203,15 @@ function upload(h,pdf,label="ACTA") {
   assert.equal(h.context.stream({documentoId:row[0],solicitudId:"SOL-1",accessToken:userBound.accessToken}).code,
     "DOCUMENT_ACCESS_TOKEN_BINDING_MISMATCH","a token cannot be transferred to another user");
   h.state.actorUserId="USER-1";
+  const versionBound=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1"});
+  const currentVersion=row[13];
+  row[13]="2.0";
+  assert.equal(h.context.stream({documentoId:row[0],solicitudId:"SOL-1",accessToken:versionBound.accessToken}).code,
+    "DOCUMENT_ACCESS_TOKEN_BINDING_MISMATCH","a token cannot be reused after the document version changes");
+  row[13]=currentVersion;
+  const wrongDocument=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1"});
+  assert.equal(h.context.stream({documentoId:"DOC-OTHER",solicitudId:"SOL-1",accessToken:wrongDocument.accessToken}).code,
+    "DOCUMENT_ACCESS_TOKEN_BINDING_MISMATCH","a token cannot be transferred to another document");
   const expired=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1"});
   h.state.now+=61000;
   assert.equal(h.context.stream({documentoId:row[0],solicitudId:"SOL-1",accessToken:expired.accessToken}).code,
@@ -412,4 +421,7 @@ assert.match(source,/case "getSecureDocumentStream": result = getSecureDocumentS
 assert.match(source,/case "getStudentDocumentFile": result = \{ status: "error", code: "SECURE_DOCUMENT_STREAM_REQUIRED"/);
 assert.doesNotMatch(source,/driveUrl: r\[6\]/);
 assert.match(source,/case "createStudentDocumentAccessToken": result = createStudentDocumentAccessToken\(payload\); break;/);
+assert.match(source,/const permissionAction = \["createStudentDocumentAccessToken", "getSecureDocumentStream"\]/);
+assert.match(source,/validateContextualAccess\(permissionAction, payload, verifiedUserId, userRole\)/);
+assert.doesNotMatch(source,/getDownloadUrl\(\)/);
 console.log("academic-student-document-private-storage: PASS");
