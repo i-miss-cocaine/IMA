@@ -20,5 +20,6 @@ assert.ok(js.includes("migrationImportEscape"), "all dynamic workbook and server
 assert.ok(js.includes("file.size > 10 * 1024 * 1024"), "client upload size is bounded");
 assert.ok(backend.includes("function validateImportWorkbookBinary_"), "the server validates the original XLSX package");
 assert.ok(backend.includes("fileHash: fileValidation.fileHash"), "the file digest is part of the preview hash");
+assert.ok(backend.includes('"HashSHA256"'), "the source workbook digest is persisted in a dedicated audit column");
 assert.ok(backend.includes('request.action === "importDataWithColumnMapping"'), "the authenticated router exposes preview-bound commit");
 process.stdout.write("Accounting migration import UI: workbook selection, mapping, server preflight, preview-bound commit and safe rendering PASS.\n");
