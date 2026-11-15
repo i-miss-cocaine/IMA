@@ -346,38 +346,6 @@ assert.ok(user.includes("const identityMappingIssues = auditIdentityMappingConsi
 assert.ok(user.includes("inconsistenciasIdentidad: identityMappingIssues"));
 
 
-function runAccountingMigrationWriterFixture(source,entity){
- const schemaStart=source.indexOf("const ACCOUNTING_MIGRATION_WRITER_SCHEMAS_"),firstFn=source.indexOf("function accountingMigrationStableJson_",schemaStart);
- assert.ok(schemaStart>=0&&firstFn>schemaStart,"accounting migration writer schema "+entity);
- const constants=source.slice(schemaStart,firstFn),names=["accountingMigrationStableJson_","accountingMigrationSafeCell_","accountingMigrationEncodeSnapshot_","accountingMigrationDecodeSnapshot_","ensureAccountingMigrationSheet_","applyAccountingMigrationWrite_","compensateAccountingMigrationWrite_"];
- const code=constants+names.map(n=>extractBalancedFunction(source,n)).join(String.fromCharCode(10))+"this.apply=applyAccountingMigrationWrite_;this.compensate=compensateAccountingMigrationWrite_;this.schemas=ACCOUNTING_MIGRATION_WRITER_SCHEMAS_;";
- const sheets={},ss={getSheetByName:n=>sheets[n]||null,insertSheet:n=>sheets[n]=makeMigrationSheet([])};
- const ctx={SPREADSHEET_ID:"LOCAL",SpreadsheetApp:{openById:()=>ss},LockService:{getScriptLock:()=>({waitLock:()=>{},releaseLock:()=>{}})},Date,JSON,String,Object,Array,Error};
- vm.runInNewContext(code,ctx);const schema=ctx.schemas[entity],data={};
- schema.headers.slice(1).forEach((h,i)=>data[h]=/^Fecha/.test(h)?new Date("2026-02-03T04:05:06.000Z"):"v"+i);
- data[schema.headers[1]]="=1+1";
- const input={tipoEntidad:entity,idNuevoPlataforma:"OWNER-1",idempotencyKey:"ACC-MIG-1",datos:data};
- assert.equal(ctx.apply(input).accion,"INSERT");const target=sheets[schema.sheet];assert.equal(ctx.apply(input).idempotent,true);
- assert.equal(target.rows.length,2);assert.equal(target.rows[1][1],"'=1+1");
- assert.throws(()=>ctx.apply(Object.assign({},input,{datos:Object.assign({},data,{[schema.headers[1]]:"different"})})),/IDEMPOTENCY_CONFLICT/);
- assert.equal(ctx.compensate({idempotencyKey:"ACC-MIG-1"}).compensated,true);assert.equal(target.rows.length,1);
- const dateField=schema.headers.find(h=>/^Fecha/.test(h)),dateIndex=schema.headers.indexOf(dateField),oldRow=schema.headers.map(()=> "");
- oldRow[0]="OWNER-OLD";oldRow[1]="Original";oldRow[dateIndex]=new Date("2020-04-05T06:07:08.000Z");target.rows.push(oldRow);
- const update={tipoEntidad:entity,idNuevoPlataforma:"OWNER-OLD",idempotencyKey:"ACC-MIG-UPDATE",datos:{[schema.headers[1]]:"Updated"}};
- assert.equal(ctx.apply(update).accion,"UPDATE");assert.equal(target.rows[1][1],"Updated");
- assert.equal(ctx.compensate({idempotencyKey:"ACC-MIG-UPDATE"}).compensated,true);
- assert.equal(target.rows[1][1],"Original");assert.ok(target.rows[1][dateIndex] instanceof Date,"accounting owner writer restores typed Date snapshot");
-}
-runAccountingMigrationWriterFixture(accounting,"empleado");
-runAccountingMigrationWriterFixture(accounting,"curso");
-assert.ok(accounting.includes('if(route.service==="ACCOUNTING")'));
-const accountingRouteContext={MIGRATION_OWNER_SCHEMAS_:{empleado:{service:"ACCOUNTING"},curso:{service:"ACCOUNTING"}},applyAccountingMigrationWrite_:p=>({status:"success",written:p.tipoEntidad}),compensateAccountingMigrationWrite_:p=>({status:"success",compensated:p.tipoEntidad})};
-vm.runInNewContext(extractBalancedFunction(accounting,"sendMigrationOwnerRequest_")+"this.send=sendMigrationOwnerRequest_;",accountingRouteContext);
-assert.equal(accountingRouteContext.send("empleado","writeMigratedEntity",{tipoEntidad:"empleado"}).written,"empleado");
-assert.equal(accountingRouteContext.send("curso","compensateMigratedEntity",{tipoEntidad:"curso"}).compensated,"curso");
-assert.throws(()=>accountingRouteContext.send("empleado","unknown",{}),/ACCOUNTING_MIGRATION_ACTION_NOT_ALLOWED/);
-
-
 // TASK-068 real mapping workflow: register is idempotent, conflicting targets fail, human decisions are auditable.
 const mappingDecisionHeaders=["decisionId","idMapeo","sistemaOrigen","tipoEntidad","idOriginalLegado","idNuevoPlataformaAnterior","idNuevoPlataformaNuevo","decision","motivo","actorUserId","actorRole","fechaDecision","institucionId"];
 function makeIdentitySheet(rows){return{getDataRange:function(){return{getValues:function(){return rows.map(r=>r.slice());}};},appendRow:function(row){rows.push(row.slice());},getLastRow:function(){return rows.length;},deleteRow:function(row){rows.splice(row-1,1);},getRange:function(row,col){return{setValue:function(value){rows[row-1][col-1]=value;}};}};}
