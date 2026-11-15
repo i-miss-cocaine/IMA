@@ -94,7 +94,7 @@ vm.createContext(context);
 const functions = [
   "getOrCreatePrivateAttachmentFolder_","rollbackPrivateAttachment_","createPrivateRequestAttachment_",
   "createPrivateRequestAttachmentWithIntegrity_","computeDocumentSHA256","requestAttachmentHeaderMap_",
-  "getAdministrativeRequestAttachment"
+  "getEvidenceIntegrityPolicy_","logEvidenceTampering_","getAdministrativeRequestAttachment"
 ];
 vm.runInContext(functions.map(name=>extractFunction(userSource,name)).join("\n"),context);
 const created=context.createPrivateRequestAttachmentWithIntegrity_(base64,"evidence.pdf","Tramites_Adjuntos_Privados_v1",[".pdf"]);
