@@ -334,11 +334,11 @@ assert.deepEqual(JSON.parse(multiRecord[attachmentMap.FechasAfectadasJSON] || "[
 sessions.appendRow(["SES-USER","2026-11-14","","","10","A","MAT","DOC-1","Cerrada",""]);
 attendance.appendRow(["REG-USER","SES-USER","STU-USER","Ausente","","",false,"",new Date("2026-11-14T12:00:00Z")]);
 let userLockBusy = false;
+let userUuid = 0;
 const userContext = {
   SPREADSHEET_ID: "TEST",
   SpreadsheetApp: { openById() { return { getSheetByName(name) { return store[name] ? sheet(name) : null; } }; } },
   LockService: { getScriptLock() { return { tryLock() { return !userLockBusy; }, waitLock() { if (userLockBusy) throw new Error("LOCK_BUSY"); }, releaseLock() {} }; } },
-  let userUuid = 0;
   Utilities: { getUuid() { userUuid++; return "USER-UUID-" + String(userUuid).padStart(8, "0"); } },
   getOrCreateSheet(_ss, name) { return sheet(name); },
   getUserVerifiedRole(payload) { payload._verifiedUserId = payload._userId; payload._verifiedRole = payload._role; return payload._role; },
