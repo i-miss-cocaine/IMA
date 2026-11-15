@@ -252,6 +252,11 @@ Auditar integralmente las capacidades destinadas a facilitar la transición de l
 - **Prioridad:** P0. **Estado:** Implementada parcialmente (C1.763).
 - **Evidencia de avance:** validación binaria ZIP/OpenXML endurecida y parser XML de DOCX/XLSX en Academic, Accounting y User; conteo de párrafos, tablas, controles de contenido y campos de formulario; clasificación PDF por página (digital, escaneada, mixta y vacía/vectorial); preflight Excel estructural y semántico con importación parcial explícita y rollback transaccional. Pendientes OCR, integración de la vista de preflight con el servicio propietario, validación beta en Apps Script y verificación de sobrescritura para destinos remotos.
 
+
+- Evidencia C1.764 (2026-11-15): ACCOUNTING incorpora preflight semántico tenant-scoped, snapshot de identidad confirmada, detección de referencias huérfanas/sobrescrituras, invalidación por hash, importación parcial confirmada y compensación de escritura. La validación departamental usa membresías/responsabilidades verificadas y snapshots por fila; el ownership del expediente se registra en USER. La lectura referencial interdepartamental de documentos laborales usa HMAC y campos/documentos aprobados, excluyendo URLs y observaciones.
+- Contratos aislados: semantic preflight, departmental import scope (40 escenarios), department reference consumer (29 escenarios), academic binary validation y teacher Excel preflight PASS en V8 aislado. No se declara Node CLI PASS.
+- Estado CI: ima/department-reference-consumers SUCCESS en el HEAD anterior; ima/department-scope-contract FAILURE por contratos amplios de ACCOUNTING/RR. HH. todavía no implementados (incluye getEmployeeContracts, getEmployeeTrainingHistory, getStaffAttendanceLogs, getPaymentVouchers, generatePayrollReceiptPDF, entre otros). El HEAD actual aún no tiene estado final de Actions confirmado.
+- Brechas: falta UI de mapeo/confirmación, verificación remota de destino USER/ACADEMIC, OCR y beta real; la aceptación de TASK-133 permanece parcial.
 ### [F39-Task05] Crear bandeja de vinculación asistida de documentos históricos
 - **Hallazgo de origen:** 3.5 y CAR-F39-05; P16 no aprobado.
 - **Severidad:** Alta / P1 según plan G. **Objetivo:** asociar documentos sin ID o con nombres históricos a expedientes actuales mediante confirmación humana.
