@@ -6840,61 +6840,74 @@ function submitStudentAbsenceJustification(payload) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaAusencia) || !motivo || motivo.length > 2000) throw new Error("FECHA_AUSENCIA_O_MOTIVO_INVALIDO");
   if (String(p.adjuntoUrl || "").trim() || String(p.adjuntoFileId || "").trim()) throw new Error("UNTRUSTED_ATTACHMENT_REFERENCE");
   const submitter = resolveVerifiedRequestSubmitter_(p, estudianteId, true, "permisoAsistencia");
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "SolicitudesTramites");
-  const map = ensureUserAbsenceRequestSchema_(sheet);
-  const rows = sheet.getDataRange().getValues();
-  var existing = null;
-  for (var i = 1; i < rows.length; i++) {
-    if (String(rows[i][map.EstudianteID] || rows[i][2] || "").trim() !== String(submitter.estudianteId).trim()) continue;
-    if (String(rows[i][map.FechaAfectada] || "").trim() !== fechaAusencia || String(rows[i][map.Periodo] || "").trim() !== periodo) continue;
-    if (String(rows[i][3] || "") !== "Justificación de Ausencia") continue;
-    if (["Rechazada","Cancelada"].indexOf(String(rows[i][6] || "")) !== -1) continue;
-    existing = { rowNumber: i + 1, row: rows[i], id: String(rows[i][map.JustificacionID] || rows[i][0] || "").trim() };
-    break;
+  var submitLock = LockService.getScriptLock();
+  try { submitLock.waitLock(10000); }
+  catch (_) { return { status: "error", code: "ABSENCE_SUBMISSION_LOCK_TIMEOUT", retryable: true }; }
+
+  var sheet, map, existing = null, id = "", attachment = null, attachmentRecord = null;
+  var fileId = "", attachmentMetadata = null;
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    sheet = getOrCreateSheet(ss, "SolicitudesTramites");
+    map = ensureUserAbsenceRequestSchema_(sheet);
+    const rows = sheet.getDataRange().getValues();
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][map.EstudianteID] || rows[i][2] || "").trim() !== String(submitter.estudianteId).trim()) continue;
+      if (String(rows[i][map.FechaAfectada] || "").trim() !== fechaAusencia || String(rows[i][map.Periodo] || "").trim() !== periodo) continue;
+      if (String(rows[i][3] || "") !== "Justificación de Ausencia") continue;
+      if (["Rechazada","Cancelada"].indexOf(String(rows[i][6] || "")) !== -1) continue;
+      existing = { rowNumber: i + 1, row: rows[i], id: String(rows[i][map.JustificacionID] || rows[i][0] || "").trim() };
+      break;
+    }
+    id = existing ? existing.id : "JUST-" + Utilities.getUuid();
+    if (!/^JUST-[A-Za-z0-9-]{8,100}$/.test(id)) throw new Error("ABSENCE_REQUEST_ID_INVALID");
+    if (existing && String(existing.row[map.MotivoJustificacion] || "").trim() !== motivo) {
+      return { status: "error", code: "IDEMPOTENCY_CONFLICT", solicitudId: id };
+    }
+    fileId = existing ? String(existing.row[5] || "") : "";
+    attachmentMetadata = existing ? {
+      sha256: String(existing.row[map.AdjuntoSHA256] || ""),
+      version: Number(existing.row[map.AdjuntoVersion] || 0),
+      sizeBytes: Number(existing.row[map.AdjuntoSizeBytes] || 0),
+      mimeType: String(existing.row[map.AdjuntoMimeType] || ""),
+      receivedAt: String(existing.row[map.AdjuntoFechaRecepcion] || ""),
+      integrityStatus: String(existing.row[map.AdjuntoIntegridadEstado] || (fileId ? "LEGACY_UNVERIFIED" : "SIN_ADJUNTO"))
+    } : null;
+    if (!existing) {
+      attachmentRecord = createPrivateRequestAttachmentWithIntegrity_(p.adjuntoData, p.adjuntoNombre, "Tramites_Adjuntos_Privados_v1", [".pdf", ".jpg", ".jpeg", ".png"]);
+      attachment = attachmentRecord ? attachmentRecord.file : null;
+      fileId = attachmentRecord ? attachmentRecord.fileId : "";
+      attachmentMetadata = attachmentRecord;
+      var description = "Justificación de ausencia para la fecha " + fechaAusencia + ". Motivo: " + motivo + ". Observaciones: " + (p.observaciones || "N/A");
+      var newRow = new Array(sheet.getLastColumn()).fill("");
+      newRow[map.SolicitudID] = id;
+      newRow[map.UserId] = submitter.userId;
+      newRow[map.EstudianteID] = submitter.estudianteId;
+      newRow[map.TipoTramite] = "Justificación de Ausencia";
+      newRow[map.Descripcion] = description;
+      newRow[map.AdjuntoUrl] = fileId;
+      newRow[map.Estado] = "SincronizacionPendiente";
+      newRow[map.AsignadoA] = "Orientación/Secretaría";
+      newRow[map.ObservacionesAdmin] = "";
+      newRow[map.FechaSolicitud] = new Date();
+      newRow[map.FechaResolucion] = "";
+      newRow[map.JustificacionID] = id;
+      newRow[map.FechaAfectada] = fechaAusencia;
+      newRow[map.Periodo] = periodo;
+      newRow[map.SesionIDsJSON] = "[]";
+      newRow[map.SyncEstado] = "PENDIENTE";
+      newRow[map.MotivoJustificacion] = motivo;
+      setRequestAttachmentIntegrity_(newRow, map, attachmentRecord);
+      try { sheet.appendRow(newRow); }
+      catch (writeError) { rollbackPrivateAttachment_(attachment, "submitStudentAbsenceJustification"); throw writeError; }
+    }
+  } catch (error) {
+    if (attachment && !existing) rollbackPrivateAttachment_(attachment, "submitStudentAbsenceJustification");
+    throw error;
+  } finally {
+    submitLock.releaseLock();
   }
-  var id = existing ? existing.id : "JUST-" + Utilities.getUuid();
-  if (!/^JUST-[A-Za-z0-9-]{8,100}$/.test(id)) throw new Error("ABSENCE_REQUEST_ID_INVALID");
-  if (existing && String(existing.row[map.MotivoJustificacion] || "").trim() !== motivo) {
-    return { status: "error", code: "IDEMPOTENCY_CONFLICT", solicitudId: id };
-  }
-  var attachment = null, attachmentRecord = null, fileId = existing ? String(existing.row[5] || "") : "";
-  var attachmentMetadata = existing ? {
-    sha256: String(existing.row[map.AdjuntoSHA256] || ""),
-    version: Number(existing.row[map.AdjuntoVersion] || 0),
-    sizeBytes: Number(existing.row[map.AdjuntoSizeBytes] || 0),
-    mimeType: String(existing.row[map.AdjuntoMimeType] || ""),
-    receivedAt: String(existing.row[map.AdjuntoFechaRecepcion] || ""),
-    integrityStatus: String(existing.row[map.AdjuntoIntegridadEstado] || (fileId ? "LEGACY_UNVERIFIED" : "SIN_ADJUNTO"))
-  } : null;
-  if (!existing) {
-    attachmentRecord = createPrivateRequestAttachmentWithIntegrity_(p.adjuntoData, p.adjuntoNombre, "Tramites_Adjuntos_Privados_v1", [".pdf", ".jpg", ".jpeg", ".png"]);
-    attachment = attachmentRecord ? attachmentRecord.file : null;
-    fileId = attachmentRecord ? attachmentRecord.fileId : "";
-    attachmentMetadata = attachmentRecord;
-    var description = "Justificación de ausencia para la fecha " + fechaAusencia + ". Motivo: " + motivo + ". Observaciones: " + (p.observaciones || "N/A");
-    var newRow = new Array(sheet.getLastColumn()).fill("");
-    newRow[map.SolicitudID] = id;
-    newRow[map.UserId] = submitter.userId;
-    newRow[map.EstudianteID] = submitter.estudianteId;
-    newRow[map.TipoTramite] = "Justificación de Ausencia";
-    newRow[map.Descripcion] = description;
-    newRow[map.AdjuntoUrl] = fileId;
-    newRow[map.Estado] = "SincronizacionPendiente";
-    newRow[map.AsignadoA] = "Orientación/Secretaría";
-    newRow[map.ObservacionesAdmin] = "";
-    newRow[map.FechaSolicitud] = new Date();
-    newRow[map.FechaResolucion] = "";
-    newRow[map.JustificacionID] = id;
-    newRow[map.FechaAfectada] = fechaAusencia;
-    newRow[map.Periodo] = periodo;
-    newRow[map.SesionIDsJSON] = "[]";
-    newRow[map.SyncEstado] = "PENDIENTE";
-    newRow[map.MotivoJustificacion] = motivo;
-    setRequestAttachmentIntegrity_(newRow, map, attachmentRecord);
-    try { sheet.appendRow(newRow); }
-    catch (writeError) { rollbackPrivateAttachment_(attachment, "submitStudentAbsenceJustification"); throw writeError; }
-  }
+
   var sync = callAcademicAbsenceService_("createCanonicalAbsenceJustification", {
     justificacionId: id, solicitudId: id, studentId: submitter.estudianteId, fechaAfectada: fechaAusencia,
     periodo: periodo, motivoDeclarado: motivo, adjuntoUrl: fileId,
