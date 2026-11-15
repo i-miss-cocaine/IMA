@@ -96,7 +96,7 @@ const rows = {
   AsignacionesDocentes:[["DocenteUserId","AsignaturaID","Grado","Seccion","PeriodoID","Estado"],["U-TEACH","ASIG-A","10","A","2026","Activo"]]
 };
 const ss={getSheetByName:name=>rows[name]?makeSheet(rows[name]):null};
-const validPdfBytes=Array.from(Buffer.from("%PDF-1.4\\n1 0 obj\\n<< /Type /Catalog >>\\nendobj\\nstartxref\\n10\\n%%EOF\\n","utf8"));
+const validPdfBytes=Array.from(Buffer.from("%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\nstartxref\n10\n%%EOF\n","utf8"));
 const context={
   SPREADSHEET_ID:"TEST",
   PropertiesService:{getScriptProperties:()=>({getProperty:key=>key==="IMA_INSTITUTION_ID"?"INST-1":null})},
