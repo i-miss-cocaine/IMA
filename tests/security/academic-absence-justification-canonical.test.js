@@ -252,10 +252,11 @@ lockBusy = false;
 
 sessions.appendRow(["SES-USER","2026-11-14","","","10","A","MAT","DOC-1","Cerrada",""]);
 attendance.appendRow(["REG-USER","SES-USER","STU-USER","Ausente","","",false,"",new Date("2026-11-14T12:00:00Z")]);
+let userLockBusy = false;
 const userContext = {
   SPREADSHEET_ID: "TEST",
   SpreadsheetApp: { openById() { return { getSheetByName(name) { return store[name] ? sheet(name) : null; } }; } },
-  LockService: { getScriptLock() { return { tryLock() { return true; }, waitLock() {}, releaseLock() {} }; } },
+  LockService: { getScriptLock() { return { tryLock() { return !userLockBusy; }, waitLock() { if (userLockBusy) throw new Error("LOCK_BUSY"); }, releaseLock() {} }; } },
   Utilities: { getUuid() { return "USER-UUID-00000001"; } },
   getOrCreateSheet(_ss, name) { return sheet(name); },
   getUserVerifiedRole(payload) { payload._verifiedUserId = payload._userId; payload._verifiedRole = payload._role; return payload._role; },
@@ -293,6 +294,11 @@ const userRetry = userContext.submitStudentAbsenceJustification(Object.assign({}
 assert.equal(userRetry.status, "success");
 assert.equal(userRetry.solicitudId, userSubmit.solicitudId);
 assert.equal(store.SolicitudesTramites.length, userRequestCount, "USER retry must not append a duplicate request");
+userLockBusy = true;
+const lockedSubmit = userContext.submitStudentAbsenceJustification(Object.assign({}, userPayload, { fechaAusencia: "2026-11-15" }));
+assert.equal(lockedSubmit.code, "ABSENCE_SUBMISSION_LOCK_TIMEOUT", "concurrent submission must fail safely when the serialization lock is unavailable");
+assert.equal(store.SolicitudesTramites.length, userRequestCount, "lock timeout must not create a duplicate or partial request");
+userLockBusy = false;
 const userReview = userContext.reviewAbsenceJustification({
   _userId: "SEC-USER", _role: "Secretaría", solicitudId: userSubmit.solicitudId, nuevoEstado: "Aprobada"
 });
