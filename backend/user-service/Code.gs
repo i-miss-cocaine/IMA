@@ -13134,6 +13134,11 @@ function getUIMetadataCatalog(payload) {
     version: "1.0.0",
     updatedAt: "2026-11-15",
     fields: {
+      "identidad.busqueda": {
+        label: "Identificador de búsqueda",
+        help: "Ingresa el identificador disponible en el registro de origen (DNI, RNE u otro código de identificación admitido). Escríbelo tal como aparece en la fuente; este dato solo ayuda a localizar posibles coincidencias y no confirma por sí solo la identidad de una persona.",
+        source: "findPersonMatches recibe identificacion y clasifica candidatos para revisión humana; no fusiona identidades automáticamente"
+      },
       "identity.userId": {
         label: "Identificador institucional",
         help: "Escribe el UserId institucional asignado a la cuenta (por ejemplo, USR-...). No uses el nombre, el número de expediente ni un DNI en este campo.",
