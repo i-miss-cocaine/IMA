@@ -311,3 +311,10 @@ La evaluación abarca la ayuda contextual inmediata (tooltips/popovers), las ins
 - Las confirmaciones sensibles verificadas en código incluyen deleteScheduleBlock y voidCharge; ambas verifican cancelación antes de llamar al backend. El guard común no consulta ni depende del estado de tours.
 - Se agregó tests/security/ui-common-permanent-help.test.js para fallback, idempotencia, required marker, ARIA, error inline y cancelación crítica. Se verificó sintaxis de UI común, JS docente, JS contable y tests mediante compilación V8.
 - **Pendiente para cierre:** completar cobertura de formularios de admisión/matrícula, importación y adjuntos con límites comprobados en sus validadores; confirmar handler de cierre de actas; ejecutar Node CLI/GitHub Actions y pruebas reales de accesibilidad (teclado, lector de pantalla, tacto, zoom y viewport). No se declara aceptación integral ni ejecución de pruebas no disponibles.
+
+
+### Corrección C1.759 — coherencia de identificadores en Secretaría
+- Se detectó que los campos de búsqueda de identidad aceptan DNI, RNE u otros identificadores del registro fuente, pero estaban reutilizando la ayuda específica de DNI hondureño de 13 dígitos.
+- Se agregó la clave estable identidad.busqueda en el catálogo remoto y fallback local, con explicación de que el identificador es un criterio de búsqueda y no confirma identidad.
+- js/secretary.js aplica la clave neutral a identity-search-identificacion y identity-search-responsable; se conserva matricula.identidad exclusivamente para el DNI de matrícula.
+- tests/security/user-service-ui-metadata.test.js verifica el contenido de la clave y evita regresión a la ayuda DNI-only.
