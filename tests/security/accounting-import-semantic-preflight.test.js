@@ -32,7 +32,16 @@ const context={SPREADSHEET_ID:"TEST",MIGRATION_OWNER_SCHEMAS_:schemas,
  sendMigrationOwnerRequest_(type,action,payload){assert.equal(action,"writeMigratedEntity");writeCalls.push({type,payload});if(failWriteAt&&writeCalls.length===failWriteAt)throw new Error("MOCK_OWNER_WRITE_FAILED");return{status:"success",idempotent:false};},
  rollbackMigrationOwnerWrites_(applied){rollbackCalls.push(applied.slice());return[];},
  requestAccountingUserAuthorization_(action,payload){return action==="verifyAccountingSession"?{status:"success",authorized:true,userId:"U-1",role:"Administrador",institutionId:"INST-1"}:{status:"success",authorized:true,importPermissionVerified:true,userId:"U-1",role:"Administrador"};},
- getVerifiedAccountingIdentity_(){return{authorized:true,userId:"U-1",role:"Administrador"};},
+ getVerifiedAccountingIdentity_(){return{authorized:true,userId:"U-1",role:"Administrador",institutionId:"INST-1"};},
+ requestAccountingIdentityMapSnapshot_(payload){
+  if(!payload||!payload.sessionToken)return{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"};
+  const requested={};(payload.lookups||[]).forEach(lookup=>(lookup.legacyIds||[]).forEach(id=>requested[[lookup.sourceName,lookup.entityType,id].join("|")]=true));
+  const entries=identityRows.slice(1).filter(row=>requested[[row[1],row[2],row[3]].join("|")]&&row[5]==="INST-1")
+   .map(row=>({sistemaOrigen:row[1],tipoEntidad:row[2],idOriginalLegado:row[3],idNuevoPlataforma:row[4],institucionId:row[5],estadoCorrespondencia:row[9]}));
+  const counts={};entries.forEach(entry=>{const key=[entry.sistemaOrigen,entry.tipoEntidad,entry.idOriginalLegado].join("|");counts[key]=(counts[key]||0)+1;});
+  return{status:"success",verified:true,service:"USER",institutionId:"INST-1",entries,
+   uniquenessViolations:Object.keys(counts).filter(key=>counts[key]>1).map(key=>({key,count:counts[key]}))};
+ },
  requestAccountingTrustedOwnerSnapshot_(service,payload){
   if(!payload||!payload.sessionToken)return{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"};
   if(service==="ACADEMIC")return{status:"success",verified:true,service:"ACADEMIC",sheet:"ExpedientesEstudiantes",idField:"ExpedienteID",institutionId:"INST-1",existingTargetIds:["ESTUDIANTE-1"],targetRows:[]};
@@ -45,7 +54,7 @@ const context={SPREADSHEET_ID:"TEST",MIGRATION_OWNER_SCHEMAS_:schemas,
  Date,String,Number,Array,Object,JSON,RegExp,Error,isFinite};
 const funcs=["buildAccountingIdentityMapSnapshot_","resolveAccountingIdentityFromSnapshot_","buildMigrationTargetExistenceSnapshot_","buildAccountingRelatedPersonExistenceSnapshot_","buildImportPreview_","validateImportPreview","importDataWithColumnMapping"].map(extract);
 vm.createContext(context);vm.runInContext(header+"\n"+funcs.join("\n")+"\nthis.preview=buildImportPreview_;this.validate=validateImportPreview;this.import=importDataWithColumnMapping;",context);
-const base={nombreArchivo:"cursos.xlsx",destinoModulo:"Cursos",sistemaOrigen:"LEGACY",tipoEntidad:"curso",sessionToken:"signed",
+const base={nombreArchivo:"cursos.xlsx",destinoModulo:"ACCOUNTING",sistemaOrigen:"LEGACY",tipoEntidad:"curso",sessionToken:"signed",
  columnaMapeo:{identificador:"legacyId",campos:{Nombre:"nombre",Nota:"nota",FechaInicio:"fechaInicio"}},
  filasData:[{legacyId:"CUR-1",nombre:"Matemáticas",nota:90,fechaInicio:"2026-02-01"}]};
 const valid=context.preview(base);assert.equal(valid.status,"success");assert.equal(valid.validForImport,true);assert.equal(valid.filasValidas,1);
@@ -127,7 +136,7 @@ assert.equal(context.preview({...base,filasData:[{...base.filasData[0],legacyId:
 assert.equal(context.preview({...base,filasData:[{...base.filasData[0],legacyId:"CUR-OTHER"}]}).validForImport,false);
 identityRows.push(identityRows[1].slice());const duplicateMap=context.preview(base);
 assert.equal(duplicateMap.validForImport,false);assert.ok(duplicateMap.errores.some(x=>x.codigo==="IDENTITY_UNIQUENESS_VIOLATION"));identityRows.pop();
-const student={...base,destinoModulo:"Estudiantes",tipoEntidad:"estudiante",columnaMapeo:{identificador:"legacyId",campos:{PersonaID:"persona"}},filasData:[{legacyId:"EST-1",persona:"PER-1"}]};
+const student={...base,destinoModulo:"ACADEMIC",tipoEntidad:"estudiante",columnaMapeo:{identificador:"legacyId",campos:{PersonaID:"persona"}},filasData:[{legacyId:"EST-1",persona:"PER-1"}]};
 assert.equal(context.preview(student).validForImport,true);
 assert.equal(context.preview(student).targetExistenceSnapshot.verified,true);
 assert.equal(context.preview(student).relatedReferenceSnapshot.verified,true);
