@@ -49,8 +49,8 @@ for (const id of ["evm-fecha-inicio", "evm-fecha-fin", "identity-search-fecha"])
   assert.ok(index >= 0, "secretary date field must exist: " + id);
   const tag = secretaryDashboard.slice(secretaryDashboard.lastIndexOf("<input", index), secretaryDashboard.indexOf(">", index) + 1);
   assert.ok(tag.includes('data-ui-help-key="fechas.calendario"'), "secretary date field must include calendar guidance: " + id);
-  if (id === "evm-fecha-inicio") assert.ok(/\\brequired\\b/.test(tag), "event start date remains mandatory");
-  if (id === "evm-fecha-fin") assert.ok(!/\\brequired\\b/.test(tag), "event end date remains optional");
+  if (id === "evm-fecha-inicio") assert.ok(tag.includes(" required "), "event start date remains mandatory");
+  if (id === "evm-fecha-fin") assert.ok(!tag.includes(" required "), "event end date remains optional");
 }
 assert.ok(secretaryDashboard.includes('id="identity-search-fecha" type="date" data-ui-help-key="fechas.calendario"'), "identity search date keeps its accessible calendar guidance");
 assert.ok(secretary.includes('setAttribute("data-ui-help-key","identidad.busqueda")'));
