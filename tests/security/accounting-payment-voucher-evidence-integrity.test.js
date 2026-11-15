@@ -151,6 +151,10 @@ assert.match(first.sha256,/^[a-f0-9]{64}$/);
 let stored = rows.ComprobantesPago[1];
 const map = Object.fromEntries(rows.ComprobantesPago[0].map((name,index)=>[name,index]));
 assert.equal(stored[map.SHA256],first.sha256);
+assert.equal(stored[map.SolicitudID],first.comprobanteGrupoId);
+assert.equal(stored[map.EvidenciaID],first.comprobanteId);
+assert.equal(stored[map.DriveFileID],stored[map.ComprobanteUrl]);
+assert.equal(stored[map.NombreOriginal],"voucher.pdf");
 assert.equal(stored[map.EsVersionActual],true);
 assert.equal(stored[map.EstadoIntegridad],"VERIFICADO");
 
