@@ -621,3 +621,24 @@
 - **Evidencia requerida:** IDs sintéticos, decisionId, clave de deduplicación, estado final, fila de notificación anonimizada, preferencia de consentimiento, estado de reintento y auditoría de errores. No registrar correos reales ni notas internas.
 - **Estado:** Pendiente beta; no desplegado ni ejecutado contra Apps Script/MailApp/Sheets reales.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-106 — TASK-108 — Bandeja personal/departamental, lote y acuses configurables
+- **Módulo/roles:** USER / Secretaría, Dirección, Contabilidad (cuando exista fuente canónica), Estudiantes y Padres destinatarios.
+- **Objetivo:** validar en Apps Script/Sheets/Drive reales la trazabilidad por documento y destinatario, canales con consentimiento, reintentos y modos de acuse.
+- **Precondiciones:** despliegue USER con C1.757; documentos sintéticos emitidos individualmente para cada destinatario, archivos privados en Drive con SHA-256 y versión; usuarios activos con y sin consentimiento de correo; ConfiguracionInstitucional tenant-scoped.
+- **Pasos:**
+  1. Registrar un despacho individual y comprobar la aparición en bandeja departamental y bandeja personal del emisor; intentar solicitar la identidad de otro emisor y comprobar denegación.
+  2. Ejecutar un lote con varios documentos canónicos, cada uno asociado a un destinatario distinto. Verificar una fila/EntregaID/estado/hash/acuse por destinatario y que la repetición del mismo lote sea idempotente.
+  3. Solicitar canal CORREO para usuario sin consentimiento y comprobar rechazo; repetir con consentimiento explícito y verificar EstadoCorreo=ENVIADO.
+  4. Simular cuota agotada, comprobar Pendiente_Reintento y luego reintentar. Verificar que el estado del aviso y EstadoCorreo de EntregasDocumentales quedan reconciliados y que HistorialEventosJSON conserva DISPATCH_FAILED y DOCUMENT_EMAIL_RETRY_SENT.
+  5. Con modalidad EXPLICITO_CLIC_CONFIRMACION, abrir el documento y comprobar APERTURA_AUTENTICADA sin FechaConfirmacion; confirmar expresamente y comprobar hash/timestamp.
+  6. Cambiar la configuración del mismo tenant a AUTOMATICO_POR_LECTURA, abrir otro documento y comprobar RECIBIDO_AUTOMATICO_POR_LECTURA con advertencia, sin SHA256Confirmacion ni FechaConfirmacion. Confirmar expresamente después y comprobar el acuse formal.
+  7. Alterar el archivo, expirar y revocar enlaces; comprobar bloqueo de apertura y preservación del hash/acuse original.
+  8. Validar la captura de IP solo si el despliegue incorpora un proxy confiable que la entregue al backend por canal autenticado. No aceptar IP enviada libremente por el cliente.
+  9. Validar el flujo de comprobantes contables cuando exista el modelo canónico y el endpoint del servicio contable.
+- **Resultado esperado:** estados independientes por destinatario, despacho/lectura/acuse sin equiparaciones, hashes y versiones exactas, reintentos trazables, consentimiento y configuración aislados por institución.
+- **Evidencia requerida:** IDs sintéticos, EntregaID, correlationId, hashes, eventos, estados de correo, configuración tenant-scoped y logs anonimizados. No almacenar correos reales ni IP no confiable.
+- **Estado:** Pendiente beta; pendiente infraestructura de IP confiable e integración contable.
+===============================================================================
