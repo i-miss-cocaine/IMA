@@ -79,6 +79,7 @@ on:
       - teacher-dashboard.html
       - js/teacher.js
       - tests/security/user-service-departmental-outbox.test.js
+      - tests/security/user-service-workflow-notifications.test.js
       - tests/security/accounting-employee-loan-advance-ownership.test.js
       - tests/security/accounting-payroll-loan-amortization.test.js
       - tests/security/accounting-payroll-concept-catalog.test.js
@@ -142,6 +143,8 @@ jobs:
         run: node tests/security/academic-teacher-justification-abac.test.js
       - name: Run departmental document outbox, receipt and integrity contract
         run: node tests/security/user-service-departmental-outbox.test.js
+      - name: Run reactive workflow notification privacy, deduplication and concurrency contract
+        run: node tests/security/user-service-workflow-notifications.test.js
       - name: Run accounting employee loan request and approval ownership contract
         run: node tests/security/accounting-employee-loan-advance-ownership.test.js
       - name: Run accounting payroll loan amortization and reversal contract
