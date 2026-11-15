@@ -1,0 +1,39 @@
+name: Accounting Import Preflight Contract
+
+on:
+  push:
+    branches:
+      - NG_beta_0.0.0.1_work
+    paths:
+      - backend/accounting-service/Code.gs
+      - backend/user-service/Code.gs
+      - tests/security/accounting-import-auth-router.test.js
+      - tests/security/accounting-import-semantic-preflight.test.js
+      - tests/security/accounting-departmental-import-scope.test.js
+      - .github/workflows/accounting-import-preflight-contract.yml
+
+permissions:
+  contents: read
+
+jobs:
+  accounting-import-preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout authorized work branch
+        uses: actions/checkout@v4
+        with:
+          ref: NG_beta_0.0.0.1_work
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Check ACCOUNTING service syntax
+        run: node --check < backend/accounting-service/Code.gs
+      - name: Check USER service syntax
+        run: node --check < backend/user-service/Code.gs
+      - name: Run signed import authorization and HTTP router contract
+        run: node tests/security/accounting-import-auth-router.test.js
+      - name: Run semantic import preflight contract
+        run: node tests/security/accounting-import-semantic-preflight.test.js
+      - name: Run departmental import scope contract
+        run: node tests/security/accounting-departmental-import-scope.test.js
