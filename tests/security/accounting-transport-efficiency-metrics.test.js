@@ -38,9 +38,7 @@ function extractFunction(name) {
 }
 
 const names = [
-  "transportRows_", "transportDateBoundary_", "transportRelationshipIsCurrent_",
-  "transportEmployeeIdsForUser_", "resolveTransportAccessScope_", "transportAuditDenied_",
-  "transportMetricsDateKey_", "transportMetricsTimeMinutes_", "getTransportEfficiencyMetrics"
+  "transportRows_", "transportMetricsDateKey_", "transportMetricsTimeMinutes_", "getTransportEfficiencyMetrics"
 ];
 const extracted = names.map(extractFunction).join("\n");
 const rows = {
@@ -98,7 +96,17 @@ const context = {
     tryLock: () => lockAvailable,
     releaseLock: () => { releaseCount++; }
   }) },
-  logStructuredEvent: (...args) => deniedEvents.push(args),
+  resolveTransportAccessScope_(payload, spreadsheet) {
+    const role = String(payload && payload._verifiedRole || "");
+    const userId = String(payload && payload._verifiedUserId || "");
+    const user = spreadsheet.getSheetByName("Usuarios").getDataRange().getValues().slice(1)
+      .find(row => String(row[0] || "") === userId);
+    if (!role || !userId || !user || String(user[6] || "") !== role) {
+      return { authorized: false, management: false, role, userId };
+    }
+    return { authorized: true, management: ["Administrador", "Director", "Subdirector"].includes(role), role, userId };
+  },
+  transportAuditDenied_(...args) { deniedEvents.push(args); },
   Date, Math, Number, String, Object, Array, JSON, Error, isFinite, console
 };
 vm.createContext(context);

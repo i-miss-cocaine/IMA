@@ -19882,8 +19882,9 @@ function transportMetricsDateKey_(value) {
       String(value.getDate()).padStart(2, "0");
   }
   const raw = String(value).trim();
-  const iso = raw.match(/^(\d{4}-\d{2}-\d{2})/);
-  if (iso) return iso[1];
+  const candidate = raw.slice(0, 10);
+  if (candidate.length === 10 && candidate[4] === "-" && candidate[7] === "-" &&
+      candidate.replace(/[0-9-]/g, "") === "") return candidate;
   const parsed = new Date(raw);
   if (!isFinite(parsed.getTime())) return "";
   return String(parsed.getFullYear()) + "-" +
@@ -19898,12 +19899,14 @@ function transportMetricsTimeMinutes_(value) {
   const raw = String(value || "").trim();
   if (!raw) return null;
   const normalized = raw.toUpperCase().replace(/\./g, "").replace(/\s+/g, " ").trim();
-  const match = normalized.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*(AM|PM|A M|P M))?$/);
-  if (!match) return null;
-  let hour = Number(match[1]);
-  const minute = Number(match[2]);
-  const second = Number(match[3] || 0);
-  const suffix = String(match[4] || "").replace(/\s/g, "");
+  const tokens = normalized.split(" ");
+  const timeParts = tokens.shift().split(":");
+  if (timeParts.length < 2 || timeParts.length > 3 ||
+      !timeParts.every(function(part) { return /^\d+$/.test(part); })) return null;
+  let hour = Number(timeParts[0]);
+  const minute = Number(timeParts[1]);
+  const second = Number(timeParts[2] || 0);
+  const suffix = tokens.join("").replace(/\s/g, "");
   if (!Number.isInteger(hour) || !Number.isInteger(minute) || !Number.isInteger(second) ||
       minute < 0 || minute > 59 || second < 0 || second > 59) return null;
   if (suffix) {
