@@ -19354,50 +19354,260 @@ function importDocumentTemplateBase(payload) {
 // FASE 12: MOTOR DE IMPORTACIÓN, MAPEO DE COLUMNAS Y AUDITORÍA DE MIGRACIONES
 // ---------------------------------------------------------------------------
 
-function validateImportPreview(payload) {
-  const p = payload || {}, nombreArchivo = p.nombreArchivo, destinoModulo = p.destinoModulo;
-  const columnaMapeo = p.columnaMapeo, filasData = p.filasData;
-  if (!Array.isArray(filasData) || filasData.length === 0) throw new Error("filasData vacías para vista previa.");
+function buildAccountingIdentityMapSnapshot_(ss, source, type, institutionId) {
+  const sheet = ss.getSheetByName("CorrespondenciaIdentificadores");
+  if (!sheet) return { valid: false, code: "IDENTITY_MAPPING_NOT_INITIALIZED", map: Object.create(null) };
+  const headers = sheet.getRange(1, 1, 1, ACCOUNTING_IDENTITY_MAPPING_HEADERS_.length).getValues()[0].map(String);
+  if (JSON.stringify(headers) !== JSON.stringify(ACCOUNTING_IDENTITY_MAPPING_HEADERS_)) {
+    return { valid: false, code: "IDENTITY_SCHEMA_MISMATCH", map: Object.create(null) };
+  }
+  const map = Object.create(null);
+  const rows = sheet.getDataRange().getValues().slice(1);
+  rows.forEach(function(row) {
+    if (String(row[1] || "").trim() !== source ||
+        String(row[2] || "").trim().toLowerCase() !== type ||
+        String(row[5] || "").trim() !== institutionId) return;
+    const legacyId = String(row[3] || "").trim();
+    if (!legacyId) return;
+    if (map[legacyId]) {
+      map[legacyId] = { duplicate: true };
+      return;
+    }
+    map[legacyId] = {
+      duplicate: false, idMapeo: String(row[0] || "").trim(),
+      idNuevoPlataforma: String(row[4] || "").trim(),
+      estado: String(row[9] || "").trim()
+    };
+  });
+  return { valid: true, map: map };
+}
 
-  const totalFilas = filasData.length, mapeo = columnaMapeo || {}, errores = [];
-  let filasValidas = 0;
-  filasData.forEach((row, idx) => {
-    const idKey = mapeo["identificador"] || "identidad";
-    const idVal = row && (row[idKey] || row[Object.keys(row || {})[0]]);
-    if (!idVal || String(idVal).trim() === "") {
-      errores.push({ filaNum: idx + 1, campo: idKey, mensaje: "Identificador único ausente en fila." });
+function resolveAccountingIdentityFromSnapshot_(snapshot, legacyId) {
+  const key = String(legacyId === undefined || legacyId === null ? "" : legacyId).trim();
+  if (!key) return { status: "error", code: "IDENTIFIER_MISSING" };
+  const found = snapshot && snapshot.map ? snapshot.map[key] : null;
+  if (!found) return { status: "not_found", code: "IDENTITY_MAPPING_NOT_FOUND" };
+  if (found.duplicate) return { status: "error", code: "IDENTITY_UNIQUENESS_VIOLATION" };
+  if (found.estado !== "CONFIRMADA") return { status: "pending_review", code: "IDENTITY_REVIEW_REQUIRED", estadoCorrespondencia: found.estado };
+  if (!found.idMapeo || !found.idNuevoPlataforma) return { status: "error", code: "IDENTITY_CONFIRMED_MAPPING_INCOMPLETE" };
+  return { status: "success", idMapeo: found.idMapeo, idNuevoPlataforma: found.idNuevoPlataforma };
+}
+
+function buildImportPreview_(payload) {
+  const p = payload || {};
+  const nombreArchivo = String(p.nombreArchivo || "archivo.xlsx");
+  const destinoModulo = String(p.destinoModulo || "").trim();
+  const source = String(p.sistemaOrigen || "").trim();
+  const type = String(p.tipoEntidad || "").trim().toLowerCase();
+  const mapping = p.columnaMapeo || {};
+  const rows = p.filasData;
+  const structure = p.analisisEstructural && typeof p.analisisEstructural === "object" ? p.analisisEstructural : {};
+  if (!Array.isArray(rows) || !rows.length) return { status: "error", code: "IMPORT_ROWS_REQUIRED" };
+  if (rows.length > 5000) return { status: "error", code: "IMPORT_ROW_LIMIT_EXCEEDED", limit: 5000 };
+  if (!source || !type || !destinoModulo) return { status: "error", code: "MIGRATION_CONTRACT_REQUIRED" };
+  const schema = MIGRATION_OWNER_SCHEMAS_[type];
+  if (!schema) return { status: "error", code: "MIGRATION_ENTITY_NOT_OWNED" };
+  if ([schema.service, schema.sheet].indexOf(destinoModulo.toUpperCase()) === -1 && destinoModulo !== schema.sheet) {
+    return { status: "error", code: "MIGRATION_DESTINATION_MISMATCH" };
+  }
+  const actor = getVerifiedAccountingIdentity_(p);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  const identifierField = String(mapping.identificador || Object.keys(rows[0] || {})[0] || "").trim();
+  if (!identifierField) return { status: "error", code: "IDENTIFIER_MAPPING_REQUIRED" };
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const departmentPreflight = buildAccountingDepartmentalImportPreflight_(p, ss, schema);
+  if (!departmentPreflight || departmentPreflight.valid !== true) {
+    return { status: "error", code: departmentPreflight && departmentPreflight.code || "DEPARTMENT_IMPORT_SCOPE_DENIED" };
+  }
+  let institutionId = String(departmentPreflight.institutionId || "").trim();
+  if (!institutionId) {
+    institutionId = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim();
+  }
+  if (!institutionId) return { status: "error", code: "IDENTITY_CONFIGURATION_REQUIRED" };
+
+  const snapshots = Object.create(null);
+  function getSnapshot(entityType) {
+    if (!snapshots[entityType]) snapshots[entityType] = buildAccountingIdentityMapSnapshot_(ss, source, entityType, institutionId);
+    return snapshots[entityType];
+  }
+  const primarySnapshot = getSnapshot(type);
+  if (!primarySnapshot.valid) return { status: "error", code: primarySnapshot.code };
+
+  const errors = [], warnings = [], preparedRows = [], identityResolutions = [];
+  const seenIdentifiers = Object.create(null);
+  const sourceColumnTypes = Object.create(null);
+  const structuralCount = function(value) {
+    return Array.isArray(value) ? value.length : Math.max(0, Number(value) || 0);
+  };
+  const duplicateHeaders = structuralCount(structure.duplicateHeaders);
+  const unresolvedFormulas = structuralCount(structure.unresolvedFormulas || structure.formulasWithoutCachedValues);
+  const repeatedHeaders = structuralCount(structure.repeatedHeaderRows);
+  if (duplicateHeaders) errors.push({ filaNum: 0, campo: "Encabezados", codigo: "DUPLICATE_HEADERS", mensaje: "El libro contiene encabezados duplicados." });
+  if (unresolvedFormulas) errors.push({ filaNum: 0, campo: "Fórmulas", codigo: "FORMULAS_WITHOUT_CACHED_VALUES", mensaje: "Hay fórmulas sin resultado calculado; no se importarán valores por defecto." });
+  if (repeatedHeaders) errors.push({ filaNum: 0, campo: "Encabezados", codigo: "REPEATED_HEADER_ROWS", mensaje: "Se detectaron encabezados repetidos dentro de los datos." });
+  if (structuralCount(structure.hiddenSheets || structure.hojasOcultas)) warnings.push({ filaNum: 0, campo: "Hojas", codigo: "HIDDEN_SHEETS_PRESENT", mensaje: "El libro contiene hojas ocultas; revise si contienen datos que deban incluirse." });
+  if (structuralCount(structure.mergedCells || structure.celdasCombinadas)) warnings.push({ filaNum: 0, campo: "Celdas", codigo: "MERGED_CELLS_PRESENT", mensaje: "Hay celdas combinadas que pueden desplazar encabezados o valores." });
+  if (Number(structure.headerRowIndex || structure.filaEncabezado || 0) > 0) warnings.push({ filaNum: 0, campo: "Encabezados", codigo: "HEADER_ROW_SHIFTED", mensaje: "Los encabezados no comienzan en la primera fila." });
+  if (structuralCount(structure.blankRows || structure.filasVacias)) warnings.push({ filaNum: 0, campo: "Filas", codigo: "BLANK_ROWS_PRESENT", mensaje: "Se detectaron filas vacías; se conservarán como advertencia, no se completarán automáticamente." });
+  if (structuralCount(structure.typeInconsistencies || structure.inconsistenciasTipo)) warnings.push({ filaNum: 0, campo: "Tipos", codigo: "COLUMN_TYPE_INCONSISTENCY", mensaje: "Hay columnas con tipos de dato inconsistentes." });
+  if (Number(structure.visibleSheetCount || 0) > 1 && !String(structure.selectedSheet || p.hojaSeleccionada || "").trim()) {
+    errors.push({ filaNum: 0, campo: "Hojas", codigo: "VISIBLE_SHEET_SELECTION_REQUIRED", mensaje: "Seleccione explícitamente la hoja que desea importar." });
+  }
+  if (Array.isArray(structure.errors)) {
+    structure.errors.forEach(function(item) {
+      errors.push({ filaNum: 0, campo: "Estructura", codigo: String(item.code || "WORKBOOK_STRUCTURE_ERROR"), mensaje: String(item.message || "Error estructural del libro.") });
+    });
+  }
+
+  const relatedReferences = {
+    estudiante: [{ field: "PersonaID", type: "persona" }],
+    responsable: [{ field: "PersonaID", type: "persona" }],
+    empleado: [{ field: "PersonaId", type: "persona" }],
+    documento: [{ field: "ExpedienteID", type: "estudiante" }]
+  };
+  let validRows = 0;
+  rows.forEach(function(row, index) {
+    const rowNumber = index + 1;
+    const errorsBefore = errors.length;
+    if (!row || typeof row !== "object" || Array.isArray(row)) {
+      errors.push({ filaNum: rowNumber, campo: "Fila", codigo: "IMPORT_ROW_INVALID", mensaje: "La fila no contiene un objeto de datos válido." });
+      preparedRows.push(null);
+      identityResolutions.push(null);
+      return;
+    }
+    Object.keys(row).forEach(function(column) {
+      const value = row[column];
+      if (value === "" || value === null || value === undefined) return;
+      const kind = value instanceof Date ? "date" : typeof value;
+      if (!sourceColumnTypes[column]) sourceColumnTypes[column] = Object.create(null);
+      sourceColumnTypes[column][kind] = true;
+    });
+    const identifierValue = row[identifierField];
+    const legacyId = String(identifierValue === undefined || identifierValue === null ? "" : identifierValue).trim();
+    if (!legacyId) {
+      errors.push({ filaNum: rowNumber, campo: identifierField, codigo: "IDENTIFIER_MISSING", mensaje: "Identificador único ausente en fila." });
+      preparedRows.push(null);
+      identityResolutions.push(null);
+      return;
+    }
+    if (seenIdentifiers[legacyId]) {
+      errors.push({ filaNum: rowNumber, campo: identifierField, codigo: "DUPLICATE_IDENTIFIER_IN_FILE", mensaje: "El identificador aparece más de una vez en el mismo archivo." });
     } else {
-      filasValidas++;
+      seenIdentifiers[legacyId] = true;
+    }
+    const headerKeys = Object.keys(row);
+    if (headerKeys.length && headerKeys.every(function(key) {
+      return String(row[key] === undefined ? "" : row[key]).trim().toLowerCase() === String(key).trim().toLowerCase();
+    })) {
+      errors.push({ filaNum: rowNumber, campo: "Fila", codigo: "REPEATED_HEADER_ROW", mensaje: "La fila repite los nombres de las columnas." });
+    }
+
+    let mappedData = null;
+    try {
+      mappedData = departmentPreflight.applicable ? departmentPreflight.rows[index] : mapMigrationRowToTarget_(row, mapping, schema);
+      if (!mappedData || !Object.keys(mappedData).length) throw new Error("MIGRATION_FIELD_MAPPING_EMPTY");
+    } catch (mappingError) {
+      errors.push({ filaNum: rowNumber, campo: "Mapeo", codigo: String(mappingError && mappingError.message || "MIGRATION_ROW_INVALID"), mensaje: "No fue posible construir los campos destino con el mapeo confirmado." });
+      preparedRows.push(null);
+      identityResolutions.push(null);
+      return;
+    }
+
+    const identity = resolveAccountingIdentityFromSnapshot_(primarySnapshot, legacyId);
+    if (identity.status !== "success") {
+      errors.push({ filaNum: rowNumber, campo: identifierField, codigo: identity.code, mensaje: "La correspondencia de identidad no está confirmada o es ambigua." });
+    }
+
+    (relatedReferences[type] || []).forEach(function(reference) {
+      const value = mappedData[reference.field];
+      if (value === null || value === undefined || String(value).trim() === "") {
+        errors.push({ filaNum: rowNumber, campo: reference.field, codigo: "RELATED_REFERENCE_REQUIRED", mensaje: "Falta una referencia institucional requerida." });
+        return;
+      }
+      const snapshot = getSnapshot(reference.type);
+      if (!snapshot.valid) {
+        errors.push({ filaNum: rowNumber, campo: reference.field, codigo: snapshot.code, mensaje: "No se pudo verificar el catálogo de referencias relacionadas." });
+        return;
+      }
+      const related = resolveAccountingIdentityFromSnapshot_(snapshot, value);
+      if (related.status !== "success") {
+        errors.push({ filaNum: rowNumber, campo: reference.field, codigo: "ORPHANED_REFERENCE", mensaje: "La referencia relacionada no existe o no tiene correspondencia confirmada." });
+      } else {
+        mappedData[reference.field] = related.idNuevoPlataforma;
+      }
+    });
+
+    Object.keys(mappedData).forEach(function(field) {
+      const value = mappedData[field];
+      if (value === "" || value === null || value === undefined) return;
+      if (/fecha|date/i.test(field)) {
+        const validDate = value instanceof Date ? !isNaN(value.getTime()) :
+          (typeof value === "string" && value.trim() !== "" && !isNaN(Date.parse(value)));
+        if (!validDate) errors.push({ filaNum: rowNumber, campo: field, codigo: "INVALID_DATE_VALUE", mensaje: "La fecha no tiene un formato válido; no se asignará una fecha predeterminada." });
+      }
+      if (/nota|calificacion|puntaje/i.test(field)) {
+        const numeric = Number(String(value).replace(",", "."));
+        if (!isFinite(numeric) || numeric < 0 || numeric > 100) {
+          errors.push({ filaNum: rowNumber, campo: field, codigo: "GRADE_OUT_OF_RANGE", mensaje: "La calificación debe ser numérica y estar entre 0 y 100." });
+        }
+      } else if (/cantidad|monto|duracion|horas|cargahoraria/i.test(field)) {
+        const numeric = Number(String(value).replace(",", "."));
+        if (!isFinite(numeric)) errors.push({ filaNum: rowNumber, campo: field, codigo: "INVALID_NUMERIC_VALUE", mensaje: "El valor debe ser numérico." });
+      }
+    });
+    preparedRows.push(mappedData);
+    identityResolutions.push(identity.status === "success" ? identity : null);
+    if (errors.length === errorsBefore) validRows++;
+  });
+
+  Object.keys(sourceColumnTypes).forEach(function(column) {
+    if (Object.keys(sourceColumnTypes[column]).length > 1) {
+      warnings.push({ filaNum: 0, campo: column, codigo: "COLUMN_TYPE_INCONSISTENCY", mensaje: "La columna contiene más de un tipo de dato." });
     }
   });
 
-  let departmentPreflight = null;
-  if (String(p.tipoEntidad || "").trim().toLowerCase() === "empleado") {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    departmentPreflight = buildAccountingDepartmentalImportPreflight_(p, ss, MIGRATION_OWNER_SCHEMAS_.empleado);
-    if (!departmentPreflight.valid) {
-      filasValidas = 0;
-      errores.push({ filaNum: 0, campo: "Departamento", mensaje: departmentPreflight.code || "DEPARTMENT_IMPORT_SCOPE_DENIED" });
-    }
-  }
-
+  const scopeFingerprint = departmentPreflight.applicable ? {
+    departmentIds: departmentPreflight.departmentIds || [],
+    assignments: (departmentPreflight.rowAssignments || []).map(function(item) {
+      return { rowId: String(item && item.rowId || ""), departmentId: String(item && item.departmentId || "") };
+    })
+  } : null;
+  const previewHash = migrationHash_(migrationStableJson_({
+    actorId: actor.userId, institutionId: institutionId, source: source, type: type,
+    destination: destinoModulo, mapping: mapping, rows: rows, structure: structure,
+    preparedRows: preparedRows, identityResolutions: identityResolutions, scope: scopeFingerprint
+  }));
   return {
-    status: departmentPreflight && !departmentPreflight.valid ? "error" : "success",
-    code: departmentPreflight && !departmentPreflight.valid ? departmentPreflight.code : undefined,
-    nombreArchivo: nombreArchivo || "archivo.xlsx",
-    destinoModulo: destinoModulo || "Estudiantes",
-    departamentoDestino: departmentPreflight && departmentPreflight.valid ? departmentPreflight.departmentId : undefined,
-    departamentosDestino: departmentPreflight && departmentPreflight.valid ? departmentPreflight.departmentIds : undefined,
-    snapshotId: departmentPreflight && departmentPreflight.valid ? departmentPreflight.snapshotId : undefined,
+    status: "success", validForImport: errors.length === 0 && validRows === rows.length,
+    previewHash: previewHash, nombreArchivo: nombreArchivo, destinoModulo: destinoModulo,
+    tipoEntidad: type, sistemaOrigen: source, filasValidas: validRows, filasFallidas: rows.length - validRows,
+    totalFilas: rows.length, errores: errors, advertencias: warnings,
+    departamentoDestino: departmentPreflight.departmentId,
+    departamentosDestino: departmentPreflight.departmentIds,
+    snapshotId: departmentPreflight.snapshotId,
+    identityResolutions: identityResolutions, preparedRows: preparedRows,
+    departmentPreflight: departmentPreflight
+  };
+}
+
+function validateImportPreview(payload) {
+  const preview = buildImportPreview_(payload);
+  if (preview.status !== "success") return preview;
+  return {
+    status: "success", validForImport: preview.validForImport, previewHash: preview.previewHash,
+    nombreArchivo: preview.nombreArchivo, destinoModulo: preview.destinoModulo,
+    departamentoDestino: preview.departamentoDestino, departamentosDestino: preview.departamentosDestino,
+    snapshotId: preview.snapshotId,
     resumenValidation: {
-      totalFilas: totalFilas,
-      filasValidas: filasValidas,
-      filasFallidas: totalFilas - filasValidas,
-      mapeoConfirmado: mapeo,
-      erroresLista: errores.slice(0, 10)
+      totalFilas: preview.totalFilas, filasValidas: preview.filasValidas,
+      filasFallidas: preview.filasFallidas, mapeoConfirmado: (payload && payload.columnaMapeo) || {},
+      erroresLista: preview.errores.slice(0, 50), advertenciasLista: preview.advertencias.slice(0, 50),
+      requiereConfirmacion: preview.advertencias.length > 0
     }
   };
 }
+
 
 const ACCOUNTING_IDENTITY_MAPPING_HEADERS_=["idMapeo","sistemaOrigen","tipoEntidad","idOriginalLegado","idNuevoPlataforma","institucionId","hashRegistroOrigen","fechaMigracion","versionMapeo","estadoCorrespondencia","metodoCoincidencia","nivelConfianza","migradoPor"];
 function resolveCrossReferenceIdentifier(payload) {
@@ -19533,12 +19743,14 @@ function importDataWithColumnMapping(payload){
  const p=payload||{},nombreArchivo=p.nombreArchivo,destinoModulo=String(p.destinoModulo||"").trim(),mapping=p.columnaMapeo||{},rows=p.filasData,source=String(p.sistemaOrigen||"").trim(),type=String(p.tipoEntidad||"").trim().toLowerCase(),createdBy=p.creadoPor||"SISTEMA";
  if(!Array.isArray(rows)||!rows.length)throw new Error("filasData vacías.");if(!source||!type||!destinoModulo)throw new Error("MIGRATION_CONTRACT_REQUIRED: sistemaOrigen, tipoEntidad y destinoModulo son obligatorios.");
  const schema=MIGRATION_OWNER_SCHEMAS_[type];if(!schema)throw new Error("MIGRATION_ENTITY_NOT_OWNED: "+type);if([schema.service,schema.sheet].indexOf(destinoModulo.toUpperCase())===-1&&destinoModulo!==schema.sheet)throw new Error("MIGRATION_DESTINATION_MISMATCH");
- const ss=SpreadsheetApp.openById(SPREADSHEET_ID),departmentPreflight=buildAccountingDepartmentalImportPreflight_(p,ss,schema);if(!departmentPreflight.valid)throw new Error("DEPARTMENT_IMPORT_SCOPE_DENIED: "+departmentPreflight.code);
+ if(p.previewConfirmed!==true||!String(p.previewHash||"").trim())throw new Error("IMPORT_PREVIEW_CONFIRMATION_REQUIRED");
+ const preview=buildImportPreview_(p);if(preview.status!=="success"||preview.validForImport!==true||preview.previewHash!==p.previewHash)throw new Error("IMPORT_PREVIEW_INVALID_OR_STALE: "+JSON.stringify((preview.errores||[]).slice(0,5)));
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID),departmentPreflight=preview.departmentPreflight;
  const audit=getOrCreateSheet(ss,"AuditoriaMigraciones"),runId="MIG-"+Utilities.getUuid(),applied=[],errors=[];let ownershipRepairRequired=false;
  rows.forEach((row,i)=>{try{
   const identifierField=String(mapping.identificador||Object.keys(row||{})[0]||""),legacy=row&&row[identifierField];if(legacy===null||legacy===undefined||String(legacy).trim()==="")throw new Error("IDENTIFIER_MISSING");
-  const identity=resolveCrossReferenceIdentifier({sistemaOrigen:source,tipoEntidad:type,idOriginalLegado:legacy});if(!identity||identity.status!=="success")throw new Error(identity&&identity.code||"IDENTITY_MAPPING_NOT_CONFIRMED");
-  const data=departmentPreflight.applicable?departmentPreflight.rows[i]:mapMigrationRowToTarget_(row,mapping,schema),fingerprint=migrationStableJson_({source:source,type:type,legacy:String(legacy),idNuevoPlataforma:identity.idNuevoPlataforma,datos:data}),idempotencyKey="MIG-"+migrationHash_(fingerprint),writePayload={tipoEntidad:type,idNuevoPlataforma:identity.idNuevoPlataforma,datos:data,idempotencyKey:idempotencyKey,correlationId:runId};
+  const identity=preview.identityResolutions[i];if(!identity||identity.status!=="success")throw new Error("IDENTITY_MAPPING_NOT_CONFIRMED");
+  const data=preview.preparedRows[i],fingerprint=migrationStableJson_({source:source,type:type,legacy:String(legacy),idNuevoPlataforma:identity.idNuevoPlataforma,datos:data}),idempotencyKey="MIG-"+migrationHash_(fingerprint),writePayload={tipoEntidad:type,idNuevoPlataforma:identity.idNuevoPlataforma,datos:data,idempotencyKey:idempotencyKey,correlationId:runId};
   const writeResult=sendMigrationOwnerRequest_(type,"writeMigratedEntity",writePayload);if(!writeResult||writeResult.status!=="success")throw new Error("MIGRATION_OWNER_WRITE_NOT_CONFIRMED");if(writeResult.idempotent!==true)applied.push({tipoEntidad:type,idempotencyKey:idempotencyKey,correlationId:runId});
   if(type==="empleado"){const assignment=departmentPreflight.rowAssignments&&departmentPreflight.rowAssignments[i],snapshotId=assignment?assignment.snapshotId:"",rowId=assignment?assignment.rowId:"",identityKey={institutionId:departmentPreflight.institutionId,resourceType:"EXPEDIENTE_LABORAL",resourceId:identity.idNuevoPlataforma,departmentId:data.Departamento};if(assignment){identityKey.snapshotId=snapshotId;identityKey.rowId=rowId;}const ownershipKey="OWN-"+migrationHash_(migrationStableJson_(identityKey)),entry={tipoEntidad:"empleadoOwnership",idempotencyKey:ownershipKey,correlationId:runId};applied.push(entry);
    try{const op={sessionToken:p.sessionToken||p.authToken||p.token,institutionId:departmentPreflight.institutionId,activeDepartmentId:assignment?undefined:departmentPreflight.departmentId,resourceType:"EXPEDIENTE_LABORAL",resourceId:identity.idNuevoPlataforma,departmentId:data.Departamento,idempotencyKey:ownershipKey,correlationId:runId};if(assignment){op.rowDepartmentSnapshotVerified=true;op.rowDepartmentSnapshotId=snapshotId;op.rowDepartmentSnapshotRowId=rowId;op.rowDepartmentSnapshotInstitutionId=departmentPreflight.institutionId;op.rowDepartmentSnapshotDomain="ACCOUNTING";}const result=sendMigrationOwnerRequest_("empleadoOwnership","registerMigratedResourceOwnership",op);if(!result||result.status!=="success")throw new Error("RESOURCE_OWNERSHIP_REGISTRATION_NOT_CONFIRMED");if(result.idempotent===true)applied.pop();}
