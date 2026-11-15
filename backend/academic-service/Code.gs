@@ -384,6 +384,11 @@ const ROLE_PERMISSIONS = {
   "Asistente": ["getAcademicConfig", "getAsignaturasActivas", "getWhatsAppLink", "getQuestionBank", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentTimeline", "getClassAttendance", "getBatchAttendanceRecords", "getStudentAttendanceSummary", "auditAssistantDelegatedAction"],
   "Estudiante": ["getAcademicConfig", "getAsignaturasActivas", "getWhatsAppLink", "getQuestionBank", "getStudentEnrollmentHistory", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentFileSummary", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "verifyDocumentIntegritySha256", "getClassAttendance", "getDailyAttendance", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents", "calculateUnifiedAcademicGrade", "generateStudentReportCard", "validateAcademicResponsibilityAndScopeAccess"],
   "Alumno": ["getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getStudentEnrollmentHistory", "getAcademicYears", "getAcademicPeriods", "getAcademicOffers", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "verifyDocumentIntegritySha256", "getStudentEnrollments", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents", "generateStudentReportCard", "validateAcademicResponsibilityAndScopeAccess"]
+ ,
+  "Auditor": [
+    "getStudentDocuments", "getStudentFile", "getStudentDocumentFile",
+    "verifyDocumentIntegritySha256", "getPendingDocumentsReport"
+  ]
 };
 
 const PUBLIC_ACTIONS = ["ping", "createAdmissionRequest", "getPublicAdmissionStatus", "saveAdmissionDraft", "getAdmissionDraft"];
