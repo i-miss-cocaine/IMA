@@ -62,8 +62,8 @@ const input = { nombreArchivo: "cursos-renombrado.xlsx", sistemaOrigen: "LEGACY"
 const actor = { institutionId: "INST-001", userId: "USER-001" };
 runtime.audit({}, input, preview, actor, "SUCCESS", 3);
 assert.equal(sheet.rows.length, 2);
-assert.deepEqual(sheet.rows[0], ["RunId","InstitutionID","NombreArchivo","HashSHA256","PreviewHash","SistemaOrigen",
-  "TipoEntidad","DestinoModulo","ActorUserId","Fecha","Estado","RegistrosEscritos","CorrelationId"]);
+assert.equal(JSON.stringify(sheet.rows[0]), JSON.stringify(["RunId","InstitutionID","NombreArchivo","HashSHA256","PreviewHash","SistemaOrigen",
+  "TipoEntidad","DestinoModulo","ActorUserId","Fecha","Estado","RegistrosEscritos","CorrelationId"]));
 assert.equal(sheet.rows[1][1], "INST-001");
 assert.equal(sheet.rows[1][2], "cursos-renombrado.xlsx");
 assert.equal(sheet.rows[1][3], preview.fileHash, "the binary SHA-256 is persisted independently of the filename");
