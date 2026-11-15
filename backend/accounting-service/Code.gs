@@ -15607,8 +15607,8 @@ function runPhase22DocumentManagementAndSACERegressionSuite(payload) {
       name: "SACE: Verificación de estructura y compatibilidad de plantilla oficial",
       execute: function() {
         const res = verifySACETemplateCompatibility({
-          plantillaSaceId: "SACE-OFICIAL-SECUNDARIA",
-          columnasReporte: ["identidad", "nombreAlumno", "calificacionOrdinaria", "recuperacion", "resultadoFinal"]
+          nombreFormato: "SACE-OFICIAL-SECUNDARIA",
+          columnasDetectadas: ["identidad", "nombreAlumno", "calificacionOrdinaria", "recuperacion", "resultadoFinal"]
         });
         const pass = res && res.status === "success" && res.esCompatible === true;
         return { pass, expected: true, actual: res ? res.esCompatible : null, details: res };

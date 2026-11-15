@@ -11,7 +11,7 @@ function extractFunction(name) {
 }
 
 function makeSuiteHarness(options = {}) {
-  const state = { templatePayload: null, documentPayload: null, cuvLookups: [], providerConfigCalls: 0 };
+  const state = { templatePayload: null, documentPayload: null, cuvLookups: [], sacePayload: null, providerConfigCalls: 0 };
   const context = {
     Date,
     Math,
@@ -37,7 +37,7 @@ function makeSuiteHarness(options = {}) {
     computeDocumentSHA256(value) {
       return value === "Documento_Oficial_Matricula_2026" ? "a".repeat(64) : "b".repeat(64);
     },
-    verifySACETemplateCompatibility: () => ({ status: "success", esCompatible: true }),
+    verifySACETemplateCompatibility(payload) { state.sacePayload = payload; return { status: "success", esCompatible: true }; },
     generateSACEReportFile: () => options.badSace
       ? { datosReporteSACE: [{}, { calificacionOrdinaria: "0" }, { calificacionOrdinaria: "0" }] }
       : { datosReporteSACE: [{}, { calificacionOrdinaria: "AUSENTE" }, { calificacionOrdinaria: "EXENTO" }] },
@@ -60,6 +60,8 @@ function makeSuiteHarness(options = {}) {
   assert.equal(h.state.documentPayload.plantillaId, "TMP-GENERATED-001", "PT22-02 must reuse the exact ID returned by PT22-01");
   assert.equal(h.state.cuvLookups[0], "CUV-001");
   assert.match(h.state.cuvLookups[1], /^CUV-NO-EXISTE-/);
+  assert.equal(h.state.sacePayload.nombreFormato, "SACE-OFICIAL-SECUNDARIA");
+  assert.deepEqual(Array.from(h.state.sacePayload.columnasDetectadas), ["identidad", "nombreAlumno", "calificacionOrdinaria", "recuperacion", "resultadoFinal"]);
   assert.equal(h.state.providerConfigCalls, 0, "Accounting suite must not call a User-service function directly");
 }
 
