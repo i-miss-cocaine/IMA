@@ -2724,11 +2724,11 @@ let migrationImportState = {
 };
 
 const MIGRATION_IMPORT_TARGETS = {
-  curso: { sheet: "Cursos", fields: ["NombreCurso", "Categoria", "ProveedorResponsable", "Modalidad", "DuracionHoras", "Requisitos", "DirigidoA", "Estado", "CreadoPor", "FechaCreacion", "UltimaModificacion"], required: ["NombreCurso"] },
-  estudiante: { sheet: "ExpedientesEstudiantes",
+  curso: { sheet: "Cursos", destination: "ACCOUNTING", fields: ["NombreCurso", "Categoria", "ProveedorResponsable", "Modalidad", "DuracionHoras", "Requisitos", "DirigidoA", "Estado", "CreadoPor", "FechaCreacion", "UltimaModificacion"], required: ["NombreCurso"] },
+  estudiante: { sheet: "ExpedientesEstudiantes", destination: "ACADEMIC",
     fields: ["PersonaID", "CodigoInstitucional", "FechaNacimiento", "Nacionalidad", "DireccionResidencia", "FotografiaUrl", "EstadoExpediente", "FechaCreacion", "FechaActualizacion", "Observaciones"],
     required: ["PersonaID"] },
-  empleado: { sheet: "ExpedientesLaborales",
+  empleado: { sheet: "ExpedientesLaborales", destination: "ACCOUNTING",
     fields: ["PersonaId", "UserId", "Puesto", "Departamento", "CentroCosto", "FechaIngreso", "FechaSalida", "EstadoLaboral", "Observaciones"],
     required: ["Puesto"] }
 };
@@ -2990,7 +2990,7 @@ function renderMigrationImportModule(container) {
     }
     const payload = {
       sistemaOrigen: sourceInput.value.trim(), tipoEntidad: entity.value,
-      destinoModulo: target.sheet, nombreArchivo: migrationImportState.fileName,
+      destinoModulo: target.destination, nombreArchivo: migrationImportState.fileName,
       mimeTypeArchivo: migrationImportState.file && migrationImportState.file.type ||
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       fileDataBase64: migrationImportState.fileDataBase64,
