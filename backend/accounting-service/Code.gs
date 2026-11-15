@@ -64,8 +64,14 @@ function resolveCrossReferenceIdentifier(input) {
   var entityType = String(request.tipoEntidad || "").trim().toLowerCase();
   var legacyId = String(request.idOriginalLegado || "").trim();
   if (!sourceName || !entityType || !legacyId) return { status: "error", code: "IDENTITY_MAPPING_INPUT_INVALID" };
-  var spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var snapshot = buildAccountingIdentityMapSnapshot_(request, spreadsheet);
+  var snapshot = requestAccountingIdentityMapSnapshot_({
+    sessionToken: request.sessionToken, institutionId: actor.institutionId,
+    correlationId: request.correlationId,
+    lookups: [{ sourceName: sourceName, entityType: entityType, legacyIds: [legacyId] }]
+  });
+  if (!snapshot || snapshot.status !== "success" || snapshot.verified !== true) {
+    return { status: "error", code: snapshot && snapshot.code || "IDENTITY_MAPPING_SNAPSHOT_UNAVAILABLE" };
+  }
   var resolved = resolveAccountingIdentityFromSnapshot_(snapshot, sourceName, entityType, legacyId, actor.institutionId);
   if (!resolved.valid) return { status: "error", code: resolved.code || "IDENTITY_MAPPING_NOT_FOUND" };
   return { status: "success", idNuevoPlataforma: resolved.idNuevoPlataforma,
