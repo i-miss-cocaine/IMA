@@ -30,9 +30,11 @@ function readRolePermissions(relativePath) {
 
 const academic = readRolePermissions("../../backend/academic-service/Code.gs");
 const user = readRolePermissions("../../backend/user-service/Code.gs");
-const accounting = fs.readFileSync(path.resolve(__dirname, "../../backend/accounting-service/Code.gs"), "utf8");
+const accountingRoles = readRolePermissions("../../backend/accounting-service/Code.gs");
+const accounting = accountingRoles.source;
 const academicAuditor = academic.roles.Auditor || [];
 const userAuditor = user.roles.Auditor || [];
+const accountingAuditor = accountingRoles.roles.Auditor || [];
 
 assert.ok(academicAuditor.includes("getStudentDocuments"));
 assert.ok(academicAuditor.includes("getStudentFile"));
@@ -46,7 +48,9 @@ assert.ok(userAuditor.includes("getUserRoleMemberships"));
 assert.ok(userAuditor.includes("switchActiveRole"),"Auditor may switch only among already assigned memberships");
 
 const mutatingAction = /^(create|save|update|delete|remove|grant|revoke|manage|upload|write|import|restore|purge|configure|approve|register|submit|assign|cancel|archive|close|process|generate|set|mark|reply|send|accept)/i;
-for (const [service, actions] of [["ACADEMIC", academicAuditor], ["USER", userAuditor]]) {
+assert.equal(JSON.stringify(Array.from(accountingAuditor)), JSON.stringify(["getAccountingMigrationFileAudit"]),
+  "Accounting Auditor receives only its institution-scoped audit reader");
+for (const [service, actions] of [["ACADEMIC", academicAuditor], ["USER", userAuditor], ["ACCOUNTING", accountingAuditor]]) {
   assert.ok(actions.length > 0, service + " Auditor has an explicit allowlist");
   assert.equal(JSON.stringify(Array.from(actions).filter(action => mutatingAction.test(action))), "[]",
     service + " Auditor cannot mutate, delete, approve, upload or administer records");
