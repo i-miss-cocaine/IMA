@@ -12405,7 +12405,7 @@ function getVacationRequests(payload) {
     const personaId = String(employee[1] || "").trim();
     const employeeName = personNames[personaId] || "";
     const days = parseInt(row[5] || 0, 10);
-    result.push({
+    const requestDto = {
       solicitudId: requestId,
       expedienteId: expedienteId,
       empleadoNombre: employeeName,
@@ -12416,7 +12416,12 @@ function getVacationRequests(payload) {
       diasSolicitados: Number.isFinite(days) ? days : 0,
       estado: status,
       estadoOriginal: rawStatus
-    });
+    };
+    if (!self) {
+      requestDto.aprobadoPor = row[7];
+      requestDto.observaciones = row[8];
+    }
+    result.push(requestDto);
   });
   return { status: "success", data: result, solicitudes: result, total: result.length };
 }
