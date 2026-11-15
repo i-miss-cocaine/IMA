@@ -2724,7 +2724,7 @@ let migrationImportState = {
 };
 
 const MIGRATION_IMPORT_TARGETS = {
-  curso: { sheet: "Cursos", fields: ["Nombre", "Nota", "FechaInicio"], required: ["Nombre"] },
+  curso: { sheet: "Cursos", fields: ["NombreCurso", "Categoria", "ProveedorResponsable", "Modalidad", "DuracionHoras", "Requisitos", "DirigidoA", "Estado", "CreadoPor", "FechaCreacion", "UltimaModificacion"], required: ["NombreCurso"] },
   estudiante: { sheet: "ExpedientesEstudiantes",
     fields: ["PersonaID", "CodigoInstitucional", "FechaNacimiento", "Nacionalidad", "DireccionResidencia", "FotografiaUrl", "EstadoExpediente", "FechaCreacion", "FechaActualizacion", "Observaciones"],
     required: ["PersonaID"] },
