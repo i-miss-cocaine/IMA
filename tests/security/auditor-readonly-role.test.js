@@ -56,5 +56,10 @@ assert.match(user.source,/if \(actorRole === "Auditor"\)[\s\S]*scope\.institutio
   "global audit logs are restricted to Auditors with institution-wide verified scope");
 assert.match(academic.source,/const permissionAction = \["createStudentDocumentAccessToken", "getSecureDocumentStream"\]/);
 assert.match(accounting,/request\.action === "validateImportPreview"/);
-assert.match(accounting,/IMPORT_COMMIT_NOT_EXPOSED/,"ACCOUNTING exposes no import write action to the read-only Auditor");
+assert.match(accounting,/request\.action === "importDataWithColumnMapping"/,
+  "ACCOUNTING commit is routed but must pass its independent authorization and preview gates");
+assert.match(accounting,/accountingHasInstitutionalImportPermission_\(\{ roleId: auth\.role/);
+assert.match(accounting,/if \(!input\.previewConfirmed \|\| !input\.previewHash/);
+assert.equal(userAuditor.includes("authorizeAccountingImport"),false,
+  "Auditor cannot satisfy the import permission required by ACCOUNTING write/preview handlers");
 process.stdout.write("Read-only Auditor role: Academic/User allowlists, document proxy permission alias and disabled Accounting writes PASS.\n");
