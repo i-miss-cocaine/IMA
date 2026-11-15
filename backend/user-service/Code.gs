@@ -7502,6 +7502,9 @@ function reviewAbsenceJustification(payload) {
   if (!actorId || actorRole === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
   if (["Secretaría", "Director", "Subdirector", "Administrador", "Desarrollador"].indexOf(actorRole) === -1) return { status: "error", code: "AUTH_PERMISSION_DENIED", httpStatus: 403 };
   if (!solicitudId || !p.nuevoEstado) return { status: "error", code: "INVALID_PAYLOAD" };
+  const reviewLock = LockService.getScriptLock();
+  try { reviewLock.waitLock(10000); } catch (_) { return { status: "error", code: "ABSENCE_REVIEW_LOCK_TIMEOUT", retryable: true }; }
+  try {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "SolicitudesTramites");
   const map = ensureUserAbsenceRequestSchema_(sheet);
@@ -7565,6 +7568,7 @@ function reviewAbsenceJustification(payload) {
   var reviewData = result.data && result.data.data ? result.data.data : result.data;
   return { status: "success", message: "Decisión registrada en el ciclo canónico; la asistencia se sincronizó cuando correspondía.",
     evidenceIntegrityWarning: evidenceSnapshot.integrityWarning === true, data: reviewData || {} };
+  } finally { reviewLock.releaseLock(); }
 }
 
 function getAdministrativeRequestsHistory(payload) {
