@@ -273,7 +273,9 @@ const emailDispatch = context.registerDepartmentalDocumentDelivery(senderPayload
 assert.equal(emailDispatch.status, "success");
 assert.equal(emailDispatch.estadoDespacho, "ACEPTADO_POR_PLATAFORMA");
 const emailOutbox = context.getDepartmentalOutbox({ _verifiedUserId: "SEC-1", _verifiedRole: "Secretaría", documentoId: "DOC-6" });
-assert.equal(emailOutbox.data[0].estadoCorreo, "ENVIADO");
+const emailOutboxEntry = emailOutbox.data.find(item => item.canal === "PLATAFORMA_Y_CORREO");
+assert.ok(emailOutboxEntry);
+assert.equal(emailOutboxEntry.estadoCorreo, "ENVIADO");
 assert.equal(notificationPayloads[notificationPayloads.length - 1].emailRecipient, "stu2@example.test");
 
 const batch = context.sendInstitutionalDispatchBatch({
