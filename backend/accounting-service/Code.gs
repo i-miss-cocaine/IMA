@@ -1462,7 +1462,7 @@ function migrationDecodeSnapshot_(value) {
 function migrationNormalizeImportDate_(field, value) {
   var dateFields = {
     FechaInicio: true, FechaIngreso: true, FechaSalida: true, FechaNacimiento: true,
-    FechaCreacion: true, FechaActualizacion: true, FechaCarga: true
+    FechaCreacion: true, FechaActualizacion: true, UltimaModificacion: true, FechaCarga: true
   };
   if (!dateFields[String(field || "")] || value === "" || value === null || value === undefined) return value;
   if (value instanceof Date) {
