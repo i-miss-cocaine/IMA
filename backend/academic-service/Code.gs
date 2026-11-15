@@ -3758,19 +3758,91 @@ function assertRecordOwnership(authRole, authenticatedUserId, targetUserId, reso
 }
 
 // [F10-Task13] [P1] - Mejorar la gestión de evidencias y documentos sensibles
+function extractPdfTextWithOcr_(file, options) {
+  var opts = options || {};
+  if (!file || typeof file.getBlob !== "function") return { status: "error", code: "OCR_FILE_UNAVAILABLE" };
+  var mimeType = String(file.getMimeType() || "").toLowerCase().trim();
+  if (mimeType !== "application/pdf") return { status: "error", code: "OCR_UNSUPPORTED_FILE_TYPE" };
+  if (typeof Drive === "undefined" || !Drive.Files || typeof Drive.Files.insert !== "function") {
+    return { status: "error", code: "OCR_ADVANCED_SERVICE_UNAVAILABLE" };
+  }
+  var language = /^[a-z]{2}$/i.test(String(opts.language || "")) ? String(opts.language).toLowerCase() : "es";
+  var includeText = opts.includeText === true;
+  var maxTextChars = Number(opts.maxTextChars) > 0 ? Math.min(100000, Number(opts.maxTextChars)) : 50000;
+  var temporaryFileId = "";
+  var result = null;
+  try {
+    var blob = file.getBlob();
+    if (!blob || !blob.getBytes || !blob.getBytes().length) return { status: "error", code: "OCR_FILE_EMPTY" };
+    var resource = {
+      title: "IMA_OCR_TMP_" + Utilities.getUuid(),
+      mimeType: "application/vnd.google-apps.document"
+    };
+    var converted = Drive.Files.insert(resource, blob, { convert: true, ocr: true, ocrLanguage: language });
+    temporaryFileId = String(converted && converted.id || "").trim();
+    if (!temporaryFileId) throw new Error("OCR_CONVERSION_FAILED");
+    var document = DocumentApp.openById(temporaryFileId);
+    var extractedText = String(document.getBody().getText() || "");
+    if (!extractedText.trim()) {
+      result = { status: "error", code: "OCR_NO_TEXT_EXTRACTED", language: language, textLength: 0 };
+    } else {
+      result = {
+        status: "success",
+        language: language,
+        textLength: extractedText.length,
+        truncated: extractedText.length > maxTextChars
+      };
+      if (includeText) result.text = extractedText.slice(0, maxTextChars);
+    }
+  } catch (error) {
+    result = { status: "error", code: String(error && error.message || "").indexOf("OCR_") === 0 ?
+      String(error.message) : "OCR_CONVERSION_FAILED" };
+  }
+  if (temporaryFileId) {
+    var cleanupVerified = false;
+    try {
+      if (Drive.Files && typeof Drive.Files.remove === "function") {
+        Drive.Files.remove(temporaryFileId);
+        cleanupVerified = true;
+      }
+    } catch (cleanupError) {}
+    if (!cleanupVerified) {
+      try {
+        var temporaryFile = DriveApp.getFileById(temporaryFileId);
+        temporaryFile.setTrashed(true);
+        cleanupVerified = temporaryFile.isTrashed() === true;
+      } catch (cleanupError) {}
+    }
+    if (!cleanupVerified) return { status: "error", code: "OCR_TEMP_FILE_CLEANUP_FAILED" };
+  }
+  return result || { status: "error", code: "OCR_CONVERSION_FAILED" };
+}
+
 function validateEvidenceFileAndPermissions(payload) {
-  const { fileId, mimeType, sizeBytes } = payload || {};
-  if (!fileId) throw new Error("Parámetro obligatorio ausente: fileId.");
-  const actor = getVerifiedAcademicIdentity_(payload);
+  const request = payload || {};
+  const requestedFileId = String(request.fileId || "").trim();
+  const requestedDocumentId = String(request.documentoId || "").trim();
+  const mimeType = request.mimeType;
+  const sizeBytes = request.sizeBytes;
+  if (!requestedFileId && !requestedDocumentId) throw new Error("Parámetro obligatorio ausente: fileId o documentoId.");
+  const actor = getVerifiedAcademicIdentity_(request);
   if (!actor.authorized) return { status: "error", code: actor.code, message: "Acceso denegado." };
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const documentSheet = ss.getSheetByName("DocumentosEstudiante");
   const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
   if (!documentSheet) return { status: "error", code: "RESOURCE_OWNER_UNRESOLVED", message: "Acceso denegado." };
   const docRows = documentSheet.getDataRange().getValues().slice(1);
-  const docRow = docRows.find(function(row) { return String(row[5] || "").trim() === String(fileId).trim(); });
-  if (!docRow) return { status: "error", code: "RESOURCE_OWNER_UNRESOLVED", message: "Acceso denegado." };
-  const access = assertStudentDocumentScopeAccess_(payload, ss, documentSheet, docRow, expSheet);
+  const matchingRows = docRows.filter(function(row) {
+    const matchesFile = !requestedFileId || String(row[5] || "").trim() === requestedFileId;
+    const matchesDocument = !requestedDocumentId || String(row[0] || "").trim() === requestedDocumentId;
+    return matchesFile && matchesDocument;
+  });
+  if (matchingRows.length !== 1) return { status: "error", code: "RESOURCE_OWNER_UNRESOLVED", message: "Acceso denegado." };
+  const docRow = matchingRows[0];
+  const fileId = String(docRow[5] || "").trim();
+  if (!fileId) return { status: "error", code: "RESOURCE_OWNER_UNRESOLVED", message: "Acceso denegado." };
+  const scopePayload = Object.assign({}, request, { fileId: fileId });
+  const access = assertStudentDocumentScopeAccess_(scopePayload, ss, documentSheet, docRow, expSheet);
   if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
 
   const maxSizeBytes = 10 * 1024 * 1024;
@@ -3810,16 +3882,30 @@ function validateEvidenceFileAndPermissions(payload) {
     if (binaryValidation.byteLength !== actualSize || binaryValidation.mimeType !== actualMime) {
       return { status: "error", code: "FILE_BINARY_MIME_MISMATCH", message: "La extensión, la cabecera binaria y el MIME real no coinciden." };
     }
+    let ocrResult = null;
+    if (request.ocrRequested === true) {
+      ocrResult = actualMime === "application/pdf"
+        ? extractPdfTextWithOcr_(file, { language: request.ocrLanguage, includeText: request.includeOcrText === true, maxTextChars: request.maxOcrTextChars })
+        : { status: "error", code: "OCR_UNSUPPORTED_FILE_TYPE" };
+    }
     logStructuredEvent("ACADEMIC", "validateEvidenceFileAndPermissions", "INFO", "EVIDENCE_FILE_VALIDATED",
       "Archivo de evidencia validado por ámbito, tamaño, MIME real y estructura binaria.",
       { fileId: fileId, actualMime: actualMime, actualSize: actualSize, detectedFormat: binaryValidation.detectedFormat }, actor.role);
-    return {
-      status: "success", fileId: fileId, fileName: actualName, mimeType: actualMime,
+    const validationMessage = ocrResult && ocrResult.status !== "success"
+      ? "Archivo verificado físicamente; OCR no completado: " + ocrResult.code
+      : "Archivo de evidencia verificado por ámbito, MIME real y estructura binaria.";
+    const validationResponse = {
+      status: "success", documentoId: String(docRow[0] || ""), fileName: actualName, mimeType: actualMime,
       fileSizeMb: (actualSize / (1024 * 1024)).toFixed(2), isPdf: actualMime === "application/pdf",
       integrityVerified: true, detectedFormat: binaryValidation.detectedFormat, byteLength: binaryValidation.byteLength,
-      previewUrl: "https://drive.google.com/file/d/" + fileId + "/preview",
-      message: "Archivo de evidencia verificado por ámbito, MIME real y estructura binaria."
+      validationComplete: !request.ocrRequested || !!(ocrResult && ocrResult.status === "success"),
+      ocrStatus: ocrResult ? ocrResult.status : "NOT_REQUESTED",
+      ocr: ocrResult,
+      previewUrl: requestedFileId ? "https://drive.google.com/file/d/" + fileId + "/preview" : "",
+      message: validationMessage
     };
+    if (requestedFileId) validationResponse.fileId = fileId;
+    return validationResponse;
   } catch (e) {
     const detail = String(e && e.message || "");
     const match = detail.match(/^([A-Z0-9_]+):/);
