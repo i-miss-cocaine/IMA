@@ -2053,7 +2053,10 @@ function doPost(e) {
       case "respondToAuthorizationRequest": result = respondToAuthorizationRequest(payload); break;
       case "getDepartmentalWorkInbox": result = getDepartmentalWorkInbox(payload); break;
       case "getDepartmentalOutbox": result = getDepartmentalOutbox(payload); break;
+      case "getMyDepartmentalOutbox": result = getMyDepartmentalOutbox(payload); break;
       case "registerDepartmentalDocumentDelivery": result = registerDepartmentalDocumentDelivery(payload); break;
+      case "sendInstitutionalDispatch": result = sendInstitutionalDispatch(payload); break;
+      case "sendInstitutionalDispatchBatch": result = sendInstitutionalDispatchBatch(payload); break;
       case "retryDepartmentalDocumentDelivery": result = retryDepartmentalDocumentDelivery(payload); break;
       case "getMyDocumentDeliveries": result = getMyDocumentDeliveries(payload); break;
       case "openDepartmentalDocumentDelivery": result = openDepartmentalDocumentDelivery(payload); break;
@@ -5577,12 +5580,15 @@ function getDocumentDeliveryRecipient_(ss, userId) {
   var nameIndex = findColumn(["nombre","name","nombrecompleto"],1);
   var emailIndex = findColumn(["correo","email","correoelectronico"],4);
   var stateIndex = findColumn(["estado","estadocuenta","estatus","status"],-1);
+  var consentIndex = findColumn(["notificacionesemailconsentimiento","consentimientocorreo","emailnotificacioneshabilitado"],-1);
   var matches = rows.slice(1).filter(function(row) { return String(row[userIndex] || "").trim() === String(userId || "").trim(); });
   if (matches.length !== 1) return { status: "error", code: matches.length > 1 ? "DELIVERY_RECIPIENT_AMBIGUOUS" : "DELIVERY_RECIPIENT_NOT_FOUND" };
   var row = matches[0];
   var state = stateIndex >= 0 ? String(row[stateIndex] || "").trim().toLowerCase() : "";
   if (state && ["activa","activo","active","1","true"].indexOf(state) === -1) return { status: "error", code: "DELIVERY_RECIPIENT_INACTIVE" };
-  return { status: "success", userId: String(row[userIndex]).trim(), name: String(row[nameIndex] || "").trim(), email: String(row[emailIndex] || "").trim() };
+  var consent = consentIndex >= 0 ? String(row[consentIndex] || "").trim().toUpperCase() : "";
+  var emailConsent = ["TRUE","1","SI","SÍ","YES","OPT_IN"].indexOf(consent) !== -1;
+  return { status: "success", userId: String(row[userIndex]).trim(), name: String(row[nameIndex] || "").trim(), email: String(row[emailIndex] || "").trim(), emailConsent: emailConsent };
 }
 
 function appendDocumentDeliveryEvent_(row, map, action, actorId, actorRole, details) {
@@ -5626,8 +5632,13 @@ function dispatchDocumentDelivery_(ss, sheet, rowNumber, row, map, actorId, acto
     var deliveryId = String(row[map.EntregaID] || "");
     var recipientId = String(row[map.DestinatarioUserID] || "");
     var portalLink = getDocumentDeliveryPortalLink_(deliveryId);
+    var recipient = getDocumentDeliveryRecipient_(ss, recipientId);
+    if (recipient.status !== "success") throw new Error(recipient.code || "DELIVERY_RECIPIENT_NOT_FOUND");
+    var wantsEmail = ["CORREO", "PLATAFORMA_Y_CORREO"].indexOf(String(row[map.Canal] || "").toUpperCase()) !== -1;
+    if (wantsEmail && recipient.emailConsent !== true) throw new Error("EMAIL_CONSENT_REQUIRED");
     notification = sendMultiChannelNotification({
       userId: recipientId,
+      emailRecipient: wantsEmail ? recipient.email : "",
       titulo: "Documento institucional disponible",
       mensaje: "Tiene un documento institucional disponible en el portal. Inicie sesión para revisarlo y, si corresponde, confirmar su recepción. Referencia: " + deliveryId,
       tipo: "EntregaDocumental",
@@ -5661,7 +5672,8 @@ function dispatchDocumentDelivery_(ss, sheet, rowNumber, row, map, actorId, acto
       return { status: "error", code: "DOCUMENT_DELIVERY_DISPATCH_PENDING", retryable: true, deliveryId: String(updated[map.EntregaID] || "") };
     }
     updated[map.EstadoDespacho] = "ACEPTADO_POR_PLATAFORMA";
-    updated[map.EstadoCorreo] = "NO_SOLICITADO";
+    var emailRequested = ["CORREO", "PLATAFORMA_Y_CORREO"].indexOf(String(updated[map.Canal] || "").toUpperCase()) !== -1;
+    updated[map.EstadoCorreo] = !emailRequested ? "NO_SOLICITADO" : (notification.emailSent === true ? "ENVIADO" : "PENDIENTE_REINTENTO");
     updated[map.FechaDespacho] = new Date();
     updated[map.NotificacionID] = String(notification.notificacionId || updated[map.NotificacionID] || "");
     updated[map.UltimoError] = "";
@@ -5696,7 +5708,8 @@ function registerDepartmentalDocumentDelivery(payload) {
   var recipient = getDocumentDeliveryRecipient_(ss, snapshot.recipientUserId);
   if (recipient.status !== "success") return recipient;
   var channel = String(p.canal || "PLATAFORMA").trim().toUpperCase();
-  if (channel !== "PLATAFORMA") return { status: "error", code: "DOCUMENT_DELIVERY_CHANNEL_NOT_SUPPORTED" };
+  if (["PLATAFORMA", "CORREO", "PLATAFORMA_Y_CORREO"].indexOf(channel) === -1) return { status: "error", code: "DOCUMENT_DELIVERY_CHANNEL_NOT_SUPPORTED" };
+  if (["CORREO", "PLATAFORMA_Y_CORREO"].indexOf(channel) !== -1 && recipient.emailConsent !== true) return { status: "error", code: "EMAIL_CONSENT_REQUIRED" };
   var idem = String(p.idempotencyKey || "").trim();
   if (!idem) idem = "DELIVERY-" + computeDocumentSHA256([snapshot.documentId,snapshot.version,snapshot.recipientUserId,channel,sender.actorId].join("|")).slice(0, 48);
   if (idem.length < 8 || idem.length > 128) return { status: "error", code: "IDEMPOTENCY_KEY_INVALID" };
@@ -5791,6 +5804,8 @@ function getDepartmentalOutbox(payload) {
   var map = read.map, rows = read.sheet.getDataRange().getValues().slice(1);
   var requestedDepartment = String(p.departamentoId || "").trim();
   if (requestedDepartment && !isDocumentDeliveryDepartmentAllowed_(sender.context, requestedDepartment)) return { status: "error", code: "ACTIVE_SCOPE_NOT_ASSIGNED" };
+  var requestedSender = String(p.remitenteUserId || "").trim();
+  if (requestedSender && requestedSender !== sender.actorId) return { status: "error", code: "OUTBOX_SENDER_MISMATCH" };
   var documentId = String(p.documentoId || "").trim(), recipientId = String(p.destinatarioUserId || "").trim();
   var dispatchState = String(p.estadoDespacho || "").trim(), receiptState = String(p.estadoAcuse || "").trim();
   var from = p.desde ? new Date(p.desde) : null, to = p.hasta ? new Date(p.hasta) : null;
@@ -5801,6 +5816,7 @@ function getDepartmentalOutbox(payload) {
     var department = String(row[map.DepartmentID] || "");
     if (requestedDepartment && department !== requestedDepartment) return false;
     if (!requestedDepartment && !isDocumentDeliveryDepartmentAllowed_(sender.context, department)) return false;
+    if (requestedSender && String(row[map.RemitenteUserID] || "") !== requestedSender) return false;
     if (documentId && String(row[map.DocumentoID] || "") !== documentId) return false;
     if (recipientId && String(row[map.DestinatarioUserID] || "") !== recipientId) return false;
     if (dispatchState && String(row[map.EstadoDespacho] || "") !== dispatchState) return false;
@@ -5828,6 +5844,60 @@ function getDepartmentalOutbox(payload) {
     };
   });
   return { status: "success", data: data, total: filtered.length, limit: limit, offset: offset };
+}
+
+function getMyDepartmentalOutbox(payload) {
+  var sender = getDocumentDeliverySenderContext_(payload || {});
+  if (sender.status !== "success") return sender;
+  return getDepartmentalOutbox(Object.assign({}, payload || {}, { remitenteUserId: sender.actorId }));
+}
+function sendInstitutionalDispatch(payload) {
+  return registerDepartmentalDocumentDelivery(payload);
+}
+function sendInstitutionalDispatchBatch(payload) {
+  var p = payload || {}, items = Array.isArray(p.items) ? p.items : [];
+  if (!items.length || items.length > 50) return { status: "error", code: "DELIVERY_BATCH_SIZE_INVALID" };
+  var baseKey = String(p.idempotencyKey || "").trim();
+  if (!baseKey || baseKey.length > 80) return { status: "error", code: "DELIVERY_BATCH_IDEMPOTENCY_KEY_INVALID" };
+  var seen = {}, results = [], succeeded = 0, failed = 0;
+  for (var i = 0; i < items.length; i++) {
+    var item = items[i] || {}, documentId = String(item.documentoId || item.documentId || "").trim();
+    if (!documentId || seen[documentId]) {
+      results.push({ index: i, documentoId: documentId, status: "error", code: !documentId ? "RESOURCE_REFERENCE_INVALID" : "DELIVERY_BATCH_DOCUMENT_DUPLICATE" });
+      failed++; continue;
+    }
+    seen[documentId] = true;
+    var child = Object.assign({}, p, item, { idempotencyKey: baseKey + ":" + computeDocumentSHA256(documentId).slice(0, 24) });
+    delete child.items;
+    var result = registerDepartmentalDocumentDelivery(child);
+    results.push({ index: i, documentoId: documentId, status: result.status, deliveryId: result.deliveryId || "", estadoDespacho: result.estadoDespacho || "", estadoAcuse: result.estadoAcuse || "", code: result.code || "" });
+    if (result.status === "success") succeeded++; else failed++;
+  }
+  return { status: failed ? (succeeded ? "partial" : "error") : "success", total: items.length, succeeded: succeeded, failed: failed, results: results };
+}
+function getDocumentDeliveryReceiptMode_(ss, institutionId) {
+  var fallback = "EXPLICITO_CLIC_CONFIRMACION";
+  try {
+    var sheet = ss && ss.getSheetByName ? ss.getSheetByName("ConfiguracionInstitucional") : null;
+    if (!sheet || sheet.getLastRow() < 2) return fallback;
+    var rows = sheet.getDataRange().getValues();
+    var headers = (rows[0] || []).map(function(value) { return String(value || "").trim().toLowerCase().replace(/[^a-z0-9]/g, ""); });
+    var keyIndex = headers.indexOf("clave") >= 0 ? headers.indexOf("clave") : headers.indexOf("configkey");
+    var valueIndex = headers.indexOf("valor") >= 0 ? headers.indexOf("valor") : headers.indexOf("configvalue");
+    var stateIndex = headers.indexOf("estado");
+    var institutionIndex = headers.indexOf("institutionid") >= 0 ? headers.indexOf("institutionid") : headers.indexOf("institucionid");
+    if (keyIndex < 0 || valueIndex < 0) return fallback;
+    var tenant = String(institutionId || "").trim();
+    var matches = rows.slice(1).filter(function(row) {
+      if (String(row[keyIndex] || "").trim() !== "MODALIDAD_ACUSE_RECIBO_NOTIFICACIONES") return false;
+      if (institutionIndex >= 0 && String(row[institutionIndex] || "").trim() !== tenant) return false;
+      return true;
+    });
+    if (matches.length !== 1) return fallback;
+    if (stateIndex >= 0 && ["ACTIVO","ACTIVE","HABILITADO","SI","TRUE"].indexOf(String(matches[0][stateIndex] || "").trim().toUpperCase()) === -1) return fallback;
+    var mode = String(matches[0][valueIndex] || "").trim().toUpperCase();
+    return ["EXPLICITO_CLIC_CONFIRMACION","AUTOMATICO_POR_LECTURA"].indexOf(mode) !== -1 ? mode : fallback;
+  } catch (_) { return fallback; }
 }
 
 function getMyDocumentDeliveries(payload) {
@@ -5885,10 +5955,13 @@ function openDepartmentalDocumentDelivery(payload) {
     if (row[map.FechaApertura]) return { status: "success", idempotent: true, deliveryId: row[map.EntregaID], fechaApertura: row[map.FechaApertura], sha256: row[map.SHA256Apertura] };
     row[map.FechaApertura] = new Date();
     row[map.SHA256Apertura] = snapshot.sha256;
-    row[map.EstadoAcuse] = "APERTURA_AUTENTICADA";
-    appendDocumentDeliveryEvent_(row, map, "DOCUMENT_OPENED_AUTHENTICATED", actorId, actorRole, { sha256: snapshot.sha256, version: snapshot.version });
+    var receiptMode = getDocumentDeliveryReceiptMode_(ss, institutionId);
+    row[map.EstadoAcuse] = receiptMode === "AUTOMATICO_POR_LECTURA" ? "RECIBIDO_AUTOMATICO_POR_LECTURA" : "APERTURA_AUTENTICADA";
+    appendDocumentDeliveryEvent_(row, map, receiptMode === "AUTOMATICO_POR_LECTURA" ? "DOCUMENT_RECEIPT_AUTO_BY_READ_WARNING" : "DOCUMENT_OPENED_AUTHENTICATED",
+      actorId, actorRole, { sha256: snapshot.sha256, version: snapshot.version, receiptMode: receiptMode,
+        warning: receiptMode === "AUTOMATICO_POR_LECTURA" ? "La lectura autenticada no sustituye una firma o acuse legal avanzado." : "" });
     writeDocumentDeliveryRow_(read.sheet, found.rowNumber, row);
-    return { status: "success", deliveryId: row[map.EntregaID], documentoId: snapshot.documentId, solicitudId: snapshot.solicitudId, version: snapshot.version, sha256: snapshot.sha256, nombreDocumento: snapshot.fileName, fechaApertura: row[map.FechaApertura] };
+    return { status: "success", deliveryId: row[map.EntregaID], documentoId: snapshot.documentId, solicitudId: snapshot.solicitudId, version: snapshot.version, sha256: snapshot.sha256, nombreDocumento: snapshot.fileName, fechaApertura: row[map.FechaApertura], estadoAcuse: row[map.EstadoAcuse], modalidadAcuse: receiptMode, advertencia: receiptMode === "AUTOMATICO_POR_LECTURA" ? "La apertura se registra como recepción automática según configuración institucional; no equivale a firma electrónica avanzada." : "" };
   } catch (error) {
     return { status: "error", code: error.message || "DOCUMENT_DELIVERY_OPEN_FAILED" };
   } finally { lock.releaseLock(); }
