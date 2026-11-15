@@ -19,14 +19,14 @@ LockService:{getScriptLock:()=>({tryLock:()=>{if(!available||locked)return false
 vm.createContext(ctx);vm.runInContext(code,ctx);const p=t=>({sessionToken:t}),count=rows.SolicitudesVacaciones.length;
 const ownRecords=ctx.getEmployeeRecords(p("emp"));
 assert.equal(ownRecords.status,"success");
-assert.deepEqual(Array.from(ownRecords.expedientes,r=>r.expedienteId),["EA"]);
+assert.equal(Array.from(ownRecords.expedientes,r=>r.expedienteId).join(","),"EA");
 assert.equal(ownRecords.expedientes[0].observaciones,"","self-service must not expose internal HR notes");
 assert.equal(ctx.getEmployeeRecords({...p("emp"),userId:"U-OTHER"}).code,"RESOURCE_NOT_FOUND");
 assert.equal(ctx.getEmployeeRecords({...p("emp"),expedienteId:"EB"}).code,"RESOURCE_NOT_FOUND");
 assert.equal(ctx.getEmployeeRecords({...p("emp"),userId:"U-EMP",expedienteId:"EB"}).code,"RESOURCE_NOT_FOUND");
-assert.deepEqual(Array.from(ctx.getEmployeeRecords(p("ha")).expedientes,r=>r.expedienteId).sort(),["EA","EP"]);
-assert.deepEqual(Array.from(ctx.getEmployeeRecords(p("hb")).expedientes,r=>r.expedienteId),["EB"]);
-assert.deepEqual(Array.from(ctx.getEmployeeRecords(p("admin")).expedientes,r=>r.expedienteId).sort(),["EA","EB","EP"]);
+assert.equal(Array.from(ctx.getEmployeeRecords(p("ha")).expedientes,r=>r.expedienteId).sort().join(","),"EA,EP");
+assert.equal(Array.from(ctx.getEmployeeRecords(p("hb")).expedientes,r=>r.expedienteId).join(","),"EB");
+assert.equal(Array.from(ctx.getEmployeeRecords(p("admin")).expedientes,r=>r.expedienteId).sort().join(","),"EA,EB,EP");
 assert.equal(ctx.getEmployeeRecords(p("bad")).code,"VERIFIED_IDENTITY_REQUIRED");
 assert.equal(ctx.getEmployeeRecords(p("emp")).expedientes[0].observaciones,"");
 assert.equal(ctx.submitLeaveVacationRequest(p("bad")).code,"VERIFIED_IDENTITY_REQUIRED");
