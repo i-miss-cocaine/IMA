@@ -6610,6 +6610,7 @@ window.__imaUIMetadataCounter = 0;
 window.__imaUIMetadataFallback = {
     version: "offline-1.0",
     fields: {
+        "identidad.busqueda": { help: "Ingresa el identificador disponible en el registro de origen (DNI, RNE u otro código admitido). Escríbelo tal como aparece en la fuente; sirve para localizar posibles coincidencias y no confirma por sí solo la identidad." },
         "identity.userId": { help: "Usa el UserId institucional asignado a la cuenta (por ejemplo, USR-...). No escribas aquí el nombre ni el DNI." },
         "matricula.identidad": { help: "Ingresa el DNI hondureño con 13 dígitos seguidos (0801199012345) o con guiones 4-4-5 (0801-1990-12345). El servidor valida ambos formatos y normaliza a 13 dígitos; no agregues espacios ni letras." },
         "matricula.fechaNacimiento": { help: "Selecciona la fecha en el calendario y verifica que coincida con el documento oficial." },
