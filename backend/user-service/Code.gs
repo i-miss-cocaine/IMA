@@ -6789,15 +6789,18 @@ function getAdministrativeRequests(payload) {
   }).map(function(row) {
     const stored = String(row[5] || "").trim();
     const integrityState = attachmentMap.AdjuntoIntegridadEstado === undefined ? "" : String(row[attachmentMap.AdjuntoIntegridadEstado] || "").trim();
-    var approvedSessions = [], requestedSessions = [];
+    var approvedSessions = [], requestedSessions = [], affectedDates = [];
     try { approvedSessions = JSON.parse(String(attachmentMap.SesionIDsJSON === undefined ? "[]" : row[attachmentMap.SesionIDsJSON] || "[]")); } catch (_) {}
     try { requestedSessions = JSON.parse(String(attachmentMap.SesionIDsSolicitadasJSON === undefined ? "[]" : row[attachmentMap.SesionIDsSolicitadasJSON] || "[]")); } catch (_) {}
+    try { affectedDates = JSON.parse(String(attachmentMap.FechasAfectadasJSON === undefined ? "[]" : row[attachmentMap.FechasAfectadasJSON] || "[]")); } catch (_) {}
+    if (!Array.isArray(affectedDates) || !affectedDates.length) affectedDates = [String(attachmentMap.FechaAfectada === undefined ? "" : row[attachmentMap.FechaAfectada] || "")].filter(Boolean); catch (_) {}
     if (!Array.isArray(approvedSessions)) approvedSessions = [];
     if (!Array.isArray(requestedSessions)) requestedSessions = [];
+    if (!Array.isArray(affectedDates)) affectedDates = [];
     return { solicitudId:row[0], userId:row[1], estudianteId:row[2], tipoTramite:row[3], descripcion:row[4],
       adjuntoUrl:"", tieneAdjunto:!!stored, integridadAdjunto:stored ? (integrityState || "LEGACY_UNVERIFIED") : "SIN_ADJUNTO",
       alcanceAprobacion:attachmentMap.AlcanceAprobacion === undefined ? "" : String(row[attachmentMap.AlcanceAprobacion] || ""),
-      sesionesAprobadas:approvedSessions, sesionesSolicitadas:requestedSessions,
+      sesionesAprobadas:approvedSessions, sesionesSolicitadas:requestedSessions, fechasAfectadas:affectedDates,
       estado:row[6]||"Enviada", asignadoA:row[7]||"Secretaría",
       observacionesAdmin:row[8]||"", fechaSolicitud:row[9]?new Date(row[9]).toISOString():null,
       fechaResolucion:row[10]?new Date(row[10]).toISOString():null };
@@ -7027,9 +7030,12 @@ function reviewAbsenceJustification(payload) {
     var legacyDescription = String(row[4] || "");
     var legacyDateMatch = /fecha\s+(\d{4}-\d{2}-\d{2})/i.exec(legacyDescription);
     var legacyReasonMatch = /Motivo:\s*([^.]*)/i.exec(legacyDescription);
+    var storedAffectedDates = [];
+    try { storedAffectedDates = JSON.parse(String(map.FechasAfectadasJSON === undefined ? "[]" : row[map.FechasAfectadasJSON] || "[]")); } catch (_) {}
+    if (!Array.isArray(storedAffectedDates) || !storedAffectedDates.length) storedAffectedDates = [row[map.FechaAfectada] || (legacyDateMatch && legacyDateMatch[1])].filter(Boolean);
     var create = callAcademicAbsenceService_("createCanonicalAbsenceJustification", {
       justificacionId: justId, solicitudId: justId, studentId: String(row[2] || "").trim(),
-      fechaAfectada: row[map.FechaAfectada] || (legacyDateMatch && legacyDateMatch[1]),
+      fechaAfectada: row[map.FechaAfectada] || (legacyDateMatch && legacyDateMatch[1]), fechasAfectadas: storedAffectedDates,
       periodo: row[map.Periodo] || "",
       motivoDeclarado: row[map.MotivoJustificacion] || (legacyReasonMatch && legacyReasonMatch[1]) || legacyDescription,
       adjuntoUrl: row[5] || "",
