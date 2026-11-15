@@ -11513,6 +11513,7 @@ function updateEmployeeLaborStatus(payload) {
   };
 }
 
+// Audit the probe without persisting the attacker-supplied target ID.
 function auditEmployeeSelfServiceDenied_(action, actor, filters) {
   const identity = actor || {};
   logStructuredEvent(
@@ -11528,7 +11529,7 @@ function auditEmployeeSelfServiceDenied_(action, actor, filters) {
       requestedUserFilter: !!(filters && filters.userIdProvided),
       requestedExpedienteFilter: !!(filters && filters.expedienteIdProvided)
     },
-    String(identity.userId || "Sistema").trim()
+    String(identity.role || "Sistema").trim()
   );
 }
 

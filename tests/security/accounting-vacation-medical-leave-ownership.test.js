@@ -3,7 +3,7 @@ function extractFunction(s,n){const a=s.indexOf("function "+n+"(");assert.ok(a>=
 const root=path.resolve(__dirname,"../.."),accounting=fs.readFileSync(path.join(root,"backend/accounting-service/Code.gs"),"utf8");assert.doesNotThrow(()=>new Function(accounting));
 const names=["getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentScope_","resolveEmployeeDepartmentId_","assertResourceOwnershipForScope_","assertEmployeeExpedienteScopeAccess_","auditEmployeeSelfServiceDenied_","getEmployeeRecords","normalizeVacationRole_","getVacationSheetSnapshot_","resolveVacationEmployeeAccess_","assertVacationWriteAccess_","submitVacationRequestCore_","submitLeaveVacationRequest","submitVacationRequest","getLeaveVacationRequests","reviewLeaveVacationRequest","calculateVacationBalances","recordMedicalLeave","getVacationRequests","reviewVacationRequest"];
 const code=["var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();",names.map(n=>extractFunction(accounting,n)).join("\n")].join("\n");
-const claims={"ha":{userId:"U-HA",role:"RecursosHumanos"},"hb":{userId:"U-HB",role:"RecursosHumanos"},"emp":{userId:"U-EMP",role:"Empleado"},"prof":{userId:"U-PROF",role:"Profesor"},"dir":{userId:"U-DIR",role:"Director"},"admin":{userId:"U-ADMIN",role:"Administrador"},"bad":null};
+const claims={"ha":{userId:"U-HA",role:"RecursosHumanos"},"hb":{userId:"U-HB",role:"RecursosHumanos"},"emp":{userId:"U-EMP",role:"Empleado"},"prof":{userId:"U-PROF",role:"Profesor"},"parent":{userId:"U-PARENT",role:"Padre"},"dir":{userId:"U-DIR",role:"Director"},"admin":{userId:"U-ADMIN",role:"Administrador"},"bad":null};
 const scopes={"U-HA":{departmentIds:["A"],institutionWide:false},"U-HB":{departmentIds:["B"],institutionWide:false},"U-DIR":{departmentIds:["A"],institutionWide:false},"U-ADMIN":{departmentIds:[],institutionWide:true}};
 const rows={
 ExpedientesLaborales:[["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"],["EA","PA","U-EMP","Empleado","A","","2020-01-01","","Activo","Nota interna A"],["EB","PB","U-OTHER","Empleado","B","","2021-01-01","","Activo","Nota interna B"],["EP","PP","U-PROF","Profesor","A","","2022-01-01","","Activo","Nota interna P"]],
@@ -28,6 +28,9 @@ assert.equal(Array.from(ctx.getEmployeeRecords(p("ha")).expedientes,r=>r.expedie
 assert.equal(Array.from(ctx.getEmployeeRecords(p("hb")).expedientes,r=>r.expedienteId).join(","),"EB");
 assert.equal(Array.from(ctx.getEmployeeRecords(p("admin")).expedientes,r=>r.expedienteId).sort().join(","),"EA,EB,EP");
 assert.equal(ctx.getEmployeeRecords(p("bad")).code,"VERIFIED_IDENTITY_REQUIRED");
+assert.equal(ctx.getEmployeeRecords(p("parent")).code,"ROLE_NOT_ALLOWED");
+assert.equal(Array.from(ctx.getEmployeeRecords(p("ha")).expedientes,r=>r.expedienteId).join(","),"EA,EP");
+assert.equal(ctx.getEmployeeRecords(p("ha")).expedientes[0].observaciones,"Nota interna A","authorized HR scope retains its permitted record details");
 assert.equal(ctx.getEmployeeRecords(p("emp")).expedientes[0].observaciones,"");
 assert.equal(ctx.submitLeaveVacationRequest(p("bad")).code,"VERIFIED_IDENTITY_REQUIRED");
 assert.equal(ctx.submitLeaveVacationRequest({...p("emp"),expedienteId:"EB",fechaInicio:"2026-12-10",fechaFin:"2026-12-11"}).code,"RESOURCE_NOT_FOUND");assert.equal(rows.SolicitudesVacaciones.length,count);
@@ -43,7 +46,10 @@ assert.equal(ctx.getVacationRequests({...p("ha"),expedienteId:"EB"}).code,"RESOU
 assert.ok(ctx.getLeaveVacationRequests(p("emp")).solicitudes.every(x=>x.expedienteId==="EA"));
 assert.ok(ctx.getLeaveVacationRequests({...p("emp"),userId:"U-OTHER"}).solicitudes.every(x=>x.expedienteId==="EA"),"client userId must not override the signed employee identity");
 assert.equal(ctx.getVacationRequests({...p("emp"),expedienteId:"EB"}).code,"RESOURCE_NOT_FOUND");
-assert.ok(auditEvents.some(event=>event[3]==="UNAUTHORIZED_EMPLOYEE_RESOURCE_ACCESS"),"foreign employee resource probes must be audited");
+const probeEvent=auditEvents.find(event=>event[3]==="UNAUTHORIZED_EMPLOYEE_RESOURCE_ACCESS");
+assert.ok(probeEvent,"foreign employee resource probes must be audited");
+assert.equal(probeEvent[6],"Empleado","audit records the verified role, not a client-supplied role");
+
 assert.ok(auditEvents.every(event=>!JSON.stringify(event[5]||{}).includes("EB")&&!JSON.stringify(event[5]||{}).includes("U-OTHER")),"audit must not persist attacker-supplied target IDs");
 assert.equal(ctx.calculateVacationBalances({...p("ha"),expedienteId:"EA"}).status,"success");
 assert.equal(ctx.calculateVacationBalances({...p("hb"),expedienteId:"EA"}).code,"RESOURCE_NOT_FOUND");
