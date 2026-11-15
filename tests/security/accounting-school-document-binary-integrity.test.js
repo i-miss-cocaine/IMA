@@ -112,7 +112,7 @@ function makeHarness(options={}) {
   assert.equal(verified.documento.integridadVerificada,true);
   assert.equal(verified.documento.sha256Hash,result.sha256Hash);
   assert.equal(verified.documento.versionDocumento,result.versionDocumento);
-  file._setBytes("%PDF-1.4\none byte changed\n%%EOF\n");
+  file._setBytes("%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Name (tampered) >>\nendobj\nstartxref\n9\n%%EOF\n");
   const tampered=h.context.verifySchoolDocumentByCUV({codigoVerificacion:result.codigoVerificacion});
   assert.equal(tampered.status,"error");
   assert.equal(tampered.code,"DOCUMENT_INTEGRITY_MISMATCH");
