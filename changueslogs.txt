@@ -3868,3 +3868,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-15] TASK-130 — C1.759 — Corrección de ayuda para búsqueda de identidad
 - Separada la ayuda de búsqueda de DNI/RNE/otros identificadores de la ayuda de matrícula DNI 13 dígitos, evitando contradicción en Secretaría.
 - Actualizada clave remota y fallback; añadidas aserciones de contrato para impedir regresión.
+
+
+[2026-11-15] TASK-130 — C1.760 — Validación nativa inline y CI
+- Eventos invalid/input/change conectados a mensajes de validación junto al campo, con limpieza al corregir y preservación de la ayuda/ARIA.
+- Añadida prueba DOM para evento invalid en captura y recuperación.
+- Workflow UI Accessibility ampliado para ejecutar el nuevo test y cubrir cambios en formularios/scripts.
+- Ejecución real del workflow no verificable desde el conector; no se declara éxito.
