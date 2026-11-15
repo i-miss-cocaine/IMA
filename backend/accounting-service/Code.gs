@@ -308,7 +308,7 @@ function getVerifiedAccountingDepartmentScope_(payload, ss) {
     departmentIds: departments, institutionWide: institutionWide, activeDepartmentId: activeDepartmentId || null };
 }
 
-function mapMigrationRowToTarget_(row, mapping, schema) {
+function mapMigrationRowToTarget_(row, mapping, schema, sessionToken) {
   var source = row || {}, fields = mapping && mapping.campos || {}, output = {};
   Object.keys(fields).forEach(function(targetField) {
     var sourceField = fields[targetField];
@@ -320,7 +320,8 @@ function mapMigrationRowToTarget_(row, mapping, schema) {
     var resolved = resolveCrossReferenceIdentifier({
       sistemaOrigen: mapping && mapping.sistemaOrigen || "",
       tipoEntidad: mapping && mapping.tipoEntidad || "",
-      idOriginalLegado: legacyId
+      idOriginalLegado: legacyId,
+      sessionToken: String(sessionToken || "")
     });
     if (resolved && resolved.status === "success" && schema && schema.headers && schema.headers[0]) {
       output[schema.headers[0]] = resolved.idNuevoPlataforma;
