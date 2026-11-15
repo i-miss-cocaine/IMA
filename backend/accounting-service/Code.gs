@@ -993,3 +993,6 @@ function doPost(e) {
       message: "No fue posible completar la solicitud." });
   }
 }
+
+// ---------------------------------------------------------------------------
+// ENDPOINTS END
