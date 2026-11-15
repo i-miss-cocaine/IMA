@@ -13140,6 +13140,18 @@ function getUIMetadataCatalog(payload) {
         example: "USR-...",
         source: "cashier-user-id: placeholder USR-..."
       },
+      "matricula.identidad": {
+        label: "Número de identidad / DNI",
+        help: "Escribe el número exactamente como aparece en el documento oficial del estudiante o responsable. No agregues ni elimines dígitos ni uses el código institucional en este campo. Si aparece una posible coincidencia con otra persona, solicita revisión manual antes de vincular registros.",
+        source: "campo de identificación de expediente estudiantil y flujo de vinculación de identidades; sin patrón numérico impuesto por backend"
+      },
+      "matricula.fechaNacimiento": {
+        label: "Fecha de nacimiento",
+        help: "Selecciona la fecha en el calendario y verifica que coincida con el documento oficial del estudiante. El formulario usa el formato de fecha ISO (YYYY-MM-DD).",
+        inputType: "date",
+        format: "YYYY-MM-DD",
+        source: "campo fechaNacimiento de expediente estudiantil"
+      },
       "matricula.anoLectivo": {
         label: "Año lectivo",
         help: "Ingresa el año lectivo al que pertenece la matrícula. El formulario admite años entre 2000 y 2200.",
