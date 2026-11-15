@@ -58,6 +58,8 @@ window.switchTab = function (tab) {
     renderEnrollmentBillingConfigurationModule(container);
   } else if (tab === 'reportes') {
     renderFamilyCreditSalesReconciliationModule(container);
+  } else if (tab === 'migration-import') {
+    renderMigrationImportModule(container);
   } else {
     renderResumenModule(container);
   }
@@ -2709,3 +2711,353 @@ window.handleRecibirTransferencia = function (transferBatchId, itemCodigo, cantD
     })
     .catch(err => alert("Error: " + err.message));
 };
+
+
+// ---------------------------------------------------------------------------
+// Importación institucional: análisis, mapeo y preflight de solo lectura.
+// La persistencia se habilita únicamente después de una confirmación vinculada
+// al hash de previsualización emitido por ACCOUNTING.
+// ---------------------------------------------------------------------------
+let migrationImportState = {
+  workbook: null, file: null, fileName: "", sheetName: "", headers: [],
+  rows: [], dataRowNumbers: [], structural: null, payload: null, preview: null
+};
+
+const MIGRATION_IMPORT_TARGETS = {
+  curso: { sheet: "Cursos", fields: ["Nombre", "Nota", "FechaInicio"], required: ["Nombre"] },
+  estudiante: { sheet: "Estudiantes", fields: ["PersonaID"], required: ["PersonaID"] },
+  empleado: { sheet: "ExpedientesLaborales",
+    fields: ["PersonaId", "UserId", "Puesto", "Departamento", "CentroCosto", "FechaIngreso", "FechaSalida", "EstadoLaboral", "Observaciones"],
+    required: ["Puesto"] }
+};
+
+function migrationImportEscape(value) {
+  return String(value === undefined || value === null ? "" : value)
+    .replace(/[&<>"']/g, function(ch) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+    });
+}
+
+function resetMigrationImportPreview() {
+  migrationImportState.preview = null;
+  migrationImportState.payload = null;
+  var results = document.getElementById("migration-import-results");
+  if (results) results.textContent = "Seleccione un archivo y configure el mapeo para ejecutar la validación.";
+  var commit = document.getElementById("migration-import-commit");
+  if (commit) commit.disabled = true;
+  updateMigrationImportCommitState();
+}
+
+function updateMigrationImportCommitState() {
+  var button = document.getElementById("migration-import-commit");
+  var partial = document.getElementById("migration-import-allow-partial");
+  var preview = migrationImportState.preview;
+  if (!button) return;
+  var valid = !!(preview && preview.status === "success" &&
+    (preview.validForImport === true || (preview.validForPartialImport === true && partial && partial.checked)));
+  button.disabled = !valid;
+}
+
+function renderMigrationImportModule(container) {
+  container.innerHTML = `
+    <section class="space-y-5" aria-labelledby="migration-import-title">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+        <div>
+          <h3 id="migration-import-title" class="text-sm font-black uppercase text-emerald-950">Importación y migración de datos</h3>
+          <p class="mt-1 text-xs text-emerald-800">Previsualización semántica, correspondencia de identidades y revisión de destino. No se escribe hasta confirmar.</p>
+        </div>
+        <span class="rounded-lg bg-white px-3 py-2 text-[10px] font-black uppercase text-emerald-800">ACCOUNTING · Preflight</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div><label for="migration-import-source" class="mb-1 block text-xs font-bold text-slate-700">Sistema de origen</label>
+          <input id="migration-import-source" class="w-full rounded-xl border border-slate-300 p-3 text-sm" placeholder="Nombre exacto del sistema legado"></div>
+        <div><label for="migration-import-entity" class="mb-1 block text-xs font-bold text-slate-700">Tipo de entidad</label>
+          <select id="migration-import-entity" class="w-full rounded-xl border border-slate-300 p-3 text-sm">
+            <option value="curso">Cursos</option><option value="estudiante">Estudiantes</option><option value="empleado">Expedientes laborales</option>
+          </select></div>
+        <div id="migration-import-department-wrap" class="hidden md:col-span-2">
+          <label for="migration-import-department" class="mb-1 block text-xs font-bold text-slate-700">Departamento activo (ID institucional)</label>
+          <input id="migration-import-department" class="w-full rounded-xl border border-slate-300 p-3 text-sm" placeholder="ID del departamento autorizado">
+        </div>
+        <div class="md:col-span-2"><label for="migration-import-file" class="mb-1 block text-xs font-bold text-slate-700">Libro Excel (.xlsx, máximo 10 MB)</label>
+          <input id="migration-import-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="block w-full rounded-xl border border-slate-300 p-3 text-sm">
+          <p class="mt-1 text-[11px] text-slate-500">Los archivos se analizan en el navegador y sus filas se envían a ACCOUNTING para validación de identidad, permisos, estructura y destino.</p>
+        </div>
+        <div><label for="migration-import-sheet" class="mb-1 block text-xs font-bold text-slate-700">Hoja</label><select id="migration-import-sheet" class="w-full rounded-xl border border-slate-300 p-3 text-sm" disabled><option value="">Seleccione un libro</option></select></div>
+        <div><label for="migration-import-header" class="mb-1 block text-xs font-bold text-slate-700">Fila de encabezados</label><select id="migration-import-header" class="w-full rounded-xl border border-slate-300 p-3 text-sm" disabled></select></div>
+      </div>
+      <div id="migration-import-mapping" class="hidden rounded-2xl border border-slate-200 p-4 space-y-3">
+        <div><h4 class="text-xs font-black uppercase text-slate-800">Correspondencia de columnas</h4><p class="mt-1 text-[11px] text-slate-500">Seleccione la columna de identificador legado y asigne las columnas de origen a los campos de destino.</p></div>
+        <div><label for="migration-import-identifier" class="mb-1 block text-xs font-bold text-slate-700">Identificador legado *</label><select id="migration-import-identifier" class="w-full rounded-lg border border-slate-300 p-2 text-sm"></select></div>
+        <div id="migration-import-field-mapping" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button id="migration-import-preview" type="button" disabled class="rounded-xl bg-indigo-700 px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40">Validar y previsualizar</button>
+        <label class="flex items-center gap-2 text-xs text-slate-700"><input id="migration-import-allow-partial" type="checkbox" class="rounded border-slate-300"> Permitir importación parcial de filas válidas</label>
+        <button id="migration-import-commit" type="button" disabled class="rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40">Confirmar importación</button>
+      </div>
+      <div id="migration-import-results" class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700" role="status" aria-live="polite">Seleccione un archivo y configure el mapeo para ejecutar la validación.</div>
+    </section>`;
+
+  const entity = document.getElementById("migration-import-entity");
+  const fileInput = document.getElementById("migration-import-file");
+  const sheetSelect = document.getElementById("migration-import-sheet");
+  const headerSelect = document.getElementById("migration-import-header");
+  const sourceInput = document.getElementById("migration-import-source");
+  const departmentWrap = document.getElementById("migration-import-department-wrap");
+  const mappingWrap = document.getElementById("migration-import-mapping");
+  const previewButton = document.getElementById("migration-import-preview");
+  const commitButton = document.getElementById("migration-import-commit");
+  const partialToggle = document.getElementById("migration-import-allow-partial");
+
+  function resetPreviewOnEdit() {
+    resetMigrationImportPreview();
+    updateMigrationImportPreviewButton();
+  }
+  function updateMigrationImportPreviewButton() {
+    if (previewButton) previewButton.disabled = !(migrationImportState.rows.length && sourceInput.value.trim() &&
+      document.getElementById("migration-import-identifier")?.value &&
+      document.querySelectorAll("#migration-import-field-mapping select[data-target-field]").length);
+  }
+  function renderFieldMapping() {
+    const host = document.getElementById("migration-import-field-mapping");
+    const identifier = document.getElementById("migration-import-identifier");
+    const target = MIGRATION_IMPORT_TARGETS[entity.value] || MIGRATION_IMPORT_TARGETS.curso;
+    if (!host || !identifier) return;
+    const headers = migrationImportState.headers;
+    identifier.innerHTML = '<option value="">Seleccione identificador legado</option>' +
+      headers.map(header => '<option value="' + migrationImportEscape(header) + '">' + migrationImportEscape(header) + '</option>').join("");
+    if (headers.length) identifier.value = headers[0];
+    host.innerHTML = target.fields.map(field => {
+      const preferred = headers.indexOf(field) >= 0 ? field : "";
+      return '<div><label class="mb-1 block text-xs font-bold text-slate-700" for="migration-map-' + migrationImportEscape(field) + '">' +
+        migrationImportEscape(field) + (target.required.indexOf(field) >= 0 ? " *" : "") + '</label><select data-target-field="' +
+        migrationImportEscape(field) + '" id="migration-map-' + migrationImportEscape(field) +
+        '" class="w-full rounded-lg border border-slate-300 p-2 text-sm"><option value="">— No mapear —</option>' +
+        headers.map(header => '<option value="' + migrationImportEscape(header) + '">' + migrationImportEscape(header) + '</option>').join("") +
+        '</select></div>';
+    }).join("");
+    target.fields.forEach(field => {
+      const select = host.querySelector('[data-target-field="' + field.replace(/"/g, '\"') + '"]');
+      if (select) select.value = headers.indexOf(field) >= 0 ? field : "";
+    });
+    host.querySelectorAll("select").forEach(select => select.addEventListener("change", resetPreviewOnEdit));
+    identifier.addEventListener("change", resetPreviewOnEdit, { once: true });
+    if (mappingWrap) mappingWrap.classList.toggle("hidden", !headers.length);
+    if (departmentWrap) departmentWrap.classList.toggle("hidden", entity.value !== "empleado");
+    updateMigrationImportPreviewButton();
+  }
+  function buildWorkbookRows() {
+    const workbook = migrationImportState.workbook;
+    const sheetName = sheetSelect.value;
+    const sheet = workbook && workbook.Sheets[sheetName];
+    if (!sheet) { migrationImportState.rows = []; return; }
+    const matrix = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: "", blankrows: true });
+    const headerIndex = Math.max(0, Number(headerSelect.value || 0));
+    const headerRow = matrix[headerIndex] || [];
+    const headers = headerRow.map(value => String(value === undefined || value === null ? "" : value).trim());
+    migrationImportState.headers = headers.filter(Boolean);
+    const rows = [], rowNumbers = [], blankRows = [], repeatedHeaderRows = [];
+    for (let i = headerIndex + 1; i < matrix.length; i++) {
+      const values = matrix[i] || [];
+      const empty = values.every(value => value === "" || value === null || value === undefined);
+      if (empty) { blankRows.push(i + 1); continue; }
+      if (headers.length && headers.every((header, index) => String(values[index] || "").trim() === header)) {
+        repeatedHeaderRows.push(i + 1); continue;
+      }
+      const row = {};
+      headers.forEach((header, index) => { if (header) row[header] = values[index] === undefined ? "" : values[index]; });
+      rows.push(row); rowNumbers.push(i + 1);
+    }
+    const normalized = headers.map(value => value.toLowerCase().replace(/\s+/g, " "));
+    const duplicates = normalized.filter((value, index) => value && normalized.indexOf(value) !== index);
+    const typeInconsistencies = [];
+    headers.forEach((header, index) => {
+      const types = {};
+      rows.forEach(row => {
+        const value = row[header];
+        if (value === "" || value === null || value === undefined) return;
+        const typeName = value instanceof Date ? "date" : typeof value;
+        types[typeName] = true;
+      });
+      if (Object.keys(types).length > 1) typeInconsistencies.push({ column: header, types: Object.keys(types) });
+    });
+    const unresolvedFormulas = Object.keys(sheet).filter(address => !address.startsWith("!") &&
+      sheet[address] && sheet[address].f && (sheet[address].v === undefined || sheet[address].v === null || sheet[address].v === ""));
+    const merges = (sheet["!merges"] || []).map(range => XLSX.utils.encode_range(range));
+    const sheetMeta = workbook.Workbook && Array.isArray(workbook.Workbook.Sheets) ?
+      workbook.Workbook.Sheets.find(item => item.name === sheetName) : null;
+    const visibleSheets = workbook.SheetNames.filter(name => {
+      const meta = workbook.Workbook && Array.isArray(workbook.Workbook.Sheets) ?
+        workbook.Workbook.Sheets.find(item => item.name === name) : null;
+      return !(meta && Number(meta.Hidden || 0) > 0);
+    });
+    migrationImportState.rows = rows;
+    migrationImportState.dataRowNumbers = rowNumbers;
+    migrationImportState.sheetName = sheetName;
+    migrationImportState.structural = {
+      selectedSheet: sheetName, visibleSheetCount: visibleSheets.length,
+      hiddenSheets: workbook.SheetNames.filter(name => {
+        const meta = workbook.Workbook && Array.isArray(workbook.Workbook.Sheets) ?
+          workbook.Workbook.Sheets.find(item => item.name === name) : null;
+        return !!(meta && Number(meta.Hidden || 0) > 0);
+      }),
+      headerRowIndex: headerIndex, dataRowNumbers: rowNumbers, blankRows: blankRows,
+      duplicateHeaders: duplicates, repeatedHeaderRows: repeatedHeaderRows,
+      unresolvedFormulas: unresolvedFormulas, mergedCells: merges,
+      typeInconsistencies: typeInconsistencies
+    };
+    renderFieldMapping();
+    resetPreviewOnEdit();
+  }
+
+  entity.addEventListener("change", function() { renderFieldMapping(); resetPreviewOnEdit(); });
+  sourceInput.addEventListener("input", resetPreviewOnEdit);
+  document.getElementById("migration-import-department")?.addEventListener("input", resetPreviewOnEdit);
+  partialToggle.addEventListener("change", updateMigrationImportCommitState);
+  sheetSelect.addEventListener("change", buildWorkbookRows);
+  headerSelect.addEventListener("change", buildWorkbookRows);
+  fileInput.addEventListener("change", async function() {
+    resetPreviewOnEdit();
+    const file = fileInput.files && fileInput.files[0];
+    migrationImportState = { workbook: null, file: null, fileName: "", sheetName: "", headers: [], rows: [], dataRowNumbers: [], structural: null, payload: null, preview: null };
+    sheetSelect.replaceChildren(); headerSelect.replaceChildren();
+    if (!file) return;
+    if (file.size <= 0 || file.size > 10 * 1024 * 1024 || !/\.xlsx$/i.test(file.name)) {
+      alert("Seleccione un archivo .xlsx válido de hasta 10 MB.");
+      fileInput.value = ""; return;
+    }
+    if (!window.XLSX) { alert("La biblioteca de Excel no está disponible."); return; }
+    try {
+      const bytes = await file.arrayBuffer();
+      const signature = new Uint8Array(bytes.slice(0, 4));
+      if (signature.length < 4 || signature[0] !== 0x50 || signature[1] !== 0x4b) throw new Error("El archivo no contiene una cabecera ZIP válida.");
+      const workbook = XLSX.read(bytes, { type: "array", cellDates: true, cellFormula: true, cellNF: true });
+      if (!Array.isArray(workbook.SheetNames) || !workbook.SheetNames.length) throw new Error("El libro no contiene hojas.");
+      migrationImportState.workbook = workbook;
+      migrationImportState.file = file;
+      migrationImportState.fileName = file.name;
+      sheetSelect.disabled = false;
+      sheetSelect.innerHTML = '<option value="">Seleccione hoja</option>' + workbook.SheetNames.map(name =>
+        '<option value="' + migrationImportEscape(name) + '">' + migrationImportEscape(name) + '</option>').join("");
+      headerSelect.disabled = false;
+      for (let row = 0; row < 20; row++) {
+        const option = document.createElement("option"); option.value = String(row); option.textContent = "Fila " + (row + 1);
+        headerSelect.appendChild(option);
+      }
+      const visible = workbook.SheetNames.filter(name => {
+        const meta = workbook.Workbook && Array.isArray(workbook.Workbook.Sheets) ? workbook.Workbook.Sheets.find(item => item.name === name) : null;
+        return !(meta && Number(meta.Hidden || 0) > 0);
+      });
+      if (visible.length === 1) sheetSelect.value = visible[0];
+      if (visible.length === 1) buildWorkbookRows();
+      else {
+        const results = document.getElementById("migration-import-results");
+        if (results) results.textContent = "Seleccione manualmente la hoja que desea validar.";
+      }
+    } catch (error) {
+      migrationImportState.workbook = null;
+      alert("No se pudo abrir el libro: " + String(error && error.message || error));
+    }
+  });
+
+  previewButton.addEventListener("click", async function() {
+    if (!window.fetchApi || !migrationImportState.rows.length) return;
+    const target = MIGRATION_IMPORT_TARGETS[entity.value];
+    const mapping = {};
+    document.querySelectorAll("#migration-import-field-mapping select[data-target-field]").forEach(select => {
+      if (select.value) mapping[select.dataset.targetField] = select.value;
+    });
+    const missing = target.required.filter(field => !mapping[field]);
+    if (missing.length) { alert("Debe mapear los campos obligatorios: " + missing.join(", ")); return; }
+    const identifier = document.getElementById("migration-import-identifier").value;
+    if (!identifier) { alert("Seleccione el identificador legado."); return; }
+    if (!sourceInput.value.trim()) { alert("Indique el sistema de origen."); return; }
+    if (entity.value === "empleado" && !document.getElementById("migration-import-department").value.trim()) {
+      alert("Indique el ID del departamento activo."); return;
+    }
+    const payload = {
+      sistemaOrigen: sourceInput.value.trim(), tipoEntidad: entity.value,
+      destinoModulo: target.sheet, nombreArchivo: migrationImportState.fileName,
+      hojaSeleccionada: migrationImportState.sheetName,
+      columnaMapeo: { identificador: identifier, campos: mapping },
+      filasData: migrationImportState.rows,
+      analisisEstructural: migrationImportState.structural
+    };
+    if (entity.value === "empleado") payload.activeDepartmentId = document.getElementById("migration-import-department").value.trim();
+    previewButton.disabled = true;
+    previewButton.textContent = "Validando…";
+    const results = document.getElementById("migration-import-results");
+    if (results) results.textContent = "ACCOUNTING está validando permisos, identidades, referencias y registros de destino…";
+    try {
+      const response = await fetchApi("ACCOUNTING", "validateImportPreview", payload);
+      migrationImportState.payload = payload;
+      migrationImportState.preview = response;
+      renderMigrationImportResult(response);
+    } catch (error) {
+      migrationImportState.preview = null;
+      if (results) results.textContent = "No se pudo validar: " + String(error && error.message || error);
+    } finally {
+      previewButton.textContent = "Validar y previsualizar";
+      updateMigrationImportPreviewButton();
+      updateMigrationImportCommitState();
+    }
+  });
+
+  commitButton.addEventListener("click", async function() {
+    const preview = migrationImportState.preview;
+    if (!preview || !migrationImportState.payload || !preview.previewHash) return;
+    const allowPartial = !!partialToggle.checked;
+    if (preview.validForImport !== true && !(allowPartial && preview.validForPartialImport === true)) return;
+    if (!confirm("La validación terminó. ¿Confirma la escritura de los registros válidos en el servicio propietario?")) return;
+    commitButton.disabled = true;
+    commitButton.textContent = "Importando…";
+    try {
+      const response = await fetchApi("ACCOUNTING", "importDataWithColumnMapping", Object.assign({}, migrationImportState.payload, {
+        previewConfirmed: true, previewHash: preview.previewHash, allowPartialImport: allowPartial
+      }));
+      const results = document.getElementById("migration-import-results");
+      if (results) results.textContent = response && response.status === "success" ?
+        "Importación completada. Registros insertados/actualizados: " + Number(response.registrosImportados || 0) :
+        "La importación no se completó: " + String(response && (response.message || response.code) || "Error desconocido");
+      migrationImportState.preview = null;
+      migrationImportState.payload = null;
+    } catch (error) {
+      const results = document.getElementById("migration-import-results");
+      if (results) results.textContent = "La importación fue rechazada o no pudo completarse: " + String(error && error.message || error);
+    } finally {
+      commitButton.textContent = "Confirmar importación";
+      updateMigrationImportCommitState();
+    }
+  });
+  renderFieldMapping();
+}
+
+function renderMigrationImportResult(response) {
+  const host = document.getElementById("migration-import-results");
+  if (!host) return;
+  if (!response || response.status !== "success") {
+    host.innerHTML = '<p class="font-bold text-rose-700">Validación rechazada: ' +
+      migrationImportEscape(response && (response.message || response.code) || "Respuesta inválida") + '</p>';
+    return;
+  }
+  const errors = Array.isArray(response.errores) ? response.errores : [];
+  const warnings = Array.isArray(response.advertencias) ? response.advertencias : [];
+  const valid = Number(response.filasValidas || 0), failed = Number(response.filasFallidas || 0);
+  let html = '<div class="space-y-3"><div class="grid grid-cols-2 md:grid-cols-4 gap-2">' +
+    [['Filas', response.totalFilas], ['Válidas', valid], ['Con errores', failed], ['Advertencias', warnings.length]].map(item =>
+      '<div class="rounded-xl border border-slate-200 bg-white p-3"><div class="text-[10px] font-bold uppercase text-slate-500">' +
+      migrationImportEscape(item[0]) + '</div><div class="mt-1 text-lg font-black text-slate-900">' + migrationImportEscape(item[1] || 0) + '</div></div>').join("") +
+    '</div><p class="text-xs font-bold ' + (response.validForImport ? "text-emerald-700" : response.validForPartialImport ? "text-amber-700" : "text-rose-700") + '">' +
+    (response.validForImport ? "Preflight aprobado: listo para confirmar." : response.validForPartialImport ? "Hay filas válidas y filas rechazadas. La importación parcial requiere autorización explícita." : "La importación está bloqueada hasta corregir los errores.") + '</p>';
+  if (errors.length) html += '<div><h4 class="mb-1 text-xs font-black uppercase text-rose-700">Errores</h4><ul class="space-y-1 text-xs">' +
+    errors.slice(0, 80).map(item => '<li class="rounded-lg bg-rose-50 p-2 text-rose-800">' +
+      migrationImportEscape(item.codigo || item.error || "ERROR") + (item.fila ? " · fila " + migrationImportEscape(item.fila) : "") +
+      (item.mensaje ? " · " + migrationImportEscape(item.mensaje) : "") + '</li>').join("") + '</ul></div>';
+  if (warnings.length) html += '<div><h4 class="mb-1 text-xs font-black uppercase text-amber-700">Advertencias</h4><ul class="space-y-1 text-xs">' +
+    warnings.slice(0, 80).map(item => '<li class="rounded-lg bg-amber-50 p-2 text-amber-800">' +
+      migrationImportEscape(item.codigo || "WARNING") + " · " + migrationImportEscape(item.mensaje || "") + '</li>').join("") + '</ul></div>';
+  if (response.previewHash) html += '<p class="break-all text-[10px] text-slate-500">Hash de previsualización: ' + migrationImportEscape(response.previewHash) + '</p>';
+  html += '</div>';
+  host.innerHTML = html;
+}
