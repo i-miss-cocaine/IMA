@@ -480,6 +480,9 @@ function buildImportPreview_(payload) {
   if (!schema || !sourceName || !Array.isArray(input.filasData) || !input.filasData.length) {
     return { status: "error", code: "IMPORT_SCHEMA_OR_DATA_INVALID", validForImport: false, errores: [] };
   }
+  if (String(input.destinoModulo || "").trim().toUpperCase() !== String(schema.service || "").trim().toUpperCase()) {
+    return { status: "error", code: "MIGRATION_DESTINATION_MISMATCH", validForImport: false, errores: [] };
+  }
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var departmentPreflight = buildAccountingDepartmentalImportPreflight_(input, ss, schema);
   if (!departmentPreflight || departmentPreflight.valid !== true) {
@@ -728,7 +731,10 @@ const ACCOUNTING_IDENTITY_MAPPING_HEADERS_=["idMapeo", "sistemaOrigen", "tipoEnt
 function importDataWithColumnMapping(payload) {
   var input = payload || {};
   var preview = buildImportPreview_(input);
-  if (preview.status !== "success" || !input.previewConfirmed || !input.previewHash ||
+  if (!preview || preview.status !== "success") {
+    throw new Error(String(preview && preview.code || "IMPORT_PREVIEW_INVALID_OR_STALE"));
+  }
+  if (!input.previewConfirmed || !input.previewHash ||
       String(input.previewHash) !== String(preview.previewHash)) {
     throw new Error("IMPORT_PREVIEW_INVALID_OR_STALE");
   }
