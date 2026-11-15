@@ -3912,3 +3912,7 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Añadida lectura referencial de documentos laborales entre departamentos mediante HMAC, autorización del servicio USER y campos/documentos permitidos; no se exponen URLs ni observaciones privadas.
 - Contratos V8 aislados PASS: semantic preflight, scope (40 escenarios), reference consumer (29 escenarios), academic binary validation y teacher Excel preflight.
 - Node CLI nativo no ejecutado; ima/department-scope-contract permanece FAIL por APIs de RR. HH./nómina/recibos ausentes en el servicio ACCOUNTING de línea base; ima/department-reference-consumers SUCCESS en el HEAD previo. TASK-133 abierto por UI, destino remoto, OCR y beta.
+
+[2026-11-15] TASK-133 — C1.765 — Prueba de idempotencia de reintentos
+- Se amplió accounting-import-semantic-preflight.test.js para repetir un lote parcial confirmado y verificar que cada fila conserva el mismo idempotencyKey entre reintentos.
+- El contrato pasó en harness V8 aislado; no se declara Node CLI ni GitHub Actions SUCCESS para el HEAD actual.
