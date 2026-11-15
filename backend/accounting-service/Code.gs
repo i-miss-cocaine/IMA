@@ -61,7 +61,7 @@ function requestAccountingTrustedOwnerSnapshot_(service, payload) {
   var properties = PropertiesService.getScriptProperties();
   var endpoint = String(properties.getProperty(propertyName) || "").trim();
   var secret = String(properties.getProperty("IMA_MIGRATION_HMAC_SECRET") || "").trim();
-  if (!/^https:\/\/[^/]+\/exec$/i.test(endpoint) || secret.length < 32 || typeof UrlFetchApp === "undefined") {
+  if (!isAccountingTrustedAppsScriptEndpoint_(endpoint) || secret.length < 32 || typeof UrlFetchApp === "undefined") {
     return { status: "error", code: "MIGRATION_OWNER_SERVICE_NOT_CONFIGURED" };
   }
   var now = Date.now();
@@ -736,7 +736,7 @@ function authorizeAccountingDepartmentReferenceReadViaUser_(payload, resourceId,
   var allowedFields = ["categoriaDoc", "fechaCarga", "estadoVisibilidad"];
   var fields = Array.isArray(requestedFields) ? requestedFields.slice() : [];
   var documents = Array.isArray(requestedDocumentIds) ? requestedDocumentIds.slice() : [];
-  if (!/^https:\/\/[^/]+\/exec$/i.test(endpoint) || secret.length < 32 ||
+  if (!isAccountingTrustedAppsScriptEndpoint_(endpoint) || secret.length < 32 ||
       !fields.length || !documents.length ||
       fields.some(function(field, index) { return allowedFields.indexOf(field) === -1 || fields.indexOf(field) !== index; }) ||
       documents.some(function(id, index) { return !String(id || "").trim() || documents.indexOf(id) !== index; })) {
@@ -902,6 +902,14 @@ const MIGRATION_WRITER_JOURNAL_HEADERS_ = ["IdempotencyKey","TipoEntidad","IdNue
 const MIGRATION_WRITER_JOURNAL_SHEET_ = "MigracionEscrituras_ACCOUNTING";
 const ACCOUNTING_IMPORT_ROW_DEPARTMENT_SNAPSHOT_HEADERS_ = ["ImportBatchID","SnapshotID","RowID","InstitutionID","Domain","DepartmentID","Status","VerifiedBy","VerifiedAt","SnapshotVersion"];
 
+function isAccountingTrustedAppsScriptEndpoint_(value) {
+  var endpoint = String(value || "").trim();
+  var standardDeployment = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/i.test(endpoint);
+  var domainDeployment = /^https:\/\/script\.google\.com\/a\/macros\/[A-Za-z0-9.-]+\/s\/[A-Za-z0-9_-]+\/exec$/i.test(endpoint);
+  var configuredProxy = /^https:\/\/[^/]+\/exec$/i.test(endpoint);
+  return standardDeployment || domainDeployment || configuredProxy;
+}
+
 function accountingComputeHmacSignature_(message, secret) {
   var bytes = Utilities.computeHmacSignature(Utilities.MacAlgorithm.HMAC_SHA_256, String(message), String(secret));
   return bytes.map(function(byte) { return ("0" + (byte & 255).toString(16)).slice(-2); }).join("");
@@ -911,7 +919,7 @@ function requestAccountingUserAuthorization_(action, payload) {
   var properties = PropertiesService.getScriptProperties();
   var endpoint = String(properties.getProperty("IMA_USER_SERVICE_URL") || "").trim();
   var secret = String(properties.getProperty("IMA_MIGRATION_HMAC_SECRET") || "").trim();
-  if (!/^https:\/\/[^/]+\/exec$/i.test(endpoint) || secret.length < 32 ||
+  if (!isAccountingTrustedAppsScriptEndpoint_(endpoint) || secret.length < 32 ||
       typeof UrlFetchApp === "undefined") return { status: "error", code: "ACCOUNTING_AUTH_SERVICE_NOT_CONFIGURED" };
   var now = Date.now();
   var requestId = "REQ-" + now + "-" + Utilities.getUuid().replace(/-/g, "").slice(0, 12);
@@ -987,7 +995,7 @@ function sendMigrationOwnerRequest_(service, action, payload) {
   var endpointKey = target === "ACADEMIC" ? "IMA_ACADEMIC_SERVICE_URL" : "IMA_USER_SERVICE_URL";
   var endpoint = String(properties.getProperty(endpointKey) || "").trim();
   var signingSecret = String(properties.getProperty("IMA_MIGRATION_HMAC_SECRET") || "").trim();
-  if (!/^https:\/\/[^/]+\/exec$/i.test(endpoint) || signingSecret.length < 32 ||
+  if (!isAccountingTrustedAppsScriptEndpoint_(endpoint) || signingSecret.length < 32 ||
       typeof createInterServiceEnvelope !== "function" || typeof UrlFetchApp === "undefined") {
     throw new Error("MIGRATION_OWNER_SERVICE_NOT_CONFIGURED");
   }
