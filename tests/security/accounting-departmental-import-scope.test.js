@@ -44,6 +44,13 @@ const claims = { signed: { userId: "U-1", role: "Director", membershipId: "MEM-1
 const context = {
   SPREADSHEET_ID: "TEST", MIGRATION_OWNER_SCHEMAS_: { empleado: schema },
   verifySessionToken: token => claims[token] || null,
+  requestAccountingUserAuthorization_: (action, payload) => {
+    const claim = claims[payload && payload.sessionToken];
+    if (!claim) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+    if (action === "authorizeAccountingImport" && !institutionalImportPermission) return { status: "error", code: "IMPORT_PERMISSION_DENIED" };
+    return { status: "success", authorized: true, importPermissionVerified: action === "authorizeAccountingImport",
+      userId: claim.userId, role: claim.role, membershipId: claim.membershipId, institutionId: claim.institutionId };
+  },
   PropertiesService: { getScriptProperties: () => ({ getProperty: key => key === "IMA_INSTITUTION_ID" ? "INST-1" : null }) },
   SpreadsheetApp: { openById: () => spreadsheet },
   resolveInternalResponsibilityForRoleScope_: () => ({ responsibilityId: "RESP-1" }),
