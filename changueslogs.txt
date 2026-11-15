@@ -3939,3 +3939,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - TASK-143 se alinea con prerrequisitos F40-Task01 (ACL/ABAC/HMAC/inventario), no con F40-Task04 de firmas.
 - TASK-144 se alinea con F40-Task02 (SHA-256): F34-Task04, F39-Task02, F29-Task11/15 y F27-Task03; se elimina dependencia circular con F40-Task04.
 - Auditoría Fase 40 actualizada: F40-Task02 parcial con evidencia Academic/User C1.769 y brechas en Accounting, recibos, documentos escolares y backups.
+
+
+[2026-11-15] TASK-133 — C1.774 — Escrituras protegidas, snapshots y accesibilidad
+- ACCOUNTING: escritor propietario con autorización institucional, allowlist, journal aislado, ScriptLock, idempotencia, snapshots before/after, neutralización de fórmulas y compensación; el snapshot/hash del destino se revalida dentro del lock.
+- ACADEMIC: inserciones de expedientes estudiantiles requieren snapshot verificado; se rechazan destinos no verificables antes de escribir.
+- Docente: diálogo de revisión Excel con foco inicial/retorno, trampa Tab/Shift+Tab, Escape y metadatos accesibles.
+- Accounting Import Preflight Contract 43771840519 SUCCESS con Node 24.22.2; contratos y sintaxis de servicios/controladores PASS. UI Accessibility and Metadata Contract 43771708165 SUCCESS.
+- Pendientes de TASK-133: PDF NO_ANALIZADA/streams comprimidos, OCR real/Drive Advanced Service v2, beta Apps Script/Drive/Sheets, datos anonimizados y accesibilidad real. Node CLI local no ejecutado por ausencia de checkout; TASK-133 sigue En ejecución.
