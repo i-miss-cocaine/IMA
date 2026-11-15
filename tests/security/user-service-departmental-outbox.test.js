@@ -237,6 +237,10 @@ assert.equal(retried.status, "success");
 assert.equal(retried.estadoDespacho, "ACEPTADO_POR_PLATAFORMA");
 const retriedAgain = context.retryDepartmentalDocumentDelivery({ _verifiedUserId: "SEC-1", _verifiedRole: "Secretaría", deliveryId: failedDispatch.deliveryId });
 assert.equal(retriedAgain.idempotent, true);
+const retryHistoryRow = store.EntregasDocumentales.rows.find(row => row[headers.indexOf("EntregaID")] === failedDispatch.deliveryId);
+const retryHistory = JSON.parse(retryHistoryRow[headers.indexOf("HistorialEventosJSON")]);
+assert.ok(retryHistory.some(event => event.action === "DISPATCH_FAILED"));
+assert.ok(retryHistory.some(event => event.action === "DISPATCH_ACCEPTED_BY_PLATFORM"));
 
 const expired = context.registerDepartmentalDocumentDelivery(senderPayload({ documentoId: "DOC-3", solicitudId: "SOL-3", idempotencyKey: "IDEM-DELIVERY-003", expirationDays: 1 }));
 assert.equal(expired.status, "success");
@@ -306,6 +310,8 @@ assert.equal(autoOpen.status, "success");
 assert.equal(autoOpen.modalidadAcuse, "AUTOMATICO_POR_LECTURA");
 assert.equal(autoOpen.estadoAcuse, "RECIBIDO_AUTOMATICO_POR_LECTURA");
 assert.match(autoOpen.advertencia, /no equivale a firma electrónica avanzada/);
+const autoRow = store.EntregasDocumentales.rows.find(row => row[idIndex] === autoDelivery.deliveryId);
+assert.equal(autoRow[headers.indexOf("FechaConfirmacion")], "", "automatic read mode must not forge explicit confirmation timestamp");
 assert.equal(context.getDocumentDeliveryReceiptMode_(ss, "INST-2"), "EXPLICITO_CLIC_CONFIRMACION");
 
 console.log("PASS: departmental document outbox, scoped delivery, verified opening, explicit receipt, expiry, revocation, idempotency and integrity.");
