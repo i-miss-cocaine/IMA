@@ -3398,6 +3398,7 @@
 - **Dependencias:** F39-Task03.
 - **Estado:** [ ] Pendiente
 
+- **Bloqueo de dependencias C1.767:** el Plan Maestro declara TASK-134 dependiente de F39-Task03; la auditoría F39-Task03 depende de F39-Task02; F39-Task02 es la capacidad SHA-256 de deduplicación que implementa TASK-134. El grafo forma un ciclo. No se modifica el Plan Maestro ni se invierte el orden sin una corrección trazable de su fuente.
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 5897-5928; clave TASK-135; asignación única: Secretaria -->
 
 ---
