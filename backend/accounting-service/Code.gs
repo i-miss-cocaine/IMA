@@ -308,7 +308,7 @@ function importDataWithColumnMapping(payload) {
       runId, String(input.nombreArchivo || ""), String(input.sistemaOrigen || ""),
       String(input.tipoEntidad || ""), String(input.destinoModulo || ""), 0,
       new Date(), JSON.stringify(warnings), JSON.stringify(errors),
-      preview.previewHash, "ROLLED_BACK", authUserForMigration_(input)
+      preview.previewHash, "ROLLED_BACK", (actor.userId || "")
     ]);
     return { status: "error", estado: "rolled_back", registrosEscritos: 0, errores: errors, runId: runId };
   }
