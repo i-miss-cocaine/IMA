@@ -141,7 +141,7 @@ vm.runInNewContext(accountingFns.join("\n") + "\nthis.api = { auth: getVerifiedA
   const malformed = accountingRuntime.api.post({ postData: { contents: "{bad" } });
   assert.equal(JSON.parse(malformed.value).code, "INTERNAL_ERROR");
   const safeError = accountingRuntime.api.post({ postData: { contents: JSON.stringify({ action: "validateImportPreview", payload: { sessionToken: "THROW" } }) } });
-  assert.equal(JSON.parse(safeError.value).code, "INTERNAL_SECRET_PATH");
+  assert.equal(JSON.parse(safeError.value).code, "INTERNAL_ERROR");
   assert.equal(JSON.parse(safeError.value).message, "No fue posible completar la solicitud.");
 }
 
