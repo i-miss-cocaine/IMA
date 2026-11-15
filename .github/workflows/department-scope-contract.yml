@@ -79,6 +79,7 @@ on:
       - teacher-dashboard.html
       - js/teacher.js
       - tests/security/user-service-departmental-outbox.test.js
+      - tests/security/user-service-legacy-document-inventory.test.js
       - tests/security/user-service-workflow-notifications.test.js
       - tests/security/user-service-ui-metadata.test.js
       - tests/security/ui-common-permanent-help.test.js
@@ -151,6 +152,8 @@ jobs:
         run: node tests/security/academic-teacher-justification-abac.test.js
       - name: Run departmental document outbox, receipt and integrity contract
         run: node tests/security/user-service-departmental-outbox.test.js
+      - name: Run scoped legacy document inventory and migration history contract
+        run: node tests/security/user-service-legacy-document-inventory.test.js
       - name: Run reactive workflow notification privacy, deduplication and concurrency contract
         run: node tests/security/user-service-workflow-notifications.test.js
       - name: Run versioned UI metadata catalog contract
