@@ -8029,6 +8029,11 @@ window.reviewOvertimeAction = function(overtimeId, accion) {
         document.getElementById('stfile-codigo').value = data.codigoEstudiante || data.userId || '';
         document.getElementById('stfile-identificacion').value = data.identificacion || data.dni || '';
         document.getElementById('stfile-fecha-nacimiento').value = data.fechaNacimiento ? data.fechaNacimiento.split('T')[0] : '';
+        var identityHelpField = document.getElementById('stfile-identificacion');
+        var birthDateHelpField = document.getElementById('stfile-fecha-nacimiento');
+        if (identityHelpField) identityHelpField.setAttribute('data-ui-help-key', 'matricula.identidad');
+        if (birthDateHelpField) birthDateHelpField.setAttribute('data-ui-help-key', 'matricula.fechaNacimiento');
+        if (window.applyPermanentFieldHelp) window.applyPermanentFieldHelp(document);
         document.getElementById('stfile-nacionalidad').value = data.nacionalidad || '';
         document.getElementById('stfile-estado-expediente').value = data.estadoExpediente || data.estado || 'Activo';
         document.getElementById('stfile-direccion').value = data.direccion || '';
