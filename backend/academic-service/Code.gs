@@ -949,7 +949,7 @@ function getTrustedAcademicMigrationTargetExistenceSnapshot_(payload) {
       existing.push(id);
       var item = {};
       headers.forEach(function(header, column) { if (header) item[header] = values[i][column]; });
-      targetRows.push(item);
+      targetRows.push({ ExpedienteID: id, __rowHash: migrationHash_(migrationStableJson_(item)) });
     }
   }
   return { status: "success", verified: true, service: "ACADEMIC", sheet: "ExpedientesEstudiantes",
