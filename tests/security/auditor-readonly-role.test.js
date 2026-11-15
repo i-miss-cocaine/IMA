@@ -81,6 +81,17 @@ assert.equal(academicPermissionContext.check("deleteStudentDocument", { sessionT
   "dynamic permissions and delegations cannot elevate the Auditor beyond the read-only allowlist");
 assert.match(user.source,/if \(String\(claims\.role\) === "Auditor"\) return \{ status: "error", code: "IMPORT_PERMISSION_DENIED" \}/,
   "trusted ACCOUNTING authorization explicitly denies Auditor imports");
+const trustedHandlerContext = {
+  PropertiesService: { getScriptProperties: () => ({ getProperty: () => "trusted-migration-secret-at-least-32-characters" }) },
+  verifyInterServiceEnvelope: () => ({ sourceService: "ACCOUNTING", action: "authorizeAccountingImport",
+    payload: { sessionToken: "AUD-TOKEN" } }),
+  verifySessionToken: () => ({ userId: "AUD-1", role: "Auditor", institutionId: "INST-1" }),
+  getDynamicPermissionsForRole: () => true
+};
+vm.runInNewContext(extractFunction(user.source, "handleTrustedMigrationEnvelope_") +
+  "\nthis.handle = handleTrustedMigrationEnvelope_;", trustedHandlerContext);
+assert.equal(trustedHandlerContext.handle({}).code, "IMPORT_PERMISSION_DENIED",
+  "even a dynamic wildcard cannot authorize a trusted Accounting import for Auditor");
 assert.match(user.source,/\["Director", "Administrador", "Auditor"\]\.indexOf\(role\)/,
   "institution-wide inventory access for Auditor still requires an institution-wide verified scope");
 assert.match(user.source,/if \(actorRole === "Auditor"\)[\s\S]*scope\.institutionWide !== true/,
