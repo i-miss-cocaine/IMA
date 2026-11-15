@@ -4,10 +4,13 @@ const vm = require("node:vm");
 
 const servicePaths = ["backend/accounting-service/Code.gs","backend/user-service/Code.gs"];
 function extractValidator(source,path) {
+  const helperStart=source.indexOf("function validateOpenXmlPackageStructure_(");
+  assert.notEqual(helperStart,-1,"missing OpenXML validator in "+path);
+  const helperEnd=source.indexOf("\nfunction ",helperStart+10);
   const start=source.indexOf("function validateFileBinaryIntegrity(");
   assert.notEqual(start,-1,"missing validator in "+path);
   const next=source.indexOf("\nfunction ",start+10);
-  return source.slice(start,next<0?source.length:next);
+  return source.slice(helperStart,helperEnd<0?source.length:helperEnd)+"\n"+source.slice(start,next<0?source.length:next);
 }
 function dataUri(mime,bytes){return "data:"+mime+";base64,"+bytes.toString("base64");}
 function makePng(){
