@@ -675,9 +675,12 @@ function appendAccountingMigrationFileHashAudit_(ss, input, preview, actor, stat
     "TipoEntidad","DestinoModulo","ActorUserId","Fecha","Estado","RegistrosEscritos","CorrelationId"];
   var sheet = getOrCreateSheet(ss, "AuditoriaMigracionesArchivos");
   var rows = sheet.getDataRange().getValues();
-  if (!rows.length || !rows[0] || !rows[0].some(function(value) { return String(value || "").trim(); })) {
+  var lastRow = typeof sheet.getLastRow === "function" ? sheet.getLastRow() : rows.length;
+  if (!lastRow) {
     sheet.appendRow(headers);
-  } else if (JSON.stringify(rows[0].map(String).slice(0, headers.length)) !== JSON.stringify(headers)) {
+  } else if (lastRow === 1 && (!rows[0] || !rows[0].some(function(value) { return String(value || "").trim(); }))) {
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  } else if (!rows[0] || JSON.stringify(rows[0].map(String).slice(0, headers.length)) !== JSON.stringify(headers)) {
     throw new Error("MIGRATION_FILE_HASH_AUDIT_SCHEMA_MISMATCH");
   }
   var lock = LockService.getScriptLock();
