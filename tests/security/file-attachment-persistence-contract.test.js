@@ -6,12 +6,23 @@ const user = fs.readFileSync(path.resolve(__dirname, "../../backend/user-service
 const accounting = fs.readFileSync(path.resolve(__dirname, "../../backend/accounting-service/Code.gs"), "utf8");
 const student = fs.readFileSync(path.resolve(__dirname, "../../js/student.js"), "utf8");
 
-function extractFunction(source, name, nextName) {
+function extractFunction(source, name) {
   const start = source.indexOf("function " + name + "(");
   assert.notEqual(start, -1, "missing function " + name);
-  const end = source.indexOf("\nfunction " + nextName + "(", start + 1);
-  assert.notEqual(end, -1, "missing function boundary after " + name);
-  return source.slice(start, end);
+  const open = source.indexOf("{", start);
+  let depth = 0, quote = "", escape = false, lineComment = false, blockComment = false;
+  for (let i = open; i < source.length; i++) {
+    const c = source[i], n = source[i + 1];
+    if (lineComment) { if (c === "\n") lineComment = false; continue; }
+    if (blockComment) { if (c === "*" && n === "/") { blockComment = false; i++; } continue; }
+    if (quote) { if (escape) { escape = false; continue; } if (c === "\\") { escape = true; continue; } if (c === quote) quote = ""; continue; }
+    if (c === "/" && n === "/") { lineComment = true; i++; continue; }
+    if (c === "/" && n === "*") { blockComment = true; i++; continue; }
+    if (c === "'" || c === '"' || c === String.fromCharCode(96)) { quote = c; continue; }
+    if (c === "{") depth++;
+    else if (c === "}" && --depth === 0) return source.slice(start, i + 1);
+  }
+  throw new Error("unbalanced function " + name);
 }
 
 assert.match(accounting, /function createPrivatePaymentAttachment_/);
@@ -29,10 +40,10 @@ assert.match(user, /ATTACHMENT_ORPHAN_REQUIRES_RECOVERY/);
 assert.match(student, /joint-doc-file/);
 assert.match(student, /fileData:attachment\.fileData/);
 assert.doesNotMatch(student, /joint-doc-url/);
-assert.doesNotMatch(extractFunction(accounting, "uploadPaymentVoucher", "getPaymentVouchers"), /ANYONE_WITH_LINK/);
-assert.match(extractFunction(accounting, "uploadPaymentVoucher", "getPaymentVouchers"), /createPrivatePaymentAttachment_/);
-assert.match(extractFunction(user, "submitInstitutionalFormRequest", "getAppointmentBookings"), /createPrivateRequestAttachment_/);
-assert.doesNotMatch(extractFunction(user, "submitInstitutionalFormRequest", "getAppointmentBookings"), /ANYONE_WITH_LINK/);
+assert.doesNotMatch(extractFunction(accounting, "uploadPaymentVoucher"), /ANYONE_WITH_LINK/);
+assert.match(extractFunction(accounting, "uploadPaymentVoucher"), /createPrivatePaymentAttachment_/);
+assert.match(extractFunction(user, "submitInstitutionalFormRequest"), /createPrivateRequestAttachment_/);
+assert.doesNotMatch(extractFunction(user, "submitInstitutionalFormRequest"), /ANYONE_WITH_LINK/);
 
 let folderAccess = "PRIVATE";
 let failFileSharing = false;
@@ -73,9 +84,9 @@ const userContext = {
   logStructuredEvent: () => {}
 };
 const userFunctions = [
-  extractFunction(user, "getOrCreatePrivateAttachmentFolder_", "rollbackPrivateAttachment_"),
-  extractFunction(user, "rollbackPrivateAttachment_", "createPrivateRequestAttachment_"),
-  extractFunction(user, "createPrivateRequestAttachment_", "resolveVerifiedRequestSubmitter_")
+  extractFunction(user, "getOrCreatePrivateAttachmentFolder_"),
+  extractFunction(user, "rollbackPrivateAttachment_"),
+  extractFunction(user, "createPrivateRequestAttachment_")
 ].join("\n");
 vm.runInNewContext(userFunctions + "\nthis.saveAttachment=createPrivateRequestAttachment_;this.getPrivateFolder=getOrCreatePrivateAttachmentFolder_;", userContext);
 assert.throws(() => userContext.saveAttachment("YWJj", "", "private-test"), /ATTACHMENT_PAIR_REQUIRED/);
@@ -95,7 +106,7 @@ assert.throws(() => userContext.saveAttachment("YWJj", "evidence.pdf", "private-
 assert.equal(createdFile.trashed, true, "failed privacy setup must attempt file cleanup");
 failFileSharing = false;
 
-const voucherFn = extractFunction(accounting, "uploadPaymentVoucher", "getPaymentVouchers");
+const voucherFn = extractFunction(accounting, "uploadPaymentVoucher");
 let rows = [];
 let rollbackCount = 0;
 let lockAvailable = true;
@@ -115,11 +126,11 @@ const voucherContext = {
 };
 vm.runInNewContext(voucherFn + "\nthis.upload=uploadPaymentVoucher;", voucherContext);
 const denied = voucherContext.upload({ userId: "student-1", montoReportado: 10 });
-assert.equal(denied.code, "VERIFIED_IDENTITY_REQUIRED", "authorization must be checked before attachment validation");
+assert.equal(denied.code, "VERIFIED_IDENTITY_REQUIRED");
 authorized = true;
 ownerAllowed = false;
 const outOfScope = voucherContext.upload({ userId: "student-2", montoReportado: 10 });
-assert.equal(outOfScope.code, "RESOURCE_SCOPE_DENIED", "ownership must be checked before attachment validation");
+assert.equal(outOfScope.code, "RESOURCE_SCOPE_DENIED");
 ownerAllowed = true;
 assert.throws(() => voucherContext.upload({ userId: "student-1", montoReportado: 10, fileData: "YWJj" }), /ATTACHMENT_PAIR_REQUIRED/);
 const result = voucherContext.upload({ userId: "student-1", montoReportado: 10, fileData: "YWJj", fileName: "evidence.pdf" });
@@ -127,13 +138,13 @@ assert.equal(result.status, "success");
 assert.equal(result.tieneComprobante, true);
 assert.equal(result.comprobanteUrl, "");
 assert.equal(rows.length, 1);
-assert.equal(rows[0][8], "private-file-id", "only the verified private Drive file ID is persisted");
+assert.equal(rows[0][8], "private-file-id");
 appendFails = true;
 assert.throws(() => voucherContext.upload({ userId: "student-1", montoReportado: 10, fileData: "YWJj", fileName: "evidence.pdf" }), /sheet failure/);
-assert.equal(rollbackCount, 1, "failed row persistence must roll back the stored file");
+assert.equal(rollbackCount, 1);
 appendFails = false;
 lockAvailable = false;
 assert.throws(() => voucherContext.upload({ userId: "student-1", montoReportado: 10, fileData: "YWJj", fileName: "evidence.pdf" }), /LOCK_TIMEOUT/);
-assert.equal(rollbackCount, 2, "lock contention must roll back the stored file");
+assert.equal(rollbackCount, 2);
 
 console.log("file-attachment-persistence-contract: PASS (private storage, fail-closed upload, scope, rollback)");
