@@ -92,7 +92,7 @@ const context = {
   Date, Math, JSON, String, Number, Array, Object, Error
 };
 const names = [
-  "ensureAbsenceHeaders_", "absenceDateKey_", "absenceResolvePeriod_", "absenceResolveSessions_",
+  "ensureAbsenceHeaders_", "absenceDateKey_", "absenceResolvePeriod_", "absenceResolveSessions_", "absenceResolveSessionsForDates_",
   "absenceSheetMap_", "absenceInstitutionalPolicyValue_", "absenceJustificationPolicies_", "absenceTeacherConformityComplete_", "teacherJustificationActiveState_", "createCanonicalAbsenceJustification_", "createCanonicalAbsenceJustificationUnlocked_",
   "absenceUpdateRequestProjection_", "absenceAttendanceSync_", "reviewCanonicalAbsenceJustification_",
   "reconcilePendingAttendanceJustifications", "submitAttendanceJustification", "computeDocumentSHA256"
