@@ -92,13 +92,15 @@ function makeClient(url) {
     fetch,
     AbortController,
     testTimeoutMode: false,
-    setTimeout(fn, ms) { return setTimeout(fn, ms === 60000 && this.testTimeoutMode ? 25 : ms); },
     clearTimeout,
     localStorage: { getItem: () => null },
     sessionStorage: { getItem: () => null },
     document: { body: null },
     console: silentConsole,
     Date, Math, Number, String, Object, Array, JSON, Promise
+  };
+  context.setTimeout = function(fn, ms) {
+    return setTimeout(fn, ms === 60000 && context.testTimeoutMode ? 25 : ms);
   };
   context.window = context;
   vm.createContext(context);
