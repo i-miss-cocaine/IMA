@@ -119,8 +119,9 @@ function runMigrationWriterFixture(source,entity){
  const schemaStart=source.indexOf("const MIGRATION_WRITER_SCHEMAS_"),firstFn=source.indexOf("function migrationStableJson_",schemaStart);assert.ok(schemaStart>=0&&firstFn>schemaStart);
  const constants=source.slice(schemaStart,firstFn),names=["migrationStableJson_","migrationSafeCell_","migrationEncodeSnapshot_","migrationDecodeSnapshot_","ensureMigrationWriterSheet_","applyTrustedMigrationWrite_","compensateTrustedMigrationWrite_"];
  if(source.includes("function migrationNormalizeImportDate_(")) names.splice(1,0,"migrationNormalizeImportDate_");
+ if(source.includes("function migrationHash_(")) names.push("migrationHash_");
  if(source.includes("function migrationHash_(")) names.splice(1,0,"migrationHash_");
- const code=constants+names.map(n=>extractBalancedFunction(source,n)).join(String.fromCharCode(10))+"this.apply=applyTrustedMigrationWrite_;this.compensate=compensateTrustedMigrationWrite_;this.schemas=MIGRATION_WRITER_SCHEMAS_;this.journalHeaders=MIGRATION_WRITER_JOURNAL_HEADERS_;";
+ const code=constants+names.map(n=>extractBalancedFunction(source,n)).join(String.fromCharCode(10))+"this.apply=applyTrustedMigrationWrite_;this.compensate=compensateTrustedMigrationWrite_;this.schemas=MIGRATION_WRITER_SCHEMAS_;this.journalHeaders=MIGRATION_WRITER_JOURNAL_HEADERS_;this.stable=migrationStableJson_;this.hash=typeof migrationHash_==="function"?migrationHash_:null;";
  const sheets={},ctx={SPREADSHEET_ID:"LOCAL",SpreadsheetApp:{openById:()=>ss},LockService:{getScriptLock:()=>({waitLock:()=>{},releaseLock:()=>{}})},Utilities:{DigestAlgorithm:{SHA_256:"SHA_256"},computeDigest:(_algorithm,value)=>Array.from(crypto.createHash("sha256").update(String(value)).digest())},Date,JSON,String,Object,Array,Error};
  const ss={getSheetByName:n=>sheets[n]||null,insertSheet:n=>sheets[n]=makeMigrationSheet(n==="MigracionEscrituras"?ctx.journalHeaders:ctx.schemas[entity].headers)};
  vm.runInNewContext(code,ctx);
@@ -133,8 +134,8 @@ function runMigrationWriterFixture(source,entity){
  const dateField=schema.headers.find(h=>/^Fecha/.test(h)),dateIndex=schema.headers.indexOf(dateField),oldRow=schema.headers.map(()=>"");oldRow[0]="INT-OLD";oldRow[1]="Original";oldRow[dateIndex]=new Date("2020-02-03T04:05:06.000Z");target.rows.push(oldRow);
  const before={};schema.headers.forEach((header,index)=>before[header]=oldRow[index]);
  const update={tipoEntidad:entity,idNuevoPlataforma:"INT-OLD",idempotencyKey:"MIG-UPDATE",datos:{[schema.headers[1]]:"Updated"},
-   targetSnapshotVerified:typeof ctx.migrationHash_==="function",expectedTargetPresent:true,
-   expectedTargetRowHash:typeof ctx.migrationHash_==="function"?ctx.migrationHash_(ctx.migrationStableJson_(before)):""};
+   targetSnapshotVerified:typeof ctx.hash==="function",expectedTargetPresent:true,
+   expectedTargetRowHash:typeof ctx.hash==="function"?ctx.hash(ctx.stable(schema.headers.reduce((out,header,index)=>{out[header]=before[index];return out;},{}))):""};
  assert.equal(ctx.apply(update).accion,"UPDATE");assert.equal(target.rows[1][1],"Updated");
  assert.equal(ctx.compensate({idempotencyKey:"MIG-UPDATE"}).compensated,true);assert.equal(target.rows[1][1],"Original");assert.ok(target.rows[1][dateIndex] instanceof Date,"Date type preserved during compensation");
 }
