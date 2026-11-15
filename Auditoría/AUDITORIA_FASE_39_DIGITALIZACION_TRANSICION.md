@@ -257,6 +257,7 @@ Auditar integralmente las capacidades destinadas a facilitar la transición de l
 - Contratos aislados: semantic preflight, departmental import scope (40 escenarios), department reference consumer (29 escenarios), academic binary validation y teacher Excel preflight PASS en V8 aislado. No se declara Node CLI PASS.
 - Estado CI: ima/department-reference-consumers SUCCESS en el HEAD anterior; ima/department-scope-contract FAILURE por contratos amplios de ACCOUNTING/RR. HH. todavía no implementados (incluye getEmployeeContracts, getEmployeeTrainingHistory, getStaffAttendanceLogs, getPaymentVouchers, generatePayrollReceiptPDF, entre otros). El HEAD actual aún no tiene estado final de Actions confirmado.
 - Brechas: falta UI de mapeo/confirmación, verificación remota de destino USER/ACADEMIC, OCR y beta real; la aceptación de TASK-133 permanece parcial.
+- Hallazgo runtime C1.766: backend/accounting-service/Code.gs carece de doPost/textResponse/router y no define verifySessionToken, createInterServiceEnvelope ni assertEmployeeExpedienteScopeAccess_. La UI fetchApi no puede invocar con seguridad los helpers aún. No se simula una API ni se activa persistencia.
 ### [F39-Task05] Crear bandeja de vinculación asistida de documentos históricos
 - **Hallazgo de origen:** 3.5 y CAR-F39-05; P16 no aprobado.
 - **Severidad:** Alta / P1 según plan G. **Objetivo:** asociar documentos sin ID o con nombres históricos a expedientes actuales mediante confirmación humana.
