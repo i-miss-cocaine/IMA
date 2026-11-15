@@ -4146,6 +4146,11 @@ function studentDocumentTokenSignature_(encodedClaims) {
 
 function createStudentDocumentAccessToken(payload) {
   const request = payload || {};
+  const permission = validateRolePermission("getStudentDocumentFile", request);
+  if (!permission || permission.authorized !== true) {
+    return studentDocumentAccessError_(request, null, request.documentoId || request.documentId || "",
+      "AUTH_PERMISSION_DENIED", "");
+  }
   const documentId = String(request.documentoId || request.documentId || "").trim();
   const expedienteId = String(request.expedienteId || "").trim();
   const solicitudId = String(request.solicitudId || "").trim();
@@ -4171,7 +4176,7 @@ function createStudentDocumentAccessToken(payload) {
   }
   const access = assertStudentDocumentScopeAccess_(request, ss, sheet, row, expSheet);
   if (!access || access.authorized !== true) {
-    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento no disponible." };
+    return studentDocumentAccessError_(request, actor, documentId, "RESOURCE_NOT_FOUND", "");
   }
   const version = String(row[13] || "").trim();
   const expectedHash = String(row[15] || row[14] || "").trim().toLowerCase();
@@ -4247,8 +4252,32 @@ function studentDocumentAccessError_(request, actor, documentId, code, version) 
   return { status: "error", code: String(code || "RESOURCE_NOT_FOUND"), message: "Documento no disponible." };
 }
 
+function consumeStudentDocumentAccessToken_(tokenId, token) {
+  const lock = LockService.getScriptLock();
+  let acquired = false;
+  try {
+    lock.waitLock(5000);
+    acquired = true;
+    const cache = CacheService.getScriptCache();
+    const key = "STUDENT_DOC_ACCESS_" + String(tokenId || "");
+    const stored = cache.get(key);
+    if (!stored || !studentDocumentTokenConstantTimeEqual_(stored, studentDocumentTokenDigest_(token))) return false;
+    cache.remove(key);
+    return true;
+  } catch (_) {
+    return false;
+  } finally {
+    if (acquired) lock.releaseLock();
+  }
+}
+
 function getSecureDocumentStream(payload) {
   const request = payload || {};
+  const permission = validateRolePermission("getStudentDocumentFile", request);
+  if (!permission || permission.authorized !== true) {
+    return studentDocumentAccessError_(request, null, request.documentoId || request.documentId || "",
+      "AUTH_PERMISSION_DENIED", "");
+  }
   const documentId = String(request.documentoId || request.documentId || "").trim();
   const token = String(request.accessToken || "").trim();
   const expedienteId = String(request.expedienteId || "").trim();
@@ -4267,10 +4296,7 @@ function getSecureDocumentStream(payload) {
       (request.versionDocumento && String(request.versionDocumento) !== String(claims.version))) {
     return studentDocumentAccessError_(request, actor, documentId, "DOCUMENT_ACCESS_TOKEN_BINDING_MISMATCH", claims.version);
   }
-  const cache = CacheService.getScriptCache();
-  const cacheKey = "STUDENT_DOC_ACCESS_" + claims.tokenId;
-  const cachedDigest = cache.get(cacheKey);
-  if (!cachedDigest || !studentDocumentTokenConstantTimeEqual_(cachedDigest, studentDocumentTokenDigest_(token))) {
+  if (!consumeStudentDocumentAccessToken_(claims.tokenId, token)) {
     return studentDocumentAccessError_(request, actor, documentId, "DOCUMENT_ACCESS_TOKEN_REVOKED_OR_REPLAYED", claims.version);
   }
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -4291,8 +4317,6 @@ function getSecureDocumentStream(payload) {
   if (!access || access.authorized !== true) {
     return studentDocumentAccessError_(request, actor, documentId, "RESOURCE_NOT_FOUND", claims.version);
   }
-  // Consume before reading Drive: tokens are one-use and cannot be replayed.
-  cache.remove(cacheKey);
   const result = getStudentDocumentFile_(Object.assign({}, request, { documentoId: documentId, versionDocumento: claims.version }));
   if (!result || result.status !== "success" || result.versionDocumento !== claims.version) {
     return studentDocumentAccessError_(request, actor, documentId,
