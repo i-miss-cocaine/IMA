@@ -4787,6 +4787,158 @@ function setRequestAttachmentIntegrity_(row, map, attachment) {
   row[map.AdjuntoIntegridadEstado] = "VERIFICADO";
 }
 
+function ensureEvidenceDocumentSchema_(ss) {
+  var sheet = getOrCreateSheet(ss, "EvidenciasDocumentales");
+  if (sheet.getLastRow() === 0) sheet.appendRow(EVIDENCE_DOCUMENT_HEADERS_.slice());
+  var headers = sheet.getRange(1, 1, 1, Math.max(1, sheet.getLastColumn())).getValues()[0].map(function(value) { return String(value || "").trim(); });
+  EVIDENCE_DOCUMENT_HEADERS_.forEach(function(header) {
+    if (headers.indexOf(header) === -1) {
+      sheet.getRange(1, sheet.getLastColumn() + 1).setValue(header);
+      headers.push(header);
+    }
+  });
+  var map = {};
+  headers.forEach(function(header, index) { if (header) { if (map[header] !== undefined) throw new Error("EVIDENCE_SCHEMA_DUPLICATE_HEADER"); map[header] = index; } });
+  return { sheet: sheet, map: map };
+}
+
+function getEvidenceIntegrityPolicy_(ss) {
+  var sheet = ss && ss.getSheetByName ? ss.getSheetByName("ConfiguracionInstitucional") : null;
+  if (!sheet || sheet.getLastRow() < 2) return "ESTRICTO_BLOQUEAR_ACCESO_Y_NOTIFICAR_AUDITORIA";
+  var rows = sheet.getDataRange().getValues();
+  var headers = (rows[0] || []).map(function(value) { return String(value || "").trim().toLowerCase().replace(/[^a-z0-9]/g, ""); });
+  var keyIndex = headers.indexOf("clave") >= 0 ? headers.indexOf("clave") : (headers.indexOf("parametro") >= 0 ? headers.indexOf("parametro") : headers.indexOf("nombre"));
+  var valueIndex = headers.indexOf("valor"), stateIndex = headers.indexOf("estado");
+  if (keyIndex < 0 || valueIndex < 0 || stateIndex < 0) return "ESTRICTO_BLOQUEAR_ACCESO_Y_NOTIFICAR_AUDITORIA";
+  var matches = rows.slice(1).filter(function(row) { return String(row[keyIndex] || "").trim() === "BLOQUEO_AUTOMATICO_POR_DISCREPANCIA_HASH"; });
+  if (matches.length > 1) throw new Error("EVIDENCE_POLICY_AMBIGUOUS");
+  if (!matches.length || !["ACTIVO","ACTIVE","HABILITADO","SI","TRUE"].indexOf(String(matches[0][stateIndex] || "").trim().toUpperCase()) >= 0) {
+    return "ESTRICTO_BLOQUEAR_ACCESO_Y_NOTIFICAR_AUDITORIA";
+  }
+  var value = String(matches[0][valueIndex] || "").trim().toUpperCase();
+  if (["ESTRICTO_BLOQUEAR_ACCESO_Y_NOTIFICAR_AUDITORIA","ADVERTENCIA_VISUAL_REVISOR"].indexOf(value) === -1) {
+    throw new Error("EVIDENCE_POLICY_INVALID");
+  }
+  return value;
+}
+
+function logEvidenceTampering_(operation, record, expectedHash, actualHash, actor) {
+  try {
+    logStructuredEvent("USER", operation, "ERROR", "EVIDENCE_TAMPERING_DETECTED",
+      "El contenido documental actual difiere de la evidencia binaria recibida originalmente.",
+      { evidenciaId: String(record.EvidenciaID || ""), solicitudId: String(record.SolicitudID || ""),
+        expectedSHA256: String(expectedHash || ""), actualSHA256: String(actualHash || ""),
+        versionNumero: Number(record.VersionNumero || 0) }, actor || "SYSTEM");
+  } catch (_) {}
+}
+
+function verifyEvidenceDocumentRecord_(ss, record, operation, actor) {
+  var expectedHash = String(record.SHA256 || "").trim().toLowerCase();
+  var expectedSize = Number(record.SizeBytes || 0);
+  var expectedVersion = Number(record.VersionNumero || 0);
+  var fileId = String(record.DriveFileID || "").trim();
+  if (!/^[a-f0-9]{64}$/.test(expectedHash) || expectedSize < 1 || expectedVersion < 1 || !fileId) {
+    return { status: "error", code: "EVIDENCE_INTEGRITY_METADATA_INVALID", integrityVerified: false };
+  }
+  try {
+    var file = DriveApp.getFileById(fileId);
+    if (!file || file.isTrashed() || file.getSharingAccess() !== DriveApp.Access.PRIVATE) {
+      return { status: "error", code: "EVIDENCE_NOT_PRIVATE_OR_UNAVAILABLE", integrityVerified: false };
+    }
+    var blob = file.getBlob(), bytes = blob.getBytes();
+    var actualMime = String(blob.getContentType() || file.getMimeType() || "").trim().toLowerCase();
+    var expectedMime = String(record.MimeType || "").trim().toLowerCase();
+    var actualHash = computeDocumentSHA256(bytes).toLowerCase();
+    var validation = validateFileBinaryIntegrity(Utilities.base64Encode(bytes), String(record.NombreOriginal || file.getName() || "evidencia"), {
+      maxSizeBytes: 10 * 1024 * 1024, allowedExtensions: [".pdf",".jpg",".jpeg",".png",".webp",".docx",".xlsx"]
+    });
+    if (!bytes || bytes.length !== expectedSize || actualMime !== expectedMime || validation.mimeType !== expectedMime || actualHash !== expectedHash) {
+      logEvidenceTampering_(operation || "verifyDocumentEvidenceIntegrity", record, expectedHash, actualHash, actor);
+      var policy = getEvidenceIntegrityPolicy_(ss);
+      if (policy === "ADVERTENCIA_VISUAL_REVISOR") {
+        return { status: "warning", code: "EVIDENCE_TAMPERING_DETECTED", integrityVerified: false,
+          integrityWarning: true, integrityPolicy: policy, actualSHA256: actualHash };
+      }
+      return { status: "error", code: "EVIDENCE_TAMPERING_DETECTED", integrityVerified: false,
+        integrityPolicy: policy };
+    }
+    return { status: "success", integrityVerified: true, integrityStatus: "VERIFICADO",
+      sha256: actualHash, versionNumero: expectedVersion, sizeBytes: bytes.length, mimeType: actualMime,
+      file: file, bytes: bytes };
+  } catch (error) {
+    logEvidenceTampering_(operation || "verifyDocumentEvidenceIntegrity", record, expectedHash, "", actor);
+    return { status: "error", code: "EVIDENCE_INTEGRITY_VERIFICATION_FAILED", integrityVerified: false };
+  }
+}
+
+function registerDocumentEvidence_(ss, args) {
+  var p = args || {}, attachment = p.attachment;
+  if (!attachment || !attachment.fileId || !attachment.sha256) throw new Error("EVIDENCE_ATTACHMENT_METADATA_REQUIRED");
+  var schema = ensureEvidenceDocumentSchema_(ss), sheet = schema.sheet, map = schema.map;
+  var solicitudId = String(p.solicitudId || "").trim(), groupId = String(p.evidenciaGrupoId || "ADJUNTO-1").trim();
+  var userId = String(p.userId || "").trim();
+  if (!solicitudId || !userId || !groupId) throw new Error("EVIDENCE_LINKAGE_REQUIRED");
+  var rows = sheet.getDataRange().getValues(), previous = [];
+  for (var i = 1; i < rows.length; i++) {
+    if (String(rows[i][map.SolicitudID] || "").trim() === solicitudId &&
+        String(rows[i][map.EvidenciaGrupoID] || "").trim() === groupId) previous.push({ index: i, row: rows[i] });
+  }
+  var version = 1;
+  if (previous.length) {
+    var requestSheet = ss.getSheetByName("SolicitudesTramites"), requestState = "";
+    if (requestSheet) {
+      var requestRows = requestSheet.getDataRange().getValues();
+      var requestHeaders = requestRows[0] || [], idIndex = requestHeaders.indexOf("SolicitudID"), stateIndex = requestHeaders.indexOf("Estado");
+      var requestRow = requestRows.slice(1).find(function(row) { return String(row[idIndex] || "").trim() === solicitudId; });
+      requestState = requestRow && stateIndex >= 0 ? String(requestRow[stateIndex] || "").trim().toUpperCase() : "";
+    }
+    if (previous.some(function(item) {
+      return !!String(item.row[map.DecisionHash] || "").trim() ||
+        ["APROBADA","APROBADO","FIRMADA","FIRMADO","BLOQUEADA"].indexOf(String(item.row[map.Estado] || "").trim().toUpperCase()) !== -1;
+    })) throw new Error("EVIDENCE_VERSION_IMMUTABLE");
+    if (["OBSERVADO","REQUIERE_INFORMACION","PENDIENTE_SUBSANACION","DEVUELTA"].indexOf(requestState) === -1) {
+      throw new Error("EVIDENCE_VERSION_REQUIRES_OBSERVATION");
+    }
+    version = Math.max.apply(null, previous.map(function(item) { return Number(item.row[map.VersionNumero] || 0); })) + 1;
+    previous.forEach(function(item) {
+      sheet.getRange(item.index + 1, map.EsVersionActual + 1).setValue(false);
+      sheet.getRange(item.index + 1, map.Estado + 1).setValue("SUPERADA");
+    });
+  }
+  var file = DriveApp.getFileById(attachment.fileId);
+  var bytes = file.getBlob().getBytes(), actualHash = computeDocumentSHA256(bytes).toLowerCase();
+  if (file.isTrashed() || file.getSharingAccess() !== DriveApp.Access.PRIVATE ||
+      actualHash !== String(attachment.sha256).toLowerCase() || bytes.length !== Number(attachment.sizeBytes)) {
+    throw new Error("EVIDENCE_STORAGE_INTEGRITY_MISMATCH");
+  }
+  var evidenciaId = "EVD-" + Utilities.getUuid(), receivedAt = String(attachment.receivedAt || new Date().toISOString());
+  var record = {
+    EvidenciaID: evidenciaId, SolicitudID: solicitudId, EvidenciaGrupoID: groupId, VersionNumero: version,
+    NombreOriginal: String(p.nombreOriginal || file.getName()), MimeType: String(attachment.mimeType).toLowerCase(),
+    SizeBytes: Number(attachment.sizeBytes), FechaRecepcionISO: receivedAt, UserId: userId,
+    SHA256: actualHash, DriveFileID: attachment.fileId, Estado: "VERIFICADO", DecisionHash: "",
+    DecisionID: "", DecisionTimestamp: "", EsVersionActual: true, CreadoEn: new Date().toISOString(),
+    CreadoPor: userId, TipoEvidencia: String(p.tipoEvidencia || "ADJUNTO"), CorrelationID: String(p.correlationId || "")
+  };
+  var row = new Array(sheet.getLastColumn()).fill("");
+  Object.keys(record).forEach(function(key) { if (map[key] !== undefined) row[map[key]] = record[key]; });
+  sheet.appendRow(row);
+  return record;
+}
+
+function verifyDocumentEvidenceIntegrity(payload) {
+  var p = payload || {}, solicitudId = String(p.solicitudId || "").trim(), evidenciaId = String(p.evidenciaId || "").trim();
+  if (!solicitudId || !evidenciaId) return { status: "error", code: "EVIDENCE_ID_REQUIRED" };
+  var delivered = getAdministrativeRequestAttachment({ solicitudId: solicitudId, evidenciaId: evidenciaId,
+    _verifiedUserId: p._verifiedUserId, _verifiedRole: p._verifiedRole, sessionToken: p.sessionToken });
+  if (!delivered || (delivered.status !== "success" && delivered.status !== "warning")) return delivered;
+  return { status: delivered.status, code: delivered.code || "", evidenciaId: evidenciaId,
+    solicitudId: solicitudId, integrityVerified: delivered.integrityVerified === true,
+    integrityWarning: delivered.integrityWarning === true, integrityStatus: delivered.integrityStatus || "",
+    sha256: delivered.sha256 || "", versionNumero: delivered.attachmentVersion || null,
+    integrityPolicy: delivered.integrityPolicy || "" };
+}
+
 function resolveVerifiedRequestSubmitter_(payload, requestedStudentId, requireStudent, permissionKey) {
   const role = getUserVerifiedRole(payload);
   const actorId = String(payload && payload._verifiedUserId || "").trim();
@@ -6809,6 +6961,7 @@ function getAdministrativeRequests(payload) {
   return { status:"success", data:requests };
 }
 const REQUEST_ATTACHMENT_INTEGRITY_HEADERS_ = ["AdjuntoSHA256","AdjuntoVersion","AdjuntoSizeBytes","AdjuntoMimeType","AdjuntoFechaRecepcion","AdjuntoIntegridadEstado"];
+const EVIDENCE_DOCUMENT_HEADERS_ = ["EvidenciaID","SolicitudID","EvidenciaGrupoID","VersionNumero","NombreOriginal","MimeType","SizeBytes","FechaRecepcionISO","UserId","SHA256","DriveFileID","Estado","DecisionHash","DecisionID","DecisionTimestamp","EsVersionActual","CreadoEn","CreadoPor","TipoEvidencia","CorrelationID"];
 const USER_ABSENCE_REQUEST_EXTRA_HEADERS_ = ["JustificacionID","FechaAfectada","Periodo","SesionIDsJSON","SyncEstado","MotivoJustificacion","UltimoError","SesionIDsSolicitadasJSON","AlcanceAprobacion","FechasAfectadasJSON"].concat(REQUEST_ATTACHMENT_INTEGRITY_HEADERS_);
 
 function ensureUserAbsenceRequestSchema_(sheet) {
