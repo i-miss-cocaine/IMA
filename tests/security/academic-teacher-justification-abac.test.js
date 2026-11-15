@@ -86,7 +86,7 @@ const context = {
     Access:{PRIVATE:"PRIVATE"},
     getFileById(id){
       if(id!=="FILE-1")throw new Error("NOT_FOUND");
-      return {isTrashed(){return false;},getSharingAccess(){return driveSharing;},getBlob(){return {getContentType(){return "application/pdf";},getBytes(){return driveBytes;}};},getSize(){return driveBytes.length;},getMimeType(){return "application/pdf";},getName(){return "constancia.pdf";}};
+      return {isTrashed(){return false;},getSharingAccess(){return driveSharing;},getBlob(){return {getContentType(){return "application/pdf";},getBytes(){return Array.from(driveBytes);}};},getSize(){return driveBytes.length;},getMimeType(){return "application/pdf";},getName(){return "constancia.pdf";}};
     }
   },
   getVerifiedAcademicIdentity_(payload){return payload && payload.actor || {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};},

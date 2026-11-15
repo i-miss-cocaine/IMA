@@ -37,7 +37,7 @@ const file = {
   getName() { return "evidence.pdf"; },
   getMimeType() { return "application/pdf"; },
   getSize() { return storedBytes.length; },
-  getBlob() { return { getBytes() { return storedBytes; }, getContentType() { return "application/pdf"; } }; }
+  getBlob() { return { getBytes() { return Array.from(storedBytes); }, getContentType() { return "application/pdf"; } }; }
 };
 const folder = {
   getSharingAccess() { return "PRIVATE"; },
@@ -67,7 +67,7 @@ const context = {
     getFileById(id) { if(id!==fileId) throw new Error("NOT_FOUND"); return file; }
   },
   Utilities: {
-    base64Decode(value) { return Buffer.from(value,"base64"); },
+    base64Decode(value) { return Array.from(Buffer.from(value,"base64")); },
     base64Encode(value) { return Buffer.from(value).toString("base64"); },
     newBlob(bytes,mimeType,name) { return { bytes:Array.from(bytes),mimeType,name }; },
     computeDigest(_algorithm,value) {

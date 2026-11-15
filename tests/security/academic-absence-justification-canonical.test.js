@@ -83,7 +83,7 @@ const context = {
     Access:{PRIVATE:"PRIVATE"},
     getFileById(id) {
       if(id!=="DRIVE-FILE-ATTACH-001") throw new Error("NOT_FOUND");
-      return {isTrashed(){return false;},getSharingAccess(){return "PRIVATE";},getBlob(){return {getBytes(){return evidenceBytes;},getContentType(){return "application/pdf";}};},getMimeType(){return "application/pdf";}};
+      return {isTrashed(){return false;},getSharingAccess(){return "PRIVATE";},getBlob(){return {getBytes(){return Array.from(evidenceBytes);},getContentType(){return "application/pdf";}};},getMimeType(){return "application/pdf";}};
     }
   },
   Session: { getScriptTimeZone() { return "UTC"; } },
@@ -111,6 +111,8 @@ sessions.appendRow(["SES-PRESENT","2026-11-10","","","10","A","MAT","DOC-1","Cer
 sessions.appendRow(["SES-REJECT","2026-11-11","","","10","A","MAT","DOC-1","Cerrada",""]);
 sessions.appendRow(["SES-PARTIAL","2026-11-12","","","10","A","MAT","DOC-1","Cerrada",""]);
 sessions.appendRow(["SES-AMB","2026-11-13","","","10","A","MAT","DOC-1","Cerrada",""]);
+sessions.appendRow(["SES-ATTACH","2026-11-09","","","10","A","MAT","DOC-1","Cerrada",""]);
+sessions.appendRow(["SES-LEGACY","2026-11-08","","","10","A","MAT","DOC-1","Cerrada",""]);
 const attendance = sheet("RegistrosAsistencia");
 attendance.appendRow(["RegistroID","SesionID","UserId","EstadoAsistencia","HoraLlegada","MinutosTardanza","Justificado","ObservacionDocente","FechaRegistro"]);
 attendance.appendRow(["REG-1","SES-1","STU-1","Ausente","","",false,"",new Date("2026-11-10T12:00:00Z")]);
@@ -121,6 +123,8 @@ attendance.appendRow(["REG-R","SES-REJECT","STU-1","Ausente","","",false,"",new 
 attendance.appendRow(["REG-P","SES-PARTIAL","STU-1","Ausente","","",false,"",new Date("2026-11-12T12:00:00Z")]);
 attendance.appendRow(["REG-A1","SES-AMB","STU-1","Ausente","","",false,"",new Date("2026-11-13T12:00:00Z")]);
 attendance.appendRow(["REG-A2","SES-AMB","STU-1","Ausente","","",false,"",new Date("2026-11-13T12:00:00Z")]);
+attendance.appendRow(["REG-ATTACH","SES-ATTACH","STU-1","Ausente","","",false,"",new Date("2026-11-09T12:00:00Z")]);
+attendance.appendRow(["REG-LEGACY","SES-LEGACY","STU-1","Ausente","","",false,"",new Date("2026-11-08T12:00:00Z")]);
 const requests = sheet("SolicitudesTramites");
 requests.appendRow(["SolicitudID","UserId","EstudianteID","TipoTramite","Descripcion","AdjuntoUrl","Estado","AsignadoA","ObservacionesAdmin","FechaSolicitud","FechaResolucion"]);
 requests.appendRow(["JUST-TEST0001","ACT-1","STU-1","Justificación de Ausencia","Ausencia","", "SincronizacionPendiente","Secretaría","","",""]);
@@ -183,7 +187,7 @@ assert.equal(regRows[2][9], "");
 
 const attachmentPayload = {
   justificacionId: "JUST-ATTACH001", solicitudId: "JUST-ATTACH001", studentId: "STU-1",
-  fechaAfectada: "2026-11-10", periodo: "I parcial", motivoDeclarado: "Evidencia adjunta",
+  fechaAfectada: "2026-11-09", periodo: "I parcial", motivoDeclarado: "Evidencia adjunta",
   adjuntoUrl: "DRIVE-FILE-ATTACH-001", adjuntoSHA256: crypto.createHash("sha256").update("%PDF-test").digest("hex"), adjuntoVersion: 1,
   adjuntoSizeBytes: 9, adjuntoMimeType: "application/pdf",
   adjuntoFechaRecepcion: "2026-11-15T10:00:00.000Z", actorId: "ACT-1", actorRole: "Estudiante"
@@ -205,7 +209,7 @@ evidenceBytes=Buffer.from("%PDF-tampered");
 assert.equal(context.createCanonicalAbsenceJustification_(Object.assign({},attachmentPayload,{justificacionId:"JUST-ATTACHBAD",solicitudId:"JUST-ATTACHBAD"})).code,"ATTACHMENT_INTEGRITY_MISMATCH");
 evidenceBytes=Buffer.from("%PDF-test");
 const legacyAttachment = context.createCanonicalAbsenceJustification_(Object.assign({},attachmentPayload,{
-  justificacionId:"JUST-LEGACY001",solicitudId:"JUST-LEGACY001",adjuntoUrl:"DRIVE-FILE-LEGACY",adjuntoSHA256:"",
+  justificacionId:"JUST-LEGACY001",solicitudId:"JUST-LEGACY001",fechaAfectada:"2026-11-08",adjuntoUrl:"DRIVE-FILE-LEGACY",adjuntoSHA256:"",
   adjuntoVersion:"",adjuntoSizeBytes:"",adjuntoMimeType:"",adjuntoFechaRecepcion:""
 }));
 assert.equal(legacyAttachment.status,"success");
