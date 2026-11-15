@@ -362,6 +362,8 @@ const userContext = {
       return Array.from(crypto.createHash("sha256").update(bytes).digest()).map(v=>v>127?v-256:v);
     },
     base64Encode(value) { return Buffer.from(value).toString("base64"); },
+    base64Decode(value) { return Array.from(Buffer.from(value,"base64")); },
+    newBlob(value) { return { getBytes() { return Array.from(Buffer.from(String(value),"utf8")); } }; },
     DigestAlgorithm:{SHA_256:"SHA_256"}
   },
   DriveApp: {
