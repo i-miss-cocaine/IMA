@@ -19434,7 +19434,7 @@ function buildImportPreview_(payload) {
   const primarySnapshot = getSnapshot(type);
   if (!primarySnapshot.valid) return { status: "error", code: primarySnapshot.code };
 
-  const errors = [], warnings = [], preparedRows = [], identityResolutions = [];
+  const errors = [], warnings = [], preparedRows = [], identityResolutions = [], validRowIndexes = [];
   const seenIdentifiers = Object.create(null);
   const sourceColumnTypes = Object.create(null);
   const structuralCount = function(value) {
@@ -19459,6 +19459,8 @@ function buildImportPreview_(payload) {
       errors.push({ filaNum: 0, campo: "Estructura", codigo: String(item.code || "WORKBOOK_STRUCTURE_ERROR"), mensaje: String(item.message || "Error estructural del libro.") });
     });
   }
+
+  const blockingStructuralErrorCount = errors.length;
 
   const relatedReferences = {
     estudiante: [{ field: "PersonaID", type: "persona" }],
@@ -19558,7 +19560,7 @@ function buildImportPreview_(payload) {
     });
     preparedRows.push(mappedData);
     identityResolutions.push(identity.status === "success" ? identity : null);
-    if (errors.length === errorsBefore) validRows++;
+    if (errors.length === errorsBefore) { validRows++; validRowIndexes.push(index); }
   });
 
   Object.keys(sourceColumnTypes).forEach(function(column) {
@@ -19576,10 +19578,12 @@ function buildImportPreview_(payload) {
   const previewHash = migrationHash_(migrationStableJson_({
     actorId: actor.userId, institutionId: institutionId, source: source, type: type,
     destination: destinoModulo, mapping: mapping, rows: rows, structure: structure,
-    preparedRows: preparedRows, identityResolutions: identityResolutions, scope: scopeFingerprint
+    preparedRows: preparedRows, identityResolutions: identityResolutions, validRowIndexes: validRowIndexes, scope: scopeFingerprint
   }));
   return {
     status: "success", validForImport: errors.length === 0 && validRows === rows.length,
+    validForPartialImport: blockingStructuralErrorCount === 0 && validRowIndexes.length > 0 && validRowIndexes.length < rows.length,
+    validRowIndexes: validRowIndexes,
     previewHash: previewHash, nombreArchivo: nombreArchivo, destinoModulo: destinoModulo,
     tipoEntidad: type, sistemaOrigen: source, filasValidas: validRows, filasFallidas: rows.length - validRows,
     totalFilas: rows.length, errores: errors, advertencias: warnings,
@@ -19595,13 +19599,15 @@ function validateImportPreview(payload) {
   const preview = buildImportPreview_(payload);
   if (preview.status !== "success") return preview;
   return {
-    status: "success", validForImport: preview.validForImport, previewHash: preview.previewHash,
-    nombreArchivo: preview.nombreArchivo, destinoModulo: preview.destinoModulo,
+    status: "success", validForImport: preview.validForImport, validForPartialImport: preview.validForPartialImport,
+    previewHash: preview.previewHash, nombreArchivo: preview.nombreArchivo, destinoModulo: preview.destinoModulo,
     departamentoDestino: preview.departamentoDestino, departamentosDestino: preview.departamentosDestino,
     snapshotId: preview.snapshotId,
     resumenValidation: {
       totalFilas: preview.totalFilas, filasValidas: preview.filasValidas,
-      filasFallidas: preview.filasFallidas, mapeoConfirmado: (payload && payload.columnaMapeo) || {},
+      filasFallidas: preview.filasFallidas, filasImportables: (preview.validRowIndexes || []).length,
+      filasOmitidas: preview.totalFilas - (preview.validRowIndexes || []).length,
+      mapeoConfirmado: (payload && payload.columnaMapeo) || {},
       erroresLista: preview.errores.slice(0, 50), advertenciasLista: preview.advertencias.slice(0, 50),
       requiereConfirmacion: preview.advertencias.length > 0
     }
@@ -19739,31 +19745,163 @@ function compensateAccountingMigrationWrite_(p){
 function sendMigrationOwnerRequest_(entityType,action,payload){const route=MIGRATION_OWNER_SCHEMAS_[String(entityType||"").toLowerCase()];if(!route)throw new Error("MIGRATION_ENTITY_NOT_OWNED");if(route.service==="ACCOUNTING"){if(action==="writeMigratedEntity")return applyAccountingMigrationWrite_(payload);if(action==="compensateMigratedEntity")return compensateAccountingMigrationWrite_(payload);throw new Error("ACCOUNTING_MIGRATION_ACTION_NOT_ALLOWED");}const props=PropertiesService.getScriptProperties(),url=String(props.getProperty(route.urlProperty)||"").trim(),secret=String(props.getProperty("IMA_MIGRATION_HMAC_SECRET")||"");if(!url||url.indexOf("https://")!==0||secret.length<32)throw new Error("MIGRATION_TRANSPORT_CONFIGURATION_REQUIRED");const envelope=createInterServiceEnvelope("ACCOUNTING",route.service,action,payload,secret);const response=UrlFetchApp.fetch(url,{method:"post",contentType:"application/json",payload:JSON.stringify(envelope),muteHttpExceptions:true});const code=response.getResponseCode();if(code<200||code>=300)throw new Error("MIGRATION_OWNER_HTTP_ERROR: "+code);let result;try{result=JSON.parse(response.getContentText());}catch(e){throw new Error("MIGRATION_OWNER_RESPONSE_INVALID");}if(!result||result.status!=="success")throw new Error("MIGRATION_OWNER_REJECTED: "+String(result&&result.code||"UNKNOWN"));return result;}
 function rollbackMigrationOwnerWrites_(writes){const errors=[];for(let i=writes.length-1;i>=0;i--){try{const action=writes[i].tipoEntidad==="empleadoOwnership"?"compensateMigratedResourceOwnership":"compensateMigratedEntity";sendMigrationOwnerRequest_(writes[i].tipoEntidad,action,{idempotencyKey:writes[i].idempotencyKey,correlationId:writes[i].correlationId});}catch(e){errors.push({tipoEntidad:writes[i].tipoEntidad,idempotencyKey:writes[i].idempotencyKey,error:e.message});}}return errors;}
 
-function importDataWithColumnMapping(payload){
- const p=payload||{},nombreArchivo=p.nombreArchivo,destinoModulo=String(p.destinoModulo||"").trim(),mapping=p.columnaMapeo||{},rows=p.filasData,source=String(p.sistemaOrigen||"").trim(),type=String(p.tipoEntidad||"").trim().toLowerCase(),createdBy=p.creadoPor||"SISTEMA";
- if(!Array.isArray(rows)||!rows.length)throw new Error("filasData vacías.");if(!source||!type||!destinoModulo)throw new Error("MIGRATION_CONTRACT_REQUIRED: sistemaOrigen, tipoEntidad y destinoModulo son obligatorios.");
- const schema=MIGRATION_OWNER_SCHEMAS_[type];if(!schema)throw new Error("MIGRATION_ENTITY_NOT_OWNED: "+type);if([schema.service,schema.sheet].indexOf(destinoModulo.toUpperCase())===-1&&destinoModulo!==schema.sheet)throw new Error("MIGRATION_DESTINATION_MISMATCH");
- if(p.previewConfirmed!==true||!String(p.previewHash||"").trim())throw new Error("IMPORT_PREVIEW_CONFIRMATION_REQUIRED");
- const preview=buildImportPreview_(p);if(preview.status!=="success"||preview.validForImport!==true||preview.previewHash!==p.previewHash)throw new Error("IMPORT_PREVIEW_INVALID_OR_STALE: "+JSON.stringify((preview.errores||[]).slice(0,5)));
- const ss=SpreadsheetApp.openById(SPREADSHEET_ID),departmentPreflight=preview.departmentPreflight;
- const audit=getOrCreateSheet(ss,"AuditoriaMigraciones"),runId="MIG-"+Utilities.getUuid(),applied=[],errors=[];let ownershipRepairRequired=false;
- rows.forEach((row,i)=>{try{
-  const identifierField=String(mapping.identificador||Object.keys(row||{})[0]||""),legacy=row&&row[identifierField];if(legacy===null||legacy===undefined||String(legacy).trim()==="")throw new Error("IDENTIFIER_MISSING");
-  const identity=preview.identityResolutions[i];if(!identity||identity.status!=="success")throw new Error("IDENTITY_MAPPING_NOT_CONFIRMED");
-  const data=preview.preparedRows[i],fingerprint=migrationStableJson_({source:source,type:type,legacy:String(legacy),idNuevoPlataforma:identity.idNuevoPlataforma,datos:data}),idempotencyKey="MIG-"+migrationHash_(fingerprint),writePayload={tipoEntidad:type,idNuevoPlataforma:identity.idNuevoPlataforma,datos:data,idempotencyKey:idempotencyKey,correlationId:runId};
-  const writeResult=sendMigrationOwnerRequest_(type,"writeMigratedEntity",writePayload);if(!writeResult||writeResult.status!=="success")throw new Error("MIGRATION_OWNER_WRITE_NOT_CONFIRMED");if(writeResult.idempotent!==true)applied.push({tipoEntidad:type,idempotencyKey:idempotencyKey,correlationId:runId});
-  if(type==="empleado"){const assignment=departmentPreflight.rowAssignments&&departmentPreflight.rowAssignments[i],snapshotId=assignment?assignment.snapshotId:"",rowId=assignment?assignment.rowId:"",identityKey={institutionId:departmentPreflight.institutionId,resourceType:"EXPEDIENTE_LABORAL",resourceId:identity.idNuevoPlataforma,departmentId:data.Departamento};if(assignment){identityKey.snapshotId=snapshotId;identityKey.rowId=rowId;}const ownershipKey="OWN-"+migrationHash_(migrationStableJson_(identityKey)),entry={tipoEntidad:"empleadoOwnership",idempotencyKey:ownershipKey,correlationId:runId};applied.push(entry);
-   try{const op={sessionToken:p.sessionToken||p.authToken||p.token,institutionId:departmentPreflight.institutionId,activeDepartmentId:assignment?undefined:departmentPreflight.departmentId,resourceType:"EXPEDIENTE_LABORAL",resourceId:identity.idNuevoPlataforma,departmentId:data.Departamento,idempotencyKey:ownershipKey,correlationId:runId};if(assignment){op.rowDepartmentSnapshotVerified=true;op.rowDepartmentSnapshotId=snapshotId;op.rowDepartmentSnapshotRowId=rowId;op.rowDepartmentSnapshotInstitutionId=departmentPreflight.institutionId;op.rowDepartmentSnapshotDomain="ACCOUNTING";}const result=sendMigrationOwnerRequest_("empleadoOwnership","registerMigratedResourceOwnership",op);if(!result||result.status!=="success")throw new Error("RESOURCE_OWNERSHIP_REGISTRATION_NOT_CONFIRMED");if(result.idempotent===true)applied.pop();}
-   catch(ownershipError){if(writeResult.idempotent===true)ownershipRepairRequired=true;throw ownershipError;}
-  }
- }catch(e){errors.push({fila:i+1,error:String(e&&e.message||e)});}});
- let compensationErrors=[];if(errors.length)compensationErrors=rollbackMigrationOwnerWrites_(applied);
- const status=errors.length?(compensationErrors.length||ownershipRepairRequired?"compensation_required":(applied.length?"rolled_back":"failed_validation")):"completed";
- const finalErrors=errors.concat(compensationErrors.map(x=>({fila:null,error:"COMPENSATION_FAILED",detalle:x})));if(ownershipRepairRequired)finalErrors.push({fila:null,error:"RESOURCE_OWNERSHIP_REPAIR_REQUIRED",detalle:"El expediente laboral ya existía y su titularidad no pudo confirmarse; requiere reintento de registro."});
- try{audit.appendRow([runId,nombreArchivo||"importacion",destinoModulo,rows.length,errors.length?0:rows.length,finalErrors.length,JSON.stringify(mapping),JSON.stringify(finalErrors.slice(0,20)),status,createdBy]);}catch(auditError){if(!errors.length){compensationErrors=rollbackMigrationOwnerWrites_(applied);throw new Error(compensationErrors.length||ownershipRepairRequired?"MIGRATION_AUDIT_FAILED_COMPENSATION_REQUIRED":"MIGRATION_AUDIT_FAILED_BATCH_COMPENSATED");}throw auditError;}
- return{status:errors.length?"error":"success",code:errors.length?(compensationErrors.length||ownershipRepairRequired?"MIGRATION_COMPENSATION_REQUIRED":"MIGRATION_BATCH_ROLLED_BACK"):undefined,ejecucionId:runId,totalFilas:rows.length,identidadesResueltas:rows.length,registrosEscritos:errors.length?0:rows.length,filasPendientes:errors.length?rows.length:0,errores:finalErrors.slice(0,20),estado:status,message:errors.length?"El lote no se confirmó; las escrituras nuevas se compensaron o la reparación de titularidad quedó identificada.":"Importación completada con correspondencia confirmada, expediente y titularidad departamental registrados."};
-}
+function importDataWithColumnMapping(payload) {
+  const p = payload || {};
+  const nombreArchivo = p.nombreArchivo;
+  const destinoModulo = String(p.destinoModulo || "").trim();
+  const mapping = p.columnaMapeo || {};
+  const rows = p.filasData;
+  const source = String(p.sistemaOrigen || "").trim();
+  const type = String(p.tipoEntidad || "").trim().toLowerCase();
+  const createdBy = p.creadoPor || "SISTEMA";
+  if (!Array.isArray(rows) || !rows.length) throw new Error("filasData vacías.");
+  if (!source || !type || !destinoModulo) throw new Error("MIGRATION_CONTRACT_REQUIRED: sistemaOrigen, tipoEntidad y destinoModulo son obligatorios.");
 
+  const schema = MIGRATION_OWNER_SCHEMAS_[type];
+  if (!schema) throw new Error("MIGRATION_ENTITY_NOT_OWNED: " + type);
+  if ([schema.service, schema.sheet].indexOf(destinoModulo.toUpperCase()) === -1 && destinoModulo !== schema.sheet) throw new Error("MIGRATION_DESTINATION_MISMATCH");
+  if (p.previewConfirmed !== true || !String(p.previewHash || "").trim()) throw new Error("IMPORT_PREVIEW_CONFIRMATION_REQUIRED");
+
+  const preview = buildImportPreview_(p);
+  const fullPreviewValid = preview.status === "success" && preview.validForImport === true;
+  const partialPreviewValid = preview.status === "success" && preview.validForPartialImport === true &&
+    p.allowPartialImport === true && Array.isArray(preview.validRowIndexes) && preview.validRowIndexes.length > 0;
+  if (preview.status !== "success" || preview.previewHash !== p.previewHash || (!fullPreviewValid && !partialPreviewValid)) {
+    throw new Error("IMPORT_PREVIEW_INVALID_OR_STALE: " + JSON.stringify((preview.errores || []).slice(0, 5)));
+  }
+
+  const rowIndexes = fullPreviewValid ? rows.map(function(_row, index) { return index; }) : preview.validRowIndexes.slice();
+  const validationErrors = fullPreviewValid ? [] : (preview.errores || []).map(function(item) {
+    return { fila: item.filaNum || null, error: item.codigo || "IMPORT_ROW_INVALID", detalle: item.mensaje || "Fila omitida por validación." };
+  });
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const departmentPreflight = preview.departmentPreflight;
+  const audit = getOrCreateSheet(ss, "AuditoriaMigraciones");
+  const runId = "MIG-" + Utilities.getUuid();
+  const applied = [];
+  const writeErrors = [];
+  let ownershipRepairRequired = false;
+  let importedRows = 0;
+  let idempotentRows = 0;
+
+  rowIndexes.forEach(function(index) {
+    const row = rows[index];
+    try {
+      const identifierField = String(mapping.identificador || Object.keys(row || {})[0] || "");
+      const legacy = row && row[identifierField];
+      if (legacy === null || legacy === undefined || String(legacy).trim() === "") throw new Error("IDENTIFIER_MISSING");
+      const identity = preview.identityResolutions[index];
+      if (!identity || identity.status !== "success") throw new Error("IDENTITY_MAPPING_NOT_CONFIRMED");
+      const data = preview.preparedRows[index];
+      const fingerprint = migrationStableJson_({ source: source, type: type, legacy: String(legacy), idNuevoPlataforma: identity.idNuevoPlataforma, datos: data });
+      const idempotencyKey = "MIG-" + migrationHash_(fingerprint);
+      const writePayload = { tipoEntidad: type, idNuevoPlataforma: identity.idNuevoPlataforma, datos: data, idempotencyKey: idempotencyKey, correlationId: runId };
+      const writeResult = sendMigrationOwnerRequest_(type, "writeMigratedEntity", writePayload);
+      if (!writeResult || writeResult.status !== "success") throw new Error("MIGRATION_OWNER_WRITE_NOT_CONFIRMED");
+      if (writeResult.idempotent === true) idempotentRows++;
+      else applied.push({ tipoEntidad: type, idempotencyKey: idempotencyKey, correlationId: runId });
+
+      if (type === "empleado") {
+        const assignment = departmentPreflight.rowAssignments && departmentPreflight.rowAssignments[index];
+        const snapshotId = assignment ? assignment.snapshotId : "";
+        const rowId = assignment ? assignment.rowId : "";
+        const identityKey = { institutionId: departmentPreflight.institutionId, resourceType: "EXPEDIENTE_LABORAL", resourceId: identity.idNuevoPlataforma, departmentId: data.Departamento };
+        if (assignment) { identityKey.snapshotId = snapshotId; identityKey.rowId = rowId; }
+        const ownershipKey = "OWN-" + migrationHash_(migrationStableJson_(identityKey));
+        const entry = { tipoEntidad: "empleadoOwnership", idempotencyKey: ownershipKey, correlationId: runId };
+        applied.push(entry);
+        try {
+          const operation = {
+            sessionToken: p.sessionToken || p.authToken || p.token,
+            institutionId: departmentPreflight.institutionId,
+            activeDepartmentId: assignment ? undefined : departmentPreflight.departmentId,
+            resourceType: "EXPEDIENTE_LABORAL",
+            resourceId: identity.idNuevoPlataforma,
+            departmentId: data.Departamento,
+            idempotencyKey: ownershipKey,
+            correlationId: runId
+          };
+          if (assignment) {
+            operation.rowDepartmentSnapshotVerified = true;
+            operation.rowDepartmentSnapshotId = snapshotId;
+            operation.rowDepartmentSnapshotRowId = rowId;
+            operation.rowDepartmentSnapshotInstitutionId = departmentPreflight.institutionId;
+            operation.rowDepartmentSnapshotDomain = "ACCOUNTING";
+          }
+          const ownershipResult = sendMigrationOwnerRequest_("empleadoOwnership", "registerMigratedResourceOwnership", operation);
+          if (!ownershipResult || ownershipResult.status !== "success") throw new Error("RESOURCE_OWNERSHIP_REGISTRATION_NOT_CONFIRMED");
+          if (ownershipResult.idempotent === true) applied.pop();
+        } catch (ownershipError) {
+          if (writeResult.idempotent === true) ownershipRepairRequired = true;
+          throw ownershipError;
+        }
+      }
+      importedRows++;
+    } catch (error) {
+      writeErrors.push({ fila: index + 1, error: String(error && error.message || error) });
+    }
+  });
+
+  let compensationErrors = [];
+  if (writeErrors.length) {
+    compensationErrors = rollbackMigrationOwnerWrites_(applied);
+    if (!compensationErrors.length && !ownershipRepairRequired) applied.length = 0;
+  }
+  const status = writeErrors.length
+    ? (compensationErrors.length || ownershipRepairRequired ? "compensation_required" : (applied.length ? "rolled_back" : "failed_validation"))
+    : (validationErrors.length ? "partial" : "completed");
+  const successfulCount = writeErrors.length
+    ? (compensationErrors.length || ownershipRepairRequired ? 0 : idempotentRows)
+    : importedRows;
+  const omittedRows = rows.length - rowIndexes.length;
+  const finalErrors = validationErrors.concat(writeErrors);
+  finalErrors.push.apply(finalErrors, compensationErrors.map(function(item) {
+    return { fila: null, error: "COMPENSATION_FAILED", detalle: item };
+  }));
+  if (ownershipRepairRequired) finalErrors.push({
+    fila: null,
+    error: "RESOURCE_OWNERSHIP_REPAIR_REQUIRED",
+    detalle: "El expediente laboral ya existía y su titularidad no pudo confirmarse; requiere reintento de registro."
+  });
+
+  try {
+    audit.appendRow([
+      runId, nombreArchivo || "importacion", destinoModulo, rows.length, successfulCount,
+      finalErrors.length, JSON.stringify(mapping), JSON.stringify(finalErrors.slice(0, 20)), status, createdBy
+    ]);
+  } catch (auditError) {
+    if (!writeErrors.length) {
+      const auditCompensationErrors = rollbackMigrationOwnerWrites_(applied);
+      throw new Error(auditCompensationErrors.length || ownershipRepairRequired
+        ? "MIGRATION_AUDIT_FAILED_COMPENSATION_REQUIRED"
+        : "MIGRATION_AUDIT_FAILED_BATCH_COMPENSATED");
+    }
+    throw new Error(compensationErrors.length || ownershipRepairRequired
+      ? "MIGRATION_AUDIT_FAILED_COMPENSATION_REQUIRED"
+      : "MIGRATION_AUDIT_FAILED_AFTER_BATCH_ROLLBACK");
+  }
+
+  const writeFailed = writeErrors.length > 0;
+  return {
+    status: writeFailed ? "error" : "success",
+    code: writeFailed
+      ? (compensationErrors.length || ownershipRepairRequired ? "MIGRATION_COMPENSATION_REQUIRED" : "MIGRATION_BATCH_ROLLED_BACK")
+      : (validationErrors.length ? "IMPORT_PARTIAL_SUCCESS" : undefined),
+    ejecucionId: runId,
+    totalFilas: rows.length,
+    identidadesResueltas: rowIndexes.length,
+    registrosEscritos: successfulCount,
+    filasPendientes: rows.length - successfulCount,
+    filasOmitidasPorValidacion: omittedRows,
+    errores: finalErrors.slice(0, 50),
+    estado: status,
+    message: writeFailed
+      ? "El lote no se confirmó; las escrituras nuevas se compensaron o la reparación de titularidad quedó identificada."
+      : (validationErrors.length
+        ? "Se incorporaron " + successfulCount + " filas válidas y se omitieron " + omittedRows + " filas con errores de validación. Revise el informe antes de reintentar."
+        : "Importación completada con correspondencia confirmada, expediente y titularidad departamental registrados.")
+  };
+}
 function getMigrationLogs(payload) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const rows = getOrCreateSheet(ss, "AuditoriaMigraciones").getDataRange().getValues().slice(1);
