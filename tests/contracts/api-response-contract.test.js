@@ -70,7 +70,7 @@ for (const [name, source] of [["ACADEMIC", academicSource], ["ACCOUNTING", accou
   const success = JSON.parse(successOutput.getContent());
   assert.equal(successOutput.mimeType, "text/plain", "GAS text transport is retained and JSON is validated by contract");
   assert.equal(success.apiVersion, "1.0.0");
-  assert.equal(success.status, "success");
+  assert.equal(success.status, "success", JSON.stringify(success));
   assert.deepEqual(success.data, []);
   assert.equal(success.sample, "ok");
   assert.equal(success.meta.correlationId, "TEST-CORRELATION-0001");
