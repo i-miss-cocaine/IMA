@@ -84,7 +84,7 @@ for (const [name, source] of [["ACADEMIC", academicSource], ["ACCOUNTING", accou
 }
 
 const clientNames = ["createApiClientCorrelationId", "apiClientPublicMessage", "createApiClientError", "normalizeApiClientResponse", "showApiToast", "fetchApi"];
-const clientFunctions = clientNames.map(name => extractFunction(apiSource, name)).join("\n");
+const clientFunctions = 'var API_RESPONSE_VERSION = "1.0.0";\n' + clientNames.map(name => extractFunction(apiSource, name)).join("\n");
 const silentConsole = { log() {}, warn() {}, error() {} };
 function makeClient(url) {
   const context = {
