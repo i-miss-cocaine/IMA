@@ -3916,3 +3916,7 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-15] TASK-133 — C1.765 — Prueba de idempotencia de reintentos
 - Se amplió accounting-import-semantic-preflight.test.js para repetir un lote parcial confirmado y verificar que cada fila conserva el mismo idempotencyKey entre reintentos.
 - El contrato pasó en harness V8 aislado; no se declara Node CLI ni GitHub Actions SUCCESS para el HEAD actual.
+
+[2026-11-15] TASK-133 — C1.766 — Hallazgo de integración ACCOUNTING
+- Se verificó que backend/accounting-service/Code.gs no contiene doPost/textResponse ni router para exponer los métodos de preflight; faltan adaptadores locales de verificación de sesión, envelope interservicio y control de ownership. La UI fetchApi no puede conectarse de forma segura todavía.
+- TASK-133 sigue abierto; no se añadió un router parcial que pudiera interceptar o romper acciones contables existentes.
