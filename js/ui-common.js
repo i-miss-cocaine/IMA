@@ -6513,6 +6513,7 @@ window.initAccessibleTooltips = function(root) {
         trigger.setAttribute("aria-label", "Ayuda para " + fieldName);
         trigger.setAttribute("aria-expanded", "false");
         trigger.setAttribute("aria-controls", popoverId);
+        trigger.setAttribute("aria-describedby", descriptionId + " " + popoverId);
         trigger.setAttribute("data-ui-tooltip-trigger", "true");
 
         var popover = document.createElement("div");
