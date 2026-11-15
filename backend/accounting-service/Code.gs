@@ -5311,7 +5311,8 @@ function verifyPaymentVoucherEvidence_(ss,row,map) {
   if(file.getSharingAccess()!==DriveApp.Access.PRIVATE)return {status:"error",code:"VOUCHER_FILE_NOT_PRIVATE"};
   try{
     const blob=file.getBlob(),bytes=blob.getBytes(),fileName=String(file.getName()||"comprobante");
-    if(!bytes||!bytes.length||bytes.length>10*1024*1024)return {status:"error",code:"VOUCHER_FILE_SIZE_INVALID"};
+    if(!bytes||!bytes.length)return {status:"error",code:"VOUCHER_FILE_EMPTY"};
+    if(bytes.length>10*1024*1024)return {status:"error",code:"VOUCHER_FILE_TOO_LARGE"};
     const mime=String(blob.getContentType()||file.getMimeType()||"").toLowerCase();
     const extension=fileName.toLowerCase().slice(fileName.lastIndexOf("."));
     if([".pdf",".jpg",".jpeg",".png",".webp"].indexOf(extension)===-1)return {status:"error",code:"VOUCHER_FILE_TYPE_NOT_ALLOWED"};
