@@ -11540,7 +11540,10 @@ function getEmployeeRecords(payload) {
     return { status: "error", code: actor.code || "VERIFIED_IDENTITY_REQUIRED", message: "Acceso denegado." };
   }
 
-  const role = normalizeVacationRole_(actor.role);
+  const role = String(actor.role || "").toUpperCase()
+    .replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I")
+    .replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N")
+    .replace(/[^A-Z0-9]/g, "");
   const selfRoles = ["EMPLEADO", "TRABAJADOR", "PERSONAL", "PROFESOR"];
   const managementRoles = ["RECURSOSHUMANOS", "DIRECTOR", "SUBDIRECTOR", "CONTADOR", "ADMINISTRADOR"];
   const isSelf = selfRoles.indexOf(role) !== -1;
