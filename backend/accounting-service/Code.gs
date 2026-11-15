@@ -120,12 +120,19 @@ function buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutio
   var headers = values.length ? values[0].map(function(value) { return String(value || "").trim(); }) : [];
   var idIndex = headers.indexOf(idField);
   if (idIndex < 0) return { verified: false, service: service, sheet: sheetName, institutionId: institutionId, existingTargetIds: [], targetRows: [] };
+  var requestedIds = {};
+  (preparedRows || []).forEach(function(prepared) {
+    var requestedId = String(prepared && prepared[idField] || "").trim();
+    if (requestedId) requestedIds[requestedId] = true;
+  });
   var ids = {};
   var targetRows = [];
   for (var i = 1; i < values.length; i++) {
     var row = values[i];
     var id = String(row[idIndex] || "").trim();
-    if (!id) continue;
+    if (!id || !requestedIds[id]) continue;
+    if (ids[id]) return { verified: false, service: service, sheet: sheetName,
+      institutionId: institutionId, existingTargetIds: [], targetRows: [], code: "MIGRATION_SNAPSHOT_DUPLICATE_TARGET_ID" };
     ids[id] = true;
     var item = {};
     headers.forEach(function(header, column) { if (header) item[header] = row[column]; });
