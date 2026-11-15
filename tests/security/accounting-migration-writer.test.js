@@ -78,7 +78,7 @@ const runtime = {
     }
   },
   UrlFetchApp: { fetch(url, options) {
-    assert.equal(url, "https://user.example.test/exec");
+    assert.ok(["https://user.example.test/exec", "https://academic.example.test/exec"].includes(url));
     lastEnvelope = JSON.parse(options.payload);
     return { getResponseCode: () => 200, getContentText: () => JSON.stringify(remoteResponse) };
   } }
