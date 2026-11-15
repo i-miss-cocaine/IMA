@@ -141,7 +141,7 @@ async function main() {
   }
 
   const success = await call("/success");
-  assert.equal(success.status, "success");
+  assert.equal(success.status, "success", JSON.stringify(success));
   assert.equal(success.apiVersion, "1.0.0");
   assert.equal(success.data[0].id, 1);
   assert.equal(success.isFallback, false);
