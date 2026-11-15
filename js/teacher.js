@@ -6692,23 +6692,92 @@ function toBase64(file) {
             defaultFields.map(c => `<option value="${c.clave}">${c.categoria}: ${c.etiqueta} (${c.clave})</option>`).join('');
     }
 
-    // Handle File Input selection
+    // Handle File Input selection. La extensión/MIME del navegador no sustituyen la firma binaria.
     if (pdfFileInput) {
         pdfFileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
-            if (!file || file.type !== 'application/pdf') {
-                alert("Por favor seleccione un archivo PDF válido.");
+            if (!file || !/\.pdf$/i.test(String(file.name || ""))) {
+                alert("Seleccione un archivo con extensión PDF.");
+                return;
+            }
+            if (!file.size || file.size > 10 * 1024 * 1024) {
+                alert("El PDF está vacío o supera el límite de 10 MB.");
                 return;
             }
 
             try {
                 const arrayBuffer = await file.arrayBuffer();
+                const signatureBytes = new Uint8Array(arrayBuffer).slice(0, 5);
+                const signature = String.fromCharCode.apply(null, Array.from(signatureBytes));
+                if (signature !== "%PDF-") throw new Error("PDF_SIGNATURE_INVALID: la cabecera binaria no corresponde a PDF.");
                 currentPdfArrayBuffer = arrayBuffer;
                 await loadPdfFromArrayBuffer(arrayBuffer);
             } catch (err) {
-                alert("Error al cargar el PDF: " + err.message);
+                alert("No se pudo validar el PDF: " + err.message);
             }
         });
+    }
+
+    window.analyzePdfDocumentStructure = async function(pdfDocument) {
+        if (!pdfDocument || !pdfDocument.numPages || typeof pdfDocument.getPage !== "function") {
+            throw new Error("PDF_DOCUMENT_INVALID");
+        }
+        const ops = window.pdfjsLib && window.pdfjsLib.OPS || {};
+        const imageOps = [
+            ops.paintImageXObject, ops.paintJpegXObject, ops.paintInlineImageXObject,
+            ops.paintImageMaskXObject, ops.paintImageMaskXObjectGroup
+        ].filter(value => typeof value === "number");
+        const pages = [];
+        const warnings = [];
+        let textPages = 0, scannedPages = 0, mixedPages = 0, emptyPages = 0;
+        for (let pageNumber = 1; pageNumber <= pdfDocument.numPages; pageNumber++) {
+            try {
+                const page = await pdfDocument.getPage(pageNumber);
+                const textContent = await page.getTextContent();
+                const hasText = !!(textContent && Array.isArray(textContent.items) &&
+                    textContent.items.some(item => String(item && item.str || "").trim()));
+                const operatorList = typeof page.getOperatorList === "function" ? await page.getOperatorList() : null;
+                const hasImages = !!(operatorList && Array.isArray(operatorList.fnArray) &&
+                    operatorList.fnArray.some(operator => imageOps.indexOf(operator) !== -1));
+                let classification = "SIN_CONTENIDO_DETECTABLE";
+                if (hasText && hasImages) { classification = "MIXTO"; mixedPages++; }
+                else if (hasText) { classification = "DIGITAL"; textPages++; }
+                else if (hasImages) { classification = "ESCANEADO"; scannedPages++; }
+                else { emptyPages++; }
+                pages.push({ page: pageNumber, classification: classification, hasText: hasText, hasImages: hasImages });
+            } catch (pageError) {
+                warnings.push({ page: pageNumber, code: "PDF_PAGE_ANALYSIS_FAILED" });
+                pages.push({ page: pageNumber, classification: "NO_ANALIZADA", hasText: false, hasImages: false });
+            }
+        }
+        if (emptyPages) warnings.push({ code: "PDF_EMPTY_OR_VECTOR_ONLY_PAGES", count: emptyPages });
+        if (warnings.length) warnings.push({ code: "PDF_REVIEW_REQUIRED" });
+        let documentType = "SIN_CONTENIDO_DETECTABLE";
+        if (scannedPages && (textPages || mixedPages)) documentType = "MIXTO";
+        else if (scannedPages) documentType = "ESCANEADO";
+        else if (textPages || mixedPages) documentType = "DIGITAL";
+        return {
+            valid: true, pageCount: pdfDocument.numPages, documentType: documentType,
+            textPages: textPages, scannedPages: scannedPages, mixedPages: mixedPages,
+            emptyOrVectorOnlyPages: emptyPages, pages: pages, warnings: warnings,
+            requiresOcr: scannedPages > 0
+        };
+    };
+
+    function renderPdfValidationSummary_(analysis) {
+        if (!pdfPageContainer || !pdfPageContainer.parentNode) return;
+        let summary = document.getElementById("pdf-validation-summary");
+        if (!summary) {
+            summary = document.createElement("div");
+            summary.id = "pdf-validation-summary";
+            summary.className = "mb-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700";
+            pdfPageContainer.parentNode.insertBefore(summary, pdfPageContainer);
+        }
+        summary.textContent = "Validación PDF: " + analysis.documentType + " · " + analysis.pageCount +
+            " páginas · " + analysis.textPages + " digitales · " + analysis.scannedPages +
+            " escaneadas · " + analysis.mixedPages + " mixtas · " +
+            analysis.emptyOrVectorOnlyPages + " sin texto/imagen detectable." +
+            (analysis.requiresOcr ? " Requiere OCR o revisión asistida antes de extraer texto." : "");
     }
 
     async function loadPdfFromArrayBuffer(arrayBuffer) {
@@ -6722,12 +6791,19 @@ function toBase64(file) {
             currentPdfDoc = await loadingTask.promise;
             currentPdfNumPages = currentPdfDoc.numPages;
             currentPdfPage = 1;
+            const pdfAnalysis = await window.analyzePdfDocumentStructure(currentPdfDoc);
+            window.lastPdfValidation = pdfAnalysis;
+            renderPdfValidationSummary_(pdfAnalysis);
 
             document.getElementById('pdf-total-pages').textContent = currentPdfNumPages;
             await renderPdfPage(currentPdfPage);
         } catch (e) {
             console.error("Error loading PDF with pdfjs:", e);
-            alert("No se pudo renderizar la vista previa del PDF.");
+            if (e && (e.name === "PasswordException" || e.code === 1 || e.code === 2)) {
+                alert("El PDF está protegido con contraseña y no puede analizarse sin desbloquearlo.");
+            } else {
+                alert("El PDF está dañado, truncado o no puede analizarse. No continúe con la conversión.");
+            }
         }
     }
 
