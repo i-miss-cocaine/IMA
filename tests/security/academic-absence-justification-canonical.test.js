@@ -373,7 +373,7 @@ const userContext = {
 };
 const userNames = [
   "requestAttachmentHeaderMap_","ensureRequestAttachmentIntegritySchema_","setRequestAttachmentIntegrity_",
-  "ensureEvidenceDocumentSchema_","getEvidenceRecordsForRequest_",
+  "ensureEvidenceDocumentSchema_","getEvidenceRecordsForRequest_","getEvidenceSnapshotForDecision_",
   "ensureUserAbsenceRequestSchema_","createPrivateRequestAttachment_","createPrivateRequestAttachmentWithIntegrity_",
   "submitStudentAbsenceJustification","reviewAbsenceJustification","getAdministrativeRequests","updateRequestStatus","processWorkflowDecision"
 ];
