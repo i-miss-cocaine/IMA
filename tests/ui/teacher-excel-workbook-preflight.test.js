@@ -65,6 +65,7 @@ const good = context.analyze(simple, "Datos", 0);
 assert.equal(good.valid, true);
 assert.equal(good.data.length, 1);
 assert.equal(good.data[0].Nombre, "Ana");
+assert.equal(good.previewRows[0][1], "Ana");
 
 const multi = workbook([["ID","Nombre"],["A-1","Ana"]], {
   names: ["Datos","Resumen","Oculta"],
