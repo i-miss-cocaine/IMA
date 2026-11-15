@@ -294,7 +294,7 @@ const ROLE_PERMISSIONS = {
     "getClassroomResources", "saveClassroomResource", "saveClassroomMaintenance", "getStudentSchedule", "getScheduleConflictResolutionAlternatives", "saveScheduleScenario", "getScheduleScenarios", "saveTeacherWorkLoadPreferences", "createSessionException", "getScheduleVersions", "compareScheduleVersions", "restoreScheduleVersion", "getPlanningQualityAndOccupancyReport", "exportBulkClassSchedules", "importBulkClassSchedules", "previewPublishImpact",
     "createAdmissionRequest", "getAdmissionRequests", "updateAdmissionStatus", "reopenAdmissionRequest", "convertAdmissionToStudent", "scheduleAdmissionInterview", "getAdmissionInterviews", "recordInterviewOutcome", "saveAdmissionEvaluation", "getAdmissionEvaluations", "addToWaitlist", "getWaitlist", "reorderWaitlist", "offerWaitlistSlot", "respondToWaitlistSlot", "resolveAdmissionDuplicate", "getAdmissionAnalyticsReport",
     "getStudentFile", "getStudentFileSummary", "updateStudentFile", "getStudentTimeline", "findDuplicateStudents", "mergeStudentFiles", "getMergePreviewComparison", "unmergeStudentFiles", "getStudentFileAdministrativeReports", "initializeDirectionSecretaryDriveStructure",
-    "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "getStudentDocumentFile", "updateDocumentStatus", "getPendingDocumentsReport", "grantDocumentExemption", "restoreDocumentVersion", "checkAndNotifyExpiringStudentDocuments",
+    "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "getStudentDocumentFile", "verifyDocumentIntegritySha256", "updateDocumentStatus", "getPendingDocumentsReport", "grantDocumentExemption", "restoreDocumentVersion", "checkAndNotifyExpiringStudentDocuments",
     "getPendingDocumentsReport", "grantDocumentExemption", "createStudentEnrollment", "getStudentEnrollments", "renewStudentEnrollment", "checkEnrollmentCapacity",
     "changeStudentSection", "recordStudentTransfer", "recordStudentWithdrawal", "processStudentReentry", "processStudentPromotion", "processStudentGraduation", "updateStudentLifecycleStatus", "reconcileStudentLifecycleState", "runStudentLifecycleRegressionSuite", "getAcademicAreaTemplateCatalog", "assignTeacherToAcademicArea", "getTeachersByAcademicArea", "getAcademicAreasByTeacher", "removeTeacherFromAcademicArea", "getAcademicAreaCoordinationScope", "deployAcademicMicroserviceInstance", "getAcademicMicroserviceDeployments", "previewBackupRestoreImpact", "getStorageQuotaMetricsReport", "reconcileDocumentStorageIntegrity", "reconcileInstitutionalModulesMatrix",
     "openAttendanceSession", "saveClassAttendance", "bulkApplyAttendanceStatus", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "reconcilePendingAttendanceJustifications", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary", "checkAndDispatchAttendanceAlerts", "getAttendanceConfig", "saveAttendanceConfig",
@@ -307,7 +307,7 @@ const ROLE_PERMISSIONS = {
     "getTeacherAssignments", "assignTeacherToClass", "createTeacherSubstitution", "getAcademicCalendar", "createCalendarEvent", "getClassSchedules", "createClassSchedule", "deleteClassSchedule", "copyClassSchedules", "getTeacherTeachingLoad", "generateAutoSchedules", "recordClassSessionOutcome", "getTeachingHoursSummary", "rescheduleCancelledSession", "getPendingSessionRecoveries", "publishClassSchedules", "getIndividualCalendar", "syncAcademicScheduleIntegrity", "getAcademicAuditLogs", "getReusableResourceCatalog", "manageReusableResource",
     "getClassroomResources", "saveClassroomResource", "getStudentSchedule",
     "createAdmissionRequest", "getAdmissionRequests", "updateAdmissionStatus", "getStudentFile", "getStudentTimeline", "findDuplicateStudents",
-    "getStudentGuardians", "getStudentDocuments", "getStudentDocumentFile", "getStudentEnrollments", "checkEnrollmentCapacity",
+    "getStudentGuardians", "getStudentDocuments", "getStudentDocumentFile", "verifyDocumentIntegritySha256", "getStudentEnrollments", "checkEnrollmentCapacity",
     "openAttendanceSession", "saveClassAttendance", "bulkApplyAttendanceStatus", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "reconcilePendingAttendanceJustifications", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary",
     "createTeacherSupervision", "getTeacherSupervisions", "updateSupervisionStatus", "saveSupervisionObservation", "getSupervisionObservation", "saveTeacherImprovementPlan", "getTeacherImprovementPlans", "savePedagogicalPlanning", "getPedagogicalPlannings", "submitPlanningForReview", "reviewPedagogicalPlanning", "getPlanningReviewHistory", "saveSupervisionRubric", "getSupervisionRubrics"
   , "saveExtracurricularActivity", "getExtracurricularActivities"],
@@ -319,7 +319,7 @@ const ROLE_PERMISSIONS = {
     "getClassroomResources", "saveClassroomResource", "getStudentSchedule",
     "createAdmissionRequest", "getAdmissionRequests", "updateAdmissionStatus", "convertAdmissionToStudent", "scheduleAdmissionInterview", "getAdmissionInterviews", "recordInterviewOutcome", "saveAdmissionEvaluation", "getAdmissionEvaluations", "addToWaitlist", "getWaitlist", "reorderWaitlist", "offerWaitlistSlot", "respondToWaitlistSlot", "resolveAdmissionDuplicate",
     "getStudentFile", "getStudentFileSummary", "updateStudentFile", "getStudentTimeline", "findDuplicateStudents", "getMergePreviewComparison", "unmergeStudentFiles", "getStudentFileAdministrativeReports",
-    "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "getStudentDocumentFile", "updateDocumentStatus",
+    "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "getStudentDocumentFile", "verifyDocumentIntegritySha256", "updateDocumentStatus",
     "getPendingDocumentsReport", "grantDocumentExemption", "createStudentEnrollment", "getStudentEnrollments", "renewStudentEnrollment", "checkEnrollmentCapacity",
     "changeStudentSection", "recordStudentTransfer", "recordStudentWithdrawal", "processStudentReentry", "processStudentPromotion", "processStudentGraduation", "updateStudentLifecycleStatus", "reconcileStudentLifecycleState", "runStudentLifecycleRegressionSuite",
     "openAttendanceSession", "saveClassAttendance", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "reconcilePendingAttendanceJustifications", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary"
@@ -332,7 +332,7 @@ const ROLE_PERMISSIONS = {
     "getClassroomResources", "saveClassroomResource", "getStudentSchedule",
     "createAdmissionRequest", "getAdmissionRequests", "updateAdmissionStatus", "convertAdmissionToStudent", "scheduleAdmissionInterview", "getAdmissionInterviews", "recordInterviewOutcome", "saveAdmissionEvaluation", "getAdmissionEvaluations", "addToWaitlist", "getWaitlist", "reorderWaitlist", "offerWaitlistSlot", "respondToWaitlistSlot",
     "getStudentFile", "updateStudentFile", "getStudentTimeline", "findDuplicateStudents",
-    "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "getStudentDocumentFile", "updateDocumentStatus",
+    "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "getStudentDocumentFile", "verifyDocumentIntegritySha256", "updateDocumentStatus",
     "getPendingDocumentsReport", "grantDocumentExemption", "createStudentEnrollment", "getStudentEnrollments", "renewStudentEnrollment", "checkEnrollmentCapacity",
     "changeStudentSection", "recordStudentTransfer", "recordStudentWithdrawal", "processStudentReentry", "processStudentPromotion", "processStudentGraduation", "updateStudentLifecycleStatus", "reconcileStudentLifecycleState", "runStudentLifecycleRegressionSuite",
     "openAttendanceSession", "saveClassAttendance", "getBatchAttendanceRecords", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "reconcilePendingAttendanceJustifications", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary", "generateConsolidatedAttendanceAndCoexistenceReport", "validateStudentWelfareAccess"
@@ -344,17 +344,17 @@ const ROLE_PERMISSIONS = {
   "Orientacion": ["getAcademicConfig", "getAcademicYears", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentGuardians", "getAttendanceIncidents", "saveAttendanceIncident", "updateAttendanceIncidentStatus", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "addCaseCommitment", "updateCaseCommitmentStatus", "saveGuidanceFollowupPlan", "saveVocationalRecommendation", "validateEvidenceFileAndPermissions", "getStudentAttendanceSummary", "validateStudentWelfareAccess", "scheduleGuidanceAppointment", "getGuidanceAppointments", "updateGuidanceAppointmentStatus", "evaluateAndDispatchEarlyWarningAlerts", "getEarlyWarningAlerts"],
   "Padre": [
     "getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getStudentEnrollmentHistory",
-    "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentFileSummary", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "getStudentEnrollments",
+    "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentFileSummary", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "verifyDocumentIntegritySha256", "getStudentEnrollments",
     "getClassAttendance", "getDailyAttendance", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents"
   , "getStudentExtracurricularEnrollments", "enrollStudentInExtracurricular", "cancelExtracurricularEnrollment", "getExtracurricularActivities"],
   "Tutor": [
     "getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getStudentEnrollmentHistory",
-    "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "getStudentEnrollments",
+    "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "verifyDocumentIntegritySha256", "getStudentEnrollments",
     "getClassAttendance", "getDailyAttendance", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents"
   , "getStudentExtracurricularEnrollments", "enrollStudentInExtracurricular", "cancelExtracurricularEnrollment", "getExtracurricularActivities"],
   "Responsable": [
     "getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getStudentEnrollmentHistory",
-    "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "getStudentEnrollments",
+    "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "verifyDocumentIntegritySha256", "getStudentEnrollments",
     "getClassAttendance", "getDailyAttendance", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents"
   , "getStudentExtracurricularEnrollments", "enrollStudentInExtracurricular", "cancelExtracurricularEnrollment", "getExtracurricularActivities"],
   "Profesor": [
@@ -377,8 +377,8 @@ const ROLE_PERMISSIONS = {
     "savePedagogicalPlanning", "getPedagogicalPlannings", "submitPlanningForReview", "getPlanningReviewHistory", "getSupervisionRubrics"
   ],
   "Asistente": ["getAcademicConfig", "getAsignaturasActivas", "getWhatsAppLink", "getQuestionBank", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentTimeline", "getClassAttendance", "getBatchAttendanceRecords", "getStudentAttendanceSummary", "auditAssistantDelegatedAction"],
-  "Estudiante": ["getAcademicConfig", "getAsignaturasActivas", "getWhatsAppLink", "getQuestionBank", "getStudentEnrollmentHistory", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentFileSummary", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "getClassAttendance", "getDailyAttendance", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents", "calculateUnifiedAcademicGrade", "generateStudentReportCard", "validateAcademicResponsibilityAndScopeAccess"],
-  "Alumno": ["getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getStudentEnrollmentHistory", "getAcademicYears", "getAcademicPeriods", "getAcademicOffers", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "getStudentEnrollments", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents", "generateStudentReportCard", "validateAcademicResponsibilityAndScopeAccess"]
+  "Estudiante": ["getAcademicConfig", "getAsignaturasActivas", "getWhatsAppLink", "getQuestionBank", "getStudentEnrollmentHistory", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentFileSummary", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "verifyDocumentIntegritySha256", "getClassAttendance", "getDailyAttendance", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents", "calculateUnifiedAcademicGrade", "generateStudentReportCard", "validateAcademicResponsibilityAndScopeAccess"],
+  "Alumno": ["getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getStudentEnrollmentHistory", "getAcademicYears", "getAcademicPeriods", "getAcademicOffers", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "verifyDocumentIntegritySha256", "getStudentEnrollments", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents", "generateStudentReportCard", "validateAcademicResponsibilityAndScopeAccess"]
 };
 
 const PUBLIC_ACTIONS = ["ping", "createAdmissionRequest", "getPublicAdmissionStatus", "saveAdmissionDraft", "getAdmissionDraft"];
@@ -1144,6 +1144,7 @@ function doPost(e) {
       case "uploadStudentDocument": result = uploadStudentDocument(payload); break;
       case "getStudentDocuments": result = getStudentDocuments(payload); break;
       case "getStudentDocumentFile": result = getStudentDocumentFile(payload); break;
+      case "verifyDocumentIntegritySha256": result = verifyDocumentIntegritySha256(payload); break;
       case "updateDocumentStatus": result = updateDocumentStatus(payload); break;
       case "getPendingDocumentsReport": result = getPendingDocumentsReport(payload); break;
       case "grantDocumentExemption": result = grantDocumentExemption(payload); break;
@@ -13637,7 +13638,8 @@ function computeDocumentSHA256(contentOrBase64) {
 
 function ensureStudentDocumentSchema_(sheet) {
   const headers = ["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl",
-    "FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones","VersionDocumento","SHA256"];
+    "FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones","VersionDocumento","SHA256",
+    "HashSHA256","ImportBatchID","DocumentoReferenciaID"];
   const current = sheet.getRange(1,1,1,Math.max(1,sheet.getLastColumn())).getValues()[0] || [];
   headers.forEach(function(header,index) {
     const actual = String(current[index] || "").trim();
@@ -13734,6 +13736,31 @@ function nextStudentDocumentVersion_(previousVersion) {
   return String(Number(match[1])) + "." + String(Number(match[2]) + 1);
 }
 
+function getDocumentDuplicatePolicy_(ss) {
+  var defaultPolicy = "RECHAZAR_DUPLICADO_EXACTO";
+  var sheet = ss && ss.getSheetByName ? ss.getSheetByName("ConfiguracionInstitucional") : null;
+  if (!sheet || sheet.getLastRow() < 2) return { status: "success", policy: defaultPolicy };
+  var rows = sheet.getDataRange().getValues();
+  var headers = (rows[0] || []).map(function(value) { return String(value || "").trim().toLowerCase().replace(/[^a-z0-9]/g, ""); });
+  var keyIndex = headers.indexOf("clave") >= 0 ? headers.indexOf("clave") :
+    (headers.indexOf("parametro") >= 0 ? headers.indexOf("parametro") : headers.indexOf("nombre"));
+  var valueIndex = headers.indexOf("valor");
+  var stateIndex = headers.indexOf("estado");
+  if (keyIndex < 0 || valueIndex < 0 || stateIndex < 0) return { status: "success", policy: defaultPolicy, warning: "DUPLICATE_POLICY_SCHEMA_UNAVAILABLE" };
+  var matches = [];
+  for (var i = 1; i < rows.length; i++) {
+    if (String(rows[i][keyIndex] || "").trim() === "POLITICA_DUPLICADOS_DOCUMENTALES" &&
+        String(rows[i][stateIndex] || "").trim().toLowerCase() === "activo") matches.push(rows[i]);
+  }
+  if (matches.length > 1) return { status: "error", code: "DOCUMENT_DUPLICATE_POLICY_AMBIGUOUS" };
+  if (!matches.length) return { status: "success", policy: defaultPolicy };
+  var value = String(matches[0][valueIndex] || "").trim().toUpperCase();
+  if (["RECHAZAR_DUPLICADO_EXACTO", "CREAR_ENLACE_REFERENCIA_SIN_DUPLICAR_ARCHIVO"].indexOf(value) === -1) {
+    return { status: "success", policy: defaultPolicy, warning: "DOCUMENT_DUPLICATE_POLICY_INVALID" };
+  }
+  return { status: "success", policy: value };
+}
+
 function uploadStudentDocument(payload) {
   const p = payload || {};
   const expedienteId = String(p.expedienteId || "").trim();
@@ -13743,6 +13770,7 @@ function uploadStudentDocument(payload) {
   const fileData = p.fileData;
   const fechaVencimiento = p.fechaVencimiento || "";
   const observaciones = p.observaciones || "";
+  const importBatchId = String(p.importBatchId || p.loteImportacionId || "").trim();
   if ((!expedienteId && !solicitudId) || !tipoDocumento || !fileData || !fileName) {
     throw new Error("expedienteId o solicitudId, tipoDocumento, fileName y fileData son requeridos.");
   }
@@ -13790,6 +13818,84 @@ function uploadStudentDocument(payload) {
         existingIdx=i;
       }
     }
+    sha256Hash = computeDocumentSHA256(rawBytes).toLowerCase();
+    if (!/^[a-f0-9]{64}$/.test(sha256Hash)) throw new Error("DOCUMENT_SHA256_INVALID");
+    const policyResult = getDocumentDuplicatePolicy_(ss);
+    if (!policyResult || policyResult.status !== "success") return {status:"error",code:policyResult && policyResult.code || "DOCUMENT_DUPLICATE_POLICY_UNAVAILABLE"};
+    const duplicatePolicy = policyResult.policy || "RECHAZAR_DUPLICADO_EXACTO";
+    const duplicateMatches = [];
+    for (let i=1;i<docRows.length;i++) {
+      if (i === existingIdx) continue;
+      const rowHash = String(docRows[i][15] || docRows[i][14] || "").trim().toLowerCase();
+      if (rowHash && rowHash === sha256Hash) duplicateMatches.push({rowNumber:i+1,row:docRows[i]});
+    }
+    if (existingIdx !== -1) {
+      const sameRecord = docRows[existingIdx];
+      const sameHash = String(sameRecord[15] || sameRecord[14] || "").trim().toLowerCase();
+      if (sameHash && sameHash === sha256Hash) {
+        return {status:"success",documentoId:String(sameRecord[0] || ""),versionDocumento:String(sameRecord[13] || "1.0"),
+          sha256Hash:sha256Hash,tieneArchivo:!!sameRecord[5],integridadVerificada:true,idempotent:true,
+          duplicate:true,duplicateType:"MISMO_DOCUMENTO",fileCreated:false};
+      }
+    }
+    const inventorySheet = ss.getSheetByName("InventarioDocumentalLegado");
+    let inventoryDuplicate = null;
+    if (inventorySheet) {
+      const inventoryValues = inventorySheet.getDataRange().getValues();
+      const inventoryHeaders = (inventoryValues[0] || []).map(function(value){return String(value || "").trim();});
+      const inventoryHashIndex = inventoryHeaders.indexOf("HashSHA256");
+      const inventoryIdIndex = inventoryHeaders.indexOf("DocumentoId");
+      const inventoryTenantIndex = inventoryHeaders.indexOf("InstitutionID");
+      const actorTenant = String(actor.institutionId || actor.institutionID || "");
+      if (inventoryHashIndex >= 0) {
+        for (let i=1;i<inventoryValues.length;i++) {
+          if (inventoryTenantIndex >= 0 && actorTenant && String(inventoryValues[i][inventoryTenantIndex] || "") !== actorTenant) continue;
+          const inventoryHash = String(inventoryValues[i][inventoryHashIndex] || "").trim().toLowerCase();
+          if (inventoryHash && inventoryHash === sha256Hash) {
+            inventoryDuplicate = {documentId:inventoryIdIndex >= 0 ? String(inventoryValues[i][inventoryIdIndex] || "") : ""};
+            break;
+          }
+        }
+      }
+    }
+    if (inventoryDuplicate && !duplicateMatches.length) {
+      return {status:"error",code:"DUPLICATE_LEGACY_INVENTORY",duplicate:true,duplicateType:"INVENTARIO_LEGADO",
+        message:"El binario ya está registrado en el inventario documental legado; no se creó otro archivo."};
+    }
+    if (duplicateMatches.length) {
+      const sameBatch = !!importBatchId && duplicateMatches.some(function(item){return String(item.row[16] || "") === importBatchId;});
+      if (duplicatePolicy !== "CREAR_ENLACE_REFERENCIA_SIN_DUPLICAR_ARCHIVO") {
+        const sameExpediente = duplicateMatches.find(function(item){return String(item.row[1] || "") === expedienteId;});
+        return {status:"error",code:sameBatch ? "DUPLICATE_EXACT_WITHIN_BATCH" : "DUPLICATE_DOCUMENT_EXACT",
+          duplicate:true,duplicateType:sameBatch ? "MISMO_LOTE" : "REPOSITORIO",
+          existingDocumentId:sameExpediente ? String(sameExpediente.row[0] || "") : undefined,
+          message:"El contenido binario ya existe; la política institucional impide duplicar el archivo físico."};
+      }
+      const fileIds = duplicateMatches.map(function(item){return String(item.row[5] || "").trim();}).filter(Boolean);
+      const uniqueFileIds = Array.from(new Set(fileIds));
+      if (uniqueFileIds.length !== 1) return {status:"error",code:"DOCUMENT_DUPLICATE_SOURCE_AMBIGUOUS"};
+      const source = duplicateMatches.find(function(item){return String(item.row[5] || "").trim() === uniqueFileIds[0];});
+      const sourceDocId = String(source.row[0] || "").trim();
+      const sourceHash = String(source.row[15] || source.row[14] || "").trim().toLowerCase();
+      const verifiedSource = getVerifiedPrivateStudentDocumentFile_(uniqueFileIds[0],sourceHash,source.row[4],{makePrivate:false});
+      if (verifiedSource.sha256Hash !== sha256Hash) throw new Error("DOCUMENT_DUPLICATE_SOURCE_INTEGRITY_MISMATCH");
+      const referenceDocId = generateInstitutionalId({entityType:"DocumentoEstudiante",prefix:"DOC-",skipLock:true});
+      docId = referenceDocId && referenceDocId.generatedId ? String(referenceDocId.generatedId) :
+        ("DOC-" + Utilities.getUuid().replace(/-/g,"").slice(0,20));
+      version = "1.0";
+      const nowReference = new Date();
+      sheet.appendRow([docId,expedienteId,solicitudId,tipoDocumento,fileName,uniqueFileIds[0],"",nowReference,
+        fechaVencimiento,"EnRevision",actor.userId,"",observaciones,version,sha256Hash,sha256Hash,importBatchId,sourceDocId]);
+      persisted = true;
+      try {
+        logStructuredEvent("ACADEMIC","uploadStudentDocument","INFO","DOCUMENT_DUPLICATE_REFERENCE_CREATED",
+          "Se creó una referencia documental sin duplicar el archivo físico.",
+          {docId:docId,sourceDocumentId:sourceDocId,expedienteId:expedienteId,sha256Hash:sha256Hash,importBatchId:importBatchId},actor.role);
+      } catch (_) {}
+      return {status:"success",documentoId:docId,versionDocumento:version,sha256Hash:sha256Hash,
+        tieneArchivo:true,integridadVerificada:true,duplicate:true,duplicateType:"REFERENCIA_SIN_COPIA",
+        referenciaDocumentoId:sourceDocId,fileCreated:false};
+    }
     const now = new Date();
     const safeName = fileName;
     const blob = Utilities.newBlob(rawBytes,validation.mimeType,safeName);
@@ -13797,8 +13903,7 @@ function uploadStudentDocument(payload) {
     createdFile.setSharing(DriveApp.Access.PRIVATE,DriveApp.Permission.NONE);
     if (createdFile.getSharingAccess() !== DriveApp.Access.PRIVATE) throw new Error("DOCUMENT_FILE_NOT_PRIVATE");
     const stored = getVerifiedPrivateStudentDocumentFile_(createdFile.getId(),"",safeName,{makePrivate:false});
-    const uploadedHash = computeDocumentSHA256(rawBytes).toLowerCase();
-    if (stored.sha256Hash !== uploadedHash) throw new Error("DOCUMENT_STORAGE_BYTE_MISMATCH");
+    if (stored.sha256Hash !== sha256Hash) throw new Error("DOCUMENT_STORAGE_BYTE_MISMATCH");
     sha256Hash = stored.sha256Hash;
     if (!/^[a-f0-9]{64}$/.test(sha256Hash)) throw new Error("DOCUMENT_SHA256_INVALID");
 
@@ -13816,8 +13921,8 @@ function uploadStudentDocument(payload) {
       historySheet.appendRow([historyId,docId,previous[4]||"",previousFileId,"",previous[7]||now,
         actor.userId,"Sustitución por nueva versión subida",now,previousVersion,previousHash]);
       version = nextStudentDocumentVersion_(previous[13]);
-      const updated = previous.slice(0,15);
-      while (updated.length<15) updated.push("");
+      const updated = previous.slice(0,18);
+      while (updated.length<18) updated.push("");
       updated[4]=safeName;
       updated[5]=createdFile.getId();
       updated[6]="";
@@ -13829,13 +13934,16 @@ function uploadStudentDocument(payload) {
       updated[12]=observaciones;
       updated[13]=version;
       updated[14]=sha256Hash;
-      sheet.getRange(existingIdx+1,1,1,15).setValues([updated]);
+      updated[15]=sha256Hash;
+      updated[16]=importBatchId || String(previous[16] || "");
+      updated[17]="";
+      sheet.getRange(existingIdx+1,1,1,18).setValues([updated]);
     } else {
       const idGen = generateInstitutionalId({entityType:"DocumentoEstudiante",prefix:"DOC-",skipLock:true});
       docId = idGen && idGen.generatedId ? String(idGen.generatedId) : ("DOC-" + Utilities.getUuid().replace(/-/g,"").slice(0,20));
       version = "1.0";
       sheet.appendRow([docId,expedienteId,solicitudId,tipoDocumento,safeName,createdFile.getId(),"",now,
-        fechaVencimiento,"EnRevision",actor.userId,"",observaciones,version,sha256Hash]);
+        fechaVencimiento,"EnRevision",actor.userId,"",observaciones,version,sha256Hash,sha256Hash,importBatchId,""]);
     }
     persisted = true;
     successResult = {status:"success",documentoId:docId,versionDocumento:version,sha256Hash:sha256Hash,
@@ -13987,7 +14095,7 @@ function getStudentDocuments(payload) {
   const mapped = filtered.map(function(row) {
     const docId = String(row[0] || "");
     const fileId = String(row[5] || "").trim();
-    const expectedHash = String(row[14] || "").trim().toLowerCase();
+    const expectedHash = String(row[15] || row[14] || "").trim().toLowerCase();
     const version = String(row[13] || "").trim();
     let driveAccessible = false, integrityVerified = false;
     if (fileId) {
@@ -14014,6 +14122,40 @@ function getStudentDocuments(payload) {
 }
 
 // [TAREA-F6-022] [Fase 6: Expediente Institucional y Ciclo de Vida] - Restauración autorizada de versión previa de documento
+function verifyDocumentIntegritySha256(payload) {
+  const p = payload || {};
+  const documentId = String(p.documentoId || "").trim();
+  if (!documentId) return {status:"error",code:"DOCUMENT_ID_REQUIRED"};
+  const actor = getVerifiedAcademicIdentity_(p);
+  if (!actor || actor.authorized !== true || !actor.userId) return {status:"error",code:actor && actor.code || "VERIFIED_IDENTITY_REQUIRED"};
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName("DocumentosEstudiante");
+  const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
+  if (!sheet) return {status:"error",code:"RESOURCE_NOT_FOUND"};
+  const matches = sheet.getDataRange().getValues().slice(1).filter(function(row){return String(row[0] || "").trim() === documentId;});
+  if (matches.length !== 1) return {status:"error",code:"RESOURCE_NOT_FOUND"};
+  const row = matches[0];
+  const access = assertStudentDocumentScopeAccess_(p,ss,sheet,row,expSheet);
+  if (!access || access.authorized !== true) return {status:"error",code:"RESOURCE_NOT_FOUND"};
+  const expectedHash = String(row[15] || row[14] || "").trim().toLowerCase();
+  const version = String(row[13] || "").trim();
+  if (!version || !/^[a-f0-9]{64}$/.test(expectedHash)) {
+    return {status:"error",code:"DOCUMENT_BINARY_METADATA_MISSING",integridadVerificada:false};
+  }
+  try {
+    const verified = getVerifiedPrivateStudentDocumentFile_(row[5],expectedHash,row[4],{makePrivate:false});
+    const valid = verified.sha256Hash === expectedHash;
+    if (!valid) throw new Error("DOCUMENT_INTEGRITY_MISMATCH");
+    return {status:"success",documentoId:documentId,versionDocumento:version,
+      sha256Hash:verified.sha256Hash,integridadVerificada:true,bytesVerificados:verified.bytes.length};
+  } catch (error) {
+    try { logStructuredEvent("ACADEMIC","verifyDocumentIntegritySha256","ERROR","DOCUMENT_INTEGRITY_MISMATCH",
+      "El contenido binario del documento no coincide con el SHA-256 registrado.",
+      {documentoId:documentId,versionDocumento:version,expectedHash:expectedHash},actor.role); } catch (_) {}
+    return {status:"error",code:String(error && error.message || "DOCUMENT_INTEGRITY_MISMATCH"),integridadVerificada:false};
+  }
+}
+
 function getStudentDocumentFile(payload) {
   const p = payload || {};
   const documentId = String(p.documentoId || "").trim();
@@ -14034,7 +14176,7 @@ function getStudentDocumentFile(payload) {
   const access = assertStudentDocumentScopeAccess_(p,ss,sheet,row,expSheet);
   if (!access || access.authorized !== true) return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Documento no disponible."};
   const version = String(row[13] || "").trim();
-  const expectedHash = String(row[14] || "").trim().toLowerCase();
+  const expectedHash = String(row[15] || row[14] || "").trim().toLowerCase();
   if (!version || !/^[a-f0-9]{64}$/.test(expectedHash)) {
     return {status:"error",code:"DOCUMENT_BINARY_METADATA_MISSING",message:"El documento no tiene versión y hash verificables."};
   }
@@ -14087,7 +14229,7 @@ function restoreDocumentVersion(payload) {
     catch (_) { return {status:"error",code:"DOCUMENT_VERSION_INTEGRITY_UNVERIFIED",message:"La versión histórica no supera la verificación de integridad."}; }
     const now = new Date();
     const currentFileId = String(currDoc[5] || "").trim();
-    let currentHash = String(currDoc[14] || "").trim().toLowerCase();
+    let currentHash = String(currDoc[15] || currDoc[14] || "").trim().toLowerCase();
     if (currentFileId) {
       const currentVerified = getVerifiedPrivateStudentDocumentFile_(currentFileId,currentHash,currDoc[4],{makePrivate:true});
       currentHash = currentVerified.sha256Hash;
@@ -14096,8 +14238,8 @@ function restoreDocumentVersion(payload) {
       currDoc[4] || "",currentFileId,"",currDoc[7] || now,actor.userId,
       "Reemplazado por restauración a versión " + versionId + ". Motivo: " + (motivo || "Restauración manual"),
       now,String(currDoc[13] || "legacy"),currentHash]);
-    const updated = currDoc.slice(0,15);
-    while (updated.length<15) updated.push("");
+    const updated = currDoc.slice(0,18);
+    while (updated.length<18) updated.push("");
     updated[4]=targetVerified.fileName;
     updated[5]=String(targetVer[3]);
     updated[6]="";
@@ -14107,7 +14249,8 @@ function restoreDocumentVersion(payload) {
     updated[12]="Restaurado desde versión " + versionId + ". Motivo: " + (motivo || "Restauración de versión previa");
     updated[13]=targetVersion;
     updated[14]=targetHash;
-    docSheet.getRange(docIdx+1,1,1,15).setValues([updated]);
+    updated[15]=targetHash;
+    docSheet.getRange(docIdx+1,1,1,18).setValues([updated]);
     try {
       logStructuredEvent("ACADEMIC","restoreDocumentVersion","WARN","DOCUMENT_VERSION_RESTORED",
         "Documento restaurado a una versión privada con SHA-256 verificado.",
