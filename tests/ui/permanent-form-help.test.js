@@ -14,6 +14,8 @@ for (const [source, id, key] of [
   [teacher, "cashier-cargo-id", "cobros.cargoId"],
   [teacher, "cashier-monto", "cobros.monto"],
   [teacher, "cashier-ref", "cobros.referencia"],
+  [teacher, "calificacion", "calificaciones.nota"],
+  [teacher, "edit-puntaje", "calificaciones.nota"],
   [student, "voucher-monto", "cobros.monto"],
   [student, "voucher-referencia", "cobros.referencia"],
   [student, "voucher-file", "cobros.comprobante"],
@@ -31,6 +33,11 @@ for (const [source, id, key] of [
   assert.ok(tag.includes('data-ui-help-key="' + key + '"'), "field metadata key mismatch: " + id);
 }
 
+for (const id of ["calificacion", "edit-puntaje"]) {
+  const index = teacher.indexOf('id="' + id + '"');
+  const tag = teacher.slice(teacher.lastIndexOf("<input", index), teacher.indexOf(">", index) + 1);
+  assert.ok(tag.includes('min="0"') && tag.includes('max="100"') && tag.includes('step="0.01"'), "grade input range must match backend: " + id);
+}
 assert.ok(academic.includes("setAttribute('data-ui-help-key', 'matricula.identidad')"));
 assert.ok(academic.includes("setAttribute('data-ui-help-key', 'matricula.fechaNacimiento')"));
 assert.ok(secretary.includes('setAttribute("data-ui-help-key","identidad.busqueda")'));
