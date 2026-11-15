@@ -6805,7 +6805,7 @@ function getAdministrativeRequests(payload) {
   return { status:"success", data:requests };
 }
 const REQUEST_ATTACHMENT_INTEGRITY_HEADERS_ = ["AdjuntoSHA256","AdjuntoVersion","AdjuntoSizeBytes","AdjuntoMimeType","AdjuntoFechaRecepcion","AdjuntoIntegridadEstado"];
-const USER_ABSENCE_REQUEST_EXTRA_HEADERS_ = ["JustificacionID","FechaAfectada","Periodo","SesionIDsJSON","SyncEstado","MotivoJustificacion","UltimoError","SesionIDsSolicitadasJSON","AlcanceAprobacion"].concat(REQUEST_ATTACHMENT_INTEGRITY_HEADERS_);
+const USER_ABSENCE_REQUEST_EXTRA_HEADERS_ = ["JustificacionID","FechaAfectada","Periodo","SesionIDsJSON","SyncEstado","MotivoJustificacion","UltimoError","SesionIDsSolicitadasJSON","AlcanceAprobacion","FechasAfectadasJSON"].concat(REQUEST_ATTACHMENT_INTEGRITY_HEADERS_);
 
 function ensureUserAbsenceRequestSchema_(sheet) {
   const map = ensureRequestAttachmentIntegritySchema_(sheet);
@@ -6841,10 +6841,16 @@ function callAcademicAbsenceService_(action, payload) {
 function submitStudentAbsenceJustification(payload) {
   const p = payload || {};
   const estudianteId = p.estudianteId;
-  const fechaAusencia = String(p.fechaAusencia || "").trim();
+  const rawAbsenceDates = Array.isArray(p.fechasAusencia) ? p.fechasAusencia : [p.fechaAusencia];
+  const fechasAusencia = rawAbsenceDates.map(function(value) { return String(value || "").trim(); });
+  if (!fechasAusencia.length || fechasAusencia.some(function(value) { return !/^\d{4}-\d{2}-\d{2}$/.test(value) || isNaN(Date.parse(value + "T00:00:00Z")); }) ||
+      new Set(fechasAusencia).size !== fechasAusencia.length) throw new Error("FECHAS_AUSENCIA_INVALIDAS");
+  fechasAusencia.sort();
+  const fechaAusencia = fechasAusencia[0];
+  const fechasAusenciaJSON = JSON.stringify(fechasAusencia);
   const periodo = String(p.periodo || "").trim();
   const motivo = String(p.motivo || "").trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaAusencia) || !motivo || motivo.length > 2000) throw new Error("FECHA_AUSENCIA_O_MOTIVO_INVALIDO");
+  if (!motivo || motivo.length > 2000) throw new Error("FECHA_AUSENCIA_O_MOTIVO_INVALIDO");
   if (String(p.adjuntoUrl || "").trim() || String(p.adjuntoFileId || "").trim()) throw new Error("UNTRUSTED_ATTACHMENT_REFERENCE");
   const submitter = resolveVerifiedRequestSubmitter_(p, estudianteId, true, "permisoAsistencia");
 
@@ -6859,7 +6865,11 @@ function submitStudentAbsenceJustification(payload) {
     initialRows = sheet.getDataRange().getValues();
     for (var i = 1; i < initialRows.length; i++) {
       if (String(initialRows[i][map.EstudianteID] || initialRows[i][2] || "").trim() !== String(submitter.estudianteId).trim()) continue;
-      if (String(initialRows[i][map.FechaAfectada] || "").trim() !== fechaAusencia || String(initialRows[i][map.Periodo] || "").trim() !== periodo) continue;
+      var existingDates = [];
+      try { existingDates = JSON.parse(String(map.FechasAfectadasJSON === undefined ? "[]" : initialRows[i][map.FechasAfectadasJSON] || "[]")); } catch (_) {}
+      if (!Array.isArray(existingDates) || !existingDates.length) existingDates = [String(initialRows[i][map.FechaAfectada] || "").trim()];
+      existingDates = existingDates.map(function(value) { return String(value || "").trim(); }).sort();
+      if (JSON.stringify(existingDates) !== fechasAusenciaJSON || String(initialRows[i][map.Periodo] || "").trim() !== periodo) continue;
       if (String(initialRows[i][3] || "") !== "Justificación de Ausencia") continue;
       if (["Rechazada","Cancelada"].indexOf(String(initialRows[i][6] || "")) !== -1) continue;
       if (initialMatch) return { status: "error", code: "ABSENCE_REQUEST_AMBIGUOUS" };
@@ -6888,7 +6898,11 @@ function submitStudentAbsenceJustification(payload) {
     var rows = sheet.getDataRange().getValues();
     for (var j = 1; j < rows.length; j++) {
       if (String(rows[j][map.EstudianteID] || rows[j][2] || "").trim() !== String(submitter.estudianteId).trim()) continue;
-      if (String(rows[j][map.FechaAfectada] || "").trim() !== fechaAusencia || String(rows[j][map.Periodo] || "").trim() !== periodo) continue;
+      var lockedDates = [];
+      try { lockedDates = JSON.parse(String(map.FechasAfectadasJSON === undefined ? "[]" : rows[j][map.FechasAfectadasJSON] || "[]")); } catch (_) {}
+      if (!Array.isArray(lockedDates) || !lockedDates.length) lockedDates = [String(rows[j][map.FechaAfectada] || "").trim()];
+      lockedDates = lockedDates.map(function(value) { return String(value || "").trim(); }).sort();
+      if (JSON.stringify(lockedDates) !== fechasAusenciaJSON || String(rows[j][map.Periodo] || "").trim() !== periodo) continue;
       if (String(rows[j][3] || "") !== "Justificación de Ausencia") continue;
       if (["Rechazada","Cancelada"].indexOf(String(rows[j][6] || "")) !== -1) continue;
       if (existing) throw new Error("ABSENCE_REQUEST_AMBIGUOUS");
@@ -6916,7 +6930,7 @@ function submitStudentAbsenceJustification(payload) {
       if (!/^JUST-[A-Za-z0-9-]{8,100}$/.test(id)) throw new Error("ABSENCE_REQUEST_ID_INVALID");
       fileId = attachmentRecord ? attachmentRecord.fileId : "";
       attachmentMetadata = attachmentRecord;
-      var description = "Justificación de ausencia para la fecha " + fechaAusencia + ". Motivo: " + motivo + ". Observaciones: " + (p.observaciones || "N/A");
+      var description = "Justificación de ausencia para las fechas " + fechasAusencia.join(", ") + ". Motivo: " + motivo + ". Observaciones: " + (p.observaciones || "N/A");
       var newRow = new Array(sheet.getLastColumn()).fill("");
       newRow[map.SolicitudID] = id;
       newRow[map.UserId] = submitter.userId;
@@ -6931,6 +6945,7 @@ function submitStudentAbsenceJustification(payload) {
       newRow[map.FechaResolucion] = "";
       newRow[map.JustificacionID] = id;
       newRow[map.FechaAfectada] = fechaAusencia;
+      newRow[map.FechasAfectadasJSON] = fechasAusenciaJSON;
       newRow[map.Periodo] = periodo;
       newRow[map.SesionIDsJSON] = "[]";
       newRow[map.SyncEstado] = "PENDIENTE";
@@ -6947,7 +6962,7 @@ function submitStudentAbsenceJustification(payload) {
   }
 
   var sync = callAcademicAbsenceService_("createCanonicalAbsenceJustification", {
-    justificacionId: id, solicitudId: id, studentId: submitter.estudianteId, fechaAfectada: fechaAusencia,
+    justificacionId: id, solicitudId: id, studentId: submitter.estudianteId, fechaAfectada: fechaAusencia, fechasAfectadas: fechasAusencia,
     periodo: periodo, motivoDeclarado: motivo, adjuntoUrl: fileId,
     adjuntoSHA256: attachmentMetadata && attachmentMetadata.sha256 || "",
     adjuntoVersion: attachmentMetadata && attachmentMetadata.version || "",
