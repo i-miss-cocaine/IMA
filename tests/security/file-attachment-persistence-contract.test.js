@@ -109,7 +109,7 @@ failFileSharing = false;
 
 const voucherFn = extractFunction(accounting, "uploadPaymentVoucher");
 const voucherHeaders = ["ComprobanteID","Fecha","UserId","Alumno","CargoID","MontoReportado","MetodoPago","Referencia","ComprobanteUrl","Estado","Observaciones",
-  "ComprobanteGrupoID","SolicitudID","EvidenciaID","DriveFileID","NombreOriginal","VersionNumero","SHA256","SizeBytes","MimeType","FechaRecepcionISO","EstadoIntegridad","EsVersionActual","DecisionHash","DecisionTimestamp","DecisionBy","DecisionIntegrityWarning"];
+  "ComprobanteGrupoID","SolicitudID","EvidenciaID","DriveFileID","NombreOriginal","VersionNumero","SHA256","SizeBytes","MimeType","FechaRecepcionISO","EstadoIntegridad","EsVersionActual","DecisionHash","DecisionTimestamp","DecisionBy","DecisionState","DecisionIntegrityWarning"];
 const voucherMap = Object.fromEntries(voucherHeaders.map((name,index)=>[name,index]));
 let rows = [voucherHeaders.slice()];
 let rollbackCount = 0;
