@@ -23,7 +23,7 @@ function extractFunction(source, name) {
 }
 const accounting = fs.readFileSync(path.resolve(__dirname, "../../backend/accounting-service/Code.gs"), "utf8");
 const shared = fs.readFileSync(path.resolve(__dirname, "../../backend/shared/DepartmentCatalogContract.gs"), "utf8");
-const names = ["getVerifiedAccountingIdentity_", "getVerifiedDepartmentScopeForSession_", "getVerifiedAccountingDepartmentScope_", "mapMigrationRowToTarget_", "accountingHasInstitutionalImportPermission_", "resolveAccountingImportRowDepartmentSnapshot_", "buildAccountingDepartmentalImportPreflight_", "validateImportPreview", "importDataWithColumnMapping"];
+const names = ["getVerifiedAccountingIdentity_", "getVerifiedDepartmentScopeForSession_", "getVerifiedAccountingDepartmentScope_", "mapMigrationRowToTarget_", "accountingHasInstitutionalImportPermission_", "resolveAccountingImportRowDepartmentSnapshot_", "buildAccountingDepartmentalImportPreflight_", "validateImportPreview", "appendAccountingMigrationFileHashAudit_", "importDataWithColumnMapping"];
 const functions = names.map(name => extractFunction(accounting, name));
 functions.push(extractFunction(shared, "validateDepartmentalImportScope_"));
 const snapshotHeaders = ["ImportBatchID","SnapshotID","RowID","InstitutionID","Domain","DepartmentID","Status","VerifiedBy","VerifiedAt","SnapshotVersion"];
@@ -31,7 +31,7 @@ const snapshotSchema = "const ACCOUNTING_IMPORT_ROW_DEPARTMENT_SNAPSHOT_HEADERS_
 const schema = { service: "ACCOUNTING", sheet: "ExpedientesLaborales", headers: ["ExpedienteID", "PersonaId", "UserId", "Puesto", "Departamento", "CentroCosto", "FechaIngreso", "FechaSalida", "EstadoLaboral", "Observaciones"] };
 const assignmentHeaders = ["AsignacionAmbitoID", "UserID", "RoleID", "ScopeType", "ScopeValues", "Estado", "CreadoPor", "FechaCreacion", "FechaInicio", "FechaFin", "EsSuplente", "SuplenteDeUserID", "InstitutionID", "MembershipID", "ResponsibilityID"];
 let assignmentRows = [assignmentHeaders, ["ASG-1", "U-1", "Director", "DEPARTAMENTO", '["DEP-A","DEP-B"]', "Activo", "U-ADMIN", "", "", "", "No", "", "INST-1", "MEM-1", "RESP-1"]];
-const auditRows = [], writes = [], rollbackBatches = [];
+const auditRows = [], fileHashAuditRows = [], writes = [], rollbackBatches = [];
 let failRollbackCompensation = false;
 let snapshotRows = [snapshotHeaders,["BATCH-1","SNAP-1","ROW-1","INST-1","ACCOUNTING","DEP-A","VERIFIED","U-ADMIN","2026-11-12T22:00:00.000Z","1"],["BATCH-1","SNAP-1","ROW-2","INST-1","ACCOUNTING","DEP-B","VERIFIED","U-ADMIN","2026-11-12T22:00:00.000Z","1"]];
 let institutionalImportPermission = true;
@@ -65,7 +65,15 @@ const context = {
   resolveInternalResponsibilityForRoleScope_: () => ({ responsibilityId: "RESP-1" }),
   getDynamicPermissionsForRole: (role, action) => action === "importDataWithColumnMapping" ? institutionalImportPermission : null,
   ROLE_PERMISSIONS: {},
-  getOrCreateSheet: (_ss, name) => { assert.equal(name, "AuditoriaMigraciones"); return { appendRow: row => auditRows.push(row) }; },
+  getOrCreateSheet: (_ss, name) => {
+    if (name === "AuditoriaMigraciones") return { appendRow: row => auditRows.push(row) };
+    if (name === "AuditoriaMigracionesArchivos") return {
+      getDataRange: () => ({ getValues: () => fileHashAuditRows.map(row => row.slice()) }),
+      appendRow: row => fileHashAuditRows.push(row.slice())
+    };
+    throw new Error("Unexpected audit sheet: " + name);
+  },
+  LockService: { getScriptLock: () => ({ waitLock: () => {}, releaseLock: () => {} }) },
   Utilities: { getUuid: () => "RUN-1", MacAlgorithm: { HMAC_SHA_256: "HMAC_SHA_256" }, computeHmacSignature: () => [1,2,3] },
   resolveCrossReferenceIdentifier: payload => ({ status: "success", idNuevoPlataforma: "EMP-" + String(payload.idOriginalLegado || "1").replace(/[^A-Za-z0-9]/g, "") }),
   migrationStableJson_: value => JSON.stringify(value), migrationHash_: () => "HASH-1",
@@ -95,7 +103,7 @@ context.buildImportPreview_ = function(payload) {
   const preparedRows = payload.filasData.map((row, index) => departmentPreflight.applicable
     ? departmentPreflight.rows[index]
     : context.mapMigrationRowToTarget_(row, payload.columnaMapeo, targetSchema));
-  return { status: "success", validForImport: true, previewHash: "SCOPE-FIXTURE", departmentPreflight, identityResolutions, preparedRows,
+  return { status: "success", validForImport: true, previewHash: "SCOPE-FIXTURE", fileHash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", departmentPreflight, identityResolutions, preparedRows,
     departamentoDestino: departmentPreflight.departmentId, departamentosDestino: departmentPreflight.departmentIds, snapshotId: departmentPreflight.snapshotId,
     totalFilas: payload.filasData.length, filasValidas: payload.filasData.length, filasFallidas: 0, errores: [], advertencias: [] };
 };
@@ -141,6 +149,9 @@ assert.equal(ownershipCalls[0].resourceId, "EMP-LEG1");
 assert.equal(ownershipCalls[0].departmentId, "DEP-A");
 assert.equal(ownershipCalls[0].sessionToken, "signed");
 assert.equal(auditRows.length, 1);
+assert.equal(fileHashAuditRows[0][3], "HashSHA256");
+assert.equal(fileHashAuditRows.at(-1)[3], "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+assert.equal(fileHashAuditRows.at(-1)[10], "completed");
 
 const retry = context.api.run(base);
 assert.equal(retry.status, "success");
@@ -167,6 +178,7 @@ assert.equal(rollback.code, "MIGRATION_BATCH_ROLLED_BACK");
 assert.equal(rollback.estado, "rolled_back");
 assert.equal(rollbackBatches.at(-1).length, 2, "employee write and ownership intent are compensated");
 assert.equal(auditRows.at(-1)[8], "rolled_back");
+assert.equal(fileHashAuditRows.at(-1)[10], "rolled_back");
 assert.equal(rollbackBatches.at(-1).some(x => x.tipoEntidad === "empleadoOwnership"), true);
 failRollbackCompensation = true;
 failWriterAt = writerAttempts + 2;
@@ -178,6 +190,7 @@ assert.equal(compensationRequired.code, "MIGRATION_COMPENSATION_REQUIRED");
 assert.equal(compensationRequired.estado, "compensation_required");
 assert.equal(compensationRequired.registrosEscritos, null, "uncertain writes are never reported as zero or fully rolled back");
 assert.equal(auditRows.at(-1)[8], "compensation_required");
+assert.equal(fileHashAuditRows.at(-1)[10], "compensation_required");
 failRollbackCompensation = false;
 failOwnershipRegistration = true;
 const failedOwnership = context.api.run({ ...base, filasData: [{ legacyId: "LEG-5", Puesto: "Docente" }] });
