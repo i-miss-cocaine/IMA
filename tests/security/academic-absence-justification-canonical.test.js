@@ -3,14 +3,15 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
 const source = fs.readFileSync("backend/academic-service/Code.gs", "utf8");
+const userSource = fs.readFileSync("backend/user-service/Code.gs", "utf8");
 
-function extractFunction(name) {
-  const start = source.indexOf("function " + name + "(");
+function extractFunction(name, fromSource = source) {
+  const start = fromSource.indexOf("function " + name + "(");
   assert.notEqual(start, -1, "missing function " + name);
-  const open = source.indexOf("{", start);
+  const open = fromSource.indexOf("{", start);
   let depth = 0, quote = "", escaped = false, lineComment = false, blockComment = false;
-  for (let i = open; i < source.length; i++) {
-    const c = source[i], n = source[i + 1];
+  for (let i = open; i < fromSource.length; i++) {
+    const c = fromSource[i], n = fromSource[i + 1];
     if (lineComment) { if (c === "\n") lineComment = false; continue; }
     if (blockComment) { if (c === "*" && n === "/") { blockComment = false; i++; } continue; }
     if (quote) { if (escaped) escaped = false; else if (c === "\\") escaped = true; else if (c === quote) quote = ""; continue; }
@@ -18,7 +19,7 @@ function extractFunction(name) {
     if (c === "/" && n === "*") { blockComment = true; i++; continue; }
     if (c === "'" || c === '"' || c === "\`") { quote = c; continue; }
     if (c === "{") depth++;
-    else if (c === "}" && --depth === 0) return source.slice(start, i + 1);
+    else if (c === "}" && --depth === 0) return fromSource.slice(start, i + 1);
   }
   throw new Error("unclosed function " + name);
 }
@@ -67,7 +68,7 @@ const context = {
   SPREADSHEET_ID: "TEST",
   SpreadsheetApp: { openById() { return { getSheetByName(name) { return store[name] ? sheet(name) : null; } }; } },
   LockService: { getScriptLock() { return { waitLock() { if (lockBusy) throw new Error("LOCK_BUSY"); }, releaseLock() {} }; } },
-  Utilities: { formatDate(date) { return date.toISOString().slice(0, 10); } },
+  Utilities: { formatDate(date) { return date.toISOString().slice(0, 10); }, getUuid() { return "UUID-ACADEMIC-00000001"; } },
   Session: { getScriptTimeZone() { return "UTC"; } },
   getOrCreateSheet(_ss, name) { return sheet(name); },
   logStructuredEvent() {},
@@ -77,7 +78,7 @@ const names = [
   "ensureAbsenceHeaders_", "absenceDateKey_", "absenceResolvePeriod_", "absenceResolveSessions_",
   "absenceSheetMap_", "createCanonicalAbsenceJustification_", "createCanonicalAbsenceJustificationUnlocked_",
   "absenceUpdateRequestProjection_", "absenceAttendanceSync_", "reviewCanonicalAbsenceJustification_",
-  "reconcilePendingAttendanceJustifications"
+  "reconcilePendingAttendanceJustifications", "submitAttendanceJustification"
 ];
 vm.createContext(context);
 const constants = source.split("\n").filter(line => /^const ABSENCE_(JUSTIFICATION_HEADERS_|ATTENDANCE_HEADERS_|REQUEST_EXTRA_HEADERS_)/.test(line)).join("\n");
@@ -123,6 +124,11 @@ assert.equal(projectionReconcile.status, "success");
 assert.equal(projectionReconcile.processed, 1);
 assert.equal(requests.getRange(2, 16).getValues()[0][0], "SINCRONIZADO");
 assert.equal(create("JUST-TEST0001", "2026-11-10", "STU-1", "Otro motivo").code, "IDEMPOTENCY_CONFLICT");
+const directOwnership = context.submitAttendanceJustification({
+  _verifiedUserId: "STU-1", _verifiedRole: "Estudiante", userId: "STU-2",
+  fechaAfectada: "2026-11-10", periodo: "I parcial", motivoDeclarado: "No debe crear"
+});
+assert.equal(directOwnership.code, "STUDENT_OWNERSHIP_MISMATCH");
 assert.equal(create("JUST-BADPERIOD1", "2026-11-10", "STU-1", "Motivo", "P2").code, "ACADEMIC_PERIOD_DATE_MISMATCH");
 const overlappingPeriod = period.getLastRow() + 1;
 period.appendRow(["P2","ANO-1","II parcial","Parcial","2026-11-10","2026-12-31",2,"Activo"]);
@@ -191,7 +197,60 @@ const lockResult = context.reviewCanonicalAbsenceJustification_({
 assert.equal(lockResult.code, "LOCK_TIMEOUT");
 lockBusy = false;
 
-const userSource = fs.readFileSync("backend/user-service/Code.gs", "utf8");
+sessions.appendRow(["SES-USER","2026-11-14","","","10","A","MAT","DOC-1","Cerrada",""]);
+attendance.appendRow(["REG-USER","SES-USER","STU-USER","Ausente","","",false,"",new Date("2026-11-14T12:00:00Z")]);
+const userContext = {
+  SPREADSHEET_ID: "TEST",
+  SpreadsheetApp: { openById() { return { getSheetByName(name) { return store[name] ? sheet(name) : null; } }; } },
+  LockService: { getScriptLock() { return { tryLock() { return true; }, waitLock() {}, releaseLock() {} }; } },
+  Utilities: { getUuid() { return "USER-UUID-00000001"; } },
+  getOrCreateSheet(_ss, name) { return sheet(name); },
+  getUserVerifiedRole(payload) { payload._verifiedUserId = payload._userId; payload._verifiedRole = payload._role; return payload._role; },
+  resolveVerifiedRequestSubmitter_(payload, requestedStudentId) {
+    return { userId: payload._verifiedUserId || payload._userId, estudianteId: requestedStudentId || payload._verifiedUserId || payload._userId, role: payload._verifiedRole || payload._role };
+  },
+  createPrivateRequestAttachment_() { return null; },
+  rollbackPrivateAttachment_() {},
+  callAcademicAbsenceService_(action, payload) {
+    const result = action === "createCanonicalAbsenceJustification"
+      ? context.createCanonicalAbsenceJustification_(payload)
+      : context.reviewCanonicalAbsenceJustification_(payload);
+    return { status: result.status, data: result };
+  },
+  logStructuredEvent() {},
+  Date, Math, JSON, String, Number, Array, Object, Error
+};
+const userNames = ["ensureUserAbsenceRequestSchema_", "submitStudentAbsenceJustification", "reviewAbsenceJustification", "updateRequestStatus", "processWorkflowDecision"];
+vm.createContext(userContext);
+const userConstants = userSource.split("\n").filter(line => /^const USER_ABSENCE_REQUEST_EXTRA_HEADERS_/.test(line)).join("\n");
+vm.runInContext(userConstants + "\n" + userNames.map(name => extractFunction(name, userSource)).join("\n"), userContext);
+const userPayload = {
+  _userId: "STU-USER", _role: "Estudiante", estudianteId: "STU-USER",
+  fechaAusencia: "2026-11-14", periodo: "I parcial", motivo: "Motivo USER"
+};
+const userSubmit = userContext.submitStudentAbsenceJustification(userPayload);
+assert.equal(userSubmit.status, "success");
+assert.equal(userSubmit.solicitudId, userSubmit.justificacionId);
+const userRequestCount = store.SolicitudesTramites.length;
+const userRetry = userContext.submitStudentAbsenceJustification(Object.assign({}, userPayload));
+assert.equal(userRetry.status, "success");
+assert.equal(userRetry.solicitudId, userSubmit.solicitudId);
+assert.equal(store.SolicitudesTramites.length, userRequestCount, "USER retry must not append a duplicate request");
+const userReview = userContext.reviewAbsenceJustification({
+  _userId: "SEC-USER", _role: "Secretaría", solicitudId: userSubmit.solicitudId, nuevoEstado: "Aprobada"
+});
+assert.equal(userReview.status, "success");
+regRows = attendance.getDataRange().getValues();
+const userAttendanceRow = regRows.find(row => row[0] === "REG-USER");
+assert.equal(userAttendanceRow[6], true);
+assert.equal(userAttendanceRow[9], userSubmit.justificacionId);
+assert.throws(() => userContext.updateRequestStatus({ solicitudId: userSubmit.solicitudId, nuevoEstado: "Rechazada" }), /ABSENCE_REVIEW_REQUIRES_CANONICAL_WORKFLOW/);
+assert.throws(() => userContext.processWorkflowDecision({
+  solicitudId: userSubmit.solicitudId, accionDecision: "RECHAZADO",
+  _verifiedUserId: "SEC-USER", _verifiedRole: "Secretaría"
+}), /ABSENCE_REVIEW_REQUIRES_CANONICAL_WORKFLOW/);
+
+
 assert.match(userSource, /createInterServiceEnvelope\("USER", "ACADEMIC", action/);
 assert.match(userSource, /ACADEMIC_SERVICE_URL/);
 assert.match(userSource, /ABSENCE_REVIEW_REQUIRES_CANONICAL_WORKFLOW/);
