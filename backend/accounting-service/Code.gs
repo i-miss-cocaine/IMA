@@ -616,12 +616,23 @@ function buildImportPreview_(payload) {
         localErrors.push({ codigo: "RELATED_REFERENCE_MISSING", error: "RELATED_REFERENCE_MISSING", fila: originalRowNumber });
       } else {
         var person = resolveAccountingIdentityFromSnapshot_(identitySnapshot, sourceName, "persona", personLegacyId, institutionId);
-        if (!person.valid) localErrors.push({ codigo: "ORPHANED_REFERENCE", error: "ORPHANED_REFERENCE", fila: originalRowNumber });
-        else prepared.PersonaID = person.idNuevoPlataforma;
+        if (!person.valid) {
+          var personCode = person.code === "IDENTITY_MAPPING_NOT_FOUND" ? "ORPHANED_REFERENCE" : (person.code || "IDENTITY_MAPPING_NOT_CONFIRMED");
+          localErrors.push({ codigo: personCode, error: personCode, fila: originalRowNumber });
+        } else prepared.PersonaID = person.idNuevoPlataforma;
       }
     }
-    if (entityType === "empleado" && !String(prepared.PersonaId || "").trim()) {
-      localErrors.push({ codigo: "RELATED_REFERENCE_MISSING", error: "RELATED_REFERENCE_MISSING", fila: originalRowNumber });
+    if (entityType === "empleado") {
+      var employeePersonLegacyId = String(prepared.PersonaId || "").trim();
+      if (!employeePersonLegacyId) {
+        localErrors.push({ codigo: "RELATED_REFERENCE_MISSING", error: "RELATED_REFERENCE_MISSING", fila: originalRowNumber });
+      } else {
+        var employeePerson = resolveAccountingIdentityFromSnapshot_(identitySnapshot, sourceName, "persona", employeePersonLegacyId, institutionId);
+        if (!employeePerson.valid) {
+          var employeePersonCode = employeePerson.code === "IDENTITY_MAPPING_NOT_FOUND" ? "ORPHANED_REFERENCE" : (employeePerson.code || "IDENTITY_MAPPING_NOT_CONFIRMED");
+          localErrors.push({ codigo: employeePersonCode, error: employeePersonCode, fila: originalRowNumber });
+        } else prepared.PersonaId = employeePerson.idNuevoPlataforma;
+      }
     }
     Object.keys(prepared).forEach(function(field) {
       var value = prepared[field];
