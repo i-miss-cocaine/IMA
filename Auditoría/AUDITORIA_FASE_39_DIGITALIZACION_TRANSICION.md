@@ -331,3 +331,15 @@ Auditar integralmente las capacidades destinadas a facilitar la transición de l
 - **Capacidades complementarias:** la bitácora refiere 4.1..4.6, pero el informe disponible no incluye sus definiciones; quedan pendientes de recuperar como fuente documental.
 - **Subcapacidades completas preservadas:** 3.6 (Excel), 3.9 (catálogo oficial) y 3.12 (convivencia modular); no se reejecutaron pruebas.
 - **Estado global:** F39-Task01..F39-Task08 y F39-Task19..F39-Task20 permanecen pendientes de ejecución/revalidación; Task09..Task18 quedan como referencias históricas sin descripción recuperable.
+
+
+## G. AVANCE C1.762 — TASK-132 — Inventario documental legado
+- **Decisión de ubicación:** `backend/accounting-service/Code.gs` está vacío en la rama autorizada. El inventario se implementa en `backend/user-service/Code.gs`, que contiene la identidad firmada, el contexto de institución/departamentos y la autorización por permisos. La API se expone mediante acciones USER; no se inventa un servicio contable operativo.
+- **Persistencia:** `InventarioDocumentalLegado` se crea al primer registro con los 19 campos requeridos más InstitutionID, SubcategoriaDocumental y ClaveOrigen. `HistorialInventarioDocumentalLegado` conserva cada cambio con campo, valor anterior/nuevo, actor, rol, fecha y correlationId.
+- **Clasificación:** REGISTROS_DE_DATOS, PLANTILLAS, DOCUMENTOS_HISTORICOS; los diez estados de digitalización especificados; soportes FISICO, DIGITAL y MIXTO. Los registros físicos no requieren archivo en Drive.
+- **Deduplicación:** ClaveOrigen estable, única por institución y no basada en el nombre del archivo; DocumentoId generado y conservado al renombrar. Los IDs de duplicados de otro departamento no se revelan.
+- **Autorización:** validateRolePermission y getUserContextScope; filtro por InstitutionID y departmentIds; DepartamentoPropietario no puede cambiarse mediante actualización; solo Director/Administrador con ámbito institucional consultan inventario consolidado. El catálogo de departamentos se valida antes de registrar.
+- **Consulta:** filtros por departamento, categoría, formato, responsable, período y estado; paginación; CSV con neutralización de fórmulas; subcategorías disponibles agrupadas por departamento.
+- **Resiliencia:** ScriptLock para escrituras; si falla el historial, se revierte la fila de inventario; esquema de hojas validado en modo fail-closed.
+- **Pruebas:** `tests/security/user-service-legacy-document-inventory.test.js` cubre aislamiento tenant/departamento, deduplicación, ID estable, historial, exportación, validación, bloqueo, rollback, RBAC y dispatcher. Harness V8 aislado PASS. GitHub Actions `ima/department-scope-contract: success` en 54ae2556c82a349b1bc1a4ead829502b33135aa2 y c955fc6ffc51081daed3e85976575865a6f6b8d6. El test de rollback fue añadido después; no se declara aún su ejecución CI.
+- **Estado:** implementación backend avanzada, aceptación integral pendiente de interfaz de usuario, despliegue real en Sheets y beta de Secretaría/Dirección.
