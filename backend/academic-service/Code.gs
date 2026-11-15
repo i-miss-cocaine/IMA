@@ -10194,9 +10194,9 @@ function getDailyAttendance(payload) {
 }
 
 
-const ABSENCE_JUSTIFICATION_HEADERS_ = ["JustificacionID","UserId","FechaAfectada","Periodo","MotivoDeclarado","AdjuntoUrl","PresentadoPor","EstadoRevision","RevisadoPor","ObservacionesAdmin","FechaResolucion","SolicitudID","SesionIDsJSON","DecisionHistoryJSON","SyncEstado","UltimoError","CreadoPorUserId","ActualizadoEn","ObservacionesPublicas","AdjuntoSHA256","AdjuntoVersion","AdjuntoSizeBytes","AdjuntoMimeType","AdjuntoFechaRecepcion","AdjuntoIntegridadEstado","SesionIDsSolicitadasJSON","AlcanceAprobacion"];
+const ABSENCE_JUSTIFICATION_HEADERS_ = ["JustificacionID","UserId","FechaAfectada","Periodo","MotivoDeclarado","AdjuntoUrl","PresentadoPor","EstadoRevision","RevisadoPor","ObservacionesAdmin","FechaResolucion","SolicitudID","SesionIDsJSON","DecisionHistoryJSON","SyncEstado","UltimoError","CreadoPorUserId","ActualizadoEn","ObservacionesPublicas","AdjuntoSHA256","AdjuntoVersion","AdjuntoSizeBytes","AdjuntoMimeType","AdjuntoFechaRecepcion","AdjuntoIntegridadEstado","SesionIDsSolicitadasJSON","AlcanceAprobacion","FechasAfectadasJSON"];
 const ABSENCE_ATTENDANCE_HEADERS_ = ["RegistroID","SesionID","UserId","EstadoAsistencia","HoraLlegada","MinutosTardanza","Justificado","ObservacionDocente","FechaRegistro","JustificacionID"];
-const ABSENCE_REQUEST_EXTRA_HEADERS_ = ["JustificacionID","FechaAfectada","Periodo","SesionIDsJSON","SyncEstado","MotivoJustificacion","UltimoError","AdjuntoSHA256","AdjuntoVersion","AdjuntoSizeBytes","AdjuntoMimeType","AdjuntoFechaRecepcion","AdjuntoIntegridadEstado","SesionIDsSolicitadasJSON","AlcanceAprobacion"];
+const ABSENCE_REQUEST_EXTRA_HEADERS_ = ["JustificacionID","FechaAfectada","Periodo","SesionIDsJSON","SyncEstado","MotivoJustificacion","UltimoError","AdjuntoSHA256","AdjuntoVersion","AdjuntoSizeBytes","AdjuntoMimeType","AdjuntoFechaRecepcion","AdjuntoIntegridadEstado","SesionIDsSolicitadasJSON","AlcanceAprobacion","FechasAfectadasJSON"];
 
 function ensureAbsenceHeaders_(sheet, headers) {
   if (!sheet) throw new Error("ABSENCE_SHEET_UNAVAILABLE");
@@ -10313,6 +10313,25 @@ function absenceResolveSessions_(ss, studentId, dateKey, requestedSessionIds, re
   return result.map(function(item) { return item.sessionId; });
 }
 
+function absenceResolveSessionsForDates_(ss, studentId, dateKeys, requestedSessionIds, regSheet, regMap) {
+  var all = [], seen = {};
+  (dateKeys || []).forEach(function(dateKey) {
+    var requestedForDate = Array.isArray(requestedSessionIds) ? requestedSessionIds : [];
+    try {
+      absenceResolveSessions_(ss, studentId, dateKey, requestedForDate, regSheet, regMap).forEach(function(sessionId) {
+        if (seen[sessionId]) throw new Error("ATTENDANCE_SESSION_AMBIGUOUS");
+        seen[sessionId] = true;
+        all.push(sessionId);
+      });
+    } catch (error) {
+      if (error && error.message === "ATTENDANCE_RECORD_NOT_FOUND") return;
+      throw error;
+    }
+  });
+  if (!all.length) throw new Error("ATTENDANCE_RECORD_NOT_FOUND");
+  return all.sort();
+}
+
 function absenceSheetMap_(sheet, headers) {
   var map = ensureAbsenceHeaders_(sheet, headers);
   return map;
@@ -10376,6 +10395,9 @@ function createCanonicalAbsenceJustificationUnlocked_(payload) {
   var actorId = String(p.actorId || p.presentadoPor || "").trim();
   var actorRole = String(p.actorRole || "").trim();
   var dateKey = absenceDateKey_(p.fechaAfectada || p.fechaAusencia);
+  var requestedDateValues = Array.isArray(p.fechasAfectadas) ? p.fechasAfectadas : (dateKey ? [dateKey] : []);
+  var dateKeys = requestedDateValues.map(function(value) { return absenceDateKey_(value); }).filter(Boolean);
+  dateKeys = Array.from(new Set(dateKeys)).sort();
   var reason = String(p.motivoDeclarado || p.motivo || "").trim();
   var attachmentFileId = String(p.adjuntoUrl || "").trim();
   var attachmentHash = String(p.adjuntoSHA256 || "").trim().toLowerCase();
@@ -10384,9 +10406,10 @@ function createCanonicalAbsenceJustificationUnlocked_(payload) {
   var attachmentMimeType = String(p.adjuntoMimeType || "").trim().toLowerCase();
   var attachmentReceivedAt = String(p.adjuntoFechaRecepcion || "").trim();
   var attachmentIntegrityStatus = attachmentFileId ? "LEGACY_UNVERIFIED" : "SIN_ADJUNTO";
-  if (!/^JUST-[A-Za-z0-9-]{8,100}$/.test(id) || !studentId || !actorId || !actorRole || !dateKey || !reason || reason.length > 2000) {
+  if (!/^JUST-[A-Za-z0-9-]{8,100}$/.test(id) || !studentId || !actorId || !actorRole || !dateKeys.length || dateKeys.length > 90 || !reason || reason.length > 2000) {
     return { status: "error", code: "ABSENCE_JUSTIFICATION_INVALID" };
   }
+  dateKey = dateKeys[0];
   if (attachmentFileId && attachmentHash) {
     if (!/^[a-f0-9]{64}$/.test(attachmentHash) || attachmentVersion !== 1 ||
         !Number.isFinite(attachmentSizeBytes) || attachmentSizeBytes < 1 ||
@@ -10423,13 +10446,19 @@ function createCanonicalAbsenceJustificationUnlocked_(payload) {
   var regSheet = getOrCreateSheet(ss, "RegistrosAsistencia");
   var regMap = absenceSheetMap_(regSheet, ABSENCE_ATTENDANCE_HEADERS_);
   var period;
-  try { period = absenceResolvePeriod_(ss, dateKey, p.periodo); }
-  catch (periodError) { return { status: "error", code: periodError.message || "ACADEMIC_PERIOD_INVALID" }; }
+  try {
+    period = absenceResolvePeriod_(ss, dateKeys[0], p.periodo);
+    dateKeys.forEach(function(key) {
+      var resolvedPeriod = absenceResolvePeriod_(ss, key, p.periodo);
+      if (String(resolvedPeriod) !== String(period)) throw new Error("ACADEMIC_PERIOD_DATE_MISMATCH");
+    });
+  } catch (periodError) { return { status: "error", code: periodError.message || "ACADEMIC_PERIOD_INVALID" }; }
   var existing = justSheet.getDataRange().getValues();
   for (var i = 1; i < existing.length; i++) {
     if (String(existing[i][justMap.JustificacionID] || "").trim() !== id) continue;
     var same = String(existing[i][justMap.UserId] || "").trim() === studentId &&
       absenceDateKey_(existing[i][justMap.FechaAfectada]) === dateKey &&
+      String(existing[i][justMap.FechasAfectadasJSON] || JSON.stringify([absenceDateKey_(existing[i][justMap.FechaAfectada])])) === JSON.stringify(dateKeys) &&
       String(existing[i][justMap.Periodo] || "").trim() === period &&
       String(existing[i][justMap.MotivoDeclarado] || "").trim() === reason &&
       String(existing[i][justMap.AdjuntoUrl] || "").trim() === attachmentFileId &&
@@ -10442,13 +10471,14 @@ function createCanonicalAbsenceJustificationUnlocked_(payload) {
     return { status: "success", idempotent: true, data: { justificacionId: id, sesionIds: JSON.parse(String(existing[i][justMap.SesionIDsJSON] || "[]")) } };
   }
   var sessions;
-  try { sessions = absenceResolveSessions_(ss, studentId, dateKey, p.sesionIds, regSheet, regMap); }
+  try { sessions = absenceResolveSessionsForDates_(ss, studentId, dateKeys, p.sesionIds, regSheet, regMap); }
   catch (sessionError) { return { status: "error", code: sessionError.message || "ATTENDANCE_SESSION_RESOLUTION_FAILED" }; }
   var history = [{ action: "PRESENTADA", actorId: actorId, actorRole: actorRole, timestamp: new Date().toISOString(), correlationId: String(p.correlationId || "") }];
   var newRow = new Array(justSheet.getLastColumn()).fill("");
   newRow[justMap.JustificacionID] = id;
   newRow[justMap.UserId] = studentId;
   newRow[justMap.FechaAfectada] = dateKey;
+  newRow[justMap.FechasAfectadasJSON] = JSON.stringify(dateKeys);
   newRow[justMap.Periodo] = period;
   newRow[justMap.MotivoDeclarado] = reason;
   newRow[justMap.AdjuntoUrl] = attachmentFileId;
