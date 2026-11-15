@@ -33,7 +33,7 @@ function makeSheet(rows) { return {
   })
 }; }
 const academic = fs.readFileSync(path.resolve(__dirname, "../../backend/academic-service/Code.gs"), "utf8");
-const names = ["getVerifiedAcademicIdentity_","getVerifiedDepartmentScopeForSession_","getVerifiedAcademicDepartmentScope_","getAcademicDelegatedMembershipForScope_","resolveInternalResponsibilityForRoleScope_","getVerifiedAcademicGuardianDepartmentScope_","assertResourceOwnershipForScope_","getStudentPersonIdForUser_","getStudentIdentityForPerson_","assertStudentExpedienteScopeAccess_","assertStudentDocumentScopeAccess_","assertStudentRequestScopeAccess_","resolveAcademicRequestDepartment_","hasActiveTeacherAssignment_","validateAcademicResponsibilityAndScopeAccess","getStudentFile","ensureStudentDocumentSchema_","ensureDocumentVersionHistorySchema_","getStudentDocuments","logStudentDocumentAccessDecision_","studentDocumentAccessError_","getSecureDocumentStream","validateFileBinaryIntegrity","classifyPdfDocumentPages_","validateEvidenceFileAndPermissions","assertRecordOwnership","getStudentFileSummary","getStudentTimeline","restoreDocumentVersion"];
+const names = ["getVerifiedAcademicIdentity_","getVerifiedDepartmentScopeForSession_","getVerifiedAcademicDepartmentScope_","getAcademicDelegatedMembershipForScope_","resolveInternalResponsibilityForRoleScope_","getVerifiedAcademicGuardianDepartmentScope_","assertResourceOwnershipForScope_","getStudentPersonIdForUser_","getStudentIdentityForPerson_","assertStudentExpedienteScopeAccess_","assertStudentDocumentScopeAccess_","assertStudentRequestScopeAccess_","resolveAcademicRequestDepartment_","hasActiveTeacherAssignment_","validateAcademicResponsibilityAndScopeAccess","getStudentFile","ensureStudentDocumentSchema_","ensureDocumentVersionHistorySchema_","getStudentDocuments","logStudentDocumentAccessDecision_","studentDocumentAccessError_","getSecureDocumentStream","sanitizeStudentPhotoUrl_","validateFileBinaryIntegrity","classifyPdfDocumentPages_","validateEvidenceFileAndPermissions","assertRecordOwnership","getStudentFileSummary","getStudentTimeline","restoreDocumentVersion"];
 const code = "var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n" + names.map(n => extractFunction(academic, n)).join("\n");
 const claims = {
   staffA:{userId:"U-A",role:"Director"}, staffB:{userId:"U-B",role:"Director"},
@@ -68,8 +68,10 @@ const rows = {
     ["U-TEACH","","","","","","Docente","","","P-TEACH","","",""]
   ],
   ExpedientesEstudiantes:[
-    ["ExpedienteID","PersonaID","CodigoInstitucional","DepartamentoID"],
-    ["EXP-A","P-A","COD-A","DEP-A"],["EXP-B","P-B","COD-B","DEP-B"],["EXP-STUDENT","P-STUDENT","COD-S","DEP-A"]
+    ["ExpedienteID","PersonaID","CodigoInstitucional","DepartamentoID","Nacionalidad","DireccionResidencia","FotografiaURL"],
+    ["EXP-A","P-A","COD-A","DEP-A","HN","City","https://drive.google.com/file/d/PHOTO-A/view"],
+    ["EXP-B","P-B","COD-B","DEP-B","HN","City","https://drive.google.com/file/d/PHOTO-B/view"],
+    ["EXP-STUDENT","P-STUDENT","COD-S","DEP-A","HN","City","https://cdn.example.test/photo.png"]
   ],
   RelacionesEstudianteTutor:[
     ["RelacionID","ExpedienteID","ResponsableID","TipoParentesco","EsRepresentanteLegal","EsContactoEmergencia","EsResponsableFinanciero","AutorizadoPickUp","AccesoPortal","Estado"],
@@ -197,6 +199,10 @@ assert.equal(context.getStudentDocuments(actor("auditor")).code,"RESOURCE_SCOPE_
 assert.deepEqual(Array.from(context.getStudentDocuments({sessionToken:"auditor",expedienteId:"EXP-B"}).documents,d=>d.documentoId),["DOC-B"]);
 assert.equal(context.getStudentFile({sessionToken:"auditor",expedienteId:"EXP-B"}).status,"success",
   "Auditor with institution-wide scope may read metadata without receiving direct Drive URLs");
+assert.equal(context.getStudentFile({sessionToken:"auditor",expedienteId:"EXP-B"}).studentFile.fotografiaUrl,"",
+  "Google Drive profile-photo URLs are not exposed in student metadata");
+assert.equal(context.getStudentFile({sessionToken:"student",expedienteId:"EXP-STUDENT"}).studentFile.fotografiaUrl,
+  "https://cdn.example.test/photo.png","non-Drive external profile images remain compatible");
 assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"staffA",asignaturaId:"ASIG-A"}).authorized,true);
 assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"staffA",asignaturaId:"ASIG-B"}).code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"teacher",asignaturaId:"ASIG-A",grado:"10",seccion:"A",periodoId:"2026"}).authorized,true);
