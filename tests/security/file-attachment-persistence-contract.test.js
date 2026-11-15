@@ -41,7 +41,8 @@ assert.match(student, /joint-doc-file/);
 assert.match(student, /fileData:attachment\.fileData/);
 assert.doesNotMatch(student, /joint-doc-url/);
 assert.doesNotMatch(extractFunction(accounting, "uploadPaymentVoucher"), /ANYONE_WITH_LINK/);
-assert.match(extractFunction(accounting, "uploadPaymentVoucher"), /createPrivatePaymentAttachment_/);
+assert.match(extractFunction(accounting, "uploadPaymentVoucher"), /createPrivatePaymentAttachmentWithIntegrity_/);
+assert.match(extractFunction(accounting, "createPrivatePaymentAttachmentWithIntegrity_"), /createPrivatePaymentAttachment_/);
 assert.match(extractFunction(user, "submitInstitutionalFormRequest"), /createPrivateRequestAttachment(?:WithIntegrity)?_/);
 assert.doesNotMatch(extractFunction(user, "submitInstitutionalFormRequest"), /ANYONE_WITH_LINK/);
 
@@ -107,21 +108,31 @@ assert.equal(createdFile.trashed, true, "failed privacy setup must attempt file 
 failFileSharing = false;
 
 const voucherFn = extractFunction(accounting, "uploadPaymentVoucher");
-let rows = [];
+const voucherHeaders = ["ComprobanteID","Fecha","UserId","Alumno","CargoID","MontoReportado","MetodoPago","Referencia","ComprobanteUrl","Estado","Observaciones",
+  "ComprobanteGrupoID","VersionNumero","SHA256","SizeBytes","MimeType","FechaRecepcionISO","EstadoIntegridad","EsVersionActual","DecisionHash","DecisionTimestamp","DecisionBy","DecisionIntegrityWarning"];
+const voucherMap = Object.fromEntries(voucherHeaders.map((name,index)=>[name,index]));
+let rows = [voucherHeaders.slice()];
 let rollbackCount = 0;
 let lockAvailable = true;
 let appendFails = false;
 let authorized = true;
 let ownerAllowed = true;
+const voucherSheet = {
+  getLastRow:()=>rows.length,
+  getLastColumn:()=>voucherHeaders.length,
+  getDataRange:()=>({getValues:()=>rows.map(row=>row.slice())}),
+  appendRow(row){if(appendFails)throw new Error("sheet failure");rows.push(row.slice());}
+};
 const voucherContext = {
   getVerifiedAccountingIdentity_: () => authorized ? ({ authorized: true, userId: "student-1", role: "Estudiante" }) : ({ authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" }),
   assertPaymentVoucherOwnerAccess_: () => ownerAllowed ? ({ authorized: true }) : ({ authorized: false, code: "RESOURCE_SCOPE_DENIED" }),
-  createPrivatePaymentAttachment_: () => ({ getId: () => "private-file-id" }),
+  ensurePaymentVoucherEvidenceSchema_:()=>voucherMap,
+  createPrivatePaymentAttachmentWithIntegrity_: () => ({file:{getId:()=> "private-file-id"},sha256:"a".repeat(64),sizeBytes:3,mimeType:"application/pdf",receivedAt:"2026-11-15T00:00:00.000Z"}),
   rollbackPrivatePaymentAttachment_: () => { rollbackCount++; },
   LockService: { getScriptLock: () => ({ tryLock: () => lockAvailable, releaseLock: () => {} }) },
   Utilities: { getUuid: () => "uuid-1" },
   SpreadsheetApp: { openById: () => ({}) },
-  getOrCreateSheet: () => ({ appendRow: (row) => { if (appendFails) throw new Error("sheet failure"); rows.push(row); } }),
+  getOrCreateSheet: () => voucherSheet,
   SPREADSHEET_ID: "test"
 };
 vm.runInNewContext(voucherFn + "\nthis.upload=uploadPaymentVoucher;", voucherContext);
@@ -138,8 +149,9 @@ const result = voucherContext.upload({ userId: "student-1", montoReportado: 10, 
 assert.equal(result.status, "success");
 assert.equal(result.tieneComprobante, true);
 assert.equal(result.comprobanteUrl, "");
-assert.equal(rows.length, 1);
-assert.equal(rows[0][8], "private-file-id");
+assert.equal(rows.length, 2);
+assert.equal(rows[1][8], "private-file-id");
+assert.equal(rows[1][voucherMap.SHA256], "a".repeat(64));
 appendFails = true;
 assert.throws(() => voucherContext.upload({ userId: "student-1", montoReportado: 10, fileData: "YWJj", fileName: "evidence.pdf" }), /sheet failure/);
 assert.equal(rollbackCount, 1);
