@@ -16,6 +16,8 @@ const response = context.getUIMetadataCatalog({ _verifiedUserId: "U1", _verified
 assert.equal(response.status, "success");
 assert.equal(response.version, "1.0.0");
 const fields = response.data.fields;
+assert.ok(fields["identidad.busqueda"].help.includes("DNI, RNE"));
+assert.ok(!fields["identidad.busqueda"].help.includes("13 dígitos seguidos"), "identity search accepts source identifiers and must not claim DNI-only validation");
 assert.ok(fields["identity.userId"].help.includes("UserId"));
 assert.ok(fields["matricula.identidad"].help.includes("DNI hondureño"));
 assert.deepEqual(Array.from(fields["matricula.identidad"].examples), ["0801199012345", "0801-1990-12345"]);
