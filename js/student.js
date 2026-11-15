@@ -933,8 +933,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     document.getElementById('btn-open-justification-modal')?.addEventListener('click', function() {
-        var fecha = prompt('Ingrese la fecha de la ausencia (AAAA-MM-DD):', new Date().toISOString().split('T')[0]);
-        if (!fecha) return;
+        var fechaInicio = prompt('Ingrese la fecha inicial de la ausencia (AAAA-MM-DD):', new Date().toISOString().split('T')[0]);
+        if (!fechaInicio) return;
+        var fechaFin = prompt('Ingrese la fecha final (use la misma fecha si fue un solo día):', fechaInicio);
+        if (!fechaFin) return;
+        var inicio = new Date(fechaInicio + 'T00:00:00Z');
+        var fin = new Date(fechaFin + 'T00:00:00Z');
+        if (isNaN(inicio.getTime()) || isNaN(fin.getTime()) ||
+            inicio.toISOString().slice(0,10) !== fechaInicio || fin.toISOString().slice(0,10) !== fechaFin || inicio > fin) {
+            alert('El rango de fechas no es válido.');
+            return;
+        }
+        var fechasAusencia = [];
+        for (var cursor = new Date(inicio); cursor <= fin; cursor.setUTCDate(cursor.getUTCDate() + 1)) {
+            fechasAusencia.push(cursor.toISOString().slice(0,10));
+        }
         var motivo = prompt('Ingrese el motivo de la ausencia (Médico, Familiar, Personal):', 'Motivo Médico');
         if (!motivo) return;
         var obs = prompt('Observaciones o detalles adicionales:', 'Justificante presentado desde el Portal Familiar');
@@ -944,7 +957,8 @@ document.addEventListener('DOMContentLoaded', function() {
         fetchApi('USER', 'submitStudentAbsenceJustification', {
             userId: currentUser.userId,
             estudianteId: currentUser.userId,
-            fechaAusencia: fecha,
+            fechaAusencia: fechaInicio,
+            fechasAusencia: fechasAusencia,
             periodo: periodo,
             motivo: motivo,
             observaciones: obs
