@@ -4693,7 +4693,7 @@ function resolveVerifiedRequestSubmitter_(payload, requestedStudentId, requireSt
   const role = getUserVerifiedRole(payload);
   const actorId = String(payload && payload._verifiedUserId || "").trim();
   if (!actorId || role === "NO_ACCESS") throw new Error("VERIFIED_IDENTITY_REQUIRED");
-  const normalizedRole = String(role).toUpperCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").replace(/[^A-Z0-9]/g, "");
+  const normalizedRole = String(role).toUpperCase().replace(/[^A-Z0-9]/g, "");
   const studentRoles = ["ESTUDIANTE", "ALUMNO"];
   const guardianRoles = ["PADRE", "MADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"];
   let studentId = String(requestedStudentId || "").trim();
@@ -4725,7 +4725,7 @@ function getAdministrativeRequestAttachment(payload) {
   const index = rows.findIndex(function(row, i) { return i > 0 && String(row[0] || "").trim() === solicitudId; });
   if (index < 1) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Archivo no disponible." };
   const row = rows[index];
-  const normalizedRole = String(role).toUpperCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").replace(/[^A-Z0-9]/g, "");
+  const normalizedRole = String(role).toUpperCase().replace(/[^A-Z0-9]/g, "");
   const studentRoles = ["ESTUDIANTE", "ALUMNO"];
   const guardianRoles = ["PADRE", "MADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"];
   let authorized = String(row[1] || "").trim() === actorId ||
@@ -4743,7 +4743,7 @@ function getAdministrativeRequestAttachment(payload) {
   }
   if (!authorized) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Archivo no disponible." };
   const stored = String(row[5] || "").trim();
-  const match = stored.match(/\\/d\\/([A-Za-z0-9_-]+)/) || stored.match(/[?&]id=([A-Za-z0-9_-]+)/);
+  const match = stored.match(/\/d\/([A-Za-z0-9_-]+)/) || stored.match(/[?&]id=([A-Za-z0-9_-]+)/);
   const fileId = match ? match[1] : (/^[A-Za-z0-9_-]{25,}$/.test(stored) ? stored : "");
   if (!fileId) return { status: "error", code: "ATTACHMENT_NOT_FOUND", message: "Archivo no disponible." };
   try {

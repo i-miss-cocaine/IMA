@@ -5240,7 +5240,7 @@ function createPrivatePaymentAttachment_(fileData,fileName) {
   } catch(error) { rollbackPrivatePaymentAttachment_(file); throw new Error("ATTACHMENT_STORAGE_PRIVATE_FAILED"); }
 }
 function assertJointFamilyVoucherOwnerAccess_(payload,row,ss,actor) {
-  const normalized=String(actor&&actor.role||"").toUpperCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").replace(/[^A-Z0-9]/g,"");
+  const normalized=String(actor&&actor.role||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
   const guardians=["PADRE","MADRE","TUTOR","RESPONSABLE","RESPONSABLEFAMILIAR"];
   if(guardians.indexOf(normalized)!==-1&&String(actor.userId||"").trim()!==String(row[2]||"").trim()) return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};
   const sheet=ss.getSheetByName("DistribucionPagosConjuntos");
@@ -5306,7 +5306,8 @@ function uploadPaymentVoucher(payload) {
   return { status: "success", comprobantes: mapped };
 }
 
-// Recuperación autenticada del archivo privado: la referencia se obtiene exclusivamente desde ComprobantesPago.function getPaymentVoucherFile(payload) {
+// Recuperación autenticada del archivo privado: la referencia se obtiene exclusivamente desde ComprobantesPago.
+function getPaymentVoucherFile(payload) {
   const comprobanteId = String(payload && payload.comprobanteId || "").trim();
   if (!comprobanteId) return { status: "error", code: "VOUCHER_ID_REQUIRED", message: "Acceso denegado." };
 
