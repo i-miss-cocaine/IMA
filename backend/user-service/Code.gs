@@ -13208,14 +13208,17 @@ function getUIMetadataCatalog(payload) {
         inputType: "number",
         min: 0,
         max: 100,
+        step: 0.01,
         source: "grade-score-input placeholder 0-100 y reconciliación de integridad CalificacionesEstudiantes"
       },
       "tramites.adjunto": {
         label: "Archivos del trámite o actividad",
         help: "Adjunta archivos completos y legibles en los formatos aceptados por este formulario. Revisa cada archivo antes de enviarlo y evita incluir información que no corresponda al trámite.",
-        acceptedTypes: ["image/*", ".heic", "application/pdf", "text/html", "text/css", "text/javascript", ".js", ".psc", ".html", ".css"],
+        acceptedTypes: [".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".heic", ".html", ".css", ".js", ".psc", ".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
         multiple: true,
-        source: "submission-form: accept y multiple"
+        maxBytes: 52428800,
+        maxSizeLabel: "50 MB",
+        source: "task-service/validateTaskUploadFile_: allowlist MIME/extensión y máximo 50 MB"
       }
     }
   };
