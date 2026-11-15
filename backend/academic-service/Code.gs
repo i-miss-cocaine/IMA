@@ -13738,7 +13738,7 @@ function nextStudentDocumentVersion_(previousVersion) {
 
 function getDocumentDuplicatePolicy_(ssForAccess) {
   var defaultPolicy = "RECHAZAR_DUPLICADO_EXACTO";
-  var sheet = ss && ss.getSheetByName ? ss.getSheetByName("ConfiguracionInstitucional") : null;
+  var sheet = ssForAccess && ssForAccess.getSheetByName ? ssForAccess.getSheetByName("ConfiguracionInstitucional") : null;
   if (!sheet || sheet.getLastRow() < 2) return { status: "success", policy: defaultPolicy };
   var rows = sheet.getDataRange().getValues();
   var headers = (rows[0] || []).map(function(value) { return String(value || "").trim().toLowerCase().replace(/[^a-z0-9]/g, ""); });
