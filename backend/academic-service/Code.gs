@@ -10647,7 +10647,6 @@ function teacherJustificationAssignmentAllowsDate_(row, map, dateKey) {
   var start = map.FechaInicio >= 0 ? absenceDateKey_(row[map.FechaInicio]) : "";
   var end = map.FechaFin >= 0 ? absenceDateKey_(row[map.FechaFin]) : "";
   if (!start) return false;
-  if (["INACTIVO","INACTIVA","FINALIZADO","FINALIZADA","CERRADO","CERRADA","HISTORICO","HISTORICA"].indexOf(state)!==-1 && !end) return false;
   if (start && dateKey < start) return false;
   if (end && dateKey > end) return false;
   return true;
@@ -10662,10 +10661,10 @@ function teacherJustificationEvidencePolicy_(ss) {
     (headers.indexOf("parametro") >= 0 ? headers.indexOf("parametro") : headers.indexOf("nombre"));
   var valueIndex = headers.indexOf("valor");
   var stateIndex = headers.indexOf("estado");
-  if (keyIndex < 0 || valueIndex < 0) return "SOLO_DICTAMEN_SECRETARIA";
+  if (keyIndex < 0 || valueIndex < 0 || stateIndex < 0) return "SOLO_DICTAMEN_SECRETARIA";
   var matches = rows.slice(1).filter(function(row){
     if (String(row[keyIndex]||"").trim() !== "DOCENTE_VISIBILIDAD_EVIDENCIAS_MEDICAS") return false;
-    return stateIndex < 0 || !row[stateIndex] || teacherJustificationActiveState_(row[stateIndex]);
+    return teacherJustificationActiveState_(row[stateIndex]);
   });
   if (matches.length !== 1) return "SOLO_DICTAMEN_SECRETARIA";
   var value = String(matches[0][valueIndex]||"").trim().toUpperCase();
@@ -10789,7 +10788,7 @@ function resolveTeacherJustificationScope_(payload, requestedJustificationId) {
     if(!assignmentId || assignmentIdCounts[assignmentId]!==1) return;
     if (String(row[assignmentMap.DocenteUserId]||"").trim() !== actor.userId) return;
     var state = String(row[assignmentMap.Estado]||"").trim().toUpperCase();
-    if (["ACTIVO","ACTIVA","INACTIVO","INACTIVA","FINALIZADO","FINALIZADA","CERRADO","CERRADA","HISTORICO","HISTORICA"].indexOf(state)===-1) return;
+    if (!teacherJustificationActiveState_(state)) return;
     var offerId = String(row[assignmentMap.OfertaID]||"").trim();
     if (offerId && offerById[offerId]) {
       if (!assignedOffers[offerId]) assignedOffers[offerId]=[];
