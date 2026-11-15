@@ -125,6 +125,7 @@ const voucherContext = {
   SPREADSHEET_ID: "test"
 };
 vm.runInNewContext(voucherFn + "\nthis.upload=uploadPaymentVoucher;", voucherContext);
+authorized = false;
 const denied = voucherContext.upload({ userId: "student-1", montoReportado: 10 });
 assert.equal(denied.code, "VERIFIED_IDENTITY_REQUIRED");
 authorized = true;
