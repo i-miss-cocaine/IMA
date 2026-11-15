@@ -659,3 +659,24 @@
 - **Evidencia requerida:** capturas anonimizadas, claves de metadatos, resultados de validación backend y logs sintéticos de cancelación/confirmación.
 - **Estado:** Pendiente de ejecución Node CLI y validación beta real.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-108 — TASK-132 — Inventario documental legado
+- **Roles:** Secretaría, Contabilidad, Recursos Humanos, Coordinación, Dirección y Administrador, según permisos y ámbitos asignados.
+- **Precondiciones:** despliegue USER actualizado; CatalogoDepartamentos y AsignacionesAmbitosRoles activos; cuentas sintéticas con ámbitos DEP-A/DEP-B e institución INST-1; una cuenta Director con ámbito institucional.
+- **Pasos:**
+  1. Registrar un documento físico sin subir archivo a Drive, con formato FISICO, ubicación física y ClaveOrigen estable. Verificar que se crea InventarioDocumentalLegado y se genera DocumentoId.
+  2. Registrar un documento digital con ClaveOrigen basada en identificador estable de origen. Verificar campos, categoría, subcategoría y estado inicial Inventariado.
+  3. Reintentar el mismo documento con otro NombreArchivoOriginal y la misma ClaveOrigen desde el mismo departamento y desde otro departamento. Verificar que no se crea duplicado; la respuesta de otro departamento no debe revelar DocumentoId.
+  4. Actualizar el registro original por DocumentoId cambiando nombre, categoría, subcategoría y estado. Verificar que DocumentoId permanece y que HistorialInventarioDocumentalLegado registra actor, fecha, valor anterior y nuevo.
+  5. Simular error al escribir el historial y comprobar que el cambio de inventario se revierte.
+  6. Consultar como usuario departamental y comprobar que solo ve sus departamentos; intentar filtrar otro departamento y comprobar denegación.
+  7. Consultar como Dirección con ámbito institucional y comprobar vista consolidada; comprobar que no aparecen registros de otra institución.
+  8. Aplicar filtros por departamento, categoría, formato, responsable, período y estado; verificar paginación y exportación CSV.
+  9. Incluir texto que comience con =, +, - o @ y verificar que CSV no lo interpreta como fórmula.
+  10. Registrar subcategorías libres y comprobar que la respuesta las agrupa por departamento.
+- **Resultado esperado:** inventario físico/digital completo, IDs estables, deduplicación, trazabilidad, aislamiento tenant/departamento y listados exportables.
+- **Evidencia requerida:** DocumentoId, ClaveOrigen, IDs de eventos, filtros, conteos anonimizados, CSV de prueba y resultados de permisos. No adjuntar documentos reales ni datos personales.
+- **Estado:** pendiente de ejecución en Apps Script/Sheets reales y aceptación departamental.
+===============================================================================
