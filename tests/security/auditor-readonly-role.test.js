@@ -50,6 +50,8 @@ for (const [service, actions] of [["ACADEMIC", academicAuditor], ["USER", userAu
     service + " Auditor cannot mutate, delete, approve, upload or administer records");
 }
 assert.doesNotMatch(userAuditor.join("|"), /getNotificationAuditLogs|manageUserRoleMemberships|purgeStructuredLogs/);
+assert.match(user.source,/\["Director", "Administrador", "Auditor"\]\.indexOf\(role\)/,
+  "institution-wide inventory access for Auditor still requires an institution-wide verified scope");
 assert.match(academic.source,/const permissionAction = \["createStudentDocumentAccessToken", "getSecureDocumentStream"\]/);
 assert.match(accounting,/request\.action === "validateImportPreview"/);
 assert.match(accounting,/IMPORT_COMMIT_NOT_EXPOSED/,"ACCOUNTING exposes no import write action to the read-only Auditor");
