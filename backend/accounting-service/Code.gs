@@ -5358,10 +5358,6 @@ function getPaymentVoucherFile(payload) {
     if (!allowedTypes[extension] || allowedTypes[extension] !== mimeType) {
       return { status: "error", code: "VOUCHER_FILE_TYPE_NOT_ALLOWED", message: "Tipo de archivo no permitido." };
     }
-    const binaryValidation = validateFileBinaryIntegrity(Utilities.base64Encode(bytes), fileName, {
-      maxSizeBytes: 10 * 1024 * 1024, allowedExtensions: Object.keys(allowedTypes)
-    });
-    if (binaryValidation.mimeType !== mimeType) return { status: "error", code: "VOUCHER_FILE_CONTENT_MISMATCH", message: "Archivo no disponible." };
 
     return {
       status: "success",
