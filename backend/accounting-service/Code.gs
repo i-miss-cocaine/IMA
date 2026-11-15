@@ -5258,7 +5258,7 @@ function createPrivatePaymentAttachment_(fileData,fileName) {
 
 function ensurePaymentVoucherEvidenceSchema_(sheet) {
   const baseHeaders = ["ComprobanteID","Fecha","UserId","Alumno","CargoID","MontoReportado","MetodoPago","Referencia","ComprobanteUrl","Estado","Observaciones"];
-  const evidenceHeaders = ["ComprobanteGrupoID","SolicitudID","EvidenciaID","DriveFileID","NombreOriginal","VersionNumero","SHA256","SizeBytes","MimeType","FechaRecepcionISO","EstadoIntegridad","EsVersionActual","DecisionHash","DecisionTimestamp","DecisionBy","DecisionIntegrityWarning"];
+  const evidenceHeaders = ["ComprobanteGrupoID","SolicitudID","EvidenciaID","DriveFileID","NombreOriginal","VersionNumero","SHA256","SizeBytes","MimeType","FechaRecepcionISO","EstadoIntegridad","EsVersionActual","DecisionHash","DecisionTimestamp","DecisionBy","DecisionState","DecisionIntegrityWarning"];
   if (!sheet.getLastRow()) sheet.appendRow(baseHeaders.concat(evidenceHeaders));
   const headers = sheet.getRange(1,1,1,Math.max(1,sheet.getLastColumn())).getValues()[0].map(v=>String(v||"").trim());
   if (baseHeaders.some((name,index)=>headers[index]!==name)) throw new Error("VOUCHER_SCHEMA_INVALID");
@@ -5373,7 +5373,7 @@ function uploadPaymentVoucher(payload) {
     previous=matches[0];
     if(String(previous.row[map.UserId]||"").trim()!==userId||String(previous.row[map.CargoID]||"").trim()!==cargoId)
       return {status:"error",code:"VOUCHER_VERSION_OWNER_MISMATCH"};
-    if(String(previous.row[map.Estado]||"").trim()!=="Observado"||String(previous.row[map.DecisionHash]||"").trim())
+    if(String(previous.row[map.Estado]||"").trim()!=="Observado"||(String(previous.row[map.DecisionHash]||"").trim()&&String(previous.row[map.DecisionState]||"").trim()!=="Observado"))
       return {status:"error",code:"VOUCHER_VERSION_IMMUTABLE"};
     version=Math.max(1,Number(previous.row[map.VersionNumero]||1)+1);
   }
@@ -5386,7 +5386,7 @@ function uploadPaymentVoucher(payload) {
     if(previous){
       const current=lockedRows.map((row,index)=>({row:row,index:index})).filter(item=>String(item.row[map.ComprobanteGrupoID]||"").trim()===groupId&&item.row[map.EsVersionActual]!==false);
       if(current.length!==1||String(current[0].row[map.ComprobanteID]||"")!==String(previous.row[map.ComprobanteID]||"")||
-         String(current[0].row[map.Estado]||"")!=="Observado"||String(current[0].row[map.DecisionHash]||"")||String(current[0].row[map.UserId]||"").trim()!==userId||String(current[0].row[map.CargoID]||"").trim()!==cargoId)
+         String(current[0].row[map.Estado]||"")!=="Observado"||(String(current[0].row[map.DecisionHash]||"")&&String(current[0].row[map.DecisionState]||"")!=="Observado")||String(current[0].row[map.UserId]||"").trim()!==userId||String(current[0].row[map.CargoID]||"").trim()!==cargoId)
         throw new Error("VOUCHER_VERSION_IMMUTABLE");
       previousState={index:current[0].index,row:current[0].row.slice()};
       sheet.getRange(current[0].index+1,map.EsVersionActual+1).setValue(false);
@@ -5399,7 +5399,7 @@ function uploadPaymentVoucher(payload) {
     row[map.ComprobanteGrupoID]=groupId;row[map.SolicitudID]=groupId;row[map.EvidenciaID]=id;row[map.DriveFileID]=fileId;row[map.NombreOriginal]=String(fileName).trim();
     row[map.VersionNumero]=version;row[map.SHA256]=stored.sha256;row[map.SizeBytes]=stored.sizeBytes;
     row[map.MimeType]=stored.mimeType;row[map.FechaRecepcionISO]=stored.receivedAt;row[map.EstadoIntegridad]="VERIFICADO";
-    row[map.EsVersionActual]=true;row[map.DecisionHash]="";row[map.DecisionTimestamp]="";row[map.DecisionBy]="";row[map.DecisionIntegrityWarning]=false;
+    row[map.EsVersionActual]=true;row[map.DecisionHash]="";row[map.DecisionTimestamp]="";row[map.DecisionBy]="";row[map.DecisionState]="";row[map.DecisionIntegrityWarning]=false;
     sheet.appendRow(row);
     return {status:"success",comprobanteId:id,comprobanteGrupoId:groupId,versionNumero:version,sha256:stored.sha256,
       comprobanteUrl:"",tieneComprobante:true,message:"Comprobante privado almacenado y verificado antes de revisión."};
@@ -5508,6 +5508,7 @@ function reviewPaymentVoucher(payload) {
     updatedRow[map.DecisionHash]=decisionHash;
     updatedRow[map.DecisionTimestamp]=decisionTimestamp;
     updatedRow[map.DecisionBy]=actor.userId;
+    updatedRow[map.DecisionState]=nuevoEstado;
     updatedRow[map.DecisionIntegrityWarning]=decisionWarning;
     sheet.getRange(idx+1,1,1,updatedRow.length).setValues([updatedRow]);
   } finally { lock.releaseLock(); }
