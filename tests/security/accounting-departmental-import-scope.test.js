@@ -117,6 +117,8 @@ assert.equal(preflight.rows[0].Departamento, "DEP-A");
 const preview = context.api.preview(base);
 assert.equal(preview.status, "success");
 assert.equal(preview.departamentoDestino, "DEP-A");
+const verifiedScope = context.getVerifiedAccountingDepartmentScope_(base, spreadsheet);
+assert.deepEqual(Array.from(verifiedScope.allDepartmentIds), ["DEP-A", "DEP-B"]);
 const mixed = context.api.build({ ...base, filasData: [{ legacyId: "LEG-1", Puesto: "Docente", Departamento: "DEP-B" }] }, spreadsheet, schema);
 assert.equal(mixed.valid, false);
 assert.equal(mixed.code, "DEPARTMENT_IMPORT_MIXED_DEPARTMENTS");
