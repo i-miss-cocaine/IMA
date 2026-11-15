@@ -1097,7 +1097,19 @@ function apiResponsePublicMessage_(code) {
     SERVICE_UNAVAILABLE: "El servicio no está disponible temporalmente.",
     DEPENDENCY_UNAVAILABLE: "El servicio no está disponible temporalmente.",
     INTERNAL_ERROR: "No fue posible completar la solicitud.",
-    UNHANDLED_EXCEPTION: "No fue posible completar la solicitud."
+    UNHANDLED_EXCEPTION: "No fue posible completar la solicitud.",
+    IMPORT_PREVIEW_INVALID_OR_STALE: "La previsualización cambió o venció. Vuelva a validar el archivo.",
+    IMPORT_TARGET_CHANGED_AFTER_PREVIEW: "El destino cambió después de la validación. Vuelva a previsualizar.",
+    IMPORT_TARGET_SNAPSHOT_UNVERIFIED: "No se pudo verificar el destino. No se sobrescribió ningún registro.",
+    IMPORT_PERMISSION_DENIED: "No tiene permisos para importar datos.",
+    MIGRATION_BATCH_ROLLED_BACK: "La importación fue revertida porque una operación falló.",
+    MIGRATION_COMPENSATION_REQUIRED: "Se requiere revisión técnica: la compensación no pudo completarse.",
+    MIGRATION_OWNER_SERVICE_NOT_CONFIGURED: "El servicio propietario no está disponible para completar la importación.",
+    IMPORT_FILE_INVALID: "El archivo XLSX no es válido.",
+    IMPORT_FILE_MIME_INVALID: "El tipo de archivo no corresponde a un libro XLSX.",
+    IMPORT_FILE_SIGNATURE_INVALID: "La firma binaria del archivo no es válida.",
+    IMPORT_FILE_PACKAGE_INVALID: "El paquete XLSX está dañado o incompleto.",
+    IMPORT_FILE_MACROS_NOT_ALLOWED: "No se permiten libros Excel con macros."
   };
   return messages[String(code || "INTERNAL_ERROR")] || "No fue posible completar la solicitud.";
 }
@@ -1181,8 +1193,23 @@ function doPost(e) {
     if (request.action === "importDataWithColumnMapping") return respond(importDataWithColumnMapping(actionPayload));
     return respond({ status: "error", code: "ACTION_NOT_ALLOWED" });
   } catch (error) {
-    return respond({ status: "error", code: "INTERNAL_ERROR",
-      message: "No fue posible completar la solicitud." });
+    var rawCode = String(error && error.message || "").split(":")[0].trim();
+    var safeCodes = {
+      IMPORT_PREVIEW_INVALID_OR_STALE: true, IMPORT_TARGET_CHANGED_AFTER_PREVIEW: true,
+      IMPORT_TARGET_SNAPSHOT_UNVERIFIED: true, IMPORT_PERMISSION_DENIED: true,
+      AUTH_PERMISSION_DENIED: true, VERIFIED_IDENTITY_REQUIRED: true,
+      MIGRATION_BATCH_ROLLED_BACK: true, MIGRATION_COMPENSATION_REQUIRED: true,
+      RESOURCE_OWNERSHIP_REPAIR_REQUIRED: true, MIGRATION_OWNER_SERVICE_NOT_CONFIGURED: true,
+      ACCOUNTING_AUTH_SERVICE_NOT_CONFIGURED: true, ACCOUNTING_AUTH_SERVICE_UNAVAILABLE: true,
+      IMPORT_FILE_INVALID: true, IMPORT_FILE_MIME_INVALID: true, IMPORT_FILE_BASE64_INVALID: true,
+      IMPORT_FILE_SIGNATURE_INVALID: true, IMPORT_FILE_PACKAGE_INVALID: true,
+      IMPORT_FILE_MACROS_NOT_ALLOWED: true, IMPORT_FILE_UNCOMPRESSED_SIZE_LIMIT: true,
+      MIGRATION_SCHEMA_MISMATCH: true, MIGRATION_FIELD_NOT_ALLOWED: true,
+      MIGRATION_WRITE_CONTRACT_INVALID: true, DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED: true
+    };
+    var safeCode = safeCodes[rawCode] ? rawCode : "INTERNAL_ERROR";
+    return respond({ status: "error", code: safeCode,
+      message: apiResponsePublicMessage_(safeCode) });
   }
 }
 
