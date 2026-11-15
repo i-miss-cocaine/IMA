@@ -86,6 +86,7 @@ const hash = "a".repeat(64);
 let actualHash = hash;
 let uuidCounter = 0;
 let notificationCalls = 0;
+const notificationPayloads = [];
 let failNextNotification = false;
 let fileAccess = "PRIVATE";
 let contextScope = {
@@ -94,9 +95,9 @@ let contextScope = {
 };
 
 const users = sheet("Usuarios");
-users.appendRow(["UserID","Nombre","Apellido","Telefono","Email","Rol","InstitucionID","DepartamentoID","PersonaID","Codigo","Estado"]);
-users.appendRow(["STU-1","Estudiante Uno","","","stu1@example.test","Estudiante","INST-1","DEP-1","PER-1","S-1","Activo"]);
-users.appendRow(["STU-2","Estudiante Dos","","","stu2@example.test","Estudiante","INST-1","DEP-1","PER-2","S-2","Activo"]);
+users.appendRow(["UserID","Nombre","Apellido","Telefono","Email","Rol","InstitucionID","DepartamentoID","PersonaID","Codigo","Estado","ConsentimientoCorreo"]);
+users.appendRow(["STU-1","Estudiante Uno","","","stu1@example.test","Estudiante","INST-1","DEP-1","PER-1","S-1","Activo","FALSE"]);
+users.appendRow(["STU-2","Estudiante Dos","","","stu2@example.test","Estudiante","INST-1","DEP-1","PER-2","S-2","Activo","TRUE"]);
 const issued = sheet("DocumentosEscolaresEmitidos");
 function issuedRow(id, recipient, solicitud) {
   const row = new Array(17).fill("");
@@ -109,6 +110,9 @@ issued.appendRow(issuedRow("DOC-1","STU-1","SOL-1"));
 issued.appendRow(issuedRow("DOC-2","STU-1","SOL-2"));
 issued.appendRow(issuedRow("DOC-3","STU-1","SOL-3"));
 issued.appendRow(issuedRow("DOC-4","STU-1","SOL-4"));
+issued.appendRow(issuedRow("DOC-5","STU-1","SOL-5"));
+issued.appendRow(issuedRow("DOC-6","STU-2","SOL-6"));
+issued.appendRow(issuedRow("DOC-7","STU-1","SOL-7"));
 
 const file = {
   isTrashed() { return false; },
@@ -141,10 +145,11 @@ const context = {
     };
   },
   computeDocumentSHA256() { return actualHash; },
-  sendMultiChannelNotification() {
+  sendMultiChannelNotification(payload) {
     notificationCalls++;
+    notificationPayloads.push(payload || {});
     if (failNextNotification) { failNextNotification = false; throw new Error("SIMULATED_NOTIFICATION_FAILURE"); }
-    return { status: "success", notificacionId: "NTF-" + notificationCalls };
+    return { status: "success", notificacionId: "NTF-" + notificationCalls, emailSent: !!(payload && payload.emailRecipient) };
   },
   logStructuredEvent() {},
   Date, Math, JSON, String, Number, Array, Object, Error, isFinite, encodeURIComponent
@@ -156,8 +161,10 @@ const names = [
   "getDocumentDeliverySenderContext_", "getIssuedDocumentSnapshot_", "getDocumentDeliveryRecipient_",
   "appendDocumentDeliveryEvent_", "findDocumentDeliveryRow_", "writeDocumentDeliveryRow_",
   "getDocumentDeliveryPortalLink_", "dispatchDocumentDelivery_", "registerDepartmentalDocumentDelivery",
-  "retryDepartmentalDocumentDelivery", "getDepartmentalOutbox", "getMyDocumentDeliveries",
-  "openDepartmentalDocumentDelivery", "confirmDepartmentalDocumentReceipt", "revokeDepartmentalDocumentDeliveryLink"
+  "retryDepartmentalDocumentDelivery", "getDepartmentalOutbox", "getMyDepartmentalOutbox",
+  "sendInstitutionalDispatch", "sendInstitutionalDispatchBatch", "getDocumentDeliveryReceiptMode_",
+  "getMyDocumentDeliveries", "openDepartmentalDocumentDelivery", "confirmDepartmentalDocumentReceipt",
+  "revokeDepartmentalDocumentDeliveryLink"
 ];
 vm.runInContext(constants + "\n" + names.map(name => extractFunction(name)).join("\n"), context);
 
@@ -252,5 +259,46 @@ fileAccess = "ANYONE_WITH_LINK";
 const publicFile = context.registerDepartmentalDocumentDelivery(senderPayload({ documentoId: "DOC-4", solicitudId: "SOL-4", idempotencyKey: "IDEM-PUBLIC-FILE" }));
 assert.equal(publicFile.code, "DOCUMENT_FILE_NOT_PRIVATE");
 fileAccess = "PRIVATE";
+
+
+const personalOutbox = context.getMyDepartmentalOutbox({ _verifiedUserId: "SEC-1", _verifiedRole: "Secretaría" });
+assert.equal(personalOutbox.status, "success");
+assert.ok(personalOutbox.data.every(item => item.remitenteUserId === "SEC-1"));
+const forgedPersonalOutbox = context.getDepartmentalOutbox({ _verifiedUserId: "SEC-1", _verifiedRole: "Secretaría", remitenteUserId: "SEC-OTHER" });
+assert.equal(forgedPersonalOutbox.code, "OUTBOX_SENDER_MISMATCH");
+
+const noConsentEmail = context.registerDepartmentalDocumentDelivery(senderPayload({ documentoId: "DOC-5", solicitudId: "SOL-5", canal: "CORREO", idempotencyKey: "IDEM-EMAIL-NO-CONSENT" }));
+assert.equal(noConsentEmail.code, "EMAIL_CONSENT_REQUIRED");
+const emailDispatch = context.registerDepartmentalDocumentDelivery(senderPayload({ documentoId: "DOC-6", solicitudId: "SOL-6", canal: "PLATAFORMA_Y_CORREO", idempotencyKey: "IDEM-EMAIL-CONSENT" }));
+assert.equal(emailDispatch.status, "success");
+assert.equal(emailDispatch.estadoDespacho, "ACEPTADO_POR_PLATAFORMA");
+const emailOutbox = context.getDepartmentalOutbox({ _verifiedUserId: "SEC-1", _verifiedRole: "Secretaría", documentoId: "DOC-6" });
+assert.equal(emailOutbox.data[0].estadoCorreo, "ENVIADO");
+assert.equal(notificationPayloads[notificationPayloads.length - 1].emailRecipient, "stu2@example.test");
+
+const batch = context.sendInstitutionalDispatchBatch({
+  _verifiedUserId: "SEC-1", _verifiedRole: "Secretaría", idempotencyKey: "BATCH-OUTBOX-001",
+  items: [
+    { documentoId: "DOC-5", solicitudId: "SOL-5" },
+    { documentoId: "DOC-6", solicitudId: "SOL-6" }
+  ]
+});
+assert.equal(batch.status, "success");
+assert.equal(batch.succeeded, 2);
+assert.equal(batch.failed, 0);
+const studentTwoInbox = context.getMyDocumentDeliveries({ _verifiedUserId: "STU-2", _verifiedRole: "Estudiante" });
+assert.ok(studentTwoInbox.data.some(item => item.documentoId === "DOC-6"));
+
+const config = sheet("ConfiguracionInstitucional");
+config.appendRow(["Clave", "Valor", "Estado", "InstitutionID"]);
+config.appendRow(["MODALIDAD_ACUSE_RECIBO_NOTIFICACIONES", "AUTOMATICO_POR_LECTURA", "ACTIVO", "INST-1"]);
+const autoDelivery = context.registerDepartmentalDocumentDelivery(senderPayload({ documentoId: "DOC-7", solicitudId: "SOL-7", idempotencyKey: "IDEM-AUTO-RECEIPT" }));
+assert.equal(autoDelivery.status, "success");
+const autoOpen = context.openDepartmentalDocumentDelivery({ _verifiedUserId: "STU-1", _verifiedRole: "Estudiante", deliveryId: autoDelivery.deliveryId });
+assert.equal(autoOpen.status, "success");
+assert.equal(autoOpen.modalidadAcuse, "AUTOMATICO_POR_LECTURA");
+assert.equal(autoOpen.estadoAcuse, "RECIBIDO_AUTOMATICO_POR_LECTURA");
+assert.match(autoOpen.advertencia, /no equivale a firma electrónica avanzada/);
+assert.equal(context.getDocumentDeliveryReceiptMode_(ss, "INST-2"), "EXPLICITO_CLIC_CONFIRMACION");
 
 console.log("PASS: departmental document outbox, scoped delivery, verified opening, explicit receipt, expiry, revocation, idempotency and integrity.");
