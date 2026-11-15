@@ -64,4 +64,39 @@ assert.equal(conversionFailure.code,"OCR_CONVERSION_FAILED");
 assert.match(academic,/requestedDocumentId/);
 assert.match(academic,/request\.ocrRequested === true/);
 assert.match(academic,/extractPdfTextWithOcr_\(file/);
+
+function compileEvidenceValidator(scope){
+ const keys=Object.keys(scope);
+ return new Function(...keys,extract(academic,"validateEvidenceFileAndPermissions")+"\\nreturn validateEvidenceFileAndPermissions;")(...keys.map(k=>scope[k]));
+}
+let scopedPayload=null,driveReads=0;
+const documentRow=["DOC-1","EXP-1","SOL-1","PDF","evidencia.pdf","FILE-1"];
+function evidenceScope(){
+ return {
+  getVerifiedAcademicIdentity_:()=>({authorized:true,role:"Orientacion",userId:"U-1"}),
+  SpreadsheetApp:{openById:()=>({getSheetByName:name=>name==="DocumentosEstudiante"?{getDataRange:()=>({getValues:()=>[["DocumentoID","ExpedienteID","SolicitudID","Tipo","NombreArchivo","DriveFileID"],documentRow]})}:{}})},
+  assertStudentDocumentScopeAccess_:(payload)=>{scopedPayload=payload;return{authorized:true};},
+  SPREADSHEET_ID:"TEST",
+  DriveApp:{getFileById:id=>{driveReads++;assert.equal(id,"FILE-1");return{getMimeType:()=>"application/pdf",getSize:()=>4,getName:()=>"evidencia.pdf",getBlob:()=>({getBytes:()=>[37,80,68,70]})};}},
+  Utilities:{base64Encode:()=>"JVBERi0xLjQ="},
+  validateFileBinaryIntegrity:()=>({byteLength:4,mimeType:"application/pdf",detectedFormat:"pdf"}),
+  classifyPdfDocumentPages_:()=>({verified:true,pageCount:1,pages:[{pageNumber:1,classification:"ESCANEADA"}],summary:{vectorial:0,escaneada:1,mixta:0,vacia:0,noAnalizada:0},requiresOcr:true}),
+  extractPdfTextWithOcr_:()=>({status:"success",language:"es",textLength:12,text:"texto extraído"}),
+  logStructuredEvent:()=>{}
+ };
+}
+const validator=compileEvidenceValidator(evidenceScope());
+const validated=validator({documentoId:"DOC-1",studentId:"STU-1",ocrRequested:true,includeOcrText:true});
+assert.equal(validated.status,"success");
+assert.equal(validated.documentoId,"DOC-1");
+assert.equal(validated.fileId,undefined,"resolved Drive IDs are not exposed to callers that supplied only documentoId");
+assert.equal(validated.previewUrl,"");
+assert.equal(validated.pdfPageAnalysis.summary.escaneada,1);
+assert.equal(validated.ocr.text,"texto extraído");
+assert.equal(validated.validationComplete,true);
+assert.equal(scopedPayload.fileId,"FILE-1","scope validation receives the server-resolved Drive ID");
+assert.equal(driveReads,1);
+const noOcr=compileEvidenceValidator(evidenceScope())({documentoId:"DOC-1",studentId:"STU-1"});
+assert.equal(noOcr.ocrStatus,"REQUIRED_NOT_REQUESTED");
+assert.equal(noOcr.validationComplete,false);
 process.stdout.write("Academic PDF OCR contract: conversion options, text minimization, MIME guard, fail-closed errors and temporary-file cleanup PASS.\n");
