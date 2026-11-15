@@ -12,7 +12,10 @@ assert.doesNotMatch(source.slice(source.indexOf("function dispatchWorkflowStatus
 function makeSheet(rows) {
   const data=rows.map(row=>row.slice());
   return {data,getLastRow(){return data.length;},getDataRange(){return {getValues(){return data.map(row=>row.slice());}};},
-    appendRow(row){data.push(row.slice());},getRange(row,col){return {setValue(value){while(data.length<row)data.push([]);while(data[row-1].length<col)data[row-1].push("");data[row-1][col-1]=value;}};}};
+    appendRow(row){data.push(row.slice());},getRange(row,col,numRows=1,numCols=1){return {
+      getValues(){return Array.from({length:numRows},(_,r)=>Array.from({length:numCols},(_,c)=>(data[row-1+r]||[])[col-1+c]===undefined?"":data[row-1+r][col-1+c]));},
+      setValue(value){while(data.length<row)data.push([]);while(data[row-1].length<col)data[row-1].push("");data[row-1][col-1]=value;}
+    };}};
 }
 function extractFunction(name) {
   const start=source.indexOf("function "+name+"(");
@@ -38,9 +41,14 @@ function loadContext(extra={}) {
   const notificationEnd=source.indexOf("// [TAREA-F6-024]",notificationStart);
   assert.ok(notificationStart>=0&&notificationEnd>notificationStart,"notification function block must be present");
   const notificationFunctions=source.slice(notificationStart,notificationEnd);
+  const retryStart=source.indexOf("function retryFailedNotificationsQueue(payload) {");
+  const retryEnd=source.indexOf("// [F10-Task12]",retryStart);
+  assert.ok(retryStart>=0&&retryEnd>retryStart,"notification retry function must be present");
+  const retryFunction=source.slice(retryStart,retryEnd);
   const isolatedSource=[
     'const SPREADSHEET_ID="TEST";',
     'const FRONTEND_URL="https://portal.example.test/";',
+    retryFunction,
     notificationFunctions,
     extractFunction("processWorkflowDecision")
   ].join("\n");
@@ -124,6 +132,31 @@ for(const state of ["Requiere Corrección","Aprobada","Rechazada"]) {
   assert.equal(result.status,"success");assert.equal(result.nuevoEstado,"Requiere Corrección");
   assert.equal(notificationContext.destinatarioUserId,"USR-1");assert.equal(notificationContext.observacionesPublicas,"Corrige el dato");
   assert.equal(requests.data[1][6],"Requiere Corrección");assert.equal(lockState.held,false);
+}
+{
+  const notificationSheet=makeSheet([["NotificacionID","UserId","Tipo","Titulo","Mensaje","Fecha","Leido","Categoria","Enlace","DedupKey","Estado","Email"]]);
+  let lockBusy=false,lockHeld=false,uuid=0,capturedHtml="";
+  const context=loadContext({
+    SpreadsheetApp:{openById(){return {};}},
+    getOrCreateSheet(){return notificationSheet;},
+    LockService:{getScriptLock(){return {waitLock(){if(lockBusy||lockHeld)throw Error("LOCK_BUSY");lockHeld=true;},releaseLock(){lockHeld=false;}};}},
+    Utilities:{getUuid(){return "RETRY-"+(++uuid);}},
+    MailApp:{sendEmail(payload){capturedHtml=payload.htmlBody;}},
+    logStructuredEvent(){}
+  });
+  const pending=context.sendMultiChannelNotification({userId:"USR-1",emailRecipient:"user@example.test",titulo:"<script>alert(1)</script>",mensaje:"<img src=x onerror=alert(1)>",deduplicationKey:"WF|RETRY"});
+  assert.equal(pending.estadoEntrega,"Pendiente_Reintento");
+  lockBusy=true;
+  const skipped=context.retryFailedNotificationsQueue({authRole:"Sistema"});
+  assert.equal(skipped.skippedLocked,1);
+  assert.equal(notificationSheet.data[1][10],"Pendiente_Reintento");
+  lockBusy=false;
+  const retried=context.retryFailedNotificationsQueue({authRole:"Sistema"});
+  assert.equal(retried.resolvedCount,1);
+  assert.equal(notificationSheet.data[1][10],"Entregado");
+  assert.match(capturedHtml,/&lt;script&gt;/);
+  assert.match(capturedHtml,/&lt;img/);
+  assert.doesNotMatch(capturedHtml,/<script>|<img/);
 }
 assert.equal(loadContext().escapeNotificationHtml_("<script>\"&'"),"&lt;script&gt;&quot;&amp;&#39;");
 console.log("PASS user-service workflow notifications: transitions, public-only payload, consent, post-commit lock release, atomic dedupe, lock timeout, HTML escaping");
