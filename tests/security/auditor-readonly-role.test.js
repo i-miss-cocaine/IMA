@@ -53,7 +53,7 @@ assert.doesNotMatch(userAuditor.join("|"), /getNotificationAuditLogs|manageUserR
 function extractFunction(source, name) {
   const start = source.indexOf("function " + name + "(");
   assert.ok(start >= 0, "function exists: " + name);
-  const next = source.indexOf("\\nfunction ", start + 10);
+  const next = source.indexOf("\nfunction ", start + 10);
   return source.slice(start, next < 0 ? source.length : next);
 }
 const userPermissionContext = {
@@ -63,7 +63,7 @@ const userPermissionContext = {
   logStructuredEvent: () => {}
 };
 vm.runInNewContext(extractFunction(user.source, "validateRolePermission") +
-  "\\nthis.check = validateRolePermission;", userPermissionContext);
+  "\nthis.check = validateRolePermission;", userPermissionContext);
 assert.equal(userPermissionContext.check("getAuditReport", { _verifiedUserId: "AUD-1" }).authorized, true);
 assert.equal(userPermissionContext.check("importDataWithColumnMapping", { _verifiedUserId: "AUD-1" }).authorized, false,
   "a dynamic wildcard cannot grant the Auditor a write action");
@@ -75,7 +75,7 @@ const academicPermissionContext = {
   logStructuredEvent: () => {}
 };
 vm.runInNewContext(extractFunction(academic.source, "validateRolePermission") +
-  "\\nthis.check = validateRolePermission;", academicPermissionContext);
+  "\nthis.check = validateRolePermission;", academicPermissionContext);
 assert.equal(academicPermissionContext.check("getSecureDocumentStream", { sessionToken: "AUD-TOKEN" }).authorized, true);
 assert.equal(academicPermissionContext.check("deleteStudentDocument", { sessionToken: "AUD-TOKEN" }).authorized, false,
   "dynamic permissions and delegations cannot elevate the Auditor beyond the read-only allowlist");
@@ -93,4 +93,4 @@ assert.match(accounting,/accountingHasInstitutionalImportPermission_\(\{ roleId:
 assert.match(accounting,/if \(!input\.previewConfirmed \|\| !input\.previewHash/);
 assert.equal(userAuditor.includes("authorizeAccountingImport"),false,
   "Auditor cannot satisfy the import permission required by ACCOUNTING write/preview handlers");
-process.stdout.write("Read-only Auditor role: Academic/User allowlists, document proxy permission alias and disabled Accounting writes PASS.\n");
+process.stdout.write("Read-only Auditor role: Academic/User read-only allowlists, dynamic-permission override and Auditor import denial PASS.\n");
