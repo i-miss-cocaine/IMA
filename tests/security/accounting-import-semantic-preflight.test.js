@@ -70,6 +70,8 @@ assert.ok(partialResult.errores.some(item=>item.error==="INVALID_DATE_VALUE"));
 assert.equal(partialResult.errores.find(item=>item.error==="INVALID_DATE_VALUE").fila,7);
 assert.equal(writeCalls.length,1);
 assert.equal(auditRows.length,1);
+assert.ok(partialResult.advertencias.some(item=>item.codigo==="TARGET_RECORD_OVERWRITE"));
+assert.ok(JSON.parse(auditRows[0][7]).some(item=>item.severity==="WARNING"&&item.codigo==="TARGET_RECORD_OVERWRITE"));
 const structurallyBlocked=context.preview({...partialPayload,analisisEstructural:{duplicateHeaders:["Nombre"]}});
 assert.equal(structurallyBlocked.validForPartialImport,false);
 assert.throws(()=>context.import({...partialPayload,analisisEstructural:{duplicateHeaders:["Nombre"]},previewConfirmed:true,previewHash:structurallyBlocked.previewHash,allowPartialImport:true}),/IMPORT_PREVIEW_INVALID_OR_STALE/);
