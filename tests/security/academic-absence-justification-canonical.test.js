@@ -354,7 +354,23 @@ const userContext = {
   SPREADSHEET_ID: "TEST",
   SpreadsheetApp: { openById() { return { getSheetByName(name) { return store[name] ? sheet(name) : null; } }; } },
   LockService: { getScriptLock() { return { tryLock() { return !userLockBusy; }, waitLock() { if (userLockBusy) throw new Error("LOCK_BUSY"); }, releaseLock() {} }; } },
-  Utilities: { getUuid() { userUuid++; return "USER-UUID-" + String(userUuid).padStart(8, "0"); } },
+  Utilities: {
+    getUuid() { userUuid++; return "USER-UUID-" + String(userUuid).padStart(8, "0"); },
+    computeDigest(_algorithm, value) {
+      const bytes=Array.isArray(value)?Buffer.from(value.map(v=>v<0?v+256:v)):Buffer.from(String(value));
+      return Array.from(crypto.createHash("sha256").update(bytes).digest()).map(v=>v>127?v-256:v);
+    },
+    base64Encode(value) { return Buffer.from(value).toString("base64"); },
+    DigestAlgorithm:{SHA_256:"SHA_256"}
+  },
+  DriveApp: {
+    Access:{PRIVATE:"PRIVATE"},
+    getFileById(id) { if (!evidenceFiles[id]) throw new Error("NOT_FOUND"); return evidenceFiles[id]; }
+  },
+  validateFileBinaryIntegrity(data, name) {
+    const bytes=Buffer.from(String(data),"base64");
+    return {valid:true,byteLength:bytes.length,mimeType:"application/pdf"};
+  },
   getOrCreateSheet(_ss, name) { return sheet(name); },
   getUserVerifiedRole(payload) { payload._verifiedUserId = payload._userId; payload._verifiedRole = payload._role; return payload._role; },
   resolveVerifiedRequestSubmitter_(payload, requestedStudentId) {
@@ -373,7 +389,7 @@ const userContext = {
 };
 const userNames = [
   "requestAttachmentHeaderMap_","ensureRequestAttachmentIntegritySchema_","setRequestAttachmentIntegrity_",
-  "ensureEvidenceDocumentSchema_","getEvidenceRecordsForRequest_","getEvidenceSnapshotForDecision_",
+  "ensureEvidenceDocumentSchema_","getEvidenceRecordsForRequest_","registerDocumentEvidence_","getEvidenceSnapshotForDecision_","verifyEvidenceDocumentRecord_","markEvidenceDecision_","computeDocumentSHA256","getEvidenceIntegrityPolicy_","logEvidenceTampering_",
   "ensureUserAbsenceRequestSchema_","createPrivateRequestAttachment_","createPrivateRequestAttachmentWithIntegrity_",
   "submitStudentAbsenceJustification","reviewAbsenceJustification","getAdministrativeRequests","updateRequestStatus","processWorkflowDecision"
 ];
@@ -427,6 +443,58 @@ assert.equal(userMultiReview.status,"success");
 regRows = attendance.getDataRange().getValues();
 assert.equal(regRows.find(row=>row[0]==="REG-USER-MULTI-A")[6],true);
 assert.equal(regRows.find(row=>row[0]==="REG-USER-MULTI-B")[6],false,"the USER review bridge must forward and enforce the partial session selection");
+
+// Versioned evidence is immutable after decision; a failed replacement must not retire the current version.
+const evidenceRequestId = "SOL-EVIDENCE-VERSION-01";
+const evidenceRequestRow = new Array(store.SolicitudesTramites[0].length).fill("");
+store.SolicitudesTramites[0].forEach((header,index)=>{ if(header==="SolicitudID") evidenceRequestRow[index]=evidenceRequestId; if(header==="Estado") evidenceRequestRow[index]="Observado"; });
+store.SolicitudesTramites.push(evidenceRequestRow);
+function makeEvidenceFile(id, bytes) {
+  const data = Buffer.from(bytes);
+  evidenceFiles[id] = {
+    isTrashed(){return false;}, getSharingAccess(){return "PRIVATE";},
+    getBlob(){return {getBytes(){return Array.from(data);},getContentType(){return "application/pdf";}}},
+    getMimeType(){return "application/pdf";}, getName(){return id + ".pdf";}
+  };
+  return {fileId:id,sha256:crypto.createHash("sha256").update(data).digest("hex"),sizeBytes:data.length,mimeType:"application/pdf",receivedAt:"2026-11-15T17:00:00.000Z"};
+}
+const v1Attachment = makeEvidenceFile("EVIDENCE-FILE-V1","%PDF-v1");
+const v1Record = userContext.registerDocumentEvidence_(userContext.SpreadsheetApp.openById("TEST"),{
+  solicitudId:evidenceRequestId,evidenciaGrupoId:"ADJUNTO-1",userId:"STU-USER",attachment:v1Attachment,nombreOriginal:"evidence.pdf"
+});
+assert.equal(v1Record.VersionNumero,1);
+const v2Attachment = makeEvidenceFile("EVIDENCE-FILE-V2","%PDF-v2");
+const v2Record = userContext.registerDocumentEvidence_(userContext.SpreadsheetApp.openById("TEST"),{
+  solicitudId:evidenceRequestId,evidenciaGrupoId:"ADJUNTO-1",userId:"STU-USER",attachment:v2Attachment,nombreOriginal:"evidence.pdf"
+});
+assert.equal(v2Record.VersionNumero,2);
+const versionRows = userContext.getEvidenceRecordsForRequest_(userContext.SpreadsheetApp.openById("TEST"),evidenceRequestId,false);
+assert.equal(versionRows[0].Estado,"SUPERADA");
+assert.equal(versionRows[0].EsVersionActual,false);
+assert.equal(versionRows[1].Estado,"VERIFICADO");
+assert.equal(versionRows[1].EsVersionActual,true);
+const badAttachment = makeEvidenceFile("EVIDENCE-FILE-BAD","%PDF-bad");
+badAttachment.sha256 = "0".repeat(64);
+assert.throws(()=>userContext.registerDocumentEvidence_(userContext.SpreadsheetApp.openById("TEST"),{
+  solicitudId:evidenceRequestId,evidenciaGrupoId:"ADJUNTO-1",userId:"STU-USER",attachment:badAttachment,nombreOriginal:"evidence.pdf"
+}),/EVIDENCE_STORAGE_INTEGRITY_MISMATCH/);
+const afterBadReplacement = userContext.getEvidenceRecordsForRequest_(userContext.SpreadsheetApp.openById("TEST"),evidenceRequestId,true);
+assert.deepEqual(Array.from(afterBadReplacement.map(item=>item.EvidenciaID)),[v2Record.EvidenciaID],"invalid candidate must not retire the previous valid version");
+const snapshot = userContext.getEvidenceSnapshotForDecision_(userContext.SpreadsheetApp.openById("TEST"),evidenceRequestId,[v2Record.EvidenciaID],"SEC-USER","Secretaría",true);
+assert.equal(snapshot.status,"success");
+assert.equal(snapshot.snapshot.length,1);
+assert.equal(snapshot.snapshot[0].sha256,v2Attachment.sha256);
+userContext.markEvidenceDecision_(userContext.SpreadsheetApp.openById("TEST"),evidenceRequestId,[v2Record.EvidenciaID],snapshot.snapshotHash,"DECISION-1",false);
+const approvedEvidence = userContext.getEvidenceRecordsForRequest_(userContext.SpreadsheetApp.openById("TEST"),evidenceRequestId,true)[0];
+assert.equal(approvedEvidence.DecisionHash,snapshot.snapshotHash);
+assert.equal(approvedEvidence.DecisionID,"DECISION-1");
+store.SolicitudesTramites[1 + store.SolicitudesTramites.slice(1).findIndex(row=>row[0]===evidenceRequestId)][store.SolicitudesTramites[0].indexOf("Estado")]="Aprobada";
+const v3Attachment = makeEvidenceFile("EVIDENCE-FILE-V3","%PDF-v3");
+assert.throws(()=>userContext.registerDocumentEvidence_(userContext.SpreadsheetApp.openById("TEST"),{
+  solicitudId:evidenceRequestId,evidenciaGrupoId:"ADJUNTO-1",userId:"STU-USER",attachment:v3Attachment,nombreOriginal:"evidence.pdf"
+}),/EVIDENCE_VERSION_IMMUTABLE/);
+assert.equal(userContext.getEvidenceRecordsForRequest_(userContext.SpreadsheetApp.openById("TEST"),evidenceRequestId,true)[0].EvidenciaID,v2Record.EvidenciaID);
+
 const unauthorizedReview = userContext.reviewAbsenceJustification({_userId:"TEACHER-1",_role:"Profesor",solicitudId:userMultiSubmit.solicitudId,nuevoEstado:"Aprobada"});
 assert.equal(unauthorizedReview.code,"AUTH_PERMISSION_DENIED","teachers cannot exercise secretariat review authority through USER");
 const secretaryQueue = userContext.getAdministrativeRequests({_userId:"SEC-USER",_role:"Secretaría"});
