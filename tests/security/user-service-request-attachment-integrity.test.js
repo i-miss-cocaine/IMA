@@ -184,5 +184,5 @@ assert.match(formSubmit,/createPrivateRequestAttachmentWithIntegrity_/);
 assert.match(formSubmit,/setRequestAttachmentIntegrity_/);
 assert.match(review,/adjuntoSHA256/);
 assert.match(userSource,/AdjuntoIntegridadEstado/);
-assert.match(userSource,/ATTACHMENT_INTEGRITY_MISMATCH/);
+assert.match(userSource,/EVIDENCE_TAMPERING_DETECTED/);
 console.log("PASS: request attachment SHA-256 baseline, private storage read-back, metadata/version persistence, tamper detection, legacy-unverified disclosure and ownership checks");
