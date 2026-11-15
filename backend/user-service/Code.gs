@@ -1632,6 +1632,11 @@ function validateRolePermission(action, payload) {
   if (userRole === "NO_ACCESS") {
     return { authorized: false, role: "Cuenta Inactiva/Bloqueada" };
   }
+  if (userRole === "Auditor" && (ROLE_PERMISSIONS.Auditor || []).indexOf(action) === -1) {
+    logStructuredEvent("USER", "validateRolePermission", "WARN", "AUDITOR_READ_ONLY",
+      "Acción no incluida en la lista de solo lectura del auditor.", { action: action, userId: payload && payload._verifiedUserId }, userRole);
+    return { authorized: false, role: userRole };
+  }
   if (["getUserContextScope", "validateRoleScopeAccess", "getUserRoleMemberships", "switchActiveRole"].indexOf(action) !== -1) {
     return { authorized: true, role: userRole, userId: payload && payload._verifiedUserId };
   }
