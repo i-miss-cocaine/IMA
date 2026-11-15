@@ -5641,3 +5641,12 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Contrato Node ABAC PASS: separación multi-docente, matrículas retiradas, período vencido, oferta inactiva, alumno sin matrícula, IDOR, auditoría, revocación entre validación y escritura, concurrencia/lock, idempotencia, privacidad y evidencia. Department Scope run 43737615044, Task-Service 43737615057 y Department Reference Consumers 43737615098 SUCCESS; Node.js 24.22.2 y sintaxis Apps Script/JS PASS.
 - Node local NOT RUN: intento de checkout impedido por resolución DNS de github.com. Sin despliegue Apps Script ni validación real de Sheets/Drive.
 - BETA-FUNC-102 pendiente. F34-Task04 permanece como siguiente P0 para SHA-256 de adjuntos/evidencias, conforme a F34-10; no se afirma integridad binaria en esta tarea.
+
+
+### C1.753 — F34-Task04 — integridad SHA-256 de adjuntos/evidencias
+- Revisión de continuidad confirmó implementación existente en USER y ACADEMIC: hash calculado sobre bytes reales, read-back de Drive, comparación de hash/tamaño/MIME, metadatos versionados, privacidad y rechazo de sustitución en descargas/consulta docente.
+- Los adjuntos legacy sin hash se etiquetan LEGACY_UNVERIFIED; no se declaran criptográficamente verificados.
+- Se añadió regresión en tests/security/user-service-request-attachment-integrity.test.js: bytes distintos en read-back provocan ATTACHMENT_STORAGE_INTEGRITY_MISMATCH y rollback del archivo.
+- Department Scope Contract run 43740294235 SUCCESS; Node.js 24 y sintaxis Apps Script/JS PASS.
+- F34-Task04 completada en código/CI; beta real de Drive/Sheets pendiente. TASK-106 no queda cerrada: múltiples adjuntos/versiones v2+, inmutabilidad preaprobación, hash vinculado a decisión y configuración institucional de discrepancias permanecen fuera de este subalcance.
+- Próxima tarea elegible P0: revalidación de TASK-105 (orden 1; F34-Task03 y F34-Task04 satisfechas). TASK-106 es P0 orden 2.
