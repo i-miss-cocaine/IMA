@@ -166,7 +166,7 @@ try {
     { legacyId: "LEG-1", Puesto: "Docente", Departamento: "DEP-A" },
     { legacyId: "LEG-2", Puesto: "Docente", Departamento: "DEP-B" }
   ] });
-} catch (error) { mixedImportDenied = String(error.message).includes("IMPORT_PREVIEW_INVALID_OR_STALE"); }
+} catch (error) { mixedImportDenied = String(error.message).includes("DEPARTMENT_IMPORT_MIXED_DEPARTMENTS"); }
 assert.equal(mixedImportDenied, true);
 assert.equal(writerAttempts, beforeMixedWriters, "the entire mixed batch is rejected before the first writer");
 assert.equal(auditRows.length, beforeMixedAudit, "a rejected batch creates no migration audit row");
