@@ -553,7 +553,25 @@ function buildImportPreview_(payload) {
 }
 
 function validateImportPreview(payload) {
-  return buildImportPreview_(payload);
+  var preview = buildImportPreview_(payload);
+  if (!preview || preview.status !== "success" || !preview.targetExistenceSnapshot) return preview;
+  var snapshot = preview.targetExistenceSnapshot;
+  var idField = String(snapshot.idField || "");
+  var requested = {};
+  (preview.preparedRows || []).forEach(function(row) {
+    var id = String(row && row[idField] || "").trim();
+    if (id) requested[id] = true;
+  });
+  preview.targetExistenceSnapshot = {
+    verified: snapshot.verified === true,
+    service: String(snapshot.service || ""),
+    sheet: String(snapshot.sheet || ""),
+    institutionId: String(snapshot.institutionId || ""),
+    idField: idField,
+    existingTargetIds: (snapshot.existingTargetIds || []).map(String).filter(function(id) { return !!requested[id]; }).sort(),
+    targetRows: []
+  };
+  return preview;
 }
 
 const ACCOUNTING_IDENTITY_MAPPING_HEADERS_=["idMapeo", "sistemaOrigen", "tipoEntidad", "idOriginalLegado", "idNuevoPlataforma", "institucionId", "hashRegistroOrigen", "fechaMigracion", "versionMapeo", "estadoCorrespondencia", "metodoCoincidencia", "nivelConfianza", "migradoPor"];
