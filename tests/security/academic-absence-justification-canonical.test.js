@@ -585,7 +585,7 @@ const canonicalResubmissionRow = canonicalResubmissionRows.find((row,index)=>ind
 assert.deepEqual(JSON.parse(canonicalResubmissionRow[attachmentMap.EvidenciaIDsJSON]),currentResubmissionEvidence.map(item=>item.EvidenciaID).sort());
 const resubmissionHistory = JSON.parse(canonicalResubmissionRow[attachmentMap.DecisionHistoryJSON]);
 assert.ok(resubmissionHistory.some(item=>item.action==="EVIDENCE_RESUBMITTED"&&item.previousEvidenceIds.includes(oldResubmissionRecord.EvidenciaID)));
-assert.ok(resubmissionHistory.some(item=>item.action==="APPROVE"&&currentResubmissionEvidence.every(evidence=>item.evidenceIds.includes(evidence.EvidenciaID)));
+assert.ok(resubmissionHistory.some(item=>item.action==="APPROVE"&&currentResubmissionEvidence.every(evidence=>item.evidenceIds.includes(evidence.EvidenciaID))));
 const unauthorizedReview = userContext.reviewAbsenceJustification({_userId:"TEACHER-1",_role:"Profesor",solicitudId:userMultiSubmit.solicitudId,nuevoEstado:"Aprobada"});
 assert.equal(unauthorizedReview.code,"AUTH_PERMISSION_DENIED","teachers cannot exercise secretariat review authority through USER");
 const secretaryQueue = userContext.getAdministrativeRequests({_userId:"SEC-USER",_role:"Secretaría"});
