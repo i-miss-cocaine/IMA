@@ -53,3 +53,46 @@
 - Siguiente acción concreta: continuar TASK-133 restaurando un contrato autenticado y el router mínimo de ACCOUNTING, verificando el mecanismo de sesión/interservicio existente antes de exponer preflight o importación. Mantener la UI desconectada hasta que el endpoint autentique y autorice en servidor.
 - **Estado:** checkpoint de auditoría de continuidad; no representa cierre de TASK-133, TASK-143 ni TASK-144.
 ===============================================================================
+
+
+===============================================================================
+## C1.772 — IMA-EXEC-20261115-TASK133-EXCEL-SEMANTIC-PREFLIGHT-UI-01
+- Fecha: 2026-11-15
+- Rama: NG_beta_0.0.0.1_work
+- HEAD verificado antes del registro: 6d4de6acbd8ef0da654946c8d8030805033ebbec
+- Rama base: NG_beta_0.0.0.1 — 44d9891132332e692dbe2ba8602b41f50a508a59; 3.096 commits por delante y 0 por detrás en la verificación previa al registro.
+- Normativa: Normas_Desarollo.md v1.4, leída y aplicada.
+
+### Corrección de continuidad
+- La afirmación de C1.771 de que ACCOUNTING carecía de router/auth quedó superada por commits posteriores de la propia rama. En HEAD de esta sesión ya existen doGet/doPost, respuesta API versionada, verificación de sesión mediante USER con HMAC, autorización de importación, escritor de migración con journal/idempotencia y pruebas de contrato. No se duplicaron esas implementaciones.
+- El endpoint validateImportPreview está expuesto por ACCOUNTING y ejecuta validación de identidad y permiso en servidor. La acción de escritura continúa cerrada en el router (IMPORT_COMMIT_NOT_EXPOSED); la UI no intenta saltarse esa protección.
+
+### Implementación de TASK-133
+- teacher-dashboard.html: se añadieron controles para sistema de origen, tipo de entidad, departamento activo, identificador legado, mapeo de campos, prevalidación semántica y confirmación explícita de revisión.
+- js/teacher.js: el importador Excel construye el contrato para curso/estudiante/empleado y llama fetchApi('ACCOUNTING','validateImportPreview'). Campos obligatorios se validan antes de enviar; los opcionales solo se mapean si el usuario elige columna.
+- La interfaz presenta filas válidas, errores, advertencias y estado de verificación del destino. La confirmación exige hash, destino verificado, resultado elegible y checkbox explícito; confirma únicamente la revisión en pantalla y no persiste registros.
+- Se añadió control de concurrencia por secuencia de solicitud: respuestas antiguas se descartan cuando cambia archivo, hoja o mapeo. No se realizan llamadas a importDataWithColumnMapping.
+- tests/security/teacher-excel-semantic-preflight-ui.test.js cubre controles, contrato de mapeo, campos requeridos, ámbito departamental y la prohibición de persistencia desde la revisión.
+- .github/workflows/accounting-import-preflight-contract.yml incluye Node 24, node --check js/teacher.js y el nuevo contrato UI, además de las pruebas existentes de ACCOUNTING/USER.
+
+### Commits de implementación
+- 88e2a246ece82797b711a13fb16159146dd5ca4b — controles de UI.
+- 687e12cc07b9e0e541a0513e141f5081e80cb360 — conexión del controlador.
+- e74c32b38324d0032a178ff901d82238bd42ad24 — workflow y rutas de ejecución.
+- de4f1f3bb491f907226731c671ad07110e6790a1 — contrato de pruebas UI.
+- 737abc0ba4cafaa535746fe6dff8afae646a9a76 — exigir checkbox antes de confirmar.
+- 6d4de6acbd8ef0da654946c8d8030805033ebbec — prueba de regresión de confirmación explícita.
+
+### Verificación
+- Node local disponible: v22.16.0. Se ejecutó un harness aislado de Node para el constructor de payload; PASS en mapeo de curso, estudiante y empleado, campos requeridos, departamento y rechazo de tipo desconocido. Esto no equivale a ejecutar el test del repositorio ni node --check sobre el archivo completo.
+- El workflow quedó configurado para Node 24 y ejecución de pruebas en push a la rama autorizada. La consulta de estado no reportó status checks ni runs visibles; no se declara GitHub Actions PASS.
+- No se ejecutó Apps Script real, Drive/Sheets de producción ni beta institucional. No se modificaron datos reales.
+- Revisión estática: los datos de usuario se renderizan con textContent; la UI no usa HTML dinámico para diagnósticos ni expone una acción de escritura. Confirmación local no es autorización de persistencia.
+
+### Pendientes y siguiente tarea elegible
+- TASK-133 permanece En ejecución. Falta snapshot de existencia verificable para destinos USER/ACADEMIC; por diseño la UI bloquea la confirmación cuando targetExistenceSnapshot.verified no es true.
+- Falta OCR operativo para documentos escaneados, validación beta real Apps Script/Drive/Sheets, pruebas de accesibilidad con teclado/lector de pantalla y prueba integral con datos anonimizados.
+- No se habilita persistencia hasta que el destino remoto esté verificado y el flujo propietario de escritura esté habilitado y probado.
+- Siguiente paso: implementar un contrato de consulta remota de existencia tenant-scoped en ACADEMIC/USER y probar sus límites de autorización antes de permitir confirmación/importación. Después continuar OCR y validación beta sin alterar la protección fail-closed.
+- Estado: avance funcional parcial y checkpoint recuperable; TASK-133 no está completada.
+===============================================================================
