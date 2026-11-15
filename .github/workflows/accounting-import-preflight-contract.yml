@@ -29,6 +29,7 @@ on:
       - tests/security/user-service-legacy-document-inventory.test.js
       - tests/security/academic-student-document-private-storage.test.js
       - tests/security/auditor-readonly-role.test.js
+      - tests/security/accounting-auditor-migration-audit.test.js
       - js/teacher.js
       - teacher-dashboard.html
       - tests/security/teacher-excel-semantic-preflight-ui.test.js
@@ -103,6 +104,8 @@ jobs:
         run: node tests/security/academic-student-document-private-storage.test.js
       - name: Run read-only Auditor role contract
         run: node tests/security/auditor-readonly-role.test.js
+      - name: Run Accounting Auditor migration audit contract
+        run: node tests/security/accounting-auditor-migration-audit.test.js
       - name: Check teacher dashboard controller syntax
         run: node --check js/teacher.js
       - name: Run Excel semantic preflight UI contract
