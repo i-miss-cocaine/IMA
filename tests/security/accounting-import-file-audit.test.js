@@ -39,15 +39,17 @@ class Sheet {
 }
 
 const sheet = new Sheet();
-let acquired = 0, released = 0;
+let acquired = 0, released = 0, sheetLookups = 0, lockBusy = false;
 const runtime = {
   Date, String, Number, JSON, Array, Object, Error,
   getOrCreateSheet(_ss, name) {
     assert.equal(name, "AuditoriaMigracionesArchivos");
+    assert.ok(acquired > released, "audit sheet schema is inspected only while the script lock is held");
+    sheetLookups++;
     return sheet;
   },
   LockService: { getScriptLock: () => ({
-    waitLock(ms) { assert.equal(ms, 10000); acquired++; },
+    waitLock(ms) { assert.equal(ms, 10000); if (lockBusy) throw new Error("LOCK_TIMEOUT"); acquired++; },
     releaseLock() { released++; }
   }) }
 };
@@ -72,6 +74,14 @@ assert.equal(sheet.rows[1][12], "CORR-001");
 assert.throws(() => runtime.audit({}, input, { ...preview, fileHash: "invalid" }, actor, "SUCCESS", 3),
   /MIGRATION_FILE_HASH_REQUIRED/);
 assert.equal(sheet.rows.length, 2, "invalid hashes never enter the audit ledger");
-assert.equal(acquired, 1);
-assert.equal(released, 1, "the audit lock is released after persistence");
+runtime.audit({}, input, { ...preview, runId: "RUN-002" }, actor, "SUCCESS", 2);
+assert.equal(sheet.rows.length, 3, "subsequent runs append records without duplicating the header");
+assert.equal(sheet.rows.filter(row => row[0] === "RunId").length, 1);
+const beforeBusyLookups = sheetLookups, beforeBusyRows = sheet.rows.length;
+lockBusy = true;
+assert.throws(() => runtime.audit({}, input, { ...preview, runId: "RUN-LOCK" }, actor, "SUCCESS", 1), /LOCK_TIMEOUT/);
+assert.equal(sheetLookups, beforeBusyLookups, "a lock timeout cannot inspect or mutate the audit sheet");
+assert.equal(sheet.rows.length, beforeBusyRows);
+assert.equal(acquired, 2);
+assert.equal(released, 2, "the audit lock is released after each successful persistence");
 process.stdout.write("Accounting migration file audit: institution binding, filename-independent SHA-256 persistence, preview binding, status and lock release PASS.\n");
