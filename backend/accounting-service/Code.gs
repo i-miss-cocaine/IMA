@@ -536,6 +536,9 @@ function buildImportPreview_(payload) {
   if (!departmentPreflight || departmentPreflight.valid !== true) {
     return { status: "error", code: departmentPreflight && departmentPreflight.code || "DEPARTMENT_IMPORT_SCOPE_DENIED", validForImport: false, errores: [] };
   }
+  var mapping = input.columnaMapeo || {};
+  var fields = mapping.campos || {};
+  var legacyIdColumn = String(mapping.identificador || "").trim();
   var legacyIds = input.filasData.map(function(row) {
     return String(row && legacyIdColumn ? row[legacyIdColumn] || "" : "").trim();
   }).filter(Boolean);
@@ -586,9 +589,6 @@ function buildImportPreview_(payload) {
   if (Array.isArray(structural.typeInconsistencies) && structural.typeInconsistencies.length) addWarning("COLUMN_TYPE_INCONSISTENCY", "Hay columnas con tipos de datos inconsistentes.");
   if (Array.isArray(structural.hiddenSheets) && structural.hiddenSheets.indexOf(selectedSheet) !== -1) addWarning("HIDDEN_SHEET_SELECTED", "La hoja elegida está marcada como oculta.");
 
-  var mapping = input.columnaMapeo || {};
-  var fields = mapping.campos || {};
-  var legacyIdColumn = String(mapping.identificador || "").trim();
   var targetIdField = schema.headers && schema.headers[0] || "";
   var validIndexes = [];
   var preparedRows = [];
