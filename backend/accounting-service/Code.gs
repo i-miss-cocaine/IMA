@@ -642,6 +642,7 @@ function importDataWithColumnMapping(payload) {
   var actor = getVerifiedAccountingIdentity_(input);
   if (!actor || actor.authorized !== true) throw new Error("AUTH_PERMISSION_DENIED");
   var runId = Utilities.getUuid();
+  preview.runId = runId;
   var applied = [];
   var errors = [];
   var warnings = (preview.advertencias || []).slice();
@@ -1203,7 +1204,9 @@ function apiResponsePublicMessage_(code) {
     IMPORT_FILE_MIME_INVALID: "El tipo de archivo no corresponde a un libro XLSX.",
     IMPORT_FILE_SIGNATURE_INVALID: "La firma binaria del archivo no es válida.",
     IMPORT_FILE_PACKAGE_INVALID: "El paquete XLSX está dañado o incompleto.",
-    IMPORT_FILE_MACROS_NOT_ALLOWED: "No se permiten libros Excel con macros."
+    IMPORT_FILE_MACROS_NOT_ALLOWED: "No se permiten libros Excel con macros.",
+    MIGRATION_FILE_HASH_REQUIRED: "No se pudo registrar la huella SHA-256 del archivo.",
+    MIGRATION_FILE_HASH_AUDIT_SCHEMA_MISMATCH: "El registro de huellas SHA-256 requiere revisión de esquema."
   };
   var key = String(code || "INTERNAL_ERROR");
   return Object.prototype.hasOwnProperty.call(messages, key) ? messages[key] : "No fue posible completar la solicitud.";
@@ -1300,7 +1303,8 @@ function doPost(e) {
       IMPORT_FILE_SIGNATURE_INVALID: true, IMPORT_FILE_PACKAGE_INVALID: true,
       IMPORT_FILE_MACROS_NOT_ALLOWED: true, IMPORT_FILE_UNCOMPRESSED_SIZE_LIMIT: true,
       MIGRATION_SCHEMA_MISMATCH: true, MIGRATION_FIELD_NOT_ALLOWED: true,
-      MIGRATION_WRITE_CONTRACT_INVALID: true, DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED: true
+      MIGRATION_WRITE_CONTRACT_INVALID: true, MIGRATION_FILE_HASH_REQUIRED: true,
+      MIGRATION_FILE_HASH_AUDIT_SCHEMA_MISMATCH: true, DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED: true
     };
     var safeCode = Object.prototype.hasOwnProperty.call(safeCodes, rawCode) ? rawCode : "INTERNAL_ERROR";
     return respond({ status: "error", code: safeCode,
