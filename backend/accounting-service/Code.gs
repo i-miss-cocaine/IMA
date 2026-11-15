@@ -1386,12 +1386,18 @@ function textResponse(value, correlationId, serviceName) {
 function validateApiContractsTestSuite() {
   var success = buildApiResponseEnvelope_({ status: "success", data: [] }, "CONTRACT-SUCCESS-001", "ACCOUNTING");
   var failure = buildApiResponseEnvelope_({ status: "error", code: "INTERNAL_ERROR", message: "Sensitive stack path" }, "CONTRACT-ERROR-001", "ACCOUNTING");
+  var migrationFailure = buildApiResponseEnvelope_({ status: "error", code: "MIGRATION_DESTINATION_MISMATCH",
+    message: "Sensitive stack path" }, "CONTRACT-ERROR-002", "ACCOUNTING");
   var cases = [
     { action: "success envelope", pass: success.apiVersion === API_RESPONSE_VERSION && success.status === "success" && Array.isArray(success.data) && !!success.meta.correlationId },
     { action: "legitimate empty collection", pass: Array.isArray(success.data) && success.data.length === 0 },
     { action: "structured error envelope", pass: failure.status === "error" && failure.error && failure.error.code === "INTERNAL_ERROR" && !Object.prototype.hasOwnProperty.call(failure, "data") },
     { action: "safe public error message", pass: failure.error.message === "No fue posible completar la solicitud." && failure.error.message.indexOf("Sensitive") === -1 },
-    { action: "error is not counted as success", pass: failure.status !== "success" }
+    { action: "error is not counted as success", pass: failure.status !== "success" },
+    { action: "actionable migration error remains safe", pass: migrationFailure.status === "error" &&
+      migrationFailure.error.code === "MIGRATION_DESTINATION_MISMATCH" &&
+      migrationFailure.error.message === "El destino no corresponde al servicio propietario del registro." &&
+      migrationFailure.error.message.indexOf("Sensitive") === -1 }
   ];
   var passed = cases.filter(function(item) { return item.pass; }).length;
   return { status: passed === cases.length ? "success" : "error", service: "ACCOUNTING",
