@@ -3881,3 +3881,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Añadido el test DOM de validación inline a los workflows UI Accessibility y Department Scope.
 - GitHub Actions ima/department-scope-contract SUCCESS en c92724908578f5acf02867e3d51ce24518800876.
 - Ampliado el contrato de formularios para verificar los rangos de calificación 0–100.
+
+
+[2026-11-15] TASK-132 — C1.762 — Inventario documental legado
+- Añadidas las acciones USER registerLegacyDocumentInventory/getLegacyDocumentInventory con esquema de inventario e historial, clasificación y estados, subcategorías por departamento y clave de origen estable.
+- Aislamiento por institución/departamento, permisos RBAC, deduplicación institucional, filtros, paginación y exportación CSV protegida contra fórmulas.
+- ScriptLock y rollback compensatorio si falla el historial; test de contrato Node agregado al workflow Department Scope.
+- Implementación en USER porque accounting-service/Code.gs está vacío; interfaz y beta real siguen pendientes.
