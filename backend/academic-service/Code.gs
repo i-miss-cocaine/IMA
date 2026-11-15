@@ -10839,7 +10839,7 @@ function resolveTeacherJustificationScope_(payload, requestedJustificationId) {
     var enrollmentId=String(row[enrollmentMap.MatriculaID]||"").trim();
     if(!enrollmentId || enrollmentIdCounts[enrollmentId]!==1)return;
     var state=String(row[enrollmentMap.Estado]||"").trim().toUpperCase();
-    if(["ACTIVA","ACTIVO","CONFIRMADA","CONFIRMADO","FINALIZADA","FINALIZADO","RETIRADA","RETIRADO","TRASLADADA","TRASLADADO","GRADUADA","GRADUADO"].indexOf(state)===-1)return;
+    if(!teacherJustificationActiveState_(state))return;
     var key=[String(row[enrollmentMap.UserId]||"").trim(),String(row[enrollmentMap.Periodo]||"").trim(),
       String(row[enrollmentMap.Grado]||"").trim(),String(row[enrollmentMap.Seccion]||"").trim()].join("|");
     if(!key.replace(/\|/g,""))return;
