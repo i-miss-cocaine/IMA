@@ -36,6 +36,7 @@
                 <button id="btn-admission-analytics" class="p-2 text-emerald-600 hover:text-emerald-800 rounded-xl hover:bg-emerald-50 text-lg transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500" title="Analítica y Seguimiento Operativo de Admisiones" aria-label="Analítica de Admisiones">
                     <i class="fa-solid fa-chart-line"></i>
                 </button>
+                <button id="btn-transport-efficiency-analytics" type="button" onclick="window.openTransportEfficiencyModal()" class="p-2 text-cyan-700 hover:text-cyan-900 rounded-xl hover:bg-cyan-50 text-lg transition-all focus:outline-none focus:ring-2 focus:ring-cyan-500" title="Indicadores de eficiencia del transporte" aria-label="Analítica de transporte"><i class="fa-solid fa-bus-simple"></i></button>
                 <button id="btn-user-management-admin" class="p-2 text-blue-600 hover:text-blue-800 rounded-xl hover:bg-blue-50 text-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-500" title="Gestión Administrativa de Usuarios y Permisos" aria-label="Gestión de Usuarios">
                     <i class="fa-solid fa-users-gear"></i>
                 </button>
@@ -175,6 +176,7 @@
     <script src="js/secretary.js?v=23"></script>
     <script src="js/teacher.js?v=23"></script>
     <script src="js/department-reference-admin.js?v=1"></script>
+    <script src="js/transport-analytics.js?v=1"></script>
     <script>
         // [TAREA-F4-P2-03] [Fase 4: Gestión de Usuarios] - Vinculación de los botones de gestión de usuarios y seguridad
         document.addEventListener("DOMContentLoaded", function() {
@@ -542,6 +544,29 @@
                     <p class="text-xs text-slate-400 italic">No se han consultado concesiones.</p>
                 </div>
             </section>
+        </div>
+    </div>
+
+
+    <div id="modal-transport-efficiency-analytics" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[130] flex items-center justify-center p-2 md:p-4 hidden" role="dialog" aria-modal="true" aria-labelledby="transport-efficiency-title">
+        <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-6xl w-full p-5 md:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
+                <div>
+                    <span class="px-3 py-1 bg-cyan-50 text-cyan-800 rounded-full text-[10px] font-black uppercase tracking-widest">PM-05 · TASK-391</span>
+                    <h3 id="transport-efficiency-title" class="font-black text-slate-900 text-lg uppercase tracking-tight mt-2">Eficiencia operativa del transporte</h3>
+                    <p class="text-xs text-slate-500 mt-1">Ocupación por ruta y jornada, puntualidad y duración de recorridos</p>
+                </div>
+                <button type="button" onclick="document.getElementById('modal-transport-efficiency-analytics').classList.add('hidden')" class="w-10 h-10 shrink-0 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center" aria-label="Cerrar analítica de transporte"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                <label class="text-[11px] font-bold text-slate-600">Desde<input id="transport-metrics-from" type="date" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"></label>
+                <label class="text-[11px] font-bold text-slate-600">Hasta<input id="transport-metrics-to" type="date" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"></label>
+                <label class="text-[11px] font-bold text-slate-600">ID de ruta (opcional)<input id="transport-metrics-route" maxlength="100" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Todas las rutas"></label>
+                <label class="text-[11px] font-bold text-slate-600">Jornada<select id="transport-metrics-journey" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"><option value="">Todas</option><option value="Matutina">Matutina</option><option value="Vespertina">Vespertina</option><option value="Nocturna">Nocturna</option></select></label>
+            </div>
+            <div class="flex justify-end"><button type="button" id="btn-refresh-transport-metrics" class="px-4 py-2 rounded-xl bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-black uppercase">Actualizar indicadores</button></div>
+            <div id="transport-efficiency-results" class="space-y-4" aria-live="polite"><p class="p-6 text-center text-slate-400 text-xs font-bold uppercase">Seleccione actualizar para consultar los indicadores.</p></div>
+            <p class="text-[10px] text-slate-500 border-t border-slate-100 pt-3">La ocupación usa abordajes registrados y, cuando faltan, asignaciones activas identificadas como estimación. La puntualidad compara la hora real con la programada sin aplicar una tolerancia no configurada. El costo por estudiante y la demanda geográfica sin cobertura permanecen sin datos hasta disponer de fuentes verificables.</p>
         </div>
     </div>
 

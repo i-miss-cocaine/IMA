@@ -198,9 +198,9 @@ function doGet() { return textResponse({ status: "success", service: "ACCOUNTING
 const ROLE_PERMISSIONS = {
   "Administrador": ["*"],
   "Director": [
-    "voidCharge", "reversePayment", "issueFiscalCreditNote", "processPaymentRefund", "previewBatchMonthlyCharges", "generateBatchMonthlyCharges", "configureSARAuthorizedCAI", "getSARAuthorizedCAIs", "initializeFinancialDriveStructure", "configurePaymentConcept", "configurePaymentTariff", "getEnrollmentBillingConfiguration", "saveEnrollmentBillingConfiguration", "getStudentAccountStatement", "recordStudentPayment", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher", "generatePaymentReceiptPDF", "createFiscalInvoice", "getFiscalInvoices", "configureGatewayIntegration", "testGatewayConnection", "recordCashBankMovement", "closeCashSession", "getCashBankSummary", "performBankReconciliation", "recordAccountsPayableExpense", "verifyThreeWayMatch", "recordSupplierPayment", "applySupplierCreditNote", "getSupplierAccountsPayableSummary", "getChartOfAccounts", "saveAccountItem", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getBudgets", "saveBudgetPlan", "getBudgetExecutionReport", "checkBudgetAvailability", "getFinancialSummary", "getAccountsReceivablePayableSummary", "generatePayrollPeriod", "recordStaffAttendance", "getStaffPayrollReceipt", "recordInventoryMovement", "getInventoryKardex", "registerSupplier", "getSuppliers", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount", "createEmployeeRecord", "getEmployeeRecords", "manageEmployeeContract", "getEmployeeContracts", "submitVacationRequest", "getVacationRequests", "reviewVacationRequest", "configureFiscalPolicy", "getFiscalPolicies", "publishInstitutionalPolicy", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getAdvancedDashboardAnalytics", "manageBibliographicWork", "getBibliographicWorks", "manageLibraryBook", "getLibraryBooks", "processLibraryLoan", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "recordLibraryIncident", "getLibraryIncidents", "manageDigitalResource", "getDigitalResources", "manageAssetItem", "getAssetItems", "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "assignAssetCustody", "returnAssetCustody", "getAssetAssignments", "manageTransportVehicle", "getTransportVehicles", "manageTransportDriver", "getTransportDrivers", "manageTransportRoute", "getTransportRoutes", "assignStudentTransport", "getTransportAssignments", "recordStudentBoarding", "recordStudentAlighting", "getTripPassengerManifest", "getAuthorizedPickupPersons", "recordStudentSafeDelivery", "finalizeTransportTrip", "auditAndMigrateTransportData", "registerSpreadsheetSource", "resolveSpreadsheetSource", "getSpreadsheetCatalog", "configureSchoolDocumentTemplate", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "validateImportPreview", "importDataWithColumnMapping", "getMigrationLogs", "verifySACETemplateCompatibility", "generateSACEReportFile", "configureDiscountScholarshipRule", "getDiscountScholarshipRules", "submitDiscountScholarshipRequest", "getDiscountScholarshipRequests", "approveDiscountScholarshipRequest", "calculateAppliedDiscount", "applyApprovedScholarshipsToCharges", "configureLateFeeRule", "getLateFeeRules", "calculateLateFeesForAccount", "manageStoreProduct", "getStoreProducts", "createStoreOrder", "getStoreOrders", "updateStoreOrderStatus", "manageCafeteriaMenu", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "updateCafeteriaOrderStatus", "configureFamilyCreditAuthorization", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase", "createFamilyPaymentAgreement", "getFamilyPaymentAgreements", "saveMultiYearBudgetProjection", "getMultiYearBudgetProjections", "createPurchaseRequest", "getPurchaseRequests", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "createPurchaseOrder", "approvePurchaseOrder", "modifyPurchaseOrderAmount", "generatePurchaseOrderPDF", "recordPurchaseOrderConfirmation", "getPurchaseDossier", "getPurchaseOrders", "recordPurchaseReceipt", "getPurchaseReceipts", "manageWarehouseLocation", "getWarehouseLocations", "transferInventoryStock", "confirmTransferReceipt", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "deliverMaterialRequisition", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "createPhysicalInventoryCount", "getPhysicalInventoryCounts", "reconcilePhysicalCount", "manageMaintenanceOrder", "getMaintenanceOrders", "registerAssetDisposal", "getAssetDisposals", "runPhase18PurchasingAndSuppliersRegressionSuite", "runPhase19InventoryAndAssetsRegressionSuite", "runPhase20LibraryAndResourcesRegressionSuite", "runPhase21TransportAndServicesRegressionSuite", "runPhase22DocumentManagementAndSACERegressionSuite", "purgeSecurityCaches", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "manageServiceTariff", "getServiceTariffs", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization", "getFamilyCreditSalesReconciliation", "getInstitutionalComplementaryServices", "saveInstitutionalComplementaryService", "setInstitutionalComplementaryServiceStatus"],
+    "voidCharge", "reversePayment", "issueFiscalCreditNote", "processPaymentRefund", "previewBatchMonthlyCharges", "generateBatchMonthlyCharges", "configureSARAuthorizedCAI", "getSARAuthorizedCAIs", "initializeFinancialDriveStructure", "configurePaymentConcept", "configurePaymentTariff", "getEnrollmentBillingConfiguration", "saveEnrollmentBillingConfiguration", "getStudentAccountStatement", "recordStudentPayment", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher", "generatePaymentReceiptPDF", "createFiscalInvoice", "getFiscalInvoices", "configureGatewayIntegration", "testGatewayConnection", "recordCashBankMovement", "closeCashSession", "getCashBankSummary", "performBankReconciliation", "recordAccountsPayableExpense", "verifyThreeWayMatch", "recordSupplierPayment", "applySupplierCreditNote", "getSupplierAccountsPayableSummary", "getChartOfAccounts", "saveAccountItem", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getBudgets", "saveBudgetPlan", "getBudgetExecutionReport", "checkBudgetAvailability", "getFinancialSummary", "getAccountsReceivablePayableSummary", "generatePayrollPeriod", "recordStaffAttendance", "getStaffPayrollReceipt", "recordInventoryMovement", "getInventoryKardex", "registerSupplier", "getSuppliers", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount", "createEmployeeRecord", "getEmployeeRecords", "manageEmployeeContract", "getEmployeeContracts", "submitVacationRequest", "getVacationRequests", "reviewVacationRequest", "configureFiscalPolicy", "getFiscalPolicies", "publishInstitutionalPolicy", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getAdvancedDashboardAnalytics", "manageBibliographicWork", "getBibliographicWorks", "manageLibraryBook", "getLibraryBooks", "processLibraryLoan", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "recordLibraryIncident", "getLibraryIncidents", "manageDigitalResource", "getDigitalResources", "manageAssetItem", "getAssetItems", "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "assignAssetCustody", "returnAssetCustody", "getAssetAssignments", "manageTransportVehicle", "getTransportVehicles", "manageTransportDriver", "getTransportDrivers", "manageTransportRoute", "getTransportRoutes", "getTransportEfficiencyMetrics", "assignStudentTransport", "getTransportAssignments", "recordStudentBoarding", "recordStudentAlighting", "getTripPassengerManifest", "getAuthorizedPickupPersons", "recordStudentSafeDelivery", "finalizeTransportTrip", "auditAndMigrateTransportData", "registerSpreadsheetSource", "resolveSpreadsheetSource", "getSpreadsheetCatalog", "configureSchoolDocumentTemplate", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "validateImportPreview", "importDataWithColumnMapping", "getMigrationLogs", "verifySACETemplateCompatibility", "generateSACEReportFile", "configureDiscountScholarshipRule", "getDiscountScholarshipRules", "submitDiscountScholarshipRequest", "getDiscountScholarshipRequests", "approveDiscountScholarshipRequest", "calculateAppliedDiscount", "applyApprovedScholarshipsToCharges", "configureLateFeeRule", "getLateFeeRules", "calculateLateFeesForAccount", "manageStoreProduct", "getStoreProducts", "createStoreOrder", "getStoreOrders", "updateStoreOrderStatus", "manageCafeteriaMenu", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "updateCafeteriaOrderStatus", "configureFamilyCreditAuthorization", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase", "createFamilyPaymentAgreement", "getFamilyPaymentAgreements", "saveMultiYearBudgetProjection", "getMultiYearBudgetProjections", "createPurchaseRequest", "getPurchaseRequests", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "createPurchaseOrder", "approvePurchaseOrder", "modifyPurchaseOrderAmount", "generatePurchaseOrderPDF", "recordPurchaseOrderConfirmation", "getPurchaseDossier", "getPurchaseOrders", "recordPurchaseReceipt", "getPurchaseReceipts", "manageWarehouseLocation", "getWarehouseLocations", "transferInventoryStock", "confirmTransferReceipt", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "deliverMaterialRequisition", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "createPhysicalInventoryCount", "getPhysicalInventoryCounts", "reconcilePhysicalCount", "manageMaintenanceOrder", "getMaintenanceOrders", "registerAssetDisposal", "getAssetDisposals", "runPhase18PurchasingAndSuppliersRegressionSuite", "runPhase19InventoryAndAssetsRegressionSuite", "runPhase20LibraryAndResourcesRegressionSuite", "runPhase21TransportAndServicesRegressionSuite", "runPhase22DocumentManagementAndSACERegressionSuite", "purgeSecurityCaches", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "manageServiceTariff", "getServiceTariffs", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization", "getFamilyCreditSalesReconciliation", "getInstitutionalComplementaryServices", "saveInstitutionalComplementaryService", "setInstitutionalComplementaryServiceStatus"],
   "Subdirector": [
-    "voidCharge", "reversePayment", "issueFiscalCreditNote", "processPaymentRefund", "previewBatchMonthlyCharges", "generateBatchMonthlyCharges", "configureSARAuthorizedCAI", "getSARAuthorizedCAIs","configurePaymentConcept", "configurePaymentTariff", "getEnrollmentBillingConfiguration", "saveEnrollmentBillingConfiguration", "getStudentAccountStatement", "recordStudentPayment", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher", "generatePaymentReceiptPDF", "createFiscalInvoice", "getFiscalInvoices", "configureGatewayIntegration", "testGatewayConnection", "recordCashBankMovement", "closeCashSession", "getCashBankSummary", "performBankReconciliation", "recordAccountsPayableExpense", "getChartOfAccounts", "saveAccountItem", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getBudgets", "saveBudgetPlan", "getBudgetExecutionReport", "checkBudgetAvailability", "getFinancialSummary", "getAccountsReceivablePayableSummary", "generatePayrollPeriod", "recordStaffAttendance", "getStaffPayrollReceipt", "recordInventoryMovement", "getInventoryKardex", "registerSupplier", "getSuppliers", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount", "createEmployeeRecord", "getEmployeeRecords", "manageEmployeeContract", "getEmployeeContracts", "submitVacationRequest", "getVacationRequests", "reviewVacationRequest", "configureFiscalPolicy", "getFiscalPolicies", "publishInstitutionalPolicy", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getAdvancedDashboardAnalytics", "manageBibliographicWork", "getBibliographicWorks", "manageLibraryBook", "getLibraryBooks", "processLibraryLoan", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "recordLibraryIncident", "getLibraryIncidents", "manageDigitalResource", "getDigitalResources", "manageAssetItem", "getAssetItems", "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "assignAssetCustody", "returnAssetCustody", "getAssetAssignments", "manageTransportVehicle", "getTransportVehicles", "manageTransportDriver", "getTransportDrivers", "manageTransportRoute", "getTransportRoutes", "assignStudentTransport", "getTransportAssignments", "recordStudentBoarding", "recordStudentAlighting", "getTripPassengerManifest", "getAuthorizedPickupPersons", "recordStudentSafeDelivery", "finalizeTransportTrip", "auditAndMigrateTransportData", "registerSpreadsheetSource", "resolveSpreadsheetSource", "getSpreadsheetCatalog", "configureSchoolDocumentTemplate", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "validateImportPreview", "importDataWithColumnMapping", "getMigrationLogs", "verifySACETemplateCompatibility", "generateSACEReportFile", "configureDiscountScholarshipRule", "getDiscountScholarshipRules", "submitDiscountScholarshipRequest", "getDiscountScholarshipRequests", "approveDiscountScholarshipRequest", "calculateAppliedDiscount", "applyApprovedScholarshipsToCharges", "createPurchaseRequest", "getPurchaseRequests", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "createPurchaseOrder", "approvePurchaseOrder", "modifyPurchaseOrderAmount", "generatePurchaseOrderPDF", "recordPurchaseOrderConfirmation", "getPurchaseDossier", "getPurchaseOrders", "recordPurchaseReceipt", "manageWarehouseLocation", "getWarehouseLocations", "transferInventoryStock", "confirmTransferReceipt", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "deliverMaterialRequisition", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "createPhysicalInventoryCount", "getPhysicalInventoryCounts", "reconcilePhysicalCount", "manageMaintenanceOrder", "getMaintenanceOrders", "registerAssetDisposal", "getAssetDisposals", "runPhase18PurchasingAndSuppliersRegressionSuite", "runPhase19InventoryAndAssetsRegressionSuite", "runPhase20LibraryAndResourcesRegressionSuite", "runPhase21TransportAndServicesRegressionSuite", "runPhase22DocumentManagementAndSACERegressionSuite", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "manageServiceTariff", "getServiceTariffs", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization", "getFamilyCreditSalesReconciliation", "getInstitutionalComplementaryServices", "saveInstitutionalComplementaryService", "setInstitutionalComplementaryServiceStatus"],
+    "voidCharge", "reversePayment", "issueFiscalCreditNote", "processPaymentRefund", "previewBatchMonthlyCharges", "generateBatchMonthlyCharges", "configureSARAuthorizedCAI", "getSARAuthorizedCAIs","configurePaymentConcept", "configurePaymentTariff", "getEnrollmentBillingConfiguration", "saveEnrollmentBillingConfiguration", "getStudentAccountStatement", "recordStudentPayment", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher", "generatePaymentReceiptPDF", "createFiscalInvoice", "getFiscalInvoices", "configureGatewayIntegration", "testGatewayConnection", "recordCashBankMovement", "closeCashSession", "getCashBankSummary", "performBankReconciliation", "recordAccountsPayableExpense", "getChartOfAccounts", "saveAccountItem", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getBudgets", "saveBudgetPlan", "getBudgetExecutionReport", "checkBudgetAvailability", "getFinancialSummary", "getAccountsReceivablePayableSummary", "generatePayrollPeriod", "recordStaffAttendance", "getStaffPayrollReceipt", "recordInventoryMovement", "getInventoryKardex", "registerSupplier", "getSuppliers", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount", "createEmployeeRecord", "getEmployeeRecords", "manageEmployeeContract", "getEmployeeContracts", "submitVacationRequest", "getVacationRequests", "reviewVacationRequest", "configureFiscalPolicy", "getFiscalPolicies", "publishInstitutionalPolicy", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getAdvancedDashboardAnalytics", "manageBibliographicWork", "getBibliographicWorks", "manageLibraryBook", "getLibraryBooks", "processLibraryLoan", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "recordLibraryIncident", "getLibraryIncidents", "manageDigitalResource", "getDigitalResources", "manageAssetItem", "getAssetItems", "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "assignAssetCustody", "returnAssetCustody", "getAssetAssignments", "manageTransportVehicle", "getTransportVehicles", "manageTransportDriver", "getTransportDrivers", "manageTransportRoute", "getTransportRoutes", "getTransportEfficiencyMetrics", "assignStudentTransport", "getTransportAssignments", "recordStudentBoarding", "recordStudentAlighting", "getTripPassengerManifest", "getAuthorizedPickupPersons", "recordStudentSafeDelivery", "finalizeTransportTrip", "auditAndMigrateTransportData", "registerSpreadsheetSource", "resolveSpreadsheetSource", "getSpreadsheetCatalog", "configureSchoolDocumentTemplate", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "validateImportPreview", "importDataWithColumnMapping", "getMigrationLogs", "verifySACETemplateCompatibility", "generateSACEReportFile", "configureDiscountScholarshipRule", "getDiscountScholarshipRules", "submitDiscountScholarshipRequest", "getDiscountScholarshipRequests", "approveDiscountScholarshipRequest", "calculateAppliedDiscount", "applyApprovedScholarshipsToCharges", "createPurchaseRequest", "getPurchaseRequests", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "createPurchaseOrder", "approvePurchaseOrder", "modifyPurchaseOrderAmount", "generatePurchaseOrderPDF", "recordPurchaseOrderConfirmation", "getPurchaseDossier", "getPurchaseOrders", "recordPurchaseReceipt", "manageWarehouseLocation", "getWarehouseLocations", "transferInventoryStock", "confirmTransferReceipt", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "deliverMaterialRequisition", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "createPhysicalInventoryCount", "getPhysicalInventoryCounts", "reconcilePhysicalCount", "manageMaintenanceOrder", "getMaintenanceOrders", "registerAssetDisposal", "getAssetDisposals", "runPhase18PurchasingAndSuppliersRegressionSuite", "runPhase19InventoryAndAssetsRegressionSuite", "runPhase20LibraryAndResourcesRegressionSuite", "runPhase21TransportAndServicesRegressionSuite", "runPhase22DocumentManagementAndSACERegressionSuite", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "manageServiceTariff", "getServiceTariffs", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization", "getFamilyCreditSalesReconciliation", "getInstitutionalComplementaryServices", "saveInstitutionalComplementaryService", "setInstitutionalComplementaryServiceStatus"],
   "Contador": [
     "voidCharge", "reversePayment", "issueFiscalCreditNote", "processPaymentRefund", "previewBatchMonthlyCharges", "generateBatchMonthlyCharges", "configureSARAuthorizedCAI", "getSARAuthorizedCAIs","initializeFinancialDriveStructure", "configurePaymentConcept", "configurePaymentTariff", "getEnrollmentBillingConfiguration", "saveEnrollmentBillingConfiguration", "getStudentAccountStatement", "recordStudentPayment", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher", "generatePaymentReceiptPDF", "createFiscalInvoice", "getFiscalInvoices", "configureGatewayIntegration", "testGatewayConnection", "recordCashBankMovement", "closeCashSession", "getCashBankSummary", "performBankReconciliation", "recordAccountsPayableExpense", "verifyThreeWayMatch", "recordSupplierPayment", "applySupplierCreditNote", "getSupplierAccountsPayableSummary", "getChartOfAccounts", "saveAccountItem", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getBudgets", "saveBudgetPlan", "getBudgetExecutionReport", "checkBudgetAvailability", "getFinancialSummary", "getAccountsReceivablePayableSummary", "generatePayrollPeriod", "recordStaffAttendance", "getStaffPayrollReceipt", "recordInventoryMovement", "getInventoryKardex", "registerSupplier", "getSuppliers", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount", "createEmployeeRecord", "getEmployeeRecords", "manageEmployeeContract", "getEmployeeContracts", "submitVacationRequest", "getVacationRequests", "reviewVacationRequest", "configureFiscalPolicy", "getFiscalPolicies", "publishInstitutionalPolicy", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getAdvancedDashboardAnalytics", "manageBibliographicWork", "getBibliographicWorks", "manageLibraryBook", "getLibraryBooks", "processLibraryLoan", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "recordLibraryIncident", "getLibraryIncidents", "manageDigitalResource", "getDigitalResources", "manageAssetItem", "getAssetItems", "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "assignAssetCustody", "returnAssetCustody", "getAssetAssignments", "manageTransportVehicle", "getTransportVehicles", "manageTransportDriver", "getTransportDrivers", "resolveSpreadsheetSource", "getSpreadsheetCatalog", "validateImportPreview", "importDataWithColumnMapping", "getMigrationLogs", "configureDiscountScholarshipRule", "getDiscountScholarshipRules", "submitDiscountScholarshipRequest", "getDiscountScholarshipRequests", "calculateAppliedDiscount", "getStoreProducts", "getStoreOrders", "getCafeteriaMenu", "getCafeteriaOrders", "createPurchaseRequest", "getPurchaseRequests", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "createPurchaseOrder", "approvePurchaseOrder", "modifyPurchaseOrderAmount", "generatePurchaseOrderPDF", "recordPurchaseOrderConfirmation", "getPurchaseDossier", "getPurchaseOrders", "recordPurchaseReceipt", "getPurchaseReceipts", "manageWarehouseLocation", "getWarehouseLocations", "transferInventoryStock", "confirmTransferReceipt", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "deliverMaterialRequisition", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "createPhysicalInventoryCount", "getPhysicalInventoryCounts", "reconcilePhysicalCount", "manageMaintenanceOrder", "getMaintenanceOrders", "registerAssetDisposal", "getAssetDisposals", "runPhase18PurchasingAndSuppliersRegressionSuite", "runPhase19InventoryAndAssetsRegressionSuite", "runPhase20LibraryAndResourcesRegressionSuite", "runPhase21TransportAndServicesRegressionSuite", "runPhase22DocumentManagementAndSACERegressionSuite", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "manageServiceTariff", "getServiceTariffs", "getFamilyCreditSalesReconciliation"],
   // REVISIÓN RBAC: Habilitar permiso processFamilyCreditPurchase para personal de tienda, cafetería, tutores y estudiantes
@@ -954,6 +954,7 @@ function doPost(e) {
       case "rejectRouteStopsOptimization": result = rejectRouteStopsOptimization(payload); break;
       case "manageTransportRoute": result = manageTransportRoute(payload); break;
       case "getTransportRoutes": result = getTransportRoutes(payload); break;
+      case "getTransportEfficiencyMetrics": result = getTransportEfficiencyMetrics(payload); break;
       case "manageServiceTariff": result = manageServiceTariff(payload); break;
       case "getServiceTariffs": result = getServiceTariffs(payload); break;
       case "manageTransportTariff": result = manageTransportTariff(payload); break;
@@ -19869,6 +19870,268 @@ function getTransportRouteIdsForScope_(ss, scope) {
         routeIds.indexOf(routeId) === -1) routeIds.push(routeId);
   });
   return routeIds;
+}
+
+// [TASK-391] Indicadores agregados de eficiencia de transporte.
+// No devuelve identidades, paradas, coordenadas ni datos individuales de estudiantes.
+function transportMetricsDateKey_(value) {
+  if (!value) return "";
+  if (value instanceof Date && isFinite(value.getTime())) {
+    return String(value.getFullYear()) + "-" +
+      String(value.getMonth() + 1).padStart(2, "0") + "-" +
+      String(value.getDate()).padStart(2, "0");
+  }
+  const raw = String(value).trim();
+  const iso = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (iso) return iso[1];
+  const parsed = new Date(raw);
+  if (!isFinite(parsed.getTime())) return "";
+  return String(parsed.getFullYear()) + "-" +
+    String(parsed.getMonth() + 1).padStart(2, "0") + "-" +
+    String(parsed.getDate()).padStart(2, "0");
+}
+
+function transportMetricsTimeMinutes_(value) {
+  if (value instanceof Date && isFinite(value.getTime())) {
+    return value.getHours() * 60 + value.getMinutes() + value.getSeconds() / 60;
+  }
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+  const normalized = raw.toUpperCase().replace(/\./g, "").replace(/\s+/g, " ").trim();
+  const match = normalized.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*(AM|PM|A M|P M))?$/);
+  if (!match) return null;
+  let hour = Number(match[1]);
+  const minute = Number(match[2]);
+  const second = Number(match[3] || 0);
+  const suffix = String(match[4] || "").replace(/\s/g, "");
+  if (!Number.isInteger(hour) || !Number.isInteger(minute) || !Number.isInteger(second) ||
+      minute < 0 || minute > 59 || second < 0 || second > 59) return null;
+  if (suffix) {
+    if (hour < 1 || hour > 12) return null;
+    if (suffix === "AM" || suffix === "A") hour = hour === 12 ? 0 : hour;
+    else if (suffix === "PM" || suffix === "P") hour = hour === 12 ? 12 : hour + 12;
+    else return null;
+  } else if (hour < 0 || hour > 23) return null;
+  return hour * 60 + minute + second / 60;
+}
+
+function getTransportEfficiencyMetrics(payload) {
+  const data = payload || {};
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) {
+    return { status: "error", code: "LOCK_TIMEOUT", message: "No fue posible obtener una lectura consistente. Reintente." };
+  }
+
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const scope = resolveTransportAccessScope_(data, ss);
+    if (!scope.authorized) {
+      transportAuditDenied_("getTransportEfficiencyMetrics", data, scope, null);
+      return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "Se requiere una identidad verificada." };
+    }
+    if (!scope.management || ["Administrador", "Director", "Subdirector"].indexOf(scope.role) === -1) {
+      transportAuditDenied_("getTransportEfficiencyMetrics", data, scope, null);
+      return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", message: "La analítica agregada está reservada a Dirección." };
+    }
+
+    const from = data.fechaDesde ? transportMetricsDateKey_(data.fechaDesde) : "";
+    const to = data.fechaHasta ? transportMetricsDateKey_(data.fechaHasta) : "";
+    if ((data.fechaDesde && !from) || (data.fechaHasta && !to) || (from && to && from > to)) {
+      return { status: "error", code: "INVALID_DATE_RANGE", message: "El rango de fechas no es válido." };
+    }
+    const requestedRoute = String(data.rutaId || "").trim();
+    const requestedJourney = String(data.jornada || "").trim().toLowerCase();
+
+    const routeRows = transportRows_(ss, "TransporteRutas");
+    const vehicleRows = transportRows_(ss, "TransporteVehiculos");
+    const assignmentRows = transportRows_(ss, "TransporteAsignaciones");
+    const tripRows = transportRows_(ss, "TransporteViajes");
+    const attendanceRows = transportRows_(ss, "TransporteAsistenciaViajes");
+
+    const routes = Object.create(null);
+    routeRows.forEach(function(row) {
+      const id = String(row[0] || "").trim();
+      if (id) routes[id] = row;
+    });
+    const capacityByUnit = Object.create(null);
+    vehicleRows.forEach(function(row) {
+      const unit = String(row[1] || "").trim();
+      const capacity = Number(row[5]);
+      if (unit && isFinite(capacity) && capacity > 0) capacityByUnit[unit] = capacity;
+    });
+
+    const activeAssignmentStates = ["active", "activa"];
+    const assignedByGroup = Object.create(null);
+    assignmentRows.forEach(function(row) {
+      const routeId = String(row[1] || "").trim();
+      const studentId = String(row[2] || "").trim();
+      const state = String(row[5] || "").trim().toLowerCase();
+      const route = routes[routeId] || [];
+      const journey = String(row[7] || route[10] || "SIN_JORNADA").trim().toLowerCase();
+      if (!routeId || !studentId || activeAssignmentStates.indexOf(state) === -1) return;
+      const key = routeId + "|" + journey;
+      if (!assignedByGroup[key]) assignedByGroup[key] = [];
+      if (assignedByGroup[key].indexOf(studentId) === -1) assignedByGroup[key].push(studentId);
+    });
+
+    const boardedByTrip = Object.create(null);
+    attendanceRows.forEach(function(row) {
+      const tripId = String(row[1] || "").trim();
+      const studentId = String(row[2] || "").trim();
+      const boardingTime = row[4];
+      const state = String(row[6] || "").trim().toUpperCase();
+      if (!tripId || !studentId || !boardingTime || ["A_BORDO", "DESCENDIDO"].indexOf(state) === -1) return;
+      if (!boardedByTrip[tripId]) boardedByTrip[tripId] = [];
+      if (boardedByTrip[tripId].indexOf(studentId) === -1) boardedByTrip[tripId].push(studentId);
+    });
+
+    const groups = Object.create(null);
+    let totalTrips = 0;
+    let punctualTrips = 0;
+    let onTimeTrips = 0;
+    let durationTotal = 0;
+    let durationTrips = 0;
+    let occupancyTotal = 0;
+    let occupancyTrips = 0;
+
+    tripRows.forEach(function(trip) {
+      const tripId = String(trip[0] || "").trim();
+      const routeId = String(trip[1] || "").trim();
+      const route = routes[routeId] || [];
+      const dateKey = transportMetricsDateKey_(trip[5]);
+      const journey = String(trip[6] || route[10] || "SIN_JORNADA").trim();
+      const journeyKey = journey.toLowerCase();
+      const status = String(trip[9] || "").trim().toLowerCase();
+      if (!tripId || !routeId || !dateKey ||
+          (from && dateKey < from) || (to && dateKey > to) ||
+          ["cancelado", "cancelada", "anulado", "anulada", "cancelled"].indexOf(status) !== -1 ||
+          (requestedRoute && routeId !== requestedRoute) ||
+          (requestedJourney && journeyKey !== requestedJourney)) return;
+
+      const key = routeId + "|" + journeyKey;
+      if (!groups[key]) {
+        const unitCode = String(route[2] || trip[2] || "").trim();
+        const routeCapacity = Number(route[4]);
+        const capacity = capacityByUnit[unitCode] ||
+          (isFinite(routeCapacity) && routeCapacity > 0 ? routeCapacity : 0);
+        groups[key] = {
+          rutaId: routeId,
+          nombreRuta: String(route[1] || routeId),
+          unidadCodigo: unitCode,
+          jornada: journey,
+          capacidadPasajeros: capacity,
+          viajes: 0,
+          ocupacionTotalPct: 0,
+          ocupacionViajes: 0,
+          abordajesReales: 0,
+          ocupacionesEstimadas: 0,
+          puntualidadEvaluados: 0,
+          puntualidadATiempo: 0,
+          duracionTotalMinutos: 0,
+          duracionEvaluados: 0
+        };
+      }
+      const group = groups[key];
+      group.viajes++;
+      totalTrips++;
+
+      if (group.capacidadPasajeros > 0) {
+        const actualBoardings = boardedByTrip[tripId];
+        const hasBoardingEvidence = !!(actualBoardings && actualBoardings.length);
+        const occupiedSeats = hasBoardingEvidence
+          ? actualBoardings.length
+          : ((assignedByGroup[key] || []).length);
+        group.ocupacionTotalPct += occupiedSeats / group.capacidadPasajeros * 100;
+        group.ocupacionViajes++;
+        occupancyTotal += occupiedSeats / group.capacidadPasajeros * 100;
+        occupancyTrips++;
+        if (hasBoardingEvidence) group.abordajesReales++;
+        else group.ocupacionesEstimadas++;
+      }
+
+      const plannedStart = transportMetricsTimeMinutes_(route[8]);
+      const actualStart = transportMetricsTimeMinutes_(trip[7]);
+      if (plannedStart !== null && actualStart !== null) {
+        group.puntualidadEvaluados++;
+        punctualTrips++;
+        if (actualStart <= plannedStart) {
+          group.puntualidadATiempo++;
+          onTimeTrips++;
+        }
+      }
+
+      const endTime = transportMetricsTimeMinutes_(trip[8]);
+      if (actualStart !== null && endTime !== null) {
+        let duration = endTime - actualStart;
+        if (duration < 0) duration += 24 * 60;
+        if (duration > 0 && duration <= 24 * 60) {
+          group.duracionTotalMinutos += duration;
+          group.duracionEvaluados++;
+          durationTotal += duration;
+          durationTrips++;
+        }
+      }
+    });
+
+    const routeMetrics = Object.keys(groups).map(function(key) {
+      const group = groups[key];
+      const occupancyEvaluated = group.ocupacionViajes > 0;
+      const punctualityEvaluated = group.puntualidadEvaluados > 0;
+      const durationEvaluated = group.duracionEvaluados > 0;
+      return {
+        rutaId: group.rutaId,
+        nombreRuta: group.nombreRuta,
+        unidadCodigo: group.unidadCodigo,
+        jornada: group.jornada,
+        capacidadPasajeros: group.capacidadPasajeros || null,
+        viajes: group.viajes,
+        ocupacionPromedioPct: occupancyEvaluated ? Math.round(group.ocupacionTotalPct / group.ocupacionViajes * 100) / 100 : null,
+        abordajesReales: group.abordajesReales,
+        ocupacionesEstimadas: group.ocupacionesEstimadas,
+        sobrecapacidadDetectada: occupancyEvaluated && group.ocupacionTotalPct / group.ocupacionViajes > 100,
+        puntualidadPct: punctualityEvaluated ? Math.round(group.puntualidadATiempo / group.puntualidadEvaluados * 10000) / 100 : null,
+        viajesPuntualidadEvaluados: group.puntualidadEvaluados,
+        duracionPromedioMinutos: durationEvaluated ? Math.round(group.duracionTotalMinutos / group.duracionEvaluados * 100) / 100 : null,
+        viajesDuracionEvaluados: group.duracionEvaluados
+      };
+    }).sort(function(a, b) {
+      return a.nombreRuta.localeCompare(b.nombreRuta) || a.jornada.localeCompare(b.jornada);
+    });
+
+    return {
+      status: "success",
+      filtros: { fechaDesde: from, fechaHasta: to, rutaId: requestedRoute, jornada: data.jornada || "" },
+      resumen: {
+        viajesAnalizados: totalTrips,
+        ocupacionPromedioPct: occupancyTrips ? Math.round(occupancyTotal / occupancyTrips * 100) / 100 : null,
+        viajesConOcupacion: occupancyTrips,
+        puntualidadPct: punctualTrips ? Math.round(onTimeTrips / punctualTrips * 10000) / 100 : null,
+        viajesPuntualidadEvaluados: punctualTrips,
+        duracionPromedioMinutos: durationTrips ? Math.round(durationTotal / durationTrips * 100) / 100 : null,
+        viajesDuracionEvaluados: durationTrips
+      },
+      rutas: routeMetrics,
+      indicadoresNoDisponibles: {
+        costoOperativoPorEstudiante: {
+          estado: "SIN_DATOS",
+          motivo: "No existe una bitácora de combustible ni un registro de costos operativos vinculado a viajes o vehículos."
+        },
+        demandaGeograficaSinCobertura: {
+          estado: "SIN_DATOS",
+          motivo: "No existe un registro de solicitudes de transporte georreferenciadas ni una regla institucional de cobertura configurada."
+        }
+      },
+      definiciones: {
+        ocupacion: "Promedio de pasajeros abordados por capacidad vehicular; cuando falta bitácora de abordaje del viaje se usa la asignación activa como estimación y se informa por separado.",
+        puntualidad: "Un viaje es puntual si su hora real de inicio no supera la hora de inicio programada; no se aplica tolerancia no configurada.",
+        duracion: "Promedio de minutos entre HoraInicio y HoraFin de viajes con ambas horas válidas."
+      }
+    };
+  } catch (error) {
+    return { status: "error", code: "TRANSPORT_METRICS_READ_FAILED", message: String(error && error.message || error) };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function getTransportRoutes(payload) {
