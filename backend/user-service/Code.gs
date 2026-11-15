@@ -4795,8 +4795,7 @@ function submitJointFamilyPayment(payload) {
   const guardianResult = getGuardianStudents({ userId: submitter.userId, sessionToken: payload.sessionToken || payload.authToken || payload.token });
   const linked = {};
   (guardianResult.data || []).forEach(function(student) { linked[String(student.studentUserId || student.userId || "").trim()] = student; });
-  let sum = 0;
-  const seen = {};
+  let sum = 0; const seen = {};
   distribuciones.forEach(function(item) {
     const id = String(item && item.estudianteId || "").trim(), relation = linked[id], amount = Number(item.montoAplicado);
     if (!id || !relation || (relation.permisos && relation.permisos.permisoFinanciero === false)) throw new Error("FAMILY_FINANCIAL_SCOPE_DENIED");
@@ -4806,17 +4805,16 @@ function submitJointFamilyPayment(payload) {
   });
   const total = Number(montoTotal);
   if (!Number.isFinite(total) || total <= 0 || Math.abs(sum-total) > 0.01) throw new Error("DISTRIBUTION_TOTAL_MISMATCH");
-
-  const attachment = createPrivateRequestAttachment_(fileData, fileName, "Comprobantes_Pago_Privados_v1", [".pdf", ".jpg", ".jpeg", ".png", ".webp"]);
+  const attachment = createPrivateRequestAttachment_(fileData,fileName,"Comprobantes_Pago_Privados_v1",[".pdf",".jpg",".jpeg",".png",".webp"]);
   const fileId = attachment ? attachment.getId() : "";
   const lock = LockService.getScriptLock();
-  if (!lock.tryLock(30000)) { rollbackPrivateAttachment_(attachment, "submitJointFamilyPayment"); throw new Error("LOCK_TIMEOUT"); }
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const compSheet = getOrCreateSheet(ss, "ComprobantesPago");
-  const distSheet = getOrCreateSheet(ss, "DistribucionPagosConjuntos");
+  if (!lock.tryLock(30000)) { rollbackPrivateAttachment_(attachment,"submitJointFamilyPayment"); throw new Error("LOCK_TIMEOUT"); }
   const pagoId = "PAGO-CONJUNTO-" + Utilities.getUuid(), fecha = new Date().toISOString();
-  let compRow = 0; const distRows = [];
+  let compSheet = null, distSheet = null, compRow = 0; const distRows = [];
   try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    compSheet = getOrCreateSheet(ss,"ComprobantesPago");
+    distSheet = getOrCreateSheet(ss,"DistribucionPagosConjuntos");
     compSheet.appendRow([pagoId,fecha,submitter.userId,"Pago Conjunto Familiar ("+distribuciones.length+" estudiantes)","CARGO-CONJUNTO",total,
       "Transferencia / Depósito",numeroReferencia||"REF-PAGO",fileId,"En revision",observaciones||"Pago conjunto distribuido entre varios hijos"]);
     compRow = compSheet.getLastRow();
@@ -4826,14 +4824,20 @@ function submitJointFamilyPayment(payload) {
       distRows.push(distSheet.getLastRow());
     });
   } catch (error) {
-    distRows.sort(function(a,b){return b-a;}).forEach(function(row){try{if(String(distSheet.getRange(row,1).getValue()||"").trim()===pagoId)distSheet.deleteRow(row);}catch(_){}});
-    if(compRow){try{if(String(compSheet.getRange(compRow,1).getValue()||"").trim()===pagoId)compSheet.deleteRow(compRow);}catch(_){}}
-    rollbackPrivateAttachment_(attachment, "submitJointFamilyPayment");
+    if (distSheet) distRows.sort(function(a,b){return b-a;}).forEach(function(row) {
+      try { if(String(distSheet.getRange(row,1).getValue()||"").trim()===pagoId) distSheet.deleteRow(row); }
+      catch(cleanupError) { try { logStructuredEvent("USER","submitJointFamilyPayment","ERROR","PAYMENT_DISTRIBUTION_ROLLBACK_FAILED","No fue posible retirar una distribución parcial.",{pagoId:pagoId,row:row,reason:String(cleanupError&&cleanupError.message||cleanupError)},"SYSTEM"); } catch(_){} }
+    });
+    if(compSheet&&compRow) {
+      try { if(String(compSheet.getRange(compRow,1).getValue()||"").trim()===pagoId) compSheet.deleteRow(compRow); }
+      catch(cleanupError) { try { logStructuredEvent("USER","submitJointFamilyPayment","ERROR","PAYMENT_HEADER_ROLLBACK_FAILED","No fue posible retirar el encabezado de un pago parcial.",{pagoId:pagoId,row:compRow,reason:String(cleanupError&&cleanupError.message||cleanupError)},"SYSTEM"); } catch(_){} }
+    }
+    rollbackPrivateAttachment_(attachment,"submitJointFamilyPayment");
     throw error;
   } finally { lock.releaseLock(); }
-  return { status:"success", pagoId:pagoId, tieneComprobante:!!fileId,
-    message:"Pago conjunto familiar registrado y enviado a revisión." };
-}function getFamilyScholarships(payload) {
+  return {status:"success",pagoId:pagoId,tieneComprobante:!!fileId,message:"Pago conjunto familiar registrado y enviado a revisión."};
+}
+function getFamilyScholarships(payload) {
   const { userIdResponsable, userId } = payload || {};
   const uid = userIdResponsable || userId;
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -6190,14 +6194,19 @@ function getAdministrativeRequests(payload) {
   const submitter = resolveVerifiedRequestSubmitter_(payload, estudianteId, true, "permisoAsistencia");
   const attachment = createPrivateRequestAttachment_(adjuntoData, adjuntoNombre, "Tramites_Adjuntos_Privados_v1");
   const fileId = attachment ? attachment.getId() : "";
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID), sheet = getOrCreateSheet(ss,"SolicitudesTramites");
   const id = "JUST-" + Utilities.getUuid(), now = new Date();
-  const description = "Justificación de ausencia para la fecha " + fechaAusencia + ". Motivo: " + motivo + ". Observaciones: " + (observaciones||"N/A");
+  const description = "Justificación de ausencia para la fecha " + fechaAusencia + ". Motivo: " + motivo + ". Observaciones: " + (observaciones || "N/A");
   try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = getOrCreateSheet(ss, "SolicitudesTramites");
     sheet.appendRow([id,submitter.userId,submitter.estudianteId,"Justificación de Ausencia",description,fileId,"Enviada","Orientación/Secretaría","",now,""]);
-  } catch(error) { rollbackPrivateAttachment_(attachment,"submitStudentAbsenceJustification"); throw error; }
+  } catch (error) {
+    rollbackPrivateAttachment_(attachment,"submitStudentAbsenceJustification");
+    throw error;
+  }
   return {status:"success",solicitudId:id,tieneAdjunto:!!fileId,message:"Justificación de ausencia ingresada y en proceso de revisión."};
-}function getStudentAbsenceJustifications(payload) {
+}
+function getStudentAbsenceJustifications(payload) {
   const callerRole = getUserVerifiedRole(payload);
   let { estudianteId, userId } = payload || {};
 
@@ -6233,17 +6242,22 @@ function submitAdministrativeRequest(payload) {
   const submitter = resolveVerifiedRequestSubmitter_(payload, estudianteId, false, "permisoDocumental");
   const attachment = createPrivateRequestAttachment_(adjuntoData, adjuntoNombre, "Tramites_Adjuntos_Privados_v1");
   const fileId = attachment ? attachment.getId() : "";
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID), sheet = getOrCreateSheet(ss,"SolicitudesTramites");
   const id = "TRAM-" + Utilities.getUuid(), now = new Date();
   try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = getOrCreateSheet(ss, "SolicitudesTramites");
     sheet.appendRow([id,submitter.userId,submitter.estudianteId||"",tipoTramite,descripcion,fileId,"Enviada","Secretaría","",now,""]);
-  } catch(error) { rollbackPrivateAttachment_(attachment,"submitAdministrativeRequest"); throw error; }
+  } catch (error) {
+    rollbackPrivateAttachment_(attachment,"submitAdministrativeRequest");
+    throw error;
+  }
   try {
     createUserNotification({userId:submitter.userId,titulo:"Trámite Registrado",
       mensaje:"Su solicitud de "+tipoTramite+" ha sido ingresada en Secretaría.",tipo:"Tramite",categoria:"Administrativa"});
-  } catch(e) { logDebug("Error creando notificacion de tramite:",e.message); }
+  } catch (e) { logDebug("Error creando notificacion de tramite:",e.message); }
   return {status:"success",message:"Trámite/Solicitud ingresado correctamente.",tieneAdjunto:!!fileId,data:{solicitudId:id}};
-}function updateRequestStatus(payload) {
+}
+function updateRequestStatus(payload) {
   const { solicitudId, nuevoEstado, observacionesAdmin, asignadoA } = payload || {};
   if (!solicitudId || !nuevoEstado) throw new Error("solicitudId y nuevoEstado son requeridos.");
 
@@ -6524,16 +6538,21 @@ function submitInstitutionalFormRequest(payload) {
   const submitter = resolveVerifiedRequestSubmitter_(payload,estudianteId,false,"permisoDocumental");
   const attachment = createPrivateRequestAttachment_(adjuntoData,adjuntoNombre,"Tramites_Adjuntos_Privados_v1");
   const fileId = attachment ? attachment.getId() : "";
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID), sheet = getOrCreateSheet(ss,"SolicitudesTramites");
   const id = "SOL-FRM-" + Utilities.getUuid(), now = new Date();
   const responseText = typeof respuestasFormularioJSON === "object" ? JSON.stringify(respuestasFormularioJSON) : (respuestasFormularioJSON||"{}");
   const description = "Solicitud mediante formulario ["+(formId||"N/A")+"]: "+responseText+". Observaciones: "+(observaciones||"Sin observaciones");
   try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = getOrCreateSheet(ss,"SolicitudesTramites");
     sheet.appendRow([id,submitter.userId,submitter.estudianteId||"N/A",tipoTramite,description,fileId,"Enviada","Secretaría/Orientación","",now.toISOString(),""]);
-  } catch(error) { rollbackPrivateAttachment_(attachment,"submitInstitutionalFormRequest"); throw error; }
+  } catch (error) {
+    rollbackPrivateAttachment_(attachment,"submitInstitutionalFormRequest");
+    throw error;
+  }
   return {status:"success",solicitudId:id,tieneAdjunto:!!fileId,fechaSolicitud:now.toISOString(),
     message:"Trámite digital enviado con éxito para revisión oficial."};
-}function getAppointmentBookings(payload) {
+}
+function getAppointmentBookings(payload) {
   const { solicitanteId, estudianteId, solicitadoA } = payload || {};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "CitasReuniones");
