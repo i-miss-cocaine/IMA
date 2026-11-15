@@ -67,7 +67,7 @@ assert.match(academic,/extractPdfTextWithOcr_\(file/);
 
 function compileEvidenceValidator(scope){
  const keys=Object.keys(scope);
- return new Function(...keys,extract(academic,"validateEvidenceFileAndPermissions")+"\\nreturn validateEvidenceFileAndPermissions;")(...keys.map(k=>scope[k]));
+ return new Function(...keys,extract(academic,"validateEvidenceFileAndPermissions")+";return validateEvidenceFileAndPermissions;")(...keys.map(k=>scope[k]));
 }
 let scopedPayload=null,driveReads=0;
 const documentRow=["DOC-1","EXP-1","SOL-1","PDF","evidencia.pdf","FILE-1"];
