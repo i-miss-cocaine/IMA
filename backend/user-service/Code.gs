@@ -1648,7 +1648,7 @@ function validateRolePermission(action, payload) {
     return { authorized: TICKET_ADMIN_ROLES_.indexOf(userRole) !== -1, role: userRole };
   }
 
-  if (["searchGlobalOmnibox", "getNotificationAuditLogs", "getServiceHealthReport", "submitPrivacyRightsRequest", "getPrivacyRightsRequests"].indexOf(action) !== -1) {
+  if (["searchGlobalOmnibox", "getNotificationAuditLogs", "getServiceHealthReport", "submitPrivacyRightsRequest", "getPrivacyRightsRequests", "getUIMetadataCatalog"].indexOf(action) !== -1) {
     return { authorized: true, role: userRole };
   }
 
@@ -2177,6 +2177,9 @@ function doPost(e) {
       case "ping": result = { status: "success", service: "USER", timestamp: new Date().toISOString(), dbConnected: true }; break;
       case "getUserDynamicDashboardConfig":
         result = getUserDynamicDashboardConfig(payload);
+        break;
+      case "getUIMetadataCatalog":
+        result = getUIMetadataCatalog(payload);
         break;
       case "getCentralCapabilitiesCatalog":
         result = getCentralCapabilitiesCatalog(payload);
@@ -13119,6 +13122,84 @@ function registerResourceOwnership(payload) {
   } finally {
     if (lock) { try { lock.releaseLock(); } catch (e) {} }
   }
+}
+
+// [F38-Task02] Catálogo versionado de metadatos de campos y ayudas; no concede permisos ni modifica validaciones.
+function getUIMetadataCatalog(payload) {
+  var role = getUserVerifiedRole(payload || {});
+  if (!payload || !payload._verifiedUserId || !role || role === "NO_ACCESS") {
+    return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  }
+  var catalog = {
+    version: "1.0.0",
+    updatedAt: "2026-11-15",
+    fields: {
+      "identity.userId": {
+        label: "Identificador institucional",
+        help: "Escribe el UserId institucional asignado a la cuenta (por ejemplo, USR-...). No uses el nombre, el número de expediente ni un DNI en este campo.",
+        example: "USR-...",
+        source: "cashier-user-id: placeholder USR-..."
+      },
+      "matricula.anoLectivo": {
+        label: "Año lectivo",
+        help: "Ingresa el año lectivo al que pertenece la matrícula. El formulario admite años entre 2000 y 2200.",
+        inputType: "number",
+        min: 2000,
+        max: 2200,
+        source: "enrollment-billing-year: min=2000, max=2200"
+      },
+      "matricula.grado": {
+        label: "Grado",
+        help: "Usa el nombre oficial del grado según el catálogo institucional. El campo admite hasta 80 caracteres.",
+        maxLength: 80,
+        source: "enrollment-billing-grade: maxlength=80"
+      },
+      "cobros.monto": {
+        label: "Monto",
+        help: "Ingresa únicamente el importe en lempiras, sin escribir el símbolo de moneda ni separadores de miles. Usa punto decimal y hasta dos decimales; verifica que coincida con el cargo o comprobante.",
+        inputType: "number",
+        step: 0.01,
+        example: "1250.00",
+        source: "cashier-monto y voucher-monto: type=number, step=0.01"
+      },
+      "cobros.referencia": {
+        label: "Referencia de pago",
+        help: "Copia la referencia exactamente como aparece en el recibo o comprobante. No inventes ni sustituyas dígitos.",
+        example: "TRANS-987654",
+        source: "voucher-referencia: campo requerido con ejemplo TRANS-987654"
+      },
+      "cobros.comprobante": {
+        label: "Comprobante de pago",
+        help: "Adjunta una imagen o PDF completo y legible. Asegúrate de que se distingan el importe, la fecha, la referencia y la entidad emisora.",
+        acceptedTypes: ["image/*", ".pdf"],
+        multiple: false,
+        source: "voucher-file: accept=image/*,.pdf"
+      },
+      "fechas.calendario": {
+        label: "Fecha",
+        help: "Selecciona la fecha en el calendario y comprueba el día, mes y año. Si el formulario solicita un rango, verifica que la fecha inicial no sea posterior a la final.",
+        inputType: "date",
+        format: "YYYY-MM-DD",
+        source: "campos de fecha HTML type=date"
+      },
+      "calificaciones.nota": {
+        label: "Calificación",
+        help: "Ingresa una nota numérica entre 0 y 100 conforme a la escala de la actividad. No escribas texto ni símbolos.",
+        inputType: "number",
+        min: 0,
+        max: 100,
+        source: "grade-score-input placeholder 0-100 y reconciliación de integridad CalificacionesEstudiantes"
+      },
+      "tramites.adjunto": {
+        label: "Archivos del trámite o actividad",
+        help: "Adjunta archivos completos y legibles en los formatos aceptados por este formulario. Revisa cada archivo antes de enviarlo y evita incluir información que no corresponda al trámite.",
+        acceptedTypes: ["image/*", ".heic", "application/pdf", "text/html", "text/css", "text/javascript", ".js", ".psc", ".html", ".css"],
+        multiple: true,
+        source: "submission-form: accept y multiple"
+      }
+    }
+  };
+  return { status: "success", version: catalog.version, data: JSON.parse(JSON.stringify(catalog)) };
 }
 
 // [TAREA-AD-01] [Anexo Tareas: Dashboards Dinámicos] - Consulta de configuración dinámica de módulos, responsabilidades y ámbitos por usuario
