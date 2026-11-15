@@ -2,7 +2,7 @@
 const assert=require("node:assert/strict"),crypto=require("node:crypto"),fs=require("node:fs"),path=require("node:path"),vm=require("node:vm");
 const source=fs.readFileSync(path.resolve(__dirname,"../../backend/accounting-service/Code.gs"),"utf8");
 function extract(name){const start=source.indexOf("function "+name+"(");assert.ok(start>=0,name+" exists");const end=source.indexOf("\nfunction ",start+10);return source.slice(start,end<0?source.length:end);}
-const hs=source.indexOf("const ACCOUNTING_IDENTITY_MAPPING_HEADERS_ ="),he=source.indexOf(";",hs)+1;
+const hs=source.indexOf("const ACCOUNTING_IDENTITY_MAPPING_HEADERS_="),he=source.indexOf(";",hs)+1;
 assert.ok(hs>=0&&he>hs);
 const header=source.slice(hs,he);
 const identityHeaders=["idMapeo","sistemaOrigen","tipoEntidad","idOriginalLegado","idNuevoPlataforma","institucionId","hashRegistroOrigen","fechaMigracion","versionMapeo","estadoCorrespondencia","metodoCoincidencia","nivelConfianza","migradoPor"];
