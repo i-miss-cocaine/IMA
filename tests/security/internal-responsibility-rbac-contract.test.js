@@ -998,7 +998,7 @@ const crossSharedSpreadsheet={getSheetByName:name=>{
   if(name==="EstadoRevocacionSesiones")return makeSharedSheet(sessionRevocationStateRows);
   return null;
 }};
-for(const serviceName of ["academic","accounting","task","exam"]){
+for(const serviceName of ["academic","task","exam"]){
   const consumerCtx={
     SPREADSHEET_ID:"LOCAL",
     ROLE_PERMISSIONS:{Director:[],Auditor:[]},
