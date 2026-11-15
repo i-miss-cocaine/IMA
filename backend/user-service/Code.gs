@@ -13765,6 +13765,15 @@ function getUIMetadataCatalog(payload) {
         step: 0.01,
         source: "grade-score-input placeholder 0-100 y reconciliación de integridad CalificacionesEstudiantes"
       },
+      "importacion.xlsx": {
+        label: "Importación de expedientes XLSX",
+        help: "Selecciona un libro .xlsx de hasta 10 MB. Se valida la extensión, el tipo MIME y la cabecera ZIP; los archivos vacíos, cifrados, truncados o dañados se rechazan. Revisa la vista previa y los diagnósticos antes de confirmar la importación.",
+        acceptedTypes: [".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
+        multiple: false,
+        maxBytes: 10485760,
+        maxSizeLabel: "10 MB",
+        source: "js/teacher.js validateExcelFileEnvelope: límite de 10 MiB, extensión .xlsx, MIME y magic bytes"
+      },
       "tramites.adjunto": {
         label: "Archivos del trámite o actividad",
         help: "Adjunta archivos completos y legibles en los formatos aceptados por este formulario. Revisa cada archivo antes de enviarlo y evita incluir información que no corresponda al trámite.",
