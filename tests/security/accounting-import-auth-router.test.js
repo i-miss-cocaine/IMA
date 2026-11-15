@@ -144,7 +144,7 @@ vm.runInNewContext(accountingFns.join("\n") + "\nthis.api = { auth: getVerifiedA
   const deniedAction = accountingRuntime.api.post({ postData: { contents: JSON.stringify({ action: "deleteAll", payload: {} }) } });
   assert.equal(JSON.parse(deniedAction.value).code, "ACTION_NOT_ALLOWED");
   const missingConfirmation = accountingRuntime.api.post({ postData: { contents: JSON.stringify({ action: "importDataWithColumnMapping", payload: {} }) } });
-  assert.equal(JSON.parse(missingConfirmation.value).code, "INTERNAL_ERROR");
+  assert.equal(JSON.parse(missingConfirmation.value).code, "IMPORT_PREVIEW_INVALID_OR_STALE");
   const committed = accountingRuntime.api.post({ postData: { contents: JSON.stringify({
     action: "importDataWithColumnMapping", correlationId: "IMPORT-CORRELATION-001",
     payload: { previewConfirmed: true, previewHash: "HASH-1" }
