@@ -4159,15 +4159,15 @@ function createStudentDocumentAccessToken(payload) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName("DocumentosEstudiante");
   const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
-  if (!sheet) return studentDocumentAccessError_(request, actor, documentId, "RESOURCE_NOT_FOUND", claims.version);
+  if (!sheet) return studentDocumentAccessError_(request, actor, documentId, "RESOURCE_NOT_FOUND", "");
   const matches = sheet.getDataRange().getValues().slice(1).filter(function(row) {
     return String(row[0] || "").trim() === documentId;
   });
-  if (matches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento no disponible." };
+  if (matches.length !== 1) return studentDocumentAccessError_(request, actor, documentId, "RESOURCE_NOT_FOUND", "");
   const row = matches[0];
   if ((expedienteId && String(row[1] || "").trim() !== expedienteId) ||
       (solicitudId && String(row[2] || "").trim() !== solicitudId)) {
-    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento no disponible." };
+    return studentDocumentAccessError_(request, actor, documentId, "RESOURCE_NOT_FOUND", "");
   }
   const access = assertStudentDocumentScopeAccess_(request, ss, sheet, row, expSheet);
   if (!access || access.authorized !== true) {
@@ -4176,7 +4176,7 @@ function createStudentDocumentAccessToken(payload) {
   const version = String(row[13] || "").trim();
   const expectedHash = String(row[15] || row[14] || "").trim().toLowerCase();
   if (!version || !/^[a-f0-9]{64}$/.test(expectedHash) || !String(row[5] || "").trim()) {
-    return { status: "error", code: "DOCUMENT_BINARY_METADATA_MISSING", message: "El documento no tiene versión y hash verificables." };
+    return studentDocumentAccessError_(request, actor, documentId, "DOCUMENT_BINARY_METADATA_MISSING", version);
   }
   const issuedAt = Date.now();
   const claims = {
@@ -4254,11 +4254,11 @@ function getSecureDocumentStream(payload) {
   const expedienteId = String(request.expedienteId || "").trim();
   const solicitudId = String(request.solicitudId || "").trim();
   if (!documentId || !token || (!expedienteId && !solicitudId)) {
-    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento no disponible." };
+    return studentDocumentAccessError_(request, null, documentId, "RESOURCE_NOT_FOUND", "");
   }
   const actor = getVerifiedAcademicIdentity_(request);
   if (!actor || actor.authorized !== true || !actor.userId) {
-    return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", message: "Documento no disponible." };
+    return studentDocumentAccessError_(request, actor, documentId, actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", "");
   }
   let claims;
   try { claims = decodeStudentDocumentAccessToken_(token); }
@@ -4276,11 +4276,11 @@ function getSecureDocumentStream(payload) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName("DocumentosEstudiante");
   const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
-  if (!sheet) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento no disponible." };
+  if (!sheet) return studentDocumentAccessError_(request, actor, documentId, "RESOURCE_NOT_FOUND", claims.version);
   const matches = sheet.getDataRange().getValues().slice(1).filter(function(row) {
     return String(row[0] || "").trim() === documentId;
   });
-  if (matches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento no disponible." };
+  if (matches.length !== 1) return studentDocumentAccessError_(request, actor, documentId, "RESOURCE_NOT_FOUND", claims.version);
   const row = matches[0];
   if ((expedienteId && String(row[1] || "").trim() !== expedienteId) ||
       (solicitudId && String(row[2] || "").trim() !== solicitudId) ||
@@ -4289,7 +4289,7 @@ function getSecureDocumentStream(payload) {
   }
   const access = assertStudentDocumentScopeAccess_(request, ss, sheet, row, expSheet);
   if (!access || access.authorized !== true) {
-    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento no disponible." };
+    return studentDocumentAccessError_(request, actor, documentId, "RESOURCE_NOT_FOUND", claims.version);
   }
   // Consume before reading Drive: tokens are one-use and cannot be replayed.
   cache.remove(cacheKey);
