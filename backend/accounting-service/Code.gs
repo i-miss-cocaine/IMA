@@ -498,6 +498,10 @@ function importDataWithColumnMapping(payload) {
       var idempotencyKey = migrationHash_(migrationStableJson_({
         previewHash: preview.previewHash, entityType: input.tipoEntidad, legacyId: legacyId, entity: row
       }));
+      var ownerData = {};
+      (schema.headers || []).slice(1).forEach(function(field) {
+        if (Object.prototype.hasOwnProperty.call(row, field)) ownerData[field] = row[field];
+      });
       var result = sendMigrationOwnerRequest_(service, "writeMigratedEntity", {
         sessionToken: input.sessionToken,
         institutionId: PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID") ||
@@ -505,7 +509,7 @@ function importDataWithColumnMapping(payload) {
         tipoEntidad: input.tipoEntidad,
         idNuevoPlataforma: String(row[(schema.headers || [])[0]] || "").trim(),
         entity: row,
-        datos: row,
+        datos: ownerData,
         source: { fileName: input.nombreArchivo || "", sourceSystem: input.sistemaOrigen || "", legacyId: legacyId },
         idempotencyKey: idempotencyKey
       });
