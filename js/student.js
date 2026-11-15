@@ -3346,10 +3346,12 @@ window.submitPublicAdmissionRequest = async function(formData) {
         return { status: "error", message: "Nombres, apellidos y grado solicitado son obligatorios." };
     }
 
-    const cleanIdent = (formData.identificacion || "").replace(/[^0-9]/g, '');
-    if (cleanIdent.length !== 13) {
-        return { status: "error", message: "El número de identificación (DNI) de Honduras debe contener exactamente 13 dígitos numéricos." };
+    const rawIdent = String(formData.identificacion || "").trim();
+    const validIdent = /^\d{13}$/.test(rawIdent) || /^\d{4}-\d{4}-\d{5}$/.test(rawIdent);
+    if (!validIdent) {
+        return { status: "error", message: "Ingrese el DNI de Honduras con 13 dígitos (0801199012345) o con guiones (0801-1990-12345)." };
     }
+    const cleanIdent = rawIdent.replace(/-/g, '');
 
     const cleanPhone = (formData.telefonoContacto || "").replace(/[^0-9]/g, '');
     if (cleanPhone.length < 8) {
