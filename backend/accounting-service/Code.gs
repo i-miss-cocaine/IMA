@@ -732,6 +732,7 @@ function importDataWithColumnMapping(payload) {
       String(input.previewHash) !== String(preview.previewHash)) {
     throw new Error("IMPORT_PREVIEW_INVALID_OR_STALE");
   }
+  if (!/^[a-f0-9]{64}$/i.test(String(preview.fileHash || ""))) throw new Error("MIGRATION_FILE_HASH_REQUIRED");
   var partial = !preview.validForImport;
   if (partial && (!preview.validForPartialImport || input.allowPartialImport !== true)) {
     throw new Error("IMPORT_PREVIEW_INVALID_OR_STALE");
