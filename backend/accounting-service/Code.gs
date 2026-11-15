@@ -553,6 +553,8 @@ function buildImportPreview_(payload) {
     targetExistenceSnapshot: targetSnapshot,
     relatedReferenceSnapshot: relatedReferenceSnapshot,
     previewHash: previewHash,
+    fileHash: fileValidation.fileHash,
+    fileSizeBytes: fileValidation.sizeBytes,
     errores: errors,
     advertencias: warnings,
     resumenValidation: {
@@ -571,9 +573,39 @@ function buildImportPreview_(payload) {
   };
 }
 
+function appendAccountingMigrationFileHashAudit_(ss, input, preview, actor, status, recordsWritten) {
+  var fileHash = String(preview && preview.fileHash || "").toLowerCase();
+  if (!/^[a-f0-9]{64}$/.test(fileHash)) throw new Error("MIGRATION_FILE_HASH_REQUIRED");
+  var headers = ["RunId","InstitutionID","NombreArchivo","HashSHA256","PreviewHash","SistemaOrigen",
+    "TipoEntidad","DestinoModulo","ActorUserId","Fecha","Estado","RegistrosEscritos","CorrelationId"];
+  var sheet = getOrCreateSheet(ss, "AuditoriaMigracionesArchivos");
+  var rows = sheet.getDataRange().getValues();
+  if (!rows.length || !rows[0] || !rows[0].some(function(value) { return String(value || "").trim(); })) {
+    sheet.appendRow(headers);
+  } else if (JSON.stringify(rows[0].map(String).slice(0, headers.length)) !== JSON.stringify(headers)) {
+    throw new Error("MIGRATION_FILE_HASH_AUDIT_SCHEMA_MISMATCH");
+  }
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    sheet.appendRow([
+      String(preview.runId || ""), String(actor && actor.institutionId || ""),
+      String(input && input.nombreArchivo || ""), fileHash, String(preview.previewHash || ""),
+      String(input && input.sistemaOrigen || ""), String(input && input.tipoEntidad || ""),
+      String(input && input.destinoModulo || ""), String(actor && actor.userId || ""),
+      new Date(), String(status || ""), recordsWritten === null ? "" : Number(recordsWritten || 0),
+      String(input && input.correlationId || "")
+    ]);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function validateImportPreview(payload) {
   var preview = buildImportPreview_(payload);
   if (!preview || preview.status !== "success" || !preview.targetExistenceSnapshot) return preview;
+  delete preview.fileHash;
+  delete preview.fileSizeBytes;
   var snapshot = preview.targetExistenceSnapshot;
   var idField = String(snapshot.idField || "");
   var requested = {};
@@ -700,6 +732,7 @@ function importDataWithColumnMapping(payload) {
       new Date(), JSON.stringify(warnings), partial ? "partial" : "completed",
       JSON.stringify(errors), preview.previewHash, actor.userId || ""
     ]);
+    appendAccountingMigrationFileHashAudit_(ss, input, preview, actor, partial ? "partial" : "completed", rowsToWrite.length);
     return {
       status: "success",
       estado: partial ? "partial" : "completed",
@@ -723,6 +756,7 @@ function importDataWithColumnMapping(payload) {
       compensationAudit.appendRow([runId, String(input.nombreArchivo || ""), String(input.sistemaOrigen || ""),
         String(input.tipoEntidad || ""), String(input.destinoModulo || ""), applied.length, new Date(),
         JSON.stringify(warnings), "compensation_required", JSON.stringify(rollbackFailures), preview.previewHash, actor.userId || ""]);
+      appendAccountingMigrationFileHashAudit_(ss, input, preview, actor, "compensation_required", null);
       return { status: "error", code: "MIGRATION_COMPENSATION_REQUIRED", estado: "compensation_required",
         registrosEscritos: null, operacionesPendientesCompensacion: rollbackFailures.length,
         errores: errors, runId: runId };
@@ -733,6 +767,7 @@ function importDataWithColumnMapping(payload) {
       repairAudit.appendRow([runId, String(input.nombreArchivo || ""), String(input.sistemaOrigen || ""),
         String(input.tipoEntidad || ""), String(input.destinoModulo || ""), 0, new Date(),
         JSON.stringify(warnings), "compensation_required", JSON.stringify(errors), preview.previewHash, actor.userId || ""]);
+      appendAccountingMigrationFileHashAudit_(ss, input, preview, actor, "compensation_required", 0);
       return { status: "error", code: "MIGRATION_COMPENSATION_REQUIRED", estado: "compensation_required",
         registrosEscritos: 0, errores: errors, runId: runId };
     }
@@ -742,6 +777,7 @@ function importDataWithColumnMapping(payload) {
     auditRollback.appendRow([runId, String(input.nombreArchivo || ""), String(input.sistemaOrigen || ""),
       String(input.tipoEntidad || ""), String(input.destinoModulo || ""), 0, new Date(),
       JSON.stringify(warnings), "rolled_back", JSON.stringify(errors), preview.previewHash, actor.userId || ""]);
+    appendAccountingMigrationFileHashAudit_(ss, input, preview, actor, "rolled_back", 0);
     return { status: "error", code: "MIGRATION_BATCH_ROLLED_BACK", estado: "rolled_back",
       registrosEscritos: 0, errores: errors, runId: runId };
   }
