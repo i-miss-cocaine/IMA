@@ -372,7 +372,7 @@ function getAccountingMigrationFileAudit(payload) {
     return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED",
       message: "No fue posible verificar el acceso al registro de auditoría." };
   }
-  if (actor.role !== "Auditor" ||
+  if (actor.role !== "Auditor" || !accountingHasRolePermission_(actor, "getAccountingMigrationFileAudit") ||
       (input.institutionId && String(input.institutionId) !== String(actor.institutionId)) ||
       !accountingHasInstitutionalAuditReadPermission_({
         sessionToken: input.sessionToken, userId: actor.userId, role: actor.role,
@@ -1420,6 +1420,16 @@ function migrationHash_(value) {
 
 /* Authenticated HTTP surface for the document-import preflight and preview-bound commit. */
 const API_RESPONSE_VERSION = "1.0.0";
+
+const ROLE_PERMISSIONS = {
+  Auditor: ["getAccountingMigrationFileAudit"]
+};
+
+function accountingHasRolePermission_(actor, action) {
+  var role = String(actor && actor.role || "");
+  var permissions = ROLE_PERMISSIONS[role];
+  return Array.isArray(permissions) && permissions.indexOf(String(action || "")) !== -1;
+}
 
 function apiResponseCorrelationId_(candidate) {
   var supplied = String(candidate || "").trim();
