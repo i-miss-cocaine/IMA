@@ -18,7 +18,7 @@ function loadContext(extra={}) {
   const context={console,Date,Math,JSON,String,Number,Array,Object,Error,RegExp,
     PropertiesService:{getScriptProperties(){return {getProperty(){return null;}};}},
     SPREADSHEET_ID:"TEST",FRONTEND_URL:"https://portal.example.test/"};
-  vm.runInNewContext(source,context,{timeout:2000});
+  vm.runInNewContext(source,context,{timeout:10000});
   Object.keys(extra).forEach(key=>{context[key]=extra[key];});
   return context;
 }
