@@ -19,15 +19,19 @@ function makeSheet(rows){
  return {
   getDataRange:()=>({getValues:()=>rows.map(r=>r.slice())}),
   getLastRow:()=>rows.length,
+  getLastColumn:()=>rows.reduce((max,row)=>Math.max(max,row.length),0),
   appendRow:row=>rows.push(row.slice()),
-  getRange:(r,c)=>({setValue:v=>{if(!rows[r-1])rows[r-1]=[];rows[r-1][c-1]=v;}})
+  getRange:(r,c,numRows,numCols)=>({
+   getValues:()=>Array.from({length:numRows||1},(_,ri)=>Array.from({length:numCols||1},(_,ci)=>(rows[r-1+ri]||[])[c-1+ci]===undefined?"":(rows[r-1+ri]||[])[c-1+ci])),
+   setValue:v=>{if(!rows[r-1])rows[r-1]=[];rows[r-1][c-1]=v;}
+  })
  };
 }
 const accounting=fs.readFileSync(path.resolve(__dirname,"../../backend/accounting-service/Code.gs"),"utf8");
 assert.doesNotThrow(()=>new Function(accounting),"the complete ACCOUNTING Code.gs source must parse before running isolated security contracts");
 const names=[
  "parseJsonSafe","getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentScope_","getVerifiedDepartmentScopeForSession_","assertResourceOwnershipForScope_","resolveEmployeeDepartmentId_","assertEmployeeExpedienteScopeAccess_",
- "getAccountingPersonIdForUser_","resolveStudentExpedienteForAccounting_","assertPaymentVoucherOwnerAccess_","createPrivatePaymentAttachment_","assertJointFamilyVoucherOwnerAccess_",
+ "getAccountingPersonIdForUser_","resolveStudentExpedienteForAccounting_","assertPaymentVoucherOwnerAccess_","createPrivatePaymentAttachment_","assertJointFamilyVoucherOwnerAccess_","ensurePaymentVoucherEvidenceSchema_","verifyPaymentVoucherEvidence_","getAccountingEvidenceIntegrityPolicy_",
  "extractDriveFileId","getEmployeeDocuments","getEmployeeContracts","getEmployeeContractAlerts","getEmployeeTrainingHistory","getLaborIncidentsHistory","getWorkShiftsAndSubstitutionsHistory","getStaffAttendanceLogs","recordStaffCheckIn","getPayrollPlanHeaders_","isValidPayrollPlanHeaders_","getStaffPayrollReceipt","getEmployeeLoansAdvances","getLoanAmortizationSchedule","getEmployeeRecords","getVacationSheetSnapshot_","getEmployeePersonNameIndex_","getEmployeeSelfServicePortal","uploadEmployeeDocument","uploadPaymentVoucher","getPaymentVouchers","getPaymentVoucherFile","reviewPaymentVoucher","generatePayrollReceiptPDF","getPayrollReceiptPDFFile","validateRolePermission"
 ];
 const code="var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n"+names.map(n=>extractFunction(accounting,n)).join("\n");
@@ -181,7 +185,8 @@ const context={
  LockService:{getScriptLock:()=>({tryLock:()=>true,waitLock:()=>{},releaseLock:()=>{}})},
  getOrCreateSheet:(spreadsheet,name)=>spreadsheet.getSheetByName(name)||makeSheet([[]]),
  DriveApp:{Access:{PRIVATE:"PRIVATE"},Permission:{NONE:"NONE"},getRootFolder:()=>payrollRoot,getFileById:id=>{if(!files[id])throw new Error("File not found");return files[id];}},
- Utilities:{base64Encode:bytes=>Buffer.from(bytes).toString("base64")},validateFileBinaryIntegrity:(data,name)=>({valid:true,mimeType:String(name).toLowerCase().endsWith(".pdf")?"application/pdf":"application/octet-stream",byteLength:Buffer.from(data,"base64").length}),DocumentApp:payrollDocumentApp,MimeType:{PDF:"application/pdf"},getParentDriveFolder:()=>payrollRoot,getOrCreateFolderNews:()=>payrollFolder,
+ Utilities:{base64Encode:bytes=>Buffer.from(bytes).toString("base64"),base64Decode:value=>Array.from(Buffer.from(value,"base64")),newBlob:value=>({getBytes:()=>Array.from(Buffer.from(String(value),"utf8"))}),computeDigest:(_algorithm,value)=>Array.from(require("node:crypto").createHash("sha256").update(Buffer.from(value.map(v=>v<0?v+256:v))).digest()).map(v=>v>127?v-256:v),DigestAlgorithm:{SHA_256:"SHA_256"}},
+ computeDocumentSHA256:value=>require("node:crypto").createHash("sha256").update(Buffer.from(value)).digest("hex"),validateFileBinaryIntegrity:(data,name)=>({valid:true,mimeType:String(name).toLowerCase().endsWith(".pdf")?"application/pdf":"application/octet-stream",byteLength:Buffer.from(data,"base64").length}),DocumentApp:payrollDocumentApp,MimeType:{PDF:"application/pdf"},getParentDriveFolder:()=>payrollRoot,getOrCreateFolderNews:()=>payrollFolder,
  logStructuredEvent:()=>{}
 };
 vm.runInNewContext(code+"\nthis.assertEmployeeExpedienteScopeAccess_=assertEmployeeExpedienteScopeAccess_;this.assertPaymentVoucherOwnerAccess_=assertPaymentVoucherOwnerAccess_;this.getEmployeeDocuments=getEmployeeDocuments;this.getEmployeeContracts=getEmployeeContracts;this.getEmployeeContractAlerts=getEmployeeContractAlerts;this.getEmployeeTrainingHistory=getEmployeeTrainingHistory;this.getLaborIncidentsHistory=getLaborIncidentsHistory;this.getWorkShiftsAndSubstitutionsHistory=getWorkShiftsAndSubstitutionsHistory;this.getStaffAttendanceLogs=getStaffAttendanceLogs;this.recordStaffCheckIn=recordStaffCheckIn;this.getStaffPayrollReceipt=getStaffPayrollReceipt;this.getEmployeeLoansAdvances=getEmployeeLoansAdvances;this.getLoanAmortizationSchedule=getLoanAmortizationSchedule;this.getEmployeeRecords=getEmployeeRecords;this.getEmployeeSelfServicePortal=getEmployeeSelfServicePortal;this.uploadEmployeeDocument=uploadEmployeeDocument;this.uploadPaymentVoucher=uploadPaymentVoucher;this.getPaymentVouchers=getPaymentVouchers;this.getPaymentVoucherFile=getPaymentVoucherFile;this.reviewPaymentVoucher=reviewPaymentVoucher;this.generatePayrollReceiptPDF=generatePayrollReceiptPDF;this.getPayrollReceiptPDFFile=getPayrollReceiptPDFFile;",context);
