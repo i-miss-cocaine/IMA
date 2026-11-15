@@ -655,6 +655,8 @@
   5. Descartar un tour, ejecutar una operación crítica (eliminar/desactivar bloque, anular cargo o revertir pago) y comprobar que el diálogo obligatorio sigue apareciendo.
   6. Cancelar la confirmación y verificar que no se llama al endpoint ni se modifica el registro. Confirmar en un fixture de prueba y verificar resultado/auditoría.
   7. Verificar que importaciones y adjuntos muestran solo extensiones y límites que el backend realmente admite.
+  8. En el importador de expedientes, aceptar un XLSX sintético válido menor o igual a 10 MiB y rechazar archivo vacío, .xls/.xlsm, MIME incompatible, firma ZIP inválida, archivo cifrado/truncado y archivo superior a 10 MiB; confirmar que la vista previa explica el rechazo.
+  9. En Secretaría, verificar ayuda permanente de calendario en evm-fecha-inicio, evm-fecha-fin e identity-search-fecha; confirmar que la fecha inicial del evento es obligatoria y la final opcional.
 - **Resultado esperado:** ayuda siempre visible y consistente, mensajes de error accesibles e independientes, y confirmaciones sensibles no suprimibles por preferencias de tutorial.
 - **Evidencia requerida:** capturas anonimizadas, claves de metadatos, resultados de validación backend y logs sintéticos de cancelación/confirmación.
 - **Estado:** Pendiente de ejecución Node CLI y validación beta real.
