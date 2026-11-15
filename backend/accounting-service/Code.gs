@@ -15520,7 +15520,7 @@ function runPhase22DocumentManagementAndSACERegressionSuite(payload) {
     },
     {
       id: "PT22-02",
-      name: "Documentos: Generación con correlativo anual, CUV y Hash SHA-256",
+      name: "Documentos: CUV y formato del digest SHA-256 (sin afirmar hash de bytes)",
       execute: function() {
         if (!testTemplateId) {
           return { pass: false, expected: "ID de plantilla válido de PT22-01", actual: null };
@@ -15534,13 +15534,14 @@ function runPhase22DocumentManagementAndSACERegressionSuite(payload) {
             "estudiante.identidad": "0801-2010-99887"
           }
         });
-        const pass = res && res.status === "success" && res.documentoId && res.codigoVerificacion && res.sha256Hash && res.sha256Hash.length === 64;
+        const pass = res && res.status === "success" && res.documentoId && res.codigoVerificacion &&
+          typeof res.sha256Hash === "string" && /^[a-f0-9]{64}$/i.test(res.sha256Hash);
         if (pass) {
           testDocId = res.documentoId;
           testCUV = res.codigoVerificacion;
           testHash = res.sha256Hash;
         }
-        return { pass, expected: "sha256 length 64", actual: res ? (res.sha256Hash ? res.sha256Hash.length : null) : null, details: res };
+        return { pass, expected: "digest SHA-256 hexadecimal de 64 caracteres; no prueba hash de bytes", actual: res ? (res.sha256Hash ? res.sha256Hash.length : null) : null, details: res };
       }
     },
     {
@@ -15591,13 +15592,14 @@ function runPhase22DocumentManagementAndSACERegressionSuite(payload) {
     },
     {
       id: "PT22-07",
-      name: "Firmas: Vinculación criptográfica SHA-256 entre firma y documento",
+      name: "Integridad: hashes SHA-256 de payloads de prueba (sin verificar firma real)",
       execute: function() {
         const docHash = computeDocumentSHA256("Documento_Oficial_Matricula_2026");
         const baseData = docHash + "|SOL-TEST-001|DOC-TEST-001|USER-DIRECTOR-01|Director|2026-11-03T00:00:00.000Z";
         const sigHash = computeDocumentSHA256(baseData);
-        const pass = sigHash && sigHash.length === 64 && docHash !== sigHash;
-        return { pass, expected: "64-char sha256", actual: sigHash ? sigHash.length : null };
+        const pass = typeof docHash === "string" && /^[a-f0-9]{64}$/i.test(docHash) &&
+          typeof sigHash === "string" && /^[a-f0-9]{64}$/i.test(sigHash) && docHash !== sigHash;
+        return { pass, expected: "dos digests de 64 caracteres hexadecimales; no acredita firma sobre PDF", actual: sigHash ? sigHash.length : null };
       }
     },
     {
