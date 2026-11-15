@@ -15,6 +15,8 @@ function extractFunction(name) {
 }
 const helperSource = extractFunction("authorizeDepartmentReferenceReadViaUser_");
 const readerSource = extractFunction("getStudentDocuments");
+const privateFileSource = extractFunction("getVerifiedPrivateStudentDocumentFile_");
+const hashSource = extractFunction("computeDocumentSHA256");
 const secret = "academic-reference-secret-with-more-than-32-characters";
 const defaultFields = ["tipoDocumento", "nombreArchivo"];
 const defaultDocs = ["DOC-1"];
@@ -22,22 +24,35 @@ function makeSheet(rows) { return { getDataRange() { return { getValues() { retu
 function makeRuntime(options = {}) {
   const calls = [];
   let uuidSequence = 0;
+  const fileBytesById = {
+    "PRIVATE-DRIVE-ID": Buffer.from("private document one","utf8"),
+    "PRIVATE-DRIVE-ID-2": Buffer.from("private document two","utf8")
+  };
+  const hash1 = crypto.createHash("sha256").update(fileBytesById["PRIVATE-DRIVE-ID"]).digest("hex");
+  const hash2 = crypto.createHash("sha256").update(fileBytesById["PRIVATE-DRIVE-ID-2"]).digest("hex");
   const documentRows = [
-    ["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl","FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones"],
-    ["DOC-1","EXP-1","","ACTA","Acta de nacimiento.pdf","PRIVATE-DRIVE-ID","https://drive.google.com/private","2026-01-02","","VALIDADO","U1","U2","dato privado"],
-    ["DOC-2","EXP-1","","IDENTIDAD","Identidad.pdf","PRIVATE-DRIVE-ID-2","https://drive.google.com/private2","2026-01-03","","PENDIENTE","U1","","otro dato privado"]
+    ["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl","FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones","VersionDocumento","SHA256"],
+    ["DOC-1","EXP-1","","ACTA","Acta de nacimiento.pdf","PRIVATE-DRIVE-ID","https://drive.google.com/private","2026-01-02","","VALIDADO","U1","U2","dato privado","1.0",hash1],
+    ["DOC-2","EXP-1","","IDENTIDAD","Identidad.pdf","PRIVATE-DRIVE-ID-2","https://drive.google.com/private2","2026-01-03","","PENDIENTE","U1","","otro dato privado","1.0",hash2]
   ];
   const sheets = { DocumentosEstudiante: makeSheet(documentRows), ExpedientesEstudiantes: makeSheet([["ExpedienteID","PersonaID"],["EXP-1","PERSON-1"]]) };
   const context = {
     Date,String,Array,Object,Number,Math,JSON,isNaN,SPREADSHEET_ID:"TEST",
     SpreadsheetApp:{openById(){return{getSheetByName(name){return sheets[name]||null;}};}},
-    DriveApp:{getFileById(){if(options.referenceMode)throw new Error("reference path must not touch Drive");return{isTrashed(){return false;}};}},
+    DriveApp:{Access:{PRIVATE:"PRIVATE"},getFileById(id){
+      if(options.referenceMode)throw new Error("reference path must not touch Drive");
+      const bytes=fileBytesById[id];if(!bytes)throw new Error("FILE_NOT_FOUND");
+      return {isTrashed(){return false;},getSharingAccess(){return "PRIVATE";},getName(){return id==="PRIVATE-DRIVE-ID"?"Acta de nacimiento.pdf":"Identidad.pdf";},
+        getBlob(){return {getBytes(){return Array.from(bytes);}};}};
+    }},
     PropertiesService:{getScriptProperties(){return{getProperty(name){
       if(name==="IMA_USER_SERVICE_URL")return options.url===undefined?"https://user.example/exec":options.url;
       if(name==="IMA_DEPARTMENT_REFERENCE_HMAC_SECRET")return options.secret===undefined?secret:options.secret;
       return null;
     }};}},
-    Utilities:{MacAlgorithm:{HMAC_SHA_256:"HMAC_SHA_256"},getUuid(){uuidSequence++;return String(uuidSequence).padStart(12,"0")+"-1234-1234-1234-123456789012";},
+    Utilities:{MacAlgorithm:{HMAC_SHA_256:"HMAC_SHA_256"},DigestAlgorithm:{SHA_256:"SHA_256"},getUuid(){uuidSequence++;return String(uuidSequence).padStart(12,"0")+"-1234-1234-1234-123456789012";},
+      base64Encode(value){return Buffer.from(value).toString("base64");},
+      computeDigest(_algorithm,bytes){return Array.from(crypto.createHash("sha256").update(Buffer.from(bytes)).digest());},
       computeHmacSignature(algorithm,body,key){return Array.from(crypto.createHmac("sha256",key).update(body).digest());}},
     UrlFetchApp:{fetch(url,request){
       calls.push({url,request});
@@ -58,11 +73,12 @@ function makeRuntime(options = {}) {
         approvedFields:envelope.payload.requestedFields,approvedDocumentIds:envelope.payload.requestedDocumentIds,grantId:"GRANT-1",auditEventId:"AUDIT-1"};
       return{getResponseCode(){return 200;},getContentText(){return JSON.stringify(response);}};
     }},
-    assertStudentDocumentScopeAccess_(){return options.sameDepartment?{authorized:true,departmentId:"DEP-A"}:{authorized:false,code:"RESOURCE_SCOPE_DENIED"};}
+    assertStudentDocumentScopeAccess_(){return options.sameDepartment?{authorized:true,departmentId:"DEP-A",accessType:"STAFF"}:{authorized:false,code:"RESOURCE_SCOPE_DENIED"};},
+    validateFileBinaryIntegrity(data,name){const bytes=Buffer.from(data,"base64");if(!String(name).toLowerCase().endsWith(".pdf"))throw new Error("FILE_EXTENSION_NOT_ALLOWED");return{mimeType:"application/pdf",byteLength:bytes.length};}
   };
   vm.createContext(context);
   vm.runInContext("const ACADEMIC_DEPARTMENT_REFERENCE_SAFE_FIELDS_=[\"tipoDocumento\",\"nombreArchivo\",\"fechaRecepcion\",\"fechaVencimiento\",\"estadoRevision\"];\n"+
-    helperSource+"\n"+readerSource+"\nthis.read=getStudentDocuments;",context);
+    helperSource+"\n"+hashSource+"\n"+privateFileSource+"\n"+readerSource+"\nthis.read=getStudentDocuments;",context);
   return{context,calls};
 }
 function request(overrides={}){return Object.assign({expedienteId:"exp-1",sessionToken:"signed-session-token",activeDepartmentId:"DEP-A",
@@ -76,7 +92,7 @@ function request(overrides={}){return Object.assign({expedienteId:"exp-1",sessio
 {
  const h=makeRuntime({sameDepartment:true}),r=h.context.read(request());
  assert.equal(r.status,"success");assert.equal(r.referenceOnly,undefined);assert.equal(r.documents.length,2);
- assert.equal(r.documents[0].driveFileId,"PRIVATE-DRIVE-ID");assert.equal(h.calls.length,0);
+ assert.equal(r.documents[0].tieneArchivo,true);assert.equal(r.documents[0].integridadVerificada,true);assert.equal("driveFileId" in r.documents[0],false);assert.equal("driveUrl" in r.documents[0],false);assert.equal(h.calls.length,0);
 }
 {
  const h=makeRuntime({referenceMode:true,response:{status:"error",authorized:false,code:"DEPARTMENT_REFERENCE_GRANT_NOT_FOUND"}});

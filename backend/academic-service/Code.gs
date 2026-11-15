@@ -237,7 +237,8 @@ function getOrCreateSheet(ss, name) {
     if (name === "BorradoresAdmision") sheet.appendRow(["BorradorID", "IdentificadorUsuario", "EmailResponsable", "DatosDraftJSON", "FechaCreacion", "FechaActualizacion", "Estado", "AccessTokenHash"]);
     if (name === "ResponsablesTutores") sheet.appendRow(["ResponsableID", "PersonaID", "Nombres", "Apellidos", "Identificacion", "Telefono", "Email", "Direccion", "Ocupacion", "Estado"]);
     if (name === "RelacionesEstudianteTutor") sheet.appendRow(["RelacionID", "ExpedienteID", "ResponsableID", "TipoParentesco", "EsRepresentanteLegal", "EsContactoEmergencia", "EsResponsableFinanciero", "AutorizadoPickUp", "AccesoPortal", "Estado", "Observaciones"]);
-    if (name === "DocumentosEstudiante") sheet.appendRow(["DocumentoID", "ExpedienteID", "SolicitudID", "TipoDocumento", "NombreArchivo", "DriveFileId", "DriveUrl", "FechaRecepcion", "FechaVencimiento", "EstadoRevision", "SubidoPor", "ValidadoPor", "Observaciones"]);
+    if (name === "DocumentosEstudiante") sheet.appendRow(["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl","FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones","VersionDocumento","SHA256"]);
+    if (name === "HistorialVersionesDocumentos") sheet.appendRow(["VersionID","DocumentoID","NombreArchivo","DriveFileId","DriveUrl","FechaCreacion","ArchivadoPor","MotivoArchivado","FechaArchivado","VersionDocumento","SHA256"]);
     if (name === "MovimientosEstudiante") sheet.appendRow(["MovimientoID", "ExpedienteID", "MatriculaID", "AnoLectivo", "TipoMovimiento", "GradoOrigen", "SeccionOrigen", "GradoDestino", "SeccionDestino", "FechaEfectiva", "Motivo", "AutorizadoPor", "Estado"]);
     if (name === "AntecedentesAcademicos") sheet.appendRow(["AntecedenteID", "ExpedienteID", "InstitucionOrigen", "GradoCompletado", "AnoCompletado", "PromedioObtenido", "EstadoVerificacion", "Observaciones"]);
     // Nuevas Tablas Fase 7 - Asistencia y Seguimiento Estudiantil
@@ -293,7 +294,7 @@ const ROLE_PERMISSIONS = {
     "getClassroomResources", "saveClassroomResource", "saveClassroomMaintenance", "getStudentSchedule", "getScheduleConflictResolutionAlternatives", "saveScheduleScenario", "getScheduleScenarios", "saveTeacherWorkLoadPreferences", "createSessionException", "getScheduleVersions", "compareScheduleVersions", "restoreScheduleVersion", "getPlanningQualityAndOccupancyReport", "exportBulkClassSchedules", "importBulkClassSchedules", "previewPublishImpact",
     "createAdmissionRequest", "getAdmissionRequests", "updateAdmissionStatus", "reopenAdmissionRequest", "convertAdmissionToStudent", "scheduleAdmissionInterview", "getAdmissionInterviews", "recordInterviewOutcome", "saveAdmissionEvaluation", "getAdmissionEvaluations", "addToWaitlist", "getWaitlist", "reorderWaitlist", "offerWaitlistSlot", "respondToWaitlistSlot", "resolveAdmissionDuplicate", "getAdmissionAnalyticsReport",
     "getStudentFile", "getStudentFileSummary", "updateStudentFile", "getStudentTimeline", "findDuplicateStudents", "mergeStudentFiles", "getMergePreviewComparison", "unmergeStudentFiles", "getStudentFileAdministrativeReports", "initializeDirectionSecretaryDriveStructure",
-    "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "updateDocumentStatus", "getPendingDocumentsReport", "grantDocumentExemption", "restoreDocumentVersion", "checkAndNotifyExpiringStudentDocuments",
+    "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "getStudentDocumentFile", "updateDocumentStatus", "getPendingDocumentsReport", "grantDocumentExemption", "restoreDocumentVersion", "checkAndNotifyExpiringStudentDocuments",
     "getPendingDocumentsReport", "grantDocumentExemption", "createStudentEnrollment", "getStudentEnrollments", "renewStudentEnrollment", "checkEnrollmentCapacity",
     "changeStudentSection", "recordStudentTransfer", "recordStudentWithdrawal", "processStudentReentry", "processStudentPromotion", "processStudentGraduation", "updateStudentLifecycleStatus", "reconcileStudentLifecycleState", "runStudentLifecycleRegressionSuite", "getAcademicAreaTemplateCatalog", "assignTeacherToAcademicArea", "getTeachersByAcademicArea", "getAcademicAreasByTeacher", "removeTeacherFromAcademicArea", "getAcademicAreaCoordinationScope", "deployAcademicMicroserviceInstance", "getAcademicMicroserviceDeployments", "previewBackupRestoreImpact", "getStorageQuotaMetricsReport", "reconcileDocumentStorageIntegrity", "reconcileInstitutionalModulesMatrix",
     "openAttendanceSession", "saveClassAttendance", "bulkApplyAttendanceStatus", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary", "checkAndDispatchAttendanceAlerts", "getAttendanceConfig", "saveAttendanceConfig",
@@ -306,7 +307,7 @@ const ROLE_PERMISSIONS = {
     "getTeacherAssignments", "assignTeacherToClass", "createTeacherSubstitution", "getAcademicCalendar", "createCalendarEvent", "getClassSchedules", "createClassSchedule", "deleteClassSchedule", "copyClassSchedules", "getTeacherTeachingLoad", "generateAutoSchedules", "recordClassSessionOutcome", "getTeachingHoursSummary", "rescheduleCancelledSession", "getPendingSessionRecoveries", "publishClassSchedules", "getIndividualCalendar", "syncAcademicScheduleIntegrity", "getAcademicAuditLogs", "getReusableResourceCatalog", "manageReusableResource",
     "getClassroomResources", "saveClassroomResource", "getStudentSchedule",
     "createAdmissionRequest", "getAdmissionRequests", "updateAdmissionStatus", "getStudentFile", "getStudentTimeline", "findDuplicateStudents",
-    "getStudentGuardians", "getStudentDocuments", "getStudentEnrollments", "checkEnrollmentCapacity",
+    "getStudentGuardians", "getStudentDocuments", "getStudentDocumentFile", "getStudentEnrollments", "checkEnrollmentCapacity",
     "openAttendanceSession", "saveClassAttendance", "bulkApplyAttendanceStatus", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary",
     "createTeacherSupervision", "getTeacherSupervisions", "updateSupervisionStatus", "saveSupervisionObservation", "getSupervisionObservation", "saveTeacherImprovementPlan", "getTeacherImprovementPlans", "savePedagogicalPlanning", "getPedagogicalPlannings", "submitPlanningForReview", "reviewPedagogicalPlanning", "getPlanningReviewHistory", "saveSupervisionRubric", "getSupervisionRubrics"
   , "saveExtracurricularActivity", "getExtracurricularActivities"],
@@ -318,7 +319,7 @@ const ROLE_PERMISSIONS = {
     "getClassroomResources", "saveClassroomResource", "getStudentSchedule",
     "createAdmissionRequest", "getAdmissionRequests", "updateAdmissionStatus", "convertAdmissionToStudent", "scheduleAdmissionInterview", "getAdmissionInterviews", "recordInterviewOutcome", "saveAdmissionEvaluation", "getAdmissionEvaluations", "addToWaitlist", "getWaitlist", "reorderWaitlist", "offerWaitlistSlot", "respondToWaitlistSlot", "resolveAdmissionDuplicate",
     "getStudentFile", "getStudentFileSummary", "updateStudentFile", "getStudentTimeline", "findDuplicateStudents", "getMergePreviewComparison", "unmergeStudentFiles", "getStudentFileAdministrativeReports",
-    "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "updateDocumentStatus",
+    "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "getStudentDocumentFile", "updateDocumentStatus",
     "getPendingDocumentsReport", "grantDocumentExemption", "createStudentEnrollment", "getStudentEnrollments", "renewStudentEnrollment", "checkEnrollmentCapacity",
     "changeStudentSection", "recordStudentTransfer", "recordStudentWithdrawal", "processStudentReentry", "processStudentPromotion", "processStudentGraduation", "updateStudentLifecycleStatus", "reconcileStudentLifecycleState", "runStudentLifecycleRegressionSuite",
     "openAttendanceSession", "saveClassAttendance", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary"
@@ -331,7 +332,7 @@ const ROLE_PERMISSIONS = {
     "getClassroomResources", "saveClassroomResource", "getStudentSchedule",
     "createAdmissionRequest", "getAdmissionRequests", "updateAdmissionStatus", "convertAdmissionToStudent", "scheduleAdmissionInterview", "getAdmissionInterviews", "recordInterviewOutcome", "saveAdmissionEvaluation", "getAdmissionEvaluations", "addToWaitlist", "getWaitlist", "reorderWaitlist", "offerWaitlistSlot", "respondToWaitlistSlot",
     "getStudentFile", "updateStudentFile", "getStudentTimeline", "findDuplicateStudents",
-    "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "updateDocumentStatus",
+    "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "getStudentDocumentFile", "updateDocumentStatus",
     "getPendingDocumentsReport", "grantDocumentExemption", "createStudentEnrollment", "getStudentEnrollments", "renewStudentEnrollment", "checkEnrollmentCapacity",
     "changeStudentSection", "recordStudentTransfer", "recordStudentWithdrawal", "processStudentReentry", "processStudentPromotion", "processStudentGraduation", "updateStudentLifecycleStatus", "reconcileStudentLifecycleState", "runStudentLifecycleRegressionSuite",
     "openAttendanceSession", "saveClassAttendance", "getBatchAttendanceRecords", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary", "generateConsolidatedAttendanceAndCoexistenceReport", "validateStudentWelfareAccess"
@@ -343,17 +344,17 @@ const ROLE_PERMISSIONS = {
   "Orientacion": ["getAcademicConfig", "getAcademicYears", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentGuardians", "getAttendanceIncidents", "saveAttendanceIncident", "updateAttendanceIncidentStatus", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "addCaseCommitment", "updateCaseCommitmentStatus", "saveGuidanceFollowupPlan", "saveVocationalRecommendation", "validateEvidenceFileAndPermissions", "getStudentAttendanceSummary", "validateStudentWelfareAccess", "scheduleGuidanceAppointment", "getGuidanceAppointments", "updateGuidanceAppointmentStatus", "evaluateAndDispatchEarlyWarningAlerts", "getEarlyWarningAlerts"],
   "Padre": [
     "getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getStudentEnrollmentHistory",
-    "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentFileSummary", "getStudentTimeline", "getStudentDocuments", "getStudentEnrollments",
+    "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentFileSummary", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "getStudentEnrollments",
     "getClassAttendance", "getDailyAttendance", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents"
   , "getStudentExtracurricularEnrollments", "enrollStudentInExtracurricular", "cancelExtracurricularEnrollment", "getExtracurricularActivities"],
   "Tutor": [
     "getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getStudentEnrollmentHistory",
-    "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentEnrollments",
+    "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "getStudentEnrollments",
     "getClassAttendance", "getDailyAttendance", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents"
   , "getStudentExtracurricularEnrollments", "enrollStudentInExtracurricular", "cancelExtracurricularEnrollment", "getExtracurricularActivities"],
   "Responsable": [
     "getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getStudentEnrollmentHistory",
-    "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentEnrollments",
+    "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "getStudentEnrollments",
     "getClassAttendance", "getDailyAttendance", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents"
   , "getStudentExtracurricularEnrollments", "enrollStudentInExtracurricular", "cancelExtracurricularEnrollment", "getExtracurricularActivities"],
   "Profesor": [
@@ -375,8 +376,8 @@ const ROLE_PERMISSIONS = {
     "savePedagogicalPlanning", "getPedagogicalPlannings", "submitPlanningForReview", "getPlanningReviewHistory", "getSupervisionRubrics"
   ],
   "Asistente": ["getAcademicConfig", "getAsignaturasActivas", "getWhatsAppLink", "getQuestionBank", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentTimeline", "getClassAttendance", "getBatchAttendanceRecords", "getStudentAttendanceSummary", "auditAssistantDelegatedAction"],
-  "Estudiante": ["getAcademicConfig", "getAsignaturasActivas", "getWhatsAppLink", "getQuestionBank", "getStudentEnrollmentHistory", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentFileSummary", "getStudentTimeline", "getStudentDocuments", "getClassAttendance", "getDailyAttendance", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents", "calculateUnifiedAcademicGrade", "generateStudentReportCard", "validateAcademicResponsibilityAndScopeAccess"],
-  "Alumno": ["getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getStudentEnrollmentHistory", "getAcademicYears", "getAcademicPeriods", "getAcademicOffers", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentEnrollments", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents", "generateStudentReportCard", "validateAcademicResponsibilityAndScopeAccess"]
+  "Estudiante": ["getAcademicConfig", "getAsignaturasActivas", "getWhatsAppLink", "getQuestionBank", "getStudentEnrollmentHistory", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentFileSummary", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "getClassAttendance", "getDailyAttendance", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents", "calculateUnifiedAcademicGrade", "generateStudentReportCard", "validateAcademicResponsibilityAndScopeAccess"],
+  "Alumno": ["getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getStudentEnrollmentHistory", "getAcademicYears", "getAcademicPeriods", "getAcademicOffers", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "getStudentEnrollments", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents", "generateStudentReportCard", "validateAcademicResponsibilityAndScopeAccess"]
 };
 
 const PUBLIC_ACTIONS = ["ping", "createAdmissionRequest", "getPublicAdmissionStatus", "saveAdmissionDraft", "getAdmissionDraft"];
@@ -1127,6 +1128,7 @@ function doPost(e) {
       case "unlinkStudentGuardian": result = unlinkStudentGuardian(payload); break;
       case "uploadStudentDocument": result = uploadStudentDocument(payload); break;
       case "getStudentDocuments": result = getStudentDocuments(payload); break;
+      case "getStudentDocumentFile": result = getStudentDocumentFile(payload); break;
       case "updateDocumentStatus": result = updateDocumentStatus(payload); break;
       case "getPendingDocumentsReport": result = getPendingDocumentsReport(payload); break;
       case "grantDocumentExemption": result = grantDocumentExemption(payload); break;
@@ -12230,146 +12232,377 @@ function unlinkStudentGuardian(payload) {
 // ---------------------------------------------------------------------------
 
 // [TAREA-F5-006] [Fase 5: Admisiones y Matrícula] - Gestión documental de aspirantes con asociación por solicitudId, validación de tamaño (10MB), tipo MIME y migración al expediente.
-function uploadStudentDocument(payload) {
-  const { expedienteId, solicitudId, tipoDocumento, fileName, fileData, fechaVencimiento, observaciones } = payload || {};
-  if ((!expedienteId && !solicitudId) || !tipoDocumento || !fileData) {
-    throw new Error("expedienteId o solicitudId, tipoDocumento y fileData son requeridos.");
+function validateFileBinaryIntegrity(fileData, fileName, options) {
+  const opts = options || {};
+  const maxSizeBytes = Number(opts.maxSizeBytes) > 0 ? Number(opts.maxSizeBytes) : 10 * 1024 * 1024;
+  const allowedExtensions = opts.allowedExtensions || null;
+  if (typeof fileData !== "string" || !fileData.trim()) throw new Error("FILE_MISSING: Datos de archivo ausentes.");
+  if (typeof fileName !== "string" || !fileName.trim()) throw new Error("FILE_INVALID_NAME: Nombre de archivo inválido o ausente.");
+  const normalizedName = fileName.trim();
+  if (/[\/\\\u0000-\u001F]/.test(normalizedName)) throw new Error("FILE_INVALID_NAME: No se permiten rutas ni caracteres de control.");
+  const lowerName = normalizedName.toLowerCase();
+  const dangerousExtensions = [".exe",".bat",".cmd",".sh",".msi",".dll",".com",".scr",".vbs",".js",".jar",".ps1",".apk"];
+  if (dangerousExtensions.some(ext => lowerName.endsWith(ext))) throw new Error("DANGEROUS_FILE_EXTENSION: Extensión prohibida.");
+  const dot = lowerName.lastIndexOf(".");
+  const extension = dot >= 0 ? lowerName.slice(dot) : "";
+  const policies = {
+    ".pdf": { format: "pdf", mime: "application/pdf" },
+    ".jpg": { format: "jpeg", mime: "image/jpeg" },
+    ".jpeg": { format: "jpeg", mime: "image/jpeg" },
+    ".png": { format: "png", mime: "image/png" },
+    ".webp": { format: "webp", mime: "image/webp" },
+    ".docx": { format: "docx", mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
+    ".xlsx": { format: "xlsx", mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }
+  };
+  const policy = policies[extension];
+  if (!policy) throw new Error("UNSUPPORTED_FILE_FORMAT: Extensión no admitida.");
+  if (Array.isArray(allowedExtensions) && allowedExtensions.length > 0 &&
+      !allowedExtensions.some(value => String(value || "").trim().toLowerCase() === extension)) {
+    throw new Error("INVALID_FILE_EXTENSION: Extensión no permitida.");
   }
-  const access = assertStudentRequestScopeAccess_(payload, SpreadsheetApp.openById(SPREADSHEET_ID), expedienteId, solicitudId);
-  if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
-
-  // Validación de tipo MIME y tamaño de archivo (máximo 10 MB = 10,485,760 bytes)
-  let mimeType = "application/pdf";
-  let base64Data = "";
-  if (typeof fileData === "string" && fileData.indexOf("data:") === 0) {
-    const parts = fileData.split(",");
-    const match = parts[0].match(/:(.*?);/);
-    if (match) mimeType = match[1];
-    base64Data = parts[1] || "";
-  } else if (typeof fileData === "string") {
-    base64Data = fileData;
+  let base64Content = fileData.trim();
+  let declaredMime = "";
+  if (base64Content.indexOf(",") !== -1) {
+    const comma = base64Content.indexOf(",");
+    const header = base64Content.slice(0, comma);
+    if (!/^data:[^;,\s]+(?:;[^,]*)?;base64$/i.test(header)) throw new Error("FILE_DATA_URI_INVALID: URI Base64 inválida.");
+    declaredMime = header.slice(5).split(";")[0].toLowerCase();
+    base64Content = base64Content.slice(comma + 1);
   }
-
-  const allowedMimeTypes = ["application/pdf", "image/jpeg", "image/jpg", "image/png", "image/webp"];
-  if (allowedMimeTypes.indexOf(mimeType.toLowerCase()) === -1) {
-    throw new Error(`Formato de archivo no permitido: '${mimeType}'. Únicamente se admiten archivos PDF, JPG, PNG o WEBP.`);
+  base64Content = base64Content.replace(/\s/g, "");
+  if (!base64Content) throw new Error("EMPTY_FILE_REJECTED: El archivo está vacío (0 bytes).");
+  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64Content) || base64Content.length % 4 === 1) {
+    throw new Error("FILE_BASE64_INVALID: Contenido Base64 inválido.");
   }
-
-  const rawBytes = Utilities.base64Decode(base64Data);
-  if (!rawBytes || rawBytes.length === 0) {
-    throw new Error("El archivo subido está vacío (0 bytes) o corrupto.");
+  const unpadded = base64Content.replace(/=+$/, "");
+  if (unpadded.length % 4 === 1 || (base64Content.indexOf("=") >= 0 && base64Content.length % 4 !== 0)) {
+    throw new Error("FILE_BASE64_INVALID: Padding Base64 inválido.");
   }
-
-  const maxSizeBytes = 10 * 1024 * 1024; // 10 MB
-  if (rawBytes.length > maxSizeBytes) {
-    throw new Error(`El archivo excede el tamaño máximo permitido de 10 MB. Tamaño del archivo: ${(rawBytes.length / (1024 * 1024)).toFixed(2)} MB.`);
+  base64Content = unpadded + (base64Content.indexOf("=") >= 0 ? "=".repeat(base64Content.length - unpadded.length) : "=".repeat((4 - unpadded.length % 4) % 4));
+  if (declaredMime && declaredMime !== "application/octet-stream" && declaredMime !== policy.mime) {
+    throw new Error("FILE_MIME_MISMATCH: El MIME declarado no coincide con la extensión.");
   }
-
-  let driveFileId = "";
-  let driveUrl = "";
-
+  let rawBytes;
   try {
-    const root = DriveApp.getRootFolder();
-    let mainFolder = root.getFoldersByName("New Generation");
-    let parent = mainFolder.hasNext() ? mainFolder.next() : root.createFolder("New Generation");
-    let docFolder = parent.getFoldersByName("Documentos_Estudiantes");
-    let targetFolder = docFolder.hasNext() ? docFolder.next() : parent.createFolder("Documentos_Estudiantes");
-
-    const blob = Utilities.newBlob(rawBytes, mimeType, fileName || `${tipoDocumento}_${Date.now()}`);
-    const file = targetFolder.createFile(blob);
-
-    driveFileId = file.getId();
-    driveUrl = `https://lh3.googleusercontent.com/d/${file.getId()}`;
-  } catch (e) {
-    logDebug("Error subida archivo documento estudiante:", e.message);
-    throw new Error("Fallo al guardar el archivo en almacenamiento seguro de Google Drive: " + e.message);
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "DocumentosEstudiante");
-  const now = new Date();
-  const docRows = sheet.getDataRange().getValues();
-
-  // [TAREA-F6-022] [Fase 6: Expediente Institucional y Ciclo de Vida] - Control de versiones documentales y sustitución con conservación de versión previa
-  let existingIdx = -1;
-  const targetExpId = String(expedienteId || "").trim().toLowerCase();
-  const targetSolId = String(solicitudId || "").trim().toLowerCase();
-  const targetTipo = String(tipoDocumento || "").trim().toLowerCase();
-
-  for (let i = 1; i < docRows.length; i++) {
-    const rowExp = String(docRows[i][1] || "").trim().toLowerCase();
-    const rowSol = String(docRows[i][2] || "").trim().toLowerCase();
-    const rowTipo = String(docRows[i][3] || "").trim().toLowerCase();
-
-    if (((targetExpId && rowExp === targetExpId) || (targetSolId && rowSol === targetSolId)) && rowTipo === targetTipo) {
-      existingIdx = i;
-      break;
+    if (typeof Utilities !== "undefined" && Utilities.base64Decode) rawBytes = Utilities.base64Decode(base64Content);
+    else if (typeof Buffer !== "undefined") rawBytes = Buffer.from(base64Content, "base64");
+    else throw new Error("UNSUPPORTED_RUNTIME");
+  } catch (_) { throw new Error("FILE_BASE64_INVALID: No fue posible decodificar el archivo."); }
+  const byteLength = rawBytes && rawBytes.length ? rawBytes.length : 0;
+  if (!byteLength) throw new Error("EMPTY_FILE_REJECTED: El archivo está vacío (0 bytes).");
+  if (byteLength > maxSizeBytes) throw new Error("FILE_SIZE_EXCEEDED: El archivo supera el tamaño máximo permitido.");
+  const byteAt = index => Number(rawBytes[index]) & 0xFF;
+  const ascii = (offset,length) => { let value=""; for(let i=offset;i<Math.min(byteLength,offset+length);i++) value+=String.fromCharCode(byteAt(i)); return value; };
+  const u16 = offset => offset<0||offset+2>byteLength ? -1 : byteAt(offset)|(byteAt(offset+1)<<8);
+  const u32 = offset => offset<0||offset+4>byteLength ? -1 : (byteAt(offset)|(byteAt(offset+1)<<8)|(byteAt(offset+2)<<16)|(byteAt(offset+3)<<24))>>>0;
+  const be32 = offset => offset<0||offset+4>byteLength ? -1 : (byteAt(offset)*0x1000000)+(byteAt(offset+1)*0x10000)+(byteAt(offset+2)*0x100)+byteAt(offset+3);
+  if (policy.format === "pdf") {
+    const head=ascii(0,Math.min(16,byteLength)),tail=ascii(Math.max(0,byteLength-2048),Math.min(2048,byteLength));
+    if(!/^%PDF-[12]\.\d/.test(head)||tail.indexOf("%%EOF")<0)throw new Error("PDF_STRUCTURE_INVALID: Cabecera o EOF ausente.");
+    const startXref=tail.lastIndexOf("startxref"),match=startXref>=0?tail.slice(startXref+9).match(/^\s*(\d+)/):null;
+    if(!match||Number(match[1])<=0||Number(match[1])>=byteLength)throw new Error("PDF_STRUCTURE_INVALID: startxref inválido.");
+  } else if (policy.format === "jpeg") {
+    if(byteLength<4||byteAt(0)!==255||byteAt(1)!==216||byteAt(2)!==255||byteAt(byteLength-2)!==255||byteAt(byteLength-1)!==217)throw new Error("JPEG_STRUCTURE_INVALID: SOI/EOI ausente o truncado.");
+  } else if (policy.format === "png") {
+    const sig=[137,80,78,71,13,10,26,10],valid=byteLength>=45&&sig.every((v,i)=>byteAt(i)===v);
+    const ihdr=valid&&be32(8)===13&&ascii(12,4)==="IHDR";
+    const iend=valid&&be32(byteLength-12)===0&&ascii(byteLength-8,4)==="IEND"&&byteAt(byteLength-4)===174&&byteAt(byteLength-3)===66&&byteAt(byteLength-2)===96&&byteAt(byteLength-1)===130;
+    if(!ihdr||!iend||ascii(8,byteLength-8).indexOf("IDAT")<0)throw new Error("PNG_STRUCTURE_INVALID: IHDR/IDAT/IEND ausente o truncado.");
+  } else if (policy.format === "webp") {
+    if(byteLength<20||ascii(0,4)!=="RIFF"||ascii(8,4)!=="WEBP"||u32(4)!==byteLength-8)throw new Error("WEBP_STRUCTURE_INVALID: RIFF/WEBP inválido.");
+    let offset=12,found=false;
+    while(offset+8<=byteLength){const type=ascii(offset,4),size=u32(offset+4);if(size<1||offset+8+size+(size%2)>byteLength)throw new Error("WEBP_STRUCTURE_INVALID: Chunk truncado.");if(type==="VP8 "||type==="VP8L"||type==="VP8X")found=true;offset+=8+size+(size%2);}
+    if(!found||offset!==byteLength)throw new Error("WEBP_STRUCTURE_INVALID: Chunk de imagen ausente.");
+  } else if (policy.format === "docx" || policy.format === "xlsx") {
+    let eocd=-1;for(let i=byteLength-22;i>=Math.max(0,byteLength-65557);i--){if(u32(i)===0x06054B50){eocd=i;break;}}
+    if(eocd<0)throw new Error("OPENXML_ZIP_INVALID: EOCD ausente.");
+    const disk=u16(eocd+4),centralDisk=u16(eocd+6),onDisk=u16(eocd+8),total=u16(eocd+10),centralSize=u32(eocd+12),centralOffset=u32(eocd+16),comment=u16(eocd+20);
+    if(disk!==0||centralDisk!==0||onDisk!==total||total<1||eocd+22+comment!==byteLength||centralOffset+centralSize>eocd)throw new Error("OPENXML_ZIP_INVALID: Directorio central inconsistente.");
+    const entries=Object.create(null);let cursor=centralOffset;
+    for(let n=0;n<total;n++){
+      if(cursor+46>eocd||u32(cursor)!==0x02014B50)throw new Error("OPENXML_ZIP_INVALID: Entrada central inválida.");
+      const flags=u16(cursor+8),method=u16(cursor+10),compressed=u32(cursor+20),uncompressed=u32(cursor+24),nameLen=u16(cursor+28),extraLen=u16(cursor+30),commentLen=u16(cursor+32),local=u32(cursor+42),end=cursor+46+nameLen+extraLen+commentLen;
+      if(end>centralOffset+centralSize||nameLen<1||(flags&1)!==0||(method!==0&&method!==8))throw new Error("OPENXML_ZIP_INVALID: Metadatos no permitidos.");
+      const name=ascii(cursor+46,nameLen);
+      if(!name||name.charAt(0)==="/"||name.indexOf("../")>=0||name.indexOf("\\")>=0||name.indexOf("\u0000")>=0)throw new Error("OPENXML_ZIP_INVALID: Ruta interna inválida.");
+      if(local+30>centralOffset||u32(local)!==0x04034B50)throw new Error("OPENXML_ZIP_INVALID: Cabecera local ausente.");
+      const localNameLen=u16(local+26),localExtraLen=u16(local+28),localName=ascii(local+30,localNameLen),dataOffset=local+30+localNameLen+localExtraLen;
+      if(localName!==name||dataOffset+compressed>centralOffset)throw new Error("OPENXML_ZIP_INVALID: Entrada local inconsistente.");
+      entries[name]={size:uncompressed};cursor=end;
     }
+    if(cursor!==centralOffset+centralSize||!entries["[Content_Types].xml"]||entries["[Content_Types].xml"].size<1)throw new Error("OPENXML_STRUCTURE_INVALID: [Content_Types].xml ausente.");
+    if(policy.format==="docx"&&(!entries["word/document.xml"]||entries["word/document.xml"].size<1))throw new Error("DOCX_STRUCTURE_INVALID: word/document.xml ausente.");
+    if(policy.format==="xlsx"&&(!entries["xl/workbook.xml"]||entries["xl/workbook.xml"].size<1))throw new Error("XLSX_STRUCTURE_INVALID: xl/workbook.xml ausente.");
   }
+  return {valid:true,fileName:normalizedName,detectedFormat:policy.format,byteLength:byteLength,mimeType:policy.mime};
+}
 
-  let docId = "";
-
-  if (existingIdx !== -1) {
-    const prevRow = docRows[existingIdx];
-    docId = String(prevRow[0]);
-
-    // Archivar versión anterior en HistorialVersionesDocumentos
-    try {
-      const verSheet = getOrCreateSheet(ss, "HistorialVersionesDocumentos");
-      verSheet.appendRow([
-        `VER-${Date.now()}`,
-        docId,
-        prevRow[4] || "", // nombreArchivo anterior
-        prevRow[5] || "", // driveFileId anterior
-        prevRow[6] || "", // driveUrl anterior
-        prevRow[7] || now, // fechaCreacion anterior
-        (payload && (payload._verifiedUserId || payload.userId)) || "Secretaría",
-        "Sustitución por nueva versión subida",
-        now
-      ]);
-    } catch (_) {}
-
-    // Actualizar documento vigente
-    sheet.getRange(existingIdx + 1, 5).setValue(fileName || tipoDocumento);
-    sheet.getRange(existingIdx + 1, 6).setValue(driveFileId);
-    sheet.getRange(existingIdx + 1, 7).setValue(driveUrl);
-    sheet.getRange(existingIdx + 1, 8).setValue(now);
-    sheet.getRange(existingIdx + 1, 9).setValue(fechaVencimiento || "");
-    sheet.getRange(existingIdx + 1, 10).setValue("EnRevision");
-    sheet.getRange(existingIdx + 1, 11).setValue((payload && (payload._verifiedUserId || payload.userId)) || "Secretaría");
-    sheet.getRange(existingIdx + 1, 13).setValue(observaciones || "");
-
-    logStructuredEvent("ACADEMIC", "uploadStudentDocument", "INFO", "DOCUMENT_VERSION_UPDATED", `Nueva versión de documento ${docId} (${tipoDocumento}) subida`, { docId, expedienteId, solicitudId, tipoDocumento, fileName }, payload && payload.authRole);
-    return { status: "success", documentoId: docId, driveUrl: driveUrl, message: "Nueva versión del documento guardada y versión anterior archivada." };
+function computeDocumentSHA256(contentOrBase64) {
+  if (contentOrBase64 === null || contentOrBase64 === undefined || contentOrBase64 === "") return "";
+  let rawBytes;
+  const isByteArray = Array.isArray(contentOrBase64) ||
+    (typeof Uint8Array !== "undefined" && contentOrBase64 instanceof Uint8Array);
+  if (isByteArray) {
+    rawBytes = Array.from(contentOrBase64);
+  } else if (contentOrBase64 && typeof contentOrBase64.getBytes === "function") {
+    rawBytes = Array.from(contentOrBase64.getBytes());
+  } else if (typeof contentOrBase64 === "string") {
+    if (typeof Utilities !== "undefined" && Utilities.base64Decode &&
+        /^data:[^,]*;base64,/i.test(contentOrBase64)) {
+      rawBytes = Array.from(Utilities.base64Decode(contentOrBase64.slice(contentOrBase64.indexOf(",") + 1)));
+    } else if (typeof Utilities !== "undefined" && Utilities.newBlob) {
+      rawBytes = Array.from(Utilities.newBlob(contentOrBase64).getBytes());
+    } else {
+      rawBytes = Array.from(Buffer.from(contentOrBase64, "utf8"));
+    }
   } else {
-    const idGen = generateInstitutionalId({ entityType: "DocumentoEstudiante", prefix: "DOC-", skipLock: true });
-    docId = (idGen && idGen.generatedId) ? idGen.generatedId : ("DOC-" + now.getTime());
+    throw new Error("DOCUMENT_HASH_INPUT_TYPE_INVALID");
+  }
+  if (!rawBytes.length) return "";
+  let digest;
+  if (typeof Utilities !== "undefined" && Utilities.computeDigest) {
+    digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, rawBytes);
+    return digest.map(function(b) {
+      return ("0" + ((Number(b) + 256) % 256).toString(16)).slice(-2);
+    }).join("");
+  }
+  return require("crypto").createHash("sha256").update(Buffer.from(rawBytes)).digest("hex");
+}
 
-    sheet.appendRow([
-      docId,
-      expedienteId || "",
-      solicitudId || "",
-      tipoDocumento,
-      fileName || tipoDocumento,
-      driveFileId,
-      driveUrl,
-      now,
-      fechaVencimiento || "",
-      "EnRevision",
-      (payload && (payload._verifiedUserId || payload.userId)) || "Secretaría",
-      "",
-      observaciones || ""
-    ]);
+function ensureStudentDocumentSchema_(sheet) {
+  const headers = ["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl",
+    "FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones","VersionDocumento","SHA256"];
+  const current = sheet.getRange(1,1,1,Math.max(1,sheet.getLastColumn())).getValues()[0] || [];
+  headers.forEach(function(header,index) {
+    const actual = String(current[index] || "").trim();
+    if (!actual) sheet.getRange(1,index+1).setValue(header);
+    else if (actual.toLowerCase() !== header.toLowerCase()) throw new Error("STUDENT_DOCUMENT_SCHEMA_MISMATCH:" + (index+1));
+  });
+  return sheet;
+}
 
-    logStructuredEvent("ACADEMIC", "uploadStudentDocument", "INFO", "DOCUMENT_UPLOADED", `Documento ${docId} (${tipoDocumento}) subido para ${expedienteId || solicitudId}`, { docId, expedienteId, solicitudId, tipoDocumento, fileName, sizeBytes: (rawBytes || "").length }, payload && payload.authRole);
+function ensureDocumentVersionHistorySchema_(sheet) {
+  const headers = ["VersionID","DocumentoID","NombreArchivo","DriveFileId","DriveUrl","FechaCreacion","ArchivadoPor",
+    "MotivoArchivado","FechaArchivado","VersionDocumento","SHA256"];
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(headers);
+    return sheet;
+  }
+  let current = sheet.getRange(1,1,1,Math.max(1,sheet.getLastColumn())).getValues()[0] || [];
+  if (String(current[0] || "").trim().toLowerCase() !== "versionid") {
+    if (typeof sheet.insertRowBefore === "function") sheet.insertRowBefore(1);
+    else if (typeof sheet.insertRows === "function") sheet.insertRows(1,1);
+    else throw new Error("DOCUMENT_VERSION_HISTORY_HEADER_MIGRATION_UNAVAILABLE");
+    sheet.getRange(1,1,1,headers.length).setValues([headers]);
+    return sheet;
+  }
+  headers.forEach(function(header,index) {
+    const actual = String(current[index] || "").trim();
+    if (!actual) sheet.getRange(1,index+1).setValue(header);
+    else if (actual.toLowerCase() !== header.toLowerCase()) throw new Error("DOCUMENT_VERSION_HISTORY_SCHEMA_MISMATCH:" + (index+1));
+  });
+  return sheet;
+}
 
-    return { status: "success", documentoId: docId, driveUrl: driveUrl, message: "Documento adjuntado correctamente." };
+function getOrCreatePrivateStudentDocumentFolder_() {
+  const lock = LockService.getScriptLock();
+  let hasLock = false;
+  try {
+    hasLock = lock.tryLock(10000);
+    if (!hasLock) throw new Error("DOCUMENT_FOLDER_LOCK_UNAVAILABLE");
+    const root = DriveApp.getRootFolder();
+    const folderName = "Documentos_Estudiantes_Privados_v1";
+    const iterator = root.getFoldersByName(folderName);
+    const folder = iterator.hasNext() ? iterator.next() : root.createFolder(folderName);
+    folder.setSharing(DriveApp.Access.PRIVATE,DriveApp.Permission.NONE);
+    if (!folder.getSharingAccess || folder.getSharingAccess() !== DriveApp.Access.PRIVATE) {
+      throw new Error("DOCUMENT_FOLDER_NOT_PRIVATE");
+    }
+    return folder;
+  } finally {
+    if (hasLock) { try { lock.releaseLock(); } catch (_) {} }
   }
 }
 
-// [TAREA-F6-022] [Fase 6: Expediente Institucional y Ciclo de Vida] - Consulta de documentos con verificación de accesibilidad Drive y recuperación de versiones archivadas
-const ACADEMIC_DEPARTMENT_REFERENCE_SAFE_FIELDS_ = ["tipoDocumento", "nombreArchivo", "fechaRecepcion", "fechaVencimiento", "estadoRevision"];
+function rollbackPrivateStudentDocumentFile_(file, reason) {
+  if (!file) return;
+  try { file.setTrashed(true); }
+  catch (error) {
+    try { logStructuredEvent("ACADEMIC","uploadStudentDocument","ERROR","STUDENT_DOCUMENT_ORPHAN_REQUIRES_RECOVERY",
+      "No fue posible retirar el archivo creado sin registro documental asociado.",
+      {fileId:file.getId ? file.getId() : "",reason:String(error && error.message || error),
+        originalReason:String(reason || "")},"SYSTEM"); } catch (_) {}
+  }
+}
 
+function getVerifiedPrivateStudentDocumentFile_(fileId, expectedHash, fallbackName, options) {
+  const opts = options || {};
+  const cleanId = String(fileId || "").trim();
+  if (!cleanId) throw new Error("DOCUMENT_FILE_REFERENCE_MISSING");
+  const file = DriveApp.getFileById(cleanId);
+  if (!file || file.isTrashed()) throw new Error("DOCUMENT_FILE_UNAVAILABLE");
+  if (!file.getSharingAccess) throw new Error("DOCUMENT_FILE_PRIVACY_UNVERIFIABLE");
+  if (file.getSharingAccess() !== DriveApp.Access.PRIVATE) {
+    if (opts.makePrivate !== true) throw new Error("DOCUMENT_FILE_NOT_PRIVATE");
+    file.setSharing(DriveApp.Access.PRIVATE,DriveApp.Permission.NONE);
+    if (file.getSharingAccess() !== DriveApp.Access.PRIVATE) throw new Error("DOCUMENT_FILE_NOT_PRIVATE");
+  }
+  const blob = file.getBlob();
+  const bytes = blob && blob.getBytes ? blob.getBytes() : [];
+  if (!bytes || !bytes.length) throw new Error("DOCUMENT_FILE_EMPTY");
+  const fileName = String(file.getName ? file.getName() : fallbackName || "").trim();
+  const validation = validateFileBinaryIntegrity(Utilities.base64Encode(bytes),fileName,
+    {maxSizeBytes:10*1024*1024,allowedExtensions:[".pdf",".jpg",".jpeg",".png",".webp"]});
+  if (validation.byteLength !== bytes.length) throw new Error("DOCUMENT_FILE_SIZE_MISMATCH");
+  const sha256Hash = computeDocumentSHA256(bytes).toLowerCase();
+  const expected = String(expectedHash || "").trim().toLowerCase();
+  if (expected && sha256Hash !== expected) throw new Error("DOCUMENT_INTEGRITY_MISMATCH");
+  return {file:file,bytes:bytes,fileName:fileName,validation:validation,sha256Hash:sha256Hash};
+}
+
+function nextStudentDocumentVersion_(previousVersion) {
+  const value = String(previousVersion || "").trim();
+  if (!value) return "1.0";
+  const match = value.match(/^(\d+)\.(\d+)$/);
+  if (!match) return "2.0";
+  return String(Number(match[1])) + "." + String(Number(match[2]) + 1);
+}
+
+function uploadStudentDocument(payload) {
+  const p = payload || {};
+  const expedienteId = String(p.expedienteId || "").trim();
+  const solicitudId = String(p.solicitudId || "").trim();
+  const tipoDocumento = String(p.tipoDocumento || "").trim();
+  const fileName = String(p.fileName || "").trim();
+  const fileData = p.fileData;
+  const fechaVencimiento = p.fechaVencimiento || "";
+  const observaciones = p.observaciones || "";
+  if ((!expedienteId && !solicitudId) || !tipoDocumento || !fileData || !fileName) {
+    throw new Error("expedienteId o solicitudId, tipoDocumento, fileName y fileData son requeridos.");
+  }
+  const ssForAccess = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const access = assertStudentRequestScopeAccess_(p,ssForAccess,expedienteId,solicitudId);
+  if (!access || !access.authorized) return {status:"error",code:access && access.code || "RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
+  const actor = getVerifiedAcademicIdentity_(p);
+  if (!actor || actor.authorized !== true || !actor.userId) return {status:"error",code:actor && actor.code || "VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+
+  let base64Data = String(fileData);
+  let declaredMime = "";
+  if (/^data:/i.test(base64Data)) {
+    const comma = base64Data.indexOf(",");
+    const header = comma >= 0 ? base64Data.slice(0,comma) : "";
+    const match = header.match(/^data:([^;]+);base64$/i);
+    if (comma < 0 || !match) throw new Error("FILE_DATA_URI_INVALID");
+    declaredMime = String(match[1] || "").toLowerCase();
+    base64Data = base64Data.slice(comma+1);
+  }
+  const validation = validateFileBinaryIntegrity(base64Data,fileName,
+    {maxSizeBytes:10*1024*1024,allowedExtensions:[".pdf",".jpg",".jpeg",".png",".webp"]});
+  if (declaredMime && declaredMime !== String(validation.mimeType).toLowerCase()) throw new Error("FILE_MIME_MISMATCH");
+  const rawBytes = Utilities.base64Decode(base64Data);
+  if (!rawBytes || !rawBytes.length || rawBytes.length !== validation.byteLength) throw new Error("FILE_BINARY_SIZE_MISMATCH");
+
+  const folder = getOrCreatePrivateStudentDocumentFolder_();
+  const lock = LockService.getScriptLock();
+  let hasLock = false, createdFile = null, persisted = false, docId = "", version = "", sha256Hash = "";
+  let sheet = null, existingIdx = -1, successResult = null;
+  try {
+    hasLock = lock.tryLock(10000);
+    if (!hasLock) throw new Error("DOCUMENT_UPLOAD_LOCK_UNAVAILABLE");
+    sheet = ensureStudentDocumentSchema_(getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"DocumentosEstudiante"));
+    const historySheet = ensureDocumentVersionHistorySchema_(getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"HistorialVersionesDocumentos"));
+    const docRows = sheet.getDataRange().getValues();
+    const targetExpId = expedienteId.toLowerCase(), targetSolId = solicitudId.toLowerCase(), targetTipo = tipoDocumento.toLowerCase();
+    for (let i=1;i<docRows.length;i++) {
+      const rowExp=String(docRows[i][1]||"").trim().toLowerCase();
+      const rowSol=String(docRows[i][2]||"").trim().toLowerCase();
+      const rowTipo=String(docRows[i][3]||"").trim().toLowerCase();
+      const identityMatch = targetExpId && targetSolId ? (rowExp===targetExpId && rowSol===targetSolId) :
+        (targetExpId ? rowExp===targetExpId : rowSol===targetSolId);
+      if (identityMatch && rowTipo===targetTipo) {
+        if (existingIdx !== -1) throw new Error("STUDENT_DOCUMENT_RECORD_AMBIGUOUS");
+        existingIdx=i;
+      }
+    }
+    const now = new Date();
+    const safeName = fileName;
+    const blob = Utilities.newBlob(rawBytes,validation.mimeType,safeName);
+    createdFile = folder.createFile(blob);
+    createdFile.setSharing(DriveApp.Access.PRIVATE,DriveApp.Permission.NONE);
+    if (createdFile.getSharingAccess() !== DriveApp.Access.PRIVATE) throw new Error("DOCUMENT_FILE_NOT_PRIVATE");
+    const stored = getVerifiedPrivateStudentDocumentFile_(createdFile.getId(),"",safeName,{makePrivate:false});
+    const uploadedHash = computeDocumentSHA256(rawBytes).toLowerCase();
+    if (stored.sha256Hash !== uploadedHash) throw new Error("DOCUMENT_STORAGE_BYTE_MISMATCH");
+    sha256Hash = stored.sha256Hash;
+    if (!/^[a-f0-9]{64}$/.test(sha256Hash)) throw new Error("DOCUMENT_SHA256_INVALID");
+
+    if (existingIdx !== -1) {
+      const previous = docRows[existingIdx];
+      docId = String(previous[0] || "").trim();
+      const previousVersion = String(previous[13] || "legacy").trim();
+      let previousHash = String(previous[14] || "").trim().toLowerCase();
+      const previousFileId = String(previous[5] || "").trim();
+      if (previousFileId) {
+        const previousFile = getVerifiedPrivateStudentDocumentFile_(previousFileId,previousHash,previous[4],{makePrivate:true});
+        previousHash = previousFile.sha256Hash;
+      }
+      const historyId = "VER-" + Utilities.getUuid().replace(/-/g,"").slice(0,20).toUpperCase();
+      historySheet.appendRow([historyId,docId,previous[4]||"",previousFileId,"",previous[7]||now,
+        actor.userId,"Sustitución por nueva versión subida",now,previousVersion,previousHash]);
+      version = nextStudentDocumentVersion_(previous[13]);
+      const updated = previous.slice(0,15);
+      while (updated.length<15) updated.push("");
+      updated[4]=safeName;
+      updated[5]=createdFile.getId();
+      updated[6]="";
+      updated[7]=now;
+      updated[8]=fechaVencimiento;
+      updated[9]="EnRevision";
+      updated[10]=actor.userId;
+      updated[11]="";
+      updated[12]=observaciones;
+      updated[13]=version;
+      updated[14]=sha256Hash;
+      sheet.getRange(existingIdx+1,1,1,15).setValues([updated]);
+    } else {
+      const idGen = generateInstitutionalId({entityType:"DocumentoEstudiante",prefix:"DOC-",skipLock:true});
+      docId = idGen && idGen.generatedId ? String(idGen.generatedId) : ("DOC-" + Utilities.getUuid().replace(/-/g,"").slice(0,20));
+      version = "1.0";
+      sheet.appendRow([docId,expedienteId,solicitudId,tipoDocumento,safeName,createdFile.getId(),"",now,
+        fechaVencimiento,"EnRevision",actor.userId,"",observaciones,version,sha256Hash]);
+    }
+    persisted = true;
+    successResult = {status:"success",documentoId:docId,versionDocumento:version,sha256Hash:sha256Hash,
+      tieneArchivo:true,integridadVerificada:true,message:existingIdx!==-1?
+        "Nueva versión privada guardada; la versión anterior fue archivada con su hash.":
+        "Documento privado adjuntado y vinculado a su versión y hash SHA-256."};
+    try {
+      logStructuredEvent("ACADEMIC","uploadStudentDocument","INFO",existingIdx!==-1?"DOCUMENT_VERSION_UPDATED":"DOCUMENT_UPLOADED",
+        "Documento almacenado de forma privada y validado contra los bytes persistidos.",
+        {docId:docId,expedienteId:expedienteId,solicitudId:solicitudId,tipoDocumento:tipoDocumento,
+          fileName:safeName,versionDocumento:version,sha256Hash:sha256Hash,sizeBytes:stored.bytes.length},actor.role);
+    } catch (_) {}
+    return successResult;
+  } catch (error) {
+    if (createdFile && !persisted) {
+      let rowPersisted = false;
+      try {
+        if (sheet && docId) rowPersisted = sheet.getDataRange().getValues().slice(1).some(function(row) {
+          return String(row[0]||"")===docId && String(row[5]||"")===String(createdFile.getId()) &&
+            String(row[14]||"").toLowerCase()===sha256Hash;
+        });
+      } catch (_) {}
+      if (rowPersisted) {
+        return {status:"success",documentoId:docId,versionDocumento:version,sha256Hash:sha256Hash,
+          tieneArchivo:true,integridadVerificada:true,persistenciaRecuperada:true};
+      }
+      rollbackPrivateStudentDocumentFile_(createdFile,error);
+    }
+    throw error;
+  } finally {
+    if (hasLock) { try { lock.releaseLock(); } catch (_) {} }
+  }
+}
 function authorizeDepartmentReferenceReadViaUser_(payload, expedienteId, requestedFields, requestedDocumentIds) {
   const request = payload || {};
   const sessionToken = String(request.sessionToken || request.authToken || request.token || "").trim();
@@ -12426,11 +12659,12 @@ function getStudentDocuments(payload) {
   if (!documentSheet) return { status: "success", documents: [] };
   const rows = documentSheet.getDataRange().getValues().slice(1);
   const versionSheet = ss.getSheetByName("HistorialVersionesDocumentos");
+  if (versionSheet) ensureDocumentVersionHistorySchema_(versionSheet);
   const verRows = versionSheet ? versionSheet.getDataRange().getValues().slice(1) : [];
   const candidates = rows.filter(function(row) {
     const rowExpId = String(row[1] || "").trim().toLowerCase();
     const rowSolId = String(row[2] || "").trim().toLowerCase();
-    if (cleanExpId && cleanSolId) return rowExpId === cleanExpId || rowSolId === cleanSolId;
+    if (cleanExpId && cleanSolId) return rowExpId === cleanExpId && rowSolId === cleanSolId;
     if (cleanExpId) return rowExpId === cleanExpId;
     if (cleanSolId) return rowSolId === cleanSolId;
     return true;
@@ -12485,73 +12719,140 @@ function getStudentDocuments(payload) {
   }
   if (!explicitTarget && candidates.length && !filtered.length) return { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "No existen documentos disponibles dentro del ámbito autorizado." };
   const mapped = filtered.map(function(row) {
-    const docId = String(row[0]), fileId = String(row[5] || "").trim();
-    let driveAccessible = false;
-    if (fileId) { try { const file = DriveApp.getFileById(fileId); driveAccessible = !file.isTrashed(); } catch (_) { driveAccessible = false; } }
-    const versions = verRows.filter(function(version) { return String(version[1]).trim() === docId.trim(); }).map(function(version) {
-      return { versionId: version[0], documentoId: version[1], nombreArchivo: version[2], driveFileId: version[3], driveUrl: version[4],
-        fechaCreacion: version[5], archivadoPor: version[6], motivoArchivado: version[7], fechaArchivado: version[8] };
+    const docId = String(row[0] || "");
+    const fileId = String(row[5] || "").trim();
+    const expectedHash = String(row[14] || "").trim().toLowerCase();
+    const version = String(row[13] || "").trim();
+    let driveAccessible = false, integrityVerified = false;
+    if (fileId) {
+      try {
+        const verifiedFile = getVerifiedPrivateStudentDocumentFile_(fileId,expectedHash,row[4],{makePrivate:false});
+        driveAccessible = true;
+        integrityVerified = !!expectedHash && !!version && verifiedFile.sha256Hash === expectedHash;
+      } catch (_) {}
+    }
+    const versions = verRows.filter(function(versionRow) {
+      return String(versionRow[1] || "").trim() === docId.trim();
+    }).map(function(versionRow) {
+      return {versionId:versionRow[0],documentoId:versionRow[1],nombreArchivo:versionRow[2],
+        fechaCreacion:versionRow[5],archivadoPor:versionRow[6],motivoArchivado:versionRow[7],
+        fechaArchivado:versionRow[8],versionDocumento:versionRow[9] || "",sha256Hash:versionRow[10] || ""};
     });
-    return { documentoId: docId, expedienteId: row[1], solicitudId: row[2], tipoDocumento: row[3], nombreArchivo: row[4],
-      driveFileId: row[5], driveUrl: row[6], fechaRecepcion: row[7], fechaVencimiento: row[8], estadoRevision: row[9],
-      subidoPor: row[10], validadoPor: row[11], observaciones: row[12], driveAccessible: driveAccessible,
-      totalVersionesPrevias: versions.length, historialVersiones: versions };
+    return {documentoId:docId,expedienteId:row[1],solicitudId:row[2],tipoDocumento:row[3],
+      nombreArchivo:row[4],fechaRecepcion:row[7],fechaVencimiento:row[8],estadoRevision:row[9],
+      subidoPor:row[10],validadoPor:row[11],observaciones:row[12],tieneArchivo:!!fileId,
+      driveAccessible:driveAccessible,integridadVerificada:integrityVerified,versionDocumento:version,
+      sha256Hash:expectedHash,totalVersionesPrevias:versions.length,historialVersiones:versions};
   });
   return { status: "success", documents: mapped };
 }
 
 // [TAREA-F6-022] [Fase 6: Expediente Institucional y Ciclo de Vida] - Restauración autorizada de versión previa de documento
-function restoreDocumentVersion(payload) {
-  const { documentoId, versionId, motivo } = payload || {};
-  if (!documentoId || !versionId) throw new Error("documentoId y versionId son requeridos para la restauración.");
-  const actor = getVerifiedAcademicIdentity_(payload);
-  if (!actor.authorized) return { status: "error", code: actor.code || "VERIFIED_IDENTITY_REQUIRED", message: "Acceso denegado." };
-
+function getStudentDocumentFile(payload) {
+  const p = payload || {};
+  const documentId = String(p.documentoId || "").trim();
+  if (!documentId) throw new Error("documentoId requerido.");
+  const actor = getVerifiedAcademicIdentity_(p);
+  if (!actor || actor.authorized !== true || !actor.userId) return {status:"error",code:actor && actor.code || "VERIFIED_IDENTITY_REQUIRED",message:"Documento no disponible."};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const docSheet = getOrCreateSheet(ss, "DocumentosEstudiante");
-  const verSheet = getOrCreateSheet(ss, "HistorialVersionesDocumentos");
-  const docRows = docSheet.getDataRange().getValues();
-  const cleanDocumentId = String(documentoId).trim();
-  const docIdx = docRows.findIndex(r => String(r[0] || "").trim() === cleanDocumentId);
-  if (docIdx <= 0) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento o versión no disponible." };
-
-  const currDoc = docRows[docIdx];
-  const access = assertStudentDocumentScopeAccess_(payload, ss, docSheet, currDoc, ss.getSheetByName("ExpedientesEstudiantes"));
-  if (!access.authorized || ["SELF", "GUARDIAN"].indexOf(access.accessType) !== -1) {
-    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento o versión no disponible." };
+  const sheet = ss.getSheetByName("DocumentosEstudiante");
+  const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
+  if (!sheet) return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Documento no disponible."};
+  const matches = sheet.getDataRange().getValues().slice(1).filter(function(row) {
+    return String(row[0] || "").trim() === documentId;
+  });
+  if (matches.length !== 1) return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Documento no disponible."};
+  const row = matches[0];
+  if (p.expedienteId && String(row[1] || "").trim() !== String(p.expedienteId).trim()) return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Documento no disponible."};
+  if (p.solicitudId && String(row[2] || "").trim() !== String(p.solicitudId).trim()) return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Documento no disponible."};
+  const access = assertStudentDocumentScopeAccess_(p,ss,sheet,row,expSheet);
+  if (!access || access.authorized !== true) return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Documento no disponible."};
+  const version = String(row[13] || "").trim();
+  const expectedHash = String(row[14] || "").trim().toLowerCase();
+  if (!version || !/^[a-f0-9]{64}$/.test(expectedHash)) {
+    return {status:"error",code:"DOCUMENT_BINARY_METADATA_MISSING",message:"El documento no tiene versión y hash verificables."};
   }
-
-  const verRows = verSheet.getDataRange().getValues();
-  const verIdx = verRows.findIndex(r => String(r[0] || "").trim() === String(versionId).trim());
-  if (verIdx <= 0) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento o versión no disponible." };
-  const targetVer = verRows[verIdx];
-  if (String(targetVer[1] || "").trim() !== cleanDocumentId) {
-    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento o versión no disponible." };
+  try {
+    const verified = getVerifiedPrivateStudentDocumentFile_(row[5],expectedHash,row[4],{makePrivate:false});
+    return {status:"success",documentoId:documentId,fileName:verified.fileName,mimeType:verified.validation.mimeType,
+      fileData:Utilities.base64Encode(verified.bytes),sizeBytes:verified.bytes.length,
+      versionDocumento:version,sha256Hash:verified.sha256Hash};
+  } catch (error) {
+    return {status:"error",code:String(error && error.message || "DOCUMENT_FILE_UNAVAILABLE"),message:"El documento no está disponible o no supera la verificación de integridad."};
   }
-
-  const now = new Date();
-  verSheet.appendRow([
-    `VER-${Date.now()}`,
-    cleanDocumentId,
-    currDoc[4] || "",
-    currDoc[5] || "",
-    currDoc[6] || "",
-    currDoc[7] || now,
-    actor.userId,
-    `Reemplazado por restauración a la versión ${versionId}. Motivo: ${motivo || "Restauración manual"}`,
-    now
-  ]);
-  docSheet.getRange(docIdx + 1, 5).setValue(targetVer[2]);
-  docSheet.getRange(docIdx + 1, 6).setValue(targetVer[3]);
-  docSheet.getRange(docIdx + 1, 7).setValue(targetVer[4]);
-  docSheet.getRange(docIdx + 1, 8).setValue(now);
-  docSheet.getRange(docIdx + 1, 10).setValue("Aprobado");
-  docSheet.getRange(docIdx + 1, 11).setValue(actor.userId);
-  docSheet.getRange(docIdx + 1, 13).setValue(`Restaurado desde versión ${versionId}. Motivo: ${motivo || "Restauración de versión previa"}`);
-  logStructuredEvent("ACADEMIC", "restoreDocumentVersion", "WARN", "DOCUMENT_VERSION_RESTORED", `Documento ${cleanDocumentId} restaurado a versión ${versionId}`, { documentoId: cleanDocumentId, versionId, motivo }, actor.role);
-  return { status: "success", message: `Documento ${cleanDocumentId} restaurado exitosamente a versión ${versionId}.` };
 }
 
+function restoreDocumentVersion(payload) {
+  const p = payload || {};
+  const documentoId = String(p.documentoId || "").trim();
+  const versionId = String(p.versionId || "").trim();
+  const motivo = p.motivo || "";
+  if (!documentoId || !versionId) throw new Error("documentoId y versionId son requeridos para la restauración.");
+  const actor = getVerifiedAcademicIdentity_(p);
+  if (!actor || actor.authorized !== true) return {status:"error",code:actor && actor.code || "VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+  const lock = LockService.getScriptLock();
+  let hasLock = false;
+  try {
+    hasLock = lock.tryLock(10000);
+    if (!hasLock) throw new Error("DOCUMENT_UPLOAD_LOCK_UNAVAILABLE");
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const docSheet = ensureStudentDocumentSchema_(getOrCreateSheet(ss,"DocumentosEstudiante"));
+    const verSheet = ensureDocumentVersionHistorySchema_(getOrCreateSheet(ss,"HistorialVersionesDocumentos"));
+    const docRows = docSheet.getDataRange().getValues();
+    const docMatches = docRows.map((row,index)=>({row:row,index:index})).filter(item=>item.index>0&&String(item.row[0]||"").trim()===documentoId);
+    if (docMatches.length !== 1) return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Documento o versión no disponible."};
+    const docIdx = docMatches[0].index, currDoc = docMatches[0].row;
+    const access = assertStudentDocumentScopeAccess_(p,ss,docSheet,currDoc,ss.getSheetByName("ExpedientesEstudiantes"));
+    if (!access.authorized || ["SELF","GUARDIAN"].indexOf(access.accessType)!==-1) {
+      return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Documento o versión no disponible."};
+    }
+    const verRows = verSheet.getDataRange().getValues();
+    const verMatches = verRows.map((row,index)=>({row:row,index:index})).filter(item=>item.index>0&&String(item.row[0]||"").trim()===versionId);
+    if (verMatches.length !== 1) return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Documento o versión no disponible."};
+    const targetVer = verMatches[0].row;
+    if (String(targetVer[1] || "").trim() !== documentoId) return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Documento o versión no disponible."};
+    const targetVersion = String(targetVer[9] || "").trim();
+    const targetHash = String(targetVer[10] || "").trim().toLowerCase();
+    if (!targetVersion || !/^[a-f0-9]{64}$/.test(targetHash) || !String(targetVer[3] || "").trim()) {
+      return {status:"error",code:"DOCUMENT_VERSION_INTEGRITY_UNVERIFIED",message:"La versión histórica no dispone de archivo, versión o hash verificable."};
+    }
+    let targetVerified;
+    try { targetVerified = getVerifiedPrivateStudentDocumentFile_(targetVer[3],targetHash,targetVer[2],{makePrivate:false}); }
+    catch (_) { return {status:"error",code:"DOCUMENT_VERSION_INTEGRITY_UNVERIFIED",message:"La versión histórica no supera la verificación de integridad."}; }
+    const now = new Date();
+    const currentFileId = String(currDoc[5] || "").trim();
+    let currentHash = String(currDoc[14] || "").trim().toLowerCase();
+    if (currentFileId) {
+      const currentVerified = getVerifiedPrivateStudentDocumentFile_(currentFileId,currentHash,currDoc[4],{makePrivate:true});
+      currentHash = currentVerified.sha256Hash;
+    }
+    verSheet.appendRow(["VER-" + Utilities.getUuid().replace(/-/g,"").slice(0,20).toUpperCase(),documentoId,
+      currDoc[4] || "",currentFileId,"",currDoc[7] || now,actor.userId,
+      "Reemplazado por restauración a versión " + versionId + ". Motivo: " + (motivo || "Restauración manual"),
+      now,String(currDoc[13] || "legacy"),currentHash]);
+    const updated = currDoc.slice(0,15);
+    while (updated.length<15) updated.push("");
+    updated[4]=targetVerified.fileName;
+    updated[5]=String(targetVer[3]);
+    updated[6]="";
+    updated[7]=now;
+    updated[9]="Aprobado";
+    updated[10]=actor.userId;
+    updated[12]="Restaurado desde versión " + versionId + ". Motivo: " + (motivo || "Restauración de versión previa");
+    updated[13]=targetVersion;
+    updated[14]=targetHash;
+    docSheet.getRange(docIdx+1,1,1,15).setValues([updated]);
+    try {
+      logStructuredEvent("ACADEMIC","restoreDocumentVersion","WARN","DOCUMENT_VERSION_RESTORED",
+        "Documento restaurado a una versión privada con SHA-256 verificado.",
+        {documentoId:documentoId,versionId:versionId,versionDocumento:targetVersion,sha256Hash:targetHash,motivo:motivo},actor.role);
+    } catch (_) {}
+    return {status:"success",documentoId:documentoId,versionId:versionId,versionDocumento:targetVersion,
+      sha256Hash:targetHash,message:"Documento restaurado exitosamente a la versión verificada."};
+  } finally {
+    if (hasLock) { try { lock.releaseLock(); } catch (_) {} }
+  }
+}
 function updateDocumentStatus(payload) {
   const { documentoId, nuevoEstado, observaciones } = payload || {};
   if (!documentoId || !nuevoEstado) throw new Error("documentoId y nuevoEstado requeridos.");

@@ -12,6 +12,7 @@ on:
       - backend/exam-service/Code.gs
       - backend/developer-service/Code.gs
       - js/student.js
+      - js/secretary.js
       - js/ui-common.js
       - dashboard-recursos-humanos.html
       - js/hr-payroll-pdf.js
@@ -23,6 +24,7 @@ on:
       - js/auth.js
       - tests/security/departmental-resource-access.test.js
       - tests/security/academic-student-expediente-ownership.test.js
+      - tests/security/academic-student-document-private-storage.test.js
       - tests/security/academic-student-enrollment-history-ownership.test.js
       - tests/security/academic-student-enrollment-write-ownership.test.js
       - js/accounting.js
@@ -215,6 +217,8 @@ jobs:
         run: node tests/security/department-reference-interservice-envelope.test.js
       - name: Run ACADEMIC department reference consumer contract
         run: node tests/security/academic-department-reference-consumer.test.js
+      - name: Run academic private student document storage, versioning and download contract
+        run: node tests/security/academic-student-document-private-storage.test.js
       - name: Run ACCOUNTING department reference consumer contract
         run: node tests/security/accounting-department-reference-consumer.test.js
       - name: Syntax-check updated Apps Script services
@@ -223,6 +227,7 @@ jobs:
           node --check < backend/academic-service/Code.gs
           node --check < backend/accounting-service/Code.gs
           node --check js/accounting.js
+          node --check js/secretary.js
           node --check js/transport-analytics.js
           node --check js/api.js
           node --check tests/contracts/api-response-contract.test.js

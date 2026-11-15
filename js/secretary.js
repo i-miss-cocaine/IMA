@@ -319,7 +319,7 @@ window.loadAdmissionApplicantDocuments = async function(solicitudId) {
                             ${d.observaciones ? `<span class="text-[10px] text-amber-700 block mt-0.5">Nota: ${d.observaciones}</span>` : ''}
                         </div>
                         <div class="flex items-center gap-2">
-                            ${d.driveUrl ? `<a href="${d.driveUrl}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold rounded-lg text-[10px] uppercase transition-all"><i class="fa-solid fa-file-arrow-down"></i> Ver</a>` : ''}
+                            ${d.tieneArchivo && d.integridadVerificada ? `<button onclick="window.downloadApplicantDocumentAction('${d.documentoId}', '${solicitudId}')" class="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold rounded-lg text-[10px] uppercase transition-all"><i class="fa-solid fa-file-arrow-down"></i> Ver</button>` : (d.tieneArchivo ? `<span class="text-[10px] text-amber-700">Archivo no verificable</span>` : '')}
                             <button onclick="window.updateApplicantDocumentStatusAction('${d.documentoId}', 'Aceptado', '${solicitudId}')" class="px-2.5 py-1 bg-green-50 text-green-700 hover:bg-green-100 font-bold rounded-lg text-[10px] uppercase transition-all" title="Aprobar Documento"><i class="fa-solid fa-check"></i> Aprobar</button>
                             <button onclick="window.updateApplicantDocumentStatusAction('${d.documentoId}', 'Rechazado', '${solicitudId}')" class="px-2.5 py-1 bg-red-50 text-red-700 hover:bg-red-100 font-bold rounded-lg text-[10px] uppercase transition-all" title="Rechazar Documento"><i class="fa-solid fa-xmark"></i> Rechazar</button>
                         </div>
@@ -331,6 +331,32 @@ window.loadAdmissionApplicantDocuments = async function(solicitudId) {
         }
     } catch (err) {
         docsContainer.innerHTML = `<p class="text-red-500 font-medium">Error al cargar documentos: ${err.message}</p>`;
+    }
+};
+
+window.downloadApplicantDocumentAction = async function(documentoId, solicitudId) {
+    try {
+        const res = await window.fetchApi('ACADEMIC', 'getStudentDocumentFile', { documentoId, solicitudId });
+        if (!res || res.status !== 'success' || !res.fileData) {
+            throw new Error((res && res.message) || 'El documento no está disponible o no superó la verificación de integridad.');
+        }
+        const binary = atob(res.fileData);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const blob = new Blob([bytes], { type: res.mimeType || 'application/octet-stream' });
+        const objectUrl = URL.createObjectURL(blob);
+        const opened = window.open(objectUrl, '_blank');
+        if (!opened) {
+            const link = document.createElement('a');
+            link.href = objectUrl;
+            link.download = res.fileName || 'documento';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+    } catch (err) {
+        alert('No fue posible abrir el documento: ' + err.message);
     }
 };
 
