@@ -3934,3 +3934,8 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Academic: verifyDocumentIntegritySha256 expuesto por dispatcher; consulta/descarga verifican SHA-256 y las versiones restauradas conservan el hash.
 - User: InventarioDocumentalLegado añade HashSHA256 con migración aditiva; el hash se calcula en servidor desde fileData; duplicados exactos institucionales se bloquean sin revelar IDs de otros departamentos.
 - Pruebas V8 aisladas PASS: academic-student-document-private-storage y user-service-legacy-document-inventory. Node CLI nativo y Actions actuales no confirmados; ACCOUNTING/DocumentosEscolaresEmitidos y beta real pendientes.
+
+[2026-11-15] F40 — C1.770 — Alineación de dependencias de almacenamiento e integridad
+- TASK-143 se alinea con prerrequisitos F40-Task01 (ACL/ABAC/HMAC/inventario), no con F40-Task04 de firmas.
+- TASK-144 se alinea con F40-Task02 (SHA-256): F34-Task04, F39-Task02, F29-Task11/15 y F27-Task03; se elimina dependencia circular con F40-Task04.
+- Auditoría Fase 40 actualizada: F40-Task02 parcial con evidencia Academic/User C1.769 y brechas en Accounting, recibos, documentos escolares y backups.
