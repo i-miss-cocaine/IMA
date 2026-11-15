@@ -4,7 +4,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const root = path.resolve(__dirname, "../..");
-const sourcePath = path.join(root, "backend/accounting-service/Code.gs");
+const sourcePath = path.join(root, "backend/transport-service/Code.gs");
 const source = fs.readFileSync(sourcePath, "utf8");
 new vm.Script(source, { filename: sourcePath });
 
