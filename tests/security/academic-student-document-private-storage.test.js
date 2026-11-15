@@ -17,7 +17,9 @@ const names=[
   "ensureDocumentVersionHistorySchema_","getOrCreatePrivateStudentDocumentFolder_",
   "rollbackPrivateStudentDocumentFile_","getVerifiedPrivateStudentDocumentFile_",
   "nextStudentDocumentVersion_","uploadStudentDocument","verifyDocumentIntegritySha256","getStudentDocumentFile",
-  "getStudentDocuments","restoreDocumentVersion"
+  "getStudentDocumentAccessTokenSecret_","studentDocumentTokenHex_","studentDocumentTokenConstantTimeEqual_",
+  "studentDocumentTokenDigest_","studentDocumentTokenSignature_","createStudentDocumentAccessToken",
+  "decodeStudentDocumentAccessToken_","getSecureDocumentStream","getStudentDocuments","restoreDocumentVersion"
 ];
 const functions=names.map(extractFunction);
 const pdf1=Buffer.from("%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Name (first) >>\nendobj\nstartxref\n9\n%%EOF\n","utf8");
@@ -54,7 +56,8 @@ function makeSheet(initialRows=[]) {
 }
 
 function makeHarness(options={}) {
-  const state={lockHeld:false,lockReleases:0,uuid:0,docSequence:0,fileSequence:0,folderAccess:"PRIVATE",failFileSharing:false};
+  const state={lockHeld:false,lockReleases:0,uuid:0,docSequence:0,fileSequence:0,folderAccess:"PRIVATE",
+    failFileSharing:false,actorUserId:"USER-1",now:Date.now(),tokenCache:new Map(),scriptProperties:new Map(),auditEvents:[]};
   const docHeader=["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl",
     "FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones","VersionDocumento","SHA256"];
   const historyHeader=["VersionID","DocumentoID","NombreArchivo","DriveFileId","DriveUrl","FechaCreacion","ArchivadoPor",
@@ -91,10 +94,20 @@ function makeHarness(options={}) {
   };
   const lock={
     tryLock:()=>{if(state.lockHeld)return false;state.lockHeld=true;return true;},
+    waitLock:ms=>{assert.equal(ms,10000);if(state.lockHeld)throw new Error("LOCK_BUSY");state.lockHeld=true;},
     releaseLock:()=>{assert.equal(state.lockHeld,true);state.lockHeld=false;state.lockReleases++;}
   };
+  class TestDate extends Date {
+    constructor(...args){super(...(args.length?args:[state.now]));}
+    static now(){return state.now;}
+  }
+  const scriptCache={
+    put(key,value,ttl){state.tokenCache.set(key,{value,expiresAt:state.now+Number(ttl)*1000});},
+    get(key){const item=state.tokenCache.get(key);if(!item||item.expiresAt<=state.now){state.tokenCache.delete(key);return null;}return item.value;},
+    remove(key){state.tokenCache.delete(key);}
+  };
   const context={
-    Buffer,require,Date,Math,String,Array,Object,Number,JSON,isNaN,Uint8Array,
+    Buffer,require,Date:TestDate,Math,String,Array,Object,Number,JSON,isNaN,Uint8Array,
     SPREADSHEET_ID:"IN_MEMORY",
     SpreadsheetApp:{openById:id=>{assert.equal(id,"IN_MEMORY");return {getSheetByName:name=>sheets[name]||null};}},
     getOrCreateSheet:(_ss,name)=>{
@@ -106,25 +119,33 @@ function makeHarness(options={}) {
       return sheets[name];
     },
     LockService:{getScriptLock:()=>lock},
+    CacheService:{getScriptCache:()=>scriptCache},
+    PropertiesService:{getScriptProperties:()=>({
+      getProperty:key=>state.scriptProperties.get(key)||"",
+      setProperty:(key,value)=>{state.scriptProperties.set(key,String(value));}
+    })},
     DriveApp:{Access:{PRIVATE:"PRIVATE"},Permission:{NONE:"NONE"},getRootFolder:()=>root,
       getFileById:id=>{if(!files.has(id))throw new Error("FILE_NOT_FOUND");return files.get(id);}},
     Utilities:{
       DigestAlgorithm:{SHA_256:"SHA_256"},
+      MacAlgorithm:{HMAC_SHA_256:"HMAC_SHA_256"},
+      Charset:{UTF_8:"UTF-8"},
       base64Decode:value=>Buffer.from(value,"base64"),
       base64Encode:value=>Buffer.from(value).toString("base64"),
-      newBlob(bytes,mimeType,name){const data=Buffer.from(bytes);return{name,mimeType,getBytes:()=>Array.from(data)};},
+      newBlob(bytes,mimeType,name){const data=Buffer.from(bytes);return{name,mimeType,getBytes:()=>Array.from(data),getDataAsString:()=>data.toString("utf8")};},
       computeDigest:(_algorithm,bytes)=>Array.from(crypto.createHash("sha256").update(Buffer.from(bytes)).digest()),
-      getUuid:()=> "uuid-" + String(++state.uuid).padStart(12,"0")
+      computeHmacSignature:(_algorithm,message,key)=>Array.from(crypto.createHmac("sha256",String(key)).update(String(message)).digest()),
+      getUuid:()=> "12345678-1234-1234-1234-" + String(++state.uuid).padStart(12,"0")
     },
     MimeType:{PDF:"application/pdf"},
     assertStudentRequestScopeAccess_:()=>({authorized:true,departmentId:"DEP-1"}),
     assertStudentDocumentScopeAccess_:()=>({authorized:true,accessType:"STAFF",departmentId:"DEP-1"}),
-    getVerifiedAcademicIdentity_:()=>({authorized:true,userId:"USER-1",role:"Secretary"}),
+    getVerifiedAcademicIdentity_:()=>({authorized:true,userId:state.actorUserId,role:"Secretary"}),
     generateInstitutionalId:()=>({generatedId:"DOC-"+(++state.docSequence)}),
-    logStructuredEvent:()=>{},logDebug:()=>{}
+    logStructuredEvent:(...args)=>{state.auditEvents.push(args);},logDebug:()=>{}
   };
   vm.createContext(context);
-  vm.runInContext(functions.join("\n\n")+"\nthis.upload=uploadStudentDocument;this.verify=verifyDocumentIntegritySha256;this.download=getStudentDocumentFile;this.list=getStudentDocuments;this.restore=restoreDocumentVersion;",context);
+  vm.runInContext(functions.join("\n\n")+"\nthis.upload=uploadStudentDocument;this.verify=verifyDocumentIntegritySha256;this.download=getStudentDocumentFile;this.list=getStudentDocuments;this.restore=restoreDocumentVersion;this.issueToken=createStudentDocumentAccessToken;this.stream=getSecureDocumentStream;",context);
   return {state,sheets,files,context,setFileBytes(id,value){const file=files.get(id);assert.ok(file);file.getBlob=()=>({getBytes:()=>Array.from(Buffer.from(value)),getContentType:()=>"application/pdf"});},
     setFileSharing(id,value){const file=files.get(id);assert.ok(file);file.getSharingAccess=()=>value;}};
 }
@@ -164,6 +185,28 @@ function upload(h,pdf,label="ACTA") {
   assert.equal(listed.documents[0].integridadVerificada,true);
   assert.equal("driveFileId" in listed.documents[0],false);
   assert.equal("driveUrl" in listed.documents[0],false);
+  assert.equal(h.context.list({}).code,"RESOURCE_SCOPE_DENIED","document metadata queries require an expediente or application ID");
+  const issued=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1"});
+  assert.equal(issued.status,"success");
+  assert.equal(issued.expiresInSeconds,60);
+  const streamed=h.context.stream({documentoId:row[0],solicitudId:"SOL-1",versionDocumento:issued.versionDocumento,accessToken:issued.accessToken});
+  assert.equal(streamed.status,"success");
+  assert.equal(Buffer.from(streamed.fileData,"base64").equals(pdf1),true);
+  assert.equal("downloadUrl" in streamed,false);
+  assert.equal("driveUrl" in streamed,false);
+  assert.equal(h.state.auditEvents.some(event=>event[3]==="DOCUMENT_DOWNLOADED"),true);
+  const replay=h.context.stream({documentoId:row[0],solicitudId:"SOL-1",versionDocumento:issued.versionDocumento,accessToken:issued.accessToken});
+  assert.equal(replay.code,"DOCUMENT_ACCESS_TOKEN_REVOKED_OR_REPLAYED","download tokens are one-use");
+  const userBound=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1"});
+  h.state.actorUserId="USER-2";
+  assert.equal(h.context.stream({documentoId:row[0],solicitudId:"SOL-1",accessToken:userBound.accessToken}).code,
+    "DOCUMENT_ACCESS_TOKEN_BINDING_MISMATCH","a token cannot be transferred to another user");
+  h.state.actorUserId="USER-1";
+  const expired=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1"});
+  h.state.now+=61000;
+  assert.equal(h.context.stream({documentoId:row[0],solicitudId:"SOL-1",accessToken:expired.accessToken}).code,
+    "DOCUMENT_ACCESS_TOKEN_INVALID","expired tokens are rejected");
+  h.state.now-=61000;
 }
 
 {
@@ -362,4 +405,8 @@ const secretary = fs.readFileSync(path.join(__dirname,"../../js/secretary.js"),"
 assert.ok(secretary.includes("getStudentDocumentFile"));
 assert.ok(!secretary.includes("d.driveUrl"),"student-document UI must not render direct Drive URLs");
 
+assert.match(source,/case "getSecureDocumentStream": result = getSecureDocumentStream\\(payload\\); break;/);
+assert.match(source,/case "getStudentDocumentFile": result = \\{ status: "error", code: "SECURE_DOCUMENT_STREAM_REQUIRED"/);
+assert.doesNotMatch(source,/driveUrl: r\\[6\\]/);
+assert.match(source,/case "createStudentDocumentAccessToken": result = createStudentDocumentAccessToken\\(payload\\); break;/);
 console.log("academic-student-document-private-storage: PASS");
