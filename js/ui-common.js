@@ -6776,6 +6776,25 @@ window.clearFieldValidationError = function(targetOrId) {
     return true;
 };
 
+window.handleNativeFieldInvalid_ = function(event) {
+    var target = event && event.target;
+    if (!target || target.type === "hidden" || !target.validationMessage) return false;
+    return window.setFieldValidationError(target, target.validationMessage);
+};
+
+window.handleNativeFieldValidation_ = function(event) {
+    var target = event && event.target;
+    if (!target || !target.validity || !target.validity.valid) return false;
+    return window.clearFieldValidationError(target);
+};
+
+if (!window.__imaFieldValidationEventsBound && document.addEventListener) {
+    document.addEventListener("invalid", window.handleNativeFieldInvalid_, true);
+    document.addEventListener("input", window.handleNativeFieldValidation_, true);
+    document.addEventListener("change", window.handleNativeFieldValidation_, true);
+    window.__imaFieldValidationEventsBound = true;
+}
+
 if (!document.getElementById("ima-permanent-field-help-styles")) {
     var fieldHelpStyle = document.createElement("style");
     fieldHelpStyle.id = "ima-permanent-field-help-styles";
