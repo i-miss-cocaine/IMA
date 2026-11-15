@@ -10380,7 +10380,14 @@ function absenceTeacherConformityComplete_(ss, justId, sessionIds) {
         String(row[map.TipoConstancia] || "").trim().toUpperCase() === "CONFORMIDAD" &&
         String(row[map.Estado] || "").trim().toUpperCase() === "ACTIVA";
     });
-    return matches.length === 1 && !!String(matches[0][map.DocenteUserId] || "").trim();
+    if (matches.length !== 1) return false;
+    var row = matches[0], teacherId = String(row[map.DocenteUserId] || "").trim();
+    var constanciaId = String(row[map.ConstanciaID] || "").trim();
+    var timestamp = String(row[map.FechaConocimiento] || "").trim();
+    var storedHash = String(row[map.HashRegistro] || "").trim().toLowerCase();
+    if (!teacherId || !constanciaId || !timestamp || !/^[a-f0-9]{64}$/.test(storedHash)) return false;
+    var expectedHash = teacherJustificationSha256_([constanciaId, justId, teacherId, sessionId, "CONFORMIDAD", timestamp].join("|"));
+    return storedHash === expectedHash;
   });
 }
 
