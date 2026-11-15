@@ -882,11 +882,13 @@ function getEmployeeDocuments(payload) {
   }
   var expedienteId = String(input.expedienteId || "").trim();
   if (!expedienteId && String(actor.role || "").toLowerCase() === "empleado") {
-    var selfRow = employeeValues.slice(1).find(function(row) { return String(row[employeeIndex.UserId] || "") === String(actor.userId || ""); });
-    expedienteId = selfRow ? String(selfRow[employeeIndex.ExpedienteID] || "").trim() : "";
-    if (!expedienteId && employeeValues.length > 1) expedienteId = String(employeeValues[1][employeeIndex.ExpedienteID] || "").trim();
+    var selfRows = employeeValues.slice(1).filter(function(row) {
+      return String(row[employeeIndex.UserId] || "").trim() === String(actor.userId || "").trim();
+    });
+    if (selfRows.length === 1) expedienteId = String(selfRows[0][employeeIndex.ExpedienteID] || "").trim();
+    else return { status: "error", code: "RESOURCE_NOT_FOUND" };
   }
-  if (!expedienteId) return { status: "success", documentos: [] };
+  if (!expedienteId) return { status: "error", code: "RESOURCE_NOT_FOUND" };
   var matchingEmployees = employeeValues.slice(1).filter(function(row) {
     return String(row[employeeIndex.ExpedienteID] || "").trim() === expedienteId;
   });
