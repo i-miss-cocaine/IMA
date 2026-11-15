@@ -1843,6 +1843,7 @@ function validateImportWorkbookBinary_(payload) {
     if (code === "XLSX_MACROS_NOT_ALLOWED") return { valid: false, code: "IMPORT_FILE_MACROS_NOT_ALLOWED" };
     if (code === "FILE_BASE64_INVALID") return { valid: false, code: "IMPORT_FILE_BASE64_INVALID" };
     if (code === "FILE_SIZE_EXCEEDED") return { valid: false, code: "IMPORT_FILE_INVALID" };
+    if (code === "OPENXML_EXPANDED_SIZE_EXCEEDED") return { valid: false, code: "IMPORT_FILE_UNCOMPRESSED_SIZE_LIMIT" };
     return { valid: false, code: "IMPORT_FILE_PACKAGE_INVALID" };
   }
 }
