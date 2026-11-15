@@ -1016,3 +1016,49 @@ TASK-106 — Integridad criptográfica, versionado y protección contra sustituc
 - TASK-106 completada en código y CI.
 - Siguiente: auditar dependencias de TASK-108 y F34-Task06 antes de seleccionar la siguiente tarea elegible; no asumir que TASK-108 está desbloqueada solo por completar F34-Task04.
 ===============================================================================
+
+
+===============================================================================
+## C1.756 — IMA-EXEC-20261115-F34-TASK06-REACTIVE-WORKFLOW-NOTIFICATIONS-01
+- **Fecha:** 2026-11-15
+- **Rama exclusiva:** NG_beta_0.0.0.1_work
+- **HEAD inicial de sesión:** f8a67705d87388a0e2c1e1acc9b2edc4f21d44e0
+- **HEAD de código F34-TASK06:** 3b667725c840f3db88161e3cd82434eb2d91668c
+- **Commit de pruebas/aislamiento y CI PASS:** d36a52e63386363dab5d01346c1de8056c6ca417
+- **HEAD previo a publicar este checkpoint:** 6041d84f60eb0a02a1fa49b99978bd9d33ea91a2
+- **Normativa:** Normas_Desarollo.md v1.4, única normativa operativa.
+
+### Alcance implementado
+- processWorkflowDecision conserva la escritura de la decisión y el estado; prepara el aviso dentro de la unidad y lo despacha solo después de liberar el ScriptLock.
+- Estados notificados: Requiere Corrección, Aprobada y Rechazada; destinatario derivado del UserId de la solicitud.
+- Contenido mínimo: estado, acción requerida, observaciones públicas, fecha límite si existe y enlace HTTPS al portal. No se transmiten observaciones internas.
+- Consentimiento de correo fail-closed: email solo si existe una preferencia explícita persistida; de lo contrario se usa bandeja interna.
+- sendMultiChannelNotification aplica deduplicación bajo ScriptLock, conserva compatibilidad con userId de tipo email, escapa HTML y deja Pendiente_Reintento ante fallos/cuotas de MailApp.
+
+### Archivos de código/pruebas
+- backend/user-service/Code.gs
+- tests/security/user-service-workflow-notifications.test.js
+- .github/workflows/department-scope-contract.yml
+
+### Registros actualizados
+- pendientes/Secretaria/Pendientes.md — F34-TASK06 completada en código/CI.
+- Auditoría/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md — evidencia C1.756.
+- changueslogs.txt — registro de entrega.
+- beta_test_Parte_0002.txt — BETA-FUNC-105 pendiente beta.
+- Auditoría/INDICE_CHECKPOINTS.md — índice C1.756.
+
+### Verificación
+- Node.js local v22, harness aislado con mocks: PASS (tres estados, privacidad, consentimiento, notificación después del lock, deduplicación, cuota/reintento, compatibilidad email y escape HTML).
+- Parseo de backend USER completo: PASS.
+- GitHub Actions Department Scope Contract, Node 24: SUCCESS; incluye user-service-workflow-notifications.test.js y la suite de contratos existente.
+- CLI independiente: no aplicable; el repositorio no declara package.json ni entrypoint CLI.
+- Diff revisado: cambios acotados a notificaciones y salida del workflow; no se modificaron notas internas ni estados canónicos.
+
+### Límites / beta
+- BETA-FUNC-105 pendiente para validar Apps Script, Sheets y MailApp reales, consentimiento, cuotas y reintentos desplegados.
+- No se declara WhatsApp ni entrega formal documental. La apertura del correo no equivale a acuse de recibo.
+
+### Estado y continuidad
+- F34-TASK06: completada en código y CI; beta pendiente.
+- Siguiente tarea elegible: TASK-108 (P0), bandeja de salida institucional y control de entregas con acuses, reutilizando el núcleo F34-Task02 y las dependencias F34-Task04/F34-Task06. No reconstruir la funcionalidad ya implementada.
+===============================================================================
