@@ -553,6 +553,13 @@ const requestInfo = context.reviewCanonicalAbsenceJustification_({
   observacionesAdmin:"Aportar documento legible"
 });
 assert.equal(requestInfo.status,"success");
+const unauthorizedEvidenceCount = Object.keys(evidenceFiles).length;
+const unauthorizedCorrection = userContext.submitStudentAbsenceJustification({
+  _userId:"STU-OTHER",_role:"Estudiante",solicitudId:resubmissionId,
+  adjuntos:[{data:"%PDF-unauthorized",nombre:"unauthorized.pdf",evidenciaGrupoId:"ADJUNTO-1"}]
+});
+assert.notEqual(unauthorizedCorrection.status,"success");
+assert.equal(Object.keys(evidenceFiles).length,unauthorizedEvidenceCount,"unauthorized users must not create replacement files");
 let correctedEvidenceSequence = 0;
 userContext.createPrivateRequestAttachmentWithIntegrity_ = function(data,name) {
   const id = "EVIDENCE-RESUBMISSION-NEW-" + (++correctedEvidenceSequence);
@@ -575,7 +582,15 @@ const currentResubmissionEvidence = userContext.getEvidenceRecordsForRequest_(us
 assert.equal(currentResubmissionEvidence.length,2);
 assert.notEqual(currentResubmissionEvidence[0].EvidenciaID,oldResubmissionRecord.EvidenciaID);
 assert.notEqual(currentResubmissionEvidence[0].SHA256,currentResubmissionEvidence[1].SHA256,"each attachment must retain its own content hash");
-assert.equal(userContext.getEvidenceRecordsForRequest_(userContext.SpreadsheetApp.openById("TEST"),resubmissionId,false).find(item=>item.EvidenciaID===oldResubmissionRecord.EvidenciaID).Estado,"SUPERADA");
+const historicalResubmissionRecord = userContext.getEvidenceRecordsForRequest_(userContext.SpreadsheetApp.openById("TEST"),resubmissionId,false).find(item=>item.EvidenciaID===oldResubmissionRecord.EvidenciaID);
+assert.equal(historicalResubmissionRecord.Estado,"SUPERADA");
+assert.equal(historicalResubmissionRecord.SHA256,oldResubmissionRecord.SHA256);
+assert.equal(historicalResubmissionRecord.FechaRecepcionISO,oldResubmissionRecord.FechaRecepcionISO,"historical receipt timestamps must remain immutable");
+const historicalEvidenceVerification = userContext.getAdministrativeRequestAttachment({
+  _userId:"STU-USER",_role:"Estudiante",solicitudId:resubmissionId,evidenciaId:oldResubmissionRecord.EvidenciaID,verifyOnly:true
+});
+assert.equal(historicalEvidenceVerification.status,"success",JSON.stringify(historicalEvidenceVerification));
+assert.equal(historicalEvidenceVerification.integrityVerified,true);
 const resubmissionReview = userContext.reviewAbsenceJustification({
   _userId:"SEC-USER",_role:"Secretaría",solicitudId:resubmissionId,nuevoEstado:"Aprobada"
 });
@@ -586,6 +601,13 @@ assert.deepEqual(JSON.parse(canonicalResubmissionRow[attachmentMap.EvidenciaIDsJ
 const resubmissionHistory = JSON.parse(canonicalResubmissionRow[attachmentMap.DecisionHistoryJSON]);
 assert.ok(resubmissionHistory.some(item=>item.action==="EVIDENCE_RESUBMITTED"&&item.previousEvidenceIds.includes(oldResubmissionRecord.EvidenciaID)));
 assert.ok(resubmissionHistory.some(item=>item.action==="APPROVE"&&currentResubmissionEvidence.every(evidence=>item.evidenceIds.includes(evidence.EvidenciaID))));
+const approvedEvidenceIds = Array.from(currentResubmissionEvidence,item=>item.EvidenciaID).sort();
+const approvedReplacement = userContext.submitStudentAbsenceJustification({
+  _userId:"STU-USER",_role:"Estudiante",solicitudId:resubmissionId,
+  adjuntos:[{data:"%PDF-after-approval",nombre:"after-approval.pdf",evidenciaGrupoId:"ADJUNTO-1"}]
+});
+assert.notEqual(approvedReplacement.status,"success","approved evidence must be immutable");
+assert.deepEqual(JSON.parse(canonicalResubmissionRow[attachmentMap.EvidenciaIDsJSON]),approvedEvidenceIds);
 const unauthorizedReview = userContext.reviewAbsenceJustification({_userId:"TEACHER-1",_role:"Profesor",solicitudId:userMultiSubmit.solicitudId,nuevoEstado:"Aprobada"});
 assert.equal(unauthorizedReview.code,"AUTH_PERMISSION_DENIED","teachers cannot exercise secretariat review authority through USER");
 const secretaryQueue = userContext.getAdministrativeRequests({_userId:"SEC-USER",_role:"Secretaría"});
