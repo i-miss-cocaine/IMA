@@ -245,6 +245,18 @@ const duplicateHashLegacy = context.registerLegacyDocumentInventory({
 });
 assert.equal(duplicateHashLegacy.code, "LEGACY_DOCUMENT_HASH_DUPLICATE",
   "exact binary duplicates must be detected even when origin keys differ");
+const malformedHashInput = context.registerLegacyDocumentInventory({
+  sessionToken: "token-sec-a", departmentId: "DEP-A",
+  record: Object.assign({}, digitalRecord, { claveOrigen: "HASH-MALFORMED", fileData: "abc" })
+});
+assert.equal(malformedHashInput.code, "LEGACY_DOCUMENT_FILE_DATA_INVALID",
+  "malformed base64 is rejected before digest calculation");
+const oversizedHashInput = context.registerLegacyDocumentInventory({
+  sessionToken: "token-sec-a", departmentId: "DEP-A",
+  record: Object.assign({}, digitalRecord, { claveOrigen: "HASH-OVERSIZED", fileData: "A".repeat(14000000) })
+});
+assert.equal(oversizedHashInput.code, "LEGACY_DOCUMENT_FILE_TOO_LARGE",
+  "oversized content is rejected before base64 decoding");
 
 const legacyHeader = store.InventarioDocumentalLegado.rows[0].slice(0, 22);
 const legacyRows = store.InventarioDocumentalLegado.rows.map(row => row.slice(0, 22));
