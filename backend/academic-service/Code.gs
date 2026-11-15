@@ -13835,7 +13835,7 @@ function uploadStudentDocument(payload) {
       if (sameHash && sameHash === sha256Hash) {
         return {status:"success",documentoId:String(sameRecord[0] || ""),versionDocumento:String(sameRecord[13] || "1.0"),
           sha256Hash:sha256Hash,tieneArchivo:!!sameRecord[5],integridadVerificada:true,idempotent:true,
-          duplicate:true,duplicateType:"MISMO_DOCUMENTO",fileCreated:false};
+          duplicate:true,duplicateType:importBatchId && String(sameRecord[16] || "") === importBatchId ? "MISMO_LOTE" : "MISMO_DOCUMENTO",fileCreated:false};
       }
     }
     const inventorySheet = ss.getSheetByName("InventarioDocumentalLegado");
@@ -13893,7 +13893,7 @@ function uploadStudentDocument(payload) {
           {docId:docId,sourceDocumentId:sourceDocId,expedienteId:expedienteId,sha256Hash:sha256Hash,importBatchId:importBatchId},actor.role);
       } catch (_) {}
       return {status:"success",documentoId:docId,versionDocumento:version,sha256Hash:sha256Hash,
-        tieneArchivo:true,integridadVerificada:true,duplicate:true,duplicateType:"REFERENCIA_SIN_COPIA",
+        tieneArchivo:true,integridadVerificada:true,duplicate:true,duplicateType:sameBatch ? "MISMO_LOTE_REFERENCIADO" : "REFERENCIA_SIN_COPIA",
         referenciaDocumentoId:sourceDocId,fileCreated:false};
     }
     const now = new Date();
