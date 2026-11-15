@@ -79,7 +79,7 @@ assert.equal(writeCalls[1].payload.idempotencyKey,writeCalls[0].payload.idempote
 const structurallyBlocked=context.preview({...partialPayload,analisisEstructural:{duplicateHeaders:["Nombre"]}});
 assert.equal(structurallyBlocked.validForPartialImport,false);
 assert.throws(()=>context.import({...partialPayload,analisisEstructural:{duplicateHeaders:["Nombre"]},previewConfirmed:true,previewHash:structurallyBlocked.previewHash,allowPartialImport:true}),/IMPORT_PREVIEW_INVALID_OR_STALE/);
-assert.equal(writeCalls.length,1);
+assert.equal(writeCalls.length,2);
 const rollbackBatch={...base,filasData:[base.filasData[0],{...base.filasData[0],legacyId:"CUR-2",nombre:"Otro curso"}]};
 const rollbackPreview=context.preview(rollbackBatch);
 failWriteAt=4;
