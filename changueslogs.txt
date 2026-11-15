@@ -3863,3 +3863,8 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Mejorada la capa UI común: marcador visible para campos obligatorios y helpers de validación inline accesibles, preservando aria-describedby y la ayuda permanente.
 - Añadida ayuda de calificaciones 0–100 con step 0.01 en el dashboard docente, alineada con el auditor backend.
 - Añadida prueba DOM simulada para fallback, idempotencia, marcador required, ARIA, errores inline y cancelación de operaciones sensibles. Ejecución Node CLI/CI aún pendiente; no se atribuye PASS.
+
+
+[2026-11-15] TASK-130 — C1.759 — Corrección de ayuda para búsqueda de identidad
+- Separada la ayuda de búsqueda de DNI/RNE/otros identificadores de la ayuda de matrícula DNI 13 dígitos, evitando contradicción en Secretaría.
+- Actualizada clave remota y fallback; añadidas aserciones de contrato para impedir regresión.
