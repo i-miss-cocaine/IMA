@@ -14,6 +14,7 @@ vm.createContext({ window });
 const context = { window };
 vm.runInNewContext(source.slice(start, end), context);
 
+(async function runPdfClassifierTests() {
 const pages = {
   1: { async getTextContent() { return { items: [{ str: "Acta de cierre" }] }; }, async getOperatorList() { return { fnArray: [] }; } },
   2: { async getTextContent() { return { items: [{ str: " " }] }; }, async getOperatorList() { return { fnArray: [1] }; } },
@@ -43,3 +44,4 @@ assert.equal(failedPage.pages[0].classification, "NO_ANALIZADA");
 assert.ok(failedPage.warnings.some(item => item.code === "PDF_PAGE_ANALYSIS_FAILED"));
 await assert.rejects(() => window.analyzePdfDocumentStructure(null), /PDF_DOCUMENT_INVALID/);
 console.log("PASS PDF page classifier: digital, scanned, mixed, empty/vector-only, failed pages and invalid documents");
+})().catch(error => { console.error(error); process.exitCode = 1; });
