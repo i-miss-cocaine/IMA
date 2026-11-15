@@ -91,7 +91,8 @@ function makeClient(url) {
     SERVICE_URLS: { ACADEMIC: url, ACCOUNTING: url, USER: url },
     fetch,
     AbortController,
-    setTimeout(fn, ms) { return setTimeout(fn, ms === 60000 ? 25 : ms); },
+    testTimeoutMode: false,
+    setTimeout(fn, ms) { return setTimeout(fn, ms === 60000 && this.testTimeoutMode ? 25 : ms); },
     clearTimeout,
     localStorage: { getItem: () => null },
     sessionStorage: { getItem: () => null },
@@ -187,7 +188,9 @@ async function main() {
   assert.equal(missingService.code, "SERVICE_URL_MISSING");
   assert.equal(Object.prototype.hasOwnProperty.call(missingService, "data"), false);
 
+  client.testTimeoutMode = true;
   const timeout = await call("/timeout");
+  client.testTimeoutMode = false;
   assert.equal(timeout.status, "error");
   assert.equal(timeout.code, "REQUEST_TIMEOUT");
   assert.equal(timeout.isFallback, true);
