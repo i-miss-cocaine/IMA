@@ -103,7 +103,9 @@ context.buildImportPreview_ = function(payload) {
   const preparedRows = payload.filasData.map((row, index) => departmentPreflight.applicable
     ? departmentPreflight.rows[index]
     : context.mapMigrationRowToTarget_(row, payload.columnaMapeo, targetSchema));
-  return { status: "success", validForImport: true, previewHash: "SCOPE-FIXTURE", fileHash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", departmentPreflight, identityResolutions, preparedRows,
+  return { status: "success", validForImport: true, previewHash: "SCOPE-FIXTURE", fileHash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    targetExistenceSnapshot: { verified: true, idField: targetSchema.headers[0], targetRows: [] },
+    departmentPreflight, identityResolutions, preparedRows,
     departamentoDestino: departmentPreflight.departmentId, departamentosDestino: departmentPreflight.departmentIds, snapshotId: departmentPreflight.snapshotId,
     totalFilas: payload.filasData.length, filasValidas: payload.filasData.length, filasFallidas: 0, errores: [], advertencias: [] };
 };
