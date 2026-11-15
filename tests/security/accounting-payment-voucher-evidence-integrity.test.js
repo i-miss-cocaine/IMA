@@ -200,8 +200,11 @@ assert.equal(Object.keys(files).length,fileCountAfterApproval,"approved evidence
 
 const second = context.uploadPaymentVoucher(voucherPayload({cargoId:"CARGO-2",referencia:"REF-2",fileData:pdfData("v1-second")}));
 assert.equal(second.status,"success");
+const secondObserved = context.reviewPaymentVoucher({_verifiedUserId:"SEC-1",_verifiedRole:"Secretaría",comprobanteId:second.comprobanteId,nuevoEstado:"Observado"});
+assert.equal(secondObserved.status,"success");
 const secondRowIndex = rows.ComprobantesPago.findIndex((row,index)=>index>0&&row[map.ComprobanteID]===second.comprobanteId);
-rows.ComprobantesPago[secondRowIndex][map.Estado]="Observado";
+assert.equal(rows.ComprobantesPago[secondRowIndex][map.DecisionState],"Observado");
+assert.match(rows.ComprobantesPago[secondRowIndex][map.DecisionHash],/^[a-f0-9]{64}$/);
 const secondV2 = context.uploadPaymentVoucher(voucherPayload({cargoId:"CARGO-2",referencia:"REF-2",comprobanteGrupoId:second.comprobanteGrupoId,fileData:pdfData("v2-second")}));
 assert.equal(secondV2.status,"success");
 assert.equal(secondV2.versionNumero,2);
