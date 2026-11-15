@@ -53,6 +53,7 @@ label.htmlFor = target.id;
 target.labels = [label];
 const parent = new Node("div");
 parent.appendChild(target);
+body.appendChild(parent);
 const document = {
   body, head,
   createElement(tag) { return new Node(tag); },
