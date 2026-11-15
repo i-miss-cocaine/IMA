@@ -196,7 +196,10 @@ const routeStart = accounting.indexOf("const MIGRATION_OWNER_SCHEMAS_=");
 const routeEnd = accounting.indexOf("function migrationStableJson_", routeStart);
 const routeCalls = [];
 const routeHarness = {
-  PropertiesService: { getScriptProperties: () => ({ getProperty: key => key === "IMA_USER_SERVICE_URL" ? "https://user.example.test/exec" : "12345678901234567890123456789012" }) },
+  PropertiesService: { getScriptProperties: () => ({ getProperty: key =>
+    key === "IMA_USER_SERVICE_URL" ? "https://script.google.com/macros/s/AKfycbUSER123/exec" :
+    key === "IMA_ACADEMIC_SERVICE_URL" ? "https://script.google.com/macros/s/AKfycbACADEMIC123/exec" :
+    "12345678901234567890123456789012" }) },
   isAccountingTrustedAppsScriptEndpoint_: () => true,
   accountingComputeHmacSignature_: () => "signed-hmac",
   Utilities: { getUuid: () => "12345678-1234-1234-1234-123456789012", MacAlgorithm: { HMAC_SHA_256: "HMAC_SHA_256" }, computeHmacSignature: () => [1,2,3] },
