@@ -1748,10 +1748,10 @@ window.loadAbsenceJustificationQueue = async function() {
             ].join(' ');
             const attachmentButton = evidenceIds.length
                 ? evidenceIds.map(function(evidenceId, index) {
-                    return '<button type="button" onclick="window.openAbsenceJustificationAttachment(\\'' + id + '\\',\\'' + window.escapeAbsenceReviewHtml(evidenceId) + '\\')" class="mt-1 mr-2 text-xs text-blue-700 font-semibold hover:underline">Ver evidencia ' + (index + 1) + '</button>';
+                    return '<button type="button" onclick="window.openAbsenceJustificationAttachment(\'' + id + '\',\'' + window.escapeAbsenceReviewHtml(evidenceId) + '\')" class="mt-1 mr-2 text-xs text-blue-700 font-semibold hover:underline">Ver evidencia ' + (index + 1) + '</button>';
                   }).join('')
                 : (item.tieneAdjunto
-                    ? '<button type="button" onclick="window.openAbsenceJustificationAttachment(\\'' + id + '\\')" class="mt-1 text-xs text-blue-700 font-semibold hover:underline">Ver evidencia</button>'
+                    ? '<button type="button" onclick="window.openAbsenceJustificationAttachment(\'' + id + '\')" class="mt-1 text-xs text-blue-700 font-semibold hover:underline">Ver evidencia</button>'
                     : '');
             return '<tr>' +
                 '<td class="p-3 align-top"><strong class="block text-slate-800">' + id + '</strong><span class="text-[10px] text-slate-500">Estudiante: ' + window.escapeAbsenceReviewHtml(item.estudianteId || '—') + '</span></td>' +
