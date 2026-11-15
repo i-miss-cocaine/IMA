@@ -7936,6 +7936,7 @@ function processWorkflowDecision(payload) {
     }
 
     const solRow = solData[idx];
+    if (String(solRow[3] || "") === "Justificación de Ausencia") throw new Error("ABSENCE_REVIEW_REQUIRES_CANONICAL_WORKFLOW");
     const estadoActual = String(solRow[6] || "").trim();
     const asignadoAActual = String(solRow[7] || "").trim();
 
