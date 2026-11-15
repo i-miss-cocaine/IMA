@@ -965,3 +965,54 @@ Se aisló y corrigió un subflujo independiente en `generateSignatureAuditCertif
 #### Límites y continuidad
 - BETA-FUNC-103 pendiente: ejecutar con estudiantes/representantes, Secretaría, dos docentes, sesiones de varios días, evidencia sintética privada, políticas HABILITADO/TODO_O_NADA, modo de conformidad previa, reintentos, fallo parcial y revocación en entorno beta.
 - **Siguiente P0 elegible:** TASK-106 — integridad criptográfica, versionado y protección contra sustitución de evidencias documentales (orden 2). F34-Task01 y F34-Task04 están completadas; no se debe confundir este alcance con el versionado múltiple/inmutabilidad adicional de TASK-106.
+
+===============================================================================
+## C1.755 — IMA-EXEC-20261115-TASK106-EVIDENCE-INTEGRITY-01
+- **Fecha:** 2026-11-15
+- **Rama autorizada:** NG_beta_0.0.0.1_work
+- **Rama base:** NG_beta_0.0.0.1 — verificada sin modificaciones.
+- **Checkpoint anterior:** C1.754.
+- **Normativa aplicada:** Normas_Desarollo.md; sin despliegue ni cambios fuera de la rama autorizada.
+- **HEAD de implementación verificado:** 2db32093801846f2d74be81be54d4b6bb4dbdd57.
+- **Commits documentales previos:** BETA-FUNC-104 bd0c67c254e9fc8ee521d4276002ee929c24cf63; cierre TASK-106 f5ac9e7f3bf189be3b5eaf7cf946ba39c2a1cdad; changelog 700831939e3946d96ca3b274b43928a3ab375b69.
+
+### Tarea cerrada
+TASK-106 — Integridad criptográfica, versionado y protección contra sustitución de evidencias documentales.
+
+### Implementación
+- **USER:** cálculo SHA-256 sobre bytes reales y read-back; metadatos independientes por adjunto; IDs de evidencia/solicitud, nombre original, MIME, tamaño, fecha ISO, usuario, versión y referencia privada de Drive. Verificación al consultar/descargar; detección de alteración; versiones históricas; subsanación con rollback; varios adjuntos por solicitud; bloqueo de sustitución después de aprobación.
+- **ACADEMIC:** la aprobación vincula el snapshot/hash y los IDs exactos de evidencia revisados. El conjunto de evidencia solo puede cambiar tras estado RequiereInformacion; el historial conserva el conjunto anterior y el nuevo. La revisión se serializa con la subsanación.
+- **ACCOUNTING:** comprobantes de pago privados con SHA-256, SolicitudID, EvidenciaID, DriveFileID, nombre original, MIME, tamaño, fecha, versión y hash/actor/estado de decisión. Se detecta también el cambio de nombre. Observado permite una nueva versión; decisiones finales bloquean sustituciones. Versiones anteriores permanecen verificables y descargables por roles autorizados.
+- **Configuración:** BLOQUEO_AUTOMATICO_POR_DISCREPANCIA_HASH admite modo estricto y advertencia; configuración ausente, duplicada o inválida vuelve a modo estricto.
+- **UI:** Secretaría puede consultar y verificar evidencias sin exponer URLs públicas ni IDs de Drive en DTOs.
+
+### Archivos de implementación y pruebas
+- backend/user-service/Code.gs
+- backend/academic-service/Code.gs
+- backend/accounting-service/Code.gs
+- js/secretary.js
+- .github/workflows/department-scope-contract.yml
+- tests/security/academic-absence-justification-canonical.test.js
+- tests/security/user-service-request-attachment-integrity.test.js
+- tests/security/accounting-payment-voucher-evidence-integrity.test.js
+- tests/security/accounting-departmental-resource-access.test.js
+- tests/security/file-attachment-persistence-contract.test.js
+
+### Verificación
+- **Department Scope:** run 43746597438 — SUCCESS; contratos canónicos USER/ACADEMIC, múltiples evidencias, histórico, adjuntos privados, ACCOUNTING, versionado y sintaxis Apps Script.
+- **Identity Mapping and Transport Security:** run 43746563028 — SUCCESS.
+- **Department Reference Consumers:** run 43746563035 — SUCCESS.
+- **Node.js en GitHub Actions:** PASS; comprobación de sintaxis de servicios Apps Script PASS.
+- **Node local:** NOT RUN. No se realizó checkout local.
+- **CLI independiente:** no aplicable; el repositorio no declara package.json ni entrypoint CLI.
+- **Prueba real beta Apps Script/Sheets/Drive:** pendiente; BETA-FUNC-104 preparada en beta_test_Parte_0002.txt.
+
+### Hallazgos y límites
+- Los adjuntos históricos sin hash se identifican como LEGACY_UNVERIFIED. Pueden consultarse con advertencia por roles autorizados, pero no se presentan como evidencia verificada ni sustentan una nueva aprobación sin reingreso verificable.
+- No se desplegó código ni se modificó producción.
+- No se detectó ni se ejecutó una CLI independiente.
+
+### Continuidad
+- TASK-106 completada en código y CI.
+- Siguiente: auditar dependencias de TASK-108 y F34-Task06 antes de seleccionar la siguiente tarea elegible; no asumir que TASK-108 está desbloqueada solo por completar F34-Task04.
+===============================================================================
