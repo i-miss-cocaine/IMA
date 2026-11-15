@@ -229,4 +229,22 @@ store.InventarioDocumentalLegado.rows[0][0] = "UnexpectedHeader";
 assert.equal(context.getLegacyDocumentInventory({ sessionToken: "token-sec-a" }).code, "LEGACY_INVENTORY_SCHEMA_MISMATCH");
 store.InventarioDocumentalLegado.rows[0][0] = originalHeader;
 
-console.log("PASS legacy document inventory: tenant and department isolation, stable IDs, source deduplication, history, filters, CSV safety, validation, lock and schema checks");
+const permissionStart = source.indexOf("const ROLE_PERMISSIONS = {");
+const permissionEnd = source.indexOf("\n};", permissionStart);
+assert.ok(permissionStart >= 0 && permissionEnd > permissionStart);
+const permissionSource = source.slice(permissionStart, permissionEnd);
+for (const role of ["Director", "Subdirector", "Secretaría", "Contador", "RecursosHumanos", "Coordinador", "Consejeros", "Profesor", "Asistente"]) {
+  const roleStart = permissionSource.indexOf('"' + role + '":');
+  assert.ok(roleStart >= 0);
+  const nextRole = permissionSource.indexOf('\n  "', roleStart + 1);
+  const roleBlock = permissionSource.slice(roleStart, nextRole >= 0 ? nextRole : permissionSource.length);
+  assert.ok(roleBlock.includes("registerLegacyDocumentInventory"), "write permission missing for " + role);
+  assert.ok(roleBlock.includes("getLegacyDocumentInventory"), "read permission missing for " + role);
+}
+const dispatcherStart = source.indexOf("function doPost(e)");
+const dispatcherEnd = source.indexOf("\nfunction ", dispatcherStart + 10);
+const dispatcher = source.slice(dispatcherStart, dispatcherEnd > dispatcherStart ? dispatcherEnd : source.length);
+assert.ok(dispatcher.includes('case "registerLegacyDocumentInventory"'));
+assert.ok(dispatcher.includes('case "getLegacyDocumentInventory"'));
+
+console.log("PASS legacy document inventory: tenant and department isolation, stable IDs, source deduplication, history, filters, CSV safety, validation, locking, schema, RBAC and routing");
