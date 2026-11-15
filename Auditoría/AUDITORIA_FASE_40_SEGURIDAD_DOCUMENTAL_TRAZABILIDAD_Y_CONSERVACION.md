@@ -244,6 +244,7 @@ Si bien la plataforma cuenta con una base sólida de versionado documental (`His
 - **Acción ejecutable:** retirar `ANYONE_WITH_LINK` de documentos laborales/financieros; establecer ACL privadas; implementar `getSecureDocumentStream` con token efímero vinculado a usuario/documento/versión/operación; aplicar ABAC en backend y taxonomía `NivelSensibilidad` (médico, disciplinario, financiero, académico, laboral).
 - **Archivos/módulos:** `backend/academic-service/Code.gs`, `backend/accounting-service/Code.gs`, `backend/user-service/Code.gs`, `uploadEmployeeDocument`, `uploadPaymentVoucher`, `getStudentDocuments`, `ROLE_PERMISSIONS`, `DocumentosEstudiante`.
 - **Dependencias/riesgos:** TASK-296 (ACL/enlaces Drive seguros), AUD-NG-158/TASK-502 (ABAC), AUD-NG-127 (HMAC), F31-Task09/F34-Task04/F39-Task02; riesgo de enlaces filtrados y acceso fuera de ámbito.
+- **Alineación C1.770:** TASK-143 se vincula a estos prerrequisitos de F40-Task01; se elimina su referencia circular a F40-Task04 (firmas), que es posterior y no es prerrequisito para auditar permisos públicos.
 - **Alcance:** almacenamiento privado y entrega autenticada; no confiar en URL directa de Drive ni en ID enviado por cliente.
 - **Criterios de aceptación:** ningún archivo sensible con ANYONE_WITH_LINK; token aleatorio firmado y de vida corta; usuario/ámbito/documento/versión/operación validados server-side; categorías de sensibilidad con permisos mínimos; revocación efectiva; pruebas anónimas, IDOR, enlace filtrado, cambio de rol y revocación.
 - **Prioridad:** P0. **Estado:** Pendiente.
@@ -257,8 +258,10 @@ Si bien la plataforma cuenta con una base sólida de versionado documental (`His
 - **Dependencias/riesgos:** F34-Task04, F39-Task02, F29-Task11/15, F27-Task03; riesgo de calcular hash de URL/metadatos o de no asociarlo a la versión exacta.
 - **Alcance:** hash de contenido binario; no afirmar autenticidad de autor ni firma legal por usar SHA-256.
 - **Criterios de aceptación:** hash de bytes original/final; registro por versión; verificación antes de entrega y restauración; discrepancia bloquea operación y genera incidente; pruebas de sustitución, corrupción, archivo ausente y re-subida.
-- **Prioridad:** P0. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; no se calcula SHA-256 en upload y backup usa DJB2 simple.
+- **Prioridad:** P0. **Estado:** Parcial (C1.769).
+- **Evidencia C1.769:** Academic calcula SHA-256 sobre bytes originales antes de Drive.createFile; persiste por documento/versión, valida en consulta/descarga y detecta alteraciones. User añade HashSHA256 al inventario legado con migración aditiva y cálculo server-side. La deduplicación y referencias sin copia quedan implementadas para DocumentosEstudiantes.
+- **Brechas:** uploadEmployeeDocument, uploadPaymentVoucher, generateSchoolDocument, createSystemBackup y restoreSystemBackup aún no comparten un verificador SHA-256 completo; ACCOUNTING no tiene router/flujo de carga. Node CLI/Actions actuales y E2E real pendientes.
+- **Alineación C1.770:** TASK-144 se vincula a F34-Task04, F39-Task02, F29-Task11/15 y F27-Task03; se elimina la dependencia circular a F40-Task04 (firmas), que depende de la integridad SHA-256 y por tanto es posterior.
 
 ### [F40-Task03] Crear rol segregado de Auditor de solo lectura
 - **Hallazgo de origen:** F40-17; E2E-06.
