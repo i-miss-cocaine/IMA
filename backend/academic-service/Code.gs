@@ -773,6 +773,8 @@ function auditTeacherJustificationDenied_(action,payload,role,code) {
 
 function validateRolePermission(action, payload) {
   if (PUBLIC_ACTIONS.indexOf(action) !== -1) return { authorized: true };
+  const permissionAction = ["createStudentDocumentAccessToken", "getSecureDocumentStream"].indexOf(action) !== -1 ?
+    "getStudentDocumentFile" : action;
 
   let userRole = "Estudiante";
   let verifiedUserId = null;
@@ -799,25 +801,25 @@ function validateRolePermission(action, payload) {
     return { authorized: true, role: userRole };
   }
 
-  const ctxCheck = validateContextualAccess(action, payload, verifiedUserId, userRole);
+  const ctxCheck = validateContextualAccess(permissionAction, payload, verifiedUserId, userRole);
   if (!ctxCheck.authorized) {
     auditTeacherJustificationDenied_(action,payload,userRole,"CONTEXT_SCOPE_DENIED");
     return { authorized: false, role: userRole + " (" + ctxCheck.reason + ")" };
   }
 
-  const dynamicCheck = getDynamicPermissionsForRole(userRole, action);
+  const dynamicCheck = getDynamicPermissionsForRole(userRole, permissionAction);
   if (dynamicCheck !== null) {
     if (dynamicCheck === true) return { authorized: true, role: userRole };
   } else {
     const permitted = ROLE_PERMISSIONS[userRole] || [];
-    if (permitted.indexOf("*") !== -1 || permitted.indexOf(action) !== -1) {
+    if (permitted.indexOf("*") !== -1 || permitted.indexOf(permissionAction) !== -1) {
       return { authorized: true, role: userRole };
     }
   }
 
   const verifiedId = payload && payload._verifiedUserId;
   if (verifiedId) {
-    const activeDel = hasActiveDelegationForAction(verifiedId, action);
+    const activeDel = hasActiveDelegationForAction(verifiedId, permissionAction);
     if (activeDel) {
       if (payload) {
         payload._delegatedFrom = activeDel.delegante;
@@ -1192,7 +1194,9 @@ function doPost(e) {
       case "unlinkStudentGuardian": result = unlinkStudentGuardian(payload); break;
       case "uploadStudentDocument": result = uploadStudentDocument(payload); break;
       case "getStudentDocuments": result = getStudentDocuments(payload); break;
-      case "getStudentDocumentFile": result = getStudentDocumentFile(payload); break;
+      case "createStudentDocumentAccessToken": result = createStudentDocumentAccessToken(payload); break;
+      case "getSecureDocumentStream": result = getSecureDocumentStream(payload); break;
+      case "getStudentDocumentFile": result = { status: "error", code: "SECURE_DOCUMENT_STREAM_REQUIRED", message: "Use el proxy documental autenticado." }; break;
       case "verifyDocumentIntegritySha256": result = verifyDocumentIntegritySha256(payload); break;
       case "updateDocumentStatus": result = updateDocumentStatus(payload); break;
       case "getPendingDocumentsReport": result = getPendingDocumentsReport(payload); break;
@@ -4088,30 +4092,195 @@ function validateEvidenceFileAndPermissions(payload) {
 }
 
 // [T-GOV-03] [Fase Gobernanza y Seguridad] - Proxy de descarga segura y autorización de adjuntos en Google Drive
-function getSecureDocumentStream(payload) {
-  const { fileId, documentId } = payload || {};
-  if (!fileId && !documentId) return { status: "error", code: "RESOURCE_OWNER_UNRESOLVED", message: "Identificador de documento no proporcionado." };
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const documentSheet = ss.getSheetByName("DocumentosEstudiante");
-  const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
-  if (!documentSheet) return { status: "error", code: "RESOURCE_OWNER_UNRESOLVED", message: "Acceso denegado." };
-  const rows = documentSheet.getDataRange().getValues();
-  const docRow = rows.slice(1).find(function(r) {
-    const idMatches = !documentId || String(r[0] || "").trim() === String(documentId).trim();
-    const fileMatches = !fileId || String(r[5] || "").trim() === String(fileId).trim();
-    return idMatches && fileMatches;
-  });
-  if (!docRow) return { status: "error", code: "RESOURCE_OWNER_UNRESOLVED", message: "Acceso denegado." };
-  const access = assertStudentDocumentScopeAccess_(payload, ss, documentSheet, docRow, expSheet);
-  if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
-  const targetId = String(fileId || docRow[5] || "").trim();
-  if (!targetId || targetId !== String(docRow[5] || "").trim()) return { status: "error", code: "RESOURCE_OWNER_UNRESOLVED", message: "Acceso denegado." };
+const STUDENT_DOCUMENT_ACCESS_TOKEN_TTL_SECONDS_ = 60;
+
+function getStudentDocumentAccessTokenSecret_() {
+  const properties = PropertiesService.getScriptProperties();
+  let secret = String(properties.getProperty("IMA_DOCUMENT_ACCESS_TOKEN_SECRET") || "").trim();
+  if (secret.length >= 32) return secret;
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
   try {
-    const file = DriveApp.getFileById(targetId);
-    return { status: "success", fileId: targetId, fileName: file.getName(), mimeType: file.getMimeType(), downloadUrl: file.getDownloadUrl() };
-  } catch (e) {
-    return { status: "error", message: "Error al acceder al documento en Drive: " + e.message };
+    secret = String(properties.getProperty("IMA_DOCUMENT_ACCESS_TOKEN_SECRET") || "").trim();
+    if (secret.length < 32) {
+      secret = [Utilities.getUuid(), Utilities.getUuid(), Utilities.getUuid()].join("");
+      properties.setProperty("IMA_DOCUMENT_ACCESS_TOKEN_SECRET", secret);
+    }
+    return secret;
+  } finally {
+    lock.releaseLock();
   }
+}
+
+function studentDocumentTokenHex_(bytes) {
+  return Array.from(bytes || []).map(function(value) {
+    return ("0" + ((Number(value) + 256) % 256).toString(16)).slice(-2);
+  }).join("");
+}
+
+function studentDocumentTokenConstantTimeEqual_(left, right) {
+  const a = String(left || ""), b = String(right || "");
+  if (a.length !== b.length) return false;
+  let difference = 0;
+  for (let i = 0; i < a.length; i++) difference |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return difference === 0;
+}
+
+function studentDocumentTokenDigest_(token) {
+  return studentDocumentTokenHex_(Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256, String(token || ""), Utilities.Charset.UTF_8
+  ));
+}
+
+function studentDocumentTokenSignature_(encodedClaims) {
+  const signature = Utilities.computeHmacSignature(
+    Utilities.MacAlgorithm.HMAC_SHA_256, String(encodedClaims || ""), getStudentDocumentAccessTokenSecret_()
+  );
+  return studentDocumentTokenHex_(signature);
+}
+
+function createStudentDocumentAccessToken(payload) {
+  const request = payload || {};
+  const documentId = String(request.documentoId || request.documentId || "").trim();
+  const expedienteId = String(request.expedienteId || "").trim();
+  const solicitudId = String(request.solicitudId || "").trim();
+  if (!documentId || (!expedienteId && !solicitudId)) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento no disponible." };
+  }
+  const actor = getVerifiedAcademicIdentity_(request);
+  if (!actor || actor.authorized !== true || !actor.userId) {
+    return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", message: "Documento no disponible." };
+  }
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName("DocumentosEstudiante");
+  const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
+  if (!sheet) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento no disponible." };
+  const matches = sheet.getDataRange().getValues().slice(1).filter(function(row) {
+    return String(row[0] || "").trim() === documentId;
+  });
+  if (matches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento no disponible." };
+  const row = matches[0];
+  if ((expedienteId && String(row[1] || "").trim() !== expedienteId) ||
+      (solicitudId && String(row[2] || "").trim() !== solicitudId)) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento no disponible." };
+  }
+  const access = assertStudentDocumentScopeAccess_(request, ss, sheet, row, expSheet);
+  if (!access || access.authorized !== true) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento no disponible." };
+  }
+  const version = String(row[13] || "").trim();
+  const expectedHash = String(row[15] || row[14] || "").trim().toLowerCase();
+  if (!version || !/^[a-f0-9]{64}$/.test(expectedHash) || !String(row[5] || "").trim()) {
+    return { status: "error", code: "DOCUMENT_BINARY_METADATA_MISSING", message: "El documento no tiene versión y hash verificables." };
+  }
+  const issuedAt = Date.now();
+  const claims = {
+    tokenId: (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, ""),
+    documentId: documentId, version: version, userId: String(actor.userId),
+    operation: "DOWNLOAD", issuedAt: issuedAt,
+    expiresAt: issuedAt + STUDENT_DOCUMENT_ACCESS_TOKEN_TTL_SECONDS_ * 1000
+  };
+  const encodedClaims = Utilities.base64Encode(JSON.stringify(claims)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  const token = encodedClaims + "." + studentDocumentTokenSignature_(encodedClaims);
+  CacheService.getScriptCache().put("STUDENT_DOC_ACCESS_" + claims.tokenId, studentDocumentTokenDigest_(token),
+    STUDENT_DOCUMENT_ACCESS_TOKEN_TTL_SECONDS_);
+  try {
+    logStructuredEvent("ACADEMIC", "createStudentDocumentAccessToken", "INFO", "DOCUMENT_ACCESS_TOKEN_ISSUED",
+      "Se emitió un permiso efímero de descarga documental.", {
+        documentoId: documentId, versionDocumento: version, userId: String(actor.userId),
+        operation: "DOWNLOAD", expiresAt: claims.expiresAt
+      }, actor.role);
+  } catch (_) {}
+  return { status: "success", accessToken: token, documentoId: documentId,
+    versionDocumento: version, expiresAt: claims.expiresAt, expiresInSeconds: STUDENT_DOCUMENT_ACCESS_TOKEN_TTL_SECONDS_ };
+}
+
+function decodeStudentDocumentAccessToken_(token) {
+  const parts = String(token || "").split(".");
+  if (parts.length !== 2 || !/^[A-Za-z0-9_-]+$/.test(parts[0]) || !/^[a-f0-9]{64}$/i.test(parts[1])) {
+    throw new Error("DOCUMENT_ACCESS_TOKEN_INVALID");
+  }
+  const expectedSignature = studentDocumentTokenSignature_(parts[0]);
+  if (!studentDocumentTokenConstantTimeEqual_(expectedSignature, parts[1].toLowerCase())) {
+    throw new Error("DOCUMENT_ACCESS_TOKEN_INVALID");
+  }
+  let base64 = parts[0].replace(/-/g, "+").replace(/_/g, "/");
+  while (base64.length % 4) base64 += "=";
+  const claimsText = Utilities.newBlob(Utilities.base64Decode(base64)).getDataAsString("UTF-8");
+  const claims = JSON.parse(claimsText);
+  const now = Date.now();
+  if (!claims || !/^[a-f0-9]{48,64}$/i.test(String(claims.tokenId || "")) ||
+      claims.operation !== "DOWNLOAD" || !claims.documentId || !claims.version || !claims.userId ||
+      !Number.isFinite(Number(claims.issuedAt)) || !Number.isFinite(Number(claims.expiresAt)) ||
+      Number(claims.issuedAt) > now + 5000 || Number(claims.expiresAt) <= now ||
+      Number(claims.expiresAt) - Number(claims.issuedAt) > STUDENT_DOCUMENT_ACCESS_TOKEN_TTL_SECONDS_ * 1000) {
+    throw new Error("DOCUMENT_ACCESS_TOKEN_EXPIRED_OR_INVALID");
+  }
+  return claims;
+}
+
+function getSecureDocumentStream(payload) {
+  const request = payload || {};
+  const documentId = String(request.documentoId || request.documentId || "").trim();
+  const token = String(request.accessToken || "").trim();
+  const expedienteId = String(request.expedienteId || "").trim();
+  const solicitudId = String(request.solicitudId || "").trim();
+  if (!documentId || !token || (!expedienteId && !solicitudId)) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento no disponible." };
+  }
+  const actor = getVerifiedAcademicIdentity_(request);
+  if (!actor || actor.authorized !== true || !actor.userId) {
+    return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", message: "Documento no disponible." };
+  }
+  let claims;
+  try { claims = decodeStudentDocumentAccessToken_(token); }
+  catch (_) { return { status: "error", code: "DOCUMENT_ACCESS_TOKEN_INVALID", message: "Documento no disponible." }; }
+  if (claims.documentId !== documentId || claims.userId !== String(actor.userId) ||
+      (request.versionDocumento && String(request.versionDocumento) !== String(claims.version))) {
+    return { status: "error", code: "DOCUMENT_ACCESS_TOKEN_BINDING_MISMATCH", message: "Documento no disponible." };
+  }
+  const cache = CacheService.getScriptCache();
+  const cacheKey = "STUDENT_DOC_ACCESS_" + claims.tokenId;
+  const cachedDigest = cache.get(cacheKey);
+  if (!cachedDigest || !studentDocumentTokenConstantTimeEqual_(cachedDigest, studentDocumentTokenDigest_(token))) {
+    return { status: "error", code: "DOCUMENT_ACCESS_TOKEN_REVOKED_OR_REPLAYED", message: "Documento no disponible." };
+  }
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName("DocumentosEstudiante");
+  const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
+  if (!sheet) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento no disponible." };
+  const matches = sheet.getDataRange().getValues().slice(1).filter(function(row) {
+    return String(row[0] || "").trim() === documentId;
+  });
+  if (matches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento no disponible." };
+  const row = matches[0];
+  if ((expedienteId && String(row[1] || "").trim() !== expedienteId) ||
+      (solicitudId && String(row[2] || "").trim() !== solicitudId) ||
+      String(row[13] || "").trim() !== String(claims.version)) {
+    return { status: "error", code: "DOCUMENT_ACCESS_TOKEN_BINDING_MISMATCH", message: "Documento no disponible." };
+  }
+  const access = assertStudentDocumentScopeAccess_(request, ss, sheet, row, expSheet);
+  if (!access || access.authorized !== true) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento no disponible." };
+  }
+  // Consume before reading Drive: tokens are one-use and cannot be replayed.
+  cache.remove(cacheKey);
+  const result = getStudentDocumentFile(Object.assign({}, request, { documentoId: documentId, versionDocumento: claims.version }));
+  if (!result || result.status !== "success" || result.versionDocumento !== claims.version) {
+    try {
+      logStructuredEvent("ACADEMIC", "getSecureDocumentStream", "WARN", "DOCUMENT_ACCESS_DENIED",
+        "La entrega documental autenticada fue denegada.", { documentoId: documentId, userId: String(actor.userId) }, actor.role);
+    } catch (_) {}
+    return result && result.status === "error" ? result : { status: "error", code: "DOCUMENT_VERSION_CHANGED", message: "Documento no disponible." };
+  }
+  try {
+    logStructuredEvent("ACADEMIC", "getSecureDocumentStream", "INFO", "DOCUMENT_DOWNLOADED",
+      "Documento entregado mediante proxy autenticado.", {
+        documentoId: documentId, versionDocumento: claims.version, userId: String(actor.userId),
+        operation: "DOWNLOAD"
+      }, actor.role);
+  } catch (_) {}
+  return result;
 }
 
 // [REQ-EXP-001] [Fase 1: Registro y Expediente de Estudiantes] - Service backend endpoint (getStudentFile) para consulta y visualización del expediente digital del estudiante.
@@ -4155,7 +4324,7 @@ function getStudentFile(payload) {
   });
   const docRows = getOrCreateSheet(ss, "DocumentosEstudiante").getDataRange().getValues().slice(1);
   const docs = docRows.filter(r => String(r[1]).trim() === String(targetExpId).trim()).map(r => ({
-    documentoId: r[0], tipoDocumento: r[3], nombreArchivo: r[4], driveUrl: r[6],
+    documentoId: r[0], tipoDocumento: r[3], nombreArchivo: r[4],
     fechaRecepcion: r[7], estadoRevision: r[9]
   }));
   const movRows = getOrCreateSheet(ss, "MovimientosEstudiante").getDataRange().getValues().slice(1);
@@ -14326,6 +14495,7 @@ function getStudentDocuments(payload) {
   const cleanExpId = request.expedienteId ? String(request.expedienteId).trim().toLowerCase() : "";
   const cleanSolId = request.solicitudId ? String(request.solicitudId).trim().toLowerCase() : "";
   const explicitTarget = !!(cleanExpId || cleanSolId);
+  if (!explicitTarget) return { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "Debe indicar expedienteId o solicitudId." };
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const documentSheet = ss.getSheetByName("DocumentosEstudiante");
   const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
