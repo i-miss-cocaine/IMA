@@ -170,6 +170,10 @@ assert.equal(downloaded.integrityVerified,true);
 assert.equal(downloaded.sha256Actual,first.sha256);
 
 const firstFileId = stored[map.ComprobanteUrl];
+files[firstFileId].name = "renamed.pdf";
+const renamed = context.getPaymentVoucherFile({_verifiedUserId:"STU-1",_verifiedRole:"Estudiante",comprobanteId:first.comprobanteId});
+assert.equal(renamed.code,"EVIDENCE_TAMPERING_DETECTED","renaming a received evidence file must be detected");
+files[firstFileId].name = "voucher.pdf";
 files[firstFileId].bytes = Array.from(Buffer.from("%PDF-1.4\n%tampered\n1 0 obj\n<<>>\nendobj\nstartxref\n10\n%%EOF","utf8"));
 let blocked = context.getPaymentVoucherFile({_verifiedUserId:"STU-1",_verifiedRole:"Estudiante",comprobanteId:first.comprobanteId});
 assert.equal(blocked.code,"EVIDENCE_TAMPERING_DETECTED","strict policy must block altered evidence");
