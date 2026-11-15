@@ -318,3 +318,10 @@ La evaluación abarca la ayuda contextual inmediata (tooltips/popovers), las ins
 - Se agregó la clave estable identidad.busqueda en el catálogo remoto y fallback local, con explicación de que el identificador es un criterio de búsqueda y no confirma identidad.
 - js/secretary.js aplica la clave neutral a identity-search-identificacion y identity-search-responsable; se conserva matricula.identidad exclusivamente para el DNI de matrícula.
 - tests/security/user-service-ui-metadata.test.js verifica el contenido de la clave y evita regresión a la ayuda DNI-only.
+
+
+### Avance C1.760 — integración de validación nativa y cobertura CI
+- Se enlazaron los eventos de captura invalid/input/change a los helpers inline: el navegador informa el validationMessage junto al campo y, al corregirse el control, se limpia solo el error; la ayuda descriptiva y las asociaciones ARIA preexistentes se conservan.
+- tests/security/ui-common-permanent-help.test.js ahora cubre el listener de invalid en fase capture (el evento no burbujea), mensaje accesible y recuperación.
+- .github/workflows/ui-accessibility-contract.yml incluye el nuevo test, el contrato estático de formularios y los dashboards/scripts consumidos en sus filtros de push/PR. El workflow define Node 24 y comandos node.
+- El conector no permite consultar runs de push ni check-runs de este commit; no se afirma ejecución real del CLI ni éxito de Actions.
