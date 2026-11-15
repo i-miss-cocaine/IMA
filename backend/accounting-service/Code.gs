@@ -916,11 +916,11 @@ function getEmployeeDocuments(payload) {
     if (!id || documentIds[id]) return { status: "error", code: "RESOURCE_NOT_FOUND" };
     documentIds[id] = true;
   }
+  var privateFilesVerified = matchingDocuments.every(function(row) {
+    return enforcePrivateEmployeeDocumentFile_(row[documentIndex.ArchivoUrl]);
+  });
+  if (!privateFilesVerified) return { status: "error", code: "RESOURCE_NOT_FOUND" };
   if (access && access.authorized === true) {
-    var privateFilesVerified = matchingDocuments.every(function(row) {
-      return enforcePrivateEmployeeDocumentFile_(row[documentIndex.ArchivoUrl]);
-    });
-    if (!privateFilesVerified) return { status: "error", code: "RESOURCE_NOT_FOUND" };
     var fullDocuments = matchingDocuments.map(function(row) {
       return {
         documentoId: row[documentIndex.DocumentoID],
