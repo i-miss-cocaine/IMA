@@ -7650,6 +7650,54 @@ function toBase64(file) {
     let latestExcelReviewConfirmedHash = '';
     let excelPreflightRequestSequence = 0;
     let excelPreflightInFlight = false;
+    let excelImporterReturnFocusElement = null;
+
+    function setExcelImporterDialogOpen_(open) {
+        if (!modalExcelImporter) return;
+        if (open) {
+            excelImporterReturnFocusElement = document.activeElement;
+            modalExcelImporter.classList.remove('hidden');
+            if (fileInputExcel) fileInputExcel.focus();
+            else modalExcelImporter.focus();
+            return;
+        }
+        resetExcelSemanticPreflight_();
+        modalExcelImporter.classList.add('hidden');
+        if (excelImporterReturnFocusElement && typeof excelImporterReturnFocusElement.focus === 'function' &&
+            document.contains(excelImporterReturnFocusElement)) {
+            excelImporterReturnFocusElement.focus();
+        }
+        excelImporterReturnFocusElement = null;
+    }
+
+    function handleExcelImporterDialogKeydown_(event) {
+        if (!modalExcelImporter || modalExcelImporter.classList.contains('hidden')) return;
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            setExcelImporterDialogOpen_(false);
+            return;
+        }
+        if (event.key !== 'Tab') return;
+        const focusable = Array.from(modalExcelImporter.querySelectorAll(
+            'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+        )).filter(element => !element.hidden && element.getAttribute('aria-hidden') !== 'true' &&
+            element.getClientRects().length > 0);
+        if (!focusable.length) {
+            event.preventDefault();
+            modalExcelImporter.focus();
+            return;
+        }
+        const first = focusable[0], last = focusable[focusable.length - 1];
+        if (event.shiftKey && (document.activeElement === first || !modalExcelImporter.contains(document.activeElement))) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && (document.activeElement === last || !modalExcelImporter.contains(document.activeElement))) {
+            event.preventDefault();
+            first.focus();
+        }
+    }
+
+    modalExcelImporter?.addEventListener('keydown', handleExcelImporterDialogKeydown_);
 
     function buildExcelImportPreflightPayload_(config) {
         const input = config || {};
@@ -8027,11 +8075,11 @@ function toBase64(file) {
         if (previewContainerExcel) previewContainerExcel.classList.add('hidden');
         if (previewDiagnosticsExcel) previewDiagnosticsExcel.replaceChildren();
         if (previewSummaryExcel) previewSummaryExcel.textContent = '';
-        modalExcelImporter?.classList.remove('hidden');
+        setExcelImporterDialogOpen_(true);
     });
 
-    document.getElementById('btn-close-excel-importer')?.addEventListener('click', () => { resetExcelSemanticPreflight_(); modalExcelImporter?.classList.add('hidden'); });
-    document.getElementById('btn-cancel-excel-import')?.addEventListener('click', () => { resetExcelSemanticPreflight_(); modalExcelImporter?.classList.add('hidden'); });
+    document.getElementById('btn-close-excel-importer')?.addEventListener('click', () => setExcelImporterDialogOpen_(false));
+    document.getElementById('btn-cancel-excel-import')?.addEventListener('click', () => setExcelImporterDialogOpen_(false));
     sheetSelectExcel?.addEventListener('change', refreshExcelWorkbookPreview);
     headerRowSelectExcel?.addEventListener('change', refreshExcelWorkbookPreview);
 
