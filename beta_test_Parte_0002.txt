@@ -642,3 +642,20 @@
 - **Evidencia requerida:** IDs sintéticos, EntregaID, correlationId, hashes, eventos, estados de correo, configuración tenant-scoped y logs anonimizados. No almacenar correos reales ni IP no confiable.
 - **Estado:** Pendiente beta; pendiente infraestructura de IP confiable e integración contable.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-107 — TASK-130 — Ayudas permanentes, validación inline y confirmaciones críticas
+- **Módulo/roles:** dashboards docente, Secretaría/matrícula y Contabilidad; roles según permisos existentes.
+- **Pasos:**
+  1. Abrir un formulario con campos required y verificar asterisco visible, atributo required y ayuda debajo del campo.
+  2. Navegar con Tab hasta el control y activar su tooltip; cerrarlo con Escape. Repetir en viewport móvil y zoom 200%.
+  3. Probar DNI con 13 dígitos y formato 4-4-5, fecha ISO, año lectivo, monto positivo con hasta dos decimales, calificación entre 0 y 100 y adjuntos. Comparar cada regla con la validación backend activa.
+  4. Provocar un error de validación y verificar que aparece junto al campo con role=alert, aria-invalid y aria-describedby; limpiar el error y comprobar que la ayuda permanente permanece asociada.
+  5. Descartar un tour, ejecutar una operación crítica (eliminar/desactivar bloque, anular cargo o revertir pago) y comprobar que el diálogo obligatorio sigue apareciendo.
+  6. Cancelar la confirmación y verificar que no se llama al endpoint ni se modifica el registro. Confirmar en un fixture de prueba y verificar resultado/auditoría.
+  7. Verificar que importaciones y adjuntos muestran solo extensiones y límites que el backend realmente admite.
+- **Resultado esperado:** ayuda siempre visible y consistente, mensajes de error accesibles e independientes, y confirmaciones sensibles no suprimibles por preferencias de tutorial.
+- **Evidencia requerida:** capturas anonimizadas, claves de metadatos, resultados de validación backend y logs sintéticos de cancelación/confirmación.
+- **Estado:** Pendiente de ejecución Node CLI y validación beta real.
+===============================================================================
