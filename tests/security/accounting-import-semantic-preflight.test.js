@@ -18,7 +18,7 @@ const sheet={getRange(r,c,n,m){return{getValues(){return identityRows.slice(r-1,
 const targetRows=[["CursoID","Nombre","Nota","FechaInicio"],["CURSO-1","Matemáticas",80,"2025-01-01"]];
 const targetSheet={getDataRange(){return{getValues(){return targetRows.map(row=>row.slice());}};}};
 const ss={getSheetByName(name){if(name==="CorrespondenciaIdentificadores")return sheet;if(name==="Cursos")return targetSheet;return null;}};
-const schemas={curso:{service:"ACCOUNTING",sheet:"Cursos",headers:["CursoID","Nombre","Nota","FechaInicio"]},estudiante:{service:"ACADEMIC",sheet:"Estudiantes",headers:["EstudianteID","PersonaID"]}};
+const schemas={curso:{service:"ACCOUNTING",sheet:"Cursos",headers:["CursoID","Nombre","Nota","FechaInicio"]},estudiante:{service:"ACADEMIC",sheet:"ExpedientesEstudiantes",headers:["ExpedienteID","PersonaID"]}};
 const auditRows=[],writeCalls=[],rollbackCalls=[];
 let failWriteAt=0,runCounter=0;
 const audit={appendRow(row){auditRows.push(row);}};
@@ -30,11 +30,17 @@ const context={SPREADSHEET_ID:"TEST",MIGRATION_OWNER_SCHEMAS_:schemas,
  rollbackMigrationOwnerWrites_(applied){rollbackCalls.push(applied.slice());return[];},
  requestAccountingUserAuthorization_(action,payload){return action==="verifyAccountingSession"?{status:"success",authorized:true,userId:"U-1",role:"Administrador",institutionId:"INST-1"}:{status:"success",authorized:true,importPermissionVerified:true,userId:"U-1",role:"Administrador"};},
  getVerifiedAccountingIdentity_(){return{authorized:true,userId:"U-1",role:"Administrador"};},
+ requestAccountingTrustedOwnerSnapshot_(service,action,payload){
+  if(action!=="getMigrationTargetExistenceSnapshot")return{status:"error",code:"ACTION_NOT_ALLOWED"};
+  if(service==="ACADEMIC")return{status:"success",verified:true,service:"ACADEMIC",sheet:"ExpedientesEstudiantes",idField:"ExpedienteID",institutionId:"INST-1",existingTargetIds:["ESTUDIANTE-1"],targetRows:[]};
+  if(service==="USER")return{status:"success",verified:true,service:"USER",sheet:"Personas",idField:"PersonaID",institutionId:"INST-1",existingTargetIds:["PERSONA-1"],targetRows:[]};
+  return{status:"error",code:"OWNER_NOT_ALLOWED"};
+ },
  buildAccountingDepartmentalImportPreflight_(){return{valid:true,applicable:false,institutionId:"INST-1",rows:[]};},
  mapMigrationRowToTarget_(row,mapping){const out={};Object.keys(mapping.campos||{}).forEach(field=>out[field]=row[mapping.campos[field]]);return out;},
  migrationStableJson_:value=>JSON.stringify(value),migrationHash_:value=>crypto.createHash("sha256").update(String(value)).digest("hex"),
  Date,String,Number,Array,Object,JSON,RegExp,Error,isFinite};
-const funcs=["buildAccountingIdentityMapSnapshot_","resolveAccountingIdentityFromSnapshot_","buildMigrationTargetExistenceSnapshot_","buildImportPreview_","validateImportPreview","importDataWithColumnMapping"].map(extract);
+const funcs=["buildAccountingIdentityMapSnapshot_","resolveAccountingIdentityFromSnapshot_","buildMigrationTargetExistenceSnapshot_","buildAccountingRelatedPersonExistenceSnapshot_","buildImportPreview_","validateImportPreview","importDataWithColumnMapping"].map(extract);
 vm.createContext(context);vm.runInContext(header+"\n"+funcs.join("\n")+"\nthis.preview=buildImportPreview_;this.validate=validateImportPreview;this.import=importDataWithColumnMapping;",context);
 const base={nombreArchivo:"cursos.xlsx",destinoModulo:"Cursos",sistemaOrigen:"LEGACY",tipoEntidad:"curso",sessionToken:"signed",
  columnaMapeo:{identificador:"legacyId",campos:{Nombre:"nombre",Nota:"nota",FechaInicio:"fechaInicio"}},
@@ -112,8 +118,20 @@ identityRows.push(identityRows[1].slice());const duplicateMap=context.preview(ba
 assert.equal(duplicateMap.validForImport,false);assert.ok(duplicateMap.errores.some(x=>x.codigo==="IDENTITY_UNIQUENESS_VIOLATION"));identityRows.pop();
 const student={...base,destinoModulo:"Estudiantes",tipoEntidad:"estudiante",columnaMapeo:{identificador:"legacyId",campos:{PersonaID:"persona"}},filasData:[{legacyId:"EST-1",persona:"PER-1"}]};
 assert.equal(context.preview(student).validForImport,true);
-assert.equal(context.preview(student).targetExistenceSnapshot.verified,false);
+assert.equal(context.preview(student).targetExistenceSnapshot.verified,true);
+assert.equal(context.preview(student).relatedReferenceSnapshot.verified,true);
+assert.deepEqual(Array.from(context.preview(student).targetExistenceSnapshot.existingTargetIds),["ESTUDIANTE-1"]);
+assert.deepEqual(Array.from(context.preview(student).relatedReferenceSnapshot.existingTargetIds),["PERSONA-1"]);
 const orphan=context.preview({...student,filasData:[{legacyId:"EST-1",persona:"MISSING"}]});
 assert.equal(orphan.validForImport,false);assert.ok(orphan.errores.some(x=>x.codigo==="ORPHANED_REFERENCE"));
 assert.equal(context.preview({...student,filasData:[{legacyId:"EST-1"}]}).validForImport,false);
-console.log("Accounting semantic import preflight: identity snapshots, tenant isolation, structural blockers/warnings, row validation, related references and preview hash PASS.");
+const originalOwnerSnapshot=context.requestAccountingTrustedOwnerSnapshot_;
+context.requestAccountingTrustedOwnerSnapshot_=()=>({status:"error",code:"MIGRATION_OWNER_SERVICE_NOT_CONFIGURED"});
+const unverifiedRemote=context.preview(student);
+assert.equal(unverifiedRemote.validForImport,false);
+assert.equal(unverifiedRemote.validForPartialImport,false);
+assert.equal(unverifiedRemote.targetExistenceSnapshot.verified,false);
+assert.equal(unverifiedRemote.relatedReferenceSnapshot.verified,false);
+assert.ok(unverifiedRemote.errores.some(item=>item.codigo==="TARGET_EXISTENCE_UNVERIFIED"));
+context.requestAccountingTrustedOwnerSnapshot_=originalOwnerSnapshot;
+console.log("Accounting semantic import preflight: local/remote target snapshots, tenant isolation, row validation and stale-preview hash PASS.");
