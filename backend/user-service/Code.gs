@@ -6186,9 +6186,9 @@ function getAdministrativeRequests(payload) {
     if (estudianteId && String(row[2]).trim() !== String(estudianteId).trim()) return false;
     return true;
   }).map(function(row) {
-    const stored = String(row[5] || "").trim(), privateId = /^[A-Za-z0-9_-]{25,}$/.test(stored);
+    const stored = String(row[5] || "").trim();
     return { solicitudId:row[0], userId:row[1], estudianteId:row[2], tipoTramite:row[3], descripcion:row[4],
-      adjuntoUrl:privateId?"":row[5], tieneAdjunto:!!stored, estado:row[6]||"Enviada", asignadoA:row[7]||"Secretaría",
+      adjuntoUrl:"", tieneAdjunto:!!stored, estado:row[6]||"Enviada", asignadoA:row[7]||"Secretaría",
       observacionesAdmin:row[8]||"", fechaSolicitud:row[9]?new Date(row[9]).toISOString():null,
       fechaResolucion:row[10]?new Date(row[10]).toISOString():null };
   });

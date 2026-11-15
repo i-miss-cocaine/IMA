@@ -148,4 +148,101 @@ lockAvailable = false;
 assert.throws(() => voucherContext.upload({ userId: "student-1", montoReportado: 10, fileData: "YWJj", fileName: "evidence.pdf" }), /LOCK_TIMEOUT/);
 assert.equal(rollbackCount, 2);
 
+
+
+// Descargas privadas: autorización previa, privacidad incluso para referencias históricas y binario íntegro.
+const voucherDownloadFn = extractFunction(accounting, "getPaymentVoucherFile");
+assert.match(voucherDownloadFn, /file\.getSharingAccess\(\) !== DriveApp\.Access\.PRIVATE/);
+assert.match(voucherDownloadFn, /validateFileBinaryIntegrity/);
+let voucherSharing = "PRIVATE";
+let voucherBlobReads = 0;
+let voucherOwnerAllowed = true;
+const voucherDownloadContext = {
+  getVerifiedAccountingIdentity_: () => ({ authorized: true, userId: "student-1", role: "Estudiante" }),
+  assertPaymentVoucherOwnerAccess_: () => voucherOwnerAllowed ? ({ authorized: true }) : ({ authorized: false, code: "RESOURCE_SCOPE_DENIED" }),
+  extractDriveFileId: () => "legacy-file-id",
+  SpreadsheetApp: { openById: () => ({ getSheetByName: () => ({ getDataRange: () => ({ getValues: () => [
+    ["id","fecha","userId","alumno","cargoId","monto","metodo","referencia","archivo","estado","observaciones"],
+    ["VCH-1",new Date(),"student-1","Estudiante","GRAL",10,"Transferencia","REF","https://drive.google.com/file/d/legacy-file-id/view","En Revisión",""]
+  ] }) }) }) },
+  DriveApp: { Access: { PRIVATE: "PRIVATE" }, getFileById: () => ({
+    isTrashed: () => false,
+    getSharingAccess: () => voucherSharing,
+    getBlob: () => { voucherBlobReads++; return { getBytes: () => [1,2,3], getContentType: () => "application/pdf" }; },
+    getName: () => "evidence.pdf",
+    getMimeType: () => "application/pdf"
+  }) },
+  Utilities: { base64Encode: () => "YWJj" },
+  validateFileBinaryIntegrity: () => ({ valid: true, mimeType: "application/pdf", byteLength: 3 }),
+  logStructuredEvent: () => {},
+  SPREADSHEET_ID: "test"
+};
+vm.runInNewContext(voucherDownloadFn + "\nthis.download=getPaymentVoucherFile;", voucherDownloadContext);
+const privateVoucherDownload = voucherDownloadContext.download({ comprobanteId: "VCH-1" });
+assert.equal(privateVoucherDownload.status, "success");
+assert.equal(privateVoucherDownload.fileData, "YWJj");
+voucherSharing = "ANYONE_WITH_LINK";
+const publicLegacyVoucherDownload = voucherDownloadContext.download({ comprobanteId: "VCH-1" });
+assert.equal(publicLegacyVoucherDownload.code, "VOUCHER_FILE_NOT_PRIVATE");
+assert.equal(voucherBlobReads, 1, "public legacy files must be rejected before reading bytes");
+voucherSharing = "PRIVATE";
+voucherOwnerAllowed = false;
+const unauthorizedVoucherDownload = voucherDownloadContext.download({ comprobanteId: "VCH-1" });
+assert.equal(unauthorizedVoucherDownload.code, "RESOURCE_NOT_FOUND");
+assert.equal(voucherBlobReads, 1, "unauthorized callers must not read voucher bytes");
+
+// Las consultas de solicitudes nunca exponen URLs históricas, aunque el archivo tenga una referencia legacy.
+const requestsFn = extractFunction(user, "getAdministrativeRequests");
+assert.match(requestsFn, /adjuntoUrl:""/);
+assert.doesNotMatch(requestsFn, /adjuntoUrl:\s*row\[5\]/);
+const legacyRequestUrl = "https://drive.google.com/file/d/legacy-request-file/view";
+const requestRows = [
+  ["id","userId","studentId","type","description","attachment","state","assigned","notes","created","resolved"],
+  ["SOL-1","guardian-1","student-1","Trámite","Solicitud",legacyRequestUrl,"Enviada","Secretaría","","2026-01-01",""]
+];
+const requestListContext = {
+  getUserVerifiedRole: () => "Padre",
+  SpreadsheetApp: { openById: () => ({}) },
+  getOrCreateSheet: () => ({ getDataRange: () => ({ getValues: () => requestRows }) }),
+  SPREADSHEET_ID: "test"
+};
+vm.runInNewContext(requestsFn + "\nthis.list=getAdministrativeRequests;", requestListContext);
+const listedRequests = requestListContext.list({ _verifiedUserId: "guardian-1", userId: "guardian-1" });
+assert.equal(listedRequests.data.length, 1);
+assert.equal(listedRequests.data[0].adjuntoUrl, "");
+assert.equal(listedRequests.data[0].tieneAdjunto, true);
+
+// La descarga administrativa comprueba identidad/relación antes de abrir Drive y exige archivo privado.
+const requestDownloadFn = extractFunction(user, "getAdministrativeRequestAttachment");
+let requestFileLookups = 0, requestFileSharing = "PRIVATE", requestBlobReads = 0;
+const requestDownloadContext = {
+  getUserVerifiedRole: () => "Estudiante",
+  SpreadsheetApp: { openById: () => ({ getSheetByName: () => ({ getDataRange: () => ({ getValues: () => [
+    ["id","userId","studentId","type","description","attachment"],
+    ["SOL-1","guardian-1","student-1","Trámite","Solicitud","legacy-request-file-id-123456789012345"]
+  ] }) }) }) },
+  DriveApp: { Access: { PRIVATE: "PRIVATE" }, getFileById: () => {
+    requestFileLookups++;
+    return { isTrashed: () => false, getSharingAccess: () => requestFileSharing,
+      getBlob: () => { requestBlobReads++; return { getBytes: () => [1,2,3], getContentType: () => "application/pdf" }; },
+      getName: () => "evidence.pdf", getMimeType: () => "application/pdf" };
+  } },
+  Utilities: { base64Encode: () => "YWJj" },
+  validateFileBinaryIntegrity: () => ({ valid: true, mimeType: "application/pdf", byteLength: 3 }),
+  logStructuredEvent: () => {},
+  validateRolePermission: () => ({ authorized: false }),
+  SPREADSHEET_ID: "test"
+};
+vm.runInNewContext(requestDownloadFn + "\nthis.download=getAdministrativeRequestAttachment;", requestDownloadContext);
+const deniedRequestDownload = requestDownloadContext.download({ _verifiedUserId: "intruder", solicitudId: "SOL-1" });
+assert.equal(deniedRequestDownload.code, "RESOURCE_NOT_FOUND");
+assert.equal(requestFileLookups, 0, "unauthorized callers must not reach Drive");
+const allowedRequestDownload = requestDownloadContext.download({ _verifiedUserId: "student-1", solicitudId: "SOL-1" });
+assert.equal(allowedRequestDownload.status, "success");
+assert.equal(allowedRequestDownload.fileData, "YWJj");
+requestFileSharing = "ANYONE_WITH_LINK";
+const publicRequestDownload = requestDownloadContext.download({ _verifiedUserId: "student-1", solicitudId: "SOL-1" });
+assert.equal(publicRequestDownload.code, "ATTACHMENT_NOT_PRIVATE");
+assert.equal(requestBlobReads, 1, "public request files must be rejected before reading bytes");
+
 console.log("file-attachment-persistence-contract: PASS (private storage, fail-closed upload, scope, rollback)");

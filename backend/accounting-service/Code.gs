@@ -5355,10 +5355,9 @@ function getPaymentVoucherFile(payload) {
     if (!file || file.isTrashed()) {
       return { status: "error", code: "VOUCHER_FILE_UNAVAILABLE", message: "Archivo no disponible." };
     }
-    const storedReference = String(row[8] || "").trim();
-    if (/^[A-Za-z0-9_-]{25,}$/.test(storedReference) && file.getSharingAccess() !== DriveApp.Access.PRIVATE) {
+    if (file.getSharingAccess() !== DriveApp.Access.PRIVATE) {
       logStructuredEvent("ACCOUNTING","getPaymentVoucherFile","WARN","VOUCHER_FILE_NOT_PRIVATE",
-        "Se rechazó la entrega de un comprobante nuevo que no conserva permisos privados.",{comprobanteId:comprobanteId},actor.role);
+        "Se rechazó la entrega de un comprobante que no conserva permisos privados.",{comprobanteId:comprobanteId},actor.role);
       return {status:"error",code:"VOUCHER_FILE_NOT_PRIVATE",message:"Archivo no disponible."};
     }
     const blob = file.getBlob();
@@ -5382,6 +5381,12 @@ function getPaymentVoucherFile(payload) {
     };
     if (!allowedTypes[extension] || allowedTypes[extension] !== mimeType) {
       return { status: "error", code: "VOUCHER_FILE_TYPE_NOT_ALLOWED", message: "Tipo de archivo no permitido." };
+    }
+    const binaryValidation = validateFileBinaryIntegrity(Utilities.base64Encode(bytes), fileName, {
+      maxSizeBytes: 10 * 1024 * 1024, allowedExtensions: Object.keys(allowedTypes)
+    });
+    if (binaryValidation.mimeType !== mimeType) {
+      return { status: "error", code: "VOUCHER_FILE_CONTENT_MISMATCH", message: "Archivo no disponible." };
     }
 
     logStructuredEvent("ACCOUNTING","getPaymentVoucherFile","INFO","VOUCHER_FILE_DELIVERED",
