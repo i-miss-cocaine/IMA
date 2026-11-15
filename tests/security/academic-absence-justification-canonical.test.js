@@ -93,7 +93,7 @@ const context = {
 };
 const names = [
   "ensureAbsenceHeaders_", "absenceDateKey_", "absenceResolvePeriod_", "absenceResolveSessions_", "absenceResolveSessionsForDates_",
-  "absenceSheetMap_", "absenceInstitutionalPolicyValue_", "absenceJustificationPolicies_", "absenceTeacherConformityComplete_", "teacherJustificationActiveState_", "createCanonicalAbsenceJustification_", "createCanonicalAbsenceJustificationUnlocked_",
+  "absenceSheetMap_", "absenceInstitutionalPolicyValue_", "absenceJustificationPolicies_", "absenceTeacherConformityComplete_", "teacherJustificationActiveState_", "teacherJustificationSha256_", "createCanonicalAbsenceJustification_", "createCanonicalAbsenceJustificationUnlocked_",
   "absenceUpdateRequestProjection_", "absenceAttendanceSync_", "reviewCanonicalAbsenceJustification_",
   "reconcilePendingAttendanceJustifications", "submitAttendanceJustification", "computeDocumentSHA256"
 ];
@@ -295,7 +295,7 @@ const conformityBlocked = context.reviewCanonicalAbsenceJustification_({
 assert.equal(conformityBlocked.code, "TEACHER_CONFORMITY_REQUIRED");
 const acknowledgements = sheet("ConstanciasConocimientoDocente");
 acknowledgements.appendRow(["ConstanciaID","JustificacionID","DocenteUserId","SesionID","TipoConstancia","FechaConocimiento","HashRegistro","Estado","CorrelationID"]);
-acknowledgements.appendRow(["ACK-1","JUST-CONFORMITY01","DOC-1","SES-CONFORMITY","CONFORMIDAD","2026-11-17T10:00:00.000Z","HASH","ACTIVA",""]);
+acknowledgements.appendRow(["ACK-1","JUST-CONFORMITY01","DOC-1","SES-CONFORMITY","CONFORMIDAD","2026-11-17T10:00:00.000Z",context.teacherJustificationSha256_(["ACK-1","JUST-CONFORMITY01","DOC-1","SES-CONFORMITY","CONFORMIDAD","2026-11-17T10:00:00.000Z"].join("|")),"ACTIVA",""]);
 const conformityApproved = context.reviewCanonicalAbsenceJustification_({
   justificacionId: "JUST-CONFORMITY01", nuevoEstado: "Aprobada", actorId: "SEC-1", actorRole: "Secretaría"
 });
