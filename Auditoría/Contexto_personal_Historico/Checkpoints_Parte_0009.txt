@@ -408,5 +408,5 @@ C1.721 — IMA-EXEC-20261114-TASK200-01 — TASK-200 — Facturación automátic
 - **Limitaciones:** no se ejecutó Apps Script/Sheets desplegado ni E2E real de navegador. BETA-FUNC-094 queda Pendiente beta. No se usaron datos productivos.
 - **Estado:** TASK-392 completada en código, revisión y CI.
 - **Siguiente tarea elegible:** TASK-391 — indicadores de eficiencia operativa y análisis de demanda de transporte; verificar primero disponibilidad y contrato de F21-Task27, viajes, asignaciones y fuentes de costos.
-- **HEAD final:** se verificará después del commit documental; rama base debe permanecer en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **HEAD final de implementación:** 8f7714ea0edcb49e2fc7b496f374d9fbc550a792; **commit que registra C1.737:** 94827d968b29065a89355a8411a97ace416f05b2; rama base verificada en 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
