@@ -11036,12 +11036,17 @@ function resolveTeacherJustificationScope_(payload, requestedJustificationId) {
     var row=justRows[j], justId=String(row[justMap.JustificacionID]||"").trim();
     if(!justId || justificationIdCounts[justId]!==1 || (requestedJustificationId && justId!==String(requestedJustificationId).trim()))continue;
     var dateKey=absenceDateKey_(row[justMap.FechaAfectada]);
+    var affectedDates=[];
+    try{affectedDates=JSON.parse(String(justMap.FechasAfectadasJSON===undefined?"[]":row[justMap.FechasAfectadasJSON]||"[]"));}catch(_){continue;}
+    if(!Array.isArray(affectedDates)||!affectedDates.length)affectedDates=[dateKey];
+    affectedDates=affectedDates.map(function(value){return absenceDateKey_(value);}).filter(Boolean);
+    if(!affectedDates.length||new Set(affectedDates).size!==affectedDates.length)continue;
     var periodId=String(row[justMap.Periodo]||"").trim();
     var period=periods[periodId];
     var studentId=String(row[justMap.UserId]||"").trim();
     if(!dateKey || !period || !period.year || !studentId)continue;
     if(!period.start || !period.end || !teacherJustificationActiveState_(period.state))continue;
-    if(todayKey<period.start || todayKey>period.end || dateKey<period.start || dateKey>period.end)continue;
+    if(todayKey<period.start || todayKey>period.end || affectedDates.some(function(value){return value<period.start||value>period.end;}))continue;
     var rawSessions;
     try{rawSessions=JSON.parse(String(row[justMap.SesionIDsJSON]||"[]"));}catch(_){continue;}
     if(!Array.isArray(rawSessions) || !rawSessions.length)continue;
@@ -11051,7 +11056,7 @@ function resolveTeacherJustificationScope_(payload, requestedJustificationId) {
     rawSessions.forEach(function(sessionId){
       sessionId=String(sessionId||"").trim();
       var session=sessions[sessionId];
-      if(!session || session.teacher!==actor.userId || session.date!==dateKey)return;
+      if(!session || session.teacher!==actor.userId || affectedDates.indexOf(session.date)===-1)return;
       var candidates=Object.keys(assignedOffers).filter(function(offerId){
         var offer=offerById[offerId];
         return offer && teacherJustificationActiveState_(offer.state) &&
@@ -11086,7 +11091,7 @@ function resolveTeacherJustificationScope_(payload, requestedJustificationId) {
     var publicNotes=justMap.ObservacionesPublicas!==undefined?String(row[justMap.ObservacionesPublicas]||""):"";
     var dto={
       justificacionId:justId,estudianteNombre:String(enrollmentRecord.row[enrollmentMap.Alumno]||""),
-      fechaAfectada:dateKey,periodo:period.name||periodId,estado:String(row[justMap.EstadoRevision]||"Pendiente"),
+      fechaAfectada:dateKey,fechasAfectadas:affectedDates,periodo:period.name||periodId,estado:String(row[justMap.EstadoRevision]||"Pendiente"),
       observacionesPublicas:publicNotes,sesiones:visibleSessions,
       evidenciaDisponible:policy==="PERMITIR_VER_CONSTANCIA_MEDICA_COMPLETA" && teacherJustificationEvidenceMetadataValid_(row,justMap),
       grado:firstSession.grade,seccion:firstSession.section
