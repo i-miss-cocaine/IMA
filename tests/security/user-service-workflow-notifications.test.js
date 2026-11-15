@@ -14,11 +14,35 @@ function makeSheet(rows) {
   return {data,getLastRow(){return data.length;},getDataRange(){return {getValues(){return data.map(row=>row.slice());}};},
     appendRow(row){data.push(row.slice());},getRange(row,col){return {setValue(value){while(data.length<row)data.push([]);while(data[row-1].length<col)data[row-1].push("");data[row-1][col-1]=value;}};}};
 }
+function extractFunction(name) {
+  const start=source.indexOf("function "+name+"(");
+  assert.notEqual(start,-1,"missing function "+name);
+  const open=source.indexOf("{",start);
+  let depth=0,quote="",escaped=false,lineComment=false,blockComment=false;
+  for(let i=open;i<source.length;i++){
+    const c=source[i],next=source[i+1];
+    if(lineComment){if(c==="\\n")lineComment=false;continue;}
+    if(blockComment){if(c==="*"&&next==="/"){blockComment=false;i++;}continue;}
+    if(quote){if(escaped)escaped=false;else if(c==="\\\\")escaped=true;else if(c===quote)quote="";continue;}
+    if(c==="/"&&next==="/"){lineComment=true;i++;continue;}
+    if(c==="/"&&next==="*"){blockComment=true;i++;continue;}
+    if(c==="'"||c==='"'||c==="\x60"){quote=c;continue;}
+    if(c==="{")depth++;
+    else if(c==="}"&&--depth===0)return source.slice(start,i+1);
+  }
+  throw new Error("unclosed function "+name);
+}
 function loadContext(extra={}) {
-  const context={console,Date,Math,JSON,String,Number,Array,Object,Error,RegExp,
-    PropertiesService:{getScriptProperties(){return {getProperty(){return null;}};}},
-    SPREADSHEET_ID:"TEST",FRONTEND_URL:"https://portal.example.test/"};
-  vm.runInNewContext(source,context,{timeout:10000});
+  const context={console,Date,Math,JSON,String,Number,Array,Object,Error,RegExp};
+  const isolatedSource=[
+    'const SPREADSHEET_ID="TEST";',
+    'const FRONTEND_URL="https://portal.example.test/";',
+    extractFunction("escapeNotificationHtml_"),
+    extractFunction("sendMultiChannelNotification"),
+    extractFunction("dispatchWorkflowStatusNotification_"),
+    extractFunction("processWorkflowDecision")
+  ].join("\\n");
+  vm.runInNewContext(isolatedSource,context,{timeout:10000});
   Object.keys(extra).forEach(key=>{context[key]=extra[key];});
   return context;
 }
