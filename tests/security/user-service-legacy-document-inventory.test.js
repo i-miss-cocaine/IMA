@@ -116,12 +116,14 @@ const duplicate = context.registerLegacyDocumentInventory({
   record: Object.assign({}, record, { nombreArchivoOriginal: "Actas_2020_renombradas.pdf" })
 });
 assert.equal(duplicate.code, "LEGACY_DOCUMENT_ORIGIN_DUPLICATE");
+assert.equal(duplicate.existingDocumentId, created.documentId, "same-department duplicate can reference its existing record");
 assert.equal(store.InventarioDocumentalLegado.rows.length, 2);
 const crossDepartmentDuplicate = context.registerLegacyDocumentInventory({
   sessionToken: "token-sec-b", departmentId: "DEP-B", record
 });
 assert.equal(crossDepartmentDuplicate.code, "LEGACY_DOCUMENT_ORIGIN_DUPLICATE",
   "the same source document cannot be inventoried twice under another department in the same institution");
+assert.equal(crossDepartmentDuplicate.existingDocumentId, undefined, "duplicate detection must not disclose another department's document ID");
 
 const updated = context.registerLegacyDocumentInventory({
   sessionToken: "token-sec-a", departmentId: "DEP-A", documentId,
