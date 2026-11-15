@@ -375,7 +375,7 @@ function makeStatusHarness(options = {}) {
 }
 
 function makeManualSignatureHarness(options = {}) {
-  const headers=["FirmaID","SolicitudID","DocumentoID","FirmanteID","RolFirmante","TipoFirma","TokenVerificacion","FechaFirma","IPOrigen","DocumentoHash","SignatureHash"];
+  const headers=["FirmaID","SolicitudID","DocumentoID","FirmanteID","RolFirmante","TipoFirma","TokenVerificacion","FechaFirma","IpMetadata","DocumentoHash","SignatureHash","VersionDocumento","MetodoAutenticacion","TransaccionID"];
   const initial=options.rows||[];
   const rows=[headers].concat(initial.map(row=>row.slice()));
   const state={held:false,lockAttempts:0,opens:0,reads:0,appends:0,releases:0,ownershipCalls:0,events:[]};
@@ -383,6 +383,9 @@ function makeManualSignatureHarness(options = {}) {
     getDataRange(){assert.equal(state.held,true);state.reads++;return {getValues:()=>rows.map(row=>row.slice())};},
     appendRow(row){assert.equal(state.held,true);state.appends++;if(options.onAppend)options.onAppend(row.slice());rows.push(row.slice());}
   };
+  const fileBytes=[37,80,68,70,45,49,46,52,10,37,37,69,79,70];
+  const file={isTrashed:()=>false,getSharingAccess:()=>"PRIVATE",getName:()=>"document.pdf",
+    getBlob:()=>({getBytes:()=>fileBytes.slice(),getContentType:()=>"application/pdf"})};
   const context={
     validateRolePermission:action=>{assert.equal(action,"registerDocumentSignature");return {authorized:options.permissionAllowed!==false};},
     getUserVerifiedRole:payload=>{payload._verifiedUserId=options.actorId||"ACTOR-1";return options.role||"Director";},
@@ -392,17 +395,22 @@ function makeManualSignatureHarness(options = {}) {
     SPREADSHEET_ID:"SPREADSHEET",
     assertAdvancedSignatureDocumentScope_:(_payload,_ss,docId,requestId,operation)=>{
       state.ownershipCalls++;assert.equal(state.held,true);assert.equal(docId,"DOC-1");assert.equal(requestId,"SOL-1");assert.equal(operation,"UPDATE");
-      return {authorized:options.ownerAuthorized!==false,code:"RESOURCE_SCOPE_DENIED",documentId:"DOC-CANONICAL",departmentId:"D1"};
+      return {authorized:options.ownerAuthorized!==false,code:"RESOURCE_SCOPE_DENIED",documentId:"DOC-CANONICAL",departmentId:"D1",
+        userId:options.actorId||"ACTOR-1",role:options.role||"Director",driveFileId:"FILE-1",fileName:"document.pdf",
+        documentVersion:"v1",storedDocumentHash:"a".repeat(64)};
     },
     getOrCreateSheet:(_ss,name)=>{assert.equal(state.held,true);assert.equal(name,"FirmasConformidades");return sheet;},
-    Utilities:{getUuid:()=>"UUID-1"},
-    computeDocumentSHA256:value=>"HASH:"+value,
+    ensureDocumentSignatureSchema_:value=>value,
+    DriveApp:{Access:{PRIVATE:"PRIVATE"},getFileById:id=>{assert.equal(id,"FILE-1");return file;}},
+    Utilities:{getUuid:()=>"UUID-1",base64Encode:value=>Buffer.from(value).toString("base64")},
+    validateFileBinaryIntegrity:(_data,_name)=>({valid:true,detectedFormat:"pdf",mimeType:"application/pdf",byteLength:fileBytes.length}),
+    computeDocumentSHA256:value=>Array.isArray(value)?"a".repeat(64):"HASH:"+value,
     logStructuredEvent:(_service,_fn,_level,code,_message,data,role)=>state.events.push({code,data,role}),
     Date
   };
   vm.runInNewContext(extractFunction("registerDocumentSignature"),context);
   const payload={solicitudId:"SOL-1",documentoId:"DOC-1",firmanteId:options.signerId||"ACTOR-1",
-    tipoFirma:options.tipoFirma||"Conformidad Digital Institucional",documentoHash:options.documentoHash===undefined?"DOC-HASH-1":options.documentoHash};
+    tipoFirma:options.tipoFirma||"Conformidad Digital Institucional",documentoHash:options.documentoHash===undefined?"a".repeat(64):options.documentoHash};
   return {execute:()=>context.registerDocumentSignature(payload),state,rows,payload};
 }
 
@@ -410,7 +418,7 @@ function makeManualSignatureHarness(options = {}) {
   const valid=makeManualSignatureHarness();
   const result=valid.execute();
   assert.equal(result.status,"success");
-  assert.equal(result.documentoHash,"DOC-HASH-1");
+  assert.equal(result.documentoHash,"a".repeat(64));
   assert.match(result.signatureHash,/^HASH:/);
   assert.equal(valid.rows[1][2],"DOC-CANONICAL","persist canonical document identity");
   assert.equal(valid.rows[1][3],"ACTOR-1","the signer must be the verified actor");
@@ -422,7 +430,7 @@ function makeManualSignatureHarness(options = {}) {
   assert.equal(valid.state.releases,1);
 
   const existingRow=["SIG-EXISTING","SOL-1","DOC-CANONICAL","ACTOR-1","Director",
-    "Conformidad Digital Institucional","VERIF-EXISTING","2026-11-10T12:00:00.000Z","NO_DISPONIBLE","DOC-HASH-1","HASH:stable"];
+    "Conformidad Digital Institucional","VERIF-EXISTING","2026-11-10T12:00:00.000Z","NO_DISPONIBLE","a".repeat(64),"HASH:stable","v1","SESION_VERIFICADA","SIG-EXISTING"];
   const retry=makeManualSignatureHarness({rows:[existingRow]});
   const retryResult=retry.execute();
   assert.equal(retryResult.isExisting,true);
@@ -430,7 +438,7 @@ function makeManualSignatureHarness(options = {}) {
   assert.equal(retry.state.appends,0,"an exact retry must not append a second signature");
 
   const changedHash=makeManualSignatureHarness({rows:[existingRow],documentoHash:"OTHER-HASH"});
-  assert.throws(()=>changedHash.execute(),/SIGNATURE_ALREADY_REGISTERED/);
+  assert.throws(()=>changedHash.execute(),/DOCUMENT_HASH_MISMATCH/);
   assert.equal(changedHash.state.appends,0);
 
   const ambiguous=makeManualSignatureHarness({rows:[existingRow,existingRow]});
