@@ -298,6 +298,12 @@ assert.equal(conformityBlocked.code, "TEACHER_CONFORMITY_REQUIRED");
 const acknowledgements = sheet("ConstanciasConocimientoDocente");
 acknowledgements.appendRow(["ConstanciaID","JustificacionID","DocenteUserId","SesionID","TipoConstancia","FechaConocimiento","HashRegistro","Estado","CorrelationID"]);
 acknowledgements.appendRow(["ACK-1","JUST-CONFORMITY01","DOC-1","SES-CONFORMITY","CONFORMIDAD","2026-11-17T10:00:00.000Z",context.teacherJustificationSha256_(["ACK-1","JUST-CONFORMITY01","DOC-1","SES-CONFORMITY","CONFORMIDAD","2026-11-17T10:00:00.000Z"].join("|")),"ACTIVA",""]);
+const conformityApproved = context.reviewCanonicalAbsenceJustification_({
+  justificacionId: "JUST-CONFORMITY01", nuevoEstado: "Aprobada", actorId: "SEC-1", actorRole: "Secretaría"
+});
+assert.equal(conformityApproved.status, "success", "valid, hash-verified teacher conformity must unblock approval");
+assert.equal(attendance.getDataRange().getValues().find(row => row[0] === "REG-CONFORMITY")[6], true);
+
 const policySave = context.saveAbsenceJustificationPolicies({
   _verifiedUserId: "ADMIN-1", _verifiedRole: "Administrador",
   impacto: "INMEDIATO_AL_APROBAR_SECRETARIA", parcial: "HABILITADO"
@@ -311,13 +317,6 @@ const policySaveDenied = context.saveAbsenceJustificationPolicies({
   impacto: "INMEDIATO_AL_APROBAR_SECRETARIA", parcial: "HABILITADO"
 });
 assert.equal(policySaveDenied.code, "AUTH_PERMISSION_DENIED");
-
-const conformityApproved = context.reviewCanonicalAbsenceJustification_({
-  justificacionId: "JUST-CONFORMITY01", nuevoEstado: "Aprobada", actorId: "SEC-1", actorRole: "Secretaría"
-});
-assert.equal(conformityApproved.status, "success");
-assert.equal(attendance.getDataRange().getValues().find(row => row[0] === "REG-CONFORMITY")[6], true);
-policySheet.getRange(3, 2).setValue("INMEDIATO_AL_APROBAR_SECRETARIA");
 
 // Una solicitud que cubre varios días debe enlazar todas las sesiones exactas y sincronizarlas juntas.
 sessions.appendRow(["SES-MULTI-A","2026-11-18","","","10","A","MAT","DOC-1","Cerrada",""]);
