@@ -2457,7 +2457,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (files.length === 0) return;
 
             var MAX_SIZE_MB = 50;
-            var ALLOWED_EXT = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'heic', 'pdf', 'html', 'css', 'js', 'psc'];
+            var ALLOWED_EXT = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'heic', 'pdf', 'html', 'css', 'js', 'psc', 'xlsx'];
 
             var validFiles = [];
             for (var i = 0; i < files.length; i++) {
