@@ -35,6 +35,10 @@ assert.deepEqual(Array.from(fields["cobros.comprobante"].acceptedTypes), ["image
 assert.equal(fields["tramites.adjunto"].multiple, true);
 assert.equal(fields["tramites.adjunto"].maxBytes, 50 * 1024 * 1024);
 assert.ok(Array.from(fields["tramites.adjunto"].acceptedTypes).includes(".xlsx"));
+assert.equal(fields["importacion.xlsx"].multiple, false);
+assert.deepEqual(Array.from(fields["importacion.xlsx"].acceptedTypes), [".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]);
+assert.equal(fields["importacion.xlsx"].maxBytes, 10 * 1024 * 1024);
+assert.ok(fields["importacion.xlsx"].help.includes("cifrados, truncados o dañados"));
 assert.equal(fields["calificaciones.nota"].min, 0);
 assert.equal(fields["calificaciones.nota"].max, 100);
 assert.equal(fields["calificaciones.nota"].step, 0.01);
