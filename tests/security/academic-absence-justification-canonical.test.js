@@ -93,7 +93,7 @@ const context = {
 };
 const names = [
   "ensureAbsenceHeaders_", "absenceDateKey_", "absenceResolvePeriod_", "absenceResolveSessions_",
-  "absenceSheetMap_", "createCanonicalAbsenceJustification_", "createCanonicalAbsenceJustificationUnlocked_",
+  "absenceSheetMap_", "absenceInstitutionalPolicyValue_", "absenceJustificationPolicies_", "absenceTeacherConformityComplete_", "teacherJustificationActiveState_", "createCanonicalAbsenceJustification_", "createCanonicalAbsenceJustificationUnlocked_",
   "absenceUpdateRequestProjection_", "absenceAttendanceSync_", "reviewCanonicalAbsenceJustification_",
   "reconcilePendingAttendanceJustifications", "submitAttendanceJustification", "computeDocumentSHA256"
 ];
@@ -249,6 +249,58 @@ const lockResult = context.reviewCanonicalAbsenceJustification_({
 });
 assert.equal(lockResult.code, "LOCK_TIMEOUT");
 lockBusy = false;
+
+// Aprobación parcial: se conserva el conjunto solicitado y solo se marca como justificada la sesión expresamente aprobada.
+sessions.appendRow(["SES-PARTIAL-A","2026-11-16","","","10","A","MAT","DOC-1","Cerrada",""]);
+sessions.appendRow(["SES-PARTIAL-B","2026-11-16","","","10","A","MAT","DOC-1","Cerrada",""]);
+attendance.appendRow(["REG-PARTIAL-A","SES-PARTIAL-A","STU-1","Ausente","","",false,"",new Date("2026-11-16T12:00:00Z")]);
+attendance.appendRow(["REG-PARTIAL-B","SES-PARTIAL-B","STU-1","Ausente","","",false,"",new Date("2026-11-16T12:00:00Z")]);
+const partialMulti = create("JUST-PARTIAL-MULTI", "2026-11-16", "STU-1");
+assert.equal(partialMulti.status, "success");
+assert.deepEqual(Array.from(partialMulti.data.sesionIds).sort(), ["SES-PARTIAL-A","SES-PARTIAL-B"]);
+const partialDisabled = context.reviewCanonicalAbsenceJustification_({
+  justificacionId: "JUST-PARTIAL-MULTI", nuevoEstado: "Aprobada", actorId: "SEC-1", actorRole: "Secretaría",
+  sesionIdsAprobadas: ["SES-PARTIAL-A"]
+});
+assert.equal(partialDisabled.code, "ABSENCE_PARTIAL_APPROVAL_DISABLED", "TODO_O_NADA must reject a partial decision by default");
+const policySheet = sheet("ConfiguracionInstitucional");
+policySheet.appendRow(["Clave","Valor","Estado"]);
+policySheet.appendRow(["PERMITIR_JUSTIFICACION_PARCIAL_DIAS","HABILITADO","Activo"]);
+const partialEnabled = context.reviewCanonicalAbsenceJustification_({
+  justificacionId: "JUST-PARTIAL-MULTI", nuevoEstado: "Aprobada", actorId: "SEC-1", actorRole: "Secretaría",
+  sesionIdsAprobadas: ["SES-PARTIAL-A"]
+});
+assert.equal(partialEnabled.status, "success");
+assert.equal(partialEnabled.data.alcanceAprobacion, "PARCIAL");
+regRows = attendance.getDataRange().getValues();
+assert.equal(regRows.find(row => row[0] === "REG-PARTIAL-A")[6], true);
+assert.equal(regRows.find(row => row[0] === "REG-PARTIAL-B")[6], false, "unapproved sessions must remain unchanged");
+const partialRecordRows = sheet("JustificacionesAsistencia").getDataRange().getValues();
+const partialHeaderMap = {};
+partialRecordRows[0].forEach((header,index)=>{partialHeaderMap[header]=index;});
+const partialRecord = partialRecordRows.find((row,index)=>index>0 && row[partialHeaderMap.JustificacionID]==="JUST-PARTIAL-MULTI");
+assert.deepEqual(JSON.parse(partialRecord[partialHeaderMap.SesionIDsSolicitadasJSON]), ["SES-PARTIAL-A","SES-PARTIAL-B"]);
+assert.deepEqual(JSON.parse(partialRecord[partialHeaderMap.SesionIDsJSON]), ["SES-PARTIAL-A"]);
+assert.equal(partialRecord[partialHeaderMap.AlcanceAprobacion], "PARCIAL");
+
+// La política de conformidad previa exige una constancia CONFORMIDAD activa por cada sesión seleccionada.
+policySheet.appendRow(["JUSTIFICACION_IMPACTO_AUTOMATICO_ASISTENCIA","REQUIERE_CONFORMIDAD_PREVIA_DOCENTE","Activo"]);
+sessions.appendRow(["SES-CONFORMITY","2026-11-17","","","10","A","MAT","DOC-1","Cerrada",""]);
+attendance.appendRow(["REG-CONFORMITY","SES-CONFORMITY","STU-1","Ausente","","",false,"",new Date("2026-11-17T12:00:00Z")]);
+const conformityJustification = create("JUST-CONFORMITY01", "2026-11-17", "STU-1");
+assert.equal(conformityJustification.status, "success");
+const conformityBlocked = context.reviewCanonicalAbsenceJustification_({
+  justificacionId: "JUST-CONFORMITY01", nuevoEstado: "Aprobada", actorId: "SEC-1", actorRole: "Secretaría"
+});
+assert.equal(conformityBlocked.code, "TEACHER_CONFORMITY_REQUIRED");
+const acknowledgements = sheet("ConstanciasConocimientoDocente");
+acknowledgements.appendRow(["ConstanciaID","JustificacionID","DocenteUserId","SesionID","TipoConstancia","FechaConocimiento","HashRegistro","Estado","CorrelationID"]);
+acknowledgements.appendRow(["ACK-1","JUST-CONFORMITY01","DOC-1","SES-CONFORMITY","CONFORMIDAD","2026-11-17T10:00:00.000Z","HASH","ACTIVA",""]);
+const conformityApproved = context.reviewCanonicalAbsenceJustification_({
+  justificacionId: "JUST-CONFORMITY01", nuevoEstado: "Aprobada", actorId: "SEC-1", actorRole: "Secretaría"
+});
+assert.equal(conformityApproved.status, "success");
+assert.equal(attendance.getDataRange().getValues().find(row => row[0] === "REG-CONFORMITY")[6], true);
 
 sessions.appendRow(["SES-USER","2026-11-14","","","10","A","MAT","DOC-1","Cerrada",""]);
 attendance.appendRow(["REG-USER","SES-USER","STU-USER","Ausente","","",false,"",new Date("2026-11-14T12:00:00Z")]);
