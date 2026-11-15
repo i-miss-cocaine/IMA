@@ -10544,10 +10544,18 @@ function reconcilePendingAttendanceJustifications(payload) {
         if (String(requestRow[requestMap.TipoTramite] || "") !== "Justificación de Ausencia" ||
             String(requestRow[requestMap.SyncEstado] || "") !== "PENDIENTE") continue;
         var requestId = String(requestRow[requestMap.JustificacionID] || requestRow[requestMap.SolicitudID] || "").trim();
-        var canonicalExists = rows.some(function(existingRow, existingIndex) {
+        var canonicalIndex = rows.findIndex(function(existingRow, existingIndex) {
           return existingIndex > 0 && String(existingRow[map.JustificacionID] || "").trim() === requestId;
         });
-        if (canonicalExists) continue;
+        if (canonicalIndex > 0) {
+          var canonicalRow = rows[canonicalIndex];
+          requestSheet.getRange(q + 1, requestMap.SyncEstado + 1).setValue("SINCRONIZADO");
+          requestSheet.getRange(q + 1, requestMap.Estado + 1).setValue(String(canonicalRow[map.EstadoRevision] || "Pendiente"));
+          requestSheet.getRange(q + 1, requestMap.SesionIDsJSON + 1).setValue(String(canonicalRow[map.SesionIDsJSON] || "[]"));
+          requestSheet.getRange(q + 1, requestMap.UltimoError + 1).setValue(String(canonicalRow[map.UltimoError] || ""));
+          processed++;
+          continue;
+        }
         var created = createCanonicalAbsenceJustificationUnlocked_({
           justificacionId: requestId, solicitudId: requestId,
           studentId: String(requestRow[requestMap.EstudianteID] || "").trim(),
