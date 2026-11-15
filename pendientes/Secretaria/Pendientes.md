@@ -3723,6 +3723,7 @@
 - **Dependencias:** TASK-296, AUD-NG-158/TASK-502, AUD-NG-127, F31-Task09, F34-Task04 y F39-Task02 (prerrequisitos F40-Task01).
 - **Estado:** [ ] Pendiente
 
+- **Resolución C1.770:** se sustituyó la dependencia circular F40-Task04 por los prerrequisitos de F40-Task01 (TASK-296, AUD-NG-158/TASK-502, AUD-NG-127, F31-Task09, F34-Task04 y F39-Task02), según la auditoría Fase 40.
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 6208-6240; clave TASK-144; asignación única: Secretaria -->
 
 ---
@@ -3759,6 +3760,7 @@
 - **Dependencias:** F34-Task04, F39-Task02, F29-Task11/15 y F27-Task03 (prerrequisitos F40-Task02).
 - **Estado:** [ ] Pendiente
 
+- **Resolución C1.770:** se sustituyó la dependencia circular F40-Task04 por los prerrequisitos de F40-Task02 (F34-Task04, F39-Task02, F29-Task11/15 y F27-Task03), según la auditoría Fase 40.
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 6241-6272; clave TASK-145; asignación única: Secretaria -->
 
 ---
