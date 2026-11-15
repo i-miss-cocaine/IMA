@@ -4991,6 +4991,7 @@ function recordStudentPayment(payload) {
 // ---------------------------------------------------------------------------
 
 // [TASK-038] [F22-Task01] - Función auxiliar para validación binaria, seguridad y verificación de integridad
+// OpenXML package inspection is mirrored across service boundaries.
 function validateOpenXmlPackageStructure_(rawBytes, format, entries, maxExpandedBytes) {
   const kind = String(format || "").toLowerCase();
   if (kind !== "docx" && kind !== "xlsx") return null;
