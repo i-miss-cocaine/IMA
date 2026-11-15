@@ -3734,15 +3734,40 @@ function validateEvidenceFileAndPermissions(payload) {
   }
   try {
     const file = DriveApp.getFileById(fileId);
-    const actualMime = file.getMimeType();
-    const actualSize = file.getSize();
+    const actualMime = String(file.getMimeType() || "").toLowerCase().trim();
+    const actualSize = Number(file.getSize()) || 0;
+    const actualName = String(file.getName() || "").trim();
+    if (actualSize <= 0) return { status: "error", code: "EMPTY_FILE_REJECTED", message: "El archivo almacenado está vacío." };
     if (actualSize > maxSizeBytes) return { status: "error", code: "FILE_TOO_LARGE", message: "El archivo de evidencia almacenado excede el límite permitido de 10 MB." };
-    logStructuredEvent("ACADEMIC", "validateEvidenceFileAndPermissions", "INFO", "EVIDENCE_FILE_VALIDATED", "Archivo de evidencia validado para la identidad autenticada.", { fileId: fileId, actualMime: actualMime, actualSize: actualSize }, actor.role);
+    if (allowedMimeTypes.indexOf(actualMime) === -1) {
+      return { status: "error", code: "UNSUPPORTED_FILE_TYPE", message: "El tipo MIME real del archivo no está permitido." };
+    }
+    if (mimeType && String(mimeType).toLowerCase().trim() !== actualMime) {
+      return { status: "error", code: "FILE_MIME_MISMATCH", message: "El MIME declarado no coincide con el tipo real almacenado." };
+    }
+    if (typeof Utilities === "undefined" || typeof Utilities.base64Encode !== "function" ||
+        typeof validateFileBinaryIntegrity !== "function") {
+      return { status: "error", code: "FILE_BINARY_VALIDATION_UNAVAILABLE", message: "No está disponible la validación binaria del archivo." };
+    }
+    const blobBytes = file.getBlob().getBytes();
+    if (!blobBytes || !blobBytes.length || blobBytes.length !== actualSize) {
+      return { status: "error", code: "FILE_SIZE_MISMATCH", message: "El tamaño leído no coincide con el tamaño almacenado." };
+    }
+    const binaryValidation = validateFileBinaryIntegrity(Utilities.base64Encode(blobBytes), actualName, {
+      maxSizeBytes: maxSizeBytes, allowedExtensions: [".pdf", ".png", ".jpg", ".jpeg", ".webp"]
+    });
+    if (binaryValidation.byteLength !== actualSize || binaryValidation.mimeType !== actualMime) {
+      return { status: "error", code: "FILE_BINARY_MIME_MISMATCH", message: "La extensión, la cabecera binaria y el MIME real no coinciden." };
+    }
+    logStructuredEvent("ACADEMIC", "validateEvidenceFileAndPermissions", "INFO", "EVIDENCE_FILE_VALIDATED",
+      "Archivo de evidencia validado por ámbito, tamaño, MIME real y estructura binaria.",
+      { fileId: fileId, actualMime: actualMime, actualSize: actualSize, detectedFormat: binaryValidation.detectedFormat }, actor.role);
     return {
-      status: "success", fileId: fileId, fileName: file.getName(), mimeType: actualMime,
+      status: "success", fileId: fileId, fileName: actualName, mimeType: actualMime,
       fileSizeMb: (actualSize / (1024 * 1024)).toFixed(2), isPdf: actualMime === "application/pdf",
+      integrityVerified: true, detectedFormat: binaryValidation.detectedFormat, byteLength: binaryValidation.byteLength,
       previewUrl: "https://drive.google.com/file/d/" + fileId + "/preview",
-      message: "Archivo de evidencia verificado y protegido por el ámbito del expediente."
+      message: "Archivo de evidencia verificado por ámbito, MIME real y estructura binaria."
     };
   } catch (e) {
     return { status: "error", message: "Error al verificar archivo de evidencia en Google Drive: " + e.message };
