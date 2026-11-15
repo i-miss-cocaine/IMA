@@ -5486,6 +5486,25 @@ const DOCUMENT_DELIVERY_HEADERS_ = [
   "FechaActualizacion"
 ];
 
+function syncDepartmentalDocumentEmailRetry_(ss, deduplicationKey, notificationId) {
+  var prefix = "ENTREGA_DOCUMENTAL:";
+  var key = String(deduplicationKey || "");
+  if (key.indexOf(prefix) !== 0) return { status: "skipped", reason: "NOT_A_DOCUMENT_DELIVERY" };
+  var deliveryId = key.slice(prefix.length);
+  if (!deliveryId) return { status: "error", code: "DOCUMENT_DELIVERY_ID_INVALID" };
+  var read = getDocumentDeliverySheetForRead_(ss);
+  if (read.status !== "success" || !read.sheet) return { status: "error", code: read.code || "DOCUMENT_DELIVERY_NOT_FOUND", deliveryId: deliveryId };
+  var found = findDocumentDeliveryRow_(read.sheet, read.map, deliveryId);
+  if (found.status !== "success") return { status: "error", code: found.code, deliveryId: deliveryId };
+  var row = found.row, map = read.map;
+  if (String(row[map.EstadoCorreo] || "") === "ENVIADO") return { status: "success", idempotent: true, deliveryId: deliveryId };
+  row[map.EstadoCorreo] = "ENVIADO";
+  row[map.UltimoError] = "";
+  appendDocumentDeliveryEvent_(row, map, "DOCUMENT_EMAIL_RETRY_SENT", "SYSTEM", "Sistema", { notificationId: String(notificationId || "") });
+  writeDocumentDeliveryRow_(read.sheet, found.rowNumber, row);
+  return { status: "success", deliveryId: deliveryId, estadoCorreo: "ENVIADO" };
+}
+
 function ensureDocumentDeliverySheet_(ss) {
   var sheet = ss.getSheetByName("EntregasDocumentales");
   if (!sheet) {
@@ -6939,6 +6958,12 @@ function retryFailedNotificationsQueue(payload) {
           '<p style="font-size:12px;color:#6b7280">Aviso automático. La apertura del correo no constituye acuse formal de recepción documental.</p></div>';
         MailApp.sendEmail({ to: targetEmail, subject: "[IMA] " + titulo, body: mensaje, htmlBody: html });
         sheet.getRange(i + 1, 11).setValue("Entregado");
+        var deliverySync = syncDepartmentalDocumentEmailRetry_(ss, String(current[9] || ""), notifId);
+        if (deliverySync.status === "error") {
+          logStructuredEvent("USER", "retryFailedNotificationsQueue", "WARN", "DOCUMENT_EMAIL_STATUS_SYNC_FAILED",
+            "Correo enviado, pero el estado de la bandeja documental requiere reconciliación.",
+            { notifId: notifId, deliveryId: deliverySync.deliveryId || "" }, "Sistema");
+        }
         resolvedCount++;
       } catch (error) {
         logStructuredEvent("USER", "retryFailedNotificationsQueue", "WARN", "RETRY_MAIL_SEND_FAILED",
