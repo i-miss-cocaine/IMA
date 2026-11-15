@@ -34,6 +34,7 @@ on:
       - tests/security/accounting-complementary-services.test.js
       - tests/security/academic-admission-ownership.test.js
       - tests/security/user-service-signature-ownership.test.js
+      - tests/security/user-service-signature-provider-callback.test.js
       - tests/security/accounting-departmental-resource-access.test.js
       - tests/security/accounting-purchase-quotation-adjudication.test.js
       - tests/security/accounting-purchase-asset-capitalization.test.js
@@ -189,6 +190,8 @@ jobs:
         run: node tests/security/academic-admission-ownership.test.js
       - name: Run user-service signature ownership contract
         run: node tests/security/user-service-signature-ownership.test.js
+      - name: Run user-service signature provider callback contract
+        run: node tests/security/user-service-signature-provider-callback.test.js
       - name: Run generic resource ownership ABAC contract
         run: node tests/security/resource-ownership-abac.test.js
       - name: Run interdepartmental reference policy contract
@@ -214,6 +217,7 @@ jobs:
           node --check js/transport-analytics.js
           node --check js/api.js
           node --check tests/contracts/api-response-contract.test.js
+          node --check tests/security/user-service-signature-provider-callback.test.js
           node --check tests/regression/hr-vacation-dashboard-contract.test.js
           node --check js/ui-common.js
           node --check < backend/task-service/Code.gs
