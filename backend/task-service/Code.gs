@@ -1682,6 +1682,38 @@ function assertTaskServiceUploadSessionOwner(session,payload) {
   return actorId;
 }
 
+function validateTaskUploadFile_(fileName, mimeType, base64Length, byteLength) {
+  const maxBytes = 50 * 1024 * 1024;
+  const maxBase64Chars = 70 * 1024 * 1024;
+  if (!base64Length || base64Length > maxBase64Chars || !byteLength || byteLength > maxBytes) {
+    throw new Error("UPLOAD_SIZE_LIMIT: maximum file size is 50 MB.");
+  }
+  const extension = String(fileName || "").split(".").pop().toLowerCase();
+  const allowedMimeTypes = {
+    pdf: ["application/pdf"],
+    png: ["image/png"],
+    jpg: ["image/jpeg"],
+    jpeg: ["image/jpeg"],
+    gif: ["image/gif"],
+    webp: ["image/webp"],
+    heic: ["image/heic", "image/heif"],
+    html: ["text/html"],
+    htm: ["text/html"],
+    css: ["text/css"],
+    js: ["text/javascript", "application/javascript"],
+    psc: ["text/plain"],
+    xlsx: ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]
+  };
+  if (!Object.prototype.hasOwnProperty.call(allowedMimeTypes, extension)) {
+    throw new Error("UPLOAD_FILE_TYPE_NOT_ALLOWED: supported formats are PDF, PNG, JPG, GIF, WEBP, HEIC, HTML, CSS, JS, PSC and XLSX.");
+  }
+  const normalizedMime = String(mimeType || "").toLowerCase().trim();
+  if (allowedMimeTypes[extension].indexOf(normalizedMime) === -1) {
+    throw new Error("UPLOAD_MIME_TYPE_MISMATCH: file extension and MIME type do not match.");
+  }
+  return { extension: extension, mimeType: normalizedMime, maxBytes: maxBytes };
+}
+
 function uploadFile(payload) {
   const actorId=payload&&payload._verifiedUserId,role=payload&&payload._verifiedRole;
   const tareaId=String(payload&&payload.tareaId||"").trim(),fileData=payload&&payload.fileData,fileName=String(payload&&payload.fileName||"").trim();
@@ -1697,9 +1729,10 @@ function uploadFile(payload) {
   const match=parts[0].match(/^data:([^;]+);base64$/i);
   if(match)mimeType=match[1];
   else {const ext=fileName.split(".").pop().toLowerCase();const map={js:"text/javascript",css:"text/css",html:"text/html",txt:"text/plain",psc:"text/plain",heic:"image/heic"};mimeType=map[ext]||mimeType;}
-  if(!raw||raw.length>70*1024*1024)throw new Error("Archivo vacío o supera el límite permitido.");
+  if(!raw)throw new Error("Archivo vacío o supera el límite permitido.");
   const bytes=Utilities.base64Decode(raw.replace(/\s/g,""));
-  if(bytes.length>50*1024*1024)throw new Error("El archivo supera el límite de 50 MB.");
+  const uploadValidation=validateTaskUploadFile_(fileName,mimeType,raw.length,bytes.length);
+  mimeType=uploadValidation.mimeType;
   const blob=Utilities.newBlob(bytes,mimeType,fileName),root=DriveApp.getFolderById(DRIVE_FOLDER_ID);
   const grade=getOrCreateFolder(root,String(profile.grado||taskData[6]||"General"));
   const section=getOrCreateFolder(grade,String(profile.seccion||taskData[7]||"General"));
