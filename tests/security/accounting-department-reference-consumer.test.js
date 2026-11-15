@@ -40,7 +40,7 @@ function makeRuntime(options = {}) {
   };
   const context = {
     Date,String,Array,Object,Number,Math,JSON,isNaN,SPREADSHEET_ID:"TEST",
-    isAccountingTrustedAppsScriptEndpoint_(url){return /^https:\/\/user\.example\/exec$/.test(url);},
+    isAccountingTrustedAppsScriptEndpoint_(url){return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(url);},
     SpreadsheetApp:{openById(){return{getSheetByName(name){return sheets[name]||null;}};}},
     DriveApp: { Access: { PRIVATE: "PRIVATE" }, Permission: { NONE: "NONE" }, getFileById(id) {
       return { setSharing(access, permission) { privateCalls.push({ id, access, permission }); },
