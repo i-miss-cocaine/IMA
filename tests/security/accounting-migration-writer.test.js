@@ -101,6 +101,14 @@ const payload = {
   datos: { NombreCurso: "=HYPERLINK(\"https://evil.test\")", Categoria: "Capacitación", Modalidad: "Virtual", Estado: "Activo", FechaCreacion: "2026-02-01", UltimaModificacion: "2026-02-02" }
 };
 {
+  const target = new Sheet([schemas.curso.headers]);
+  sheets.set("Cursos", target);
+  assert.throws(() => runtime.api.write({ ...payload, idNuevoPlataforma: "CURSO-UNVERIFIED",
+    idempotencyKey: "KEY-UNVERIFIED", targetSnapshotVerified: false }),
+    /IMPORT_TARGET_SNAPSHOT_UNVERIFIED/);
+  assert.equal(target.rows.length, 1, "unverified destination cannot receive a new accounting row");
+}
+{
   const inserted = runtime.api.write(payload);
   assert.equal(inserted.status, "success");
   assert.equal(inserted.idempotent, false);
