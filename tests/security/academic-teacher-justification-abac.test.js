@@ -45,7 +45,7 @@ function extractConst(name, text = source) {
 }
 
 const store = Object.create(null);
-let lockBusy = false, uuid = 0, driveSharing = "PRIVATE";
+let lockBusy = false, uuid = 0, driveSharing = "PRIVATE", beforeLock = null;
 function sheet(name) {
   if (!store[name]) store[name] = [];
   const rows = store[name];
@@ -73,7 +73,7 @@ const context = {
   SPREADSHEET_ID:"TEST",
   SpreadsheetApp:{openById(){return {getSheetByName(name){return store[name]?sheet(name):null;},insertSheet(name){store[name]=[];return sheet(name);}};}},
   getOrCreateSheet(_ss,name){return sheet(name);},
-  LockService:{getScriptLock(){return {waitLock(){if(lockBusy)throw new Error("LOCK_BUSY");},releaseLock(){}};}},
+  LockService:{getScriptLock(){return {waitLock(){if(lockBusy)throw new Error("LOCK_BUSY");if(beforeLock){const fn=beforeLock;beforeLock=null;fn();}},releaseLock(){}};}},
   Utilities:{
     getUuid(){uuid++;return "00000000-0000-4000-8000-"+String(uuid).padStart(12,"0");},
     computeDigest(_alg,value){return Array.from(crypto.createHash("sha256").update(String(value)).digest()).map(v=>v>127?v-256:v);},
@@ -168,6 +168,7 @@ assert.equal(context.getTeacherStudentJustifications(outsider).data.length,0);
 const deniedRole=context.getTeacherStudentJustifications({actor:actor("STUDENT-1","Estudiante")});
 assert.equal(deniedRole.code,"AUTH_PERMISSION_DENIED");
 assert.ok(store.RegistroEventos.length>=2,"unauthorized access attempts must be audited");
+assert.ok(store.RegistroEventos.some(row=>String(row[3]||"")==="getTeacherStudentJustifications" && String(row[6]||"")==="TEACHER_JUSTIFICATIONS_LISTED" && String(row[8]||"")==="SUCCESS"),"successful teacher reads must be audited");
 context.auditTeacherJustificationDenied_("getTeacherStudentJustifications",{justificacionId:"JUST-00000001"},"Estudiante","ROLE_PERMISSION_DENIED");
 assert.ok(store.RegistroEventos.length>=3,"dispatcher-level denials must also be audited in RegistroEventos");
 
@@ -177,6 +178,11 @@ assert.equal(locked.code,"LOCK_TIMEOUT");
 lockBusy=false;
 const idorAck=context.acknowledgeTeacherStudentJustification(Object.assign({},outsider,{justificacionId:"JUST-00000001"}));
 assert.equal(idorAck.code,"RESOURCE_NOT_FOUND");
+beforeLock=()=>assignments.getRange(2,7).setValue("Revocada");
+const revokedBetweenCheckAndWrite=context.acknowledgeTeacherStudentJustification(Object.assign({},teacher1,{justificacionId:"JUST-00000001",sesionIds:["SESSION-MATH"]}));
+assert.equal(revokedBetweenCheckAndWrite.code,"RESOURCE_NOT_FOUND","assignment revocation between precheck and lock must deny the write");
+assert.equal(sheet("ConstanciasConocimientoDocente").getLastRow(),1,"revoked teacher must not persist an acknowledgment");
+assignments.getRange(2,7).setValue("Inactivo");
 const badSession=context.acknowledgeTeacherStudentJustification(Object.assign({},teacher1,{justificacionId:"JUST-00000001",sesionIds:["SESSION-ENG"]}));
 assert.equal(badSession.code,"TEACHER_JUSTIFICATION_SESSION_SCOPE_DENIED");
 

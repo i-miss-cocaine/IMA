@@ -10942,6 +10942,12 @@ function getTeacherStudentJustifications(payload) {
     return {status:"error",code:"TEACHER_JUSTIFICATION_SCOPE_UNAVAILABLE"};
   }
   if(!resolved || resolved.status!=="success")return resolved||{status:"error",code:"TEACHER_JUSTIFICATION_SCOPE_UNAVAILABLE"};
+  try {
+    var actor = getVerifiedAcademicIdentity_(payload || {});
+    logTeacherJustificationAccessEvent_(SpreadsheetApp.openById(SPREADSHEET_ID),
+      "getTeacherStudentJustifications", actor && actor.userId, actor && actor.role,
+      "TEACHER_JUSTIFICATIONS_LISTED", "", "SUCCESS");
+  } catch (_) {}
   return resolved;
 }
 
@@ -10962,6 +10968,16 @@ function acknowledgeTeacherStudentJustification(payload) {
   var lock=LockService.getScriptLock();
   try{lock.waitLock(10000);}catch(_){return {status:"error",code:"LOCK_TIMEOUT",retryable:true};}
   try{
+    var freshScope=resolveTeacherJustificationScope_(p,justId);
+    if(!freshScope || freshScope.status!=="success" || !freshScope.data.length){
+      logTeacherJustificationAccessEvent_(SpreadsheetApp.openById(SPREADSHEET_ID),
+        "acknowledgeTeacherStudentJustification",p._verifiedUserId,p._verifiedRole,
+        "TEACHER_JUSTIFICATION_SCOPE_CHANGED",justId,"DENIED");
+      return {status:"error",code:"RESOURCE_NOT_FOUND",httpStatus:403};
+    }
+    var freshAllowed=freshScope.data[0].sesiones.map(function(session){return session.sesionId;});
+    if(requested.some(function(id){return freshAllowed.indexOf(id)===-1;}))
+      return {status:"error",code:"TEACHER_JUSTIFICATION_SESSION_SCOPE_DENIED",httpStatus:403};
     var ss=SpreadsheetApp.openById(SPREADSHEET_ID);
     var sheet=getOrCreateSheet(ss,"ConstanciasConocimientoDocente");
     var map=absenceSheetMap_(sheet,TEACHER_JUSTIFICATION_ACK_HEADERS_);
