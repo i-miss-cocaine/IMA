@@ -285,14 +285,23 @@ assert.equal(listedRequests.data[0].adjuntoUrl, "");
 assert.equal(listedRequests.data[0].tieneAdjunto, true);
 
 // La descarga administrativa comprueba identidad/relación antes de abrir Drive y exige archivo privado.
+const requestDownloadHelperFn = extractFunction(user, "requestAttachmentHeaderMap_");
 const requestDownloadFn = extractFunction(user, "getAdministrativeRequestAttachment");
 let requestFileLookups = 0, requestFileSharing = "PRIVATE", requestBlobReads = 0;
+const requestDownloadHeaders = ["SolicitudID","UserId","EstudianteID","TipoTramite","Descripcion","AdjuntoUrl"];
+const requestDownloadRows = [
+  requestDownloadHeaders,
+  ["SOL-1","guardian-1","student-1","Trámite","Solicitud","legacy-request-file-id-123456789012345"]
+];
+const requestDownloadSheet = {
+  getLastRow: () => requestDownloadRows.length,
+  getLastColumn: () => requestDownloadHeaders.length,
+  getRange: (row,col,numRows,numCols) => ({ getValues: () => [requestDownloadRows[row-1].slice(col-1,col-1+(numCols||1))] }),
+  getDataRange: () => ({ getValues: () => requestDownloadRows })
+};
 const requestDownloadContext = {
   getUserVerifiedRole: () => "Estudiante",
-  SpreadsheetApp: { openById: () => ({ getSheetByName: () => ({ getDataRange: () => ({ getValues: () => [
-    ["id","userId","studentId","type","description","attachment"],
-    ["SOL-1","guardian-1","student-1","Trámite","Solicitud","legacy-request-file-id-123456789012345"]
-  ] }) }) }) },
+  SpreadsheetApp: { openById: () => ({ getSheetByName: () => requestDownloadSheet }) },
   DriveApp: { Access: { PRIVATE: "PRIVATE" }, getFileById: () => {
     requestFileLookups++;
     return { isTrashed: () => false, getSharingAccess: () => requestFileSharing,
@@ -305,7 +314,7 @@ const requestDownloadContext = {
   validateRolePermission: () => ({ authorized: false }),
   SPREADSHEET_ID: "test"
 };
-vm.runInNewContext(requestDownloadFn + "\nthis.download=getAdministrativeRequestAttachment;", requestDownloadContext);
+vm.runInNewContext(requestDownloadHelperFn + "\n" + requestDownloadFn + "\nthis.download=getAdministrativeRequestAttachment;", requestDownloadContext);
 const deniedRequestDownload = requestDownloadContext.download({ _verifiedUserId: "intruder", solicitudId: "SOL-1" });
 assert.equal(deniedRequestDownload.code, "RESOURCE_NOT_FOUND");
 assert.equal(requestFileLookups, 0, "unauthorized callers must not reach Drive");
