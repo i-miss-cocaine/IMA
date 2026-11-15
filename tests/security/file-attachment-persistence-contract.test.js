@@ -109,7 +109,7 @@ failFileSharing = false;
 
 const voucherFn = extractFunction(accounting, "uploadPaymentVoucher");
 const voucherHeaders = ["ComprobanteID","Fecha","UserId","Alumno","CargoID","MontoReportado","MetodoPago","Referencia","ComprobanteUrl","Estado","Observaciones",
-  "ComprobanteGrupoID","VersionNumero","SHA256","SizeBytes","MimeType","FechaRecepcionISO","EstadoIntegridad","EsVersionActual","DecisionHash","DecisionTimestamp","DecisionBy","DecisionIntegrityWarning"];
+  "ComprobanteGrupoID","SolicitudID","EvidenciaID","DriveFileID","NombreOriginal","VersionNumero","SHA256","SizeBytes","MimeType","FechaRecepcionISO","EstadoIntegridad","EsVersionActual","DecisionHash","DecisionTimestamp","DecisionBy","DecisionIntegrityWarning"];
 const voucherMap = Object.fromEntries(voucherHeaders.map((name,index)=>[name,index]));
 let rows = [voucherHeaders.slice()];
 let rollbackCount = 0;
@@ -152,6 +152,10 @@ assert.equal(result.comprobanteUrl, "");
 assert.equal(rows.length, 2);
 assert.equal(rows[1][8], "private-file-id");
 assert.equal(rows[1][voucherMap.SHA256], "a".repeat(64));
+assert.equal(rows[1][voucherMap.SolicitudID], rows[1][voucherMap.ComprobanteGrupoID]);
+assert.equal(rows[1][voucherMap.EvidenciaID], rows[1][voucherMap.ComprobanteID]);
+assert.equal(rows[1][voucherMap.DriveFileID], "private-file-id");
+assert.equal(rows[1][voucherMap.NombreOriginal], "evidence.pdf");
 appendFails = true;
 assert.throws(() => voucherContext.upload({ userId: "student-1", montoReportado: 10, fileData: "YWJj", fileName: "evidence.pdf" }), /sheet failure/);
 assert.equal(rollbackCount, 1);
