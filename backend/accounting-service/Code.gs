@@ -874,3 +874,55 @@ function migrationHash_(value) {
   var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(value), Utilities.Charset.UTF_8);
   return digest.map(function(byte) { return ("0" + ((byte + 256) % 256).toString(16)).slice(-2); }).join("");
 }
+
+
+/* Authenticated HTTP surface for the document-import preflight.
+ * Import writes remain deliberately unavailable until the ACCOUNTING owner-write
+ * and compensation path is implemented and covered by contract tests.
+ */
+function textResponse(value, correlationId) {
+  var body = value && typeof value === "object" && !Array.isArray(value) ?
+    Object.assign({}, value) : { status: "error", code: "INVALID_RESPONSE" };
+  if (!body.status) body.status = "success";
+  if (!body.timestamp) body.timestamp = new Date().toISOString();
+  if (correlationId) body.correlationId = String(correlationId);
+  if (body.status === "error" && !body.code) body.code = "INTERNAL_ERROR";
+  return ContentService.createTextOutput(JSON.stringify(body))
+    .setMimeType(ContentService.MimeType.TEXT);
+}
+
+function doGet() {
+  return textResponse({
+    status: "success", service: "ACCOUNTING",
+    configured: !!String(PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID") || "").trim()
+  });
+}
+
+function doPost(e) {
+  var correlationId = "";
+  try {
+    if (!e || !e.postData || typeof e.postData.contents !== "string" || !e.postData.contents) {
+      return textResponse({ status: "error", code: "REQUEST_BODY_REQUIRED" });
+    }
+    var request = JSON.parse(e.postData.contents);
+    if (!request || typeof request !== "object" || Array.isArray(request) ||
+        typeof request.action !== "string" || !request.action ||
+        !request.payload || typeof request.payload !== "object" || Array.isArray(request.payload)) {
+      return textResponse({ status: "error", code: "REQUEST_SCHEMA_INVALID" });
+    }
+    correlationId = String(request.correlationId || "").trim().slice(0, 128);
+    if (request.action === "validateImportPreview") {
+      return textResponse(validateImportPreview(request.payload), correlationId);
+    }
+    if (request.action === "importDataWithColumnMapping") {
+      return textResponse({ status: "error", code: "IMPORT_COMMIT_NOT_EXPOSED",
+        message: "La escritura de importaciones aún no está habilitada en este servicio." }, correlationId);
+    }
+    return textResponse({ status: "error", code: "ACTION_NOT_ALLOWED" }, correlationId);
+  } catch (error) {
+    var code = String(error && error.message || "");
+    if (!/^[A-Z0-9_]{1,80}$/.test(code)) code = "INTERNAL_ERROR";
+    return textResponse({ status: "error", code: code,
+      message: "No fue posible completar la solicitud." }, correlationId);
+  }
+}
