@@ -216,3 +216,36 @@
 - Pendiente: validar en beta la política POLITICA_DUPLICADOS_DOCUMENTALES, la integridad contra bytes reales de Drive y la persistencia real; completar la integración de importación ACCOUNTING después de habilitar de forma segura el commit de TASK-133. No se declara cierre por evidencia local/CI solamente.
 - Siguiente acción: continuar TASK-134 revisando si existe un flujo documental contable propietario que requiera hash persistido, sin inventar un servicio de almacenamiento paralelo; mantener TASK-135/F39-Task03 pendiente hasta disponer de evidencia suficiente de integridad y custodia.
 ===============================================================================
+
+===============================================================================
+## C1.776 — IMA-EXEC-20261115-TASK134-ACCOUNTING-HASH-AUDIT-LOCK-01
+- **Fecha:** 2026-11-15
+- **Rama:** NG_beta_0.0.0.1_work
+- **HEAD verificado antes del checkpoint:** db9b7bcc6eafa45a09d98f409deae255c4d46129
+- **Rama base:** NG_beta_0.0.0.1 — 44d9891132332e692dbe2ba8602b41f50a508a59; 3.318 commits por delante y 0 por detrás.
+- **Normativa:** Normas_Desarollo.md v1.4 aplicada.
+
+### TASK-134 — auditoría SHA-256 de archivos de importación ACCOUNTING
+- Se identificó una condición de carrera en appendAccountingMigrationFileHashAudit_: la creación/validación del esquema de AuditoriaMigracionesArchivos ocurría antes de adquirir ScriptLock. Dos importaciones concurrentes podían observar la hoja vacía e insertar encabezados duplicados.
+- Se movió la lectura/creación/validación de hoja dentro de la sección protegida por ScriptLock. Un timeout ahora ocurre antes de consultar o modificar la hoja.
+- Se añadió tests/security/accounting-import-file-audit.test.js para verificar encabezados únicos, HashSHA256 independiente del nombre, previewHash, institución, estado, registros escritos, correlación, lock y timeout sin acceso a hoja.
+- Se añadió el contrato al workflow Accounting Import Preflight Contract.
+
+### Archivos y commits
+- backend/accounting-service/Code.gs
+- tests/security/accounting-import-file-audit.test.js
+- .github/workflows/accounting-import-preflight-contract.yml
+- Commits de implementación/prueba/CI: acd7ff9d1b2fd8d6613e0aeaf9f15303c32b8a7a, cbdad7fd7a7529074ae0eeab04b34bcccf3ed7ab, d56eeae5fd73571f7103886c031d8b3f30531c81, 0558c9346ef9425c2a9a67669842634090e28b72 y db9b7bcc6eafa45a09d98f409deae255c4d46129.
+
+### Verificaciones
+- GitHub Actions Accounting Import Preflight Contract run 43772273147 SUCCESS en HEAD db9b7bcc. El test de auditoría informa: institution binding, filename-independent SHA-256 persistence, preview binding, status and lock release PASS.
+- El mismo run confirma PASS para Accounting XLSX SHA-256 preview binding, USER legacy document inventory, Academic private document storage, migración/compensación ACCOUNTING y ACADEMIC, snapshots, OpenXML, PDF/OCR y preflight semántico/departamental.
+- Department Reference Consumers Local Contract run 43772245095 SUCCESS.
+- Workflows transversales ajenos siguen fallando por causas ya identificadas: Department Scope por resolveEmployeeDepartmentId_ ausente en contrato de RR. HH.; Identity mapping/transport por backend/transport-service/Code.gs inexistente; Task-Service por verifySessionToken ausente. No son errores del test de auditoría SHA-256.
+- Node CLI local no ejecutado por ausencia de checkout; GitHub Actions ejecutó Node 24 en checkout limpio. No se ha ejecutado beta real Drive/Sheets ni importación institucional.
+
+### Estado y continuidad
+- TASK-134 continúa En ejecución. El hash/auditoría de archivo XLSX ACCOUNTING queda probado a nivel de helper y Node 24; la persistencia real de la auditoría depende de habilitar importDataWithColumnMapping tras TASK-133.
+- No se identificó ruta ACCOUNTING de creación/custodia de documentos físicos en Drive; no se creó un repositorio paralelo. La integración contable pendiente queda limitada al flujo documental propietario si se identifica, y a la activación segura del commit de importación.
+- TASK-135/F39-Task03 continúa bloqueada por evidencia completa de TASK-134/TASK-144 y beta de custodia. Siguiente paso: continuar TASK-133/134 con verificación beta y revisar los flujos documentales propietarios sin ampliar el alcance por suposición.
+===============================================================================
