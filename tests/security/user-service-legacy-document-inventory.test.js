@@ -114,7 +114,12 @@ const context = {
 };
 function getRole(payload) { const claim = claims[payload && payload.sessionToken]; return claim ? claim.role : "NO_ACCESS"; }
 vm.createContext(context);
-vm.runInContext(constants + "\n" + names.map(extractFunction).join("\n") +
+const registerStart = source.indexOf("function registerLegacyDocumentInventory(payload)");
+const registerEnd = source.indexOf("function getUIMetadataCatalog(payload)", registerStart);
+assert.ok(registerStart >= 0 && registerEnd > registerStart, "register handler must remain before the metadata endpoint");
+const registerFunction = source.slice(registerStart, registerEnd);
+const extractedHelpers = names.filter(name => name !== "registerLegacyDocumentInventory").map(extractFunction);
+vm.runInContext(constants + "\n" + extractedHelpers.join("\n") + "\n" + registerFunction +
   "\nthis.registerLegacyDocumentInventory=registerLegacyDocumentInventory;" +
   "\nthis.getLegacyDocumentInventory=getLegacyDocumentInventory;", context);
 
