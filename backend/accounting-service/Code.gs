@@ -11533,6 +11533,7 @@ function auditEmployeeSelfServiceDenied_(action, actor, filters) {
   );
 }
 
+// This handler performs SELF or department ownership checks per expediente; its self-service branch is enforced here rather than by the generic department-scope gate.
 function getEmployeeRecords(payload) {
   const actor = getVerifiedAccountingIdentity_(payload);
   if (!actor.authorized) {
