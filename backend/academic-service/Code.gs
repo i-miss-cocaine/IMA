@@ -13750,7 +13750,7 @@ function getDocumentDuplicatePolicy_(ssForAccess) {
   var matches = [];
   for (var i = 1; i < rows.length; i++) {
     if (String(rows[i][keyIndex] || "").trim() === "POLITICA_DUPLICADOS_DOCUMENTALES" &&
-        String(rows[i][stateIndex] || "").trim().toLowerCase() === "activo") matches.push(rows[i]);
+        ["ACTIVO","ACTIVE","HABILITADO","SI","TRUE"].indexOf(String(rows[i][stateIndex] || "").trim().toUpperCase()) !== -1) matches.push(rows[i]);
   }
   if (matches.length > 1) return { status: "error", code: "DOCUMENT_DUPLICATE_POLICY_AMBIGUOUS" };
   if (!matches.length) return { status: "success", policy: defaultPolicy };
