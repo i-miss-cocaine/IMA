@@ -10616,7 +10616,14 @@ function reviewCanonicalAbsenceJustification_(payload) {
     var approvalScope = null;
     var evidenceIds = Array.isArray(p.evidenceIds) ? p.evidenceIds.map(function(value) { return String(value || "").trim(); }).filter(Boolean) : [];
     var evidenceSnapshotHash = String(p.evidenceSnapshotHash || "").trim().toLowerCase();
-    if (target === "Aprobada" && evidenceIds.length && !/^[a-f0-9]{64}$/.test(evidenceSnapshotHash)) return { status: "error", code: "EVIDENCE_DECISION_HASH_REQUIRED" };
+    if (target === "Aprobada") {
+      var storedEvidenceIds = [];
+      try { storedEvidenceIds = JSON.parse(String(row[map.EvidenciaIDsJSON] || "[]")); } catch (_) { return { status: "error", code: "EVIDENCE_LINKAGE_CORRUPT" }; }
+      if (!Array.isArray(storedEvidenceIds)) return { status: "error", code: "EVIDENCE_LINKAGE_CORRUPT" };
+      storedEvidenceIds = storedEvidenceIds.map(function(value) { return String(value || "").trim(); }).filter(Boolean).sort();
+      if (JSON.stringify(storedEvidenceIds) !== JSON.stringify(evidenceIds.slice().sort())) return { status: "error", code: "EVIDENCE_LINKAGE_MISMATCH" };
+      if (evidenceIds.length && !/^[a-f0-9]{64}$/.test(evidenceSnapshotHash)) return { status: "error", code: "EVIDENCE_DECISION_HASH_REQUIRED" };
+    }
     if (target === "Aprobada") {
       var policies = absenceJustificationPolicies_(ss);
       var requestedSessions = [];
