@@ -7806,6 +7806,10 @@ function toBase64(file) {
                 table.className = 'min-w-full text-xs border-collapse';
                 const thead = document.createElement('thead');
                 const headRow = document.createElement('tr');
+                const rowNumberHeader = document.createElement('th');
+                rowNumberHeader.className = 'border-b border-slate-200 bg-slate-50 px-3 py-2 text-left font-bold text-slate-700';
+                rowNumberHeader.textContent = 'Fila';
+                headRow.appendChild(rowNumberHeader);
                 result.headers.forEach(header => {
                     const cell = document.createElement('th');
                     cell.className = 'border-b border-slate-200 bg-slate-50 px-3 py-2 text-left font-bold text-slate-700';
@@ -7815,8 +7819,12 @@ function toBase64(file) {
                 thead.appendChild(headRow);
                 table.appendChild(thead);
                 const tbody = document.createElement('tbody');
-                result.previewRows.slice(0, 5).forEach(values => {
+                result.previewRows.slice(0, 5).forEach((values, previewIndex) => {
                     const row = document.createElement('tr');
+                    const rowNumberCell = document.createElement('td');
+                    rowNumberCell.className = 'border-b border-slate-100 px-3 py-2 font-semibold text-slate-700';
+                    rowNumberCell.textContent = String((result.dataRowNumbers || [])[previewIndex] || (previewIndex + 2));
+                    row.appendChild(rowNumberCell);
                     values.forEach(value => {
                         const cell = document.createElement('td');
                         cell.className = 'border-b border-slate-100 px-3 py-2 text-slate-600';
