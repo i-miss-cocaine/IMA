@@ -1569,10 +1569,13 @@
   - [ ] Comprobar que un reenvío conserva el historial del intento previo sin destruirlo.
   - [ ] Modificar una copia posterior del documento y verificar que el acuse original permanece vinculado a la versión efectivamente recibida.
 - **Dependencias:** F34-Task04 (integridad criptográfica), F34-Task06 (notificaciones de envío y entrega), historial institucional.
-- **Estado:** [ ] Pendiente
+- **Estado:** [ ] En ejecución — subalcance USER completado en código/CI; pendientes IP confiable, integración contable, push, adjuntos múltiples y validación beta.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 5723-5755; clave TASK-130; asignación única: Secretaria -->
 
+- **Avance C1.757 (2026-11-15):** se agregaron bandeja personal del emisor (getMyDepartmentalOutbox), alias sendInstitutionalDispatch, lote de despachos con un registro/acuse independiente por documento y destinatario, canales PLATAFORMA/CORREO con consentimiento explícito, modalidad tenant-scoped MODALIDAD_ACUSE_RECIBO_NOTIFICACIONES, y reconciliación del estado de correo al completar reintentos. Se conservan eventos de intentos previos y la apertura automática se etiqueta por separado; no se falsifica FechaConfirmacion.
+- **Verificación de código/CI:** parseo USER y test de contrato PASS; GitHub Actions ima/department-scope-contract SUCCESS en Node 24. Harness de contrato aislado en V8 PASS para lote multi-documento, consentimiento, bandeja personal, filtro anti-impersonación y modo automático.
+- **Brechas no cerradas:** Apps Script Web App no expone una IP cliente confiable en el contexto actual; no se registra una IP inventada. accounting-service/Code.gs está vacío y no existe fuente canónica de comprobantes contables para conectar. No hay proveedor push ni modelo de múltiples adjuntos en la emisión actual; el despacho por lote requiere un documento emitido canónico por destinatario para preservar ownership.
 ---
 
 <!-- ID: TASK-130 | Fuentes: Pendientes.md ; pendientes/Secretaria/Pendientes.md -->
