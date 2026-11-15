@@ -1709,9 +1709,18 @@
   - [ ] Los registros válidos no se pierden por errores aislados de otras filas.
   - [ ] Los errores nunca se transforman silenciosamente en valores predeterminados.
 - **Dependencias:** F39-Task01.
-- **Estado:** [ ] Pendiente
+- **Estado:** [ ] En ejecución — validadores binarios/OpenXML, PDF, Excel y preflight semántico avanzados; UI de mapeo y beta real pendientes.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 5864-5896; clave TASK-134; asignación única: Secretaria -->
+
+- **Avance C1.763 (2026-11-15):** se endureció validateFileBinaryIntegrity en Academic, Accounting y User: límites de ZIP, rutas seguras, entradas duplicadas, cifrado, tamaños/ratios y verificación de cabeceras; descompresión y validación XML en Apps Script. DOCX cuenta párrafos, tablas, controles de contenido y campos; XLSX verifica workbook/worksheets.
+- **PDF:** el clasificador por página diferencia texto digital, escaneo raster, mixto y páginas vacías/vectoriales; errores de análisis quedan como NO_ANALIZADA.
+- **Excel:** teacher-dashboard incluye revisión de solo lectura con selector explícito de hoja/fila de encabezados, detección de hojas ocultas, fórmulas sin caché, encabezados duplicados/repetidos, celdas combinadas, filas vacías, tipos inconsistentes y tabla de muestra con números originales.
+- **Preflight semántico:** valida fechas, identificadores, notas 0–100, referencias de estudiantes/personas, tenant y departamento; advierte sobrescrituras en destinos ACCOUNTING locales y advierte cuando el destino remoto no puede verificarse. El hash incorpora el estado de destino para rechazar previsualizaciones obsoletas.
+- **Importación parcial:** solo con confirmación explícita allowPartialImport; filas estructuralmente bloqueadas no se importan; errores de escritura compensan el lote; hallazgos se registran en AuditoriaMigraciones.
+- **Verificación:** Node 24 y GitHub Actions Department Scope Contract SUCCESS en e9013de331cd0b49e7d5b9e9372be4a3d8548b19 para OpenXML, preflight semántico, PDF y Excel. Se añadió después detección de sobrescritura y persistencia de advertencias; la ejecución CI de esos últimos cambios está en curso.
+- **Dependencia F39-Task01:** backend de inventario legado revisado en C1.762; suficiente para continuar validación tenant/departamento. F39-Task01 sigue parcial por UI y beta.
+- **Pendiente para cierre:** conectar la UI de Secretaría/Contabilidad al endpoint de preflight con mapeo y confirmación; verificación de existencia en USER/ACADEMIC; OCR operativo; validación beta real con Apps Script/Drive/Sheets; pruebas de accesibilidad y de errores en datos reales anonimizados. No se declara completada.
 
 ---
 
