@@ -168,6 +168,7 @@ function makeMigrationOrchestrationFixture(options){
  // Reapply isolated dependencies after evaluating the source slice, which contains production helpers.
  ctx.getVerifiedAccountingIdentity_=()=>({authorized:true,userId:"U-1",role:"Director",institutionId:"INST-1"});
  ctx.accountingHasInstitutionalImportPermission_=()=>true;
+ ctx.getOrCreateSheet=()=>audit;
  ctx.resolveCrossReferenceIdentifier=p=>p.idOriginalLegado==="PENDING"?{status:"pending_review",code:"IDENTITY_REVIEW_REQUIRED"}:{status:"success",idMapeo:"MAP-"+p.idOriginalLegado,idNuevoPlataforma:"PER-SHARED"};
  ctx.buildImportPreview_ = function(payload) {
   const schema = ctx.schemas[payload.tipoEntidad];
