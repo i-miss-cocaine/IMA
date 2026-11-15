@@ -856,6 +856,19 @@ function assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId) {
   return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
 }
 
+function enforcePrivateEmployeeDocumentFile_(fileUrl) {
+  var url = String(fileUrl || "").trim();
+  var match = url.match(/\/d\/([A-Za-z0-9_-]{10,})/i) || url.match(/[?&]id=([A-Za-z0-9_-]{10,})/i);
+  if (!match || typeof DriveApp === "undefined" || !DriveApp.Access || !DriveApp.Permission) return false;
+  try {
+    var file = DriveApp.getFileById(match[1]);
+    file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
+    return file.getSharingAccess() === DriveApp.Access.PRIVATE;
+  } catch (error) {
+    return false;
+  }
+}
+
 function getEmployeeDocuments(payload) {
   var input = payload || {};
   var actor = getVerifiedAccountingIdentity_(input);
@@ -904,6 +917,10 @@ function getEmployeeDocuments(payload) {
     documentIds[id] = true;
   }
   if (access && access.authorized === true) {
+    var privateFilesVerified = matchingDocuments.every(function(row) {
+      return enforcePrivateEmployeeDocumentFile_(row[documentIndex.ArchivoUrl]);
+    });
+    if (!privateFilesVerified) return { status: "error", code: "RESOURCE_NOT_FOUND" };
     var fullDocuments = matchingDocuments.map(function(row) {
       return {
         documentoId: row[documentIndex.DocumentoID],
