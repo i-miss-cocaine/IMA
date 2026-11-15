@@ -237,8 +237,9 @@ assert.equal(retried.status, "success");
 assert.equal(retried.estadoDespacho, "ACEPTADO_POR_PLATAFORMA");
 const retriedAgain = context.retryDepartmentalDocumentDelivery({ _verifiedUserId: "SEC-1", _verifiedRole: "Secretaría", deliveryId: failedDispatch.deliveryId });
 assert.equal(retriedAgain.idempotent, true);
-const retryHistoryRow = store.EntregasDocumentales.rows.find(row => row[headers.indexOf("EntregaID")] === failedDispatch.deliveryId);
-const retryHistory = JSON.parse(retryHistoryRow[headers.indexOf("HistorialEventosJSON")]);
+const retryHeaders = store.EntregasDocumentales.rows[0];
+const retryHistoryRow = store.EntregasDocumentales.rows.find(row => row[retryHeaders.indexOf("EntregaID")] === failedDispatch.deliveryId);
+const retryHistory = JSON.parse(retryHistoryRow[retryHeaders.indexOf("HistorialEventosJSON")]);
 assert.ok(retryHistory.some(event => event.action === "DISPATCH_FAILED"));
 assert.ok(retryHistory.some(event => event.action === "DISPATCH_ACCEPTED_BY_PLATFORM"));
 
