@@ -298,11 +298,11 @@
                                     </div>
                                     <div>
                                         <label class="block font-medium text-gray-700 mb-2">Fecha de la Clase (Impartida)</label>
-                                        <input type="date" name="fechaClase" id="create-task-class-date" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" title="Fecha en que se imparte el contenido">
+                                        <input type="date" name="fechaClase" id="create-task-class-date" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" title="Fecha en que se imparte el contenido" data-ui-help-key="fechas.calendario">
                                     </div>
                                     <div>
                                         <label class="block font-medium text-gray-700 mb-2">Fecha Límite de Entrega</label>
-                                        <input type="date" name="fechaLimite" id="create-task-due-date" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                                        <input type="date" name="fechaLimite" id="create-task-due-date" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required data-ui-help-key="fechas.calendario">
                                     </div>
                                     <div>
                                         <label class="block font-medium text-gray-700 mb-2">Hora de Disponibilidad (Opcional)</label>
@@ -341,7 +341,7 @@
                                     </div>
                                     <div>
                                         <label class="block font-medium text-gray-700 mb-2">Fecha Límite</label>
-                                        <input type="date" name="fechaLimite" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                                        <input type="date" name="fechaLimite" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required data-ui-help-key="fechas.calendario">
                                     </div>
                                 </div>
                                 <div id="questions-container" class="space-y-4"></div>
@@ -867,7 +867,7 @@
                                 </h4>
                                 <div>
                                     <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Fecha Programada de Pago</label>
-                                    <input type="date" id="sim-fecha-pago" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold">
+                                    <input type="date" id="sim-fecha-pago" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" data-ui-help-key="fechas.calendario">
                                 </div>
                                 <div>
                                     <button type="button" id="btn-simulate-payment-date" class="w-full py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-blue-700 shadow-md">
@@ -1181,7 +1181,7 @@
                     </div>
                     <div>
                         <label for="news-expiration" class="block font-medium text-gray-700 mb-1">Fecha de Expiración (Vigencia)</label>
-                        <input type="date" id="news-expiration" class="w-full p-2.5 border rounded-xl text-sm">
+                        <input type="date" id="news-expiration" class="w-full p-2.5 border rounded-xl text-sm" data-ui-help-key="fechas.calendario">
                     </div>
                     <div>
                         <label for="news-image-input" class="block font-medium text-gray-700 mb-1">Imagen de Portada</label>
@@ -1461,11 +1461,11 @@
                     </div>
                     <div>
                         <label class="block font-medium text-gray-700 mb-1">Fecha de Clase</label>
-                        <input type="date" id="edit-fecha-clase" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
+                        <input type="date" id="edit-fecha-clase" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" data-ui-help-key="fechas.calendario">
                     </div>
                     <div>
                         <label class="block font-medium text-gray-700 mb-1">Fecha Límite</label>
-                        <input type="date" id="edit-fecha" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                        <input type="date" id="edit-fecha" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required data-ui-help-key="fechas.calendario">
                     </div>
                     <div>
                         <label class="block font-medium text-gray-700 mb-1">Hora de Disponibilidad</label>
