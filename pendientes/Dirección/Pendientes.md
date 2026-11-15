@@ -2751,7 +2751,10 @@
 - **Criterios de Aceptación:**
   - Se calculan métricas fundamentadas en datos reales de viajes y asignaciones.
   - Dirección visualiza gráficos de rendimiento de la flota vehicular.
-- **Estado:** [ ] Pendiente
+- **Estado:** [ ] Pendiente.
+- **Avance verificado C1.739 (2026-11-15):** se implementó getTransportEfficiencyMetrics y el panel de analítica de Dirección para ocupación, puntualidad y duración por ruta/jornada. La ocupación usa abordajes reales y marca cuando recurre a asignaciones activas como estimación; se conserva la sobrecapacidad superior al 100%. Nuevo contrato Node.js y CI/sintaxis PASS (Department Scope 43673593703; Identity Mapping 43673593702; Department Reference Consumers 43673593667).
+- **Brechas pendientes:** costo operativo por estudiante sigue sin fuente de combustible/costos; demanda geográfica sin cobertura sigue sin solicitudes georreferenciadas ni regla de cobertura. Ambos indicadores se muestran como SIN_DATOS, sin estimaciones inventadas. E2E Apps Script/Sheets pendiente (BETA-FUNC-095).
+- **Estado:** [ ] Pendiente; subflujo calculable implementado y verificado, sin cerrar TASK-391.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 14079-14099; clave TASK-392; asignación única: Dirección -->
 

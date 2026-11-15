@@ -3712,3 +3712,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato Node.js 24.22.2 PASS; syntax-check Apps Script y JS PASS; GitHub Actions Department Scope 43671785558, Identity Mapping 43671785546 y Department Reference Consumers 43671785553 SUCCESS.
 - TASK-392 completada en código, revisión y CI. No existe package.json ni CLI de proyecto; no se ejecutó CLI. Apps Script/Sheets real y pruebas E2E de interfaz quedan Pendiente beta.
 - Siguiente tarea elegible: TASK-391 — indicadores de eficiencia operativa y análisis de demanda de transporte (PM-05), sujeto a verificación de F21-Task27 y de los datos fuente disponibles.
+
+
+[2026-11-15] TASK-391 — indicadores agregados de eficiencia de transporte (C1.739)
+- Se implementó getTransportEfficiencyMetrics como lectura agregada por ruta/jornada: ocupación, puntualidad y duración; el porcentaje de ocupación conserva valores mayores a 100 y marca sobrecapacidad por viaje.
+- Se usan abordajes registrados; cuando un viaje carece de bitácora se estima desde asignaciones activas y se informa la fuente. No se generan datos ni hojas por defecto.
+- El endpoint limita acceso a Administrador/Director/Subdirector con identidad verificada, revalida el rol bajo ScriptLock y no bloquea el lock para solicitudes no autorizadas.
+- Dashboard de Dirección incorpora filtros y gráficos. Costo por estudiante y demanda geográfica permanecen SIN_DATOS por ausencia comprobada de bitácora de combustible/costos y solicitudes georreferenciadas/regla de cobertura.
+- Nuevo contrato Node.js PASS; Department Scope 43673593703, Identity Mapping 43673593702 y Department Reference Consumers 43673593667 SUCCESS; syntax-check Apps Script y JS PASS.
+- No hay package.json/CLI de proyecto; CLI no aplica. Apps Script/Sheets real y E2E navegador quedan Pendiente beta (BETA-FUNC-095).
+- TASK-391 sigue Pendiente por fuentes faltantes; subflujo calculable completado en código/CI.

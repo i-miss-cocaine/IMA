@@ -2949,3 +2949,14 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Medio — trazabilidad:** el detalle por partida de las cotizaciones se cargaba pero no se devolvía ni mostraba. Corregido en backend/UI.
 - **Evidencia:** commit 828421d83bf9d2e0a032af4ab41e2e4a874b862c; Department Scope 43514861936, Identity Mapping 43514861917 y Department Reference Consumers 43514861918 SUCCESS; contrato y syntax-check PASS.
 ===============================================================================
+
+
+===============================================================================
+### C1.739 — Revisión técnica y evidencia de TASK-391
+- **Implementado:** endpoint agregado de eficiencia por ruta/jornada, filtros, indicadores de ocupación/puntualidad/duración y panel de Dirección.
+- **Seguridad:** solo roles de gestión con identidad verificada; revalidación bajo ScriptLock; no se toma el lock para peticiones no autorizadas; respuesta agregada sin identificadores de estudiantes.
+- **Integridad:** endpoint de solo lectura; no crea hojas, no siembra datos, no muta rutas, viajes, asignaciones ni asistencia; porcentaje superior al 100 se conserva para detectar sobrecupo.
+- **Limitaciones verificadas:** sin fuente de combustible/costos no puede calcularse costo por estudiante; sin solicitudes georreferenciadas y regla de cobertura no puede determinarse demanda no atendida. La API informa ambos indicadores como SIN_DATOS.
+- **Evidencia:** commit funcional 8fca60de7ba70ea75930f1c2b506900f15acc0bf; Department Scope 43673593703 SUCCESS; Identity Mapping 43673593702 SUCCESS; Department Reference Consumers 43673593667 SUCCESS; contrato Node y syntax-check PASS.
+- **Resultado:** subflujo completado en código/CI; TASK-391 permanece Pendiente. BETA-FUNC-095 pendiente de despliegue/ejecución real.
+===============================================================================

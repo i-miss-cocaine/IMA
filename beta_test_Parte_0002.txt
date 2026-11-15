@@ -432,3 +432,15 @@
 - **Evidencia requerida:** snapshots sintéticos antes/después, IDs de servicio por año, filas del catálogo, respuestas de pedidos e inscripciones, cantidades de inventario, actores, registros de auditoría y resultado de las pruebas de concurrencia. No usar datos personales ni productivos.
 - **Estado:** Pendiente beta; Node.js 24.22.2 y syntax-check local runner aprobados en GitHub Actions; Apps Script/Sheets desplegado no ejecutado.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-095 — TASK-391 — Indicadores de eficiencia operativa del transporte
+- **Módulo/roles:** Dirección / Subdirección / Administrador.
+- **Objetivo:** verificar en el entorno beta los indicadores agregados por ruta y jornada y su representación en el dashboard de Dirección.
+- **Precondiciones:** despliegue de backend/accounting-service y dashboard-direccion en un entorno aislado; hojas sintéticas TransporteRutas, TransporteVehiculos, TransporteAsignaciones, TransporteViajes y TransporteAsistenciaViajes; usuarios de prueba Director, Subdirector, Administrador y Padre.
+- **Pasos:** (1) cargar viajes con abordajes registrados, viajes sin bitácora, asignaciones duplicadas, viajes cancelados y rutas con capacidad conocida; (2) verificar ocupación por ruta/jornada, uso de abordajes reales y fallback estimado; (3) simular ocupación superior al 100% y comprobar que no se recorta y se marca sobrecapacidad; (4) comparar hora real/programada, duración y filtros de fecha/ruta/jornada; (5) intentar la acción con Padre, identidad ausente y rol modificado; (6) simular lock ocupado y confirmar error recuperable; (7) comparar snapshots antes/después para verificar que ninguna hoja fuente cambió; (8) comprobar que costo por estudiante y demanda geográfica aparecen como SIN_DATOS, sin valores inventados; (9) validar el modal, tarjetas y gráficos en escritorio/móvil.
+- **Resultado esperado:** métricas consistentes con fixtures; respuestas solo agregadas; acceso limitado a gestión; ninguna mutación de fuentes; brechas de costo/demanda visibles como no disponibles; UI sin errores.
+- **Evidencia requerida:** snapshots sintéticos, payload/respuesta agregada, usuario/rol, IDs de viaje, resultados de filtros, captura del panel y logs de denegación/lock. No usar PII ni datos productivos.
+- **Estado:** Pendiente beta. Contrato Node.js y syntax-check aprobados en GitHub Actions; no se ha desplegado Apps Script/Sheets real ni ejecutado E2E navegador.
+===============================================================================
