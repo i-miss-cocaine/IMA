@@ -7,6 +7,8 @@ on:
     paths:
       - backend/accounting-service/Code.gs
       - backend/user-service/Code.gs
+      - backend/academic-service/Code.gs
+      - tests/security/accounting-remote-target-snapshot.test.js
       - tests/security/accounting-import-auth-router.test.js
       - tests/security/accounting-migration-writer.test.js
       - tests/security/accounting-import-semantic-preflight.test.js
@@ -35,10 +37,14 @@ jobs:
         run: node --check < backend/accounting-service/Code.gs
       - name: Check USER service syntax
         run: node --check < backend/user-service/Code.gs
+      - name: Check ACADEMIC service syntax
+        run: node --check < backend/academic-service/Code.gs
       - name: Run signed import authorization and HTTP router contract
         run: node tests/security/accounting-import-auth-router.test.js
       - name: Run journaled accounting migration writer contract
         run: node tests/security/accounting-migration-writer.test.js
+      - name: Run USER and ACADEMIC remote target snapshot contract
+        run: node tests/security/accounting-remote-target-snapshot.test.js
       - name: Run semantic import preflight contract
         run: node tests/security/accounting-import-semantic-preflight.test.js
       - name: Run departmental import scope contract
