@@ -920,9 +920,7 @@ function doPost(e) {
     }
     return textResponse({ status: "error", code: "ACTION_NOT_ALLOWED" }, correlationId);
   } catch (error) {
-    var code = String(error && error.message || "");
-    if (!/^[A-Z0-9_]{1,80}$/.test(code)) code = "INTERNAL_ERROR";
-    return textResponse({ status: "error", code: code,
+    return textResponse({ status: "error", code: "INTERNAL_ERROR",
       message: "No fue posible completar la solicitud." }, correlationId);
   }
 }
