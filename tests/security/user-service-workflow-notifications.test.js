@@ -34,12 +34,14 @@ function extractFunction(name) {
 }
 function loadContext(extra={}) {
   const context={console,Date,Math,JSON,String,Number,Array,Object,Error,RegExp};
+  const notificationStart=source.indexOf("function escapeNotificationHtml_");
+  const notificationEnd=source.indexOf("// [TAREA-F6-024]",notificationStart);
+  assert.ok(notificationStart>=0&&notificationEnd>notificationStart,"notification function block must be present");
+  const notificationFunctions=source.slice(notificationStart,notificationEnd);
   const isolatedSource=[
     'const SPREADSHEET_ID="TEST";',
     'const FRONTEND_URL="https://portal.example.test/";',
-    extractFunction("escapeNotificationHtml_"),
-    extractFunction("sendMultiChannelNotification"),
-    extractFunction("dispatchWorkflowStatusNotification_"),
+    notificationFunctions,
     extractFunction("processWorkflowDecision")
   ].join("\n");
   vm.runInNewContext(isolatedSource,context,{timeout:10000});
