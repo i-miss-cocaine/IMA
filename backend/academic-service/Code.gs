@@ -10316,9 +10316,8 @@ function absenceResolveSessions_(ss, studentId, dateKey, requestedSessionIds, re
 function absenceResolveSessionsForDates_(ss, studentId, dateKeys, requestedSessionIds, regSheet, regMap) {
   var all = [], seen = {};
   (dateKeys || []).forEach(function(dateKey) {
-    var requestedForDate = Array.isArray(requestedSessionIds) ? requestedSessionIds : [];
     try {
-      absenceResolveSessions_(ss, studentId, dateKey, requestedForDate, regSheet, regMap).forEach(function(sessionId) {
+      absenceResolveSessions_(ss, studentId, dateKey, [], regSheet, regMap).forEach(function(sessionId) {
         if (seen[sessionId]) throw new Error("ATTENDANCE_SESSION_AMBIGUOUS");
         seen[sessionId] = true;
         all.push(sessionId);
@@ -10329,7 +10328,11 @@ function absenceResolveSessionsForDates_(ss, studentId, dateKeys, requestedSessi
     }
   });
   if (!all.length) throw new Error("ATTENDANCE_RECORD_NOT_FOUND");
-  return all.sort();
+  var requested = Array.isArray(requestedSessionIds) ? requestedSessionIds.map(function(value) { return String(value || "").trim(); }).filter(Boolean) : [];
+  if (requested.length && (new Set(requested).size !== requested.length || requested.some(function(id) { return !seen[id]; }))) {
+    throw new Error("ATTENDANCE_SESSION_SCOPE_MISMATCH");
+  }
+  return (requested.length ? requested : all).sort();
 }
 
 function absenceSheetMap_(sheet, headers) {
@@ -10396,8 +10399,9 @@ function createCanonicalAbsenceJustificationUnlocked_(payload) {
   var actorRole = String(p.actorRole || "").trim();
   var dateKey = absenceDateKey_(p.fechaAfectada || p.fechaAusencia);
   var requestedDateValues = Array.isArray(p.fechasAfectadas) ? p.fechasAfectadas : (dateKey ? [dateKey] : []);
-  var dateKeys = requestedDateValues.map(function(value) { return absenceDateKey_(value); }).filter(Boolean);
-  dateKeys = Array.from(new Set(dateKeys)).sort();
+  var dateKeys = requestedDateValues.map(function(value) { return absenceDateKey_(value); });
+  if (!dateKeys.length || dateKeys.some(function(value) { return !value; }) || new Set(dateKeys).size !== dateKeys.length) return { status: "error", code: "ABSENCE_JUSTIFICATION_INVALID" };
+  dateKeys = dateKeys.sort();
   var reason = String(p.motivoDeclarado || p.motivo || "").trim();
   var attachmentFileId = String(p.adjuntoUrl || "").trim();
   var attachmentHash = String(p.adjuntoSHA256 || "").trim().toLowerCase();
