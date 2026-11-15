@@ -1617,6 +1617,8 @@
 - **Pruebas disponibles:** parseo sintáctico de ui-common.js, teacher-dashboard.html (sin scripts inline modificados), teacher.js, accounting.js y ambos tests de metadatos PASS mediante compilación V8. Se agregó tests/security/ui-common-permanent-help.test.js con fixtures DOM para fallback, idempotencia, required marker, asociación ARIA, errores inline y cancelación crítica. No se pudo ejecutar Node CLI ni confirmar un workflow run desde las herramientas disponibles; la ejecución automatizada queda pendiente y no se declara PASS.
 - **Cobertura aún pendiente:** asociar claves a todos los campos reales de admisión/matrícula, importaciones y adjuntos según sus validadores backend; completar labels/help de campos complejos en los dashboards no cubiertos; validar el cierre de actas de calificaciones con su handler real; pruebas manuales de teclado, lector de pantalla, móvil, zoom y cancelación sin mutación.
 
+- **Corrección adicional C1.759:** el buscador de identidades admite DNI, RNE u otros identificadores de origen; se separó su ayuda (identidad.busqueda) de la ayuda de matrícula DNI 13 dígitos. Se evita inducir a error a los operadores que consultan registros RNE. Prueba de contrato ampliada para impedir que vuelva a usarse la guía DNI-only en esos campos.
+
 ---
 
 <!-- ID: TASK-132 | Fuentes: Pendientes.md ; pendientes/Secretaria/Pendientes.md -->
