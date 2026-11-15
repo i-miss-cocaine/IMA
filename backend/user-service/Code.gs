@@ -11585,6 +11585,13 @@ function getHelpGuidesCatalog(payload) {
 
 function getAuditReport(payload) {
   try {
+    const actorRole = getUserVerifiedRole(payload);
+    if (actorRole === "Auditor") {
+      const scope = getUserContextScope(payload);
+      if (!scope || scope.status !== "success" || scope.authorized !== true || scope.institutionWide !== true) {
+        return { status: "error", code: "INSTITUTION_SCOPE_DENIED", message: "El auditor requiere alcance institucional verificado para consultar la auditoría global." };
+      }
+    }
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = ss.getSheetByName("LogsSistema");
     if (!sheet) {
