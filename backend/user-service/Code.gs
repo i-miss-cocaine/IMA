@@ -6841,17 +6841,25 @@ function submitStudentAbsenceJustification(payload) {
   if (String(p.adjuntoUrl || "").trim() || String(p.adjuntoFileId || "").trim()) throw new Error("UNTRUSTED_ATTACHMENT_REFERENCE");
   const submitter = resolveVerifiedRequestSubmitter_(p, estudianteId, true, "permisoAsistencia");
 
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var sheet = getOrCreateSheet(ss, "SolicitudesTramites");
-  var map = ensureUserAbsenceRequestSchema_(sheet);
-  var initialRows = sheet.getDataRange().getValues(), initialMatch = null;
-  for (var i = 1; i < initialRows.length; i++) {
-    if (String(initialRows[i][map.EstudianteID] || initialRows[i][2] || "").trim() !== String(submitter.estudianteId).trim()) continue;
-    if (String(initialRows[i][map.FechaAfectada] || "").trim() !== fechaAusencia || String(initialRows[i][map.Periodo] || "").trim() !== periodo) continue;
-    if (String(initialRows[i][3] || "") !== "Justificación de Ausencia") continue;
-    if (["Rechazada","Cancelada"].indexOf(String(initialRows[i][6] || "")) !== -1) continue;
-    if (initialMatch) return { status: "error", code: "ABSENCE_REQUEST_AMBIGUOUS" };
-    initialMatch = { rowNumber: i + 1, row: initialRows[i], id: String(initialRows[i][map.JustificacionID] || initialRows[i][0] || "").trim() };
+  var ss, sheet, map, initialRows, initialMatch = null;
+  var preflightLock = LockService.getScriptLock();
+  try { preflightLock.waitLock(10000); }
+  catch (_) { return { status: "error", code: "ABSENCE_SUBMISSION_LOCK_TIMEOUT", retryable: true }; }
+  try {
+    ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    sheet = getOrCreateSheet(ss, "SolicitudesTramites");
+    map = ensureUserAbsenceRequestSchema_(sheet);
+    initialRows = sheet.getDataRange().getValues();
+    for (var i = 1; i < initialRows.length; i++) {
+      if (String(initialRows[i][map.EstudianteID] || initialRows[i][2] || "").trim() !== String(submitter.estudianteId).trim()) continue;
+      if (String(initialRows[i][map.FechaAfectada] || "").trim() !== fechaAusencia || String(initialRows[i][map.Periodo] || "").trim() !== periodo) continue;
+      if (String(initialRows[i][3] || "") !== "Justificación de Ausencia") continue;
+      if (["Rechazada","Cancelada"].indexOf(String(initialRows[i][6] || "")) !== -1) continue;
+      if (initialMatch) return { status: "error", code: "ABSENCE_REQUEST_AMBIGUOUS" };
+      initialMatch = { rowNumber: i + 1, row: initialRows[i], id: String(initialRows[i][map.JustificacionID] || initialRows[i][0] || "").trim() };
+    }
+  } finally {
+    preflightLock.releaseLock();
   }
 
   // Drive folder setup acquires ScriptLock internally; create/read-back the file before taking the row-serialization lock.
