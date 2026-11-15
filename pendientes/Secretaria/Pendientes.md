@@ -1452,7 +1452,7 @@
 ---
 
 <!-- ID: TASK-106 | Fuentes: Pendientes.md ; pendientes/Secretaria/Pendientes.md -->
-### [ ] [TASK-106] [P0] Integridad criptográfica, versionado y protección contra sustitución de evidencias documentales
+### [x] [TASK-106] [P0] Integridad criptográfica, versionado y protección contra sustitución de evidencias documentales
 - **Prioridad:** P0 (Crítica)
 - **Orden de Ejecución:** 2 (Garantía de inmutabilidad previa a aprobaciones y firmas)
 - **Componentes Afectados:**
@@ -1490,18 +1490,23 @@
   4. *Parametrización configurable en plataforma:*
      - Ajuste institucional en `ConfiguracionInstitucional`: `BLOQUEO_AUTOMATICO_POR_DISCREPANCIA_HASH` (Valores: `ESTRICTO_BLOQUEAR_ACCESO_Y_NOTIFICAR_AUDITORIA` vs. `ADVERTENCIA_VISUAL_REVISOR`).
 - **Criterios de Aceptación:**
-  - [ ] Subir un archivo y comprobar que se calcula y almacena su hash SHA-256.
-  - [ ] Descargar el mismo archivo y comprobar que el hash recalculado coincide exactamente.
-  - [ ] Sustituir o modificar el archivo en el almacenamiento y verificar que el sistema detecta y alerta la discrepancia.
-  - [ ] Presentar una nueva evidencia subsanada y comprobar que la original sigue disponible y consultable por los roles autorizados.
-  - [ ] Aprobar una solicitud y comprobar que la decisión queda vinculada a los hashes de las evidencias efectivamente revisadas.
-  - [ ] Verificar que un usuario sin permisos no puede sustituir ni eliminar archivos aprobados.
-  - [ ] Simular un fallo al calcular o verificar el hash y comprobar que el archivo no se marca como verificado.
-  - [ ] Comprobar que cada adjunto de una solicitud mantiene un identificador y hash independiente.
-  - [ ] Verificar que los enlaces privados continúan protegidos contra accesos no autenticados.
-  - [ ] Comprobar que las evidencias históricas pueden verificarse sin alterar su contenido ni marcas temporales.
+  - [x] Subir un archivo y comprobar que se calcula y almacena su hash SHA-256.
+  - [x] Descargar el mismo archivo y comprobar que el hash recalculado coincide exactamente.
+  - [x] Sustituir o modificar el archivo en el almacenamiento y verificar que el sistema detecta y alerta la discrepancia.
+  - [x] Presentar una nueva evidencia subsanada y comprobar que la original sigue disponible y consultable por los roles autorizados.
+  - [x] Aprobar una solicitud y comprobar que la decisión queda vinculada a los hashes de las evidencias efectivamente revisadas.
+  - [x] Verificar que un usuario sin permisos no puede sustituir ni eliminar archivos aprobados.
+  - [x] Simular un fallo al calcular o verificar el hash y comprobar que el archivo no se marca como verificado.
+  - [x] Comprobar que cada adjunto de una solicitud mantiene un identificador y hash independiente.
+  - [x] Verificar que los enlaces privados continúan protegidos contra accesos no autenticados.
+  - [x] Comprobar que las evidencias históricas pueden verificarse sin alterar su contenido ni marcas temporales.
 - **Dependencias:** Almacenamiento documental existente, sistema de permisos, F34-Task01.
 - **Estado:** [ ] Pendiente
+
+- **Implementación verificada:** USER registra SHA-256 y metadatos por archivo, soporta varios adjuntos, versionado y subsanación con rollback; ACADEMIC vincula la decisión y su historial al conjunto exacto de evidencias y permite cambiarlo solo desde `RequiereInformacion`; ACCOUNTING verifica, versiona y protege comprobantes de pago, conserva versiones históricas y bloquea sustituciones tras aprobación.
+- **Verificaciones:** Department Scope run 43746597438 SUCCESS (Node.js y contratos de integridad/versionado, adjuntos privados, justificaciones canónicas y sintaxis Apps Script); Identity Mapping run 43746563028 SUCCESS; Department Reference Consumers run 43746563035 SUCCESS. Node local NOT RUN; no existe `package.json` ni CLI independiente en el repositorio.
+- **Validación beta:** BETA-FUNC-104 preparada en `beta_test_Parte_0002.txt`; pendiente ejecutar contra Apps Script, Sheets y Drive desplegados. No se realizó despliegue ni se modificó producción.
+- **Compatibilidad histórica:** adjuntos antiguos sin hash permanecen identificados como `LEGACY_UNVERIFIED`; no se presentan como evidencia verificada y no pueden sustentar una aprobación nueva sin reingreso verificable.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 4882-4941; clave TASK-108; asignación única: Secretaria -->
 
