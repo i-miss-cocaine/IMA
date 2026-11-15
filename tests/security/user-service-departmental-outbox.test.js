@@ -159,7 +159,7 @@ const names = [
   "ensureDocumentDeliverySheet_", "getDocumentDeliverySheetForRead_",
   "getDocumentDeliveryAllowedDepartmentIds_", "isDocumentDeliveryDepartmentAllowed_",
   "getDocumentDeliverySenderContext_", "getIssuedDocumentSnapshot_", "getDocumentDeliveryRecipient_",
-  "appendDocumentDeliveryEvent_", "findDocumentDeliveryRow_", "writeDocumentDeliveryRow_",
+  "appendDocumentDeliveryEvent_", "findDocumentDeliveryRow_", "writeDocumentDeliveryRow_", "syncDepartmentalDocumentEmailRetry_",
   "getDocumentDeliveryPortalLink_", "dispatchDocumentDelivery_", "registerDepartmentalDocumentDelivery",
   "retryDepartmentalDocumentDelivery", "getDepartmentalOutbox", "getMyDepartmentalOutbox",
   "sendInstitutionalDispatch", "createDepartmentalBatchIdempotencyKey_", "sendInstitutionalDispatchBatch", "getDocumentDeliveryReceiptMode_",
@@ -282,6 +282,14 @@ const emailOutboxEntry = emailOutbox.data.find(item => item.canal === "PLATAFORM
 assert.ok(emailOutboxEntry);
 assert.equal(emailOutboxEntry.estadoCorreo, "ENVIADO");
 assert.equal(notificationPayloads[notificationPayloads.length - 1].emailRecipient, "stu2@example.test");
+const outboxHeaders = store.EntregasDocumentales.rows[0];
+const emailDeliveryRow = store.EntregasDocumentales.rows.find(row => row[outboxHeaders.indexOf("EntregaID")] === emailDispatch.deliveryId);
+emailDeliveryRow[outboxHeaders.indexOf("EstadoCorreo")] = "PENDIENTE_REINTENTO";
+const emailSync = context.syncDepartmentalDocumentEmailRetry_(ss, "ENTREGA_DOCUMENTAL:" + emailDispatch.deliveryId, "NTF-EMAIL-RETRY");
+assert.equal(emailSync.status, "success");
+assert.equal(emailDeliveryRow[outboxHeaders.indexOf("EstadoCorreo")], "ENVIADO");
+const emailSyncHistory = JSON.parse(emailDeliveryRow[outboxHeaders.indexOf("HistorialEventosJSON")]);
+assert.ok(emailSyncHistory.some(event => event.action === "DOCUMENT_EMAIL_RETRY_SENT"));
 
 assert.notEqual(
   context.createDepartmentalBatchIdempotencyKey_("BATCH-1", "DOC-5"),
