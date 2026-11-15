@@ -236,6 +236,14 @@ assert.equal(paymentCreatedFile.trashed, true, "failed accounting privacy setup 
 
 // Descargas privadas: autorización previa, privacidad incluso para referencias históricas y binario íntegro.
 const voucherDownloadFn = extractFunction(accounting, "getPaymentVoucherFile");
+const voucherVerificationFns = [
+  extractFunction(accounting, "verifyPaymentVoucherEvidence_"),
+  extractFunction(accounting, "getAccountingEvidenceIntegrityPolicy_")
+].join("\n");
+const voucherDownloadMap = {ComprobanteID:0,Fecha:1,UserId:2,Alumno:3,CargoID:4,MontoReportado:5,MetodoPago:6,
+  Referencia:7,ComprobanteUrl:8,Estado:9,Observaciones:10,ComprobanteGrupoID:11,VersionNumero:12,SHA256:13,
+  SizeBytes:14,MimeType:15,FechaRecepcionISO:16,EstadoIntegridad:17,EsVersionActual:18,DecisionHash:19,
+  DecisionTimestamp:20,DecisionBy:21,DecisionIntegrityWarning:22};
 assert.match(voucherDownloadFn, /file\.getSharingAccess\(\) !== DriveApp\.Access\.PRIVATE/);
 assert.match(voucherDownloadFn, /validateFileBinaryIntegrity/);
 let voucherSharing = "PRIVATE";
@@ -249,6 +257,8 @@ const voucherDownloadContext = {
     ["id","fecha","userId","alumno","cargoId","monto","metodo","referencia","archivo","estado","observaciones"],
     ["VCH-1",new Date(),"student-1","Estudiante","GRAL",10,"Transferencia","REF","https://drive.google.com/file/d/legacy-file-id/view","En Revisión",""]
   ] }) }) }) },
+  ensurePaymentVoucherEvidenceSchema_: () => voucherDownloadMap,
+  computeDocumentSHA256: () => "a".repeat(64),
   DriveApp: { Access: { PRIVATE: "PRIVATE" }, getFileById: () => ({
     isTrashed: () => false,
     getSharingAccess: () => voucherSharing,
@@ -261,7 +271,7 @@ const voucherDownloadContext = {
   logStructuredEvent: () => {},
   SPREADSHEET_ID: "test"
 };
-vm.runInNewContext(voucherDownloadFn + "\nthis.download=getPaymentVoucherFile;", voucherDownloadContext);
+vm.runInNewContext(voucherVerificationFns + "\n" + voucherDownloadFn + "\nthis.download=getPaymentVoucherFile;", voucherDownloadContext);
 const privateVoucherDownload = voucherDownloadContext.download({ comprobanteId: "VCH-1" });
 assert.equal(privateVoucherDownload.status, "success");
 assert.equal(privateVoucherDownload.fileData, "YWJj");
