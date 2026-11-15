@@ -5650,3 +5650,11 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Department Scope Contract run 43740294235 SUCCESS; Node.js 24 y sintaxis Apps Script/JS PASS.
 - F34-Task04 completada en código/CI; beta real de Drive/Sheets pendiente. TASK-106 no queda cerrada: múltiples adjuntos/versiones v2+, inmutabilidad preaprobación, hash vinculado a decisión y configuración institucional de discrepancias permanecen fuera de este subalcance.
 - Próxima tarea elegible P0: revalidación de TASK-105 (orden 1; F34-Task03 y F34-Task04 satisfechas). TASK-106 es P0 orden 2.
+
+### C1.754 — TASK-105 — ciclo canónico de justificaciones y sincronización de asistencia
+- Se completó el ciclo USER→ACADEMIC con identificador estable, fechas múltiples, resolución de sesiones exactas, adjuntos con integridad, revisión administrativa y proyección coherente.
+- Se implementaron aprobaciones totales/parciales, configuración institucional, modo de conformidad previa docente con hash, idempotencia, bloqueo, recuperación/reconciliación y revocación reversible.
+- Se integró el portal familiar para rangos de fechas, bandeja de Secretaría para revisión total/parcial/rechazo y visualización docente de todas las fechas.
+- Department Scope Contract run 43742077374 SUCCESS (Node.js 24, contratos de justificación canónica/ABAC y sintaxis Apps Script/JS/clients); Identity Mapping run 43742077382 SUCCESS.
+- TASK-105 completada en código/revisión/CI; BETA-FUNC-103 pendiente de validación real en Apps Script/Sheets/Drive beta.
+- **Siguiente P0 por orden del Plan Maestro:** TASK-106 — integridad criptográfica, versionado y protección contra sustitución de evidencias documentales.
