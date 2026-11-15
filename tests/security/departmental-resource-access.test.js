@@ -33,7 +33,7 @@ function makeSheet(rows) { return {
   })
 }; }
 const academic = fs.readFileSync(path.resolve(__dirname, "../../backend/academic-service/Code.gs"), "utf8");
-const names = ["getVerifiedAcademicIdentity_","getVerifiedDepartmentScopeForSession_","getVerifiedAcademicDepartmentScope_","getAcademicDelegatedMembershipForScope_","resolveInternalResponsibilityForRoleScope_","getVerifiedAcademicGuardianDepartmentScope_","assertResourceOwnershipForScope_","getStudentPersonIdForUser_","getStudentIdentityForPerson_","assertStudentExpedienteScopeAccess_","assertStudentDocumentScopeAccess_","assertStudentRequestScopeAccess_","resolveAcademicRequestDepartment_","hasActiveTeacherAssignment_","validateAcademicResponsibilityAndScopeAccess","getStudentFile","ensureStudentDocumentSchema_","ensureDocumentVersionHistorySchema_","getStudentDocuments","getSecureDocumentStream","validateFileBinaryIntegrity","classifyPdfDocumentPages_","validateEvidenceFileAndPermissions","assertRecordOwnership","getStudentFileSummary","getStudentTimeline","restoreDocumentVersion"];
+const names = ["getVerifiedAcademicIdentity_","getVerifiedDepartmentScopeForSession_","getVerifiedAcademicDepartmentScope_","getAcademicDelegatedMembershipForScope_","resolveInternalResponsibilityForRoleScope_","getVerifiedAcademicGuardianDepartmentScope_","assertResourceOwnershipForScope_","getStudentPersonIdForUser_","getStudentIdentityForPerson_","assertStudentExpedienteScopeAccess_","assertStudentDocumentScopeAccess_","assertStudentRequestScopeAccess_","resolveAcademicRequestDepartment_","hasActiveTeacherAssignment_","validateAcademicResponsibilityAndScopeAccess","getStudentFile","ensureStudentDocumentSchema_","ensureDocumentVersionHistorySchema_","getStudentDocuments","logStudentDocumentAccessDecision_","studentDocumentAccessError_","getSecureDocumentStream","validateFileBinaryIntegrity","classifyPdfDocumentPages_","validateEvidenceFileAndPermissions","assertRecordOwnership","getStudentFileSummary","getStudentTimeline","restoreDocumentVersion"];
 const code = "var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n" + names.map(n => extractFunction(academic, n)).join("\n");
 const claims = {
   staffA:{userId:"U-A",role:"Director"}, staffB:{userId:"U-B",role:"Director"},
@@ -103,6 +103,7 @@ const context={
   PropertiesService:{getScriptProperties:()=>({getProperty:key=>key==="IMA_INSTITUTION_ID"?"INST-1":null})},
   SpreadsheetApp:{openById:()=>ss},
   verifySessionToken:token=>claims[token]||null,
+  validateRolePermission:()=>({authorized:true}),
   getOrCreateSheet:(spreadsheet,name)=>spreadsheet.getSheetByName(name)||makeSheet([[]]),
   DriveApp:{getFileById:id=>({isTrashed:()=>false,getName:()=>id+".pdf",getMimeType:()=>"application/pdf",getDownloadUrl:()=>"download:"+id,getSize:()=>validPdfBytes.length,getBlob:()=>({getBytes:()=>validPdfBytes})})},
   LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>{}})},
