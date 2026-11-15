@@ -86,7 +86,7 @@ const runtime = {
   } }
 };
 const names = [
-  "migrationStableJson_", "accountingComputeHmacSignature_", "createInterServiceEnvelope",
+  "migrationStableJson_", "isAccountingTrustedAppsScriptEndpoint_", "accountingComputeHmacSignature_", "createInterServiceEnvelope",
   "ensureMigrationWriterSheet_", "migrationSafeCell_", "migrationEncodeSnapshot_", "migrationDecodeSnapshot_",
   "applyTrustedAccountingMigrationWrite_", "compensateTrustedAccountingMigrationWrite_", "sendMigrationOwnerRequest_"
 ];
