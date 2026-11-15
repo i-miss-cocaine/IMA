@@ -44,6 +44,7 @@ async function invoke(currentUser, action, payload) {
     getItem(key) { return key === "currentUser" && currentUser ? JSON.stringify(currentUser) : null; }
   };
   const context = {
+    API_RESPONSE_VERSION: "1.0.0",
     window: { SERVICE_URLS: { USER: "https://unit.test/user" } },
     localStorage: storage,
     sessionStorage: { getItem() { return null; } },
