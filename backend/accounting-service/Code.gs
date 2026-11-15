@@ -1581,6 +1581,215 @@ function compensateTrustedAccountingMigrationWrite_(payload) {
 }
 
 
+function validateOpenXmlPackageStructure_(rawBytes, format, entries, maxExpandedBytes) {
+  const kind = String(format || "").toLowerCase();
+  if (kind !== "docx" && kind !== "xlsx") return null;
+  if (typeof Utilities === "undefined" || typeof Utilities.unzip !== "function" ||
+      typeof Utilities.newBlob !== "function" || typeof XmlService === "undefined" ||
+      typeof XmlService.parse !== "function") {
+    return { verified: false, reason: "OPENXML_XML_VALIDATION_UNAVAILABLE" };
+  }
+  const expandedLimit = Number(maxExpandedBytes) > 0 ? Number(maxExpandedBytes) : 50 * 1024 * 1024;
+  let blobs;
+  try {
+    blobs = Utilities.unzip(Utilities.newBlob(rawBytes));
+  } catch (error) {
+    throw new Error("OPENXML_DECOMPRESSION_FAILED: El paquete no pudo descomprimirse; puede estar cifrado o dañado.");
+  }
+  if (!Array.isArray(blobs) || !blobs.length) throw new Error("OPENXML_DECOMPRESSION_EMPTY: El paquete no contiene entradas legibles.");
+
+  const byName = Object.create(null);
+  let expandedBytes = 0;
+  blobs.forEach(function(blob) {
+    const name = String(blob && blob.getName ? blob.getName() : "");
+    if (!name) throw new Error("OPENXML_ENTRY_NAME_INVALID");
+    if (name.charAt(name.length - 1) === "/" && !entries[name]) return;
+    if (!entries[name]) throw new Error("OPENXML_ENTRY_NOT_DECLARED: " + name);
+    if (Object.prototype.hasOwnProperty.call(byName, name)) throw new Error("OPENXML_DUPLICATE_ENTRY: " + name);
+    const bytes = blob.getBytes ? blob.getBytes() : [];
+    const length = bytes && bytes.length ? bytes.length : 0;
+    expandedBytes += length;
+    if (expandedBytes > expandedLimit) throw new Error("OPENXML_EXPANDED_SIZE_EXCEEDED");
+    if (length !== Number(entries[name].size)) throw new Error("OPENXML_ENTRY_SIZE_MISMATCH: " + name);
+    byName[name] = blob;
+  });
+  Object.keys(entries).forEach(function(name) {
+    if (name.charAt(name.length - 1) !== "/" && !Object.prototype.hasOwnProperty.call(byName, name)) {
+      throw new Error("OPENXML_DECOMPRESSION_INCOMPLETE: " + name);
+    }
+  });
+
+  function parsePart(name, expectedRoot) {
+    const blob = byName[name];
+    if (!blob) throw new Error("OPENXML_REQUIRED_PART_MISSING: " + name);
+    const xml = String(blob.getDataAsString ? blob.getDataAsString("UTF-8") : "");
+    if (!xml.trim()) throw new Error("OPENXML_XML_EMPTY: " + name);
+    let document;
+    try { document = XmlService.parse(xml); }
+    catch (_) { throw new Error("OPENXML_XML_INVALID: " + name); }
+    const root = document && document.getRootElement ? document.getRootElement() : null;
+    if (!root || String(root.getName()).toLowerCase() !== String(expectedRoot).toLowerCase()) {
+      throw new Error("OPENXML_XML_ROOT_INVALID: " + name);
+    }
+    return root;
+  }
+  function countElements(element, targetName) {
+    if (!element) return 0;
+    let count = String(element.getName()).toLowerCase() === String(targetName).toLowerCase() ? 1 : 0;
+    const children = element.getChildren ? element.getChildren() : [];
+    (children || []).forEach(function(child) { count += countElements(child, targetName); });
+    return count;
+  }
+
+  parsePart("[Content_Types].xml", "Types");
+  if (kind === "docx") {
+    const documentRoot = parsePart("word/document.xml", "document");
+    const relationships = byName["word/_rels/document.xml.rels"] ? parsePart("word/_rels/document.xml.rels", "Relationships") : null;
+    return {
+      verified: true, format: "docx", entryCount: Object.keys(byName).length, expandedBytes: expandedBytes,
+      paragraphs: countElements(documentRoot, "p"),
+      tables: countElements(documentRoot, "tbl"),
+      contentControls: countElements(documentRoot, "sdt"),
+      formFields: countElements(documentRoot, "ffData") + countElements(documentRoot, "fldChar"),
+      relationshipsVerified: !!relationships
+    };
+  }
+
+  const workbookRoot = parsePart("xl/workbook.xml", "workbook");
+  const sheetCount = countElements(workbookRoot, "sheet");
+  const worksheetNames = Object.keys(byName).filter(function(name) { return /^xl\/worksheets\/sheet\d+\.xml$/i.test(name); });
+  if (!sheetCount || !worksheetNames.length) throw new Error("XLSX_STRUCTURE_INVALID: No hay hojas de cálculo legibles.");
+  worksheetNames.forEach(function(name) { parsePart(name, "worksheet"); });
+  if (byName["xl/sharedStrings.xml"]) parsePart("xl/sharedStrings.xml", "sst");
+  return {
+    verified: true, format: "xlsx", entryCount: Object.keys(byName).length, expandedBytes: expandedBytes,
+    sheetCount: sheetCount, worksheetCount: worksheetNames.length
+  };
+}
+
+function validateFileBinaryIntegrity(fileData, fileName, options) {
+  const opts = options || {};
+  const maxSizeBytes = Number(opts.maxSizeBytes) > 0 ? Number(opts.maxSizeBytes) : 10 * 1024 * 1024;
+  const allowedExtensions = opts.allowedExtensions || null;
+  if (typeof fileData !== "string" || !fileData.trim()) throw new Error("FILE_MISSING: Datos de archivo ausentes.");
+  if (typeof fileName !== "string" || !fileName.trim()) throw new Error("FILE_INVALID_NAME: Nombre de archivo inválido o ausente.");
+  const normalizedName = fileName.trim();
+  if (/[\/\\\u0000-\u001F]/.test(normalizedName)) throw new Error("FILE_INVALID_NAME: No se permiten rutas ni caracteres de control.");
+  const lowerName = normalizedName.toLowerCase();
+  const dangerousExtensions = [".exe",".bat",".cmd",".sh",".msi",".dll",".com",".scr",".vbs",".js",".jar",".ps1",".apk"];
+  if (dangerousExtensions.some(ext => lowerName.endsWith(ext))) throw new Error("DANGEROUS_FILE_EXTENSION: Extensión prohibida.");
+  const dot = lowerName.lastIndexOf(".");
+  const extension = dot >= 0 ? lowerName.slice(dot) : "";
+  const policies = {
+    ".pdf": { format: "pdf", mime: "application/pdf" },
+    ".jpg": { format: "jpeg", mime: "image/jpeg" },
+    ".jpeg": { format: "jpeg", mime: "image/jpeg" },
+    ".png": { format: "png", mime: "image/png" },
+    ".webp": { format: "webp", mime: "image/webp" },
+    ".docx": { format: "docx", mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
+    ".xlsx": { format: "xlsx", mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }
+  };
+  const policy = policies[extension];
+  if (!policy) throw new Error("UNSUPPORTED_FILE_FORMAT: Extensión no admitida.");
+  if (Array.isArray(allowedExtensions) && allowedExtensions.length > 0 &&
+      !allowedExtensions.some(value => String(value || "").trim().toLowerCase() === extension)) {
+    throw new Error("INVALID_FILE_EXTENSION: Extensión no permitida.");
+  }
+  let base64Content = fileData.trim();
+  let declaredMime = "";
+  if (base64Content.indexOf(",") !== -1) {
+    const comma = base64Content.indexOf(",");
+    const header = base64Content.slice(0, comma);
+    if (!/^data:[^;,\s]+(?:;[^,]*)?;base64$/i.test(header)) throw new Error("FILE_DATA_URI_INVALID: URI Base64 inválida.");
+    declaredMime = header.slice(5).split(";")[0].toLowerCase();
+    base64Content = base64Content.slice(comma + 1);
+  }
+  base64Content = base64Content.replace(/\s/g, "");
+  if (!base64Content) throw new Error("EMPTY_FILE_REJECTED: El archivo está vacío (0 bytes).");
+  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64Content) || base64Content.length % 4 === 1) {
+    throw new Error("FILE_BASE64_INVALID: Contenido Base64 inválido.");
+  }
+  const unpadded = base64Content.replace(/=+$/, "");
+  if (unpadded.length % 4 === 1 || (base64Content.indexOf("=") >= 0 && base64Content.length % 4 !== 0)) {
+    throw new Error("FILE_BASE64_INVALID: Padding Base64 inválido.");
+  }
+  base64Content = unpadded + (base64Content.indexOf("=") >= 0 ? "=".repeat(base64Content.length - unpadded.length) : "=".repeat((4 - unpadded.length % 4) % 4));
+  if (declaredMime && declaredMime !== "application/octet-stream" && declaredMime !== policy.mime) {
+    throw new Error("FILE_MIME_MISMATCH: El MIME declarado no coincide con la extensión.");
+  }
+  let rawBytes;
+  try {
+    if (typeof Utilities !== "undefined" && Utilities.base64Decode) rawBytes = Utilities.base64Decode(base64Content);
+    else if (typeof Buffer !== "undefined") rawBytes = Buffer.from(base64Content, "base64");
+    else throw new Error("UNSUPPORTED_RUNTIME");
+  } catch (_) { throw new Error("FILE_BASE64_INVALID: No fue posible decodificar el archivo."); }
+  const byteLength = rawBytes && rawBytes.length ? rawBytes.length : 0;
+  if (!byteLength) throw new Error("EMPTY_FILE_REJECTED: El archivo está vacío (0 bytes).");
+  if (byteLength > maxSizeBytes) throw new Error("FILE_SIZE_EXCEEDED: El archivo supera el tamaño máximo permitido.");
+  const byteAt = index => Number(rawBytes[index]) & 0xFF;
+  const ascii = (offset,length) => { let value=""; for(let i=offset;i<Math.min(byteLength,offset+length);i++) value+=String.fromCharCode(byteAt(i)); return value; };
+  const u16 = offset => offset<0||offset+2>byteLength ? -1 : byteAt(offset)|(byteAt(offset+1)<<8);
+  const u32 = offset => offset<0||offset+4>byteLength ? -1 : (byteAt(offset)|(byteAt(offset+1)<<8)|(byteAt(offset+2)<<16)|(byteAt(offset+3)<<24))>>>0;
+  const be32 = offset => offset<0||offset+4>byteLength ? -1 : (byteAt(offset)*0x1000000)+(byteAt(offset+1)*0x10000)+(byteAt(offset+2)*0x100)+byteAt(offset+3);
+  let openXmlStructure = null;
+  if (policy.format === "pdf") {
+    const head=ascii(0,Math.min(16,byteLength)),tail=ascii(Math.max(0,byteLength-2048),Math.min(2048,byteLength));
+    if(!/^%PDF-[12]\.\d/.test(head)||tail.indexOf("%%EOF")<0)throw new Error("PDF_STRUCTURE_INVALID: Cabecera o EOF ausente.");
+    const startXref=tail.lastIndexOf("startxref"),match=startXref>=0?tail.slice(startXref+9).match(/^\s*(\d+)/):null;
+    if(!match||Number(match[1])<=0||Number(match[1])>=byteLength)throw new Error("PDF_STRUCTURE_INVALID: startxref inválido.");
+  } else if (policy.format === "jpeg") {
+    if(byteLength<4||byteAt(0)!==255||byteAt(1)!==216||byteAt(2)!==255||byteAt(byteLength-2)!==255||byteAt(byteLength-1)!==217)throw new Error("JPEG_STRUCTURE_INVALID: SOI/EOI ausente o truncado.");
+  } else if (policy.format === "png") {
+    const sig=[137,80,78,71,13,10,26,10],valid=byteLength>=45&&sig.every((v,i)=>byteAt(i)===v);
+    const ihdr=valid&&be32(8)===13&&ascii(12,4)==="IHDR";
+    const iend=valid&&be32(byteLength-12)===0&&ascii(byteLength-8,4)==="IEND"&&byteAt(byteLength-4)===174&&byteAt(byteLength-3)===66&&byteAt(byteLength-2)===96&&byteAt(byteLength-1)===130;
+    if(!ihdr||!iend||ascii(8,byteLength-8).indexOf("IDAT")<0)throw new Error("PNG_STRUCTURE_INVALID: IHDR/IDAT/IEND ausente o truncado.");
+  } else if (policy.format === "webp") {
+    if(byteLength<20||ascii(0,4)!=="RIFF"||ascii(8,4)!=="WEBP"||u32(4)!==byteLength-8)throw new Error("WEBP_STRUCTURE_INVALID: RIFF/WEBP inválido.");
+    let offset=12,found=false;
+    while(offset+8<=byteLength){const type=ascii(offset,4),size=u32(offset+4);if(size<1||offset+8+size+(size%2)>byteLength)throw new Error("WEBP_STRUCTURE_INVALID: Chunk truncado.");if(type==="VP8 "||type==="VP8L"||type==="VP8X")found=true;offset+=8+size+(size%2);}
+    if(!found||offset!==byteLength)throw new Error("WEBP_STRUCTURE_INVALID: Chunk de imagen ausente.");
+  } else if (policy.format === "docx" || policy.format === "xlsx") {
+    let eocd=-1;for(let i=byteLength-22;i>=Math.max(0,byteLength-65557);i--){if(u32(i)===0x06054B50){eocd=i;break;}}
+    if(eocd<0)throw new Error("OPENXML_ZIP_INVALID: EOCD ausente.");
+    const disk=u16(eocd+4),centralDisk=u16(eocd+6),onDisk=u16(eocd+8),total=u16(eocd+10),centralSize=u32(eocd+12),centralOffset=u32(eocd+16),comment=u16(eocd+20);
+    const maxArchiveEntries=Number(opts.maxArchiveEntries)>0?Number(opts.maxArchiveEntries):512;
+    const maxExpandedBytes=Number(opts.maxExpandedSizeBytes)>0?Number(opts.maxExpandedSizeBytes):50*1024*1024;
+    const maxCompressionRatio=Number(opts.maxCompressionRatio)>0?Number(opts.maxCompressionRatio):200;
+    if(disk!==0||centralDisk!==0||onDisk!==total||total<1||total===0xFFFF||centralSize===0xFFFFFFFF||centralOffset===0xFFFFFFFF||
+       total>maxArchiveEntries||centralSize>4*1024*1024||eocd+22+comment!==byteLength||centralOffset+centralSize>eocd)throw new Error("OPENXML_ZIP_INVALID: Directorio central inconsistente o excede límites.");
+    const entries=Object.create(null),normalizedNames=Object.create(null);let cursor=centralOffset,totalExpandedBytes=0;
+    for(let n=0;n<total;n++){
+      if(cursor+46>eocd||u32(cursor)!==0x02014B50)throw new Error("OPENXML_ZIP_INVALID: Entrada central inválida.");
+      const flags=u16(cursor+8),method=u16(cursor+10),crc=u32(cursor+16),compressed=u32(cursor+20),uncompressed=u32(cursor+24),nameLen=u16(cursor+28),extraLen=u16(cursor+30),commentLen=u16(cursor+32),local=u32(cursor+42),end=cursor+46+nameLen+extraLen+commentLen;
+      if(end>centralOffset+centralSize||nameLen<1||compressed===0xFFFFFFFF||uncompressed===0xFFFFFFFF||local===0xFFFFFFFF||
+         (flags&0x2041)!==0||(method!==0&&method!==8))throw new Error("OPENXML_ZIP_INVALID: Metadatos no permitidos o archivo cifrado.");
+      const name=ascii(cursor+46,nameLen),parts=name.split("/");
+      if(!name||name.charAt(0)==="/"||/^[A-Za-z]:/.test(name)||/[\u0000-\u001F]/.test(name)||name.indexOf("\\")>=0||
+         parts.some(function(part,index){return part===".."||part==="."||(!part&&index!==parts.length-1);}))throw new Error("OPENXML_ZIP_INVALID: Ruta interna inválida.");
+      const lowerName=name.toLowerCase();
+      if(Object.prototype.hasOwnProperty.call(normalizedNames,lowerName))throw new Error("OPENXML_ZIP_INVALID: Entrada duplicada.");
+      normalizedNames[lowerName]=true;
+      if((compressed===0&&uncompressed>0)||(compressed>0&&uncompressed/compressed>maxCompressionRatio))throw new Error("OPENXML_ZIP_COMPRESSION_RATIO_EXCEEDED");
+      totalExpandedBytes+=uncompressed;
+      if(totalExpandedBytes>maxExpandedBytes)throw new Error("OPENXML_EXPANDED_SIZE_EXCEEDED");
+      if(local+30>centralOffset||u32(local)!==0x04034B50)throw new Error("OPENXML_ZIP_INVALID: Cabecera local ausente.");
+      const localFlags=u16(local+6),localMethod=u16(local+8),localCrc=u32(local+14),localCompressed=u32(local+18),localUncompressed=u32(local+22);
+      const localNameLen=u16(local+26),localExtraLen=u16(local+28),localName=ascii(local+30,localNameLen),dataOffset=local+30+localNameLen+localExtraLen;
+      if(localName!==name||localFlags!==flags||localMethod!==method||dataOffset+compressed>centralOffset)throw new Error("OPENXML_ZIP_INVALID: Entrada local inconsistente.");
+      const hasDescriptor=(flags&8)!==0;
+      if((!hasDescriptor&&(localCrc!==crc||localCompressed!==compressed||localUncompressed!==uncompressed))||
+         (hasDescriptor&&((localCrc&&localCrc!==crc)||(localCompressed&&localCompressed!==compressed)||(localUncompressed&&localUncompressed!==uncompressed))))throw new Error("OPENXML_ZIP_INVALID: CRC o tamaños locales inconsistentes.");
+      entries[name]={size:uncompressed,compressedSize:compressed,method:method,crc:crc,flags:flags};cursor=end;
+    }
+    if(cursor!==centralOffset+centralSize||!entries["[Content_Types].xml"]||entries["[Content_Types].xml"].size<1)throw new Error("OPENXML_STRUCTURE_INVALID: [Content_Types].xml ausente.");
+    if(policy.format==="docx"&&(!entries["word/document.xml"]||entries["word/document.xml"].size<1))throw new Error("DOCX_STRUCTURE_INVALID: word/document.xml ausente.");
+    if(policy.format==="xlsx"&&(!entries["xl/workbook.xml"]||entries["xl/workbook.xml"].size<1))throw new Error("XLSX_STRUCTURE_INVALID: xl/workbook.xml ausente.");
+    openXmlStructure=validateOpenXmlPackageStructure_(rawBytes,policy.format,entries,maxExpandedBytes);
+  }
+  return {valid:true,fileName:normalizedName,detectedFormat:policy.format,byteLength:byteLength,mimeType:policy.mime,openXmlStructure:openXmlStructure};
+}
+
 function validateImportWorkbookBinary_(payload) {
   var input = payload || {};
   var fileName = String(input.nombreArchivo || "").trim();
