@@ -7110,16 +7110,20 @@ function submitStudentAbsenceJustification(payload) {
   // Drive folder setup acquires ScriptLock internally; create/read-back the file before taking the row-serialization lock.
   var attachmentInputs = Array.isArray(p.adjuntos) && p.adjuntos.length ? p.adjuntos :
     (p.adjuntoData ? [{ data: p.adjuntoData, nombre: p.adjuntoNombre, evidenciaGrupoId: "ADJUNTO-1" }] : []);
-  var attachmentRecords = attachmentInputs.map(function(item, index) {
-    var data = item && (item.data || item.fileData), name = item && (item.nombre || item.fileName || item.name);
-    var groupId = String(item && item.evidenciaGrupoId || ("ADJUNTO-" + (index + 1))).trim();
-    if (!data || !groupId) throw new Error("EVIDENCE_ATTACHMENT_INVALID");
-    return { evidenciaGrupoId: groupId, attachment: createPrivateRequestAttachmentWithIntegrity_(data, name, "Tramites_Adjuntos_Privados_v1", [".pdf", ".jpg", ".jpeg", ".png"]) };
-  });
-  if (new Set(attachmentRecords.map(function(item) { return item.evidenciaGrupoId; })).size !== attachmentRecords.length ||
-      attachmentRecords.some(function(item) { return !item.attachment; })) {
-    attachmentRecords.forEach(function(item) { if (item.attachment) rollbackPrivateAttachment_(item.attachment.file, "submitStudentAbsenceJustification-invalid"); });
-    throw new Error("EVIDENCE_ATTACHMENT_INVALID");
+  var attachmentRecords = [];
+  try {
+    attachmentInputs.forEach(function(item, index) {
+      var data = item && (item.data || item.fileData), name = item && (item.nombre || item.fileName || item.name);
+      var groupId = String(item && item.evidenciaGrupoId || ("ADJUNTO-" + (index + 1))).trim();
+      if (!data || !groupId) throw new Error("EVIDENCE_ATTACHMENT_INVALID");
+      var record = createPrivateRequestAttachmentWithIntegrity_(data, name, "Tramites_Adjuntos_Privados_v1", [".pdf", ".jpg", ".jpeg", ".png"]);
+      if (!record) throw new Error("EVIDENCE_ATTACHMENT_INVALID");
+      attachmentRecords.push({ evidenciaGrupoId: groupId, attachment: record });
+    });
+    if (new Set(attachmentRecords.map(function(item) { return item.evidenciaGrupoId; })).size !== attachmentRecords.length) throw new Error("EVIDENCE_ATTACHMENT_GROUP_DUPLICATE");
+  } catch (attachmentError) {
+    attachmentRecords.forEach(function(item) { rollbackPrivateAttachment_(item.attachment.file, "submitStudentAbsenceJustification-invalid"); });
+    throw attachmentError;
   }
   var attachmentRecord = attachmentRecords.length ? attachmentRecords[0].attachment : null;
   var attachment = attachmentRecord ? attachmentRecord.file : null;
@@ -7161,6 +7165,7 @@ function submitStudentAbsenceJustification(payload) {
         return { status: "error", code: "IDEMPOTENCY_CONFLICT", solicitudId: id };
       }
       attachmentRecords.forEach(function(item) { rollbackPrivateAttachment_(item.attachment.file, "submitStudentAbsenceJustification-retry"); });
+      attachmentPersisted = true;
       fileId = String(existing.row[5] || "");
       attachmentMetadata = {
         sha256: String(existing.row[map.AdjuntoSHA256] || ""),
@@ -7177,10 +7182,10 @@ function submitStudentAbsenceJustification(payload) {
       if (!/^JUST-[A-Za-z0-9-]{8,100}$/.test(id)) throw new Error("ABSENCE_REQUEST_ID_INVALID");
       fileId = attachmentRecord ? attachmentRecord.fileId : "";
       attachmentMetadata = attachmentRecord;
-      evidenceRecords = attachmentRecords.map(function(item) {
-        return registerDocumentEvidence_(ss, { solicitudId: id, evidenciaGrupoId: item.evidenciaGrupoId,
+      attachmentRecords.forEach(function(item) {
+        evidenceRecords.push(registerDocumentEvidence_(ss, { solicitudId: id, evidenciaGrupoId: item.evidenciaGrupoId,
           userId: submitter.userId, attachment: item.attachment, nombreOriginal: item.attachment.fileName || item.attachment.file.getName(),
-          tipoEvidencia: "JUSTIFICACION_ASISTENCIA", correlationId: String(p.correlationId || "") });
+          tipoEvidencia: "JUSTIFICACION_ASISTENCIA", correlationId: String(p.correlationId || "") }));
       });
       evidenceIds = evidenceRecords.map(function(item) { return item.EvidenciaID; });
       var description = "Justificación de ausencia para las fechas " + fechasAusencia.join(", ") + ". Motivo: " + motivo + ". Observaciones: " + (p.observaciones || "N/A");
@@ -7622,14 +7627,22 @@ function submitInstitutionalFormRequest(payload) {
   const submitter = resolveVerifiedRequestSubmitter_(p, estudianteId, false, "permisoDocumental");
   const inputs = Array.isArray(p.adjuntos) && p.adjuntos.length ? p.adjuntos :
     (adjuntoData ? [{ data: adjuntoData, nombre: adjuntoNombre, evidenciaGrupoId: "ADJUNTO-1" }] : []);
-  const attachmentRecords = inputs.map(function(item, index) {
-    var data = item && (item.data || item.fileData);
-    var name = item && (item.nombre || item.fileName || item.name);
-    var groupId = String(item && item.evidenciaGrupoId || ("ADJUNTO-" + (index + 1))).trim();
-    if (!data || !groupId) throw new Error("EVIDENCE_ATTACHMENT_INVALID");
-    return { evidenciaGrupoId: groupId, attachment: createPrivateRequestAttachmentWithIntegrity_(data, name, "Tramites_Adjuntos_Privados_v1") };
-  });
-  if (attachmentRecords.some(function(item) { return !item.attachment; })) throw new Error("EVIDENCE_ATTACHMENT_INVALID");
+  var attachmentRecords = [];
+  try {
+    inputs.forEach(function(item, index) {
+      var data = item && (item.data || item.fileData);
+      var name = item && (item.nombre || item.fileName || item.name);
+      var groupId = String(item && item.evidenciaGrupoId || ("ADJUNTO-" + (index + 1))).trim();
+      if (!data || !groupId) throw new Error("EVIDENCE_ATTACHMENT_INVALID");
+      var record = createPrivateRequestAttachmentWithIntegrity_(data, name, "Tramites_Adjuntos_Privados_v1");
+      if (!record) throw new Error("EVIDENCE_ATTACHMENT_INVALID");
+      attachmentRecords.push({ evidenciaGrupoId: groupId, attachment: record });
+    });
+    if (new Set(attachmentRecords.map(function(item) { return item.evidenciaGrupoId; })).size !== attachmentRecords.length) throw new Error("EVIDENCE_ATTACHMENT_GROUP_DUPLICATE");
+  } catch (attachmentError) {
+    attachmentRecords.forEach(function(item) { rollbackPrivateAttachment_(item.attachment.file, "submitInstitutionalFormRequest-invalid"); });
+    throw attachmentError;
+  }
   const primary = attachmentRecords.length ? attachmentRecords[0].attachment : null;
   const attachment = primary ? primary.file : null;
   const fileId = primary ? primary.fileId : "";
@@ -7653,10 +7666,10 @@ function submitInstitutionalFormRequest(payload) {
     row[map.Estado] = "Enviada"; row[map.AsignadoA] = "Secretaría/Orientación"; row[map.ObservacionesAdmin] = "";
     row[map.FechaSolicitud] = now.toISOString(); row[map.FechaResolucion] = "";
     setRequestAttachmentIntegrity_(row, map, primary);
-    evidenceRecords = attachmentRecords.map(function(item) {
-      return registerDocumentEvidence_(ss, { solicitudId: id, evidenciaGrupoId: item.evidenciaGrupoId,
+    attachmentRecords.forEach(function(item) {
+      evidenceRecords.push(registerDocumentEvidence_(ss, { solicitudId: id, evidenciaGrupoId: item.evidenciaGrupoId,
         userId: submitter.userId, attachment: item.attachment, nombreOriginal: item.attachment.fileName || item.attachment.file.getName(),
-        tipoEvidencia: tipoTramite, correlationId: String(p.correlationId || "") });
+        tipoEvidencia: tipoTramite, correlationId: String(p.correlationId || "") }));
     });
     if (map.EvidenciaIDsJSON !== undefined) row[map.EvidenciaIDsJSON] = JSON.stringify(evidenceRecords.map(function(item) { return item.EvidenciaID; }));
     sheet.appendRow(row);
