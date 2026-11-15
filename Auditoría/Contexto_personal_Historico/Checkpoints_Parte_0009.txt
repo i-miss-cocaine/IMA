@@ -1153,3 +1153,37 @@ TASK-106 — Integridad criptográfica, versionado y protección contra sustituc
 - Rama base NG_beta_0.0.0.1 no fue modificada.
 - Siguiente paso elegible: ampliar mapeo de metadatos en los formularios reales de Secretaría/Admisión y las importaciones, verificando primero cada restricción contra el backend correspondiente; después ejecutar suite Node y CI.
 ===============================================================================
+
+
+===============================================================================
+## C1.759 — IMA-EXEC-20261115-TASK130-IDENTITY-HELP-CONSISTENCY-01
+- **Fecha:** 2026-11-15
+- **Rama exclusiva:** NG_beta_0.0.0.1_work
+- **HEAD antes del checkpoint:** 54a9046458a2630a17054108835b4aecab94ff48
+- **Tarea:** TASK-130 — coherencia de ayudas permanentes en campos de identidad.
+
+### Hallazgo y corrección
+- El buscador de identidad de Secretaría recibe DNI, RNE u otros identificadores de la fuente. La ayuda previa matricula.identidad explicaba solo el DNI hondureño de 13 dígitos y era incorrecta para el campo de búsqueda.
+- Añadida clave identidad.busqueda en getUIMetadataCatalog y fallback local. Explica el propósito de búsqueda y aclara que la coincidencia requiere revisión humana y no acredita identidad.
+- js/secretary.js asigna identidad.busqueda a identity-search-identificacion y identity-search-responsable. matricula.identidad queda reservada al DNI del proceso de matrícula.
+- tests/security/user-service-ui-metadata.test.js incorpora aserciones para la clave y para evitar la regresión.
+
+### Archivos
+- backend/user-service/Code.gs
+- js/ui-common.js
+- js/secretary.js
+- tests/security/user-service-ui-metadata.test.js
+- pendientes/Secretaria/Pendientes.md
+- Auditoría/AUDITORIA_FASE_38_AYUDA_CONTEXTUAL_METADATOS_APRENDIZAJE.md
+- changueslogs.txt
+
+### Verificación
+- Parseo sintáctico V8 PASS: backend USER, UI común, Secretaría y test de catálogo.
+- Comparación de guía con findPersonMatches: el identificador de búsqueda se clasifica como evidencia y el backend exige revisión humana; no hay fusión automática.
+- Node CLI/GitHub Actions: sin ejecución disponible para este commit; status checks y workflow runs consultados, ambos sin resultados. No se declara prueba de ejecución PASS.
+
+### Estado
+- TASK-130 sigue parcial. La guía de búsqueda es ahora coherente con el contrato real.
+- HEAD previo al checkpoint verificado: 54a9046458a2630a17054108835b4aecab94ff48.
+- Rama base NG_beta_0.0.0.1 sin modificaciones.
+===============================================================================
