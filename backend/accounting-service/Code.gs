@@ -11513,77 +11513,132 @@ function updateEmployeeLaborStatus(payload) {
   };
 }
 
+function auditEmployeeSelfServiceDenied_(action, actor, filters) {
+  const identity = actor || {};
+  logStructuredEvent(
+    "SECURITY",
+    action || "employeeSelfService",
+    "WARN",
+    "UNAUTHORIZED_EMPLOYEE_RESOURCE_ACCESS",
+    "Intento de consulta de un recurso laboral fuera del titular autenticado.",
+    {
+      callerId: String(identity.userId || "").trim(),
+      effectiveRole: String(identity.role || "").trim(),
+      resourceType: "EXPEDIENTE_LABORAL",
+      requestedUserFilter: !!(filters && filters.userIdProvided),
+      requestedExpedienteFilter: !!(filters && filters.expedienteIdProvided)
+    },
+    String(identity.userId || "Sistema").trim()
+  );
+}
+
 function getEmployeeRecords(payload) {
   const actor = getVerifiedAccountingIdentity_(payload);
   if (!actor.authorized) {
     return { status: "error", code: actor.code || "VERIFIED_IDENTITY_REQUIRED", message: "Acceso denegado." };
   }
 
-  const { userId, expedienteId, estadoLaboral } = payload || {};
-  const requestedExpedienteId = String(expedienteId || "").trim();
-  const requestedUserId = String(userId || "").trim();
+  const role = normalizeVacationRole_(actor.role);
+  const selfRoles = ["EMPLEADO", "TRABAJADOR", "PERSONAL", "PROFESOR"];
+  const managementRoles = ["RECURSOSHUMANOS", "DIRECTOR", "SUBDIRECTOR", "CONTADOR", "ADMINISTRADOR"];
+  const isSelf = selfRoles.indexOf(role) !== -1;
+  if (!isSelf && managementRoles.indexOf(role) === -1) {
+    return { status: "error", code: "ROLE_NOT_ALLOWED", message: "Acceso denegado." };
+  }
+
+  const request = payload || {};
+  const requestedExpedienteId = String(request.expedienteId || "").trim();
+  const requestedUserId = String(request.userId || "").trim();
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName("ExpedientesLaborales");
   if (!sheet) return { status: "success", expedientes: [] };
   const values = sheet.getDataRange().getValues();
   const rows = values.length > 1 ? values.slice(1) : [];
 
-  const expedienteCounts = {};
+  const expedienteCounts = Object.create(null);
   rows.forEach(function(row) {
     const id = String((row || [])[0] || "").trim();
     if (id) expedienteCounts[id] = (expedienteCounts[id] || 0) + 1;
   });
 
   let candidates = rows;
-  if (requestedExpedienteId) {
-    candidates = rows.filter(function(row) {
-      return String((row || [])[0] || "").trim() === requestedExpedienteId;
+  if (isSelf) {
+    const ownRows = rows.filter(function(row) {
+      return String((row || [])[2] || "").trim() === actor.userId;
     });
-    if (candidates.length !== 1) {
+    const ownId = ownRows.length === 1 ? String(ownRows[0][0] || "").trim() : "";
+    if (!ownId || expedienteCounts[ownId] !== 1) {
+      if (requestedExpedienteId || requestedUserId) {
+        auditEmployeeSelfServiceDenied_("getEmployeeRecords", actor, {
+          userIdProvided: !!requestedUserId,
+          expedienteIdProvided: !!requestedExpedienteId
+        });
+      }
       return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Expediente no disponible." };
     }
+    if ((requestedExpedienteId && requestedExpedienteId !== ownId) ||
+        (requestedUserId && requestedUserId !== actor.userId)) {
+      auditEmployeeSelfServiceDenied_("getEmployeeRecords", actor, {
+        userIdProvided: !!requestedUserId,
+        expedienteIdProvided: !!requestedExpedienteId
+      });
+      return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Expediente no disponible." };
+    }
+    candidates = ownRows;
+  } else {
+    if (requestedExpedienteId) {
+      candidates = rows.filter(function(row) {
+        return String((row || [])[0] || "").trim() === requestedExpedienteId;
+      });
+      if (candidates.length !== 1) {
+        return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Expediente no disponible." };
+      }
+    }
+    if (requestedUserId) {
+      candidates = candidates.filter(function(row) {
+        return String((row || [])[2] || "").trim() === requestedUserId;
+      });
+    }
   }
-  if (requestedUserId) {
+  if (request.estadoLaboral) {
     candidates = candidates.filter(function(row) {
-      return String((row || [])[2] || "").trim() === requestedUserId;
-    });
-  }
-  if (estadoLaboral) {
-    candidates = candidates.filter(function(row) {
-      return String((row || [])[8] || "").trim() === String(estadoLaboral).trim();
+      return String((row || [])[8] || "").trim() === String(request.estadoLaboral).trim();
     });
   }
 
   const filtered = [];
+  const accessById = Object.create(null);
   for (let i = 0; i < candidates.length; i++) {
     const row = candidates[i] || [];
     const id = String(row[0] || "").trim();
     if (!id || expedienteCounts[id] !== 1) continue;
-
     const access = assertEmployeeExpedienteScopeAccess_(payload, ss, id);
-    if (access.authorized) filtered.push(row);
-    else if (requestedExpedienteId) {
+    if (access.authorized) {
+      filtered.push(row);
+      accessById[id] = access;
+    } else if (requestedExpedienteId) {
       return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Expediente no disponible." };
     }
   }
 
-  const mapped = filtered.map(r => ({
-    expedienteId: r[0],
-    personaId: r[1],
-    userId: r[2],
-    puesto: r[3],
-    departamento: r[4],
-    centroCosto: r[5],
-    fechaIngreso: r[6],
-    fechaSalida: r[7],
-    estadoLaboral: r[8],
-    observaciones: r[9]
-  }));
+  const mapped = filtered.map(function(row) {
+    const id = String(row[0] || "").trim();
+    const selfAccess = accessById[id] && accessById[id].accessType === "SELF";
+    return {
+      expedienteId: row[0],
+      personaId: row[1],
+      userId: row[2],
+      puesto: row[3],
+      departamento: row[4],
+      centroCosto: row[5],
+      fechaIngreso: row[6],
+      fechaSalida: row[7],
+      estadoLaboral: row[8],
+      observaciones: selfAccess ? "" : row[9]
+    };
+  });
 
-  return {
-    status: "success",
-    expedientes: mapped
-  };
+  return { status: "success", expedientes: mapped };
 }
 
 function manageEmployeeContract(payload) {
@@ -12036,7 +12091,7 @@ function getVacationSheetSnapshot_(ss,name,headers) {
   if(!data.length||!Array.isArray(data[0])||data[0].length!==headers.length||headers.some((h,i)=>String(data[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))return {error:true,sheet:sheet,rows:[]};
   return {missing:false,error:false,sheet:sheet,rows:data.slice(1).filter(Array.isArray)};
 }
-function resolveVacationEmployeeAccess_(payload,ss,requestedId,allowSelf) {
+function resolveVacationEmployeeAccess_(payload,ss,requestedId,allowSelf,actionName) {
   const actor=getVerifiedAccountingIdentity_(payload);
   if(!actor.authorized)return actor;
   const role=normalizeVacationRole_(actor.role),selfRoles=["EMPLEADO","TRABAJADOR","PERSONAL","PROFESOR"],id=String(requestedId||"").trim();
@@ -12047,7 +12102,11 @@ function resolveVacationEmployeeAccess_(payload,ss,requestedId,allowSelf) {
     const own=employees.rows.filter(r=>String(r[2]||"").trim()===actor.userId);
     if(own.length!==1)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
     const ownId=String(own[0][0]||"").trim();
-    if(!ownId||employees.rows.filter(r=>String(r[0]||"").trim()===ownId).length!==1||(id&&id!==ownId))return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+    if(!ownId||employees.rows.filter(r=>String(r[0]||"").trim()===ownId).length!==1)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+    if(id&&id!==ownId){
+      auditEmployeeSelfServiceDenied_(actionName||"resolveVacationEmployeeAccess_",actor,{expedienteIdProvided:true});
+      return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+    }
     return {authorized:true,actor:actor,expedienteId:ownId,accessType:"SELF"};
   }
   if(!id||employees.rows.filter(r=>String(r[0]||"").trim()===id).length!==1)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
@@ -12149,7 +12208,7 @@ function getVacationRequests(payload){
   const role=normalizeVacationRole_(actor.role),self=["EMPLEADO","TRABAJADOR","PERSONAL","PROFESOR"].indexOf(role)!==-1;
   if(!self&&["RECURSOSHUMANOS","DIRECTOR","SUBDIRECTOR","CONTADOR","ADMINISTRADOR"].indexOf(role)===-1)return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
   const ss=SpreadsheetApp.openById(SPREADSHEET_ID);let target="";
-  if(self||p.expedienteId){const access=resolveVacationEmployeeAccess_(p,ss,p.expedienteId,true);if(!access.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existen solicitudes disponibles."};target=access.expedienteId;}
+  if(self||p.expedienteId){const access=resolveVacationEmployeeAccess_(p,ss,p.expedienteId,true,"getVacationRequests");if(!access.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existen solicitudes disponibles."};target=access.expedienteId;}
   const snap=getVacationSheetSnapshot_(ss,"SolicitudesVacaciones",["SolicitudID","ExpedienteID","Tipo","FechaInicio","FechaFin","DiasSolicitados","Estado","AprobadoPor","Observaciones"]);
   if(snap.missing)return {status:"success",solicitudes:[]};
   if(snap.error)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de solicitudes de vacaciones no es válida."};
@@ -12158,7 +12217,7 @@ function getVacationRequests(payload){
   snap.rows.forEach(r=>{
     const reqId=String(r[0]||"").trim(),expId=String(r[1]||"").trim();
     if(!reqId||counts[reqId]!==1||!expId||(target&&target!==expId))return;
-    if(!Object.prototype.hasOwnProperty.call(cache,expId))cache[expId]=resolveVacationEmployeeAccess_(p,ss,expId,self);
+    if(!Object.prototype.hasOwnProperty.call(cache,expId))cache[expId]=resolveVacationEmployeeAccess_(p,ss,expId,self,"getVacationRequests");
     if(!cache[expId].authorized||(wanted&&String(r[6]||"").trim().toLowerCase()!==wanted))return;
     result.push({solicitudId:r[0],expedienteId:r[1],tipo:r[2],fechaInicio:r[3],fechaFin:r[4],diasSolicitados:parseInt(r[5]||0,10),estado:r[6],aprobadoPor:r[7],observaciones:r[8]});
   });

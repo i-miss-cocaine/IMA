@@ -1,22 +1,34 @@
 const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),vm=require("node:vm");
 function extractFunction(s,n){const a=s.indexOf("function "+n+"(");assert.ok(a>=0,n);const o=s.indexOf("{",a);let d=0,q="",esc=false,line=false,block=false;for(let i=o;i<s.length;i++){const c=s[i],x=s[i+1];if(line){if(c==="\n")line=false;continue;}if(block){if(c==="*"&&x==="/"){block=false;i++;}continue;}if(q){if(esc){esc=false;continue;}if(c==="\\"){esc=true;continue;}if(c===q)q="";continue;}if(c==="/"&&x==="/"){line=true;i++;continue;}if(c==="/"&&x==="*"){block=true;i++;continue;}if(c==="'"||c==='"'||c.charCodeAt(0)===96){q=c;continue;}if(c==="{")d++;else if(c==="}"&&--d===0)return s.slice(a,i+1);}throw Error(n+" unbalanced");}
 const root=path.resolve(__dirname,"../.."),accounting=fs.readFileSync(path.join(root,"backend/accounting-service/Code.gs"),"utf8");assert.doesNotThrow(()=>new Function(accounting));
-const names=["getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentScope_","resolveEmployeeDepartmentId_","assertResourceOwnershipForScope_","assertEmployeeExpedienteScopeAccess_","normalizeVacationRole_","getVacationSheetSnapshot_","resolveVacationEmployeeAccess_","assertVacationWriteAccess_","submitVacationRequestCore_","submitLeaveVacationRequest","submitVacationRequest","getLeaveVacationRequests","reviewLeaveVacationRequest","calculateVacationBalances","recordMedicalLeave","getVacationRequests","reviewVacationRequest"];
+const names=["getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentScope_","resolveEmployeeDepartmentId_","assertResourceOwnershipForScope_","assertEmployeeExpedienteScopeAccess_","auditEmployeeSelfServiceDenied_","getEmployeeRecords","normalizeVacationRole_","getVacationSheetSnapshot_","resolveVacationEmployeeAccess_","assertVacationWriteAccess_","submitVacationRequestCore_","submitLeaveVacationRequest","submitVacationRequest","getLeaveVacationRequests","reviewLeaveVacationRequest","calculateVacationBalances","recordMedicalLeave","getVacationRequests","reviewVacationRequest"];
 const code=["var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();",names.map(n=>extractFunction(accounting,n)).join("\n")].join("\n");
 const claims={"ha":{userId:"U-HA",role:"RecursosHumanos"},"hb":{userId:"U-HB",role:"RecursosHumanos"},"emp":{userId:"U-EMP",role:"Empleado"},"prof":{userId:"U-PROF",role:"Profesor"},"dir":{userId:"U-DIR",role:"Director"},"admin":{userId:"U-ADMIN",role:"Administrador"},"bad":null};
 const scopes={"U-HA":{departmentIds:["A"],institutionWide:false},"U-HB":{departmentIds:["B"],institutionWide:false},"U-DIR":{departmentIds:["A"],institutionWide:false},"U-ADMIN":{departmentIds:[],institutionWide:true}};
 const rows={
-ExpedientesLaborales:[["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"],["EA","PA","U-EMP","Empleado","A","","2020-01-01","","Activo",""],["EB","PB","U-OTHER","Empleado","B","","2021-01-01","","Activo",""],["EP","PP","U-PROF","Profesor","A","","2022-01-01","","Activo",""]],
+ExpedientesLaborales:[["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"],["EA","PA","U-EMP","Empleado","A","","2020-01-01","","Activo","Nota interna A"],["EB","PB","U-OTHER","Empleado","B","","2021-01-01","","Activo","Nota interna B"],["EP","PP","U-PROF","Profesor","A","","2022-01-01","","Activo","Nota interna P"]],
 ResourceOwnership:[["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"],["OA","I","EXPEDIENTE_LABORAL","EA","A","ACTIVE","U-ADMIN","",""],["OB","I","EXPEDIENTE_LABORAL","EB","B","ACTIVE","U-ADMIN","",""],["OP","I","EXPEDIENTE_LABORAL","EP","A","ACTIVE","U-ADMIN","",""]],
 SolicitudesVacaciones:[["SolicitudID","ExpedienteID","Tipo","FechaInicio","FechaFin","DiasSolicitados","Estado","AprobadoPor","Observaciones"],["VA","EA","Vacaciones","2026-12-01","2026-12-05",5,"PendienteAprobacion","","A"],["VB","EB","Permiso","2026-12-02","2026-12-03",2,"PendienteAprobacion","","B"]],
 IncapacidadesMedicas:[["IncapacidadID","ExpedienteID","CentroMedico","DiagnosticoPrivadoUrl","FechaInicio","FechaFin","DiasOtorgados","EstadoIHSS","Observaciones"],["IA","EA","IHSS","PRIVATE","2026-01-10","2026-01-12",3,"AceptadaIHSS","A"],["IB","EB","IHSS","PRIVATE","2026-01-11","2026-01-13",3,"AceptadaIHSS","B"]]};
 let onAppend=null;function sheet(n){return {getDataRange:()=>({getValues:()=>(rows[n]||[]).map(r=>r.slice())}),getLastRow:()=>(rows[n]||[]).length,appendRow:r=>{if(onAppend)onAppend();rows[n].push(r.slice());},getRange:(r,c)=>({setValue:v=>rows[n][r-1][c-1]=v})};}
 const ss={getSheetByName:n=>Object.hasOwn(rows,n)?sheet(n):null,insertSheet:n=>(rows[n]=[],sheet(n))};let uuid=0,locked=false,available=true;
-const ctx={console,Date,Math,Number,String,Object,Array,JSON,WeakMap,isNaN,parseInt,SPREADSHEET_ID:"T",verifySessionToken:t=>claims[t]||null,
+const auditEvents=[];const ctx={console,Date,Math,Number,String,Object,Array,JSON,WeakMap,isNaN,parseInt,SPREADSHEET_ID:"T",verifySessionToken:t=>claims[t]||null,logStructuredEvent:(...args)=>auditEvents.push(args),
 getVerifiedDepartmentScopeForSession_:(p,s,a)=>scopes[a.userId]?{authorized:true,userId:a.userId,role:a.role,institutionId:"I",departmentIds:scopes[a.userId].departmentIds,institutionWide:scopes[a.userId].institutionWide}:{authorized:false,code:"DEPARTMENT_SCOPE_NOT_ASSIGNED"},
 SpreadsheetApp:{openById:()=>ss},getOrCreateSheet:(s,n)=>(rows[n]||(rows[n]=[]),sheet(n)),Utilities:{getUuid:()=>"U"+(++uuid)},
 LockService:{getScriptLock:()=>({tryLock:()=>{if(!available||locked)return false;locked=true;return true;},releaseLock:()=>locked=false})}};
 vm.createContext(ctx);vm.runInContext(code,ctx);const p=t=>({sessionToken:t}),count=rows.SolicitudesVacaciones.length;
+const ownRecords=ctx.getEmployeeRecords(p("emp"));
+assert.equal(ownRecords.status,"success");
+assert.deepEqual(ownRecords.expedientes.map(r=>r.expedienteId),["EA"]);
+assert.equal(ownRecords.expedientes[0].observaciones,"","self-service must not expose internal HR notes");
+assert.equal(ctx.getEmployeeRecords({...p("emp"),userId:"U-OTHER"}).code,"RESOURCE_NOT_FOUND");
+assert.equal(ctx.getEmployeeRecords({...p("emp"),expedienteId:"EB"}).code,"RESOURCE_NOT_FOUND");
+assert.equal(ctx.getEmployeeRecords({...p("emp"),userId:"U-EMP",expedienteId:"EB"}).code,"RESOURCE_NOT_FOUND");
+assert.deepEqual(ctx.getEmployeeRecords(p("ha")).expedientes.map(r=>r.expedienteId).sort(),["EA","EP"]);
+assert.deepEqual(ctx.getEmployeeRecords(p("hb")).expedientes.map(r=>r.expedienteId),["EB"]);
+assert.deepEqual(ctx.getEmployeeRecords(p("admin")).expedientes.map(r=>r.expedienteId).sort(),["EA","EB","EP"]);
+assert.equal(ctx.getEmployeeRecords(p("bad")).code,"VERIFIED_IDENTITY_REQUIRED");
+assert.equal(ctx.getEmployeeRecords(p("emp")).expedientes[0].observaciones,"");
 assert.equal(ctx.submitLeaveVacationRequest(p("bad")).code,"VERIFIED_IDENTITY_REQUIRED");
 assert.equal(ctx.submitLeaveVacationRequest({...p("emp"),expedienteId:"EB",fechaInicio:"2026-12-10",fechaFin:"2026-12-11"}).code,"RESOURCE_NOT_FOUND");assert.equal(rows.SolicitudesVacaciones.length,count);
 assert.equal(ctx.submitLeaveVacationRequest({...p("emp"),fechaInicio:"2026-12-10",fechaFin:"2026-12-12",diasSolicitados:3}).status,"success");assert.equal(rows.SolicitudesVacaciones.at(-1)[1],"EA");
@@ -30,6 +42,8 @@ const hrRequests=ctx.getLeaveVacationRequests(p("ha")).solicitudes;assert.ok(hrR
 assert.equal(ctx.getVacationRequests({...p("ha"),expedienteId:"EB"}).code,"RESOURCE_NOT_FOUND");
 assert.ok(ctx.getLeaveVacationRequests(p("emp")).solicitudes.every(x=>x.expedienteId==="EA"));
 assert.equal(ctx.getVacationRequests({...p("emp"),expedienteId:"EB"}).code,"RESOURCE_NOT_FOUND");
+assert.ok(auditEvents.some(event=>event[3]==="UNAUTHORIZED_EMPLOYEE_RESOURCE_ACCESS"),"foreign employee resource probes must be audited");
+assert.ok(auditEvents.every(event=>!JSON.stringify(event[5]||{}).includes("EB")&&!JSON.stringify(event[5]||{}).includes("U-OTHER")),"audit must not persist attacker-supplied target IDs");
 assert.equal(ctx.calculateVacationBalances({...p("ha"),expedienteId:"EA"}).status,"success");
 assert.equal(ctx.calculateVacationBalances({...p("hb"),expedienteId:"EA"}).code,"RESOURCE_NOT_FOUND");
 assert.equal(ctx.calculateVacationBalances({...p("emp"),expedienteId:"EA"}).code,"ROLE_NOT_ALLOWED");
@@ -43,5 +57,5 @@ available=false;const n=rows.SolicitudesVacaciones.length;assert.equal(ctx.submi
 const dup=rows.SolicitudesVacaciones.length;rows.SolicitudesVacaciones.push(["DUP","EA","V","a","b",1,"Pending","",""],["DUP","EA","V","a","b",1,"Pending","",""]);assert.ok(!ctx.getVacationRequests(p("admin")).solicitudes.some(x=>x.solicitudId==="DUP"));rows.SolicitudesVacaciones.splice(dup);
 const header=rows.SolicitudesVacaciones[0].slice();rows.SolicitudesVacaciones[0][0]="bad";assert.equal(ctx.getVacationRequests(p("admin")).code,"RESOURCE_SCHEMA_INVALID");rows.SolicitudesVacaciones[0]=header;
 const saved=rows.SolicitudesVacaciones;delete rows.SolicitudesVacaciones;assert.deepEqual(Array.from(ctx.getVacationRequests(p("admin")).solicitudes),[]);assert.equal(Object.hasOwn(rows,"SolicitudesVacaciones"),false);rows.SolicitudesVacaciones=saved;
-const gate=extractFunction(accounting,"validateRolePermission");for(const a of ["submitLeaveVacationRequest","submitVacationRequest","getLeaveVacationRequests","getVacationRequests","reviewLeaveVacationRequest","reviewVacationRequest","calculateVacationBalances","recordMedicalLeave"])assert.ok(gate.includes('"'+a+'"'),a+" missing scope gate");
+const gate=extractFunction(accounting,"validateRolePermission");for(const a of ["getEmployeeRecords","submitLeaveVacationRequest","submitVacationRequest","getLeaveVacationRequests","getVacationRequests","reviewLeaveVacationRequest","reviewVacationRequest","calculateVacationBalances","recordMedicalLeave"])assert.ok(gate.includes('"'+a+'"'),a+" missing scope gate");
 console.log("ACCOUNTING vacation and medical-leave ownership contract passed");
