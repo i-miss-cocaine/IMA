@@ -5313,6 +5313,8 @@ function verifyPaymentVoucherEvidence_(ss,row,map) {
     const blob=file.getBlob(),bytes=blob.getBytes(),fileName=String(file.getName()||"comprobante");
     if(!bytes||!bytes.length||bytes.length>10*1024*1024)return {status:"error",code:"VOUCHER_FILE_SIZE_INVALID"};
     const mime=String(blob.getContentType()||file.getMimeType()||"").toLowerCase();
+    const extension=fileName.toLowerCase().slice(fileName.lastIndexOf("."));
+    if([".pdf",".jpg",".jpeg",".png",".webp"].indexOf(extension)===-1)return {status:"error",code:"VOUCHER_FILE_TYPE_NOT_ALLOWED"};
     let validation;
     try { validation=validateFileBinaryIntegrity(Utilities.base64Encode(bytes),fileName,{maxSizeBytes:10*1024*1024,allowedExtensions:[".pdf",".jpg",".jpeg",".png",".webp"]}); }
     catch(validationError) {
