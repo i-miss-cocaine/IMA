@@ -942,12 +942,18 @@ function getTrustedAcademicMigrationTargetExistenceSnapshot_(payload) {
   var headers = values.length ? values[0].map(function(value) { return String(value || "").trim(); }) : [];
   if (headers[0] !== "ExpedienteID") return { status: "error", code: "MIGRATION_SNAPSHOT_SCHEMA_MISMATCH" };
   var existing = [];
+  var targetRows = [];
   for (var i = 1; i < values.length; i++) {
     var id = String(values[i][0] || "").trim();
-    if (id && requested[id]) existing.push(id);
+    if (id && requested[id]) {
+      existing.push(id);
+      var item = {};
+      headers.forEach(function(header, column) { if (header) item[header] = values[i][column]; });
+      targetRows.push(item);
+    }
   }
   return { status: "success", verified: true, service: "ACADEMIC", sheet: "ExpedientesEstudiantes",
-    idField: "ExpedienteID", institutionId: institutionId, existingTargetIds: existing.sort(), targetRows: [] };
+    idField: "ExpedienteID", institutionId: institutionId, existingTargetIds: existing.sort(), targetRows: targetRows };
 }
 
 function handleTrustedMigrationEnvelope_(envelope){
