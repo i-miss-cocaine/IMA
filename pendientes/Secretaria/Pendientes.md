@@ -1661,10 +1661,17 @@
   - [ ] Los departamentos consultan su propio inventario sin acceder a información restringida de otras áreas.
   - [ ] Dirección puede consultar el inventario consolidado de toda la institución.
 - **Dependencias:** Estructura de departamentos, roles, permisos y almacenamiento institucional.
-- **Estado:** [ ] Pendiente
+- **Estado:** [ ] En ejecución — API USER y contratos automatizados implementados; interfaz de inventario y beta real pendientes.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 5826-5863; clave TASK-133; asignación única: Secretaria -->
 
+- **Avance C1.762 (2026-11-15):** se implementaron registerLegacyDocumentInventory y getLegacyDocumentInventory en backend/user-service/Code.gs, porque backend/accounting-service/Code.gs está vacío en la rama y el contexto autenticado de roles/ámbitos departamentales reside en USER. No se creó un servicio ACCOUNTING ficticio.
+- **Modelo:** hoja InventarioDocumentalLegado auto-creada al registrar y hoja HistorialInventarioDocumentalLegado para auditoría. Incluye los campos originales solicitados, InstitutionID, SubcategoriaDocumental y ClaveOrigen estable. Los soportes FISICO/DIGITAL/MIXTO se registran sin exigir carga a Drive.
+- **Clasificación:** categorías REGISTROS_DE_DATOS, PLANTILLAS y DOCUMENTOS_HISTORICOS; estados exactos de transición del requisito; subcategorías de texto libre agrupadas por departamento.
+- **Seguridad:** identidad verificada, permiso dinámico/ROLE_PERMISSIONS, getUserContextScope, tenant isolation, departamento propietario inmutable, lectura limitada a ámbitos asignados y consolidado solo para Director/Administrador con ámbito institucional. La deduplicación por ClaveOrigen es institucional y no revela IDs de otros departamentos.
+- **Trazabilidad:** DocumentoId estable; cambios de metadatos/clasificación/estado guardan valor anterior/nuevo, actor, rol, fecha y correlationId. ScriptLock serializa escrituras y se compensa la fila si falla el historial. Filtros por departamento/categoría/formato/responsable/período/estado y exportación CSV con neutralización de fórmulas.
+- **Pruebas:** tests/security/user-service-legacy-document-inventory.test.js cubre tenant/departamento, ID estable, deduplicación por referencia de origen, historial, filtros, CSV, validación, lock, rollback, RBAC y dispatcher. Harness aislado V8 PASS. GitHub Actions ima/department-scope-contract SUCCESS en commits 54ae2556c82a349b1bc1a4ead829502b33135aa2 y c955fc6ffc51081daed3e85976575865a6f6b8d6. Las aserciones de rollback se agregaron después y requieren confirmar el estado del commit be9a598c6fe4e052bb572a5bb6c9f512469fe102.
+- **Pendiente para cierre:** interfaz/pantalla para registro, edición, filtros y exportación; pruebas de Apps Script/Sheets reales y aceptación de Secretaría/Dirección; confirmar CI del test de rollback; integración con importación ZIP, validación documental y SHA-256 en tareas posteriores.
 ---
 
 <!-- ID: TASK-133 | Fuentes: Pendientes.md ; pendientes/Secretaria/Pendientes.md -->
