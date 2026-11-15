@@ -46,7 +46,7 @@ assert.ok(userAuditor.includes("getUserRoleMemberships"));
 const mutatingAction = /^(create|save|update|delete|remove|grant|revoke|manage|upload|write|import|restore|purge|configure|approve|register|submit|assign|cancel|archive|close|process|generate|set|mark|reply|send|accept|switch)/i;
 for (const [service, actions] of [["ACADEMIC", academicAuditor], ["USER", userAuditor]]) {
   assert.ok(actions.length > 0, service + " Auditor has an explicit allowlist");
-  assert.deepEqual(actions.filter(action => mutatingAction.test(action)), [],
+  assert.equal(JSON.stringify(Array.from(actions).filter(action => mutatingAction.test(action))), "[]",
     service + " Auditor cannot mutate, delete, approve, upload or administer records");
 }
 assert.doesNotMatch(userAuditor.join("|"), /getNotificationAuditLogs|manageUserRoleMemberships|purgeStructuredLogs/);
