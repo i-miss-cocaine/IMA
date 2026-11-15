@@ -74,7 +74,7 @@ function makeRuntime(options = {}) {
     }},
     getVerifiedAccountingIdentity_(payload){
       if(!payload||payload.sessionToken==="invalid")return{authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
-      return payload.sessionToken==="employee"?{authorized:true,userId:"U-EMP",role:"Empleado"}:{authorized:true,userId:"U-STAFF",role:"Director"};
+      return payload.sessionToken==="employee"?{authorized:true,userId:"U-A",role:"Empleado"}:{authorized:true,userId:"U-STAFF",role:"Director"};
     },
     assertEmployeeExpedienteScopeAccess_(payload,ss,expedienteId){
       if(options.scopeCode)return{authorized:false,code:options.scopeCode};
