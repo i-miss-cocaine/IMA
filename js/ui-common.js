@@ -6437,3 +6437,166 @@ window.loadDynamicDashboard = async function() {
         if (grid) grid.innerHTML = '<p class="col-span-3 text-rose-500 font-bold text-center p-6 bg-white rounded-2xl border">Error de comunicación con el servicio de configuración.</p>';
     }
 };
+
+
+/* [F38-Task01] Tooltips accesibles: teclado, hover, toque y posicionamiento adaptable. */
+window.calculateAccessibleTooltipPosition = function(targetRect, tooltipRect, viewport) {
+    var width = Number(viewport && viewport.width) || 0;
+    var height = Number(viewport && viewport.height) || 0;
+    var gap = 8;
+    var left = Number(targetRect && targetRect.left) || 0;
+    var top = (Number(targetRect && targetRect.bottom) || 0) + gap;
+    var placement = "bottom";
+    var tooltipHeight = Number(tooltipRect && tooltipRect.height) || 0;
+    var tooltipWidth = Number(tooltipRect && tooltipRect.width) || 0;
+
+    if (top + tooltipHeight > height - gap &&
+        Number(targetRect && targetRect.top) >= tooltipHeight + gap * 2) {
+        top = Number(targetRect.top) - tooltipHeight - gap;
+        placement = "top";
+    }
+    left = Math.max(gap, Math.min(left, Math.max(gap, width - tooltipWidth - gap)));
+    top = Math.max(gap, Math.min(top, Math.max(gap, height - tooltipHeight - gap)));
+    return { top: top, left: left, placement: placement };
+};
+
+window.initAccessibleTooltips = function(root) {
+    root = root || document;
+    if (!document || !document.body) return 0;
+
+    if (!document.getElementById("ima-accessible-tooltip-styles")) {
+        var style = document.createElement("style");
+        style.id = "ima-accessible-tooltip-styles";
+        style.textContent =
+            ".ima-tooltip-sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}" +
+            ".ima-tooltip-trigger{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin:0 0 0 6px;width:22px;height:22px;border:1px solid #94a3b8;border-radius:50%;background:#fff;color:#334155;font:700 12px/1 sans-serif;cursor:help}" +
+            ".ima-tooltip-trigger:focus-visible{outline:3px solid #2563eb;outline-offset:2px}" +
+            ".ima-tooltip-popover{position:fixed;z-index:100000;display:none;max-width:min(320px,calc(100vw - 16px));padding:10px 12px;border-radius:10px;background:#0f172a;color:#fff;font:400 12px/1.5 sans-serif;box-shadow:0 8px 24px rgba(15,23,42,.24);pointer-events:none}";
+        (document.head || document.body).appendChild(style);
+    }
+
+    var selector = "[data-tooltip],[data-help]";
+    var targets = [];
+    if (root.matches && root.matches(selector)) targets.push(root);
+    if (root.querySelectorAll) {
+        var found = root.querySelectorAll(selector);
+        for (var i = 0; i < found.length; i++) targets.push(found[i]);
+    }
+
+    var initialized = 0;
+    for (var j = 0; j < targets.length; j++) {
+        var target = targets[j];
+        if (!target || target.getAttribute("data-tooltip-ready") === "true") continue;
+        var helpText = String(target.getAttribute("data-tooltip") || target.getAttribute("data-help") || "").trim();
+        if (!helpText) continue;
+
+        var idSuffix = String(++window.__imaTooltipCounter || (window.__imaTooltipCounter = 1));
+        var descriptionId = "ima-tooltip-description-" + idSuffix;
+        var popoverId = "ima-tooltip-popover-" + idSuffix;
+        var fieldName = target.getAttribute("aria-label") || target.getAttribute("name") || target.id || "este campo";
+
+        var description = document.createElement("span");
+        description.id = descriptionId;
+        description.className = "ima-tooltip-sr-only";
+        description.textContent = helpText;
+        document.body.appendChild(description);
+
+        var describedBy = String(target.getAttribute("aria-describedby") || "").trim();
+        if ((" " + describedBy + " ").indexOf(" " + descriptionId + " ") === -1) {
+            target.setAttribute("aria-describedby", (describedBy ? describedBy + " " : "") + descriptionId);
+        }
+
+        var trigger = document.createElement("button");
+        trigger.type = "button";
+        trigger.className = "ima-tooltip-trigger";
+        trigger.textContent = "?";
+        trigger.setAttribute("aria-label", "Ayuda para " + fieldName);
+        trigger.setAttribute("aria-expanded", "false");
+        trigger.setAttribute("aria-controls", popoverId);
+        trigger.setAttribute("data-ui-tooltip-trigger", "true");
+
+        var popover = document.createElement("div");
+        popover.id = popoverId;
+        popover.className = "ima-tooltip-popover";
+        popover.setAttribute("role", "tooltip");
+        popover.textContent = helpText;
+        document.body.appendChild(popover);
+
+        var isOpen = false;
+        var reposition = function() {
+            if (!isOpen) return;
+            var targetRect = target.getBoundingClientRect();
+            popover.style.visibility = "hidden";
+            popover.style.display = "block";
+            var tooltipRect = popover.getBoundingClientRect();
+            var position = window.calculateAccessibleTooltipPosition(
+                targetRect, tooltipRect, { width: window.innerWidth, height: window.innerHeight }
+            );
+            popover.style.top = position.top + "px";
+            popover.style.left = position.left + "px";
+            popover.setAttribute("data-placement", position.placement);
+            popover.style.visibility = "visible";
+        };
+        var hide = function() {
+            if (!isOpen) return;
+            isOpen = false;
+            popover.style.display = "none";
+            trigger.setAttribute("aria-expanded", "false");
+            window.removeEventListener("resize", reposition);
+            window.removeEventListener("scroll", reposition, true);
+        };
+        var show = function() {
+            if (isOpen) { reposition(); return; }
+            isOpen = true;
+            trigger.setAttribute("aria-expanded", "true");
+            popover.style.display = "block";
+            reposition();
+            window.addEventListener("resize", reposition);
+            window.addEventListener("scroll", reposition, true);
+        };
+
+        trigger.addEventListener("mouseenter", show);
+        trigger.addEventListener("mouseleave", function() {
+            if (document.activeElement !== trigger) hide();
+        });
+        trigger.addEventListener("focus", show);
+        trigger.addEventListener("blur", hide);
+        trigger.addEventListener("click", function(event) {
+            if (event && event.preventDefault) event.preventDefault();
+            if (isOpen) hide(); else show();
+        });
+        trigger.addEventListener("keydown", function(event) {
+            if (event && (event.key === "Escape" || event.keyCode === 27)) {
+                hide();
+                trigger.focus();
+            }
+        });
+
+        if (target.parentNode) target.parentNode.insertBefore(trigger, target.nextSibling);
+        target.setAttribute("data-tooltip-ready", "true");
+        initialized++;
+    }
+
+    if (!window.__imaTooltipObserver && typeof MutationObserver !== "undefined" && document.body) {
+        window.__imaTooltipObserver = new MutationObserver(function(records) {
+            for (var r = 0; r < records.length; r++) {
+                for (var n = 0; n < records[r].addedNodes.length; n++) {
+                    var node = records[r].addedNodes[n];
+                    if (node && node.nodeType === 1 && !node.getAttribute("data-ui-tooltip-trigger")) {
+                        window.initAccessibleTooltips(node);
+                    }
+                }
+            }
+        });
+        window.__imaTooltipObserver.observe(document.body, { childList: true, subtree: true });
+    }
+    return initialized;
+};
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function() {
+        window.initAccessibleTooltips(document);
+    });
+} else {
+    window.initAccessibleTooltips(document);
+}
