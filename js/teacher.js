@@ -7755,7 +7755,7 @@ function toBase64(file) {
         const canConfirm = !!(preview && preview.status === 'success' && preview.previewHash && destinationVerified && (preview.validForImport === true || preview.validForPartialImport === true));
         if (confirmation) confirmation.classList.toggle('hidden', !preview || !preview.previewHash);
         if (checkbox) checkbox.checked = false;
-        if (confirmButton) confirmButton.disabled = !canConfirm;
+        if (confirmButton) confirmButton.disabled = !canConfirm || !checkbox || !checkbox.checked;
         const status = document.getElementById('excel-semantic-confirmation-status');
         if (status) status.textContent = canConfirm ? 'La confirmación registra únicamente que revisó este resultado. No ejecuta una importación.' : 'No se puede confirmar: corrija los errores o espere a que el destino pueda verificarse.';
     }
