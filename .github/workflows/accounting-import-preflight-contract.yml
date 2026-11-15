@@ -17,6 +17,7 @@ on:
       - js/accounting.js
       - dashboard-contabilidad.html
       - tests/security/accounting-migration-import-ui.test.js
+      - tests/security/accounting-employee-expediente-scope.test.js
       - js/teacher.js
       - teacher-dashboard.html
       - tests/security/teacher-excel-semantic-preflight-ui.test.js
@@ -67,6 +68,8 @@ jobs:
         run: node --check js/accounting.js
       - name: Run accounting migration import UI contract
         run: node tests/security/accounting-migration-import-ui.test.js
+      - name: Run employee expediente scope contract
+        run: node tests/security/accounting-employee-expediente-scope.test.js
       - name: Check teacher dashboard controller syntax
         run: node --check js/teacher.js
       - name: Run Excel semantic preflight UI contract
