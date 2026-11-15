@@ -61,6 +61,7 @@ const runtime = {
   Date, String, JSON, Array, Object, Number, Math, RegExp, Error,
   getVerifiedAccountingIdentity_: () => identity,
   accountingHasInstitutionalImportPermission_: () => permission,
+  migrationHash_: value => crypto.createHash("sha256").update(String(value)).digest("hex"),
   PropertiesService: { getScriptProperties: () => ({ getProperty: key => ({
     IMA_USER_SERVICE_URL: "https://user.example.test/exec",
     IMA_ACADEMIC_SERVICE_URL: "https://academic.example.test/exec",
@@ -96,6 +97,7 @@ vm.runInNewContext(names.map(extract).join("\n") +
 const payload = {
   tipoEntidad: "curso", idNuevoPlataforma: "CURSO-1", idempotencyKey: "KEY-1",
   institutionId: "INST-1", sessionToken: "SIGNED", correlationId: "CORR-0001",
+  targetSnapshotVerified: true, expectedTargetPresent: false, expectedTargetRowHash: "",
   datos: { Nombre: "=HYPERLINK(\"https://evil.test\")", Nota: 90, FechaInicio: "2026-02-01" }
 };
 {
@@ -120,13 +122,27 @@ const payload = {
 {
   const target = new Sheet([schemas.curso.headers, ["CURSO-2", "Antes", 70, "2025-01-01"]]);
   sheets.set("Cursos", target);
+  const expectedBefore = { CursoID: "CURSO-2", Nombre: "Antes", Nota: 70, FechaInicio: "2025-01-01" };
   const updatePayload = { ...payload, idNuevoPlataforma: "CURSO-2", idempotencyKey: "KEY-2",
+    targetSnapshotVerified: true, expectedTargetPresent: true,
+    expectedTargetRowHash: runtime.migrationHash_(runtime.migrationStableJson_(expectedBefore)),
     datos: { Nombre: "Después", Nota: 88, FechaInicio: "2026-03-01" } };
   const updated = runtime.api.write(updatePayload);
   assert.equal(updated.accion, "UPDATE");
   assert.equal(target.rows[1][1], "Después");
   assert.equal(runtime.api.compensate({ idempotencyKey: "KEY-2" }).compensated, true);
   assert.deepEqual(target.rows[1], ["CURSO-2", "Antes", 70, "2025-01-01"], "update compensation restores the exact prior row");
+}
+{
+  const target = new Sheet([schemas.curso.headers, ["CURSO-3", "Original", 60, "2025-01-01"]]);
+  sheets.set("Cursos", target);
+  const expected = { CursoID: "CURSO-3", Nombre: "Original", Nota: 60, FechaInicio: "2025-01-01" };
+  const stale = { ...payload, idNuevoPlataforma: "CURSO-3", idempotencyKey: "KEY-STALE",
+    expectedTargetPresent: true, expectedTargetRowHash: runtime.migrationHash_(runtime.migrationStableJson_(expected)),
+    datos: { Nombre: "Importado", Nota: 95, FechaInicio: "2026-05-01" } };
+  target.rows[1][2] = 61;
+  assert.throws(() => runtime.api.write(stale), /IMPORT_TARGET_CHANGED_AFTER_PREVIEW/);
+  assert.equal(target.rows[1][2], 61, "stale preview never overwrites a concurrent target edit");
 }
 {
   permission = false;
