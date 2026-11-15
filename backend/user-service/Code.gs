@@ -6846,7 +6846,7 @@ function submitStudentAbsenceJustification(payload) {
   const estudianteId = p.estudianteId;
   const rawAbsenceDates = Array.isArray(p.fechasAusencia) ? p.fechasAusencia : [p.fechaAusencia];
   const fechasAusencia = rawAbsenceDates.map(function(value) { return String(value || "").trim(); });
-  if (!fechasAusencia.length || fechasAusencia.some(function(value) { return !/^\d{4}-\d{2}-\d{2}$/.test(value) || isNaN(Date.parse(value + "T00:00:00Z")); }) ||
+  if (!fechasAusencia.length || fechasAusencia.some(function(value) { var parsed = new Date(value + "T00:00:00Z"); return !/^\d{4}-\d{2}-\d{2}$/.test(value) || isNaN(parsed.getTime()) || parsed.toISOString().slice(0,10) !== value; }) ||
       new Set(fechasAusencia).size !== fechasAusencia.length) throw new Error("FECHAS_AUSENCIA_INVALIDAS");
   fechasAusencia.sort();
   const fechaAusencia = fechasAusencia[0];
