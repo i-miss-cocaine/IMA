@@ -76,7 +76,7 @@ function makeUserRuntime(options = {}) {
 }
 
 const accountingFns = [
-  "accountingComputeHmacSignature_", "requestAccountingUserAuthorization_",
+  "isAccountingTrustedAppsScriptEndpoint_", "accountingComputeHmacSignature_", "requestAccountingUserAuthorization_",
   "getVerifiedAccountingIdentity_", "accountingHasInstitutionalImportPermission_",
   "getVerifiedDepartmentScopeForSession_", "apiResponseCorrelationId_", "apiResponsePublicMessage_",
   "buildApiResponseEnvelope_", "textResponse", "validateApiContractsTestSuite", "doGet", "doPost"
