@@ -13142,8 +13142,10 @@ function getUIMetadataCatalog(payload) {
       },
       "matricula.identidad": {
         label: "Número de identidad / DNI",
-        help: "Escribe el número exactamente como aparece en el documento oficial del estudiante o responsable. No agregues ni elimines dígitos ni uses el código institucional en este campo. Si aparece una posible coincidencia con otra persona, solicita revisión manual antes de vincular registros.",
-        source: "campo de identificación de expediente estudiantil y flujo de vinculación de identidades; sin patrón numérico impuesto por backend"
+        help: "Ingresa el DNI hondureño con 13 dígitos seguidos (0801199012345) o con guiones en grupos 4-4-5 (0801-1990-12345). El servidor valida ambos formatos y guarda los 13 dígitos normalizados. No agregues espacios ni letras.",
+        examples: ["0801199012345", "0801-1990-12345"],
+        format: "13 dígitos o 4-4-5 con guiones",
+        source: "normalizeHonduranIdentity_ en academic-service/createAdmissionRequest"
       },
       "matricula.fechaNacimiento": {
         label: "Fecha de nacimiento",
