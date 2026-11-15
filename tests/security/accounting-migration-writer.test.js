@@ -48,7 +48,7 @@ const spreadsheet = {
   getSheetByName(name) { return sheets.get(name) || null; },
   insertSheet(name) { const sheet = new Sheet(); sheets.set(name, sheet); return sheet; }
 };
-let lockCount = 0, releaseCount = 0, permission = true, identity = {
+let lockCount = 0, releaseCount = 0, lockBusy = false, permission = true, identity = {
   authorized: true, userId: "U-1", role: "Administrador", institutionId: "INST-1"
 };
 let remoteResponse = { status: "success", accepted: true }, lastEnvelope = null;
@@ -69,7 +69,7 @@ const runtime = {
   })[key] || "" }) },
   SpreadsheetApp: { openById: id => { assert.equal(id, "SHEET-1"); return spreadsheet; } },
   LockService: { getScriptLock: () => ({
-    waitLock(ms) { assert.equal(ms, 10000); lockCount++; },
+    waitLock(ms) { assert.equal(ms, 10000); if (lockBusy) throw new Error("LOCK_TIMEOUT"); lockCount++; },
     releaseLock() { releaseCount++; }
   }) },
   Utilities: {
@@ -91,7 +91,7 @@ const names = [
   "applyTrustedAccountingMigrationWrite_", "compensateTrustedAccountingMigrationWrite_", "sendMigrationOwnerRequest_"
 ];
 vm.runInNewContext(names.map(extract).join("\n") +
-  "\nthis.api={write:applyTrustedAccountingMigrationWrite_,compensate:compensateTrustedAccountingMigrationWrite_,send:sendMigrationOwnerRequest_,envelope:createInterServiceEnvelope};",
+  "\nthis.api={write:applyTrustedAccountingMigrationWrite_,compensate:compensateTrustedAccountingMigrationWrite_,send:sendMigrationOwnerRequest_,envelope:createInterServiceEnvelope,stable:migrationStableJson_};",
   runtime);
 
 const payload = {
@@ -127,7 +127,7 @@ const payload = {
   sheets.set("Cursos", target);
   const updatePayload = { ...payload, idNuevoPlataforma: "CURSO-2", idempotencyKey: "KEY-2",
     targetSnapshotVerified: true, expectedTargetPresent: true,
-    expectedTargetRowHash: runtime.migrationHash_(runtime.migrationStableJson_(expectedBefore)),
+    expectedTargetRowHash: runtime.migrationHash_(runtime.api.stable(expectedBefore)),
     datos: { NombreCurso: "Después", Categoria: "Capacitación", Modalidad: "Presencial", Estado: "Activo" } };
   const updated = runtime.api.write(updatePayload);
   assert.equal(updated.accion, "UPDATE");
@@ -176,5 +176,13 @@ const payload = {
     "arbitrary HTTPS endpoints are rejected before outbound requests");
   runtime.PropertiesService.getScriptProperties = originalProperties;
 }
-assert.equal(lockCount, releaseCount, "all successful and failed write paths release their script lock");
-process.stdout.write("Accounting migration writer: insert/update, idempotency, compensation, tenant/permission isolation, formula safety and USER HMAC transport PASS.\n");
+{
+  const target = sheets.get("Cursos");
+  const beforeRows = target.rows.map(row => row.slice());
+  lockBusy = true;
+  assert.throws(() => runtime.api.write({ ...payload, idNuevoPlataforma: "CURSO-LOCK", idempotencyKey: "KEY-LOCK" }), /LOCK_TIMEOUT/);
+  lockBusy = false;
+  assert.deepEqual(target.rows, beforeRows, "lock contention prevents any partial row mutation");
+}
+assert.equal(lockCount, releaseCount, "all acquired script locks are released, including failed write paths");
+process.stdout.write("Accounting migration writer: insert/update, idempotency, stale snapshot, compensation, lock contention, tenant/permission isolation, formula safety and USER HMAC transport PASS.\n");
