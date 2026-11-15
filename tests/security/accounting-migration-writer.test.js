@@ -151,7 +151,7 @@ const payload = {
   assert.throws(() => runtime.api.write({ ...payload, idempotencyKey: "KEY-DENIED" }), /IMPORT_PERMISSION_DENIED/);
   permission = true;
   assert.throws(() => runtime.api.write({ ...payload, idempotencyKey: "KEY-FIELD", datos: { Unknown: "x" } }), /MIGRATION_FIELD_NOT_ALLOWED/);
-    assert.throws(() => runtime.api.write({ ...payload, idempotencyKey: "KEY-DATE-INVALID", datos: { Nombre: "Invalid", Nota: 10, FechaInicio: "not-a-date" } }), /MIGRATION_DATE_INVALID/);
+    assert.throws(() => runtime.api.write({ ...payload, idempotencyKey: "KEY-DATE-INVALID", datos: { NombreCurso: "Invalid", FechaCreacion: "not-a-date" } }), /MIGRATION_DATE_INVALID/);
   assert.throws(() => runtime.api.write({ ...payload, idempotencyKey: "KEY-TENANT", institutionId: "INST-2" }), /AUTH_PERMISSION_DENIED/);
 }
 {
