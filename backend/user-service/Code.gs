@@ -6789,8 +6789,15 @@ function getAdministrativeRequests(payload) {
   }).map(function(row) {
     const stored = String(row[5] || "").trim();
     const integrityState = attachmentMap.AdjuntoIntegridadEstado === undefined ? "" : String(row[attachmentMap.AdjuntoIntegridadEstado] || "").trim();
+    var approvedSessions = [], requestedSessions = [];
+    try { approvedSessions = JSON.parse(String(attachmentMap.SesionIDsJSON === undefined ? "[]" : row[attachmentMap.SesionIDsJSON] || "[]")); } catch (_) {}
+    try { requestedSessions = JSON.parse(String(attachmentMap.SesionIDsSolicitadasJSON === undefined ? "[]" : row[attachmentMap.SesionIDsSolicitadasJSON] || "[]")); } catch (_) {}
+    if (!Array.isArray(approvedSessions)) approvedSessions = [];
+    if (!Array.isArray(requestedSessions)) requestedSessions = [];
     return { solicitudId:row[0], userId:row[1], estudianteId:row[2], tipoTramite:row[3], descripcion:row[4],
       adjuntoUrl:"", tieneAdjunto:!!stored, integridadAdjunto:stored ? (integrityState || "LEGACY_UNVERIFIED") : "SIN_ADJUNTO",
+      alcanceAprobacion:attachmentMap.AlcanceAprobacion === undefined ? "" : String(row[attachmentMap.AlcanceAprobacion] || ""),
+      sesionesAprobadas:approvedSessions, sesionesSolicitadas:requestedSessions,
       estado:row[6]||"Enviada", asignadoA:row[7]||"Secretaría",
       observacionesAdmin:row[8]||"", fechaSolicitud:row[9]?new Date(row[9]).toISOString():null,
       fechaResolucion:row[10]?new Date(row[10]).toISOString():null };
@@ -6798,7 +6805,7 @@ function getAdministrativeRequests(payload) {
   return { status:"success", data:requests };
 }
 const REQUEST_ATTACHMENT_INTEGRITY_HEADERS_ = ["AdjuntoSHA256","AdjuntoVersion","AdjuntoSizeBytes","AdjuntoMimeType","AdjuntoFechaRecepcion","AdjuntoIntegridadEstado"];
-const USER_ABSENCE_REQUEST_EXTRA_HEADERS_ = ["JustificacionID","FechaAfectada","Periodo","SesionIDsJSON","SyncEstado","MotivoJustificacion","UltimoError"].concat(REQUEST_ATTACHMENT_INTEGRITY_HEADERS_);
+const USER_ABSENCE_REQUEST_EXTRA_HEADERS_ = ["JustificacionID","FechaAfectada","Periodo","SesionIDsJSON","SyncEstado","MotivoJustificacion","UltimoError","SesionIDsSolicitadasJSON","AlcanceAprobacion"].concat(REQUEST_ATTACHMENT_INTEGRITY_HEADERS_);
 
 function ensureUserAbsenceRequestSchema_(sheet) {
   const map = ensureRequestAttachmentIntegritySchema_(sheet);
