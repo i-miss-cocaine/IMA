@@ -81,6 +81,7 @@ on:
       - tests/security/user-service-departmental-outbox.test.js
       - tests/security/user-service-workflow-notifications.test.js
       - tests/security/user-service-ui-metadata.test.js
+      - tests/security/ui-common-permanent-help.test.js
       - tests/security/academic-admission-identity.test.js
       - tests/security/task-service-grade-validation.test.js
       - tests/security/task-service-upload-contract.test.js
@@ -158,6 +159,8 @@ jobs:
         run: node tests/ui/accessible-tooltips.test.js
       - name: Run permanent form help metadata contract
         run: node tests/ui/permanent-form-help.test.js
+      - name: Run inline permanent help and validation DOM contract
+        run: node tests/security/ui-common-permanent-help.test.js
       - name: Run Honduran admission identity validation contract
         run: node tests/security/academic-admission-identity.test.js
       - name: Run task grade validation contract
