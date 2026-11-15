@@ -303,6 +303,34 @@ assert.equal(conformityApproved.status, "success");
 assert.equal(attendance.getDataRange().getValues().find(row => row[0] === "REG-CONFORMITY")[6], true);
 policySheet.getRange(3, 2).setValue("INMEDIATO_AL_APROBAR_SECRETARIA");
 
+// Una solicitud que cubre varios días debe enlazar todas las sesiones exactas y sincronizarlas juntas.
+sessions.appendRow(["SES-MULTI-A","2026-11-18","","","10","A","MAT","DOC-1","Cerrada",""]);
+sessions.appendRow(["SES-MULTI-B","2026-11-19","","","10","A","MAT","DOC-1","Cerrada",""]);
+attendance.appendRow(["REG-MULTI-A","SES-MULTI-A","STU-1","Ausente","","",false,"",new Date("2026-11-18T12:00:00Z")]);
+attendance.appendRow(["REG-MULTI-B","SES-MULTI-B","STU-1","Tardanza","","",false,"",new Date("2026-11-19T12:00:00Z")]);
+const multiDate = context.createCanonicalAbsenceJustification_({
+  justificacionId: "JUST-MULTIDATE01", solicitudId: "JUST-MULTIDATE01", studentId: "STU-1",
+  fechaAfectada: "2026-11-18", fechasAfectadas: ["2026-11-18","2026-11-19"],
+  periodo: "I parcial", motivoDeclarado: "Ausencia de varios días", actorId: "ACT-1", actorRole: "Estudiante"
+});
+assert.equal(multiDate.status, "success");
+assert.deepEqual(Array.from(multiDate.data.sesionIds).sort(), ["SES-MULTI-A","SES-MULTI-B"]);
+assert.equal(context.createCanonicalAbsenceJustification_({
+  justificacionId: "JUST-MULTIDATE01", solicitudId: "JUST-MULTIDATE01", studentId: "STU-1",
+  fechaAfectada: "2026-11-18", fechasAfectadas: ["2026-11-18"],
+  periodo: "I parcial", motivoDeclarado: "Ausencia de varios días", actorId: "ACT-1", actorRole: "Estudiante"
+}).code, "IDEMPOTENCY_CONFLICT", "idempotency must bind the complete date set");
+const multiApproved = context.reviewCanonicalAbsenceJustification_({
+  justificacionId: "JUST-MULTIDATE01", nuevoEstado: "Aprobada", actorId: "SEC-1", actorRole: "Secretaría"
+});
+assert.equal(multiApproved.status, "success");
+regRows = attendance.getDataRange().getValues();
+assert.equal(regRows.find(row => row[0] === "REG-MULTI-A")[6], true);
+assert.equal(regRows.find(row => row[0] === "REG-MULTI-B")[6], true);
+const multiRecordRows = sheet("JustificacionesAsistencia").getDataRange().getValues();
+const multiRecord = multiRecordRows.find((row,index)=>index>0 && row[0]==="JUST-MULTIDATE01");
+assert.deepEqual(JSON.parse(multiRecord[attachmentMap.FechasAfectadasJSON] || "[]"), ["2026-11-18","2026-11-19"]);
+
 sessions.appendRow(["SES-USER","2026-11-14","","","10","A","MAT","DOC-1","Cerrada",""]);
 attendance.appendRow(["REG-USER","SES-USER","STU-USER","Ausente","","",false,"",new Date("2026-11-14T12:00:00Z")]);
 let userLockBusy = false;
@@ -310,7 +338,8 @@ const userContext = {
   SPREADSHEET_ID: "TEST",
   SpreadsheetApp: { openById() { return { getSheetByName(name) { return store[name] ? sheet(name) : null; } }; } },
   LockService: { getScriptLock() { return { tryLock() { return !userLockBusy; }, waitLock() { if (userLockBusy) throw new Error("LOCK_BUSY"); }, releaseLock() {} }; } },
-  Utilities: { getUuid() { return "USER-UUID-00000001"; } },
+  let userUuid = 0;
+  Utilities: { getUuid() { userUuid++; return "USER-UUID-" + String(userUuid).padStart(8, "0"); } },
   getOrCreateSheet(_ss, name) { return sheet(name); },
   getUserVerifiedRole(payload) { payload._verifiedUserId = payload._userId; payload._verifiedRole = payload._role; return payload._role; },
   resolveVerifiedRequestSubmitter_(payload, requestedStudentId) {
