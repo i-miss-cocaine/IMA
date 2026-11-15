@@ -880,47 +880,116 @@ function migrationHash_(value) {
  * Import writes remain deliberately unavailable until the ACCOUNTING owner-write
  * and compensation path is implemented and covered by contract tests.
  */
-function textResponse(value, correlationId) {
-  var body = value && typeof value === "object" && !Array.isArray(value) ?
-    Object.assign({}, value) : { status: "error", code: "INVALID_RESPONSE" };
-  if (!body.status) body.status = "success";
-  if (!body.timestamp) body.timestamp = new Date().toISOString();
-  if (correlationId) body.correlationId = String(correlationId);
-  if (body.status === "error" && !body.code) body.code = "INTERNAL_ERROR";
-  return ContentService.createTextOutput(JSON.stringify(body))
-    .setMimeType(ContentService.MimeType.TEXT);
+const API_RESPONSE_VERSION = "1.0.0";
+
+function apiResponseCorrelationId_(candidate) {
+  var supplied = String(candidate || "").trim();
+  if (supplied.length >= 8 && supplied.length <= 80 && /^[A-Za-z0-9._-]+$/.test(supplied)) return supplied;
+  try {
+    if (typeof Utilities !== "undefined" && Utilities.getUuid) return Utilities.getUuid();
+  } catch (ignored) {}
+  return "IMA-" + Date.now() + "-" + Math.floor(Math.random() * 1000000000);
+}
+
+function apiResponsePublicMessage_(code) {
+  var messages = {
+    AUTH_PERMISSION_DENIED: "No tiene permisos para realizar esta acción.",
+    VERIFIED_IDENTITY_REQUIRED: "Debe iniciar sesión para continuar.",
+    RESOURCE_NOT_FOUND: "El recurso solicitado no está disponible.",
+    INVALID_PAYLOAD: "Los datos enviados no son válidos.",
+    VALIDATION_ERROR: "Los datos enviados no son válidos.",
+    CONFLICT: "La operación entra en conflicto con el estado actual.",
+    LOCK_TIMEOUT: "El servicio está ocupado. Intente nuevamente.",
+    SERVICE_UNAVAILABLE: "El servicio no está disponible temporalmente.",
+    DEPENDENCY_UNAVAILABLE: "El servicio no está disponible temporalmente.",
+    INTERNAL_ERROR: "No fue posible completar la solicitud.",
+    UNHANDLED_EXCEPTION: "No fue posible completar la solicitud."
+  };
+  return messages[String(code || "INTERNAL_ERROR")] || "No fue posible completar la solicitud.";
+}
+
+function buildApiResponseEnvelope_(obj, correlationId, serviceName) {
+  var source = obj && typeof obj === "object" && !Array.isArray(obj) ? obj : {};
+  var status = source.status === "error" ? "error" : "success";
+  var timestamp = new Date().toISOString();
+  var requestId = apiResponseCorrelationId_(correlationId);
+  var meta = { timestamp: timestamp, correlationId: requestId };
+  if (serviceName) meta.service = String(serviceName);
+  if (status === "error") {
+    var sourceError = source.error && typeof source.error === "object" ? source.error : {};
+    var rawCode = String(source.code || sourceError.code || "INTERNAL_ERROR").trim().toUpperCase();
+    var code = /^[A-Z][A-Z0-9_]*$/.test(rawCode) ? rawCode : "INTERNAL_ERROR";
+    var message = apiResponsePublicMessage_(code);
+    return { apiVersion: API_RESPONSE_VERSION, status: "error",
+      error: { code: code, message: message, details: null }, code: code,
+      message: message, meta: meta, timestamp: timestamp, correlationId: requestId };
+  }
+  var data;
+  if (Object.prototype.hasOwnProperty.call(source, "data")) data = source.data;
+  else {
+    data = {};
+    var reserved = ["status","data","error","apiVersion","meta","timestamp","correlationId","code","message"];
+    Object.keys(source).forEach(function(key) { if (reserved.indexOf(key) === -1) data[key] = source[key]; });
+  }
+  var envelope = { apiVersion: API_RESPONSE_VERSION, status: "success", data: data,
+    meta: meta, timestamp: timestamp, correlationId: requestId };
+  Object.keys(source).forEach(function(key) {
+    if (["status","data","error","apiVersion","meta","timestamp","correlationId","code","message"].indexOf(key) === -1) {
+      envelope[key] = source[key];
+    }
+  });
+  return envelope;
+}
+
+function textResponse(value, correlationId, serviceName) {
+  var envelope = buildApiResponseEnvelope_(value, correlationId, serviceName || "ACCOUNTING");
+  return ContentService.createTextOutput(JSON.stringify(envelope)).setMimeType(ContentService.MimeType.TEXT);
+}
+
+function validateApiContractsTestSuite() {
+  var success = buildApiResponseEnvelope_({ status: "success", data: [] }, "CONTRACT-SUCCESS-001", "ACCOUNTING");
+  var failure = buildApiResponseEnvelope_({ status: "error", code: "INTERNAL_ERROR", message: "Sensitive stack path" }, "CONTRACT-ERROR-001", "ACCOUNTING");
+  var cases = [
+    { action: "success envelope", pass: success.apiVersion === API_RESPONSE_VERSION && success.status === "success" && Array.isArray(success.data) && !!success.meta.correlationId },
+    { action: "legitimate empty collection", pass: Array.isArray(success.data) && success.data.length === 0 },
+    { action: "structured error envelope", pass: failure.status === "error" && failure.error && failure.error.code === "INTERNAL_ERROR" && !Object.prototype.hasOwnProperty.call(failure, "data") },
+    { action: "safe public error message", pass: failure.error.message === "No fue posible completar la solicitud." && failure.error.message.indexOf("Sensitive") === -1 },
+    { action: "error is not counted as success", pass: failure.status !== "success" }
+  ];
+  var passed = cases.filter(function(item) { return item.pass; }).length;
+  return { status: passed === cases.length ? "success" : "error", service: "ACCOUNTING",
+    apiVersion: API_RESPONSE_VERSION, totalPruebas: cases.length, pruebasExitosas: passed,
+    todasPruebasPasaron: passed === cases.length, resultadosContratos: cases };
 }
 
 function doGet() {
-  return textResponse({
-    status: "success", service: "ACCOUNTING",
+  return textResponse({ status: "success", service: "ACCOUNTING",
     configured: !!String(PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID") || "").trim()
-  });
+  }, null, "ACCOUNTING");
 }
 
 function doPost(e) {
-  var correlationId = "";
+  var correlationId = apiResponseCorrelationId_();
+  var respond = function(value) { return textResponse(value, correlationId, "ACCOUNTING"); };
   try {
     if (!e || !e.postData || typeof e.postData.contents !== "string" || !e.postData.contents) {
-      return textResponse({ status: "error", code: "REQUEST_BODY_REQUIRED" });
+      return respond({ status: "error", code: "REQUEST_BODY_REQUIRED" });
     }
     var request = JSON.parse(e.postData.contents);
+    correlationId = apiResponseCorrelationId_(request && request.correlationId);
     if (!request || typeof request !== "object" || Array.isArray(request) ||
         typeof request.action !== "string" || !request.action ||
         !request.payload || typeof request.payload !== "object" || Array.isArray(request.payload)) {
-      return textResponse({ status: "error", code: "REQUEST_SCHEMA_INVALID" });
+      return respond({ status: "error", code: "REQUEST_SCHEMA_INVALID" });
     }
-    correlationId = String(request.correlationId || "").trim().slice(0, 128);
-    if (request.action === "validateImportPreview") {
-      return textResponse(validateImportPreview(request.payload), correlationId);
-    }
+    if (request.action === "validateImportPreview") return respond(validateImportPreview(request.payload));
     if (request.action === "importDataWithColumnMapping") {
-      return textResponse({ status: "error", code: "IMPORT_COMMIT_NOT_EXPOSED",
-        message: "La escritura de importaciones aún no está habilitada en este servicio." }, correlationId);
+      return respond({ status: "error", code: "IMPORT_COMMIT_NOT_EXPOSED",
+        message: "La escritura de importaciones aún no está habilitada en este servicio." });
     }
-    return textResponse({ status: "error", code: "ACTION_NOT_ALLOWED" }, correlationId);
+    return respond({ status: "error", code: "ACTION_NOT_ALLOWED" });
   } catch (error) {
-    return textResponse({ status: "error", code: "INTERNAL_ERROR",
-      message: "No fue posible completar la solicitud." }, correlationId);
+    return respond({ status: "error", code: "INTERNAL_ERROR",
+      message: "No fue posible completar la solicitud." });
   }
 }
