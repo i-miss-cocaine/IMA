@@ -392,7 +392,7 @@ const userContext = {
 };
 const userNames = [
   "requestAttachmentHeaderMap_","ensureRequestAttachmentIntegritySchema_","setRequestAttachmentIntegrity_",
-  "ensureEvidenceDocumentSchema_","getEvidenceRecordsForRequest_","getAdministrativeRequestAttachment","registerDocumentEvidence_","getEvidenceSnapshotForDecision_","verifyEvidenceDocumentRecord_","markEvidenceDecision_","computeDocumentSHA256","getEvidenceIntegrityPolicy_","saveEvidenceIntegrityPolicy","logEvidenceTampering_",
+  "ensureEvidenceDocumentSchema_","getEvidenceRecordsForRequest_","getAdministrativeRequestAttachment","validateFileBinaryIntegrity","registerDocumentEvidence_","getEvidenceSnapshotForDecision_","verifyEvidenceDocumentRecord_","markEvidenceDecision_","computeDocumentSHA256","getEvidenceIntegrityPolicy_","saveEvidenceIntegrityPolicy","logEvidenceTampering_",
   "ensureUserAbsenceRequestSchema_","createPrivateRequestAttachment_","createPrivateRequestAttachmentWithIntegrity_","submitRequestEvidenceCorrection_",
   "submitStudentAbsenceJustification","reviewAbsenceJustification","getAdministrativeRequests","updateRequestStatus","processWorkflowDecision"
 ];
