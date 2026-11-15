@@ -54,7 +54,8 @@ const context = {
   },
   PropertiesService: { getScriptProperties: () => ({ getProperty: key => ({
     IMA_INSTITUTION_ID: "INST-1",
-    IMA_USER_SERVICE_URL: "https://user.example.test/exec",
+    IMA_USER_SERVICE_URL: "https://script.google.com/macros/s/AKfycbUSER123/exec",
+    IMA_ACADEMIC_SERVICE_URL: "https://script.google.com/macros/s/AKfycbACADEMIC123/exec",
     IMA_MIGRATION_HMAC_SECRET: "migration-transport-secret-with-more-than-32-characters"
   })[key] || null }) },
   Utilities: { getUuid: () => "12345678-1234-1234-1234-123456789012",
@@ -208,7 +209,7 @@ const routeHarness = {
 };
 vm.runInNewContext(accounting.slice(routeStart, routeEnd) + "\n" + extractFunction(accounting, "sendMigrationOwnerRequest_") + "\nthis.send = sendMigrationOwnerRequest_;", routeHarness);
 assert.equal(routeHarness.send("empleadoOwnership", "registerMigratedResourceOwnership", { resourceId: "EMP-1" }).status, "success");
-assert.equal(routeCalls[0].url, "https://user.example.test/exec");
+assert.equal(routeCalls[0].url, "https://script.google.com/macros/s/AKfycbUSER123/exec");
 assert.equal(routeCalls[0].envelope.sourceService, "ACCOUNTING");
 assert.equal(routeCalls[0].envelope.targetService, "USER");
 assert.equal(routeCalls[0].envelope.action, "registerMigratedResourceOwnership");
