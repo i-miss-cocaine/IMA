@@ -27,7 +27,7 @@ const names = [
   "validateFileBinaryIntegrity", "computeDocumentSHA256", "getOrCreatePrivateAttachmentFolder_",
   "rollbackPrivatePaymentAttachment_", "createPrivatePaymentAttachment_", "ensurePaymentVoucherEvidenceSchema_",
   "getAccountingEvidenceIntegrityPolicy_", "createPrivatePaymentAttachmentWithIntegrity_",
-  "verifyPaymentVoucherEvidence_", "uploadPaymentVoucher", "getPaymentVouchers",
+  "verifyPaymentVoucherEvidence_", "extractDriveFileId", "uploadPaymentVoucher", "getPaymentVouchers",
   "getPaymentVoucherFile", "reviewPaymentVoucher"
 ];
 
@@ -120,6 +120,8 @@ const context = {
     DigestAlgorithm:{SHA_256:"SHA_256"}
   },
   getOrCreateSheet, console, Date, Math, String, Number, Object, Array, JSON, Error, Set, Map, Buffer,
+  assertPaymentVoucherOwnerAccess_(payload,target,options){const actor=context.getVerifiedAccountingIdentity_(payload);if(options&&options.requireStaff)return actor.role==="Secretaría"?{authorized:true}:{authorized:false,code:"RESOURCE_SCOPE_DENIED"};return actor.userId===String(target||"")||actor.role==="Secretaría"?{authorized:true}:{authorized:false,code:"RESOURCE_SCOPE_DENIED"};},
+  assertJointFamilyVoucherOwnerAccess_(){return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};},
   getVerifiedAccountingIdentity_(payload){return {authorized:true,userId:String(payload&&payload._verifiedUserId||payload&&payload.userId||"STU-1"),role:String(payload&&payload._verifiedRole||"Estudiante")};},
   assertPaymentVoucherOwnerAccess_(payload,target,options){
     const actor=this.getVerifiedAccountingIdentity_(payload);
@@ -131,6 +133,7 @@ const context = {
   logStructuredEvent(...args){events.push(args);},
   recordStudentPayment(){return {status:"success",pagoId:"PAY-TEST"};}
 };
+context.extractDriveFileId=value=>String(value||"").trim();
 vm.createContext(context);
 vm.runInContext(names.map(extractFunction).join("\n"),context);
 
