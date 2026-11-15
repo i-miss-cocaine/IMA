@@ -1,4 +1,5 @@
 const assert = require("node:assert/strict");
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const vm = require("node:vm");
 
@@ -10,63 +11,107 @@ function extractFunction(name) {
   return source.slice(start, next < 0 ? source.length : next);
 }
 
-function makeSuiteHarness(options = {}) {
-  const state = { templatePayload: null, documentPayload: null, cuvLookups: [], sacePayload: null, providerConfigCalls: 0 };
+const phase22Functions = [
+  "configureSchoolDocumentTemplate",
+  "generateSchoolDocument",
+  "verifySchoolDocumentByCUV",
+  "validateFileBinaryIntegrity",
+  "computeDocumentSHA256",
+  "verifySACETemplateCompatibility",
+  "generateSACEReportFile",
+  "validateSACETemplateFile",
+  "runPhase22DocumentManagementAndSACERegressionSuite"
+];
+
+function makeMemorySheet(header) {
+  const rows = [header.slice()];
+  return {
+    rows,
+    getLastRow: () => rows.length,
+    getDataRange: () => ({ getValues: () => rows.map(row => row.slice()) }),
+    appendRow: row => rows.push(row.slice()),
+    getRange(row, column, rowCount, columnCount) {
+      return { setValues(values) {
+        for (let r = 0; r < rowCount; r++) {
+          rows[row - 1 + r].splice(column - 1, columnCount, ...values[r]);
+        }
+      }};
+    }
+  };
+}
+
+function makeIsolatedHarness(options = {}) {
+  const state = { openedIds: [], createdSheets: [], lockHeld: false, lockReleases: 0 };
+  const sheets = new Map();
+  const headers = {
+    PlantillasEscolares: ["PlantillaID", "CodigoDocumento", "Categoria", "Titulo", "CamposJSON", "FlujoAprobacion", "Estado", "Version", "ContenidoHTML", "ConfigFormatoJSON", "Descripcion", "Departamento", "TipoSalida", "CreadoPor", "DriveFolderID"],
+    DocumentosEscolaresEmitidos: ["DocumentoID", "PlantillaID", "TargetEntityID", "SolicitanteUserID", "DatosJSON", "EstadoDoc", "CUV", "DriveFileID", "DriveURL", "FechaEmision", "Observaciones", "VersionPlantilla", "Correlativo", "NumeroCorrelativo", "SHA256"],
+    PlantillasSACEVerificadas: ["PlantillaSaceID", "NombreFormato", "Version", "Columnas", "Estado", "Observaciones"]
+  };
+  const spreadsheet = {
+    getSheetByName(name) { return sheets.get(name) || null; }
+  };
   const context = {
     Date,
     Math,
-    configureSchoolDocumentTemplate(payload) {
-      state.templatePayload = payload;
-      return options.templateResult || { status: "success", plantillaId: "TMP-GENERATED-001" };
+    Buffer,
+    require,
+    console: { warn() {}, log() {} },
+    SPREADSHEET_ID: "IN_MEMORY_TEST_ONLY",
+    SpreadsheetApp: { openById(id) {
+      state.openedIds.push(id);
+      assert.equal(id, "IN_MEMORY_TEST_ONLY", "tests must never open a production spreadsheet");
+      return spreadsheet;
+    }},
+    getOrCreateSheet(_ss, name) {
+      let sheet = sheets.get(name);
+      if (!sheet) {
+        sheet = makeMemorySheet(headers[name] || ["TestID"]);
+        sheets.set(name, sheet);
+        state.createdSheets.push(name);
+      }
+      return sheet;
     },
-    generateSchoolDocument(payload) {
-      state.documentPayload = payload;
-      return { status: "success", documentoId: "DOC-001", codigoVerificacion: "CUV-001", sha256Hash: "a".repeat(64) };
-    },
-    verifySchoolDocumentByCUV(payload) {
-      state.cuvLookups.push(payload.codigoVerificacion);
-      if (payload.codigoVerificacion === "CUV-001") return { status: "success", documento: { codigoVerificacion: "CUV-001" } };
-      return { status: "not_found" };
-    },
-    validateFileBinaryIntegrity(data, filename) {
-      if (filename.endsWith(".exe")) throw new Error("DANGEROUS_FILE_EXTENSION");
-      if (data.endsWith("base64,")) throw new Error("EMPTY_FILE_REJECTED");
-      return { valid: true, detectedFormat: "pdf" };
-    },
-    Utilities: { base64Encode: value => Buffer.from(value).toString("base64") },
-    computeDocumentSHA256(value) {
-      return value === "Documento_Oficial_Matricula_2026" ? "a".repeat(64) : "b".repeat(64);
-    },
-    verifySACETemplateCompatibility(payload) { state.sacePayload = payload; return { status: "success", esCompatible: true }; },
-    generateSACEReportFile: () => options.badSace
-      ? { datosReporteSACE: [{}, { calificacionOrdinaria: "0" }, { calificacionOrdinaria: "0" }] }
-      : { datosReporteSACE: [{}, { calificacionOrdinaria: "AUSENTE" }, { calificacionOrdinaria: "EXENTO" }] },
-    validateSACETemplateFile: () => ({ status: "error", esValido: false })
+    LockService: { getScriptLock: () => ({
+      tryLock: () => { if (state.lockHeld) return false; state.lockHeld = true; return true; },
+      releaseLock: () => { assert.equal(state.lockHeld, true); state.lockHeld = false; state.lockReleases++; }
+    })},
+    Utilities: {
+      DigestAlgorithm: { SHA_256: "SHA_256" },
+      base64Encode: value => Buffer.from(value).toString("base64"),
+      base64Decode: value => Buffer.from(value, "base64"),
+      newBlob: value => ({ getBytes: () => Buffer.from(String(value), "utf8") }),
+      computeDigest: (_algorithm, bytes) => Array.from(crypto.createHash("sha256").update(Buffer.from(bytes)).digest())
+    }
   };
-  vm.runInNewContext(extractFunction("runPhase22DocumentManagementAndSACERegressionSuite"), context);
-  return { run: () => context.runPhase22DocumentManagementAndSACERegressionSuite({}), state };
+  const functions = phase22Functions.map(extractFunction).join("\n\n");
+  vm.runInNewContext(functions, context);
+  if (options.badSace) {
+    context.generateSACEReportFile = () => ({ datosReporteSACE: [{}, { calificacionOrdinaria: "0" }, { calificacionOrdinaria: "0" }] });
+  }
+  return { run: () => context.runPhase22DocumentManagementAndSACERegressionSuite({}), state, sheets, context };
 }
 
 {
-  const h = makeSuiteHarness();
+  const h = makeIsolatedHarness();
   const result = h.run();
   assert.equal(result.status, "success");
   assert.equal(result.todasPruebasPasaron, true);
   assert.equal(result.totalPruebasFase22, 12);
   assert.equal(result.pruebasExitosas, 12);
-  assert.equal(h.state.templatePayload.codigoDocumento, "CONST-ESTUDIO-STD");
-  assert.equal(h.state.templatePayload.titulo, "Constancia de Estudio Oficial");
-  assert.deepEqual(Array.from(h.state.templatePayload.camposJSON), ["estudiante.nombreCompleto", "estudiante.identidad"]);
-  assert.equal(h.state.documentPayload.plantillaId, "TMP-GENERATED-001", "PT22-02 must reuse the exact ID returned by PT22-01");
-  assert.equal(h.state.cuvLookups[0], "CUV-001");
-  assert.match(h.state.cuvLookups[1], /^CUV-NO-EXISTE-/);
-  assert.equal(h.state.sacePayload.nombreFormato, "SACE-OFICIAL-SECUNDARIA");
-  assert.deepEqual(Array.from(h.state.sacePayload.columnasDetectadas), ["identidad", "nombreAlumno", "calificacionOrdinaria", "recuperacion", "resultadoFinal"]);
-  assert.equal(h.state.providerConfigCalls, 0, "Accounting suite must not call a User-service function directly");
+  assert.equal(h.state.openedIds.length > 0, true);
+  assert.equal(h.state.openedIds.every(id => id === "IN_MEMORY_TEST_ONLY"), true);
+  assert.deepEqual(h.state.createdSheets.sort(), ["DocumentosEscolaresEmitidos", "PlantillasEscolares", "PlantillasSACEVerificadas"].sort());
+  assert.equal(h.sheets.get("PlantillasEscolares").rows.length, 2, "one template fixture must be created");
+  assert.equal(h.sheets.get("DocumentosEscolaresEmitidos").rows.length, 2, "one document fixture must be created");
+  assert.equal(h.sheets.get("PlantillasSACEVerificadas").rows.length, 2, "one SACE fixture must be created");
+  assert.equal(h.sheets.has("FirmasConformidades"), false, "read-only CUV lookup must not create the signatures sheet");
+  assert.equal(h.state.lockHeld, false);
+  assert.equal(h.state.lockReleases, 1);
 }
 
 {
-  const h = makeSuiteHarness({ badSace: true });
+  const h = makeIsolatedHarness({ badSace: true });
   const result = h.run();
   assert.equal(result.todasPruebasPasaron, false);
   assert.equal(result.status, "error", "a failed scenario must fail the suite envelope");
