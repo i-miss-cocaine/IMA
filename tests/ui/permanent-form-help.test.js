@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const read = path => fs.readFileSync(path, "utf8");
 const teacher = read("teacher-dashboard.html");
 const student = read("student-dashboard.html");
+const secretaryDashboard = read("dashboard-secretaria.html");
 const accounting = read("js/accounting.js");
 const academic = read("js/teacher.js");
 const secretary = read("js/secretary.js");
@@ -40,6 +41,15 @@ for (const id of ["calificacion", "edit-puntaje"]) {
 }
 assert.ok(academic.includes("setAttribute('data-ui-help-key', 'matricula.identidad')"));
 assert.ok(academic.includes("setAttribute('data-ui-help-key', 'matricula.fechaNacimiento')"));
+const excelInputIndex = teacher.indexOf('id="excel-file-input"');
+const excelInputTag = teacher.slice(teacher.lastIndexOf("<input", excelInputIndex), teacher.indexOf(">", excelInputIndex) + 1);
+assert.ok(excelInputTag.includes('data-ui-help-key="importacion.xlsx"'), "XLSX import must expose permanent file constraints");
+for (const id of ["evm-fecha-inicio", "evm-fecha-fin", "identity-search-fecha"]) {
+  const index = secretaryDashboard.indexOf('id="' + id + '"');
+  assert.ok(index >= 0, "secretary date field must exist: " + id);
+  const tag = secretaryDashboard.slice(secretaryDashboard.lastIndexOf("<input", index), secretaryDashboard.indexOf(">", index) + 1);
+  assert.ok(tag.includes('data-ui-help-key="fechas.calendario"'), "secretary date field must include calendar guidance: " + id);
+}
 assert.ok(secretary.includes('setAttribute("data-ui-help-key","identidad.busqueda")'));
 assert.ok(!secretary.includes('setAttribute("data-ui-help-key","matricula.identidad")'), "identity search must not reuse DNI-only enrollment guidance");
 assert.ok(secretary.includes('setAttribute("data-ui-help-key","matricula.fechaNacimiento")'));
