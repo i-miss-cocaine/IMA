@@ -1223,3 +1223,24 @@ TASK-106 — Integridad criptográfica, versionado y protección contra sustituc
 - TASK-130 continúa parcial; no se cierra hasta cubrir formularios reales de matrícula/importación/adjuntos y verificar el handler de cierre de actas, además de pruebas Node/CI y accesibilidad.
 - HEAD base verificado antes de checkpoint: 44d9891132332e692dbe2ba8602b41f50a508a59; no se publicó ningún cambio en esa rama.
 ===============================================================================
+
+
+===============================================================================
+## C1.761 — IMA-EXEC-20261115-TASK130-NODE-HELP-CONTRACT-01
+- **Fecha:** 2026-11-15
+- **Rama:** NG_beta_0.0.0.1_work
+- **HEAD antes del checkpoint:** a760ac3fbb14030e62ec0427b07e019c933a9603
+- **Tarea:** TASK-130 — ayudas permanentes y validación accesible.
+
+### Pruebas y CI
+- .github/workflows/ui-accessibility-contract.yml y .github/workflows/department-scope-contract.yml incluyen tests/security/ui-common-permanent-help.test.js.
+- tests/ui/permanent-form-help.test.js ahora verifica también los campos calificacion y edit-puntaje, clave calificaciones.nota, min=0, max=100 y step=0.01.
+- GitHub Actions `ima/department-scope-contract: success` confirmado en c92724908578f5acf02867e3d51ce24518800876 y f81732c70468448e1fea395bd595ef663ae61fe4. El segundo commit incluye las aserciones de rango y el test de formularios.
+- Parseo sintáctico V8 PASS de JS, backend y scripts inline de los dashboards revisados.
+
+### Estado de la tarea
+- El contrato automatizado de Node 24 se ejecutó y pasó en los commits indicados.
+- TASK-130 permanece parcial por la cobertura restante de formularios de matrícula/importación/adjuntos, handler de cierre de actas y validación manual de accesibilidad en navegador/lector de pantalla/móvil.
+- No se atribuye el estado success a commits posteriores que solo modificaron documentación.
+- Rama base sin modificaciones; no se publicaron cambios en otras ramas.
+===============================================================================
