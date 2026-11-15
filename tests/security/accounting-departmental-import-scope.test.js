@@ -138,7 +138,7 @@ const nonDepartmentEntity = context.api.build({ ...base, tipoEntidad: "curso" },
 assert.equal(nonDepartmentEntity.valid, true);
 assert.equal(nonDepartmentEntity.applicable, false);
 let denied = false;
-try { context.api.run({ ...base, activeDepartmentId: "DEP-X" }); } catch (error) { denied = String(error.message).includes("IMPORT_PREVIEW_INVALID_OR_STALE"); }
+try { context.api.run({ ...base, activeDepartmentId: "DEP-X" }); } catch (error) { denied = String(error.message).includes("ACTIVE_SCOPE_NOT_ASSIGNED"); }
 assert.equal(denied, true);
 assert.equal(auditRows.length, 0);
 assert.equal(writes.length, 0);
