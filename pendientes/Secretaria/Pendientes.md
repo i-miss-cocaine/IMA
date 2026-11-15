@@ -1608,9 +1608,14 @@
   - [ ] Los mensajes de error de validación aparecen junto al campo correspondiente y no sustituyen la ayuda descriptiva.
   - [ ] Una operación crítica cancelada por el usuario no altera ningún dato en la plataforma.
 - **Dependencias:** F38-Task01, F38-Task02.
-- **Estado:** [ ] Pendiente
+- **Estado:** [ ] En ejecución — ayudas permanentes y confirmaciones independientes ampliadas; cobertura integral de formularios y ejecución Node/CI pendientes.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 5788-5825; clave TASK-132; asignación única: Secretaria -->
+
+- **Avance C1.758 (2026-11-15):** el catálogo versionado getUIMetadataCatalog y su fallback local se mantienen; js/ui-common.js ahora marca visualmente los campos required, conserva aria-describedby y ofrece setFieldValidationError/clearFieldValidationError para mostrar errores junto al control sin sustituir la ayuda permanente. Se agregaron metadatos de calificación (0–100, step 0.01) en los dos campos de calificación del dashboard docente, alineados con auditAcademicGradesIntegrity.
+- **Confirmaciones críticas:** confirmCriticalOperation permanece independiente de tutoriales; se verificó por inspección el guard antes de la mutación en deleteScheduleBlock y voidCharge. La prueba nueva incluye cancelación, consecuencia y orden de ejecución.
+- **Pruebas disponibles:** parseo sintáctico de ui-common.js, teacher-dashboard.html (sin scripts inline modificados), teacher.js, accounting.js y ambos tests de metadatos PASS mediante compilación V8. Se agregó tests/security/ui-common-permanent-help.test.js con fixtures DOM para fallback, idempotencia, required marker, asociación ARIA, errores inline y cancelación crítica. No se pudo ejecutar Node CLI ni confirmar un workflow run desde las herramientas disponibles; la ejecución automatizada queda pendiente y no se declara PASS.
+- **Cobertura aún pendiente:** asociar claves a todos los campos reales de admisión/matrícula, importaciones y adjuntos según sus validadores backend; completar labels/help de campos complejos en los dashboards no cubiertos; validar el cierre de actas de calificaciones con su handler real; pruebas manuales de teclado, lector de pantalla, móvil, zoom y cancelación sin mutación.
 
 ---
 
