@@ -123,11 +123,6 @@ const context = {
   assertPaymentVoucherOwnerAccess_(payload,target,options){const actor=context.getVerifiedAccountingIdentity_(payload);if(options&&options.requireStaff)return actor.role==="Secretaría"?{authorized:true}:{authorized:false,code:"RESOURCE_SCOPE_DENIED"};return actor.userId===String(target||"")||actor.role==="Secretaría"?{authorized:true}:{authorized:false,code:"RESOURCE_SCOPE_DENIED"};},
   assertJointFamilyVoucherOwnerAccess_(){return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};},
   getVerifiedAccountingIdentity_(payload){return {authorized:true,userId:String(payload&&payload._verifiedUserId||payload&&payload.userId||"STU-1"),role:String(payload&&payload._verifiedRole||"Estudiante")};},
-  assertPaymentVoucherOwnerAccess_(payload,target,options){
-    const actor=this.getVerifiedAccountingIdentity_(payload);
-    if(options&&options.requireStaff)return actor.role==="Secretaría"?{authorized:true}:{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
-    return actor.userId===String(target||"")||actor.role==="Secretaría"?{authorized:true}:{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
-  },
   assertJointFamilyVoucherOwnerAccess_(){return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};},
   extractDriveFileId(value){return String(value||"").trim();},
   logStructuredEvent(...args){events.push(args);},
