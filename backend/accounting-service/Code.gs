@@ -229,9 +229,13 @@ function getVerifiedDepartmentScopeForSession_(payload) {
   };
 }
 
-function getVerifiedAccountingDepartmentScope_(payload, ss) {
+function getVerifiedAccountingDepartmentScope_(payload, ss, identityOverride) {
   var actor = getVerifiedDepartmentScopeForSession_(payload);
   if (!actor.valid || !ss) return actor.valid ? { valid: false, authorized: false, code: "DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED" } : actor;
+  if (identityOverride && (String(identityOverride.userId || "") !== actor.userId ||
+      String(identityOverride.role || "") !== actor.roleId)) {
+    return { valid: false, authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
+  }
   var sheet = ss.getSheetByName("AsignacionesAmbitosRoles");
   if (!sheet) return { valid: false, authorized: false, code: "DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED" };
   var values = sheet.getDataRange().getValues();
