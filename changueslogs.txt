@@ -3928,3 +3928,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-15] TASK-134 / F39 — C1.768 — Resolución del ciclo SHA-256
 - Se corrigió la dependencia de TASK-134 en Plan Maestro y backlog: F39-Task01 (inventario) es prerrequisito; TASK-134 implementa F39-Task02 (SHA-256) y habilita F39-Task03 (custodia protegida).
 - Se conserva el requisito de F39-Task03 de depender de F39-Task02. La secuencia queda acíclica y TASK-134 es elegible.
+
+[2026-11-15] TASK-134 / F39-Task02 — C1.769 — SHA-256 y deduplicación exacta
+- Academic: HashSHA256, ImportBatchID y DocumentoReferenciaID; cálculo sobre bytes antes de Drive.createFile; detección bajo ScriptLock; política configurable RECHAZAR_DUPLICADO_EXACTO/CREAR_ENLACE_REFERENCIA_SIN_DUPLICAR_ARCHIVO; referencias reutilizan DriveFileId.
+- Academic: verifyDocumentIntegritySha256 expuesto por dispatcher; consulta/descarga verifican SHA-256 y las versiones restauradas conservan el hash.
+- User: InventarioDocumentalLegado añade HashSHA256 con migración aditiva; el hash se calcula en servidor desde fileData; duplicados exactos institucionales se bloquean sin revelar IDs de otros departamentos.
+- Pruebas V8 aisladas PASS: academic-student-document-private-storage y user-service-legacy-document-inventory. Node CLI nativo y Actions actuales no confirmados; ACCOUNTING/DocumentosEscolaresEmitidos y beta real pendientes.
