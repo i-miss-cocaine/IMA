@@ -99,4 +99,10 @@ assert.equal(driveReads,1);
 const noOcr=compileEvidenceValidator(evidenceScope())({documentoId:"DOC-1",studentId:"STU-1"});
 assert.equal(noOcr.ocrStatus,"REQUIRED_NOT_REQUESTED");
 assert.equal(noOcr.validationComplete,false);
+const compressedScope=evidenceScope();
+compressedScope.classifyPdfDocumentPages_=()=>({verified:false,pageCount:1,pages:[{pageNumber:1,classification:"NO_ANALIZADA"}],summary:{vectorial:0,escaneada:0,mixta:0,vacia:0,noAnalizada:1},requiresOcr:true});
+const compressedReview=compileEvidenceValidator(compressedScope)({documentoId:"DOC-1",studentId:"STU-1",ocrRequested:true,includeOcrText:true});
+assert.equal(compressedReview.ocrStatus,"success");
+assert.equal(compressedReview.validationComplete,false,"OCR text cannot falsely mark an unclassified PDF as fully verified");
+
 process.stdout.write("Academic PDF OCR contract: conversion options, text minimization, MIME guard, fail-closed errors and temporary-file cleanup PASS.\n");
