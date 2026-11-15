@@ -137,3 +137,43 @@
 - Ejecutar beta con datos anonimizados y pruebas de accesibilidad. La validación completa sigue fail-closed para páginas NO_ANALIZADA o OCR requerido no ejecutado.
 - TASK-133 permanece parcial; no se declara completada.
 ===============================================================================
+
+===============================================================================
+## C1.774 — IMA-EXEC-20261115-TASK133-SNAPSHOT-ACCESSIBILITY-03
+- **Fecha:** 2026-11-15
+- **Rama:** NG_beta_0.0.0.1_work
+- **HEAD verificado antes del checkpoint:** c7adb2c6a92eb9f252abb1ff0faa6b9e81009f4f
+- **Rama base:** NG_beta_0.0.0.1 — 44d9891132332e692dbe2ba8602b41f50a508a59; 3.302 commits por delante y 0 por detrás.
+- **Normativa:** Normas_Desarollo.md v1.4 leída y aplicada.
+
+### Continuidad TASK-133
+- Se continuó desde C1.773 sin reiniciar preflight ni abrir el endpoint de persistencia. ACCOUNTING mantiene IMPORT_COMMIT_NOT_EXPOSED en su router; la UI solo valida y confirma revisión local.
+- ACCOUNTING: se consolidó el escritor propietario para cursos/expedientes laborales con autorización institucional verificada, esquema allowlist, normalización de fechas, neutralización de fórmulas, ScriptLock, journal aislado, idempotencia, snapshots de antes/después y compensación ante fallo de journal. El dispatch interno distingue ACCOUNTING, ACADEMIC y USER; los snapshots de destino se comparan dentro del lock para impedir sobrescrituras concurrentes.
+- ACADEMIC: se corrigió un caso fail-open: el escritor de expedientes estudiantiles ya exige snapshot de destino verificado también para inserciones nuevas, no solo para actualizaciones. Se añadió regresión para insertar con snapshot ausente/no verificado.
+- ACCOUNTING: el test de ámbito departamental ahora proporciona snapshot verificado en el fixture y espera el código específico DEPARTMENT_IMPORT_ROW_SNAPSHOT_NOT_FOUND ante snapshot de asignación ausente.
+- UI Docente: el diálogo del importador Excel incorpora foco inicial, retorno del foco al invocador, ciclo de foco con Tab/Shift+Tab, cierre con Escape, aria-describedby y nombre/descrición accesibles. La confirmación sigue siendo solo lectura.
+
+### Archivos y commits principales de esta iteración
+- backend/accounting-service/Code.gs — envelope API versionado, escritor/journal, verificación de snapshot bajo lock, dispatch y compensación.
+- backend/academic-service/Code.gs — rechazo fail-closed de inserciones sin snapshot verificado.
+- js/teacher.js y teacher-dashboard.html — accesibilidad por teclado y metadatos del diálogo.
+- tests/security/accounting-migration-writer.test.js — idempotencia, rollback, aislamiento, lock contention, seguridad de fórmulas y snapshot no verificado.
+- tests/security/academic-migration-writer.test.js — inserción/actualización, rollback, fechas, concurrencia obsoleta y snapshot no verificado.
+- tests/security/accounting-departmental-import-scope.test.js — fixture de snapshot y error fail-closed específico.
+- tests/security/identity-mapping-contract.test.js — fixture actualizado al contrato de snapshot ACADEMIC.
+- tests/security/teacher-excel-semantic-preflight-ui.test.js — regresión de accesibilidad del diálogo.
+- Commits relevantes: bf16a5e76feef87f3264357f4e6c330cf5d22f36, 7ae4ba1be1f71605aa6bd9a54b40f938d22901d5, 98e4e74dd70c1dd80c0aa858c774b6ebb322924f, a60535792d03f17f4a9c2df5cd6fc90a5c591e2e, c388b45b459d2866fc1a2b45fcd16b793a753336, 7bd944489916d38e9fe3aa086f2994124d67e3b8 y c7adb2c6a92eb9f252abb1ff0faa6b9e81009f4f.
+
+### Verificaciones
+- GitHub Actions **Accounting Import Preflight Contract**: run 43771840519 SUCCESS en HEAD c7adb2c. Node.js v24.22.2; sintaxis ACCOUNTING/USER/ACADEMIC, js/api.js, js/accounting.js y js/teacher.js PASS.
+- Contratos PASS en ese run: autenticación/router ACCOUNTING; escritor y journal ACCOUNTING; sobre binario XLSX; snapshots remotos USER/ACADEMIC; OCR PDF; clasificador PDF; validación binaria (48 combinaciones); OpenXML; preflight semántico; ámbito departamental (40 escenarios); envelope API; transporte de sesión; envelope HMAC de referencias; UI de importación contable; alcance de expedientes laborales; mapeo de identidad; snapshot de identidad USER; escritor de estudiantes ACADEMIC; UI Excel Docente.
+- GitHub Actions **UI Accessibility and Metadata Contract**: SUCCESS en run 43771708165; **Department Reference Consumers Local Contract**: SUCCESS en run 43771741712.
+- Workflows transversales que siguen FAIL fuera del alcance de TASK-133: Department Scope Contract por ausencia de resolveEmployeeDepartmentId_ exigida por accounting-vacation-medical-leave-ownership.test.js; Task-Service security local contracts por ausencia de verifySessionToken exigida por task-service-security-contract.test.js; Identity mapping and transport security contracts por referencia a backend/transport-service/Code.gs inexistente en transport-access-scope.test.js. No se ocultaron ni se modificaron pruebas/servicios ajenos para forzar verde.
+- Node local v22.16.0 está disponible, pero no hay checkout local del repositorio en este entorno; no se declara ejecución local de las suites. GitHub Actions sí ejecutó Node 24 sobre el checkout de la rama.
+- No se ejecutó OCR real ni Drive Advanced Service v2 en despliegue, navegador/lector de pantalla real, Apps Script/Sheets beta ni datos institucionales. Esas verificaciones permanecen pendientes de beta; no se modificaron datos reales.
+
+### Estado y continuidad
+- TASK-133 sigue **En ejecución**, no completada: las páginas PDF NO_ANALIZADA/streams comprimidos siguen sin interpretación completa; OCR real y disponibilidad Drive Advanced Service v2 requieren despliegue; faltan pruebas beta anonimizadas y validación real de teclado/lector de pantalla.
+- La escritura de importaciones permanece cerrada en el router hasta cerrar validación y autorización del destino en beta.
+- Siguiente tarea elegible para revisión: TASK-134/F39-Task02 SHA-256, contrastando los criterios originales y el avance C1.769; continuar la integración pendiente en ACCOUNTING sin duplicar capacidades ya implementadas en ACADEMIC/USER.
+===============================================================================
