@@ -27,7 +27,7 @@ const accounting=fs.readFileSync(path.resolve(__dirname,"../../backend/accountin
 assert.doesNotThrow(()=>new Function(accounting),"the complete ACCOUNTING Code.gs source must parse before running isolated security contracts");
 const names=[
  "parseJsonSafe","getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentScope_","getVerifiedDepartmentScopeForSession_","assertResourceOwnershipForScope_","resolveEmployeeDepartmentId_","assertEmployeeExpedienteScopeAccess_",
- "getAccountingPersonIdForUser_","resolveStudentExpedienteForAccounting_","assertPaymentVoucherOwnerAccess_",
+ "getAccountingPersonIdForUser_","resolveStudentExpedienteForAccounting_","assertPaymentVoucherOwnerAccess_","createPrivatePaymentAttachment_","assertJointFamilyVoucherOwnerAccess_",
  "extractDriveFileId","getEmployeeDocuments","getEmployeeContracts","getEmployeeContractAlerts","getEmployeeTrainingHistory","getLaborIncidentsHistory","getWorkShiftsAndSubstitutionsHistory","getStaffAttendanceLogs","recordStaffCheckIn","getPayrollPlanHeaders_","isValidPayrollPlanHeaders_","getStaffPayrollReceipt","getEmployeeLoansAdvances","getLoanAmortizationSchedule","getEmployeeRecords","getVacationSheetSnapshot_","getEmployeePersonNameIndex_","getEmployeeSelfServicePortal","uploadEmployeeDocument","uploadPaymentVoucher","getPaymentVouchers","getPaymentVoucherFile","reviewPaymentVoucher","generatePayrollReceiptPDF","getPayrollReceiptPDFFile","validateRolePermission"
 ];
 const code="var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n"+names.map(n=>extractFunction(accounting,n)).join("\n");
@@ -287,7 +287,8 @@ assert.equal(context.getPaymentVoucherFile({sessionToken:"student",comprobanteId
 assert.ok(extractFunction(accounting,"validateRolePermission").includes("getVerifiedAccountingDepartmentScope_"));
 assert.ok(extractFunction(accounting,"uploadEmployeeDocument").includes("DriveApp.Access.PRIVATE"));
 assert.ok(!extractFunction(accounting,"uploadEmployeeDocument").includes("ANYONE_WITH_LINK"));
-assert.ok(extractFunction(accounting,"uploadPaymentVoucher").includes("DriveApp.Access.PRIVATE"));
+assert.ok(extractFunction(accounting,"uploadPaymentVoucher").includes("createPrivatePaymentAttachment_"));
+assert.ok(extractFunction(accounting,"createPrivatePaymentAttachment_").includes("DriveApp.Access.PRIVATE"));
 assert.ok(!extractFunction(accounting,"uploadPaymentVoucher").includes("ANYONE_WITH_LINK"));
 assert.ok(extractFunction(accounting,"assertEmployeeExpedienteScopeAccess_").includes("assertResourceOwnershipForScope_"));
 assert.ok(extractFunction(accounting,"assertPaymentVoucherOwnerAccess_").includes("assertResourceOwnershipForScope_"));
