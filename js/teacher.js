@@ -263,6 +263,8 @@ document.addEventListener('DOMContentLoaded', () => {
             statusNode.textContent = rows.length + ' justificación(es) dentro de tu ámbito académico.';
             bodyNode.innerHTML = rows.map(item => {
                 const subjects = Array.isArray(item.asignaturas) ? item.asignaturas.join(', ') : '';
+                const affectedDates = Array.isArray(item.fechasAfectadas) ? item.fechasAfectadas : [];
+                const dateLabel = affectedDates.length ? affectedDates.join(', ') : (item.fechaAfectada || '');
                 const sessions = Array.isArray(item.sesiones) ? item.sesiones : [];
                 const acknowledged = item.conocimientoCompleto === true;
                 const pendingSessionIds = sessions.filter(session => !session.conocimientoRegistrado).map(session => session.sesionId);
@@ -286,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return '<tr>' +
                     '<td class="p-3 font-medium text-gray-800">' + escapeTeacherJustificationHtml(item.estudianteNombre || 'Estudiante') + '</td>' +
                     '<td class="p-3 text-gray-600">' + escapeTeacherJustificationHtml((item.grado || '') + ' · ' + (item.seccion || '')) + '<br><span class="text-xs text-gray-400">' + escapeTeacherJustificationHtml(subjects || sessionLabel) + '</span></td>' +
-                    '<td class="p-3 text-gray-600">' + escapeTeacherJustificationHtml(item.fechaAfectada || '') + '<br><span class="text-xs text-gray-400">' + escapeTeacherJustificationHtml(item.periodo || '') + '</span></td>' +
+                    '<td class="p-3 text-gray-600">' + escapeTeacherJustificationHtml(dateLabel) + '<br><span class="text-xs text-gray-400">' + escapeTeacherJustificationHtml(item.periodo || '') + '</span></td>' +
                     '<td class="p-3"><span class="inline-flex px-2 py-1 rounded-full bg-slate-100 text-slate-700 text-xs">' + escapeTeacherJustificationHtml(item.estado || 'Pendiente') + '</span></td>' +
                     '<td class="p-3 text-gray-600 max-w-xs">' + escapeTeacherJustificationHtml(item.observacionesPublicas || '—') + '</td>' +
                     '<td class="p-3 whitespace-nowrap">' + actions + '</td>' +
