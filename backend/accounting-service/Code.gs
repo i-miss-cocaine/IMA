@@ -811,7 +811,7 @@ function hasActiveDelegationForAction(userId, action) {
 
 function doPost(e) {
   let correlationId = apiResponseCorrelationId_();
-  const respond = function(value) { return respond(value, correlationId, "ACCOUNTING"); };
+  const respond = function(value) { return textResponse(value, correlationId, "ACCOUNTING"); };
   try {
     if (!e || !e.postData || !e.postData.contents) return respond({ status: "error", message: "No se recibieron datos." });
     const request = JSON.parse(e.postData.contents);

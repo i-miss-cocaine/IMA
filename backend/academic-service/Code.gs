@@ -915,7 +915,7 @@ function handleTrustedMigrationEnvelope_(envelope){
 
 function doPost(e) {
   let correlationId = apiResponseCorrelationId_();
-  const respond = function(value) { return respond(value, correlationId, "ACADEMIC"); };
+  const respond = function(value) { return textResponse(value, correlationId, "ACADEMIC"); };
   try {
     if (!e || !e.postData || !e.postData.contents) return respond({ status: "error", message: "No se recibieron datos." });
     const request = JSON.parse(e.postData.contents);

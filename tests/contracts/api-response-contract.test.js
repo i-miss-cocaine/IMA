@@ -83,6 +83,16 @@ for (const [name, source] of [["ACADEMIC", academicSource], ["ACCOUNTING", accou
   assert.doesNotMatch(JSON.stringify(failure), /private stack|secret\/path/);
 }
 
+
+for (const [service, source] of [["ACADEMIC", academicSource], ["ACCOUNTING", accountingSource]]) {
+  const start = source.indexOf("function doPost(e)");
+  const end = source.indexOf("\n// ---------------------------------------------------------------------------", start);
+  const body = source.slice(start, end);
+  assert.ok(body.includes('const respond = function(value) { return textResponse(value, correlationId, "' + service + '"); };'), service + " doPost must delegate through textResponse");
+  assert.ok(!body.includes("const respond = function(value) { return respond("), service + " response wrapper must not recurse");
+  assert.ok(body.includes('message: "No fue posible completar la solicitud."'), service + " public catch response must be sanitized");
+}
+
 const clientNames = ["createApiClientCorrelationId", "apiClientPublicMessage", "createApiClientError", "normalizeApiClientResponse", "showApiToast", "fetchApi"];
 const clientFunctions = 'var API_RESPONSE_VERSION = "1.0.0";\n' + clientNames.map(name => extractFunction(apiSource, name)).join("\n");
 const silentConsole = { log() {}, warn() {}, error() {} };
