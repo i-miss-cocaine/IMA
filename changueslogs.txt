@@ -3821,3 +3821,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Constancias CONOCIMIENTO/CONFORMIDAD idempotentes bajo ScriptLock, revalidación de ámbito y auditoría. Evidencia privada solo con política institucional explícita; configuración ausente/inactiva/ambigua deniega el archivo completo.
 - Contrato academic-teacher-justification-abac.test.js PASS. Department Scope 43737615044, Task-Service Security 43737615057 y Department Reference Consumers 43737615098 SUCCESS; sintaxis Apps Script/JS PASS en Node 24.
 - Node local NOT RUN por DNS de github.com; sin despliegue Apps Script/Sheets/Drive. BETA-FUNC-102 pendiente. Siguiente P0: F34-Task04 (SHA-256 de adjuntos/evidencias).
+
+
+[2026-11-15] F34-Task04 — C1.753, integridad SHA-256 de adjuntos y evidencias
+- Verificación de implementación USER/ACADEMIC: hash de bytes reales, read-back, metadatos SHA-256/version/tamaño/MIME/fecha, almacenamiento privado y detección de sustitución al descargar/consultar evidencia.
+- Legacy sin hash identificado como LEGACY_UNVERIFIED; no se representa como evidencia verificada.
+- Se amplió el contrato Node para probar bytes alterados durante read-back y rollback de archivo. Department Scope run 43740294235 SUCCESS; Node 24 y sintaxis Apps Script/JS PASS.
+- Beta Drive/Sheets pendiente. TASK-106 continúa pendiente por versionado múltiple, inmutabilidad de evidencias y vínculo de decisiones con hashes.
