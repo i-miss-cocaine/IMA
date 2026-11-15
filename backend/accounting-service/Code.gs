@@ -213,16 +213,16 @@ function getVerifiedDepartmentScopeForSession_(payload) {
 
 function getVerifiedAccountingDepartmentScope_(payload, ss) {
   var actor = getVerifiedDepartmentScopeForSession_(payload);
-  if (!actor.valid || !ss) return actor.valid ? { valid: false, code: "DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED" } : actor;
+  if (!actor.valid || !ss) return actor.valid ? { valid: false, authorized: false, code: "DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED" } : actor;
   var sheet = ss.getSheetByName("AsignacionesAmbitosRoles");
-  if (!sheet) return { valid: false, code: "DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED" };
+  if (!sheet) return { valid: false, authorized: false, code: "DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED" };
   var values = sheet.getDataRange().getValues();
   var legacyHeaders = ["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"];
   var membershipHeaders = legacyHeaders.concat(["InstitutionID","MembershipID"]);
   var currentHeaders = membershipHeaders.concat(["ResponsibilityID"]);
   var actual = values.length ? values[0].map(String) : [];
   if (JSON.stringify(actual) !== JSON.stringify(currentHeaders)) {
-    return { valid: false, code: "DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED" };
+    return { valid: false, authorized: false, code: "DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED" };
   }
   var counts = {};
   values.slice(1).forEach(function(row) {
@@ -266,7 +266,7 @@ function getVerifiedAccountingDepartmentScope_(payload, ss) {
       membershipId: actor.membershipId, responsibilityId: responsibilityId, responsibility: responsibility,
       scopeType: scopeType, scopeValues: scopeValues });
   }
-  if (!scopes.length) return { valid: false, code: "DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED" };
+  if (!scopes.length) return { valid: false, authorized: false, code: "DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED" };
   var departments = [], institutionWide = false;
   scopes.forEach(function(scope) {
     if (scope.scopeType === "DEPARTAMENTO") scope.scopeValues.forEach(function(id) {
@@ -276,7 +276,7 @@ function getVerifiedAccountingDepartmentScope_(payload, ss) {
   });
   var activeDepartmentId = String(payload && payload.activeDepartmentId || "").trim();
   if (activeDepartmentId) {
-    if (departments.indexOf(activeDepartmentId) === -1) return { valid: false, code: "ACTIVE_SCOPE_NOT_ASSIGNED" };
+    if (departments.indexOf(activeDepartmentId) === -1) return { valid: false, authorized: false, code: "ACTIVE_SCOPE_NOT_ASSIGNED" };
     scopes = scopes.filter(function(scope) {
       if (scope.scopeType !== "DEPARTAMENTO") return false;
       scope.scopeValues = scope.scopeValues.filter(function(id) { return id === activeDepartmentId; });
