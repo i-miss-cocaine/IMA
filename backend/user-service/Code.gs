@@ -6793,7 +6793,7 @@ function getAdministrativeRequests(payload) {
     try { approvedSessions = JSON.parse(String(attachmentMap.SesionIDsJSON === undefined ? "[]" : row[attachmentMap.SesionIDsJSON] || "[]")); } catch (_) {}
     try { requestedSessions = JSON.parse(String(attachmentMap.SesionIDsSolicitadasJSON === undefined ? "[]" : row[attachmentMap.SesionIDsSolicitadasJSON] || "[]")); } catch (_) {}
     try { affectedDates = JSON.parse(String(attachmentMap.FechasAfectadasJSON === undefined ? "[]" : row[attachmentMap.FechasAfectadasJSON] || "[]")); } catch (_) {}
-    if (!Array.isArray(affectedDates) || !affectedDates.length) affectedDates = [String(attachmentMap.FechaAfectada === undefined ? "" : row[attachmentMap.FechaAfectada] || "")].filter(Boolean); catch (_) {}
+    if (!Array.isArray(affectedDates) || !affectedDates.length) affectedDates = [String(attachmentMap.FechaAfectada === undefined ? "" : row[attachmentMap.FechaAfectada] || "")].filter(Boolean);
     if (!Array.isArray(approvedSessions)) approvedSessions = [];
     if (!Array.isArray(requestedSessions)) requestedSessions = [];
     if (!Array.isArray(affectedDates)) affectedDates = [];
