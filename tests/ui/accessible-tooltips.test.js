@@ -31,4 +31,13 @@ for (const token of ["aria-describedby", "aria-expanded", "aria-controls", 'setA
 }
 assert.ok(source.includes("window.initAccessibleTooltips(document)"));
 assert.ok(source.includes("window.calculateAccessibleTooltipPosition"));
+assert.ok(source.includes('fetchApi("USER", "getUIMetadataCatalog", {})'));
+const helpStart = source.indexOf("window.applyPermanentFieldHelp = function");
+const helpEnd = source.indexOf("\n\nif (!window.__imaFieldHelpObserver", helpStart);
+assert.ok(helpStart >= 0 && helpEnd > helpStart, "permanent field help renderer must exist");
+const helpBlock = source.slice(helpStart, helpEnd);
+assert.ok(helpBlock.includes("textContent"), "help content must be inserted as text");
+assert.ok(helpBlock.includes("aria-describedby"), "field help must be associated for assistive technology");
+assert.doesNotMatch(helpBlock, /innerHTML/, "field help must not interpret metadata as HTML");
+assert.ok(source.includes("window.__imaFieldHelpObserver"));
 console.log("PASS accessible tooltips: keyboard/focus/touch hooks, aria relationships, Escape, dynamic DOM and viewport collision placement");
