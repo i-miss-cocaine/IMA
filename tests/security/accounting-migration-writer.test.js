@@ -86,7 +86,7 @@ const runtime = {
   } }
 };
 const names = [
-  "migrationStableJson_", "isAccountingTrustedAppsScriptEndpoint_", "accountingComputeHmacSignature_", "createInterServiceEnvelope",
+  "migrationStableJson_", "migrationNormalizeImportDate_", "isAccountingTrustedAppsScriptEndpoint_", "accountingComputeHmacSignature_", "createInterServiceEnvelope",
   "ensureMigrationWriterSheet_", "migrationSafeCell_", "migrationEncodeSnapshot_", "migrationDecodeSnapshot_",
   "applyTrustedAccountingMigrationWrite_", "compensateTrustedAccountingMigrationWrite_", "sendMigrationOwnerRequest_"
 ];
@@ -108,6 +108,8 @@ const payload = {
   assert.equal(target.rows.length, 2);
   assert.equal(target.rows[1][0], "CURSO-1");
   assert.equal(target.rows[1][1], "'=HYPERLINK(\"https://evil.test\")", "formula-like imported text is neutralized");
+  assert.ok(target.rows[1][3] instanceof Date, "ISO date values are stored as spreadsheet dates");
+  assert.equal(target.rows[1][3].toISOString(), "2026-02-01T00:00:00.000Z");
   assert.equal(sheets.get("MigracionEscrituras_ACCOUNTING").rows.length, 2);
   const retry = runtime.api.write(payload);
   assert.equal(retry.idempotent, true);
@@ -149,6 +151,7 @@ const payload = {
   assert.throws(() => runtime.api.write({ ...payload, idempotencyKey: "KEY-DENIED" }), /IMPORT_PERMISSION_DENIED/);
   permission = true;
   assert.throws(() => runtime.api.write({ ...payload, idempotencyKey: "KEY-FIELD", datos: { Unknown: "x" } }), /MIGRATION_FIELD_NOT_ALLOWED/);
+    assert.throws(() => runtime.api.write({ ...payload, idempotencyKey: "KEY-DATE-INVALID", datos: { Nombre: "Invalid", Nota: 10, FechaInicio: "not-a-date" } }), /MIGRATION_DATE_INVALID/);
   assert.throws(() => runtime.api.write({ ...payload, idempotencyKey: "KEY-TENANT", institutionId: "INST-2" }), /AUTH_PERMISSION_DENIED/);
 }
 {
