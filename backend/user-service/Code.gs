@@ -5373,10 +5373,12 @@ function getDepartmentalOutbox(payload) {
       destinatarioUserId: row[map.DestinatarioUserID], remitenteUserId: row[map.RemitenteUserID],
       departamentoId: row[map.DepartmentID], canal: row[map.Canal], estadoDespacho: row[map.EstadoDespacho],
       estadoCorreo: row[map.EstadoCorreo], fechaSolicitud: row[map.FechaSolicitud], fechaDespacho: row[map.FechaDespacho],
-      fechaApertura: row[map.FechaApertura], fechaConfirmacion: row[map.FechaConfirmacion],
+      fechaApertura: row[map.FechaApertura], sha256Apertura: row[map.SHA256Apertura],
+      fechaConfirmacion: row[map.FechaConfirmacion], sha256Confirmacion: row[map.SHA256Confirmacion],
       estadoAcuse: row[map.EstadoAcuse], estadoEnlace: (String(row[map.EstadoEnlace]) === "ACTIVO" && row[map.FechaExpiracionEnlace] && new Date(row[map.FechaExpiracionEnlace]).getTime() <= Date.now()) ? "EXPIRADO" : row[map.EstadoEnlace],
-      fechaExpiracionEnlace: row[map.FechaExpiracionEnlace], ultimoError: row[map.UltimoError],
-      correlationId: row[map.CorrelationID], fechaRevocacionEnlace: row[map.FechaRevocacionEnlace], revocadoPor: row[map.RevocadoPor]
+      fechaExpiracionEnlace: row[map.FechaExpiracionEnlace], fechaRevocacionEnlace: row[map.FechaRevocacionEnlace],
+      revocadoPor: row[map.RevocadoPor], notificacionId: row[map.NotificacionID], ultimoError: row[map.UltimoError],
+      correlationId: row[map.CorrelationID]
     };
   });
   return { status: "success", data: data, total: filtered.length, limit: limit, offset: offset };
@@ -5399,9 +5401,10 @@ function getMyDocumentDeliveries(payload) {
       entregaId: row[map.EntregaID], documentoId: row[map.DocumentoID], solicitudId: row[map.SolicitudID],
       nombreDocumento: row[map.NombreDocumento], versionDocumento: row[map.VersionDocumento], sha256Documento: row[map.SHA256Documento],
       canal: row[map.Canal], estadoDespacho: row[map.EstadoDespacho], estadoAcuse: row[map.EstadoAcuse],
-      fechaDespacho: row[map.FechaDespacho], fechaApertura: row[map.FechaApertura], fechaConfirmacion: row[map.FechaConfirmacion],
+      fechaDespacho: row[map.FechaDespacho], fechaApertura: row[map.FechaApertura], sha256Apertura: row[map.SHA256Apertura],
+      fechaConfirmacion: row[map.FechaConfirmacion], sha256Confirmacion: row[map.SHA256Confirmacion],
       estadoEnlace: (String(row[map.EstadoEnlace]) === "ACTIVO" && row[map.FechaExpiracionEnlace] && new Date(row[map.FechaExpiracionEnlace]).getTime() <= Date.now()) ? "EXPIRADO" : row[map.EstadoEnlace],
-      fechaExpiracionEnlace: row[map.FechaExpiracionEnlace], fechaRevocacionEnlace: row[map.FechaRevocacionEnlace]
+      fechaExpiracionEnlace: row[map.FechaExpiracionEnlace], fechaRevocacionEnlace: row[map.FechaRevocacionEnlace], fechaRevocacionEnlace: row[map.FechaRevocacionEnlace]
     };
   }) };
 }
