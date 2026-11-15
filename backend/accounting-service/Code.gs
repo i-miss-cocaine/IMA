@@ -286,7 +286,7 @@ function getOrCreateSheet(ss, name) {
     if (name === "TransporteAsignaciones") sheet.appendRow(["AsignacionTranspID", "RutaID", "EstudianteUserId", "ParadaNombre", "HorarioPlan", "Estado"]);
     if (name === "CatalogoSpreadsheets") sheet.appendRow(["FuenteID", "DominioArea", "AnoLectivo", "SpreadsheetId", "UrlAcceso", "Estado", "SchemaVersion", "Observaciones"]);
     if (name === "PlantillasEscolares") sheet.appendRow(["PlantillaID", "CodigoDocumento", "Categoria", "Titulo", "CamposJSON", "FlujoAprobacion", "Estado", "Version"]);
-    if (name === "DocumentosEscolaresEmitidos") sheet.appendRow(["DocumentoID","PlantillaID","EstudianteUserId","SolicitanteUserId","DatosJSON","EstadoDoc","CodigoVerificacion","DriveFileID","DriveURL","FechaEmision","Observaciones","VersionPlantilla","Correlativo","NumeroCorrelativo","SHA256","VersionDocumento"]);
+    if (name === "DocumentosEscolaresEmitidos") sheet.appendRow(["DocumentoID","PlantillaID","EstudianteUserId","SolicitanteUserId","DatosJSON","EstadoDoc","CodigoVerificacion","DriveFileID","DriveURL","FechaEmision","Observaciones","VersionPlantilla","Correlativo","NumeroCorrelativo","SHA256","VersionDocumento","SolicitudID"]);
     if (name === "AuditoriaMigraciones") sheet.appendRow(["EjecucionID", "NombreArchivo", "DestinoModulo", "TotalFilas", "Exitosas", "Fallidas", "MapeoJSON", "ErroresJSON", "Estado", "CreadoPor"]);
     if (name === "PlantillasSACEVerificadas") sheet.appendRow(["PlantillaSaceID", "NombreFormato", "VersionSACE", "ColumnasMapJSON", "EstadoCompatibilidad", "Observaciones"]);
   }
@@ -18979,7 +18979,7 @@ function previewSchoolDocument(payload) {
 function ensureSchoolDocumentIssuedSchema_(sheet) {
   const headers = ["DocumentoID","PlantillaID","EstudianteUserId","SolicitanteUserId","DatosJSON","EstadoDoc",
     "CodigoVerificacion","DriveFileID","DriveURL","FechaEmision","Observaciones","VersionPlantilla",
-    "Correlativo","NumeroCorrelativo","SHA256","VersionDocumento"];
+    "Correlativo","NumeroCorrelativo","SHA256","VersionDocumento","SolicitudID"];
   const current = sheet.getRange(1,1,1,Math.max(1,sheet.getLastColumn())).getValues()[0] || [];
   headers.forEach(function(header,index) {
     const actual = String(current[index] || "").trim();
@@ -19103,7 +19103,7 @@ function generateSchoolDocument(payload) {
     issuedSheet.appendRow([docId,plantillaId,targetId,
       p.solicitanteUserId ? String(p.solicitanteUserId).trim() : targetId,dJSON,"issued",verifCode,
       createdFile.getId(),"",nowISO,p.observaciones || "Emitido oficialmente mediante Diseñador de Plantillas",
-      templateVersion,nextCorrelativoNum,numeroCorrelativo,sha256Hash,documentVersion]);
+      templateVersion,nextCorrelativoNum,numeroCorrelativo,sha256Hash,documentVersion,String(p.solicitudId || "").trim()]);
     rowPersisted = true;
     return {status:"success",documentoId:docId,numeroCorrelativo:numeroCorrelativo,codigoVerificacion:verifCode,
       sha256Hash:sha256Hash,versionDocumento:documentVersion,integridadVerificada:true,
@@ -19157,10 +19157,9 @@ function verifySchoolDocumentByCUV(payload) {
       message:"El archivo almacenado no coincide con la huella SHA-256 registrada."};
   }
   const docObj = {
-    documentoId:foundRow[0],plantillaId:foundRow[1],targetEntityId:foundRow[2],solicitanteUserId:foundRow[3],
-    datosJSON:foundRow[4],estadoDoc:foundRow[5],codigoVerificacion:foundRow[6],
-    fechaEmision:foundRow[9] || "",observaciones:foundRow[10] || "",
-    versionPlantilla:foundRow[11] || "1.0",numeroCorrelativo:foundRow[13] || foundRow[12] || "N/A",
+    documentoId:foundRow[0],plantillaId:foundRow[1],estadoDoc:foundRow[5],codigoVerificacion:foundRow[6],
+    fechaEmision:foundRow[9] || "",versionPlantilla:foundRow[11] || "1.0",
+    numeroCorrelativo:foundRow[13] || foundRow[12] || "N/A",
     sha256Hash:expectedHash,versionDocumento:documentVersion,integridadVerificada:true
   };
   let certificadoAuditoria = null;

@@ -7974,9 +7974,9 @@ function ensureDocumentSignatureSchema_(sheet) {
 
 function registerDocumentSignature(payload) {
   const p = payload || {};
-  const requestId = String(p.solicitudId || "").trim();
+  const requestedRequestId = String(p.solicitudId || "").trim();
   const documentId = String(p.documentoId || "").trim();
-  if (!requestId || !documentId) throw new Error("solicitudId y documentoId son requeridos.");
+  if (!documentId) throw new Error("documentoId es requerido.");
   const permission = validateRolePermission("registerDocumentSignature",p);
   if (!permission || permission.authorized !== true) throw new Error("AUTH_PERMISSION_DENIED");
   const actorRole = String(getUserVerifiedRole(p) || "").trim();
@@ -7993,11 +7993,13 @@ function registerDocumentSignature(payload) {
     hasLock = lock.tryLock(10000);
     if (!hasLock) throw new Error("Servicio ocupado registrando conformidades. Por favor reintente.");
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const access = assertAdvancedSignatureDocumentScope_(p,ss,documentId,requestId,"UPDATE");
+    const access = assertAdvancedSignatureDocumentScope_(p,ss,documentId,requestedRequestId,"UPDATE");
     if (!access || access.authorized !== true) throw new Error(access && access.code || "RESOURCE_SCOPE_DENIED");
     if (String(access.userId || "").trim() !== actorUserId || String(access.role || "").trim() !== actorRole) {
       throw new Error("VERIFIED_IDENTITY_REQUIRED");
     }
+    const requestId = String(access.solicitudId || requestedRequestId || ("DOC:" + access.documentId)).trim();
+    if (!requestId) throw new Error("SIGNATURE_REQUEST_REFERENCE_REQUIRED");
     const driveFileId = String(access.driveFileId || "").trim();
     const version = String(access.documentVersion || "").trim();
     const expectedStoredHash = String(access.storedDocumentHash || "").trim().toLowerCase();
@@ -8054,8 +8056,8 @@ function registerDocumentSignature(payload) {
     try {
       logStructuredEvent("USER","registerDocumentSignature","INFO","DOCUMENT_CONFORMITY_REGISTERED",
         "Conformidad institucional manual vinculada a los bytes y versión verificados del archivo.",
-        {firmaId:firmaId,solicitudId:requestId,documentoId:access.documentId,firmanteId:signerId,
-          actorUserId:actorUserId,departmentId:access.departmentId,documentHash:documentHash,
+        {firmaId:firmaId,solicitudId:requestId,documentoId:access.documentId,documentSource:access.documentSource || "",
+          firmanteId:signerId,actorUserId:actorUserId,departmentId:access.departmentId,documentHash:documentHash,
           documentVersion:version,signatureType:signatureType,transactionId:firmaId},actorRole);
     } catch(_) {}
     return {status:"success",firmaId:firmaId,tokenVerificacion:token,signatureHash:signatureHash,
@@ -8370,35 +8372,94 @@ function assertAdvancedSignatureDocumentScope_(payload, ss, documentoId, solicit
   const cleanDocumentId = String(documentoId || "").trim();
   const requestedSolicitudId = String(solicitudId || "").trim();
   if (!cleanDocumentId) return {authorized:false,code:"RESOURCE_REFERENCE_INVALID"};
+
   const documentSheet = ss && ss.getSheetByName("DocumentosEstudiante");
-  if (!documentSheet || documentSheet.getLastRow() <= 1) return {authorized:false,code:"RESOURCE_OWNER_UNRESOLVED"};
-  const documentRows = documentSheet.getDataRange().getValues().slice(1);
-  const matches = documentRows.filter(function(row) {
+  const documentRows = documentSheet && documentSheet.getLastRow() > 1
+    ? documentSheet.getDataRange().getValues().slice(1) : [];
+  const uploadedMatches = documentRows.filter(function(row) {
     return String(row[0] || "").trim() === cleanDocumentId || String(row[5] || "").trim() === cleanDocumentId;
   });
-  if (matches.length !== 1) return {authorized:false,code:matches.length > 1 ? "RESOURCE_OWNERSHIP_AMBIGUOUS" : "RESOURCE_NOT_FOUND"};
-  const row = matches[0];
-  const canonicalDocumentId = String(row[0] || "").trim();
-  const expedienteId = String(row[1] || "").trim();
-  const storedSolicitudId = String(row[2] || "").trim();
-  if (requestedSolicitudId && storedSolicitudId && requestedSolicitudId !== storedSolicitudId) return {authorized:false,code:"RESOURCE_NOT_FOUND"};
-  const resolvedSolicitudId = storedSolicitudId || requestedSolicitudId;
-  if (expedienteId && resolvedSolicitudId) {
-    const admissionSheet = ss.getSheetByName("SolicitudesAdmision");
-    const admissionRows = admissionSheet ? admissionSheet.getDataRange().getValues().slice(1) : [];
-    const admission = admissionRows.find(function(item) { return String(item[0] || "").trim() === resolvedSolicitudId; });
-    if (!admission || String(admission[14] || "").trim() !== expedienteId) return {authorized:false,code:"RESOURCE_OWNER_UNRESOLVED"};
+  const issuedSheet = ss && ss.getSheetByName("DocumentosEscolaresEmitidos");
+  const issuedRows = issuedSheet && issuedSheet.getLastRow() > 1
+    ? issuedSheet.getDataRange().getValues().slice(1) : [];
+  const issuedMatches = issuedRows.filter(function(row) {
+    return String(row[0] || "").trim() === cleanDocumentId || String(row[7] || "").trim() === cleanDocumentId;
+  });
+  if (uploadedMatches.length + issuedMatches.length > 1) {
+    return {authorized:false,code:"RESOURCE_OWNERSHIP_AMBIGUOUS"};
   }
-  let ownership;
-  if (expedienteId) ownership = assertRecordOwnership(payload,"EXPEDIENTE_ESTUDIANTE",expedienteId,operation);
-  else if (resolvedSolicitudId) ownership = assertRecordOwnership(payload,"SOLICITUD_ADMISION",resolvedSolicitudId,operation);
-  else ownership = assertRecordOwnership(payload,"DOCUMENTO_ESTUDIANTE",canonicalDocumentId,operation);
+
+  if (uploadedMatches.length === 1) {
+    const row = uploadedMatches[0];
+    const canonicalDocumentId = String(row[0] || "").trim();
+    const expedienteId = String(row[1] || "").trim();
+    const storedSolicitudId = String(row[2] || "").trim();
+    if (requestedSolicitudId && storedSolicitudId && requestedSolicitudId !== storedSolicitudId) {
+      return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+    }
+    let resolvedSolicitudId = storedSolicitudId || requestedSolicitudId;
+    if (!resolvedSolicitudId) resolvedSolicitudId = "DOC:" + canonicalDocumentId;
+    if (expedienteId && storedSolicitudId && resolvedSolicitudId !== "DOC:" + canonicalDocumentId) {
+      const admissionSheet = ss.getSheetByName("SolicitudesAdmision");
+      const admissionRows = admissionSheet ? admissionSheet.getDataRange().getValues().slice(1) : [];
+      const admission = admissionRows.find(function(item) { return String(item[0] || "").trim() === resolvedSolicitudId; });
+      if (!admission || String(admission[14] || "").trim() !== expedienteId) {
+        return {authorized:false,code:"RESOURCE_OWNER_UNRESOLVED"};
+      }
+    }
+    let ownership;
+    if (expedienteId) ownership = assertRecordOwnership(payload,"EXPEDIENTE_ESTUDIANTE",expedienteId,operation);
+    else if (storedSolicitudId || requestedSolicitudId) ownership = assertRecordOwnership(payload,"SOLICITUD_ADMISION",resolvedSolicitudId,operation);
+    else ownership = assertRecordOwnership(payload,"DOCUMENTO_ESTUDIANTE",canonicalDocumentId,operation);
+    if (!ownership || ownership.authorized !== true) return {authorized:false,code:ownership && ownership.code || "RESOURCE_SCOPE_DENIED"};
+    return {
+      authorized:true,documentId:canonicalDocumentId,documentSource:"DOCUMENTO_ESTUDIANTE",
+      expedienteId:expedienteId,solicitudId:resolvedSolicitudId,driveFileId:String(row[5] || "").trim(),
+      fileName:String(row[4] || "").trim(),documentVersion:String(row[13] || "").trim(),
+      storedDocumentHash:String(row[14] || "").trim().toLowerCase(),departmentId:ownership.departmentId || "",
+      userId:context.userId,role:context.role,institutionId:context.institutionId
+    };
+  }
+
+  if (issuedMatches.length !== 1) {
+    return {authorized:false,code:issuedMatches.length > 1 ? "RESOURCE_OWNERSHIP_AMBIGUOUS" : "RESOURCE_NOT_FOUND"};
+  }
+  const row = issuedMatches[0];
+  const canonicalDocumentId = String(row[0] || "").trim();
+  if (String(row[5] || "").trim().toLowerCase() !== "issued") return {authorized:false,code:"DOCUMENT_NOT_ISSUED"};
+  const targetUserId = String(row[2] || "").trim();
+  if (!targetUserId || targetUserId === "GENERICO") return {authorized:false,code:"RESOURCE_OWNER_UNRESOLVED"};
+  const storedSolicitudId = String(row[16] || "").trim();
+  const resolvedSolicitudId = storedSolicitudId || "DOC:" + canonicalDocumentId;
+  if (requestedSolicitudId && requestedSolicitudId !== resolvedSolicitudId) {
+    return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  }
+  const usersSheet = ss.getSheetByName("Usuarios");
+  const expedienteSheet = ss.getSheetByName("ExpedientesEstudiantes");
+  if (!usersSheet || !expedienteSheet) return {authorized:false,code:"RESOURCE_OWNER_UNRESOLVED"};
+  const userData = usersSheet.getDataRange().getValues();
+  const userHeaders = (userData[0] || []).map(function(value) { return String(value || "").trim().toLowerCase(); });
+  const findColumn = function(name,fallback) { const index=userHeaders.indexOf(name.toLowerCase());return index>=0?index:fallback; };
+  const userIdIndex=findColumn("userid",0),personIdIndex=findColumn("personaid",9);
+  const userMatches=userData.slice(1).filter(function(item) {
+    return String(item[userIdIndex] || "").trim() === targetUserId;
+  });
+  if (userMatches.length !== 1) return {authorized:false,code:userMatches.length > 1 ? "RESOURCE_OWNER_AMBIGUOUS" : "RESOURCE_OWNER_UNRESOLVED"};
+  const personId=String(userMatches[0][personIdIndex] || "").trim();
+  if (!personId) return {authorized:false,code:"RESOURCE_OWNER_UNRESOLVED"};
+  const expedienteRows=expedienteSheet.getDataRange().getValues().slice(1).filter(function(item) {
+    return String(item[1] || "").trim() === personId;
+  });
+  if (expedienteRows.length !== 1) return {authorized:false,code:expedienteRows.length > 1 ? "RESOURCE_OWNER_AMBIGUOUS" : "RESOURCE_OWNER_UNRESOLVED"};
+  const expedienteId=String(expedienteRows[0][0] || "").trim();
+  const ownership=assertRecordOwnership(payload,"EXPEDIENTE_ESTUDIANTE",expedienteId,operation);
   if (!ownership || ownership.authorized !== true) return {authorized:false,code:ownership && ownership.code || "RESOURCE_SCOPE_DENIED"};
   return {
-    authorized:true,documentId:canonicalDocumentId,expedienteId:expedienteId,solicitudId:resolvedSolicitudId,
-    driveFileId:String(row[5] || "").trim(),fileName:String(row[4] || "").trim(),
-    documentVersion:String(row[13] || "").trim(),storedDocumentHash:String(row[14] || "").trim().toLowerCase(),
-    departmentId:ownership.departmentId || "",userId:context.userId,role:context.role,institutionId:context.institutionId
+    authorized:true,documentId:canonicalDocumentId,documentSource:"DOCUMENTO_ESCOLAR_EMITIDO",
+    expedienteId:expedienteId,solicitudId:resolvedSolicitudId,driveFileId:String(row[7] || "").trim(),
+    fileName:"",documentVersion:String(row[15] || "").trim(),
+    storedDocumentHash:String(row[14] || "").trim().toLowerCase(),departmentId:ownership.departmentId || "",
+    userId:context.userId,role:context.role,institutionId:context.institutionId
   };
 }
 function assertAdvancedSignatureSignerScope_(ss, documentAccess, firmanteId, signerContext) {

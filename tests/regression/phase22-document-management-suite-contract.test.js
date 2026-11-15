@@ -60,7 +60,7 @@ function makeIsolatedHarness(options = {}) {
   const sheets = new Map();
   const headers = {
     PlantillasEscolares: ["PlantillaID", "CodigoDocumento", "Categoria", "Titulo", "CamposJSON", "FlujoAprobacion", "Estado", "Version", "ContenidoHTML", "ConfigFormatoJSON", "Descripcion", "Departamento", "TipoSalida", "CreadoPor", "DriveFolderID"],
-    DocumentosEscolaresEmitidos: ["DocumentoID","PlantillaID","EstudianteUserId","SolicitanteUserId","DatosJSON","EstadoDoc","CodigoVerificacion","DriveFileID","DriveURL","FechaEmision","Observaciones","VersionPlantilla","Correlativo","NumeroCorrelativo","SHA256","VersionDocumento"],
+    DocumentosEscolaresEmitidos: ["DocumentoID","PlantillaID","EstudianteUserId","SolicitanteUserId","DatosJSON","EstadoDoc","CodigoVerificacion","DriveFileID","DriveURL","FechaEmision","Observaciones","VersionPlantilla","Correlativo","NumeroCorrelativo","SHA256","VersionDocumento","SolicitudID"],
     PlantillasSACEVerificadas: ["PlantillaSaceID", "NombreFormato", "Version", "Columnas", "Estado", "Observaciones"]
   };
   const spreadsheet = {

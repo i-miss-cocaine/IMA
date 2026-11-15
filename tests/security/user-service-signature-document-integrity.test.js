@@ -37,9 +37,20 @@ function makeHarness(options={}) {
     appendRow:row=>signatureRows.push(row.slice())
   };
   const documentSheet={
-    getLastRow:()=>2,
-    getDataRange:()=>({getValues:()=>[["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl","FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones","VersionDocumento","SHA256"],documentRow.slice()]})
+    getLastRow:()=>options.issuedDocument?1:2,
+    getDataRange:()=>({getValues:()=>options.issuedDocument
+      ?[["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl","FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones","VersionDocumento","SHA256"]]
+      :[["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl","FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones","VersionDocumento","SHA256"],documentRow.slice()]})
   };
+  const issuedRow=["DOC-ISSUED","TPL-1","USER-1","ISSUER-1","{}","issued","CUV-1","FILE-1","",
+    "2026-11-15T06:00:00.000Z","","1.0",1,"2026-000001",hash(pdf1),
+    "DOC-ISSUED:1.0:2026-11-15T06:00:00.000Z",""];
+  const issuedSheet={getLastRow:()=>options.issuedDocument?2:1,
+    getDataRange:()=>({getValues:()=>options.issuedDocument
+      ?[["DocumentoID","PlantillaID","EstudianteUserId","SolicitanteUserId","DatosJSON","EstadoDoc","CodigoVerificacion","DriveFileID","DriveURL","FechaEmision","Observaciones","VersionPlantilla","Correlativo","NumeroCorrelativo","SHA256","VersionDocumento","SolicitudID"],issuedRow.slice()]
+      :[["DocumentoID","PlantillaID","EstudianteUserId","SolicitanteUserId","DatosJSON","EstadoDoc","CodigoVerificacion","DriveFileID","DriveURL","FechaEmision","Observaciones","VersionPlantilla","Correlativo","NumeroCorrelativo","SHA256","VersionDocumento","SolicitudID"]]})};
+  const usersSheet={getDataRange:()=>({getValues:()=>[["UserID","","","","","","","","","PersonaID"],["USER-1","","","","","","","","","PERSON-1"]]})};
+  const expedienteSheet={getDataRange:()=>({getValues:()=>[["ExpedienteID","PersonaID"],["EXP-1","PERSON-1"]]})};
   let fileBytes=Buffer.from(options.fileBytes||pdf1);
   let sharing=options.sharing||"PRIVATE";
   let mutateOnSecondRead=!!options.mutateOnSecondRead;
@@ -54,7 +65,13 @@ function makeHarness(options={}) {
       return {getBytes:()=>Array.from(snapshot),getContentType:()=>"application/pdf"};
     }
   };
-  const ss={getSheetByName:name=>name==="DocumentosEstudiante"?documentSheet:(name==="SolicitudesAdmision"?null:null)};
+  const ss={getSheetByName:name=>{
+    if(name==="DocumentosEstudiante")return documentSheet;
+    if(name==="DocumentosEscolaresEmitidos")return issuedSheet;
+    if(name==="Usuarios")return options.issuedDocument?usersSheet:null;
+    if(name==="ExpedientesEstudiantes")return options.issuedDocument?expedienteSheet:null;
+    return null;
+  }};
   const context={
     Buffer,require,Date,Math,SPREADSHEET_ID:"TEST-SPREADSHEET",
     validateRolePermission:()=>({authorized:true}),
@@ -62,8 +79,8 @@ function makeHarness(options={}) {
     getUserContextScope:()=>({status:"success",userId:"USER-1",role:"Director",institutionId:"INST-1",departmentIds:["DEP-1"]}),
     assertRecordOwnership:(_payload,type,id,operation)=>{
       state.scopeCalls++;
-      assert.equal(type,"SOLICITUD_ADMISION");
-      assert.equal(id,"REQ-1");
+      assert.equal(type,options.issuedDocument?"EXPEDIENTE_ESTUDIANTE":"SOLICITUD_ADMISION");
+      assert.equal(id,options.issuedDocument?"EXP-1":"REQ-1");
       assert.equal(operation,"UPDATE");
       return {authorized:true,departmentId:"DEP-1"};
     },
@@ -162,6 +179,17 @@ assert.equal(hash(pdf1),hash(Array.from(pdf1)),"fixture raw bytes hash baseline"
   assert.equal(h.rows.length,1);
   h.state.lockHeld=false;
 }
+{
+  const h=makeHarness({issuedDocument:true});
+  const result=h.context.registerDocumentSignature({documentoId:"DOC-ISSUED",_verifiedUserId:"USER-1",_verifiedRole:"Director"});
+  assert.equal(result.status,"success");
+  assert.equal(result.versionDocumento,"DOC-ISSUED:1.0:2026-11-15T06:00:00.000Z");
+  assert.equal(h.rows[1][1],"DOC:DOC-ISSUED");
+  assert.equal(h.rows[1][2],"DOC-ISSUED");
+  assert.equal(h.rows[1][9],hash(pdf1));
+  assert.equal(h.state.scopeCalls,1);
+}
+
 {
   const h=makeHarness({mutateOnSecondRead:true});
   assert.throws(()=>h.context.registerDocumentSignature({solicitudId:"REQ-1",documentoId:"DOC-1",

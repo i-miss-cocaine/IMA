@@ -20,7 +20,7 @@ function makeHarness(options={}) {
   const state={lockHeld:false,releases:0,files:new Map(),trashed:0,folderSharing:"PRIVATE",appendFailure:false};
   const issuedRows=[["DocumentoID","PlantillaID","EstudianteUserId","SolicitanteUserId","DatosJSON","EstadoDoc",
     "CodigoVerificacion","DriveFileID","DriveURL","FechaEmision","Observaciones","VersionPlantilla",
-    "Correlativo","NumeroCorrelativo","SHA256","VersionDocumento"]];
+    "Correlativo","NumeroCorrelativo","SHA256","VersionDocumento","SolicitudID"]];
   const templateRows=[["PlantillaID","CodigoDocumento","Categoria","Titulo","CamposJSON","FlujoAprobacion","Estado","Version","ContenidoHTML"],
     ["TPL-1","CONST","Constancia","Constancia", "{}", "[]","Activa","2.0","<h1>{{student.name}}</h1><p>{{student.grade}}</p>"]];
   function makeSheet(rows) {
@@ -96,7 +96,7 @@ function makeHarness(options={}) {
 {
   const h=makeHarness();
   const result=h.context.generateSchoolDocument({plantillaId:"TPL-1",targetEntityId:"STU-1",
-    solicitanteUserId:"USER-1",datosFormulario:{"student.name":"Ana & Luis","student.grade":"9no"}});
+    solicitanteUserId:"USER-1",solicitudId:"SOL-1",datosFormulario:{"student.name":"Ana & Luis","student.grade":"9no"}});
   assert.equal(result.status,"success");
   assert.equal(result.integridadVerificada,true);
   assert.match(result.sha256Hash,/^[a-f0-9]{64}$/);
@@ -107,6 +107,7 @@ function makeHarness(options={}) {
   assert.equal(file.getSharingAccess(),"PRIVATE");
   assert.equal(row[14],result.sha256Hash);
   assert.equal(row[15],result.versionDocumento);
+  assert.equal(row[16],"SOL-1");
   const verified=h.context.verifySchoolDocumentByCUV({codigoVerificacion:result.codigoVerificacion});
   assert.equal(verified.status,"success");
   assert.equal(verified.documento.integridadVerificada,true);
@@ -119,6 +120,23 @@ function makeHarness(options={}) {
   assert.equal(tampered.documento.integridadVerificada,false);
   assert.equal(h.state.releases,1);
   assert.equal(h.state.lockHeld,false);
+}
+{
+  const h=makeHarness();
+  const result=h.context.generateSchoolDocument({plantillaId:"TPL-1",datosFormulario:{"student.name":"A","student.grade":"B"}});
+  const file=h.files.get(h.issuedRows[1][7]);
+  file.setSharing("ANYONE_WITH_LINK");
+  const verified=h.context.verifySchoolDocumentByCUV({codigoVerificacion:result.codigoVerificacion});
+  assert.equal(verified.status,"error");
+  assert.equal(verified.code,"DOCUMENT_FILE_NOT_PRIVATE");
+}
+{
+  const h=makeHarness();
+  const result=h.context.generateSchoolDocument({plantillaId:"TPL-1",datosFormulario:{"student.name":"A","student.grade":"B"}});
+  h.files.delete(h.issuedRows[1][7]);
+  const verified=h.context.verifySchoolDocumentByCUV({codigoVerificacion:result.codigoVerificacion});
+  assert.equal(verified.status,"error");
+  assert.equal(verified.code,"DOCUMENT_FILE_UNAVAILABLE");
 }
 {
   const h=makeHarness();
