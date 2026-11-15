@@ -204,3 +204,10 @@ Se registra AUD-NG-191 / TASK-488 para los paneles de Dirección, Coordinación 
 - **Evidencia:** contrato de ownership de vacaciones/ausencias y prueba de acceso departamental PASS; Department Scope 43674129348 SUCCESS; Identity Mapping 43674075666 SUCCESS; Department Reference Consumers 43674075654 SUCCESS.
 - **Archivos modificados:** backend/accounting-service/Code.gs y tests/security/accounting-vacation-medical-leave-ownership.test.js.
 - **Beta:** BETA-FUNC-096 pendiente de despliegue y validación con usuarios sintéticos.
+
+
+## Dependencia satisfecha — AUD-NG-174 (C1.741)
+- El contrato API versionado requerido por TASK-489 quedó implementado en js/api.js y en Academic/Accounting: apiVersion 1.0.0, respuesta success/data o error estructurado, código estable, mensaje público seguro y meta con timestamp/correlationId.
+- fetchApi ya no convierte errores de transporte o respuestas malformadas en listas vacías; la suite local HTTP prueba éxito, vacío, error, JSON inválido, HTML, HTTP 503, timeout y caída de red.
+- CI final: Department Scope 43675111519, Identity Mapping 43675111535, Department Reference Consumers 43675111514 y Task-Service 43675111510 — SUCCESS.
+- TASK-489 queda desbloqueada para corregir el DTO/renderizado de RR. HH.; no se amplía el alcance de autorización ni se reemplaza el aislamiento implementado por TASK-490.

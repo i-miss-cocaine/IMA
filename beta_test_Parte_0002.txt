@@ -455,3 +455,14 @@
 - **Evidencia requerida:** usuarios/roles sintéticos, payloads de prueba, códigos de respuesta, eventos de auditoría sanitizados y snapshots antes/después de las hojas. No utilizar PII productiva.
 - **Estado:** Pendiente beta. Contratos Node y CI aprobados.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-097 — AUD-NG-174 — Contrato API versionado y errores de transporte
+- **Módulos:** cliente js/api.js; servicios Academic y Accounting; despliegue Apps Script.
+- **Precondiciones:** desplegar simultáneamente versiones de cliente, Academic y Accounting en un entorno beta aislado; endpoints sintéticos/controlados para success, empty, error, malformed JSON, HTML, HTTP 503 y timeout.
+- **Pasos:** (1) verificar apiVersion 1.0.0, status, data/error y meta.timestamp/correlationId en ambos servicios; (2) comprobar correlationId de solicitud y respuesta; (3) probar colección vacía legítima y confirmar success/data:[]; (4) probar error de negocio y error interno y verificar código estable/mensaje público seguro; (5) probar JSON inválido y HTML; (6) probar HTTP 503 y caída de dependencia; (7) probar timeout sin cambiar la política configurada; (8) comprobar que ningún fallo se convierte en success ni genera listas vacías; (9) verificar compatibilidad legacy de los demás servicios y que la caché solo se actualiza con success; (10) validar mensajes de error con textContent y sin inyección HTML.
+- **Resultado esperado:** cliente y ambos servicios usan el contrato v1.0.0; errores quedan separados de datos vacíos; correlación trazable; ninguna excepción interna se expone.
+- **Evidencia requerida:** payloads/respuestas sanitizados, códigos HTTP, correlationId, capturas de UI y logs beta sin datos personales.
+- **Estado:** Pendiente beta. Contratos Node/HTTP y CI aprobados.
+===============================================================================

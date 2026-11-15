@@ -7,3 +7,13 @@
 - **Verificación local:** 12 escenarios / 17 aserciones V8 PASS; parseo de servicio y contrato PASS. CI Department Scope 42910740964, Task-Service 42910740844 e Identity Mapping 42910740991 — SUCCESS.
 - **Estado:** Completada en código. BETA-FUNC-028 Pendiente beta para migración/PropertiesService real.
 - **Riesgo residual:** Script Properties es accesible a editores autorizados del proyecto; no equivale a un gestor externo de secretos ni se afirma cifrado de extremo a extremo.
+
+
+<!-- ID: AUD-NG-174 | Fuente: Plan Maestro PM-02; auditoría FASE2-02; dependencias TASK-489/T-UX-12 -->
+### [x] [AUD-NG-174] Normalizar contratos API y manejo de errores entre cliente y microservicios
+- **Alcance ejecutado:** fetchApi; textResponse de Academic y Accounting; validateApiContractsTestSuite común; ContentService.MimeType.TEXT; isFallback; contrato API versionado 1.0.0.
+- **Contrato:** éxito con data; error con objeto estructurado, código estable y mensaje público seguro; metadata timestamp/correlationId. doPost propaga correlationId.
+- **Cliente:** valida JSON/envelope/versión; diferencia vacío legítimo de error; errores de red, timeout, HTTP, HTML, JSON inválido y dependencia fallida no se convierten en success/data:[]; adaptador legacy para servicios aún no versionados.
+- **Seguridad:** mensajes renderizados con textContent; caché reconciliada solo en success; timeout de AUD-NG-007 conservado.
+- **Pruebas:** suite Node HTTP local y helpers de ambos servicios PASS; Department Scope 43675111519, Identity Mapping 43675111535, Department Reference Consumers 43675111514 y Task-Service 43675111510 SUCCESS.
+- **Estado:** Completada en código/CI; BETA-FUNC-097 pendiente.

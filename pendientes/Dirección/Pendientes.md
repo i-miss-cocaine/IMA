@@ -2372,6 +2372,7 @@
 - **Acción ejecutable:** normalizar el DTO entre backend y frontend; alinear solicitudes/data, nombres de campos y estados; validar contadores y listas de vacaciones; manejar estados vacío/error.
 - **Archivos/módulos afectados:** backend/user-service/Code.gs, módulo UI de Recursos Humanos y dashboard correspondiente.
 - **Dependencias y riesgos:** contrato API versionado de AUD-NG-174; no traducir fallos a lista vacía.
+- **Dependencia AUD-NG-174:** satisfecha en código/CI en C1.741: contrato v1.0.0 para Academic/Accounting, validación estricta en fetchApi y errores estructurados; Department Scope 43675111519, Identity Mapping 43675111535, Department Reference Consumers 43675111514 y Task-Service 43675111510 SUCCESS. BETA-FUNC-097 pendiente de despliegue real. TASK-489 queda técnicamente desbloqueada y sigue Pendiente.
 - **Alcance:** consulta y renderizado de solicitudes laborales/vacaciones.
 - **Criterios de aceptación:** esquema documentado coincide en ambos lados; lista/contador muestran los mismos registros; estados se traducen explícitamente; pruebas de éxito, vacío y error.
 - **Prioridad:** P1.

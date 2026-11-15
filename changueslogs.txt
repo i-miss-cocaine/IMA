@@ -3730,3 +3730,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - RecursosHumanos conserva ámbito departamental; el acceso institucional global exige ámbito institucional verificado. Pruebas cubren empleado, HR por departamento, HR global, Director, Administrador y rol no autorizado.
 - Department Scope 43674129348 SUCCESS; Identity Mapping 43674075666 SUCCESS; Department Reference Consumers 43674075654 SUCCESS; pruebas de ownership y syntax-check PASS.
 - TASK-490 completada en código/CI; BETA-FUNC-096 pendiente de ejecución en entorno real.
+
+
+[2026-11-15] AUD-NG-174 — contrato API versionado y manejo uniforme de errores (C1.741)
+- Academic y Accounting emiten apiVersion 1.0.0, status, data/error estructurado y meta timestamp/correlationId; textResponse conserva ContentService.MimeType.TEXT y doPost responde por el helper versionado.
+- fetchApi valida versión/envelope y separa éxito vacío legítimo de errores de red, timeout, HTTP, HTML, JSON inválido, versión incompatible y dependencia caída; ya no convierte fallos en success/data:[]; adaptador legacy explícito para otros servicios.
+- Mensajes públicos seguros, sin innerHTML; caché solo se reconcilia en success. Se conserva política de timeout de AUD-NG-007.
+- Suite Node HTTP local y helpers de ambos servicios PASS. Department Scope 43675111519, Identity Mapping 43675111535, Department Reference Consumers 43675111514 y Task-Service 43675111510 SUCCESS.
+- AUD-NG-174 completada en código/CI; BETA-FUNC-097 pendiente. TASK-489 queda desbloqueada.

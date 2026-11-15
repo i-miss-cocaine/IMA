@@ -56,3 +56,5 @@ Los checkpoints posteriores se registran aquí.
 | C1.739 | IMA-EXEC-20261115-TASK391-OPS-METRICS-01 | Métricas agregadas de ocupación/puntualidad/duración y panel Dirección; contrato Node y CI PASS; costo/demanda sin fuentes; TASK-391 sigue Pendiente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt — C1.739 | C1.738 | subflujo implementado; beta y fuentes de costo/demanda pendientes |
 
 | C1.740 | IMA-EXEC-20261115-TASK490-EMPLOYEE-OWNERSHIP-01 | Aislamiento SELF/ABAC de expedientes y solicitudes; auditoría sin ID objetivo; contratos y CI PASS; beta pendiente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt — C1.740 | C1.739 | TASK-490 completada en código/CI; BETA-FUNC-096 pendiente |
+
+| C1.741 | IMA-EXEC-20261115-AUD-NG-174-API-CONTRACT-01 | Contrato API v1.0.0 cliente/Academic/Accounting; errores estructurados; HTTP/Node y CI PASS; beta pendiente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt — C1.741 | C1.740 | AUD-NG-174 completada en código/CI; TASK-489 desbloqueada |
