@@ -586,6 +586,7 @@ const historicalResubmissionRecord = userContext.getEvidenceRecordsForRequest_(u
 assert.equal(historicalResubmissionRecord.Estado,"SUPERADA");
 assert.equal(historicalResubmissionRecord.SHA256,oldResubmissionRecord.SHA256);
 assert.equal(historicalResubmissionRecord.FechaRecepcionISO,oldResubmissionRecord.FechaRecepcionISO,"historical receipt timestamps must remain immutable");
+userContext.validateFileBinaryIntegrity = function(){ return {valid:true,mimeType:"application/pdf"}; };
 const historicalEvidenceVerification = userContext.getAdministrativeRequestAttachment({
   _userId:"STU-USER",_role:"Estudiante",solicitudId:resubmissionId,evidenciaId:oldResubmissionRecord.EvidenciaID,verifyOnly:true
 });
