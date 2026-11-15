@@ -30,8 +30,8 @@ const context={SPREADSHEET_ID:"TEST",MIGRATION_OWNER_SCHEMAS_:schemas,
  rollbackMigrationOwnerWrites_(applied){rollbackCalls.push(applied.slice());return[];},
  requestAccountingUserAuthorization_(action,payload){return action==="verifyAccountingSession"?{status:"success",authorized:true,userId:"U-1",role:"Administrador",institutionId:"INST-1"}:{status:"success",authorized:true,importPermissionVerified:true,userId:"U-1",role:"Administrador"};},
  getVerifiedAccountingIdentity_(){return{authorized:true,userId:"U-1",role:"Administrador"};},
- requestAccountingTrustedOwnerSnapshot_(service,action,payload){
-  if(action!=="getMigrationTargetExistenceSnapshot")return{status:"error",code:"ACTION_NOT_ALLOWED"};
+ requestAccountingTrustedOwnerSnapshot_(service,payload){
+  if(!payload||!payload.sessionToken)return{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"};
   if(service==="ACADEMIC")return{status:"success",verified:true,service:"ACADEMIC",sheet:"ExpedientesEstudiantes",idField:"ExpedienteID",institutionId:"INST-1",existingTargetIds:["ESTUDIANTE-1"],targetRows:[]};
   if(service==="USER")return{status:"success",verified:true,service:"USER",sheet:"Personas",idField:"PersonaID",institutionId:"INST-1",existingTargetIds:["PERSONA-1"],targetRows:[]};
   return{status:"error",code:"OWNER_NOT_ALLOWED"};
