@@ -1005,6 +1005,11 @@ const ROLE_PERMISSIONS = {
     "getInstitutionalCriteria", "getFormativeEvaluations", "getSupportPlans",
     "acceptLinkInvitation", "getGuardianStudents", "getInstitutionalAnnouncements", "getInternalMessages", "sendInternalMessage", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "getMyDocumentDeliveries", "openDepartmentalDocumentDelivery", "confirmDepartmentalDocumentReceipt", "getAppointmentBookings", "bookAppointment", "getInstitutionalCalendarEvents", "getPendingReminders"
   ]
+ ,
+  "Auditor": [
+    "getLegacyDocumentInventory", "getAuditReport", "getInstitutionalReportCatalog",
+    "getNotificationAuditLogs", "getUserRoleMemberships"
+  ]
 };
 
 // Políticas explícitas del módulo de soporte; los handlers aplican propiedad del recurso.
