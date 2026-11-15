@@ -6611,7 +6611,7 @@ window.__imaUIMetadataFallback = {
     version: "offline-1.0",
     fields: {
         "identity.userId": { help: "Usa el UserId institucional asignado a la cuenta (por ejemplo, USR-...). No escribas aquí el nombre ni el DNI." },
-        "matricula.identidad": { help: "Escribe el número exactamente como aparece en el identificación oficial. No agregues ni elimines dígitos; revisa manualmente cualquier posible coincidencia." },
+        "matricula.identidad": { help: "Escribe el número exactamente como aparece en la identificación oficial. No agregues ni elimines dígitos; revisa manualmente cualquier posible coincidencia." },
         "matricula.fechaNacimiento": { help: "Selecciona la fecha en el calendario y verifica que coincida con el documento oficial." },
         "matricula.anoLectivo": { help: "Ingresa el año lectivo de la matrícula; el formulario admite valores entre 2000 y 2200." },
         "matricula.grado": { help: "Usa el nombre oficial del grado del catálogo institucional; máximo 80 caracteres." },
