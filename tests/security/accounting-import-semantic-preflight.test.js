@@ -15,7 +15,9 @@ add("LEGACY","curso","CUR-OTHER","CURSO-X","CONFIRMADA","INST-2");
 add("LEGACY","estudiante","EST-1","ESTUDIANTE-1");
 add("LEGACY","persona","PER-1","PERSONA-1");
 const sheet={getRange(r,c,n,m){return{getValues(){return identityRows.slice(r-1,r-1+n).map(row=>row.slice(c-1,c-1+m));}};},getDataRange(){return{getValues(){return identityRows.map(row=>row.slice());}};}};
-const ss={getSheetByName(name){return name==="CorrespondenciaIdentificadores"?sheet:null;}};
+const targetRows=[["CursoID","Nombre","Nota","FechaInicio"],["CURSO-1","Matemáticas",80,"2025-01-01"]];
+const targetSheet={getDataRange(){return{getValues(){return targetRows.map(row=>row.slice());}};}};
+const ss={getSheetByName(name){if(name==="CorrespondenciaIdentificadores")return sheet;if(name==="Cursos")return targetSheet;return null;}};
 const schemas={curso:{service:"ACCOUNTING",sheet:"Cursos",headers:["CursoID","Nombre","Nota","FechaInicio"]},estudiante:{service:"ACADEMIC",sheet:"Estudiantes",headers:["EstudianteID","PersonaID"]}};
 const auditRows=[],writeCalls=[],rollbackCalls=[];
 let failWriteAt=0,runCounter=0;
@@ -30,7 +32,7 @@ const context={SPREADSHEET_ID:"TEST",MIGRATION_OWNER_SCHEMAS_:schemas,
  mapMigrationRowToTarget_(row,mapping){const out={};Object.keys(mapping.campos||{}).forEach(field=>out[field]=row[mapping.campos[field]]);return out;},
  migrationStableJson_:value=>JSON.stringify(value),migrationHash_:value=>crypto.createHash("sha256").update(String(value)).digest("hex"),
  Date,String,Number,Array,Object,JSON,RegExp,Error,isFinite};
-const funcs=["buildAccountingIdentityMapSnapshot_","resolveAccountingIdentityFromSnapshot_","buildImportPreview_","validateImportPreview","importDataWithColumnMapping"].map(extract);
+const funcs=["buildAccountingIdentityMapSnapshot_","resolveAccountingIdentityFromSnapshot_","buildMigrationTargetExistenceSnapshot_","buildImportPreview_","validateImportPreview","importDataWithColumnMapping"].map(extract);
 vm.createContext(context);vm.runInContext(header+"\n"+funcs.join("\n")+"\nthis.preview=buildImportPreview_;this.validate=validateImportPreview;this.import=importDataWithColumnMapping;",context);
 const base={nombreArchivo:"cursos.xlsx",destinoModulo:"Cursos",sistemaOrigen:"LEGACY",tipoEntidad:"curso",sessionToken:"signed",
  columnaMapeo:{identificador:"legacyId",campos:{Nombre:"nombre",Nota:"nota",FechaInicio:"fechaInicio"}},
@@ -38,7 +40,16 @@ const base={nombreArchivo:"cursos.xlsx",destinoModulo:"Cursos",sistemaOrigen:"LE
 const valid=context.preview(base);assert.equal(valid.status,"success");assert.equal(valid.validForImport,true);assert.equal(valid.filasValidas,1);
 assert.equal(valid.preparedRows[0].Nombre,"Matemáticas");
 assert.equal(valid.validRowIndexes.length,1);assert.equal(valid.identityResolutions[0].idNuevoPlataforma,"CURSO-1");assert.match(valid.previewHash,/^[a-f0-9]{64}$/);
+assert.equal(valid.targetExistenceSnapshot.verified,true);
+assert.deepEqual(Array.from(valid.targetExistenceSnapshot.existingTargetIds),["CURSO-1"]);
+assert.ok(valid.advertencias.some(item=>item.codigo==="TARGET_RECORD_OVERWRITE"));
+const initialTargetHash=valid.previewHash;
+targetRows[1][2]=81;
+assert.notEqual(context.preview(base).previewHash,initialTargetHash,"target edits invalidate a stale preview");
+targetRows[1][2]=80;
 assert.equal(context.validate(base).validForImport,true);
+assert.equal(context.validate(base).resumenValidation.sobrescriturasDetectadas,1);
+assert.equal(context.validate(base).resumenValidation.existenciaDestinoVerificada,true);
 assert.notEqual(context.preview({...base,filasData:[{...base.filasData[0],nota:91}]}).previewHash,valid.previewHash);
 const partialPayload={...base,analisisEstructural:{headerRowIndex:1,dataRowNumbers:[3,7]},filasData:[base.filasData[0],{...base.filasData[0],legacyId:"CUR-2",fechaInicio:"fecha-invalida"}]};
 const partialPreview=context.preview(partialPayload);
@@ -93,6 +104,7 @@ identityRows.push(identityRows[1].slice());const duplicateMap=context.preview(ba
 assert.equal(duplicateMap.validForImport,false);assert.ok(duplicateMap.errores.some(x=>x.codigo==="IDENTITY_UNIQUENESS_VIOLATION"));identityRows.pop();
 const student={...base,destinoModulo:"Estudiantes",tipoEntidad:"estudiante",columnaMapeo:{identificador:"legacyId",campos:{PersonaID:"persona"}},filasData:[{legacyId:"EST-1",persona:"PER-1"}]};
 assert.equal(context.preview(student).validForImport,true);
+assert.equal(context.preview(student).targetExistenceSnapshot.verified,false);
 const orphan=context.preview({...student,filasData:[{legacyId:"EST-1",persona:"MISSING"}]});
 assert.equal(orphan.validForImport,false);assert.ok(orphan.errores.some(x=>x.codigo==="ORPHANED_REFERENCE"));
 assert.equal(context.preview({...student,filasData:[{legacyId:"EST-1"}]}).validForImport,false);
