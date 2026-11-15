@@ -4927,6 +4927,46 @@ function registerDocumentEvidence_(ss, args) {
   return record;
 }
 
+function getEvidenceRecordsForRequest_(ss, solicitudId, currentOnly) {
+  var schema = ensureEvidenceDocumentSchema_(ss), rows = schema.sheet.getDataRange().getValues(), out = [];
+  for (var i = 1; i < rows.length; i++) {
+    if (String(rows[i][schema.map.SolicitudID] || "").trim() !== String(solicitudId || "").trim()) continue;
+    if (currentOnly && rows[i][schema.map.EsVersionActual] !== true && String(rows[i][schema.map.EsVersionActual]).toUpperCase() !== "TRUE") continue;
+    var record = {};
+    Object.keys(schema.map).forEach(function(key) { record[key] = rows[i][schema.map[key]]; });
+    record._rowNumber = i + 1;
+    out.push(record);
+  }
+  return out;
+}
+
+function rollbackDocumentEvidence_(ss, evidenciaId, reason) {
+  try {
+    var schema = ensureEvidenceDocumentSchema_(ss), rows = schema.sheet.getDataRange().getValues();
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][schema.map.EvidenciaID] || "").trim() !== String(evidenciaId || "").trim()) continue;
+      schema.sheet.getRange(i + 1, schema.map.Estado + 1).setValue("ORPHANED");
+      schema.sheet.getRange(i + 1, schema.map.EsVersionActual + 1).setValue(false);
+      schema.sheet.getRange(i + 1, schema.map.CorrelationID + 1).setValue(String(reason || "ROLLBACK"));
+      return true;
+    }
+  } catch (_) {}
+  return false;
+}
+
+function compareEvidenceRetry_(ss, solicitudId, attachmentRecords) {
+  var existing = getEvidenceRecordsForRequest_(ss, solicitudId, true);
+  var incoming = (attachmentRecords || []).map(function(item, index) {
+    return { groupId: String(item.evidenciaGrupoId || ("ADJUNTO-" + (index + 1))), hash: String(item.attachment.sha256 || "").toLowerCase() };
+  }).sort(function(a,b) { return a.groupId.localeCompare(b.groupId); });
+  var current = existing.map(function(item) {
+    return { groupId: String(item.EvidenciaGrupoID || ""), hash: String(item.SHA256 || "").toLowerCase() };
+  }).sort(function(a,b) { return a.groupId.localeCompare(b.groupId); });
+  return incoming.length === current.length && incoming.every(function(item,index) {
+    return item.groupId === current[index].groupId && item.hash === current[index].hash;
+  });
+}
+
 function verifyDocumentEvidenceIntegrity(payload) {
   var p = payload || {}, solicitudId = String(p.solicitudId || "").trim(), evidenciaId = String(p.evidenciaId || "").trim();
   if (!solicitudId || !evidenciaId) return { status: "error", code: "EVIDENCE_ID_REQUIRED" };
