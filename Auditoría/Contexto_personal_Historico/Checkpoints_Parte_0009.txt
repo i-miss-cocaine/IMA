@@ -410,3 +410,17 @@ C1.721 — IMA-EXEC-20261114-TASK200-01 — TASK-200 — Facturación automátic
 - **Siguiente tarea elegible:** TASK-391 — indicadores de eficiencia operativa y análisis de demanda de transporte; verificar primero disponibilidad y contrato de F21-Task27, viajes, asignaciones y fuentes de costos.
 - **HEAD final de implementación:** 8f7714ea0edcb49e2fc7b496f374d9fbc550a792; **commit que registra C1.737:** 94827d968b29065a89355a8411a97ace416f05b2; rama base verificada en 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
+
+
+===============================================================================
+### C1.738 — IMA-EXEC-20261115-TASK391-SOURCE-READINESS-01 — Verificación de fuentes para métricas de transporte
+- **Continuidad:** C1.737. HEAD inicial de esta revisión: a0e28223c3e2ec25c03dd49e0d1d116470c043a9. Rama exclusiva NG_beta_0.0.0.1_work; rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Tarea siguiente:** TASK-391 — indicadores de eficiencia operativa y análisis de demanda de transporte (PM-05), todavía Pendiente; no se modificó su código ni se cambió su estado.
+- **Dependencia revisada:** F21-27 aparece como “Asistencia a servicios complementarios — Completa y verificada” en la auditoría de Fase 21. Los datos actuales de rutas, asignaciones, viajes y asistencia a bordo/descenso existen y permiten implementar ocupación, puntualidad y duración promedio.
+- **Hallazgo de fuente de costos:** la auditoría F21-21 indica “Control de combustible y kilometraje — Ausente”. TransporteVehiculos solo contiene kilometraje acumulado actual y TransporteViajes conserva ruta, unidad, conductor, acompañante, fecha, jornada, horas de inicio/fin, estado y observaciones; no existe una bitácora de combustible ni costos operativos vinculados a viajes/vehículos. No se puede calcular costo por estudiante sin inventar valores o una fuente.
+- **Hallazgo de demanda no cubierta:** no existe hoja/contrato de solicitudes de transporte, lista de espera georreferenciada ni fuente de demanda residencial no atendida. TransporteAsignaciones solo representa asignaciones existentes; no permite inferir qué estudiantes necesitan transporte ni dónde hay demanda sin cobertura. Tampoco hay una regla de radio/distancia de cobertura configurada.
+- **Decisión de continuidad:** los indicadores calculables con datos existentes pueden desarrollarse como subflujo independiente. El costo por estudiante y la identificación de zonas sin cobertura deben permanecer explícitamente “sin datos” hasta disponer de fuentes verificables y una regla de cobertura configurable; no se inventarán datos ni umbrales.
+- **Archivos de código:** ninguno modificado en esta revisión. Fuentes inspeccionadas: backend/accounting-service/Code.gs y Auditoría/AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md.
+- **Estado:** preanálisis de TASK-391; la tarea sigue Pendiente. Sin pruebas ni cambios de código ejecutados para TASK-391.
+- **Siguiente acción:** implementar el subflujo de ocupación, puntualidad y duración con pruebas locales; mantener separados los dos indicadores que requieren nuevos contratos de captura y datos.
+===============================================================================
