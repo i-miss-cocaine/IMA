@@ -5255,6 +5255,81 @@ function createPrivatePaymentAttachment_(fileData,fileName) {
     return file;
   } catch(error) { rollbackPrivatePaymentAttachment_(file); throw new Error("ATTACHMENT_STORAGE_PRIVATE_FAILED"); }
 }
+
+function ensurePaymentVoucherEvidenceSchema_(sheet) {
+  const baseHeaders = ["ComprobanteID","Fecha","UserId","Alumno","CargoID","MontoReportado","MetodoPago","Referencia","ComprobanteUrl","Estado","Observaciones"];
+  const evidenceHeaders = ["ComprobanteGrupoID","VersionNumero","SHA256","SizeBytes","MimeType","FechaRecepcionISO","EstadoIntegridad","EsVersionActual","DecisionHash","DecisionTimestamp","DecisionBy","DecisionIntegrityWarning"];
+  if (!sheet.getLastRow()) sheet.appendRow(baseHeaders.concat(evidenceHeaders));
+  const headers = sheet.getRange(1,1,1,Math.max(1,sheet.getLastColumn())).getValues()[0].map(v=>String(v||"").trim());
+  if (baseHeaders.some((name,index)=>headers[index]!==name)) throw new Error("VOUCHER_SCHEMA_INVALID");
+  evidenceHeaders.forEach(name=>{
+    if(headers.indexOf(name)===-1){sheet.getRange(1,sheet.getLastColumn()+1).setValue(name);headers.push(name);}
+  });
+  const map={};
+  headers.forEach((name,index)=>{if(name){if(map[name]!==undefined)throw new Error("VOUCHER_SCHEMA_DUPLICATE_HEADER");map[name]=index;}});
+  return map;
+}
+
+function getAccountingEvidenceIntegrityPolicy_(ss) {
+  const strict = "ESTRICTO_BLOQUEAR_ACCESO_Y_NOTIFICAR_AUDITORIA";
+  const sheet = ss && ss.getSheetByName("ConfiguracionInstitucional");
+  if(!sheet) return strict;
+  const rows=sheet.getDataRange().getValues();
+  if(!rows.length) return strict;
+  const headers=(rows[0]||[]).map(v=>String(v||"").trim());
+  const keyIndex=headers.indexOf("Clave"),valueIndex=headers.indexOf("Valor"),stateIndex=headers.indexOf("Estado");
+  if(keyIndex<0||valueIndex<0||stateIndex<0) return strict;
+  const matches=rows.slice(1).filter(row=>String(row[keyIndex]||"").trim()==="BLOQUEO_AUTOMATICO_POR_DISCREPANCIA_HASH");
+  if(matches.length!==1||!["ACTIVO","ACTIVE","SI","SÍ","TRUE","1"].includes(String(matches[0][stateIndex]||"").trim().toUpperCase())) return strict;
+  const value=String(matches[0][valueIndex]||"").trim().toUpperCase();
+  return ["ESTRICTO_BLOQUEAR_ACCESO_Y_NOTIFICAR_AUDITORIA","ADVERTENCIA_VISUAL_REVISOR"].includes(value)?value:strict;
+}
+
+function createPrivatePaymentAttachmentWithIntegrity_(fileData,fileName) {
+  const validation=validateFileBinaryIntegrity(fileData,fileName,{maxSizeBytes:10*1024*1024,allowedExtensions:[".pdf",".jpg",".jpeg",".png",".webp"]});
+  const base64=fileData.indexOf(",")>=0?fileData.slice(fileData.indexOf(",")+1):fileData;
+  const sourceBytes=Utilities.base64Decode(base64),sourceHash=computeDocumentSHA256(sourceBytes).toLowerCase();
+  const file=createPrivatePaymentAttachment_(fileData,fileName);
+  try {
+    const blob=file.getBlob(),bytes=blob.getBytes(),mime=String(blob.getContentType()||file.getMimeType()||"").toLowerCase();
+    const hash=computeDocumentSHA256(bytes).toLowerCase();
+    if(file.isTrashed()||file.getSharingAccess()!==DriveApp.Access.PRIVATE||bytes.length!==validation.byteLength||
+       bytes.length!==sourceBytes.length||mime!==validation.mimeType||hash!==sourceHash) throw new Error("ATTACHMENT_STORAGE_INTEGRITY_MISMATCH");
+    return {file:file,sha256:hash,sizeBytes:bytes.length,mimeType:mime,receivedAt:new Date().toISOString()};
+  } catch(error) {
+    rollbackPrivatePaymentAttachment_(file);
+    throw error;
+  }
+}
+
+function verifyPaymentVoucherEvidence_(ss,row,map) {
+  const fileId=extractDriveFileId(row[map.ComprobanteUrl]);
+  if(!fileId) return {status:"error",code:"VOUCHER_FILE_REFERENCE_INVALID"};
+  let file;
+  try{file=DriveApp.getFileById(fileId);}catch(_){return {status:"error",code:"VOUCHER_FILE_UNAVAILABLE"};}
+  if(!file||file.isTrashed())return {status:"error",code:"VOUCHER_FILE_UNAVAILABLE"};
+  if(file.getSharingAccess()!==DriveApp.Access.PRIVATE)return {status:"error",code:"VOUCHER_FILE_NOT_PRIVATE"};
+  try{
+    const blob=file.getBlob(),bytes=blob.getBytes(),fileName=String(file.getName()||"comprobante");
+    if(!bytes||!bytes.length||bytes.length>10*1024*1024)return {status:"error",code:"VOUCHER_FILE_SIZE_INVALID"};
+    const mime=String(blob.getContentType()||file.getMimeType()||"").toLowerCase();
+    const validation=validateFileBinaryIntegrity(Utilities.base64Encode(bytes),fileName,{maxSizeBytes:10*1024*1024,allowedExtensions:[".pdf",".jpg",".jpeg",".png",".webp"]});
+    if(validation.mimeType!==mime)return {status:"error",code:"VOUCHER_FILE_CONTENT_MISMATCH"};
+    const actualHash=computeDocumentSHA256(bytes).toLowerCase();
+    const expectedHash=String(row[map.SHA256]||"").trim().toLowerCase();
+    if(!expectedHash)return {status:"warning",code:"LEGACY_UNVERIFIED",file:file,bytes:bytes,fileName:fileName,mimeType:mime,actualHash:actualHash,integrityVerified:false};
+    const expectedSize=Number(row[map.SizeBytes]||0),expectedMime=String(row[map.MimeType]||"").trim().toLowerCase();
+    const mismatch=actualHash!==expectedHash||(expectedSize>0&&expectedSize!==bytes.length)||(expectedMime&&expectedMime!==mime);
+    if(mismatch){
+      logStructuredEvent("ACCOUNTING","verifyPaymentVoucherEvidence_","WARN","EVIDENCE_TAMPERING_DETECTED",
+        "Se detectó discrepancia de integridad en un comprobante privado.",{comprobanteId:String(row[map.ComprobanteID]||""),storedHash:expectedHash,actualHash:actualHash}, "SYSTEM");
+      if(getAccountingEvidenceIntegrityPolicy_(ss)==="ADVERTENCIA_VISUAL_REVISOR")
+        return {status:"warning",code:"EVIDENCE_TAMPERING_DETECTED",file:file,bytes:bytes,fileName:fileName,mimeType:mime,actualHash:actualHash,storedHash:expectedHash,integrityVerified:false};
+      return {status:"error",code:"EVIDENCE_TAMPERING_DETECTED"};
+    }
+    return {status:"success",file:file,bytes:bytes,fileName:fileName,mimeType:mime,actualHash:actualHash,storedHash:expectedHash,integrityVerified:true};
+  }catch(error){return {status:"error",code:error.message||"VOUCHER_FILE_UNAVAILABLE"};}
+}
 function assertJointFamilyVoucherOwnerAccess_(payload,row,ss,actor) {
   const normalized=String(actor&&actor.role||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
   const guardians=["PADRE","MADRE","TUTOR","RESPONSABLE","RESPONSABLEFAMILIAR"];
@@ -5271,26 +5346,58 @@ function assertJointFamilyVoucherOwnerAccess_(payload,row,ss,actor) {
 }
 
 function uploadPaymentVoucher(payload) {
-  const {userId,alumno,cargoId,montoReportado,metodoPago,referencia,fileData,fileName,observaciones}=payload||{};
-  const amount=Number(montoReportado);
+  const p=payload||{},userId=String(p.userId||"").trim(),alumno=p.alumno,cargoId=String(p.cargoId||"GRAL").trim();
+  const amount=Number(p.montoReportado),fileData=p.fileData,fileName=p.fileName,observaciones=p.observaciones;
   if(!userId||!Number.isFinite(amount)||amount<=0) throw new Error("userId y monto reportado válido son requeridos.");
   const actor=getVerifiedAccountingIdentity_(payload);
   if(!actor.authorized) return {status:"error",code:actor.code,message:"Acceso denegado."};
   const access=assertPaymentVoucherOwnerAccess_(payload,userId,{});
   if(!access.authorized) return {status:"error",code:access.code||"RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
   if(typeof fileData!=="string"||!fileData.trim()||typeof fileName!=="string"||!fileName.trim()) throw new Error("ATTACHMENT_PAIR_REQUIRED");
-  const file=createPrivatePaymentAttachment_(fileData,fileName),fileId=file.getId();
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getOrCreateSheet(ss,"ComprobantesPago"),map=ensurePaymentVoucherEvidenceSchema_(sheet);
+  const requestedGroup=String(p.comprobanteGrupoId||"").trim();
+  let previous=null,version=1,groupId=requestedGroup||("VCHGRP-"+Utilities.getUuid());
+  if(requestedGroup){
+    const rows=sheet.getDataRange().getValues(),matches=[];
+    for(let i=1;i<rows.length;i++)if(String(rows[i][map.ComprobanteGrupoID]||"").trim()===requestedGroup&&rows[i][map.EsVersionActual]!==false)matches.push({index:i,row:rows[i]});
+    if(matches.length!==1)return {status:"error",code:matches.length?"VOUCHER_VERSION_AMBIGUOUS":"VOUCHER_VERSION_NOT_FOUND"};
+    previous=matches[0];
+    if(String(previous.row[map.UserId]||"").trim()!==userId||String(previous.row[map.CargoID]||"").trim()!==cargoId)
+      return {status:"error",code:"VOUCHER_VERSION_OWNER_MISMATCH"};
+    if(String(previous.row[map.Estado]||"").trim()!=="Observado"||String(previous.row[map.DecisionHash]||"").trim())
+      return {status:"error",code:"VOUCHER_VERSION_IMMUTABLE"};
+    version=Math.max(1,Number(previous.row[map.VersionNumero]||1)+1);
+  }
+  const stored=createPrivatePaymentAttachmentWithIntegrity_(fileData,fileName),file=stored.file,fileId=file.getId();
   const lock=LockService.getScriptLock();
   if(!lock.tryLock(30000)){rollbackPrivatePaymentAttachment_(file);throw new Error("LOCK_TIMEOUT");}
+  let previousState=null;
   try {
-    const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getOrCreateSheet(ss,"ComprobantesPago"),now=new Date();
-    const id="VCH-"+Utilities.getUuid();
-    sheet.appendRow([id,now,String(userId).trim(),alumno||"Estudiante",cargoId||"GRAL",amount,
-      metodoPago||"Transferencia Bancaria",referencia||"SIN-REF",fileId,"En Revisión",observaciones||""]);
-    return {status:"success",comprobanteId:id,comprobanteUrl:"",tieneComprobante:true,
-      message:"Comprobante privado adjuntado y enviado a revisión."};
-  } catch(error){rollbackPrivatePaymentAttachment_(file);throw error;}
-  finally{lock.releaseLock();}
+    const lockedRows=sheet.getDataRange().getValues();
+    if(previous){
+      const current=lockedRows.map((row,index)=>({row:row,index:index})).filter(item=>String(item.row[map.ComprobanteGrupoID]||"").trim()===groupId&&item.row[map.EsVersionActual]!==false);
+      if(current.length!==1||String(current[0].row[map.ComprobanteID]||"")!==String(previous.row[map.ComprobanteID]||"")||
+         String(current[0].row[map.Estado]||"")!=="Observado"||String(current[0].row[map.DecisionHash]||""))
+        throw new Error("VOUCHER_VERSION_IMMUTABLE");
+      previousState={index:current[0].index,row:current[0].row.slice()};
+      sheet.getRange(current[0].index+1,map.EsVersionActual+1).setValue(false);
+      sheet.getRange(current[0].index+1,map.Estado+1).setValue("SUPERADA");
+    }
+    const id="VCH-"+Utilities.getUuid(),row=new Array(sheet.getLastColumn()).fill(""),now=new Date();
+    row[map.ComprobanteID]=id;row[map.Fecha]=now;row[map.UserId]=userId;row[map.Alumno]=alumno||"Estudiante";row[map.CargoID]=cargoId;
+    row[map.MontoReportado]=amount;row[map.MetodoPago]=p.metodoPago||"Transferencia Bancaria";row[map.Referencia]=p.referencia||"SIN-REF";
+    row[map.ComprobanteUrl]=fileId;row[map.Estado]="En Revisión";row[map.Observaciones]=observaciones||"";
+    row[map.ComprobanteGrupoID]=groupId;row[map.VersionNumero]=version;row[map.SHA256]=stored.sha256;row[map.SizeBytes]=stored.sizeBytes;
+    row[map.MimeType]=stored.mimeType;row[map.FechaRecepcionISO]=stored.receivedAt;row[map.EstadoIntegridad]="VERIFICADO";
+    row[map.EsVersionActual]=true;row[map.DecisionHash]="";row[map.DecisionTimestamp]="";row[map.DecisionBy]="";row[map.DecisionIntegrityWarning]=false;
+    sheet.appendRow(row);
+    return {status:"success",comprobanteId:id,comprobanteGrupoId:groupId,versionNumero:version,sha256:stored.sha256,
+      comprobanteUrl:"",tieneComprobante:true,message:"Comprobante privado almacenado y verificado antes de revisión."};
+  } catch(error) {
+    if(previousState){sheet.getRange(previousState.index+1,1,1,previousState.row.length).setValues([previousState.row]);}
+    rollbackPrivatePaymentAttachment_(file);
+    throw error;
+  } finally {lock.releaseLock();}
 }function getPaymentVouchers(payload) {
   const actor = getVerifiedAccountingIdentity_(payload);
   if (!actor.authorized) return { status: "error", code: actor.code, message: "Acceso denegado." };
@@ -5324,119 +5431,75 @@ function uploadPaymentVoucher(payload) {
 
 // Recuperación autenticada del archivo privado: la referencia se obtiene exclusivamente desde ComprobantesPago.
 function getPaymentVoucherFile(payload) {
-  const comprobanteId = String(payload && payload.comprobanteId || "").trim();
-  if (!comprobanteId) return { status: "error", code: "VOUCHER_ID_REQUIRED", message: "Acceso denegado." };
-
-  const actor = getVerifiedAccountingIdentity_(payload);
-  if (!actor.authorized) return { status: "error", code: actor.code || "VERIFIED_IDENTITY_REQUIRED", message: "Acceso denegado." };
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = ss.getSheetByName("ComprobantesPago");
-  if (!sheet) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Archivo no disponible." };
-  const rows = sheet.getDataRange().getValues();
-  const rowIndex = rows.findIndex(function(row, index) {
-    return index > 0 && String(row[0] || "").trim() === comprobanteId;
-  });
-  if (rowIndex < 1) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Archivo no disponible." };
-
-  const row = rows[rowIndex];
-  let access = assertPaymentVoucherOwnerAccess_(payload, row[2], {});
-  if (!access.authorized && String(row[3] || "").indexOf("Pago Conjunto Familiar (") === 0) access = assertJointFamilyVoucherOwnerAccess_(payload, row, ss, actor);
-  if (!access.authorized) {
-    logStructuredEvent("ACCOUNTING","getPaymentVoucherFile","WARN","VOUCHER_ACCESS_DENIED",
-      "Se rechazó una descarga de comprobante fuera del ámbito autorizado.",{comprobanteId:comprobanteId,actorId:actor.userId,role:actor.role},actor.role);
-    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Archivo no disponible." };
+  const comprobanteId=String(payload&&payload.comprobanteId||"").trim();
+  if(!comprobanteId)return {status:"error",code:"VOUCHER_ID_REQUIRED",message:"Acceso denegado."};
+  const actor=getVerifiedAccountingIdentity_(payload);
+  if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("ComprobantesPago");
+  if(!sheet)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Archivo no disponible."};
+  let map;
+  try{map=ensurePaymentVoucherEvidenceSchema_(sheet);}catch(_){return {status:"error",code:"VOUCHER_SCHEMA_INVALID",message:"Archivo no disponible."};}
+  const rows=sheet.getDataRange().getValues(),matches=[];
+  for(let i=1;i<rows.length;i++)if(String(rows[i][map.ComprobanteID]||"").trim()===comprobanteId)matches.push({index:i,row:rows[i]});
+  if(matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Archivo no disponible."};
+  const row=matches[0].row;
+  let access=assertPaymentVoucherOwnerAccess_(payload,row[map.UserId],{});
+  if(!access.authorized&&String(row[map.Alumno]||"").indexOf("Pago Conjunto Familiar (")===0)access=assertJointFamilyVoucherOwnerAccess_(payload,row,ss,actor);
+  if(!access.authorized){
+    logStructuredEvent("ACCOUNTING","getPaymentVoucherFile","WARN","VOUCHER_ACCESS_DENIED","Se rechazó una descarga de comprobante fuera del ámbito autorizado.",{comprobanteId:comprobanteId,actorId:actor.userId,role:actor.role},actor.role);
+    return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Archivo no disponible."};
   }
-
-  const fileId = extractDriveFileId(row[8]);
-  if (!fileId) return { status: "error", code: "VOUCHER_FILE_REFERENCE_INVALID", message: "Archivo no disponible." };
-
-  try {
-    const file = DriveApp.getFileById(fileId);
-    if (!file || file.isTrashed()) {
-      return { status: "error", code: "VOUCHER_FILE_UNAVAILABLE", message: "Archivo no disponible." };
-    }
-    if (file.getSharingAccess() !== DriveApp.Access.PRIVATE) {
-      logStructuredEvent("ACCOUNTING","getPaymentVoucherFile","WARN","VOUCHER_FILE_NOT_PRIVATE",
-        "Se rechazó la entrega de un comprobante que no conserva permisos privados.",{comprobanteId:comprobanteId},actor.role);
-      return {status:"error",code:"VOUCHER_FILE_NOT_PRIVATE",message:"Archivo no disponible."};
-    }
-    const blob = file.getBlob();
-    const bytes = blob.getBytes();
-    if (!bytes || !bytes.length) {
-      return { status: "error", code: "VOUCHER_FILE_EMPTY", message: "Archivo no disponible." };
-    }
-    if (bytes.length > 10 * 1024 * 1024) {
-      return { status: "error", code: "VOUCHER_FILE_TOO_LARGE", message: "Archivo fuera del límite permitido." };
-    }
-
-    const mimeType = String(blob.getContentType() || file.getMimeType() || "").toLowerCase();
-    const fileName = String(file.getName() || "comprobante");
-    const extension = fileName.toLowerCase().slice(fileName.lastIndexOf("."));
-    const allowedTypes = {
-      ".pdf": "application/pdf",
-      ".jpg": "image/jpeg",
-      ".jpeg": "image/jpeg",
-      ".png": "image/png",
-      ".webp": "image/webp"
-    };
-    if (!allowedTypes[extension] || allowedTypes[extension] !== mimeType) {
-      return { status: "error", code: "VOUCHER_FILE_TYPE_NOT_ALLOWED", message: "Tipo de archivo no permitido." };
-    }
-    const binaryValidation = validateFileBinaryIntegrity(Utilities.base64Encode(bytes), fileName, {
-      maxSizeBytes: 10 * 1024 * 1024, allowedExtensions: Object.keys(allowedTypes)
-    });
-    if (binaryValidation.mimeType !== mimeType) {
-      return { status: "error", code: "VOUCHER_FILE_CONTENT_MISMATCH", message: "Archivo no disponible." };
-    }
-
-    logStructuredEvent("ACCOUNTING","getPaymentVoucherFile","INFO","VOUCHER_FILE_DELIVERED",
-      "Comprobante privado entregado tras autorización.",{comprobanteId:comprobanteId,actorId:actor.userId,fileId:fileId,fileSizeBytes:bytes.length},actor.role);
-    return {
-      status: "success",
-      comprobanteId: comprobanteId,
-      fileName: fileName,
-      mimeType: mimeType,
-      encoding: "base64",
-      fileData: Utilities.base64Encode(bytes),
-      fileSizeBytes: bytes.length
-    };
-  } catch (error) {
-    logStructuredEvent("ACCOUNTING", "getPaymentVoucherFile", "WARN", "VOUCHER_FILE_UNAVAILABLE",
-      "No fue posible recuperar el archivo privado del comprobante.", { comprobanteId: comprobanteId }, actor.role);
-    return { status: "error", code: "VOUCHER_FILE_UNAVAILABLE", message: "Archivo no disponible." };
-  }
+  const verified=verifyPaymentVoucherEvidence_(ss,row,map);
+  if(verified.status==="error")return {status:"error",code:verified.code,message:"Archivo no disponible."};
+  logStructuredEvent("ACCOUNTING","getPaymentVoucherFile",verified.status==="success"?"INFO":"WARN",
+    verified.status==="success"?"VOUCHER_FILE_DELIVERED":"VOUCHER_FILE_INTEGRITY_WARNING",
+    "Comprobante privado entregado tras autorización; estado de integridad explícito.",
+    {comprobanteId:comprobanteId,version:Number(row[map.VersionNumero]||1),integrityStatus:verified.code||"VERIFICADO"},actor.role);
+  return {status:"success",comprobanteId:comprobanteId,comprobanteGrupoId:String(row[map.ComprobanteGrupoID]||""),
+    versionNumero:Number(row[map.VersionNumero]||1),fileName:verified.fileName,mimeType:verified.mimeType,
+    encoding:"base64",fileData:Utilities.base64Encode(verified.bytes),fileSizeBytes:verified.bytes.length,
+    sha256Actual:verified.actualHash,integrityVerified:verified.integrityVerified===true,
+    integrityStatus:verified.code||"VERIFICADO",integrityWarning:verified.status==="warning"};
 }
 
 function reviewPaymentVoucher(payload) {
-  const { comprobanteId, nuevoEstado, observacionesAdmin } = payload || {};
-  if (!comprobanteId || !nuevoEstado) throw new Error("comprobanteId y nuevoEstado son requeridos.");
-  const actor = getVerifiedAccountingIdentity_(payload);
-  if (!actor.authorized) return { status: "error", code: actor.code, message: "Acceso denegado." };
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "ComprobantesPago");
-  const data = sheet.getDataRange().getValues();
-  const idx = data.findIndex(r => String(r[0]).trim() === String(comprobanteId).trim());
-  if (idx === -1) throw new Error("Comprobante de pago no encontrado.");
-  const row = data[idx];
-  const access = assertPaymentVoucherOwnerAccess_(payload, row[2], { requireStaff: true });
-  if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
-  const allowedStates = ["Aprobado", "Confirmado", "Rechazado", "Observado"];
-  if (allowedStates.indexOf(String(nuevoEstado)) === -1) return { status: "error", code: "INVALID_VOUCHER_STATE", message: "Estado de comprobante no permitido." };
-  sheet.getRange(idx + 1, 10).setValue(nuevoEstado);
-  if (observacionesAdmin) sheet.getRange(idx + 1, 11).setValue(observacionesAdmin);
-  let pagoRes = null;
-  if (nuevoEstado === "Aprobado" || nuevoEstado === "Confirmado") {
-    pagoRes = recordStudentPayment({
-      userId: row[2], cargoId: row[4], montoAbono: row[5], metodoPago: row[6],
-      referencia: row[7], observaciones: "Aprobado administrativamente desde comprobante " + comprobanteId + ". " + (observacionesAdmin || "")
-    });
+  const p=payload||{},comprobanteId=String(p.comprobanteId||"").trim(),nuevoEstado=String(p.nuevoEstado||"").trim(),observacionesAdmin=p.observacionesAdmin;
+  if(!comprobanteId||!nuevoEstado)throw new Error("comprobanteId y nuevoEstado son requeridos.");
+  const actor=getVerifiedAccountingIdentity_(payload);
+  if(!actor.authorized)return {status:"error",code:actor.code,message:"Acceso denegado."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getOrCreateSheet(ss,"ComprobantesPago"),map=ensurePaymentVoucherEvidenceSchema_(sheet);
+  const data=sheet.getDataRange().getValues(),matches=[];
+  for(let i=1;i<data.length;i++)if(String(data[i][map.ComprobanteID]||"").trim()===comprobanteId)matches.push({index:i,row:data[i]});
+  if(matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Comprobante no disponible."};
+  const idx=matches[0].index,row=matches[0].row;
+  const access=assertPaymentVoucherOwnerAccess_(payload,row[map.UserId],{requireStaff:true});
+  if(!access.authorized)return {status:"error",code:access.code||"RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
+  const allowedStates=["Aprobado","Confirmado","Rechazado","Observado"];
+  if(allowedStates.indexOf(nuevoEstado)===-1)return {status:"error",code:"INVALID_VOUCHER_STATE",message:"Estado de comprobante no permitido."};
+  if(row[map.EsVersionActual]===false||String(row[map.Estado]||"")==="SUPERADA")return {status:"error",code:"VOUCHER_VERSION_SUPERSEDED"};
+  if(String(row[map.DecisionHash]||"").trim())return {status:"error",code:"VOUCHER_DECISION_IMMUTABLE"};
+  const evidence=verifyPaymentVoucherEvidence_(ss,row,map);
+  if(evidence.status==="error")return {status:"error",code:evidence.code,message:"La evidencia no pudo verificarse."};
+  const approval=["Aprobado","Confirmado"].indexOf(nuevoEstado)!==-1;
+  if(approval&&evidence.code==="LEGACY_UNVERIFIED")return {status:"error",code:"LEGACY_EVIDENCE_UNVERIFIED",message:"El comprobante histórico no tiene huella de recepción y no puede aprobarse como evidencia verificada."};
+  const decisionTimestamp=new Date().toISOString(),warning=evidence.status==="warning";
+  const decisionHash=computeDocumentSHA256([comprobanteId,String(row[map.SHA256]||""),String(evidence.actualHash||""),String(row[map.VersionNumero]||1),
+    nuevoEstado,actor.userId,decisionTimestamp,warning?"WARNING":"VERIFIED"].join("|"));
+  sheet.getRange(idx+1,map.Estado+1).setValue(nuevoEstado);
+  if(observacionesAdmin)sheet.getRange(idx+1,map.Observaciones+1).setValue(observacionesAdmin);
+  sheet.getRange(idx+1,map.DecisionHash+1).setValue(decisionHash);
+  sheet.getRange(idx+1,map.DecisionTimestamp+1).setValue(decisionTimestamp);
+  sheet.getRange(idx+1,map.DecisionBy+1).setValue(actor.userId);
+  sheet.getRange(idx+1,map.DecisionIntegrityWarning+1).setValue(warning);
+  let pagoRes=null;
+  if(approval){
+    pagoRes=recordStudentPayment({userId:row[map.UserId],cargoId:row[map.CargoID],montoAbono:row[map.MontoReportado],metodoPago:row[map.MetodoPago],
+      referencia:row[map.Referencia],observaciones:"Aprobado administrativamente desde comprobante "+comprobanteId+". "+(observacionesAdmin||"")});
   }
-  logStructuredEvent("ACCOUNTING", "reviewPaymentVoucher", "INFO", "VOUCHER_REVIEWED", "Comprobante revisado a estado " + nuevoEstado, { comprobanteId: comprobanteId }, actor.role);
-  return {
-    status: "success", comprobanteId: comprobanteId, nuevoEstado: nuevoEstado,
-    pagoProcesado: pagoRes, message: "Comprobante de pago " + nuevoEstado + " exitosamente."
-  };
+  logStructuredEvent("ACCOUNTING","reviewPaymentVoucher","INFO","VOUCHER_REVIEWED","Comprobante revisado con decisión vinculada a la huella de evidencia.",
+    {comprobanteId:comprobanteId,version:Number(row[map.VersionNumero]||1),decisionHash:decisionHash,integrityWarning:warning},actor.role);
+  return {status:"success",comprobanteId:comprobanteId,nuevoEstado:nuevoEstado,decisionHash:decisionHash,
+    integrityWarning:warning,pagoProcesado:pagoRes,message:"Comprobante de pago "+nuevoEstado+" exitosamente."};
 }
 
 // [REQ-EXP-011] [Requerimientos de Expansión y Desarrollo] - Generación de recibos PDF únicos con correlativo y consulta de vencimientos.
