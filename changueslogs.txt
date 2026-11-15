@@ -3760,3 +3760,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se corrigió el orden de evaluación de Ausente/Exento/Pendiente en generateSACEReportFile; PT22-09 cubre los tres estados.
 - Nuevo contrato Node aislado con funciones extraídas y SpreadsheetApp en memoria. Node local PASS; CI Department Scope 43679192402, Identity mapping 43679192378 y Department Reference Consumers 43679192396 SUCCESS.
 - F22-Task10 continúa Pendiente: 12/53 escenarios. El runner Apps Script aún puede escribir en la hoja configurada y no debe ejecutarse sobre datos institucionales sin fixture desechable.
+
+
+[2026-11-15] F22-Task01 — C1.745, validación binaria estricta compartida
+- Validadores ACCOUNTING/USER idénticos; validan PDF/JPEG/PNG/WEBP y estructura ZIP OpenXML DOCX/XLSX, MIME/extensión, Base64, tamaño y rutas.
+- Contrato Node: 24 escenarios x 2 servicios = 48 combinaciones PASS. CI 43680158966, 43680158922, 43680158941 y 43680158904 SUCCESS.
+- F22-Task01 sigue En progreso: quedan pares obligatorios, errores de Drive fail-closed, referencias cliente no confiables y descarga privada autorizada.

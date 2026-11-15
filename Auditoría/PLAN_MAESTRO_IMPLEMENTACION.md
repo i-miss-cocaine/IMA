@@ -5580,3 +5580,10 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - CI final: Department Scope Contract 43679192402 SUCCESS; Identity mapping 43679192378 SUCCESS; Department Reference Consumers 43679192396 SUCCESS. El run previo 43679125644 falló al detectar la regresión AUSENTE/EXENTO; corregida en 83fee5e y validada después.
 - **Estado:** F22-Task10 sigue Pendiente: objetivo original 53 pruebas; actualmente 12 casos del orquestador y cobertura adicional de contrato/aislamiento. El orquestador Apps Script legado sigue escribiendo en el Spreadsheet configurado si se invoca directamente; requiere despliegue desechable antes de ejecución operativa.
 - **Siguiente elegible:** F22-Task01 P0, validación binaria/privacidad de adjuntos en ambos servicios.
+
+
+### C1.745 — F22-Task01 — validación binaria estricta compartida
+- Se unificó la implementación de validateFileBinaryIntegrity en ACCOUNTING y USER, con comprobación de estructura PDF/JPEG/PNG/WEBP y contenedor OpenXML DOCX/XLSX, MIME/extensión, Base64, tamaño y nombre.
+- Nuevo contrato Node con 24 escenarios por servicio (48 combinaciones), incluyendo tipos válidos, archivos truncados, OpenXML incompleto, MIME cruzado, extensiones desconocidas, Base64 inválido, tamaño y rutas. CI final SUCCESS.
+- **Pendiente:** uploadPaymentVoucher aún no falla de forma cerrada en todos los errores; submitInstitutionalFormRequest aún acepta referencias cliente, publica adjuntos y absorbe fallos; rutas adyacentes también aceptan adjuntoUrl. Falta endpoint de descarga privada con autorización institucional. F22-Task01 continúa En progreso.
+- **Siguiente:** endurecer callsites y servir adjuntos mediante autorización.

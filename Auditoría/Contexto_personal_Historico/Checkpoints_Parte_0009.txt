@@ -531,3 +531,17 @@ C1.744 — IMA-EXEC-20261115-F22-TASK10-REGRESSION-CONTRACT-01 — Corrección p
 - **Estado:** subalcance de corrección contractual y harness en memoria completado; F22-Task10 permanece Pendiente.
 - **Siguiente tarea elegible:** F22-Task01 (P0), inspección binaria estricta y privacidad de adjuntos en ACCOUNTING y USER; validar PDF/imagen/OpenXML, MIME/extensión, archivos desconocidos/truncados, caminos de entrada y almacenamiento/descarga privada. F22-Task02/03 y F22-Task04 permanecen pendientes en sus alcances originales.
 ===============================================================================
+
+
+===============================================================================
+C1.745 — IMA-EXEC-20261115-F22-TASK01-STRICT-BINARY-VALIDATION-01 — Política binaria compartida ACCOUNTING/USER
+- **Continuidad:** C1.744. HEAD funcional verificado: 48c6c2e098079dad5833cf35ff3bcec3a37367a0. Rama de trabajo exclusiva NG_beta_0.0.0.1_work. Rama base sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Cambios:** validateFileBinaryIntegrity quedó idéntica en backend/accounting-service/Code.gs y backend/user-service/Code.gs. Ahora exige archivo/nombre, extensión admitida, nombre sin rutas, Base64 válido, MIME compatible, límite de tamaño y estructura mínima completa.
+- **Formatos:** PDF exige cabecera, startxref y %%EOF; JPEG SOI/EOI; PNG IHDR/IDAT/IEND; WEBP RIFF/WEBP con chunks; DOCX/XLSX inspeccionan EOCD/directorio central ZIP, cabeceras locales y entradas OpenXML requeridas. Se rechazan extensiones desconocidas, MIME cruzado, rutas internas ZIP, archivos vacíos y ejecutables.
+- **Pruebas:** tests/security/file-binary-validation-contract.test.js ejecuta 24 escenarios por servicio (48 combinaciones) y comprueba que ambas funciones permanecen idénticas. Node local v22.16.0: 48 combinaciones PASS.
+- **GitHub Actions:** 43680158966 Department Scope Contract SUCCESS (incluye binary validation contract y Phase22 regression contract); 43680158922 Identity mapping and transport security SUCCESS; 43680158941 Department Reference Consumers Local Contract SUCCESS; 43680158904 Task-Service security local contracts SUCCESS.
+- **Riesgos pendientes de F22-Task01:** los callsites aún no exigen el par completo en todas las rutas. uploadPaymentVoucher puede continuar sin adjunto si falta uno de los campos y actualmente absorbe errores de Drive; submitInstitutionalFormRequest acepta adjuntoUrl/adjuntoFileId enviados por el cliente, comparte con ANYONE_WITH_LINK y puede persistir solicitud aunque falle la subida. Los endpoints de ausencia/trámite también aceptan adjuntoUrl externo. No se declara completada la privacidad ni la descarga autorizada.
+- **Límite de la validación:** la inspección es estructural, no sustituye un parser completo de PDF/XML ni verifica CRC/descompresión de todas las entradas ZIP. La aceptación OpenXML exige contenedor ZIP coherente y las entradas obligatorias.
+- **Estado:** subalcance de validación binaria compartida completado; F22-Task01 permanece En progreso.
+- **Siguiente tarea elegible:** exigir pares de adjunto, fallar de forma cerrada ante errores de Drive, eliminar referencias de archivo controladas por cliente y diseñar descarga privada con autorización institucional para formularios/vouchers.
+===============================================================================
