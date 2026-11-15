@@ -1007,7 +1007,8 @@ const ROLE_PERMISSIONS = {
   ]
  ,
   "Auditor": [
-    "getLegacyDocumentInventory", "getAuditReport", "getUserRoleMemberships"
+    "getUserContextScope", "validateRoleScopeAccess", "getLegacyDocumentInventory",
+    "getAuditReport", "getUserRoleMemberships"
   ]
 };
 
