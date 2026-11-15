@@ -1855,25 +1855,32 @@ function getTrustedMigrationTargetExistenceSnapshot_(payload) {
     return { status: "error", code: "MIGRATION_SNAPSHOT_CONTRACT_INVALID" };
   }
   var requested = {};
+  var invalidTargetId = false;
   input.targetIds.forEach(function(value) {
-    var id = String(value || "").trim();
-    if (id && id.length <= 128) requested[id] = true;
+    if (typeof value !== "string" && typeof value !== "number") { invalidTargetId = true; return; }
+    var id = String(value).trim();
+    if (!id || id.length > 128) { invalidTargetId = true; return; }
+    requested[id] = true;
   });
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var sheet = ss.getSheetByName("Personas");
+  if (invalidTargetId) return { status: "error", code: "MIGRATION_SNAPSHOT_TARGET_ID_INVALID" };
+  var sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("Personas");
   if (!sheet) return { status: "error", code: "MIGRATION_SNAPSHOT_TARGET_UNAVAILABLE" };
   var values = sheet.getDataRange().getValues();
   var headers = values.length ? values[0].map(function(value) { return String(value || "").trim(); }) : [];
   if (headers[0] !== "PersonaID") return { status: "error", code: "MIGRATION_SNAPSHOT_SCHEMA_MISMATCH" };
   var existing = [];
+  var seenExisting = {};
   for (var i = 1; i < values.length; i++) {
     var id = String(values[i][0] || "").trim();
-    if (id && requested[id]) existing.push(id);
+    if (id && requested[id]) {
+      if (seenExisting[id]) return { status: "error", code: "MIGRATION_SNAPSHOT_DUPLICATE_TARGET_ID" };
+      seenExisting[id] = true;
+      existing.push(id);
+    }
   }
   return { status: "success", verified: true, service: "USER", sheet: "Personas",
     idField: "PersonaID", institutionId: institutionId, existingTargetIds: existing.sort(), targetRows: [] };
 }
-
 function handleTrustedMigrationEnvelope_(envelope){
  const secret=String(PropertiesService.getScriptProperties().getProperty("IMA_MIGRATION_HMAC_SECRET")||"");
  if(secret.length<32)throw new Error("MIGRATION_TRANSPORT_SECRET_REQUIRED");
