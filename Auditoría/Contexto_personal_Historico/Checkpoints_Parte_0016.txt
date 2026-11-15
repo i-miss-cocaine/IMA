@@ -96,3 +96,44 @@
 - Siguiente paso: implementar un contrato de consulta remota de existencia tenant-scoped en ACADEMIC/USER y probar sus límites de autorización antes de permitir confirmación/importación. Después continuar OCR y validación beta sin alterar la protección fail-closed.
 - Estado: avance funcional parcial y checkpoint recuperable; TASK-133 no está completada.
 ===============================================================================
+
+
+===============================================================================
+## C1.773 — IMA-EXEC-20261115-TASK133-REMOTE-SNAPSHOTS-PDF-OCR-02
+- Fecha: 2026-11-15
+- Rama: NG_beta_0.0.0.1_work
+- HEAD verificado antes del registro: 187042d1f99080a8f8f62ec65ca3daad451a931e
+- Rama base: NG_beta_0.0.0.1 — 44d9891132332e692dbe2ba8602b41f50a508a59; 3.189 commits por delante y 0 por detrás.
+- Normativa: Normas_Desarollo.md v1.4 aplicada.
+
+### Continuidad y corrección de trazabilidad
+- TASK-133 sigue En ejecución. No se reinició el preflight ni se habilitó persistencia de importación.
+- La nota histórica de TASK-133 que atribuye el clasificador PDF a C1.763 no coincide con el índice: C1.763 está indexado en otra actividad. En el código recuperado no existía clasificador por página; el clasificador conservador se implementa y prueba en esta iteración. Se conserva la nota original como historial, pero no se usa como evidencia de cierre.
+
+### USER/ACADEMIC: snapshots remotos firmados
+- ACCOUNTING consulta a USER y ACADEMIC mediante envelopes HMAC, con URL de servicio configurada en Script Properties, timestamp, requestId y correlationId. La validación acepta URL canónica de Apps Script y mantiene compatibilidad con proxy configurado.
+- USER verifica sesión, institución y permiso de importación; consulta únicamente Personas.PersonaID y devuelve IDs coincidentes, sin nombres ni datos personales. IDs inválidos o duplicados bloquean la consulta.
+- ACADEMIC verifica sesión e institución; consulta ExpedientesEstudiantes.ExpedienteID y devuelve IDs existentes junto con hashes SHA-256 de filas, no datos personales. IDs inválidos/duplicados bloquean la consulta.
+- Se corrigió el owner schema de estudiante: ExpedientesEstudiantes / ExpedienteID (no Estudiantes / EstudianteID).
+- El preflight verifica PersonaID/PersonaId relacionados en USER. Si una referencia remota falta, la fila se excluye de validRowIndexes/preparedRows antes de permitir importación parcial; un snapshot no verificable bloquea el lote. No se filtran filas huérfanas hacia el escritor.
+- La UI expone los campos de expediente académico disponibles y mantiene la confirmación solo de revisión; el router no expone commit de importación.
+
+### PDF y OCR
+- Academic incorpora classifyPdfDocumentPages_: ordena páginas mediante el árbol PDF y clasifica flujos analizables como VECTORIAL, ESCANEADA, MIXTA o VACIA. Flujos comprimidos, referencias no resueltas, cifrado o árboles no compatibles quedan NO_ANALIZADA; nunca se adivina su tipo. Se informa summary y requiresOcr.
+- validateEvidenceFileAndPermissions acepta documentoId, resuelve el DriveFileID en servidor y aplica el scope check antes de leer el archivo. Si el caller no entrega fileId, la respuesta no lo devuelve.
+- Se añadió extractPdfTextWithOcr_ con conversión temporal Drive.Files.insert(convert/ocr/ocrLanguage), extracción opcional de texto y borrado del documento temporal; falla cerrado si el servicio no está disponible o si no se puede verificar la limpieza.
+- Requisito de despliegue no verificado: Google Apps Script Advanced Drive Service v2 debe estar habilitado en el proyecto Academic. No se ejecutó OCR contra un PDF real; los tests usan mocks. Los PDF con páginas NO_ANALIZADA siguen sin validación completa aunque OCR devuelva texto.
+
+### Pruebas y verificaciones
+- Compilación sintáctica V8 (new Function) PASS para ACCOUNTING, USER, ACADEMIC, teacher.js y los contratos de pruebas modificados.
+- Harness V8 aislado con mocks PASS: accounting-import-semantic-preflight, accounting-remote-target-snapshot, teacher-excel-semantic-preflight-ui, academic-pdf-ocr-contract y academic-pdf-page-classifier. El hash de los harnesses se simuló en los tests aislados; esto no sustituye Node CLI ni CI.
+- Node local v22.16.0: PASS en prueba aislada previa del constructor de payload. Node 24 del workflow no se verificó en esta sesión.
+- GitHub Actions/status checks: la consulta no reportó status checks ni workflow runs visibles para el HEAD. No se declara CI PASS.
+- Sin beta real Apps Script/Drive/Sheets, sin cambios en datos reales y sin pruebas de accesibilidad con teclado/lector de pantalla.
+
+### Pendientes y siguiente acción
+- Verificar en el proyecto desplegado la disponibilidad de Drive Advanced Service v2 y ejecutar OCR real sobre PDF escaneado/mixed; validar limpieza del temporal y texto extraído.
+- Mejorar cobertura PDF real: streams comprimidos, object streams, recursos heredados, xref streams y PDFs cifrados deben seguir NO_ANALIZADA hasta que exista parser/servicio fiable.
+- Ejecutar beta con datos anonimizados y pruebas de accesibilidad. La validación completa sigue fail-closed para páginas NO_ANALIZADA o OCR requerido no ejecutado.
+- TASK-133 permanece parcial; no se declara completada.
+===============================================================================
