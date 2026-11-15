@@ -20,9 +20,20 @@ function extractFunction(source, name) {
   }
   throw new Error("Unbalanced function " + name);
 }
-function makeSheet(rows) { return { getLastRow: () => rows.length, getDataRange: () => ({ getValues: () => rows.map(r => r.slice()) }), appendRow: row => rows.push(row.slice()), getRange: () => ({ setValue: () => {} }) }; }
+function makeSheet(rows) { return {
+  getLastRow: () => rows.length,
+  getLastColumn: () => Math.max(1,...rows.map(r=>r.length)),
+  getDataRange: () => ({ getValues: () => rows.map(r => r.slice()) }),
+  appendRow: row => rows.push(row.slice()),
+  insertRowBefore: index => rows.splice(index-1,0,[]),
+  getRange: (row,column,rowCount,columnCount) => ({
+    getValues:()=>Array.from({length:rowCount||1},(_,ri)=>Array.from({length:columnCount||1},(_,ci)=>(rows[row-1+ri]||[])[column-1+ci]||"")),
+    setValue: value => {while(rows.length<row)rows.push([]);while(rows[row-1].length<column)rows[row-1].push("");rows[row-1][column-1]=value;},
+    setValues: values => {for(let ri=0;ri<(rowCount||1);ri++){while(rows.length<row+ri)rows.push([]);rows[row-1+ri].splice(column-1,columnCount||1,...values[ri]);}}
+  })
+}; }
 const academic = fs.readFileSync(path.resolve(__dirname, "../../backend/academic-service/Code.gs"), "utf8");
-const names = ["getVerifiedAcademicIdentity_","getVerifiedDepartmentScopeForSession_","getVerifiedAcademicDepartmentScope_","getAcademicDelegatedMembershipForScope_","resolveInternalResponsibilityForRoleScope_","getVerifiedAcademicGuardianDepartmentScope_","assertResourceOwnershipForScope_","getStudentPersonIdForUser_","getStudentIdentityForPerson_","assertStudentExpedienteScopeAccess_","assertStudentDocumentScopeAccess_","assertStudentRequestScopeAccess_","resolveAcademicRequestDepartment_","hasActiveTeacherAssignment_","validateAcademicResponsibilityAndScopeAccess","getStudentFile","getStudentDocuments","getSecureDocumentStream","validateEvidenceFileAndPermissions","assertRecordOwnership","getStudentFileSummary","getStudentTimeline","restoreDocumentVersion"];
+const names = ["getVerifiedAcademicIdentity_","getVerifiedDepartmentScopeForSession_","getVerifiedAcademicDepartmentScope_","getAcademicDelegatedMembershipForScope_","resolveInternalResponsibilityForRoleScope_","getVerifiedAcademicGuardianDepartmentScope_","assertResourceOwnershipForScope_","getStudentPersonIdForUser_","getStudentIdentityForPerson_","assertStudentExpedienteScopeAccess_","assertStudentDocumentScopeAccess_","assertStudentRequestScopeAccess_","resolveAcademicRequestDepartment_","hasActiveTeacherAssignment_","validateAcademicResponsibilityAndScopeAccess","getStudentFile","ensureStudentDocumentSchema_","ensureDocumentVersionHistorySchema_","getStudentDocuments","getSecureDocumentStream","validateEvidenceFileAndPermissions","assertRecordOwnership","getStudentFileSummary","getStudentTimeline","restoreDocumentVersion"];
 const code = "var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n" + names.map(n => extractFunction(academic, n)).join("\n");
 const claims = {
   staffA:{userId:"U-A",role:"Director"}, staffB:{userId:"U-B",role:"Director"},
@@ -65,18 +76,18 @@ const rows = {
   ],
   ResponsablesTutores:[["ResponsableID","PersonaID","Nombres","Apellidos"],["RESP-1","P-GUARDIAN","",""]],
   DocumentosEstudiante:[
-    ["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl","FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones"],
-    ["DOC-A","EXP-A","","ID","a.pdf","FILE-A","url-a","","","Aprobado","","",""],
-    ["DOC-B","EXP-B","","ID","b.pdf","FILE-B","url-b","","","Aprobado","","",""],
-    ["DOC-S","EXP-STUDENT","","ID","s.pdf","FILE-S","url-s","","","Aprobado","","",""],
-    ["DOC-MISMATCH","EXP-A","SOL-B","ID","x.pdf","FILE-X","url-x","","","Aprobado","","",""]
+    ["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl","FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones","VersionDocumento","SHA256"],
+    ["DOC-A","EXP-A","","ID","a.pdf","FILE-A","url-a","","","Aprobado","","","","1.1","bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"],
+    ["DOC-B","EXP-B","","ID","b.pdf","FILE-B","url-b","","","Aprobado","","","","1.0","bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"],
+    ["DOC-S","EXP-STUDENT","","ID","s.pdf","FILE-S","url-s","","","Aprobado","","","","1.0","bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"],
+    ["DOC-MISMATCH","EXP-A","SOL-B","ID","x.pdf","FILE-X","url-x","","","Aprobado","","","","1.0","bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"]
   ],
   SolicitudesAdmision:[["SolicitudID","FechaSolicitud","AnoLectivo","GradoSolicitado","NombresAspirante","ApellidosAspirante","Identificacion","FechaNacimiento","NombreResponsable","TelefonoContacto","EmailContacto","EstadoSolicitud","CanalIngreso","Observaciones","ExpedienteID"],["SOL-B","","","","","","","","","","","","","","EXP-B"]],
   HistorialVersionesDocumentos:[
-    ["VersionID","DocumentoID","NombreArchivo","DriveFileId","DriveUrl","FechaCreacion","ArchivadoPor","MotivoArchivado","FechaArchivado"],
-    ["VER-A","DOC-A","old-a.pdf","FILE-A-OLD","url-old-a",new Date("2026-01-01"),"U-A","legacy",""],
-    ["VER-B","DOC-B","old-b.pdf","FILE-B-OLD","url-old-b",new Date("2026-01-02"),"U-B","legacy",""],
-    ["VER-S","DOC-S","old-s.pdf","FILE-S-OLD","url-old-s",new Date("2026-01-03"),"U-STUDENT","legacy",""]
+    ["VersionID","DocumentoID","NombreArchivo","DriveFileId","DriveUrl","FechaCreacion","ArchivadoPor","MotivoArchivado","FechaArchivado","VersionDocumento","SHA256"],
+    ["VER-A","DOC-A","old-a.pdf","FILE-A-OLD","url-old-a",new Date("2026-01-01"),"U-A","legacy","","1.0","aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"],
+    ["VER-B","DOC-B","old-b.pdf","FILE-B-OLD","url-old-b",new Date("2026-01-02"),"U-B","legacy","","1.0","aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"],
+    ["VER-S","DOC-S","old-s.pdf","FILE-S-OLD","url-old-s",new Date("2026-01-03"),"U-STUDENT","legacy","","1.0","aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]
   ],
   Matriculas:[["MatriculaID","Fecha","UserId","Alumno","Grado","Seccion","Periodo","Tipo","Estado","BecaDescuento","Observaciones"]],
   MovimientosEstudiante:[["MovimientoID","ExpedienteID","MatriculaID","AnoLectivo","TipoMovimiento","GradoOrigen","SeccionOrigen","GradoDestino","SeccionDestino","FechaEfectiva","Motivo"]],
@@ -92,6 +103,9 @@ const context={
   verifySessionToken:token=>claims[token]||null,
   getOrCreateSheet:(spreadsheet,name)=>spreadsheet.getSheetByName(name)||makeSheet([[]]),
   DriveApp:{getFileById:id=>({isTrashed:()=>false,getName:()=>id,getMimeType:()=>"application/pdf",getDownloadUrl:()=>"download:"+id,getSize:()=>1024})},
+  LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>{}})},
+  Utilities:{getUuid:()=>"test-version-id"},
+  getVerifiedPrivateStudentDocumentFile_:(fileId,expectedHash,fileName)=>({fileId:fileId,fileName:fileName||"document.pdf",sha256Hash:expectedHash||"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",bytes:[1,2,3],mimeType:"application/pdf",driveAccessible:true,integrityVerified:!!expectedHash}),
   logStructuredEvent:()=>{}
 };
 vm.runInNewContext(code + "\nthis.assertStudentExpedienteScopeAccess_=assertStudentExpedienteScopeAccess_;this.assertStudentDocumentScopeAccess_=assertStudentDocumentScopeAccess_;this.assertStudentRequestScopeAccess_=assertStudentRequestScopeAccess_;this.validateAcademicResponsibilityAndScopeAccess=validateAcademicResponsibilityAndScopeAccess;this.getStudentFile=getStudentFile;this.getStudentDocuments=getStudentDocuments;this.getSecureDocumentStream=getSecureDocumentStream;this.validateEvidenceFileAndPermissions=validateEvidenceFileAndPermissions;this.assertRecordOwnership=assertRecordOwnership;",context);
