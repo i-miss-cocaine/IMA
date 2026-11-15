@@ -78,14 +78,15 @@ function makeUserRuntime(options = {}) {
 const accountingFns = [
   "accountingComputeHmacSignature_", "requestAccountingUserAuthorization_",
   "getVerifiedAccountingIdentity_", "accountingHasInstitutionalImportPermission_",
-  "getVerifiedDepartmentScopeForSession_", "textResponse", "doGet", "doPost"
+  "getVerifiedDepartmentScopeForSession_", "apiResponseCorrelationId_", "apiResponsePublicMessage_",
+  "buildApiResponseEnvelope_", "textResponse", "validateApiContractsTestSuite", "doGet", "doPost"
 ].map(name => extractFunction(accountingSource, name));
 
 let remoteResponse = { status: "success", authorized: true, userId: "U-1", role: "Director",
   membershipId: "MEM-1", institutionId: "INST-1", importPermissionVerified: true };
 let lastEnvelope = null;
 const accountingRuntime = {
-  Date, String, JSON, Array, Object, Number, Math, RegExp, Error,
+  API_RESPONSE_VERSION: "1.0.0", Date, String, JSON, Array, Object, Number, Math, RegExp, Error,
   PropertiesService: { getScriptProperties: () => ({ getProperty: key => ({
     IMA_USER_SERVICE_URL: "https://user.example.test/exec",
     IMA_MIGRATION_HMAC_SECRET: secret,
@@ -132,6 +133,7 @@ vm.runInNewContext(accountingFns.join("\n") + "\nthis.api = { auth: getVerifiedA
   assert.equal(department.valid, true);
   assert.equal(department.membershipId, "MEM-1");
   assert.equal(accountingRuntime.api.get().value.includes('"service":"ACCOUNTING"'), true);
+  assert.equal(accountingRuntime.validateApiContractsTestSuite().todasPruebasPasaron, true);
   const ok = accountingRuntime.api.post({ postData: { contents: JSON.stringify({ action: "validateImportPreview", payload: { sessionToken: "SIGNED-LIVE-SESSION" } }) } });
   assert.equal(JSON.parse(ok.value).validForImport, true);
   const deniedAction = accountingRuntime.api.post({ postData: { contents: JSON.stringify({ action: "deleteAll", payload: {} }) } });
