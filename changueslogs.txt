@@ -3954,3 +3954,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - USER inventory test amplía cobertura de entradas malformadas y excesivas; se añadió el test USER y el test Academic de documentos privados al workflow Accounting Import Preflight para ejecutarlos sin depender del contrato transversal de RR. HH.
 - Accounting Import Preflight Contract run 43772074993 SUCCESS: USER legacy inventory PASS, Academic private document storage PASS, XLSX SHA-256 preview binding PASS y resto de contratos de importación/sintaxis PASS.
 - TASK-134 sigue parcial: beta Drive/Sheets real y habilitación segura de la escritura ACCOUNTING después de TASK-133 pendientes. No se inventa un repositorio documental contable.
+
+
+[2026-11-15] TASK-134 / ACCOUNTING — C1.776 — Serialización de auditoría SHA-256
+- Se detectó y corrigió una carrera en la inicialización de AuditoriaMigracionesArchivos: getOrCreateSheet, lectura y validación de encabezados ahora se ejecutan bajo ScriptLock antes de insertar el registro.
+- Nuevo accounting-import-file-audit.test.js comprueba hash independiente del nombre, binding institucional/preview, encabezado único, lock release y timeout sin acceso a la hoja.
+- Accounting Import Preflight Contract run 43772273147 SUCCESS; Accounting migration file audit PASS.
+- TASK-134 continúa abierto: falta beta real y persistencia real al habilitar el commit de importación después de TASK-133.
