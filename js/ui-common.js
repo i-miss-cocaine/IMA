@@ -6742,3 +6742,16 @@ if (document.readyState === "loading") {
         window.initAccessibleTooltips(document);
     });
 }
+
+
+/* [TASK-130] Confirmación modal obligatoria e independiente de tutoriales para operaciones sensibles. */
+window.confirmCriticalOperation = function(options) {
+    var config = options || {};
+    var title = String(config.title || "Confirmación obligatoria");
+    var details = String(config.details || "Revise la operación solicitada.");
+    var consequence = String(config.consequence || "La operación modificará información institucional.");
+    var warning = config.irreversible ? "\n\nEsta operación no puede deshacerse desde esta pantalla." : "";
+    var message = title + "\n\n" + details + "\n\nConsecuencia: " + consequence + warning + "\n\n¿Confirma que desea continuar?";
+    if (typeof window.confirm !== "function") return false;
+    return window.confirm(message);
+};
