@@ -111,7 +111,7 @@ const context={
   Buffer,Date,String,Number,Array,Object,Math,JSON,RegExp,Error,isFinite
 };
 
-for(const servicePath of ["backend/academic-service/Code.gs","backend/accounting-service/Code.gs"]){
+for(const servicePath of ["backend/academic-service/Code.gs","backend/accounting-service/Code.gs","backend/user-service/Code.gs"]){
   const source=fs.readFileSync(servicePath,"utf8");
   const helper=extractFunction(source,"validateOpenXmlPackageStructure_");
   const validator=extractFunction(source,"validateFileBinaryIntegrity");
@@ -177,4 +177,4 @@ for(const servicePath of ["backend/academic-service/Code.gs","backend/accounting
   assert.throws(()=>sandbox.validate(makeZip(expandedBomb).toString("base64"),"expanded.docx"),/OPENXML_EXPANDED_SIZE_EXCEEDED/);
 }
 
-console.log("OpenXML package validation passed for Academic and Accounting: DOCX paragraphs/tables/controls/forms, XLSX workbook/sheets, malformed XML, encrypted/duplicate/traversal ZIP entries, local-header mismatch and decompression limits.");
+console.log("OpenXML package validation passed for Academic, Accounting and User: DOCX paragraphs/tables/controls/forms, XLSX workbook/sheets, malformed XML, encrypted/duplicate/traversal ZIP entries, local-header mismatch and decompression limits.");
