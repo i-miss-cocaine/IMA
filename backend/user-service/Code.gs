@@ -13386,17 +13386,22 @@ function getLegacyDocumentInventory(payload) {
     if (exportRequested && total > 5000) return { status: "error", code: "LEGACY_INVENTORY_EXPORT_LIMIT_EXCEEDED", total: total, limit: 5000 };
     var selected = exportRequested ? filtered : filtered.slice((page - 1) * pageSize, page * pageSize);
     var data = selected.map(legacyDocumentInventoryRowToObject_);
-    var subcategories = [];
+    var subcategories = [], subcategoriesByDepartment = {};
     filtered.forEach(function(row) {
       var subcategory = String(row[indexes.SubcategoriaDocumental] || "").trim();
-      if (subcategory && subcategories.indexOf(subcategory) === -1) subcategories.push(subcategory);
+      var departmentId = String(row[indexes.DepartamentoPropietario] || "");
+      if (!subcategoriesByDepartment[departmentId]) subcategoriesByDepartment[departmentId] = [];
+      if (subcategory) {
+        if (subcategories.indexOf(subcategory) === -1) subcategories.push(subcategory);
+        if (subcategoriesByDepartment[departmentId].indexOf(subcategory) === -1) subcategoriesByDepartment[departmentId].push(subcategory);
+      }
     });
     var response = {
       status: "success", data: data, total: total, page: page, pageSize: exportRequested ? total : pageSize,
       hasMore: !exportRequested && page * pageSize < total,
       scope: access.institutionWide ? "INSTITUCION" : "DEPARTAMENTOS_ASIGNADOS",
       departmentIds: access.institutionWide ? [] : access.departmentIds,
-      subcategories: subcategories
+      subcategories: subcategories, subcategoriesByDepartment: subcategoriesByDepartment
     };
     if (exportRequested) {
       var exportHeaders = LEGACY_DOCUMENT_INVENTORY_HEADERS_.filter(function(header) { return header !== "InstitutionID"; });
@@ -13476,9 +13481,8 @@ function registerLegacyDocumentInventory(payload) {
     var normalizedOriginKey = record.ClaveOrigen.toLowerCase().replace(/\s+/g, " ");
     for (var duplicateIndex = 1; duplicateIndex < rows.length; duplicateIndex++) {
       var candidate = rows[duplicateIndex];
-      if (String(candidate[institutionIndex] || "") !== access.institutionId ||
-          String(candidate[departmentIndex] || "") !== departmentId) continue;
-      var candidateKey = String(candidate[keyIndex] || "").trim().toLowerCase().replace(/\s+/g, " ");
+      if (String(candidate[institutionIndex] || "") !== access.institutionId) continue;
+      var candidateKey = String(candidate[keyIndex] || "").replace(/^'/, "").trim().toLowerCase().replace(/\s+/g, " ");
       if (candidateKey && candidateKey === normalizedOriginKey && String(candidate[idIndex] || "") !== documentId) {
         return { status: "error", code: "LEGACY_DOCUMENT_ORIGIN_DUPLICATE", existingDocumentId: String(candidate[idIndex] || "") };
       }
