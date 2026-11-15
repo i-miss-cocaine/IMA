@@ -13166,6 +13166,12 @@ function getUIMetadataCatalog(payload) {
         maxLength: 80,
         source: "enrollment-billing-grade: maxlength=80"
       },
+      "cobros.cargoId": {
+        label: "ID de cargo financiero",
+        help: "Copia el identificador del cargo que aparece en la cuenta del estudiante (por ejemplo, CHG-...). No uses aquí el número de referencia del recibo.",
+        example: "CHG-...",
+        source: "cashier-cargo-id: placeholder CHG-..."
+      },
       "cobros.monto": {
         label: "Monto",
         help: "Ingresa únicamente el importe en lempiras, sin escribir el símbolo de moneda ni separadores de miles. Usa punto decimal y hasta dos decimales; verifica que coincida con el cargo o comprobante.",
