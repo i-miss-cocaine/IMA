@@ -63,6 +63,8 @@ assert.equal(context.validate(base).resumenValidation.sobrescriturasDetectadas,1
 assert.equal(context.validate(base).resumenValidation.existenciaDestinoVerificada,true);
 const publicPreview=context.validate(base);
 assert.deepEqual(Array.from(publicPreview.targetExistenceSnapshot.targetRows),[],"preflight never returns unrelated destination row contents");
+assert.equal(publicPreview.fileHash, undefined, "raw workbook digests remain server-side");
+assert.equal(publicPreview.fileSizeBytes, undefined, "binary metadata is not exposed in the preflight response");
 assert.deepEqual(Array.from(publicPreview.targetExistenceSnapshot.existingTargetIds),["CURSO-1"],"preflight reveals only target IDs in the submitted batch");
 assert.notEqual(context.preview({...base,filasData:[{...base.filasData[0],nota:91}]}).previewHash,valid.previewHash);
 binaryFileHash="DIFFERENT-FILE-HASH";
