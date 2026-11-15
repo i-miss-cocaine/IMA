@@ -1577,3 +1577,23 @@ El archivo maestro histórico supera el umbral de rotación de 180.000 caractere
 - **Evidencia requerida:** IDs sintéticos, snapshots de asignaciones/ofertas/matrículas/sesiones/justificaciones/constancias, respuestas sanitizadas por docente, eventos RegistroEventos, configuración sin datos sensibles, capturas responsive y hash/tipo/privacidad del archivo de prueba.
 - **Estado:** Pendiente beta; no se ha desplegado ni ejecutado contra Apps Script/Sheets/Drive reales.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-108 — TASK-133 — Preflight semántico, alcance y referencias de documentos laborales
+- **Módulo/roles:** ACCOUNTING, USER, ACADEMIC; Contabilidad, Secretaría, Dirección y RR. HH.
+- **Precondiciones:** despliegue coordinado de servicios; usuarios y membresías sintéticas; institución de prueba; correspondencias legadas confirmadas/pendientes; hojas Cursos, Estudiantes, CorrespondenciaIdentificadores, ExpedientesLaborales, DocumentosLaborales, AsignacionesAmbitosRoles y AsignacionesImportacionDepartamental; endpoint USER HTTPS con secreto HMAC de al menos 32 caracteres.
+- **Pasos:**
+  1. Cargar un archivo XLSX sintético con cursos, identificadores duplicados, referencias huérfanas, fechas inválidas y notas fuera de 0–100. Verificar que el preflight identifica errores por fila y no persiste.
+  2. Confirmar un lote válido y comprobar que la clave de previsualización cambia si se modifica el registro de destino entre preview y confirmación; la escritura obsoleta debe rechazarse.
+  3. Probar importación parcial con una fila inválida y allowPartialImport explícito; verificar filas originales, advertencias de sobrescritura, auditoría y que no se importen errores estructurales.
+  4. Repetir la misma importación y comprobar idempotencia; provocar fallo de escritura en la segunda fila y comprobar compensación de las escrituras anteriores.
+  5. Probar empleado con alcance DEP-A, departamento activo no asignado, texto libre, mezcla DEP-A/DEP-B y membresía ausente; todos los casos no autorizados deben bloquearse antes del writer.
+  6. Para importación institucional, usar snapshots persistidos por fila; alterar tenant, dominio, estado, snapshotId, RowID, duplicar filas y enviar asignaciones manipuladas desde el cliente. Todos deben rechazarse antes de escribir.
+  7. Confirmar que cada expediente laboral importado registra ownership en USER con departmentId, resourceId, snapshotId y RowID; simular caída de USER y validar compensación o estado compensation_required.
+  8. Solicitar lectura referencial de un expediente de otro departamento con campos aprobados. Verificar HMAC, grantId, auditEventId y que no se devuelvan ArchivoUrl, título ni observaciones. Probar URL HTTP, secreto corto, respuesta 503, JSON inválido, grant incompleto y campos/documentos duplicados.
+  9. Ejecutar con documentos reales anonimizados en Apps Script/Sheets/Drive y verificar UX de mapeo/confirmación, accesibilidad y errores visibles; no activar OCR hasta configurar proveedor y revisión humana.
+- **Resultado esperado:** ningún dato se escribe sin identidad, tenant, permiso, preflight vigente y confirmación; importaciones parciales y compensaciones quedan auditadas; referencias cruzadas no revelan documentos privados.
+- **Evidencia requerida:** IDs sintéticos, previewHash, importBatchId, snapshotId, RowID, correlationId, hashes, eventos de auditoría, respuestas sanitizadas y capturas de interfaz sin PII.
+- **Estado:** Pendiente beta real; este escenario no se ha ejecutado contra Apps Script/Drive/Sheets/MailApp.
+===============================================================================
