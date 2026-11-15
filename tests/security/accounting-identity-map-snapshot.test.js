@@ -65,6 +65,8 @@ assert.equal(snapshot.entries.length, 3, "only requested identifiers from the cu
 assert.ok(snapshot.entries.every(entry => entry.institucionId === "INST-1"));
 assert.ok(!snapshot.entries.some(entry => entry.idOriginalLegado === "C-OTHER"), "cross-tenant mappings are not disclosed");
 assert.equal(snapshot.entries.find(entry => entry.idOriginalLegado === "C-2").estadoCorrespondencia, "PENDIENTE_REVISION");
+assert.equal(snapshot.entries[0].hashRegistroOrigen, "H1");
+assert.equal(snapshot.entries[0].versionMapeo, "1");
 assert.ok(!Object.prototype.hasOwnProperty.call(snapshot.entries[0], "idMapeo"));
 assert.ok(!Object.prototype.hasOwnProperty.call(snapshot.entries[0], "migradoPor"));
 
