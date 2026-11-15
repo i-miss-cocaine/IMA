@@ -40,6 +40,9 @@ assert.equal(payload.tipoEntidad,"curso"); assert.equal(payload.destinoModulo,"A
 assert.deepEqual(JSON.parse(JSON.stringify(payload.columnaMapeo.campos)),{Nombre:"CourseName",Nota:"Score"}); assert.equal(payload.filasData,rows);
 assert.throws(()=>context.build({sistemaOrigen:"X",tipoEntidad:"curso",identificador:"LegacyCourse",filasData:rows,campos:{}}),/REQUIRED_FIELD_MAPPING_MISSING:Nombre/);
 assert.throws(()=>context.build({sistemaOrigen:"X",tipoEntidad:"estudiante",identificador:"LegacyStudent",filasData:rows,campos:{}}),/REQUIRED_FIELD_MAPPING_MISSING:PersonaID/);
+const studentPayload=context.build({sistemaOrigen:"LEGACY",tipoEntidad:"estudiante",identificador:"LegacyStudent",filasData:rows,campos:{PersonaID:"LegacyPerson",CodigoInstitucional:"SchoolCode",FechaNacimiento:"BirthDate"}});
+assert.equal(studentPayload.destinoModulo,"ACADEMIC");
+assert.deepEqual(JSON.parse(JSON.stringify(studentPayload.columnaMapeo.campos)),{PersonaID:"LegacyPerson",CodigoInstitucional:"SchoolCode",FechaNacimiento:"BirthDate"});
 assert.throws(()=>context.build({sistemaOrigen:"X",tipoEntidad:"empleado",identificador:"LegacyEmployee",filasData:rows,campos:{PersonaId:"Person",Puesto:"Role",Departamento:"Dept"}}),/ACTIVE_DEPARTMENT_REQUIRED/);
 const employee=context.build({sistemaOrigen:"X",tipoEntidad:"empleado",identificador:"LegacyEmployee",activeDepartmentId:"DEPT-1",filasData:rows,campos:{PersonaId:"Person",Puesto:"Role",Departamento:"Dept"}});
 assert.equal(employee.activeDepartmentId,"DEPT-1"); assert.equal(employee.destinoModulo,"ACCOUNTING");
