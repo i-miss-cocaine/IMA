@@ -5616,3 +5616,11 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Contrato user-service-signature-ownership, callback PSC, integridad documental y sintaxis CI PASS. Department Scope run 43726394404 SUCCESS (Node.js 24.22.2). Node local NOT RUN; CLI no aplicable.
 - **Estado:** subflujo completado; F22-Task03 sigue Pendiente por falta de artefacto independiente persistido, disparador terminal autenticado, PSC real y flujo multifirmante.
 - **Continuidad:** seleccionar otro P0 de PM-06 que sea técnicamente independiente; no cerrar ni simular F22-Task03/04/06.
+
+
+### C1.750 — F34-Task01 — ciclo canónico de justificaciones y asistencia
+- Se implementó un único motor en ACADEMIC para ambos canales, con USER como proyección interservicio firmada mediante HMAC; vínculos estructurados de alumno/fecha/período/sesiones y decisiones históricas.
+- La aprobación aplica Justificado=true solo a sesiones ausentes/tardías exactas; la revocación retira únicamente la vinculación propia; las fallas parciales/proyecciones pendientes son reconciliables. Se bloquean updateRequestStatus y processWorkflowDecision genéricos para ausencias.
+- Contrato Node ambos canales, ownership, idempotencia, ambigüedad, rechazo/revocación, recuperación parcial y lock PASS; Department Scope run 43727954380 SUCCESS y sintaxis Apps Script/JS PASS.
+- BETA-FUNC-100 pendiente por ACADEMIC_SERVICE_URL, secreto HMAC compartido, autorización UrlFetch y prueba real Apps Script/Sheets. Node local NOT RUN; CLI no aplicable.
+- Siguiente P0: F34-Task02. F22-Task03 no se cierra.

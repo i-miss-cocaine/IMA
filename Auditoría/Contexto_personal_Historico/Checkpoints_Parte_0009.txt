@@ -706,3 +706,65 @@ Se aisló y corrigió un subflujo independiente en `generateSignatureAuditCertif
 - **F22-Task03:** sigue Pendiente; este checkpoint cierra únicamente el subflujo de aislamiento por hash/versión. No existe aún certificado independiente persistido, disparador de finalización, validación PSC real ni regla de finalización multifirmante. El resumen en memoria no se presenta como certificado probatorio.
 - **Dependencias bloqueantes para el cierre:** F22-Task04 (PSC real con endpoint/credenciales/cadena de confianza) y F22-Task06 (firmantes requeridos, orden, estados y finalización). No se marca la tarea completa.
 - Continuar con el siguiente subflujo P0 técnicamente independiente de PM-06; no forzar F22-Task03/04/06 ni crear evidencia ficticia.
+
+
+### C1.750 — F34-Task01 — ciclo canónico de justificaciones y asistencia
+
+- **Fecha:** 2026-11-15.
+- **Rama autorizada:** NG_beta_0.0.0.1_work.
+- **Checkpoint anterior:** C1.749.
+- **HEAD al iniciar:** 1addc1552ef788ea89eebf741abc7debe123f9a2.
+- **HEAD antes del checkpoint documental:** 0910e6fca94a88e3c7b538d877192d411e1e1594.
+- **Rama base protegida:** NG_beta_0.0.0.1 = 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+- **Estado:** F34-Task01 completada en código, revisión y CI; BETA-FUNC-100 pendiente de validación real.
+
+#### Implementación
+- ACADEMIC es el propietario del registro canónico JustificacionesAsistencia. USER crea SolicitudesTramites como proyección y delega el alta/revisión a ACADEMIC con sobre HMAC firmado; la ruta directa ACADEMIC usa el mismo motor.
+- Se agregan vínculos estructurados por JustificacionID/SolicitudID, alumno, fecha, período y sesiones exactas. RegistrosAsistencia conserva el estado original y añade JustificacionID.
+- La resolución de sesión usa alumno + fecha exacta y SesionesAsistencia o identificador diario exacto; se rechazan períodos/sesiones ambiguos, duplicados, registros sin vínculo y estados presentes.
+- La aprobación actualiza Justificado=true y JustificacionID en los registros ausentes/tardíos correspondientes. Rechazo y solicitud de información no alteran asistencia. Revocación revierte únicamente registros enlazados a la justificación, con historial de decisiones.
+- Las escrituras parciales quedan en estado pendiente y son idempotentes/reconciliables; reconcilePendingAttendanceJustifications repara decisiones parciales y proyecciones USER pendientes.
+- Se bloquearon las rutas genéricas updateRequestStatus y processWorkflowDecision para que no puedan resolver justificaciones de ausencia fuera del flujo canónico. La interfaz estudiantil solicita el período académico.
+- Se añadieron controles de esquema duplicado, período fuera de vigencia/ambiguo y ownership del alumno.
+
+#### Archivos
+- backend/academic-service/Code.gs
+- backend/user-service/Code.gs
+- js/student.js
+- tests/security/academic-absence-justification-canonical.test.js
+- .github/workflows/department-scope-contract.yml
+- beta_test_Parte_0002.txt
+- pendientes/Secretaria/Pendientes.md
+- Auditoría/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- changueslogs.txt
+
+#### Commits de implementación y endurecimiento
+- c8fb91e3d690cf809dd9c76a2cc8714001beb127 — motor canónico USER/ACADEMIC y contrato inicial.
+- d47b8e3d26805261ac2ed4cdbaba59daa1801c9a — fixture de sesión no ambigua.
+- a2d59ba6f070304e7ba661e3aebbaf8988409c29 — bloqueo de processWorkflowDecision genérico.
+- 3e691fd6949909acce49259858eb6b715aebfe08 — validación de períodos y encabezados duplicados.
+- 7ea4e30932d46931a9a1a63dd447a8df5dcd98d8 — reconciliación de proyecciones USER.
+- f10213b5b4670bf3ce006f5311a18916722c6c37 — cobertura Node de presentación/revisión USER.
+- 0910e6fca94a88e3c7b538d877192d411e1e1594 — corrección del extractor multiarchivo del contrato.
+
+#### Verificación
+- Department Scope Contract run 43727954380: SUCCESS; contrato académico canónico y sintaxis Apps Script/JS PASS.
+- Department Scope Contract run 43727778200: SUCCESS.
+- Department Reference Consumers run 43727778243: SUCCESS.
+- Task-Service security run 43727778249: SUCCESS.
+- Identity Mapping and Transport Security run 43727738102: SUCCESS.
+- Node.js 24.22.2 ejecutó el contrato en CI. Node local NOT RUN; no se obtuvo checkout local ejecutable. CLI no aplicable por ausencia de package.json/scripts.
+- No se desplegó Apps Script ni se ejecutaron pruebas reales contra Drive/Sheets productivos.
+
+#### Dependencias de beta y límites
+- Configurar ACADEMIC_SERVICE_URL en Script Properties de USER con la URL /exec de ACADEMIC.
+- Configurar el mismo IMA_MIGRATION_HMAC_SECRET de al menos 32 caracteres en USER y ACADEMIC; no registrar el secreto en repositorio/logs.
+- Autorizar UrlFetch y desplegar versiones compatibles de ambos servicios.
+- Ejecutar BETA-FUNC-100 con datos sintéticos, pruebas de permisos, idempotencia, reintentos, concurrencia y fallos parciales.
+- No se declara verificada la operación interservicio en producción ni la integración real con Apps Script/Sheets.
+
+#### Continuidad
+- Próxima tarea P0: F34-Task02 — bandeja de salida departamental y acuses de entrega/lectura.
+- F22-Task03 continúa pendiente por PSC real, artefacto probatorio persistido y flujo multifirmante; no se altera su estado.

@@ -222,6 +222,19 @@ Se evaluó el recorrido de extremo a extremo:
 - **Prioridad:** P0. **Estado:** Pendiente.
 - **Evidencia de cierre:** pendiente; PT-F34-04 falla cuando la excusa se tramita desde user-service porque no actualiza `RegistrosAsistencia`.
 
+
+### Revalidación técnica C1.750 — 2026-11-15
+- **Resultado:** F34-Task01 completada en código, revisión y CI; la validación beta en Apps Script/Sheets sigue pendiente.
+- ACADEMIC concentra la fuente canónica en JustificacionesAsistencia y aplica las decisiones de los dos canales bajo el mismo ScriptLock. USER crea SolicitudesTramites como proyección enlazada y delega el alta/revisión a ACADEMIC mediante sobre interservicio HMAC.
+- Se incorporan FechaAfectada, Periodo, SesionIDsJSON, DecisionHistoryJSON, SyncEstado, UltimoError y JustificacionID. La resolución de sesiones usa alumno + fecha exacta + sesión; rechaza sesiones/períodos ambiguos y registros duplicados. Se conservan EstadoAsistencia y los registros de otros alumnos/sesiones.
+- Aprobar establece Justificado=true y JustificacionID solo en sesiones ausentes/tardías exactas. Rechazo/solicitud de información no modifica asistencia. Revocación revierte únicamente los registros enlazados y conserva historial. Escrituras parciales quedan pendientes y se recuperan mediante reintento/reconcilePendingAttendanceJustifications.
+- Se bloqueó el bypass desde updateRequestStatus y processWorkflowDecision. La interfaz estudiantil ahora captura el período académico.
+- **Contrato Node:** tests/security/academic-absence-justification-canonical.test.js cubre la ruta ACADEMIC, presentación/reintento/revisión USER, ownership, idempotencia, período/sesión ambiguos, aprobación, rechazo, revocación, recuperación parcial, lock y bloqueos de rutas genéricas.
+- **CI:** Department Scope run 43727954380 SUCCESS; el contrato canónico y la sintaxis Apps Script/JS terminaron PASS. Department Scope 43727778200, Department Reference Consumers 43727778243, Task-Service Security 43727778249 e Identity Mapping 43727738102 SUCCESS.
+- **Limitaciones:** Node local NOT RUN (no se obtuvo checkout local ejecutable); Node.js 24.22.2 ejecutó el contrato en CI. CLI no aplicable (sin package.json/scripts). No se ejecutó despliegue real ni prueba en Drive/Sheets productivos.
+- **BETA-FUNC-100:** pendiente. Configurar ACADEMIC_SERVICE_URL en Script Properties de USER y el mismo IMA_MIGRATION_HMAC_SECRET (mínimo 32 caracteres) en USER/ACADEMIC; autorizar UrlFetch y ejecutar los escenarios de ambos canales, fallos y concurrencia.
+- **Siguiente tarea P0:** F34-Task02 — bandeja de salida departamental y acuses de entrega/lectura.
+
 ### [F34-Task02] Crear bandeja de salida departamental y acuses de entrega/lectura
 - **Hallazgo de origen:** F34-02 y CAR-F34-02; PT-F34-05 no aprobado.
 - **Severidad:** Crítica / P0. **Objetivo:** rastrear documentos enviados por Secretaría/Dirección y distinguir solicitud de envío, entrega, apertura y recepción formal.

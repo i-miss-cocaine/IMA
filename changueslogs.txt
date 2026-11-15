@@ -3799,3 +3799,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se mantiene RESUMEN_AUDITORIA_NO_PROBATORIO: no se afirma certificado persistido ni firma criptográfica válida.
 - Dependencias: ciclo F22-Task03/04/06; PSC real y flujo multifirmante pendientes. F22-Task03 permanece Pendiente.
 - Node contract user-service-signature-ownership y sintaxis CI PASS; Department Scope 43726394404 SUCCESS. Node local NOT RUN; CLI no aplicable.
+
+
+[2026-11-15] F34-Task01 — C1.750, ciclo canónico de justificaciones y asistencia
+- Se unificó la fuente de verdad en ACADEMIC/JustificacionesAsistencia; USER delega presentación y revisión mediante sobre HMAC y mantiene SolicitudesTramites como proyección vinculada. Las rutas directas ACADEMIC y USER comparten el mismo motor.
+- Se estructuraron vínculos de alumno, fecha, período y sesiones exactas; se añadieron historial de decisiones, JustificacionID, SyncEstado y reconciliación. La aprobación marca Justificado=true solo para registros ausentes/tardíos; rechazo no altera asistencia y revocación revierte solo registros enlazados. Se preserva EstadoAsistencia.
+- Se bloquearon updateRequestStatus y processWorkflowDecision para evitar bypass; la UI estudiantil solicita período. Se añadieron contratos Node para ambos canales, ownership, idempotencia, períodos/sesiones ambiguos, rechazo, revocación, fallo parcial, recuperación y lock.
+- CI Node.js 24.22.2 PASS: Department Scope 43727954380; Department Reference Consumers 43727778243; Task-Service Security 43727778249; Identity Mapping 43727738102. Sintaxis Apps Script/JS PASS. Node local NOT RUN; CLI no aplicable.
+- BETA-FUNC-100 pendiente: configurar ACADEMIC_SERVICE_URL y el mismo IMA_MIGRATION_HMAC_SECRET en USER/ACADEMIC, autorizar UrlFetch y probar Apps Script/Sheets real. Próxima tarea P0: F34-Task02.

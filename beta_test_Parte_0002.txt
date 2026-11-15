@@ -522,5 +522,5 @@
   11. Revisar solicitudes históricas de USER y justificaciones académicas sin columnas nuevas; verificar compatibilidad, resolución exacta de sesión y preservación de datos anteriores.
 - **Resultado esperado:** una fuente canónica en ACADEMIC; todas las decisiones de ambos canales pasan por el mismo motor, lock y ledger de historial; la asistencia se actualiza únicamente para sesiones exactas y de forma idempotente; fallos quedan reconciliables; no hay aprobaciones falsas ni pérdida de historial.
 - **Evidencia requerida:** respuestas sanitizadas, IDs sintéticos, snapshots de JustificacionesAsistencia, RegistrosAsistencia y SolicitudesTramites, eventos de decisión, estados de reconciliación, resultados de concurrencia, configuración (sin revelar el secreto) y logs de autorización.
-- **Estado:** Pendiente beta. Contrato Node/CI debe aprobar antes de desplegar.
+- **Estado:** Contrato Node/CI PASS (run 43727954380); Pendiente beta real por configuración interservicio y validación Apps Script/Sheets.
 ===============================================================================
