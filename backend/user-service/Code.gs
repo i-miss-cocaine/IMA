@@ -7685,13 +7685,13 @@ function computeDocumentSHA256(contentOrBase64) {
   if (Array.isArray(contentOrBase64)) rawBytes = contentOrBase64.slice();
   else if (typeof Uint8Array !== "undefined" && contentOrBase64 instanceof Uint8Array) rawBytes = Array.from(contentOrBase64).map(function(value) { return value > 127 ? value - 256 : value; });
   else if (typeof Utilities !== "undefined" && Utilities.computeDigest) {
-    if (typeof contentOrBase64 === "string" && contentOrBase64.indexOf(",") !== -1) rawBytes = Utilities.base64Decode(contentOrBase64.split(",")[1]);
+    if (typeof contentOrBase64 === "string" && /^data:[^,]*;base64,/i.test(contentOrBase64)) rawBytes = Utilities.base64Decode(contentOrBase64.slice(contentOrBase64.indexOf(",") + 1));
     else if (typeof contentOrBase64 === "string") rawBytes = Utilities.newBlob(contentOrBase64).getBytes();
     else throw new Error("DOCUMENT_HASH_INPUT_UNSUPPORTED");
   } else if (typeof require !== "undefined") {
     const crypto = require("crypto");
-    const buffer = typeof contentOrBase64 === "string" && contentOrBase64.indexOf(",") !== -1
-      ? Buffer.from(contentOrBase64.split(",")[1],"base64") : Buffer.from(String(contentOrBase64),"utf8");
+    const buffer = typeof contentOrBase64 === "string" && /^data:[^,]*;base64,/i.test(contentOrBase64)
+      ? Buffer.from(contentOrBase64.slice(contentOrBase64.indexOf(",") + 1),"base64") : Buffer.from(String(contentOrBase64),"utf8");
     return crypto.createHash("sha256").update(buffer).digest("hex");
   } else throw new Error("DOCUMENT_HASH_PROVIDER_UNAVAILABLE");
   if (typeof Utilities !== "undefined" && Utilities.computeDigest) {
