@@ -153,6 +153,7 @@ function makeMigrationOrchestrationFixture(options){
  const ctx={
   SPREADSHEET_ID:"LOCAL",
   SpreadsheetApp:{openById:()=>ss},
+  PropertiesService:{getScriptProperties:()=>({getProperty:()=> "INST-1"})},
   getOrCreateSheet:()=>audit,
   getVerifiedAccountingIdentity_:()=>({authorized:true,userId:"U-1",role:"Director",institutionId:"INST-1"}),
   accountingHasInstitutionalImportPermission_:()=>true,
