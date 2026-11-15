@@ -62,7 +62,12 @@ const context = {
   SPREADSHEET_ID: "TEST",
   SpreadsheetApp: { openById(id) { assert.equal(id, "TEST"); return ss; } },
   LockService: { getScriptLock() { return { waitLock() { if (lockBusy) throw new Error("LOCK_BUSY"); }, releaseLock() {} }; } },
-  Utilities: { getUuid() { uuid++; return "UUID-" + String(uuid).padStart(6, "0"); } },
+  Utilities: {
+    DigestAlgorithm: { SHA_256: "SHA_256" },
+    base64Decode(value) { return Buffer.from(value, "base64"); },
+    computeDigest(_algorithm, bytes) { return Array.from({ length: 32 }, (_, index) => index); },
+    getUuid() { uuid++; return "UUID-" + String(uuid).padStart(6, "0"); }
+  },
   getUserVerifiedRole(payload) {
     const claim = claims[payload && payload.sessionToken];
     if (!claim) return "NO_ACCESS";
@@ -109,7 +114,8 @@ const documentId = created.documentId;
 assert.ok(documentId.startsWith("LEG-"));
 assert.equal(store.InventarioDocumentalLegado.rows.length, 2);
 assert.equal(store.HistorialInventarioDocumentalLegado.rows.length, 2);
-assert.equal(store.InventarioDocumentalLegado.rows[1].length, 22);
+assert.equal(store.InventarioDocumentalLegado.rows[1].length, 23);
+assert.equal(store.InventarioDocumentalLegado.rows[0][22], "HashSHA256");
 
 const duplicate = context.registerLegacyDocumentInventory({
   sessionToken: "token-sec-a", departmentId: "DEP-A",
@@ -222,6 +228,31 @@ const originalHeader = store.InventarioDocumentalLegado.rows[0][0];
 store.InventarioDocumentalLegado.rows[0][0] = "UnexpectedHeader";
 assert.equal(context.getLegacyDocumentInventory({ sessionToken: "token-sec-a" }).code, "LEGACY_INVENTORY_SCHEMA_MISMATCH");
 store.InventarioDocumentalLegado.rows[0][0] = originalHeader;
+
+
+const digitalRecord = Object.assign({}, record, {
+  nombreArchivoOriginal: "Acta_digital_con_hash.pdf",
+  claveOrigen: "HASH-SOURCE-001",
+  fileData: "data:application/pdf;base64," + Buffer.from("legacy-file-bytes").toString("base64")
+});
+const hashedLegacy = context.registerLegacyDocumentInventory({ sessionToken: "token-sec-a", departmentId: "DEP-A", record: digitalRecord });
+assert.equal(hashedLegacy.status, "success");
+assert.equal(hashedLegacy.data.HashSHA256, "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
+assert.equal(store.InventarioDocumentalLegado.rows.at(-1)[22], hashedLegacy.data.HashSHA256);
+const duplicateHashLegacy = context.registerLegacyDocumentInventory({
+  sessionToken: "token-sec-a", departmentId: "DEP-A",
+  record: Object.assign({}, digitalRecord, { nombreArchivoOriginal: "Acta_renombrada.pdf", claveOrigen: "HASH-SOURCE-002" })
+});
+assert.equal(duplicateHashLegacy.code, "LEGACY_DOCUMENT_HASH_DUPLICATE",
+  "exact binary duplicates must be detected even when origin keys differ");
+
+const legacyHeader = store.InventarioDocumentalLegado.rows[0].slice(0, 22);
+const legacyRows = store.InventarioDocumentalLegado.rows.map(row => row.slice(0, 22));
+store.InventarioDocumentalLegado = new FakeSheet("InventarioDocumentalLegado", legacyRows);
+const migratedInventory = context.getLegacyDocumentInventory({ sessionToken: "token-dir" });
+assert.equal(migratedInventory.status, "success");
+assert.equal(store.InventarioDocumentalLegado.rows[0][22], "HashSHA256",
+  "the additive schema migration must preserve existing inventory rows");
 
 const permissionStart = source.indexOf("const ROLE_PERMISSIONS = {");
 const permissionEnd = source.indexOf("\n};", permissionStart);
