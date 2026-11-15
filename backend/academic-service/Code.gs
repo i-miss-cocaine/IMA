@@ -10643,7 +10643,7 @@ function teacherJustificationActiveState_(value) {
 
 function teacherJustificationAssignmentAllowsDate_(row, map, dateKey) {
   var state = String(row[map.Estado] || "").trim().toUpperCase();
-  if (["REVOCADO","REVOCADA","CANCELADO","CANCELADA","ELIMINADO","ELIMINADA","ANULADO","ANULADA"].indexOf(state)!==-1) return false;
+  if (!teacherJustificationActiveState_(state)) return false;
   var start = map.FechaInicio >= 0 ? absenceDateKey_(row[map.FechaInicio]) : "";
   var end = map.FechaFin >= 0 ? absenceDateKey_(row[map.FechaFin]) : "";
   if (!start) return false;
@@ -10800,7 +10800,7 @@ function resolveTeacherJustificationScope_(payload, requestedJustificationId) {
 
   var enrollmentMap = teacherJustificationHeaderMap_(enrollmentSheet,["MatriculaID","UserId","Alumno","Grado","Seccion","Periodo","Estado"]);
   var enrollmentRows = enrollmentSheet.getDataRange().getValues().slice(1);
-  var periodMap = teacherJustificationHeaderMap_(periodSheet,["PeriodoID","AnoID","Nombre"]);
+  var periodMap = teacherJustificationHeaderMap_(periodSheet,["PeriodoID","AnoID","Nombre","FechaInicio","FechaFin","Estado"]);
   var periodRows = periodSheet.getDataRange().getValues().slice(1);
   var periods = Object.create(null);
   periodRows.forEach(function(row){
@@ -10808,8 +10808,8 @@ function resolveTeacherJustificationScope_(payload, requestedJustificationId) {
     if(!id)return;
     if(Object.prototype.hasOwnProperty.call(periods,id)){periods[id]=null;return;}
     else periods[id]={year:String(row[periodMap.AnoID]||"").trim(),name:String(row[periodMap.Nombre]||"").trim(),
-      start:periodMap.FechaInicio===undefined?"":absenceDateKey_(row[periodMap.FechaInicio]),
-      end:periodMap.FechaFin===undefined?"":absenceDateKey_(row[periodMap.FechaFin])};
+      start:absenceDateKey_(row[periodMap.FechaInicio]),end:absenceDateKey_(row[periodMap.FechaFin]),
+      state:String(row[periodMap.Estado]||"").trim()};
   });
   var sessionMap = teacherJustificationHeaderMap_(sessionSheet,["SesionID","Fecha","Grado","Seccion","AsignaturaID","DocenteUserId"]);
   var sessionRows = sessionSheet.getDataRange().getValues().slice(1);
@@ -10862,6 +10862,7 @@ function resolveTeacherJustificationScope_(payload, requestedJustificationId) {
 
   var justificationIdCounts=Object.create(null);
   justRows.slice(1).forEach(function(row){var id=String(row[justMap.JustificacionID]||"").trim();if(id)justificationIdCounts[id]=(justificationIdCounts[id]||0)+1;});
+  var todayKey=absenceDateKey_(new Date());
   var result=[];
   for(var j=1;j<justRows.length;j++){
     var row=justRows[j], justId=String(row[justMap.JustificacionID]||"").trim();
@@ -10871,7 +10872,8 @@ function resolveTeacherJustificationScope_(payload, requestedJustificationId) {
     var period=periods[periodId];
     var studentId=String(row[justMap.UserId]||"").trim();
     if(!dateKey || !period || !period.year || !studentId)continue;
-    if(!period.start || !period.end || dateKey<period.start || dateKey>period.end)continue;
+    if(!period.start || !period.end || !teacherJustificationActiveState_(period.state))continue;
+    if(todayKey<period.start || todayKey>period.end || dateKey<period.start || dateKey>period.end)continue;
     var rawSessions;
     try{rawSessions=JSON.parse(String(row[justMap.SesionIDsJSON]||"[]"));}catch(_){continue;}
     if(!Array.isArray(rawSessions) || !rawSessions.length)continue;
@@ -10884,7 +10886,7 @@ function resolveTeacherJustificationScope_(payload, requestedJustificationId) {
       if(!session || session.teacher!==actor.userId || session.date!==dateKey)return;
       var candidates=Object.keys(assignedOffers).filter(function(offerId){
         var offer=offerById[offerId];
-        return offer && ["ACTIVA","ACTIVO","INACTIVA","INACTIVO","CERRADA","CERRADO","FINALIZADA","FINALIZADO"].indexOf(offer.state)!==-1 &&
+        return offer && teacherJustificationActiveState_(offer.state) &&
           offer.year===period.year && offer.grade===session.grade && offer.section===session.section &&
           offer.subject===session.subject && assignedOffers[offerId].some(function(assignmentRow){
             return teacherJustificationAssignmentAllowsDate_(assignmentRow,{
