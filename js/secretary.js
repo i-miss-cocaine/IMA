@@ -1665,7 +1665,15 @@ window.reorderWaitlistAction = async function(esperaId) {
 
 
 // TASK-068: interfaz de búsqueda, revisión y vinculación de identidades.
-window.openIdentityMappingManager = function() { var m=document.getElementById("modal-identity-mapping"); if(m){m.classList.remove("hidden");m.classList.add("flex");} };
+window.openIdentityMappingManager = function() {
+ var m=document.getElementById("modal-identity-mapping");
+ if(m){m.classList.remove("hidden");m.classList.add("flex");}
+ ["identity-search-identificacion","identity-search-responsable"].forEach(function(id){var field=document.getElementById(id);if(field)field.setAttribute("data-ui-help-key","matricula.identidad");});
+ var birthDate=document.getElementById("identity-search-fecha");
+ if(birthDate)birthDate.setAttribute("data-ui-help-key","matricula.fechaNacimiento");
+ if(window.applyPermanentFieldHelp)window.applyPermanentFieldHelp(m||document);
+ if(window.initAccessibleTooltips)window.initAccessibleTooltips(m||document);
+};
 window.closeIdentityMappingManager = function() { var m=document.getElementById("modal-identity-mapping"); if(m){m.classList.add("hidden");m.classList.remove("flex");} };
 window.handleIdentityMatchSearch = async function(event) {
  if(event)event.preventDefault();var status=document.getElementById("identity-search-status"),results=document.getElementById("identity-match-results");
