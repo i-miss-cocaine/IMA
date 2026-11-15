@@ -13484,7 +13484,12 @@ function registerLegacyDocumentInventory(payload) {
       if (String(candidate[institutionIndex] || "") !== access.institutionId) continue;
       var candidateKey = String(candidate[keyIndex] || "").replace(/^'/, "").trim().toLowerCase().replace(/\s+/g, " ");
       if (candidateKey && candidateKey === normalizedOriginKey && String(candidate[idIndex] || "") !== documentId) {
-        return { status: "error", code: "LEGACY_DOCUMENT_ORIGIN_DUPLICATE", existingDocumentId: String(candidate[idIndex] || "") };
+        var duplicateResult = { status: "error", code: "LEGACY_DOCUMENT_ORIGIN_DUPLICATE" };
+        var duplicateDepartmentId = String(candidate[departmentIndex] || "");
+        if (access.institutionWide || access.departmentIds.indexOf(duplicateDepartmentId) !== -1) {
+          duplicateResult.existingDocumentId = String(candidate[idIndex] || "");
+        }
+        return duplicateResult;
       }
     }
 
