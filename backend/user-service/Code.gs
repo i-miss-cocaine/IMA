@@ -965,7 +965,7 @@ const ROLE_PERMISSIONS = {
     "acceptLinkInvitation", "getGuardianStudents", "getGuardianApplicants", "getInstitutionalAnnouncements", "getInternalMessages", "sendInternalMessage", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "getMyDocumentDeliveries", "openDepartmentalDocumentDelivery", "confirmDepartmentalDocumentReceipt", "getAppointmentBookings", "bookAppointment", "getInstitutionalCalendarEvents", "getPendingReminders", "getAuthorizationRequests", "respondToAuthorizationRequest"
   ],
   "Director": [
-    "createNews", "uploadNewsImage", "getNews", "updateNewsStatus", "getStudents", "getStudentsByGradoSeccion", "getUserInfo", "saveGameResult", "getGameStats", "getGlobalTop", "recordAnalytics", "getLearningProfile", "mergeGuestData", "updateUserProfile", "findPersonMatches", "createPerson", "linkPersonAccount", "manageAccountState", "generateInstitutionalId",
+    "registerLegacyDocumentInventory", "getLegacyDocumentInventory", "createNews", "uploadNewsImage", "getNews", "updateNewsStatus", "getStudents", "getStudentsByGradoSeccion", "getUserInfo", "saveGameResult", "getGameStats", "getGlobalTop", "recordAnalytics", "getLearningProfile", "mergeGuestData", "updateUserProfile", "findPersonMatches", "createPerson", "linkPersonAccount", "manageAccountState", "generateInstitutionalId",
     "getInstitutionalCriteria", "saveInstitutionalCriterion", "getFormativeEvaluations", "saveFormativeEvaluation", "getSupportPlans", "saveSupportPlan",
     "createLinkInvitation", "acceptLinkInvitation", "getGuardianStudents", "registerLegalCustodyRestriction", "getStudentGuardianConsolidatedList", "getInstitutionalAnnouncements", "createInstitutionalAnnouncement", "submitAnnouncementReceiptConfirmation", "getAnnouncementReadReport", "getDepartmentalWorkInbox", "getDepartmentalOutbox", "registerDepartmentalDocumentDelivery", "retryDepartmentalDocumentDelivery", "revokeDepartmentalDocumentDeliveryLink", "closeConversationThread", "getInternalConversations", "getInternalMessages", "sendInternalMessage", "sendInstitutionalMessage", "getInstitutionalConversations", "getConversationMessages", "archiveInstitutionalConversation", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "createUserNotification", "sendMultiChannelNotification", "dispatchScheduleChangeNotifications", "getScheduleChangeNotificationLogs", "getAdmissionNotificationLogs", "getStudentProcedureNotificationLogs", "getNotificationPreferences", "getAdministrativeRequests", "verifyDocumentEvidenceIntegrity", "getAdministrativeRequestsHistory", "submitAdministrativeRequest", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "reviewAbsenceJustification", "updateRequestStatus", "saveInstitutionalForm", "getInstitutionalForms", "submitInstitutionalFormRequest", "saveApprovalWorkflow", "getApprovalWorkflows", "processWorkflowDecision", "getWorkflowHistory", "registerDocumentSignature", "generateSignatureAuditCertificate", "configureAdvancedSignatureProvider", "getAdvancedSignatureProviderConfig", "createAdvancedSignatureRequest", "checkAdvancedSignatureStatus", "configureNotificationChannel", "getNotificationChannelConfigs", "sendChannelNotificationTest", "getAppointmentBookings", "bookAppointment", "updateAppointmentStatus", "getInstitutionalCalendarEvents", "saveInstitutionalCalendarEvent", "checkCalendarEventOverlap", "getPendingReminders",
     "getUserSettings", "saveUserSettings", "getSystemConfigurations", "saveSystemConfiguration", "getProviderIntegrations", "configureProviderIntegration",
@@ -973,28 +973,28 @@ const ROLE_PERMISSIONS = {
     "manageInternalRoleCatalog", "getInternalRoleCatalog", "getInternalRoleAssignments", "updateTicketStatus", "saveVisualPaletteProposal", "approveVisualPaletteProposal", "registerAndDispatchEvent", "retryFailedEventsQueue", "recordTraceabilityLog", "getTraceabilityCorrelationLogs", "getOperationalCapacityMetrics", "runInterdepartmentalIntegrationTestSuite", "getSharedConfigurationsCatalog", "manageInstitutionalDataCache", "purgeSecurityCaches", "dispatchSecurityEvent", "processSecurityEventQueue", "getSecurityEventsQueue", "getSecurityAndComplianceDashboardData", "generatePrivilegeAndAccountAuditReport", "getPaginatedAuditLogReport", "auditAndReconcileIdentityInconsistencies", "saveEvidenceIntegrityPolicy"
   ],
   "Subdirector": [
-    "createNews", "uploadNewsImage", "getNews", "updateNewsStatus", "getStudents", "getStudentsByGradoSeccion", "getUserInfo", "saveGameResult", "getGameStats", "getGlobalTop", "recordAnalytics", "getLearningProfile", "mergeGuestData", "updateUserProfile", "findPersonMatches", "generateInstitutionalId",
+    "registerLegacyDocumentInventory", "getLegacyDocumentInventory", "createNews", "uploadNewsImage", "getNews", "updateNewsStatus", "getStudents", "getStudentsByGradoSeccion", "getUserInfo", "saveGameResult", "getGameStats", "getGlobalTop", "recordAnalytics", "getLearningProfile", "mergeGuestData", "updateUserProfile", "findPersonMatches", "generateInstitutionalId",
     "getInstitutionalCriteria", "saveInstitutionalCriterion", "getFormativeEvaluations", "saveFormativeEvaluation", "getSupportPlans", "saveSupportPlan",
     "registerSpreadsheetSource", "resolveSpreadsheetSource", "getSpreadsheetCatalog", "verifyWorkflowDecisionAuditChain", "recordWorkflowDecisionCorrection",
     "manageInternalRoleCatalog", "getInternalRoleCatalog", "getInternalRoleAssignments", "createLinkInvitation", "getGuardianStudents", "getInstitutionalAnnouncements", "createInstitutionalAnnouncement", "submitAnnouncementReceiptConfirmation", "getAnnouncementReadReport", "getDepartmentalWorkInbox", "getDepartmentalOutbox", "registerDepartmentalDocumentDelivery", "retryDepartmentalDocumentDelivery", "revokeDepartmentalDocumentDeliveryLink", "closeConversationThread", "getInternalConversations", "getInternalMessages", "sendInternalMessage", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "sendMultiChannelNotification", "getNotificationPreferences", "getAdministrativeRequests", "getAdministrativeRequestsHistory", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "reviewAbsenceJustification", "updateRequestStatus", "saveInstitutionalForm", "getInstitutionalForms", "submitInstitutionalFormRequest", "saveApprovalWorkflow", "getApprovalWorkflows", "processWorkflowDecision", "getWorkflowHistory", "registerDocumentSignature", "generateSignatureAuditCertificate", "configureAdvancedSignatureProvider", "getAdvancedSignatureProviderConfig", "createAdvancedSignatureRequest", "checkAdvancedSignatureStatus", "configureNotificationChannel", "getNotificationChannelConfigs", "sendChannelNotificationTest", "getAppointmentBookings", "updateAppointmentStatus", "getInstitutionalCalendarEvents", "saveInstitutionalCalendarEvent", "checkCalendarEventOverlap", "getPendingReminders"
   ],
   "Secretaría": [
-    "createNews", "uploadNewsImage", "getNews", "updateNewsStatus", "getStudents", "getStudentsByGradoSeccion", "getUserInfo", "updateUserProfile", "findPersonMatches", "createPerson", "linkPersonAccount", "manageAccountState", "generateInstitutionalId",
+    "registerLegacyDocumentInventory", "getLegacyDocumentInventory", "createNews", "uploadNewsImage", "getNews", "updateNewsStatus", "getStudents", "getStudentsByGradoSeccion", "getUserInfo", "updateUserProfile", "findPersonMatches", "createPerson", "linkPersonAccount", "manageAccountState", "generateInstitutionalId",
     "getInstitutionalCriteria", "getFormativeEvaluations", "saveFormativeEvaluation", "getSupportPlans", "saveSupportPlan",
     "registerSpreadsheetSource", "resolveSpreadsheetSource", "getSpreadsheetCatalog", "verifyWorkflowDecisionAuditChain", "recordWorkflowDecisionCorrection",
     "createLinkInvitation", "acceptLinkInvitation", "getGuardianStudents", "registerLegalCustodyRestriction", "getStudentGuardianConsolidatedList", "getInstitutionalAnnouncements", "createInstitutionalAnnouncement", "submitAnnouncementReceiptConfirmation", "getAnnouncementReadReport", "getDepartmentalWorkInbox", "getDepartmentalOutbox", "registerDepartmentalDocumentDelivery", "retryDepartmentalDocumentDelivery", "revokeDepartmentalDocumentDeliveryLink", "closeConversationThread", "getInternalConversations", "getInternalMessages", "sendInternalMessage", "sendInstitutionalMessage", "getInstitutionalConversations", "getConversationMessages", "archiveInstitutionalConversation", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "createUserNotification", "sendMultiChannelNotification", "getAdmissionNotificationLogs", "getNotificationPreferences", "getAdministrativeRequests", "getAdministrativeRequestsHistory", "submitAdministrativeRequest", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "reviewAbsenceJustification", "updateRequestStatus", "saveInstitutionalForm", "getInstitutionalForms", "submitInstitutionalFormRequest", "saveApprovalWorkflow", "getApprovalWorkflows", "processWorkflowDecision", "getWorkflowHistory", "registerDocumentSignature", "generateSignatureAuditCertificate", "configureAdvancedSignatureProvider", "getAdvancedSignatureProviderConfig", "createAdvancedSignatureRequest", "checkAdvancedSignatureStatus", "configureNotificationChannel", "getNotificationChannelConfigs", "sendChannelNotificationTest", "getAppointmentBookings", "bookAppointment", "updateAppointmentStatus", "getInstitutionalCalendarEvents", "saveInstitutionalCalendarEvent", "checkCalendarEventOverlap", "getPendingReminders"
   ],
-  "Contador": ["getStudents", "getUserInfo", "getNews", "getInstitutionalAnnouncements", "getUserNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest"],
-  "RecursosHumanos": ["manageInternalRoleCatalog", "getInternalRoleCatalog", "getInternalRoleAssignments", "getStudents", "getUserInfo", "getNews", "getInstitutionalAnnouncements", "getUserNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest", "createNews", "getInternalMessages", "sendInternalMessage"],
+  "Contador": ["registerLegacyDocumentInventory", "getLegacyDocumentInventory", "getStudents", "getUserInfo", "getNews", "getInstitutionalAnnouncements", "getUserNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest"],
+  "RecursosHumanos": ["registerLegacyDocumentInventory", "getLegacyDocumentInventory", "manageInternalRoleCatalog", "getInternalRoleCatalog", "getInternalRoleAssignments", "getStudents", "getUserInfo", "getNews", "getInstitutionalAnnouncements", "getUserNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest", "createNews", "getInternalMessages", "sendInternalMessage"],
   "Empleado": ["getUserInfo", "getNews", "getInstitutionalAnnouncements", "getUserNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest", "getInternalMessages", "sendInternalMessage"],
-  "Coordinador": ["getStudents", "getStudentsByGradoSeccion", "getUserInfo", "getLearningProfile", "getNews", "getInstitutionalCriteria", "getFormativeEvaluations", "getSupportPlans", "getInstitutionalAnnouncements", "getInternalMessages", "sendInternalMessage", "getUserNotifications", "markNotificationAsRead", "getAppointmentBookings", "updateAppointmentStatus", "getCoordinatorOverview", "assignTeacherToSection", "designateGuideTeacher", "saveClassSchedules", "generateAutoSchedules"],
-  "Consejeros": ["getStudents", "getStudentsByGradoSeccion", "getUserInfo", "getLearningProfile", "getNews", "getInstitutionalCriteria", "getFormativeEvaluations", "saveFormativeEvaluation", "getSupportPlans", "saveSupportPlan", "getInstitutionalAnnouncements", "getInternalMessages", "sendInternalMessage", "getUserNotifications", "markNotificationAsRead", "getAppointmentBookings", "updateAppointmentStatus"],
+  "Coordinador": ["registerLegacyDocumentInventory", "getLegacyDocumentInventory", "getStudents", "getStudentsByGradoSeccion", "getUserInfo", "getLearningProfile", "getNews", "getInstitutionalCriteria", "getFormativeEvaluations", "getSupportPlans", "getInstitutionalAnnouncements", "getInternalMessages", "sendInternalMessage", "getUserNotifications", "markNotificationAsRead", "getAppointmentBookings", "updateAppointmentStatus", "getCoordinatorOverview", "assignTeacherToSection", "designateGuideTeacher", "saveClassSchedules", "generateAutoSchedules"],
+  "Consejeros": ["registerLegacyDocumentInventory", "getLegacyDocumentInventory", "getStudents", "getStudentsByGradoSeccion", "getUserInfo", "getLearningProfile", "getNews", "getInstitutionalCriteria", "getFormativeEvaluations", "saveFormativeEvaluation", "getSupportPlans", "saveSupportPlan", "getInstitutionalAnnouncements", "getInternalMessages", "sendInternalMessage", "getUserNotifications", "markNotificationAsRead", "getAppointmentBookings", "updateAppointmentStatus"],
   "Profesor": [
-    "getStudents", "getStudentsByGradoSeccion", "getUserInfo", "getNews", "createNews", "uploadNewsImage", "saveGameResult", "getGameStats", "getGlobalTop", "recordAnalytics", "getLearningProfile", "mergeGuestData",
+    "registerLegacyDocumentInventory", "getLegacyDocumentInventory", "getStudents", "getStudentsByGradoSeccion", "getUserInfo", "getNews", "createNews", "uploadNewsImage", "saveGameResult", "getGameStats", "getGlobalTop", "recordAnalytics", "getLearningProfile", "mergeGuestData",
     "getInstitutionalCriteria", "getFormativeEvaluations", "saveFormativeEvaluation", "getSupportPlans",
     "getGuardianStudents", "getInstitutionalAnnouncements", "getInternalMessages", "sendInternalMessage", "sendInstitutionalMessage", "getInstitutionalConversations", "getConversationMessages", "archiveInstitutionalConversation", "getUserNotifications", "markNotificationAsRead", "createUserNotification", "getAdministrativeRequests", "submitAdministrativeRequest", "getAppointmentBookings", "bookAppointment", "updateAppointmentStatus", "getInstitutionalCalendarEvents", "checkCalendarEventOverlap"
   ],
-  "Asistente": ["getStudents", "getStudentsByGradoSeccion", "getUserInfo", "getNews", "getLearningProfile", "getInstitutionalCriteria", "getFormativeEvaluations", "getInstitutionalAnnouncements", "getUserNotifications"],
+  "Asistente": ["registerLegacyDocumentInventory", "getLegacyDocumentInventory", "getStudents", "getStudentsByGradoSeccion", "getUserInfo", "getNews", "getLearningProfile", "getInstitutionalCriteria", "getFormativeEvaluations", "getInstitutionalAnnouncements", "getUserNotifications"],
   "Estudiante": [
     "getUserInfo", "getNews", "saveGameResult", "getGameStats", "getGlobalTop", "recordAnalytics", "getLearningProfile", "mergeGuestData", "updateUserProfile",
     "getInstitutionalCriteria", "getFormativeEvaluations", "getSupportPlans",
@@ -2177,6 +2177,12 @@ function doPost(e) {
       case "ping": result = { status: "success", service: "USER", timestamp: new Date().toISOString(), dbConnected: true }; break;
       case "getUserDynamicDashboardConfig":
         result = getUserDynamicDashboardConfig(payload);
+        break;
+      case "getLegacyDocumentInventory":
+        result = getLegacyDocumentInventory(payload);
+        break;
+      case "registerLegacyDocumentInventory":
+        result = registerLegacyDocumentInventory(payload);
         break;
       case "getUIMetadataCatalog":
         result = getUIMetadataCatalog(payload);
@@ -13125,6 +13131,439 @@ function registerResourceOwnership(payload) {
 }
 
 // [F38-Task02] Catálogo versionado de metadatos de campos y ayudas; no concede permisos ni modifica validaciones.
+
+/* [TASK-132] Inventario documental legado: metadatos institucionales, clasificación y trazabilidad. */
+const LEGACY_DOCUMENT_INVENTORY_HEADERS_ = [
+  "DocumentoId", "DepartamentoPropietario", "AreaResponsable", "NombreArchivoOriginal",
+  "DescripcionProposito", "FormatoSoporte", "UbicacionOrigen", "ResponsableDocumento",
+  "CantidadRegistrosPaginas", "FrecuenciaUso", "FechaCreacionPeriodo", "NivelConfidencialidad",
+  "EstadoConservacion", "CategoriaDocumental", "EstadoDigitalizacion", "ExpedienteRelacionadoId",
+  "ObservacionesHistoricas", "FechaRegistro", "UsuarioRegistro", "InstitutionID",
+  "SubcategoriaDocumental", "ClaveOrigen"
+];
+const LEGACY_DOCUMENT_INVENTORY_HISTORY_HEADERS_ = [
+  "EventoId", "DocumentoId", "InstitutionID", "DepartamentoPropietario", "Accion",
+  "Campo", "ValorAnterior", "ValorNuevo", "ActorUserId", "ActorRole", "FechaCambio", "CorrelationId"
+];
+const LEGACY_DOCUMENT_INVENTORY_CATEGORIES_ = [
+  "REGISTROS_DE_DATOS", "PLANTILLAS", "DOCUMENTOS_HISTORICOS"
+];
+const LEGACY_DOCUMENT_INVENTORY_STATES_ = [
+  "Inventariado", "Pendiente_Revision", "Pendiente_Digitalizacion", "En_Proceso_Importacion",
+  "Importado", "Pendiente_Validacion", "Validado", "Requiere_Correccion", "Archivado", "Excluido_Migracion"
+];
+
+function getLegacyDocumentInventoryAccessContext_(payload, action) {
+  var role = getUserVerifiedRole(payload || {});
+  var actorId = String((payload && payload._verifiedUserId) || "").trim();
+  if (!actorId || !role || role === "NO_ACCESS") {
+    return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  }
+  var permission = validateRolePermission(action, payload);
+  if (!permission || permission.authorized !== true) {
+    return { status: "error", code: "AUTH_PERMISSION_DENIED" };
+  }
+  var scope = getUserContextScope(payload);
+  if (!scope || scope.status !== "success" || scope.authorized !== true) {
+    return { status: "error", code: scope && scope.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+  }
+  var institutionId = String(scope.institutionId || getIdentityInstitutionId_() || "").trim();
+  if (!institutionId) return { status: "error", code: "IDENTITY_CONFIGURATION_REQUIRED" };
+  var departmentIds = Array.isArray(scope.departmentIds) ? scope.departmentIds.map(function(id) {
+    return String(id || "").trim();
+  }).filter(Boolean) : [];
+  var canViewInstitution = scope.institutionWide === true &&
+    ["Director", "Administrador"].indexOf(role) !== -1;
+  if (!canViewInstitution && !departmentIds.length) {
+    return { status: "error", code: "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+  }
+  return {
+    status: "success", actorId: actorId, role: role, institutionId: institutionId,
+    departmentIds: departmentIds, institutionWide: canViewInstitution, scope: scope
+  };
+}
+
+function getLegacyDocumentDepartmentInfo_(ss, departmentId) {
+  var sheet = ss.getSheetByName("CatalogoDepartamentos");
+  if (!sheet) return { status: "error", code: "DEPARTMENT_CATALOG_NOT_INITIALIZED" };
+  var rows = sheet.getDataRange().getValues();
+  var expected = ["deptId", "nombre", "jefaturaUserId", "estado", "fechaCreacion"];
+  if (!rows.length || JSON.stringify(rows[0].slice(0, expected.length).map(String)) !== JSON.stringify(expected)) {
+    return { status: "error", code: "DEPARTMENT_CATALOG_SCHEMA_MISMATCH" };
+  }
+  var matches = rows.slice(1).filter(function(row) {
+    return String(row[0] || "").trim() === departmentId;
+  });
+  if (matches.length !== 1) return { status: "error", code: matches.length ? "DEPARTMENT_CATALOG_AMBIGUOUS" : "DEPARTMENT_NOT_FOUND" };
+  var state = String(matches[0][3] || "").trim().toUpperCase();
+  if (["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(state) === -1) {
+    return { status: "error", code: "DEPARTMENT_INACTIVE" };
+  }
+  return { status: "success", departmentId: departmentId, name: String(matches[0][1] || "").trim() };
+}
+
+function validateLegacyDocumentInventorySheet_(sheet, headers, errorCode) {
+  var actual = sheet.getRange(1, 1, 1, headers.length).getValues()[0].map(String);
+  if (JSON.stringify(actual) !== JSON.stringify(headers)) return { status: "error", code: errorCode };
+  if (typeof sheet.getLastColumn === "function" && sheet.getLastColumn() !== headers.length) {
+    return { status: "error", code: errorCode };
+  }
+  return { status: "success", sheet: sheet };
+}
+
+function ensureLegacyDocumentInventorySheet_(ss) {
+  var sheet = ss.getSheetByName("InventarioDocumentalLegado");
+  if (!sheet) sheet = ss.insertSheet("InventarioDocumentalLegado");
+  if (sheet.getLastRow() === 0) sheet.appendRow(LEGACY_DOCUMENT_INVENTORY_HEADERS_);
+  return validateLegacyDocumentInventorySheet_(sheet, LEGACY_DOCUMENT_INVENTORY_HEADERS_, "LEGACY_INVENTORY_SCHEMA_MISMATCH");
+}
+
+function getLegacyDocumentInventorySheet_(ss) {
+  var sheet = ss.getSheetByName("InventarioDocumentalLegado");
+  if (!sheet) return { status: "error", code: "LEGACY_INVENTORY_NOT_INITIALIZED" };
+  return validateLegacyDocumentInventorySheet_(sheet, LEGACY_DOCUMENT_INVENTORY_HEADERS_, "LEGACY_INVENTORY_SCHEMA_MISMATCH");
+}
+
+function ensureLegacyDocumentInventoryHistorySheet_(ss) {
+  var sheet = ss.getSheetByName("HistorialInventarioDocumentalLegado");
+  if (!sheet) sheet = ss.insertSheet("HistorialInventarioDocumentalLegado");
+  if (sheet.getLastRow() === 0) sheet.appendRow(LEGACY_DOCUMENT_INVENTORY_HISTORY_HEADERS_);
+  return validateLegacyDocumentInventorySheet_(sheet, LEGACY_DOCUMENT_INVENTORY_HISTORY_HEADERS_, "LEGACY_INVENTORY_HISTORY_SCHEMA_MISMATCH");
+}
+
+function appendLegacyDocumentInventoryHistory_(sheet, event) {
+  sheet.appendRow([
+    String(event.eventId || ""), String(event.documentId || ""), String(event.institutionId || ""),
+    String(event.departmentId || ""), String(event.action || ""), String(event.field || ""),
+    String(event.oldValue === undefined || event.oldValue === null ? "" : event.oldValue),
+    String(event.newValue === undefined || event.newValue === null ? "" : event.newValue),
+    String(event.actorId || ""), String(event.actorRole || ""), event.changedAt || new Date(),
+    String(event.correlationId || "")
+  ]);
+  return sheet.getLastRow();
+}
+
+function legacyDocumentInventorySafeCell_(value) {
+  if (value === null || value === undefined) return "";
+  if (value instanceof Date || typeof value === "number" || typeof value === "boolean") return value;
+  var text = String(value);
+  return /^[=+@-]/.test(text) ? "'" + text : text;
+}
+
+function legacyDocumentInventoryRowToObject_(row) {
+  var result = {};
+  LEGACY_DOCUMENT_INVENTORY_HEADERS_.forEach(function(header, index) {
+    var value = row[index];
+    result[header] = value instanceof Date ? value.toISOString() : (value === undefined ? "" : value);
+  });
+  return result;
+}
+
+function normalizeLegacyDocumentInventoryRecord_(input, previous) {
+  input = input || {};
+  previous = previous || {};
+  var has = function(key, alias) {
+    return Object.prototype.hasOwnProperty.call(input, key) ||
+      (alias && Object.prototype.hasOwnProperty.call(input, alias));
+  };
+  var value = function(key, alias, oldValue) {
+    if (Object.prototype.hasOwnProperty.call(input, key)) return input[key];
+    if (alias && Object.prototype.hasOwnProperty.call(input, alias)) return input[alias];
+    return oldValue;
+  };
+  var text = function(key, alias, oldValue, maxLength, required) {
+    var raw = value(key, alias, oldValue);
+    var normalized = String(raw === null || raw === undefined ? "" : raw).trim();
+    if (required && !normalized) return { error: key + "_REQUIRED" };
+    if (normalized.length > maxLength) return { error: key + "_TOO_LONG" };
+    return { value: normalized };
+  };
+  var result = {};
+  var definitions = [
+    ["areaResponsable", "AreaResponsable", previous.AreaResponsable, 120, true, "AreaResponsable"],
+    ["nombreArchivoOriginal", "NombreArchivoOriginal", previous.NombreArchivoOriginal, 255, true, "NombreArchivoOriginal"],
+    ["descripcionProposito", "DescripcionProposito", previous.DescripcionProposito, 2000, true, "DescripcionProposito"],
+    ["ubicacionOrigen", "UbicacionOrigen", previous.UbicacionOrigen, 500, true, "UbicacionOrigen"],
+    ["responsableDocumento", "ResponsableDocumento", previous.ResponsableDocumento, 180, true, "ResponsableDocumento"],
+    ["frecuenciaUso", "FrecuenciaUso", previous.FrecuenciaUso, 80, false, "FrecuenciaUso"],
+    ["fechaCreacionPeriodo", "FechaCreacionPeriodo", previous.FechaCreacionPeriodo, 50, false, "FechaCreacionPeriodo"],
+    ["nivelConfidencialidad", "NivelConfidencialidad", previous.NivelConfidencialidad, 50, true, "NivelConfidencialidad"],
+    ["estadoConservacion", "EstadoConservacion", previous.EstadoConservacion, 80, true, "EstadoConservacion"],
+    ["expedienteRelacionadoId", "ExpedienteRelacionadoId", previous.ExpedienteRelacionadoId, 120, false, "ExpedienteRelacionadoId"],
+    ["observacionesHistoricas", "ObservacionesHistoricas", previous.ObservacionesHistoricas, 2000, false, "ObservacionesHistoricas"],
+    ["subcategoriaDocumental", "SubcategoriaDocumental", previous.SubcategoriaDocumental, 120, false, "SubcategoriaDocumental"],
+    ["claveOrigen", "ClaveOrigen", previous.ClaveOrigen, 200, true, "ClaveOrigen"]
+  ];
+  for (var i = 0; i < definitions.length; i++) {
+    var item = definitions[i];
+    var normalized = text(item[0], item[1], item[2], item[3], item[4]);
+    if (normalized.error) return { status: "error", code: "VALIDATION_ERROR", field: item[0], detail: normalized.error };
+    result[item[5]] = normalized.value;
+  }
+
+  var formatRaw = String(value("formatoSoporte", "FormatoSoporte", previous.FormatoSoporte) || "").trim().toUpperCase();
+  var format = formatRaw.replace(/Í/g, "I").replace(/É/g, "E");
+  if (["FISICO", "DIGITAL", "MIXTO"].indexOf(format) === -1) {
+    return { status: "error", code: "VALIDATION_ERROR", field: "formatoSoporte", detail: "FORMATO_SOPORTE_INVALIDO" };
+  }
+  result.FormatoSoporte = format;
+
+  var categoryRaw = String(value("categoriaDocumental", "CategoriaDocumental", previous.CategoriaDocumental) || "").trim().toUpperCase();
+  categoryRaw = categoryRaw.replace(/Ó/g, "O").replace(/Í/g, "I").replace(/É/g, "E").replace(/[\s-]+/g, "_");
+  var category = LEGACY_DOCUMENT_INVENTORY_CATEGORIES_.indexOf(categoryRaw) !== -1 ? categoryRaw : "";
+  if (!category) return { status: "error", code: "VALIDATION_ERROR", field: "categoriaDocumental", detail: "CATEGORIA_DOCUMENTAL_INVALIDA" };
+  result.CategoriaDocumental = category;
+
+  var stateRaw = String(value("estadoDigitalizacion", "EstadoDigitalizacion", previous.EstadoDigitalizacion || "Inventariado") || "Inventariado").trim().toUpperCase();
+  var state = "";
+  for (var stateIndex = 0; stateIndex < LEGACY_DOCUMENT_INVENTORY_STATES_.length; stateIndex++) {
+    if (LEGACY_DOCUMENT_INVENTORY_STATES_[stateIndex].toUpperCase() === stateRaw) {
+      state = LEGACY_DOCUMENT_INVENTORY_STATES_[stateIndex];
+      break;
+    }
+  }
+  if (!state) return { status: "error", code: "VALIDATION_ERROR", field: "estadoDigitalizacion", detail: "ESTADO_DIGITALIZACION_INVALIDO" };
+  result.EstadoDigitalizacion = state;
+
+  var countRaw = value("cantidadRegistrosPaginas", "CantidadRegistrosPaginas", previous.CantidadRegistrosPaginas);
+  if (countRaw === "" || countRaw === null || countRaw === undefined) result.CantidadRegistrosPaginas = "";
+  else {
+    var count = Number(countRaw);
+    if (!isFinite(count) || count < 0 || Math.floor(count) !== count) {
+      return { status: "error", code: "VALIDATION_ERROR", field: "cantidadRegistrosPaginas", detail: "CANTIDAD_INVALIDA" };
+    }
+    result.CantidadRegistrosPaginas = count;
+  }
+  return { status: "success", data: result };
+}
+
+function getLegacyDocumentInventory(payload) {
+  try {
+    var access = getLegacyDocumentInventoryAccessContext_(payload, "getLegacyDocumentInventory");
+    if (access.status !== "success") return access;
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var read = getLegacyDocumentInventorySheet_(ss);
+    if (read.status !== "success") {
+      if (read.code === "LEGACY_INVENTORY_NOT_INITIALIZED") {
+        return { status: "success", data: [], total: 0, page: 1, pageSize: 100, hasMore: false, subcategories: [] };
+      }
+      return read;
+    }
+    var filters = payload && payload.filters || {};
+    var requestedDepartment = String(filters.departmentId || payload.departmentId || "").trim();
+    if (requestedDepartment && !access.institutionWide && access.departmentIds.indexOf(requestedDepartment) === -1) {
+      return { status: "error", code: "DEPARTMENT_SCOPE_ACCESS_DENIED" };
+    }
+    var rows = read.sheet.getDataRange().getValues();
+    var headers = LEGACY_DOCUMENT_INVENTORY_HEADERS_;
+    var indexes = {};
+    headers.forEach(function(header, index) { indexes[header] = index; });
+    var filtered = [];
+    for (var i = 1; i < rows.length; i++) {
+      var row = rows[i];
+      if (String(row[indexes.InstitutionID] || "") !== access.institutionId) continue;
+      var departmentId = String(row[indexes.DepartamentoPropietario] || "");
+      if (requestedDepartment && departmentId !== requestedDepartment) continue;
+      if (!access.institutionWide && access.departmentIds.indexOf(departmentId) === -1) continue;
+      var category = String(filters.categoriaDocumental || filters.category || "").trim().toUpperCase();
+      if (category && String(row[indexes.CategoriaDocumental] || "").toUpperCase() !== category) continue;
+      var format = String(filters.formatoSoporte || filters.format || "").trim().toUpperCase();
+      if (format && String(row[indexes.FormatoSoporte] || "").toUpperCase() !== format) continue;
+      var state = String(filters.estadoDigitalizacion || filters.state || "").trim().toUpperCase();
+      if (state && String(row[indexes.EstadoDigitalizacion] || "").toUpperCase() !== state) continue;
+      var responsible = String(filters.responsableDocumento || filters.responsible || "").trim().toLowerCase();
+      if (responsible && String(row[indexes.ResponsableDocumento] || "").toLowerCase().indexOf(responsible) === -1 &&
+          String(row[indexes.AreaResponsable] || "").toLowerCase().indexOf(responsible) === -1) continue;
+      var period = String(filters.periodo || filters.period || "").trim().toLowerCase();
+      if (period && String(row[indexes.FechaCreacionPeriodo] || "").toLowerCase().indexOf(period) === -1) continue;
+      filtered.push(row);
+    }
+    filtered.sort(function(a, b) {
+      var left = a[indexes.FechaRegistro] instanceof Date ? a[indexes.FechaRegistro].getTime() : new Date(a[indexes.FechaRegistro] || 0).getTime();
+      var right = b[indexes.FechaRegistro] instanceof Date ? b[indexes.FechaRegistro].getTime() : new Date(b[indexes.FechaRegistro] || 0).getTime();
+      return right - left;
+    });
+    var page = Math.max(1, Math.floor(Number(payload && payload.page) || 1));
+    var pageSize = Math.min(500, Math.max(1, Math.floor(Number(payload && payload.pageSize) || 100)));
+    var total = filtered.length;
+    var exportRequested = !!(payload && payload.export === true);
+    if (exportRequested && total > 5000) return { status: "error", code: "LEGACY_INVENTORY_EXPORT_LIMIT_EXCEEDED", total: total, limit: 5000 };
+    var selected = exportRequested ? filtered : filtered.slice((page - 1) * pageSize, page * pageSize);
+    var data = selected.map(legacyDocumentInventoryRowToObject_);
+    var subcategories = [];
+    filtered.forEach(function(row) {
+      var subcategory = String(row[indexes.SubcategoriaDocumental] || "").trim();
+      if (subcategory && subcategories.indexOf(subcategory) === -1) subcategories.push(subcategory);
+    });
+    var response = {
+      status: "success", data: data, total: total, page: page, pageSize: exportRequested ? total : pageSize,
+      hasMore: !exportRequested && page * pageSize < total,
+      scope: access.institutionWide ? "INSTITUCION" : "DEPARTAMENTOS_ASIGNADOS",
+      departmentIds: access.institutionWide ? [] : access.departmentIds,
+      subcategories: subcategories
+    };
+    if (exportRequested) {
+      var exportHeaders = LEGACY_DOCUMENT_INVENTORY_HEADERS_.filter(function(header) { return header !== "InstitutionID"; });
+      var csvRows = [exportHeaders.map(legacyDocumentInventoryCsvCell_).join(",")];
+      selected.forEach(function(row) {
+        csvRows.push(exportHeaders.map(function(header) { return legacyDocumentInventoryCsvCell_(row[indexes[header]]); }).join(","));
+      });
+      response.csv = csvRows.join("\r\n");
+      response.exportFormat = "CSV";
+    }
+    return response;
+  } catch (error) {
+    logStructuredEvent("USER", "getLegacyDocumentInventory", "ERROR", "LEGACY_INVENTORY_READ_FAILED", error.message, null, "Sistema");
+    return { status: "error", code: error.message || "LEGACY_INVENTORY_READ_FAILED" };
+  }
+}
+
+function legacyDocumentInventoryCsvCell_(value) {
+  var text = value instanceof Date ? value.toISOString() : String(value === null || value === undefined ? "" : value);
+  if (/^[=+@-]/.test(text)) text = "'" + text;
+  return '"' + text.replace(/"/g, '""') + '"';
+}
+
+function registerLegacyDocumentInventory(payload) {
+  var lock = null, inventoryRowNumber = 0, historyStartRow = 0, oldRow = null, created = false;
+  var inventorySheet = null, historySheet = null;
+  try {
+    var access = getLegacyDocumentInventoryAccessContext_(payload, "registerLegacyDocumentInventory");
+    if (access.status !== "success") return access;
+    lock = LockService.getScriptLock();
+    lock.waitLock(10000);
+    access = getLegacyDocumentInventoryAccessContext_(payload, "registerLegacyDocumentInventory");
+    if (access.status !== "success") return access;
+
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var inventoryResult = ensureLegacyDocumentInventorySheet_(ss);
+    if (inventoryResult.status !== "success") return inventoryResult;
+    inventorySheet = inventoryResult.sheet;
+    var historyResult = ensureLegacyDocumentInventoryHistorySheet_(ss);
+    if (historyResult.status !== "success") return historyResult;
+    historySheet = historyResult.sheet;
+
+    var input = payload && (payload.record || payload.document) || payload || {};
+    var documentId = String((payload && payload.documentId) || input.documentId || input.DocumentoId || "").trim();
+    var rows = inventorySheet.getDataRange().getValues();
+    var idIndex = LEGACY_DOCUMENT_INVENTORY_HEADERS_.indexOf("DocumentoId");
+    var institutionIndex = LEGACY_DOCUMENT_INVENTORY_HEADERS_.indexOf("InstitutionID");
+    var departmentIndex = LEGACY_DOCUMENT_INVENTORY_HEADERS_.indexOf("DepartamentoPropietario");
+    var keyIndex = LEGACY_DOCUMENT_INVENTORY_HEADERS_.indexOf("ClaveOrigen");
+    var existingMatches = [];
+    if (documentId) {
+      for (var rowIndex = 1; rowIndex < rows.length; rowIndex++) {
+        if (String(rows[rowIndex][idIndex] || "") === documentId &&
+            String(rows[rowIndex][institutionIndex] || "") === access.institutionId) {
+          existingMatches.push({ rowNumber: rowIndex + 1, row: rows[rowIndex] });
+        }
+      }
+      if (existingMatches.length !== 1) return { status: "error", code: existingMatches.length ? "LEGACY_DOCUMENT_ID_AMBIGUOUS" : "LEGACY_DOCUMENT_NOT_FOUND" };
+    }
+    var existing = existingMatches.length ? existingMatches[0] : null;
+    var previous = existing ? legacyDocumentInventoryRowToObject_(existing.row) : {};
+    var departmentId = String((payload && payload.departmentId) || input.departmentId ||
+      input.departamentoPropietario || input.DepartamentoPropietario || previous.DepartamentoPropietario || "").trim();
+    if (!departmentId) return { status: "error", code: "DEPARTMENT_ID_REQUIRED" };
+    if (!access.institutionWide && access.departmentIds.indexOf(departmentId) === -1) {
+      return { status: "error", code: "DEPARTMENT_SCOPE_ACCESS_DENIED" };
+    }
+    if (existing && String(existing.row[departmentIndex] || "") !== departmentId) {
+      return { status: "error", code: "LEGACY_DOCUMENT_OWNER_IMMUTABLE" };
+    }
+    var departmentInfo = getLegacyDocumentDepartmentInfo_(ss, departmentId);
+    if (departmentInfo.status !== "success") return departmentInfo;
+
+    var normalized = normalizeLegacyDocumentInventoryRecord_(input, previous);
+    if (normalized.status !== "success") return normalized;
+    var record = normalized.data;
+    var normalizedOriginKey = record.ClaveOrigen.toLowerCase().replace(/\s+/g, " ");
+    for (var duplicateIndex = 1; duplicateIndex < rows.length; duplicateIndex++) {
+      var candidate = rows[duplicateIndex];
+      if (String(candidate[institutionIndex] || "") !== access.institutionId ||
+          String(candidate[departmentIndex] || "") !== departmentId) continue;
+      var candidateKey = String(candidate[keyIndex] || "").trim().toLowerCase().replace(/\s+/g, " ");
+      if (candidateKey && candidateKey === normalizedOriginKey && String(candidate[idIndex] || "") !== documentId) {
+        return { status: "error", code: "LEGACY_DOCUMENT_ORIGIN_DUPLICATE", existingDocumentId: String(candidate[idIndex] || "") };
+      }
+    }
+
+    var now = new Date();
+    var finalDocumentId = documentId || ("LEG-" + Utilities.getUuid());
+    var row = [
+      finalDocumentId, departmentId, record.AreaResponsable, record.NombreArchivoOriginal,
+      record.DescripcionProposito, record.FormatoSoporte, record.UbicacionOrigen, record.ResponsableDocumento,
+      record.CantidadRegistrosPaginas, record.FrecuenciaUso, record.FechaCreacionPeriodo,
+      record.NivelConfidencialidad, record.EstadoConservacion, record.CategoriaDocumental,
+      record.EstadoDigitalizacion, record.ExpedienteRelacionadoId, record.ObservacionesHistoricas,
+      existing ? existing.row[17] : now, existing ? existing.row[18] : access.actorId,
+      access.institutionId, record.SubcategoriaDocumental, record.ClaveOrigen
+    ].map(legacyDocumentInventorySafeCell_);
+
+    var historyEvents = [];
+    if (!existing) {
+      historyEvents.push({ action: "CREATED", field: "DOCUMENTO", oldValue: "", newValue: JSON.stringify(legacyDocumentInventoryRowToObject_(row)), documentId: finalDocumentId });
+    } else {
+      var mutableHeaders = LEGACY_DOCUMENT_INVENTORY_HEADERS_.slice(2, 17).concat(["ClaveOrigen"]);
+      mutableHeaders.forEach(function(header) {
+        var index = LEGACY_DOCUMENT_INVENTORY_HEADERS_.indexOf(header);
+        var oldValue = existing.row[index] instanceof Date ? existing.row[index].toISOString() : String(existing.row[index] === undefined ? "" : existing.row[index]);
+        var newValue = row[index] instanceof Date ? row[index].toISOString() : String(row[index] === undefined ? "" : row[index]);
+        if (oldValue !== newValue) historyEvents.push({
+          action: "UPDATED", field: header, oldValue: oldValue, newValue: newValue, documentId: finalDocumentId
+        });
+      });
+      if (!historyEvents.length) return { status: "success", documentId: finalDocumentId, updated: false, idempotent: true };
+    }
+
+    if (existing) {
+      oldRow = existing.row.slice();
+      inventoryRowNumber = existing.rowNumber;
+      inventorySheet.getRange(inventoryRowNumber, 1, 1, LEGACY_DOCUMENT_INVENTORY_HEADERS_.length).setValues([row]);
+    } else {
+      inventorySheet.appendRow(row);
+      inventoryRowNumber = inventorySheet.getLastRow();
+      created = true;
+    }
+
+    historyStartRow = historySheet.getLastRow() + 1;
+    try {
+      historyEvents.forEach(function(event) {
+        appendLegacyDocumentInventoryHistory_(historySheet, {
+          eventId: "LEGH-" + Utilities.getUuid(), documentId: finalDocumentId,
+          institutionId: access.institutionId, departmentId: departmentId,
+          action: event.action, field: event.field, oldValue: event.oldValue, newValue: event.newValue,
+          actorId: access.actorId, actorRole: access.role, changedAt: now,
+          correlationId: String((payload && payload.correlationId) || "")
+        });
+      });
+    } catch (historyError) {
+      if (created && inventoryRowNumber) inventorySheet.deleteRow(inventoryRowNumber);
+      else if (oldRow && inventoryRowNumber) inventorySheet.getRange(inventoryRowNumber, 1, 1, LEGACY_DOCUMENT_INVENTORY_HEADERS_.length).setValues([oldRow]);
+      while (historySheet.getLastRow() >= historyStartRow) historySheet.deleteRow(historySheet.getLastRow());
+      throw historyError;
+    }
+
+    logStructuredEvent("USER", "registerLegacyDocumentInventory", "INFO", existing ? "LEGACY_DOCUMENT_UPDATED" : "LEGACY_DOCUMENT_REGISTERED",
+      "Se registró un cambio en el inventario documental legado.",
+      { documentId: finalDocumentId, departmentId: departmentId, category: record.CategoriaDocumental, state: record.EstadoDigitalizacion },
+      access.role);
+    return {
+      status: "success", documentId: finalDocumentId, created: created, updated: !!existing,
+      data: legacyDocumentInventoryRowToObject_(row)
+    };
+  } catch (error) {
+    logStructuredEvent("USER", "registerLegacyDocumentInventory", "ERROR", "LEGACY_DOCUMENT_INVENTORY_WRITE_FAILED",
+      error.message, null, "Sistema");
+    return { status: "error", code: error.message || "LEGACY_DOCUMENT_INVENTORY_WRITE_FAILED" };
+  } finally {
+    if (lock) {
+      try { lock.releaseLock(); } catch (releaseError) {}
+    }
+  }
+}
+
+
 function getUIMetadataCatalog(payload) {
   var role = getUserVerifiedRole(payload || {});
   if (!payload || !payload._verifiedUserId || !role || role === "NO_ACCESS") {
