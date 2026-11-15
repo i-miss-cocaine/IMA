@@ -6915,8 +6915,7 @@ function submitStudentAbsenceJustification(payload) {
       if (!/^JUST-[A-Za-z0-9-]{8,100}$/.test(id)) throw new Error("ABSENCE_REQUEST_ID_INVALID");
       var existingHash = String(existing.row[map.AdjuntoSHA256] || "").trim().toLowerCase();
       if (String(existing.row[map.MotivoJustificacion] || "").trim() !== motivo ||
-          (attachmentRecord && existingHash && existingHash !== String(attachmentRecord.sha256 || "").trim().toLowerCase()) ||
-          (attachmentRecord && !existingHash && String(existing.row[5] || "").trim())) {
+          (attachmentRecord && existingHash !== String(attachmentRecord.sha256 || "").trim().toLowerCase())) {
         if (attachment) { rollbackPrivateAttachment_(attachment, "submitStudentAbsenceJustification"); attachmentPersisted = true; }
         return { status: "error", code: "IDEMPOTENCY_CONFLICT", solicitudId: id };
       }
