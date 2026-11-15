@@ -54,17 +54,67 @@ function resolveAccountingIdentityFromSnapshot_(snapshot, sourceName, entityType
   return { valid: true, idNuevoPlataforma: match.idNuevoPlataforma, mapping: match };
 }
 
-function buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutionId, ss) {
+function requestAccountingTrustedOwnerSnapshot_(service, payload) {
+  var target = String(service || "").toUpperCase();
+  var propertyName = target === "USER" ? "IMA_USER_SERVICE_URL" : (target === "ACADEMIC" ? "IMA_ACADEMIC_SERVICE_URL" : "");
+  if (!propertyName) return { status: "error", code: "MIGRATION_OWNER_SERVICE_NOT_ALLOWED" };
+  var properties = PropertiesService.getScriptProperties();
+  var endpoint = String(properties.getProperty(propertyName) || "").trim();
+  var secret = String(properties.getProperty("IMA_MIGRATION_HMAC_SECRET") || "").trim();
+  if (!/^https:\/\/[^/]+\/exec$/i.test(endpoint) || secret.length < 32 || typeof UrlFetchApp === "undefined") {
+    return { status: "error", code: "MIGRATION_OWNER_SERVICE_NOT_CONFIGURED" };
+  }
+  var now = Date.now();
+  var requestId = "REQ-" + now + "-" + Utilities.getUuid().replace(/-/g, "").slice(0, 12);
+  var correlationId = "CORR-" + Utilities.getUuid().replace(/-/g, "");
+  var body = payload || {};
+  var bodyToSign = [requestId, now, correlationId, "ACCOUNTING", target, "getMigrationTargetExistenceSnapshot", JSON.stringify(body)].join("|");
+  var envelope = {
+    sourceService: "ACCOUNTING", targetService: target, action: "getMigrationTargetExistenceSnapshot",
+    requestId: requestId, timestamp: now, correlationId: correlationId, payload: body,
+    hmacSignature: accountingComputeHmacSignature_(bodyToSign, secret)
+  };
+  try {
+    var response = UrlFetchApp.fetch(endpoint, {
+      method: "post", contentType: "application/json", payload: JSON.stringify(envelope), muteHttpExceptions: true
+    });
+    var httpStatus = response.getResponseCode();
+    var parsed = {};
+    try { parsed = JSON.parse(response.getContentText() || "{}"); } catch (ignored) {}
+    if (httpStatus < 200 || httpStatus >= 300 || !parsed || parsed.status !== "success") {
+      return { status: "error", code: parsed && parsed.code || "MIGRATION_OWNER_SNAPSHOT_UNAVAILABLE" };
+    }
+    var data = parsed.data && typeof parsed.data === "object" ? parsed.data : parsed;
+    return Object.assign({}, data, { status: parsed.status });
+  } catch (error) {
+    return { status: "error", code: "MIGRATION_OWNER_SNAPSHOT_UNAVAILABLE" };
+  }
+}
+
+function buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutionId, ss, input) {
   var service = String(schema && schema.service || "").toUpperCase();
   var sheetName = String(schema && schema.sheet || "");
   var idField = schema && schema.headers && schema.headers[0] || "";
+  if (service === "ACADEMIC") {
+    var academicIds = (preparedRows || []).map(function(row) { return String(row && row[idField] || "").trim(); }).filter(Boolean);
+    var academicResult = requestAccountingTrustedOwnerSnapshot_("ACADEMIC", {
+      sessionToken: String(input && input.sessionToken || ""), institutionId: institutionId,
+      entityType: "estudiante", targetIds: academicIds
+    });
+    if (!academicResult || academicResult.status !== "success" || academicResult.verified !== true ||
+        academicResult.service !== "ACADEMIC" || academicResult.sheet !== "ExpedientesEstudiantes" ||
+        academicResult.idField !== "ExpedienteID" || String(academicResult.institutionId || "") !== String(institutionId) ||
+        !Array.isArray(academicResult.existingTargetIds)) {
+      return { verified: false, service: service, sheet: sheetName, institutionId: institutionId, existingTargetIds: [], targetRows: [] };
+    }
+    return { verified: true, service: service, sheet: sheetName, institutionId: institutionId,
+      idField: idField, existingTargetIds: academicResult.existingTargetIds.map(String).sort(), targetRows: [] };
+  }
   if (service !== "ACCOUNTING") {
     return { verified: false, service: service, sheet: sheetName, institutionId: institutionId, existingTargetIds: [], targetRows: [] };
   }
   var sheet = ss.getSheetByName(sheetName);
-  if (!sheet) {
-    return { verified: false, service: service, sheet: sheetName, institutionId: institutionId, existingTargetIds: [], targetRows: [] };
-  }
+  if (!sheet) return { verified: false, service: service, sheet: sheetName, institutionId: institutionId, existingTargetIds: [], targetRows: [] };
   var values = sheet.getDataRange().getValues();
   var headers = values.length ? values[0].map(function(value) { return String(value || "").trim(); }) : [];
   var idIndex = headers.indexOf(idField);
@@ -80,15 +130,32 @@ function buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutio
     headers.forEach(function(header, column) { if (header) item[header] = row[column]; });
     targetRows.push(item);
   }
-  return {
-    verified: true,
-    service: service,
-    sheet: sheetName,
-    institutionId: institutionId,
-    idField: idField,
-    existingTargetIds: Object.keys(ids).sort(),
-    targetRows: targetRows
-  };
+  return { verified: true, service: service, sheet: sheetName, institutionId: institutionId,
+    idField: idField, existingTargetIds: Object.keys(ids).sort(), targetRows: targetRows };
+}
+
+function buildAccountingRelatedPersonExistenceSnapshot_(preparedRows, entityType, institutionId, input) {
+  var type = String(entityType || "").toLowerCase();
+  var field = type === "estudiante" ? "PersonaID" : (type === "empleado" ? "PersonaId" : "");
+  if (!field) return { verified: true, service: "NOT_REQUIRED", sheet: "", institutionId: institutionId, idField: "", existingTargetIds: [], targetRows: [] };
+  var ids = [];
+  var seen = {};
+  (preparedRows || []).forEach(function(row) {
+    var id = String(row && row[field] || "").trim();
+    if (id && !seen[id]) { seen[id] = true; ids.push(id); }
+  });
+  if (!ids.length) return { verified: true, service: "USER", sheet: "Personas", institutionId: institutionId, idField: "PersonaID", existingTargetIds: [], targetRows: [] };
+  var result = requestAccountingTrustedOwnerSnapshot_("USER", {
+    sessionToken: String(input && input.sessionToken || ""), institutionId: institutionId,
+    entityType: "persona", targetIds: ids
+  });
+  if (!result || result.status !== "success" || result.verified !== true || result.service !== "USER" ||
+      result.sheet !== "Personas" || result.idField !== "PersonaID" ||
+      String(result.institutionId || "") !== String(institutionId) || !Array.isArray(result.existingTargetIds)) {
+    return { verified: false, service: "USER", sheet: "Personas", institutionId: institutionId, idField: "PersonaID", existingTargetIds: [], targetRows: [] };
+  }
+  return { verified: true, service: "USER", sheet: "Personas", institutionId: institutionId,
+    idField: "PersonaID", existingTargetIds: result.existingTargetIds.map(String).sort(), targetRows: [] };
 }
 
 function getVerifiedDepartmentScopeForSession_(payload) {
@@ -324,7 +391,7 @@ function buildImportPreview_(payload) {
     var item = { codigo: code, mensaje: message };
     if (rowNumber !== undefined && rowNumber !== null) item.fila = rowNumber;
     errors.push(item);
-    if (["DUPLICATE_HEADERS", "UNRESOLVED_FORMULAS", "REPEATED_HEADER_ROWS", "VISIBLE_SHEET_SELECTION_REQUIRED"].indexOf(code) !== -1) structuralBlockers.push(item);
+    if (["DUPLICATE_HEADERS", "UNRESOLVED_FORMULAS", "REPEATED_HEADER_ROWS", "VISIBLE_SHEET_SELECTION_REQUIRED", "TARGET_EXISTENCE_UNVERIFIED", "RELATED_REFERENCE_EXISTENCE_UNVERIFIED"].indexOf(code) !== -1) structuralBlockers.push(item);
   }
   function addWarning(code, message) { warnings.push({ severity: "WARNING", codigo: code, mensaje: message }); }
   if (identitySnapshot.uniquenessViolations.length) {
@@ -386,6 +453,9 @@ function buildImportPreview_(payload) {
         else prepared.PersonaID = person.idNuevoPlataforma;
       }
     }
+    if (entityType === "empleado" && !String(prepared.PersonaId || "").trim()) {
+      localErrors.push({ codigo: "RELATED_REFERENCE_MISSING", error: "RELATED_REFERENCE_MISSING", fila: originalRowNumber });
+    }
     Object.keys(prepared).forEach(function(field) {
       var value = prepared[field];
       if (value === "" || value === null || value === undefined) return;
@@ -406,7 +476,23 @@ function buildImportPreview_(payload) {
     }
   });
   errors = errors.concat(rowErrors);
-  var targetSnapshot = buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutionId, ss);
+  var targetSnapshot = buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutionId, ss, input);
+  var relatedReferenceSnapshot = buildAccountingRelatedPersonExistenceSnapshot_(preparedRows, entityType, institutionId, input);
+  if (targetSnapshot.verified !== true) addError("TARGET_EXISTENCE_UNVERIFIED", "No se pudo verificar el identificador de destino en el servicio propietario; la incorporación queda bloqueada.");
+  if (relatedReferenceSnapshot.verified !== true) addError("RELATED_REFERENCE_EXISTENCE_UNVERIFIED", "No se pudo verificar la existencia de las personas relacionadas en USER; la incorporación queda bloqueada.");
+  if (relatedReferenceSnapshot.verified === true && relatedReferenceSnapshot.service === "USER") {
+    var existingPeople = {};
+    (relatedReferenceSnapshot.existingTargetIds || []).forEach(function(id) { existingPeople[String(id)] = true; });
+    preparedRows.forEach(function(row, index) {
+      var relatedId = String(row && (entityType === "estudiante" ? row.PersonaID : row.PersonaId) || "").trim();
+      if (relatedId && !existingPeople[relatedId]) {
+        var sourceIndex = validIndexes[index];
+        var rowNumber = Array.isArray(structural.dataRowNumbers) && structural.dataRowNumbers[sourceIndex] ?
+          Number(structural.dataRowNumbers[sourceIndex]) : sourceIndex + 2;
+        addError("ORPHANED_REFERENCE", "La persona relacionada no existe en el servicio USER.", rowNumber);
+      }
+    });
+  }
   var existing = targetSnapshot.existingTargetIds || [];
   var overwrites = preparedRows.filter(function(row) { return existing.indexOf(String(row[targetIdField] || "")) !== -1; });
   overwrites.forEach(function() { addWarning("TARGET_RECORD_OVERWRITE", "El identificador de destino ya existe; se requiere revisar la sobrescritura."); });
@@ -431,6 +517,7 @@ function buildImportPreview_(payload) {
     errors: errors,
     warnings: warnings,
     target: targetSnapshotForHash,
+    relatedReferenceSnapshot: relatedReferenceSnapshot,
     fileHash: fileValidation.fileHash,
     structure: structural
   };
@@ -445,6 +532,7 @@ function buildImportPreview_(payload) {
     preparedRows: preparedRows,
     identityResolutions: identityResolutions,
     targetExistenceSnapshot: targetSnapshot,
+    relatedReferenceSnapshot: relatedReferenceSnapshot,
     previewHash: previewHash,
     errores: errors,
     advertencias: warnings,
@@ -453,6 +541,7 @@ function buildImportPreview_(payload) {
       advertencias: warnings.length,
       sobrescriturasDetectadas: overwrites.length,
       existenciaDestinoVerificada: targetSnapshot.verified,
+      referenciasRelacionadasVerificadas: relatedReferenceSnapshot.verified,
       requiereConfirmacion: errors.length > 0 || warnings.length > 0 || overwrites.length > 0
     },
     analisisEstructural: structural,
@@ -771,7 +860,7 @@ function getEmployeeDocuments(payload) {
 var SPREADSHEET_ID = PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID") || "";
 const MIGRATION_OWNER_SCHEMAS_={
   curso: { service: "ACCOUNTING", sheet: "Cursos", headers: ["CursoID", "Nombre", "Nota", "FechaInicio"] },
-  estudiante: { service: "ACADEMIC", sheet: "Estudiantes", headers: ["EstudianteID", "PersonaID"] },
+  estudiante: { service: "ACADEMIC", sheet: "ExpedientesEstudiantes", headers: ["ExpedienteID", "PersonaID"] },
   empleado: { service: "ACCOUNTING", sheet: "ExpedientesLaborales", departmentScoped: true, headers: ["ExpedienteID", "PersonaId", "UserId", "Puesto", "Departamento", "CentroCosto", "FechaIngreso", "FechaSalida", "EstadoLaboral", "Observaciones"] },
   empleadoOwnership: { service: "USER", sheet: "", headers: [] }
 };
