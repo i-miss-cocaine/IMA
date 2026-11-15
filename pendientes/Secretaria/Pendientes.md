@@ -1622,6 +1622,8 @@
 - **Avance C1.760:** los eventos nativos invalid/input/change ahora se capturan globalmente para mostrar el validationMessage junto al campo y limpiar el error cuando el control vuelve a ser válido, sin perder la ayuda permanente ni otras descripciones ARIA. El workflow ui-accessibility-contract.yml incorpora el test DOM nuevo y amplía sus filtros de rutas a los dashboards y scripts que consume.
 - **Ejecución CI:** la definición del workflow y los pasos Node 24 están registrados; el conector no expone los runs de push ni reporta check-runs para este commit. Por tanto, el Node CLI y el resultado de Actions siguen sin evidencia consultable en esta sesión.
 
+- **Prueba automatizada C1.761:** se conectó tests/security/ui-common-permanent-help.test.js a ui-accessibility-contract.yml y department-scope-contract.yml. El test de formularios ahora verifica también calificacion/edit-puntaje con 0–100 y step 0.01. GitHub Actions department-scope-contract SUCCESS en commit c92724908578f5acf02867e3d51ce24518800876; la nueva aserción de rangos quedó en un commit posterior y su ejecución está pendiente.
+
 ---
 
 <!-- ID: TASK-132 | Fuentes: Pendientes.md ; pendientes/Secretaria/Pendientes.md -->
