@@ -165,6 +165,13 @@ const payload = {
     "USER owner writes use the exact shared migration HMAC secret and canonical envelope");
   remoteResponse = { status: "error", code: "OWNER_DENIED" };
   assert.throws(() => runtime.api.send("USER", "registerMigratedResourceOwnership", {}), /OWNER_DENIED/);
+  const originalProperties = runtime.PropertiesService.getScriptProperties;
+  runtime.PropertiesService.getScriptProperties = () => ({ getProperty: key =>
+    key === "IMA_USER_SERVICE_URL" ? "https://evil.example/exec" :
+    key === "IMA_MIGRATION_HMAC_SECRET" ? secret : "" });
+  assert.throws(() => runtime.api.send("USER", "registerMigratedResourceOwnership", {}), /MIGRATION_OWNER_SERVICE_NOT_CONFIGURED/,
+    "arbitrary HTTPS endpoints are rejected before outbound requests");
+  runtime.PropertiesService.getScriptProperties = originalProperties;
 }
 assert.equal(lockCount, releaseCount, "all successful and failed write paths release their script lock");
 process.stdout.write("Accounting migration writer: insert/update, idempotency, compensation, tenant/permission isolation, formula safety and USER HMAC transport PASS.\n");
