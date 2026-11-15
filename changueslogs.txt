@@ -3857,3 +3857,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Añadidos canales de plataforma/correo con consentimiento explícito, modalidad institucional de acuse (explícito o automático por lectura con advertencia) y sincronización del estado de correo tras reintentos.
 - Reintentos de notificación serializados con ScriptLock y HTML escapado; historial de intentos documentales preservado.
 - Parseo USER/test PASS; GitHub Actions ima/department-scope-contract SUCCESS (Node 24). Cierre integral pendiente: IP cliente confiable, accounting-service vacío, proveedor push, múltiples adjuntos y BETA-FUNC-106.
+
+
+[2026-11-15] TASK-130 — C1.758 — Ayudas permanentes y errores inline
+- Mejorada la capa UI común: marcador visible para campos obligatorios y helpers de validación inline accesibles, preservando aria-describedby y la ayuda permanente.
+- Añadida ayuda de calificaciones 0–100 con step 0.01 en el dashboard docente, alineada con el auditor backend.
+- Añadida prueba DOM simulada para fallback, idempotencia, marcador required, ARIA, errores inline y cancelación de operaciones sensibles. Ejecución Node CLI/CI aún pendiente; no se atribuye PASS.
