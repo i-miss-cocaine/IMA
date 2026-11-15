@@ -1111,7 +1111,8 @@ function apiResponsePublicMessage_(code) {
     IMPORT_FILE_PACKAGE_INVALID: "El paquete XLSX está dañado o incompleto.",
     IMPORT_FILE_MACROS_NOT_ALLOWED: "No se permiten libros Excel con macros."
   };
-  return messages[String(code || "INTERNAL_ERROR")] || "No fue posible completar la solicitud.";
+  var key = String(code || "INTERNAL_ERROR");
+  return Object.prototype.hasOwnProperty.call(messages, key) ? messages[key] : "No fue posible completar la solicitud.";
 }
 
 function buildApiResponseEnvelope_(obj, correlationId, serviceName) {
@@ -1207,7 +1208,7 @@ function doPost(e) {
       MIGRATION_SCHEMA_MISMATCH: true, MIGRATION_FIELD_NOT_ALLOWED: true,
       MIGRATION_WRITE_CONTRACT_INVALID: true, DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED: true
     };
-    var safeCode = safeCodes[rawCode] ? rawCode : "INTERNAL_ERROR";
+    var safeCode = Object.prototype.hasOwnProperty.call(safeCodes, rawCode) ? rawCode : "INTERNAL_ERROR";
     return respond({ status: "error", code: safeCode,
       message: "No fue posible completar la solicitud." });
   }
