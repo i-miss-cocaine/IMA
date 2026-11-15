@@ -151,6 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Elementos de Navegación y Secciones ---
     const navDashboard = document.getElementById('nav-dashboard');
+    const navJustificaciones = document.getElementById('nav-justificaciones');
     const navGradebook = document.getElementById('nav-gradebook');
     const navAttendance = document.getElementById('nav-attendance');
     const navComunicados = document.getElementById('nav-comunicados');
@@ -166,6 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const navPlantillas = document.getElementById('nav-plantillas');
 
     const sectionAcademicReports = document.getElementById('section-dashboard');
+    const sectionJustificaciones = document.getElementById('section-justificaciones');
     const sectionGradebook = document.getElementById('section-gradebook');
     const sectionAttendance = document.getElementById('section-attendance');
     const sectionComunicados = document.getElementById('section-comunicados');
@@ -202,8 +204,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let isNavigating = false;
     let studentSort = { column: 'nombre', direction: 'asc' };
 
-    const allSections = [sectionAcademicReports, sectionGradebook, sectionAttendance, sectionComunicados, sectionOrientacion, sectionSupervision, sectionTareas, sectionProyectos, sectionLogros, sectionNews, sectionAdmin, sectionReportes, sectionPlantillas];
-    const allNavLinks = [navDashboard, navGradebook, navAttendance, navComunicados, navOrientacion, navSupervision, navTareas, navProyectos, navLogros, navNews, navAdmin, navReportsOld, navPlantillas];
+    const allSections = [sectionAcademicReports, sectionJustificaciones, sectionGradebook, sectionAttendance, sectionComunicados, sectionOrientacion, sectionSupervision, sectionTareas, sectionProyectos, sectionLogros, sectionNews, sectionAdmin, sectionReportes, sectionPlantillas];
+    const allNavLinks = [navDashboard, navJustificaciones, navGradebook, navAttendance, navComunicados, navOrientacion, navSupervision, navTareas, navProyectos, navLogros, navNews, navAdmin, navReportsOld, navPlantillas];
 
     // Auxiliar para normalizar strings (trim, lowercase y sin acentos) para comparaciones robustas
     const norm = (s) => (s || "").toString().trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -234,6 +236,122 @@ document.addEventListener('DOMContentLoaded', () => {
             history.pushState({ type: 'dashboard-section', sectionId: targetSection.id, navId: navElement.id }, '');
         }
     }
+
+    const escapeTeacherJustificationHtml = (value) => String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[char]));
+
+    async function loadTeacherStudentJustifications() {
+        const statusNode = document.getElementById('teacher-justification-status');
+        const bodyNode = document.getElementById('teacher-justifications-table-body');
+        if (!statusNode || !bodyNode) return;
+        statusNode.textContent = 'Consultando las justificaciones autorizadas para tus asignaciones...';
+        bodyNode.innerHTML = '<tr><td colspan="6" class="p-5 text-center text-gray-400">Cargando...</td></tr>';
+        try {
+            const response = await apiCall({ action: 'getTeacherStudentJustifications' }, 'ACADEMIC');
+            const rows = response && response.data && Array.isArray(response.data.data)
+                ? response.data.data
+                : (response && Array.isArray(response.data) ? response.data : []);
+            if (!response || response.status !== 'success') {
+                throw new Error(response && (response.message || response.code) || 'No fue posible consultar las justificaciones.');
+            }
+            if (!rows.length) {
+                statusNode.textContent = 'No hay justificaciones disponibles para tus asignaciones académicas.';
+                bodyNode.innerHTML = '<tr><td colspan="6" class="p-5 text-center text-gray-400">No hay registros.</td></tr>';
+                return;
+            }
+            statusNode.textContent = rows.length + ' justificación(es) dentro de tu ámbito académico.';
+            bodyNode.innerHTML = rows.map(item => {
+                const subjects = Array.isArray(item.asignaturas) ? item.asignaturas.join(', ') : '';
+                const sessions = Array.isArray(item.sesiones) ? item.sesiones : [];
+                const acknowledged = item.conocimientoCompleto === true;
+                const pendingSessionIds = sessions.filter(session => !session.conocimientoRegistrado).map(session => session.sesionId);
+                const pendingSessionAttribute = escapeTeacherJustificationHtml(JSON.stringify(pendingSessionIds));
+                const recordedTypes = Array.from(new Set(sessions.map(session => session.tipoConstancia).filter(Boolean)));
+                const sessionLabel = sessions.map(session => escapeTeacherJustificationHtml(
+                    session.asignaturaId + (session.horaInicio ? ' · ' + session.horaInicio : '')
+                )).join('<br>');
+                const ackButtons = acknowledged
+                    ? '<span class="text-xs text-emerald-700 font-semibold">Constancia registrada: ' + escapeTeacherJustificationHtml(recordedTypes.join(', ')) + '</span>'
+                    : [
+                        '<button type="button" data-teacher-justification-action="ack" data-tipo-constancia="CONOCIMIENTO" data-session-ids="' + pendingSessionAttribute + '" data-justification-id="' + escapeTeacherJustificationHtml(item.justificacionId) + '" class="px-3 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700">Registrar conocimiento</button>',
+                        '<button type="button" data-teacher-justification-action="ack" data-tipo-constancia="CONFORMIDAD" data-session-ids="' + pendingSessionAttribute + '" data-justification-id="' + escapeTeacherJustificationHtml(item.justificacionId) + '" class="ml-2 px-3 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700">Registrar conformidad</button>'
+                    ].join('');
+                const actions = [
+                    ackButtons,
+                    item.evidenciaDisponible === true
+                        ? '<button type="button" data-teacher-justification-action="evidence" data-justification-id="' + escapeTeacherJustificationHtml(item.justificacionId) + '" class="ml-2 px-3 py-2 rounded-lg text-xs font-semibold bg-amber-50 text-amber-800 hover:bg-amber-100">Ver evidencia autorizada</button>'
+                        : ''
+                ].join('');
+                return '<tr>' +
+                    '<td class="p-3 font-medium text-gray-800">' + escapeTeacherJustificationHtml(item.estudianteNombre || 'Estudiante') + '</td>' +
+                    '<td class="p-3 text-gray-600">' + escapeTeacherJustificationHtml((item.grado || '') + ' · ' + (item.seccion || '')) + '<br><span class="text-xs text-gray-400">' + escapeTeacherJustificationHtml(subjects || sessionLabel) + '</span></td>' +
+                    '<td class="p-3 text-gray-600">' + escapeTeacherJustificationHtml(item.fechaAfectada || '') + '<br><span class="text-xs text-gray-400">' + escapeTeacherJustificationHtml(item.periodo || '') + '</span></td>' +
+                    '<td class="p-3"><span class="inline-flex px-2 py-1 rounded-full bg-slate-100 text-slate-700 text-xs">' + escapeTeacherJustificationHtml(item.estado || 'Pendiente') + '</span></td>' +
+                    '<td class="p-3 text-gray-600 max-w-xs">' + escapeTeacherJustificationHtml(item.observacionesPublicas || '—') + '</td>' +
+                    '<td class="p-3 whitespace-nowrap">' + actions + '</td>' +
+                '</tr>';
+            }).join('');
+        } catch (error) {
+            statusNode.textContent = 'Error de consulta: ' + (error.message || 'Error desconocido');
+            bodyNode.innerHTML = '<tr><td colspan="6" class="p-5 text-center text-red-500">No fue posible cargar los registros.</td></tr>';
+        }
+    }
+
+    navJustificaciones?.addEventListener('click', () => {
+        window.navigateTo(sectionJustificaciones, navJustificaciones);
+        loadTeacherStudentJustifications();
+    });
+    document.getElementById('btn-refresh-justificaciones')?.addEventListener('click', loadTeacherStudentJustifications);
+    document.getElementById('teacher-justifications-table-body')?.addEventListener('click', async (event) => {
+        const button = event.target.closest('button[data-teacher-justification-action]');
+        if (!button || button.disabled) return;
+        const action = button.dataset.teacherJustificationAction;
+        const justificacionId = button.dataset.justificationId;
+        button.disabled = true;
+        const evidenceWindow = action === 'evidence' ? window.open('about:blank', '_blank') : null;
+        if (evidenceWindow) evidenceWindow.opener = null;
+        try {
+            if (action === 'ack') {
+                let sessionIds = [];
+                try { sessionIds = JSON.parse(button.dataset.sessionIds || '[]'); } catch (_) { throw new Error('La lista de sesiones no es válida.'); }
+                const response = await apiCall({
+                    action: 'acknowledgeTeacherStudentJustification',
+                    justificacionId,
+                    sesionIds: sessionIds,
+                    tipoConstancia: button.dataset.tipoConstancia || 'CONOCIMIENTO'
+                }, 'ACADEMIC');
+                if (!response || response.status !== 'success') throw new Error(response && (response.code || response.message) || 'No se pudo registrar el conocimiento.');
+                await loadTeacherStudentJustifications();
+                return;
+            }
+            if (action === 'evidence') {
+                const response = await apiCall({ action: 'getTeacherJustificationEvidence', justificacionId }, 'ACADEMIC');
+                const data = response && response.data && response.data.data ? response.data.data : response && response.data;
+                if (!response || response.status !== 'success' || !data || !data.base64) throw new Error(response && (response.code || response.message) || 'Evidencia no disponible.');
+                const binary = atob(data.base64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                const blob = new Blob([bytes], { type: data.mimeType });
+                const url = URL.createObjectURL(blob);
+                if (evidenceWindow) evidenceWindow.location.replace(url);
+                else {
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.target = '_blank';
+                    link.rel = 'noopener';
+                    link.click();
+                }
+                button.disabled = false;
+                setTimeout(() => URL.revokeObjectURL(url), 60000);
+            }
+        } catch (error) {
+            if (evidenceWindow) evidenceWindow.close();
+            const statusNode = document.getElementById('teacher-justification-status');
+            if (statusNode) statusNode.textContent = error.message || 'La operación no pudo completarse.';
+            button.disabled = false;
+        }
+    });
 
     navDashboard.addEventListener('click', () => {
         window.navigateTo(sectionAcademicReports, navDashboard);

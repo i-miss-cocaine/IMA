@@ -1557,3 +1557,23 @@ El archivo maestro histórico supera el umbral de rotación de 180.000 caractere
 ### Nota de configuración de cuentas — TASK-179
 - El plan de cuentas por defecto separa 2101 (retención obrera IHSS) de 2107 (proveedores); las obligaciones laborales utilizan 2101–2106 y 1105.
 - Para instituciones con un catálogo histórico donde 2101 aún sea Proveedores, el asiento de nómina se bloquea con PAYROLL_ACCOUNT_CODE_CONFLICT:2101 hasta que el administrador contable resuelva el mapeo. No se reescriben asientos históricos ni se migra el catálogo existente automáticamente.
+
+
+===============================================================================
+### BETA-FUNC-102 — F34-Task03 / TASK-107 — consulta docente ABAC de justificaciones
+- **Módulo/roles:** ACADEMIC, panel docente; Profesor/Docente, Secretaría y Administrador para preparación de datos de prueba.
+- **Objetivo:** comprobar que cada docente consulta solo las sesiones justificadas de estudiantes matriculados en sus ofertas/asignaturas y que las constancias de conocimiento no alteran la resolución administrativa.
+- **Precondiciones:** despliegue compatible de ACADEMIC y panel docente; datos sintéticos en AsignacionesDocentes, OfertaAcademica, Matriculas, PeriodosAcademicos, SesionesAsistencia, RegistrosAsistencia y JustificacionesAsistencia; un archivo PDF privado sintético en Drive; hoja ConfiguracionInstitucional con DOCENTE_VISIBILIDAD_EVIDENCIAS_MEDICAS=SOLO_DICTAMEN_SECRETARIA. No usar PII ni documentos médicos reales.
+- **Pasos:**
+  1. Crear dos docentes con ofertas/asignaturas distintas para el mismo grupo, un estudiante matriculado y una justificación que abarque ambas sesiones. Consultar como cada docente y comprobar que cada uno recibe solo su sesión asignada.
+  2. Crear un docente sin asignaciones, otro estudiante sin matrícula compatible y una asignación histórica con fechas; comprobar que no se expone el estudiante no matriculado y que el acceso histórico se limita a fechas cubiertas por la asignación.
+  3. Alterar manualmente JustificacionID, SesionID, UserId, OfertaID y parámetros de consulta; comprobar que no se amplía el ámbito ABAC ni se enumeran recursos ajenos.
+  4. Probar token ausente, token inválido, rol Estudiante/Asistente y docente sin relación; comprobar denegación y evento en RegistroEventos.
+  5. Revisar la respuesta JSON: nombre/grado/sección, fecha/período, estado, observaciones públicas y sesiones autorizadas; confirmar que no aparecen MotivoDeclarado, ObservacionesAdmin, AdjuntoUrl, datos clínicos ni identificadores internos del alumno.
+  6. Registrar CONOCIMIENTO y CONFORMIDAD; repetir la misma operación, enviar sesiones de otro docente, duplicar SesionID y ejecutar solicitudes concurrentes. Confirmar idempotencia, scope y que EstadoRevision de Secretaría permanece intacto.
+  7. Con SOLO_DICTAMEN_SECRETARIA, comprobar que no se expone ni descarga la evidencia. Cambiar la política a PERMITIR_VER_CONSTANCIA_MEDICA_COMPLETA mediante saveTeacherJustificationEvidencePolicy como Director/Administrador y comprobar acceso solo a archivos PDF/JPEG/PNG privados dentro del límite de tamaño; archivos públicos, eliminados o fuera de formato deben rechazarse.
+  8. Abrir la sección Justificaciones en el panel docente en escritorio y móvil; comprobar carga, vacío, error, constancia registrada y acceso a evidencia sin interferir con Entregas/Tareas.
+- **Resultado esperado:** aislamiento docente por identidad + asignación + oferta + matrícula + período + sesión; datos mínimos sin notas internas; auditoría de denegaciones; constancias idempotentes e independientes de la decisión de Secretaría; evidencia visible solo con política explícita y archivo privado.
+- **Evidencia requerida:** IDs sintéticos, snapshots de asignaciones/ofertas/matrículas/sesiones/justificaciones/constancias, respuestas sanitizadas por docente, eventos RegistroEventos, configuración sin datos sensibles, capturas responsive y hash/tipo/privacidad del archivo de prueba.
+- **Estado:** Pendiente beta; no se ha desplegado ni ejecutado contra Apps Script/Sheets/Drive reales.
+===============================================================================

@@ -6842,7 +6842,7 @@ function reviewAbsenceJustification(payload) {
   }
   var result = callAcademicAbsenceService_("reviewCanonicalAbsenceJustification", {
     justificacionId: justId, nuevoEstado: p.nuevoEstado,
-    observacionesAdmin: p.observacionesAdmin || "",
+    observacionesAdmin: p.observacionesAdmin || "", observacionesPublicas: p.observacionesPublicas || "",
     actorId: actorId, actorRole: actorRole, correlationId: String(p.correlationId || "")
   });
   if (!result || result.status !== "success") return result || { status: "error", code: "ABSENCE_INTERSERVICE_FAILED" };

@@ -117,6 +117,7 @@
             <nav class="flex flex-nowrap overflow-x-auto gap-2 md:gap-3 mb-6 pb-2 scroll-horizontal-clean">
                 <button id="nav-dashboard" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-blue-600 text-white">Entregas</button>
                 <button id="nav-reportes" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Reportes</button>
+                <button id="nav-justificaciones" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Justificaciones</button>
                 <button id="nav-tareas" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Actividades</button>
                 <button id="nav-proyectos" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Proyectos</button>
                 <button id="nav-logros" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Logros</button>
@@ -174,6 +175,36 @@
                         </tbody>
                     </table>
                 </div>
+            </section>
+
+            <!-- Consulta ABAC de justificaciones: datos mínimos por sesiones asignadas -->
+            <section id="section-justificaciones" class="hidden animate-fade-in-up">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-5">
+                    <div>
+                        <h2 class="text-2xl font-semibold text-gray-800">Justificaciones de asistencia</h2>
+                        <p class="text-sm text-gray-500 mt-1">Solo se muestran estudiantes y sesiones vinculados a tus asignaciones académicas, incluidos los registros históricos autorizados.</p>
+                    </div>
+                    <button id="btn-refresh-justificaciones" type="button" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700">Actualizar</button>
+                </div>
+                <p id="teacher-justification-status" class="text-sm text-gray-500 mb-3" role="status" aria-live="polite">Selecciona Actualizar para consultar tus grupos asignados.</p>
+                <div class="overflow-x-auto bg-white rounded-2xl border border-gray-100 shadow-sm">
+                    <table class="w-full min-w-[760px]">
+                        <thead class="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                            <tr>
+                                <th class="p-3 text-left">Estudiante</th>
+                                <th class="p-3 text-left">Grupo / Asignatura</th>
+                                <th class="p-3 text-left">Fecha / Período</th>
+                                <th class="p-3 text-left">Resolución</th>
+                                <th class="p-3 text-left">Observación pública</th>
+                                <th class="p-3 text-left">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teacher-justifications-table-body" class="divide-y divide-gray-100 text-sm">
+                            <tr><td colspan="6" class="p-5 text-center text-gray-400">Sin consulta realizada.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-xs text-gray-400 mt-3">Las notas administrativas internas y los motivos médicos no se muestran en esta bandeja. La evidencia clínica solo se habilita mediante la política institucional correspondiente.</p>
             </section>
 
             <!-- Sección de Tareas (Unificada) -->
@@ -1467,7 +1498,7 @@
     <script src="js/games-adapter.js?v=22"></script>
     <script src="js/ui-common.js?v=22"></script>
     <script src="js/data.js?v=22"></script>
-    <script src="js/teacher.js?v=22"></script>
+    <script src="js/teacher.js?v=23"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             if (window.setupCommonUI) window.setupCommonUI();

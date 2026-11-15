@@ -287,7 +287,7 @@ const ROLE_PERMISSIONS = {
   "Administrador": ["*"],
   "Director": [
     "getAcademicConfig", "updateAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "saveWhatsAppLink", "getQuestionBank", "saveQuestion", "generateMigrationReport", "registerStudentEnrollment", "getStudentEnrollmentHistory",
-    "getInstitutionParams", "saveInstitutionParam", "getAcademicYears", "createAcademicYear", "updateAcademicYearStatus", "prepareNewAcademicYear",
+    "getInstitutionParams", "saveInstitutionParam", "saveTeacherJustificationEvidencePolicy", "getAcademicYears", "createAcademicYear", "updateAcademicYearStatus", "prepareNewAcademicYear",
     "getAcademicPeriods", "manageAcademicPeriod", "getSubjectCatalog", "createSubjectCatalogItem", "getStudyPlans", "createStudyPlan",
     "getAcademicOffers", "createAcademicOffer", "getTeacherAssignments", "assignTeacherToClass", "createTeacherSubstitution",
     "getAcademicCalendar", "createCalendarEvent", "getClassSchedules", "createClassSchedule", "deleteClassSchedule", "getAcademicRules", "saveAcademicRule", "getDepartmentAcademicPlanning", "assignDepartmentHead", "getCurricularAnalyticsReport", "getReusableResourceCatalog", "manageReusableResource", "getCurricularEquivalences", "executeCurricularMigration", "registerCurricularAreaExtension", "runCurricularAreaServiceTests", "toggleCurricularAreaStatus", "validateApiContractsTestSuite", "getInstitutionalCatalog", "validateCatalogReference", "generateInstitutionalUUID", "validateInstitutionalIdentifier", "auditInstitutionalIdentifierCollisions", "runConcurrencyAndConsistencySuite", "getPaginatedAcademicHistory", "reconcileRestoredDataIntegrity", "evaluateTransactionalStorageMigrationNeed",
@@ -370,6 +370,7 @@ const ROLE_PERMISSIONS = {
     "runAcademicPlanningRegressionSuite",
     "saveCurricularConstraint", "getAcademicCalendar", "getClassSchedules", "createClassSchedule", "deleteClassSchedule", "getTeacherTeachingLoad", "recordClassSessionOutcome", "getTeachingHoursSummary", "rescheduleCancelledSession", "getPendingSessionRecoveries", "getIndividualCalendar", "getClassroomResources", "getStudentSchedule", "getReusableResourceCatalog", "manageReusableResource",
     "getStudentFile", "getStudentFileSummary", "getStudentTimeline", "getStudentEnrollments",
+    "getTeacherStudentJustifications", "acknowledgeTeacherStudentJustification", "getTeacherJustificationEvidence",
     "openAttendanceSession", "saveClassAttendance", "bulkApplyAttendanceStatus", "getBatchAttendanceRecords", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "reconcilePendingAttendanceJustifications", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary", "generateConsolidatedAttendanceAndCoexistenceReport",
     "getTeacherSupervisions", "getSupervisionObservation", "saveSupervisionObservation", "getTeacherImprovementPlans",
     "calculateUnifiedAcademicGrade", "previewAcademicGradeCalculation", "auditAcademicGradesIntegrity", "generateStudentReportCard", "validateAcademicResponsibilityAndScopeAccess", "exportAcademicGradesData",
@@ -756,6 +757,15 @@ function validateContextualAccess(action, payload, verifiedUserId, userRole) {
   return { authorized: true };
 }
 
+
+function auditTeacherJustificationDenied_(action,payload,role,code) {
+  if (["getTeacherStudentJustifications","acknowledgeTeacherStudentJustification","getTeacherJustificationEvidence","saveTeacherJustificationEvidencePolicy"].indexOf(String(action||""))===-1) return;
+  try {
+    var ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+    logTeacherJustificationAccessEvent_(ss,action,payload&&payload._verifiedUserId,role,code,payload&&payload.justificacionId,"DENIED");
+  } catch (_) {}
+}
+
 function validateRolePermission(action, payload) {
   if (PUBLIC_ACTIONS.indexOf(action) !== -1) return { authorized: true };
 
@@ -766,6 +776,7 @@ function validateRolePermission(action, payload) {
   if (token) {
     const claims = verifySessionToken(token);
     if (!claims) {
+      auditTeacherJustificationDenied_(action,payload,"Token Inválido/Expirado","SESSION_TOKEN_INVALID");
       return { authorized: false, role: "Token Inválido/Expirado" };
     }
     userRole = claims.role || "Estudiante";
@@ -775,6 +786,7 @@ function validateRolePermission(action, payload) {
       payload._verifiedRole = userRole;
     }
   } else {
+    auditTeacherJustificationDenied_(action,payload,"Sin Credenciales de Sesión","SESSION_REQUIRED");
     return { authorized: false, role: "Sin Credenciales de Sesión" };
   }
 
@@ -784,6 +796,7 @@ function validateRolePermission(action, payload) {
 
   const ctxCheck = validateContextualAccess(action, payload, verifiedUserId, userRole);
   if (!ctxCheck.authorized) {
+    auditTeacherJustificationDenied_(action,payload,userRole,"CONTEXT_SCOPE_DENIED");
     return { authorized: false, role: userRole + " (" + ctxCheck.reason + ")" };
   }
 
@@ -811,6 +824,7 @@ function validateRolePermission(action, payload) {
   }
 
   // [TAREA-AD-06] [Anexo Tareas: Seguridad y Roles] - Registro de auditoría de rechazo por defecto ante peticiones no autorizadas
+  auditTeacherJustificationDenied_(action,payload,userRole,"ROLE_PERMISSION_DENIED");
   try {
     logStructuredEvent("ACADEMIC", "validateRolePermission", "WARN", "UNAUTHORIZED_ACCESS_ATTEMPT", `Acceso no autorizado rechazado por defecto para rol '${userRole}' en acción '${action}'.`, { action: action, userId: verifiedUserId }, userRole);
   } catch (_) {}
@@ -1170,6 +1184,10 @@ function doPost(e) {
       case "getClassAttendance": result = getClassAttendance(payload); break;
       case "saveDailyAttendance": result = saveDailyAttendance(payload); break;
       case "getDailyAttendance": result = getDailyAttendance(payload); break;
+      case "getTeacherStudentJustifications": result = getTeacherStudentJustifications(payload); break;
+      case "acknowledgeTeacherStudentJustification": result = acknowledgeTeacherStudentJustification(payload); break;
+      case "getTeacherJustificationEvidence": result = getTeacherJustificationEvidence(payload); break;
+      case "saveTeacherJustificationEvidencePolicy": result = saveTeacherJustificationEvidencePolicy(payload); break;
       case "submitAttendanceJustification": result = submitAttendanceJustification(payload); break;
       case "reviewAttendanceJustification": result = reviewAttendanceJustification(payload); break;
       case "reconcilePendingAttendanceJustifications": result = reconcilePendingAttendanceJustifications(payload); break;
@@ -10176,7 +10194,7 @@ function getDailyAttendance(payload) {
 }
 
 
-const ABSENCE_JUSTIFICATION_HEADERS_ = ["JustificacionID","UserId","FechaAfectada","Periodo","MotivoDeclarado","AdjuntoUrl","PresentadoPor","EstadoRevision","RevisadoPor","ObservacionesAdmin","FechaResolucion","SolicitudID","SesionIDsJSON","DecisionHistoryJSON","SyncEstado","UltimoError","CreadoPorUserId","ActualizadoEn"];
+const ABSENCE_JUSTIFICATION_HEADERS_ = ["JustificacionID","UserId","FechaAfectada","Periodo","MotivoDeclarado","AdjuntoUrl","PresentadoPor","EstadoRevision","RevisadoPor","ObservacionesAdmin","FechaResolucion","SolicitudID","SesionIDsJSON","DecisionHistoryJSON","SyncEstado","UltimoError","CreadoPorUserId","ActualizadoEn","ObservacionesPublicas"];
 const ABSENCE_ATTENDANCE_HEADERS_ = ["RegistroID","SesionID","UserId","EstadoAsistencia","HoraLlegada","MinutosTardanza","Justificado","ObservacionDocente","FechaRegistro","JustificacionID"];
 const ABSENCE_REQUEST_EXTRA_HEADERS_ = ["JustificacionID","FechaAfectada","Periodo","SesionIDsJSON","SyncEstado","MotivoJustificacion","UltimoError"];
 
@@ -10468,6 +10486,7 @@ function reviewCanonicalAbsenceJustification_(payload) {
       row[map.DecisionHistoryJSON] = JSON.stringify(history);
       row[map.RevisadoPor] = actorId;
       row[map.ObservacionesAdmin] = String(p.observacionesAdmin || "");
+      row[map.ObservacionesPublicas] = String(p.observacionesPublicas || row[map.ObservacionesPublicas] || "").slice(0,2000);
       row[map.ActualizadoEn] = new Date();
       sheet.getRange(rowNumber, 1, 1, row.length).setValues([row]);
       try {
@@ -10490,6 +10509,7 @@ function reviewCanonicalAbsenceJustification_(payload) {
       row[map.SyncEstado] = "NO_REQUERIDA";
       row[map.RevisadoPor] = actorId;
       row[map.ObservacionesAdmin] = String(p.observacionesAdmin || "");
+      row[map.ObservacionesPublicas] = String(p.observacionesPublicas || row[map.ObservacionesPublicas] || "").slice(0,2000);
       row[map.DecisionHistoryJSON] = JSON.stringify(history);
       row[map.FechaResolucion] = target === "RequiereInformacion" ? "" : new Date();
       row[map.ActualizadoEn] = new Date();
@@ -10591,6 +10611,425 @@ function handleTrustedAbsenceJustificationEnvelope_(envelope) {
 
 
 // [F10-Task05] [P1] - Ampliar la gestión de justificaciones, permisos y salidas anticipadas
+
+const TEACHER_JUSTIFICATION_ACK_HEADERS_ = [
+  "ConstanciaID","JustificacionID","DocenteUserId","SesionID","TipoConstancia",
+  "FechaConocimiento","HashRegistro","Estado","CorrelationID"
+];
+
+function teacherJustificationNormalizeRole_(value) {
+  return String(value || "").trim().toUpperCase()
+    .replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I")
+    .replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N")
+    .replace(/[^A-Z0-9]/g,"");
+}
+
+function teacherJustificationHeaderMap_(sheet, required) {
+  if (!sheet || sheet.getLastRow() < 1 || sheet.getLastColumn() < 1) throw new Error("TEACHER_JUSTIFICATION_SCHEMA_INVALID");
+  var headers = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0].map(function(v){return String(v||"").trim();});
+  var map = {};
+  headers.forEach(function(name,index) {
+    if (!name) return;
+    if (Object.prototype.hasOwnProperty.call(map,name)) throw new Error("TEACHER_JUSTIFICATION_SCHEMA_DUPLICATE_HEADER");
+    map[name] = index;
+  });
+  required.forEach(function(name){if(!Object.prototype.hasOwnProperty.call(map,name))throw new Error("TEACHER_JUSTIFICATION_SCHEMA_INVALID");});
+  return map;
+}
+
+function teacherJustificationActiveState_(value) {
+  return ["ACTIVO","ACTIVA","ACTIVE","TRUE","1","CONFIRMADA","CONFIRMADO"].indexOf(String(value===true?"TRUE":value||"").trim().toUpperCase())!==-1;
+}
+
+function teacherJustificationAssignmentAllowsDate_(row, map, dateKey) {
+  var state = String(row[map.Estado] || "").trim().toUpperCase();
+  if (["REVOCADO","REVOCADA","CANCELADO","CANCELADA","ELIMINADO","ELIMINADA","ANULADO","ANULADA"].indexOf(state)!==-1) return false;
+  var start = map.FechaInicio >= 0 ? absenceDateKey_(row[map.FechaInicio]) : "";
+  var end = map.FechaFin >= 0 ? absenceDateKey_(row[map.FechaFin]) : "";
+  if (!start) return false;
+  if (["INACTIVO","INACTIVA","FINALIZADO","FINALIZADA","CERRADO","CERRADA","HISTORICO","HISTORICA"].indexOf(state)!==-1 && !end) return false;
+  if (start && dateKey < start) return false;
+  if (end && dateKey > end) return false;
+  return true;
+}
+
+function teacherJustificationEvidencePolicy_(ss) {
+  var sheet = ss.getSheetByName("ConfiguracionInstitucional");
+  if (!sheet || sheet.getLastRow() < 2) return "SOLO_DICTAMEN_SECRETARIA";
+  var rows = sheet.getDataRange().getValues();
+  var headers = (rows[0] || []).map(function(v){return String(v||"").trim().toLowerCase().replace(/[^a-z0-9]/g,"");});
+  var keyIndex = headers.indexOf("clave") >= 0 ? headers.indexOf("clave") :
+    (headers.indexOf("parametro") >= 0 ? headers.indexOf("parametro") : headers.indexOf("nombre"));
+  var valueIndex = headers.indexOf("valor");
+  var stateIndex = headers.indexOf("estado");
+  if (keyIndex < 0 || valueIndex < 0) return "SOLO_DICTAMEN_SECRETARIA";
+  var matches = rows.slice(1).filter(function(row){
+    if (String(row[keyIndex]||"").trim() !== "DOCENTE_VISIBILIDAD_EVIDENCIAS_MEDICAS") return false;
+    return stateIndex < 0 || !row[stateIndex] || teacherJustificationActiveState_(row[stateIndex]);
+  });
+  if (matches.length !== 1) return "SOLO_DICTAMEN_SECRETARIA";
+  var value = String(matches[0][valueIndex]||"").trim().toUpperCase();
+  return value === "PERMITIR_VER_CONSTANCIA_MEDICA_COMPLETA" ? value : "SOLO_DICTAMEN_SECRETARIA";
+}
+
+
+function saveTeacherJustificationEvidencePolicy(payload) {
+  var p=payload||{},actor=getVerifiedAcademicIdentity_(p);
+  if(!actor || actor.authorized!==true || !actor.userId || !actor.role)return {status:"error",code:"VERIFIED_IDENTITY_REQUIRED",httpStatus:403};
+  var role=teacherJustificationNormalizeRole_(actor.role);
+  if(["ADMINISTRADOR","DIRECTOR"].indexOf(role)===-1){
+    var deniedSS=SpreadsheetApp.openById(SPREADSHEET_ID);
+    logTeacherJustificationAccessEvent_(deniedSS,"saveTeacherJustificationEvidencePolicy",actor.userId,actor.role,"AUTH_PERMISSION_DENIED","","DENIED");
+    return {status:"error",code:"AUTH_PERMISSION_DENIED",httpStatus:403};
+  }
+  var value=String(p.valor||"").trim().toUpperCase();
+  if(["SOLO_DICTAMEN_SECRETARIA","PERMITIR_VER_CONSTANCIA_MEDICA_COMPLETA"].indexOf(value)===-1)return {status:"error",code:"TEACHER_EVIDENCE_POLICY_INVALID"};
+  var lock=LockService.getScriptLock();
+  try{lock.waitLock(10000);}catch(_){return {status:"error",code:"LOCK_TIMEOUT",retryable:true};}
+  try{
+    var ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet=ss.getSheetByName("ConfiguracionInstitucional");
+    if(!sheet)sheet=ss.insertSheet("ConfiguracionInstitucional");
+    var existingHeaders=sheet.getLastColumn()>0?sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0].map(function(v){return String(v||"").trim();}):[];
+    var keyHeader=existingHeaders.indexOf("Clave")!==-1?"Clave":(existingHeaders.indexOf("Parametro")!==-1?"Parametro":(existingHeaders.indexOf("Nombre")!==-1?"Nombre":"Clave"));
+    var map=ensureAbsenceHeaders_(sheet,[keyHeader,"Valor","Estado","ActualizadoPor","ActualizadoEn"]);
+    var rows=sheet.getDataRange().getValues(),matches=[];
+    for(var i=1;i<rows.length;i++)if(String(rows[i][map[keyHeader]]||"").trim()==="DOCENTE_VISIBILIDAD_EVIDENCIAS_MEDICAS")matches.push(i);
+    if(matches.length>1)return {status:"error",code:"TEACHER_EVIDENCE_POLICY_AMBIGUOUS"};
+    if(matches.length===1){
+      sheet.getRange(matches[0]+1,map.Valor+1).setValue(value);
+      sheet.getRange(matches[0]+1,map.Estado+1).setValue("Activo");
+      sheet.getRange(matches[0]+1,map.ActualizadoPor+1).setValue(actor.userId);
+      sheet.getRange(matches[0]+1,map.ActualizadoEn+1).setValue(new Date());
+    }else{
+      var row=new Array(sheet.getLastColumn()).fill("");
+      row[map[keyHeader]]="DOCENTE_VISIBILIDAD_EVIDENCIAS_MEDICAS";
+      row[map.Valor]=value;row[map.Estado]="Activo";
+      row[map.ActualizadoPor]=actor.userId;row[map.ActualizadoEn]=new Date();
+      sheet.appendRow(row);
+    }
+    logTeacherJustificationAccessEvent_(ss,"saveTeacherJustificationEvidencePolicy",actor.userId,actor.role,"TEACHER_EVIDENCE_POLICY_UPDATED","","SUCCESS");
+    return {status:"success",data:{clave:"DOCENTE_VISIBILIDAD_EVIDENCIAS_MEDICAS",valor:value}};
+  }catch(error){return {status:"error",code:error.message||"TEACHER_EVIDENCE_POLICY_SAVE_FAILED"};}
+  finally{lock.releaseLock();}
+}
+
+function logTeacherJustificationAccessEvent_(ss, action, actorId, actorRole, code, resourceId, result) {
+  try {
+    var sheet = ss.getSheetByName("RegistroEventos");
+    if (!sheet) {
+      sheet = ss.insertSheet("RegistroEventos");
+      sheet.appendRow(["EventoID","Fecha","Servicio","Accion","ActorID","Rol","Codigo","RecursoID","Resultado","DetallesJSON"]);
+    }
+    var map = ensureAbsenceHeaders_(sheet, ["EventoID","Fecha","Servicio","Accion","ActorID","Rol","Codigo","RecursoID","Resultado","DetallesJSON"]);
+    var row = new Array(sheet.getLastColumn()).fill("");
+    row[map.EventoID] = "EVT-TEACHER-JUST-" + Utilities.getUuid();
+    row[map.Fecha] = new Date().toISOString();
+    row[map.Servicio] = "ACADEMIC";
+    row[map.Accion] = String(action||"");
+    row[map.ActorID] = String(actorId||"");
+    row[map.Rol] = String(actorRole||"");
+    row[map.Codigo] = String(code||"");
+    row[map.RecursoID] = String(resourceId||"");
+    row[map.Resultado] = String(result||"");
+    row[map.DetallesJSON] = JSON.stringify({source:"F34-Task03"});
+    sheet.appendRow(row);
+  } catch (error) {
+    try { logStructuredEvent("ACADEMIC", action, "WARN", "TEACHER_JUSTIFICATION_AUDIT_WRITE_FAILED", "No se pudo persistir el evento de acceso docente.", {resourceId:String(resourceId||""),code:String(code||"")}, actorRole); } catch (_) {}
+  }
+}
+
+function resolveTeacherJustificationScope_(payload, requestedJustificationId) {
+  var request = payload || {};
+  var actor = getVerifiedAcademicIdentity_(request);
+  if (!actor || actor.authorized !== true || !actor.userId || !actor.role) {
+    return {status:"error",code:"VERIFIED_IDENTITY_REQUIRED",httpStatus:403};
+  }
+  var role = teacherJustificationNormalizeRole_(actor.role);
+  if (["PROFESOR","DOCENTE","MAESTRO"].indexOf(role) === -1) {
+    var deniedSS = SpreadsheetApp.openById(SPREADSHEET_ID);
+    logTeacherJustificationAccessEvent_(deniedSS,"getTeacherStudentJustifications",actor.userId,actor.role,"TEACHER_ROLE_REQUIRED",requestedJustificationId,"DENIED");
+    return {status:"error",code:"AUTH_PERMISSION_DENIED",httpStatus:403};
+  }
+
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var assignmentSheet = ss.getSheetByName("AsignacionesDocentes");
+  var offerSheet = ss.getSheetByName("OfertaAcademica");
+  var enrollmentSheet = ss.getSheetByName("Matriculas");
+  var sessionSheet = ss.getSheetByName("SesionesAsistencia");
+  var attendanceSheet = ss.getSheetByName("RegistrosAsistencia");
+  var periodSheet = ss.getSheetByName("PeriodosAcademicos");
+  var justificationSheet = ss.getSheetByName("JustificacionesAsistencia");
+  if (!assignmentSheet || !offerSheet || !enrollmentSheet || !sessionSheet || !attendanceSheet || !periodSheet || !justificationSheet) {
+    return {status:"success",data:[],policy:teacherJustificationEvidencePolicy_(ss)};
+  }
+
+  var assignmentMap = teacherJustificationHeaderMap_(assignmentSheet,["AsignacionID","OfertaID","DocenteUserId","Estado"]);
+  var assignmentRows = assignmentSheet.getDataRange().getValues().slice(1);
+  var assignmentIdCounts=Object.create(null);
+  assignmentRows.forEach(function(row){var id=String(row[assignmentMap.AsignacionID]||"").trim();if(id)assignmentIdCounts[id]=(assignmentIdCounts[id]||0)+1;});
+  var offerMap = getAcademicOfferColumnMap(offerSheet,false);
+  var offerRows = offerSheet.getDataRange().getValues().slice(1);
+  var offerById = Object.create(null);
+  offerRows.forEach(function(row){
+    var id = String(getAcademicOfferValue(row,offerMap,"ofertaId","")||"").trim();
+    if (!id) return;
+    if (Object.prototype.hasOwnProperty.call(offerById,id)) { offerById[id] = null; return; }
+    else offerById[id] = {
+      id:id,year:String(getAcademicOfferValue(row,offerMap,"anoId","")||"").trim(),
+      grade:String(getAcademicOfferValue(row,offerMap,"grado","")||"").trim(),
+      section:String(getAcademicOfferValue(row,offerMap,"seccion","")||"").trim(),
+      subject:String(getAcademicOfferValue(row,offerMap,"asignaturaId","")||"").trim(),
+      state:String(getAcademicOfferValue(row,offerMap,"estado","")||"").trim().toUpperCase()
+    };
+  });
+  var assignedOffers = Object.create(null);
+  assignmentRows.forEach(function(row){
+    var assignmentId=String(row[assignmentMap.AsignacionID]||"").trim();
+    if(!assignmentId || assignmentIdCounts[assignmentId]!==1) return;
+    if (String(row[assignmentMap.DocenteUserId]||"").trim() !== actor.userId) return;
+    var state = String(row[assignmentMap.Estado]||"").trim().toUpperCase();
+    if (["ACTIVO","ACTIVA","INACTIVO","INACTIVA","FINALIZADO","FINALIZADA","CERRADO","CERRADA","HISTORICO","HISTORICA"].indexOf(state)===-1) return;
+    var offerId = String(row[assignmentMap.OfertaID]||"").trim();
+    if (offerId && offerById[offerId]) {
+      if (!assignedOffers[offerId]) assignedOffers[offerId]=[];
+      assignedOffers[offerId].push(row);
+    }
+  });
+  if (!Object.keys(assignedOffers).length) return {status:"success",data:[],policy:teacherJustificationEvidencePolicy_(ss)};
+
+  var enrollmentMap = teacherJustificationHeaderMap_(enrollmentSheet,["MatriculaID","UserId","Alumno","Grado","Seccion","Periodo","Estado"]);
+  var enrollmentRows = enrollmentSheet.getDataRange().getValues().slice(1);
+  var periodMap = teacherJustificationHeaderMap_(periodSheet,["PeriodoID","AnoID","Nombre"]);
+  var periodRows = periodSheet.getDataRange().getValues().slice(1);
+  var periods = Object.create(null);
+  periodRows.forEach(function(row){
+    var id=String(row[periodMap.PeriodoID]||"").trim();
+    if(!id)return;
+    if(Object.prototype.hasOwnProperty.call(periods,id)){periods[id]=null;return;}
+    else periods[id]={year:String(row[periodMap.AnoID]||"").trim(),name:String(row[periodMap.Nombre]||"").trim(),
+      start:periodMap.FechaInicio===undefined?"":absenceDateKey_(row[periodMap.FechaInicio]),
+      end:periodMap.FechaFin===undefined?"":absenceDateKey_(row[periodMap.FechaFin])};
+  });
+  var sessionMap = teacherJustificationHeaderMap_(sessionSheet,["SesionID","Fecha","Grado","Seccion","AsignaturaID","DocenteUserId"]);
+  var sessionRows = sessionSheet.getDataRange().getValues().slice(1);
+  var sessions = Object.create(null);
+  sessionRows.forEach(function(row){
+    var id=String(row[sessionMap.SesionID]||"").trim();
+    if(!id)return;
+    if(Object.prototype.hasOwnProperty.call(sessions,id)){sessions[id]=null;return;}
+    else sessions[id]={id:id,date:absenceDateKey_(row[sessionMap.Fecha]),grade:String(row[sessionMap.Grado]||"").trim(),
+      section:String(row[sessionMap.Seccion]||"").trim(),subject:String(row[sessionMap.AsignaturaID]||"").trim(),
+      teacher:String(row[sessionMap.DocenteUserId]||"").trim(),start:row[sessionMap.HoraInicio],end:row[sessionMap.HoraFin]};
+  });
+  var attendanceMap = teacherJustificationHeaderMap_(attendanceSheet,["SesionID","UserId","EstadoAsistencia"]);
+  var attendanceRows = attendanceSheet.getDataRange().getValues().slice(1);
+  var attendanceCounts = Object.create(null), attendanceStateByKey = Object.create(null), attendanceJustificationByKey = Object.create(null);
+  attendanceRows.forEach(function(row){
+    var key=String(row[attendanceMap.UserId]||"").trim()+"|"+String(row[attendanceMap.SesionID]||"").trim();
+    attendanceCounts[key]=(attendanceCounts[key]||0)+1;
+    attendanceStateByKey[key]=String(row[attendanceMap.EstadoAsistencia]||"").trim().toUpperCase();
+    attendanceJustificationByKey[key]=attendanceMap.JustificacionID===undefined?"":String(row[attendanceMap.JustificacionID]||"").trim();
+  });
+
+  var enrollmentIdCounts=Object.create(null);
+  enrollmentRows.forEach(function(row){var id=String(row[enrollmentMap.MatriculaID]||"").trim();if(id)enrollmentIdCounts[id]=(enrollmentIdCounts[id]||0)+1;});
+  var enrollmentIndex = Object.create(null);
+  enrollmentRows.forEach(function(row){
+    var enrollmentId=String(row[enrollmentMap.MatriculaID]||"").trim();
+    if(!enrollmentId || enrollmentIdCounts[enrollmentId]!==1)return;
+    var state=String(row[enrollmentMap.Estado]||"").trim().toUpperCase();
+    if(["ACTIVA","ACTIVO","CONFIRMADA","CONFIRMADO","FINALIZADA","FINALIZADO","RETIRADA","RETIRADO","TRASLADADA","TRASLADADO","GRADUADA","GRADUADO"].indexOf(state)===-1)return;
+    var key=[String(row[enrollmentMap.UserId]||"").trim(),String(row[enrollmentMap.Periodo]||"").trim(),
+      String(row[enrollmentMap.Grado]||"").trim(),String(row[enrollmentMap.Seccion]||"").trim()].join("|");
+    if(!key.replace(/\|/g,""))return;
+    if(!enrollmentIndex[key])enrollmentIndex[key]={count:0,row:row};
+    enrollmentIndex[key].count++;
+  });
+
+  var justMap = absenceSheetMap_(justificationSheet,ABSENCE_JUSTIFICATION_HEADERS_);
+  var justRows = justificationSheet.getDataRange().getValues();
+  var policy = teacherJustificationEvidencePolicy_(ss);
+  var acknowledgements = Object.create(null);
+  var ackSheet = ss.getSheetByName("ConstanciasConocimientoDocente");
+  if (ackSheet && ackSheet.getLastRow()>1) {
+    var ackMap = teacherJustificationHeaderMap_(ackSheet,["JustificacionID","DocenteUserId","SesionID","Estado"]);
+    ackSheet.getDataRange().getValues().slice(1).forEach(function(row){
+      if(String(row[ackMap.DocenteUserId]||"").trim()!==actor.userId || String(row[ackMap.Estado]||"").trim().toUpperCase()!=="ACTIVA")return;
+      acknowledgements[String(row[ackMap.JustificacionID]||"").trim()+"|"+String(row[ackMap.SesionID]||"").trim()]=String(row[ackMap.TipoConstancia]||"CONOCIMIENTO").trim().toUpperCase();
+    });
+  }
+
+  var justificationIdCounts=Object.create(null);
+  justRows.slice(1).forEach(function(row){var id=String(row[justMap.JustificacionID]||"").trim();if(id)justificationIdCounts[id]=(justificationIdCounts[id]||0)+1;});
+  var result=[];
+  for(var j=1;j<justRows.length;j++){
+    var row=justRows[j], justId=String(row[justMap.JustificacionID]||"").trim();
+    if(!justId || justificationIdCounts[justId]!==1 || (requestedJustificationId && justId!==String(requestedJustificationId).trim()))continue;
+    var dateKey=absenceDateKey_(row[justMap.FechaAfectada]);
+    var periodId=String(row[justMap.Periodo]||"").trim();
+    var period=periods[periodId];
+    var studentId=String(row[justMap.UserId]||"").trim();
+    if(!dateKey || !period || !period.year || !studentId)continue;
+    if(!period.start || !period.end || dateKey<period.start || dateKey>period.end)continue;
+    var rawSessions;
+    try{rawSessions=JSON.parse(String(row[justMap.SesionIDsJSON]||"[]"));}catch(_){continue;}
+    if(!Array.isArray(rawSessions) || !rawSessions.length)continue;
+    rawSessions=rawSessions.map(function(value){return String(value||"").trim();}).filter(Boolean);
+    if(new Set(rawSessions).size!==rawSessions.length)continue;
+    var visibleSessions=[];
+    rawSessions.forEach(function(sessionId){
+      sessionId=String(sessionId||"").trim();
+      var session=sessions[sessionId];
+      if(!session || session.teacher!==actor.userId || session.date!==dateKey)return;
+      var candidates=Object.keys(assignedOffers).filter(function(offerId){
+        var offer=offerById[offerId];
+        return offer && ["ACTIVA","ACTIVO","INACTIVA","INACTIVO","CERRADA","CERRADO","FINALIZADA","FINALIZADO"].indexOf(offer.state)!==-1 &&
+          offer.year===period.year && offer.grade===session.grade && offer.section===session.section &&
+          offer.subject===session.subject && assignedOffers[offerId].some(function(assignmentRow){
+            return teacherJustificationAssignmentAllowsDate_(assignmentRow,{
+              Estado:assignmentMap.Estado,
+              FechaInicio:assignmentMap.FechaInicio===undefined?-1:assignmentMap.FechaInicio,
+              FechaFin:assignmentMap.FechaFin===undefined?-1:assignmentMap.FechaFin
+            },dateKey);
+          });
+      });
+      if(candidates.length!==1)return;
+      var offerId=candidates[0];
+      var enrollmentKey=[studentId,period.year,session.grade,session.section].join("|");
+      var enrollment=enrollmentIndex[enrollmentKey];
+      if(!enrollment || enrollment.count!==1)return;
+      var attendanceKey=studentId+"|"+sessionId;
+      var attendanceState=attendanceStateByKey[attendanceKey];
+      if(attendanceCounts[attendanceKey]!==1 || ["AUSENTE","AUSENCIA","FALTA","INASISTENCIA","TARDANZA","TARDE","LATE","ABSENT"].indexOf(attendanceState)===-1)return;
+      var linkedJustification=attendanceJustificationByKey[attendanceKey];
+      if(linkedJustification && linkedJustification!==justId)return;
+      visibleSessions.push({sesionId:sessionId,asignaturaId:session.subject,fecha:session.date,
+        horaInicio:session.start||"",horaFin:session.end||"",
+        tipoConstancia:acknowledgements[justId+"|"+sessionId]||"",
+        conocimientoRegistrado:!!acknowledgements[justId+"|"+sessionId]});
+    });
+    if(!visibleSessions.length)continue;
+    var firstSession=sessions[visibleSessions[0].sesionId];
+    var enrollmentRecord=enrollmentIndex[[studentId,period.year,firstSession.grade,firstSession.section].join("|")];
+    if(!enrollmentRecord || enrollmentRecord.count!==1)continue;
+    var publicNotes=justMap.ObservacionesPublicas!==undefined?String(row[justMap.ObservacionesPublicas]||""):"";
+    var dto={
+      justificacionId:justId,estudianteNombre:String(enrollmentRecord.row[enrollmentMap.Alumno]||""),
+      fechaAfectada:dateKey,periodo:period.name||periodId,estado:String(row[justMap.EstadoRevision]||"Pendiente"),
+      observacionesPublicas:publicNotes,sesiones:visibleSessions,
+      evidenciaDisponible:policy==="PERMITIR_VER_CONSTANCIA_MEDICA_COMPLETA" && !!String(row[justMap.AdjuntoUrl]||"").trim(),
+      grado:firstSession.grade,seccion:firstSession.section
+    };
+    dto.asignaturas=Array.from(new Set(visibleSessions.map(function(item){return item.asignaturaId;})));
+    dto.conocimientoCompleto=visibleSessions.every(function(item){return item.conocimientoRegistrado;});
+    result.push(dto);
+  }
+  result.sort(function(a,b){return a.fechaAfectada.localeCompare(b.fechaAfectada)||a.estudianteNombre.localeCompare(b.estudianteNombre);});
+  return {status:"success",data:result,policy:policy};
+}
+
+function teacherJustificationSha256_(value) {
+  var bytes=Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,String(value||""),Utilities.Charset.UTF_8);
+  return bytes.map(function(b){return ("0"+(b&255).toString(16)).slice(-2);}).join("");
+}
+
+function getTeacherStudentJustifications(payload) {
+  var resolved;
+  try{resolved=resolveTeacherJustificationScope_(payload,"");}
+  catch(error){
+    try{logTeacherJustificationAccessEvent_(SpreadsheetApp.openById(SPREADSHEET_ID),"getTeacherStudentJustifications",payload&&payload._verifiedUserId,payload&&payload._verifiedRole,error.message||"SCOPE_ERROR","","DENIED");}catch(_){}
+    return {status:"error",code:"TEACHER_JUSTIFICATION_SCOPE_UNAVAILABLE"};
+  }
+  if(!resolved || resolved.status!=="success")return resolved||{status:"error",code:"TEACHER_JUSTIFICATION_SCOPE_UNAVAILABLE"};
+  return resolved;
+}
+
+function acknowledgeTeacherStudentJustification(payload) {
+  var p=payload||{};
+  var justId=String(p.justificacionId||"").trim();
+  var kind=String(p.tipoConstancia||"CONOCIMIENTO").trim().toUpperCase();
+  if(!justId || ["CONOCIMIENTO","CONFORMIDAD"].indexOf(kind)===-1)return {status:"error",code:"TEACHER_ACK_INVALID"};
+  var resolved;
+  try{resolved=resolveTeacherJustificationScope_(p,justId);}catch(error){return {status:"error",code:"TEACHER_JUSTIFICATION_SCOPE_UNAVAILABLE"};}
+  if(!resolved || resolved.status!=="success" || !resolved.data.length){
+    try{logTeacherJustificationAccessEvent_(SpreadsheetApp.openById(SPREADSHEET_ID),"acknowledgeTeacherStudentJustification",p._verifiedUserId,p._verifiedRole,"TEACHER_JUSTIFICATION_SCOPE_DENIED",justId,"DENIED");}catch(_){}
+    return {status:"error",code:"RESOURCE_NOT_FOUND",httpStatus:403};
+  }
+  var item=resolved.data[0], allowed=item.sesiones.map(function(session){return session.sesionId;});
+  var requested=Array.isArray(p.sesionIds)?p.sesionIds.map(function(value){return String(value||"").trim();}).filter(Boolean):allowed;
+  if(!requested.length || new Set(requested).size!==requested.length || requested.some(function(id){return allowed.indexOf(id)===-1;}))return {status:"error",code:"TEACHER_JUSTIFICATION_SESSION_SCOPE_DENIED",httpStatus:403};
+  var lock=LockService.getScriptLock();
+  try{lock.waitLock(10000);}catch(_){return {status:"error",code:"LOCK_TIMEOUT",retryable:true};}
+  try{
+    var ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet=getOrCreateSheet(ss,"ConstanciasConocimientoDocente");
+    var map=absenceSheetMap_(sheet,TEACHER_JUSTIFICATION_ACK_HEADERS_);
+    var rows=sheet.getDataRange().getValues(),created=0,existing=0;
+    var actor= getVerifiedAcademicIdentity_(p);
+    if(!actor || !actor.authorized || actor.userId!==String(p._verifiedUserId||actor.userId))return {status:"error",code:"VERIFIED_IDENTITY_REQUIRED"};
+    requested.forEach(function(sessionId){
+      var matches=[];
+      for(var i=1;i<rows.length;i++){
+        if(String(rows[i][map.JustificacionID]||"").trim()===justId &&
+           String(rows[i][map.DocenteUserId]||"").trim()===actor.userId &&
+           String(rows[i][map.SesionID]||"").trim()===sessionId)matches.push(i);
+      }
+      if(matches.length>1)throw new Error("TEACHER_ACK_DUPLICATE_RECORD");
+      if(matches.length===1){
+        if(String(rows[matches[0]][map.TipoConstancia]||"").trim().toUpperCase()!==kind)throw new Error("TEACHER_ACK_IDEMPOTENCY_CONFLICT");
+        existing++;return;
+      }
+      var timestamp=new Date().toISOString();
+      var constanciaId="ACK-TEACHER-"+Utilities.getUuid();
+      var hash=teacherJustificationSha256_([constanciaId,justId,actor.userId,sessionId,kind,timestamp].join("|"));
+      var newRow=new Array(sheet.getLastColumn()).fill("");
+      newRow[map.ConstanciaID]=constanciaId;newRow[map.JustificacionID]=justId;
+      newRow[map.DocenteUserId]=actor.userId;newRow[map.SesionID]=sessionId;
+      newRow[map.TipoConstancia]=kind;newRow[map.FechaConocimiento]=timestamp;
+      newRow[map.HashRegistro]=hash;newRow[map.Estado]="ACTIVA";
+      newRow[map.CorrelationID]=String(p.correlationId||"");
+      sheet.appendRow(newRow);created++;
+    });
+    logTeacherJustificationAccessEvent_(ss,"acknowledgeTeacherStudentJustification",actor.userId,actor.role,"TEACHER_ACK_RECORDED",justId,"SUCCESS");
+    return {status:"success",data:{justificacionId:justId,created:created,alreadyRegistered:existing,total:requested.length}};
+  }catch(error){return {status:"error",code:error.message||"TEACHER_ACK_FAILED"};}
+  finally{lock.releaseLock();}
+}
+
+function getTeacherJustificationEvidence(payload) {
+  var p=payload||{},justId=String(p.justificacionId||"").trim();
+  if(!justId)return {status:"error",code:"TEACHER_EVIDENCE_INVALID"};
+  var resolved;
+  try{resolved=resolveTeacherJustificationScope_(p,justId);}catch(_){return {status:"error",code:"RESOURCE_NOT_FOUND"};}
+  if(!resolved || resolved.status!=="success" || !resolved.data.length){
+    try{logTeacherJustificationAccessEvent_(SpreadsheetApp.openById(SPREADSHEET_ID),"getTeacherJustificationEvidence",p._verifiedUserId,p._verifiedRole,"TEACHER_EVIDENCE_SCOPE_DENIED",justId,"DENIED");}catch(_){}
+    return {status:"error",code:"RESOURCE_NOT_FOUND",httpStatus:403};
+  }
+  if(resolved.policy!=="PERMITIR_VER_CONSTANCIA_MEDICA_COMPLETA")return {status:"error",code:"TEACHER_EVIDENCE_POLICY_RESTRICTED",httpStatus:403};
+  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("JustificacionesAsistencia");
+  var map=absenceSheetMap_(sheet,ABSENCE_JUSTIFICATION_HEADERS_),rows=sheet.getDataRange().getValues();
+  var matchingRows=rows.slice(1).filter(function(item){return String(item[map.JustificacionID]||"").trim()===justId;});
+  if(matchingRows.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",httpStatus:403};
+  var fileId=String(matchingRows[0][map.AdjuntoUrl]||"").trim();
+  if(!fileId)return {status:"error",code:"TEACHER_EVIDENCE_NOT_AVAILABLE"};
+  try{
+    var file=DriveApp.getFileById(fileId);
+    if(file.isTrashed() || file.getSharingAccess()!==DriveApp.Access.PRIVATE)return {status:"error",code:"TEACHER_EVIDENCE_NOT_PRIVATE"};
+    var size=file.getSize();
+    if(size>2*1024*1024)return {status:"error",code:"TEACHER_EVIDENCE_FORMAT_RESTRICTED"};
+    var blob=file.getBlob(),mime=String(blob.getContentType()||file.getMimeType()||"").toLowerCase();
+    if(["application/pdf","image/jpeg","image/png"].indexOf(mime)===-1)return {status:"error",code:"TEACHER_EVIDENCE_FORMAT_RESTRICTED"};
+    var base64=Utilities.base64Encode(blob.getBytes());
+    logTeacherJustificationAccessEvent_(ss,"getTeacherJustificationEvidence",p._verifiedUserId,p._verifiedRole,"TEACHER_EVIDENCE_VIEWED",justId,"SUCCESS");
+    return {status:"success",data:{fileName:file.getName(),mimeType:mime,base64:base64}};
+  }catch(error){
+    logTeacherJustificationAccessEvent_(ss,"getTeacherJustificationEvidence",p._verifiedUserId,p._verifiedRole,"TEACHER_EVIDENCE_READ_FAILED",justId,"FAILED");
+    return {status:"error",code:"TEACHER_EVIDENCE_UNAVAILABLE"};
+  }
+}
+
+
 function submitAttendanceJustification(payload) {
   const p = payload || {};
   const actorId = String(p._verifiedUserId || "").trim();
@@ -10614,7 +11053,7 @@ function reviewAttendanceJustification(payload) {
   const p = payload || {};
   return reviewCanonicalAbsenceJustification_({
     justificacionId: p.justificacionId, nuevoEstado: p.nuevoEstado,
-    observacionesAdmin: p.observacionesAdmin,
+    observacionesAdmin: p.observacionesAdmin, observacionesPublicas: p.observacionesPublicas,
     actorId: p._verifiedUserId, actorRole: p._verifiedRole
   });
 }
