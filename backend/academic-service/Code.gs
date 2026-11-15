@@ -3758,6 +3758,162 @@ function assertRecordOwnership(authRole, authenticatedUserId, targetUserId, reso
 }
 
 // [F10-Task13] [P1] - Mejorar la gestión de evidencias y documentos sensibles
+function classifyPdfDocumentPages_(rawBytes) {
+  function unavailable(code) {
+    return { verified: false, pageCount: 0, pages: [{ pageNumber: null, classification: "NO_ANALIZADA", reason: code }],
+      summary: { vectorial: 0, escaneada: 0, mixta: 0, vacia: 0, noAnalizada: 1 }, requiresOcr: false, reason: code };
+  }
+  try {
+    if (!rawBytes || !rawBytes.length) return unavailable("PDF_BYTES_EMPTY");
+    var chunks = [];
+    for (var offset = 0; offset < rawBytes.length; offset += 8192) {
+      var part = "";
+      for (var j = offset; j < Math.min(rawBytes.length, offset + 8192); j++) part += String.fromCharCode(Number(rawBytes[j]) & 255);
+      chunks.push(part);
+    }
+    var source = chunks.join("");
+    if (/\/Encrypt\b/.test(source)) return unavailable("PDF_ENCRYPTED");
+    var objects = Object.create(null);
+    var objectPattern = /(?:^|[\r\n])(\d+)\s+\d+\s+obj\b([\s\S]*?)\bendobj\b/g;
+    var objectMatch;
+    while ((objectMatch = objectPattern.exec(source)) !== null) objects[String(objectMatch[1])] = objectMatch[2];
+    function getObject(reference) {
+      var match = String(reference || "").match(/(\d+)\s+\d+\s+R/);
+      return match ? objects[String(match[1])] || "" : "";
+    }
+    function getObjectId(reference) {
+      var match = String(reference || "").match(/(\d+)\s+\d+\s+R/);
+      return match ? String(match[1]) : "";
+    }
+    function extractDictionary(text, key) {
+      var keyIndex = String(text || "").indexOf(key);
+      if (keyIndex < 0) return "";
+      var open = String(text).indexOf("<<", keyIndex + key.length);
+      if (open < 0) return "";
+      var depth = 0;
+      for (var i = open; i < text.length - 1; i++) {
+        var pair = text.slice(i, i + 2);
+        if (pair === "<<") { depth++; i++; }
+        else if (pair === ">>") {
+          depth--; i++;
+          if (depth === 0) return text.slice(open, i + 1);
+        }
+      }
+      return "";
+    }
+    var catalogId = Object.keys(objects).filter(function(id) { return /\/Type\s*\/Catalog\b/.test(objects[id]); })[0];
+    if (!catalogId) return unavailable("PDF_CATALOG_UNAVAILABLE");
+    var pagesRootId = getObjectId((objects[catalogId].match(/\/Pages\s+(\d+)\s+\d+\s+R/) || [])[0]);
+    if (!pagesRootId) return unavailable("PDF_PAGE_TREE_UNAVAILABLE");
+    var pages = [];
+    var visited = Object.create(null);
+    function collectPages(objectId, parentId) {
+      if (!objectId || visited[objectId]) return false;
+      visited[objectId] = true;
+      var body = objects[objectId];
+      if (!body) return false;
+      if (/\/Type\s*\/Page\b/.test(body)) {
+        pages.push({ objectId: objectId, body: body, parentId: parentId || getObjectId((body.match(/\/Parent\s+(\d+)\s+\d+\s+R/) || [])[0]) });
+        return true;
+      }
+      if (!/\/Type\s*\/Pages\b/.test(body)) return false;
+      var kidsMatch = body.match(/\/Kids\s*\[([\s\S]*?)\]/);
+      if (!kidsMatch) return false;
+      var refs = kidsMatch[1].match(/\d+\s+\d+\s+R/g) || [];
+      if (!refs.length) return false;
+      var ok = true;
+      refs.forEach(function(reference) { if (!collectPages(getObjectId(reference), objectId)) ok = false; });
+      return ok;
+    }
+    if (!collectPages(pagesRootId, "" ) || !pages.length) return unavailable("PDF_PAGE_TREE_UNAVAILABLE");
+    function resolveResources(page) {
+      var body = page.body;
+      var ref = body.match(/\/Resources\s+(\d+)\s+\d+\s+R/);
+      if (ref) return objects[String(ref[1])] || "";
+      var inline = extractDictionary(body, "/Resources");
+      if (inline) return inline;
+      var parentId = page.parentId;
+      var hops = 0;
+      while (parentId && hops++ < 8) {
+        var parent = objects[parentId] || "";
+        ref = parent.match(/\/Resources\s+(\d+)\s+\d+\s+R/);
+        if (ref) return objects[String(ref[1])] || "";
+        inline = extractDictionary(parent, "/Resources");
+        if (inline) return inline;
+        parentId = getObjectId((parent.match(/\/Parent\s+(\d+)\s+\d+\s+R/) || [])[0]);
+      }
+      return "";
+    }
+    function classifyPage(page) {
+      var contentsMatch = page.body.match(/\/Contents\s*(\[[\s\S]*?\]|\d+\s+\d+\s+R)/);
+      if (!contentsMatch) return { classification: "VACIA", reason: "NO_CONTENT_STREAM" };
+      var references = contentsMatch[1].match(/\d+\s+\d+\s+R/g) || [];
+      if (!references.length) return { classification: "NO_ANALIZADA", reason: "DIRECT_CONTENT_STREAM_UNSUPPORTED" };
+      var resources = resolveResources(page);
+      var xObjectDictionary = "";
+      var xObjectRef = resources.match(/\/XObject\s+(\d+)\s+\d+\s+R/);
+      if (xObjectRef) xObjectDictionary = objects[String(xObjectRef[1])] || "";
+      else xObjectDictionary = extractDictionary(resources, "/XObject");
+      var xObjectRefs = Object.create(null);
+      var xObjectPattern = /\/([A-Za-z0-9_.-]+)\s+(\d+)\s+\d+\s+R/g;
+      var xMatch;
+      while ((xMatch = xObjectPattern.exec(xObjectDictionary)) !== null) xObjectRefs[xMatch[1]] = objects[String(xMatch[2])] || "";
+      var hasText = false, hasImage = false, hasVector = false, hasNonEmptyStream = false, unsupported = false;
+      references.forEach(function(reference) {
+        var contentObject = getObject(reference);
+        var streamStart = contentObject.indexOf("stream");
+        var streamEnd = contentObject.lastIndexOf("endstream");
+        if (streamStart < 0 || streamEnd < streamStart) { unsupported = true; return; }
+        var dictionary = contentObject.slice(0, streamStart);
+        if (/\/Filter\b/.test(dictionary)) { unsupported = true; return; }
+        var dataStart = streamStart + 6;
+        if (contentObject.slice(dataStart, dataStart + 2) === "\r\n") dataStart += 2;
+        else if (contentObject.charAt(dataStart) === "\n" || contentObject.charAt(dataStart) === "\r") dataStart++;
+        var stream = contentObject.slice(dataStart, streamEnd).replace(/[\r\n]+$/, "");
+        if (!stream.trim()) return;
+        hasNonEmptyStream = true;
+        if (/\bBT\b/.test(stream) && /\b(?:Tj|TJ)\b/.test(stream)) hasText = true;
+        if (/\bBI\b[\s\S]*?\bID\b[\s\S]*?\bEI\b/.test(stream)) hasImage = true;
+        var drawPattern = /\/([A-Za-z0-9_.-]+)\s+Do\b/g;
+        var drawMatch;
+        while ((drawMatch = drawPattern.exec(stream)) !== null) {
+          var xObject = xObjectRefs[drawMatch[1]];
+          if (!xObject) { unsupported = true; continue; }
+          if (/\/Subtype\s*\/Image\b/.test(xObject)) hasImage = true;
+          else if (/\/Subtype\s*\/Form\b/.test(xObject)) unsupported = true;
+        }
+        if (/(?:^|[\s\r\n])(?:m|l|c|v|y|h|re|S|s|f|F|B|b|n)(?=[\s\r\n])/m.test(stream)) hasVector = true;
+      });
+      if (unsupported) return { classification: "NO_ANALIZADA", reason: "COMPRESSED_OR_UNRESOLVED_CONTENT" };
+      if (!hasNonEmptyStream) return { classification: "VACIA", reason: "EMPTY_CONTENT_STREAM" };
+      if (hasImage && (hasText || hasVector)) return { classification: "MIXTA", reason: "TEXT_OR_VECTOR_AND_IMAGE" };
+      if (hasImage) return { classification: "ESCANEADA", reason: "IMAGE_CONTENT" };
+      if (hasText || hasVector) return { classification: "VECTORIAL", reason: hasText ? "TEXT_OPERATORS" : "VECTOR_OPERATORS" };
+      return { classification: "NO_ANALIZADA", reason: "CONTENT_TYPE_UNRESOLVED" };
+    }
+    var summary = { vectorial: 0, escaneada: 0, mixta: 0, vacia: 0, noAnalizada: 0 };
+    var classifiedPages = pages.map(function(page, index) {
+      var result = classifyPage(page);
+      var key = result.classification === "VECTORIAL" ? "vectorial" :
+        result.classification === "ESCANEADA" ? "escaneada" :
+        result.classification === "MIXTA" ? "mixta" :
+        result.classification === "VACIA" ? "vacia" : "noAnalizada";
+      summary[key]++;
+      return { pageNumber: index + 1, objectId: page.objectId, classification: result.classification, reason: result.reason };
+    });
+    return {
+      verified: summary.noAnalizada === 0,
+      pageCount: classifiedPages.length,
+      pages: classifiedPages,
+      summary: summary,
+      requiresOcr: summary.escaneada + summary.mixta > 0,
+      parser: "conservative-pdf-page-v1"
+    };
+  } catch (error) {
+    return unavailable("PDF_PAGE_CLASSIFICATION_FAILED");
+  }
+}
+
 function extractPdfTextWithOcr_(file, options) {
   var opts = options || {};
   if (!file || typeof file.getBlob !== "function") return { status: "error", code: "OCR_FILE_UNAVAILABLE" };
@@ -3882,6 +4038,7 @@ function validateEvidenceFileAndPermissions(payload) {
     if (binaryValidation.byteLength !== actualSize || binaryValidation.mimeType !== actualMime) {
       return { status: "error", code: "FILE_BINARY_MIME_MISMATCH", message: "La extensión, la cabecera binaria y el MIME real no coinciden." };
     }
+    const pdfPageAnalysis = actualMime === "application/pdf" ? classifyPdfDocumentPages_(blobBytes) : null;
     let ocrResult = null;
     if (request.ocrRequested === true) {
       ocrResult = actualMime === "application/pdf"
@@ -3891,15 +4048,20 @@ function validateEvidenceFileAndPermissions(payload) {
     logStructuredEvent("ACADEMIC", "validateEvidenceFileAndPermissions", "INFO", "EVIDENCE_FILE_VALIDATED",
       "Archivo de evidencia validado por ámbito, tamaño, MIME real y estructura binaria.",
       { fileId: fileId, actualMime: actualMime, actualSize: actualSize, detectedFormat: binaryValidation.detectedFormat }, actor.role);
-    const validationMessage = ocrResult && ocrResult.status !== "success"
-      ? "Archivo verificado físicamente; OCR no completado: " + ocrResult.code
-      : "Archivo de evidencia verificado por ámbito, MIME real y estructura binaria.";
+    const validationMessage = pdfPageAnalysis && pdfPageAnalysis.verified !== true
+      ? "Archivo verificado físicamente; una o más páginas PDF no pudieron clasificarse con seguridad."
+      : (pdfPageAnalysis && pdfPageAnalysis.requiresOcr && (!ocrResult || ocrResult.status !== "success")
+        ? "PDF contiene páginas escaneadas o mixtas; OCR requerido o pendiente."
+        : (ocrResult && ocrResult.status !== "success"
+          ? "Archivo verificado físicamente; OCR no completado: " + ocrResult.code
+          : "Archivo de evidencia verificado por ámbito, MIME real, estructura binaria y análisis de páginas PDF."));
     const validationResponse = {
       status: "success", documentoId: String(docRow[0] || ""), fileName: actualName, mimeType: actualMime,
       fileSizeMb: (actualSize / (1024 * 1024)).toFixed(2), isPdf: actualMime === "application/pdf",
       integrityVerified: true, detectedFormat: binaryValidation.detectedFormat, byteLength: binaryValidation.byteLength,
-      validationComplete: !request.ocrRequested || !!(ocrResult && ocrResult.status === "success"),
-      ocrStatus: ocrResult ? ocrResult.status : "NOT_REQUESTED",
+      validationComplete: (!pdfPageAnalysis || pdfPageAnalysis.verified === true) && (!pdfPageAnalysis || !pdfPageAnalysis.requiresOcr || !!(ocrResult && ocrResult.status === "success")) && (!request.ocrRequested || !!(ocrResult && ocrResult.status === "success")),
+      pdfPageAnalysis: pdfPageAnalysis,
+      ocrStatus: ocrResult ? ocrResult.status : (pdfPageAnalysis && pdfPageAnalysis.requiresOcr ? "REQUIRED_NOT_REQUESTED" : "NOT_REQUESTED"),
       ocr: ocrResult,
       previewUrl: requestedFileId ? "https://drive.google.com/file/d/" + fileId + "/preview" : "",
       message: validationMessage
