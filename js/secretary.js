@@ -1668,7 +1668,7 @@ window.reorderWaitlistAction = async function(esperaId) {
 window.openIdentityMappingManager = function() {
  var m=document.getElementById("modal-identity-mapping");
  if(m){m.classList.remove("hidden");m.classList.add("flex");}
- ["identity-search-identificacion","identity-search-responsable"].forEach(function(id){var field=document.getElementById(id);if(field)field.setAttribute("data-ui-help-key","matricula.identidad");});
+ ["identity-search-identificacion","identity-search-responsable"].forEach(function(id){var field=document.getElementById(id);if(field)field.setAttribute("data-ui-help-key","identidad.busqueda");});
  var birthDate=document.getElementById("identity-search-fecha");
  if(birthDate)birthDate.setAttribute("data-ui-help-key","matricula.fechaNacimiento");
  if(window.applyPermanentFieldHelp)window.applyPermanentFieldHelp(m||document);
