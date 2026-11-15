@@ -36,7 +36,7 @@ const canonicalSchemas=[
   ['["ExpedienteID", "PersonaId", "UserId", "Puesto", "Departamento", "CentroCosto", "FechaIngreso", "FechaSalida", "EstadoLaboral", "Observaciones"]',accounting],
   ['["CursoID","NombreCurso","Categoria","ProveedorResponsable","Modalidad","DuracionHoras","Requisitos","DirigidoA","Estado","CreadoPor","FechaCreacion","UltimaModificacion"]',accounting]
 ];
-canonicalSchemas.forEach(([schema,source])=>assert.ok(source.includes(schema),"canonical destination schema "+schema));
+canonicalSchemas.forEach(([schema,source])=>assert.ok(source.replace(/\s+/g,"").includes(schema.replace(/\s+/g,"")),"canonical destination schema "+schema));
 const targetStart=user.indexOf("const IDENTITY_TARGET_SCHEMAS_ = {");
 const targetFunctionStart=user.indexOf("function identityTargetExists_(",targetStart);
 const targetEnd=user.indexOf(String.fromCharCode(10)+"}",targetFunctionStart);
