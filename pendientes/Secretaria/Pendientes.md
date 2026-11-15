@@ -3395,10 +3395,10 @@
   - [ ] Se evita almacenar nuevamente el mismo binario en Google Drive cuando ya existe registrado.
   - [ ] Un archivo modificado produce un hash diferente y se clasifica como nueva versión o documento independiente.
   - [ ] La verificación de integridad detecta si un archivo en Drive fue alterado o sustituido con posterioridad.
-- **Dependencias:** F39-Task03.
+- **Dependencias:** F39-Task01 (inventario documental institucional); TASK-134 implementa F39-Task02 y es prerrequisito de F39-Task03.
 - **Estado:** [ ] Pendiente
 
-- **Bloqueo de dependencias C1.767:** el Plan Maestro declara TASK-134 dependiente de F39-Task03; la auditoría F39-Task03 depende de F39-Task02; F39-Task02 es la capacidad SHA-256 de deduplicación que implementa TASK-134. El grafo forma un ciclo. No se modifica el Plan Maestro ni se invierte el orden sin una corrección trazable de su fuente.
+- **Resolución C1.768:** se corrigió el Plan Maestro: TASK-134 depende del inventario F39-Task01, implementa F39-Task02 (SHA-256) y habilita F39-Task03 (custodia protegida). Se conserva F39-Task03 como dependiente de F39-Task02; el ciclo queda eliminado.
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 5897-5928; clave TASK-135; asignación única: Secretaria -->
 
 ---
