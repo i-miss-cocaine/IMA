@@ -2785,7 +2785,7 @@
 ---
 
 <!-- ID: F34-TASK06 | Fuentes: AUDITORIAS/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md -->
-### [ ] [F34-TASK06] Enviar notificaciones multicanal reactivas por cambio de estado
+### [x] [F34-TASK06] Enviar notificaciones multicanal reactivas por cambio de estado
 - **Hallazgo de origen:** F34-08 y CAR-F34-08.
 - **Severidad:** Alta / P1. **Objetivo:** informar al solicitante cuando el trámite requiere corrección, se aprueba o se rechaza.
 - **Acción ejecutable:** conectar transiciones autorizadas del workflow con `sendMultiChannelNotification`; incluir estado, acción requerida, fecha límite y enlace seguro; agrupar notificaciones y deduplicar por solicitud/versión/estado/destinatario.
@@ -2793,8 +2793,8 @@
 - **Dependencias/riesgos:** TASK-316 (multicanal/preferencias/reintentos), TASK-227 (eventos workflow), TASK-064 (cuotas); riesgo de revelar observaciones internas o enviar avisos duplicados.
 - **Alcance:** notificación de transiciones al solicitante; no enviar notas internas ni tratar el envío como prueba de recepción.
 - **Criterios de aceptación:** evento solo tras commit de transición; contenido público minimizado; deduplicación; canal según preferencias/consentimiento; reintentos y fallos visibles; pruebas de corrección/aprobación/rechazo, cambio repetido y cuota agotada.
-- **Prioridad:** P1. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; existe notificación básica al crear trámite, pero no se despachan avisos multicanal reactivos ante cambios de estado.
+- **Prioridad:** P1. **Estado:** Completada en código y CI; BETA-FUNC-105 pendiente beta.
+- **Evidencia de cierre:** C1.756; `dispatchWorkflowStatusNotification_` se ejecuta después de liberar el lock y persistir la decisión; deduplicación atómica; notas públicas únicamente; correo con consentimiento explícito; fallos de cuota quedan `Pendiente_Reintento`. Node local y Department Scope Contract PASS; validación Apps Script/MailApp real pendiente.
 
 ---
 
