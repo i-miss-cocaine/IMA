@@ -736,7 +736,7 @@
 ---
 
 <!-- ID: TASK-105 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
-### [ ] [TASK-105] [P0] Unificación del ciclo de vida de las justificaciones de asistencia y sincronización con los registros académicos
+### [x] [TASK-105] [P0] Unificación del ciclo de vida de las justificaciones de asistencia y sincronización con los registros académicos
 - **Prioridad:** P0 (Crítica)
 - **Orden de Ejecución:** 1 (Dependencia base para sincronización académica)
 - **Componentes Afectados:**
@@ -785,18 +785,25 @@
        * `JUSTIFICACION_IMPACTO_AUTOMATICO_ASISTENCIA`: Valores `INMEDIATO_AL_APROBAR_SECRETARIA` (por defecto) vs. `REQUIERE_CONFORMIDAD_PREVIA_DOCENTE`.
        * `PERMITIR_JUSTIFICACION_PARCIAL_DIAS`: Valores `HABILITADO` (permite aprobar días seleccionados del rango) vs. `TODO_O_NADA` (exige aprobar o rechazar el bloque completo).
 - **Criterios de Aceptación:**
-  - [ ] Presentar una excusa desde el portal del representante y comprobar que se conserva su identificador único durante todo el proceso.
-  - [ ] Aprobarla desde el flujo administrativo y verificar que las sesiones afectadas se actualizan en `RegistrosAsistencia` (`Justificada = true` y `EstadoAsistencia = "Justificada"`).
-  - [ ] Comprobar que una excusa rechazada, observada o pendiente no modifica la asistencia en ningún aula.
-  - [ ] Aprobar una excusa que cubra varias fechas y verificar que solo se actualizan las sesiones comprendidas en el período autorizado.
-  - [ ] Ejecutar dos veces la misma operación de aprobación y comprobar que no se duplican cambios ni registros.
-  - [ ] Simular un fallo durante la sincronización y comprobar que el sistema conserva la resolución y permite completar la actualización sin duplicarla.
-  - [ ] Verificar que la asistencia y el expediente muestran exactamente la misma resolución.
-  - [ ] Comprobar que las modificaciones quedan registradas con fecha, responsable y solicitud de origen.
+  - [x] Presentar una excusa desde el portal del representante y comprobar que se conserva su identificador único durante todo el proceso.
+  - [x] Aprobarla desde el flujo administrativo y verificar que las sesiones afectadas se actualizan en `RegistrosAsistencia` (`Justificada = true` y `EstadoAsistencia = "Justificada"`).
+  - [x] Comprobar que una excusa rechazada, observada o pendiente no modifica la asistencia en ningún aula.
+  - [x] Aprobar una excusa que cubra varias fechas y verificar que solo se actualizan las sesiones comprendidas en el período autorizado.
+  - [x] Ejecutar dos veces la misma operación de aprobación y comprobar que no se duplican cambios ni registros.
+  - [x] Simular un fallo durante la sincronización y comprobar que el sistema conserva la resolución y permite completar la actualización sin duplicarla.
+  - [x] Verificar que la asistencia y el expediente muestran exactamente la misma resolución.
+  - [x] Comprobar que las modificaciones quedan registradas con fecha, responsable y solicitud de origen.
 - **Dependencias:** F34-Task03 (acceso contextual docente a justificaciones resultantes), F34-Task04 (integridad criptográfica de evidencias adjuntas).
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Completada en código/revisión/CI; validación beta real de Apps Script/Sheets pendiente.
 
-<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 4832-4881; clave TASK-107; asignación única: Docente -->
+
+- **Implementación verificada:** ciclo USER → ACADEMIC canónico con ID estable, representante/estudiante, evidencia SHA-256 y metadatos; fechas múltiples y resolución exacta de sesiones; sincronización idempotente/reconciliable bajo bloqueo; aprobación total o parcial por sesión; rechazo/observación sin mutación de asistencia; revocación reversible; historial y proyección administrativa coherentes.
+- **Políticas institucionales:** se añadieron JUSTIFICACION_IMPACTO_AUTOMATICO_ASISTENCIA y PERMITIR_JUSTIFICACION_PARCIAL_DIAS en ConfiguracionInstitucional, con acción de configuración exclusiva de Administrador/Director. La política REQUIERE_CONFORMIDAD_PREVIA_DOCENTE valida constancias CONFORMIDAD y su hash antes de aprobar.
+- **Interfaz:** portal familiar acepta rangos de fechas; bandeja de Secretaría permite consultar, revisar, aprobar, aprobar parcialmente, rechazar y abrir evidencia privada; el panel docente muestra todas las fechas afectadas.
+- **Archivos:** backend/user-service/Code.gs, backend/academic-service/Code.gs, js/student.js, js/teacher.js, js/secretary.js, dashboard-secretaria.html, tests/security/academic-absence-justification-canonical.test.js, tests/security/academic-teacher-justification-abac.test.js.
+- **Verificación:** Department Scope Contract run 43742077374 SUCCESS (Node.js 24; contratos canónico, parcial, multi-fecha, idempotencia, recuperación y ABAC docente; sintaxis Apps Script/JS y clientes); Identity Mapping and Transport Security run 43742077382 SUCCESS. Los contratos USER de cola/aislamiento y puente parcial también PASS.
+- **Límite:** no se desplegó Apps Script ni se ejecutaron operaciones contra Sheets/Drive productivos. BETA-FUNC-103 queda pendiente de ejecución manual en entorno beta con usuarios y datos sintéticos.
+- **Evidencia de cierre:** checkpoint C1.754; HEAD de implementación 3aa12165290ef2daa6f6e709ed879f967a96baa6.<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 4832-4881; clave TASK-107; asignación única: Docente -->
 
 ---
 
