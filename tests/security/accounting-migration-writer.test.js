@@ -40,7 +40,7 @@ class Sheet {
   deleteRow(row) { this.rows.splice(row - 1, 1); }
 }
 const schemas = {
-  curso: { sheet: "Cursos", headers: ["CursoID", "Nombre", "Nota", "FechaInicio"] },
+  curso: { sheet: "Cursos", headers: ["CursoID","NombreCurso","Categoria","ProveedorResponsable","Modalidad","DuracionHoras","Requisitos","DirigidoA","Estado","CreadoPor","FechaCreacion","UltimaModificacion"] },
   empleado: { sheet: "ExpedientesLaborales", headers: ["ExpedienteID", "PersonaId", "UserId", "Puesto", "Departamento", "CentroCosto", "FechaIngreso", "FechaSalida", "EstadoLaboral", "Observaciones"] }
 };
 const sheets = new Map();
@@ -98,7 +98,7 @@ const payload = {
   tipoEntidad: "curso", idNuevoPlataforma: "CURSO-1", idempotencyKey: "KEY-1",
   institutionId: "INST-1", sessionToken: "SIGNED", correlationId: "CORR-0001",
   targetSnapshotVerified: true, expectedTargetPresent: false, expectedTargetRowHash: "",
-  datos: { Nombre: "=HYPERLINK(\"https://evil.test\")", Nota: 90, FechaInicio: "2026-02-01" }
+  datos: { NombreCurso: "=HYPERLINK(\"https://evil.test\")", Categoria: "Capacitación", Modalidad: "Virtual", Estado: "Activo" }
 };
 {
   const inserted = runtime.api.write(payload);
@@ -114,7 +114,7 @@ const payload = {
   const retry = runtime.api.write(payload);
   assert.equal(retry.idempotent, true);
   assert.equal(target.rows.length, 2, "idempotent retry does not duplicate rows");
-  assert.throws(() => runtime.api.write({ ...payload, datos: { ...payload.datos, Nota: 91 } }), /MIGRATION_IDEMPOTENCY_CONFLICT/);
+  assert.throws(() => runtime.api.write({ ...payload, datos: { ...payload.datos, Categoria: "Otra" } }), /MIGRATION_IDEMPOTENCY_CONFLICT/);
   const compensated = runtime.api.compensate({ idempotencyKey: "KEY-1" });
   assert.equal(compensated.compensated, true);
   assert.equal(target.rows.length, 1, "insert compensation removes only the owned row");
@@ -122,18 +122,18 @@ const payload = {
   assert.throws(() => runtime.api.write(payload), /MIGRATION_WRITE_ALREADY_COMPENSATED/);
 }
 {
-  const target = new Sheet([schemas.curso.headers, ["CURSO-2", "Antes", 70, "2025-01-01"]]);
+  const target = new Sheet([schemas.curso.headers, schemas.curso.headers.map((header, index) => expectedBefore[header] === undefined ? "" : expectedBefore[header])]);
   sheets.set("Cursos", target);
-  const expectedBefore = { CursoID: "CURSO-2", Nombre: "Antes", Nota: 70, FechaInicio: "2025-01-01" };
+  const expectedBefore = { CursoID: "CURSO-2", NombreCurso: "Antes", Categoria: "Capacitación", ProveedorResponsable: "", Modalidad: "Virtual", DuracionHoras: "", Requisitos: "", DirigidoA: "", Estado: "Activo", CreadoPor: "", FechaCreacion: "", UltimaModificacion: "" };
   const updatePayload = { ...payload, idNuevoPlataforma: "CURSO-2", idempotencyKey: "KEY-2",
     targetSnapshotVerified: true, expectedTargetPresent: true,
     expectedTargetRowHash: runtime.migrationHash_(runtime.migrationStableJson_(expectedBefore)),
-    datos: { Nombre: "Después", Nota: 88, FechaInicio: "2026-03-01" } };
+    datos: { NombreCurso: "Después", Categoria: "Capacitación", Modalidad: "Presencial", Estado: "Activo" } };
   const updated = runtime.api.write(updatePayload);
   assert.equal(updated.accion, "UPDATE");
   assert.equal(target.rows[1][1], "Después");
   assert.equal(runtime.api.compensate({ idempotencyKey: "KEY-2" }).compensated, true);
-  assert.deepEqual(target.rows[1], ["CURSO-2", "Antes", 70, "2025-01-01"], "update compensation restores the exact prior row");
+  assert.deepEqual(target.rows[1], schemas.curso.headers.map((header, index) => expectedBefore[header] === undefined ? "" : expectedBefore[header]), "update compensation restores the exact prior row");
 }
 {
   const target = new Sheet([schemas.curso.headers, ["CURSO-3", "Original", 60, "2025-01-01"]]);
