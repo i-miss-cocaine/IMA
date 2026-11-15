@@ -373,11 +373,12 @@ const userContext = {
 };
 const userNames = [
   "requestAttachmentHeaderMap_","ensureRequestAttachmentIntegritySchema_","setRequestAttachmentIntegrity_",
+  "ensureEvidenceDocumentSchema_","getEvidenceRecordsForRequest_",
   "ensureUserAbsenceRequestSchema_","createPrivateRequestAttachment_","createPrivateRequestAttachmentWithIntegrity_",
   "submitStudentAbsenceJustification","reviewAbsenceJustification","getAdministrativeRequests","updateRequestStatus","processWorkflowDecision"
 ];
 vm.createContext(userContext);
-const userConstants = userSource.split("\n").filter(line => /^const (REQUEST_ATTACHMENT_INTEGRITY_HEADERS_|USER_ABSENCE_REQUEST_EXTRA_HEADERS_)/.test(line)).join("\n");
+const userConstants = userSource.split("\n").filter(line => /^const (REQUEST_ATTACHMENT_INTEGRITY_HEADERS_|EVIDENCE_DOCUMENT_HEADERS_|USER_ABSENCE_REQUEST_EXTRA_HEADERS_)/.test(line)).join("\n");
 vm.runInContext(userConstants + "\n" + userNames.map(name => extractFunction(name, userSource)).join("\n"), userContext);
 const userPayload = {
   _userId: "STU-USER", _role: "Estudiante", estudianteId: "STU-USER",
