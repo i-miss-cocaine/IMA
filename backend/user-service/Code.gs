@@ -917,7 +917,7 @@ function getOrCreateSheet(ss, name) {
     if (name === "FormulariosInstitucionales") sheet.appendRow(["FormID", "CodigoFormulario", "Titulo", "Descripcion", "Departamento", "DefinicionJSON", "Estado", "Version", "RequiereFirma", "PlantillaDocumentoId", "FechaCreacion", "CreadoPor"]);
     if (name === "FlujosAprobacion") sheet.appendRow(["FlujoID", "FormID", "NombreFlujo", "Departamento", "PasosEtapasJSON", "Estado", "Version", "FechaCreacion", "CreadoPor"]);
     if (name === "RevisionesDecisionesTramite") sheet.appendRow(["DecisionID", "SolicitudID", "EtapaNombre", "RevisorID", "AccionDecisión", "ObservacionesInternas", "ObservacionesPublicas", "FechaDecisión", "IpMetadata"]);
-    if (name === "FirmasConformidades") sheet.appendRow(["FirmaID", "SolicitudID", "DocumentoID", "FirmanteID", "RolFirmante", "TipoFirma", "TokenVerificacion", "FechaFirma", "IpMetadata"]);
+    if (name === "FirmasConformidades") sheet.appendRow(["FirmaID","SolicitudID","DocumentoID","FirmanteID","RolFirmante","TipoFirma","TokenVerificacion","FechaFirma","IpMetadata","DocumentoHash","SignatureHash","VersionDocumento","MetodoAutenticacion","TransaccionID"]);
     if (name === "CanalesProveedoresConfig") sheet.appendRow(["CanalID", "NombreCanal", "Proveedor", "EstadoHabilitado", "ConfiguracionJSON", "CredencialesEncriptadasHash", "UltimaPrueba", "ActualizadoPor"]);
     if (name === "RegistroEnviosExternos") sheet.appendRow(["EnvioID", "NotificacionID", "CanalID", "DestinatarioContacto", "EstadoEnvio", "RespuestaProveedorJSON", "Intentos", "FechaEnvio"]);
     if (name === "CitasReuniones") sheet.appendRow(["CitaID", "SolicitanteID", "EstudianteID", "SolicitadoA", "Motivo", "FechaHora", "Modalidad", "Estado", "Comentarios"]);
@@ -6508,34 +6508,27 @@ function validateFileBinaryIntegrity(fileData, fileName, options) {
   return {valid:true,fileName:normalizedName,detectedFormat:policy.format,byteLength:byteLength,mimeType:policy.mime};
 }
 function computeDocumentSHA256(contentOrBase64) {
-  if (!contentOrBase64) return "";
+  if (contentOrBase64 === null || contentOrBase64 === undefined || contentOrBase64 === "") return "";
   let rawBytes;
-  if (typeof Utilities !== "undefined" && Utilities.computeDigest) {
-    if (typeof contentOrBase64 === "string" && contentOrBase64.indexOf(",") !== -1) {
-      rawBytes = Utilities.base64Decode(contentOrBase64.split(",")[1]);
-    } else if (typeof contentOrBase64 === "string") {
-      rawBytes = Utilities.newBlob(contentOrBase64).getBytes();
-    } else {
-      rawBytes = Utilities.newBlob(JSON.stringify(contentOrBase64)).getBytes();
-    }
-    const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, rawBytes);
-    return digest.map(function(b) { return ("0" + ((b & 0xFF).toString(16))).slice(-2); }).join("");
+  if (Array.isArray(contentOrBase64)) rawBytes = contentOrBase64.slice();
+  else if (typeof Uint8Array !== "undefined" && contentOrBase64 instanceof Uint8Array) rawBytes = Array.from(contentOrBase64).map(function(value) { return value > 127 ? value - 256 : value; });
+  else if (typeof Utilities !== "undefined" && Utilities.computeDigest) {
+    if (typeof contentOrBase64 === "string" && contentOrBase64.indexOf(",") !== -1) rawBytes = Utilities.base64Decode(contentOrBase64.split(",")[1]);
+    else if (typeof contentOrBase64 === "string") rawBytes = Utilities.newBlob(contentOrBase64).getBytes();
+    else throw new Error("DOCUMENT_HASH_INPUT_UNSUPPORTED");
   } else if (typeof require !== "undefined") {
     const crypto = require("crypto");
-    let buf;
-    if (typeof contentOrBase64 === "string" && contentOrBase64.indexOf(",") !== -1) {
-      buf = Buffer.from(contentOrBase64.split(",")[1], "base64");
-    } else if (typeof contentOrBase64 === "string") {
-      buf = Buffer.from(contentOrBase64, "utf8");
-    } else {
-      buf = Buffer.from(JSON.stringify(contentOrBase64), "utf8");
-    }
-    return crypto.createHash("sha256").update(buf).digest("hex");
+    const buffer = typeof contentOrBase64 === "string" && contentOrBase64.indexOf(",") !== -1
+      ? Buffer.from(contentOrBase64.split(",")[1],"base64") : Buffer.from(String(contentOrBase64),"utf8");
+    return crypto.createHash("sha256").update(buffer).digest("hex");
+  } else throw new Error("DOCUMENT_HASH_PROVIDER_UNAVAILABLE");
+  if (typeof Utilities !== "undefined" && Utilities.computeDigest) {
+    return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,rawBytes)
+      .map(function(value) { return ("0" + ((value & 255).toString(16))).slice(-2); }).join("");
   }
-  return "";
+  if (typeof require !== "undefined") return require("crypto").createHash("sha256").update(Buffer.from(rawBytes)).digest("hex");
+  throw new Error("DOCUMENT_HASH_PROVIDER_UNAVAILABLE");
 }
-
-// [TASK-038] [F22-Task01] - Envío de formulario institucional con validación binaria de adjuntos
 function submitInstitutionalFormRequest(payload) {
   const { estudianteId, formId, tipoTramite, respuestasFormularioJSON, adjuntoUrl, adjuntoFileId,
     adjuntoData, adjuntoNombre, observaciones } = payload || {};
@@ -7957,85 +7950,119 @@ function getWorkflowHistory(payload) {
     fechaFirma: r[7] ? new Date(r[7]).toISOString() : null,
     ipOrigen: r[8] || "",
     documentoHash: r[9] || "",
-    signatureHash: r[10] || ""
+    signatureHash: r[10] || "",
+    versionDocumento: r[11] || "",
+    metodoAutenticacion: r[12] || "",
+    transaccionId: r[13] || ""
   })) : [];
 
   return { status: "success", historialDecisiones: history, firmas: signatures };
 }
 
 // [TASK-039] [F22-Task02] - Registro de firma electrónica y conformidad institucional con vinculación criptográfica SHA-256
-function registerDocumentSignature(payload) {
-  const { solicitudId, documentoId, firmanteId, tipoFirma, documentoHash } = payload || {};
-  const requestId = String(solicitudId || "").trim();
-  const documentId = String(documentoId || "").trim();
-  const signerId = String(firmanteId || "").trim();
-  if (!requestId || !documentId || !signerId) {
-    throw new Error("solicitudId, documentoId y firmanteId son requeridos.");
-  }
-  const permission = validateRolePermission("registerDocumentSignature", payload);
-  if (!permission || permission.authorized !== true) throw new Error("AUTH_PERMISSION_DENIED");
-  const actorRole = getUserVerifiedRole(payload);
-  const actorUserId = String((payload && payload._verifiedUserId) || "").trim();
-  if (!actorUserId || !actorRole || actorRole === "NO_ACCESS") throw new Error("VERIFIED_IDENTITY_REQUIRED");
-  if (signerId !== actorUserId) throw new Error("SIGNER_IDENTITY_MISMATCH");
-  const signatureType = String(tipoFirma || "Conformidad Digital Institucional").trim();
-  if (/avanzada|cualificada|qualified|x\.509|cades|pkcs7/i.test(signatureType)) {
-    throw new Error("SIGNATURE_PROVIDER_CALLBACK_REQUIRED");
-  }
+function ensureDocumentSignatureSchema_(sheet) {
+  const headers = ["FirmaID","SolicitudID","DocumentoID","FirmanteID","RolFirmante","TipoFirma","TokenVerificacion",
+    "FechaFirma","IpMetadata","DocumentoHash","SignatureHash","VersionDocumento","MetodoAutenticacion","TransaccionID"];
+  const current = sheet.getRange(1,1,1,Math.max(1,sheet.getLastColumn())).getValues()[0] || [];
+  headers.forEach(function(header,index) {
+    const actual = String(current[index] || "").trim();
+    if (!actual) sheet.getRange(1,index+1).setValue(header);
+    else if (actual.toLowerCase() !== header.toLowerCase()) throw new Error("SIGNATURE_SCHEMA_MISMATCH:" + (index+1));
+  });
+  return sheet;
+}
 
+function registerDocumentSignature(payload) {
+  const p = payload || {};
+  const requestId = String(p.solicitudId || "").trim();
+  const documentId = String(p.documentoId || "").trim();
+  if (!requestId || !documentId) throw new Error("solicitudId y documentoId son requeridos.");
+  const permission = validateRolePermission("registerDocumentSignature",p);
+  if (!permission || permission.authorized !== true) throw new Error("AUTH_PERMISSION_DENIED");
+  const actorRole = String(getUserVerifiedRole(p) || "").trim();
+  const actorUserId = String(p._verifiedUserId || "").trim();
+  if (!actorUserId || !actorRole || actorRole === "NO_ACCESS") throw new Error("VERIFIED_IDENTITY_REQUIRED");
+  const suppliedSignerId = String(p.firmanteId || "").trim();
+  if (suppliedSignerId && suppliedSignerId !== actorUserId) throw new Error("SIGNER_IDENTITY_MISMATCH");
+  const signerId = actorUserId;
+  const signatureType = String(p.tipoFirma || "Conformidad Digital Institucional").trim();
+  if (/avanzada|cualificada|qualified|x\.509|cades|pkcs7/i.test(signatureType)) throw new Error("SIGNATURE_PROVIDER_CALLBACK_REQUIRED");
   const lock = LockService.getScriptLock();
   let hasLock = false;
   try {
     hasLock = lock.tryLock(10000);
     if (!hasLock) throw new Error("Servicio ocupado registrando conformidades. Por favor reintente.");
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const documentAccess = assertAdvancedSignatureDocumentScope_(payload, ss, documentId, requestId, "UPDATE");
-    if (!documentAccess || documentAccess.authorized !== true) {
-      throw new Error(documentAccess && documentAccess.code || "RESOURCE_SCOPE_DENIED");
+    const access = assertAdvancedSignatureDocumentScope_(p,ss,documentId,requestId,"UPDATE");
+    if (!access || access.authorized !== true) throw new Error(access && access.code || "RESOURCE_SCOPE_DENIED");
+    if (String(access.userId || "").trim() !== actorUserId || String(access.role || "").trim() !== actorRole) {
+      throw new Error("VERIFIED_IDENTITY_REQUIRED");
     }
-    const sheet = getOrCreateSheet(ss, "FirmasConformidades");
+    const driveFileId = String(access.driveFileId || "").trim();
+    const version = String(access.documentVersion || "").trim();
+    const expectedStoredHash = String(access.storedDocumentHash || "").trim().toLowerCase();
+    if (!driveFileId) throw new Error("DOCUMENT_FILE_REFERENCE_MISSING");
+    if (!version || !/^[a-f0-9]{64}$/.test(expectedStoredHash)) throw new Error("DOCUMENT_BINARY_METADATA_MISSING");
+    const file = DriveApp.getFileById(driveFileId);
+    if (!file || (file.isTrashed && file.isTrashed())) throw new Error("DOCUMENT_FILE_UNAVAILABLE");
+    if (!file.getSharingAccess || file.getSharingAccess() !== DriveApp.Access.PRIVATE) throw new Error("DOCUMENT_FILE_NOT_PRIVATE");
+    const fileName = String(file.getName ? file.getName() : access.fileName || "").trim();
+    if (!/\.pdf$/i.test(fileName)) throw new Error("SIGNATURE_DOCUMENT_MUST_BE_PDF");
+    const bytes = file.getBlob().getBytes();
+    if (!bytes || !bytes.length) throw new Error("DOCUMENT_FILE_EMPTY");
+    const validation = validateFileBinaryIntegrity(Utilities.base64Encode(bytes),fileName,
+      {maxSizeBytes:10*1024*1024,allowedExtensions:[".pdf"]});
+    if (!validation || validation.valid !== true || validation.detectedFormat !== "pdf" || validation.byteLength !== bytes.length) {
+      throw new Error("DOCUMENT_FILE_BINARY_INVALID");
+    }
+    const documentHash = computeDocumentSHA256(bytes).toLowerCase();
+    if (documentHash !== expectedStoredHash) throw new Error("DOCUMENT_INTEGRITY_MISMATCH");
+    const suppliedHash = String(p.documentoHash || "").trim().toLowerCase();
+    if (suppliedHash && suppliedHash !== documentHash) throw new Error("DOCUMENT_HASH_MISMATCH");
+    const fileCheck = DriveApp.getFileById(driveFileId);
+    if (!fileCheck || (fileCheck.isTrashed && fileCheck.isTrashed())) throw new Error("DOCUMENT_FILE_UNAVAILABLE");
+    if (!fileCheck.getSharingAccess || fileCheck.getSharingAccess() !== DriveApp.Access.PRIVATE) throw new Error("DOCUMENT_FILE_NOT_PRIVATE");
+    const secondBytes = fileCheck.getBlob().getBytes();
+    if (computeDocumentSHA256(secondBytes).toLowerCase() !== documentHash) throw new Error("DOCUMENT_CHANGED_DURING_SIGNING");
+    const sheet = ensureDocumentSignatureSchema_(getOrCreateSheet(ss,"FirmasConformidades"));
     const data = sheet.getDataRange().getValues();
-    const documentHashReference = String(documentoHash || "").trim();
     const existing = data.slice(1).filter(function(row) {
       return String(row[1] || "").trim() === requestId &&
-        String(row[2] || "").trim() === documentAccess.documentId &&
-        String(row[3] || "").trim() === signerId;
+        String(row[2] || "").trim() === access.documentId &&
+        String(row[3] || "").trim() === signerId &&
+        String(row[11] || "").trim() === version;
     });
     if (existing.length > 1) throw new Error("RESOURCE_OWNERSHIP_AMBIGUOUS");
     if (existing.length === 1) {
       if (String(existing[0][5] || "").trim() === signatureType &&
-          String(existing[0][9] || "").trim() === documentHashReference) {
-        return { status: "success", firmaId: existing[0][0], tokenVerificacion: existing[0][6],
-          signatureHash: existing[0][10], documentoHash: existing[0][9],
-          fechaFirma: existing[0][7], isExisting: true,
-          message: "La conformidad ya estaba registrada para este documento y firmante." };
+          String(existing[0][9] || "").trim().toLowerCase() === documentHash) {
+        return {status:"success",firmaId:existing[0][0],tokenVerificacion:existing[0][6],
+          signatureHash:existing[0][10],documentoHash:documentHash,versionDocumento:version,
+          transaccionId:existing[0][13],fechaFirma:existing[0][7],isExisting:true,
+          message:"La conformidad ya estaba registrada para estos bytes, versión y firmante."};
       }
       throw new Error("SIGNATURE_ALREADY_REGISTERED");
     }
-
-    const now = new Date();
-    const nowISO = now.toISOString();
-    const fid = "SIG-" + Utilities.getUuid();
-    const tokenVerif = "VERIF-" + Utilities.getUuid().replace(/-/g, "").substring(0, 12).toUpperCase();
-    const baseData = documentHashReference + "|" + requestId + "|" + documentAccess.documentId +
-      "|" + signerId + "|" + actorRole + "|" + nowISO;
-    const signatureHash = computeDocumentSHA256(baseData);
-    sheet.appendRow([fid, requestId, documentAccess.documentId, signerId, actorRole,
-      signatureType, tokenVerif, nowISO, "NO_DISPONIBLE", documentHashReference, signatureHash]);
+    const nowISO = new Date().toISOString();
+    const firmaId = "SIG-" + Utilities.getUuid();
+    const token = "VERIF-" + Utilities.getUuid().replace(/-/g,"").substring(0,12).toUpperCase();
+    const method = "SESION_VERIFICADA";
+    const signatureBase = [documentHash,version,driveFileId,requestId,access.documentId,signerId,actorRole,method,firmaId,nowISO].join("|");
+    const signatureHash = computeDocumentSHA256(signatureBase);
+    sheet.appendRow([firmaId,requestId,access.documentId,signerId,actorRole,signatureType,token,nowISO,
+      "NO_DISPONIBLE",documentHash,signatureHash,version,method,firmaId]);
     try {
-      logStructuredEvent("USER", "registerDocumentSignature", "INFO", "DOCUMENT_CONFORMITY_REGISTERED",
-        "Conformidad institucional manual registrada por la identidad autenticada.",
-        { firmaId: fid, solicitudId: requestId, documentoId: documentAccess.documentId,
-          firmanteId: signerId, actorUserId: actorUserId, departmentId: documentAccess.departmentId,
-          signatureType: signatureType }, actorRole);
-    } catch (_) {}
-    return { status: "success", firmaId: fid, tokenVerificacion: tokenVerif,
-      signatureHash: signatureHash, documentoHash: documentHashReference, fechaFirma: nowISO,
-      message: "Conformidad institucional manual registrada. No equivale a una firma avanzada cualificada de un PSC." };
+      logStructuredEvent("USER","registerDocumentSignature","INFO","DOCUMENT_CONFORMITY_REGISTERED",
+        "Conformidad institucional manual vinculada a los bytes y versión verificados del archivo.",
+        {firmaId:firmaId,solicitudId:requestId,documentoId:access.documentId,firmanteId:signerId,
+          actorUserId:actorUserId,departmentId:access.departmentId,documentHash:documentHash,
+          documentVersion:version,signatureType:signatureType,transactionId:firmaId},actorRole);
+    } catch(_) {}
+    return {status:"success",firmaId:firmaId,tokenVerificacion:token,signatureHash:signatureHash,
+      documentoHash:documentHash,versionDocumento:version,transaccionId:firmaId,fechaFirma:nowISO,
+      message:"Conformidad institucional manual registrada sobre los bytes verificados. No equivale a firma avanzada cualificada de un PSC."};
   } finally {
-    if (hasLock) {
-      try { lock.releaseLock(); } catch (_) {}
-    }
+    if (hasLock) { try { lock.releaseLock(); } catch(_) {} }
   }
 }
 function generateSignatureAuditCertificate(payload) {
@@ -8334,74 +8361,46 @@ function getAdvancedSignatureProviderConfig(payload) {
 function assertAdvancedSignatureDocumentScope_(payload, ss, documentoId, solicitudId, operation) {
   const verifiedRole = getUserVerifiedRole(payload);
   const verifiedUserId = String((payload && payload._verifiedUserId) || "").trim();
-  if (!verifiedUserId || !verifiedRole || verifiedRole === "NO_ACCESS") {
-    return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
-  }
+  if (!verifiedUserId || !verifiedRole || verifiedRole === "NO_ACCESS") return {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
   const context = getUserContextScope(payload);
-  if (!context || context.status !== "success" || !context.userId) {
-    return { authorized: false, code: context && context.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+  if (!context || context.status !== "success" || !context.userId ||
+      String(context.userId).trim() !== verifiedUserId) {
+    return {authorized:false,code:context && context.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED"};
   }
-
   const cleanDocumentId = String(documentoId || "").trim();
   const requestedSolicitudId = String(solicitudId || "").trim();
-  if (!cleanDocumentId) return { authorized: false, code: "RESOURCE_REFERENCE_INVALID" };
+  if (!cleanDocumentId) return {authorized:false,code:"RESOURCE_REFERENCE_INVALID"};
   const documentSheet = ss && ss.getSheetByName("DocumentosEstudiante");
-  if (!documentSheet || documentSheet.getLastRow() <= 1) {
-    return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
-  }
+  if (!documentSheet || documentSheet.getLastRow() <= 1) return {authorized:false,code:"RESOURCE_OWNER_UNRESOLVED"};
   const documentRows = documentSheet.getDataRange().getValues().slice(1);
   const matches = documentRows.filter(function(row) {
-    return String(row[0] || "").trim() === cleanDocumentId ||
-      String(row[5] || "").trim() === cleanDocumentId;
+    return String(row[0] || "").trim() === cleanDocumentId || String(row[5] || "").trim() === cleanDocumentId;
   });
-  if (matches.length !== 1) {
-    return { authorized: false, code: matches.length > 1 ? "RESOURCE_OWNERSHIP_AMBIGUOUS" : "RESOURCE_NOT_FOUND" };
-  }
-
-  const documentRow = matches[0];
-  const canonicalDocumentId = String(documentRow[0] || "").trim();
-  const expedienteId = String(documentRow[1] || "").trim();
-  const storedSolicitudId = String(documentRow[2] || "").trim();
-  if (requestedSolicitudId && storedSolicitudId && requestedSolicitudId !== storedSolicitudId) {
-    return { authorized: false, code: "RESOURCE_NOT_FOUND" };
-  }
+  if (matches.length !== 1) return {authorized:false,code:matches.length > 1 ? "RESOURCE_OWNERSHIP_AMBIGUOUS" : "RESOURCE_NOT_FOUND"};
+  const row = matches[0];
+  const canonicalDocumentId = String(row[0] || "").trim();
+  const expedienteId = String(row[1] || "").trim();
+  const storedSolicitudId = String(row[2] || "").trim();
+  if (requestedSolicitudId && storedSolicitudId && requestedSolicitudId !== storedSolicitudId) return {authorized:false,code:"RESOURCE_NOT_FOUND"};
   const resolvedSolicitudId = storedSolicitudId || requestedSolicitudId;
-
   if (expedienteId && resolvedSolicitudId) {
     const admissionSheet = ss.getSheetByName("SolicitudesAdmision");
     const admissionRows = admissionSheet ? admissionSheet.getDataRange().getValues().slice(1) : [];
-    const admission = admissionRows.find(function(row) {
-      return String(row[0] || "").trim() === resolvedSolicitudId;
-    });
-    if (!admission || String(admission[14] || "").trim() !== expedienteId) {
-      return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
-    }
+    const admission = admissionRows.find(function(item) { return String(item[0] || "").trim() === resolvedSolicitudId; });
+    if (!admission || String(admission[14] || "").trim() !== expedienteId) return {authorized:false,code:"RESOURCE_OWNER_UNRESOLVED"};
   }
-
   let ownership;
-  if (expedienteId) {
-    ownership = assertRecordOwnership(payload, "EXPEDIENTE_ESTUDIANTE", expedienteId, operation);
-  } else if (resolvedSolicitudId) {
-    ownership = assertRecordOwnership(payload, "SOLICITUD_ADMISION", resolvedSolicitudId, operation);
-  } else {
-    ownership = assertRecordOwnership(payload, "DOCUMENTO_ESTUDIANTE", canonicalDocumentId, operation);
-  }
-  if (!ownership || ownership.authorized !== true) {
-    return { authorized: false, code: ownership && ownership.code || "RESOURCE_SCOPE_DENIED" };
-  }
+  if (expedienteId) ownership = assertRecordOwnership(payload,"EXPEDIENTE_ESTUDIANTE",expedienteId,operation);
+  else if (resolvedSolicitudId) ownership = assertRecordOwnership(payload,"SOLICITUD_ADMISION",resolvedSolicitudId,operation);
+  else ownership = assertRecordOwnership(payload,"DOCUMENTO_ESTUDIANTE",canonicalDocumentId,operation);
+  if (!ownership || ownership.authorized !== true) return {authorized:false,code:ownership && ownership.code || "RESOURCE_SCOPE_DENIED"};
   return {
-    authorized: true,
-    documentId: canonicalDocumentId,
-    expedienteId: expedienteId,
-    solicitudId: resolvedSolicitudId,
-    driveFileId: String(documentRow[5] || "").trim(),
-    departmentId: ownership.departmentId || "",
-    userId: context.userId,
-    role: context.role,
-    institutionId: context.institutionId
+    authorized:true,documentId:canonicalDocumentId,expedienteId:expedienteId,solicitudId:resolvedSolicitudId,
+    driveFileId:String(row[5] || "").trim(),fileName:String(row[4] || "").trim(),
+    documentVersion:String(row[13] || "").trim(),storedDocumentHash:String(row[14] || "").trim().toLowerCase(),
+    departmentId:ownership.departmentId || "",userId:context.userId,role:context.role,institutionId:context.institutionId
   };
 }
-
 function assertAdvancedSignatureSignerScope_(ss, documentAccess, firmanteId, signerContext) {
   const deny = function(code) { return { authorized: false, code: code }; };
   try {

@@ -50,6 +50,8 @@ on:
       - tests/contracts/api-response-contract.test.js
       - tests/regression/hr-vacation-dashboard-contract.test.js
       - tests/regression/phase22-document-management-suite-contract.test.js
+      - tests/security/user-service-signature-document-integrity.test.js
+      - tests/security/accounting-school-document-binary-integrity.test.js
       - js/api.js
       - backend/academic-service/Code.gs
       - backend/accounting-service/Code.gs
@@ -203,6 +205,10 @@ jobs:
         run: node tests/security/file-attachment-persistence-contract.test.js
       - name: Run Phase 22 document management suite contract
         run: node tests/regression/phase22-document-management-suite-contract.test.js
+      - name: Run user-service signature document integrity contract
+        run: node tests/security/user-service-signature-document-integrity.test.js
+      - name: Run ACCOUNTING school document binary integrity contract
+        run: node tests/security/accounting-school-document-binary-integrity.test.js
       - name: Run generic resource ownership ABAC contract
         run: node tests/security/resource-ownership-abac.test.js
       - name: Run interdepartmental reference policy contract
