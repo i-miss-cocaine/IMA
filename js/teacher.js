@@ -7763,6 +7763,7 @@ function toBase64(file) {
             });
             data.push(record);
         }
+        if (!data.length) errors.push({ code: 'DATA_ROWS_EMPTY', message: 'La hoja no contiene registros después de la fila de encabezados seleccionada.' });
         if (blankRows.length) warnings.push({ code: 'BLANK_ROWS_PRESENT', message: 'Se detectaron ' + blankRows.length + ' filas vacías; no se completaron automáticamente.' });
         if (repeatedHeaderRows.length) errors.push({ code: 'REPEATED_HEADER_ROWS', message: 'Se detectaron encabezados repetidos dentro de los datos en las filas: ' + repeatedHeaderRows.join(', ') + '.' });
         headers.forEach((header, column) => {
