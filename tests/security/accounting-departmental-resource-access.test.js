@@ -296,7 +296,8 @@ assert.equal(context.getPaymentVoucherFile({sessionToken:"student",comprobanteId
 assert.ok(extractFunction(accounting,"validateRolePermission").includes("getVerifiedAccountingDepartmentScope_"));
 assert.ok(extractFunction(accounting,"uploadEmployeeDocument").includes("DriveApp.Access.PRIVATE"));
 assert.ok(!extractFunction(accounting,"uploadEmployeeDocument").includes("ANYONE_WITH_LINK"));
-assert.ok(extractFunction(accounting,"uploadPaymentVoucher").includes("createPrivatePaymentAttachment_"));
+assert.ok(extractFunction(accounting,"uploadPaymentVoucher").includes("createPrivatePaymentAttachmentWithIntegrity_"));
+assert.ok(extractFunction(accounting,"createPrivatePaymentAttachmentWithIntegrity_").includes("createPrivatePaymentAttachment_"));
 assert.ok(extractFunction(accounting,"createPrivatePaymentAttachment_").includes("DriveApp.Access.PRIVATE"));
 assert.ok(!extractFunction(accounting,"uploadPaymentVoucher").includes("ANYONE_WITH_LINK"));
 assert.ok(extractFunction(accounting,"assertEmployeeExpedienteScopeAccess_").includes("assertResourceOwnershipForScope_"));
