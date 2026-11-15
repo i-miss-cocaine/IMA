@@ -10507,11 +10507,11 @@ function createCanonicalAbsenceJustificationUnlocked_(payload) {
   newRow[justMap.CreadoPorUserId] = actorId;
   newRow[justMap.ActualizadoEn] = new Date();
   justSheet.appendRow(newRow);
-  absenceUpdateRequestProjection_(ss, id, "Pendiente", "SINCRONIZADO", sessions, "");
+  absenceUpdateRequestProjection_(ss, id, "Pendiente", "SINCRONIZADO", sessions, "", sessions, "TOTAL_PENDIENTE", dateKeys);
   return { status: "success", idempotent: false, data: { justificacionId: id, sesionIds: sessions } };
 }
 
-function absenceUpdateRequestProjection_(ss, justificacionId, state, syncState, sessionIds, errorCode, requestedSessionIds, approvalScope) {
+function absenceUpdateRequestProjection_(ss, justificacionId, state, syncState, sessionIds, errorCode, requestedSessionIds, approvalScope, affectedDates) {
   var requestSheet = ss.getSheetByName("SolicitudesTramites");
   if (!requestSheet) return;
   var map = absenceSheetMap_(requestSheet, ["SolicitudID","UserId","EstudianteID","TipoTramite","Descripcion","AdjuntoUrl","Estado","AsignadoA","ObservacionesAdmin","FechaSolicitud","FechaResolucion"].concat(ABSENCE_REQUEST_EXTRA_HEADERS_));
@@ -10524,6 +10524,7 @@ function absenceUpdateRequestProjection_(ss, justificacionId, state, syncState, 
     if (sessionIds) requestSheet.getRange(i + 1, map.SesionIDsJSON + 1).setValue(JSON.stringify(sessionIds));
     if (requestedSessionIds && map.SesionIDsSolicitadasJSON !== undefined) requestSheet.getRange(i + 1, map.SesionIDsSolicitadasJSON + 1).setValue(JSON.stringify(requestedSessionIds));
     if (approvalScope && map.AlcanceAprobacion !== undefined) requestSheet.getRange(i + 1, map.AlcanceAprobacion + 1).setValue(approvalScope);
+    if (affectedDates && map.FechasAfectadasJSON !== undefined) requestSheet.getRange(i + 1, map.FechasAfectadasJSON + 1).setValue(JSON.stringify(affectedDates));
     if (errorCode !== undefined && map.UltimoError !== undefined) requestSheet.getRange(i + 1, map.UltimoError + 1).setValue(errorCode || "");
     if (state === "Aprobada" || state === "Rechazada" || state === "Cancelada") requestSheet.getRange(i + 1, map.FechaResolucion + 1).setValue(new Date());
     break;
@@ -10667,7 +10668,7 @@ function reviewCanonicalAbsenceJustification_(payload) {
       row[map.FechaResolucion] = new Date();
       row[map.ActualizadoEn] = new Date();
       sheet.getRange(rowNumber, 1, 1, row.length).setValues([row]);
-      absenceUpdateRequestProjection_(ss, justId, target, "SINCRONIZADO", JSON.parse(String(row[map.SesionIDsJSON] || "[]")), "", JSON.parse(String(row[map.SesionIDsSolicitadasJSON] || row[map.SesionIDsJSON] || "[]")), String(row[map.AlcanceAprobacion] || ""));
+      absenceUpdateRequestProjection_(ss, justId, target, "SINCRONIZADO", JSON.parse(String(row[map.SesionIDsJSON] || "[]")), "", JSON.parse(String(row[map.SesionIDsSolicitadasJSON] || row[map.SesionIDsJSON] || "[]")), String(row[map.AlcanceAprobacion] || ""), JSON.parse(String(row[map.FechasAfectadasJSON] || JSON.stringify([row[map.FechaAfectada]]))));
     } else {
       row[map.EstadoRevision] = target;
       row[map.SyncEstado] = "NO_REQUERIDA";
@@ -10711,7 +10712,7 @@ function reconcilePendingAttendanceJustifications(payload) {
         row[map.FechaResolucion] = new Date();
         row[map.ActualizadoEn] = new Date();
         sheet.getRange(i + 1, 1, 1, row.length).setValues([row]);
-        absenceUpdateRequestProjection_(ss, String(row[map.JustificacionID]), row[map.EstadoRevision], "SINCRONIZADO", JSON.parse(String(row[map.SesionIDsJSON] || "[]")), "", JSON.parse(String(row[map.SesionIDsSolicitadasJSON] || row[map.SesionIDsJSON] || "[]")), String(row[map.AlcanceAprobacion] || ""));
+        absenceUpdateRequestProjection_(ss, String(row[map.JustificacionID]), row[map.EstadoRevision], "SINCRONIZADO", JSON.parse(String(row[map.SesionIDsJSON] || "[]")), "", JSON.parse(String(row[map.SesionIDsSolicitadasJSON] || row[map.SesionIDsJSON] || "[]")), String(row[map.AlcanceAprobacion] || ""), JSON.parse(String(row[map.FechasAfectadasJSON] || JSON.stringify([row[map.FechaAfectada]]))));
         processed++;
       } catch (error) {
         row[map.UltimoError] = String(error.message || "ATTENDANCE_SYNC_FAILED").slice(0, 120);
