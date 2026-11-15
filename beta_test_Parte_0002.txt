@@ -584,3 +584,22 @@
 - **Evidencia requerida:** IDs sintéticos, snapshots sanitizados de solicitudes/justificaciones/asistencia, hashes, fechas/sesiones, decisiones, constancias docentes y eventos allow/deny. No exportar archivos médicos ni incluir base64/secretos.
 - **Estado:** contratos Node/CI PASS; pendiente ejecución real en Apps Script/Sheets/Drive beta.
 ===============================================================================
+
+===============================================================================
+### BETA-FUNC-104 — TASK-106 — integridad criptográfica, versionado e inmutabilidad de evidencias
+- **Precondiciones:** entorno beta desplegado con USER, ACADEMIC y ACCOUNTING compatibles; usuarios sintéticos de Estudiante, Secretaría y Administrador; filas de configuración institucional; carpetas privadas de Drive. Usar archivos PDF sintéticos, nunca documentos médicos/personales reales.
+- **Pasos:**
+  1. Presentar una solicitud con dos archivos adjuntos distintos. Consultar `EvidenciasDocumentales` y comprobar que cada archivo tiene `EvidenciaID`, `SolicitudID`, nombre original, MIME, tamaño exacto, fecha ISO, usuario, SHA-256, versión y DriveFileID propios.
+  2. Descargar cada evidencia desde un rol autorizado y recalcular SHA-256 sobre los bytes recibidos. Confirmar coincidencia exacta, privacidad de Drive y ausencia de URL/DriveFileID en DTOs no autorizados.
+  3. Renombrar y alterar una copia de archivo después de su recepción. En modo `ESTRICTO_BLOQUEAR_ACCESO_Y_NOTIFICAR_AUDITORIA`, confirmar bloqueo y evento `EVIDENCE_TAMPERING_DETECTED`. En modo `ADVERTENCIA_VISUAL_REVISOR`, confirmar que se muestra advertencia y que el archivo nunca se marca como verificado.
+  4. Marcar la solicitud como `RequiereInformacion` y presentar dos evidencias corregidas. Confirmar que la versión del primer grupo aumenta, el segundo grupo conserva su propia secuencia, y las versiones anteriores permanecen consultables por ID.
+  5. Verificar que el hash, nombre y fecha de recepción de las versiones históricas no cambian. Abrir y verificar una versión `SUPERADA` con el rol autorizado.
+  6. Aprobar la solicitud corregida y revisar `DecisionHistoryJSON`: la decisión debe contener los IDs actuales, hash del snapshot y vínculo a las versiones efectivamente revisadas.
+  7. Intentar sustituir evidencia después de aprobar y repetir la subsanación con otro usuario. Confirmar denegación, ausencia de archivos nuevos y conservación del conjunto de evidencias aprobado.
+  8. Simular discrepancia durante el read-back del archivo recién creado. Confirmar que la operación falla, el archivo no se marca como verificado, se revierte la escritura documental y el archivo temporal se elimina o queda en cuarentena auditable.
+  9. En ACCOUNTING, cargar un comprobante de pago; comprobar `SolicitudID`, `EvidenciaID`, `DriveFileID`, nombre original, SHA-256, tamaño, MIME, fecha y versión. Marcarlo `Observado`, cargar v2 en el mismo grupo, verificar que v1 sigue descargable y que v2 puede aprobarse. Intentar otra sustitución después de aprobar y confirmar bloqueo.
+  10. Probar configuración ausente, duplicada, inactiva, estricta y de advertencia. La configuración inválida o ambigua debe volver al comportamiento estricto.
+- **Resultado esperado:** cada archivo tiene identidad y hash independientes; las descargas y revisiones críticas detectan cambios; las subsanaciones crean versiones nuevas sin alterar el histórico; las decisiones quedan vinculadas al snapshot exacto; no se publican archivos ni se permite sustituir evidencia aprobada.
+- **Evidencia requerida:** IDs sintéticos, hashes, versiones, estados, resultados allow/deny, eventos de auditoría y snapshots sanitizados de filas. No incluir base64, contenido real, DriveFileID sensible ni secretos en logs.
+- **Estado:** contratos Node/CI y sintaxis PASS; pendiente validación manual en Apps Script/Sheets/Drive beta.
+===============================================================================
