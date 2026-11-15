@@ -7064,18 +7064,21 @@ function getAdministrativeRequests(payload) {
   }).map(function(row) {
     const stored = String(row[5] || "").trim();
     const integrityState = attachmentMap.AdjuntoIntegridadEstado === undefined ? "" : String(row[attachmentMap.AdjuntoIntegridadEstado] || "").trim();
-    var approvedSessions = [], requestedSessions = [], affectedDates = [];
+    var approvedSessions = [], requestedSessions = [], affectedDates = [], evidenceIds = [];
     try { approvedSessions = JSON.parse(String(attachmentMap.SesionIDsJSON === undefined ? "[]" : row[attachmentMap.SesionIDsJSON] || "[]")); } catch (_) {}
     try { requestedSessions = JSON.parse(String(attachmentMap.SesionIDsSolicitadasJSON === undefined ? "[]" : row[attachmentMap.SesionIDsSolicitadasJSON] || "[]")); } catch (_) {}
     try { affectedDates = JSON.parse(String(attachmentMap.FechasAfectadasJSON === undefined ? "[]" : row[attachmentMap.FechasAfectadasJSON] || "[]")); } catch (_) {}
+    try { evidenceIds = JSON.parse(String(attachmentMap.EvidenciaIDsJSON === undefined ? "[]" : row[attachmentMap.EvidenciaIDsJSON] || "[]")); } catch (_) {}
     if (!Array.isArray(affectedDates) || !affectedDates.length) affectedDates = [String(attachmentMap.FechaAfectada === undefined ? "" : row[attachmentMap.FechaAfectada] || "")].filter(Boolean);
     if (!Array.isArray(approvedSessions)) approvedSessions = [];
     if (!Array.isArray(requestedSessions)) requestedSessions = [];
     if (!Array.isArray(affectedDates)) affectedDates = [];
+    if (!Array.isArray(evidenceIds)) evidenceIds = [];
     return { solicitudId:row[0], userId:row[1], estudianteId:row[2], tipoTramite:row[3], descripcion:row[4],
       adjuntoUrl:"", tieneAdjunto:!!stored, integridadAdjunto:stored ? (integrityState || "LEGACY_UNVERIFIED") : "SIN_ADJUNTO",
       alcanceAprobacion:attachmentMap.AlcanceAprobacion === undefined ? "" : String(row[attachmentMap.AlcanceAprobacion] || ""),
       sesionesAprobadas:approvedSessions, sesionesSolicitadas:requestedSessions, fechasAfectadas:affectedDates,
+      evidenciaIds:evidenceIds, evidenciaCount:evidenceIds.length,
       estado:row[6]||"Enviada", asignadoA:row[7]||"Secretaría",
       observacionesAdmin:row[8]||"", fechaSolicitud:row[9]?new Date(row[9]).toISOString():null,
       fechaResolucion:row[10]?new Date(row[10]).toISOString():null };
