@@ -165,6 +165,10 @@ function makeMigrationOrchestrationFixture(options){
  const constants=accounting.slice(start,first),names=["migrationStableJson_","migrationHash_","mapMigrationRowToTarget_","buildAccountingDepartmentalImportPreflight_","rollbackMigrationOwnerWrites_","importDataWithColumnMapping"];
  const code=constants+names.map(n=>extractBalancedFunction(accounting,n)).join(String.fromCharCode(10));
  vm.runInNewContext(code + "\nthis.schemas=MIGRATION_OWNER_SCHEMAS_;",ctx);
+ // Reapply isolated dependencies after evaluating the source slice, which contains production helpers.
+ ctx.getVerifiedAccountingIdentity_=()=>({authorized:true,userId:"U-1",role:"Director",institutionId:"INST-1"});
+ ctx.accountingHasInstitutionalImportPermission_=()=>true;
+ ctx.resolveCrossReferenceIdentifier=p=>p.idOriginalLegado==="PENDING"?{status:"pending_review",code:"IDENTITY_REVIEW_REQUIRED"}:{status:"success",idMapeo:"MAP-"+p.idOriginalLegado,idNuevoPlataforma:"PER-SHARED"};
  ctx.buildImportPreview_ = function(payload) {
   const schema = ctx.schemas[payload.tipoEntidad];
   const departmentPreflight = ctx.buildAccountingDepartmentalImportPreflight_(payload, ss, schema);
