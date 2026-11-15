@@ -6322,7 +6322,8 @@ function validateFileBinaryIntegrity(fileData, fileName, options) {
     base64Content = base64Content.slice(comma + 1);
   }
   base64Content = base64Content.replace(/\s/g, "");
-  if (!base64Content || !/^[A-Za-z0-9+/]*={0,2}$/.test(base64Content) || base64Content.length % 4 === 1) {
+  if (!base64Content) throw new Error("EMPTY_FILE_REJECTED: El archivo está vacío (0 bytes).");
+  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64Content) || base64Content.length % 4 === 1) {
     throw new Error("FILE_BASE64_INVALID: Contenido Base64 inválido.");
   }
   const unpadded = base64Content.replace(/=+$/, "");

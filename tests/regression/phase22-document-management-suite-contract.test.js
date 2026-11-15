@@ -95,6 +95,9 @@ function makeIsolatedHarness(options = {}) {
 {
   const h = makeIsolatedHarness();
   const result = h.run();
+  if (result.status !== "success") {
+    console.error("Phase 22 failed scenarios:", JSON.stringify(Array.from(result.resultadosSuiteRegresion || []).filter(item => item.status === "FAIL"), null, 2));
+  }
   assert.equal(result.status, "success");
   assert.equal(result.todasPruebasPasaron, true);
   assert.equal(result.totalPruebasFase22, 12);

@@ -5029,7 +5029,8 @@ function validateFileBinaryIntegrity(fileData, fileName, options) {
     base64Content = base64Content.slice(comma + 1);
   }
   base64Content = base64Content.replace(/\s/g, "");
-  if (!base64Content || !/^[A-Za-z0-9+/]*={0,2}$/.test(base64Content) || base64Content.length % 4 === 1) {
+  if (!base64Content) throw new Error("EMPTY_FILE_REJECTED: El archivo está vacío (0 bytes).");
+  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64Content) || base64Content.length % 4 === 1) {
     throw new Error("FILE_BASE64_INVALID: Contenido Base64 inválido.");
   }
   const unpadded = base64Content.replace(/=+$/, "");
@@ -15591,7 +15592,7 @@ function runPhase22DocumentManagementAndSACERegressionSuite(payload) {
       id: "PT22-06",
       name: "Seguridad Binaria: Detección de Magic Bytes válidos en PDF",
       execute: function() {
-        const dummyPdf = "data:application/pdf;base64," + Utilities.base64Encode("%PDF-1.4 header dummy valid content for testing");
+        const dummyPdf = "data:application/pdf;base64," + Utilities.base64Encode("%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\nstartxref\n9\n%%EOF\n");
         const res = validateFileBinaryIntegrity(dummyPdf, "comprobante.pdf");
         const pass = res && res.valid === true && res.detectedFormat === "pdf";
         return { pass, expected: "pdf", actual: res ? res.detectedFormat : null, details: res };
