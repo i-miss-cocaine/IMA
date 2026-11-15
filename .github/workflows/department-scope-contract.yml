@@ -45,6 +45,7 @@ on:
       - tests/security/accounting-transport-efficiency-metrics.test.js
       - tests/contracts/api-response-contract.test.js
       - tests/regression/hr-vacation-dashboard-contract.test.js
+      - tests/regression/phase22-document-management-suite-contract.test.js
       - js/api.js
       - backend/academic-service/Code.gs
       - backend/accounting-service/Code.gs
@@ -192,6 +193,8 @@ jobs:
         run: node tests/security/user-service-signature-ownership.test.js
       - name: Run user-service signature provider callback contract
         run: node tests/security/user-service-signature-provider-callback.test.js
+      - name: Run Phase 22 document management suite contract
+        run: node tests/regression/phase22-document-management-suite-contract.test.js
       - name: Run generic resource ownership ABAC contract
         run: node tests/security/resource-ownership-abac.test.js
       - name: Run interdepartmental reference policy contract
@@ -218,6 +221,7 @@ jobs:
           node --check js/api.js
           node --check tests/contracts/api-response-contract.test.js
           node --check tests/security/user-service-signature-provider-callback.test.js
+          node --check tests/regression/phase22-document-management-suite-contract.test.js
           node --check tests/regression/hr-vacation-dashboard-contract.test.js
           node --check js/ui-common.js
           node --check < backend/task-service/Code.gs

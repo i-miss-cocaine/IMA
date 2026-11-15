@@ -15493,6 +15493,7 @@ function runPhase22DocumentManagementAndSACERegressionSuite(payload) {
     });
   }
 
+  let testTemplateId = null;
   let testDocId = null;
   let testCUV = null;
   let testHash = null;
@@ -15502,27 +15503,30 @@ function runPhase22DocumentManagementAndSACERegressionSuite(payload) {
       id: "PT22-01",
       name: "Documentos: Configuración y alta de plantilla escolar",
       execute: function() {
-        const tId = "PLANTILLA-TEST-CONSTANCIA-" + Date.now();
         const res = configureSchoolDocumentTemplate({
-          plantillaId: tId,
-          codigoOficial: "CONST-ESTUDIO-STD",
-          nombrePlantilla: "Constancia de Estudio Oficial",
+          codigoDocumento: "CONST-ESTUDIO-STD",
+          titulo: "Constancia de Estudio Oficial",
           categoria: "Académica",
           descripcion: "Constancia oficial de matrícula y estudio",
           contenidoHTML: "<h1>Constancia de Estudio</h1><p>El alumno {{estudiante.nombreCompleto}} con ID {{estudiante.identidad}} está matriculado.</p>",
           version: "1.0",
-          camposPersonalizablesJSON: ["estudiante.nombreCompleto", "estudiante.identidad"]
+          camposJSON: ["estudiante.nombreCompleto", "estudiante.identidad"]
         });
-        const pass = res && res.status === "success" && res.plantillaId === tId;
-        return { pass, expected: tId, actual: res ? res.plantillaId : null, details: res };
+        const generatedTemplateId = String(res && res.plantillaId || "").trim();
+        const pass = !!(res && res.status === "success" && generatedTemplateId);
+        if (pass) testTemplateId = generatedTemplateId;
+        return { pass, expected: "ID de plantilla generado por el servicio", actual: generatedTemplateId || null, details: res };
       }
     },
     {
       id: "PT22-02",
       name: "Documentos: Generación con correlativo anual, CUV y Hash SHA-256",
       execute: function() {
+        if (!testTemplateId) {
+          return { pass: false, expected: "ID de plantilla válido de PT22-01", actual: null };
+        }
         const res = generateSchoolDocument({
-          plantillaId: "PLANTILLA-TEST-CONSTANCIA",
+          plantillaId: testTemplateId,
           estudianteUserId: "EST-TEST-2026-001",
           solicitanteUserId: "PADRE-TEST-001",
           datosFormulario: {
@@ -15647,20 +15651,21 @@ function runPhase22DocumentManagementAndSACERegressionSuite(payload) {
     },
     {
       id: "PT22-11",
-      name: "Firma Avanzada: Verificación de marco normativo Decreto 149-2013",
+      name: "CUV: Rechazo de códigos de verificación inexistentes",
       execute: function() {
-        const res = getAdvancedSignatureProviderConfig({});
-        const pass = res && res.status === "success" && Array.isArray(res.proveedores) && res.proveedores.length > 0;
-        return { pass, expected: "Lista proveedores PSC", actual: res && res.proveedores ? res.proveedores.length : 0 };
+        const invalidCUV = "CUV-NO-EXISTE-" + Date.now() + "-" + Math.floor(Math.random() * 1000000);
+        const res = verifySchoolDocumentByCUV({ codigoVerificacion: invalidCUV });
+        const pass = res && res.status === "not_found";
+        return { pass, expected: "not_found", actual: res ? res.status : null, details: res };
       }
     },
     {
       id: "PT22-12",
-      name: "Expediente Probatorio: Certificado de finalización inmutable con hora GMT-6",
+      name: "Integridad: hash SHA-256 de prueba (no acredita certificado persistido)",
       execute: function() {
         const docHash = computeDocumentSHA256("CertificadoFinalizacionTest");
-        const pass = docHash && docHash.length === 64;
-        return { pass, expected: 64, actual: docHash ? docHash.length : null };
+        const pass = typeof docHash === "string" && /^[a-f0-9]{64}$/i.test(docHash);
+        return { pass, expected: "64 caracteres hexadecimales; no certifica persistencia", actual: typeof docHash === "string" ? docHash.length : null };
       }
     }
   ];
@@ -15678,7 +15683,8 @@ function runPhase22DocumentManagementAndSACERegressionSuite(payload) {
   const allPassed = passedCount === testCases.length;
 
   return {
-    status: "success",
+    status: allPassed ? "success" : "error",
+    code: allPassed ? null : "PHASE22_REGRESSION_FAILED",
     service: "ACCOUNTING",
     suiteName: "runPhase22DocumentManagementAndSACERegressionSuite",
     totalPruebasFase22: testCases.length,
@@ -19113,7 +19119,10 @@ function verifySchoolDocumentByCUV(payload) {
   if (!targetCode) throw new Error("codigoVerificacion es requerido para la consulta.");
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "DocumentosEscolaresEmitidos").getDataRange().getValues().slice(1);
+  const issuedSheet = ss.getSheetByName("DocumentosEscolaresEmitidos");
+  const rows = issuedSheet && issuedSheet.getLastRow() > 1
+    ? issuedSheet.getDataRange().getValues().slice(1)
+    : [];
 
   const foundRow = rows.find(r => String(r[6] || "").trim().toUpperCase() === targetCode);
 
@@ -19144,8 +19153,10 @@ function verifySchoolDocumentByCUV(payload) {
   // [TASK-040] Expediente probatorio y certificado de auditoría de firmas vinculadas al documento
   let certificadoAuditoria = null;
   try {
-    const firmSheet = getOrCreateSheet(ss, "FirmasConformidades");
-    const firmRows = firmSheet.getDataRange().getValues().slice(1);
+    const firmSheet = ss.getSheetByName("FirmasConformidades");
+    const firmRows = firmSheet && firmSheet.getLastRow() > 1
+      ? firmSheet.getDataRange().getValues().slice(1)
+      : [];
     const relatedSignatures = firmRows.filter(r => String(r[2]).trim() === String(foundRow[0]).trim() || String(r[1]).trim() === String(foundRow[0]).trim());
 
     if (relatedSignatures.length > 0) {
