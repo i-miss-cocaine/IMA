@@ -97,6 +97,7 @@ const functions = [
   "getEvidenceIntegrityPolicy_","logEvidenceTampering_","getAdministrativeRequestAttachment"
 ];
 vm.runInContext(functions.map(name=>extractFunction(userSource,name)).join("\n"),context);
+context.getEvidenceIntegrityPolicy_ = function() { return "ESTRICTO_BLOQUEAR_ACCESO_Y_NOTIFICAR_AUDITORIA"; };
 const created=context.createPrivateRequestAttachmentWithIntegrity_(base64,"evidence.pdf","Tramites_Adjuntos_Privados_v1",[".pdf"]);
 assert.equal(created.file,file);
 assert.equal(created.fileId,fileId);
@@ -128,7 +129,7 @@ assert.equal(Buffer.from(result.fileData,"base64").toString(),"%PDF-test");
 
 storedBytes=Buffer.from("%PDF-tampered");
 result=context.getAdministrativeRequestAttachment({_verifiedUserId:"STU-1",solicitudId:"REQ-1"});
-assert.equal(result.code,"ATTACHMENT_INTEGRITY_MISMATCH","mutated Drive bytes must be rejected");
+assert.equal(result.code,"EVIDENCE_TAMPERING_DETECTED","mutated Drive bytes must be rejected and classified as evidence tampering");
 storedBytes=Buffer.from(originalBytes);
 
 sharing="ANYONE_WITH_LINK";
@@ -163,7 +164,7 @@ assert.equal(result.code,"ATTACHMENT_INTEGRITY_METADATA_INVALID","unknown attach
 
 result=context.getAdministrativeRequestAttachment({_verifiedUserId:"STU-OTHER",solicitudId:"REQ-1"});
 assert.equal(result.code,"RESOURCE_NOT_FOUND","attachment ownership must still be enforced");
-assert.ok(events.some(event=>event.event==="ATTACHMENT_INTEGRITY_MISMATCH"));
+assert.ok(events.some(event=>event.event==="EVIDENCE_TAMPERING_DETECTED"));
 assert.ok(events.some(event=>event.event==="ATTACHMENT_DELIVERED_LEGACY_UNVERIFIED"));
 
 const absenceSubmit=extractFunction(userSource,"submitStudentAbsenceJustification");
