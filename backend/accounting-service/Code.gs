@@ -842,15 +842,16 @@ function sendMigrationOwnerRequest_(service, action, payload) {
     if (action === "compensateMigratedEntity") return compensateTrustedAccountingMigrationWrite_(payload || {});
     throw new Error("MIGRATION_ACTION_NOT_ALLOWED");
   }
-  if (target !== "USER") throw new Error("MIGRATION_OWNER_SERVICE_NOT_CONFIGURED");
+  if (target !== "USER" && target !== "ACADEMIC") throw new Error("MIGRATION_OWNER_SERVICE_NOT_CONFIGURED");
   var properties = PropertiesService.getScriptProperties();
-  var endpoint = String(properties.getProperty("IMA_USER_SERVICE_URL") || "").trim();
+  var endpointKey = target === "ACADEMIC" ? "IMA_ACADEMIC_SERVICE_URL" : "IMA_USER_SERVICE_URL";
+  var endpoint = String(properties.getProperty(endpointKey) || "").trim();
   var signingSecret = String(properties.getProperty("IMA_MIGRATION_HMAC_SECRET") || "").trim();
   if (!/^https:\/\/[^/]+\/exec$/i.test(endpoint) || signingSecret.length < 32 ||
       typeof createInterServiceEnvelope !== "function" || typeof UrlFetchApp === "undefined") {
     throw new Error("MIGRATION_OWNER_SERVICE_NOT_CONFIGURED");
   }
-  var envelope = createInterServiceEnvelope("ACCOUNTING", "USER", action, payload || {}, signingSecret);
+  var envelope = createInterServiceEnvelope("ACCOUNTING", target, action, payload || {}, signingSecret);
   var response = UrlFetchApp.fetch(endpoint, {
     method: "post", contentType: "application/json",
     payload: JSON.stringify(envelope), muteHttpExceptions: true
@@ -868,7 +869,8 @@ function rollbackMigrationOwnerWrites_(applied) {
   (applied || []).slice().reverse().forEach(function(item) {
     try {
       var ownership = String(item && item.tipoEntidad || "") === "empleadoOwnership";
-      sendMigrationOwnerRequest_(ownership ? "USER" : "ACCOUNTING",
+      var ownerService = ownership ? "USER" : String(item && item.service || "ACCOUNTING").toUpperCase();
+      sendMigrationOwnerRequest_(ownerService,
         ownership ? "compensateMigratedResourceOwnership" : "compensateMigratedEntity",
         { idempotencyKey: item.idempotencyKey || "", entityType: item.tipoEntidad || "",
           payload: item.payload || {}, ownershipId: item.ownershipId || "" });
