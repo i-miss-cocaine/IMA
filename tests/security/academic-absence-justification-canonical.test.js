@@ -582,7 +582,7 @@ const resubmissionReview = userContext.reviewAbsenceJustification({
 assert.equal(resubmissionReview.status,"success",JSON.stringify(resubmissionReview));
 const canonicalResubmissionRows = sheet("JustificacionesAsistencia").getDataRange().getValues();
 const canonicalResubmissionRow = canonicalResubmissionRows.find((row,index)=>index>0&&row[0]===resubmissionId);
-assert.deepEqual(JSON.parse(canonicalResubmissionRow[attachmentMap.EvidenciaIDsJSON]),currentResubmissionEvidence.map(item=>item.EvidenciaID).sort());
+assert.deepEqual(JSON.parse(canonicalResubmissionRow[attachmentMap.EvidenciaIDsJSON]),Array.from(currentResubmissionEvidence,item=>item.EvidenciaID).sort());
 const resubmissionHistory = JSON.parse(canonicalResubmissionRow[attachmentMap.DecisionHistoryJSON]);
 assert.ok(resubmissionHistory.some(item=>item.action==="EVIDENCE_RESUBMITTED"&&item.previousEvidenceIds.includes(oldResubmissionRecord.EvidenciaID)));
 assert.ok(resubmissionHistory.some(item=>item.action==="APPROVE"&&currentResubmissionEvidence.every(evidence=>item.evidenceIds.includes(evidence.EvidenciaID))));
