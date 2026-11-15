@@ -636,7 +636,7 @@ function importDataWithColumnMapping(payload) {
           return String(targetRow && targetRow[targetIdField] || "").trim() === String(row[(schema.headers || [])[0]] || "").trim();
         });
         expectedTargetPresent = !!existingTargetRow;
-        if (existingTargetRow) expectedTargetRowHash = migrationHash_(migrationStableJson_(existingTargetRow));
+        if (existingTargetRow) expectedTargetRowHash = String(existingTargetRow.__rowHash || migrationHash_(migrationStableJson_(existingTargetRow)));
       }
       var result = sendMigrationOwnerRequest_(service, "writeMigratedEntity", {
         sessionToken: input.sessionToken,
