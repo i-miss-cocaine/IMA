@@ -88,7 +88,7 @@ let lastEnvelope = null;
 const accountingRuntime = {
   API_RESPONSE_VERSION: "1.0.0", Date, String, JSON, Array, Object, Number, Math, RegExp, Error,
   PropertiesService: { getScriptProperties: () => ({ getProperty: key => ({
-    IMA_USER_SERVICE_URL: "https://user.example.test/exec",
+    IMA_USER_SERVICE_URL: "https://script.google.com/macros/s/AKfycbUSER123/exec",
     IMA_MIGRATION_HMAC_SECRET: secret,
     IMA_INSTITUTION_ID: "INST-1",
     SPREADSHEET_ID: "SHEET-1"
@@ -102,7 +102,7 @@ const accountingRuntime = {
     getUuid: () => "12345678-1234-1234-1234-123456789012"
   },
   UrlFetchApp: { fetch(url, options) {
-    assert.equal(url, "https://user.example.test/exec");
+    assert.equal(url, "https://script.google.com/macros/s/AKfycbUSER123/exec");
     assert.equal(options.method, "post");
     lastEnvelope = JSON.parse(options.payload);
     return { getResponseCode: () => 200, getContentText: () => JSON.stringify(remoteResponse) };
