@@ -1187,3 +1187,39 @@ TASK-106 — Integridad criptográfica, versionado y protección contra sustituc
 - HEAD previo al checkpoint verificado: 54a9046458a2630a17054108835b4aecab94ff48.
 - Rama base NG_beta_0.0.0.1 sin modificaciones.
 ===============================================================================
+
+
+===============================================================================
+## C1.760 — IMA-EXEC-20261115-TASK130-NATIVE-FIELD-VALIDATION-CI-01
+- **Fecha:** 2026-11-15
+- **Rama:** NG_beta_0.0.0.1_work (única rama modificada)
+- **HEAD antes del checkpoint:** 43e8f1a447ef87c65ab29db0dc39963a641180f1
+- **Tarea:** TASK-130 — ayudas permanentes, errores inline y confirmaciones independientes.
+
+### Implementación
+- js/ui-common.js: los eventos nativos invalid/input/change se capturan a nivel documento. El validationMessage se presenta bajo el control con role=alert/aria-live, aria-invalid y aria-describedby; al corregirse el control, se elimina solo el error y se conserva la ayuda permanente.
+- tests/security/ui-common-permanent-help.test.js cubre la captura del evento invalid (no burbujeante), visualización del mensaje y limpieza al corregir.
+- .github/workflows/ui-accessibility-contract.yml incluye el test DOM nuevo y amplía filtros de push/PR para formularios y scripts dependientes.
+
+### Pruebas
+- Compilación sintáctica V8 PASS para js/ui-common.js, backend/user-service/Code.gs, js/secretary.js, js/teacher.js, js/accounting.js, tests/security/ui-common-permanent-help.test.js, tests/security/user-service-ui-metadata.test.js y tests/ui/permanent-form-help.test.js.
+- Node CLI y GitHub Actions: ejecución no verificable con el conector disponible (sin resultados de status/check-run/workflow-run expuestos). No se declara PASS.
+- Pruebas de navegador/lector de pantalla/tacto aún pendientes.
+
+### Archivos del avance
+- js/ui-common.js
+- tests/security/ui-common-permanent-help.test.js
+- tests/security/user-service-ui-metadata.test.js
+- tests/ui/permanent-form-help.test.js
+- .github/workflows/ui-accessibility-contract.yml
+- backend/user-service/Code.gs
+- js/secretary.js
+- teacher-dashboard.html
+- pendientes/Secretaria/Pendientes.md
+- Auditoría/AUDITORIA_FASE_38_AYUDA_CONTEXTUAL_METADATOS_APRENDIZAJE.md
+- changueslogs.txt
+
+### Estado y continuidad
+- TASK-130 continúa parcial; no se cierra hasta cubrir formularios reales de matrícula/importación/adjuntos y verificar el handler de cierre de actas, además de pruebas Node/CI y accesibilidad.
+- HEAD base verificado antes de checkpoint: 44d9891132332e692dbe2ba8602b41f50a508a59; no se publicó ningún cambio en esa rama.
+===============================================================================
