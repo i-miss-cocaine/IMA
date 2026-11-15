@@ -430,6 +430,9 @@ const secretaryQueue = userContext.getAdministrativeRequests({_userId:"SEC-USER"
 assert.equal(secretaryQueue.status,"success");
 assert.ok(secretaryQueue.data.some(item=>item.solicitudId===userMultiSubmit.solicitudId),"secretariat must see the institution-wide justification queue");
 assert.deepEqual(Array.from(secretaryQueue.data.find(item=>item.solicitudId===userMultiSubmit.solicitudId).fechasAfectadas),["2026-11-20","2026-11-21"]);
+const queuedPartial = secretaryQueue.data.find(item=>item.solicitudId===userMultiSubmit.solicitudId);
+assert.equal(queuedPartial.alcanceAprobacion,"PARCIAL");
+assert.deepEqual(Array.from(queuedPartial.sesionesAprobadas),["SES-USER-MULTI-A"]);
 const studentQueue = userContext.getAdministrativeRequests({_userId:"STU-USER",_role:"Estudiante"});
 assert.ok(studentQueue.data.every(item=>item.userId==="STU-USER"),"student request history must remain scoped to the authenticated student");
 assert.throws(() => userContext.updateRequestStatus({ solicitudId: userSubmit.solicitudId, nuevoEstado: "Rechazada" }), /ABSENCE_REVIEW_REQUIRES_CANONICAL_WORKFLOW/);
