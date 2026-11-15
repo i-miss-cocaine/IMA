@@ -336,7 +336,15 @@ window.loadAdmissionApplicantDocuments = async function(solicitudId) {
 
 window.downloadApplicantDocumentAction = async function(documentoId, solicitudId) {
     try {
-        const res = await window.fetchApi('ACADEMIC', 'getStudentDocumentFile', { documentoId, solicitudId });
+        const access = await window.fetchApi('ACADEMIC', 'createStudentDocumentAccessToken', {
+            documentoId, solicitudId, operation: 'DOWNLOAD'
+        });
+        if (!access || access.status !== 'success' || !access.accessToken) {
+            throw new Error((access && access.message) || 'No fue posible autorizar la descarga del documento.');
+        }
+        const res = await window.fetchApi('ACADEMIC', 'getSecureDocumentStream', {
+            documentoId, solicitudId, versionDocumento: access.versionDocumento, accessToken: access.accessToken
+        });
         if (!res || res.status !== 'success' || !res.fileData) {
             throw new Error((res && res.message) || 'El documento no está disponible o no superó la verificación de integridad.');
         }
