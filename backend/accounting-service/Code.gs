@@ -460,6 +460,48 @@ function buildAccountingDepartmentalImportPreflight_(payload, ss, schema) {
   return { valid: true, applicable: true, departmentId: active, departmentIds: [active], rows: rows };
 }
 
+function requestAccountingIdentityMapSnapshot_(payload) {
+  var input = payload || {};
+  var properties = PropertiesService.getScriptProperties();
+  var endpoint = String(properties.getProperty("IMA_USER_SERVICE_URL") || "").trim();
+  var secret = String(properties.getProperty("IMA_MIGRATION_HMAC_SECRET") || "").trim();
+  if (!isAccountingTrustedAppsScriptEndpoint_(endpoint) || secret.length < 32 ||
+      typeof UrlFetchApp === "undefined" || typeof createInterServiceEnvelope !== "function") {
+    return { status: "error", code: "IDENTITY_MAPPING_SNAPSHOT_UNAVAILABLE" };
+  }
+  var now = Date.now();
+  var requestId = "REQ-" + now + "-" + Utilities.getUuid().replace(/-/g, "").slice(0, 12);
+  var correlationId = String(input.correlationId || ("CORR-" + Utilities.getUuid().replace(/-/g, "")));
+  var body = { sessionToken: String(input.sessionToken || ""), institutionId: String(input.institutionId || ""),
+    lookups: Array.isArray(input.lookups) ? input.lookups : [] };
+  var bodyToSign = [requestId, now, correlationId, "ACCOUNTING", "USER",
+    "getMigrationIdentityMapSnapshot", JSON.stringify(body)].join("|");
+  var envelope = {
+    sourceService: "ACCOUNTING", targetService: "USER", action: "getMigrationIdentityMapSnapshot",
+    requestId: requestId, timestamp: now, correlationId: correlationId, payload: body,
+    hmacSignature: accountingComputeHmacSignature_(bodyToSign, secret)
+  };
+  try {
+    var response = UrlFetchApp.fetch(endpoint, {
+      method: "post", contentType: "application/json", payload: JSON.stringify(envelope), muteHttpExceptions: true
+    });
+    var httpStatus = response.getResponseCode(), parsed = {};
+    try { parsed = JSON.parse(response.getContentText() || "{}"); } catch (ignored) {}
+    if (httpStatus < 200 || httpStatus >= 300 || !parsed || parsed.status !== "success") {
+      return { status: "error", code: parsed && parsed.code || "IDENTITY_MAPPING_SNAPSHOT_UNAVAILABLE" };
+    }
+    var data = parsed.data && typeof parsed.data === "object" ? parsed.data : parsed;
+    if (data.verified !== true || String(data.service || "") !== "USER" ||
+        String(data.institutionId || "") !== String(input.institutionId || "") ||
+        !Array.isArray(data.entries) || !Array.isArray(data.uniquenessViolations)) {
+      return { status: "error", code: "IDENTITY_MAPPING_SNAPSHOT_UNVERIFIED" };
+    }
+    return Object.assign({}, data, { status: "success" });
+  } catch (error) {
+    return { status: "error", code: "IDENTITY_MAPPING_SNAPSHOT_UNAVAILABLE" };
+  }
+}
+
 function buildImportPreview_(payload) {
   var input = payload || {};
   var auth = getVerifiedAccountingIdentity_(input);
@@ -488,7 +530,26 @@ function buildImportPreview_(payload) {
   if (!departmentPreflight || departmentPreflight.valid !== true) {
     return { status: "error", code: departmentPreflight && departmentPreflight.code || "DEPARTMENT_IMPORT_SCOPE_DENIED", validForImport: false, errores: [] };
   }
-  var identitySnapshot = buildAccountingIdentityMapSnapshot_(input, ss);
+  var legacyIds = input.filasData.map(function(row) {
+    return String(row && legacyIdColumn ? row[legacyIdColumn] || "" : "").trim();
+  }).filter(Boolean);
+  var identityLookups = [{ sourceName: sourceName, entityType: entityType, legacyIds: legacyIds }];
+  var relatedPersonField = entityType === "estudiante" ? "PersonaID" : (entityType === "empleado" ? "PersonaId" : "");
+  var relatedPersonSourceField = relatedPersonField ? String(fields[relatedPersonField] || "") : "";
+  if (relatedPersonSourceField) {
+    var relatedPersonIds = input.filasData.map(function(row) {
+      return String(row && row[relatedPersonSourceField] || "").trim();
+    }).filter(Boolean);
+    if (relatedPersonIds.length) identityLookups.push({ sourceName: sourceName, entityType: "persona", legacyIds: relatedPersonIds });
+  }
+  var identitySnapshot = requestAccountingIdentityMapSnapshot_({
+    sessionToken: input.sessionToken, institutionId: institutionId, correlationId: input.correlationId,
+    lookups: identityLookups
+  });
+  if (!identitySnapshot || identitySnapshot.status !== "success" || identitySnapshot.verified !== true) {
+    return { status: "error", code: identitySnapshot && identitySnapshot.code || "IDENTITY_MAPPING_SNAPSHOT_UNAVAILABLE",
+      validForImport: false, errores: [] };
+  }
   var structural = input.analisisEstructural || {};
   var errors = [];
   var warnings = [];
