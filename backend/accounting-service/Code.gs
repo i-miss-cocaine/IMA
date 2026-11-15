@@ -5431,7 +5431,7 @@ function uploadPaymentVoucher(payload) {
   const mapped=filtered.map(r=>({
     comprobanteId:r[map.ComprobanteID],evidenciaId:String(r[map.EvidenciaID]||r[map.ComprobanteID]||""),solicitudId:String(r[map.SolicitudID]||r[map.ComprobanteGrupoID]||""),
     comprobanteGrupoId:String(r[map.ComprobanteGrupoID]||""),nombreOriginal:String(r[map.NombreOriginal]||""),
-    versionNumero:Number(r[map.VersionNumero]||1),esVersionActual:r[map.EsVersionActual]===false?false:true;
+    versionNumero:Number(r[map.VersionNumero]||1),esVersionActual:r[map.EsVersionActual]===false?false:true,
     sha256:String(r[map.SHA256]||""),integridadEstado:String(r[map.EstadoIntegridad]||"LEGACY_UNVERIFIED"),
     fecha:r[map.Fecha],userId:r[map.UserId],alumno:r[map.Alumno],cargoId:r[map.CargoID],
     montoReportado:parseFloat(r[map.MontoReportado]||0),metodoPago:r[map.MetodoPago],referencia:r[map.Referencia],
