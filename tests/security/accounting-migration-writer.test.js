@@ -140,7 +140,7 @@ const payload = {
   const target = new Sheet([schemas.curso.headers, schemas.curso.headers.map(header => expected[header] === undefined ? "" : expected[header])]);
   sheets.set("Cursos", target);
   const stale = { ...payload, idNuevoPlataforma: "CURSO-3", idempotencyKey: "KEY-STALE",
-    expectedTargetPresent: true, expectedTargetRowHash: runtime.migrationHash_(runtime.migrationStableJson_(expected)),
+    expectedTargetPresent: true, expectedTargetRowHash: runtime.migrationHash_(runtime.api.stable(expected)),
     datos: { NombreCurso: "Importado", Categoria: "Capacitación", Modalidad: "Virtual", Estado: "Activo" } };
   target.rows[1][2] = 61;
   assert.throws(() => runtime.api.write(stale), /IMPORT_TARGET_CHANGED_AFTER_PREVIEW/);
