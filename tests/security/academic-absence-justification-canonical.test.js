@@ -553,21 +553,28 @@ const requestInfo = context.reviewCanonicalAbsenceJustification_({
   observacionesAdmin:"Aportar documento legible"
 });
 assert.equal(requestInfo.status,"success");
+let correctedEvidenceSequence = 0;
 userContext.createPrivateRequestAttachmentWithIntegrity_ = function(data,name) {
-  const attachment = makeEvidenceFile("EVIDENCE-RESUBMISSION-NEW",data);
-  attachment.file = evidenceFiles["EVIDENCE-RESUBMISSION-NEW"];
+  const id = "EVIDENCE-RESUBMISSION-NEW-" + (++correctedEvidenceSequence);
+  const attachment = makeEvidenceFile(id,data);
+  attachment.file = evidenceFiles[id];
   attachment.fileName = name || "corrected.pdf";
   return attachment;
 };
 const correctedSubmission = userContext.submitStudentAbsenceJustification({
   _userId:"STU-USER",_role:"Estudiante",solicitudId:resubmissionId,
-  adjuntos:[{data:"%PDF-corrected",nombre:"corrected.pdf",evidenciaGrupoId:"ADJUNTO-1"}]
+  adjuntos:[
+    {data:"%PDF-corrected",nombre:"corrected.pdf",evidenciaGrupoId:"ADJUNTO-1"},
+    {data:"%PDF-second",nombre:"second.pdf",evidenciaGrupoId:"ADJUNTO-2"}
+  ]
 });
 assert.equal(correctedSubmission.status,"success",JSON.stringify(correctedSubmission));
-assert.equal(correctedSubmission.versiones[0].version,2);
+assert.equal(correctedSubmission.versiones.find(item=>item.grupoId==="ADJUNTO-1").version,2);
+assert.equal(correctedSubmission.versiones.find(item=>item.grupoId==="ADJUNTO-2").version,1);
 const currentResubmissionEvidence = userContext.getEvidenceRecordsForRequest_(userContext.SpreadsheetApp.openById("TEST"),resubmissionId,true);
-assert.equal(currentResubmissionEvidence.length,1);
+assert.equal(currentResubmissionEvidence.length,2);
 assert.notEqual(currentResubmissionEvidence[0].EvidenciaID,oldResubmissionRecord.EvidenciaID);
+assert.notEqual(currentResubmissionEvidence[0].SHA256,currentResubmissionEvidence[1].SHA256,"each attachment must retain its own content hash");
 assert.equal(userContext.getEvidenceRecordsForRequest_(userContext.SpreadsheetApp.openById("TEST"),resubmissionId,false).find(item=>item.EvidenciaID===oldResubmissionRecord.EvidenciaID).Estado,"SUPERADA");
 const resubmissionReview = userContext.reviewAbsenceJustification({
   _userId:"SEC-USER",_role:"Secretaría",solicitudId:resubmissionId,nuevoEstado:"Aprobada"
@@ -575,10 +582,10 @@ const resubmissionReview = userContext.reviewAbsenceJustification({
 assert.equal(resubmissionReview.status,"success",JSON.stringify(resubmissionReview));
 const canonicalResubmissionRows = sheet("JustificacionesAsistencia").getDataRange().getValues();
 const canonicalResubmissionRow = canonicalResubmissionRows.find((row,index)=>index>0&&row[0]===resubmissionId);
-assert.deepEqual(JSON.parse(canonicalResubmissionRow[attachmentMap.EvidenciaIDsJSON]),[currentResubmissionEvidence[0].EvidenciaID]);
+assert.deepEqual(JSON.parse(canonicalResubmissionRow[attachmentMap.EvidenciaIDsJSON]),currentResubmissionEvidence.map(item=>item.EvidenciaID).sort());
 const resubmissionHistory = JSON.parse(canonicalResubmissionRow[attachmentMap.DecisionHistoryJSON]);
 assert.ok(resubmissionHistory.some(item=>item.action==="EVIDENCE_RESUBMITTED"&&item.previousEvidenceIds.includes(oldResubmissionRecord.EvidenciaID)));
-assert.ok(resubmissionHistory.some(item=>item.action==="APPROVE"&&item.evidenceIds.includes(currentResubmissionEvidence[0].EvidenciaID)));
+assert.ok(resubmissionHistory.some(item=>item.action==="APPROVE"&&currentResubmissionEvidence.every(evidence=>item.evidenceIds.includes(evidence.EvidenciaID)));
 const unauthorizedReview = userContext.reviewAbsenceJustification({_userId:"TEACHER-1",_role:"Profesor",solicitudId:userMultiSubmit.solicitudId,nuevoEstado:"Aprobada"});
 assert.equal(unauthorizedReview.code,"AUTH_PERMISSION_DENIED","teachers cannot exercise secretariat review authority through USER");
 const secretaryQueue = userContext.getAdministrativeRequests({_userId:"SEC-USER",_role:"Secretaría"});
