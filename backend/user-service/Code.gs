@@ -7017,6 +7017,7 @@ function reviewAbsenceJustification(payload) {
   const actorId = String(p._verifiedUserId || "").trim();
   const solicitudId = String(p.solicitudId || "").trim();
   if (!actorId || actorRole === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  if (["Secretaría", "Director", "Subdirector", "Administrador", "Desarrollador"].indexOf(actorRole) === -1) return { status: "error", code: "AUTH_PERMISSION_DENIED", httpStatus: 403 };
   if (!solicitudId || !p.nuevoEstado) return { status: "error", code: "INVALID_PAYLOAD" };
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "SolicitudesTramites");
@@ -7052,7 +7053,8 @@ function reviewAbsenceJustification(payload) {
   var result = callAcademicAbsenceService_("reviewCanonicalAbsenceJustification", {
     justificacionId: justId, nuevoEstado: p.nuevoEstado,
     observacionesAdmin: p.observacionesAdmin || "", observacionesPublicas: p.observacionesPublicas || "",
-    actorId: actorId, actorRole: actorRole, correlationId: String(p.correlationId || "")
+    actorId: actorId, actorRole: actorRole, sesionIdsAprobadas: Array.isArray(p.sesionIdsAprobadas) ? p.sesionIdsAprobadas : undefined,
+    correlationId: String(p.correlationId || "")
   });
   if (!result || result.status !== "success") return result || { status: "error", code: "ABSENCE_INTERSERVICE_FAILED" };
   var reviewData = result.data && result.data.data ? result.data.data : result.data;
