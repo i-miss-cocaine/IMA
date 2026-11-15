@@ -249,7 +249,7 @@ Auditar integralmente las capacidades destinadas a facilitar la transición de l
 - **Dependencias/riesgos:** F31-Task03 (DOCX), F32-Task10 (OCR), F25-Task01 (integraciones); riesgo de archivos malformados, ZIP bombs y envío de PII a proveedores externos sin autorización.
 - **Alcance:** validación y clasificación; OCR requiere revisión humana y no sustituye la validación de identidad.
 - **Criterios de aceptación:** MIME/magic bytes coinciden; estructura DOCX inspeccionada sin macros; PDF clasificado por contenido; OCR se activa solo cuando corresponde; resultado y confianza visibles; pruebas de DOCX con tablas, PDF escaneado, PDF digital, archivo corrupto y protegido.
-- **Prioridad:** P0. **Estado:** Implementada parcialmente (C1.763).
+- **Prioridad:** P0. **Estado:** Implementada parcialmente (C1.764).
 - **Evidencia de avance:** validación binaria ZIP/OpenXML endurecida y parser XML de DOCX/XLSX en Academic, Accounting y User; conteo de párrafos, tablas, controles de contenido y campos de formulario; clasificación PDF por página (digital, escaneada, mixta y vacía/vectorial); preflight Excel estructural y semántico con importación parcial explícita y rollback transaccional. Pendientes OCR, integración de la vista de preflight con el servicio propietario, validación beta en Apps Script y verificación de sobrescritura para destinos remotos.
 
 
