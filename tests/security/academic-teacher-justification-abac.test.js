@@ -219,7 +219,7 @@ assert.match(source,/"getTeacherStudentJustifications", "acknowledgeTeacherStude
 assert.match(source,/DOCENTE_VISIBILIDAD_EVIDENCIAS_MEDICAS/);
 assert.match(source,/case "saveTeacherJustificationEvidencePolicy": result = saveTeacherJustificationEvidencePolicy\(payload\); break;/);
 assert.match(source,/"getInstitutionParams", "saveInstitutionParam", "saveTeacherJustificationEvidencePolicy"/);
-assert.match(source,/saveTeacherJustificationEvidencePolicy"].indexOf\(String\(action\|\|"\)\)/);
+assert.match(source,/saveTeacherJustificationEvidencePolicy"].indexOf\(String\(action\|\|""\)\)/);
 assert.match(source,/RegistroEventos/);
 assert.match(source,/auditTeacherJustificationDenied_\(action,payload,"Sin Credenciales de Sesión","SESSION_REQUIRED"\)/);
 assert.match(source,/auditTeacherJustificationDenied_\(action,payload,userRole,"ROLE_PERMISSION_DENIED"\)/);
