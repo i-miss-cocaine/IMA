@@ -1592,9 +1592,11 @@ El archivo maestro histórico supera el umbral de rotación de 180.000 caractere
   6. Para importación institucional, usar snapshots persistidos por fila; alterar tenant, dominio, estado, snapshotId, RowID, duplicar filas y enviar asignaciones manipuladas desde el cliente. Todos deben rechazarse antes de escribir.
   7. Confirmar que cada expediente laboral importado registra ownership en USER con departmentId, resourceId, snapshotId y RowID; simular caída de USER y validar compensación o estado compensation_required.
   8. Solicitar lectura referencial de un expediente de otro departamento con campos aprobados. Verificar HMAC, grantId, auditEventId y que no se devuelvan ArchivoUrl, título ni observaciones. Probar URL HTTP, secreto corto, respuesta 503, JSON inválido, grant incompleto y campos/documentos duplicados.
-  9. Ejecutar con documentos reales anonimizados en Apps Script/Sheets/Drive y verificar UX de mapeo/confirmación, accesibilidad y errores visibles; no activar OCR hasta configurar proveedor y revisión humana.
-- **Resultado esperado:** ningún dato se escribe sin identidad, tenant, permiso, preflight vigente y confirmación; importaciones parciales y compensaciones quedan auditadas; referencias cruzadas no revelan documentos privados.
-- **Evidencia requerida:** IDs sintéticos, previewHash, importBatchId, snapshotId, RowID, correlationId, hashes, eventos de auditoría, respuestas sanitizadas y capturas de interfaz sin PII.
+  9. Ejecutar con documentos reales anonimizados en Apps Script/Sheets/Drive y verificar UX de mapeo/confirmación, accesibilidad y errores visibles.
+  10. En un entorno beta aislado, habilitar explícitamente Drive Advanced Service v2 y la política de OCR; cargar PDFs vectoriales, escaneados y mixtos. Verificar clasificación por página, extracción vectorial/OCR temporal, idioma configurado, límites de páginas y revisión humana antes de usar resultados.
+  11. Forzar fallos de conversión, lectura y OCR; comprobar eliminación del Google Doc temporal tanto en éxito como en error. Si Drive v2 no está disponible o la política no autoriza OCR, verificar que no se realiza la conversión ni se persiste contenido temporal.
+- **Resultado esperado:** ningún dato se escribe sin identidad, tenant, permiso, preflight vigente y confirmación; importaciones parciales y compensaciones quedan auditadas; referencias cruzadas no revelan documentos privados; OCR permanece opt-in, temporal, limitado y sujeto a revisión humana.
+- **Evidencia requerida:** IDs sintéticos, previewHash, importBatchId, snapshotId, RowID, correlationId, hashes, eventos de auditoría, respuestas sanitizadas, capturas de interfaz sin PII, IDs temporales de Drive y evidencia de su eliminación.
 - **Estado:** Pendiente beta real; este escenario no se ha ejecutado contra Apps Script/Drive/Sheets/MailApp.
 ===============================================================================
 
