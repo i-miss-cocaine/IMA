@@ -7196,7 +7196,7 @@ function submitRequestEvidenceCorrection_(payload, permissionKey, expectedType) 
   }
   function validateRequest(item) {
     var state = String(item.row[map.Estado] || "").trim().toUpperCase();
-    if (["OBSERVADO", "REQUIEREINFORMACION", "PENDIENTE_SUBSANACION", "DEVUELTA"].indexOf(state) === -1) {
+    if (["OBSERVADO", "OBSERVADA", "REQUIERE_INFORMACION", "REQUIEREINFORMACION", "PENDIENTE_SUBSANACION", "PENDIENTESUBSANACION", "DEVUELTA"].indexOf(state) === -1) {
       throw new Error("EVIDENCE_CORRECTION_REQUIRES_OBSERVATION");
     }
     if (expectedType && String(item.row[map.TipoTramite] || "").trim() !== expectedType) throw new Error("REQUEST_TYPE_MISMATCH");
