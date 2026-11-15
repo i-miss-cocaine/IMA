@@ -708,7 +708,18 @@ function importDataWithColumnMapping(payload) {
     var idempotentOwnershipFailure = String(error && error.message || error) === "RESOURCE_OWNERSHIP_REPAIR_REQUIRED" &&
       applied.some(function(item) { return item.tipoEntidad === "empleadoOwnership"; }) &&
       !applied.some(function(item) { return item.tipoEntidad === input.tipoEntidad; });
-    if (applied.length) rollbackMigrationOwnerWrites_(applied);
+    var rollbackFailures = applied.length ? rollbackMigrationOwnerWrites_(applied) : [];
+    if (rollbackFailures && rollbackFailures.length) {
+      errors.push({ severity: "ERROR", codigo: "MIGRATION_COMPENSATION_REQUIRED",
+        operacionesPendientesCompensacion: rollbackFailures.length });
+      var compensationAudit = getOrCreateSheet(ss, "AuditoriaMigraciones");
+      compensationAudit.appendRow([runId, String(input.nombreArchivo || ""), String(input.sistemaOrigen || ""),
+        String(input.tipoEntidad || ""), String(input.destinoModulo || ""), applied.length, new Date(),
+        JSON.stringify(warnings), "compensation_required", JSON.stringify(rollbackFailures), preview.previewHash, actor.userId || ""]);
+      return { status: "error", code: "MIGRATION_COMPENSATION_REQUIRED", estado: "compensation_required",
+        registrosEscritos: null, operacionesPendientesCompensacion: rollbackFailures.length,
+        errores: errors, runId: runId };
+    }
     if (idempotentOwnershipFailure) {
       errors.push({ severity: "ERROR", codigo: "RESOURCE_OWNERSHIP_REPAIR_REQUIRED", error: "RESOURCE_OWNERSHIP_REPAIR_REQUIRED" });
       var repairAudit = getOrCreateSheet(ss, "AuditoriaMigraciones");
@@ -1055,10 +1066,7 @@ function migrationHash_(value) {
 }
 
 
-/* Authenticated HTTP surface for the document-import preflight.
- * Import writes remain deliberately unavailable until the ACCOUNTING owner-write
- * and compensation path is implemented and covered by contract tests.
- */
+/* Authenticated HTTP surface for the document-import preflight and preview-bound commit. */
 const API_RESPONSE_VERSION = "1.0.0";
 
 function apiResponseCorrelationId_(candidate) {
