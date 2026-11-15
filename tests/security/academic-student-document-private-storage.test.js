@@ -107,6 +107,7 @@ function makeHarness(options={}) {
     remove(key){state.tokenCache.delete(key);}
   };
   const context={
+    STUDENT_DOCUMENT_ACCESS_TOKEN_TTL_SECONDS_:60,
     Buffer,require,Date:TestDate,Math,String,Array,Object,Number,JSON,isNaN,Uint8Array,
     SPREADSHEET_ID:"IN_MEMORY",
     SpreadsheetApp:{openById:id=>{assert.equal(id,"IN_MEMORY");return {getSheetByName:name=>sheets[name]||null};}},
