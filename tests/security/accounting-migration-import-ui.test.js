@@ -11,6 +11,8 @@ new vm.Script(js, { filename: "js/accounting.js" });
 assert.ok(html.includes("switchTab('migration-import')"), "accounting navigation exposes the import workspace");
 assert.ok(html.includes("xlsx-0.20.1/package/dist/xlsx.full.min.js"), "the workbook parser is version-pinned");
 assert.ok(js.includes("function renderMigrationImportModule(container)"), "the mapping workspace is rendered");
+assert.ok(js.includes("envelope.data && typeof envelope.data === \"object\""), "the UI unwraps versioned API data before rendering preview and commit results");
+assert.ok(js.includes("response.registrosEscritos"), "the completion message uses the owner service result field");
 assert.ok(js.includes("function migrationImportBase64(buffer)"), "the original workbook bytes are retained for server validation");
 assert.ok(js.includes('destinoModulo: target.destination'), "the import is routed to the canonical owner service, not a sheet name");
 assert.ok(js.includes('destination: "ACADEMIC"'), "student records are routed to ACADEMIC");
