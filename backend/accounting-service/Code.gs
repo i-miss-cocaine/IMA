@@ -115,7 +115,7 @@ function buildImportPreview_(payload) {
     errors.push(item);
     if (["DUPLICATE_HEADERS", "UNRESOLVED_FORMULAS", "REPEATED_HEADER_ROWS", "VISIBLE_SHEET_SELECTION_REQUIRED"].indexOf(code) !== -1) structuralBlockers.push(item);
   }
-  function addWarning(code, message) { warnings.push({ codigo: code, mensaje: message }); }
+  function addWarning(code, message) { warnings.push({ severity: "WARNING", codigo: code, mensaje: message }); }
   if (identitySnapshot.uniquenessViolations.length) {
     identitySnapshot.uniquenessViolations.forEach(function(item) {
       addError("IDENTITY_UNIQUENESS_VIOLATION", "Hay más de una correspondencia confirmada para el mismo identificador legado.");
