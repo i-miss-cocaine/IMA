@@ -184,7 +184,7 @@ function makeMigrationOrchestrationFixture(options){
   const preparedRows = payload.filasData.map((row,index) => departmentPreflight.applicable
    ? departmentPreflight.rows[index]
    : ctx.mapMigrationRowToTarget_(row,payload.columnaMapeo,schema));
-  return {status:"success",validForImport:true,previewHash:"MIGRATION-FIXTURE",fileHash:"a".repeat(64),departmentPreflight:departmentPreflight,
+  return {status:"success",validForImport:identityResolutions.every(Boolean),validForPartialImport:false,previewHash:"MIGRATION-FIXTURE",fileHash:"a".repeat(64),departmentPreflight:departmentPreflight,
    identityResolutions:identityResolutions,preparedRows:preparedRows};
  };
  return{ctx,calls,auditRows,state};
@@ -204,8 +204,9 @@ function runMigrationOrchestrationTests(source){
  assert.equal(rollback.calls.filter(x=>x.action==="compensateMigratedEntity").length,1);
  const failedComp=makeMigrationOrchestrationFixture({failWriteAt:2,failCompensation:true});
  const compResult=failedComp.ctx.importDataWithColumnMapping(batch);assert.equal(compResult.code,"MIGRATION_COMPENSATION_REQUIRED");assert.equal(compResult.estado,"compensation_required");
- const pending=makeMigrationOrchestrationFixture();const pendingResult=pending.ctx.importDataWithColumnMapping(payload("LEGACY_A","PENDING"));
- assert.equal(pendingResult.estado,"failed_validation");assert.equal(pending.calls.length,0);
+ const pending=makeMigrationOrchestrationFixture();
+ assert.throws(()=>pending.ctx.importDataWithColumnMapping(payload("LEGACY_A","PENDING")),/IMPORT_PREVIEW_INVALID_OR_STALE/);
+ assert.equal(pending.calls.length,0,"unconfirmed identity mappings never reach the owner writer");
  assert.throws(()=>fixture.ctx.importDataWithColumnMapping(Object.assign(payload("LEGACY_A","A-01"),{destinoModulo:"ACADEMIC"})),/MIGRATION_DESTINATION_MISMATCH/);
 }
 
