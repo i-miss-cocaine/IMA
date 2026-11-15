@@ -89,6 +89,7 @@ period.appendRow(["P1","ANO-1","I parcial","Parcial","2026-01-01","2026-12-31",1
 const sessions = sheet("SesionesAsistencia");
 sessions.appendRow(["SesionID","Fecha","HoraInicio","HoraFin","Grado","Seccion","AsignaturaID","DocenteUserId","Estado","Observaciones"]);
 sessions.appendRow(["SES-1","2026-11-10","","","10","A","MAT","DOC-1","Cerrada",""]);
+sessions.appendRow(["SES-PRESENT","2026-11-10","","","10","A","MAT","DOC-1","Cerrada",""]);
 sessions.appendRow(["SES-REJECT","2026-11-11","","","10","A","MAT","DOC-1","Cerrada",""]);
 sessions.appendRow(["SES-PARTIAL","2026-11-12","","","10","A","MAT","DOC-1","Cerrada",""]);
 sessions.appendRow(["SES-AMB","2026-11-13","","","10","A","MAT","DOC-1","Cerrada",""]);
@@ -97,7 +98,7 @@ attendance.appendRow(["RegistroID","SesionID","UserId","EstadoAsistencia","HoraL
 attendance.appendRow(["REG-1","SES-1","STU-1","Ausente","","",false,"",new Date("2026-11-10T12:00:00Z")]);
 attendance.appendRow(["REG-2","SES-DIARIA-2026-11-10-10-A","STU-1","Tardanza","","",false,"",new Date("2026-11-10T12:00:00Z")]);
 attendance.appendRow(["REG-3","SES-1","STU-2","Ausente","","",false,"",new Date("2026-11-10T12:00:00Z")]);
-attendance.appendRow(["REG-4","SES-1","STU-1","Presente","","",false,"",new Date("2026-11-10T12:00:00Z")]);
+attendance.appendRow(["REG-4","SES-PRESENT","STU-1","Presente","","",false,"",new Date("2026-11-10T12:00:00Z")]);
 attendance.appendRow(["REG-R","SES-REJECT","STU-1","Ausente","","",false,"",new Date("2026-11-11T12:00:00Z")]);
 attendance.appendRow(["REG-P","SES-PARTIAL","STU-1","Ausente","","",false,"",new Date("2026-11-12T12:00:00Z")]);
 attendance.appendRow(["REG-A1","SES-AMB","STU-1","Ausente","","",false,"",new Date("2026-11-13T12:00:00Z")]);
