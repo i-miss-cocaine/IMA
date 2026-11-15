@@ -189,6 +189,20 @@ const payload = {
   runtime.PropertiesService.getScriptProperties = originalProperties;
 }
 {
+  const employeePayload = { ...payload, tipoEntidad: "empleado", idNuevoPlataforma: "EMP-1", idempotencyKey: "KEY-EMP",
+    expectedTargetPresent: false,
+    datos: { PersonaId: "PER-1", UserId: "U-1", Puesto: "Docente", Departamento: "DEP-A",
+      CentroCosto: "CC-1", FechaIngreso: "2026-02-01", EstadoLaboral: "ACTIVO", Observaciones: "Alta" } };
+  const employeeWrite = runtime.api.write(employeePayload);
+  assert.equal(employeeWrite.status, "success");
+  const employeeSheet = sheets.get("ExpedientesLaborales");
+  assert.equal(employeeSheet.rows[1][0], "EMP-1");
+  assert.equal(employeeSheet.rows[1][1], "PER-1");
+  assert.ok(employeeSheet.rows[1][6] instanceof Date, "employee start date is normalized");
+  assert.equal(runtime.api.compensate({ idempotencyKey: "KEY-EMP" }).compensated, true);
+  assert.equal(employeeSheet.rows.length, 1, "employee insert compensation removes the exact inserted row");
+}
+{
   const target = sheets.get("Cursos");
   const beforeRows = target.rows.map(row => row.slice());
   lockBusy = true;
