@@ -7654,7 +7654,7 @@ function toBase64(file) {
     function buildExcelImportPreflightPayload_(config) {
         const input = config || {};
         const targets = {
-            curso: { destination: 'ACCOUNTING', fields: ['Nombre', 'Nota', 'FechaInicio'], required: ['Nombre'] },
+            curso: { destination: 'ACCOUNTING', fields: ['NombreCurso', 'Categoria', 'ProveedorResponsable', 'Modalidad', 'DuracionHoras', 'Requisitos', 'DirigidoA', 'Estado', 'CreadoPor', 'FechaCreacion', 'UltimaModificacion'], required: ['NombreCurso'] },
             estudiante: { destination: 'ACADEMIC', fields: ['PersonaID', 'CodigoInstitucional', 'FechaNacimiento', 'Nacionalidad', 'DireccionResidencia', 'FotografiaUrl', 'EstadoExpediente', 'FechaCreacion', 'FechaActualizacion', 'Observaciones'], required: ['PersonaID'] },
             empleado: { destination: 'ACCOUNTING', fields: ['PersonaId', 'UserId', 'Puesto', 'Departamento', 'CentroCosto', 'FechaIngreso', 'FechaSalida', 'EstadoLaboral', 'Observaciones'], required: ['PersonaId', 'Puesto', 'Departamento'] }
         };
@@ -7708,7 +7708,7 @@ function toBase64(file) {
         const departmentContainer = document.getElementById('excel-import-active-department-container');
         if (!identifierSelect || !mappingContainer || !entitySelect) return;
         const targets = {
-            curso: { fields: ['Nombre', 'Nota', 'FechaInicio'], required: ['Nombre'] },
+            curso: { fields: ['NombreCurso', 'Categoria', 'ProveedorResponsable', 'Modalidad', 'DuracionHoras', 'Requisitos', 'DirigidoA', 'Estado', 'CreadoPor', 'FechaCreacion', 'UltimaModificacion'], required: ['NombreCurso'] },
             estudiante: { fields: ['PersonaID', 'CodigoInstitucional', 'FechaNacimiento', 'Nacionalidad', 'DireccionResidencia', 'FotografiaUrl', 'EstadoExpediente', 'FechaCreacion', 'FechaActualizacion', 'Observaciones'], required: ['PersonaID'] },
             empleado: { fields: ['PersonaId', 'UserId', 'Puesto', 'Departamento', 'CentroCosto', 'FechaIngreso', 'FechaSalida', 'EstadoLaboral', 'Observaciones'], required: ['PersonaId', 'Puesto', 'Departamento'] }
         };
