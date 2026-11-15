@@ -244,8 +244,9 @@ const voucherDownloadMap = {ComprobanteID:0,Fecha:1,UserId:2,Alumno:3,CargoID:4,
   Referencia:7,ComprobanteUrl:8,Estado:9,Observaciones:10,ComprobanteGrupoID:11,VersionNumero:12,SHA256:13,
   SizeBytes:14,MimeType:15,FechaRecepcionISO:16,EstadoIntegridad:17,EsVersionActual:18,DecisionHash:19,
   DecisionTimestamp:20,DecisionBy:21,DecisionIntegrityWarning:22};
-assert.match(voucherDownloadFn, /file\.getSharingAccess\(\) !== DriveApp\.Access\.PRIVATE/);
-assert.match(voucherDownloadFn, /validateFileBinaryIntegrity/);
+const voucherVerifyFn = extractFunction(accounting, "verifyPaymentVoucherEvidence_");
+assert.match(voucherVerifyFn, /file\.getSharingAccess\(\) !== DriveApp\.Access\.PRIVATE/);
+assert.match(voucherVerifyFn, /validateFileBinaryIntegrity/);
 let voucherSharing = "PRIVATE";
 let voucherBlobReads = 0;
 let voucherOwnerAllowed = true;
