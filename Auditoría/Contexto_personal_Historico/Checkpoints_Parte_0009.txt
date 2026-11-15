@@ -884,3 +884,38 @@ Se aisló y corrigió un subflujo independiente en `generateSignatureAuditCertif
 
 #### Continuidad
 - Siguiente prioridad P0 del Plan Maestro: F34-Task04 — añadir SHA-256 a adjuntos y evidencias documentales. El identificador figura en la matriz del Plan Maestro, pero no se localizó una ficha operativa equivalente en pendientes/Otros; ejecutar a partir del alcance F34-10 de la auditoría, sin inventar requisitos adicionales.
+
+
+### C1.753 — F34-Task04 — integridad SHA-256 de adjuntos y evidencias
+- **Fecha:** 2026-11-15.
+- **Rama autorizada:** NG_beta_0.0.0.1_work.
+- **Checkpoint anterior:** C1.752.
+- **HEAD de inicio:** 4d2093012e6cc46d5c273d66574c15659ef8b12d.
+- **Commit de prueba:** 8c81df2843b88ce2af6a05a99ae692b8ab4a55af.
+- **CI:** Department Scope Contract run 43740294235 — SUCCESS; Node.js 24; sintaxis Apps Script/JS PASS.
+- **Estado:** F34-Task04 completada en código y CI. Validación beta real de Drive/Sheets pendiente.
+
+#### Alcance verificado
+- USER calcula SHA-256 de los bytes fuente y vuelve a leer los bytes persistidos en Drive; compara hash, longitud, MIME y privacidad antes de registrar evidencia como VERIFICADO.
+- Se persisten SHA-256, versión, tamaño, MIME, fecha ISO de recepción y estado en SolicitudesTramites para justificaciones, trámites y formularios institucionales.
+- ACADEMIC conserva metadatos SHA-256 por evidencia en JustificacionesAsistencia; el flujo canónico revalida archivo privado, bytes, tamaño, MIME y hash antes de persistir.
+- La descarga administrativa recalcula el hash y rechaza discrepancias o metadatos/versiones inválidos. Los archivos históricos sin huella se identifican explícitamente como LEGACY_UNVERIFIED; nunca se presentan como verificados.
+- La consulta docente de evidencia vuelve a calcular SHA-256 y bloquea archivos alterados, eliminados o no privados.
+- Se amplió tests/security/user-service-request-attachment-integrity.test.js para simular que Drive devuelve bytes distintos después de la carga; el helper debe lanzar ATTACHMENT_STORAGE_INTEGRITY_MISMATCH y retirar el archivo huérfano.
+
+#### Archivos
+- backend/user-service/Code.gs (implementación ya presente en HEAD de inicio; revisada, sin cambios de producción en esta iteración).
+- backend/academic-service/Code.gs (implementación ya presente en HEAD de inicio; revisada, sin cambios de producción en esta iteración).
+- tests/security/user-service-request-attachment-integrity.test.js.
+
+#### Verificación
+- Department Scope Contract run 43740294235: SUCCESS.
+- Node.js 24 ejecutó la suite completa del workflow; el paso específico “Run request attachment SHA-256 integrity and tamper detection contract” SUCCESS.
+- Sintaxis de servicios Apps Script/JS: SUCCESS en el mismo workflow.
+- Se revisaron contratos de adjuntos USER, justificación canónica ACADEMIC, evidencia docente y bandeja documental; sin cambios de producción ni regresiones introducidas.
+- No se ejecutó Apps Script desplegado ni se accedió a Drive/Sheets productivos. Node local no fue necesario: la suite se ejecutó en GitHub Actions. No se ejecutó CLI independiente.
+
+#### Límites y continuidad
+- BETA-FUNC de F34-Task04 pendiente: carga, descarga, sustitución controlada, privacidad y evidencia histórica en Drive/Sheets de entorno beta.
+- TASK-106 sigue pendiente: su alcance adicional incluye múltiples adjuntos/versiones v2+, inmutabilidad de evidencias previas a aprobación/firma, vínculo de decisiones con hashes y parametrización institucional ante discrepancias. No se declara cubierto por F34-Task04.
+- Próxima tarea elegible: revalidar TASK-105 (P0, orden 1) tras satisfacer su dependencia F34-Task04; si sus criterios ya están cubiertos por C1.750, registrar evidencia sin duplicar implementación. TASK-106 permanece P0, orden 2.
