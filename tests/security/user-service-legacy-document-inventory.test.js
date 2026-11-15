@@ -189,6 +189,27 @@ for (const invalidRecord of [
 }
 assert.equal(context.registerLegacyDocumentInventory({ sessionToken: "token-sec-a", departmentId: "DEP-B", record: Object.assign({}, record, { claveOrigen: "BAD-DEPT" }) }).code, "DEPARTMENT_SCOPE_ACCESS_DENIED");
 
+const historySheet = store.HistorialInventarioDocumentalLegado;
+const originalAppendRow = historySheet.appendRow.bind(historySheet);
+const inventoryCountBeforeRollback = store.InventarioDocumentalLegado.rows.length;
+historySheet.appendRow = function() { throw new Error("HISTORY_WRITE_FAILED"); };
+const failedCreate = context.registerLegacyDocumentInventory({
+  sessionToken: "token-sec-a", departmentId: "DEP-A",
+  record: Object.assign({}, record, { claveOrigen: "ROLLBACK-CREATE" })
+});
+assert.equal(failedCreate.code, "HISTORY_WRITE_FAILED");
+assert.equal(store.InventarioDocumentalLegado.rows.length, inventoryCountBeforeRollback,
+  "a failed history append must roll back the new inventory row");
+const priorName = store.InventarioDocumentalLegado.rows.find(row => row[0] === documentId)[3];
+const failedUpdate = context.registerLegacyDocumentInventory({
+  sessionToken: "token-sec-a", departmentId: "DEP-A", documentId,
+  record: { nombreArchivoOriginal: "No debe persistir.pdf" }
+});
+assert.equal(failedUpdate.code, "HISTORY_WRITE_FAILED");
+assert.equal(store.InventarioDocumentalLegado.rows.find(row => row[0] === documentId)[3], priorName,
+  "a failed history append must restore the previous inventory row");
+historySheet.appendRow = originalAppendRow;
+
 lockBusy = true;
 const lockRejected = context.registerLegacyDocumentInventory({
   sessionToken: "token-sec-a", departmentId: "DEP-A",
