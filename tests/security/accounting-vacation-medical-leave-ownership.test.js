@@ -3,8 +3,8 @@ function extractFunction(s,n){const a=s.indexOf("function "+n+"(");assert.ok(a>=
 const root=path.resolve(__dirname,"../.."),accounting=fs.readFileSync(path.join(root,"backend/accounting-service/Code.gs"),"utf8");assert.doesNotThrow(()=>new Function(accounting));
 const names=["getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentScope_","resolveEmployeeDepartmentId_","assertResourceOwnershipForScope_","assertEmployeeExpedienteScopeAccess_","auditEmployeeSelfServiceDenied_","getEmployeeRecords","normalizeVacationRole_","getVacationSheetSnapshot_","resolveVacationEmployeeAccess_","assertVacationWriteAccess_","submitVacationRequestCore_","submitLeaveVacationRequest","submitVacationRequest","getLeaveVacationRequests","reviewLeaveVacationRequest","calculateVacationBalances","recordMedicalLeave","getVacationRequests","reviewVacationRequest"];
 const code=["var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();",names.map(n=>extractFunction(accounting,n)).join("\n")].join("\n");
-const claims={"ha":{userId:"U-HA",role:"RecursosHumanos"},"hb":{userId:"U-HB",role:"RecursosHumanos"},"emp":{userId:"U-EMP",role:"Empleado"},"prof":{userId:"U-PROF",role:"Profesor"},"parent":{userId:"U-PARENT",role:"Padre"},"dir":{userId:"U-DIR",role:"Director"},"admin":{userId:"U-ADMIN",role:"Administrador"},"bad":null};
-const scopes={"U-HA":{departmentIds:["A"],institutionWide:false},"U-HB":{departmentIds:["B"],institutionWide:false},"U-DIR":{departmentIds:["A"],institutionWide:false},"U-ADMIN":{departmentIds:[],institutionWide:true}};
+const claims={"ha":{userId:"U-HA",role:"RecursosHumanos"},"hb":{userId:"U-HB",role:"RecursosHumanos"},"hrGlobal":{userId:"U-HR-GLOBAL",role:"RecursosHumanos"},"emp":{userId:"U-EMP",role:"Empleado"},"prof":{userId:"U-PROF",role:"Profesor"},"parent":{userId:"U-PARENT",role:"Padre"},"dir":{userId:"U-DIR",role:"Director"},"admin":{userId:"U-ADMIN",role:"Administrador"},"bad":null};
+const scopes={"U-HA":{departmentIds:["A"],institutionWide:false},"U-HB":{departmentIds:["B"],institutionWide:false},"U-HR-GLOBAL":{departmentIds:[],institutionWide:true},"U-DIR":{departmentIds:["A"],institutionWide:false},"U-ADMIN":{departmentIds:[],institutionWide:true}};
 const rows={
 ExpedientesLaborales:[["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"],["EA","PA","U-EMP","Empleado","A","","2020-01-01","","Activo","Nota interna A"],["EB","PB","U-OTHER","Empleado","B","","2021-01-01","","Activo","Nota interna B"],["EP","PP","U-PROF","Profesor","A","","2022-01-01","","Activo","Nota interna P"]],
 ResourceOwnership:[["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"],["OA","I","EXPEDIENTE_LABORAL","EA","A","ACTIVE","U-ADMIN","",""],["OB","I","EXPEDIENTE_LABORAL","EB","B","ACTIVE","U-ADMIN","",""],["OP","I","EXPEDIENTE_LABORAL","EP","A","ACTIVE","U-ADMIN","",""]],
@@ -29,8 +29,11 @@ assert.equal(Array.from(ctx.getEmployeeRecords(p("hb")).expedientes,r=>r.expedie
 assert.equal(Array.from(ctx.getEmployeeRecords(p("admin")).expedientes,r=>r.expedienteId).sort().join(","),"EA,EB,EP");
 assert.equal(ctx.getEmployeeRecords(p("bad")).code,"VERIFIED_IDENTITY_REQUIRED");
 assert.equal(ctx.getEmployeeRecords(p("parent")).code,"ROLE_NOT_ALLOWED");
+assert.equal(ctx.getVacationRequests(p("parent")).code,"ROLE_NOT_ALLOWED");
 assert.equal(Array.from(ctx.getEmployeeRecords(p("ha")).expedientes,r=>r.expedienteId).join(","),"EA,EP");
 assert.equal(ctx.getEmployeeRecords(p("ha")).expedientes[0].observaciones,"Nota interna A","authorized HR scope retains its permitted record details");
+assert.equal(Array.from(ctx.getEmployeeRecords(p("hrGlobal")).expedientes,r=>r.expedienteId).sort().join(","),"EA,EB,EP","institution-wide HR scope may view the full authorized institution");
+assert.ok(ctx.getVacationRequests(p("hrGlobal")).solicitudes.some(r=>r.expedienteId==="EB"),"institution-wide HR scope may view requests within its authorized institution");
 assert.equal(ctx.getEmployeeRecords(p("emp")).expedientes[0].observaciones,"");
 assert.equal(ctx.submitLeaveVacationRequest(p("bad")).code,"VERIFIED_IDENTITY_REQUIRED");
 assert.equal(ctx.submitLeaveVacationRequest({...p("emp"),expedienteId:"EB",fechaInicio:"2026-12-10",fechaFin:"2026-12-11"}).code,"RESOURCE_NOT_FOUND");assert.equal(rows.SolicitudesVacaciones.length,count);
