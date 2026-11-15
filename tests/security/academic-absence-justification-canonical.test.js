@@ -420,12 +420,12 @@ const userHeaders = store.SolicitudesTramites[0];
 const userDateIndex = userHeaders.indexOf("FechasAfectadasJSON");
 assert.deepEqual(JSON.parse(userMultiRow[userDateIndex]),["2026-11-20","2026-11-21"]);
 const userMultiReview = userContext.reviewAbsenceJustification({
-  _userId:"SEC-USER",_role:"Secretaría",solicitudId:userMultiSubmit.solicitudId,nuevoEstado:"Aprobada"
+  _userId:"SEC-USER",_role:"Secretaría",solicitudId:userMultiSubmit.solicitudId,nuevoEstado:"Aprobada",sesionIdsAprobadas:["SES-USER-MULTI-A"]
 });
 assert.equal(userMultiReview.status,"success");
 regRows = attendance.getDataRange().getValues();
 assert.equal(regRows.find(row=>row[0]==="REG-USER-MULTI-A")[6],true);
-assert.equal(regRows.find(row=>row[0]==="REG-USER-MULTI-B")[6],true);
+assert.equal(regRows.find(row=>row[0]==="REG-USER-MULTI-B")[6],false,"the USER review bridge must forward and enforce the partial session selection");
 const secretaryQueue = userContext.getAdministrativeRequests({_userId:"SEC-USER",_role:"Secretaría"});
 assert.equal(secretaryQueue.status,"success");
 assert.ok(secretaryQueue.data.some(item=>item.solicitudId===userMultiSubmit.solicitudId),"secretariat must see the institution-wide justification queue");
