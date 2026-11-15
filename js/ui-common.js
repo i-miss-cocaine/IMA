@@ -6600,3 +6600,124 @@ if (document.readyState === "loading") {
 } else {
     window.initAccessibleTooltips(document);
 }
+
+
+/* [F38-Task02] Catálogo de metadatos y ayudas permanentes; caché en memoria y fallback no bloqueante. */
+window.__imaUIMetadataCache = null;
+window.__imaUIMetadataPromise = null;
+window.__imaUIMetadataCounter = 0;
+
+window.getUIMetadataField = function(fieldKey) {
+    var catalog = window.__imaUIMetadataCache;
+    return catalog && catalog.fields ? (catalog.fields[fieldKey] || null) : null;
+};
+
+window.loadUIMetadataCatalog = function(forceRefresh) {
+    if (!forceRefresh && window.__imaUIMetadataCache) return Promise.resolve(window.__imaUIMetadataCache);
+    if (!forceRefresh && window.__imaUIMetadataPromise) return window.__imaUIMetadataPromise;
+    if (typeof fetchApi !== "function") {
+        return Promise.resolve({ version: "fallback", fields: {} });
+    }
+
+    window.__imaUIMetadataPromise = fetchApi("USER", "getUIMetadataCatalog", {}).then(function(response) {
+        var catalog = response && response.data && response.data.fields ? response.data :
+            (response && response.fields ? response : null);
+        if (!response || response.status !== "success" || !catalog || !catalog.fields) {
+            throw new Error("UI_METADATA_CATALOG_UNAVAILABLE");
+        }
+        window.__imaUIMetadataCache = catalog;
+        window.applyPermanentFieldHelp(document);
+        window.initAccessibleTooltips(document);
+        return catalog;
+    }).catch(function(error) {
+        window.__imaUIMetadataPromise = null;
+        console.warn("[UI-METADATA] Se utilizarán ayudas locales; catálogo remoto no disponible.", error);
+        return { version: "fallback", fields: {} };
+    });
+    return window.__imaUIMetadataPromise;
+};
+
+window.applyPermanentFieldHelp = function(root) {
+    root = root || document;
+    var selector = "[data-ui-help-key]";
+    var targets = [];
+    if (root.matches && root.matches(selector)) targets.push(root);
+    if (root.querySelectorAll) {
+        var nodes = root.querySelectorAll(selector);
+        for (var i = 0; i < nodes.length; i++) targets.push(nodes[i]);
+    }
+    var applied = 0;
+
+    for (var j = 0; j < targets.length; j++) {
+        var target = targets[j];
+        var key = String(target.getAttribute("data-ui-help-key") || "");
+        var metadata = window.getUIMetadataField(key);
+        var helpText = String((metadata && metadata.help) || target.getAttribute("data-ui-help-fallback") || "").trim();
+        if (!helpText || !target.parentNode) continue;
+
+        var helpId = target.getAttribute("data-ui-help-id");
+        if (!helpId) {
+            var safeTargetId = String(target.id || "").replace(/[^A-Za-z0-9_-]/g, "-");
+            helpId = "ima-field-help-" + (safeTargetId || String(++window.__imaUIMetadataCounter));
+            target.setAttribute("data-ui-help-id", helpId);
+        }
+
+        var helpNode = document.getElementById(helpId);
+        if (!helpNode) {
+            helpNode = document.createElement("p");
+            helpNode.id = helpId;
+            helpNode.className = "ima-field-help";
+            helpNode.setAttribute("data-ui-field-help", "true");
+            target.parentNode.insertBefore(helpNode, target.nextSibling);
+        }
+        helpNode.textContent = helpText;
+
+        var describedBy = String(target.getAttribute("aria-describedby") || "").trim();
+        if ((" " + describedBy + " ").indexOf(" " + helpId + " ") === -1) {
+            target.setAttribute("aria-describedby", (describedBy ? describedBy + " " : "") + helpId);
+        }
+        if (!target.getAttribute("data-tooltip")) target.setAttribute("data-tooltip", helpText);
+        target.setAttribute("data-ui-help-ready", "true");
+        applied++;
+    }
+
+    if (targets.length && window.initAccessibleTooltips) window.initAccessibleTooltips(root);
+    return applied;
+};
+
+if (!document.getElementById("ima-permanent-field-help-styles")) {
+    var fieldHelpStyle = document.createElement("style");
+    fieldHelpStyle.id = "ima-permanent-field-help-styles";
+    fieldHelpStyle.textContent = ".ima-field-help{display:block;margin:5px 0 8px;color:#475569;font-size:11px;line-height:1.45}";
+    (document.head || document.body).appendChild(fieldHelpStyle);
+}
+
+if (!window.__imaFieldHelpObserver && typeof MutationObserver !== "undefined" && document.body) {
+    window.__imaFieldHelpObserver = new MutationObserver(function(records) {
+        for (var r = 0; r < records.length; r++) {
+            for (var n = 0; n < records[r].addedNodes.length; n++) {
+                var node = records[r].addedNodes[n];
+                if (node && node.nodeType === 1 && !node.getAttribute("data-ui-field-help") &&
+                    !node.getAttribute("data-ui-tooltip-trigger")) {
+                    window.applyPermanentFieldHelp(node);
+                    window.initAccessibleTooltips(node);
+                }
+            }
+        }
+    });
+    window.__imaFieldHelpObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function() {
+        window.loadUIMetadataCatalog(false).then(function() {
+            window.applyPermanentFieldHelp(document);
+            window.initAccessibleTooltips(document);
+        });
+    });
+} else {
+    window.loadUIMetadataCatalog(false).then(function() {
+        window.applyPermanentFieldHelp(document);
+        window.initAccessibleTooltips(document);
+    });
+}
