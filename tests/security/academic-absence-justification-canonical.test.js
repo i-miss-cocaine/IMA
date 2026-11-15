@@ -392,13 +392,26 @@ const userContext = {
 };
 const userNames = [
   "requestAttachmentHeaderMap_","ensureRequestAttachmentIntegritySchema_","setRequestAttachmentIntegrity_",
-  "ensureEvidenceDocumentSchema_","getEvidenceRecordsForRequest_","registerDocumentEvidence_","getEvidenceSnapshotForDecision_","verifyEvidenceDocumentRecord_","markEvidenceDecision_","computeDocumentSHA256","getEvidenceIntegrityPolicy_","logEvidenceTampering_",
+  "ensureEvidenceDocumentSchema_","getEvidenceRecordsForRequest_","registerDocumentEvidence_","getEvidenceSnapshotForDecision_","verifyEvidenceDocumentRecord_","markEvidenceDecision_","computeDocumentSHA256","getEvidenceIntegrityPolicy_","saveEvidenceIntegrityPolicy","logEvidenceTampering_",
   "ensureUserAbsenceRequestSchema_","createPrivateRequestAttachment_","createPrivateRequestAttachmentWithIntegrity_",
   "submitStudentAbsenceJustification","reviewAbsenceJustification","getAdministrativeRequests","updateRequestStatus","processWorkflowDecision"
 ];
 vm.createContext(userContext);
 const userConstants = userSource.split("\n").filter(line => /^const (REQUEST_ATTACHMENT_INTEGRITY_HEADERS_|EVIDENCE_DOCUMENT_HEADERS_|USER_ABSENCE_REQUEST_EXTRA_HEADERS_)/.test(line)).join("\n");
 vm.runInContext(userConstants + "\n" + userNames.map(name => extractFunction(name, userSource)).join("\n"), userContext);
+const evidencePolicySave = userContext.saveEvidenceIntegrityPolicy({
+  _userId:"ADMIN-USER",_role:"Administrador",valor:"ADVERTENCIA_VISUAL_REVISOR"
+});
+assert.equal(evidencePolicySave.status,"success");
+assert.equal(userContext.getEvidenceIntegrityPolicy_(userContext.SpreadsheetApp.openById("TEST")),"ADVERTENCIA_VISUAL_REVISOR");
+const evidencePolicyDenied = userContext.saveEvidenceIntegrityPolicy({
+  _userId:"SEC-USER",_role:"Secretaría",valor:"ESTRICTO_BLOQUEAR_ACCESO_Y_NOTIFICAR_AUDITORIA"
+});
+assert.equal(evidencePolicyDenied.code,"AUTH_PERMISSION_DENIED");
+const evidencePolicyInvalid = userContext.saveEvidenceIntegrityPolicy({
+  _userId:"ADMIN-USER",_role:"Administrador",valor:"ALLOW_UNVERIFIED"
+});
+assert.equal(evidencePolicyInvalid.code,"EVIDENCE_POLICY_INVALID");
 const userPayload = {
   _userId: "STU-USER", _role: "Estudiante", estudianteId: "STU-USER",
   fechaAusencia: "2026-11-14", periodo: "I parcial", motivo: "Motivo USER"
