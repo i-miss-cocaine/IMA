@@ -3005,7 +3005,9 @@ function renderMigrationImportModule(container) {
     const results = document.getElementById("migration-import-results");
     if (results) results.textContent = "ACCOUNTING está validando permisos, identidades, referencias y registros de destino…";
     try {
-      const response = await fetchApi("ACCOUNTING", "validateImportPreview", payload);
+      const envelope = await fetchApi("ACCOUNTING", "validateImportPreview", payload);
+      const responseData = envelope && envelope.data && typeof envelope.data === "object" ? envelope.data : envelope;
+      const response = Object.assign({}, responseData || {}, { status: envelope && envelope.status || responseData && responseData.status || "error" });
       migrationImportState.payload = payload;
       migrationImportState.preview = response;
       renderMigrationImportResult(response);
@@ -3028,12 +3030,14 @@ function renderMigrationImportModule(container) {
     commitButton.disabled = true;
     commitButton.textContent = "Importando…";
     try {
-      const response = await fetchApi("ACCOUNTING", "importDataWithColumnMapping", Object.assign({}, migrationImportState.payload, {
+      const envelope = await fetchApi("ACCOUNTING", "importDataWithColumnMapping", Object.assign({}, migrationImportState.payload, {
         previewConfirmed: true, previewHash: preview.previewHash, allowPartialImport: allowPartial
       }));
+      const responseData = envelope && envelope.data && typeof envelope.data === "object" ? envelope.data : envelope;
+      const response = Object.assign({}, responseData || {}, { status: envelope && envelope.status || responseData && responseData.status || "error" });
       const results = document.getElementById("migration-import-results");
       if (results) results.textContent = response && response.status === "success" ?
-        "Importación completada. Registros insertados/actualizados: " + Number(response.registrosImportados || 0) :
+        "Importación completada. Registros insertados/actualizados: " + Number(response.registrosEscritos || 0) :
         "La importación no se completó: " + String(response && (response.message || response.code) || "Error desconocido");
       migrationImportState.preview = null;
       migrationImportState.payload = null;
