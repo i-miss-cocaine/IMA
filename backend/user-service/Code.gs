@@ -1839,6 +1839,41 @@ function handleTrustedDepartmentReferenceEnvelope_(envelope) {
   return authorizeDepartmentReferenceRead(verified.payload);
 }
 
+function getTrustedMigrationTargetExistenceSnapshot_(payload) {
+  var input = payload || {};
+  var claims = verifySessionToken(String(input.sessionToken || ""));
+  var institutionId = "";
+  try { institutionId = getIdentityInstitutionId_(); } catch (error) { return { status: "error", code: "IDENTITY_CONFIGURATION_REQUIRED" }; }
+  if (!claims || !claims.userId || !claims.role || !claims.institutionId ||
+      String(claims.institutionId) !== institutionId || String(input.institutionId || "") !== institutionId) {
+    return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  }
+  if (getDynamicPermissionsForRole(String(claims.role), "importDataWithColumnMapping") !== true) {
+    return { status: "error", code: "IMPORT_PERMISSION_DENIED" };
+  }
+  if (String(input.entityType || "").toLowerCase() !== "persona" || !Array.isArray(input.targetIds)) {
+    return { status: "error", code: "MIGRATION_SNAPSHOT_CONTRACT_INVALID" };
+  }
+  var requested = {};
+  input.targetIds.forEach(function(value) {
+    var id = String(value || "").trim();
+    if (id && id.length <= 128) requested[id] = true;
+  });
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = ss.getSheetByName("Personas");
+  if (!sheet) return { status: "error", code: "MIGRATION_SNAPSHOT_TARGET_UNAVAILABLE" };
+  var values = sheet.getDataRange().getValues();
+  var headers = values.length ? values[0].map(function(value) { return String(value || "").trim(); }) : [];
+  if (headers[0] !== "PersonaID") return { status: "error", code: "MIGRATION_SNAPSHOT_SCHEMA_MISMATCH" };
+  var existing = [];
+  for (var i = 1; i < values.length; i++) {
+    var id = String(values[i][0] || "").trim();
+    if (id && requested[id]) existing.push(id);
+  }
+  return { status: "success", verified: true, service: "USER", sheet: "Personas",
+    idField: "PersonaID", institutionId: institutionId, existingTargetIds: existing.sort(), targetRows: [] };
+}
+
 function handleTrustedMigrationEnvelope_(envelope){
  const secret=String(PropertiesService.getScriptProperties().getProperty("IMA_MIGRATION_HMAC_SECRET")||"");
  if(secret.length<32)throw new Error("MIGRATION_TRANSPORT_SECRET_REQUIRED");
@@ -1859,6 +1894,7 @@ function handleTrustedMigrationEnvelope_(envelope){
    userId: String(claims.userId), role: String(claims.role),
    membershipId: String(claims.membershipId || ""), institutionId: String(claims.institutionId) };
  }
+ if(verified.action==="getMigrationTargetExistenceSnapshot")return getTrustedMigrationTargetExistenceSnapshot_(verified.payload);
  if(verified.action==="writeMigratedEntity")return applyTrustedMigrationWrite_(verified.payload);
  if(verified.action==="compensateMigratedEntity")return compensateTrustedMigrationWrite_(verified.payload);
  if(verified.action==="registerMigratedResourceOwnership")return registerMigratedResourceOwnership_(verified.payload);
