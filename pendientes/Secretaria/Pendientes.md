@@ -1624,6 +1624,10 @@
 
 - **Prueba automatizada C1.761:** se conectó tests/security/ui-common-permanent-help.test.js a ui-accessibility-contract.yml y department-scope-contract.yml. El test de formularios ahora verifica también calificacion/edit-puntaje con 0–100 y step 0.01. GitHub Actions ima/department-scope-contract SUCCESS tanto en c92724908578f5acf02867e3d51ce24518800876 como en f81732c70468448e1fea395bd595ef663ae61fe4, que incorpora la aserción de rangos.
 
+- **Avance C1.763 (2026-11-15):** se amplió el catálogo remoto y fallback local con importacion.xlsx, documentando exactamente el límite de 10 MiB, extensión .xlsx, MIME y validación de cabecera ZIP según validateExcelFileEnvelope; se vinculó al input excel-file-input. Se incorporó ayuda permanente de calendario en evm-fecha-inicio, evm-fecha-fin e identity-search-fecha de Secretaría. Los contratos comprueban metadatos, límite, tipo, obligatoriedad del inicio y carácter opcional del fin.
+- **Verificación C1.763:** cuatro contratos UI/metadatos ejecutados en harness JS aislado PASS; sintaxis V8 de backend USER, ui-common, teacher, secretary, accounting y student PASS. No se ejecutó Node CLI nativo en esta sesión. CI del commit 2754939 falló porque la prueba de campos de Secretaría precedió al commit de su HTML; el HTML ya fue actualizado y la prueba corregida, y el commit de corrección 385f59f espera estado verificable. No se declara aún CI PASS para este avance.
+- **Pendiente:** ampliar la ayuda en todos los formularios dinámicos de admisión/matrícula e importación que tengan restricciones verificables; revisión de límites en adjuntos restantes; pruebas manuales de teclado, lector de pantalla, móvil, zoom y cancelación sin mutación; ejecutar CI Node 24 sobre el commit corregido.
+
 ---
 
 <!-- ID: TASK-132 | Fuentes: Pendientes.md ; pendientes/Secretaria/Pendientes.md -->
