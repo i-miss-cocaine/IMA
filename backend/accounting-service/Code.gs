@@ -1313,6 +1313,24 @@ function migrationDecodeSnapshot_(value) {
   return value;
 }
 
+function migrationNormalizeImportDate_(field, value) {
+  var dateFields = {
+    FechaInicio: true, FechaIngreso: true, FechaSalida: true, FechaNacimiento: true,
+    FechaCreacion: true, FechaActualizacion: true, FechaCarga: true
+  };
+  if (!dateFields[String(field || "")] || value === "" || value === null || value === undefined) return value;
+  if (value instanceof Date) {
+    if (isNaN(value.getTime())) throw new Error("MIGRATION_DATE_INVALID");
+    return value;
+  }
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:?\d{2})?)?$/.test(value)) {
+    throw new Error("MIGRATION_DATE_INVALID");
+  }
+  var date = new Date(value);
+  if (isNaN(date.getTime())) throw new Error("MIGRATION_DATE_INVALID");
+  return date;
+}
+
 function applyTrustedAccountingMigrationWrite_(payload) {
   var input = payload || {};
   var type = String(input.tipoEntidad || "").trim().toLowerCase();
@@ -1338,9 +1356,11 @@ function applyTrustedAccountingMigrationWrite_(payload) {
       throw new Error("MIGRATION_CELL_TYPE_INVALID");
     }
   });
-  var canonical = {};
+  var canonical = {}, normalizedData = {};
   Object.keys(data).sort().forEach(function(field) {
-    canonical[field] = data[field] instanceof Date ? data[field].toISOString() : data[field];
+    var normalizedValue = migrationNormalizeImportDate_(field, data[field]);
+    normalizedData[field] = normalizedValue;
+    canonical[field] = normalizedValue instanceof Date ? normalizedValue.toISOString() : normalizedValue;
   });
   var json = migrationStableJson_({ tipoEntidad: type, idNuevoPlataforma: id, datos: canonical });
   var lock = LockService.getScriptLock();
@@ -1380,7 +1400,7 @@ function applyTrustedAccountingMigrationWrite_(payload) {
     var after = before ? before.slice() : schema.headers.map(function() { return ""; });
     after[0] = migrationSafeCell_(id);
     Object.keys(canonical).forEach(function(field) {
-      after[schema.headers.indexOf(field)] = migrationSafeCell_(data[field]);
+      after[schema.headers.indexOf(field)] = migrationSafeCell_(normalizedData[field]);
     });
     if (rowNumber > 0) target.getRange(rowNumber, 1, 1, schema.headers.length).setValues([after]);
     else target.appendRow(after);
