@@ -113,6 +113,10 @@ const accountingRuntime = {
   validateImportPreview(payload) {
     if (payload.sessionToken === "THROW") throw new Error("INTERNAL_SECRET_PATH");
     return { status: "success", validForImport: true, filasValidas: 1 };
+  },
+  importDataWithColumnMapping(payload) {
+    if (payload.previewConfirmed !== true || !payload.previewHash) throw new Error("IMPORT_PREVIEW_INVALID_OR_STALE");
+    return { status: "success", registrosImportados: 1 };
   }
 };
 vm.runInNewContext(accountingFns.join("\n") + "\nthis.api = { auth: getVerifiedAccountingIdentity_, permission: accountingHasInstitutionalImportPermission_, department: getVerifiedDepartmentScopeForSession_, post: doPost, get: doGet };", accountingRuntime);
@@ -139,8 +143,13 @@ vm.runInNewContext(accountingFns.join("\n") + "\nthis.api = { auth: getVerifiedA
   assert.equal(JSON.parse(ok.value).validForImport, true);
   const deniedAction = accountingRuntime.api.post({ postData: { contents: JSON.stringify({ action: "deleteAll", payload: {} }) } });
   assert.equal(JSON.parse(deniedAction.value).code, "ACTION_NOT_ALLOWED");
-  const blockedCommit = accountingRuntime.api.post({ postData: { contents: JSON.stringify({ action: "importDataWithColumnMapping", payload: {} }) } });
-  assert.equal(JSON.parse(blockedCommit.value).code, "IMPORT_COMMIT_NOT_EXPOSED");
+  const missingConfirmation = accountingRuntime.api.post({ postData: { contents: JSON.stringify({ action: "importDataWithColumnMapping", payload: {} }) } });
+  assert.equal(JSON.parse(missingConfirmation.value).code, "INTERNAL_ERROR");
+  const committed = accountingRuntime.api.post({ postData: { contents: JSON.stringify({
+    action: "importDataWithColumnMapping", correlationId: "IMPORT-CORRELATION-001",
+    payload: { previewConfirmed: true, previewHash: "HASH-1" }
+  }) } });
+  assert.equal(JSON.parse(committed.value).registrosImportados, 1);
   const malformed = accountingRuntime.api.post({ postData: { contents: "{bad" } });
   assert.equal(JSON.parse(malformed.value).code, "INTERNAL_ERROR");
   const safeError = accountingRuntime.api.post({ postData: { contents: JSON.stringify({ action: "validateImportPreview", payload: { sessionToken: "THROW" } }) } });
