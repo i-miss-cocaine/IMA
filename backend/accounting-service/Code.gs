@@ -5258,7 +5258,7 @@ function createPrivatePaymentAttachment_(fileData,fileName) {
 
 function ensurePaymentVoucherEvidenceSchema_(sheet) {
   const baseHeaders = ["ComprobanteID","Fecha","UserId","Alumno","CargoID","MontoReportado","MetodoPago","Referencia","ComprobanteUrl","Estado","Observaciones"];
-  const evidenceHeaders = ["ComprobanteGrupoID","VersionNumero","SHA256","SizeBytes","MimeType","FechaRecepcionISO","EstadoIntegridad","EsVersionActual","DecisionHash","DecisionTimestamp","DecisionBy","DecisionIntegrityWarning"];
+  const evidenceHeaders = ["ComprobanteGrupoID","SolicitudID","EvidenciaID","DriveFileID","NombreOriginal","VersionNumero","SHA256","SizeBytes","MimeType","FechaRecepcionISO","EstadoIntegridad","EsVersionActual","DecisionHash","DecisionTimestamp","DecisionBy","DecisionIntegrityWarning"];
   if (!sheet.getLastRow()) sheet.appendRow(baseHeaders.concat(evidenceHeaders));
   const headers = sheet.getRange(1,1,1,Math.max(1,sheet.getLastColumn())).getValues()[0].map(v=>String(v||"").trim());
   if (baseHeaders.some((name,index)=>headers[index]!==name)) throw new Error("VOUCHER_SCHEMA_INVALID");
@@ -5303,7 +5303,7 @@ function createPrivatePaymentAttachmentWithIntegrity_(fileData,fileName) {
 }
 
 function verifyPaymentVoucherEvidence_(ss,row,map) {
-  const fileId=extractDriveFileId(row[map.ComprobanteUrl]);
+  const fileId=extractDriveFileId(row[map.DriveFileID]||row[map.ComprobanteUrl]);
   if(!fileId) return {status:"error",code:"VOUCHER_FILE_REFERENCE_INVALID"};
   let file;
   try{file=DriveApp.getFileById(fileId);}catch(_){return {status:"error",code:"VOUCHER_FILE_UNAVAILABLE"};}
@@ -5325,9 +5325,10 @@ function verifyPaymentVoucherEvidence_(ss,row,map) {
     if(validation.mimeType!==mime)return {status:"error",code:"VOUCHER_FILE_CONTENT_MISMATCH"};
     const actualHash=computeDocumentSHA256(bytes).toLowerCase();
     const expectedHash=String(row[map.SHA256]||"").trim().toLowerCase();
+    const expectedName=String(row[map.NombreOriginal]||"").trim();
     if(!expectedHash)return {status:"warning",code:"LEGACY_UNVERIFIED",file:file,bytes:bytes,fileName:fileName,mimeType:mime,actualHash:actualHash,integrityVerified:false};
     const expectedSize=Number(row[map.SizeBytes]||0),expectedMime=String(row[map.MimeType]||"").trim().toLowerCase();
-    const mismatch=actualHash!==expectedHash||(expectedSize>0&&expectedSize!==bytes.length)||(expectedMime&&expectedMime!==mime);
+    const mismatch=actualHash!==expectedHash||(expectedSize>0&&expectedSize!==bytes.length)||(expectedMime&&expectedMime!==mime)||(expectedName&&expectedName!==fileName);
     if(mismatch){
       logStructuredEvent("ACCOUNTING","verifyPaymentVoucherEvidence_","WARN","EVIDENCE_TAMPERING_DETECTED",
         "Se detectó discrepancia de integridad en un comprobante privado.",{comprobanteId:String(row[map.ComprobanteID]||""),storedHash:expectedHash,actualHash:actualHash}, "SYSTEM");
@@ -5395,7 +5396,8 @@ function uploadPaymentVoucher(payload) {
     row[map.ComprobanteID]=id;row[map.Fecha]=now;row[map.UserId]=userId;row[map.Alumno]=alumno||"Estudiante";row[map.CargoID]=cargoId;
     row[map.MontoReportado]=amount;row[map.MetodoPago]=p.metodoPago||"Transferencia Bancaria";row[map.Referencia]=p.referencia||"SIN-REF";
     row[map.ComprobanteUrl]=fileId;row[map.Estado]="En Revisión";row[map.Observaciones]=observaciones||"";
-    row[map.ComprobanteGrupoID]=groupId;row[map.VersionNumero]=version;row[map.SHA256]=stored.sha256;row[map.SizeBytes]=stored.sizeBytes;
+    row[map.ComprobanteGrupoID]=groupId;row[map.SolicitudID]=groupId;row[map.EvidenciaID]=id;row[map.DriveFileID]=fileId;row[map.NombreOriginal]=String(fileName).trim();
+    row[map.VersionNumero]=version;row[map.SHA256]=stored.sha256;row[map.SizeBytes]=stored.sizeBytes;
     row[map.MimeType]=stored.mimeType;row[map.FechaRecepcionISO]=stored.receivedAt;row[map.EstadoIntegridad]="VERIFICADO";
     row[map.EsVersionActual]=true;row[map.DecisionHash]="";row[map.DecisionTimestamp]="";row[map.DecisionBy]="";row[map.DecisionIntegrityWarning]=false;
     sheet.appendRow(row);
@@ -5427,12 +5429,13 @@ function uploadPaymentVoucher(payload) {
   }
   if(!targetUserId&&candidates.length&&!filtered.length)return {status:"error",code:"RESOURCE_SCOPE_DENIED",message:"No existen comprobantes dentro del ámbito autorizado."};
   const mapped=filtered.map(r=>({
-    comprobanteId:r[map.ComprobanteID],comprobanteGrupoId:String(r[map.ComprobanteGrupoID]||""),
-    versionNumero:Number(r[map.VersionNumero]||1),esVersionActual:r[map.EsVersionActual]===false?false:true,
+    comprobanteId:r[map.ComprobanteID],evidenciaId:String(r[map.EvidenciaID]||r[map.ComprobanteID]||""),solicitudId:String(r[map.SolicitudID]||r[map.ComprobanteGrupoID]||""),
+    comprobanteGrupoId:String(r[map.ComprobanteGrupoID]||""),nombreOriginal:String(r[map.NombreOriginal]||""),
+    versionNumero:Number(r[map.VersionNumero]||1),esVersionActual:r[map.EsVersionActual]===false?false:true;
     sha256:String(r[map.SHA256]||""),integridadEstado:String(r[map.EstadoIntegridad]||"LEGACY_UNVERIFIED"),
     fecha:r[map.Fecha],userId:r[map.UserId],alumno:r[map.Alumno],cargoId:r[map.CargoID],
     montoReportado:parseFloat(r[map.MontoReportado]||0),metodoPago:r[map.MetodoPago],referencia:r[map.Referencia],
-    comprobanteUrl:"",tieneComprobante:!!String(r[map.ComprobanteUrl]||"").trim(),estado:r[map.Estado],observaciones:r[map.Observaciones]
+    comprobanteUrl:"",tieneComprobante:!!String(r[map.DriveFileID]||r[map.ComprobanteUrl]||"").trim(),estado:r[map.Estado],observaciones:r[map.Observaciones]
   }));
   return {status:"success",comprobantes:mapped};
 }
@@ -5463,8 +5466,9 @@ function getPaymentVoucherFile(payload) {
     verified.status==="success"?"VOUCHER_FILE_DELIVERED":"VOUCHER_FILE_INTEGRITY_WARNING",
     "Comprobante privado entregado tras autorización; estado de integridad explícito.",
     {comprobanteId:comprobanteId,version:Number(row[map.VersionNumero]||1),integrityStatus:verified.code||"VERIFICADO"},actor.role);
-  return {status:"success",comprobanteId:comprobanteId,comprobanteGrupoId:String(row[map.ComprobanteGrupoID]||""),
-    versionNumero:Number(row[map.VersionNumero]||1),fileName:verified.fileName,mimeType:verified.mimeType,
+  return {status:"success",comprobanteId:comprobanteId,evidenciaId:String(row[map.EvidenciaID]||comprobanteId),
+    solicitudId:String(row[map.SolicitudID]||row[map.ComprobanteGrupoID]||""),comprobanteGrupoId:String(row[map.ComprobanteGrupoID]||""),
+    versionNumero:Number(row[map.VersionNumero]||1),fileName:verified.fileName,nombreOriginal:String(row[map.NombreOriginal]||verified.fileName),mimeType:verified.mimeType,
     encoding:"base64",fileData:Utilities.base64Encode(verified.bytes),fileSizeBytes:verified.bytes.length,
     sha256Actual:verified.actualHash,integrityVerified:verified.integrityVerified===true,
     integrityStatus:verified.code||"VERIFICADO",integrityWarning:verified.status==="warning"};
@@ -5496,7 +5500,7 @@ function reviewPaymentVoucher(payload) {
     if(approval&&evidence.code==="LEGACY_UNVERIFIED")return {status:"error",code:"LEGACY_EVIDENCE_UNVERIFIED",message:"El comprobante histórico no tiene huella de recepción y no puede aprobarse como evidencia verificada."};
     decisionWarning=evidence.status==="warning";
     decisionTimestamp=new Date().toISOString();
-    decisionHash=computeDocumentSHA256([comprobanteId,String(row[map.SHA256]||""),String(evidence.actualHash||""),String(row[map.VersionNumero]||1),
+    decisionHash=computeDocumentSHA256([comprobanteId,String(row[map.SHA256]||""),String(evidence.actualHash||""),String(row[map.NombreOriginal]||""),String(evidence.fileName||""),String(row[map.VersionNumero]||1),
       nuevoEstado,actor.userId,decisionTimestamp,decisionWarning?"WARNING":"VERIFIED"].join("|"));
     const updatedRow=row.slice();
     updatedRow[map.Estado]=nuevoEstado;
