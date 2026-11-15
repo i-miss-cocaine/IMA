@@ -175,7 +175,7 @@ function makeMigrationOrchestrationFixture(options){
   const preparedRows = payload.filasData.map((row,index) => departmentPreflight.applicable
    ? departmentPreflight.rows[index]
    : ctx.mapMigrationRowToTarget_(row,payload.columnaMapeo,schema));
-  return {status:"success",validForImport:true,previewHash:"MIGRATION-FIXTURE",departmentPreflight:departmentPreflight,
+  return {status:"success",validForImport:true,previewHash:"MIGRATION-FIXTURE",fileHash:"a".repeat(64),departmentPreflight:departmentPreflight,
    identityResolutions:identityResolutions,preparedRows:preparedRows};
  };
  return{ctx,calls,auditRows,state};
