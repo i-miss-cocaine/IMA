@@ -19,6 +19,8 @@ function ownerRuntime(source,service,handlerName,snapshotName,rows,expectedSheet
   verifySessionToken:token=>token==="SIGNED-SESSION"?{userId:"U-1",role:"Director",institutionId:"INST-1"}:null,
   getIdentityInstitutionId_:()=>"INST-1",
   getDynamicPermissionsForRole:()=>true,
+  migrationStableJson_:value=>JSON.stringify(value),
+  migrationHash_:value=>crypto.createHash("sha256").update(String(value)).digest("hex"),
   SPREADSHEET_ID:"TEST",
   SpreadsheetApp:{openById:()=>({getSheetByName:name=>name===expectedSheet?{getDataRange:()=>({getValues:()=>rows.map(row=>row.slice())})}:null})}
  };
@@ -37,11 +39,11 @@ assert.throws(()=>userRuntime.handle({sourceService:"ACADEMIC",action:"getMigrat
 const academicRuntime=ownerRuntime(academic,"ACADEMIC","handleTrustedMigrationEnvelope_","getTrustedAcademicMigrationTargetExistenceSnapshot_",
  [["ExpedienteID","PersonaID"],["EXP-1","PER-1"],["EXP-2","PER-2"]],"ExpedientesEstudiantes","ExpedienteID");
 const academicResult=academicRuntime.handle({sourceService:"ACCOUNTING",action:"getMigrationTargetExistenceSnapshot",payload:{sessionToken:"SIGNED-SESSION",institutionId:"INST-1",entityType:"estudiante",targetIds:["EXP-1","MISSING"]}});
-assert.equal(academicResult.verified,true);assert.deepEqual(Array.from(academicResult.existingTargetIds),["EXP-1"]);assert.equal(academicResult.targetRows.length,0);
+assert.equal(academicResult.verified,true);assert.deepEqual(Array.from(academicResult.existingTargetIds),["EXP-1"]);assert.equal(academicResult.targetRows.length,1);assert.equal(academicResult.targetRows[0].ExpedienteID,"EXP-1");assert.match(academicResult.targetRows[0].__rowHash,/^[a-f0-9]{64}$/);assert.ok(!JSON.stringify(academicResult.targetRows).includes("PER-1"),"ACADEMIC returns row hashes, not student personal data");
 assert.equal(academicRuntime.handle({sourceService:"ACCOUNTING",action:"getMigrationTargetExistenceSnapshot",payload:{sessionToken:"SIGNED-SESSION",institutionId:"INST-1",entityType:"persona",targetIds:["EXP-1"]}}).code,"MIGRATION_SNAPSHOT_CONTRACT_INVALID");
 
 const accountingFunctions=["isAccountingTrustedAppsScriptEndpoint_","accountingComputeHmacSignature_","requestAccountingTrustedOwnerSnapshot_","buildMigrationTargetExistenceSnapshot_","buildAccountingRelatedPersonExistenceSnapshot_"].map(name=>extract(accounting,name));
-let remoteData={status:"success",verified:true,service:"ACADEMIC",sheet:"ExpedientesEstudiantes",idField:"ExpedienteID",institutionId:"INST-1",existingTargetIds:["EXP-1"],targetRows:[]};
+let remoteData={status:"success",verified:true,service:"ACADEMIC",sheet:"ExpedientesEstudiantes",idField:"ExpedienteID",institutionId:"INST-1",existingTargetIds:["EXP-1"],targetRows:[{ExpedienteID:"EXP-1",__rowHash:"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]};
 let envelopeSeen=null;
 const accountingRuntime={
  Date,String,JSON,Array,Object,Number,Math,RegExp,Error,
@@ -57,7 +59,7 @@ assert.equal(accountingRuntime.api.endpoint("https://script.google.com/a/macros/
 assert.equal(accountingRuntime.api.endpoint("http://script.google.com/macros/s/AKfycbACADEMIC123/exec"),false);
 assert.equal(accountingRuntime.api.endpoint("https://script.google.com/macros/s/AKfycbACADEMIC123/exec?x=1"),false);
 const target=accountingRuntime.api.target(schema,[{ExpedienteID:"EXP-1"}],"INST-1",{}, {sessionToken:"SIGNED-SESSION"});
-assert.equal(target.verified,true);assert.deepEqual(Array.from(target.existingTargetIds),["EXP-1"]);
+assert.equal(target.verified,true);assert.deepEqual(Array.from(target.existingTargetIds),["EXP-1"]);assert.equal(target.targetRows[0].__rowHash,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 assert.equal(envelopeSeen.action,"getMigrationTargetExistenceSnapshot");assert.equal(envelopeSeen.targetService,"ACADEMIC");
 const signedBody=[envelopeSeen.requestId,envelopeSeen.timestamp,envelopeSeen.correlationId,envelopeSeen.sourceService,envelopeSeen.targetService,envelopeSeen.action,JSON.stringify(envelopeSeen.payload)].join("|");
 assert.equal(envelopeSeen.hmacSignature,crypto.createHmac("sha256",secret).update(signedBody).digest("hex"));
