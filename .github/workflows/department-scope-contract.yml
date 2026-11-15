@@ -8,6 +8,7 @@ on:
       - backend/user-service/Code.gs
       - backend/academic-service/Code.gs
       - tests/security/academic-multilevel-file-validation.test.js
+      - tests/security/openxml-package-validation.test.js
       - tests/ui/pdf-document-classification.test.js
       - tests/ui/teacher-excel-workbook-preflight.test.js
       - backend/accounting-service/Code.gs
@@ -162,6 +163,8 @@ jobs:
         run: node tests/security/user-service-legacy-document-inventory.test.js
       - name: Run academic evidence binary and MIME validation contract
         run: node tests/security/academic-multilevel-file-validation.test.js
+      - name: Run OpenXML package validation contract
+        run: node tests/security/openxml-package-validation.test.js
       - name: Run PDF page classification contract
         run: node tests/ui/pdf-document-classification.test.js
       - name: Run teacher Excel workbook preflight contract
