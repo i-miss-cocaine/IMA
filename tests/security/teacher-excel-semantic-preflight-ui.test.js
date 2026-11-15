@@ -25,6 +25,7 @@ function extractFunction(source, name) {
 assert.match(js, /fetchApi\('ACCOUNTING',\s*'validateImportPreview'/);
 assert.match(js, /requestSequence !== excelPreflightRequestSequence/);
 assert.match(js, /targetExistenceSnapshot\.verified !== true/);
+assert.match(js, /confirmButton\.disabled = !canConfirm \|\| !checkbox \|\| !checkbox\.checked/);
 const start = js.indexOf("// FASE 28: IMPORTADOR UNIVERSAL DE ARCHIVOS EXCEL");
 const end = js.indexOf("});\n/**\n * REQ: Soporte para copia de código", start);
 assert.ok(start >= 0 && end > start, "Excel importer controller block is bounded");
