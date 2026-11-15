@@ -7,6 +7,7 @@ const student = read("student-dashboard.html");
 const accounting = read("js/accounting.js");
 const academic = read("js/teacher.js");
 const secretary = read("js/secretary.js");
+const studentJs = read("js/student.js");
 
 for (const [source, id, key] of [
   [teacher, "cashier-user-id", "identity.userId"],
@@ -34,6 +35,8 @@ assert.ok(academic.includes("setAttribute('data-ui-help-key', 'matricula.identid
 assert.ok(academic.includes("setAttribute('data-ui-help-key', 'matricula.fechaNacimiento')"));
 assert.ok(secretary.includes('setAttribute("data-ui-help-key","matricula.identidad")'));
 assert.ok(secretary.includes('setAttribute("data-ui-help-key","matricula.fechaNacimiento")'));
+assert.ok(studentJs.includes('input[name="identificacion"]'));
+assert.ok(studentJs.includes('setAttribute("data-ui-help-key", "matricula.identidad")'));
 assert.ok(teacher.includes('data-tooltip="Registra el abono del cargo seleccionado.'));
 assert.ok(student.includes('data-tooltip="Cierra el formulario sin enviar el comprobante.'));
 for (const source of [teacher, accounting, academic]) {
