@@ -918,11 +918,44 @@ function hasActiveDelegationForAction(userId, action) {
 }
 
 
+function getTrustedAcademicMigrationTargetExistenceSnapshot_(payload) {
+  var input = payload || {};
+  var token = String(input.sessionToken || "");
+  var claims = verifySessionToken(token);
+  var institutionId = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim();
+  if (!claims || !claims.userId || !claims.role || !claims.institutionId ||
+      !institutionId || String(claims.institutionId) !== institutionId || String(input.institutionId || "") !== institutionId) {
+    return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  }
+  if (String(input.entityType || "").toLowerCase() !== "estudiante" || !Array.isArray(input.targetIds)) {
+    return { status: "error", code: "MIGRATION_SNAPSHOT_CONTRACT_INVALID" };
+  }
+  var requested = {};
+  input.targetIds.forEach(function(value) {
+    var id = String(value || "").trim();
+    if (id && id.length <= 128) requested[id] = true;
+  });
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = ss.getSheetByName("ExpedientesEstudiantes");
+  if (!sheet) return { status: "error", code: "MIGRATION_SNAPSHOT_TARGET_UNAVAILABLE" };
+  var values = sheet.getDataRange().getValues();
+  var headers = values.length ? values[0].map(function(value) { return String(value || "").trim(); }) : [];
+  if (headers[0] !== "ExpedienteID") return { status: "error", code: "MIGRATION_SNAPSHOT_SCHEMA_MISMATCH" };
+  var existing = [];
+  for (var i = 1; i < values.length; i++) {
+    var id = String(values[i][0] || "").trim();
+    if (id && requested[id]) existing.push(id);
+  }
+  return { status: "success", verified: true, service: "ACADEMIC", sheet: "ExpedientesEstudiantes",
+    idField: "ExpedienteID", institutionId: institutionId, existingTargetIds: existing.sort(), targetRows: [] };
+}
+
 function handleTrustedMigrationEnvelope_(envelope){
  const secret=String(PropertiesService.getScriptProperties().getProperty("IMA_MIGRATION_HMAC_SECRET")||"");
  if(secret.length<32)throw new Error("MIGRATION_TRANSPORT_SECRET_REQUIRED");
  const verified=verifyInterServiceEnvelope(envelope,"ACADEMIC",secret);
  if(verified.sourceService!=="ACCOUNTING")throw new Error("MIGRATION_SOURCE_NOT_ALLOWED");
+ if(verified.action==="getMigrationTargetExistenceSnapshot")return getTrustedAcademicMigrationTargetExistenceSnapshot_(verified.payload);
  if(verified.action==="writeMigratedEntity")return applyTrustedMigrationWrite_(verified.payload);
  if(verified.action==="compensateMigratedEntity")return compensateTrustedMigrationWrite_(verified.payload);
  throw new Error("MIGRATION_ACTION_NOT_ALLOWED");
