@@ -2455,7 +2455,39 @@ window.generateBatchMonthlyCharges = async function(payload) {
 
 
 // [TASK-003] [F15-Task03] - Métodos clientes para anulaciones, reversión de pagos, notas de crédito y reembolsos
+function confirmAccountingSensitiveOperation_(action, payload) {
+  const p = payload || {};
+  const reference = String(p.cargoId || p.paymentId || p.pagoId || p.id || "registro seleccionado");
+  const messages = {
+    voidCharge: {
+      title: "Anulación de cargo financiero",
+      details: "Se solicitará la anulación del cargo " + reference + ".",
+      consequence: "Si se aprueba, el cargo dejará de ser exigible y puede cambiar el saldo pendiente y la conciliación. El registro queda sujeto a auditoría."
+    },
+    reversePayment: {
+      title: "Reversión de pago",
+      details: "Se solicitará revertir el pago " + reference + ".",
+      consequence: "La reversión puede modificar el saldo del estudiante y la conciliación; el registro original no se elimina."
+    },
+    issueFiscalCreditNote: {
+      title: "Emisión de nota de crédito fiscal",
+      details: "Se solicitará una nota de crédito para el registro " + reference + ".",
+      consequence: "Puede producir efectos contables y fiscales. Verifique el documento, importe y referencia antes de emitir."
+    },
+    processPaymentRefund: {
+      title: "Procesamiento de reembolso",
+      details: "Se solicitará el reembolso del pago " + reference + ".",
+      consequence: "Puede generar una salida de fondos y modificar el saldo y la conciliación. Verifique beneficiario, importe y evidencia."
+    }
+  };
+  const config = messages[action];
+  if (!config) return false;
+  if (window.confirmCriticalOperation) return window.confirmCriticalOperation(config);
+  return typeof window.confirm === "function" && window.confirm(config.title + "\n\n" + config.details + "\n\nConsecuencia: " + config.consequence + "\n\n¿Confirma que desea continuar?");
+}
+
 window.voidCharge = async function(payload) {
+  if (!confirmAccountingSensitiveOperation_("voidCharge", payload)) return { status: "cancelled", code: "USER_CANCELLED" };
   try {
     return await window.callApi('ACCOUNTING', 'voidCharge', payload || {});
   } catch (error) {
@@ -2465,6 +2497,7 @@ window.voidCharge = async function(payload) {
 };
 
 window.reversePayment = async function(payload) {
+  if (!confirmAccountingSensitiveOperation_("reversePayment", payload)) return { status: "cancelled", code: "USER_CANCELLED" };
   try {
     return await window.callApi('ACCOUNTING', 'reversePayment', payload || {});
   } catch (error) {
@@ -2474,6 +2507,7 @@ window.reversePayment = async function(payload) {
 };
 
 window.issueFiscalCreditNote = async function(payload) {
+  if (!confirmAccountingSensitiveOperation_("issueFiscalCreditNote", payload)) return { status: "cancelled", code: "USER_CANCELLED" };
   try {
     return await window.callApi('ACCOUNTING', 'issueFiscalCreditNote', payload || {});
   } catch (error) {
@@ -2483,6 +2517,7 @@ window.issueFiscalCreditNote = async function(payload) {
 };
 
 window.processPaymentRefund = async function(payload) {
+  if (!confirmAccountingSensitiveOperation_("processPaymentRefund", payload)) return { status: "cancelled", code: "USER_CANCELLED" };
   try {
     return await window.callApi('ACCOUNTING', 'processPaymentRefund', payload || {});
   } catch (error) {
