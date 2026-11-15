@@ -3888,3 +3888,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Aislamiento por institución/departamento, permisos RBAC, deduplicación institucional, filtros, paginación y exportación CSV protegida contra fórmulas.
 - ScriptLock y rollback compensatorio si falla el historial; test de contrato Node agregado al workflow Department Scope.
 - Implementación en USER porque accounting-service/Code.gs está vacío; interfaz y beta real siguen pendientes.
+
+
+[2026-11-15] TASK-133 — C1.763 — Validación multinivel de archivos/documentos
+- Endurecida validateFileBinaryIntegrity en Academic, Accounting y User: límites de ZIP, detección de cifrado, rutas/entradas duplicadas, tamaño expandido y ratio de compresión, consistencia de cabeceras locales/centrales.
+- Añadida inspección XML OpenXML en DOCX/XLSX mediante Utilities.unzip y XmlService: párrafos, tablas, controles de contenido, campos de formulario, workbook y worksheets.
+- Incorporada vista de solo lectura en teacher-dashboard para inspección Excel de múltiples hojas, encabezados desplazados/duplicados/repetidos, fórmulas, filas vacías, tipos y muestra de datos con números de fila originales.
+- Preflight Accounting valida identidad, fechas, calificaciones 0–100, referencias, tenant/departamento y sobrescrituras locales; importación parcial explícita y rollback ante errores de escritura; advertencias persistidas en AuditoriaMigraciones.
+- CI Node 24 SUCCESS para contratos semánticos, OpenXML, PDF y Excel en e9013de331cd0b49e7d5b9e9372be4a3d8548b19. Cambios posteriores de detección de sobrescritura/advertencias pendientes de la siguiente ejecución CI.
+- TASK-133 permanece abierto: UI de mapeo/confirmación en Secretaría/Contabilidad, consulta de destinos USER/ACADEMIC, OCR y beta real pendientes.
