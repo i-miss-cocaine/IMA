@@ -3875,3 +3875,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Añadida prueba DOM para evento invalid en captura y recuperación.
 - Workflow UI Accessibility ampliado para ejecutar el nuevo test y cubrir cambios en formularios/scripts.
 - Ejecución real del workflow no verificable desde el conector; no se declara éxito.
+
+
+[2026-11-15] TASK-130 — C1.761 — Pruebas Node de ayuda permanente
+- Añadido el test DOM de validación inline a los workflows UI Accessibility y Department Scope.
+- GitHub Actions ima/department-scope-contract SUCCESS en c92724908578f5acf02867e3d51ce24518800876.
+- Ampliado el contrato de formularios para verificar los rangos de calificación 0–100.
