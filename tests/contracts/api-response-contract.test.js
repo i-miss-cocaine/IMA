@@ -91,7 +91,6 @@ function makeClient(url) {
     SERVICE_URLS: { ACADEMIC: url, ACCOUNTING: url, USER: url },
     fetch,
     AbortController,
-    testTimeoutMode: false,
     clearTimeout,
     localStorage: { getItem: () => null },
     sessionStorage: { getItem: () => null },
@@ -100,7 +99,7 @@ function makeClient(url) {
     Date, Math, Number, String, Object, Array, JSON, Promise
   };
   context.setTimeout = function(fn, ms) {
-    return setTimeout(fn, ms === 60000 && context.testTimeoutMode ? 25 : ms);
+    return setTimeout(fn, ms === 60000 ? 1000 : ms);
   };
   context.window = context;
   vm.createContext(context);
@@ -109,17 +108,18 @@ function makeClient(url) {
 }
 
 async function main() {
+  let delayedResponseTimer = null;
   const server = http.createServer((req, res) => {
     const pathname = new URL(req.url, "http://localhost").pathname;
     req.resume();
     const send = (status, type, body) => { res.writeHead(status, { "content-type": type }); res.end(body); };
     if (pathname === "/timeout") {
-      setTimeout(() => {
+      delayedResponseTimer = setTimeout(() => {
         if (!res.destroyed && !res.writableEnded) {
           const delayedMeta = { timestamp: new Date().toISOString(), correlationId: "DELAYED-CORRELATION-123456" };
           send(200, "text/plain", JSON.stringify({ apiVersion: "1.0.0", status: "success", data: [], meta: delayedMeta }));
         }
-      }, 250);
+      }, 3000);
       return;
     }
     const meta = { timestamp: new Date().toISOString(), correlationId: "SERVER-CORRELATION-123456" };
@@ -190,9 +190,7 @@ async function main() {
   assert.equal(missingService.code, "SERVICE_URL_MISSING");
   assert.equal(Object.prototype.hasOwnProperty.call(missingService, "data"), false);
 
-  client.testTimeoutMode = true;
   const timeout = await call("/timeout");
-  client.testTimeoutMode = false;
   assert.equal(timeout.status, "error");
   assert.equal(timeout.code, "REQUEST_TIMEOUT");
   assert.equal(timeout.isFallback, true);
@@ -207,6 +205,7 @@ async function main() {
   assert.doesNotMatch(clientSourceForStaticCheck(apiSource), /innerHTML\s*=/, "API error messages must be rendered as text");
   console.log("PASS: versioned response envelope, both backend services, strict client validation and local HTTP success/error/empty/invalid JSON/HTML/HTTP 503/timeout/network failure");
   } finally {
+    if (delayedResponseTimer) clearTimeout(delayedResponseTimer);
     server.closeAllConnections();
     await new Promise(resolve => server.close(resolve));
   }
