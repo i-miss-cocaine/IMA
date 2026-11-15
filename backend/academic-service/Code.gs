@@ -3915,6 +3915,7 @@ function classifyPdfDocumentPages_(rawBytes) {
   }
 }
 
+// Requires Google Apps Script Advanced Drive Service v2 (Drive.Files.insert/remove); temporary Docs are deleted before returning.
 function extractPdfTextWithOcr_(file, options) {
   var opts = options || {};
   if (!file || typeof file.getBlob !== "function") return { status: "error", code: "OCR_FILE_UNAVAILABLE" };
