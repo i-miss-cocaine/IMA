@@ -409,7 +409,7 @@ assert.ok(!secretary.includes("'getStudentDocumentFile'"),"legacy direct downloa
 assert.ok(!secretary.includes("d.driveUrl"),"student-document UI must not render direct Drive URLs");
 
 assert.match(source,/case "getSecureDocumentStream": result = getSecureDocumentStream\(payload\); break;/);
-assert.match(source,/case "getStudentDocumentFile_": result = \{ status: "error", code: "SECURE_DOCUMENT_STREAM_REQUIRED"/);
+assert.match(source,/case "getStudentDocumentFile": result = \{ status: "error", code: "SECURE_DOCUMENT_STREAM_REQUIRED"/);
 assert.doesNotMatch(source,/driveUrl: r\[6\]/);
 assert.match(source,/case "createStudentDocumentAccessToken": result = createStudentDocumentAccessToken\(payload\); break;/);
 console.log("academic-student-document-private-storage: PASS");
