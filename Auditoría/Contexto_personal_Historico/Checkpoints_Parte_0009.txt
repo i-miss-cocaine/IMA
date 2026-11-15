@@ -919,3 +919,49 @@ Se aisló y corrigió un subflujo independiente en `generateSignatureAuditCertif
 - BETA-FUNC de F34-Task04 pendiente: carga, descarga, sustitución controlada, privacidad y evidencia histórica en Drive/Sheets de entorno beta.
 - TASK-106 sigue pendiente: su alcance adicional incluye múltiples adjuntos/versiones v2+, inmutabilidad de evidencias previas a aprobación/firma, vínculo de decisiones con hashes y parametrización institucional ante discrepancias. No se declara cubierto por F34-Task04.
 - Próxima tarea elegible: revalidar TASK-105 (P0, orden 1) tras satisfacer su dependencia F34-Task04; si sus criterios ya están cubiertos por C1.750, registrar evidencia sin duplicar implementación. TASK-106 permanece P0, orden 2.
+
+
+### C1.754 — TASK-105 — ciclo canónico de justificaciones y sincronización de asistencia
+- **Fecha:** 2026-11-15.
+- **Rama autorizada:** NG_beta_0.0.0.1_work.
+- **Checkpoint anterior:** C1.753.
+- **HEAD al iniciar TASK-105:** d8c71a67531fe83984173d643a2e2f5120a57234.
+- **HEAD de implementación y CI:** 3aa12165290ef2daa6f6e709ed879f967a96baa6.
+- **Rama base:** NG_beta_0.0.0.1 = 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- **Estado:** TASK-105 completada en código, revisión y CI. BETA-FUNC-103 pendiente de ejecución en Apps Script/Sheets/Drive beta.
+
+#### Implementación
+- Se unificó el flujo USER → ACADEMIC canónico, conservando el ID de solicitud/justificación, estudiante, usuario/representante, fechas afectadas, sesiones exactas, adjunto y decisión administrativa.
+- USER serializa la prelectura y el alta mediante ScriptLock en secciones separadas de la creación de adjuntos, evitando lock anidado con la creación de carpetas Drive. Revalida dentro del lock; duplicados ambiguos fallan cerrados; reintentos comparan motivo y hash de adjunto y no crean filas duplicadas.
+- Se añadieron FechasAfectadasJSON y SesionIDsSolicitadasJSON. El portal familiar permite enviar un rango de fechas; ACADEMIC valida cada fecha dentro del mismo período y resuelve la unión exacta de sesiones de clase. Los docentes reciben únicamente sus sesiones autorizadas y todas las fechas del expediente.
+- La aprobación puede abarcar todas las sesiones o un subconjunto explícito. Se conserva el conjunto solicitado, el subconjunto aprobado y el alcance TOTAL/PARCIAL; sesiones no aprobadas no se modifican. La política TODO_O_NADA deniega subconjuntos.
+- JUSTIFICACION_IMPACTO_AUTOMATICO_ASISTENCIA soporta INMEDIATO_AL_APROBAR_SECRETARIA (predeterminado) y REQUIERE_CONFORMIDAD_PREVIA_DOCENTE. En el segundo modo se exige una constancia CONFORMIDAD activa por sesión y se verifica su hash SHA-256 antes de permitir la aprobación.
+- PERMITIR_JUSTIFICACION_PARCIAL_DIAS soporta HABILITADO y TODO_O_NADA. La configuración se guarda en ConfiguracionInstitucional mediante saveAbsenceJustificationPolicies, restringida a Administrador/Director.
+- La sincronización de asistencia es idempotente y recuperable: decisiones pendientes/rechazadas/observadas no mutan asistencia; aprobaciones actualizan solo sesiones seleccionadas; fallos mantienen estado pendiente para reconciliación; revocaciones revierten el indicador y el vínculo sin borrar el historial.
+- Se integró bandeja de Secretaría en dashboard-secretaria.html/js/secretary.js con consulta institucional, aprobación total/parcial, rechazo y apertura de adjuntos privados tras revalidar integridad. El rol docente no puede invocar revisión administrativa. El panel docente muestra todas las fechas afectadas.
+
+#### Archivos
+- backend/user-service/Code.gs
+- backend/academic-service/Code.gs
+- js/student.js
+- js/teacher.js
+- js/secretary.js
+- dashboard-secretaria.html
+- tests/security/academic-absence-justification-canonical.test.js
+- tests/security/academic-teacher-justification-abac.test.js
+- pendientes/Docente/Pendientes.md
+- beta_test_Parte_0002.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt
+- changueslogs.txt
+
+#### Verificación
+- Department Scope Contract run 43742077374: SUCCESS en HEAD 3aa12165290ef2daa6f6e709ed879f967a96baa6. Node.js 24; contrato canónico, fechas múltiples, aprobación parcial, configuración, hash de conformidad, reintentos, recuperación y ABAC docente PASS; sintaxis Apps Script/JS, js/student.js y js/secretary.js PASS.
+- Identity Mapping and Transport Security Contracts run 43742077382: SUCCESS.
+- Contratos previos de cola institucional/aislamiento, puente USER de revisión parcial y proyección de sesiones parciales: PASS.
+- No se desplegó Apps Script ni se modificaron datos reales de Sheets/Drive. No se declara validación productiva.
+
+#### Límites y continuidad
+- BETA-FUNC-103 pendiente: ejecutar con estudiantes/representantes, Secretaría, dos docentes, sesiones de varios días, evidencia sintética privada, políticas HABILITADO/TODO_O_NADA, modo de conformidad previa, reintentos, fallo parcial y revocación en entorno beta.
+- **Siguiente P0 elegible:** TASK-106 — integridad criptográfica, versionado y protección contra sustitución de evidencias documentales (orden 2). F34-Task01 y F34-Task04 están completadas; no se debe confundir este alcance con el versionado múltiple/inmutabilidad adicional de TASK-106.
