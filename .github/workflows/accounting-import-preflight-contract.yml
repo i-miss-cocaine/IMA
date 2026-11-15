@@ -11,6 +11,9 @@ on:
       - tests/security/accounting-migration-writer.test.js
       - tests/security/accounting-import-semantic-preflight.test.js
       - tests/security/accounting-departmental-import-scope.test.js
+      - js/teacher.js
+      - teacher-dashboard.html
+      - tests/security/teacher-excel-semantic-preflight-ui.test.js
       - .github/workflows/accounting-import-preflight-contract.yml
 
 permissions:
@@ -48,3 +51,7 @@ jobs:
         run: node tests/security/department-reference-interservice-envelope.test.js
       - name: Check API client syntax
         run: node --check js/api.js
+      - name: Check teacher dashboard controller syntax
+        run: node --check js/teacher.js
+      - name: Run Excel semantic preflight UI contract
+        run: node tests/security/teacher-excel-semantic-preflight-ui.test.js
