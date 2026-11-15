@@ -1082,7 +1082,7 @@ const scopeCurrentRows=[scopeHeaders,
 const scopeClaims={userId:"U-SCOPE",role:"Director",membershipId:"MEM-SCOPE",institutionId:"INST-1"};
 const scopeServiceReaders=[["academic","getVerifiedAcademicDepartmentScope_"],["accounting","getVerifiedAccountingDepartmentScope_"],["task","getVerifiedTaskDepartmentScope_"],["exam","getVerifiedExamDepartmentScope_"]];
 for(const [serviceName,readerName] of scopeServiceReaders){
- const scopeCtx={Date:FixedTemporalDate,PropertiesService:{getScriptProperties:()=>({getProperty:key=>key==="IMA_INSTITUTION_ID"?"INST-1":null})},getVerifiedAccountingIdentity_:()=>({authorized:true,userId:"U-SCOPE",role:"Director",membershipId:"MEM-SCOPE",institutionId:"INST-1"}),verifySessionToken:token=>token==="scope-valid"?scopeClaims:(token==="scope-wrong-tenant"?{...scopeClaims,institutionId:"INST-OTHER"}:null)};
+ const scopeCtx={Date:FixedTemporalDate,PropertiesService:{getScriptProperties:()=>({getProperty:key=>key==="IMA_INSTITUTION_ID"?"INST-1":null})},getVerifiedAccountingIdentity_:payload=>({authorized:true,userId:"U-SCOPE",role:"Director",membershipId:"MEM-SCOPE",institutionId:payload&&payload.sessionToken==="scope-wrong-tenant"?"INST-OTHER":"INST-1"}),verifySessionToken:token=>token==="scope-valid"?scopeClaims:(token==="scope-wrong-tenant"?{...scopeClaims,institutionId:"INST-OTHER"}:null)};
  const code=`
  ${extractFunction(consumerSources[serviceName],"getInstitutionalResponsibilityForRoleScope_")}
  ${extractFunction(consumerSources[serviceName],"resolveInternalResponsibilityForRoleScope_")}
