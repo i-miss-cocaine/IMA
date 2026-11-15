@@ -3828,3 +3828,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Legacy sin hash identificado como LEGACY_UNVERIFIED; no se representa como evidencia verificada.
 - Se amplió el contrato Node para probar bytes alterados durante read-back y rollback de archivo. Department Scope run 43740294235 SUCCESS; Node 24 y sintaxis Apps Script/JS PASS.
 - Beta Drive/Sheets pendiente. TASK-106 continúa pendiente por versionado múltiple, inmutabilidad de evidencias y vínculo de decisiones con hashes.
+
+[2026-11-15] TASK-105 — C1.754, ciclo canónico de justificaciones de asistencia
+- Se unificó USER→ACADEMIC y se añadió soporte para rangos de fechas, sesiones exactas, aprobación parcial, políticas configurables, conformidad docente verificada por hash, reintentos y revocación reversible.
+- Se integró bandeja de Secretaría con revisión total/parcial/rechazo y apertura de evidencia privada verificada; el docente visualiza todas las fechas afectadas.
+- Department Scope run 43742077374 SUCCESS; Identity Mapping run 43742077382 SUCCESS. BETA-FUNC-103 pendiente.
+- Siguiente P0: TASK-106 (integridad criptográfica, versionado e inmutabilidad de evidencias).
