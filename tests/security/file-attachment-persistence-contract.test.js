@@ -42,7 +42,7 @@ assert.match(student, /fileData:attachment\.fileData/);
 assert.doesNotMatch(student, /joint-doc-url/);
 assert.doesNotMatch(extractFunction(accounting, "uploadPaymentVoucher"), /ANYONE_WITH_LINK/);
 assert.match(extractFunction(accounting, "uploadPaymentVoucher"), /createPrivatePaymentAttachment_/);
-assert.match(extractFunction(user, "submitInstitutionalFormRequest"), /createPrivateRequestAttachment_/);
+assert.match(extractFunction(user, "submitInstitutionalFormRequest"), /createPrivateRequestAttachment(?:WithIntegrity)?_/);
 assert.doesNotMatch(extractFunction(user, "submitInstitutionalFormRequest"), /ANYONE_WITH_LINK/);
 
 let folderAccess = "PRIVATE";
