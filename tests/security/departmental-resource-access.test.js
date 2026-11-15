@@ -182,6 +182,7 @@ assert.ok(extractFunction(academic,"assertStudentExpedienteScopeAccess_").includ
 assert.ok(extractFunction(academic,"assertStudentDocumentScopeAccess_").includes("assertResourceOwnershipForScope_"));
 const ownFile=context.getStudentFile({sessionToken:"student",userId:"P-B"});
 assert.equal(ownFile.status,"success"); assert.equal(ownFile.studentFile.expedienteId,"EXP-STUDENT");
+assert.equal("driveUrl" in ownFile.studentFile.documents[0],false,"student file summaries must not expose permanent Drive URLs");
 assert.equal(context.getStudentFile({sessionToken:"staffA",expedienteId:"EXP-B"}).code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.getStudentFile({sessionToken:"admin",expedienteId:"EXP-B"}).status,"success");
 assert.equal(context.getStudentDocuments(actor("staffA")).code,"RESOURCE_SCOPE_DENIED","document queries without a target expediente/application are rejected");
