@@ -1244,3 +1244,47 @@ TASK-106 — Integridad criptográfica, versionado y protección contra sustituc
 - No se atribuye el estado success a commits posteriores que solo modificaron documentación.
 - Rama base sin modificaciones; no se publicaron cambios en otras ramas.
 ===============================================================================
+
+
+===============================================================================
+## C1.762 — IMA-EXEC-20261115-TASK132-LEGACY-DOCUMENT-INVENTORY-01
+- **Fecha:** 2026-11-15
+- **Rama exclusiva:** NG_beta_0.0.0.1_work
+- **HEAD antes del checkpoint:** 399a2bdec0735f987aacf06cbc5c51ada1c8fee6
+- **HEAD de código/inventario:** c955fc6ffc51081daed3e85976575865a6f6b8d6
+- **HEAD de test con rollback:** be9a598c6fe4e052bb572a5bb6c9f512469fe102
+- **HEAD base verificado:** NG_beta_0.0.0.1 = 44d9891132332e692dbe2ba8602b41f50a508a59
+- **Normativa:** Normas_Desarollo.md v1.4.
+
+### Decisión de arquitectura
+- backend/accounting-service/Code.gs está vacío en la rama. El inventario se implementa y expone en USER, donde residen identidad firmada, permisos, getUserContextScope y aislamiento por institución/departamento. No se crea una falsa fachada de ACCOUNTING sin un servicio desplegable.
+
+### Implementación
+- Se añaden registerLegacyDocumentInventory y getLegacyDocumentInventory y se registran en doPost.
+- InventarioDocumentalLegado se crea al primer registro con los campos de TASK-132, InstitutionID, SubcategoriaDocumental y ClaveOrigen. HistorialInventarioDocumentalLegado conserva campo, valor anterior/nuevo, actor, rol, fecha y correlationId.
+- Se admiten soportes FISICO/DIGITAL/MIXTO, sin requerir subida inmediata a Drive; categorías REGISTROS_DE_DATOS, PLANTILLAS y DOCUMENTOS_HISTORICOS; los diez estados de transición especificados.
+- Subcategorías libres y agrupadas por departamento. ClaveOrigen estable y única por institución, no basada en el nombre; DocumentoId estable en actualizaciones.
+- Autorización por validateRolePermission + getUserContextScope. Aislamiento InstitutionID y departmentIds; propietario departamental inmutable. Director/Administrador con ámbito institucional pueden consultar el consolidado. Un duplicado de otro departamento no revela su DocumentoId.
+- Filtros por departamento, categoría, formato, responsable, período y estado; paginación; exportación CSV protegida contra fórmulas.
+- ScriptLock serializa escrituras. Si falla el historial, la operación revierte la fila de inventario. Lecturas validan esquema y fallan cerradas ante drift.
+
+### Archivos
+- backend/user-service/Code.gs
+- tests/security/user-service-legacy-document-inventory.test.js
+- .github/workflows/department-scope-contract.yml
+- pendientes/Secretaria/Pendientes.md
+- Auditoría/AUDITORIA_FASE_39_DIGITALIZACION_TRANSICION.md
+- changueslogs.txt
+- beta_test_Parte_0002.txt
+
+### Verificación
+- Compilación sintáctica V8 PASS: backend USER y test de inventario.
+- Harness aislado V8 del test de contrato PASS, incluyendo aislamiento tenant/departamento, ID estable, deduplicación, historial, filtros, CSV, validación, bloqueo, rollback, RBAC y routing.
+- GitHub Actions `ima/department-scope-contract: success` confirmado en be9a598c6fe4e052bb572a5bb6c9f512469fe102. El job ejecuta Node 24 y el test de inventario agregado.
+- Una ejecución anterior falló por error del extractor del test y por índice de departamento omitido; ambos se corrigieron y el commit posterior pasó.
+
+### Estado y continuidad
+- TASK-132: backend avanzado y contratos CI aprobados; no se cierra por falta de UI de inventario y validación beta real con Sheets/roles de los departamentos.
+- No se modificó ACCOUNTING porque el archivo está vacío; no se alteró la rama base ni se publicaron cambios en otra rama.
+- Siguiente tarea elegible: TASK-133 (motor de validación multinivel de archivos/documentos), dependiente de F39-Task01; iniciar solo después de verificar el estado real del checkpoint y los validadores existentes para evitar duplicación.
+===============================================================================
