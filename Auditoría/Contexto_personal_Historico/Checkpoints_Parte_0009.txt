@@ -446,7 +446,7 @@ C1.739 — IMA-EXEC-20261115-TASK391-OPS-METRICS-01 — Indicadores agregados de
 
 
 C1.740 — IMA-EXEC-20261115-TASK490-EMPLOYEE-OWNERSHIP-01 — Aislamiento de expedientes y solicitudes laborales
-- **Continuidad:** C1.739. HEAD inicial: 665c6c6d1f7d7f77d7f3f5d0e6f5bfcfd3e4d31a (checkpoint C1.739). HEAD funcional verificado: 88e1b6f176b38358bc94f2eef698996a831bf2fa. Rama exclusiva NG_beta_0.0.0.1_work; rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Continuidad:** C1.739. HEAD inicial: 665c6c6cee67b2f80d49385979dd03ef967a045b (checkpoint C1.739). HEAD funcional verificado: 88e1b6f176b38358bc94f2eef698996a831bf2fa. Rama exclusiva NG_beta_0.0.0.1_work; rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59.
 - **Tarea:** TASK-490, PM-01, Dirección, P1, hallazgo AUD-NG-193. Completada en código/CI; BETA-FUNC-096 pendiente de ejecución en entorno Apps Script/Sheets.
 - **Aislamiento SELF:** getEmployeeRecords deriva actor/rol desde token verificado; el rol Empleado obtiene únicamente su expediente. Los filtros userId/expedienteId aportados por el cliente no cambian titularidad; un ID ajeno produce RESOURCE_NOT_FOUND sin revelar existencia. Las observaciones internas no se devuelven en la vista SELF.
 - **Aislamiento de solicitudes:** getVacationRequests y su wrapper getLeaveVacationRequests resuelven el expediente desde identidad verificada; el empleado solo ve solicitudes propias. Manipular expedienteId se rechaza con respuesta indistinguible de recurso inexistente.
