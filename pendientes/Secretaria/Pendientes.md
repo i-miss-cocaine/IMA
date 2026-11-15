@@ -3354,6 +3354,10 @@
 - **Verificación:** Node 24 y GitHub Actions Department Scope Contract SUCCESS en e9013de331cd0b49e7d5b9e9372be4a3d8548b19 para OpenXML, preflight semántico, PDF y Excel. Se añadió después detección de sobrescritura y persistencia de advertencias; la ejecución CI de esos últimos cambios está en curso.
 - **Dependencia F39-Task01:** backend de inventario legado revisado en C1.762; suficiente para continuar validación tenant/departamento. F39-Task01 sigue parcial por UI y beta.
 - **Pendiente para cierre:** conectar la UI de Secretaría/Contabilidad al endpoint de preflight con mapeo y confirmación; verificación de existencia en USER/ACADEMIC; OCR operativo; validación beta real con Apps Script/Drive/Sheets; pruebas de accesibilidad y de errores en datos reales anonimizados. No se declara completada.
+- **Avance C1.772 (2026-11-15):** se conectó el importador Excel a ACCOUNTING/validateImportPreview mediante fetchApi, con mapeo explícito para cursos, estudiantes y expedientes laborales; validación de campos obligatorios; selección de departamento activo; presentación de errores/advertencias y confirmación de revisión solo lectura. Se agregaron pruebas de contrato UI y pasos Node 24 al workflow. La UI bloquea confirmación si el destino no tiene snapshot verificado y descarta respuestas obsoletas por secuencia de solicitud. No habilita escrituras.
+- **Verificación:** harness Node aislado del constructor de payload PASS (casos válidos y límites). El test completo del repositorio y node --check js/teacher.js quedan pendientes de ejecución en CI; no se reportaron status checks/runs visibles al consultar el HEAD. No se declara Actions PASS.
+- **Pendiente para cierre:** snapshot tenant-scoped remoto para USER/ACADEMIC, OCR operativo, beta real Apps Script/Drive/Sheets, accesibilidad con teclado/lector de pantalla y pruebas con datos anonimizados. TASK-133 continúa En ejecución.
+
 
 ---
 
