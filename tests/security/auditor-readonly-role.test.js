@@ -82,23 +82,40 @@ assert.equal(academicPermissionContext.check("deleteStudentDocument", { sessionT
   "dynamic permissions and delegations cannot elevate the Auditor beyond the read-only allowlist");
 assert.match(user.source,/if \(String\(claims\.role\) === "Auditor"\) return \{ status: "error", code: "IMPORT_PERMISSION_DENIED" \}/,
   "trusted ACCOUNTING authorization explicitly denies Auditor imports");
+let trustedAction = "authorizeAccountingImport";
+let trustedRole = "Auditor";
+let institutionWideAuditScope = true;
 const trustedHandlerContext = {
   PropertiesService: { getScriptProperties: () => ({ getProperty: () => "trusted-migration-secret-at-least-32-characters" }) },
-  verifyInterServiceEnvelope: () => ({ sourceService: "ACCOUNTING", action: "authorizeAccountingImport",
+  verifyInterServiceEnvelope: () => ({ sourceService: "ACCOUNTING", action: trustedAction,
     payload: { sessionToken: "AUD-TOKEN" } }),
-  verifySessionToken: () => ({ userId: "AUD-1", role: "Auditor", institutionId: "INST-1" }),
-  getDynamicPermissionsForRole: () => true
+  verifySessionToken: () => ({ userId: "AUD-1", role: trustedRole, institutionId: "INST-1" }),
+  getDynamicPermissionsForRole: () => true,
+  getUserContextScope: () => ({ status: "success", authorized: true, institutionWide: institutionWideAuditScope })
 };
 vm.runInNewContext(extractFunction(user.source, "handleTrustedMigrationEnvelope_") +
   "\nthis.handle = handleTrustedMigrationEnvelope_;", trustedHandlerContext);
 assert.equal(trustedHandlerContext.handle({}).code, "IMPORT_PERMISSION_DENIED",
   "even a dynamic wildcard cannot authorize a trusted Accounting import for Auditor");
+trustedAction = "authorizeAccountingAuditRead";
+const auditAuthorization = trustedHandlerContext.handle({});
+assert.equal(auditAuthorization.status, "success");
+assert.equal(auditAuthorization.auditReadPermissionVerified, true);
+institutionWideAuditScope = false;
+assert.equal(trustedHandlerContext.handle({}).code, "INSTITUTION_SCOPE_DENIED",
+  "department-only Auditor scope cannot read institution-wide Accounting audit");
+institutionWideAuditScope = true;
+trustedRole = "Director";
+assert.equal(trustedHandlerContext.handle({}).code, "AUDIT_READ_PERMISSION_DENIED",
+  "only the explicit Auditor role receives this Accounting audit grant");
 assert.match(user.source,/\["Director", "Administrador", "Auditor"\]\.indexOf\(role\)/,
   "institution-wide inventory access for Auditor still requires an institution-wide verified scope");
 assert.match(user.source,/if \(actorRole === "Auditor"\)[\s\S]*scope\.institutionWide !== true/,
   "global audit logs are restricted to Auditors with institution-wide verified scope");
 assert.match(academic.source,/const permissionAction = \["createStudentDocumentAccessToken", "getSecureDocumentStream"\]/);
 assert.match(accounting,/request\.action === "validateImportPreview"/);
+assert.match(accounting,/request\.action === "getAccountingMigrationFileAudit"/,
+  "ACCOUNTING exposes a read-only institution-bound audit endpoint for Auditor");
 assert.match(accounting,/request\.action === "importDataWithColumnMapping"/,
   "ACCOUNTING commit is routed but must pass its independent authorization and preview gates");
 assert.match(accounting,/accountingHasInstitutionalImportPermission_\(\{ roleId: auth\.role/);
