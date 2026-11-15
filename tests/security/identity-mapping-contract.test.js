@@ -124,7 +124,7 @@ function runMigrationWriterFixture(source,entity){
  const ss={getSheetByName:n=>sheets[n]||null,insertSheet:n=>sheets[n]=makeMigrationSheet(n==="MigracionEscrituras"?ctx.journalHeaders:ctx.schemas[entity].headers)};
  vm.runInNewContext(code,ctx);
  const schema=ctx.schemas[entity];
- const data={};schema.headers.slice(1).forEach((h,i)=>data[h]="v"+i);
+ const data={};schema.headers.slice(1).forEach((h,i)=>data[h]=/^Fecha/.test(h)?"2026-01-15":"v"+i);
  const input={tipoEntidad:entity,idNuevoPlataforma:"INT-001",idempotencyKey:"MIG-001",datos:data};
  assert.equal(ctx.apply(input).accion,"INSERT");const target=sheets[schema.sheet];assert.equal(ctx.apply(input).idempotent,true);assert.equal(target.rows.length,2);
  assert.throws(()=>ctx.apply(Object.assign({},input,{datos:Object.assign({},data,{[schema.headers[1]]:"different"})})),/MIGRATION_IDEMPOTENCY_CONFLICT/);
