@@ -389,6 +389,28 @@ regRows = attendance.getDataRange().getValues();
 const userAttendanceRow = regRows.find(row => row[0] === "REG-USER");
 assert.equal(userAttendanceRow[6], true);
 assert.equal(userAttendanceRow[9], userSubmit.justificacionId);
+
+// USER must preserve a multi-day date set through the trusted ACADEMIC bridge.
+sessions.appendRow(["SES-USER-MULTI-A","2026-11-20","","","10","A","MAT","DOC-1","Cerrada",""]);
+sessions.appendRow(["SES-USER-MULTI-B","2026-11-21","","","10","A","MAT","DOC-1","Cerrada",""]);
+attendance.appendRow(["REG-USER-MULTI-A","SES-USER-MULTI-A","STU-USER","Ausente","","",false,"",new Date("2026-11-20T12:00:00Z")]);
+attendance.appendRow(["REG-USER-MULTI-B","SES-USER-MULTI-B","STU-USER","Ausente","","",false,"",new Date("2026-11-21T12:00:00Z")]);
+const userMultiSubmit = userContext.submitStudentAbsenceJustification({
+  _userId:"STU-USER",_role:"Estudiante",estudianteId:"STU-USER",
+  fechasAusencia:["2026-11-20","2026-11-21"],periodo:"I parcial",motivo:"Motivo multi-día"
+});
+assert.equal(userMultiSubmit.status,"success");
+const userMultiRow = store.SolicitudesTramites.find(row=>row[0]===userMultiSubmit.solicitudId);
+const userHeaders = store.SolicitudesTramites[0];
+const userDateIndex = userHeaders.indexOf("FechasAfectadasJSON");
+assert.deepEqual(JSON.parse(userMultiRow[userDateIndex]),["2026-11-20","2026-11-21"]);
+const userMultiReview = userContext.reviewAbsenceJustification({
+  _userId:"SEC-USER",_role:"Secretaría",solicitudId:userMultiSubmit.solicitudId,nuevoEstado:"Aprobada"
+});
+assert.equal(userMultiReview.status,"success");
+regRows = attendance.getDataRange().getValues();
+assert.equal(regRows.find(row=>row[0]==="REG-USER-MULTI-A")[6],true);
+assert.equal(regRows.find(row=>row[0]==="REG-USER-MULTI-B")[6],true);
 assert.throws(() => userContext.updateRequestStatus({ solicitudId: userSubmit.solicitudId, nuevoEstado: "Rechazada" }), /ABSENCE_REVIEW_REQUIRES_CANONICAL_WORKFLOW/);
 assert.throws(() => userContext.processWorkflowDecision({
   solicitudId: userSubmit.solicitudId, accionDecision: "RECHAZADO",
