@@ -756,19 +756,19 @@ function appendAccountingMigrationFileHashAudit_(ss, input, preview, actor, stat
   if (!/^[a-f0-9]{64}$/.test(fileHash)) throw new Error("MIGRATION_FILE_HASH_REQUIRED");
   var headers = ["RunId","InstitutionID","NombreArchivo","HashSHA256","PreviewHash","SistemaOrigen",
     "TipoEntidad","DestinoModulo","ActorUserId","Fecha","Estado","RegistrosEscritos","CorrelationId"];
-  var sheet = getOrCreateSheet(ss, "AuditoriaMigracionesArchivos");
-  var rows = sheet.getDataRange().getValues();
-  var lastRow = typeof sheet.getLastRow === "function" ? sheet.getLastRow() : rows.length;
-  if (!lastRow) {
-    sheet.appendRow(headers);
-  } else if (lastRow === 1 && (!rows[0] || !rows[0].some(function(value) { return String(value || "").trim(); }))) {
-    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-  } else if (!rows[0] || JSON.stringify(rows[0].map(String).slice(0, headers.length)) !== JSON.stringify(headers)) {
-    throw new Error("MIGRATION_FILE_HASH_AUDIT_SCHEMA_MISMATCH");
-  }
   var lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
+    var sheet = getOrCreateSheet(ss, "AuditoriaMigracionesArchivos");
+    var rows = sheet.getDataRange().getValues();
+    var lastRow = typeof sheet.getLastRow === "function" ? sheet.getLastRow() : rows.length;
+    if (!lastRow) {
+      sheet.appendRow(headers);
+    } else if (lastRow === 1 && (!rows[0] || !rows[0].some(function(value) { return String(value || "").trim(); }))) {
+      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    } else if (!rows[0] || JSON.stringify(rows[0].map(String).slice(0, headers.length)) !== JSON.stringify(headers)) {
+      throw new Error("MIGRATION_FILE_HASH_AUDIT_SCHEMA_MISMATCH");
+    }
     sheet.appendRow([
       String(preview.runId || ""), String(actor && actor.institutionId || ""),
       String(input && input.nombreArchivo || ""), fileHash, String(preview.previewHash || ""),
