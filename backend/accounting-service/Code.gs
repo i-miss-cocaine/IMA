@@ -5399,34 +5399,34 @@ function uploadPaymentVoucher(payload) {
     throw error;
   } finally {lock.releaseLock();}
 }function getPaymentVouchers(payload) {
-  const actor = getVerifiedAccountingIdentity_(payload);
-  if (!actor.authorized) return { status: "error", code: actor.code, message: "Acceso denegado." };
-  const role = String(actor.role || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E")
-    .replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
-  const { userId, estado } = payload || {};
-  const studentRole = role === "ESTUDIANTE" || role === "ALUMNO";
-  const targetUserId = studentRole ? actor.userId : String(userId || "").trim();
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "ComprobantesPago").getDataRange().getValues().slice(1);
-  let candidates = rows;
-  if (targetUserId) candidates = candidates.filter(r => String(r[2] || "").trim() === targetUserId);
-  if (estado) candidates = candidates.filter(r => String(r[9] || "").toLowerCase().trim() === String(estado).toLowerCase().trim());
-  const filtered = [];
-  for (let i = 0; i < candidates.length; i++) {
-    let access = assertPaymentVoucherOwnerAccess_(payload, candidates[i][2], {});
-    if (!access.authorized && String(candidates[i][3] || "").indexOf("Pago Conjunto Familiar (") === 0) access = assertJointFamilyVoucherOwnerAccess_(payload, candidates[i], ss, actor);
-    if (access.authorized) filtered.push(candidates[i]);
-    else if (targetUserId) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
+  const actor=getVerifiedAccountingIdentity_(payload);
+  if(!actor.authorized)return {status:"error",code:actor.code,message:"Acceso denegado."};
+  const role=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E")
+    .replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
+  const p=payload||{},studentRole=role==="ESTUDIANTE"||role==="ALUMNO";
+  const targetUserId=studentRole?actor.userId:String(p.userId||"").trim(),ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet=getOrCreateSheet(ss,"ComprobantesPago"),map=ensurePaymentVoucherEvidenceSchema_(sheet);
+  let candidates=sheet.getDataRange().getValues().slice(1);
+  if(targetUserId)candidates=candidates.filter(r=>String(r[map.UserId]||"").trim()===targetUserId);
+  if(p.estado)candidates=candidates.filter(r=>String(r[map.Estado]||"").toLowerCase().trim()===String(p.estado).toLowerCase().trim());
+  const filtered=[];
+  for(let i=0;i<candidates.length;i++){
+    let access=assertPaymentVoucherOwnerAccess_(payload,candidates[i][map.UserId],{});
+    if(!access.authorized&&String(candidates[i][map.Alumno]||"").indexOf("Pago Conjunto Familiar (")===0)
+      access=assertJointFamilyVoucherOwnerAccess_(payload,candidates[i],ss,actor);
+    if(access.authorized)filtered.push(candidates[i]);
+    else if(targetUserId)return {status:"error",code:access.code||"RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
   }
-  if (!targetUserId && candidates.length && !filtered.length) {
-    return { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "No existen comprobantes dentro del ámbito autorizado." };
-  }
-  const mapped = filtered.map(r => ({
-    comprobanteId: r[0], fecha: r[1], userId: r[2], alumno: r[3], cargoId: r[4],
-    montoReportado: parseFloat(r[5] || 0), metodoPago: r[6], referencia: r[7],
-    comprobanteUrl: "", tieneComprobante: !!String(r[8] || "").trim(), estado: r[9], observaciones: r[10]
+  if(!targetUserId&&candidates.length&&!filtered.length)return {status:"error",code:"RESOURCE_SCOPE_DENIED",message:"No existen comprobantes dentro del ámbito autorizado."};
+  const mapped=filtered.map(r=>({
+    comprobanteId:r[map.ComprobanteID],comprobanteGrupoId:String(r[map.ComprobanteGrupoID]||""),
+    versionNumero:Number(r[map.VersionNumero]||1),esVersionActual:r[map.EsVersionActual]===false?false:true,
+    sha256:String(r[map.SHA256]||""),integridadEstado:String(r[map.EstadoIntegridad]||"LEGACY_UNVERIFIED"),
+    fecha:r[map.Fecha],userId:r[map.UserId],alumno:r[map.Alumno],cargoId:r[map.CargoID],
+    montoReportado:parseFloat(r[map.MontoReportado]||0),metodoPago:r[map.MetodoPago],referencia:r[map.Referencia],
+    comprobanteUrl:"",tieneComprobante:!!String(r[map.ComprobanteUrl]||"").trim(),estado:r[map.Estado],observaciones:r[map.Observaciones]
   }));
-  return { status: "success", comprobantes: mapped };
+  return {status:"success",comprobantes:mapped};
 }
 
 // Recuperación autenticada del archivo privado: la referencia se obtiene exclusivamente desde ComprobantesPago.
@@ -5467,42 +5467,46 @@ function reviewPaymentVoucher(payload) {
   if(!comprobanteId||!nuevoEstado)throw new Error("comprobanteId y nuevoEstado son requeridos.");
   const actor=getVerifiedAccountingIdentity_(payload);
   if(!actor.authorized)return {status:"error",code:actor.code,message:"Acceso denegado."};
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getOrCreateSheet(ss,"ComprobantesPago"),map=ensurePaymentVoucherEvidenceSchema_(sheet);
-  const data=sheet.getDataRange().getValues(),matches=[];
-  for(let i=1;i<data.length;i++)if(String(data[i][map.ComprobanteID]||"").trim()===comprobanteId)matches.push({index:i,row:data[i]});
-  if(matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Comprobante no disponible."};
-  const idx=matches[0].index,row=matches[0].row;
-  const access=assertPaymentVoucherOwnerAccess_(payload,row[map.UserId],{requireStaff:true});
-  if(!access.authorized)return {status:"error",code:access.code||"RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
-  const allowedStates=["Aprobado","Confirmado","Rechazado","Observado"];
-  if(allowedStates.indexOf(nuevoEstado)===-1)return {status:"error",code:"INVALID_VOUCHER_STATE",message:"Estado de comprobante no permitido."};
-  if(row[map.EsVersionActual]===false||String(row[map.Estado]||"")==="SUPERADA")return {status:"error",code:"VOUCHER_VERSION_SUPERSEDED"};
-  if(String(row[map.DecisionHash]||"").trim())return {status:"error",code:"VOUCHER_DECISION_IMMUTABLE"};
-  const evidence=verifyPaymentVoucherEvidence_(ss,row,map);
-  if(evidence.status==="error")return {status:"error",code:evidence.code,message:"La evidencia no pudo verificarse."};
-  const approval=["Aprobado","Confirmado"].indexOf(nuevoEstado)!==-1;
-  if(approval&&evidence.code==="LEGACY_UNVERIFIED")return {status:"error",code:"LEGACY_EVIDENCE_UNVERIFIED",message:"El comprobante histórico no tiene huella de recepción y no puede aprobarse como evidencia verificada."};
-  const decisionTimestamp=new Date().toISOString(),warning=evidence.status==="warning";
-  const decisionHash=computeDocumentSHA256([comprobanteId,String(row[map.SHA256]||""),String(evidence.actualHash||""),String(row[map.VersionNumero]||1),
-    nuevoEstado,actor.userId,decisionTimestamp,warning?"WARNING":"VERIFIED"].join("|"));
-  sheet.getRange(idx+1,map.Estado+1).setValue(nuevoEstado);
-  if(observacionesAdmin)sheet.getRange(idx+1,map.Observaciones+1).setValue(observacionesAdmin);
-  sheet.getRange(idx+1,map.DecisionHash+1).setValue(decisionHash);
-  sheet.getRange(idx+1,map.DecisionTimestamp+1).setValue(decisionTimestamp);
-  sheet.getRange(idx+1,map.DecisionBy+1).setValue(actor.userId);
-  sheet.getRange(idx+1,map.DecisionIntegrityWarning+1).setValue(warning);
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(15000))return {status:"error",code:"VOUCHER_REVIEW_LOCK_TIMEOUT",retryable:true};
+  let row=null,decisionWarning=false,decisionHash="",decisionTimestamp="",sheet=null,map=null,idx=-1;
+  try {
+    const ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+    sheet=getOrCreateSheet(ss,"ComprobantesPago");map=ensurePaymentVoucherEvidenceSchema_(sheet);
+    const data=sheet.getDataRange().getValues(),matches=[];
+    for(let i=1;i<data.length;i++)if(String(data[i][map.ComprobanteID]||"").trim()===comprobanteId)matches.push({index:i,row:data[i]});
+    if(matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Comprobante no disponible."};
+    idx=matches[0].index;row=matches[0].row;
+    const access=assertPaymentVoucherOwnerAccess_(payload,row[map.UserId],{requireStaff:true});
+    if(!access.authorized)return {status:"error",code:access.code||"RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
+    if(["Aprobado","Confirmado","Rechazado","Observado"].indexOf(nuevoEstado)===-1)return {status:"error",code:"INVALID_VOUCHER_STATE",message:"Estado de comprobante no permitido."};
+    if(row[map.EsVersionActual]===false||String(row[map.Estado]||"")==="SUPERADA")return {status:"error",code:"VOUCHER_VERSION_SUPERSEDED"};
+    if(String(row[map.DecisionHash]||"").trim())return {status:"error",code:"VOUCHER_DECISION_IMMUTABLE"};
+    const evidence=verifyPaymentVoucherEvidence_(ss,row,map);
+    if(evidence.status==="error")return {status:"error",code:evidence.code,message:"La evidencia no pudo verificarse."};
+    const approval=["Aprobado","Confirmado"].indexOf(nuevoEstado)!==-1;
+    if(approval&&evidence.code==="LEGACY_UNVERIFIED")return {status:"error",code:"LEGACY_EVIDENCE_UNVERIFIED",message:"El comprobante histórico no tiene huella de recepción y no puede aprobarse como evidencia verificada."};
+    decisionWarning=evidence.status==="warning";
+    decisionTimestamp=new Date().toISOString();
+    decisionHash=computeDocumentSHA256([comprobanteId,String(row[map.SHA256]||""),String(evidence.actualHash||""),String(row[map.VersionNumero]||1),
+      nuevoEstado,actor.userId,decisionTimestamp,decisionWarning?"WARNING":"VERIFIED"].join("|"));
+    sheet.getRange(idx+1,map.Estado+1).setValue(nuevoEstado);
+    if(observacionesAdmin)sheet.getRange(idx+1,map.Observaciones+1).setValue(observacionesAdmin);
+    sheet.getRange(idx+1,map.DecisionHash+1).setValue(decisionHash);
+    sheet.getRange(idx+1,map.DecisionTimestamp+1).setValue(decisionTimestamp);
+    sheet.getRange(idx+1,map.DecisionBy+1).setValue(actor.userId);
+    sheet.getRange(idx+1,map.DecisionIntegrityWarning+1).setValue(decisionWarning);
+  } finally { lock.releaseLock(); }
   let pagoRes=null;
-  if(approval){
+  if(["Aprobado","Confirmado"].indexOf(nuevoEstado)!==-1){
     pagoRes=recordStudentPayment({userId:row[map.UserId],cargoId:row[map.CargoID],montoAbono:row[map.MontoReportado],metodoPago:row[map.MetodoPago],
       referencia:row[map.Referencia],observaciones:"Aprobado administrativamente desde comprobante "+comprobanteId+". "+(observacionesAdmin||"")});
   }
   logStructuredEvent("ACCOUNTING","reviewPaymentVoucher","INFO","VOUCHER_REVIEWED","Comprobante revisado con decisión vinculada a la huella de evidencia.",
-    {comprobanteId:comprobanteId,version:Number(row[map.VersionNumero]||1),decisionHash:decisionHash,integrityWarning:warning},actor.role);
+    {comprobanteId:comprobanteId,version:Number(row[map.VersionNumero]||1),decisionHash:decisionHash,integrityWarning:decisionWarning},actor.role);
   return {status:"success",comprobanteId:comprobanteId,nuevoEstado:nuevoEstado,decisionHash:decisionHash,
-    integrityWarning:warning,pagoProcesado:pagoRes,message:"Comprobante de pago "+nuevoEstado+" exitosamente."};
+    integrityWarning:decisionWarning,pagoProcesado:pagoRes,message:"Comprobante de pago "+nuevoEstado+" exitosamente."};
 }
-
-// [REQ-EXP-011] [Requerimientos de Expansión y Desarrollo] - Generación de recibos PDF únicos con correlativo y consulta de vencimientos.
 function generatePaymentReceiptPDF(payload) {
   const { reciboId, pagoId } = payload || {};
   if (!reciboId && !pagoId) throw new Error("reciboId o pagoId requerido.");
