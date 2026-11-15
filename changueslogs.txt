@@ -3924,3 +3924,7 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-15] TASK-134 / F39 — C1.767 — Contradicción en el grafo de dependencias
 - Se contrastó Plan Maestro y auditoría Fase 39: TASK-134 depende de F39-Task03, mientras F39-Task03 depende de F39-Task02, que contiene la capacidad SHA-256/deduplicación de TASK-134.
 - Se registró el ciclo en backlog/auditoría sin modificar la fuente normativa ni alterar el orden de ejecución.
+
+[2026-11-15] TASK-134 / F39 — C1.768 — Resolución del ciclo SHA-256
+- Se corrigió la dependencia de TASK-134 en Plan Maestro y backlog: F39-Task01 (inventario) es prerrequisito; TASK-134 implementa F39-Task02 (SHA-256) y habilita F39-Task03 (custodia protegida).
+- Se conserva el requisito de F39-Task03 de depender de F39-Task02. La secuencia queda acíclica y TASK-134 es elegible.
