@@ -54,6 +54,24 @@ function resolveAccountingIdentityFromSnapshot_(snapshot, sourceName, entityType
   return { valid: true, idNuevoPlataforma: match.idNuevoPlataforma, mapping: match };
 }
 
+function resolveCrossReferenceIdentifier(input) {
+  var request = input || {};
+  var actor = getVerifiedAccountingIdentity_(request);
+  if (!actor || actor.authorized !== true) {
+    return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  }
+  var sourceName = String(request.sistemaOrigen || "").trim();
+  var entityType = String(request.tipoEntidad || "").trim().toLowerCase();
+  var legacyId = String(request.idOriginalLegado || "").trim();
+  if (!sourceName || !entityType || !legacyId) return { status: "error", code: "IDENTITY_MAPPING_INPUT_INVALID" };
+  var spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var snapshot = buildAccountingIdentityMapSnapshot_(request, spreadsheet);
+  var resolved = resolveAccountingIdentityFromSnapshot_(snapshot, sourceName, entityType, legacyId, actor.institutionId);
+  if (!resolved.valid) return { status: "error", code: resolved.code || "IDENTITY_MAPPING_NOT_FOUND" };
+  return { status: "success", idNuevoPlataforma: resolved.idNuevoPlataforma,
+    institutionId: actor.institutionId, estadoCorrespondencia: "CONFIRMADA" };
+}
+
 function requestAccountingTrustedOwnerSnapshot_(service, payload) {
   var target = String(service || "").toUpperCase();
   var propertyName = target === "USER" ? "IMA_USER_SERVICE_URL" : (target === "ACADEMIC" ? "IMA_ACADEMIC_SERVICE_URL" : "");
