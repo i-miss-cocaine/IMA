@@ -2929,7 +2929,7 @@ function renderMigrationImportModule(container) {
   fileInput.addEventListener("change", async function() {
     resetPreviewOnEdit();
     const file = fileInput.files && fileInput.files[0];
-    migrationImportState = { workbook: null, file: null, fileName: "", sheetName: "", headers: [], rows: [], dataRowNumbers: [], structural: null, payload: null, preview: null };
+    migrationImportState = { workbook: null, file: null, fileName: "", sheetName: "", headers: [], rows: [], dataRowNumbers: [], structural: null, fileDataBase64: "", payload: null, preview: null };
     sheetSelect.replaceChildren(); headerSelect.replaceChildren();
     if (!file) return;
     if (file.size <= 0 || file.size > 10 * 1024 * 1024 || !/\.xlsx$/i.test(file.name)) {
