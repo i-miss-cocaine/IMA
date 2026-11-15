@@ -248,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
         statusNode.textContent = 'Consultando las justificaciones autorizadas para tus asignaciones...';
         bodyNode.innerHTML = '<tr><td colspan="6" class="p-5 text-center text-gray-400">Cargando...</td></tr>';
         try {
-            const response = await apiCall({ action: 'getTeacherStudentJustifications' }, 'ACADEMIC');
+            const response = await fetchApi('ACADEMIC', 'getTeacherStudentJustifications', {});
             const rows = response && response.data && Array.isArray(response.data.data)
                 ? response.data.data
                 : (response && Array.isArray(response.data) ? response.data : []);
@@ -315,18 +315,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (action === 'ack') {
                 let sessionIds = [];
                 try { sessionIds = JSON.parse(button.dataset.sessionIds || '[]'); } catch (_) { throw new Error('La lista de sesiones no es válida.'); }
-                const response = await apiCall({
-                    action: 'acknowledgeTeacherStudentJustification',
+                const response = await fetchApi('ACADEMIC', 'acknowledgeTeacherStudentJustification', {
                     justificacionId,
                     sesionIds: sessionIds,
                     tipoConstancia: button.dataset.tipoConstancia || 'CONOCIMIENTO'
-                }, 'ACADEMIC');
+                });
                 if (!response || response.status !== 'success') throw new Error(response && (response.code || response.message) || 'No se pudo registrar el conocimiento.');
                 await loadTeacherStudentJustifications();
                 return;
             }
             if (action === 'evidence') {
-                const response = await apiCall({ action: 'getTeacherJustificationEvidence', justificacionId }, 'ACADEMIC');
+                const response = await fetchApi('ACADEMIC', 'getTeacherJustificationEvidence', { justificacionId });
                 const data = response && response.data && response.data.data ? response.data.data : response && response.data;
                 if (!response || response.status !== 'success' || !data || !data.base64) throw new Error(response && (response.code || response.message) || 'Evidencia no disponible.');
                 const binary = atob(data.base64);

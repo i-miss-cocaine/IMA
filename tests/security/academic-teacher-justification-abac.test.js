@@ -226,11 +226,11 @@ assert.match(source,/auditTeacherJustificationDenied_\(action,payload,userRole,"
 assert.match(userSource,/observacionesPublicas: p\.observacionesPublicas \|\| ""/);
 assert.match(teacherUi,/id="nav-justificaciones"/);
 assert.match(teacherUi,/id="section-justificaciones"/);
-assert.match(teacherJs,/action: 'getTeacherStudentJustifications'/);
-assert.match(teacherJs,/action: 'acknowledgeTeacherStudentJustification'/);
+assert.match(teacherJs,/fetchApi\('ACADEMIC', 'getTeacherStudentJustifications', \{\}\)/);
+assert.match(teacherJs,/fetchApi\('ACADEMIC', 'acknowledgeTeacherStudentJustification'/);
 assert.match(teacherJs,/Registrar conformidad/);
 assert.match(teacherJs,/data-tipo-constancia="CONFORMIDAD"/);
-assert.match(teacherJs,/action: 'getTeacherJustificationEvidence'/);
+assert.match(teacherJs,/fetchApi\('ACADEMIC', 'getTeacherJustificationEvidence'/);
 const duplicateJustification = justifications.getDataRange().getValues()[1].slice();
 duplicateJustification[12] = '["SESSION-MATH"]';
 justifications.appendRow(duplicateJustification);
