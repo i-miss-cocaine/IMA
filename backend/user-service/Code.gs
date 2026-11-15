@@ -13262,10 +13262,6 @@ function legacyDocumentInventoryRowToObject_(row) {
 function normalizeLegacyDocumentInventoryRecord_(input, previous) {
   input = input || {};
   previous = previous || {};
-  var has = function(key, alias) {
-    return Object.prototype.hasOwnProperty.call(input, key) ||
-      (alias && Object.prototype.hasOwnProperty.call(input, alias));
-  };
   var value = function(key, alias, oldValue) {
     if (Object.prototype.hasOwnProperty.call(input, key)) return input[key];
     if (alias && Object.prototype.hasOwnProperty.call(input, alias)) return input[alias];
@@ -13504,7 +13500,7 @@ function registerLegacyDocumentInventory(payload) {
     if (!existing) {
       historyEvents.push({ action: "CREATED", field: "DOCUMENTO", oldValue: "", newValue: JSON.stringify(legacyDocumentInventoryRowToObject_(row)), documentId: finalDocumentId });
     } else {
-      var mutableHeaders = LEGACY_DOCUMENT_INVENTORY_HEADERS_.slice(2, 17).concat(["ClaveOrigen"]);
+      var mutableHeaders = LEGACY_DOCUMENT_INVENTORY_HEADERS_.slice(2, 17).concat(["SubcategoriaDocumental", "ClaveOrigen"]);
       mutableHeaders.forEach(function(header) {
         var index = LEGACY_DOCUMENT_INVENTORY_HEADERS_.indexOf(header);
         var oldValue = existing.row[index] instanceof Date ? existing.row[index].toISOString() : String(existing.row[index] === undefined ? "" : existing.row[index]);
