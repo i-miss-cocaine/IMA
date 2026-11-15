@@ -272,15 +272,22 @@ function importDataWithColumnMapping(payload) {
   try {
     rowsToWrite.forEach(function(index) {
       var row = preview.preparedRows[preview.validRowIndexes.indexOf(index)];
-      var result = sendMigrationOwnerRequest_(String(MIGRATION_OWNER_SCHEMAS_[input.tipoEntidad].service || "").toUpperCase(), "writeMigratedEntity", {
+      var schema = MIGRATION_OWNER_SCHEMAS_[input.tipoEntidad];
+      var service = String(schema.service || "").toUpperCase();
+      var original = input.filasData[index] || {};
+      var legacyId = String(original[(input.columnaMapeo || {}).identificador] || "").trim();
+      var idempotencyKey = migrationHash_(migrationStableJson_({
+        previewHash: preview.previewHash, entityType: input.tipoEntidad, legacyId: legacyId, entity: row
+      }));
+      var result = sendMigrationOwnerRequest_(service, "writeMigratedEntity", {
         sessionToken: input.sessionToken,
         institutionId: PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID"),
         entity: row,
-        source: { fileName: input.nombreArchivo || "", sourceSystem: input.sistemaOrigen || "", legacyId: row[(MIGRATION_OWNER_SCHEMAS_[input.tipoEntidad].headers || [])[0]] || "" },
-        idempotencyKey: migrationHash_(migrationStableJson_({ runId: runId, row: row }))
+        source: { fileName: input.nombreArchivo || "", sourceSystem: input.sistemaOrigen || "", legacyId: legacyId },
+        idempotencyKey: idempotencyKey
       });
       if (!result || result.status !== "success") throw new Error("MIGRATION_OWNER_WRITE_FAILED");
-      applied.push({ entityType: input.tipoEntidad, payload: row });
+      applied.push({ service: service, entityType: input.tipoEntidad, payload: row });
     });
     var audit = getOrCreateSheet("AuditoriaMigraciones");
     audit.appendRow([
@@ -328,6 +335,9 @@ function getVerifiedAccountingIdentity_(payload) {
   }
   var role = getUserVerifiedRole(payload);
   if (!role || role === "NO_ACCESS" || role === "SIN_ACCESO") return { authorized: false, code: "AUTH_PERMISSION_DENIED" };
+  if (typeof validateRolePermission !== "function") return { authorized: false, code: "ROLE_PERMISSION_CHECK_UNAVAILABLE" };
+  var permission = validateRolePermission("importDataWithColumnMapping", payload);
+  if (!permission || permission.authorized !== true) return { authorized: false, code: "AUTH_PERMISSION_DENIED" };
   var scope = getUserContextScope(payload);
   var configuredInstitution = String(PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID") || "").trim();
   if (!scope || scope.status !== "success" || scope.authorized !== true ||
