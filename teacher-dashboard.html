@@ -131,6 +131,10 @@
                  <div class="flex flex-col space-y-4 mb-6">
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <h2 class="text-lg font-semibold text-gray-900 uppercase tracking-tighter" id="dashboard-level-title">Control de Entregas</h2>
+                        <button type="button" id="btn-open-excel-importer" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold uppercase tracking-widest shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" aria-haspopup="dialog" aria-controls="modal-excel-importer">
+                            <i class="fa-solid fa-file-excel" aria-hidden="true"></i>
+                            Validar libro Excel
+                        </button>
                         <div class="flex flex-wrap items-center gap-2" id="filters-container">
                             <select id="filter-grado" class="p-2 bg-white border border-gray-100 rounded-xl text-[10px] font-semibold uppercase tracking-widest focus:ring-2 focus:ring-blue-500/20 outline-none">
                                 <option value="">Grados</option>
@@ -1106,6 +1110,51 @@
     </main>
 
     <!-- Modal de Perfil -->
+    <!-- Validador preliminar de libros Excel: no realiza escrituras de negocio. -->
+    <div id="modal-excel-importer" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[120] flex items-center justify-center p-3 md:p-6 hidden" role="dialog" aria-modal="true" aria-labelledby="excel-importer-title">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200">
+            <div class="px-5 md:px-7 py-4 bg-slate-900 text-white flex items-center justify-between">
+                <div>
+                    <h2 id="excel-importer-title" class="text-base md:text-lg font-black uppercase tracking-tight">Validación estructural de Excel</h2>
+                    <p class="text-xs text-slate-300 mt-1">Revisión previa de integridad, hojas, encabezados y contenido</p>
+                </div>
+                <button type="button" id="btn-close-excel-importer" class="w-9 h-9 rounded-xl hover:bg-white/10 text-white text-xl" aria-label="Cerrar validador">&times;</button>
+            </div>
+            <div class="p-5 md:p-7 overflow-y-auto space-y-5">
+                <div>
+                    <label for="excel-file-input" class="block text-sm font-bold text-slate-800 mb-2">Archivo XLSX (máximo 10 MB)</label>
+                    <input id="excel-file-input" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="block w-full text-sm text-slate-700 file:mr-4 file:rounded-xl file:border-0 file:bg-emerald-50 file:px-4 file:py-2 file:font-bold file:text-emerald-800 hover:file:bg-emerald-100">
+                    <p class="text-xs text-slate-500 mt-2">Se verifican extensión, MIME declarado y cabecera ZIP. Los libros cifrados, truncados o dañados se rechazan.</p>
+                </div>
+                <div id="excel-preview-container" class="hidden space-y-4">
+                    <div id="excel-preview-summary" class="rounded-xl bg-slate-50 border border-slate-200 p-3 text-sm font-semibold text-slate-800" role="status" aria-live="polite"></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="excel-sheet-select" class="block text-xs font-bold uppercase tracking-wide text-slate-700 mb-2">Hoja que se revisará</label>
+                            <select id="excel-sheet-select" class="w-full rounded-xl border border-slate-300 p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                                <option value="">Seleccione una hoja…</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="excel-header-row" class="block text-xs font-bold uppercase tracking-wide text-slate-700 mb-2">Fila de encabezados</label>
+                            <select id="excel-header-row" class="w-full rounded-xl border border-slate-300 p-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                                <option value="0">Fila 1</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 p-4">
+                        <h3 class="text-xs font-black uppercase tracking-widest text-slate-800 mb-3">Hallazgos de validación</h3>
+                        <ul id="excel-import-diagnostics" class="space-y-2 text-sm" aria-live="polite"></ul>
+                    </div>
+                    <p class="text-xs text-slate-500">Esta revisión es preliminar y de solo lectura. No guarda, importa ni modifica registros. La incorporación requiere validación semántica, mapeo y autorización del servicio propietario.</p>
+                </div>
+            </div>
+            <div class="px-5 md:px-7 py-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+                <button type="button" id="btn-cancel-excel-import" class="px-5 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold uppercase tracking-widest">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
     <div id="profile-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden z-[70] backdrop-blur-sm">
         <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-fade-in-up">
             <div class="flex justify-between items-center mb-6">
