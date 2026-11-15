@@ -1,4 +1,5 @@
 "use strict";
+// Runs against both standalone Apps Script service validators.
 const assert=require("node:assert/strict");
 const fs=require("node:fs");
 const vm=require("node:vm");
