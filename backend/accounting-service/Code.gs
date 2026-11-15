@@ -11665,7 +11665,7 @@ function getEmployeeRecords(payload) {
   const requestedUserId = String(request.userId || "").trim();
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName("ExpedientesLaborales");
-  if (!sheet) return { status: "success", expedientes: [] };
+  if (!sheet) return { status: "success", data: [], expedientes: [], total: 0 };
   const values = sheet.getDataRange().getValues();
   const rows = values.length > 1 ? values.slice(1) : [];
 
@@ -11735,12 +11735,17 @@ function getEmployeeRecords(payload) {
     }
   }
 
+  const employeePersonNames = getEmployeePersonNameIndex_(ss);
   const mapped = filtered.map(function(row) {
     const id = String(row[0] || "").trim();
     const selfAccess = accessById[id] && accessById[id].accessType === "SELF";
+    const personaId = String(row[1] || "").trim();
+    const empleadoNombre = employeePersonNames[personaId] || "";
     return {
       expedienteId: row[0],
       personaId: row[1],
+      empleadoNombre: empleadoNombre,
+      nombreCompleto: empleadoNombre,
       userId: row[2],
       puesto: row[3],
       departamento: row[4],
@@ -11752,7 +11757,7 @@ function getEmployeeRecords(payload) {
     };
   });
 
-  return { status: "success", expedientes: mapped };
+  return { status: "success", data: mapped, expedientes: mapped, total: mapped.length };
 }
 
 function manageEmployeeContract(payload) {
@@ -12205,6 +12210,33 @@ function getVacationSheetSnapshot_(ss,name,headers) {
   if(!data.length||!Array.isArray(data[0])||data[0].length!==headers.length||headers.some((h,i)=>String(data[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))return {error:true,sheet:sheet,rows:[]};
   return {missing:false,error:false,sheet:sheet,rows:data.slice(1).filter(Array.isArray)};
 }
+
+function getEmployeePersonNameIndex_(ss) {
+  const snapshot = getVacationSheetSnapshot_(ss, "Personas", ["PersonaID","Nombres","Apellidos","Identificacion","EmailContacto","TelefonoContacto","EstadoPersona","FechaCreacion","FechaActualizacion","Observaciones"]);
+  const counts = Object.create(null), names = Object.create(null);
+  if (!snapshot || snapshot.missing || snapshot.error) return names;
+  snapshot.rows.forEach(function(row) {
+    const id = String(row[0] || "").trim();
+    if (!id) return;
+    counts[id] = (counts[id] || 0) + 1;
+    names[id] = [String(row[1] || "").trim(), String(row[2] || "").trim()].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+  });
+  Object.keys(names).forEach(function(id) {
+    if (counts[id] !== 1 || !names[id]) delete names[id];
+  });
+  return names;
+}
+
+function normalizeVacationRequestStatus_(value) {
+  const raw = String(value || "").trim();
+  const key = normalizeVacationRole_(raw);
+  if (["PENDIENTE","PENDIENTEAPROBACION","PENDIENTEDEAPROBACION","PENDING","PENDINGAPPROVAL"].indexOf(key) !== -1) return "Pendiente";
+  if (["APROBADO","APROBADA","APPROVED"].indexOf(key) !== -1) return "Aprobado";
+  if (["RECHAZADO","RECHAZADA","REJECTED"].indexOf(key) !== -1) return "Rechazado";
+  if (["CANCELADO","CANCELADA","CANCELED","CANCELLED"].indexOf(key) !== -1) return "Cancelado";
+  return raw || "Desconocido";
+}
+
 function resolveVacationEmployeeAccess_(payload,ss,requestedId,allowSelf,actionName) {
   const actor=getVerifiedAccountingIdentity_(payload);
   if(!actor.authorized)return actor;
@@ -12316,26 +12348,77 @@ function recordMedicalLeave(payload){
     return {status:"success",incapacidadId:inc,message:"Incapacidad médica registrada confidencialmente."};
   }finally{lock.releaseLock();}
 }
-function getVacationRequests(payload){
-  const p=payload||{},actor=getVerifiedAccountingIdentity_(p);
-  if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
-  const role=normalizeVacationRole_(actor.role),self=["EMPLEADO","TRABAJADOR","PERSONAL","PROFESOR"].indexOf(role)!==-1;
-  if(!self&&["RECURSOSHUMANOS","DIRECTOR","SUBDIRECTOR","CONTADOR","ADMINISTRADOR"].indexOf(role)===-1)return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID);let target="";
-  if(self||p.expedienteId){const access=resolveVacationEmployeeAccess_(p,ss,p.expedienteId,true,"getVacationRequests");if(!access.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existen solicitudes disponibles."};target=access.expedienteId;}
-  const snap=getVacationSheetSnapshot_(ss,"SolicitudesVacaciones",["SolicitudID","ExpedienteID","Tipo","FechaInicio","FechaFin","DiasSolicitados","Estado","AprobadoPor","Observaciones"]);
-  if(snap.missing)return {status:"success",solicitudes:[]};
-  if(snap.error)return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de solicitudes de vacaciones no es válida."};
-  const counts=Object.create(null);snap.rows.forEach(r=>{const id=String(r[0]||"").trim();if(id)counts[id]=(counts[id]||0)+1;});
-  const cache=Object.create(null),wanted=String(p.estado||"").trim().toLowerCase(),result=[];
-  snap.rows.forEach(r=>{
-    const reqId=String(r[0]||"").trim(),expId=String(r[1]||"").trim();
-    if(!reqId||counts[reqId]!==1||!expId||(target&&target!==expId))return;
-    if(!Object.prototype.hasOwnProperty.call(cache,expId))cache[expId]=resolveVacationEmployeeAccess_(p,ss,expId,self,"getVacationRequests");
-    if(!cache[expId].authorized||(wanted&&String(r[6]||"").trim().toLowerCase()!==wanted))return;
-    result.push({solicitudId:r[0],expedienteId:r[1],tipo:r[2],fechaInicio:r[3],fechaFin:r[4],diasSolicitados:parseInt(r[5]||0,10),estado:r[6],aprobadoPor:r[7],observaciones:r[8]});
+function getVacationRequests(payload) {
+  const p = payload || {}, actor = getVerifiedAccountingIdentity_(p);
+  if (!actor.authorized) return { status: "error", code: actor.code || "VERIFIED_IDENTITY_REQUIRED", message: "Acceso denegado." };
+  const role = normalizeVacationRole_(actor.role);
+  const self = ["EMPLEADO","TRABAJADOR","PERSONAL","PROFESOR"].indexOf(role) !== -1;
+  if (!self && ["RECURSOSHUMANOS","DIRECTOR","SUBDIRECTOR","CONTADOR","ADMINISTRADOR"].indexOf(role) === -1) {
+    return { status: "error", code: "ROLE_NOT_ALLOWED", message: "Acceso denegado." };
+  }
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let target = "";
+  if (self || p.expedienteId) {
+    const access = resolveVacationEmployeeAccess_(p, ss, p.expedienteId, true, "getVacationRequests");
+    if (!access.authorized) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen solicitudes disponibles." };
+    target = access.expedienteId;
+  }
+
+  const snapshot = getVacationSheetSnapshot_(ss, "SolicitudesVacaciones", ["SolicitudID","ExpedienteID","Tipo","FechaInicio","FechaFin","DiasSolicitados","Estado","AprobadoPor","Observaciones"]);
+  if (snapshot.missing) return { status: "success", data: [], solicitudes: [], total: 0 };
+  if (snapshot.error) return { status: "error", code: "RESOURCE_SCHEMA_INVALID", message: "La estructura de solicitudes de vacaciones no es válida." };
+
+  const employees = getVacationSheetSnapshot_(ss, "ExpedientesLaborales", ["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"]);
+  if (employees.missing || employees.error) return { status: "error", code: "RESOURCE_SCHEMA_INVALID", message: "La estructura de expedientes laborales no es válida." };
+  const employeeCounts = Object.create(null), employeeById = Object.create(null);
+  employees.rows.forEach(function(row) {
+    const id = String(row[0] || "").trim();
+    if (id) employeeCounts[id] = (employeeCounts[id] || 0) + 1;
   });
-  return {status:"success",solicitudes:result};
+  employees.rows.forEach(function(row) {
+    const id = String(row[0] || "").trim();
+    if (id && employeeCounts[id] === 1) employeeById[id] = row;
+  });
+  const personNames = getEmployeePersonNameIndex_(ss);
+  const requestCounts = Object.create(null);
+  snapshot.rows.forEach(function(row) {
+    const id = String(row[0] || "").trim();
+    if (id) requestCounts[id] = (requestCounts[id] || 0) + 1;
+  });
+
+  const cache = Object.create(null);
+  const wanted = p.estado ? normalizeVacationRequestStatus_(p.estado) : "";
+  const result = [];
+  snapshot.rows.forEach(function(row) {
+    const requestId = String(row[0] || "").trim();
+    const expedienteId = String(row[1] || "").trim();
+    if (!requestId || requestCounts[requestId] !== 1 || !expedienteId || (target && target !== expedienteId)) return;
+    if (!Object.prototype.hasOwnProperty.call(cache, expedienteId)) {
+      cache[expedienteId] = resolveVacationEmployeeAccess_(p, ss, expedienteId, self, "getVacationRequests");
+    }
+    if (!cache[expedienteId].authorized || !employeeById[expedienteId]) return;
+    const rawStatus = String(row[6] || "").trim();
+    const status = normalizeVacationRequestStatus_(rawStatus);
+    if (wanted && status !== wanted) return;
+    const employee = employeeById[expedienteId];
+    const personaId = String(employee[1] || "").trim();
+    const employeeName = personNames[personaId] || "";
+    const days = parseInt(row[5] || 0, 10);
+    result.push({
+      solicitudId: requestId,
+      expedienteId: expedienteId,
+      empleadoNombre: employeeName,
+      tipo: row[2],
+      tipoSolicitud: row[2],
+      fechaInicio: row[3],
+      fechaFin: row[4],
+      diasSolicitados: Number.isFinite(days) ? days : 0,
+      estado: status,
+      estadoOriginal: rawStatus
+    });
+  });
+  return { status: "success", data: result, solicitudes: result, total: result.length };
 }
 function reviewVacationRequest(payload){
   const p=payload||{},id=String(p.solicitudId||"").trim(),state=String(p.nuevoEstado||"").trim();

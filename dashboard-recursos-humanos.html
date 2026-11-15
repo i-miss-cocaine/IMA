@@ -1124,7 +1124,7 @@
     </div>
 
     <script src="js/config.js?v=24"></script>
-    <script src="js/api.js?v=24"></script>
+    <script src="js/api.js?v=25"></script>
     <script src="js/hr-payroll-pdf.js?v=1"></script>
     <script src="js/ui-common.js?v=24"></script>
     <!-- [TAREA RH-01] [Fase Recursos Humanos y Personal] - Controlador de interfaz para el panel de Recursos Humanos y conexión con servicios existentes. -->
@@ -2732,72 +2732,174 @@
         }
 
         async function loadHRDashboardData() {
+            const tbody = document.getElementById('rrhh-employees-tbody');
+            const totalCountEl = document.getElementById('rrhh-total-count');
+            const activeStaffEl = document.getElementById('rrhh-active-staff');
+            const expiringContractsEl = document.getElementById('rrhh-expiring-contracts');
+            const requestsList = document.getElementById('rrhh-requests-list');
+            const pendingLeavesEl = document.getElementById('rrhh-pending-leaves');
+
+            const setMessage = function(element, message, className) {
+                if (!element) return;
+                element.replaceChildren();
+                const node = document.createElement('div');
+                node.className = className || 'text-center py-4 text-gray-400 font-bold text-xs';
+                node.textContent = message;
+                element.appendChild(node);
+            };
+            const setTableMessage = function(message) {
+                if (!tbody) return;
+                tbody.replaceChildren();
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.colSpan = 5;
+                cell.className = 'py-6 text-center text-gray-400 font-bold uppercase';
+                cell.textContent = message;
+                row.appendChild(cell);
+                tbody.appendChild(row);
+            };
+            const renderLeaveError = function() {
+                if (pendingLeavesEl) pendingLeavesEl.textContent = '—';
+                setMessage(requestsList, 'No fue posible cargar las solicitudes. El servicio devolvió un error o una respuesta incompleta.', 'text-center py-4 text-rose-600 font-bold text-xs');
+            };
+
+            if (totalCountEl) totalCountEl.textContent = '…';
+            if (activeStaffEl) activeStaffEl.textContent = '…';
+            if (pendingLeavesEl) pendingLeavesEl.textContent = '…';
+            setTableMessage('Cargando expedientes laborales…');
+            setMessage(requestsList, 'Cargando solicitudes…', 'text-center py-4 text-gray-400 font-bold text-xs');
+
             try {
-                // 1. Cargar Expedientes Laborales
                 const resEmp = await fetchApi('ACCOUNTING', 'getEmployeeRecords', {});
-                const tbody = document.getElementById('rrhh-employees-tbody');
-                const totalCountEl = document.getElementById('rrhh-total-count');
-                const activeStaffEl = document.getElementById('rrhh-active-staff');
+                const employeeRows = resEmp && resEmp.status === 'success'
+                    ? (Array.isArray(resEmp.data) ? resEmp.data : (Array.isArray(resEmp.expedientes) ? resEmp.expedientes : null))
+                    : null;
 
-                if (resEmp && resEmp.status === 'success' && Array.isArray(resEmp.expedientes)) {
-                    const emps = resEmp.expedientes;
-                    if (totalCountEl) totalCountEl.textContent = `${emps.length} Registros`;
-                    if (activeStaffEl) activeStaffEl.textContent = emps.filter(e => e.estadoLaboral === 'active' || e.estadoLaboral === 'Activo').length;
-
+                if (employeeRows) {
+                    if (totalCountEl) totalCountEl.textContent = employeeRows.length + ' Registros';
+                    if (activeStaffEl) activeStaffEl.textContent = employeeRows.filter(function(employee) {
+                        return ['active', 'Activo'].indexOf(String(employee.estadoLaboral || '').trim()) !== -1;
+                    }).length;
                     if (tbody) {
-                        if (emps.length === 0) {
-                            tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-gray-400 font-bold uppercase">No existen expedientes registrados.</td></tr>';
+                        tbody.replaceChildren();
+                        if (employeeRows.length === 0) {
+                            setTableMessage('No existen expedientes registrados.');
                         } else {
-                            tbody.innerHTML = emps.map(emp => `
-                                <tr class="border-b border-gray-50 hover:bg-teal-50/30 transition-all">
-                                    <td class="py-3 px-2 font-bold text-gray-800">${emp.observaciones || emp.expedienteId}<br><span class="text-[10px] text-gray-400 font-normal">${emp.puesto || 'Sin Puesto'}</span></td>
-                                    <td class="py-3 px-2 font-medium">${emp.departamento || 'General'}</td>
-                                    <td class="py-3 px-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-700">${emp.centroCosto || 'Completa'}</span></td>
-                                    <td class="py-3 px-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">${emp.estadoLaboral || 'Activo'}</span></td>
-                                    <td class="py-3 px-2 text-right">
-                                        <button class="text-teal-600 hover:text-teal-800 font-bold text-[11px]" onclick="alert('Expediente ID: ${emp.expedienteId}')">Ver Ficha</button>
-                                    </td>
-                                </tr>
-                            `).join('');
+                            employeeRows.forEach(function(employee) {
+                                const row = document.createElement('tr');
+                                row.className = 'border-b border-gray-50 hover:bg-teal-50/30 transition-all';
+                                const nameCell = document.createElement('td');
+                                nameCell.className = 'py-3 px-2 font-bold text-gray-800';
+                                const name = document.createElement('p');
+                                name.textContent = employee.empleadoNombre || employee.nombreCompleto || 'Nombre no disponible';
+                                const position = document.createElement('span');
+                                position.className = 'text-[10px] text-gray-400 font-normal';
+                                position.textContent = employee.puesto || 'Sin puesto';
+                                nameCell.appendChild(name);
+                                nameCell.appendChild(position);
+
+                                const department = document.createElement('td');
+                                department.className = 'py-3 px-2 font-medium';
+                                department.textContent = employee.departamento || 'Departamento no disponible';
+                                const costCell = document.createElement('td');
+                                costCell.className = 'py-3 px-2';
+                                const cost = document.createElement('span');
+                                cost.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-700';
+                                cost.textContent = employee.centroCosto || 'No asignado';
+                                costCell.appendChild(cost);
+                                const statusCell = document.createElement('td');
+                                statusCell.className = 'py-3 px-2';
+                                const status = document.createElement('span');
+                                status.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800';
+                                status.textContent = employee.estadoLaboral || 'Estado no disponible';
+                                statusCell.appendChild(status);
+                                const actionCell = document.createElement('td');
+                                actionCell.className = 'py-3 px-2 text-right';
+                                const viewButton = document.createElement('button');
+                                viewButton.type = 'button';
+                                viewButton.className = 'text-teal-600 hover:text-teal-800 font-bold text-[11px]';
+                                viewButton.textContent = 'Ver Ficha';
+                                viewButton.addEventListener('click', function() {
+                                    alert('Expediente ID: ' + String(employee.expedienteId || 'No disponible'));
+                                });
+                                actionCell.appendChild(viewButton);
+                                row.appendChild(nameCell);
+                                row.appendChild(department);
+                                row.appendChild(costCell);
+                                row.appendChild(statusCell);
+                                row.appendChild(actionCell);
+                                tbody.appendChild(row);
+                            });
                         }
                     }
+                } else {
+                    if (totalCountEl) totalCountEl.textContent = '—';
+                    if (activeStaffEl) activeStaffEl.textContent = '—';
+                    setTableMessage('No fue posible cargar los expedientes laborales.');
                 }
 
-                // 1.5 Cargar Alertas de Contratos
                 const resAlerts = await fetchApi('ACCOUNTING', 'getEmployeeContractAlerts', { diasAnticipacion: 30 });
-                const expiringContractsEl = document.getElementById('rrhh-expiring-contracts');
-                if (resAlerts && resAlerts.status === 'success' && resAlerts.resumen) {
-                    if (expiringContractsEl) expiringContractsEl.textContent = resAlerts.resumen.proximosAVencer + resAlerts.resumen.vencidos;
+                if (resAlerts && resAlerts.status === 'success' && resAlerts.resumen && expiringContractsEl) {
+                    expiringContractsEl.textContent = (Number(resAlerts.resumen.proximosAVencer) || 0) + (Number(resAlerts.resumen.vencidos) || 0);
+                } else if (expiringContractsEl) {
+                    expiringContractsEl.textContent = '—';
                 }
 
-                // 2. Cargar Solicitudes de Permisos / Vacaciones
                 const resLeaves = await fetchApi('ACCOUNTING', 'getLeaveVacationRequests', {});
-                const requestsList = document.getElementById('rrhh-requests-list');
-                const pendingLeavesEl = document.getElementById('rrhh-pending-leaves');
+                if (!resLeaves || resLeaves.status !== 'success' || !Array.isArray(resLeaves.data)) {
+                    renderLeaveError();
+                    return;
+                }
 
-                if (resLeaves && resLeaves.status === 'success' && Array.isArray(resLeaves.data)) {
-                    const leaves = resLeaves.data;
-                    const pendingCount = leaves.filter(l => l.estado === 'Pendiente').length;
-                    if (pendingLeavesEl) pendingLeavesEl.textContent = pendingCount;
+                const leaves = resLeaves.data;
+                const pendingCount = leaves.filter(function(leave) {
+                    const state = String(leave.estado || '').toLowerCase().replace(/[\s_-]/g, '');
+                    return ['pendiente', 'pendienteaprobacion', 'pending', 'pendingapproval'].indexOf(state) !== -1;
+                }).length;
+                if (pendingLeavesEl) pendingLeavesEl.textContent = String(pendingCount);
 
-                    if (requestsList) {
-                        if (leaves.length === 0) {
-                            requestsList.innerHTML = '<div class="text-center py-4 text-gray-400 font-bold text-xs uppercase">Sin solicitudes pendientes.</div>';
-                        } else {
-                            requestsList.innerHTML = leaves.map(l => `
-                                <div class="p-3 bg-gray-50 rounded-2xl flex items-center justify-between border border-gray-100">
-                                    <div>
-                                        <p class="font-bold text-xs text-gray-800">${l.tipoSolicitud || 'Permiso'} - ${l.userId || 'Empleado'}</p>
-                                        <p class="text-[10px] text-gray-400">${l.fechaInicio || ''} al ${l.fechaFin || ''}</p>
-                                    </div>
-                                    <span class="px-2 py-1 rounded-lg text-[10px] font-black uppercase ${l.estado === 'Pendiente' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">${l.estado || 'Pendiente'}</span>
-                                </div>
-                            `).join('');
-                        }
+                if (requestsList) {
+                    requestsList.replaceChildren();
+                    if (leaves.length === 0) {
+                        setMessage(requestsList, 'No hay solicitudes registradas.', 'text-center py-4 text-gray-400 font-bold text-xs uppercase');
+                    } else {
+                        const statusClasses = {
+                            Pendiente: 'bg-amber-100 text-amber-800',
+                            Aprobado: 'bg-emerald-100 text-emerald-800',
+                            Rechazado: 'bg-rose-100 text-rose-800',
+                            Cancelado: 'bg-gray-100 text-gray-600'
+                        };
+                        leaves.forEach(function(leave) {
+                            const card = document.createElement('div');
+                            card.className = 'p-3 bg-gray-50 rounded-2xl flex items-center justify-between border border-gray-100';
+                            const content = document.createElement('div');
+                            const title = document.createElement('p');
+                            title.className = 'font-bold text-xs text-gray-800';
+                            title.textContent = (leave.tipoSolicitud || leave.tipo || 'Tipo no especificado') + ' — ' + (leave.empleadoNombre || 'Nombre no disponible');
+                            const metadata = document.createElement('p');
+                            metadata.className = 'text-[10px] text-gray-400';
+                            const details = [];
+                            if (leave.expedienteId) details.push('Expediente: ' + String(leave.expedienteId));
+                            if (leave.fechaInicio || leave.fechaFin) details.push(String(leave.fechaInicio || 'Fecha inicial no disponible') + ' al ' + String(leave.fechaFin || 'Fecha final no disponible'));
+                            if (Number.isFinite(Number(leave.diasSolicitados))) details.push(String(Number(leave.diasSolicitados)) + ' días');
+                            metadata.textContent = details.join(' · ');
+                            content.appendChild(title);
+                            content.appendChild(metadata);
+                            const badge = document.createElement('span');
+                            badge.className = 'px-2 py-1 rounded-lg text-[10px] font-black uppercase ' + (statusClasses[leave.estado] || 'bg-gray-100 text-gray-600');
+                            badge.textContent = leave.estado || 'Estado no disponible';
+                            card.appendChild(content);
+                            card.appendChild(badge);
+                            requestsList.appendChild(card);
+                        });
                     }
                 }
             } catch (err) {
                 console.error('Error al cargar datos de RRHH:', err);
+                if (totalCountEl) totalCountEl.textContent = '—';
+                if (activeStaffEl) activeStaffEl.textContent = '—';
+                setTableMessage('No fue posible cargar los expedientes laborales.');
+                renderLeaveError();
             }
         }
     </script>
