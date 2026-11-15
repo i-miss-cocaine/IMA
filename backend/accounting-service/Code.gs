@@ -704,7 +704,7 @@ function getEmployeeDocuments(payload) {
     return { status: "success", documentos: fullDocuments };
   }
   if (!access || access.code !== "RESOURCE_SCOPE_DENIED" || String(actor.role || "").toLowerCase() === "empleado") {
-    return { status: "error", code: access && access.code || "RESOURCE_NOT_FOUND" };
+    return { status: "error", code: "RESOURCE_NOT_FOUND" };
   }
   var requestedFields = input.referenceRequestedFields;
   var requestedDocumentIds = input.referenceDocumentIds;
