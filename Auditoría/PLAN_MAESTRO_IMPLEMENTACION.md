@@ -5624,3 +5624,11 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Contrato Node ambos canales, ownership, idempotencia, ambigüedad, rechazo/revocación, recuperación parcial y lock PASS; Department Scope run 43727954380 SUCCESS y sintaxis Apps Script/JS PASS.
 - BETA-FUNC-100 pendiente por ACADEMIC_SERVICE_URL, secreto HMAC compartido, autorización UrlFetch y prueba real Apps Script/Sheets. Node local NOT RUN; CLI no aplicable.
 - Siguiente P0: F34-Task02. F22-Task03 no se cierra.
+
+
+### C1.751 — F34-Task02 — bandeja de salida y acuses documentales verificables
+- Se creó EntregasDocumentales y getDepartmentalOutbox con scope institucional/departamental, filtros, documento/destinatario/emisor, canal, hash/versión y correlación. registerDepartmentalDocumentDelivery verifica documento emitido, destinatario, ownership, archivo privado y hash real.
+- Se separan solicitud, aceptación de notificación por plataforma, apertura autenticada y recepción formal explícita. La apertura/confirmación guarda timestamps y SHA-256; los enlaces tienen expiración/revocación; el retry usa clave estable y no duplica notificaciones.
+- Contrato Node cubre entrega fallida/reintento, duplicados, scope, destinatario incorrecto, hash, privacidad, apertura, confirmación, revocación y expiración. Department Scope 43729081735, Task-Service 43729081760 e Identity Mapping 43729081762 SUCCESS; sintaxis Apps Script/JS PASS.
+- Solo canal PLATAFORMA. TASK-316 (correo), TASK-221/TASK-318 (bandejas unificadas), TASK-227 (eventos) y F34-Task08 (UI) siguen pendientes. FechaApertura no prueba lectura humana del PDF; recepción formal requiere acción explícita.
+- BETA-FUNC-101 pendiente de Drive/Sheets reales; Node local NOT RUN; CLI no aplicable. Siguiente P0: F34-Task03.

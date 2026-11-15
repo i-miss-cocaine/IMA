@@ -3807,3 +3807,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se bloquearon updateRequestStatus y processWorkflowDecision para evitar bypass; la UI estudiantil solicita período. Se añadieron contratos Node para ambos canales, ownership, idempotencia, períodos/sesiones ambiguos, rechazo, revocación, fallo parcial, recuperación y lock.
 - CI Node.js 24.22.2 PASS: Department Scope 43727954380; Department Reference Consumers 43727778243; Task-Service Security 43727778249; Identity Mapping 43727738102. Sintaxis Apps Script/JS PASS. Node local NOT RUN; CLI no aplicable.
 - BETA-FUNC-100 pendiente: configurar ACADEMIC_SERVICE_URL y el mismo IMA_MIGRATION_HMAC_SECRET en USER/ACADEMIC, autorizar UrlFetch y probar Apps Script/Sheets real. Próxima tarea P0: F34-Task02.
+
+
+[2026-11-15] F34-Task02 — C1.751, bandeja de salida y acuses documentales
+- Se creó EntregasDocumentales y getDepartmentalOutbox con filtro por institución/departamento/documento/destinatario/estado/fecha; la entrega se vincula a DocumentoID/SolicitudID, versión, SHA-256, destinatario y emisor autenticados, departamento y correlación.
+- El registro exige documento emitido, titular correcto, scope del emisor, Drive privado y hash real coincidente. El despacho por plataforma se registra como ACEPTADO_POR_PLATAFORMA, no como lectura ni recepción. Apertura autenticada y confirmación explícita se registran en estados separados con timestamps y hashes; enlace expirable/revocable y retry idempotente.
+- Contrato Node y sintaxis CI PASS: Department Scope 43729081735; Task-Service Security 43729081760; Identity Mapping 43729081762. Node local NOT RUN; CLI no aplicable.
+- Solo canal PLATAFORMA; TASK-316, TASK-221/TASK-318, TASK-227 y UI F34-Task08 siguen pendientes. BETA-FUNC-101 pendiente de validación real Apps Script/Drive/Sheets. Siguiente P0: F34-Task03.

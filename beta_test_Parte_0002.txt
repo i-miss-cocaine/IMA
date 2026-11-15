@@ -524,3 +524,26 @@
 - **Evidencia requerida:** respuestas sanitizadas, IDs sintéticos, snapshots de JustificacionesAsistencia, RegistrosAsistencia y SolicitudesTramites, eventos de decisión, estados de reconciliación, resultados de concurrencia, configuración (sin revelar el secreto) y logs de autorización.
 - **Estado:** Contrato Node/CI PASS (run 43727954380); Pendiente beta real por configuración interservicio y validación Apps Script/Sheets.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-101 — F34-TASK02 — Bandeja de salida documental y acuses verificables
+- **Módulos/roles:** USER (registerDepartmentalDocumentDelivery, retryDepartmentalDocumentDelivery, getDepartmentalOutbox, getMyDocumentDeliveries, openDepartmentalDocumentDelivery, confirmDepartmentalDocumentReceipt, revokeDepartmentalDocumentDeliveryLink); Secretaría/Dirección; estudiante destinatario.
+- **Precondiciones:** desplegar USER; configurar IMA_INSTITUTION_ID; opcionalmente PORTAL_BASE_URL para enlaces de navegación; preparar un documento sintético en DocumentosEscolaresEmitidos con DocumentoID en columna A, destinatario en C, estado issued en F, DriveFileID en H, SHA256 en O, VersionDocumento en P y SolicitudID en Q; archivo privado (DriveApp.Access.PRIVATE), hash SHA-256 coincidente, destinatario único/activo en Usuarios y ResourceOwnership que permita al emisor acceder al expediente/departamento. No usar PII ni documentos productivos.
+- **Pasos:**
+  1. Registrar una entrega desde Secretaría con canal PLATAFORMA e idempotencyKey estable. Verificar fila EntregasDocumentales, documento/destinatario/emisor/departamento, versión/hash, correlación/historial y NotificacionID; EstadoDespacho debe ser ACEPTADO_POR_PLATAFORMA y EstadoAcuse debe permanecer PENDIENTE.
+  2. Repetir la misma solicitud con la misma idempotencyKey; debe devolver el mismo EntregaID sin crear otra fila ni notificación. Reutilizar la clave con otro documento/destinatario/hash y verificar IDEMPOTENCY_CONFLICT.
+  3. Intentar enviar un documento a un destinatario distinto del registrado en DocumentosEscolaresEmitidos; debe rechazarse. Probar emisor sin ResourceOwnership, departamento activo distinto e institución distinta; todos deben denegarse.
+  4. Probar documento no emitido, destinatario inexistente/duplicado/inactivo, archivo inexistente/en papelera/público, SHA-256 divergente, versión vacía y SolicitudID distinto; no crear entrega.
+  5. Provocar fallo al registrar la notificación de plataforma; comprobar PENDIENTE_REINTENTO sin acuse falso. Reintentar con el mismo EntregaID; debe quedar aceptado sin duplicar notificación.
+  6. Consultar getDepartmentalOutbox con filtros por departamento, documento, destinatario, estado y fecha; comprobar que un emisor no obtiene filas de otro departamento ni institución. Consultar getMyDocumentDeliveries con otro usuario y verificar que no ve la entrega.
+  7. Abrir con usuario incorrecto; debe denegarse. Abrir con el destinatario correcto y enlace activo; verificar FechaApertura y SHA256Apertura iguales al hash del documento. Repetir y comprobar idempotencia.
+  8. Intentar confirmación con confirmacionExplicita=false y antes de abrir; debe rechazarse. Confirmar después de abrir con confirmacionExplicita=true; verificar FechaConfirmacion, SHA256Confirmacion, ConfirmadoPor y RECIBIDO_CONFIRMADO. Repetir sin duplicar.
+  9. Revocar el enlace desde Secretaría; la apertura posterior debe fallar, conservando el historial/acuse previo. Crear otro enlace con expiración corta y verificar que abrir tras la fecha lo marca EXPIRADO.
+  10. Alterar un byte, cambiar la versión o hacer público el archivo después del despacho; la apertura/confirmación debe fallar por integridad o privacidad.
+  11. Verificar que el despacho de plataforma no se marque como lectura ni recepción formal; EstadoAcuse solo avanza por apertura autenticada y confirmación explícita.
+- **Resultado esperado:** cada entrega está vinculada a un documento/versión/hash exactos, un destinatario autorizado y un emisor con scope; los estados técnicos y humanos son independientes; reintentos son idempotentes; enlaces vencidos/revocados no permiten nuevas aperturas; el acuse formal conserva timestamp/hash y actor.
+- **Límites de esta beta:** solo canal PLATAFORMA; no probar correo hasta completar TASK-316. La apertura registra el evento autenticado del portal, no demuestra por sí sola que una persona leyó el PDF. La UI final y agregación de bandejas/eventos dependen de F34-Task08, TASK-221/TASK-318 y TASK-227.
+- **Evidencia requerida:** filas sintéticas de EntregasDocumentales, hashes calculados y comparados con bytes, estados de notificación/acuse, IDs de eventos y resultados allow/deny; no registrar DriveFileID sensible ni contenido documental en logs.
+- **Estado:** Contrato Node/CI PASS; pendiente prueba real en Apps Script/Drive/Sheets desplegados.
+===============================================================================

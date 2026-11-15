@@ -109,7 +109,7 @@
 ---
 
 <!-- ID: F34-TASK02 | Fuentes: AUDITORIAS/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md -->
-### [ ] [F34-TASK02] Crear bandeja de salida departamental y acuses de entrega/lectura
+### [x] [F34-TASK02] Crear bandeja de salida departamental y acuses de entrega/lectura
 - **Hallazgo de origen:** F34-02 y CAR-F34-02; PT-F34-05 no aprobado.
 - **Severidad:** Crítica / P0. **Objetivo:** rastrear documentos enviados por Secretaría/Dirección y distinguir solicitud de envío, entrega, apertura y recepción formal.
 - **Acción ejecutable:** crear `EntregasDocumentales` y `getDepartmentalOutbox` con documento, destinatario, emisor, departamento, canal, fecha, estado, acuse, hash y correlación; registrar entrega/apertura solo con evidencia verificable.
@@ -117,8 +117,10 @@
 - **Dependencias/riesgos:** TASK-221/TASK-318 (bandejas), TASK-227 (eventos workflow), TASK-316 (canales); riesgo de afirmar lectura por simple apertura de enlace o exponer documentos a destinatarios equivocados.
 - **Alcance:** bandeja de salida y acuses; no confundir entrega técnica con lectura humana ni con aceptación legal.
 - **Criterios de aceptación:** estados diferenciados; destinatario/actor verificados; acuse con timestamp y hash del documento exacto; reintentos idempotentes; revocación/expiración de enlaces; filtros por departamento y documento; pruebas de entrega fallida, apertura, destinatario incorrecto y duplicados.
-- **Prioridad:** P0. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; no existe endpoint formal de salida ni registro de acuses.
+- **Prioridad:** P0. **Estado:** Backend especializado completado en código/revisión/CI; beta e integración transversal pendientes.
+- **Evidencia de cierre:** commits 0bfb106, 00e924f y 5a72049; contrato Node y sintaxis Apps Script/JS PASS en Department Scope run 43729081735; Task-Service Security 43729081760 e Identity Mapping 43729081762 SUCCESS. BETA-FUNC-101 pendiente de Drive/Sheets desplegados.
+- **Cierre técnico:** EntregasDocumentales y getDepartmentalOutbox con scope institucional/departamental, hash/version del documento emitido, destinatario contrastado, notificación de plataforma, apertura autenticada, acuse explícito, reintento idempotente y revocación/expiración. La notificación aceptada por la plataforma no se presenta como lectura ni recepción.
+- **Límites/dependencias:** canal actual PLATAFORMA; correo queda para TASK-316. Integración con bandejas unificadas/eventos/UI pendiente de TASK-221/TASK-318, TASK-227 y F34-Task08. FechaApertura registra apertura autenticada del flujo, no prueba lectura humana del PDF.
 
 ---
 

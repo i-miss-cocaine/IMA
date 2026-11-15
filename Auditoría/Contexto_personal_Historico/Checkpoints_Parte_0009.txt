@@ -768,3 +768,57 @@ Se aisló y corrigió un subflujo independiente en `generateSignatureAuditCertif
 #### Continuidad
 - Próxima tarea P0: F34-Task02 — bandeja de salida departamental y acuses de entrega/lectura.
 - F22-Task03 continúa pendiente por PSC real, artefacto probatorio persistido y flujo multifirmante; no se altera su estado.
+
+
+### C1.751 — F34-Task02 — bandeja de salida y acuses documentales verificables
+
+- **Fecha:** 2026-11-15.
+- **Rama autorizada:** NG_beta_0.0.0.1_work.
+- **Checkpoint anterior:** C1.750.
+- **HEAD al iniciar:** 65f14390bf9056f8e0dc92fc8e851e6528991526.
+- **HEAD de implementación antes del checkpoint documental:** 5a7204926f54e0e7367b820bc837b9c8e3ea246b.
+- **Rama base protegida:** NG_beta_0.0.0.1 = 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+- **Estado:** núcleo backend F34-Task02 completado en código/revisión/CI; BETA-FUNC-101 e integración transversal pendientes.
+
+#### Implementación
+- Se creó EntregasDocumentales con identidad del documento/solicitud, nombre, versión, SHA-256, destinatario, emisor, institución/departamento, canal, estado de despacho, timestamps, hashes de apertura/confirmación, acuse, notificación, idempotencia, correlación, historial, expiración y revocación.
+- registerDepartmentalDocumentDelivery exige documento emitido en DocumentosEscolaresEmitidos, destinatario exacto, emisor autenticado con scope sobre el expediente/departamento, archivo Drive privado y SHA-256/version coincidentes con los bytes/metadatos actuales.
+- getDepartmentalOutbox filtra por institución/departamento activo, documento, destinatario, estado y fechas. getMyDocumentDeliveries limita al destinatario autenticado.
+- El despacho actual es PLATAFORMA. ACEPTADO_POR_PLATAFORMA significa que la notificación fue registrada en la bandeja interna; no se interpreta como entrega de correo, lectura humana ni recepción formal.
+- openDepartmentalDocumentDelivery registra una apertura autenticada después de comprobar destinatario, vigencia del enlace, privacidad, hash y versión. confirmDepartmentalDocumentReceipt exige confirmación explícita y persiste timestamp/hash/actor. revokeDepartmentalDocumentDeliveryLink impide aperturas posteriores sin borrar el historial.
+- Los reintentos usan EntregaID/deduplicationKey; fallos quedan PENDIENTE_REINTENTO y se pueden recuperar sin duplicar notificaciones.
+
+#### Archivos
+- backend/user-service/Code.gs
+- tests/security/user-service-departmental-outbox.test.js
+- .github/workflows/department-scope-contract.yml
+- beta_test_Parte_0002.txt
+- pendientes/Dirección/Pendientes.md
+- Auditoría/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- changueslogs.txt
+
+#### Commits
+- 0bfb106e588fe2cf0895c0adbbba9cbf89e276c0 — outbox departamental, schema, dispatch interno y acuses.
+- 00e924f0b7ba11f25c44ca2cf086e276cb76184e — endurecimiento de scope departamental y retry.
+- 5a7204926f54e0e7367b820bc837b9c8e3ea246b — exposición de hashes/timestamps de apertura y confirmación.
+
+#### Verificación
+- Department Scope Contract run 43729081735: SUCCESS; test outbox y sintaxis Apps Script/JS PASS.
+- Task-Service security run 43729081760: SUCCESS.
+- Identity Mapping and Transport Security run 43729081762: SUCCESS.
+- Node.js 24.22.2 ejecutó los contratos en CI. Node local NOT RUN; checkout local no disponible. CLI no aplicable por ausencia de package.json/scripts.
+- No se desplegó Apps Script ni se ejecutaron pruebas reales contra Drive/Sheets productivos.
+
+#### Límites y dependencias
+- Solo se activa el canal PLATAFORMA. Correo/multicanal depende de TASK-316.
+- La integración con bandejas unificadas depende de TASK-221/TASK-318; la orquestación de eventos depende de TASK-227; la UI final de F34-Task08.
+- FechaApertura representa un evento autenticado del flujo del portal, no prueba de lectura humana del PDF. La recepción formal es una acción explícita independiente.
+- PORTAL_BASE_URL es opcional; sin UI, el destinatario consulta mediante getMyDocumentDeliveries.
+- BETA-FUNC-101 pendiente con documento sintético emitido, archivo privado, hash/version, ResourceOwnership y scope real.
+
+#### Continuidad
+- Siguiente tarea P0: F34-Task03 — ABAC docente para consultar justificaciones de estudiantes inscritos.
+- TASK-221, TASK-227, TASK-316 y TASK-318 permanecen pendientes; no se marcan como completadas.
+- F22-Task03 sigue pendiente por PSC real, certificado persistido y multifirmante.
