@@ -520,7 +520,12 @@ function importDataWithColumnMapping(payload) {
         if (!ownershipPayload.resourceId || !ownershipPayload.departmentId) throw new Error("RESOURCE_OWNERSHIP_CONTEXT_INVALID");
         var ownershipIntent = { tipoEntidad: "empleadoOwnership", service: "USER", idempotencyKey: ownershipPayload.idempotencyKey, payload: ownershipPayload };
         applied.push(ownershipIntent);
-        var ownershipResult = sendMigrationOwnerRequest_("USER", "registerMigratedResourceOwnership", ownershipPayload);
+        var ownershipResult;
+        try {
+          ownershipResult = sendMigrationOwnerRequest_("USER", "registerMigratedResourceOwnership", ownershipPayload);
+        } catch (ownershipError) {
+          throw new Error("RESOURCE_OWNERSHIP_REPAIR_REQUIRED");
+        }
         if (!ownershipResult || ownershipResult.status !== "success") throw new Error("RESOURCE_OWNERSHIP_REPAIR_REQUIRED");
         ownershipIntent.ownershipId = ownershipResult.ownershipId || "";
       }
