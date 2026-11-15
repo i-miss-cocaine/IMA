@@ -325,3 +325,9 @@ La evaluación abarca la ayuda contextual inmediata (tooltips/popovers), las ins
 - tests/security/ui-common-permanent-help.test.js ahora cubre el listener de invalid en fase capture (el evento no burbujea), mensaje accesible y recuperación.
 - .github/workflows/ui-accessibility-contract.yml incluye el nuevo test, el contrato estático de formularios y los dashboards/scripts consumidos en sus filtros de push/PR. El workflow define Node 24 y comandos node.
 - El conector no permite consultar runs de push ni check-runs de este commit; no se afirma ejecución real del CLI ni éxito de Actions.
+
+
+### C1.761 — resultado automatizado y cobertura de calificaciones
+- El workflow Department Scope ejecutó Node 24 y reportó `ima/department-scope-contract: success` para commit c92724908578f5acf02867e3d51ce24518800876; el job incluye el contrato de metadatos, ayuda permanente, tooltips y el test DOM de validación inline agregado.
+- tests/ui/permanent-form-help.test.js se amplió para verificar calificacion y edit-puntaje con clave calificaciones.nota y rango 0–100, step 0.01. El commit posterior f81732c70468448e1fea395bd595ef663ae61fe4 requiere esperar/consultar su propio estado antes de atribuirle el mismo resultado.
+- La aceptación integral de TASK-130 permanece pendiente por cobertura restante y validación beta manual.
