@@ -198,6 +198,9 @@ function upload(h,pdf,label="ACTA") {
   assert.equal("downloadUrl" in streamed,false);
   assert.equal("driveUrl" in streamed,false);
   assert.equal(h.state.auditEvents.some(event=>event[3]==="DOCUMENT_DOWNLOADED"),true);
+  assert.equal(h.state.auditEvents.some(event=>event[3]==="DOCUMENT_ACCESS_TOKEN_ISSUED"),true);
+  assert.equal(h.state.auditEvents.some(event=>event[3]==="DOCUMENT_ACCESS_DENIED"),true,
+    "invalid, expired, replayed and mismatched attempts are logged without exposing file details");
   const replay=h.context.stream({documentoId:row[0],solicitudId:"SOL-1",versionDocumento:issued.versionDocumento,accessToken:issued.accessToken});
   assert.equal(replay.code,"DOCUMENT_ACCESS_TOKEN_REVOKED_OR_REPLAYED","download tokens are one-use");
   const userBound=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1"});
