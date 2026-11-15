@@ -1111,12 +1111,12 @@
 
     <!-- Modal de Perfil -->
     <!-- Validador preliminar de libros Excel: no realiza escrituras de negocio. -->
-    <div id="modal-excel-importer" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[120] flex items-center justify-center p-3 md:p-6 hidden" role="dialog" aria-modal="true" aria-labelledby="excel-importer-title">
+    <div id="modal-excel-importer" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[120] flex items-center justify-center p-3 md:p-6 hidden" role="dialog" aria-modal="true" aria-labelledby="excel-importer-title" aria-describedby="excel-importer-description" tabindex="-1">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200">
             <div class="px-5 md:px-7 py-4 bg-slate-900 text-white flex items-center justify-between">
                 <div>
                     <h2 id="excel-importer-title" class="text-base md:text-lg font-black uppercase tracking-tight">Validación estructural de Excel</h2>
-                    <p class="text-xs text-slate-300 mt-1">Revisión previa de integridad, hojas, encabezados y contenido</p>
+                    <p id="excel-importer-description" class="text-xs text-slate-300 mt-1">Revisión previa de integridad, hojas, encabezados y contenido. Use Tab para recorrer los controles y Escape para cerrar.</p>
                 </div>
                 <button type="button" id="btn-close-excel-importer" class="w-9 h-9 rounded-xl hover:bg-white/10 text-white text-xl" aria-label="Cerrar validador">&times;</button>
             </div>
