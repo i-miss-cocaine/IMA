@@ -302,3 +302,12 @@ La evaluación abarca la ayuda contextual inmediata (tooltips/popovers), las ins
 - **Discrepancia histórica:** Auditoria.txt registra 11 IDs F38-Task01..F38-Task11 (P0 01/02/04/05, P1 03/06..10, P2 11), mientras el informe vigente describe F38-Task01..F38-Task07. No se recuperaron descripciones de Task08..Task11; no se inventan ni se consulta Pendientes.md.
 - **Subcapacidades completas preservadas:** F38-11/F38-13/F38-14; no se reejecutaron pruebas.
 - **Estado global:** F38-Task01..F38-Task07 y F38-Task12 permanecen pendientes; F38-Task08..Task11 quedan como referencias históricas sin descripción recuperable.
+
+
+## E. AVANCE C1.758 — TASK-130 (2026-11-15)
+- Se conserva el catálogo versionado getUIMetadataCatalog y el fallback local ya presentes en USER/ui-common.
+- js/ui-common.js agrega marcador visible de obligatoriedad para controles required, preservando etiquetas y asociación ARIA. Se añaden setFieldValidationError/clearFieldValidationError con role=alert, aria-live y aria-invalid; limpiar el error conserva la ayuda descriptiva y otras asociaciones previas.
+- teacher-dashboard.html incorpora la clave calificaciones.nota en calificacion y edit-puntaje, con min=0, max=100 y step=0.01; la regla coincide con auditAcademicGradesIntegrity (0–100). Los campos de cobros y fechas que ya tenían claves se conservan.
+- Las confirmaciones sensibles verificadas en código incluyen deleteScheduleBlock y voidCharge; ambas verifican cancelación antes de llamar al backend. El guard común no consulta ni depende del estado de tours.
+- Se agregó tests/security/ui-common-permanent-help.test.js para fallback, idempotencia, required marker, ARIA, error inline y cancelación crítica. Se verificó sintaxis de UI común, JS docente, JS contable y tests mediante compilación V8.
+- **Pendiente para cierre:** completar cobertura de formularios de admisión/matrícula, importación y adjuntos con límites comprobados en sus validadores; confirmar handler de cierre de actas; ejecutar Node CLI/GitHub Actions y pruebas reales de accesibilidad (teclado, lector de pantalla, tacto, zoom y viewport). No se declara aceptación integral ni ejecución de pruebas no disponibles.
