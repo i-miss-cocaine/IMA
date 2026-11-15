@@ -64,6 +64,13 @@ const names = [
 ];
 vm.runInNewContext(names.map(extract).join("\n") +
   "\nthis.api={write:applyTrustedMigrationWrite_,compensate:compensateTrustedMigrationWrite_};", runtime);
+const payload = {
+  tipoEntidad: "estudiante", idNuevoPlataforma: "EXP-1", idempotencyKey: "STUDENT-KEY-1",
+  correlationId: "CORR-STUDENT-1", targetSnapshotVerified: true, expectedTargetPresent: false,
+  expectedTargetRowHash: "",
+  datos: { PersonaID: "PER-1", CodigoInstitucional: "=FORMULA()", FechaNacimiento: "2004-05-06",
+    EstadoExpediente: "Activo", Observaciones: "Importación" }
+};
 {
   const target = new Sheet([schema.headers]);
   sheets.set("ExpedientesEstudiantes", target);
@@ -72,13 +79,6 @@ vm.runInNewContext(names.map(extract).join("\n") +
     /IMPORT_TARGET_SNAPSHOT_UNVERIFIED/);
   assert.equal(target.rows.length, 1, "an unverified destination cannot receive a new student row");
 }
-const payload = {
-  tipoEntidad: "estudiante", idNuevoPlataforma: "EXP-1", idempotencyKey: "STUDENT-KEY-1",
-  correlationId: "CORR-STUDENT-1", targetSnapshotVerified: true, expectedTargetPresent: false,
-  expectedTargetRowHash: "",
-  datos: { PersonaID: "PER-1", CodigoInstitucional: "=FORMULA()", FechaNacimiento: "2004-05-06",
-    EstadoExpediente: "Activo", Observaciones: "Importación" }
-};
 {
   const result = runtime.api.write(payload);
   assert.equal(result.status, "success");
