@@ -1844,6 +1844,18 @@ function handleTrustedMigrationEnvelope_(envelope){
  if(secret.length<32)throw new Error("MIGRATION_TRANSPORT_SECRET_REQUIRED");
  const verified=verifyInterServiceEnvelope(envelope,"USER",secret);
  if(verified.sourceService!=="ACCOUNTING")throw new Error("MIGRATION_SOURCE_NOT_ALLOWED");
+ if(verified.action==="authorizeAccountingImport") {
+  var request = verified.payload || {};
+  var claims = verifySessionToken(String(request.sessionToken || ""));
+  if (!claims || !claims.userId || !claims.role || !claims.institutionId) {
+   return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  }
+  var permission = getDynamicPermissionsForRole(String(claims.role), "importDataWithColumnMapping");
+  if (permission !== true) return { status: "error", code: "IMPORT_PERMISSION_DENIED" };
+  return { status: "success", authorized: true, importPermissionVerified: true,
+   userId: String(claims.userId), role: String(claims.role),
+   membershipId: String(claims.membershipId || ""), institutionId: String(claims.institutionId) };
+ }
  if(verified.action==="writeMigratedEntity")return applyTrustedMigrationWrite_(verified.payload);
  if(verified.action==="compensateMigratedEntity")return compensateTrustedMigrationWrite_(verified.payload);
  if(verified.action==="registerMigratedResourceOwnership")return registerMigratedResourceOwnership_(verified.payload);
