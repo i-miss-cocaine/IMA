@@ -760,6 +760,7 @@ var MIGRATION_WRITER_SCHEMAS_ = {
   empleado: { sheet: "ExpedientesLaborales", headers: MIGRATION_OWNER_SCHEMAS_.empleado.headers.slice() }
 };
 const MIGRATION_WRITER_JOURNAL_HEADERS_ = ["IdempotencyKey","TipoEntidad","IdNuevoPlataforma","PayloadJSON","Estado","Accion","FilaAnteriorJSON","FilaNuevaJSON","Fecha","CorrelationId"];
+const MIGRATION_WRITER_JOURNAL_SHEET_ = "MigracionEscrituras_ACCOUNTING";
 const ACCOUNTING_IMPORT_ROW_DEPARTMENT_SNAPSHOT_HEADERS_ = ["ImportBatchID","SnapshotID","RowID","InstitutionID","Domain","DepartmentID","Status","VerifiedBy","VerifiedAt","SnapshotVersion"];
 
 function accountingComputeHmacSignature_(message, secret) {
@@ -1101,7 +1102,7 @@ function applyTrustedAccountingMigrationWrite_(payload) {
   try {
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var target = ensureMigrationWriterSheet_(ss, schema.sheet, schema.headers);
-    var journal = ensureMigrationWriterSheet_(ss, "MigracionEscrituras", MIGRATION_WRITER_JOURNAL_HEADERS_);
+    var journal = ensureMigrationWriterSheet_(ss, MIGRATION_WRITER_JOURNAL_SHEET_, MIGRATION_WRITER_JOURNAL_HEADERS_);
     var journalRows = journal.getDataRange().getValues();
     for (var j = 1; j < journalRows.length; j++) {
       if (String(journalRows[j][0]) !== key) continue;
@@ -1157,7 +1158,7 @@ function compensateTrustedAccountingMigrationWrite_(payload) {
   lock.waitLock(10000);
   try {
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    var journal = ensureMigrationWriterSheet_(ss, "MigracionEscrituras", MIGRATION_WRITER_JOURNAL_HEADERS_);
+    var journal = ensureMigrationWriterSheet_(ss, MIGRATION_WRITER_JOURNAL_SHEET_, MIGRATION_WRITER_JOURNAL_HEADERS_);
     var entries = journal.getDataRange().getValues();
     var journalRow = -1;
     for (var i = 1; i < entries.length; i++) if (String(entries[i][0]) === key) { journalRow = i + 1; break; }
