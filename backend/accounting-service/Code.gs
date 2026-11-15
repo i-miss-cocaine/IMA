@@ -1209,7 +1209,7 @@ function doPost(e) {
     };
     var safeCode = safeCodes[rawCode] ? rawCode : "INTERNAL_ERROR";
     return respond({ status: "error", code: safeCode,
-      message: apiResponsePublicMessage_(safeCode) });
+      message: "No fue posible completar la solicitud." });
   }
 }
 
