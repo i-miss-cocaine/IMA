@@ -188,7 +188,7 @@ assert.equal(idorAck.code,"RESOURCE_NOT_FOUND");
 beforeLock=()=>assignments.getRange(2,7).setValue("Revocada");
 const revokedBetweenCheckAndWrite=context.acknowledgeTeacherStudentJustification(Object.assign({},teacher1,{justificacionId:"JUST-00000001",sesionIds:["SESSION-MATH"]}));
 assert.equal(revokedBetweenCheckAndWrite.code,"RESOURCE_NOT_FOUND","assignment revocation between precheck and lock must deny the write");
-assert.equal(sheet("ConstanciasConocimientoDocente").getLastRow(),1,"revoked teacher must not persist an acknowledgment");
+assert.equal(sheet("ConstanciasConocimientoDocente").getLastRow(),0,"revoked teacher must not create the acknowledgment ledger");
 assignments.getRange(2,7).setValue("Activo");
 const badSession=context.acknowledgeTeacherStudentJustification(Object.assign({},teacher1,{justificacionId:"JUST-00000001",sesionIds:["SESSION-ENG"]}));
 assert.equal(badSession.code,"TEACHER_JUSTIFICATION_SESSION_SCOPE_DENIED");
