@@ -7588,34 +7588,61 @@ function computeDocumentSHA256(contentOrBase64) {
   throw new Error("DOCUMENT_HASH_PROVIDER_UNAVAILABLE");
 }
 function submitInstitutionalFormRequest(payload) {
-  const { estudianteId, formId, tipoTramite, respuestasFormularioJSON, adjuntoUrl, adjuntoFileId,
-    adjuntoData, adjuntoNombre, observaciones } = payload || {};
+  const p = payload || {};
+  const { estudianteId, formId, tipoTramite, respuestasFormularioJSON, adjuntoUrl, adjuntoFileId, adjuntoData, adjuntoNombre, observaciones } = p;
   if (!tipoTramite) throw new Error("tipoTramite es requerido.");
-  if (String(adjuntoUrl||"").trim() || String(adjuntoFileId||"").trim()) throw new Error("UNTRUSTED_ATTACHMENT_REFERENCE");
-  const submitter = resolveVerifiedRequestSubmitter_(payload,estudianteId,false,"permisoDocumental");
-  const attachmentRecord = createPrivateRequestAttachmentWithIntegrity_(adjuntoData,adjuntoNombre,"Tramites_Adjuntos_Privados_v1");
-  const attachment = attachmentRecord ? attachmentRecord.file : null;
-  const fileId = attachmentRecord ? attachmentRecord.fileId : "";
+  if (String(adjuntoUrl || "").trim() || String(adjuntoFileId || "").trim()) throw new Error("UNTRUSTED_ATTACHMENT_REFERENCE");
+  const submitter = resolveVerifiedRequestSubmitter_(p, estudianteId, false, "permisoDocumental");
+  const inputs = Array.isArray(p.adjuntos) && p.adjuntos.length ? p.adjuntos :
+    (adjuntoData ? [{ data: adjuntoData, nombre: adjuntoNombre, evidenciaGrupoId: "ADJUNTO-1" }] : []);
+  const attachmentRecords = inputs.map(function(item, index) {
+    var data = item && (item.data || item.fileData);
+    var name = item && (item.nombre || item.fileName || item.name);
+    var groupId = String(item && item.evidenciaGrupoId || ("ADJUNTO-" + (index + 1))).trim();
+    if (!data || !groupId) throw new Error("EVIDENCE_ATTACHMENT_INVALID");
+    return { evidenciaGrupoId: groupId, attachment: createPrivateRequestAttachmentWithIntegrity_(data, name, "Tramites_Adjuntos_Privados_v1") };
+  });
+  if (attachmentRecords.some(function(item) { return !item.attachment; })) throw new Error("EVIDENCE_ATTACHMENT_INVALID");
+  const primary = attachmentRecords.length ? attachmentRecords[0].attachment : null;
+  const attachment = primary ? primary.file : null;
+  const fileId = primary ? primary.fileId : "";
   const id = "SOL-FRM-" + Utilities.getUuid(), now = new Date();
-  const responseText = typeof respuestasFormularioJSON === "object" ? JSON.stringify(respuestasFormularioJSON) : (respuestasFormularioJSON||"{}");
-  const description = "Solicitud mediante formulario ["+(formId||"N/A")+"]: "+responseText+". Observaciones: "+(observaciones||"Sin observaciones");
+  const responseText = typeof respuestasFormularioJSON === "object" ? JSON.stringify(respuestasFormularioJSON) : (respuestasFormularioJSON || "{}");
+  const description = "Solicitud mediante formulario [" + (formId || "N/A") + "]: " + responseText + ". Observaciones: " + (observaciones || "Sin observaciones");
+  const lock = LockService.getScriptLock();
+  try { lock.waitLock(10000); }
+  catch (_) {
+    attachmentRecords.forEach(function(item) { rollbackPrivateAttachment_(item.attachment.file, "submitInstitutionalFormRequest-lock"); });
+    return { status: "error", code: "REQUEST_SUBMISSION_LOCK_TIMEOUT", retryable: true };
+  }
+  var ss = null, evidenceRecords = [];
   try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sheet = getOrCreateSheet(ss,"SolicitudesTramites");
+    ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = getOrCreateSheet(ss, "SolicitudesTramites");
     const map = ensureRequestAttachmentIntegritySchema_(sheet);
     const row = new Array(sheet.getLastColumn()).fill("");
-    row[map.SolicitudID]=id; row[map.UserId]=submitter.userId; row[map.EstudianteID]=submitter.estudianteId||"N/A";
-    row[map.TipoTramite]=tipoTramite; row[map.Descripcion]=description; row[map.AdjuntoUrl]=fileId;
-    row[map.Estado]="Enviada"; row[map.AsignadoA]="Secretaría/Orientación"; row[map.ObservacionesAdmin]="";
-    row[map.FechaSolicitud]=now.toISOString(); row[map.FechaResolucion]="";
-    setRequestAttachmentIntegrity_(row,map,attachmentRecord);
+    row[map.SolicitudID] = id; row[map.UserId] = submitter.userId; row[map.EstudianteID] = submitter.estudianteId || "N/A";
+    row[map.TipoTramite] = tipoTramite; row[map.Descripcion] = description; row[map.AdjuntoUrl] = fileId;
+    row[map.Estado] = "Enviada"; row[map.AsignadoA] = "Secretaría/Orientación"; row[map.ObservacionesAdmin] = "";
+    row[map.FechaSolicitud] = now.toISOString(); row[map.FechaResolucion] = "";
+    setRequestAttachmentIntegrity_(row, map, primary);
+    evidenceRecords = attachmentRecords.map(function(item) {
+      return registerDocumentEvidence_(ss, { solicitudId: id, evidenciaGrupoId: item.evidenciaGrupoId,
+        userId: submitter.userId, attachment: item.attachment, nombreOriginal: item.attachment.fileName || item.attachment.file.getName(),
+        tipoEvidencia: tipoTramite, correlationId: String(p.correlationId || "") });
+    });
+    if (map.EvidenciaIDsJSON !== undefined) row[map.EvidenciaIDsJSON] = JSON.stringify(evidenceRecords.map(function(item) { return item.EvidenciaID; }));
     sheet.appendRow(row);
   } catch (error) {
-    rollbackPrivateAttachment_(attachment,"submitInstitutionalFormRequest");
+    evidenceRecords.forEach(function(item) { rollbackDocumentEvidence_(ss, item.EvidenciaID, "REQUEST_ROW_WRITE_FAILED"); });
+    attachmentRecords.forEach(function(item) { rollbackPrivateAttachment_(item.attachment.file, "submitInstitutionalFormRequest"); });
     throw error;
+  } finally {
+    lock.releaseLock();
   }
-  return {status:"success",solicitudId:id,tieneAdjunto:!!fileId,fechaSolicitud:now.toISOString(),
-    message:"Trámite digital enviado con éxito para revisión oficial."};
+  return { status: "success", solicitudId: id, tieneAdjunto: !!fileId, evidenciaCount: evidenceRecords.length,
+    evidenciaIds: evidenceRecords.map(function(item) { return item.EvidenciaID; }), fechaSolicitud: now.toISOString(),
+    message: "Trámite digital enviado con éxito para revisión oficial." };
 }
 function getAppointmentBookings(payload) {
   const { solicitanteId, estudianteId, solicitadoA } = payload || {};
