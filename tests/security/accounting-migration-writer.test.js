@@ -122,9 +122,9 @@ const payload = {
   assert.throws(() => runtime.api.write(payload), /MIGRATION_WRITE_ALREADY_COMPENSATED/);
 }
 {
-  const target = new Sheet([schemas.curso.headers, schemas.curso.headers.map((header, index) => expectedBefore[header] === undefined ? "" : expectedBefore[header])]);
-  sheets.set("Cursos", target);
   const expectedBefore = { CursoID: "CURSO-2", NombreCurso: "Antes", Categoria: "Capacitación", ProveedorResponsable: "", Modalidad: "Virtual", DuracionHoras: "", Requisitos: "", DirigidoA: "", Estado: "Activo", CreadoPor: "", FechaCreacion: "", UltimaModificacion: "" };
+  const target = new Sheet([schemas.curso.headers, schemas.curso.headers.map(header => expectedBefore[header] === undefined ? "" : expectedBefore[header])]);
+  sheets.set("Cursos", target);
   const updatePayload = { ...payload, idNuevoPlataforma: "CURSO-2", idempotencyKey: "KEY-2",
     targetSnapshotVerified: true, expectedTargetPresent: true,
     expectedTargetRowHash: runtime.migrationHash_(runtime.migrationStableJson_(expectedBefore)),
@@ -136,12 +136,12 @@ const payload = {
   assert.deepEqual(target.rows[1], schemas.curso.headers.map((header, index) => expectedBefore[header] === undefined ? "" : expectedBefore[header]), "update compensation restores the exact prior row");
 }
 {
-  const target = new Sheet([schemas.curso.headers, ["CURSO-3", "Original", 60, "2025-01-01"]]);
+  const expected = { CursoID: "CURSO-3", NombreCurso: "Original", Categoria: "Capacitación", ProveedorResponsable: "", Modalidad: "Virtual", DuracionHoras: "", Requisitos: "", DirigidoA: "", Estado: "Activo", CreadoPor: "", FechaCreacion: "", UltimaModificacion: "" };
+  const target = new Sheet([schemas.curso.headers, schemas.curso.headers.map(header => expected[header] === undefined ? "" : expected[header])]);
   sheets.set("Cursos", target);
-  const expected = { CursoID: "CURSO-3", Nombre: "Original", Nota: 60, FechaInicio: "2025-01-01" };
   const stale = { ...payload, idNuevoPlataforma: "CURSO-3", idempotencyKey: "KEY-STALE",
     expectedTargetPresent: true, expectedTargetRowHash: runtime.migrationHash_(runtime.migrationStableJson_(expected)),
-    datos: { Nombre: "Importado", Nota: 95, FechaInicio: "2026-05-01" } };
+    datos: { NombreCurso: "Importado", Categoria: "Capacitación", Modalidad: "Virtual", Estado: "Activo" } };
   target.rows[1][2] = 61;
   assert.throws(() => runtime.api.write(stale), /IMPORT_TARGET_CHANGED_AFTER_PREVIEW/);
   assert.equal(target.rows[1][2], 61, "stale preview never overwrites a concurrent target edit");
