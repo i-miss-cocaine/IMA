@@ -3362,6 +3362,12 @@
 - **Verificación C1.773:** compilación sintáctica V8 PASS; harnesses aislados PASS para snapshots remotos, preflight semántico, UI, OCR y clasificador PDF. No sustituye Node CLI/CI. GitHub Actions no reportó runs/status visibles para HEAD; no se declara PASS de CI.
 - **Corrección de trazabilidad:** la referencia histórica C1.763 en esta tarea no acredita el clasificador PDF; el índice asigna C1.763 a otra actividad. La implementación y evidencia del clasificador comienzan en C1.773.
 
+- **Avance C1.774 (2026-11-15):** el escritor ACCOUNTING de cursos/expedientes laborales se consolidó con autorización institucional, allowlist, journal aislado, ScriptLock, idempotencia, snapshots before/after y compensación. La escritura compara presencia/hash del destino bajo lock para rechazar cambios posteriores al preflight. El dispatch interno separa propietarios ACCOUNTING/ACADEMIC/USER; el endpoint HTTP sigue sin exponer importDataWithColumnMapping.
+- **Seguridad del destino ACADEMIC:** el escritor de expedientes estudiantiles ahora rechaza cualquier inserción o actualización si el snapshot de destino no fue verificado; se añadió prueba negativa para inserción sin snapshot.
+- **Accesibilidad UI:** diálogo Excel con foco inicial, retorno al invocador, Tab/Shift+Tab atrapados, Escape, aria-describedby y pruebas de contrato.
+- **Verificación:** GitHub Actions Accounting Import Preflight Contract run 43771840519 SUCCESS (Node 24.22.2); sintaxis de servicios y controladores PASS y contratos de autenticación, escritores, snapshots, OCR/PDF, OpenXML, preflight, ámbito departamental, API, HMAC y UI PASS. UI Accessibility and Metadata Contract run 43771708165 SUCCESS.
+- **Pendientes:** PDF comprimido/no analizado, OCR real y Drive Advanced Service v2 en despliegue, beta Apps Script/Drive/Sheets, prueba con datos anonimizados y accesibilidad real con teclado/lector. Node CLI local no ejecutado por ausencia de checkout local; no se declara TASK-133 completada.
+
 
 
 ---
