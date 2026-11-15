@@ -502,6 +502,8 @@ function importDataWithColumnMapping(payload) {
         sessionToken: input.sessionToken,
         institutionId: PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID") ||
           PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID"),
+        tipoEntidad: input.tipoEntidad,
+        idNuevoPlataforma: String(row[(schema.headers || [])[0]] || "").trim(),
         entity: row,
         datos: row,
         source: { fileName: input.nombreArchivo || "", sourceSystem: input.sistemaOrigen || "", legacyId: legacyId },
@@ -749,6 +751,11 @@ const MIGRATION_OWNER_SCHEMAS_={
   empleado: { service: "ACCOUNTING", sheet: "ExpedientesLaborales", departmentScoped: true, headers: ["ExpedienteID", "PersonaId", "UserId", "Puesto", "Departamento", "CentroCosto", "FechaIngreso", "FechaSalida", "EstadoLaboral", "Observaciones"] },
   empleadoOwnership: { service: "USER", sheet: "", headers: [] }
 };
+var MIGRATION_WRITER_SCHEMAS_ = {
+  curso: { sheet: "Cursos", headers: MIGRATION_OWNER_SCHEMAS_.curso.headers.slice() },
+  empleado: { sheet: "ExpedientesLaborales", headers: MIGRATION_OWNER_SCHEMAS_.empleado.headers.slice() }
+};
+const MIGRATION_WRITER_JOURNAL_HEADERS_ = ["IdempotencyKey","TipoEntidad","IdNuevoPlataforma","PayloadJSON","Estado","Accion","FilaAnteriorJSON","FilaNuevaJSON","Fecha","CorrelationId"];
 const ACCOUNTING_IMPORT_ROW_DEPARTMENT_SNAPSHOT_HEADERS_ = ["ImportBatchID","SnapshotID","RowID","InstitutionID","Domain","DepartmentID","Status","VerifiedBy","VerifiedAt","SnapshotVersion"];
 
 function accountingComputeHmacSignature_(message, secret) {
@@ -809,19 +816,37 @@ function getVerifiedAccountingIdentity_(payload) {
     membershipId: String(verified.membershipId || ""), institutionId: configuredInstitution };
 }
 
+function createInterServiceEnvelope(sourceService, targetService, action, payload, customSecret) {
+  var now = Date.now();
+  var requestId = "REQ-" + now + "-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 12);
+  var correlationId = String(payload && payload.correlationId || ("CORR-" + String(Utilities.getUuid()).replace(/-/g, "")));
+  var body = payload || {};
+  var bodyToSign = [requestId, now, correlationId, sourceService, targetService, action, JSON.stringify(body)].join("|");
+  return {
+    sourceService: sourceService, targetService: targetService, action: action,
+    requestId: requestId, timestamp: now, correlationId: correlationId,
+    payload: body, hmacSignature: accountingComputeHmacSignature_(bodyToSign, customSecret)
+  };
+}
+
 function sendMigrationOwnerRequest_(service, action, payload) {
   var target = String(service || "").toUpperCase();
   if (String(action || "").indexOf("MigratedResourceOwnership") !== -1 || target === "USER" ||
       String(action || "") === "compensateMigratedResourceOwnership") target = "USER";
+  if (target === "ACCOUNTING") {
+    if (action === "writeMigratedEntity") return applyTrustedAccountingMigrationWrite_(payload || {});
+    if (action === "compensateMigratedEntity") return compensateTrustedAccountingMigrationWrite_(payload || {});
+    throw new Error("MIGRATION_ACTION_NOT_ALLOWED");
+  }
   if (target !== "USER") throw new Error("MIGRATION_OWNER_SERVICE_NOT_CONFIGURED");
   var properties = PropertiesService.getScriptProperties();
   var endpoint = String(properties.getProperty("IMA_USER_SERVICE_URL") || "").trim();
-  var signingSecret = String(properties.getProperty("IMA_DEPARTMENT_REFERENCE_HMAC_SECRET") || "");
+  var signingSecret = String(properties.getProperty("IMA_MIGRATION_HMAC_SECRET") || "").trim();
   if (!/^https:\/\/[^/]+\/exec$/i.test(endpoint) || signingSecret.length < 32 ||
       typeof createInterServiceEnvelope !== "function" || typeof UrlFetchApp === "undefined") {
     throw new Error("MIGRATION_OWNER_SERVICE_NOT_CONFIGURED");
   }
-  var envelope = createInterServiceEnvelope("ACCOUNTING", "USER", action, payload || {});
+  var envelope = createInterServiceEnvelope("ACCOUNTING", "USER", action, payload || {}, signingSecret);
   var response = UrlFetchApp.fetch(endpoint, {
     method: "post", contentType: "application/json",
     payload: JSON.stringify(envelope), muteHttpExceptions: true
@@ -996,3 +1021,161 @@ function doPost(e) {
 
 // ---------------------------------------------------------------------------
 // ENDPOINTS END
+
+
+function ensureMigrationWriterSheet_(ss, name, headers) {
+  var sheet = ss.getSheetByName(name);
+  if (!sheet) { sheet = ss.insertSheet(name); sheet.appendRow(headers); }
+  var actual = sheet.getRange(1, 1, 1, headers.length).getValues()[0].map(String);
+  if (JSON.stringify(actual) !== JSON.stringify(headers)) throw new Error("MIGRATION_SCHEMA_MISMATCH");
+  return sheet;
+}
+
+function migrationSafeCell_(value) {
+  if (value === null || value === undefined) return "";
+  if (value instanceof Date || typeof value === "number" || typeof value === "boolean") return value;
+  if (typeof value !== "string") throw new Error("MIGRATION_CELL_TYPE_INVALID");
+  return /^[=+@-]/.test(value) ? "'" + value : value;
+}
+
+function migrationEncodeSnapshot_(value) {
+  if (value instanceof Date) return { __migrationSnapshotType: "Date", value: value.toISOString() };
+  if (Array.isArray(value)) return value.map(migrationEncodeSnapshot_);
+  if (value && typeof value === "object") {
+    var out = {};
+    Object.keys(value).forEach(function(key) { out[key] = migrationEncodeSnapshot_(value[key]); });
+    return out;
+  }
+  return value;
+}
+
+function migrationDecodeSnapshot_(value) {
+  if (Array.isArray(value)) return value.map(migrationDecodeSnapshot_);
+  if (value && typeof value === "object") {
+    if (value.__migrationSnapshotType === "Date") return new Date(value.value);
+    var out = {};
+    Object.keys(value).forEach(function(key) { out[key] = migrationDecodeSnapshot_(value[key]); });
+    return out;
+  }
+  return value;
+}
+
+function applyTrustedAccountingMigrationWrite_(payload) {
+  var input = payload || {};
+  var type = String(input.tipoEntidad || "").trim().toLowerCase();
+  var id = String(input.idNuevoPlataforma || "").trim();
+  var key = String(input.idempotencyKey || "").trim();
+  var schema = MIGRATION_WRITER_SCHEMAS_[type];
+  var data = input.datos;
+  if (!schema || !id || !key || !data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error("MIGRATION_WRITE_CONTRACT_INVALID");
+  }
+  var actor = getVerifiedAccountingIdentity_({ sessionToken: input.sessionToken });
+  if (!actor || actor.authorized !== true || String(input.institutionId || "") !== actor.institutionId) {
+    throw new Error("AUTH_PERMISSION_DENIED");
+  }
+  if (!accountingHasInstitutionalImportPermission_({
+    roleId: actor.role, userId: actor.userId, sessionToken: input.sessionToken
+  })) throw new Error("IMPORT_PERMISSION_DENIED");
+
+  var allowed = schema.headers.slice(1);
+  Object.keys(data).forEach(function(field) {
+    if (allowed.indexOf(field) === -1) throw new Error("MIGRATION_FIELD_NOT_ALLOWED");
+    if (data[field] && typeof data[field] === "object" && !(data[field] instanceof Date)) {
+      throw new Error("MIGRATION_CELL_TYPE_INVALID");
+    }
+  });
+  var canonical = {};
+  Object.keys(data).sort().forEach(function(field) {
+    canonical[field] = data[field] instanceof Date ? data[field].toISOString() : data[field];
+  });
+  var json = migrationStableJson_({ tipoEntidad: type, idNuevoPlataforma: id, datos: canonical });
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var target = ensureMigrationWriterSheet_(ss, schema.sheet, schema.headers);
+    var journal = ensureMigrationWriterSheet_(ss, "MigracionEscrituras", MIGRATION_WRITER_JOURNAL_HEADERS_);
+    var journalRows = journal.getDataRange().getValues();
+    for (var j = 1; j < journalRows.length; j++) {
+      if (String(journalRows[j][0]) !== key) continue;
+      if (String(journalRows[j][3]) !== json) throw new Error("MIGRATION_IDEMPOTENCY_CONFLICT");
+      if (String(journalRows[j][4]) === "APPLIED") {
+        return { status: "success", idempotent: true, idNuevoPlataforma: id, accion: journalRows[j][5] };
+      }
+      if (String(journalRows[j][4]) === "COMPENSATED") throw new Error("MIGRATION_WRITE_ALREADY_COMPENSATED");
+    }
+    var rows = target.getDataRange().getValues();
+    var rowNumber = -1;
+    for (var r = 1; r < rows.length; r++) {
+      if (String(rows[r][0] || "").trim() === id) { rowNumber = r + 1; break; }
+    }
+    var before = rowNumber > 0 ? rows[rowNumber - 1].slice() : null;
+    var after = before ? before.slice() : schema.headers.map(function() { return ""; });
+    after[0] = migrationSafeCell_(id);
+    Object.keys(canonical).forEach(function(field) {
+      after[schema.headers.indexOf(field)] = migrationSafeCell_(data[field]);
+    });
+    if (rowNumber > 0) target.getRange(rowNumber, 1, 1, schema.headers.length).setValues([after]);
+    else target.appendRow(after);
+    var operation = rowNumber > 0 ? "UPDATE" : "INSERT";
+    try {
+      journal.appendRow([key, type, id, json, "APPLIED", operation,
+        JSON.stringify(migrationEncodeSnapshot_(before)), JSON.stringify(migrationEncodeSnapshot_(after)),
+        new Date(), String(input.correlationId || "")]);
+    } catch (writeError) {
+      try {
+        if (operation === "INSERT") {
+          var currentRows = target.getDataRange().getValues();
+          var inserted = currentRows.findIndex(function(row, index) { return index > 0 && String(row[0] || "").trim() === id; });
+          if (inserted > 0) target.deleteRow(inserted + 1);
+        } else {
+          target.getRange(rowNumber, 1, 1, schema.headers.length).setValues([before]);
+        }
+      } catch (rollbackError) {
+        throw new Error("MIGRATION_COMPENSATION_REQUIRED");
+      }
+      throw writeError;
+    }
+    return { status: "success", idempotent: false, idNuevoPlataforma: id, accion: operation };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function compensateTrustedAccountingMigrationWrite_(payload) {
+  var input = payload || {};
+  var key = String(input.idempotencyKey || "").trim();
+  if (!key) throw new Error("MIGRATION_IDEMPOTENCY_KEY_REQUIRED");
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var journal = ensureMigrationWriterSheet_(ss, "MigracionEscrituras", MIGRATION_WRITER_JOURNAL_HEADERS_);
+    var entries = journal.getDataRange().getValues();
+    var journalRow = -1;
+    for (var i = 1; i < entries.length; i++) if (String(entries[i][0]) === key) { journalRow = i + 1; break; }
+    if (journalRow < 0) throw new Error("MIGRATION_JOURNAL_NOT_FOUND");
+    var entry = entries[journalRow - 1];
+    if (String(entry[4]) === "COMPENSATED") return { status: "success", compensated: true, idempotent: true };
+    if (String(entry[4]) !== "APPLIED") throw new Error("MIGRATION_JOURNAL_STATE_INVALID");
+    var schema = MIGRATION_WRITER_SCHEMAS_[String(entry[1])];
+    if (!schema) throw new Error("MIGRATION_ENTITY_NOT_OWNED");
+    var target = ensureMigrationWriterSheet_(ss, schema.sheet, schema.headers);
+    var rows = target.getDataRange().getValues();
+    var rowNumber = -1;
+    for (var r = 1; r < rows.length; r++) if (String(rows[r][0] || "").trim() === String(entry[2])) { rowNumber = r + 1; break; }
+    var expected = migrationDecodeSnapshot_(JSON.parse(String(entry[7])));
+    if (rowNumber < 0 || migrationStableJson_(rows[rowNumber - 1]) !== migrationStableJson_(expected)) {
+      throw new Error("MIGRATION_COMPENSATION_CONFLICT");
+    }
+    var before = entry[6] ? migrationDecodeSnapshot_(JSON.parse(String(entry[6]))) : null;
+    if (String(entry[5]) === "INSERT") target.deleteRow(rowNumber);
+    else if (before) target.getRange(rowNumber, 1, 1, schema.headers.length).setValues([before]);
+    else throw new Error("MIGRATION_COMPENSATION_SNAPSHOT_MISSING");
+    journal.getRange(journalRow, 5).setValue("COMPENSATED");
+    return { status: "success", compensated: true, idempotent: false };
+  } finally {
+    lock.releaseLock();
+  }
+}
