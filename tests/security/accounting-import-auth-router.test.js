@@ -94,6 +94,7 @@ const accountingRuntime = {
     SPREADSHEET_ID: "SHEET-1"
   })[key] || "" }) },
   Utilities: {
+    MacAlgorithm: { HMAC_SHA_256: "HMAC_SHA_256" },
     computeHmacSignature(algorithm, message, key) {
       assert.equal(algorithm, "HMAC_SHA_256");
       return Array.from(crypto.createHmac("sha256", key).update(String(message)).digest());
