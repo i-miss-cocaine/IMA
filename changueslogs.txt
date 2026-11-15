@@ -3850,3 +3850,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Notificación dirigida al solicitante original; solo incluye observaciones públicas, fecha límite si existe y enlace HTTPS al portal. Correo únicamente con consentimiento explícito; sin consentimiento permanece en la bandeja interna.
 - Deduplicación atómica bajo ScriptLock, estado `Pendiente_Reintento` ante fallo/cuota MailApp, escape HTML y compatibilidad con consumidores existentes que usan email como `userId`.
 - Node local v22 (harness aislado) PASS; Department Scope Contract / Node 24 GitHub Actions SUCCESS. BETA-FUNC-105 pendiente de validación Apps Script/MailApp reales. No se declara WhatsApp ni entrega formal documental.
+
+
+[2026-11-15] TASK-108 — C1.757 — Extensión de bandeja de salida y entregas
+- Añadida bandeja personal del emisor, alias sendInstitutionalDispatch y despacho por lote con estados e idempotencia independientes por documento/destinatario.
+- Añadidos canales de plataforma/correo con consentimiento explícito, modalidad institucional de acuse (explícito o automático por lectura con advertencia) y sincronización del estado de correo tras reintentos.
+- Reintentos de notificación serializados con ScriptLock y HTML escapado; historial de intentos documentales preservado.
+- Parseo USER/test PASS; GitHub Actions ima/department-scope-contract SUCCESS (Node 24). Cierre integral pendiente: IP cliente confiable, accounting-service vacío, proveedor push, múltiples adjuntos y BETA-FUNC-106.
