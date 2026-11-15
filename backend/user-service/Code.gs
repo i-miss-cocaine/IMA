@@ -6775,7 +6775,8 @@ function getAdministrativeRequests(payload) {
   if ((callerRole === "Estudiante" || callerRole === "Alumno") && payload._verifiedUserId) {
     userId = payload._verifiedUserId; estudianteId = payload._verifiedUserId;
   }
-  if (!userId && payload && payload._verifiedUserId) userId = payload._verifiedUserId;
+  var canReviewInstitutionalQueue = ["Administrador", "Desarrollador", "Director", "Subdirector", "Secretaría"].indexOf(callerRole) !== -1;
+  if (!userId && payload && payload._verifiedUserId && !canReviewInstitutionalQueue) userId = payload._verifiedUserId;
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "SolicitudesTramites");
   const data = sheet.getDataRange().getValues();
