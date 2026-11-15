@@ -6616,7 +6616,7 @@ window.__imaUIMetadataFallback = {
         "matricula.anoLectivo": { help: "Ingresa el año lectivo de la matrícula; el formulario admite valores entre 2000 y 2200." },
         "matricula.grado": { help: "Usa el nombre oficial del grado del catálogo institucional; máximo 80 caracteres." },
         "cobros.cargoId": { help: "Copia el identificador del cargo financiero que aparece en la cuenta (por ejemplo, CHG-...)." },
-        "cobros.monto": { help: "Ingresa solo el importe en lempiras, sin símbolo ni separadores de miles; usa punto decimal y hasta dos decimales." },
+        "cobros.monto": { help: "Ingresa un importe mayor que cero en lempiras, sin símbolo ni separadores de miles; usa punto decimal y hasta dos decimales." },
         "cobros.referencia": { help: "Copia la referencia exactamente como aparece en el recibo o comprobante." },
         "cobros.comprobante": { help: "Adjunta una imagen o PDF completo y legible; deben distinguirse importe, fecha, referencia y entidad emisora." },
         "fechas.calendario": { help: "Selecciona la fecha en el calendario y comprueba el día, mes y año." },
