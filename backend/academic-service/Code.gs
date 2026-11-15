@@ -10465,6 +10465,8 @@ function createCanonicalAbsenceJustificationUnlocked_(payload) {
       if (String(resolvedPeriod) !== String(period)) throw new Error("ACADEMIC_PERIOD_DATE_MISMATCH");
     });
   } catch (periodError) { return { status: "error", code: periodError.message || "ACADEMIC_PERIOD_INVALID" }; }
+  var requestedEvidenceIds = Array.isArray(p.evidenciaIds) ? p.evidenciaIds.map(function(value) { return String(value || "").trim(); }).filter(Boolean).sort() : [];
+  if (new Set(requestedEvidenceIds).size !== requestedEvidenceIds.length) return { status: "error", code: "EVIDENCE_LINKAGE_INVALID" };
   var existing = justSheet.getDataRange().getValues();
   for (var i = 1; i < existing.length; i++) {
     if (String(existing[i][justMap.JustificacionID] || "").trim() !== id) continue;
@@ -10478,7 +10480,8 @@ function createCanonicalAbsenceJustificationUnlocked_(payload) {
       Number(existing[i][justMap.AdjuntoVersion] || 0) === attachmentVersion &&
       Number(existing[i][justMap.AdjuntoSizeBytes] || 0) === attachmentSizeBytes &&
       String(existing[i][justMap.AdjuntoMimeType] || "").trim().toLowerCase() === attachmentMimeType &&
-      String(existing[i][justMap.AdjuntoFechaRecepcion] || "").trim() === attachmentReceivedAt;
+      String(existing[i][justMap.AdjuntoFechaRecepcion] || "").trim() === attachmentReceivedAt &&
+      JSON.stringify((function(){var ids=[];try{ids=JSON.parse(String(existing[i][justMap.EvidenciaIDsJSON]||"[]"));}catch(_){}return Array.isArray(ids)?ids.map(String).sort():[];})()) === JSON.stringify(requestedEvidenceIds);
     if (!same) return { status: "error", code: "IDEMPOTENCY_CONFLICT" };
     return { status: "success", idempotent: true, data: { justificacionId: id, sesionIds: JSON.parse(String(existing[i][justMap.SesionIDsJSON] || "[]")) } };
   }
