@@ -2365,7 +2365,7 @@
 ---
 
 <!-- ID: TASK-489 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-12.md ; Pendientes.md -->
-### [ ] [TASK-489] Corregir el contrato de datos entre el panel de Recursos Humanos y las solicitudes de vacaciones
+### [x] [TASK-489] Corregir el contrato de datos entre el panel de Recursos Humanos y las solicitudes de vacaciones
 - **Hallazgo de origen:** AUD-NG-192; T-UX-12.
 - **Severidad:** Alto.
 - **Objetivo:** alinear el panel de RR. HH. con la respuesta real del backend.
@@ -2376,7 +2376,7 @@
 - **Alcance:** consulta y renderizado de solicitudes laborales/vacaciones.
 - **Criterios de aceptación:** esquema documentado coincide en ambos lados; lista/contador muestran los mismos registros; estados se traducen explícitamente; pruebas de éxito, vacío y error.
 - **Prioridad:** P1.
-- **Estado:** Pendiente.
+- **Estado:** Completada en código/CI; BETA-FUNC-098 pendiente..
 - **Evidencia de cierre:** pruebas de contrato y renderizado.
 - **Origen del Hallazgo:** AUD-NG-192 en Auditoria.txt (T-UX-12; integridad de indicadores y listas de RR. HH.).
 - **Severidad/Clasificación:** Alto / P1.
@@ -2400,6 +2400,8 @@
 ---
 
 <!-- ID: TASK-490 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-12.md ; Pendientes.md -->
+- **Evidencia C1.742:** backend DTO data[] y alias solicitudes; empleadoNombre por PersonaID; estados normalizados; UI con carga/vacío/error/incompleto; privacidad autoservicio; pruebas Node de dashboard y ownership; CI 43675596189/43675596202/43675596211 SUCCESS.
+
 ### [x] [TASK-490] Aislar en servidor los expedientes y solicitudes laborales de cada empleado
 - **Hallazgo de origen:** AUD-NG-193; T-UX-12.
 - **Severidad:** Alto.

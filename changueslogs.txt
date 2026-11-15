@@ -3738,3 +3738,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Mensajes públicos seguros, sin innerHTML; caché solo se reconcilia en success. Se conserva política de timeout de AUD-NG-007.
 - Suite Node HTTP local y helpers de ambos servicios PASS. Department Scope 43675111519, Identity Mapping 43675111535, Department Reference Consumers 43675111514 y Task-Service 43675111510 SUCCESS.
 - AUD-NG-174 completada en código/CI; BETA-FUNC-097 pendiente. TASK-489 queda desbloqueada.
+
+
+[2026-11-15] TASK-489 — contrato de solicitudes de vacaciones y panel de RR. HH. (C1.742)
+- Accounting devuelve DTO explícito data[] y alias solicitudes; empleadoNombre se resuelve por PersonaID único; tipoSolicitud y estados normalizados; estadoOriginal preservado.
+- Autoservicio no recibe observaciones ni aprobadoPor; RR. HH. mantiene esos campos. No se usa userId/expedienteId como nombre.
+- Dashboard diferencia loading, empty, error, respuesta incompleta y caída; contador Pendiente se basa en estado normalizado. DOM/textContent, sin interpolación HTML.
+- Tests Node de dashboard y propiedad/privacidad PASS. CI final: Department Scope 43675596189, Department Reference 43675596202, Identity Mapping 43675596211 — SUCCESS.
+- TASK-489 completada en código/CI; BETA-FUNC-098 pendiente.

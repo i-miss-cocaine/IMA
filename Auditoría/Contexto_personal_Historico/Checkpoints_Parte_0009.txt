@@ -482,3 +482,20 @@ C1.741 — IMA-EXEC-20261115-AUD-NG-174-API-CONTRACT-01 — Contrato API version
 - **Estado:** alcance visible en Plan Maestro implementado y verificado por contratos Node/HTTP y CI. AUD-NG-174 completada en código/CI; beta pendiente.
 - **Siguiente tarea elegible:** TASK-489 (P1, T-UX-12), al quedar satisfecha su dependencia técnica de contrato API versionado. Corregir DTO/renderizado de solicitudes de vacaciones del dashboard RR. HH. sin ampliar exposición; mantener TASK-490 como control de aislamiento.
 ===============================================================================
+
+
+C1.742 — IMA-EXEC-20261115-TASK-489-HR-VACATION-DASHBOARD-01 — Contrato DTO y estados del panel de RR. HH.
+- **Continuidad:** C1.741. HEAD inicial verificado: 2d787d424fb390428ba4a9bcf136cfde8d521f97. HEAD funcional verificado: 0bf5f09536f011c7f255910a941535769e64273e. Rama exclusiva NG_beta_0.0.0.1_work; rama base sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Tarea:** TASK-489 (PM-05, P1), corregir contrato de datos entre el panel de Recursos Humanos y solicitudes de vacaciones. Completada en código/CI; validación beta pendiente.
+- **Backend Accounting:** getVacationRequests/getLeaveVacationRequests entregan data como arreglo explícito y conservan solicitudes como alias; incluyen total, empleadoNombre, tipo/tipoSolicitud, expedienteId, fechas, días, estado normalizado y estadoOriginal. PendienteAprobacion se normaliza a Pendiente; Aprobado/Rechazado/Cancelado conservan su semántica.
+- **Identidad de empleado:** el nombre se resuelve desde Personas por PersonaID único. No se sustituye con userId, expedienteId ni observaciones. Si no existe un nombre único se devuelve vacío y la UI presenta “Nombre no disponible”; el expediente se muestra solo como metadato.
+- **Privacidad:** solicitudes para autoservicio omiten observaciones y aprobadoPor; RR. HH. conserva esos campos para su flujo autorizado. No se amplían permisos ni se cambia el resolver de ámbito.
+- **UI:** loadHRDashboardData consume data[]; renderiza estados pendientes/aprobadas/rechazadas, contador pendiente, carga, vacío, error, respuesta incompleta y caída del servicio. Errores no se presentan como cero solicitudes. Los datos se construyen con DOM/textContent, no interpolación HTML. Se actualizó cache-busting de js/api.js a v=25.
+- **Pruebas:** tests/regression/hr-vacation-dashboard-contract.test.js valida DTO UI, nombres, contador, estados, vacío, error, respuesta incompleta, outage y ausencia de innerHTML. accounting-vacation-medical-leave-ownership valida DTO, nombres, estado original y privacidad; departmental-resource-access y employee self-service preservan aislamiento.
+- **CI final:** Department Scope Contract 43675596189 SUCCESS (incluye accounting vacation ownership, employee self-service, nuevo HR dashboard contract, departmental access y syntax check); Department Reference Consumers 43675596202 SUCCESS; Identity Mapping and Transport Security 43675596211 SUCCESS. Node 24.
+- **Commits funcionales:** d47c99ed32bdc2307cd20ab801d6338f379e6bb0 (DTO, UI, pruebas y workflow); 0bf5f09536f011c7f255910a941535769e64273e (conserva observaciones/aprobadoPor para RR. HH. y los excluye del autoservicio). HEAD funcional: 0bf5f09536f011c7f255910a941535769e64273e.
+- **CLI/local:** no existe package.json, lockfile ni CLI de proyecto; no aplica. Node 24 se ejecutó en GitHub Actions.
+- **Beta/runtime:** Apps Script desplegado y navegador real no ejecutados; BETA-FUNC-098 queda Pendiente.
+- **Estado:** TASK-489 completada en código/CI; BETA-FUNC-098 pendiente.
+- **Siguiente tarea elegible:** AUD-NG-063 — proteger secretos y credenciales del proveedor de firma avanzada. La tarea técnica puede ejecutarse sin esperar integración PSC real; F22-TASK04 conserva sus dependencias de proveedor/credenciales para la conexión externa.
+===============================================================================

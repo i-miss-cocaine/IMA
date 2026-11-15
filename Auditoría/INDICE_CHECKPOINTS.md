@@ -58,3 +58,5 @@ Los checkpoints posteriores se registran aquí.
 | C1.740 | IMA-EXEC-20261115-TASK490-EMPLOYEE-OWNERSHIP-01 | Aislamiento SELF/ABAC de expedientes y solicitudes; auditoría sin ID objetivo; contratos y CI PASS; beta pendiente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt — C1.740 | C1.739 | TASK-490 completada en código/CI; BETA-FUNC-096 pendiente |
 
 | C1.741 | IMA-EXEC-20261115-AUD-NG-174-API-CONTRACT-01 | Contrato API v1.0.0 cliente/Academic/Accounting; errores estructurados; HTTP/Node y CI PASS; beta pendiente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt — C1.741 | C1.740 | AUD-NG-174 completada en código/CI; TASK-489 desbloqueada |
+
+| C1.742 | IMA-EXEC-20261115-TASK-489-HR-VACATION-DASHBOARD-01 | TASK-489 DTO/estados RR. HH.; CI y regresión UI PASS; beta pendiente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt — C1.742 | C1.741 | TASK-489 completada en código/CI; siguiente AUD-NG-063 |

@@ -211,3 +211,10 @@ Se registra AUD-NG-191 / TASK-488 para los paneles de Dirección, Coordinación 
 - fetchApi ya no convierte errores de transporte o respuestas malformadas en listas vacías; la suite local HTTP prueba éxito, vacío, error, JSON inválido, HTML, HTTP 503, timeout y caída de red.
 - CI final: Department Scope 43675111519, Identity Mapping 43675111535, Department Reference Consumers 43675111514 y Task-Service 43675111510 — SUCCESS.
 - TASK-489 queda desbloqueada para corregir el DTO/renderizado de RR. HH.; no se amplía el alcance de autorización ni se reemplaza el aislamiento implementado por TASK-490.
+
+
+## Cierre TASK-489 — C1.742
+- El contrato de solicitudes de vacaciones ahora entrega data[] explícito, campos normalizados y nombre real por PersonaID; el dashboard no trata fallos como listas vacías y renderiza estados diferenciados con textContent.
+- La privacidad de autoservicio se conserva: observaciones y aprobadoPor se entregan solo a RR. HH.; no se amplían permisos ni se usan identificadores como nombres.
+- Pruebas: accounting vacation ownership, employee self-service, departmental resource access y hr-vacation-dashboard-contract PASS. CI 43675596189, 43675596202 y 43675596211 SUCCESS.
+- Estado: TASK-489 completada en código/CI; BETA-FUNC-098 pendiente.

@@ -466,3 +466,14 @@
 - **Evidencia requerida:** payloads/respuestas sanitizados, códigos HTTP, correlationId, capturas de UI y logs beta sin datos personales.
 - **Estado:** Pendiente beta. Contratos Node/HTTP y CI aprobados.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-098 — TASK-489 — Panel de RR. HH. y solicitudes de vacaciones
+- **Módulos:** dashboard-recursos-humanos.html; Accounting/getLeaveVacationRequests; hojas ExpedientesLaborales, Personas y SolicitudesVacaciones.
+- **Precondiciones:** desplegar backend Accounting y cliente js/api.js v=25 en entorno beta; disponer de solicitudes con estados PendienteAprobacion, Aprobado, Rechazado y una persona sin nombre único para validar el fallback.
+- **Pasos:** (1) cargar expedientes y verificar que el nombre provenga de Personas; (2) confirmar que expedienteId/userId/observaciones no se presentan como nombre; (3) cargar solicitudes y validar tipoSolicitud, empleadoNombre, fechas, días y metadatos; (4) comprobar que PendienteAprobacion se cuenta como Pendiente y que Aprobado/Rechazado se conservan; (5) comprobar contador pendiente; (6) probar data:[] legítimo y texto de lista vacía; (7) provocar status:error, data incompleta y caída del servicio y verificar estado de error, nunca contador 0; (8) validar que RR. HH. conserva observaciones/aprobadoPor y autoservicio no recibe esos campos; (9) revisar DOM con nombres que contengan caracteres especiales; (10) verificar aislamiento de expedientes y que ningún ID se muestre como nombre.
+- **Resultado esperado:** datos consistentes con el DTO versionado; lista, contador y estados coherentes; privacidad por rol; errores diferenciados de vacío.
+- **Evidencia requerida:** capturas de panel, respuestas sanitizadas, IDs de prueba no reales, logs y resultados de consultas en beta.
+- **Estado:** Pendiente beta. CI y pruebas locales aprobadas.
+===============================================================================
