@@ -1621,6 +1621,10 @@ function validateContextualAccess(action, payload, verifiedUserId, userRole) {
 function validateRolePermission(action, payload) {
   if (PUBLIC_ACTIONS.indexOf(action) !== -1) return { authorized: true };
   const userRole = getUserVerifiedRole(payload);
+  if (action === "getAdministrativeRequestAttachment") {
+    const readPermission = validateRolePermission("getAdministrativeRequests", payload);
+    return { authorized: !!readPermission.authorized, role: readPermission.role || userRole };
+  }
   if (userRole === "NO_ACCESS") {
     return { authorized: false, role: "Cuenta Inactiva/Bloqueada" };
   }
@@ -2084,6 +2088,7 @@ function doPost(e) {
       case "markNotificationAsRead": result = markNotificationAsRead(payload); break;
       case "createUserNotification": result = createUserNotification(payload); break;
       case "getAdministrativeRequests": result = getAdministrativeRequests(payload); break;
+      case "getAdministrativeRequestAttachment": result = getAdministrativeRequestAttachment(payload); break;
       case "submitStudentAbsenceJustification": result = submitStudentAbsenceJustification(payload); break;
       case "getStudentAbsenceJustifications": result = getStudentAbsenceJustifications(payload); break;
       case "reviewAbsenceJustification": result = reviewAbsenceJustification(payload); break;
@@ -4623,65 +4628,193 @@ function getFamilyConsolidatedSummary(payload) {
   };
 }
 
-function submitJointFamilyPayment(payload) {
-  const { userIdResponsable, comprobanteUrl, bancoOrigen, numeroReferencia, montoTotal, distribuciones, observaciones } = payload || {};
-  if (!userIdResponsable || !montoTotal || !Array.isArray(distribuciones) || distribuciones.length === 0) {
-    throw new Error("Datos de pago conjunto incompletos.");
-  }
 
-  let sumaDist = 0;
-  distribuciones.forEach(d => {
-    sumaDist += parseFloat(d.montoAplicado) || 0;
+function getOrCreatePrivateAttachmentFolder_(folderName) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) throw new Error("ATTACHMENT_FOLDER_LOCK_TIMEOUT");
+  try {
+    const root = DriveApp.getRootFolder();
+    const folders = root.getFoldersByName(folderName);
+    const exists = folders.hasNext();
+    const folder = exists ? folders.next() : root.createFolder(folderName);
+    if (exists) {
+      if (folder.getSharingAccess() !== DriveApp.Access.PRIVATE) throw new Error("ATTACHMENT_FOLDER_NOT_PRIVATE");
+    } else {
+      try {
+        folder.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
+        if (folder.getSharingAccess() !== DriveApp.Access.PRIVATE) throw new Error("ATTACHMENT_FOLDER_NOT_PRIVATE");
+      } catch (error) {
+        try { folder.setTrashed(true); } catch (_) {}
+        throw new Error("ATTACHMENT_FOLDER_PRIVATE_SETUP_FAILED");
+      }
+    }
+    return folder;
+  } finally { lock.releaseLock(); }
+}
+
+function rollbackPrivateAttachment_(file, operation) {
+  if (!file) return;
+  try { file.setTrashed(true); }
+  catch (error) {
+    try {
+      logStructuredEvent("USER", operation || "attachmentRollback", "ERROR",
+        "ATTACHMENT_ORPHAN_REQUIRES_RECOVERY",
+        "No fue posible retirar un archivo creado sin registro asociado.",
+        { fileId: file.getId ? file.getId() : "", reason: String(error && error.message || error) }, "SYSTEM");
+    } catch (_) {}
+  }
+}
+
+function createPrivateRequestAttachment_(fileData, fileName, folderName, allowedExtensions) {
+  const hasData = typeof fileData === "string" && fileData.trim().length > 0;
+  const hasName = typeof fileName === "string" && fileName.trim().length > 0;
+  if (!hasData && !hasName) return null;
+  if (hasData !== hasName) throw new Error("ATTACHMENT_PAIR_REQUIRED");
+  const validation = validateFileBinaryIntegrity(fileData, fileName, {
+    maxSizeBytes: 10 * 1024 * 1024,
+    allowedExtensions: allowedExtensions || [".pdf", ".jpg", ".jpeg", ".png", ".webp", ".docx", ".xlsx"]
   });
-
-  if (Math.abs(sumaDist - parseFloat(montoTotal)) > 0.01) {
-    throw new Error("La suma de las distribuciones (L. " + sumaDist.toFixed(2) + ") debe ser igual al monto total del pago (L. " + parseFloat(montoTotal).toFixed(2) + ").");
+  const base64 = fileData.indexOf(",") >= 0 ? fileData.slice(fileData.indexOf(",") + 1) : fileData;
+  const bytes = Utilities.base64Decode(base64);
+  if (!bytes || bytes.length !== validation.byteLength || bytes.length > 10 * 1024 * 1024) throw new Error("ATTACHMENT_SIZE_MISMATCH");
+  const folder = getOrCreatePrivateAttachmentFolder_(folderName);
+  const file = folder.createFile(Utilities.newBlob(bytes, validation.mimeType, fileName.trim()));
+  try {
+    file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
+    if (file.getSharingAccess() !== DriveApp.Access.PRIVATE) throw new Error("ATTACHMENT_FILE_NOT_PRIVATE");
+    return file;
+  } catch (error) {
+    rollbackPrivateAttachment_(file, "createPrivateRequestAttachment_");
+    throw new Error("ATTACHMENT_STORAGE_PRIVATE_FAILED");
   }
+}
 
+function resolveVerifiedRequestSubmitter_(payload, requestedStudentId, requireStudent, permissionKey) {
+  const role = getUserVerifiedRole(payload);
+  const actorId = String(payload && payload._verifiedUserId || "").trim();
+  if (!actorId || role === "NO_ACCESS") throw new Error("VERIFIED_IDENTITY_REQUIRED");
+  const normalizedRole = String(role).toUpperCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").replace(/[^A-Z0-9]/g, "");
+  const studentRoles = ["ESTUDIANTE", "ALUMNO"];
+  const guardianRoles = ["PADRE", "MADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"];
+  let studentId = String(requestedStudentId || "").trim();
+  if (studentRoles.indexOf(normalizedRole) !== -1) {
+    if (studentId && studentId !== actorId) throw new Error("STUDENT_OWNERSHIP_MISMATCH");
+    studentId = actorId;
+  } else if (guardianRoles.indexOf(normalizedRole) !== -1 && studentId) {
+    const linkedResult = getGuardianStudents({ userId: actorId, sessionToken: payload.sessionToken || payload.authToken || payload.token });
+    const linked = (linkedResult.data || []).some(function(student) {
+      const matches = String(student.studentUserId || student.userId || "").trim() === studentId ||
+        String(student.expedienteEstudianteId || "").trim() === studentId;
+      return matches && (!permissionKey || !student.permisos || student.permisos[permissionKey] !== false);
+    });
+    if (!linked) throw new Error("GUARDIAN_STUDENT_SCOPE_DENIED");
+  }
+  if (requireStudent && !studentId) throw new Error("STUDENT_ID_REQUIRED");
+  return { userId: actorId, estudianteId: studentId, role: role };
+}
+
+function getAdministrativeRequestAttachment(payload) {
+  const role = getUserVerifiedRole(payload);
+  const actorId = String(payload && payload._verifiedUserId || "").trim();
+  const solicitudId = String(payload && payload.solicitudId || "").trim();
+  if (!actorId || role === "NO_ACCESS" || !solicitudId) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Archivo no disponible." };
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName("SolicitudesTramites");
+  if (!sheet) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Archivo no disponible." };
+  const rows = sheet.getDataRange().getValues();
+  const index = rows.findIndex(function(row, i) { return i > 0 && String(row[0] || "").trim() === solicitudId; });
+  if (index < 1) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Archivo no disponible." };
+  const row = rows[index];
+  const normalizedRole = String(role).toUpperCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").replace(/[^A-Z0-9]/g, "");
+  const studentRoles = ["ESTUDIANTE", "ALUMNO"];
+  const guardianRoles = ["PADRE", "MADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"];
+  let authorized = String(row[1] || "").trim() === actorId ||
+    (studentRoles.indexOf(normalizedRole) !== -1 && String(row[2] || "").trim() === actorId);
+  if (!authorized && guardianRoles.indexOf(normalizedRole) !== -1) {
+    const linkedResult = getGuardianStudents({ userId: actorId, sessionToken: payload.sessionToken || payload.authToken || payload.token });
+    authorized = (linkedResult.data || []).some(function(student) {
+      const permissions = student.permisos || {};
+      return String(student.studentUserId || student.userId || "").trim() === String(row[2] || "").trim() &&
+        permissions.permisoDocumental !== false;
+    });
+  }
+  if (!authorized && studentRoles.indexOf(normalizedRole) === -1 && guardianRoles.indexOf(normalizedRole) === -1) {
+    authorized = !!validateRolePermission("getAdministrativeRequests", payload).authorized;
+  }
+  if (!authorized) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Archivo no disponible." };
+  const stored = String(row[5] || "").trim();
+  const match = stored.match(/\\/d\\/([A-Za-z0-9_-]+)/) || stored.match(/[?&]id=([A-Za-z0-9_-]+)/);
+  const fileId = match ? match[1] : (/^[A-Za-z0-9_-]{25,}$/.test(stored) ? stored : "");
+  if (!fileId) return { status: "error", code: "ATTACHMENT_NOT_FOUND", message: "Archivo no disponible." };
+  try {
+    const file = DriveApp.getFileById(fileId);
+    if (!file || file.isTrashed()) return { status: "error", code: "ATTACHMENT_NOT_FOUND", message: "Archivo no disponible." };
+    const blob = file.getBlob(), bytes = blob.getBytes();
+    if (!bytes || !bytes.length || bytes.length > 10 * 1024 * 1024) return { status: "error", code: "ATTACHMENT_INVALID_SIZE", message: "Archivo no disponible." };
+    const fileName = String(file.getName() || "adjunto");
+    const validation = validateFileBinaryIntegrity(Utilities.base64Encode(bytes), fileName, {
+      maxSizeBytes: 10 * 1024 * 1024,
+      allowedExtensions: [".pdf", ".jpg", ".jpeg", ".png", ".webp", ".docx", ".xlsx"]
+    });
+    const mimeType = String(blob.getContentType() || file.getMimeType() || "").toLowerCase();
+    if (mimeType && mimeType !== validation.mimeType) return { status: "error", code: "ATTACHMENT_MIME_MISMATCH", message: "Archivo no disponible." };
+    return { status: "success", solicitudId: solicitudId, fileName: fileName, mimeType: validation.mimeType,
+      encoding: "base64", fileData: Utilities.base64Encode(bytes), fileSizeBytes: bytes.length };
+  } catch (error) {
+    logStructuredEvent("USER", "getAdministrativeRequestAttachment", "WARN", "ATTACHMENT_UNAVAILABLE",
+      "No fue posible recuperar un adjunto privado.", { solicitudId: solicitudId }, role);
+    return { status: "error", code: "ATTACHMENT_UNAVAILABLE", message: "Archivo no disponible." };
+  }
+}
+
+function submitJointFamilyPayment(payload) {
+  const { userIdResponsable, comprobanteUrl, fileData, fileName, numeroReferencia, montoTotal, distribuciones, observaciones } = payload || {};
+  if (!montoTotal || !Array.isArray(distribuciones) || !distribuciones.length) throw new Error("Datos de pago conjunto incompletos.");
+  if (String(comprobanteUrl || "").trim()) throw new Error("UNTRUSTED_ATTACHMENT_REFERENCE");
+  const submitter = resolveVerifiedRequestSubmitter_(payload, "", false, "permisoFinanciero");
+  if (userIdResponsable && String(userIdResponsable).trim() !== submitter.userId) throw new Error("VERIFIED_IDENTITY_MISMATCH");
+  const guardianResult = getGuardianStudents({ userId: submitter.userId, sessionToken: payload.sessionToken || payload.authToken || payload.token });
+  const linked = {};
+  (guardianResult.data || []).forEach(function(student) { linked[String(student.studentUserId || student.userId || "").trim()] = student; });
+  let sum = 0;
+  const seen = {};
+  distribuciones.forEach(function(item) {
+    const id = String(item && item.estudianteId || "").trim(), relation = linked[id], amount = Number(item.montoAplicado);
+    if (!id || !relation || (relation.permisos && relation.permisos.permisoFinanciero === false)) throw new Error("FAMILY_FINANCIAL_SCOPE_DENIED");
+    if (seen["$"+id]) throw new Error("DUPLICATE_STUDENT_DISTRIBUTION");
+    if (!Number.isFinite(amount) || amount <= 0) throw new Error("INVALID_DISTRIBUTION_AMOUNT");
+    seen["$"+id] = true; sum += amount;
+  });
+  const total = Number(montoTotal);
+  if (!Number.isFinite(total) || total <= 0 || Math.abs(sum-total) > 0.01) throw new Error("DISTRIBUTION_TOTAL_MISMATCH");
+
+  const attachment = createPrivateRequestAttachment_(fileData, fileName, "Comprobantes_Pago_Privados_v1", [".pdf", ".jpg", ".jpeg", ".png", ".webp"]);
+  const fileId = attachment ? attachment.getId() : "";
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) { rollbackPrivateAttachment_(attachment, "submitJointFamilyPayment"); throw new Error("LOCK_TIMEOUT"); }
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const compSheet = getOrCreateSheet(ss, "ComprobantesPago");
   const distSheet = getOrCreateSheet(ss, "DistribucionPagosConjuntos");
-
-  const pagoId = "PAGO-CONJUNTO-" + Date.now();
-  const fecha = new Date().toISOString();
-
-  // Registrar comprobante general
-  compSheet.appendRow([
-    pagoId,
-    fecha,
-    userIdResponsable,
-    "Pago Conjunto Familiar (" + distribuciones.length + " estudiantes)",
-    "CARGO-CONJUNTO",
-    montoTotal,
-    "Transferencia / Depósito",
-    numeroReferencia || "REF-PAGO",
-    comprobanteUrl || "",
-    "En revision",
-    observaciones || "Pago conjunto distribuido entre varios hijos"
-  ]);
-
-  // Registrar cada distribución individual
-  distribuciones.forEach(d => {
-    distSheet.appendRow([
-      pagoId,
-      userIdResponsable,
-      d.estudianteId,
-      d.cargoId || "CARGO-GENERAL",
-      d.concepto || "Colegiatura / Servicios",
-      parseFloat(d.montoAplicado) || 0,
-      fecha,
-      "En revision"
-    ]);
-  });
-
-  return {
-    status: "success",
-    pagoId: pagoId,
-    message: "Pago conjunto familiar registrado exitosamente y enviado a revisión."
-  };
-}
-
-function getFamilyScholarships(payload) {
+  const pagoId = "PAGO-CONJUNTO-" + Utilities.getUuid(), fecha = new Date().toISOString();
+  let compRow = 0; const distRows = [];
+  try {
+    compSheet.appendRow([pagoId,fecha,submitter.userId,"Pago Conjunto Familiar ("+distribuciones.length+" estudiantes)","CARGO-CONJUNTO",total,
+      "Transferencia / Depósito",numeroReferencia||"REF-PAGO",fileId,"En revision",observaciones||"Pago conjunto distribuido entre varios hijos"]);
+    compRow = compSheet.getLastRow();
+    distribuciones.forEach(function(item) {
+      distSheet.appendRow([pagoId,submitter.userId,item.estudianteId,item.cargoId||"CARGO-GENERAL",
+        item.concepto||"Colegiatura / Servicios",Number(item.montoAplicado),fecha,"En revision"]);
+      distRows.push(distSheet.getLastRow());
+    });
+  } catch (error) {
+    distRows.sort(function(a,b){return b-a;}).forEach(function(row){try{if(String(distSheet.getRange(row,1).getValue()||"").trim()===pagoId)distSheet.deleteRow(row);}catch(_){}});
+    if(compRow){try{if(String(compSheet.getRange(compRow,1).getValue()||"").trim()===pagoId)compSheet.deleteRow(compRow);}catch(_){}}
+    rollbackPrivateAttachment_(attachment, "submitJointFamilyPayment");
+    throw error;
+  } finally { lock.releaseLock(); }
+  return { status:"success", pagoId:pagoId, tieneComprobante:!!fileId,
+    message:"Pago conjunto familiar registrado y enviado a revisión." };
+}function getFamilyScholarships(payload) {
   const { userIdResponsable, userId } = payload || {};
   const uid = userIdResponsable || userId;
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -6009,74 +6142,43 @@ function createUserNotification(payload) {
 // [TAREA-F4-P0-02] [Fase 4: Protección IDOR y ABAC] - Aislamiento de solicitudes administrativas
 function getAdministrativeRequests(payload) {
   const callerRole = getUserVerifiedRole(payload);
-  if (callerRole === "NO_ACCESS") {
-    throw new Error("Acceso denegado: Credenciales de sesión inválidas o expiradas.");
-  }
+  if (callerRole === "NO_ACCESS") throw new Error("Acceso denegado: Credenciales de sesión inválidas o expiradas.");
   let { userId, estudianteId } = payload || {};
   if ((callerRole === "Estudiante" || callerRole === "Alumno") && payload._verifiedUserId) {
-    userId = payload._verifiedUserId;
-    estudianteId = payload._verifiedUserId;
+    userId = payload._verifiedUserId; estudianteId = payload._verifiedUserId;
   }
-  if (!userId && payload && payload._verifiedUserId) {
-    userId = payload._verifiedUserId;
-  }
-
+  if (!userId && payload && payload._verifiedUserId) userId = payload._verifiedUserId;
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "SolicitudesTramites");
   const data = sheet.getDataRange().getValues();
-  if (data.length <= 1) return { status: "success", data: [] };
-
-  const requests = data.slice(1).filter(r => {
-    if (userId && String(r[1]).trim() !== String(userId).trim()) return false;
-    if (estudianteId && String(r[2]).trim() !== String(estudianteId).trim()) return false;
+  if (data.length <= 1) return { status:"success", data:[] };
+  const requests = data.slice(1).filter(function(row) {
+    if (userId && String(row[1]).trim() !== String(userId).trim()) return false;
+    if (estudianteId && String(row[2]).trim() !== String(estudianteId).trim()) return false;
     return true;
-  }).map(r => ({
-    solicitudId: r[0],
-    userId: r[1],
-    estudianteId: r[2],
-    tipoTramite: r[3],
-    descripcion: r[4],
-    adjuntoUrl: r[5],
-    estado: r[6] || "Enviada",
-    asignadoA: r[7] || "Secretaría",
-    observacionesAdmin: r[8] || "",
-    fechaSolicitud: r[9] ? new Date(r[9]).toISOString() : null,
-    fechaResolucion: r[10] ? new Date(r[10]).toISOString() : null
-  }));
-
-  return { status: "success", data: requests };
-}
-
-function submitStudentAbsenceJustification(payload) {
-  const { userId, estudianteId, fechaAusencia, motivo, observaciones, adjuntoUrl } = payload || {};
-  if (!userId || !estudianteId || !fechaAusencia || !motivo) throw new Error("userId, estudianteId, fechaAusencia y motivo son requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "SolicitudesTramites");
-
-  const solId = "JUST-" + Date.now();
-  const now = new Date();
-  const desc = `Justificación de ausencia para la fecha ${fechaAusencia}. Motivo: ${motivo}. Observaciones: ${observaciones || 'N/A'}`;
-
-  sheet.appendRow([
-    solId,
-    userId,
-    estudianteId,
-    "Justificación de Ausencia",
-    desc,
-    adjuntoUrl || "",
-    "Enviada",
-    "Orientación/Secretaría",
-    "",
-    now,
-    ""
-  ]);
-
-  return { status: "success", solicitudId: solId, message: "Justificación de ausencia ingresada y en proceso de revisión." };
-}
-
-// [TAREA-F4-P0-02] [Fase 4: Protección IDOR y ABAC] - Aislamiento estricto de justificaciones de ausencia
-function getStudentAbsenceJustifications(payload) {
+  }).map(function(row) {
+    const stored = String(row[5] || "").trim(), privateId = /^[A-Za-z0-9_-]{25,}$/.test(stored);
+    return { solicitudId:row[0], userId:row[1], estudianteId:row[2], tipoTramite:row[3], descripcion:row[4],
+      adjuntoUrl:privateId?"":row[5], tieneAdjunto:!!stored, estado:row[6]||"Enviada", asignadoA:row[7]||"Secretaría",
+      observacionesAdmin:row[8]||"", fechaSolicitud:row[9]?new Date(row[9]).toISOString():null,
+      fechaResolucion:row[10]?new Date(row[10]).toISOString():null };
+  });
+  return { status:"success", data:requests };
+}function submitStudentAbsenceJustification(payload) {
+  const { estudianteId, fechaAusencia, motivo, observaciones, adjuntoUrl, adjuntoData, adjuntoNombre } = payload || {};
+  if (!fechaAusencia || !motivo) throw new Error("fechaAusencia y motivo son requeridos.");
+  if (String(adjuntoUrl || "").trim()) throw new Error("UNTRUSTED_ATTACHMENT_REFERENCE");
+  const submitter = resolveVerifiedRequestSubmitter_(payload, estudianteId, true, "permisoAsistencia");
+  const attachment = createPrivateRequestAttachment_(adjuntoData, adjuntoNombre, "Tramites_Adjuntos_Privados_v1");
+  const fileId = attachment ? attachment.getId() : "";
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID), sheet = getOrCreateSheet(ss,"SolicitudesTramites");
+  const id = "JUST-" + Utilities.getUuid(), now = new Date();
+  const description = "Justificación de ausencia para la fecha " + fechaAusencia + ". Motivo: " + motivo + ". Observaciones: " + (observaciones||"N/A");
+  try {
+    sheet.appendRow([id,submitter.userId,submitter.estudianteId,"Justificación de Ausencia",description,fileId,"Enviada","Orientación/Secretaría","",now,""]);
+  } catch(error) { rollbackPrivateAttachment_(attachment,"submitStudentAbsenceJustification"); throw error; }
+  return {status:"success",solicitudId:id,tieneAdjunto:!!fileId,message:"Justificación de ausencia ingresada y en proceso de revisión."};
+}function getStudentAbsenceJustifications(payload) {
   const callerRole = getUserVerifiedRole(payload);
   let { estudianteId, userId } = payload || {};
 
@@ -6106,45 +6208,23 @@ function getAdministrativeRequestsHistory(payload) {
 }
 
 function submitAdministrativeRequest(payload) {
-  const { userId, estudianteId, tipoTramite, descripcion, adjuntoUrl } = payload || {};
-  if (!userId || !tipoTramite || !descripcion) throw new Error("userId, tipoTramite y descripcion son requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "SolicitudesTramites");
-
-  const solId = "TRAM-" + Date.now();
-  const now = new Date();
-
-  sheet.appendRow([
-    solId,
-    userId,
-    estudianteId || "",
-    tipoTramite,
-    descripcion,
-    adjuntoUrl || "",
-    "Enviada",
-    "Secretaría",
-    "",
-    now,
-    ""
-  ]);
-
+  const { estudianteId, tipoTramite, descripcion, adjuntoUrl, adjuntoData, adjuntoNombre } = payload || {};
+  if (!tipoTramite || !descripcion) throw new Error("tipoTramite y descripcion son requeridos.");
+  if (String(adjuntoUrl || "").trim()) throw new Error("UNTRUSTED_ATTACHMENT_REFERENCE");
+  const submitter = resolveVerifiedRequestSubmitter_(payload, estudianteId, false, "permisoDocumental");
+  const attachment = createPrivateRequestAttachment_(adjuntoData, adjuntoNombre, "Tramites_Adjuntos_Privados_v1");
+  const fileId = attachment ? attachment.getId() : "";
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID), sheet = getOrCreateSheet(ss,"SolicitudesTramites");
+  const id = "TRAM-" + Utilities.getUuid(), now = new Date();
   try {
-    createUserNotification({
-      userId: userId,
-      titulo: "Trámite Registrado",
-      mensaje: `Su solicitud de ${tipoTramite} ha sido ingresada en Secretaría.`,
-      tipo: "Tramite",
-      categoria: "Administrativa"
-    });
-  } catch (e) {
-    logDebug("Error creando notificacion de tramite:", e.message);
-  }
-
-  return { status: "success", message: "Trámite/Solicitud ingresado correctamente.", data: { solicitudId: solId } };
-}
-
-function updateRequestStatus(payload) {
+    sheet.appendRow([id,submitter.userId,submitter.estudianteId||"",tipoTramite,descripcion,fileId,"Enviada","Secretaría","",now,""]);
+  } catch(error) { rollbackPrivateAttachment_(attachment,"submitAdministrativeRequest"); throw error; }
+  try {
+    createUserNotification({userId:submitter.userId,titulo:"Trámite Registrado",
+      mensaje:"Su solicitud de "+tipoTramite+" ha sido ingresada en Secretaría.",tipo:"Tramite",categoria:"Administrativa"});
+  } catch(e) { logDebug("Error creando notificacion de tramite:",e.message); }
+  return {status:"success",message:"Trámite/Solicitud ingresado correctamente.",tieneAdjunto:!!fileId,data:{solicitudId:id}};
+}function updateRequestStatus(payload) {
   const { solicitudId, nuevoEstado, observacionesAdmin, asignadoA } = payload || {};
   if (!solicitudId || !nuevoEstado) throw new Error("solicitudId y nuevoEstado son requeridos.");
 
@@ -6418,74 +6498,23 @@ function computeDocumentSHA256(contentOrBase64) {
 
 // [TASK-038] [F22-Task01] - Envío de formulario institucional con validación binaria de adjuntos
 function submitInstitutionalFormRequest(payload) {
-  const {
-    userId,
-    estudianteId,
-    formId,
-    tipoTramite,
-    respuestasFormularioJSON,
-    adjuntoUrl,
-    adjuntoFileId,
-    adjuntoData,
-    adjuntoNombre,
-    observaciones
-  } = payload || {};
-
-  if (!userId || !tipoTramite) throw new Error("userId y tipoTramite son requeridos.");
-
-  let finalAdjuntoUrl = adjuntoUrl || (adjuntoFileId ? "https://drive.google.com/uc?id=" + adjuntoFileId : "");
-
-  // Si se provee archivo binario en base64 para el trámite, validar estrictamente
-  if (adjuntoData && adjuntoNombre) {
-    const binaryValidation = validateFileBinaryIntegrity(adjuntoData, adjuntoNombre, {
-      maxSizeBytes: 10 * 1024 * 1024,
-      allowedExtensions: [".pdf", ".jpg", ".jpeg", ".png", ".webp", ".docx", ".xlsx"]
-    });
-
-    try {
-      const folder = getOrCreateFolderNews(getParentDriveFolder(), "Tramites_Adjuntos");
-      const base64Data = adjuntoData.indexOf(",") !== -1 ? adjuntoData.split(',')[1] : adjuntoData;
-      const file = folder.createFile(Utilities.newBlob(Utilities.base64Decode(base64Data), binaryValidation.mimeType, adjuntoNombre));
-      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      finalAdjuntoUrl = "https://drive.google.com/uc?id=" + file.getId();
-    } catch (e) {
-      logDebug("Error subida archivo tramite:", e.message);
-    }
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "SolicitudesTramites");
-
-  const solId = "SOL-FRM-" + Date.now();
-  const now = new Date();
-  const respStr = typeof respuestasFormularioJSON === "object" ? JSON.stringify(respuestasFormularioJSON) : (respuestasFormularioJSON || "{}");
-
-  const desc = `Solicitud mediante formulario [${formId || 'N/A'}]: ${respStr}. Observaciones: ${observaciones || 'Sin observaciones'}`;
-
-  sheet.appendRow([
-    solId,
-    userId,
-    estudianteId || "N/A",
-    tipoTramite,
-    desc,
-    finalAdjuntoUrl,
-    "Enviada",
-    "Secretaría/Orientación",
-    "",
-    now.toISOString(),
-    ""
-  ]);
-
-  return {
-    status: "success",
-    solicitudId: solId,
-    adjuntoUrl: finalAdjuntoUrl,
-    fechaSolicitud: now.toISOString(),
-    message: "Trámite digital enviado con éxito para revisión oficial."
-  };
-}
-
-function getAppointmentBookings(payload) {
+  const { estudianteId, formId, tipoTramite, respuestasFormularioJSON, adjuntoUrl, adjuntoFileId,
+    adjuntoData, adjuntoNombre, observaciones } = payload || {};
+  if (!tipoTramite) throw new Error("tipoTramite es requerido.");
+  if (String(adjuntoUrl||"").trim() || String(adjuntoFileId||"").trim()) throw new Error("UNTRUSTED_ATTACHMENT_REFERENCE");
+  const submitter = resolveVerifiedRequestSubmitter_(payload,estudianteId,false,"permisoDocumental");
+  const attachment = createPrivateRequestAttachment_(adjuntoData,adjuntoNombre,"Tramites_Adjuntos_Privados_v1");
+  const fileId = attachment ? attachment.getId() : "";
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID), sheet = getOrCreateSheet(ss,"SolicitudesTramites");
+  const id = "SOL-FRM-" + Utilities.getUuid(), now = new Date();
+  const responseText = typeof respuestasFormularioJSON === "object" ? JSON.stringify(respuestasFormularioJSON) : (respuestasFormularioJSON||"{}");
+  const description = "Solicitud mediante formulario ["+(formId||"N/A")+"]: "+responseText+". Observaciones: "+(observaciones||"Sin observaciones");
+  try {
+    sheet.appendRow([id,submitter.userId,submitter.estudianteId||"N/A",tipoTramite,description,fileId,"Enviada","Secretaría/Orientación","",now.toISOString(),""]);
+  } catch(error) { rollbackPrivateAttachment_(attachment,"submitInstitutionalFormRequest"); throw error; }
+  return {status:"success",solicitudId:id,tieneAdjunto:!!fileId,fechaSolicitud:now.toISOString(),
+    message:"Trámite digital enviado con éxito para revisión oficial."};
+}function getAppointmentBookings(payload) {
   const { solicitanteId, estudianteId, solicitadoA } = payload || {};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "CitasReuniones");

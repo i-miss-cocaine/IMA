@@ -5198,49 +5198,84 @@ function assertPaymentVoucherOwnerAccess_(payload, targetUserId, options) {
   return { authorized: true, accessType: ownership.accessType, departmentId: ownership.departmentId };
 }
 
-function uploadPaymentVoucher(payload) {
-  const { userId, alumno, cargoId, montoReportado, metodoPago, referencia, fileData, fileName, observaciones } = payload || {};
-  if (!userId || !montoReportado) throw new Error("userId y monto reportado son requeridos.");
-  const actor = getVerifiedAccountingIdentity_(payload);
-  if (!actor.authorized) return { status: "error", code: actor.code, message: "Acceso denegado." };
-  const access = assertPaymentVoucherOwnerAccess_(payload, userId, {});
-  if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
 
-  let comprobanteUrl = "";
-  let binaryValidation = null;
-  if (fileData && fileName) {
-    binaryValidation = validateFileBinaryIntegrity(fileData, fileName, {
-      maxSizeBytes: 10 * 1024 * 1024,
-      allowedExtensions: [".pdf", ".jpg", ".jpeg", ".png", ".webp"]
-    });
-    try {
-      const folder = getOrCreateFolderNews(getParentDriveFolder(), "Comprobantes_Pago");
-      const base64Data = fileData.indexOf(",") !== -1 ? fileData.split(",")[1] : fileData;
-      const file = folder.createFile(Utilities.newBlob(Utilities.base64Decode(base64Data), binaryValidation.mimeType, fileName));
-      file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
-      comprobanteUrl = "https://lh3.googleusercontent.com/d/" + file.getId();
-    } catch (e) {
-      logDebug("Error subida archivo comprobante:", e.message);
+function getOrCreatePrivateAttachmentFolder_(folderName) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) throw new Error("ATTACHMENT_FOLDER_LOCK_TIMEOUT");
+  try {
+    const root = DriveApp.getRootFolder(), folders = root.getFoldersByName(folderName);
+    const exists = folders.hasNext(), folder = exists ? folders.next() : root.createFolder(folderName);
+    if (exists) {
+      if (folder.getSharingAccess() !== DriveApp.Access.PRIVATE) throw new Error("ATTACHMENT_FOLDER_NOT_PRIVATE");
+    } else {
+      try {
+        folder.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
+        if (folder.getSharingAccess() !== DriveApp.Access.PRIVATE) throw new Error("ATTACHMENT_FOLDER_NOT_PRIVATE");
+      } catch(error) { try{folder.setTrashed(true);}catch(_){} throw new Error("ATTACHMENT_FOLDER_PRIVATE_SETUP_FAILED"); }
     }
+    return folder;
+  } finally { lock.releaseLock(); }
+}
+function rollbackPrivatePaymentAttachment_(file) {
+  if (!file) return;
+  try { file.setTrashed(true); }
+  catch(error) {
+    try { logStructuredEvent("ACCOUNTING","uploadPaymentVoucher","ERROR","ATTACHMENT_ORPHAN_REQUIRES_RECOVERY",
+      "No fue posible retirar un archivo creado sin comprobante asociado.",
+      {fileId:file.getId?file.getId():"",reason:String(error&&error.message||error)},"SYSTEM"); } catch(_){}
   }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const compSheet = getOrCreateSheet(ss, "ComprobantesPago");
-  const now = new Date();
-  const comprobanteId = "VCH-" + now.getTime();
-  compSheet.appendRow([
-    comprobanteId, now, String(userId).trim(), alumno || "Estudiante", cargoId || "GRAL",
-    parseFloat(montoReportado || 0), metodoPago || "Transferencia Bancaria", referencia || "SIN-REF",
-    comprobanteUrl, "En Revisión", observaciones || ""
-  ]);
-  return {
-    status: "success", comprobanteId: comprobanteId, comprobanteUrl: comprobanteUrl,
-    message: "Comprobante de pago adjuntado en revisión."
-  };
+}
+function createPrivatePaymentAttachment_(fileData,fileName) {
+  if(typeof fileData!=="string"||!fileData.trim()||typeof fileName!=="string"||!fileName.trim()) throw new Error("ATTACHMENT_PAIR_REQUIRED");
+  const validation=validateFileBinaryIntegrity(fileData,fileName,{maxSizeBytes:10*1024*1024,allowedExtensions:[".pdf",".jpg",".jpeg",".png",".webp"]});
+  const base64=fileData.indexOf(",")>=0?fileData.slice(fileData.indexOf(",")+1):fileData;
+  const bytes=Utilities.base64Decode(base64);
+  if(!bytes||bytes.length!==validation.byteLength||bytes.length>10*1024*1024) throw new Error("ATTACHMENT_SIZE_MISMATCH");
+  const folder=getOrCreatePrivateAttachmentFolder_("Comprobantes_Pago_Privados_v1");
+  const file=folder.createFile(Utilities.newBlob(bytes,validation.mimeType,fileName.trim()));
+  try {
+    file.setSharing(DriveApp.Access.PRIVATE,DriveApp.Permission.NONE);
+    if(file.getSharingAccess()!==DriveApp.Access.PRIVATE) throw new Error("ATTACHMENT_FILE_NOT_PRIVATE");
+    return file;
+  } catch(error) { rollbackPrivatePaymentAttachment_(file); throw new Error("ATTACHMENT_STORAGE_PRIVATE_FAILED"); }
+}
+function assertJointFamilyVoucherOwnerAccess_(payload,row,ss,actor) {
+  const normalized=String(actor&&actor.role||"").toUpperCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").replace(/[^A-Z0-9]/g,"");
+  const guardians=["PADRE","MADRE","TUTOR","RESPONSABLE","RESPONSABLEFAMILIAR"];
+  if(guardians.indexOf(normalized)!==-1&&String(actor.userId||"").trim()!==String(row[2]||"").trim()) return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+  const sheet=ss.getSheetByName("DistribucionPagosConjuntos");
+  if(!sheet) return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+  const distributions=sheet.getDataRange().getValues().slice(1).filter(function(item){return String(item[0]||"").trim()===String(row[0]||"").trim();});
+  if(!distributions.length) return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+  for(let i=0;i<distributions.length;i++) {
+    const check=assertPaymentVoucherOwnerAccess_(payload,distributions[i][2],{});
+    if(!check.authorized) return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+  }
+  return {authorized:true,accessType:"FAMILY"};
 }
 
-// [TAREA-F4-P0-02] [Fase 4: Protección IDOR y ABAC] - Aislamiento estricto de comprobantes de pago por usuario
-function getPaymentVouchers(payload) {
+function uploadPaymentVoucher(payload) {
+  const {userId,alumno,cargoId,montoReportado,metodoPago,referencia,fileData,fileName,observaciones}=payload||{};
+  const amount=Number(montoReportado);
+  if(!userId||!Number.isFinite(amount)||amount<=0) throw new Error("userId y monto reportado válido son requeridos.");
+  if(typeof fileData!=="string"||!fileData.trim()||typeof fileName!=="string"||!fileName.trim()) throw new Error("ATTACHMENT_PAIR_REQUIRED");
+  const actor=getVerifiedAccountingIdentity_(payload);
+  if(!actor.authorized) return {status:"error",code:actor.code,message:"Acceso denegado."};
+  const access=assertPaymentVoucherOwnerAccess_(payload,userId,{});
+  if(!access.authorized) return {status:"error",code:access.code||"RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
+  const file=createPrivatePaymentAttachment_(fileData,fileName),fileId=file.getId();
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(30000)){rollbackPrivatePaymentAttachment_(file);throw new Error("LOCK_TIMEOUT");}
+  try {
+    const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getOrCreateSheet(ss,"ComprobantesPago"),now=new Date();
+    const id="VCH-"+Utilities.getUuid();
+    sheet.appendRow([id,now,String(userId).trim(),alumno||"Estudiante",cargoId||"GRAL",amount,
+      metodoPago||"Transferencia Bancaria",referencia||"SIN-REF",fileId,"En Revisión",observaciones||""]);
+    return {status:"success",comprobanteId:id,comprobanteUrl:"",tieneComprobante:true,
+      message:"Comprobante privado adjuntado y enviado a revisión."};
+  } catch(error){rollbackPrivatePaymentAttachment_(file);throw error;}
+  finally{lock.releaseLock();}
+}function getPaymentVouchers(payload) {
   const actor = getVerifiedAccountingIdentity_(payload);
   if (!actor.authorized) return { status: "error", code: actor.code, message: "Acceso denegado." };
   const role = String(actor.role || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E")
@@ -5255,7 +5290,8 @@ function getPaymentVouchers(payload) {
   if (estado) candidates = candidates.filter(r => String(r[9] || "").toLowerCase().trim() === String(estado).toLowerCase().trim());
   const filtered = [];
   for (let i = 0; i < candidates.length; i++) {
-    const access = assertPaymentVoucherOwnerAccess_(payload, candidates[i][2], {});
+    let access = assertPaymentVoucherOwnerAccess_(payload, candidates[i][2], {});
+    if (!access.authorized && String(candidates[i][3] || "").indexOf("Pago Conjunto Familiar (") === 0) access = assertJointFamilyVoucherOwnerAccess_(payload, candidates[i], ss, actor);
     if (access.authorized) filtered.push(candidates[i]);
     else if (targetUserId) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
   }
@@ -5270,8 +5306,7 @@ function getPaymentVouchers(payload) {
   return { status: "success", comprobantes: mapped };
 }
 
-// Recuperación autenticada del archivo privado: la referencia se obtiene exclusivamente desde ComprobantesPago.
-function getPaymentVoucherFile(payload) {
+// Recuperación autenticada del archivo privado: la referencia se obtiene exclusivamente desde ComprobantesPago.function getPaymentVoucherFile(payload) {
   const comprobanteId = String(payload && payload.comprobanteId || "").trim();
   if (!comprobanteId) return { status: "error", code: "VOUCHER_ID_REQUIRED", message: "Acceso denegado." };
 
@@ -5288,7 +5323,8 @@ function getPaymentVoucherFile(payload) {
   if (rowIndex < 1) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Archivo no disponible." };
 
   const row = rows[rowIndex];
-  const access = assertPaymentVoucherOwnerAccess_(payload, row[2], {});
+  let access = assertPaymentVoucherOwnerAccess_(payload, row[2], {});
+  if (!access.authorized && String(row[3] || "").indexOf("Pago Conjunto Familiar (") === 0) access = assertJointFamilyVoucherOwnerAccess_(payload, row, ss, actor);
   if (!access.authorized) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Archivo no disponible." };
 
   const fileId = extractDriveFileId(row[8]);
@@ -5321,6 +5357,10 @@ function getPaymentVoucherFile(payload) {
     if (!allowedTypes[extension] || allowedTypes[extension] !== mimeType) {
       return { status: "error", code: "VOUCHER_FILE_TYPE_NOT_ALLOWED", message: "Tipo de archivo no permitido." };
     }
+    const binaryValidation = validateFileBinaryIntegrity(Utilities.base64Encode(bytes), fileName, {
+      maxSizeBytes: 10 * 1024 * 1024, allowedExtensions: Object.keys(allowedTypes)
+    });
+    if (binaryValidation.mimeType !== mimeType) return { status: "error", code: "VOUCHER_FILE_CONTENT_MISMATCH", message: "Archivo no disponible." };
 
     return {
       status: "success",

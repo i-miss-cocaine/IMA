@@ -555,8 +555,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             '</div>' +
                         '</div>' +
                         '<div>' +
-                            '<label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Enlace del Comprobante (Drive / Imagen)</label>' +
-                            '<input type="url" id="joint-doc-url" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-none focus:bg-white" placeholder="https://drive.google.com/...">' +
+                            '<label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Archivo del Comprobante (PDF / JPG / PNG / WEBP)</label>' +
+                            '<input type="file" id="joint-doc-file" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-none focus:bg-white">' +
+                            '<p class="text-[10px] text-slate-400 mt-1">Máximo 10 MB. El archivo se almacenará de forma privada.</p>' +
                         '</div>' +
                         '<div>' +
                             '<label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Distribución del Pago entre Estudiantes</label>' +
@@ -595,67 +596,42 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.submitJointFamilyPaymentForm = function() {
-        var totalInp = document.getElementById('joint-total-amount');
-        var refInp = document.getElementById('joint-ref-number');
-        var urlInp = document.getElementById('joint-doc-url');
-
-        var montoTotal = parseFloat(totalInp ? totalInp.value : 0) || 0;
-        var refNum = refInp ? refInp.value.trim() : '';
-        var docUrl = urlInp ? urlInp.value.trim() : '';
-
-        if (montoTotal <= 0) {
-            alert('Ingrese un monto total válido para el pago.');
-            return;
-        }
-
-        var inputs = document.querySelectorAll('.joint-distribution-input');
-        var distribuciones = [];
-        var suma = 0;
-        inputs.forEach(function(inp) {
-            var val = parseFloat(inp.value) || 0;
-            if (val > 0) {
-                var stId = inp.getAttribute('data-student-id');
-                var stName = inp.getAttribute('data-student-name');
-                distribuciones.push({
-                    estudianteId: stId,
-                    concepto: 'Colegiatura / Servicios - ' + stName,
-                    montoAplicado: val
-                });
-                suma += val;
-            }
+        var totalInp=document.getElementById('joint-total-amount');
+        var refInp=document.getElementById('joint-ref-number');
+        var fileInp=document.getElementById('joint-doc-file');
+        var selectedFile=fileInp&&fileInp.files&&fileInp.files[0]?fileInp.files[0]:null;
+        var montoTotal=parseFloat(totalInp?totalInp.value:0)||0;
+        var refNum=refInp?refInp.value.trim():'';
+        if(montoTotal<=0){alert('Ingrese un monto total válido para el pago.');return;}
+        if(selectedFile&&selectedFile.size>10*1024*1024){alert('El comprobante supera el límite de 10 MB.');return;}
+        var inputs=document.querySelectorAll('.joint-distribution-input'),distribuciones=[],suma=0;
+        inputs.forEach(function(inp){
+          var val=parseFloat(inp.value)||0;
+          if(val>0){distribuciones.push({estudianteId:inp.getAttribute('data-student-id'),
+            concepto:'Colegiatura / Servicios - '+inp.getAttribute('data-student-name'),montoAplicado:val});suma+=val;}
         });
-
-        if (distribuciones.length === 0) {
-            alert('Debe asignar el monto distribuido al menos a un estudiante.');
-            return;
-        }
-
-        if (Math.abs(suma - montoTotal) > 0.01) {
-            alert('La suma de las distribuciones (L. ' + suma.toFixed(2) + ') debe coincidir exactamente con el monto total declarado (L. ' + montoTotal.toFixed(2) + ').');
-            return;
-        }
-
-        fetchApi('USER', 'submitJointFamilyPayment', {
-            userIdResponsable: currentUser.userId || currentUser.id,
-            montoTotal: montoTotal,
-            numeroReferencia: refNum,
-            comprobanteUrl: docUrl,
-            distribuciones: distribuciones
-        }).then(function(res) {
-            if (res && res.status === 'success') {
-                alert('¡Pago conjunto multihijo enviado exitosamente!\n\nID: ' + res.pagoId);
-                var modal = document.getElementById('modal-joint-payment');
-                if (modal) modal.classList.add('hidden');
-                window.renderFamilyConsolidatedSummary();
-            } else {
-                alert('Error al registrar pago conjunto: ' + (res ? res.message : 'Error desconocido'));
-            }
-        }).catch(function(err) {
-            alert('Fallo de red: ' + err.message);
-        });
-    };
-
-    window.openFamilyScholarshipModal = function() {
+        if(!distribuciones.length){alert('Debe asignar el monto distribuido al menos a un estudiante.');return;}
+        if(Math.abs(suma-montoTotal)>0.01){alert('La suma de las distribuciones (L. '+suma.toFixed(2)+') debe coincidir exactamente con el monto total declarado (L. '+montoTotal.toFixed(2)+').');return;}
+        var attachmentPromise=selectedFile?new Promise(function(resolve,reject){
+          var reader=new FileReader();
+          reader.onload=function(){if(!reader.result)return reject(new Error('No se pudo leer el comprobante.'));
+            resolve({fileData:String(reader.result),fileName:selectedFile.name});};
+          reader.onerror=function(){reject(new Error('Error de lectura del comprobante.'));};
+          reader.readAsDataURL(selectedFile);
+        }):Promise.resolve({fileData:'',fileName:''});
+        attachmentPromise.then(function(attachment){
+          return fetchApi('USER','submitJointFamilyPayment',{
+            userIdResponsable:currentUser.userId||currentUser.id,montoTotal:montoTotal,numeroReferencia:refNum,
+            fileData:attachment.fileData,fileName:attachment.fileName,distribuciones:distribuciones
+          });
+        }).then(function(res){
+          if(res&&res.status==='success'){
+            alert('¡Pago conjunto multihijo enviado exitosamente!\\n\\nID: '+res.pagoId);
+            var modal=document.getElementById('modal-joint-payment');if(modal)modal.classList.add('hidden');
+            window.renderFamilyConsolidatedSummary();
+          }else{alert('Error al registrar pago conjunto: '+(res?res.message:'Error desconocido'));}
+        }).catch(function(err){alert('Fallo de red: '+err.message);});
+    };window.openFamilyScholarshipModal = function() {
         var modalId = 'modal-family-scholarship';
         var modal = document.getElementById(modalId);
         if (!modal) {
