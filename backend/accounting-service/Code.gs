@@ -969,8 +969,8 @@ function doGet() {
 }
 
 function doPost(e) {
-  var correlationId = apiResponseCorrelationId_();
-  var respond = function(value) { return textResponse(value, correlationId, "ACCOUNTING"); };
+  let correlationId = apiResponseCorrelationId_();
+  const respond = function(value) { return textResponse(value, correlationId, "ACCOUNTING"); };
   try {
     if (!e || !e.postData || typeof e.postData.contents !== "string" || !e.postData.contents) {
       return respond({ status: "error", code: "REQUEST_BODY_REQUIRED" });
