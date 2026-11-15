@@ -14116,7 +14116,7 @@ function getStudentDocuments(payload) {
       nombreArchivo:row[4],fechaRecepcion:row[7],fechaVencimiento:row[8],estadoRevision:row[9],
       subidoPor:row[10],validadoPor:row[11],observaciones:row[12],tieneArchivo:!!fileId,
       driveAccessible:driveAccessible,integridadVerificada:integrityVerified,versionDocumento:version,
-      sha256Hash:expectedHash,totalVersionesPrevias:versions.length,historialVersiones:versions};
+      sha256Hash:expectedHash,importBatchId:String(row[16] || ""),documentoReferenciaId:String(row[17] || ""),esReferenciaSinCopia:!!String(row[17] || ""),totalVersionesPrevias:versions.length,historialVersiones:versions};
   });
   return { status: "success", documents: mapped };
 }
@@ -14184,7 +14184,7 @@ function getStudentDocumentFile(payload) {
     const verified = getVerifiedPrivateStudentDocumentFile_(row[5],expectedHash,row[4],{makePrivate:false});
     return {status:"success",documentoId:documentId,fileName:verified.fileName,mimeType:verified.validation.mimeType,
       fileData:Utilities.base64Encode(verified.bytes),sizeBytes:verified.bytes.length,
-      versionDocumento:version,sha256Hash:verified.sha256Hash};
+      versionDocumento:version,sha256Hash:verified.sha256Hash,documentoReferenciaId:String(row[17] || ""),esReferenciaSinCopia:!!String(row[17] || "")};
   } catch (error) {
     return {status:"error",code:String(error && error.message || "DOCUMENT_FILE_UNAVAILABLE"),message:"El documento no está disponible o no supera la verificación de integridad."};
   }
