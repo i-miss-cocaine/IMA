@@ -1810,7 +1810,8 @@ window.openAbsenceJustificationAttachment = async function(solicitudId) {
         for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
         const blob = new Blob([bytes], { type: response.mimeType || 'application/octet-stream' });
         const url = URL.createObjectURL(blob);
-        const opened = window.open(url, '_blank', 'noopener');
+        const opened = window.open(url, '_blank');
+        if (opened) opened.opener = null;
         if (!opened) {
             const link = document.createElement('a');
             link.href = url;
