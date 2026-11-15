@@ -23,6 +23,7 @@ on:
       - tests/security/accounting-migration-import-ui.test.js
       - tests/security/accounting-employee-expediente-scope.test.js
       - tests/security/identity-mapping-contract.test.js
+      - tests/security/accounting-identity-map-snapshot.test.js
       - tests/security/academic-migration-writer.test.js
       - js/teacher.js
       - teacher-dashboard.html
@@ -86,6 +87,8 @@ jobs:
         run: node tests/security/accounting-employee-expediente-scope.test.js
       - name: Run identity mapping regression contract
         run: node tests/security/identity-mapping-contract.test.js
+      - name: Run trusted USER identity snapshot contract
+        run: node tests/security/accounting-identity-map-snapshot.test.js
       - name: Run Academic student migration writer contract
         run: node tests/security/academic-migration-writer.test.js
       - name: Check teacher dashboard controller syntax
