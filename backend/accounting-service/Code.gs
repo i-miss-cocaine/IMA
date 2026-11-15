@@ -17,13 +17,117 @@ function logDebug(message, optionalParam) {
 }
 
 // [FASE2-T03] [Fase 2 - Contratos API y Compatibilidad] - Formato estandarizado de respuestas de API, marca de tiempo y códigos de error normalizados.
-function textResponse(obj) {
-  if (obj && typeof obj === "object") {
-    if (!obj.status) obj.status = "success";
-    if (!obj.timestamp) obj.timestamp = new Date().toISOString();
-    if (obj.status === "error" && !obj.code) obj.code = "INTERNAL_ERROR";
+var API_RESPONSE_VERSION = "1.0.0";
+
+function apiResponseCorrelationId_(candidate) {
+  const supplied = String(candidate || "").trim();
+  if (supplied.length >= 8 && supplied.length <= 80 && /^[A-Za-z0-9._-]+$/.test(supplied)) return supplied;
+  try {
+    if (typeof Utilities !== "undefined" && Utilities.getUuid) return Utilities.getUuid();
+  } catch (_) {}
+  return "IMA-" + Date.now() + "-" + Math.floor(Math.random() * 1000000000);
+}
+
+function apiResponsePublicMessage_(code) {
+  const messages = {
+    AUTH_PERMISSION_DENIED: "No tiene permisos para realizar esta acción.",
+    UNAUTHORIZED_ACCESS_ATTEMPT: "No tiene permisos para realizar esta acción.",
+    ROLE_NOT_ALLOWED: "No tiene permisos para realizar esta acción.",
+    VERIFIED_IDENTITY_REQUIRED: "Debe iniciar sesión para continuar.",
+    RESOURCE_NOT_FOUND: "El recurso solicitado no está disponible.",
+    INVALID_PAYLOAD: "Los datos enviados no son válidos.",
+    VALIDATION_ERROR: "Los datos enviados no son válidos.",
+    INVALID_DATE_RANGE: "El rango de fechas no es válido.",
+    MISSING_REQUIRED_FIELDS: "Faltan datos obligatorios para completar la solicitud.",
+    CONFLICT: "La operación entra en conflicto con el estado actual.",
+    IDEMPOTENCY_CONFLICT: "La operación entra en conflicto con el estado actual.",
+    LOCK_TIMEOUT: "El servicio está ocupado. Intente nuevamente.",
+    SERVICE_BUSY: "El servicio está ocupado. Intente nuevamente.",
+    SERVICE_UNAVAILABLE: "El servicio no está disponible temporalmente.",
+    DEPENDENCY_UNAVAILABLE: "El servicio no está disponible temporalmente.",
+    INTERNAL_ERROR: "No fue posible completar la solicitud.",
+    UNHANDLED_EXCEPTION: "No fue posible completar la solicitud."
+  };
+  return messages[String(code || "INTERNAL_ERROR")] || "No fue posible completar la solicitud.";
+}
+
+function buildApiResponseEnvelope_(obj, correlationId, serviceName) {
+  const source = obj && typeof obj === "object" && !Array.isArray(obj) ? obj : {};
+  const status = source.status === "error" ? "error" : "success";
+  const timestamp = new Date().toISOString();
+  const requestId = apiResponseCorrelationId_(correlationId);
+  const meta = { timestamp: timestamp, correlationId: requestId };
+  if (serviceName) meta.service = String(serviceName);
+
+  if (status === "error") {
+    const sourceError = source.error && typeof source.error === "object" ? source.error : {};
+    const rawCode = String(source.code || sourceError.code || "INTERNAL_ERROR").trim().toUpperCase();
+    const code = /^[A-Z][A-Z0-9_]*$/.test(rawCode) ? rawCode : "INTERNAL_ERROR";
+    const message = apiResponsePublicMessage_(code);
+    return {
+      apiVersion: API_RESPONSE_VERSION,
+      status: "error",
+      error: { code: code, message: message, details: null },
+      code: code,
+      message: message,
+      meta: meta,
+      timestamp: timestamp,
+      correlationId: requestId
+    };
   }
-  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.TEXT);
+
+  let data;
+  if (Object.prototype.hasOwnProperty.call(source, "data")) {
+    data = source.data;
+  } else {
+    data = {};
+    const reserved = ["status", "data", "error", "apiVersion", "meta", "timestamp", "correlationId", "code", "message"];
+    Object.keys(source).forEach(function(key) {
+      if (reserved.indexOf(key) === -1) data[key] = source[key];
+    });
+  }
+  const envelope = {
+    apiVersion: API_RESPONSE_VERSION,
+    status: "success",
+    data: data,
+    meta: meta,
+    timestamp: timestamp,
+    correlationId: requestId
+  };
+  Object.keys(source).forEach(function(key) {
+    if (["status", "data", "error", "apiVersion", "meta", "timestamp", "correlationId", "code", "message"].indexOf(key) === -1) {
+      envelope[key] = source[key];
+    }
+  });
+  return envelope;
+}
+
+function textResponse(obj, correlationId, serviceName) {
+  const envelope = buildApiResponseEnvelope_(obj, correlationId, serviceName);
+  return ContentService.createTextOutput(JSON.stringify(envelope)).setMimeType(ContentService.MimeType.TEXT);
+}
+
+function validateApiContractsTestSuite() {
+  const success = buildApiResponseEnvelope_({ status: "success", data: [] }, "CONTRACT-SUCCESS-001", "SERVICE");
+  const empty = buildApiResponseEnvelope_({ status: "success", data: [] }, "CONTRACT-EMPTY-001", "SERVICE");
+  const failure = buildApiResponseEnvelope_({ status: "error", code: "INTERNAL_ERROR", message: "Sensitive stack path" }, "CONTRACT-ERROR-001", "SERVICE");
+  const cases = [
+    { action: "success envelope", pass: success.apiVersion === API_RESPONSE_VERSION && success.status === "success" && Array.isArray(success.data) && !!success.meta.correlationId },
+    { action: "legitimate empty collection", pass: empty.status === "success" && Array.isArray(empty.data) && empty.data.length === 0 },
+    { action: "structured error envelope", pass: failure.status === "error" && failure.error && failure.error.code === "INTERNAL_ERROR" && !Object.prototype.hasOwnProperty.call(failure, "data") },
+    { action: "safe public error message", pass: failure.error.message === "No fue posible completar la solicitud." && failure.error.message.indexOf("Sensitive") === -1 },
+    { action: "error is not counted as success", pass: failure.status !== "success" }
+  ];
+  const passed = cases.filter(function(item) { return item.pass; }).length;
+  return {
+    status: passed === cases.length ? "success" : "error",
+    service: "ACCOUNTING",
+    apiVersion: API_RESPONSE_VERSION,
+    totalPruebas: cases.length,
+    pruebasExitosas: passed,
+    todasPruebasPasaron: passed === cases.length,
+    resultadosContratos: cases
+  };
 }
 
 function normalizeString(str) {
@@ -706,22 +810,26 @@ function hasActiveDelegationForAction(userId, action) {
 }
 
 function doPost(e) {
+  let correlationId = apiResponseCorrelationId_();
+  const respond = function(value) { return respond(value, correlationId, "ACCOUNTING"); };
   try {
-    if (!e || !e.postData || !e.postData.contents) return textResponse({ status: "error", message: "No se recibieron datos." });
-    const { action, payload } = JSON.parse(e.postData.contents);
+    if (!e || !e.postData || !e.postData.contents) return respond({ status: "error", message: "No se recibieron datos." });
+    const request = JSON.parse(e.postData.contents);
+    correlationId = apiResponseCorrelationId_(request && request.correlationId);
+    const { action, payload } = request;
     if (action === "recordInventoryMovement" && payload) delete payload.cantidadBase;
     if (payload && payload.skipLock && !payload.isInternalCall) {
       delete payload.skipLock;
     }
     const authCheck = validateRolePermission(action, payload);
     if (!authCheck.authorized) {
-      return textResponse({ status: "error", code: "AUTH_PERMISSION_DENIED", message: "Acceso denegado: El rol " + authCheck.role + " no tiene permiso para la acción " + action + "." });
+      return respond({ status: "error", code: "AUTH_PERMISSION_DENIED", message: "Acceso denegado: El rol " + authCheck.role + " no tiene permiso para la acción " + action + "." });
     }
 
     if (action.indexOf("get") !== 0) {
       const cachedResult = checkAndRegisterIdempotencyKey(action, payload);
       if (cachedResult) {
-        return textResponse(cachedResult);
+        return respond(cachedResult);
       }
     }
 
@@ -1032,7 +1140,7 @@ function doPost(e) {
       saveIdempotentResult(action, payload, result);
     }
 
-    return textResponse(result);
+    return respond(result);
   } catch (err) {
     let safeRequestMeta = {};
     try {
@@ -1049,8 +1157,9 @@ function doPost(e) {
     } catch (_) {
       safeRequestMeta = { requestBody: "[OMITTED_UNPARSEABLE_BODY]" };
     }
-    logStructuredEvent("ACCOUNTING", "doPost", "ERROR", "UNHANDLED_EXCEPTION", err.message, safeRequestMeta, "Sistema");
-    return textResponse({ status: "error", code: "INTERNAL_ERROR", message: err.message || "Error interno contabilidad." });
+    safeRequestMeta.correlationId = correlationId;
+    logStructuredEvent("ACCOUNTING", "doPost", "ERROR", "UNHANDLED_EXCEPTION", "Request processing failed.", safeRequestMeta, "Sistema");
+    return respond({ status: "error", code: "INTERNAL_ERROR", message: "No fue posible completar la solicitud." });
   }
 }
 

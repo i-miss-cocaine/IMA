@@ -8,215 +8,282 @@
  * @param {object} payload - Los datos para la acción.
  * @returns {Promise<object>} La respuesta del servicio parseada como JSON.
  */
-function fetchApi(service, action, payload, retryCount, options) {
-    var MAX_RETRIES = 2;
-    retryCount = retryCount || 0;
-    options = options || {};
+var API_RESPONSE_VERSION = "1.0.0";
 
-    // REQ: Uso de constante global v3.3
-    var urls = window.SERVICE_URLS || (typeof SERVICE_URLS !== 'undefined' ? SERVICE_URLS : {});
-
-    if (!urls[service]) {
-        console.error('URL para el servicio "' + service + '" no encontrada.');
-        return Promise.resolve({ status: 'error', message: 'Configuración de servicio no encontrada.', isFallback: true, data: [] });
-    }
-
-    var url = urls[service];
-
-    // REQ: Implementación de Timeout para evitar bloqueos por Gateway Timeout (Tarea 1)
-    var controller = null;
-    var signal = null;
-    if (typeof AbortController !== 'undefined') {
-        controller = new AbortController();
-        signal = controller.signal;
-    }
-
-    var timeoutId = null;
-    if (controller) {
-        timeoutId = setTimeout(function() { controller.abort(); }, 60000); // 60 segundos de límite
-    }
-
-    // REQ-EXP-008: Inyección automática de contexto de autorización RBAC
-    var currentUser = null;
-    try {
-        var rawUser = localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser');
-        if (rawUser) currentUser = JSON.parse(rawUser);
-    } catch (_) {}
-
-    // Clonar el payload para no mutar objetos compartidos por los consumidores.
-    var enrichedPayload = payload && typeof payload === 'object' && !Array.isArray(payload)
-        ? Object.assign({}, payload)
-        : {};
-    var authBootstrapActions = ['loginUser', 'registerUser', 'requestPasswordRecovery', 'resetPassword'];
-    if (authBootstrapActions.indexOf(action) === -1) {
-        // La identidad de la petición procede exclusivamente de la sesión persistida.
-        // Ningún token ni requester* enviado por el consumidor puede reemplazarla.
-        if (currentUser && currentUser.sessionToken) {
-            enrichedPayload.sessionToken = currentUser.sessionToken;
-            delete enrichedPayload.authToken;
-            delete enrichedPayload.token;
-            if (currentUser.userId) enrichedPayload.requesterUserId = currentUser.userId;
-            else delete enrichedPayload.requesterUserId;
-            if (currentUser.rol) enrichedPayload.requesterRole = currentUser.rol;
-            else delete enrichedPayload.requesterRole;
-        } else {
-            // Sin sesión local no se acepta una identidad aportada por el payload.
-            delete enrichedPayload.sessionToken;
-            delete enrichedPayload.authToken;
-            delete enrichedPayload.token;
-            delete enrichedPayload.requesterUserId;
-            delete enrichedPayload.requesterRole;
-        }
-    }
-
-    var fetchOptions = {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'text/plain'
-        },
-        body: JSON.stringify({ action: action, payload: enrichedPayload })
-    };
-    if (signal) fetchOptions.signal = signal;
-    if (options.priority) fetchOptions.priority = options.priority;
-
-    // REQ: Eager Caching & 0ms Initial Render (Modulo 1.1)
-    // Disparar lectura de caché inmediatamente sin bloquear el fetch remoto
-    if (options.store && options.onUpdate && window.PersistenceManager) {
-        window.PersistenceManager.get(options.store, options.key).then(function(cached) {
-            if (cached && (cached.data || cached.allHistory || Array.isArray(cached))) {
-                console.log('[API-CACHE] Renderizado inmediato desde:', options.store);
-                // REQ: Preservar sobres si contienen historial detallado (v7.7)
-                var cleanCached = cached;
-                if (cached.data !== undefined && !cached.allHistory) {
-                    cleanCached = cached.data;
-                }
-
-                // REQ: Defensive array check for cache (v7.7.1)
-                if (action.indexOf('get') === 0 && cleanCached === undefined) {
-                    cleanCached = [];
-                }
-
-                options.onUpdate(cleanCached);
-            }
-        }).catch(function(e) {
-            console.warn('[API-CACHE] Error en lectura previa:', e);
-        });
-    }
-
-    return fetch(url, fetchOptions)
-        .then(function(response) {
-            if (timeoutId) clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                throw new Error('Error HTTP: ' + response.status + ' ' + response.statusText);
-            }
-
-            var contentType = response.headers.get('content-type');
-
-            return response.text().then(function(textResponse) {
-                // REQ: Validación de content-type antes de parsear (Fase 8)
-                if (contentType && contentType.indexOf('text/html') !== -1) {
-                    console.error("RECIBIDO HTML EN LUGAR DE JSON:", {
-                        url: url,
-                        action: action,
-                        snippet: textResponse.substring(0, 200)
-                    });
-                    throw new Error('Error: El servidor respondió con HTML (posible 404 o error de script). Acción: ' + action);
-                }
-
-                try {
-                    var parsed = JSON.parse(textResponse);
-
-                    // REQ: Defensive Data Validation (v7.7.1)
-                    // If the action is a "get" action, ensure we return an array if data is missing
-                    if (action.indexOf('get') === 0 && parsed.status === 'success' && parsed.data === undefined) {
-                        parsed.data = [];
-                    }
-
-                    // REQ: Silent Reconciliation (Modulo 1.1)
-                    if (options.store && window.PersistenceManager) {
-                        window.PersistenceManager.reconcile(options.store, parsed, options.onUpdate, options.key);
-                    }
-
-                    // REQ-EXP-008: Manejo explícito de rechazo por autorización RBAC
-                    if (parsed && parsed.status === 'error' && parsed.code === 'AUTH_PERMISSION_DENIED') {
-                        console.error('[RBAC] Acceso denegado:', parsed.message);
-                        if (document.body && !options.silentAuthError) {
-                            var authToast = document.createElement('div');
-                            authToast.className = 'fixed top-6 left-1/2 -translate-x-1/2 bg-red-800 text-white px-6 py-3 rounded-2xl shadow-2xl z-[10000] flex items-center gap-3 border border-red-500 animate-fade-in-down';
-                            authToast.innerHTML = '<i class="fas fa-shield-alt text-lg"></i><span class="text-xs font-bold uppercase tracking-wider">Acceso denegado: ' + (parsed.message || 'No autorizado') + '</span>';
-                            document.body.appendChild(authToast);
-                            setTimeout(function() {
-                                if (authToast.parentNode) authToast.parentNode.removeChild(authToast);
-                            }, 5000);
-                        }
-                    }
-
-                    return parsed;
-                } catch (e) {
-                    console.error("Respuesta no es JSON válido:", textResponse);
-                    throw new Error('El servidor devolvió una respuesta inválida (no-JSON). URL: ' + url);
-                }
-            });
-        })
-        .catch(function(error) {
-            console.error('Intento ' + (retryCount + 1) + ' fallido para ' + service + '/' + action + ':', error);
-
-            if (retryCount < MAX_RETRIES && (error.message.indexOf('fetch') !== -1 || error.message.indexOf('Network') !== -1 || error.message.indexOf('Failed') !== -1)) {
-                var delay = 1000 * (retryCount + 1);
-                console.log('Reintentando en ' + delay + 'ms...');
-                return new Promise(function(resolve) {
-                    setTimeout(function() {
-                        resolve(fetchApi(service, action, payload, retryCount + 1, options));
-                    }, delay);
-                });
-            }
-
-            // REQ: Fallback amigable y notificación de error (v4.0)
-            console.warn('[API-FALLBACK] Retornando estado seguro para ' + service + '/' + action + ' tras error crítico.');
-
-            // Notificación visual no bloqueante (Toast)
-            if (document.body) {
-                var errorToast = document.createElement('div');
-                errorToast.className = 'fixed bottom-20 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-4 rounded-2xl shadow-2xl z-[9999] flex items-center gap-4 animate-fade-in-up border border-red-400/30 backdrop-blur-md';
-                errorToast.innerHTML =
-                    '<div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">' +
-                        '<i class="fas fa-wifi-slash"></i>' +
-                    '</div>' +
-                    '<div class="flex-grow">' +
-                        '<p class="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Error de Conexión</p>' +
-                        '<p class="text-xs font-medium opacity-90">El servicio ' + service + ' no responde. Los datos pueden estar desactualizados.</p>' +
-                    '</div>' +
-                    '<button onclick="location.reload()" class="bg-white text-red-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter hover:bg-gray-100 transition-colors">Reintentar</button>';
-
-                document.body.appendChild(errorToast);
-                setTimeout(function() {
-                    if (errorToast.parentNode) {
-                        errorToast.style.opacity = '0';
-                        errorToast.style.pointerEvents = 'none';
-                        errorToast.style.transition = 'opacity 0.5s';
-                        setTimeout(function() {
-                            if (errorToast.parentNode) errorToast.parentNode.removeChild(errorToast);
-                        }, 500);
-                    }
-                }, 8000);
-            }
-
-            // Estructuras de fallback según la acción solicitada (v7.7.5)
-            if (action === 'getNews') return { status: 'success', data: [], isFallback: true };
-            if (action === 'getGlobalTop') return { status: 'success', global: [], subjectTops: {}, isFallback: true };
-            if (action === 'getAcademicConfig') return { status: 'success', data: { ParcialActual: "I parcial", GradoActual: [], SeccionActual: [], AsignaturaActual: [], TemaActual: ["General"] }, isFallback: true };
-            if (action.indexOf('get') === 0) return { status: 'success', data: [], isFallback: true };
-            if (action === 'loginUser') return { status: 'error', message: 'Servicio de autenticación no disponible.', isFallback: true };
-
-            return {
-                status: 'error',
-                message: 'Error de conexión persistente. Trabajando en modo offline limitado.',
-                isFallback: true,
-                data: []
-            };
-        });
+function createApiClientCorrelationId() {
+  return "REQ-" + Date.now() + "-" + Math.floor(Math.random() * 1000000000);
 }
+
+function apiClientPublicMessage(code) {
+  var messages = {
+    AUTH_PERMISSION_DENIED: "No tiene permisos para realizar esta acción.",
+    UNAUTHORIZED_ACCESS_ATTEMPT: "No tiene permisos para realizar esta acción.",
+    ROLE_NOT_ALLOWED: "No tiene permisos para realizar esta acción.",
+    VERIFIED_IDENTITY_REQUIRED: "Debe iniciar sesión para continuar.",
+    RESOURCE_NOT_FOUND: "El recurso solicitado no está disponible.",
+    INVALID_PAYLOAD: "Los datos enviados no son válidos.",
+    VALIDATION_ERROR: "Los datos enviados no son válidos.",
+    SERVICE_URL_MISSING: "La configuración del servicio no está disponible.",
+    API_VERSION_REQUIRED: "El servicio respondió con una versión de contrato no compatible.",
+    API_VERSION_MISMATCH: "El servicio respondió con una versión de contrato no compatible.",
+    INVALID_API_ENVELOPE: "El servicio devolvió una respuesta incompatible.",
+    INVALID_JSON_RESPONSE: "El servicio devolvió una respuesta inválida.",
+    HTML_RESPONSE: "El servicio devolvió una página web en lugar de datos.",
+    HTTP_ERROR: "No fue posible completar la solicitud.",
+    DEPENDENCY_UNAVAILABLE: "El servicio no está disponible temporalmente.",
+    NETWORK_ERROR: "No fue posible conectar con el servicio.",
+    REQUEST_TIMEOUT: "El servicio tardó demasiado en responder.",
+    INTERNAL_ERROR: "No fue posible completar la solicitud."
+  };
+  return messages[String(code || "INTERNAL_ERROR")] || "No fue posible completar la solicitud.";
+}
+
+function createApiClientError(code, message, isFallback, correlationId, extraMeta) {
+  var now = new Date().toISOString();
+  var requestId = correlationId || createApiClientCorrelationId();
+  var safeCode = String(code || "INTERNAL_ERROR");
+  var safeMessage = message || apiClientPublicMessage(safeCode);
+  var meta = Object.assign({ timestamp: now, correlationId: requestId }, extraMeta || {});
+  return {
+    apiVersion: API_RESPONSE_VERSION,
+    status: "error",
+    error: { code: safeCode, message: safeMessage, details: null },
+    code: safeCode,
+    message: safeMessage,
+    isFallback: !!isFallback,
+    meta: meta,
+    timestamp: now,
+    correlationId: requestId
+  };
+}
+
+function normalizeApiClientResponse(parsed, service, action, correlationId) {
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return createApiClientError("INVALID_API_ENVELOPE", null, true, correlationId);
+  }
+  var serviceName = String(service || "").toUpperCase();
+  var requiresVersion = serviceName === "ACADEMIC" || serviceName === "ACCOUNTING";
+  var versioned = parsed.apiVersion === API_RESPONSE_VERSION;
+  if (parsed.apiVersion && !versioned) {
+    return createApiClientError("API_VERSION_MISMATCH", null, true, correlationId);
+  }
+  if (requiresVersion && !versioned) {
+    return createApiClientError("API_VERSION_REQUIRED", null, true, correlationId);
+  }
+  if (parsed.status !== "success" && parsed.status !== "error") {
+    return createApiClientError("INVALID_API_ENVELOPE", null, true, correlationId);
+  }
+
+  if (versioned) {
+    var meta = parsed.meta;
+    if (!meta || typeof meta !== "object" || !meta.timestamp || !meta.correlationId) {
+      return createApiClientError("INVALID_API_ENVELOPE", null, true, correlationId);
+    }
+    if (parsed.status === "success" && !Object.prototype.hasOwnProperty.call(parsed, "data")) {
+      return createApiClientError("INVALID_API_ENVELOPE", null, true, correlationId);
+    }
+    if (parsed.status === "error") {
+      if (!parsed.error || typeof parsed.error !== "object" || !parsed.error.code || !parsed.error.message) {
+        return createApiClientError("INVALID_API_ENVELOPE", null, true, correlationId);
+      }
+      return Object.assign({}, parsed, {
+        code: parsed.error.code,
+        message: parsed.error.message,
+        isFallback: false
+      });
+    }
+    return Object.assign({}, parsed, { isFallback: false });
+  }
+
+  if (parsed.status === "success") {
+    var legacyData = parsed.data;
+    if (legacyData === undefined) {
+      legacyData = {};
+      var reserved = ["status", "apiVersion", "meta", "timestamp", "correlationId", "code", "message", "error", "isFallback"];
+      Object.keys(parsed).forEach(function(key) {
+        if (reserved.indexOf(key) === -1) legacyData[key] = parsed[key];
+      });
+      if (Object.keys(legacyData).length === 0) {
+        return createApiClientError("INVALID_API_ENVELOPE", null, true, correlationId);
+      }
+    }
+    var legacyMeta = {
+      timestamp: parsed.timestamp || new Date().toISOString(),
+      correlationId: parsed.correlationId || correlationId || createApiClientCorrelationId(),
+      legacyAdapter: true
+    };
+    return Object.assign({}, parsed, {
+      apiVersion: API_RESPONSE_VERSION,
+      data: legacyData,
+      meta: legacyMeta,
+      correlationId: legacyMeta.correlationId,
+      isFallback: false,
+      legacyAdapter: true
+    });
+  }
+
+  var legacyCode = parsed.code || "INTERNAL_ERROR";
+  return createApiClientError(legacyCode, apiClientPublicMessage(legacyCode), false, correlationId, { legacyAdapter: true });
+}
+
+function showApiToast(title, message, kind) {
+  if (typeof document === "undefined" || !document.body) return;
+  var toast = document.createElement("div");
+  toast.className = kind === "auth"
+    ? "fixed top-6 left-1/2 -translate-x-1/2 bg-red-800 text-white px-6 py-3 rounded-2xl shadow-2xl z-[10000] flex items-center gap-3 border border-red-500"
+    : "fixed bottom-20 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-4 rounded-2xl shadow-2xl z-[9999] flex items-center gap-4 border border-red-400/30";
+  var heading = document.createElement("p");
+  heading.className = "text-[10px] font-black uppercase tracking-widest";
+  heading.textContent = String(title || "Aviso");
+  var detail = document.createElement("p");
+  detail.className = "text-xs font-medium";
+  detail.textContent = String(message || "No fue posible completar la solicitud.");
+  var close = document.createElement("button");
+  close.type = "button";
+  close.className = "bg-white text-red-700 px-3 py-2 rounded-xl text-[10px] font-black uppercase";
+  close.textContent = "Cerrar";
+  close.addEventListener("click", function() {
+    if (toast.parentNode) toast.parentNode.removeChild(toast);
+  });
+  toast.appendChild(heading);
+  toast.appendChild(detail);
+  toast.appendChild(close);
+  document.body.appendChild(toast);
+  setTimeout(function() {
+    if (toast.parentNode) toast.parentNode.removeChild(toast);
+  }, 8000);
+}
+
+function fetchApi(service, action, payload, retryCount, options) {
+  var MAX_RETRIES = 2;
+  retryCount = retryCount || 0;
+  options = options || {};
+  var correlationId = createApiClientCorrelationId();
+  var urls = window.SERVICE_URLS || (typeof SERVICE_URLS !== "undefined" ? SERVICE_URLS : {});
+  if (!urls[service]) {
+    console.error('URL para el servicio "' + service + '" no encontrada.');
+    return Promise.resolve(createApiClientError("SERVICE_URL_MISSING", null, true, correlationId));
+  }
+  var url = urls[service];
+
+  // Se conserva el timeout existente; su configuración y ciclo de vida pertenecen a AUD-NG-007.
+  var controller = null;
+  var signal = null;
+  if (typeof AbortController !== "undefined") {
+    controller = new AbortController();
+    signal = controller.signal;
+  }
+  var timeoutId = null;
+  if (controller) {
+    timeoutId = setTimeout(function() { controller.abort(); }, 60000);
+  }
+
+  var currentUser = null;
+  try {
+    var rawUser = localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser");
+    if (rawUser) currentUser = JSON.parse(rawUser);
+  } catch (_) {}
+
+  var enrichedPayload = payload && typeof payload === "object" && !Array.isArray(payload)
+    ? Object.assign({}, payload)
+    : {};
+  var authBootstrapActions = ["loginUser", "registerUser", "requestPasswordRecovery", "resetPassword"];
+  if (authBootstrapActions.indexOf(action) === -1) {
+    if (currentUser && currentUser.sessionToken) {
+      enrichedPayload.sessionToken = currentUser.sessionToken;
+      delete enrichedPayload.authToken;
+      delete enrichedPayload.token;
+      if (currentUser.userId) enrichedPayload.requesterUserId = currentUser.userId;
+      else delete enrichedPayload.requesterUserId;
+      if (currentUser.rol) enrichedPayload.requesterRole = currentUser.rol;
+      else delete enrichedPayload.requesterRole;
+    } else {
+      delete enrichedPayload.sessionToken;
+      delete enrichedPayload.authToken;
+      delete enrichedPayload.token;
+      delete enrichedPayload.requesterUserId;
+      delete enrichedPayload.requesterRole;
+    }
+  }
+
+  var fetchOptions = {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify({ action: action, payload: enrichedPayload, correlationId: correlationId })
+  };
+  if (signal) fetchOptions.signal = signal;
+  if (options.priority) fetchOptions.priority = options.priority;
+
+  if (options.store && options.onUpdate && window.PersistenceManager) {
+    window.PersistenceManager.get(options.store, options.key).then(function(cached) {
+      if (cached && (cached.data || cached.allHistory || Array.isArray(cached))) {
+        var cleanCached = cached;
+        if (cached.data !== undefined && !cached.allHistory) cleanCached = cached.data;
+        if (action.indexOf("get") === 0 && cleanCached === undefined) cleanCached = [];
+        options.onUpdate(cleanCached);
+      }
+    }).catch(function(error) {
+      console.warn("[API-CACHE] Error en lectura previa:", error);
+    });
+  }
+
+  return fetch(url, fetchOptions).then(function(response) {
+    if (timeoutId) clearTimeout(timeoutId);
+    var contentType = response.headers && response.headers.get ? response.headers.get("content-type") || "" : "";
+    return response.text().then(function(responseText) {
+      if (contentType.toLowerCase().indexOf("text/html") !== -1) {
+        var htmlError = createApiClientError("HTML_RESPONSE", null, true, correlationId, { httpStatus: response.status });
+        showApiToast("Respuesta inválida", "El servicio " + service + " devolvió HTML en lugar de datos.", "network");
+        return htmlError;
+      }
+      var parsed;
+      try {
+        parsed = JSON.parse(responseText);
+      } catch (_) {
+        var jsonError = createApiClientError("INVALID_JSON_RESPONSE", null, true, correlationId, { httpStatus: response.status });
+        showApiToast("Respuesta inválida", "El servicio " + service + " devolvió JSON inválido.", "network");
+        return jsonError;
+      }
+      var normalized = normalizeApiClientResponse(parsed, service, action, correlationId);
+      if (!response.ok) {
+        if (normalized.status === "error") {
+          normalized.meta.httpStatus = response.status;
+          return normalized;
+        }
+        return createApiClientError(response.status >= 500 ? "DEPENDENCY_UNAVAILABLE" : "HTTP_ERROR", null, true, correlationId, { httpStatus: response.status });
+      }
+      if (normalized.status === "error") {
+        if (normalized.code === "AUTH_PERMISSION_DENIED" && !options.silentAuthError) {
+          showApiToast("Acceso denegado", normalized.message, "auth");
+        } else if (normalized.isFallback) {
+          showApiToast("Respuesta inválida", normalized.message, "network");
+        }
+        return normalized;
+      }
+      if (options.store && window.PersistenceManager) {
+        window.PersistenceManager.reconcile(options.store, normalized, options.onUpdate, options.key);
+      }
+      return normalized;
+    });
+  }).catch(function(error) {
+    console.error("Intento " + (retryCount + 1) + " fallido para " + service + "/" + action + ":", error);
+    var errorMessage = String(error && error.message || "");
+    if (retryCount < MAX_RETRIES &&
+        (errorMessage.indexOf("fetch") !== -1 || errorMessage.indexOf("Network") !== -1 || errorMessage.indexOf("Failed") !== -1)) {
+      var delay = 1000 * (retryCount + 1);
+      return new Promise(function(resolve) {
+        setTimeout(function() {
+          resolve(fetchApi(service, action, payload, retryCount + 1, options));
+        }, delay);
+      });
+    }
+    var code = error && (error.name === "AbortError" || error.name === "TimeoutError") ? "REQUEST_TIMEOUT" : "NETWORK_ERROR";
+    var failure = createApiClientError(code, null, true, correlationId);
+    showApiToast("Error de conexión", "El servicio " + service + " no está disponible. No se devolverán datos vacíos como si fueran válidos.", "network");
+    return failure;
+  });
+}
+
 
 /**
  * REQ-EXP-017: Health Check Ping-Pong para Monitoreo de Microservicios

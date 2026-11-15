@@ -42,6 +42,10 @@ on:
       - tests/security/accounting-transport-monthly-charges.test.js
       - tests/security/accounting-transport-route-optimization.test.js
       - tests/security/accounting-transport-efficiency-metrics.test.js
+      - tests/contracts/api-response-contract.test.js
+      - js/api.js
+      - backend/academic-service/Code.gs
+      - backend/accounting-service/Code.gs
       - dashboard-direccion.html
       - js/transport-analytics.js
       - tests/security/accounting-service-tariffs.test.js
@@ -144,6 +148,8 @@ jobs:
         run: node tests/security/accounting-transport-route-optimization.test.js
       - name: Run transport efficiency metrics authorization, aggregation and data-gap contract
         run: node tests/security/accounting-transport-efficiency-metrics.test.js
+      - name: Run versioned API envelope and local HTTP contract suite
+        run: node tests/contracts/api-response-contract.test.js
       - name: Run centralized service tariff, versioning and discount contract
         run: node tests/security/accounting-service-tariffs.test.js
       - name: Run family credit guardian approval preference and fail-closed contract
@@ -203,6 +209,8 @@ jobs:
           node --check < backend/accounting-service/Code.gs
           node --check js/accounting.js
           node --check js/transport-analytics.js
+          node --check js/api.js
+          node --check tests/contracts/api-response-contract.test.js
           node --check js/ui-common.js
           node --check < backend/task-service/Code.gs
           node --check < backend/exam-service/Code.gs
