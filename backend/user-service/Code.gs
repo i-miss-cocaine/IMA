@@ -4962,7 +4962,7 @@ function registerDocumentEvidence_(ss, args) {
       return !!String(item.row[map.DecisionHash] || "").trim() ||
         ["APROBADA","APROBADO","FIRMADA","FIRMADO","BLOQUEADA"].indexOf(String(item.row[map.Estado] || "").trim().toUpperCase()) !== -1;
     })) throw new Error("EVIDENCE_VERSION_IMMUTABLE");
-    if (["OBSERVADO","REQUIERE_INFORMACION","PENDIENTE_SUBSANACION","DEVUELTA"].indexOf(requestState) === -1) {
+    if (["OBSERVADO","OBSERVADA","REQUIERE_INFORMACION","REQUIEREINFORMACION","PENDIENTE_SUBSANACION","PENDIENTESUBSANACION","DEVUELTA"].indexOf(requestState) === -1) {
       throw new Error("EVIDENCE_VERSION_REQUIRES_OBSERVATION");
     }
     version = Math.max.apply(null, previous.map(function(item) { return Number(item.row[map.VersionNumero] || 0); })) + 1;
