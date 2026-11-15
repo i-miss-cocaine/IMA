@@ -62,6 +62,7 @@ const runtime = {
   accountingHasInstitutionalImportPermission_: () => permission,
   PropertiesService: { getScriptProperties: () => ({ getProperty: key => ({
     IMA_USER_SERVICE_URL: "https://user.example.test/exec",
+    IMA_ACADEMIC_SERVICE_URL: "https://academic.example.test/exec",
     IMA_MIGRATION_HMAC_SECRET: secret
   })[key] || "" }) },
   SpreadsheetApp: { openById: id => { assert.equal(id, "SHEET-1"); return spreadsheet; } },
@@ -139,6 +140,8 @@ const payload = {
   assert.equal(lastEnvelope.sourceService, "ACCOUNTING");
   assert.equal(lastEnvelope.targetService, "USER");
   assert.equal(lastEnvelope.action, "registerMigratedResourceOwnership");
+  runtime.api.send("ACADEMIC", "writeMigratedEntity", { sessionToken: "SIGNED", tipoEntidad: "estudiante", idNuevoPlataforma: "EST-1", datos: { PersonaID: "PER-1" } });
+  assert.equal(lastEnvelope.targetService, "ACADEMIC", "student entities are written by the ACADEMIC owner service");
   const body = [lastEnvelope.requestId, lastEnvelope.timestamp, lastEnvelope.correlationId,
     lastEnvelope.sourceService, lastEnvelope.targetService, lastEnvelope.action, JSON.stringify(lastEnvelope.payload)].join("|");
   assert.equal(lastEnvelope.hmacSignature, crypto.createHmac("sha256", secret).update(body).digest("hex"),
