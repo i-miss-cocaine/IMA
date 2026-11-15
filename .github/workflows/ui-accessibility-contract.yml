@@ -12,6 +12,14 @@ on:
       - "tests/security/user-service-ui-metadata.test.js"
       - "tests/security/user-service-workflow-notifications.test.js"
       - "tests/security/user-service-departmental-outbox.test.js"
+      - "tests/security/ui-common-permanent-help.test.js"
+      - "tests/ui/permanent-form-help.test.js"
+      - "teacher-dashboard.html"
+      - "student-dashboard.html"
+      - "dashboard-secretaria.html"
+      - "js/teacher.js"
+      - "js/secretary.js"
+      - "js/accounting.js"
       - ".github/workflows/ui-accessibility-contract.yml"
   pull_request:
     branches:
@@ -50,6 +58,10 @@ jobs:
         run: node tests/ui/accessible-tooltips.test.js
       - name: UI metadata catalog contract
         run: node tests/security/user-service-ui-metadata.test.js
+      - name: Permanent form help and inline validation contract
+        run: |
+          node tests/ui/permanent-form-help.test.js
+          node tests/security/ui-common-permanent-help.test.js
       - name: Notification and delivery regression contracts
         run: |
           node tests/security/user-service-workflow-notifications.test.js
