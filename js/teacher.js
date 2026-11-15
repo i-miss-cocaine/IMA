@@ -7655,7 +7655,7 @@ function toBase64(file) {
         const input = config || {};
         const targets = {
             curso: { destination: 'ACCOUNTING', fields: ['Nombre', 'Nota', 'FechaInicio'], required: ['Nombre'] },
-            estudiante: { destination: 'ACADEMIC', fields: ['PersonaID'], required: ['PersonaID'] },
+            estudiante: { destination: 'ACADEMIC', fields: ['PersonaID', 'CodigoInstitucional', 'FechaNacimiento', 'Nacionalidad', 'DireccionResidencia', 'FotografiaUrl', 'EstadoExpediente', 'FechaCreacion', 'FechaActualizacion', 'Observaciones'], required: ['PersonaID'] },
             empleado: { destination: 'ACCOUNTING', fields: ['PersonaId', 'UserId', 'Puesto', 'Departamento', 'CentroCosto', 'FechaIngreso', 'FechaSalida', 'EstadoLaboral', 'Observaciones'], required: ['PersonaId', 'Puesto', 'Departamento'] }
         };
         const entityType = String(input.tipoEntidad || '').trim().toLowerCase();
@@ -7709,7 +7709,7 @@ function toBase64(file) {
         if (!identifierSelect || !mappingContainer || !entitySelect) return;
         const targets = {
             curso: { fields: ['Nombre', 'Nota', 'FechaInicio'], required: ['Nombre'] },
-            estudiante: { fields: ['PersonaID'], required: ['PersonaID'] },
+            estudiante: { fields: ['PersonaID', 'CodigoInstitucional', 'FechaNacimiento', 'Nacionalidad', 'DireccionResidencia', 'FotografiaUrl', 'EstadoExpediente', 'FechaCreacion', 'FechaActualizacion', 'Observaciones'], required: ['PersonaID'] },
             empleado: { fields: ['PersonaId', 'UserId', 'Puesto', 'Departamento', 'CentroCosto', 'FechaIngreso', 'FechaSalida', 'EstadoLaboral', 'Observaciones'], required: ['PersonaId', 'Puesto', 'Departamento'] }
         };
         const target = targets[String(entitySelect.value || 'curso')];
