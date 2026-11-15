@@ -36,7 +36,8 @@ const base={nombreArchivo:"cursos.xlsx",destinoModulo:"Cursos",sistemaOrigen:"LE
  columnaMapeo:{identificador:"legacyId",campos:{Nombre:"nombre",Nota:"nota",FechaInicio:"fechaInicio"}},
  filasData:[{legacyId:"CUR-1",nombre:"Matemáticas",nota:90,fechaInicio:"2026-02-01"}]};
 const valid=context.preview(base);assert.equal(valid.status,"success");assert.equal(valid.validForImport,true);assert.equal(valid.filasValidas,1);
-assert.equal(valid.preparedRows[0].Nombre,"Matemáticas");assert.equal(valid.identityResolutions[0].idNuevoPlataforma,"CURSO-1");assert.match(valid.previewHash,/^[a-f0-9]{64}$/);
+assert.equal(valid.preparedRows[0].Nombre,"Matemáticas");
+assert.equal(valid.validRowIndexes.length,1);assert.equal(valid.identityResolutions[0].idNuevoPlataforma,"CURSO-1");assert.match(valid.previewHash,/^[a-f0-9]{64}$/);
 assert.equal(context.validate(base).validForImport,true);
 assert.notEqual(context.preview({...base,filasData:[{...base.filasData[0],nota:91}]}).previewHash,valid.previewHash);
 const partialPayload={...base,filasData:[base.filasData[0],{...base.filasData[0],legacyId:"CUR-2",fechaInicio:"fecha-invalida"}]};
@@ -44,6 +45,7 @@ const partialPreview=context.preview(partialPayload);
 assert.equal(partialPreview.validForImport,false);
 assert.equal(partialPreview.validForPartialImport,true);
 assert.deepEqual(Array.from(partialPreview.validRowIndexes),[0]);
+assert.equal(partialPreview.validForPartialImport,true);
 assert.equal(context.validate(partialPayload).validForPartialImport,true);
 assert.equal(context.validate(partialPayload).resumenValidation.requiereConfirmacion,true);
 assert.throws(()=>context.import({...partialPayload,previewConfirmed:true,previewHash:partialPreview.previewHash}),/IMPORT_PREVIEW_INVALID_OR_STALE/);
