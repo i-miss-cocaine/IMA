@@ -158,10 +158,24 @@ function makeMigrationOrchestrationFixture(options){
  const constants=accounting.slice(start,first),names=["migrationStableJson_","migrationHash_","mapMigrationRowToTarget_","buildAccountingDepartmentalImportPreflight_","rollbackMigrationOwnerWrites_","importDataWithColumnMapping"];
  const code=constants+names.map(n=>extractBalancedFunction(accounting,n)).join(String.fromCharCode(10));
  vm.runInNewContext(code,ctx);
+ ctx.buildImportPreview_ = function(payload) {
+  const schema = ctx.MIGRATION_OWNER_SCHEMAS_[payload.tipoEntidad];
+  const departmentPreflight = ctx.buildAccountingDepartmentalImportPreflight_(payload, ss, schema);
+  const identifierField = String(payload.columnaMapeo && payload.columnaMapeo.identificador || "legacy");
+  const identityResolutions = payload.filasData.map(row => {
+   const identity = ctx.resolveCrossReferenceIdentifier({sistemaOrigen:payload.sistemaOrigen,tipoEntidad:payload.tipoEntidad,idOriginalLegado:row[identifierField]});
+   return identity && identity.status === "success" ? {status:"success",idNuevoPlataforma:identity.idNuevoPlataforma} : null;
+  });
+  const preparedRows = payload.filasData.map((row,index) => departmentPreflight.applicable
+   ? departmentPreflight.rows[index]
+   : ctx.mapMigrationRowToTarget_(row,payload.columnaMapeo,schema));
+  return {status:"success",validForImport:true,previewHash:"MIGRATION-FIXTURE",departmentPreflight:departmentPreflight,
+   identityResolutions:identityResolutions,preparedRows:preparedRows};
+ };
  return{ctx,calls,auditRows,state};
 }
 function runMigrationOrchestrationTests(source){
- const fixture=makeMigrationOrchestrationFixture(),payload=(system,legacy)=>({nombreArchivo:"fixture.csv",destinoModulo:"USER",columnaMapeo:{identificador:"legacy",campos:{Nombres:"Nombres",Apellidos:"Apellidos",Identificacion:"DNI"}},filasData:[{legacy:legacy,Nombres:"Ana",Apellidos:"Perez",DNI:"0801-1990-12345"}],creadoPor:"TEST",sistemaOrigen:system,tipoEntidad:"persona"});
+ const fixture=makeMigrationOrchestrationFixture(),payload=(system,legacy)=>({nombreArchivo:"fixture.csv",destinoModulo:"USER",columnaMapeo:{identificador:"legacy",campos:{Nombres:"Nombres",Apellidos:"Apellidos",Identificacion:"DNI"}},filasData:[{legacy:legacy,Nombres:"Ana",Apellidos:"Perez",DNI:"0801-1990-12345"}],creadoPor:"TEST",sistemaOrigen:system,tipoEntidad:"persona",previewConfirmed:true,previewHash:"MIGRATION-FIXTURE"});
  const a=fixture.ctx.importDataWithColumnMapping(payload("LEGACY_A","A-01"));const b=fixture.ctx.importDataWithColumnMapping(payload("LEGACY_B","B-99"));
  assert.equal(a.status,"success");assert.equal(b.status,"success");
  const writes=fixture.calls.filter(x=>x.action==="writeMigratedEntity");assert.equal(writes.length,2);
