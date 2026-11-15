@@ -53,7 +53,7 @@ let remoteData={status:"success",verified:true,service:"ACADEMIC",sheet:"Expedie
 let envelopeSeen=null;
 const accountingRuntime={
  Date,String,JSON,Array,Object,Number,Math,RegExp,Error,
- PropertiesService:{getScriptProperties:()=>({getProperty:key=>({IMA_ACADEMIC_SERVICE_URL:"https://script.google.com/macros/s/AKfycbACADEMIC123/exec",IMA_USER_SERVICE_URL:"https://script.google.com/macros/s/AKfycbUSER123/exec",IMA_MIGRATION_HMAC_SECRET:secret})[key]||"")})},
+ PropertiesService:{getScriptProperties:()=>({getProperty:key=>({IMA_ACADEMIC_SERVICE_URL:"https://script.google.com/macros/s/AKfycbACADEMIC123/exec",IMA_USER_SERVICE_URL:"https://script.google.com/macros/s/AKfycbUSER123/exec",IMA_MIGRATION_HMAC_SECRET:secret})[key]||""})},
  Utilities:{MacAlgorithm:{HMAC_SHA_256:"HMAC_SHA_256"},getUuid:()=>"12345678-1234-1234-1234-123456789012",computeHmacSignature:(algorithm,message,key)=>Array.from(crypto.createHmac("sha256",key).update(String(message)).digest())},
  UrlFetchApp:{fetch:(url,options)=>{envelopeSeen=JSON.parse(options.payload);return{getResponseCode:()=>200,getContentText:()=>JSON.stringify({apiVersion:"1.0.0",status:"success",data:remoteData})};}}
 };
