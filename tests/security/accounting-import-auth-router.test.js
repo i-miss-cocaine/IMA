@@ -116,10 +116,11 @@ const accountingRuntime = {
   },
   importDataWithColumnMapping(payload) {
     if (payload.previewConfirmed !== true || !payload.previewHash) throw new Error("IMPORT_PREVIEW_INVALID_OR_STALE");
+    if (payload.previewHash === "constructor") throw new Error("constructor");
     return { status: "success", registrosImportados: 1 };
   }
 };
-vm.runInNewContext(accountingFns.join("\n") + "\nthis.api = { auth: getVerifiedAccountingIdentity_, permission: accountingHasInstitutionalImportPermission_, department: getVerifiedDepartmentScopeForSession_, post: doPost, get: doGet };", accountingRuntime);
+vm.runInNewContext(accountingFns.join("\n") + "\nthis.api = { auth: getVerifiedAccountingIdentity_, permission: accountingHasInstitutionalImportPermission_, department: getVerifiedDepartmentScopeForSession_, post: doPost, get: doGet, publicMessage: apiResponsePublicMessage_ };", accountingRuntime);
 
 {
   const identity = accountingRuntime.api.auth({ sessionToken: "SIGNED-LIVE-SESSION" });
@@ -150,6 +151,11 @@ vm.runInNewContext(accountingFns.join("\n") + "\nthis.api = { auth: getVerifiedA
     payload: { previewConfirmed: true, previewHash: "HASH-1" }
   }) } });
   assert.equal(JSON.parse(committed.value).registrosImportados, 1);
+  const prototypeCode = accountingRuntime.api.post({ postData: { contents: JSON.stringify({
+    action: "importDataWithColumnMapping", payload: { previewConfirmed: true, previewHash: "constructor" }
+  }) } });
+  assert.equal(JSON.parse(prototypeCode.value).code, "INTERNAL_ERROR", "prototype keys never pass the public error allowlist");
+  assert.equal(accountingRuntime.api.publicMessage("constructor"), "No fue posible completar la solicitud.");
   const malformed = accountingRuntime.api.post({ postData: { contents: "{bad" } });
   assert.equal(JSON.parse(malformed.value).code, "INTERNAL_ERROR");
   const safeError = accountingRuntime.api.post({ postData: { contents: JSON.stringify({ action: "validateImportPreview", payload: { sessionToken: "THROW" } }) } });
