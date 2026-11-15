@@ -2720,7 +2720,7 @@ window.handleRecibirTransferencia = function (transferBatchId, itemCodigo, cantD
 // ---------------------------------------------------------------------------
 let migrationImportState = {
   workbook: null, file: null, fileName: "", sheetName: "", headers: [],
-  rows: [], dataRowNumbers: [], structural: null, payload: null, preview: null
+  rows: [], dataRowNumbers: [], structural: null, fileDataBase64: "", payload: null, preview: null
 };
 
 const MIGRATION_IMPORT_TARGETS = {
@@ -2736,6 +2736,15 @@ function migrationImportEscape(value) {
     .replace(/[&<>"']/g, function(ch) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
     });
+}
+
+function migrationImportBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(offset, offset + 0x8000));
+  }
+  return btoa(binary);
 }
 
 function resetMigrationImportPreview() {
@@ -2937,6 +2946,7 @@ function renderMigrationImportModule(container) {
       migrationImportState.workbook = workbook;
       migrationImportState.file = file;
       migrationImportState.fileName = file.name;
+      migrationImportState.fileDataBase64 = migrationImportBase64(bytes);
       sheetSelect.disabled = false;
       sheetSelect.innerHTML = '<option value="">Seleccione hoja</option>' + workbook.SheetNames.map(name =>
         '<option value="' + migrationImportEscape(name) + '">' + migrationImportEscape(name) + '</option>').join("");
@@ -2979,6 +2989,9 @@ function renderMigrationImportModule(container) {
     const payload = {
       sistemaOrigen: sourceInput.value.trim(), tipoEntidad: entity.value,
       destinoModulo: target.sheet, nombreArchivo: migrationImportState.fileName,
+      mimeTypeArchivo: migrationImportState.file && migrationImportState.file.type ||
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      fileDataBase64: migrationImportState.fileDataBase64,
       hojaSeleccionada: migrationImportState.sheetName,
       columnaMapeo: { identificador: identifier, campos: mapping },
       filasData: migrationImportState.rows,
