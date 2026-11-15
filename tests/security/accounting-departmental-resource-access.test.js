@@ -23,7 +23,8 @@ function makeSheet(rows){
   appendRow:row=>rows.push(row.slice()),
   getRange:(r,c,numRows,numCols)=>({
    getValues:()=>Array.from({length:numRows||1},(_,ri)=>Array.from({length:numCols||1},(_,ci)=>(rows[r-1+ri]||[])[c-1+ci]===undefined?"":(rows[r-1+ri]||[])[c-1+ci])),
-   setValue:v=>{if(!rows[r-1])rows[r-1]=[];rows[r-1][c-1]=v;}
+   setValue:v=>{if(!rows[r-1])rows[r-1]=[];rows[r-1][c-1]=v;},
+   setValues:values=>values.forEach((valuesRow,ri)=>{if(!rows[r-1+ri])rows[r-1+ri]=[];valuesRow.forEach((value,ci)=>{rows[r-1+ri][c-1+ci]=value;});})
   })
  };
 }
