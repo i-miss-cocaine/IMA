@@ -10410,7 +10410,7 @@ function createCanonicalAbsenceJustificationUnlocked_(payload) {
   var attachmentMimeType = String(p.adjuntoMimeType || "").trim().toLowerCase();
   var attachmentReceivedAt = String(p.adjuntoFechaRecepcion || "").trim();
   var attachmentIntegrityStatus = attachmentFileId ? "LEGACY_UNVERIFIED" : "SIN_ADJUNTO";
-  if (!/^JUST-[A-Za-z0-9-]{8,100}$/.test(id) || !studentId || !actorId || !actorRole || !dateKeys.length || dateKeys.length > 90 || !reason || reason.length > 2000) {
+  if (!/^JUST-[A-Za-z0-9-]{8,100}$/.test(id) || !studentId || !actorId || !actorRole || !dateKeys.length || !reason || reason.length > 2000) {
     return { status: "error", code: "ABSENCE_JUSTIFICATION_INVALID" };
   }
   dateKey = dateKeys[0];
