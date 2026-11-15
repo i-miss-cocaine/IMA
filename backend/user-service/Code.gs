@@ -6888,7 +6888,7 @@ function escapeNotificationHtml_(value) {
 }
 function sendMultiChannelNotification(payload) {
   const p=payload||{}, userId=String(p.userId||"").trim(), emailRecipient=String(p.emailRecipient||"").trim();
-  const targetUser=userId||emailRecipient||"INVITADO", titulo=String(p.titulo||"").trim(), mensaje=String(p.mensaje||"").trim();
+  const targetUser=userId||emailRecipient||"INVITADO", targetEmail=emailRecipient||(userId.indexOf("@")!==-1?userId:""), titulo=String(p.titulo||"").trim(), mensaje=String(p.mensaje||"").trim();
   const deduplicationKey=String(p.deduplicationKey||"").trim();
   if(!targetUser||!titulo||!mensaje)throw new Error("Destinatario (userId/emailRecipient), título y mensaje son requeridos.");
   if(deduplicationKey.length>240)return {status:"error",code:"NOTIFICATION_DEDUPLICATION_KEY_INVALID"};
@@ -6902,17 +6902,17 @@ function sendMultiChannelNotification(payload) {
       if(duplicate)return {status:"success",deduplicated:true,notificacionId:duplicate[0],estadoEntrega:String(duplicate[10]||"Entregado"),message:"Notificación ya registrada para esta transición."};
     }
     notifId="NTF-"+(Utilities.getUuid?Utilities.getUuid():(Date.now()+"-"+Math.floor(Math.random()*1000000)));
-    initialStatus=emailRecipient?"Pendiente_Reintento":"Entregado";
-    sheet.appendRow([notifId,targetUser,p.tipo||"NotificacionAdmision",titulo,mensaje,new Date(),false,p.categoria||"Admisiones",p.enlaceAccion||"",deduplicationKey,initialStatus,emailRecipient]);
+    initialStatus=targetEmail?"Pendiente_Reintento":"Entregado";
+    sheet.appendRow([notifId,targetUser,p.tipo||"NotificacionAdmision",titulo,mensaje,new Date(),false,p.categoria||"Admisiones",p.enlaceAccion||"",deduplicationKey,initialStatus,targetEmail]);
     rowNumber=sheet.getLastRow();
   }finally{lock.releaseLock();}
   let emailSent=false;
-  if(emailRecipient){
+  if(targetEmail){
     try{
       if(typeof MailApp==="undefined"||!MailApp.sendEmail)throw new Error("MAIL_SERVICE_UNAVAILABLE");
       const link=/^https:\/\/[^\s"'<>]+$/i.test(String(p.enlaceAccion||""))?String(p.enlaceAccion):"";
       const html='<div style="font-family:Arial,sans-serif;color:#1f2937;max-width:600px;margin:0 auto;padding:20px"><h2>New Generation Christian Academy</h2><h3>'+escapeNotificationHtml_(titulo)+'</h3><p>'+escapeNotificationHtml_(mensaje).replace(/\n/g,"<br>")+'</p>'+(link?'<p><a href="'+escapeNotificationHtml_(link)+'">Abrir portal institucional</a></p>':"")+'<p style="font-size:12px;color:#6b7280">La apertura del correo no constituye acuse formal de recepción documental.</p></div>';
-      MailApp.sendEmail({to:emailRecipient,subject:"[IMA] "+titulo,body:mensaje,htmlBody:html});
+      MailApp.sendEmail({to:targetEmail,subject:"[IMA] "+titulo,body:mensaje,htmlBody:html});
       emailSent=true;sheet.getRange(rowNumber,11).setValue("Entregado");
     }catch(mailErr){
       logStructuredEvent("USER","sendMultiChannelNotification","WARN","MAIL_SEND_FAILED","Fallo al enviar correo; el aviso permanece en la bandeja de plataforma.",{targetUser,notifId,error:String(mailErr&&mailErr.message||mailErr)},p.authRole);
