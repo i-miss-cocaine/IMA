@@ -7645,27 +7645,27 @@ window.ensureSchoolYearConfigModalExists = function() {
                 </div>
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Fecha de Inicio Oficial *</label>
-                    <input type="date" id="sy-fecha-inicio" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" required>
+                    <input type="date" id="sy-fecha-inicio" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" required data-ui-help-key="fechas.calendario">
                 </div>
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Fecha de Fin Oficial *</label>
-                    <input type="date" id="sy-fecha-fin" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" required>
+                    <input type="date" id="sy-fecha-fin" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" required data-ui-help-key="fechas.calendario">
                 </div>
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Primer Día de Clases</label>
-                    <input type="date" id="sy-inicio-clases" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
+                    <input type="date" id="sy-inicio-clases" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" data-ui-help-key="fechas.calendario">
                 </div>
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Último Día de Clases</label>
-                    <input type="date" id="sy-fin-clases" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
+                    <input type="date" id="sy-fin-clases" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" data-ui-help-key="fechas.calendario">
                 </div>
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Cierre Administrativo</label>
-                    <input type="date" id="sy-fin-admin" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
+                    <input type="date" id="sy-fin-admin" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" data-ui-help-key="fechas.calendario">
                 </div>
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Límite Ingreso Notas</label>
-                    <input type="date" id="sy-limite-calif" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
+                    <input type="date" id="sy-limite-calif" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" data-ui-help-key="fechas.calendario">
                 </div>
             </div>
 
@@ -7840,11 +7840,11 @@ window.ensureInstitutionalActivitiesModalExists = function() {
                 </div>
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Fecha de Inicio *</label>
-                    <input type="date" id="act-fecha-inicio" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" required>
+                    <input type="date" id="act-fecha-inicio" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" required data-ui-help-key="fechas.calendario">
                 </div>
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Fecha de Fin</label>
-                    <input type="date" id="act-fecha-fin" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold">
+                    <input type="date" id="act-fecha-fin" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold" data-ui-help-key="fechas.calendario">
                 </div>
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Estrategia de Afectación de Clases *</label>
