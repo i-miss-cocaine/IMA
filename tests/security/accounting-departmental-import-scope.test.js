@@ -183,7 +183,14 @@ assert.equal(rollbackCalls[1].action, "compensateMigratedEntity");
 const routeStart = accounting.indexOf("const MIGRATION_OWNER_SCHEMAS_=");
 const routeEnd = accounting.indexOf("function migrationStableJson_", routeStart);
 const routeCalls = [];
-const routeHarness = { PropertiesService: { getScriptProperties: () => ({ getProperty: key => key === "IMA_USER_SERVICE_URL" ? "https://user.example.test/exec" : "12345678901234567890123456789012" }) }, createInterServiceEnvelope: (source, target, action, payload) => ({ sourceService: source, targetService: target, action, payload }), UrlFetchApp: { fetch: (url, options) => { routeCalls.push({ url, envelope: JSON.parse(options.payload) }); return { getResponseCode: () => 200, getContentText: () => JSON.stringify({ status: "success", ownershipId: "OWN-1" }) }; } } };
+const routeHarness = {
+  PropertiesService: { getScriptProperties: () => ({ getProperty: key => key === "IMA_USER_SERVICE_URL" ? "https://user.example.test/exec" : "12345678901234567890123456789012" }) },
+  isAccountingTrustedAppsScriptEndpoint_: () => true,
+  accountingComputeHmacSignature_: () => "signed-hmac",
+  Utilities: { getUuid: () => "12345678-1234-1234-1234-123456789012", MacAlgorithm: { HMAC_SHA_256: "HMAC_SHA_256" }, computeHmacSignature: () => [1,2,3] },
+  createInterServiceEnvelope: (source, target, action, payload) => ({ sourceService: source, targetService: target, action, payload }),
+  UrlFetchApp: { fetch: (url, options) => { routeCalls.push({ url, envelope: JSON.parse(options.payload) }); return { getResponseCode: () => 200, getContentText: () => JSON.stringify({ status: "success", ownershipId: "OWN-1" }) }; } }
+};
 vm.runInNewContext(accounting.slice(routeStart, routeEnd) + "\n" + extractFunction(accounting, "sendMigrationOwnerRequest_") + "\nthis.send = sendMigrationOwnerRequest_;", routeHarness);
 assert.equal(routeHarness.send("empleadoOwnership", "registerMigratedResourceOwnership", { resourceId: "EMP-1" }).status, "success");
 assert.equal(routeCalls[0].url, "https://user.example.test/exec");
