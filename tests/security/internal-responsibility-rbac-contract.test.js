@@ -431,7 +431,7 @@ const rbacCtx = {
   PUBLIC_ACTIONS:[],
   IDENTITY_MANAGER_ACTIONS_:[],
   IDENTITY_MANAGER_ROLES_:[],
-  ROLE_PERMISSIONS:{Director:[],Auditor:[]},
+  ROLE_PERMISSIONS:{Director:[],Auditor:["viewAuditLogs"]},
   getIdentityInstitutionId_:()=> "INST-1",
   getDynamicPermissionCacheKey_:()=> "rbac-c1-627",
   CacheService:{getScriptCache:()=>rbacCache},
