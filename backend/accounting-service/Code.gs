@@ -20047,11 +20047,13 @@ function importDataWithColumnMapping(payload) {
     error: "RESOURCE_OWNERSHIP_REPAIR_REQUIRED",
     detalle: "El expediente laboral ya existía y su titularidad no pudo confirmarse; requiere reintento de registro."
   });
+  const auditFindings = finalErrors.map(function(item) { return Object.assign({ severity: "ERROR" }, item); })
+    .concat((preview.advertencias || []).map(function(item) { return Object.assign({ severity: "WARNING" }, item); }));
 
   try {
     audit.appendRow([
       runId, nombreArchivo || "importacion", destinoModulo, rows.length, successfulCount,
-      finalErrors.length, JSON.stringify(mapping), JSON.stringify(finalErrors.slice(0, 20)), status, createdBy
+      finalErrors.length, JSON.stringify(mapping), JSON.stringify(auditFindings.slice(0, 50)), status, createdBy
     ]);
   } catch (auditError) {
     if (!writeErrors.length) {
@@ -20078,6 +20080,7 @@ function importDataWithColumnMapping(payload) {
     filasPendientes: rows.length - successfulCount,
     filasOmitidasPorValidacion: omittedRows,
     errores: finalErrors.slice(0, 50),
+    advertencias: (preview.advertencias || []).slice(0, 50),
     estado: status,
     message: writeFailed
       ? "El lote no se confirmó; las escrituras nuevas se compensaron o la reparación de titularidad quedó identificada."
