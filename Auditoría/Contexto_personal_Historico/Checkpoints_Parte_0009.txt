@@ -1062,3 +1062,51 @@ TASK-106 — Integridad criptográfica, versionado y protección contra sustituc
 - F34-TASK06: completada en código y CI; beta pendiente.
 - Siguiente tarea elegible: TASK-108 (P0), bandeja de salida institucional y control de entregas con acuses, reutilizando el núcleo F34-Task02 y las dependencias F34-Task04/F34-Task06. No reconstruir la funcionalidad ya implementada.
 ===============================================================================
+
+
+===============================================================================
+## C1.757 — IMA-EXEC-20261115-TASK108-OUTBOX-DELIVERY-CONTROLS-01
+- **Fecha:** 2026-11-15
+- **Rama exclusiva:** NG_beta_0.0.0.1_work
+- **HEAD inicial:** 3b69408e2e0d740747c4c6ab80bbffcf508d409
+- **HEAD de implementación USER:** 0026d3fcf4b779db05c05231e18617707a741689
+- **HEAD de pruebas de contrato:** 06bd0dd1191b6c159fb4cc7e0c18047729760946
+- **CI verificado:** ima/department-scope-contract SUCCESS (Node 24) en 06bd0dd1191b6c159fb4cc7e0c18047729760946
+- **HEAD previo a publicar este checkpoint:** 3b69408e2e0d740747c4c6ab80bbffcf508d409
+- **Normativa:** Normas_Desarollo.md v1.4.
+
+### Alcance completado en USER
+- Bandeja personal del emisor getMyDepartmentalOutbox, filtrada por identidad autenticada, y bandeja departamental con rechazo de remitente suplantado.
+- Alias sendInstitutionalDispatch y lote sendInstitutionalDispatchBatch, con clave idempotente estable por documento y estado individual por destinatario. Cada destinatario debe tener un documento emitido canónico propio para preservar ownership.
+- Canales PLATAFORMA, CORREO y PLATAFORMA_Y_CORREO; correo requiere consentimiento explícito en Usuarios. No se habilita push sin proveedor.
+- Modalidad tenant-scoped MODALIDAD_ACUSE_RECIBO_NOTIFICACIONES; default EXPLICITO_CLIC_CONFIRMACION. AUTOMATICO_POR_LECTURA genera RECIBIDO_AUTOMATICO_POR_LECTURA con advertencia y sin FechaConfirmacion/SHA256Confirmacion.
+- Reintentos de correo serializados con ScriptLock y HTML escapado; el éxito del reintento sincroniza EstadoCorreo en EntregasDocumentales y agrega DOCUMENT_EMAIL_RETRY_SENT. Los eventos de fallos anteriores permanecen en HistorialEventosJSON.
+- Se elimina propiedad duplicada fechaRevocacionEnlace de la respuesta getMyDocumentDeliveries.
+
+### Archivos
+- backend/user-service/Code.gs
+- tests/security/user-service-departmental-outbox.test.js
+- tests/security/user-service-workflow-notifications.test.js
+- pendientes/Secretaria/Pendientes.md
+- Auditoría/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md
+- changueslogs.txt
+- beta_test_Parte_0002.txt (BETA-FUNC-106)
+
+### Verificación
+- Parseo de backend USER completo: PASS.
+- Parseo y extracción de 25 funciones de entrega/acuse: PASS.
+- Harness aislado V8 con mocks: PASS (lote, destinatarios, consentimiento, bandeja personal, suplantación, modo automático).
+- Reintento de correo con cuota simulada: PASS (Pendiente_Reintento -> Entregado, HTML escapado, estado de entrega reconciliado).
+- GitHub Actions Department Scope Contract: SUCCESS, Node 24; incluye pruebas de bandeja/outbox y notificaciones.
+- No se alteró el branch base. No se registró IP de cliente inventada.
+
+### Límites que mantienen TASK-108 abierto
+- Apps Script Web App no expone IP cliente confiable al handler actual; requiere proxy/gateway confiable y contrato autenticado.
+- backend/accounting-service/Code.gs está vacío; falta modelo canónico de comprobantes contables y su autorización para conectarlo.
+- No existe proveedor push ni modelo de múltiples adjuntos; el despacho por lote usa un documento canónico por destinatario.
+- BETA-FUNC-106 pendiente de despliegue real en Apps Script/Drive/Sheets/MailApp.
+
+### Estado y continuidad
+- TASK-108: parcial avanzado en código/CI; no se marca completada por los criterios externos pendientes.
+- Siguiente tarea elegible independiente: TASK-130 (ayudas permanentes y descripciones de formularios), sujeto a verificar F38-Task01/F38-Task02 y Normas_Desarollo.md.
+===============================================================================
