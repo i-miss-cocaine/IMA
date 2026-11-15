@@ -208,9 +208,10 @@ console.log("User role membership contract: institution/user binding, effective 
 
 
 {
+  // ACCOUNTING delegates session verification to USER through its signed interservice adapter;
+  // only services that locally verify session tokens are included in this shared-ledger harness.
   const servicePaths = [
     "../../backend/academic-service/Code.gs",
-    "../../backend/accounting-service/Code.gs",
     "../../backend/task-service/Code.gs",
     "../../backend/exam-service/Code.gs"
   ];
