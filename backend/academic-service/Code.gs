@@ -10195,7 +10195,7 @@ function getDailyAttendance(payload) {
 }
 
 
-const ABSENCE_JUSTIFICATION_HEADERS_ = ["JustificacionID","UserId","FechaAfectada","Periodo","MotivoDeclarado","AdjuntoUrl","PresentadoPor","EstadoRevision","RevisadoPor","ObservacionesAdmin","FechaResolucion","SolicitudID","SesionIDsJSON","DecisionHistoryJSON","SyncEstado","UltimoError","CreadoPorUserId","ActualizadoEn","ObservacionesPublicas","AdjuntoSHA256","AdjuntoVersion","AdjuntoSizeBytes","AdjuntoMimeType","AdjuntoFechaRecepcion","AdjuntoIntegridadEstado","SesionIDsSolicitadasJSON","AlcanceAprobacion","FechasAfectadasJSON"];
+const ABSENCE_JUSTIFICATION_HEADERS_ = ["JustificacionID","UserId","FechaAfectada","Periodo","MotivoDeclarado","AdjuntoUrl","PresentadoPor","EstadoRevision","RevisadoPor","ObservacionesAdmin","FechaResolucion","SolicitudID","SesionIDsJSON","DecisionHistoryJSON","SyncEstado","UltimoError","CreadoPorUserId","ActualizadoEn","ObservacionesPublicas","AdjuntoSHA256","AdjuntoVersion","AdjuntoSizeBytes","AdjuntoMimeType","AdjuntoFechaRecepcion","AdjuntoIntegridadEstado","SesionIDsSolicitadasJSON","AlcanceAprobacion","FechasAfectadasJSON","EvidenciaIDsJSON"];
 const ABSENCE_ATTENDANCE_HEADERS_ = ["RegistroID","SesionID","UserId","EstadoAsistencia","HoraLlegada","MinutosTardanza","Justificado","ObservacionDocente","FechaRegistro","JustificacionID"];
 const ABSENCE_REQUEST_EXTRA_HEADERS_ = ["JustificacionID","FechaAfectada","Periodo","SesionIDsJSON","SyncEstado","MotivoJustificacion","UltimoError","AdjuntoSHA256","AdjuntoVersion","AdjuntoSizeBytes","AdjuntoMimeType","AdjuntoFechaRecepcion","AdjuntoIntegridadEstado","SesionIDsSolicitadasJSON","AlcanceAprobacion","FechasAfectadasJSON"];
 
@@ -10491,6 +10491,7 @@ function createCanonicalAbsenceJustificationUnlocked_(payload) {
   newRow[justMap.UserId] = studentId;
   newRow[justMap.FechaAfectada] = dateKey;
   newRow[justMap.FechasAfectadasJSON] = JSON.stringify(dateKeys);
+  newRow[justMap.EvidenciaIDsJSON] = JSON.stringify(Array.isArray(p.evidenciaIds) ? p.evidenciaIds : []);
   newRow[justMap.Periodo] = period;
   newRow[justMap.MotivoDeclarado] = reason;
   newRow[justMap.AdjuntoUrl] = attachmentFileId;
@@ -10610,6 +10611,9 @@ function reviewCanonicalAbsenceJustification_(payload) {
     var retryApproval = current === "PendienteSincronizacion" && target === "Aprobada" && syncState === "PENDIENTE";
     var retryRevocation = current === "RevocacionPendienteSincronizacion" && target === "Cancelada" && syncState === "PENDIENTE_REVOCACION";
     var approvalScope = null;
+    var evidenceIds = Array.isArray(p.evidenceIds) ? p.evidenceIds.map(function(value) { return String(value || "").trim(); }).filter(Boolean) : [];
+    var evidenceSnapshotHash = String(p.evidenceSnapshotHash || "").trim().toLowerCase();
+    if (target === "Aprobada" && evidenceIds.length && !/^[a-f0-9]{64}$/.test(evidenceSnapshotHash)) return { status: "error", code: "EVIDENCE_DECISION_HASH_REQUIRED" };
     if (target === "Aprobada") {
       var policies = absenceJustificationPolicies_(ss);
       var requestedSessions = [];
@@ -10650,7 +10654,7 @@ function reviewCanonicalAbsenceJustification_(payload) {
       if (target === "Aprobada" && current !== "Pendiente" && current !== "RequiereInformacion") return { status: "error", code: "ABSENCE_DECISION_CONFLICT" };
       if (target === "Rechazada" && current !== "Pendiente" && current !== "RequiereInformacion") return { status: "error", code: "ABSENCE_DECISION_CONFLICT" };
       if (target === "RequiereInformacion" && current !== "Pendiente") return { status: "error", code: "ABSENCE_DECISION_CONFLICT" };
-      history.push({ action: target === "Aprobada" ? "APPROVE" : target === "Cancelada" ? "REVOKE" : target.toUpperCase(), actorId: actorId, actorRole: actorRole, timestamp: new Date().toISOString(), observation: String(p.observacionesAdmin || "").slice(0, 2000), approvedSessionIds: approvalScope ? approvalScope.selected : [], approvalScope: approvalScope ? approvalScope.scope : "" });
+      history.push({ action: target === "Aprobada" ? "APPROVE" : target === "Cancelada" ? "REVOKE" : target.toUpperCase(), actorId: actorId, actorRole: actorRole, timestamp: new Date().toISOString(), observation: String(p.observacionesAdmin || "").slice(0, 2000), approvedSessionIds: approvalScope ? approvalScope.selected : [], approvalScope: approvalScope ? approvalScope.scope : "", evidenceIds: evidenceIds, evidenceSnapshotHash: evidenceSnapshotHash, evidenceIntegrityWarning: p.evidenceIntegrityWarning === true });
     }
     if (target === "Aprobada" || target === "Cancelada" && (current === "Aprobada" || retryRevocation)) {
       var pendingState = target === "Aprobada" ? "PendienteSincronizacion" : "RevocacionPendienteSincronizacion";
