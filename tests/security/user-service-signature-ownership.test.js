@@ -200,7 +200,7 @@ function makeHarness(options = {}) {
   forgedHash.payload.documentoHash="0".repeat(64);
   assert.throws(()=>forgedHash.execute(),/DOCUMENT_HASH_MISMATCH/);
   assert.equal(forgedHash.transactions.appends.length,0);
-  assert.equal(forgedHash.state.driveReads,2);
+  assert.equal(forgedHash.state.driveReads,1,"reject a mismatched client hash before the second stability read");
 
   const malformedHash=makeHarness();
   malformedHash.payload.documentoHash="not-a-sha256";
