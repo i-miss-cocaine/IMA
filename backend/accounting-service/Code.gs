@@ -983,8 +983,7 @@ function isAccountingTrustedAppsScriptEndpoint_(value) {
   var endpoint = String(value || "").trim();
   var standardDeployment = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/i.test(endpoint);
   var domainDeployment = /^https:\/\/script\.google\.com\/a\/macros\/[A-Za-z0-9.-]+\/s\/[A-Za-z0-9_-]+\/exec$/i.test(endpoint);
-  var configuredProxy = /^https:\/\/[^/]+\/exec$/i.test(endpoint);
-  return standardDeployment || domainDeployment || configuredProxy;
+  return standardDeployment || domainDeployment;
 }
 
 function accountingComputeHmacSignature_(message, secret) {
