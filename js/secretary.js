@@ -1701,3 +1701,126 @@ window.handleIdentityAccountLink = async function(event) {
  try{var r=await window.linkPersonAccount({userId:val("identity-link-user"),personaId:val("identity-link-person"),motivo:val("identity-link-reason")});if(!r||r.status!=="success")throw new Error((r&&r.message)||"No se pudo vincular.");if(status)status.textContent=r.message||"Cuenta vinculada con historial auditable.";}
  catch(e){if(status)status.textContent="Error: "+String(e.message||e);}
 };
+
+
+// F34/TASK-105: bandeja canónica de justificaciones y decisiones administrativas.
+window.absenceJustificationQueue = window.absenceJustificationQueue || [];
+window.escapeAbsenceReviewHtml = function(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function(char) {
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]);
+    });
+};
+
+window.loadAbsenceJustificationQueue = async function() {
+    const statusNode = document.getElementById('absence-review-status');
+    const bodyNode = document.getElementById('absence-justifications-table-body');
+    if (!statusNode || !bodyNode) return;
+    statusNode.textContent = 'Consultando justificaciones institucionales...';
+    bodyNode.innerHTML = '<tr><td colspan="5" class="p-5 text-center text-slate-400">Cargando...</td></tr>';
+    try {
+        const response = await window.fetchApi('USER', 'getAdministrativeRequests', {});
+        if (!response || response.status !== 'success' || !Array.isArray(response.data)) {
+            throw new Error(response && (response.message || response.code) || 'No fue posible consultar la bandeja.');
+        }
+        const rows = response.data.filter(function(item) {
+            return String(item.tipoTramite || '').trim() === 'Justificación de Ausencia';
+        });
+        window.absenceJustificationQueue = rows;
+        statusNode.textContent = rows.length + ' justificación(es) registradas.';
+        if (!rows.length) {
+            bodyNode.innerHTML = '<tr><td colspan="5" class="p-5 text-center text-slate-400">No hay justificaciones registradas.</td></tr>';
+            return;
+        }
+        bodyNode.innerHTML = rows.map(function(item) {
+            const id = window.escapeAbsenceReviewHtml(item.solicitudId || '');
+            const dates = Array.isArray(item.fechasAfectadas) ? item.fechasAfectadas : [];
+            const sessions = Array.isArray(item.sesionesSolicitadas) ? item.sesionesSolicitadas : [];
+            const status = String(item.estado || 'Pendiente');
+            const finalState = ['Rechazada','Cancelada'].indexOf(status) !== -1;
+            const attachmentLabel = item.tieneAdjunto
+                ? ('Adjunto · ' + String(item.integridadAdjunto || 'LEGACY_UNVERIFIED'))
+                : 'Sin adjunto';
+            const actions = finalState ? '<span class="text-xs text-slate-400">Estado final</span>' : [
+                '<button type="button" onclick="window.reviewAbsenceJustificationAction(\'' + id + '\',\'Aprobada\')" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700">Aprobar</button>',
+                sessions.length > 1 ? '<button type="button" onclick="window.reviewAbsenceJustificationAction(\'' + id + '\',\'PARCIAL\')" class="px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700">Parcial</button>' : '',
+                '<button type="button" onclick="window.reviewAbsenceJustificationAction(\'' + id + '\',\'Rechazada\')" class="px-2.5 py-1.5 rounded-lg bg-rose-600 text-white font-bold hover:bg-rose-700">Rechazar</button>'
+            ].join(' ');
+            const attachmentButton = item.tieneAdjunto
+                ? '<button type="button" onclick="window.openAbsenceJustificationAttachment(\'' + id + '\')" class="mt-1 text-xs text-blue-700 font-semibold hover:underline">Ver evidencia</button>'
+                : '';
+            return '<tr>' +
+                '<td class="p-3 align-top"><strong class="block text-slate-800">' + id + '</strong><span class="text-[10px] text-slate-500">Estudiante: ' + window.escapeAbsenceReviewHtml(item.estudianteId || '—') + '</span></td>' +
+                '<td class="p-3 align-top text-slate-600">' + window.escapeAbsenceReviewHtml(dates.join(', ') || '—') + '<br><span class="text-[10px] text-slate-400">' + window.escapeAbsenceReviewHtml(item.periodo || '') + '</span><br><span class="text-[10px] text-slate-400">' + sessions.length + ' sesión(es)</span></td>' +
+                '<td class="p-3 align-top text-slate-600 max-w-sm"><span class="block whitespace-normal">' + window.escapeAbsenceReviewHtml(item.descripcion || '') + '</span><span class="text-[10px] text-slate-500">' + window.escapeAbsenceReviewHtml(attachmentLabel) + '</span><br>' + attachmentButton + '</td>' +
+                '<td class="p-3 align-top"><span class="inline-flex px-2 py-1 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold">' + window.escapeAbsenceReviewHtml(status) + '</span></td>' +
+                '<td class="p-3 align-top text-right"><div class="flex flex-wrap justify-end gap-1">' + actions + '</div></td>' +
+            '</tr>';
+        }).join('');
+    } catch (error) {
+        statusNode.textContent = 'No se pudo cargar la bandeja: ' + String(error.message || error);
+        bodyNode.innerHTML = '<tr><td colspan="5" class="p-5 text-center text-rose-600">Error al consultar las justificaciones.</td></tr>';
+    }
+};
+
+window.reviewAbsenceJustificationAction = async function(solicitudId, action) {
+    const item = window.absenceJustificationQueue.find(function(row) {
+        return String(row.solicitudId || '') === String(solicitudId || '');
+    });
+    if (!item) { alert('La solicitud ya no está disponible. Actualice la bandeja.'); return; }
+    let nuevoEstado = action;
+    let sesionIdsAprobadas;
+    if (action === 'PARCIAL') {
+        const available = Array.isArray(item.sesionesSolicitadas) ? item.sesionesSolicitadas : [];
+        if (!available.length) { alert('No hay sesiones verificadas para una aprobación parcial.'); return; }
+        const raw = prompt('Ingrese únicamente los IDs de sesión que Secretaría aprueba, separados por coma:\n' + available.join(', '), available.join(', '));
+        if (raw === null) return;
+        sesionIdsAprobadas = raw.split(',').map(function(value) { return value.trim(); }).filter(Boolean);
+        if (!sesionIdsAprobadas.length) { alert('Debe seleccionar al menos una sesión.'); return; }
+        nuevoEstado = 'Aprobada';
+    }
+    const observacionesAdmin = prompt('Observaciones de la decisión administrativa (opcional):', item.observacionesAdmin || '');
+    if (observacionesAdmin === null) return;
+    try {
+        const response = await window.fetchApi('USER', 'reviewAbsenceJustification', {
+            solicitudId: solicitudId,
+            nuevoEstado: nuevoEstado,
+            observacionesAdmin: observacionesAdmin,
+            sesionIdsAprobadas: sesionIdsAprobadas
+        });
+        if (!response || response.status !== 'success') {
+            throw new Error(response && (response.message || response.code) || 'No fue posible registrar la decisión.');
+        }
+        alert(response.message || 'Decisión registrada.');
+        await window.loadAbsenceJustificationQueue();
+    } catch (error) {
+        alert('No se pudo completar la revisión: ' + String(error.message || error));
+    }
+};
+
+window.openAbsenceJustificationAttachment = async function(solicitudId) {
+    try {
+        const response = await window.fetchApi('USER', 'getAdministrativeRequestAttachment', { solicitudId: solicitudId });
+        if (!response || response.status !== 'success' || !response.fileData) {
+            throw new Error(response && (response.message || response.code) || 'Evidencia no disponible.');
+        }
+        if (response.integrityVerified !== true &&
+            !confirm('La evidencia histórica no tiene verificación SHA-256. ¿Desea abrirla identificada como LEGACY_UNVERIFIED?')) return;
+        const binary = atob(response.fileData);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const blob = new Blob([bytes], { type: response.mimeType || 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const opened = window.open(url, '_blank', 'noopener');
+        if (!opened) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = response.fileName || 'evidencia';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+        window.setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
+    } catch (error) {
+        alert('No fue posible abrir la evidencia: ' + String(error.message || error));
+    }
+};
