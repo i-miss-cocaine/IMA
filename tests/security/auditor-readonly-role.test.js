@@ -67,6 +67,7 @@ const userPermissionContext = {
 vm.runInNewContext(extractFunction(user.source, "validateRolePermission") +
   "\nthis.check = validateRolePermission;", userPermissionContext);
 assert.equal(userPermissionContext.check("getAuditReport", { _verifiedUserId: "AUD-1" }).authorized, true);
+assert.equal(userPermissionContext.check("viewAuditLogs", { _verifiedUserId: "AUD-1" }).authorized, true);
 assert.equal(userPermissionContext.check("importDataWithColumnMapping", { _verifiedUserId: "AUD-1" }).authorized, false,
   "a dynamic wildcard cannot grant the Auditor a write action");
 const academicPermissionContext = {
