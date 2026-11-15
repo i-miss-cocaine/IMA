@@ -80,6 +80,10 @@ on:
       - js/teacher.js
       - tests/security/user-service-departmental-outbox.test.js
       - tests/security/user-service-workflow-notifications.test.js
+      - tests/security/user-service-ui-metadata.test.js
+      - tests/ui/**
+      - student-dashboard.html
+      - .github/workflows/ui-accessibility-contract.yml
       - tests/security/accounting-employee-loan-advance-ownership.test.js
       - tests/security/accounting-payroll-loan-amortization.test.js
       - tests/security/accounting-payroll-concept-catalog.test.js
@@ -145,6 +149,10 @@ jobs:
         run: node tests/security/user-service-departmental-outbox.test.js
       - name: Run reactive workflow notification privacy, deduplication and concurrency contract
         run: node tests/security/user-service-workflow-notifications.test.js
+      - name: Run versioned UI metadata catalog contract
+        run: node tests/security/user-service-ui-metadata.test.js
+      - name: Run accessible tooltip positioning and interaction contract
+        run: node tests/ui/accessible-tooltips.test.js
       - name: Run accounting employee loan request and approval ownership contract
         run: node tests/security/accounting-employee-loan-advance-ownership.test.js
       - name: Run accounting payroll loan amortization and reversal contract
