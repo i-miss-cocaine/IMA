@@ -4967,6 +4967,57 @@ function compareEvidenceRetry_(ss, solicitudId, attachmentRecords) {
   });
 }
 
+function getEvidenceSnapshotForDecision_(ss, solicitudId, evidenceIds, actorId, actorRole, parentHasAttachment) {
+  var ids = Array.isArray(evidenceIds) ? evidenceIds.map(function(value) { return String(value || "").trim(); }).filter(Boolean) : [];
+  var snapshot = [], warning = false;
+  if (ids.length) {
+    var records = getEvidenceRecordsForRequest_(ss, solicitudId, true);
+    var selected = records.filter(function(record) { return ids.indexOf(String(record.EvidenciaID || "").trim()) !== -1; });
+    if (selected.length !== ids.length) return { status: "error", code: "EVIDENCE_RECORD_MISSING" };
+    selected.forEach(function(record) {
+      var verification = verifyEvidenceDocumentRecord_(ss, record, "reviewAbsenceJustification", actorId);
+      if (verification.status === "error") throw new Error(verification.code || "EVIDENCE_INTEGRITY_VERIFICATION_FAILED");
+      if (verification.status === "warning") warning = true;
+      snapshot.push({ evidenciaId: String(record.EvidenciaID), groupId: String(record.EvidenciaGrupoID),
+        version: Number(record.VersionNumero), sha256: String(record.SHA256).toLowerCase(),
+        verified: verification.integrityVerified === true });
+    });
+  } else if (parentHasAttachment) {
+    var legacy = getAdministrativeRequestAttachment({ solicitudId: solicitudId, _verifiedUserId: actorId,
+      _verifiedRole: actorRole, verifyOnly: true });
+    if (!legacy || legacy.status !== "success" || legacy.integrityVerified !== true) {
+      var policy = getEvidenceIntegrityPolicy_(ss);
+      if (policy !== "ADVERTENCIA_VISUAL_REVISOR") return { status: "error", code: legacy && legacy.code || "EVIDENCE_INTEGRITY_UNVERIFIED" };
+      warning = true;
+      snapshot.push({ evidenciaId: "", groupId: "LEGACY_PRIMARY", version: Number(legacy && legacy.attachmentVersion || 0),
+        sha256: String(legacy && legacy.sha256 || ""), verified: false });
+    } else {
+      snapshot.push({ evidenciaId: "", groupId: "LEGACY_PRIMARY", version: Number(legacy.attachmentVersion || 1),
+        sha256: String(legacy.sha256 || "").toLowerCase(), verified: true });
+    }
+  }
+  snapshot.sort(function(a,b) { return a.groupId.localeCompare(b.groupId); });
+  var snapshotHash = snapshot.length ? computeDocumentSHA256(JSON.stringify(snapshot)).toLowerCase() : "";
+  return { status: "success", evidenceIds: ids, snapshot: snapshot, snapshotHash: snapshotHash, integrityWarning: warning };
+}
+
+function markEvidenceDecision_(ss, solicitudId, evidenceIds, snapshotHash, decisionId, integrityWarning) {
+  if (!Array.isArray(evidenceIds) || !evidenceIds.length) return true;
+  var schema = ensureEvidenceDocumentSchema_(ss), rows = schema.sheet.getDataRange().getValues();
+  var now = new Date().toISOString(), found = {};
+  for (var i = 1; i < rows.length; i++) {
+    var id = String(rows[i][schema.map.EvidenciaID] || "").trim();
+    if (evidenceIds.indexOf(id) === -1 || String(rows[i][schema.map.SolicitudID] || "").trim() !== solicitudId) continue;
+    schema.sheet.getRange(i + 1, schema.map.DecisionHash + 1).setValue(snapshotHash);
+    schema.sheet.getRange(i + 1, schema.map.DecisionID + 1).setValue(decisionId);
+    schema.sheet.getRange(i + 1, schema.map.DecisionTimestamp + 1).setValue(now);
+    schema.sheet.getRange(i + 1, schema.map.Estado + 1).setValue(integrityWarning ? "APROBADA_CON_ADVERTENCIA" : "APROBADA");
+    found[id] = true;
+  }
+  if (evidenceIds.some(function(id) { return !found[id]; })) throw new Error("EVIDENCE_DECISION_BINDING_INCOMPLETE");
+  return true;
+}
+
 function verifyDocumentEvidenceIntegrity(payload) {
   var p = payload || {}, solicitudId = String(p.solicitudId || "").trim(), evidenciaId = String(p.evidenciaId || "").trim();
   if (!solicitudId || !evidenciaId) return { status: "error", code: "EVIDENCE_ID_REQUIRED" };
