@@ -1860,12 +1860,24 @@ function saveInstitutionalComplementaryService(payload) {
   try {
     const sheet = ensureInstitutionalComplementaryServiceCatalog_(ss), rows = sheet.getDataRange().getValues();
     const requestedId = String(data.servicioId || "").trim();
-    const matches = rows.map((row, index) => ({ row: row, rowNumber: index + 1 }))
-      .filter(item => item.rowNumber > 1 &&
-        (requestedId ? String(item.row[0] || "").trim() === requestedId :
-          String(item.row[1] || "").trim().toUpperCase() === key && String(item.row[9] || "").trim() === year));
-    if (matches.length > 1) throw new Error("INSTITUTIONAL_SERVICE_CONFIGURATION_DUPLICATE");
-    const existing = matches[0], id = existing ? existing.row[0] : ("SVC-" + Utilities.getUuid());
+    const records = rows.map((row, index) => ({ row: row, rowNumber: index + 1 }))
+      .filter(item => item.rowNumber > 1);
+    const idMatches = requestedId ? records.filter(item => String(item.row[0] || "").trim() === requestedId) : [];
+    const keyYearMatches = records.filter(item =>
+      String(item.row[1] || "").trim().toUpperCase() === key && String(item.row[9] || "").trim() === year);
+    if (idMatches.length > 1 || keyYearMatches.length > 1) {
+      throw new Error("INSTITUTIONAL_SERVICE_CONFIGURATION_DUPLICATE");
+    }
+    if (requestedId && idMatches.length !== 1) throw new Error("INSTITUTIONAL_SERVICE_NOT_FOUND");
+    if (requestedId && keyYearMatches.some(item => String(item.row[0] || "").trim() !== requestedId)) {
+      throw new Error("INSTITUTIONAL_SERVICE_CONFIGURATION_DUPLICATE");
+    }
+    const identified = requestedId ? idMatches[0] : null;
+    // A service ID belongs to one school year. A year change creates a new version
+    // rather than overwriting the historical configuration.
+    const existing = identified && String(identified.row[9] || "").trim() === year
+      ? identified : (!requestedId ? keyYearMatches[0] : null);
+    const id = existing ? existing.row[0] : ("SVC-" + Utilities.getUuid());
     const now = new Date();
     const values = [id, key, name, category, modality, capacity, JSON.stringify(responsible), fee,
       JSON.stringify(rules), year, state, start, end, "PLATAFORMA", data.referenciaOrigen || "",
@@ -1915,7 +1927,6 @@ function createStoreOrder(payload) {
   if (!requestedUserId || !Array.isArray(detalleItems) || detalleItems.length === 0) throw new Error("userId y lista de productos (detalleItems) son requeridos.");
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  if (!institutionalServiceIsActive_(ss, "TIENDA", String(payload && payload.anoLectivo || new Date().getFullYear()))) throw new Error("INSTITUTIONAL_SERVICE_PAUSED");
   const actorId = String(payload && payload._verifiedUserId || "").trim();
   const roleKey = String(payload && payload._verifiedRole || "").trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z]/g, "");
   const studentRoles = ["ESTUDIANTE", "ALUMNO", "STUDENT"];
@@ -1935,6 +1946,9 @@ function createStoreOrder(payload) {
   let prodSheet = null, orderSheet = null, creditPolicy = null, createdOrderRowNumber = null;
   const changedStocks = [];
   try {
+    if (!institutionalServiceIsActive_(ss, "TIENDA", String(payload && payload.anoLectivo || new Date().getFullYear()))) {
+      throw new Error("INSTITUTIONAL_SERVICE_PAUSED");
+    }
     prodSheet = getOrCreateSheet(ss, "TiendaProductos");
     orderSheet = getOrCreateSheet(ss, "TiendaOrdenes");
     if (usesFamilyCredit) creditPolicy = familyCreditRequirePurchaseAuthorizationForStudent_(ss, userId);
@@ -2304,7 +2318,6 @@ function createCafeteriaOrder(payload) {
   if (!requestedStudentId || !Array.isArray(detalleItems) || detalleItems.length === 0) throw new Error("estudianteUserId y lista de alimentos (detalleItems) son requeridos.");
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  if (!institutionalServiceIsActive_(ss, "CAFETERIA", String(payload && payload.anoLectivo || new Date().getFullYear()))) throw new Error("INSTITUTIONAL_SERVICE_PAUSED");
   const actorId = String(payload && payload._verifiedUserId || "").trim();
   const roleKey = String(payload && payload._verifiedRole || "").trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z]/g, "");
   const studentRoles = ["ESTUDIANTE", "ALUMNO", "STUDENT"];
@@ -2327,6 +2340,9 @@ function createCafeteriaOrder(payload) {
   let menuSheet = null, orderSheet = null, creditPolicy = null, createdOrderRowNumber = null;
   const changedStocks = [];
   try {
+    if (!institutionalServiceIsActive_(ss, "CAFETERIA", String(payload && payload.anoLectivo || new Date().getFullYear()))) {
+      throw new Error("INSTITUTIONAL_SERVICE_PAUSED");
+    }
     menuSheet = getOrCreateSheet(ss, "CafeteriaMenu");
     orderSheet = getOrCreateSheet(ss, "CafeteriaPedidos");
     if (usesFamilyCredit) {

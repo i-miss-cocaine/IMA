@@ -139,6 +139,23 @@ assert.equal(context.getInstitutionalComplementaryServices({
   _verifiedRole: "Director", anoLectivo: "2027", incluirHistorico: true
 }).services.length, 3);
 
+const nextYearVersion = context.saveInstitutionalComplementaryService({
+  _verifiedRole: "Director", _verifiedUserId: "DIR-1", servicioId: saved.servicioId,
+  servicioClave: "TUTORIAS", nombre: "Tutorías académicas", categoria: "ACADEMICO",
+  modalidad: "RECURRENTE", cupoMaximo: 25, tarifa: 400, anoLectivo: "2029",
+  responsablesJSON: ["DOC-1"], reglasAutorizacionFamiliarJSON: {}, estado: "ACTIVO"
+});
+assert.equal(nextYearVersion.actualizado, false, "changing school year must create a new historical version");
+assert.notEqual(nextYearVersion.servicioId, saved.servicioId);
+assert.equal(sheets.ServiciosCatalogoInstitucional.rows[1][9], "2027", "prior year must remain unchanged");
+assert.equal(sheets.ServiciosCatalogoInstitucional.rows[4][9], "2029");
+assert.throws(() => context.saveInstitutionalComplementaryService({
+  _verifiedRole: "Director", _verifiedUserId: "DIR-1", servicioId: saved.servicioId,
+  servicioClave: "TUTORIAS", nombre: "Tutorías académicas", categoria: "ACADEMICO",
+  modalidad: "RECURRENTE", cupoMaximo: 25, tarifa: 400, anoLectivo: "2028",
+  responsablesJSON: [], reglasAutorizacionFamiliarJSON: {}, estado: "ACTIVO"
+}), /INSTITUTIONAL_SERVICE_CONFIGURATION_DUPLICATE/);
+
 context.setInstitutionalComplementaryServiceStatus({
   _verifiedRole: "Director", _verifiedUserId: "DIR-1", servicioClave: "TIENDA", anoLectivo: "2027", estado: "PAUSADO"
 });
@@ -178,5 +195,15 @@ assert.ok(directorRole.includes('"saveInstitutionalComplementaryService"'));
 assert.ok(directorRole.includes('"setInstitutionalComplementaryServiceStatus"'));
 assert.ok(directorRole.includes('"getInstitutionalComplementaryServices"'));
 assert.ok(parentRole.includes('"getInstitutionalComplementaryServices"'));
+const storeOrderSource = extract("createStoreOrder");
+const cafeteriaOrderSource = extract("createCafeteriaOrder");
+assert.ok(storeOrderSource.indexOf("lock.waitLock(10000)") < storeOrderSource.indexOf('institutionalServiceIsActive_(ss, "TIENDA"'),
+  "store service state must be revalidated after acquiring the order lock");
+assert.ok(cafeteriaOrderSource.indexOf("lock.waitLock(10000)") < cafeteriaOrderSource.indexOf('institutionalServiceIsActive_(ss, "CAFETERIA"'),
+  "cafeteria service state must be revalidated after acquiring the order lock");
+assert.ok(storeOrderSource.indexOf('institutionalServiceIsActive_(ss, "TIENDA"') < storeOrderSource.indexOf('prodSheet = getOrCreateSheet'),
+  "store service gate must run before stock reads or writes");
+assert.ok(cafeteriaOrderSource.indexOf('institutionalServiceIsActive_(ss, "CAFETERIA"') < cafeteriaOrderSource.indexOf('menuSheet = getOrCreateSheet'),
+  "cafeteria service gate must run before stock reads or writes");
 assert.ok(released);
 console.log("ACCOUNTING institutional complementary services catalog contract PASS.");
