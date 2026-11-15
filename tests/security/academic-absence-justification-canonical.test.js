@@ -89,11 +89,12 @@ const context = {
   Session: { getScriptTimeZone() { return "UTC"; } },
   getOrCreateSheet(_ss, name) { return sheet(name); },
   logStructuredEvent() {},
+  getVerifiedAcademicIdentity_(payload) { return { authorized: true, userId: payload._verifiedUserId, role: payload._verifiedRole }; },
   Date, Math, JSON, String, Number, Array, Object, Error
 };
 const names = [
   "ensureAbsenceHeaders_", "absenceDateKey_", "absenceResolvePeriod_", "absenceResolveSessions_", "absenceResolveSessionsForDates_",
-  "absenceSheetMap_", "absenceInstitutionalPolicyValue_", "absenceJustificationPolicies_", "absenceTeacherConformityComplete_", "teacherJustificationActiveState_", "teacherJustificationSha256_", "createCanonicalAbsenceJustification_", "createCanonicalAbsenceJustificationUnlocked_",
+  "absenceSheetMap_", "absenceInstitutionalPolicyValue_", "absenceJustificationPolicies_", "absenceTeacherConformityComplete_", "teacherJustificationActiveState_", "teacherJustificationSha256_", "teacherJustificationNormalizeRole_", "logTeacherJustificationAccessEvent_", "saveAbsenceJustificationPolicies", "createCanonicalAbsenceJustification_", "createCanonicalAbsenceJustificationUnlocked_",
   "absenceUpdateRequestProjection_", "absenceAttendanceSync_", "reviewCanonicalAbsenceJustification_",
   "reconcilePendingAttendanceJustifications", "submitAttendanceJustification", "computeDocumentSHA256"
 ];
@@ -296,6 +297,20 @@ assert.equal(conformityBlocked.code, "TEACHER_CONFORMITY_REQUIRED");
 const acknowledgements = sheet("ConstanciasConocimientoDocente");
 acknowledgements.appendRow(["ConstanciaID","JustificacionID","DocenteUserId","SesionID","TipoConstancia","FechaConocimiento","HashRegistro","Estado","CorrelationID"]);
 acknowledgements.appendRow(["ACK-1","JUST-CONFORMITY01","DOC-1","SES-CONFORMITY","CONFORMIDAD","2026-11-17T10:00:00.000Z",context.teacherJustificationSha256_(["ACK-1","JUST-CONFORMITY01","DOC-1","SES-CONFORMITY","CONFORMIDAD","2026-11-17T10:00:00.000Z"].join("|")),"ACTIVA",""]);
+const policySave = context.saveAbsenceJustificationPolicies({
+  _verifiedUserId: "ADMIN-1", _verifiedRole: "Administrador",
+  impacto: "INMEDIATO_AL_APROBAR_SECRETARIA", parcial: "HABILITADO"
+});
+assert.equal(policySave.status, "success");
+assert.deepEqual(context.absenceJustificationPolicies_(context.SpreadsheetApp.openById("TEST")), {
+  impact: "INMEDIATO_AL_APROBAR_SECRETARIA", partial: "HABILITADO"
+});
+const policySaveDenied = context.saveAbsenceJustificationPolicies({
+  _verifiedUserId: "SEC-1", _verifiedRole: "Secretaría",
+  impacto: "INMEDIATO_AL_APROBAR_SECRETARIA", parcial: "HABILITADO"
+});
+assert.equal(policySaveDenied.code, "AUTH_PERMISSION_DENIED");
+
 const conformityApproved = context.reviewCanonicalAbsenceJustification_({
   justificacionId: "JUST-CONFORMITY01", nuevoEstado: "Aprobada", actorId: "SEC-1", actorRole: "Secretaría"
 });
