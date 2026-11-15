@@ -79,6 +79,7 @@ context.buildImportPreview_ = function(payload) {
     ? departmentPreflight.rows[index]
     : context.mapMigrationRowToTarget_(row, payload.columnaMapeo, targetSchema));
   return { status: "success", validForImport: true, previewHash: "SCOPE-FIXTURE", departmentPreflight, identityResolutions, preparedRows,
+    departamentoDestino: departmentPreflight.departmentId, departamentosDestino: departmentPreflight.departmentIds, snapshotId: departmentPreflight.snapshotId,
     totalFilas: payload.filasData.length, filasValidas: payload.filasData.length, filasFallidas: 0, errores: [], advertencias: [] };
 };
 const originalRun = context.api.run;
