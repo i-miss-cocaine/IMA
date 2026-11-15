@@ -300,6 +300,10 @@ function buildImportPreview_(payload) {
   }
   var institutionId = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID") || "").trim();
   if (!institutionId) return { status: "error", code: "INSTITUTION_CONTEXT_REQUIRED", validForImport: false, errores: [] };
+  var fileValidation = validateImportWorkbookBinary_(input);
+  if (!fileValidation || fileValidation.valid !== true) {
+    return { status: "error", code: fileValidation && fileValidation.code || "IMPORT_FILE_INVALID", validForImport: false, errores: [] };
+  }
   var sourceName = String(input.sistemaOrigen || "").trim();
   var entityType = String(input.tipoEntidad || "").trim().toLowerCase();
   var schema = MIGRATION_OWNER_SCHEMAS_ && MIGRATION_OWNER_SCHEMAS_[entityType];
@@ -427,6 +431,7 @@ function buildImportPreview_(payload) {
     errors: errors,
     warnings: warnings,
     target: targetSnapshotForHash,
+    fileHash: fileValidation.fileHash,
     structure: structural
   };
   var previewHash = migrationHash_(migrationStableJson_(hashInput));
@@ -1210,5 +1215,61 @@ function compensateTrustedAccountingMigrationWrite_(payload) {
     return { status: "success", compensated: true, idempotent: false };
   } finally {
     lock.releaseLock();
+  }
+}
+
+
+function validateImportWorkbookBinary_(payload) {
+  var input = payload || {};
+  var fileName = String(input.nombreArchivo || "").trim();
+  var mimeType = String(input.mimeTypeArchivo || "").trim().toLowerCase();
+  var encoded = String(input.fileDataBase64 || "");
+  if (!/\.xlsx$/i.test(fileName) || !encoded || encoded.length > 14000000) {
+    return { valid: false, code: "IMPORT_FILE_INVALID" };
+  }
+  if (mimeType && mimeType !== "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" &&
+      mimeType !== "application/octet-stream") return { valid: false, code: "IMPORT_FILE_MIME_INVALID" };
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(encoded) || encoded.length % 4 !== 0) {
+    return { valid: false, code: "IMPORT_FILE_BASE64_INVALID" };
+  }
+  try {
+    var bytes = Utilities.base64Decode(encoded);
+    if (!bytes || bytes.length < 4 || bytes.length > 10 * 1024 * 1024 ||
+        (bytes[0] & 255) !== 0x50 || (bytes[1] & 255) !== 0x4b ||
+        (bytes[2] & 255) !== 0x03 || (bytes[3] & 255) !== 0x04) {
+      return { valid: false, code: "IMPORT_FILE_SIGNATURE_INVALID" };
+    }
+    var blob = Utilities.newBlob(bytes, mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+    var entries = Utilities.unzip(blob);
+    if (!Array.isArray(entries) || !entries.length || entries.length > 1000) {
+      return { valid: false, code: "IMPORT_FILE_PACKAGE_INVALID" };
+    }
+    var names = {}, totalBytes = 0, hasContentTypes = false, hasWorkbook = false, hasWorksheet = false;
+    entries.forEach(function(entry) {
+      var name = String(entry && entry.getName ? entry.getName() : "");
+      if (!name || name.indexOf("../") !== -1 || name.charAt(0) === "/" || names[name]) {
+        throw new Error("IMPORT_FILE_PACKAGE_INVALID");
+      }
+      names[name] = true;
+      if (name === "[Content_Types].xml") hasContentTypes = true;
+      if (name === "xl/workbook.xml") hasWorkbook = true;
+      if (/^xl\/worksheets\/sheet\d+\.xml$/i.test(name)) hasWorksheet = true;
+      if (/vbaProject\.bin$/i.test(name)) throw new Error("IMPORT_FILE_MACROS_NOT_ALLOWED");
+      var entryBytes = entry.getBytes ? entry.getBytes() : [];
+      totalBytes += entryBytes.length;
+      if (entryBytes.length > 15 * 1024 * 1024 || totalBytes > 40 * 1024 * 1024) {
+        throw new Error("IMPORT_FILE_UNCOMPRESSED_SIZE_LIMIT");
+      }
+    });
+    if (!hasContentTypes || !hasWorkbook || !hasWorksheet) return { valid: false, code: "IMPORT_FILE_PACKAGE_INVALID" };
+    var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, bytes);
+    var fileHash = digest.map(function(byte) { return ("0" + (byte & 255).toString(16)).slice(-2); }).join("");
+    return { valid: true, fileHash: fileHash, sizeBytes: bytes.length, uncompressedBytes: totalBytes };
+  } catch (error) {
+    var code = String(error && error.message || "");
+    if (code === "IMPORT_FILE_MACROS_NOT_ALLOWED" || code === "IMPORT_FILE_UNCOMPRESSED_SIZE_LIMIT") {
+      return { valid: false, code: code };
+    }
+    return { valid: false, code: "IMPORT_FILE_PACKAGE_INVALID" };
   }
 }
