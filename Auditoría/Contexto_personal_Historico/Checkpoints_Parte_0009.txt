@@ -822,3 +822,65 @@ Se aisló y corrigió un subflujo independiente en `generateSignatureAuditCertif
 - Siguiente tarea P0: F34-Task03 — ABAC docente para consultar justificaciones de estudiantes inscritos.
 - TASK-221, TASK-227, TASK-316 y TASK-318 permanecen pendientes; no se marcan como completadas.
 - F22-Task03 sigue pendiente por PSC real, certificado persistido y multifirmante.
+
+
+### C1.752 — F34-Task03 — acceso contextual ABAC docente a justificaciones
+
+- **Fecha:** 2026-11-15.
+- **Rama autorizada:** NG_beta_0.0.0.1_work.
+- **Checkpoint anterior:** C1.751.
+- **HEAD al iniciar la tarea:** 7fac571312597ab2c0392228d6691a2bb0693e20.
+- **HEAD de implementación y verificación:** 0c4c81d6c5a59bcc2bce78f6e0b9f9dbd4031f38.
+- **Rama base protegida:** NG_beta_0.0.0.1 = 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+- **Estado:** F34-Task03 completada en código, revisión y CI. BETA-FUNC-102 pendiente de validación con Apps Script/Sheets desplegados.
+
+#### Implementación
+- Se creó getTeacherStudentJustifications en ACADEMIC y se habilitó exclusivamente para roles docentes permitidos. La identidad se deriva del token de sesión verificado; el endpoint no confía en IDs de usuario o rol enviados libremente.
+- La consulta valida en servidor la cadena docente → asignación activa → oferta académica activa → período vigente → matrícula confirmada y única → sesión exacta del docente → registro de asistencia del alumno. Las asignaciones deben cubrir la fecha afectada; las ofertas, períodos, matrículas, sesiones, asistencias y justificaciones duplicadas o ambiguas fallan cerradas.
+- Cada docente ve solo las sesiones de su asignatura. Si una justificación cubre varias asignaturas, se fragmenta el resultado por sesiones autorizadas; no se devuelve el conjunto completo de sesiones a todos los docentes.
+- El DTO docente minimiza datos: estudiante, grado/sección, fecha/período, estado, observaciones públicas y sesiones autorizadas. No expone motivo declarado, notas administrativas internas, adjunto, ID del alumno ni datos familiares.
+- La política DOCENTE_VISIBILIDAD_EVIDENCIAS_MEDICAS es restrictiva por defecto. La exposición completa requiere configuración explícita por Administrador/Director; configuración ausente, inactiva, ambigua o sin estado válido se resuelve como SOLO_DICTAMEN_SECRETARIA.
+- getTeacherJustificationEvidence revalida el ámbito docente y la política, y exige archivo privado, no eliminado, de tamaño máximo 2 MiB y MIME PDF/JPEG/PNG. La integridad SHA-256 de adjuntos queda para F34-Task04; no se afirma aquí verificación criptográfica del binario.
+- acknowledgeTeacherStudentJustification registra CONOCIMIENTO o CONFORMIDAD por sesión con hash de registro, actor autenticado, timestamp, ScriptLock, revalidación del ámbito dentro del lock e idempotencia. No altera la decisión de Secretaría.
+- Se integró la pestaña de justificaciones en teacher-dashboard.html y js/teacher.js con carga, actualización, registro de constancias y apertura de evidencia autorizada.
+
+#### Archivos
+- backend/academic-service/Code.gs
+- teacher-dashboard.html
+- js/teacher.js
+- tests/security/academic-teacher-justification-abac.test.js
+- .github/workflows/department-scope-contract.yml (contrato ya integrado)
+- pendientes/Docente/Pendientes.md
+- beta_test_Parte_0002.txt
+- Auditoría/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- changueslogs.txt
+
+#### Commits de implementación y endurecimiento
+- 1d1aecaffae0fc18749d418d1182682b992feccd — consulta ABAC, DTO mínimo, constancias y evidencia condicionada.
+- f98d96a3456ed0eb38dab3dcab8fb67b6ff828ca y 1e05c046c0dfafe0b49f8d25f5b6243c0c329e27 — correcciones del extractor del contrato.
+- d42fb6651f8bbef86dd2e0443844253d238540f0 — integración del cliente teacher con fetchApi compartido.
+- fc5197eddc3bd78e144f75cc2c8e0265c4caf14e — revalidación del ámbito al registrar constancias.
+- eb4dba0f06b773229bb81363c14752abbd8b53d1 — matrícula vigente y período activo.
+- 5f0f5f55eb570a4e230477b57713aee74a4e2032 y 1cfb4df8791918187d8b0b7d12f2348eb4853f9e — cobertura de revocación y utilidades de fecha Apps Script.
+- a0c84c8abd1a1201f7db902e9a412f0c148b7f17 — rechazo de matrículas retiradas/históricas.
+- 0c4c81d6c5a59bcc2bce78f6e0b9f9dbd4031f38 — política de evidencia fail-closed y cobertura adicional de fechas/revocación.
+
+#### Verificación
+- Department Scope Contract run 43737615044: SUCCESS; contrato ABAC docente PASS, sintaxis Apps Script/JS PASS y suite configurada completada.
+- Task-Service security run 43737615057: SUCCESS.
+- Department Reference Consumers run 43737615098: SUCCESS.
+- Department Scope Contract run 43737343581: SUCCESS en el HEAD previo al endurecimiento final.
+- El contrato prueba separación entre docentes, alumno fuera de asignación, matrícula retirada, período vencido, oferta inactiva, ausencia de matrícula, sesiones ajenas, justificación duplicada, permisos por rol, auditoría, revalidación después de revocación, lock, idempotencia y política/privacidad de evidencias.
+- CI ejecutó Node.js 24.22.2. Node local NOT RUN: se intentó obtener checkout de la rama autorizada, pero el entorno no pudo resolver github.com (DNS). CLI no aplicable por ausencia de scripts de proyecto confirmada en la inspección previa.
+- No se desplegó Apps Script ni se ejecutaron pruebas reales contra Sheets/Drive productivos.
+
+#### Límites y dependencias
+- BETA-FUNC-102 pendiente: probar con docentes y alumnos sintéticos, asignaciones y matrículas reales de beta, períodos, sesiones, constancias, evidencia privada y denegaciones.
+- La evidencia adjunta no tiene todavía hash SHA-256 persistido/verificado en este subflujo; corresponde a F34-Task04.
+- La visibilidad de evidencias médicas completas está deshabilitada salvo decisión explícita de Administrador/Director. No debe interpretarse como permiso general para consultar expedientes.
+- F34-Task01 y F34-Task02 conservan sus pruebas beta pendientes. F22-Task03 continúa pendiente por PSC real, artefacto probatorio persistido y multifirmante.
+
+#### Continuidad
+- Siguiente prioridad P0 del Plan Maestro: F34-Task04 — añadir SHA-256 a adjuntos y evidencias documentales. El identificador figura en la matriz del Plan Maestro, pero no se localizó una ficha operativa equivalente en pendientes/Otros; ejecutar a partir del alcance F34-10 de la auditoría, sin inventar requisitos adicionales.

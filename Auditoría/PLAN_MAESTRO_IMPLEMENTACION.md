@@ -5632,3 +5632,12 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Contrato Node cubre entrega fallida/reintento, duplicados, scope, destinatario incorrecto, hash, privacidad, apertura, confirmación, revocación y expiración. Department Scope 43729081735, Task-Service 43729081760 e Identity Mapping 43729081762 SUCCESS; sintaxis Apps Script/JS PASS.
 - Solo canal PLATAFORMA. TASK-316 (correo), TASK-221/TASK-318 (bandejas unificadas), TASK-227 (eventos) y F34-Task08 (UI) siguen pendientes. FechaApertura no prueba lectura humana del PDF; recepción formal requiere acción explícita.
 - BETA-FUNC-101 pendiente de Drive/Sheets reales; Node local NOT RUN; CLI no aplicable. Siguiente P0: F34-Task03.
+
+
+### C1.752 — F34-Task03 — ABAC docente para justificaciones
+- Se implementó getTeacherStudentJustifications en ACADEMIC, derivando identidad del token verificado y validando asignación activa, oferta, período vigente, matrícula confirmada, sesión exacta y registro de asistencia. Se aplica fail-closed a relaciones ausentes, duplicadas o ambiguas.
+- La respuesta docente minimiza datos y limita sesiones por profesor. Se añadieron constancias CONOCIMIENTO/CONFORMIDAD con ScriptLock, revalidación e idempotencia, además de consulta de evidencia privada condicionada por política institucional.
+- Se integró la pestaña de justificaciones en el dashboard docente. Política de evidencia médica por defecto restringida; configuración faltante/inactiva/ambigua no habilita acceso.
+- Contrato Node ABAC PASS: separación multi-docente, matrículas retiradas, período vencido, oferta inactiva, alumno sin matrícula, IDOR, auditoría, revocación entre validación y escritura, concurrencia/lock, idempotencia, privacidad y evidencia. Department Scope run 43737615044, Task-Service 43737615057 y Department Reference Consumers 43737615098 SUCCESS; Node.js 24.22.2 y sintaxis Apps Script/JS PASS.
+- Node local NOT RUN: intento de checkout impedido por resolución DNS de github.com. Sin despliegue Apps Script ni validación real de Sheets/Drive.
+- BETA-FUNC-102 pendiente. F34-Task04 permanece como siguiente P0 para SHA-256 de adjuntos/evidencias, conforme a F34-10; no se afirma integridad binaria en esta tarea.

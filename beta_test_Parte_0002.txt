@@ -547,3 +547,21 @@
 - **Evidencia requerida:** filas sintéticas de EntregasDocumentales, hashes calculados y comparados con bytes, estados de notificación/acuse, IDs de eventos y resultados allow/deny; no registrar DriveFileID sensible ni contenido documental en logs.
 - **Estado:** Contrato Node/CI PASS; pendiente prueba real en Apps Script/Drive/Sheets desplegados.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-102 — F34-Task03 — acceso ABAC docente a justificaciones
+- **Precondiciones:** desplegar versión compatible de ACADEMIC; disponer de docentes, ofertas, asignaciones, matrículas, períodos, sesiones, asistencias y justificaciones sintéticas; configurar cuentas de prueba por rol. No usar datos médicos o personales reales.
+- **Pasos:**
+  1. Autenticar dos docentes distintos y consultar getTeacherStudentJustifications; verificar que cada uno solo recibe las sesiones exactas que imparte y alumnos matriculados en su oferta.
+  2. Cambiar en el cliente _verifiedUserId, rol, studentId, justificacionId o sesionIds; confirmar que la identidad proviene del token y no permite IDOR.
+  3. Revocar una asignación, retirar una matrícula, desactivar una oferta y cerrar/vencer un período; confirmar que las consultas posteriores no exponen registros.
+  4. Crear justificaciones que incluyan sesiones de varios docentes; cada profesor solo debe ver su sesión y no los motivos médicos ni notas internas.
+  5. Intentar leer evidencia con política por defecto, política ausente, estado vacío, estado inactivo y configuración duplicada; todas deben denegar el archivo completo.
+  6. Como Administrador/Director, habilitar explícitamente PERMITIR_VER_CONSTANCIA_MEDICA_COMPLETA; como docente autorizado, consultar solo evidencia PDF/JPEG/PNG privada, menor o igual a 2 MiB. Hacer público, eliminar o sustituir el archivo y verificar que el acceso falle por privacidad/estado; la verificación de hash se cubre en F34-Task04.
+  7. Registrar CONOCIMIENTO y CONFORMIDAD para las sesiones permitidas; reintentar, enviar sesiones ajenas y simular revocación antes de la escritura. Verificar idempotencia, bloqueo y que el estado administrativo no cambie.
+  8. Confirmar eventos allow/deny en RegistroEventos y ausencia de PII/diagnósticos/notas internas en los logs.
+- **Resultado esperado:** acceso docente limitado a la asignación académica y período vigentes, con DTO minimizado, auditoría, constancias trazables e idempotentes y evidencia médica bloqueada salvo política institucional explícita.
+- **Evidencia requerida:** capturas sanitizadas, IDs sintéticos, snapshots de asignaciones/matrículas/ofertas/períodos/sesiones, DTO por docente, filas de constancias, resultados allow/deny y eventos de auditoría. No exportar archivos médicos ni incluir base64/secretos en evidencias.
+- **Estado:** Contrato Node/CI PASS; pendiente prueba real en Apps Script/Sheets/Drive desplegados.
+===============================================================================

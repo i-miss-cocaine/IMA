@@ -338,3 +338,14 @@ Se evaluó el recorrido de extremo a extremo:
 - **Discrepancia histórica:** Auditoria.txt indica un backlog de 11 IDs F34-Task01..F34-Task11, con prioridades P0 para 01-04, P1 para 05-09 y P2 para 10-11; el informe actual describe solo F34-Task01..F34-Task08. No se recuperaron títulos/criterios de Task09..Task11 en la bitácora. Se conservan como IDs históricos sin descripción recuperable; no se inventan ni se consulta Pendientes.md.
 - **Subcapacidades completas preservadas:** F34-05/07/09 y parte de F34-11 se mantienen según el informe; no se reejecutaron pruebas.
 - **Estado global:** F34-Task01..F34-Task08 permanecen pendientes de ejecución/revalidación; F34-Task09..Task11 quedan como referencias históricas sin descripción recuperable.
+
+
+## E. ACTUALIZACIÓN DE EJECUCIÓN — C1.752 (2026-11-15)
+
+- **F34-Task01:** ciclo canónico de justificaciones y sincronización de asistencia implementado en C1.750; BETA-FUNC-100 pendiente.
+- **F34-Task02:** bandeja de salida y acuses documentales implementados en C1.751; BETA-FUNC-101 y dependencias de correo/bandejas/eventos pendientes.
+- **F34-Task03:** acceso ABAC docente implementado y verificado en C1.752. La consulta limita cada resultado a asignaciones/ofertas activas, matrícula confirmada, período vigente y sesiones impartidas por el docente. La UI docente permite consultar, registrar conocimiento/conformidad y, solo si la política institucional lo autoriza, consultar evidencia privada.
+- La política de visibilidad de evidencia médica queda restringida por defecto; falta de estado, estado inactivo o configuración ambigua nunca habilitan el archivo completo. No se confunde el hash de una constancia docente con firma electrónica avanzada.
+- CI final del HEAD 0c4c81d6c5a59bcc2bce78f6e0b9f9dbd4031f38: Department Scope 43737615044 SUCCESS; Task-Service Security 43737615057 SUCCESS; Department Reference Consumers 43737615098 SUCCESS. El contrato específico academic-teacher-justification-abac.test.js reportó PASS y se validó sintaxis Apps Script/JS.
+- No hubo ejecución local: el intento de checkout por HTTPS falló por DNS (github.com no resolvió). No se desplegó Apps Script ni se accedió a datos reales de Sheets/Drive.
+- **Pendiente beta:** BETA-FUNC-100, BETA-FUNC-101 y BETA-FUNC-102. F34-Task04 (SHA-256 de adjuntos/evidencias) queda como siguiente P0. El estado histórico de la auditoría inicial se conserva como antecedente y no se reescribe retroactivamente.

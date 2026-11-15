@@ -3814,3 +3814,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - El registro exige documento emitido, titular correcto, scope del emisor, Drive privado y hash real coincidente. El despacho por plataforma se registra como ACEPTADO_POR_PLATAFORMA, no como lectura ni recepción. Apertura autenticada y confirmación explícita se registran en estados separados con timestamps y hashes; enlace expirable/revocable y retry idempotente.
 - Contrato Node y sintaxis CI PASS: Department Scope 43729081735; Task-Service Security 43729081760; Identity Mapping 43729081762. Node local NOT RUN; CLI no aplicable.
 - Solo canal PLATAFORMA; TASK-316, TASK-221/TASK-318, TASK-227 y UI F34-Task08 siguen pendientes. BETA-FUNC-101 pendiente de validación real Apps Script/Drive/Sheets. Siguiente P0: F34-Task03.
+
+
+[2026-11-15] F34-Task03 — C1.752, acceso ABAC docente a justificaciones
+- ACADEMIC deriva identidad de token verificado y filtra por asignación activa, oferta, matrícula confirmada, período vigente y sesiones exactas impartidas por el docente. El DTO omite motivo, notas administrativas, referencias de adjuntos e IDs innecesarios.
+- Constancias CONOCIMIENTO/CONFORMIDAD idempotentes bajo ScriptLock, revalidación de ámbito y auditoría. Evidencia privada solo con política institucional explícita; configuración ausente/inactiva/ambigua deniega el archivo completo.
+- Contrato academic-teacher-justification-abac.test.js PASS. Department Scope 43737615044, Task-Service Security 43737615057 y Department Reference Consumers 43737615098 SUCCESS; sintaxis Apps Script/JS PASS en Node 24.
+- Node local NOT RUN por DNS de github.com; sin despliegue Apps Script/Sheets/Drive. BETA-FUNC-102 pendiente. Siguiente P0: F34-Task04 (SHA-256 de adjuntos/evidencias).

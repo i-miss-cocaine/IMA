@@ -461,16 +461,16 @@
 ---
 
 <!-- ID: F34-TASK03 | Fuentes: AUDITORIAS/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md -->
-### [ ] [F34-TASK03] Implementar acceso contextual ABAC docente a justificaciones de sus estudiantes
+### [x] [F34-TASK03] Implementar acceso contextual ABAC docente a justificaciones de sus estudiantes
 - **Hallazgo de origen:** F34-11 y CAR-F34-04; PT-F34-06 no aprobado.
 - **Severidad:** Crítica / P0. **Objetivo:** permitir al docente consultar solo justificaciones de estudiantes matriculados en sus asignaturas/secciones vigentes.
-- **Acción ejecutable:** crear `getTeacherStudentJustifications` con identidad derivada de sesión verificada; validar asignación docente, oferta, grupo, periodo y relación con el estudiante; excluir notas internas y datos familiares no necesarios.
-- **Archivos/módulos:** `backend/academic-service/Code.gs`, `ROLE_PERMISSIONS`, `AsignacionesDocentes`, `MatriculasEstudiantes`, justificaciones y `backend/user-service/Code.gs`.
-- **Dependencias/riesgos:** AUD-NG-105/108/158, AUD-NG-217/TASK-496 cuando corresponda; riesgo de IDOR o acceso a alumnos fuera de asignación.
-- **Alcance:** consulta docente de justificaciones; no habilitar acceso a expedientes completos ni observaciones internas administrativas.
-- **Criterios de aceptación:** contexto se deriva del token; asignación y matrícula vigentes verificadas server-side; filtros por año/periodo; respuesta minimizada; denegación fail-closed ante relación ausente; pruebas multi-docente, sección ajena, periodo vencido y usuario manipulado.
-- **Prioridad:** P0. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; la auditoría confirma que no existe endpoint contextual docente.
+- **Implementación:** getTeacherStudentJustifications deriva identidad del token verificado y valida asignación activa, oferta académica, período vigente, matrícula confirmada y sesiones exactas del docente. Se incorporó DTO mínimo, auditoría de accesos, constancias CONOCIMIENTO/CONFORMIDAD idempotentes y evidencia privada condicionada por política institucional fail-closed.
+- **Archivos/módulos:** backend/academic-service/Code.gs, teacher-dashboard.html, js/teacher.js, ROLE_PERMISSIONS, AsignacionesDocentes, OfertaAcademica, Matriculas, PeriodosAcademicos, SesionesAsistencia, RegistrosAsistencia y JustificacionesAsistencia.
+- **Criterios verificados:** token y rol docente; separación entre profesores/asignaturas; exclusión de matrícula retirada, período vencido, oferta inactiva y alumno sin matrícula; sesiones ajenas denegadas; notas internas y datos familiares no expuestos; acceso a evidencia privada solo con política explícita; auditoría; revocación revalidada antes de escritura; lock e idempotencia.
+- **Pruebas:** tests/security/academic-teacher-justification-abac.test.js PASS en Department Scope run 43737615044 (Node.js 24.22.2); sintaxis Apps Script/JS PASS. Task-Service run 43737615057 y Department Reference Consumers run 43737615098 SUCCESS.
+- **Límites:** BETA-FUNC-102 pendiente de validación con Apps Script/Sheets/Drive desplegados. Node local NOT RUN porque el entorno no pudo resolver github.com durante el checkout. No se afirma validación productiva ni integridad SHA-256 de adjuntos (F34-Task04).
+- **Estado:** Completada en código/revisión/CI; beta pendiente.
+- **Evidencia de cierre:** commit 0c4c81d6c5a59bcc2bce78f6e0b9f9dbd4031f38; checkpoint C1.752.
 
 ---
 
