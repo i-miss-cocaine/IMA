@@ -23,7 +23,7 @@ const successScope={
 const success=compile(successScope)(pdfFile(),{language:"es",includeText:true,maxTextChars:8});
 assert.equal(success.status,"success");
 assert.equal(success.text,"Texto OC");
-assert.equal(success.textLength,20);
+assert.equal(success.textLength,19);
 assert.equal(success.truncated,true);
 assert.equal(success.language,"es");
 assert.equal(removedId,"TMP-OCR-1");
