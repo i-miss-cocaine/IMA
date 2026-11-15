@@ -32,6 +32,7 @@ const schema = { service: "ACCOUNTING", sheet: "ExpedientesLaborales", headers: 
 const assignmentHeaders = ["AsignacionAmbitoID", "UserID", "RoleID", "ScopeType", "ScopeValues", "Estado", "CreadoPor", "FechaCreacion", "FechaInicio", "FechaFin", "EsSuplente", "SuplenteDeUserID", "InstitutionID", "MembershipID", "ResponsibilityID"];
 let assignmentRows = [assignmentHeaders, ["ASG-1", "U-1", "Director", "DEPARTAMENTO", '["DEP-A","DEP-B"]', "Activo", "U-ADMIN", "", "", "", "No", "", "INST-1", "MEM-1", "RESP-1"]];
 const auditRows = [], writes = [], rollbackBatches = [];
+let failRollbackCompensation = false;
 let snapshotRows = [snapshotHeaders,["BATCH-1","SNAP-1","ROW-1","INST-1","ACCOUNTING","DEP-A","VERIFIED","U-ADMIN","2026-11-12T22:00:00.000Z","1"],["BATCH-1","SNAP-1","ROW-2","INST-1","ACCOUNTING","DEP-B","VERIFIED","U-ADMIN","2026-11-12T22:00:00.000Z","1"]];
 let institutionalImportPermission = true;
 let writerAttempts = 0, failWriterAt = 0;
@@ -76,7 +77,7 @@ const context = {
     writes.push(payload);
     return { status: "success", idempotent: idempotentEmployeeWrite };
   },
-  rollbackMigrationOwnerWrites_: applied => { rollbackBatches.push(applied.slice()); return []; }
+  rollbackMigrationOwnerWrites_: applied => { rollbackBatches.push(applied.slice()); return failRollbackCompensation ? [{ entityType: "empleado", code: "MIGRATION_COMPENSATION_CONFLICT" }] : []; }
 };
 vm.runInNewContext(snapshotSchema + "\n" + functions.join("\n") + "\nthis.api = { build: buildAccountingDepartmentalImportPreflight_, preview: validateImportPreview, run: importDataWithColumnMapping };", context);
 context.buildImportPreview_ = function(payload) {
@@ -166,6 +167,17 @@ assert.equal(rollback.estado, "rolled_back");
 assert.equal(rollbackBatches.at(-1).length, 2, "employee write and ownership intent are compensated");
 assert.equal(auditRows.at(-1)[8], "rolled_back");
 assert.equal(rollbackBatches.at(-1).some(x => x.tipoEntidad === "empleadoOwnership"), true);
+failRollbackCompensation = true;
+failWriterAt = writerAttempts + 2;
+const compensationRequired = context.api.run({ ...base, filasData: [
+  { legacyId: "LEG-30", Puesto: "Docente" },
+  { legacyId: "LEG-31", Puesto: "Docente" }
+] });
+assert.equal(compensationRequired.code, "MIGRATION_COMPENSATION_REQUIRED");
+assert.equal(compensationRequired.estado, "compensation_required");
+assert.equal(compensationRequired.registrosEscritos, null, "uncertain writes are never reported as zero or fully rolled back");
+assert.equal(auditRows.at(-1)[8], "compensation_required");
+failRollbackCompensation = false;
 failOwnershipRegistration = true;
 const failedOwnership = context.api.run({ ...base, filasData: [{ legacyId: "LEG-5", Puesto: "Docente" }] });
 assert.equal(failedOwnership.status, "error");
