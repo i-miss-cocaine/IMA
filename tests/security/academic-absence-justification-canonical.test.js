@@ -301,6 +301,7 @@ const conformityApproved = context.reviewCanonicalAbsenceJustification_({
 });
 assert.equal(conformityApproved.status, "success");
 assert.equal(attendance.getDataRange().getValues().find(row => row[0] === "REG-CONFORMITY")[6], true);
+policySheet.getRange(3, 2).setValue("INMEDIATO_AL_APROBAR_SECRETARIA");
 
 sessions.appendRow(["SES-USER","2026-11-14","","","10","A","MAT","DOC-1","Cerrada",""]);
 attendance.appendRow(["REG-USER","SES-USER","STU-USER","Ausente","","",false,"",new Date("2026-11-14T12:00:00Z")]);
