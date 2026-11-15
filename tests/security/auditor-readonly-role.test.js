@@ -41,6 +41,7 @@ assert.ok(academicAuditor.includes("verifyDocumentIntegritySha256"));
 assert.ok(academicAuditor.includes("getPendingDocumentsReport"));
 assert.ok(userAuditor.includes("getLegacyDocumentInventory"));
 assert.ok(userAuditor.includes("getAuditReport"));
+assert.ok(userAuditor.includes("viewAuditLogs"),"Auditor retains the explicit read-only audit RBAC grant");
 assert.ok(userAuditor.includes("getUserRoleMemberships"));
 assert.ok(userAuditor.includes("switchActiveRole"),"Auditor may switch only among already assigned memberships");
 
