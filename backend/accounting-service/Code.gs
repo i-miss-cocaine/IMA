@@ -166,6 +166,38 @@ function buildAccountingRelatedPersonExistenceSnapshot_(preparedRows, entityType
     idField: "PersonaID", existingTargetIds: result.existingTargetIds.map(String).sort(), targetRows: [] };
 }
 
+function getInstitutionalResponsibilityForRoleScope_(ss, responsibilityId) {
+  var id=String(responsibilityId||"").trim(); if(!id||!ss)return null;
+  var sheet=ss.getSheetByName("ResponsabilidadesInstitucionales"); if(!sheet)return null;
+  var data=sheet.getDataRange().getValues();
+  var headers=["ResponsibilityID","Nombre","Descripcion","ModulosJSON","CapacidadesJSON","Estado","CreadoPor","FechaActualizacion"];
+  if(!data.length||JSON.stringify(data[0].map(String))!==JSON.stringify(headers))return null;
+  var rows=data.slice(1).filter(function(r){return String(r[0]||"").trim()===id;});
+  if(rows.length!==1)return null;
+  var r=rows[0],state=String(r[5]||"").trim().toUpperCase();
+  if(!(r[5]===true||state==="TRUE"||state==="ACTIVA"||state==="ACTIVO"))return null;
+  var modules,capabilities; try{modules=JSON.parse(r[3]||"[]");capabilities=JSON.parse(r[4]||"[]");}catch(e){return null;}
+  var normalizeIds=function(values){if(!Array.isArray(values))return null;var seen={},out=[];for(var i=0;i<values.length;i++){if(typeof values[i]!=="string")return null;var value=values[i].trim(),key="$"+value;if(!value||seen[key])return null;seen[key]=true;out.push(value);}return out;};
+  modules=normalizeIds(modules);capabilities=normalizeIds(capabilities);if(!modules||!capabilities)return null;
+  return {responsibilityId:id,name:String(r[1]||""),description:String(r[2]||""),modules:modules,capabilities:capabilities};
+}
+
+function resolveInternalResponsibilityForRoleScope_(ss, responsibilityId) {
+  var id=String(responsibilityId||"").trim();if(!id||!ss)return null;
+  var sheet=ss.getSheetByName("CatalogoRolesInternos");if(!sheet)return null;
+  var data=sheet.getDataRange().getValues();
+  var base=["RolInternoID","CodigoInterno","NombreResponsabilidad","Descripcion","Departamento","AreaAcademica","TipoResponsabilidad","VigenciaMeses","PermiteSuplencia","Estado","CreadoPor","FechaCreacion","FechaActualizacion"];
+  if(!data.length)return null;
+  var headers=data[0].map(String),legacy=JSON.stringify(headers)===JSON.stringify(base),linked=JSON.stringify(headers)===JSON.stringify(base.concat(["ResponsibilityID"]));
+  if(!legacy&&!linked)return null;
+  var rows=data.slice(1).filter(function(r){return String(r[0]||"").trim()===id;});
+  if(rows.length!==1||String(rows[0][9]||"").trim().toUpperCase()!=="ACTIVO")return null;
+  var r=rows[0],institutionalId=linked?String(r[13]||"").trim():"";
+  var institutional=institutionalId?getInstitutionalResponsibilityForRoleScope_(ss,institutionalId):null;
+  if(institutionalId&&!institutional)return null;
+  return {responsibilityId:id,name:String(r[2]||""),department:String(r[4]||""),academicArea:String(r[5]||""),responsibilityType:String(r[6]||""),institutionalResponsibilityId:institutionalId||null,institutionalResponsibility:institutional};
+}
+
 function getVerifiedDepartmentScopeForSession_(payload) {
   var identity = getVerifiedAccountingIdentity_(payload || {});
   if (!identity || identity.authorized !== true) return { valid: false, code: identity && identity.code || "VERIFIED_IDENTITY_REQUIRED" };
@@ -181,43 +213,81 @@ function getVerifiedDepartmentScopeForSession_(payload) {
 
 function getVerifiedAccountingDepartmentScope_(payload, ss) {
   var actor = getVerifiedDepartmentScopeForSession_(payload);
-  if (!actor.valid) return actor;
+  if (!actor.valid || !ss) return actor.valid ? { valid: false, code: "DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED" } : actor;
   var sheet = ss.getSheetByName("AsignacionesAmbitosRoles");
   if (!sheet) return { valid: false, code: "DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED" };
   var values = sheet.getDataRange().getValues();
-  var headers = values.length ? values[0].map(function(value) { return String(value || "").trim(); }) : [];
-  var idx = {};
-  headers.forEach(function(name, i) { idx[name] = i; });
-  var match = null;
+  var legacyHeaders = ["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"];
+  var membershipHeaders = legacyHeaders.concat(["InstitutionID","MembershipID"]);
+  var currentHeaders = membershipHeaders.concat(["ResponsibilityID"]);
+  var actual = values.length ? values[0].map(String) : [];
+  if (JSON.stringify(actual) !== JSON.stringify(currentHeaders)) {
+    return { valid: false, code: "DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED" };
+  }
+  var counts = {};
+  values.slice(1).forEach(function(row) {
+    var id = String((row || [])[0] || "").trim();
+    if (id) counts[id] = (counts[id] || 0) + 1;
+  });
+  function parseDate(value) {
+    if (value === "" || value === null || value === undefined) return { valid: true, date: null };
+    var date = value instanceof Date ? value : new Date(value);
+    return isNaN(date.getTime()) ? { valid: false, date: null } : { valid: true, date: date };
+  }
+  function parseValues(value) {
+    if (Array.isArray(value)) return value.map(function(item) { return String(item).trim(); }).filter(Boolean);
+    var raw = String(value || "").trim();
+    if (!raw) return [];
+    try {
+      var parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.map(function(item) { return String(item).trim(); }).filter(Boolean);
+      if (parsed !== null && parsed !== undefined) return [String(parsed).trim()].filter(Boolean);
+    } catch (ignored) {}
+    return raw.split(",").map(function(item) { return String(item).trim(); }).filter(Boolean);
+  }
+  var now = new Date(), scopes = [];
   for (var i = 1; i < values.length; i++) {
-    var row = values[i];
-    if (String(row[idx.UserID] || "") !== actor.userId ||
-        String(row[idx.RoleID] || "") !== actor.roleId ||
-        String(row[idx.InstitutionID] || "") !== actor.institutionId ||
-        String(row[idx.MembershipID] || "") !== actor.membershipId ||
-        String(row[idx.Estado] || "").toLowerCase() !== "activo") continue;
-    match = row; break;
+    var row = values[i] || [], assignmentId = String(row[0] || "").trim();
+    if (!assignmentId || counts[assignmentId] !== 1 ||
+        String(row[1] || "").trim() !== actor.userId ||
+        String(row[2] || "").trim() !== actor.roleId ||
+        String(row[12] || "").trim() !== actor.institutionId ||
+        String(row[13] || "").trim() !== actor.membershipId ||
+        ["ACTIVO","ACTIVA","ACTIVE"].indexOf(String(row[5] || "").trim().toUpperCase()) === -1) continue;
+    var responsibilityId = String(row[14] || "").trim();
+    var responsibility = resolveInternalResponsibilityForRoleScope_(ss, responsibilityId);
+    if (!responsibility) continue;
+    var start = parseDate(row[8]), end = parseDate(row[9]);
+    if (!start.valid || !end.valid || (start.date && start.date.getTime() > now.getTime()) ||
+        (end.date && end.date.getTime() < now.getTime())) continue;
+    var scopeType = String(row[3] || "").trim().toUpperCase(), scopeValues = parseValues(row[4]);
+    if (!scopeType || !scopeValues.length) continue;
+    scopes.push({ assignmentId: assignmentId, roleId: actor.roleId, institutionId: actor.institutionId,
+      membershipId: actor.membershipId, responsibilityId: responsibilityId, responsibility: responsibility,
+      scopeType: scopeType, scopeValues: scopeValues });
   }
-  if (!match) return { valid: false, code: "DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED" };
-  var responsibilityId = String(match[idx.ResponsibilityID] || "");
-  if (!responsibilityId || typeof resolveInternalResponsibilityForRoleScope_ !== "function") {
-    return { valid: false, code: "DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED" };
+  if (!scopes.length) return { valid: false, code: "DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED" };
+  var departments = [], institutionWide = false;
+  scopes.forEach(function(scope) {
+    if (scope.scopeType === "DEPARTAMENTO") scope.scopeValues.forEach(function(id) {
+      if (departments.indexOf(id) === -1) departments.push(id);
+    });
+    if (scope.scopeType === "INSTITUCION" && scope.scopeValues.indexOf(actor.institutionId) !== -1) institutionWide = true;
+  });
+  var activeDepartmentId = String(payload && payload.activeDepartmentId || "").trim();
+  if (activeDepartmentId) {
+    if (departments.indexOf(activeDepartmentId) === -1) return { valid: false, code: "ACTIVE_SCOPE_NOT_ASSIGNED" };
+    scopes = scopes.filter(function(scope) {
+      if (scope.scopeType !== "DEPARTAMENTO") return false;
+      scope.scopeValues = scope.scopeValues.filter(function(id) { return id === activeDepartmentId; });
+      return scope.scopeValues.length > 0;
+    });
+    departments = [activeDepartmentId];
+    institutionWide = false;
   }
-  var responsibility = resolveInternalResponsibilityForRoleScope_(actor.roleId, String(match[idx.ScopeType] || ""), String(match[idx.ScopeValues] || ""), actor.institutionId);
-  if (!responsibility || String(responsibility.responsibilityId || "") !== responsibilityId) {
-    return { valid: false, code: "DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED" };
-  }
-  var scopeType = String(match[idx.ScopeType] || "").toUpperCase();
-  var scopeValues = [];
-  try { scopeValues = JSON.parse(String(match[idx.ScopeValues] || "[]")); } catch (ignored) {}
-  if (!Array.isArray(scopeValues)) return { valid: false, code: "DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED" };
-  var departments = scopeType === "DEPARTAMENTO" ? scopeValues.map(function(value) { return String(value || "").trim(); }).filter(Boolean) : [];
-  return {
-    valid: true, userId: actor.userId, roleId: actor.roleId, membershipId: actor.membershipId,
-    institutionId: actor.institutionId, responsibilityId: responsibilityId,
-    institutionWide: scopeType === "INSTITUCION", departmentIds: departments,
-    scopeType: scopeType
-  };
+  return { valid: true, authorized: true, userId: actor.userId, roleId: actor.roleId,
+    membershipId: actor.membershipId, institutionId: actor.institutionId, scopes: scopes,
+    departmentIds: departments, institutionWide: institutionWide, activeDepartmentId: activeDepartmentId || null };
 }
 
 function mapMigrationRowToTarget_(row, mapping, schema) {
