@@ -3920,3 +3920,7 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-15] TASK-133 — C1.766 — Hallazgo de integración ACCOUNTING
 - Se verificó que backend/accounting-service/Code.gs no contiene doPost/textResponse ni router para exponer los métodos de preflight; faltan adaptadores locales de verificación de sesión, envelope interservicio y control de ownership. La UI fetchApi no puede conectarse de forma segura todavía.
 - TASK-133 sigue abierto; no se añadió un router parcial que pudiera interceptar o romper acciones contables existentes.
+
+[2026-11-15] TASK-134 / F39 — C1.767 — Contradicción en el grafo de dependencias
+- Se contrastó Plan Maestro y auditoría Fase 39: TASK-134 depende de F39-Task03, mientras F39-Task03 depende de F39-Task02, que contiene la capacidad SHA-256/deduplicación de TASK-134.
+- Se registró el ciclo en backlog/auditoría sin modificar la fuente normativa ni alterar el orden de ejecución.
