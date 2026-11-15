@@ -3753,3 +3753,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - El contrato cubre HMAC, secreto ausente/no disponible, envelope, allowlist, timestamp, anti-replay, lock ocupado y reentrada; verifica que un callback autenticado permanece pendiente de validación y no modifica el estado transaccional.
 - Node.js v22.16.0 local aislado y sintaxis PASS; GitHub Actions run 43678080608 con pasos ejecutados SUCCESS (estado terminal: SUCCESS).
 - No se modificó lógica productiva ni se simuló un PSC. F22-TASK04 sigue Pendiente para integración real, protocolo/endpoint/credenciales autorizados y validación X.509/sello de tiempo. BETA-FUNC-027 Pendiente beta.
+
+
+[2026-11-15] F22-Task10 — C1.744, corrección parcial de contratos de regresión documental
+- Se corrigieron PT22-01/02 (contrato e ID real de plantilla), PT22-08 (contrato SACE), PT22-11 (sin dependencia directa ACCOUNTING→USER), PT22-07/12 (hash de prueba no presentado como firma/certificado), estado global de suite y consulta CUV de solo lectura.
+- Se corrigió el orden de evaluación de Ausente/Exento/Pendiente en generateSACEReportFile; PT22-09 cubre los tres estados.
+- Nuevo contrato Node aislado con funciones extraídas y SpreadsheetApp en memoria. Node local PASS; CI Department Scope 43679192402, Identity mapping 43679192378 y Department Reference Consumers 43679192396 SUCCESS.
+- F22-Task10 continúa Pendiente: 12/53 escenarios. El runner Apps Script aún puede escribir en la hoja configurada y no debe ejecutarse sobre datos institucionales sin fixture desechable.

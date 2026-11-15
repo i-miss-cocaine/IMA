@@ -5571,3 +5571,12 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - AUD-NG-063 ya estaba completada en C1.474; la exigencia de proveedor explícito/activo en createAdvancedSignatureRequest ya estaba implementada y cubierta. No se repitió.
 - **Estado:** subalcance local completado; F22-TASK04 permanece Pendiente para integración PSC real. No se inventan proveedor, protocolo, endpoint, credenciales ni cadena de confianza. BETA-FUNC-027 continúa Pendiente beta.
 - **Siguiente acción:** con PSC y especificación técnica/credenciales autorizadas, implementar adaptador real y validación de firma/certificado X.509, cadena, sello de tiempo, hash del PDF y transición transaccional.
+
+
+### C1.744 — F22-Task10 — corrección contractual parcial de regresión Fase 22
+- Se corrigieron parámetros/ID de plantilla PT22-01/02, contrato SACE PT22-08, dependencia cruzada inválida PT22-11, etiquetas de hashes no probatorios PT22-02/07/12 y propagación de fallos del orquestador.
+- verifySchoolDocumentByCUV dejó de crear hojas durante consultas; generateSACEReportFile conserva AUSENTE/EXENTO aunque notaFinal sea null y diferencia PENDIENTE.
+- Se agregó un contrato Node que extrae funciones reales y usa SpreadsheetApp en memoria; no accede a hojas institucionales ni Drive. 12 casos del orquestador pasan; no se ejecuta el orquestador Apps Script contra producción.
+- CI final: Department Scope Contract 43679192402 SUCCESS; Identity mapping 43679192378 SUCCESS; Department Reference Consumers 43679192396 SUCCESS. El run previo 43679125644 falló al detectar la regresión AUSENTE/EXENTO; corregida en 83fee5e y validada después.
+- **Estado:** F22-Task10 sigue Pendiente: objetivo original 53 pruebas; actualmente 12 casos del orquestador y cobertura adicional de contrato/aislamiento. El orquestador Apps Script legado sigue escribiendo en el Spreadsheet configurado si se invoca directamente; requiere despliegue desechable antes de ejecución operativa.
+- **Siguiente elegible:** F22-Task01 P0, validación binaria/privacidad de adjuntos en ambos servicios.
