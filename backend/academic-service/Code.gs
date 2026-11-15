@@ -13820,7 +13820,7 @@ function uploadStudentDocument(payload) {
     }
     sha256Hash = computeDocumentSHA256(rawBytes).toLowerCase();
     if (!/^[a-f0-9]{64}$/.test(sha256Hash)) throw new Error("DOCUMENT_SHA256_INVALID");
-    const policyResult = getDocumentDuplicatePolicy_(ss);
+    const policyResult = getDocumentDuplicatePolicy_(ssForAccess);
     if (!policyResult || policyResult.status !== "success") return {status:"error",code:policyResult && policyResult.code || "DOCUMENT_DUPLICATE_POLICY_UNAVAILABLE"};
     const duplicatePolicy = policyResult.policy || "RECHAZAR_DUPLICADO_EXACTO";
     const duplicateMatches = [];
