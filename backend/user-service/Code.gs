@@ -13411,7 +13411,7 @@ function getLegacyDocumentInventoryAccessContext_(payload, action) {
     return String(id || "").trim();
   }).filter(Boolean) : [];
   var canViewInstitution = scope.institutionWide === true &&
-    ["Director", "Administrador"].indexOf(role) !== -1;
+    ["Director", "Administrador", "Auditor"].indexOf(role) !== -1;
   if (!canViewInstitution && !departmentIds.length) {
     return { status: "error", code: "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
   }
