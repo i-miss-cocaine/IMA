@@ -13449,7 +13449,6 @@ function registerLegacyDocumentInventory(payload) {
     var rows = inventorySheet.getDataRange().getValues();
     var idIndex = LEGACY_DOCUMENT_INVENTORY_HEADERS_.indexOf("DocumentoId");
     var institutionIndex = LEGACY_DOCUMENT_INVENTORY_HEADERS_.indexOf("InstitutionID");
-    var departmentIndex = LEGACY_DOCUMENT_INVENTORY_HEADERS_.indexOf("DepartamentoPropietario");
     var keyIndex = LEGACY_DOCUMENT_INVENTORY_HEADERS_.indexOf("ClaveOrigen");
     var existingMatches = [];
     if (documentId) {
