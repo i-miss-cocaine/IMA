@@ -25,6 +25,8 @@ on:
       - tests/security/identity-mapping-contract.test.js
       - tests/security/accounting-identity-map-snapshot.test.js
       - tests/security/academic-migration-writer.test.js
+      - tests/security/user-service-legacy-document-inventory.test.js
+      - tests/security/academic-student-document-private-storage.test.js
       - js/teacher.js
       - teacher-dashboard.html
       - tests/security/teacher-excel-semantic-preflight-ui.test.js
@@ -91,6 +93,10 @@ jobs:
         run: node tests/security/accounting-identity-map-snapshot.test.js
       - name: Run Academic student migration writer contract
         run: node tests/security/academic-migration-writer.test.js
+      - name: Run USER legacy document inventory SHA-256 contract
+        run: node tests/security/user-service-legacy-document-inventory.test.js
+      - name: Run Academic private document SHA-256 and deduplication contract
+        run: node tests/security/academic-student-document-private-storage.test.js
       - name: Check teacher dashboard controller syntax
         run: node --check js/teacher.js
       - name: Run Excel semantic preflight UI contract
