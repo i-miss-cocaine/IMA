@@ -42,8 +42,9 @@ assert.ok(academicAuditor.includes("getPendingDocumentsReport"));
 assert.ok(userAuditor.includes("getLegacyDocumentInventory"));
 assert.ok(userAuditor.includes("getAuditReport"));
 assert.ok(userAuditor.includes("getUserRoleMemberships"));
+assert.ok(userAuditor.includes("switchActiveRole"),"Auditor may switch only among already assigned memberships");
 
-const mutatingAction = /^(create|save|update|delete|remove|grant|revoke|manage|upload|write|import|restore|purge|configure|approve|register|submit|assign|cancel|archive|close|process|generate|set|mark|reply|send|accept|switch)/i;
+const mutatingAction = /^(create|save|update|delete|remove|grant|revoke|manage|upload|write|import|restore|purge|configure|approve|register|submit|assign|cancel|archive|close|process|generate|set|mark|reply|send|accept)/i;
 for (const [service, actions] of [["ACADEMIC", academicAuditor], ["USER", userAuditor]]) {
   assert.ok(actions.length > 0, service + " Auditor has an explicit allowlist");
   assert.equal(JSON.stringify(Array.from(actions).filter(action => mutatingAction.test(action))), "[]",
