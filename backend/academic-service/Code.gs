@@ -4332,6 +4332,13 @@ function getSecureDocumentStream(payload) {
 }
 
 // [REQ-EXP-001] [Fase 1: Registro y Expediente de Estudiantes] - Service backend endpoint (getStudentFile) para consulta y visualización del expediente digital del estudiante.
+function sanitizeStudentPhotoUrl_(value) {
+  var url = String(value || "").trim();
+  if (!url) return "";
+  if (/^(?:https?:)?\\/\\/(?:drive\\.google\\.com|docs\\.google\\.com|drive\\.usercontent\\.google\\.com|[^/]+\\.googleusercontent\\.com)(?:[/:?#]|$)/i.test(url)) return "";
+  return url;
+}
+
 function getStudentFile(payload) {
   const { expedienteId, userId, codigoInstitucional } = payload || {};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -4384,7 +4391,7 @@ function getStudentFile(payload) {
     status: "success",
     studentFile: {
       expedienteId: exp[0], personaId: exp[1], userId: targetUserId, codigoInstitucional: exp[2],
-      fechaNacimiento: exp[3], nacionalidad: exp[4], direccionResidencia: exp[5], fotografiaUrl: exp[6],
+      fechaNacimiento: exp[3], nacionalidad: exp[4], direccionResidencia: exp[5], fotografiaUrl: sanitizeStudentPhotoUrl_(exp[6]),
       estadoExpediente: exp[7], fechaCreacion: exp[8], observaciones: exp[10],
       enrollments: enrollments, guardians: guardians, documents: docs, movements: moves
     }
