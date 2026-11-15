@@ -3907,7 +3907,7 @@ function classifyPdfDocumentPages_(rawBytes) {
       pageCount: classifiedPages.length,
       pages: classifiedPages,
       summary: summary,
-      requiresOcr: summary.escaneada + summary.mixta > 0,
+      requiresOcr: summary.escaneada + summary.mixta > 0 || classifiedPages.some(function(page) { return page.reason === "COMPRESSED_OR_UNRESOLVED_CONTENT"; }),
       parser: "conservative-pdf-page-v1"
     };
   } catch (error) {
