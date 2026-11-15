@@ -13736,7 +13736,7 @@ function nextStudentDocumentVersion_(previousVersion) {
   return String(Number(match[1])) + "." + String(Number(match[2]) + 1);
 }
 
-function getDocumentDuplicatePolicy_(ss) {
+function getDocumentDuplicatePolicy_(ssForAccess) {
   var defaultPolicy = "RECHAZAR_DUPLICADO_EXACTO";
   var sheet = ss && ss.getSheetByName ? ss.getSheetByName("ConfiguracionInstitucional") : null;
   if (!sheet || sheet.getLastRow() < 2) return { status: "success", policy: defaultPolicy };
@@ -13838,7 +13838,7 @@ function uploadStudentDocument(payload) {
           duplicate:true,duplicateType:importBatchId && String(sameRecord[16] || "") === importBatchId ? "MISMO_LOTE" : "MISMO_DOCUMENTO",fileCreated:false};
       }
     }
-    const inventorySheet = ss.getSheetByName("InventarioDocumentalLegado");
+    const inventorySheet = ssForAccess.getSheetByName("InventarioDocumentalLegado");
     let inventoryDuplicate = null;
     if (inventorySheet) {
       const inventoryValues = inventorySheet.getDataRange().getValues();
