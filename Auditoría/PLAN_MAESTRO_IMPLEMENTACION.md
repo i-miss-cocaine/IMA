@@ -5608,3 +5608,11 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Node local NOT RUN por ausencia de checkout local ejecutable; CI Node.js 24.22.2 y sintaxis Apps Script/JS PASS. CLI no aplicable: no hay package.json ni scripts CLI. BETA-FUNC-099 sigue Pendiente beta.
 - **Estado:** F22-Task02 completada en código/revisión/CI; no se afirma verificación en Drive/Sheets productivos ni integración PSC real.
 - **Siguiente candidata:** F22-Task03; analizar subflujo de certificado para conformidad manual y respetar dependencias PSC/múltiples firmantes antes de cerrar la tarea completa.
+
+
+### C1.749 — F22-Task03 — aislamiento del resumen por hash y versión (subflujo)
+- El grafo de dependencias revela ciclo entre F22-Task03 (certificado final), F22-Task04 (PSC real) y F22-Task06 (multifirmante). El certificado probatorio no puede generarse hasta disponer de una transacción criptográficamente validada y del conjunto completo de firmantes requeridos.
+- Se aisló un subflujo seguro: generateSignatureAuditCertificate exige metadatos binarios vigentes y limita el resumen a las firmas de la solicitud/documento/hash/versión exactos. Se incluyen las versiones por firmante y se excluyen versiones históricas o hashes divergentes. El resultado continúa explícitamente como resumen NO_PROBATORIO y no se persiste como certificado.
+- Contrato user-service-signature-ownership, callback PSC, integridad documental y sintaxis CI PASS. Department Scope run 43726394404 SUCCESS (Node.js 24.22.2). Node local NOT RUN; CLI no aplicable.
+- **Estado:** subflujo completado; F22-Task03 sigue Pendiente por falta de artefacto independiente persistido, disparador terminal autenticado, PSC real y flujo multifirmante.
+- **Continuidad:** seleccionar otro P0 de PM-06 que sea técnicamente independiente; no cerrar ni simular F22-Task03/04/06.

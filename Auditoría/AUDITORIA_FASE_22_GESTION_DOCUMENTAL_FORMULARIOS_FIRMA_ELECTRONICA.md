@@ -271,6 +271,8 @@ El informe documenta de forma exhaustiva y rigurosa el estado de la Fase 22, per
 - **Reconciliación:** TASK-040/F22-Task03 registró generador y 227/227 pruebas, pero AUD-NG-061 encuentra certificado solo en memoria, sin persistencia ni disparador automático, y clasifica cualquier estado distinto de Rechazado como CompletadoConExito. Coordinar con TASK-351/AUD-NG-061 para la verificación CUV sin duplicar.
 - **Evidencia de cierre:** pendiente; no existe evidencia de certificado independiente persistido y emitido tras finalización válida.
 
+- **Subflujo C1.749:** el resumen no probatorio se limita al hash y VersionDocumento vigentes; excluye firmas de versiones anteriores. La tarea permanece Pendiente hasta persistencia de certificado, cierre criptográfico y finalización de todos los firmantes.
+
 ### [F22-Task04] Integrar firma electrónica avanzada con PSC real y proteger credenciales
 - **Hallazgo de origen:** secciones A.1.6, B, C.7, D/F22-16/F22-38, G.3 y H P0; ampliaciones AUD-NG-062 y AUD-NG-063.
 - **Severidad:** Crítica. **Objetivo:** distinguir conformidad simple de firma avanzada verificable bajo el marco legal hondureño.

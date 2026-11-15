@@ -674,3 +674,35 @@ Commits de implementación/ajuste reconciliados desde C1.747: `07b6bdbb641e0c320
 - **F22-Task02:** completada en código/revisión/CI; beta pendiente.
 - **Siguiente candidata:** F22-Task03, certificado probatorio persistido; antes de cerrar su alcance completo, separar la generación verificable para conformidades manuales de las dependencias aún no satisfechas de PSC/múltiples firmantes. No declarar F22-Task03 completada por la sola existencia de un certificado en memoria.
 - Reanudar desde el commit que incorpora este checkpoint, manteniendo exclusivamente `NG_beta_0.0.0.1_work`.
+
+
+### C1.749 — F22-Task03 — aislamiento de resumen de auditoría por hash y versión
+
+**Rama:** `NG_beta_0.0.0.1_work`  
+**Checkpoint anterior:** C1.748  
+**HEAD inicial:** `00c59edc0ba9b2b40c0748414ea58fe7387e2e65`  
+**HEAD antes del commit de checkpoint:** `d7094f1c66088bed6b73d87e019047270cff2412`  
+**Rama base:** `NG_beta_0.0.0.1` — HEAD sin cambios `44d9891132332e692dbe2ba8602b41f50a508a59`.
+
+#### Subflujo seguro ejecutado (F22-Task03, no cierre de tarea)
+La selección topológica confirmó un ciclo de dependencias: F22-Task03 requiere F22-Task04 y el flujo multifirmante; F22-Task06 requiere F22-Task03/04. La integración PSC real sigue sin proveedor/credenciales/PKI verificados, y el flujo multifirmante no está implementado. No se debe emitir ni persistir un certificado probatorio cuando el estado de firma no puede validarse criptográficamente ni se conoce el conjunto completo de firmantes requeridos.
+
+Se aisló y corrigió un subflujo independiente en `generateSignatureAuditCertificate`: el resumen de auditoría (que sigue etiquetado explícitamente `RESUMEN_AUDITORIA_NO_PROBATORIO`) ahora exige VersionDocumento y SHA-256 persistidos del documento autorizado y solo incluye firmas que coinciden simultáneamente con solicitud, documento, hash y versión vigentes. El resultado y cada entrada de firmante exponen la versión exacta. Firmas de versiones históricas, hashes diferentes o metadatos incompletos no se mezclan con el resumen actual.
+
+#### Archivos y commits
+- `backend/user-service/Code.gs`
+- `tests/security/user-service-signature-ownership.test.js`
+- Commit de implementación: `6a8db849dba5b6b7e96b780c4a65a2764c5b94c8`.
+- Commit de fixtures SHA-256 válidos: `d7094f1c66088bed6b73d87e019047270cff2412`.
+
+#### Verificaciones
+- Contrato Node `user-service-signature-ownership`: PASS, incluyendo versión actual, hash exacto, exclusión de firmas históricas, rechazo de hash distinto y metadatos incompletos.
+- Contratos de callback PSC y de integridad documental USER: PASS.
+- Sintaxis Apps Script/JS y clientes: PASS en GitHub Actions.
+- Department Scope Contract run `43726394404`: SUCCESS, Node.js 24.22.2.
+- Node local: NOT RUN; no se dispuso de checkout local ejecutable. CLI no aplicable al repositorio (sin `package.json` ni scripts CLI).
+
+#### Estado y continuidad
+- **F22-Task03:** sigue Pendiente; este checkpoint cierra únicamente el subflujo de aislamiento por hash/versión. No existe aún certificado independiente persistido, disparador de finalización, validación PSC real ni regla de finalización multifirmante. El resumen en memoria no se presenta como certificado probatorio.
+- **Dependencias bloqueantes para el cierre:** F22-Task04 (PSC real con endpoint/credenciales/cadena de confianza) y F22-Task06 (firmantes requeridos, orden, estados y finalización). No se marca la tarea completa.
+- Continuar con el siguiente subflujo P0 técnicamente independiente de PM-06; no forzar F22-Task03/04/06 ni crear evidencia ficticia.

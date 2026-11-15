@@ -3792,3 +3792,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - createAdvancedSignatureRequest se endureció para comparar el hash de bytes con el hash persistido, exigir versión, comprobar privacidad/estado del archivo y estabilidad entre lecturas, guardar VersionDocumento en TransaccionesFirmaAvanzada y devolverla al consultar estado. No declara firma PSC válida.
 - Contratos Node y sintaxis CI PASS. Department Scope 43726054293 SUCCESS; Task-Service security 43725992636 SUCCESS; Identity Mapping 43725992655 SUCCESS. Se corrigió una aserción de prueba que esperaba una lectura adicional tras un rechazo temprano.
 - Node local NOT RUN; CI Node.js 24.22.2 ejecutó los contratos. CLI no aplicable (sin package.json/scripts). BETA-FUNC-099 Pendiente beta; integración PSC real sigue pendiente.
+
+
+[2026-11-15] F22-Task03 — C1.749, aislamiento de resúmenes por hash y versión
+- generateSignatureAuditCertificate exige versión/hash persistidos y solo incorpora firmas de la solicitud/documento/hash/versión actuales; excluye versiones históricas y hashes distintos. Incluye VersionDocumento en resumen y entradas.
+- Se mantiene RESUMEN_AUDITORIA_NO_PROBATORIO: no se afirma certificado persistido ni firma criptográfica válida.
+- Dependencias: ciclo F22-Task03/04/06; PSC real y flujo multifirmante pendientes. F22-Task03 permanece Pendiente.
+- Node contract user-service-signature-ownership y sintaxis CI PASS; Department Scope 43726394404 SUCCESS. Node local NOT RUN; CLI no aplicable.

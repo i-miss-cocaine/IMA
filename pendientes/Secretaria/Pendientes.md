@@ -109,6 +109,8 @@
 
 ---
 
+- **Subflujo C1.749:** el resumen de auditoría queda limitado a documento/hash/versión exactos; no constituye certificado probatorio ni cierra la tarea. Pendiente: artefacto independiente en Drive, disparador de finalización validada, PSC real y flujo multifirmante.
+
 <!-- ID: F22-TASK04 | Fuentes: AUDITORIAS/AUDITORIA_FASE_22_GESTION_DOCUMENTAL_FORMULARIOS_FIRMA_ELECTRONICA.md -->
 ### [ ] [F22-TASK04] Integrar firma electrónica avanzada con PSC real y proteger credenciales
 - **Hallazgo de origen:** secciones A.1.6, B, C.7, D/F22-16/F22-38, G.3 y H P0; ampliaciones AUD-NG-062 y AUD-NG-063.
