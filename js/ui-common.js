@@ -6699,6 +6699,29 @@ window.applyPermanentFieldHelp = function(root) {
             target.setAttribute("aria-describedby", (describedBy ? describedBy + " " : "") + helpId);
         }
         target.setAttribute("data-ui-help-ready", "true");
+
+        /* Marca obligatorios sin depender del placeholder ni alterar el texto de la etiqueta. */
+        if (target.required && target.type !== "hidden") {
+            var labels = target.labels ? Array.prototype.slice.call(target.labels) : [];
+            if (!labels.length && target.id && root.querySelectorAll) {
+                var candidateLabels = root.querySelectorAll("label[for]");
+                for (var labelIndex = 0; labelIndex < candidateLabels.length; labelIndex++) {
+                    if (candidateLabels[labelIndex].htmlFor === target.id) labels.push(candidateLabels[labelIndex]);
+                }
+            }
+            for (var requiredIndex = 0; requiredIndex < labels.length; requiredIndex++) {
+                var label = labels[requiredIndex];
+                var hasMarker = label.querySelector && label.querySelector("[data-ui-required-marker]");
+                if (!hasMarker) {
+                    var marker = document.createElement("span");
+                    marker.className = "ima-field-required-marker";
+                    marker.setAttribute("data-ui-required-marker", "true");
+                    marker.setAttribute("aria-hidden", "true");
+                    marker.textContent = " *";
+                    label.appendChild(marker);
+                }
+            }
+        }
         applied++;
     }
 
@@ -6706,10 +6729,56 @@ window.applyPermanentFieldHelp = function(root) {
     return applied;
 };
 
+window.setFieldValidationError = function(targetOrId, message) {
+    var target = typeof targetOrId === "string" ? document.getElementById(targetOrId) : targetOrId;
+    if (!target) return false;
+    var errorText = String(message || "").trim();
+    if (!errorText) return window.clearFieldValidationError(target);
+    var errorId = target.getAttribute("data-ui-validation-error-id");
+    if (!errorId) {
+        errorId = "ima-field-error-" + String(target.id || (++window.__imaUIMetadataCounter)).replace(/[^A-Za-z0-9_-]/g, "-");
+        target.setAttribute("data-ui-validation-error-id", errorId);
+    }
+    var errorNode = document.getElementById(errorId);
+    if (!errorNode) {
+        errorNode = document.createElement("p");
+        errorNode.id = errorId;
+        errorNode.className = "ima-field-error";
+        errorNode.setAttribute("role", "alert");
+        errorNode.setAttribute("aria-live", "polite");
+        var helpId = target.getAttribute("data-ui-help-id");
+        var anchor = helpId ? document.getElementById(helpId) : null;
+        var parent = target.parentNode;
+        if (!parent) return false;
+        parent.insertBefore(errorNode, anchor && anchor.parentNode === parent ? anchor.nextSibling : target.nextSibling);
+    }
+    errorNode.textContent = errorText;
+    target.setAttribute("aria-invalid", "true");
+    var describedBy = String(target.getAttribute("aria-describedby") || "").trim();
+    if ((" " + describedBy + " ").indexOf(" " + errorId + " ") === -1) {
+        target.setAttribute("aria-describedby", (describedBy ? describedBy + " " : "") + errorId);
+    }
+    return true;
+};
+
+window.clearFieldValidationError = function(targetOrId) {
+    var target = typeof targetOrId === "string" ? document.getElementById(targetOrId) : targetOrId;
+    if (!target) return false;
+    var errorId = target.getAttribute("data-ui-validation-error-id");
+    var errorNode = errorId ? document.getElementById(errorId) : null;
+    if (errorNode && errorNode.parentNode) errorNode.parentNode.removeChild(errorNode);
+    target.removeAttribute("aria-invalid");
+    target.removeAttribute("data-ui-validation-error-id");
+    var describedBy = String(target.getAttribute("aria-describedby") || "").split(/\\s+/).filter(function(id) { return id && id !== errorId; });
+    if (describedBy.length) target.setAttribute("aria-describedby", describedBy.join(" "));
+    else target.removeAttribute("aria-describedby");
+    return true;
+};
+
 if (!document.getElementById("ima-permanent-field-help-styles")) {
     var fieldHelpStyle = document.createElement("style");
     fieldHelpStyle.id = "ima-permanent-field-help-styles";
-    fieldHelpStyle.textContent = ".ima-field-help{display:block;margin:5px 0 8px;color:#475569;font-size:11px;line-height:1.45}";
+    fieldHelpStyle.textContent = ".ima-field-help{display:block;margin:5px 0 8px;color:#475569;font-size:11px;line-height:1.45}.ima-field-required-marker{color:#dc2626;font-weight:700}.ima-field-error{display:block;margin:4px 0 8px;color:#b91c1c;font-size:11px;font-weight:600;line-height:1.4}";
     (document.head || document.body).appendChild(fieldHelpStyle);
 }
 
