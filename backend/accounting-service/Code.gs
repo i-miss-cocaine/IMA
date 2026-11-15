@@ -262,6 +262,8 @@ function importDataWithColumnMapping(payload) {
     throw new Error("IMPORT_PREVIEW_INVALID_OR_STALE");
   }
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) throw new Error("AUTH_PERMISSION_DENIED");
   var runId = Utilities.getUuid();
   var applied = [];
   var errors = [];
@@ -270,7 +272,7 @@ function importDataWithColumnMapping(payload) {
   try {
     rowsToWrite.forEach(function(index) {
       var row = preview.preparedRows[preview.validRowIndexes.indexOf(index)];
-      var result = sendMigrationOwnerRequest_(String(input.tipoEntidad || "").toLowerCase(), "writeMigratedEntity", {
+      var result = sendMigrationOwnerRequest_(String(MIGRATION_OWNER_SCHEMAS_[input.tipoEntidad].service || "").toUpperCase(), "writeMigratedEntity", {
         sessionToken: input.sessionToken,
         institutionId: PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID"),
         entity: row,
@@ -285,7 +287,7 @@ function importDataWithColumnMapping(payload) {
       runId, String(input.nombreArchivo || ""), String(input.sistemaOrigen || ""),
       String(input.tipoEntidad || ""), String(input.destinoModulo || ""), applied.length,
       new Date(), JSON.stringify(warnings), JSON.stringify(errors),
-      preview.previewHash, partial ? "PARTIAL" : "COMPLETED", authUserForMigration_(input)
+      preview.previewHash, partial ? "PARTIAL" : "COMPLETED", actor.userId || ""
     ]);
     return {
       status: "success",
@@ -312,7 +314,87 @@ function importDataWithColumnMapping(payload) {
   }
 }
 
-function authUserForMigration_(payload) {
-  var identity = getVerifiedAccountingIdentity_(payload || {});
-  return identity && identity.userId || "";
+
+/* Runtime configuration and fail-closed service adapters. */
+var SPREADSHEET_ID = PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID") || "";
+var MIGRATION_OWNER_SCHEMAS_ = {
+  curso: { service: "ACCOUNTING", sheet: "Cursos", headers: ["CursoID", "Nombre", "Nota", "FechaInicio"] },
+  estudiante: { service: "ACADEMIC", sheet: "Estudiantes", headers: ["EstudianteID", "PersonaID"] }
+};
+
+function getVerifiedAccountingIdentity_(payload) {
+  if (!payload || !payload.sessionToken || typeof getUserVerifiedRole !== "function" || typeof getUserContextScope !== "function") {
+    return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
+  }
+  var role = getUserVerifiedRole(payload);
+  if (!role || role === "NO_ACCESS" || role === "SIN_ACCESO") return { authorized: false, code: "AUTH_PERMISSION_DENIED" };
+  var scope = getUserContextScope(payload);
+  var configuredInstitution = String(PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID") || "").trim();
+  if (!scope || scope.status !== "success" || scope.authorized !== true ||
+      !scope.userId || !scope.institutionId || String(scope.institutionId) !== configuredInstitution) {
+    return { authorized: false, code: "INSTITUTION_SCOPE_DENIED" };
+  }
+  return { authorized: true, userId: String(scope.userId), role: String(scope.role || role), institutionId: configuredInstitution };
+}
+
+function sendMigrationOwnerRequest_(service, action, payload) {
+  var properties = PropertiesService.getScriptProperties();
+  var endpoint = String(properties.getProperty("MIGRATION_OWNER_API_URL") || "").trim();
+  var secret = String(properties.getProperty("MIGRATION_OWNER_API_SECRET") || "").trim();
+  if (!endpoint || !secret || typeof UrlFetchApp === "undefined") throw new Error("MIGRATION_OWNER_SERVICE_NOT_CONFIGURED");
+  var response = UrlFetchApp.fetch(endpoint, {
+    method: "post",
+    contentType: "application/json",
+    headers: { Authorization: "Bearer " + secret },
+    payload: JSON.stringify({ service: service, action: action, payload: payload }),
+    muteHttpExceptions: true
+  });
+  var status = response.getResponseCode();
+  var body = {};
+  try { body = JSON.parse(response.getContentText() || "{}"); } catch (ignored) {}
+  if (status < 200 || status >= 300 || body.status !== "success") {
+    throw new Error(String(body.code || "MIGRATION_OWNER_REQUEST_FAILED"));
+  }
+  return body;
+}
+
+function rollbackMigrationOwnerWrites_(applied) {
+  var failures = [];
+  (applied || []).slice().reverse().forEach(function(item) {
+    try {
+      sendMigrationOwnerRequest_(item.service, "rollbackMigratedEntity", {
+        entityType: item.entityType,
+        entity: item.payload,
+        idempotencyKey: migrationHash_(migrationStableJson_({ action: "rollback", entityType: item.entityType, entity: item.payload }))
+      });
+    } catch (error) {
+      failures.push({ entityType: item.entityType, code: String(error && error.message || error) });
+    }
+  });
+  return failures;
+}
+
+function getOrCreateSheet(name) {
+  if (!SPREADSHEET_ID) throw new Error("SPREADSHEET_NOT_CONFIGURED");
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  return ss.getSheetByName(name) || ss.insertSheet(name);
+}
+
+function migrationStableJson_(value) {
+  function normalize(item) {
+    if (item instanceof Date) return item.toISOString();
+    if (Array.isArray(item)) return item.map(normalize);
+    if (item && typeof item === "object") {
+      var out = {};
+      Object.keys(item).sort().forEach(function(key) { out[key] = normalize(item[key]); });
+      return out;
+    }
+    return item;
+  }
+  return JSON.stringify(normalize(value));
+}
+
+function migrationHash_(value) {
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(value), Utilities.Charset.UTF_8);
+  return digest.map(function(byte) { return ("0" + ((byte + 256) % 256).toString(16)).slice(-2); }).join("");
 }
