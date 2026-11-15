@@ -4335,7 +4335,7 @@ function getSecureDocumentStream(payload) {
 function sanitizeStudentPhotoUrl_(value) {
   var url = String(value || "").trim();
   if (!url) return "";
-  if (/^(?:https?:)?\\/\\/(?:drive\\.google\\.com|docs\\.google\\.com|drive\\.usercontent\\.google\\.com|[^/]+\\.googleusercontent\\.com)(?:[/:?#]|$)/i.test(url)) return "";
+  if (/^(?:https?:)?\/\/(?:drive\.google\.com|docs\.google\.com|drive\.usercontent\.google\.com|[^/]+\.googleusercontent\.com)(?:[/:?#]|$)/i.test(url)) return "";
   return url;
 }
 
