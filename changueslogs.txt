@@ -3897,3 +3897,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Preflight Accounting valida identidad, fechas, calificaciones 0–100, referencias, tenant/departamento y sobrescrituras locales; importación parcial explícita y rollback ante errores de escritura; advertencias persistidas en AuditoriaMigraciones.
 - CI Node 24 SUCCESS para contratos semánticos, OpenXML, PDF y Excel en e9013de331cd0b49e7d5b9e9372be4a3d8548b19. Cambios posteriores de detección de sobrescritura/advertencias pendientes de la siguiente ejecución CI.
 - TASK-133 permanece abierto: UI de mapeo/confirmación en Secretaría/Contabilidad, consulta de destinos USER/ACADEMIC, OCR y beta real pendientes.
+
+
+[2026-11-15] TASK-130 — C1.763 — Ayudas permanentes de importación y Secretaría
+- Se añadió metadata/fallback importacion.xlsx con máximo verificado de 10 MiB y validación .xlsx/MIME/firma ZIP.
+- Se vinculó excel-file-input y se añadieron ayudas de calendario a tres campos de Secretaría.
+- Se ampliaron contratos de catálogo y formulario; cuatro suites de contrato aisladas PASS y sintaxis V8 de seis scripts PASS.
+- Node CLI nativo y estado final de GitHub Actions no confirmados; TASK-130 permanece abierto.
