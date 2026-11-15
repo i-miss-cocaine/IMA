@@ -94,13 +94,13 @@ function buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutio
 function getVerifiedDepartmentScopeForSession_(payload) {
   var identity = getVerifiedAccountingIdentity_(payload || {});
   if (!identity || identity.authorized !== true) return { valid: false, code: identity && identity.code || "VERIFIED_IDENTITY_REQUIRED" };
-  var claims = typeof verifySessionToken === "function" ? verifySessionToken(payload.sessionToken) : null;
-  if (!claims || !claims.membershipId || !claims.userId || !claims.role || !claims.institutionId) {
+  if (!identity.membershipId || !identity.userId || !identity.role || !identity.institutionId) {
     return { valid: false, code: "DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED" };
   }
   return {
-    valid: true, userId: String(claims.userId), roleId: String(claims.role),
-    membershipId: String(claims.membershipId), institutionId: String(claims.institutionId)
+    valid: true, userId: String(identity.userId), roleId: String(identity.role),
+    membershipId: String(identity.membershipId), institutionId: String(identity.institutionId),
+    sessionToken: String(payload.sessionToken)
   };
 }
 
@@ -167,9 +167,14 @@ function mapMigrationRowToTarget_(row, mapping, schema) {
 }
 
 function accountingHasInstitutionalImportPermission_(actor) {
-  if (!actor || !actor.roleId || typeof getDynamicPermissionsForRole !== "function") return false;
-  var permission = getDynamicPermissionsForRole(actor.roleId, "importDataWithColumnMapping");
-  return permission === true || !!(permission && permission.authorized === true);
+  if (!actor || !actor.sessionToken) return false;
+  var verified = requestAccountingUserAuthorization_("authorizeAccountingImport", {
+    sessionToken: String(actor.sessionToken)
+  });
+  return !!(verified && verified.status === "success" &&
+    verified.authorized === true && verified.importPermissionVerified === true &&
+    String(verified.userId || "") === String(actor.userId || "") &&
+    String(verified.role || "") === String(actor.roleId || ""));
 }
 
 function resolveAccountingImportRowDepartmentSnapshot_(payload, ss, actor) {
@@ -235,7 +240,7 @@ function buildAccountingDepartmentalImportPreflight_(payload, ss, schema) {
   if (!departmentScoped) return { valid: true, applicable: false, rows: input.filasData || [] };
   var scope = getVerifiedAccountingDepartmentScope_(input, ss);
   if (!scope.valid) return { valid: false, code: scope.code };
-  var hasImportPermission = accountingHasInstitutionalImportPermission_({ roleId: scope.roleId, userId: scope.userId });
+  var hasImportPermission = accountingHasInstitutionalImportPermission_({ roleId: scope.roleId, userId: scope.userId, sessionToken: input.sessionToken });
   if (!hasImportPermission) {
     return { valid: false, code: scope.institutionWide ?
       "DEPARTMENT_IMPORT_INSTITUTION_WIDE_UNAUTHORIZED" : "DEPARTMENT_IMPORT_PERMISSION_DENIED" };
@@ -290,7 +295,7 @@ function buildImportPreview_(payload) {
   var auth = getVerifiedAccountingIdentity_(input);
   if (!auth || auth.authorized !== true) return { status: "error", code: "AUTH_PERMISSION_DENIED", validForImport: false, errores: [] };
   if (typeof accountingHasInstitutionalImportPermission_ === "function" &&
-      !accountingHasInstitutionalImportPermission_({ roleId: auth.role || auth.roleId, userId: auth.userId })) {
+      !accountingHasInstitutionalImportPermission_({ roleId: auth.role || auth.roleId, userId: auth.userId, sessionToken: input.sessionToken })) {
     return { status: "error", code: "IMPORT_PERMISSION_DENIED", validForImport: false, errores: [] };
   }
   var institutionId = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID") || "").trim();
@@ -746,20 +751,62 @@ const MIGRATION_OWNER_SCHEMAS_={
 };
 const ACCOUNTING_IMPORT_ROW_DEPARTMENT_SNAPSHOT_HEADERS_ = ["ImportBatchID","SnapshotID","RowID","InstitutionID","Domain","DepartmentID","Status","VerifiedBy","VerifiedAt","SnapshotVersion"];
 
+function accountingComputeHmacSignature_(message, secret) {
+  var bytes = Utilities.computeHmacSignature(Utilities.MacAlgorithm.HMAC_SHA_256, String(message), String(secret));
+  return bytes.map(function(byte) { return ("0" + (byte & 255).toString(16)).slice(-2); }).join("");
+}
+
+function requestAccountingUserAuthorization_(action, payload) {
+  var properties = PropertiesService.getScriptProperties();
+  var endpoint = String(properties.getProperty("IMA_USER_SERVICE_URL") || "").trim();
+  var secret = String(properties.getProperty("IMA_MIGRATION_HMAC_SECRET") || "").trim();
+  if (!/^https:\/\/[^/]+\/exec$/i.test(endpoint) || secret.length < 32 ||
+      typeof UrlFetchApp === "undefined") return { status: "error", code: "ACCOUNTING_AUTH_SERVICE_NOT_CONFIGURED" };
+  var now = Date.now();
+  var requestId = "REQ-" + now + "-" + Utilities.getUuid().replace(/-/g, "").slice(0, 12);
+  var correlationId = "CORR-" + Utilities.getUuid().replace(/-/g, "");
+  var body = payload || {};
+  var bodyToSign = [requestId, now, correlationId, "ACCOUNTING", "USER", String(action), JSON.stringify(body)].join("|");
+  var envelope = {
+    sourceService: "ACCOUNTING", targetService: "USER", action: String(action),
+    requestId: requestId, timestamp: now, correlationId: correlationId,
+    payload: body, hmacSignature: accountingComputeHmacSignature_(bodyToSign, secret)
+  };
+  try {
+    var response = UrlFetchApp.fetch(endpoint, {
+      method: "post", contentType: "application/json",
+      payload: JSON.stringify(envelope), muteHttpExceptions: true
+    });
+    var status = response.getResponseCode();
+    var result = {};
+    try { result = JSON.parse(response.getContentText() || "{}"); } catch (ignored) {}
+    if (status < 200 || status >= 300 || !result || typeof result !== "object") {
+      return { status: "error", code: "ACCOUNTING_AUTH_SERVICE_UNAVAILABLE" };
+    }
+    return result;
+  } catch (error) {
+    return { status: "error", code: "ACCOUNTING_AUTH_SERVICE_UNAVAILABLE" };
+  }
+}
+
 function getVerifiedAccountingIdentity_(payload) {
-  if (!payload || !payload.sessionToken || typeof verifySessionToken !== "function") {
+  if (!payload || typeof payload.sessionToken !== "string" || !payload.sessionToken) {
     return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
   }
-  var claims = verifySessionToken(payload.sessionToken);
-  if (!claims || !claims.userId || !claims.role || !claims.institutionId) {
-    return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
+  var verified = requestAccountingUserAuthorization_("verifyAccountingSession", {
+    sessionToken: payload.sessionToken
+  });
+  if (!verified || verified.status !== "success" || verified.authorized !== true ||
+      !verified.userId || !verified.role || !verified.institutionId) {
+    return { authorized: false, code: verified && verified.code || "VERIFIED_IDENTITY_REQUIRED" };
   }
-  var configuredInstitution = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim();
-  if (!configuredInstitution || String(claims.institutionId) !== configuredInstitution) {
+  var configuredInstitution = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") ||
+    PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID") || "").trim();
+  if (!configuredInstitution || String(verified.institutionId) !== configuredInstitution) {
     return { authorized: false, code: "INSTITUTION_SCOPE_DENIED" };
   }
-  return { authorized: true, userId: String(claims.userId), role: String(claims.role),
-    membershipId: String(claims.membershipId || ""), institutionId: configuredInstitution };
+  return { authorized: true, userId: String(verified.userId), role: String(verified.role),
+    membershipId: String(verified.membershipId || ""), institutionId: configuredInstitution };
 }
 
 function sendMigrationOwnerRequest_(service, action, payload) {
