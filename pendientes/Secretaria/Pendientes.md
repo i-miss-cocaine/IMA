@@ -3396,9 +3396,15 @@
   - [ ] Un archivo modificado produce un hash diferente y se clasifica como nueva versión o documento independiente.
   - [ ] La verificación de integridad detecta si un archivo en Drive fue alterado o sustituido con posterioridad.
 - **Dependencias:** F39-Task01 (inventario documental institucional); TASK-134 implementa F39-Task02 y es prerrequisito de F39-Task03.
-- **Estado:** [ ] Pendiente
+- **Estado:** [ ] En ejecución — deduplicación SHA-256 implementada en Academic/User; falta integración ACCOUNTING, Node CLI/Actions y beta real.
 
 - **Resolución C1.768:** se corrigió el Plan Maestro: TASK-134 depende del inventario F39-Task01, implementa F39-Task02 (SHA-256) y habilita F39-Task03 (custodia protegida). Se conserva F39-Task03 como dependiente de F39-Task02; el ciclo queda eliminado.
+
+- **Avance C1.769 (2026-11-15):** DocumentosEstudiantes amplía el esquema de forma aditiva con HashSHA256, ImportBatchID y DocumentoReferenciaID, conservando SHA256 legado. uploadStudentDocument calcula el hash antes de crear el archivo, serializa la detección con ScriptLock, distingue mismo lote/repositorio/mismo documento y evita crear un archivo físico duplicado. La política POLITICA_DUPLICADOS_DOCUMENTALES usa RECHAZAR_DUPLICADO_EXACTO por defecto o CREAR_ENLACE_REFERENCIA_SIN_DUPLICAR_ARCHIVO para crear una referencia al mismo DriveFileId.
+- **Integridad:** verifyDocumentIntegritySha256 se expone por el dispatcher Academic y usa el mismo verificador privado; getStudentDocuments/getStudentDocumentFile comprueban el hash al consultar/descargar. Restauración de versiones conserva HashSHA256.
+- **Inventario legado:** InventarioDocumentalLegado añade HashSHA256 al final mediante migración aditiva; el hash se calcula en servidor desde fileData, nunca se acepta un hash arbitrario del cliente. Duplicados binarios en la misma institución se rechazan sin revelar IDs de otros departamentos.
+- **Pruebas aisladas:** academic-student-document-private-storage PASS (incluye duplicado exacto, lote, enlace sin copia, inventario legado, alteración binaria y verificación); user-service-legacy-document-inventory PASS (hash, deduplicación, migración de esquema); parseo completo Academic/User PASS. Hash SHA-256 simulado consistentemente en harness V8; Node CLI nativo no ejecutado.
+- **Pendiente:** el componente ACCOUNTING sigue sin ruta de carga de documentos ni router doPost/textResponse, por lo que no hay flujo de documentos contables que pueda integrarse sin crear un servicio parcial. GitHub Actions no reporta un workflow para el HEAD actual. BETA-FUNC-109 pendiente de Apps Script/Drive reales.
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 5897-5928; clave TASK-135; asignación única: Secretaria -->
 
 ---
