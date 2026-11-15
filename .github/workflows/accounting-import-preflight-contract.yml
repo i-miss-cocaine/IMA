@@ -88,6 +88,8 @@ jobs:
         run: node tests/security/department-reference-interservice-envelope.test.js
       - name: Check API client syntax
         run: node --check js/api.js
+      - name: Check secretary document download client syntax
+        run: node --check js/secretary.js
       - name: Check accounting dashboard syntax
         run: node --check js/accounting.js
       - name: Run accounting migration import UI contract
