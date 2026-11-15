@@ -24,8 +24,9 @@ const schemas={curso:{service:"ACCOUNTING",sheet:"Cursos",headers:["CursoID","No
 const auditRows=[],writeCalls=[],rollbackCalls=[];
 let failWriteAt=0,runCounter=0;
 const audit={appendRow(row){auditRows.push(row);}};
+let binaryFileHash="TEST-FILE-HASH";
 const context={SPREADSHEET_ID:"TEST",MIGRATION_OWNER_SCHEMAS_:schemas,
- validateImportWorkbookBinary_:()=>({valid:true,fileHash:"TEST-FILE-HASH"}),
+ validateImportWorkbookBinary_:()=>({valid:true,fileHash:binaryFileHash}),
  SpreadsheetApp:{openById(){return ss;}},PropertiesService:{getScriptProperties(){return{getProperty(){return"INST-1";}};}},
  getOrCreateSheet(){return audit;},Utilities:{getUuid(){return"RUN-"+(++runCounter);}},
  sendMigrationOwnerRequest_(type,action,payload){assert.equal(action,"writeMigratedEntity");writeCalls.push({type,payload});if(failWriteAt&&writeCalls.length===failWriteAt)throw new Error("MOCK_OWNER_WRITE_FAILED");return{status:"success",idempotent:false};},
@@ -64,6 +65,9 @@ const publicPreview=context.validate(base);
 assert.deepEqual(Array.from(publicPreview.targetExistenceSnapshot.targetRows),[],"preflight never returns unrelated destination row contents");
 assert.deepEqual(Array.from(publicPreview.targetExistenceSnapshot.existingTargetIds),["CURSO-1"],"preflight reveals only target IDs in the submitted batch");
 assert.notEqual(context.preview({...base,filasData:[{...base.filasData[0],nota:91}]}).previewHash,valid.previewHash);
+binaryFileHash="DIFFERENT-FILE-HASH";
+assert.notEqual(context.preview(base).previewHash,valid.previewHash,"the original uploaded file digest is bound into the preview hash");
+binaryFileHash="TEST-FILE-HASH";
 const partialPayload={...base,analisisEstructural:{headerRowIndex:1,dataRowNumbers:[3,7]},filasData:[base.filasData[0],{...base.filasData[0],legacyId:"CUR-2",fechaInicio:"fecha-invalida"}]};
 const partialPreview=context.preview(partialPayload);
 assert.equal(partialPreview.validForImport,false);
