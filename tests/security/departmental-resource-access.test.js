@@ -184,10 +184,12 @@ const ownFile=context.getStudentFile({sessionToken:"student",userId:"P-B"});
 assert.equal(ownFile.status,"success"); assert.equal(ownFile.studentFile.expedienteId,"EXP-STUDENT");
 assert.equal(context.getStudentFile({sessionToken:"staffA",expedienteId:"EXP-B"}).code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.getStudentFile({sessionToken:"admin",expedienteId:"EXP-B"}).status,"success");
-assert.deepEqual(Array.from(context.getStudentDocuments(actor("staffA")).documents,d=>d.documentoId),["DOC-A","DOC-S"]);
+assert.equal(context.getStudentDocuments(actor("staffA")).code,"RESOURCE_SCOPE_DENIED","document queries without a target expediente/application are rejected");
+assert.deepEqual(Array.from(context.getStudentDocuments({sessionToken:"staffA",expedienteId:"EXP-STUDENT"}).documents,d=>d.documentoId),["DOC-S"]);
 assert.equal(context.getStudentDocuments({sessionToken:"staffA",expedienteId:"EXP-B"}).code,"RESOURCE_SCOPE_DENIED");
-assert.deepEqual(Array.from(context.getStudentDocuments(actor("student")).documents,d=>d.documentoId),["DOC-S"]);
-assert.deepEqual(Array.from(context.getStudentDocuments(actor("admin")).documents,d=>d.documentoId),["DOC-A","DOC-B","DOC-S"]);
+assert.deepEqual(Array.from(context.getStudentDocuments({sessionToken:"student",expedienteId:"EXP-STUDENT"}).documents,d=>d.documentoId),["DOC-S"]);
+assert.equal(context.getStudentDocuments(actor("admin")).code,"RESOURCE_SCOPE_DENIED","institution-wide scope does not bypass explicit target binding");
+assert.deepEqual(Array.from(context.getStudentDocuments({sessionToken:"admin",expedienteId:"EXP-B"}).documents,d=>d.documentoId),["DOC-B"]);
 assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"staffA",asignaturaId:"ASIG-A"}).authorized,true);
 assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"staffA",asignaturaId:"ASIG-B"}).code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"teacher",asignaturaId:"ASIG-A",grado:"10",seccion:"A",periodoId:"2026"}).authorized,true);
@@ -205,8 +207,9 @@ for(const [fn,needle] of [["uploadStudentDocument","assertStudentRequestScopeAcc
 
 assert.equal(context.assertRecordOwnership("Director","U-A","U-B","DOCUMENT").authorized,false);
 assert.equal(context.assertRecordOwnership("Estudiante","U-STUDENT","U-STUDENT","DOCUMENT").authorized,true);
-assert.equal(context.getSecureDocumentStream({sessionToken:"staffA",fileId:"FILE-B"}).code,"RESOURCE_SCOPE_DENIED");
-assert.equal(context.getSecureDocumentStream({sessionToken:"staffA",fileId:"FILE-A"}).status,"success");
+assert.equal(context.getSecureDocumentStream({sessionToken:"staffA",fileId:"FILE-B"}).code,"RESOURCE_NOT_FOUND");
+assert.equal(context.getSecureDocumentStream({sessionToken:"staffA",fileId:"FILE-A"}).code,"RESOURCE_NOT_FOUND",
+  "a Drive file ID alone cannot authorize a download without a one-use document token");
 assert.equal(context.validateEvidenceFileAndPermissions({sessionToken:"staffA",fileId:"FILE-B"}).code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.validateEvidenceFileAndPermissions({sessionToken:"staffA",fileId:"FILE-A"}).status,"success");
 assert.ok(extractFunction(academic,"getStudentFileSummary").includes("getVerifiedAcademicIdentity_"));
