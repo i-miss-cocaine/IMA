@@ -7637,75 +7637,291 @@ function toBase64(file) {
     // [REQ-EXP-010] [Fase 1: Registro y Expediente de Estudiantes] - Controlador de interfaz para la lectura, vista previa e importación masiva de expedientes desde CSV y XLSX (#modal-excel-importer).
     const modalExcelImporter = document.getElementById('modal-excel-importer');
     const fileInputExcel = document.getElementById('excel-file-input');
+    const sheetSelectExcel = document.getElementById('excel-sheet-select');
+    const headerRowSelectExcel = document.getElementById('excel-header-row');
+    const previewSummaryExcel = document.getElementById('excel-preview-summary');
+    const previewDiagnosticsExcel = document.getElementById('excel-import-diagnostics');
+    const previewContainerExcel = document.getElementById('excel-preview-container');
     let parsedExcelData = [];
+    let selectedWorkbookExcel = null;
+    let selectedExcelFileName = '';
+    let latestExcelAnalysis = null;
+
+    function validateExcelFileEnvelope(file, bytes) {
+        const errors = [], warnings = [];
+        const maxBytes = 10 * 1024 * 1024;
+        if (!file || !Number(file.size)) errors.push({ code: 'FILE_EMPTY', message: 'El archivo está vacío o no se pudo leer.' });
+        if (file && Number(file.size) > maxBytes) errors.push({ code: 'FILE_TOO_LARGE', message: 'El archivo supera el límite de 10 MB.' });
+        if (!file || !/\.xlsx$/i.test(String(file.name || ''))) errors.push({ code: 'FILE_EXTENSION_MISMATCH', message: 'Solo se admiten libros .xlsx; no se aceptan .xls ni .xlsm.' });
+        const declaredMime = String(file && file.type || '').toLowerCase();
+        const expectedMime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        if (declaredMime && declaredMime !== expectedMime) errors.push({ code: 'FILE_MIME_MISMATCH', message: 'El tipo MIME declarado no corresponde a un libro XLSX.' });
+        if (!bytes || bytes.length < 4 || bytes[0] !== 0x50 || bytes[1] !== 0x4B || bytes[2] !== 0x03 || bytes[3] !== 0x04) {
+            errors.push({ code: 'FILE_MAGIC_BYTES_MISMATCH', message: 'La cabecera binaria no corresponde a un paquete XLSX ZIP válido. El archivo puede estar cifrado, dañado o tener otra extensión.' });
+        }
+        if (file && bytes && Number(file.size) !== bytes.length) errors.push({ code: 'FILE_READ_TRUNCATED', message: 'La cantidad de bytes leídos no coincide con el tamaño declarado del archivo.' });
+        if (!declaredMime) warnings.push({ code: 'FILE_MIME_UNDECLARED', message: 'El navegador no informó un MIME; se verificó la cabecera binaria.' });
+        return { valid: errors.length === 0, errors: errors, warnings: warnings };
+    }
+
+    function analyzeExcelWorkbook(workbook, sheetName, headerRowIndex) {
+        const errors = [], warnings = [];
+        if (!workbook || !Array.isArray(workbook.SheetNames) || !workbook.SheetNames.length || !workbook.Sheets) {
+            return { valid: false, errors: [{ code: 'WORKBOOK_EMPTY', message: 'El libro no contiene hojas legibles.' }], warnings: [], data: [], analysis: {} };
+        }
+
+        const metadata = workbook.Workbook && Array.isArray(workbook.Workbook.Sheets) ? workbook.Workbook.Sheets : [];
+        const hiddenSheets = workbook.SheetNames.filter(name => {
+            const item = metadata.find(entry => String(entry.name || '') === String(name));
+            return item && Number(item.Hidden || 0) > 0;
+        });
+        const visibleSheets = workbook.SheetNames.filter(name => hiddenSheets.indexOf(name) === -1);
+        const selectedName = String(sheetName || '').trim();
+        if (visibleSheets.length > 1 && !selectedName) {
+            errors.push({ code: 'VISIBLE_SHEET_SELECTION_REQUIRED', message: 'El libro contiene varias hojas visibles. Seleccione explícitamente la hoja que desea revisar.' });
+        }
+        const effectiveSheetName = selectedName || visibleSheets[0] || workbook.SheetNames[0];
+        const sheet = workbook.Sheets[effectiveSheetName];
+        if (!sheet) {
+            errors.push({ code: 'WORKSHEET_NOT_FOUND', message: 'La hoja seleccionada no existe en el libro.' });
+            return { valid: false, errors: errors, warnings: warnings, data: [], analysis: { visibleSheetCount: visibleSheets.length, hiddenSheets: hiddenSheets, selectedSheet: effectiveSheetName } };
+        }
+
+        if (hiddenSheets.length) warnings.push({ code: 'HIDDEN_SHEETS_PRESENT', message: 'El libro contiene hojas ocultas. Revise si contienen información que deba incorporarse.' });
+        if (hiddenSheets.indexOf(effectiveSheetName) !== -1) warnings.push({ code: 'HIDDEN_SHEET_SELECTED', message: 'La hoja seleccionada está oculta en el libro original.' });
+        const rowIndex = Number.isInteger(Number(headerRowIndex)) && Number(headerRowIndex) >= 0 ? Number(headerRowIndex) : 0;
+        if (rowIndex > 0) warnings.push({ code: 'HEADER_ROW_SHIFTED', message: 'Los encabezados comienzan después de la primera fila.' });
+
+        let grid = [];
+        try {
+            grid = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null, blankrows: true, raw: true, range: rowIndex });
+        } catch (error) {
+            errors.push({ code: 'WORKSHEET_PARSE_FAILED', message: 'No se pudo interpretar la hoja seleccionada: ' + String(error && error.message || error) });
+        }
+        if (!Array.isArray(grid) || !grid.length || !Array.isArray(grid[0])) {
+            errors.push({ code: 'HEADER_ROW_NOT_FOUND', message: 'No se encontró una fila de encabezados en la posición seleccionada.' });
+            return { valid: false, errors: errors, warnings: warnings, data: [], analysis: { visibleSheetCount: visibleSheets.length, hiddenSheets: hiddenSheets, selectedSheet: effectiveSheetName, headerRowIndex: rowIndex } };
+        }
+
+        const headers = grid[0].map(value => String(value === null || value === undefined ? '' : value).trim());
+        const headerIndexes = Object.create(null);
+        const duplicateHeaders = [];
+        headers.forEach((header, index) => {
+            if (!header) {
+                const hasData = grid.slice(1).some(row => row && row[index] !== null && row[index] !== undefined && String(row[index]).trim() !== '');
+                if (hasData) errors.push({ code: 'HEADER_NAME_MISSING', message: 'La columna ' + (index + 1) + ' contiene datos pero no tiene encabezado.' });
+                return;
+            }
+            const normalized = header.toLocaleLowerCase();
+            if (headerIndexes[normalized] !== undefined) duplicateHeaders.push(header);
+            else headerIndexes[normalized] = index;
+        });
+        if (duplicateHeaders.length) errors.push({ code: 'DUPLICATE_HEADERS', message: 'Hay encabezados duplicados: ' + duplicateHeaders.join(', ') + '.' });
+        if (!headers.some(Boolean)) errors.push({ code: 'HEADER_ROW_EMPTY', message: 'La fila seleccionada no contiene encabezados.' });
+
+        const mergedCells = Array.isArray(sheet['!merges']) ? sheet['!merges'].length : 0;
+        if (mergedCells) warnings.push({ code: 'MERGED_CELLS_PRESENT', message: 'Se detectaron ' + mergedCells + ' rangos de celdas combinadas; revise los valores desplazados.' });
+
+        const unresolvedFormulas = [], formulaErrors = [];
+        Object.keys(sheet).forEach(address => {
+            if (address.charAt(0) === '!') return;
+            const cell = sheet[address];
+            if (!cell || typeof cell !== 'object') return;
+            if (cell.f && (cell.v === undefined || cell.v === null || cell.v === '')) unresolvedFormulas.push(address);
+            const displayed = String(cell.w !== undefined ? cell.w : cell.v === undefined ? '' : cell.v);
+            if (cell.t === 'e' || /^#(REF!|DIV\/0!|VALUE!|N\/A|NAME\?|NUM!|NULL!)/i.test(displayed)) formulaErrors.push(address);
+        });
+        if (unresolvedFormulas.length) errors.push({ code: 'FORMULAS_WITHOUT_CACHED_VALUES', message: 'Hay fórmulas sin resultado calculado en: ' + unresolvedFormulas.slice(0, 12).join(', ') + '.' });
+        if (formulaErrors.length) errors.push({ code: 'FORMULA_CELL_ERRORS', message: 'Hay celdas con errores de fórmula en: ' + formulaErrors.slice(0, 12).join(', ') + '.' });
+
+        const blankRows = [], repeatedHeaderRows = [], typeInconsistencies = [];
+        const columnTypes = headers.map(() => Object.create(null));
+        const data = [];
+        for (let rowOffset = 1; rowOffset < grid.length; rowOffset++) {
+            const row = Array.isArray(grid[rowOffset]) ? grid[rowOffset] : [];
+            const values = headers.map((header, column) => row[column] === undefined ? null : row[column]);
+            const isBlank = values.every(value => value === null || value === undefined || String(value).trim() === '');
+            if (isBlank) {
+                blankRows.push(rowIndex + rowOffset + 1);
+                continue;
+            }
+            const repeatsHeader = headers.some(Boolean) && headers.every((header, column) =>
+                !header || String(values[column] === null || values[column] === undefined ? '' : values[column]).trim().toLocaleLowerCase() === header.toLocaleLowerCase()
+            );
+            if (repeatsHeader) {
+                repeatedHeaderRows.push(rowIndex + rowOffset + 1);
+                continue;
+            }
+            const record = {};
+            headers.forEach((header, column) => {
+                if (!header) return;
+                const value = values[column] === null || values[column] === undefined ? '' : values[column];
+                record[header] = value;
+                if (value === '') return;
+                const kind = value instanceof Date ? 'date' : typeof value;
+                columnTypes[column][kind] = true;
+            });
+            data.push(record);
+        }
+        if (blankRows.length) warnings.push({ code: 'BLANK_ROWS_PRESENT', message: 'Se detectaron ' + blankRows.length + ' filas vacías; no se completaron automáticamente.' });
+        if (repeatedHeaderRows.length) errors.push({ code: 'REPEATED_HEADER_ROWS', message: 'Se detectaron encabezados repetidos dentro de los datos en las filas: ' + repeatedHeaderRows.join(', ') + '.' });
+        headers.forEach((header, column) => {
+            if (header && Object.keys(columnTypes[column]).length > 1) typeInconsistencies.push(header);
+        });
+        if (typeInconsistencies.length) warnings.push({ code: 'COLUMN_TYPE_INCONSISTENCY', message: 'Hay columnas con tipos de datos inconsistentes: ' + typeInconsistencies.join(', ') + '.' });
+
+        const analysis = {
+            visibleSheetCount: visibleSheets.length,
+            selectedSheet: effectiveSheetName,
+            hiddenSheets: hiddenSheets,
+            mergedCells: mergedCells,
+            headerRowIndex: rowIndex,
+            blankRows: blankRows,
+            repeatedHeaderRows: repeatedHeaderRows,
+            duplicateHeaders: duplicateHeaders,
+            unresolvedFormulas: unresolvedFormulas,
+            formulaErrors: formulaErrors,
+            typeInconsistencies: typeInconsistencies,
+            errors: errors.map(item => ({ code: item.code, message: item.message }))
+        };
+        return { valid: errors.length === 0, errors: errors, warnings: warnings, data: data, headers: headers, analysis: analysis, selectedSheet: effectiveSheetName, headerRowIndex: rowIndex };
+    }
+
+    window.validateExcelFileEnvelope = validateExcelFileEnvelope;
+    window.analyzeExcelWorkbook = analyzeExcelWorkbook;
+
+    function renderExcelValidationResult(result, fileName) {
+        if (previewSummaryExcel) {
+            previewSummaryExcel.textContent = fileName + ' · ' + result.data.length + ' filas detectadas · ' + (result.headers || []).filter(Boolean).length + ' columnas';
+        }
+        if (!previewDiagnosticsExcel) return;
+        previewDiagnosticsExcel.replaceChildren();
+        const entries = result.errors.map(item => ({ severity: 'ERROR', message: item.message }))
+            .concat(result.warnings.map(item => ({ severity: 'ADVERTENCIA', message: item.message })));
+        if (!entries.length) entries.push({ severity: 'OK', message: 'La estructura del libro pasó la revisión preliminar.' });
+        entries.forEach(item => {
+            const line = document.createElement('li');
+            line.className = item.severity === 'ERROR' ? 'text-red-700' : item.severity === 'ADVERTENCIA' ? 'text-amber-700' : 'text-emerald-700';
+            line.textContent = item.severity + ': ' + item.message;
+            previewDiagnosticsExcel.appendChild(line);
+        });
+    }
+
+    function refreshExcelWorkbookPreview() {
+        if (!selectedWorkbookExcel) return;
+        const sheetName = sheetSelectExcel ? sheetSelectExcel.value : '';
+        const headerRow = headerRowSelectExcel ? Number(headerRowSelectExcel.value || 0) : 0;
+        latestExcelAnalysis = analyzeExcelWorkbook(selectedWorkbookExcel, sheetName, headerRow);
+        parsedExcelData = latestExcelAnalysis.valid ? latestExcelAnalysis.data : [];
+        renderExcelValidationResult(latestExcelAnalysis, selectedExcelFileName);
+        if (previewContainerExcel) previewContainerExcel.classList.remove('hidden');
+    }
+
+    function populateExcelWorkbookSelectors(workbook) {
+        if (sheetSelectExcel) {
+            sheetSelectExcel.replaceChildren();
+            const visibleCount = workbook.SheetNames.filter(name => {
+                const meta = workbook.Workbook && Array.isArray(workbook.Workbook.Sheets) ? workbook.Workbook.Sheets.find(item => item.name === name) : null;
+                return !(meta && Number(meta.Hidden || 0) > 0);
+            }).length;
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = visibleCount > 1 ? 'Seleccione una hoja…' : 'Hoja del libro';
+            sheetSelectExcel.appendChild(placeholder);
+            workbook.SheetNames.forEach(name => {
+                const meta = workbook.Workbook && Array.isArray(workbook.Workbook.Sheets) ? workbook.Workbook.Sheets.find(item => item.name === name) : null;
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name + (meta && Number(meta.Hidden || 0) > 0 ? ' (oculta)' : '');
+                sheetSelectExcel.appendChild(option);
+            });
+            if (visibleCount === 1) {
+                const firstVisible = workbook.SheetNames.find(name => {
+                    const meta = workbook.Workbook && Array.isArray(workbook.Workbook.Sheets) ? workbook.Workbook.Sheets.find(item => item.name === name) : null;
+                    return !(meta && Number(meta.Hidden || 0) > 0);
+                });
+                sheetSelectExcel.value = firstVisible || '';
+            } else {
+                sheetSelectExcel.value = '';
+            }
+        }
+        if (headerRowSelectExcel) {
+            headerRowSelectExcel.replaceChildren();
+            for (let row = 0; row < 20; row++) {
+                const option = document.createElement('option');
+                option.value = String(row);
+                option.textContent = 'Fila ' + (row + 1);
+                headerRowSelectExcel.appendChild(option);
+            }
+            headerRowSelectExcel.value = '0';
+        }
+    }
 
     document.getElementById('btn-open-excel-importer')?.addEventListener('click', () => {
         parsedExcelData = [];
+        selectedWorkbookExcel = null;
+        selectedExcelFileName = '';
+        latestExcelAnalysis = null;
         if (fileInputExcel) fileInputExcel.value = '';
-        document.getElementById('excel-preview-container')?.classList.add('hidden');
+        if (previewContainerExcel) previewContainerExcel.classList.add('hidden');
+        if (previewDiagnosticsExcel) previewDiagnosticsExcel.replaceChildren();
+        if (previewSummaryExcel) previewSummaryExcel.textContent = '';
         modalExcelImporter?.classList.remove('hidden');
     });
 
     document.getElementById('btn-close-excel-importer')?.addEventListener('click', () => modalExcelImporter?.classList.add('hidden'));
     document.getElementById('btn-cancel-excel-import')?.addEventListener('click', () => modalExcelImporter?.classList.add('hidden'));
+    sheetSelectExcel?.addEventListener('change', refreshExcelWorkbookPreview);
+    headerRowSelectExcel?.addEventListener('change', refreshExcelWorkbookPreview);
 
-    fileInputExcel?.addEventListener('change', (e) => {
-        const file = e.target.files[0];
+    fileInputExcel?.addEventListener('change', event => {
+        const file = event.target.files && event.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
-        reader.onload = (evt) => {
+        reader.onload = loadEvent => {
             try {
-                if (window.XLSX) {
-                    const data = new Uint8Array(evt.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    parsedExcelData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-
-                    const summaryElem = document.getElementById('excel-preview-summary');
-                    const previewContainer = document.getElementById('excel-preview-container');
-                    if (summaryElem) {
-                        summaryElem.innerHTML = `<strong>Total de Filas Leídas:</strong> ${parsedExcelData.length}<br><strong>Columnas Detectadas:</strong> ${Object.keys(parsedExcelData[0] || {}).join(', ')}`;
-                    }
-                    if (previewContainer) previewContainer.classList.remove('hidden');
-                } else {
-                    alert("Biblioteca XLSX no disponible.");
+                if (!window.XLSX) throw new Error('La biblioteca XLSX no está disponible.');
+                const bytes = new Uint8Array(loadEvent.target.result || new ArrayBuffer(0));
+                const envelope = validateExcelFileEnvelope(file, bytes);
+                if (!envelope.valid) {
+                    renderExcelValidationResult({ data: [], headers: [], errors: envelope.errors, warnings: envelope.warnings }, file.name);
+                    if (previewContainerExcel) previewContainerExcel.classList.remove('hidden');
+                    return;
                 }
-            } catch (err) {
-                alert("Error al leer archivo Excel: " + err.message);
+                selectedWorkbookExcel = XLSX.read(bytes, { type: 'array', cellDates: true, cellFormula: true, cellNF: true });
+                selectedExcelFileName = file.name;
+                populateExcelWorkbookSelectors(selectedWorkbookExcel);
+                refreshExcelWorkbookPreview();
+                if (envelope.warnings.length) {
+                    envelope.warnings.forEach(item => {
+                        if (previewDiagnosticsExcel) {
+                            const line = document.createElement('li');
+                            line.className = 'text-amber-700';
+                            line.textContent = 'ADVERTENCIA: ' + item.message;
+                            previewDiagnosticsExcel.appendChild(line);
+                        }
+                    });
+                }
+            } catch (error) {
+                selectedWorkbookExcel = null;
+                parsedExcelData = [];
+                renderExcelValidationResult({ data: [], headers: [], errors: [{ code: 'WORKBOOK_READ_FAILED', message: 'No se pudo abrir el libro. Puede estar dañado o protegido con contraseña: ' + String(error && error.message || error) }], warnings: [] }, file.name);
+                if (previewContainerExcel) previewContainerExcel.classList.remove('hidden');
             }
+        };
+        reader.onerror = () => {
+            renderExcelValidationResult({ data: [], headers: [], errors: [{ code: 'FILE_READ_FAILED', message: 'No fue posible leer completamente el archivo.' }], warnings: [] }, file.name);
+            if (previewContainerExcel) previewContainerExcel.classList.remove('hidden');
         };
         reader.readAsArrayBuffer(file);
     });
 
-    document.getElementById('btn-submit-excel-import')?.addEventListener('click', async () => {
-        if (!parsedExcelData || parsedExcelData.length === 0) {
-            alert("Por favor seleccione un archivo Excel válido con datos.");
-            return;
-        }
-
-        const targetModule = document.getElementById('excel-target-module')?.value || 'Docentes';
-        try {
-            const resp = await apiCall({
-                action: 'importDataWithColumnMapping',
-                nombreArchivo: 'importacion.xlsx',
-                destinoModulo: targetModule,
-                columnaMapeo: { identificador: Object.keys(parsedExcelData[0] || {})[0] || 'ID' },
-                filasData: parsedExcelData
-            }, 'ACCOUNTING');
-
-            if (resp && resp.status === 'success') {
-                alert(`¡Importación Completada!\nFilas Procesadas Exitosamente: ${resp.exitosas || parsedExcelData.length}`);
-                modalExcelImporter?.classList.add('hidden');
-            } else {
-                alert('Error al importar datos: ' + (resp?.message || 'Error desconocido'));
-            }
-        } catch (err) {
-            alert('Error al procesar importación: ' + err.message);
-        }
-    });
-
+    const submitExcelImportButton = document.getElementById('btn-submit-excel-import');
+    if (submitExcelImportButton) {
+        submitExcelImportButton.disabled = true;
+        submitExcelImportButton.title = 'La persistencia requiere un mapeo y una confirmación emitidos por el servicio propietario.';
+        submitExcelImportButton.textContent = 'Importación no habilitada';
+    }
 });
 /**
  * REQ: Soporte para copia de código en el panel del profesor (v7.6.4)
