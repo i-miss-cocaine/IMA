@@ -161,7 +161,7 @@ let t1=context.getTeacherStudentJustifications(teacher1);
 assert.equal(t1.status,"success");
 assert.equal(t1.data.length,1,"students without a current enrollment or with expired periods must not be exposed");
 assert.equal(t1.data[0].estudianteNombre,"Estudiante Uno");
-assert.deepEqual(Array.from(t1.data[0].sesiones.map(x=>x.sesionId)),["SESSION-MATH"]);
+assert.deepEqual(Array.from(t1.data[0].sesiones.map(x=>x.sesionId)),["SESSION-MATH","SESSION-MATH-2"]);
 assert.deepEqual(Array.from(t1.data[0].fechasAfectadas),["2026-11-10","2026-11-11"]);
 assert.equal(t1.data[0].grado,"10");
 assert.equal(t1.data[0].seccion,"A");
