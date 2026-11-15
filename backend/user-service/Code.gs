@@ -5854,6 +5854,16 @@ function getMyDepartmentalOutbox(payload) {
 function sendInstitutionalDispatch(payload) {
   return registerDepartmentalDocumentDelivery(payload);
 }
+function createDepartmentalBatchIdempotencyKey_(baseKey, documentId) {
+  var input = String(documentId || ""), first = 2166136261, second = 0x9e3779b9;
+  for (var i = 0; i < input.length; i++) {
+    var code = input.charCodeAt(i);
+    first = Math.imul(first ^ code, 16777619);
+    second = Math.imul(second ^ (code + i), 2246822519);
+  }
+  var a = (first >>> 0).toString(16), b = (second >>> 0).toString(16);
+  return String(baseKey || "") + ":" + ("00000000" + a).slice(-8) + ("00000000" + b).slice(-8);
+}
 function sendInstitutionalDispatchBatch(payload) {
   var p = payload || {}, items = Array.isArray(p.items) ? p.items : [];
   if (!items.length || items.length > 50) return { status: "error", code: "DELIVERY_BATCH_SIZE_INVALID" };
@@ -5867,7 +5877,7 @@ function sendInstitutionalDispatchBatch(payload) {
       failed++; continue;
     }
     seen[documentId] = true;
-    var child = Object.assign({}, p, item, { idempotencyKey: baseKey + ":" + computeDocumentSHA256(documentId).slice(0, 24) });
+    var child = Object.assign({}, p, item, { idempotencyKey: createDepartmentalBatchIdempotencyKey_(baseKey, documentId) });
     delete child.items;
     var result = registerDepartmentalDocumentDelivery(child);
     results.push({ index: i, documentoId: documentId, status: result.status, deliveryId: result.deliveryId || "", estadoDespacho: result.estadoDespacho || "", estadoAcuse: result.estadoAcuse || "", code: result.code || "" });
