@@ -2730,7 +2730,7 @@ const MIGRATION_IMPORT_TARGETS = {
     required: ["PersonaID"] },
   empleado: { sheet: "ExpedientesLaborales", destination: "ACCOUNTING",
     fields: ["PersonaId", "UserId", "Puesto", "Departamento", "CentroCosto", "FechaIngreso", "FechaSalida", "EstadoLaboral", "Observaciones"],
-    required: ["Puesto"] }
+    required: ["PersonaId", "Puesto", "Departamento"] }
 };
 
 function migrationImportEscape(value) {
