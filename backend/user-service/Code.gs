@@ -4755,7 +4755,11 @@ function getAdministrativeRequestAttachment(payload) {
   if (!authorized && studentRoles.indexOf(normalizedRole) === -1 && guardianRoles.indexOf(normalizedRole) === -1) {
     authorized = !!validateRolePermission("getAdministrativeRequests", payload).authorized;
   }
-  if (!authorized) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Archivo no disponible." };
+  if (!authorized) {
+    logStructuredEvent("USER","getAdministrativeRequestAttachment","WARN","ATTACHMENT_ACCESS_DENIED",
+      "Se rechazó una descarga sin relación o permiso institucional.",{solicitudId:solicitudId,actorId:actorId,role:role},role);
+    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Archivo no disponible." };
+  }
   const stored = String(row[5] || "").trim();
   const match = stored.match(/\/d\/([A-Za-z0-9_-]+)/) || stored.match(/[?&]id=([A-Za-z0-9_-]+)/);
   const fileId = match ? match[1] : (/^[A-Za-z0-9_-]{25,}$/.test(stored) ? stored : "");
@@ -4777,6 +4781,8 @@ function getAdministrativeRequestAttachment(payload) {
     });
     const mimeType = String(blob.getContentType() || file.getMimeType() || "").toLowerCase();
     if (mimeType && mimeType !== validation.mimeType) return { status: "error", code: "ATTACHMENT_MIME_MISMATCH", message: "Archivo no disponible." };
+    logStructuredEvent("USER","getAdministrativeRequestAttachment","INFO","ATTACHMENT_DELIVERED",
+      "Adjunto privado entregado tras autorización.",{solicitudId:solicitudId,actorId:actorId,fileId:fileId,fileSizeBytes:bytes.length},role);
     return { status: "success", solicitudId: solicitudId, fileName: fileName, mimeType: validation.mimeType,
       encoding: "base64", fileData: Utilities.base64Encode(bytes), fileSizeBytes: bytes.length };
   } catch (error) {
@@ -4787,9 +4793,9 @@ function getAdministrativeRequestAttachment(payload) {
 }
 
 function submitJointFamilyPayment(payload) {
-  const { userIdResponsable, comprobanteUrl, fileData, fileName, numeroReferencia, montoTotal, distribuciones, observaciones } = payload || {};
+  const { userIdResponsable, comprobanteUrl, comprobanteFileId, fileData, fileName, numeroReferencia, montoTotal, distribuciones, observaciones } = payload || {};
   if (!montoTotal || !Array.isArray(distribuciones) || !distribuciones.length) throw new Error("Datos de pago conjunto incompletos.");
-  if (String(comprobanteUrl || "").trim()) throw new Error("UNTRUSTED_ATTACHMENT_REFERENCE");
+  if (String(comprobanteUrl || "").trim() || String(comprobanteFileId || "").trim()) throw new Error("UNTRUSTED_ATTACHMENT_REFERENCE");
   const submitter = resolveVerifiedRequestSubmitter_(payload, "", false, "permisoFinanciero");
   if (userIdResponsable && String(userIdResponsable).trim() !== submitter.userId) throw new Error("VERIFIED_IDENTITY_MISMATCH");
   const guardianResult = getGuardianStudents({ userId: submitter.userId, sessionToken: payload.sessionToken || payload.authToken || payload.token });
@@ -6188,9 +6194,9 @@ function getAdministrativeRequests(payload) {
   });
   return { status:"success", data:requests };
 }function submitStudentAbsenceJustification(payload) {
-  const { estudianteId, fechaAusencia, motivo, observaciones, adjuntoUrl, adjuntoData, adjuntoNombre } = payload || {};
+  const { estudianteId, fechaAusencia, motivo, observaciones, adjuntoUrl, adjuntoFileId, adjuntoData, adjuntoNombre } = payload || {};
   if (!fechaAusencia || !motivo) throw new Error("fechaAusencia y motivo son requeridos.");
-  if (String(adjuntoUrl || "").trim()) throw new Error("UNTRUSTED_ATTACHMENT_REFERENCE");
+  if (String(adjuntoUrl || "").trim() || String(adjuntoFileId || "").trim()) throw new Error("UNTRUSTED_ATTACHMENT_REFERENCE");
   const submitter = resolveVerifiedRequestSubmitter_(payload, estudianteId, true, "permisoAsistencia");
   const attachment = createPrivateRequestAttachment_(adjuntoData, adjuntoNombre, "Tramites_Adjuntos_Privados_v1");
   const fileId = attachment ? attachment.getId() : "";
@@ -6236,9 +6242,9 @@ function getAdministrativeRequestsHistory(payload) {
 }
 
 function submitAdministrativeRequest(payload) {
-  const { estudianteId, tipoTramite, descripcion, adjuntoUrl, adjuntoData, adjuntoNombre } = payload || {};
+  const { estudianteId, tipoTramite, descripcion, adjuntoUrl, adjuntoFileId, adjuntoData, adjuntoNombre } = payload || {};
   if (!tipoTramite || !descripcion) throw new Error("tipoTramite y descripcion son requeridos.");
-  if (String(adjuntoUrl || "").trim()) throw new Error("UNTRUSTED_ATTACHMENT_REFERENCE");
+  if (String(adjuntoUrl || "").trim() || String(adjuntoFileId || "").trim()) throw new Error("UNTRUSTED_ATTACHMENT_REFERENCE");
   const submitter = resolveVerifiedRequestSubmitter_(payload, estudianteId, false, "permisoDocumental");
   const attachment = createPrivateRequestAttachment_(adjuntoData, adjuntoNombre, "Tramites_Adjuntos_Privados_v1");
   const fileId = attachment ? attachment.getId() : "";

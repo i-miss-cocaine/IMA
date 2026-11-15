@@ -5341,7 +5341,11 @@ function getPaymentVoucherFile(payload) {
   const row = rows[rowIndex];
   let access = assertPaymentVoucherOwnerAccess_(payload, row[2], {});
   if (!access.authorized && String(row[3] || "").indexOf("Pago Conjunto Familiar (") === 0) access = assertJointFamilyVoucherOwnerAccess_(payload, row, ss, actor);
-  if (!access.authorized) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Archivo no disponible." };
+  if (!access.authorized) {
+    logStructuredEvent("ACCOUNTING","getPaymentVoucherFile","WARN","VOUCHER_ACCESS_DENIED",
+      "Se rechazó una descarga de comprobante fuera del ámbito autorizado.",{comprobanteId:comprobanteId,actorId:actor.userId,role:actor.role},actor.role);
+    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Archivo no disponible." };
+  }
 
   const fileId = extractDriveFileId(row[8]);
   if (!fileId) return { status: "error", code: "VOUCHER_FILE_REFERENCE_INVALID", message: "Archivo no disponible." };
@@ -5380,6 +5384,8 @@ function getPaymentVoucherFile(payload) {
       return { status: "error", code: "VOUCHER_FILE_TYPE_NOT_ALLOWED", message: "Tipo de archivo no permitido." };
     }
 
+    logStructuredEvent("ACCOUNTING","getPaymentVoucherFile","INFO","VOUCHER_FILE_DELIVERED",
+      "Comprobante privado entregado tras autorización.",{comprobanteId:comprobanteId,actorId:actor.userId,fileId:fileId,fileSizeBytes:bytes.length},actor.role);
     return {
       status: "success",
       comprobanteId: comprobanteId,
