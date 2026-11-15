@@ -680,3 +680,26 @@
 - **Evidencia requerida:** DocumentoId, ClaveOrigen, IDs de eventos, filtros, conteos anonimizados, CSV de prueba y resultados de permisos. No adjuntar documentos reales ni datos personales.
 - **Estado:** pendiente de ejecución en Apps Script/Sheets reales y aceptación departamental.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-109 — TASK-133 — Validación multinivel de archivos y previsualización de importación
+- **Módulos:** Academic, Accounting, User y Teacher UI.
+- **Objetivo:** validar integridad física, estructura documental y semántica antes de persistir; comprobar importación parcial explícita y protección contra sobrescrituras obsoletas.
+- **Precondiciones:** entorno beta aislado; usuarios/roles sintéticos; inventario legado C1.762 disponible; hojas destino con datos de prueba; archivos sintéticos DOCX/XLSX/PDF sin PII real.
+- **Pasos:**
+  1. Enviar archivos vacíos, truncados, MIME/extension mismatch, ZIP cifrado, duplicado, ruta traversal, ratio/expanded-size excesivos y XML corrupto. Confirmar rechazo con código explicativo.
+  2. Validar DOCX con párrafos, tablas, controles de contenido y campos; probar DOCX sin document.xml y XML malformado.
+  3. Validar XLSX con varias hojas visibles/ocultas, encabezados desplazados, duplicados/repetidos, celdas combinadas, filas vacías, fórmulas sin caché y columnas con tipos mixtos. Comprobar selector explícito de hoja/fila y números originales de fila.
+  4. Validar PDF digital, escaneado, mixto, vacío/vectorial y página ilegible. Confirmar clasificación por página y que OCR solo se solicite cuando corresponde.
+  5. Ejecutar preflight con fechas inválidas, calificación fuera de 0–100, identificador inexistente, referencia huérfana, mapping ambiguo y tenant/departamento incorrecto. Confirmar que no hay defaults silenciosos.
+  6. Probar destino ACCOUNTING existente y modificar un campo destino entre preview/import; debe aparecer TARGET_RECORD_OVERWRITE y el hash obsoleto debe impedir la importación.
+  7. Probar destino USER/ACADEMIC; el preflight debe advertir que no pudo verificar existencia, sin afirmar que no hay sobrescritura.
+  8. En lote mixto con una fila válida y otra inválida, rechazar importación sin allowPartialImport; permitir solo la fila válida con confirmación explícita y registrar las omitidas.
+  9. Simular fallo de escritura después de una fila válida; verificar rollback compensatorio y estado rolled_back/compensation_required según el resultado.
+  10. Confirmar que AuditoriaMigraciones conserva errores y advertencias con severidad, y que no se persiste nada cuando el preflight estructural bloquea.
+  11. Probar permisos de usuario no autorizado y aislamiento de dos instituciones/departamentos.
+- **Resultado esperado:** el contenido se clasifica y valida antes de persistir; errores estructurales bloquean, errores por fila permiten omisión explícita, el destino obsoleto exige nueva previsualización y la auditoría conserva los hallazgos.
+- **Evidencia requerida:** hashes sintéticos, códigos de validación, recuentos de páginas/filas/partes DOCX, IDs de ejecución, filas omitidas, warnings de sobrescritura y resultados de rollback. No adjuntar documentos reales ni datos personales.
+- **Estado:** pendiente de ejecución en Apps Script/Drive/Sheets reales y aceptación de Secretaría/Contabilidad.
+===============================================================================
