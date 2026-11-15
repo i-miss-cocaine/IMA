@@ -1973,6 +1973,7 @@ function handleTrustedMigrationEnvelope_(envelope){
    return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
   }
   if (verified.action === "authorizeAccountingImport") {
+   if (String(claims.role) === "Auditor") return { status: "error", code: "IMPORT_PERMISSION_DENIED" };
    var permission = getDynamicPermissionsForRole(String(claims.role), "importDataWithColumnMapping");
    if (permission !== true) return { status: "error", code: "IMPORT_PERMISSION_DENIED" };
   }
