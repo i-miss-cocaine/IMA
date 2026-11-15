@@ -175,6 +175,9 @@ function makeMigrationOrchestrationFixture(options){
  ctx.resolveCrossReferenceIdentifier=p=>p.idOriginalLegado==="PENDING"?{status:"pending_review",code:"IDENTITY_REVIEW_REQUIRED"}:{status:"success",idMapeo:"MAP-"+p.idOriginalLegado,idNuevoPlataforma:"PER-SHARED"};
  ctx.buildImportPreview_ = function(payload) {
   const schema = ctx.schemas[payload.tipoEntidad];
+  if (!schema || String(schema.service).toUpperCase() !== String(payload.destinoModulo || "").toUpperCase()) {
+   return {status:"error",code:"MIGRATION_DESTINATION_MISMATCH",validForImport:false,errores:[]};
+  }
   const departmentPreflight = ctx.buildAccountingDepartmentalImportPreflight_(payload, ss, schema);
   const identifierField = String(payload.columnaMapeo && payload.columnaMapeo.identificador || "legacy");
   const identityResolutions = payload.filasData.map(row => {
