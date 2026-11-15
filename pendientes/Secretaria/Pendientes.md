@@ -1619,6 +1619,9 @@
 
 - **Corrección adicional C1.759:** el buscador de identidades admite DNI, RNE u otros identificadores de origen; se separó su ayuda (identidad.busqueda) de la ayuda de matrícula DNI 13 dígitos. Se evita inducir a error a los operadores que consultan registros RNE. Prueba de contrato ampliada para impedir que vuelva a usarse la guía DNI-only en esos campos.
 
+- **Avance C1.760:** los eventos nativos invalid/input/change ahora se capturan globalmente para mostrar el validationMessage junto al campo y limpiar el error cuando el control vuelve a ser válido, sin perder la ayuda permanente ni otras descripciones ARIA. El workflow ui-accessibility-contract.yml incorpora el test DOM nuevo y amplía sus filtros de rutas a los dashboards y scripts que consume.
+- **Ejecución CI:** la definición del workflow y los pasos Node 24 están registrados; el conector no expone los runs de push ni reporta check-runs para este commit. Por tanto, el Node CLI y el resultado de Actions siguen sin evidencia consultable en esta sesión.
+
 ---
 
 <!-- ID: TASK-132 | Fuentes: Pendientes.md ; pendientes/Secretaria/Pendientes.md -->
