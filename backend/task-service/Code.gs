@@ -1788,6 +1788,16 @@ function saveSubmissionDraft(payload) {
   return submitAssignment(Object.assign({}, payload, { esBorrador: true }));
 }
 
+function normalizeTaskGradeScore_(value) {
+  if (value === null || value === undefined || String(value).trim() === "") {
+    throw new Error("TASK_GRADE_REQUIRED");
+  }
+  const score = Number(value);
+  if (!isFinite(score) || score < 0 || score > 100) throw new Error("TASK_GRADE_OUT_OF_RANGE");
+  if (Math.abs(score * 100 - Math.round(score * 100)) > 0.0000001) throw new Error("TASK_GRADE_PRECISION_INVALID");
+  return Math.round(score * 100) / 100;
+}
+
 function gradeSubmissionWithRubric(payload) {
   return withAuthorizedTaskSubmissionMutation_(payload, "gradeSubmissionWithRubric", context => {
     const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
@@ -1797,11 +1807,12 @@ function gradeSubmissionWithRubric(payload) {
     if (calificacionCol===-1||estadoCol===-1||comentarioCol===-1) throw new Error("TASK_GRADE_SCHEMA_INVALID");
     const rowData=context.delivery.slice(); while(rowData.length<headers.length)rowData.push("");
     const oldRow=rowData.slice();
-    const event=prepareTaskGradeRectificationEvent_(context,rowData[calificacionCol],p.calificacion,p.motivoRectificacion);
-    rowData[calificacionCol]=p.calificacion; rowData[estadoCol]=p.estado||"revisada"; rowData[comentarioCol]=p.comentario||"";
+    const normalizedGrade=normalizeTaskGradeScore_(p.calificacion);
+    const event=prepareTaskGradeRectificationEvent_(context,rowData[calificacionCol],normalizedGrade,p.motivoRectificacion);
+    rowData[calificacionCol]=normalizedGrade; rowData[estadoCol]=p.estado||"revisada"; rowData[comentarioCol]=p.comentario||"";
     context.deliverySheet.getRange(context.deliveryRowIndex,1,1,rowData.length).setValues([rowData]);
     if(event){try{appendTaskGradeRectificationEvent_(event);}catch(error){try{context.deliverySheet.getRange(context.deliveryRowIndex,1,1,oldRow.length).setValues([oldRow]);}catch(rollbackError){throw new Error("GRADE_RECTIFICATION_AUDIT_ROLLBACK_FAILED");}throw error;}}
-    if(p.rubricaEvaluacionJSON){const rubricaSheet=getOrCreateSheet(context.ss,"EvaluacionesRubricas");if(rubricaSheet.getLastRow()===0)rubricaSheet.appendRow(["ID","EntregaID","RubricaJSON","PuntajeCalculado","EvaluadoEn"]);rubricaSheet.appendRow(["EVAL-"+Date.now(),context.deliveryId,JSON.stringify(p.rubricaEvaluacionJSON),p.calificacion,new Date()]);}
+    if(p.rubricaEvaluacionJSON){const rubricaSheet=getOrCreateSheet(context.ss,"EvaluacionesRubricas");if(rubricaSheet.getLastRow()===0)rubricaSheet.appendRow(["ID","EntregaID","RubricaJSON","PuntajeCalculado","EvaluadoEn"]);rubricaSheet.appendRow(["EVAL-"+Date.now(),context.deliveryId,JSON.stringify(p.rubricaEvaluacionJSON),normalizedGrade,new Date()]);}
     return {status:"success",message:"Calificación con rúbrica registrada exitosamente.",rectificacionRegistrada:!!event};
   });
 }
@@ -1953,8 +1964,9 @@ function gradeSubmission(payload) {
     const rowData = context.delivery.slice();
     while (rowData.length < headers.length) rowData.push("");
     const oldRow = rowData.slice();
-    const event = prepareTaskGradeRectificationEvent_(context,rowData[calificacionCol],p.calificacion,p.motivoRectificacion);
-    rowData[calificacionCol]=p.calificacion; rowData[estadoCol]=p.estado; rowData[comentarioCol]=p.comentario;
+    const normalizedGrade = normalizeTaskGradeScore_(p.calificacion);
+    const event = prepareTaskGradeRectificationEvent_(context,rowData[calificacionCol],normalizedGrade,p.motivoRectificacion);
+    rowData[calificacionCol]=normalizedGrade; rowData[estadoCol]=p.estado; rowData[comentarioCol]=p.comentario;
     context.deliverySheet.getRange(context.deliveryRowIndex,1,1,rowData.length).setValues([rowData]);
     if (event) {
       try { appendTaskGradeRectificationEvent_(event); }
