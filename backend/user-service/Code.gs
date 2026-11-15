@@ -6883,83 +6883,71 @@ function retryFailedNotificationsQueue(payload) {
 }
 
 // [F10-Task12] [P1] - Motor multicanal de notificaciones automáticas con deduplicación estricta y reintentos seguros
-function sendMultiChannelNotification(payload) {
-  const { userId, emailRecipient, titulo, mensaje, tipo, categoria, canal, enlaceAccion, deduplicationKey } = payload || {};
-  const targetUser = userId || emailRecipient || "INVITADO";
-  if (!targetUser || !titulo || !mensaje) throw new Error("Destinatario (userId/emailRecipient), título y mensaje son requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "BandejaNotificaciones");
-
-  // Deduplicación preventiva por deduplicationKey
-  if (deduplicationKey) {
-    const data = sheet.getDataRange().getValues();
-    const dup = data.find(r => String(r[9] || "").trim() === String(deduplicationKey).trim());
-    if (dup) {
-      logStructuredEvent("USER", "sendMultiChannelNotification", "INFO", "NOTIFICATION_DEDUPLICATED", `Notificación omita por duplicación key=${deduplicationKey}`, { deduplicationKey, notificacionId: dup[0] }, payload && payload.authRole);
-      return { status: "success", deduplicated: true, notificacionId: dup[0], message: "Notificación ya despachada previamente." };
-    }
-  }
-
-  const now = new Date();
-  const notifId = "NTF-" + now.getFullYear() + "-" + Math.floor(100000 + Math.random() * 900000);
-  let deliveryStatus = "Entregado";
-  let emailSent = false;
-
-  // Intento de envío vía MailApp si se proporciona un correo o si userId parece un email
-  const targetEmail = (emailRecipient || (userId && userId.includes("@") ? userId : "")).trim();
-  if (targetEmail) {
-    try {
-      if (typeof MailApp !== "undefined") {
-        MailApp.sendEmail({
-          to: targetEmail,
-          subject: `[NGCA Admisiones] ${titulo}`,
-          htmlBody: `
-            <div style="font-family: Arial, sans-serif; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
-              <h2 style="color: #0d6efd; margin-top: 0;">New Generation Christian Academy</h2>
-              <h3 style="color: #111827;">${titulo}</h3>
-              <p style="font-size: 15px; line-height: 1.6;">${mensaje}</p>
-              ${enlaceAccion ? `<div style="margin: 25px 0;"><a href="${enlaceAccion}" style="background-color: #0d6efd; color: white; padding: 12px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Verificar en el Portal</a></div>` : ''}
-              <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
-              <p style="font-size: 12px; color: #6b7280;">Este es un mensaje automático enviado por la plataforma de admisiones. Por favor no responda directamente a este correo.</p>
-            </div>
-          `
-        });
-        emailSent = true;
-      }
-    } catch (mailErr) {
-      logStructuredEvent("USER", "sendMultiChannelNotification", "WARN", "MAIL_SEND_FAILED", `Fallo al enviar correo a ${targetEmail}: ${mailErr.message}`, { targetEmail, notifId }, payload && payload.authRole);
-      deliveryStatus = "Pendiente_Reintento";
-    }
-  }
-
-  // Registro en BandejaNotificaciones
-  sheet.appendRow([
-    notifId,
-    targetUser,
-    tipo || "NotificacionAdmision",
-    titulo,
-    mensaje,
-    now,
-    false, // leido
-    categoria || "Admisiones",
-    enlaceAccion || "",
-    deduplicationKey || "",
-    deliveryStatus,
-    targetEmail || ""
-  ]);
-
-  logStructuredEvent("USER", "sendMultiChannelNotification", "INFO", "NOTIFICATION_SENT", `Notificación ${notifId} enviada a ${targetUser} (Email: ${emailSent ? 'Sí' : 'No'})`, { notifId, targetUser, deliveryStatus, emailSent }, payload && payload.authRole);
-
-  return {
-    status: "success",
-    notificacionId: notifId,
-    canalUtilizado: emailSent ? "CorreoYPlataforma" : "PlataformaInterna",
-    estadoEntrega: deliveryStatus,
-    message: "Notificación despachada correctamente."
-  };
+function escapeNotificationHtml_(value) {
+  return String(value === undefined || value === null ? "" : value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 }
-
+function sendMultiChannelNotification(payload) {
+  const p=payload||{}, userId=String(p.userId||"").trim(), emailRecipient=String(p.emailRecipient||"").trim();
+  const targetUser=userId||emailRecipient||"INVITADO", titulo=String(p.titulo||"").trim(), mensaje=String(p.mensaje||"").trim();
+  const deduplicationKey=String(p.deduplicationKey||"").trim();
+  if(!targetUser||!titulo||!mensaje)throw new Error("Destinatario (userId/emailRecipient), título y mensaje son requeridos.");
+  if(deduplicationKey.length>240)return {status:"error",code:"NOTIFICATION_DEDUPLICATION_KEY_INVALID"};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID), sheet=getOrCreateSheet(ss,"BandejaNotificaciones"), lock=LockService.getScriptLock();
+  try{lock.waitLock(10000);}catch(_){return {status:"error",code:"NOTIFICATION_LOCK_TIMEOUT",retryable:true};}
+  let notifId,rowNumber,initialStatus;
+  try{
+    const data=sheet.getDataRange().getValues();
+    if(deduplicationKey){
+      const duplicate=data.slice(1).find(row=>String(row[9]||"").trim()===deduplicationKey&&String(row[1]||"").trim()===targetUser);
+      if(duplicate)return {status:"success",deduplicated:true,notificacionId:duplicate[0],estadoEntrega:String(duplicate[10]||"Entregado"),message:"Notificación ya registrada para esta transición."};
+    }
+    notifId="NTF-"+(Utilities.getUuid?Utilities.getUuid():(Date.now()+"-"+Math.floor(Math.random()*1000000)));
+    initialStatus=emailRecipient?"Pendiente_Reintento":"Entregado";
+    sheet.appendRow([notifId,targetUser,p.tipo||"NotificacionAdmision",titulo,mensaje,new Date(),false,p.categoria||"Admisiones",p.enlaceAccion||"",deduplicationKey,initialStatus,emailRecipient]);
+    rowNumber=sheet.getLastRow();
+  }finally{lock.releaseLock();}
+  let emailSent=false;
+  if(emailRecipient){
+    try{
+      if(typeof MailApp==="undefined"||!MailApp.sendEmail)throw new Error("MAIL_SERVICE_UNAVAILABLE");
+      const link=/^https:\/\/[^\s"'<>]+$/i.test(String(p.enlaceAccion||""))?String(p.enlaceAccion):"";
+      const html='<div style="font-family:Arial,sans-serif;color:#1f2937;max-width:600px;margin:0 auto;padding:20px"><h2>New Generation Christian Academy</h2><h3>'+escapeNotificationHtml_(titulo)+'</h3><p>'+escapeNotificationHtml_(mensaje).replace(/\n/g,"<br>")+'</p>'+(link?'<p><a href="'+escapeNotificationHtml_(link)+'">Abrir portal institucional</a></p>':"")+'<p style="font-size:12px;color:#6b7280">La apertura del correo no constituye acuse formal de recepción documental.</p></div>';
+      MailApp.sendEmail({to:emailRecipient,subject:"[IMA] "+titulo,body:mensaje,htmlBody:html});
+      emailSent=true;sheet.getRange(rowNumber,11).setValue("Entregado");
+    }catch(mailErr){
+      logStructuredEvent("USER","sendMultiChannelNotification","WARN","MAIL_SEND_FAILED","Fallo al enviar correo; el aviso permanece en la bandeja de plataforma.",{targetUser,notifId,error:String(mailErr&&mailErr.message||mailErr)},p.authRole);
+    }
+  }
+  const deliveryStatus=emailSent?"Entregado":initialStatus;
+  logStructuredEvent("USER","sendMultiChannelNotification","INFO","NOTIFICATION_REGISTERED","Notificación registrada en la bandeja de plataforma.",{notifId,targetUser,deliveryStatus,emailSent},p.authRole);
+  return {status:"success",notificacionId:notifId,canalUtilizado:emailSent?"CorreoYPlataforma":"PlataformaInterna",estadoEntrega:deliveryStatus,emailSent,message:"Notificación registrada en la bandeja institucional."};
+}
+function dispatchWorkflowStatusNotification_(context) {
+  const c=context||{},state=String(c.estado||"").trim(),allowed=["Requiere Corrección","Aprobada","Rechazada"];
+  if(allowed.indexOf(state)===-1)return {status:"skipped",reason:"STATE_NOT_NOTIFIABLE"};
+  const userId=String(c.destinatarioUserId||"").trim(),solicitudId=String(c.solicitudId||"").trim(),decisionId=String(c.decisionId||"").trim();
+  if(!userId||!solicitudId||!decisionId)return {status:"error",code:"WORKFLOW_NOTIFICATION_CONTEXT_INVALID"};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),usersSheet=ss.getSheetByName("Usuarios");
+  if(!usersSheet)return {status:"error",code:"NOTIFICATION_RECIPIENT_DIRECTORY_UNAVAILABLE"};
+  const users=usersSheet.getDataRange().getValues();if(users.length<2)return {status:"error",code:"NOTIFICATION_RECIPIENT_NOT_FOUND"};
+  const headers=users[0].map(v=>String(v||"").trim()),userRow=users.slice(1).find(row=>String(row[0]||"").trim()===userId);
+  if(!userRow||String(userRow[10]||"").trim().toUpperCase()==="INACTIVO")return {status:"error",code:"NOTIFICATION_RECIPIENT_NOT_FOUND"};
+  const templates={
+    "Requiere Corrección":{title:"Tu trámite requiere corrección",action:"Ingresa al portal institucional, revisa las observaciones públicas y realiza la corrección solicitada."},
+    "Aprobada":{title:"Tu trámite fue aprobado",action:"Consulta el estado actualizado y el detalle disponible en el portal institucional."},
+    "Rechazada":{title:"Tu trámite fue rechazado",action:"Consulta el estado y las observaciones públicas disponibles en el portal institucional."}
+  };
+  const template=templates[state],notes=String(c.observacionesPublicas||"").trim().slice(0,1000);
+  let message="La solicitud "+solicitudId+" cambió al estado: "+state+". "+template.action;
+  if(notes)message+="\nObservación pública: "+notes;
+  if(c.fechaLimite){const deadline=c.fechaLimite instanceof Date?c.fechaLimite:new Date(c.fechaLimite);if(!isNaN(deadline.getTime()))message+="\nFecha límite: "+deadline.toISOString();}
+  const emailIndex=headers.indexOf("Email"),consentNames=["NotificacionesEmailConsentimiento","ConsentimientoCorreo","EmailNotificacionesHabilitado"];
+  const consentIndex=headers.findIndex(h=>consentNames.indexOf(h)!==-1),consent=consentIndex>=0?String(userRow[consentIndex]||"").trim().toUpperCase():"";
+  const emailOptIn=["TRUE","1","SI","SÍ","YES","OPT_IN"].indexOf(consent)!==-1;
+  const emailRecipient=emailOptIn&&emailIndex>=0?String(userRow[emailIndex]||"").trim():"";
+  const portalUrl=/^https:\/\/[^\s"'<>]+$/i.test(String(FRONTEND_URL||""))?String(FRONTEND_URL):"";
+  return sendMultiChannelNotification({userId,emailRecipient,titulo:template.title,mensaje:message,tipo:"CambioEstadoTramite",categoria:"Administrativa",canal:emailRecipient?"PlataformaYCorreo":"Plataforma",enlaceAccion:portalUrl,deduplicationKey:["WORKFLOW",solicitudId,decisionId,state,userId].join("|"),authRole:"Sistema"});
+}
 // [TAREA-F6-024] [Fase 6: Expediente Institucional y Ciclo de Vida] - Consulta del historial de notificaciones y seguimiento de trámites del expediente
 function getStudentProcedureNotificationLogs(payload) {
   const { expedienteId, solicitudId, estadoFilter } = payload || {};
@@ -9187,6 +9175,8 @@ function processWorkflowDecision(payload) {
     throw new Error("WORKFLOW_CONCURRENCY_LOCKED: No se pudo adquirir el bloqueo de concurrencia para resolver la solicitud. Reintente en unos instantes.");
   }
 
+  var workflowResponse = null;
+  var workflowNotificationContext = null;
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
 
@@ -9287,19 +9277,34 @@ function processWorkflowDecision(payload) {
     if (observacionesPublicas) solSheet.getRange(idx + 1, 9).setValue(observacionesPublicas);
     solSheet.getRange(idx + 1, 11).setValue(now);
 
-    return {
-      status: "success",
-      decisionId: decId,
-      solicitudId: solicitudId,
-      etapaResuelta: targetEtapa,
-      accionDecision: accionDecision,
-      nuevoEstado: estadoFinalCalculado,
-      siguienteAsignadoA: siguienteAsignadoCalculado,
+    workflowResponse = {
+      status: "success", decisionId: decId, solicitudId: solicitudId, etapaResuelta: targetEtapa,
+      accionDecision: accionDecision, nuevoEstado: estadoFinalCalculado, siguienteAsignadoA: siguienteAsignadoCalculado,
       message: `Decisión '${accionDecision}' procesada y registrada exitosamente con candado atómico para la solicitud ${solicitudId}.`
+    };
+    workflowNotificationContext = {
+      solicitudId: String(solicitudId), decisionId: decId, destinatarioUserId: String(solRow[1] || "").trim(),
+      estado: estadoFinalCalculado, observacionesPublicas: String(observacionesPublicas || ""),
+      fechaLimite: (function() {
+        const headers = solData[0] || [], candidates = ["FechaLimite", "FechaLimiteSubsanacion", "FechaVencimiento"];
+        const index = headers.findIndex(function(header) { return candidates.indexOf(String(header || "").trim()) !== -1; });
+        return index >= 0 ? solRow[index] : "";
+      })()
     };
   } finally {
     lock.releaseLock();
   }
+  if (workflowNotificationContext) {
+    try { workflowResponse.notificacion = dispatchWorkflowStatusNotification_(workflowNotificationContext); }
+    catch (notificationError) {
+      logStructuredEvent("USER", "processWorkflowDecision", "WARN", "WORKFLOW_NOTIFICATION_FAILED",
+        "La transición quedó registrada; el aviso no pudo completarse y requiere seguimiento.",
+        { solicitudId: solicitudId, decisionId: workflowNotificationContext.decisionId,
+          error: String(notificationError && notificationError.message || notificationError) }, "Sistema");
+      workflowResponse.notificacion = { status: "error", code: "WORKFLOW_NOTIFICATION_FAILED" };
+    }
+  }
+  return workflowResponse;
 }
 
 function getWorkflowHistory(payload) {
