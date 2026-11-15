@@ -12,6 +12,9 @@ assert.ok(html.includes("switchTab('migration-import')"), "accounting navigation
 assert.ok(html.includes("xlsx-0.20.1/package/dist/xlsx.full.min.js"), "the workbook parser is version-pinned");
 assert.ok(js.includes("function renderMigrationImportModule(container)"), "the mapping workspace is rendered");
 assert.ok(js.includes("function migrationImportBase64(buffer)"), "the original workbook bytes are retained for server validation");
+assert.ok(js.includes('destinoModulo: target.destination'), "the import is routed to the canonical owner service, not a sheet name");
+assert.ok(js.includes('destination: "ACADEMIC"'), "student records are routed to ACADEMIC");
+assert.ok(js.includes('destination: "ACCOUNTING"'), "course and employee records are routed to ACCOUNTING");
 assert.ok(js.includes("fileDataBase64: migrationImportState.fileDataBase64"), "the original workbook is sent to ACCOUNTING");
 assert.ok(js.includes('fetchApi("ACCOUNTING", "validateImportPreview", payload)'), "preflight is performed by the owner service");
 assert.ok(js.includes('fetchApi("ACCOUNTING", "importDataWithColumnMapping"'), "commit is routed through the owner service");
