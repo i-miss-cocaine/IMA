@@ -6769,7 +6769,7 @@ window.clearFieldValidationError = function(targetOrId) {
     if (errorNode && errorNode.parentNode) errorNode.parentNode.removeChild(errorNode);
     target.removeAttribute("aria-invalid");
     target.removeAttribute("data-ui-validation-error-id");
-    var describedBy = String(target.getAttribute("aria-describedby") || "").split(/\\s+/).filter(function(id) { return id && id !== errorId; });
+    var describedBy = String(target.getAttribute("aria-describedby") || "").split(/\s+/).filter(function(id) { return id && id !== errorId; });
     if (describedBy.length) target.setAttribute("aria-describedby", describedBy.join(" "));
     else target.removeAttribute("aria-describedby");
     return true;
