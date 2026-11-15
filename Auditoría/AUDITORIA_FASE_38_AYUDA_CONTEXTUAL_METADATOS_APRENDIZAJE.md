@@ -333,3 +333,13 @@ La evaluación abarca la ayuda contextual inmediata (tooltips/popovers), las ins
 - La aceptación integral de TASK-130 permanece pendiente por cobertura restante y validación beta manual.
 
 - **Resultado confirmado posterior:** `ima/department-scope-contract: success` también para f81732c70468448e1fea395bd595ef663ae61fe4, incluyendo la nueva aserción de rango de calificaciones.
+
+
+### C1.763 — Ayudas verificadas para importación XLSX y fechas de Secretaría
+- Se revisó el validador real validateExcelFileEnvelope en js/teacher.js: acepta solo .xlsx, valida MIME declarado, firma ZIP/magic bytes, tamaño no vacío y máximo 10 MiB; se rechazan libros cifrados, truncados o dañados. No se extrapoló este límite a otros uploads.
+- Se añadió importacion.xlsx al catálogo remoto getUIMetadataCatalog y al fallback local de js/ui-common.js, incluyendo formatos y maxBytes=10485760. Se vinculó excel-file-input con la clave estable.
+- Se añadieron ayudas de fechas a evm-fecha-inicio, evm-fecha-fin e identity-search-fecha en dashboard-secretaria.html; se conserva la obligatoriedad del inicio y el carácter opcional del fin.
+- tests/security/user-service-ui-metadata.test.js y tests/ui/permanent-form-help.test.js ampliados para validar restricciones del importador y campos de Secretaría.
+- Cuatro contratos (help DOM, formularios permanentes, catálogo metadata y tooltips) PASS en harness JS aislado; sintaxis V8 de backend USER y cinco clientes JS PASS.
+- Un commit intermedio de prueba falló porque se ejecutó antes de publicar las claves en dashboard-secretaria.html; se corrigió la secuencia y el test local pasó. El estado de CI del commit de corrección aún no es consultable, por lo que no se declara Node 24/GitHub Actions PASS para C1.763.
+- TASK-130 sigue abierto: falta cobertura exhaustiva de formularios dinámicos y validación manual real de teclado/lector/tacto/zoom y cancelación sin mutación.
