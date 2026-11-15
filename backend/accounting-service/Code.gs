@@ -1804,6 +1804,7 @@ function validateFileBinaryIntegrity(fileData, fileName, options) {
     if(cursor!==centralOffset+centralSize||!entries["[Content_Types].xml"]||entries["[Content_Types].xml"].size<1)throw new Error("OPENXML_STRUCTURE_INVALID: [Content_Types].xml ausente.");
     if(policy.format==="docx"&&(!entries["word/document.xml"]||entries["word/document.xml"].size<1))throw new Error("DOCX_STRUCTURE_INVALID: word/document.xml ausente.");
     if(policy.format==="xlsx"&&(!entries["xl/workbook.xml"]||entries["xl/workbook.xml"].size<1))throw new Error("XLSX_STRUCTURE_INVALID: xl/workbook.xml ausente.");
+    if(policy.format==="xlsx"&&Object.keys(entries).some(function(name){return /vbaProject\.bin$/i.test(name);}))throw new Error("XLSX_MACROS_NOT_ALLOWED");
     openXmlStructure=validateOpenXmlPackageStructure_(rawBytes,policy.format,entries,maxExpandedBytes);
   }
   return {valid:true,fileName:normalizedName,detectedFormat:policy.format,byteLength:byteLength,mimeType:policy.mime,openXmlStructure:openXmlStructure};
@@ -1819,47 +1820,27 @@ function validateImportWorkbookBinary_(payload) {
   }
   if (mimeType && mimeType !== "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" &&
       mimeType !== "application/octet-stream") return { valid: false, code: "IMPORT_FILE_MIME_INVALID" };
-  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(encoded) || encoded.length % 4 !== 0) {
-    return { valid: false, code: "IMPORT_FILE_BASE64_INVALID" };
-  }
   try {
-    var bytes = Utilities.base64Decode(encoded);
-    if (!bytes || bytes.length < 4 || bytes.length > 10 * 1024 * 1024 ||
-        (bytes[0] & 255) !== 0x50 || (bytes[1] & 255) !== 0x4b ||
-        (bytes[2] & 255) !== 0x03 || (bytes[3] & 255) !== 0x04) {
-      return { valid: false, code: "IMPORT_FILE_SIGNATURE_INVALID" };
-    }
-    var blob = Utilities.newBlob(bytes, mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
-    var entries = Utilities.unzip(blob);
-    if (!Array.isArray(entries) || !entries.length || entries.length > 1000) {
+    var validation = validateFileBinaryIntegrity(encoded, fileName, {
+      maxSizeBytes: 10 * 1024 * 1024,
+      maxExpandedSizeBytes: 40 * 1024 * 1024,
+      maxArchiveEntries: 1000,
+      allowedExtensions: [".xlsx"]
+    });
+    if (!validation || validation.valid !== true || !validation.openXmlStructure ||
+        validation.openXmlStructure.verified !== true || validation.openXmlStructure.format !== "xlsx") {
       return { valid: false, code: "IMPORT_FILE_PACKAGE_INVALID" };
     }
-    var names = {}, totalBytes = 0, hasContentTypes = false, hasWorkbook = false, hasWorksheet = false;
-    entries.forEach(function(entry) {
-      var name = String(entry && entry.getName ? entry.getName() : "");
-      if (!name || name.indexOf("../") !== -1 || name.charAt(0) === "/" || names[name]) {
-        throw new Error("IMPORT_FILE_PACKAGE_INVALID");
-      }
-      names[name] = true;
-      if (name === "[Content_Types].xml") hasContentTypes = true;
-      if (name === "xl/workbook.xml") hasWorkbook = true;
-      if (/^xl\/worksheets\/sheet\d+\.xml$/i.test(name)) hasWorksheet = true;
-      if (/vbaProject\.bin$/i.test(name)) throw new Error("IMPORT_FILE_MACROS_NOT_ALLOWED");
-      var entryBytes = entry.getBytes ? entry.getBytes() : [];
-      totalBytes += entryBytes.length;
-      if (entryBytes.length > 15 * 1024 * 1024 || totalBytes > 40 * 1024 * 1024) {
-        throw new Error("IMPORT_FILE_UNCOMPRESSED_SIZE_LIMIT");
-      }
-    });
-    if (!hasContentTypes || !hasWorkbook || !hasWorksheet) return { valid: false, code: "IMPORT_FILE_PACKAGE_INVALID" };
+    var bytes = Utilities.base64Decode(encoded);
     var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, bytes);
     var fileHash = digest.map(function(byte) { return ("0" + (byte & 255).toString(16)).slice(-2); }).join("");
-    return { valid: true, fileHash: fileHash, sizeBytes: bytes.length, uncompressedBytes: totalBytes };
+    return { valid: true, fileHash: fileHash, sizeBytes: validation.byteLength,
+      uncompressedBytes: validation.openXmlStructure.expandedBytes };
   } catch (error) {
-    var code = String(error && error.message || "");
-    if (code === "IMPORT_FILE_MACROS_NOT_ALLOWED" || code === "IMPORT_FILE_UNCOMPRESSED_SIZE_LIMIT") {
-      return { valid: false, code: code };
-    }
+    var code = String(error && error.message || "").split(":")[0].trim();
+    if (code === "XLSX_MACROS_NOT_ALLOWED") return { valid: false, code: "IMPORT_FILE_MACROS_NOT_ALLOWED" };
+    if (code === "FILE_BASE64_INVALID") return { valid: false, code: "IMPORT_FILE_BASE64_INVALID" };
+    if (code === "FILE_SIZE_EXCEEDED") return { valid: false, code: "IMPORT_FILE_INVALID" };
     return { valid: false, code: "IMPORT_FILE_PACKAGE_INVALID" };
   }
 }
