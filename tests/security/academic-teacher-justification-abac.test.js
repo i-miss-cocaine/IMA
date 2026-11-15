@@ -74,7 +74,9 @@ const context = {
   SpreadsheetApp:{openById(){return {getSheetByName(name){return store[name]?sheet(name):null;},insertSheet(name){store[name]=[];return sheet(name);}};}},
   getOrCreateSheet(_ss,name){return sheet(name);},
   LockService:{getScriptLock(){return {waitLock(){if(lockBusy)throw new Error("LOCK_BUSY");if(beforeLock){const fn=beforeLock;beforeLock=null;fn();}},releaseLock(){}};}},
+  Session:{getScriptTimeZone(){return "UTC";}},
   Utilities:{
+    formatDate(date){return date.toISOString().slice(0,10);},
     getUuid(){uuid++;return "00000000-0000-4000-8000-"+String(uuid).padStart(12,"0");},
     computeDigest(_alg,value){return Array.from(crypto.createHash("sha256").update(String(value)).digest()).map(v=>v>127?v-256:v);},
     base64Encode(bytes){return Buffer.from(bytes).toString("base64");},
