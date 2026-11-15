@@ -485,6 +485,7 @@ const snapshot = userContext.getEvidenceSnapshotForDecision_(userContext.Spreads
 assert.equal(snapshot.status,"success");
 assert.equal(snapshot.snapshot.length,1);
 assert.equal(snapshot.snapshot[0].sha256,v2Attachment.sha256);
+assert.equal(snapshot.snapshotHash,crypto.createHash("sha256").update(JSON.stringify(snapshot.snapshot),"utf8").digest("hex"),"decision snapshot hashes must cover the exact UTF-8 JSON bytes");
 userContext.markEvidenceDecision_(userContext.SpreadsheetApp.openById("TEST"),evidenceRequestId,[v2Record.EvidenciaID],snapshot.snapshotHash,"DECISION-1",false);
 const approvedEvidence = userContext.getEvidenceRecordsForRequest_(userContext.SpreadsheetApp.openById("TEST"),evidenceRequestId,true)[0];
 assert.equal(approvedEvidence.DecisionHash,snapshot.snapshotHash);
