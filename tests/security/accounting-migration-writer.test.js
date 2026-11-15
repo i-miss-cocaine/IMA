@@ -63,8 +63,8 @@ const runtime = {
   accountingHasInstitutionalImportPermission_: () => permission,
   migrationHash_: value => crypto.createHash("sha256").update(String(value)).digest("hex"),
   PropertiesService: { getScriptProperties: () => ({ getProperty: key => ({
-    IMA_USER_SERVICE_URL: "https://user.example.test/exec",
-    IMA_ACADEMIC_SERVICE_URL: "https://academic.example.test/exec",
+    IMA_USER_SERVICE_URL: "https://script.google.com/macros/s/AKfycbUSER123/exec",
+    IMA_ACADEMIC_SERVICE_URL: "https://script.google.com/macros/s/AKfycbACADEMIC123/exec",
     IMA_MIGRATION_HMAC_SECRET: secret
   })[key] || "" }) },
   SpreadsheetApp: { openById: id => { assert.equal(id, "SHEET-1"); return spreadsheet; } },
@@ -80,7 +80,7 @@ const runtime = {
     }
   },
   UrlFetchApp: { fetch(url, options) {
-    assert.ok(["https://user.example.test/exec", "https://academic.example.test/exec"].includes(url));
+    assert.ok(["https://script.google.com/macros/s/AKfycbUSER123/exec", "https://script.google.com/macros/s/AKfycbACADEMIC123/exec"].includes(url));
     lastEnvelope = JSON.parse(options.payload);
     return { getResponseCode: () => 200, getContentText: () => JSON.stringify(remoteResponse) };
   } }
