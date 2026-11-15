@@ -13677,9 +13677,15 @@ function computeLegacyInventoryHashSHA256_(fileData) {
     if (comma < 0 || !/^data:[^;]+;base64$/i.test(header)) throw new Error("LEGACY_DOCUMENT_FILE_DATA_INVALID");
     encoded = encoded.slice(comma + 1);
   }
-  if (!encoded || !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)) throw new Error("LEGACY_DOCUMENT_FILE_DATA_INVALID");
+  var maxBytes = 10 * 1024 * 1024;
+  var maxEncodedLength = Math.ceil(maxBytes / 3) * 4;
+  if (!encoded || !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded) || encoded.length % 4 !== 0) {
+    throw new Error("LEGACY_DOCUMENT_FILE_DATA_INVALID");
+  }
+  if (encoded.length > maxEncodedLength) throw new Error("LEGACY_DOCUMENT_FILE_TOO_LARGE");
   var bytes = Utilities.base64Decode(encoded);
   if (!bytes || !bytes.length) throw new Error("LEGACY_DOCUMENT_FILE_EMPTY");
+  if (bytes.length > maxBytes) throw new Error("LEGACY_DOCUMENT_FILE_TOO_LARGE");
   var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, bytes);
   if (!digest || digest.length !== 32) throw new Error("LEGACY_DOCUMENT_SHA256_FAILED");
   return digest.map(function(byte) { return ("0" + ((Number(byte) + 256) % 256).toString(16)).slice(-2); }).join("");
