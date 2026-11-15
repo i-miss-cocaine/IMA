@@ -7734,7 +7734,7 @@ function toBase64(file) {
         if (unresolvedFormulas.length) errors.push({ code: 'FORMULAS_WITHOUT_CACHED_VALUES', message: 'Hay fórmulas sin resultado calculado en: ' + unresolvedFormulas.slice(0, 12).join(', ') + '.' });
         if (formulaErrors.length) errors.push({ code: 'FORMULA_CELL_ERRORS', message: 'Hay celdas con errores de fórmula en: ' + formulaErrors.slice(0, 12).join(', ') + '.' });
 
-        const blankRows = [], repeatedHeaderRows = [], typeInconsistencies = [];
+        const blankRows = [], repeatedHeaderRows = [], typeInconsistencies = [], previewRows = [];
         const columnTypes = headers.map(() => Object.create(null));
         const data = [];
         for (let rowOffset = 1; rowOffset < grid.length; rowOffset++) {
@@ -7752,6 +7752,7 @@ function toBase64(file) {
                 repeatedHeaderRows.push(rowIndex + rowOffset + 1);
                 continue;
             }
+            previewRows.push(values.slice());
             const record = {};
             headers.forEach((header, column) => {
                 if (!header) return;
@@ -7785,7 +7786,7 @@ function toBase64(file) {
             typeInconsistencies: typeInconsistencies,
             errors: errors.map(item => ({ code: item.code, message: item.message }))
         };
-        return { valid: errors.length === 0, errors: errors, warnings: warnings, data: data, headers: headers, analysis: analysis, selectedSheet: effectiveSheetName, headerRowIndex: rowIndex };
+        return { valid: errors.length === 0, errors: errors, warnings: warnings, data: data, headers: headers, previewRows: previewRows, analysis: analysis, selectedSheet: effectiveSheetName, headerRowIndex: rowIndex };
     }
 
     window.validateExcelFileEnvelope = validateExcelFileEnvelope;
@@ -7794,6 +7795,37 @@ function toBase64(file) {
     function renderExcelValidationResult(result, fileName) {
         if (previewSummaryExcel) {
             previewSummaryExcel.textContent = fileName + ' · ' + result.data.length + ' filas detectadas · ' + (result.headers || []).filter(Boolean).length + ' columnas';
+        }
+        const dataPreview = document.getElementById('excel-data-preview');
+        if (dataPreview) {
+            dataPreview.replaceChildren();
+            if (result.headers && result.previewRows && result.previewRows.length) {
+                const table = document.createElement('table');
+                table.className = 'min-w-full text-xs border-collapse';
+                const thead = document.createElement('thead');
+                const headRow = document.createElement('tr');
+                result.headers.forEach(header => {
+                    const cell = document.createElement('th');
+                    cell.className = 'border-b border-slate-200 bg-slate-50 px-3 py-2 text-left font-bold text-slate-700';
+                    cell.textContent = String(header || '(sin encabezado)');
+                    headRow.appendChild(cell);
+                });
+                thead.appendChild(headRow);
+                table.appendChild(thead);
+                const tbody = document.createElement('tbody');
+                result.previewRows.slice(0, 5).forEach(values => {
+                    const row = document.createElement('tr');
+                    values.forEach(value => {
+                        const cell = document.createElement('td');
+                        cell.className = 'border-b border-slate-100 px-3 py-2 text-slate-600';
+                        cell.textContent = value instanceof Date ? value.toISOString().slice(0, 10) : String(value === null || value === undefined ? '' : value);
+                        row.appendChild(cell);
+                    });
+                    tbody.appendChild(row);
+                });
+                table.appendChild(tbody);
+                dataPreview.appendChild(table);
+            }
         }
         if (!previewDiagnosticsExcel) return;
         previewDiagnosticsExcel.replaceChildren();
