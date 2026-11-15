@@ -26,3 +26,30 @@
 ### Continuidad
 - Siguiente acción: verificar las evidencias técnicas de los prerrequisitos de TASK-143/TASK-144; no asumir que una referencia de dependencia equivale a una implementación completada.
 ===============================================================================
+
+
+===============================================================================
+## C1.771 — IMA-EXEC-20261115-F40-DEPENDENCY-REVIEW-02
+- **Fecha:** 2026-11-15
+- **Rama:** NG_beta_0.0.0.1_work
+- **HEAD inicial verificado:** cf16bfda0f95a9f064a9649930934d3bf4c37726 (C1.770)
+- **Rama base verificada:** NG_beta_0.0.0.1 — 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios. La rama de trabajo está 3.058 commits por delante y 0 por detrás.
+- **Normativa:** `Normas_Desarollo.md` v1.4, leída antes de cualquier modificación.
+
+### Recuperación y auditoría de dependencias
+- Se confirmó C1.770 como último checkpoint existente. Su entrada no estaba todavía reflejada en `INDICE_CHECKPOINTS.md`.
+- **TASK-143 / F40-22:** TASK-296 sigue Pendiente y contiene controles pertinentes de ACL, enlaces y salida segura. AUD-NG-158 sigue Pendiente, pero su alcance original es ABAC para escrituras docentes; la necesidad de bloquear una auditoría ACL de Drive no queda demostrada. F31-Task09 corresponde a TASK-290 (borradores de formularios), funcionalidad ajena a la remediación ACL y no se trata como bloqueo técnico. F34-Task04 está completada en C1.753. F39-Task02 permanece parcial en C1.769. TASK-502 y AUD-NG-127 aparecen en el índice del Plan Maestro, pero no se localizó su bloque correspondiente en el backlog asignado; su estado y alcance no se presumen.
+- **TASK-144 / F40-02:** F34-Task04 está completada; F39-Task02 sigue parcial. F29-TASK11 aparece Pendiente. F29-TASK15 y F27-TASK03 aparecen en el índice del Plan Maestro, pero no se localizaron sus bloques de requisitos en el backlog asignado durante esta revisión; no se inventa evidencia de cierre.
+- **TASK-133 / F39-03:** permanece En ejecución y es el siguiente subflujo técnico elegible. Los helpers de preflight están presentes en ACCOUNTING, pero `backend/accounting-service/Code.gs` aún no tiene `doPost`, `doGet` ni `textResponse`. `getVerifiedAccountingIdentity_` depende de `verifySessionToken`, que no está definido en ese servicio. C1.766 ya registraba la ausencia de router y adaptadores de autenticación/ownership; el problema sigue vigente en HEAD C1.770.
+
+### Verificaciones y límites
+- Comparación de ramas: HEAD de trabajo cf16bfda...; HEAD base 44d98911...; 3.058 commits ahead, 0 behind.
+- Estado de checks consultado para C1.770: sin status checks reportados. La consulta de workflow runs disponible devuelve solo ejecuciones disparadas por PR y no reportó runs para este commit; esto no demuestra que no existan otras ejecuciones.
+- No se modificó código. Node v22.16.0 está disponible en el contenedor, pero no hay checkout del repositorio; no se clonó la rama. Node CLI, suites locales y GitHub Actions no se ejecutaron en esta sesión.
+- No se ejecutaron acciones sobre Drive/Sheets ni se modificaron datos reales.
+
+### Resultado y continuidad
+- TASK-143 y TASK-144 no se declaran elegibles para cierre: sus dependencias de almacenamiento/integridad siguen parciales o sin evidencia de backlog verificable.
+- Siguiente acción concreta: continuar TASK-133 restaurando un contrato autenticado y el router mínimo de ACCOUNTING, verificando el mecanismo de sesión/interservicio existente antes de exponer preflight o importación. Mantener la UI desconectada hasta que el endpoint autentique y autorice en servidor.
+- **Estado:** checkpoint de auditoría de continuidad; no representa cierre de TASK-133, TASK-143 ni TASK-144.
+===============================================================================
