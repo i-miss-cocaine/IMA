@@ -349,3 +349,11 @@ Se evaluó el recorrido de extremo a extremo:
 - CI final del HEAD 0c4c81d6c5a59bcc2bce78f6e0b9f9dbd4031f38: Department Scope 43737615044 SUCCESS; Task-Service Security 43737615057 SUCCESS; Department Reference Consumers 43737615098 SUCCESS. El contrato específico academic-teacher-justification-abac.test.js reportó PASS y se validó sintaxis Apps Script/JS.
 - No hubo ejecución local: el intento de checkout por HTTPS falló por DNS (github.com no resolvió). No se desplegó Apps Script ni se accedió a datos reales de Sheets/Drive.
 - **Pendiente beta:** BETA-FUNC-100, BETA-FUNC-101 y BETA-FUNC-102. F34-Task04 (SHA-256 de adjuntos/evidencias) queda como siguiente P0. El estado histórico de la auditoría inicial se conserva como antecedente y no se reescribe retroactivamente.
+
+
+## F. ACTUALIZACIÓN DE EJECUCIÓN — C1.753 (2026-11-15)
+- **F34-Task04:** revisión confirmó SHA-256 calculado sobre bytes reales y comprobación read-back de Drive en USER; metadatos de hash, versión, tamaño, MIME y fecha se persisten junto al registro. ACADEMIC revalida evidencia canónica y el endpoint docente vuelve a calcular el hash antes de exponerla.
+- La descarga administrativa rechaza discrepancias hash/metadata y mantiene archivos históricos sin huella como LEGACY_UNVERIFIED, sin presentarlos como verificados.
+- Se añadió un caso de regresión para bytes modificados durante la lectura posterior a la carga; exige fallo de integridad y rollback.
+- Department Scope Contract run 43740294235 SUCCESS; Node.js 24 y sintaxis Apps Script/JS PASS.
+- La validación con Drive/Sheets desplegados permanece pendiente. TASK-106 conserva el alcance adicional de múltiples versiones/adjuntos, inmutabilidad vinculada a decisiones y política configurable de discrepancias.
