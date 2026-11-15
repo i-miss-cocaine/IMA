@@ -4150,16 +4150,16 @@ function createStudentDocumentAccessToken(payload) {
   const expedienteId = String(request.expedienteId || "").trim();
   const solicitudId = String(request.solicitudId || "").trim();
   if (!documentId || (!expedienteId && !solicitudId)) {
-    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento no disponible." };
+    return studentDocumentAccessError_(request, null, documentId, "RESOURCE_NOT_FOUND", "");
   }
   const actor = getVerifiedAcademicIdentity_(request);
   if (!actor || actor.authorized !== true || !actor.userId) {
-    return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", message: "Documento no disponible." };
+    return studentDocumentAccessError_(request, actor, documentId, actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", "");
   }
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName("DocumentosEstudiante");
   const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
-  if (!sheet) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento no disponible." };
+  if (!sheet) return studentDocumentAccessError_(request, actor, documentId, "RESOURCE_NOT_FOUND", claims.version);
   const matches = sheet.getDataRange().getValues().slice(1).filter(function(row) {
     return String(row[0] || "").trim() === documentId;
   });
@@ -4224,6 +4224,29 @@ function decodeStudentDocumentAccessToken_(token) {
   return claims;
 }
 
+function logStudentDocumentAccessDecision_(request, actor, documentId, version, allowed, reasonCode) {
+  try {
+    logStructuredEvent("ACADEMIC", "getSecureDocumentStream", allowed ? "INFO" : "WARN",
+      allowed ? "DOCUMENT_DOWNLOADED" : "DOCUMENT_ACCESS_DENIED",
+      allowed ? "Documento entregado mediante proxy autenticado." : "Intento de acceso documental denegado.",
+      {
+        documentoId: String(documentId || ""),
+        versionDocumento: String(version || ""),
+        userId: String(actor && actor.userId || ""),
+        role: String(actor && actor.role || ""),
+        operation: "DOWNLOAD",
+        decision: allowed ? "ALLOW" : "DENY",
+        reasonCode: String(reasonCode || ""),
+        correlationId: String(request && request.correlationId || "")
+      }, String(actor && actor.role || ""));
+  } catch (_) {}
+}
+
+function studentDocumentAccessError_(request, actor, documentId, code, version) {
+  logStudentDocumentAccessDecision_(request, actor, documentId, version, false, code);
+  return { status: "error", code: String(code || "RESOURCE_NOT_FOUND"), message: "Documento no disponible." };
+}
+
 function getSecureDocumentStream(payload) {
   const request = payload || {};
   const documentId = String(request.documentoId || request.documentId || "").trim();
@@ -4239,16 +4262,16 @@ function getSecureDocumentStream(payload) {
   }
   let claims;
   try { claims = decodeStudentDocumentAccessToken_(token); }
-  catch (_) { return { status: "error", code: "DOCUMENT_ACCESS_TOKEN_INVALID", message: "Documento no disponible." }; }
+  catch (_) { return studentDocumentAccessError_(request, actor, documentId, "DOCUMENT_ACCESS_TOKEN_INVALID", ""); }
   if (claims.documentId !== documentId || claims.userId !== String(actor.userId) ||
       (request.versionDocumento && String(request.versionDocumento) !== String(claims.version))) {
-    return { status: "error", code: "DOCUMENT_ACCESS_TOKEN_BINDING_MISMATCH", message: "Documento no disponible." };
+    return studentDocumentAccessError_(request, actor, documentId, "DOCUMENT_ACCESS_TOKEN_BINDING_MISMATCH", claims.version);
   }
   const cache = CacheService.getScriptCache();
   const cacheKey = "STUDENT_DOC_ACCESS_" + claims.tokenId;
   const cachedDigest = cache.get(cacheKey);
   if (!cachedDigest || !studentDocumentTokenConstantTimeEqual_(cachedDigest, studentDocumentTokenDigest_(token))) {
-    return { status: "error", code: "DOCUMENT_ACCESS_TOKEN_REVOKED_OR_REPLAYED", message: "Documento no disponible." };
+    return studentDocumentAccessError_(request, actor, documentId, "DOCUMENT_ACCESS_TOKEN_REVOKED_OR_REPLAYED", claims.version);
   }
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName("DocumentosEstudiante");
@@ -4262,7 +4285,7 @@ function getSecureDocumentStream(payload) {
   if ((expedienteId && String(row[1] || "").trim() !== expedienteId) ||
       (solicitudId && String(row[2] || "").trim() !== solicitudId) ||
       String(row[13] || "").trim() !== String(claims.version)) {
-    return { status: "error", code: "DOCUMENT_ACCESS_TOKEN_BINDING_MISMATCH", message: "Documento no disponible." };
+    return studentDocumentAccessError_(request, actor, documentId, "DOCUMENT_ACCESS_TOKEN_BINDING_MISMATCH", claims.version);
   }
   const access = assertStudentDocumentScopeAccess_(request, ss, sheet, row, expSheet);
   if (!access || access.authorized !== true) {
@@ -4272,19 +4295,10 @@ function getSecureDocumentStream(payload) {
   cache.remove(cacheKey);
   const result = getStudentDocumentFile_(Object.assign({}, request, { documentoId: documentId, versionDocumento: claims.version }));
   if (!result || result.status !== "success" || result.versionDocumento !== claims.version) {
-    try {
-      logStructuredEvent("ACADEMIC", "getSecureDocumentStream", "WARN", "DOCUMENT_ACCESS_DENIED",
-        "La entrega documental autenticada fue denegada.", { documentoId: documentId, userId: String(actor.userId) }, actor.role);
-    } catch (_) {}
-    return result && result.status === "error" ? result : { status: "error", code: "DOCUMENT_VERSION_CHANGED", message: "Documento no disponible." };
+    return studentDocumentAccessError_(request, actor, documentId,
+      result && result.code || "DOCUMENT_VERSION_CHANGED", claims.version);
   }
-  try {
-    logStructuredEvent("ACADEMIC", "getSecureDocumentStream", "INFO", "DOCUMENT_DOWNLOADED",
-      "Documento entregado mediante proxy autenticado.", {
-        documentoId: documentId, versionDocumento: claims.version, userId: String(actor.userId),
-        operation: "DOWNLOAD"
-      }, actor.role);
-  } catch (_) {}
+  logStudentDocumentAccessDecision_(request, actor, documentId, claims.version, true, "");
   return result;
 }
 
