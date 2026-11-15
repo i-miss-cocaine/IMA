@@ -57,6 +57,32 @@ for(const state of ["Requiere Corrección","Aprobada","Rechazada"]) {
   assert.equal(busy.code,"NOTIFICATION_LOCK_TIMEOUT");assert.equal(notificationSheet.data.length,2);
 }
 {
+  const notificationSheet=makeSheet([["NotificacionID","UserId","Tipo","Titulo","Mensaje","Fecha","Leido","Categoria","Enlace","DedupKey","Estado","Email"]]);
+  let lockHeld=false;
+  const context=loadContext({SpreadsheetApp:{openById(){return {};}},
+    getOrCreateSheet(){return notificationSheet;},
+    LockService:{getScriptLock(){return {waitLock(){if(lockHeld)throw Error("busy");lockHeld=true;},releaseLock(){lockHeld=false;}};}},
+    Utilities:{getUuid(){return "EMAIL-UUID";}},MailApp:{sendEmail(){throw new Error("Service invoked too many times: email quota exceeded");}},
+    logStructuredEvent(){}});
+  const pending=context.sendMultiChannelNotification({userId:"USR-1",emailRecipient:"user@example.test",titulo:"Aviso",mensaje:"Estado",deduplicationKey:"WF|QUOTA"});
+  assert.equal(pending.status,"success");
+  assert.equal(pending.estadoEntrega,"Pendiente_Reintento","quota failures must remain visible and retryable");
+  assert.equal(notificationSheet.data[1][10],"Pendiente_Reintento");
+  assert.equal(notificationSheet.data[1][11],"user@example.test");
+}
+{
+  const notificationSheet=makeSheet([["NotificacionID","UserId","Tipo","Titulo","Mensaje","Fecha","Leido","Categoria","Enlace","DedupKey","Estado","Email"]]);
+  let lockHeld=false;
+  const context=loadContext({SpreadsheetApp:{openById(){return {};}},
+    getOrCreateSheet(){return notificationSheet;},
+    LockService:{getScriptLock(){return {waitLock(){if(lockHeld)throw Error("busy");lockHeld=true;},releaseLock(){lockHeld=false;}};}},
+    Utilities:{getUuid(){return "LEGACY-EMAIL";}},MailApp:{sendEmail(payload){assert.equal(payload.to,"legacy@example.test");}},
+    logStructuredEvent(){}});
+  const result=context.sendMultiChannelNotification({userId:"legacy@example.test",titulo:"Aviso",mensaje:"Estado"});
+  assert.equal(result.emailSent,true,"legacy email-as-userId callers must remain compatible");
+  assert.equal(notificationSheet.data[1][10],"Entregado");
+}
+{
   const lockState={held:false};
   const request=["TRAM-1","USR-1","STU-1","Solicitud Administrativa","Descripción","","En Revisión","Secretaría","","2026-11-15","", "2026-12-01"];
   const requests=makeSheet([["SolicitudID","UserId","EstudianteID","TipoTramite","Descripcion","AdjuntoUrl","Estado","AsignadoA","Observaciones","FechaSolicitud","FechaActualizacion","FechaLimite"],request]);
