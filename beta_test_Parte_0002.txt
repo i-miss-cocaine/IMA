@@ -477,3 +477,14 @@
 - **Evidencia requerida:** capturas de panel, respuestas sanitizadas, IDs de prueba no reales, logs y resultados de consultas en beta.
 - **Estado:** Pendiente beta. CI y pruebas locales aprobadas.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-099 — F22-Task01 — Persistencia privada y descarga autorizada de adjuntos
+- **Módulos:** ACCOUNTING/uploadPaymentVoucher/getPaymentVoucherFile; USER/submitJointFamilyPayment/submitInstitutionalFormRequest/submitStudentAbsenceJustification/submitAdministrativeRequest/getAdministrativeRequestAttachment; Google Drive, SolicitudesTramites, ComprobantesPago y UI de estudiante.
+- **Precondiciones:** despliegue beta aislado de ACCOUNTING, USER y cliente; cuentas sintéticas de estudiante, tutor vinculado, personal autorizado y usuario ajeno; carpeta de prueba exclusiva; PDFs/imágenes/OpenXML sintéticos válidos e inválidos. No usar expedientes ni comprobantes reales.
+- **Pasos:** (1) subir voucher individual y pago conjunto con archivo válido; (2) enviar formulario institucional, justificante y trámite con adjunto; (3) comprobar que se rechazan URL/ID de Drive enviados por cliente y pares incompletos; (4) verificar en Drive que carpeta y archivos son PRIVATE; (5) inspeccionar hojas y confirmar que solo se persiste el ID privado, no URL pública; (6) comprobar que getPaymentVouchers/getAdministrativeRequests no devuelven URL; (7) descargar el propio comprobante/adjunto por endpoint autenticado; (8) probar tutor vinculado con permiso y sin permiso; (9) probar usuario ajeno y rol sin autorización; (10) probar archivo legacy público y confirmar denegación; (11) validar vista previa con Blob URL y revocación al cerrar; (12) confirmar rollback y ausencia de filas huérfanas en los escenarios de fallo controlado.
+- **Resultado esperado:** ningún adjunto documental es público; no hay éxito falso ni referencia vacía ante fallo de Drive; solo titular/tutor autorizado/personal con permiso obtiene bytes; referencias legacy públicas y recursos ajenos se rechazan; no quedan archivos huérfanos ni URLs de Drive expuestas.
+- **Evidencia requerida:** respuestas sanitizadas, permisos PRIVATE observados en Drive, IDs de filas/archivos sintéticos, logs de allow/deny y evidencia de rollback; no registrar contenido ni datos personales reales.
+- **Estado:** Pendiente beta. Contratos Node/CI aprobados; no se ha ejecutado contra Apps Script/Drive/Sheets desplegados.
+===============================================================================

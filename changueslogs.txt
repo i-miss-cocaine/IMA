@@ -3766,3 +3766,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Validadores ACCOUNTING/USER idénticos; validan PDF/JPEG/PNG/WEBP y estructura ZIP OpenXML DOCX/XLSX, MIME/extensión, Base64, tamaño y rutas.
 - Contrato Node: 24 escenarios x 2 servicios = 48 combinaciones PASS. CI 43680158966, 43680158922, 43680158941 y 43680158904 SUCCESS.
 - F22-Task01 sigue En progreso: quedan pares obligatorios, errores de Drive fail-closed, referencias cliente no confiables y descarga privada autorizada.
+
+
+[2026-11-15] F22-Task01 — C1.746, persistencia privada y descarga autorizada
+- Se cerraron los callsites pendientes: uploadPaymentVoucher; submitJointFamilyPayment; submitInstitutionalFormRequest; submitStudentAbsenceJustification; submitAdministrativeRequest. Pares fileData/fileName, referencias cliente rechazadas, almacenamiento privado y rollback.
+- getPaymentVoucherFile/getAdministrativeRequestAttachment verifican identidad, ámbito, privacidad, tamaño, MIME y bytes; se bloquearon descargas legacy públicas y getAdministrativeRequests dejó de devolver URLs.
+- Se ampliaron contratos Node para rutas de entrada, privacidad de Drive, rollback, autorización, archivos legacy y UI Blob URL. 48 combinaciones de validación binaria y contratos de adjuntos PASS.
+- Department Scope 43686093512 SUCCESS (Node.js 24.22.2), incluye contratos de adjuntos, Phase 22, syntax Apps Script y clientes. 43686001435 SUCCESS tras corregir fixtures. El run 43685937158 falló por fixtures obsoletos y fue corregido/validado en el run posterior.
+- F22-Task01 completada en código/revisión/CI; BETA-FUNC-099 pendiente para Drive/Sheets desplegados. No se ejecutó CLI inexistente ni Node local por fallo DNS del checkout. Siguiente elegible F22-Task02.
