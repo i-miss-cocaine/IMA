@@ -13178,9 +13178,10 @@ function getUIMetadataCatalog(payload) {
         label: "Monto",
         help: "Ingresa únicamente el importe en lempiras, sin escribir el símbolo de moneda ni separadores de miles. Usa punto decimal y hasta dos decimales; verifica que coincida con el cargo o comprobante.",
         inputType: "number",
+        min: 0.01,
         step: 0.01,
         example: "1250.00",
-        source: "cashier-monto y voucher-monto: type=number, step=0.01"
+        source: "cashier-monto y voucher-monto: min=0.01, step=0.01; validación frontend, ACCOUNTING service no está disponible en este repositorio"
       },
       "cobros.referencia": {
         label: "Referencia de pago",
