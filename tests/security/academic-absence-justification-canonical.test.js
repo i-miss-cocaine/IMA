@@ -77,7 +77,8 @@ const context = {
       const bytes=Array.isArray(value)?Buffer.from(value.map(v=>v<0?v+256:v)):Buffer.from(String(value));
       return Array.from(crypto.createHash("sha256").update(bytes).digest()).map(v=>v>127?v-256:v);
     },
-    DigestAlgorithm:{SHA_256:"SHA_256"}
+    DigestAlgorithm:{SHA_256:"SHA_256"},
+    Charset:{UTF_8:"UTF_8"}
   },
   DriveApp: {
     Access:{PRIVATE:"PRIVATE"},
