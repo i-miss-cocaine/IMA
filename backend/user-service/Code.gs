@@ -4879,6 +4879,17 @@ function registerDocumentEvidence_(ss, args) {
   var solicitudId = String(p.solicitudId || "").trim(), groupId = String(p.evidenciaGrupoId || "ADJUNTO-1").trim();
   var userId = String(p.userId || "").trim();
   if (!solicitudId || !userId || !groupId) throw new Error("EVIDENCE_LINKAGE_REQUIRED");
+  // Validate the candidate bytes before mutating the current-version flags; failed uploads must not retire valid evidence.
+  var file = DriveApp.getFileById(attachment.fileId);
+  var blob = file.getBlob(), bytes = blob.getBytes();
+  var actualHash = computeDocumentSHA256(bytes).toLowerCase();
+  var actualMime = String(blob.getContentType() || file.getMimeType() || "").trim().toLowerCase();
+  var expectedMime = String(attachment.mimeType || "").trim().toLowerCase();
+  if (file.isTrashed() || file.getSharingAccess() !== DriveApp.Access.PRIVATE ||
+      actualHash !== String(attachment.sha256).toLowerCase() || bytes.length !== Number(attachment.sizeBytes) ||
+      !expectedMime || actualMime !== expectedMime) {
+    throw new Error("EVIDENCE_STORAGE_INTEGRITY_MISMATCH");
+  }
   var rows = sheet.getDataRange().getValues(), previous = [];
   for (var i = 1; i < rows.length; i++) {
     if (String(rows[i][map.SolicitudID] || "").trim() === solicitudId &&
@@ -4905,12 +4916,6 @@ function registerDocumentEvidence_(ss, args) {
       sheet.getRange(item.index + 1, map.EsVersionActual + 1).setValue(false);
       sheet.getRange(item.index + 1, map.Estado + 1).setValue("SUPERADA");
     });
-  }
-  var file = DriveApp.getFileById(attachment.fileId);
-  var bytes = file.getBlob().getBytes(), actualHash = computeDocumentSHA256(bytes).toLowerCase();
-  if (file.isTrashed() || file.getSharingAccess() !== DriveApp.Access.PRIVATE ||
-      actualHash !== String(attachment.sha256).toLowerCase() || bytes.length !== Number(attachment.sizeBytes)) {
-    throw new Error("EVIDENCE_STORAGE_INTEGRITY_MISMATCH");
   }
   var evidenciaId = "EVD-" + Utilities.getUuid(), receivedAt = String(attachment.receivedAt || new Date().toISOString());
   var record = {
