@@ -31,6 +31,8 @@ function extractFunction(source, name) {
   }
   throw new Error("unbalanced function " + name);
 }
+const apiHelpers = ["createApiClientCorrelationId", "createApiClientError", "apiClientPublicMessage", "normalizeApiClientResponse", "showApiToast"]
+  .map(name => extractFunction(apiSource, name));
 const fetchApiFn = extractFunction(apiSource, "fetchApi");
 assert.ok(fetchApiFn.includes("enrichedPayload.sessionToken = currentUser.sessionToken"));
 assert.ok(fetchApiFn.includes("delete enrichedPayload.authToken") && fetchApiFn.includes("delete enrichedPayload.token"));
@@ -57,7 +59,7 @@ async function invoke(currentUser, action, payload) {
       });
     }
   };
-  vm.runInNewContext(fetchApiFn + "\nthis.callFetchApi = fetchApi;", context);
+  vm.runInNewContext(apiHelpers.join("\n") + "\n" + fetchApiFn + "\nthis.callFetchApi = fetchApi;", context);
   await context.callFetchApi("USER", action, payload);
   return { sent, original: payload };
 }
