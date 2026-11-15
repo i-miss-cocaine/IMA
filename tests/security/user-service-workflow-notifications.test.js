@@ -17,8 +17,10 @@ function makeSheet(rows) {
 function loadContext(extra={}) {
   const context={console,Date,Math,JSON,String,Number,Array,Object,Error,RegExp,
     PropertiesService:{getScriptProperties(){return {getProperty(){return null;}};}},
-    SPREADSHEET_ID:"TEST",FRONTEND_URL:"https://portal.example.test/",...extra};
-  vm.runInNewContext(source,context,{timeout:2000});return context;
+    SPREADSHEET_ID:"TEST",FRONTEND_URL:"https://portal.example.test/"};
+  vm.runInNewContext(source,context,{timeout:2000});
+  Object.keys(extra).forEach(key=>{context[key]=extra[key];});
+  return context;
 }
 for(const state of ["Requiere Corrección","Aprobada","Rechazada"]) {
   let sent=null;
