@@ -348,6 +348,7 @@ assert.deepEqual(JSON.parse(multiRecord[attachmentMap.FechasAfectadasJSON] || "[
 
 sessions.appendRow(["SES-USER","2026-11-14","","","10","A","MAT","DOC-1","Cerrada",""]);
 attendance.appendRow(["REG-USER","SES-USER","STU-USER","Ausente","","",false,"",new Date("2026-11-14T12:00:00Z")]);
+const evidenceFiles = Object.create(null);
 let userLockBusy = false;
 let userUuid = 0;
 const userContext = {
