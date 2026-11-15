@@ -1,5 +1,6 @@
 "use strict";
 // Structural workbook analysis is isolated from browser DOM and persistence.
+// The department-scope workflow executes this contract on teacher UI changes.
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
