@@ -9,6 +9,7 @@ on:
       - backend/academic-service/Code.gs
       - tests/security/academic-multilevel-file-validation.test.js
       - tests/ui/pdf-document-classification.test.js
+      - tests/ui/teacher-excel-workbook-preflight.test.js
       - backend/accounting-service/Code.gs
       - backend/task-service/Code.gs
       - backend/exam-service/Code.gs
