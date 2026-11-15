@@ -955,6 +955,7 @@ const ROLE_PERMISSIONS = {
   "Padre": [
     "getUserInfo", "getNews", "getInstitutionalCriteria", "getFormativeEvaluations", "getSupportPlans",
     "acceptLinkInvitation", "getGuardianStudents", "getGuardianApplicants", "getInstitutionalAnnouncements", "getInternalMessages", "sendInternalMessage", "sendInstitutionalMessage", "getInstitutionalConversations", "getConversationMessages", "archiveInstitutionalConversation", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "getMyDocumentDeliveries", "openDepartmentalDocumentDelivery", "confirmDepartmentalDocumentReceipt", "getAppointmentBookings", "bookAppointment", "getInstitutionalCalendarEvents", "getPendingReminders", "getAuthorizationRequests", "respondToAuthorizationRequest"
+    "saveEvidenceIntegrityPolicy",
   ],
   "Tutor": [
     "getUserInfo", "getNews", "getInstitutionalCriteria", "getFormativeEvaluations", "getSupportPlans",
@@ -971,6 +972,7 @@ const ROLE_PERMISSIONS = {
     "getUserSettings", "saveUserSettings", "getSystemConfigurations", "saveSystemConfiguration", "getProviderIntegrations", "configureProviderIntegration",
     "registerSpreadsheetSource", "resolveSpreadsheetSource", "getSpreadsheetCatalog", "verifyWorkflowDecisionAuditChain", "recordWorkflowDecisionCorrection",
     "manageInternalRoleCatalog", "getInternalRoleCatalog", "getInternalRoleAssignments", "updateTicketStatus", "saveVisualPaletteProposal", "approveVisualPaletteProposal", "registerAndDispatchEvent", "retryFailedEventsQueue", "recordTraceabilityLog", "getTraceabilityCorrelationLogs", "getOperationalCapacityMetrics", "runInterdepartmentalIntegrationTestSuite", "getSharedConfigurationsCatalog", "manageInstitutionalDataCache", "purgeSecurityCaches", "dispatchSecurityEvent", "processSecurityEventQueue", "getSecurityEventsQueue", "getSecurityAndComplianceDashboardData", "generatePrivilegeAndAccountAuditReport", "getPaginatedAuditLogReport", "auditAndReconcileIdentityInconsistencies"
+    "saveEvidenceIntegrityPolicy",
   ],
   "Subdirector": [
     "createNews", "uploadNewsImage", "getNews", "updateNewsStatus", "getStudents", "getStudentsByGradoSeccion", "getUserInfo", "saveGameResult", "getGameStats", "getGlobalTop", "recordAnalytics", "getLearningProfile", "mergeGuestData", "updateUserProfile", "findPersonMatches", "generateInstitutionalId",
@@ -2137,6 +2139,7 @@ function doPost(e) {
       case "saveUserSettings": result = saveUserSettings(payload); break;
       case "getSystemConfigurations": result = getSystemConfigurations(payload); break;
       case "saveSystemConfiguration": result = saveSystemConfiguration(payload); break;
+      case "saveEvidenceIntegrityPolicy": result = saveEvidenceIntegrityPolicy(payload); break;
       case "getProviderIntegrations": result = getProviderIntegrations(payload); break;
       case "configureProviderIntegration": result = configureProviderIntegration(payload); break;
 
@@ -4801,6 +4804,59 @@ function ensureEvidenceDocumentSchema_(ss) {
   var map = {};
   headers.forEach(function(header, index) { if (header) { if (map[header] !== undefined) throw new Error("EVIDENCE_SCHEMA_DUPLICATE_HEADER"); map[header] = index; } });
   return { sheet: sheet, map: map };
+}
+
+function saveEvidenceIntegrityPolicy(payload) {
+  var p = payload || {};
+  var role = getUserVerifiedRole(p);
+  var actorId = String(p._verifiedUserId || "").trim();
+  if (!actorId || ["Administrador", "Director"].indexOf(role) === -1) {
+    return { status: "error", code: actorId ? "AUTH_PERMISSION_DENIED" : "VERIFIED_IDENTITY_REQUIRED", httpStatus: 403 };
+  }
+  var value = String(p.valor || "").trim().toUpperCase();
+  if (["ESTRICTO_BLOQUEAR_ACCESO_Y_NOTIFICAR_AUDITORIA", "ADVERTENCIA_VISUAL_REVISOR"].indexOf(value) === -1) {
+    return { status: "error", code: "EVIDENCE_POLICY_INVALID" };
+  }
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(10000); } catch (_) { return { status: "error", code: "LOCK_TIMEOUT", retryable: true }; }
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = getOrCreateSheet(ss, "ConfiguracionInstitucional");
+    if (sheet.getLastRow() === 0) sheet.appendRow(["Clave", "Valor", "Estado", "ActualizadoPor", "ActualizadoEn"]);
+    var headers = sheet.getRange(1, 1, 1, Math.max(1, sheet.getLastColumn())).getValues()[0].map(function(item) { return String(item || "").trim(); });
+    ["Clave", "Valor", "Estado", "ActualizadoPor", "ActualizadoEn"].forEach(function(header) {
+      if (headers.indexOf(header) === -1) {
+        sheet.getRange(1, sheet.getLastColumn() + 1).setValue(header);
+        headers.push(header);
+      }
+    });
+    var map = {};
+    headers.forEach(function(header, index) { if (header) { if (map[header] !== undefined) throw new Error("EVIDENCE_POLICY_SCHEMA_DUPLICATE_HEADER"); map[header] = index; } });
+    var rows = sheet.getDataRange().getValues(), matches = [];
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][map.Clave] || "").trim() === "BLOQUEO_AUTOMATICO_POR_DISCREPANCIA_HASH") matches.push(i);
+    }
+    if (matches.length > 1) return { status: "error", code: "EVIDENCE_POLICY_AMBIGUOUS" };
+    if (matches.length === 1) {
+      sheet.getRange(matches[0] + 1, map.Valor + 1).setValue(value);
+      sheet.getRange(matches[0] + 1, map.Estado + 1).setValue("Activo");
+      sheet.getRange(matches[0] + 1, map.ActualizadoPor + 1).setValue(actorId);
+      sheet.getRange(matches[0] + 1, map.ActualizadoEn + 1).setValue(new Date().toISOString());
+    } else {
+      var row = new Array(sheet.getLastColumn()).fill("");
+      row[map.Clave] = "BLOQUEO_AUTOMATICO_POR_DISCREPANCIA_HASH";
+      row[map.Valor] = value;
+      row[map.Estado] = "Activo";
+      row[map.ActualizadoPor] = actorId;
+      row[map.ActualizadoEn] = new Date().toISOString();
+      sheet.appendRow(row);
+    }
+    logStructuredEvent("USER", "saveEvidenceIntegrityPolicy", "INFO", "EVIDENCE_POLICY_UPDATED",
+      "La política institucional de integridad documental fue actualizada.", { value: value }, role);
+    return { status: "success", data: { clave: "BLOQUEO_AUTOMATICO_POR_DISCREPANCIA_HASH", valor: value } };
+  } catch (error) {
+    return { status: "error", code: error.message || "EVIDENCE_POLICY_SAVE_FAILED" };
+  } finally { lock.releaseLock(); }
 }
 
 function getEvidenceIntegrityPolicy_(ss) {
