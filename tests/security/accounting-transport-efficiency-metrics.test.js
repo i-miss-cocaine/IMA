@@ -81,7 +81,10 @@ const rows = {
   ]
 };
 let lockAvailable = true;
+let lockCalls = 0;
 let releaseCount = 0;
+let scopeCalls = 0;
+let invalidateAfterFirstScope = false;
 const deniedEvents = [];
 const ss = {
   getSheetByName(name) {
@@ -93,15 +96,17 @@ const context = {
   SPREADSHEET_ID: "TEST",
   SpreadsheetApp: { openById: () => ss },
   LockService: { getScriptLock: () => ({
-    tryLock: () => lockAvailable,
+    tryLock: () => { lockCalls++; return lockAvailable; },
     releaseLock: () => { releaseCount++; }
   }) },
   resolveTransportAccessScope_(payload, spreadsheet) {
+    scopeCalls++;
     const role = String(payload && payload._verifiedRole || "");
     const userId = String(payload && payload._verifiedUserId || "");
     const user = spreadsheet.getSheetByName("Usuarios").getDataRange().getValues().slice(1)
       .find(row => String(row[0] || "") === userId);
-    if (!role || !userId || !user || String(user[6] || "") !== role) {
+    if (!role || !userId || !user || String(user[6] || "") !== role ||
+        (invalidateAfterFirstScope && scopeCalls % 2 === 0)) {
       return { authorized: false, management: false, role, userId };
     }
     return { authorized: true, management: ["Administrador", "Director", "Subdirector"].includes(role), role, userId };
@@ -110,11 +115,13 @@ const context = {
   Date, Math, Number, String, Object, Array, JSON, Error, isFinite, console
 };
 vm.createContext(context);
-vm.runInContext(extracted + "\nthis.metrics = getTransportEfficiencyMetrics;", context);
+vm.runInContext(extracted + "\nthis.metrics = getTransportEfficiencyMetrics; this.parseTime = transportMetricsTimeMinutes_;", context);
 
 function run(payload) { return context.metrics(payload); }
 
 const before = JSON.stringify(rows);
+assert.equal(context.parseTime("6:30:00 a. m."), 390, "Spanish locale AM times must parse");
+assert.equal(context.parseTime("6:45:00 p. m."), 1125, "Spanish locale PM times must parse");
 const result = run({ _verifiedRole: "Director", _verifiedUserId: "DIR-1" });
 assert.equal(result.status, "success");
 assert.equal(result.resumen.viajesAnalizados, 3, "cancelled trips must be excluded");
@@ -146,23 +153,39 @@ const invalidRange = run({
 });
 assert.equal(invalidRange.code, "INVALID_DATE_RANGE");
 
+const lockCallsBeforeDenied = lockCalls;
 const noIdentity = run({});
 assert.equal(noIdentity.code, "VERIFIED_IDENTITY_REQUIRED");
 const nonManagement = run({ _verifiedRole: "Padre", _verifiedUserId: "PARENT-1" });
 assert.equal(nonManagement.code, "UNAUTHORIZED_ACCESS_ATTEMPT");
+assert.equal(lockCalls, lockCallsBeforeDenied, "unauthorized requests must not acquire the global lock");
 assert.ok(deniedEvents.length >= 1);
+
+invalidateAfterFirstScope = true;
+const roleChanged = run({ _verifiedRole: "Director", _verifiedUserId: "DIR-1" });
+assert.equal(roleChanged.code, "VERIFIED_IDENTITY_REQUIRED", "identity must be revalidated after lock acquisition");
+invalidateAfterFirstScope = false;
 
 lockAvailable = false;
 const locked = run({ _verifiedRole: "Director", _verifiedUserId: "DIR-1" });
 assert.equal(locked.code, "LOCK_TIMEOUT");
 lockAvailable = true;
-assert.equal(releaseCount, 5, "each acquired lock is released exactly once");
+assert.equal(releaseCount, 4, "each acquired lock is released exactly once");
 
 assert.match(dashboard, /btn-transport-efficiency-analytics/);
 assert.match(dashboard, /modal-transport-efficiency-analytics/);
 assert.match(dashboard, /js\/transport-analytics\.js/);
 assert.match(client, /getTransportEfficiencyMetrics/);
 assert.doesNotMatch(client, /\.innerHTML\s*=/, "untrusted metric values must not be interpolated as HTML");
+const permissionStart = source.indexOf("const ROLE_PERMISSIONS = {");
+const permissionEnd = source.indexOf("\n};", permissionStart);
+const permissionSource = source.slice(permissionStart, permissionEnd);
+const directorStart = permissionSource.indexOf('"Director": [');
+const subdirectorStart = permissionSource.indexOf('"Subdirector": [');
+const nextRoleStart = permissionSource.indexOf('\n  "', subdirectorStart + 1);
+assert.ok(permissionSource.slice(directorStart, subdirectorStart).includes('"getTransportEfficiencyMetrics"'));
+assert.ok(permissionSource.slice(subdirectorStart, nextRoleStart).includes('"getTransportEfficiencyMetrics"'));
+assert.match(source, /case "getTransportEfficiencyMetrics": result = getTransportEfficiencyMetrics\(payload\); break;/);
 assert.match(workflow, /accounting-transport-efficiency-metrics\.test\.js/);
 assert.match(workflow, /node --check js\/transport-analytics\.js/);
 console.log("PASS: transport metrics authorization, aggregation, date filtering, over-capacity, no-data handling, read-only behavior, lock release and dashboard wiring");

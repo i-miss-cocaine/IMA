@@ -19920,17 +19920,34 @@ function transportMetricsTimeMinutes_(value) {
 
 function getTransportEfficiencyMetrics(payload) {
   const data = payload || {};
+  let ss;
+  try {
+    ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    // Rechazar identidades no autorizadas antes de tomar el lock global.
+    const initialScope = resolveTransportAccessScope_(data, ss);
+    if (!initialScope.authorized) {
+      transportAuditDenied_("getTransportEfficiencyMetrics", data, initialScope, null);
+      return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "Se requiere una identidad verificada." };
+    }
+    if (!initialScope.management || ["Administrador", "Director", "Subdirector"].indexOf(initialScope.role) === -1) {
+      transportAuditDenied_("getTransportEfficiencyMetrics", data, initialScope, null);
+      return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", message: "La analítica agregada está reservada a Dirección." };
+    }
+  } catch (error) {
+    return { status: "error", code: "TRANSPORT_METRICS_READ_FAILED", message: String(error && error.message || error) };
+  }
+
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(10000)) {
     return { status: "error", code: "LOCK_TIMEOUT", message: "No fue posible obtener una lectura consistente. Reintente." };
   }
 
   try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    // Revalidar identidad/rol dentro del lock para evitar TOCTOU durante la espera.
     const scope = resolveTransportAccessScope_(data, ss);
     if (!scope.authorized) {
       transportAuditDenied_("getTransportEfficiencyMetrics", data, scope, null);
-      return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "Se requiere una identidad verificada." };
+      return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "La identidad dejó de ser válida." };
     }
     if (!scope.management || ["Administrador", "Director", "Subdirector"].indexOf(scope.role) === -1) {
       transportAuditDenied_("getTransportEfficiencyMetrics", data, scope, null);
@@ -20028,6 +20045,7 @@ function getTransportEfficiencyMetrics(payload) {
           ocupacionViajes: 0,
           abordajesReales: 0,
           ocupacionesEstimadas: 0,
+          sobrecapacidadDetectada: false,
           puntualidadEvaluados: 0,
           puntualidadATiempo: 0,
           duracionTotalMinutos: 0,
@@ -20044,7 +20062,9 @@ function getTransportEfficiencyMetrics(payload) {
         const occupiedSeats = hasBoardingEvidence
           ? actualBoardings.length
           : ((assignedByGroup[key] || []).length);
-        group.ocupacionTotalPct += occupiedSeats / group.capacidadPasajeros * 100;
+        const tripOccupancyPct = occupiedSeats / group.capacidadPasajeros * 100;
+        group.ocupacionTotalPct += tripOccupancyPct;
+        if (tripOccupancyPct > 100) group.sobrecapacidadDetectada = true;
         group.ocupacionViajes++;
         occupancyTotal += occupiedSeats / group.capacidadPasajeros * 100;
         occupancyTrips++;
@@ -20091,7 +20111,7 @@ function getTransportEfficiencyMetrics(payload) {
         ocupacionPromedioPct: occupancyEvaluated ? Math.round(group.ocupacionTotalPct / group.ocupacionViajes * 100) / 100 : null,
         abordajesReales: group.abordajesReales,
         ocupacionesEstimadas: group.ocupacionesEstimadas,
-        sobrecapacidadDetectada: occupancyEvaluated && group.ocupacionTotalPct / group.ocupacionViajes > 100,
+        sobrecapacidadDetectada: occupancyEvaluated && group.sobrecapacidadDetectada,
         puntualidadPct: punctualityEvaluated ? Math.round(group.puntualidadATiempo / group.puntualidadEvaluados * 10000) / 100 : null,
         viajesPuntualidadEvaluados: group.puntualidadEvaluados,
         duracionPromedioMinutos: durationEvaluated ? Math.round(group.duracionTotalMinutos / group.duracionEvaluados * 100) / 100 : null,
