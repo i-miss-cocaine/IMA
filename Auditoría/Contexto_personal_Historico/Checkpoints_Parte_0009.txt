@@ -1288,3 +1288,47 @@ TASK-106 — Integridad criptográfica, versionado y protección contra sustituc
 - No se modificó ACCOUNTING porque el archivo está vacío; no se alteró la rama base ni se publicaron cambios en otra rama.
 - Siguiente tarea elegible: TASK-133 (motor de validación multinivel de archivos/documentos), dependiente de F39-Task01; iniciar solo después de verificar el estado real del checkpoint y los validadores existentes para evitar duplicación.
 ===============================================================================
+
+
+===============================================================================
+## C1.763 — IMA-EXEC-20261115-TASK130-PERMANENT-HELP-XLSX-SECRETARY-01
+- Fecha: 2026-11-15
+- Rama exclusiva: NG_beta_0.0.0.1_work
+- HEAD de código/metadata: aad0684ba981fc818843eb799e94b25720be9b0a
+- HEAD de fallback UI: 8a29c5645b8cb86fd233f960f565f0015f6af606
+- HEAD de formularios/tests: 58176b77c5d44b80eb59f95054d1112790cd0b01
+- HEAD de prueba corregida: 385f59f9dc576bf0099946db3774e51bbe944a40
+- HEAD beta/documentación previo a checkpoint: 84a284ae36b4a19a1e4bcc9a9638450b82e6759a
+- HEAD base verificado: NG_beta_0.0.0.1 = 44d9891132332e692dbe2ba8602b41f50a508a59
+- Normativa: Normas_Desarollo.md v1.4.
+
+### Alcance
+- Se amplía getUIMetadataCatalog y el fallback de ui-common.js con importacion.xlsx, incluyendo exactamente .xlsx, MIME OpenXML, maxBytes=10 MiB, rechazo de archivo vacío/cifrado/truncado/dañado y revisión de vista previa. La restricción coincide con validateExcelFileEnvelope en js/teacher.js.
+- Se vincula el input excel-file-input a importacion.xlsx.
+- Se agregan ayudas permanentes de calendario en evm-fecha-inicio, evm-fecha-fin e identity-search-fecha del dashboard de Secretaría; se conserva fecha inicial obligatoria y fecha final opcional.
+- Se amplían los tests de catálogo y formulario, y BETA-FUNC-107 documenta los escenarios adicionales.
+
+### Archivos modificados en este avance
+- backend/user-service/Code.gs
+- js/ui-common.js
+- teacher-dashboard.html
+- dashboard-secretaria.html
+- tests/security/user-service-ui-metadata.test.js
+- tests/ui/permanent-form-help.test.js
+- pendientes/Secretaria/Pendientes.md
+- Auditoría/AUDITORIA_FASE_38_AYUDA_CONTEXTUAL_METADATOS_APRENDIZAJE.md
+- changueslogs.txt
+- beta_test_Parte_0002.txt
+
+### Verificación
+- Cuatro contratos UI/metadatos ejecutados en harness JS aislado PASS: ui-common-permanent-help, permanent-form-help, user-service-ui-metadata y accessible-tooltips.
+- Sintaxis V8 PASS: backend/user-service/Code.gs, js/ui-common.js, js/teacher.js, js/secretary.js, js/accounting.js y js/student.js.
+- GitHub Actions ima/department-scope-contract: success confirmado en 385f59f9dc576bf0099946db3774e51bbe944a40 (Node 24; workflow ejecuta los contratos UI/metadatos y chequeos de sintaxis pertinentes).
+- El commit 2754939 tuvo un fallo intermedio porque la prueba se publicó antes de la ayuda en dashboard-secretaria.html y la aserción de atributo required usó una expresión incorrecta. Ambos defectos se corrigieron; harness local PASS y commit 385f59f con Actions SUCCESS. No se oculta el fallo anterior.
+- La rama base permanece en 44d9891132332e692dbe2ba8602b41f50a508a59; todos los writes fueron dirigidos a NG_beta_0.0.0.1_work.
+
+### Estado y continuidad
+- TASK-130 permanece abierto: falta cobertura exhaustiva de formularios dinámicos y revisión de límites de adjuntos restantes con sus validadores reales; falta prueba manual de teclado, lector de pantalla, tacto, zoom y cancelación sin mutación en navegador.
+- BETA-FUNC-107 pendiente de ejecución en entorno beta real.
+- Siguiente tarea P0 elegible según el checkpoint C1.762 y Plan Maestro: TASK-133, previa lectura de F39-Task01 y verificación de validadores existentes para no duplicar capacidades.
+===============================================================================
