@@ -6607,17 +6607,36 @@ if (document.readyState === "loading") {
 window.__imaUIMetadataCache = null;
 window.__imaUIMetadataPromise = null;
 window.__imaUIMetadataCounter = 0;
+window.__imaUIMetadataFallback = {
+    version: "offline-1.0",
+    fields: {
+        "identity.userId": { help: "Usa el UserId institucional asignado a la cuenta (por ejemplo, USR-...). No escribas aquí el nombre ni el DNI." },
+        "matricula.identidad": { help: "Escribe el número exactamente como aparece en el identificación oficial. No agregues ni elimines dígitos; revisa manualmente cualquier posible coincidencia." },
+        "matricula.fechaNacimiento": { help: "Selecciona la fecha en el calendario y verifica que coincida con el documento oficial." },
+        "matricula.anoLectivo": { help: "Ingresa el año lectivo de la matrícula; el formulario admite valores entre 2000 y 2200." },
+        "matricula.grado": { help: "Usa el nombre oficial del grado del catálogo institucional; máximo 80 caracteres." },
+        "cobros.cargoId": { help: "Copia el identificador del cargo financiero que aparece en la cuenta (por ejemplo, CHG-...)." },
+        "cobros.monto": { help: "Ingresa solo el importe en lempiras, sin símbolo ni separadores de miles; usa punto decimal y hasta dos decimales." },
+        "cobros.referencia": { help: "Copia la referencia exactamente como aparece en el recibo o comprobante." },
+        "cobros.comprobante": { help: "Adjunta una imagen o PDF completo y legible; deben distinguirse importe, fecha, referencia y entidad emisora." },
+        "fechas.calendario": { help: "Selecciona la fecha en el calendario y comprueba el día, mes y año." },
+        "calificaciones.nota": { help: "Ingresa una calificación numérica entre 0 y 100, conforme a la escala de la actividad." },
+        "tramites.adjunto": { help: "Adjunta archivos completos y legibles en los formatos aceptados por el formulario." }
+    }
+};
 
 window.getUIMetadataField = function(fieldKey) {
-    var catalog = window.__imaUIMetadataCache;
-    return catalog && catalog.fields ? (catalog.fields[fieldKey] || null) : null;
+    var catalog = window.__imaUIMetadataCache || window.__imaUIMetadataFallback;
+    return catalog && catalog.fields ? (catalog.fields[fieldKey] || window.__imaUIMetadataFallback.fields[fieldKey] || null) : null;
 };
 
 window.loadUIMetadataCatalog = function(forceRefresh) {
     if (!forceRefresh && window.__imaUIMetadataCache) return Promise.resolve(window.__imaUIMetadataCache);
     if (!forceRefresh && window.__imaUIMetadataPromise) return window.__imaUIMetadataPromise;
     if (typeof fetchApi !== "function") {
-        return Promise.resolve({ version: "fallback", fields: {} });
+        window.applyPermanentFieldHelp(document);
+        window.initAccessibleTooltips(document);
+        return Promise.resolve(window.__imaUIMetadataFallback);
     }
 
     window.__imaUIMetadataPromise = fetchApi("USER", "getUIMetadataCatalog", {}).then(function(response) {
@@ -6633,7 +6652,9 @@ window.loadUIMetadataCatalog = function(forceRefresh) {
     }).catch(function(error) {
         window.__imaUIMetadataPromise = null;
         console.warn("[UI-METADATA] Se utilizarán ayudas locales; catálogo remoto no disponible.", error);
-        return { version: "fallback", fields: {} };
+        window.applyPermanentFieldHelp(document);
+        window.initAccessibleTooltips(document);
+        return window.__imaUIMetadataFallback;
     });
     return window.__imaUIMetadataPromise;
 };
