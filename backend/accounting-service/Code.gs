@@ -476,23 +476,34 @@ function buildImportPreview_(payload) {
     }
   });
   errors = errors.concat(rowErrors);
-  var targetSnapshot = buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutionId, ss, input);
   var relatedReferenceSnapshot = buildAccountingRelatedPersonExistenceSnapshot_(preparedRows, entityType, institutionId, input);
-  if (targetSnapshot.verified !== true) addError("TARGET_EXISTENCE_UNVERIFIED", "No se pudo verificar el identificador de destino en el servicio propietario; la incorporación queda bloqueada.");
-  if (relatedReferenceSnapshot.verified !== true) addError("RELATED_REFERENCE_EXISTENCE_UNVERIFIED", "No se pudo verificar la existencia de las personas relacionadas en USER; la incorporación queda bloqueada.");
-  if (relatedReferenceSnapshot.verified === true && relatedReferenceSnapshot.service === "USER") {
+  if (relatedReferenceSnapshot.verified !== true) {
+    addError("RELATED_REFERENCE_EXISTENCE_UNVERIFIED", "No se pudo verificar la existencia de las personas relacionadas en USER; la incorporación queda bloqueada.");
+  } else if (relatedReferenceSnapshot.service === "USER") {
     var existingPeople = {};
     (relatedReferenceSnapshot.existingTargetIds || []).forEach(function(id) { existingPeople[String(id)] = true; });
+    var rowsWithVerifiedReferences = [];
+    var indexesWithVerifiedReferences = [];
+    var identitiesWithVerifiedReferences = [];
     preparedRows.forEach(function(row, index) {
       var relatedId = String(row && (entityType === "estudiante" ? row.PersonaID : row.PersonaId) || "").trim();
-      if (relatedId && !existingPeople[relatedId]) {
+      if (!relatedId || !existingPeople[relatedId]) {
         var sourceIndex = validIndexes[index];
         var rowNumber = Array.isArray(structural.dataRowNumbers) && structural.dataRowNumbers[sourceIndex] ?
           Number(structural.dataRowNumbers[sourceIndex]) : sourceIndex + 2;
         addError("ORPHANED_REFERENCE", "La persona relacionada no existe en el servicio USER.", rowNumber);
+        return;
       }
+      rowsWithVerifiedReferences.push(row);
+      indexesWithVerifiedReferences.push(validIndexes[index]);
+      if (identityResolutions[index]) identitiesWithVerifiedReferences.push(identityResolutions[index]);
     });
+    preparedRows = rowsWithVerifiedReferences;
+    validIndexes = indexesWithVerifiedReferences;
+    identityResolutions = identitiesWithVerifiedReferences;
   }
+  var targetSnapshot = buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutionId, ss, input);
+  if (targetSnapshot.verified !== true) addError("TARGET_EXISTENCE_UNVERIFIED", "No se pudo verificar el identificador de destino en el servicio propietario; la incorporación queda bloqueada.");
   var existing = targetSnapshot.existingTargetIds || [];
   var overwrites = preparedRows.filter(function(row) { return existing.indexOf(String(row[targetIdField] || "")) !== -1; });
   overwrites.forEach(function() { addWarning("TARGET_RECORD_OVERWRITE", "El identificador de destino ya existe; se requiere revisar la sobrescritura."); });
