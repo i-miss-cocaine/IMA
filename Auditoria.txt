@@ -2971,3 +2971,13 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Pruebas:** Department Scope 43674129348 SUCCESS (ownership vacaciones/ausencias, acceso departamental y syntax-check); Identity Mapping 43674075666 SUCCESS; Department Reference Consumers 43674075654 SUCCESS.
 - **Resultado:** TASK-490 completada en código/CI; BETA-FUNC-096 pendiente de despliegue y validación runtime.
 ===============================================================================
+
+===============================================================================
+### AUD-NG-392 — ALTO/P1 — Ruta ACADEMIC de carga de documentos estudiantiles fuera de la política privada/binaria
+- **Origen:** revisión cruzada de F22-Task02 posterior al cierre C1.746 de F22-Task01.
+- **Evidencia:** backend/academic-service/Code.gs, función uploadStudentDocument; el flujo aceptaba MIME declarado por cliente, persistía DriveUrl directo y no guardaba hash SHA-256 ni versión documental verificables.
+- **Impacto:** la ruta podía introducir documentos sin las garantías de privacidad/integridad requeridas y dejaba una referencia documental sin vínculo fuerte a los bytes exactos; esto afectaba también la precondición de F22-Task02 para registrar conformidades.
+- **Corrección C1.747:** almacenamiento en carpeta privada dedicada, validación binaria por contenido/extensión/MIME/tamaño, fileName/fileData obligatorios, verificación de permisos, hash calculado sobre bytes persistidos, versión incremental, historial versionado, descarga autenticada con comprobación de hash, restauración protegida por LockService y eliminación de URLs directas en la respuesta/UI.
+- **Verificación:** contratos Node añadidos para carga, reemplazo, restauración, migración de historial, descarga autorizada, tampering, permisos públicos, rollback y contención de lock; GitHub Actions SUCCESS en contratos y sintaxis. Ejecución local bloqueada por fallo DNS al obtener checkout.
+- **Estado:** Corregido en código/CI; validación beta real pendiente bajo BETA-FUNC-099.
+===============================================================================

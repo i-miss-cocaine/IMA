@@ -3774,3 +3774,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se ampliaron contratos Node para rutas de entrada, privacidad de Drive, rollback, autorización, archivos legacy y UI Blob URL. 48 combinaciones de validación binaria y contratos de adjuntos PASS.
 - Department Scope 43686093512 SUCCESS (Node.js 24.22.2), incluye contratos de adjuntos, Phase 22, syntax Apps Script y clientes. 43686001435 SUCCESS tras corregir fixtures. El run 43685937158 falló por fixtures obsoletos y fue corregido/validado en el run posterior.
 - F22-Task01 completada en código/revisión/CI; BETA-FUNC-099 pendiente para Drive/Sheets desplegados. No se ejecutó CLI inexistente ni Node local por fallo DNS del checkout. Siguiente elegible F22-Task02.
+
+
+[2026-11-15] F22-Task01 — C1.747, cierre ampliado de la ruta ACADEMIC de documentos estudiantiles
+- La revisión transversal descubrió uploadStudentDocument fuera del alcance anterior: aceptaba MIME de cliente, guardaba DriveUrl y no vinculaba hash/versión. Se registró AUD-NG-392 y se reabrió F22-Task01 hasta corregirla.
+- ACADEMIC ahora valida bytes/extensión/MIME/tamaño, exige fileName/fileData, usa carpeta/archivos PRIVATE, guarda versión y SHA-256 de bytes persistidos, archiva reemplazos, restaura bajo LockService y entrega bytes solo por endpoint autenticado. getStudentDocuments e historial dejan de exponer IDs/URLs; UI Secretaría usa Blob URL.
+- Contratos Node añadidos: academic-student-document-private-storage y actualización de academic-department-reference-consumer; CI incorpora prueba de almacenamiento/descarga y syntax-check de js/secretary.js.
+- Verificaciones CI: Department Scope Contract (run 43688056861) SUCCESS; Department Reference Consumers (run 43688056890) SUCCESS; Identity Mapping and Transport Security (run 43688115358) SUCCESS. Los primeros fallos de fixtures (helper de historial y formato del contrato de esquema) se corrigieron y las ejecuciones posteriores pasaron.
+- Node local: versión 22.16.0 disponible, pero el checkout local falló por DNS al resolver github.com; no se declara ejecución local. Las pruebas/sintaxis sí se ejecutaron en GitHub Actions con Node configurado por el workflow.
+- BETA-FUNC-099 ampliado para incluir ACADEMIC, versionado, descarga, restauración, integridad y firma exacta. No se ha ejecutado aún contra Apps Script/Drive/Sheets reales.
+- Siguiente tarea elegible: F22-Task02, vinculación de SHA-256 a los bytes y versión exactos del documento firmado.

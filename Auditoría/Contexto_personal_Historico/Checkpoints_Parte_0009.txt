@@ -563,3 +563,66 @@ C1.746 — IMA-EXEC-20261115-F22-TASK01-PRIVATE-ATTACHMENT-DELIVERY-02 — Persi
 - **Estado:** F22-Task01 completada en código, revisión y CI. La validación operativa real de Drive/Sheets permanece pendiente en beta aislada.
 - **Siguiente tarea elegible:** F22-Task02 (P0) — vincular SHA-256 a los bytes PDF definitivos y versión inmutable, verificar el hash desde Drive y derivar firmante/rol de la sesión autenticada.
 ===============================================================================
+
+
+## C1.747 — IMA-EXEC-20261115-F22-TASK01-ACADEMIC-PRIVATE-DOCUMENTS-03
+**Fecha:** 2026-11-15  
+**Rama autorizada:** \`NG_beta_0.0.0.1_work\`  
+**Rama base protegida:** \`NG_beta_0.0.0.1\`  
+**Checkpoint anterior:** C1.746  
+**Estado:** F22-Task01 cerrada nuevamente en código y CI; validación beta real pendiente.
+
+### 1. Verificación de continuidad
+- HEAD inicial verificado de la rama de trabajo: \`bf8e15b0bcfa77494d0f6628d0e2adf641418ce3\`.
+- HEAD de la rama base verificado sin modificaciones: \`44d9891132332e692dbe2ba8602b41f50a508a59\`.
+- Commits de implementación y corrección de contratos en la rama autorizada:
+  - \`06af21b369c135c6866dee82994c7d61898af383\` — implementación ACADEMIC, UI Secretaría, prueba privada y workflow.
+  - \`2e47b6d7484dca530e0794e8d05c1359b35f0081\` — fixtures de alcance e identidad alineados con la nueva versión de esquema.
+  - \`5e267ac32f21236722905f5b9ef8081768b661ad\` — normalización del contrato de esquema para no depender de espacios de formato.
+- HEAD verificado antes del commit de este checkpoint: \`5e267ac32f21236722905f5b9ef8081768b661ad\`.
+- Se volvió a consultar \`Normas_Desarollo.md\` y se mantuvo como única normativa operativa. No se modificó ni publicó en la rama base.
+
+### 2. Tarea ejecutada
+**F22-Task01 — Persistencia privada, integridad y entrega autorizada de adjuntos.**
+
+La revisión transversal posterior a C1.746 detectó que ACADEMIC/uploadStudentDocument era una ruta adicional no cubierta por el cierre anterior: aceptaba MIME declarado por cliente, persistía DriveUrl directo y no guardaba hash/versión verificables. Se registró AUD-NG-392 y se reabrió la tarea dentro de esta iteración.
+
+Correcciones implementadas:
+- Validación binaria real por extensión, MIME detectado, firma del archivo, Base64 y tamaño; no se confía en el MIME enviado por el cliente.
+- Exigencia de fileName/fileData y verificación de que los bytes leídos después de guardar coinciden con los bytes recibidos.
+- Carpeta y archivos de documentos estudiantiles privados; el flujo falla de forma segura si no puede aplicar permisos y revierte el archivo recién creado.
+- Persistencia de VersionDocumento y SHA256 en DocumentosEstudiante; historial de versiones con hash/versión y migración de encabezado sin perder filas legacy.
+- Reemplazo por identidad de expediente/solicitud/tipo, archivado de la versión previa y restauración de versión privada/hash verificado bajo LockService.
+- Nuevo endpoint getStudentDocumentFile con identidad y alcance verificados, comprobación de privacidad e integridad y entrega de bytes; respuestas de listado/historial sin DriveFileId ni DriveUrl.
+- UI de Secretaría actualizada para abrir el archivo mediante Blob URL y endpoint autenticado; no presenta enlace directo de Drive ni vista previa de archivo no verificable.
+- Filtro estricto de listado cuando expediente y solicitud se proporcionan juntos.
+
+### 3. Archivos de implementación y pruebas
+- \`backend/academic-service/Code.gs\`
+- \`js/secretary.js\`
+- \`tests/security/academic-department-reference-consumer.test.js\`
+- \`tests/security/academic-student-document-private-storage.test.js\`
+- \`tests/security/departmental-resource-access.test.js\`
+- \`tests/security/identity-mapping-contract.test.js\`
+- \`.github/workflows/department-scope-contract.yml\`
+
+### 4. Verificaciones
+**GitHub Actions — SUCCESS:**
+- Department Scope Contract, run \`43688056861\`: PASS; incluye contrato de almacenamiento privado/versionado/descarga y \`node --check js/secretary.js\`.
+- Department Reference Consumers, run \`43688056890\`: PASS; incluye consumidores de referencia y controles de alcance departamental.
+- Identity Mapping and Transport Security Contracts, run \`43688115358\`: PASS.
+- Los primeros intentos detectaron fixtures de prueba incompletos (helper de migración del historial y comparación de esquema sensible a espacios); ambos se corrigieron y las ejecuciones posteriores finalizaron satisfactoriamente.
+
+**Ejecución local:** Node v22.16.0 está instalado, pero no fue posible obtener un checkout local porque la resolución DNS de github.com falló. Por tanto, no se declara ejecución local de los comandos Node. Las pruebas y verificaciones de sintaxis se ejecutaron en GitHub Actions con la versión Node configurada por el workflow.
+
+**Pendiente:** validación funcional en Apps Script/Drive/Sheets del entorno beta. No se afirma que se haya ejecutado.
+
+### 5. Hallazgos, dependencias y estado beta
+- AUD-NG-392: corregido en código y cubierto por contratos; no queda abierto como bloqueo de implementación.
+- BETA-FUNC-099 actualizado para incluir la ruta ACADEMIC, versionado, descarga, restauración, verificación de bytes y vínculo de firma. Estado: pendiente de ejecución real en beta.
+- No se requiere un proveedor PSC para cerrar el contrato manual de integridad; la integración avanzada permanece sujeta a F22-Task04 y a un proveedor real autorizado.
+
+### 6. Continuidad
+- **F22-Task01:** completada en código/revisión/CI; beta pendiente.
+- **Siguiente tarea elegible:** F22-Task02 — vincular SHA-256 a los bytes y versión exactos del documento firmado.
+- Reanudar desde HEAD \`5e267ac32f21236722905f5b9ef8081768b661ad\` más el commit de este checkpoint.
