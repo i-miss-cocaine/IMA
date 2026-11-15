@@ -1,0 +1,28 @@
+===============================================================================
+## C1.770 — IMA-EXEC-20261115-F40-DEPENDENCY-ALIGNMENT-01
+- **Fecha:** 2026-11-15
+- **Rama:** NG_beta_0.0.0.1_work
+- **HEAD previo a checkpoint:** ed4b88ef536684289125accf8b2bb1cf4b892bad
+- **Rama base:** NG_beta_0.0.0.1 (sin cambios).
+
+### Corrección técnica del grafo
+- TASK-143/F40-22 es parte de F40-Task01 (ACL privada y remediación de permisos públicos). Se sustituyó la dependencia circular F40-Task04 (firmas) por los prerrequisitos originales de F40-Task01: TASK-296, AUD-NG-158/TASK-502, AUD-NG-127, F31-Task09, F34-Task04 y F39-Task02.
+- TASK-144/F40-02 es integridad SHA-256. Se sustituyó la dependencia circular F40-Task04 (firmas, que a su vez depende de SHA-256) por los prerrequisitos originales de F40-Task02: F34-Task04, F39-Task02, F29-Task11/15 y F27-Task03.
+- Las correcciones se reflejaron en Plan Maestro, Pendientes y auditoría Fase 40; no cambian los criterios funcionales.
+
+### Estado de tareas
+- TASK-134/F39-Task02: implementación parcial avanzada Academic/User en C1.769; ACCOUNTING y otros flujos de documentos/backup pendientes.
+- TASK-143: no ejecutada; primero verificar la evidencia de TASK-296, AUD-NG-158/TASK-502, AUD-NG-127, F31-Task09 y F34-Task04.
+- TASK-144: no ejecutada; verificar F34-Task04, F29-Task11/15 y F27-Task03; F39-Task02 está parcialmente implementada.
+
+### Archivos modificados
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- pendientes/Secretaria/Pendientes.md
+- Auditoría/AUDITORIA_FASE_40_SEGURIDAD_DOCUMENTAL_TRAZABILIDAD_Y_CONSERVACION.md
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0016.txt
+- Auditoría/INDICE_CHECKPOINTS.md (pendiente de indexar)
+
+### Continuidad
+- Siguiente acción: verificar las evidencias técnicas de los prerrequisitos de TASK-143/TASK-144; no asumir que una referencia de dependencia equivale a una implementación completada.
+===============================================================================
