@@ -901,7 +901,7 @@ function getEmployeeDocuments(payload) {
     if (selfRows.length === 1) expedienteId = String(selfRows[0][employeeIndex.ExpedienteID] || "").trim();
     else return { status: "error", code: "RESOURCE_NOT_FOUND" };
   }
-  if (!expedienteId) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  if (!expedienteId) return { status: "success", documentos: [] };
   var matchingEmployees = employeeValues.slice(1).filter(function(row) {
     return String(row[employeeIndex.ExpedienteID] || "").trim() === expedienteId;
   });
