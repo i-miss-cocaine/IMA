@@ -157,9 +157,9 @@ function makeMigrationOrchestrationFixture(options){
  const start=accounting.indexOf("const MIGRATION_OWNER_SCHEMAS_"),first=accounting.indexOf("function migrationStableJson_",start);
  const constants=accounting.slice(start,first),names=["migrationStableJson_","migrationHash_","mapMigrationRowToTarget_","buildAccountingDepartmentalImportPreflight_","rollbackMigrationOwnerWrites_","importDataWithColumnMapping"];
  const code=constants+names.map(n=>extractBalancedFunction(accounting,n)).join(String.fromCharCode(10));
- vm.runInNewContext(code,ctx);
+ vm.runInNewContext(code + "\nthis.schemas=MIGRATION_OWNER_SCHEMAS_;",ctx);
  ctx.buildImportPreview_ = function(payload) {
-  const schema = ctx.MIGRATION_OWNER_SCHEMAS_[payload.tipoEntidad];
+  const schema = ctx.schemas[payload.tipoEntidad];
   const departmentPreflight = ctx.buildAccountingDepartmentalImportPreflight_(payload, ss, schema);
   const identifierField = String(payload.columnaMapeo && payload.columnaMapeo.identificador || "legacy");
   const identityResolutions = payload.filasData.map(row => {
