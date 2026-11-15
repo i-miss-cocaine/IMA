@@ -52,6 +52,8 @@ for (const [service, actions] of [["ACADEMIC", academicAuditor], ["USER", userAu
 assert.doesNotMatch(userAuditor.join("|"), /getNotificationAuditLogs|manageUserRoleMemberships|purgeStructuredLogs/);
 assert.match(user.source,/\["Director", "Administrador", "Auditor"\]\.indexOf\(role\)/,
   "institution-wide inventory access for Auditor still requires an institution-wide verified scope");
+assert.match(user.source,/if \(actorRole === "Auditor"\)[\s\S]*scope\.institutionWide !== true/,
+  "global audit logs are restricted to Auditors with institution-wide verified scope");
 assert.match(academic.source,/const permissionAction = \["createStudentDocumentAccessToken", "getSecureDocumentStream"\]/);
 assert.match(accounting,/request\.action === "validateImportPreview"/);
 assert.match(accounting,/IMPORT_COMMIT_NOT_EXPOSED/,"ACCOUNTING exposes no import write action to the read-only Auditor");
