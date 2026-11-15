@@ -12,6 +12,7 @@ function extractFunction(name) {
   return source.slice(start, next < 0 ? source.length : next);
 }
 const helperSource = extractFunction("authorizeAccountingDepartmentReferenceReadViaUser_");
+const privateFileSource = extractFunction("enforcePrivateEmployeeDocumentFile_");
 const readerSource = extractFunction("getEmployeeDocuments");
 const secret = "accounting-reference-secret-with-more-than-32-characters";
 const defaultFields = ["categoriaDoc", "fechaCarga"];
@@ -21,11 +22,12 @@ function makeSheet(rows) {
 }
 function makeRuntime(options = {}) {
   const calls = [];
+  const privateCalls = [];
   let uuidSequence = 0;
   const documentRows = [
     ["DocumentoID","ExpedienteID","CategoriaDoc","TituloDocumento","ArchivoUrl","FechaCarga","CargadoPor","EstadoVisibilidad","Observaciones"],
-    ["DOC-A","EXP-A","Contrato","Contrato A","https://drive.example/private-a","2026-01-01","U-A","Privado","nota privada A"],
-    ["DOC-B","EXP-B","Identidad","Identidad B","https://drive.example/private-b","2026-02-02","U-B","Restringido","nota privada B"]
+    ["DOC-A","EXP-A","Contrato","Contrato A","https://drive.google.com/file/d/FILEIDA123456789012345/view","2026-01-01","U-A","Privado","nota privada A"],
+    ["DOC-B","EXP-B","Identidad","Identidad B","https://drive.google.com/file/d/FILEIDB123456789012345/view","2026-02-02","U-B","Restringido","nota privada B"]
   ];
   const employeeRows = [
     ["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"],
@@ -40,6 +42,10 @@ function makeRuntime(options = {}) {
     Date,String,Array,Object,Number,Math,JSON,isNaN,SPREADSHEET_ID:"TEST",
     isAccountingTrustedAppsScriptEndpoint_(url){return /^https:\/\/user\.example\/exec$/.test(url);},
     SpreadsheetApp:{openById(){return{getSheetByName(name){return sheets[name]||null;}};}},
+    DriveApp: { Access: { PRIVATE: "PRIVATE" }, Permission: { NONE: "NONE" }, getFileById(id) {
+      return { setSharing(access, permission) { privateCalls.push({ id, access, permission }); },
+        getSharingAccess() { return "PRIVATE"; } };
+    } },
     PropertiesService:{getScriptProperties(){return{getProperty(name){
       if(name==="IMA_USER_SERVICE_URL")return options.url===undefined?"https://user.example/exec":options.url;
       if(name==="IMA_DEPARTMENT_REFERENCE_HMAC_SECRET")return options.secret===undefined?secret:options.secret;
@@ -78,8 +84,8 @@ function makeRuntime(options = {}) {
     }
   };
   vm.createContext(context);
-  vm.runInContext(helperSource+"\n"+readerSource+"\nthis.read=getEmployeeDocuments;",context);
-  return{context,calls,sheets,documentRows,employeeRows};
+  vm.runInContext(privateFileSource+"\n"+helperSource+"\n"+readerSource+"\nthis.read=getEmployeeDocuments;",context);
+  return{context,calls,privateCalls,sheets,documentRows,employeeRows};
 }
 function request(overrides={}){return Object.assign({expedienteId:"EXP-B",sessionToken:"staff",activeDepartmentId:"DEP-A",
   referenceRequestedFields:defaultFields.slice(),referenceDocumentIds:defaultDocs.slice()},overrides);}
@@ -92,7 +98,8 @@ function request(overrides={}){return Object.assign({expedienteId:"EXP-B",sessio
 {
  const h=makeRuntime({sameDepartment:true}),r=h.context.read(request({expedienteId:"EXP-A",referenceDocumentIds:undefined,referenceRequestedFields:undefined}));
  assert.equal(r.status,"success");assert.equal(r.referenceOnly,undefined);assert.equal(r.documentos.length,1);
- assert.equal(r.documentos[0].archivoUrl,"https://drive.example/private-a");assert.equal(h.calls.length,0);
+ assert.equal(r.documentos[0].archivoUrl,"https://drive.google.com/file/d/FILEIDA123456789012345/view");assert.equal(h.calls.length,0);
+ assert.deepEqual(h.privateCalls,[{id:"FILEIDA123456789012345",access:"PRIVATE",permission:"NONE"}],"employee documents are forced to private Drive sharing before URLs are returned");
 }
 {
  const h=makeRuntime({response:{status:"error",authorized:false,code:"DEPARTMENT_REFERENCE_GRANT_NOT_FOUND"}});
