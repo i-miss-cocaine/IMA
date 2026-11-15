@@ -6563,7 +6563,7 @@ window.initAccessibleTooltips = function(root) {
         trigger.addEventListener("blur", hide);
         trigger.addEventListener("click", function(event) {
             if (event && event.preventDefault) event.preventDefault();
-            if (isOpen) hide(); else show();
+            show();
         });
         trigger.addEventListener("keydown", function(event) {
             if (event && (event.key === "Escape" || event.keyCode === 27)) {
@@ -6676,7 +6676,6 @@ window.applyPermanentFieldHelp = function(root) {
         if ((" " + describedBy + " ").indexOf(" " + helpId + " ") === -1) {
             target.setAttribute("aria-describedby", (describedBy ? describedBy + " " : "") + helpId);
         }
-        if (!target.getAttribute("data-tooltip")) target.setAttribute("data-tooltip", helpText);
         target.setAttribute("data-ui-help-ready", "true");
         applied++;
     }
