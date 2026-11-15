@@ -289,6 +289,10 @@ function buildImportPreview_(payload) {
   var input = payload || {};
   var auth = getVerifiedAccountingIdentity_(input);
   if (!auth || auth.authorized !== true) return { status: "error", code: "AUTH_PERMISSION_DENIED", validForImport: false, errores: [] };
+  if (typeof accountingHasInstitutionalImportPermission_ === "function" &&
+      !accountingHasInstitutionalImportPermission_({ roleId: auth.role || auth.roleId, userId: auth.userId })) {
+    return { status: "error", code: "IMPORT_PERMISSION_DENIED", validForImport: false, errores: [] };
+  }
   var institutionId = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID") || "").trim();
   if (!institutionId) return { status: "error", code: "INSTITUTION_CONTEXT_REQUIRED", validForImport: false, errores: [] };
   var sourceName = String(input.sistemaOrigen || "").trim();
