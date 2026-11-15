@@ -28,6 +28,7 @@ on:
       - tests/security/academic-migration-writer.test.js
       - tests/security/user-service-legacy-document-inventory.test.js
       - tests/security/academic-student-document-private-storage.test.js
+      - tests/security/departmental-resource-access.test.js
       - tests/security/auditor-readonly-role.test.js
       - tests/security/accounting-auditor-migration-audit.test.js
       - js/teacher.js
@@ -102,6 +103,8 @@ jobs:
         run: node tests/security/user-service-legacy-document-inventory.test.js
       - name: Run Academic private document SHA-256 and deduplication contract
         run: node tests/security/academic-student-document-private-storage.test.js
+      - name: Run Academic department-scoped resource access contract
+        run: node tests/security/departmental-resource-access.test.js
       - name: Run read-only Auditor role contract
         run: node tests/security/auditor-readonly-role.test.js
       - name: Run Accounting Auditor migration audit contract
