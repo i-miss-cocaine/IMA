@@ -101,4 +101,38 @@ assert.equal(window.clearFieldValidationError(target), true);
 assert.equal(document.getElementById(errorId), null);
 assert.equal(target.getAttribute("aria-invalid"), null);
 assert.equal(target.getAttribute("aria-describedby"), "existing-description " + helpId, "clearing errors must preserve other descriptions");
-console.log("PASS permanent field help: fallback, required marker, idempotency, ARIA association and independent inline validation errors");
+const confirmStart = source.indexOf("window.confirmCriticalOperation = function(options)");
+const confirmEnd = source.indexOf("\n};", confirmStart) + 3;
+assert.ok(confirmStart >= 0 && confirmEnd > confirmStart, "critical confirmation guard must exist");
+let confirmationMessage = "";
+const confirmContext = { window: { confirm(message) { confirmationMessage = message; return false; } } };
+vm.runInNewContext(source.slice(confirmStart, confirmEnd), confirmContext);
+assert.equal(confirmContext.window.confirmCriticalOperation({
+  title: "Anulación de pago",
+  details: "Se anulará el pago PAY-1.",
+  consequence: "El saldo y la conciliación pueden cambiar.",
+  irreversible: true
+}), false, "cancellation must be returned to the caller");
+assert.match(confirmationMessage, /El saldo y la conciliación pueden cambiar/);
+assert.match(confirmationMessage, /no puede deshacerse/);
+
+const teacherSource = fs.readFileSync("js/teacher.js", "utf8");
+const scheduleStart = teacherSource.indexOf("window.deleteScheduleBlock = async function(horarioId)");
+const scheduleEnd = teacherSource.indexOf("\n    };", scheduleStart) + 7;
+assert.ok(scheduleStart >= 0 && scheduleEnd > scheduleStart, "schedule deletion handler must exist");
+const scheduleHandler = teacherSource.slice(scheduleStart, scheduleEnd);
+assert.ok(scheduleHandler.includes("window.confirmCriticalOperation"));
+assert.ok(scheduleHandler.indexOf("if (!confirmed) return;") < scheduleHandler.indexOf("fetchApi('ACADEMIC', 'deleteClassSchedule'"),
+  "cancelled schedule deletion must return before backend mutation");
+
+const accountingSource = fs.readFileSync("js/accounting.js", "utf8");
+const voidStart = accountingSource.indexOf("window.voidCharge = async function(payload)");
+const voidEnd = accountingSource.indexOf("\n};", voidStart) + 3;
+assert.ok(voidStart >= 0 && voidEnd > voidStart, "payment void handler must exist");
+const voidHandler = accountingSource.slice(voidStart, voidEnd);
+assert.ok(voidHandler.indexOf("if (!confirmAccountingSensitiveOperation_") < voidHandler.indexOf("window.callApi"),
+  "cancelled payment void must return before backend mutation");
+assert.ok(accountingSource.includes("if (window.confirmCriticalOperation) return window.confirmCriticalOperation(config)"),
+  "accounting confirmations must use the independent critical guard when available");
+
+console.log("PASS permanent field help: fallback, required marker, idempotency, ARIA association, inline errors and independent destructive-operation confirmation");
