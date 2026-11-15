@@ -54,8 +54,10 @@ target.labels = [label];
 const parent = new Node("div");
 parent.appendChild(target);
 body.appendChild(parent);
+const listeners = {};
 const document = {
   body, head,
+  addEventListener(type, handler, capture) { listeners[type] = { handler, capture }; },
   createElement(tag) { return new Node(tag); },
   getElementById(id) {
     function find(node) {
@@ -101,6 +103,19 @@ assert.equal(window.clearFieldValidationError(target), true);
 assert.equal(document.getElementById(errorId), null);
 assert.equal(target.getAttribute("aria-invalid"), null);
 assert.equal(target.getAttribute("aria-describedby"), "existing-description " + helpId, "clearing errors must preserve other descriptions");
+
+assert.equal(listeners.invalid.capture, true, "native invalid events must be captured even though they do not bubble");
+assert.equal(typeof listeners.input.handler, "function");
+assert.equal(typeof listeners.change.handler, "function");
+target.validationMessage = "La calificación debe estar entre 0 y 100.";
+target.validity = { valid: false };
+assert.equal(listeners.invalid.handler({ target }), true);
+assert.equal(document.getElementById(target.getAttribute("data-ui-validation-error-id")).textContent, target.validationMessage);
+target.validity = { valid: true };
+assert.equal(listeners.input.handler({ target }), true);
+assert.equal(target.getAttribute("aria-invalid"), null);
+assert.equal(target.getAttribute("aria-describedby"), "existing-description " + helpId, "native correction must preserve permanent help");
+
 const confirmStart = source.indexOf("window.confirmCriticalOperation = function(options)");
 const confirmEnd = source.indexOf("\n};", confirmStart) + 3;
 assert.ok(confirmStart >= 0 && confirmEnd > confirmStart, "critical confirmation guard must exist");
