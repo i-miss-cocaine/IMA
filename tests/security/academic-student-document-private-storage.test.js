@@ -16,7 +16,7 @@ const names=[
   "validateFileBinaryIntegrity","computeDocumentSHA256","getDocumentDuplicatePolicy_","ensureStudentDocumentSchema_",
   "ensureDocumentVersionHistorySchema_","getOrCreatePrivateStudentDocumentFolder_",
   "rollbackPrivateStudentDocumentFile_","getVerifiedPrivateStudentDocumentFile_",
-  "nextStudentDocumentVersion_","uploadStudentDocument","verifyDocumentIntegritySha256","getStudentDocumentFile",
+  "nextStudentDocumentVersion_","uploadStudentDocument","verifyDocumentIntegritySha256","getStudentDocumentFile_",
   "getStudentDocumentAccessTokenSecret_","studentDocumentTokenHex_","studentDocumentTokenConstantTimeEqual_",
   "studentDocumentTokenDigest_","studentDocumentTokenSignature_","createStudentDocumentAccessToken",
   "decodeStudentDocumentAccessToken_","getSecureDocumentStream","getStudentDocuments","restoreDocumentVersion"
@@ -146,7 +146,7 @@ function makeHarness(options={}) {
     logStructuredEvent:(...args)=>{state.auditEvents.push(args);},logDebug:()=>{}
   };
   vm.createContext(context);
-  vm.runInContext(functions.join("\n\n")+"\nthis.upload=uploadStudentDocument;this.verify=verifyDocumentIntegritySha256;this.download=getStudentDocumentFile;this.list=getStudentDocuments;this.restore=restoreDocumentVersion;this.issueToken=createStudentDocumentAccessToken;this.stream=getSecureDocumentStream;",context);
+  vm.runInContext(functions.join("\n\n")+"\nthis.upload=uploadStudentDocument;this.verify=verifyDocumentIntegritySha256;this.download=getStudentDocumentFile_;this.list=getStudentDocuments;this.restore=restoreDocumentVersion;this.issueToken=createStudentDocumentAccessToken;this.stream=getSecureDocumentStream;",context);
   return {state,sheets,files,context,setFileBytes(id,value){const file=files.get(id);assert.ok(file);file.getBlob=()=>({getBytes:()=>Array.from(Buffer.from(value)),getContentType:()=>"application/pdf"});},
     setFileSharing(id,value){const file=files.get(id);assert.ok(file);file.getSharingAccess=()=>value;}};
 }
@@ -409,7 +409,7 @@ assert.ok(!secretary.includes("'getStudentDocumentFile'"),"legacy direct downloa
 assert.ok(!secretary.includes("d.driveUrl"),"student-document UI must not render direct Drive URLs");
 
 assert.match(source,/case "getSecureDocumentStream": result = getSecureDocumentStream\(payload\); break;/);
-assert.match(source,/case "getStudentDocumentFile": result = \{ status: "error", code: "SECURE_DOCUMENT_STREAM_REQUIRED"/);
+assert.match(source,/case "getStudentDocumentFile_": result = \{ status: "error", code: "SECURE_DOCUMENT_STREAM_REQUIRED"/);
 assert.doesNotMatch(source,/driveUrl: r\[6\]/);
 assert.match(source,/case "createStudentDocumentAccessToken": result = createStudentDocumentAccessToken\(payload\); break;/);
 console.log("academic-student-document-private-storage: PASS");
