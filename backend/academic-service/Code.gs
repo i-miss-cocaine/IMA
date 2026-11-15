@@ -287,7 +287,7 @@ const ROLE_PERMISSIONS = {
   "Administrador": ["*"],
   "Director": [
     "getAcademicConfig", "updateAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "saveWhatsAppLink", "getQuestionBank", "saveQuestion", "generateMigrationReport", "registerStudentEnrollment", "getStudentEnrollmentHistory",
-    "getInstitutionParams", "saveInstitutionParam", "saveTeacherJustificationEvidencePolicy", "getAcademicYears", "createAcademicYear", "updateAcademicYearStatus", "prepareNewAcademicYear",
+    "getInstitutionParams", "saveInstitutionParam", "saveTeacherJustificationEvidencePolicy", "saveAbsenceJustificationPolicies", "getAcademicYears", "createAcademicYear", "updateAcademicYearStatus", "prepareNewAcademicYear",
     "getAcademicPeriods", "manageAcademicPeriod", "getSubjectCatalog", "createSubjectCatalogItem", "getStudyPlans", "createStudyPlan",
     "getAcademicOffers", "createAcademicOffer", "getTeacherAssignments", "assignTeacherToClass", "createTeacherSubstitution",
     "getAcademicCalendar", "createCalendarEvent", "getClassSchedules", "createClassSchedule", "deleteClassSchedule", "getAcademicRules", "saveAcademicRule", "getDepartmentAcademicPlanning", "assignDepartmentHead", "getCurricularAnalyticsReport", "getReusableResourceCatalog", "manageReusableResource", "getCurricularEquivalences", "executeCurricularMigration", "registerCurricularAreaExtension", "runCurricularAreaServiceTests", "toggleCurricularAreaStatus", "validateApiContractsTestSuite", "getInstitutionalCatalog", "validateCatalogReference", "generateInstitutionalUUID", "validateInstitutionalIdentifier", "auditInstitutionalIdentifierCollisions", "runConcurrencyAndConsistencySuite", "getPaginatedAcademicHistory", "reconcileRestoredDataIntegrity", "evaluateTransactionalStorageMigrationNeed",
@@ -1188,6 +1188,7 @@ function doPost(e) {
       case "acknowledgeTeacherStudentJustification": result = acknowledgeTeacherStudentJustification(payload); break;
       case "getTeacherJustificationEvidence": result = getTeacherJustificationEvidence(payload); break;
       case "saveTeacherJustificationEvidencePolicy": result = saveTeacherJustificationEvidencePolicy(payload); break;
+      case "saveAbsenceJustificationPolicies": result = saveAbsenceJustificationPolicies(payload); break;
       case "submitAttendanceJustification": result = submitAttendanceJustification(payload); break;
       case "reviewAttendanceJustification": result = reviewAttendanceJustification(payload); break;
       case "reconcilePendingAttendanceJustifications": result = reconcilePendingAttendanceJustifications(payload); break;
@@ -10888,6 +10889,69 @@ function saveTeacherJustificationEvidencePolicy(payload) {
     return {status:"success",data:{clave:"DOCENTE_VISIBILIDAD_EVIDENCIAS_MEDICAS",valor:value}};
   }catch(error){return {status:"error",code:error.message||"TEACHER_EVIDENCE_POLICY_SAVE_FAILED"};}
   finally{lock.releaseLock();}
+}
+
+function saveAbsenceJustificationPolicies(payload) {
+  var p = payload || {}, actor = getVerifiedAcademicIdentity_(p);
+  if (!actor || actor.authorized !== true || !actor.userId || !actor.role) {
+    return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", httpStatus: 403 };
+  }
+  var role = teacherJustificationNormalizeRole_(actor.role);
+  if (["ADMINISTRADOR", "DIRECTOR"].indexOf(role) === -1) {
+    try { logTeacherJustificationAccessEvent_(SpreadsheetApp.openById(SPREADSHEET_ID), "saveAbsenceJustificationPolicies", actor.userId, actor.role, "AUTH_PERMISSION_DENIED", "", "DENIED"); } catch (_) {}
+    return { status: "error", code: "AUTH_PERMISSION_DENIED", httpStatus: 403 };
+  }
+  var impact = String(p.impacto || "").trim().toUpperCase();
+  var partial = String(p.parcial || "").trim().toUpperCase();
+  if (["INMEDIATO_AL_APROBAR_SECRETARIA", "REQUIERE_CONFORMIDAD_PREVIA_DOCENTE"].indexOf(impact) === -1 ||
+      ["HABILITADO", "TODO_O_NADA"].indexOf(partial) === -1) {
+    return { status: "error", code: "ABSENCE_POLICY_INVALID" };
+  }
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(10000); } catch (_) { return { status: "error", code: "LOCK_TIMEOUT", retryable: true }; }
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName("ConfiguracionInstitucional");
+    if (!sheet) sheet = ss.insertSheet("ConfiguracionInstitucional");
+    var existingHeaders = sheet.getLastColumn() > 0 ?
+      sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(function(value) { return String(value || "").trim(); }) : [];
+    var keyHeader = existingHeaders.indexOf("Clave") !== -1 ? "Clave" :
+      (existingHeaders.indexOf("Parametro") !== -1 ? "Parametro" : (existingHeaders.indexOf("Nombre") !== -1 ? "Nombre" : "Clave"));
+    var map = ensureAbsenceHeaders_(sheet, [keyHeader, "Valor", "Estado", "ActualizadoPor", "ActualizadoEn"]);
+    var rows = sheet.getDataRange().getValues();
+    var entries = [
+      { key: "JUSTIFICACION_IMPACTO_AUTOMATICO_ASISTENCIA", value: impact },
+      { key: "PERMITIR_JUSTIFICACION_PARCIAL_DIAS", value: partial }
+    ];
+    entries.forEach(function(entry) {
+      var matches = [];
+      for (var i = 1; i < rows.length; i++) if (String(rows[i][map[keyHeader]] || "").trim() === entry.key) matches.push(i);
+      if (matches.length > 1) throw new Error("ABSENCE_POLICY_AMBIGUOUS:" + entry.key);
+      entry.rowIndex = matches.length ? matches[0] : -1;
+    });
+    entries.forEach(function(entry) {
+      if (entry.rowIndex >= 0) {
+        sheet.getRange(entry.rowIndex + 1, map.Valor + 1).setValue(entry.value);
+        sheet.getRange(entry.rowIndex + 1, map.Estado + 1).setValue("Activo");
+        sheet.getRange(entry.rowIndex + 1, map.ActualizadoPor + 1).setValue(actor.userId);
+        sheet.getRange(entry.rowIndex + 1, map.ActualizadoEn + 1).setValue(new Date());
+      } else {
+        var row = new Array(sheet.getLastColumn()).fill("");
+        row[map[keyHeader]] = entry.key;
+        row[map.Valor] = entry.value;
+        row[map.Estado] = "Activo";
+        row[map.ActualizadoPor] = actor.userId;
+        row[map.ActualizadoEn] = new Date();
+        sheet.appendRow(row);
+      }
+    });
+    logTeacherJustificationAccessEvent_(ss, "saveAbsenceJustificationPolicies", actor.userId, actor.role, "ABSENCE_POLICIES_UPDATED", "", "SUCCESS");
+    return { status: "success", data: { impacto: impact, parcial: partial } };
+  } catch (error) {
+    return { status: "error", code: error.message || "ABSENCE_POLICY_SAVE_FAILED" };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function logTeacherJustificationAccessEvent_(ss, action, actorId, actorRole, code, resourceId, result) {
