@@ -1839,6 +1839,72 @@ function handleTrustedDepartmentReferenceEnvelope_(envelope) {
   return authorizeDepartmentReferenceRead(verified.payload);
 }
 
+function getTrustedMigrationIdentityMapSnapshot_(payload) {
+  var input = payload || {};
+  var claims = verifySessionToken(String(input.sessionToken || ""));
+  var institutionId = "";
+  try { institutionId = getIdentityInstitutionId_(); }
+  catch (error) { return { status: "error", code: "IDENTITY_CONFIGURATION_REQUIRED" }; }
+  if (!claims || !claims.userId || !claims.role || !claims.institutionId ||
+      String(claims.institutionId) !== institutionId || String(input.institutionId || "") !== institutionId) {
+    return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  }
+  if (getDynamicPermissionsForRole(String(claims.role), "importDataWithColumnMapping") !== true) {
+    return { status: "error", code: "IMPORT_PERMISSION_DENIED" };
+  }
+  if (!Array.isArray(input.lookups) || !input.lookups.length || input.lookups.length > 4) {
+    return { status: "error", code: "IDENTITY_MAPPING_SNAPSHOT_CONTRACT_INVALID" };
+  }
+  var requested = {};
+  var total = 0, invalid = false;
+  input.lookups.forEach(function(lookup) {
+    if (!lookup || typeof lookup !== "object" || Array.isArray(lookup)) { invalid = true; return; }
+    var source = String(lookup.sourceName || "").trim();
+    var type = String(lookup.entityType || "").trim().toLowerCase();
+    if (!source || source.length > 128 || !/^[a-z0-9_-]+$/i.test(type) ||
+        !Array.isArray(lookup.legacyIds)) { invalid = true; return; }
+    lookup.legacyIds.forEach(function(value) {
+      if (typeof value !== "string" && typeof value !== "number") { invalid = true; return; }
+      var legacy = String(value).trim();
+      if (!legacy || legacy.length > 128) { invalid = true; return; }
+      requested[identityCompositeKey_(source, type, legacy, institutionId)] = {
+        sistemaOrigen: source, tipoEntidad: type, idOriginalLegado: legacy
+      };
+      total++;
+    });
+  });
+  if (invalid || !total || total > 5000) return { status: "error", code: "IDENTITY_MAPPING_SNAPSHOT_INPUT_INVALID" };
+  var sheet;
+  try { sheet = getIdentityMappingSheet_(); }
+  catch (error) { return { status: "error", code: "IDENTITY_MAPPING_SNAPSHOT_UNAVAILABLE" }; }
+  var values = sheet.getDataRange().getValues();
+  var headers = values.length ? values[0].map(function(value) { return String(value || "").trim(); }) : [];
+  var index = {};
+  headers.forEach(function(name, position) { index[name] = position; });
+  var entries = [], counts = {};
+  for (var i = 1; i < values.length; i++) {
+    var row = values[i] || [];
+    var source = String(row[index.sistemaOrigen] || "").trim();
+    var type = String(row[index.tipoEntidad] || "").trim().toLowerCase();
+    var legacy = String(row[index.idOriginalLegado] || "").trim();
+    var tenant = String(row[index.institucionId] || "").trim();
+    if (tenant !== institutionId) continue;
+    var key = identityCompositeKey_(source, type, legacy, tenant);
+    if (!requested[key]) continue;
+    counts[key] = (counts[key] || 0) + 1;
+    entries.push({
+      sistemaOrigen: source, tipoEntidad: type, idOriginalLegado: legacy,
+      idNuevoPlataforma: String(row[index.idNuevoPlataforma] || "").trim(),
+      institucionId: tenant,
+      estadoCorrespondencia: String(row[index.estadoCorrespondencia] || "").trim().toUpperCase()
+    });
+  }
+  var uniquenessViolations = Object.keys(counts).filter(function(key) { return counts[key] > 1; })
+    .map(function(key) { return { key: key, count: counts[key] }; });
+  return { status: "success", verified: true, service: "USER", institutionId: institutionId,
+    entries: entries, uniquenessViolations: uniquenessViolations };
+}
+
 function getTrustedMigrationTargetExistenceSnapshot_(payload) {
   var input = payload || {};
   var claims = verifySessionToken(String(input.sessionToken || ""));
@@ -1901,6 +1967,7 @@ function handleTrustedMigrationEnvelope_(envelope){
    userId: String(claims.userId), role: String(claims.role),
    membershipId: String(claims.membershipId || ""), institutionId: String(claims.institutionId) };
  }
+ if(verified.action==="getMigrationIdentityMapSnapshot")return getTrustedMigrationIdentityMapSnapshot_(verified.payload);
  if(verified.action==="getMigrationTargetExistenceSnapshot")return getTrustedMigrationTargetExistenceSnapshot_(verified.payload);
  if(verified.action==="writeMigratedEntity")return applyTrustedMigrationWrite_(verified.payload);
  if(verified.action==="compensateMigratedEntity")return compensateTrustedMigrationWrite_(verified.payload);
