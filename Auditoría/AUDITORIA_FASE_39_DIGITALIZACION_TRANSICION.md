@@ -216,8 +216,8 @@ Auditar integralmente las capacidades destinadas a facilitar la transición de l
 - **Dependencias/riesgos:** F29-Task13 (inventario/extracción), F37-Task06 (catálogo destinos), F35-ID-Task02 (ámbitos); riesgo de duplicar inventarios por departamento o incluir archivos sin autorización.
 - **Alcance:** catálogo de documentos legados; no mover ni borrar originales durante la fase de inventario.
 - **Criterios de aceptación:** identificador estable por documento/lote; departamento/propietario y ubicación registrados; clasificación y sensibilidad; estado inventariado/en revisión/migrado/rechazado; auditoría de cambios; pruebas de duplicados, ubicaciones faltantes y múltiples departamentos.
-- **Prioridad:** P0. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; el informe confirma que no existe una tabla consolidada de documentos tradicionales.
+- **Prioridad:** P0. **Estado:** Implementada parcialmente (C1.762).
+- **Evidencia de avance:** InventarioDocumentalLegado y HistorialInventarioDocumentalLegado implementados en USER con tenant/departamento, clasificación, soporte físico/digital/mixto, estados, clave de origen estable, historial y permisos. Pendientes UI manual/asistida, beta real y validación completa de ubicaciones/duplicados múltiples.
 
 ### [F39-Task02] Calcular SHA-256 y detectar duplicados exactos/sustituciones
 - **Hallazgo de origen:** 3.4/3.10 y CAR-F39-04/CAR-F39-10; P11 no aprobado.
@@ -249,8 +249,8 @@ Auditar integralmente las capacidades destinadas a facilitar la transición de l
 - **Dependencias/riesgos:** F31-Task03 (DOCX), F32-Task10 (OCR), F25-Task01 (integraciones); riesgo de archivos malformados, ZIP bombs y envío de PII a proveedores externos sin autorización.
 - **Alcance:** validación y clasificación; OCR requiere revisión humana y no sustituye la validación de identidad.
 - **Criterios de aceptación:** MIME/magic bytes coinciden; estructura DOCX inspeccionada sin macros; PDF clasificado por contenido; OCR se activa solo cuando corresponde; resultado y confianza visibles; pruebas de DOCX con tablas, PDF escaneado, PDF digital, archivo corrupto y protegido.
-- **Prioridad:** P0. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; no existe parser DOCX nativo ni detección/OCR de PDF escaneado.
+- **Prioridad:** P0. **Estado:** Implementada parcialmente (C1.763).
+- **Evidencia de avance:** validación binaria ZIP/OpenXML endurecida y parser XML de DOCX/XLSX en Academic, Accounting y User; conteo de párrafos, tablas, controles de contenido y campos de formulario; clasificación PDF por página (digital, escaneada, mixta y vacía/vectorial); preflight Excel estructural y semántico con importación parcial explícita y rollback transaccional. Pendientes OCR, integración de la vista de preflight con el servicio propietario, validación beta en Apps Script y verificación de sobrescritura para destinos remotos.
 
 ### [F39-Task05] Crear bandeja de vinculación asistida de documentos históricos
 - **Hallazgo de origen:** 3.5 y CAR-F39-05; P16 no aprobado.
@@ -330,7 +330,7 @@ Auditar integralmente las capacidades destinadas a facilitar la transición de l
 - **Discrepancia histórica:** Auditoria.txt registra 18 tareas F39-Task01..F39-Task18 (P0 01..07, P1 08..17, P2 18), mientras el informe vigente describe ocho tareas. No se recuperaron descripciones de Task09..Task18; no se inventan ni se consulta Pendientes.md.
 - **Capacidades complementarias:** la bitácora refiere 4.1..4.6, pero el informe disponible no incluye sus definiciones; quedan pendientes de recuperar como fuente documental.
 - **Subcapacidades completas preservadas:** 3.6 (Excel), 3.9 (catálogo oficial) y 3.12 (convivencia modular); no se reejecutaron pruebas.
-- **Estado global:** F39-Task01..F39-Task08 y F39-Task19..F39-Task20 permanecen pendientes de ejecución/revalidación; Task09..Task18 quedan como referencias históricas sin descripción recuperable.
+- **Estado global:** F39-Task01 y F39-Task04 avanzadas parcialmente en C1.762/C1.763; F39-Task02/03/05..08 y F39-Task19/20 permanecen pendientes de ejecución/revalidación; Task09..Task18 quedan como referencias históricas sin descripción recuperable.
 
 
 ## G. AVANCE C1.762 — TASK-132 — Inventario documental legado
@@ -343,3 +343,16 @@ Auditar integralmente las capacidades destinadas a facilitar la transición de l
 - **Resiliencia:** ScriptLock para escrituras; si falla el historial, se revierte la fila de inventario; esquema de hojas validado en modo fail-closed.
 - **Pruebas:** `tests/security/user-service-legacy-document-inventory.test.js` cubre aislamiento tenant/departamento, deduplicación, ID estable, historial, exportación, validación, bloqueo, rollback, RBAC y dispatcher. Harness V8 aislado PASS. GitHub Actions `ima/department-scope-contract: success` en 54ae2556c82a349b1bc1a4ead829502b33135aa2 y c955fc6ffc51081daed3e85976575865a6f6b8d6. El test de rollback fue añadido después; no se declara aún su ejecución CI.
 - **Estado:** implementación backend avanzada, aceptación integral pendiente de interfaz de usuario, despliegue real en Sheets y beta de Secretaría/Dirección.
+
+
+## G. AVANCE C1.763 — TASK-133 — Validación multinivel de archivos y documentos
+- **Dependencia F39-Task01:** revisada. C1.762 ya implementa el inventario legado y su historial en USER; se mantiene parcial por UI/beta, pero el esquema institucional/departamental disponible permite continuar el motor de validación. No se inventan ubicaciones ni se modifica el inventario durante la previsualización.
+- **Validación física:** validateFileBinaryIntegrity alineada en Academic, Accounting y User. ZIP/OpenXML limita entradas, tamaño expandido, ratio de compresión, rutas, duplicados, ZIP64 y cifrado; verifica cabeceras locales/centrales y descomprime el paquete cuando Apps Script ofrece Utilities.unzip; el XML se analiza con XmlService.
+- **DOCX/XLSX:** validateOpenXmlPackageStructure_ verifica [Content_Types].xml, word/document.xml, relaciones disponibles, y cuenta párrafos, tablas, controles de contenido y campos de formulario. En XLSX verifica workbook, hojas y XML de worksheets/sharedStrings. Los paquetes corruptos, truncados, cifrados, con rutas maliciosas o estructura XML inválida se rechazan.
+- **PDF:** analyzePdfDocumentStructure clasifica páginas digitales, escaneadas, mixtas y vacías/vectoriales; registra páginas no analizadas y requiere OCR cuando corresponde, sin ejecutar OCR ni inventar extracción.
+- **Excel:** js/teacher.js y teacher-dashboard.html añaden un preflight de solo lectura: extensión/MIME/magic bytes/tamaño/truncamiento, selección explícita entre hojas visibles, hojas ocultas, fila de encabezado desplazada, encabezados duplicados/repetidos, celdas combinadas, filas vacías, fórmulas sin caché, errores de fórmula, tipos inconsistentes y muestra de cinco filas con números originales. La persistencia en este dashboard permanece deshabilitada hasta conectar un mapeo y servicio propietario autorizado.
+- **Semántica:** buildImportPreview_ valida fechas, calificaciones 0–100, identificadores y referencias relacionadas, tenant y ámbito departamental. Los errores por fila conservan el número original de Excel. La previsualización identifica sobrescrituras en hojas ACCOUNTING locales y advierte cuando no puede verificar destinos remotos; los cambios en el destino invalidan el hash de previsualización.
+- **Importación parcial segura:** importDataWithColumnMapping solo acepta filas válidas cuando allowPartialImport === true y validForPartialImport fue confirmado; errores estructurales bloquean el lote completo. Los fallos de escritura disparan compensación del lote; el resultado parcial, advertencias y errores se registran en AuditoriaMigraciones. Los registros válidos no se descartan por errores de otras filas.
+- **Pruebas:** accounting-import-semantic-preflight.test.js, teacher-excel-workbook-preflight.test.js, openxml-package-validation.test.js, file-binary-validation-contract.test.js, academic-multilevel-file-validation.test.js y pdf-document-classification.test.js; GitHub Actions Department Scope Contract SUCCESS en e9013de331cd0b49e7d5b9e9372be4a3d8548b19, Node 24. Ejecución posterior para el nuevo chequeo de sobrescrituras en curso al momento de registrar este avance.
+- **Brechas abiertas:** la UI de Secretaría/Contabilidad aún no consume el endpoint de preflight ni permite mapear campos y confirmar importación; el dashboard docente muestra solo una vista de estructura. No hay consulta de existencia de destinos en USER/ACADEMIC, OCR operativo, validación beta con Drive/Sheets reales ni verificación de macros en paquetes Office (se rechazan extensiones macro habilitadas).
+- **Estado:** TASK-133 parcialmente implementada; no marcar como completada hasta cerrar la interfaz/mapeo, verificación de destinos remotos y beta real.
