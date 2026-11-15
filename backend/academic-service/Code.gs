@@ -806,6 +806,11 @@ function validateRolePermission(action, payload) {
     return { authorized: true, role: userRole };
   }
 
+  if (userRole === "Auditor" && (ROLE_PERMISSIONS.Auditor || []).indexOf(permissionAction) === -1) {
+    auditTeacherJustificationDenied_(action, payload, userRole, "AUDITOR_READ_ONLY");
+    return { authorized: false, role: userRole };
+  }
+
   const ctxCheck = validateContextualAccess(permissionAction, payload, verifiedUserId, userRole);
   if (!ctxCheck.authorized) {
     auditTeacherJustificationDenied_(action,payload,userRole,"CONTEXT_SCOPE_DENIED");
