@@ -4629,6 +4629,20 @@ function getFamilyConsolidatedSummary(payload) {
 }
 
 
+function enqueueDriveRecovery_(service, operation, resourceType, resource, failure) {
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = getOrCreateSheet(ss, "RecuperacionAdjuntosDrive");
+    if (sheet.getLastRow() === 0) sheet.appendRow(["RecoveryID","Servicio","Operacion","TipoRecurso","DriveID","Nombre","Fecha","Motivo","Estado"]);
+    sheet.appendRow(["REC-ATT-"+Utilities.getUuid(),service,operation,resourceType,
+      resource&&resource.getId?resource.getId():"",resource&&resource.getName?resource.getName():"",
+      new Date().toISOString(),String(failure&&failure.message||failure||"UNKNOWN"),"PENDIENTE"]);
+  } catch(queueError) {
+    try { logStructuredEvent(service,operation,"ERROR","ATTACHMENT_RECOVERY_QUEUE_FAILED",
+      "No fue posible registrar el recurso huérfano en la cola de recuperación.",
+      {driveId:resource&&resource.getId?resource.getId():"",reason:String(failure&&failure.message||failure),queueError:String(queueError&&queueError.message||queueError)},"SYSTEM"); } catch(_){}
+  }
+}
 function getOrCreatePrivateAttachmentFolder_(folderName) {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(15000)) throw new Error("ATTACHMENT_FOLDER_LOCK_TIMEOUT");
@@ -4644,7 +4658,7 @@ function getOrCreatePrivateAttachmentFolder_(folderName) {
         folder.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
         if (folder.getSharingAccess() !== DriveApp.Access.PRIVATE) throw new Error("ATTACHMENT_FOLDER_NOT_PRIVATE");
       } catch (error) {
-        try { folder.setTrashed(true); } catch (_) {}
+        try { folder.setTrashed(true); } catch (cleanupError) { enqueueDriveRecovery_("USER","getOrCreatePrivateAttachmentFolder_","FOLDER",folder,cleanupError); }
         throw new Error("ATTACHMENT_FOLDER_PRIVATE_SETUP_FAILED");
       }
     }
@@ -4656,15 +4670,12 @@ function rollbackPrivateAttachment_(file, operation) {
   if (!file) return;
   try { file.setTrashed(true); }
   catch (error) {
-    try {
-      logStructuredEvent("USER", operation || "attachmentRollback", "ERROR",
-        "ATTACHMENT_ORPHAN_REQUIRES_RECOVERY",
-        "No fue posible retirar un archivo creado sin registro asociado.",
-        { fileId: file.getId ? file.getId() : "", reason: String(error && error.message || error) }, "SYSTEM");
-    } catch (_) {}
+    enqueueDriveRecovery_("USER",operation||"attachmentRollback","FILE",file,error);
+    try { logStructuredEvent("USER",operation||"attachmentRollback","ERROR","ATTACHMENT_ORPHAN_REQUIRES_RECOVERY",
+      "No fue posible retirar un archivo creado sin registro asociado.",
+      {fileId:file.getId?file.getId():"",reason:String(error&&error.message||error)},"SYSTEM"); } catch(_){}
   }
 }
-
 function createPrivateRequestAttachment_(fileData, fileName, folderName, allowedExtensions) {
   const hasData = typeof fileData === "string" && fileData.trim().length > 0;
   const hasName = typeof fileName === "string" && fileName.trim().length > 0;
@@ -4752,6 +4763,11 @@ function getAdministrativeRequestAttachment(payload) {
   try {
     const file = DriveApp.getFileById(fileId);
     if (!file || file.isTrashed()) return { status: "error", code: "ATTACHMENT_NOT_FOUND", message: "Archivo no disponible." };
+    if (file.getSharingAccess() !== DriveApp.Access.PRIVATE) {
+      logStructuredEvent("USER","getAdministrativeRequestAttachment","WARN","ATTACHMENT_NOT_PRIVATE",
+        "Se rechazó la entrega de un archivo que no es privado.",{solicitudId:solicitudId,fileId:fileId},role);
+      return {status:"error",code:"ATTACHMENT_NOT_PRIVATE",message:"Archivo no disponible."};
+    }
     const blob = file.getBlob(), bytes = blob.getBytes();
     if (!bytes || !bytes.length || bytes.length > 10 * 1024 * 1024) return { status: "error", code: "ATTACHMENT_INVALID_SIZE", message: "Archivo no disponible." };
     const fileName = String(file.getName() || "adjunto");
