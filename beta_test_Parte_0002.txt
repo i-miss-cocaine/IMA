@@ -412,3 +412,23 @@
 - **Evidencia requerida:** snapshots sintéticos de TransporteRutas y TransporteOptimizaciones; propuesta, secuencia y distancias; actor que aprueba/rechaza; motivo de rechazo; conflicto de versión y logs de lock. No usar datos reales.
 - **Estado:** Pendiente beta. Contrato Node.js 24.22.2 y syntax-check Apps Script aprobados en GitHub Actions; geocodificación real y Maps API no ejecutados.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-094 — TASK-392 — Catálogo institucional de servicios complementarios
+- **Módulo/roles:** Dirección / Contabilidad / Padre / Tutor / Responsable / Administrador.
+- **Objetivo:** verificar la administración de servicios complementarios y su disponibilidad por año lectivo, preservando cafetería, tienda y actividades existentes.
+- **Precondiciones:** versión beta desplegada en un entorno aislado; hojas sintéticas CafeteriaMenu, TiendaProductos y ActividadesExtracurriculares; catálogo ServiciosCatalogoInstitucional; cuentas de prueba para roles administrativos y familiares.
+- **Pasos:**
+  1. Consultar los servicios heredados antes de crear configuraciones y comprobar que se muestran como activos sin migrar ni modificar sus filas.
+  2. Crear un servicio recurrente y otro por consumo/evento, con cupo, tarifa, responsables, reglas familiares y vigencia; consultar el resultado y editar cada uno.
+  3. Crear el mismo servicio en dos años lectivos; editar el año desde un registro existente y comprobar que se crea una versión nueva sin alterar el año anterior.
+  4. Intentar duplicar la misma clave/año, utilizar un ID inexistente y guardar modalidades, importes, cupos, JSON o fechas inválidas; verificar rechazo sin escritura parcial.
+  5. Pausar tienda y cafetería en un año lectivo; comprobar que nuevos pedidos se rechazan sin descontar existencias y que el período siguiente continúa activo. Reactivar y repetir.
+  6. Ejecutar solicitudes concurrentes de pausa y creación de pedidos. Si la pausa obtiene primero el ScriptLock, el pedido debe rechazarse; si el pedido obtiene primero el lock, debe finalizar antes de que la pausa se confirme. No debe existir pedido creado después de una pausa ya confirmada.
+  7. Pausar actividades extracurriculares y verificar que las nuevas inscripciones se rechazan; reactivar y comprobar la continuidad de las inscripciones existentes.
+  8. Verificar que Padre/Tutor solo consulta el período permitido y que el historial de otros períodos queda restringido a perfiles administrativos.
+- **Resultado esperado:** catálogo único por servicio/año; cambios versionados; historial preservado; estados aislados por período; módulos heredados compatibles; control concurrente consistente; RBAC positivo/negativo sin mutaciones parciales.
+- **Evidencia requerida:** snapshots sintéticos antes/después, IDs de servicio por año, filas del catálogo, respuestas de pedidos e inscripciones, cantidades de inventario, actores, registros de auditoría y resultado de las pruebas de concurrencia. No usar datos personales ni productivos.
+- **Estado:** Pendiente beta; Node.js 24.22.2 y syntax-check local runner aprobados en GitHub Actions; Apps Script/Sheets desplegado no ejecutado.
+===============================================================================

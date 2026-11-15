@@ -391,3 +391,22 @@ C1.721 — IMA-EXEC-20261114-TASK200-01 — TASK-200 — Facturación automátic
 - **HEAD previo al commit documental:** 7c84f1febadaed2544db4911836efa29f4d523af; rama base 44d9891132332e692dbe2ba8602b41f50a508a59.
 - **Siguiente tarea elegible del Plan Maestro PM-05:** TASK-392 — configuración centralizada de servicios complementarios institucionales (P2).
 ===============================================================================
+
+
+===============================================================================
+### C1.737 — IMA-EXEC-20261115-TASK392-CATALOG-01 — Catálogo centralizado de servicios complementarios
+- **Continuidad:** C1.736. HEAD inicial de esta corrección: 38684804eee9e04e98a81df76e6124cd37f3300f. La rama ya contenía 16 commits de implementación de TASK-392; se continuó desde ellos sin repetir el desarrollo.
+- **Rama:** NG_beta_0.0.0.1_work. Rama base de solo lectura NG_beta_0.0.0.1; HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Implementación:** catálogo ServiciosCatalogoInstitucional para modalidades RECURRENTE, POR_CONSUMO y POR_EVENTO, categoría, cupos, responsables, tarifas, reglas de autorización familiar, año lectivo, estado, fechas de vigencia, origen y metadatos. Panel administrativo para alta/edición y pausa/activación de servicios heredados.
+- **Integración:** la tienda y cafetería verifican el estado institucional antes de procesar pedidos; las actividades extracurriculares comprueban disponibilidad al consultar/inscribir. Sin configuración explícita, los módulos heredados conservan su comportamiento anterior.
+- **Revisión/corrección:** se detectó que la comprobación de disponibilidad de tienda/cafetería ocurría antes de adquirir ScriptLock, permitiendo una carrera con la pausa. Se movió la comprobación dentro del lock y antes de leer/modificar existencias. La edición que cambia el año lectivo ahora crea una nueva versión para preservar el registro anterior; IDs no existentes y duplicados por clave/año se rechazan.
+- **Archivos de implementación de TASK-392:** .github/workflows/department-scope-contract.yml; app/html/dashboards/dynamic-dashboard.html; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; js/ui-common.js; tests/security/academic-extracurricular-enrollment.test.js; tests/security/accounting-complementary-services.test.js; tests/security/accounting-family-credit-preference.test.js.
+- **Corrección final:** backend/accounting-service/Code.gs; tests/security/accounting-complementary-services.test.js.
+- **Pruebas locales aisladas:** contrato Node.js 24.22.2 PASS en GitHub Actions, incluyendo compatibilidad heredada, alta/upsert, versión por año, duplicados, permisos, estados por año y orden de adquisición del lock; node --check Apps Script/JS PASS.
+- **GitHub Actions:** Department Scope Contract 43671785558 SUCCESS; Identity mapping and transport security contracts 43671785546 SUCCESS; Department Reference Consumers Local Contract 43671785553 SUCCESS. HEAD de CI: 8f7714ea0edcb49e2fc7b496f374d9fbc550a792.
+- **CLI:** no existe package.json ni CLI del proyecto en el árbol del repositorio; NOT APPLICABLE / NOT RUN.
+- **Limitaciones:** no se ejecutó Apps Script/Sheets desplegado ni E2E real de navegador. BETA-FUNC-094 queda Pendiente beta. No se usaron datos productivos.
+- **Estado:** TASK-392 completada en código, revisión y CI.
+- **Siguiente tarea elegible:** TASK-391 — indicadores de eficiencia operativa y análisis de demanda de transporte; verificar primero disponibilidad y contrato de F21-Task27, viajes, asignaciones y fuentes de costos.
+- **HEAD final:** se verificará después del commit documental; rama base debe permanecer en 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================

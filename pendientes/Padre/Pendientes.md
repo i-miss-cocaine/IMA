@@ -447,7 +447,7 @@
 ---
 
 <!-- ID: TASK-392 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
-### [ ] [TASK-392] Configuración centralizada de servicios complementarios institucionales
+### [x] [TASK-392] Configuración centralizada de servicios complementarios institucionales
 - **Origen del Hallazgo:** `AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md` / Sección C (1.14) y Plan de Implementación TAREA 32
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Arquitectura reutilizable de servicios escolares, parametrización y escalabilidad)
@@ -464,6 +464,11 @@
 - **Criterios de Aceptación:**
   - Se pueden parametrizar nuevos servicios complementarios desde la plataforma.
   - Los servicios existentes continúan funcionando con plena compatibilidad.
-- **Estado:** [ ] Pendiente
+- **Implementación C1.737:** catálogo ServiciosCatalogoInstitucional con clave, categoría, modalidad, cupo, responsables, tarifa, reglas familiares, año lectivo, vigencia, estado, origen y metadatos; alta/edición y activación/pausa por año desde panel administrativo.
+- **Compatibilidad:** cafetería, tienda y actividades existentes se exponen como servicios heredados sin migrar ni reescribir sus registros. La ausencia de una configuración conserva el comportamiento anterior; una pausa por año bloquea nuevos pedidos/inscripciones del servicio correspondiente.
+- **Integridad:** ScriptLock serializa alta/edición/pausa con creación de pedidos de tienda y cafetería. La validación de disponibilidad se realiza dentro del lock; el cambio de año crea una versión nueva y conserva el registro histórico; se rechazan IDs inexistentes y duplicados por servicio/año.
+- **Seguridad:** acciones de escritura restringidas a Administrador/Director/Subdirector/Contador con identidad verificada; consulta familiar limitada al período actual; lectura histórica restringida a perfiles administrativos.
+- **Pruebas:** `tests/security/accounting-complementary-services.test.js` cubre compatibilidad heredada, alta/upsert, versionado por año, duplicados, estados por período, permisos y orden de exclusión mutua antes de consultar/modificar existencias. Node.js 24.22.2 y sintaxis Apps Script/JS PASS en GitHub Actions.
+- **Estado:** [x] Completada en código, revisión y CI; validación beta pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 14173-14205; clave TASK-396; asignación única: Dirección -->
