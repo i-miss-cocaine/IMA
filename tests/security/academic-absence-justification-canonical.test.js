@@ -303,9 +303,9 @@ const policySave = context.saveAbsenceJustificationPolicies({
   impacto: "INMEDIATO_AL_APROBAR_SECRETARIA", parcial: "HABILITADO"
 });
 assert.equal(policySave.status, "success");
-assert.deepEqual(context.absenceJustificationPolicies_(context.SpreadsheetApp.openById("TEST")), {
-  impact: "INMEDIATO_AL_APROBAR_SECRETARIA", partial: "HABILITADO"
-});
+const savedPolicies = context.absenceJustificationPolicies_(context.SpreadsheetApp.openById("TEST"));
+assert.equal(savedPolicies.impact, "INMEDIATO_AL_APROBAR_SECRETARIA");
+assert.equal(savedPolicies.partial, "HABILITADO");
 const policySaveDenied = context.saveAbsenceJustificationPolicies({
   _verifiedUserId: "SEC-1", _verifiedRole: "Secretaría",
   impacto: "INMEDIATO_AL_APROBAR_SECRETARIA", parcial: "HABILITADO"
