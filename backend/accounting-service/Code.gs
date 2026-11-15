@@ -108,7 +108,8 @@ function buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutio
       return { verified: false, service: service, sheet: sheetName, institutionId: institutionId, existingTargetIds: [], targetRows: [] };
     }
     return { verified: true, service: service, sheet: sheetName, institutionId: institutionId,
-      idField: idField, existingTargetIds: academicResult.existingTargetIds.map(String).sort(), targetRows: [] };
+      idField: idField, existingTargetIds: academicResult.existingTargetIds.map(String).sort(),
+      targetRows: Array.isArray(academicResult.targetRows) ? academicResult.targetRows : [] };
   }
   if (service !== "ACCOUNTING") {
     return { verified: false, service: service, sheet: sheetName, institutionId: institutionId, existingTargetIds: [], targetRows: [] };
@@ -626,7 +627,7 @@ function importDataWithColumnMapping(payload) {
         if (Object.prototype.hasOwnProperty.call(row, field)) ownerData[field] = row[field];
       });
       var targetSnapshot = preview.targetExistenceSnapshot || {};
-      var targetSnapshotVerified = service === "ACCOUNTING" && targetSnapshot.verified === true;
+      var targetSnapshotVerified = (service === "ACCOUNTING" || service === "ACADEMIC") && targetSnapshot.verified === true;
       var expectedTargetPresent = false;
       var expectedTargetRowHash = "";
       if (targetSnapshotVerified) {
@@ -889,7 +890,7 @@ function getEmployeeDocuments(payload) {
 var SPREADSHEET_ID = PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID") || "";
 const MIGRATION_OWNER_SCHEMAS_={
   curso: { service: "ACCOUNTING", sheet: "Cursos", headers: ["CursoID", "Nombre", "Nota", "FechaInicio"] },
-  estudiante: { service: "ACADEMIC", sheet: "ExpedientesEstudiantes", headers: ["ExpedienteID", "PersonaID"] },
+  estudiante: { service: "ACADEMIC", sheet: "ExpedientesEstudiantes", headers: ["ExpedienteID", "PersonaID", "CodigoInstitucional", "FechaNacimiento", "Nacionalidad", "DireccionResidencia", "FotografiaUrl", "EstadoExpediente", "FechaCreacion", "FechaActualizacion", "Observaciones"] },
   empleado: { service: "ACCOUNTING", sheet: "ExpedientesLaborales", departmentScoped: true, headers: ["ExpedienteID", "PersonaId", "UserId", "Puesto", "Departamento", "CentroCosto", "FechaIngreso", "FechaSalida", "EstadoLaboral", "Observaciones"] },
   empleadoOwnership: { service: "USER", sheet: "", headers: [] }
 };
