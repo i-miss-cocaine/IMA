@@ -33,7 +33,7 @@ function makeSheet(rows) { return {
   })
 }; }
 const academic = fs.readFileSync(path.resolve(__dirname, "../../backend/academic-service/Code.gs"), "utf8");
-const names = ["getVerifiedAcademicIdentity_","getVerifiedDepartmentScopeForSession_","getVerifiedAcademicDepartmentScope_","getAcademicDelegatedMembershipForScope_","resolveInternalResponsibilityForRoleScope_","getVerifiedAcademicGuardianDepartmentScope_","assertResourceOwnershipForScope_","getStudentPersonIdForUser_","getStudentIdentityForPerson_","assertStudentExpedienteScopeAccess_","assertStudentDocumentScopeAccess_","assertStudentRequestScopeAccess_","resolveAcademicRequestDepartment_","hasActiveTeacherAssignment_","validateAcademicResponsibilityAndScopeAccess","getStudentFile","ensureStudentDocumentSchema_","ensureDocumentVersionHistorySchema_","getStudentDocuments","getSecureDocumentStream","validateEvidenceFileAndPermissions","assertRecordOwnership","getStudentFileSummary","getStudentTimeline","restoreDocumentVersion"];
+const names = ["getVerifiedAcademicIdentity_","getVerifiedDepartmentScopeForSession_","getVerifiedAcademicDepartmentScope_","getAcademicDelegatedMembershipForScope_","resolveInternalResponsibilityForRoleScope_","getVerifiedAcademicGuardianDepartmentScope_","assertResourceOwnershipForScope_","getStudentPersonIdForUser_","getStudentIdentityForPerson_","assertStudentExpedienteScopeAccess_","assertStudentDocumentScopeAccess_","assertStudentRequestScopeAccess_","resolveAcademicRequestDepartment_","hasActiveTeacherAssignment_","validateAcademicResponsibilityAndScopeAccess","getStudentFile","ensureStudentDocumentSchema_","ensureDocumentVersionHistorySchema_","getStudentDocuments","getSecureDocumentStream","validateFileBinaryIntegrity","validateEvidenceFileAndPermissions","assertRecordOwnership","getStudentFileSummary","getStudentTimeline","restoreDocumentVersion"];
 const code = "var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n" + names.map(n => extractFunction(academic, n)).join("\n");
 const claims = {
   staffA:{userId:"U-A",role:"Director"}, staffB:{userId:"U-B",role:"Director"},
@@ -96,15 +96,16 @@ const rows = {
   AsignacionesDocentes:[["DocenteUserId","AsignaturaID","Grado","Seccion","PeriodoID","Estado"],["U-TEACH","ASIG-A","10","A","2026","Activo"]]
 };
 const ss={getSheetByName:name=>rows[name]?makeSheet(rows[name]):null};
+const validPdfBytes=Array.from(Buffer.from("%PDF-1.4\\n1 0 obj\\n<< /Type /Catalog >>\\nendobj\\nstartxref\\n10\\n%%EOF\\n","utf8"));
 const context={
   SPREADSHEET_ID:"TEST",
   PropertiesService:{getScriptProperties:()=>({getProperty:key=>key==="IMA_INSTITUTION_ID"?"INST-1":null})},
   SpreadsheetApp:{openById:()=>ss},
   verifySessionToken:token=>claims[token]||null,
   getOrCreateSheet:(spreadsheet,name)=>spreadsheet.getSheetByName(name)||makeSheet([[]]),
-  DriveApp:{getFileById:id=>({isTrashed:()=>false,getName:()=>id,getMimeType:()=>"application/pdf",getDownloadUrl:()=>"download:"+id,getSize:()=>1024})},
+  DriveApp:{getFileById:id=>({isTrashed:()=>false,getName:()=>id+".pdf",getMimeType:()=>"application/pdf",getDownloadUrl:()=>"download:"+id,getSize:()=>validPdfBytes.length,getBlob:()=>({getBytes:()=>validPdfBytes})})},
   LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>{}})},
-  Utilities:{getUuid:()=>"test-version-id"},
+  Utilities:{getUuid:()=>"test-version-id",base64Encode:bytes=>Buffer.from(bytes).toString("base64"),base64Decode:value=>Array.from(Buffer.from(value,"base64"))},
   getVerifiedPrivateStudentDocumentFile_:(fileId,expectedHash,fileName)=>({fileId:fileId,fileName:fileName||"document.pdf",sha256Hash:expectedHash||"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",bytes:[1,2,3],mimeType:"application/pdf",driveAccessible:true,integrityVerified:!!expectedHash}),
   logStructuredEvent:()=>{}
 };
