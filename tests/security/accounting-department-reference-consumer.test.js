@@ -96,6 +96,12 @@ function request(overrides={}){return Object.assign({expedienteId:"EXP-B",sessio
  assert.equal(h.calls.length,1);
 }
 {
+ const h=makeRuntime({sameDepartment:true});
+ h.documentRows[1][4] = "https://external.example/private-document";
+ const result = h.context.read(request({expedienteId:"EXP-A",referenceDocumentIds:undefined,referenceRequestedFields:undefined}));
+ assert.equal(result.code,"RESOURCE_NOT_FOUND","non-Drive employee document URLs fail closed");
+}
+{
  const h=makeRuntime({sameDepartment:true}),r=h.context.read(request({expedienteId:"EXP-A",referenceDocumentIds:undefined,referenceRequestedFields:undefined}));
  assert.equal(r.status,"success");assert.equal(r.referenceOnly,undefined);assert.equal(r.documentos.length,1);
  assert.equal(r.documentos[0].archivoUrl,"https://drive.google.com/file/d/FILEIDA123456789012345/view");assert.equal(h.calls.length,0);
