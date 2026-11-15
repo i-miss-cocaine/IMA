@@ -177,3 +177,42 @@
 - La escritura de importaciones permanece cerrada en el router hasta cerrar validación y autorización del destino en beta.
 - Siguiente tarea elegible para revisión: TASK-134/F39-Task02 SHA-256, contrastando los criterios originales y el avance C1.769; continuar la integración pendiente en ACCOUNTING sin duplicar capacidades ya implementadas en ACADEMIC/USER.
 ===============================================================================
+
+===============================================================================
+## C1.775 — IMA-EXEC-20261115-TASK134-LEGACY-HASH-BOUNDS-01
+- **Fecha:** 2026-11-15
+- **Rama:** NG_beta_0.0.0.1_work
+- **HEAD verificado antes del checkpoint:** e18e4812fa2268a42dc43a69be6ffdabd15cbe04
+- **Rama base:** NG_beta_0.0.0.1 — 44d9891132332e692dbe2ba8602b41f50a508a59; 3.309 commits por delante y 0 por detrás.
+- **Normativa:** Normas_Desarollo.md v1.4 aplicada.
+
+### Continuidad TASK-134 / F39-Task02
+- Se contrastaron los criterios originales de TASK-134 con las implementaciones Academic/User y el preflight ACCOUNTING existente. No se duplicó el mecanismo SHA-256 ya implementado en Academic ni el inventario legado en USER.
+- USER: computeLegacyInventoryHashSHA256_ ahora limita el contenido a 10 MiB antes de decodificar Base64, valida longitud/padding y vuelve a comprobar el tamaño real tras decodificar. Se evita asignar memoria a entradas excesivas o aceptar cadenas Base64 malformadas antes del digest.
+- USER: registerLegacyDocumentInventory mantiene el cálculo SHA-256 en servidor, deduplicación institucional por hash y ClaveOrigen, aislamiento por institución/departamento, ScriptLock y rollback de inventario si falla el historial.
+- Academic: uploadStudentDocument calcula SHA-256 antes de Drive, aplica política institucional RECHAZAR_DUPLICADO_EXACTO (por defecto) o CREAR_ENLACE_REFERENCIA_SIN_DUPLICAR_ARCHIVO, evita copias físicas redundantes y comprueba integridad en consulta/descarga/restauración.
+- ACCOUNTING: validateImportWorkbookBinary_ calcula SHA-256 del XLSX, lo liga al previewHash y appendAccountingMigrationFileHashAudit_ conserva el HashSHA256 por institución/ejecución cuando el flujo de importación está habilitado. Esto cubre el archivo de importación tabular, no equivale a una ruta de custodia de documentos contables. El router continúa sin exponer importDataWithColumnMapping hasta completar TASK-133.
+- Se amplió accounting-import-preflight-contract.yml para ejecutar de forma independiente los contratos user-service-legacy-document-inventory.test.js y academic-student-document-private-storage.test.js, ya que el workflow transversal Department Scope se interrumpe antes por un contrato ajeno a F39.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- tests/security/user-service-legacy-document-inventory.test.js
+- .github/workflows/accounting-import-preflight-contract.yml
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0016.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- pendientes/Secretaria/Pendientes.md
+- changueslogs.txt
+
+### Verificaciones
+- GitHub Actions Accounting Import Preflight Contract run 43772074993 SUCCESS en HEAD e18e4812. Incluye sintaxis de servicios/controladores y contratos de importación, writers, snapshots, PDF/OCR, OpenXML, API, HMAC, inventario legado USER y almacenamiento privado Academic.
+- Evidencia específica: PASS legacy document inventory (aislamiento, IDs, deduplicación, historial, filtros, CSV, validación, locking, schema, RBAC y routing); academic-student-document-private-storage: PASS; Accounting XLSX envelope con SHA-256 preview binding PASS.
+- GitHub Actions UI Accessibility and Metadata Contract run 43772012706 SUCCESS.
+- Department Scope Contract run 43772024983 FAIL por resolveEmployeeDepartmentId_ requerido por accounting-vacation-medical-leave-ownership.test.js; el contrato de inventario USER no aparece como causa y las pruebas previas del workflow sí pasan. No se modificó esa funcionalidad ajena.
+- Identity mapping and transport security contracts run 43772012702 FAIL porque transport-access-scope.test.js intenta abrir backend/transport-service/Code.gs, archivo inexistente. Task-Service security local contracts run 43772012711 FAIL por verifySessionToken ausente en la fixture/servicio de TASK. Hallazgos ajenos a TASK-134, conservados sin ocultar.
+- Node CLI local no se ejecutó: el entorno no contiene checkout local del repositorio. GitHub Actions ejecutó Node 24 en checkout limpio de la rama. No se ejecutó Drive/Sheets real ni beta institucional.
+
+### Estado y continuidad
+- TASK-134 sigue En ejecución. El inventario USER y los documentos Academic cuentan con SHA-256 y deduplicación; ACCOUNTING tiene hash del archivo XLSX de preflight/auditoría, pero no dispone de un repositorio físico propio de documentos contables y su commit de importación continúa protegido por TASK-133.
+- Pendiente: validar en beta la política POLITICA_DUPLICADOS_DOCUMENTALES, la integridad contra bytes reales de Drive y la persistencia real; completar la integración de importación ACCOUNTING después de habilitar de forma segura el commit de TASK-133. No se declara cierre por evidencia local/CI solamente.
+- Siguiente acción: continuar TASK-134 revisando si existe un flujo documental contable propietario que requiera hash persistido, sin inventar un servicio de almacenamiento paralelo; mantener TASK-135/F39-Task03 pendiente hasta disponer de evidencia suficiente de integridad y custodia.
+===============================================================================
