@@ -131,6 +131,8 @@ const context = {
 context.extractDriveFileId=value=>String(value||"").trim();
 vm.createContext(context);
 vm.runInContext(names.map(extractFunction).join("\n"),context);
+const jsonHashInput=JSON.stringify({evidence:["one","two"],version:2});
+assert.equal(context.computeDocumentSHA256(jsonHashInput),require("node:crypto").createHash("sha256").update(jsonHashInput,"utf8").digest("hex"),"JSON decision payloads must be hashed as UTF-8, not parsed as data URIs");
 
 function pdfData(marker) {
   const bytes = Buffer.from("%PDF-1.4\n%"+marker+"\n1 0 obj\n<<>>\nendobj\nstartxref\n10\n%%EOF","utf8");
