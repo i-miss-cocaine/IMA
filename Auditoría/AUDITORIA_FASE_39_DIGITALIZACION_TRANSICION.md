@@ -227,8 +227,10 @@ Auditar integralmente las capacidades destinadas a facilitar la transición de l
 - **Dependencias/riesgos:** F34-Task04 (hash adjuntos), F31-Task09 (validación de adjuntos), F29-Task11/15 (integridad/transferencia); riesgo de implementar múltiples algoritmos/formatos de hash o calcular sobre metadatos en vez de bytes.
 - **Alcance:** integridad y deduplicación exacta; no confundir SHA-256 con detección de documentos similares ni con antivirus.
 - **Criterios de aceptación:** hash calculado sobre binario; duplicado exacto identificado; sustitución posterior detectada; política de duplicados configurable; historial de versiones preservado; pruebas mismo archivo/nombre distinto, archivo alterado y carga legítima nueva.
-- **Prioridad:** P0. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; la carga actual no calcula SHA-256 y no detecta duplicados con nombres diferentes.
+- **Prioridad:** P0. **Estado:** Parcial (C1.769).
+- **Evidencia C1.769:** uploadStudentDocument calcula SHA-256 sobre bytes decodificados antes de crear archivo; DocumentosEstudiantes conserva SHA256 legado y añade HashSHA256/ImportBatchID/DocumentoReferenciaID. La detección bajo ScriptLock clasifica mismo documento, mismo lote y duplicado de repositorio; la política institucional permite rechazar o crear referencia al mismo DriveFileId. getStudentDocuments/getStudentDocumentFile y verifyDocumentIntegritySha256 verifican el binario al consultar/descargar. InventarioDocumentalLegado añade HashSHA256 mediante migración aditiva y calcula hash servidor-side desde fileData; duplicados exactos por institución se bloquean sin filtrar IDs entre departamentos.
+- **Pruebas aisladas:** academic-student-document-private-storage PASS (incluye hashes idénticos con nombres distintos, lote, referencia sin copia, inventario y alteración binaria); user-service-legacy-document-inventory PASS (hash, deduplicación y migración). Harness V8 con SHA-256 simulado consistentemente; Node CLI/Actions del HEAD actual no confirmados.
+- **Brechas:** DocumentosEscolaresEmitidos y el servicio ACCOUNTING no tienen todavía flujo de carga/deduplicación conectado; BETA-FUNC-109 y verificación Node 24/Actions pendientes.
 
 ### [F39-Task03] Mantener custodia protegida e inmutable de originales en Drive
 - **Hallazgo de origen:** 3.10 y CAR-F39-10; necesidad de conservar evidencia fuente.
