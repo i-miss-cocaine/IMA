@@ -13243,7 +13243,7 @@ const LEGACY_DOCUMENT_INVENTORY_HEADERS_ = [
   "CantidadRegistrosPaginas", "FrecuenciaUso", "FechaCreacionPeriodo", "NivelConfidencialidad",
   "EstadoConservacion", "CategoriaDocumental", "EstadoDigitalizacion", "ExpedienteRelacionadoId",
   "ObservacionesHistoricas", "FechaRegistro", "UsuarioRegistro", "InstitutionID",
-  "SubcategoriaDocumental", "ClaveOrigen"
+  "SubcategoriaDocumental", "ClaveOrigen", "HashSHA256"
 ];
 const LEGACY_DOCUMENT_INVENTORY_HISTORY_HEADERS_ = [
   "EventoId", "DocumentoId", "InstitutionID", "DepartamentoPropietario", "Accion",
@@ -13318,14 +13318,23 @@ function validateLegacyDocumentInventorySheet_(sheet, headers, errorCode) {
 function ensureLegacyDocumentInventorySheet_(ss) {
   var sheet = ss.getSheetByName("InventarioDocumentalLegado");
   if (!sheet) sheet = ss.insertSheet("InventarioDocumentalLegado");
-  if (sheet.getLastRow() === 0) sheet.appendRow(LEGACY_DOCUMENT_INVENTORY_HEADERS_);
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(LEGACY_DOCUMENT_INVENTORY_HEADERS_);
+  } else {
+    var lastColumn = typeof sheet.getLastColumn === "function" ? sheet.getLastColumn() : LEGACY_DOCUMENT_INVENTORY_HEADERS_.length - 1;
+    var currentHeaders = sheet.getRange(1, 1, 1, Math.max(1, lastColumn)).getValues()[0].map(String);
+    var legacyHeaders = LEGACY_DOCUMENT_INVENTORY_HEADERS_.slice(0, -1);
+    if (JSON.stringify(currentHeaders) === JSON.stringify(legacyHeaders)) {
+      sheet.getRange(1, LEGACY_DOCUMENT_INVENTORY_HEADERS_.length).setValue("HashSHA256");
+    }
+  }
   return validateLegacyDocumentInventorySheet_(sheet, LEGACY_DOCUMENT_INVENTORY_HEADERS_, "LEGACY_INVENTORY_SCHEMA_MISMATCH");
 }
 
 function getLegacyDocumentInventorySheet_(ss) {
   var sheet = ss.getSheetByName("InventarioDocumentalLegado");
   if (!sheet) return { status: "error", code: "LEGACY_INVENTORY_NOT_INITIALIZED" };
-  return validateLegacyDocumentInventorySheet_(sheet, LEGACY_DOCUMENT_INVENTORY_HEADERS_, "LEGACY_INVENTORY_SCHEMA_MISMATCH");
+  return ensureLegacyDocumentInventorySheet_(ss);
 }
 
 function ensureLegacyDocumentInventoryHistorySheet_(ss) {
@@ -13529,6 +13538,23 @@ function legacyDocumentInventoryCsvCell_(value) {
   return '"' + text.replace(/"/g, '""') + '"';
 }
 
+function computeLegacyInventoryHashSHA256_(fileData) {
+  var encoded = String(fileData || "").trim();
+  if (!encoded) return "";
+  if (/^data:/i.test(encoded)) {
+    var comma = encoded.indexOf(",");
+    var header = comma >= 0 ? encoded.slice(0, comma) : "";
+    if (comma < 0 || !/^data:[^;]+;base64$/i.test(header)) throw new Error("LEGACY_DOCUMENT_FILE_DATA_INVALID");
+    encoded = encoded.slice(comma + 1);
+  }
+  if (!encoded || !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)) throw new Error("LEGACY_DOCUMENT_FILE_DATA_INVALID");
+  var bytes = Utilities.base64Decode(encoded);
+  if (!bytes || !bytes.length) throw new Error("LEGACY_DOCUMENT_FILE_EMPTY");
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, bytes);
+  if (!digest || digest.length !== 32) throw new Error("LEGACY_DOCUMENT_SHA256_FAILED");
+  return digest.map(function(byte) { return ("0" + ((Number(byte) + 256) % 256).toString(16)).slice(-2); }).join("");
+}
+
 function registerLegacyDocumentInventory(payload) {
   var lock = null, inventoryRowNumber = 0, historyStartRow = 0, oldRow = null, created = false;
   var inventorySheet = null, historySheet = null;
@@ -13582,6 +13608,7 @@ function registerLegacyDocumentInventory(payload) {
     var normalized = normalizeLegacyDocumentInventoryRecord_(input, previous);
     if (normalized.status !== "success") return normalized;
     var record = normalized.data;
+    record.HashSHA256 = input.fileData ? computeLegacyInventoryHashSHA256_(input.fileData) : String(previous.HashSHA256 || "");
     var normalizedOriginKey = record.ClaveOrigen.toLowerCase().replace(/\s+/g, " ");
     for (var duplicateIndex = 1; duplicateIndex < rows.length; duplicateIndex++) {
       var candidate = rows[duplicateIndex];
@@ -13597,6 +13624,18 @@ function registerLegacyDocumentInventory(payload) {
       }
     }
 
+    var hashIndex = LEGACY_DOCUMENT_INVENTORY_HEADERS_.indexOf("HashSHA256");
+    if (record.HashSHA256) {
+      for (var hashRowIndex = 1; hashRowIndex < rows.length; hashRowIndex++) {
+        var hashCandidate = rows[hashRowIndex];
+        if (String(hashCandidate[institutionIndex] || "") !== access.institutionId ||
+            String(hashCandidate[idIndex] || "") === documentId) continue;
+        if (String(hashCandidate[hashIndex] || "").toLowerCase() === record.HashSHA256.toLowerCase()) {
+          return { status: "error", code: "LEGACY_DOCUMENT_HASH_DUPLICATE", duplicateType: "INVENTARIO_LEGADO" };
+        }
+      }
+    }
+
     var now = new Date();
     var finalDocumentId = documentId || ("LEG-" + Utilities.getUuid());
     var row = [
@@ -13606,14 +13645,14 @@ function registerLegacyDocumentInventory(payload) {
       record.NivelConfidencialidad, record.EstadoConservacion, record.CategoriaDocumental,
       record.EstadoDigitalizacion, record.ExpedienteRelacionadoId, record.ObservacionesHistoricas,
       existing ? existing.row[17] : now, existing ? existing.row[18] : access.actorId,
-      access.institutionId, record.SubcategoriaDocumental, record.ClaveOrigen
+      access.institutionId, record.SubcategoriaDocumental, record.ClaveOrigen, record.HashSHA256
     ].map(legacyDocumentInventorySafeCell_);
 
     var historyEvents = [];
     if (!existing) {
       historyEvents.push({ action: "CREATED", field: "DOCUMENTO", oldValue: "", newValue: JSON.stringify(legacyDocumentInventoryRowToObject_(row)), documentId: finalDocumentId });
     } else {
-      var mutableHeaders = LEGACY_DOCUMENT_INVENTORY_HEADERS_.slice(2, 17).concat(["SubcategoriaDocumental", "ClaveOrigen"]);
+      var mutableHeaders = LEGACY_DOCUMENT_INVENTORY_HEADERS_.slice(2, 17).concat(["SubcategoriaDocumental", "ClaveOrigen", "HashSHA256"]);
       mutableHeaders.forEach(function(header) {
         var index = LEGACY_DOCUMENT_INVENTORY_HEADERS_.indexOf(header);
         var oldValue = existing.row[index] instanceof Date ? existing.row[index].toISOString() : String(existing.row[index] === undefined ? "" : existing.row[index]);
