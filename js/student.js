@@ -938,11 +938,14 @@ document.addEventListener('DOMContentLoaded', function() {
         var motivo = prompt('Ingrese el motivo de la ausencia (Médico, Familiar, Personal):', 'Motivo Médico');
         if (!motivo) return;
         var obs = prompt('Observaciones o detalles adicionales:', 'Justificante presentado desde el Portal Familiar');
+        var periodo = prompt('Ingrese el período académico (ID o nombre, por ejemplo: I parcial):', '');
+        if (!periodo) return;
 
         fetchApi('USER', 'submitStudentAbsenceJustification', {
             userId: currentUser.userId,
             estudianteId: currentUser.userId,
             fechaAusencia: fecha,
+            periodo: periodo,
             motivo: motivo,
             observaciones: obs
         }).then(function(res) {

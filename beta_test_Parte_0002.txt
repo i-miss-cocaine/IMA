@@ -502,3 +502,25 @@
 - **Evidencia requerida:** respuestas sanitizadas, permisos PRIVATE observados en Drive, IDs de filas/archivos sintéticos, hashes calculados, snapshots de versiones, logs allow/deny, resultados de rollback y evidencia de UI Blob URL; no registrar contenido ni datos personales reales.
 - **Estado:** Pendiente beta. Contratos Node/CI aprobados; no se ha ejecutado contra Apps Script/Drive/Sheets desplegados.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-100 — F34-TASK01 — Ciclo canónico de justificaciones y sincronización de asistencia
+- **Módulos/roles:** USER (submitStudentAbsenceJustification, reviewAbsenceJustification), ACADEMIC (submitAttendanceJustification, reviewAttendanceJustification, reconcilePendingAttendanceJustifications), estudiante/tutor, Secretaría y roles institucionales autorizados.
+- **Precondiciones:** desplegar versiones compatibles de USER y ACADEMIC; configurar ACADEMIC_SERVICE_URL en Script Properties de USER con la URL /exec del servicio ACADEMIC; configurar el mismo secreto aleatorio IMA_MIGRATION_HMAC_SECRET (mínimo 32 caracteres) en ambos proyectos Apps Script; conceder permisos UrlFetch; preparar estudiantes/sesiones/registros sintéticos y al menos un período académico con fechas vigentes. No usar PII ni registros productivos.
+- **Pasos:**
+  1. Enviar una justificación desde USER como estudiante y como tutor con relación/permisos válidos; verificar un único JustificacionID estable en JustificacionesAsistencia y vínculo a SolicitudID, alumno, fecha, período y SesionIDsJSON.
+  2. Enviar desde ACADEMIC con estudiante autenticado; comprobar ownership propio. Intentar enviar para otro alumno y verificar rechazo.
+  3. Probar fechas inválidas, período fuera de vigencia, período ambiguo, fecha sin sesiones y sesión duplicada/ambigua; ninguna debe marcar asistencia.
+  4. Repetir la misma solicitud y el mismo ID; debe ser idempotente. Reutilizar el ID con alumno/fecha/período/motivo distintos; debe producir conflicto.
+  5. Aprobar desde USER y desde ACADEMIC; verificar que solo los registros exactos del alumno/sesiones ausentes o con tardanza reciben Justificado=true y JustificacionID; preservar EstadoAsistencia, registros de otros alumnos y sesiones presentes.
+  6. Repetir aprobación; no duplicar eventos ni escrituras. Rechazar y solicitar información; preservar historial y no modificar asistencia.
+  7. Revocar una aprobación; retirar Justificado solo de registros vinculados a ese JustificacionID, conservar estados y demás justificaciones.
+  8. Provocar indisponibilidad del endpoint, secreto inválido, respuesta no JSON y fallo parcial de escritura; comprobar estado pendiente/error sin falsa confirmación y recuperar mediante reintento o reconcilePendingAttendanceJustifications.
+  9. Ejecutar aprobaciones simultáneas/reintentos sobre la misma justificación; confirmar serialización, idempotencia y ausencia de doble decisión.
+  10. Verificar que updateRequestStatus genérico no pueda aprobar/rechazar una justificación de ausencia y que roles/usuarios fuera de permiso o scope no puedan revisar ni reconciliar.
+  11. Revisar solicitudes históricas de USER y justificaciones académicas sin columnas nuevas; verificar compatibilidad, resolución exacta de sesión y preservación de datos anteriores.
+- **Resultado esperado:** una fuente canónica en ACADEMIC; todas las decisiones de ambos canales pasan por el mismo motor, lock y ledger de historial; la asistencia se actualiza únicamente para sesiones exactas y de forma idempotente; fallos quedan reconciliables; no hay aprobaciones falsas ni pérdida de historial.
+- **Evidencia requerida:** respuestas sanitizadas, IDs sintéticos, snapshots de JustificacionesAsistencia, RegistrosAsistencia y SolicitudesTramites, eventos de decisión, estados de reconciliación, resultados de concurrencia, configuración (sin revelar el secreto) y logs de autorización.
+- **Estado:** Pendiente beta. Contrato Node/CI debe aprobar antes de desplegar.
+===============================================================================

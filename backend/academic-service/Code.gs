@@ -297,7 +297,7 @@ const ROLE_PERMISSIONS = {
     "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "getStudentDocumentFile", "updateDocumentStatus", "getPendingDocumentsReport", "grantDocumentExemption", "restoreDocumentVersion", "checkAndNotifyExpiringStudentDocuments",
     "getPendingDocumentsReport", "grantDocumentExemption", "createStudentEnrollment", "getStudentEnrollments", "renewStudentEnrollment", "checkEnrollmentCapacity",
     "changeStudentSection", "recordStudentTransfer", "recordStudentWithdrawal", "processStudentReentry", "processStudentPromotion", "processStudentGraduation", "updateStudentLifecycleStatus", "reconcileStudentLifecycleState", "runStudentLifecycleRegressionSuite", "getAcademicAreaTemplateCatalog", "assignTeacherToAcademicArea", "getTeachersByAcademicArea", "getAcademicAreasByTeacher", "removeTeacherFromAcademicArea", "getAcademicAreaCoordinationScope", "deployAcademicMicroserviceInstance", "getAcademicMicroserviceDeployments", "previewBackupRestoreImpact", "getStorageQuotaMetricsReport", "reconcileDocumentStorageIntegrity", "reconcileInstitutionalModulesMatrix",
-    "openAttendanceSession", "saveClassAttendance", "bulkApplyAttendanceStatus", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary", "checkAndDispatchAttendanceAlerts", "getAttendanceConfig", "saveAttendanceConfig",
+    "openAttendanceSession", "saveClassAttendance", "bulkApplyAttendanceStatus", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "reconcilePendingAttendanceJustifications", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary", "checkAndDispatchAttendanceAlerts", "getAttendanceConfig", "saveAttendanceConfig",
     "createTeacherSupervision", "getTeacherSupervisions", "updateSupervisionStatus", "saveSupervisionObservation", "getSupervisionObservation", "saveTeacherImprovementPlan", "getTeacherImprovementPlans", "purgeSecurityCaches", "scheduleGuidanceAppointment", "getGuidanceAppointments", "updateGuidanceAppointmentStatus", "evaluateAndDispatchEarlyWarningAlerts", "getEarlyWarningAlerts", "savePedagogicalPlanning", "getPedagogicalPlannings", "submitPlanningForReview", "reviewPedagogicalPlanning", "getPlanningReviewHistory", "saveSupervisionRubric", "getSupervisionRubrics"
   , "saveExtracurricularActivity", "getExtracurricularActivities"],
   "Subdirector": [
@@ -308,7 +308,7 @@ const ROLE_PERMISSIONS = {
     "getClassroomResources", "saveClassroomResource", "getStudentSchedule",
     "createAdmissionRequest", "getAdmissionRequests", "updateAdmissionStatus", "getStudentFile", "getStudentTimeline", "findDuplicateStudents",
     "getStudentGuardians", "getStudentDocuments", "getStudentDocumentFile", "getStudentEnrollments", "checkEnrollmentCapacity",
-    "openAttendanceSession", "saveClassAttendance", "bulkApplyAttendanceStatus", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary",
+    "openAttendanceSession", "saveClassAttendance", "bulkApplyAttendanceStatus", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "reconcilePendingAttendanceJustifications", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary",
     "createTeacherSupervision", "getTeacherSupervisions", "updateSupervisionStatus", "saveSupervisionObservation", "getSupervisionObservation", "saveTeacherImprovementPlan", "getTeacherImprovementPlans", "savePedagogicalPlanning", "getPedagogicalPlannings", "submitPlanningForReview", "reviewPedagogicalPlanning", "getPlanningReviewHistory", "saveSupervisionRubric", "getSupervisionRubrics"
   , "saveExtracurricularActivity", "getExtracurricularActivities"],
   "Secretaría": [
@@ -322,7 +322,7 @@ const ROLE_PERMISSIONS = {
     "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "getStudentDocumentFile", "updateDocumentStatus",
     "getPendingDocumentsReport", "grantDocumentExemption", "createStudentEnrollment", "getStudentEnrollments", "renewStudentEnrollment", "checkEnrollmentCapacity",
     "changeStudentSection", "recordStudentTransfer", "recordStudentWithdrawal", "processStudentReentry", "processStudentPromotion", "processStudentGraduation", "updateStudentLifecycleStatus", "reconcileStudentLifecycleState", "runStudentLifecycleRegressionSuite",
-    "openAttendanceSession", "saveClassAttendance", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary"
+    "openAttendanceSession", "saveClassAttendance", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "reconcilePendingAttendanceJustifications", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary"
   ],
   // [TAREA-F5-005] [Fase 5: Admisiones y Matrícula] - Permisos para Secretaría General & Admisiones
   "Secretaria": [
@@ -335,7 +335,7 @@ const ROLE_PERMISSIONS = {
     "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "getStudentDocumentFile", "updateDocumentStatus",
     "getPendingDocumentsReport", "grantDocumentExemption", "createStudentEnrollment", "getStudentEnrollments", "renewStudentEnrollment", "checkEnrollmentCapacity",
     "changeStudentSection", "recordStudentTransfer", "recordStudentWithdrawal", "processStudentReentry", "processStudentPromotion", "processStudentGraduation", "updateStudentLifecycleStatus", "reconcileStudentLifecycleState", "runStudentLifecycleRegressionSuite",
-    "openAttendanceSession", "saveClassAttendance", "getBatchAttendanceRecords", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary", "generateConsolidatedAttendanceAndCoexistenceReport", "validateStudentWelfareAccess"
+    "openAttendanceSession", "saveClassAttendance", "getBatchAttendanceRecords", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "reconcilePendingAttendanceJustifications", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary", "generateConsolidatedAttendanceAndCoexistenceReport", "validateStudentWelfareAccess"
   ],
   "Coordinador": ["getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getAcademicYears", "getAcademicOffers", "getSubjectCatalog", "getStudyPlans", "getTeacherAssignments", "getClassSchedules", "getStudentFile", "getAcademicAreaTemplateCatalog", "assignTeacherToAcademicArea", "getTeachersByAcademicArea", "getAcademicAreasByTeacher", "removeTeacherFromAcademicArea", "getAcademicAreaCoordinationScope", "getBatchAttendanceRecords", "generateConsolidatedAttendanceAndCoexistenceReport", "evaluateAndDispatchEarlyWarningAlerts", "getEarlyWarningAlerts", "savePedagogicalPlanning", "getPedagogicalPlannings", "submitPlanningForReview", "reviewPedagogicalPlanning", "getPlanningReviewHistory", "saveSupervisionRubric", "getSupervisionRubrics"],
   "Desarrollador": ["getAcademicConfig", "getAcademicHistory", "getAcademicAreaTemplateCatalog", "assignTeacherToAcademicArea", "getTeachersByAcademicArea", "getAcademicAreasByTeacher", "removeTeacherFromAcademicArea", "getAcademicAreaCoordinationScope", "deployAcademicMicroserviceInstance", "getAcademicMicroserviceDeployments", "configureAcademicLevelsAndDynamicStorage", "getServiceHealthDiagnostics"],
@@ -370,7 +370,7 @@ const ROLE_PERMISSIONS = {
     "runAcademicPlanningRegressionSuite",
     "saveCurricularConstraint", "getAcademicCalendar", "getClassSchedules", "createClassSchedule", "deleteClassSchedule", "getTeacherTeachingLoad", "recordClassSessionOutcome", "getTeachingHoursSummary", "rescheduleCancelledSession", "getPendingSessionRecoveries", "getIndividualCalendar", "getClassroomResources", "getStudentSchedule", "getReusableResourceCatalog", "manageReusableResource",
     "getStudentFile", "getStudentFileSummary", "getStudentTimeline", "getStudentEnrollments",
-    "openAttendanceSession", "saveClassAttendance", "bulkApplyAttendanceStatus", "getBatchAttendanceRecords", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary", "generateConsolidatedAttendanceAndCoexistenceReport",
+    "openAttendanceSession", "saveClassAttendance", "bulkApplyAttendanceStatus", "getBatchAttendanceRecords", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "reconcilePendingAttendanceJustifications", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary", "generateConsolidatedAttendanceAndCoexistenceReport",
     "getTeacherSupervisions", "getSupervisionObservation", "saveSupervisionObservation", "getTeacherImprovementPlans",
     "calculateUnifiedAcademicGrade", "previewAcademicGradeCalculation", "auditAcademicGradesIntegrity", "generateStudentReportCard", "validateAcademicResponsibilityAndScopeAccess", "exportAcademicGradesData",
     "savePedagogicalPlanning", "getPedagogicalPlannings", "submitPlanningForReview", "getPlanningReviewHistory", "getSupervisionRubrics"
@@ -921,6 +921,7 @@ function doPost(e) {
     if (!e || !e.postData || !e.postData.contents) return respond({ status: "error", message: "No se recibieron datos." });
     const request = JSON.parse(e.postData.contents);
     correlationId = apiResponseCorrelationId_(request && request.correlationId);
+    if (request && request.sourceService === "USER") return respond(handleTrustedAbsenceJustificationEnvelope_(request));
     if (request && request.sourceService) return respond(handleTrustedMigrationEnvelope_(request));
     const { action, payload } = request;
     if (payload && payload.skipLock && !payload.isInternalCall) {
@@ -1171,6 +1172,7 @@ function doPost(e) {
       case "getDailyAttendance": result = getDailyAttendance(payload); break;
       case "submitAttendanceJustification": result = submitAttendanceJustification(payload); break;
       case "reviewAttendanceJustification": result = reviewAttendanceJustification(payload); break;
+      case "reconcilePendingAttendanceJustifications": result = reconcilePendingAttendanceJustifications(payload); break;
       case "recordEarlyDeparture": result = recordEarlyDeparture(payload); break;
       case "getAttendanceIncidents": result = getAttendanceIncidents(payload); break;
       case "saveAttendanceIncident": result = saveAttendanceIncident(payload); break;
@@ -10173,102 +10175,431 @@ function getDailyAttendance(payload) {
   return { status: "success", data: records };
 }
 
+
+const ABSENCE_JUSTIFICATION_HEADERS_ = ["JustificacionID","UserId","FechaAfectada","Periodo","MotivoDeclarado","AdjuntoUrl","PresentadoPor","EstadoRevision","RevisadoPor","ObservacionesAdmin","FechaResolucion","SolicitudID","SesionIDsJSON","DecisionHistoryJSON","SyncEstado","UltimoError","CreadoPorUserId","ActualizadoEn"];
+const ABSENCE_ATTENDANCE_HEADERS_ = ["RegistroID","SesionID","UserId","EstadoAsistencia","HoraLlegada","MinutosTardanza","Justificado","ObservacionDocente","FechaRegistro","JustificacionID"];
+const ABSENCE_REQUEST_EXTRA_HEADERS_ = ["JustificacionID","FechaAfectada","Periodo","SesionIDsJSON","SyncEstado","MotivoJustificacion","UltimoError"];
+
+function ensureAbsenceHeaders_(sheet, headers) {
+  if (!sheet) throw new Error("ABSENCE_SHEET_UNAVAILABLE");
+  if (sheet.getLastRow() === 0) sheet.appendRow(headers.slice());
+  var lastCol = Math.max(1, sheet.getLastColumn());
+  var actual = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function(v) { return String(v || "").trim(); });
+  headers.forEach(function(header) {
+    if (actual.indexOf(header) === -1) {
+      var nextCol = sheet.getLastColumn() + 1;
+      sheet.getRange(1, nextCol).setValue(header);
+      actual.push(header);
+    }
+  });
+  var map = {};
+  actual.forEach(function(header, index) { if (header) map[header] = index; });
+  return map;
+}
+
+function absenceDateKey_(value) {
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return Utilities.formatDate(value, Session.getScriptTimeZone(), "yyyy-MM-dd");
+  }
+  var raw = String(value || "").trim();
+  var match = /^(\d{4}-\d{2}-\d{2})(?:$|T)/.exec(raw);
+  if (!match) return "";
+  var parsed = new Date(match[1] + "T00:00:00Z");
+  return !isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === match[1] ? match[1] : "";
+}
+
+function absenceResolvePeriod_(ss, dateKey, requested) {
+  var value = String(requested || "").trim();
+  var sheet = ss.getSheetByName("PeriodosAcademicos");
+  var matches = [];
+  if (sheet && sheet.getLastRow() > 1) {
+    var rows = sheet.getDataRange().getValues();
+    for (var i = 1; i < rows.length; i++) {
+      var row = rows[i];
+      var state = String(row[7] || "Activo").trim().toLowerCase();
+      if (state === "inactivo" || state === "archivado" || state === "cerrado") continue;
+      var start = row[4] ? absenceDateKey_(row[4]) : "";
+      var end = row[5] ? absenceDateKey_(row[5]) : "";
+      if ((!start || dateKey >= start) && (!end || dateKey <= end)) {
+        matches.push({ id: String(row[0] || "").trim(), name: String(row[2] || "").trim(), start: start, end: end });
+      }
+    }
+  }
+  if (value) {
+    var exact = matches.filter(function(item) {
+      return item.id.toLowerCase() === value.toLowerCase() || item.name.toLowerCase() === value.toLowerCase();
+    });
+    if (exact.length === 1) return exact[0].id || exact[0].name;
+    if (exact.length > 1) throw new Error("ACADEMIC_PERIOD_AMBIGUOUS");
+    if (matches.length > 0) throw new Error("ACADEMIC_PERIOD_DATE_MISMATCH");
+    if (value.length > 80) throw new Error("ACADEMIC_PERIOD_INVALID");
+    return value;
+  }
+  if (matches.length === 1) return matches[0].id || matches[0].name;
+  if (matches.length > 1) throw new Error("ACADEMIC_PERIOD_AMBIGUOUS");
+  throw new Error("ACADEMIC_PERIOD_REQUIRED");
+}
+
+function absenceResolveSessions_(ss, studentId, dateKey, requestedSessionIds, regSheet, regMap) {
+  var sessionsSheet = ss.getSheetByName("SesionesAsistencia");
+  var sessionDates = {};
+  if (sessionsSheet && sessionsSheet.getLastRow() > 1) {
+    var sessionRows = sessionsSheet.getDataRange().getValues();
+    for (var i = 1; i < sessionRows.length; i++) {
+      var sessionId = String(sessionRows[i][0] || "").trim();
+      var sessionDate = absenceDateKey_(sessionRows[i][1]);
+      if (sessionId && sessionDate) sessionDates[sessionId] = sessionDate;
+    }
+  }
+  var regData = regSheet.getDataRange().getValues();
+  var candidates = [];
+  var requested = Array.isArray(requestedSessionIds) ? requestedSessionIds.map(function(v) { return String(v || "").trim(); }).filter(Boolean) : [];
+  for (var r = 1; r < regData.length; r++) {
+    var row = regData[r];
+    if (String(row[regMap.UserId] || "").trim() !== studentId) continue;
+    var sessionId = String(row[regMap.SesionID] || "").trim();
+    var sessionDate = sessionDates[sessionId] || "";
+    if (!sessionDate) {
+      var daily = /^SES-DIARIA-(\d{4}-\d{2}-\d{2})-/.exec(sessionId);
+      if (daily) sessionDate = daily[1];
+    }
+    if (sessionDate !== dateKey) continue;
+    if (requested.length && requested.indexOf(sessionId) === -1) continue;
+    var state = String(row[regMap.EstadoAsistencia] || "").trim().toLowerCase();
+    var justified = row[regMap.Justificado] === true || String(row[regMap.Justificado]).toLowerCase() === "true";
+    if (justified && String(row[regMap.JustificacionID] || "").trim()) candidates.push({ sessionId: sessionId, rowNumber: r + 1, state: state, justified: true });
+    else if (["ausente","tardanza"].indexOf(state) !== -1) candidates.push({ sessionId: sessionId, rowNumber: r + 1, state: state, justified: justified });
+    else if (requested.length) throw new Error("ATTENDANCE_SESSION_NOT_ABSENT");
+  }
+  if (requested.length) {
+    var found = {};
+    candidates.forEach(function(item) { found[item.sessionId] = true; });
+    if (requested.some(function(id) { return !found[id]; })) throw new Error("ATTENDANCE_SESSION_SCOPE_MISMATCH");
+  }
+  var bySession = {};
+  candidates.forEach(function(item) {
+    if (bySession[item.sessionId]) throw new Error("ATTENDANCE_RECORD_AMBIGUOUS");
+    bySession[item.sessionId] = item;
+  });
+  var result = Object.keys(bySession).sort().map(function(id) { return bySession[id]; });
+  if (!result.length) throw new Error("ATTENDANCE_RECORD_NOT_FOUND");
+  return result.map(function(item) { return item.sessionId; });
+}
+
+function absenceSheetMap_(sheet, headers) {
+  var map = ensureAbsenceHeaders_(sheet, headers);
+  return map;
+}
+
+function createCanonicalAbsenceJustification_(payload) {
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(10000); } catch (_) { return { status: "error", code: "LOCK_TIMEOUT" }; }
+  try { return createCanonicalAbsenceJustificationUnlocked_(payload); }
+  finally { lock.releaseLock(); }
+}
+
+function createCanonicalAbsenceJustificationUnlocked_(payload) {
+  var p = payload || {};
+  var id = String(p.justificacionId || p.solicitudId || "").trim();
+  var studentId = String(p.studentId || p.userId || "").trim();
+  var actorId = String(p.actorId || p.presentadoPor || "").trim();
+  var actorRole = String(p.actorRole || "").trim();
+  var dateKey = absenceDateKey_(p.fechaAfectada || p.fechaAusencia);
+  var reason = String(p.motivoDeclarado || p.motivo || "").trim();
+  if (!/^JUST-[A-Za-z0-9-]{8,100}$/.test(id) || !studentId || !actorId || !actorRole || !dateKey || !reason || reason.length > 2000) {
+    return { status: "error", code: "ABSENCE_JUSTIFICATION_INVALID" };
+  }
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var justSheet = getOrCreateSheet(ss, "JustificacionesAsistencia");
+  var justMap = absenceSheetMap_(justSheet, ABSENCE_JUSTIFICATION_HEADERS_);
+  var regSheet = getOrCreateSheet(ss, "RegistrosAsistencia");
+  var regMap = absenceSheetMap_(regSheet, ABSENCE_ATTENDANCE_HEADERS_);
+  var period;
+  try { period = absenceResolvePeriod_(ss, dateKey, p.periodo); }
+  catch (periodError) { return { status: "error", code: periodError.message || "ACADEMIC_PERIOD_INVALID" }; }
+  var existing = justSheet.getDataRange().getValues();
+  for (var i = 1; i < existing.length; i++) {
+    if (String(existing[i][justMap.JustificacionID] || "").trim() !== id) continue;
+    var same = String(existing[i][justMap.UserId] || "").trim() === studentId &&
+      absenceDateKey_(existing[i][justMap.FechaAfectada]) === dateKey &&
+      String(existing[i][justMap.Periodo] || "").trim() === period &&
+      String(existing[i][justMap.MotivoDeclarado] || "").trim() === reason;
+    if (!same) return { status: "error", code: "IDEMPOTENCY_CONFLICT" };
+    return { status: "success", idempotent: true, data: { justificacionId: id, sesionIds: JSON.parse(String(existing[i][justMap.SesionIDsJSON] || "[]")) } };
+  }
+  var sessions;
+  try { sessions = absenceResolveSessions_(ss, studentId, dateKey, p.sesionIds, regSheet, regMap); }
+  catch (sessionError) { return { status: "error", code: sessionError.message || "ATTENDANCE_SESSION_RESOLUTION_FAILED" }; }
+  var history = [{ action: "PRESENTADA", actorId: actorId, actorRole: actorRole, timestamp: new Date().toISOString(), correlationId: String(p.correlationId || "") }];
+  var newRow = new Array(justSheet.getLastColumn()).fill("");
+  newRow[justMap.JustificacionID] = id;
+  newRow[justMap.UserId] = studentId;
+  newRow[justMap.FechaAfectada] = dateKey;
+  newRow[justMap.Periodo] = period;
+  newRow[justMap.MotivoDeclarado] = reason;
+  newRow[justMap.AdjuntoUrl] = String(p.adjuntoUrl || "");
+  newRow[justMap.PresentadoPor] = actorId;
+  newRow[justMap.EstadoRevision] = "Pendiente";
+  newRow[justMap.RevisadoPor] = "";
+  newRow[justMap.ObservacionesAdmin] = "";
+  newRow[justMap.FechaResolucion] = "";
+  newRow[justMap.SolicitudID] = String(p.solicitudId || id);
+  newRow[justMap.SesionIDsJSON] = JSON.stringify(sessions);
+  newRow[justMap.DecisionHistoryJSON] = JSON.stringify(history);
+  newRow[justMap.SyncEstado] = "NO_REQUERIDA";
+  newRow[justMap.UltimoError] = "";
+  newRow[justMap.CreadoPorUserId] = actorId;
+  newRow[justMap.ActualizadoEn] = new Date();
+  justSheet.appendRow(newRow);
+  absenceUpdateRequestProjection_(ss, id, "Pendiente", "SINCRONIZADO", sessions, "");
+  return { status: "success", idempotent: false, data: { justificacionId: id, sesionIds: sessions } };
+}
+
+function absenceUpdateRequestProjection_(ss, justificacionId, state, syncState, sessionIds, errorCode) {
+  var requestSheet = ss.getSheetByName("SolicitudesTramites");
+  if (!requestSheet) return;
+  var map = absenceSheetMap_(requestSheet, ["SolicitudID","UserId","EstudianteID","TipoTramite","Descripcion","AdjuntoUrl","Estado","AsignadoA","ObservacionesAdmin","FechaSolicitud","FechaResolucion"].concat(ABSENCE_REQUEST_EXTRA_HEADERS_));
+  var rows = requestSheet.getDataRange().getValues();
+  for (var i = 1; i < rows.length; i++) {
+    var linked = String(rows[i][map.JustificacionID] || rows[i][map.SolicitudID] || "").trim();
+    if (linked !== justificacionId) continue;
+    requestSheet.getRange(i + 1, map.Estado + 1).setValue(state);
+    requestSheet.getRange(i + 1, map.SyncEstado + 1).setValue(syncState);
+    if (sessionIds) requestSheet.getRange(i + 1, map.SesionIDsJSON + 1).setValue(JSON.stringify(sessionIds));
+    if (errorCode !== undefined && map.UltimoError !== undefined) requestSheet.getRange(i + 1, map.UltimoError + 1).setValue(errorCode || "");
+    if (state === "Aprobada" || state === "Rechazada" || state === "Cancelada") requestSheet.getRange(i + 1, map.FechaResolucion + 1).setValue(new Date());
+    break;
+  }
+}
+
+function absenceAttendanceSync_(ss, justRow, justMap, shouldApply) {
+  var regSheet = getOrCreateSheet(ss, "RegistrosAsistencia");
+  var regMap = absenceSheetMap_(regSheet, ABSENCE_ATTENDANCE_HEADERS_);
+  var rows = regSheet.getDataRange().getValues();
+  var studentId = String(justRow[justMap.UserId] || "").trim();
+  var justId = String(justRow[justMap.JustificacionID] || "").trim();
+  var sessionIds = JSON.parse(String(justRow[justMap.SesionIDsJSON] || "[]"));
+  if (!Array.isArray(sessionIds) || !sessionIds.length) {
+    sessionIds = absenceResolveSessions_(ss, studentId, absenceDateKey_(justRow[justMap.FechaAfectada]), [], regSheet, regMap);
+    justRow[justMap.SesionIDsJSON] = JSON.stringify(sessionIds);
+  }
+  if (!Array.isArray(sessionIds) || !sessionIds.length) throw new Error("ATTENDANCE_SESSION_LINK_MISSING");
+  for (var s = 0; s < sessionIds.length; s++) {
+    var matches = [];
+    for (var r = 1; r < rows.length; r++) {
+      if (String(rows[r][regMap.UserId] || "").trim() === studentId && String(rows[r][regMap.SesionID] || "").trim() === String(sessionIds[s])) matches.push({ row: rows[r], rowNumber: r + 1 });
+    }
+    if (matches.length !== 1) throw new Error(matches.length ? "ATTENDANCE_RECORD_AMBIGUOUS" : "ATTENDANCE_RECORD_NOT_FOUND");
+    var item = matches[0], row = item.row;
+    var linkedId = String(row[regMap.JustificacionID] || "").trim();
+    var justified = row[regMap.Justificado] === true || String(row[regMap.Justificado]).toLowerCase() === "true";
+    if (shouldApply) {
+      var state = String(row[regMap.EstadoAsistencia] || "").trim().toLowerCase();
+      if (["ausente","tardanza"].indexOf(state) === -1 && !(linkedId === justId && justified)) throw new Error("ATTENDANCE_STATE_CHANGED");
+      if (linkedId && linkedId !== justId) throw new Error("ATTENDANCE_JUSTIFICATION_CONFLICT");
+      if (justified && linkedId !== justId) throw new Error("ATTENDANCE_ALREADY_JUSTIFIED");
+      if (linkedId !== justId) regSheet.getRange(item.rowNumber, regMap.JustificacionID + 1).setValue(justId);
+      if (!justified) regSheet.getRange(item.rowNumber, regMap.Justificado + 1).setValue(true);
+    } else {
+      if (linkedId && linkedId !== justId) throw new Error("ATTENDANCE_JUSTIFICATION_CONFLICT");
+      if (linkedId === justId) {
+        if (justified) regSheet.getRange(item.rowNumber, regMap.Justificado + 1).setValue(false);
+        regSheet.getRange(item.rowNumber, regMap.JustificacionID + 1).setValue("");
+      } else if (justified) {
+        throw new Error("ATTENDANCE_JUSTIFICATION_OWNERSHIP_UNKNOWN");
+      }
+    }
+  }
+}
+
+function reviewCanonicalAbsenceJustification_(payload) {
+  var p = payload || {};
+  var justId = String(p.justificacionId || "").trim();
+  var actorId = String(p.actorId || "").trim();
+  var actorRole = String(p.actorRole || "").trim();
+  var requested = String(p.nuevoEstado || "").trim().toLowerCase();
+  if (!justId || !actorId || !actorRole) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  var target = requested === "aprobado" || requested === "aprobada" ? "Aprobada" :
+    requested === "rechazado" || requested === "rechazada" ? "Rechazada" :
+    requested === "cancelada" || requested === "cancelado" ? "Cancelada" :
+    requested === "requiereinformacion" ? "RequiereInformacion" : "";
+  if (!target) return { status: "error", code: "ABSENCE_DECISION_INVALID" };
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(10000); } catch (lockError) { return { status: "error", code: "LOCK_TIMEOUT" }; }
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = getOrCreateSheet(ss, "JustificacionesAsistencia");
+    var map = absenceSheetMap_(sheet, ABSENCE_JUSTIFICATION_HEADERS_);
+    var data = sheet.getDataRange().getValues();
+    var index = -1;
+    for (var i = 1; i < data.length; i++) if (String(data[i][map.JustificacionID] || "").trim() === justId) { index = i; break; }
+    if (index < 0) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    var rowNumber = index + 1, row = data[index].slice();
+    var current = String(row[map.EstadoRevision] || "Pendiente");
+    var syncState = String(row[map.SyncEstado] || "");
+    var history;
+    try { history = JSON.parse(String(row[map.DecisionHistoryJSON] || "[]")); } catch (_) { return { status: "error", code: "ABSENCE_HISTORY_CORRUPT" }; }
+    if (!Array.isArray(history)) return { status: "error", code: "ABSENCE_HISTORY_CORRUPT" };
+    var retryApproval = current === "PendienteSincronizacion" && target === "Aprobada" && syncState === "PENDIENTE";
+    var retryRevocation = current === "RevocacionPendienteSincronizacion" && target === "Cancelada" && syncState === "PENDIENTE_REVOCACION";
+    if (current === target && (syncState === "SINCRONIZADO" || syncState === "NO_REQUERIDA")) return { status: "success", idempotent: true, data: { justificacionId: justId, estado: target } };
+    if (!retryApproval && !retryRevocation) {
+      if (current === "Aprobada" && target !== "Cancelada") return { status: "error", code: "ABSENCE_DECISION_CONFLICT" };
+      if (["Rechazada","Cancelada"].indexOf(current) !== -1) return { status: "error", code: "ABSENCE_DECISION_CONFLICT" };
+      if (target === "Cancelada" && current !== "Aprobada") return { status: "error", code: "ABSENCE_DECISION_CONFLICT" };
+      if (target === "Aprobada" && current !== "Pendiente" && current !== "RequiereInformacion") return { status: "error", code: "ABSENCE_DECISION_CONFLICT" };
+      if (target === "Rechazada" && current !== "Pendiente" && current !== "RequiereInformacion") return { status: "error", code: "ABSENCE_DECISION_CONFLICT" };
+      if (target === "RequiereInformacion" && current !== "Pendiente") return { status: "error", code: "ABSENCE_DECISION_CONFLICT" };
+      history.push({ action: target === "Aprobada" ? "APPROVE" : target === "Cancelada" ? "REVOKE" : target.toUpperCase(), actorId: actorId, actorRole: actorRole, timestamp: new Date().toISOString(), observation: String(p.observacionesAdmin || "").slice(0, 2000) });
+    }
+    if (target === "Aprobada" || target === "Cancelada" && (current === "Aprobada" || retryRevocation)) {
+      var pendingState = target === "Aprobada" ? "PendienteSincronizacion" : "RevocacionPendienteSincronizacion";
+      row[map.EstadoRevision] = pendingState;
+      row[map.SyncEstado] = target === "Aprobada" ? "PENDIENTE" : "PENDIENTE_REVOCACION";
+      row[map.DecisionHistoryJSON] = JSON.stringify(history);
+      row[map.RevisadoPor] = actorId;
+      row[map.ObservacionesAdmin] = String(p.observacionesAdmin || "");
+      row[map.ActualizadoEn] = new Date();
+      sheet.getRange(rowNumber, 1, 1, row.length).setValues([row]);
+      try {
+        absenceAttendanceSync_(ss, row, map, target === "Aprobada");
+      } catch (syncError) {
+        row[map.UltimoError] = String(syncError.message || "ATTENDANCE_SYNC_FAILED").slice(0, 120);
+        sheet.getRange(rowNumber, 1, 1, row.length).setValues([row]);
+        absenceUpdateRequestProjection_(ss, justId, pendingState, row[map.SyncEstado], null, row[map.UltimoError]);
+        return { status: "error", code: "ATTENDANCE_SYNC_PENDING", retryable: true, data: { justificacionId: justId, estado: pendingState } };
+      }
+      row[map.EstadoRevision] = target;
+      row[map.SyncEstado] = "SINCRONIZADO";
+      row[map.UltimoError] = "";
+      row[map.FechaResolucion] = new Date();
+      row[map.ActualizadoEn] = new Date();
+      sheet.getRange(rowNumber, 1, 1, row.length).setValues([row]);
+      absenceUpdateRequestProjection_(ss, justId, target, "SINCRONIZADO", JSON.parse(String(row[map.SesionIDsJSON] || "[]")), "");
+    } else {
+      row[map.EstadoRevision] = target;
+      row[map.SyncEstado] = "NO_REQUERIDA";
+      row[map.RevisadoPor] = actorId;
+      row[map.ObservacionesAdmin] = String(p.observacionesAdmin || "");
+      row[map.DecisionHistoryJSON] = JSON.stringify(history);
+      row[map.FechaResolucion] = target === "RequiereInformacion" ? "" : new Date();
+      row[map.ActualizadoEn] = new Date();
+      sheet.getRange(rowNumber, 1, 1, row.length).setValues([row]);
+      absenceUpdateRequestProjection_(ss, justId, target, "SINCRONIZADO", null, "");
+    }
+    logStructuredEvent("ACADEMIC", "reviewCanonicalAbsenceJustification", "INFO", "ATTENDANCE_JUSTIFICATION_REVIEWED", "Decisión registrada para justificación " + justId, { justificacionId: justId, estado: target, actorId: actorId }, actorRole);
+    return { status: "success", data: { justificacionId: justId, estado: target, syncEstado: target === "Rechazada" || target === "RequiereInformacion" ? "NO_REQUERIDA" : "SINCRONIZADO" } };
+  } catch (error) {
+    return { status: "error", code: error.message || "ABSENCE_REVIEW_FAILED" };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function reconcilePendingAttendanceJustifications(payload) {
+  var actorId = String(payload && payload._verifiedUserId || "").trim();
+  var actorRole = String(payload && payload._verifiedRole || "").trim();
+  if (!actorId || !actorRole) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(10000); } catch (_) { return { status: "error", code: "LOCK_TIMEOUT" }; }
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = getOrCreateSheet(ss, "JustificacionesAsistencia");
+    var map = absenceSheetMap_(sheet, ABSENCE_JUSTIFICATION_HEADERS_);
+    var rows = sheet.getDataRange().getValues(), processed = 0, failed = 0;
+    for (var i = 1; i < rows.length && processed + failed < 100; i++) {
+      var row = rows[i].slice(), state = String(row[map.EstadoRevision] || ""), sync = String(row[map.SyncEstado] || "");
+      if (state !== "PendienteSincronizacion" && state !== "RevocacionPendienteSincronizacion") continue;
+      try {
+        absenceAttendanceSync_(ss, row, map, state === "PendienteSincronizacion");
+        row[map.EstadoRevision] = state === "PendienteSincronizacion" ? "Aprobada" : "Cancelada";
+        row[map.SyncEstado] = "SINCRONIZADO";
+        row[map.UltimoError] = "";
+        row[map.FechaResolucion] = new Date();
+        row[map.ActualizadoEn] = new Date();
+        sheet.getRange(i + 1, 1, 1, row.length).setValues([row]);
+        absenceUpdateRequestProjection_(ss, String(row[map.JustificacionID]), row[map.EstadoRevision], "SINCRONIZADO", null, "");
+        processed++;
+      } catch (error) {
+        row[map.UltimoError] = String(error.message || "ATTENDANCE_SYNC_FAILED").slice(0, 120);
+        sheet.getRange(i + 1, 1, 1, row.length).setValues([row]);
+        failed++;
+      }
+    }
+    var requestSheet = ss.getSheetByName("SolicitudesTramites");
+    if (requestSheet) {
+      var requestMap = absenceSheetMap_(requestSheet, ["SolicitudID","UserId","EstudianteID","TipoTramite","Descripcion","AdjuntoUrl","Estado","AsignadoA","ObservacionesAdmin","FechaSolicitud","FechaResolucion"].concat(ABSENCE_REQUEST_EXTRA_HEADERS_));
+      var requestRows = requestSheet.getDataRange().getValues();
+      for (var q = 1; q < requestRows.length && processed + failed < 100; q++) {
+        var requestRow = requestRows[q];
+        if (String(requestRow[requestMap.TipoTramite] || "") !== "Justificación de Ausencia" ||
+            String(requestRow[requestMap.SyncEstado] || "") !== "PENDIENTE") continue;
+        var requestId = String(requestRow[requestMap.JustificacionID] || requestRow[requestMap.SolicitudID] || "").trim();
+        var canonicalExists = rows.some(function(existingRow, existingIndex) {
+          return existingIndex > 0 && String(existingRow[map.JustificacionID] || "").trim() === requestId;
+        });
+        if (canonicalExists) continue;
+        var created = createCanonicalAbsenceJustificationUnlocked_({
+          justificacionId: requestId, solicitudId: requestId,
+          studentId: String(requestRow[requestMap.EstudianteID] || "").trim(),
+          fechaAfectada: requestRow[requestMap.FechaAfectada],
+          periodo: requestRow[requestMap.Periodo],
+          motivoDeclarado: requestRow[requestMap.MotivoJustificacion],
+          adjuntoUrl: requestRow[requestMap.AdjuntoUrl] || "",
+          actorId: String(requestRow[requestMap.UserId] || "").trim(),
+          actorRole: "Solicitante"
+        });
+        if (created && created.status === "success") {
+          requestSheet.getRange(q + 1, requestMap.SyncEstado + 1).setValue("SINCRONIZADO");
+          processed++;
+        } else {
+          requestSheet.getRange(q + 1, requestMap.UltimoError + 1).setValue(String(created && created.code || "ABSENCE_RECONCILIATION_FAILED"));
+          failed++;
+        }
+      }
+    }
+    return { status: failed ? "partial" : "success", processed: processed, failed: failed };
+  } finally { lock.releaseLock(); }
+}
+
+function handleTrustedAbsenceJustificationEnvelope_(envelope) {
+  var secret = String(PropertiesService.getScriptProperties().getProperty("IMA_MIGRATION_HMAC_SECRET") || "");
+  if (secret.length < 32) throw new Error("ABSENCE_INTERSERVICE_SECRET_REQUIRED");
+  var verified = verifyInterServiceEnvelope(envelope, "ACADEMIC", secret);
+  if (verified.sourceService !== "USER") throw new Error("ABSENCE_INTERSERVICE_SOURCE_NOT_ALLOWED");
+  if (verified.action === "createCanonicalAbsenceJustification") return createCanonicalAbsenceJustification_(verified.payload);
+  if (verified.action === "reviewCanonicalAbsenceJustification") return reviewCanonicalAbsenceJustification_(verified.payload);
+  throw new Error("ABSENCE_INTERSERVICE_ACTION_NOT_ALLOWED");
+}
+
+
 // [F10-Task05] [P1] - Ampliar la gestión de justificaciones, permisos y salidas anticipadas
 function submitAttendanceJustification(payload) {
-  const { userId, fechaAfectada, periodo, motivoDeclarado, adjuntoUrl, presentadoPor } = payload || {};
-  if (!userId || !fechaAfectada || !motivoDeclarado) throw new Error("userId, fechaAfectada y motivoDeclarado son requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "JustificacionesAsistencia");
-
-  const justId = "JUST-" + Date.now();
-  const now = new Date();
-
-  sheet.appendRow([
-    justId,
-    userId,
-    fechaAfectada,
-    periodo || "I parcial",
-    motivoDeclarado,
-    adjuntoUrl || "",
-    presentadoPor || "Estudiante",
-    "Pendiente",
-    "",
-    "",
-    now
-  ]);
-
-  return { status: "success", message: "Justificación de asistencia enviada para revisión.", data: { justificacionId: justId } };
+  const p = payload || {};
+  const actorId = String(p._verifiedUserId || "").trim();
+  const actorRole = String(p._verifiedRole || "").trim();
+  const targetUserId = String(p.userId || actorId).trim();
+  if (!actorId || !actorRole) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  if (["estudiante","alumno"].indexOf(actorRole.toLowerCase()) !== -1 && targetUserId !== actorId) {
+    return { status: "error", code: "STUDENT_OWNERSHIP_MISMATCH" };
+  }
+  const id = "JUST-" + Utilities.getUuid();
+  const result = createCanonicalAbsenceJustification_({
+    justificacionId: id, solicitudId: id, studentId: targetUserId, fechaAfectada: p.fechaAfectada,
+    periodo: p.periodo, motivoDeclarado: p.motivoDeclarado, adjuntoUrl: p.adjuntoUrl,
+    actorId: actorId, actorRole: actorRole, correlationId: p.correlationId
+  });
+  if (result.status !== "success") return result;
+  return { status: "success", message: "Justificación registrada en el flujo oficial de asistencia.", data: result.data };
 }
 
 function reviewAttendanceJustification(payload) {
-  const { justificacionId, nuevoEstado, revisadoPor, observacionesAdmin, authRole } = payload || {};
-  if (!justificacionId || !nuevoEstado) throw new Error("justificacionId y nuevoEstado son requeridos.");
-
-  const validStates = ["Presentada", "Pendiente", "RequiereInformacion", "Aprobada", "Aprobado", "Rechazada", "Rechazado", "Cancelada"];
-  if (validStates.indexOf(String(nuevoEstado).trim()) === -1) {
-    throw new Error(`Estado de revisión '${nuevoEstado}' no válido. Estados permitidos: ${validStates.join(", ")}`);
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "JustificacionesAsistencia");
-  const data = sheet.getDataRange().getValues();
-  const idx = data.findIndex(r => String(r[0]).trim() === String(justificacionId).trim());
-  if (idx === -1) throw new Error("Justificación no encontrada.");
-
-  sheet.getRange(idx + 1, 8).setValue(nuevoEstado); // EstadoRevision
-  sheet.getRange(idx + 1, 9).setValue(revisadoPor || "Secretaría");
-  sheet.getRange(idx + 1, 10).setValue(observacionesAdmin || "");
-  sheet.getRange(idx + 1, 11).setValue(new Date());
-
-  if (nuevoEstado === "Aprobada" || nuevoEstado === "Aprobado") {
-    try {
-      const targetUserId = String(data[idx][1]).trim();
-      const rawFechaAf = data[idx][2];
-      const targetFechaStr = rawFechaAf ? (rawFechaAf instanceof Date ? rawFechaAf.toISOString().split('T')[0] : String(rawFechaAf).trim().split('T')[0]) : "";
-
-      const regSheet = getOrCreateSheet(ss, "RegistrosAsistencia");
-      const regData = regSheet.getDataRange().getValues();
-
-      const sesSheet = getOrCreateSheet(ss, "SesionesAsistencia");
-      const sesData = sesSheet.getDataRange().getValues();
-      const sesionFechaMap = {};
-      for (let s = 1; s < sesData.length; s++) {
-        const sId = String(sesData[s][0]).trim();
-        const sFecha = sesData[s][1] instanceof Date ? sesData[s][1].toISOString().split('T')[0] : String(sesData[s][1]).trim().split('T')[0];
-        sesionFechaMap[sId] = sFecha;
-      }
-
-      for (let i = 1; i < regData.length; i++) {
-        if (String(regData[i][2]).trim() === targetUserId) {
-          const sesId = String(regData[i][1]).trim();
-          let regFechaStr = "";
-          if (sesId in sesionFechaMap) {
-            regFechaStr = sesionFechaMap[sesId];
-          } else if (sesId.indexOf("SES-DIARIA-") === 0) {
-            const parts = sesId.split("-");
-            if (parts.length >= 5) {
-              regFechaStr = `${parts[2]}-${parts[3]}-${parts[4]}`;
-            }
-          }
-          if (!regFechaStr && regData[i][8]) {
-            regFechaStr = regData[i][8] instanceof Date ? regData[i][8].toISOString().split('T')[0] : String(regData[i][8]).trim().split('T')[0];
-          }
-
-          if (!targetFechaStr || !regFechaStr || regFechaStr === targetFechaStr) {
-            regSheet.getRange(i + 1, 7).setValue(true); // Justificado = true
-            regSheet.getRange(i + 1, 4).setValue("Justificada"); // EstadoAsistencia = Justificada
-          }
-        }
-      }
-    } catch (e) {
-      logDebug("Error actualizando asistencia a Justificada", e.message);
-    }
-  }
-
-  logStructuredEvent("ACADEMIC", "reviewAttendanceJustification", "INFO", "ATTENDANCE_JUSTIFICATION_REVIEWED", `Justificación ${justificacionId} cambiada a estado ${nuevoEstado}`, { justificacionId, nuevoEstado, revisadoPor }, authRole || "Secretaría");
-
-  return { status: "success", message: `Justificación cambiada a ${nuevoEstado}.` };
+  const p = payload || {};
+  return reviewCanonicalAbsenceJustification_({
+    justificacionId: p.justificacionId, nuevoEstado: p.nuevoEstado,
+    observacionesAdmin: p.observacionesAdmin,
+    actorId: p._verifiedUserId, actorRole: p._verifiedRole
+  });
 }
 
 function addCaseFollowUpNote(payload) {
