@@ -1735,19 +1735,24 @@ window.loadAbsenceJustificationQueue = async function() {
             const id = window.escapeAbsenceReviewHtml(item.solicitudId || '');
             const dates = Array.isArray(item.fechasAfectadas) ? item.fechasAfectadas : [];
             const sessions = Array.isArray(item.sesionesSolicitadas) ? item.sesionesSolicitadas : [];
+            const evidenceIds = Array.isArray(item.evidenciaIds) ? item.evidenciaIds : [];
             const status = String(item.estado || 'Pendiente');
             const finalState = ['Rechazada','Cancelada'].indexOf(status) !== -1;
-            const attachmentLabel = item.tieneAdjunto
-                ? ('Adjunto · ' + String(item.integridadAdjunto || 'LEGACY_UNVERIFIED'))
-                : 'Sin adjunto';
+            const attachmentLabel = evidenceIds.length
+                ? (evidenceIds.length + ' evidencia(s) versionada(s)')
+                : (item.tieneAdjunto ? ('Adjunto · ' + String(item.integridadAdjunto || 'LEGACY_UNVERIFIED')) : 'Sin adjunto');
             const actions = finalState ? '<span class="text-xs text-slate-400">Estado final</span>' : [
                 '<button type="button" onclick="window.reviewAbsenceJustificationAction(\'' + id + '\',\'Aprobada\')" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700">Aprobar</button>',
                 sessions.length > 1 ? '<button type="button" onclick="window.reviewAbsenceJustificationAction(\'' + id + '\',\'PARCIAL\')" class="px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700">Parcial</button>' : '',
                 '<button type="button" onclick="window.reviewAbsenceJustificationAction(\'' + id + '\',\'Rechazada\')" class="px-2.5 py-1.5 rounded-lg bg-rose-600 text-white font-bold hover:bg-rose-700">Rechazar</button>'
             ].join(' ');
-            const attachmentButton = item.tieneAdjunto
-                ? '<button type="button" onclick="window.openAbsenceJustificationAttachment(\'' + id + '\')" class="mt-1 text-xs text-blue-700 font-semibold hover:underline">Ver evidencia</button>'
-                : '';
+            const attachmentButton = evidenceIds.length
+                ? evidenceIds.map(function(evidenceId, index) {
+                    return '<button type="button" onclick="window.openAbsenceJustificationAttachment(\\'' + id + '\\',\\'' + window.escapeAbsenceReviewHtml(evidenceId) + '\\')" class="mt-1 mr-2 text-xs text-blue-700 font-semibold hover:underline">Ver evidencia ' + (index + 1) + '</button>';
+                  }).join('')
+                : (item.tieneAdjunto
+                    ? '<button type="button" onclick="window.openAbsenceJustificationAttachment(\\'' + id + '\\')" class="mt-1 text-xs text-blue-700 font-semibold hover:underline">Ver evidencia</button>'
+                    : '');
             return '<tr>' +
                 '<td class="p-3 align-top"><strong class="block text-slate-800">' + id + '</strong><span class="text-[10px] text-slate-500">Estudiante: ' + window.escapeAbsenceReviewHtml(item.estudianteId || '—') + '</span></td>' +
                 '<td class="p-3 align-top text-slate-600">' + window.escapeAbsenceReviewHtml(dates.join(', ') || '—') + '<br><span class="text-[10px] text-slate-400">' + window.escapeAbsenceReviewHtml(item.periodo || '') + '</span><br><span class="text-[10px] text-slate-400">' + sessions.length + ' sesión(es)</span></td>' +
@@ -1797,9 +1802,9 @@ window.reviewAbsenceJustificationAction = async function(solicitudId, action) {
     }
 };
 
-window.openAbsenceJustificationAttachment = async function(solicitudId) {
+window.openAbsenceJustificationAttachment = async function(solicitudId, evidenciaId) {
     try {
-        const response = await window.fetchApi('USER', 'getAdministrativeRequestAttachment', { solicitudId: solicitudId });
+        const response = await window.fetchApi('USER', 'getAdministrativeRequestAttachment', { solicitudId: solicitudId, evidenciaId: evidenciaId || undefined });
         if (!response || response.status !== 'success' || !response.fileData) {
             throw new Error(response && (response.message || response.code) || 'Evidencia no disponible.');
         }
