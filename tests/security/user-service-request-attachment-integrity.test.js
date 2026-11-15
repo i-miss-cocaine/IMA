@@ -158,9 +158,13 @@ result=context.getAdministrativeRequestAttachment({_verifiedUserId:"STU-1",solic
 assert.equal(result.code,"ATTACHMENT_INTEGRITY_METADATA_INVALID");
 
 requestRows[1][11]=crypto.createHash("sha256").update(originalBytes).digest("hex");
+requestRows[1][12]=0;
+result=context.getAdministrativeRequestAttachment({_verifiedUserId:"STU-1",solicitudId:"REQ-1"});
+assert.equal(result.code,"ATTACHMENT_INTEGRITY_METADATA_INVALID","zero versions must fail closed");
 requestRows[1][12]=2;
 result=context.getAdministrativeRequestAttachment({_verifiedUserId:"STU-1",solicitudId:"REQ-1"});
-assert.equal(result.code,"ATTACHMENT_INTEGRITY_METADATA_INVALID","unknown attachment versions must fail closed");
+assert.equal(result.status,"success","versioned evidence v2 must remain verifiable");
+assert.equal(result.attachmentVersion,2);
 
 result=context.getAdministrativeRequestAttachment({_verifiedUserId:"STU-OTHER",solicitudId:"REQ-1"});
 assert.equal(result.code,"RESOURCE_NOT_FOUND","attachment ownership must still be enforced");
