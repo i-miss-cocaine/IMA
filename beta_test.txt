@@ -1597,3 +1597,24 @@ El archivo maestro histórico supera el umbral de rotación de 180.000 caractere
 - **Evidencia requerida:** IDs sintéticos, previewHash, importBatchId, snapshotId, RowID, correlationId, hashes, eventos de auditoría, respuestas sanitizadas y capturas de interfaz sin PII.
 - **Estado:** Pendiente beta real; este escenario no se ha ejecutado contra Apps Script/Drive/Sheets/MailApp.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-109 — TASK-134 — SHA-256, deduplicación exacta y referencias sin copia
+- **Módulos/roles:** Academic, User/Secretaría, Accounting cuando se restaure su servicio de documentos.
+- **Precondiciones:** despliegue coordinado Academic/User; DocumentosEstudiantes e InventarioDocumentalLegado con HashSHA256; ConfiguracionInstitucional con POLITICA_DUPLICADOS_DOCUMENTALES; Drive privado; dos expedientes de prueba con permisos independientes.
+- **Pasos:**
+  1. Cargar un PDF sintético y registrar SHA-256 sobre bytes binarios; comprobar que SHA256 legado y HashSHA256 coinciden y que el hash tiene 64 caracteres hexadecimales.
+  2. Cargar los mismos bytes con nombre diferente y mismo expediente/tipo; verificar respuesta idempotente y que no se crea otro archivo ni versión.
+  3. Cargar los mismos bytes en otro expediente y lote diferente con política RECHAZAR_DUPLICADO_EXACTO; comprobar DUPLICATE_DOCUMENT_EXACT y que Drive no crea otro archivo.
+  4. Repetir con el mismo ImportBatchID; comprobar DUPLICATE_EXACT_WITHIN_BATCH.
+  5. Configurar CREAR_ENLACE_REFERENCIA_SIN_DUPLICAR_ARCHIVO; cargar el mismo binario en otro expediente y verificar nuevo DocumentoID, DocumentoReferenciaID, mismo DriveFileId, mismo HashSHA256 y cero archivos nuevos.
+  6. Cargar bytes diferentes en el mismo expediente/tipo; verificar que se registra nueva versión con hash diferente y el historial preserva el hash anterior.
+  7. Registrar fileData digital en InventarioDocumentalLegado; verificar HashSHA256 calculado por servidor. Intentar otro DocumentoId/ClaveOrigen con los mismos bytes y verificar rechazo de duplicado por institución.
+  8. Alterar bytes en Drive después de registrar; ejecutar verifyDocumentIntegritySha256 y consulta/descarga; comprobar DOCUMENT_INTEGRITY_MISMATCH y que no se entrega el binario alterado.
+  9. Probar migración aditiva desde una hoja InventarioDocumentalLegado antigua sin HashSHA256; verificar que la nueva columna se añade al final sin borrar filas ni cambiar datos existentes.
+  10. Ejecutar con DocumentosEscolaresEmitidos y flujo contable una vez que esos endpoints estén desplegados; comprobar misma política sin duplicar lógica ni permitir acceso cruzado.
+- **Resultado esperado:** un solo archivo físico por hash idéntico; referencias por expediente sujetas a política; hash validado en lectura/descarga; versión nueva solo ante bytes diferentes.
+- **Evidencia requerida:** SHA-256, DocumentoID, DocumentoReferenciaID, ImportBatchID, DriveFileId, versión, eventos de auditoría y conteo de archivos en carpeta privada; sin PII.
+- **Estado:** Pendiente de beta real en Apps Script/Drive; no ejecutado en producción.
+===============================================================================
