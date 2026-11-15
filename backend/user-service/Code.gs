@@ -954,20 +954,20 @@ const ROLE_PERMISSIONS = {
   "Desarrollador": ["*"],
   "Padre": [
     "getUserInfo", "getNews", "getInstitutionalCriteria", "getFormativeEvaluations", "getSupportPlans",
-    "acceptLinkInvitation", "getGuardianStudents", "getGuardianApplicants", "getInstitutionalAnnouncements", "getInternalMessages", "sendInternalMessage", "sendInstitutionalMessage", "getInstitutionalConversations", "getConversationMessages", "archiveInstitutionalConversation", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "getAppointmentBookings", "bookAppointment", "getInstitutionalCalendarEvents", "getPendingReminders", "getAuthorizationRequests", "respondToAuthorizationRequest"
+    "acceptLinkInvitation", "getGuardianStudents", "getGuardianApplicants", "getInstitutionalAnnouncements", "getInternalMessages", "sendInternalMessage", "sendInstitutionalMessage", "getInstitutionalConversations", "getConversationMessages", "archiveInstitutionalConversation", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "getMyDocumentDeliveries", "openDepartmentalDocumentDelivery", "confirmDepartmentalDocumentReceipt", "getAppointmentBookings", "bookAppointment", "getInstitutionalCalendarEvents", "getPendingReminders", "getAuthorizationRequests", "respondToAuthorizationRequest"
   ],
   "Tutor": [
     "getUserInfo", "getNews", "getInstitutionalCriteria", "getFormativeEvaluations", "getSupportPlans",
-    "acceptLinkInvitation", "getGuardianStudents", "getGuardianApplicants", "getInstitutionalAnnouncements", "getInternalMessages", "sendInternalMessage", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "getAppointmentBookings", "bookAppointment", "getInstitutionalCalendarEvents", "getPendingReminders", "getAuthorizationRequests", "respondToAuthorizationRequest"
+    "acceptLinkInvitation", "getGuardianStudents", "getGuardianApplicants", "getInstitutionalAnnouncements", "getInternalMessages", "sendInternalMessage", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "getMyDocumentDeliveries", "openDepartmentalDocumentDelivery", "confirmDepartmentalDocumentReceipt", "getAppointmentBookings", "bookAppointment", "getInstitutionalCalendarEvents", "getPendingReminders", "getAuthorizationRequests", "respondToAuthorizationRequest"
   ],
   "Responsable": [
     "getUserInfo", "getNews", "getInstitutionalCriteria", "getFormativeEvaluations", "getSupportPlans",
-    "acceptLinkInvitation", "getGuardianStudents", "getGuardianApplicants", "getInstitutionalAnnouncements", "getInternalMessages", "sendInternalMessage", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "getAppointmentBookings", "bookAppointment", "getInstitutionalCalendarEvents", "getPendingReminders", "getAuthorizationRequests", "respondToAuthorizationRequest"
+    "acceptLinkInvitation", "getGuardianStudents", "getGuardianApplicants", "getInstitutionalAnnouncements", "getInternalMessages", "sendInternalMessage", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "getMyDocumentDeliveries", "openDepartmentalDocumentDelivery", "confirmDepartmentalDocumentReceipt", "getAppointmentBookings", "bookAppointment", "getInstitutionalCalendarEvents", "getPendingReminders", "getAuthorizationRequests", "respondToAuthorizationRequest"
   ],
   "Director": [
     "createNews", "uploadNewsImage", "getNews", "updateNewsStatus", "getStudents", "getStudentsByGradoSeccion", "getUserInfo", "saveGameResult", "getGameStats", "getGlobalTop", "recordAnalytics", "getLearningProfile", "mergeGuestData", "updateUserProfile", "findPersonMatches", "createPerson", "linkPersonAccount", "manageAccountState", "generateInstitutionalId",
     "getInstitutionalCriteria", "saveInstitutionalCriterion", "getFormativeEvaluations", "saveFormativeEvaluation", "getSupportPlans", "saveSupportPlan",
-    "createLinkInvitation", "acceptLinkInvitation", "getGuardianStudents", "registerLegalCustodyRestriction", "getStudentGuardianConsolidatedList", "getInstitutionalAnnouncements", "createInstitutionalAnnouncement", "submitAnnouncementReceiptConfirmation", "getAnnouncementReadReport", "getDepartmentalWorkInbox", "closeConversationThread", "getInternalConversations", "getInternalMessages", "sendInternalMessage", "sendInstitutionalMessage", "getInstitutionalConversations", "getConversationMessages", "archiveInstitutionalConversation", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "createUserNotification", "sendMultiChannelNotification", "dispatchScheduleChangeNotifications", "getScheduleChangeNotificationLogs", "getAdmissionNotificationLogs", "getStudentProcedureNotificationLogs", "getNotificationPreferences", "getAdministrativeRequests", "getAdministrativeRequestsHistory", "submitAdministrativeRequest", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "reviewAbsenceJustification", "updateRequestStatus", "saveInstitutionalForm", "getInstitutionalForms", "submitInstitutionalFormRequest", "saveApprovalWorkflow", "getApprovalWorkflows", "processWorkflowDecision", "getWorkflowHistory", "registerDocumentSignature", "generateSignatureAuditCertificate", "configureAdvancedSignatureProvider", "getAdvancedSignatureProviderConfig", "createAdvancedSignatureRequest", "checkAdvancedSignatureStatus", "configureNotificationChannel", "getNotificationChannelConfigs", "sendChannelNotificationTest", "getAppointmentBookings", "bookAppointment", "updateAppointmentStatus", "getInstitutionalCalendarEvents", "saveInstitutionalCalendarEvent", "checkCalendarEventOverlap", "getPendingReminders",
+    "createLinkInvitation", "acceptLinkInvitation", "getGuardianStudents", "registerLegalCustodyRestriction", "getStudentGuardianConsolidatedList", "getInstitutionalAnnouncements", "createInstitutionalAnnouncement", "submitAnnouncementReceiptConfirmation", "getAnnouncementReadReport", "getDepartmentalWorkInbox", "getDepartmentalOutbox", "registerDepartmentalDocumentDelivery", "retryDepartmentalDocumentDelivery", "revokeDepartmentalDocumentDeliveryLink", "closeConversationThread", "getInternalConversations", "getInternalMessages", "sendInternalMessage", "sendInstitutionalMessage", "getInstitutionalConversations", "getConversationMessages", "archiveInstitutionalConversation", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "createUserNotification", "sendMultiChannelNotification", "dispatchScheduleChangeNotifications", "getScheduleChangeNotificationLogs", "getAdmissionNotificationLogs", "getStudentProcedureNotificationLogs", "getNotificationPreferences", "getAdministrativeRequests", "getAdministrativeRequestsHistory", "submitAdministrativeRequest", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "reviewAbsenceJustification", "updateRequestStatus", "saveInstitutionalForm", "getInstitutionalForms", "submitInstitutionalFormRequest", "saveApprovalWorkflow", "getApprovalWorkflows", "processWorkflowDecision", "getWorkflowHistory", "registerDocumentSignature", "generateSignatureAuditCertificate", "configureAdvancedSignatureProvider", "getAdvancedSignatureProviderConfig", "createAdvancedSignatureRequest", "checkAdvancedSignatureStatus", "configureNotificationChannel", "getNotificationChannelConfigs", "sendChannelNotificationTest", "getAppointmentBookings", "bookAppointment", "updateAppointmentStatus", "getInstitutionalCalendarEvents", "saveInstitutionalCalendarEvent", "checkCalendarEventOverlap", "getPendingReminders",
     "getUserSettings", "saveUserSettings", "getSystemConfigurations", "saveSystemConfiguration", "getProviderIntegrations", "configureProviderIntegration",
     "registerSpreadsheetSource", "resolveSpreadsheetSource", "getSpreadsheetCatalog", "verifyWorkflowDecisionAuditChain", "recordWorkflowDecisionCorrection",
     "manageInternalRoleCatalog", "getInternalRoleCatalog", "getInternalRoleAssignments", "updateTicketStatus", "saveVisualPaletteProposal", "approveVisualPaletteProposal", "registerAndDispatchEvent", "retryFailedEventsQueue", "recordTraceabilityLog", "getTraceabilityCorrelationLogs", "getOperationalCapacityMetrics", "runInterdepartmentalIntegrationTestSuite", "getSharedConfigurationsCatalog", "manageInstitutionalDataCache", "purgeSecurityCaches", "dispatchSecurityEvent", "processSecurityEventQueue", "getSecurityEventsQueue", "getSecurityAndComplianceDashboardData", "generatePrivilegeAndAccountAuditReport", "getPaginatedAuditLogReport", "auditAndReconcileIdentityInconsistencies"
@@ -976,13 +976,13 @@ const ROLE_PERMISSIONS = {
     "createNews", "uploadNewsImage", "getNews", "updateNewsStatus", "getStudents", "getStudentsByGradoSeccion", "getUserInfo", "saveGameResult", "getGameStats", "getGlobalTop", "recordAnalytics", "getLearningProfile", "mergeGuestData", "updateUserProfile", "findPersonMatches", "generateInstitutionalId",
     "getInstitutionalCriteria", "saveInstitutionalCriterion", "getFormativeEvaluations", "saveFormativeEvaluation", "getSupportPlans", "saveSupportPlan",
     "registerSpreadsheetSource", "resolveSpreadsheetSource", "getSpreadsheetCatalog", "verifyWorkflowDecisionAuditChain", "recordWorkflowDecisionCorrection",
-    "manageInternalRoleCatalog", "getInternalRoleCatalog", "getInternalRoleAssignments", "createLinkInvitation", "getGuardianStudents", "getInstitutionalAnnouncements", "createInstitutionalAnnouncement", "submitAnnouncementReceiptConfirmation", "getAnnouncementReadReport", "getDepartmentalWorkInbox", "closeConversationThread", "getInternalConversations", "getInternalMessages", "sendInternalMessage", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "sendMultiChannelNotification", "getNotificationPreferences", "getAdministrativeRequests", "getAdministrativeRequestsHistory", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "reviewAbsenceJustification", "updateRequestStatus", "saveInstitutionalForm", "getInstitutionalForms", "submitInstitutionalFormRequest", "saveApprovalWorkflow", "getApprovalWorkflows", "processWorkflowDecision", "getWorkflowHistory", "registerDocumentSignature", "generateSignatureAuditCertificate", "configureAdvancedSignatureProvider", "getAdvancedSignatureProviderConfig", "createAdvancedSignatureRequest", "checkAdvancedSignatureStatus", "configureNotificationChannel", "getNotificationChannelConfigs", "sendChannelNotificationTest", "getAppointmentBookings", "updateAppointmentStatus", "getInstitutionalCalendarEvents", "saveInstitutionalCalendarEvent", "checkCalendarEventOverlap", "getPendingReminders"
+    "manageInternalRoleCatalog", "getInternalRoleCatalog", "getInternalRoleAssignments", "createLinkInvitation", "getGuardianStudents", "getInstitutionalAnnouncements", "createInstitutionalAnnouncement", "submitAnnouncementReceiptConfirmation", "getAnnouncementReadReport", "getDepartmentalWorkInbox", "getDepartmentalOutbox", "registerDepartmentalDocumentDelivery", "retryDepartmentalDocumentDelivery", "revokeDepartmentalDocumentDeliveryLink", "closeConversationThread", "getInternalConversations", "getInternalMessages", "sendInternalMessage", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "sendMultiChannelNotification", "getNotificationPreferences", "getAdministrativeRequests", "getAdministrativeRequestsHistory", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "reviewAbsenceJustification", "updateRequestStatus", "saveInstitutionalForm", "getInstitutionalForms", "submitInstitutionalFormRequest", "saveApprovalWorkflow", "getApprovalWorkflows", "processWorkflowDecision", "getWorkflowHistory", "registerDocumentSignature", "generateSignatureAuditCertificate", "configureAdvancedSignatureProvider", "getAdvancedSignatureProviderConfig", "createAdvancedSignatureRequest", "checkAdvancedSignatureStatus", "configureNotificationChannel", "getNotificationChannelConfigs", "sendChannelNotificationTest", "getAppointmentBookings", "updateAppointmentStatus", "getInstitutionalCalendarEvents", "saveInstitutionalCalendarEvent", "checkCalendarEventOverlap", "getPendingReminders"
   ],
   "Secretaría": [
     "createNews", "uploadNewsImage", "getNews", "updateNewsStatus", "getStudents", "getStudentsByGradoSeccion", "getUserInfo", "updateUserProfile", "findPersonMatches", "createPerson", "linkPersonAccount", "manageAccountState", "generateInstitutionalId",
     "getInstitutionalCriteria", "getFormativeEvaluations", "saveFormativeEvaluation", "getSupportPlans", "saveSupportPlan",
     "registerSpreadsheetSource", "resolveSpreadsheetSource", "getSpreadsheetCatalog", "verifyWorkflowDecisionAuditChain", "recordWorkflowDecisionCorrection",
-    "createLinkInvitation", "acceptLinkInvitation", "getGuardianStudents", "registerLegalCustodyRestriction", "getStudentGuardianConsolidatedList", "getInstitutionalAnnouncements", "createInstitutionalAnnouncement", "submitAnnouncementReceiptConfirmation", "getAnnouncementReadReport", "getDepartmentalWorkInbox", "closeConversationThread", "getInternalConversations", "getInternalMessages", "sendInternalMessage", "sendInstitutionalMessage", "getInstitutionalConversations", "getConversationMessages", "archiveInstitutionalConversation", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "createUserNotification", "sendMultiChannelNotification", "getAdmissionNotificationLogs", "getNotificationPreferences", "getAdministrativeRequests", "getAdministrativeRequestsHistory", "submitAdministrativeRequest", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "reviewAbsenceJustification", "updateRequestStatus", "saveInstitutionalForm", "getInstitutionalForms", "submitInstitutionalFormRequest", "saveApprovalWorkflow", "getApprovalWorkflows", "processWorkflowDecision", "getWorkflowHistory", "registerDocumentSignature", "generateSignatureAuditCertificate", "configureAdvancedSignatureProvider", "getAdvancedSignatureProviderConfig", "createAdvancedSignatureRequest", "checkAdvancedSignatureStatus", "configureNotificationChannel", "getNotificationChannelConfigs", "sendChannelNotificationTest", "getAppointmentBookings", "bookAppointment", "updateAppointmentStatus", "getInstitutionalCalendarEvents", "saveInstitutionalCalendarEvent", "checkCalendarEventOverlap", "getPendingReminders"
+    "createLinkInvitation", "acceptLinkInvitation", "getGuardianStudents", "registerLegalCustodyRestriction", "getStudentGuardianConsolidatedList", "getInstitutionalAnnouncements", "createInstitutionalAnnouncement", "submitAnnouncementReceiptConfirmation", "getAnnouncementReadReport", "getDepartmentalWorkInbox", "getDepartmentalOutbox", "registerDepartmentalDocumentDelivery", "retryDepartmentalDocumentDelivery", "revokeDepartmentalDocumentDeliveryLink", "closeConversationThread", "getInternalConversations", "getInternalMessages", "sendInternalMessage", "sendInstitutionalMessage", "getInstitutionalConversations", "getConversationMessages", "archiveInstitutionalConversation", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "createUserNotification", "sendMultiChannelNotification", "getAdmissionNotificationLogs", "getNotificationPreferences", "getAdministrativeRequests", "getAdministrativeRequestsHistory", "submitAdministrativeRequest", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "reviewAbsenceJustification", "updateRequestStatus", "saveInstitutionalForm", "getInstitutionalForms", "submitInstitutionalFormRequest", "saveApprovalWorkflow", "getApprovalWorkflows", "processWorkflowDecision", "getWorkflowHistory", "registerDocumentSignature", "generateSignatureAuditCertificate", "configureAdvancedSignatureProvider", "getAdvancedSignatureProviderConfig", "createAdvancedSignatureRequest", "checkAdvancedSignatureStatus", "configureNotificationChannel", "getNotificationChannelConfigs", "sendChannelNotificationTest", "getAppointmentBookings", "bookAppointment", "updateAppointmentStatus", "getInstitutionalCalendarEvents", "saveInstitutionalCalendarEvent", "checkCalendarEventOverlap", "getPendingReminders"
   ],
   "Contador": ["getStudents", "getUserInfo", "getNews", "getInstitutionalAnnouncements", "getUserNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest"],
   "RecursosHumanos": ["manageInternalRoleCatalog", "getInternalRoleCatalog", "getInternalRoleAssignments", "getStudents", "getUserInfo", "getNews", "getInstitutionalAnnouncements", "getUserNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest", "createNews", "getInternalMessages", "sendInternalMessage"],
@@ -998,12 +998,12 @@ const ROLE_PERMISSIONS = {
   "Estudiante": [
     "getUserInfo", "getNews", "saveGameResult", "getGameStats", "getGlobalTop", "recordAnalytics", "getLearningProfile", "mergeGuestData", "updateUserProfile",
     "getInstitutionalCriteria", "getFormativeEvaluations", "getSupportPlans",
-    "acceptLinkInvitation", "getGuardianStudents", "getInstitutionalAnnouncements", "getInternalMessages", "sendInternalMessage", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "getAppointmentBookings", "bookAppointment", "getInstitutionalCalendarEvents", "getPendingReminders"
+    "acceptLinkInvitation", "getGuardianStudents", "getInstitutionalAnnouncements", "getInternalMessages", "sendInternalMessage", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "getMyDocumentDeliveries", "openDepartmentalDocumentDelivery", "confirmDepartmentalDocumentReceipt", "getAppointmentBookings", "bookAppointment", "getInstitutionalCalendarEvents", "getPendingReminders"
   ],
   "Alumno": [
     "getUserInfo", "getNews", "saveGameResult", "getGameStats", "getGlobalTop", "recordAnalytics", "getLearningProfile", "mergeGuestData", "updateUserProfile",
     "getInstitutionalCriteria", "getFormativeEvaluations", "getSupportPlans",
-    "acceptLinkInvitation", "getGuardianStudents", "getInstitutionalAnnouncements", "getInternalMessages", "sendInternalMessage", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "getAppointmentBookings", "bookAppointment", "getInstitutionalCalendarEvents", "getPendingReminders"
+    "acceptLinkInvitation", "getGuardianStudents", "getInstitutionalAnnouncements", "getInternalMessages", "sendInternalMessage", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "getMyDocumentDeliveries", "openDepartmentalDocumentDelivery", "confirmDepartmentalDocumentReceipt", "getAppointmentBookings", "bookAppointment", "getInstitutionalCalendarEvents", "getPendingReminders"
   ]
 };
 
@@ -2052,6 +2052,13 @@ function doPost(e) {
       case "getAuthorizationRequests": result = getAuthorizationRequests(payload); break;
       case "respondToAuthorizationRequest": result = respondToAuthorizationRequest(payload); break;
       case "getDepartmentalWorkInbox": result = getDepartmentalWorkInbox(payload); break;
+      case "getDepartmentalOutbox": result = getDepartmentalOutbox(payload); break;
+      case "registerDepartmentalDocumentDelivery": result = registerDepartmentalDocumentDelivery(payload); break;
+      case "retryDepartmentalDocumentDelivery": result = retryDepartmentalDocumentDelivery(payload); break;
+      case "getMyDocumentDeliveries": result = getMyDocumentDeliveries(payload); break;
+      case "openDepartmentalDocumentDelivery": result = openDepartmentalDocumentDelivery(payload); break;
+      case "confirmDepartmentalDocumentReceipt": result = confirmDepartmentalDocumentReceipt(payload); break;
+      case "revokeDepartmentalDocumentDeliveryLink": result = revokeDepartmentalDocumentDeliveryLink(payload); break;
       case "getInternalConversations": result = getInternalConversations(payload); break;
       case "getInternalMessages": result = getInternalMessages(payload); break;
       case "closeConversationThread": result = closeConversationThread(payload); break;
@@ -5017,6 +5024,480 @@ function getAnnouncementReadReport(payload) {
   }));
 
   return { status: "success", comunicadoId: comunicadoId, totalConfirmaciones: mapped.length, confirmaciones: mapped };
+}
+
+
+const DOCUMENT_DELIVERY_HEADERS_ = [
+  "EntregaID","InstitutionID","DepartmentID","DocumentoID","SolicitudID","NombreDocumento",
+  "VersionDocumento","SHA256Documento","DestinatarioUserID","RemitenteUserID","RemitenteRole",
+  "Canal","EstadoDespacho","EstadoCorreo","FechaSolicitud","FechaDespacho","FechaApertura",
+  "SHA256Apertura","FechaConfirmacion","SHA256Confirmacion","EstadoAcuse","ConfirmadoPor",
+  "ObservacionRecepcion","NotificacionID","IdempotencyKey","CorrelationID","HistorialEventosJSON",
+  "UltimoError","FechaExpiracionEnlace","EstadoEnlace","FechaRevocacionEnlace","RevocadoPor",
+  "FechaActualizacion"
+];
+
+function ensureDocumentDeliverySheet_(ss) {
+  var sheet = ss.getSheetByName("EntregasDocumentales");
+  if (!sheet) {
+    sheet = ss.insertSheet("EntregasDocumentales");
+    sheet.appendRow(DOCUMENT_DELIVERY_HEADERS_.slice());
+    return sheet;
+  }
+  if (sheet.getLastRow() === 0) sheet.appendRow(DOCUMENT_DELIVERY_HEADERS_.slice());
+  var actual = sheet.getRange(1, 1, 1, Math.max(1, sheet.getLastColumn())).getValues()[0].map(function(value) { return String(value || "").trim(); });
+  if (JSON.stringify(actual) !== JSON.stringify(DOCUMENT_DELIVERY_HEADERS_)) throw new Error("DOCUMENT_DELIVERY_SCHEMA_MISMATCH");
+  return sheet;
+}
+
+function getDocumentDeliverySheetForRead_(ss) {
+  var sheet = ss.getSheetByName("EntregasDocumentales");
+  if (!sheet) return { status: "success", sheet: null, map: null };
+  try {
+    var checked = ensureDocumentDeliverySheet_(ss);
+    var map = {};
+    DOCUMENT_DELIVERY_HEADERS_.forEach(function(header, index) { map[header] = index; });
+    return { status: "success", sheet: checked, map: map };
+  } catch (error) {
+    return { status: "error", code: error.message || "DOCUMENT_DELIVERY_SCHEMA_MISMATCH" };
+  }
+}
+
+function getDocumentDeliveryAllowedDepartmentIds_(context) {
+  if (context && context.activeDepartmentId) return [String(context.activeDepartmentId)];
+  if (context && context.institutionWide === true) return null;
+  return (context && Array.isArray(context.departmentIds) ? context.departmentIds : []).map(function(value) { return String(value); });
+}
+
+function isDocumentDeliveryDepartmentAllowed_(context, departmentId) {
+  var allowed = getDocumentDeliveryAllowedDepartmentIds_(context);
+  return !allowed || allowed.indexOf(String(departmentId || "")) !== -1;
+}
+
+function getDocumentDeliverySenderContext_(payload) {
+  var role = getUserVerifiedRole(payload);
+  var actorId = String(payload && payload._verifiedUserId || "").trim();
+  if (!actorId || !role || role === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  var context = getUserContextScope(payload);
+  if (!context || context.status !== "success") return { status: "error", code: context && context.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+  return { status: "success", actorId: actorId, role: role, context: context };
+}
+
+function getIssuedDocumentSnapshot_(ss, documentId, solicitudId) {
+  try {
+    var sheet = ss.getSheetByName("DocumentosEscolaresEmitidos");
+    if (!sheet || sheet.getLastRow() <= 1) return { status: "error", code: "ISSUED_DOCUMENT_NOT_FOUND" };
+    var rows = sheet.getDataRange().getValues();
+    var matches = rows.slice(1).filter(function(row) { return String(row[0] || "").trim() === String(documentId || "").trim(); });
+    if (matches.length !== 1) return { status: "error", code: matches.length > 1 ? "ISSUED_DOCUMENT_AMBIGUOUS" : "ISSUED_DOCUMENT_NOT_FOUND" };
+    var row = matches[0];
+    var canonicalId = String(row[0] || "").trim();
+    var recipientUserId = String(row[2] || "").trim();
+    var state = String(row[5] || "").trim().toLowerCase();
+    var fileId = String(row[7] || "").trim();
+    var storedHash = String(row[14] || "").trim().toLowerCase();
+    var version = String(row[15] || "").trim();
+    var storedSolicitudId = String(row[16] || "").trim() || ("DOC:" + canonicalId);
+    if (state !== "issued") return { status: "error", code: "DOCUMENT_NOT_ISSUED" };
+    if (!recipientUserId || recipientUserId === "GENERICO") return { status: "error", code: "DOCUMENT_RECIPIENT_UNRESOLVED" };
+    if (solicitudId && String(solicitudId).trim() !== storedSolicitudId) return { status: "error", code: "DOCUMENT_REQUEST_MISMATCH" };
+    if (!fileId || !/^[a-f0-9]{64}$/.test(storedHash) || !version) return { status: "error", code: "DOCUMENT_INTEGRITY_METADATA_MISSING" };
+    var file = DriveApp.getFileById(fileId);
+    if (!file || file.isTrashed()) return { status: "error", code: "DOCUMENT_FILE_UNAVAILABLE" };
+    var sharing = String(file.getSharingAccess()).toUpperCase();
+    if (sharing !== "PRIVATE") return { status: "error", code: "DOCUMENT_FILE_NOT_PRIVATE" };
+    var actualHash = String(computeDocumentSHA256(file.getBlob().getBytes()) || "").toLowerCase();
+    if (actualHash !== storedHash) return { status: "error", code: "DOCUMENT_HASH_MISMATCH" };
+    return {
+      status: "success", documentId: canonicalId, solicitudId: storedSolicitudId,
+      recipientUserId: recipientUserId, driveFileId: fileId, fileName: file.getName(),
+      mimeType: file.getMimeType(), version: version, sha256: actualHash
+    };
+  } catch (error) {
+    return { status: "error", code: error.message || "ISSUED_DOCUMENT_INTEGRITY_FAILED" };
+  }
+}
+
+function getDocumentDeliveryRecipient_(ss, userId) {
+  var sheet = ss.getSheetByName("Usuarios");
+  if (!sheet || sheet.getLastRow() <= 1) return { status: "error", code: "DELIVERY_RECIPIENT_NOT_FOUND" };
+  var rows = sheet.getDataRange().getValues();
+  var headers = (rows[0] || []).map(function(value) { return String(value || "").trim().toLowerCase(); });
+  var findColumn = function(names, fallback) {
+    for (var n = 0; n < names.length; n++) { var index = headers.indexOf(names[n]); if (index >= 0) return index; }
+    return fallback;
+  };
+  var userIndex = findColumn(["userid","user_id"],0);
+  var nameIndex = findColumn(["nombre","name","nombrecompleto"],1);
+  var emailIndex = findColumn(["correo","email","correoelectronico"],4);
+  var stateIndex = findColumn(["estado","estadocuenta","estatus","status"],-1);
+  var matches = rows.slice(1).filter(function(row) { return String(row[userIndex] || "").trim() === String(userId || "").trim(); });
+  if (matches.length !== 1) return { status: "error", code: matches.length > 1 ? "DELIVERY_RECIPIENT_AMBIGUOUS" : "DELIVERY_RECIPIENT_NOT_FOUND" };
+  var row = matches[0];
+  var state = stateIndex >= 0 ? String(row[stateIndex] || "").trim().toLowerCase() : "";
+  if (state && ["activa","activo","active","1","true"].indexOf(state) === -1) return { status: "error", code: "DELIVERY_RECIPIENT_INACTIVE" };
+  return { status: "success", userId: String(row[userIndex]).trim(), name: String(row[nameIndex] || "").trim(), email: String(row[emailIndex] || "").trim() };
+}
+
+function appendDocumentDeliveryEvent_(row, map, action, actorId, actorRole, details) {
+  var history;
+  try { history = JSON.parse(String(row[map.HistorialEventosJSON] || "[]")); }
+  catch (_) { throw new Error("DOCUMENT_DELIVERY_HISTORY_CORRUPT"); }
+  if (!Array.isArray(history)) throw new Error("DOCUMENT_DELIVERY_HISTORY_CORRUPT");
+  history.push({
+    action: String(action || ""), actorId: String(actorId || ""), actorRole: String(actorRole || ""),
+    timestamp: new Date().toISOString(), correlationId: String(row[map.CorrelationID] || ""),
+    details: details || {}
+  });
+  row[map.HistorialEventosJSON] = JSON.stringify(history);
+  row[map.FechaActualizacion] = new Date();
+}
+
+function findDocumentDeliveryRow_(sheet, map, deliveryId) {
+  var rows = sheet.getDataRange().getValues(), matches = [];
+  for (var i = 1; i < rows.length; i++) {
+    if (String(rows[i][map.EntregaID] || "").trim() === String(deliveryId || "").trim()) matches.push({ rowNumber: i + 1, row: rows[i].slice() });
+  }
+  if (matches.length !== 1) return { status: "error", code: matches.length > 1 ? "DOCUMENT_DELIVERY_AMBIGUOUS" : "DOCUMENT_DELIVERY_NOT_FOUND" };
+  return { status: "success", rowNumber: matches[0].rowNumber, row: matches[0].row };
+}
+
+function writeDocumentDeliveryRow_(sheet, rowNumber, row) {
+  sheet.getRange(rowNumber, 1, 1, DOCUMENT_DELIVERY_HEADERS_.length).setValues([row]);
+}
+
+function getDocumentDeliveryPortalLink_(deliveryId) {
+  try {
+    var base = String(PropertiesService.getScriptProperties().getProperty("PORTAL_BASE_URL") || "").trim();
+    if (!/^https:\/\/[A-Za-z0-9.-]+(?::\d+)?(?:\/[^ ]*)?$/.test(base)) return "";
+    return base + (base.indexOf("?") === -1 ? "?" : "&") + "deliveryId=" + encodeURIComponent(deliveryId);
+  } catch (_) { return ""; }
+}
+
+function dispatchDocumentDelivery_(ss, sheet, rowNumber, row, map, actorId, actorRole) {
+  var notification = null, dispatchError = "";
+  try {
+    var deliveryId = String(row[map.EntregaID] || "");
+    var recipientId = String(row[map.DestinatarioUserID] || "");
+    var portalLink = getDocumentDeliveryPortalLink_(deliveryId);
+    notification = sendMultiChannelNotification({
+      userId: recipientId,
+      titulo: "Documento institucional disponible",
+      mensaje: "Tiene un documento institucional disponible en el portal. Inicie sesión para revisarlo y, si corresponde, confirmar su recepción. Referencia: " + deliveryId,
+      tipo: "EntregaDocumental",
+      categoria: "Documentos",
+      canal: "PLATAFORMA",
+      enlaceAccion: portalLink,
+      deduplicationKey: "ENTREGA_DOCUMENTAL:" + deliveryId,
+      authRole: actorRole,
+      correlationId: row[map.CorrelationID]
+    });
+    if (!notification || notification.status !== "success") throw new Error(notification && notification.code || "DOCUMENT_DELIVERY_NOTIFICATION_FAILED");
+  } catch (error) {
+    dispatchError = String(error.message || "DOCUMENT_DELIVERY_DISPATCH_FAILED").slice(0, 120);
+  }
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(10000); } catch (_) {
+    return { status: "error", code: "LOCK_TIMEOUT", retryable: true, deliveryId: String(row[map.EntregaID] || "") };
+  }
+  try {
+    var current = findDocumentDeliveryRow_(sheet, map, row[map.EntregaID]);
+    if (current.status !== "success") return current;
+    var updated = current.row;
+    if (String(updated[map.EstadoDespacho]) === "ACEPTADO_POR_PLATAFORMA") {
+      return { status: "success", idempotent: true, deliveryId: String(updated[map.EntregaID]), estadoDespacho: String(updated[map.EstadoDespacho]), estadoAcuse: String(updated[map.EstadoAcuse]), notificationId: String(updated[map.NotificacionID] || "") };
+    }
+    if (dispatchError) {
+      updated[map.EstadoDespacho] = "PENDIENTE_REINTENTO";
+      updated[map.UltimoError] = dispatchError;
+      appendDocumentDeliveryEvent_(updated, map, "DISPATCH_FAILED", actorId, actorRole, { errorCode: dispatchError });
+      writeDocumentDeliveryRow_(sheet, current.rowNumber, updated);
+      return { status: "error", code: "DOCUMENT_DELIVERY_DISPATCH_PENDING", retryable: true, deliveryId: String(updated[map.EntregaID] || "") };
+    }
+    updated[map.EstadoDespacho] = "ACEPTADO_POR_PLATAFORMA";
+    updated[map.EstadoCorreo] = "NO_SOLICITADO";
+    updated[map.FechaDespacho] = new Date();
+    updated[map.NotificacionID] = String(notification.notificacionId || updated[map.NotificacionID] || "");
+    updated[map.UltimoError] = "";
+    appendDocumentDeliveryEvent_(updated, map, "DISPATCH_ACCEPTED_BY_PLATFORM", actorId, actorRole, { notificationId: updated[map.NotificacionID] });
+    writeDocumentDeliveryRow_(sheet, current.rowNumber, updated);
+    logStructuredEvent("USER", "dispatchDocumentDelivery_", "INFO", "DOCUMENT_DELIVERY_DISPATCH_ACCEPTED", "Notificación de entrega registrada en la bandeja interna; no equivale a apertura ni recepción.", {
+      deliveryId: updated[map.EntregaID], documentId: updated[map.DocumentoID], recipientUserId: updated[map.DestinatarioUserID], notificationId: updated[map.NotificacionID]
+    }, actorRole);
+    return { status: "success", deliveryId: String(updated[map.EntregaID]), estadoDespacho: String(updated[map.EstadoDespacho]), estadoAcuse: String(updated[map.EstadoAcuse]), notificationId: String(updated[map.NotificacionID] || "") };
+  } finally { lock.releaseLock(); }
+}
+function registerDepartmentalDocumentDelivery(payload) {
+  var p = payload || {}, sender = getDocumentDeliverySenderContext_(p);
+  if (sender.status !== "success") return sender;
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var documentId = String(p.documentoId || p.documentId || "").trim();
+  if (!documentId) return { status: "error", code: "RESOURCE_REFERENCE_INVALID" };
+  var access = assertAdvancedSignatureDocumentScope_(p, ss, documentId, p.solicitudId, "READ");
+  if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "RESOURCE_SCOPE_DENIED" };
+  if (access.documentSource !== "DOCUMENTO_ESCOLAR_EMITIDO") return { status: "error", code: "ISSUED_DOCUMENT_REQUIRED" };
+  var snapshot = getIssuedDocumentSnapshot_(ss, access.documentId, access.solicitudId);
+  if (snapshot.status !== "success") return snapshot;
+  if (String(p.destinatarioUserId || snapshot.recipientUserId).trim() !== snapshot.recipientUserId) return { status: "error", code: "DOCUMENT_RECIPIENT_MISMATCH" };
+  if (snapshot.sha256 !== String(access.storedDocumentHash || "").toLowerCase() || snapshot.version !== String(access.documentVersion || "")) {
+    return { status: "error", code: "DOCUMENT_SCOPE_SNAPSHOT_MISMATCH" };
+  }
+  if (sender.context.institutionId !== access.institutionId ||
+      !isDocumentDeliveryDepartmentAllowed_(sender.context, access.departmentId)) {
+    return { status: "error", code: "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+  }
+  var recipient = getDocumentDeliveryRecipient_(ss, snapshot.recipientUserId);
+  if (recipient.status !== "success") return recipient;
+  var channel = String(p.canal || "PLATAFORMA").trim().toUpperCase();
+  if (channel !== "PLATAFORMA") return { status: "error", code: "DOCUMENT_DELIVERY_CHANNEL_NOT_SUPPORTED" };
+  var idem = String(p.idempotencyKey || "").trim();
+  if (!idem) idem = "DELIVERY-" + computeDocumentSHA256([snapshot.documentId,snapshot.version,snapshot.recipientUserId,channel,sender.actorId].join("|")).slice(0, 48);
+  if (idem.length < 8 || idem.length > 128) return { status: "error", code: "IDEMPOTENCY_KEY_INVALID" };
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(10000); } catch (_) { return { status: "error", code: "LOCK_TIMEOUT" }; }
+  var sheet, map, rowNumber, row;
+  try {
+    sheet = ensureDocumentDeliverySheet_(ss);
+    map = {};
+    DOCUMENT_DELIVERY_HEADERS_.forEach(function(header,index){ map[header]=index; });
+    var rows = sheet.getDataRange().getValues(), matches = [];
+    for (var i = 1; i < rows.length; i++) if (String(rows[i][map.IdempotencyKey] || "").trim() === idem) matches.push({ rowNumber:i+1,row:rows[i].slice() });
+    if (matches.length > 1) return { status: "error", code: "DOCUMENT_DELIVERY_IDEMPOTENCY_AMBIGUOUS" };
+    if (matches.length === 1) {
+      var existing = matches[0].row;
+      var same = String(existing[map.DocumentoID]) === snapshot.documentId &&
+        String(existing[map.VersionDocumento]) === snapshot.version &&
+        String(existing[map.SHA256Documento]) === snapshot.sha256 &&
+        String(existing[map.DestinatarioUserID]) === snapshot.recipientUserId &&
+        String(existing[map.DepartmentID]) === String(access.departmentId) &&
+        String(existing[map.Canal]) === channel;
+      if (!same) return { status: "error", code: "IDEMPOTENCY_CONFLICT" };
+      return { status: "success", idempotent: true, deliveryId: String(existing[map.EntregaID]), estadoDespacho: String(existing[map.EstadoDespacho]), estadoAcuse: String(existing[map.EstadoAcuse]) };
+    }
+    var now = new Date(), deliveryId = "ENT-" + Utilities.getUuid();
+    var days = Number(p.expirationDays === undefined ? 7 : p.expirationDays);
+    if (!Number.isInteger(days) || days < 1 || days > 30) return { status: "error", code: "DELIVERY_EXPIRATION_INVALID" };
+    rowNumber = sheet.getLastRow() + 1;
+    row = new Array(DOCUMENT_DELIVERY_HEADERS_.length).fill("");
+    row[map.EntregaID] = deliveryId;
+    row[map.InstitutionID] = sender.context.institutionId;
+    row[map.DepartmentID] = String(access.departmentId);
+    row[map.DocumentoID] = snapshot.documentId;
+    row[map.SolicitudID] = snapshot.solicitudId;
+    row[map.NombreDocumento] = snapshot.fileName;
+    row[map.VersionDocumento] = snapshot.version;
+    row[map.SHA256Documento] = snapshot.sha256;
+    row[map.DestinatarioUserID] = snapshot.recipientUserId;
+    row[map.RemitenteUserID] = sender.actorId;
+    row[map.RemitenteRole] = sender.role;
+    row[map.Canal] = channel;
+    row[map.EstadoDespacho] = "PENDIENTE_DESPACHO";
+    row[map.EstadoCorreo] = "NO_SOLICITADO";
+    row[map.FechaSolicitud] = now;
+    row[map.EstadoAcuse] = "PENDIENTE";
+    row[map.IdempotencyKey] = idem;
+    row[map.CorrelationID] = String(p.correlationId || ("CORR-" + Utilities.getUuid()));
+    row[map.HistorialEventosJSON] = "[]";
+    row[map.FechaExpiracionEnlace] = new Date(now.getTime() + days * 86400000);
+    row[map.EstadoEnlace] = "ACTIVO";
+    appendDocumentDeliveryEvent_(row, map, "DELIVERY_REQUESTED", sender.actorId, sender.role, { documentId: snapshot.documentId, version: snapshot.version, sha256: snapshot.sha256 });
+    sheet.appendRow(row);
+  } catch (error) {
+    return { status: "error", code: error.message || "DOCUMENT_DELIVERY_CREATE_FAILED" };
+  } finally {
+    lock.releaseLock();
+  }
+  var dispatched = dispatchDocumentDelivery_(ss, sheet, rowNumber, row, map, sender.actorId, sender.role);
+  if (dispatched.status !== "success") return dispatched;
+  return { status: "success", deliveryId: dispatched.deliveryId, estadoDespacho: dispatched.estadoDespacho, estadoAcuse: dispatched.estadoAcuse, fechaExpiracionEnlace: row[map.FechaExpiracionEnlace] };
+}
+
+function retryDepartmentalDocumentDelivery(payload) {
+  var p = payload || {}, sender = getDocumentDeliverySenderContext_(p);
+  if (sender.status !== "success") return sender;
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var read = getDocumentDeliverySheetForRead_(ss);
+  if (read.status !== "success" || !read.sheet) return { status: "error", code: read.code || "DOCUMENT_DELIVERY_NOT_FOUND" };
+  var found = findDocumentDeliveryRow_(read.sheet, read.map, p.deliveryId);
+  if (found.status !== "success") return found;
+  var row = found.row, map = read.map;
+  if (String(row[map.InstitutionID]) !== sender.context.institutionId ||
+      !isDocumentDeliveryDepartmentAllowed_(sender.context, row[map.DepartmentID])) return { status: "error", code: "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+  if (String(row[map.EstadoDespacho]) === "ACEPTADO_POR_PLATAFORMA") return { status: "success", idempotent: true, deliveryId: String(row[map.EntregaID]), estadoDespacho: String(row[map.EstadoDespacho]) };
+  if (String(row[map.EstadoEnlace]) !== "ACTIVO") return { status: "error", code: "DELIVERY_LINK_NOT_ACTIVE" };
+  var retryExpiry = row[map.FechaExpiracionEnlace] ? new Date(row[map.FechaExpiracionEnlace]) : null;
+  if (retryExpiry && (!isFinite(retryExpiry.getTime()) || retryExpiry.getTime() <= Date.now())) return { status: "error", code: "DELIVERY_LINK_EXPIRED" };
+  var snapshot = getIssuedDocumentSnapshot_(ss, row[map.DocumentoID], row[map.SolicitudID]);
+  if (snapshot.status !== "success") return snapshot;
+  if (snapshot.recipientUserId !== String(row[map.DestinatarioUserID]) || snapshot.sha256 !== String(row[map.SHA256Documento]) || snapshot.version !== String(row[map.VersionDocumento])) return { status: "error", code: "DOCUMENT_VERSION_OR_HASH_CHANGED" };
+  return dispatchDocumentDelivery_(ss, read.sheet, found.rowNumber, row, map, sender.actorId, sender.role);
+}
+
+function getDepartmentalOutbox(payload) {
+  var p = payload || {}, sender = getDocumentDeliverySenderContext_(p);
+  if (sender.status !== "success") return sender;
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var read = getDocumentDeliverySheetForRead_(ss);
+  if (read.status !== "success") return read;
+  if (!read.sheet) return { status: "success", data: [], total: 0, limit: 50, offset: 0 };
+  var map = read.map, rows = read.sheet.getDataRange().getValues().slice(1);
+  var requestedDepartment = String(p.departamentoId || "").trim();
+  if (requestedDepartment && !isDocumentDeliveryDepartmentAllowed_(sender.context, requestedDepartment)) return { status: "error", code: "ACTIVE_SCOPE_NOT_ASSIGNED" };
+  var documentId = String(p.documentoId || "").trim(), recipientId = String(p.destinatarioUserId || "").trim();
+  var dispatchState = String(p.estadoDespacho || "").trim(), receiptState = String(p.estadoAcuse || "").trim();
+  var from = p.desde ? new Date(p.desde) : null, to = p.hasta ? new Date(p.hasta) : null;
+  if (from && isNaN(from.getTime()) || to && isNaN(to.getTime())) return { status: "error", code: "DELIVERY_DATE_FILTER_INVALID" };
+  if (to && typeof p.hasta === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.hasta)) to.setHours(23, 59, 59, 999);
+  var filtered = rows.filter(function(row) {
+    if (String(row[map.InstitutionID] || "") !== sender.context.institutionId) return false;
+    var department = String(row[map.DepartmentID] || "");
+    if (requestedDepartment && department !== requestedDepartment) return false;
+    if (!requestedDepartment && !isDocumentDeliveryDepartmentAllowed_(sender.context, department)) return false;
+    if (documentId && String(row[map.DocumentoID] || "") !== documentId) return false;
+    if (recipientId && String(row[map.DestinatarioUserID] || "") !== recipientId) return false;
+    if (dispatchState && String(row[map.EstadoDespacho] || "") !== dispatchState) return false;
+    if (receiptState && String(row[map.EstadoAcuse] || "") !== receiptState) return false;
+    var created = row[map.FechaSolicitud] ? new Date(row[map.FechaSolicitud]) : null;
+    if (from && (!created || created < from)) return false;
+    if (to && (!created || created > to)) return false;
+    return true;
+  }).sort(function(a,b){ return new Date(b[map.FechaSolicitud] || 0).getTime() - new Date(a[map.FechaSolicitud] || 0).getTime(); });
+  var limit = Number(p.limit === undefined ? 50 : p.limit), offset = Number(p.offset || 0);
+  if (!Number.isInteger(limit) || limit < 1 || limit > 100 || !Number.isInteger(offset) || offset < 0) return { status: "error", code: "DELIVERY_PAGINATION_INVALID" };
+  var data = filtered.slice(offset, offset + limit).map(function(row) {
+    return {
+      entregaId: row[map.EntregaID], documentoId: row[map.DocumentoID], solicitudId: row[map.SolicitudID],
+      nombreDocumento: row[map.NombreDocumento], versionDocumento: row[map.VersionDocumento], sha256Documento: row[map.SHA256Documento],
+      destinatarioUserId: row[map.DestinatarioUserID], remitenteUserId: row[map.RemitenteUserID],
+      departamentoId: row[map.DepartmentID], canal: row[map.Canal], estadoDespacho: row[map.EstadoDespacho],
+      estadoCorreo: row[map.EstadoCorreo], fechaSolicitud: row[map.FechaSolicitud], fechaDespacho: row[map.FechaDespacho],
+      fechaApertura: row[map.FechaApertura], fechaConfirmacion: row[map.FechaConfirmacion],
+      estadoAcuse: row[map.EstadoAcuse], estadoEnlace: (String(row[map.EstadoEnlace]) === "ACTIVO" && row[map.FechaExpiracionEnlace] && new Date(row[map.FechaExpiracionEnlace]).getTime() <= Date.now()) ? "EXPIRADO" : row[map.EstadoEnlace],
+      fechaExpiracionEnlace: row[map.FechaExpiracionEnlace], ultimoError: row[map.UltimoError],
+      correlationId: row[map.CorrelationID], fechaRevocacionEnlace: row[map.FechaRevocacionEnlace], revocadoPor: row[map.RevocadoPor]
+    };
+  });
+  return { status: "success", data: data, total: filtered.length, limit: limit, offset: offset };
+}
+
+function getMyDocumentDeliveries(payload) {
+  var actorRole = getUserVerifiedRole(payload), actorId = String(payload && payload._verifiedUserId || "").trim();
+  if (!actorId || !actorRole || actorRole === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  var institutionId = String(getIdentityInstitutionId_() || "").trim();
+  if (!institutionId) return { status: "error", code: "IDENTITY_CONFIGURATION_REQUIRED" };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), read = getDocumentDeliverySheetForRead_(ss);
+  if (read.status !== "success") return read;
+  if (!read.sheet) return { status: "success", data: [] };
+  var map = read.map;
+  var data = read.sheet.getDataRange().getValues().slice(1).filter(function(row) {
+    return String(row[map.InstitutionID] || "") === institutionId && String(row[map.DestinatarioUserID] || "") === actorId;
+  }).sort(function(a,b){ return new Date(b[map.FechaSolicitud] || 0).getTime() - new Date(a[map.FechaSolicitud] || 0).getTime(); });
+  return { status: "success", data: data.map(function(row) {
+    return {
+      entregaId: row[map.EntregaID], documentoId: row[map.DocumentoID], solicitudId: row[map.SolicitudID],
+      nombreDocumento: row[map.NombreDocumento], versionDocumento: row[map.VersionDocumento], sha256Documento: row[map.SHA256Documento],
+      canal: row[map.Canal], estadoDespacho: row[map.EstadoDespacho], estadoAcuse: row[map.EstadoAcuse],
+      fechaDespacho: row[map.FechaDespacho], fechaApertura: row[map.FechaApertura], fechaConfirmacion: row[map.FechaConfirmacion],
+      estadoEnlace: (String(row[map.EstadoEnlace]) === "ACTIVO" && row[map.FechaExpiracionEnlace] && new Date(row[map.FechaExpiracionEnlace]).getTime() <= Date.now()) ? "EXPIRADO" : row[map.EstadoEnlace],
+      fechaExpiracionEnlace: row[map.FechaExpiracionEnlace], fechaRevocacionEnlace: row[map.FechaRevocacionEnlace]
+    };
+  }) };
+}
+
+function openDepartmentalDocumentDelivery(payload) {
+  var p = payload || {}, actorRole = getUserVerifiedRole(p), actorId = String(p._verifiedUserId || "").trim();
+  if (!actorId || !actorRole || actorRole === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  var institutionId = String(getIdentityInstitutionId_() || "").trim();
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(10000); } catch (_) { return { status: "error", code: "LOCK_TIMEOUT" }; }
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID), read = getDocumentDeliverySheetForRead_(ss);
+    if (read.status !== "success" || !read.sheet) return { status: "error", code: read.code || "DOCUMENT_DELIVERY_NOT_FOUND" };
+    var map = read.map, found = findDocumentDeliveryRow_(read.sheet, map, p.deliveryId);
+    if (found.status !== "success") return found;
+    var row = found.row;
+    if (String(row[map.InstitutionID]) !== institutionId || String(row[map.DestinatarioUserID]) !== actorId) return { status: "error", code: "DOCUMENT_DELIVERY_RECIPIENT_MISMATCH" };
+    if (String(row[map.EstadoEnlace]) === "REVOCADO") return { status: "error", code: "DELIVERY_LINK_REVOKED" };
+    if (String(row[map.EstadoEnlace]) === "EXPIRADO") return { status: "error", code: "DELIVERY_LINK_EXPIRED" };
+    if (String(row[map.EstadoEnlace]) !== "ACTIVO") return { status: "error", code: "DELIVERY_LINK_NOT_ACTIVE" };
+    var expiry = row[map.FechaExpiracionEnlace] ? new Date(row[map.FechaExpiracionEnlace]) : null;
+    if (expiry && (isNaN(expiry.getTime()) || expiry.getTime() <= Date.now())) {
+      row[map.EstadoEnlace] = "EXPIRADO";
+      appendDocumentDeliveryEvent_(row, map, "DELIVERY_LINK_EXPIRED", actorId, actorRole, {});
+      writeDocumentDeliveryRow_(read.sheet, found.rowNumber, row);
+      return { status: "error", code: "DELIVERY_LINK_EXPIRED" };
+    }
+    if (String(row[map.EstadoDespacho]) !== "ACEPTADO_POR_PLATAFORMA") return { status: "error", code: "DOCUMENT_DELIVERY_NOT_DISPATCHED" };
+    var snapshot = getIssuedDocumentSnapshot_(ss, row[map.DocumentoID], row[map.SolicitudID]);
+    if (snapshot.status !== "success") return snapshot;
+    if (snapshot.recipientUserId !== String(row[map.DestinatarioUserID]) || snapshot.sha256 !== String(row[map.SHA256Documento]) || snapshot.version !== String(row[map.VersionDocumento])) return { status: "error", code: "DOCUMENT_VERSION_OR_HASH_CHANGED" };
+    if (row[map.FechaApertura]) return { status: "success", idempotent: true, deliveryId: row[map.EntregaID], fechaApertura: row[map.FechaApertura], sha256: row[map.SHA256Apertura] };
+    row[map.FechaApertura] = new Date();
+    row[map.SHA256Apertura] = snapshot.sha256;
+    row[map.EstadoAcuse] = "APERTURA_AUTENTICADA";
+    appendDocumentDeliveryEvent_(row, map, "DOCUMENT_OPENED_AUTHENTICATED", actorId, actorRole, { sha256: snapshot.sha256, version: snapshot.version });
+    writeDocumentDeliveryRow_(read.sheet, found.rowNumber, row);
+    return { status: "success", deliveryId: row[map.EntregaID], documentoId: snapshot.documentId, solicitudId: snapshot.solicitudId, version: snapshot.version, sha256: snapshot.sha256, nombreDocumento: snapshot.fileName, fechaApertura: row[map.FechaApertura] };
+  } catch (error) {
+    return { status: "error", code: error.message || "DOCUMENT_DELIVERY_OPEN_FAILED" };
+  } finally { lock.releaseLock(); }
+}
+
+function confirmDepartmentalDocumentReceipt(payload) {
+  var p = payload || {}, actorRole = getUserVerifiedRole(p), actorId = String(p._verifiedUserId || "").trim();
+  if (!actorId || !actorRole || actorRole === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  if (p.confirmacionExplicita !== true) return { status: "error", code: "EXPLICIT_RECEIPT_REQUIRED" };
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(10000); } catch (_) { return { status: "error", code: "LOCK_TIMEOUT" }; }
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID), read = getDocumentDeliverySheetForRead_(ss);
+    if (read.status !== "success" || !read.sheet) return { status: "error", code: read.code || "DOCUMENT_DELIVERY_NOT_FOUND" };
+    var map = read.map, found = findDocumentDeliveryRow_(read.sheet, map, p.deliveryId);
+    if (found.status !== "success") return found;
+    var row = found.row;
+    if (String(row[map.DestinatarioUserID]) !== actorId || String(row[map.InstitutionID]) !== String(getIdentityInstitutionId_() || "")) return { status: "error", code: "DOCUMENT_DELIVERY_RECIPIENT_MISMATCH" };
+    if (row[map.FechaConfirmacion]) return { status: "success", idempotent: true, deliveryId: row[map.EntregaID], fechaConfirmacion: row[map.FechaConfirmacion] };
+    if (!row[map.FechaApertura]) return { status: "error", code: "DOCUMENT_MUST_BE_OPENED_BEFORE_RECEIPT" };
+    var snapshot = getIssuedDocumentSnapshot_(ss, row[map.DocumentoID], row[map.SolicitudID]);
+    if (snapshot.status !== "success") return snapshot;
+    if (snapshot.recipientUserId !== String(row[map.DestinatarioUserID]) || snapshot.sha256 !== String(row[map.SHA256Documento]) || snapshot.version !== String(row[map.VersionDocumento]) ||
+        snapshot.sha256 !== String(row[map.SHA256Apertura])) return { status: "error", code: "DOCUMENT_VERSION_OR_HASH_CHANGED" };
+    row[map.FechaConfirmacion] = new Date();
+    row[map.SHA256Confirmacion] = snapshot.sha256;
+    row[map.EstadoAcuse] = "RECIBIDO_CONFIRMADO";
+    row[map.ConfirmadoPor] = actorId;
+    row[map.ObservacionRecepcion] = String(p.observacionRecepcion || "").trim().slice(0, 500);
+    appendDocumentDeliveryEvent_(row, map, "DOCUMENT_RECEIPT_CONFIRMED", actorId, actorRole, { sha256: snapshot.sha256, version: snapshot.version });
+    writeDocumentDeliveryRow_(read.sheet, found.rowNumber, row);
+    return { status: "success", deliveryId: row[map.EntregaID], estadoAcuse: row[map.EstadoAcuse], fechaConfirmacion: row[map.FechaConfirmacion], sha256: snapshot.sha256 };
+  } catch (error) {
+    return { status: "error", code: error.message || "DOCUMENT_RECEIPT_CONFIRMATION_FAILED" };
+  } finally { lock.releaseLock(); }
+}
+
+function revokeDepartmentalDocumentDeliveryLink(payload) {
+  var p = payload || {}, sender = getDocumentDeliverySenderContext_(p);
+  if (sender.status !== "success") return sender;
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(10000); } catch (_) { return { status: "error", code: "LOCK_TIMEOUT" }; }
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID), read = getDocumentDeliverySheetForRead_(ss);
+    if (read.status !== "success" || !read.sheet) return { status: "error", code: read.code || "DOCUMENT_DELIVERY_NOT_FOUND" };
+    var map = read.map, found = findDocumentDeliveryRow_(read.sheet, map, p.deliveryId);
+    if (found.status !== "success") return found;
+    var row = found.row;
+    if (String(row[map.InstitutionID]) !== sender.context.institutionId ||
+        !isDocumentDeliveryDepartmentAllowed_(sender.context, row[map.DepartmentID])) return { status: "error", code: "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+    if (String(row[map.EstadoEnlace]) === "REVOCADO") return { status: "success", idempotent: true, deliveryId: row[map.EntregaID], estadoEnlace: "REVOCADO" };
+    row[map.EstadoEnlace] = "REVOCADO";
+    row[map.FechaRevocacionEnlace] = new Date();
+    row[map.RevocadoPor] = sender.actorId;
+    appendDocumentDeliveryEvent_(row, map, "DELIVERY_LINK_REVOKED", sender.actorId, sender.role, { reason: String(p.motivo || "").slice(0, 250) });
+    writeDocumentDeliveryRow_(read.sheet, found.rowNumber, row);
+    return { status: "success", deliveryId: row[map.EntregaID], estadoEnlace: row[map.EstadoEnlace] };
+  } catch (error) {
+    return { status: "error", code: error.message || "DOCUMENT_DELIVERY_REVOKE_FAILED" };
+  } finally { lock.releaseLock(); }
 }
 
 function getDepartmentalWorkInbox(payload) {

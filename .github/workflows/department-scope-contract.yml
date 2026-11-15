@@ -73,6 +73,7 @@ on:
       - tests/security/accounting-employee-self-service-portal.test.js
       - tests/security/accounting-attendance-correction-ownership.test.js
       - tests/security/academic-absence-justification-canonical.test.js
+      - tests/security/user-service-departmental-outbox.test.js
       - tests/security/accounting-employee-loan-advance-ownership.test.js
       - tests/security/accounting-payroll-loan-amortization.test.js
       - tests/security/accounting-payroll-concept-catalog.test.js
@@ -132,6 +133,8 @@ jobs:
         run: node tests/security/accounting-attendance-correction-ownership.test.js
       - name: Run canonical academic absence justification and reconciliation contract
         run: node tests/security/academic-absence-justification-canonical.test.js
+      - name: Run departmental document outbox, receipt and integrity contract
+        run: node tests/security/user-service-departmental-outbox.test.js
       - name: Run accounting employee loan request and approval ownership contract
         run: node tests/security/accounting-employee-loan-advance-ownership.test.js
       - name: Run accounting payroll loan amortization and reversal contract
