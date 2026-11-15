@@ -10396,7 +10396,7 @@ function absenceSheetMap_(sheet, headers) {
 }
 
 function absenceInstitutionalPolicyValue_(ss, key, allowedValues, defaultValue) {
-  var sheet = ss && ss.getSheetByName ? ss.getSheetByName("ConfiguracionInstitucional") : null;
+  var sheet = ssForAccess && ssForAccess.getSheetByName ? ssForAccess.getSheetByName("ConfiguracionInstitucional") : null;
   if (!sheet || sheet.getLastRow() < 2 || sheet.getLastColumn() < 1) return defaultValue;
   var rows = sheet.getDataRange().getValues();
   var headers = (rows[0] || []).map(function(value) {
