@@ -24,7 +24,7 @@ const schemas={curso:{service:"ACCOUNTING",sheet:"Cursos",headers:["CursoID","No
 const auditRows=[],writeCalls=[],rollbackCalls=[];
 let failWriteAt=0,runCounter=0;
 const audit={appendRow(row){auditRows.push(row);}};
-let binaryFileHash="TEST-FILE-HASH";
+let binaryFileHash="a".repeat(64);
 const context={SPREADSHEET_ID:"TEST",MIGRATION_OWNER_SCHEMAS_:schemas,
  validateImportWorkbookBinary_:()=>({valid:true,fileHash:binaryFileHash}),
  SpreadsheetApp:{openById(){return ss;}},PropertiesService:{getScriptProperties(){return{getProperty(){return"INST-1";}};}},
@@ -67,9 +67,9 @@ assert.equal(publicPreview.fileHash, undefined, "raw workbook digests remain ser
 assert.equal(publicPreview.fileSizeBytes, undefined, "binary metadata is not exposed in the preflight response");
 assert.deepEqual(Array.from(publicPreview.targetExistenceSnapshot.existingTargetIds),["CURSO-1"],"preflight reveals only target IDs in the submitted batch");
 assert.notEqual(context.preview({...base,filasData:[{...base.filasData[0],nota:91}]}).previewHash,valid.previewHash);
-binaryFileHash="DIFFERENT-FILE-HASH";
+binaryFileHash="b".repeat(64);
 assert.notEqual(context.preview(base).previewHash,valid.previewHash,"the original uploaded file digest is bound into the preview hash");
-binaryFileHash="TEST-FILE-HASH";
+binaryFileHash="a".repeat(64);
 const partialPayload={...base,analisisEstructural:{headerRowIndex:1,dataRowNumbers:[3,7]},filasData:[base.filasData[0],{...base.filasData[0],legacyId:"CUR-2",fechaInicio:"fecha-invalida"}]};
 const partialPreview=context.preview(partialPayload);
 assert.equal(partialPreview.validForImport,false);
