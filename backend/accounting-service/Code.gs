@@ -5377,7 +5377,7 @@ function uploadPaymentVoucher(payload) {
     if(previous){
       const current=lockedRows.map((row,index)=>({row:row,index:index})).filter(item=>String(item.row[map.ComprobanteGrupoID]||"").trim()===groupId&&item.row[map.EsVersionActual]!==false);
       if(current.length!==1||String(current[0].row[map.ComprobanteID]||"")!==String(previous.row[map.ComprobanteID]||"")||
-         String(current[0].row[map.Estado]||"")!=="Observado"||String(current[0].row[map.DecisionHash]||""))
+         String(current[0].row[map.Estado]||"")!=="Observado"||String(current[0].row[map.DecisionHash]||"")||String(current[0].row[map.UserId]||"").trim()!==userId||String(current[0].row[map.CargoID]||"").trim()!==cargoId)
         throw new Error("VOUCHER_VERSION_IMMUTABLE");
       previousState={index:current[0].index,row:current[0].row.slice()};
       sheet.getRange(current[0].index+1,map.EsVersionActual+1).setValue(false);
@@ -5490,12 +5490,14 @@ function reviewPaymentVoucher(payload) {
     decisionTimestamp=new Date().toISOString();
     decisionHash=computeDocumentSHA256([comprobanteId,String(row[map.SHA256]||""),String(evidence.actualHash||""),String(row[map.VersionNumero]||1),
       nuevoEstado,actor.userId,decisionTimestamp,decisionWarning?"WARNING":"VERIFIED"].join("|"));
-    sheet.getRange(idx+1,map.Estado+1).setValue(nuevoEstado);
-    if(observacionesAdmin)sheet.getRange(idx+1,map.Observaciones+1).setValue(observacionesAdmin);
-    sheet.getRange(idx+1,map.DecisionHash+1).setValue(decisionHash);
-    sheet.getRange(idx+1,map.DecisionTimestamp+1).setValue(decisionTimestamp);
-    sheet.getRange(idx+1,map.DecisionBy+1).setValue(actor.userId);
-    sheet.getRange(idx+1,map.DecisionIntegrityWarning+1).setValue(decisionWarning);
+    const updatedRow=row.slice();
+    updatedRow[map.Estado]=nuevoEstado;
+    if(observacionesAdmin)updatedRow[map.Observaciones]=observacionesAdmin;
+    updatedRow[map.DecisionHash]=decisionHash;
+    updatedRow[map.DecisionTimestamp]=decisionTimestamp;
+    updatedRow[map.DecisionBy]=actor.userId;
+    updatedRow[map.DecisionIntegrityWarning]=decisionWarning;
+    sheet.getRange(idx+1,1,1,updatedRow.length).setValues([updatedRow]);
   } finally { lock.releaseLock(); }
   let pagoRes=null;
   if(["Aprobado","Confirmado"].indexOf(nuevoEstado)!==-1){
