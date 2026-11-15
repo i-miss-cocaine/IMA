@@ -10194,9 +10194,9 @@ function getDailyAttendance(payload) {
 }
 
 
-const ABSENCE_JUSTIFICATION_HEADERS_ = ["JustificacionID","UserId","FechaAfectada","Periodo","MotivoDeclarado","AdjuntoUrl","PresentadoPor","EstadoRevision","RevisadoPor","ObservacionesAdmin","FechaResolucion","SolicitudID","SesionIDsJSON","DecisionHistoryJSON","SyncEstado","UltimoError","CreadoPorUserId","ActualizadoEn","ObservacionesPublicas","AdjuntoSHA256","AdjuntoVersion","AdjuntoSizeBytes","AdjuntoMimeType","AdjuntoFechaRecepcion","AdjuntoIntegridadEstado"];
+const ABSENCE_JUSTIFICATION_HEADERS_ = ["JustificacionID","UserId","FechaAfectada","Periodo","MotivoDeclarado","AdjuntoUrl","PresentadoPor","EstadoRevision","RevisadoPor","ObservacionesAdmin","FechaResolucion","SolicitudID","SesionIDsJSON","DecisionHistoryJSON","SyncEstado","UltimoError","CreadoPorUserId","ActualizadoEn","ObservacionesPublicas","AdjuntoSHA256","AdjuntoVersion","AdjuntoSizeBytes","AdjuntoMimeType","AdjuntoFechaRecepcion","AdjuntoIntegridadEstado","SesionIDsSolicitadasJSON","AlcanceAprobacion"];
 const ABSENCE_ATTENDANCE_HEADERS_ = ["RegistroID","SesionID","UserId","EstadoAsistencia","HoraLlegada","MinutosTardanza","Justificado","ObservacionDocente","FechaRegistro","JustificacionID"];
-const ABSENCE_REQUEST_EXTRA_HEADERS_ = ["JustificacionID","FechaAfectada","Periodo","SesionIDsJSON","SyncEstado","MotivoJustificacion","UltimoError","AdjuntoSHA256","AdjuntoVersion","AdjuntoSizeBytes","AdjuntoMimeType","AdjuntoFechaRecepcion","AdjuntoIntegridadEstado"];
+const ABSENCE_REQUEST_EXTRA_HEADERS_ = ["JustificacionID","FechaAfectada","Periodo","SesionIDsJSON","SyncEstado","MotivoJustificacion","UltimoError","AdjuntoSHA256","AdjuntoVersion","AdjuntoSizeBytes","AdjuntoMimeType","AdjuntoFechaRecepcion","AdjuntoIntegridadEstado","SesionIDsSolicitadasJSON","AlcanceAprobacion"];
 
 function ensureAbsenceHeaders_(sheet, headers) {
   if (!sheet) throw new Error("ABSENCE_SHEET_UNAVAILABLE");
@@ -10318,6 +10318,50 @@ function absenceSheetMap_(sheet, headers) {
   return map;
 }
 
+function absenceInstitutionalPolicyValue_(ss, key, allowedValues, defaultValue) {
+  var sheet = ss && ss.getSheetByName ? ss.getSheetByName("ConfiguracionInstitucional") : null;
+  if (!sheet || sheet.getLastRow() < 2 || sheet.getLastColumn() < 1) return defaultValue;
+  var rows = sheet.getDataRange().getValues();
+  var headers = (rows[0] || []).map(function(value) {
+    return String(value || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  });
+  var keyIndex = headers.indexOf("clave") >= 0 ? headers.indexOf("clave") :
+    (headers.indexOf("parametro") >= 0 ? headers.indexOf("parametro") : headers.indexOf("nombre"));
+  var valueIndex = headers.indexOf("valor"), stateIndex = headers.indexOf("estado");
+  if (keyIndex < 0 || valueIndex < 0 || stateIndex < 0) return defaultValue;
+  var matches = rows.slice(1).filter(function(row) { return String(row[keyIndex] || "").trim() === key; });
+  if (matches.length > 1) throw new Error("ABSENCE_POLICY_AMBIGUOUS:" + key);
+  if (!matches.length || !teacherJustificationActiveState_(matches[0][stateIndex])) return defaultValue;
+  var value = String(matches[0][valueIndex] || "").trim().toUpperCase();
+  if (allowedValues.indexOf(value) === -1) throw new Error("ABSENCE_POLICY_INVALID:" + key);
+  return value;
+}
+
+function absenceJustificationPolicies_(ss) {
+  return {
+    impact: absenceInstitutionalPolicyValue_(ss, "JUSTIFICACION_IMPACTO_AUTOMATICO_ASISTENCIA",
+      ["INMEDIATO_AL_APROBAR_SECRETARIA", "REQUIERE_CONFORMIDAD_PREVIA_DOCENTE"], "INMEDIATO_AL_APROBAR_SECRETARIA"),
+    partial: absenceInstitutionalPolicyValue_(ss, "PERMITIR_JUSTIFICACION_PARCIAL_DIAS",
+      ["HABILITADO", "TODO_O_NADA"], "TODO_O_NADA")
+  };
+}
+
+function absenceTeacherConformityComplete_(ss, justId, sessionIds) {
+  var sheet = ss && ss.getSheetByName ? ss.getSheetByName("ConstanciasConocimientoDocente") : null;
+  if (!sheet || sheet.getLastRow() < 2) return false;
+  var required = ["ConstanciaID", "JustificacionID", "DocenteUserId", "SesionID", "TipoConstancia", "FechaConocimiento", "HashRegistro", "Estado", "CorrelationID"];
+  var map = absenceSheetMap_(sheet, required), rows = sheet.getDataRange().getValues();
+  return sessionIds.every(function(sessionId) {
+    var matches = rows.slice(1).filter(function(row) {
+      return String(row[map.JustificacionID] || "").trim() === justId &&
+        String(row[map.SesionID] || "").trim() === sessionId &&
+        String(row[map.TipoConstancia] || "").trim().toUpperCase() === "CONFORMIDAD" &&
+        String(row[map.Estado] || "").trim().toUpperCase() === "ACTIVA";
+    });
+    return matches.length === 1 && !!String(matches[0][map.DocenteUserId] || "").trim();
+  });
+}
+
 function createCanonicalAbsenceJustification_(payload) {
   var lock = LockService.getScriptLock();
   try { lock.waitLock(10000); } catch (_) { return { status: "error", code: "LOCK_TIMEOUT" }; }
@@ -10421,6 +10465,8 @@ function createCanonicalAbsenceJustificationUnlocked_(payload) {
   newRow[justMap.FechaResolucion] = "";
   newRow[justMap.SolicitudID] = String(p.solicitudId || id);
   newRow[justMap.SesionIDsJSON] = JSON.stringify(sessions);
+  newRow[justMap.SesionIDsSolicitadasJSON] = JSON.stringify(sessions);
+  newRow[justMap.AlcanceAprobacion] = "TOTAL_PENDIENTE";
   newRow[justMap.DecisionHistoryJSON] = JSON.stringify(history);
   newRow[justMap.SyncEstado] = "NO_REQUERIDA";
   newRow[justMap.UltimoError] = "";
@@ -10518,6 +10564,39 @@ function reviewCanonicalAbsenceJustification_(payload) {
     if (!Array.isArray(history)) return { status: "error", code: "ABSENCE_HISTORY_CORRUPT" };
     var retryApproval = current === "PendienteSincronizacion" && target === "Aprobada" && syncState === "PENDIENTE";
     var retryRevocation = current === "RevocacionPendienteSincronizacion" && target === "Cancelada" && syncState === "PENDIENTE_REVOCACION";
+    var approvalScope = null;
+    if (target === "Aprobada") {
+      var policies = absenceJustificationPolicies_(ss);
+      var requestedSessions = [];
+      try { requestedSessions = JSON.parse(String(row[map.SesionIDsSolicitadasJSON] || row[map.SesionIDsJSON] || "[]")); }
+      catch (_) { return { status: "error", code: "ABSENCE_SESSION_HISTORY_CORRUPT" }; }
+      if (!Array.isArray(requestedSessions) || !requestedSessions.length) return { status: "error", code: "ATTENDANCE_SESSION_LINK_MISSING" };
+      requestedSessions = requestedSessions.map(function(value) { return String(value || "").trim(); }).filter(Boolean);
+      if (new Set(requestedSessions).size !== requestedSessions.length) return { status: "error", code: "ATTENDANCE_SESSION_AMBIGUOUS" };
+      var selectedSessions = retryApproval ? JSON.parse(String(row[map.SesionIDsJSON] || "[]")) :
+        (Array.isArray(p.sesionIdsAprobadas) ? p.sesionIdsAprobadas.map(function(value) { return String(value || "").trim(); }).filter(Boolean) : requestedSessions.slice());
+      if (!Array.isArray(selectedSessions) || !selectedSessions.length || new Set(selectedSessions).size !== selectedSessions.length ||
+          selectedSessions.some(function(sessionId) { return requestedSessions.indexOf(sessionId) === -1; })) {
+        return { status: "error", code: "ABSENCE_PARTIAL_SESSION_SCOPE_MISMATCH" };
+      }
+      if (policies.partial === "TODO_O_NADA" && selectedSessions.length !== requestedSessions.length) {
+        return { status: "error", code: "ABSENCE_PARTIAL_APPROVAL_DISABLED" };
+      }
+      if (policies.impact === "REQUIERE_CONFORMIDAD_PREVIA_DOCENTE" &&
+          !absenceTeacherConformityComplete_(ss, justId, selectedSessions)) {
+        return { status: "error", code: "TEACHER_CONFORMITY_REQUIRED", retryable: true };
+      }
+      approvalScope = {
+        requested: requestedSessions,
+        selected: selectedSessions,
+        scope: selectedSessions.length === requestedSessions.length ? "TOTAL" : "PARCIAL"
+      };
+      if (!retryApproval) {
+        row[map.SesionIDsSolicitadasJSON] = JSON.stringify(requestedSessions);
+        row[map.SesionIDsJSON] = JSON.stringify(selectedSessions);
+        row[map.AlcanceAprobacion] = approvalScope.scope;
+      }
+    }
     if (current === target && (syncState === "SINCRONIZADO" || syncState === "NO_REQUERIDA")) return { status: "success", idempotent: true, data: { justificacionId: justId, estado: target } };
     if (!retryApproval && !retryRevocation) {
       if (current === "Aprobada" && target !== "Cancelada") return { status: "error", code: "ABSENCE_DECISION_CONFLICT" };
@@ -10526,7 +10605,7 @@ function reviewCanonicalAbsenceJustification_(payload) {
       if (target === "Aprobada" && current !== "Pendiente" && current !== "RequiereInformacion") return { status: "error", code: "ABSENCE_DECISION_CONFLICT" };
       if (target === "Rechazada" && current !== "Pendiente" && current !== "RequiereInformacion") return { status: "error", code: "ABSENCE_DECISION_CONFLICT" };
       if (target === "RequiereInformacion" && current !== "Pendiente") return { status: "error", code: "ABSENCE_DECISION_CONFLICT" };
-      history.push({ action: target === "Aprobada" ? "APPROVE" : target === "Cancelada" ? "REVOKE" : target.toUpperCase(), actorId: actorId, actorRole: actorRole, timestamp: new Date().toISOString(), observation: String(p.observacionesAdmin || "").slice(0, 2000) });
+      history.push({ action: target === "Aprobada" ? "APPROVE" : target === "Cancelada" ? "REVOKE" : target.toUpperCase(), actorId: actorId, actorRole: actorRole, timestamp: new Date().toISOString(), observation: String(p.observacionesAdmin || "").slice(0, 2000), approvedSessionIds: approvalScope ? approvalScope.selected : [], approvalScope: approvalScope ? approvalScope.scope : "" });
     }
     if (target === "Aprobada" || target === "Cancelada" && (current === "Aprobada" || retryRevocation)) {
       var pendingState = target === "Aprobada" ? "PendienteSincronizacion" : "RevocacionPendienteSincronizacion";
@@ -10566,7 +10645,7 @@ function reviewCanonicalAbsenceJustification_(payload) {
       absenceUpdateRequestProjection_(ss, justId, target, "SINCRONIZADO", null, "");
     }
     logStructuredEvent("ACADEMIC", "reviewCanonicalAbsenceJustification", "INFO", "ATTENDANCE_JUSTIFICATION_REVIEWED", "Decisión registrada para justificación " + justId, { justificacionId: justId, estado: target, actorId: actorId }, actorRole);
-    return { status: "success", data: { justificacionId: justId, estado: target, syncEstado: target === "Rechazada" || target === "RequiereInformacion" ? "NO_REQUERIDA" : "SINCRONIZADO" } };
+    return { status: "success", data: { justificacionId: justId, estado: target, syncEstado: target === "Rechazada" || target === "RequiereInformacion" ? "NO_REQUERIDA" : "SINCRONIZADO", alcanceAprobacion: approvalScope ? approvalScope.scope : String(row[map.AlcanceAprobacion] || ""), sesionesAprobadas: approvalScope ? approvalScope.selected : [] } };
   } catch (error) {
     return { status: "error", code: error.message || "ABSENCE_REVIEW_FAILED" };
   } finally {
