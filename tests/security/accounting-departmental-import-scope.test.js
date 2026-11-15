@@ -64,7 +64,7 @@ const context = {
   getDynamicPermissionsForRole: (role, action) => action === "importDataWithColumnMapping" ? institutionalImportPermission : null,
   ROLE_PERMISSIONS: {},
   getOrCreateSheet: (_ss, name) => { assert.equal(name, "AuditoriaMigraciones"); return { appendRow: row => auditRows.push(row) }; },
-  Utilities: { getUuid: () => "RUN-1" },
+  Utilities: { getUuid: () => "RUN-1", MacAlgorithm: { HMAC_SHA_256: "HMAC_SHA_256" }, computeHmacSignature: () => [1,2,3] },
   resolveCrossReferenceIdentifier: payload => ({ status: "success", idNuevoPlataforma: "EMP-" + String(payload.idOriginalLegado || "1").replace(/[^A-Za-z0-9]/g, "") }),
   migrationStableJson_: value => JSON.stringify(value), migrationHash_: () => "HASH-1",
   sendMigrationOwnerRequest_: (_type, action, payload) => {
