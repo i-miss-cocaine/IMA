@@ -59,6 +59,7 @@ on:
       - dashboard-direccion.html
       - js/transport-analytics.js
       - tests/security/accounting-service-tariffs.test.js
+      - tests/security/accounting-payment-voucher-evidence-integrity.test.js
       - tests/security/accounting-family-credit-preference.test.js
       - tests/security/accounting-purchase-receipt-partial.test.js
       - tests/security/accounting-supplier-profile.test.js
@@ -175,6 +176,8 @@ jobs:
         run: node tests/regression/hr-vacation-dashboard-contract.test.js
       - name: Run centralized service tariff, versioning and discount contract
         run: node tests/security/accounting-service-tariffs.test.js
+      - name: Run accounting payment voucher evidence integrity, versioning and decision binding contract
+        run: node tests/security/accounting-payment-voucher-evidence-integrity.test.js
       - name: Run family credit guardian approval preference and fail-closed contract
         run: node tests/security/accounting-family-credit-preference.test.js
       - name: Run supplier profile and protected banking contract
