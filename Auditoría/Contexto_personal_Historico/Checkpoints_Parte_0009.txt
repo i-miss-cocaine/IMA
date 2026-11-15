@@ -626,3 +626,51 @@ Correcciones implementadas:
 - **F22-Task01:** completada en código/revisión/CI; beta pendiente.
 - **Siguiente tarea elegible:** F22-Task02 — vincular SHA-256 a los bytes y versión exactos del documento firmado.
 - Reanudar desde HEAD \`5e267ac32f21236722905f5b9ef8081768b661ad\` más el commit de este checkpoint.
+
+
+### C1.748 — F22-Task02 — integridad criptográfica del PDF y versión firmada
+
+**Rama autorizada:** `NG_beta_0.0.0.1_work`  
+**Rama base:** `NG_beta_0.0.0.1`  
+**Checkpoint anterior:** C1.747  
+**HEAD inicial verificado:** `c7fbb2098f7eb14e95cb62102700e481e0f8c035`  
+**HEAD antes del commit de checkpoint:** `a4fe3b4d1f5ca09dcb25ec8294a20f3492f5d0ad`  
+**HEAD de rama base verificado sin cambios:** `44d9891132332e692dbe2ba8602b41f50a508a59`  
+**Estado:** F22-Task02 completada en código/revisión/CI; BETA-FUNC-099 pendiente.
+
+#### 1. Requisito y alcance ejecutado
+F22-Task02 exige que la huella SHA-256 se derive de los bytes PDF reales y quede ligada a un documento/version inmutable, CUV e identidad/rol autenticados; la verificación debe recuperar los bytes y recalcular el hash. No se considera evidencia un hash de metadatos ni datos de firmante aportados por el cliente.
+
+Se verificó y completó el flujo de emisión en ACCOUNTING: `generateSchoolDocument` genera PDF, valida su estructura, persiste en Drive privado, vuelve a leer los bytes almacenados, compara longitud y SHA-256 con los bytes generados y guarda DriveFileID, SHA256, VersionDocumento y CUV bajo ScriptLock; si falla la persistencia, elimina/compensa el archivo creado. `verifySchoolDocumentByCUV` recupera el archivo privado, valida PDF, recalcula SHA-256 y compara con el registro; detecta archivo ausente, público, inválido o alterado y solo asocia firmas con el mismo hash y versión.
+
+En USER, `registerDocumentSignature` exige identidad/rol de sesión verificados, resuelve el documento y propietario mediante scope, comprueba PDF privado, versión/hash persistidos, recalcula SHA-256 de los bytes recuperados y hace segunda lectura para detectar cambios durante la operación. Rechaza hash del cliente que no coincida, firmante suplantado, documento alterado, público o sin metadatos; guarda hash, signatureHash, versión, método y transacción. Los reintentos exactos son idempotentes y ScriptLock serializa la escritura.
+
+La revisión adicional detectó que `createAdvancedSignatureRequest` calculaba el hash del archivo, pero no verificaba su coincidencia con la huella/version persistidas ni guardaba la versión en la transacción. Se corrigió: exige metadatos, archivo PDF privado/no eliminado, hash real igual al almacenado, segunda lectura estable, columna VersionDocumento y devolución de la versión en consulta de estado. La transacción permanece Pendiente; no se afirma firma avanzada validada ni integración PSC real.
+
+#### 2. Archivos modificados en la tarea
+- `backend/user-service/Code.gs`
+- `tests/security/user-service-signature-document-integrity.test.js`
+- `tests/security/user-service-signature-ownership.test.js`
+- `tests/security/accounting-school-document-binary-integrity.test.js`
+- `tests/regression/phase22-document-management-suite-contract.test.js`
+- `backend/accounting-service/Code.gs` y pruebas de emisión/verificación se revisaron como implementación preexistente ya incorporada antes del HEAD inicial de esta sesión; no se reescribieron en esta iteración.
+
+Commits de implementación/ajuste reconciliados desde C1.747: `07b6bdbb641e0c3208602a9292df00304e2cc415`, `07e0fa8b0068d0d08c0d5607afff4c39b52fcaa8`, `bd05686096e5439f5c3a4cd9628413dec2974230`, `7f483940db9848e088d3146ad9618474f2c1922b`, `c7fbb2098f7eb14e95cb62102700e481e0f8c035`, `466fcbaa50e0158676a0a81941b70261ee6c83e8`, `20754fc18abfec7e4db44f5de716238efb165b0a`, `a4fe3b4d1f5ca09dcb25ec8294a20f3492f5d0ad`.
+
+#### 3. Revisión y pruebas
+- Revisión focalizada de generación PDF, privacidad Drive, esquema/versionado, CUV, hash de bytes, identidad/rol, idempotencia, ScriptLock, lecturas repetidas y tratamiento de errores/rollback.
+- Contrato `user-service-signature-document-integrity`: PASS; cubre hash real, versionado, idempotencia, mismatch, archivo alterado/público, lock ocupado y cambio entre lecturas.
+- Contrato `user-service-signature-ownership`: PASS; ampliado para hash persistido, versión exacta, archivo privado, archivo en papelera, alteración durante lectura, ausencia de metadatos, hash cliente inválido, identidad/scope, idempotencia y reentrada.
+- Contrato `accounting-school-document-binary-integrity` y regresión Phase 22: incluidos en el workflow y PASS.
+- GitHub Actions Node.js 24.22.2: Department Scope Contract run `43726054293` SUCCESS; Task-Service security contracts run `43725992636` SUCCESS; Identity Mapping and Transport Security run `43725992655` SUCCESS. Los runs Department Scope `43725929320` y `43725992635` fallaron por una aserción de fixture que esperaba dos lecturas incluso cuando el hash aportado por cliente se rechaza antes de la segunda lectura; la aserción se corrigió y el run `43726054293` pasó.
+- Sintaxis Apps Script/JS y clientes: PASS en el workflow. CLI: no aplicable; el repositorio no contiene `package.json` ni scripts CLI. Node local: NOT RUN en esta sesión porque no se dispuso de checkout local ejecutable; la ejecución Node efectiva se realizó en CI. No se presenta CI como prueba local.
+
+#### 4. Límites y estado beta
+- BETA-FUNC-099 conserva la verificación real en Apps Script/Drive/Sheets como Pendiente beta; no se ejecutó contra documentos ni datos institucionales productivos.
+- F22-Task04 sigue pendiente para integración PSC real, certificados X.509, cadena de confianza y sello de tiempo. La ruta manual no se describe como firma avanzada cualificada.
+- No se modificó `NG_beta_0.0.0.1` ni otra rama.
+
+#### 5. Continuidad
+- **F22-Task02:** completada en código/revisión/CI; beta pendiente.
+- **Siguiente candidata:** F22-Task03, certificado probatorio persistido; antes de cerrar su alcance completo, separar la generación verificable para conformidades manuales de las dependencias aún no satisfechas de PSC/múltiples firmantes. No declarar F22-Task03 completada por la sola existencia de un certificado en memoria.
+- Reanudar desde el commit que incorpora este checkpoint, manteniendo exclusivamente `NG_beta_0.0.0.1_work`.

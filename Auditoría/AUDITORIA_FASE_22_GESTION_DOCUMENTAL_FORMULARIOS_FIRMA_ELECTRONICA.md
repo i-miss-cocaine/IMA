@@ -255,9 +255,9 @@ El informe documenta de forma exhaustiva y rigurosa el estado de la Fase 22, per
 - **Dependencias/riesgos:** generación real de PDF, Drive, versionado de plantilla, identidad autenticada y CUV; riesgo de atribución falsa y hash sin relación con el documento.
 - **Alcance:** integridad documental y vínculo firma-documento; no presentar hash de metadatos como hash del archivo.
 - **Criterios de aceptación:** PDF real persistido; hash calculado sobre bytes; verificación recalcula y compara; firma requiere documento/version válida; identidad y rol coinciden con sesión autenticada; solicitudes repetidas son idempotentes; alteración del archivo se detecta.
-- **Prioridad:** P0. **Estado:** Pendiente.
+- **Prioridad:** P0. **Estado:** Completada en código/revisión/CI; BETA-FUNC-099 pendiente.
 - **Reconciliación:** TASK-039/F22-Task02 registró `computeDocumentSHA256` y 221/221 pruebas, pero AUD-NG-059 demuestra hash de metadatos y ausencia de PDF final/verificación de bytes; AUD-NG-060 demuestra que se confía en documentoHash y datos de firmante aportados por cliente; AUD-NG-027 ya identificaba aceptación de identidad/hash del cliente. TASK-351/TASK-118 y AUD-NG-161 son referencias relacionadas para CUV, identidad/correlativo y pruebas de colisión; coordinar sin duplicar esos alcances.
-- **Evidencia de cierre:** pendiente; no se ha demostrado vínculo criptográfico con bytes PDF ni identidad firmante verificada.
+- **Evidencia de cierre:** PDF real privado con SHA-256 de bytes persistidos y versión/DriveFileId/CUV; verificación CUV recalcula bytes; firmas manuales y solicitudes avanzadas quedan ligadas al hash/version exactos y a identidad autenticada; contratos Node y sintaxis CI PASS. La validación real en Drive/Sheets permanece Pendiente beta.
 
 ### [F22-Task03] Persistir un certificado probatorio inmutable al completar válidamente cada proceso de firma
 - **Hallazgo de origen:** secciones B, C.7, D/F22-19, G.3 y H P0; ampliación AUD-NG-061.

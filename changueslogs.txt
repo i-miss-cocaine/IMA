@@ -3784,3 +3784,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Node local: versión 22.16.0 disponible, pero el checkout local falló por DNS al resolver github.com; no se declara ejecución local. Las pruebas/sintaxis sí se ejecutaron en GitHub Actions con Node configurado por el workflow.
 - BETA-FUNC-099 ampliado para incluir ACADEMIC, versionado, descarga, restauración, integridad y firma exacta. No se ha ejecutado aún contra Apps Script/Drive/Sheets reales.
 - Siguiente tarea elegible: F22-Task02, vinculación de SHA-256 a los bytes y versión exactos del documento firmado.
+
+
+[2026-11-15] F22-Task02 — C1.748, hash SHA-256 de bytes PDF y versión exacta
+- Se consolidó la emisión de PDF privado en ACCOUNTING: validación binaria, lectura posterior de bytes, SHA-256, CUV, DriveFileID y VersionDocumento; verifySchoolDocumentByCUV recalcula bytes y rechaza alteraciones, archivos públicos o metadatos incompletos.
+- USER registerDocumentSignature vincula la conformidad a documento/version/hash verificados y al actor autenticado; comprueba PDF privado, compara hash real, repite lectura, persiste hash de documento/firma y es idempotente bajo ScriptLock.
+- createAdvancedSignatureRequest se endureció para comparar el hash de bytes con el hash persistido, exigir versión, comprobar privacidad/estado del archivo y estabilidad entre lecturas, guardar VersionDocumento en TransaccionesFirmaAvanzada y devolverla al consultar estado. No declara firma PSC válida.
+- Contratos Node y sintaxis CI PASS. Department Scope 43726054293 SUCCESS; Task-Service security 43725992636 SUCCESS; Identity Mapping 43725992655 SUCCESS. Se corrigió una aserción de prueba que esperaba una lectura adicional tras un rechazo temprano.
+- Node local NOT RUN; CI Node.js 24.22.2 ejecutó los contratos. CLI no aplicable (sin package.json/scripts). BETA-FUNC-099 Pendiente beta; integración PSC real sigue pendiente.
