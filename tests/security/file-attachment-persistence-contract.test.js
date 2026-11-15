@@ -150,6 +150,78 @@ assert.equal(rollbackCount, 2);
 
 
 
+// Todos los puntos de entrada de USER deben usar el mismo almacenamiento privado y rechazar referencias del cliente.
+[
+  "submitInstitutionalFormRequest",
+  "submitStudentAbsenceJustification",
+  "submitAdministrativeRequest",
+  "submitJointFamilyPayment"
+].forEach(function(name) {
+  const fn = extractFunction(user, name);
+  assert.match(fn, /createPrivateRequestAttachment_/, name + " must persist through the private attachment helper");
+  assert.match(fn, /UNTRUSTED_ATTACHMENT_REFERENCE/, name + " must reject client-supplied URLs/IDs");
+  assert.match(fn, /rollbackPrivateAttachment_/, name + " must compensate failed persistence");
+});
+
+// El helper de ACCOUNTING también se ejecuta con Drive simulado: carpeta/archivo privados y rollback de permisos fallidos.
+const accountingAttachmentFunctions = [
+  extractFunction(accounting, "getOrCreatePrivateAttachmentFolder_"),
+  extractFunction(accounting, "rollbackPrivatePaymentAttachment_"),
+  extractFunction(accounting, "createPrivatePaymentAttachment_")
+].join("\n");
+let paymentFolderExists = false;
+let paymentFolderAccess = "PRIVATE";
+let paymentFileShareFails = false;
+let paymentCreatedFile = null;
+const paymentFolder = {
+  getSharingAccess: () => paymentFolderAccess,
+  setSharing: (access) => { paymentFolderAccess = access; },
+  setTrashed: () => { paymentFolderAccess = "TRASHED"; },
+  createFile: (blob) => {
+    paymentCreatedFile = {
+      blob, sharing: "PRIVATE", trashed: false,
+      setSharing(access) { if (paymentFileShareFails) throw new Error("file sharing failure"); this.sharing = access; },
+      getSharingAccess() { return this.sharing; },
+      setTrashed() { this.trashed = true; },
+      getId() { return "payment-file-id-123456789012345678901"; }
+    };
+    return paymentCreatedFile;
+  }
+};
+const paymentRoot = {
+  getFoldersByName: () => ({ hasNext: () => paymentFolderExists, next: () => paymentFolder }),
+  createFolder: () => paymentFolder
+};
+const paymentContext = {
+  LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }) },
+  DriveApp: { Access: { PRIVATE: "PRIVATE" }, Permission: { NONE: "NONE" }, getRootFolder: () => paymentRoot },
+  Utilities: {
+    base64Decode: (value) => Buffer.from(value, "base64"),
+    newBlob: (bytes, mimeType, name) => ({ bytes, mimeType, name })
+  },
+  validateFileBinaryIntegrity: (data, name, options) => {
+    assert.equal(name, "evidence.pdf");
+    assert.equal(options.maxSizeBytes, 10 * 1024 * 1024);
+    return { valid: true, mimeType: "application/pdf", byteLength: 3 };
+  },
+  logStructuredEvent: () => {},
+  enqueueDriveRecovery_: () => {}
+};
+vm.runInNewContext(accountingAttachmentFunctions + "\nthis.savePayment=createPrivatePaymentAttachment_;this.getPaymentFolder=getOrCreatePrivateAttachmentFolder_;", paymentContext);
+assert.throws(() => paymentContext.savePayment("YWJj", "", "evidence.pdf"), /ATTACHMENT_PAIR_REQUIRED/);
+const privatePaymentFile = paymentContext.savePayment("YWJj", "evidence.pdf");
+assert.equal(privatePaymentFile.sharing, "PRIVATE");
+assert.equal(privatePaymentFile.trashed, false);
+assert.equal(privatePaymentFile.blob.mimeType, "application/pdf");
+paymentFolderExists = true;
+paymentFolderAccess = "ANYONE_WITH_LINK";
+assert.throws(() => paymentContext.getPaymentFolder("Comprobantes_Pago_Privados_v1"), /ATTACHMENT_FOLDER_NOT_PRIVATE/);
+paymentFolderExists = false;
+paymentFolderAccess = "PRIVATE";
+paymentFileShareFails = true;
+assert.throws(() => paymentContext.savePayment("YWJj", "evidence.pdf"), /ATTACHMENT_STORAGE_PRIVATE_FAILED/);
+assert.equal(paymentCreatedFile.trashed, true, "failed accounting privacy setup must attempt cleanup");
+
 // Descargas privadas: autorización previa, privacidad incluso para referencias históricas y binario íntegro.
 const voucherDownloadFn = extractFunction(accounting, "getPaymentVoucherFile");
 assert.match(voucherDownloadFn, /file\.getSharingAccess\(\) !== DriveApp\.Access\.PRIVATE/);
@@ -245,4 +317,4 @@ const publicRequestDownload = requestDownloadContext.download({ _verifiedUserId:
 assert.equal(publicRequestDownload.code, "ATTACHMENT_NOT_PRIVATE");
 assert.equal(requestBlobReads, 1, "public request files must be rejected before reading bytes");
 
-console.log("file-attachment-persistence-contract: PASS (private storage, fail-closed upload, scope, rollback)");
+console.log("file-attachment-persistence-contract: PASS (binary validation, all upload paths, private storage, authorized downloads, fail-closed behavior, rollback and legacy URL suppression)");
