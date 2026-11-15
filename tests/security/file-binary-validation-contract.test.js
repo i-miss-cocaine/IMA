@@ -86,7 +86,9 @@ for(const validator of validators){
   for(const [label,make,shouldPass] of scenarios){
     const args=make();
     if(shouldPass){
-      const result=context.validateFileBinaryIntegrity(args.data,args.name,args.options);
+      let result;
+      try { result=context.validateFileBinaryIntegrity(args.data,args.name,args.options); }
+      catch(error) { throw new Error(validator.path+": "+label+": "+String(error&&error.message||error)); }
       assert.equal(result.valid,true,validator.path+": "+label);
       assert.ok(result.byteLength>0,validator.path+": "+label+" byte length");
     }else{
