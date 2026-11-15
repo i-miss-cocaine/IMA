@@ -8,6 +8,7 @@ on:
       - backend/user-service/Code.gs
       - backend/academic-service/Code.gs
       - tests/security/academic-multilevel-file-validation.test.js
+      - tests/ui/pdf-document-classification.test.js
       - backend/accounting-service/Code.gs
       - backend/task-service/Code.gs
       - backend/exam-service/Code.gs
@@ -157,6 +158,8 @@ jobs:
         run: node tests/security/user-service-legacy-document-inventory.test.js
       - name: Run academic evidence binary and MIME validation contract
         run: node tests/security/academic-multilevel-file-validation.test.js
+      - name: Run PDF page classification contract
+        run: node tests/ui/pdf-document-classification.test.js
       - name: Run reactive workflow notification privacy, deduplication and concurrency contract
         run: node tests/security/user-service-workflow-notifications.test.js
       - name: Run versioned UI metadata catalog contract
