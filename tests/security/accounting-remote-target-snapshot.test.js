@@ -40,18 +40,22 @@ const academicResult=academicRuntime.handle({sourceService:"ACCOUNTING",action:"
 assert.equal(academicResult.verified,true);assert.deepEqual(Array.from(academicResult.existingTargetIds),["EXP-1"]);assert.equal(academicResult.targetRows.length,0);
 assert.equal(academicRuntime.handle({sourceService:"ACCOUNTING",action:"getMigrationTargetExistenceSnapshot",payload:{sessionToken:"SIGNED-SESSION",institutionId:"INST-1",entityType:"persona",targetIds:["EXP-1"]}}).code,"MIGRATION_SNAPSHOT_CONTRACT_INVALID");
 
-const accountingFunctions=["accountingComputeHmacSignature_","requestAccountingTrustedOwnerSnapshot_","buildMigrationTargetExistenceSnapshot_","buildAccountingRelatedPersonExistenceSnapshot_"].map(name=>extract(accounting,name));
+const accountingFunctions=["isAccountingTrustedAppsScriptEndpoint_","accountingComputeHmacSignature_","requestAccountingTrustedOwnerSnapshot_","buildMigrationTargetExistenceSnapshot_","buildAccountingRelatedPersonExistenceSnapshot_"].map(name=>extract(accounting,name));
 let remoteData={status:"success",verified:true,service:"ACADEMIC",sheet:"ExpedientesEstudiantes",idField:"ExpedienteID",institutionId:"INST-1",existingTargetIds:["EXP-1"],targetRows:[]};
 let envelopeSeen=null;
 const accountingRuntime={
  Date,String,JSON,Array,Object,Number,Math,RegExp,Error,
- PropertiesService:{getScriptProperties:()=>({getProperty:key=>({IMA_ACADEMIC_SERVICE_URL:"https://academic.example.test/exec",IMA_USER_SERVICE_URL:"https://user.example.test/exec",IMA_MIGRATION_HMAC_SECRET:secret})[key]||"")})},
+ PropertiesService:{getScriptProperties:()=>({getProperty:key=>({IMA_ACADEMIC_SERVICE_URL:"https://script.google.com/macros/s/AKfycbACADEMIC123/exec",IMA_USER_SERVICE_URL:"https://script.google.com/macros/s/AKfycbUSER123/exec",IMA_MIGRATION_HMAC_SECRET:secret})[key]||"")})},
  Utilities:{MacAlgorithm:{HMAC_SHA_256:"HMAC_SHA_256"},getUuid:()=>"12345678-1234-1234-1234-123456789012",computeHmacSignature:(algorithm,message,key)=>Array.from(crypto.createHmac("sha256",key).update(String(message)).digest())},
  UrlFetchApp:{fetch:(url,options)=>{envelopeSeen=JSON.parse(options.payload);return{getResponseCode:()=>200,getContentText:()=>JSON.stringify({apiVersion:"1.0.0",status:"success",data:remoteData})};}}
 };
 vm.createContext(accountingRuntime);
-vm.runInContext(accountingFunctions.join("\n")+"\nthis.api={target:buildMigrationTargetExistenceSnapshot_,related:buildAccountingRelatedPersonExistenceSnapshot_};",accountingRuntime);
+vm.runInContext(accountingFunctions.join("\n")+"\nthis.api={endpoint:isAccountingTrustedAppsScriptEndpoint_,target:buildMigrationTargetExistenceSnapshot_,related:buildAccountingRelatedPersonExistenceSnapshot_};",accountingRuntime);
 const schema={service:"ACADEMIC",sheet:"ExpedientesEstudiantes",headers:["ExpedienteID","PersonaID"]};
+assert.equal(accountingRuntime.api.endpoint("https://script.google.com/macros/s/AKfycbACADEMIC123/exec"),true);
+assert.equal(accountingRuntime.api.endpoint("https://script.google.com/a/macros/example.edu/s/AKfycbACADEMIC123/exec"),true);
+assert.equal(accountingRuntime.api.endpoint("http://script.google.com/macros/s/AKfycbACADEMIC123/exec"),false);
+assert.equal(accountingRuntime.api.endpoint("https://script.google.com/macros/s/AKfycbACADEMIC123/exec?x=1"),false);
 const target=accountingRuntime.api.target(schema,[{ExpedienteID:"EXP-1"}],"INST-1",{}, {sessionToken:"SIGNED-SESSION"});
 assert.equal(target.verified,true);assert.deepEqual(Array.from(target.existingTargetIds),["EXP-1"]);
 assert.equal(envelopeSeen.action,"getMigrationTargetExistenceSnapshot");assert.equal(envelopeSeen.targetService,"ACADEMIC");
