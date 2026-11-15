@@ -162,7 +162,7 @@ const names = [
   "appendDocumentDeliveryEvent_", "findDocumentDeliveryRow_", "writeDocumentDeliveryRow_",
   "getDocumentDeliveryPortalLink_", "dispatchDocumentDelivery_", "registerDepartmentalDocumentDelivery",
   "retryDepartmentalDocumentDelivery", "getDepartmentalOutbox", "getMyDepartmentalOutbox",
-  "sendInstitutionalDispatch", "sendInstitutionalDispatchBatch", "getDocumentDeliveryReceiptMode_",
+  "sendInstitutionalDispatch", "createDepartmentalBatchIdempotencyKey_", "sendInstitutionalDispatchBatch", "getDocumentDeliveryReceiptMode_",
   "getMyDocumentDeliveries", "openDepartmentalDocumentDelivery", "confirmDepartmentalDocumentReceipt",
   "revokeDepartmentalDocumentDeliveryLink"
 ];
@@ -278,6 +278,11 @@ assert.ok(emailOutboxEntry);
 assert.equal(emailOutboxEntry.estadoCorreo, "ENVIADO");
 assert.equal(notificationPayloads[notificationPayloads.length - 1].emailRecipient, "stu2@example.test");
 
+assert.notEqual(
+  context.createDepartmentalBatchIdempotencyKey_("BATCH-1", "DOC-5"),
+  context.createDepartmentalBatchIdempotencyKey_("BATCH-1", "DOC-6"),
+  "each recipient document in a batch needs an independent idempotency key"
+);
 const batch = context.sendInstitutionalDispatchBatch({
   _verifiedUserId: "SEC-1", _verifiedRole: "Secretaría", idempotencyKey: "BATCH-OUTBOX-001",
   items: [
