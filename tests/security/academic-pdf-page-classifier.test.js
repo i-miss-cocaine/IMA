@@ -39,6 +39,11 @@ assert.equal(result.summary.noAnalizada,1);
 assert.deepEqual(result.pages.map(page=>page.classification),["VECTORIAL","ESCANEADA","MIXTA","VACIA","NO_ANALIZADA"]);
 assert.equal(result.verified,false);
 assert.equal(result.requiresOcr,true);
+const compressedOnly="%PDF-1.4\\n1 0 obj\\n<< /Type /Catalog /Pages 2 0 R >>\\nendobj\\n2 0 obj\\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\\nendobj\\n3 0 obj\\n<< /Type /Page /Parent 2 0 R /Contents 4 0 R >>\\nendobj\\n4 0 obj\\n<< /Filter /FlateDecode /Length 12 >>\\nstream\\ncompressed\\nendstream\\nendobj";
+const compressedResult=classify(bytes(compressedOnly));
+assert.equal(compressedResult.pages[0].classification,"NO_ANALIZADA");
+assert.equal(compressedResult.requiresOcr,true,"compressed page content is routed to OCR review rather than guessed");
+
 const encrypted=classify(bytes("%PDF-1.4\n/Encrypt 8 0 R\n"));
 assert.equal(encrypted.pages[0].classification,"NO_ANALIZADA");
 assert.equal(encrypted.reason,"PDF_ENCRYPTED");
