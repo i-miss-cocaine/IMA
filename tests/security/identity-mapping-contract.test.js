@@ -121,7 +121,7 @@ function runMigrationWriterFixture(source,entity){
  if(source.includes("function migrationNormalizeImportDate_(")) names.splice(1,0,"migrationNormalizeImportDate_");
  if(source.includes("function migrationHash_(")) names.push("migrationHash_");
  if(source.includes("function migrationHash_(")) names.splice(1,0,"migrationHash_");
- const code=constants+names.map(n=>extractBalancedFunction(source,n)).join(String.fromCharCode(10))+"this.apply=applyTrustedMigrationWrite_;this.compensate=compensateTrustedMigrationWrite_;this.schemas=MIGRATION_WRITER_SCHEMAS_;this.journalHeaders=MIGRATION_WRITER_JOURNAL_HEADERS_;this.stable=migrationStableJson_;this.hash=typeof migrationHash_==="function"?migrationHash_:null;";
+ const code=constants+names.map(n=>extractBalancedFunction(source,n)).join(String.fromCharCode(10))+"this.apply=applyTrustedMigrationWrite_;this.compensate=compensateTrustedMigrationWrite_;this.schemas=MIGRATION_WRITER_SCHEMAS_;this.journalHeaders=MIGRATION_WRITER_JOURNAL_HEADERS_;this.stable=migrationStableJson_;this.hash=typeof migrationHash_==='function'?migrationHash_:null;";
  const sheets={},ctx={SPREADSHEET_ID:"LOCAL",SpreadsheetApp:{openById:()=>ss},LockService:{getScriptLock:()=>({waitLock:()=>{},releaseLock:()=>{}})},Utilities:{DigestAlgorithm:{SHA_256:"SHA_256"},computeDigest:(_algorithm,value)=>Array.from(crypto.createHash("sha256").update(String(value)).digest())},Date,JSON,String,Object,Array,Error};
  const ss={getSheetByName:n=>sheets[n]||null,insertSheet:n=>sheets[n]=makeMigrationSheet(n==="MigracionEscrituras"?ctx.journalHeaders:ctx.schemas[entity].headers)};
  vm.runInNewContext(code,ctx);
