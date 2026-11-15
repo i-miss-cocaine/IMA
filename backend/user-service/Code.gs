@@ -5001,7 +5001,22 @@ function getAdministrativeRequestAttachment(payload) {
       "Se rechazó una descarga sin relación o permiso institucional.",{solicitudId:solicitudId,actorId:actorId,role:role},role);
     return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Archivo no disponible." };
   }
-  const stored = String(row[map.AdjuntoUrl] || "").trim();
+  var evidenceRecord = null;
+  if (String(payload.evidenciaId || "").trim()) {
+    try {
+      var evidenceSchema = ensureEvidenceDocumentSchema_(ss), evidenceRows = evidenceSchema.sheet.getDataRange().getValues();
+      var evidenceIndex = evidenceRows.findIndex(function(item, i) {
+        return i > 0 && String(item[evidenceSchema.map.EvidenciaID] || "").trim() === String(payload.evidenciaId).trim() &&
+          String(item[evidenceSchema.map.SolicitudID] || "").trim() === solicitudId;
+      });
+      if (evidenceIndex > 0) {
+        evidenceRecord = {};
+        Object.keys(evidenceSchema.map).forEach(function(key) { evidenceRecord[key] = evidenceRows[evidenceIndex][evidenceSchema.map[key]]; });
+      }
+    } catch (_) {}
+    if (!evidenceRecord) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Archivo no disponible." };
+  }
+  const stored = evidenceRecord ? String(evidenceRecord.DriveFileID || "").trim() : String(row[map.AdjuntoUrl] || "").trim();
   const match = stored.match(/\/d\/([A-Za-z0-9_-]+)/) || stored.match(/[?&]id=([A-Za-z0-9_-]+)/);
   const fileId = match ? match[1] : (/^[A-Za-z0-9_-]{25,}$/.test(stored) ? stored : "");
   if (!fileId) return { status: "error", code: "ATTACHMENT_NOT_FOUND", message: "Archivo no disponible." };
@@ -5015,34 +5030,46 @@ function getAdministrativeRequestAttachment(payload) {
     }
     const blob = file.getBlob(), bytes = blob.getBytes();
     if (!bytes || !bytes.length || bytes.length > 10 * 1024 * 1024) return { status: "error", code: "ATTACHMENT_INVALID_SIZE", message: "Archivo no disponible." };
-    const fileName = String(file.getName() || "adjunto");
+    const fileName = String(evidenceRecord ? evidenceRecord.NombreOriginal || file.getName() : file.getName() || "adjunto");
     const validation = validateFileBinaryIntegrity(Utilities.base64Encode(bytes), fileName, {
       maxSizeBytes: 10 * 1024 * 1024,
       allowedExtensions: [".pdf", ".jpg", ".jpeg", ".png", ".webp", ".docx", ".xlsx"]
     });
     const mimeType = String(blob.getContentType() || file.getMimeType() || "").toLowerCase();
     if (mimeType && mimeType !== validation.mimeType) return { status: "error", code: "ATTACHMENT_MIME_MISMATCH", message: "Archivo no disponible." };
-    const expectedHash = map.AdjuntoSHA256 === undefined ? "" : String(row[map.AdjuntoSHA256] || "").trim().toLowerCase();
-    let integrityStatus = "LEGACY_UNVERIFIED", integrityVerified = false, verifiedHash = "";
+    const expectedHash = evidenceRecord ? String(evidenceRecord.SHA256 || "").trim().toLowerCase() :
+      (map.AdjuntoSHA256 === undefined ? "" : String(row[map.AdjuntoSHA256] || "").trim().toLowerCase());
+    const expectedVersion = evidenceRecord ? Number(evidenceRecord.VersionNumero || 0) :
+      (map.AdjuntoVersion === undefined ? 0 : Number(row[map.AdjuntoVersion] || 0));
+    const expectedSize = evidenceRecord ? Number(evidenceRecord.SizeBytes || 0) :
+      (map.AdjuntoSizeBytes === undefined ? 0 : Number(row[map.AdjuntoSizeBytes] || 0));
+    const expectedMime = evidenceRecord ? String(evidenceRecord.MimeType || "").trim().toLowerCase() :
+      (map.AdjuntoMimeType === undefined ? "" : String(row[map.AdjuntoMimeType] || "").trim().toLowerCase());
+    const expectedState = evidenceRecord ? String(evidenceRecord.Estado || "").trim().toUpperCase() :
+      (map.AdjuntoIntegridadEstado === undefined ? "" : String(row[map.AdjuntoIntegridadEstado] || "").trim().toUpperCase());
+    let integrityStatus = "LEGACY_UNVERIFIED", integrityVerified = false, verifiedHash = "", integrityWarning = false, integrityPolicy = "";
     if (expectedHash) {
-      const expectedVersion = map.AdjuntoVersion === undefined ? 0 : Number(row[map.AdjuntoVersion] || 0);
-      const expectedSize = map.AdjuntoSizeBytes === undefined ? 0 : Number(row[map.AdjuntoSizeBytes] || 0);
-      const expectedMime = map.AdjuntoMimeType === undefined ? "" : String(row[map.AdjuntoMimeType] || "").trim().toLowerCase();
-      const expectedState = map.AdjuntoIntegridadEstado === undefined ? "" : String(row[map.AdjuntoIntegridadEstado] || "").trim().toUpperCase();
-      if (!/^[a-f0-9]{64}$/.test(expectedHash) || expectedVersion !== 1 || !Number.isFinite(expectedSize) ||
-          expectedSize < 1 || !expectedMime || expectedState !== "VERIFICADO") {
+      if (!/^[a-f0-9]{64}$/.test(expectedHash) || expectedVersion < 1 || !Number.isFinite(expectedSize) ||
+          expectedSize < 1 || !expectedMime || ["VERIFICADO","SUPERADA","APROBADA","FIRMADA"].indexOf(expectedState) === -1) {
         return { status: "error", code: "ATTACHMENT_INTEGRITY_METADATA_INVALID", message: "Archivo no disponible." };
       }
       const actualHash = computeDocumentSHA256(bytes).toLowerCase();
       if (actualHash !== expectedHash || bytes.length !== expectedSize || validation.mimeType !== expectedMime) {
-        logStructuredEvent("USER","getAdministrativeRequestAttachment","ERROR","ATTACHMENT_INTEGRITY_MISMATCH",
-          "El adjunto no coincide con la huella y metadatos registrados al recibirlo.",{solicitudId:solicitudId,fileSizeBytes:bytes.length},role);
-        return { status: "error", code: "ATTACHMENT_INTEGRITY_MISMATCH", message: "El archivo cambió desde su recepción y no puede entregarse como evidencia." };
+        logEvidenceTampering_("getAdministrativeRequestAttachment", evidenceRecord || {
+          EvidenciaID: "", SolicitudID: solicitudId, VersionNumero: expectedVersion
+        }, expectedHash, actualHash, actorId);
+        integrityPolicy = getEvidenceIntegrityPolicy_(ss);
+        if (integrityPolicy !== "ADVERTENCIA_VISUAL_REVISOR") {
+          return { status: "error", code: "EVIDENCE_TAMPERING_DETECTED", message: "La evidencia fue alterada y se bloqueó su entrega." };
+        }
+        integrityStatus = "DISCREPANCIA";
+        integrityWarning = true;
+      } else {
+        integrityStatus = "VERIFICADO";
+        integrityVerified = true;
+        verifiedHash = actualHash;
       }
-      integrityStatus = "VERIFICADO";
-      integrityVerified = true;
-      verifiedHash = actualHash;
-    } else if (map.AdjuntoIntegridadEstado !== undefined) {
+    } else if (!evidenceRecord && map.AdjuntoIntegridadEstado !== undefined) {
       const legacyState = String(row[map.AdjuntoIntegridadEstado] || "").trim().toUpperCase();
       if (legacyState === "VERIFICADO" || legacyState === "SIN_ADJUNTO" ||
           (legacyState && legacyState !== "LEGACY_UNVERIFIED")) {
@@ -5053,10 +5080,13 @@ function getAdministrativeRequestAttachment(payload) {
       integrityVerified ? "ATTACHMENT_DELIVERED_VERIFIED" : "ATTACHMENT_DELIVERED_LEGACY_UNVERIFIED",
       "Adjunto privado entregado tras autorización; el nivel de integridad queda explícito.",
       {solicitudId:solicitudId,actorId:actorId,fileId:fileId,fileSizeBytes:bytes.length,integrityStatus:integrityStatus},role);
-    return { status: "success", solicitudId: solicitudId, fileName: fileName, mimeType: validation.mimeType,
-      encoding: "base64", fileData: Utilities.base64Encode(bytes), fileSizeBytes: bytes.length,
-      integrityStatus: integrityStatus, integrityVerified: integrityVerified, sha256: verifiedHash,
-      attachmentVersion: integrityVerified ? 1 : null };
+    var response = { status: "success", solicitudId: solicitudId, evidenciaId: evidenceRecord ? String(evidenceRecord.EvidenciaID || "") : "",
+      fileName: fileName, mimeType: validation.mimeType, encoding: "base64", fileSizeBytes: bytes.length,
+      integrityStatus: integrityStatus, integrityVerified: integrityVerified, integrityWarning: integrityWarning,
+      integrityPolicy: integrityPolicy, sha256: verifiedHash, attachmentVersion: expectedVersion || null };
+    if (!payload.verifyOnly) response.fileData = Utilities.base64Encode(bytes);
+    if (integrityWarning) response.code = "EVIDENCE_TAMPERING_DETECTED";
+    return response;
   } catch (error) {
     logStructuredEvent("USER", "getAdministrativeRequestAttachment", "WARN", "ATTACHMENT_UNAVAILABLE",
       "No fue posible recuperar un adjunto privado.", { solicitudId: solicitudId }, role);
