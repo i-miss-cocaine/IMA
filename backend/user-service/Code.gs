@@ -6856,8 +6856,8 @@ function submitStudentAbsenceJustification(payload) {
       if (String(rows[i][map.FechaAfectada] || "").trim() !== fechaAusencia || String(rows[i][map.Periodo] || "").trim() !== periodo) continue;
       if (String(rows[i][3] || "") !== "Justificación de Ausencia") continue;
       if (["Rechazada","Cancelada"].indexOf(String(rows[i][6] || "")) !== -1) continue;
+      if (existing) throw new Error("ABSENCE_REQUEST_AMBIGUOUS");
       existing = { rowNumber: i + 1, row: rows[i], id: String(rows[i][map.JustificacionID] || rows[i][0] || "").trim() };
-      break;
     }
     id = existing ? existing.id : "JUST-" + Utilities.getUuid();
     if (!/^JUST-[A-Za-z0-9-]{8,100}$/.test(id)) throw new Error("ABSENCE_REQUEST_ID_INVALID");
@@ -6898,8 +6898,7 @@ function submitStudentAbsenceJustification(payload) {
       newRow[map.SyncEstado] = "PENDIENTE";
       newRow[map.MotivoJustificacion] = motivo;
       setRequestAttachmentIntegrity_(newRow, map, attachmentRecord);
-      try { sheet.appendRow(newRow); }
-      catch (writeError) { rollbackPrivateAttachment_(attachment, "submitStudentAbsenceJustification"); throw writeError; }
+      sheet.appendRow(newRow);
     }
   } catch (error) {
     if (attachment && !existing) rollbackPrivateAttachment_(attachment, "submitStudentAbsenceJustification");
