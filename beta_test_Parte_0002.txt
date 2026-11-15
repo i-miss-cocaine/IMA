@@ -565,3 +565,22 @@
 - **Evidencia requerida:** capturas sanitizadas, IDs sintéticos, snapshots de asignaciones/matrículas/ofertas/períodos/sesiones, DTO por docente, filas de constancias, resultados allow/deny y eventos de auditoría. No exportar archivos médicos ni incluir base64/secretos en evidencias.
 - **Estado:** Contrato Node/CI PASS; pendiente prueba real en Apps Script/Sheets/Drive desplegados.
 ===============================================================================
+
+===============================================================================
+### BETA-FUNC-103 — TASK-105 — ciclo canónico multi-fecha de justificaciones
+- **Precondiciones:** entorno beta desplegado con USER y ACADEMIC compatibles; estudiantes/representantes sintéticos; Secretaría; dos docentes con asignaciones activas; período vigente; sesiones de asistencia en dos o más fechas; Drive privado con PDF sintético. No usar datos médicos ni documentos personales reales.
+- **Pasos:**
+  1. Desde el portal familiar, presentar una justificación para un rango de dos fechas. Confirmar que el mismo solicitudId/justificacionId se conserva en USER y ACADEMIC y que FechasAfectadasJSON contiene el rango.
+  2. Consultar la bandeja de Secretaría; comprobar fechas, período, sesiones solicitadas, estado de integridad del adjunto y que el archivo no se expone como URL pública.
+  3. Abrir el adjunto desde Secretaría; confirmar privacidad y hash SHA-256. Alterar una copia de prueba en Drive y comprobar que la entrega se deniega por discrepancia.
+  4. Con PERMITIR_JUSTIFICACION_PARCIAL_DIAS=HABILITADO, aprobar solo una sesión de las solicitadas. Verificar que únicamente esa sesión queda justificada y que la proyección registra alcance PARCIAL y conserva el conjunto original.
+  5. Con TODO_O_NADA, intentar la misma aprobación parcial y confirmar denegación sin mutación de asistencia.
+  6. Con JUSTIFICACION_IMPACTO_AUTOMATICO_ASISTENCIA=REQUIERE_CONFORMIDAD_PREVIA_DOCENTE, intentar aprobar sin constancia CONFORMIDAD; confirmar bloqueo. Registrar conformidad de cada docente responsable y reintentar; confirmar que la aprobación se ejecuta.
+  7. Repetir la aprobación y el envío original; comprobar idempotencia y ausencia de filas duplicadas. Intentar un reintento con motivo o adjunto diferente; confirmar conflicto.
+  8. Simular un fallo durante la sincronización; comprobar estado pendiente y reconciliación sin duplicar cambios. Revocar una aprobación y confirmar reversión de las sesiones afectadas, preservando historial y evidencia.
+  9. Intentar revisión administrativa con rol docente y confirmar AUTH_PERMISSION_DENIED. Confirmar que estudiantes solo consultan su historial y Secretaría ve la cola institucional.
+  10. Revisar RegistroEventos/DecisionHistory para actor, rol, timestamps, decisiones y correlation ID; confirmar que no se registran diagnósticos ni contenido documental.
+- **Resultado esperado:** ciclo administrativo y académico consistente, limitado a las sesiones autorizadas, con trazabilidad, integridad documental, parcialidad configurable, control de concurrencia y recuperación idempotente.
+- **Evidencia requerida:** IDs sintéticos, snapshots sanitizados de solicitudes/justificaciones/asistencia, hashes, fechas/sesiones, decisiones, constancias docentes y eventos allow/deny. No exportar archivos médicos ni incluir base64/secretos.
+- **Estado:** contratos Node/CI PASS; pendiente ejecución real en Apps Script/Sheets/Drive beta.
+===============================================================================
