@@ -3,39 +3,10 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
 const source = fs.readFileSync("backend/user-service/Code.gs", "utf8");
-function extractFunction(name) {
-  const start = source.indexOf("function " + name + "(");
-  assert.ok(start >= 0, "missing function " + name);
-  const open = source.indexOf("{", start);
-  let depth = 0, quote = "", escape = false, lineComment = false, blockComment = false, template = false;
-  for (let i = open; i < source.length; i++) {
-    const c = source[i], n = source[i + 1];
-    if (lineComment) { if (c === "\n") lineComment = false; continue; }
-    if (blockComment) { if (c === "*" && n === "/") { blockComment = false; i++; } continue; }
-    if (quote) { if (escape) { escape = false; continue; } if (c === "\\") { escape = true; continue; } if (c === quote) quote = ""; continue; }
-    if (template) { if (escape) { escape = false; continue; } if (c === "\\") { escape = true; continue; } if (c === String.fromCharCode(96)) template = false; continue; }
-    if (c === "/" && n === "/") { lineComment = true; i++; continue; }
-    if (c === "/" && n === "*") { blockComment = true; i++; continue; }
-    if (c === "'" || c === '"') { quote = c; continue; }
-    if (c === String.fromCharCode(96)) { template = true; continue; }
-    if (c === "{") depth++;
-    else if (c === "}" && --depth === 0) return source.slice(start, i + 1);
-  }
-  throw new Error("unbalanced function " + name);
-}
 const constantsStart = source.indexOf("const LEGACY_DOCUMENT_INVENTORY_HEADERS_ = [");
-const statesStart = source.indexOf("const LEGACY_DOCUMENT_INVENTORY_STATES_ = [", constantsStart);
-const constantsEnd = source.indexOf("];", statesStart) + 2;
-assert.ok(constantsStart >= 0 && constantsEnd > constantsStart);
-const constants = source.slice(constantsStart, constantsEnd);
-const names = [
-  "getLegacyDocumentInventoryAccessContext_", "getLegacyDocumentDepartmentInfo_",
-  "validateLegacyDocumentInventorySheet_", "ensureLegacyDocumentInventorySheet_",
-  "getLegacyDocumentInventorySheet_", "ensureLegacyDocumentInventoryHistorySheet_",
-  "appendLegacyDocumentInventoryHistory_", "legacyDocumentInventorySafeCell_",
-  "legacyDocumentInventoryRowToObject_", "normalizeLegacyDocumentInventoryRecord_",
-  "getLegacyDocumentInventory", "legacyDocumentInventoryCsvCell_", "registerLegacyDocumentInventory"
-];
+const inventoryBlockEnd = source.indexOf("function getUIMetadataCatalog(payload)", constantsStart);
+assert.ok(constantsStart >= 0 && inventoryBlockEnd > constantsStart, "inventory module block must be contiguous before UI metadata");
+const inventoryBlock = source.slice(constantsStart, inventoryBlockEnd);
 class FakeSheet {
   constructor(name, rows) { this.name = name; this.rows = rows || []; }
   getLastRow() { return this.rows.length; }
@@ -114,12 +85,7 @@ const context = {
 };
 function getRole(payload) { const claim = claims[payload && payload.sessionToken]; return claim ? claim.role : "NO_ACCESS"; }
 vm.createContext(context);
-const registerStart = source.indexOf("function registerLegacyDocumentInventory(payload)");
-const registerEnd = source.indexOf("function getUIMetadataCatalog(payload)", registerStart);
-assert.ok(registerStart >= 0 && registerEnd > registerStart, "register handler must remain before the metadata endpoint");
-const registerFunction = source.slice(registerStart, registerEnd);
-const extractedHelpers = names.filter(name => name !== "registerLegacyDocumentInventory").map(extractFunction);
-vm.runInContext(constants + "\n" + extractedHelpers.join("\n") + "\n" + registerFunction +
+vm.runInContext(inventoryBlock +
   "\nthis.registerLegacyDocumentInventory=registerLegacyDocumentInventory;" +
   "\nthis.getLegacyDocumentInventory=getLegacyDocumentInventory;", context);
 
