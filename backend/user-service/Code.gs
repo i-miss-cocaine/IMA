@@ -2096,6 +2096,7 @@ function doPost(e) {
       case "createUserNotification": result = createUserNotification(payload); break;
       case "getAdministrativeRequests": result = getAdministrativeRequests(payload); break;
       case "getAdministrativeRequestAttachment": result = getAdministrativeRequestAttachment(payload); break;
+      case "verifyDocumentEvidenceIntegrity": result = verifyDocumentEvidenceIntegrity(payload); break;
       case "submitStudentAbsenceJustification": result = submitStudentAbsenceJustification(payload); break;
       case "getStudentAbsenceJustifications": result = getStudentAbsenceJustifications(payload); break;
       case "reviewAbsenceJustification": result = reviewAbsenceJustification(payload); break;
@@ -4930,7 +4931,7 @@ function verifyDocumentEvidenceIntegrity(payload) {
   var p = payload || {}, solicitudId = String(p.solicitudId || "").trim(), evidenciaId = String(p.evidenciaId || "").trim();
   if (!solicitudId || !evidenciaId) return { status: "error", code: "EVIDENCE_ID_REQUIRED" };
   var delivered = getAdministrativeRequestAttachment({ solicitudId: solicitudId, evidenciaId: evidenciaId,
-    _verifiedUserId: p._verifiedUserId, _verifiedRole: p._verifiedRole, sessionToken: p.sessionToken });
+    _verifiedUserId: p._verifiedUserId, _verifiedRole: p._verifiedRole, sessionToken: p.sessionToken, verifyOnly: true });
   if (!delivered || (delivered.status !== "success" && delivered.status !== "warning")) return delivered;
   return { status: delivered.status, code: delivered.code || "", evidenciaId: evidenciaId,
     solicitudId: solicitudId, integrityVerified: delivered.integrityVerified === true,
