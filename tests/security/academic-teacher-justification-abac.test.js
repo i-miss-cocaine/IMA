@@ -27,6 +27,23 @@ function extractFunction(name, text = source) {
   throw new Error("unclosed function " + name);
 }
 
+function extractConst(name, text = source) {
+  const start = text.indexOf("const " + name + " =");
+  assert.notEqual(start, -1, "missing const " + name);
+  let quote = "", escaped = false, brackets = 0, braces = 0;
+  for (let i = start; i < text.length; i++) {
+    const c = text[i];
+    if (quote) { if (escaped) escaped = false; else if (c === "\\\\") escaped = true; else if (c === quote) quote = ""; continue; }
+    if (c === "'" || c === '"' || c === "`") { quote = c; continue; }
+    if (c === "[") brackets++;
+    else if (c === "]") brackets--;
+    else if (c === "{") braces++;
+    else if (c === "}") braces--;
+    else if (c === ";" && brackets === 0 && braces === 0) return text.slice(start, i + 1);
+  }
+  throw new Error("unclosed const " + name);
+}
+
 const store = Object.create(null);
 let lockBusy = false, uuid = 0, driveSharing = "PRIVATE";
 function sheet(name) {
@@ -75,7 +92,7 @@ const context = {
   Date,Math,JSON,String,Number,Array,Object,Error,Set
 };
 vm.createContext(context);
-const constants=source.split("\n").filter(line=>/^const (ABSENCE_JUSTIFICATION_HEADERS_|TEACHER_JUSTIFICATION_ACK_HEADERS_)/.test(line)).join("\n");
+const constants = extractConst("ABSENCE_JUSTIFICATION_HEADERS_") + "\n" + extractConst("TEACHER_JUSTIFICATION_ACK_HEADERS_");
 const functions=[
   "ensureAbsenceHeaders_","absenceDateKey_","absenceSheetMap_","getAcademicOfferColumnMap","getAcademicOfferValue",
   "teacherJustificationNormalizeRole_","teacherJustificationHeaderMap_","teacherJustificationActiveState_",
