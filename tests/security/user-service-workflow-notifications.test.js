@@ -135,13 +135,13 @@ for(const state of ["Requiere Corrección","Aprobada","Rechazada"]) {
 }
 {
   const notificationSheet=makeSheet([["NotificacionID","UserId","Tipo","Titulo","Mensaje","Fecha","Leido","Categoria","Enlace","DedupKey","Estado","Email"]]);
-  let lockBusy=false,lockHeld=false,uuid=0,capturedHtml="";
+  let lockBusy=false,lockHeld=false,uuid=0,capturedHtml="",mailCalls=0;
   const context=loadContext({
     SpreadsheetApp:{openById(){return {};}},
     getOrCreateSheet(){return notificationSheet;},
     LockService:{getScriptLock(){return {waitLock(){if(lockBusy||lockHeld)throw Error("LOCK_BUSY");lockHeld=true;},releaseLock(){lockHeld=false;}};}},
     Utilities:{getUuid(){return "RETRY-"+(++uuid);}},
-    MailApp:{sendEmail(payload){capturedHtml=payload.htmlBody;}},
+    MailApp:{sendEmail(payload){mailCalls++;if(mailCalls===1)throw Error("MAIL_QUOTA_EXCEEDED");capturedHtml=payload.htmlBody;}},
     logStructuredEvent(){}
   });
   const pending=context.sendMultiChannelNotification({userId:"USR-1",emailRecipient:"user@example.test",titulo:"<script>alert(1)</script>",mensaje:"<img src=x onerror=alert(1)>",deduplicationKey:"WF|RETRY"});
