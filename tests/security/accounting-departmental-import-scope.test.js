@@ -51,7 +51,14 @@ const context = {
     return { status: "success", authorized: true, importPermissionVerified: action === "authorizeAccountingImport",
       userId: claim.userId, role: claim.role, membershipId: claim.membershipId, institutionId: claim.institutionId };
   },
-  PropertiesService: { getScriptProperties: () => ({ getProperty: key => key === "IMA_INSTITUTION_ID" ? "INST-1" : null }) },
+  PropertiesService: { getScriptProperties: () => ({ getProperty: key => ({
+    IMA_INSTITUTION_ID: "INST-1",
+    IMA_USER_SERVICE_URL: "https://user.example.test/exec",
+    IMA_MIGRATION_HMAC_SECRET: "migration-transport-secret-with-more-than-32-characters"
+  })[key] || null }) },
+  Utilities: { getUuid: () => "12345678-1234-1234-1234-123456789012",
+    MacAlgorithm: { HMAC_SHA_256: "HMAC_SHA_256" }, computeHmacSignature: () => [1,2,3] },
+  UrlFetchApp: { fetch: () => ({ getResponseCode: () => 200, getContentText: () => JSON.stringify({ status: "success", ownershipId: "OWN-1" }) }) },
   SpreadsheetApp: { openById: () => spreadsheet },
   resolveInternalResponsibilityForRoleScope_: () => ({ responsibilityId: "RESP-1" }),
   getDynamicPermissionsForRole: (role, action) => action === "importDataWithColumnMapping" ? institutionalImportPermission : null,
