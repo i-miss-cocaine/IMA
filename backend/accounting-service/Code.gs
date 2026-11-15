@@ -15627,12 +15627,14 @@ function runPhase22DocumentManagementAndSACERegressionSuite(payload) {
           estudiantesNotas: [
             { identidad: "0801-2010-00001", nombre: "Alumno Aprobado", notaFinal: 85, estado: "Aprobado" },
             { identidad: "0801-2010-00002", nombre: "Alumno Ausente", notaFinal: null, estado: "Ausente" },
-            { identidad: "0801-2010-00003", nombre: "Alumno Exento", notaFinal: null, estado: "Exento" }
+            { identidad: "0801-2010-00003", nombre: "Alumno Exento", notaFinal: null, estado: "Exento" },
+            { identidad: "0801-2010-00004", nombre: "Alumno Pendiente", notaFinal: null, estado: "Pendiente" }
           ]
         });
         const d = res && res.datosReporteSACE;
-        const pass = d && d.length === 3 && d[1].calificacionOrdinaria === "AUSENTE" && d[2].calificacionOrdinaria === "EXENTO";
-        return { pass, expected: "Ausente / Exento preservados", actual: d ? `${d[1].calificacionOrdinaria}/${d[2].calificacionOrdinaria}` : null };
+        const pass = d && d.length === 4 && d[1].calificacionOrdinaria === "AUSENTE" &&
+          d[2].calificacionOrdinaria === "EXENTO" && d[3].calificacionOrdinaria === "PENDIENTE";
+        return { pass, expected: "Ausente / Exento / Pendiente preservados", actual: d ? `${d[1].calificacionOrdinaria}/${d[2].calificacionOrdinaria}/${d[3].calificacionOrdinaria}` : null };
       }
     },
     {
@@ -19560,9 +19562,10 @@ function generateSACEReportFile(payload) {
   const list = Array.isArray(estudiantesNotas) ? estudiantesNotas : [];
 
   const mappedSACEData = list.map(item => {
-    const isPending = item.estado === "Pendiente" || item.notaFinal === null || item.notaFinal === undefined;
     const isExempt = item.estado === "Exento";
     const isAbsent = item.estado === "Ausente";
+    const isPending = !isExempt && !isAbsent &&
+      (item.estado === "Pendiente" || item.notaFinal === null || item.notaFinal === undefined);
 
     const notaOrd = isPending || isExempt || isAbsent ? null : parseFloat(item.calificacionOrdinaria || item.notaFinal || 0);
     const notaRec = parseFloat(item.recuperacion || 0);
