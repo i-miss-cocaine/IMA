@@ -3947,3 +3947,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Docente: diálogo de revisión Excel con foco inicial/retorno, trampa Tab/Shift+Tab, Escape y metadatos accesibles.
 - Accounting Import Preflight Contract 43771840519 SUCCESS con Node 24.22.2; contratos y sintaxis de servicios/controladores PASS. UI Accessibility and Metadata Contract 43771708165 SUCCESS.
 - Pendientes de TASK-133: PDF NO_ANALIZADA/streams comprimidos, OCR real/Drive Advanced Service v2, beta Apps Script/Drive/Sheets, datos anonimizados y accesibilidad real. Node CLI local no ejecutado por ausencia de checkout; TASK-133 sigue En ejecución.
+
+
+[2026-11-15] TASK-134 / F39-Task02 — C1.775 — Límite de entrada y contratos independientes SHA-256
+- USER: computeLegacyInventoryHashSHA256_ limita a 10 MiB, rechaza Base64 malformado/longitudes no canónicas antes de decodificar y comprueba el tamaño binario resultante antes del digest SHA-256.
+- USER inventory test amplía cobertura de entradas malformadas y excesivas; se añadió el test USER y el test Academic de documentos privados al workflow Accounting Import Preflight para ejecutarlos sin depender del contrato transversal de RR. HH.
+- Accounting Import Preflight Contract run 43772074993 SUCCESS: USER legacy inventory PASS, Academic private document storage PASS, XLSX SHA-256 preview binding PASS y resto de contratos de importación/sintaxis PASS.
+- TASK-134 sigue parcial: beta Drive/Sheets real y habilitación segura de la escritura ACCOUNTING después de TASK-133 pendientes. No se inventa un repositorio documental contable.
