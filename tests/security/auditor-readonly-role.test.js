@@ -50,6 +50,37 @@ for (const [service, actions] of [["ACADEMIC", academicAuditor], ["USER", userAu
     service + " Auditor cannot mutate, delete, approve, upload or administer records");
 }
 assert.doesNotMatch(userAuditor.join("|"), /getNotificationAuditLogs|manageUserRoleMemberships|purgeStructuredLogs/);
+function extractFunction(source, name) {
+  const start = source.indexOf("function " + name + "(");
+  assert.ok(start >= 0, "function exists: " + name);
+  const next = source.indexOf("\\nfunction ", start + 10);
+  return source.slice(start, next < 0 ? source.length : next);
+}
+const userPermissionContext = {
+  PUBLIC_ACTIONS: [], ROLE_PERMISSIONS: user.roles, IDENTITY_MANAGER_ACTIONS_: [], TICKET_ADMIN_ROLES_: [],
+  getUserVerifiedRole: () => "Auditor", validateContextualAccess: () => ({ authorized: true }),
+  getDynamicPermissionsForRole: () => true, hasActiveDelegationForAction: () => ({ delegante: "ADMIN", delId: "D-1" }),
+  logStructuredEvent: () => {}
+};
+vm.runInNewContext(extractFunction(user.source, "validateRolePermission") +
+  "\\nthis.check = validateRolePermission;", userPermissionContext);
+assert.equal(userPermissionContext.check("getAuditReport", { _verifiedUserId: "AUD-1" }).authorized, true);
+assert.equal(userPermissionContext.check("importDataWithColumnMapping", { _verifiedUserId: "AUD-1" }).authorized, false,
+  "a dynamic wildcard cannot grant the Auditor a write action");
+const academicPermissionContext = {
+  PUBLIC_ACTIONS: [], ROLE_PERMISSIONS: academic.roles,
+  verifySessionToken: () => ({ userId: "AUD-1", role: "Auditor" }),
+  auditTeacherJustificationDenied_: () => {}, validateContextualAccess: () => ({ authorized: true }),
+  getDynamicPermissionsForRole: () => true, hasActiveDelegationForAction: () => ({ delegante: "ADMIN", delId: "D-1" }),
+  logStructuredEvent: () => {}
+};
+vm.runInNewContext(extractFunction(academic.source, "validateRolePermission") +
+  "\\nthis.check = validateRolePermission;", academicPermissionContext);
+assert.equal(academicPermissionContext.check("getSecureDocumentStream", { sessionToken: "AUD-TOKEN" }).authorized, true);
+assert.equal(academicPermissionContext.check("deleteStudentDocument", { sessionToken: "AUD-TOKEN" }).authorized, false,
+  "dynamic permissions and delegations cannot elevate the Auditor beyond the read-only allowlist");
+assert.match(user.source,/if \(String\(claims\.role\) === "Auditor"\) return \{ status: "error", code: "IMPORT_PERMISSION_DENIED" \}/,
+  "trusted ACCOUNTING authorization explicitly denies Auditor imports");
 assert.match(user.source,/\["Director", "Administrador", "Auditor"\]\.indexOf\(role\)/,
   "institution-wide inventory access for Auditor still requires an institution-wide verified scope");
 assert.match(user.source,/if \(actorRole === "Auditor"\)[\s\S]*scope\.institutionWide !== true/,
