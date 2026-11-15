@@ -10616,12 +10616,22 @@ function reviewCanonicalAbsenceJustification_(payload) {
     var approvalScope = null;
     var evidenceIds = Array.isArray(p.evidenceIds) ? p.evidenceIds.map(function(value) { return String(value || "").trim(); }).filter(Boolean) : [];
     var evidenceSnapshotHash = String(p.evidenceSnapshotHash || "").trim().toLowerCase();
+    var evidenceResubmission = null;
     if (target === "Aprobada") {
       var storedEvidenceIds = [];
       try { storedEvidenceIds = JSON.parse(String(row[map.EvidenciaIDsJSON] || "[]")); } catch (_) { return { status: "error", code: "EVIDENCE_LINKAGE_CORRUPT" }; }
       if (!Array.isArray(storedEvidenceIds)) return { status: "error", code: "EVIDENCE_LINKAGE_CORRUPT" };
       storedEvidenceIds = storedEvidenceIds.map(function(value) { return String(value || "").trim(); }).filter(Boolean).sort();
-      if (JSON.stringify(storedEvidenceIds) !== JSON.stringify(evidenceIds.slice().sort())) return { status: "error", code: "EVIDENCE_LINKAGE_MISMATCH" };
+      var incomingEvidenceIds = evidenceIds.slice().sort();
+      if (new Set(evidenceIds).size !== evidenceIds.length ||
+          evidenceIds.some(function(value) { return !/^EVD-[A-Za-z0-9-]{8,100}$/.test(value); })) {
+        return { status: "error", code: "EVIDENCE_LINKAGE_INVALID" };
+      }
+      if (JSON.stringify(storedEvidenceIds) !== JSON.stringify(incomingEvidenceIds)) {
+        if (current !== "RequiereInformacion" || !incomingEvidenceIds.length) return { status: "error", code: "EVIDENCE_LINKAGE_MISMATCH" };
+        evidenceResubmission = { previousEvidenceIds: storedEvidenceIds, evidenceIds: incomingEvidenceIds };
+        row[map.EvidenciaIDsJSON] = JSON.stringify(incomingEvidenceIds);
+      }
       if (evidenceIds.length && !/^[a-f0-9]{64}$/.test(evidenceSnapshotHash)) return { status: "error", code: "EVIDENCE_DECISION_HASH_REQUIRED" };
     }
     if (target === "Aprobada") {
@@ -10657,6 +10667,11 @@ function reviewCanonicalAbsenceJustification_(payload) {
       }
     }
     if (current === target && (syncState === "SINCRONIZADO" || syncState === "NO_REQUERIDA")) return { status: "success", idempotent: true, data: { justificacionId: justId, estado: target } };
+    if (evidenceResubmission && !retryApproval) {
+      history.push({ action: "EVIDENCE_RESUBMITTED", actorId: actorId, actorRole: actorRole,
+        timestamp: new Date().toISOString(), previousEvidenceIds: evidenceResubmission.previousEvidenceIds,
+        evidenceIds: evidenceResubmission.evidenceIds });
+    }
     if (!retryApproval && !retryRevocation) {
       if (current === "Aprobada" && target !== "Cancelada") return { status: "error", code: "ABSENCE_DECISION_CONFLICT" };
       if (["Rechazada","Cancelada"].indexOf(current) !== -1) return { status: "error", code: "ABSENCE_DECISION_CONFLICT" };
