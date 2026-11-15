@@ -189,7 +189,7 @@ function makeMigrationOrchestrationFixture(options){
 function runMigrationOrchestrationTests(source){
  const fixture=makeMigrationOrchestrationFixture(),payload=(system,legacy)=>({nombreArchivo:"fixture.csv",destinoModulo:"USER",columnaMapeo:{identificador:"legacy",campos:{Nombres:"Nombres",Apellidos:"Apellidos",Identificacion:"DNI"}},filasData:[{legacy:legacy,Nombres:"Ana",Apellidos:"Perez",DNI:"0801-1990-12345"}],creadoPor:"TEST",sistemaOrigen:system,tipoEntidad:"persona",previewConfirmed:true,previewHash:"MIGRATION-FIXTURE"});
  const a=fixture.ctx.importDataWithColumnMapping(payload("LEGACY_A","A-01"));const b=fixture.ctx.importDataWithColumnMapping(payload("LEGACY_B","B-99"));
- assert.equal(a.status,"success");assert.equal(b.status,"success");
+ assert.equal(a.status,"success",JSON.stringify(a));assert.equal(b.status,"success",JSON.stringify(b));
  const writes=fixture.calls.filter(x=>x.action==="writeMigratedEntity");assert.equal(writes.length,2);
  assert.equal(writes[0].payload.idNuevoPlataforma,"PER-SHARED");assert.equal(writes[1].payload.idNuevoPlataforma,"PER-SHARED");
  assert.notEqual(writes[0].payload.idempotencyKey,writes[1].payload.idempotencyKey,"different source IDs retain distinct idempotency keys");
