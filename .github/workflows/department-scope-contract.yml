@@ -97,6 +97,7 @@ on:
       - tests/security/accounting-payroll-receipt-distribution.test.js
       - tests/security/accounting-payroll-journal-integration.test.js
       - tests/security/accounting-departmental-import-scope.test.js
+      - tests/security/accounting-import-semantic-preflight.test.js
       - tests/security/user-migrated-resource-ownership-contract.test.js
       - tests/security/resource-ownership-abac.test.js
       - tests/security/department-reference-policy.test.js
