@@ -2399,7 +2399,7 @@
 ---
 
 <!-- ID: TASK-490 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-12.md ; Pendientes.md -->
-### [ ] [TASK-490] Aislar en servidor los expedientes y solicitudes laborales de cada empleado
+### [x] [TASK-490] Aislar en servidor los expedientes y solicitudes laborales de cada empleado
 - **Hallazgo de origen:** AUD-NG-193; T-UX-12.
 - **Severidad:** Alto.
 - **Objetivo:** impedir que un empleado autenticado consulte datos laborales de otros empleados.
@@ -2409,7 +2409,7 @@
 - **Alcance:** lectura de datos laborales y expedientes.
 - **Criterios de aceptación:** empleado no puede leer otro UserId manipulando payload; roles administrativos autorizados mantienen su alcance; accesos denegados se registran; pruebas IDOR por rol.
 - **Prioridad:** P1.
-- **Estado:** Pendiente.
+- **Estado:** Completada en código/CI; beta pendiente.
 - **Evidencia de cierre:** pruebas de aislamiento y autorización servidor.
 - **Origen del Hallazgo:** AUD-NG-193 en Auditoria.txt (T-UX-12; permisos efectivos y confidencialidad del panel de RR. HH.).
 - **Severidad/Clasificación:** Alto / P1 (exposición de información laboral entre usuarios autenticados).
@@ -2430,7 +2430,9 @@
   - Pruebas de regresión cubren empleado A consultando empleado B, filtros ausentes, IDs manipulados, usuario sin expediente, rol RR. HH. autorizado y rol no autorizado.
   - Las pruebas no utilizan ni exponen datos personales productivos.
 - **Relaciones y límites:** T-UX-12 exige que los servicios respeten los permisos efectivos. TASK-489 corrige el contrato de presentación de solicitudes; TASK-490 corrige la autorización y el aislamiento de datos. No ampliar permisos de RR. HH. ni duplicar las tareas generales de RBAC ya registradas.
-- **Estado:** [ ] Pendiente.
+- **Estado:** Completada en código/CI; beta pendiente.
+
+- **Cierre técnico C1.740 (2026-11-15):** identidad SELF derivada del token verificado en getEmployeeRecords/getVacationRequests; IDs ajenos rechazados con RESOURCE_NOT_FOUND; intentos auditados sin registrar el ID objetivo; observaciones internas ocultas en autoservicio; HR departamental/institucional y roles administrativos probados. Contrato de ownership y acceso departamental PASS; Department Scope 43674129348, Identity Mapping 43674075666 y Department Reference Consumers 43674075654 SUCCESS. BETA-FUNC-096 pendiente de despliegue/runtime.
 
 ---
 

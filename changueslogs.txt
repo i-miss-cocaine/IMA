@@ -3722,3 +3722,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Nuevo contrato Node.js PASS; Department Scope 43673593703, Identity Mapping 43673593702 y Department Reference Consumers 43673593667 SUCCESS; syntax-check Apps Script y JS PASS.
 - No hay package.json/CLI de proyecto; CLI no aplica. Apps Script/Sheets real y E2E navegador quedan Pendiente beta (BETA-FUNC-095).
 - TASK-391 sigue Pendiente por fuentes faltantes; subflujo calculable completado en código/CI.
+
+
+[2026-11-15] TASK-490 — aislamiento servidor de expedientes y solicitudes laborales (C1.740)
+- getEmployeeRecords deriva titularidad del token verificado para Empleado; rechaza userId/expedienteId ajenos con RESOURCE_NOT_FOUND y oculta observaciones internas en SELF.
+- getVacationRequests/getLeaveVacationRequests restringen solicitudes al expediente propio; manipulación de expedienteId se rechaza sin revelar existencia y se registra evento de seguridad sin persistir el ID objetivo.
+- RecursosHumanos conserva ámbito departamental; el acceso institucional global exige ámbito institucional verificado. Pruebas cubren empleado, HR por departamento, HR global, Director, Administrador y rol no autorizado.
+- Department Scope 43674129348 SUCCESS; Identity Mapping 43674075666 SUCCESS; Department Reference Consumers 43674075654 SUCCESS; pruebas de ownership y syntax-check PASS.
+- TASK-490 completada en código/CI; BETA-FUNC-096 pendiente de ejecución en entorno real.

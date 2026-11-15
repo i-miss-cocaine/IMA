@@ -195,3 +195,12 @@ Se registra AUD-NG-191 / TASK-488 para los paneles de Dirección, Coordinación 
 - **Prioridad:** P1.
 - **Estado:** Pendiente.
 - **Evidencia de cierre:** pruebas de aislamiento y autorización servidor.
+
+
+## Cierre técnico — TASK-490 (C1.740)
+- **Estado:** Completada en código/CI; validación beta pendiente.
+- **Implementación:** el servicio ACCOUNTING deriva el expediente del empleado desde la identidad verificada, ignora la titularidad aportada por el cliente, rechaza consultas cruzadas sin revelar existencia y audita intentos sin registrar el ID objetivo. La vista SELF omite observaciones internas.
+- **Ámbitos administrativos:** Recursos Humanos accede a su ámbito departamental o institucional verificado; Director/Administrador mantienen únicamente los permisos y ámbitos efectivos.
+- **Evidencia:** contrato de ownership de vacaciones/ausencias y prueba de acceso departamental PASS; Department Scope 43674129348 SUCCESS; Identity Mapping 43674075666 SUCCESS; Department Reference Consumers 43674075654 SUCCESS.
+- **Archivos modificados:** backend/accounting-service/Code.gs y tests/security/accounting-vacation-medical-leave-ownership.test.js.
+- **Beta:** BETA-FUNC-096 pendiente de despliegue y validación con usuarios sintéticos.

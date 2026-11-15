@@ -444,3 +444,14 @@
 - **Evidencia requerida:** snapshots sintéticos, payload/respuesta agregada, usuario/rol, IDs de viaje, resultados de filtros, captura del panel y logs de denegación/lock. No usar PII ni datos productivos.
 - **Estado:** Pendiente beta. Contrato Node.js y syntax-check aprobados en GitHub Actions; no se ha desplegado Apps Script/Sheets real ni ejecutado E2E navegador.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-096 — TASK-490 — Aislamiento de expedientes y solicitudes laborales
+- **Módulo/roles:** autoservicio Empleado; Recursos Humanos; Dirección; Administrador.
+- **Precondiciones:** despliegue aislado de ACCOUNTING; empleados A/B con expedientes y solicitudes sintéticas; HR con ámbitos departamentales A/B y HR con ámbito institucional; Director/Admin; rol no autorizado.
+- **Pasos:** (1) iniciar como empleado A y consultar sin filtros; verificar solo expediente/solicitudes A; (2) alterar userId, expedienteId e identificador de solicitud para apuntar a B; verificar RESOURCE_NOT_FOUND y ausencia de datos de B; (3) comprobar que los eventos de denegación se registran sin guardar IDs objetivo; (4) verificar que observaciones internas no se muestran en autoservicio; (5) consultar como HR de departamento A/B y comprobar aislamiento; (6) consultar como HR institucional y comprobar acceso global autorizado; (7) comprobar Director/Admin según permisos; (8) comprobar rol Padre/no autorizado; (9) verificar que las lecturas no modifican hojas.
+- **Resultado esperado:** ningún acceso cruzado; respuestas indistinguibles para IDs inexistentes/ajenos; auditoría sin ID objetivo; acceso HR solo según ámbito vigente; sin mutaciones.
+- **Evidencia requerida:** usuarios/roles sintéticos, payloads de prueba, códigos de respuesta, eventos de auditoría sanitizados y snapshots antes/después de las hojas. No utilizar PII productiva.
+- **Estado:** Pendiente beta. Contratos Node y CI aprobados.
+===============================================================================

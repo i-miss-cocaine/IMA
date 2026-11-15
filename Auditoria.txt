@@ -2960,3 +2960,14 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Evidencia:** commit funcional 8fca60de7ba70ea75930f1c2b506900f15acc0bf; Department Scope 43673593703 SUCCESS; Identity Mapping 43673593702 SUCCESS; Department Reference Consumers 43673593667 SUCCESS; contrato Node y syntax-check PASS.
 - **Resultado:** subflujo completado en código/CI; TASK-391 permanece Pendiente. BETA-FUNC-095 pendiente de despliegue/ejecución real.
 ===============================================================================
+
+
+===============================================================================
+### C1.740 — Revisión técnica y evidencia de TASK-490
+- **Hallazgo corregido:** el rol Empleado no puede consultar expedientes ni solicitudes de terceros omitiendo filtros o manipulando userId/expedienteId.
+- **Servidor:** getEmployeeRecords deriva titularidad del token verificado; getVacationRequests resuelve el expediente propio; getLeaveVacationRequests conserva el mismo aislamiento.
+- **Roles administrativos:** RecursosHumanos se limita a ámbitos departamentales/institucionales verificados; otros roles requieren permisos explícitos.
+- **Auditoría:** los intentos de acceso ajeno se registran con identidad/rol verificados y sin incluir el ID objetivo en el payload del log.
+- **Pruebas:** Department Scope 43674129348 SUCCESS (ownership vacaciones/ausencias, acceso departamental y syntax-check); Identity Mapping 43674075666 SUCCESS; Department Reference Consumers 43674075654 SUCCESS.
+- **Resultado:** TASK-490 completada en código/CI; BETA-FUNC-096 pendiente de despliegue y validación runtime.
+===============================================================================
