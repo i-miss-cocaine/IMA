@@ -155,6 +155,8 @@ jobs:
         run: node tests/ui/accessible-tooltips.test.js
       - name: Run permanent form help metadata contract
         run: node tests/ui/permanent-form-help.test.js
+      - name: Run Honduran admission identity validation contract
+        run: node tests/security/academic-admission-identity.test.js
       - name: Run accounting employee loan request and approval ownership contract
         run: node tests/security/accounting-employee-loan-advance-ownership.test.js
       - name: Run accounting payroll loan amortization and reversal contract
