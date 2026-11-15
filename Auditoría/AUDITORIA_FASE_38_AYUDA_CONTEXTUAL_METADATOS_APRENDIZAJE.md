@@ -331,3 +331,5 @@ La evaluación abarca la ayuda contextual inmediata (tooltips/popovers), las ins
 - El workflow Department Scope ejecutó Node 24 y reportó `ima/department-scope-contract: success` para commit c92724908578f5acf02867e3d51ce24518800876; el job incluye el contrato de metadatos, ayuda permanente, tooltips y el test DOM de validación inline agregado.
 - tests/ui/permanent-form-help.test.js se amplió para verificar calificacion y edit-puntaje con clave calificaciones.nota y rango 0–100, step 0.01. El commit posterior f81732c70468448e1fea395bd595ef663ae61fe4 requiere esperar/consultar su propio estado antes de atribuirle el mismo resultado.
 - La aceptación integral de TASK-130 permanece pendiente por cobertura restante y validación beta manual.
+
+- **Resultado confirmado posterior:** `ima/department-scope-contract: success` también para f81732c70468448e1fea395bd595ef663ae61fe4, incluyendo la nueva aserción de rango de calificaciones.
