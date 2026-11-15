@@ -56,6 +56,7 @@ const secret = "migration-transport-secret-with-more-than-32-characters";
 const runtime = {
   MIGRATION_WRITER_SCHEMAS_: schemas,
   MIGRATION_WRITER_JOURNAL_HEADERS_: ["IdempotencyKey","TipoEntidad","IdNuevoPlataforma","PayloadJSON","Estado","Accion","FilaAnteriorJSON","FilaNuevaJSON","Fecha","CorrelationId"],
+  MIGRATION_WRITER_JOURNAL_SHEET_: "MigracionEscrituras_ACCOUNTING",
   SPREADSHEET_ID: "SHEET-1",
   Date, String, JSON, Array, Object, Number, Math, RegExp, Error,
   getVerifiedAccountingIdentity_: () => identity,
@@ -105,7 +106,7 @@ const payload = {
   assert.equal(target.rows.length, 2);
   assert.equal(target.rows[1][0], "CURSO-1");
   assert.equal(target.rows[1][1], "'=HYPERLINK(\"https://evil.test\")", "formula-like imported text is neutralized");
-  assert.equal(sheets.get("MigracionEscrituras").rows.length, 2);
+  assert.equal(sheets.get("MigracionEscrituras_ACCOUNTING").rows.length, 2);
   const retry = runtime.api.write(payload);
   assert.equal(retry.idempotent, true);
   assert.equal(target.rows.length, 2, "idempotent retry does not duplicate rows");
