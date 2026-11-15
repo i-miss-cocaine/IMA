@@ -296,6 +296,10 @@ function buildImportPreview_(payload) {
     return { status: "error", code: "IMPORT_SCHEMA_OR_DATA_INVALID", validForImport: false, errores: [] };
   }
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var departmentPreflight = buildAccountingDepartmentalImportPreflight_(input, ss, schema);
+  if (!departmentPreflight || departmentPreflight.valid !== true) {
+    return { status: "error", code: departmentPreflight && departmentPreflight.code || "DEPARTMENT_IMPORT_SCOPE_DENIED", validForImport: false, errores: [] };
+  }
   var identitySnapshot = buildAccountingIdentityMapSnapshot_(input, ss);
   var structural = input.analisisEstructural || {};
   var errors = [];
@@ -353,6 +357,9 @@ function buildImportPreview_(payload) {
       var sourceField = fields[targetField];
       prepared[targetField] = source[sourceField] === undefined || source[sourceField] === null ? "" : source[sourceField];
     });
+    if (departmentPreflight.applicable && departmentPreflight.rows && departmentPreflight.rows[rowIndex]) {
+      prepared = Object.assign(prepared, departmentPreflight.rows[rowIndex]);
+    }
     if (identity.valid && targetIdField) prepared[targetIdField] = identity.idNuevoPlataforma;
     if (entityType === "estudiante") {
       var personLegacyId = String(prepared.PersonaID || "").trim();
@@ -432,7 +439,11 @@ function buildImportPreview_(payload) {
       existenciaDestinoVerificada: targetSnapshot.verified,
       requiereConfirmacion: errors.length > 0 || warnings.length > 0 || overwrites.length > 0
     },
-    analisisEstructural: structural
+    analisisEstructural: structural,
+    departmentPreflight: departmentPreflight,
+    departamentoDestino: departmentPreflight.departmentId || null,
+    departamentosDestino: departmentPreflight.departmentIds || [],
+    snapshotId: departmentPreflight.snapshotId || null
   };
 }
 
@@ -460,10 +471,15 @@ function importDataWithColumnMapping(payload) {
   var applied = [];
   var errors = [];
   var warnings = (preview.advertencias || []).slice();
-  var rowsToWrite = partial ? preview.validRowIndexes : preview.validRowIndexes;
+  var validIndexes = Array.isArray(preview.validRowIndexes) ? preview.validRowIndexes.slice() :
+    (preview.preparedRows || []).map(function(row, index) { return index; });
+  var rowsToWrite = validIndexes;
+  var departmentPreflight = preview.departmentPreflight || null;
   try {
     rowsToWrite.forEach(function(index) {
-      var row = preview.preparedRows[preview.validRowIndexes.indexOf(index)];
+      var rowPosition = Array.isArray(preview.validRowIndexes) ? preview.validRowIndexes.indexOf(index) : index;
+      var row = preview.preparedRows[rowPosition];
+      if (!row) throw new Error("MIGRATION_PREPARED_ROW_MISSING");
       var schema = MIGRATION_OWNER_SCHEMAS_[input.tipoEntidad];
       var service = String(schema.service || "").toUpperCase();
       var original = input.filasData[index] || {};
@@ -473,26 +489,54 @@ function importDataWithColumnMapping(payload) {
       }));
       var result = sendMigrationOwnerRequest_(service, "writeMigratedEntity", {
         sessionToken: input.sessionToken,
-        institutionId: PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID"),
+        institutionId: PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID") ||
+          PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID"),
         entity: row,
+        datos: row,
         source: { fileName: input.nombreArchivo || "", sourceSystem: input.sistemaOrigen || "", legacyId: legacyId },
         idempotencyKey: idempotencyKey
       });
       if (!result || result.status !== "success") throw new Error("MIGRATION_OWNER_WRITE_FAILED");
-      applied.push({ service: service, entityType: input.tipoEntidad, payload: row });
+      var employeeId = preview.identityResolutions && preview.identityResolutions[index] ?
+        preview.identityResolutions[index].idNuevoPlataforma : row[(schema.headers || [])[0]];
+      if (!(result.idempotent === true)) {
+        applied.push({ tipoEntidad: input.tipoEntidad, service: service, idempotencyKey: idempotencyKey, payload: row });
+      }
+      if (departmentPreflight && departmentPreflight.applicable === true) {
+        var departmentId = String(row.Departamento || departmentPreflight.departmentId || "").trim();
+        var ownershipPayload = {
+          sessionToken: input.sessionToken,
+          institutionId: actor.institutionId,
+          resourceType: "EXPEDIENTE_LABORAL",
+          resourceId: String(employeeId || "").trim(),
+          departmentId: departmentId,
+          rowDepartmentSnapshotId: departmentPreflight.snapshotId || "",
+          rowDepartmentSnapshotRowId: original.RowID || "",
+          idempotencyKey: migrationHash_(migrationStableJson_({
+            previewHash: preview.previewHash, resourceId: employeeId, departmentId: departmentId,
+            snapshotId: departmentPreflight.snapshotId || "", rowId: original.RowID || ""
+          }))
+        };
+        if (!ownershipPayload.resourceId || !ownershipPayload.departmentId) throw new Error("RESOURCE_OWNERSHIP_CONTEXT_INVALID");
+        var ownershipIntent = { tipoEntidad: "empleadoOwnership", service: "USER", idempotencyKey: ownershipPayload.idempotencyKey, payload: ownershipPayload };
+        applied.push(ownershipIntent);
+        var ownershipResult = sendMigrationOwnerRequest_("USER", "registerMigratedResourceOwnership", ownershipPayload);
+        if (!ownershipResult || ownershipResult.status !== "success") throw new Error("RESOURCE_OWNERSHIP_REPAIR_REQUIRED");
+        ownershipIntent.ownershipId = ownershipResult.ownershipId || "";
+      }
     });
-    var audit = getOrCreateSheet("AuditoriaMigraciones");
+    var audit = getOrCreateSheet(ss, "AuditoriaMigraciones");
     audit.appendRow([
       runId, String(input.nombreArchivo || ""), String(input.sistemaOrigen || ""),
-      String(input.tipoEntidad || ""), String(input.destinoModulo || ""), applied.length,
-      new Date(), JSON.stringify(warnings), JSON.stringify(errors),
-      preview.previewHash, partial ? "PARTIAL" : "COMPLETED", actor.userId || ""
+      String(input.tipoEntidad || ""), String(input.destinoModulo || ""), rowsToWrite.length,
+      new Date(), JSON.stringify(warnings), partial ? "partial" : "completed",
+      JSON.stringify(errors), preview.previewHash, actor.userId || ""
     ]);
     return {
       status: "success",
       estado: partial ? "partial" : "completed",
-      registrosEscritos: applied.length,
-      filasOmitidasPorValidacion: Math.max(0, input.filasData.length - applied.length),
+      registrosEscritos: rowsToWrite.length,
+      filasOmitidasPorValidacion: Math.max(0, input.filasData.length - rowsToWrite.length),
       errores: (preview.errores || []).map(function(item) {
         return { error: item.error || item.codigo, fila: item.fila, mensaje: item.mensaje || item.codigo };
       }),
@@ -500,59 +544,72 @@ function importDataWithColumnMapping(payload) {
       runId: runId
     };
   } catch (error) {
+    var idempotentOwnershipFailure = String(error && error.message || error) === "RESOURCE_OWNERSHIP_REPAIR_REQUIRED" &&
+      applied.some(function(item) { return item.tipoEntidad === "empleadoOwnership"; }) &&
+      !applied.some(function(item) { return item.tipoEntidad === input.tipoEntidad; });
     if (applied.length) rollbackMigrationOwnerWrites_(applied);
-    errors.push({ severity: "ERROR", codigo: "MIGRATION_BATCH_ROLLED_BACK", message: String(error && error.message || error) });
-    var auditRollback = getOrCreateSheet("AuditoriaMigraciones");
-    auditRollback.appendRow([
-      runId, String(input.nombreArchivo || ""), String(input.sistemaOrigen || ""),
-      String(input.tipoEntidad || ""), String(input.destinoModulo || ""), 0,
-      new Date(), JSON.stringify(warnings), JSON.stringify(errors),
-      preview.previewHash, "ROLLED_BACK", (actor.userId || "")
-    ]);
-    return { status: "error", estado: "rolled_back", registrosEscritos: 0, errores: errors, runId: runId };
+    if (idempotentOwnershipFailure) {
+      errors.push({ severity: "ERROR", codigo: "RESOURCE_OWNERSHIP_REPAIR_REQUIRED", error: "RESOURCE_OWNERSHIP_REPAIR_REQUIRED" });
+      var repairAudit = getOrCreateSheet(ss, "AuditoriaMigraciones");
+      repairAudit.appendRow([runId, String(input.nombreArchivo || ""), String(input.sistemaOrigen || ""),
+        String(input.tipoEntidad || ""), String(input.destinoModulo || ""), 0, new Date(),
+        JSON.stringify(warnings), "compensation_required", JSON.stringify(errors), preview.previewHash, actor.userId || ""]);
+      return { status: "error", code: "MIGRATION_COMPENSATION_REQUIRED", estado: "compensation_required",
+        registrosEscritos: 0, errores: errors, runId: runId };
+    }
+    errors.push({ severity: "ERROR", codigo: "MIGRATION_BATCH_ROLLED_BACK", error: "MIGRATION_BATCH_ROLLED_BACK",
+      message: String(error && error.message || error) });
+    var auditRollback = getOrCreateSheet(ss, "AuditoriaMigraciones");
+    auditRollback.appendRow([runId, String(input.nombreArchivo || ""), String(input.sistemaOrigen || ""),
+      String(input.tipoEntidad || ""), String(input.destinoModulo || ""), 0, new Date(),
+      JSON.stringify(warnings), "rolled_back", JSON.stringify(errors), preview.previewHash, actor.userId || ""]);
+    return { status: "error", code: "MIGRATION_BATCH_ROLLED_BACK", estado: "rolled_back",
+      registrosEscritos: 0, errores: errors, runId: runId };
   }
 }
-
 
 /* Runtime configuration and fail-closed service adapters. */
 var SPREADSHEET_ID = PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID") || "";
-var MIGRATION_OWNER_SCHEMAS_ = {
+const MIGRATION_OWNER_SCHEMAS_={
   curso: { service: "ACCOUNTING", sheet: "Cursos", headers: ["CursoID", "Nombre", "Nota", "FechaInicio"] },
-  estudiante: { service: "ACADEMIC", sheet: "Estudiantes", headers: ["EstudianteID", "PersonaID"] }
+  estudiante: { service: "ACADEMIC", sheet: "Estudiantes", headers: ["EstudianteID", "PersonaID"] },
+  empleado: { service: "ACCOUNTING", sheet: "ExpedientesLaborales", departmentScoped: true, headers: ["ExpedienteID", "PersonaId", "UserId", "Puesto", "Departamento", "CentroCosto", "FechaIngreso", "FechaSalida", "EstadoLaboral", "Observaciones"] },
+  empleadoOwnership: { service: "USER", sheet: "", headers: [] }
 };
+const ACCOUNTING_IMPORT_ROW_DEPARTMENT_SNAPSHOT_HEADERS_ = ["ImportBatchID","SnapshotID","RowID","InstitutionID","Domain","DepartmentID","Status","VerifiedBy","VerifiedAt","SnapshotVersion"];
 
 function getVerifiedAccountingIdentity_(payload) {
-  if (!payload || !payload.sessionToken || typeof getUserVerifiedRole !== "function" || typeof getUserContextScope !== "function") {
+  if (!payload || !payload.sessionToken || typeof verifySessionToken !== "function") {
     return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
   }
-  var role = getUserVerifiedRole(payload);
-  if (!role || role === "NO_ACCESS" || role === "SIN_ACCESO") return { authorized: false, code: "AUTH_PERMISSION_DENIED" };
-  if (typeof validateRolePermission !== "function") return { authorized: false, code: "ROLE_PERMISSION_CHECK_UNAVAILABLE" };
-  var permission = validateRolePermission("importDataWithColumnMapping", payload);
-  if (!permission || permission.authorized !== true) return { authorized: false, code: "AUTH_PERMISSION_DENIED" };
-  var scope = getUserContextScope(payload);
-  var configuredInstitution = String(PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID") || "").trim();
-  if (!scope || scope.status !== "success" || scope.authorized !== true ||
-      !scope.userId || !scope.institutionId || String(scope.institutionId) !== configuredInstitution) {
+  var claims = verifySessionToken(payload.sessionToken);
+  if (!claims || !claims.userId || !claims.role || !claims.institutionId) {
+    return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
+  }
+  var configuredInstitution = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim();
+  if (!configuredInstitution || String(claims.institutionId) !== configuredInstitution) {
     return { authorized: false, code: "INSTITUTION_SCOPE_DENIED" };
   }
-  return { authorized: true, userId: String(scope.userId), role: String(scope.role || role), institutionId: configuredInstitution };
+  return { authorized: true, userId: String(claims.userId), role: String(claims.role),
+    membershipId: String(claims.membershipId || ""), institutionId: configuredInstitution };
 }
 
 function sendMigrationOwnerRequest_(service, action, payload) {
+  var target = String(service || "").toUpperCase();
+  if (String(action || "").indexOf("MigratedResourceOwnership") !== -1 || target === "USER" ||
+      String(action || "") === "compensateMigratedResourceOwnership") target = "USER";
+  if (target !== "USER") throw new Error("MIGRATION_OWNER_SERVICE_NOT_CONFIGURED");
   var properties = PropertiesService.getScriptProperties();
-  var endpoint = String(properties.getProperty("MIGRATION_OWNER_API_URL") || "").trim();
-  var secret = String(properties.getProperty("MIGRATION_OWNER_API_SECRET") || "").trim();
-  if (!endpoint || !secret || typeof UrlFetchApp === "undefined") throw new Error("MIGRATION_OWNER_SERVICE_NOT_CONFIGURED");
+  var endpoint = String(properties.getProperty("IMA_USER_SERVICE_URL") || "").trim();
+  if (!/^https:\/\/[^/]+\/exec$/i.test(endpoint) || typeof createInterServiceEnvelope !== "function" || typeof UrlFetchApp === "undefined") {
+    throw new Error("MIGRATION_OWNER_SERVICE_NOT_CONFIGURED");
+  }
+  var envelope = createInterServiceEnvelope("ACCOUNTING", "USER", action, payload || {});
   var response = UrlFetchApp.fetch(endpoint, {
-    method: "post",
-    contentType: "application/json",
-    headers: { Authorization: "Bearer " + secret },
-    payload: JSON.stringify({ service: service, action: action, payload: payload }),
-    muteHttpExceptions: true
+    method: "post", contentType: "application/json",
+    payload: JSON.stringify(envelope), muteHttpExceptions: true
   });
-  var status = response.getResponseCode();
-  var body = {};
+  var status = response.getResponseCode(), body = {};
   try { body = JSON.parse(response.getContentText() || "{}"); } catch (ignored) {}
   if (status < 200 || status >= 300 || body.status !== "success") {
     throw new Error(String(body.code || "MIGRATION_OWNER_REQUEST_FAILED"));
@@ -564,22 +621,22 @@ function rollbackMigrationOwnerWrites_(applied) {
   var failures = [];
   (applied || []).slice().reverse().forEach(function(item) {
     try {
-      sendMigrationOwnerRequest_(item.service, "rollbackMigratedEntity", {
-        entityType: item.entityType,
-        entity: item.payload,
-        idempotencyKey: migrationHash_(migrationStableJson_({ action: "rollback", entityType: item.entityType, entity: item.payload }))
-      });
+      var ownership = String(item && item.tipoEntidad || "") === "empleadoOwnership";
+      sendMigrationOwnerRequest_(ownership ? "USER" : "ACCOUNTING",
+        ownership ? "compensateMigratedResourceOwnership" : "compensateMigratedEntity",
+        { idempotencyKey: item.idempotencyKey || "", entityType: item.tipoEntidad || "",
+          payload: item.payload || {}, ownershipId: item.ownershipId || "" });
     } catch (error) {
-      failures.push({ entityType: item.entityType, code: String(error && error.message || error) });
+      failures.push({ entityType: item && item.tipoEntidad || "", code: String(error && error.message || error) });
     }
   });
   return failures;
 }
 
-function getOrCreateSheet(name) {
-  if (!SPREADSHEET_ID) throw new Error("SPREADSHEET_NOT_CONFIGURED");
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  return ss.getSheetByName(name) || ss.insertSheet(name);
+function getOrCreateSheet(ss, name) {
+  var spreadsheet = ss || SpreadsheetApp.openById(SPREADSHEET_ID);
+  if (!spreadsheet) throw new Error("SPREADSHEET_NOT_CONFIGURED");
+  return spreadsheet.getSheetByName(name) || spreadsheet.insertSheet(name);
 }
 
 function migrationStableJson_(value) {
