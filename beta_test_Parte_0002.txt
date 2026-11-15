@@ -603,3 +603,21 @@
 - **Evidencia requerida:** IDs sintéticos, hashes, versiones, estados, resultados allow/deny, eventos de auditoría y snapshots sanitizados de filas. No incluir base64, contenido real, DriveFileID sensible ni secretos en logs.
 - **Estado:** contratos Node/CI y sintaxis PASS; pendiente validación manual en Apps Script/Sheets/Drive beta.
 ===============================================================================
+
+===============================================================================
+### BETA-FUNC-105 — F34-TASK06 — Notificaciones reactivas de transiciones de trámites
+- **Módulo/roles:** USER / Secretaría, Dirección, solicitante; correo solo con consentimiento explícito.
+- **Objetivo:** verificar que las transiciones Requiere Corrección, Aprobada y Rechazada generan un aviso al solicitante después de persistir la decisión, sin exponer notas internas ni confundir el aviso con recepción formal.
+- **Precondiciones:** USER desplegado con el commit de F34-TASK06; solicitudes y usuarios sintéticos; una cuenta con consentimiento de correo explícito y otra sin consentimiento; cuota MailApp disponible y escenario de cuota agotada controlado.
+- **Pasos:**
+  1. Crear una solicitud sintética y resolverla como DEVUELTO_CORRECCION. Confirmar que la transición queda persistida antes de registrar el aviso y que el destinatario es el UserId solicitante de la fila canónica.
+  2. Repetir con APROBADO y RECHAZADO. Confirmar título, estado, acción requerida, fecha límite cuando exista y enlace HTTPS al portal.
+  3. Incluir una nota interna y una observación pública distintas. Confirmar que solo la observación pública aparece en la notificación.
+  4. Reintentar la misma clave de evento y ejecutar dos solicitudes concurrentes equivalentes. Confirmar una sola fila por destinatario/clave y que no se duplica el correo.
+  5. Con consentimiento de correo ausente o falso, confirmar que solo se registra en la bandeja interna. Con consentimiento explícito, comprobar envío por correo y persistencia del estado.
+  6. Simular cuota agotada o fallo de MailApp. Confirmar estado Pendiente_Reintento visible y ejecutar retryFailedNotificationsQueue; verificar recuperación sin crear una segunda notificación.
+  7. Confirmar que la apertura del correo o de la notificación no registra acuse formal de recepción documental.
+- **Resultado esperado:** notificación posterior al commit; contenido público mínimo; deduplicación por solicitud/decisión/estado/destinatario; correo solo con opt-in explícito; fallos y reintentos visibles; sin acuse documental implícito.
+- **Evidencia requerida:** IDs sintéticos, decisionId, clave de deduplicación, estado final, fila de notificación anonimizada, preferencia de consentimiento, estado de reintento y auditoría de errores. No registrar correos reales ni notas internas.
+- **Estado:** Pendiente beta; no desplegado ni ejecutado contra Apps Script/MailApp/Sheets reales.
+===============================================================================
