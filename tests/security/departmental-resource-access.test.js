@@ -37,7 +37,7 @@ const names = ["getVerifiedAcademicIdentity_","getVerifiedDepartmentScopeForSess
 const code = "var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n" + names.map(n => extractFunction(academic, n)).join("\n");
 const claims = {
   staffA:{userId:"U-A",role:"Director"}, staffB:{userId:"U-B",role:"Director"},
-  admin:{userId:"U-ADMIN",role:"Administrador"}, teacher:{userId:"U-TEACH",role:"Docente"},
+  admin:{userId:"U-ADMIN",role:"Administrador"}, auditor:{userId:"U-AUDITOR",role:"Auditor"}, teacher:{userId:"U-TEACH",role:"Docente"},
   student:{userId:"U-STUDENT",role:"Estudiante"}, guardian:{userId:"U-GUARDIAN",role:"Tutor"}, invalid:null
 };
 const rows = {
@@ -46,6 +46,7 @@ const rows = {
     ["S-A","U-A","Director","DEPARTAMENTO",'["DEP-A"]',"Activo","","","","","",""],
     ["S-B","U-B","Director","DEPARTAMENTO",'["DEP-B"]',"Activo","","","","","",""],
     ["S-ADMIN","U-ADMIN","Administrador","INSTITUCION",'["INST-1"]',"Activo","","","","","",""],
+    ["S-AUDITOR","U-AUDITOR","Auditor","INSTITUCION",'["INST-1"]',"Activo","","","","","",""],
     ["S-TEACH","U-TEACH","Docente","DEPARTAMENTO",'["DEP-A"]',"Activo","","","","","",""],
     ["S-STUDENT","U-STUDENT","Estudiante","DEPARTAMENTO",'["DEP-A"]',"Activo","","","","","",""],
     ["S-STUDENT-A","U-STUDENT-A","Estudiante","DEPARTAMENTO",'["DEP-A"]',"Activo","","","","","",""],
@@ -191,6 +192,10 @@ assert.equal(context.getStudentDocuments({sessionToken:"staffA",expedienteId:"EX
 assert.deepEqual(Array.from(context.getStudentDocuments({sessionToken:"student",expedienteId:"EXP-STUDENT"}).documents,d=>d.documentoId),["DOC-S"]);
 assert.equal(context.getStudentDocuments(actor("admin")).code,"RESOURCE_SCOPE_DENIED","institution-wide scope does not bypass explicit target binding");
 assert.deepEqual(Array.from(context.getStudentDocuments({sessionToken:"admin",expedienteId:"EXP-B"}).documents,d=>d.documentoId),["DOC-B"]);
+assert.equal(context.getStudentDocuments(actor("auditor")).code,"RESOURCE_SCOPE_DENIED");
+assert.deepEqual(Array.from(context.getStudentDocuments({sessionToken:"auditor",expedienteId:"EXP-B"}).documents,d=>d.documentoId),["DOC-B"]);
+assert.equal(context.getStudentFile({sessionToken:"auditor",expedienteId:"EXP-B"}).status,"success",
+  "Auditor with institution-wide scope may read metadata without receiving direct Drive URLs");
 assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"staffA",asignaturaId:"ASIG-A"}).authorized,true);
 assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"staffA",asignaturaId:"ASIG-B"}).code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"teacher",asignaturaId:"ASIG-A",grado:"10",seccion:"A",periodoId:"2026"}).authorized,true);
