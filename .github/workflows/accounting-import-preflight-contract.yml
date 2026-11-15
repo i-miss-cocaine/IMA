@@ -51,6 +51,8 @@ jobs:
         run: node tests/security/department-reference-interservice-envelope.test.js
       - name: Check API client syntax
         run: node --check js/api.js
+      - name: Check accounting dashboard syntax
+        run: node --check js/accounting.js
       - name: Check teacher dashboard controller syntax
         run: node --check js/teacher.js
       - name: Run Excel semantic preflight UI contract
