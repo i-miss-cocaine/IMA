@@ -3843,3 +3843,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Node local NOT RUN; CLI independiente no aplicable (sin package.json/entrypoint CLI). No se desplegó Apps Script ni se modificó producción. BETA-FUNC-104 preparada; prueba real Drive/Sheets pendiente.
 - Legacy sin SHA permanece LEGACY_UNVERIFIED: no se considera evidencia verificada ni se permite aprobarla como nueva evidencia sin reingreso verificable.
 - HEAD de implementación verificado: 2db32093801846f2d74be81be54d4b6bb4dbdd57. Siguiente: revisar dependencias de TASK-108 y F34-Task06 antes de elegir la próxima tarea.
+
+
+[2026-11-15] F34-TASK06 — C1.756 — Notificaciones reactivas de trámites
+- `processWorkflowDecision` despacha avisos después de persistir la decisión y liberar el ScriptLock para `Requiere Corrección`, `Aprobada` y `Rechazada`.
+- Notificación dirigida al solicitante original; solo incluye observaciones públicas, fecha límite si existe y enlace HTTPS al portal. Correo únicamente con consentimiento explícito; sin consentimiento permanece en la bandeja interna.
+- Deduplicación atómica bajo ScriptLock, estado `Pendiente_Reintento` ante fallo/cuota MailApp, escape HTML y compatibilidad con consumidores existentes que usan email como `userId`.
+- Node local v22 (harness aislado) PASS; Department Scope Contract / Node 24 GitHub Actions SUCCESS. BETA-FUNC-105 pendiente de validación Apps Script/MailApp reales. No se declara WhatsApp ni entrega formal documental.
