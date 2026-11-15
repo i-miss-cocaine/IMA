@@ -5886,12 +5886,12 @@ function getDocumentDeliveryReceiptMode_(ss, institutionId) {
     var valueIndex = headers.indexOf("valor") >= 0 ? headers.indexOf("valor") : headers.indexOf("configvalue");
     var stateIndex = headers.indexOf("estado");
     var institutionIndex = headers.indexOf("institutionid") >= 0 ? headers.indexOf("institutionid") : headers.indexOf("institucionid");
-    if (keyIndex < 0 || valueIndex < 0) return fallback;
+    if (keyIndex < 0 || valueIndex < 0 || institutionIndex < 0) return fallback;
     var tenant = String(institutionId || "").trim();
+    if (!tenant) return fallback;
     var matches = rows.slice(1).filter(function(row) {
-      if (String(row[keyIndex] || "").trim() !== "MODALIDAD_ACUSE_RECIBO_NOTIFICACIONES") return false;
-      if (institutionIndex >= 0 && String(row[institutionIndex] || "").trim() !== tenant) return false;
-      return true;
+      return String(row[keyIndex] || "").trim() === "MODALIDAD_ACUSE_RECIBO_NOTIFICACIONES" &&
+        String(row[institutionIndex] || "").trim() === tenant;
     });
     if (matches.length !== 1) return fallback;
     if (stateIndex >= 0 && ["ACTIVO","ACTIVE","HABILITADO","SI","TRUE"].indexOf(String(matches[0][stateIndex] || "").trim().toUpperCase()) === -1) return fallback;
@@ -5920,7 +5920,7 @@ function getMyDocumentDeliveries(payload) {
       fechaDespacho: row[map.FechaDespacho], fechaApertura: row[map.FechaApertura], sha256Apertura: row[map.SHA256Apertura],
       fechaConfirmacion: row[map.FechaConfirmacion], sha256Confirmacion: row[map.SHA256Confirmacion],
       estadoEnlace: (String(row[map.EstadoEnlace]) === "ACTIVO" && row[map.FechaExpiracionEnlace] && new Date(row[map.FechaExpiracionEnlace]).getTime() <= Date.now()) ? "EXPIRADO" : row[map.EstadoEnlace],
-      fechaExpiracionEnlace: row[map.FechaExpiracionEnlace], fechaRevocacionEnlace: row[map.FechaRevocacionEnlace], fechaRevocacionEnlace: row[map.FechaRevocacionEnlace]
+      fechaExpiracionEnlace: row[map.FechaExpiracionEnlace], fechaRevocacionEnlace: row[map.FechaRevocacionEnlace]
     };
   }) };
 }
