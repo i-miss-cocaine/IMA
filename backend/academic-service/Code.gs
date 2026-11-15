@@ -4265,7 +4265,7 @@ function getSecureDocumentStream(payload) {
   }
   // Consume before reading Drive: tokens are one-use and cannot be replayed.
   cache.remove(cacheKey);
-  const result = getStudentDocumentFile(Object.assign({}, request, { documentoId: documentId, versionDocumento: claims.version }));
+  const result = getStudentDocumentFile_(Object.assign({}, request, { documentoId: documentId, versionDocumento: claims.version }));
   if (!result || result.status !== "success" || result.versionDocumento !== claims.version) {
     try {
       logStructuredEvent("ACADEMIC", "getSecureDocumentStream", "WARN", "DOCUMENT_ACCESS_DENIED",
@@ -14625,7 +14625,7 @@ function verifyDocumentIntegritySha256(payload) {
   }
 }
 
-function getStudentDocumentFile(payload) {
+function getStudentDocumentFile_(payload) {
   const p = payload || {};
   const documentId = String(p.documentoId || "").trim();
   if (!documentId) throw new Error("documentoId requerido.");
