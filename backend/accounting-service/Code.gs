@@ -19609,7 +19609,7 @@ function validateImportPreview(payload) {
       filasOmitidas: preview.totalFilas - (preview.validRowIndexes || []).length,
       mapeoConfirmado: (payload && payload.columnaMapeo) || {},
       erroresLista: preview.errores.slice(0, 50), advertenciasLista: preview.advertencias.slice(0, 50),
-      requiereConfirmacion: preview.advertencias.length > 0
+      requiereConfirmacion: preview.advertencias.length > 0 || preview.validForPartialImport === true
     }
   };
 }
@@ -19842,13 +19842,14 @@ function importDataWithColumnMapping(payload) {
     }
   });
 
+  const hadAppliedWrites = applied.length > 0;
   let compensationErrors = [];
   if (writeErrors.length) {
     compensationErrors = rollbackMigrationOwnerWrites_(applied);
     if (!compensationErrors.length && !ownershipRepairRequired) applied.length = 0;
   }
   const status = writeErrors.length
-    ? (compensationErrors.length || ownershipRepairRequired ? "compensation_required" : (applied.length ? "rolled_back" : "failed_validation"))
+    ? (compensationErrors.length || ownershipRepairRequired ? "compensation_required" : (hadAppliedWrites ? "rolled_back" : "failed_validation"))
     : (validationErrors.length ? "partial" : "completed");
   const successfulCount = writeErrors.length
     ? (compensationErrors.length || ownershipRepairRequired ? 0 : idempotentRows)
