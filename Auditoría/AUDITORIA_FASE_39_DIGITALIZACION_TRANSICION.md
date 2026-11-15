@@ -236,6 +236,7 @@ Auditar integralmente las capacidades destinadas a facilitar la transición de l
 - **Acción ejecutable:** almacenar originales en estructura privada `Drive/DocumentosOriginales/` o repositorio equivalente con ID estable, hash, versión, ACL, fecha de recepción y relación al registro derivado; impedir reemplazo destructivo y conservar historial.
 - **Archivos/módulos:** servicios Academic/User/Developer, Google Drive, `DocumentosEstudiante`, `DocumentosEscolaresEmitidos`, manifiesto documental.
 - **Dependencias/riesgos:** F39-Task02, F29-Task11/15, F27-Task03 y TASK-151/TASK-152; riesgo de permisos públicos o de borrar originales tras extraer datos.
+- **Hallazgo de secuencia C1.767:** el Plan Maestro asigna TASK-134 (SHA-256/deduplicación) como dependiente de F39-Task03, mientras esta tarea F39-Task03 declara dependencia de F39-Task02, cuya capacidad es precisamente SHA-256/deduplicación. Se documenta ciclo de dependencia; no se altera la fuente del Plan Maestro ni se declara F39-Task02/F39-Task03 completada.
 - **Alcance:** custodia de originales y metadatos; no asumir inmutabilidad solo por mover un archivo a una carpeta.
 - **Criterios de aceptación:** original privado y versionado; hash ligado a versión; ACL mínima; cambios registrados; restauración comprobable; retención/expurgo documentados; pruebas de sustitución, borrado, acceso no autorizado y restauración.
 - **Prioridad:** P0. **Estado:** Pendiente.
