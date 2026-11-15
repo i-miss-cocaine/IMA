@@ -7179,8 +7179,121 @@ function callAcademicAbsenceService_(action, payload) {
   }
 }
 
+function submitRequestEvidenceCorrection_(payload, permissionKey, expectedType) {
+  var p = payload || {}, solicitudId = String(p.solicitudId || "").trim();
+  var inputs = Array.isArray(p.adjuntos) ? p.adjuntos : [];
+  if (!solicitudId || !inputs.length) return { status: "error", code: "EVIDENCE_CORRECTION_PAYLOAD_INVALID" };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = getOrCreateSheet(ss, "SolicitudesTramites");
+  var map = ensureRequestAttachmentIntegritySchema_(sheet);
+  function findRequest(rows) {
+    var matches = [];
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][map.SolicitudID] || "").trim() === solicitudId) matches.push({ index: i, row: rows[i] });
+    }
+    if (matches.length !== 1) throw new Error(matches.length ? "REQUEST_ID_AMBIGUOUS" : "RESOURCE_NOT_FOUND");
+    return matches[0];
+  }
+  function validateRequest(item) {
+    var state = String(item.row[map.Estado] || "").trim().toUpperCase();
+    if (["OBSERVADO", "REQUIEREINFORMACION", "PENDIENTE_SUBSANACION", "DEVUELTA"].indexOf(state) === -1) {
+      throw new Error("EVIDENCE_CORRECTION_REQUIRES_OBSERVATION");
+    }
+    if (expectedType && String(item.row[map.TipoTramite] || "").trim() !== expectedType) throw new Error("REQUEST_TYPE_MISMATCH");
+    if (p.tipoTramite && String(item.row[map.TipoTramite] || "").trim() !== String(p.tipoTramite).trim()) throw new Error("REQUEST_TYPE_MISMATCH");
+    var submitter = resolveVerifiedRequestSubmitter_(p, String(item.row[map.EstudianteID] || "").trim(), false, permissionKey);
+    if (String(item.row[map.UserId] || "").trim() !== submitter.userId) throw new Error("REQUEST_OWNER_MISMATCH");
+    return submitter;
+  }
+  try { validateRequest(findRequest(sheet.getDataRange().getValues())); }
+  catch (preflightError) { return { status: "error", code: preflightError.message || "EVIDENCE_CORRECTION_PREFLIGHT_FAILED" }; }
+
+  var attachmentRecords = [];
+  try {
+    inputs.forEach(function(item, index) {
+      var data = item && (item.data || item.fileData);
+      var name = item && (item.nombre || item.fileName || item.name);
+      var groupId = String(item && item.evidenciaGrupoId || ("ADJUNTO-" + (index + 1))).trim();
+      if (!data || !groupId) throw new Error("EVIDENCE_ATTACHMENT_INVALID");
+      var attachment = createPrivateRequestAttachmentWithIntegrity_(data, name, "Tramites_Adjuntos_Privados_v1");
+      if (!attachment) throw new Error("EVIDENCE_ATTACHMENT_INVALID");
+      attachmentRecords.push({ evidenciaGrupoId: groupId, attachment: attachment });
+    });
+    if (new Set(attachmentRecords.map(function(item) { return item.evidenciaGrupoId; })).size !== attachmentRecords.length) {
+      throw new Error("EVIDENCE_ATTACHMENT_GROUP_DUPLICATE");
+    }
+  } catch (uploadError) {
+    attachmentRecords.forEach(function(item) { rollbackPrivateAttachment_(item.attachment.file, "submitRequestEvidenceCorrection-invalid"); });
+    return { status: "error", code: uploadError.message || "EVIDENCE_ATTACHMENT_INVALID" };
+  }
+
+  var lock = LockService.getScriptLock(), newRecords = [], priorRecords = [], committed = false;
+  try { lock.waitLock(10000); }
+  catch (_) {
+    attachmentRecords.forEach(function(item) { rollbackPrivateAttachment_(item.attachment.file, "submitRequestEvidenceCorrection-lock"); });
+    return { status: "error", code: "EVIDENCE_CORRECTION_LOCK_TIMEOUT", retryable: true };
+  }
+  try {
+    var currentSheet = getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID), "SolicitudesTramites");
+    var currentMap = ensureRequestAttachmentIntegritySchema_(currentSheet);
+    var currentRequest = findRequest(currentSheet.getDataRange().getValues());
+    validateRequest(currentRequest);
+    priorRecords = getEvidenceRecordsForRequest_(ss, solicitudId, false);
+    attachmentRecords.forEach(function(item) {
+      newRecords.push(registerDocumentEvidence_(ss, {
+        solicitudId: solicitudId, evidenciaGrupoId: item.evidenciaGrupoId,
+        userId: String(currentRequest.row[currentMap.UserId] || "").trim(),
+        attachment: item.attachment, nombreOriginal: item.attachment.fileName || item.attachment.file.getName(),
+        tipoEvidencia: String(currentRequest.row[currentMap.TipoTramite] || "ADJUNTO"),
+        correlationId: String(p.correlationId || "")
+      }));
+    });
+    var currentEvidence = getEvidenceRecordsForRequest_(ss, solicitudId, true);
+    if (!currentEvidence.length) throw new Error("EVIDENCE_CURRENT_VERSION_MISSING");
+    currentEvidence.sort(function(a, b) { return String(a.EvidenciaGrupoID || "").localeCompare(String(b.EvidenciaGrupoID || "")); });
+    var primary = currentEvidence.find(function(item) { return String(item.EvidenciaGrupoID || "") === "ADJUNTO-1"; }) || currentEvidence[0];
+    var updatedRow = currentRequest.row.slice();
+    updatedRow[currentMap.EvidenciaIDsJSON] = JSON.stringify(currentEvidence.map(function(item) { return String(item.EvidenciaID); }));
+    updatedRow[currentMap.AdjuntoUrl] = String(primary.DriveFileID || "");
+    if (currentMap.AdjuntoSHA256 !== undefined) updatedRow[currentMap.AdjuntoSHA256] = String(primary.SHA256 || "");
+    if (currentMap.AdjuntoVersion !== undefined) updatedRow[currentMap.AdjuntoVersion] = Number(primary.VersionNumero || 0);
+    if (currentMap.AdjuntoSizeBytes !== undefined) updatedRow[currentMap.AdjuntoSizeBytes] = Number(primary.SizeBytes || 0);
+    if (currentMap.AdjuntoMimeType !== undefined) updatedRow[currentMap.AdjuntoMimeType] = String(primary.MimeType || "");
+    if (currentMap.AdjuntoFechaRecepcion !== undefined) updatedRow[currentMap.AdjuntoFechaRecepcion] = String(primary.FechaRecepcionISO || "");
+    if (currentMap.AdjuntoIntegridadEstado !== undefined) updatedRow[currentMap.AdjuntoIntegridadEstado] = "VERIFICADO";
+    updatedRow[currentMap.Estado] = "Enviada";
+    updatedRow[currentMap.FechaSolicitud] = new Date().toISOString();
+    updatedRow[currentMap.FechaResolucion] = "";
+    if (currentMap.UltimoError !== undefined) updatedRow[currentMap.UltimoError] = "";
+    currentSheet.getRange(currentRequest.index + 1, 1, 1, updatedRow.length).setValues([updatedRow]);
+    committed = true;
+    return { status: "success", solicitudId: solicitudId, evidenciaIds: currentEvidence.map(function(item) { return String(item.EvidenciaID); }),
+      versiones: currentEvidence.map(function(item) { return { evidenciaId: String(item.EvidenciaID), grupoId: String(item.EvidenciaGrupoID), version: Number(item.VersionNumero) }; }),
+      message: "Evidencia subsanada registrada como nueva versión; las versiones anteriores se conservan para auditoría." };
+  } catch (error) {
+    newRecords.forEach(function(item) { rollbackDocumentEvidence_(ss, item.EvidenciaID, "EVIDENCE_CORRECTION_ROLLBACK"); });
+    priorRecords.forEach(function(item) {
+      var evidenceSheet = getEvidenceRecordsForRequest_(ss, solicitudId, false);
+      var current = evidenceSheet.find(function(record) { return record.EvidenciaID === item.EvidenciaID; });
+      if (current) {
+        var evidenceSchema = ensureEvidenceDocumentSchema_(ss);
+        evidenceSchema.sheet.getRange(current._rowNumber, evidenceSchema.map.Estado + 1).setValue(item.Estado);
+        evidenceSchema.sheet.getRange(current._rowNumber, evidenceSchema.map.EsVersionActual + 1).setValue(item.EsVersionActual);
+      }
+    });
+    attachmentRecords.forEach(function(item) { rollbackPrivateAttachment_(item.attachment.file, "submitRequestEvidenceCorrection"); });
+    return { status: "error", code: error.message || "EVIDENCE_CORRECTION_FAILED" };
+  } finally {
+    if (!committed) {
+      // Files and evidence rows were compensated above; the lock is always released.
+    }
+    lock.releaseLock();
+  }
+}
+
 function submitStudentAbsenceJustification(payload) {
   const p = payload || {};
+  if (p.solicitudId && Array.isArray(p.adjuntos)) return submitRequestEvidenceCorrection_(p, "permisoAsistencia", "Justificación de Ausencia");
   const estudianteId = p.estudianteId;
   const rawAbsenceDates = Array.isArray(p.fechasAusencia) ? p.fechasAusencia : [p.fechaAusencia];
   const fechasAusencia = rawAbsenceDates.map(function(value) { return String(value || "").trim(); });
@@ -7757,6 +7870,7 @@ function computeDocumentSHA256(contentOrBase64) {
 }
 function submitInstitutionalFormRequest(payload) {
   const p = payload || {};
+  if (p.solicitudId && Array.isArray(p.adjuntos)) return submitRequestEvidenceCorrection_(p, "permisoDocumental", null);
   const { estudianteId, formId, tipoTramite, respuestasFormularioJSON, adjuntoUrl, adjuntoFileId, adjuntoData, adjuntoNombre, observaciones } = p;
   if (!tipoTramite) throw new Error("tipoTramite es requerido.");
   if (String(adjuntoUrl || "").trim() || String(adjuntoFileId || "").trim()) throw new Error("UNTRUSTED_ATTACHMENT_REFERENCE");
