@@ -107,9 +107,9 @@ const requests = sheet("SolicitudesTramites");
 requests.appendRow(["SolicitudID","UserId","EstudianteID","TipoTramite","Descripcion","AdjuntoUrl","Estado","AsignadoA","ObservacionesAdmin","FechaSolicitud","FechaResolucion"]);
 requests.appendRow(["JUST-TEST0001","ACT-1","STU-1","Justificación de Ausencia","Ausencia","", "SincronizacionPendiente","Secretaría","","",""]);
 
-function create(id, date, studentId, motivo) {
+function create(id, date, studentId, motivo, period) {
   return context.createCanonicalAbsenceJustification_({
-    justificacionId: id, solicitudId: id, studentId, fechaAfectada: date, periodo: "I parcial",
+    justificacionId: id, solicitudId: id, studentId, fechaAfectada: date, periodo: period === undefined ? "I parcial" : period,
     motivoDeclarado: motivo || "Motivo médico", actorId: "ACT-1", actorRole: "Estudiante"
   });
 }
@@ -118,6 +118,14 @@ assert.equal(created.status, "success");
 assert.deepEqual(Array.from(created.data.sesionIds).sort(), ["SES-1","SES-DIARIA-2026-11-10-10-A"]);
 assert.equal(create("JUST-TEST0001", "2026-11-10", "STU-1").idempotent, true);
 assert.equal(create("JUST-TEST0001", "2026-11-10", "STU-1", "Otro motivo").code, "IDEMPOTENCY_CONFLICT");
+assert.equal(create("JUST-BADPERIOD1", "2026-11-10", "STU-1", "Motivo", "P2").code, "ACADEMIC_PERIOD_DATE_MISMATCH");
+const overlappingPeriod = period.getLastRow() + 1;
+period.appendRow(["P2","ANO-1","II parcial","Parcial","2026-11-10","2026-12-31",2,"Activo"]);
+assert.throws(() => context.absenceResolvePeriod_(context.SpreadsheetApp.openById("TEST"), "2026-11-10", "P1"), /ACADEMIC_PERIOD_AMBIGUOUS/);
+store.PeriodosAcademicos.splice(overlappingPeriod - 1, 1);
+const badSchema = sheet("BadAbsenceSchema");
+badSchema.appendRow(["Duplicado","Duplicado"]);
+assert.throws(() => context.ensureAbsenceHeaders_(badSchema, ["Duplicado"]), /ABSENCE_SCHEMA_DUPLICATE_HEADER/);
 
 const approved = context.reviewCanonicalAbsenceJustification_({
   justificacionId: "JUST-TEST0001", nuevoEstado: "Aprobada", actorId: "SEC-1", actorRole: "Secretaría"

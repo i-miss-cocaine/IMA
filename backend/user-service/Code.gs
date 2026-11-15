@@ -6207,7 +6207,11 @@ function ensureUserAbsenceRequestSchema_(sheet) {
     }
   });
   var map = {};
-  headers.forEach(function(header, index) { if (header) map[header] = index; });
+  headers.forEach(function(header, index) {
+    if (!header) return;
+    if (Object.prototype.hasOwnProperty.call(map, header)) throw new Error("ABSENCE_REQUEST_SCHEMA_DUPLICATE_HEADER:" + header);
+    map[header] = index;
+  });
   return map;
 }
 
@@ -6356,7 +6360,8 @@ function reviewAbsenceJustification(payload) {
     actorId: actorId, actorRole: actorRole, correlationId: String(p.correlationId || "")
   });
   if (!result || result.status !== "success") return result || { status: "error", code: "ABSENCE_INTERSERVICE_FAILED" };
-  return { status: "success", message: "Decisión registrada y sincronizada con el expediente oficial de asistencia.", data: result.data || {} };
+  var reviewData = result.data && result.data.data ? result.data.data : result.data;
+  return { status: "success", message: "Decisión registrada en el ciclo canónico; la asistencia se sincronizó cuando correspondía.", data: reviewData || {} };
 }
 
 function getAdministrativeRequestsHistory(payload) {

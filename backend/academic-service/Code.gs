@@ -10193,7 +10193,11 @@ function ensureAbsenceHeaders_(sheet, headers) {
     }
   });
   var map = {};
-  actual.forEach(function(header, index) { if (header) map[header] = index; });
+  actual.forEach(function(header, index) {
+    if (!header) return;
+    if (Object.prototype.hasOwnProperty.call(map, header)) throw new Error("ABSENCE_SCHEMA_DUPLICATE_HEADER:" + header);
+    map[header] = index;
+  });
   return map;
 }
 
@@ -10212,12 +10216,14 @@ function absenceResolvePeriod_(ss, dateKey, requested) {
   var value = String(requested || "").trim();
   var sheet = ss.getSheetByName("PeriodosAcademicos");
   var matches = [];
+  var configuredActivePeriods = 0;
   if (sheet && sheet.getLastRow() > 1) {
     var rows = sheet.getDataRange().getValues();
     for (var i = 1; i < rows.length; i++) {
       var row = rows[i];
       var state = String(row[7] || "Activo").trim().toLowerCase();
       if (state === "inactivo" || state === "archivado" || state === "cerrado") continue;
+      configuredActivePeriods++;
       var start = row[4] ? absenceDateKey_(row[4]) : "";
       var end = row[5] ? absenceDateKey_(row[5]) : "";
       if ((!start || dateKey >= start) && (!end || dateKey <= end)) {
@@ -10225,13 +10231,13 @@ function absenceResolvePeriod_(ss, dateKey, requested) {
       }
     }
   }
+  if (matches.length > 1) throw new Error("ACADEMIC_PERIOD_AMBIGUOUS");
   if (value) {
     var exact = matches.filter(function(item) {
       return item.id.toLowerCase() === value.toLowerCase() || item.name.toLowerCase() === value.toLowerCase();
     });
     if (exact.length === 1) return exact[0].id || exact[0].name;
-    if (exact.length > 1) throw new Error("ACADEMIC_PERIOD_AMBIGUOUS");
-    if (matches.length > 0) throw new Error("ACADEMIC_PERIOD_DATE_MISMATCH");
+    if (configuredActivePeriods > 0) throw new Error("ACADEMIC_PERIOD_DATE_MISMATCH");
     if (value.length > 80) throw new Error("ACADEMIC_PERIOD_INVALID");
     return value;
   }
@@ -10248,7 +10254,10 @@ function absenceResolveSessions_(ss, studentId, dateKey, requestedSessionIds, re
     for (var i = 1; i < sessionRows.length; i++) {
       var sessionId = String(sessionRows[i][0] || "").trim();
       var sessionDate = absenceDateKey_(sessionRows[i][1]);
-      if (sessionId && sessionDate) sessionDates[sessionId] = sessionDate;
+      if (sessionId && sessionDate) {
+        if (Object.prototype.hasOwnProperty.call(sessionDates, sessionId)) throw new Error("ATTENDANCE_SESSION_AMBIGUOUS");
+        sessionDates[sessionId] = sessionDate;
+      }
     }
   }
   var regData = regSheet.getDataRange().getValues();
