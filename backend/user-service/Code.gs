@@ -8653,7 +8653,7 @@ function createAdvancedSignatureRequest(payload) {
       throw new Error("DOCUMENT_FILE_NOT_PRIVATE");
     }
     const sourceFileName = String(sourceFile.getName ? sourceFile.getName() : documentAccess.fileName || "").trim();
-    if (!/\\.pdf$/i.test(sourceFileName)) throw new Error("SIGNATURE_DOCUMENT_MUST_BE_PDF");
+    if (!/\.pdf$/i.test(sourceFileName)) throw new Error("SIGNATURE_DOCUMENT_MUST_BE_PDF");
     let sourceBytes;
     try {
       sourceBytes = sourceFile.getBlob().getBytes();

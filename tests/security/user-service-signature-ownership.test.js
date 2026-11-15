@@ -17,7 +17,7 @@ function makeHarness(options = {}) {
     [options.documentId || "DOC-1", options.expedienteId === undefined ? "EXP-1" : options.expedienteId,
       options.storedSolicitudId === undefined ? "SOL-1" : options.storedSolicitudId,
       "Identidad","identidad.pdf",options.driveFileId === undefined ? "DRIVE-1" : options.driveFileId,
-      "","","","","","","",options.documentVersion || "v1",options.storedHash || crypto.createHash("sha256").update(Buffer.from([1,2,3])).digest("hex")]
+      "","","","","","","",options.documentVersion === undefined ? "v1" : options.documentVersion,options.storedHash || crypto.createHash("sha256").update(Buffer.from([1,2,3])).digest("hex")]
   ];
   const admissionRows = [
     ["SolicitudID","SolicitanteID","EstudianteID","TipoTramite","Descripcion","Fecha","Estado","","","","","","","","ExpedienteID"],
