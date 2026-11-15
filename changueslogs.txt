@@ -3834,3 +3834,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se integró bandeja de Secretaría con revisión total/parcial/rechazo y apertura de evidencia privada verificada; el docente visualiza todas las fechas afectadas.
 - Department Scope run 43742077374 SUCCESS; Identity Mapping run 43742077382 SUCCESS. BETA-FUNC-103 pendiente.
 - Siguiente P0: TASK-106 (integridad criptográfica, versionado e inmutabilidad de evidencias).
+
+[2026-11-15] TASK-106 — C1.755, integridad criptográfica y versionado de evidencias
+- USER: SHA-256 sobre bytes reales, read-back, metadatos independientes por adjunto, almacenamiento privado, verificación al consultar/descargar, versionado y subsanación transaccional. Las versiones históricas conservan hash y fecha originales; una evidencia aprobada no puede sustituirse.
+- ACADEMIC: las decisiones de aprobación quedan vinculadas al snapshot/hash y a los IDs de evidencia revisados; solo se acepta un conjunto corregido cuando la solicitud está en RequiereInformacion. Se añadió cobertura para múltiples archivos y concurrencia de revisión/subsanación.
+- ACCOUNTING: comprobantes privados con SHA-256, nombre original, solicitud/evidencia/Drive IDs, MIME, tamaño, recepción, versión y hash de decisión. La revisión se serializa; Observado admite una nueva versión, Aprobado/Confirmado/Rechazado no admite sustitución; descargas históricas se verifican y nunca exponen URLs directas.
+- Contratos Node/CI PASS: Department Scope 43746597438; Identity Mapping 43746563028; Department Reference Consumers 43746563035. Incluye contratos de justificación canónica, múltiples evidencias, histórico, privacidad, pagos, versionado, rollback y sintaxis Apps Script.
+- Node local NOT RUN; CLI independiente no aplicable (sin package.json/entrypoint CLI). No se desplegó Apps Script ni se modificó producción. BETA-FUNC-104 preparada; prueba real Drive/Sheets pendiente.
+- Legacy sin SHA permanece LEGACY_UNVERIFIED: no se considera evidencia verificada ni se permite aprobarla como nueva evidencia sin reingreso verificable.
+- HEAD de implementación verificado: 2db32093801846f2d74be81be54d4b6bb4dbdd57. Siguiente: revisar dependencias de TASK-108 y F34-Task06 antes de elegir la próxima tarea.
