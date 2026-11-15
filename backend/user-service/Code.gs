@@ -5236,6 +5236,7 @@ function registerDepartmentalDocumentDelivery(payload) {
   var access = assertAdvancedSignatureDocumentScope_(p, ss, documentId, p.solicitudId, "READ");
   if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "RESOURCE_SCOPE_DENIED" };
   if (access.documentSource !== "DOCUMENTO_ESCOLAR_EMITIDO") return { status: "error", code: "ISSUED_DOCUMENT_REQUIRED" };
+  if (!String(access.departmentId || "").trim() || !String(access.institutionId || "").trim()) return { status: "error", code: "RESOURCE_DEPARTMENT_UNRESOLVED" };
   var snapshot = getIssuedDocumentSnapshot_(ss, access.documentId, access.solicitudId);
   if (snapshot.status !== "success") return snapshot;
   if (String(p.destinatarioUserId || snapshot.recipientUserId).trim() !== snapshot.recipientUserId) return { status: "error", code: "DOCUMENT_RECIPIENT_MISMATCH" };
@@ -5324,6 +5325,7 @@ function retryDepartmentalDocumentDelivery(payload) {
   if (String(row[map.InstitutionID]) !== sender.context.institutionId ||
       !isDocumentDeliveryDepartmentAllowed_(sender.context, row[map.DepartmentID])) return { status: "error", code: "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
   if (String(row[map.EstadoDespacho]) === "ACEPTADO_POR_PLATAFORMA") return { status: "success", idempotent: true, deliveryId: String(row[map.EntregaID]), estadoDespacho: String(row[map.EstadoDespacho]) };
+  if (["PENDIENTE_DESPACHO","PENDIENTE_REINTENTO"].indexOf(String(row[map.EstadoDespacho])) === -1) return { status: "error", code: "DELIVERY_STATE_NOT_RETRYABLE" };
   if (String(row[map.EstadoEnlace]) !== "ACTIVO") return { status: "error", code: "DELIVERY_LINK_NOT_ACTIVE" };
   var retryExpiry = row[map.FechaExpiracionEnlace] ? new Date(row[map.FechaExpiracionEnlace]) : null;
   if (retryExpiry && (!isFinite(retryExpiry.getTime()) || retryExpiry.getTime() <= Date.now())) return { status: "error", code: "DELIVERY_LINK_EXPIRED" };
