@@ -17,6 +17,8 @@ assert.equal(response.status, "success");
 assert.equal(response.version, "1.0.0");
 const fields = response.data.fields;
 assert.ok(fields["identity.userId"].help.includes("UserId"));
+assert.ok(fields["matricula.identidad"].help.includes("documento oficial"));
+assert.ok(fields["matricula.fechaNacimiento"].help.includes("calendario"));
 assert.equal(fields["matricula.anoLectivo"].min, 2000);
 assert.equal(fields["matricula.anoLectivo"].max, 2200);
 assert.equal(fields["matricula.grado"].maxLength, 80);
