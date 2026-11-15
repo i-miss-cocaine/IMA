@@ -502,12 +502,27 @@ function importDataWithColumnMapping(payload) {
       (schema.headers || []).slice(1).forEach(function(field) {
         if (Object.prototype.hasOwnProperty.call(row, field)) ownerData[field] = row[field];
       });
+      var targetSnapshot = preview.targetExistenceSnapshot || {};
+      var targetSnapshotVerified = service === "ACCOUNTING" && targetSnapshot.verified === true;
+      var expectedTargetPresent = false;
+      var expectedTargetRowHash = "";
+      if (targetSnapshotVerified) {
+        var targetIdField = String(targetSnapshot.idField || (schema.headers || [])[0] || "");
+        var existingTargetRow = (targetSnapshot.targetRows || []).find(function(targetRow) {
+          return String(targetRow && targetRow[targetIdField] || "").trim() === String(row[(schema.headers || [])[0]] || "").trim();
+        });
+        expectedTargetPresent = !!existingTargetRow;
+        if (existingTargetRow) expectedTargetRowHash = migrationHash_(migrationStableJson_(existingTargetRow));
+      }
       var result = sendMigrationOwnerRequest_(service, "writeMigratedEntity", {
         sessionToken: input.sessionToken,
         institutionId: PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID") ||
           PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID"),
         tipoEntidad: input.tipoEntidad,
         idNuevoPlataforma: String(row[(schema.headers || [])[0]] || "").trim(),
+        targetSnapshotVerified: targetSnapshotVerified,
+        expectedTargetPresent: expectedTargetPresent,
+        expectedTargetRowHash: expectedTargetRowHash,
         entity: row,
         datos: ownerData,
         source: { fileName: input.nombreArchivo || "", sourceSystem: input.sistemaOrigen || "", legacyId: legacyId },
@@ -1116,6 +1131,19 @@ function applyTrustedAccountingMigrationWrite_(payload) {
     var rowNumber = -1;
     for (var r = 1; r < rows.length; r++) {
       if (String(rows[r][0] || "").trim() === id) { rowNumber = r + 1; break; }
+    }
+    if (input.targetSnapshotVerified !== true) throw new Error("IMPORT_TARGET_SNAPSHOT_UNVERIFIED");
+    var targetPresentNow = rowNumber > 0;
+    if (targetPresentNow !== (input.expectedTargetPresent === true)) {
+      throw new Error("IMPORT_TARGET_CHANGED_AFTER_PREVIEW");
+    }
+    if (targetPresentNow) {
+      var currentTargetObject = {};
+      schema.headers.forEach(function(header, index) { currentTargetObject[header] = rows[rowNumber - 1][index]; });
+      var currentTargetHash = migrationHash_(migrationStableJson_(currentTargetObject));
+      if (!input.expectedTargetRowHash || currentTargetHash !== String(input.expectedTargetRowHash)) {
+        throw new Error("IMPORT_TARGET_CHANGED_AFTER_PREVIEW");
+      }
     }
     var before = rowNumber > 0 ? rows[rowNumber - 1].slice() : null;
     var after = before ? before.slice() : schema.headers.map(function() { return ""; });
