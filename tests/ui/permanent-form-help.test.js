@@ -33,7 +33,8 @@ for (const [source, id, key] of [
 
 assert.ok(academic.includes("setAttribute('data-ui-help-key', 'matricula.identidad')"));
 assert.ok(academic.includes("setAttribute('data-ui-help-key', 'matricula.fechaNacimiento')"));
-assert.ok(secretary.includes('setAttribute("data-ui-help-key","matricula.identidad")'));
+assert.ok(secretary.includes('setAttribute("data-ui-help-key","identidad.busqueda")'));
+assert.ok(!secretary.includes('setAttribute("data-ui-help-key","matricula.identidad")'), "identity search must not reuse DNI-only enrollment guidance");
 assert.ok(secretary.includes('setAttribute("data-ui-help-key","matricula.fechaNacimiento")'));
 assert.ok(studentJs.includes('input[name="identificacion"]'));
 assert.ok(studentJs.includes('setAttribute("data-ui-help-key", "matricula.identidad")'));
