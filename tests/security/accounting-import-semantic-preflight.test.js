@@ -57,7 +57,7 @@ vm.createContext(context);vm.runInContext(header+"\n"+funcs.join("\n")+"\nthis.p
 const base={nombreArchivo:"cursos.xlsx",destinoModulo:"ACCOUNTING",sistemaOrigen:"LEGACY",tipoEntidad:"curso",sessionToken:"signed",
  columnaMapeo:{identificador:"legacyId",campos:{Nombre:"nombre",Nota:"nota",FechaInicio:"fechaInicio"}},
  filasData:[{legacyId:"CUR-1",nombre:"Matemáticas",nota:90,fechaInicio:"2026-02-01"}]};
-const valid=context.preview(base);assert.equal(valid.status,"success");assert.equal(valid.validForImport,true);assert.equal(valid.filasValidas,1);
+const valid=context.preview(base);assert.equal(valid.status,"success",JSON.stringify(valid));assert.equal(valid.validForImport,true);assert.equal(valid.filasValidas,1);
 assert.equal(valid.preparedRows[0].Nombre,"Matemáticas");
 assert.equal(valid.validRowIndexes.length,1);assert.equal(valid.identityResolutions[0].idNuevoPlataforma,"CURSO-1");assert.match(valid.previewHash,/^[a-f0-9]{64}$/);
 assert.equal(valid.targetExistenceSnapshot.verified,true);
