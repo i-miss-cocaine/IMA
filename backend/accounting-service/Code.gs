@@ -1302,6 +1302,8 @@ function apiResponsePublicMessage_(code) {
     IMPORT_FILE_SIGNATURE_INVALID: "La firma binaria del archivo no es válida.",
     IMPORT_FILE_PACKAGE_INVALID: "El paquete XLSX está dañado o incompleto.",
     IMPORT_FILE_MACROS_NOT_ALLOWED: "No se permiten libros Excel con macros.",
+    IMPORT_FILE_BASE64_INVALID: "El contenido codificado del archivo está dañado.",
+    IMPORT_FILE_UNCOMPRESSED_SIZE_LIMIT: "El contenido descomprimido supera el límite de seguridad.",
     MIGRATION_FILE_HASH_REQUIRED: "No se pudo registrar la huella SHA-256 del archivo.",
     MIGRATION_FILE_HASH_AUDIT_SCHEMA_MISMATCH: "El registro de huellas SHA-256 requiere revisión de esquema."
   };
