@@ -1285,7 +1285,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-600 mb-1">Calificación / Nota</label>
-                        <input type="number" id="grade-score-input" value="${submissionData?.nota || ''}" placeholder="0 - 100" class="w-full text-xs p-2 border border-slate-200 rounded-xl bg-white focus:outline-none focus:border-indigo-500" />
+                        <input type="number" id="grade-score-input" data-ui-help-key="calificaciones.nota" value="${submissionData?.nota || ''}" placeholder="0 - 100" class="w-full text-xs p-2 border border-slate-200 rounded-xl bg-white focus:outline-none focus:border-indigo-500" />
                     </div>
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-600 mb-1">Estado de Revisión</label>
