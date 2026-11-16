@@ -2799,8 +2799,11 @@ function resolveStaffingNeedsAccess_(payload, ss, writeRequired) {
   if (writeRequired && role !== "recursoshumanos") return { authorized:false, code:"ROLE_NOT_ALLOWED" };
   if (!writeRequired && ["recursoshumanos","administrador"].indexOf(role) < 0) return { authorized:false, code:"ROLE_NOT_ALLOWED" };
   var scope = getVerifiedDepartmentScopeForSession_(payload || {});
-  if (!scope || scope.valid !== true || String(scope.userId || "") !== String(actor.userId || "") ||
-      String(scope.roleId || "") !== String(actor.role || "") || String(scope.institutionId || "") !== String(actor.institutionId || "")) {
+  var scopeRole = scope && (scope.roleId || scope.role) || "";
+  if (!scope || (scope.valid !== true && scope.authorized !== true) ||
+      String(scope.userId || "") !== String(actor.userId || "") ||
+      String(scopeRole || "") !== String(actor.role || "") ||
+      String(scope.institutionId || "") !== String(actor.institutionId || "I")) {
     return { authorized:false, code:"DEPARTMENT_SCOPE_NOT_ASSIGNED" };
   }
   if (writeRequired && (scope.institutionWide === true || !Array.isArray(scope.departmentIds) || !scope.departmentIds.length)) {
