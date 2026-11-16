@@ -10546,7 +10546,7 @@ function generatePreventiveMaintenanceOrders(p){
    const due=maintenancePlanDate_(r[9]),post=maintenancePlanDate_(r[27]);if(post&&post>today)return;
    const freq=String(r[6]),usage=freq==="HORAS_USO",current=Number(p.lecturasUso&&p.lecturasUso[r[0]]||r[24]||0),threshold=Number(r[25]||0),days=due?Math.floor((due-today)/86400000):null;
    if(usage?current<threshold:(!due||days>Number(r[17]||30)))return;
-   const plan={tipoObjetivo:r[2],objetivoId:r[3],categoria:r[5]},targets=maintenancePlanTargets_(ss,plan);if(!targets.length){omitted.push({planId:r[0],code:"MAINTENANCE_PLAN_TARGETS_EMPTY"});return;}
+   const plan={tipoObjetivo:r[2],objetivoId:r[3],categoria:r[5]};let targets;try{targets=maintenancePlanTargets_(ss,plan);targets.forEach(ref=>maintenancePlanAssertAssetScope_(ss,p,actor,ref,dept));}catch(e){omitted.push({planId:r[0],code:e.message||"MAINTENANCE_PLAN_TARGET_INVALID"});return;}if(!targets.length){omitted.push({planId:r[0],code:"MAINTENANCE_PLAN_TARGETS_EMPTY"});return;}
    const cycle=usage?"USO-"+threshold:maintenancePlanISO_(due);
    targets.forEach(target=>{const cycleId=String(r[0])+"|"+cycle+"|"+target,exists=orderRows.some((o,i)=>i>0&&String(o[20]||"")===cycleId);if(exists)return;
     const orderId="MNT-PREV-"+Utilities.getUuid(),description=String(r[11]||"Mantenimiento preventivo programado")+" | Ciclo "+cycle;
