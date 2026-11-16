@@ -911,8 +911,36 @@ function renderMantenimientoView(container) {
         </div>
       </div>
     </div>
+    <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <section class="bg-white p-5 rounded-2xl border border-gray-200">
+        <h5 class="font-black text-xs uppercase text-gray-800 mb-3">Plan preventivo</h5>
+        <form id="form-plan-mantenimiento" onsubmit="handleSavePreventiveMaintenancePlan(event)" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          <label class="font-bold text-gray-600">Tipo de objetivo<select id="mnt-plan-target-type" class="w-full p-2 border rounded-xl"><option value="ACTIVO">Activo específico</option><option value="CATEGORIA">Categoría de activos</option><option value="UBICACION">Ubicación</option><option value="INSTALACION">Instalación</option><option value="GRUPO">Grupo de equipos</option></select></label>
+          <label class="font-bold text-gray-600">Objetivo / ID / ubicación<input id="mnt-plan-target" required class="w-full p-2 border rounded-xl" placeholder="Activo, categoría o ubicación"></label>
+          <label class="font-bold text-gray-600">Categoría (si aplica)<input id="mnt-plan-category" class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600">Frecuencia<select id="mnt-plan-frequency" class="w-full p-2 border rounded-xl"><option value="DIARIA">Diaria</option><option value="SEMANAL">Semanal</option><option value="QUINCENAL">Quincenal</option><option value="MENSUAL" selected>Mensual</option><option value="TRIMESTRAL">Trimestral</option><option value="SEMESTRAL">Semestral</option><option value="ANUAL">Anual</option><option value="DIAS">Intervalo en días</option><option value="HORAS_USO">Horas de uso</option></select></label>
+          <label class="font-bold text-gray-600">Intervalo / horas<input id="mnt-plan-frequency-value" type="number" min="1" value="1" required class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600">Último mantenimiento<input id="mnt-plan-last" type="date" class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600">Próximo mantenimiento<input id="mnt-plan-next" type="date" class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600">Departamento<input id="mnt-plan-department" required class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600">Centro de costo<input id="mnt-plan-cost-center" class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600">Responsable técnico<input id="mnt-plan-owner" class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600">Días de anticipación<input id="mnt-plan-alert-days" type="number" min="0" max="90" value="30" class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600 md:col-span-2">Procedimiento<textarea id="mnt-plan-procedure" rows="2" class="w-full p-2 border rounded-xl"></textarea></label>
+          <label class="font-bold text-gray-600">Checklist (JSON)<textarea id="mnt-plan-checklist" rows="2" class="w-full p-2 border rounded-xl font-mono"></textarea></label>
+          <label class="font-bold text-gray-600">Repuestos necesarios (JSON)<textarea id="mnt-plan-parts" rows="2" class="w-full p-2 border rounded-xl font-mono"></textarea></label>
+          <div class="md:col-span-2"><button type="submit" class="w-full py-2.5 bg-emerald-600 text-white font-bold rounded-xl">Guardar plan preventivo</button></div>
+        </form>
+      </section>
+      <section class="bg-white p-5 rounded-2xl border border-gray-200">
+        <div class="flex items-center justify-between gap-3 mb-3"><h5 class="font-black text-xs uppercase text-gray-800">Alertas y planes</h5><button type="button" onclick="generatePreventiveMaintenanceOrders()" class="px-3 py-2 bg-amber-100 text-amber-800 rounded-lg font-bold">Generar órdenes próximas</button></div>
+        <div id="mnt-plan-alerts" class="mb-4 text-xs">Cargando alertas...</div>
+        <div id="mnt-plan-list" class="text-xs">Cargando planes...</div>
+      </section>
+    </div>
   `;
   loadMantenimientoData();
+  loadPreventiveMaintenanceData();
 }
 
 window.loadMantenimientoData = function () {
@@ -980,6 +1008,30 @@ window.handleSaveMantenimiento = function (e) {
       loadMantenimientoData();
     })
     .catch(err => alert("Error: " + err.message));
+};
+
+
+function maintenancePlanEscapeHtml(value){return String(value==null?"":value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+window.handleSavePreventiveMaintenancePlan=function(e){
+ e.preventDefault();const parse=(id)=>{const raw=document.getElementById(id).value.trim();if(!raw)return [];const v=JSON.parse(raw);if(!Array.isArray(v))throw new Error("El valor debe ser un arreglo JSON.");return v;};
+ let checklist,parts;try{checklist=parse("mnt-plan-checklist");parts=parse("mnt-plan-parts");}catch(err){alert("JSON inválido: "+err.message);return;}
+ const payload={tipoObjetivo:document.getElementById("mnt-plan-target-type").value,objetivoId:document.getElementById("mnt-plan-target").value,categoria:document.getElementById("mnt-plan-category").value,frecuenciaTipo:document.getElementById("mnt-plan-frequency").value,frecuenciaValor:Number(document.getElementById("mnt-plan-frequency-value").value),fechaUltimoMantenimiento:document.getElementById("mnt-plan-last").value,fechaProximoMantenimiento:document.getElementById("mnt-plan-next").value,departamento:document.getElementById("mnt-plan-department").value,centroCosto:document.getElementById("mnt-plan-cost-center").value,responsableTecnico:document.getElementById("mnt-plan-owner").value,diasAnticipacion:Number(document.getElementById("mnt-plan-alert-days").value),procedimiento:document.getElementById("mnt-plan-procedure").value,checklist:checklist,repuestosNecesarios:parts};
+ fetchApi("ACCOUNTING","managePreventiveMaintenancePlan",payload).then(r=>{alert("Plan preventivo guardado: "+r.planId);document.getElementById("form-plan-mantenimiento").reset();loadPreventiveMaintenanceData();}).catch(err=>alert("Error: "+err.message));
+};
+window.generatePreventiveMaintenanceOrders=function(){
+ fetchApi("ACCOUNTING","generatePreventiveMaintenanceOrders",{}).then(r=>{alert("Órdenes generadas: "+(r.generadas||[]).length);loadMantenimientoData();loadPreventiveMaintenanceData();}).catch(err=>alert("Error al generar órdenes: "+err.message));
+};
+window.postponeMaintenancePlan=function(encodedId){
+ const planId=decodeURIComponent(encodedId),date=prompt("Nueva fecha programada (AAAA-MM-DD):");if(!date)return;const reason=prompt("Justificación obligatoria de la postergación:");if(!reason||!reason.trim()){alert("Debe indicar una justificación.");return;}
+ fetchApi("ACCOUNTING","managePreventiveMaintenancePlan",{accion:"posponer",planId:planId,fechaPospuestaHasta:date,motivoPostergacion:reason}).then(()=>loadPreventiveMaintenanceData()).catch(err=>alert("Error: "+err.message));
+};
+window.loadPreventiveMaintenanceData=function(){
+ const alerts=document.getElementById("mnt-plan-alerts"),list=document.getElementById("mnt-plan-list");if(!alerts||!list)return;
+ Promise.all([fetchApi("ACCOUNTING","getPreventiveMaintenanceAlerts",{}),fetchApi("ACCOUNTING","getPreventiveMaintenancePlans",{})]).then(([a,p])=>{
+  const esc=maintenancePlanEscapeHtml,items=a.alertas||[],plans=p.planes||[];
+  alerts.innerHTML=items.length?items.map(x=>'<div class="p-2 mb-1 rounded-lg bg-amber-50 text-amber-900"><strong>'+esc(x.estado)+'</strong> · '+esc(x.objetivo)+' · '+esc(x.fechaProgramada||("Lectura "+x.lecturaProgramada))+'</div>').join(""):'<p class="text-gray-500">No hay alertas preventivas en el período.</p>';
+  list.innerHTML=plans.length?plans.map(x=>'<div class="border-b py-2"><div class="font-bold">'+esc(x.planId)+' · '+esc(x.objetivoNombre)+'</div><div class="text-gray-500">'+esc(x.frecuenciaTipo)+' ('+esc(x.frecuenciaValor)+') · Próximo: '+esc(x.fechaProximoMantenimiento||"Por horas de uso")+'</div><button type="button" onclick="postponeMaintenancePlan(\''+encodeURIComponent(x.planId)+'\')" class="mt-1 text-amber-700 underline">Posponer con justificación</button></div>').join(""):'<p class="text-gray-500">No hay planes preventivos configurados.</p>';
+ }).catch(err=>{alerts.textContent="No se pudieron cargar alertas: "+err.message;list.textContent="No se pudieron cargar los planes.";});
 };
 
 // --- BAJAS DE BIENES ---
