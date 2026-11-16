@@ -214,6 +214,6 @@ function request(overrides={}){return Object.assign({expedienteId:"EXP-B",sessio
 }
 {
  const h=makeRuntime();h.documentRows[0][4]="ArchivoPrivado";
- const r=h.context.read(request());assert.equal(r.code,"RESOURCE_NOT_FOUND");assert.equal(h.calls.length,0);
+ const r=h.context.read(request());assert.equal(r.code,"RESOURCE_SCHEMA_INVALID");assert.equal(h.calls.length,0);
 }
 process.stdout.write("ACCOUNTING department reference consumer contract: 29 scenarios PASS.\n");

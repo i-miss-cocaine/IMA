@@ -1106,9 +1106,9 @@ function assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId) {
   var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
   if (!actor || actor.authorized !== true) return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
   var sheet = ss && ss.getSheetByName ? ss.getSheetByName("ExpedientesLaborales") : null;
-  if (!sheet) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  if (!sheet) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
   var values = sheet.getDataRange().getValues();
-  if (!values || values.length < 2) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  if (!values || values.length < 2) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
   var headers = values[0].map(function(value) { return String(value || "").trim(); });
   var expedienteIndex = headers.indexOf("ExpedienteID"), userIndex = headers.indexOf("UserId");
   if (expedienteIndex < 0 || userIndex < 0) return { authorized: false, code: "RESOURCE_SCHEMA_INVALID" };
@@ -1129,6 +1129,7 @@ function assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId) {
   }
   return assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_LABORAL", targetId, "READ");
 }
+
 
 function enforcePrivateEmployeeDocumentFile_(fileUrl) {
   var url = String(fileUrl || "").trim();
@@ -1425,43 +1426,38 @@ function assertVacationWriteAccess_(payload, ss, expedienteId, actor, allowedRol
 }
 
 function getEmployeeRecords(payload) {
-  var input = payload || {};
-  var actor = getVerifiedAccountingIdentity_(input);
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
   if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
   var permission = validateRolePermission(actor, "getEmployeeRecords");
   if (!permission.authorized) return { status: "error", code: permission.code };
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var sheet = ss.getSheetByName("ExpedientesLaborales");
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), sheet = ss.getSheetByName("ExpedientesLaborales");
   if (!sheet) return { status: "success", data: [], expedientes: [] };
   var values = sheet.getDataRange().getValues();
   if (!values || !values.length) return { status: "success", data: [], expedientes: [] };
   var headers = values[0].map(function(value) { return String(value || "").trim(); });
-  var idx = { id: headers.indexOf("ExpedienteID"), person: headers.indexOf("PersonaId"), user: headers.indexOf("UserId"), role: headers.indexOf("Puesto"), department: headers.indexOf("Departamento"), cost: headers.indexOf("CentroCosto"), hire: headers.indexOf("FechaIngreso"), exit: headers.indexOf("FechaSalida"), state: headers.indexOf("EstadoLaboral"), notes: headers.indexOf("Observaciones") };
+  var idx = { id: headers.indexOf("ExpedienteID"), person: headers.indexOf("PersonaId"), user: headers.indexOf("UserId"),
+    role: headers.indexOf("Puesto"), department: headers.indexOf("Departamento"), cost: headers.indexOf("CentroCosto"),
+    hire: headers.indexOf("FechaIngreso"), exit: headers.indexOf("FechaSalida"), state: headers.indexOf("EstadoLaboral"), notes: headers.indexOf("Observaciones") };
   if (Object.keys(idx).some(function(key) { return idx[key] < 0; })) return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
-  var names = getEmployeePersonNameIndex_(ss), role = normalizeVacationRole_(actor.role), rows = [];
-  if (role === "empleado" && input.userId && String(input.userId).trim() !== actor.userId) {
-    auditEmployeeSelfServiceDenied_(actor, "getEmployeeRecords");
+  var role = String(actor.role || "").trim().toLowerCase();
+  if (role === "empleado" && input.userId && String(input.userId).trim() !== String(actor.userId)) {
     return { status: "error", code: "RESOURCE_NOT_FOUND" };
   }
+  var names = getEmployeePersonNameIndex_(ss), rows = [], seen = {};
   values.slice(1).forEach(function(row) {
     var id = String(row[idx.id] || "").trim();
-    if (!id) return;
-    if (role === "empleado") {
-      if (String(row[idx.user] || "").trim() !== actor.userId) return;
-    } else {
-      var access = resolveVacationEmployeeAccess_(input, ss, id, actor);
-      if (!access.authorized) return;
-    }
-    var item = { expedienteId: id, personaId: row[idx.person], userId: role === "empleado" ? undefined : row[idx.user],
+    if (!id || seen[id]) return;
+    seen[id] = true;
+    var access = assertEmployeeExpedienteScopeAccess_(input, ss, id);
+    if (!access || access.authorized !== true) return;
+    rows.push({ expedienteId: id, personaId: row[idx.person], userId: role === "empleado" ? undefined : row[idx.user],
       puesto: row[idx.role], departamento: row[idx.department], centroCosto: row[idx.cost],
       fechaIngreso: row[idx.hire], fechaSalida: row[idx.exit], estadoLaboral: row[idx.state],
-      empleadoNombre: names[String(row[idx.person] || "").trim()] || "" };
-    item.observaciones = role === "empleado" ? "" : (row[idx.notes] || "");
-    rows.push(item);
+      empleadoNombre: names[String(row[idx.person] || "").trim()] || "",
+      observaciones: role === "empleado" ? "" : (row[idx.notes] || "") });
   });
   var requestedId = String(input.expedienteId || "").trim();
   if (requestedId && !rows.some(function(item) { return item.expedienteId === requestedId; })) {
-    auditEmployeeSelfServiceDenied_(actor, "getEmployeeRecords");
     return { status: "error", code: "RESOURCE_NOT_FOUND" };
   }
   return { status: "success", data: rows, expedientes: rows };

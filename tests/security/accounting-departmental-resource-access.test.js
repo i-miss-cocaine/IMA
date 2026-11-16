@@ -31,11 +31,15 @@ function makeSheet(rows){
 const accounting=fs.readFileSync(path.resolve(__dirname,"../../backend/accounting-service/Code.gs"),"utf8");
 assert.doesNotThrow(()=>new Function(accounting),"the complete ACCOUNTING Code.gs source must parse before running isolated security contracts");
 const names=[
- "parseJsonSafe","getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentScope_","getVerifiedDepartmentScopeForSession_","resolveInternalResponsibilityForRoleScope_","assertResourceOwnershipForScope_","resolveEmployeeDepartmentId_","assertEmployeeExpedienteScopeAccess_",
+ "parseJsonSafe","getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentScope_","getVerifiedDepartmentScopeForSession_","resolveInternalResponsibilityForRoleScope_","accountingHasRolePermission_","assertResourceOwnershipForScope_","resolveEmployeeDepartmentId_","assertEmployeeExpedienteScopeAccess_",
  "getAccountingPersonIdForUser_","resolveStudentExpedienteForAccounting_","assertPaymentVoucherOwnerAccess_","createPrivatePaymentAttachment_","assertJointFamilyVoucherOwnerAccess_","ensurePaymentVoucherEvidenceSchema_","verifyPaymentVoucherEvidence_","getAccountingEvidenceIntegrityPolicy_",
- "extractDriveFileId","enforcePrivateEmployeeDocumentFile_","getEmployeeDocuments","getEmployeeContracts","getEmployeeContractAlerts","getEmployeeTrainingHistory","getLaborIncidentsHistory","getWorkShiftsAndSubstitutionsHistory","getStaffAttendanceLogs","recordStaffCheckIn","getPayrollPlanHeaders_","isValidPayrollPlanHeaders_","getStaffPayrollReceipt","getEmployeeLoansAdvances","getLoanAmortizationSchedule","getEmployeeRecords","getVacationSheetSnapshot_","getEmployeePersonNameIndex_","getEmployeeSelfServicePortal","uploadEmployeeDocument","uploadPaymentVoucher","getPaymentVouchers","getPaymentVoucherFile","reviewPaymentVoucher","generatePayrollReceiptPDF","getPayrollReceiptPDFFile","validateRolePermission"
+ "extractDriveFileId","enforcePrivateEmployeeDocumentFile_","getEmployeeDocuments","getEmployeeContracts","getEmployeeContractAlerts","getEmployeeTrainingHistory","getLaborIncidentsHistory","getWorkShiftsAndSubstitutionsHistory","getStaffAttendanceLogs","recordStaffCheckIn","getPayrollPlanHeaders_","isValidPayrollPlanHeaders_","getStaffPayrollReceipt","getEmployeeLoansAdvances","getLoanAmortizationSchedule","getEmployeeRecords","normalizeVacationRole_","resolveVacationEmployeeAccess_","getVacationSheetSnapshot_","getEmployeePersonNameIndex_","getEmployeeSelfServicePortal","uploadEmployeeDocument","uploadPaymentVoucher","getPaymentVouchers","getPaymentVoucherFile","reviewPaymentVoucher","generatePayrollReceiptPDF","getPayrollReceiptPDFFile","validateRolePermission"
 ];
-const code="var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n"+names.map(n=>extractFunction(accounting,n)).join("\n");
+const roleStart=accounting.indexOf("const ROLE_PERMISSIONS = {");
+const roleEnd=accounting.indexOf("\n};",roleStart);
+assert.ok(roleStart>=0&&roleEnd>roleStart,"ROLE_PERMISSIONS must be present in the isolated contract");
+const roleConfig=accounting.slice(roleStart,roleEnd+3);
+const code=roleConfig+"\nvar RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n"+names.map(n=>extractFunction(accounting,n)).join("\n");
 const claims={
  staffA:{userId:"U-A",role:"Director",membershipId:"M-DIR-A",institutionId:"INST-1"},
  staffB:{userId:"U-B",role:"Director",membershipId:"M-DIR-B",institutionId:"INST-1"},
