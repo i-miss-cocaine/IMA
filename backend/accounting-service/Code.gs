@@ -1858,9 +1858,9 @@ function manageTrainingCourse(payload) {
     if(id&&matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND"};
     var now=new Date();
     if(!id){
-      if(duration===null)return {status:"error",code:"TRAINING_COURSE_DURATION_INVALID"};
       id="CURS-CAP-"+String(Utilities.getUuid()).replace(/-/g,"");
       if(snapshot.rows.some(function(row){return String(row[0]||"")===id;}))return {status:"error",code:"TRAINING_COURSE_ID_COLLISION"};
+      if(duration===null)return {status:"error",code:"TRAINING_COURSE_DURATION_INVALID"};
       snapshot.sheet.appendRow([id,name,String(input.categoria||"General").slice(0,100),String(input.proveedorResponsable||"").slice(0,200),
         String(input.modalidad||"Presencial").slice(0,60),duration,JSON.stringify(requirements),String(input.dirigidoA||"Todos").slice(0,200),
         String(input.estado||"Activo").slice(0,40),access.actor.userId,now,""]);
