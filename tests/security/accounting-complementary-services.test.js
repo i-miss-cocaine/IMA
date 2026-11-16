@@ -80,7 +80,7 @@ const context = {
   Date, Math, JSON, Number, String, Object, Array, Set, isFinite
 };
 const names = [
-  "ensureInstitutionalComplementaryServiceCatalog_", "institutionalServiceRoleKey_",
+  "ensureInstitutionalComplementaryServiceCatalog_", "institutionalServiceRoleKey_", "institutionalServiceActor_", "institutionalServiceParseJSON_",
   "institutionalServiceIsActive_", "getInstitutionalComplementaryServices",
   "saveInstitutionalComplementaryService", "setInstitutionalComplementaryServiceStatus"
 ];
