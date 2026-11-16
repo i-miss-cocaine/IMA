@@ -1103,43 +1103,30 @@ function authorizeAccountingDepartmentReferenceReadViaUser_(payload, resourceId,
 }
 
 function assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId) {
-  var input = payload || {};
-  var actor = getVerifiedAccountingIdentity_(input);
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
   if (!actor || actor.authorized !== true) return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
   var sheet = ss && ss.getSheetByName ? ss.getSheetByName("ExpedientesLaborales") : null;
-  if (!sheet) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  if (!sheet) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
   var values = sheet.getDataRange().getValues();
-  if (!values || values.length < 2) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  if (!values || values.length < 2) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
   var headers = values[0].map(function(value) { return String(value || "").trim(); });
-  var index = {};
-  headers.forEach(function(name, position) { index[name] = position; });
-  if (index.ExpedienteID === undefined || index.UserId === undefined || index.Departamento === undefined) {
-    return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
-  }
+  var expedienteIndex = headers.indexOf("ExpedienteID"), userIndex = headers.indexOf("UserId");
+  if (expedienteIndex < 0 || userIndex < 0) return { authorized: false, code: "RESOURCE_SCHEMA_INVALID" };
   var targetId = String(expedienteId || "").trim();
-  if (!targetId) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
-  var matches = values.slice(1).filter(function(row) {
-    return String(row[index.ExpedienteID] || "").trim() === targetId;
-  });
-  if (matches.length !== 1) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
-  var target = matches[0];
-  var role = String(actor.role || "").trim().toLowerCase();
+  if (!targetId) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  var matches = values.slice(1).filter(function(row) { return String(row[expedienteIndex] || "").trim() === targetId; });
+  if (matches.length !== 1) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  var target = matches[0], role = String(actor.role || "").trim().toLowerCase();
   if (role === "empleado") {
-    return String(target[index.UserId] || "").trim() === String(actor.userId || "").trim()
-      ? { authorized: true, accessType: "SELF" }
+    return String(target[userIndex] || "").trim() === String(actor.userId || "").trim()
+      ? { authorized: true, accessType: "SELF", userId: actor.userId }
       : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
   }
-  var scope = getVerifiedAccountingDepartmentScope_(input, ss);
-  if (!scope || scope.valid !== true) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
-  if (scope.institutionWide === true) return { authorized: true, accessType: "INSTITUTION" };
-  var targetDepartment = String(target[index.Departamento] || "").trim();
-  var permittedDepartments = Array.isArray(scope.departmentIds) ? scope.departmentIds.map(function(value) {
-    return String(value || "").trim();
-  }) : [];
-  if (targetDepartment && permittedDepartments.indexOf(targetDepartment) !== -1) {
-    return { authorized: true, accessType: "DEPARTMENT", departmentId: targetDepartment };
+  var scope = getVerifiedAccountingDepartmentScope_(input, ss, actor);
+  if (!scope || scope.valid !== true || scope.authorized !== true) {
+    return { authorized: false, code: scope && scope.code || "RESOURCE_SCOPE_DENIED" };
   }
-  return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  return assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_LABORAL", targetId, "READ");
 }
 
 function enforcePrivateEmployeeDocumentFile_(fileUrl) {
@@ -1287,24 +1274,42 @@ function assertResourceOwnershipForScope_(payload, ss, expedienteId, resourceId,
     var spreadsheet = payload, scope = ss, resourceType = String(expedienteId || "").trim().toUpperCase();
     var targetId = String(resourceId || "").trim(), action = String(operation || "").trim().toUpperCase();
     if (!spreadsheet || !scope || (scope.valid !== true && scope.authorized !== true) ||
-        resourceType !== "EXPEDIENTE_LABORAL" || action !== "WRITE" || !targetId) {
+        resourceType !== "EXPEDIENTE_LABORAL" || ["READ","WRITE"].indexOf(action) === -1 || !targetId) {
       return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
     }
     var employeeSheet = spreadsheet.getSheetByName("ExpedientesLaborales");
-    if (!employeeSheet) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
-    var values = employeeSheet.getDataRange().getValues();
-    if (!values || !values.length) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
-    var headers = values[0].map(function(value) { return String(value || "").trim(); });
-    var idIndex = headers.indexOf("ExpedienteID"), departmentIndex = headers.indexOf("Departamento");
-    if (idIndex < 0 || departmentIndex < 0) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
-    var matches = values.slice(1).filter(function(row) { return String(row[idIndex] || "").trim() === targetId; });
-    if (matches.length !== 1) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
-    var departmentId = String(matches[0][departmentIndex] || "").trim();
+    if (!employeeSheet) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+    var employeeRows = employeeSheet.getDataRange().getValues();
+    if (!employeeRows || !employeeRows.length) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+    var employeeHeaders = employeeRows[0].map(function(value) { return String(value || "").trim(); });
+    var employeeIdIndex = employeeHeaders.indexOf("ExpedienteID");
+    if (employeeIdIndex < 0) return { authorized: false, code: "RESOURCE_SCHEMA_INVALID" };
+    var employeeMatches = employeeRows.slice(1).filter(function(row) { return String(row[employeeIdIndex] || "").trim() === targetId; });
+    if (employeeMatches.length !== 1) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+    var ownershipSheet = spreadsheet.getSheetByName("ResourceOwnership");
+    if (!ownershipSheet) return { authorized: false, code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
+    var ownershipRows = ownershipSheet.getDataRange().getValues();
+    var expectedHeaders = ["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"];
+    if (!ownershipRows || !ownershipRows.length || JSON.stringify(ownershipRows[0].map(function(value) { return String(value || "").trim(); })) !== JSON.stringify(expectedHeaders)) {
+      return { authorized: false, code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
+    }
+    var institutionId = String(scope.institutionId || "").trim();
+    var owners = ownershipRows.slice(1).filter(function(row) {
+      return String(row[1] || "").trim() === institutionId &&
+        String(row[2] || "").trim().toUpperCase() === resourceType &&
+        String(row[3] || "").trim() === targetId;
+    });
+    if (owners.length !== 1 || String(owners[0][5] || "").trim().toUpperCase() !== "ACTIVE") {
+      return { authorized: false, code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
+    }
+    var departmentId = String(owners[0][4] || "").trim();
+    if (!departmentId) return { authorized: false, code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
     var departments = Array.isArray(scope.departmentIds) ? scope.departmentIds.map(function(value) { return String(value || "").trim(); }) : [];
-    if (scope.institutionWide !== true && (!departmentId || departments.indexOf(departmentId) === -1)) {
+    if (scope.institutionWide !== true && departments.indexOf(departmentId) === -1) {
       return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
     }
-    return { authorized: true, departmentId: departmentId, institutionId: String(scope.institutionId || "") };
+    return { authorized: true, accessType: scope.institutionWide === true ? "INSTITUTION" : "DEPARTMENT",
+      departmentId: departmentId, institutionId: institutionId, operation: action };
   }
   return assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId);
 }

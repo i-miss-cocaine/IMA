@@ -31,24 +31,36 @@ function makeSheet(rows){
 const accounting=fs.readFileSync(path.resolve(__dirname,"../../backend/accounting-service/Code.gs"),"utf8");
 assert.doesNotThrow(()=>new Function(accounting),"the complete ACCOUNTING Code.gs source must parse before running isolated security contracts");
 const names=[
- "parseJsonSafe","getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentScope_","getVerifiedDepartmentScopeForSession_","assertResourceOwnershipForScope_","resolveEmployeeDepartmentId_","assertEmployeeExpedienteScopeAccess_",
+ "parseJsonSafe","getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentScope_","getVerifiedDepartmentScopeForSession_","resolveInternalResponsibilityForRoleScope_","assertResourceOwnershipForScope_","resolveEmployeeDepartmentId_","assertEmployeeExpedienteScopeAccess_",
  "getAccountingPersonIdForUser_","resolveStudentExpedienteForAccounting_","assertPaymentVoucherOwnerAccess_","createPrivatePaymentAttachment_","assertJointFamilyVoucherOwnerAccess_","ensurePaymentVoucherEvidenceSchema_","verifyPaymentVoucherEvidence_","getAccountingEvidenceIntegrityPolicy_",
  "extractDriveFileId","getEmployeeDocuments","getEmployeeContracts","getEmployeeContractAlerts","getEmployeeTrainingHistory","getLaborIncidentsHistory","getWorkShiftsAndSubstitutionsHistory","getStaffAttendanceLogs","recordStaffCheckIn","getPayrollPlanHeaders_","isValidPayrollPlanHeaders_","getStaffPayrollReceipt","getEmployeeLoansAdvances","getLoanAmortizationSchedule","getEmployeeRecords","getVacationSheetSnapshot_","getEmployeePersonNameIndex_","getEmployeeSelfServicePortal","uploadEmployeeDocument","uploadPaymentVoucher","getPaymentVouchers","getPaymentVoucherFile","reviewPaymentVoucher","generatePayrollReceiptPDF","getPayrollReceiptPDFFile","validateRolePermission"
 ];
 const code="var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n"+names.map(n=>extractFunction(accounting,n)).join("\n");
 const claims={
- staffA:{userId:"U-A",role:"Director"},staffB:{userId:"U-B",role:"Director"},hrA:{userId:"U-A",role:"RecursosHumanos"},hrB:{userId:"U-B",role:"RecursosHumanos"},
- employee:{userId:"U-EMP",role:"Empleado"},professor:{userId:"U-EMP",role:"Profesor"},admin:{userId:"U-ADMIN",role:"Administrador"},
- student:{userId:"U-STUDENT",role:"Estudiante"},guardian:{userId:"U-GUARDIAN",role:"Tutor"},invalid:null
+ staffA:{userId:"U-A",role:"Director",membershipId:"M-DIR-A",institutionId:"INST-1"},
+ staffB:{userId:"U-B",role:"Director",membershipId:"M-DIR-B",institutionId:"INST-1"},
+ hrA:{userId:"U-A",role:"RecursosHumanos",membershipId:"M-HR-A",institutionId:"INST-1"},
+ hrB:{userId:"U-B",role:"RecursosHumanos",membershipId:"M-HR-B",institutionId:"INST-1"},
+ employee:{userId:"U-EMP",role:"Empleado",membershipId:"M-EMP",institutionId:"INST-1"},
+ professor:{userId:"U-EMP",role:"Profesor",membershipId:"M-PROF",institutionId:"INST-1"},
+ admin:{userId:"U-ADMIN",role:"Administrador",membershipId:"M-ADMIN",institutionId:"INST-1"},
+ student:{userId:"U-STUDENT",role:"Estudiante",membershipId:"M-STUDENT",institutionId:"INST-1"},
+ guardian:{userId:"U-GUARDIAN",role:"Tutor",membershipId:"M-GUARDIAN",institutionId:"INST-1"},invalid:null
 };
 const rows={
  AsignacionesAmbitosRoles:[
-  ["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"],
-  ["S-A","U-A","Director","DEPARTAMENTO",'["DEP-A"]',"Activo","","","","","",""],
-  ["S-B","U-B","Director","DEPARTAMENTO",'["DEP-B"]',"Activo","","","","","",""],
-  ["S-HR-A","U-A","RecursosHumanos","DEPARTAMENTO",'["DEP-A"]',"Activo","","","","","",""],
-  ["S-HR-B","U-B","RecursosHumanos","DEPARTAMENTO",'["DEP-B"]',"Activo","","","","","",""],
-  ["S-ADMIN","U-ADMIN","Administrador","INSTITUCION",'["INST-1"]',"Activo","","","","","",""]
+  ["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID","InstitutionID","MembershipID","ResponsibilityID"],
+  ["S-A","U-A","Director","DEPARTAMENTO",'["DEP-A"]',"Activo","","","","","","","INST-1","M-DIR-A","RESP-DIR"],
+  ["S-B","U-B","Director","DEPARTAMENTO",'["DEP-B"]',"Activo","","","","","","","INST-1","M-DIR-B","RESP-DIR"],
+  ["S-HR-A","U-A","RecursosHumanos","DEPARTAMENTO",'["DEP-A"]',"Activo","","","","","","","INST-1","M-HR-A","RESP-HR"],
+  ["S-HR-B","U-B","RecursosHumanos","DEPARTAMENTO",'["DEP-B"]',"Activo","","","","","","","INST-1","M-HR-B","RESP-HR"],
+  ["S-ADMIN","U-ADMIN","Administrador","INSTITUCION",'["INST-1"]',"Activo","","","","","","","INST-1","M-ADMIN","RESP-ADMIN"]
+ ],
+ CatalogoRolesInternos:[
+  ["RolInternoID","CodigoInterno","NombreResponsabilidad","Descripcion","Departamento","AreaAcademica","TipoResponsabilidad","VigenciaMeses","PermiteSuplencia","Estado","CreadoPor","FechaCreacion","FechaActualizacion"],
+  ["RESP-DIR","DIR","Dirección","Dirección institucional","","","Administrativa",12,false,"Activo","","",""],
+  ["RESP-HR","HR","Recursos Humanos","Gestión de personal","","","Administrativa",12,false,"Activo","","",""],
+  ["RESP-ADMIN","ADMIN","Administración","Administración institucional","","","Administrativa",12,false,"Activo","","",""]
  ],
  ExpedientesLaborales:[
   ["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"],
