@@ -1143,97 +1143,105 @@ function enforcePrivateEmployeeDocumentFile_(fileUrl) {
 }
 
 function getEmployeeDocuments(payload) {
-  var input = payload || {};
-  var actor = getVerifiedAccountingIdentity_(input);
-  if (!actor || actor.authorized !== true) {
-    return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
-  }
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var documentSheet = ss.getSheetByName("DocumentosLaborales");
-  var employeeSheet = ss.getSheetByName("ExpedientesLaborales");
+  var documentSheet = ss.getSheetByName("DocumentosLaborales"), employeeSheet = ss.getSheetByName("ExpedientesLaborales");
   if (!documentSheet || !employeeSheet) return { status: "error", code: "RESOURCE_NOT_FOUND" };
-  var employeeValues = employeeSheet.getDataRange().getValues();
-  var documentValues = documentSheet.getDataRange().getValues();
+  var employeeValues = employeeSheet.getDataRange().getValues(), documentValues = documentSheet.getDataRange().getValues();
   if (!employeeValues.length || !documentValues.length) return { status: "error", code: "RESOURCE_NOT_FOUND" };
   var employeeHeaders = employeeValues[0].map(function(value) { return String(value || "").trim(); });
   var documentHeaders = documentValues[0].map(function(value) { return String(value || "").trim(); });
   var employeeIndex = {}, documentIndex = {};
   employeeHeaders.forEach(function(name, index) { employeeIndex[name] = index; });
   documentHeaders.forEach(function(name, index) { documentIndex[name] = index; });
-  var requiredEmployee = ["ExpedienteID", "UserId", "Departamento"];
-  var requiredDocument = ["DocumentoID", "ExpedienteID", "CategoriaDoc", "TituloDocumento", "ArchivoUrl", "FechaCarga", "CargadoPor", "EstadoVisibilidad", "Observaciones"];
+  var requiredEmployee = ["ExpedienteID", "UserId"], requiredDocument = ["DocumentoID", "ExpedienteID", "CategoriaDoc", "TituloDocumento", "ArchivoUrl", "FechaCarga", "CargadoPor", "EstadoVisibilidad", "Observaciones"];
   if (requiredEmployee.some(function(name) { return employeeIndex[name] === undefined; }) ||
-      requiredDocument.some(function(name) { return documentIndex[name] === undefined; })) {
-    return { status: "error", code: "RESOURCE_NOT_FOUND" };
-  }
-  var expedienteId = String(input.expedienteId || "").trim();
-  if (!expedienteId && String(actor.role || "").toLowerCase() === "empleado") {
-    var selfRows = employeeValues.slice(1).filter(function(row) {
-      return String(row[employeeIndex.UserId] || "").trim() === String(actor.userId || "").trim();
+      requiredDocument.some(function(name) { return documentIndex[name] === undefined; })) return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
+  var role = String(actor.role || "").trim().toLowerCase(), requestedId = String(input.expedienteId || "").trim();
+  var employeeRows = employeeValues.slice(1), allowedIds = [], referenceAccess = null;
+  if (requestedId) {
+    var matches = employeeRows.filter(function(row) { return String(row[employeeIndex.ExpedienteID] || "").trim() === requestedId; });
+    if (matches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    var access = assertEmployeeExpedienteScopeAccess_(input, ss, requestedId);
+    if (access && access.authorized === true) allowedIds = [requestedId];
+    else {
+      if (!access || access.code !== "RESOURCE_SCOPE_DENIED" || role === "empleado") return { status: "error", code: "RESOURCE_NOT_FOUND" };
+      var allDocsForTarget = documentValues.slice(1).filter(function(row) {
+        return String(row[documentIndex.ExpedienteID] || "").trim() === requestedId;
+      });
+      var allIds = {};
+      allDocsForTarget.forEach(function(row) { var id = String(row[documentIndex.DocumentoID] || "").trim(); if (id) allIds[id] = true; });
+      var requestedFields = input.referenceRequestedFields, requestedDocumentIds = input.referenceDocumentIds;
+      if (!Array.isArray(requestedFields) || !requestedFields.length || !Array.isArray(requestedDocumentIds) ||
+          !requestedDocumentIds.length || requestedDocumentIds.some(function(id) { return !allIds[String(id || "")]; })) {
+        return { status: "error", code: "RESOURCE_NOT_FOUND" };
+      }
+      referenceAccess = authorizeAccountingDepartmentReferenceReadViaUser_(input, requestedId, requestedFields, requestedDocumentIds);
+      if (!referenceAccess || referenceAccess.status !== "success") return { status: "error", code: "RESOURCE_NOT_FOUND" };
+      var referenceDocuments = [];
+      requestedDocumentIds.forEach(function(requestedDocumentId) {
+        var row = allDocsForTarget.find(function(item) { return String(item[documentIndex.DocumentoID] || "") === String(requestedDocumentId); });
+        if (!row) return;
+        var document = { documentoId: row[documentIndex.DocumentoID] };
+        referenceAccess.approvedFields.forEach(function(field) {
+          var map = { categoriaDoc: "CategoriaDoc", fechaCarga: "FechaCarga", estadoVisibilidad: "EstadoVisibilidad" };
+          document[field] = row[documentIndex[map[field]]];
+        });
+        referenceDocuments.push(document);
+      });
+      if (referenceDocuments.length !== requestedDocumentIds.length) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+      return { status: "success", referenceOnly: true, grantId: referenceAccess.grantId,
+        auditEventId: referenceAccess.auditEventId, documentos: referenceDocuments };
+    }
+  } else if (role === "empleado") {
+    var selfRows = employeeRows.filter(function(row) { return String(row[employeeIndex.UserId] || "").trim() === String(actor.userId || "").trim(); });
+    if (selfRows.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    var selfId = String(selfRows[0][employeeIndex.ExpedienteID] || "").trim();
+    var selfAccess = assertEmployeeExpedienteScopeAccess_(input, ss, selfId);
+    if (!selfAccess || selfAccess.authorized !== true) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    allowedIds = [selfId];
+  } else {
+    var seenExpedientes = {};
+    employeeRows.forEach(function(row) {
+      var id = String(row[employeeIndex.ExpedienteID] || "").trim();
+      if (!id || seenExpedientes[id]) return;
+      seenExpedientes[id] = true;
+      var access = assertEmployeeExpedienteScopeAccess_(input, ss, id);
+      if (access && access.authorized === true) allowedIds.push(id);
     });
-    if (selfRows.length === 1) expedienteId = String(selfRows[0][employeeIndex.ExpedienteID] || "").trim();
-    else return { status: "error", code: "RESOURCE_NOT_FOUND" };
   }
-  if (!expedienteId) return { status: "success", documentos: [] };
-  var matchingEmployees = employeeValues.slice(1).filter(function(row) {
-    return String(row[employeeIndex.ExpedienteID] || "").trim() === expedienteId;
-  });
-  if (matchingEmployees.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
-  var access = assertEmployeeExpedienteScopeAccess_(input, ss, expedienteId);
+  if (!allowedIds.length) return { status: "success", documentos: [] };
+  var allowedSet = {};
+  allowedIds.forEach(function(id) { allowedSet[id] = true; });
   var matchingDocuments = documentValues.slice(1).filter(function(row) {
-    return String(row[documentIndex.ExpedienteID] || "").trim() === expedienteId;
+    if (!allowedSet[String(row[documentIndex.ExpedienteID] || "").trim()]) return false;
+    var category = String(input.categoriaDoc || "").trim();
+    return !category || String(row[documentIndex.CategoriaDoc] || "").trim().toLowerCase() === category.toLowerCase();
   });
-  var documentIds = {};
-  for (var i = 0; i < matchingDocuments.length; i++) {
-    var id = String(matchingDocuments[i][documentIndex.DocumentoID] || "").trim();
-    if (!id || documentIds[id]) return { status: "error", code: "RESOURCE_NOT_FOUND" };
-    documentIds[id] = true;
-  }
+  var idCounts = {};
+  matchingDocuments.forEach(function(row) {
+    var id = String(row[documentIndex.DocumentoID] || "").trim();
+    if (id) idCounts[id] = (idCounts[id] || 0) + 1;
+  });
+  matchingDocuments = matchingDocuments.filter(function(row) {
+    var id = String(row[documentIndex.DocumentoID] || "").trim();
+    return !!id && idCounts[id] === 1;
+  });
   var privateFilesVerified = matchingDocuments.every(function(row) {
     return enforcePrivateEmployeeDocumentFile_(row[documentIndex.ArchivoUrl]);
   });
   if (!privateFilesVerified) return { status: "error", code: "RESOURCE_NOT_FOUND" };
-  if (access && access.authorized === true) {
-    var fullDocuments = matchingDocuments.map(function(row) {
-      return {
-        documentoId: row[documentIndex.DocumentoID],
-        expedienteId: row[documentIndex.ExpedienteID],
-        categoriaDoc: row[documentIndex.CategoriaDoc],
-        tituloDocumento: row[documentIndex.TituloDocumento],
-        tieneArchivo: !!String(row[documentIndex.ArchivoUrl] || "").trim(),
-        fechaCarga: row[documentIndex.FechaCarga],
-        cargadoPor: row[documentIndex.CargadoPor],
-        estadoVisibilidad: row[documentIndex.EstadoVisibilidad],
-        observaciones: row[documentIndex.Observaciones]
-      };
-    });
-    return { status: "success", documentos: fullDocuments };
-  }
-  if (!access || access.code !== "RESOURCE_SCOPE_DENIED" || String(actor.role || "").toLowerCase() === "empleado") {
-    return { status: "error", code: "RESOURCE_NOT_FOUND" };
-  }
-  var requestedFields = input.referenceRequestedFields;
-  var requestedDocumentIds = input.referenceDocumentIds;
-  if (!Array.isArray(requestedFields) || !requestedFields.length || !Array.isArray(requestedDocumentIds) ||
-      !requestedDocumentIds.length || requestedDocumentIds.some(function(id) { return !documentIds[String(id || "")]; })) {
-    return { status: "error", code: "RESOURCE_NOT_FOUND" };
-  }
-  var authorization = authorizeAccountingDepartmentReferenceReadViaUser_(input, expedienteId, requestedFields, requestedDocumentIds);
-  if (!authorization || authorization.status !== "success") return { status: "error", code: "RESOURCE_NOT_FOUND" };
-  var referenceDocuments = [];
-  requestedDocumentIds.forEach(function(requestedId) {
-    var row = matchingDocuments.find(function(item) { return String(item[documentIndex.DocumentoID] || "") === String(requestedId); });
-    if (!row) return;
-    var document = { documentoId: row[documentIndex.DocumentoID] };
-    authorization.approvedFields.forEach(function(field) {
-      var map = { categoriaDoc: "CategoriaDoc", fechaCarga: "FechaCarga", estadoVisibilidad: "EstadoVisibilidad" };
-      document[field] = row[documentIndex[map[field]]];
-    });
-    referenceDocuments.push(document);
+  var fullDocuments = matchingDocuments.map(function(row) {
+    return {
+      documentoId: row[documentIndex.DocumentoID], expedienteId: row[documentIndex.ExpedienteID],
+      categoriaDoc: row[documentIndex.CategoriaDoc], tituloDocumento: row[documentIndex.TituloDocumento],
+      tieneArchivo: !!String(row[documentIndex.ArchivoUrl] || "").trim(), fechaCarga: row[documentIndex.FechaCarga],
+      cargadoPor: row[documentIndex.CargadoPor], estadoVisibilidad: row[documentIndex.EstadoVisibilidad],
+      observaciones: row[documentIndex.Observaciones]
+    };
   });
-  if (referenceDocuments.length !== requestedDocumentIds.length) return { status: "error", code: "RESOURCE_NOT_FOUND" };
-  return { status: "success", referenceOnly: true, grantId: authorization.grantId,
-    auditEventId: authorization.auditEventId, documentos: referenceDocuments };
+  return { status: "success", documentos: fullDocuments };
 }
 
 
