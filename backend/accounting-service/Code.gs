@@ -10217,7 +10217,7 @@ function recognizeAssignedMaterialConsumption(payload) {
 function manageMaintenanceOrder(payload) {
  const p=payload||{},actor=catalogActor_(p,false),assetRef=String(p.activoIdUbicacion||"").trim(),description=String(p.descripcionFalla||"").trim();
  if(!assetRef||!description)throw new Error("activoIdUbicacion y descripcionFalla son requeridos.");
- const lock=LockService.getScriptLock();lock.waitLock(15000);let movementStart=0,journalStart=0,valuationSnapshot=null;
+ const lock=LockService.getScriptLock();lock.waitLock(15000);let movementStart=0,journalStart=0,valuationSnapshot=null,maintenanceOrderSnapshot=null,maintenanceOrderIndex=-1,maintenanceOrderSheetRef=null;
  try{
   const ss=SpreadsheetApp.openById(SPREADSHEET_ID);valuationSnapshot=inventoryValuationSnapshot_(ss);const sheet=getOrCreateSheet(ss,"MantenimientoOrdenes");inventoryEnsureMaintenanceSchema_(sheet);
   const data=sheet.getDataRange().getValues(),oId=String(p.ordenMaintId||("MNT-"+Utilities.getUuid())).trim(),matches=data.map((r,i)=>({row:r,index:i})).filter(x=>x.index>0&&String(x.row[0]||"").trim()===oId);
@@ -10252,11 +10252,12 @@ function manageMaintenanceOrder(payload) {
    });
    asientoId="AST-INV-MNT-"+oId;inventoryPostJournal_(ss,{descripcion:"Consumo de repuestos de mantenimiento "+oId,origenModulo:"INVENTARIO",referenciaId:oId,asientoId:asientoId,lineas:lines,creadoPor:actor.userId});details=JSON.stringify(saved);
   }
-  const row=existing?existing.slice():new Array(23).fill("");while(row.length<23)row.push("");
+  const row=existing?existing.slice():new Array(24).fill("");while(row.length<24)row.push("");
   row[0]=oId;row[1]=existing?existing[1]:now;row[2]=assetRef;row[3]=p.tipoMantenimiento||(existing&&existing[3])||"Correctivo";row[4]=description;row[5]=p.prioridad||(existing&&existing[5])||"Media";row[6]=existing?existing[6]:actor.userId;row[7]=p.asignadoAEmpleadoId!==undefined?p.asignadoAEmpleadoId:(existing&&existing[7]||"");row[8]=repuestStr;row[9]=p.costoEstimado!==undefined?p.costoEstimado:(existing&&existing[9]||0);
   const partsTotal=(()=>{try{return JSON.parse(details||"[]").reduce((sum,x)=>sum+Number(x.importe||0),0);}catch(_){return 0;}})();row[10]=p.costoReal!==undefined?p.costoReal:(Number(existing&&existing[10]||0)>0?existing[10]:partsTotal);
-  row[11]=state;row[12]=p.fechaResolucion||(complete?((existing&&existing[12])||now):(existing&&existing[12]||""));row[13]=p.observaciones!==undefined?p.observaciones:(existing&&existing[13]||"");row[14]=departmentInfo?departmentInfo.departmentId:(existing&&existing[14]||"");row[15]=departmentInfo?departmentInfo.centroCosto:(existing&&existing[15]||"");row[16]=asientoId;row[17]=details;row[18]=departmentInfo?departmentInfo.ubicacionOrigen:(existing&&existing[18]||p.ubicacionOrigen||"Bodega General");row[19]=String(p.planMantenimientoId||(existing&&existing[19])||"");row[20]=String(p.cicloMantenimientoId||(existing&&existing[20])||"");row[21]=String(p.checklistJSON||(existing&&existing[21])||"[]");row[22]=p.fechaProgramada||(existing&&existing[22])||"";
-  if(idx!==-1)sheet.getRange(idx+1,1,1,row.length).setValues([row]);else sheet.appendRow(row);
+  row[11]=state;row[12]=p.fechaResolucion||(complete?((existing&&existing[12])||now):(existing&&existing[12]||""));row[13]=p.observaciones!==undefined?p.observaciones:(existing&&existing[13]||"");row[14]=departmentInfo?departmentInfo.departmentId:(existing&&existing[14]||"");row[15]=departmentInfo?departmentInfo.centroCosto:(existing&&existing[15]||"");row[16]=asientoId;row[17]=details;row[18]=departmentInfo?departmentInfo.ubicacionOrigen:(existing&&existing[18]||p.ubicacionOrigen||"Bodega General");row[19]=String(p.planMantenimientoId||(existing&&existing[19])||"");row[20]=String(p.cicloMantenimientoId||(existing&&existing[20])||"");row[21]=String(p.checklistJSON||(existing&&existing[21])||"[]");row[22]=p.fechaProgramada||(existing&&existing[22])||"";row[23]=p.lecturaUsoAlCompletar!==undefined?p.lecturaUsoAlCompletar:(existing&&existing[23]||"");
+  maintenanceOrderSheetRef=sheet;maintenanceOrderIndex=idx!==-1?idx+1:sheet.getLastRow()+1;maintenanceOrderSnapshot=idx!==-1?existing.slice():null;
+   if(idx!==-1)sheet.getRange(idx+1,1,1,row.length).setValues([row]);else sheet.appendRow(row);
    if(complete&&row[19])maintenancePlanComplete_(ss,row,actor);
   try{
    const vehSheet=getOrCreateSheet(ss,"TransporteVehiculos"),vehData=vehSheet.getDataRange().getValues(),vIdx=vehData.findIndex(r=>String(r[0]||"").trim()===assetRef||String(r[1]||"").trim()===assetRef||String(r[2]||"").trim()===assetRef);
@@ -10264,7 +10265,7 @@ function manageMaintenanceOrder(payload) {
   }catch(_){}
   return {status:"success",ordenMaintId:oId,asientoId:asientoId||null,idempotent:idempotent,detalleRepuestos:repArr.length?JSON.parse(details):[],message:idempotent?"Orden de mantenimiento y consumo contable ya registrados.":"Orden de mantenimiento registrada/actualizada correctamente."};
  }catch(e){
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID);inventoryValuationRestore_(ss,valuationSnapshot);
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID);if(maintenanceOrderSheetRef&&maintenanceOrderIndex>0){if(maintenanceOrderSnapshot)maintenanceOrderSheetRef.getRange(maintenanceOrderIndex,1,1,maintenanceOrderSnapshot.length).setValues([maintenanceOrderSnapshot]);else if(maintenanceOrderSheetRef.getLastRow()>=maintenanceOrderIndex)maintenanceOrderSheetRef.deleteRow(maintenanceOrderIndex);}inventoryValuationRestore_(ss,valuationSnapshot);
   if(movementStart){const sh=ss.getSheetByName("InventariosKardex");if(sh)inventoryDeleteAppendedRows_(sh,movementStart);}
   if(journalStart){const sh=ss.getSheetByName("AsientosContables");if(sh)inventoryDeleteAppendedRows_(sh,journalStart);}
   throw e;
@@ -10399,7 +10400,7 @@ function confirmTransferReceipt(payload) {
 
 function inventoryEnsureMaintenanceSchema_(sheet) {
  const base=["OrdenMaintID","FechaReporte","ActivoIdUbicacion","TipoMantenimiento","DescripcionFalla","Prioridad","ReportadoPorUserId","AsignadoAEmpleadoId","RepuestosConsumidosJSON","CostoEstimado","CostoReal","EstadoOrden","FechaResolucion","Observaciones"];
- const extra=["DepartamentoID","CentroCosto","AsientoContableID","DetalleRepuestosContabilizadosJSON","UbicacionOrigen","PlanMantenimientoID","CicloMantenimientoID","ChecklistJSON","FechaProgramada"],row=sheet.getDataRange().getValues()[0]||[];
+ const extra=["DepartamentoID","CentroCosto","AsientoContableID","DetalleRepuestosContabilizadosJSON","UbicacionOrigen","PlanMantenimientoID","CicloMantenimientoID","ChecklistJSON","FechaProgramada","LecturaUsoAlCompletar"],row=sheet.getDataRange().getValues()[0]||[];
  if(base.some((h,i)=>String(row[i]||"").trim()!==h))throw new Error("MAINTENANCE_ORDER_SCHEMA_MISMATCH");
  extra.forEach((h,i)=>{const v=String(row[14+i]||"").trim();if(v&&v!==h)throw new Error("MAINTENANCE_ORDER_SCHEMA_CONFLICT:"+v);});
  extra.forEach((h,i)=>{if(!String(row[14+i]||"").trim())sheet.getRange(1,15+i).setValue(h);});
@@ -10440,7 +10441,7 @@ function inventoryResolveMaintenanceDepartment_(ss,p,assetRef,actor,existingRow)
 }
 
 
-const MAINTENANCE_PLAN_HEADERS_=["PlanID","Estado","TipoObjetivo","ObjetivoID","ObjetivoNombre","Categoria","FrecuenciaTipo","FrecuenciaValor","FechaUltimoMantenimiento","FechaProximoMantenimiento","ResponsableTecnico","Procedimiento","ChecklistJSON","RepuestosJSON","DuracionEstimadaHoras","CostoPresupuestado","TiempoInactividadHoras","DiasAnticipacion","DepartamentoID","CentroCosto","FechaCreacion","CreadoPor","FechaActualizacion","ActualizadoPor","LecturaUsoUltima","LecturaUsoProxima","UltimaOrdenID","FechaPospuestaHasta","MotivoPostergacion"];
+const MAINTENANCE_PLAN_HEADERS_=["PlanID","Estado","TipoObjetivo","ObjetivoID","ObjetivoNombre","Categoria","FrecuenciaTipo","FrecuenciaValor","FechaUltimoMantenimiento","FechaProximoMantenimiento","ResponsableTecnico","Procedimiento","ChecklistJSON","RepuestosJSON","DuracionEstimadaHoras","CostoPresupuestado","TiempoInactividadHoras","DiasAnticipacion","DepartamentoID","CentroCosto","FechaCreacion","CreadoPor","FechaActualizacion","ActualizadoPor","LecturaUsoUltima","LecturaUsoProxima","UltimaOrdenID","FechaPospuestaHasta","MotivoPostergacion","LecturaUsoAlCompletar"];
 function maintenancePlanSheet_(ss,create){
  let sh=ss.getSheetByName("MantenimientoPlanes");if(!sh&&create){sh=ss.insertSheet("MantenimientoPlanes");sh.getRange(1,1,1,MAINTENANCE_PLAN_HEADERS_.length).setValues([MAINTENANCE_PLAN_HEADERS_]);}
  if(!sh)return null;const rows=sh.getDataRange().getValues(),header=rows[0]||[];
@@ -10549,8 +10550,13 @@ function getMaintenanceOrders(p){
 
 function maintenancePlanComplete_(ss,orderRow,actor){
  const planId=String(orderRow[19]||"").trim();if(!planId)return null;const sh=maintenancePlanSheet_(ss,false);if(!sh)return null;const rows=sh.getDataRange().getValues(),matches=rows.map((r,i)=>({r,i})).filter(x=>x.i>0&&String(x.r[0])===planId);if(matches.length!==1)throw new Error(matches.length?"MAINTENANCE_PLAN_ID_AMBIGUOUS":"MAINTENANCE_PLAN_NOT_FOUND");
- const found=matches[0],r=found.r,now=maintenancePlanDate_(orderRow[12]||new Date()),next=String(r[6])==="HORAS_USO"?null:maintenancePlanAdd_(now,r[6],r[7]);sh.getRange(found.i+1,9).setValue(now);if(next)sh.getRange(found.i+1,10).setValue(next);sh.getRange(found.i+1,27).setValue(orderRow[0]);sh.getRange(found.i+1,28).setValue("");sh.getRange(found.i+1,29).setValue("");
- const hist=inventoryEnsureLedgerSheet_(ss,"MantenimientoHistorial",["EventoID","PlanID","OrdenMaintID","Fecha","TipoEvento","FechaAnterior","FechaNueva","Motivo","ActorUserId"]);hist.appendRow(["MNH-"+Utilities.getUuid(),planId,orderRow[0],new Date(),"COMPLETADO",r[9],next||"", "",actor.userId]);return {planId,fechaUltimoMantenimiento:maintenancePlanISO_(now),fechaProximoMantenimiento:next?maintenancePlanISO_(next):null};
+ const found=matches[0],r=found.r;if(String(r[26]||"")===String(orderRow[0]))return {planId,idempotent:true};
+ const now=maintenancePlanDate_(orderRow[12]||new Date()),freq=String(r[6]),usage=freq==="HORAS_USO",reading=Number(orderRow[23]!==""&&orderRow[23]!==undefined?orderRow[23]:r[25]||0);
+ if(usage&&(!Number.isFinite(reading)||reading<Number(r[24]||0)))throw new Error("MAINTENANCE_USAGE_READING_INVALID");
+ const next=usage?null:maintenancePlanAdd_(now,freq,r[7]),oldRow=r.slice(),hist=inventoryEnsureLedgerSheet_(ss,"MantenimientoHistorial",["EventoID","PlanID","OrdenMaintID","Fecha","TipoEvento","FechaAnterior","FechaNueva","Motivo","ActorUserId"]);
+ try{sh.getRange(found.i+1,9).setValue(now);if(next)sh.getRange(found.i+1,10).setValue(next);if(usage){sh.getRange(found.i+1,25).setValue(reading);sh.getRange(found.i+1,26).setValue(reading+Number(r[7]||0));}sh.getRange(found.i+1,27).setValue(orderRow[0]);sh.getRange(found.i+1,28).setValue("");sh.getRange(found.i+1,29).setValue("");hist.appendRow(["MNH-"+Utilities.getUuid(),planId,orderRow[0],new Date(),"COMPLETADO",r[9],next||"","",actor.userId]);}
+ catch(e){sh.getRange(found.i+1,1,1,oldRow.length).setValues([oldRow]);throw e;}
+ return {planId,fechaUltimoMantenimiento:maintenancePlanISO_(now),fechaProximoMantenimiento:next?maintenancePlanISO_(next):null,lecturaUsoProxima:usage?reading+Number(r[7]||0):null};
 }
 
 // Restored monthly transport billing and service tariff engine.
