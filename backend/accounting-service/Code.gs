@@ -8494,14 +8494,35 @@ function inventoryAssertExistingJournal_(ss,id,expectedOrigin,expectedRef) {
 }
 
 function inventoryPostJournal_(ss,payload) {
- const existing=inventoryFindJournalById_(ss,payload.asientoId);
+ var input=payload||{},id=String(input.asientoId||"").trim(),description=String(input.descripcion||"").trim();
+ var lines=Array.isArray(input.lineas)?input.lineas:[];
+ if(!id||!description||!lines.length)throw new Error("INVENTORY_JOURNAL_ENTRY_INVALID");
+ var existing=inventoryFindJournalById_(ss,id);
  if(existing){
-  if(String(existing[2]||"")!==String(payload.descripcion||"")||String(existing[3]||"")!==String(payload.origenModulo||"")||String(existing[4]||"")!==String(payload.referenciaId||"")||String(existing[5]||"")!==JSON.stringify(payload.lineas))throw new Error("INVENTORY_JOURNAL_IDEMPOTENCY_CONFLICT:"+payload.asientoId);
-  return {status:"success",asientoId:payload.asientoId,idempotent:true};
+  if(String(existing[2]||"")!==description||String(existing[3]||"")!==String(input.origenModulo||"")||
+     String(existing[4]||"")!==String(input.referenciaId||"")||String(existing[5]||"")!==JSON.stringify(lines)) {
+    throw new Error("INVENTORY_JOURNAL_IDEMPOTENCY_CONFLICT:"+id);
+  }
+  return {status:"success",asientoId:id,idempotent:true};
  }
- return recordAccountingJournalEntry(payload);
+ var debit=0,credit=0;
+ lines.forEach(function(line){
+  var d=Number(line&&line.debe||0),h=Number(line&&line.haber||0);
+  if(!line||!String(line.cuenta||"").trim()||!Number.isFinite(d)||!Number.isFinite(h)||d<0||h<0||(d>0&&h>0)) {
+    throw new Error("INVENTORY_JOURNAL_ENTRY_INVALID");
+  }
+  debit+=d;credit+=h;
+ });
+ if(Math.abs(debit-credit)>0.01)throw new Error("INVENTORY_JOURNAL_ENTRY_UNBALANCED");
+ var sheet=getOrCreateSheet(ss,"AsientosContables"),data=sheet.getDataRange().getValues();
+ var headers=["AsientoID","Fecha","Descripcion","OrigenModulo","ReferenciaID","LineasJSON","Estado","CreadoPor"];
+ if(!data.length||JSON.stringify(data[0].map(function(v){return String(v||"").trim();}))!==JSON.stringify(headers)) {
+  throw new Error("INVENTORY_JOURNAL_SCHEMA_MISMATCH");
+ }
+ sheet.appendRow([id,new Date(),description,String(input.origenModulo||"INVENTARIO"),
+  String(input.referenciaId||""),JSON.stringify(lines),"Asentado",String(input.creadoPor||"SISTEMA")]);
+ return {status:"success",asientoId:id,totalDebe:debit,totalHaber:credit,estado:"Asentado"};
 }
-
 function inventoryDeleteAppendedRows_(sheet,firstRow) {
  if(!sheet||typeof sheet.deleteRow!=="function")return;
  while(sheet.getLastRow()>=firstRow)sheet.deleteRow(sheet.getLastRow());
