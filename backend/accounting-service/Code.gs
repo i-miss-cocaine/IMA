@@ -10446,8 +10446,8 @@ const MAINTENANCE_PLAN_HEADERS_=["PlanID","Estado","TipoObjetivo","ObjetivoID","
 function maintenancePlanSheet_(ss,create){
  let sh=ss.getSheetByName("MantenimientoPlanes");if(!sh&&create){sh=ss.insertSheet("MantenimientoPlanes");sh.getRange(1,1,1,MAINTENANCE_PLAN_HEADERS_.length).setValues([MAINTENANCE_PLAN_HEADERS_]);}
  if(!sh)return null;const rows=sh.getDataRange().getValues(),header=rows[0]||[];
- if(header.length>0&&header.some((v,i)=>String(v||"").trim()&&String(v||"").trim()!==MAINTENANCE_PLAN_HEADERS_[i]))throw new Error("MAINTENANCE_PLAN_SCHEMA_CONFLICT");
- MAINTENANCE_PLAN_HEADERS_.forEach((h,i)=>{if(String(header[i]||"").trim()!==h)sh.getRange(1,i+1).setValue(h);});
+ if(create){if(header.some((v,i)=>String(v||"").trim()&&String(v||"").trim()!==MAINTENANCE_PLAN_HEADERS_[i]))throw new Error("MAINTENANCE_PLAN_SCHEMA_CONFLICT");MAINTENANCE_PLAN_HEADERS_.forEach((h,i)=>{if(String(header[i]||"").trim()!==h)sh.getRange(1,i+1).setValue(h);});}
+ else if(MAINTENANCE_PLAN_HEADERS_.some((h,i)=>String(header[i]||"").trim()!==h))throw new Error("MAINTENANCE_PLAN_SCHEMA_MISMATCH");
  return sh;
 }
 function maintenancePlanDate_(v){
@@ -10503,6 +10503,7 @@ function managePreventiveMaintenancePlan(p){
  p=p||{};const actor=catalogActor_(p,true),id=String(p.planId||"").trim(),action=String(p.accion||"guardar").toLowerCase(),lock=LockService.getScriptLock();lock.waitLock(15000);
  try{const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=maintenancePlanSheet_(ss,true),rows=sh.getDataRange().getValues(),matches=rows.map((r,i)=>({r,i})).filter(x=>x.i>0&&String(x.r[0])===id);
   if(matches.length>1)throw new Error("MAINTENANCE_PLAN_ID_AMBIGUOUS");const found=matches[0],existing=found&&found.r;
+  if(existing){inventoryAssertDepartmentScope_(p,ss,actor,String(existing[18]||""));if(p.departamento&&String(p.departamento).trim()!==String(existing[18]||"").trim())throw new Error("MAINTENANCE_PLAN_DEPARTMENT_IMMUTABLE");}
   if(action==="desactivar"){if(!existing)throw new Error("MAINTENANCE_PLAN_NOT_FOUND");inventoryAssertDepartmentScope_(p,ss,actor,String(existing[18]));sh.getRange(found.i+1,2).setValue("Inactivo");sh.getRange(found.i+1,23).setValue(new Date());sh.getRange(found.i+1,24).setValue(actor.userId);return {status:"success",planId:id,estado:"Inactivo"};}
   if(action==="posponer"){if(!existing)throw new Error("MAINTENANCE_PLAN_NOT_FOUND");inventoryAssertDepartmentScope_(p,ss,actor,String(existing[18]));const until=maintenancePlanDate_(p.fechaPospuestaHasta),reason=String(p.motivoPostergacion||"").trim();if(!until||until<=maintenancePlanDate_(new Date())||!reason)throw new Error("MAINTENANCE_POSTPONE_REASON_AND_FUTURE_DATE_REQUIRED");sh.getRange(found.i+1,10).setValue(until);sh.getRange(found.i+1,28).setValue(until);sh.getRange(found.i+1,29).setValue(reason);const hist=inventoryEnsureLedgerSheet_(ss,"MantenimientoHistorial",["EventoID","PlanID","OrdenMaintID","Fecha","TipoEvento","FechaAnterior","FechaNueva","Motivo","ActorUserId"]);hist.appendRow(["MNH-"+Utilities.getUuid(),id,String(existing[26]||""),new Date(),"POSPUESTO",existing[9],until,reason,actor.userId]);return {status:"success",planId:id,fechaPospuestaHasta:maintenancePlanISO_(until)};}
   const x=maintenancePlanNormalize_(p,existing,actor,ss);x.actor=actor.userId;maintenancePlanTargets_(ss,x);const row=maintenancePlanRow_(x,existing);if(found)sh.getRange(found.i+1,1,1,row.length).setValues([row]);else sh.appendRow(row);
@@ -10529,7 +10530,7 @@ function generatePreventiveMaintenanceOrders(p){
  p=p||{};const actor=catalogActor_(p,true),today=maintenancePlanDate_(p.fechaReferencia||new Date()),lock=LockService.getScriptLock();lock.waitLock(15000);
  try{const ss=SpreadsheetApp.openById(SPREADSHEET_ID),plans=maintenancePlanSheet_(ss,false);if(!plans)return {status:"success",generadas:[],omitidas:[]};
   const orders=getOrCreateSheet(ss,"MantenimientoOrdenes");inventoryEnsureMaintenanceSchema_(orders);const rows=plans.getDataRange().getValues(),orderRows=orders.getDataRange().getValues(),generated=[],omitted=[];
-  rows.slice(1).forEach((r)=>{if(String(r[1])!=="Activo")return;const dept=String(r[18]||"");try{inventoryAssertDepartmentScope_(p,ss,actor,dept);}catch(e){omitted.push({planId:r[0],code:e.message});return;}
+  rows.slice(1).forEach((r)=>{if(String(r[1])!=="Activo")return;const dept=String(r[18]||"");try{inventoryAssertDepartmentScope_(p,ss,actor,dept);}catch(e){return;}
    const due=maintenancePlanDate_(r[9]),post=maintenancePlanDate_(r[27]);if(post&&post>today)return;
    const freq=String(r[6]),usage=freq==="HORAS_USO",current=Number(p.lecturasUso&&p.lecturasUso[r[0]]||r[24]||0),threshold=Number(r[25]||0),days=due?Math.floor((due-today)/86400000):null;
    if(usage?current<threshold:(!due||days>Number(r[17]||30)))return;
