@@ -104,8 +104,8 @@ function request(overrides={}){return Object.assign({expedienteId:"EXP-B",sessio
 {
  const h=makeRuntime({sameDepartment:true}),r=h.context.read(request({expedienteId:"EXP-A",referenceDocumentIds:undefined,referenceRequestedFields:undefined}));
  assert.equal(r.status,"success");assert.equal(r.referenceOnly,undefined);assert.equal(r.documentos.length,1);
- assert.equal(r.documentos[0].archivoUrl,"https://drive.google.com/file/d/FILEIDA123456789012345/view");assert.equal(h.calls.length,0);
- assert.deepEqual(h.privateCalls,[{id:"FILEIDA123456789012345",access:"PRIVATE",permission:"NONE"}],"employee documents are forced to private Drive sharing before URLs are returned");
+ assert.equal(r.documentos[0].tieneArchivo,true);assert.equal("archivoUrl" in r.documentos[0],false,"authorized employee metadata must not expose direct Drive URLs");assert.equal(h.calls.length,0);
+ assert.deepEqual(h.privateCalls,[{id:"FILEIDA123456789012345",access:"PRIVATE",permission:"NONE"}],"employee documents are forced to private Drive sharing before metadata is returned");
 }
 {
  const h=makeRuntime({response:{status:"error",authorized:false,code:"DEPARTMENT_REFERENCE_GRANT_NOT_FOUND"}});
