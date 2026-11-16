@@ -2817,7 +2817,31 @@ function rollbackMigrationOwnerWrites_(applied) {
 function getOrCreateSheet(ss, name) {
   var spreadsheet = ss || SpreadsheetApp.openById(SPREADSHEET_ID);
   if (!spreadsheet) throw new Error("SPREADSHEET_NOT_CONFIGURED");
-  return spreadsheet.getSheetByName(name) || spreadsheet.insertSheet(name);
+  var sheet = spreadsheet.getSheetByName(name) || spreadsheet.insertSheet(name);
+  var defaultHeaders = {
+    "ExpedientesLaborales": ["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"],
+    "ContratosLaborales": ["ContratoID","ExpedienteID","TipoContrato","FechaInicio","FechaFin","SalarioBase","Jornada","EstadoContrato","Observaciones"],
+    "AprobacionHorasExtras": ["OvertimeID","UserId","NombreEmpleado","FechaTrabajada","HorasRegistradas","HorasAprobadas","Motivo","EstadoAprobacion","AprobadoPor","PeriodoNominaId","EstadoPago","Timestamp"],
+    "IncidenciasNomina": ["IncidenciaID","PlanillaID","PeriodoMes","EmpleadoId","EmpleadoNombre","TipoIncidencia","Descripcion","FechaRegistro","Estado"],
+    "PlanillasNomenclatura": ["PlanillaID","FechaGeneracion","PeriodoMes","EmpleadoId","EmpleadoNombre","CargoPuesto","SalarioBase","HorasExtras","MontoHorasExtras","Bonificaciones","DeduccionIHSS","DeduccionRAP","DeduccionISR","OtrasDeducciones","SalarioNeto","Estado","PatronalIHSS","PatronalRAP","PatronalINFOP","CostoLaboralTotal"],
+    "DeduccionesAsistencia": ["AsistenciaID","Fecha","EmpleadoId","EmpleadoNombre","HoraEntrada","HoraSalida","MinutosTardanza","EstadoAsistencia","Observaciones"],
+    "SolicitudesVacaciones": ["SolicitudID","ExpedienteID","Tipo","FechaInicio","FechaFin","DiasSolicitados","Estado","AprobadoPor","Observaciones"],
+    "IncapacidadesMedicas": ["IncapacidadID","ExpedienteID","CentroMedico","DiagnosticoPrivadoUrl","FechaInicio","FechaFin","DiasOtorgados","EstadoIHSS","Observaciones"],
+    "AnticiposPrestamosEmpleado": ["PrestamoID","Fecha","EmpleadoId","Tipo","MontoSolicitado","MontoAprobado","PlazoCuotas","CuotaMensual","SaldoPendiente","EstadoAprobacion","AprobadoPor","Observaciones"],
+    "BoletasPago": ["BoletaID","PlanillaID","FechaEmision","EmpleadoId","EmpleadoNombre","PeriodoMes","TotalDevengado","TotalDeducciones","NetoAPagar","EstadoBoleta","DriveFileId"],
+    "PlanCuentas": ["CuentaID","CodigoCuenta","NombreCuenta","TipoCuenta","Naturaleza","Estado","Observaciones"],
+    "AsientosContables": ["AsientoID","Fecha","Descripcion","OrigenModulo","ReferenciaID","LineasJSON","Estado","CreadoPor"],
+    "HorariosLaborales": ["HorarioID","NombreHorario","JornadaTipo","HoraEntrada","HoraSalida","ToleranciaMinutos","DiasLaboralesJSON","Estado","Observaciones"],
+    "CorreccionesAsistencia": ["CorreccionID","AsistenciaID","EmpleadoId","FechaIncidencia","HoraOriginal","HoraSolicitada","Motivo","EvidenciaUrl","EstadoAprobacion","AprobadoPor","Observaciones"],
+    "DocumentosLaborales": ["DocumentoID","ExpedienteID","CategoriaDoc","TituloDocumento","ArchivoUrl","FechaCarga","CargadoPor","EstadoVisibilidad","Observaciones"],
+    "RelacionesFamiliares": ["RelacionID","ExpedienteID","ResponsableUserId","TipoRelacion","Estado","FechaInicio","FechaFin","VerificadaPor","FechaVerificacion"],
+    "TransporteRutas": ["RutaID","Nombre","Unidad","Conductor","Capacidad","Paradas","Estado"],
+    "TransporteAsignaciones": ["ID","RutaID","EstudianteUserId","Parada","Horario","Estado","Fecha","Jornada"],
+    "TransporteViajes": ["ViajeID","RutaID","Unidad","Conductor","Monitor","Fecha","Jornada","Inicio","Fin","Estado"]
+  };
+  var headers = defaultHeaders[name];
+  if (headers && sheet.getLastRow() === 0) sheet.appendRow(headers);
+  return sheet;
 }
 
 function migrationStableJson_(value) {
@@ -3032,6 +3056,7 @@ function doPost(e) {
     if (request.action === "recordAccountingJournalEntry") return respond(recordAccountingJournalEntry(actionPayload));
     if (request.action === "getAccountingJournalEntries") return respond(getAccountingJournalEntries(actionPayload));
     if (request.action === "getPaginatedJournalEntries") return respond(getPaginatedJournalEntries(actionPayload));
+    if (request.action === "getAdvancedDashboardAnalytics") return respond(getAdvancedDashboardAnalytics(actionPayload));
     if (request.action === "getTransportRoutes") return respond(getTransportRoutes(actionPayload));
     if (request.action === "getTransportAssignments") return respond(getTransportAssignments(actionPayload));
     if (request.action === "getTripPassengerManifest") return respond(getTripPassengerManifest(actionPayload));
