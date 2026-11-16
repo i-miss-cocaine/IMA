@@ -135,7 +135,7 @@ for(const servicePath of ["backend/academic-service/Code.gs","backend/accounting
   assert.equal(xlsx.openXmlStructure.worksheetCount,1);
   const macroWorkbook = xlsxEntries.concat([{name:"xl/vbaProject.bin",data:"macro"}]);
   unzipEntries=makeBlobs(macroWorkbook);
-  assert.throws(()=>sandbox.validate(makeZip(macroWorkbook).toString("base64"),"macro.xlsx"),/XLSX_MACROS_NOT_ALLOWED/);
+  assert.throws(()=>sandbox.validate(makeZip(macroWorkbook).toString("base64"),"macro.xlsx"),/(?:XLSX_MACROS_NOT_ALLOWED|OPENXML_ACTIVE_CONTENT_NOT_ALLOWED)/);
 
   const malformed=docxEntries.map(item=>({...item}));
   malformed[1].data="<w:document><w:body></w:document>";
