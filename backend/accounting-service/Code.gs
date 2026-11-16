@@ -3280,175 +3280,156 @@ function getEmployeeTrainingHistory(payload) {
 }
 
 function getLaborIncidentsHistory(payload) {
-  const {
-    empleadoId,
-    incidenciaId,
-    estado,
-    categoria,
-    userRole
-  } = payload || {};
-
-  // Restringir acceso solo a roles autorizados de RRHH / Dirección
-  const allowedRoles = ["RecursosHumanos", "Director", "Administrador", "Subdirector"];
-  if (userRole && !allowedRoles.includes(userRole)) {
-    throw new Error("Acceso denegado. Los registros de incidencias laborales y medidas disciplinarias están restringidos a la Oficina de Recursos Humanos y Dirección.");
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var role = normalizeVacationRole_(actor.role);
+  if (["recursoshumanos","director","administrador","subdirector"].indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED" };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var employeeAccess = getEmployeeResourceAccessIndex_(input, ss, actor);
+  if (!employeeAccess || employeeAccess.valid !== true) return { status: "error", code: employeeAccess && employeeAccess.code || "RESOURCE_OWNERSHIP_UNVERIFIED" };
+  var requestedEmployee = String(input.empleadoId || "").trim(), requestedIncident = String(input.incidenciaId || "").trim();
+  if (requestedEmployee && !employeeAccess.byUserId[requestedEmployee]) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  var incidentSheet = ss.getSheetByName("IncidenciasLaborales"), measureSheet = ss.getSheetByName("MedidasDisciplinarias");
+  var incidentRows = incidentSheet ? incidentSheet.getDataRange().getValues() : [];
+  var measureRows = measureSheet ? measureSheet.getDataRange().getValues() : [];
+  var incidentRequired = ["IncidenciaID","EmpleadoID","Fecha","Categoria","DescripcionObjetiva","ResponsableRegistro","Estado","ResponsabilidadEstablecida","DocumentacionDriveUrl","ObservacionesAclaraciones","HistorialAclaracionesJSON","CreadoPor","FechaCreacion"];
+  var measureRequired = ["MedidaID","IncidenciaID","EmpleadoID","TipoMedida","FundamentoDocumentado","FechaEfectiva","ResponsableAprobacion","EstadoMedida","DiasSuspension","ActaFirmadaDriveUrl","CreadoPor","FechaCreacion"];
+  function makeIndex(headers, required) {
+    var result = {};
+    required.forEach(function(name) { result[name] = headers.indexOf(name); });
+    return required.some(function(name) { return result[name] < 0; }) ? null : result;
   }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-
-  // Incidencias
-  const incSheet = getOrCreateSheet(ss, "IncidenciasLaborales");
-  const incData = incSheet.getDataRange().getValues();
-  let incidencias = [];
-
-  if (incData.length > 1) {
-    incidencias = incData.slice(1).filter(r => {
-      if (empleadoId && String(r[1]).trim() !== String(empleadoId).trim()) return false;
-      if (incidenciaId && String(r[0]).trim() !== String(incidenciaId).trim()) return false;
-      if (categoria && String(r[3]).toLowerCase() !== String(categoria).toLowerCase()) return false;
-      if (estado && String(r[6]).toLowerCase() !== String(estado).toLowerCase()) return false;
-      return true;
-    }).map(r => ({
-      incidenciaId: r[0],
-      empleadoId: r[1],
-      fecha: r[2],
-      categoria: r[3],
-      descripcionObjetiva: r[4],
-      responsableRegistro: r[5],
-      estado: r[6],
-      responsabilidadEstablecida: Boolean(r[7]),
-      documentacionDriveUrl: r[8],
-      observacionesAclaraciones: r[9],
-      historialAclaraciones: parseJsonSafe(r[10], []),
-      creadoPor: r[11],
-      fechaCreacion: r[12]
-    }));
-  }
-
-  // Medidas Disciplinarias
-  const medSheet = getOrCreateSheet(ss, "MedidasDisciplinarias");
-  const medData = medSheet.getDataRange().getValues();
-  let medidasDisciplinarias = [];
-
-  if (medData.length > 1) {
-    medidasDisciplinarias = medData.slice(1).filter(r => {
-      if (empleadoId && String(r[2]).trim() !== String(empleadoId).trim()) return false;
-      if (incidenciaId && String(r[1]).trim() !== String(incidenciaId).trim()) return false;
-      return true;
-    }).map(r => ({
-      medidaId: r[0],
-      incidenciaId: r[1],
-      empleadoId: r[2],
-      tipoMedida: r[3],
-      fundamentoDocumentado: r[4],
-      fechaEfectiva: r[5],
-      responsableAprobacion: r[6],
-      estadoMedida: r[7],
-      diasSuspension: parseInt(r[8] || 0, 10),
-      actaFirmadaDriveUrl: r[9],
-      fechaCreacion: r[11]
-    }));
-  }
-
-  return {
-    status: "success",
-    data: {
-      incidencias,
-      medidasDisciplinarias
-    }
-  };
+  var incidentIndex = incidentRows.length ? makeIndex(incidentRows[0].map(function(v) { return String(v || "").trim(); }), incidentRequired) : null;
+  var measureIndex = measureRows.length ? makeIndex(measureRows[0].map(function(v) { return String(v || "").trim(); }), measureRequired) : null;
+  if ((incidentRows.length && !incidentIndex) || (measureRows.length && !measureIndex)) return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
+  var allIncidents = incidentRows.length > 1 ? incidentRows.slice(1) : [], incidentCounts = {}, employeeByIncident = {};
+  allIncidents.forEach(function(row) {
+    var id = String(row[incidentIndex.IncidenciaID] || "").trim(), userId = String(row[incidentIndex.EmpleadoID] || "").trim();
+    if (id) incidentCounts[id] = (incidentCounts[id] || 0) + 1;
+    if (id) employeeByIncident[id] = userId;
+  });
+  if (requestedIncident && incidentCounts[requestedIncident] !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  var validIncidentIds = {}, incidencias = [];
+  allIncidents.forEach(function(row) {
+    var id = String(row[incidentIndex.IncidenciaID] || "").trim(), userId = String(row[incidentIndex.EmpleadoID] || "").trim();
+    var access = employeeAccess.byUserId[userId];
+    if (!id || incidentCounts[id] !== 1 || !access || (requestedEmployee && requestedEmployee !== userId) ||
+        (requestedIncident && requestedIncident !== id)) return;
+    var scope = assertEmployeeExpedienteScopeAccess_(input, ss, access.expedienteId);
+    if (!scope || scope.authorized !== true) return;
+    validIncidentIds[id] = userId;
+    var category = String(input.categoria || "").trim(), state = String(input.estado || "").trim();
+    if (category && String(row[incidentIndex.Categoria] || "").trim().toLowerCase() !== category.toLowerCase()) return;
+    if (state && String(row[incidentIndex.Estado] || "").trim().toLowerCase() !== state.toLowerCase()) return;
+    incidencias.push({
+      incidenciaId: row[incidentIndex.IncidenciaID], empleadoId: row[incidentIndex.EmpleadoID], fecha: row[incidentIndex.Fecha],
+      categoria: row[incidentIndex.Categoria], descripcionObjetiva: row[incidentIndex.DescripcionObjetiva],
+      responsableRegistro: row[incidentIndex.ResponsableRegistro], estado: row[incidentIndex.Estado],
+      responsabilidadEstablecida: Boolean(row[incidentIndex.ResponsabilidadEstablecida]),
+      documentacionDriveUrl: row[incidentIndex.DocumentacionDriveUrl], observacionesAclaraciones: row[incidentIndex.ObservacionesAclaraciones],
+      historialAclaraciones: parseJsonSafe(row[incidentIndex.HistorialAclaracionesJSON], []),
+      creadoPor: row[incidentIndex.CreadoPor], fechaCreacion: row[incidentIndex.FechaCreacion]
+    });
+  });
+  var measureCounts = {}, medidasDisciplinarias = [];
+  (measureRows.length > 1 ? measureRows.slice(1) : []).forEach(function(row) {
+    var id = String(row[measureIndex.MedidaID] || "").trim();
+    if (id) measureCounts[id] = (measureCounts[id] || 0) + 1;
+  });
+  (measureRows.length > 1 ? measureRows.slice(1) : []).forEach(function(row) {
+    var id = String(row[measureIndex.MedidaID] || "").trim();
+    var incidentId = String(row[measureIndex.IncidenciaID] || "").trim();
+    var userId = String(row[measureIndex.EmpleadoID] || "").trim();
+    var access = employeeAccess.byUserId[userId];
+    if (!id || measureCounts[id] !== 1 || !validIncidentIds[incidentId] ||
+        validIncidentIds[incidentId] !== userId || !access || (requestedEmployee && requestedEmployee !== userId) ||
+        (requestedIncident && requestedIncident !== incidentId)) return;
+    var scope = assertEmployeeExpedienteScopeAccess_(input, ss, access.expedienteId);
+    if (!scope || scope.authorized !== true) return;
+    medidasDisciplinarias.push({
+      medidaId: row[measureIndex.MedidaID], incidenciaId: row[measureIndex.IncidenciaID], empleadoId: row[measureIndex.EmpleadoID],
+      tipoMedida: row[measureIndex.TipoMedida], fundamentoDocumentado: row[measureIndex.FundamentoDocumentado],
+      fechaEfectiva: row[measureIndex.FechaEfectiva], responsableAprobacion: row[measureIndex.ResponsableAprobacion],
+      estadoMedida: row[measureIndex.EstadoMedida], diasSuspension: parseInt(row[measureIndex.DiasSuspension] || 0, 10),
+      actaFirmadaDriveUrl: row[measureIndex.ActaFirmadaDriveUrl], fechaCreacion: row[measureIndex.FechaCreacion]
+    });
+  });
+  return { status: "success", data: { incidencias: incidencias, medidasDisciplinarias: medidasDisciplinarias } };
 }
-
 function getWorkShiftsAndSubstitutionsHistory(payload) {
-  const { empleadoId, departamentoArea } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-
-  // 1. Asignaciones de Turnos
-  const turnosSheet = getOrCreateSheet(ss, "AsignacionesTurnosLaborales");
-  const turnosData = turnosSheet.getDataRange().getValues();
-  let turnos = [];
-
-  if (turnosData.length > 1) {
-    turnos = turnosData.slice(1).filter(r => {
-      if (empleadoId && String(r[1]).trim() !== String(empleadoId).trim()) return false;
-      if (departamentoArea && String(r[7]).toLowerCase() !== String(departamentoArea).toLowerCase()) return false;
-      return true;
-    }).map(r => ({
-      asignacionTurnoId: r[0],
-      empleadoId: r[1],
-      nombreTurno: r[2],
-      fechaInicio: r[3],
-      fechaFin: r[4],
-      horaEntrada: r[5],
-      horaSalida: r[6],
-      departamentoArea: r[7],
-      estado: r[8],
-      creadoPor: r[9],
-      fechaCreacion: r[10]
-    }));
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var role = normalizeVacationRole_(actor.role);
+  if (["recursoshumanos","director","administrador","subdirector"].indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED" };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var employeeAccess = getEmployeeResourceAccessIndex_(input, ss, actor);
+  if (!employeeAccess || employeeAccess.valid !== true) return { status: "error", code: employeeAccess && employeeAccess.code || "RESOURCE_OWNERSHIP_UNVERIFIED" };
+  var requestedEmployee = String(input.empleadoId || "").trim(), requestedDepartment = String(input.departamentoArea || "").trim();
+  if (requestedEmployee && !employeeAccess.byUserId[requestedEmployee]) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  function load(name, required) {
+    var sheet = ss.getSheetByName(name);
+    if (!sheet) return { rows: [], index: null };
+    var values = sheet.getDataRange().getValues();
+    if (!values || !values.length) return { rows: [], index: null };
+    var headers = values[0].map(function(v) { return String(v || "").trim(); }), index = {};
+    required.forEach(function(key) { index[key] = headers.indexOf(key); });
+    if (required.some(function(key) { return index[key] < 0; })) return { invalid: true };
+    return { rows: values.slice(1), index: index };
   }
-
-  // 2. Sustituciones
-  const sustSheet = getOrCreateSheet(ss, "SustitucionesPersonal");
-  const sustData = sustSheet.getDataRange().getValues();
-  let sustituciones = [];
-
-  if (sustData.length > 1) {
-    sustituciones = sustData.slice(1).filter(r => {
-      if (empleadoId && String(r[1]).trim() !== String(empleadoId).trim() && String(r[2]).trim() !== String(empleadoId).trim()) return false;
-      if (departamentoArea && String(r[8]).toLowerCase() !== String(departamentoArea).toLowerCase()) return false;
-      return true;
-    }).map(r => ({
-      sustitucionId: r[0],
-      empleadoSustitutoId: r[1],
-      empleadoSustituidoId: r[2],
-      fechaInicio: r[3],
-      fechaFin: r[4],
-      horaEntrada: r[5],
-      horaSalida: r[6],
-      motivoSustitucion: r[7],
-      departamentoArea: r[8],
-      estado: r[9],
-      creadoPor: r[10],
-      fechaCreacion: r[11]
-    }));
-  }
-
-  // 3. Solicitudes Horas Extras
-  const otSheet = getOrCreateSheet(ss, "SolicitudesHorasExtras");
-  const otData = otSheet.getDataRange().getValues();
-  let horasExtras = [];
-
-  if (otData.length > 1) {
-    horasExtras = otData.slice(1).filter(r => {
-      if (empleadoId && String(r[1]).trim() !== String(empleadoId).trim()) return false;
-      return true;
-    }).map(r => ({
-      solicitudId: r[0],
-      empleadoId: r[1],
-      fecha: r[2],
-      horasSolicitadas: r[3],
-      motivo: r[4],
-      estado: r[5],
-      aprobadoPor: r[6]
-    }));
-  }
-
-  return {
-    status: "success",
-    data: {
-      turnos,
-      sustituciones,
-      horasExtras,
-      totalTurnos: turnos.length,
-      totalSustituciones: sustituciones.length,
-      totalHorasExtras: horasExtras.length
-    }
-  };
+  var shifts = load("AsignacionesTurnosLaborales", ["AsignacionTurnoID","EmpleadoID","NombreTurno","FechaInicio","FechaFin","HoraEntrada","HoraSalida","DepartamentoArea","Estado","CreadoPor","FechaCreacion"]);
+  var substitutions = load("SustitucionesPersonal", ["SustitucionID","EmpleadoSustitutoID","EmpleadoSustituidoID","FechaInicio","FechaFin","HoraEntrada","HoraSalida","MotivoSustitucion","DepartamentoArea","Estado","CreadoPor","FechaCreacion"]);
+  var overtime = load("SolicitudesHorasExtras", ["SolicitudID","EmpleadoID","Fecha","HorasSolicitadas","Motivo","Estado","AprobadoPor"]);
+  if (shifts.invalid || substitutions.invalid || overtime.invalid) return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
+  var shiftCounts = {}, substitutionCounts = {}, overtimeCounts = {};
+  function countIds(rows, index, field, target) { rows.forEach(function(row) { var id = String(row[index[field]] || "").trim(); if (id) target[id] = (target[id] || 0) + 1; }); }
+  countIds(shifts.rows, shifts.index || {}, "AsignacionTurnoID", shiftCounts);
+  countIds(substitutions.rows, substitutions.index || {}, "SustitucionID", substitutionCounts);
+  countIds(overtime.rows, overtime.index || {}, "SolicitudID", overtimeCounts);
+  var turnos = [], sustituciones = [], horasExtras = [];
+  shifts.rows.forEach(function(row) {
+    var id = String(row[shifts.index.AsignacionTurnoID] || "").trim(), userId = String(row[shifts.index.EmpleadoID] || "").trim();
+    var access = employeeAccess.byUserId[userId], department = String(row[shifts.index.DepartamentoArea] || "").trim();
+    if (!id || shiftCounts[id] !== 1 || !access || (requestedEmployee && requestedEmployee !== userId) ||
+        (requestedDepartment && requestedDepartment !== department)) return;
+    var scope = assertEmployeeExpedienteScopeAccess_(input, ss, access.expedienteId);
+    if (!scope || scope.authorized !== true) return;
+    turnos.push({ asignacionTurnoId: row[shifts.index.AsignacionTurnoID], empleadoId: row[shifts.index.EmpleadoID],
+      nombreTurno: row[shifts.index.NombreTurno], fechaInicio: row[shifts.index.FechaInicio], fechaFin: row[shifts.index.FechaFin],
+      horaEntrada: row[shifts.index.HoraEntrada], horaSalida: row[shifts.index.HoraSalida],
+      departamentoArea: row[shifts.index.DepartamentoArea], estado: row[shifts.index.Estado],
+      creadoPor: row[shifts.index.CreadoPor], fechaCreacion: row[shifts.index.FechaCreacion] });
+  });
+  substitutions.rows.forEach(function(row) {
+    var id = String(row[substitutions.index.SustitucionID] || "").trim();
+    var substituteId = String(row[substitutions.index.EmpleadoSustitutoID] || "").trim();
+    var replacedId = String(row[substitutions.index.EmpleadoSustituidoID] || "").trim();
+    var substitute = employeeAccess.byUserId[substituteId], replaced = employeeAccess.byUserId[replacedId];
+    if (!id || substitutionCounts[id] !== 1 || !substitute || !replaced ||
+        (requestedEmployee && requestedEmployee !== substituteId && requestedEmployee !== replacedId) ||
+        (requestedDepartment && requestedDepartment !== String(row[substitutions.index.DepartamentoArea] || "").trim())) return;
+    var substituteScope = assertEmployeeExpedienteScopeAccess_(input, ss, substitute.expedienteId);
+    var replacedScope = assertEmployeeExpedienteScopeAccess_(input, ss, replaced.expedienteId);
+    if (!substituteScope || substituteScope.authorized !== true || !replacedScope || replacedScope.authorized !== true) return;
+    sustituciones.push({ sustitucionId: row[substitutions.index.SustitucionID],
+      empleadoSustitutoId: row[substitutions.index.EmpleadoSustitutoID], empleadoSustituidoId: row[substitutions.index.EmpleadoSustituidoID],
+      fechaInicio: row[substitutions.index.FechaInicio], fechaFin: row[substitutions.index.FechaFin],
+      horaEntrada: row[substitutions.index.HoraEntrada], horaSalida: row[substitutions.index.HoraSalida],
+      motivoSustitucion: row[substitutions.index.MotivoSustitucion], departamentoArea: row[substitutions.index.DepartamentoArea],
+      estado: row[substitutions.index.Estado], creadoPor: row[substitutions.index.CreadoPor], fechaCreacion: row[substitutions.index.FechaCreacion] });
+  });
+  overtime.rows.forEach(function(row) {
+    var id = String(row[overtime.index.SolicitudID] || "").trim(), userId = String(row[overtime.index.EmpleadoID] || "").trim();
+    var access = employeeAccess.byUserId[userId];
+    if (!id || overtimeCounts[id] !== 1 || !access || (requestedEmployee && requestedEmployee !== userId)) return;
+    var scope = assertEmployeeExpedienteScopeAccess_(input, ss, access.expedienteId);
+    if (!scope || scope.authorized !== true) return;
+    horasExtras.push({ solicitudId: row[overtime.index.SolicitudID], empleadoId: row[overtime.index.EmpleadoID],
+      fecha: row[overtime.index.Fecha], horasSolicitadas: row[overtime.index.HorasSolicitadas], motivo: row[overtime.index.Motivo],
+      estado: row[overtime.index.Estado], aprobadoPor: row[overtime.index.AprobadoPor] });
+  });
+  return { status: "success", data: { turnos: turnos, sustituciones: sustituciones, horasExtras: horasExtras,
+    totalTurnos: turnos.length, totalSustituciones: sustituciones.length, totalHorasExtras: horasExtras.length } };
 }
-
-// TAREA RH-08: Implementar la planificación de necesidades de personal
-
 function uploadEmployeeDocument(payload) {
   var input=payload||{},actor=getVerifiedAccountingIdentity_(input);
   if(!actor||actor.authorized!==true)return{status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
