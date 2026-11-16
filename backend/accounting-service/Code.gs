@@ -2076,7 +2076,7 @@ function recordStaffCheckIn(payload) {
   if(["Entrada","Salida"].indexOf(type)===-1)return {status:"error",code:"INVALID_ATTENDANCE_TYPE"};
   var ss=SpreadsheetApp.openById(SPREADSHEET_ID),access=resolveStaffAttendanceEmployeeAccess_(input,ss,input.empleadoId,actor);
   if(!access.authorized)return {status:"error",code:access.code};
-  if(role!=="recursoshumanos"&&role!=="administrador")return {status:"error",code:"ROLE_NOT_ALLOWED"};
+  if(role!=="recursoshumanos"&&role!=="administrador"&&role!=="empleado")return {status:"error",code:"ROLE_NOT_ALLOWED"};
   var headers=["AsistenciaID","Fecha","EmpleadoId","EmpleadoNombre","HoraEntrada","HoraSalida","MinutosTardanza","EstadoAsistencia","Observaciones"];
   var sheet=ss.getSheetByName("DeduccionesAsistencia");
   if(!sheet)return {status:"error",code:"RESOURCE_SCHEMA_INVALID"};
@@ -2086,6 +2086,12 @@ function recordStaffCheckIn(payload) {
   var lock=LockService.getScriptLock();
   if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY"};
   try{
+    var lockedActor=getVerifiedAccountingIdentity_(input);
+    if(!lockedActor||lockedActor.authorized!==true||String(lockedActor.userId||"")!==String(actor.userId||"")||
+      normalizeVacationRole_(lockedActor.role)!==role)return {status:"error",code:"VERIFIED_IDENTITY_CHANGED"};
+    var lockedAccess=resolveStaffAttendanceEmployeeAccess_(input,ss,input.empleadoId,lockedActor);
+    if(!lockedAccess.authorized||String(lockedAccess.employeeId||"")!==String(access.employeeId||""))return {status:"error",code:lockedAccess.code||"RESOURCE_NOT_FOUND"};
+    access=lockedAccess;
     var rows=values.slice(1),today=rows.map(function(row,index){return {row:row,index:index};}).filter(function(item){
       return String(item.row[1]||"").slice(0,10)===date&&String(item.row[2]||"").trim()===access.employeeId;
     });
