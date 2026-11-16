@@ -3876,9 +3876,10 @@ function createPurchaseRequest(payload) {
       return { status: "error", code: "RESOURCE_NOT_FOUND" };
     }
     var actor = access.actor;
-    var prepared = input.detalleItems.map(function(source) {
+    var classifications = input.detalleItems.map(function(x) { return { clasificacionInventario:normalizePurchaseAssetClassification_(x) }; });
+    var prepared = input.detalleItems.map(function(source, index) {
       source = source || {};
-      var classification = normalizePurchaseAssetClassification_(source);
+      var classification = classifications[index].clasificacionInventario;
       var lookup = source.catalogItemId || source.itemId || source.ItemId || source.codigoItem || source.itemCodigo;
       var item = catalogFindItem_(ss, lookup, true);
       var unit = catalogFindUnit_(ss, source.unidadMedida || source.unidad || item.baseUnit);
