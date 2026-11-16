@@ -334,7 +334,7 @@ assert.ok(extractFunction(accounting,"assertPaymentVoucherOwnerAccess_").include
 assert.ok(extractFunction(accounting,"getPaymentVouchers").includes("assertPaymentVoucherOwnerAccess_"));
 assert.ok(extractFunction(accounting,"reviewPaymentVoucher").includes("assertPaymentVoucherOwnerAccess_"));
 assert.ok(accounting.includes('"getPaymentVoucherFile"'),"new file action must be declared in role permissions");
-assert.ok(accounting.includes('case "getPaymentVoucherFile": result = getPaymentVoucherFile(payload); break;'));
+assert.ok(accounting.includes('if (request.action === "getPaymentVoucherFile") return respond(getPaymentVoucherFile(actionPayload));'),"authenticated doPost router exposes the private voucher file action");
 const selfPortal=context.getEmployeeSelfServicePortal(actor("employee"));
 assert.equal(selfPortal.status,"success");
 assert.equal(selfPortal.data.effectiveUserId,"U-EMP");
