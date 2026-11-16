@@ -8,9 +8,13 @@ const evidenceStart = source.indexOf("function validateEvidenceFileAndPermission
 const evidenceEnd = source.indexOf("\nfunction ", evidenceStart + 10);
 const binaryStart = source.indexOf("function validateFileBinaryIntegrity(fileData, fileName, options)");
 const binaryEnd = source.indexOf("\nfunction ", binaryStart + 10);
+const pageStart = source.indexOf("function classifyPdfDocumentPages_(rawBytes)");
+const pageEnd = source.indexOf("\nfunction ", pageStart + 10);
 assert.ok(evidenceStart >= 0 && evidenceEnd > evidenceStart, "Drive evidence validator must exist");
 assert.ok(binaryStart >= 0 && binaryEnd > binaryStart, "binary integrity validator must exist");
-const validatorCode = source.slice(evidenceStart, evidenceEnd) + "\n" + source.slice(binaryStart, binaryEnd);
+assert.ok(pageStart >= 0 && pageEnd > pageStart, "PDF page classifier must exist");
+const validatorCode = source.slice(evidenceStart, evidenceEnd) + "\n" +
+  source.slice(binaryStart, binaryEnd) + "\n" + source.slice(pageStart, pageEnd);
 
 const pdfBytes = Buffer.from("%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\nstartxref\n10\n%%EOF\n", "utf8");
 let actualMime = "application/pdf";
