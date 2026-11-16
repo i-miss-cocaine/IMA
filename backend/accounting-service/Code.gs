@@ -3875,9 +3875,7 @@ function createPurchaseRequest(payload) {
     if (access.scope.institutionWide !== true && allowedDepartments.indexOf(String(department.departmentId)) === -1) {
       return { status: "error", code: "RESOURCE_NOT_FOUND" };
     }
-    var actor = getVerifiedAccountingIdentity_(input);
-    if (!actor || actor.authorized !== true || String(actor.userId) !== String(access.actor.userId) ||
-        String(actor.role) !== String(access.actor.role)) return { status: "error", code: "VERIFIED_IDENTITY_CHANGED" };
+    var actor = access.actor;
     var prepared = input.detalleItems.map(function(source) {
       source = source || {};
       var classification = normalizePurchaseAssetClassification_(source);
