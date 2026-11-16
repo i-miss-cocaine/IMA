@@ -2798,7 +2798,12 @@ function resolveStaffingNeedsAccess_(payload, ss, writeRequired) {
   var role = normalizeVacationRole_(actor.role);
   if (writeRequired && role !== "recursoshumanos") return { authorized:false, code:"ROLE_NOT_ALLOWED" };
   if (!writeRequired && ["recursoshumanos","administrador"].indexOf(role) < 0) return { authorized:false, code:"ROLE_NOT_ALLOWED" };
-  var scope = getVerifiedDepartmentScopeForSession_(payload || {});
+  var scope;
+  if (typeof getVerifiedDepartmentScopeForSession_ === "function" && getVerifiedDepartmentScopeForSession_.length >= 3) {
+    scope = getVerifiedDepartmentScopeForSession_(payload || {}, ss, actor);
+  } else {
+    scope = getVerifiedAccountingDepartmentScope_(payload || {}, ss, actor);
+  }
   var scopeRole = scope && (scope.roleId || scope.role) || "";
   if (!scope || (scope.valid !== true && scope.authorized !== true) ||
       String(scope.userId || "") !== String(actor.userId || "") ||
