@@ -4258,7 +4258,7 @@ function logStudentDocumentAccessDecision_(request, actor, documentId, version, 
         decision: allowed ? "ALLOW" : "DENY",
         reasonCode: String(reasonCode || ""),
         correlationId: String(request && request.correlationId || "")
-      }, String(actor && actor.role || "");
+      }, String(actor && actor.role || ""));
   } catch (_) {}
 }
 
