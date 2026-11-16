@@ -10480,6 +10480,18 @@ function maintenancePlanTargets_(ss,plan){
  });
  return matches.map(r=>String(r[id]||"").trim()).filter(Boolean);
 }
+function maintenancePlanAssertAssetScope_(ss,p,actor,assetRef,expectedDepartmentId){
+ const sh=ss.getSheetByName("ActivosPatrimoniales");if(!sh)throw new Error("MAINTENANCE_ASSET_SHEET_REQUIRED");const rows=sh.getDataRange().getValues();if(rows.length<2)throw new Error("MAINTENANCE_ASSET_NOT_FOUND");
+ const h=rows[0].map(v=>String(v||"").trim().toLowerCase()),find=names=>names.map(n=>h.indexOf(n.toLowerCase())).find(i=>i>=0),id=find(["activoid"]),code=find(["codigopatrimonial","codigo patrimonial"]),name=find(["nombre"]),custodian=find(["custodianuserid","custodio userid","custodiouserid"]),dept=find(["departamentoid","departamento","departamentoresponsable"]);
+ const matches=rows.slice(1).filter(r=>[id,code,name].some(i=>i>=0&&String(r[i]||"").trim().toLowerCase()===String(assetRef).trim().toLowerCase()));if(matches.length!==1)throw new Error(matches.length?"MAINTENANCE_ASSET_REFERENCE_AMBIGUOUS":"MAINTENANCE_ASSET_NOT_FOUND");
+ const row=matches[0],rawAssetDept=dept>=0?String(row[dept]||"").trim():"";let rawCustodianDept="";
+ if(custodian>=0&&String(row[custodian]||"").trim()){const employeeSheet=ss.getSheetByName("ExpedientesLaborales");if(!employeeSheet)throw new Error("MAINTENANCE_DEPARTMENT_UNRESOLVED");const er=employeeSheet.getDataRange().getValues(),eh=er[0].map(v=>String(v||"").trim().toLowerCase()),user=eh.indexOf("userid"),employeeDept=eh.indexOf("departamento");if(user<0||employeeDept<0)throw new Error("MAINTENANCE_EMPLOYEE_SCHEMA_INVALID");const found=er.slice(1).filter(x=>String(x[user]||"").trim()===String(row[custodian]).trim());if(found.length!==1)throw new Error(found.length?"MAINTENANCE_ASSET_CUSTODIAN_AMBIGUOUS":"MAINTENANCE_DEPARTMENT_UNRESOLVED");rawCustodianDept=String(found[0][employeeDept]||"").trim();if(!rawCustodianDept)throw new Error("MAINTENANCE_DEPARTMENT_UNRESOLVED");}
+ const resolve=value=>value?inventoryAssertDepartmentScope_(p,ss,actor,value).department.departmentId:"",assetDept=resolve(rawAssetDept),custodianDept=resolve(rawCustodianDept);
+ if(assetDept&&custodianDept&&assetDept!==custodianDept)throw new Error("MAINTENANCE_ASSET_DEPARTMENT_CONFLICT");
+ const actual=custodianDept||assetDept;if(actual&&actual!==String(expectedDepartmentId))throw new Error("MAINTENANCE_ASSET_OUTSIDE_PLAN_DEPARTMENT");
+ return true;
+}
+
 function maintenancePlanNormalize_(p,existing,actor,ss){
  const freq=String(p.frecuenciaTipo||(existing&&existing[6])||"MENSUAL").toUpperCase(),freqValue=Number(p.frecuenciaValor!==undefined?p.frecuenciaValor:(existing&&existing[7])||1);
  if(!["DIARIA","SEMANAL","QUINCENAL","MENSUAL","TRIMESTRAL","SEMESTRAL","ANUAL","DIAS","HORAS_USO"].includes(freq)||!Number.isInteger(freqValue)||freqValue<1||freqValue>3650)throw new Error("MAINTENANCE_PLAN_FREQUENCY_INVALID");
@@ -10489,7 +10501,7 @@ function maintenancePlanNormalize_(p,existing,actor,ss){
  if(freq!=="HORAS_USO"&&(!next||!last||next<last))throw new Error("MAINTENANCE_PLAN_NEXT_DATE_REQUIRED");
  if(freq==="HORAS_USO"&&(!Number.isFinite(readingLast)||!Number.isFinite(readingNext)||readingLast<0||readingNext<=readingLast))throw new Error("MAINTENANCE_PLAN_USAGE_THRESHOLD_REQUIRED");
  const dept=String(p.departamento||(existing&&existing[18])||"").trim();if(!dept)throw new Error("MAINTENANCE_DEPARTMENT_REQUIRED");
- const scope=inventoryAssertDepartmentScope_(p,ss,actor,dept),check=p.checklist!==undefined?p.checklist:(existing?JSON.parse(String(existing[12]||"[]")):[]),parts=p.repuestosNecesarios!==undefined?p.repuestosNecesarios:(existing?JSON.parse(String(existing[13]||"[]")):[]);
+ const scope=inventoryAssertDepartmentScope_(p,ss,actor,dept),targets=maintenancePlanTargets_(ss,{tipoObjetivo:tipo,objetivoId:target,categoria:String(p.categoria||(existing&&existing[5])||"")});targets.forEach(ref=>maintenancePlanAssertAssetScope_(ss,p,actor,ref,scope.department.departmentId));const check=p.checklist!==undefined?p.checklist:(existing?JSON.parse(String(existing[12]||"[]")):[]),parts=p.repuestosNecesarios!==undefined?p.repuestosNecesarios:(existing?JSON.parse(String(existing[13]||"[]")):[]);
  if(!Array.isArray(check)||!Array.isArray(parts)||check.some(x=>typeof x!=="string"||!x.trim())||parts.some(x=>!x||typeof x!=="object"||!String(x.catalogItemId||x.itemCodigo||x.itemId||"").trim()||!Number.isFinite(Number(x.cantidad))||Number(x.cantidad)<=0))throw new Error("MAINTENANCE_PLAN_LIST_INVALID");
  const anticip=Number(p.diasAnticipacion!==undefined?p.diasAnticipacion:(existing&&existing[17])||30),duracion=Number(p.duracionEstimadaHoras!==undefined?p.duracionEstimadaHoras:(existing&&existing[14])||0),costo=Number(p.costoPresupuestado!==undefined?p.costoPresupuestado:(existing&&existing[15])||0),inactividad=Number(p.tiempoInactividadHoras!==undefined?p.tiempoInactividadHoras:(existing&&existing[16])||0);if(!Number.isInteger(anticip)||anticip<0||anticip>90)throw new Error("MAINTENANCE_PLAN_ALERT_WINDOW_INVALID");if([duracion,costo,inactividad].some(x=>!Number.isFinite(x)||x<0))throw new Error("MAINTENANCE_PLAN_ESTIMATE_INVALID");
  const estadoRaw=String(p.estado||(existing&&existing[1])||"Activo").toUpperCase();if(!["ACTIVO","INACTIVO"].includes(estadoRaw))throw new Error("MAINTENANCE_PLAN_STATE_INVALID");const estado=estadoRaw==="ACTIVO"?"Activo":"Inactivo";
