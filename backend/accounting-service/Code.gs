@@ -1285,7 +1285,7 @@ function validateRolePermission(actorOrPayload, action) {
     return voucherSelfRoles.indexOf(voucherRole) !== -1
       ? { authorized: true, actor: actor } : { authorized: false, code: "ROLE_NOT_ALLOWED" };
   }
-  var employeeScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "recordStaffCheckIn", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitLeaveVacationRequest", "submitVacationRequest", "getLeaveVacationRequests", "getVacationRequests", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "manageProfessionalDevelopmentPlan"];
+  var employeeScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "getLoanAmortizationSchedule", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "recordStaffCheckIn", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitLeaveVacationRequest", "submitVacationRequest", "getLeaveVacationRequests", "getVacationRequests", "getLaborIncidentsHistory", "getWorkShiftsAndSubstitutionsHistory", "manageProfessionalDevelopmentPlan"];
   if (employeeScopeActions.indexOf(String(action || "")) !== -1) {
     var role = normalizeVacationRole_(actor.role), staffRoles = ["recursoshumanos","director","subdirector","administrador"];
     var selfRoles = ["empleado","profesor"], staffOnly = ["manageProfessionalDevelopmentPlan","getLaborIncidentsHistory","getWorkShiftsAndSubstitutionsHistory"];
