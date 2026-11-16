@@ -1845,9 +1845,9 @@ function manageTrainingCourse(payload) {
   var headers=["CursoID","NombreCurso","Categoria","ProveedorResponsable","Modalidad","DuracionHoras","Requisitos","DirigidoA","Estado","CreadoPor","FechaCreacion","UltimaModificacion"];
   var snapshot=ensureTrainingCourseWriteSheet_(ss,headers);
   if(!snapshot.valid)return {status:"error",code:snapshot.code};
-  var name=String(input.nombreCurso||"").trim(),duration=Number(input.duracionHoras);
+  var name=String(input.nombreCurso||"").trim(),duration=input.duracionHoras===undefined?null:Number(input.duracionHoras);
   if(!name)return {status:"error",code:"TRAINING_COURSE_NAME_REQUIRED"};
-  if(!isFinite(duration)||duration<=0||duration>10000)return {status:"error",code:"TRAINING_COURSE_DURATION_INVALID"};
+  if(duration!==null&&(!isFinite(duration)||duration<=0||duration>10000))return {status:"error",code:"TRAINING_COURSE_DURATION_INVALID"};
   var requirements=input.requisitos===undefined?[]:input.requisitos;
   if(typeof requirements==="string"){try{requirements=JSON.parse(requirements);}catch(_){requirements=requirements.split(",").map(function(v){return v.trim();}).filter(Boolean);}}
   if(!Array.isArray(requirements)||requirements.length>100)return {status:"error",code:"TRAINING_COURSE_REQUIREMENTS_INVALID"};
@@ -1858,6 +1858,7 @@ function manageTrainingCourse(payload) {
     if(id&&matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND"};
     var now=new Date();
     if(!id){
+      if(duration===null)return {status:"error",code:"TRAINING_COURSE_DURATION_INVALID"};
       id="CURS-CAP-"+String(Utilities.getUuid()).replace(/-/g,"");
       if(snapshot.rows.some(function(row){return String(row[0]||"")===id;}))return {status:"error",code:"TRAINING_COURSE_ID_COLLISION"};
       snapshot.sheet.appendRow([id,name,String(input.categoria||"General").slice(0,100),String(input.proveedorResponsable||"").slice(0,200),
@@ -1868,7 +1869,7 @@ function manageTrainingCourse(payload) {
       next[1]=name;next[2]=String(input.categoria===undefined?old[2]:input.categoria).slice(0,100);
       next[3]=String(input.proveedorResponsable===undefined?old[3]:input.proveedorResponsable).slice(0,200);
       next[4]=String(input.modalidad===undefined?old[4]:input.modalidad).slice(0,60);
-      next[5]=duration;next[6]=JSON.stringify(requirements);
+      next[5]=duration===null?old[5]:duration;next[6]=JSON.stringify(requirements);
       next[7]=String(input.dirigidoA===undefined?old[7]:input.dirigidoA).slice(0,200);
       next[8]=String(input.estado===undefined?old[8]:input.estado).slice(0,40);next[11]=now;
       try{snapshot.sheet.getRange(matches[0].index+2,1,1,headers.length).setValues([next]);}
