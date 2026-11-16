@@ -2532,19 +2532,22 @@ function verifyPaymentVoucherEvidence_(ss, record, operation, actor) {
   }
   try {
     var file = DriveApp.getFileById(fileId);
-    if (!file || file.isTrashed() || file.getSharingAccess() !== DriveApp.Access.PRIVATE ||
-        String(file.getName() || "") !== String(record.NombreOriginal || "")) {
-      throw new Error("EVIDENCE_TAMPERING_DETECTED");
-    }
+    if (!file || file.isTrashed()) return { status: "error", code: "VOUCHER_FILE_UNAVAILABLE" };
+    if (file.getSharingAccess() !== DriveApp.Access.PRIVATE) return { status: "error", code: "VOUCHER_FILE_NOT_PRIVATE" };
+    if (String(file.getName() || "") !== String(record.NombreOriginal || "")) throw new Error("EVIDENCE_TAMPERING_DETECTED");
     var blob = file.getBlob(), bytes = blob.getBytes();
+    if (!bytes || !bytes.length) return { status: "error", code: "VOUCHER_FILE_EMPTY" };
     var actualMime = String(blob.getContentType() || file.getMimeType() || "").trim().toLowerCase();
     var expectedMime = String(record.MimeType || "").trim().toLowerCase();
-    var actualHash = computeDocumentSHA256(bytes).toLowerCase();
     var validation = validateFileBinaryIntegrity(Utilities.base64Encode(bytes), String(record.NombreOriginal || "voucher.pdf"), {
       maxSizeBytes: 10 * 1024 * 1024, allowedExtensions: [".pdf"]
     });
-    if (!bytes || bytes.length !== expectedSize || actualMime !== expectedMime ||
-        validation.mimeType !== expectedMime || actualHash !== expectedHash) throw new Error("EVIDENCE_TAMPERING_DETECTED");
+    if (!validation || validation.valid !== true || expectedMime !== "application/pdf" ||
+        actualMime !== expectedMime || validation.mimeType !== expectedMime) {
+      return { status: "error", code: "VOUCHER_FILE_TYPE_NOT_ALLOWED" };
+    }
+    var actualHash = computeDocumentSHA256(bytes).toLowerCase();
+    if (bytes.length !== expectedSize || actualHash !== expectedHash) throw new Error("EVIDENCE_TAMPERING_DETECTED");
     return { status: "success", integrityVerified: true, integrityStatus: "VERIFICADO",
       sha256Actual: actualHash, sha256: actualHash, versionNumero: version, sizeBytes: bytes.length,
       mimeType: actualMime, file: file, bytes: bytes };
@@ -2566,7 +2569,6 @@ function verifyPaymentVoucherEvidence_(ss, record, operation, actor) {
     return { status: "error", code: "EVIDENCE_TAMPERING_DETECTED", integrityVerified: false, integrityPolicy: policy };
   }
 }
-
 function assertPaymentVoucherOwnerAccess_(payload,targetUserId,options) {
   var input=payload||{},actor=getVerifiedAccountingIdentity_(input);
   if(!actor||actor.authorized!==true)return{authorized:false,code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};

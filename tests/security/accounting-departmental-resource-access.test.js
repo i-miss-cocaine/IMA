@@ -178,6 +178,11 @@ const files={
  FILE_EMPTY_123456789012345678901234567890:{isTrashed:()=>false,getSharingAccess:()=>"PRIVATE",setSharing:()=>{},getName:()=>"voucher-empty.pdf",getMimeType:()=>"application/pdf",getBlob:()=>({getBytes:()=>[],getContentType:()=>"application/pdf"})},
  FILE_PUBLIC_123456789012345678901234567890:{isTrashed:()=>false,getSharingAccess:()=>"ANYONE_WITH_LINK",getName:()=>"voucher-public.pdf",getMimeType:()=>"application/pdf",getBlob:()=>({getBytes:()=>Array.from(fileBytes),getContentType:()=>"application/pdf"})}
 };
+const voucherEvidenceHeaders=["AprobadoPor","SolicitudID","EvidenciaID","DriveFileID","NombreOriginal","EsVersionActual","EstadoIntegridad","SHA256","VersionNumero","SizeBytes","MimeType","FechaRecepcion","DecisionIntegrityWarning","DecisionHash","DecisionState","ComprobanteGrupoID","DecisionActor","DecisionDate"];
+rows.ComprobantesPago[0].push(...voucherEvidenceHeaders);
+function makeVoucherEvidenceMetadata_(id,fileId,fileName,mimeType,bytes,sizeOverride){const actualBytes=bytes||Buffer.alloc(0),hash=require("node:crypto").createHash("sha256").update(actualBytes).digest("hex");return ["","",id,fileId,fileName,true,"VERIFICADO",hash,1,sizeOverride===undefined?actualBytes.length:sizeOverride,mimeType,new Date("2026-01-04T12:00:00.000Z"),false,"","Pendiente",id,"",""];}
+rows.ComprobantesPago.slice(1).forEach(row=>{const map={"VCH-A":["FILE_A_123456789012345678901234567890","voucher-a.pdf"],"VCH-B":["FILE_B_123456789012345678901234567890","voucher-b.pdf"],"VCH-N":["FILE_N_123456789012345678901234567890","voucher-n.pdf"]};const evidence=map[String(row[0])];if(!evidence)throw new Error("Missing voucher evidence fixture: "+row[0]);row.push(...makeVoucherEvidenceMetadata_(row[0],evidence[0],evidence[1],"application/pdf",fileBytes));});
+function makeVoucherEvidenceFixtureRow_(id,fileId,fileName,mimeType,bytes,sizeOverride){const row=[id,new Date("2026-01-04"),"U-STUDENT","Alumno A","GRAL",100,"Transferencia","REF-"+id,"https://lh3.googleusercontent.com/d/"+fileId,"En Revisión",""];row.push(...makeVoucherEvidenceMetadata_(id,fileId,fileName,mimeType,bytes,sizeOverride));return row;}
 let payrollFileSequence=0;
 const payrollPdfBytes=Array.from(Buffer.from("%PDF-1.4\n% fixture PDF\n"));
 const payrollFolder={
@@ -203,7 +208,7 @@ const context={
  getOrCreateSheet:(spreadsheet,name)=>spreadsheet.getSheetByName(name)||makeSheet([[]]),
  DriveApp:{Access:{PRIVATE:"PRIVATE"},Permission:{NONE:"NONE"},getRootFolder:()=>payrollRoot,getFileById:id=>{if(!files[id])throw new Error("File not found");return files[id];}},
  Utilities:{base64Encode:bytes=>Buffer.from(bytes).toString("base64"),base64Decode:value=>Array.from(Buffer.from(value,"base64")),newBlob:value=>({getBytes:()=>Array.from(Buffer.from(String(value),"utf8"))}),computeDigest:(_algorithm,value)=>Array.from(require("node:crypto").createHash("sha256").update(Buffer.from(value.map(v=>v<0?v+256:v))).digest()).map(v=>v>127?v-256:v),DigestAlgorithm:{SHA_256:"SHA_256"}},
- computeDocumentSHA256:value=>require("node:crypto").createHash("sha256").update(Buffer.from(value)).digest("hex"),validateFileBinaryIntegrity:(data,name)=>({valid:true,mimeType:String(name).toLowerCase().endsWith(".pdf")?"application/pdf":"application/octet-stream",byteLength:Buffer.from(data,"base64").length}),DocumentApp:payrollDocumentApp,MimeType:{PDF:"application/pdf"},getParentDriveFolder:()=>payrollRoot,getOrCreateFolderNews:()=>payrollFolder,
+ computeDocumentSHA256:value=>require("node:crypto").createHash("sha256").update(Buffer.from(value)).digest("hex"),validateFileBinaryIntegrity:(data,name,options)=>{const bytes=Buffer.from(data,"base64"),isPdf=String(name).toLowerCase().endsWith(".pdf");return{valid:isPdf&&bytes.length>0&&bytes.length<=(options&&options.maxSizeBytes||Infinity),mimeType:isPdf?"application/pdf":"application/octet-stream",byteLength:bytes.length};},DocumentApp:payrollDocumentApp,MimeType:{PDF:"application/pdf"},getParentDriveFolder:()=>payrollRoot,getOrCreateFolderNews:()=>payrollFolder,
  logStructuredEvent:()=>{}
 };
 vm.runInNewContext(code+"\nthis.assertEmployeeExpedienteScopeAccess_=assertEmployeeExpedienteScopeAccess_;this.assertPaymentVoucherOwnerAccess_=assertPaymentVoucherOwnerAccess_;this.getEmployeeDocuments=getEmployeeDocuments;this.getEmployeeContracts=getEmployeeContracts;this.getEmployeeContractAlerts=getEmployeeContractAlerts;this.getEmployeeTrainingHistory=getEmployeeTrainingHistory;this.getLaborIncidentsHistory=getLaborIncidentsHistory;this.getWorkShiftsAndSubstitutionsHistory=getWorkShiftsAndSubstitutionsHistory;this.getStaffAttendanceLogs=getStaffAttendanceLogs;this.recordStaffCheckIn=recordStaffCheckIn;this.getStaffPayrollReceipt=getStaffPayrollReceipt;this.getEmployeeLoansAdvances=getEmployeeLoansAdvances;this.getLoanAmortizationSchedule=getLoanAmortizationSchedule;this.getEmployeeRecords=getEmployeeRecords;this.getEmployeeSelfServicePortal=getEmployeeSelfServicePortal;this.uploadEmployeeDocument=uploadEmployeeDocument;this.uploadPaymentVoucher=uploadPaymentVoucher;this.getPaymentVouchers=getPaymentVouchers;this.getPaymentVoucherFile=getPaymentVoucherFile;this.reviewPaymentVoucher=reviewPaymentVoucher;this.generatePayrollReceiptPDF=generatePayrollReceiptPDF;this.getPayrollReceiptPDFFile=getPayrollReceiptPDFFile;",context);
@@ -282,9 +287,9 @@ assert.deepEqual(Array.from(context.getPaymentVouchers(actor("guardian")).compro
 assert.deepEqual(Array.from(context.getPaymentVouchers(actor("staffA")).comprobantes,c=>c.comprobanteId),["VCH-A"]);
 assert.deepEqual(Array.from(context.getPaymentVouchers(actor("admin")).comprobantes,c=>c.comprobanteId),["VCH-A","VCH-B"],"institution-wide access still requires a registered resource owner");
 rows.ComprobantesPago.push(
- ["VCH-TRASHED",new Date("2026-01-04"),"U-STUDENT","Alumno A","GRAL",100,"Transferencia","REF-T","https://lh3.googleusercontent.com/d/FILE_TRASHED_123456789012345678901234567890","En Revisión",""],
- ["VCH-BADTYPE",new Date("2026-01-05"),"U-STUDENT","Alumno A","GRAL",100,"Transferencia","REF-X","https://lh3.googleusercontent.com/d/FILE_BADTYPE_123456789012345678901234567890","En Revisión",""],
- ["VCH-EMPTY",new Date("2026-01-06"),"U-STUDENT","Alumno A","GRAL",100,"Transferencia","REF-E","https://lh3.googleusercontent.com/d/FILE_EMPTY_123456789012345678901234567890","En Revisión",""]
+ makeVoucherEvidenceFixtureRow_("VCH-TRASHED","FILE_TRASHED_123456789012345678901234567890","voucher-trashed.pdf","application/pdf",fileBytes),
+ makeVoucherEvidenceFixtureRow_("VCH-BADTYPE","FILE_BADTYPE_123456789012345678901234567890","voucher.exe","application/octet-stream",fileBytes),
+ makeVoucherEvidenceFixtureRow_("VCH-EMPTY","FILE_EMPTY_123456789012345678901234567890","voucher-empty.pdf","application/pdf",Buffer.alloc(0),1)
 );
 assert.equal(context.getPaymentVouchers({sessionToken:"staffA",userId:"U-OTHER"}).code,"RESOURCE_SCOPE_DENIED");
 const voucherFileCountBeforeUnauthorizedUpload=Object.keys(files).length;
@@ -298,7 +303,7 @@ assert.equal(ownFile.status,"success","student may retrieve only their own vouch
 assert.equal(ownFile.fileName,"voucher-a.pdf","file reference must come from the stored voucher row, not client fileId");
 assert.equal(ownFile.mimeType,"application/pdf");
 assert.equal(ownFile.fileData,Buffer.from("%PDF-1.4 test").toString("base64"));
-rows.ComprobantesPago.push(["VCH-P",new Date("2026-01-04"),"U-STUDENT","Alumno A","GRAL",10,"Transferencia","REF-P","https://lh3.googleusercontent.com/d/FILE_PUBLIC_123456789012345678901234567890","En Revisión",""]);
+rows.ComprobantesPago.push(makeVoucherEvidenceFixtureRow_("VCH-P","FILE_PUBLIC_123456789012345678901234567890","voucher-public.pdf","application/pdf",fileBytes));
 assert.equal(context.getPaymentVoucherFile({sessionToken:"student",comprobanteId:"VCH-P"}).code,"VOUCHER_FILE_NOT_PRIVATE","legacy public files must not be delivered through the authenticated endpoint");
 assert.equal(context.getPaymentVoucherFile({sessionToken:"student",comprobanteId:"VCH-B"}).code,"RESOURCE_NOT_FOUND","unauthorized voucher IDs must not reveal resource existence");
 assert.equal(context.getPaymentVoucherFile({sessionToken:"guardian",comprobanteId:"VCH-A"}).status,"success","linked guardian may retrieve the linked voucher");
