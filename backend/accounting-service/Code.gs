@@ -3982,13 +3982,20 @@ function getVerifiedAccountingIdentity_(payload) {
   if (!payload || typeof payload.sessionToken !== "string" || !payload.sessionToken) {
     return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
   }
-  var verified = requestAccountingUserAuthorization_("verifyAccountingSession", {
-    sessionToken: payload.sessionToken
-  });
+  var verified, delegated = typeof requestAccountingUserAuthorization_ === "function";
+  if (delegated) {
+    verified = requestAccountingUserAuthorization_("verifyAccountingSession", { sessionToken: payload.sessionToken });
+  } else if (typeof verifySessionToken === "function") {
+    var claims = verifySessionToken(payload.sessionToken);
+    if (claims) verified = { status:"success", authorized:true, userId:claims.userId, role:claims.role,
+      membershipId:claims.membershipId || "", institutionId:claims.institutionId || "" };
+  }
   if (!verified || verified.status !== "success" || verified.authorized !== true ||
       !verified.userId || !verified.role || !verified.institutionId) {
     return { authorized: false, code: verified && verified.code || "VERIFIED_IDENTITY_REQUIRED" };
   }
+  if (!delegated) return { authorized:true,userId:String(verified.userId),role:String(verified.role),
+    membershipId:String(verified.membershipId || ""),institutionId:String(verified.institutionId) };
   var configuredInstitution = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") ||
     PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID") || "").trim();
   if (!configuredInstitution || String(verified.institutionId) !== configuredInstitution) {
