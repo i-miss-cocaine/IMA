@@ -2623,7 +2623,7 @@ function uploadPaymentVoucher(payload) {
   if (String(actor.role || "") !== "Estudiante") return { status: "error", code: "ROLE_NOT_ALLOWED" };
   var owner = assertPaymentVoucherOwnerAccess_(input, input.userId || actor.userId);
   if (!owner || owner.authorized !== true || String(input.userId || actor.userId) !== String(actor.userId)) {
-    return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    return { status: "error", code: "RESOURCE_SCOPE_DENIED" };
   }
   var fileData = input.fileData, fileName = String(input.fileName || "").trim();
   if (typeof fileData !== "string" || !fileData.trim() || !fileName) return { status: "error", code: "PAYMENT_VOUCHER_FILE_REQUIRED" };
