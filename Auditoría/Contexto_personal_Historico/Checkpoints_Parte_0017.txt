@@ -28,3 +28,18 @@
 - Node CLI local: NOT RUN. Despliegue/beta Drive y Sheets: NOT RUN.
 - Siguiente tarea elegible: TASK-185 — motor de depreciación y gestión contable de activos.
 ===============================================================================
+
+
+===============================================================================
+## C1.789 — IMA-EXEC-20261116-0402Z-TASK185-ASSET-DEPRECIATION-01
+
+- Rama autorizada: NG_beta_0.0.0.1_work.
+- HEAD verificado: 8f6e9b6d76a7711cbeaa90c38a3b81bbf8144b32.
+- Tarea: TASK-185 — motor de depreciación y gestión contable de activos fijos.
+- Resultado: políticas por categoría; perfiles financieros por activo; línea recta, saldo decreciente y unidades de producción; mejoras capitalizables con idempotencia; cálculo mensual, asientos de doble partida, programación y conciliación patrimonial; reversión limitada al último período y baja a cierre mensual con verificación de períodos faltantes.
+- Archivos: backend/accounting-service/Code.gs; .github/workflows/department-scope-contract.yml (contrato de depreciación aislado para ejecutarse antes de la prueba de catálogo que bloquea el job).
+- Verificación GitHub Actions run 43800738839, Node.js 24.22.2: “Run fixed asset depreciation contract” PASS y “Run fixed asset depreciation and double-entry contract” PASS; también pasan los contratos TASK-181 y TASK-182.
+- Resultado global del workflow: FAILURE posterior en “Run accounting master catalog and unit conversion contract”, que se detiene en la línea 4 del test con “catalog service block missing” (no encuentra CATALOG_ITEM_HEADERS_ ni el límite getInventoryKardex en Code.gs). Este bloqueo es ajeno a TASK-181/182/185 y requiere su propio análisis antes de declarar CI integral verde.
+- Node CLI local: NOT RUN. Despliegue/beta Drive y Sheets: NOT RUN.
+- Siguiente elegible: reconciliar el servicio de catálogo/inventario que el contrato exige; después continuar los elementos pendientes de compras/proveedores/expediente documental según Plan Maestro.
+===============================================================================
