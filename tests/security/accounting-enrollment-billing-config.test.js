@@ -54,7 +54,7 @@ function harness(options = {}) {
     SpreadsheetApp:{openById:id => {assert.equal(id,"TEST");return ss;}},
     LockService:{getScriptLock:() => ({tryLock:() => {attempts++;return lockAvailable;},releaseLock:() => {releases++;}})}
   };
-  const funcs = ["ensureEnrollmentBillingConfigSheet_","getEnrollmentBillingConfiguration","saveEnrollmentBillingConfiguration"].map(extractFunction);
+  const funcs = ["enrollmentBillingConfigHeaders_","enrollmentBillingIdentity_","enrollmentBillingActiveTariffs_","enrollmentBillingConfigObject_","ensureEnrollmentBillingConfigSheet_","getEnrollmentBillingConfiguration","saveEnrollmentBillingConfiguration"].map(extractFunction);
   vm.runInNewContext(funcs.join("\n") + "\nthis.getConfig=getEnrollmentBillingConfiguration;this.saveConfig=saveEnrollmentBillingConfiguration;", context);
   return {context,sheets,stats:() => ({releases,attempts})};
 }
