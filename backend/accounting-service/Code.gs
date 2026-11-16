@@ -10149,7 +10149,7 @@ function sanitizePayloadForLog(payload) {
   if (!payload || typeof payload !== "object") return String(payload || "");
   try {
     const clean = JSON.parse(JSON.stringify(payload));
-    const sensitiveKeys = ["password", "clave", "token", "secret", "credencial", "authorization"];
+    const sensitiveKeys = ["password", "clave", "token", "secret", "credencial", "authorization", "pin", "otp", "passcode"];
     function maskObj(obj) {
       if (!obj || typeof obj !== "object") return;
       for (const k in obj) {
