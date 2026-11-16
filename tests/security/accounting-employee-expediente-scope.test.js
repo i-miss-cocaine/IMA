@@ -46,7 +46,7 @@ const accountingDocumentSource = source;
 function extractAccountingFunction(name) {
   const from = accountingDocumentSource.indexOf("function " + name + "(");
   assert.ok(from >= 0, "missing " + name);
-  const to = accountingDocumentSource.indexOf("\nfunction ", from + 10);
+  const to = accountingDocumentSource.indexOf("\n/* Runtime configuration", from + 10);
   return accountingDocumentSource.slice(from, to < 0 ? accountingDocumentSource.length : to);
 }
 const employeeSheetRows = [
