@@ -3112,6 +3112,492 @@ function parseJsonSafe(jsonStr, fallback) {
 
 // [TAREA RH-06] [Fase Recursos Humanos] - Catálogo de capacitaciones, inscripciones, certificados con vencimiento y planes de desarrollo profesional.
 
+function getEmployeeContracts(payload) {
+  const { expedienteId } = payload || {};
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const rows = getOrCreateSheet(ss, "ContratosLaborales").getDataRange().getValues().slice(1);
+
+  let filtered = rows;
+  if (expedienteId) filtered = filtered.filter(r => String(r[1]).trim() === String(expedienteId).trim());
+
+  const mapped = filtered.map(r => ({
+    contratoId: r[0],
+    expedienteId: r[1],
+    tipoContrato: r[2],
+    fechaInicio: r[3],
+    fechaFin: r[4],
+    salarioBase: parseFloat(r[5] || 0),
+    jornada: r[6],
+    estadoContrato: r[7],
+    observaciones: r[8]
+  }));
+
+  return {
+    status: "success",
+    contratos: mapped
+  };
+}
+
+// ---------------------------------------------------------------------------
+// PERMISOS Y VACACIONES
+// ---------------------------------------------------------------------------
+
+function getEmployeeContractAlerts(payload) {
+  const { diasAnticipacion } = payload || {};
+  const threshold = parseInt(diasAnticipacion || 30, 10);
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const rows = getOrCreateSheet(ss, "ContratosLaborales").getDataRange().getValues().slice(1);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let countVigentes = 0;
+  let countProximos = 0;
+  let countVencidos = 0;
+
+  const alertas = rows.map(r => {
+    const fFin = r[4] ? new Date(r[4]) : null;
+    let estadoAlerta = "Vigente";
+    let diasParaVencer = null;
+
+    if (fFin && !isNaN(fFin.getTime())) {
+      fFin.setHours(0, 0, 0, 0);
+      const diff = fFin.getTime() - today.getTime();
+      diasParaVencer = Math.ceil(diff / (1000 * 60 * 60 * 24));
+
+      if (diasParaVencer < 0) {
+        estadoAlerta = "Vencido";
+        countVencidos++;
+      } else if (diasParaVencer <= threshold) {
+        estadoAlerta = "ProximoAVencer";
+        countProximos++;
+      } else {
+        estadoAlerta = "Vigente";
+        countVigentes++;
+      }
+    }
+
+    return {
+      contratoId: r[0],
+      expedienteId: r[1],
+      tipoContrato: r[2],
+      fechaInicio: r[3],
+      fechaFin: r[4],
+      estadoContrato: r[7],
+      estadoAlerta,
+      diasParaVencer,
+      observaciones: r[8]
+    };
+  });
+
+  return {
+    status: "success",
+    data: alertas,
+    resumen: {
+      vigentes: countVigentes,
+      proximosAVencer: countProximos,
+      vencidos: countVencidos,
+      totalContratos: rows.length
+    }
+  };
+}
+
+// [TAREA RH-03] [Fase Reclutamiento y Selección] - Creación, consulta y actualización de vacantes laborales institucionales.
+
+function getEmployeeTrainingHistory(payload) {
+  const {
+    empleadoId,
+    cursoId,
+    soloProximosVencimientos,
+    diasAnticipacion,
+    userRole,
+    authenticatedUserId
+  } = payload || {};
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+
+  // Cursos
+  const courseSheet = getOrCreateSheet(ss, "CatalogoCursosCapacitacion");
+  const courseData = courseSheet.getDataRange().getValues();
+  const cursosMap = {};
+  if (courseData.length > 1) {
+    courseData.slice(1).forEach(r => {
+      cursosMap[String(r[0]).trim()] = {
+        cursoId: r[0],
+        nombreCurso: r[1],
+        categoria: r[2],
+        proveedorResponsable: r[3],
+        modalidad: r[4],
+        duracionHoras: r[5],
+        requisitos: parseJsonSafe(r[6], []),
+        dirigidoA: r[7],
+        estado: r[8]
+      };
+    });
+  }
+
+  // Inscripciones
+  const insSheet = getOrCreateSheet(ss, "InscripcionesCapacitacion");
+  const insData = insSheet.getDataRange().getValues();
+  let inscripciones = [];
+
+  const now = new Date();
+  const targetDays = parseInt(diasAnticipacion || "30", 10);
+  const isEmployeeRole = userRole === "Empleado";
+  const targetEmpId = isEmployeeRole ? authenticatedUserId : empleadoId;
+
+  if (insData.length > 1) {
+    inscripciones = insData.slice(1).filter(r => {
+      if (targetEmpId && String(r[2]).trim() !== String(targetEmpId).trim()) return false;
+      if (cursoId && String(r[1]).trim() !== String(cursoId).trim()) return false;
+
+      // Filtro de vencimiento
+      if (soloProximosVencimientos) {
+        const fechaVenc = r[9] ? new Date(r[9]) : null;
+        if (!fechaVenc || isNaN(fechaVenc.getTime())) return false;
+        const diffDays = Math.ceil((fechaVenc - now) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0 || diffDays > targetDays) return false;
+      }
+
+      return true;
+    }).map(r => {
+      const cId = String(r[1]).trim();
+      const cursoInfo = cursosMap[cId] || { nombreCurso: cId };
+      const fechaVenc = r[9] ? new Date(r[9]) : null;
+      let estaProximoAVencer = false;
+      let diasParaVencer = null;
+
+      if (fechaVenc && !isNaN(fechaVenc.getTime())) {
+        diasParaVencer = Math.ceil((fechaVenc - now) / (1000 * 60 * 60 * 24));
+        estaProximoAVencer = diasParaVencer >= 0 && diasParaVencer <= targetDays;
+      }
+
+      return {
+        inscripcionId: r[0],
+        cursoId: r[1],
+        nombreCurso: cursoInfo.nombreCurso,
+        categoriaCurso: cursoInfo.categoria,
+        duracionHoras: cursoInfo.duracionHoras,
+        empleadoId: r[2],
+        fechaInscripcion: r[3],
+        estadoInscripcion: r[4],
+        asistenciaPorcentaje: r[5],
+        resultadoNota: r[6],
+        certificadoDriveUrl: r[7],
+        fechaEmisionCertificado: r[8],
+        fechaVencimientoCertificado: r[9],
+        estaProximoAVencer,
+        diasParaVencer,
+        observaciones: r[10],
+        fechaCreacion: r[12]
+      };
+    });
+  }
+
+  // Planes de Desarrollo
+  const planSheet = getOrCreateSheet(ss, "PlanesDesarrolloProfesional");
+  const planData = planSheet.getDataRange().getValues();
+  let planesDesarrollo = [];
+
+  if (planData.length > 1) {
+    planesDesarrollo = planData.slice(1).filter(r => {
+      if (targetEmpId && String(r[1]).trim() !== String(targetEmpId).trim()) return false;
+      return true;
+    }).map(r => ({
+      planId: r[0],
+      empleadoId: r[1],
+      tituloObjetivo: r[2],
+      descripcion: r[3],
+      metasAcciones: parseJsonSafe(r[4], []),
+      fechaInicio: r[5],
+      fechaMeta: r[6],
+      estadoObjetivo: r[7],
+      evaluacionSeguimiento: r[8],
+      fechaCreacion: r[10]
+    }));
+  }
+
+  return {
+    status: "success",
+    data: {
+      cursos: Object.values(cursosMap),
+      inscripciones,
+      planesDesarrollo
+    }
+  };
+}
+
+function getLaborIncidentsHistory(payload) {
+  const {
+    empleadoId,
+    incidenciaId,
+    estado,
+    categoria,
+    userRole
+  } = payload || {};
+
+  // Restringir acceso solo a roles autorizados de RRHH / Dirección
+  const allowedRoles = ["RecursosHumanos", "Director", "Administrador", "Subdirector"];
+  if (userRole && !allowedRoles.includes(userRole)) {
+    throw new Error("Acceso denegado. Los registros de incidencias laborales y medidas disciplinarias están restringidos a la Oficina de Recursos Humanos y Dirección.");
+  }
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+
+  // Incidencias
+  const incSheet = getOrCreateSheet(ss, "IncidenciasLaborales");
+  const incData = incSheet.getDataRange().getValues();
+  let incidencias = [];
+
+  if (incData.length > 1) {
+    incidencias = incData.slice(1).filter(r => {
+      if (empleadoId && String(r[1]).trim() !== String(empleadoId).trim()) return false;
+      if (incidenciaId && String(r[0]).trim() !== String(incidenciaId).trim()) return false;
+      if (categoria && String(r[3]).toLowerCase() !== String(categoria).toLowerCase()) return false;
+      if (estado && String(r[6]).toLowerCase() !== String(estado).toLowerCase()) return false;
+      return true;
+    }).map(r => ({
+      incidenciaId: r[0],
+      empleadoId: r[1],
+      fecha: r[2],
+      categoria: r[3],
+      descripcionObjetiva: r[4],
+      responsableRegistro: r[5],
+      estado: r[6],
+      responsabilidadEstablecida: Boolean(r[7]),
+      documentacionDriveUrl: r[8],
+      observacionesAclaraciones: r[9],
+      historialAclaraciones: parseJsonSafe(r[10], []),
+      creadoPor: r[11],
+      fechaCreacion: r[12]
+    }));
+  }
+
+  // Medidas Disciplinarias
+  const medSheet = getOrCreateSheet(ss, "MedidasDisciplinarias");
+  const medData = medSheet.getDataRange().getValues();
+  let medidasDisciplinarias = [];
+
+  if (medData.length > 1) {
+    medidasDisciplinarias = medData.slice(1).filter(r => {
+      if (empleadoId && String(r[2]).trim() !== String(empleadoId).trim()) return false;
+      if (incidenciaId && String(r[1]).trim() !== String(incidenciaId).trim()) return false;
+      return true;
+    }).map(r => ({
+      medidaId: r[0],
+      incidenciaId: r[1],
+      empleadoId: r[2],
+      tipoMedida: r[3],
+      fundamentoDocumentado: r[4],
+      fechaEfectiva: r[5],
+      responsableAprobacion: r[6],
+      estadoMedida: r[7],
+      diasSuspension: parseInt(r[8] || 0, 10),
+      actaFirmadaDriveUrl: r[9],
+      fechaCreacion: r[11]
+    }));
+  }
+
+  return {
+    status: "success",
+    data: {
+      incidencias,
+      medidasDisciplinarias
+    }
+  };
+}
+
+function getWorkShiftsAndSubstitutionsHistory(payload) {
+  const { empleadoId, departamentoArea } = payload || {};
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+
+  // 1. Asignaciones de Turnos
+  const turnosSheet = getOrCreateSheet(ss, "AsignacionesTurnosLaborales");
+  const turnosData = turnosSheet.getDataRange().getValues();
+  let turnos = [];
+
+  if (turnosData.length > 1) {
+    turnos = turnosData.slice(1).filter(r => {
+      if (empleadoId && String(r[1]).trim() !== String(empleadoId).trim()) return false;
+      if (departamentoArea && String(r[7]).toLowerCase() !== String(departamentoArea).toLowerCase()) return false;
+      return true;
+    }).map(r => ({
+      asignacionTurnoId: r[0],
+      empleadoId: r[1],
+      nombreTurno: r[2],
+      fechaInicio: r[3],
+      fechaFin: r[4],
+      horaEntrada: r[5],
+      horaSalida: r[6],
+      departamentoArea: r[7],
+      estado: r[8],
+      creadoPor: r[9],
+      fechaCreacion: r[10]
+    }));
+  }
+
+  // 2. Sustituciones
+  const sustSheet = getOrCreateSheet(ss, "SustitucionesPersonal");
+  const sustData = sustSheet.getDataRange().getValues();
+  let sustituciones = [];
+
+  if (sustData.length > 1) {
+    sustituciones = sustData.slice(1).filter(r => {
+      if (empleadoId && String(r[1]).trim() !== String(empleadoId).trim() && String(r[2]).trim() !== String(empleadoId).trim()) return false;
+      if (departamentoArea && String(r[8]).toLowerCase() !== String(departamentoArea).toLowerCase()) return false;
+      return true;
+    }).map(r => ({
+      sustitucionId: r[0],
+      empleadoSustitutoId: r[1],
+      empleadoSustituidoId: r[2],
+      fechaInicio: r[3],
+      fechaFin: r[4],
+      horaEntrada: r[5],
+      horaSalida: r[6],
+      motivoSustitucion: r[7],
+      departamentoArea: r[8],
+      estado: r[9],
+      creadoPor: r[10],
+      fechaCreacion: r[11]
+    }));
+  }
+
+  // 3. Solicitudes Horas Extras
+  const otSheet = getOrCreateSheet(ss, "SolicitudesHorasExtras");
+  const otData = otSheet.getDataRange().getValues();
+  let horasExtras = [];
+
+  if (otData.length > 1) {
+    horasExtras = otData.slice(1).filter(r => {
+      if (empleadoId && String(r[1]).trim() !== String(empleadoId).trim()) return false;
+      return true;
+    }).map(r => ({
+      solicitudId: r[0],
+      empleadoId: r[1],
+      fecha: r[2],
+      horasSolicitadas: r[3],
+      motivo: r[4],
+      estado: r[5],
+      aprobadoPor: r[6]
+    }));
+  }
+
+  return {
+    status: "success",
+    data: {
+      turnos,
+      sustituciones,
+      horasExtras,
+      totalTurnos: turnos.length,
+      totalSustituciones: sustituciones.length,
+      totalHorasExtras: horasExtras.length
+    }
+  };
+}
+
+// TAREA RH-08: Implementar la planificación de necesidades de personal
+
+function uploadEmployeeDocument(payload) {
+  const { expedienteId, categoriaDoc, tituloDocumento, fileData, fileName, observaciones, authRole } = payload || {};
+  if (!expedienteId || !tituloDocumento) throw new Error("expedienteId y tituloDocumento son requeridos.");
+
+  let archivoUrl = "";
+  if (fileData && fileName) {
+    try {
+      const folder = getOrCreateFolderNews(getParentDriveFolder(), "Documentos_Laborales");
+      const mimeType = fileData.split(',')[0].match(/:(.*?);/)[1];
+      const base64Data = fileData.split(',')[1];
+      const file = folder.createFile(Utilities.newBlob(Utilities.base64Decode(base64Data), mimeType, fileName));
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      archivoUrl = `https://lh3.googleusercontent.com/d/${file.getId()}`;
+    } catch (e) {
+      logDebug("Error subida archivo laboral:", e.message);
+    }
+  }
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = getOrCreateSheet(ss, "DocumentosLaborales");
+  const now = new Date();
+  const docId = "DOC-LAB-" + now.getTime();
+
+  sheet.appendRow([
+    docId,
+    String(expedienteId).trim(),
+    categoriaDoc || "Contrato",
+    tituloDocumento,
+    archivoUrl || "https://newgeneration.edu.hn/documento-privado.pdf",
+    now,
+    authRole || "RecursosHumanos",
+    "PrivadoEmpleado",
+    observaciones || ""
+  ]);
+
+  return {
+    status: "success",
+    documentoId: docId,
+    archivoUrl: archivoUrl,
+    message: "Documento laboral privado cargado exitosamente."
+  };
+}
+
+function getParentDriveFolder() {
+  try {
+    const folderId = PropertiesService.getScriptProperties().getProperty('PARENT_FOLDER_ID');
+    if (folderId) return DriveApp.getFolderById(folderId);
+  } catch (_) {}
+  return DriveApp.getRootFolder();
+}
+
+function logDebug(message, optionalParam) {
+  if (!DEBUG_MODE) return;
+  try {
+    console.log(`[ACCOUNTING-SVC] ${new Date().toLocaleTimeString()} - ${message}`, optionalParam || "");
+  } catch (_) {}
+}
+
+// [FASE2-T03] [Fase 2 - Contratos API y Compatibilidad] - Formato estandarizado de respuestas de API, marca de tiempo y códigos de error normalizados.
+
+
+function getAccountingPersonIdForUser_(ss,userId) {
+  var users=ss&&ss.getSheetByName?ss.getSheetByName("Usuarios"):null;
+  if(!users)return "";
+  var rows=users.getDataRange().getValues(),h=(rows[0]||[]).map(function(v){return String(v||"").trim();});
+  var ui=h.indexOf("UserId"),pi=h.indexOf("PersonaID");
+  if(ui<0||pi<0)return "";
+  var matches=rows.slice(1).filter(function(r){return String(r[ui]||"").trim()===String(userId||"").trim();});
+  return matches.length===1?String(matches[0][pi]||"").trim():"";
+}
+
+function resolveStudentExpedienteForAccounting_(ss,userId) {
+  var personId=getAccountingPersonIdForUser_(ss,userId);
+  var sheet=ss&&ss.getSheetByName?ss.getSheetByName("ExpedientesLaborales"):null;
+  if(!sheet)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  var rows=sheet.getDataRange().getValues(),h=(rows[0]||[]).map(function(v){return String(v||"").trim();});
+  var ui=h.indexOf("UserId"),pi=h.indexOf("PersonaId"),ei=h.indexOf("ExpedienteID"),si=h.indexOf("EstadoLaboral");
+  if([ui,pi,ei,si].some(function(i){return i<0;}))return {authorized:false,code:"RESOURCE_SCHEMA_INVALID"};
+  var matches=rows.slice(1).filter(function(r){return (String(r[ui]||"").trim()===String(userId||"").trim()||(personId&&String(r[pi]||"").trim()===personId))&&String(r[si]||"").trim().toLowerCase()==="activo";});
+  if(matches.length!==1)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  return {authorized:true,expedienteId:String(matches[0][ei]||"").trim(),userId:String(userId||"").trim(),personId:personId};
+}
+
+function assertJointFamilyVoucherOwnerAccess_(payload, ss, targetUserId) {
+  var actor=getVerifiedAccountingIdentity_(payload||{});
+  if(!actor||actor.authorized!==true)return {authorized:false,code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
+  if(String(actor.userId||"")===String(targetUserId||""))return {authorized:true,actor:actor};
+  var role=normalizeVacationRole_(actor.role);
+  if(["padre","tutor","responsable"].indexOf(role)<0)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  var guardianPerson=getAccountingPersonIdForUser_(ss,actor.userId);
+  var studentPerson=getAccountingPersonIdForUser_(ss,targetUserId);
+  if(!guardianPerson||!studentPerson)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  var rel=ss.getSheetByName("RelacionesFamiliares");
+  if(!rel)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  var rows=rel.getDataRange().getValues(),h=(rows[0]||[]).map(function(v){return String(v||"").trim();});
+  var sp=h.indexOf("PersonaEstudianteID"),gp=h.indexOf("PersonaResponsableID"),st=h.indexOf("EstadoAutorizacion");
+  var matches=rows.slice(1).filter(function(r){return String(r[sp]||"").trim()===studentPerson&&String(r[gp]||"").trim()===guardianPerson&&["aprobado","autorizado","activo"].indexOf(String(r[st]||"").trim().toLowerCase())>=0;});
+  return matches.length===1?{authorized:true,actor:actor}:{authorized:false,code:"RESOURCE_NOT_FOUND"};
+}
+
 function transportRows_(ss, sheetName, expectedHeaders) {
   var sheet = ss && ss.getSheetByName ? ss.getSheetByName(sheetName) : null;
   if (!sheet) return { valid: false, missing: true, code: "TRANSPORT_RESOURCE_NOT_FOUND", rows: [], headers: [] };
