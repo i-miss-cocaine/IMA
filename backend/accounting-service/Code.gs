@@ -2881,11 +2881,11 @@ const ROLE_PERMISSIONS = {
   "Estudiante": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "Conductor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "Monitor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
-  "RecursosHumanos": [ "recordPurchaseReceipt", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "recordStaffCheckIn", "recordStaffAttendance", "getStaffAttendanceLogs", "getEmployeeSelfServicePortal", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
-  "Director": [ "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
-  "Subdirector": [ "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
-  "Contador": [ "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
-  "Administrador": [ "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"]
+  "RecursosHumanos": [ "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "recordStaffCheckIn", "recordStaffAttendance", "getStaffAttendanceLogs", "getEmployeeSelfServicePortal", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
+  "Director": [ "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
+  "Subdirector": [ "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
+  "Contador": [ "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
+  "Administrador": [ "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"]
 };
 
 function accountingHasRolePermission_(actor, action) {
@@ -3031,10 +3031,12 @@ function normalizePurchaseAwardRole_(role) {
   return ["contador","director","subdirector","administrador","recursoshumanos"].indexOf(value) !== -1 ? value : "";
 }
 function normalizePurchaseAssetClassification_(value) {
-  var raw = String(value || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  if (["activofijo","activofijos","biencapitalizable","bienes capitalizables","capitalizable","patrimonial"].indexOf(raw) !== -1) return "ActivoFijo";
+  var source = value && typeof value === "object" ? (value.clasificacionInventario || value.tipoBien ||
+    value.clasificacion || value.categoriaInventario || value.tipoActivo || value.tipo || "") : value;
+  var raw = String(source || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (["activofijo","activofijos","biencapitalizable","bienes capitalizables / activos fijos","bienes capitalizables","capitalizable","patrimonial"].indexOf(raw) !== -1) return "ActivoFijo";
   if (["consumible","consumibles","suministro","suministros"].indexOf(raw) !== -1) return "Consumible";
-  return raw ? String(value).trim() : "Inventariable";
+  return raw ? String(source).trim() : "Inventariable";
 }
 function purchaseQuotationItemKey_(value) {
   return String(value || "").trim();
@@ -3562,6 +3564,356 @@ function recordPurchaseReceipt(payload) {
   }
 }
 
+
+const ASSET_BASE_HEADERS_ = ["ActivoID","CodigoPatrimonial","Nombre","Categoria","SerieModel","UbicacionActual","CustodioUserId","Estado","Observaciones"];
+const ASSET_ACQUISITION_HEADERS_ = ["FechaAdquisicion","OrdenCompraID","RecepcionID","NumeroFactura","ProveedorID","ItemId","Marca","NumeroSerie","Modelo","CostoAdquisicion","FechaRegistro","ClasificacionInventario"];
+const ASSET_ASSIGNMENT_HEADERS_ = ["AsignacionID","ActivoID","CustodioUserId","FechaEntrega","FechaDevolucion","EstadoActa","Observaciones"];
+
+function ensureAssetAcquisitionSchema_(ss) {
+  var spreadsheet = ss || SpreadsheetApp.openById(SPREADSHEET_ID);
+  var assets = getOrCreateSheet(spreadsheet, "ActivosPatrimoniales");
+  var values = assets.getDataRange().getValues();
+  if (!values || !values.length) throw new Error("ASSET_SCHEMA_INVALID");
+  var headers = values[0].map(function(v) { return String(v || "").trim(); });
+  if (JSON.stringify(headers.slice(0, ASSET_BASE_HEADERS_.length)) !== JSON.stringify(ASSET_BASE_HEADERS_)) {
+    throw new Error("ASSET_SCHEMA_INVALID");
+  }
+  var current = headers.slice();
+  ASSET_ACQUISITION_HEADERS_.forEach(function(header) {
+    if (current.indexOf(header) === -1) {
+      assets.getRange(1, current.length + 1).setValue(header);
+      current.push(header);
+    }
+  });
+  var assignments = getOrCreateSheet(spreadsheet, "AsignacionesActivos");
+  var assignmentValues = assignments.getDataRange().getValues();
+  if (!assignmentValues || !assignmentValues.length) throw new Error("ASSET_ASSIGNMENT_SCHEMA_INVALID");
+  var assignmentHeaders = assignmentValues[0].map(function(v) { return String(v || "").trim(); });
+  if (assignmentHeaders.length === 0) {
+    assignments.appendRow(ASSET_ASSIGNMENT_HEADERS_);
+  } else if (JSON.stringify(assignmentHeaders.slice(0, ASSET_ASSIGNMENT_HEADERS_.length)) !== JSON.stringify(ASSET_ASSIGNMENT_HEADERS_)) {
+    throw new Error("ASSET_ASSIGNMENT_SCHEMA_INVALID");
+  }
+  return { assets: assets, assignments: assignments, assetHeaders: current, assignmentHeaders: assignmentHeaders };
+}
+
+function purchaseAssetReceiptContext_(payload) {
+  var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var access = purchaseQuotationAccess_(input, ss, true);
+  if (!access || access.authorized !== true) throw new Error(access && access.code || "ROLE_NOT_ALLOWED");
+  var receipts = getOrCreateSheet(ss, "RecepcionesCompra").getDataRange().getValues();
+  var orders = getOrCreateSheet(ss, "OrdenesCompra").getDataRange().getValues();
+  var requests = getOrCreateSheet(ss, "SolicitudesCompra").getDataRange().getValues();
+  var payables = getOrCreateSheet(ss, "CuentasPorPagarGastos").getDataRange().getValues();
+  function idx(headers, name, fallback) { var i = headers.indexOf(name); return i >= 0 ? i : fallback; }
+  var rh = receipts[0].map(String), oh = orders[0].map(String), qh = requests[0].map(String), ph = payables[0].map(String);
+  var receiptMatches = receipts.slice(1).map(function(row, index) { return { row: row, index: index + 2 }; })
+    .filter(function(item) { return String(item.row[idx(rh,"RecepcionID",0)] || "") === String(input.recepcionId || ""); });
+  if (receiptMatches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
+  var receiptRecord = receiptMatches[0], receipt = receiptRecord.row;
+  var receiptState = String(receipt[idx(rh,"EstadoConformidad",5)] || "").trim().toLowerCase();
+  if (receiptState !== "conforme") return { status: "success", ss: ss, access: access, receipt: receipt,
+    receiptRecord: receiptRecord, order: null, request: null, items: [], invoices: [], candidates: [], unavailable: true };
+  var orderId = String(receipt[idx(rh,"OrdenCompraID",1)] || "").trim();
+  var orderMatches = orders.slice(1).map(function(row, index) { return { row: row, index: index + 2 }; })
+    .filter(function(item) { return String(item.row[idx(oh,"OrdenCompraID",0)] || "") === orderId; });
+  if (orderMatches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
+  var orderRecord = orderMatches[0], order = orderRecord.row;
+  var requestId = String(order[idx(oh,"SolicitudID",1)] || "").trim();
+  var requestMatches = requests.slice(1).filter(function(row) { return String(row[idx(qh,"SolicitudID",0)] || "") === requestId; });
+  if (requestMatches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
+  var request = requestMatches[0], requestItemsRaw = [];
+  try { requestItemsRaw = JSON.parse(String(request[idx(qh,"DetalleItemsJSON",6)] || "[]")); } catch (ignored) {}
+  var orderItems = [];
+  try { orderItems = JSON.parse(String(order[idx(oh,"DetalleItemsJSON",6)] || "[]")); } catch (ignored2) {}
+  var received = [];
+  try { received = JSON.parse(String(receipt[idx(rh,"DetalleJSON",4)] || "[]")); } catch (ignored3) {}
+  if (!Array.isArray(requestItemsRaw) || !Array.isArray(orderItems) || !Array.isArray(received)) throw new Error("PURCHASE_ASSET_SOURCE_INVALID");
+  var requestById = {};
+  requestItemsRaw.forEach(function(x) {
+    var itemId = String(x.itemId || x.ItemId || x.codigoItem || "").trim();
+    if (itemId) requestById[itemId] = x;
+  });
+  var requestDept = String(request[idx(qh,"Departamento",2)] || "").trim();
+  var scope = access.scope || {};
+  var departmentIds = Array.isArray(scope.departmentIds) ? scope.departmentIds.map(String) : [];
+  if (scope.institutionWide !== true && departmentIds.indexOf(requestDept) === -1) throw new Error("RESOURCE_NOT_FOUND");
+  var items = orderItems.map(function(x) {
+    var itemId = String(x.itemId || x.ItemId || x.codigoItem || x.itemCodigo || "").trim();
+    var source = requestById[itemId] || {};
+    const classification=normalizePurchaseAssetClassification_(source);
+    return { itemId: itemId, codigoItem: itemId, descripcion: String(x.descripcion || x.nombreItem || source.descripcion || ""),
+      cantidadOrdenada: Number(x.cantidad === undefined ? x.Cantidad : x.cantidad),
+      cantidadRecibidaConforme: 0, clasificacionInventario: classification,
+      costoUnitario: Number(x.precioUnitario === undefined ? (x.costoUnitario || 0) : x.precioUnitario),
+      marca: String(x.marca || ""), modelo: String(x.modelo || ""), unidadMedida: String(x.unidadMedida || x.unidad || "Unidad") };
+  });
+  received.forEach(function(x) {
+    var itemId = String(x.itemId || x.ItemId || x.codigoItem || "").trim();
+    var item = items.filter(function(candidate) { return candidate.itemId === itemId; })[0];
+    if (item && (x.conforme === true || String(x.estadoConformidad || "").toLowerCase() === "conforme")) {
+      item.cantidadRecibidaConforme += Number(x.cantidad || x.cantidadRecibida || 0);
+    }
+  });
+  var invoiceIndex = idx(ph,"Observaciones",9), invoices = [];
+  payables.slice(1).forEach(function(row) {
+    var observations = String(row[invoiceIndex] || ""), state = String(row[idx(ph,"EstadoPago",7)] || "").toLowerCase();
+    var approved = ["aprobado","aprobada","approved"].indexOf(String(row[idx(ph,"EstadoAprobacion",6)] || "").toLowerCase()) !== -1;
+    if (observations.indexOf("[ORDEN_" + orderId + "]") === -1 || observations.indexOf("[MATCH:Conciliada]") === -1 ||
+        state.indexOf("bloqueado") !== -1 || state.indexOf("bloqueada") !== -1 || !approved) return;
+    var number = String(row[idx(ph,"NumeroFactura",2)] || "").trim();
+    if (!number) return;
+    invoices.push({ obligacionId: row[idx(ph,"ObligacionID",0)], numeroFactura: number,
+      proveedorId: String(row[idx(ph,"ProveedorID",1)] || ""), importe: Number(row[idx(ph,"Importe",3)] || 0),
+      estadoConciliacion: "Conciliada" });
+  });
+  var assetSheet = ss.getSheetByName("ActivosPatrimoniales");
+  var assetRows = assetSheet ? assetSheet.getDataRange().getValues() : [];
+  var existingAssets = assetRows.length ? assetRows.slice(1) : [];
+  var candidates = items.filter(function(item) {
+    var requested = requestById[item.itemId] || {};
+    const classification=normalizePurchaseAssetClassification_(requested);
+    item.clasificacionInventario = classification;
+    var alreadyCapitalized = existingAssets.filter(function(asset) {
+      return String(asset[10] || "") === orderId && String(asset[11] || "") === String(input.recepcionId) &&
+        String(asset[14] || "") === item.itemId;
+    }).length;
+    item.unidadesDisponibles = Math.max(0, item.cantidadRecibidaConforme - alreadyCapitalized);
+    return classification === "ActivoFijo" && item.unidadesDisponibles > 0;
+  });
+  return { status: "success", ss: ss, access: access, receipt: receipt, receiptRecord: receiptRecord,
+    order: order, orderRecord: orderRecord, request: request, items: items, candidatos: candidates,
+    facturas: invoices, facturasDisponibles: invoices, unavailable: false };
+}
+
+function getPurchaseReceiptAssetCandidates(payload) {
+  var context = purchaseAssetReceiptContext_(payload || {});
+  if (context.unavailable) return { status: "success", recepcionId: String(payload.recepcionId), candidatos: [], facturasDisponibles: [] };
+  return { status: "success", recepcionId: String(payload.recepcionId),
+    candidatos: context.candidatos.map(function(item) { return { itemId: item.itemId, codigoItem: item.codigoItem,
+      descripcion: item.descripcion, unidadesDisponibles: item.unidadesDisponibles, cantidadRecibidaConforme: item.cantidadRecibidaConforme,
+      clasificacionInventario: item.clasificacionInventario, costoUnitario: item.costoUnitario }; }),
+    facturasDisponibles: context.facturasDisponibles };
+}
+
+function registerAssetsFromPurchaseReceipt(payload) {
+  var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var access = purchaseQuotationAccess_(input, ss, true);
+  if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "ROLE_NOT_ALLOWED" };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
+  var createdAssets = [], createdAssignments = [];
+  try {
+    var context = purchaseAssetReceiptContext_(input);
+    if (context.unavailable) return { status: "error", code: "PURCHASE_RECEIPT_NOT_CONFORMING" };
+    var invoiceNumber = String(input.numeroFactura || "").trim();
+    var invoice = context.facturasDisponibles.filter(function(item) { return item.numeroFactura === invoiceNumber; })[0];
+    if (!invoice) return { status: "error", code: "PURCHASE_ASSET_INVOICE_NOT_LINKED" };
+    var schema = ensureAssetAcquisitionSchema_(ss), assets = schema.assets, assignments = schema.assignments;
+    var assetRows = assets.getDataRange().getValues(), assignmentRows = assignments.getDataRange().getValues();
+    var headers = assetRows[0].map(String), assetsByReceipt = assetRows.slice(1);
+    function idx(name) { return headers.indexOf(name); }
+    var requestedAssets = Array.isArray(input.activos) ? input.activos : [];
+    if (!requestedAssets.length) return { status: "error", code: "PURCHASE_ASSET_ITEMS_REQUIRED" };
+    var candidateById = {};
+    context.candidatos.forEach(function(item) { candidateById[item.itemId] = item; });
+    var requestedCount = {};
+    requestedAssets.forEach(function(asset) {
+      var itemId = String(asset.itemId || asset.ItemId || asset.codigoItem || "").trim();
+      if (!candidateById[itemId]) throw new Error("PURCHASE_ASSET_ITEM_NOT_ELIGIBLE");
+      requestedCount[itemId] = (requestedCount[itemId] || 0) + 1;
+    });
+    for (var key in requestedCount) if (requestedCount[key] > candidateById[key].unidadesDisponibles) {
+      return { status: "error", code: "PURCHASE_ASSET_QUANTITY_EXCEEDED" };
+    }
+    var idempotent = requestedAssets.every(function(asset) {
+      var itemId = String(asset.itemId || asset.ItemId || asset.codigoItem || "").trim();
+      var code = String(asset.codigoPatrimonial || "").trim(), serial = String(asset.numeroSerie || "").trim();
+      return assetsByReceipt.some(function(row) {
+        return String(row[idx("OrdenCompraID")] || "") === String(input.ordenCompraId || context.order[0] || "") &&
+          String(row[idx("RecepcionID")] || "") === String(input.recepcionId) &&
+          String(row[idx("NumeroFactura")] || "") === invoiceNumber &&
+          String(row[idx("ItemId")] || "") === itemId && String(row[idx("CodigoPatrimonial")] || "") === code &&
+          String(row[idx("NumeroSerie")] || "") === serial;
+      });
+    });
+    if (idempotent) return { status: "success", idempotente: true,
+      activos: requestedAssets.map(function(asset) { return { codigoPatrimonial: asset.codigoPatrimonial }; }) };
+    for (var i = 0; i < requestedAssets.length; i++) {
+      var asset = requestedAssets[i], itemId = String(asset.itemId || asset.ItemId || asset.codigoItem || "").trim();
+      var code = String(asset.codigoPatrimonial || "").trim(), serial = String(asset.numeroSerie || "").trim();
+      if (!code || !serial) return { status: "error", code: "PURCHASE_ASSET_IDENTIFIERS_REQUIRED" };
+      var duplicate = assetsByReceipt.some(function(row) {
+        return String(row[idx("CodigoPatrimonial")] || "") === code || String(row[idx("NumeroSerie")] || row[4] || "") === serial;
+      });
+      if (duplicate) return { status: "error", code: "ASSET_CODE_OR_SERIAL_ALREADY_EXISTS" };
+    }
+    var created = [];
+    try {
+      requestedAssets.forEach(function(asset, index) {
+        var itemId = String(asset.itemId || asset.ItemId || asset.codigoItem || "").trim();
+        var candidate = candidateById[itemId], custodian = String(asset.custodioUserId || asset.CustodioUserId || "").trim();
+        var assetId = "ACT-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 24);
+        var row = [];
+        row[idx("ActivoID")] = assetId;
+        row[idx("CodigoPatrimonial")] = String(asset.codigoPatrimonial).trim();
+        row[idx("Nombre")] = String(asset.nombre || candidate.descripcion || "");
+        row[idx("Categoria")] = String(asset.categoriaPatrimonial || "");
+        row[idx("SerieModel")] = [asset.marca || "", asset.modelo || ""].join(" ").trim();
+        row[idx("UbicacionActual")] = String(asset.ubicacionActual || "");
+        row[idx("CustodioUserId")] = custodian;
+        row[idx("Estado")] = "Activo";
+        row[idx("Observaciones")] = String(asset.observaciones || "");
+        row[idx("FechaAdquisicion")] = new Date();
+        row[idx("OrdenCompraID")] = String(context.order[0] || "");
+        row[idx("RecepcionID")] = String(input.recepcionId);
+        row[idx("NumeroFactura")] = invoiceNumber;
+        row[idx("ProveedorID")] = String(context.order[3] || "");
+        row[idx("ItemId")] = itemId;
+        row[idx("Marca")] = String(asset.marca || "");
+        row[idx("NumeroSerie")] = String(asset.numeroSerie || "");
+        row[idx("Modelo")] = String(asset.modelo || "");
+        row[idx("CostoAdquisicion")] = Number(candidate.costoUnitario || 0);
+        row[idx("FechaRegistro")] = new Date();
+        row[idx("ClasificacionInventario")] = "ActivoFijo";
+        while (row.length < headers.length) row.push("");
+        if (custodian) {
+          var assignmentId = "ASG-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 20);
+          assignments.appendRow([assignmentId, assetId, custodian, new Date(), "", "Entregada", "Recepción " + input.recepcionId]);
+          createdAssignments.push(assignments.getLastRow());
+        }
+        assets.appendRow(row);
+        createdAssets.push(assets.getLastRow());
+        created.push({ activoId: assetId, codigoPatrimonial: code, numeroSerie: serial, itemId: itemId });
+      });
+    } catch (writeError) {
+      createdAssets.forEach(function(row) { try { assets.getRange(row, 1, 1, headers.length).clearContent(); } catch (ignored) {} });
+      createdAssignments.forEach(function(row) { try { assignments.getRange(row, 1, 1, 7).clearContent(); } catch (ignored2) {} });
+      return { status: "error", code: String(writeError && writeError.message || "PURCHASE_ASSET_WRITE_FAILED") };
+    }
+    return { status: "success", activos: created, idempotente: false };
+  } catch (error) {
+    return { status: "error", code: String(error && error.message || "PURCHASE_ASSET_REGISTRATION_FAILED") };
+  } finally { lock.releaseLock(); }
+}
+
+function getAssetItems(payload) {
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), sheet = ss.getSheetByName("ActivosPatrimoniales");
+  if (!sheet) return { status: "success", activos: [] };
+  var values = sheet.getDataRange().getValues();
+  if (!values || values.length < 2) return { status: "success", activos: [] };
+  var headers = values[0].map(String);
+  var activos = values.slice(1).filter(function(row) {
+    return String(row[headers.indexOf("Estado")] || "").trim().toLowerCase() === "activo";
+  }).map(function(row) {
+    var result = {};
+    headers.forEach(function(header, index) { result[header] = row[index]; });
+    return result;
+  });
+  return { status: "success", activos: activos };
+}
+
+function manageAssetItem(payload) {
+  var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = getOrCreateSheet(ss, "ActivosPatrimoniales"), rows = sheet.getDataRange().getValues();
+  var headers = rows[0].map(String), serial = String(input.numeroSerie || input.SerieModel || "").trim();
+  var code = String(input.codigoPatrimonial || "").trim();
+  var duplicate = rows.slice(1).some(function(row) {
+    return (serial && (String(row[headers.indexOf("NumeroSerie")] || "") === serial || String(row[4] || "") === serial)) ||
+      (code && String(row[headers.indexOf("CodigoPatrimonial")] || "") === code);
+  });
+  if (duplicate) throw new Error("ASSET_SERIAL_ALREADY_EXISTS");
+  var newRow = [];
+  newRow[headers.indexOf("ActivoID")] = "ACT-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 24);
+  newRow[headers.indexOf("CodigoPatrimonial")] = code;
+  newRow[headers.indexOf("Nombre")] = String(input.nombre || "");
+  newRow[headers.indexOf("Categoria")] = String(input.categoria || "");
+  newRow[headers.indexOf("SerieModel")] = serial;
+  newRow[headers.indexOf("Estado")] = "Activo";
+  while (newRow.length < headers.length) newRow.push("");
+  sheet.appendRow(newRow);
+  return { status: "success" };
+}
+
+function createPurchaseRequest(payload) {
+  var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var access = purchaseQuotationAccess_(input, ss, true);
+  if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "ROLE_NOT_ALLOWED" };
+  var items = Array.isArray(input.detalleItems) ? input.detalleItems : [];
+  if (!items.length) return { status: "error", code: "PURCHASE_REQUEST_ITEMS_INVALID" };
+  var prepared = items.map(function(source) {
+    const classification=normalizePurchaseAssetClassification_(source);
+    var item = catalogFindItem_(ss, source.itemId || source.ItemId || source.codigoItem);
+    if (!item) throw new Error("PURCHASE_REQUEST_ITEM_NOT_FOUND");
+    var unit = catalogFindUnit_(ss, source.unidadMedida || source.unidad || item.baseUnit);
+    if (!unit) throw new Error("PURCHASE_REQUEST_UNIT_INVALID");
+    return { itemId: String(source.itemId || source.ItemId || source.codigoItem || item.code),
+      catalogItemId:item.id, descripcion: String(source.descripcion || item.name || ""),
+      cantidad: Number(source.cantidad), unidadMedida: String(source.unidadMedida || source.unidad || item.baseUnit),
+      clasificacionInventario: classification };
+  });
+  if (prepared.some(function(item) { return !isFinite(item.cantidad) || item.cantidad <= 0; })) return { status: "error", code: "PURCHASE_REQUEST_ITEMS_INVALID" };
+  var sheet = getOrCreateSheet(ss, "SolicitudesCompra");
+  var id = "REQ-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 24);
+  sheet.appendRow([id, new Date(), String(input.departamento || ""), String(access.actor.userId || ""),
+    String(input.justificacion || ""), String(input.categoria || ""), JSON.stringify(prepared),
+    Number(input.montoEstimado || 0), String(input.centroCosto || ""), "Pendiente", ""]);
+  return { status: "success", solicitudId: id };
+}
+
+function createPurchaseOrder(payload) {
+  var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var access = purchaseQuotationAccess_(input, ss, true);
+  if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "ROLE_NOT_ALLOWED" };
+  if (!supplierEnsureActiveForOrder_(ss, input.proveedorId)) return { status: "error", code: "PURCHASE_SUPPLIER_NOT_ACTIVE" };
+  var requests = getOrCreateSheet(ss, "SolicitudesCompra").getDataRange().getValues();
+  var matches = requests.slice(1).filter(function(row) { return String(row[0]) === String(input.solicitudId || ""); });
+  if (matches.length !== 1) return { status: "error", code: "PURCHASE_REQUEST_NOT_FOUND" };
+  var request = matches[0], sourceItems = JSON.parse(String(request[6] || "[]")), orderItems = Array.isArray(input.detalleItems) ? input.detalleItems : [];
+  var sourceById = {};
+  sourceItems.forEach(function(x) { sourceById[String(x.itemId || x.ItemId || "")] = x; });
+  var prepared = orderItems.map(function(x) {
+    var itemId = String(x.itemId || x.ItemId || x.codigoItem || "");
+    var a = sourceById[itemId];
+    if (!a) throw new Error("PURCHASE_ORDER_ITEM_NOT_AUTHORIZED");
+    return Object.assign({}, x, { itemId: itemId, catalogItemId: a.catalogItemId,
+      clasificacionInventario:a.clasificacionInventario,
+      capitalizable: normalizePurchaseAssetClassification_(a) === "ActivoFijo" });
+  });
+  var sheet = getOrCreateSheet(ss, "OrdenesCompra");
+  var id = "OC-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 24);
+  var total = Number(input.montoTotal || prepared.reduce(function(sum, item) { return sum + Number(item.total || Number(item.cantidad || 0) * Number(item.precioUnitario || 0)); }, 0));
+  sheet.appendRow([id, String(input.solicitudId), String(input.cotizacionId || ""), String(input.proveedorId),
+    new Date(), "", JSON.stringify(prepared), total, String(request[8] || ""), "Borrador", "", "",
+    String(request[3] || ""), "1", ""]);
+  return { status: "success", ordenCompraId: id };
+}
+
+function verifyThreeWayMatch(payload) {
+  var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var orders = getOrCreateSheet(ss, "OrdenesCompra").getDataRange().getValues();
+  var receipts = getOrCreateSheet(ss, "RecepcionesCompra").getDataRange().getValues();
+  var order = orders.slice(1).filter(function(row) { return String(row[0]) === String(input.ordenCompraId || ""); })[0];
+  if (!order) return { status: "error", code: "PURCHASE_ORDER_NOT_FOUND" };
+  var orderItems = purchaseQuotationJsonArray_(order[6]), received = {};
+  receipts.slice(1).filter(function(row) { return String(row[1]) === String(input.ordenCompraId); }).forEach(function(row) {
+    purchaseQuotationJsonArray_(row[4]).forEach(function(item) {
+      var id = String(item.itemId || item.ItemId || item.codigoItem || "");
+      if (item.conforme === true || String(item.estadoConformidad || "").toLowerCase() === "conforme") received[id] = (received[id] || 0) + Number(item.cantidad || 0);
+    });
+  });
+  var invoice = input.facturaProveedor || {}, invoiceItems = Array.isArray(invoice.partidasFacturadas) ? invoice.partidasFacturadas : [];
+  var valid = invoice.proveedorId === String(order[3]) && orderItems.every(function(item) {
+    var id = String(item.itemId || item.ItemId || item.codigoItem || "");
+    var billed = invoiceItems.filter(function(x) { return String(x.itemId || x.ItemId || "") === id; })[0];
+    return billed && Number(billed.cantidad) <= Number(received[id] || 0) &&
+      Number(billed.cantidad) <= Number(item.cantidad || 0) &&
+      Math.abs(Number(billed.precioUnitario || 0) - Number(item.precioUnitario || 0)) < 0.01;
+  });
+  return { status: "success", estadoConciliacion: valid ? "Conciliada" : "Discrepancia",
+    ordenCompraId: String(input.ordenCompraId), partidasVerificadas: invoiceItems.length };
+}
+
 function doGet() {
   return textResponse({ status: "success", service: "ACCOUNTING",
     configured: !!String(PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID") || "").trim()
@@ -3613,6 +3965,14 @@ function doPost(e) {
     if (request.action === "getAdvancedDashboardAnalytics") return respond(getAdvancedDashboardAnalytics(actionPayload));
     if (request.action === "submitPurchaseQuotation") return respond(submitPurchaseQuotation(actionPayload));
     if (request.action === "recordPurchaseReceipt") return respond(recordPurchaseReceipt(actionPayload));
+    if (request.action === "getPurchaseReceiptAssetCandidates") return respond(getPurchaseReceiptAssetCandidates(actionPayload));
+    if (request.action === "registerAssetsFromPurchaseReceipt") return respond(registerAssetsFromPurchaseReceipt(actionPayload));
+    if (request.action === "getAssetItems") return respond(getAssetItems(actionPayload));
+    if (request.action === "manageAssetItem") return respond(manageAssetItem(actionPayload));
+    if (request.action === "createPurchaseRequest") return respond(createPurchaseRequest(actionPayload));
+    if (request.action === "createPurchaseOrder") return respond(createPurchaseOrder(actionPayload));
+    if (request.action === "verifyThreeWayMatch") return respond(verifyThreeWayMatch(actionPayload));
+
     if (request.action === "getPurchaseQuotations") return respond(getPurchaseQuotations(actionPayload));
     if (request.action === "getPurchaseQuotationMatrix") return respond(getPurchaseQuotationMatrix(actionPayload));
     if (request.action === "adjudicatePurchaseQuotations") return respond(adjudicatePurchaseQuotations(actionPayload));
