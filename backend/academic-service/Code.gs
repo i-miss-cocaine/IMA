@@ -4791,110 +4791,144 @@ function getCurricularAnalyticsReport(payload) {
 }
 
 // [TAREA-18] [Fase 1 - Reutilización de Recursos] - Módulo de catálogo de recursos educativos reutilizables, etiquetado por área/materia e interdisciplinariedad.
-function getReusableResourceCatalog(payload) {
-  const { area, asignatura, grado, tema, idioma, categoria } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+function sanitizeReusableResourceText_(value, maxLength) {
+  const limit = Number(maxLength) > 0 ? Number(maxLength) : 500;
+  const clean = String(value === null || value === undefined ? "" : value)
+    .normalize("NFC")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/[\x00-\x1F\x7F]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (clean.length > limit) throw new Error("REUSABLE_RESOURCE_TEXT_TOO_LONG");
+  return clean;
+}
 
+function validateReusableResourceDriveUrl_(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const match = raw.match(/^https:\/\/(?:drive\.google\.com\/file\/d\/|docs\.google\.com\/(?:document|spreadsheets|presentation)\/d\/)([A-Za-z0-9_-]{10,})(?:\/(?:view|edit))?\/?$/i);
+  if (!match) throw new Error("RESOURCE_DRIVE_URL_INVALID");
+  const fileId = match[1];
+  let file;
+  try { file = DriveApp.getFileById(fileId); }
+  catch (_) { throw new Error("RESOURCE_DRIVE_FILE_UNAVAILABLE"); }
+  if (!file || file.isTrashed()) throw new Error("RESOURCE_DRIVE_FILE_UNAVAILABLE");
+  let access;
+  try { access = String(file.getSharingAccess()); }
+  catch (_) { throw new Error("RESOURCE_DRIVE_ACL_UNVERIFIED"); }
+  const publicAccess = [String(DriveApp.Access.ANYONE), String(DriveApp.Access.ANYONE_WITH_LINK)];
+  if (publicAccess.indexOf(access) !== -1) throw new Error("RESOURCE_DRIVE_FILE_PUBLIC");
+  return "https://drive.google.com/file/d/" + fileId + "/view";
+}
+
+function getReusableResourceCatalog(payload) {
+  const request = payload || {};
+  const permission = validateRolePermission("getReusableResourceCatalog", request);
+  const actor = getVerifiedAcademicIdentity_(request);
+  if (!permission || permission.authorized !== true || !actor || actor.authorized !== true) {
+    throw new Error("AUTH_PERMISSION_DENIED");
+  }
+  const { area, asignatura, grado, idioma } = request;
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "RecursosEducativosReutilizables");
   const data = sheet.getDataRange().getValues();
-
-  // Función local auxiliar de comparación diacrítica segura para evitar depender de alcance externo
-  const normStr = (str) => (!str ? "" : str.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim());
-
-  let resources = [];
-  if (data.length > 1) {
-    resources = data.slice(1).filter(r => {
-      if (r[8] === "Inactivo") return false;
-      if (area && normStr(r[2]) !== normStr(area)) return false;
-      if (asignatura && normStr(r[3]) !== normStr(asignatura)) return false;
-      if (grado && normStr(r[4]) !== normStr(grado)) return false;
-      if (idioma && normStr(r[6]) !== normStr(idioma)) return false;
-      return true;
-    }).map(r => ({
-      recursoId: r[0],
-      titulo: r[1],
-      area: r[2],
-      asignatura: r[3],
-      grado: r[4],
-      tema: r[5],
-      idioma: r[6] || "Español",
-      version: r[7] || "1.0",
-      estado: r[8] || "Activo",
-      autorId: r[9],
-      urlDrive: r[10],
-      esInterdisciplinario: r[11] === true || String(r[11]).toLowerCase() === "true"
-    }));
-  }
-
-  const projSheet = getOrCreateSheet(ss, "ProyectosInterdisciplinarios");
-  const projData = projSheet.getDataRange().getValues();
-  let projects = [];
-  if (projData.length > 1) {
-    projects = projData.slice(1).filter(r => r[6] !== "Inactivo").map(r => ({
-      proyectoId: r[0],
-      titulo: r[1],
-      departamentosInvolucrados: r[2],
-      descripcion: r[3],
-      liderProyectoId: r[4],
-      anoLectivo: r[5],
-      estado: r[6] || "Activo"
-    }));
-  }
-
-  return {
-    status: "success",
-    resources,
-    interdisciplinaryProjects: projects
+  const normStr = str => (!str ? "" : String(str).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim());
+  const safeLink = value => {
+    try { return validateReusableResourceDriveUrl_(value); }
+    catch (error) {
+      logStructuredEvent("ACADEMIC", "getReusableResourceCatalog", "WARN", "RESOURCE_LINK_HIDDEN",
+        "Se omitió un enlace de recurso que no superó la validación de destino o privacidad.",
+        { reasonCode: String(error && error.message || "RESOURCE_LINK_INVALID") }, String(actor.role || ""));
+      return "";
+    }
   };
+  const resources = data.length > 1 ? data.slice(1).filter(row => {
+    if (row[8] === "Inactivo") return false;
+    if (area && normStr(row[2]) !== normStr(area)) return false;
+    if (asignatura && normStr(row[3]) !== normStr(asignatura)) return false;
+    if (grado && normStr(row[4]) !== normStr(grado)) return false;
+    if (idioma && normStr(row[6]) !== normStr(idioma)) return false;
+    return true;
+  }).map(row => ({
+    recursoId: sanitizeReusableResourceText_(row[0], 100),
+    titulo: sanitizeReusableResourceText_(row[1], 160),
+    area: sanitizeReusableResourceText_(row[2], 100),
+    asignatura: sanitizeReusableResourceText_(row[3], 120),
+    grado: sanitizeReusableResourceText_(row[4], 40),
+    tema: sanitizeReusableResourceText_(row[5], 160),
+    idioma: sanitizeReusableResourceText_(row[6] || "Español", 40),
+    version: sanitizeReusableResourceText_(row[7] || "1.0", 40),
+    estado: sanitizeReusableResourceText_(row[8] || "Activo", 40),
+    autorId: sanitizeReusableResourceText_(row[9], 100),
+    urlDrive: safeLink(row[10]),
+    esInterdisciplinario: row[11] === true || String(row[11]).toLowerCase() === "true"
+  })) : [];
+
+  const projectSheet = getOrCreateSheet(ss, "ProyectosInterdisciplinarios");
+  const projectData = projectSheet.getDataRange().getValues();
+  const projects = projectData.length > 1 ? projectData.slice(1).filter(row => row[6] !== "Inactivo").map(row => ({
+    proyectoId: sanitizeReusableResourceText_(row[0], 100),
+    titulo: sanitizeReusableResourceText_(row[1], 160),
+    departamentosInvolucrados: sanitizeReusableResourceText_(row[2], 160),
+    descripcion: sanitizeReusableResourceText_(row[3], 500),
+    liderProyectoId: sanitizeReusableResourceText_(row[4], 100),
+    anoLectivo: sanitizeReusableResourceText_(row[5], 20),
+    estado: sanitizeReusableResourceText_(row[6] || "Activo", 40)
+  })) : [];
+  return { status: "success", resources, interdisciplinaryProjects: projects };
 }
 
 function manageReusableResource(payload) {
-  const { recursoId, titulo, area, asignatura, grado, tema, idioma, version, urlDrive, esInterdisciplinario, autorId, esProyecto, departamentosInvolucrados, descripcion } = payload || {};
+  const request = payload || {};
+  const permission = validateRolePermission("manageReusableResource", request);
+  const actor = getVerifiedAcademicIdentity_(request);
+  if (!permission || permission.authorized !== true || !actor || actor.authorized !== true || !actor.userId) {
+    throw new Error("AUTH_PERMISSION_DENIED");
+  }
+  const { recursoId, titulo, area, asignatura, grado, tema, idioma, version, urlDrive, esInterdisciplinario, esProyecto, departamentosInvolucrados, descripcion } = request;
+  const safeTitle = sanitizeReusableResourceText_(titulo, 160);
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-
   if (esProyecto) {
-    if (!titulo) throw new Error("Título de proyecto es requerido.");
-    const projSheet = getOrCreateSheet(ss, "ProyectosInterdisciplinarios");
-    const pid = recursoId || ("PROJ-INT-" + Date.now());
-
-    projSheet.appendRow([
-      pid,
-      titulo,
-      departamentosInvolucrados || "General",
-      descripcion || "",
-      autorId || "Docente",
+    if (!safeTitle) throw new Error("Título de proyecto es requerido.");
+    const projectSheet = getOrCreateSheet(ss, "ProyectosInterdisciplinarios");
+    const projectId = recursoId || ("PROJ-INT-" + Utilities.getUuid());
+    projectSheet.appendRow([
+      projectId,
+      safeTitle,
+      sanitizeReusableResourceText_(departamentosInvolucrados || "General", 160),
+      sanitizeReusableResourceText_(descripcion || "", 500),
+      String(actor.userId),
       "2026",
       "Activo"
     ]);
-
-    logStructuredEvent("ACADEMIC", "manageReusableResource", "INFO", "PROJECT_SAVED", `Proyecto interdisciplinario ${titulo} creado`, { pid }, payload && payload.authRole);
-    return { status: "success", message: "Proyecto interdisciplinario registrado exitosamente.", data: { proyectoId: pid } };
-  } else {
-    if (!titulo || !area) throw new Error("Título y área son requeridos.");
-    const sheet = getOrCreateSheet(ss, "RecursosEducativosReutilizables");
-    const rid = recursoId || ("REC-REUT-" + Date.now());
-
-    sheet.appendRow([
-      rid,
-      titulo,
-      area,
-      asignatura || "General",
-      grado || "Todos",
-      tema || "General",
-      idioma || "Español",
-      version || "1.0",
-      "Activo",
-      autorId || "Docente",
-      urlDrive || "",
-      esInterdisciplinario ? true : false
-    ]);
-
-    logStructuredEvent("ACADEMIC", "manageReusableResource", "INFO", "RESOURCE_SAVED", `Recurso educativo ${titulo} registrado`, { rid }, payload && payload.authRole);
-    return { status: "success", message: "Recurso educativo reutilizable registrado con éxito.", data: { recursoId: rid } };
+    logStructuredEvent("ACADEMIC", "manageReusableResource", "INFO", "PROJECT_SAVED",
+      "Proyecto interdisciplinario registrado.", { projectId }, String(actor.role || ""));
+    return { status: "success", message: "Proyecto interdisciplinario registrado exitosamente.", data: { proyectoId: projectId } };
   }
+  const safeArea = sanitizeReusableResourceText_(area, 100);
+  if (!safeTitle || !safeArea) throw new Error("Título y área son requeridos.");
+  const safeDriveUrl = validateReusableResourceDriveUrl_(urlDrive);
+  const resourceSheet = getOrCreateSheet(ss, "RecursosEducativosReutilizables");
+  const resourceId = recursoId || ("REC-REUT-" + Utilities.getUuid());
+  resourceSheet.appendRow([
+    resourceId,
+    safeTitle,
+    safeArea,
+    sanitizeReusableResourceText_(asignatura || "General", 120),
+    sanitizeReusableResourceText_(grado || "Todos", 40),
+    sanitizeReusableResourceText_(tema || "General", 160),
+    sanitizeReusableResourceText_(idioma || "Español", 40),
+    sanitizeReusableResourceText_(version || "1.0", 40),
+    "Activo",
+    String(actor.userId),
+    safeDriveUrl,
+    esInterdisciplinario === true
+  ]);
+  logStructuredEvent("ACADEMIC", "manageReusableResource", "INFO", "RESOURCE_SAVED",
+    "Recurso educativo reutilizable registrado.", { resourceId }, String(actor.role || ""));
+  return { status: "success", message: "Recurso educativo reutilizable registrado con éxito.", data: { recursoId: resourceId } };
 }
 
-// [TAREA-19] [Fase 1 - Migración Curricular] - Herramienta de mapeo, equivalencias curriculares, simulación previa sin pérdida de datos y preservación inalterable de datos históricos.
 function getCurricularEquivalences(payload) {
   const { planOrigenId, planDestinoId } = payload || {};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
