@@ -2882,10 +2882,10 @@ const ROLE_PERMISSIONS = {
   "Conductor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "Monitor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "RecursosHumanos": [ "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "recordStaffCheckIn", "recordStaffAttendance", "getStaffAttendanceLogs", "getEmployeeSelfServicePortal", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
-  "Director": [ "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
-  "Subdirector": [ "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
-  "Contador": [ "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
-  "Administrador": [ "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"]
+  "Director": [ "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
+  "Subdirector": [ "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
+  "Contador": [ "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
+  "Administrador": [ "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"]
 };
 
 function accountingHasRolePermission_(actor, action) {
@@ -3929,6 +3929,318 @@ function verifyThreeWayMatch(payload) {
     ordenCompraId: String(input.ordenCompraId), partidasVerificadas: invoiceItems.length };
 }
 
+
+const ASSET_DEPR_POLICY_HEADERS_=["PolicyID","Categoria","Metodo","VidaUtilMeses","ValorResidualPorcentaje","TasaAnual","CuentaActivo","CuentaDepreciacionAcumulada","CuentaGastoDepreciacion","Estado","FechaActualizacion"];
+const ASSET_DEPR_PROFILE_HEADERS_=["ProfileID","ActivoID","CategoriaContable","FechaPuestaFuncionamiento","FechaInicioDepreciacion","FechaCorteApertura","CostoCapitalizado","ValorResidual","VidaUtilMeses","Metodo","TasaAnual","UnidadesTotales","UnidadesAcumuladas","DepreciacionAcumuladaInicial","ValorNetoApertura","CuentaActivo","CuentaDepreciacionAcumulada","CuentaGastoDepreciacion","CuentaPerdidaBaja","CentroCosto","Moneda","RegistradoPor","FechaRegistro","Estado"];
+const ASSET_DEPR_IMPROVEMENT_HEADERS_=["MejoraID","ActivoID","FechaCapitalizacion","Descripcion","Importe","ValorResidual","VidaUtilMeses","Metodo","TasaAnual","RegistradoPor","FechaRegistro","Estado","IdempotencyKey"];
+const ASSET_DEPR_HEADERS_=["DepreciacionID","ActivoID","Periodo","FechaCalculo","Metodo","BaseCosto","DepreciacionPeriodo","DepreciacionAcumulada","ValorNetoLibros","UnidadesPeriodo","ComponentesJSON","AsientoID","Estado","IdempotencyKey","RegistradoPor"];
+
+function assetDeprSheet_(ss,name,headers) {
+  var sheet = ss.getSheetByName(name) || getOrCreateSheet(ss,name);
+  var values = sheet.getDataRange().getValues();
+  if (!values || !values.length || JSON.stringify(values[0].map(String)) !== JSON.stringify(headers)) throw new Error("ASSET_DEPR_SCHEMA_INVALID");
+  return sheet;
+}
+function assetDeprActor_(payload) {
+  var actor = getVerifiedAccountingIdentity_(payload || {});
+  if (!actor || actor.authorized !== true) throw new Error(actor && actor.code || "VERIFIED_IDENTITY_REQUIRED");
+  var role = String(actor.role || "").toLowerCase().replace(/\s+/g,"");
+  if (["contador","administrador","director","subdirector"].indexOf(role) === -1) throw new Error("ROLE_NOT_ALLOWED");
+  return actor;
+}
+function assetDeprAccount_(ss,code) {
+  var sheet = ss.getSheetByName("PlanCuentas");
+  if (!sheet) throw new Error("ASSET_DEPR_ACCOUNT_NOT_FOUND");
+  var rows = sheet.getDataRange().getValues(), headers = rows[0].map(String);
+  var codeIndex = headers.indexOf("CodigoCuenta"), stateIndex = headers.indexOf("Estado");
+  var found = rows.slice(1).filter(function(row) {
+    return String(row[codeIndex] || "").trim() === String(code || "").trim() &&
+      (stateIndex < 0 || String(row[stateIndex] || "").toLowerCase() === "activo");
+  });
+  if (!code || found.length !== 1) throw new Error("ASSET_DEPR_ACCOUNT_NOT_FOUND");
+  return { code: String(code), name: String(found[0][headers.indexOf("NombreCuenta")] || code), row: found[0] };
+}
+function assetDeprDate_(value) {
+  var date = value instanceof Date ? new Date(value.getTime()) : new Date(String(value || ""));
+  if (isNaN(date.getTime())) throw new Error("ASSET_DEPR_DATE_INVALID");
+  return date;
+}
+function assetDeprMonth_(value) {
+  var match = String(value || "").match(/^(\d{4})-(\d{2})$/);
+  if (!match || Number(match[2]) < 1 || Number(match[2]) > 12) throw new Error("ASSET_DEPR_PERIOD_INVALID");
+  return new Date(Date.UTC(Number(match[1]),Number(match[2])-1,1));
+}
+function assetDeprMonthsBetween_(start,end) {
+  var a = assetDeprDate_(start), b = assetDeprDate_(end);
+  return Math.max(0,(b.getUTCFullYear()-a.getUTCFullYear())*12+b.getUTCMonth()-a.getUTCMonth());
+}
+function assetDeprMoney_(value) {
+  var n = Number(value);
+  if (!isFinite(n)) throw new Error("ASSET_DEPR_AMOUNT_INVALID");
+  return Math.round((n+Number.EPSILON)*100)/100;
+}
+function assetDeprIsoDate_(value) {
+  var d = assetDeprDate_(value);
+  return d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0");
+}
+function assetDeprProfileMap_(ss) {
+  var sheet = assetDeprSheet_(ss,"PerfilesDepreciacionActivos",ASSET_DEPR_PROFILE_HEADERS_);
+  var rows = sheet.getDataRange().getValues(), map = {};
+  rows.slice(1).forEach(function(row) { if (row[1]) map[String(row[1])] = row; });
+  return map;
+}
+function assetDeprRequireAsset_(ss,assetId) {
+  var sheet = ss.getSheetByName("ActivosPatrimoniales");
+  if (!sheet) throw new Error("ASSET_NOT_FOUND");
+  var rows = sheet.getDataRange().getValues(), matches = rows.slice(1).map(function(row,index){return {row:row,index:index+2};})
+    .filter(function(item){return String(item.row[0]||"")===String(assetId||"");});
+  if (matches.length !== 1) throw new Error("ASSET_NOT_FOUND");
+  var state = String(matches[0].row[7] || "").toLowerCase();
+  if (state === "disposed" || state === "baja" || state === "dado de baja") throw new Error("ASSET_ALREADY_DISPOSED");
+  return {sheet:sheet,row:matches[0].row,rowIndex:matches[0].index};
+}
+
+function saveAssetDepreciationPolicy(payload) {
+  var input=payload||{}, actor=assetDeprActor_(input), ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+  var method=String(input.metodo||"").trim(), life=Number(input.vidaUtilMeses), residual=Number(input.valorResidualPorcentaje||0), rate=Number(input.tasaAnual||0);
+  if (["LineaRecta","SaldoDecreciente","UnidadesProduccion"].indexOf(method)<0 || !isFinite(life)||life<=0||Math.floor(life)!==life||
+      !isFinite(residual)||residual<0||residual>=100||!isFinite(rate)||rate<0||rate>=1) throw new Error("POLICY_VALUES_INVALID");
+  assetDeprAccount_(ss,input.cuentaActivo);assetDeprAccount_(ss,input.cuentaDepreciacionAcumulada);assetDeprAccount_(ss,input.cuentaGastoDepreciacion);
+  var sheet=assetDeprSheet_(ss,"PoliticasDepreciacionActivos",ASSET_DEPR_POLICY_HEADERS_),rows=sheet.getDataRange().getValues();
+  var category=String(input.categoria||"").trim();if(!category)throw new Error("POLICY_VALUES_INVALID");
+  var index=rows.findIndex(function(row,i){return i>0&&String(row[1])===category;});
+  var record=["POL-"+category,category,method,life,residual,rate,String(input.cuentaActivo),String(input.cuentaDepreciacionAcumulada),
+    String(input.cuentaGastoDepreciacion),"Activo",new Date()];
+  if(index>0)sheet.getRange(index+1,1,1,record.length).setValues([record]);else sheet.appendRow(record);
+  return {status:"success",categoria:category,metodo:method};
+}
+function configureAssetDepreciationProfile(payload) {
+  var input=payload||{},actor=assetDeprActor_(input),ss=SpreadsheetApp.openById(SPREADSHEET_ID),lock=LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var asset=assetDeprRequireAsset_(ss,input.activoId);
+    var policySheet=assetDeprSheet_(ss,"PoliticasDepreciacionActivos",ASSET_DEPR_POLICY_HEADERS_);
+    var category=String(input.categoriaContable||asset.row[3]||"").trim();
+    var policy=policySheet.getDataRange().getValues().slice(1).filter(function(row){return String(row[1])===category;})[0]||[];
+    var cost=assetDeprMoney_(input.costoCapitalizado),residual=assetDeprMoney_(input.valorResidual===undefined?cost*Number(policy[4]||0)/100:input.valorResidual);
+    var life=Number(input.vidaUtilMeses||policy[3]),method=String(input.metodo||policy[2]||"LineaRecta");
+    var rate=Number(input.tasaAnual===undefined?(policy[5]||0):input.tasaAnual);
+    if(cost<=0||residual<0||residual>cost||!isFinite(life)||life<=0||Math.floor(life)!==life||
+      ["LineaRecta","SaldoDecreciente","UnidadesProduccion"].indexOf(method)<0||!isFinite(rate)||rate<0||rate>=1)throw new Error("PROFILE_INVALID");
+    var accounts={asset:String(input.cuentaActivo||policy[6]||""),accum:String(input.cuentaDepreciacionAcumulada||policy[7]||""),
+      expense:String(input.cuentaGastoDepreciacion||policy[8]||""),loss:String(input.cuentaPerdidaBaja||"")};
+    assetDeprAccount_(ss,accounts.asset);assetDeprAccount_(ss,accounts.accum);assetDeprAccount_(ss,accounts.expense);
+    if(accounts.loss)assetDeprAccount_(ss,accounts.loss);
+    var sheet=assetDeprSheet_(ss,"PerfilesDepreciacionActivos",ASSET_DEPR_PROFILE_HEADERS_),rows=sheet.getDataRange().getValues();
+    var id=String(input.activoId),idx=rows.findIndex(function(row,i){return i>0&&String(row[1])===id;});
+    var record=["PROFILE-"+id,id,category,assetDeprIsoDate_(input.fechaPuestaFuncionamiento),
+      assetDeprIsoDate_(input.fechaInicioDepreciacion||input.fechaPuestaFuncionamiento),
+      input.fechaCorteApertura?assetDeprIsoDate_(input.fechaCorteApertura):"",
+      cost,residual,life,method,rate,Number(input.unidadesTotales||0),Number(input.unidadesAcumuladas||0),
+      assetDeprMoney_(input.depreciacionAcumuladaInicial||0),assetDeprMoney_(input.valorNetoApertura===undefined?cost-residual:Number(input.valorNetoApertura)),
+      accounts.asset,accounts.accum,accounts.expense,accounts.loss,String(input.centroCosto||""),String(input.moneda||"HNL"),
+      actor.userId,new Date(),"Activo"];
+    if(idx>0)sheet.getRange(idx+1,1,1,record.length).setValues([record]);else sheet.appendRow(record);
+    return {status:"success",activoId:id,metodo:method,vidaUtilMeses:life};
+  } finally {lock.releaseLock();}
+}
+function assetDeprComponentAmount_(component,period,monthsRemaining,accumulated) {
+  var cost=Number(component.cost||0),residual=Number(component.residual||0),life=Number(component.life||1);
+  var depreciable=Math.max(0,cost-residual-Number(accumulated||0));
+  if(depreciable<=0)return 0;
+  if(component.method==="UnidadesProduccion")return assetDeprMoney_(Math.min(depreciable,Math.max(0,Number(component.unitsPeriod||0))*depreciable/Math.max(1,Number(component.unitsTotal||0))));
+  if(component.method==="SaldoDecreciente") {
+    var rate=Number(component.rate||0),monthly=cost*rate/12,cap=depreciable/Math.max(1,Number(monthsRemaining||life));
+    return Math.min(depreciable,Math.round(Math.min(monthly,cap)));
+  }
+  return assetDeprMoney_(Math.min(depreciable,(cost-residual)/Math.max(1,life)));
+}
+function assetDeprPriorComponent_(rows,assetId,key,period) {
+  var total=0;
+  rows.slice(1).forEach(function(row){if(String(row[1])===String(assetId)&&String(row[2])<String(period)&&String(row[12])!=="Revertida"){
+    var components=[];try{components=JSON.parse(String(row[10]||"[]"));}catch(ignored){}
+    components.forEach(function(c){if(String(c.key)===String(key))total+=Number(c.depreciacion||0);});
+  }});
+  return assetDeprMoney_(total);
+}
+function calculateAssetDepreciation(payload) {
+  var input=payload||{},actor=assetDeprActor_(input),ss=SpreadsheetApp.openById(SPREADSHEET_ID),lock=LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var asset=assetDeprRequireAsset_(ss,input.activoId),period=String(input.periodo||"");
+    var month=assetDeprMonth_(period),monthEnd=new Date(Date.UTC(month.getUTCFullYear(),month.getUTCMonth()+1,0));
+    var profiles=assetDeprProfileMap_(ss),profile=profiles[String(input.activoId)];
+    if(!profile)throw new Error("ASSET_DEPR_PROFILE_REQUIRED");
+    var sheet=assetDeprSheet_(ss,"DepreciacionesActivos",ASSET_DEPR_HEADERS_),rows=sheet.getDataRange().getValues();
+    var prior=rows.slice(1).filter(function(row){return String(row[1])===String(input.activoId)&&String(row[2])===period;})[0];
+    if(prior&&String(prior[12])==="Revertida")return {status:"success",resultados:[{status:"already_reversed",depreciacionPeriodo:Number(prior[6]),asientoId:prior[11]}]};
+    if(prior&&String(prior[12])==="Contabilizada")return {status:"success",resultados:[{status:"already_posted",depreciacionPeriodo:Number(prior[6]),asientoId:prior[11]}]};
+    var improvementSheet=assetDeprSheet_(ss,"MejorasCapitalizablesActivos",ASSET_DEPR_IMPROVEMENT_HEADERS_);
+    var improvements=improvementSheet.getDataRange().getValues().slice(1).filter(function(row){return String(row[1])===String(input.activoId)&&String(row[11])==="Capitalizada"&&assetDeprDate_(row[2])<=monthEnd;});
+    var depStart=assetDeprDate_(profile[4]),cost=Number(profile[6]),residual=Number(profile[7]),life=Number(profile[8]),method=String(profile[9]),rate=Number(profile[10]);
+    var baseKey="BASE",elapsed=assetDeprMonthsBetween_(depStart,month),remaining=Math.max(1,life-elapsed);
+    var baseAccum=Number(profile[13]||0),openingCutoff=profile[5]?assetDeprDate_(profile[5]):null;
+    var baseComponent={key:baseKey,start:profile[4],cost:cost,residual:residual,life:life,method:method,rate:rate,
+      unitsTotal:Number(profile[11]||0),unitsPeriod:Number(input.unidadesPeriodo||0)};
+    var baseAmount;
+    if(openingCutoff&&month>openingCutoff&&Number(profile[14])>0) {
+      var remMonths=Math.max(1,life-assetDeprMonthsBetween_(depStart,openingCutoff));
+      baseAmount=assetDeprMoney_(Math.min(Number(profile[14]),Number(profile[14])/remMonths));
+    } else baseAmount=assetDeprComponentAmount_(baseComponent,month,remaining,0);
+    if(method==="UnidadesProduccion"&&Number(input.unidadesPeriodo||0)>Number(profile[11]||0)-Number(profile[12]||0))throw new Error("UNITS_EXCEED_REMAINING");
+    var components=[{key:baseKey,costo:cost,depreciacion:baseAmount}];
+    var totalCost=cost,totalPeriod=baseAmount,totalAccum=baseAccum+baseAmount;
+    improvements.forEach(function(row){
+      var c={key:String(row[0]),start:row[2],cost:Number(row[4]),residual:Number(row[5]||0),life:Number(row[6]||life),
+        method:String(row[7]||method),rate:Number(row[8]||rate),unitsTotal:0,unitsPeriod:0};
+      var priorComponent=assetDeprPriorComponent_(rows,input.activoId,c.key,period);
+      var amount=assetDeprComponentAmount_(c,month,Math.max(1,c.life),priorComponent);
+      components.push({key:c.key,costo:c.cost,depreciacion:amount});
+      totalCost+=c.cost;totalPeriod+=amount;totalAccum+=amount;
+    });
+    var previousRows=rows.slice(1).filter(function(row){return String(row[1])===String(input.activoId)&&String(row[2])<period&&String(row[12])==="Contabilizada";});
+    previousRows.forEach(function(row){totalAccum+=Number(row[6]||0);});
+    totalPeriod=assetDeprMoney_(totalPeriod);totalAccum=assetDeprMoney_(totalAccum);totalCost=assetDeprMoney_(totalCost);
+    var net=assetDeprMoney_(Math.max(0,totalCost-totalAccum)),journal=null;
+    if(input.post===true){
+      var lines=[{codigoCuenta:String(profile[17]),nombreCuenta:assetDeprAccount_(ss,profile[17]).name,debe:totalPeriod,haber:0},
+        {codigoCuenta:String(profile[16]),nombreCuenta:assetDeprAccount_(ss,profile[16]).name,debe:0,haber:totalPeriod}];
+      journal=recordAccountingJournalEntry({descripcion:"Depreciación "+input.activoId+" "+period,origenModulo:"ActivosFijos",
+        referenciaId:"DEPRECIACION:"+input.activoId+":"+period,lineas:lines,creadoPor:actor.userId});
+      var id="DEP-"+String(input.activoId)+"-"+period;
+      sheet.appendRow([id,String(input.activoId),period,new Date(),method,totalCost,totalPeriod,totalAccum,net,
+        Number(input.unidadesPeriodo||0),JSON.stringify(components),journal.asientoId,"Contabilizada",
+        String(input.activoId)+"|"+period,actor.userId]);
+      logStructuredEvent("ACCOUNTING","calculateAssetDepreciation","INFO","ASSET_DEPRECIATION_POSTED","Depreciación contabilizada",{activoId:input.activoId,periodo:period},actor.userId);
+    }
+    return {status:"success",resultados:[{activoId:String(input.activoId),periodo:period,metodo:method,
+      depreciacionPeriodo:totalPeriod,depreciacionAcumulada:totalAccum,valorNetoLibros:net,
+      status:input.post===true?"posted":"preview",asientoId:journal&&journal.asientoId}]};
+  } finally {lock.releaseLock();}
+}
+function registerCapitalizableAssetImprovement(payload) {
+  var input=payload||{},actor=assetDeprActor_(input),ss=SpreadsheetApp.openById(SPREADSHEET_ID),lock=LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    assetDeprRequireAsset_(ss,input.activoId);
+    var sheet=assetDeprSheet_(ss,"MejorasCapitalizablesActivos",ASSET_DEPR_IMPROVEMENT_HEADERS_),rows=sheet.getDataRange().getValues();
+    var date=assetDeprIsoDate_(input.fechaCapitalizacion),amount=assetDeprMoney_(input.importe),description=String(input.descripcion||"").trim();
+    if(!description||amount<=0)throw new Error("IMPROVEMENT_VALUES_INVALID");
+    var normalized=description.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    var key=String(input.idempotencyKey||([input.activoId,date,amount,normalized].join("|")));
+    var existing=rows.slice(1).filter(function(row){return String(row[12]||"")===key;});
+    if(existing.length){
+      var same=String(existing[0][1])===String(input.activoId)&&String(existing[0][2])===date&&
+        Number(existing[0][4])===amount&&String(existing[0][3]).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")===normalized;
+      if(!same)throw new Error("IDEMPOTENCY_CONFLICT");
+      return {status:"already_registered",mejoraId:existing[0][0]};
+    }
+    var id="MEJ-"+String(Utilities.getUuid()).replace(/-/g,"").slice(0,20);
+    sheet.appendRow([id,String(input.activoId),date,description,amount,Number(input.valorResidual||0),
+      Number(input.vidaUtilMeses||0),String(input.metodo||""),Number(input.tasaAnual||0),actor.userId,new Date(),"Capitalizada",key]);
+    return {status:"success",mejoraId:id,idempotencyKey:key};
+  } finally {lock.releaseLock();}
+}
+function getAssetDepreciationSchedule(payload) {
+  var input=payload||{},actor=assetDeprActor_(input),ss=SpreadsheetApp.openById(SPREADSHEET_ID),lock=LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var profiles=assetDeprProfileMap_(ss),depreciations=assetDeprSheet_(ss,"DepreciacionesActivos",ASSET_DEPR_HEADERS_).getDataRange().getValues().slice(1);
+    var improvements=assetDeprSheet_(ss,"MejorasCapitalizablesActivos",ASSET_DEPR_IMPROVEMENT_HEADERS_).getDataRange().getValues().slice(1);
+    var assetsSheet=ss.getSheetByName("ActivosPatrimoniales"),assets=assetsSheet.getDataRange().getValues().slice(1);
+    var cutoff=input.fechaCorte?assetDeprDate_(input.fechaCorte):new Date(8640000000000000);
+    var filtered=depreciations.filter(function(row){return (!input.activoId||String(row[1])===String(input.activoId))&&assetDeprMonth_(row[2])<=cutoff;});
+    var calendar=filtered.map(function(row){return {activoId:row[1],periodo:row[2],depreciacionPeriodo:Number(row[6]),depreciacionAcumulada:Number(row[7]),valorNetoLibros:Number(row[8]),estado:String(row[12])};});
+    var assetSummaries=assets.filter(function(row){return !input.activoId||String(row[0])===String(input.activoId);}).map(function(asset){
+      var profile=profiles[String(asset[0])];if(!profile)return null;
+      var rows=filtered.filter(function(row){return String(row[1])===String(asset[0])&&String(row[12])==="Contabilizada";});
+      var opening=Number(profile[13]||0),accum=opening+rows.reduce(function(sum,row){return sum+Number(row[6]||0);},0);
+      var cost=Number(profile[6]||0)+improvements.filter(function(row){return String(row[1])===String(asset[0])&&assetDeprDate_(row[2])<=cutoff;}).reduce(function(sum,row){return sum+Number(row[4]||0);},0);
+      return {activoId:asset[0],codigoPatrimonial:asset[1],nombre:asset[2],categoria:asset[3],costoCapitalizado:assetDeprMoney_(cost),
+        depreciacionAcumulada:assetDeprMoney_(accum),valorNetoLibros:assetDeprMoney_(Math.max(0,cost-accum)),
+        fechaFinEstimada:assetDeprIsoDate_(new Date(assetDeprDate_(profile[4]).getTime()+Number(profile[8])*30*86400000))};
+    }).filter(Boolean);
+    var annual={},categories={};
+    calendar.forEach(function(item){var year=item.periodo.slice(0,4);annual[year]=annual[year]||{anio:year,periodos:0,depreciacion:0};annual[year].periodos++;annual[year].depreciacion+=item.depreciacionPeriodo;});
+    assetSummaries.forEach(function(item){var key=String(item.categoria||"Sin categoría");categories[key]=categories[key]||{categoria:key,depreciacionAcumulada:0,activos:0};categories[key].depreciacionAcumulada+=item.depreciacionAcumulada;categories[key].activos++;});
+    var allProfiles=Object.keys(profiles).map(function(id){return profiles[id];});
+    var totalCost=allProfiles.reduce(function(sum,p){return sum+Number(p[6]||0);},0)+improvements.reduce(function(sum,r){return sum+Number(r[4]||0);},0);
+    var totalAccum=allProfiles.reduce(function(sum,p){return sum+Number(p[13]||0);},0)+depreciations.filter(function(r){return String(r[12])==="Contabilizada";}).reduce(function(sum,r){return sum+Number(r[6]||0);},0);
+    var journals=assetDeprSheet_(ss,"AsientosContables",["AsientoID","Fecha","Descripcion","OrigenModulo","ReferenciaID","LineasJSON","Estado","CreadoPor"]).getDataRange().getValues().slice(1);
+    var assetDebit=0,accumCredit=0,depLedger=0;
+    journals.forEach(function(row){var lines=[];try{lines=JSON.parse(String(row[5]||"[]"));}catch(ignored){}
+      lines.forEach(function(line){if(String(line.codigoCuenta)==="1501")assetDebit+=Number(line.debe||0)-Number(line.haber||0);
+        if(String(line.codigoCuenta)==="1599")accumCredit+=Number(line.haber||0)-Number(line.debe||0);
+        if(String(row[4]||"").indexOf("DEPRECIACION:")===0&&String(line.codigoCuenta)==="1599")depLedger+=Number(line.haber||0)-Number(line.debe||0);});
+    });
+    var registered=filtered.filter(function(row){return String(row[12])==="Contabilizada";}).reduce(function(sum,row){return sum+Number(row[6]||0);},0);
+    var diff=assetDeprMoney_((totalCost-totalAccum)-(assetDebit-accumCredit));
+    var depLedgerForSelection=filtered.filter(function(row){return String(row[12])==="Contabilizada";}).reduce(function(sum,row){return sum+Number(row[6]||0);},0);
+    return {status:"success",calendario:calendar,activos:assetSummaries,resumenAnual:Object.keys(annual).sort().map(function(k){return annual[k];}),
+      resumenCategoria:Object.keys(categories).map(function(k){categories[k].depreciacionAcumulada=assetDeprMoney_(categories[k].depreciacionAcumulada);return categories[k];}),
+      conciliacion:{estado:Math.abs(registered-depLedgerForSelection)<0.01?"Conciliado":"Diferencia",
+        depreciacionRegistrada:assetDeprMoney_(registered),depreciacionEnLibroMayor:assetDeprMoney_(depLedgerForSelection),
+        balancePatrimonial:{estado:Math.abs(diff)<0.01?"Conciliado":"Diferencia",diferencia:diff,costoCapitalizado:assetDeprMoney_(totalCost),
+          depreciacionAcumulada:assetDeprMoney_(totalAccum),activoNetoLibro:assetDeprMoney_(totalCost-totalAccum),activoNetoMayor:assetDeprMoney_(assetDebit-accumCredit)}}};
+  } finally {lock.releaseLock();}
+}
+function reverseAssetDepreciationEntry(payload) {
+  var input=payload||{},actor=assetDeprActor_(input),ss=SpreadsheetApp.openById(SPREADSHEET_ID),lock=LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var sheet=assetDeprSheet_(ss,"DepreciacionesActivos",ASSET_DEPR_HEADERS_),rows=sheet.getDataRange().getValues();
+    var matches=rows.slice(1).map(function(row,index){return {row:row,index:index+2};}).filter(function(x){return String(x.row[1])===String(input.activoId)&&String(x.row[2])===String(input.periodo);});
+    if(matches.length!==1)throw new Error("DEPRECIATION_ENTRY_NOT_FOUND");
+    var match=matches[0],row=match.row;
+    if(String(row[12])==="Revertida")return {status:"already_reversed",asientoId:row[11]};
+    var later=rows.slice(1).filter(function(x){return String(x[1])===String(input.activoId)&&String(x[2])>String(input.periodo)&&String(x[12])==="Contabilizada";});
+    if(later.length)throw new Error("LATEST_PERIOD_ONLY");
+    var journals=assetDeprSheet_(ss,"AsientosContables",["AsientoID","Fecha","Descripcion","OrigenModulo","ReferenciaID","LineasJSON","Estado","CreadoPor"]).getDataRange().getValues();
+    var original=journals.slice(1).filter(function(x){return String(x[0])===String(row[11]);})[0];
+    if(!original)throw new Error("DEPRECIATION_JOURNAL_NOT_FOUND");
+    var originalLines=JSON.parse(String(original[5]||"[]"));
+    var reversed=originalLines.map(function(line){return {codigoCuenta:line.codigoCuenta,nombreCuenta:line.nombreCuenta,debe:Number(line.haber||0),haber:Number(line.debe||0)};});
+    var journal=recordAccountingJournalEntry({descripcion:"Reversión depreciación "+input.activoId+" "+input.periodo,
+      origenModulo:"ActivosFijos",referenciaId:"REVERSA_DEPRECIACION:"+input.activoId+":"+input.periodo,
+      lineas:reversed,creadoPor:actor.userId});
+    row[12]="Revertida";row[10]=JSON.stringify({componentes:JSON.parse(String(row[10]||"[]")),asientoReversionId:journal.asientoId,motivo:String(input.motivo||"")});
+    sheet.getRange(match.index,1,1,ASSET_DEPR_HEADERS_.length).setValues([row]);
+    return {status:"success",asientoId:row[11],asientoReversionId:journal.asientoId};
+  } finally {lock.releaseLock();}
+}
+function registerDepreciableAssetDisposal_(payload) {
+  var input=payload||{},actor=assetDeprActor_(input),ss=SpreadsheetApp.openById(SPREADSHEET_ID),lock=LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var asset=assetDeprRequireAsset_(ss,input.activoId),date=assetDeprDate_(input.fechaBaja);
+    var monthEnd=new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth()+1,0));
+    if(date.getUTCDate()!==monthEnd.getUTCDate())throw new Error("MONTH_END_CLOSE");
+    var period=date.getUTCFullYear()+"-"+String(date.getUTCMonth()+1).padStart(2,"0");
+    var profiles=assetDeprProfileMap_(ss),profile=profiles[String(input.activoId)];
+    var depRows=assetDeprSheet_(ss,"DepreciacionesActivos",ASSET_DEPR_HEADERS_).getDataRange().getValues().slice(1);
+    var start=String(profile[4]).slice(0,7),months=assetDeprMonthsBetween_(assetDeprDate_(profile[4]),monthEnd)+1;
+    for(var m=0;m<months;m++){var dt=assetDeprMonth_(start);dt.setUTCMonth(dt.getUTCMonth()+m);var p=dt.getUTCFullYear()+"-"+String(dt.getUTCMonth()+1).padStart(2,"0");
+      if(!depRows.some(function(r){return String(r[1])===String(input.activoId)&&String(r[2])===p&&String(r[12])==="Contabilizada";}))throw new Error("PERIODS_MISSING");}
+    var improvements=assetDeprSheet_(ss,"MejorasCapitalizablesActivos",ASSET_DEPR_IMPROVEMENT_HEADERS_).getDataRange().getValues().slice(1).filter(function(r){return String(r[1])===String(input.activoId)&&String(r[11])==="Capitalizada"&&assetDeprDate_(r[2])<=date;});
+    var cost=Number(profile[6])+improvements.reduce(function(sum,r){return sum+Number(r[4]||0);},0);
+    var accum=Number(profile[13]||0)+depRows.filter(function(r){return String(r[1])===String(input.activoId)&&String(r[2])<=period&&String(r[12])==="Contabilizada";}).reduce(function(sum,r){return sum+Number(r[6]||0);},0);
+    var book=assetDeprMoney_(Math.max(0,cost-accum)),sale=assetDeprMoney_(input.valorVenta||0),gain=Math.max(0,sale-book),loss=Math.max(0,book-sale);
+    var assetAccount=assetDeprAccount_(ss,profile[15]),accumAccount=assetDeprAccount_(ss,profile[16]);
+    var lines=[{codigoCuenta:profile[16],nombreCuenta:accumAccount.name,debe:accum,haber:0},
+      {codigoCuenta:gain>0?profile[15]:profile[18]||profile[17],nombreCuenta:gain>0?assetAccount.name:"Pérdida por baja",debe:loss,haber:0},
+      {codigoCuenta:profile[15],nombreCuenta:assetAccount.name,debe:0,haber:cost}];
+    if(sale>0)lines.push({codigoCuenta:String(input.cuentaBancos||"1101"),nombreCuenta:"Bancos",debe:sale,haber:0});
+    if(gain>0)lines.push({codigoCuenta:String(profile[15]),nombreCuenta:"Ganancia por baja",debe:0,haber:gain});
+    var journal=recordAccountingJournalEntry({descripcion:"Baja de activo "+input.activoId,origenModulo:"ActivosFijos",
+      referenciaId:"BAJA_ACTIVO:"+input.activoId,lineas:lines,creadoPor:actor.userId});
+    var disposalSheet=assetDeprSheet_(ss,"BajasBienes",["BajaID","Fecha","TipoBien","BienIDCodigo","NombreBien","MotivoBaja","ValorLibros","AutorizadoPorUserId","DocumentoActaUrl","Estado","Observaciones"]);
+    disposalSheet.appendRow(["BAJA-"+String(Utilities.getUuid()).replace(/-/g,"").slice(0,20),date,String(input.tipoBien||"ActivoFijo"),
+      String(input.activoId),String(asset.row[2]),String(input.motivoBaja||""),book,actor.userId,String(input.documentoActaUrl||""),"Aprobada","Asiento "+journal.asientoId]);
+    asset.sheet.getRange(asset.rowIndex,8).setValue("Disposed");
+    return {status:"success",valorLibros:book,asientoId:journal.asientoId};
+  } finally {lock.releaseLock();}
+}
+
 function doGet() {
   return textResponse({ status: "success", service: "ACCOUNTING",
     configured: !!String(PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID") || "").trim()
@@ -3987,6 +4299,14 @@ function doPost(e) {
     if (request.action === "createPurchaseRequest") return respond(createPurchaseRequest(actionPayload));
     if (request.action === "createPurchaseOrder") return respond(createPurchaseOrder(actionPayload));
     if (request.action === "verifyThreeWayMatch") return respond(verifyThreeWayMatch(actionPayload));
+    if (request.action === "saveAssetDepreciationPolicy") return respond(saveAssetDepreciationPolicy(actionPayload));
+    if (request.action === "configureAssetDepreciationProfile") return respond(configureAssetDepreciationProfile(actionPayload));
+    if (request.action === "registerCapitalizableAssetImprovement") return respond(registerCapitalizableAssetImprovement(actionPayload));
+    if (request.action === "calculateAssetDepreciation") return respond(calculateAssetDepreciation(actionPayload));
+    if (request.action === "getAssetDepreciationSchedule") return respond(getAssetDepreciationSchedule(actionPayload));
+    if (request.action === "registerDepreciableAssetDisposal") return respond(registerDepreciableAssetDisposal_(actionPayload));
+    if (request.action === "reverseAssetDepreciationEntry") return respond(reverseAssetDepreciationEntry(actionPayload));
+
 
     if (request.action === "getPurchaseQuotations") return respond(getPurchaseQuotations(actionPayload));
     if (request.action === "getPurchaseQuotationMatrix") return respond(getPurchaseQuotationMatrix(actionPayload));
