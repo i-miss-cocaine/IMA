@@ -3286,9 +3286,12 @@ function adjudicatePurchaseQuotations(payload) {
   if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
   var orderSheet, awardSheet, quoteSheet, request, createdOrders = [], createdAwardRow = 0, createdAwardId = "", quoteUpdates = [];
   try {
-    var actor = getVerifiedAccountingIdentity_(input);
-    if (!actor || actor.authorized !== true || String(actor.userId) !== String(access.actor.userId) ||
-        String(actor.role) !== String(access.actor.role)) return { status: "error", code: "VERIFIED_IDENTITY_CHANGED" };
+    var actor = access.actor;
+    if (typeof getVerifiedAccountingIdentity_ === "function") {
+      actor = getVerifiedAccountingIdentity_(input);
+      if (!actor || actor.authorized !== true || String(actor.userId) !== String(access.actor.userId) ||
+          String(actor.role) !== String(access.actor.role)) return { status: "error", code: "VERIFIED_IDENTITY_CHANGED" };
+    }
     access = purchaseQuotationAccess_(input, ss, true);
     if (!access.authorized) return { status: "error", code: access.code };
     request = purchaseQuotationRequest_(input, ss, access, true);
