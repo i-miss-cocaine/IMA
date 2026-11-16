@@ -2845,9 +2845,7 @@ function manageStaffingNeeds(payload) {
   var department = resolveStaffingDepartmentReference_(ss, input.departamentoArea);
   if (!department.resolved) return { status:"error", code:department.code };
   var assigned = (access.scope.departmentIds || []).map(function(value) { return String(value || "").trim(); });
-  if (access.scope.institutionWide === true || assigned.indexOf(department.departmentId) < 0) {
-    return { status:"error", code:"RESOURCE_SCOPE_DENIED" };
-  }
+  if (access.scope.institutionWide === true || assigned.indexOf(department.departmentId) < 0) return { status:"error", code:"RESOURCE_SCOPE_DENIED" };
   var vacancyId = String(input.vacanteRelacionadaId || "").trim();
   if (vacancyId) {
     var vacancies = ss.getSheetByName("VacantesLaborales");
@@ -2855,46 +2853,59 @@ function manageStaffingNeeds(payload) {
     var vacancyRows = vacancies.getDataRange().getValues(), vh = (vacancyRows[0] || []).map(function(v) { return String(v || "").trim(); });
     var vi = vh.indexOf("VacanteID"), vd = vh.indexOf("Departamento");
     if (vi < 0 || vd < 0) return { status:"error", code:"RESOURCE_SCHEMA_INVALID" };
-    var matches = vacancyRows.slice(1).filter(function(row) { return String(row[vi] || "").trim() === vacancyId; });
-    if (matches.length !== 1 || String(matches[0][vd] || "").trim() !== department.departmentId) return { status:"error", code:"RESOURCE_NOT_FOUND" };
+    var vacancyMatches = vacancyRows.slice(1).filter(function(row) { return String(row[vi] || "").trim() === vacancyId; });
+    if (vacancyMatches.length !== 1 || String(vacancyMatches[0][vd] || "").trim() !== department.departmentId) return { status:"error", code:"RESOURCE_NOT_FOUND" };
   }
-  var quantity = Number(input.cantidadRequerida);
+  var planId = String(input.planificacionId || "").trim(), existingSnapshot = null, candidateId = "";
+  var currentSheet = ss.getSheetByName("PlanificacionNecesidadesPersonal");
+  if (planId) {
+    if (!currentSheet) return { status:"error", code:"RESOURCE_NOT_FOUND" };
+    var currentRows = currentSheet.getDataRange().getValues();
+    var expectedHeaders = ["PlanificacionID","PeriodoAcademico","DepartamentoArea","PuestoOFamilia","CantidadRequerida",
+      "EscenarioMatricula","MetricaBaseCalculo","ObservacionesJustificacion","VacanteRelacionadaID","CreadoPor","FechaCreacion","UltimaModificacion"];
+    if (!currentRows.length || JSON.stringify(currentRows[0].map(function(v) { return String(v || "").trim(); })) !== JSON.stringify(expectedHeaders)) {
+      return { status:"error", code:"RESOURCE_SCHEMA_INVALID" };
+    }
+    var preflight = currentRows.slice(1).filter(function(row) { return String(row[0] || "").trim() === planId; });
+    if (preflight.length !== 1 || String(preflight[0][2] || "").trim() !== department.departmentId) return { status:"error", code:"RESOURCE_NOT_FOUND" };
+    existingSnapshot = preflight[0];
+  } else {
+    candidateId = "PLAN-NEC-" + String(Utilities.getUuid()).replace(/-/g,"").slice(0,24);
+    var existingRows = currentSheet ? currentSheet.getDataRange().getValues().slice(1) : [];
+    if (existingRows.some(function(row) { return String(row[0] || "").trim() === candidateId; })) return { status:"error", code:"STAFFING_PLAN_ID_COLLISION" };
+  }
+  var quantity = input.cantidadRequerida === undefined && existingSnapshot ? Number(existingSnapshot[4]) : Number(input.cantidadRequerida);
   if (!isFinite(quantity) || quantity <= 0 || Math.floor(quantity) !== quantity) return { status:"error", code:"STAFFING_QUANTITY_INVALID" };
-  var period = String(input.periodoAcademico || "").trim(), position = String(input.puestoOFamilia || "").trim();
+  var period = String(input.periodoAcademico || existingSnapshot && existingSnapshot[1] || "").trim();
+  var position = String(input.puestoOFamilia || existingSnapshot && existingSnapshot[3] || "").trim();
   if (!period || !position) return { status:"error", code:"STAFFING_FIELDS_REQUIRED" };
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) return { status:"error", code:"CONCURRENT_UPDATE_RETRY" };
   try {
     var schema = ensureStaffingNeedsWriteSheet_(ss);
     if (!schema.valid) return { status:"error", code:schema.code };
-    var rows = schema.sheet.getDataRange().getValues(), planId = String(input.planificacionId || "").trim();
-    var now = new Date(), row;
+    var rows = schema.sheet.getDataRange().getValues(), row, now = new Date();
     if (planId) {
       var existing = rows.slice(1).map(function(value,index) { return {row:value,index:index}; })
         .filter(function(item) { return String(item.row[0] || "").trim() === planId; });
-      if (existing.length !== 1 || String(existing[0].row[2] || "").trim() !== department.departmentId) {
-        return { status:"error", code:"RESOURCE_NOT_FOUND" };
-      }
+      if (existing.length !== 1 || String(existing[0].row[2] || "").trim() !== department.departmentId) return { status:"error", code:"RESOURCE_NOT_FOUND" };
       row = existing[0].row.slice();
       row[1] = period; row[2] = department.departmentId; row[3] = position; row[4] = quantity;
       row[5] = String(input.escenarioMatricula || row[5] || "Base");
       row[6] = String(input.metricaBaseCalculo || row[6] || "Manual");
-      row[7] = String(input.observacionesJustificacion || "").slice(0,1000);
-      row[8] = vacancyId; row[11] = now;
+      row[7] = input.observacionesJustificacion === undefined ? row[7] : String(input.observacionesJustificacion || "").slice(0,1000);
+      row[8] = vacancyId || row[8] || ""; row[11] = now;
       try { schema.sheet.getRange(existing[0].index + 2,1,1,row.length).setValues([row]); }
       catch (_) { return { status:"error", code:"STAFFING_PLAN_WRITE_FAILED" }; }
       return { status:"success", planificacionId:planId, departamentoArea:department.departmentId };
     }
-    planId = "PLAN-NEC-" + String(Utilities.getUuid()).replace(/-/g,"").slice(0,24);
-    if (rows.slice(1).some(function(value) { return String(value[0] || "").trim() === planId; })) {
-      return { status:"error", code:"STAFFING_PLAN_ID_COLLISION" };
-    }
-    row = [planId,period,department.departmentId,position,quantity,String(input.escenarioMatricula || "Base"),
+    if (rows.slice(1).some(function(value) { return String(value[0] || "").trim() === candidateId; })) return { status:"error", code:"STAFFING_PLAN_ID_COLLISION" };
+    row = [candidateId,period,department.departmentId,position,quantity,String(input.escenarioMatricula || "Base"),
       String(input.metricaBaseCalculo || "Manual"),String(input.observacionesJustificacion || "").slice(0,1000),
       vacancyId,String(access.actor.userId),now,now];
     try { schema.sheet.appendRow(row); }
     catch (_) { return { status:"error", code:"STAFFING_PLAN_WRITE_FAILED" }; }
-    return { status:"success", planificacionId:planId, departamentoArea:department.departmentId };
+    return { status:"success", planificacionId:candidateId, departamentoArea:department.departmentId };
   } finally { lock.releaseLock(); }
 }
 function getStaffingNeedsPlanning(payload) {
