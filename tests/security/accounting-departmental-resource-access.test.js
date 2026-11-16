@@ -166,12 +166,12 @@ const rows={
 const ss={getSheetByName:name=>rows[name]?makeSheet(rows[name]):null};
 const fileBytes=Buffer.from("%PDF-1.4 test");
 const files={
- FILE_A_123456789012345678901234567890:{isTrashed:()=>false,getSharingAccess:()=>"PRIVATE",getName:()=>"voucher-a.pdf",getMimeType:()=>"application/pdf",getBlob:()=>({getBytes:()=>Array.from(fileBytes),getContentType:()=>"application/pdf"})},
- FILE_B_123456789012345678901234567890:{isTrashed:()=>false,getSharingAccess:()=>"PRIVATE",getName:()=>"voucher-b.pdf",getMimeType:()=>"application/pdf",getBlob:()=>({getBytes:()=>Array.from(fileBytes),getContentType:()=>"application/pdf"})},
- FILE_N_123456789012345678901234567890:{isTrashed:()=>false,getSharingAccess:()=>"PRIVATE",getName:()=>"voucher-n.pdf",getMimeType:()=>"application/pdf",getBlob:()=>({getBytes:()=>Array.from(fileBytes),getContentType:()=>"application/pdf"})},
- FILE_TRASHED_123456789012345678901234567890:{isTrashed:()=>true,getSharingAccess:()=>"PRIVATE",getName:()=>"voucher-trashed.pdf",getMimeType:()=>"application/pdf",getBlob:()=>({getBytes:()=>Array.from(fileBytes),getContentType:()=>"application/pdf"})},
- FILE_BADTYPE_123456789012345678901234567890:{isTrashed:()=>false,getSharingAccess:()=>"PRIVATE",getName:()=>"voucher.exe",getMimeType:()=>"application/octet-stream",getBlob:()=>({getBytes:()=>Array.from(fileBytes),getContentType:()=>"application/octet-stream"})},
- FILE_EMPTY_123456789012345678901234567890:{isTrashed:()=>false,getSharingAccess:()=>"PRIVATE",getName:()=>"voucher-empty.pdf",getMimeType:()=>"application/pdf",getBlob:()=>({getBytes:()=>[],getContentType:()=>"application/pdf"})},
+ FILE_A_123456789012345678901234567890:{isTrashed:()=>false,getSharingAccess:()=>"PRIVATE",setSharing:()=>{},getName:()=>"voucher-a.pdf",getMimeType:()=>"application/pdf",getBlob:()=>({getBytes:()=>Array.from(fileBytes),getContentType:()=>"application/pdf"})},
+ FILE_B_123456789012345678901234567890:{isTrashed:()=>false,getSharingAccess:()=>"PRIVATE",setSharing:()=>{},getName:()=>"voucher-b.pdf",getMimeType:()=>"application/pdf",getBlob:()=>({getBytes:()=>Array.from(fileBytes),getContentType:()=>"application/pdf"})},
+ FILE_N_123456789012345678901234567890:{isTrashed:()=>false,getSharingAccess:()=>"PRIVATE",setSharing:()=>{},getName:()=>"voucher-n.pdf",getMimeType:()=>"application/pdf",getBlob:()=>({getBytes:()=>Array.from(fileBytes),getContentType:()=>"application/pdf"})},
+ FILE_TRASHED_123456789012345678901234567890:{isTrashed:()=>true,getSharingAccess:()=>"PRIVATE",setSharing:()=>{},getName:()=>"voucher-trashed.pdf",getMimeType:()=>"application/pdf",getBlob:()=>({getBytes:()=>Array.from(fileBytes),getContentType:()=>"application/pdf"})},
+ FILE_BADTYPE_123456789012345678901234567890:{isTrashed:()=>false,getSharingAccess:()=>"PRIVATE",setSharing:()=>{},getName:()=>"voucher.exe",getMimeType:()=>"application/octet-stream",getBlob:()=>({getBytes:()=>Array.from(fileBytes),getContentType:()=>"application/octet-stream"})},
+ FILE_EMPTY_123456789012345678901234567890:{isTrashed:()=>false,getSharingAccess:()=>"PRIVATE",setSharing:()=>{},getName:()=>"voucher-empty.pdf",getMimeType:()=>"application/pdf",getBlob:()=>({getBytes:()=>[],getContentType:()=>"application/pdf"})},
  FILE_PUBLIC_123456789012345678901234567890:{isTrashed:()=>false,getSharingAccess:()=>"ANYONE_WITH_LINK",getName:()=>"voucher-public.pdf",getMimeType:()=>"application/pdf",getBlob:()=>({getBytes:()=>Array.from(fileBytes),getContentType:()=>"application/pdf"})}
 };
 let payrollFileSequence=0;
