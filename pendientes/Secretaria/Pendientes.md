@@ -3712,11 +3712,14 @@
   - [ ] Reutilizar un token vencido, revocado o asociado a otra versión: el servidor rechaza la solicitud.
   - [ ] Ningún proceso de carga privado vuelve a establecer `ANYONE_WITH_LINK`.
 - **Dependencias:** F40-Task01, F40-Task03.
-- **Estado:** [ ] En ejecución (parcial; proxy autenticado y token efímero implementados; permisos PREVIEW y beta real pendientes)
+- **Estado:** [ ] En ejecución (parcial; Academic PREVIEW/DOWNLOAD con RBAC, token efímero, proxy y UI diferenciadas; flujo binario ACCOUNTING y beta real pendientes)
 - **Avance C1.780 (2026-11-16):** Academic ya separa PREVIEW y DOWNLOAD con permisos RBAC, tokens HMAC de un solo uso vinculados a operación/documento/versión/usuario y auditoría diferenciada; la UI muestra botones Ver y Descargar. Accounting getEmployeeDocuments deja de devolver archivoUrl y solo informa tieneArchivo, con verificación de privacidad Drive. No se localizaron uploadEmployeeDocument ni uploadPaymentVoucher ni un proxy binario Accounting en el servicio actual; no se inventó una ruta. La carga/entrega laboral autenticada y beta real permanecen pendientes.
 - **Verificación C1.780:** Accounting Import Preflight run 43788968649 SUCCESS (Node 24.22.2); Department Reference Consumers run 43789068286 SUCCESS. Department Scope run 43789068303 conserva FAIL independiente porque falta resolveEmployeeDepartmentId_ en ACCOUNTING. BETA-FUNC-110 describe la validación aislada pendiente.
 
 
+
+- **Avance C1.782 (2026-11-16):** Academic distingue PREVIEW y DOWNLOAD en el permiso RBAC, claims HMAC y consumo del proxy; un token PREVIEW no se puede usar para descargar, los tokens siguen siendo de un uso y la auditoría distingue vista previa/descarga. UI Secretaría ofrece Ver y Descargar por separado. Pruebas cubren denegación de PREVIEW, operación inválida, replay y escalamiento entre operaciones.
+- **Verificación C1.782:** Accounting Import Preflight run 43791013454 SUCCESS con Node.js 24.22.2; Department Scope run 43791013489 FAIL por resolveEmployeeDepartmentId_ no definido en backend/accounting-service/Code.gs. El flujo binario laboral contable y las pruebas beta reales siguen pendientes; no se inventó un repositorio documental.
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 6176-6207; clave TASK-143; asignación única: Secretaria -->
 
 ---

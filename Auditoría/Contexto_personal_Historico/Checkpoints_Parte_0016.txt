@@ -462,3 +462,38 @@
 - TASK-143 todavía no es elegible hasta verificar/resolver los demás prerrequisitos declarados en Plan Maestro: TASK-296, AUD-NG-127, F31-Task09, F34-Task04 y F39-Task02. AUD-NG-158 deja de ser bloqueo.
 - Siguiente: auditar los prerrequisitos pendientes de TASK-143/TASK-144 y elegir el siguiente alcance técnico ejecutable; mantener visible el fallo independiente de Department Scope.
 ===============================================================================
+
+
+===============================================================================
+## C1.782 — IMA-EXEC-20261116-0218Z-TASK142-PREVIEW-DOWNLOAD-CI-01 — Separación de vista previa y descarga autenticadas
+
+- Fecha: 2026-11-16 02:18 UTC.
+- Rama autorizada: NG_beta_0.0.0.1_work.
+- Rama base: NG_beta_0.0.0.1.
+- HEAD inicial: 6ba6d8348aa17f8c88c9d2366aad54ee69b41c3b.
+- Commits funcional y de pruebas/contratos: c128d6385b116240b2410f12545872e42639958b, dc8c8208ce8c843c949d424be0903ddfe44c2b89.
+- HEAD final: dc8c8208ce8c843c949d424be0903ddfe44c2b89.
+- Continuidad: C1.781; se conserva el avance funcional C1.780.
+
+### Implementación TASK-142
+
+- Academic createStudentDocumentAccessToken acepta únicamente PREVIEW o DOWNLOAD; la operación forma parte de los claims firmados, no puede cambiarse en el stream, y el token sigue siendo efímero, de un solo uso y vinculado a documento/versión/usuario.
+- PREVIEW requiere el permiso RBAC separado previewStudentDocument; DOWNLOAD conserva getStudentDocumentFile. El proxy revalida la autorización de la operación al consumir el token.
+- El registro de auditoría diferencia DOCUMENT_PREVIEWED y DOCUMENT_DOWNLOADED.
+- La UI de Secretaría presenta acciones separadas Ver y Descargar. La vista previa abre una ventana de forma síncrona para evitar bloqueo del popup; si el navegador la bloquea, falla de forma explícita sin degradar a descarga.
+- Se agregaron pruebas para permiso PREVIEW denegado, operación inválida, stream PREVIEW, auditoría de vista previa, replay y rechazo de escalamiento PREVIEW→DOWNLOAD.
+- Se corrigieron dos contratos transversales que bloqueaban la suite Accounting: fixture PDF JavaScript que codificaba saltos de línea literales en vez de LF reales; aserción de rechazo de macros OpenXML que ahora reconoce ambos códigos fail-closed válidos (XLSX_MACROS_NOT_ALLOWED y OPENXML_ACTIVE_CONTENT_NOT_ALLOWED).
+
+### Verificación
+
+- GitHub Actions Accounting Import Preflight Contract run 43791013454: SUCCESS, Node.js 24.22.2; sin pasos fallidos. El paso de Academic private document SHA-256/deduplication y el resto de los contratos/sintaxis de la suite pasaron.
+- GitHub Actions Department Scope Contract run 43791013489: FAILURE independiente en accounting-vacation-medical-leave-ownership.test.js; la extracción exige resolveEmployeeDepartmentId_ en backend/accounting-service/Code.gs y el helper no existe en ese servicio. Los contratos de ámbito previos del workflow pasaron. No se alteró el test ni se añadió un helper ficticio.
+- Node CLI local: NOT RUN; Node 24 se ejecutó en GitHub Actions. No se desplegó Apps Script/Drive/Sheets en beta real.
+- HEAD de rama base verificado sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+### Estado y siguiente acción
+
+- TASK-142 continúa En ejecución parcial: Academic PREVIEW/DOWNLOAD y UI diferenciadas quedan cubiertos por CI; falta un flujo binario Accounting con propietario de almacenamiento confirmado, y beta real (permisos privados Drive, sesión anónima, revocación y comportamiento del stream).
+- No se crean rutas uploadEmployeeDocument/uploadPaymentVoucher ni almacenamiento paralelo sin evidencia de propietario.
+- Siguiente: auditar prerrequisitos TASK-143/TASK-144 declarados en el Plan Maestro y elegir un alcance ejecutable; mantener el fallo de Department Scope visible y remediarlo en el propietario ACCOUNTING, no en el test.
+===============================================================================
