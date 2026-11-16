@@ -2174,7 +2174,7 @@ function submitAttendanceCorrection(payload) {
     return { status: "error", code: "ATTENDANCE_CORRECTION_DATA_INVALID" };
   }
   var evidenceUrl = String(input.evidenciaUrl || "").trim();
-  if (evidenceUrl && (!/^https:\/\//i.test(evidenceUrl) || /[\\s<>]/.test(evidenceUrl))) {
+  if (evidenceUrl && (evidenceUrl.indexOf("https://") !== 0 || /[\\s<>]/.test(evidenceUrl))) {
     return { status: "error", code: "EVIDENCE_URL_INVALID" };
   }
   var incidentDate = String(input.fechaIncidencia || access.attendanceRow[1] || "").slice(0, 10);
