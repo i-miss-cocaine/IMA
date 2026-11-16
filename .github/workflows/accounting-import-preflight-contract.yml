@@ -13,6 +13,7 @@ on:
       - tests/security/academic-pdf-page-classifier.test.js
       - tests/security/openxml-package-validation.test.js
       - tests/security/file-binary-validation-contract.test.js
+      - tests/security/reusable-resource-xss-url-contract.test.js
       - tests/security/accounting-import-auth-router.test.js
       - tests/security/accounting-migration-writer.test.js
       - tests/security/accounting-import-file-envelope.test.js
@@ -74,6 +75,8 @@ jobs:
         run: node tests/security/academic-pdf-page-classifier.test.js
       - name: Run cross-service file binary validation contract
         run: node tests/security/file-binary-validation-contract.test.js
+      - name: Run reusable resource XSS and private Drive URL contract
+        run: node tests/security/reusable-resource-xss-url-contract.test.js
       - name: Run cross-service OpenXML package contract
         run: node tests/security/openxml-package-validation.test.js
       - name: Run semantic import preflight contract
