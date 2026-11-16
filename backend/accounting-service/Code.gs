@@ -10589,9 +10589,9 @@ function maintenancePlanComplete_(ss,orderRow,actor){
 
 // Restored monthly transport billing and service tariff engine.
 function monthlyChargeHeaderMap_(headers, required) {
-  const map = {};
-  (headers || []).forEach((value, index) => { map[String(value || "").trim().toLowerCase()] = index; });
-  required.forEach(name => { if (map[name.toLowerCase()] === undefined) throw new Error("MONTHLY_CHARGE_SCHEMA_INVALID:" + name); });
+  const map = {},keyOf=value=>String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  (headers || []).forEach((value, index) => { map[keyOf(value)] = index; });
+  required.forEach(name => { if (map[keyOf(name)] === undefined) throw new Error("MONTHLY_CHARGE_SCHEMA_INVALID:" + name); });
   return map;
 }
 
