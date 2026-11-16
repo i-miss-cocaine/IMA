@@ -1,4 +1,5 @@
 # Keep canonical absence reconciliation and ownership tests covered on every relevant push.
+# Include the PDF page classifier dependency in the academic evidence contract.
 name: Department Scope Contract
 
 on:
