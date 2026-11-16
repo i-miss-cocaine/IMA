@@ -1691,6 +1691,9 @@ function manageDisciplinaryMeasure(payload) {
   var access = resolveLaborIncidentWriteAccess_(input, ss, input.empleadoId, "manageDisciplinaryMeasure");
   if (!access.authorized) return { status: "error", code: access.code };
   var headers = ["MedidaID","IncidenciaID","EmpleadoID","TipoMedida","FundamentoDocumentado","FechaEfectiva","ResponsableAprobacion","EstadoMedida","DiasSuspension","ActaFirmadaDriveUrl","CreadoPor","FechaCreacion","UltimaModificacion"];
+  var days = Number(input.diasSuspension || 0);
+  if (!isFinite(days) || days < 0 || days > 365) return { status: "error", code: "DISCIPLINARY_DAYS_INVALID" };
+  if (!String(input.tipoMedida||"").trim() || !String(input.fundamentoDocumentado||"").trim()) return { status: "error", code: "DISCIPLINARY_BASIS_REQUIRED" };
   var existingSheet = ss.getSheetByName("MedidasDisciplinarias");
   var existingValues = existingSheet ? existingSheet.getDataRange().getValues().slice(1) : [];
   var proposedId = input.medidaId ? String(input.medidaId).trim() : "MED-DISC-" + String(Utilities.getUuid()).replace(/-/g,"");
@@ -1702,9 +1705,6 @@ function manageDisciplinaryMeasure(payload) {
   if (incidentMatches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
   var snapshot = ensureLaborWriteSheet_(ss,"MedidasDisciplinarias",headers);
   if (!snapshot.valid) return { status: "error", code: snapshot.code };
-  var days = Number(input.diasSuspension || 0);
-  if (!isFinite(days) || days < 0 || days > 365) return { status: "error", code: "DISCIPLINARY_DAYS_INVALID" };
-  if (!String(input.tipoMedida||"").trim() || !String(input.fundamentoDocumentado||"").trim()) return { status: "error", code: "DISCIPLINARY_BASIS_REQUIRED" };
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
   try {
