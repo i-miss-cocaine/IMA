@@ -39,6 +39,7 @@ const accountingAuditor = accountingRoles.roles.Auditor || [];
 assert.ok(academicAuditor.includes("getStudentDocuments"));
 assert.ok(academicAuditor.includes("getStudentFile"));
 assert.ok(academicAuditor.includes("getStudentDocumentFile"), "the internal permission key authorizes only the tokenized proxy");
+assert.ok(academicAuditor.includes("previewStudentDocument"), "preview is a separate read-only permission for the tokenized proxy");
 assert.ok(academicAuditor.includes("verifyDocumentIntegritySha256"));
 assert.ok(academicAuditor.includes("getPendingDocumentsReport"));
 assert.ok(userAuditor.includes("getLegacyDocumentInventory"));
@@ -118,7 +119,8 @@ assert.match(user.source,/\["Director", "Administrador", "Auditor"\]\.indexOf\(r
   "institution-wide inventory access for Auditor still requires an institution-wide verified scope");
 assert.match(user.source,/if \(actorRole === "Auditor"\)[\s\S]*scope\.institutionWide !== true/,
   "global audit logs are restricted to Auditors with institution-wide verified scope");
-assert.match(academic.source,/const permissionAction = \["createStudentDocumentAccessToken", "getSecureDocumentStream"\]/);
+assert.match(academic.source,/const secureDocumentAction = \["createStudentDocumentAccessToken", "getSecureDocumentStream"\]/);
+assert.match(academic.source,/requestedDocumentOperation === "PREVIEW" \? "previewStudentDocument" : "getStudentDocumentFile"/);
 assert.match(accounting,/request\.action === "validateImportPreview"/);
 assert.match(accounting,/request\.action === "getAccountingMigrationFileAudit"/,
   "ACCOUNTING exposes a read-only institution-bound audit endpoint for Auditor");
