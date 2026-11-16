@@ -471,7 +471,9 @@ assert.match(source,/case "getSecureDocumentStream": result = getSecureDocumentS
 assert.match(source,/case "getStudentDocumentFile": result = \{ status: "error", code: "SECURE_DOCUMENT_STREAM_REQUIRED"/);
 assert.doesNotMatch(source,/driveUrl: r\[6\]/);
 assert.match(source,/case "createStudentDocumentAccessToken": result = createStudentDocumentAccessToken\(payload\); break;/);
-assert.match(source,/const secureDocumentAction = \["createStudentDocumentAccessToken", "getSecureDocumentStream"\]/);\nassert.match(source,/requestedDocumentOperation === "PREVIEW" \? "previewStudentDocument" : "getStudentDocumentFile"/);\nassert.match(source,/claims.operation !== requestedOperation/);
+assert.match(source,/const secureDocumentAction = \["createStudentDocumentAccessToken", "getSecureDocumentStream"\]/);
+assert.match(source,/requestedDocumentOperation === "PREVIEW" \? "previewStudentDocument" : "getStudentDocumentFile"/);
+assert.match(source,/claims.operation !== requestedOperation/);
 assert.match(source,/validateContextualAccess\(permissionAction, payload, verifiedUserId, userRole\)/);
 assert.doesNotMatch(source,/getDownloadUrl\(\)/);
 assert.match(source,/function consumeStudentDocumentAccessToken_\(tokenId, token\)[\s\S]*lock\.waitLock\(5000\)[\s\S]*cache\.remove\(key\)/);

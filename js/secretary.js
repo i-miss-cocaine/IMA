@@ -359,14 +359,15 @@ window.openApplicantDocumentAction = async function(documentoId, solicitudId, op
         objectUrl = URL.createObjectURL(blob);
         if (accessOperation === 'PREVIEW' && previewWindow) {
             previewWindow.location.href = objectUrl;
-        } else {
+        } else if (accessOperation === 'DOWNLOAD') {
             const link = document.createElement('a');
             link.href = objectUrl;
-            if (accessOperation === 'DOWNLOAD') link.download = res.fileName || 'documento';
-            else link.target = '_blank';
+            link.download = res.fileName || 'documento';
             document.body.appendChild(link);
             link.click();
             link.remove();
+        } else {
+            throw new Error('El navegador bloqueó la ventana de vista previa. Permite las ventanas emergentes e inténtalo nuevamente.');
         }
         setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
     } catch (err) {
