@@ -2635,7 +2635,7 @@
 ---
 
 <!-- ID: TASK-187 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [ ] [TASK-187] Programación automática y administración del mantenimiento preventivo recurrente
+### [x] [TASK-187] Programación automática y administración del mantenimiento preventivo recurrente
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E (F19-15), Sección C (2.15) y Plan de Trabajo F19-06
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Preservación de infraestructura, continuidad operativa, planificación de intervenciones y prevención de fallas mayores)
@@ -2672,7 +2672,8 @@
   - Se identifican mantenimientos atrasados con alertas destacadas.
   - Los repuestos utilizados se descuentan de forma exacta en Kardex.
   - Se consultan indicadores de cumplimiento y costos acumulados por activo.
-- **Estado:** [ ] Pendiente
+- **Resolución C1.792:** planes preventivos por activo/categoría/ubicación/grupo; frecuencias calendario y horas de uso; generación idempotente de órdenes al abrir el módulo; alertas 30/15/7/1 días y vencidas; avance del ciclo al completar, postergación justificada con historial, plantillas, consumo contable de repuestos e indicadores. Contrato Node 24 y sintaxis Apps Script verificados en GitHub Actions.
+- **Estado:** [x] Completada en código y CI; BETA-FUNC-111 pendiente de validación desplegada.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7803-7840; clave TASK-188; asignación única: Contabilidad -->
 
