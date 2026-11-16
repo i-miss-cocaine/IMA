@@ -2119,6 +2119,8 @@ function getStaffAttendanceLogs(payload) {
   var selfRoles = ["empleado","profesor"];
   if (staffRoles.indexOf(role) === -1 && selfRoles.indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED", asistencias: [] };
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = ss.getSheetByName("DeduccionesAsistencia");
+  if (!sheet) return { status: "success", asistencias: [] };
   if (staffRoles.indexOf(role) !== -1) {
     var attendanceScope = getVerifiedAccountingDepartmentScope_(input, ss, actor);
     if (!attendanceScope || attendanceScope.valid !== true) return { status: "error", code: attendanceScope && attendanceScope.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED", asistencias: [] };
@@ -2137,8 +2139,6 @@ function getStaffAttendanceLogs(payload) {
   if (start && /^\d{4}-\d{2}-\d{2}$/.test(String(input.fechaInicio))) start.setHours(0,0,0,0);
   if (end && /^\d{4}-\d{2}-\d{2}$/.test(String(input.fechaFin))) end.setHours(23,59,59,999);
   if (start && end && end < start) return { status: "error", code: "INVALID_DATE_RANGE", asistencias: [] };
-  var sheet = ss.getSheetByName("DeduccionesAsistencia");
-  if (!sheet) return { status: "success", asistencias: [] };
   var values = sheet.getDataRange().getValues();
   var required = ["AsistenciaID","Fecha","EmpleadoId","EmpleadoNombre","HoraEntrada","HoraSalida","MinutosTardanza","EstadoAsistencia","Observaciones"];
   if (!values || !values.length || JSON.stringify(values[0].map(function(v) { return String(v || "").trim(); })) !== JSON.stringify(required)) {
