@@ -125,7 +125,7 @@ assert.match(accounting,/request\.action === "getAccountingMigrationFileAudit"/,
 assert.match(accounting,/request\.action === "importDataWithColumnMapping"/,
   "ACCOUNTING commit is routed but must pass its independent authorization and preview gates");
 assert.match(accounting,/accountingHasInstitutionalImportPermission_\(\{ roleId: auth\.role/);
-assert.match(accounting,/if \(!input\.previewConfirmed \|\| !input\.previewHash/);
+assert.match(accounting,/if \(input\.previewConfirmed !== true \|\| !input\.previewHash/);
 assert.equal(userAuditor.includes("authorizeAccountingImport"),false,
   "Auditor cannot satisfy the import permission required by ACCOUNTING write/preview handlers");
 process.stdout.write("Read-only Auditor role: Academic/User read-only allowlists, dynamic-permission override and Auditor import denial PASS.\n");
