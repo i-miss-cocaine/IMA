@@ -185,7 +185,7 @@ lockAvailable = false;
 const locked = run({ _verifiedRole: "Director", _verifiedUserId: "DIR-1" });
 assert.equal(locked.code, "LOCK_TIMEOUT");
 lockAvailable = true;
-assert.equal(releaseCount, 4, "each acquired lock is released exactly once");
+assert.equal(releaseCount, lockCalls - 1, "every acquired lock is released exactly once; the final timed-out acquisition is not released");
 
 assert.match(dashboard, /btn-transport-efficiency-analytics/);
 assert.match(dashboard, /modal-transport-efficiency-analytics/);
