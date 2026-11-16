@@ -2446,7 +2446,7 @@ function createPrivatePaymentAttachmentWithIntegrity_(fileData, fileName) {
 function ensurePaymentVoucherEvidenceSchema_(ss) {
   var sheet = getOrCreateSheet(ss, "ComprobantesPago");
   var headers = ["ComprobanteID","Fecha","UserId","Alumno","CargoID","MontoReportado","MetodoPago","Referencia",
-    "ComprobanteUrl","Estado","Observaciones","SolicitudID","EvidenciaID","DriveFileID","NombreOriginal",
+    "ComprobanteUrl","Estado","Observaciones","AprobadoPor","SolicitudID","EvidenciaID","DriveFileID","NombreOriginal",
     "EsVersionActual","EstadoIntegridad","SHA256","VersionNumero","SizeBytes","MimeType","FechaRecepcion",
     "DecisionIntegrityWarning","DecisionHash","DecisionState","ComprobanteGrupoID","DecisionActor","DecisionDate"];
   if (sheet.getLastRow() === 0) sheet.appendRow(headers.slice());

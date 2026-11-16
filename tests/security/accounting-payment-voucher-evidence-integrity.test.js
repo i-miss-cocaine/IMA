@@ -27,7 +27,7 @@ const names = [
   "validateFileBinaryIntegrity", "computeDocumentSHA256", "getOrCreatePrivateAttachmentFolder_",
   "rollbackPrivatePaymentAttachment_", "createPrivatePaymentAttachment_", "ensurePaymentVoucherEvidenceSchema_",
   "getAccountingEvidenceIntegrityPolicy_", "createPrivatePaymentAttachmentWithIntegrity_",
-  "verifyPaymentVoucherEvidence_", "extractDriveFileId", "uploadPaymentVoucher", "getPaymentVouchers",
+  "verifyPaymentVoucherEvidence_", "extractDriveFileId", "paymentVoucherRowObject_", "uploadPaymentVoucher", "getPaymentVouchers",
   "getPaymentVoucherFile", "reviewPaymentVoucher"
 ];
 
