@@ -3105,6 +3105,13 @@ function manageWorkShiftAndSubstitution(payload) {
   } finally { lock.releaseLock(); }
 }
 
+function parseJsonSafe(jsonStr, fallback) {
+  if (!jsonStr) return fallback;
+  try { return JSON.parse(jsonStr); } catch (e) { return fallback; }
+}
+
+// [TAREA RH-06] [Fase Recursos Humanos] - Catálogo de capacitaciones, inscripciones, certificados con vencimiento y planes de desarrollo profesional.
+
 function transportRows_(ss, sheetName, expectedHeaders) {
   var sheet = ss && ss.getSheetByName ? ss.getSheetByName(sheetName) : null;
   if (!sheet) return { valid: false, missing: true, code: "TRANSPORT_RESOURCE_NOT_FOUND", rows: [], headers: [] };
