@@ -2112,43 +2112,50 @@ function recordStaffAttendance(payload) {
 }
 
 function getStaffAttendanceLogs(payload) {
-  var input=payload||{},actor=getVerifiedAccountingIdentity_(input);
-  if(!actor||actor.authorized!==true)return {status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED",asistencias:[]};
-  var role=normalizeVacationRole_(actor.role);
-  if(["recursoshumanos","administrador","empleado"].indexOf(role)===-1)return {status:"error",code:"ROLE_NOT_ALLOWED",asistencias:[]};
-  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("DeduccionesAsistencia");
-  if(!sheet)return {status:"success",asistencias:[]};
-  var values=sheet.getDataRange().getValues(),headers=values[0].map(function(v){return String(v||"").trim();});
-  var required=["AsistenciaID","Fecha","EmpleadoId","EmpleadoNombre","HoraEntrada","HoraSalida","MinutosTardanza","EstadoAsistencia","Observaciones"];
-  if(JSON.stringify(headers)!==JSON.stringify(required))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",asistencias:[]};
-  var start=input.fechaInicio?new Date(input.fechaInicio):null,end=input.fechaFin?new Date(input.fechaFin):null;
-  if((start&&isNaN(start.getTime()))||(end&&isNaN(end.getTime()))||(start&&end&&end<start))return {status:"error",code:"INVALID_DATE_RANGE",asistencias:[]};
-  var allowed=null;
-  if(role==="recursoshumanos"){
-    var scope=getVerifiedAccountingDepartmentScope_(input,ss,actor);
-    if(!scope||scope.valid!==true)return {status:"error",code:scope&&scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED",asistencias:[]};
-    allowed=scope.institutionWide?null:(scope.departmentIds||[]).map(String);
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", asistencias: [] };
+  var role = normalizeVacationRole_(actor.role);
+  var staffRoles = ["recursoshumanos","director","subdirector","administrador"];
+  var selfRoles = ["empleado","profesor"];
+  if (staffRoles.indexOf(role) === -1 && selfRoles.indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED", asistencias: [] };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var employeeAccess = getEmployeeResourceAccessIndex_(input, ss, actor);
+  if (!employeeAccess || employeeAccess.valid !== true) return { status: "error", code: employeeAccess && employeeAccess.code || "RESOURCE_OWNERSHIP_UNVERIFIED", asistencias: [] };
+  var requested = String(input.empleadoId || "").trim();
+  if (selfRoles.indexOf(role) !== -1) {
+    if (requested && requested !== String(actor.userId || "").trim()) return { status: "error", code: "RESOURCE_NOT_FOUND", asistencias: [] };
+    requested = String(actor.userId || "").trim();
   }
-  var employeeSheet=ss.getSheetByName("ExpedientesLaborales"),employeeValues=employeeSheet?employeeSheet.getDataRange().getValues():[];
-  var eh=employeeValues.length?employeeValues[0].map(function(v){return String(v||"").trim();}):[],ui=eh.indexOf("UserId"),di=eh.indexOf("Departamento"),departments=Object.create(null);
-  employeeValues.slice(1).forEach(function(row){if(ui>=0&&di>=0)departments[String(row[ui]||"").trim()]=String(row[di]||"").trim();});
-  var requested=String(input.empleadoId||"").trim();
-  if(role==="recursoshumanos"&&requested&&(!departments[requested]||(allowed&&allowed.indexOf(departments[requested])===-1)))return {status:"error",code:"RESOURCE_NOT_FOUND",asistencias:[]};
-  if(role==="empleado"&&requested&&requested!==actor.userId)return {status:"error",code:"RESOURCE_NOT_FOUND",asistencias:[]};
-  if(role==="empleado")requested=actor.userId;
-  var result=values.slice(1).filter(function(row){
-    var employee=String(row[2]||"").trim(),date=new Date(row[1]);
-    if(requested&&employee!==requested)return false;
-    if(role==="recursoshumanos"&&allowed&&allowed.indexOf(departments[employee]||"")===-1)return false;
-    if(start&&date<start)return false;
-    if(end&&date>end)return false;
-    return true;
-  }).map(function(row){return {asistenciaId:row[0],fecha:row[1],empleadoId:row[2],empleadoNombre:row[3],horaEntrada:row[4],horaSalida:row[5],minutosTardanza:row[6],estadoAsistencia:row[7],observaciones:row[8]};});
-  if(role==="recursoshumanos"&&requested&&!result.length&&departments[requested]===undefined)return {status:"error",code:"RESOURCE_NOT_FOUND",asistencias:[]};
-  return {status:"success",asistencias:result};
+  if (requested && !employeeAccess.byUserId[requested]) return { status: "error", code: "RESOURCE_NOT_FOUND", asistencias: [] };
+  var start = input.fechaInicio ? new Date(input.fechaInicio) : null;
+  var end = input.fechaFin ? new Date(input.fechaFin) : null;
+  if ((start && isNaN(start.getTime())) || (end && isNaN(end.getTime()))) return { status: "error", code: "INVALID_DATE_RANGE", asistencias: [] };
+  if (start && /^\d{4}-\d{2}-\d{2}$/.test(String(input.fechaInicio))) start.setHours(0,0,0,0);
+  if (end && /^\d{4}-\d{2}-\d{2}$/.test(String(input.fechaFin))) end.setHours(23,59,59,999);
+  if (start && end && end < start) return { status: "error", code: "INVALID_DATE_RANGE", asistencias: [] };
+  var sheet = ss.getSheetByName("DeduccionesAsistencia");
+  if (!sheet) return { status: "success", asistencias: [] };
+  var values = sheet.getDataRange().getValues();
+  var required = ["AsistenciaID","Fecha","EmpleadoId","EmpleadoNombre","HoraEntrada","HoraSalida","MinutosTardanza","EstadoAsistencia","Observaciones"];
+  if (!values || !values.length || JSON.stringify(values[0].map(function(v) { return String(v || "").trim(); })) !== JSON.stringify(required)) {
+    return { status: "error", code: "RESOURCE_SCHEMA_INVALID", asistencias: [] };
+  }
+  var counts = {};
+  values.slice(1).forEach(function(row) { var id = String(row[0] || "").trim(); if (id) counts[id] = (counts[id] || 0) + 1; });
+  var asistencias = [];
+  values.slice(1).forEach(function(row) {
+    var id = String(row[0] || "").trim(), userId = String(row[2] || "").trim();
+    var access = employeeAccess.byUserId[userId], date = row[1] instanceof Date ? row[1] : new Date(row[1]);
+    if (!id || counts[id] !== 1 || !access || (requested && requested !== userId) || isNaN(date.getTime())) return;
+    var ownership = assertEmployeeExpedienteScopeAccess_(input, ss, access.expedienteId);
+    if (!ownership || ownership.authorized !== true) return;
+    if (start && date < start) return;
+    if (end && date > end) return;
+    asistencias.push({ asistenciaId: row[0], fecha: row[1], empleadoId: row[2], empleadoNombre: row[3],
+      horaEntrada: row[4], horaSalida: row[5], minutosTardanza: row[6], estadoAsistencia: row[7], observaciones: row[8] });
+  });
+  return { status: "success", asistencias: asistencias };
 }
-
-
 function resolveAttendanceCorrectionEmployeeAccess_(payload, ss, attendanceId, requestedEmployeeId, actor) {
   var input = payload || {}, identity = actor || getVerifiedAccountingIdentity_(input);
   if (!identity || identity.authorized !== true) return { authorized: false, code: identity && identity.code || "VERIFIED_IDENTITY_REQUIRED" };
