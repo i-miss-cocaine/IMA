@@ -2870,7 +2870,7 @@ const API_RESPONSE_VERSION = "1.0.0";
 const ROLE_PERMISSIONS = {
   Auditor: ["getAccountingMigrationFileAudit"],
   "Empleado": ["getEmployeeRecords", "getLeaveVacationRequests", "submitLeaveVacationRequest", "submitAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "getLoanAmortizationSchedule", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "manageProfessionalDevelopmentPlan"],
-  "Profesor": ["submitVacationRequest", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile"],
+  "Profesor": ["getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitVacationRequest"],
   "Padre": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "Estudiante": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "Conductor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
