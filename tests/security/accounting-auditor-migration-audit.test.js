@@ -42,7 +42,8 @@ const state = {
   calls: [], hasSheet: true
 };
 const runtime = {
-  SPREADSHEET_ID: "SHEET-1", Date, String, Number, Array, Object, isFinite,
+  SPREADSHEET_ID: "SHEET-1", ROLE_PERMISSIONS: { Auditor: ["getAccountingMigrationFileAudit"] },
+  Date, String, Number, Array, Object, isFinite,
   getVerifiedAccountingIdentity_: () => state.actor,
   requestAccountingUserAuthorization_(action, payload) { state.calls.push({ action, payload }); return state.auth; },
   SpreadsheetApp: { openById(id) { assert.equal(id, "SHEET-1"); return {
@@ -50,6 +51,7 @@ const runtime = {
   }; } }
 };
 vm.runInNewContext([
+  extractFunction("accountingHasRolePermission_"),
   extractFunction("accountingHasInstitutionalAuditReadPermission_"),
   extractFunction("getAccountingMigrationFileAudit"),
   "this.canRead = accountingHasInstitutionalAuditReadPermission_; this.audit = getAccountingMigrationFileAudit;"
