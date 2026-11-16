@@ -4365,8 +4365,8 @@ function manageSupplierBankAccount(payload) {
   if(["contador","director","administrador"].indexOf(access.role)<0)return {status:"error",code:"SUPPLIER_ROLE_NOT_ALLOWED"};
   supplierFindById_(ss,input.proveedorId);
   if(!String(input.motivoAutorizacion||"").trim()||!String(input.referenciaAutorizacion||"").trim())throw new Error("SUPPLIER_BANK_AUTHORIZATION_REQUIRED");
-  var account=String(input.numeroCuenta||"").replace(/\s/g,"");
-  if(!/^[0-9-]{8,30}$/.test(account))throw new Error("SUPPLIER_BANK_ACCOUNT_INVALID");
+  var account=String(input.numeroCuenta||"").replace(/\D/g,"");
+  if(!/^\d{8,30}$/.test(account))throw new Error("SUPPLIER_BANK_ACCOUNT_INVALID");
   var sheet=supplierAuxSheet_(ss,"CuentasBancariasProveedores",SUPPLIER_BANK_HEADERS_),rows=sheet.getDataRange().getValues();
   var previous=rows.slice(1).filter(function(row){return String(row[1])===String(input.proveedorId)&&String(row[7])==="Activo";});
   previous.forEach(function(row,index){var realIndex=rows.findIndex(function(r,i){return i>0&&r[0]===row[0];});if(realIndex>0)sheet.getRange(realIndex+1,8).setValue("Reemplazada");});
