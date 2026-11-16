@@ -2860,17 +2860,16 @@ function manageStaffingNeeds(payload) {
   var currentSheet = ss.getSheetByName("PlanificacionNecesidadesPersonal");
   var expectedHeaders = ["PlanificacionID","PeriodoAcademico","DepartamentoArea","PuestoOFamilia","CantidadRequerida",
     "EscenarioMatricula","MetricaBaseCalculo","ObservacionesJustificacion","VacanteRelacionadaID","CreadoPor","FechaCreacion","UltimaModificacion"];
-  if (currentSheet) {
+  if (planId) {
+    if (!currentSheet) return { status:"error", code:"RESOURCE_NOT_FOUND" };
     var currentRows = currentSheet.getDataRange().getValues();
     if (!currentRows.length || JSON.stringify(currentRows[0].map(function(v) { return String(v || "").trim(); })) !== JSON.stringify(expectedHeaders)) {
       return { status:"error", code:"RESOURCE_SCHEMA_INVALID" };
     }
-    if (planId) {
-      var preflight = currentRows.slice(1).filter(function(row) { return String(row[0] || "").trim() === planId; });
-      if (preflight.length !== 1 || String(preflight[0][2] || "").trim() !== department.departmentId) return { status:"error", code:"RESOURCE_NOT_FOUND" };
-      existingSnapshot = preflight[0];
-    }
-  } else if (planId) return { status:"error", code:"RESOURCE_NOT_FOUND" };
+    var preflight = currentRows.slice(1).filter(function(row) { return String(row[0] || "").trim() === planId; });
+    if (preflight.length !== 1 || String(preflight[0][2] || "").trim() !== department.departmentId) return { status:"error", code:"RESOURCE_NOT_FOUND" };
+    existingSnapshot = preflight[0];
+  }
   if (!planId) {
     candidateId = "PLAN-NEC-" + String(Utilities.getUuid()).replace(/-/g,"").slice(0,24);
     var existingRows = currentSheet ? currentSheet.getDataRange().getValues().slice(1) : [];
