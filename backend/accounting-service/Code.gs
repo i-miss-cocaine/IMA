@@ -2119,6 +2119,10 @@ function getStaffAttendanceLogs(payload) {
   var selfRoles = ["empleado","profesor"];
   if (staffRoles.indexOf(role) === -1 && selfRoles.indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED", asistencias: [] };
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  if (staffRoles.indexOf(role) !== -1) {
+    var attendanceScope = getVerifiedAccountingDepartmentScope_(input, ss, actor);
+    if (!attendanceScope || attendanceScope.valid !== true) return { status: "error", code: attendanceScope && attendanceScope.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED", asistencias: [] };
+  }
   var employeeAccess = getEmployeeResourceAccessIndex_(input, ss, actor);
   if (!employeeAccess || employeeAccess.valid !== true) return { status: "error", code: employeeAccess && employeeAccess.code || "RESOURCE_OWNERSHIP_UNVERIFIED", asistencias: [] };
   var requested = String(input.empleadoId || "").trim();
