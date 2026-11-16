@@ -3365,7 +3365,8 @@ function adjudicatePurchaseQuotations(payload) {
     var quoteIds = {};
     awardLines.forEach(function(line) { quoteIds[line.cotizacionId] = true; });
     Object.keys(quoteIds).forEach(function(id) {
-      var rowIndex = quoteRows.findIndex(function(row, index) { return index > 0 && String(row[0]) === id; }) + 1;
+      var rowIndex = quoteRows.findIndex(function(row, index) { return index > 0 && String(row[0]) === id; });
+      if (rowIndex < 1) throw new Error("PURCHASE_QUOTATION_NOT_FOUND");
       var oldState = quoteRows[rowIndex][9];
       quoteUpdates.push({ row: rowIndex + 1, state: oldState });
       quoteSheet.getRange(rowIndex + 1, 10).setValue("AdjudicadaParcial");
