@@ -13995,7 +13995,24 @@ function validateOpenXmlPackageStructure_(rawBytes, format, entries, maxExpanded
     return count;
   }
 
+  function rejectExternalRelationships(root) {
+    const pending = [root];
+    while (pending.length) {
+      const node = pending.pop();
+      if (node && node.getAttribute) {
+        const targetMode = node.getAttribute("TargetMode");
+        if (targetMode && String(targetMode.getValue() || "").trim().toLowerCase() === "external") throw new Error("OPENXML_EXTERNAL_RELATIONSHIP_NOT_ALLOWED");
+        const relationshipType = node.getAttribute("Type");
+        if (relationshipType && /(?:oleObject|package|vbaProject|activeX|externalLink)/i.test(String(relationshipType.getValue() || ""))) throw new Error("OPENXML_ACTIVE_RELATIONSHIP_NOT_ALLOWED");
+      }
+      const children = node && node.getChildren ? node.getChildren() : [];
+      (children || []).forEach(function(child) { pending.push(child); });
+    }
+  }
+
   parsePart("[Content_Types].xml", "Types");
+  Object.keys(byName).filter(function(name) { return String(name).toLowerCase().indexOf("_rels/") !== -1 && String(name).toLowerCase().endsWith(".rels"); })
+    .forEach(function(name) { rejectExternalRelationships(parsePart(name, "Relationships")); });
   if (kind === "docx") {
     const documentRoot = parsePart("word/document.xml", "document");
     const relationships = byName["word/_rels/document.xml.rels"] ? parsePart("word/_rels/document.xml.rels", "Relationships") : null;
@@ -14031,7 +14048,9 @@ function validateFileBinaryIntegrity(fileData, fileName, options) {
   if (/[\/\\\u0000-\u001F]/.test(normalizedName)) throw new Error("FILE_INVALID_NAME: No se permiten rutas ni caracteres de control.");
   const lowerName = normalizedName.toLowerCase();
   const dangerousExtensions = [".exe",".bat",".cmd",".sh",".msi",".dll",".com",".scr",".vbs",".js",".jar",".ps1",".apk"];
-  if (dangerousExtensions.some(ext => lowerName.endsWith(ext))) throw new Error("DANGEROUS_FILE_EXTENSION: Extensión prohibida.");
+  const nameParts = lowerName.split(".");
+  const hasExecutableDoubleExtension = nameParts.slice(1, -1).some(part => dangerousExtensions.indexOf("." + part) !== -1);
+  if (dangerousExtensions.some(ext => lowerName.endsWith(ext)) || hasExecutableDoubleExtension) throw new Error("DANGEROUS_FILE_EXTENSION: Extensión prohibida o doble extensión ejecutable.");
   const dot = lowerName.lastIndexOf(".");
   const extension = dot >= 0 ? lowerName.slice(dot) : "";
   const policies = {
@@ -14087,6 +14106,9 @@ function validateFileBinaryIntegrity(fileData, fileName, options) {
   const be32 = offset => offset<0||offset+4>byteLength ? -1 : (byteAt(offset)*0x1000000)+(byteAt(offset+1)*0x10000)+(byteAt(offset+2)*0x100)+byteAt(offset+3);
   let openXmlStructure = null;
   if (policy.format === "pdf") {
+    const pdfContent = ascii(0, byteLength);
+    const activePdfTokens = ["/JavaScript","/JS","/Launch","/OpenAction","/AA","/EmbeddedFile","/RichMedia","/SubmitForm","/ImportData","/GoToR","/XFA"];
+    if (activePdfTokens.some(token => pdfContent.indexOf(token) !== -1)) throw new Error("PDF_ACTIVE_CONTENT_NOT_ALLOWED: Acciones ejecutables o contenido activo no permitido.");
     const head=ascii(0,Math.min(16,byteLength)),tail=ascii(Math.max(0,byteLength-2048),Math.min(2048,byteLength));
     if(!/^%PDF-[12]\.\d/.test(head)||tail.indexOf("%%EOF")<0)throw new Error("PDF_STRUCTURE_INVALID: Cabecera o EOF ausente.");
     const startXref=tail.lastIndexOf("startxref"),match=startXref>=0?tail.slice(startXref+9).match(/^\s*(\d+)/):null;
@@ -14139,7 +14161,14 @@ function validateFileBinaryIntegrity(fileData, fileName, options) {
     if(cursor!==centralOffset+centralSize||!entries["[Content_Types].xml"]||entries["[Content_Types].xml"].size<1)throw new Error("OPENXML_STRUCTURE_INVALID: [Content_Types].xml ausente.");
     if(policy.format==="docx"&&(!entries["word/document.xml"]||entries["word/document.xml"].size<1))throw new Error("DOCX_STRUCTURE_INVALID: word/document.xml ausente.");
     if(policy.format==="xlsx"&&(!entries["xl/workbook.xml"]||entries["xl/workbook.xml"].size<1))throw new Error("XLSX_STRUCTURE_INVALID: xl/workbook.xml ausente.");
-    if(policy.format==="xlsx"&&Object.keys(entries).some(function(name){return /vbaProject\.bin$/i.test(name);}))throw new Error("XLSX_MACROS_NOT_ALLOWED");
+    const activeContentEntry = Object.keys(entries).find(function(name) {
+      const lowerEntry = String(name).toLowerCase();
+      return lowerEntry.indexOf("vbaproject.bin") !== -1 || lowerEntry.indexOf("/activex/") !== -1 ||
+        lowerEntry.indexOf("/embeddings/") !== -1 || lowerEntry.indexOf("/macrosheets/") !== -1 ||
+        lowerEntry.indexOf("/externallinks/") !== -1 || lowerEntry.endsWith("/connections.xml") ||
+        lowerEntry.indexOf("/customui/") !== -1;
+    });
+    if (activeContentEntry) throw new Error("OPENXML_ACTIVE_CONTENT_NOT_ALLOWED: Macros, ActiveX, objetos embebidos o vínculos externos no permitidos.");
     openXmlStructure=validateOpenXmlPackageStructure_(rawBytes,policy.format,entries,maxExpandedBytes);
   }
   return {valid:true,fileName:normalizedName,detectedFormat:policy.format,byteLength:byteLength,mimeType:policy.mime,openXmlStructure:openXmlStructure};

@@ -2,7 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
 
-const servicePaths = ["backend/accounting-service/Code.gs","backend/user-service/Code.gs"];
+const servicePaths = ["backend/accounting-service/Code.gs","backend/user-service/Code.gs","backend/academic-service/Code.gs"];
 function extractValidator(source,path) {
   const helperStart=source.indexOf("function validateOpenXmlPackageStructure_(");
   assert.notEqual(helperStart,-1,"missing OpenXML validator in "+path);
@@ -29,13 +29,15 @@ function makeZip(entries){
   const locals=[],centrals=[];let offset=0;
   for(const entry of entries){
     const name=Buffer.from(entry.name,"ascii"),data=Buffer.from(entry.data||"<xml/>","utf8"),local=Buffer.alloc(30);
+    const compressedSize=entry.compressedSize===undefined?data.length:Number(entry.compressedSize);
+    const uncompressedSize=entry.uncompressedSize===undefined?data.length:Number(entry.uncompressedSize);
     local.writeUInt32LE(0x04034B50,0);local.writeUInt16LE(20,4);local.writeUInt16LE(0,6);local.writeUInt16LE(0,8);
-    local.writeUInt16LE(0,10);local.writeUInt16LE(0,12);local.writeUInt32LE(0,14);local.writeUInt32LE(data.length,18);
-    local.writeUInt32LE(data.length,22);local.writeUInt16LE(name.length,26);local.writeUInt16LE(0,28);
+    local.writeUInt16LE(0,10);local.writeUInt16LE(0,12);local.writeUInt32LE(0,14);local.writeUInt32LE(compressedSize,18);
+    local.writeUInt32LE(uncompressedSize,22);local.writeUInt16LE(name.length,26);local.writeUInt16LE(0,28);
     locals.push(local,name,data);
     const central=Buffer.alloc(46);central.writeUInt32LE(0x02014B50,0);central.writeUInt16LE(20,4);central.writeUInt16LE(20,6);
     central.writeUInt16LE(0,8);central.writeUInt16LE(0,10);central.writeUInt16LE(0,12);central.writeUInt16LE(0,14);
-    central.writeUInt32LE(0,16);central.writeUInt32LE(data.length,20);central.writeUInt32LE(data.length,24);
+    central.writeUInt32LE(0,16);central.writeUInt32LE(compressedSize,20);central.writeUInt32LE(uncompressedSize,24);
     central.writeUInt16LE(name.length,28);central.writeUInt16LE(0,30);central.writeUInt16LE(0,32);central.writeUInt16LE(0,34);
     central.writeUInt16LE(0,36);central.writeUInt32LE(0,38);central.writeUInt32LE(offset,42);centrals.push(central,name);
     offset+=local.length+name.length+data.length;
@@ -54,6 +56,8 @@ const xlsx=makeZip([{name:"[Content_Types].xml"},{name:"xl/workbook.xml"}]);
 const scenarios=[
  ["valid PDF",()=>({data:dataUri("application/pdf",pdf),name:"evidence.pdf"}),true],
  ["PDF missing EOF/startxref",()=>({data:dataUri("application/pdf",Buffer.from("%PDF-1.4")),name:"broken.pdf"}),false],
+ ["PDF with JavaScript action",()=>({data:dataUri("application/pdf",Buffer.from("%PDF-1.4\\n/JavaScript /OpenAction\\nstartxref\\n9\\n%%EOF\\n","ascii")),name:"active.pdf"}),false],
+ ["executable hidden by double extension",()=>({data:dataUri("application/pdf",pdf),name:"payload.exe.pdf"}),false],
  ["valid JPEG",()=>({data:dataUri("image/jpeg",jpeg),name:"photo.jpg"}),true],
  ["JPEG missing EOI",()=>({data:dataUri("image/jpeg",jpeg.subarray(0,jpeg.length-2)),name:"broken.jpg"}),false],
  ["valid PNG",()=>({data:dataUri("image/png",png),name:"image.png"}),true],
@@ -61,6 +65,8 @@ const scenarios=[
  ["valid WEBP",()=>({data:dataUri("image/webp",webp),name:"image.webp"}),true],
  ["WEBP wrong RIFF length",()=>({data:dataUri("image/webp",Buffer.concat([webp,Buffer.from([0])])),name:"broken.webp"}),false],
  ["valid DOCX OpenXML",()=>({data:dataUri("application/vnd.openxmlformats-officedocument.wordprocessingml.document",docx),name:"form.docx"}),true],
+ ["DOCX with VBA project",()=>({data:dataUri("application/vnd.openxmlformats-officedocument.wordprocessingml.document",makeZip([{name:"[Content_Types].xml"},{name:"word/document.xml"},{name:"word/vbaProject.bin",data:"macro"}])),name:"macro.docx"}),false],
+ ["DOCX ZIP bomb ratio",()=>({data:dataUri("application/vnd.openxmlformats-officedocument.wordprocessingml.document",makeZip([{name:"[Content_Types].xml"},{name:"word/document.xml",data:"x",compressedSize:1,uncompressedSize:1000}])),name:"bomb.docx"}),false],
  ["DOCX missing document.xml",()=>({data:dataUri("application/vnd.openxmlformats-officedocument.wordprocessingml.document",makeZip([{name:"[Content_Types].xml"}])),name:"bad.docx"}),false],
  ["valid XLSX OpenXML",()=>({data:dataUri("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",xlsx),name:"grades.xlsx"}),true],
  ["XLSX missing workbook.xml",()=>({data:dataUri("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",makeZip([{name:"[Content_Types].xml"}])),name:"bad.xlsx"}),false],
@@ -79,7 +85,9 @@ const scenarios=[
 ];
 const loaded=servicePaths.map(path=>({path,source:fs.readFileSync(path,"utf8")}));
 const validators=loaded.map(item=>({path:item.path,fn:extractValidator(item.source,item.path)}));
-assert.equal(validators[0].fn,validators[1].fn,"ACCOUNTING and USER validators must remain identical");
+assert.equal(validators[0].fn.trim(),validators[1].fn.trim(),"ACCOUNTING and USER validators must remain identical");
+assert.equal(validators[0].fn.trim(),validators[2].fn.trim(),"ACADEMIC validator must remain aligned with ACCOUNTING and USER");
+assert(validators[0].fn.includes("TargetMode") && validators[0].fn.includes("OPENXML_ACTIVE_CONTENT_NOT_ALLOWED"),"OpenXML external relationships and active content are rejected");
 for(const validator of validators){
   const context={Buffer,Utilities:{base64Decode:value=>Buffer.from(value,"base64")}};
   vm.runInNewContext(validator.fn,context);
@@ -96,4 +104,4 @@ for(const validator of validators){
     }
   }
 }
-console.log("file-binary-validation-contract: PASS ("+(scenarios.length*validators.length)+" service/scenario combinations)");
+console.log("file-binary-validation-contract: PASS ("+(scenarios.length*validators.length)+" service/scenario combinations across ACADEMIC, ACCOUNTING and USER)");
