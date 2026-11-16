@@ -1642,3 +1642,26 @@ El archivo maestro histórico supera el umbral de rotación de 180.000 caractere
 - **Evidencia requerida:** IDs sintéticos, operación, versión, resultado RBAC, eventos de auditoría, hashes y estado de privacidad Drive; sin PII ni URLs compartibles.
 - **Estado:** Pendiente beta real en Apps Script/Drive/Sheets; ACCOUNTING queda pendiente de restaurar/documentar el propietario del repositorio y el proxy binario.
 ===============================================================================
+
+
+=============================================================================
+### BETA-FUNC-111 — TASK-187 — Planificación automática de mantenimiento preventivo
+
+- **Módulos/roles:** ACCOUNTING; Dirección, Contabilidad, responsables de mantenimiento y roles operativos autorizados por ámbito departamental.
+- **Precondiciones:** desplegar la versión que incluye MantenimientoPlanes, el esquema ampliado de MantenimientoOrdenes y el catálogo de activos; disponer de activos sintéticos, departamentos/centros de costo, catálogo de artículos y existencias valorizadas; usuarios de prueba con ámbitos departamentales separados.
+- **Pasos:**
+  1. Crear planes para un activo específico, una categoría, una ubicación/instalación y un grupo; comprobar que los activos se resuelven sin ambigüedad y que no se asignan a departamentos ajenos.
+  2. Configurar frecuencias diaria, semanal, quincenal, mensual, trimestral, semestral, anual, intervalo de días y horas de uso; comprobar cálculo de fecha, fin de mes y umbral de lectura.
+  3. Abrir la vista de mantenimiento y comprobar que genera órdenes para los ciclos dentro de la ventana de anticipación; refrescar varias veces y verificar que no duplica órdenes.
+  4. Probar alertas escalonadas de 30, 15, 7 y 1 día, vencidas y por umbral de uso; verificar que los planes fuera del ámbito del usuario no se revelan.
+  5. Completar una orden preventiva; comprobar fecha del último mantenimiento, proyección del próximo ciclo, historial y que un reintento no avanza dos veces la frecuencia.
+  6. Completar un plan por horas de uso con lectura real; rechazar lectura ausente o menor que la última registrada y calcular el siguiente umbral.
+  7. Posponer una intervención con fecha futura y motivo; rechazar motivo vacío/fecha inválida y verificar que la nueva fecha y el historial se conservan.
+  8. Aplicar las plantillas de computadoras, aires acondicionados, vehículos, instalaciones eléctricas y laboratorios; verificar procedimiento y checklist.
+  9. Completar una orden con repuestos; comprobar descuento exacto en Kardex, asiento balanceado, costo real y ausencia de doble consumo ante reintentos.
+  10. Verificar indicadores de programadas/ejecutadas/atrasadas, costos acumulados y tiempo promedio de resolución; comparar con órdenes y asientos de prueba.
+  11. Intentar consultar, actualizar, posponer y generar planes de otro departamento; comprobar denegación sin filtración de IDs ni escrituras.
+- **Resultado esperado:** ciclos preventivos trazables, órdenes sin duplicados, alertas correctas, repuestos y costos conciliados, historial de postergaciones/completados y aislamiento departamental.
+- **Evidencia requerida:** PlanID, OrdenMaintID, CicloMantenimientoID, eventos de historial, movimientos Kardex, AsientoID, fechas/lecturas sintéticas, resultados RBAC y capturas anonimizadas. No adjuntar datos personales ni documentos reales.
+- **Estado:** Pendiente de ejecución beta real en Apps Script/Sheets; no se declara validado en producción.
+=============================================================================
