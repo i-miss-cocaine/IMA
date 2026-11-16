@@ -3824,8 +3824,7 @@ function getEmployeeSelfServicePortal(payload) {
   var employees=employeeValues.slice(1).filter(function(row){return String(row[employeeIndex.UserId]||"").trim()===targetUserId;});
   if(employees.length!==1)return{status:"error",code:"RESOURCE_NOT_FOUND"};
   var employee=employees[0],expedienteId=String(employee[employeeIndex.ExpedienteID]||"").trim();
-  var access=assertEmployeeExpedienteScopeAccess_(input,ss,expedienteId);
-  if(!access||access.authorized!==true)return{status:"error",code:"RESOURCE_NOT_FOUND"};
+  if(!isSelf){var access=assertEmployeeExpedienteScopeAccess_(input,ss,expedienteId);if(!access||access.authorized!==true)return{status:"error",code:"RESOURCE_NOT_FOUND"};}
   var expediente={expedienteId:expedienteId,personaId:employee[employeeIndex.PersonaId],puesto:employee[employeeIndex.Puesto],
     departamento:employee[employeeIndex.Departamento],centroCosto:employee[employeeIndex.CentroCosto],
     fechaIngreso:employee[employeeIndex.FechaIngreso],fechaSalida:employee[employeeIndex.FechaSalida],estadoLaboral:employee[employeeIndex.EstadoLaboral]};
