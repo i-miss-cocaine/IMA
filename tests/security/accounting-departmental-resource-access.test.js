@@ -297,7 +297,8 @@ assert.equal(context.uploadPaymentVoucher({sessionToken:"student",userId:"U-OTHE
 assert.equal(Object.keys(files).length,voucherFileCountBeforeUnauthorizedUpload,"unauthorized voucher uploads must be rejected before creating Drive attachments");
 assert.equal(context.reviewPaymentVoucher({sessionToken:"student",comprobanteId:"VCH-A",nuevoEstado:"Rechazado"}).code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.reviewPaymentVoucher({sessionToken:"staffA",comprobanteId:"VCH-B",nuevoEstado:"Rechazado"}).code,"RESOURCE_SCOPE_DENIED");
-assert.equal(context.reviewPaymentVoucher({sessionToken:"staffA",comprobanteId:"VCH-A",nuevoEstado:"Rechazado"}).status,"success");
+const staffReviewResult=context.reviewPaymentVoucher({sessionToken:"staffA",comprobanteId:"VCH-A",nuevoEstado:"Rechazado"});
+assert.equal(staffReviewResult.status,"success","authorized reviewer should process a verified voucher; actual="+JSON.stringify(staffReviewResult));
 const ownFile=context.getPaymentVoucherFile({sessionToken:"student",comprobanteId:"VCH-A",fileId:"FILE_B_123456789012345678901234567890"});
 assert.equal(ownFile.status,"success","student may retrieve only their own voucher file; actual="+JSON.stringify(ownFile));
 assert.equal(ownFile.fileName,"voucher-a.pdf","file reference must come from the stored voucher row, not client fileId");
