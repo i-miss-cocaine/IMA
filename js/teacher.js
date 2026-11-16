@@ -3531,6 +3531,7 @@ window.triggerRestoreSystemBackup = async function(fileId, fileName) {
         document.getElementById('edit-grado').value = item.grado;
         document.getElementById('edit-seccion').value = item.seccion || '';
         document.getElementById('edit-fecha').value = item.fechaLimite ? item.fechaLimite.split('T')[0] : '';
+        document.getElementById('edit-fecha').dataset.originalValue = document.getElementById('edit-fecha').value;
         document.getElementById('edit-puntaje').value = item.puntaje || 100;
         document.getElementById('edit-archivo').value = item.archivoUrl || '';
 
@@ -3570,6 +3571,16 @@ window.triggerRestoreSystemBackup = async function(fileId, fileName) {
 
         if (tipo === 'Tarea') {
             payload.tareaId = document.getElementById('edit-id').value;
+            const dueDateInput = document.getElementById('edit-fecha');
+            const originalDueDate = dueDateInput.dataset.originalValue || '';
+            if (originalDueDate !== (payload.fechaLimite || '')) {
+                const reason = window.prompt('Indica el motivo del cambio de fecha límite:');
+                if (!reason || !reason.trim()) {
+                    alert('El motivo del cambio de fecha límite es obligatorio.');
+                    return;
+                }
+                payload.motivoCambioFechaLimite = reason.trim();
+            }
         } else {
             payload.examenId = document.getElementById('edit-id').value;
             payload.tiempoLimite = document.getElementById('edit-tiempo').value;

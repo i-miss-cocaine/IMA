@@ -11,6 +11,7 @@ on:
       - 'tests/security/task-service-security-contract.test.js'
       - 'tests/security/task-service-resource-ownership.test.js'
       - 'tests/security/task-service-grade-submission-history.test.js'
+      - 'tests/security/task-service-deadline-history.test.js'
       - 'teacher-dashboard.html'
       - 'js/teacher.js'
       - '.github/workflows/task-service-security-contract.yml'
@@ -36,4 +37,5 @@ jobs:
       - run: node tests/security/task-service-security-contract.test.js
       - run: node tests/security/task-service-resource-ownership.test.js
       - run: node tests/security/task-service-grade-submission-history.test.js
+      - run: node tests/security/task-service-deadline-history.test.js
       - run: node --check js/teacher.js

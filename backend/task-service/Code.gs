@@ -550,17 +550,117 @@ function createTask(payload) {
  if(!registered.authorized){try{const rows=taskSheet.getDataRange().getValues(),idx=rows.findIndex((r,n)=>n>0&&String(r[0]||"").trim()===id);if(idx>0)taskSheet.deleteRow(idx+1);}catch(_){throw new Error("RESOURCE_OWNERSHIP_ROLLBACK_FAILED");}throw new Error(registered.code||"RESOURCE_OWNERSHIP_WRITE_FAILED");}
  return {status:"success",message:"Tarea creada.",data:{tareaId:id}};
 }
+const TASK_DEADLINE_HISTORY_HEADERS_ = ["HistoryID","TaskID","PreviousDeadline","NewDeadline","ChangedByUserID","ChangedByRole","ChangedAt","Reason","CorrelationID"];
+
+function normalizeTaskDeadlineForHistory_(value) {
+  if (value === null || value === undefined || String(value).trim() === "") return "";
+  const date = value instanceof Date ? value : new Date(value);
+  if (isNaN(date.getTime())) throw new Error("TASK_DEADLINE_INVALID");
+  return date.toISOString();
+}
+
+function ensureTaskDeadlineHistorySheet_(ss) {
+  const name = "HistorialFechasLimiteTareas";
+  let sheet = ss.getSheetByName(name);
+  if (!sheet) {
+    if (!ss.insertSheet) throw new Error("TASK_DEADLINE_HISTORY_SHEET_UNAVAILABLE");
+    sheet = ss.insertSheet(name);
+  }
+  const data = sheet.getDataRange().getValues();
+  if (!data.length || !data[0] || !data[0].length || data[0].every(value => String(value || "").trim() === "")) {
+    sheet.appendRow(TASK_DEADLINE_HISTORY_HEADERS_.slice());
+    return sheet;
+  }
+  const actualHeaders = data[0].map(value => String(value || "").trim());
+  if (JSON.stringify(actualHeaders) !== JSON.stringify(TASK_DEADLINE_HISTORY_HEADERS_)) {
+    throw new Error("TASK_DEADLINE_HISTORY_SCHEMA_MISMATCH");
+  }
+  return sheet;
+}
+
 function updateTask(payload) {
- const uid=payload&&payload._verifiedUserId,tareaId=payload&&payload.tareaId;if(!uid||!tareaId)throw new Error("Identidad y tarea requeridas.");
- const sh=getSheetOrThrow(SpreadsheetApp.openById(SPREADSHEET_ID),"Tareas"),data=sh.getDataRange().getValues(),i=data.findIndex(r=>String(r[0]).trim()===String(tareaId).trim());if(i<1)throw new Error("Tarea no encontrada.");
- const row=data[i];assertTaskServiceTeacherCanManageTask(payload,row);
- if(payload._verifiedRole==="Profesor"&&["gradoAsignado","seccionAsignada","asignatura"].some(k=>payload[k]!==undefined)){
-  const g=payload.gradoAsignado===undefined?row[6]:payload.gradoAsignado,sec=payload.seccionAsignada===undefined?row[7]:payload.seccionAsignada,sub=payload.asignatura===undefined?row[5]:payload.asignatura;
-  const c=getSheetOrThrow(SpreadsheetApp.openById(SPREADSHEET_ID),"AulasVirtuales").getDataRange().getValues().slice(1).find(r=>String(r[7]||"Activa")!=="Desactivada"&&normalizeString(r[3])===normalizeString(g)&&(!r[4]||normalizeString(r[4])===normalizeString(sec))&&normalizeString(r[5])===normalizeString(sub)&&String(r[6]||"").trim()===String(uid).trim());
-  if(!c)throw new Error("El nuevo ámbito no pertenece a una asignación docente.");assertTaskServiceTeacherAssignedToOffer(uid,c[1]);
- }
- [["titulo",2],["descripcion",3],["parcial",4],["asignatura",5],["gradoAsignado",6],["seccionAsignada",7],["fechaLimite",8],["puntaje",12],["archivoUrl",13]].forEach(([k,col])=>{if(payload[k]!==undefined)row[col]=payload[k];});
- sh.getRange(i+1,1,1,row.length).setValues([row]);return {status:"success",message:"Tarea actualizada."};
+  const request = payload || {};
+  const initialIdentity = getVerifiedTaskIdentity_(request);
+  if (!initialIdentity || initialIdentity.authorized !== true || !initialIdentity.userId || !initialIdentity.role) {
+    throw new Error("VERIFIED_IDENTITY_REQUIRED");
+  }
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error("TASK_UPDATE_LOCK_UNAVAILABLE");
+  try {
+    const identity = getVerifiedTaskIdentity_(request);
+    if (!identity || identity.authorized !== true || !identity.userId ||
+        String(identity.userId) !== String(initialIdentity.userId) ||
+        String(identity.role || "") !== String(initialIdentity.role || "")) {
+      throw new Error("VERIFIED_IDENTITY_CHANGED");
+    }
+    const taskId = String(request.tareaId || "").trim();
+    if (!taskId) throw new Error("Identidad y tarea requeridas.");
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = getSheetOrThrow(ss, "Tareas");
+    const data = sheet.getDataRange().getValues();
+    const index = data.findIndex(row => String(row[0] || "").trim() === taskId);
+    if (index < 1) throw new Error("Tarea no encontrada.");
+    const originalRow = data[index].slice();
+    assertTaskServiceTeacherCanManageTask(request, originalRow);
+
+    if (identity.role === "Profesor" &&
+        ["gradoAsignado", "seccionAsignada", "asignatura"].some(key => request[key] !== undefined)) {
+      const grade = request.gradoAsignado === undefined ? originalRow[6] : request.gradoAsignado;
+      const section = request.seccionAsignada === undefined ? originalRow[7] : request.seccionAsignada;
+      const subject = request.asignatura === undefined ? originalRow[5] : request.asignatura;
+      const classroom = getSheetOrThrow(ss, "AulasVirtuales").getDataRange().getValues().slice(1).find(row =>
+        String(row[7] || "Activa") !== "Desactivada" &&
+        normalizeString(row[3]) === normalizeString(grade) &&
+        (!row[4] || normalizeString(row[4]) === normalizeString(section)) &&
+        normalizeString(row[5]) === normalizeString(subject) &&
+        String(row[6] || "").trim() === String(identity.userId).trim()
+      );
+      if (!classroom) throw new Error("El nuevo ámbito no pertenece a una asignación docente.");
+      assertTaskServiceTeacherAssignedToOffer(identity.userId, classroom[1]);
+    }
+
+    const updatedRow = originalRow.slice();
+    [["titulo",2],["descripcion",3],["parcial",4],["asignatura",5],["gradoAsignado",6],
+      ["seccionAsignada",7],["fechaLimite",8],["puntaje",12],["archivoUrl",13]].forEach(([key,column]) => {
+        if (request[key] !== undefined) updatedRow[column] = request[key];
+      });
+
+    const deadlineChanged = request.fechaLimite !== undefined &&
+      normalizeTaskDeadlineForHistory_(request.fechaLimite) !== normalizeTaskDeadlineForHistory_(originalRow[8]);
+    let historySheet = null;
+    let reason = "";
+    let previousDeadline = "";
+    let nextDeadline = "";
+    if (deadlineChanged) {
+      reason = String(request.motivoCambioFechaLimite || "").trim();
+      if (!reason) throw new Error("TASK_DEADLINE_CHANGE_REASON_REQUIRED");
+      if (reason.length > 500) throw new Error("TASK_DEADLINE_CHANGE_REASON_TOO_LONG");
+      previousDeadline = normalizeTaskDeadlineForHistory_(originalRow[8]);
+      nextDeadline = normalizeTaskDeadlineForHistory_(request.fechaLimite);
+      historySheet = ensureTaskDeadlineHistorySheet_(ss);
+    }
+
+    sheet.getRange(index + 1, 1, 1, updatedRow.length).setValues([updatedRow]);
+    if (deadlineChanged) {
+      try {
+        historySheet.appendRow([
+          "DLH-" + Utilities.getUuid(), taskId, previousDeadline, nextDeadline,
+          String(identity.userId), String(identity.role), new Date(), reason,
+          String(request.correlationId || "")
+        ]);
+      } catch (historyError) {
+        try {
+          sheet.getRange(index + 1, 1, 1, originalRow.length).setValues([originalRow]);
+        } catch (rollbackError) {
+          throw new Error("TASK_UPDATE_HISTORY_ROLLBACK_FAILED");
+        }
+        throw new Error("TASK_DEADLINE_HISTORY_WRITE_FAILED");
+      }
+    }
+    return { status: "success", message: "Tarea actualizada.", deadlineHistoryRecorded: deadlineChanged };
+  } finally {
+    lock.releaseLock();
+  }
 }
 function deleteTask(payload) {
  const id=payload&&payload.tareaId;if(!id)throw new Error("tareaId requerido.");const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=getSheetOrThrow(ss,"Tareas"),data=sh.getDataRange().getValues(),i=data.findIndex(r=>String(r[0]).trim()===String(id).trim());if(i<1)throw new Error("Tarea no encontrada.");
@@ -2459,19 +2559,36 @@ function getStudyMaterials(payload) {
   return { status:"success", data:materials };
 }
 function createStudyMaterial(payload) {
- const role=payload&&payload._verifiedRole,uid=payload&&payload._verifiedUserId,{aulaId,titulo,descripcion,tipoRecurso,parcial,unidad,tema,archivoUrl,driveId}=payload||{},classId=aulaId||"General";
- if(!uid||!titulo||!archivoUrl)throw new Error("Identidad, título y archivo obligatorios.");
- if(role==="Profesor"||isTaskServiceAdministrativeRole(role))assertTaskServiceClassroomAccess(payload,classId);else throw new Error("Acceso denegado.");
- if(classId==="General"&&!isTaskServiceAdministrativeRole(role))throw new Error("Solo administración puede publicar materiales generales.");
- if(driveId){const file=DriveApp.getFileById(extractTaskServiceFileId(driveId));if(file.isTrashed())throw new Error("Archivo eliminado.");}
- const sh=getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"MaterialesEducativos");if(sh.getLastRow()===0)sh.appendRow(["ID","AulaID","Titulo","Descripcion","TipoRecurso","Parcial","Unidad","Tema","ArchivoUrl","DriveId","AutorID","FechaPublicacion","Estado"]);
- const id="MAT-"+Utilities.getUuid(),now=new Date();sh.appendRow([id,classId,titulo,descripcion||"",tipoRecurso||"Documento",parcial||"I parcial",unidad||"Unidad 1",tema||"Tema General",archivoUrl,driveId||"",uid,now,"Activo"]);return {status:"success",message:"Material educativo publicado.",data:{materialId:id}};
+  const identity = getVerifiedTaskIdentity_(payload);
+  const role = identity.role, uid = identity.userId;
+  const { aulaId, titulo, descripcion, tipoRecurso, parcial, unidad, tema, archivoUrl, driveId } = payload || {};
+  const classId = aulaId || "General";
+  if (!identity.authorized || !uid || !titulo || !archivoUrl) throw new Error("Identidad, título y archivo obligatorios.");
+  if (role === "Profesor" || isTaskServiceAdministrativeRole(role)) assertTaskServiceClassroomAccess(payload, classId);
+  else throw new Error("Acceso denegado.");
+  if (classId === "General" && !isTaskServiceAdministrativeRole(role)) throw new Error("Solo administración puede publicar materiales generales.");
+  if (driveId) { const file = DriveApp.getFileById(extractTaskServiceFileId(driveId)); if (file.isTrashed()) throw new Error("Archivo eliminado."); }
+  const sheet = getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID), "MaterialesEducativos");
+  if (sheet.getLastRow() === 0) sheet.appendRow(["ID","AulaID","Titulo","Descripcion","TipoRecurso","Parcial","Unidad","Tema","ArchivoUrl","DriveId","AutorID","FechaPublicacion","Estado"]);
+  const id = "MAT-" + Utilities.getUuid(), now = new Date();
+  sheet.appendRow([id,classId,titulo,descripcion||"",tipoRecurso||"Documento",parcial||"I parcial",unidad||"Unidad 1",tema||"Tema General",archivoUrl,driveId||"",uid,now,"Activo"]);
+  return { status:"success", message:"Material educativo publicado.", data:{ materialId:id } };
 }
 function deleteStudyMaterial(payload) {
- const role=payload&&payload._verifiedRole,uid=payload&&payload._verifiedUserId,id=payload&&payload.materialId;if(!uid||!id)throw new Error("Identidad y materialId requeridos.");
- const sh=getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"MaterialesEducativos"),data=sh.getDataRange().getValues(),i=data.findIndex(r=>String(r[0]).trim()===String(id).trim());if(i<1)throw new Error("Material no encontrado.");const row=data[i];
- if(!isTaskServiceAdministrativeRole(role)&&(role!=="Profesor"||String(row[10]).trim()!==String(uid).trim()))throw new Error("El material no pertenece al docente.");assertTaskServiceClassroomAccess(payload,row[1]);
- sh.getRange(i+1,13).setValue("Eliminado");return {status:"success",message:"Material eliminado."};
+  const identity = getVerifiedTaskIdentity_(payload);
+  const role = identity.role, uid = identity.userId, id = payload && payload.materialId;
+  if (!identity.authorized || !uid || !id) throw new Error("Identidad y materialId requeridos.");
+  const sheet = getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID), "MaterialesEducativos");
+  const data = sheet.getDataRange().getValues();
+  const index = data.findIndex(row => String(row[0] || "").trim() === String(id).trim());
+  if (index < 1) throw new Error("Material no encontrado.");
+  const row = data[index];
+  if (!isTaskServiceAdministrativeRole(role) && (role !== "Profesor" || String(row[10]).trim() !== String(uid).trim())) {
+    throw new Error("El material no pertenece al docente.");
+  }
+  assertTaskServiceClassroomAccess(payload, row[1]);
+  sheet.getRange(index + 1, 13).setValue("Eliminado");
+  return { status:"success", message:"Material eliminado." };
 }
 function returnSubmissionForRevision(payload) {
   const { entregaId, comentario } = payload || {};
