@@ -1147,7 +1147,7 @@ function getEmployeeDocuments(payload) {
   if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var documentSheet = ss.getSheetByName("DocumentosLaborales"), employeeSheet = ss.getSheetByName("ExpedientesLaborales");
-  if (!documentSheet || !employeeSheet) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  if (!documentSheet || !employeeSheet) return { status: "success", documentos: [] };
   var employeeValues = employeeSheet.getDataRange().getValues(), documentValues = documentSheet.getDataRange().getValues();
   if (!employeeValues.length || !documentValues.length) return { status: "error", code: "RESOURCE_NOT_FOUND" };
   var employeeHeaders = employeeValues[0].map(function(value) { return String(value || "").trim(); });
@@ -1170,11 +1170,16 @@ function getEmployeeDocuments(payload) {
       var allDocsForTarget = documentValues.slice(1).filter(function(row) {
         return String(row[documentIndex.ExpedienteID] || "").trim() === requestedId;
       });
-      var allIds = {};
-      allDocsForTarget.forEach(function(row) { var id = String(row[documentIndex.DocumentoID] || "").trim(); if (id) allIds[id] = true; });
+      var allIds = {}, allIdCounts = {};
+      allDocsForTarget.forEach(function(row) {
+        var id = String(row[documentIndex.DocumentoID] || "").trim();
+        if (id) { allIds[id] = true; allIdCounts[id] = (allIdCounts[id] || 0) + 1; }
+      });
       var requestedFields = input.referenceRequestedFields, requestedDocumentIds = input.referenceDocumentIds;
       if (!Array.isArray(requestedFields) || !requestedFields.length || !Array.isArray(requestedDocumentIds) ||
-          !requestedDocumentIds.length || requestedDocumentIds.some(function(id) { return !allIds[String(id || "")]; })) {
+          !requestedDocumentIds.length || requestedDocumentIds.some(function(id) {
+            var key = String(id || ""); return !allIds[key] || allIdCounts[key] !== 1;
+          })) {
         return { status: "error", code: "RESOURCE_NOT_FOUND" };
       }
       referenceAccess = authorizeAccountingDepartmentReferenceReadViaUser_(input, requestedId, requestedFields, requestedDocumentIds);
