@@ -1390,6 +1390,10 @@ function getEmployeeRecords(payload) {
   var idx = { id: headers.indexOf("ExpedienteID"), person: headers.indexOf("PersonaId"), user: headers.indexOf("UserId"), role: headers.indexOf("Puesto"), department: headers.indexOf("Departamento"), cost: headers.indexOf("CentroCosto"), hire: headers.indexOf("FechaIngreso"), exit: headers.indexOf("FechaSalida"), state: headers.indexOf("EstadoLaboral"), notes: headers.indexOf("Observaciones") };
   if (Object.keys(idx).some(function(key) { return idx[key] < 0; })) return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
   var names = getEmployeePersonNameIndex_(ss), role = normalizeVacationRole_(actor.role), rows = [];
+  if (role === "empleado" && input.userId && String(input.userId).trim() !== actor.userId) {
+    auditEmployeeSelfServiceDenied_(actor, "getEmployeeRecords");
+    return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  }
   values.slice(1).forEach(function(row) {
     var id = String(row[idx.id] || "").trim();
     if (!id) return;
