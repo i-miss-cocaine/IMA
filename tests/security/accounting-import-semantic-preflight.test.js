@@ -79,6 +79,11 @@ assert.notEqual(context.preview({...base,filasData:[{...base.filasData[0],nota:9
 binaryFileHash="b".repeat(64);
 assert.notEqual(context.preview(base).previewHash,valid.previewHash,"the original uploaded file digest is bound into the preview hash");
 binaryFileHash="a".repeat(64);
+const unconfirmedValues=["false","true",1,{},[]];
+for(const unconfirmed of unconfirmedValues){
+ assert.throws(()=>context.import({...base,previewConfirmed:unconfirmed,previewHash:valid.previewHash}),/IMPORT_PREVIEW_INVALID_OR_STALE/);
+}
+assert.equal(writeCalls.length,0,"only the literal boolean true confirms an import preview");
 const partialPayload={...base,analisisEstructural:{headerRowIndex:1,dataRowNumbers:[3,7]},filasData:[base.filasData[0],{...base.filasData[0],legacyId:"CUR-2",fechaInicio:"fecha-invalida"}]};
 const partialPreview=context.preview(partialPayload);
 assert.equal(partialPreview.validForImport,false);

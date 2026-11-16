@@ -874,7 +874,7 @@ function importDataWithColumnMapping(payload) {
   if (!preview || preview.status !== "success") {
     throw new Error(String(preview && preview.code || "IMPORT_PREVIEW_INVALID_OR_STALE"));
   }
-  if (!input.previewConfirmed || !input.previewHash ||
+  if (input.previewConfirmed !== true || !input.previewHash ||
       String(input.previewHash) !== String(preview.previewHash)) {
     throw new Error("IMPORT_PREVIEW_INVALID_OR_STALE");
   }
