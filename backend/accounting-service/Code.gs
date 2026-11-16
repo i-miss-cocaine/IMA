@@ -2783,7 +2783,8 @@ function reviewPaymentVoucher(payload) {
     var match = matches[0], record = paymentVoucherRowObject_(match.row, schema.map);
     var scopedOwner = assertPaymentVoucherOwnerAccess_(input, record.UserId, { requireStaff: true });
     if (!scopedOwner || scopedOwner.authorized !== true) return { status: "error", code: "RESOURCE_SCOPE_DENIED" };
-    if (record.EsVersionActual !== true || ["Pendiente","Observado"].indexOf(String(record.Estado || "")) === -1) {
+    var currentVoucherState = String(record.Estado || "").trim().toLowerCase().replace(/[\\s_]+/g, "");
+    if (record.EsVersionActual !== true || ["pendiente","observado","enrevision"].indexOf(currentVoucherState) === -1) {
       return { status: "error", code: "PAYMENT_VOUCHER_ALREADY_REVIEWED" };
     }
     var evidence = verifyPaymentVoucherEvidence_(ss, record, "reviewPaymentVoucher", actor.role);

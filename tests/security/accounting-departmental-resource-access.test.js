@@ -298,9 +298,10 @@ assert.equal(Object.keys(files).length,voucherFileCountBeforeUnauthorizedUpload,
 assert.equal(context.reviewPaymentVoucher({sessionToken:"student",comprobanteId:"VCH-A",nuevoEstado:"Rechazado"}).code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.reviewPaymentVoucher({sessionToken:"staffA",comprobanteId:"VCH-B",nuevoEstado:"Rechazado"}).code,"RESOURCE_SCOPE_DENIED");
 const staffReviewResult=context.reviewPaymentVoucher({sessionToken:"staffA",comprobanteId:"VCH-A",nuevoEstado:"Rechazado"});
-assert.equal(staffReviewResult.status,"success","authorized reviewer should process a verified voucher; actual="+JSON.stringify(staffReviewResult));
+assert.equal(staffReviewResult.status,"success","authorized reviewer should process a verified voucher");
+assert.equal(context.reviewPaymentVoucher({sessionToken:"staffA",comprobanteId:"VCH-A",nuevoEstado:"Aprobado"}).code,"PAYMENT_VOUCHER_ALREADY_REVIEWED","a terminal voucher decision cannot be overwritten");
 const ownFile=context.getPaymentVoucherFile({sessionToken:"student",comprobanteId:"VCH-A",fileId:"FILE_B_123456789012345678901234567890"});
-assert.equal(ownFile.status,"success","student may retrieve only their own voucher file; actual="+JSON.stringify(ownFile));
+assert.equal(ownFile.status,"success","student may retrieve only their own voucher file");
 assert.equal(ownFile.fileName,"voucher-a.pdf","file reference must come from the stored voucher row, not client fileId");
 assert.equal(ownFile.mimeType,"application/pdf");
 assert.equal(ownFile.fileData,Buffer.from("%PDF-1.4 test").toString("base64"));
