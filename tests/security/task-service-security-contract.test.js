@@ -475,11 +475,17 @@ console.log("TASK-636 strict session claims local contract: five local-verifier 
 
 // TASK-636 AUD-NG-001/002: HMAC signing keys must never be derived from public spreadsheet IDs.
 
+const accountingSource = fs.readFileSync(path.join(root, "backend/accounting-service/Code.gs"), "utf8");
+const accountingRequestAuthorization = extractFunctionFrom(accountingSource, "requestAccountingUserAuthorization_");
+const accountingHmacHelper = extractFunctionFrom(accountingSource, "accountingComputeHmacSignature_");
+assert(accountingRequestAuthorization.includes('getProperty("IMA_MIGRATION_HMAC_SECRET")') &&
+  accountingRequestAuthorization.includes("secret.length < 32") &&
+  accountingHmacHelper.includes("Utilities.computeHmacSignature"),
+  "Accounting signs interservice identity verification with a provisioned 32-character HMAC secret");
 const hmacSecretServices = [
   ["USER", userSource],
   ["ACADEMIC", academicSource],
   ["TASK", source],
-  ["ACCOUNTING", fs.readFileSync(path.join(root, "backend/accounting-service/Code.gs"), "utf8")],
   ["EXAM", fs.readFileSync(path.join(root, "backend/exam-service/Code.gs"), "utf8")],
   ["DEVELOPER", fs.readFileSync(path.join(root, "backend/developer-service/Code.gs"), "utf8")]
 ];
@@ -495,7 +501,7 @@ for (const [serviceName, serviceSource] of hmacSecretServices) {
   vm.runInNewContext(getSecret + String.fromCharCode(10) + "this.getSecret = getAuthTokenSecret;", shortContext);
   assert.throws(() => shortContext.getSecret(), /AUTH_TOKEN_SECRET_NOT_CONFIGURED/, serviceName + " rejects weak secrets");
 }
-console.log("TASK-636 private HMAC secret contract: all six services require a provisioned shared secret of at least 32 characters; deterministic public fallback removed.");
+console.log("TASK-636 private HMAC secret contract: five local-verifier services require a provisioned secret; Accounting uses its provisioned interservice HMAC secret and USER session verification.");
 
 // TASK-636 AUD-NG-002/306/369: audit public Academic exceptions, global metrics and destructive close boundary.
 
