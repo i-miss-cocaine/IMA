@@ -1253,7 +1253,7 @@ function getEmployeeDocuments(payload) {
 
 
 function normalizeVacationRole_(role) {
-  return String(role || "").trim().toLowerCase().replace(/\s+/g, "");
+  return String(role || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
 }
 
 function validateRolePermission(actorOrPayload, action) {
@@ -1266,6 +1266,24 @@ function validateRolePermission(actorOrPayload, action) {
     var staffingAllowed = action === "manageStaffingNeeds" || action === "manageWorkShiftAndSubstitution"
       ? staffingRole === "recursoshumanos" : ["recursoshumanos","administrador"].indexOf(staffingRole) !== -1;
     return staffingAllowed ? { authorized: true, actor: actor } : { authorized: false, code: "ROLE_NOT_ALLOWED" };
+  }
+  var paymentVoucherActions = ["uploadPaymentVoucher","getPaymentVouchers","getPaymentVoucherFile","reviewPaymentVoucher"];
+  if (paymentVoucherActions.indexOf(String(action || "")) !== -1) {
+    var voucherRole = normalizeVacationRole_(actor.role);
+    var voucherStaffRoles = ["secretaria","administrador","director","subdirector","recursoshumanos"];
+    var voucherSelfRoles = ["estudiante","alumno","tutor","padre","madre","responsable"];
+    if (action === "uploadPaymentVoucher") return voucherRole === "estudiante"
+      ? { authorized: true, actor: actor } : { authorized: false, code: "ROLE_NOT_ALLOWED" };
+    if (action === "reviewPaymentVoucher" && voucherStaffRoles.indexOf(voucherRole) === -1) {
+      return { authorized: false, code: "ROLE_NOT_ALLOWED" };
+    }
+    if (voucherStaffRoles.indexOf(voucherRole) !== -1) {
+      var voucherScope = getVerifiedAccountingDepartmentScope_(actorOrPayload || {}, SpreadsheetApp.openById(SPREADSHEET_ID), actor);
+      if (!voucherScope || voucherScope.valid !== true) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+      return { authorized: true, actor: actor, scope: voucherScope };
+    }
+    return voucherSelfRoles.indexOf(voucherRole) !== -1
+      ? { authorized: true, actor: actor } : { authorized: false, code: "ROLE_NOT_ALLOWED" };
   }
   var employeeScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "recordStaffCheckIn", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitLeaveVacationRequest", "submitVacationRequest", "getLeaveVacationRequests", "getVacationRequests", "manageProfessionalDevelopmentPlan"];
   if (employeeScopeActions.indexOf(String(action || "")) !== -1) {
