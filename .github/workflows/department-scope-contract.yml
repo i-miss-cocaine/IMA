@@ -220,6 +220,8 @@ jobs:
         run: node tests/security/accounting-purchase-dossier.test.js
       - name: Run accounting master catalog and unit conversion contract
         run: node tests/security/accounting-catalog.test.js
+      - name: Run preventive maintenance scheduling and concurrency contract
+        run: node tests/security/accounting-preventive-maintenance.test.js
       - name: Run transport monthly charge, proration, cancellation and idempotency contract
         run: node tests/security/accounting-transport-monthly-charges.test.js
       - name: Run transport route optimization, approval and stale-write contract
