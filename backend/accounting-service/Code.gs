@@ -1263,9 +1263,16 @@ function validateRolePermission(actorOrPayload, action) {
   var staffingActions = ["manageStaffingNeeds", "getStaffingNeedsPlanning", "manageWorkShiftAndSubstitution"];
   if (staffingActions.indexOf(String(action || "")) !== -1) {
     var staffingRole = normalizeVacationRole_(actor.role);
-    var staffingAllowed = action === "manageStaffingNeeds" || action === "manageWorkShiftAndSubstitution" ? staffingRole === "recursoshumanos" :
-      ["recursoshumanos","administrador"].indexOf(staffingRole) !== -1;
+    var staffingAllowed = action === "manageStaffingNeeds" || action === "manageWorkShiftAndSubstitution"
+      ? staffingRole === "recursoshumanos" : ["recursoshumanos","administrador"].indexOf(staffingRole) !== -1;
     return staffingAllowed ? { authorized: true, actor: actor } : { authorized: false, code: "ROLE_NOT_ALLOWED" };
+  }
+  var employeeScopeActions = ["getEmployeeDocuments", "getEmployeeContracts", "getEmployeeContractAlerts", "getEmployeeTrainingHistory", "getStaffAttendanceLogs", "getStaffPayrollReceipt", "getEmployeeLoansAdvances", "uploadEmployeeDocument", "getEmployeeSelfServicePortal", "recordStaffCheckIn", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitLeaveVacationRequest", "submitVacationRequest", "getLeaveVacationRequests", "getVacationRequests", "manageProfessionalDevelopmentPlan"];
+  if (employeeScopeActions.indexOf(String(action || "")) !== -1) {
+    var role = normalizeVacationRole_(actor.role), staffRoles = ["recursoshumanos","director","subdirector","administrador"];
+    var selfRoles = ["empleado","profesor"], staffOnly = ["manageProfessionalDevelopmentPlan"];
+    var allowed = staffRoles.indexOf(role) !== -1 || (selfRoles.indexOf(role) !== -1 && staffOnly.indexOf(String(action || "")) === -1);
+    return allowed ? { authorized: true, actor: actor } : { authorized: false, code: "ROLE_NOT_ALLOWED" };
   }
   return accountingHasRolePermission_(actor, action)
     ? { authorized: true, actor: actor }
@@ -1425,42 +1432,48 @@ function assertVacationWriteAccess_(payload, ss, expedienteId, actor, allowedRol
   return access;
 }
 
-function getEmployeeRecords(payload) {
-  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
-  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
-  var permission = validateRolePermission(actor, "getEmployeeRecords");
-  if (!permission.authorized) return { status: "error", code: permission.code };
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), sheet = ss.getSheetByName("ExpedientesLaborales");
-  if (!sheet) return { status: "success", data: [], expedientes: [] };
+function getEmployeeResourceAccessIndex_(payload, ss, actor) {
+  var identity = actor || getVerifiedAccountingIdentity_(payload || {});
+  if (!identity || identity.authorized !== true) return { valid: false, code: identity && identity.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var sheet = ss && ss.getSheetByName ? ss.getSheetByName("ExpedientesLaborales") : null;
+  if (!sheet) return { valid: false, code: "RESOURCE_NOT_FOUND", byUserId: {}, byExpedienteId: {} };
   var values = sheet.getDataRange().getValues();
-  if (!values || !values.length) return { status: "success", data: [], expedientes: [] };
+  if (!values || !values.length) return { valid: true, byUserId: {}, byExpedienteId: {} };
   var headers = values[0].map(function(value) { return String(value || "").trim(); });
-  var idx = { id: headers.indexOf("ExpedienteID"), person: headers.indexOf("PersonaId"), user: headers.indexOf("UserId"),
-    role: headers.indexOf("Puesto"), department: headers.indexOf("Departamento"), cost: headers.indexOf("CentroCosto"),
-    hire: headers.indexOf("FechaIngreso"), exit: headers.indexOf("FechaSalida"), state: headers.indexOf("EstadoLaboral"), notes: headers.indexOf("Observaciones") };
-  if (Object.keys(idx).some(function(key) { return idx[key] < 0; })) return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
-  var role = String(actor.role || "").trim().toLowerCase();
-  if (role === "empleado" && input.userId && String(input.userId).trim() !== String(actor.userId)) {
-    return { status: "error", code: "RESOURCE_NOT_FOUND" };
-  }
-  var names = getEmployeePersonNameIndex_(ss), rows = [], seen = {};
+  var idIndex = headers.indexOf("ExpedienteID"), userIndex = headers.indexOf("UserId");
+  if (idIndex < 0 || userIndex < 0) return { valid: false, code: "RESOURCE_SCHEMA_INVALID", byUserId: {}, byExpedienteId: {} };
+  var byUser = {}, countsByUser = {}, countsById = {};
   values.slice(1).forEach(function(row) {
-    var id = String(row[idx.id] || "").trim();
-    if (!id || seen[id]) return;
-    seen[id] = true;
-    var access = assertEmployeeExpedienteScopeAccess_(input, ss, id);
-    if (!access || access.authorized !== true) return;
-    rows.push({ expedienteId: id, personaId: row[idx.person], userId: role === "empleado" ? undefined : row[idx.user],
-      puesto: row[idx.role], departamento: row[idx.department], centroCosto: row[idx.cost],
-      fechaIngreso: row[idx.hire], fechaSalida: row[idx.exit], estadoLaboral: row[idx.state],
-      empleadoNombre: names[String(row[idx.person] || "").trim()] || "",
-      observaciones: role === "empleado" ? "" : (row[idx.notes] || "") });
+    var id = String(row[idIndex] || "").trim(), userId = String(row[userIndex] || "").trim();
+    if (!id || !userId) return;
+    countsByUser[userId] = (countsByUser[userId] || 0) + 1;
+    countsById[id] = (countsById[id] || 0) + 1;
+    byUser[userId] = { expedienteId: id, row: row };
   });
-  var requestedId = String(input.expedienteId || "").trim();
-  if (requestedId && !rows.some(function(item) { return item.expedienteId === requestedId; })) {
-    return { status: "error", code: "RESOURCE_NOT_FOUND" };
-  }
-  return { status: "success", data: rows, expedientes: rows };
+  var resultUsers = {}, resultIds = {};
+  Object.keys(byUser).forEach(function(userId) {
+    var record = byUser[userId];
+    if (countsByUser[userId] !== 1 || countsById[record.expedienteId] !== 1) return;
+    var access = assertEmployeeExpedienteScopeAccess_(payload || {}, ss, record.expedienteId);
+    if (!access || access.authorized !== true) return;
+    resultUsers[userId] = { expedienteId: record.expedienteId, row: record.row, access: access };
+    resultIds[record.expedienteId] = { userId: userId, row: record.row, access: access };
+  });
+  return { valid: true, byUserId: resultUsers, byExpedienteId: resultIds };
+}
+
+function getEmployeeRecords(payload) {
+  var input=payload||{},actor=getVerifiedAccountingIdentity_(input);
+  if(!actor||actor.authorized!==true)return{status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
+  var permission=validateRolePermission(actor,"getEmployeeRecords");if(!permission.authorized)return{status:"error",code:permission.code};
+  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("ExpedientesLaborales");if(!sheet)return{status:"success",data:[],expedientes:[]};
+  var values=sheet.getDataRange().getValues();if(!values.length)return{status:"success",data:[],expedientes:[]};
+  var headers=values[0].map(function(v){return String(v||"").trim();}),idx={id:headers.indexOf("ExpedienteID"),person:headers.indexOf("PersonaId"),user:headers.indexOf("UserId"),role:headers.indexOf("Puesto"),department:headers.indexOf("Departamento"),cost:headers.indexOf("CentroCosto"),hire:headers.indexOf("FechaIngreso"),exit:headers.indexOf("FechaSalida"),state:headers.indexOf("EstadoLaboral"),notes:headers.indexOf("Observaciones")};
+  if(Object.keys(idx).some(function(k){return idx[k]<0;}))return{status:"error",code:"RESOURCE_SCHEMA_INVALID"};
+  var role=String(actor.role||"").trim().toLowerCase();if(role==="empleado"&&input.userId&&String(input.userId).trim()!==String(actor.userId))return{status:"error",code:"RESOURCE_NOT_FOUND"};
+  var names=getEmployeePersonNameIndex_(ss),rows=[],seen={};values.slice(1).forEach(function(row){var id=String(row[idx.id]||"").trim();if(!id||seen[id])return;seen[id]=true;var access=assertEmployeeExpedienteScopeAccess_(input,ss,id);if(!access||!access.authorized)return;rows.push({expedienteId:id,personaId:row[idx.person],userId:role==="empleado"?undefined:row[idx.user],puesto:row[idx.role],departamento:row[idx.department],centroCosto:row[idx.cost],fechaIngreso:row[idx.hire],fechaSalida:row[idx.exit],estadoLaboral:row[idx.state],empleadoNombre:names[String(row[idx.person]||"").trim()]||"",observaciones:role==="empleado"?"":(row[idx.notes]||"")});});
+  var requestedId=String(input.expedienteId||"").trim();if(requestedId&&!rows.some(function(x){return x.expedienteId===requestedId;}))return{status:"error",code:"RESOURCE_NOT_FOUND"};
+  return{status:"success",data:rows,expedientes:rows};
 }
 
 function submitVacationRequestCore_(payload, allowedRoles) {
@@ -3128,29 +3141,30 @@ function parseJsonSafe(jsonStr, fallback) {
 // [TAREA RH-06] [Fase Recursos Humanos] - Catálogo de capacitaciones, inscripciones, certificados con vencimiento y planes de desarrollo profesional.
 
 function getEmployeeContracts(payload) {
-  const { expedienteId } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "ContratosLaborales").getDataRange().getValues().slice(1);
-
-  let filtered = rows;
-  if (expedienteId) filtered = filtered.filter(r => String(r[1]).trim() === String(expedienteId).trim());
-
-  const mapped = filtered.map(r => ({
-    contratoId: r[0],
-    expedienteId: r[1],
-    tipoContrato: r[2],
-    fechaInicio: r[3],
-    fechaFin: r[4],
-    salarioBase: parseFloat(r[5] || 0),
-    jornada: r[6],
-    estadoContrato: r[7],
-    observaciones: r[8]
-  }));
-
-  return {
-    status: "success",
-    contratos: mapped
-  };
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var permission = validateRolePermission(actor, "getEmployeeContracts");
+  if (!permission.authorized) return { status: "error", code: permission.code };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), sheet = ss.getSheetByName("ContratosLaborales");
+  if (!sheet) return { status: "success", contratos: [] };
+  var values = sheet.getDataRange().getValues();
+  if (!values || !values.length) return { status: "success", contratos: [] };
+  var headers = values[0].map(function(value) { return String(value || "").trim(); });
+  var required = ["ContratoID","ExpedienteID","TipoContrato","FechaInicio","FechaFin","SalarioBase","Jornada","EstadoContrato","Observaciones"], idx = {};
+  headers.forEach(function(name, i) { idx[name] = i; });
+  if (required.some(function(name) { return idx[name] === undefined; })) return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
+  var requestedId = String(input.expedienteId || "").trim(), accessIndex = getEmployeeResourceAccessIndex_(input, ss, actor);
+  if (!accessIndex.valid) return { status: "error", code: accessIndex.code };
+  if (requestedId && !accessIndex.byExpedienteId[requestedId]) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  var rows = values.slice(1), counts = {};
+  rows.forEach(function(row) { var id = String(row[idx.ContratoID] || "").trim(); if (id) counts[id] = (counts[id] || 0) + 1; });
+  var contratos = rows.filter(function(row) {
+    var id = String(row[idx.ContratoID] || "").trim(), expedienteId = String(row[idx.ExpedienteID] || "").trim();
+    return !!id && counts[id] === 1 && !!accessIndex.byExpedienteId[expedienteId] && (!requestedId || requestedId === expedienteId);
+  }).map(function(row) { return { contratoId: row[idx.ContratoID], expedienteId: row[idx.ExpedienteID], tipoContrato: row[idx.TipoContrato],
+    fechaInicio: row[idx.FechaInicio], fechaFin: row[idx.FechaFin], salarioBase: parseFloat(row[idx.SalarioBase] || 0),
+    jornada: row[idx.Jornada], estadoContrato: row[idx.EstadoContrato], observaciones: row[idx.Observaciones] }; });
+  return { status: "success", contratos: contratos };
 }
 
 // ---------------------------------------------------------------------------
@@ -3158,189 +3172,54 @@ function getEmployeeContracts(payload) {
 // ---------------------------------------------------------------------------
 
 function getEmployeeContractAlerts(payload) {
-  const { diasAnticipacion } = payload || {};
-  const threshold = parseInt(diasAnticipacion || 30, 10);
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "ContratosLaborales").getDataRange().getValues().slice(1);
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  let countVigentes = 0;
-  let countProximos = 0;
-  let countVencidos = 0;
-
-  const alertas = rows.map(r => {
-    const fFin = r[4] ? new Date(r[4]) : null;
-    let estadoAlerta = "Vigente";
-    let diasParaVencer = null;
-
-    if (fFin && !isNaN(fFin.getTime())) {
-      fFin.setHours(0, 0, 0, 0);
-      const diff = fFin.getTime() - today.getTime();
-      diasParaVencer = Math.ceil(diff / (1000 * 60 * 60 * 24));
-
-      if (diasParaVencer < 0) {
-        estadoAlerta = "Vencido";
-        countVencidos++;
-      } else if (diasParaVencer <= threshold) {
-        estadoAlerta = "ProximoAVencer";
-        countProximos++;
-      } else {
-        estadoAlerta = "Vigente";
-        countVigentes++;
-      }
-    }
-
-    return {
-      contratoId: r[0],
-      expedienteId: r[1],
-      tipoContrato: r[2],
-      fechaInicio: r[3],
-      fechaFin: r[4],
-      estadoContrato: r[7],
-      estadoAlerta,
-      diasParaVencer,
-      observaciones: r[8]
-    };
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var permission = validateRolePermission(actor, "getEmployeeContractAlerts");
+  if (!permission.authorized) return { status: "error", code: permission.code };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), sheet = ss.getSheetByName("ContratosLaborales");
+  if (!sheet) return { status: "success", data: [], resumen: { vigentes: 0, proximosAVencer: 0, vencidos: 0, totalContratos: 0 } };
+  var values = sheet.getDataRange().getValues();
+  if (!values || !values.length) return { status: "success", data: [], resumen: { vigentes: 0, proximosAVencer: 0, vencidos: 0, totalContratos: 0 } };
+  var headers = values[0].map(function(value) { return String(value || "").trim(); });
+  var required = ["ContratoID","ExpedienteID","TipoContrato","FechaInicio","FechaFin","EstadoContrato","Observaciones"], idx = {};
+  headers.forEach(function(name, i) { idx[name] = i; });
+  if (required.some(function(name) { return idx[name] === undefined; })) return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
+  var accessIndex = getEmployeeResourceAccessIndex_(input, ss, actor);
+  if (!accessIndex.valid) return { status: "error", code: accessIndex.code };
+  var requestedId = String(input.expedienteId || "").trim();
+  if (requestedId && !accessIndex.byExpedienteId[requestedId]) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  var rows = values.slice(1), counts = {};
+  rows.forEach(function(row) { var id = String(row[idx.ContratoID] || "").trim(); if (id) counts[id] = (counts[id] || 0) + 1; });
+  var today = new Date(); today.setHours(0,0,0,0), threshold = Math.max(0, Math.min(365, parseInt(input.diasAnticipacion || 30, 10) || 30));
+  var data = rows.filter(function(row) { var id = String(row[idx.ContratoID] || "").trim(), exp = String(row[idx.ExpedienteID] || "").trim();
+    return !!id && counts[id] === 1 && !!accessIndex.byExpedienteId[exp] && (!requestedId || requestedId === exp);
+  }).map(function(row) {
+    var end = row[idx.FechaFin] ? new Date(row[idx.FechaFin]) : null, days = null, state = "Vigente";
+    if (end && !isNaN(end.getTime())) { end.setHours(0,0,0,0); days = Math.ceil((end.getTime()-today.getTime())/86400000); state = days<0?"Vencido":days<=threshold?"ProximoAVencer":"Vigente"; }
+    return { contratoId:row[idx.ContratoID],expedienteId:row[idx.ExpedienteID],tipoContrato:row[idx.TipoContrato],fechaInicio:row[idx.FechaInicio],fechaFin:row[idx.FechaFin],estadoContrato:row[idx.EstadoContrato],estadoAlerta:state,diasParaVencer:days,observaciones:row[idx.Observaciones] };
   });
-
-  return {
-    status: "success",
-    data: alertas,
-    resumen: {
-      vigentes: countVigentes,
-      proximosAVencer: countProximos,
-      vencidos: countVencidos,
-      totalContratos: rows.length
-    }
-  };
+  return { status:"success",data:data,resumen:{vigentes:data.filter(function(x){return x.estadoAlerta==="Vigente";}).length,proximosAVencer:data.filter(function(x){return x.estadoAlerta==="ProximoAVencer";}).length,vencidos:data.filter(function(x){return x.estadoAlerta==="Vencido";}).length,totalContratos:data.length} };
 }
 
 // [TAREA RH-03] [Fase Reclutamiento y Selección] - Creación, consulta y actualización de vacantes laborales institucionales.
 
 function getEmployeeTrainingHistory(payload) {
-  const {
-    empleadoId,
-    cursoId,
-    soloProximosVencimientos,
-    diasAnticipacion,
-    userRole,
-    authenticatedUserId
-  } = payload || {};
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-
-  // Cursos
-  const courseSheet = getOrCreateSheet(ss, "CatalogoCursosCapacitacion");
-  const courseData = courseSheet.getDataRange().getValues();
-  const cursosMap = {};
-  if (courseData.length > 1) {
-    courseData.slice(1).forEach(r => {
-      cursosMap[String(r[0]).trim()] = {
-        cursoId: r[0],
-        nombreCurso: r[1],
-        categoria: r[2],
-        proveedorResponsable: r[3],
-        modalidad: r[4],
-        duracionHoras: r[5],
-        requisitos: parseJsonSafe(r[6], []),
-        dirigidoA: r[7],
-        estado: r[8]
-      };
-    });
-  }
-
-  // Inscripciones
-  const insSheet = getOrCreateSheet(ss, "InscripcionesCapacitacion");
-  const insData = insSheet.getDataRange().getValues();
-  let inscripciones = [];
-
-  const now = new Date();
-  const targetDays = parseInt(diasAnticipacion || "30", 10);
-  const isEmployeeRole = userRole === "Empleado";
-  const targetEmpId = isEmployeeRole ? authenticatedUserId : empleadoId;
-
-  if (insData.length > 1) {
-    inscripciones = insData.slice(1).filter(r => {
-      if (targetEmpId && String(r[2]).trim() !== String(targetEmpId).trim()) return false;
-      if (cursoId && String(r[1]).trim() !== String(cursoId).trim()) return false;
-
-      // Filtro de vencimiento
-      if (soloProximosVencimientos) {
-        const fechaVenc = r[9] ? new Date(r[9]) : null;
-        if (!fechaVenc || isNaN(fechaVenc.getTime())) return false;
-        const diffDays = Math.ceil((fechaVenc - now) / (1000 * 60 * 60 * 24));
-        if (diffDays < 0 || diffDays > targetDays) return false;
-      }
-
-      return true;
-    }).map(r => {
-      const cId = String(r[1]).trim();
-      const cursoInfo = cursosMap[cId] || { nombreCurso: cId };
-      const fechaVenc = r[9] ? new Date(r[9]) : null;
-      let estaProximoAVencer = false;
-      let diasParaVencer = null;
-
-      if (fechaVenc && !isNaN(fechaVenc.getTime())) {
-        diasParaVencer = Math.ceil((fechaVenc - now) / (1000 * 60 * 60 * 24));
-        estaProximoAVencer = diasParaVencer >= 0 && diasParaVencer <= targetDays;
-      }
-
-      return {
-        inscripcionId: r[0],
-        cursoId: r[1],
-        nombreCurso: cursoInfo.nombreCurso,
-        categoriaCurso: cursoInfo.categoria,
-        duracionHoras: cursoInfo.duracionHoras,
-        empleadoId: r[2],
-        fechaInscripcion: r[3],
-        estadoInscripcion: r[4],
-        asistenciaPorcentaje: r[5],
-        resultadoNota: r[6],
-        certificadoDriveUrl: r[7],
-        fechaEmisionCertificado: r[8],
-        fechaVencimientoCertificado: r[9],
-        estaProximoAVencer,
-        diasParaVencer,
-        observaciones: r[10],
-        fechaCreacion: r[12]
-      };
-    });
-  }
-
-  // Planes de Desarrollo
-  const planSheet = getOrCreateSheet(ss, "PlanesDesarrolloProfesional");
-  const planData = planSheet.getDataRange().getValues();
-  let planesDesarrollo = [];
-
-  if (planData.length > 1) {
-    planesDesarrollo = planData.slice(1).filter(r => {
-      if (targetEmpId && String(r[1]).trim() !== String(targetEmpId).trim()) return false;
-      return true;
-    }).map(r => ({
-      planId: r[0],
-      empleadoId: r[1],
-      tituloObjetivo: r[2],
-      descripcion: r[3],
-      metasAcciones: parseJsonSafe(r[4], []),
-      fechaInicio: r[5],
-      fechaMeta: r[6],
-      estadoObjetivo: r[7],
-      evaluacionSeguimiento: r[8],
-      fechaCreacion: r[10]
-    }));
-  }
-
-  return {
-    status: "success",
-    data: {
-      cursos: Object.values(cursosMap),
-      inscripciones,
-      planesDesarrollo
-    }
-  };
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var permission = validateRolePermission(actor, "getEmployeeTrainingHistory");
+  if (!permission.authorized) return { status: "error", code: permission.code };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), accessIndex = getEmployeeResourceAccessIndex_(input, ss, actor);
+  if (!accessIndex.valid) return { status: "error", code: accessIndex.code };
+  var requestedEmployee = String(input.empleadoId || "").trim(), role = normalizeVacationRole_(actor.role);
+  if (["empleado","profesor"].indexOf(role) !== -1) requestedEmployee = String(actor.userId || "");
+  if (requestedEmployee && !accessIndex.byUserId[requestedEmployee]) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  var coursesSheet=ss.getSheetByName("CatalogoCursosCapacitacion"),enrollmentsSheet=ss.getSheetByName("InscripcionesCapacitacion"),plansSheet=ss.getSheetByName("PlanesDesarrolloProfesional");
+  var cv=coursesSheet?coursesSheet.getDataRange().getValues():[[]],ev=enrollmentsSheet?enrollmentsSheet.getDataRange().getValues():[[]],pv=plansSheet?plansSheet.getDataRange().getValues():[[]];
+  var cursos=[],inscripciones=[],planesDesarrollo=[];
+  if(cv.length>1){var ch=cv[0].map(String),ci={id:ch.indexOf("CursoID"),name:ch.indexOf("NombreCurso"),category:ch.indexOf("Categoria"),provider:ch.indexOf("ProveedorResponsable"),mode:ch.indexOf("Modalidad"),duration:ch.indexOf("DuracionHoras"),requirements:ch.indexOf("Requisitos"),target:ch.indexOf("DirigidoA"),state:ch.indexOf("Estado")};if(Object.keys(ci).some(function(k){return ci[k]<0;}))return{status:"error",code:"RESOURCE_SCHEMA_INVALID"};var cc={};cv.slice(1).forEach(function(r){var id=String(r[ci.id]||"").trim();if(id)cc[id]=(cc[id]||0)+1;});cursos=cv.slice(1).filter(function(r){var id=String(r[ci.id]||"").trim();return !!id&&cc[id]===1;}).map(function(r){var req=[];try{req=JSON.parse(String(r[ci.requirements]||"[]"));}catch(e){}return{cursoId:r[ci.id],nombreCurso:r[ci.name],categoria:r[ci.category],proveedorResponsable:r[ci.provider],modalidad:r[ci.mode],duracionHoras:r[ci.duration],requisitos:Array.isArray(req)?req:[],dirigidoA:r[ci.target],estado:r[ci.state]};});}
+  if(ev.length>1){var eh=ev[0].map(String),ei={id:eh.indexOf("InscripcionID"),course:eh.indexOf("CursoID"),employee:eh.indexOf("EmpleadoID"),date:eh.indexOf("FechaInscripcion"),state:eh.indexOf("EstadoInscripcion"),attendance:eh.indexOf("AsistenciaPorcentaje"),grade:eh.indexOf("ResultadoNota"),file:eh.indexOf("CertificadoDriveUrl"),issued:eh.indexOf("FechaEmisionCertificado"),expires:eh.indexOf("FechaVencimientoCertificado"),notes:eh.indexOf("Observaciones"),created:eh.indexOf("FechaCreacion")};if(Object.keys(ei).some(function(k){return ei[k]<0;}))return{status:"error",code:"RESOURCE_SCHEMA_INVALID"};var ec={};ev.slice(1).forEach(function(r){var id=String(r[ei.id]||"").trim();if(id)ec[id]=(ec[id]||0)+1;});var now=new Date(),limit=Math.max(0,Math.min(365,parseInt(input.diasAnticipacion||30,10)||30));inscripciones=ev.slice(1).filter(function(r){var id=String(r[ei.id]||"").trim(),user=String(r[ei.employee]||"").trim();if(!id||ec[id]!==1||!accessIndex.byUserId[user]||(requestedEmployee&&user!==requestedEmployee)||(input.cursoId&&String(r[ei.course])!==String(input.cursoId)))return false;if(input.soloProximosVencimientos){var d=r[ei.expires]?new Date(r[ei.expires]):null;if(!d||isNaN(d.getTime()))return false;var days=Math.ceil((d.getTime()-now.getTime())/86400000);if(days<0||days>limit)return false;}return true;}).map(function(r){return{inscripcionId:r[ei.id],cursoId:r[ei.course],nombreCurso:(cursos.find(function(c){return String(c.cursoId)===String(r[ei.course]);})||{}).nombreCurso||String(r[ei.course]),empleadoId:r[ei.employee],fechaInscripcion:r[ei.date],estadoInscripcion:r[ei.state],asistenciaPorcentaje:r[ei.attendance],resultadoNota:r[ei.grade],certificadoDriveUrl:r[ei.file],fechaEmisionCertificado:r[ei.issued],fechaVencimientoCertificado:r[ei.expires],observaciones:r[ei.notes],fechaCreacion:r[ei.created]};});}
+  if(pv.length>1){var ph=pv[0].map(String),pi={id:ph.indexOf("PlanID"),employee:ph.indexOf("EmpleadoID"),title:ph.indexOf("TituloObjetivo"),description:ph.indexOf("Descripcion"),goals:ph.indexOf("MetasAccionesJSON"),start:ph.indexOf("FechaInicio"),target:ph.indexOf("FechaMeta"),state:ph.indexOf("EstadoObjetivo"),review:ph.indexOf("EvaluacionSeguimiento"),created:ph.indexOf("FechaCreacion")};if(Object.keys(pi).some(function(k){return pi[k]<0;}))return{status:"error",code:"RESOURCE_SCHEMA_INVALID"};var pc={};pv.slice(1).forEach(function(r){var id=String(r[pi.id]||"").trim();if(id)pc[id]=(pc[id]||0)+1;});planesDesarrollo=pv.slice(1).filter(function(r){var id=String(r[pi.id]||"").trim(),user=String(r[pi.employee]||"").trim();return !!id&&pc[id]===1&&!!accessIndex.byUserId[user]&&(!requestedEmployee||user===requestedEmployee);}).map(function(r){var goals=[];try{goals=JSON.parse(String(r[pi.goals]||"[]"));}catch(e){}return{planId:r[pi.id],empleadoId:r[pi.employee],tituloObjetivo:r[pi.title],descripcion:r[pi.description],metasAcciones:Array.isArray(goals)?goals:[],fechaInicio:r[pi.start],fechaMeta:r[pi.target],estadoObjetivo:r[pi.state],evaluacionSeguimiento:r[pi.review],fechaCreacion:r[pi.created]};});}
+  return {status:"success",data:{cursos:cursos,inscripciones:inscripciones,planesDesarrollo:planesDesarrollo}};
 }
 
 function getLaborIncidentsHistory(payload) {
