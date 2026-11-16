@@ -5123,6 +5123,99 @@ function createPurchaseOrder(payload) {
   return { status: "success", ordenCompraId: id };
 }
 
+
+function purchaseOrderScopeAccess_(payload, ss, order, write) {
+  var access = purchaseQuotationAccess_(payload || {}, ss, write === true);
+  if (!access || access.authorized !== true) return { authorized: false, code: access && access.code || "ROLE_NOT_ALLOWED" };
+  var scope = access.scope || {};
+  if (scope.institutionWide === true) return { authorized: true, access: access, scope: scope, departmentId: "" };
+  var requestId = String(order && order[1] || "").trim();
+  var requestSheet = ss.getSheetByName("SolicitudesCompra");
+  if (!requestSheet || !requestId) return { authorized: false, code: "PURCHASE_SCOPE_UNVERIFIED" };
+  var values = requestSheet.getDataRange().getValues();
+  var headers = (values[0] || []).map(function(v) { return String(v || "").trim(); });
+  var idIndex = headers.indexOf("SolicitudID"), departmentIndex = headers.indexOf("Departamento");
+  if (idIndex < 0 || departmentIndex < 0) return { authorized: false, code: "PURCHASE_SCOPE_UNVERIFIED" };
+  var matches = values.slice(1).filter(function(row) { return String(row[idIndex] || "").trim() === requestId; });
+  if (matches.length !== 1) return { authorized: false, code: "PURCHASE_SCOPE_UNVERIFIED" };
+  var departmentId = String(matches[0][departmentIndex] || "").trim();
+  var departments = Array.isArray(scope.departmentIds) ? scope.departmentIds.map(function(v) { return String(v || "").trim(); }) : [];
+  if (!departmentId || departments.indexOf(departmentId) === -1) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  return { authorized: true, access: access, scope: scope, departmentId: departmentId };
+}
+
+function ensureAccountsPayableInvoiceSheet_(ss) {
+  var expected = ["ObligacionID","ProveedorID","NumeroFactura","Importe","Impuestos","FechaVencimiento","EstadoAprobacion","EstadoPago","AsientoID","Observaciones","TotalMonto","SaldoPendiente","TotalAbonado","FechaEmision","FechaRecepcion","OrdenCompraID","EstadoConciliacion","DiferenciasJSON","FacturaHash","IdempotencyKey","DiferenciaAutorizadaPor","FechaAutorizacionDiferencia","JustificacionDiferencia"];
+  var sheet = ss.getSheetByName("CuentasPorPagarGastos") || getOrCreateSheet(ss, "CuentasPorPagarGastos");
+  var values = sheet.getDataRange().getValues();
+  if (!values || !values.length) return { valid: false, code: "RESOURCE_SCHEMA_INVALID" };
+  var headers = values[0].map(function(v) { return String(v || "").trim(); });
+  if (JSON.stringify(headers.slice(0, 15)) !== JSON.stringify(expected.slice(0, 15))) return { valid: false, code: "RESOURCE_SCHEMA_INVALID" };
+  if (headers.length < expected.length) {
+    var extra = expected.slice(headers.length);
+    sheet.getRange(1, headers.length + 1, 1, extra.length).setValues([extra]);
+    headers = headers.concat(extra);
+  }
+  if (JSON.stringify(headers.slice(0, expected.length)) !== JSON.stringify(expected)) return { valid: false, code: "RESOURCE_SCHEMA_INVALID" };
+  return { valid: true, sheet: sheet, headers: expected };
+}
+
+function getPurchaseInvoiceTolerance_(ss, concept) {
+  var key = String(concept || "").trim().toUpperCase();
+  var defaults = { PRECIO_UNITARIO: [0.05,0], IMPUESTO: [0.05,0], DESCUENTO: [0.05,0], TRANSPORTE: [0.05,0], OTROS_CARGOS: [0.05,0], IMPORTE_SUBTOTAL: [0.05,0], IMPORTE_TOTAL: [0.05,0] };
+  var sheet = ss.getSheetByName("ToleranciasConciliacionCompras");
+  if (!sheet) return { absolute: (defaults[key] || [0.05,0])[0], percent: (defaults[key] || [0.05,0])[1] };
+  var values = sheet.getDataRange().getValues();
+  var expected = ["Concepto","ToleranciaAbsoluta","ToleranciaPorcentual","Estado","ActualizadoPor","FechaActualizacion"];
+  if (!values || !values.length || JSON.stringify(values[0].map(function(v) { return String(v || "").trim(); })) !== JSON.stringify(expected)) return { valid: false };
+  var rows = values.slice(1).filter(function(row) { return String(row[0] || "").trim().toUpperCase() === key && String(row[3] || "").trim().toUpperCase() === "ACTIVO"; });
+  if (rows.length > 1) return { valid: false };
+  if (!rows.length) return { absolute: (defaults[key] || [0.05,0])[0], percent: (defaults[key] || [0.05,0])[1] };
+  var absolute = Number(rows[0][1]), percent = Number(rows[0][2]);
+  if (!isFinite(absolute) || absolute < 0 || !isFinite(percent) || percent < 0 || percent > 5) return { valid: false };
+  return { absolute: absolute, percent: percent };
+}
+
+function getPurchaseInvoiceTolerances(payload) {
+  var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var access = purchaseQuotationAccess_(input, ss, false);
+  if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "ROLE_NOT_ALLOWED" };
+  var concepts = ["PRECIO_UNITARIO","IMPUESTO","DESCUENTO","TRANSPORTE","OTROS_CARGOS","IMPORTE_SUBTOTAL","IMPORTE_TOTAL"];
+  var result = [];
+  for (var i = 0; i < concepts.length; i++) {
+    var t = getPurchaseInvoiceTolerance_(ss, concepts[i]);
+    if (!t || t.valid === false) return { status: "error", code: "PURCHASE_TOLERANCE_SCHEMA_INVALID" };
+    result.push({ concepto: concepts[i], toleranciaAbsoluta: t.absolute, toleranciaPorcentual: t.percent });
+  }
+  return { status: "success", tolerancias: result };
+}
+
+function savePurchaseInvoiceTolerance(payload) {
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var role = normalizePurchaseAwardRole_(actor.role);
+  if (["Director","Administrador"].indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED" };
+  var concept = String(input.concepto || "").trim().toUpperCase();
+  var allowed = ["PRECIO_UNITARIO","IMPUESTO","DESCUENTO","TRANSPORTE","OTROS_CARGOS","IMPORTE_SUBTOTAL","IMPORTE_TOTAL"];
+  var absolute = Number(input.toleranciaAbsoluta), percent = Number(input.toleranciaPorcentual || 0);
+  if (allowed.indexOf(concept) === -1 || !isFinite(absolute) || absolute < 0 || absolute > 1000 || !isFinite(percent) || percent < 0 || percent > 5) return { status: "error", code: "PURCHASE_TOLERANCE_INVALID" };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), access = purchaseQuotationAccess_(input, ss, true);
+  if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "ROLE_NOT_ALLOWED" };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
+  try {
+    var expected = ["Concepto","ToleranciaAbsoluta","ToleranciaPorcentual","Estado","ActualizadoPor","FechaActualizacion"];
+    var sheet = ss.getSheetByName("ToleranciasConciliacionCompras") || getOrCreateSheet(ss, "ToleranciasConciliacionCompras");
+    var values = sheet.getDataRange().getValues();
+    if (!values.length || JSON.stringify(values[0].map(function(v) { return String(v || "").trim(); })) !== JSON.stringify(expected)) return { status: "error", code: "PURCHASE_TOLERANCE_SCHEMA_INVALID" };
+    var matches = values.slice(1).map(function(row, index) { return { row: row, index: index + 2 }; }).filter(function(item) { return String(item.row[0] || "").trim().toUpperCase() === concept; });
+    if (matches.length > 1) return { status: "error", code: "PURCHASE_TOLERANCE_DUPLICATE" };
+    var row = [concept, absolute, percent, "Activo", String(actor.userId || ""), new Date()];
+    if (matches.length === 1) sheet.getRange(matches[0].index, 1, 1, row.length).setValues([row]); else sheet.appendRow(row);
+    return { status: "success", concepto: concept, toleranciaAbsoluta: absolute, toleranciaPorcentual: percent };
+  } finally { lock.releaseLock(); }
+}
+
 function verifyThreeWayMatch(payload) {
   var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var orders = getOrCreateSheet(ss, "OrdenesCompra").getDataRange().getValues();
