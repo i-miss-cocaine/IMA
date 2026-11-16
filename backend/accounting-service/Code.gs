@@ -8984,7 +8984,18 @@ function manageServiceTariffLocked_(ss,p,actor){
  const concept=p.conceptoId?{id:String(p.conceptoId)}:serviceEnsureConcept_(ss,service),sh=serviceEnsureTariffsSheet_(ss),rows=sh.getDataRange().getValues(),all=rows.slice(1).map((r,i)=>({r:r,n:i+2,from:transportParseDate_(r[6]),to:transportParseDate_(r[7])})).filter(x=>String(x.r[1]).toUpperCase()===service&&String(x.r[2]).toUpperCase()===mode&&String(x.r[3]||"")===routeId&&String(x.r[4]).toUpperCase()===period&&String(x.r[13]).toLowerCase()==="activo");
  const same=all.filter(x=>x.from&&x.from.getTime()===start.getTime());if(same.length>1)throw new Error("SERVICE_TARIFF_AMBIGUOUS");
  const values=[same.length?same[0].r[0]:"SVT-"+Utilities.getUuid(),service,mode,routeId,period,Math.round(amount*100)/100,start,end||"",siblingPct,maxPct,prorateStart,prorateEnd,concept.id,"Activo",actor.userId,new Date()];
- if(same.length){if(!end)values[7]=same[0].r[7]||"";sh.getRange(same[0].n,1,1,values.length).setValues([values]);return {status:"success",tarifaServicioId:values[0],servicio:service,modalidad:mode,rutaId:routeId,periodo:period,monto:values[5],conceptoId:concept.id,message:"Tarifa de servicio actualizada."};}
+ if(same.length){
+  const futureVersions=all.filter(x=>x.from&&x.from>start).sort((a,b)=>a.from-b.from);
+  if(futureVersions.length){
+   const nextStart=futureVersions[0].from;
+   const latestAllowedEnd=new Date(nextStart.getFullYear(),nextStart.getMonth(),nextStart.getDate()-1);
+   const requestedEnd=transportParseDate_(values[7]);
+   if(!requestedEnd||requestedEnd>latestAllowedEnd)values[7]=latestAllowedEnd;
+  }else if(!end)values[7]=same[0].r[7]||"";
+  if(values[7]&&transportParseDate_(values[7])<start)throw new Error("SERVICE_TARIFF_DATE_RANGE_INVALID");
+  sh.getRange(same[0].n,1,1,values.length).setValues([values]);
+  return {status:"success",tarifaServicioId:values[0],servicio:service,modalidad:mode,rutaId:routeId,periodo:period,monto:values[5],conceptoId:concept.id,message:"Tarifa de servicio actualizada."};
+ }
  const future=all.filter(x=>x.from&&x.from>start&&(!x.to||x.to>=start)).sort((a,b)=>a.from-b.from),previous=all.filter(x=>x.from&&x.from<start&&(!x.to||x.to>=start));
  previous.forEach(x=>sh.getRange(x.n,8).setValue(new Date(start.getFullYear(),start.getMonth(),start.getDate()-1)));
  if(future.length){const next=future[0].from,dayBefore=new Date(next.getFullYear(),next.getMonth(),next.getDate()-1);if(!values[7]||dayBefore<values[7])values[7]=dayBefore;}
