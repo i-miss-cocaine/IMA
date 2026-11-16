@@ -3155,6 +3155,7 @@ function getEmployeeContracts(payload) {
   if (required.some(function(name) { return idx[name] === undefined; })) return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
   var requestedId = String(input.expedienteId || "").trim(), accessIndex = getEmployeeResourceAccessIndex_(input, ss, actor);
   if (!accessIndex.valid) return { status: "error", code: accessIndex.code };
+  if (["empleado","profesor"].indexOf(normalizeVacationRole_(actor.role)) !== -1 && !accessIndex.byUserId[String(actor.userId || "")]) return { status: "error", code: "RESOURCE_NOT_FOUND" };
   if (requestedId && !accessIndex.byExpedienteId[requestedId]) return { status: "error", code: "RESOURCE_NOT_FOUND" };
   var rows = values.slice(1), counts = {};
   rows.forEach(function(row) { var id = String(row[idx.ContratoID] || "").trim(); if (id) counts[id] = (counts[id] || 0) + 1; });
@@ -3211,7 +3212,10 @@ function getEmployeeTrainingHistory(payload) {
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID), accessIndex = getEmployeeResourceAccessIndex_(input, ss, actor);
   if (!accessIndex.valid) return { status: "error", code: accessIndex.code };
   var requestedEmployee = String(input.empleadoId || "").trim(), role = normalizeVacationRole_(actor.role);
-  if (["empleado","profesor"].indexOf(role) !== -1) requestedEmployee = String(actor.userId || "");
+  if (["empleado","profesor"].indexOf(role) !== -1) {
+    if (requestedEmployee && requestedEmployee !== String(actor.userId || "")) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    requestedEmployee = String(actor.userId || "");
+  }
   if (requestedEmployee && !accessIndex.byUserId[requestedEmployee]) return { status: "error", code: "RESOURCE_NOT_FOUND" };
   var coursesSheet=ss.getSheetByName("CatalogoCursosCapacitacion"),enrollmentsSheet=ss.getSheetByName("InscripcionesCapacitacion"),plansSheet=ss.getSheetByName("PlanesDesarrolloProfesional");
   var cv=coursesSheet?coursesSheet.getDataRange().getValues():[[]],ev=enrollmentsSheet?enrollmentsSheet.getDataRange().getValues():[[]],pv=plansSheet?plansSheet.getDataRange().getValues():[[]];
