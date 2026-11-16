@@ -2764,7 +2764,7 @@ function reviewPaymentVoucher(payload) {
   var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
   if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
   var staff = assertPaymentVoucherOwnerAccess_(input, "", { requireStaff: true });
-  if (!staff || staff.authorized !== true) return { status: "error", code: "ROLE_NOT_ALLOWED" };
+  if (!staff || staff.authorized !== true) return { status: "error", code: staff && staff.code || "ROLE_NOT_ALLOWED" };
   var state = String(input.nuevoEstado || "").trim();
   if (["Aprobado","Observado","Rechazado"].indexOf(state) === -1) return { status: "error", code: "PAYMENT_VOUCHER_DECISION_INVALID" };
   var lock = LockService.getScriptLock();
