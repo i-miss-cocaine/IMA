@@ -2059,7 +2059,7 @@ function resolveStaffAttendanceEmployeeAccess_(payload, ss, employeeId, actor) {
   var matches=values.slice(1).filter(function(row){return String(row[userIndex]||"").trim()===target||String(row[idIndex]||"").trim()===target;});
   if(matches.length!==1||String(matches[0][stateIndex]||"").toLowerCase()!=="activo")return {authorized:false,code:"RESOURCE_NOT_FOUND"};
   if(role==="empleado"&&String(matches[0][userIndex]||"").trim()!==identity.userId)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
-  if(role!=="empleado"&&role!=="recursoshumanos"&&role!=="administrador")return {authorized:false,code:"ROLE_NOT_ALLOWED"};
+  if(["empleado","recursoshumanos","director","subdirector","administrador"].indexOf(role)===-1)return {authorized:false,code:"ROLE_NOT_ALLOWED"};
   var expedienteId=String(matches[0][idIndex]||"").trim();
   if(role!=="empleado"){
     var ownership=assertResourceOwnershipForScope_(input,ss,expedienteId);
@@ -2076,7 +2076,7 @@ function recordStaffCheckIn(payload) {
   if(["Entrada","Salida"].indexOf(type)===-1)return {status:"error",code:"INVALID_ATTENDANCE_TYPE"};
   var ss=SpreadsheetApp.openById(SPREADSHEET_ID),access=resolveStaffAttendanceEmployeeAccess_(input,ss,input.empleadoId,actor);
   if(!access.authorized)return {status:"error",code:access.code};
-  if(role!=="recursoshumanos"&&role!=="administrador"&&role!=="empleado")return {status:"error",code:"ROLE_NOT_ALLOWED"};
+  if(["recursoshumanos","director","subdirector","administrador","empleado"].indexOf(role)===-1)return {status:"error",code:"ROLE_NOT_ALLOWED"};
   var headers=["AsistenciaID","Fecha","EmpleadoId","EmpleadoNombre","HoraEntrada","HoraSalida","MinutosTardanza","EstadoAsistencia","Observaciones"];
   var sheet=ss.getSheetByName("DeduccionesAsistencia");
   if(!sheet)return {status:"error",code:"RESOURCE_SCHEMA_INVALID"};
