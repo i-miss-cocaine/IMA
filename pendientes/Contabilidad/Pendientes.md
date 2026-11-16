@@ -2450,7 +2450,7 @@
   - Se detecta y rechaza el registro de activos con números de serie previamente existentes.
   - Las compras de materiales consumibles no generan activos patrimoniales automáticamente.
   - La consulta del activo permite navegar directamente hacia su expediente de adquisición original.
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Completada en código y CI; validación beta pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7594-7631; clave TASK-183; asignación única: Contabilidad -->
 

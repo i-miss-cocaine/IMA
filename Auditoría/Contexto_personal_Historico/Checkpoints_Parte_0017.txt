@@ -14,3 +14,17 @@
 - Pendiente externo a esta tarea: el workflow global termina FAIL más adelante en accounting-catalog.test.js por ausencia del bloque CATALOG_ITEM_HEADERS_/getInventoryKardex; no afecta el paso TASK-181 que pasó.
 - Siguiente tarea elegible: TASK-182 — recepción de compras y capitalización patrimonial.
 ===============================================================================
+
+
+===============================================================================
+## C1.788 — IMA-EXEC-20261116-0358Z-TASK182-PURCHASE-ASSET-01
+
+- Rama autorizada: NG_beta_0.0.0.1_work.
+- HEAD verificado: 318b950a5e1401fcfa35c8e31d4b508d585ed167.
+- Tarea: TASK-182 — recepción parcial de compras y capitalización de activos fijos.
+- Resultado: recepción parcial con control acumulado de cantidades, conformidad/rechazo, prevención de sobre-recepción, integración de entradas de inventario, y capitalización desde recepción conforme con vínculo a orden, proveedor, factura y recepción. Se incorporaron identificación patrimonial individual, custodia, validación de serie/código, idempotencia y autorización de factura conciliada.
+- Archivos: backend/accounting-service/Code.gs; tests/security/accounting-purchase-asset-capitalization.test.js; .github/workflows/department-scope-contract.yml.
+- Verificación GitHub Actions run 43800738839 (Node.js 24.22.2): contrato de recepción parcial PASS; contrato de capitalización desde recepción PASS.
+- Node CLI local: NOT RUN. Despliegue/beta Drive y Sheets: NOT RUN.
+- Siguiente tarea elegible: TASK-185 — motor de depreciación y gestión contable de activos.
+===============================================================================
