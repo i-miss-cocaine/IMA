@@ -46,7 +46,7 @@ const accountingDocumentSource = source;
 function extractAccountingFunction(name) {
   const from = accountingDocumentSource.indexOf("function " + name + "(");
   assert.ok(from >= 0, "missing " + name);
-  const to = accountingDocumentSource.indexOf("\\nfunction ", from + 10);
+  const to = accountingDocumentSource.indexOf("\nfunction ", from + 10);
   return accountingDocumentSource.slice(from, to < 0 ? accountingDocumentSource.length : to);
 }
 const employeeSheetRows = [
@@ -72,11 +72,11 @@ const employeeDocumentContext = {
   getVerifiedAccountingIdentity_: () => employeeActor,
   getVerifiedAccountingDepartmentScope_: () => ({ valid: true, institutionWide: false, departmentIds: ["DEP-A"] }),
   enforcePrivateEmployeeDocumentFile_: () => true,
-  assertEmployeeExpedienteScopeAccess_: context.assertEmployeeExpedienteScopeAccess_,
+  assertEmployeeExpedienteScopeAccess_: context.check,
   authorizeAccountingDepartmentReferenceReadViaUser_: () => ({ status: "error" })
 };
 vm.runInNewContext(extractAccountingFunction("getEmployeeDocuments") +
-  "\\nthis.getEmployeeDocuments = getEmployeeDocuments;", employeeDocumentContext);
+  "\nthis.getEmployeeDocuments = getEmployeeDocuments;", employeeDocumentContext);
 const employeeDocuments = employeeDocumentContext.getEmployeeDocuments({ sessionToken: "EMP-SESSION" });
 assert.equal(employeeDocuments.status, "success");
 assert.equal(employeeDocuments.documentos.length, 2);
