@@ -10433,6 +10433,112 @@ function inventoryResolveMaintenanceDepartment_(ss,p,assetRef,actor,existingRow)
  return {departmentId:scoped.department.departmentId,departmentName:scoped.department.departmentName||scoped.department.departmentId,centroCosto:center,ubicacionOrigen:String(p.ubicacionOrigen||(existingRow&&existingRow[18])||"Bodega General").trim()};
 }
 
+
+const MAINTENANCE_PLAN_HEADERS_=["PlanID","Estado","TipoObjetivo","ObjetivoID","ObjetivoNombre","Categoria","FrecuenciaTipo","FrecuenciaValor","FechaUltimoMantenimiento","FechaProximoMantenimiento","ResponsableTecnico","Procedimiento","ChecklistJSON","RepuestosJSON","DuracionEstimadaHoras","CostoPresupuestado","TiempoInactividadHoras","DiasAnticipacion","DepartamentoID","CentroCosto","FechaCreacion","CreadoPor","FechaActualizacion","ActualizadoPor","LecturaUsoUltima","LecturaUsoProxima","UltimaOrdenID","FechaPospuestaHasta","MotivoPostergacion"];
+function maintenancePlanSheet_(ss,create){
+ let sh=ss.getSheetByName("MantenimientoPlanes");if(!sh&&create){sh=ss.insertSheet("MantenimientoPlanes");sh.getRange(1,1,1,MAINTENANCE_PLAN_HEADERS_.length).setValues([MAINTENANCE_PLAN_HEADERS_]);}
+ if(!sh)return null;const rows=sh.getDataRange().getValues(),header=rows[0]||[];
+ if(header.length>0&&header.some((v,i)=>String(v||"").trim()&&String(v||"").trim()!==MAINTENANCE_PLAN_HEADERS_[i]))throw new Error("MAINTENANCE_PLAN_SCHEMA_CONFLICT");
+ MAINTENANCE_PLAN_HEADERS_.forEach((h,i)=>{if(String(header[i]||"").trim()!==h)sh.getRange(1,i+1).setValue(h);});
+ return sh;
+}
+function maintenancePlanDate_(v){
+ if(v instanceof Date)return Number.isFinite(v.getTime())?new Date(v.getFullYear(),v.getMonth(),v.getDate(),12):null;
+ const s=String(v||"").trim(),m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return null;
+ const d=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]),12);return d.getFullYear()===Number(m[1])&&d.getMonth()===Number(m[2])-1&&d.getDate()===Number(m[3])?d:null;
+}
+function maintenancePlanISO_(d){return Utilities.formatDate(d,Session.getScriptTimeZone(),"yyyy-MM-dd");}
+function maintenancePlanAdd_(date,type,value){
+ const d=maintenancePlanDate_(date);if(!d)throw new Error("MAINTENANCE_PLAN_DATE_INVALID");const n=Number(value||1);if(!Number.isInteger(n)||n<1||n>3650)throw new Error("MAINTENANCE_PLAN_FREQUENCY_INVALID");
+ const t=String(type||"").toUpperCase();
+ if(t==="DIARIA")d.setDate(d.getDate()+n);else if(t==="SEMANAL")d.setDate(d.getDate()+7*n);else if(t==="QUINCENAL")d.setDate(d.getDate()+15*n);else if(t==="MENSUAL")d.setMonth(d.getMonth()+n);else if(t==="TRIMESTRAL")d.setMonth(d.getMonth()+3*n);else if(t==="SEMESTRAL")d.setMonth(d.getMonth()+6*n);else if(t==="ANUAL")d.setFullYear(d.getFullYear()+n);else if(t==="DIAS")d.setDate(d.getDate()+n);else if(t==="HORAS_USO")return null;else throw new Error("MAINTENANCE_PLAN_FREQUENCY_TYPE_INVALID");
+ return d;
+}
+function maintenancePlanTargets_(ss,plan){
+ const type=String(plan.tipoObjetivo||"ACTIVO").toUpperCase(),target=String(plan.objetivoId||"").trim(),sh=ss.getSheetByName("ActivosPatrimoniales");
+ if(type==="ACTIVO")return target?[target]:[];
+ if(!sh)throw new Error("MAINTENANCE_ASSET_SHEET_REQUIRED");
+ const rows=sh.getDataRange().getValues();if(rows.length<2)return [];
+ const h=rows[0].map(x=>String(x||"").trim().toLowerCase()),find=(names)=>names.map(n=>h.indexOf(n.toLowerCase())).find(i=>i>=0);
+ const id=find(["activoid","codigo patrimonial","codigopatrimonial"]),name=find(["nombre","activo","descripcion"]),category=find(["categoria","categoriaactivo","tipoactivo"]),location=find(["ubicacion","ubicacionfisica","sede","instalacion"]),state=find(["estado"]);
+ if(id===undefined||id<0)throw new Error("MAINTENANCE_ASSET_SCHEMA_INVALID");
+ const matches=rows.slice(1).filter(r=>{
+  if(state>=0&&["inactivo","baja","eliminado"].includes(String(r[state]||"").toLowerCase()))return false;
+  const val=(i)=>i>=0?String(r[i]||"").trim():"";
+  if(type==="CATEGORIA")return category>=0&&val(category).toLowerCase()===String(plan.categoria||target).toLowerCase();
+  if(type==="UBICACION"||type==="INSTALACION"||type==="GRUPO")return (location>=0&&val(location).toLowerCase()===target.toLowerCase())||(name>=0&&val(name).toLowerCase()===target.toLowerCase());
+  throw new Error("MAINTENANCE_PLAN_TARGET_TYPE_INVALID");
+ });
+ return matches.map(r=>String(r[id]||"").trim()).filter(Boolean);
+}
+function maintenancePlanNormalize_(p,existing,actor,ss){
+ const freq=String(p.frecuenciaTipo||(existing&&existing[6])||"MENSUAL").toUpperCase(),freqValue=Number(p.frecuenciaValor!==undefined?p.frecuenciaValor:(existing&&existing[7])||1);
+ if(!["DIARIA","SEMANAL","QUINCENAL","MENSUAL","TRIMESTRAL","SEMESTRAL","ANUAL","DIAS","HORAS_USO"].includes(freq)||!Number.isInteger(freqValue)||freqValue<1||freqValue>3650)throw new Error("MAINTENANCE_PLAN_FREQUENCY_INVALID");
+ const tipo=String(p.tipoObjetivo||(existing&&existing[2])||"ACTIVO").toUpperCase(),target=String(p.objetivoId||(existing&&existing[3])||"").trim();
+ if(!["ACTIVO","CATEGORIA","UBICACION","INSTALACION","GRUPO"].includes(tipo)||!target)throw new Error("MAINTENANCE_PLAN_TARGET_REQUIRED");
+ const last=maintenancePlanDate_(p.fechaUltimoMantenimiento||(existing&&existing[8])||new Date()),next=maintenancePlanDate_(p.fechaProximoMantenimiento||(existing&&existing[9])||(freq==="HORAS_USO"?"":maintenancePlanAdd_(last,freq,freqValue)));
+ if(freq!=="HORAS_USO"&&!next)throw new Error("MAINTENANCE_PLAN_NEXT_DATE_REQUIRED");
+ if(freq==="HORAS_USO"&&(!(Number(p.lecturaUsoProxima||(existing&&existing[25]))>0)))throw new Error("MAINTENANCE_PLAN_USAGE_THRESHOLD_REQUIRED");
+ const dept=String(p.departamento||(existing&&existing[18])||"").trim();if(!dept)throw new Error("MAINTENANCE_DEPARTMENT_REQUIRED");
+ const scope=inventoryAssertDepartmentScope_(p,ss,actor,dept),check=p.checklist!==undefined?p.checklist:(existing?JSON.parse(String(existing[12]||"[]")):[]),parts=p.repuestosNecesarios!==undefined?p.repuestosNecesarios:(existing?JSON.parse(String(existing[13]||"[]")):[]);
+ if(!Array.isArray(check)||!Array.isArray(parts))throw new Error("MAINTENANCE_PLAN_LIST_INVALID");
+ const anticip=Number(p.diasAnticipacion!==undefined?p.diasAnticipacion:(existing&&existing[17])||30);if(!Number.isInteger(anticip)||anticip<0||anticip>90)throw new Error("MAINTENANCE_PLAN_ALERT_WINDOW_INVALID");
+ return {id:String(p.planId||(existing&&existing[0])||("MPL-"+Utilities.getUuid())),estado:String(p.estado||(existing&&existing[1])||"Activo"),tipoObjetivo:tipo,objetivoId:target,objetivoNombre:String(p.objetivoNombre||(existing&&existing[4])||target),categoria:String(p.categoria||(existing&&existing[5])||""),frecuenciaTipo:freq,frecuenciaValor:freqValue,fechaUltimo:last,fechaProximo:next,responsable:String(p.responsableTecnico||(existing&&existing[10])||""),procedimiento:String(p.procedimiento||(existing&&existing[11])||""),checklist:check,repuestos:parts,duracion:Number(p.duracionEstimadaHoras!==undefined?p.duracionEstimadaHoras:(existing&&existing[14])||0),costo:Number(p.costoPresupuestado!==undefined?p.costoPresupuestado:(existing&&existing[15])||0),inactividad:Number(p.tiempoInactividadHoras!==undefined?p.tiempoInactividadHoras:(existing&&existing[16])||0),anticipacion:anticip,departamento:scope.department.departmentId,centroCosto:String(p.centroCosto||(existing&&existing[19])||scope.department.departmentName||scope.department.departmentId),lecturaUltima:Number(p.lecturaUsoUltima!==undefined?p.lecturaUsoUltima:(existing&&existing[24])||0),lecturaProxima:Number(p.lecturaUsoProxima!==undefined?p.lecturaUsoProxima:(existing&&existing[25])||0)};
+}
+function maintenancePlanRow_(x,old){
+ const r=old?old.slice():new Array(MAINTENANCE_PLAN_HEADERS_.length).fill("");while(r.length<MAINTENANCE_PLAN_HEADERS_.length)r.push("");
+ [x.id,x.estado,x.tipoObjetivo,x.objetivoId,x.objetivoNombre,x.categoria,x.frecuenciaTipo,x.frecuenciaValor,x.fechaUltimo||"",x.fechaProximo||"",x.responsable,x.procedimiento,JSON.stringify(x.checklist),JSON.stringify(x.repuestos),x.duracion,x.costo,x.inactividad,x.anticipacion,x.departamento,x.centroCosto,old?old[20]:new Date(),old?old[21]:x.actor,new Date(),x.actor,x.lecturaUltima,x.lecturaProxima,old?old[26]:"",old?old[27]:"",old?old[28]:""].forEach((v,i)=>{r[i]=v;});return r;
+}
+function managePreventiveMaintenancePlan(p){
+ p=p||{};const actor=catalogActor_(p,true),id=String(p.planId||"").trim(),action=String(p.accion||"guardar").toLowerCase(),lock=LockService.getScriptLock();lock.waitLock(15000);
+ try{const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=maintenancePlanSheet_(ss,true),rows=sh.getDataRange().getValues(),matches=rows.map((r,i)=>({r,i})).filter(x=>x.i>0&&String(x.r[0])===id);
+  if(matches.length>1)throw new Error("MAINTENANCE_PLAN_ID_AMBIGUOUS");const found=matches[0],existing=found&&found.r;
+  if(action==="desactivar"){if(!existing)throw new Error("MAINTENANCE_PLAN_NOT_FOUND");inventoryAssertDepartmentScope_(p,ss,actor,String(existing[18]));sh.getRange(found.i+1,2).setValue("Inactivo");sh.getRange(found.i+1,23).setValue(new Date());sh.getRange(found.i+1,24).setValue(actor.userId);return {status:"success",planId:id,estado:"Inactivo"};}
+  if(action==="posponer"){if(!existing)throw new Error("MAINTENANCE_PLAN_NOT_FOUND");inventoryAssertDepartmentScope_(p,ss,actor,String(existing[18]));const until=maintenancePlanDate_(p.fechaPospuestaHasta),reason=String(p.motivoPostergacion||"").trim();if(!until||until<=maintenancePlanDate_(new Date())||!reason)throw new Error("MAINTENANCE_POSTPONE_REASON_AND_FUTURE_DATE_REQUIRED");sh.getRange(found.i+1,28).setValue(until);sh.getRange(found.i+1,29).setValue(reason);const hist=inventoryEnsureLedgerSheet_(ss,"MantenimientoHistorial",["EventoID","PlanID","OrdenMaintID","Fecha","TipoEvento","FechaAnterior","FechaNueva","Motivo","ActorUserId"]);hist.appendRow(["MNH-"+Utilities.getUuid(),id,String(existing[26]||""),new Date(),"POSPUESTO",existing[9],until,reason,actor.userId]);return {status:"success",planId:id,fechaPospuestaHasta:maintenancePlanISO_(until)};}
+  const x=maintenancePlanNormalize_(p,existing,actor,ss);x.actor=actor.userId;maintenancePlanTargets_(ss,x);const row=maintenancePlanRow_(x,existing);if(found)sh.getRange(found.i+1,1,1,row.length).setValues([row]);else sh.appendRow(row);
+  return {status:"success",planId:x.id,estado:x.estado,fechaProximoMantenimiento:x.fechaProximo?maintenancePlanISO_(x.fechaProximo):null};
+ }finally{lock.releaseLock();}
+}
+function getPreventiveMaintenancePlans(p){
+ p=p||{};const actor=catalogActor_(p,false),ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=maintenancePlanSheet_(ss,false);if(!sh)return {status:"success",planes:[]};
+ const rows=sh.getDataRange().getValues().slice(1),planes=rows.filter(r=>String(r[1])==="Activo").filter(r=>{try{inventoryAssertDepartmentScope_(p,ss,actor,String(r[18]));return true;}catch(_){return false;}}).map(r=>({planId:r[0],estado:r[1],tipoObjetivo:r[2],objetivoId:r[3],objetivoNombre:r[4],categoria:r[5],frecuenciaTipo:r[6],frecuenciaValor:r[7],fechaUltimoMantenimiento:r[8],fechaProximoMantenimiento:r[9],responsableTecnico:r[10],procedimiento:r[11],checklist:JSON.parse(String(r[12]||"[]")),repuestosNecesarios:JSON.parse(String(r[13]||"[]")),diasAnticipacion:Number(r[17]||30),departamento:r[18],centroCosto:r[19]}));
+ return {status:"success",planes};
+}
+function maintenancePlanCycle_(plan){return plan.fechaProximo?maintenancePlanISO_(maintenancePlanDate_(plan.fechaProximo)):"USO-"+String(plan.lecturaProxima||0);}
+function getPreventiveMaintenanceAlerts(p){
+ p=p||{};const actor=catalogActor_(p,false),ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=maintenancePlanSheet_(ss,false);if(!sh)return {status:"success",alertas:[]};
+ const today=maintenancePlanDate_(p.fechaReferencia||new Date()),rows=sh.getDataRange().getValues().slice(1),alerts=[];
+ rows.forEach(r=>{if(String(r[1])!=="Activo")return;let allowed;try{allowed=inventoryAssertDepartmentScope_(p,ss,actor,String(r[18]));}catch(_){return;}
+  const due=maintenancePlanDate_(r[9]),post=maintenancePlanDate_(r[27]);if(post&&post>today)return;
+  if(String(r[6])==="HORAS_USO"){const current=Number(p.lecturasUso&&p.lecturasUso[r[0]]||r[24]||0),threshold=Number(r[25]||0),remaining=threshold-current;if(remaining<=0)alerts.push({planId:r[0],objetivo:r[4],estado:"VENCIDO",lecturaActual:current,lecturaProgramada:threshold,diasRestantes:null,departamento:r[18]});return;}
+  if(!due)return;const days=Math.floor((due.getTime()-today.getTime())/86400000),window=Number(r[17]||30);if(days<=window)alerts.push({planId:r[0],objetivo:r[4],estado:days<0?"VENCIDO":days<=1?"1_DIA":days<=7?"7_DIAS":days<=15?"15_DIAS":"30_DIAS",fechaProgramada:maintenancePlanISO_(due),diasRestantes:days,departamento:r[18]});
+ });
+ return {status:"success",alertas:alerts.sort((a,b)=>(a.diasRestantes??0)-(b.diasRestantes??0))};
+}
+function generatePreventiveMaintenanceOrders(p){
+ p=p||{};const actor=catalogActor_(p,true),today=maintenancePlanDate_(p.fechaReferencia||new Date()),lock=LockService.getScriptLock();lock.waitLock(15000);
+ try{const ss=SpreadsheetApp.openById(SPREADSHEET_ID),plans=maintenancePlanSheet_(ss,false);if(!plans)return {status:"success",generadas:[],omitidas:[]};
+  const orders=getOrCreateSheet(ss,"MantenimientoOrdenes");inventoryEnsureMaintenanceSchema_(orders);const rows=plans.getDataRange().getValues(),orderRows=orders.getDataRange().getValues(),generated=[],omitted=[];
+  rows.slice(1).forEach((r)=>{if(String(r[1])!=="Activo")return;const dept=String(r[18]||"");try{inventoryAssertDepartmentScope_(p,ss,actor,dept);}catch(e){omitted.push({planId:r[0],code:e.message});return;}
+   const due=maintenancePlanDate_(r[9]),post=maintenancePlanDate_(r[27]);if(post&&post>today)return;
+   const freq=String(r[6]),usage=freq==="HORAS_USO",current=Number(p.lecturasUso&&p.lecturasUso[r[0]]||r[24]||0),threshold=Number(r[25]||0),days=due?Math.floor((due-today)/86400000):null;
+   if(usage?current<threshold:(!due||days>Number(r[17]||30)))return;
+   const plan={tipoObjetivo:r[2],objetivoId:r[3],categoria:r[5]},targets=maintenancePlanTargets_(ss,plan);if(!targets.length){omitted.push({planId:r[0],code:"MAINTENANCE_PLAN_TARGETS_EMPTY"});return;}
+   const cycle=usage?"USO-"+threshold:maintenancePlanISO_(due);
+   targets.forEach(target=>{const cycleId=String(r[0])+"|"+cycle+"|"+target,exists=orderRows.some((o,i)=>i>0&&String(o[20]||"")===cycleId);if(exists)return;
+    const orderId="MNT-PREV-"+Utilities.getUuid(),description=String(r[11]||"Mantenimiento preventivo programado")+" | Ciclo "+cycle;
+    const row=new Array(23).fill("");row[0]=orderId;row[1]=new Date();row[2]=target;row[3]="Preventivo";row[4]=description;row[5]=days!==null&&days<0?"Alta":"Media";row[6]=actor.userId;row[7]=r[10]||"";row[8]=String(r[13]||"[]");row[9]=Number(r[15]||0);row[10]=0;row[11]="Programado";row[13]="Generada desde plan "+r[0];row[14]=dept;row[15]=r[19]||dept;row[19]=r[0];row[20]=cycleId;row[21]=String(r[12]||"[]");row[22]=due||"";orders.appendRow(row);orderRows.push(row);generated.push({ordenMaintId:orderId,planId:r[0],activoIdUbicacion:target,fechaProgramada:due?maintenancePlanISO_(due):null,ciclo:cycleId});
+   });
+  });
+  return {status:"success",generadas:generated,omitidas};
+ }finally{lock.releaseLock();}
+}
+function maintenancePlanComplete_(ss,orderRow,actor){
+ const planId=String(orderRow[19]||"").trim();if(!planId)return null;const sh=maintenancePlanSheet_(ss,false);if(!sh)return null;const rows=sh.getDataRange().getValues(),matches=rows.map((r,i)=>({r,i})).filter(x=>x.i>0&&String(x.r[0])===planId);if(matches.length!==1)throw new Error(matches.length?"MAINTENANCE_PLAN_ID_AMBIGUOUS":"MAINTENANCE_PLAN_NOT_FOUND");
+ const found=matches[0],r=found.r,now=maintenancePlanDate_(orderRow[12]||new Date()),next=String(r[6])==="HORAS_USO"?null:maintenancePlanAdd_(now,r[6],r[7]);sh.getRange(found.i+1,9).setValue(now);if(next)sh.getRange(found.i+1,10).setValue(next);sh.getRange(found.i+1,27).setValue(orderRow[0]);sh.getRange(found.i+1,28).setValue("");sh.getRange(found.i+1,29).setValue("");
+ const hist=inventoryEnsureLedgerSheet_(ss,"MantenimientoHistorial",["EventoID","PlanID","OrdenMaintID","Fecha","TipoEvento","FechaAnterior","FechaNueva","Motivo","ActorUserId"]);hist.appendRow(["MNH-"+Utilities.getUuid(),planId,orderRow[0],new Date(),"COMPLETADO",r[9],next||"", "",actor.userId]);return {planId,fechaUltimoMantenimiento:maintenancePlanISO_(now),fechaProximoMantenimiento:next?maintenancePlanISO_(next):null};
+}
+
 // Restored monthly transport billing and service tariff engine.
 function monthlyChargeHeaderMap_(headers, required) {
   const map = {};
