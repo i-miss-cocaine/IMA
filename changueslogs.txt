@@ -4012,3 +4012,8 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-16] C1.785 — Revisión de continuidad del módulo laboral ACCOUNTING
 - Fase 16 identifica ACCOUNTING como propietario de vacaciones, permisos e incapacidades, pero las funciones requeridas no están en el servicio de trabajo ni en los otros servicios; el árbol base conserva el código heredado. El test de ownership falla y requiere adaptarse a la autenticación central vigente, sin reintroducir verifySessionToken local.
 - Sin cambios de código. Accounting Import Preflight 43791680550 SUCCESS (40/40, Node 24.22.2); Department Reference Consumers 43791680506 SUCCESS (15/15); Task-Service Security 43791680523 SUCCESS (11/11); Department Scope 43791680491 FAILURE. Node CLI local y beta NOT RUN.
+
+
+[2026-11-16] C1.786 — Implementación incremental de ACCOUNTING HR
+- Se incorporan contratos de ownership para vacaciones/incapacidades, incidencias/medidas disciplinarias, capacitación, planes de desarrollo, analítica, asistencia y portal de autoservicio. Los siete contratos Node 24 pasan en el run Department Scope antes de alcanzar el siguiente test.
+- Pendiente: correcciones de asistencia (falta resolveAttendanceCorrectionEmployeeAccess_). Identity/transport contract falla al abrir backend/transport-service/Code.gs, ruta inexistente en el árbol actual. Accounting Import Preflight y Department Reference Consumers pasan.

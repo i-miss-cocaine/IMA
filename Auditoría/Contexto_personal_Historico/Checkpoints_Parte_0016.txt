@@ -586,3 +586,16 @@
 - Node CLI local: NOT RUN. Beta Drive/Sheets: NOT RUN. TASK-296/F31-Task09 parciales; TASK-143/TASK-144 no elegibles.
 - Siguiente: reconciliar/restaurar módulo laboral en ACCOUNTING con auth central y pruebas actualizadas; después continuar ACL/cuarentena TASK-296/F31-Task09 y revalidar TASK-143/TASK-144.
 ===============================================================================
+
+
+===============================================================================
+## C1.786 — IMA-EXEC-20261116-0256Z-ACCOUNTING-HR-MODULES-01
+
+- Rama: NG_beta_0.0.0.1_work
+- HEAD: 62dd1cf295a466eeeac38e15a2e9542c2ab0a897
+- Se incorporaron flujos de vacaciones/incapacidades, incidencias y medidas disciplinarias, capacitación (catálogo e inscripciones), planes de desarrollo, analítica de capacitación, asistencia del personal y portal de autoservicio, todos con contratos de ownership/aislamiento y controles de concurrencia en las rutas cubiertas.
+- Node 24 CI: los siete contratos de esas capacidades pasan. Department Scope continúa fallando en el siguiente contrato, accounting-attendance-correction-ownership, por ausencia de resolveAttendanceCorrectionEmployeeAccess_.
+- Accounting Import Preflight y Department Reference Consumers Local Contract pasan. Identity mapping/transport falla por referencia del test a backend/transport-service/Code.gs inexistente en el árbol actual.
+- Node CLI local y beta Drive/Sheets: NOT RUN.
+- Siguiente: correcciones de asistencia; luego ruta real del contrato transport-service y tareas restantes.
+===============================================================================

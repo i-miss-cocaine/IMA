@@ -2993,3 +2993,16 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Cambios de código en esta revisión:** ninguno. No se declara completada ninguna tarea. TASK-296 y F31-Task09 siguen parciales por ACL/cuarentena y beta; TASK-143/TASK-144 siguen sin elegibilidad conforme a sus dependencias.
 - **Siguiente acción concreta:** restaurar/reconciliar el módulo F16 laboral en ACCOUNTING usando la autenticación y el ámbito departamental actuales; actualizar el contrato local para probar ese diseño; ejecutar CI Node y regresiones. Después continuar TASK-296/F31-Task09 y reevaluar TASK-143/TASK-144.
 ===============================================================================
+
+
+===============================================================================
+### C1.786 — Implementación incremental de gestión laboral y autoservicio ACCOUNTING
+- **Fecha:** 2026-11-16 02:56 UTC.
+- **Rama autorizada:** NG_beta_0.0.0.1_work. **HEAD de checkpoint:** 62dd1cf295a466eeeac38e15a2e9542c2ab0a897. **Checkpoint anterior:** C1.785.
+- **Alcance incorporado en backend/accounting-service/Code.gs:** gestión de solicitudes de vacaciones/incapacidades con ownership, aislamiento y locks; incidencias laborales y medidas disciplinarias; catálogo e inscripciones de capacitación; planes de desarrollo profesional e informes agregados; marcajes de asistencia y consultas departamentales; portal de autoservicio laboral con filtrado de filas enlazadas y protección de XSS en el renderizado existente. Se añadieron rutas de acción correspondientes y contratos Node para las capacidades.
+- **Contratos Node 24 que pasaron en Department Scope run 43795039580, antes del siguiente bloqueo:** accounting-vacation-medical-leave-ownership; accounting-labor-incident-write-ownership; accounting-training-enrollment-ownership; accounting-training-course-catalog-ownership; accounting-professional-development-analytics-ownership; accounting-staff-attendance-ownership; accounting-employee-self-service-portal. El contrato de autoservicio también verificó esquema, integridad de filas vinculadas y renderizador XSS.
+- **Bloqueo siguiente:** accounting-attendance-correction-ownership.test.js falla al extraer resolveAttendanceCorrectionEmployeeAccess_; el flujo de correcciones de marcajes aún no está implementado. No se marca como completado.
+- **Otras verificaciones:** Accounting Import Preflight run 43794989903 SUCCESS; Department Reference Consumers Local Contract run 43794989824 SUCCESS. Identity mapping and transport security run 43794989844 FAILURE porque el test busca backend/transport-service/Code.gs, ruta que no existe en el árbol actual; revisar el propietario/ruta vigente y adaptar el contrato sin omitir verificaciones.
+- **Node CLI local:** NOT RUN. **Beta real Drive/Sheets:** NOT RUN. No se declaran pruebas de runtime beta.
+- **Siguiente acción:** implementar y probar correcciones de asistencia con ownership, estado pendiente, rollback y locks; después resolver la ruta real de transport-service/identity contract y continuar con los contratos restantes.
+===============================================================================
