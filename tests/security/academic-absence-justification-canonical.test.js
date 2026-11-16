@@ -164,6 +164,7 @@ assert.throws(() => context.ensureAbsenceHeaders_(badSchema, ["Duplicado"]), /AB
 const approved = context.reviewCanonicalAbsenceJustification_({
   justificacionId: "JUST-TEST0001", nuevoEstado: "Aprobada", actorId: "SEC-1", actorRole: "Secretaría"
 });
+console.log("DEBUG_ABSENCE_APPROVAL", approved);
 assert.equal(approved.status, "success");
 let regRows = attendance.getDataRange().getValues();
 assert.equal(regRows[1][6], true);
