@@ -9430,7 +9430,7 @@ function getTransportEfficiencyMetrics(payload) {
       return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "La identidad dejó de ser válida." };
     }
     if (!scope.management || ["Administrador", "Director", "Subdirector"].indexOf(scope.role) === -1) {
-      transportAuditDenied_("getTransportEfficiencyMetrics", data, scope, null);
+      transportAuditDenied_(scope, "getTransportEfficiencyMetrics", null);
       return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", message: "La analítica agregada está reservada a Dirección." };
     }
 
@@ -9442,11 +9442,27 @@ function getTransportEfficiencyMetrics(payload) {
     const requestedRoute = String(data.rutaId || "").trim();
     const requestedJourney = String(data.jornada || "").trim().toLowerCase();
 
-    const routeRows = transportRows_(ss, "TransporteRutas");
-    const vehicleRows = transportRows_(ss, "TransporteVehiculos");
-    const assignmentRows = transportRows_(ss, "TransporteAsignaciones");
-    const tripRows = transportRows_(ss, "TransporteViajes");
-    const attendanceRows = transportRows_(ss, "TransporteAsistenciaViajes");
+    const routeSnapshot = transportRows_(ss, "TransporteRutas",
+      ["RutaID","NombreRuta","UnidadCodigo","ConductorEmpleadoId","Capacidad","ParadasJSON","Estado","Observaciones","HoraInicio","HoraFin","Jornada"]);
+    const vehicleSnapshot = transportRows_(ss, "TransporteVehiculos",
+      ["VehiculoID","CodigoUnidad","Placa","Marca","Ano","CapacidadPasajeros"]);
+    const assignmentSnapshot = transportRows_(ss, "TransporteAsignaciones",
+      ["AsignacionID","RutaID","EstudianteUserId","Parada","Horario","Estado","Fecha","Jornada"]);
+    const tripSnapshot = transportRows_(ss, "TransporteViajes",
+      ["ViajeID","RutaID","Unidad","Conductor","Monitor","Fecha","Jornada","HoraInicio","HoraFin","Estado"]);
+    const attendanceSnapshot = transportRows_(ss, "TransporteAsistenciaViajes",
+      ["EventoID","ViajeID","EstudianteUserId","Parada","HoraAbordaje","HoraDescenso","Estado"]);
+    const snapshots = [routeSnapshot, vehicleSnapshot, assignmentSnapshot, tripSnapshot, attendanceSnapshot];
+    const invalidSnapshot = snapshots.find(function(snapshot) { return !snapshot.valid; });
+    if (invalidSnapshot) {
+      return { status: "error", code: invalidSnapshot.missing ? "TRANSPORT_RESOURCE_NOT_FOUND" : "TRANSPORT_SCHEMA_INVALID",
+        message: "No fue posible validar el esquema de los registros de transporte." };
+    }
+    const routeRows = routeSnapshot.rows;
+    const vehicleRows = vehicleSnapshot.rows;
+    const assignmentRows = assignmentSnapshot.rows;
+    const tripRows = tripSnapshot.rows;
+    const attendanceRows = attendanceSnapshot.rows;
 
     const routes = Object.create(null);
     routeRows.forEach(function(row) {

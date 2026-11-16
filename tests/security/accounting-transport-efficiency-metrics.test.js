@@ -81,6 +81,8 @@ const rows = {
   ]
 };
 let lockAvailable = true;
+let missingSheet = "";
+let invalidHeaderSheet = "";
 let lockCalls = 0;
 let releaseCount = 0;
 let scopeCalls = 0;
@@ -88,8 +90,12 @@ let invalidateAfterFirstScope = false;
 const deniedEvents = [];
 const ss = {
   getSheetByName(name) {
-    if (!Object.prototype.hasOwnProperty.call(rows, name)) return null;
-    return { getDataRange: () => ({ getValues: () => rows[name].map(r => r.slice()) }) };
+    if (name === missingSheet || !Object.prototype.hasOwnProperty.call(rows, name)) return null;
+    return { getDataRange: () => ({ getValues: () => {
+      const snapshot = rows[name].map(r => r.slice());
+      if (name === invalidHeaderSheet) snapshot[0][0] = "UnexpectedHeader";
+      return snapshot;
+    } }) };
   }
 };
 const context = {
@@ -138,6 +144,15 @@ assert.equal(south.sobrecapacidadDetectada, true);
 assert.equal(result.indicadoresNoDisponibles.costoOperativoPorEstudiante.estado, "SIN_DATOS");
 assert.equal(result.indicadoresNoDisponibles.demandaGeograficaSinCobertura.estado, "SIN_DATOS");
 assert.equal(JSON.stringify(rows), before, "analytics must not mutate source sheets");
+
+invalidHeaderSheet = "TransporteViajes";
+const invalidSchema = run({ _verifiedRole: "Director", _verifiedUserId: "DIR-1" });
+assert.equal(invalidSchema.code, "TRANSPORT_SCHEMA_INVALID", "malformed source headers must fail closed");
+invalidHeaderSheet = "";
+missingSheet = "TransporteAsistenciaViajes";
+const missingResource = run({ _verifiedRole: "Director", _verifiedUserId: "DIR-1" });
+assert.equal(missingResource.code, "TRANSPORT_RESOURCE_NOT_FOUND", "missing source sheets must fail closed");
+missingSheet = "";
 
 const filtered = run({
   _verifiedRole: "Director", _verifiedUserId: "DIR-1",
