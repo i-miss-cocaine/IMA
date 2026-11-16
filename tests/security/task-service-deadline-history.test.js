@@ -85,7 +85,7 @@ function makeHarness(options = {}) {
       return true;
     }
   };
-  vm.runInNewContext(extractFunction("normalizeTaskDeadlineForHistory_") + "\n" +
+  vm.runInNewContext("const TASK_DEADLINE_HISTORY_HEADERS_ = " + JSON.stringify(historyHeaders) + ";\n" + extractFunction("normalizeTaskDeadlineForHistory_") + "\n" +
     extractFunction("ensureTaskDeadlineHistorySheet_") + "\n" + extractFunction("updateTask") +
     "\nthis.update=updateTask;", context);
   return { context, taskRows, historyRows, lockState, sheets };
