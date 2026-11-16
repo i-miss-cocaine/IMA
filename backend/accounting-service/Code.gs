@@ -1293,47 +1293,34 @@ function resolveEmployeeDepartmentId_(ss, expedienteId) {
 
 function assertResourceOwnershipForScope_(payload, ss, expedienteId, resourceId, operation) {
   if (arguments.length >= 5) {
-    var spreadsheet = payload, scope = ss, resourceType = String(expedienteId || "").trim().toUpperCase();
-    var targetId = String(resourceId || "").trim(), action = String(operation || "").trim().toUpperCase();
-    if (!spreadsheet || !scope || (scope.valid !== true && scope.authorized !== true) ||
-        resourceType !== "EXPEDIENTE_LABORAL" || ["READ","WRITE"].indexOf(action) === -1 || !targetId) {
-      return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
-    }
-    var employeeSheet = spreadsheet.getSheetByName("ExpedientesLaborales");
-    if (!employeeSheet) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
-    var employeeRows = employeeSheet.getDataRange().getValues();
-    if (!employeeRows || !employeeRows.length) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
-    var employeeHeaders = employeeRows[0].map(function(value) { return String(value || "").trim(); });
-    var employeeIdIndex = employeeHeaders.indexOf("ExpedienteID");
-    if (employeeIdIndex < 0) return { authorized: false, code: "RESOURCE_SCHEMA_INVALID" };
-    var employeeMatches = employeeRows.slice(1).filter(function(row) { return String(row[employeeIdIndex] || "").trim() === targetId; });
-    if (employeeMatches.length !== 1) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
-    var ownershipSheet = spreadsheet.getSheetByName("ResourceOwnership");
-    if (!ownershipSheet) return { authorized: false, code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
-    var ownershipRows = ownershipSheet.getDataRange().getValues();
-    var expectedHeaders = ["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"];
-    if (!ownershipRows || !ownershipRows.length || JSON.stringify(ownershipRows[0].map(function(value) { return String(value || "").trim(); })) !== JSON.stringify(expectedHeaders)) {
-      return { authorized: false, code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
-    }
-    var institutionId = String(scope.institutionId || "").trim();
-    var owners = ownershipRows.slice(1).filter(function(row) {
-      return String(row[1] || "").trim() === institutionId &&
-        String(row[2] || "").trim().toUpperCase() === resourceType &&
-        String(row[3] || "").trim() === targetId;
-    });
-    if (owners.length !== 1 || String(owners[0][5] || "").trim().toUpperCase() !== "ACTIVE") {
-      return { authorized: false, code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
-    }
-    var departmentId = String(owners[0][4] || "").trim();
-    if (!departmentId) return { authorized: false, code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
-    var departments = Array.isArray(scope.departmentIds) ? scope.departmentIds.map(function(value) { return String(value || "").trim(); }) : [];
-    if (scope.institutionWide !== true && departments.indexOf(departmentId) === -1) {
-      return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
-    }
-    return { authorized: true, accessType: scope.institutionWide === true ? "INSTITUTION" : "DEPARTMENT",
-      departmentId: departmentId, institutionId: institutionId, operation: action };
+    var spreadsheet=payload,scope=ss,resourceType=String(expedienteId||"").trim().toUpperCase();
+    var targetId=String(resourceId||"").trim(),action=String(operation||"").trim().toUpperCase();
+    if(!spreadsheet||!scope||(scope.valid!==true&&scope.authorized!==true)||
+      ["EXPEDIENTE_LABORAL","EXPEDIENTE_ESTUDIANTE"].indexOf(resourceType)===-1||
+      ["READ","WRITE"].indexOf(action)===-1||!targetId)return{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+    var resourceSheet=spreadsheet.getSheetByName(resourceType==="EXPEDIENTE_LABORAL"?"ExpedientesLaborales":"ExpedientesEstudiantes");
+    if(!resourceSheet)return{authorized:false,code:"RESOURCE_NOT_FOUND"};
+    var resourceRows=resourceSheet.getDataRange().getValues();
+    if(!resourceRows||!resourceRows.length)return{authorized:false,code:"RESOURCE_NOT_FOUND"};
+    var resourceHeaders=resourceRows[0].map(function(v){return String(v||"").trim();}),resourceIdIndex=resourceHeaders.indexOf("ExpedienteID");
+    if(resourceIdIndex<0)return{authorized:false,code:"RESOURCE_SCHEMA_INVALID"};
+    var resourceMatches=resourceRows.slice(1).filter(function(row){return String(row[resourceIdIndex]||"").trim()===targetId;});
+    if(resourceMatches.length!==1)return{authorized:false,code:"RESOURCE_NOT_FOUND"};
+    var ownershipSheet=spreadsheet.getSheetByName("ResourceOwnership");
+    if(!ownershipSheet)return{authorized:false,code:"RESOURCE_OWNERSHIP_UNVERIFIED"};
+    var ownershipRows=ownershipSheet.getDataRange().getValues();
+    var expected=["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"];
+    if(!ownershipRows||!ownershipRows.length||JSON.stringify(ownershipRows[0].map(function(v){return String(v||"").trim();}))!==JSON.stringify(expected))
+      return{authorized:false,code:"RESOURCE_OWNERSHIP_UNVERIFIED"};
+    var institutionId=String(scope.institutionId||"").trim();
+    var owners=ownershipRows.slice(1).filter(function(row){return String(row[1]||"").trim()===institutionId&&String(row[2]||"").trim().toUpperCase()===resourceType&&String(row[3]||"").trim()===targetId;});
+    if(owners.length!==1||String(owners[0][5]||"").trim().toUpperCase()!=="ACTIVE")return{authorized:false,code:"RESOURCE_OWNERSHIP_UNVERIFIED"};
+    var departmentId=String(owners[0][4]||"").trim();if(!departmentId)return{authorized:false,code:"RESOURCE_OWNERSHIP_UNVERIFIED"};
+    var departments=Array.isArray(scope.departmentIds)?scope.departmentIds.map(function(v){return String(v||"").trim();}):[];
+    if(scope.institutionWide!==true&&departments.indexOf(departmentId)===-1)return{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+    return{authorized:true,accessType:scope.institutionWide===true?"INSTITUTION":"DEPARTMENT",departmentId:departmentId,institutionId:institutionId,operation:action};
   }
-  return assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId);
+  return assertEmployeeExpedienteScopeAccess_(payload,ss,expedienteId);
 }
 
 function auditEmployeeSelfServiceDenied_(actor, action) {
@@ -2580,15 +2567,54 @@ function verifyPaymentVoucherEvidence_(ss, record, operation, actor) {
   }
 }
 
-function assertPaymentVoucherOwnerAccess_(payload, targetUserId, options) {
-  var actor = getVerifiedAccountingIdentity_(payload);
-  if (!actor || actor.authorized !== true) return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
-  var role = String(actor.role || "").trim();
-  if (options && options.requireStaff) return ["Secretaría","Administrador","Director"].indexOf(role) !== -1
-    ? { authorized: true, actor: actor } : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
-  if (role === "Secretaría" || role === "Administrador" || role === "Director") return { authorized: true, actor: actor };
-  return String(actor.userId || "") === String(targetUserId || "")
-    ? { authorized: true, actor: actor } : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+function assertPaymentVoucherOwnerAccess_(payload,targetUserId,options) {
+  var input=payload||{},actor=getVerifiedAccountingIdentity_(input);
+  if(!actor||actor.authorized!==true)return{authorized:false,code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
+  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),role=normalizeVacationRole_(actor.role),target=String(targetUserId||"").trim();
+  var staffRoles=["secretaria","administrador","director","subdirector","recursoshumanos"];
+  var requireStaff=options&&options.requireStaff===true;
+  if(requireStaff&&staffRoles.indexOf(role)===-1)return{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+  if(["estudiante","alumno"].indexOf(role)!==-1){
+    if(requireStaff)return{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+    return target&&target===String(actor.userId||"")?{authorized:true,actor:actor,accessType:"SELF"}:{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+  }
+  if(["tutor","padre","madre","responsable"].indexOf(role)!==-1){
+    if(requireStaff||!target)return{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+    var guardianPerson=getAccountingPersonIdForUser_(ss,actor.userId),studentPerson=getAccountingPersonIdForUser_(ss,target);
+    if(!guardianPerson||!studentPerson)return{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+    var studentSheet=ss.getSheetByName("ExpedientesEstudiantes"),responsibleSheet=ss.getSheetByName("ResponsablesTutores"),relationSheet=ss.getSheetByName("RelacionesEstudianteTutor");
+    if(!studentSheet||!responsibleSheet||!relationSheet)return{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+    var studentRows=studentSheet.getDataRange().getValues(),sh=(studentRows[0]||[]).map(function(v){return String(v||"").trim();});
+    var personIndex=sh.indexOf("PersonaID"),expIndex=sh.indexOf("ExpedienteID");
+    if(personIndex<0||expIndex<0)return{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+    var students=studentRows.slice(1).filter(function(row){return String(row[personIndex]||"").trim()===studentPerson;});
+    if(students.length!==1)return{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+    var responsibleRows=responsibleSheet.getDataRange().getValues(),rh=(responsibleRows[0]||[]).map(function(v){return String(v||"").trim();});
+    var responsibleIdIndex=rh.indexOf("ResponsableID"),responsiblePersonIndex=rh.indexOf("PersonaID");
+    if(responsibleIdIndex<0||responsiblePersonIndex<0)return{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+    var responsible=responsibleRows.slice(1).filter(function(row){return String(row[responsiblePersonIndex]||"").trim()===guardianPerson;});
+    if(responsible.length!==1)return{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+    var relations=relationSheet.getDataRange().getValues(),rr=(relations[0]||[]).map(function(v){return String(v||"").trim();});
+    var relationExp=rr.indexOf("ExpedienteID"),relationResponsible=rr.indexOf("ResponsableID"),relationState=rr.indexOf("Estado"),portalIndex=rr.indexOf("AccesoPortal");
+    if([relationExp,relationResponsible,relationState,portalIndex].some(function(i){return i<0;}))return{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+    var linked=relations.slice(1).filter(function(row){return String(row[relationExp]||"").trim()===String(students[0][expIndex]||"").trim()&&String(row[relationResponsible]||"").trim()===String(responsible[0][responsibleIdIndex]||"").trim()&&String(row[relationState]||"").trim().toLowerCase()==="activo"&&["si","sí","true","1"].indexOf(String(row[portalIndex]||"").trim().toLowerCase())!==-1;});
+    return linked.length===1?{authorized:true,actor:actor,accessType:"GUARDIAN"}:{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+  }
+  if(staffRoles.indexOf(role)!==-1){
+    if(!target)return requireStaff?{authorized:true,actor:actor,accessType:"STAFF"}:{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+    var personId=getAccountingPersonIdForUser_(ss,target);
+    if(!personId)return{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+    var sheet=ss.getSheetByName("ExpedientesEstudiantes");if(!sheet)return{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+    var values=sheet.getDataRange().getValues(),headers=(values[0]||[]).map(function(v){return String(v||"").trim();});
+    var pi=headers.indexOf("PersonaID"),ei=headers.indexOf("ExpedienteID");
+    if(pi<0||ei<0)return{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+    var matches=values.slice(1).filter(function(row){return String(row[pi]||"").trim()===personId;});
+    if(matches.length!==1)return{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+    var scope=getVerifiedAccountingDepartmentScope_(input,ss,actor);
+    if(!scope||scope.valid!==true)return{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+    return assertResourceOwnershipForScope_(ss,scope,"EXPEDIENTE_ESTUDIANTE",String(matches[0][ei]||"").trim(),"READ");
+  }
+  return{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
 }
 
 function uploadPaymentVoucher(payload) {
@@ -2685,24 +2711,28 @@ function uploadPaymentVoucher(payload) {
 }
 
 function getPaymentVouchers(payload) {
-  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
-  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), schema = ensurePaymentVoucherEvidenceSchema_(ss);
-  var owner = assertPaymentVoucherOwnerAccess_(input, actor.userId);
-  if (!owner || owner.authorized !== true) return { status: "error", code: "RESOURCE_SCOPE_DENIED" };
-  var rows = schema.sheet.getDataRange().getValues().slice(1).filter(function(row) {
-    return ["Secretaría","Administrador","Director"].indexOf(String(actor.role)) !== -1 ||
-      String(row[schema.map.UserId] || "") === String(actor.userId);
+  var input=payload||{},actor=getVerifiedAccountingIdentity_(input);
+  if(!actor||actor.authorized!==true)return{status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
+  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),schema=ensurePaymentVoucherEvidenceSchema_(ss);
+  var role=normalizeVacationRole_(actor.role),staffRoles=["secretaria","administrador","director","subdirector","recursoshumanos"];
+  var requestedUser=String(input.userId||"").trim();
+  if(requestedUser&&staffRoles.indexOf(role)!==-1){
+    var requestedAccess=assertPaymentVoucherOwnerAccess_(input,requestedUser);
+    if(!requestedAccess||requestedAccess.authorized!==true)return{status:"error",code:"RESOURCE_SCOPE_DENIED"};
+  }
+  var rows=schema.sheet.getDataRange().getValues().slice(1).filter(function(row){
+    var userId=String(row[schema.map.UserId]||"").trim();
+    if(requestedUser&&staffRoles.indexOf(role)!==-1&&userId!==requestedUser)return false;
+    var owner=assertPaymentVoucherOwnerAccess_(input,userId);
+    return !!owner&&owner.authorized===true;
   });
-  rows.sort(function(a,b) { return new Date(b[schema.map.Fecha] || 0).getTime() - new Date(a[schema.map.Fecha] || 0).getTime(); });
-  return { status: "success", comprobantes: rows.map(function(row) {
-    var item = paymentVoucherRowObject_(row, schema.map);
-    return { comprobanteId: String(item.ComprobanteID || ""), comprobanteGrupoId: String(item.ComprobanteGrupoID || item.SolicitudID || ""),
-      alumno: String(item.Alumno || ""), cargoId: String(item.CargoID || ""), montoReportado: Number(item.MontoReportado || 0),
-      metodoPago: String(item.MetodoPago || ""), referencia: String(item.Referencia || ""), estado: String(item.Estado || ""),
-      comprobanteUrl: "", versionNumero: Number(item.VersionNumero || 1), esVersionActual: item.EsVersionActual === true,
-      estadoIntegridad: String(item.EstadoIntegridad || "") };
-  }) };
+  rows.sort(function(a,b){return new Date(b[schema.map.Fecha]||0).getTime()-new Date(a[schema.map.Fecha]||0).getTime();});
+  return{status:"success",comprobantes:rows.map(function(row){var item=paymentVoucherRowObject_(row,schema.map);return{
+    comprobanteId:String(item.ComprobanteID||""),comprobanteGrupoId:String(item.ComprobanteGrupoID||item.SolicitudID||""),
+    alumno:String(item.Alumno||""),cargoId:String(item.CargoID||""),montoReportado:Number(item.MontoReportado||0),
+    metodoPago:String(item.MetodoPago||""),referencia:String(item.Referencia||""),estado:String(item.Estado||""),
+    comprobanteUrl:"",versionNumero:Number(item.VersionNumero||1),esVersionActual:item.EsVersionActual===true,estadoIntegridad:String(item.EstadoIntegridad||"")
+  };})};
 }
 
 function getPaymentVoucherFile(payload) {
@@ -2749,6 +2779,8 @@ function reviewPaymentVoucher(payload) {
       .filter(function(item) { return String(item.row[schema.map.ComprobanteID] || "") === String(input.comprobanteId || "").trim(); });
     if (matches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
     var match = matches[0], record = paymentVoucherRowObject_(match.row, schema.map);
+    var scopedOwner = assertPaymentVoucherOwnerAccess_(input, record.UserId, { requireStaff: true });
+    if (!scopedOwner || scopedOwner.authorized !== true) return { status: "error", code: "RESOURCE_SCOPE_DENIED" };
     if (record.EsVersionActual !== true || ["Pendiente","Observado"].indexOf(String(record.Estado || "")) === -1) {
       return { status: "error", code: "PAYMENT_VOUCHER_ALREADY_REVIEWED" };
     }
