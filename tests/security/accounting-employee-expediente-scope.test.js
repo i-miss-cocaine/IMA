@@ -68,6 +68,7 @@ const accountingSheets = {
 const accountingSs = { getSheetByName: name => accountingSheets[name] || null };
 let employeeActor = { authorized: true, userId: "EMP-1", role: "Empleado", institutionId: "INST-1" };
 const employeeDocumentContext = {
+  SPREADSHEET_ID: "IN_MEMORY",
   PropertiesService: { getScriptProperties: () => ({ getProperty: () => "IN_MEMORY" }) },
   SpreadsheetApp: { openById: () => accountingSs },
   getVerifiedAccountingIdentity_: () => employeeActor,
