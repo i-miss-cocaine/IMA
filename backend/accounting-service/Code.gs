@@ -1118,7 +1118,7 @@ function assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId) {
   if (matches.length === 0) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
   if (matches.length !== 1) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
   var target = matches[0], role = String(actor.role || "").trim().toLowerCase();
-  if (role === "empleado") {
+  if (role === "empleado" || role === "profesor") {
     return String(target[userIndex] || "").trim() === String(actor.userId || "").trim()
       ? { authorized: true, accessType: "SELF" }
       : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
