@@ -3338,8 +3338,10 @@ function adjudicatePurchaseQuotations(payload) {
     request.items.forEach(function(item) {
       if (Math.abs((allocationTotals[item.itemId] || 0) - item.cantidad) > 0.000001) throw new Error("PURCHASE_AWARD_ALLOCATION_INCOMPLETE");
       var prices = detailRows.filter(function(d) { return String(d[2]) === request.solicitudId && String(d[3]) === item.itemId && d[16] === true; })
-        .map(function(d) { return { price: Number(d[8]), valid: purchaseQuoteIsValid_(quoteById[String(d[1])] || [], new Date()) }; })
-        .filter(function(p) { return p.valid && isFinite(p.price); });
+        .map(function(d) {
+          var quote = quoteRows.filter(function(row, index) { return index > 0 && String(row[0]) === String(d[1]); })[0];
+          return { price: Number(d[8]), valid: !!quote && purchaseQuoteIsValid_(quote, new Date()) };
+        }).filter(function(p) { return p.valid && isFinite(p.price); });
       if (prices.length) {
         var lowest = Math.min.apply(null, prices);
         var selected = awardLines.filter(function(a) { return a.itemId === item.itemId; });
