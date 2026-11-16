@@ -71,8 +71,8 @@ const rows={
  DepartamentosAcademicos:[["DepartamentoID","Nombre"],["DEP-A","Departamento A"],["DEP-B","Departamento B"]],
  DocumentosLaborales:[
   ["DocumentoID","ExpedienteID","CategoriaDoc","TituloDocumento","ArchivoUrl","FechaCarga","CargadoPor","EstadoVisibilidad","Observaciones"],
-  ["DOC-A","EXP-A","Contrato","A","url","","U-A","Privado",""],
-  ["DOC-B","EXP-B","Contrato","B","url","","U-B","Privado",""]
+  ["DOC-A","EXP-A","Contrato","A","https://drive.google.com/file/d/FILE_A_123456789012345678901234567890/view","","U-A","Privado",""],
+  ["DOC-B","EXP-B","Contrato","B","https://drive.google.com/file/d/FILE_B_123456789012345678901234567890/view","","U-B","Privado",""]
  ],
  ContratosLaborales:[
   ["ContratoID","ExpedienteID","TipoContrato","FechaInicio","FechaFin","SalarioBase","Jornada","EstadoContrato","Observaciones"],

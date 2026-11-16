@@ -19,7 +19,15 @@ let actor = { authorized: true, userId: "EMP-1", role: "Empleado", institutionId
 let scope = { valid: true, institutionWide: false, departmentIds: ["DEP-A"] };
 const context = {
   getVerifiedAccountingIdentity_: () => actor,
-  getVerifiedAccountingDepartmentScope_: () => scope
+  getVerifiedAccountingDepartmentScope_: () => scope,
+  assertResourceOwnershipForScope_: (_ss, currentScope, _type, expedienteId, _operation) => {
+    const row = rows.find(item => item[0] === expedienteId);
+    if (!row) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+    if (currentScope.institutionWide) return { authorized: true, accessType: "INSTITUTION" };
+    return currentScope.departmentIds.includes(row[2])
+      ? { authorized: true, accessType: "DEPARTMENT", departmentId: row[2] }
+      : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  }
 };
 vm.runInNewContext(fn + "\nthis.check=assertEmployeeExpedienteScopeAccess_;", context);
 const ss = { getSheetByName: name => name === "ExpedientesLaborales" ? sheet : null };

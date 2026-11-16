@@ -1119,7 +1119,7 @@ function assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId) {
   var target = matches[0], role = String(actor.role || "").trim().toLowerCase();
   if (role === "empleado") {
     return String(target[userIndex] || "").trim() === String(actor.userId || "").trim()
-      ? { authorized: true, accessType: "SELF", userId: actor.userId }
+      ? { authorized: true, accessType: "SELF" }
       : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
   }
   var scope = getVerifiedAccountingDepartmentScope_(input, ss, actor);
