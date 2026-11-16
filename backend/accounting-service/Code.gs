@@ -10640,15 +10640,15 @@ function previewBatchMonthlyCharges(payload){
  const lastDay=new Date(Number(year),Number(month),0).getDate(),due=String(p.fechaVencimiento|| (year+"-"+month+"-"+String(lastDay).padStart(2,"0")));
  const existingRows=charges.getDataRange().getValues().slice(1),existingKeys=new Set();
  existingRows.forEach(r=>{const key=monthlyChargeExistingKey_(r,year,month);if(key)existingKeys.add(key);});
- const allowedStates=["activa","activo","confirmada","confirmado","inscrita","inscrito","matriculada","matriculado","active"],seen=new Set(),students=[];
+ const allowedStates=["activa","activo","confirmada","confirmado","inscrita","inscrito","matriculada","matriculado","active"],seen=new Set(),students=[],cell=(row,key,fallback)=>row[mh[key]===undefined?fallback:mh[key]];
  matRows.slice(1).forEach(r=>{
-  const user=String(r[mh.userid]||"").trim(),state=String(r[mh.estado]||"").trim().toLowerCase();if(!user||seen.has(user)||!allowedStates.includes(state))return;
-  if(String(r[mh.anolectivo]||"").trim()!==year)return;
-  const grade=String(r[mh.grado]||"").trim(),section=String(r[mh.seccion]||"").trim();
+  const user=String(cell(r,"userid",2)||"").trim(),state=String(cell(r,"estado",8)||"").trim().toLowerCase();if(!user||seen.has(user)||!allowedStates.includes(state))return;
+  if(String(cell(r,"anolectivo",6)||"").trim()!==year)return;
+  const grade=String(cell(r,"grado",4)||"").trim(),section=String(cell(r,"seccion",5)||"").trim();
   if(p.nivelGrado&&grade.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()!==String(p.nivelGrado).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase())return;
   if(p.seccion&&section.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()!==String(p.seccion).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase())return;
   if(Array.isArray(p.studentIds)&&p.studentIds.length&&!p.studentIds.map(String).includes(user))return;
-  seen.add(user);students.push({userId:user,nombre:String(r[mh.alumno]||""),grado:grade,seccion:section,descuentoPct:Math.max(0,Math.min(100,Number.parseFloat(r[mh.becadescuento]||0)||0))});
+  seen.add(user);students.push({userId:user,nombre:String(cell(r,"alumno",3)||""),grado:grade,seccion:section,descuentoPct:Math.max(0,Math.min(100,Number.parseFloat(cell(r,"becadescuento",9)||0)||0))});
  });
  if(p.__debug===true)return {debug:{header:matRows[0],map:mh,rows:matRows.slice(1),year:year,month:month,gradeFilter:p.nivelGrado}};
  let total=0,already=0,noTariff=0,pending=0;const breakdown=[];
