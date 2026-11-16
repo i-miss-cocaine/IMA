@@ -1403,7 +1403,7 @@ function getEmployeeRecords(payload) {
       puesto: row[idx.role], departamento: row[idx.department], centroCosto: row[idx.cost],
       fechaIngreso: row[idx.hire], fechaSalida: row[idx.exit], estadoLaboral: row[idx.state],
       empleadoNombre: names[String(row[idx.person] || "").trim()] || "" };
-    if (role !== "empleado") item.observaciones = row[idx.notes] || "";
+    item.observaciones = role === "empleado" ? "" : (row[idx.notes] || "");
     rows.push(item);
   });
   var requestedId = String(input.expedienteId || "").trim();
