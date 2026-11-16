@@ -57,7 +57,7 @@ function makeSheet(initialRows=[]) {
 }
 
 function makeHarness(options={}) {
-  const state={lockHeld:false,lockReleases:0,uuid:0,docSequence:0,fileSequence:0,folderAccess:"PRIVATE",
+  const state={lockHeld:false,lockReleases:0,uuid:0,docSequence:0,fileSequence:0,scopeChecks:0,identityChecks:0,folderAccess:"PRIVATE",
     failFileSharing:false,actorUserId:"USER-1",now:Date.now(),tokenCache:new Map(),scriptProperties:new Map(),auditEvents:[]};
   const docHeader=["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl",
     "FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones","VersionDocumento","SHA256"];
@@ -141,9 +141,9 @@ function makeHarness(options={}) {
       getUuid:()=> "12345678-1234-1234-1234-" + String(++state.uuid).padStart(12,"0")
     },
     MimeType:{PDF:"application/pdf"},
-    assertStudentRequestScopeAccess_:()=>({authorized:true,departmentId:"DEP-1"}),
+    assertStudentRequestScopeAccess_:()=>{state.scopeChecks++;return options.revokeScopeAfterInitial && state.scopeChecks>1?{authorized:false,code:"DEPARTMENT_SCOPE_ACCESS_DENIED"}:{authorized:true,departmentId:"DEP-1"};},
     assertStudentDocumentScopeAccess_:()=>({authorized:true,accessType:"STAFF",departmentId:"DEP-1"}),
-    getVerifiedAcademicIdentity_:()=>({authorized:true,userId:state.actorUserId,role:"Secretary"}),
+    getVerifiedAcademicIdentity_:()=>{state.identityChecks++;return options.revokeIdentityAfterInitial && state.identityChecks>1?{authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"}:{authorized:true,userId:state.actorUserId,role:"Secretary"};},
     generateInstitutionalId:()=>({generatedId:"DOC-"+(++state.docSequence)}),
     logStructuredEvent:(...args)=>{state.auditEvents.push(args);},logDebug:()=>{}
   };
@@ -297,6 +297,25 @@ function upload(h,pdf,label="ACTA") {
   const file=[...h.files.values()][0];
   assert.equal(file.isTrashed(),true,"failed privacy enforcement must roll back the newly created file");
   assert.equal(h.sheets.DocumentosEstudiante.rows.length,1);
+}
+
+{
+  const h=makeHarness({revokeScopeAfterInitial:true});
+  const result=upload(h,pdf1);
+  assert.equal(result.status,"error");
+  assert.equal(result.code,"DEPARTMENT_SCOPE_ACCESS_DENIED");
+  assert.equal(h.state.scopeChecks,2,"scope must be rechecked after acquiring the write lock");
+  assert.equal(h.files.size,0,"revoked scope cannot create a Drive file");
+  assert.equal(h.sheets.DocumentosEstudiante.rows.length,1,"revoked scope cannot persist a document row");
+}
+
+{
+  const h=makeHarness({revokeIdentityAfterInitial:true});
+  const result=upload(h,pdf1);
+  assert.equal(result.status,"error");
+  assert.equal(result.code,"VERIFIED_IDENTITY_CHANGED");
+  assert.equal(h.files.size,0,"changed identity cannot create a Drive file");
+  assert.equal(h.sheets.DocumentosEstudiante.rows.length,1,"changed identity cannot persist a document row");
 }
 
 {

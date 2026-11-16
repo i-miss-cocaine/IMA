@@ -14326,8 +14326,18 @@ function uploadStudentDocument(payload) {
   try {
     hasLock = lock.tryLock(10000);
     if (!hasLock) throw new Error("DOCUMENT_UPLOAD_LOCK_UNAVAILABLE");
-    sheet = ensureStudentDocumentSchema_(getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"DocumentosEstudiante"));
-    const historySheet = ensureDocumentVersionHistorySchema_(getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"HistorialVersionesDocumentos"));
+    const lockedSpreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const lockedActor = getVerifiedAcademicIdentity_(p);
+    if (!lockedActor || lockedActor.authorized !== true || !lockedActor.userId ||
+        String(lockedActor.userId) !== String(actor.userId) || String(lockedActor.role || "") !== String(actor.role || "")) {
+      return {status:"error",code:"VERIFIED_IDENTITY_CHANGED",message:"La identidad dejó de ser válida antes de guardar."};
+    }
+    const lockedScope = assertStudentRequestScopeAccess_(p,lockedSpreadsheet,expedienteId,solicitudId);
+    if (!lockedScope || lockedScope.authorized !== true) {
+      return {status:"error",code:lockedScope && lockedScope.code || "RESOURCE_SCOPE_DENIED",message:"El ámbito de acceso dejó de estar autorizado antes de guardar."};
+    }
+    sheet = ensureStudentDocumentSchema_(getOrCreateSheet(lockedSpreadsheet,"DocumentosEstudiante"));
+    const historySheet = ensureDocumentVersionHistorySchema_(getOrCreateSheet(lockedSpreadsheet,"HistorialVersionesDocumentos"));
     const docRows = sheet.getDataRange().getValues();
     const targetExpId = expedienteId.toLowerCase(), targetSolId = solicitudId.toLowerCase(), targetTipo = tipoDocumento.toLowerCase();
     for (let i=1;i<docRows.length;i++) {
@@ -14343,7 +14353,7 @@ function uploadStudentDocument(payload) {
     }
     sha256Hash = computeDocumentSHA256(rawBytes).toLowerCase();
     if (!/^[a-f0-9]{64}$/.test(sha256Hash)) throw new Error("DOCUMENT_SHA256_INVALID");
-    const policyResult = getDocumentDuplicatePolicy_(ssForAccess);
+    const policyResult = getDocumentDuplicatePolicy_(lockedSpreadsheet);
     if (!policyResult || policyResult.status !== "success") return {status:"error",code:policyResult && policyResult.code || "DOCUMENT_DUPLICATE_POLICY_UNAVAILABLE"};
     const duplicatePolicy = policyResult.policy || "RECHAZAR_DUPLICADO_EXACTO";
     const duplicateMatches = [];
@@ -14361,7 +14371,7 @@ function uploadStudentDocument(payload) {
           duplicate:true,duplicateType:importBatchId && String(sameRecord[16] || "") === importBatchId ? "MISMO_LOTE" : "MISMO_DOCUMENTO",fileCreated:false};
       }
     }
-    const inventorySheet = ssForAccess.getSheetByName("InventarioDocumentalLegado");
+    const inventorySheet = lockedSpreadsheet.getSheetByName("InventarioDocumentalLegado");
     let inventoryDuplicate = null;
     if (inventorySheet) {
       const inventoryValues = inventorySheet.getDataRange().getValues();
