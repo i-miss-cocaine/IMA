@@ -3306,6 +3306,10 @@ function adjudicatePurchaseQuotations(payload) {
     quoteRows.slice(1).forEach(function(row) { if (String(row[1] || "") === request.solicitudId) quoteById[String(row[0])] = row; });
     var itemById = {}; request.items.forEach(function(item) { itemById[item.itemId] = item; });
     var allocationTotals = {}, quoteQuantityTotals = {}, orderGroups = {}, awardLines = [], totalAward = 0;
+    var activeQuoteIds = {};
+    quoteRows.slice(1).forEach(function(row) {
+      if (String(row[1] || "") === request.solicitudId && purchaseQuoteIsValid_(row, new Date())) activeQuoteIds[String(row[0])] = true;
+    });
     assignments.forEach(function(line) {
       var itemId = purchaseQuotationItemKey_(line.itemId), quoteId = String(line.cotizacionId || "").trim();
       var item = itemById[itemId], quote = quoteById[quoteId];
@@ -3337,16 +3341,17 @@ function adjudicatePurchaseQuotations(payload) {
     });
     request.items.forEach(function(item) {
       if (Math.abs((allocationTotals[item.itemId] || 0) - item.cantidad) > 0.000001) throw new Error("PURCHASE_AWARD_ALLOCATION_INCOMPLETE");
-      var prices = detailRows.filter(function(d) { return String(d[2]) === request.solicitudId && String(d[3]) === item.itemId && d[16] === true; })
-        .map(function(d) {
-          var quote = quoteRows.filter(function(row, index) { return index > 0 && String(row[0]) === String(d[1]); })[0];
-          return { price: Number(d[8]), valid: !!quote && purchaseQuoteIsValid_(quote, new Date()) };
-        }).filter(function(p) { return p.valid && isFinite(p.price); });
+      var prices = detailRows.filter(function(d) {
+        return String(d[2]) === request.solicitudId && String(d[3]) === item.itemId &&
+          d[16] === true && activeQuoteIds[String(d[1])] === true && isFinite(Number(d[8]));
+      }).map(function(d) { return Number(d[8]); });
       if (prices.length) {
         var lowest = Math.min.apply(null, prices);
         var selected = awardLines.filter(function(a) { return a.itemId === item.itemId; });
-        if (selected.some(function(a) { return a.precioUnitario > lowest + 0.000001; }) &&
-            String(input.justificacion || "").trim().length < 40) throw new Error("PURCHASE_AWARD_NON_LOWEST_JUSTIFICATION_REQUIRED");
+        var selectedAboveLowest = selected.some(function(a) { return a.precioUnitario > lowest + 0.000001; });
+        if (selectedAboveLowest && String(input.justificacion || "").trim().length < 40) {
+          throw new Error("PURCHASE_AWARD_NON_LOWEST_JUSTIFICATION_REQUIRED");
+        }
       }
     });
     var rejected = Array.isArray(input.ofertasDescartadas) ? input.ofertasDescartadas : [];
