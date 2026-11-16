@@ -154,4 +154,60 @@ function makeHarness(options = {}) {
 }
 assert(teacherSource.includes("motivoCambioFechaLimite"));
 assert(teacherSource.includes("dataset.originalValue"));
+
+{
+  const materialRows = [];
+  const materialSheet = {
+    rows: materialRows,
+    getLastRow: () => materialRows.length,
+    appendRow: row => materialRows.push(row.slice()),
+    getDataRange: () => ({ getValues: () => materialRows.map(row => row.slice()) }),
+    getRange: (row, col) => ({ setValue: value => { materialRows[row - 1][col - 1] = value; } })
+  };
+  const context = {
+    SPREADSHEET_ID: "LOCAL",
+    SpreadsheetApp: { openById: () => ({}) },
+    getVerifiedTaskIdentity_: payload => payload && payload.sessionToken === "valid"
+      ? { authorized: true, userId: "PROF-1", role: "Profesor" }
+      : { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" },
+    assertTaskServiceClassroomAccess: (payload, classId) => {
+      assert.equal(payload.sessionToken, "valid");
+      assert.equal(classId, "AULA-1");
+      return true;
+    },
+    isTaskServiceAdministrativeRole: role => ["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
+    getOrCreateSheet: () => materialSheet,
+    Utilities: { getUuid: () => "MATERIAL-1" }
+  };
+  vm.runInNewContext(extractFunction("createStudyMaterial") + "\nthis.createMaterial=createStudyMaterial;", context);
+  const result = context.createMaterial({ sessionToken:"valid", _verifiedUserId:"FORGED", _verifiedRole:"Administrador",
+    aulaId:"AULA-1", titulo:"Material", archivoUrl:"https://example.invalid/material.pdf" });
+  assert.equal(result.status, "success");
+  assert.equal(materialRows[1][10], "PROF-1", "material author is derived from the signed session, not client identity fields");
+}
+{
+  const materialRows = [
+    ["ID","AulaID","Titulo","Descripcion","TipoRecurso","Parcial","Unidad","Tema","ArchivoUrl","DriveId","AutorID","FechaPublicacion","Estado"],
+    ["MAT-1","AULA-1","Material","","PDF","I","","","","","PROF-2",new Date(),"Activo"]
+  ];
+  const materialSheet = {
+    getDataRange: () => ({ getValues: () => materialRows.map(row => row.slice()) }),
+    getRange: (row, col) => ({ setValue: value => { materialRows[row - 1][col - 1] = value; } })
+  };
+  const context = {
+    SPREADSHEET_ID: "LOCAL",
+    SpreadsheetApp: { openById: () => ({}) },
+    getVerifiedTaskIdentity_: payload => payload && payload.sessionToken === "valid"
+      ? { authorized: true, userId: "PROF-1", role: "Profesor" }
+      : { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" },
+    getOrCreateSheet: () => materialSheet,
+    isTaskServiceAdministrativeRole: role => ["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
+    assertTaskServiceClassroomAccess: () => true
+  };
+  vm.runInNewContext(extractFunction("deleteStudyMaterial") + "\nthis.deleteMaterial=deleteStudyMaterial;", context);
+  assert.throws(() => context.deleteMaterial({ sessionToken:"valid", _verifiedUserId:"PROF-2", _verifiedRole:"Administrador", materialId:"MAT-1" }),
+    /El material no pertenece al docente/);
+  assert.equal(materialRows[1][12], "Activo", "a forged administrative role cannot delete another teacher's material");
+}
+
 console.log("AUD-NG-158 task deadline history: verified actor, append-only history, reason, lock, rollback and cross-owner denial PASS.");

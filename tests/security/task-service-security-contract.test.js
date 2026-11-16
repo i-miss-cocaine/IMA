@@ -453,7 +453,11 @@ function verifyTokenWithClaims(sourceText, claims) {
 }
 const tokenNow = Math.floor(Date.now() / 1000);
 const validSessionClaims = { userId:"USER-1", role:"Estudiante", sessionId:"SES-1", iat:tokenNow, exp:tokenNow+3600 };
-for (const [serviceName, sourceText] of [["USER", userSource], ["ACADEMIC", academicSource], ["TASK", source], ["ACCOUNTING", fs.readFileSync(path.join(root, "backend/accounting-service/Code.gs"), "utf8")], ["EXAM", fs.readFileSync(path.join(root, "backend/exam-service/Code.gs"), "utf8")], ["DEVELOPER", fs.readFileSync(path.join(root, "backend/developer-service/Code.gs"), "utf8")]]) {
+const accountingSource = fs.readFileSync(path.join(root, "backend/accounting-service/Code.gs"), "utf8");
+const accountingIdentityFunction = extractFunctionFrom(accountingSource, "getVerifiedAccountingIdentity_");
+assert(accountingIdentityFunction.includes('requestAccountingUserAuthorization_("verifyAccountingSession"'), "Accounting delegates session verification to the USER service over its authenticated interservice contract");
+assert(accountingIdentityFunction.includes("verified.institutionId") && accountingIdentityFunction.includes("configuredInstitution"), "Accounting rejects identities outside its configured institution");
+for (const [serviceName, sourceText] of [["USER", userSource], ["ACADEMIC", academicSource], ["TASK", source], ["EXAM", fs.readFileSync(path.join(root, "backend/exam-service/Code.gs"), "utf8")], ["DEVELOPER", fs.readFileSync(path.join(root, "backend/developer-service/Code.gs"), "utf8")]]) {
   assert(verifyTokenWithClaims(sourceText, validSessionClaims), serviceName + " accepts complete unexpired session claims");
   assert.equal(verifyTokenWithClaims(sourceText, { ...validSessionClaims, exp: undefined }), null, serviceName + " rejects sessions without expiration");
   assert.equal(verifyTokenWithClaims(sourceText, { ...validSessionClaims, iat: undefined }), null, serviceName + " rejects sessions without issued-at time");
@@ -467,7 +471,7 @@ for (const [serviceName, sourceText] of [["USER", userSource], ["ACADEMIC", acad
     assert.equal(verifyTokenWithClaims(sourceText, { ...validSessionClaims, role: "Profesor" }), null, serviceName + " rejects stale role claims after role change");
   }
 }
-console.log("TASK-636 strict session claims local contract: all six services reject incomplete, expired, future-issued and overlong sessions; five shared-data services also reject stale role claims.");
+console.log("TASK-636 strict session claims local contract: five local-verifier services reject incomplete, expired, future-issued and overlong sessions; Accounting delegates to USER and enforces institution binding.");
 
 // TASK-636 AUD-NG-001/002: HMAC signing keys must never be derived from public spreadsheet IDs.
 
