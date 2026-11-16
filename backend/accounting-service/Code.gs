@@ -3853,32 +3853,53 @@ function manageAssetItem(payload) {
 }
 
 function createPurchaseRequest(payload) {
-  var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var access = purchaseQuotationAccess_(input, ss, true);
-  if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "ROLE_NOT_ALLOWED" };
-  var items = Array.isArray(input.detalleItems) ? input.detalleItems : [];
-  if (!items.length) return { status: "error", code: "PURCHASE_REQUEST_ITEMS_INVALID" };
-  var classifications = items.map(function(x) { return { clasificacionInventario:normalizePurchaseAssetClassification_(x) }; });
-  var prepared = items.map(function(source, index) {
-    const classification=normalizePurchaseAssetClassification_(source);
-    var item = catalogFindItem_(ss, source.itemId || source.ItemId || source.codigoItem);
-    if (!item) throw new Error("PURCHASE_REQUEST_ITEM_NOT_FOUND");
-    var unit = catalogFindUnit_(ss, source.unidadMedida || source.unidad || item.baseUnit);
-    if (!unit) throw new Error("PURCHASE_REQUEST_UNIT_INVALID");
-    return { itemId: String(source.itemId || source.ItemId || source.codigoItem || item.code),
-      catalogItemId:item.id, descripcion: String(source.descripcion || item.name || ""),
-      cantidad: Number(source.cantidad), unidadMedida: String(source.unidadMedida || source.unidad || item.baseUnit),
-      clasificacionInventario: classification };
-  });
-  if (prepared.some(function(item) { return !isFinite(item.cantidad) || item.cantidad <= 0; })) return { status: "error", code: "PURCHASE_REQUEST_ITEMS_INVALID" };
-  var sheet = getOrCreateSheet(ss, "SolicitudesCompra");
-  var id = "REQ-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 24);
-  sheet.appendRow([id, new Date(), String(input.departamento || ""), String(access.actor.userId || ""),
-    String(input.justificacion || ""), String(input.categoria || ""), JSON.stringify(prepared),
-    Number(input.montoEstimado || 0), String(input.centroCosto || ""), "Pendiente", ""]);
-  return { status: "success", solicitudId: id };
+  var input = payload || {}, lock = LockService.getScriptLock();
+  if (!Array.isArray(input.detalleItems) || !input.detalleItems.length) {
+    return { status: "error", code: "PURCHASE_REQUEST_ITEMS_INVALID" };
+  }
+  lock.waitLock(15000);
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var access = purchaseQuotationAccess_(input, ss, true);
+    if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "ROLE_NOT_ALLOWED" };
+    var department = resolveStaffingDepartmentReference_(ss, input.departamento);
+    if (!department || department.resolved !== true) return { status: "error", code: department && department.code || "DEPARTMENT_REFERENCE_INVALID" };
+    var allowedDepartments = Array.isArray(access.scope.departmentIds) ? access.scope.departmentIds.map(String) : [];
+    if (access.scope.institutionWide !== true && allowedDepartments.indexOf(String(department.departmentId)) === -1) {
+      return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    }
+    var actor = getVerifiedAccountingIdentity_(input);
+    if (!actor || actor.authorized !== true || String(actor.userId) !== String(access.actor.userId) ||
+        String(actor.role) !== String(access.actor.role)) return { status: "error", code: "VERIFIED_IDENTITY_CHANGED" };
+    var prepared = input.detalleItems.map(function(source) {
+      source = source || {};
+      var classification = normalizePurchaseAssetClassification_(source);
+      var lookup = source.catalogItemId || source.itemId || source.ItemId || source.codigoItem || source.itemCodigo;
+      var item = catalogFindItem_(ss, lookup, true);
+      var unit = catalogFindUnit_(ss, source.unidadMedida || source.unidad || item.baseUnit);
+      if (catalogNormalizeText_(unit.base) !== catalogNormalizeText_(item.baseUnit)) throw new Error("CATALOG_UNIT_INCOMPATIBLE_WITH_ITEM");
+      var quantity = Number(source.cantidad);
+      if (!isFinite(quantity) || quantity <= 0) throw new Error("PURCHASE_REQUEST_ITEMS_INVALID");
+      return { itemId: item.code, codigoItem: item.code, catalogItemId: item.id,
+        descripcion: String(source.descripcion || item.name || ""), cantidad: quantity,
+        unidadMedida: String(source.unidadMedida || source.unidad || item.baseUnit),
+        clasificacionInventario: classification };
+    });
+    var seen = Object.create(null);
+    prepared.forEach(function(item) {
+      if (seen[item.codigoItem]) throw new Error("PURCHASE_REQUEST_DUPLICATE_ITEM");
+      seen[item.codigoItem] = true;
+    });
+    var sheet = getOrCreateSheet(ss, "SolicitudesCompra");
+    var id = "REQ-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 24);
+    sheet.appendRow([id, new Date(), String(department.departmentId), String(actor.userId || ""),
+      String(input.justificacion || ""), String(input.categoria || ""), JSON.stringify(prepared),
+      Number(input.montoEstimado || 0), String(input.centroCosto || ""), "Pendiente", ""]);
+    return { status: "success", solicitudId: id };
+  } finally {
+    lock.releaseLock();
+  }
 }
-
 function createPurchaseOrder(payload) {
   var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var access = purchaseQuotationAccess_(input, ss, true);
