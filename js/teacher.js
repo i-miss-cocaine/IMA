@@ -2488,17 +2488,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (combined.length === 0) {
                     tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400 font-semibold">No hay recursos ni proyectos registrados en el catálogo aún.</td></tr>';
                 } else {
-                    tableBody.innerHTML = combined.map(item => `
-                        <tr class="hover:bg-slate-50">
-                            <td class="p-2.5 font-bold text-slate-800">${item.titulo}</td>
-                            <td class="p-2.5">${item.area || 'General'}</td>
-                            <td class="p-2.5">${item.asignatura || 'General'} ${item.tema ? ' / ' + item.tema : ''}</td>
-                            <td class="p-2.5"><span class="px-2 py-0.5 ${item.esProyectoItem ? 'bg-purple-100 text-purple-800' : 'bg-indigo-100 text-indigo-800'} rounded-full font-bold text-[10px]">${item.esProyectoItem ? 'PROYECTO' : 'v' + (item.version || '1.0')}</span></td>
-                            <td class="p-2.5 text-right">
-                                ${item.urlDrive ? `<a href="${item.urlDrive}" target="_blank" class="text-indigo-600 hover:text-indigo-800 font-bold text-[11px]"><i class="fa-solid fa-arrow-up-right-from-square mr-0.5"></i> Abrir</a>` : '<span class="text-slate-400 text-[10px]">Sin enlace</span>'}
-                            </td>
-                        </tr>
-                    `).join('');
+                    tableBody.textContent = '';
+                    combined.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-slate-50';
+                        const addCell = (value, className) => {
+                            const cell = document.createElement('td');
+                            cell.className = className;
+                            cell.textContent = String(value === null || value === undefined ? '' : value);
+                            row.appendChild(cell);
+                            return cell;
+                        };
+                        addCell(item.titulo || '', 'p-2.5 font-bold text-slate-800');
+                        addCell(item.area || 'General', 'p-2.5');
+                        addCell((item.asignatura || 'General') + (item.tema ? ' / ' + item.tema : ''), 'p-2.5');
+                        const versionCell = addCell('', 'p-2.5');
+                        const badge = document.createElement('span');
+                        badge.className = 'px-2 py-0.5 ' + (item.esProyectoItem ? 'bg-purple-100 text-purple-800' : 'bg-indigo-100 text-indigo-800') + ' rounded-full font-bold text-[10px]';
+                        badge.textContent = item.esProyectoItem ? 'PROYECTO' : 'v' + (item.version || '1.0');
+                        versionCell.appendChild(badge);
+                        const actionCell = addCell('', 'p-2.5 text-right');
+                        let safeDriveUrl = '';
+                        try {
+                            const parsed = new URL(String(item.urlDrive || ''));
+                            if (parsed.protocol === 'https:' && parsed.hostname === 'drive.google.com' &&
+                                /^\/file\/d\/[A-Za-z0-9_-]{10,}\/view\/?$/i.test(parsed.pathname) &&
+                                !parsed.username && !parsed.password) safeDriveUrl = parsed.href;
+                        } catch (_) {}
+                        if (safeDriveUrl) {
+                            const link = document.createElement('a');
+                            link.href = safeDriveUrl;
+                            link.target = '_blank';
+                            link.rel = 'noopener noreferrer';
+                            link.className = 'text-indigo-600 hover:text-indigo-800 font-bold text-[11px]';
+                            link.textContent = 'Abrir';
+                            actionCell.appendChild(link);
+                        } else {
+                            const unavailable = document.createElement('span');
+                            unavailable.className = 'text-slate-400 text-[10px]';
+                            unavailable.textContent = 'Sin enlace privado validado';
+                            actionCell.appendChild(unavailable);
+                        }
+                        tableBody.appendChild(row);
+                    });
                 }
             } else {
                 tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-500">Error al cargar recursos.</td></tr>';
