@@ -1772,11 +1772,11 @@ const API_RESPONSE_VERSION = "1.0.0";
 
 const ROLE_PERMISSIONS = {
   Auditor: ["getAccountingMigrationFileAudit"],
-  Empleado: ["getEmployeeRecords", "getLeaveVacationRequests", "submitLeaveVacationRequest"],
-  Profesor: ["submitVacationRequest"],
-  RecursosHumanos: ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave"],
-  Director: ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances"],
-  Administrador: ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances"]
+  "Empleado": ["getEmployeeRecords", "getLeaveVacationRequests", "submitLeaveVacationRequest"],
+  "Profesor": ["submitVacationRequest"],
+  "RecursosHumanos": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave"],
+  "Director": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances"],
+  "Administrador": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances"]
 };
 
 function accountingHasRolePermission_(actor, action) {
