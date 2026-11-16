@@ -915,6 +915,7 @@ function renderMantenimientoView(container) {
       <section class="bg-white p-5 rounded-2xl border border-gray-200">
         <h5 class="font-black text-xs uppercase text-gray-800 mb-3">Plan preventivo</h5>
         <form id="form-plan-mantenimiento" onsubmit="handleSavePreventiveMaintenancePlan(event)" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          <label class="font-bold text-gray-600">Plantilla<select id="mnt-plan-template" onchange="applyPreventiveMaintenanceTemplate()" class="w-full p-2 border rounded-xl"><option value="">Seleccionar plantilla...</option></select></label>
           <label class="font-bold text-gray-600">Tipo de objetivo<select id="mnt-plan-target-type" class="w-full p-2 border rounded-xl"><option value="ACTIVO">Activo específico</option><option value="CATEGORIA">Categoría de activos</option><option value="UBICACION">Ubicación</option><option value="INSTALACION">Instalación</option><option value="GRUPO">Grupo de equipos</option></select></label>
           <label class="font-bold text-gray-600">Objetivo / ID / ubicación<input id="mnt-plan-target" required class="w-full p-2 border rounded-xl" placeholder="Activo, categoría o ubicación"></label>
           <label class="font-bold text-gray-600">Categoría (si aplica)<input id="mnt-plan-category" class="w-full p-2 border rounded-xl"></label>
@@ -1011,6 +1012,7 @@ window.handleSaveMantenimiento = function (e) {
 };
 
 
+window.applyPreventiveMaintenanceTemplate=function(){const id=document.getElementById("mnt-plan-template").value,t=(window._preventiveMaintenanceTemplates||[]).find(x=>x.id===id);if(!t)return;document.getElementById("mnt-plan-procedure").value=t.procedimiento;document.getElementById("mnt-plan-checklist").value=JSON.stringify(t.checklist,null,2);};
 function maintenancePlanEscapeHtml(value){return String(value==null?"":value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 window.handleSavePreventiveMaintenancePlan=function(e){
  e.preventDefault();const parse=(id)=>{const raw=document.getElementById(id).value.trim();if(!raw)return [];const v=JSON.parse(raw);if(!Array.isArray(v))throw new Error("El valor debe ser un arreglo JSON.");return v;};
@@ -1027,8 +1029,8 @@ window.postponeMaintenancePlan=function(encodedId){
 };
 window.loadPreventiveMaintenanceData=function(){
  const alerts=document.getElementById("mnt-plan-alerts"),list=document.getElementById("mnt-plan-list");if(!alerts||!list)return;
- Promise.all([fetchApi("ACCOUNTING","getPreventiveMaintenanceAlerts",{}),fetchApi("ACCOUNTING","getPreventiveMaintenancePlans",{})]).then(([a,p])=>{
-  const esc=maintenancePlanEscapeHtml,items=a.alertas||[],plans=p.planes||[];
+ Promise.all([fetchApi("ACCOUNTING","getPreventiveMaintenanceAlerts",{}),fetchApi("ACCOUNTING","getPreventiveMaintenancePlans",{}),fetchApi("ACCOUNTING","getPreventiveMaintenanceTemplates",{})]).then(([a,p,t])=>{
+  const esc=maintenancePlanEscapeHtml,items=a.alertas||[],plans=p.planes||[],templateSelect=document.getElementById("mnt-plan-template");window._preventiveMaintenanceTemplates=t.plantillas||[];if(templateSelect&&templateSelect.options.length<=1)window._preventiveMaintenanceTemplates.forEach(x=>{const option=document.createElement("option");option.value=x.id;option.textContent=x.nombre;templateSelect.appendChild(option);});
   alerts.innerHTML=items.length?items.map(x=>'<div class="p-2 mb-1 rounded-lg bg-amber-50 text-amber-900"><strong>'+esc(x.estado)+'</strong> · '+esc(x.objetivo)+' · '+esc(x.fechaProgramada||("Lectura "+x.lecturaProgramada))+'</div>').join(""):'<p class="text-gray-500">No hay alertas preventivas en el período.</p>';
   list.innerHTML=plans.length?plans.map(x=>'<div class="border-b py-2"><div class="font-bold">'+esc(x.planId)+' · '+esc(x.objetivoNombre)+'</div><div class="text-gray-500">'+esc(x.frecuenciaTipo)+' ('+esc(x.frecuenciaValor)+') · Próximo: '+esc(x.fechaProximoMantenimiento||"Por horas de uso")+'</div><button type="button" onclick="postponeMaintenancePlan(\''+encodeURIComponent(x.planId)+'\')" class="mt-1 text-amber-700 underline">Posponer con justificación</button></div>').join(""):'<p class="text-gray-500">No hay planes preventivos configurados.</p>';
  }).catch(err=>{alerts.textContent="No se pudieron cargar alertas: "+err.message;list.textContent="No se pudieron cargar los planes.";});
