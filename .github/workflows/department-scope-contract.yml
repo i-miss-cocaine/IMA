@@ -1,3 +1,4 @@
+# Keep canonical absence reconciliation and ownership tests covered on every relevant push.
 name: Department Scope Contract
 
 on:
