@@ -726,6 +726,7 @@ console.log("TASK-153 legacy document and folder-IDOR contracts passed.");
   const materialContext = {
     SPREADSHEET_ID:"LOCAL",
     SpreadsheetApp:{openById:()=>({})},
+    getVerifiedTaskIdentity_:()=>({authorized:true,userId:"ADMIN-1",role:"Administrador"}),
     isTaskServiceAdministrativeRole:role=>role==="Administrador",
     assertTaskServiceClassroomAccess:(_payload,classId)=>{assert.equal(classId,"General");throw new Error("AUTH_PERMISSION_DENIED");},
     getOrCreateSheet:()=>{materialSheetAccess=true;return {getLastRow:()=>0,appendRow:()=>{}};},
