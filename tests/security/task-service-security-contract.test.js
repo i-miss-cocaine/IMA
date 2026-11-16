@@ -475,7 +475,6 @@ console.log("TASK-636 strict session claims local contract: five local-verifier 
 
 // TASK-636 AUD-NG-001/002: HMAC signing keys must never be derived from public spreadsheet IDs.
 
-const accountingSource = fs.readFileSync(path.join(root, "backend/accounting-service/Code.gs"), "utf8");
 const accountingRequestAuthorization = extractFunctionFrom(accountingSource, "requestAccountingUserAuthorization_");
 const accountingHmacHelper = extractFunctionFrom(accountingSource, "accountingComputeHmacSignature_");
 assert(accountingRequestAuthorization.includes('getProperty("IMA_MIGRATION_HMAC_SECRET")') &&
