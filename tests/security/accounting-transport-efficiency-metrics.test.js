@@ -200,7 +200,7 @@ const subdirectorStart = permissionSource.indexOf('"Subdirector": [');
 const nextRoleStart = permissionSource.indexOf('\n  "', subdirectorStart + 1);
 assert.ok(permissionSource.slice(directorStart, subdirectorStart).includes('"getTransportEfficiencyMetrics"'));
 assert.ok(permissionSource.slice(subdirectorStart, nextRoleStart).includes('"getTransportEfficiencyMetrics"'));
-assert.match(source, /case "getTransportEfficiencyMetrics": result = getTransportEfficiencyMetrics\(payload\); break;/);
+assert.match(source, /if \(request\.action === "getTransportEfficiencyMetrics"\) return respond\(getTransportEfficiencyMetrics\(actionPayload\)\);/);
 assert.match(workflow, /accounting-transport-efficiency-metrics\.test\.js/);
 assert.match(workflow, /node --check js\/transport-analytics\.js/);
 console.log("PASS: transport metrics authorization, aggregation, date filtering, over-capacity, no-data handling, read-only behavior, lock release and dashboard wiring");
