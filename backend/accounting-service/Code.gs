@@ -4135,7 +4135,7 @@ function registerCapitalizableAssetImprovement(payload) {
     var existing=rows.slice(1).filter(function(row){return String(row[12]||"")===key;});
     if(existing.length){
       var same=String(existing[0][1])===String(input.activoId)&&String(existing[0][2])===date&&
-        Number(existing[0][4])===amount&&String(existing[0][3]).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")===normalized;
+        Number(existing[0][4])===amount&&String(existing[0][3]).toLowerCase()===normalized;
       if(!same)throw new Error("IDEMPOTENCY_CONFLICT");
       return {status:"already_registered",mejoraId:existing[0][0]};
     }
