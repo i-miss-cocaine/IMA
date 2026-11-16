@@ -920,8 +920,8 @@ function renderMantenimientoView(container) {
           <label class="font-bold text-gray-600">Categoría (si aplica)<input id="mnt-plan-category" class="w-full p-2 border rounded-xl"></label>
           <label class="font-bold text-gray-600">Frecuencia<select id="mnt-plan-frequency" class="w-full p-2 border rounded-xl"><option value="DIARIA">Diaria</option><option value="SEMANAL">Semanal</option><option value="QUINCENAL">Quincenal</option><option value="MENSUAL" selected>Mensual</option><option value="TRIMESTRAL">Trimestral</option><option value="SEMESTRAL">Semestral</option><option value="ANUAL">Anual</option><option value="DIAS">Intervalo en días</option><option value="HORAS_USO">Horas de uso</option></select></label>
           <label class="font-bold text-gray-600">Intervalo / horas<input id="mnt-plan-frequency-value" type="number" min="1" value="1" required class="w-full p-2 border rounded-xl"></label>
-          <label class="font-bold text-gray-600">Último mantenimiento<input id="mnt-plan-last" type="date" class="w-full p-2 border rounded-xl"></label>
-          <label class="font-bold text-gray-600">Próximo mantenimiento<input id="mnt-plan-next" type="date" class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600">Último mantenimiento<input id="mnt-plan-last" type="date" data-ui-help-key="fechas.calendario" class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600">Próximo mantenimiento<input id="mnt-plan-next" type="date" data-ui-help-key="fechas.calendario" class="w-full p-2 border rounded-xl"></label>
           <label class="font-bold text-gray-600">Departamento<input id="mnt-plan-department" required class="w-full p-2 border rounded-xl"></label>
           <label class="font-bold text-gray-600">Centro de costo<input id="mnt-plan-cost-center" class="w-full p-2 border rounded-xl"></label>
           <label class="font-bold text-gray-600">Responsable técnico<input id="mnt-plan-owner" class="w-full p-2 border rounded-xl"></label>
