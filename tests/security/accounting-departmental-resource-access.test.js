@@ -299,7 +299,7 @@ assert.equal(context.reviewPaymentVoucher({sessionToken:"student",comprobanteId:
 assert.equal(context.reviewPaymentVoucher({sessionToken:"staffA",comprobanteId:"VCH-B",nuevoEstado:"Rechazado"}).code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.reviewPaymentVoucher({sessionToken:"staffA",comprobanteId:"VCH-A",nuevoEstado:"Rechazado"}).status,"success");
 const ownFile=context.getPaymentVoucherFile({sessionToken:"student",comprobanteId:"VCH-A",fileId:"FILE_B_123456789012345678901234567890"});
-assert.equal(ownFile.status,"success","student may retrieve only their own voucher file");
+assert.equal(ownFile.status,"success","student may retrieve only their own voucher file; actual="+JSON.stringify(ownFile));
 assert.equal(ownFile.fileName,"voucher-a.pdf","file reference must come from the stored voucher row, not client fileId");
 assert.equal(ownFile.mimeType,"application/pdf");
 assert.equal(ownFile.fileData,Buffer.from("%PDF-1.4 test").toString("base64"));
