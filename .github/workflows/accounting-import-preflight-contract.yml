@@ -1,4 +1,5 @@
 name: Accounting Import Preflight Contract
+# Keep signed import authorization and the HTTP router contract in the backend regression gate.
 
 on:
   push:

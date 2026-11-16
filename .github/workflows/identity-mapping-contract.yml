@@ -1,4 +1,5 @@
 name: Identity mapping and transport security contracts
+# Recheck signed identity mapping and scoped transport access after accounting backend restoration.
 on:
   push:
     branches: [NG_beta_0.0.0.1_work]

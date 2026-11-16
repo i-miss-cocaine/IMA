@@ -1,4 +1,5 @@
 name: Department Reference Consumers Local Contract
+# Keep cross-service department references and resource ownership covered after accounting restoration.
 
 on:
   push:
