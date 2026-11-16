@@ -1300,11 +1300,8 @@ function getVacationSheetSnapshot_(ss, sheetName) {
   var actual = values[0].map(function(value) { return String(value || "").trim(); });
   if (JSON.stringify(actual) !== JSON.stringify(headers)) return { valid: false, code: "RESOURCE_SCHEMA_INVALID", rows: [], sheet: sheet };
   var rows = values.slice(1);
-  var ids = Object.create(null);
-  for (var i = 0; i < rows.length; i++) {
-    var id = String(rows[i][0] || "").trim();
-    if (!id || ids[id]) return { valid: false, code: "RESOURCE_SCHEMA_INVALID", rows: [], sheet: sheet };
-    ids[id] = true;
+  if (rows.some(function(row) { return !String(row[0] || "").trim(); })) {
+    return { valid: false, code: "RESOURCE_SCHEMA_INVALID", rows: [], sheet: sheet };
   }
   return { valid: true, missing: false, headers: headers, rows: rows, sheet: sheet };
 }
@@ -1346,7 +1343,7 @@ function resolveVacationEmployeeAccess_(payload, ss, expedienteId, actor) {
   var idx = { id: headers.indexOf("ExpedienteID"), person: headers.indexOf("PersonaId"), user: headers.indexOf("UserId"), department: headers.indexOf("Departamento"), hire: headers.indexOf("FechaIngreso"), notes: headers.indexOf("Observaciones") };
   if (idx.id < 0 || idx.user < 0 || idx.department < 0) return { authorized: false, code: "RESOURCE_SCHEMA_INVALID" };
   var targetId = String(expedienteId || "").trim();
-  if (role === "empleado" && !targetId) {
+  if ((role === "empleado" || role === "profesor") && !targetId) {
     var own = values.slice(1).filter(function(row) { return String(row[idx.user] || "").trim() === identity.userId; });
     if (own.length !== 1) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
     targetId = String(own[0][idx.id] || "").trim();
@@ -1354,7 +1351,7 @@ function resolveVacationEmployeeAccess_(payload, ss, expedienteId, actor) {
   var matches = values.slice(1).filter(function(row) { return String(row[idx.id] || "").trim() === targetId; });
   if (!targetId || matches.length !== 1) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
   var row = matches[0];
-  if (role === "empleado") {
+  if (role === "empleado" || role === "profesor") {
     if (String(row[idx.user] || "").trim() !== identity.userId) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
     return { authorized: true, actor: identity, role: role, expedienteId: targetId, employee: row, employeeIndex: idx, accessType: "SELF" };
   }
@@ -1496,8 +1493,11 @@ function getVacationRequests(payload) {
   if (["recursoshumanos","director","administrador"].indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED", solicitudes: [], data: [] };
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID), snapshot = getVacationSheetSnapshot_(ss);
   if (!snapshot.valid) return { status: "error", code: snapshot.code, solicitudes: [], data: [] };
-  var names = getEmployeePersonNameIndex_(ss), requested = String(input.expedienteId || "").trim(), result = [];
+  var names = getEmployeePersonNameIndex_(ss), requested = String(input.expedienteId || "").trim(), result = [], seenRequestIds = Object.create(null);
   snapshot.rows.forEach(function(row) {
+    var requestId = String(row[0] || "").trim();
+    if (seenRequestIds[requestId]) return;
+    seenRequestIds[requestId] = true;
     if (requested && String(row[1] || "").trim() !== requested) return;
     var access = resolveVacationEmployeeAccess_(input, ss, row[1], actor);
     if (!access.authorized) return;
