@@ -3601,10 +3601,13 @@ function purchaseAssetReceiptContext_(payload) {
   var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var access = purchaseQuotationAccess_(input, ss, true);
   if (!access || access.authorized !== true) throw new Error(access && access.code || "ROLE_NOT_ALLOWED");
-  var receipts = getOrCreateSheet(ss, "RecepcionesCompra").getDataRange().getValues();
-  var orders = getOrCreateSheet(ss, "OrdenesCompra").getDataRange().getValues();
-  var requests = getOrCreateSheet(ss, "SolicitudesCompra").getDataRange().getValues();
-  var payables = getOrCreateSheet(ss, "CuentasPorPagarGastos").getDataRange().getValues();
+  var receiptSheet = ss.getSheetByName("RecepcionesCompra"), orderSheet = ss.getSheetByName("OrdenesCompra");
+  var requestSheet = ss.getSheetByName("SolicitudesCompra"), payableSheet = ss.getSheetByName("CuentasPorPagarGastos");
+  if (!receiptSheet || !orderSheet || !requestSheet || !payableSheet) throw new Error("RESOURCE_NOT_FOUND");
+  var receipts = receiptSheet.getDataRange().getValues();
+  var orders = orderSheet.getDataRange().getValues();
+  var requests = requestSheet.getDataRange().getValues();
+  var payables = payableSheet.getDataRange().getValues();
   function idx(headers, name, fallback) { var i = headers.indexOf(name); return i >= 0 ? i : fallback; }
   var rh = receipts[0].map(String), oh = orders[0].map(String), qh = requests[0].map(String), ph = payables[0].map(String);
   var receiptMatches = receipts.slice(1).map(function(row, index) { return { row: row, index: index + 2 }; })
@@ -3723,6 +3726,15 @@ function registerAssetsFromPurchaseReceipt(payload) {
       if (!candidateById[itemId]) throw new Error("PURCHASE_ASSET_ITEM_NOT_ELIGIBLE");
       requestedCount[itemId] = (requestedCount[itemId] || 0) + 1;
     });
+    for (var iDuplicate = 0; iDuplicate < requestedAssets.length; iDuplicate++) {
+      var duplicateAsset = requestedAssets[iDuplicate];
+      var duplicateCode = String(duplicateAsset.codigoPatrimonial || "").trim();
+      var duplicateSerial = String(duplicateAsset.numeroSerie || "").trim();
+      if (assetsByReceipt.some(function(row) {
+        return String(row[idx("CodigoPatrimonial")] || "") === duplicateCode ||
+          String(row[idx("NumeroSerie")] || row[4] || "") === duplicateSerial;
+      })) return { status: "error", code: "ASSET_CODE_OR_SERIAL_ALREADY_EXISTS" };
+    }
     for (var key in requestedCount) if (requestedCount[key] > candidateById[key].unidadesDisponibles) {
       return { status: "error", code: "PURCHASE_ASSET_QUANTITY_EXCEEDED" };
     }
@@ -3841,7 +3853,8 @@ function createPurchaseRequest(payload) {
   if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "ROLE_NOT_ALLOWED" };
   var items = Array.isArray(input.detalleItems) ? input.detalleItems : [];
   if (!items.length) return { status: "error", code: "PURCHASE_REQUEST_ITEMS_INVALID" };
-  var prepared = items.map(function(source) {
+  var classifications = items.map(function(x) { return { clasificacionInventario:normalizePurchaseAssetClassification_(x) }; });
+  var prepared = items.map(function(source, index) {
     const classification=normalizePurchaseAssetClassification_(source);
     var item = catalogFindItem_(ss, source.itemId || source.ItemId || source.codigoItem);
     if (!item) throw new Error("PURCHASE_REQUEST_ITEM_NOT_FOUND");
