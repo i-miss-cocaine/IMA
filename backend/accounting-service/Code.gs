@@ -10577,6 +10577,7 @@ function getMaintenanceOrders(p){
 function maintenancePlanComplete_(ss,orderRow,actor){
  const planId=String(orderRow[19]||"").trim();if(!planId)return null;const sh=maintenancePlanSheet_(ss,false);if(!sh)return null;const rows=sh.getDataRange().getValues(),matches=rows.map((r,i)=>({r,i})).filter(x=>x.i>0&&String(x.r[0])===planId);if(matches.length!==1)throw new Error(matches.length?"MAINTENANCE_PLAN_ID_AMBIGUOUS":"MAINTENANCE_PLAN_NOT_FOUND");
  const found=matches[0],r=found.r;if(String(r[26]||"")===String(orderRow[0]))return {planId,idempotent:true};
+ maintenancePlanAssertAssetScope_(ss,{departamento:String(r[18]||"")},actor,String(orderRow[2]||""),String(r[18]||""));
  const freq=String(r[6]),usage=freq==="HORAS_USO",cycle=usage?"USO-"+Number(r[25]||0):(r[9]?maintenancePlanISO_(r[9]):"");const cycleParts=String(orderRow[20]||"").split("|");if(cycleParts.length!==3||cycleParts[0]!==planId||cycleParts[1]!==cycle)throw new Error("MAINTENANCE_ORDER_CYCLE_STALE");
  const now=maintenancePlanDate_(orderRow[12]||new Date()),readingRaw=orderRow[23],reading=Number(readingRaw);
  if(usage&&(readingRaw===""||readingRaw===undefined||!Number.isFinite(reading)||reading<Number(r[24]||0)))throw new Error("MAINTENANCE_USAGE_READING_INVALID");
