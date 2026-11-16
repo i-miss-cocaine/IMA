@@ -3308,7 +3308,8 @@ function getLaborIncidentsHistory(payload) {
     if (id) incidentCounts[id] = (incidentCounts[id] || 0) + 1;
     if (id) employeeByIncident[id] = userId;
   });
-  if (requestedIncident && incidentCounts[requestedIncident] !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  if (requestedIncident && (incidentCounts[requestedIncident] !== 1 ||
+      !employeeAccess.byUserId[employeeByIncident[requestedIncident]])) return { status: "error", code: "RESOURCE_NOT_FOUND" };
   var validIncidentIds = {}, incidencias = [];
   allIncidents.forEach(function(row) {
     var id = String(row[incidentIndex.IncidenciaID] || "").trim(), userId = String(row[incidentIndex.EmpleadoID] || "").trim();
