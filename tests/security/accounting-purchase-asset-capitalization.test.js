@@ -69,7 +69,7 @@ ctx.purchaseQuotationAccess_=allowedAccess;
 assert.equal(denied.code,"ROLE_NOT_ALLOWED");assert.equal(rows.ActivosPatrimoniales[0].length,headerLengthBefore,"unauthorized calls must not mutate the asset schema");
 
 const registered=ctx.registerAssetsFromPurchaseReceipt(first);
-assert.equal(registered.status,"success");assert.equal(registered.activos.length,1);
+assert.equal(registered.status,"success",JSON.stringify(registered));assert.equal(registered.activos.length,1);
 assert.equal(rows.ActivosPatrimoniales.length,2);assert.equal(rows.ActivosPatrimoniales[1][10],"ORD-1");assert.equal(rows.ActivosPatrimoniales[1][11],"REC-1");assert.equal(rows.ActivosPatrimoniales[1][12],"INV-001");assert.equal(rows.ActivosPatrimoniales[1][16],"SN-001");assert.equal(rows.ActivosPatrimoniales[1][20],"ActivoFijo");
 const retry=ctx.registerAssetsFromPurchaseReceipt(first);assert.equal(retry.status,"success");assert.equal(retry.idempotente,true);assert.equal(rows.ActivosPatrimoniales.length,2);
 const second=ctx.registerAssetsFromPurchaseReceipt({recepcionId:"REC-1",numeroFactura:"INV-001",activos:[{itemId:"IT-1",codigoPatrimonial:"PAT-002",numeroSerie:"SN-002",categoriaPatrimonial:"Equipo computacional",marca:"Marca A",modelo:"Modelo A",ubicacionActual:"Bodega",custodioUserId:"U-2"}]});
