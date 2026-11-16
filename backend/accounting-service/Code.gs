@@ -2726,7 +2726,7 @@ function getPaymentVouchers(payload) {
     var owner=assertPaymentVoucherOwnerAccess_(input,userId);
     return !!owner&&owner.authorized===true;
   });
-  rows.sort(function(a,b){return new Date(b[schema.map.Fecha]||0).getTime()-new Date(a[schema.map.Fecha]||0).getTime();});
+  rows.sort(function(a,b){return new Date(a[schema.map.Fecha]||0).getTime()-new Date(b[schema.map.Fecha]||0).getTime();});
   return{status:"success",comprobantes:rows.map(function(row){var item=paymentVoucherRowObject_(row,schema.map);return{
     comprobanteId:String(item.ComprobanteID||""),comprobanteGrupoId:String(item.ComprobanteGrupoID||item.SolicitudID||""),
     alumno:String(item.Alumno||""),cargoId:String(item.CargoID||""),montoReportado:Number(item.MontoReportado||0),
