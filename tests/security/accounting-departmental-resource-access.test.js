@@ -639,7 +639,7 @@ const invalidType=context.recordStaffCheckIn({sessionToken:"employee",empleadoId
 assert.equal(invalidType.code,"INVALID_ATTENDANCE_TYPE","unsupported attendance mutations must be rejected");
 const noScope={sessionToken:"staffA",empleadoId:"U-B"};
 assert.equal(context.recordStaffCheckIn(noScope).code,"RESOURCE_NOT_FOUND","department manager cannot write to another department");
-assert.ok(extractFunction(accounting,"recordStaffCheckIn").includes("assertResourceOwnershipForScope_"));
+assert.ok(extractFunction(accounting,"resolveStaffAttendanceEmployeeAccess_").includes("assertResourceOwnershipForScope_"),"attendance ownership helper must enforce resource scope");
 assert.ok(extractFunction(accounting,"recordStaffCheckIn").includes("getVerifiedAccountingIdentity_"));
 assert.ok(extractFunction(accounting,"validateRolePermission").includes('"recordStaffCheckIn"'));
 rows.AsignacionesTurnosLaborales[1][5]=attendanceShiftTime;
