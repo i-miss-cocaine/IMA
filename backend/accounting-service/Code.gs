@@ -3936,7 +3936,11 @@ const ASSET_DEPR_IMPROVEMENT_HEADERS_=["MejoraID","ActivoID","FechaCapitalizacio
 const ASSET_DEPR_HEADERS_=["DepreciacionID","ActivoID","Periodo","FechaCalculo","Metodo","BaseCosto","DepreciacionPeriodo","DepreciacionAcumulada","ValorNetoLibros","UnidadesPeriodo","ComponentesJSON","AsientoID","Estado","IdempotencyKey","RegistradoPor"];
 
 function assetDeprSheet_(ss,name,headers) {
-  var sheet = ss.getSheetByName(name) || getOrCreateSheet(ss,name);
+  var sheet = ss.getSheetByName(name);
+  if (!sheet) {
+    sheet = ss.insertSheet(name);
+    sheet.getRange(1,1,1,headers.length).setValues([headers]);
+  }
   var values = sheet.getDataRange().getValues();
   if (!values || !values.length || JSON.stringify(values[0].map(String)) !== JSON.stringify(headers)) throw new Error("ASSET_DEPR_SCHEMA_INVALID");
   return sheet;
@@ -4084,7 +4088,7 @@ function calculateAssetDepreciation(payload) {
       unitsTotal:Number(profile[11]||0),unitsPeriod:Number(input.unidadesPeriodo||0)};
     var baseAmount;
     if(openingCutoff&&month>openingCutoff&&Number(profile[14])>0) {
-      var remMonths=Math.max(1,life-assetDeprMonthsBetween_(depStart,openingCutoff));
+      var remMonths=Math.max(1,life-(assetDeprMonthsBetween_(depStart,openingCutoff)+1));
       baseAmount=assetDeprMoney_(Math.min(Number(profile[14]),Number(profile[14])/remMonths));
     } else baseAmount=assetDeprComponentAmount_(baseComponent,month,remaining,0);
     if(method==="UnidadesProduccion"&&Number(input.unidadesPeriodo||0)>Number(profile[11]||0)-Number(profile[12]||0))throw new Error("UNITS_EXCEED_REMAINING");
@@ -4126,7 +4130,7 @@ function registerCapitalizableAssetImprovement(payload) {
     var sheet=assetDeprSheet_(ss,"MejorasCapitalizablesActivos",ASSET_DEPR_IMPROVEMENT_HEADERS_),rows=sheet.getDataRange().getValues();
     var date=assetDeprIsoDate_(input.fechaCapitalizacion),amount=assetDeprMoney_(input.importe),description=String(input.descripcion||"").trim();
     if(!description||amount<=0)throw new Error("IMPROVEMENT_VALUES_INVALID");
-    var normalized=description.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    var normalized=description.toLowerCase();
     var key=String(input.idempotencyKey||([input.activoId,date,amount,normalized].join("|")));
     var existing=rows.slice(1).filter(function(row){return String(row[12]||"")===key;});
     if(existing.length){
@@ -4149,23 +4153,26 @@ function getAssetDepreciationSchedule(payload) {
     var improvements=assetDeprSheet_(ss,"MejorasCapitalizablesActivos",ASSET_DEPR_IMPROVEMENT_HEADERS_).getDataRange().getValues().slice(1);
     var assetsSheet=ss.getSheetByName("ActivosPatrimoniales"),assets=assetsSheet.getDataRange().getValues().slice(1);
     var cutoff=input.fechaCorte?assetDeprDate_(input.fechaCorte):new Date(8640000000000000);
-    var filtered=depreciations.filter(function(row){return (!input.activoId||String(row[1])===String(input.activoId))&&assetDeprMonth_(row[2])<=cutoff;});
+    var filtered=depreciations.filter(function(row){return String(row[12])==="Contabilizada"&&(!input.activoId||String(row[1])===String(input.activoId))&&assetDeprMonth_(row[2])<=cutoff;});
     var calendar=filtered.map(function(row){return {activoId:row[1],periodo:row[2],depreciacionPeriodo:Number(row[6]),depreciacionAcumulada:Number(row[7]),valorNetoLibros:Number(row[8]),estado:String(row[12])};});
-    var assetSummaries=assets.filter(function(row){return !input.activoId||String(row[0])===String(input.activoId);}).map(function(asset){
+    var assetSummaries=assets.filter(function(row){return String(row[7]||"").toLowerCase()!=="disposed"&&(!input.activoId||String(row[0])===String(input.activoId));}).map(function(asset){
       var profile=profiles[String(asset[0])];if(!profile)return null;
       var rows=filtered.filter(function(row){return String(row[1])===String(asset[0])&&String(row[12])==="Contabilizada";});
       var opening=Number(profile[13]||0),accum=opening+rows.reduce(function(sum,row){return sum+Number(row[6]||0);},0);
       var cost=Number(profile[6]||0)+improvements.filter(function(row){return String(row[1])===String(asset[0])&&assetDeprDate_(row[2])<=cutoff;}).reduce(function(sum,row){return sum+Number(row[4]||0);},0);
       return {activoId:asset[0],codigoPatrimonial:asset[1],nombre:asset[2],categoria:asset[3],costoCapitalizado:assetDeprMoney_(cost),
-        depreciacionAcumulada:assetDeprMoney_(accum),valorNetoLibros:assetDeprMoney_(Math.max(0,cost-accum)),
+        depreciacionAcumulada:assetDeprMoney_(accum),depreciacionRegistrada:assetDeprMoney_(rows.reduce(function(sum,row){return sum+Number(row[6]||0);},0)),
+        valorNetoLibros:assetDeprMoney_(Math.max(0,cost-accum)),
         fechaFinEstimada:assetDeprIsoDate_(new Date(assetDeprDate_(profile[4]).getTime()+Number(profile[8])*30*86400000))};
     }).filter(Boolean);
     var annual={},categories={};
     calendar.forEach(function(item){var year=item.periodo.slice(0,4);annual[year]=annual[year]||{anio:year,periodos:0,depreciacion:0};annual[year].periodos++;annual[year].depreciacion+=item.depreciacionPeriodo;});
-    assetSummaries.forEach(function(item){var key=String(item.categoria||"Sin categoría");categories[key]=categories[key]||{categoria:key,depreciacionAcumulada:0,activos:0};categories[key].depreciacionAcumulada+=item.depreciacionAcumulada;categories[key].activos++;});
-    var allProfiles=Object.keys(profiles).map(function(id){return profiles[id];});
-    var totalCost=allProfiles.reduce(function(sum,p){return sum+Number(p[6]||0);},0)+improvements.reduce(function(sum,r){return sum+Number(r[4]||0);},0);
-    var totalAccum=allProfiles.reduce(function(sum,p){return sum+Number(p[13]||0);},0)+depreciations.filter(function(r){return String(r[12])==="Contabilizada";}).reduce(function(sum,r){return sum+Number(r[6]||0);},0);
+    assetSummaries.forEach(function(item){var key=String(item.categoria||"Sin categoría");categories[key]=categories[key]||{categoria:key,depreciacionAcumulada:0,activos:0};categories[key].depreciacionAcumulada+=item.depreciacionRegistrada;categories[key].activos++;});
+    var activeAssetIds={};
+    assets.forEach(function(asset){if(String(asset[7]||"").toLowerCase()!=="disposed")activeAssetIds[String(asset[0])]=true;});
+    var allProfiles=Object.keys(profiles).filter(function(id){return activeAssetIds[id];}).map(function(id){return profiles[id];});
+    var totalCost=allProfiles.reduce(function(sum,p){return sum+Number(p[6]||0);},0)+improvements.filter(function(r){return activeAssetIds[String(r[1])];}).reduce(function(sum,r){return sum+Number(r[4]||0);},0);
+    var totalAccum=allProfiles.reduce(function(sum,p){return sum+Number(p[13]||0);},0)+depreciations.filter(function(r){return activeAssetIds[String(r[1])]&&String(r[12])==="Contabilizada";}).reduce(function(sum,r){return sum+Number(r[6]||0);},0);
     var journals=assetDeprSheet_(ss,"AsientosContables",["AsientoID","Fecha","Descripcion","OrigenModulo","ReferenciaID","LineasJSON","Estado","CreadoPor"]).getDataRange().getValues().slice(1);
     var assetDebit=0,accumCredit=0,depLedger=0;
     journals.forEach(function(row){var lines=[];try{lines=JSON.parse(String(row[5]||"[]"));}catch(ignored){}
