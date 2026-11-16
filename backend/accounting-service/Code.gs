@@ -1123,7 +1123,7 @@ function assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId) {
       : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
   }
   var scope = getVerifiedAccountingDepartmentScope_(input, ss, actor);
-  if (!scope || scope.valid !== true || scope.authorized !== true) {
+  if (!scope || scope.valid !== true) {
     return { authorized: false, code: scope && scope.code || "RESOURCE_SCOPE_DENIED" };
   }
   return assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_LABORAL", targetId, "READ");
