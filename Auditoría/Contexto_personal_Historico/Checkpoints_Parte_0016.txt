@@ -537,3 +537,37 @@
 - TASK-296 permanece En ejecución parcial: XSS del catálogo docente y panel de equivalencias corregido y probado; faltan validación de ACL heredadas/actor, cobertura completa de sanitización en otros paneles, cuarentena/antimalware si se exige, y beta Drive real.
 - TASK-143 y TASK-144 permanecen Pendientes según sus prerrequisitos originales.
 ===============================================================================
+
+
+===============================================================================
+## C1.784 — IMA-EXEC-20261116-0234Z-TASK296-SPREADSHEET-FORMULA-INJECTION-01 — Neutralización de fórmulas en catálogo de recursos
+
+- Fecha: 2026-11-16 02:34 UTC.
+- Rama autorizada: NG_beta_0.0.0.1_work.
+- Rama base: NG_beta_0.0.0.1.
+- HEAD inicial: 2ea8c3a0a9c91f730b25747152129c611242d430.
+- Commit funcional/pruebas: fb111ee693cd7073798739fafb6268dec18009bf.
+- HEAD final antes del checkpoint: fb111ee693cd7073798739fafb6268dec18009bf.
+- Continuidad: C1.783.
+
+### Implementación TASK-296
+
+- Se identificó que manageReusableResource sanitizaba texto HTML, pero escribía directamente strings controladas por el usuario en RecursosEducativosReutilizables y ProyectosInterdisciplinarios. Los prefijos =, +, @ y - podían ser interpretados por Google Sheets como fórmulas.
+- Se añadió sanitizeReusableResourceSheetCell_, que combina el límite/sanitización de texto con migrationSafeCell_ y convierte las cadenas que comienzan con =, +, @ o - en texto literal.
+- Todos los campos de texto de recursos y proyectos (incluidos IDs proporcionados, título, área, asignatura, grado, tema, idioma, versión, descripción, autor y URL validada) pasan por el helper antes de appendRow; valores booleanos y campos estáticos conservan su tipo.
+- El contrato reusable-resource-xss-url-contract.test.js prueba HYPERLINK/SUM/at-sign/negative expression y verifica que los campos de ambos appendRow usan el helper. Se conserva el test de XSS de equivalencias y enlaces.
+
+### Verificación
+
+- GitHub Actions Accounting Import Preflight Contract run 43791680550: SUCCESS, 40/40 pasos, Node.js 24.22.2. Incluye el contrato reusable-resource XSS/URL/formula injection, file-binary-validation (84 combinaciones), OpenXML, sintaxis Academic/Accounting/User y Academic private document SHA-256/deduplication.
+- Department Reference Consumers Local Contract run 43791680506: SUCCESS, 15/15 pasos.
+- Task-Service security local contracts run 43791680523: SUCCESS, 11/11 pasos.
+- Department Scope Contract run 43791680491: FAILURE en accounting-vacation-medical-leave-ownership.test.js. La suite intenta extraer funciones de un módulo de vacaciones/incapacidades desde backend/accounting-service/Code.gs; la función resolveEmployeeDepartmentId_ y el resto del módulo no existen en ACCOUNTING ni se encontraron en USER/ACADEMIC/DEVELOPER. Se conserva el fallo como funcionalidad/contrato pendiente; no se fabricó el servicio ni se debilitó la prueba.
+- Node CLI local: NOT RUN; Node.js 24 ejecutado en GitHub Actions. Beta real Drive/Sheets: NOT RUN.
+
+### Estado y siguiente acción
+
+- TASK-296 continúa En ejecución parcial: se corrigieron XSS en catálogo/equivalencias/resultados y fórmula injection en la persistencia del catálogo; validación binaria/OpenXML contractual pasa. Quedan ACL heredadas y autorización del usuario real para enlaces, sanitización de otros formularios/exportaciones, política/cuarentena de archivos sospechosos y validación beta.
+- TASK-143 continúa sin elegibilidad para remediación completa: AUD-NG-158 completa, TASK-296 parcial, F31-Task09 pendiente, F34-Task04 completada en código pero beta pendiente, F39-Task02 parcial y AUD-NG-127 sin bloque de backlog en la ruta declarada; USER mantiene fallback SECRET_KEY para recuperación y DEBUG_MODE=true.
+- Siguiente: revisar el backlog autorizado para ubicar el propietario de la gestión laboral/vacaciones que falta en ACCOUNTING; no crear un servicio contable paralelo. Después completar los subcriterios pendientes de TASK-296/F31-Task09 y reevaluar TASK-143/TASK-144.
+===============================================================================

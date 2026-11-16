@@ -4002,3 +4002,8 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-16] C1.783 — TASK-296 XSS de migración curricular
 - El panel curricular ya no inserta equivalencias, resultados ni mensajes de migración mediante innerHTML; helper textContent probado con payloads XSS. Catálogo reusable conserva renderizado DOM seguro y allowlist Drive.
 - Accounting Import Preflight run 43791459608 SUCCESS (40/40, Node 24.22.2). TASK-296 permanece parcial; TASK-143/144 no se declaran elegibles por dependencias incompletas y falta de beta Drive real.
+
+
+[2026-11-16] C1.784 — TASK-296 neutralización de fórmula injection
+- manageReusableResource aplica sanitizeReusableResourceSheetCell_ a todos los campos textuales de recursos/proyectos antes de appendRow; las expresiones con =, +, @ y - se persisten como texto literal. Pruebas integradas al contrato reusable-resource XSS/URL.
+- Accounting Import Preflight run 43791680550 SUCCESS (40/40, Node 24.22.2); Department Reference Consumers 43791680506 y Task-Service Security 43791680523 SUCCESS. Department Scope 43791680491 continúa FAIL porque el módulo laboral/vacaciones esperado no existe en ACCOUNTING.
