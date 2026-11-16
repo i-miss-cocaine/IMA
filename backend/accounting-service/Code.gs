@@ -2731,7 +2731,7 @@ function getPaymentVouchers(payload) {
     comprobanteId:String(item.ComprobanteID||""),comprobanteGrupoId:String(item.ComprobanteGrupoID||item.SolicitudID||""),
     alumno:String(item.Alumno||""),cargoId:String(item.CargoID||""),montoReportado:Number(item.MontoReportado||0),
     metodoPago:String(item.MetodoPago||""),referencia:String(item.Referencia||""),estado:String(item.Estado||""),
-    comprobanteUrl:"",versionNumero:Number(item.VersionNumero||1),esVersionActual:item.EsVersionActual===true,estadoIntegridad:String(item.EstadoIntegridad||"")
+    comprobanteUrl:"",tieneComprobante:!!String(item.ComprobanteUrl||""),versionNumero:Number(item.VersionNumero||1),esVersionActual:item.EsVersionActual===true,estadoIntegridad:String(item.EstadoIntegridad||"")
   };})};
 }
 
