@@ -2174,7 +2174,10 @@ function submitAttendanceCorrection(payload) {
     return { status: "error", code: "ATTENDANCE_CORRECTION_DATA_INVALID" };
   }
   var evidenceUrl = String(input.evidenciaUrl || "").trim();
-  if (evidenceUrl && (evidenceUrl.indexOf("https://") !== 0 || /[\\s<>]/.test(evidenceUrl))) {
+  var unsafeEvidenceCharacters = [" ", "\t", "\r", "\n", "<", ">"];
+  if (evidenceUrl && (evidenceUrl.indexOf("https://") !== 0 || unsafeEvidenceCharacters.some(function(character) {
+    return evidenceUrl.indexOf(character) !== -1;
+  }))) {
     return { status: "error", code: "EVIDENCE_URL_INVALID" };
   }
   var incidentDate = String(input.fechaIncidencia || access.attendanceRow[1] || "").slice(0, 10);
