@@ -2876,10 +2876,10 @@ const ROLE_PERMISSIONS = {
   "Conductor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "Monitor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "RecursosHumanos": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "recordStaffCheckIn", "recordStaffAttendance", "getStaffAttendanceLogs", "getEmployeeSelfServicePortal", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
-  "Director": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
-  "Subdirector": ["configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
-  "Contador": ["configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
-  "Administrador": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"]
+  "Director": ["submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
+  "Subdirector": ["submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
+  "Contador": ["submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
+  "Administrador": ["submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"]
 };
 
 function accountingHasRolePermission_(actor, action) {
@@ -3012,6 +3012,374 @@ function validateApiContractsTestSuite() {
     todasPruebasPasaron: passed === cases.length, resultadosContratos: cases };
 }
 
+
+var PURCHASE_QUOTATION_HEADERS_ = ["CotizacionID","SolicitudID","ProveedorID","FechaRecepcion","VigenciaOferta","PrecioTotal","PlazoEntregaDias","CondicionesPago","DocumentoAdjuntoUrl","EstadoSelection","Observaciones"];
+var PURCHASE_QUOTATION_DETAIL_HEADERS_ = ["DetalleCotizacionID","CotizacionID","SolicitudID","ItemId","Descripcion","Unidad","CantidadSolicitada","CantidadCotizada","PrecioUnitario","Subtotal","Descuento","Impuestos","Flete","Total","Garantia","CumplimientoTecnico","EspecificacionesCumplidas","FechaRegistro"];
+var PURCHASE_AWARD_HEADERS_ = ["ActaID","SolicitudID","Fecha","ResponsablesEvaluacionJSON","Dictamen","Justificacion","MontoAdjudicado","DetalleAdjudicacionJSON","OfertasDescartadasJSON","SnapshotCotizacionesJSON","Estado","AdjudicadoPor","IdempotencyKey","OrdenesCompraJSON"];
+var PURCHASE_ORDER_HEADERS_ = ["OrdenCompraID","SolicitudID","CotizacionID","ProveedorID","FechaEmision","FechaEntregaEstimada","DetalleItemsJSON","MontoTotal","CentroCosto","EstadoOrden","AprobadoPor","Observaciones","SolicitanteUserId","VersionDocumental","ArchivoPdfUrl"];
+var PURCHASE_REQUEST_HEADERS_ = ["SolicitudID","Fecha","Departamento","SolicitanteUserId","Justificacion","Categoria","DetalleItemsJSON","MontoEstimado","CentroCosto","EstadoAprobacion","Observaciones"];
+var PURCHASE_SUPPLIER_HEADERS_ = ["ProveedorID","FechaRegistro","NombreProveedor","RTN","Telefono","Email","RubroServicio","Estado","Observaciones"];
+
+function normalizePurchaseAwardRole_(role) {
+  var value = String(role || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
+  return ["contador","director","subdirector","administrador","recursoshumanos"].indexOf(value) !== -1 ? value : "";
+}
+function normalizePurchaseAssetClassification_(value) {
+  var raw = String(value || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (["activofijo","activofijos","biencapitalizable","bienes capitalizables","capitalizable","patrimonial"].indexOf(raw) !== -1) return "ActivoFijo";
+  if (["consumible","consumibles","suministro","suministros"].indexOf(raw) !== -1) return "Consumible";
+  return raw ? String(value).trim() : "Inventariable";
+}
+function purchaseQuotationItemKey_(value) {
+  return String(value || "").trim();
+}
+function purchaseQuotationRound_(value) {
+  var number = Number(value);
+  if (!isFinite(number)) return NaN;
+  return Math.round((number + Number.EPSILON) * 100) / 100;
+}
+function purchaseQuotationJsonArray_(value) {
+  if (Array.isArray(value)) return value;
+  if (value === "" || value === null || value === undefined) return [];
+  try { var parsed = JSON.parse(String(value)); return Array.isArray(parsed) ? parsed : []; } catch (ignored) { return []; }
+}
+function purchaseQuotationJsonObject_(value) {
+  if (value && typeof value === "object" && !Array.isArray(value)) return value;
+  if (!value) return {};
+  try { var parsed = JSON.parse(String(value)); return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {}; } catch (ignored) { return {}; }
+}
+function purchaseQuotationSheetSchemaValid_(sheet, expected) {
+  if (!sheet) return false;
+  var rows = sheet.getDataRange().getValues();
+  if (!rows || !rows.length) return false;
+  return JSON.stringify(rows[0].map(function(v) { return String(v || "").trim(); })) === JSON.stringify(expected);
+}
+function purchaseQuotationEnsureSheet_(ss, name, headers) {
+  var sheet = ss.getSheetByName(name);
+  if (!sheet) sheet = ss.insertSheet(name);
+  if (sheet.getLastRow() === 0) sheet.appendRow(headers);
+  if (!purchaseQuotationSheetSchemaValid_(sheet, headers)) throw new Error("PURCHASE_QUOTATION_SCHEMA_INVALID");
+  return sheet;
+}
+function purchaseQuotationAccess_(payload, ss, write) {
+  var actor = getVerifiedAccountingIdentity_(payload || {});
+  if (!actor || actor.authorized !== true) return { authorized: false, code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var role = normalizePurchaseAwardRole_(actor.role);
+  if (!role) return { authorized: false, code: "ROLE_NOT_ALLOWED" };
+  var scope = getVerifiedAccountingDepartmentScope_(payload || {}, ss, actor);
+  if (!scope || (scope.valid !== true && scope.authorized !== true)) return { authorized: false, code: "PURCHASE_SCOPE_UNVERIFIED" };
+  return { authorized: true, actor: actor, role: role, scope: scope, write: write === true };
+}
+function purchaseQuotationRequest_(payload, ss, access, allowAdjudicated) {
+  var sheet = purchaseQuotationEnsureSheet_(ss, "SolicitudesCompra", PURCHASE_REQUEST_HEADERS_);
+  var rows = sheet.getDataRange().getValues();
+  var id = String(payload && payload.solicitudId || "").trim();
+  if (!id) throw new Error("PURCHASE_REQUEST_NOT_FOUND");
+  var matches = rows.slice(1).map(function(row, index) { return { row: row, index: index + 2 }; })
+    .filter(function(item) { return String(item.row[0] || "").trim() === id; });
+  if (matches.length !== 1) throw new Error("PURCHASE_REQUEST_NOT_FOUND");
+  var match = matches[0], row = match.row;
+  var status = String(row[9] || "").trim().toLowerCase();
+  if (status !== "aprobada" && !(allowAdjudicated && status === "adjudicada")) throw new Error("PURCHASE_REQUEST_NOT_APPROVED");
+  var departmentId = String(row[2] || "").trim();
+  var scope = access.scope;
+  var departments = Array.isArray(scope.departmentIds) ? scope.departmentIds.map(String) : [];
+  if (scope.institutionWide !== true && departments.indexOf(departmentId) === -1) throw new Error("RESOURCE_NOT_FOUND");
+  var items = purchaseQuotationJsonArray_(row[6]);
+  if (!items.length) throw new Error("PURCHASE_REQUEST_ITEMS_INVALID");
+  var seen = {};
+  items = items.map(function(item, index) {
+    var itemId = purchaseQuotationItemKey_(item && (item.itemId || item.ItemId || item.id || item.codigo || ("ITEM-" + (index + 1))));
+    if (!itemId || seen[itemId]) throw new Error("PURCHASE_REQUEST_ITEMS_INVALID");
+    seen[itemId] = true;
+    var quantity = Number(item.cantidad === undefined ? item.Cantidad : item.cantidad);
+    if (!isFinite(quantity) || quantity <= 0) throw new Error("PURCHASE_REQUEST_ITEMS_INVALID");
+    return { itemId: itemId, descripcion: String(item.descripcion || item.Descripcion || "").trim(),
+      unidad: String(item.unidad || item.Unidad || "").trim(), cantidad: quantity,
+      especificaciones: String(item.especificaciones || item.especificacionesTecnicas || item.Especificaciones || "").trim(),
+      clasificacionInventario: normalizePurchaseAssetClassification_(item.clasificacionInventario || item.tipoActivo || item.categoriaInventario) };
+  });
+  return { sheet: sheet, row: row, rowIndex: match.index, solicitudId: id, departmentId: departmentId,
+    centroCosto: String(row[8] || "").trim(), solicitanteUserId: String(row[3] || "").trim(), items: items };
+}
+function purchaseQuoteIsValid_(row, now) {
+  var status = String(row[9] || "").trim().toLowerCase();
+  if (["rechazada","anulada","vencida"].indexOf(status) !== -1) return false;
+  var received = row[3] instanceof Date ? row[3] : new Date(row[3]);
+  if (isNaN(received.getTime())) return false;
+  var expiry = row[4];
+  var match = String(expiry || "").match(/(\d+)\s*d[ií]a/i);
+  if (match) return received.getTime() + Number(match[1]) * 86400000 >= (now || new Date()).getTime();
+  var explicit = expiry instanceof Date ? expiry : new Date(expiry);
+  if (!isNaN(explicit.getTime())) return explicit.getTime() >= (now || new Date()).getTime();
+  return true;
+}
+function submitPurchaseQuotation(payload) {
+  var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var access = purchaseQuotationAccess_(input, ss, true);
+  if (!access.authorized) return { status: "error", code: access.code };
+  var request;
+  try { request = purchaseQuotationRequest_(input, ss, access, false); } catch (error) { return { status: "error", code: String(error.message || "PURCHASE_REQUEST_INVALID") }; }
+  var supplierId = String(input.proveedorId || "").trim();
+  var supplierSheet = purchaseQuotationEnsureSheet_(ss, "ProveedoresActivos", PURCHASE_SUPPLIER_HEADERS_);
+  var suppliers = supplierSheet.getDataRange().getValues().slice(1).filter(function(row) {
+    return String(row[0] || "").trim() === supplierId && String(row[7] || "").trim().toLowerCase() === "activo";
+  });
+  if (!supplierId || suppliers.length !== 1) return { status: "error", code: "PURCHASE_SUPPLIER_NOT_ACTIVE" };
+  var details = Array.isArray(input.detalleItems) ? input.detalleItems : [];
+  if (!details.length) return { status: "error", code: "PURCHASE_QUOTATION_ITEMS_INVALID" };
+  var requested = {};
+  request.items.forEach(function(item) { requested[item.itemId] = item; });
+  var seen = {}, prepared = [], total = 0;
+  for (var i = 0; i < details.length; i++) {
+    var line = details[i] || {}, itemId = purchaseQuotationItemKey_(line.itemId || line.ItemId);
+    var base = requested[itemId], quantity = Number(line.cantidadCotizada), price = purchaseQuotationRound_(line.precioUnitario);
+    if (!base || seen[itemId] || !isFinite(quantity) || quantity <= 0 || quantity > base.cantidad || !isFinite(price) || price < 0) {
+      return { status: "error", code: "PURCHASE_QUOTATION_ITEMS_INVALID" };
+    }
+    seen[itemId] = true;
+    var discount = purchaseQuotationRound_(line.descuento || 0), tax = purchaseQuotationRound_(line.impuestos || 0), freight = purchaseQuotationRound_(line.flete || 0);
+    if ([discount,tax,freight].some(function(v) { return !isFinite(v) || v < 0; })) return { status: "error", code: "PURCHASE_QUOTATION_ITEMS_INVALID" };
+    var subtotal = purchaseQuotationRound_(quantity * price), lineTotal = purchaseQuotationRound_(subtotal - discount + tax + freight);
+    if (lineTotal < 0) return { status: "error", code: "PURCHASE_QUOTATION_ITEMS_INVALID" };
+    total = purchaseQuotationRound_(total + lineTotal);
+    prepared.push(["", "", request.solicitudId, itemId, base.descripcion, base.unidad, base.cantidad, quantity,
+      price, subtotal, discount, tax, freight, lineTotal, String(line.garantia || ""), String(line.cumplimientoTecnico || ""),
+      line.especificacionesCumplidas === true, new Date()]);
+  }
+  var declared = purchaseQuotationRound_(input.precioTotal);
+  if (!isFinite(declared) || declared <= 0 || Math.abs(declared - total) > 0.01) return { status: "error", code: "PURCHASE_QUOTATION_TOTAL_MISMATCH" };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
+  var quoteSheet, detailSheet, quoteRow = 0, detailStart = 0;
+  try {
+    var recheck = getVerifiedAccountingIdentity_(input);
+    if (!recheck || recheck.authorized !== true || String(recheck.userId) !== String(access.actor.userId) ||
+        String(recheck.role) !== String(access.actor.role)) return { status: "error", code: "VERIFIED_IDENTITY_CHANGED" };
+    access = purchaseQuotationAccess_(input, ss, true);
+    if (!access.authorized) return { status: "error", code: access.code };
+    request = purchaseQuotationRequest_(input, ss, access, false);
+    quoteSheet = purchaseQuotationEnsureSheet_(ss, "CotizacionesCompra", PURCHASE_QUOTATION_HEADERS_);
+    detailSheet = purchaseQuotationEnsureSheet_(ss, "DetalleCotizacionesCompra", PURCHASE_QUOTATION_DETAIL_HEADERS_);
+    var existing = quoteSheet.getDataRange().getValues().slice(1).filter(function(row) {
+      return String(row[1] || "").trim() === request.solicitudId && String(row[2] || "").trim() === supplierId &&
+        ["rechazada","anulada"].indexOf(String(row[9] || "").trim().toLowerCase()) === -1;
+    });
+    if (existing.length) return { status: "error", code: "PURCHASE_QUOTATION_DUPLICATE_SUPPLIER" };
+    var quoteId = "COT-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 24);
+    quoteRow = quoteSheet.getLastRow() + 1;
+    quoteSheet.appendRow([quoteId, request.solicitudId, supplierId, new Date(), String(input.vigenciaOferta || "30 días"),
+      total, Math.max(0, Math.floor(Number(input.plazoEntregaDias || 0))), String(input.condicionesPago || "Contado"),
+      String(input.documentoAdjuntoUrl || ""), "EnRevision", String(input.observaciones || "").slice(0, 500)]);
+    detailStart = detailSheet.getLastRow() + 1;
+    prepared.forEach(function(row, index) {
+      row[0] = "DET-" + quoteId + "-" + (index + 1);
+      row[1] = quoteId;
+      detailSheet.appendRow(row);
+    });
+    return { status: "success", cotizacionId: quoteId, partidasRegistradas: prepared.length };
+  } catch (error) {
+    if (quoteRow && quoteSheet) try { quoteSheet.getRange(quoteRow, 1, 1, PURCHASE_QUOTATION_HEADERS_.length).clearContent(); } catch (ignored) {}
+    if (detailStart && detailSheet) try {
+      var count = detailSheet.getLastRow() - detailStart + 1;
+      if (count > 0) detailSheet.getRange(detailStart, 1, count, PURCHASE_QUOTATION_DETAIL_HEADERS_.length).clearContent();
+    } catch (ignored2) {}
+    return { status: "error", code: String(error && error.message || "PURCHASE_QUOTATION_WRITE_FAILED") };
+  } finally { lock.releaseLock(); }
+}
+function getPurchaseQuotations(payload) {
+  var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID), access = purchaseQuotationAccess_(input, ss, false);
+  if (!access.authorized) return { status: "error", code: access.code };
+  var request;
+  try { request = purchaseQuotationRequest_(input, ss, access, true); } catch (error) { return { status: "error", code: String(error.message || "PURCHASE_REQUEST_INVALID") }; }
+  var sheet = purchaseQuotationEnsureSheet_(ss, "CotizacionesCompra", PURCHASE_QUOTATION_HEADERS_);
+  var rows = sheet.getDataRange().getValues().slice(1).filter(function(row) { return String(row[1] || "").trim() === request.solicitudId; });
+  return { status: "success", cotizaciones: rows.map(function(row) { return { cotizacionId: row[0], solicitudId: row[1],
+    proveedorId: row[2], fechaRecepcion: row[3], vigenciaOferta: row[4], precioTotal: Number(row[5] || 0),
+    plazoEntregaDias: Number(row[6] || 0), condicionesPago: row[7], documentoAdjuntoUrl: row[8],
+    estadoSelection: row[9], observaciones: row[10] }; }) };
+}
+function getPurchaseQuotationMatrix(payload) {
+  var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID), access = purchaseQuotationAccess_(input, ss, false);
+  if (!access.authorized) return { status: "error", code: access.code };
+  var request;
+  try { request = purchaseQuotationRequest_(input, ss, access, true); } catch (error) { return { status: "error", code: String(error.message || "PURCHASE_REQUEST_INVALID") }; }
+  var quoteSheet = purchaseQuotationEnsureSheet_(ss, "CotizacionesCompra", PURCHASE_QUOTATION_HEADERS_);
+  var detailSheet = purchaseQuotationEnsureSheet_(ss, "DetalleCotizacionesCompra", PURCHASE_QUOTATION_DETAIL_HEADERS_);
+  var supplierSheet = purchaseQuotationEnsureSheet_(ss, "ProveedoresActivos", PURCHASE_SUPPLIER_HEADERS_);
+  var quoteRows = quoteSheet.getDataRange().getValues().slice(1).filter(function(row) { return String(row[1] || "").trim() === request.solicitudId; }).slice(0,5);
+  var details = detailSheet.getDataRange().getValues().slice(1), suppliers = supplierSheet.getDataRange().getValues().slice(1), now = new Date();
+  var awardSheet = purchaseQuotationEnsureSheet_(ss, "ActasAdjudicacionCompra", PURCHASE_AWARD_HEADERS_);
+  var awardRows = awardSheet.getDataRange().getValues().slice(1).filter(function(row) { return String(row[1] || "").trim() === request.solicitudId && String(row[10] || "").trim() === "Aprobada"; });
+  var latestAward = awardRows.length ? awardRows[awardRows.length - 1] : null;
+  var snapshot = latestAward ? purchaseQuotationJsonObject_(latestAward[9]) : {};
+  if (latestAward && Array.isArray(snapshot.cotizaciones)) quoteRows = snapshot.cotizaciones;
+  var mappedQuotes = quoteRows.map(function(row) {
+    var supplier = suppliers.filter(function(s) { return String(s[0] || "").trim() === String(row[2] || "").trim(); })[0];
+    var valid = purchaseQuoteIsValid_(row, now);
+    var quoteDetails = details.filter(function(d) { return String(d[1] || "").trim() === String(row[0] || "").trim(); });
+    return { cotizacionId: row[0], solicitudId: row[1], proveedorId: row[2], proveedorNombre: supplier && supplier[2] || String(row[2] || ""),
+      fechaRecepcion: row[3], vigenciaOferta: row[4], precioTotal: Number(row[5] || 0), plazoEntregaDias: Number(row[6] || 0),
+      condicionesPago: row[7], documentoAdjuntoUrl: row[8], estadoSelection: row[9], vigente: valid,
+      ofertas: quoteDetails };
+  });
+  var matrixItems = request.items.map(function(item) {
+    var offers = mappedQuotes.map(function(quote) {
+      var line = quote.ofertas.filter(function(d) { return String(d[3] || "") === item.itemId; })[0];
+      return { cotizacionId: quote.cotizacionId, proveedorId: quote.proveedorId, proveedorNombre: quote.proveedorNombre,
+        precioUnitario: line ? Number(line[8] || 0) : null, cantidadCotizada: line ? Number(line[7] || 0) : 0,
+        subtotal: line ? Number(line[9] || 0) : 0, descuento: line ? Number(line[10] || 0) : 0,
+        impuestos: line ? Number(line[11] || 0) : 0, flete: line ? Number(line[12] || 0) : 0,
+        total: line ? Number(line[13] || 0) : 0, garantia: line ? line[14] : "",
+        cumplimientoTecnico: line ? line[15] : "", especificacionesCumplidas: !!(line && line[16] === true),
+        estadoOferta: !line ? "NO_COTIZADA" : Number(line[7] || 0) < item.cantidad ? "PARCIAL" : "COMPLETA",
+        menorPrecio: false, vigente: quote.vigente };
+    });
+    var prices = offers.filter(function(o) { return o.vigente && o.precioUnitario !== null && o.especificacionesCumplidas; }).map(function(o) { return o.precioUnitario; });
+    if (prices.length) {
+      var min = Math.min.apply(null, prices);
+      offers.forEach(function(o) { o.menorPrecio = o.vigente && o.precioUnitario !== null && o.precioUnitario === min; });
+    }
+    return { itemId: item.itemId, descripcion: item.descripcion, unidad: item.unidad, cantidadSolicitada: item.cantidad,
+      especificaciones: item.especificaciones, ofertas: offers };
+  });
+  var award = null;
+  if (latestAward) award = { actaId: latestAward[0], solicitudId: latestAward[1], fecha: latestAward[2],
+    responsablesEvaluacion: purchaseQuotationJsonArray_(latestAward[3]), dictamen: latestAward[4], justificacion: latestAward[5],
+    montoAdjudicado: Number(latestAward[6] || 0), adjudicaciones: purchaseQuotationJsonArray_(latestAward[7]),
+    ofertasDescartadas: purchaseQuotationJsonArray_(latestAward[8]), estado: latestAward[10] };
+  return { status: "success", solicitudId: request.solicitudId, cotizaciones: mappedQuotes.map(function(q) {
+    return { cotizacionId:q.cotizacionId, solicitudId:q.solicitudId, proveedorId:q.proveedorId, proveedorNombre:q.proveedorNombre,
+      precioTotal:q.precioTotal, plazoEntregaDias:q.plazoEntregaDias, condicionesPago:q.condicionesPago,
+      estadoSelection:q.estadoSelection, vigente:q.vigente };
+  }), partidas: matrixItems, adjudicacion: award };
+}
+function adjudicatePurchaseQuotations(payload) {
+  var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID), access = purchaseQuotationAccess_(input, ss, true);
+  if (!access.authorized) return { status: "error", code: access.code };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
+  var orderSheet, awardSheet, quoteSheet, request, createdOrders = [], createdAwardRow = 0, quoteUpdates = [];
+  try {
+    var actor = getVerifiedAccountingIdentity_(input);
+    if (!actor || actor.authorized !== true || String(actor.userId) !== String(access.actor.userId) ||
+        String(actor.role) !== String(access.actor.role)) return { status: "error", code: "VERIFIED_IDENTITY_CHANGED" };
+    access = purchaseQuotationAccess_(input, ss, true);
+    if (!access.authorized) return { status: "error", code: access.code };
+    request = purchaseQuotationRequest_(input, ss, access, false);
+    var key = String(input.idempotencyKey || "").trim();
+    if (!/^[A-Za-z0-9_-]{8,100}$/.test(key)) return { status: "error", code: "PURCHASE_AWARD_IDEMPOTENCY_KEY_REQUIRED" };
+    awardSheet = purchaseQuotationEnsureSheet_(ss, "ActasAdjudicacionCompra", PURCHASE_AWARD_HEADERS_);
+    var awards = awardSheet.getDataRange().getValues();
+    var previous = awards.slice(1).filter(function(row) { return String(row[1] || "") === request.solicitudId && String(row[12] || "") === key; });
+    if (previous.length) return { status: "success", actaId: previous[0][0], idempotente: true, ordenes: purchaseQuotationJsonArray_(previous[0][13]) };
+    var assignments = Array.isArray(input.adjudicaciones) ? input.adjudicaciones : [];
+    if (!assignments.length) return { status: "error", code: "PURCHASE_AWARD_ITEMS_REQUIRED" };
+    if (String(input.dictamen || "").trim().length < 10 || String(input.justificacion || "").trim().length < 20) {
+      return { status: "error", code: "PURCHASE_AWARD_JUSTIFICATION_REQUIRED" };
+    }
+    var quoteSheetLocal = purchaseQuotationEnsureSheet_(ss, "CotizacionesCompra", PURCHASE_QUOTATION_HEADERS_);
+    var detailSheet = purchaseQuotationEnsureSheet_(ss, "DetalleCotizacionesCompra", PURCHASE_QUOTATION_DETAIL_HEADERS_);
+    var supplierSheet = purchaseQuotationEnsureSheet_(ss, "ProveedoresActivos", PURCHASE_SUPPLIER_HEADERS_);
+    var quoteRows = quoteSheetLocal.getDataRange().getValues(), detailRows = detailSheet.getDataRange().getValues().slice(1);
+    var quoteById = {}, supplierRows = supplierSheet.getDataRange().getValues().slice(1);
+    quoteRows.slice(1).forEach(function(row) { if (String(row[1] || "") === request.solicitudId) quoteById[String(row[0])] = row; });
+    var itemById = {}; request.items.forEach(function(item) { itemById[item.itemId] = item; });
+    var allocationTotals = {}, quoteQuantityTotals = {}, orderGroups = {}, awardLines = [], totalAward = 0;
+    assignments.forEach(function(line) {
+      var itemId = purchaseQuotationItemKey_(line.itemId), quoteId = String(line.cotizacionId || "").trim();
+      var item = itemById[itemId], quote = quoteById[quoteId];
+      var qty = Number(line.cantidadAdjudicada);
+      if (!item || !quote || !isFinite(qty) || qty <= 0) throw new Error("PURCHASE_AWARD_ALLOCATION_INVALID");
+      if (!purchaseQuoteIsValid_(quote, new Date())) throw new Error("PURCHASE_AWARD_QUOTATION_EXPIRED");
+      var quoteLine = detailRows.filter(function(d) { return String(d[1]) === quoteId && String(d[3]) === itemId; })[0];
+      if (!quoteLine || !quoteLine[16] || qty > Number(quoteLine[7] || 0)) throw new Error("PURCHASE_AWARD_QUOTE_QUANTITY_EXCEEDED");
+      var allocationKey = quoteId + "|" + itemId;
+      quoteQuantityTotals[allocationKey] = (quoteQuantityTotals[allocationKey] || 0) + qty;
+      if (quoteQuantityTotals[allocationKey] > Number(quoteLine[7] || 0)) throw new Error("PURCHASE_AWARD_QUOTE_QUANTITY_EXCEEDED");
+      allocationTotals[itemId] = (allocationTotals[itemId] || 0) + qty;
+      var unitPrice = Number(quoteLine[8] || 0), subtotal = purchaseQuotationRound_(unitPrice * qty);
+      var ratio = qty / Number(quoteLine[7] || qty);
+      var discount = purchaseQuotationRound_(Number(quoteLine[10] || 0) * ratio);
+      var tax = purchaseQuotationRound_(Number(quoteLine[11] || 0) * ratio);
+      var freight = purchaseQuotationRound_(Number(quoteLine[12] || 0) * ratio);
+      var amount = purchaseQuotationRound_(subtotal - discount + tax + freight);
+      var group = orderGroups[quoteId] || (orderGroups[quoteId] = { quote: quote, supplierId: String(quote[2]), lines: [], amount: 0 });
+      group.lines.push({ itemId: itemId, descripcion: item.descripcion, unidad: item.unidad, cantidad: qty,
+        cantidadCotizada: Number(quoteLine[7]), precioUnitario: unitPrice, subtotal: subtotal, descuento: discount,
+        impuestos: tax, flete: freight, total: amount, garantia: quoteLine[14], cumplimientoTecnico: quoteLine[15],
+        especificacionesCumplidas: quoteLine[16] === true, clasificacionInventario: item.clasificacionInventario,
+        capitalizable: item.clasificacionInventario === "ActivoFijo", cotizacionId: quoteId });
+      group.amount = purchaseQuotationRound_(group.amount + amount);
+      totalAward = purchaseQuotationRound_(totalAward + amount);
+      awardLines.push({ itemId: itemId, cotizacionId: quoteId, proveedorId: group.supplierId, cantidadAdjudicada: qty,
+        precioUnitario: unitPrice, subtotal: subtotal, total: amount });
+    });
+    request.items.forEach(function(item) {
+      if (Math.abs((allocationTotals[item.itemId] || 0) - item.cantidad) > 0.000001) throw new Error("PURCHASE_AWARD_ALLOCATION_INCOMPLETE");
+      var prices = detailRows.filter(function(d) { return String(d[2]) === request.solicitudId && String(d[3]) === item.itemId && d[16] === true; })
+        .map(function(d) { return { price: Number(d[8]), valid: purchaseQuoteIsValid_(quoteById[String(d[1])] || [], new Date()) }; })
+        .filter(function(p) { return p.valid && isFinite(p.price); });
+      if (prices.length) {
+        var lowest = Math.min.apply(null, prices);
+        var selected = awardLines.filter(function(a) { return a.itemId === item.itemId; });
+        if (selected.some(function(a) { return a.precioUnitario > lowest + 0.000001; }) &&
+            String(input.justificacion || "").trim().length < 40) throw new Error("PURCHASE_AWARD_NON_LOWEST_JUSTIFICATION_REQUIRED");
+      }
+    });
+    var rejected = Array.isArray(input.ofertasDescartadas) ? input.ofertasDescartadas : [];
+    rejected.forEach(function(item) {
+      if (!quoteById[String(item.cotizacionId || "")] || String(item.motivo || "").trim().length < 10) throw new Error("PURCHASE_AWARD_REJECTION_REASON_REQUIRED");
+    });
+    var responsible = Array.isArray(input.responsablesEvaluacion) ? input.responsablesEvaluacion.map(String).filter(Boolean) : [];
+    if (responsible.indexOf(String(actor.userId)) === -1) responsible.push(String(actor.userId));
+    var suppliers = {};
+    Object.keys(orderGroups).forEach(function(id) {
+      var group = orderGroups[id], supplier = supplierRows.filter(function(s) { return String(s[0]) === group.supplierId; })[0];
+      if (!supplier) throw new Error("PURCHASE_SUPPLIER_NOT_FOUND");
+      suppliers[id] = supplier;
+    });
+    var snapshotQuotes = quoteRows.slice(1).filter(function(row) { return String(row[1]) === request.solicitudId; });
+    var snapshotDetails = detailRows.filter(function(row) { return String(row[2]) === request.solicitudId; });
+    var orderIds = [], now = new Date();
+    orderSheet = purchaseQuotationEnsureSheet_(ss, "OrdenesCompra", PURCHASE_ORDER_HEADERS_);
+    Object.keys(orderGroups).forEach(function(quoteId) {
+      var group = orderGroups[quoteId], orderId = "OC-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 24);
+      var eta = new Date(now.getTime() + Number(group.quote[6] || 0) * 86400000);
+      var orderLineItems = group.lines.map(function(line) { return Object.assign({}, line, {
+        condicionesPago: String(group.quote[7] || ""), plazoEntregaDias: Number(group.quote[6] || 0),
+        proveedorId: group.supplierId, proveedorNombre: String(suppliers[quoteId][2] || "") }); });
+      orderSheet.appendRow([orderId, request.solicitudId, quoteId, group.supplierId, now, eta, JSON.stringify(orderLineItems),
+        group.amount, request.centroCosto, "Borrador", "", "Adjudicación " + request.solicitudId,
+        request.solicitanteUserId, "1", ""]);
+      createdOrders.push(orderSheet.getLastRow());
+      orderIds.push({ ordenCompraId: orderId, cotizacionId: quoteId, proveedorId: group.supplierId, montoTotal: group.amount });
+    });
+    var awardId = "ACTA-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 24);
+    var snapshot = { cotizaciones: snapshotQuotes, detalleCotizaciones: snapshotDetails };
+    createdAwardRow = awardSheet.getLastRow() + 1;
+    awardSheet.appendRow([awardId, request.solicitudId, now, JSON.stringify(responsible), String(input.dictamen).trim(),
+      String(input.justificacion).trim(), totalAward, JSON.stringify(awardLines), JSON.stringify(rejected),
+      JSON.stringify(snapshot), "Aprobada", actor.userId, key, JSON.stringify(orderIds)]);
+    quoteSheet = quoteSheetLocal;
+    var quoteIds = {};
+    awardLines.forEach(function(line) { quoteIds[line.cotizacionId] = true; });
+    Object.keys(quoteIds).forEach(function(id) {
+      var rowIndex = quoteRows.findIndex(function(row, index) { return index > 0 && String(row[0]) === id; }) + 1;
+      var oldState = quoteRows[rowIndex][9];
+      quoteUpdates.push({ row: rowIndex + 1, state: oldState });
+      quoteSheet.getRange(rowIndex + 1, 10).setValue("AdjudicadaParcial");
+    });
+    request.sheet.getRange(request.rowIndex, 10).setValue("Adjudicada");
+    return { status: "success", actaId: awardId, ordenes: orderIds, montoAdjudicado: totalAward };
+  } catch (error) {
+    createdOrders.forEach(function(row) { try { orderSheet.getRange(row, 1, 1, PURCHASE_ORDER_HEADERS_.length).clearContent(); } catch (ignored) {} });
+    if (createdAwardRow && awardSheet) try { awardSheet.getRange(createdAwardRow, 1, 1, PURCHASE_AWARD_HEADERS_.length).clearContent(); } catch (ignored2) {}
+    quoteUpdates.forEach(function(item) { try { quoteSheet.getRange(item.row, 10).setValue(item.state); } catch (ignored3) {} });
+    return { status: "error", code: String(error && error.message || "PURCHASE_AWARD_WRITE_FAILED") };
+  } finally { lock.releaseLock(); }
+}
+
 function doGet() {
   return textResponse({ status: "success", service: "ACCOUNTING",
     configured: !!String(PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID") || "").trim()
@@ -3061,6 +3429,10 @@ function doPost(e) {
     if (request.action === "getAccountingJournalEntries") return respond(getAccountingJournalEntries(actionPayload));
     if (request.action === "getPaginatedJournalEntries") return respond(getPaginatedJournalEntries(actionPayload));
     if (request.action === "getAdvancedDashboardAnalytics") return respond(getAdvancedDashboardAnalytics(actionPayload));
+    if (request.action === "submitPurchaseQuotation") return respond(submitPurchaseQuotation(actionPayload));
+    if (request.action === "getPurchaseQuotations") return respond(getPurchaseQuotations(actionPayload));
+    if (request.action === "getPurchaseQuotationMatrix") return respond(getPurchaseQuotationMatrix(actionPayload));
+    if (request.action === "adjudicatePurchaseQuotations") return respond(adjudicatePurchaseQuotations(actionPayload));
     if (request.action === "getTransportRoutes") return respond(getTransportRoutes(actionPayload));
     if (request.action === "getTransportAssignments") return respond(getTransportAssignments(actionPayload));
     if (request.action === "getTripPassengerManifest") return respond(getTripPassengerManifest(actionPayload));
