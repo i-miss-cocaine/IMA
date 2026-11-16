@@ -3083,9 +3083,9 @@ function saveInstitutionalComplementaryService(payload){
   if(byId&&String(byId.row[9]||"")===year&&byKey.length&&byKey[0].index!==byId.index)throw new Error("INSTITUTIONAL_SERVICE_CONFIGURATION_DUPLICATE");
   if(!byId&&byKey.length)byId=byKey[0];
   if(byId&&String(byId.row[9]||"")!==year&&byKey.length)throw new Error("INSTITUTIONAL_SERVICE_CONFIGURATION_DUPLICATE");
-  var now=new Date(),serviceId=byId?String(byId.row[0]):"SVC-"+Utilities.getUuid(),record=[serviceId,key,name,category,modality,capacity,Math.round(fee*100)/100,JSON.stringify(responsibles),JSON.stringify(rules),year,start,end,state,byId?String(byId.row[13]||actor.userId):actor.userId,actor.userId,byId?(byId.row[15]||now):now,now];
-  if(byId&&String(byId.row[9]||"")===year)sheet.getRange(byId.index,1,1,record.length).setValues([record]);else sheet.appendRow(record);
-  return {status:"success",servicioId:serviceId,actualizado:!!(byId&&String(byId.row[9]||"")===year),message:"Servicio institucional guardado."};
+  var now=new Date(),isUpdate=!!(byId&&String(byId.row[9]||"")===year),serviceId=isUpdate?String(byId.row[0]):"SVC-"+Utilities.getUuid(),record=[serviceId,key,name,category,modality,capacity,Math.round(fee*100)/100,JSON.stringify(responsibles),JSON.stringify(rules),year,start,end,state,isUpdate?String(byId.row[13]||actor.userId):actor.userId,actor.userId,isUpdate?(byId.row[15]||now):now,now];
+  if(isUpdate)sheet.getRange(byId.index,1,1,record.length).setValues([record]);else sheet.appendRow(record);
+  return {status:"success",servicioId:serviceId,actualizado:isUpdate,message:"Servicio institucional guardado."};
  }finally{lock.releaseLock();}
 }
 function setInstitutionalComplementaryServiceStatus(payload){
