@@ -951,7 +951,8 @@ window.loadMantenimientoData = function () {
   const container = document.getElementById('mantenimiento-table-container');
   if (!container) return;
 
-  fetchApi('ACCOUNTING', 'getMaintenanceOrders', {})
+  fetchApi('ACCOUNTING', 'generatePreventiveMaintenanceOrders', {}).catch(() => null)
+    .then(() => fetchApi('ACCOUNTING', 'getMaintenanceOrders', {}))
     .then(res => {
       const ords = (res && res.ordenes) ? res.ordenes : [];
       if (ords.length === 0) {
