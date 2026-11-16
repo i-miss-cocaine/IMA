@@ -623,7 +623,7 @@ assert.equal(exitResult.status,"success","employee can register own exit");
 assert.equal(rows.DeduccionesAsistencia[rows.DeduccionesAsistencia.length-1][5]!==""||rows.DeduccionesAsistencia.find(r=>r[2]==="U-EMP"&&r[1] instanceof Date&&r[1].toISOString().slice(0,10)===new Date().toISOString().slice(0,10))[5]!=="",true,"exit must update the same attendance row");
 assert.equal(context.recordStaffCheckIn({sessionToken:"employee",empleadoId:"U-EMP",tipoRegistro:"Salida"}).code,"ATTENDANCE_ALREADY_RECORDED","duplicate exit must not overwrite the original mark");
 const lockOriginal=context.LockService,lockState={held:false};let nestedLockResult=null,nestedTriggered=false;
-context.LockService={getScriptLock:()=>({waitLock:()=>{if(lockState.held)throw Error("lock busy");lockState.held=true;if(!nestedTriggered){nestedTriggered=true;nestedLockResult=context.recordStaffCheckIn({sessionToken:"hrA",empleadoId:"U-X",tipoRegistro:"Entrada"});}},releaseLock:()=>{lockState.held=false;}})};
+context.LockService={getScriptLock:()=>({tryLock:()=>{if(lockState.held)return false;lockState.held=true;if(!nestedTriggered){nestedTriggered=true;nestedLockResult=context.recordStaffCheckIn({sessionToken:"hrA",empleadoId:"U-X",tipoRegistro:"Entrada"});}return true;},waitLock:()=>{if(lockState.held)throw Error("lock busy");lockState.held=true;},releaseLock:()=>{lockState.held=false;}})};
 const concurrencyResult=context.recordStaffCheckIn({sessionToken:"hrA",empleadoId:"U-X",tipoRegistro:"Entrada"});
 assert.equal(concurrencyResult.status,"success","first scoped HR write must commit");
 assert.equal(nestedLockResult.code,"CONCURRENT_UPDATE_RETRY","overlapping attendance write must fail closed while the script lock is held");
