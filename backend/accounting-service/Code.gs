@@ -2848,10 +2848,6 @@ function manageStaffingNeeds(payload) {
   if (access.scope.institutionWide === true || assigned.indexOf(department.departmentId) < 0) {
     return { status:"error", code:"RESOURCE_SCOPE_DENIED" };
   }
-  var quantity = Number(input.cantidadRequerida);
-  if (!isFinite(quantity) || quantity <= 0 || Math.floor(quantity) !== quantity) return { status:"error", code:"STAFFING_QUANTITY_INVALID" };
-  var period = String(input.periodoAcademico || "").trim(), position = String(input.puestoOFamilia || "").trim();
-  if (!period || !position) return { status:"error", code:"STAFFING_FIELDS_REQUIRED" };
   var vacancyId = String(input.vacanteRelacionadaId || "").trim();
   if (vacancyId) {
     var vacancies = ss.getSheetByName("VacantesLaborales");
@@ -2862,6 +2858,10 @@ function manageStaffingNeeds(payload) {
     var matches = vacancyRows.slice(1).filter(function(row) { return String(row[vi] || "").trim() === vacancyId; });
     if (matches.length !== 1 || String(matches[0][vd] || "").trim() !== department.departmentId) return { status:"error", code:"RESOURCE_NOT_FOUND" };
   }
+  var quantity = Number(input.cantidadRequerida);
+  if (!isFinite(quantity) || quantity <= 0 || Math.floor(quantity) !== quantity) return { status:"error", code:"STAFFING_QUANTITY_INVALID" };
+  var period = String(input.periodoAcademico || "").trim(), position = String(input.puestoOFamilia || "").trim();
+  if (!period || !position) return { status:"error", code:"STAFFING_FIELDS_REQUIRED" };
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) return { status:"error", code:"CONCURRENT_UPDATE_RETRY" };
   try {
@@ -2880,8 +2880,7 @@ function manageStaffingNeeds(payload) {
       row[5] = String(input.escenarioMatricula || row[5] || "Base");
       row[6] = String(input.metricaBaseCalculo || row[6] || "Manual");
       row[7] = String(input.observacionesJustificacion || "").slice(0,1000);
-      row[8] = vacancyId;
-      row[11] = now;
+      row[8] = vacancyId; row[11] = now;
       try { schema.sheet.getRange(existing[0].index + 2,1,1,row.length).setValues([row]); }
       catch (_) { return { status:"error", code:"STAFFING_PLAN_WRITE_FAILED" }; }
       return { status:"success", planificacionId:planId, departamentoArea:department.departmentId };
@@ -2898,7 +2897,6 @@ function manageStaffingNeeds(payload) {
     return { status:"success", planificacionId:planId, departamentoArea:department.departmentId };
   } finally { lock.releaseLock(); }
 }
-
 function getStaffingNeedsPlanning(payload) {
   var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var access = resolveStaffingNeedsAccess_(input, ss, false);
