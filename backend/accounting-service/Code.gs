@@ -10650,6 +10650,7 @@ function previewBatchMonthlyCharges(payload){
   if(Array.isArray(p.studentIds)&&p.studentIds.length&&!p.studentIds.map(String).includes(user))return;
   seen.add(user);students.push({userId:user,nombre:String(r[mh.alumno]||""),grado:grade,seccion:section,descuentoPct:Math.max(0,Math.min(100,Number.parseFloat(r[mh.becadescuento]||0)||0))});
  });
+ if(p.__debug===true)return {debug:{header:matRows[0],map:mh,rows:matRows.slice(1),year:year,month:month,gradeFilter:p.nivelGrado}};
  let total=0,already=0,noTariff=0,pending=0;const breakdown=[];
  students.forEach(st=>{
   const tariff=resolveMonthlyChargeTariff_(ss,year,st.grado,p.conceptoId),key=monthlyChargeDedupeKey_(st.userId,p.conceptoId,year,month),legacy=st.userId+"_"+conceptName.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"")+"_"+monthName+"_"+year;
