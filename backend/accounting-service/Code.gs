@@ -1982,6 +1982,108 @@ function getTrainingAnalyticsReport(payload) {
   return {status:"success",data:{totalCursos:courseValues.length?Math.max(0,courseValues.length-1):0,totalInscripciones:enrollments.length,completados:completed}};
 }
 
+
+function resolveStaffAttendanceEmployeeAccess_(payload, ss, employeeId, actor) {
+  var input=payload||{},identity=actor||getVerifiedAccountingIdentity_(input);
+  if(!identity||identity.authorized!==true)return {authorized:false,code:identity&&identity.code||"VERIFIED_IDENTITY_REQUIRED"};
+  var role=normalizeVacationRole_(identity.role),sheet=ss&&ss.getSheetByName?ss.getSheetByName("ExpedientesLaborales"):null;
+  if(!sheet)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  var values=sheet.getDataRange().getValues(),headers=values[0].map(function(v){return String(v||"").trim();});
+  var idIndex=headers.indexOf("ExpedienteID"),userIndex=headers.indexOf("UserId"),departmentIndex=headers.indexOf("Departamento"),stateIndex=headers.indexOf("EstadoLaboral");
+  if(idIndex<0||userIndex<0||departmentIndex<0||stateIndex<0)return {authorized:false,code:"RESOURCE_SCHEMA_INVALID"};
+  var target=String(employeeId||"").trim();
+  if(role==="empleado"&&!target)target=identity.userId;
+  var matches=values.slice(1).filter(function(row){return String(row[userIndex]||"").trim()===target||String(row[idIndex]||"").trim()===target;});
+  if(matches.length!==1||String(matches[0][stateIndex]||"").toLowerCase()!=="activo")return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  if(role==="empleado"&&String(matches[0][userIndex]||"").trim()!==identity.userId)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  if(role!=="empleado"&&role!=="recursoshumanos"&&role!=="administrador")return {authorized:false,code:"ROLE_NOT_ALLOWED"};
+  var expedienteId=String(matches[0][idIndex]||"").trim();
+  if(role!=="empleado"){
+    var ownership=assertResourceOwnershipForScope_(input,ss,expedienteId);
+    if(!ownership||ownership.authorized!==true)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  }
+  return {authorized:true,actor:identity,role:role,employeeId:String(matches[0][userIndex]||"").trim(),
+    employeeName:String(input.empleadoNombre||matches[0][headers.indexOf("PersonaId")]||"").trim(),departmentId:String(matches[0][departmentIndex]||"")};
+}
+
+function recordStaffCheckIn(payload) {
+  var input=payload||{},actor=getVerifiedAccountingIdentity_(input);
+  if(!actor||actor.authorized!==true)return {status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
+  var role=normalizeVacationRole_(actor.role),type=String(input.tipoRegistro||"Entrada").trim();
+  if(["Entrada","Salida"].indexOf(type)===-1)return {status:"error",code:"INVALID_ATTENDANCE_TYPE"};
+  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),access=resolveStaffAttendanceEmployeeAccess_(input,ss,input.empleadoId,actor);
+  if(!access.authorized)return {status:"error",code:access.code};
+  if(role!=="recursoshumanos"&&role!=="administrador")return {status:"error",code:"ROLE_NOT_ALLOWED"};
+  var headers=["AsistenciaID","Fecha","EmpleadoId","EmpleadoNombre","HoraEntrada","HoraSalida","MinutosTardanza","EstadoAsistencia","Observaciones"];
+  var sheet=ss.getSheetByName("DeduccionesAsistencia");
+  if(!sheet)return {status:"error",code:"RESOURCE_SCHEMA_INVALID"};
+  var values=sheet.getDataRange().getValues();
+  if(!values||!values.length||JSON.stringify(values[0].map(function(v){return String(v||"").trim();}))!==JSON.stringify(headers))return {status:"error",code:"RESOURCE_SCHEMA_INVALID"};
+  var now=new Date(),date=now.toISOString().slice(0,10),time=now.toTimeString().slice(0,5);
+  var lock=LockService.getScriptLock();
+  if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY"};
+  try{
+    var rows=values.slice(1),today=rows.map(function(row,index){return {row:row,index:index};}).filter(function(item){
+      return String(item.row[1]||"").slice(0,10)===date&&String(item.row[2]||"").trim()===access.employeeId;
+    });
+    if(today.length>1)return {status:"error",code:"RESOURCE_SCHEMA_INVALID"};
+    if(type==="Entrada"){
+      if(today.length)return {status:"error",code:"ATTENDANCE_ALREADY_RECORDED"};
+      var id="AST-"+String(Utilities.getUuid()).replace(/-/g,"");
+      if(rows.some(function(row){return String(row[0]||"")===id;}))return {status:"error",code:"ATTENDANCE_ID_COLLISION"};
+      sheet.appendRow([id,date,access.employeeId,String(input.empleadoNombre||access.employeeName||access.employeeId).slice(0,180),
+        time,"",0,"EnJornada",String(input.observaciones||"").slice(0,500)]);
+      return {status:"success",asistenciaId:id};
+    }
+    if(!today.length||!String(today[0].row[4]||"").trim())return {status:"error",code:"ATTENDANCE_ENTRY_REQUIRED"};
+    if(String(today[0].row[5]||"").trim())return {status:"error",code:"ATTENDANCE_ALREADY_RECORDED"};
+    var next=today[0].row.slice();next[5]=time;next[7]="JornadaCompleta";
+    try{sheet.getRange(today[0].index+2,1,1,headers.length).setValues([next]);}
+    catch(writeError){return {status:"error",code:"ATTENDANCE_WRITE_FAILED"};}
+    return {status:"success",asistenciaId:next[0]};
+  }finally{lock.releaseLock();}
+}
+
+function recordStaffAttendance(payload) {
+  return recordStaffCheckIn(payload);
+}
+
+function getStaffAttendanceLogs(payload) {
+  var input=payload||{},actor=getVerifiedAccountingIdentity_(input);
+  if(!actor||actor.authorized!==true)return {status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED",asistencias:[]};
+  var role=normalizeVacationRole_(actor.role);
+  if(["recursoshumanos","administrador","empleado"].indexOf(role)===-1)return {status:"error",code:"ROLE_NOT_ALLOWED",asistencias:[]};
+  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("DeduccionesAsistencia");
+  if(!sheet)return {status:"success",asistencias:[]};
+  var values=sheet.getDataRange().getValues(),headers=values[0].map(function(v){return String(v||"").trim();});
+  var required=["AsistenciaID","Fecha","EmpleadoId","EmpleadoNombre","HoraEntrada","HoraSalida","MinutosTardanza","EstadoAsistencia","Observaciones"];
+  if(JSON.stringify(headers)!==JSON.stringify(required))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",asistencias:[]};
+  var start=input.fechaInicio?new Date(input.fechaInicio):null,end=input.fechaFin?new Date(input.fechaFin):null;
+  if((start&&isNaN(start.getTime()))||(end&&isNaN(end.getTime()))||(start&&end&&end<start))return {status:"error",code:"INVALID_DATE_RANGE",asistencias:[]};
+  var allowed=null;
+  if(role==="recursoshumanos"){
+    var scope=getVerifiedAccountingDepartmentScope_(input,ss,actor);
+    if(!scope||scope.valid!==true)return {status:"error",code:scope&&scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED",asistencias:[]};
+    allowed=scope.institutionWide?null:(scope.departmentIds||[]).map(String);
+  }
+  var employeeSheet=ss.getSheetByName("ExpedientesLaborales"),employeeValues=employeeSheet?employeeSheet.getDataRange().getValues():[];
+  var eh=employeeValues.length?employeeValues[0].map(function(v){return String(v||"").trim();}):[],ui=eh.indexOf("UserId"),di=eh.indexOf("Departamento"),departments=Object.create(null);
+  employeeValues.slice(1).forEach(function(row){if(ui>=0&&di>=0)departments[String(row[ui]||"").trim()]=String(row[di]||"").trim();});
+  var requested=String(input.empleadoId||"").trim();
+  if(role==="empleado"&&requested&&requested!==actor.userId)return {status:"error",code:"RESOURCE_NOT_FOUND",asistencias:[]};
+  if(role==="empleado")requested=actor.userId;
+  var result=values.slice(1).filter(function(row){
+    var employee=String(row[2]||"").trim(),date=new Date(row[1]);
+    if(requested&&employee!==requested)return false;
+    if(role==="recursoshumanos"&&allowed&&allowed.indexOf(departments[employee]||"")===-1)return false;
+    if(start&&date<start)return false;
+    if(end&&date>end)return false;
+    return true;
+  }).map(function(row){return {asistenciaId:row[0],fecha:row[1],empleadoId:row[2],empleadoNombre:row[3],horaEntrada:row[4],horaSalida:row[5],minutosTardanza:row[6],estadoAsistencia:row[7],observaciones:row[8]};});
+  if(role==="recursoshumanos"&&requested&&!result.length&&departments[requested]===undefined)return {status:"error",code:"RESOURCE_NOT_FOUND",asistencias:[]};
+  return {status:"success",asistencias:result};
+}
+
 /* Runtime configuration and fail-closed service adapters. */
 var SPREADSHEET_ID = PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID") || "";
 const MIGRATION_OWNER_SCHEMAS_={
@@ -2158,7 +2260,7 @@ const ROLE_PERMISSIONS = {
   Auditor: ["getAccountingMigrationFileAudit"],
   "Empleado": ["getEmployeeRecords", "getLeaveVacationRequests", "submitLeaveVacationRequest", "manageProfessionalDevelopmentPlan"],
   "Profesor": ["submitVacationRequest"],
-  "RecursosHumanos": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport"],
+  "RecursosHumanos": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "recordStaffCheckIn", "recordStaffAttendance", "getStaffAttendanceLogs"],
   "Director": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances"],
   "Administrador": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances"]
 };
@@ -2314,6 +2416,9 @@ function doPost(e) {
       return respond({ status: "error", code: "REQUEST_SCHEMA_INVALID" });
     }
     var actionPayload = Object.assign({}, request.payload, { correlationId: correlationId });
+    if (request.action === "recordStaffCheckIn") return respond(recordStaffCheckIn(actionPayload));
+    if (request.action === "recordStaffAttendance") return respond(recordStaffAttendance(actionPayload));
+    if (request.action === "getStaffAttendanceLogs") return respond(getStaffAttendanceLogs(actionPayload));
     if (request.action === "manageProfessionalDevelopmentPlan") return respond(manageProfessionalDevelopmentPlan(actionPayload));
     if (request.action === "getTrainingAnalyticsReport") return respond(getTrainingAnalyticsReport(actionPayload));
     if (request.action === "manageTrainingCourse") return respond(manageTrainingCourse(actionPayload));
@@ -2349,6 +2454,7 @@ function doPost(e) {
       MIGRATION_WRITE_CONTRACT_INVALID: true, MIGRATION_FILE_HASH_REQUIRED: true,
       MIGRATION_FILE_HASH_AUDIT_SCHEMA_MISMATCH: true, DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED: true,
       RESOURCE_NOT_FOUND: true, RESOURCE_SCHEMA_INVALID: true, ROLE_NOT_ALLOWED: true,
+      INVALID_ATTENDANCE_TYPE: true, ATTENDANCE_ALREADY_RECORDED: true, ATTENDANCE_ID_COLLISION: true, ATTENDANCE_WRITE_FAILED: true, ATTENDANCE_ENTRY_REQUIRED: true, INVALID_DATE_RANGE: true,
       DEVELOPMENT_PLAN_TITLE_REQUIRED: true, DEVELOPMENT_PLAN_DATE_RANGE_INVALID: true, DEVELOPMENT_PLAN_GOALS_INVALID: true, DEVELOPMENT_PLAN_WRITE_FAILED: true,
       TRAINING_COURSE_DURATION_INVALID: true, TRAINING_COURSE_WRITE_FAILED: true, TRAINING_COURSE_ID_COLLISION: true,
       TRAINING_COURSE_NAME_REQUIRED: true, TRAINING_COURSE_REQUIREMENTS_INVALID: true,
