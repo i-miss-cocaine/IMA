@@ -3428,6 +3428,9 @@
 
 - **Avance C1.776 (2026-11-15):** se corrigió una condición de carrera en appendAccountingMigrationFileHashAudit_: la inicialización y validación de AuditoriaMigracionesArchivos ahora ocurren dentro de ScriptLock. Se añadió tests/security/accounting-import-file-audit.test.js y su ejecución en Accounting Import Preflight Contract. El contrato verificó HashSHA256 independiente del nombre, institución, previewHash, estado, correlación, encabezado único y timeout sin consultar/modificar la hoja.
 - **Evidencia:** GitHub Actions Accounting Import Preflight Contract run 43772273147 SUCCESS en Node 24; Accounting migration file audit PASS. TASK-134 sigue parcial porque la persistencia real depende de habilitar el commit de importación tras TASK-133 y de beta Drive/Sheets.
+
+- **Avance C1.779 (2026-11-16):** se cerró una ventana TOCTOU en uploadStudentDocument: después de adquirir ScriptLock se revalidan identidad/rol y ámbito del expediente con una nueva lectura de la hoja antes de revisar duplicados o escribir. El acceso revocado o la identidad cambiada entre la validación inicial y el lock no puede crear archivo ni fila. Se amplió academic-student-document-private-storage.test.js con ambos escenarios negativos.
+- **Verificación C1.779:** GitHub Actions Accounting Import Preflight Contract run 43787956996 SUCCESS, 39/39 pasos, Node.js 24.22.2; incluye contrato SHA-256/deduplicación Academic y User. Department Scope run 43787956927 continúa FAIL por resolveEmployeeDepartmentId_ ausente en backend/accounting-service/Code.gs; no está relacionado con este cambio y no se ocultó. TASK-134 continúa En ejecución.
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 5897-5928; clave TASK-135; asignación única: Secretaria -->
 
 ---

@@ -3974,3 +3974,8 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - accounting-import-semantic-preflight.test.js cubre valores no booleanos y confirma que no se producen escrituras; auditor-readonly-role.test.js exige el guard estricto.
 - Commits: a23d5644cc12f05b08bddbec765c3afde76d8adc y 298c13ff8b62fe149b89ca1ec5a484dbc53b5d52.
 - Accounting Import Preflight Contract run 43786954331 SUCCESS (39 pasos, Node 24). TASK-133 permanece abierto por PDF/OCR/beta.
+
+
+[2026-11-16] C1.779 — Seguridad de carga documental SHA-256
+- uploadStudentDocument revalida identidad/rol y ámbito después de adquirir ScriptLock para cerrar la ventana TOCTOU previa a las escrituras; prueba revocación de scope e identidad sin creación de archivo ni persistencia.
+- Commit 294092b43bc7bb4442b5eb27b72803bef0addc09. Accounting Import Preflight Contract run 43787956996 SUCCESS (39/39, Node 24). Department Scope run 43787956927 conserva FAIL independiente por resolveEmployeeDepartmentId_ ausente en ACCOUNTING.

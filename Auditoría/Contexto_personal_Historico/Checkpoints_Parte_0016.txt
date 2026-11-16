@@ -343,3 +343,39 @@
 2. Mantener los fallos transversales visibles y abordarlos como tareas independientes con sus requisitos originales.
 3. Después de TASK-133, continuar TASK-134 y sus pruebas de persistencia/beta.
 ===============================================================================
+
+
+===============================================================================
+## C1.779 — IMA-EXEC-20261116-0145Z-TASK134-AUTH-RECHECK-01 — Revalidación de identidad y ámbito bajo lock en carga documental
+
+- Fecha: 2026-11-16 01:45 UTC.
+- Rama autorizada: NG_beta_0.0.0.1_work.
+- Rama base: NG_beta_0.0.0.1.
+- HEAD inicial: 595528084cd5992ec5b55967d6cd0f05c14e9271.
+- Commit de implementación: 294092b43bc7bb4442b5eb27b72803bef0addc09.
+- HEAD final de implementación: 294092b43bc7bb4442b5eb27b72803bef0addc09.
+- Normativa leída: Normas_Desarollo.md NDASC 1.4, apartados 1-16.
+- Continuidad: C1.778.
+
+### Hallazgo y cambio
+
+- Se identificó una ventana TOCTOU en uploadStudentDocument: la identidad y el ámbito del expediente se verificaban antes de esperar por el lock, pero no se volvían a verificar antes de las escrituras.
+- Después de adquirir ScriptLock, el servicio ahora abre una referencia actualizada de la hoja, vuelve a validar identidad y rol frente a la identidad inicial, y vuelve a comprobar el ámbito de la solicitud/expediente antes de consultar duplicados o persistir.
+- Las consultas de política de duplicados e inventario legado usan la hoja abierta bajo el lock.
+- Si la identidad cambia o el ámbito se revoca durante la espera, la operación termina antes de crear un archivo o escribir filas.
+- Pruebas añadidas en academic-student-document-private-storage.test.js para revocación de ámbito e identidad entre autorización inicial y adquisición del lock; ambas verifican cero archivos y cero filas persistidas.
+- Diff revisado: solo backend/academic-service/Code.gs y tests/security/academic-student-document-private-storage.test.js; 10 líneas de producción añadidas, 2 consultas redirigidas al spreadsheet actualizado y pruebas negativas localizadas.
+
+### Verificación
+
+- GitHub Actions Accounting Import Preflight Contract run 43787956996: SUCCESS, 39/39 pasos; Node.js 24.22.2. Incluye sintaxis de Academic/User/Accounting, PDF/OCR, SHA-256, deduplicación, inventario legado, escritores, RBAC y el contrato Academic private document SHA-256/deduplication.
+- Department Scope Contract run 43787956927: FAILURE en el test preexistente accounting-vacation-medical-leave-ownership.test.js porque intenta extraer resolveEmployeeDepartmentId_ de backend/accounting-service/Code.gs y la función no existe allí. El fallo es independiente de la carga documental; no se alteró ni deshabilitó el contrato.
+- Node CLI en checkout local: NOT RUN; se respetó el flujo sin clonar la rama. La suite Node 24 se ejecutó en GitHub Actions, sin servicios vivos.
+- Beta Apps Script/Drive/Sheets: Pendiente beta; no se ejecutó.
+- No se declara cerrada TASK-134: la integración contable depende de un repositorio documental propietario que no está definido; la validación real Drive/Sheets continúa beta. El motor de deduplicación Academic/User y los contratos locales siguen implementados.
+
+### Estado y siguiente acción
+
+- TASK-134 permanece En ejecución por integración contable aplicable y evidencia beta, sin usar beta como bloqueo de la implementación local.
+- Siguiente: revisar si existe un propietario/flujo contable documental real antes de extender el almacenamiento; si no existe, no inventar repositorio. Continuar con TASK-142 PREVIEW/DOWNLOAD y revisar las dependencias independientes elegibles.
+===============================================================================
