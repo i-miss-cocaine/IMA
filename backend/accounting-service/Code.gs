@@ -1494,6 +1494,7 @@ function getVacationRequests(payload) {
   var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
   if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", solicitudes: [], data: [] };
   var role = normalizeVacationRole_(actor.role);
+  if (role === "empleado" && String(input.expedienteId || "").trim()) return { status: "error", code: "RESOURCE_NOT_FOUND", solicitudes: [], data: [] };
   if (["recursoshumanos","director","administrador"].indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED", solicitudes: [], data: [] };
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID), snapshot = getVacationSheetSnapshot_(ss);
   if (!snapshot.valid) return { status: "error", code: snapshot.code, solicitudes: [], data: [] };
