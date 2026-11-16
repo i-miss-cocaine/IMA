@@ -3072,9 +3072,9 @@ function manageWorkShiftAndSubstitution(payload) {
         .filter(function(item) { return String(item.row[0] || "").trim() === recordId; });
       if (matches.length !== 1) return { status:"error",code:"RESOURCE_NOT_FOUND" };
       row = matches[0].row.slice();
-      var expectedEmployee = operation === "RegistrarSustitucion" ? primary.employeeId : primary.employeeId;
-      if (String(row[1] || "") !== (operation === "RegistrarSustitucion" ? primary.employeeId : expectedEmployee) ||
-          String(row[8] || "") !== primary.departmentId) return { status:"error",code:"RESOURCE_NOT_FOUND" };
+      var departmentColumn = operation === "RegistrarSustitucion" ? 8 : 7;
+      if (String(row[1] || "") !== primary.employeeId ||
+          String(row[departmentColumn] || "") !== primary.departmentId) return { status:"error",code:"RESOURCE_NOT_FOUND" };
       if (operation === "AsignarTurno") {
         row[2] = String(input.nombreTurno || row[2] || "Turno").slice(0,100);
         row[3] = startText; row[4] = endText; row[5] = entryTime; row[6] = exitTime;
