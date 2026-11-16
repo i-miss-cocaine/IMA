@@ -3295,7 +3295,7 @@ function adjudicatePurchaseQuotations(payload) {
     if (previous.length) return { status: "success", actaId: previous[0][0], idempotente: true, ordenes: purchaseQuotationJsonArray_(previous[0][13]) };
     var assignments = Array.isArray(input.adjudicaciones) ? input.adjudicaciones : [];
     if (!assignments.length) return { status: "error", code: "PURCHASE_AWARD_ITEMS_REQUIRED" };
-    if (String(input.dictamen || "").trim().length < 10 || String(input.justificacion || "").trim().length < 20) {
+    if (String(input.dictamen || "").trim().length < 10 || !String(input.justificacion || "").trim()) {
       return { status: "error", code: "PURCHASE_AWARD_JUSTIFICATION_REQUIRED" };
     }
     var quoteSheetLocal = getOrCreateSheet(ss, "CotizacionesCompra");
