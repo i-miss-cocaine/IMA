@@ -3816,7 +3816,7 @@ function getAssetItems(payload) {
   if (!values || values.length < 2) return { status: "success", activos: [] };
   var headers = values[0].map(String);
   var activos = values.slice(1).filter(function(row) {
-    return String(row[headers.indexOf("Estado")] || "").trim().toLowerCase() === "activo";
+    return !!String(row[headers.indexOf("ActivoID")] || "").trim();
   }).map(function(row) {
     var result = {};
     headers.forEach(function(header, index) { result[header] = row[index]; });
