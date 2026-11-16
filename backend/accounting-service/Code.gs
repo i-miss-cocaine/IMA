@@ -3185,10 +3185,10 @@ function submitPurchaseQuotation(payload) {
     });
     return { status: "success", cotizacionId: quoteId, partidasRegistradas: prepared.length };
   } catch (error) {
-    if (quoteRow && quoteSheet) try { quoteSheet.getRange(quoteRow, 1, 1, PURCHASE_QUOTATION_HEADERS_.length).clearContent(); } catch (ignored) {}
+    if (quoteRow && quoteSheet) try { quoteSheet.getRange(quoteRow, 1, 1, 11).clearContent(); } catch (ignored) {}
     if (detailStart && detailSheet) try {
       var count = detailSheet.getLastRow() - detailStart + 1;
-      if (count > 0) detailSheet.getRange(detailStart, 1, count, PURCHASE_QUOTATION_DETAIL_HEADERS_.length).clearContent();
+      if (count > 0) detailSheet.getRange(detailStart, 1, count, 18).clearContent();
     } catch (ignored2) {}
     return { status: "error", code: String(error && error.message || "PURCHASE_QUOTATION_WRITE_FAILED") };
   } finally { lock.releaseLock(); }
@@ -3401,13 +3401,13 @@ function adjudicatePurchaseQuotations(payload) {
     request.sheet.getRange(request.rowIndex, 10).setValue("Adjudicada");
     return { status: "success", actaId: createdAwardId, ordenes: orderIds, montoAdjudicado: totalAward };
   } catch (error) {
-    createdOrders.forEach(function(row) { try { orderSheet.getRange(row, 1, 1, PURCHASE_ORDER_HEADERS_.length).clearContent(); } catch (ignored) {} });
+    createdOrders.forEach(function(row) { try { orderSheet.getRange(row, 1, 1, 15).clearContent(); } catch (ignored) {} });
     if (createdAwardRow && awardSheet) {
-      try { awardSheet.getRange(createdAwardRow, 1, 1, PURCHASE_AWARD_HEADERS_.length).clearContent(); } catch (ignored2) {}
+      try { awardSheet.getRange(createdAwardRow, 1, 1, 14).clearContent(); } catch (ignored2) {}
       try {
         var awardRowsAfterFailure = awardSheet.getDataRange().getValues();
         awardRowsAfterFailure.forEach(function(row, index) {
-          if (String(row[0] || "") === createdAwardId) awardSheet.getRange(index + 1, 1, 1, PURCHASE_AWARD_HEADERS_.length).clearContent();
+          if (String(row[0] || "") === createdAwardId) awardSheet.getRange(index + 1, 1, 1, 14).clearContent();
         });
       } catch (ignoredAwardScan) {}
     }
