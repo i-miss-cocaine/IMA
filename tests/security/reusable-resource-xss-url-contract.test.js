@@ -13,8 +13,8 @@ function extractFunction(source, name) {
   assert.ok(start >= 0, "function exists: " + name);
   const open = source.indexOf("{", start);
   let depth = 0, quote = null, escaped = false, line = false, block = false;
-  for (let i = open; i < academic.length; i++) {
-    const ch = academic[i], next = academic[i + 1];
+  for (let i = open; i < source.length; i++) {
+    const ch = source[i], next = source[i + 1];
     if (line) { if (ch === "\n") line = false; continue; }
     if (block) { if (ch === "*" && next === "/") { block = false; i++; } continue; }
     if (quote) { if (escaped) { escaped = false; continue; } if (ch === "\\") { escaped = true; continue; } if (ch === quote) quote = null; continue; }
@@ -22,7 +22,7 @@ function extractFunction(source, name) {
     if (ch === "/" && next === "*") { block = true; i++; continue; }
     if (ch === "'" || ch === '"' || ch === "\x60") { quote = ch; continue; }
     if (ch === "{") depth++;
-    else if (ch === "}" && --depth === 0) return academic.slice(start, i + 1);
+    else if (ch === "}" && --depth === 0) return source.slice(start, i + 1);
   }
   throw new Error("unbalanced " + name);
 }
@@ -37,8 +37,8 @@ const context = {
     }
   }
 };
-vm.runInNewContext(extractFunction("sanitizeReusableResourceText_") + "\n" +
-  extractFunction("validateReusableResourceDriveUrl_") + "\n" +
+vm.runInNewContext(extractFunction(academic, "sanitizeReusableResourceText_") + "\n" +
+  extractFunction(academic, "validateReusableResourceDriveUrl_") + "\n" +
   "this.sanitize=sanitizeReusableResourceText_;this.validateUrl=validateReusableResourceDriveUrl_;", context);
 assert.equal(context.sanitize('<img src=x onerror=alert(1)>Título<script>alert(1)</script>', 160), "Título alert(1)");
 assert.equal(context.sanitize("Recurso" + String.fromCharCode(0) + " seguro", 40), "Recurso seguro");
@@ -65,10 +65,10 @@ assert(academic.includes('String(actor.userId)'), "resource author is derived fr
 assert(teacher.includes("cell.textContent = String(value"), "catalog text is rendered as text, not HTML");
 assert(teacher.includes("link.rel = 'noopener noreferrer'"), "external Drive link is isolated from the opener");
 assert(!teacher.includes("tableBody.innerHTML = combined.map(item =>"), "untrusted catalog values are not interpolated into innerHTML");
-assert(!/migrationReportDetails\\.innerHTML\\s*=/.test(teacher), "curricular equivalence and migration results must never be rendered as HTML");
+assert(!/migrationReportDetails\.innerHTML\s*=/.test(teacher), "curricular equivalence and migration results must never be rendered as HTML");
 assert(teacher.includes("appendCurricularMigrationText_(migrationReportDetails,"), "curricular reports render through the text-only DOM helper");
 const uiContext = { document: { createElement: () => ({ className: "", textContent: "", children: [], appendChild(node) { this.children.push(node); } }) } };
-vm.runInNewContext(extractFunction(teacher, "appendCurricularMigrationText_") + "\\nthis.appendSafe = appendCurricularMigrationText_;", uiContext);
+vm.runInNewContext(extractFunction(teacher, "appendCurricularMigrationText_") + "\nthis.appendSafe = appendCurricularMigrationText_;", uiContext);
 const rendered = { children: [], appendChild(node) { this.children.push(node); } };
 const hostileFields = [
   '<img src=x onerror=alert(1)>',
