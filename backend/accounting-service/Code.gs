@@ -2181,8 +2181,13 @@ function submitAttendanceCorrection(payload) {
     return { status: "error", code: "EVIDENCE_URL_INVALID" };
   }
   var incidentDate = String(input.fechaIncidencia || access.attendanceRow[1] || "").slice(0, 10);
-  if (!/^\\d\\d\\d\\d-\\d\\d-\\d\\d$/.test(incidentDate) ||
-      incidentDate !== String(access.attendanceRow[1] || "").slice(0, 10)) {
+  var dateParts = incidentDate.split("-");
+  var incidentDateValid = dateParts.length === 3 && dateParts[0].length === 4 &&
+    dateParts[1].length === 2 && dateParts[2].length === 2 &&
+    dateParts.every(function(part) { return part.split("").every(function(character) {
+      return character >= "0" && character <= "9";
+    }); });
+  if (!incidentDateValid || incidentDate !== String(access.attendanceRow[1] || "").slice(0, 10)) {
     return { status: "error", code: "ATTENDANCE_CORRECTION_DATA_INVALID" };
   }
   var entryMatches = String(access.attendanceRow[4] || "").trim() === originalTime;
