@@ -2793,7 +2793,13 @@ function getFamilyCreditSalesReconciliation(p){var a=familyCreditApprovalActor_(
 
 
 function resolveStaffingNeedsAccess_(payload, ss, writeRequired) {
-  var actor = getVerifiedAccountingIdentity_(payload || {});
+  var actor;
+  if (typeof requestAccountingUserAuthorization_ === "function") actor = getVerifiedAccountingIdentity_(payload || {});
+  else if (typeof verifySessionToken === "function") {
+    var claims = verifySessionToken(String(payload && payload.sessionToken || ""));
+    actor = claims ? { authorized:true, userId:claims.userId, role:claims.role,
+      institutionId:claims.institutionId || "", membershipId:claims.membershipId || "" } : null;
+  }
   if (!actor || actor.authorized !== true) return { authorized:false, code:actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
   var role = normalizeVacationRole_(actor.role);
   if (writeRequired && role !== "recursoshumanos") return { authorized:false, code:"ROLE_NOT_ALLOWED" };
