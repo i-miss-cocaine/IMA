@@ -3809,41 +3809,49 @@ function getTripPassengerManifest(payload) {
 
 function getEmployeeSelfServicePortal(payload) {
   var input=payload||{},actor=getVerifiedAccountingIdentity_(input);
-  if(!actor||actor.authorized!==true)return {status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
-  var role=normalizeVacationRole_(actor.role);
-  if(["empleado","recursoshumanos","administrador"].indexOf(role)===-1)return {status:"error",code:"ROLE_NOT_ALLOWED"};
-  var targetUserId=role==="empleado"?actor.userId:String(input.targetUserId||input.empleadoId||"").trim();
-  if(!targetUserId)return {status:"error",code:"RESOURCE_NOT_FOUND"};
-  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),employeeSheet=ss.getSheetByName("ExpedientesLaborales");
-  if(!employeeSheet)return {status:"error",code:"RESOURCE_NOT_FOUND"};
-  var employeeValues=employeeSheet.getDataRange().getValues(),employeeHeaders=employeeValues[0].map(function(v){return String(v||"").trim();});
-  var expedienteIndex=employeeHeaders.indexOf("ExpedienteID"),userIndex=employeeHeaders.indexOf("UserId");
-  if(expedienteIndex<0||userIndex<0)return {status:"error",code:"RESOURCE_DATA_SCHEMA_INVALID"};
-  var employees=employeeValues.slice(1).filter(function(row){return String(row[userIndex]||"").trim()===targetUserId;});
-  if(employees.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND"};
-  var expedienteId=String(employees[0][expedienteIndex]||"").trim();
-  if(role==="recursoshumanos"){
-    var scope=assertEmployeeExpedienteScopeAccess_(input,ss,expedienteId);
-    if(!scope||scope.authorized!==true)return {status:"error",code:"RESOURCE_NOT_FOUND"};
-  }
+  if(!actor||actor.authorized!==true)return{status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
+  var permission=validateRolePermission(actor,"getEmployeeSelfServicePortal");
+  if(!permission.authorized)return{status:"error",code:permission.code};
+  var role=normalizeVacationRole_(actor.role),selfRoles=["empleado","profesor"],staffRoles=["recursoshumanos","director","subdirector","administrador"];
+  var targetUserId=selfRoles.indexOf(role)!==-1?String(actor.userId||""):String(input.targetUserId||input.empleadoId||"").trim();
+  if(!targetUserId)return{status:"error",code:"RESOURCE_NOT_FOUND"};
+  if(selfRoles.indexOf(role)===-1&&staffRoles.indexOf(role)===-1)return{status:"error",code:"ROLE_NOT_ALLOWED"};
+  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),accessIndex=getEmployeeResourceAccessIndex_(input,ss,actor);
+  if(!accessIndex.valid)return{status:"error",code:accessIndex.code};
+  var employee=accessIndex.byUserId[targetUserId];
+  if(!employee)return{status:"error",code:"RESOURCE_NOT_FOUND"};
+  var expedienteId=String(employee.expedienteId||"").trim();
+  var access=assertEmployeeExpedienteScopeAccess_(input,ss,expedienteId);
+  if(!access||access.authorized!==true)return{status:"error",code:"RESOURCE_NOT_FOUND"};
+  var employeeSheet=ss.getSheetByName("ExpedientesLaborales");
+  if(!employeeSheet)return{status:"error",code:"RESOURCE_NOT_FOUND"};
+  var employeeValues=employeeSheet.getDataRange().getValues(),employeeHeaders=(employeeValues[0]||[]).map(function(v){return String(v||"").trim();});
+  var employeeRow=employee.row,employeeIndex={};
+  employeeHeaders.forEach(function(name,index){employeeIndex[name]=index;});
+  var expediente={
+    expedienteId:expedienteId,personaId:employeeRow[employeeIndex.PersonaId],puesto:employeeRow[employeeIndex.Puesto],
+    departamento:employeeRow[employeeIndex.Departamento],centroCosto:employeeRow[employeeIndex.CentroCosto],
+    fechaIngreso:employeeRow[employeeIndex.FechaIngreso],fechaSalida:employeeRow[employeeIndex.FechaSalida],
+    estadoLaboral:employeeRow[employeeIndex.EstadoLaboral]
+  };
   function rowsFor(name,expectedHeaders,idColumn,filterColumn,filterValue,projector){
-    var sheet=ss.getSheetByName(name);if(!sheet)return [];
+    var sheet=ss.getSheetByName(name);if(!sheet)return[];
     var values=sheet.getDataRange().getValues();
     if(!values||!values.length||JSON.stringify(values[0].map(function(v){return String(v||"").trim();}))!==JSON.stringify(expectedHeaders))throw Error("RESOURCE_DATA_SCHEMA_INVALID");
     var rows=values.slice(1),counts=Object.create(null);
-    rows.forEach(function(row){var id=String(row[idColumn]||"").trim();counts[id]=(counts[id]||0)+1;});
+    rows.forEach(function(row){var id=String(row[idColumn]||"").trim();if(id)counts[id]=(counts[id]||0)+1;});
     return rows.filter(function(row){return String(row[filterColumn]||"").trim()===String(filterValue)&&counts[String(row[idColumn]||"").trim()]===1;}).map(projector);
   }
   try{
-    return {status:"success",data:{
-      effectiveUserId:targetUserId,
-      contratos:rowsFor("ContratosLaborales",["ContratoID","ExpedienteID","TipoContrato","FechaInicio","FechaFin","SalarioBase","Jornada","EstadoContrato","Observaciones"],0,1,expedienteId,function(r){return {contratoId:r[0],tipoContrato:r[2],fechaInicio:r[3],fechaFin:r[4],salarioBase:r[5],jornada:r[6],estadoContrato:r[7]};}),
-      solicitudesVacaciones:rowsFor("SolicitudesVacaciones",["SolicitudID","ExpedienteID","Tipo","FechaInicio","FechaFin","DiasSolicitados","Estado","AprobadoPor","Observaciones"],0,1,expedienteId,function(r){return {solicitudId:r[0],tipo:r[2],fechaInicio:r[3],fechaFin:r[4],diasSolicitados:r[5],estado:r[6]};}),
-      prestamos:rowsFor("AnticiposPrestamosEmpleado",["PrestamoID","Fecha","EmpleadoId","Tipo","MontoSolicitado","MontoAprobado","PlazoCuotas","CuotaMensual","SaldoPendiente","EstadoAprobacion","AprobadoPor","Observaciones"],0,2,targetUserId,function(r){return {prestamoId:r[0],fecha:r[1],tipo:r[3],montoSolicitado:r[4],montoAprobado:r[5],plazoCuotas:r[6],cuotaMensual:r[7],saldoPendiente:r[8],estadoAprobacion:r[9]};}),
-      turnos:rowsFor("AsignacionesTurnosLaborales",["AsignacionTurnoID","EmpleadoID","NombreTurno","FechaInicio","FechaFin","HoraEntrada","HoraSalida","DepartamentoArea","Estado","CreadoPor","FechaCreacion","UltimaModificacion"],0,1,targetUserId,function(r){return {asignacionTurnoId:r[0],nombreTurno:r[2],fechaInicio:r[3],fechaFin:r[4],horaEntrada:r[5],horaSalida:r[6],departamentoArea:r[7],estado:r[8]};}),
-      capacitaciones:rowsFor("InscripcionesCapacitacion",["InscripcionID","CursoID","EmpleadoID","FechaInscripcion","EstadoInscripcion","AsistenciaPorcentaje","ResultadoNota","CertificadoDriveUrl","FechaEmisionCertificado","FechaVencimientoCertificado","Observaciones","CreadoPor","FechaCreacion","UltimaModificacion"],0,2,targetUserId,function(r){return {inscripcionId:r[0],cursoId:r[1],fechaInscripcion:r[3],estadoInscripcion:r[4],asistenciaPorcentaje:r[5],resultadoNota:r[6],certificadoDriveUrl:r[7],fechaEmisionCertificado:r[8],fechaVencimientoCertificado:r[9]};})
+    return{status:"success",data:{
+      effectiveUserId:targetUserId,expediente:expediente,
+      contratos:rowsFor("ContratosLaborales",["ContratoID","ExpedienteID","TipoContrato","FechaInicio","FechaFin","SalarioBase","Jornada","EstadoContrato","Observaciones"],0,1,expedienteId,function(r){return{contratoId:r[0],tipoContrato:r[2],fechaInicio:r[3],fechaFin:r[4],salarioBase:r[5],jornada:r[6],estadoContrato:r[7]};}),
+      solicitudesVacaciones:rowsFor("SolicitudesVacaciones",["SolicitudID","ExpedienteID","Tipo","FechaInicio","FechaFin","DiasSolicitados","Estado","AprobadoPor","Observaciones"],0,1,expedienteId,function(r){return{solicitudId:r[0],tipo:r[2],fechaInicio:r[3],fechaFin:r[4],diasSolicitados:r[5],estado:r[6]};}),
+      prestamos:rowsFor("AnticiposPrestamosEmpleado",["PrestamoID","Fecha","EmpleadoId","Tipo","MontoSolicitado","MontoAprobado","PlazoCuotas","CuotaMensual","SaldoPendiente","EstadoAprobacion","AprobadoPor","Observaciones"],0,2,targetUserId,function(r){return{prestamoId:r[0],fecha:r[1],tipo:r[3],montoSolicitado:r[4],montoAprobado:r[5],plazoCuotas:r[6],cuotaMensual:r[7],saldoPendiente:r[8],estadoAprobacion:r[9]};}),
+      turnos:rowsFor("AsignacionesTurnosLaborales",["AsignacionTurnoID","EmpleadoID","NombreTurno","FechaInicio","FechaFin","HoraEntrada","HoraSalida","DepartamentoArea","Estado","CreadoPor","FechaCreacion","UltimaModificacion"],0,1,targetUserId,function(r){return{asignacionTurnoId:r[0],nombreTurno:r[2],fechaInicio:r[3],fechaFin:r[4],horaEntrada:r[5],horaSalida:r[6],departamentoArea:r[7],estado:r[8]};}),
+      capacitaciones:rowsFor("InscripcionesCapacitacion",["InscripcionID","CursoID","EmpleadoID","FechaInscripcion","EstadoInscripcion","AsistenciaPorcentaje","ResultadoNota","CertificadoDriveUrl","FechaEmisionCertificado","FechaVencimientoCertificado","Observaciones","CreadoPor","FechaCreacion","UltimaModificacion"],0,2,targetUserId,function(r){return{inscripcionId:r[0],cursoId:r[1],fechaInscripcion:r[3],estadoInscripcion:r[4],asistenciaPorcentaje:r[5],resultadoNota:r[6],certificadoDriveUrl:r[7],fechaEmisionCertificado:r[8],fechaVencimientoCertificado:r[9]};})
     }};
-  }catch(error){return {status:"error",code:"RESOURCE_DATA_SCHEMA_INVALID"};}
+  }catch(error){return{status:"error",code:"RESOURCE_DATA_SCHEMA_INVALID"};}
 }
 
 /* Runtime configuration and fail-closed service adapters. */
