@@ -4470,6 +4470,7 @@ function getPurchaseDossier(payload) {
   var invoices=purchaseDossierRows_(ss,"CuentasPorPagarGastos").slice(1);
   var suppliers=purchaseDossierRows_(ss,"ProveedoresActivos").slice(1);
   var journals=purchaseDossierRows_(ss,"AsientosContables").slice(1);
+  function parseArray(value){if(Array.isArray(value))return value;try{var parsed=JSON.parse(String(value||"[]"));return Array.isArray(parsed)?parsed:[];}catch(ignored){return [];}}
   var results=[];
   orders.forEach(function(order){
     var orderId=String(order[0]||""),requestId=String(order[1]||"");
@@ -4483,10 +4484,10 @@ function getPurchaseDossier(payload) {
     var receiptRows=receipts.filter(function(row){return String(row[1])===orderId;});
     var confirmationRows=confirmations.filter(function(row){return String(row[1])===orderId;});
     var invoiceRows=invoices.filter(function(row){return String(row[9]||"").indexOf("[ORDEN_"+orderId+"]")!==-1;});
-    var orderItems=purchaseQuotationJsonArray_(order[6]),requestedItems=purchaseQuotationJsonArray_(request[6]);
+    var orderItems=parseArray(order[6]),requestedItems=parseArray(request[6]);
     var receivedItems=[],billedItems=[],payments=[],documents=[],timeline=[];
     receiptRows.forEach(function(row){
-      purchaseQuotationJsonArray_(row[4]).forEach(function(item){if(item.conforme===true||String(item.estadoConformidad||"").toLowerCase()==="conforme")receivedItems.push(item);});
+      parseArray(row[4]).forEach(function(item){if(item.conforme===true||String(item.estadoConformidad||"").toLowerCase()==="conforme")receivedItems.push(item);});
       documents.push({tipo:"Recepción",fecha:purchaseDossierDate_(row[2]),url:purchaseDossierSafeUrl_(row[8]),id:row[0]});
       timeline.push({etapa:"Recepción",fecha:purchaseDossierDate_(row[2]),estado:row[5],responsable:row[3]});
     });
@@ -4542,7 +4543,7 @@ function getPurchaseDossier(payload) {
         cantidadPendiente:Math.max(0,qtyRequested-qtyReceived),importeAutorizado:Number(order[7]||0),
         importeFacturado:invoiceAmount,importePagado:paid,saldoPendiente:balance}};
     if(restricted){dossier.documentos=[];dossier.documentosRestringidos=true;}
-    var haystack=[requestId,orderId,order[3],supplier&&supplier[2],request[3]].join(" ").toLowerCase();
+    var haystack=[requestId,orderId,order[3],supplier&&supplier[2],request[3]].concat(invoiceRows.map(function(row){return row[2];})).join(" ").toLowerCase();
     if(!query||haystack.indexOf(query)!==-1)results.push(dossier);
   });
   return {status:"success",total:results.length,expedientes:results};
