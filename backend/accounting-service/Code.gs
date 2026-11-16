@@ -3879,14 +3879,16 @@ function createPurchaseRequest(payload) {
     var classifications = input.detalleItems.map(function(x) { return { clasificacionInventario:normalizePurchaseAssetClassification_(x) }; });
     var prepared = input.detalleItems.map(function(source, index) {
       source = source || {};
-      var classification = classifications[index].clasificacionInventario;
+      const classification=normalizePurchaseAssetClassification_(source);
+      var classificationFromPreflight = classifications[index].clasificacionInventario;
+      if (classification !== classificationFromPreflight) throw new Error("PURCHASE_CLASSIFICATION_PREFLIGHT_CONFLICT");
       var lookup = source.catalogItemId || source.itemId || source.ItemId || source.codigoItem || source.itemCodigo;
       var item = catalogFindItem_(ss, lookup, true);
       var unit = catalogFindUnit_(ss, source.unidadMedida || source.unidad || item.baseUnit);
       if (catalogNormalizeText_(unit.base) !== catalogNormalizeText_(item.baseUnit)) throw new Error("CATALOG_UNIT_INCOMPATIBLE_WITH_ITEM");
       var quantity = Number(source.cantidad);
       if (!isFinite(quantity) || quantity <= 0) throw new Error("PURCHASE_REQUEST_ITEMS_INVALID");
-      return { itemId: item.code, codigoItem: item.code, catalogItemId: item.id,
+      return { itemId: item.code, codigoItem: item.code, catalogItemId:item.id,
         descripcion: String(source.descripcion || item.name || ""), cantidad: quantity,
         unidadMedida: String(source.unidadMedida || source.unidad || item.baseUnit),
         clasificacionInventario: classification };
