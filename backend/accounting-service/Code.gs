@@ -1258,10 +1258,10 @@ function validateRolePermission(actorOrPayload, action) {
   var actor = actorOrPayload && actorOrPayload.authorized === true
     ? actorOrPayload : getVerifiedAccountingIdentity_(actorOrPayload || {});
   if (!actor || actor.authorized !== true) return { authorized: false, code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
-  var staffingActions = ["manageStaffingNeeds", "getStaffingNeedsPlanning"];
+  var staffingActions = ["manageStaffingNeeds", "getStaffingNeedsPlanning", "manageWorkShiftAndSubstitution"];
   if (staffingActions.indexOf(String(action || "")) !== -1) {
     var staffingRole = normalizeVacationRole_(actor.role);
-    var staffingAllowed = action === "manageStaffingNeeds" ? staffingRole === "recursoshumanos" :
+    var staffingAllowed = action === "manageStaffingNeeds" || action === "manageWorkShiftAndSubstitution" ? staffingRole === "recursoshumanos" :
       ["recursoshumanos","administrador"].indexOf(staffingRole) !== -1;
     return staffingAllowed ? { authorized: true, actor: actor } : { authorized: false, code: "ROLE_NOT_ALLOWED" };
   }
@@ -2974,6 +2974,137 @@ function getStaffingNeedsPlanning(payload) {
     personalActivoCount:activeEmployees.length, vacantesActivasCount:activeVacancies.length, comparativa:comparativa } };
 }
 
+
+function resolveWorkShiftEmployeeWriteAccess_(payload, ss, employeeUserId, identityOverride) {
+  var actor = identityOverride;
+  if (!actor) {
+    if (typeof requestAccountingUserAuthorization_ === "function") actor = getVerifiedAccountingIdentity_(payload || {});
+    else if (typeof verifySessionToken === "function") {
+      var claims = verifySessionToken(String(payload && payload.sessionToken || ""));
+      actor = claims ? { authorized:true,userId:claims.userId,role:claims.role,
+        institutionId:claims.institutionId || "",membershipId:claims.membershipId || "" } : null;
+    }
+  }
+  if (!actor || actor.authorized !== true) return { authorized:false,code:actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  if (normalizeVacationRole_(actor.role) !== "recursoshumanos") return { authorized:false,code:"ROLE_NOT_ALLOWED" };
+  var scope;
+  if (typeof getVerifiedDepartmentScopeForSession_ === "function" && getVerifiedDepartmentScopeForSession_.length >= 3) {
+    scope = getVerifiedDepartmentScopeForSession_(payload || {}, ss, actor);
+  } else {
+    scope = getVerifiedAccountingDepartmentScope_(payload || {}, ss, actor);
+  }
+  var scopeRole = scope && (scope.roleId || scope.role) || "";
+  if (!scope || (scope.valid !== true && scope.authorized !== true) ||
+      String(scope.userId || "") !== String(actor.userId || "") ||
+      String(scopeRole) !== String(actor.role || "") ||
+      String(scope.institutionId || "") !== String(actor.institutionId || "I")) {
+    return { authorized:false,code:"DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+  }
+  var id = String(employeeUserId || "").trim();
+  if (!id) return { authorized:false,code:"RESOURCE_NOT_FOUND" };
+  var sheet = ss && ss.getSheetByName ? ss.getSheetByName("ExpedientesLaborales") : null;
+  if (!sheet) return { authorized:false,code:"RESOURCE_NOT_FOUND" };
+  var values = sheet.getDataRange().getValues(), headers = (values[0] || []).map(function(v) { return String(v || "").trim(); });
+  var expedienteIndex = headers.indexOf("ExpedienteID"), userIndex = headers.indexOf("UserId");
+  var departmentIndex = headers.indexOf("Departamento"), stateIndex = headers.indexOf("EstadoLaboral");
+  if ([expedienteIndex,userIndex,departmentIndex,stateIndex].some(function(i) { return i < 0; })) {
+    return { authorized:false,code:"RESOURCE_SCHEMA_INVALID" };
+  }
+  var matches = values.slice(1).filter(function(row) { return String(row[userIndex] || "").trim() === id; });
+  if (matches.length !== 1 || String(matches[0][stateIndex] || "").trim().toLowerCase() !== "activo") {
+    return { authorized:false,code:"RESOURCE_NOT_FOUND" };
+  }
+  var expedienteId = String(matches[0][expedienteIndex] || "").trim();
+  var departmentId = String(matches[0][departmentIndex] || "").trim();
+  var departments = Array.isArray(scope.departmentIds) ? scope.departmentIds.map(String) : [];
+  if (!expedienteId || (scope.institutionWide !== true && departments.indexOf(departmentId) < 0)) {
+    return { authorized:false,code:"RESOURCE_NOT_FOUND" };
+  }
+  var ownership = assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_LABORAL", expedienteId, "WRITE");
+  if (!ownership || ownership.authorized !== true) return { authorized:false,code:"RESOURCE_NOT_FOUND" };
+  return { authorized:true,actor:actor,scope:scope,employeeId:id,expedienteId:expedienteId,departmentId:departmentId };
+}
+
+function ensureWorkShiftWriteSheet_(ss, sheetName) {
+  var name = sheetName === "SustitucionesPersonal" ? "SustitucionesPersonal" : "AsignacionesTurnosLaborales";
+  var headers = name === "SustitucionesPersonal"
+    ? ["SustitucionID","EmpleadoSustitutoID","EmpleadoSustituidoID","FechaInicio","FechaFin","HoraEntrada","HoraSalida","MotivoSustitucion","DepartamentoArea","Estado","CreadoPor","FechaCreacion","UltimaModificacion"]
+    : ["AsignacionTurnoID","EmpleadoID","NombreTurno","FechaInicio","FechaFin","HoraEntrada","HoraSalida","DepartamentoArea","Estado","CreadoPor","FechaCreacion","UltimaModificacion"];
+  var sheet = getOrCreateSheet(ss, name), values = sheet.getDataRange().getValues();
+  if (!values || !values.length || !values[0] || !values[0].length) {
+    sheet.appendRow(headers.slice());
+    values = [headers.slice()];
+  }
+  var actual = values[0].map(function(value) { return String(value || "").trim(); });
+  if (JSON.stringify(actual) !== JSON.stringify(headers)) return { valid:false,code:"RESOURCE_SCHEMA_INVALID",sheet:sheet,headers:headers };
+  return { valid:true,sheet:sheet,headers:headers };
+}
+
+function manageWorkShiftAndSubstitution(payload) {
+  var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var operation = String(input.tipoOperacion || "").trim();
+  if (["AsignarTurno","RegistrarSustitucion"].indexOf(operation) < 0) return { status:"error",code:"WORK_SHIFT_OPERATION_INVALID" };
+  var primary = resolveWorkShiftEmployeeWriteAccess_(input, ss, input.empleadoId);
+  if (!primary.authorized) return { status:"error",code:primary.code };
+  var substitute = null;
+  if (operation === "RegistrarSustitucion") {
+    substitute = resolveWorkShiftEmployeeWriteAccess_(input, ss, input.empleadoSustituidoId, primary.actor);
+    if (!substitute.authorized) return { status:"error",code:substitute.code === "RESOURCE_SCHEMA_INVALID" ? substitute.code : "RESOURCE_NOT_FOUND" };
+    if (primary.employeeId === substitute.employeeId) return { status:"error",code:"WORK_SHIFT_SUBSTITUTE_INVALID" };
+  }
+  var startText = String(input.fechaInicio || "").trim(), endText = String(input.fechaFin || "").trim();
+  var datePattern = /^\d{4}-\d{2}-\d{2}$/;
+  if (!datePattern.test(startText) || !datePattern.test(endText)) return { status:"error",code:"WORK_SHIFT_DATE_INVALID" };
+  var startDate = new Date(startText + "T00:00:00"), endDate = new Date(endText + "T00:00:00");
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || startText > endText) return { status:"error",code:"WORK_SHIFT_DATE_RANGE_INVALID" };
+  var entryTime = String(input.horaEntrada || "07:00").trim(), exitTime = String(input.horaSalida || "15:00").trim();
+  var timePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+  if (!timePattern.test(entryTime) || !timePattern.test(exitTime)) return { status:"error",code:"WORK_SHIFT_TIME_INVALID" };
+  var sheetName = operation === "RegistrarSustitucion" ? "SustitucionesPersonal" : "AsignacionesTurnosLaborales";
+  var recordId = String(input.registroId || "").trim(), lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { status:"error",code:"CONCURRENT_UPDATE_RETRY" };
+  try {
+    var schema = ensureWorkShiftWriteSheet_(ss, sheetName);
+    if (!schema.valid) return { status:"error",code:schema.code };
+    var rows = schema.sheet.getDataRange().getValues(), now = new Date(), row;
+    if (recordId) {
+      var matches = rows.slice(1).map(function(value,index) { return {row:value,index:index}; })
+        .filter(function(item) { return String(item.row[0] || "").trim() === recordId; });
+      if (matches.length !== 1) return { status:"error",code:"RESOURCE_NOT_FOUND" };
+      row = matches[0].row.slice();
+      var expectedEmployee = operation === "RegistrarSustitucion" ? primary.employeeId : primary.employeeId;
+      if (String(row[1] || "") !== (operation === "RegistrarSustitucion" ? primary.employeeId : expectedEmployee) ||
+          String(row[8] || "") !== primary.departmentId) return { status:"error",code:"RESOURCE_NOT_FOUND" };
+      if (operation === "AsignarTurno") {
+        row[2] = String(input.nombreTurno || row[2] || "Turno").slice(0,100);
+        row[3] = startText; row[4] = endText; row[5] = entryTime; row[6] = exitTime;
+        row[8] = String(input.estado || row[8] || "Asignado"); row[11] = now;
+      } else {
+        row[1] = primary.employeeId; row[2] = substitute.employeeId;
+        row[3] = startText; row[4] = endText; row[5] = entryTime; row[6] = exitTime;
+        row[7] = String(input.motivoSustitucion || row[7] || "").slice(0,500);
+        row[8] = primary.departmentId; row[9] = String(input.estado || row[9] || "Pendiente"); row[12] = now;
+      }
+      try { schema.sheet.getRange(matches[0].index + 2,1,1,row.length).setValues([row]); }
+      catch (_) { return { status:"error",code:"WORK_SHIFT_WRITE_FAILED" }; }
+      return { status:"success",registroId:recordId,tipoOperacion:operation };
+    }
+    var id = (operation === "AsignarTurno" ? "TURN-" : "SUB-") + String(Utilities.getUuid()).replace(/-/g,"").slice(0,24);
+    if (rows.slice(1).some(function(value) { return String(value[0] || "") === id; })) return { status:"error",code:"WORK_SHIFT_ID_COLLISION" };
+    if (operation === "AsignarTurno") {
+      row = [id,primary.employeeId,String(input.nombreTurno || "Turno").slice(0,100),startText,endText,entryTime,exitTime,
+        primary.departmentId,String(input.estado || "Asignado"),primary.actor.userId,now,now];
+    } else {
+      row = [id,primary.employeeId,substitute.employeeId,startText,endText,entryTime,exitTime,
+        String(input.motivoSustitucion || "").slice(0,500),primary.departmentId,String(input.estado || "Pendiente"),
+        primary.actor.userId,now,now];
+    }
+    try { schema.sheet.appendRow(row); }
+    catch (_) { return { status:"error",code:"WORK_SHIFT_WRITE_FAILED" }; }
+    return { status:"success",registroId:id,tipoOperacion:operation };
+  } finally { lock.releaseLock(); }
+}
+
 function transportRows_(ss, sheetName, expectedHeaders) {
   var sheet = ss && ss.getSheetByName ? ss.getSheetByName(sheetName) : null;
   if (!sheet) return { valid: false, missing: true, code: "TRANSPORT_RESOURCE_NOT_FOUND", rows: [], headers: [] };
@@ -3502,7 +3633,7 @@ const ROLE_PERMISSIONS = {
   "Estudiante": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "getStudentAccountStatement", "createStoreOrder", "getStoreOrders", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase"],
   "Conductor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "Monitor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
-  "RecursosHumanos": [ "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "recordStaffCheckIn", "recordStaffAttendance", "getStaffAttendanceLogs", "getEmployeeSelfServicePortal", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageStaffingNeeds", "getStaffingNeedsPlanning"],
+  "RecursosHumanos": [ "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "recordStaffCheckIn", "recordStaffAttendance", "getStaffAttendanceLogs", "getEmployeeSelfServicePortal", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageStaffingNeeds", "getStaffingNeedsPlanning", "manageWorkShiftAndSubstitution"],
   "Director": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization", "getTransportEfficiencyMetrics", "getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher", "getFamilyCreditSalesReconciliation"],
   "Subdirector": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization", "getTransportEfficiencyMetrics"],
   "Contador": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport", "getFamilyCreditSalesReconciliation"],
@@ -5347,6 +5478,7 @@ function doPost(e) {
     if (request.action === "getCafeteriaOrders") return respond(getCafeteriaOrders(actionPayload));
     if (request.action === "updateCafeteriaOrderStatus") return respond(updateCafeteriaOrderStatus(actionPayload));
     if (request.action === "getStudentAccountStatement") return respond(getStudentAccountStatement(actionPayload));
+    if (request.action === "manageWorkShiftAndSubstitution") return respond(manageWorkShiftAndSubstitution(actionPayload));
     if (request.action === "manageStaffingNeeds") return respond(manageStaffingNeeds(actionPayload));
     if (request.action === "getStaffingNeedsPlanning") return respond(getStaffingNeedsPlanning(actionPayload));
     if (request.action === "getTransportRoutes") return respond(getTransportRoutes(actionPayload));
@@ -5382,7 +5514,10 @@ function doPost(e) {
   } catch (error) {
     var rawCode = String(error && error.message || "").split(":")[0].trim();
     var safeCodes = {
-      STAFFING_QUANTITY_INVALID: true, STAFFING_FIELDS_REQUIRED: true,
+      WORK_SHIFT_OPERATION_INVALID: true, WORK_SHIFT_DATE_INVALID: true,
+      WORK_SHIFT_DATE_RANGE_INVALID: true, WORK_SHIFT_TIME_INVALID: true,
+      WORK_SHIFT_SUBSTITUTE_INVALID: true, WORK_SHIFT_WRITE_FAILED: true, WORK_SHIFT_ID_COLLISION: true,
+            STAFFING_QUANTITY_INVALID: true, STAFFING_FIELDS_REQUIRED: true,
       STAFFING_PLAN_WRITE_FAILED: true, STAFFING_PLAN_ID_COLLISION: true,
       DEPARTMENT_REFERENCE_REQUIRED: true, DEPARTMENT_REFERENCE_NOT_FOUND: true,
             FAMILY_CREDIT_GUARDIAN_ROLE_REQUIRED: true, FAMILY_CREDIT_LIMITS_INVALID: true,
