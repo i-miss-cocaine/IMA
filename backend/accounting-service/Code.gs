@@ -1213,7 +1213,7 @@ function getEmployeeDocuments(payload) {
         expedienteId: row[documentIndex.ExpedienteID],
         categoriaDoc: row[documentIndex.CategoriaDoc],
         tituloDocumento: row[documentIndex.TituloDocumento],
-        archivoUrl: row[documentIndex.ArchivoUrl],
+        tieneArchivo: !!String(row[documentIndex.ArchivoUrl] || "").trim(),
         fechaCarga: row[documentIndex.FechaCarga],
         cargadoPor: row[documentIndex.CargadoPor],
         estadoVisibilidad: row[documentIndex.EstadoVisibilidad],
