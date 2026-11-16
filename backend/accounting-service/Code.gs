@@ -2287,6 +2287,125 @@ function reviewAttendanceCorrection(payload) {
   } finally { lock.releaseLock(); }
 }
 
+function resolveEmployeeLoanAdvanceAccess_(payload, ss, requestedEmployeeId, actor) {
+  var input = payload || {}, identity = actor || getVerifiedAccountingIdentity_(input);
+  if (!identity || identity.authorized !== true) return { authorized: false, code: identity && identity.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var role = String(identity.role || "").trim().toLowerCase().replace(/\s+/g, "");
+  if (["empleado","recursoshumanos","administrador"].indexOf(role) === -1) return { authorized: false, code: "ROLE_NOT_ALLOWED" };
+  var employeeUserId = role === "empleado" ? String(identity.userId || "").trim() : String(requestedEmployeeId || "").trim();
+  if (!employeeUserId) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  var employeeSheet = ss && ss.getSheetByName ? ss.getSheetByName("ExpedientesLaborales") : null;
+  if (!employeeSheet) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  var values = employeeSheet.getDataRange().getValues();
+  if (!values || !values.length) return { authorized: false, code: "RESOURCE_SCHEMA_INVALID" };
+  var headers = values[0].map(function(value) { return String(value || "").trim(); });
+  var expedienteIndex = headers.indexOf("ExpedienteID"), userIndex = headers.indexOf("UserId");
+  var departmentIndex = headers.indexOf("Departamento"), stateIndex = headers.indexOf("EstadoLaboral");
+  if (expedienteIndex < 0 || userIndex < 0 || departmentIndex < 0 || stateIndex < 0) {
+    return { authorized: false, code: "RESOURCE_SCHEMA_INVALID" };
+  }
+  var matches = values.slice(1).filter(function(row) { return String(row[userIndex] || "").trim() === employeeUserId; });
+  if (matches.length !== 1 || String(matches[0][stateIndex] || "").trim().toLowerCase() !== "activo") {
+    return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  }
+  var expedienteId = String(matches[0][expedienteIndex] || "").trim();
+  if (!expedienteId) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  if (role !== "empleado") {
+    var scope = getVerifiedAccountingDepartmentScope_(input, ss, identity);
+    if (!scope || (scope.valid !== true && scope.authorized !== true)) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+    var ownership = assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_LABORAL", expedienteId, "WRITE");
+    if (!ownership || ownership.authorized !== true) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  } else if (employeeUserId !== String(identity.userId || "").trim()) {
+    return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  }
+  return { authorized: true, actor: identity, role: role, employeeId: employeeUserId,
+    expedienteId: expedienteId, departmentId: String(matches[0][departmentIndex] || "").trim() };
+}
+
+function requestEmployeeLoanAdvance(payload) {
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var amount = Number(input.montoSolicitado), term = Number(input.plazoCuotas);
+  if (!isFinite(amount) || amount <= 0 || Math.round(amount * 100) !== amount * 100 ||
+      !isFinite(term) || term <= 0 || Math.floor(term) !== term) {
+    return { status: "error", code: "LOAN_REQUEST_VALUES_INVALID" };
+  }
+  var type = String(input.tipo || "Prestamo").trim();
+  if (["Anticipo","Prestamo"].indexOf(type) === -1) return { status: "error", code: "LOAN_REQUEST_VALUES_INVALID" };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var access = resolveEmployeeLoanAdvanceAccess_(input, ss, input.empleadoId, actor);
+  if (!access.authorized) return { status: "error", code: access.code };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
+  try {
+    actor = getVerifiedAccountingIdentity_(input);
+    if (!actor || actor.authorized !== true || String(actor.userId) !== String(access.actor.userId) ||
+        String(actor.role) !== String(access.actor.role)) return { status: "error", code: "VERIFIED_IDENTITY_CHANGED" };
+    access = resolveEmployeeLoanAdvanceAccess_(input, ss, input.empleadoId, actor);
+    if (!access.authorized) return { status: "error", code: access.code };
+    var headers = ["PrestamoID","Fecha","EmpleadoId","Tipo","MontoSolicitado","MontoAprobado","PlazoCuotas","CuotaMensual","SaldoPendiente","EstadoAprobacion","AprobadoPor","Observaciones"];
+    var sheet = getOrCreateSheet(ss, "AnticiposPrestamosEmpleado"), values = sheet.getDataRange().getValues();
+    if (!values || !values.length) { sheet.appendRow(headers); values = [headers]; }
+    if (JSON.stringify(values[0].map(function(value) { return String(value || "").trim(); })) !== JSON.stringify(headers)) {
+      return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
+    }
+    var loanId = "PREST-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 24);
+    if (values.slice(1).some(function(row) { return String(row[0] || "").trim() === loanId; })) {
+      return { status: "error", code: "LOAN_ID_COLLISION" };
+    }
+    sheet.appendRow([loanId, new Date(), access.employeeId, type, Math.round(amount * 100) / 100,
+      0, term, 0, 0, "Pendiente", "", String(input.motivo || "").trim().slice(0, 500)]);
+    return { status: "success", prestamoId: loanId, estadoAprobacion: "Pendiente" };
+  } catch (error) {
+    return { status: "error", code: "LOAN_REQUEST_WRITE_FAILED" };
+  } finally { lock.releaseLock(); }
+}
+
+function approveEmployeeLoanAdvance(payload) {
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var role = String(actor.role || "").trim().toLowerCase().replace(/\s+/g, "");
+  if (["recursoshumanos","administrador"].indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED" };
+  var loanId = String(input.prestamoId || "").trim(), newState = String(input.nuevoEstado || "").trim();
+  if (!loanId || ["Aprobado","Rechazado"].indexOf(newState) === -1) return { status: "error", code: "LOAN_DECISION_INVALID" };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
+  try {
+    actor = getVerifiedAccountingIdentity_(input);
+    if (!actor || actor.authorized !== true || ["recursoshumanos","administrador"].indexOf(String(actor.role || "").trim().toLowerCase().replace(/\s+/g, "")) === -1) {
+      return { status: "error", code: "ROLE_NOT_ALLOWED" };
+    }
+    var headers = ["PrestamoID","Fecha","EmpleadoId","Tipo","MontoSolicitado","MontoAprobado","PlazoCuotas","CuotaMensual","SaldoPendiente","EstadoAprobacion","AprobadoPor","Observaciones"];
+    var sheet = getOrCreateSheet(ss, "AnticiposPrestamosEmpleado"), values = sheet.getDataRange().getValues();
+    if (!values || !values.length || JSON.stringify(values[0].map(function(value) { return String(value || "").trim(); })) !== JSON.stringify(headers)) {
+      return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
+    }
+    var matches = values.slice(1).map(function(row, index) { return { row: row, index: index }; })
+      .filter(function(item) { return String(item.row[0] || "").trim() === loanId; });
+    if (matches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    var match = matches[0], row = match.row.slice();
+    if (String(row[9] || "").trim() !== "Pendiente") return { status: "error", code: "LOAN_ALREADY_REVIEWED" };
+    var access = resolveEmployeeLoanAdvanceAccess_(input, ss, row[2], actor);
+    if (!access.authorized) return { status: "error", code: access.code };
+    var requested = Number(row[4]), approved = newState === "Aprobado" ? Number(input.montoAprobado === undefined ? row[4] : input.montoAprobado) : 0;
+    var term = Number(row[6]);
+    if (newState === "Aprobado" && (!isFinite(approved) || approved <= 0 || approved > requested ||
+        Math.round(approved * 100) !== approved * 100 || !isFinite(term) || term <= 0 || Math.floor(term) !== term)) {
+      return { status: "error", code: "LOAN_APPROVED_AMOUNT_INVALID" };
+    }
+    row[5] = newState === "Aprobado" ? Math.round(approved * 100) / 100 : 0;
+    row[7] = newState === "Aprobado" ? Math.round((approved / term) * 100) / 100 : 0;
+    row[8] = newState === "Aprobado" ? row[5] : 0;
+    row[9] = newState;
+    row[10] = actor.userId;
+    row[11] = String(input.observaciones || row[11] || "").trim().slice(0, 500);
+    sheet.getRange(match.index + 2, 1, 1, headers.length).setValues([row]);
+    return { status: "success", prestamoId: loanId, estadoAprobacion: newState, montoAprobado: row[5] };
+  } catch (error) {
+    return { status: "error", code: "LOAN_REVIEW_WRITE_FAILED" };
+  } finally { lock.releaseLock(); }
+}
+
 function transportRows_(ss, sheetName, expectedHeaders) {
   var sheet = ss && ss.getSheetByName ? ss.getSheetByName(sheetName) : null;
   if (!sheet) return { valid: false, missing: true, code: "TRANSPORT_RESOURCE_NOT_FOUND", rows: [], headers: [] };
@@ -2779,15 +2898,15 @@ const API_RESPONSE_VERSION = "1.0.0";
 
 const ROLE_PERMISSIONS = {
   Auditor: ["getAccountingMigrationFileAudit"],
-  "Empleado": ["getEmployeeRecords", "getLeaveVacationRequests", "submitLeaveVacationRequest", "submitAttendanceCorrection", "manageProfessionalDevelopmentPlan"],
+  "Empleado": ["getEmployeeRecords", "getLeaveVacationRequests", "submitLeaveVacationRequest", "submitAttendanceCorrection", "requestEmployeeLoanAdvance", "manageProfessionalDevelopmentPlan"],
   "Profesor": ["submitVacationRequest"],
   "Padre": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "Estudiante": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "Conductor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "Monitor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
-  "RecursosHumanos": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "recordStaffCheckIn", "recordStaffAttendance", "getStaffAttendanceLogs", "getEmployeeSelfServicePortal", "submitAttendanceCorrection", "reviewAttendanceCorrection"],
+  "RecursosHumanos": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "recordStaffCheckIn", "recordStaffAttendance", "getStaffAttendanceLogs", "getEmployeeSelfServicePortal", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "approveEmployeeLoanAdvance"],
   "Director": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances"],
-  "Administrador": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection"]
+  "Administrador": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "approveEmployeeLoanAdvance"]
 };
 
 function accountingHasRolePermission_(actor, action) {
@@ -2944,6 +3063,8 @@ function doPost(e) {
     if (request.action === "getTransportRoutes") return respond(getTransportRoutes(actionPayload));
     if (request.action === "getTransportAssignments") return respond(getTransportAssignments(actionPayload));
     if (request.action === "getTripPassengerManifest") return respond(getTripPassengerManifest(actionPayload));
+    if (request.action === "requestEmployeeLoanAdvance") return respond(requestEmployeeLoanAdvance(actionPayload));
+    if (request.action === "approveEmployeeLoanAdvance") return respond(approveEmployeeLoanAdvance(actionPayload));
     if (request.action === "submitAttendanceCorrection") return respond(submitAttendanceCorrection(actionPayload));
     if (request.action === "reviewAttendanceCorrection") return respond(reviewAttendanceCorrection(actionPayload));
     if (request.action === "getEmployeeSelfServicePortal") return respond(getEmployeeSelfServicePortal(actionPayload));
