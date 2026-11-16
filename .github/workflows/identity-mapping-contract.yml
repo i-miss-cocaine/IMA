@@ -1,5 +1,6 @@
 name: Identity mapping and transport security contracts
 # Recheck signed identity mapping and scoped transport access after accounting backend restoration.
+# Role permission formatting is asserted by the transport access contract.
 on:
   push:
     branches: [NG_beta_0.0.0.1_work]

@@ -1,5 +1,6 @@
 name: Accounting Import Preflight Contract
 # Keep signed import authorization and the HTTP router contract in the backend regression gate.
+# The accounting service syntax check covers the restored payroll and journal module.
 
 on:
   push:

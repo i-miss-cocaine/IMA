@@ -1,6 +1,7 @@
 # Keep canonical absence reconciliation and ownership tests covered on every relevant push.
 # Include the PDF page classifier dependency in the academic evidence contract.
 # Revalidate payroll concepts, loan amortization, journals, and receipt distribution with department scope.
+# Keep HR incident, disciplinary, attendance-correction, and transport ownership contracts enabled.
 name: Department Scope Contract
 
 on:

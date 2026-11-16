@@ -1,5 +1,6 @@
 name: Department Reference Consumers Local Contract
 # Keep cross-service department references and resource ownership covered after accounting restoration.
+# Verify the current accounting department-scope consumer contracts.
 
 on:
   push:
