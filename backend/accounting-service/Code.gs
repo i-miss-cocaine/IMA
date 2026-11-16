@@ -2070,6 +2070,7 @@ function getStaffAttendanceLogs(payload) {
   var eh=employeeValues.length?employeeValues[0].map(function(v){return String(v||"").trim();}):[],ui=eh.indexOf("UserId"),di=eh.indexOf("Departamento"),departments=Object.create(null);
   employeeValues.slice(1).forEach(function(row){if(ui>=0&&di>=0)departments[String(row[ui]||"").trim()]=String(row[di]||"").trim();});
   var requested=String(input.empleadoId||"").trim();
+  if(role==="recursoshumanos"&&requested&&(!departments[requested]||(allowed&&allowed.indexOf(departments[requested])===-1)))return {status:"error",code:"RESOURCE_NOT_FOUND",asistencias:[]};
   if(role==="empleado"&&requested&&requested!==actor.userId)return {status:"error",code:"RESOURCE_NOT_FOUND",asistencias:[]};
   if(role==="empleado")requested=actor.userId;
   var result=values.slice(1).filter(function(row){
