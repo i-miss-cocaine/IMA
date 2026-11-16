@@ -571,3 +571,18 @@
 - TASK-143 continúa sin elegibilidad para remediación completa: AUD-NG-158 completa, TASK-296 parcial, F31-Task09 pendiente, F34-Task04 completada en código pero beta pendiente, F39-Task02 parcial y AUD-NG-127 sin bloque de backlog en la ruta declarada; USER mantiene fallback SECRET_KEY para recuperación y DEBUG_MODE=true.
 - Siguiente: revisar el backlog autorizado para ubicar el propietario de la gestión laboral/vacaciones que falta en ACCOUNTING; no crear un servicio contable paralelo. Después completar los subcriterios pendientes de TASK-296/F31-Task09 y reevaluar TASK-143/TASK-144.
 ===============================================================================
+
+
+===============================================================================
+## C1.785 — IMA-EXEC-20261116-0227Z-CONTINUITY-HR-OWNER-01 — Hallazgo de continuidad del módulo laboral
+
+- Fecha: 2026-11-16 02:27 UTC.
+- Rama autorizada: NG_beta_0.0.0.1_work.
+- Rama base: NG_beta_0.0.0.1.
+- HEAD inicial: 921c04487130fbc4afd3823ba24f2afe68a1eb42.
+- Cambios de código: ninguno. Checkpoint de continuidad/auditoría; no cierra tarea.
+- Hallazgo: Fase 16 declara ACCOUNTING propietario de F16-11 (vacaciones, permisos, ausencias e incapacidades), pero el servicio actual no contiene el módulo ni las funciones requeridas por accounting-vacation-medical-leave-ownership.test.js. No se localizaron en los otros servicios. El árbol base conserva las funciones heredadas. El test también necesita alineación con la autenticación central actual (requestAccountingUserAuthorization_) y no debe restaurar verifySessionToken local ni RBAC legado.
+- CI del último commit funcional fb111ee693cd7073798739fafb6268dec18009bf: Accounting Import Preflight 43791680550 SUCCESS (40/40, Node 24.22.2); Department Reference Consumers 43791680506 SUCCESS (15/15); Task-Service Security 43791680523 SUCCESS (11/11); Department Scope 43791680491 FAILURE.
+- Node CLI local: NOT RUN. Beta Drive/Sheets: NOT RUN. TASK-296/F31-Task09 parciales; TASK-143/TASK-144 no elegibles.
+- Siguiente: reconciliar/restaurar módulo laboral en ACCOUNTING con auth central y pruebas actualizadas; después continuar ACL/cuarentena TASK-296/F31-Task09 y revalidar TASK-143/TASK-144.
+===============================================================================

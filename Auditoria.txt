@@ -2981,3 +2981,15 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Verificación:** contratos Node añadidos para carga, reemplazo, restauración, migración de historial, descarga autorizada, tampering, permisos públicos, rollback y contención de lock; GitHub Actions SUCCESS en contratos y sintaxis. Ejecución local bloqueada por fallo DNS al obtener checkout.
 - **Estado:** Corregido en código/CI; validación beta real pendiente bajo BETA-FUNC-099.
 ===============================================================================
+
+
+===============================================================================
+### Revisión de continuidad C1.785 — ausencia del módulo laboral en ACCOUNTING
+- **Fecha de revisión:** 2026-11-16 02:27 UTC.
+- **Rama:** NG_beta_0.0.0.1_work. **HEAD inicial:** 921c04487130fbc4afd3823ba24f2afe68a1eb42. **Rama base verificada:** 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Hallazgo accionable:** el backlog/auditoría Fase 16 identifica ACCOUNTING como propietario de expedientes laborales, vacaciones, permisos e incapacidades (F16-11). Sin embargo, el árbol de trabajo no contiene el módulo ni las funciones getEmployeeRecords, submitVacationRequest, calculateVacationBalances, recordMedicalLeave y reviewVacationRequest; tampoco se localizaron en USER, ACADEMIC o DEVELOPER. El árbol base conserva esas funciones, por lo que se requiere reconciliar la migración de esa capacidad, no crear un servicio paralelo.
+- **Contrato CI:** el test tests/security/accounting-vacation-medical-leave-ownership.test.js exige ownership por empleado/departamento/institución, aislamiento de notas y datos médicos, auditoría sin IDs ajenos, lock contra escrituras concurrentes, rechazo de duplicados/esquemas inválidos y rollback/no escritura ante lock no disponible. El run Department Scope 43791680491 falla al extraer funciones ausentes. El harness también usa verifySessionToken/validateRolePermission del contrato anterior, mientras el servicio actual delega la identidad a requestAccountingUserAuthorization_; el contrato debe alinearse con la autenticación central sin debilitarla.
+- **Verificaciones de continuidad:** HEAD y rama base leídos; compare base...work = 3416 commits ahead / 0 behind. No se modificó la rama base. Accounting Import Preflight 43791680550 SUCCESS (40/40, Node 24.22.2); Department Reference Consumers 43791680506 SUCCESS (15/15); Task-Service Security 43791680523 SUCCESS (11/11); Department Scope 43791680491 FAILURE. Node CLI local NOT RUN; beta Drive/Sheets NOT RUN.
+- **Cambios de código en esta revisión:** ninguno. No se declara completada ninguna tarea. TASK-296 y F31-Task09 siguen parciales por ACL/cuarentena y beta; TASK-143/TASK-144 siguen sin elegibilidad conforme a sus dependencias.
+- **Siguiente acción concreta:** restaurar/reconciliar el módulo F16 laboral en ACCOUNTING usando la autenticación y el ámbito departamental actuales; actualizar el contrato local para probar ese diseño; ejecutar CI Node y regresiones. Después continuar TASK-296/F31-Task09 y reevaluar TASK-143/TASK-144.
+===============================================================================
