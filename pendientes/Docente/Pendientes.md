@@ -2980,14 +2980,17 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 ---
 
 <!-- ID: AUD-NG-158 | Fuentes: Pendientes.md -->
-### [ ] [AUD-NG-158] Aplicar autorización contextual a escrituras docentes y conservar historial de fechas límite
+### [x] [AUD-NG-158] Aplicar autorización contextual a escrituras docentes y conservar historial de fechas límite
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-158 (REQ-DOC-012).
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** backend/task-service/Code.gs; backend/academic-service/Code.gs; js/api.js; pruebas de seguridad académica.
 - **Dependencias Expuestas:** validateRolePermission, validateContextualAccess, getDynamicPermissionsForRole, createTask, updateTask, createStudyMaterial, AsignacionesDocentes, _verifiedUserId, fechaLimite, historial de tareas.
 - **Descripción del Alcance:** Aplicar ABAC server-side a todas las escrituras docentes. Derivar profesorId/autorId exclusivamente de la sesión verificada y comprobar que asignatura, grado y sección pertenecen a asignaciones vigentes del docente. Verificar propiedad/ámbito antes de editar o eliminar una tarea/material. Añadir historial append-only de cambios de fecha límite con valor anterior/nuevo, actor verificado, timestamp y motivo. Coordinar con AUD-NG-001/AUD-NG-004 para token y secreto, y con TASK-085/TASK-142 para privacidad documental, sin duplicar esos alcances.
 - **Criterios de Aceptación:** Un profesor no puede crear, editar ni eliminar tareas/materiales fuera de sus asignaciones aunque manipule el payload; el servidor deriva identidad y ámbito de claims verificados; updateTask rechaza tareas de otro profesor; cada cambio de fecha límite conserva historial inmutable con actor/fecha/motivo; pruebas negativas con dos docentes y dos secciones, modificación de IDs y múltiples cambios de fecha.
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Completada — C1.781; CI Task-Service local contracts SUCCESS.
+
+- **Cierre C1.781 (2026-11-16):** createTask, updateTask, createStudyMaterial y deleteStudyMaterial derivan identidad de getVerifiedTaskIdentity_ y aplican propiedad/ámbito antes de mutar. updateTask revalida identidad tras adquirir ScriptLock, valida asignación vigente y conserva cada cambio de fecha límite en HistorialFechasLimiteTareas (valor anterior/nuevo, actor verificado, rol, timestamp, motivo obligatorio y correlationId). Si falla la escritura del historial, la fila de tarea se revierte; no se modifican ni eliminan filas históricas. La UI docente solicita motivo cuando cambia la fecha.
+- **Evidencia:** Task-Service security local contracts run 43789958601 SUCCESS (11/11 pasos, Node.js 22.23.4), incluyendo task-service-security-contract, resource-ownership, grade-submission-history, deadline-history y node --check js/teacher.js. Task-Service backup and restore run 43789660478 SUCCESS. Los contratos confirman dos docentes/propietarios, identidad manipulada, motivo obligatorio, múltiples cambios, lock, esquema inválido y rollback.
 
 ---
 

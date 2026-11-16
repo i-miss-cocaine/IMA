@@ -420,3 +420,45 @@
 - TASK-142 permanece En ejecución (parcial): Academic PREVIEW/DOWNLOAD y ocultación de URL laboral en metadatos implementadas; falta proxy binario Accounting, funciones de carga Accounting propietarias y validación beta real.
 - Siguiente: no inventar uploadEmployeeDocument/uploadPaymentVoucher; verificar el propietario del repositorio documental contable y las dependencias originales de TASK-143/TASK-144 para elegir el siguiente alcance elegible.
 ===============================================================================
+
+
+===============================================================================
+## C1.781 — IMA-EXEC-20261116-0205Z-AUD-NG-158-TEACHER-WRITES-DEADLINE-HISTORY-01 — Autorización docente y bitácora inmutable de fechas límite
+
+- Fecha: 2026-11-16 02:05 UTC.
+- Rama autorizada: NG_beta_0.0.0.1_work.
+- Rama base: NG_beta_0.0.0.1.
+- HEAD inicial: 07af7a1ac2aa37dae16b62522a1b7b72242160b8.
+- HEAD final de implementación antes del checkpoint: e1cc683c491a0415d4d49558a67bf33414a3b631.
+- Commit principal de implementación: 9a414d8ce8e9268dc885637910b55ecf3c3e8584.
+- Correcciones de contrato/harness: 388ad6e2d30346a5cb3fc2187bf56cb2a3e2ab06, d46e8807abe230285fdfc8030d2d053ad97f594b, fddaa7594366f1fe2250495d45ea8d2dcd9be970, c93eb46398ac194fbd885fac837c3d2ad8994cb9 y e1cc683c491a0415d4d49558a67bf33414a3b631.
+- Normativa leída: Normas_Desarollo.md NDASC 1.4, secciones aplicables 1-16.
+- Continuidad: C1.780.
+
+### Implementación
+
+- updateTask ya no usa _verifiedUserId/_verifiedRole del payload para identificar al actor; deriva identidad y rol de getVerifiedTaskIdentity_ y vuelve a validarlos después de adquirir ScriptLock.
+- La actualización vuelve a leer la tarea bajo lock, comprueba propiedad y ámbito mediante assertTaskServiceTeacherCanManageTask y valida que cualquier cambio de asignatura/grado/sección corresponda a un aula/asignación docente vigente.
+- Se creó HistorialFechasLimiteTareas con esquema estricto y eventos append-only: HistoryID, TaskID, PreviousDeadline, NewDeadline, ChangedByUserID, ChangedByRole, ChangedAt, Reason y CorrelationID.
+- Cada cambio de fecha requiere motivo no vacío (máximo 500 caracteres). Se guarda el actor/rol de claims verificados y el timestamp del servidor.
+- Si falla la escritura de historial, la fila de tarea se restaura a su valor anterior; si también falla el rollback se devuelve TASK_UPDATE_HISTORY_ROLLBACK_FAILED. La bitácora no se modifica ni se borra.
+- createStudyMaterial y deleteStudyMaterial también derivan identidad/rol de getVerifiedTaskIdentity_; el autor del material no se toma de campos manipulables del payload.
+- La UI docente compara la fecha original y solicita el motivo antes de enviar updateTask; cancelar el prompt impide la actualización.
+- Se añadió tests/security/task-service-deadline-history.test.js y se integró en el workflow Task-Service security local contracts.
+- El contrato existente de Task-Service fue corregido para reconocer que ACCOUNTING verifica sesión mediante USER con verifyAccountingSession e IMA_MIGRATION_HMAC_SECRET, en lugar de requerir una segunda implementación local de verifySessionToken/getAuthTokenSecret. No se debilitó la autenticación.
+
+### Verificaciones
+
+- GitHub Actions Task-Service security local contracts run 43789958601: SUCCESS, 11/11 pasos; Node.js 22.23.4. Pasaron strict session claims, ownership, grade/submission history, deadline history y sintaxis js/teacher.js.
+- GitHub Actions Task-Service backup and restore contract run 43789660478: SUCCESS.
+- GitHub Actions UI Accessibility and Metadata Contract run 43789660451: SUCCESS en el mismo cambio funcional.
+- GitHub Actions Accounting Import Preflight Contract run 43789660487: SUCCESS en el mismo cambio funcional.
+- Department Scope Contract run 43789660452 permanece FAILURE independiente por ausencia de resolveEmployeeDepartmentId_ en backend/accounting-service/Code.gs; no forma parte de AUD-NG-158.
+- Node CLI ejecutado por GitHub Actions; no se desplegó Apps Script real ni se ejecutó beta institucional.
+
+### Estado y continuidad
+
+- AUD-NG-158: COMPLETADA y marcada [x] en pendientes/Docente/Pendientes.md.
+- TASK-143 todavía no es elegible hasta verificar/resolver los demás prerrequisitos declarados en Plan Maestro: TASK-296, AUD-NG-127, F31-Task09, F34-Task04 y F39-Task02. AUD-NG-158 deja de ser bloqueo.
+- Siguiente: auditar los prerrequisitos pendientes de TASK-143/TASK-144 y elegir el siguiente alcance técnico ejecutable; mantener visible el fallo independiente de Department Scope.
+===============================================================================

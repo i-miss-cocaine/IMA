@@ -3986,3 +3986,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - getEmployeeDocuments deja de exponer archivoUrl; devuelve solo tieneArchivo y mantiene comprobación de privacidad Drive.
 - CI Accounting Import Preflight run 43788968649 SUCCESS; Department Reference Consumers run 43789068286 SUCCESS; Department Scope run 43789068303 FAILURE independiente por resolveEmployeeDepartmentId_ ausente en ACCOUNTING.
 - TASK-142 sigue parcial por falta de propietario/funciones de carga y proxy binario Accounting, además de beta real pendiente. BETA-FUNC-110 documenta las pruebas aisladas.
+
+
+[2026-11-16] C1.781 — AUD-NG-158 completada
+- Escrituras de tareas y materiales docentes derivan identidad de sesión verificada; updateTask aplica ScriptLock, verifica propiedad/ámbito y registra historial append-only de cambios de fecha límite con actor, timestamp y motivo obligatorio.
+- UI docente solicita motivo al cambiar la fecha; pruebas de ownership, manipulación de identidad, cambios múltiples, contención de lock y rollback.
+- Task-Service security local contracts run 43789958601 SUCCESS (11/11, Node 22.23.4); Task-Service backup/restore, UI Accessibility y Accounting Import Preflight también SUCCESS.
