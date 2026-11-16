@@ -18,6 +18,7 @@ assert.equal(ctx.maintenancePlanISO_(ctx.maintenancePlanAdd_("2026-01-31","MENSU
 const templates=ctx.getPreventiveMaintenanceTemplates({});assert.ok(templates.plantillas.some(x=>x.id==="VEHICULOS"));assert.ok(templates.plantillas.every(x=>Array.isArray(x.checklist)&&x.checklist.length>0));
 const saved=ctx.managePreventiveMaintenancePlan({tipoObjetivo:"ACTIVO",objetivoId:"A-1",objetivoNombre:"Equipo A",frecuenciaTipo:"SEMANAL",frecuenciaValor:1,fechaUltimoMantenimiento:"2026-11-13",fechaProximoMantenimiento:"2026-11-20",departamento:"DEP-LAB",responsableTecnico:"T-1",procedimiento:"Inspección y limpieza",checklist:["Inspección visual"],repuestosNecesarios:[],diasAnticipacion:30});
 assert.equal(saved.status,"success");assert.equal(saved.fechaProximoMantenimiento,"2026-11-20");
+assert.throws(()=>ctx.managePreventiveMaintenancePlan({planId:saved.planId,departamento:"DEP-ADMIN",procedimiento:"Cambio no autorizado"}),/MAINTENANCE_PLAN_DEPARTMENT_IMMUTABLE/,"an existing plan cannot be reassigned to another department");
 const alerts=ctx.getPreventiveMaintenanceAlerts({fechaReferencia:"2026-11-16"});assert.equal(alerts.alertas.length,1);assert.equal(alerts.alertas[0].estado,"7_DIAS");
 const generated=ctx.generatePreventiveMaintenanceOrders({fechaReferencia:"2026-11-16"});assert.equal(generated.generadas.length,1);assert.equal(rows.MantenimientoOrdenes.length,2);
 const repeated=ctx.generatePreventiveMaintenanceOrders({fechaReferencia:"2026-11-16"});assert.equal(repeated.generadas.length,0,"same plan cycle must not create duplicate orders");
