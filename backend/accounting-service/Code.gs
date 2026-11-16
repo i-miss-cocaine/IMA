@@ -2408,7 +2408,7 @@ function resolveTransportAccessScope_(payload, ss) {
   if (!actor || actor.authorized !== true) return { authorized: false, reason: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
   var role = String(actor.role || "").trim(), normalizedRole = role.toLowerCase();
   var scope = { authorized: true, role: role, userId: actor.userId, studentIds: [], employeeIds: [], routeIds: [] };
-  if (["director","administrador"].indexOf(normalizedRole) !== -1) {
+  if (["director","subdirector","administrador"].indexOf(normalizedRole) !== -1) {
     scope.management = true;
     scope.studentIds = null;
     scope.employeeIds = null;
@@ -9406,7 +9406,7 @@ function getTransportEfficiencyMetrics(payload) {
     // Rechazar identidades no autorizadas antes de tomar el lock global.
     const initialScope = resolveTransportAccessScope_(data, ss);
     if (!initialScope.authorized) {
-      transportAuditDenied_("getTransportEfficiencyMetrics", data, initialScope, null);
+      transportAuditDenied_(initialScope, "getTransportEfficiencyMetrics", null);
       return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "Se requiere una identidad verificada." };
     }
     if (!initialScope.management || ["Administrador", "Director", "Subdirector"].indexOf(initialScope.role) === -1) {
@@ -9426,7 +9426,7 @@ function getTransportEfficiencyMetrics(payload) {
     // Revalidar identidad/rol dentro del lock para evitar TOCTOU durante la espera.
     const scope = resolveTransportAccessScope_(data, ss);
     if (!scope.authorized) {
-      transportAuditDenied_("getTransportEfficiencyMetrics", data, scope, null);
+      transportAuditDenied_(scope, "getTransportEfficiencyMetrics", null);
       return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "La identidad dejó de ser válida." };
     }
     if (!scope.management || ["Administrador", "Director", "Subdirector"].indexOf(scope.role) === -1) {
