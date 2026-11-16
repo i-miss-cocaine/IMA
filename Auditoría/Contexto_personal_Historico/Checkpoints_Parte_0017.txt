@@ -1,0 +1,16 @@
+
+
+===============================================================================
+## C1.787 — IMA-EXEC-20261116-0355Z-TASK181-QUOTATION-MATRIX-01
+
+- Rama autorizada: NG_beta_0.0.0.1_work.
+- HEAD de código verificado: ebf14608545853e211c214a84a4273208b1396fc.
+- Tarea: TASK-181 — matriz comparativa de cotizaciones y adjudicación por partidas.
+- Resultado: implementadas cotizaciones por proveedor, matriz de hasta cinco ofertas, partidas ausentes/parciales, comparación de menor precio, adjudicación dividida, justificación reforzada de ofertas no mínimas, motivos de descarte, acta con snapshot inmutable, órdenes agrupadas por proveedor, idempotencia y rollback bajo ScriptLock.
+- Seguridad: autorización central y ámbito departamental verificado; RBAC/router para roles contables; revalidación de identidad dentro del lock.
+- Archivos: backend/accounting-service/Code.gs; tests/security/accounting-purchase-quotation-adjudication.test.js; .github/workflows/department-scope-contract.yml.
+- Verificación GitHub Actions: run 43800738839, Node.js 24.22.2; contrato de matriz y adjudicación PASS.
+- Node CLI local: NOT RUN. Despliegue/beta Drive y Sheets: NOT RUN.
+- Pendiente externo a esta tarea: el workflow global termina FAIL más adelante en accounting-catalog.test.js por ausencia del bloque CATALOG_ITEM_HEADERS_/getInventoryKardex; no afecta el paso TASK-181 que pasó.
+- Siguiente tarea elegible: TASK-182 — recepción de compras y capitalización patrimonial.
+===============================================================================

@@ -2382,7 +2382,7 @@
 ---
 
 <!-- ID: TASK-181 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [ ] [TASK-181] Crear una matriz comparativa de cotizaciones y adjudicación por partidas
+### [x] [TASK-181] Crear una matriz comparativa de cotizaciones y adjudicación por partidas
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección B (B.2) y Sección G (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Optimización de costos, transparencia en compras y adjudicaciones divididas)
