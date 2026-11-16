@@ -8,10 +8,10 @@ const academic = fs.readFileSync(path.join(root, "backend/academic-service/Code.
 const teacher = fs.readFileSync(path.join(root, "js/teacher.js"), "utf8");
 new vm.Script(academic, { filename: "backend/academic-service/Code.gs" });
 new vm.Script(teacher, { filename: "js/teacher.js" });
-function extractFunction(name) {
-  const start = academic.indexOf("function " + name + "(");
+function extractFunction(source, name) {
+  const start = source.indexOf("function " + name + "(");
   assert.ok(start >= 0, "function exists: " + name);
-  const open = academic.indexOf("{", start);
+  const open = source.indexOf("{", start);
   let depth = 0, quote = null, escaped = false, line = false, block = false;
   for (let i = open; i < academic.length; i++) {
     const ch = academic[i], next = academic[i + 1];
@@ -65,4 +65,21 @@ assert(academic.includes('String(actor.userId)'), "resource author is derived fr
 assert(teacher.includes("cell.textContent = String(value"), "catalog text is rendered as text, not HTML");
 assert(teacher.includes("link.rel = 'noopener noreferrer'"), "external Drive link is isolated from the opener");
 assert(!teacher.includes("tableBody.innerHTML = combined.map(item =>"), "untrusted catalog values are not interpolated into innerHTML");
+assert(!/migrationReportDetails\\.innerHTML\\s*=/.test(teacher), "curricular equivalence and migration results must never be rendered as HTML");
+assert(teacher.includes("appendCurricularMigrationText_(migrationReportDetails,"), "curricular reports render through the text-only DOM helper");
+const uiContext = { document: { createElement: () => ({ className: "", textContent: "", children: [], appendChild(node) { this.children.push(node); } }) } };
+vm.runInNewContext(extractFunction(teacher, "appendCurricularMigrationText_") + "\\nthis.appendSafe = appendCurricularMigrationText_;", uiContext);
+const rendered = { children: [], appendChild(node) { this.children.push(node); } };
+const hostileFields = [
+  '<img src=x onerror=alert(1)>',
+  '<svg onload=alert(2)>',
+  '</div><script>alert(3)</script>',
+  'javascript:alert(4)',
+  '<iframe srcdoc="<script>alert(5)</script>"></iframe>'
+];
+hostileFields.forEach(value => {
+  uiContext.appendSafe(rendered, value);
+  assert.equal(rendered.children[rendered.children.length - 1].textContent, value,
+    "curricular fields, errors and result strings are inserted as inert text");
+});
 console.log("reusable-resource-xss-url-contract: PASS");

@@ -2314,6 +2314,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    function appendCurricularMigrationText_(container, value, className) {
+        if (!container) return;
+        const line = document.createElement('div');
+        if (className) line.className = className;
+        line.textContent = String(value === null || value === undefined ? '' : value);
+        container.appendChild(line);
+    }
+
     // [TAREA-19] [Fase 1 - Migración Curricular] - Handlers e integración frontend (#modal-curricular-migration) para mapeo, equivalencias y simulación pre-validada.
     const modalCurricularMigration = document.getElementById('modal-curricular-migration');
     const btnCloseCurricularMigration = document.getElementById('btn-close-curricular-migration');
@@ -2345,13 +2353,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (res && res.status === 'success' && migrationReportContainer && migrationReportDetails) {
                     migrationReportContainer.classList.remove('hidden');
-                    let html = `<div class="font-bold text-amber-700">Equivalencias Mapeadas (${res.totalAsignaturas || 0} asignaturas):</div>`;
+                    migrationReportDetails.textContent = '';
+                    const totalAsignaturas = Number(res.totalAsignaturas);
+                    appendCurricularMigrationText_(
+                        migrationReportDetails,
+                        'Equivalencias Mapeadas (' + (Number.isFinite(totalAsignaturas) && totalAsignaturas >= 0 ? totalAsignaturas : 0) + ' asignaturas):',
+                        'font-bold text-amber-700'
+                    );
                     if (Array.isArray(res.equivalencias)) {
                         res.equivalencias.slice(0, 10).forEach(eq => {
-                            html += `<div>• ${eq.nombreOrigen} (${eq.codigoOrigen}) → ${eq.nombreDestino} [${eq.estadoMapeo}]</div>`;
+                            const item = eq || {};
+                            appendCurricularMigrationText_(
+                                migrationReportDetails,
+                                '• ' + String(item.nombreOrigen || '') + ' (' + String(item.codigoOrigen || '') +
+                                    ') → ' + String(item.nombreDestino || '') + ' [' + String(item.estadoMapeo || '') + ']'
+                            );
                         });
                     }
-                    migrationReportDetails.innerHTML = html;
                 } else if (res && res.message) {
                     alert(res.message);
                 }
@@ -2382,12 +2400,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (res && res.status === 'success' && migrationReportContainer && migrationReportDetails) {
                     migrationReportContainer.classList.remove('hidden');
                     const rep = res.reporte || {};
-                    let html = `<div class="font-bold text-emerald-700">${res.message}</div>`;
-                    html += `<div>Modo: ${rep.modoEjecucion || 'N/A'}</div>`;
-                    html += `<div>Registros Históricos Analizados: ${rep.registrosHistoricosAnalizados || 0}</div>`;
-                    html += `<div>Calificaciones Preservadas Inalterables: ${rep.calificacionesOficialesPreservadas || 0}</div>`;
-                    html += `<div>Discrepancias Detectadas: ${rep.discrepanciasDetectadas || 0}</div>`;
-                    migrationReportDetails.innerHTML = html;
+                    migrationReportDetails.textContent = '';
+                    appendCurricularMigrationText_(migrationReportDetails, res.message || '', 'font-bold text-emerald-700');
+                    appendCurricularMigrationText_(migrationReportDetails, 'Modo: ' + String(rep.modoEjecucion || 'N/A'));
+                    appendCurricularMigrationText_(migrationReportDetails, 'Registros Históricos Analizados: ' + String(rep.registrosHistoricosAnalizados || 0));
+                    appendCurricularMigrationText_(migrationReportDetails, 'Calificaciones Preservadas Inalterables: ' + String(rep.calificacionesOficialesPreservadas || 0));
+                    appendCurricularMigrationText_(migrationReportDetails, 'Discrepancias Detectadas: ' + String(rep.discrepanciasDetectadas || 0));
                 } else if (res && res.message) {
                     alert(res.message);
                 }
