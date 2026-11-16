@@ -2819,6 +2819,12 @@ function getOrCreateSheet(ss, name) {
   if (!spreadsheet) throw new Error("SPREADSHEET_NOT_CONFIGURED");
   var sheet = spreadsheet.getSheetByName(name) || spreadsheet.insertSheet(name);
   var defaultHeaders = {
+    "SolicitudesCompra": ["SolicitudID","Fecha","Departamento","SolicitanteUserId","Justificacion","Categoria","DetalleItemsJSON","MontoEstimado","CentroCosto","EstadoAprobacion","Observaciones"],
+    "CotizacionesCompra": ["CotizacionID","SolicitudID","ProveedorID","FechaRecepcion","VigenciaOferta","PrecioTotal","PlazoEntregaDias","CondicionesPago","DocumentoAdjuntoUrl","EstadoSelection","Observaciones"],
+    "DetalleCotizacionesCompra": ["DetalleCotizacionID","CotizacionID","SolicitudID","ItemId","Descripcion","Unidad","CantidadSolicitada","CantidadCotizada","PrecioUnitario","Subtotal","Descuento","Impuestos","Flete","Total","Garantia","CumplimientoTecnico","EspecificacionesCumplidas","FechaRegistro"],
+    "ActasAdjudicacionCompra": ["ActaID","SolicitudID","Fecha","ResponsablesEvaluacionJSON","Dictamen","Justificacion","MontoAdjudicado","DetalleAdjudicacionJSON","OfertasDescartadasJSON","SnapshotCotizacionesJSON","Estado","AdjudicadoPor","IdempotencyKey","OrdenesCompraJSON"],
+    "OrdenesCompra": ["OrdenCompraID","SolicitudID","CotizacionID","ProveedorID","FechaEmision","FechaEntregaEstimada","DetalleItemsJSON","MontoTotal","CentroCosto","EstadoOrden","AprobadoPor","Observaciones","SolicitanteUserId","VersionDocumental","ArchivoPdfUrl"],
+    "ProveedoresActivos": ["ProveedorID","FechaRegistro","NombreProveedor","RTN","Telefono","Email","RubroServicio","Estado","Observaciones"],
     "ExpedientesLaborales": ["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"],
     "ContratosLaborales": ["ContratoID","ExpedienteID","TipoContrato","FechaInicio","FechaFin","SalarioBase","Jornada","EstadoContrato","Observaciones"],
     "AprobacionHorasExtras": ["OvertimeID","UserId","NombreEmpleado","FechaTrabajada","HorasRegistradas","HorasAprobadas","Motivo","EstadoAprobacion","AprobadoPor","PeriodoNominaId","EstadoPago","Timestamp"],
@@ -3214,11 +3220,13 @@ function getPurchaseQuotationMatrix(payload) {
   var latestAward = awardRows.length ? awardRows[awardRows.length - 1] : null;
   var snapshot = latestAward ? purchaseQuotationJsonObject_(latestAward[9]) : {};
   if (latestAward && Array.isArray(snapshot.cotizaciones)) quoteRows = snapshot.cotizaciones;
+  if (latestAward && Array.isArray(snapshot.detalleCotizaciones)) details = snapshot.detalleCotizaciones;
   var mappedQuotes = quoteRows.map(function(row) {
     var supplier = suppliers.filter(function(s) { return String(s[0] || "").trim() === String(row[2] || "").trim(); })[0];
     var valid = purchaseQuoteIsValid_(row, now);
     var quoteDetails = details.filter(function(d) { return String(d[1] || "").trim() === String(row[0] || "").trim(); });
     return { cotizacionId: row[0], solicitudId: row[1], proveedorId: row[2], proveedorNombre: supplier && supplier[2] || String(row[2] || ""),
+      proveedorActivo: !!(supplier && String(supplier[7] || "").trim().toLowerCase() === "activo"),
       fechaRecepcion: row[3], vigenciaOferta: row[4], precioTotal: Number(row[5] || 0), plazoEntregaDias: Number(row[6] || 0),
       condicionesPago: row[7], documentoAdjuntoUrl: row[8], estadoSelection: row[9], vigente: valid,
       ofertas: quoteDetails };
@@ -3247,10 +3255,14 @@ function getPurchaseQuotationMatrix(payload) {
   if (latestAward) award = { actaId: latestAward[0], solicitudId: latestAward[1], fecha: latestAward[2],
     responsablesEvaluacion: purchaseQuotationJsonArray_(latestAward[3]), dictamen: latestAward[4], justificacion: latestAward[5],
     montoAdjudicado: Number(latestAward[6] || 0), adjudicaciones: purchaseQuotationJsonArray_(latestAward[7]),
-    ofertasDescartadas: purchaseQuotationJsonArray_(latestAward[8]), estado: latestAward[10] };
-  return { status: "success", solicitudId: request.solicitudId, cotizaciones: mappedQuotes.map(function(q) {
+    ofertasDescartadas: purchaseQuotationJsonArray_(latestAward[8]), estado: latestAward[10],
+    ordenes: purchaseQuotationJsonArray_(latestAward[13]) };
+  return { status: "success", solicitudId: request.solicitudId,
+    solicitud: { solicitudId: request.solicitudId, departamento: request.departmentId, centroCosto: request.centroCosto },
+    totalCotizaciones: mappedQuotes.length, adjudicada: !!latestAward, actaId: latestAward ? latestAward[0] : "",
+    cotizaciones: mappedQuotes.map(function(q) {
     return { cotizacionId:q.cotizacionId, solicitudId:q.solicitudId, proveedorId:q.proveedorId, proveedorNombre:q.proveedorNombre,
-      precioTotal:q.precioTotal, plazoEntregaDias:q.plazoEntregaDias, condicionesPago:q.condicionesPago,
+      proveedorActivo:q.proveedorActivo, precioTotal:q.precioTotal, plazoEntregaDias:q.plazoEntregaDias, condicionesPago:q.condicionesPago,
       estadoSelection:q.estadoSelection, vigente:q.vigente };
   }), partidas: matrixItems, adjudicacion: award };
 }
@@ -3266,7 +3278,7 @@ function adjudicatePurchaseQuotations(payload) {
         String(actor.role) !== String(access.actor.role)) return { status: "error", code: "VERIFIED_IDENTITY_CHANGED" };
     access = purchaseQuotationAccess_(input, ss, true);
     if (!access.authorized) return { status: "error", code: access.code };
-    request = purchaseQuotationRequest_(input, ss, access, false);
+    request = purchaseQuotationRequest_(input, ss, access, true);
     var key = String(input.idempotencyKey || "").trim();
     if (!/^[A-Za-z0-9_-]{8,100}$/.test(key)) return { status: "error", code: "PURCHASE_AWARD_IDEMPOTENCY_KEY_REQUIRED" };
     awardSheet = getOrCreateSheet(ss, "ActasAdjudicacionCompra");
