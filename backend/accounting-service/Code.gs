@@ -1690,12 +1690,16 @@ function manageDisciplinaryMeasure(payload) {
   var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var access = resolveLaborIncidentWriteAccess_(input, ss, input.empleadoId, "manageDisciplinaryMeasure");
   if (!access.authorized) return { status: "error", code: access.code };
+  var headers = ["MedidaID","IncidenciaID","EmpleadoID","TipoMedida","FundamentoDocumentado","FechaEfectiva","ResponsableAprobacion","EstadoMedida","DiasSuspension","ActaFirmadaDriveUrl","CreadoPor","FechaCreacion","UltimaModificacion"];
+  var existingSheet = ss.getSheetByName("MedidasDisciplinarias");
+  var existingValues = existingSheet ? existingSheet.getDataRange().getValues().slice(1) : [];
+  var proposedId = input.medidaId ? String(input.medidaId).trim() : "MED-DISC-" + String(Utilities.getUuid()).replace(/-/g,"");
+  if (!input.medidaId && existingValues.some(function(row){return String(row[0]||"")===proposedId;})) return { status: "error", code: "DISCIPLINARY_MEASURE_ID_COLLISION" };
   var incidentSheet = ss.getSheetByName("IncidenciasLaborales");
   if (!incidentSheet) return { status: "error", code: "RESOURCE_NOT_FOUND" };
   var incidentValues = incidentSheet.getDataRange().getValues();
   var incidentMatches = incidentValues.slice(1).filter(function(row){return String(row[0]||"")===String(input.incidenciaId||"") && String(row[1]||"")===access.employeeId;});
   if (incidentMatches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
-  var headers = ["MedidaID","IncidenciaID","EmpleadoID","TipoMedida","FundamentoDocumentado","FechaEfectiva","ResponsableAprobacion","EstadoMedida","DiasSuspension","ActaFirmadaDriveUrl","CreadoPor","FechaCreacion","UltimaModificacion"];
   var snapshot = ensureLaborWriteSheet_(ss,"MedidasDisciplinarias",headers);
   if (!snapshot.valid) return { status: "error", code: snapshot.code };
   var days = Number(input.diasSuspension || 0);
@@ -1707,7 +1711,7 @@ function manageDisciplinaryMeasure(payload) {
     var now = new Date(), id = String(input.medidaId||"").trim(), matches = snapshot.rows.map(function(row,index){return {row:row,index:index};}).filter(function(item){return id && String(item.row[0]||"")===id;});
     if (id && matches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
     if (!id) {
-      id = "MED-DISC-" + String(Utilities.getUuid()).replace(/-/g,"");
+      id = proposedId;
       if (snapshot.rows.some(function(row){return String(row[0]||"")===id;})) return { status: "error", code: "DISCIPLINARY_MEASURE_ID_COLLISION" };
       snapshot.sheet.appendRow([id,input.incidenciaId,access.employeeId,String(input.tipoMedida),String(input.fundamentoDocumentado),input.fechaEfectiva||now,
         access.actor.userId,"Pendiente",days,String(input.actaFirmadaDriveUrl||""),access.actor.userId,now,""]);
