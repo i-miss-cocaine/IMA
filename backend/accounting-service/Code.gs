@@ -3586,12 +3586,13 @@ function ensureAssetAcquisitionSchema_(ss) {
     }
   });
   var assignments = getOrCreateSheet(spreadsheet, "AsignacionesActivos");
+  var assignmentExpectedHeaders = ["AsignacionID","ActivoID","CustodioUserId","FechaEntrega","FechaDevolucion","EstadoActa","Observaciones"];
   var assignmentValues = assignments.getDataRange().getValues();
   if (!assignmentValues || !assignmentValues.length) throw new Error("ASSET_ASSIGNMENT_SCHEMA_INVALID");
   var assignmentHeaders = assignmentValues[0].map(function(v) { return String(v || "").trim(); });
   if (assignmentHeaders.length === 0) {
-    assignments.appendRow(ASSET_ASSIGNMENT_HEADERS_);
-  } else if (JSON.stringify(assignmentHeaders.slice(0, ASSET_ASSIGNMENT_HEADERS_.length)) !== JSON.stringify(ASSET_ASSIGNMENT_HEADERS_)) {
+    assignments.appendRow(assignmentExpectedHeaders);
+  } else if (JSON.stringify(assignmentHeaders.slice(0, assignmentExpectedHeaders.length)) !== JSON.stringify(assignmentExpectedHeaders)) {
     throw new Error("ASSET_ASSIGNMENT_SCHEMA_INVALID");
   }
   return { assets: assets, assignments: assignments, assetHeaders: current, assignmentHeaders: assignmentHeaders };
