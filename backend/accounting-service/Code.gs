@@ -10605,6 +10605,81 @@ function normalizeMonthlyChargeMonth_(value) {
   return String(months[normalized]).padStart(2, "0");
 }
 
+
+function monthlyChargeDedupeKey_(userId,conceptId,year,month){
+ const uid=String(userId||"").trim().toLowerCase(),concept=String(conceptId||"").trim().toLowerCase(),y=String(year||"").trim(),m=String(normalizeMonthlyChargeMonth_(month));
+ if(!uid||!concept||!y)throw new Error("MONTHLY_CHARGE_DEDUPE_INPUT_INVALID");
+ return uid+"_"+concept+"_"+y+"_"+m;
+}
+function monthlyChargeExistingKey_(row,year,month){
+ if(!row||String(row[7]||"").trim().toLowerCase()==="anulado")return "";
+ const stored=String(row[10]||"").trim().toLowerCase();if(stored)return stored;
+ const date=row[1] instanceof Date?row[1]:new Date(row[1]);if(!Number.isFinite(date.getTime()))return "";
+ if(String(date.getFullYear())!==String(year)||String(date.getMonth()+1).padStart(2,"0")!==String(normalizeMonthlyChargeMonth_(month)))return "";
+ const names=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+ return String(row[2]||"").trim().toLowerCase()+"_"+String(row[3]||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"")+"_"+names[date.getMonth()]+"_"+date.getFullYear();
+}
+function resolveMonthlyChargeTariff_(ss,year,grade,conceptId){
+ const sh=ss.getSheetByName("TarifasPlanPago");if(!sh)return null;const rows=sh.getDataRange().getValues();if(!rows.length)return null;
+ const h=monthlyChargeHeaderMap_(rows[0],["TarifaID","AnoLectivo","NivelGrado","ConceptoID","MontoTotal","CuotasNum","Estado"]);
+ const matches=rows.slice(1).filter(r=>String(r[h.anolectivo]||"").trim()===String(year).trim()&&String(r[h.nivelgrado]||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim()===String(grade||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim()&&String(r[h.conceptoid]||"").trim()===String(conceptId||"").trim()&&["activa","activo","active"].includes(String(r[h.estado]||"Activa").trim().toLowerCase()));
+ if(matches.length>1)throw new Error("MONTHLY_CHARGE_TARIFF_AMBIGUOUS");
+ if(!matches.length)return null;const r=matches[0],total=Number(r[h.montototal]),installments=Number(r[h.cuotasnum]||1);if(!Number.isFinite(total)||total<=0||!Number.isFinite(installments)||installments<=0)throw new Error("MONTHLY_CHARGE_TARIFF_INVALID");
+ return {tarifaId:String(r[h.tarifaid]||""),montoTotal:Math.round(total*100)/100,cuotas:installments,montoBase:Math.round(total/installments*100)/100};
+}
+function previewBatchMonthlyCharges(payload){
+ const p=payload||{},year=String(p.anoLectivo||"").trim(),month=normalizeMonthlyChargeMonth_(p.mesPeriodo);if(!year||!p.mesPeriodo)throw new Error("MONTHLY_CHARGE_PERIOD_REQUIRED");
+ if(!/^\d{4}$/.test(year)||Number(year)<2000||Number(year)>2200)throw new Error("MONTHLY_CHARGE_YEAR_INVALID");
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID),mat=ss.getSheetByName("Matriculas"),tariffs=ss.getSheetByName("TarifasPlanPago"),concepts=ss.getSheetByName("ConceptosCobro"),charges=ss.getSheetByName("CargosEstudiante");
+ if(!mat||!tariffs||!concepts||!charges)throw new Error("MONTHLY_CHARGE_REQUIRED_SHEET_MISSING");
+ const matRows=mat.getDataRange().getValues(),mh=monthlyChargeHeaderMap_(matRows[0],["MatriculaID","UserId","Alumno","Grado","Seccion","AnoLectivo","Estado","BecaDescuento"]);
+ const conceptRows=concepts.getDataRange().getValues(),ch=monthlyChargeHeaderMap_(conceptRows[0],["ConceptoID","NombreConcepto","Estado"]),concept=conceptRows.slice(1).find(r=>String(r[ch.conceptoid]||"").trim()===String(p.conceptoId||"").trim()&&["activo","activa"].includes(String(r[ch.estado]||"Activo").trim().toLowerCase()));
+ if(!concept)throw new Error("MONTHLY_CHARGE_CONCEPT_NOT_FOUND");
+ const conceptName=String(p.conceptoNombre||concept[ch.nombreconcepto]||"").trim();if(!conceptName)throw new Error("MONTHLY_CHARGE_CONCEPT_NAME_REQUIRED");
+ const monthNames=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"],monthName=monthNames[Number(month)-1],periodLabel=year+"-"+month;
+ const lastDay=new Date(Number(year),Number(month),0).getDate(),due=String(p.fechaVencimiento|| (year+"-"+month+"-"+String(lastDay).padStart(2,"0")));
+ const existingRows=charges.getDataRange().getValues().slice(1),existingKeys=new Set();
+ existingRows.forEach(r=>{const key=monthlyChargeExistingKey_(r,year,month);if(key)existingKeys.add(key);});
+ const allowedStates=["activa","activo","confirmada","confirmado","inscrita","inscrito","matriculada","matriculado","active"],seen=new Set(),students=[];
+ matRows.slice(1).forEach(r=>{
+  const user=String(r[mh.userid]||"").trim(),state=String(r[mh.estado]||"").trim().toLowerCase();if(!user||seen.has(user)||!allowedStates.includes(state))return;
+  if(String(r[mh.anolectivo]||"").trim()!==year)return;
+  const grade=String(r[mh.nivelgrado]||"").trim(),section=String(r[mh.seccion]||"").trim();
+  if(p.nivelGrado&&grade.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()!==String(p.nivelGrado).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase())return;
+  if(p.seccion&&section.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()!==String(p.seccion).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase())return;
+  if(Array.isArray(p.studentIds)&&p.studentIds.length&&!p.studentIds.map(String).includes(user))return;
+  seen.add(user);students.push({userId:user,nombre:String(r[mh.alumno]||""),grado:grade,seccion:section,descuentoPct:Math.max(0,Math.min(100,Number.parseFloat(r[mh.becadescuento]||0)||0))});
+ });
+ let total=0,already=0,noTariff=0,pending=0;const breakdown=[];
+ students.forEach(st=>{
+  const tariff=resolveMonthlyChargeTariff_(ss,year,st.grado,p.conceptoId),key=monthlyChargeDedupeKey_(st.userId,p.conceptoId,year,month),legacy=st.userId+"_"+conceptName.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"")+"_"+monthName+"_"+year;
+  if(existingKeys.has(key)||existingKeys.has(legacy)){already++;breakdown.push({...st,montoBase:0,descuento:0,montoFinal:0,estado:"YaGenerado",motivo:"Cargo existente para este período."});return;}
+  if(!tariff){noTariff++;breakdown.push({...st,montoBase:0,descuento:0,montoFinal:0,estado:"SinTarifa",motivo:"No existe tarifa activa para el grado, concepto y año lectivo."});return;}
+  const base=tariff.montoBase,discount=Math.round(base*st.descuentoPct)/100,final=Math.max(0,Math.round((base-discount)*100)/100);total+=final;pending++;breakdown.push({...st,montoBase:base,descuento:Math.round(discount*100)/100,montoFinal:final,estado:"PendienteGenerar",fechaVencimiento:due,tarifaId:tariff.tarifaId,dedupeKey:key});
+ });
+ return {status:"success",simulacion:true,anoLectivo:year,mesPeriodo:String(p.mesPeriodo),mesClave:month,periodo:periodLabel,conceptoId:String(p.conceptoId),concepto:conceptName,fechaVencimiento:due,totalEstudiantesElegibles:students.length,estudiantesParaGenerar:pending,estudiantesYaGenerados:already,estudiantesSinTarifa:noTariff,totalImporteEstimado:Math.round(total*100)/100,desglose:breakdown};
+}
+function generateBatchMonthlyCharges(payload){
+ const p=payload||{},lock=LockService.getScriptLock();if(!lock.tryLock(30000))return {status:"error",code:"LOCK_TIMEOUT",message:"El proceso de generación mensual está ocupado."};
+ try{
+  const sim=previewBatchMonthlyCharges(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("CargosEstudiante");if(!sheet)throw new Error("MONTHLY_CHARGE_REQUIRED_SHEET_MISSING");
+  const year=sim.anoLectivo,month=sim.mesClave,now=new Date(),batchId="BATCH-"+now.getTime()+"-"+Math.floor(Math.random()*1000000),existing=new Set();
+  sheet.getDataRange().getValues().slice(1).forEach(r=>{const k=monthlyChargeExistingKey_(r,year,month);if(k)existing.add(k);});
+  const excluded=new Set((Array.isArray(p.excludeUserIds)?p.excludeUserIds:[]).map(x=>String(x).trim().toLowerCase())),newRows=[],seen=new Set();let omitidos=0,sinTarifa=0,total=0;
+  sim.desglose.forEach(item=>{
+   if(item.estado==="SinTarifa"){sinTarifa++;return;}if(item.estado==="YaGenerado"||excluded.has(String(item.userId).toLowerCase())){omitidos++;return;}
+   const key=monthlyChargeDedupeKey_(item.userId,sim.conceptoId,year,month),legacy=String(item.userId).toLowerCase()+"_"+String(sim.concepto).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"")+"_"+["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"][Number(month)-1]+"_"+year;
+   if(existing.has(key)||existing.has(legacy)||seen.has(key)){omitidos++;return;}seen.add(key);
+   const base=Number(item.montoBase)||0,discount=Number(item.descuento)||0,final=Math.max(0,Math.round((base-discount)*100)/100),id="CRG-"+year+month+"-"+now.getTime()+"-"+newRows.length;
+   newRows.push([id,now,item.userId,sim.concepto,base,discount,final,final<=0?"Exonerado":"Pendiente",sim.fechaVencimiento,"Generación mensual "+sim.mesPeriodo+" "+year+"; lote "+batchId,key,batchId]);
+   existing.add(key);total+=final;
+  });
+  if(newRows.length)sheet.getRange(sheet.getLastRow()+1,1,newRows.length,newRows[0].length).setValues(newRows);
+  if(typeof logStructuredEvent==="function")logStructuredEvent("ACCOUNTING","generateBatchMonthlyCharges","INFO","BATCH_MONTHLY_CHARGES_GENERATED","Generación mensual: "+newRows.length+" cargos.",{batchId:batchId,year:year,month:month,created:newRows.length,omitted:omitidos},p.authorizedBy||"Sistema");
+  return {status:"success",batchId:batchId,anoLectivo:year,mesPeriodo:sim.mesPeriodo,totalProcesados:sim.totalEstudiantesElegibles,creados:newRows.length,omitidos:omitidos,sinTarifa:sinTarifa,fallidos:0,totalMontoGenerado:Math.round(total*100)/100};
+ }finally{lock.releaseLock();}
+}
+
 function transportEnsureBillingSchema_(ss){
  const assignments=getOrCreateSheet(ss,"TransporteAsignaciones"),headers=["AsignacionTranspID","RutaID","EstudianteUserId","ParadaNombre","HorarioPlan","Estado","FechaAsignacion","Jornada","DiasSemanaJSON","Observaciones","FechaInicioServicio","FechaFinServicio","ModalidadServicio","FechaCancelacion","TarifaMensualAplicada","ConceptoTransporteID"],a=assignments.getDataRange().getValues();
  if(!a.length)throw new Error("TRANSPORT_ASSIGNMENT_SCHEMA_INVALID");
