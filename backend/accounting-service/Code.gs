@@ -8757,3 +8757,45 @@ function confirmTransferReceipt(payload) {
 }
 
 // [TASK-021] [F19-Task03] - Consulta de transferencias entre almacenes
+
+function inventoryEnsureMaintenanceSchema_(sheet) {
+ const base=["OrdenMaintID","FechaReporte","ActivoIdUbicacion","TipoMantenimiento","DescripcionFalla","Prioridad","ReportadoPorUserId","AsignadoAEmpleadoId","RepuestosConsumidosJSON","CostoEstimado","CostoReal","EstadoOrden","FechaResolucion","Observaciones"];
+ const extra=["DepartamentoID","CentroCosto","AsientoContableID","DetalleRepuestosContabilizadosJSON","UbicacionOrigen"],row=sheet.getDataRange().getValues()[0]||[];
+ if(base.some((h,i)=>String(row[i]||"").trim()!==h))throw new Error("MAINTENANCE_ORDER_SCHEMA_MISMATCH");
+ extra.forEach((h,i)=>{const v=String(row[14+i]||"").trim();if(v&&v!==h)throw new Error("MAINTENANCE_ORDER_SCHEMA_CONFLICT:"+v);});
+ extra.forEach((h,i)=>{if(!String(row[14+i]||"").trim())sheet.getRange(1,15+i).setValue(h);});
+}
+
+function inventoryResolveMaintenanceDepartment_(ss,p,assetRef,actor,existingRow) {
+ let departmentValue=String(p.departamento||(existingRow&&existingRow[14])||"").trim(),center=String(p.centroCosto||(existingRow&&existingRow[15])||"").trim(),asset=null;
+ const assetSheet=ss.getSheetByName("ActivosPatrimoniales");
+ if(assetSheet){
+  const data=assetSheet.getDataRange().getValues();
+  if(data.length>1){
+   const h=data[0].map(v=>String(v||"").trim()),id=h.indexOf("ActivoID"),code=h.indexOf("CodigoPatrimonial"),name=h.indexOf("Nombre"),custodian=h.indexOf("CustodioUserId");
+   if(id<0||code<0||name<0||custodian<0)throw new Error("MAINTENANCE_ASSET_SCHEMA_INVALID");
+   const raw=String(assetRef||"").trim(),tokens=[raw,raw.split("/")[0].trim()].filter(Boolean),matches=data.slice(1).filter(r=>tokens.some(t=>[r[id],r[code],r[name]].some(v=>String(v||"").trim().toLowerCase()===t.toLowerCase())));
+   if(matches.length>1)throw new Error("MAINTENANCE_ASSET_REFERENCE_AMBIGUOUS");
+   if(matches.length===1)asset={row:matches[0],custodianIndex:custodian};
+  }
+ }
+ if(asset){
+  const custodianId=String(asset.row[asset.custodianIndex]||"").trim();
+  if(custodianId){
+   const employeeSheet=ss.getSheetByName("ExpedientesLaborales");
+   if(employeeSheet){
+    const data=employeeSheet.getDataRange().getValues(),h=data.length?data[0].map(v=>String(v||"").trim()):[],user=h.indexOf("UserId"),dept=h.indexOf("Departamento"),cost=h.indexOf("CentroCosto");
+    if(user<0||dept<0)throw new Error("MAINTENANCE_EMPLOYEE_SCHEMA_INVALID");
+    const matches=data.slice(1).filter(r=>String(r[user]||"").trim()===custodianId);
+    if(matches.length>1)throw new Error("MAINTENANCE_ASSET_CUSTODIAN_AMBIGUOUS");
+    if(matches.length===1){if(!departmentValue)departmentValue=String(matches[0][dept]||"").trim();if(!center&&cost>=0)center=String(matches[0][cost]||"").trim();}
+    else if(!departmentValue)throw new Error("MAINTENANCE_DEPARTMENT_UNRESOLVED");
+   }else if(!departmentValue)throw new Error("MAINTENANCE_DEPARTMENT_UNRESOLVED");
+  }
+ }
+ if(!departmentValue)throw new Error("MAINTENANCE_DEPARTMENT_REQUIRED");
+ const scoped=inventoryAssertDepartmentScope_(p,ss,actor,departmentValue);
+ center=center||scoped.department.departmentName||scoped.department.departmentId;
+ if(!center)throw new Error("MAINTENANCE_COST_CENTER_REQUIRED");
+ return {departmentId:scoped.department.departmentId,departmentName:scoped.department.departmentName||scoped.department.departmentId,centroCosto:center,ubicacionOrigen:String(p.ubicacionOrigen||(existingRow&&existingRow[18])||"Bodega General").trim()};
+}
