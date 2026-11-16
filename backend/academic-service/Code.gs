@@ -299,7 +299,7 @@ const ROLE_PERMISSIONS = {
     "getClassroomResources", "saveClassroomResource", "saveClassroomMaintenance", "getStudentSchedule", "getScheduleConflictResolutionAlternatives", "saveScheduleScenario", "getScheduleScenarios", "saveTeacherWorkLoadPreferences", "createSessionException", "getScheduleVersions", "compareScheduleVersions", "restoreScheduleVersion", "getPlanningQualityAndOccupancyReport", "exportBulkClassSchedules", "importBulkClassSchedules", "previewPublishImpact",
     "createAdmissionRequest", "getAdmissionRequests", "updateAdmissionStatus", "reopenAdmissionRequest", "convertAdmissionToStudent", "scheduleAdmissionInterview", "getAdmissionInterviews", "recordInterviewOutcome", "saveAdmissionEvaluation", "getAdmissionEvaluations", "addToWaitlist", "getWaitlist", "reorderWaitlist", "offerWaitlistSlot", "respondToWaitlistSlot", "resolveAdmissionDuplicate", "getAdmissionAnalyticsReport",
     "getStudentFile", "getStudentFileSummary", "updateStudentFile", "getStudentTimeline", "findDuplicateStudents", "mergeStudentFiles", "getMergePreviewComparison", "unmergeStudentFiles", "getStudentFileAdministrativeReports", "initializeDirectionSecretaryDriveStructure",
-    "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "getStudentDocumentFile", "verifyDocumentIntegritySha256", "updateDocumentStatus", "getPendingDocumentsReport", "grantDocumentExemption", "restoreDocumentVersion", "checkAndNotifyExpiringStudentDocuments",
+    "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "getStudentDocumentFile", "previewStudentDocument", "verifyDocumentIntegritySha256", "updateDocumentStatus", "getPendingDocumentsReport", "grantDocumentExemption", "restoreDocumentVersion", "checkAndNotifyExpiringStudentDocuments",
     "getPendingDocumentsReport", "grantDocumentExemption", "createStudentEnrollment", "getStudentEnrollments", "renewStudentEnrollment", "checkEnrollmentCapacity",
     "changeStudentSection", "recordStudentTransfer", "recordStudentWithdrawal", "processStudentReentry", "processStudentPromotion", "processStudentGraduation", "updateStudentLifecycleStatus", "reconcileStudentLifecycleState", "runStudentLifecycleRegressionSuite", "getAcademicAreaTemplateCatalog", "assignTeacherToAcademicArea", "getTeachersByAcademicArea", "getAcademicAreasByTeacher", "removeTeacherFromAcademicArea", "getAcademicAreaCoordinationScope", "deployAcademicMicroserviceInstance", "getAcademicMicroserviceDeployments", "previewBackupRestoreImpact", "getStorageQuotaMetricsReport", "reconcileDocumentStorageIntegrity", "reconcileInstitutionalModulesMatrix",
     "openAttendanceSession", "saveClassAttendance", "bulkApplyAttendanceStatus", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "reconcilePendingAttendanceJustifications", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary", "checkAndDispatchAttendanceAlerts", "getAttendanceConfig", "saveAttendanceConfig",
@@ -312,7 +312,7 @@ const ROLE_PERMISSIONS = {
     "getTeacherAssignments", "assignTeacherToClass", "createTeacherSubstitution", "getAcademicCalendar", "createCalendarEvent", "getClassSchedules", "createClassSchedule", "deleteClassSchedule", "copyClassSchedules", "getTeacherTeachingLoad", "generateAutoSchedules", "recordClassSessionOutcome", "getTeachingHoursSummary", "rescheduleCancelledSession", "getPendingSessionRecoveries", "publishClassSchedules", "getIndividualCalendar", "syncAcademicScheduleIntegrity", "getAcademicAuditLogs", "getReusableResourceCatalog", "manageReusableResource",
     "getClassroomResources", "saveClassroomResource", "getStudentSchedule",
     "createAdmissionRequest", "getAdmissionRequests", "updateAdmissionStatus", "getStudentFile", "getStudentTimeline", "findDuplicateStudents",
-    "getStudentGuardians", "getStudentDocuments", "getStudentDocumentFile", "verifyDocumentIntegritySha256", "getStudentEnrollments", "checkEnrollmentCapacity",
+    "getStudentGuardians", "getStudentDocuments", "getStudentDocumentFile", "previewStudentDocument", "verifyDocumentIntegritySha256", "getStudentEnrollments", "checkEnrollmentCapacity",
     "openAttendanceSession", "saveClassAttendance", "bulkApplyAttendanceStatus", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "reconcilePendingAttendanceJustifications", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary",
     "createTeacherSupervision", "getTeacherSupervisions", "updateSupervisionStatus", "saveSupervisionObservation", "getSupervisionObservation", "saveTeacherImprovementPlan", "getTeacherImprovementPlans", "savePedagogicalPlanning", "getPedagogicalPlannings", "submitPlanningForReview", "reviewPedagogicalPlanning", "getPlanningReviewHistory", "saveSupervisionRubric", "getSupervisionRubrics"
   , "saveExtracurricularActivity", "getExtracurricularActivities"],
@@ -324,7 +324,7 @@ const ROLE_PERMISSIONS = {
     "getClassroomResources", "saveClassroomResource", "getStudentSchedule",
     "createAdmissionRequest", "getAdmissionRequests", "updateAdmissionStatus", "convertAdmissionToStudent", "scheduleAdmissionInterview", "getAdmissionInterviews", "recordInterviewOutcome", "saveAdmissionEvaluation", "getAdmissionEvaluations", "addToWaitlist", "getWaitlist", "reorderWaitlist", "offerWaitlistSlot", "respondToWaitlistSlot", "resolveAdmissionDuplicate",
     "getStudentFile", "getStudentFileSummary", "updateStudentFile", "getStudentTimeline", "findDuplicateStudents", "getMergePreviewComparison", "unmergeStudentFiles", "getStudentFileAdministrativeReports",
-    "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "getStudentDocumentFile", "verifyDocumentIntegritySha256", "updateDocumentStatus",
+    "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "getStudentDocumentFile", "previewStudentDocument", "verifyDocumentIntegritySha256", "updateDocumentStatus",
     "getPendingDocumentsReport", "grantDocumentExemption", "createStudentEnrollment", "getStudentEnrollments", "renewStudentEnrollment", "checkEnrollmentCapacity",
     "changeStudentSection", "recordStudentTransfer", "recordStudentWithdrawal", "processStudentReentry", "processStudentPromotion", "processStudentGraduation", "updateStudentLifecycleStatus", "reconcileStudentLifecycleState", "runStudentLifecycleRegressionSuite",
     "openAttendanceSession", "saveClassAttendance", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "reconcilePendingAttendanceJustifications", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary"
@@ -337,7 +337,7 @@ const ROLE_PERMISSIONS = {
     "getClassroomResources", "saveClassroomResource", "getStudentSchedule",
     "createAdmissionRequest", "getAdmissionRequests", "updateAdmissionStatus", "convertAdmissionToStudent", "scheduleAdmissionInterview", "getAdmissionInterviews", "recordInterviewOutcome", "saveAdmissionEvaluation", "getAdmissionEvaluations", "addToWaitlist", "getWaitlist", "reorderWaitlist", "offerWaitlistSlot", "respondToWaitlistSlot",
     "getStudentFile", "updateStudentFile", "getStudentTimeline", "findDuplicateStudents",
-    "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "getStudentDocumentFile", "verifyDocumentIntegritySha256", "updateDocumentStatus",
+    "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "getStudentDocumentFile", "previewStudentDocument", "verifyDocumentIntegritySha256", "updateDocumentStatus",
     "getPendingDocumentsReport", "grantDocumentExemption", "createStudentEnrollment", "getStudentEnrollments", "renewStudentEnrollment", "checkEnrollmentCapacity",
     "changeStudentSection", "recordStudentTransfer", "recordStudentWithdrawal", "processStudentReentry", "processStudentPromotion", "processStudentGraduation", "updateStudentLifecycleStatus", "reconcileStudentLifecycleState", "runStudentLifecycleRegressionSuite",
     "openAttendanceSession", "saveClassAttendance", "getBatchAttendanceRecords", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "reconcilePendingAttendanceJustifications", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary", "generateConsolidatedAttendanceAndCoexistenceReport", "validateStudentWelfareAccess"
@@ -349,17 +349,17 @@ const ROLE_PERMISSIONS = {
   "Orientacion": ["getAcademicConfig", "getAcademicYears", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentGuardians", "getAttendanceIncidents", "saveAttendanceIncident", "updateAttendanceIncidentStatus", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "addCaseCommitment", "updateCaseCommitmentStatus", "saveGuidanceFollowupPlan", "saveVocationalRecommendation", "validateEvidenceFileAndPermissions", "getStudentAttendanceSummary", "validateStudentWelfareAccess", "scheduleGuidanceAppointment", "getGuidanceAppointments", "updateGuidanceAppointmentStatus", "evaluateAndDispatchEarlyWarningAlerts", "getEarlyWarningAlerts"],
   "Padre": [
     "getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getStudentEnrollmentHistory",
-    "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentFileSummary", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "verifyDocumentIntegritySha256", "getStudentEnrollments",
+    "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentFileSummary", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "previewStudentDocument", "verifyDocumentIntegritySha256", "getStudentEnrollments",
     "getClassAttendance", "getDailyAttendance", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents"
   , "getStudentExtracurricularEnrollments", "enrollStudentInExtracurricular", "cancelExtracurricularEnrollment", "getExtracurricularActivities"],
   "Tutor": [
     "getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getStudentEnrollmentHistory",
-    "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "verifyDocumentIntegritySha256", "getStudentEnrollments",
+    "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "previewStudentDocument", "verifyDocumentIntegritySha256", "getStudentEnrollments",
     "getClassAttendance", "getDailyAttendance", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents"
   , "getStudentExtracurricularEnrollments", "enrollStudentInExtracurricular", "cancelExtracurricularEnrollment", "getExtracurricularActivities"],
   "Responsable": [
     "getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getStudentEnrollmentHistory",
-    "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "verifyDocumentIntegritySha256", "getStudentEnrollments",
+    "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "previewStudentDocument", "verifyDocumentIntegritySha256", "getStudentEnrollments",
     "getClassAttendance", "getDailyAttendance", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents"
   , "getStudentExtracurricularEnrollments", "enrollStudentInExtracurricular", "cancelExtracurricularEnrollment", "getExtracurricularActivities"],
   "Profesor": [
@@ -382,11 +382,11 @@ const ROLE_PERMISSIONS = {
     "savePedagogicalPlanning", "getPedagogicalPlannings", "submitPlanningForReview", "getPlanningReviewHistory", "getSupervisionRubrics"
   ],
   "Asistente": ["getAcademicConfig", "getAsignaturasActivas", "getWhatsAppLink", "getQuestionBank", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentTimeline", "getClassAttendance", "getBatchAttendanceRecords", "getStudentAttendanceSummary", "auditAssistantDelegatedAction"],
-  "Estudiante": ["getAcademicConfig", "getAsignaturasActivas", "getWhatsAppLink", "getQuestionBank", "getStudentEnrollmentHistory", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentFileSummary", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "verifyDocumentIntegritySha256", "getClassAttendance", "getDailyAttendance", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents", "calculateUnifiedAcademicGrade", "generateStudentReportCard", "validateAcademicResponsibilityAndScopeAccess"],
-  "Alumno": ["getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getStudentEnrollmentHistory", "getAcademicYears", "getAcademicPeriods", "getAcademicOffers", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "verifyDocumentIntegritySha256", "getStudentEnrollments", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents", "generateStudentReportCard", "validateAcademicResponsibilityAndScopeAccess"]
+  "Estudiante": ["getAcademicConfig", "getAsignaturasActivas", "getWhatsAppLink", "getQuestionBank", "getStudentEnrollmentHistory", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentFileSummary", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "previewStudentDocument", "verifyDocumentIntegritySha256", "getClassAttendance", "getDailyAttendance", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents", "calculateUnifiedAcademicGrade", "generateStudentReportCard", "validateAcademicResponsibilityAndScopeAccess"],
+  "Alumno": ["getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getStudentEnrollmentHistory", "getAcademicYears", "getAcademicPeriods", "getAcademicOffers", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentDocumentFile", "previewStudentDocument", "verifyDocumentIntegritySha256", "getStudentEnrollments", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents", "generateStudentReportCard", "validateAcademicResponsibilityAndScopeAccess"]
  ,
   "Auditor": [
-    "getStudentDocuments", "getStudentFile", "getStudentDocumentFile",
+    "getStudentDocuments", "getStudentFile", "getStudentDocumentFile", "previewStudentDocument",
     "verifyDocumentIntegritySha256", "getPendingDocumentsReport"
   ]
 };
@@ -778,8 +778,10 @@ function auditTeacherJustificationDenied_(action,payload,role,code) {
 
 function validateRolePermission(action, payload) {
   if (PUBLIC_ACTIONS.indexOf(action) !== -1) return { authorized: true };
-  const permissionAction = ["createStudentDocumentAccessToken", "getSecureDocumentStream"].indexOf(action) !== -1 ?
-    "getStudentDocumentFile" : action;
+  const secureDocumentAction = ["createStudentDocumentAccessToken", "getSecureDocumentStream"].indexOf(action) !== -1;
+  const requestedDocumentOperation = String(payload && payload.operation || "DOWNLOAD").trim().toUpperCase();
+  const permissionAction = secureDocumentAction ?
+    (requestedDocumentOperation === "PREVIEW" ? "previewStudentDocument" : "getStudentDocumentFile") : action;
 
   let userRole = "Estudiante";
   let verifiedUserId = null;
@@ -4151,7 +4153,13 @@ function studentDocumentTokenSignature_(encodedClaims) {
 
 function createStudentDocumentAccessToken(payload) {
   const request = payload || {};
-  const permission = validateRolePermission("getStudentDocumentFile", request);
+  const operation = String(request.operation || "DOWNLOAD").trim().toUpperCase();
+  if (operation !== "PREVIEW" && operation !== "DOWNLOAD") {
+    return studentDocumentAccessError_(request, null, request.documentoId || request.documentId || "",
+      "DOCUMENT_ACCESS_OPERATION_INVALID", "");
+  }
+  const permissionAction = operation === "PREVIEW" ? "previewStudentDocument" : "getStudentDocumentFile";
+  const permission = validateRolePermission(permissionAction, request);
   if (!permission || permission.authorized !== true) {
     return studentDocumentAccessError_(request, null, request.documentoId || request.documentId || "",
       "AUTH_PERMISSION_DENIED", "");
@@ -4192,7 +4200,7 @@ function createStudentDocumentAccessToken(payload) {
   const claims = {
     tokenId: (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, ""),
     documentId: documentId, version: version, userId: String(actor.userId),
-    operation: "DOWNLOAD", issuedAt: issuedAt,
+    operation: operation, issuedAt: issuedAt,
     expiresAt: issuedAt + STUDENT_DOCUMENT_ACCESS_TOKEN_TTL_SECONDS_ * 1000
   };
   const encodedClaims = Utilities.base64Encode(JSON.stringify(claims)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
@@ -4201,9 +4209,9 @@ function createStudentDocumentAccessToken(payload) {
     STUDENT_DOCUMENT_ACCESS_TOKEN_TTL_SECONDS_);
   try {
     logStructuredEvent("ACADEMIC", "createStudentDocumentAccessToken", "INFO", "DOCUMENT_ACCESS_TOKEN_ISSUED",
-      "Se emitió un permiso efímero de descarga documental.", {
+      "Se emitió un permiso efímero de acceso documental.", {
         documentoId: documentId, versionDocumento: version, userId: String(actor.userId),
-        operation: "DOWNLOAD", expiresAt: claims.expiresAt
+        operation: operation, expiresAt: claims.expiresAt
       }, actor.role);
   } catch (_) {}
   return { status: "success", accessToken: token, documentoId: documentId,
@@ -4225,7 +4233,7 @@ function decodeStudentDocumentAccessToken_(token) {
   const claims = JSON.parse(claimsText);
   const now = Date.now();
   if (!claims || !/^[a-f0-9]{48,64}$/i.test(String(claims.tokenId || "")) ||
-      claims.operation !== "DOWNLOAD" || !claims.documentId || !claims.version || !claims.userId ||
+      (claims.operation !== "DOWNLOAD" && claims.operation !== "PREVIEW") || !claims.documentId || !claims.version || !claims.userId ||
       !Number.isFinite(Number(claims.issuedAt)) || !Number.isFinite(Number(claims.expiresAt)) ||
       Number(claims.issuedAt) > now + 5000 || Number(claims.expiresAt) <= now ||
       Number(claims.expiresAt) - Number(claims.issuedAt) > STUDENT_DOCUMENT_ACCESS_TOKEN_TTL_SECONDS_ * 1000) {
@@ -4234,26 +4242,28 @@ function decodeStudentDocumentAccessToken_(token) {
   return claims;
 }
 
-function logStudentDocumentAccessDecision_(request, actor, documentId, version, allowed, reasonCode) {
+function logStudentDocumentAccessDecision_(request, actor, documentId, version, allowed, reasonCode, operation) {
   try {
+    const accessOperation = String(operation || request && request.operation || "DOWNLOAD").trim().toUpperCase();
+    const preview = accessOperation === "PREVIEW";
     logStructuredEvent("ACADEMIC", "getSecureDocumentStream", allowed ? "INFO" : "WARN",
-      allowed ? "DOCUMENT_DOWNLOADED" : "DOCUMENT_ACCESS_DENIED",
-      allowed ? "Documento entregado mediante proxy autenticado." : "Intento de acceso documental denegado.",
+      allowed ? (preview ? "DOCUMENT_PREVIEWED" : "DOCUMENT_DOWNLOADED") : "DOCUMENT_ACCESS_DENIED",
+      allowed ? (preview ? "Documento entregado mediante vista previa autenticada." : "Documento entregado mediante proxy autenticado.") : "Intento de acceso documental denegado.",
       {
         documentoId: String(documentId || ""),
         versionDocumento: String(version || ""),
         userId: String(actor && actor.userId || ""),
         role: String(actor && actor.role || ""),
-        operation: "DOWNLOAD",
+        operation: accessOperation,
         decision: allowed ? "ALLOW" : "DENY",
         reasonCode: String(reasonCode || ""),
         correlationId: String(request && request.correlationId || "")
-      }, String(actor && actor.role || ""));
+      }, String(actor && actor.role || "");
   } catch (_) {}
 }
 
 function studentDocumentAccessError_(request, actor, documentId, code, version) {
-  logStudentDocumentAccessDecision_(request, actor, documentId, version, false, code);
+  logStudentDocumentAccessDecision_(request, actor, documentId, version, false, code, request && request.operation);
   return { status: "error", code: String(code || "RESOURCE_NOT_FOUND"), message: "Documento no disponible." };
 }
 
@@ -4278,7 +4288,7 @@ function consumeStudentDocumentAccessToken_(tokenId, token) {
 
 function getSecureDocumentStream(payload) {
   const request = payload || {};
-  const permission = validateRolePermission("getStudentDocumentFile", request);
+  const permission = validateRolePermission("getSecureDocumentStream", request);
   if (!permission || permission.authorized !== true) {
     return studentDocumentAccessError_(request, null, request.documentoId || request.documentId || "",
       "AUTH_PERMISSION_DENIED", "");
@@ -4297,9 +4307,17 @@ function getSecureDocumentStream(payload) {
   let claims;
   try { claims = decodeStudentDocumentAccessToken_(token); }
   catch (_) { return studentDocumentAccessError_(request, actor, documentId, "DOCUMENT_ACCESS_TOKEN_INVALID", ""); }
+  const requestedOperation = String(request.operation || claims.operation || "DOWNLOAD").trim().toUpperCase();
   if (claims.documentId !== documentId || claims.userId !== String(actor.userId) ||
+      claims.operation !== requestedOperation ||
       (request.versionDocumento && String(request.versionDocumento) !== String(claims.version))) {
     return studentDocumentAccessError_(request, actor, documentId, "DOCUMENT_ACCESS_TOKEN_BINDING_MISMATCH", claims.version);
+  }
+  const operationPermission = validateRolePermission(
+    claims.operation === "PREVIEW" ? "previewStudentDocument" : "getStudentDocumentFile", request
+  );
+  if (!operationPermission || operationPermission.authorized !== true) {
+    return studentDocumentAccessError_(request, actor, documentId, "AUTH_PERMISSION_DENIED", claims.version);
   }
   if (!consumeStudentDocumentAccessToken_(claims.tokenId, token)) {
     return studentDocumentAccessError_(request, actor, documentId, "DOCUMENT_ACCESS_TOKEN_REVOKED_OR_REPLAYED", claims.version);
@@ -4327,7 +4345,7 @@ function getSecureDocumentStream(payload) {
     return studentDocumentAccessError_(request, actor, documentId,
       result && result.code || "DOCUMENT_VERSION_CHANGED", claims.version);
   }
-  logStudentDocumentAccessDecision_(request, actor, documentId, claims.version, true, "");
+  logStudentDocumentAccessDecision_(request, actor, documentId, claims.version, true, "", claims.operation);
   return result;
 }
 

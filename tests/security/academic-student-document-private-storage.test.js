@@ -57,7 +57,7 @@ function makeSheet(initialRows=[]) {
 }
 
 function makeHarness(options={}) {
-  const state={lockHeld:false,lockReleases:0,uuid:0,docSequence:0,fileSequence:0,scopeChecks:0,identityChecks:0,folderAccess:"PRIVATE",
+  const state={lockHeld:false,lockReleases:0,uuid:0,docSequence:0,fileSequence:0,scopeChecks:0,identityChecks:0,permissionCalls:[],folderAccess:"PRIVATE",
     failFileSharing:false,actorUserId:"USER-1",now:Date.now(),tokenCache:new Map(),scriptProperties:new Map(),auditEvents:[]};
   const docHeader=["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl",
     "FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones","VersionDocumento","SHA256"];
@@ -121,7 +121,7 @@ function makeHarness(options={}) {
       return sheets[name];
     },
     LockService:{getScriptLock:()=>lock},
-    validateRolePermission:()=>({authorized:true}),
+    validateRolePermission:action=>{state.permissionCalls.push(action);return{authorized:!(options.denyPreview && action==="previewStudentDocument")};},
     CacheService:{getScriptCache:()=>scriptCache},
     PropertiesService:{getScriptProperties:()=>({
       getProperty:key=>state.scriptProperties.get(key)||"",
@@ -189,6 +189,25 @@ function upload(h,pdf,label="ACTA") {
   assert.equal("driveFileId" in listed.documents[0],false);
   assert.equal("driveUrl" in listed.documents[0],false);
   assert.equal(h.context.list({}).code,"RESOURCE_SCOPE_DENIED","document metadata queries require an expediente or application ID");
+  const previewDenied=makeHarness({denyPreview:true});
+  const previewDeniedUpload=upload(previewDenied,pdf1);
+  const deniedPreview=previewDenied.context.issueToken({documentoId:previewDeniedUpload.documentoId,solicitudId:"SOL-1",operation:"PREVIEW"});
+  assert.equal(deniedPreview.code,"AUTH_PERMISSION_DENIED","preview requires its own RBAC permission");
+  const invalidOperation=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1",operation:"METADATA"});
+  assert.equal(invalidOperation.code,"DOCUMENT_ACCESS_OPERATION_INVALID","metadata-only requests cannot mint a binary token");
+  const previewToken=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1",operation:"PREVIEW"});
+  assert.equal(previewToken.status,"success");
+  const previewStream=h.context.stream({documentoId:row[0],solicitudId:"SOL-1",operation:"PREVIEW",
+    versionDocumento:previewToken.versionDocumento,accessToken:previewToken.accessToken});
+  assert.equal(previewStream.status,"success");
+  assert.equal(Buffer.from(previewStream.fileData,"base64").equals(pdf1),true);
+  assert.equal(h.state.auditEvents.some(event=>event[3]==="DOCUMENT_PREVIEWED"),true);
+  const previewReplay=h.context.stream({documentoId:row[0],solicitudId:"SOL-1",operation:"PREVIEW",accessToken:previewToken.accessToken});
+  assert.equal(previewReplay.code,"DOCUMENT_ACCESS_TOKEN_REVOKED_OR_REPLAYED","preview tokens are one-use");
+  const operationMismatch=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1",operation:"PREVIEW"});
+  assert.equal(h.context.stream({documentoId:row[0],solicitudId:"SOL-1",operation:"DOWNLOAD",accessToken:operationMismatch.accessToken}).code,
+    "DOCUMENT_ACCESS_TOKEN_BINDING_MISMATCH","a preview token cannot be upgraded to download");
+  assert.ok(h.state.permissionCalls.includes("previewStudentDocument"));
   const issued=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1"});
   assert.equal(issued.status,"success");
   assert.equal(issued.expiresInSeconds,60);
@@ -452,7 +471,7 @@ assert.match(source,/case "getSecureDocumentStream": result = getSecureDocumentS
 assert.match(source,/case "getStudentDocumentFile": result = \{ status: "error", code: "SECURE_DOCUMENT_STREAM_REQUIRED"/);
 assert.doesNotMatch(source,/driveUrl: r\[6\]/);
 assert.match(source,/case "createStudentDocumentAccessToken": result = createStudentDocumentAccessToken\(payload\); break;/);
-assert.match(source,/const permissionAction = \["createStudentDocumentAccessToken", "getSecureDocumentStream"\]/);
+assert.match(source,/const secureDocumentAction = \["createStudentDocumentAccessToken", "getSecureDocumentStream"\]/);\nassert.match(source,/requestedDocumentOperation === "PREVIEW" \? "previewStudentDocument" : "getStudentDocumentFile"/);\nassert.match(source,/claims.operation !== requestedOperation/);
 assert.match(source,/validateContextualAccess\(permissionAction, payload, verifiedUserId, userRole\)/);
 assert.doesNotMatch(source,/getDownloadUrl\(\)/);
 assert.match(source,/function consumeStudentDocumentAccessToken_\(tokenId, token\)[\s\S]*lock\.waitLock\(5000\)[\s\S]*cache\.remove\(key\)/);
