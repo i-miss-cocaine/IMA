@@ -2881,11 +2881,11 @@ const ROLE_PERMISSIONS = {
   "Estudiante": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "Conductor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "Monitor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
-  "RecursosHumanos": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "recordStaffCheckIn", "recordStaffAttendance", "getStaffAttendanceLogs", "getEmployeeSelfServicePortal", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
-  "Director": ["submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
-  "Subdirector": ["submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
-  "Contador": ["submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
-  "Administrador": ["submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"]
+  "RecursosHumanos": [ "recordPurchaseReceipt", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "recordStaffCheckIn", "recordStaffAttendance", "getStaffAttendanceLogs", "getEmployeeSelfServicePortal", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
+  "Director": [ "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
+  "Subdirector": [ "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
+  "Contador": [ "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
+  "Administrador": [ "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"]
 };
 
 function accountingHasRolePermission_(actor, action) {
@@ -3416,6 +3416,152 @@ function adjudicatePurchaseQuotations(payload) {
   } finally { lock.releaseLock(); }
 }
 
+
+function recordPurchaseReceipt(payload) {
+  var input = payload || {};
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    var orderSheet = getOrCreateSheet(ss, "OrdenesCompra");
+    var receiptSheet = getOrCreateSheet(ss, "RecepcionesCompra");
+    var orderRows = orderSheet.getDataRange().getValues();
+    var receiptRows = receiptSheet.getDataRange().getValues();
+    if (!orderRows || !orderRows.length || !receiptRows || !receiptRows.length) throw new Error("PURCHASE_RECEIPT_SCHEMA_INVALID");
+    var orderHeaders = orderRows[0].map(function(v) { return String(v || "").trim(); });
+    var receiptHeaders = receiptRows[0].map(function(v) { return String(v || "").trim(); });
+    function indexOfHeader(headers, name, fallback) {
+      var index = headers.indexOf(name);
+      return index >= 0 ? index : fallback;
+    }
+    var orderIdIndex = indexOfHeader(orderHeaders, "OrdenCompraID", 0);
+    var orderStateIndex = indexOfHeader(orderHeaders, "EstadoOrden", 9);
+    var orderItemsIndex = indexOfHeader(orderHeaders, "DetalleItemsJSON", 6);
+    var orderSupplierIndex = indexOfHeader(orderHeaders, "ProveedorID", 3);
+    var orderCostCenterIndex = indexOfHeader(orderHeaders, "CentroCosto", 8);
+    var orderRowsFound = orderRows.slice(1).map(function(row, index) { return { row: row, index: index + 2 }; })
+      .filter(function(item) { return String(item.row[orderIdIndex] || "").trim() === String(input.ordenCompraId || "").trim(); });
+    if (orderRowsFound.length !== 1) throw new Error("PURCHASE_ORDER_NOT_FOUND");
+    var orderRecord = orderRowsFound[0], order = orderRecord.row;
+    var orderState = String(order[orderStateIndex] || "").trim().toLowerCase();
+    if (["aprobada","recibidaparcial"].indexOf(orderState) === -1) throw new Error("PURCHASE_ORDER_NOT_RECEIVABLE");
+    var orderItems;
+    try { orderItems = JSON.parse(String(order[orderItemsIndex] || "[]")); } catch (ignored) { throw new Error("PURCHASE_ORDER_ITEMS_INVALID"); }
+    if (!Array.isArray(orderItems) || !orderItems.length) throw new Error("PURCHASE_ORDER_ITEMS_INVALID");
+    var ordered = {}, summary = {};
+    orderItems.forEach(function(item) {
+      var code = String(item && (item.codigoItem || item.itemId || item.ItemId || item.codigo || item.itemCodigo) || "").trim();
+      var quantity = Number(item && (item.cantidad === undefined ? item.Cantidad : item.cantidad));
+      if (!code || !isFinite(quantity) || quantity <= 0 || ordered[code]) throw new Error("PURCHASE_ORDER_ITEMS_INVALID");
+      ordered[code] = { codigoItem: code, nombreItem: String(item.nombreItem || item.descripcion || item.nombre || ""),
+        cantidadSolicitada: quantity, unidadMedida: String(item.unidadMedida || item.unidad || "Unidad"),
+        costoUnitario: Number(item.precioUnitario === undefined ? (item.costoUnitario || 0) : item.precioUnitario),
+        recibidaConforme: 0, danadaRechazada: 0, pendiente: quantity };
+    });
+    function parseDetails(value) {
+      if (Array.isArray(value)) return value;
+      try { var parsed = JSON.parse(String(value || "[]")); return Array.isArray(parsed) ? parsed : []; } catch (ignored) { return []; }
+    }
+    receiptRows.slice(1).forEach(function(row) {
+      if (String(row[indexOfHeader(receiptHeaders, "OrdenCompraID", 1)] || "").trim() !== String(input.ordenCompraId || "").trim()) return;
+      var priorDetails = parseDetails(row[indexOfHeader(receiptHeaders, "DetalleJSON", 4)]);
+      priorDetails.forEach(function(detail) {
+        var code = String(detail.codigoItem || detail.itemId || detail.itemCodigo || "").trim();
+        if (!ordered[code]) return;
+        var quantity = Number(detail.cantidad || detail.cantidadRecibida || 0);
+        if (!isFinite(quantity) || quantity <= 0) return;
+        var conforming = detail.conforme === true || String(detail.estadoConformidad || "").toLowerCase() === "conforme";
+        if (conforming) ordered[code].recibidaConforme += quantity;
+        else ordered[code].danadaRechazada += quantity;
+      });
+    });
+    var incoming = Array.isArray(input.detalleRecibido) ? input.detalleRecibido : [];
+    if (!incoming.length) throw new Error("PURCHASE_RECEIPT_DETAILS_REQUIRED");
+    var seen = {}, normalized = [], conformingLines = [], damagedLines = [];
+    var overall = String(input.estadoConformidad || "Conforme").trim().toLowerCase();
+    incoming.forEach(function(detail) {
+      var code = String(detail && (detail.codigoItem || detail.itemId || detail.itemCodigo || detail.ItemId) || "").trim();
+      var quantity = Number(detail && (detail.cantidad === undefined ? detail.cantidadRecibida : detail.cantidad));
+      if (!code || !ordered[code]) throw new Error("PURCHASE_RECEIPT_ITEM_NOT_AUTHORIZED");
+      if (seen[code] || !isFinite(quantity) || quantity <= 0) throw new Error("PURCHASE_RECEIPT_QUANTITY_INVALID");
+      seen[code] = true;
+      if (ordered[code].recibidaConforme + ordered[code].danadaRechazada + quantity > ordered[code].cantidadSolicitada + 0.000001) {
+        throw new Error("PURCHASE_RECEIPT_QUANTITY_EXCEEDED");
+      }
+      var isDamaged = overall === "danado" || overall === "dañado" || detail.conforme === false ||
+        String(detail.estadoConformidad || "").toLowerCase() === "danado" || String(detail.estadoConformidad || "").toLowerCase() === "dañado";
+      var line = { codigoItem: code, itemId: code, nombreItem: String(detail.nombreItem || ordered[code].nombreItem || ""),
+        cantidad: quantity, unidadMedida: String(detail.unidadMedida || detail.unidad || ordered[code].unidadMedida),
+        conforme: !isDamaged, estadoConformidad: isDamaged ? "Danado" : "Conforme" };
+      normalized.push(line);
+      if (isDamaged) damagedLines.push(line); else conformingLines.push(line);
+    });
+    var registrarInventario = input.registrarEnInventario === true;
+    if (registrarInventario && overall !== "danado" && overall !== "dañado") {
+      conformingLines.forEach(function(line) {
+        var catalogItem = catalogFindItem_(ss, line.codigoItem);
+        if (!catalogItem) throw new Error("PURCHASE_RECEIPT_ITEM_NOT_AUTHORIZED");
+        var unit = catalogFindUnit_(ss, line.unidadMedida);
+        if (!unit) throw new Error("PURCHASE_RECEIPT_UNIT_INVALID");
+      });
+    }
+    var receiptId = "REC-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 24);
+    var now = new Date();
+    var inventoryResults = [];
+    if (registrarInventario && overall !== "danado" && overall !== "dañado") {
+      conformingLines.forEach(function(line) {
+        var catalogItem = catalogFindItem_(ss, line.codigoItem);
+        var unit = catalogFindUnit_(ss, line.unidadMedida);
+        var unitCost = Number(ordered[line.codigoItem].costoUnitario || 0);
+        var move = {
+          itemCodigo: line.codigoItem, itemNombre: line.nombreItem || catalogItem.name || catalogItem.nombre || line.codigoItem,
+          tipoMovimiento: "EntradaCompra", cantidad: line.cantidad, unidadMedida: line.unidadMedida,
+          costoUnitario: unitCost, ordenCompraId: String(input.ordenCompraId), exigirCostoDocumento: true,
+          documentOrigen: "Recepción de orden de compra " + String(input.ordenCompraId),
+          facturaId: String(input.facturaId || ""), proveedorId: String(order[orderSupplierIndex] || ""),
+          centroCosto: String(order[orderCostCenterIndex] || ""), recepcionId: receiptId,
+          unidadBase: unit.base || line.unidadMedida, factorConversion: Number(unit.factor || 1)
+        };
+        var result = recordInventoryMovementLocked_(ss, move);
+        if (!result || result.status !== "success") throw new Error(result && result.code || "PURCHASE_RECEIPT_INVENTORY_WRITE_FAILED");
+        inventoryResults.push(result);
+      });
+    }
+    normalized.forEach(function(line) {
+      if (line.conforme) ordered[line.codigoItem].recibidaConforme += line.cantidad;
+      else ordered[line.codigoItem].danadaRechazada += line.cantidad;
+    });
+    var summary = Object.keys(ordered).map(function(code) {
+      var item = ordered[code];
+      item.pendiente = Math.max(0, item.cantidadSolicitada - item.recibidaConforme - item.danadaRechazada);
+      return item;
+    });
+    var hasDamaged = summary.some(function(item) { return item.danadaRechazada > 0; });
+    var allReceived = summary.every(function(item) { return item.recibidaConforme >= item.cantidadSolicitada - 0.000001; });
+    var orderStatus = hasDamaged ? "EnDisputa" : (allReceived ? "RecibidaTotal" : "RecibidaParcial");
+    var receiptState = hasDamaged ? "Danado" : "Conforme";
+    var detailIndex = indexOfHeader(receiptHeaders, "DetalleJSON", 4);
+    var receiptRow = [];
+    receiptRow[indexOfHeader(receiptHeaders, "RecepcionID", 0)] = receiptId;
+    receiptRow[indexOfHeader(receiptHeaders, "OrdenCompraID", 1)] = String(input.ordenCompraId);
+    receiptRow[indexOfHeader(receiptHeaders, "Fecha", 2)] = now;
+    receiptRow[indexOfHeader(receiptHeaders, "ReceptorUserId", 3)] = String(input.receptorUserId || input.userId || "");
+    receiptRow[detailIndex] = JSON.stringify(normalized);
+    receiptRow[indexOfHeader(receiptHeaders, "EstadoConformidad", 5)] = receiptState;
+    receiptRow[indexOfHeader(receiptHeaders, "RegistrarInventario", 6)] = registrarInventario && inventoryResults.length > 0;
+    receiptRow[indexOfHeader(receiptHeaders, "AsientoID", 7)] = "";
+    receiptRow[indexOfHeader(receiptHeaders, "Observaciones", 8)] = String(input.observaciones || "").slice(0, 500);
+    var receiptWidth = Math.max(receiptHeaders.length, receiptRow.length);
+    for (var i = 0; i < receiptWidth; i++) if (receiptRow[i] === undefined) receiptRow[i] = "";
+    receiptSheet.appendRow(receiptRow);
+    orderSheet.getRange(orderRecord.index, orderStateIndex + 1).setValue(orderStatus);
+    return { status: "success", recepcionId: receiptId, ordenCompraId: String(input.ordenCompraId),
+      estadoOrden: orderStatus, resumenPartidas: summary, movimientosInventario: inventoryResults.length };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function doGet() {
   return textResponse({ status: "success", service: "ACCOUNTING",
     configured: !!String(PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID") || "").trim()
@@ -3466,6 +3612,7 @@ function doPost(e) {
     if (request.action === "getPaginatedJournalEntries") return respond(getPaginatedJournalEntries(actionPayload));
     if (request.action === "getAdvancedDashboardAnalytics") return respond(getAdvancedDashboardAnalytics(actionPayload));
     if (request.action === "submitPurchaseQuotation") return respond(submitPurchaseQuotation(actionPayload));
+    if (request.action === "recordPurchaseReceipt") return respond(recordPurchaseReceipt(actionPayload));
     if (request.action === "getPurchaseQuotations") return respond(getPurchaseQuotations(actionPayload));
     if (request.action === "getPurchaseQuotationMatrix") return respond(getPurchaseQuotationMatrix(actionPayload));
     if (request.action === "adjudicatePurchaseQuotations") return respond(adjudicatePurchaseQuotations(actionPayload));
