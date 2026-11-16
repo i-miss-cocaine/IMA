@@ -2740,6 +2740,50 @@ function reviewPaymentVoucher(payload) {
   } finally { lock.releaseLock(); }
 }
 
+
+function familyCreditApprovalActor_(p) {
+  var input=p||{}, actor=typeof getVerifiedAccountingIdentity_==="function"?getVerifiedAccountingIdentity_(input):
+    (input._verifiedRole?{authorized:true,userId:String(input._verifiedUserId||""),role:String(input._verifiedRole)}:null);
+  if(!actor||actor.authorized!==true||!actor.role)throw new Error("VERIFIED_IDENTITY_REQUIRED");
+  return {userId:String(actor.userId||""),role:String(actor.role||""),institutionId:String(actor.institutionId||"")};
+}
+function institutionalServiceRoleKey_(role){return String(role||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");}
+function institutionalServiceIsActive_(ss,name){var sh=ss&&ss.getSheetByName?ss.getSheetByName("ServiciosInstitucionales"):null;if(!sh)return true;var r=sh.getDataRange().getValues().slice(1).filter(function(x){return String(x[0]||"").toLowerCase()===String(name||"").toLowerCase();});if(r.length>1)throw new Error("INSTITUTIONAL_SERVICE_CONFIGURATION_AMBIGUOUS");return !r.length||["activo","active","habilitado","si","true"].indexOf(String(r[0][1]||"").toLowerCase())!==-1;}
+function familyCreditPinSecret_(){var v=PropertiesService.getScriptProperties().getProperty("FAMILY_CREDIT_PIN_SECRET");if(!v||String(v).length<16)throw new Error("FAMILY_CREDIT_PIN_SECRET_NOT_CONFIGURED");return String(v);}
+function familyCreditPinDigest_(pin,salt){var message="FAMILY_CREDIT_PIN|"+String(salt||"")+"|"+String(pin||"");if(typeof computeHmacSignature==="function")return String(computeHmacSignature(message,familyCreditPinSecret_()));if(Utilities.computeHmacSha256Signature)return Utilities.computeHmacSha256Signature(message,familyCreditPinSecret_()).map(function(x){return("0"+(x&255).toString(16)).slice(-2);}).join("");throw new Error("FAMILY_CREDIT_PIN_HASH_PROVIDER_UNAVAILABLE");}
+function familyCreditConstantTimeEquals_(a,b){a=String(a||"");b=String(b||"");var d=a.length^b.length,n=Math.max(a.length,b.length);for(var i=0;i<n;i++)d|=(a.charCodeAt(i)||0)^(b.charCodeAt(i)||0);return d===0;}
+function familyCreditEnsureConfigSheet_(ss){var sh=getOrCreateSheet(ss,"CreditoFamiliarConfiguracion"),h=["ConfiguracionID","ResponsableUserID","ModalidadAprobacion","FechaActualizacion","ActualizadoPor","PinSalt","PinHash","PinUpdatedAt","FailedAttempts","LockedUntil"],r=sh.getDataRange().getValues();if(!r.length){sh.appendRow(h);r=[h];}var cur=(r[0]||[]).map(String);h.forEach(function(x){if(cur.indexOf(x)<0){sh.getRange(1,cur.length+1).setValue(x);cur.push(x);}});var m={};cur.forEach(function(x,i){if(x){if(m[x]!==undefined)throw new Error("FAMILY_CREDIT_CONFIGURATION_SCHEMA_INVALID");m[x]=i;}});return{sheet:sh,map:m};}
+function familyCreditEnsureAuthorizationSheet_(ss){var sh=getOrCreateSheet(ss,"CreditoFamiliarAutorizaciones"),h=["AutorizacionID","Fecha","ResponsableUserId","EstudianteUserId","LimiteDiario","LimiteMensual","SaldoUsado","Estado","FechaVencimiento","Observaciones","ModalidadAprobacion","PinApprovedBy","PinApprovedAt"],r=sh.getDataRange().getValues();if(!r.length){sh.appendRow(h);r=[h];}var cur=(r[0]||[]).map(String);h.forEach(function(x){if(cur.indexOf(x)<0){sh.getRange(1,cur.length+1).setValue(x);cur.push(x);}});var m={};cur.forEach(function(x,i){if(x){if(m[x]!==undefined)throw new Error("FAMILY_CREDIT_AUTHORIZATION_SCHEMA_INVALID");m[x]=i;}});return{sheet:sh,map:m};}
+function familyCreditGetActiveStudentUserIdsForGuardian_(ss,gid){var us=ss.getSheetByName("Usuarios"),rs=ss.getSheetByName("RelacionesFamiliares");if(!us||!rs)return[];var u=us.getDataRange().getValues(),r=rs.getDataRange().getValues(),uh=u[0].map(String),rh=r[0].map(String),ui=uh.indexOf("UserId"),pi=uh.indexOf("PersonaID"),ri=uh.indexOf("Rol"),si=uh.indexOf("Estado"),sp=rh.indexOf("PersonaEstudianteID"),gp=rh.indexOf("PersonaResponsableID"),st=rh.indexOf("EstadoAutorizacion"),fi=rh.indexOf("FechaInicio"),ti=rh.indexOf("FechaFin");if([ui,pi,ri,sp,gp,st].some(function(x){return x<0;}))return[];var g=u.slice(1).filter(function(x){return String(x[ui])===String(gid);});if(g.length!==1||!g[0][pi])return[];var person=String(g[0][pi]),now=new Date(),out=[];r.slice(1).forEach(function(rel){var state=String(rel[st]||"").toLowerCase(),from=fi>=0&&rel[fi]?new Date(rel[fi]):null,to=ti>=0&&rel[ti]?new Date(rel[ti]):null;if(String(rel[gp])!==person||["aprobado","autorizado","activo","active","verificada"].indexOf(state)<0||(from&&from>now)||(to&&to<now))return;var students=u.slice(1).filter(function(x){return String(x[pi])===String(rel[sp])&&["estudiante","alumno"].indexOf(institutionalServiceRoleKey_(x[ri]))>=0&&(!x[si]||["activo","active","habilitado"].indexOf(String(x[si]).toLowerCase())>=0);});if(students.length===1&&out.indexOf(String(students[0][ui]))<0)out.push(String(students[0][ui]));});return out;}
+function familyCreditGuardianHasActiveStudentRelation_(ss,gid){return familyCreditGetActiveStudentUserIdsForGuardian_(ss,gid).length>0;}
+function familyCreditGuardianCanAuthorizeStudent_(ss,gid,sid){return familyCreditGetActiveStudentUserIdsForGuardian_(ss,gid).indexOf(String(sid))>=0;}
+function familyCreditVerifyPinInConfig_(ss,gid,pin){var s=familyCreditEnsureConfigSheet_(ss),r=s.sheet.getDataRange().getValues(),m=s.map,a=r.slice(1).map(function(row,i){return{row:row,i:i};}).filter(function(x){return String(x.row[m.ResponsableUserID])===String(gid);});if(a.length>1)throw new Error("FAMILY_CREDIT_CONFIGURATION_DUPLICATE");if(!a.length||!a[0].row[m.PinHash])throw new Error("FAMILY_CREDIT_PIN_NOT_CONFIGURED");var row=a[0].row,locked=row[m.LockedUntil];if(locked&&new Date(locked)>new Date())throw new Error("FAMILY_CREDIT_PIN_TEMPORARILY_LOCKED");if(!familyCreditConstantTimeEquals_(familyCreditPinDigest_(pin,row[m.PinSalt]),row[m.PinHash])){var tries=Number(row[m.FailedAttempts]||0)+1;s.sheet.getRange(a[0].i+2,m.FailedAttempts+1).setValue(tries);if(tries>=5){s.sheet.getRange(a[0].i+2,m.LockedUntil+1).setValue(new Date(Date.now()+900000));throw new Error("FAMILY_CREDIT_PIN_TEMPORARILY_LOCKED");}throw new Error("FAMILY_CREDIT_PIN_INVALID");}s.sheet.getRange(a[0].i+2,m.FailedAttempts+1).setValue(0);s.sheet.getRange(a[0].i+2,m.LockedUntil+1).setValue("");return true;}
+function familyCreditApprovalPreferenceRow_(ss,gid){var s=familyCreditEnsureConfigSheet_(ss),r=s.sheet.getDataRange().getValues(),m=s.map,a=r.slice(1).map(function(row,i){return{row:row,i:i};}).filter(function(x){return String(x.row[m.ResponsableUserID]||"")===String(gid);});if(a.length>1)throw new Error("FAMILY_CREDIT_CONFIGURATION_DUPLICATE");return{schema:s,match:a[0]||null};}
+function configureFamilyCreditApprovalPreference(p){var a=familyCreditApprovalActor_(p),role=institutionalServiceRoleKey_(a.role),ss=SpreadsheetApp.openById(SPREADSHEET_ID);if(role!=="padre"){if(role==="estudiante"||role==="alumno")throw new Error("FAMILY_CREDIT_GUARDIAN_ROLE_REQUIRED");if(!familyCreditGuardianHasActiveStudentRelation_(ss,a.userId))throw new Error("FAMILY_CREDIT_ACTIVE_GUARDIAN_RELATION_REQUIRED");throw new Error("FAMILY_CREDIT_GUARDIAN_ROLE_REQUIRED");}if(!familyCreditGuardianHasActiveStudentRelation_(ss,a.userId))throw new Error("FAMILY_CREDIT_ACTIVE_GUARDIAN_RELATION_REQUIRED");var mode=String(p.modalidadAprobacion||"").toUpperCase();if(["POR_CUPO","POR_COMPRA"].indexOf(mode)<0)throw new Error("FAMILY_CREDIT_APPROVAL_MODE_INVALID");var lock=LockService.getScriptLock();lock.waitLock(10000);try{var d=familyCreditApprovalPreferenceRow_(ss,a.userId),m=d.schema.map,now=new Date();if(d.match){d.schema.sheet.getRange(d.match.i+2,m.ModalidadAprobacion+1).setValue(mode);d.schema.sheet.getRange(d.match.i+2,m.FechaActualizacion+1).setValue(now);d.schema.sheet.getRange(d.match.i+2,m.ActualizadoPor+1).setValue(a.userId);}else{var row=new Array(d.schema.sheet.getDataRange().getValues()[0].length).fill("");row[m.ConfiguracionID]="CFG-"+Utilities.getUuid();row[m.ResponsableUserID]=a.userId;row[m.ModalidadAprobacion]=mode;row[m.FechaActualizacion]=now;row[m.ActualizadoPor]=a.userId;d.schema.sheet.appendRow(row);}return{status:"success",configured:true,modalidadAprobacion:mode};}finally{lock.releaseLock();}}
+function getFamilyCreditApprovalPreference(p){var a=familyCreditApprovalActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID);if(institutionalServiceRoleKey_(a.role)!=="padre")throw new Error("FAMILY_CREDIT_GUARDIAN_ROLE_REQUIRED");if(!familyCreditGuardianHasActiveStudentRelation_(ss,a.userId))throw new Error("FAMILY_CREDIT_ACTIVE_GUARDIAN_RELATION_REQUIRED");var lock=LockService.getScriptLock();lock.waitLock(10000);try{var d=familyCreditApprovalPreferenceRow_(ss,a.userId),row=d.match&&d.match.row,m=d.schema.map;return{status:"success",configured:!!(row&&row[m.ModalidadAprobacion]),modalidadAprobacion:row&&row[m.ModalidadAprobacion]||null,pinConfigured:!!(row&&row[m.PinHash])};}finally{lock.releaseLock();}}
+function configureFamilyCreditPin(p){var a=familyCreditApprovalActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID);if(institutionalServiceRoleKey_(a.role)!=="padre")throw new Error("FAMILY_CREDIT_GUARDIAN_ROLE_REQUIRED");if(!familyCreditGuardianHasActiveStudentRelation_(ss,a.userId))throw new Error("FAMILY_CREDIT_ACTIVE_GUARDIAN_RELATION_REQUIRED");var pin=String(p.newPin||"");if(!/^\d{6}$/.test(pin)||pin!==String(p.confirmPin||""))throw new Error("FAMILY_CREDIT_PIN_INPUT_INVALID");var lock=LockService.getScriptLock();lock.waitLock(10000);try{var d=familyCreditApprovalPreferenceRow_(ss,a.userId),m=d.schema.map;if(!d.match){var row=new Array(d.schema.sheet.getDataRange().getValues()[0].length).fill("");row[m.ConfiguracionID]="CFG-"+Utilities.getUuid();row[m.ResponsableUserID]=a.userId;row[m.FechaActualizacion]=new Date();row[m.ActualizadoPor]=a.userId;d.schema.sheet.appendRow(row);d=familyCreditApprovalPreferenceRow_(ss,a.userId);}if(d.match.row[m.PinHash]){if(!p.currentPin)throw new Error("FAMILY_CREDIT_CURRENT_PIN_REQUIRED");familyCreditVerifyPinInConfig_(ss,a.userId,p.currentPin);}var salt=String(Utilities.getUuid())+String(Date.now());d.schema.sheet.getRange(d.match.i+2,m.PinSalt+1).setValue(salt);d.schema.sheet.getRange(d.match.i+2,m.PinHash+1).setValue(familyCreditPinDigest_(pin,salt));d.schema.sheet.getRange(d.match.i+2,m.PinUpdatedAt+1).setValue(new Date());d.schema.sheet.getRange(d.match.i+2,m.FailedAttempts+1).setValue(0);d.schema.sheet.getRange(d.match.i+2,m.LockedUntil+1).setValue("");return{status:"success",pinConfigured:true};}finally{lock.releaseLock();}}
+function familyCreditEnsurePurchaseAuthorization_(ss,gid,sid){if(!familyCreditGuardianCanAuthorizeStudent_(ss,gid,sid))throw new Error("FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED");var s=familyCreditEnsureAuthorizationSheet_(ss),r=s.sheet.getDataRange().getValues(),m=s.map,a=r.slice(1).map(function(row,i){return{row:row,i:i};}).filter(function(x){return String(x.row[m.ResponsableUserId])===String(gid)&&String(x.row[m.EstudianteUserId])===String(sid)&&["activa","active"].indexOf(String(x.row[m.Estado]).toLowerCase())>=0;});if(a.length!==1)throw new Error(a.length?"FAMILY_CREDIT_AUTHORIZATION_AMBIGUOUS":"FAMILY_CREDIT_AUTHORIZATION_NOT_FOUND");if(a[0].row[m.FechaVencimiento]&&new Date(a[0].row[m.FechaVencimiento])<new Date())throw new Error("FAMILY_CREDIT_AUTHORIZATION_EXPIRED");return{schema:s,row:a[0].row,rowIndex:a[0].i+2,map:m};}
+function familyCreditRequirePurchaseAuthorizationForStudent_(ss,gid,sid){return familyCreditEnsurePurchaseAuthorization_(ss,gid,sid);}
+function configureFamilyCreditAuthorization(p){var a=familyCreditApprovalActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID);if(institutionalServiceRoleKey_(a.role)!=="padre")throw new Error("FAMILY_CREDIT_GUARDIAN_ROLE_REQUIRED");var sid=String(p.estudianteUserId||""),daily=Number(p.limiteDiario),monthly=Number(p.limiteMensual);if(!familyCreditGuardianCanAuthorizeStudent_(ss,a.userId,sid))throw new Error("FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED");if(!isFinite(daily)||!isFinite(monthly)||daily<=0||monthly<=0||daily>monthly)throw new Error("FAMILY_CREDIT_LIMITS_INVALID");var pref=familyCreditApprovalPreferenceRow_(ss,a.userId),mode=pref.match?String(pref.match.row[pref.schema.map.ModalidadAprobacion]||"POR_COMPRA"):"POR_COMPRA",pinApproved=false;if(p.familyPin){familyCreditVerifyPinInConfig_(ss,a.userId,p.familyPin);pinApproved=true;}else if(mode==="POR_CUPO"&&pref.match&&pref.match.row[pref.schema.map.PinHash])throw new Error("FAMILY_CREDIT_PIN_INVALID");var lock=LockService.getScriptLock();lock.waitLock(10000);try{var s=familyCreditEnsureAuthorizationSheet_(ss),r=s.sheet.getDataRange().getValues(),m=s.map,aRows=r.slice(1).map(function(row,i){return{row:row,i:i};}).filter(function(x){return String(x.row[m.ResponsableUserId])===a.userId&&String(x.row[m.EstudianteUserId])===sid;});if(aRows.length>1)throw new Error("FAMILY_CREDIT_AUTHORIZATION_AMBIGUOUS");var old=aRows[0],row=old?old.row.slice():new Array(r[0].length).fill("");row[m.AutorizacionID]=old?row[m.AutorizacionID]:"AUT-"+Utilities.getUuid();row[m.Fecha]=new Date();row[m.ResponsableUserId]=a.userId;row[m.EstudianteUserId]=sid;row[m.LimiteDiario]=daily;row[m.LimiteMensual]=monthly;row[m.SaldoUsado]=Number(row[m.SaldoUsado]||0);row[m.Estado]=p.estado||"Activa";row[m.FechaVencimiento]=p.fechaVencimiento||"";row[m.Observaciones]=String(p.observaciones||"").slice(0,500);row[m.ModalidadAprobacion]=mode;row[m.PinApprovedBy]=pinApproved?a.userId:"";row[m.PinApprovedAt]=pinApproved?new Date():"";if(old)s.sheet.getRange(old.i+2,1,1,row.length).setValues([row]);else s.sheet.appendRow(row);return{status:"success",autorizacionId:row[m.AutorizacionID],modalidadAprobacion:mode,pinAprobado:pinApproved};}finally{lock.releaseLock();}}
+function getFamilyCreditAuthorizations(p){var a=familyCreditApprovalActor_(p),role=institutionalServiceRoleKey_(a.role),ss=SpreadsheetApp.openById(SPREADSHEET_ID),s=familyCreditEnsureAuthorizationSheet_(ss),sid=String(p.estudianteUserId||""),gid=String(p.responsableUserId||"");if(role==="estudiante"||role==="alumno"){if(sid&&sid!==a.userId)throw new Error("FAMILY_CREDIT_STUDENT_OWNERSHIP_REQUIRED");sid=a.userId;gid="";}else if(role==="padre"){if(gid&&gid!==a.userId)throw new Error("FAMILY_CREDIT_GUARDIAN_OWNERSHIP_REQUIRED");gid=a.userId;if(sid&&!familyCreditGuardianCanAuthorizeStudent_(ss,gid,sid))throw new Error("FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED");}else if(["administrador","director","contador","secretaria"].indexOf(role)<0)throw new Error("ROLE_NOT_ALLOWED");var rows=s.sheet.getDataRange().getValues().slice(1).filter(function(r){return(!sid||String(r[s.map.EstudianteUserId])===sid)&&(!gid||String(r[s.map.ResponsableUserId])===gid);});return{status:"success",autorizaciones:rows.map(function(r){return{autorizacionId:r[s.map.AutorizacionID],fecha:r[s.map.Fecha],responsableUserId:r[s.map.ResponsableUserId],estudianteUserId:r[s.map.EstudianteUserId],limiteDiario:Number(r[s.map.LimiteDiario]||0),limiteMensual:Number(r[s.map.LimiteMensual]||0),saldoUsado:Number(r[s.map.SaldoUsado]||0),estado:r[s.map.Estado],fechaVencimiento:r[s.map.FechaVencimiento],observaciones:r[s.map.Observaciones]};})};}
+function familyCreditIsRequested_(v){return String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/\s/g,"")==="creditofamiliar";}
+function familyCreditIsCancellationStatus_(v){return["cancelado","cancelada","devuelto","devuelta","anulado","anulada"].indexOf(String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase())>=0;}
+function familyCreditGetStatementMovements_(ss,sid){var sh=ss.getSheetByName("CreditoFamiliarMovimientos");if(!sh)return[];return sh.getDataRange().getValues().slice(1).filter(function(r){return String(r[3])===String(sid)&&["aprobado","reversado"].indexOf(String(r[8]||"").toLowerCase())>=0;}).map(function(r){return{movimientoCreditoId:r[0],fecha:r[1],autorizacionId:r[2],estudianteUserId:r[3],responsableUserId:r[4],establecimiento:r[5],monto:Number(r[6]||0),origenRefId:r[7],estado:r[8]};});}
+function familyCreditSpentInPeriod_(ss,aid,date){var sh=ss.getSheetByName("CreditoFamiliarMovimientos");if(!sh)return 0;var start=new Date(date.getFullYear(),date.getMonth(),date.getDate()),end=new Date(start.getFullYear(),start.getMonth(),start.getDate()+1);return sh.getDataRange().getValues().slice(1).reduce(function(sum,r){var d=r[1]?new Date(r[1]):null;if(String(r[2])!==String(aid)||!d||d<start||d>=end)return sum;var st=String(r[8]||"").toLowerCase();return sum+(st==="aprobado"?Number(r[6]||0):st==="reversado"?-Number(r[6]||0):0);},0);}
+function familyCreditRecordDebit_(ss,auth,sid,gid,place,amount,origin){var s=auth.schema||familyCreditEnsureAuthorizationSheet_(ss),m=s.map,row=auth.row||auth,sh=getOrCreateSheet(ss,"CreditoFamiliarMovimientos"),id="MOV-"+Utilities.getUuid();sh.appendRow([id,new Date(),row[m.AutorizacionID],sid,gid,place,amount,origin,"Aprobado",""]);var balance=Number(row[m.SaldoUsado]||0)+amount;s.sheet.getRange(auth.rowIndex||2,m.SaldoUsado+1).setValue(balance);return{movimientoCreditoId:id,saldoUsado:balance};}
+function familyCreditApplyCupoPurchase_(ss,sid,place,origin,amount){var s=familyCreditEnsureAuthorizationSheet_(ss),r=s.sheet.getDataRange().getValues(),m=s.map,a=r.slice(1).map(function(row,i){return{row:row,i:i};}).filter(function(x){return String(x.row[m.EstudianteUserId])===String(sid)&&String(x.row[m.Estado]).toLowerCase()==="activa";});if(a.length!==1)throw new Error("FAMILY_CREDIT_AUTHORIZATION_NOT_FOUND");var auth={schema:s,row:a[0].row,rowIndex:a[0].i+2},aid=String(a[0].row[m.AutorizacionID]),used=familyCreditSpentInPeriod_(ss,aid,new Date());if(used+amount>=Number(a[0].row[m.LimiteDiario]))throw new Error("FAMILY_CREDIT_DAILY_LIMIT_EXCEEDED");if(Number(a[0].row[m.SaldoUsado]||0)+amount>Number(a[0].row[m.LimiteMensual]))throw new Error("FAMILY_CREDIT_MONTHLY_LIMIT_EXCEEDED");return familyCreditRecordDebit_(ss,auth,sid,String(a[0].row[m.ResponsableUserId]),place,amount,origin);}
+function processFamilyCreditPurchase(p){var a=familyCreditApprovalActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID);if(institutionalServiceRoleKey_(a.role)!=="padre")throw new Error("FAMILY_CREDIT_GUARDIAN_ROLE_REQUIRED");var sid=String(p.estudianteUserId||""),origin=String(p.origenRefId||""),place=String(p.establecimiento||"").toUpperCase();if(!familyCreditGuardianCanAuthorizeStudent_(ss,a.userId,sid))throw new Error("FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED");var lock=LockService.getScriptLock();lock.waitLock(10000);try{var auth=familyCreditRequirePurchaseAuthorizationForStudent_(ss,a.userId,sid),mov=getOrCreateSheet(ss,"CreditoFamiliarMovimientos"),rows=mov.getDataRange().getValues(),prior=rows.slice(1).filter(function(r){return String(r[7])===origin&&String(r[8]).toLowerCase()==="aprobado";});if(prior.length>1)throw new Error("FAMILY_CREDIT_MOVEMENT_AMBIGUOUS");if(prior.length)return{status:"success",approved:true,idempotent:true};var orderSh=getOrCreateSheet(ss,place==="TIENDA"?"TiendaOrdenes":"CafeteriaPedidos"),orders=orderSh.getDataRange().getValues(),idx=orders.findIndex(function(r){return String(r[0])===origin;});if(idx<1)throw new Error("FAMILY_CREDIT_ORDER_NOT_FOUND");var order=orders[idx];if(String(order[2])!==sid)throw new Error("FAMILY_CREDIT_STUDENT_OWNERSHIP_REQUIRED");var amount=Number(order[place==="TIENDA"?5:6]||0);familyCreditVerifyPinInConfig_(ss,a.userId,p.familyPin);var used=familyCreditSpentInPeriod_(ss,auth.row[auth.map.AutorizacionID],new Date());if(used+amount>=Number(auth.row[auth.map.LimiteDiario]))throw new Error("FAMILY_CREDIT_DAILY_LIMIT_EXCEEDED");if(Number(auth.row[auth.map.SaldoUsado]||0)+amount>Number(auth.row[auth.map.LimiteMensual]))throw new Error("FAMILY_CREDIT_MONTHLY_LIMIT_EXCEEDED");var debit=familyCreditRecordDebit_(ss,auth,sid,a.userId,place,amount,origin);orderSh.getRange(idx+1,place==="TIENDA"?8:9).setValue("AprobadoCreditoFamiliar");return{status:"success",approved:true,idempotent:false,movimientoCreditoId:debit.movimientoCreditoId};}finally{lock.releaseLock();}}
+function familyCreditReverseApprovedOrder_(ss,place,origin){var sh=getOrCreateSheet(ss,"CreditoFamiliarMovimientos"),r=sh.getDataRange().getValues(),a=r.slice(1).filter(function(x){return String(x[7])===String(origin)&&institutionalServiceRoleKey_(x[5])===institutionalServiceRoleKey_(place)&&String(x[8]).toLowerCase()==="aprobado";});if(!a.length)return{status:"success",reversed:false};if(a.length!==1)throw new Error("FAMILY_CREDIT_MOVEMENT_AMBIGUOUS");var x=a[0],ref="REV:"+x[0];if(r.slice(1).some(function(y){return String(y[7])===ref&&String(y[8]).toLowerCase()==="reversado";}))return{status:"success",reversed:false,idempotent:true};try{sh.appendRow(["REV-"+Utilities.getUuid(),new Date(),x[2],x[3],x[4],x[5],Number(x[6]),ref,"Reversado","Reversión"]);}catch(e){throw new Error("FAMILY_CREDIT_REVERSAL_WRITE_FAILED");}var s=familyCreditEnsureAuthorizationSheet_(ss),rows=s.sheet.getDataRange().getValues(),m=s.map,idx=rows.findIndex(function(y){return String(y[m.AutorizacionID])===String(x[2]);});if(idx<1)throw new Error("FAMILY_CREDIT_AUTHORIZATION_NOT_FOUND");s.sheet.getRange(idx+1,m.SaldoUsado+1).setValue(Math.max(0,Number(rows[idx][m.SaldoUsado]||0)-Number(x[6])));return{status:"success",reversed:true};}
+function familyCreditResolveStudent_(ss,a,requested){var role=institutionalServiceRoleKey_(a.role);if(role==="estudiante"||role==="alumno")return a.userId;if(role==="padre"){if(!requested||!familyCreditGuardianCanAuthorizeStudent_(ss,a.userId,requested))throw new Error("FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED");return String(requested);}return String(requested||"");}
+function createStoreOrder(p){var a=familyCreditApprovalActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),sid=familyCreditResolveStudent_(ss,a,p.userId),items=p.detalleItems||[];if(!sid||!items.length)throw new Error("ORDER_ITEMS_REQUIRED");var qty={};items.forEach(function(x){var id=String(x.productoId||""),n=Number(x.cantidad===undefined?1:x.cantidad);if(!id||!Number.isInteger(n)||n<=0)throw new Error("ORDER_QUANTITY_INVALID");qty[id]=(qty[id]||0)+n;});var lock=LockService.getScriptLock();lock.waitLock(10000);try{var ps=getOrCreateSheet(ss,"TiendaProductos"),os=getOrCreateSheet(ss,"TiendaOrdenes"),pr=ps.getDataRange().getValues(),out=[],total=0;Object.keys(qty).forEach(function(id){var m=pr.map(function(r,i){return{r:r,i:i};}).filter(function(x){return String(x.r[0])===id;});if(m.length!==1)throw new Error(m.length?"STORE_PRODUCT_AMBIGUOUS":"STORE_PRODUCT_NOT_FOUND");var x=m[0],price=Number(x.r[5]),stock=Number(x.r[6]);if(!isFinite(price)||price<0||!Number.isInteger(stock)||stock<qty[id])throw new Error("STORE_INSUFFICIENT_STOCK");out.push({productoId:id,nombre:x.r[4],precio:price,cantidad:qty[id],subtotal:price*qty[id],row:x.i+1,stock:stock});total+=price*qty[id];});total=Math.round(total*100)/100;var method=String(p.metodoPago||"Transferencia"),family=familyCreditIsRequested_(method),mode="POR_COMPRA",guardian="";if(family){var s=familyCreditEnsureAuthorizationSheet_(ss),r=s.sheet.getDataRange().getValues(),m=s.map,auth=r.slice(1).filter(function(x){return String(x[m.EstudianteUserId])===sid&&String(x[m.Estado]).toLowerCase()==="activa";});if(auth.length!==1)throw new Error("FAMILY_CREDIT_AUTHORIZATION_NOT_FOUND");mode=String(auth[0][m.ModalidadAprobacion]||"POR_COMPRA");guardian=auth[0][m.ResponsableUserId];}var id="ORD-"+Utilities.getUuid(),state=family?(mode==="POR_CUPO"?"AprobadoCreditoFamiliar":"PendienteAprobacionFamiliar"):"Pendiente";os.appendRow([id,new Date(),sid,String(p.compradorNombre||"Comprador"),JSON.stringify(out.map(function(x){return{productoId:x.productoId,nombre:x.nombre,precio:x.precio,cantidad:x.cantidad,subtotal:x.subtotal};})),total,method,state,"PendientePreparacion",p.metodoEntrega||"RecogidaEnTienda","",p.observaciones||""]);out.forEach(function(x){ps.getRange(x.row,7).setValue(x.stock-x.cantidad);});if(family&&mode==="POR_CUPO")familyCreditApplyCupoPurchase_(ss,sid,"TIENDA",id,total);return{status:"success",ordenId:id,totalCalculado:total,itemsProcesados:out.length};}finally{lock.releaseLock();}}
+function getStoreOrders(p){var a=familyCreditApprovalActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),role=institutionalServiceRoleKey_(a.role),sid="";if(role==="padre"){sid=String(p.userId||"");if(sid&&!familyCreditGuardianCanAuthorizeStudent_(ss,a.userId,sid))throw new Error("FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED");}else if(role==="estudiante"||role==="alumno")sid=a.userId;else if(["administrador","director","contador","secretaria","encargadotienda"].indexOf(role)<0)throw new Error("ROLE_NOT_ALLOWED");var allowed=role==="padre"?familyCreditGetActiveStudentUserIdsForGuardian_(ss,a.userId):[];var rows=getOrCreateSheet(ss,"TiendaOrdenes").getDataRange().getValues().slice(1).filter(function(r){return(!sid||String(r[2])===sid)&&(!p.ordenId||String(r[0])===String(p.ordenId))&&(role!=="padre"||sid||allowed.indexOf(String(r[2]))>=0);});return{status:"success",ordenes:rows.map(function(r){return{ordenId:r[0],fecha:r[1],userId:r[2],compradorNombre:r[3],detalleJSON:r[4],montoTotal:Number(r[5]||0),metodoPago:r[6],estadoPago:r[7],estadoEntrega:r[8],metodoEntrega:r[9],pdfComprobanteUrl:"",observaciones:r[11]};})};}
+function createCafeteriaOrder(p){var a=familyCreditApprovalActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),sid=familyCreditResolveStudent_(ss,a,p.estudianteUserId),items=p.detalleItems||{};if(!sid||!Array.isArray(items)||!items.length)throw new Error("CAFETERIA_ITEMS_REQUIRED");var qty={};items.forEach(function(x){var id=String(x.platoId||""),n=Number(x.cantidad===undefined?1:x.cantidad);if(!id||!Number.isInteger(n)||n<=0)throw new Error("ORDER_QUANTITY_INVALID");qty[id]=(qty[id]||0)+n;});var lock=LockService.getScriptLock();lock.waitLock(10000);try{var ms=getOrCreateSheet(ss,"CafeteriaMenu"),os=getOrCreateSheet(ss,"CafeteriaPedidos"),mr=ms.getDataRange().getValues(),out=[],total=0;Object.keys(qty).forEach(function(id){var m=mr.map(function(r,i){return{r:r,i:i};}).filter(function(x){return String(x.r[0])===id;});if(m.length!==1)throw new Error("CAFETERIA_PRODUCT_NOT_FOUND");var x=m[0],price=Number(x.r[3]),stock=Number(x.r[4]);if(!isFinite(price)||price<0||!Number.isInteger(stock)||stock<qty[id])throw new Error("CAFETERIA_INSUFFICIENT_STOCK");out.push({platoId:id,nombre:x.r[2],precio:price,cantidad:qty[id],subtotal:price*qty[id],row:x.i+1,stock:stock});total+=price*qty[id];});total=Math.round(total*100)/100;var method=String(p.metodoPago||"Efectivo"),family=familyCreditIsRequested_(method),mode="POR_COMPRA",guardian=a.userId;if(family){var s=familyCreditEnsureAuthorizationSheet_(ss),r=s.sheet.getDataRange().getValues(),m=s.map,auth=r.slice(1).filter(function(x){return String(x[m.EstudianteUserId])===sid&&String(x[m.Estado]).toLowerCase()==="activa";});if(auth.length!==1)throw new Error("FAMILY_CREDIT_AUTHORIZATION_NOT_FOUND");guardian=auth[0][m.ResponsableUserId];mode=String(auth[0][m.ModalidadAprobacion]||"POR_COMPRA");}var id="CAF-"+Utilities.getUuid(),state=family?(mode==="POR_CUPO"?"AprobadoCreditoFamiliar":"PendienteAprobacionFamiliar"):"Pendiente";os.appendRow([id,new Date(),sid,guardian,JSON.stringify(out.map(function(x){return{platoId:x.platoId,nombre:x.nombre,precio:x.precio,cantidad:x.cantidad,subtotal:x.subtotal};})),p.turnoEntrega||"Almuerzo",total,method,state,p.observaciones||""]);out.forEach(function(x){ms.getRange(x.row,5).setValue(x.stock-x.cantidad);});if(family&&mode==="POR_CUPO")familyCreditApplyCupoPurchase_(ss,sid,"CAFETERIA",id,total);return{status:"success",pedidoId:id,montoTotal:total,itemsProcesados:out.length};}finally{lock.releaseLock();}}
+function getCafeteriaOrders(p){var a=familyCreditApprovalActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),role=institutionalServiceRoleKey_(a.role),sid="";if(role==="padre"){sid=String(p.estudianteUserId||"");if(sid&&!familyCreditGuardianCanAuthorizeStudent_(ss,a.userId,sid))throw new Error("FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED");}else if(role==="estudiante"||role==="alumno")sid=a.userId;else if(["administrador","director","contador","secretaria","encargadocafeteria"].indexOf(role)<0)throw new Error("ROLE_NOT_ALLOWED");var allowed=role==="padre"?familyCreditGetActiveStudentUserIdsForGuardian_(ss,a.userId):[];var rows=getOrCreateSheet(ss,"CafeteriaPedidos").getDataRange().getValues().slice(1).filter(function(r){return(!sid||String(r[2])===sid)&&(!p.pedidoId||String(r[0])===String(p.pedidoId))&&(role!=="padre"||sid||allowed.indexOf(String(r[2]))>=0);});return{status:"success",pedidos:rows.map(function(r){return{pedidoId:r[0],fecha:r[1],estudianteUserId:r[2],responsableUserId:r[3],detalleJSON:r[4],turnoEntrega:r[5],montoTotal:Number(r[6]||0),metodoPago:r[7],estado:r[8],observaciones:r[9]};})};}
+function updateStoreOrderStatus(p){var ss=SpreadsheetApp.openById(SPREADSHEET_ID),lock=LockService.getScriptLock();lock.waitLock(10000);try{var sh=getOrCreateSheet(ss,"TiendaOrdenes"),r=sh.getDataRange().getValues(),i=r.findIndex(function(x){return String(x[0])===String(p.ordenId);});if(i<1)throw new Error("STORE_ORDER_NOT_FOUND");if(familyCreditIsRequested_(r[i][6])&&p.estadoPago==="Pagado")throw new Error("FAMILY_CREDIT_PAYMENT_STATE_SERVER_MANAGED");if(familyCreditIsRequested_(r[i][6])&&familyCreditIsCancellationStatus_(p.estadoPago))familyCreditReverseApprovedOrder_(ss,"TIENDA",p.ordenId);if(p.estadoPago)sh.getRange(i+1,8).setValue(p.estadoPago);if(p.estadoEntrega)sh.getRange(i+1,9).setValue(p.estadoEntrega);if(p.observaciones!==undefined)sh.getRange(i+1,12).setValue(p.observaciones);return{status:"success",ordenId:p.ordenId};}finally{lock.releaseLock();}}
+function updateCafeteriaOrderStatus(p){var ss=SpreadsheetApp.openById(SPREADSHEET_ID),lock=LockService.getScriptLock();lock.waitLock(10000);try{var sh=getOrCreateSheet(ss,"CafeteriaPedidos"),r=sh.getDataRange().getValues(),i=r.findIndex(function(x){return String(x[0])===String(p.pedidoId);});if(i<1)throw new Error("CAFETERIA_ORDER_NOT_FOUND");if(familyCreditIsRequested_(r[i][7])&&p.nuevoEstado==="Pagado")throw new Error("FAMILY_CREDIT_PAYMENT_STATE_SERVER_MANAGED");if(familyCreditIsRequested_(r[i][7])&&familyCreditIsCancellationStatus_(p.nuevoEstado))familyCreditReverseApprovedOrder_(ss,"CAFETERIA",p.pedidoId);sh.getRange(i+1,9).setValue(p.nuevoEstado);if(p.observaciones!==undefined)sh.getRange(i+1,10).setValue(p.observaciones);return{status:"success",pedidoId:p.pedidoId};}finally{lock.releaseLock();}}
+function getStudentAccountStatement(p){var a=familyCreditApprovalActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),sid=familyCreditResolveStudent_(ss,a,p.userId),c=getOrCreateSheet(ss,"CargosEstudiante").getDataRange().getValues().slice(1).filter(function(r){return String(r[2])===sid&&String(r[7])!=="Anulado";}),pay=getOrCreateSheet(ss,"PagosAbonos").getDataRange().getValues().slice(1).filter(function(r){return String(r[2])===sid&&String(r[8])!=="Anulado";}),charges=c.reduce(function(s,r){return s+Number(r[6]||0);},0),paid=pay.reduce(function(s,r){return s+Number(r[5]||0);},0),mov=familyCreditGetStatementMovements_(ss,sid),credit=mov.reduce(function(s,r){return s+(String(r.estado).toLowerCase()==="reversado"?-r.monto:r.monto);},0);return{status:"success",data:{userId:sid,totalCargos:charges,totalPagado:paid,saldoPendiente:Math.max(0,charges-paid),cargos:c,pagos:pay,consumosCreditoFamiliar:mov,totalConsumoCreditoFamiliar:credit}};}
+function getFamilyCreditSalesReconciliation(p){var a=familyCreditApprovalActor_(p),role=institutionalServiceRoleKey_(a.role);if(["contador","director","administrador"].indexOf(role)<0)throw new Error("FAMILY_CREDIT_SALES_REPORT_ROLE_NOT_ALLOWED");var lock=LockService.getScriptLock();lock.waitLock(10000);try{var ss=SpreadsheetApp.openById(SPREADSHEET_ID),mov=getOrCreateSheet(ss,"CreditoFamiliarMovimientos").getDataRange().getValues().slice(1),store=getOrCreateSheet(ss,"TiendaOrdenes").getDataRange().getValues().slice(1),cafe=getOrCreateSheet(ss,"CafeteriaPedidos").getDataRange().getValues().slice(1),d=[],summary={TIENDA:{ventasNetas:0,pedidosPendientes:0},CAFETERIA:{ventasNetas:0,pedidosPendientes:0}};store.forEach(function(r){if(familyCreditIsRequested_(r[6])){if(r[7]==="PendienteAprobacionFamiliar")summary.TIENDA.pedidosPendientes++;}});cafe.forEach(function(r){if(familyCreditIsRequested_(r[7])){if(r[8]==="PendienteAprobacionFamiliar")summary.CAFETERIA.pedidosPendientes++;}});mov.forEach(function(r){var key=institutionalServiceRoleKey_(r[5]),amt=Number(r[6]||0),state=String(r[8]||"").toLowerCase();if(!summary[key==="tienda"?"TIENDA":key==="cafeteria"?"CAFETERIA":""])return;var bucket=summary[key==="tienda"?"TIENDA":"CAFETERIA"];if(state==="aprobado")bucket.ventasNetas+=amt;if(state==="reversado"){bucket.ventasNetas-=amt;var id=String(r[7]||"").replace(/^REV:/,""),orig=mov.filter(function(x){return String(x[0])===id;});if(orig.length!==1||Number(orig[0][6])!==amt||String(orig[0][3])!==String(r[3])||String(orig[0][4])!==String(r[4]))d.push({codigo:"REVERSAL_AMOUNT_OR_OWNER_MISMATCH"});}});mov.filter(function(r){return String(r[8]).toLowerCase()==="aprobado";}).forEach(function(r){var list=institutionalServiceRoleKey_(r[5])==="tienda"?store:cafe;if(!list.some(function(x){return String(x[0])===String(r[7])&&String(x[2])===String(r[3]);}))d.push({codigo:"ORPHAN_APPROVED_MOVEMENT"});});var total={ventasNetas:summary.TIENDA.ventasNetas+summary.CAFETERIA.ventasNetas,pedidosPendientes:summary.TIENDA.pedidosPendientes+summary.CAFETERIA.pedidosPendientes};return{status:"success",coincide:d.length===0,resumen:summary,total:total,discrepancias:d};}finally{lock.releaseLock();}}
+
 function transportRows_(ss, sheetName, expectedHeaders) {
   var sheet = ss && ss.getSheetByName ? ss.getSheetByName(sheetName) : null;
   if (!sheet) return { valid: false, missing: true, code: "TRANSPORT_RESOURCE_NOT_FOUND", rows: [], headers: [] };
@@ -3264,16 +3308,16 @@ const ROLE_PERMISSIONS = {
   Auditor: ["getAccountingMigrationFileAudit"],
   "Empleado": ["getEmployeeRecords", "getLeaveVacationRequests", "submitLeaveVacationRequest", "submitAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "getLoanAmortizationSchedule", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "manageProfessionalDevelopmentPlan"],
   "Profesor": ["getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "submitVacationRequest"],
-  "Padre": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
-  "Estudiante": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile"],
+  "Padre": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest", "getStoreOrders", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "getFamilyCreditApprovalPreference", "configureFamilyCreditApprovalPreference", "configureFamilyCreditPin", "configureFamilyCreditAuthorization", "processFamilyCreditPurchase"],
+  "Estudiante": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest", "uploadPaymentVoucher", "getPaymentVouchers", "getPaymentVoucherFile", "getStudentAccountStatement", "createStoreOrder", "getStoreOrders", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase"],
   "Conductor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "Monitor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "RecursosHumanos": [ "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "recordStaffCheckIn", "recordStaffAttendance", "getStaffAttendanceLogs", "getEmployeeSelfServicePortal", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
-  "Director": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization", "getTransportEfficiencyMetrics", "getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher"],
+  "Director": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization", "getTransportEfficiencyMetrics", "getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher", "getFamilyCreditSalesReconciliation"],
   "Subdirector": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization", "getTransportEfficiencyMetrics"],
-  "Contador": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport"],
+  "Contador": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport", "getFamilyCreditSalesReconciliation"],
   "Secretaría": ["getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher"],
-  "Administrador": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization", "getTransportEfficiencyMetrics", "getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher"],
+  "Administrador": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization", "getTransportEfficiencyMetrics", "getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher", "getFamilyCreditSalesReconciliation"],
   "Almacenista": ["getCatalogCategories", "getCatalogUnits", "getCatalogItems", "exportCatalogItems", "getInventoryKardex", "getInventoryTransfers", "getMaterialRequisitions", "getInventoryReplenishmentSuggestions", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "transferInventoryStock", "confirmTransferReceipt", "createMaterialRequisition", "manageMaterialRequisition", "deliverMaterialRequisition", "manageInventoryReplenishmentPolicy", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder"],
   "Bodeguero": ["getCatalogCategories", "getCatalogUnits", "getCatalogItems", "exportCatalogItems", "getInventoryKardex", "getInventoryTransfers", "getMaterialRequisitions", "getInventoryReplenishmentSuggestions", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "transferInventoryStock", "confirmTransferReceipt", "createMaterialRequisition", "manageMaterialRequisition", "deliverMaterialRequisition", "manageInventoryReplenishmentPolicy", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder"],
   "Encargado de Bodega": ["getCatalogCategories", "getCatalogUnits", "getCatalogItems", "exportCatalogItems", "getInventoryKardex", "getInventoryTransfers", "getMaterialRequisitions", "getInventoryReplenishmentSuggestions", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "transferInventoryStock", "confirmTransferReceipt", "createMaterialRequisition", "manageMaterialRequisition", "deliverMaterialRequisition", "manageInventoryReplenishmentPolicy", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder"]
@@ -4990,6 +5034,10 @@ function doPost(e) {
       return respond({ status: "error", code: "REQUEST_SCHEMA_INVALID" });
     }
     var actionPayload = Object.assign({}, request.payload, { correlationId: correlationId });
+    var pinSensitiveActions = ["configureFamilyCreditPin","configureFamilyCreditAuthorization","processFamilyCreditPurchase"];
+    var safeRequestMeta = pinSensitiveActions.indexOf(request.action) !== -1
+      ? { action: request.action, payload: sanitizePayloadForLog(actionPayload) }
+      : sanitizePayloadForLog(actionPayload);
     if (request.action === "configurePaymentConcept") return respond(configurePaymentConcept(actionPayload));
     if (request.action === "getPayrollConceptCatalog") return respond(getPayrollConceptCatalog(actionPayload));
     if (request.action === "savePayrollConcept") return respond(savePayrollConcept(actionPayload));
@@ -5093,6 +5141,20 @@ function doPost(e) {
     if (request.action === "getPaymentVouchers") return respond(getPaymentVouchers(actionPayload));
     if (request.action === "getPaymentVoucherFile") return respond(getPaymentVoucherFile(actionPayload));
     if (request.action === "reviewPaymentVoucher") return respond(reviewPaymentVoucher(actionPayload));
+    if (request.action === "getFamilyCreditApprovalPreference") return respond(getFamilyCreditApprovalPreference(actionPayload));
+    if (request.action === "configureFamilyCreditApprovalPreference") return respond(configureFamilyCreditApprovalPreference(actionPayload));
+    if (request.action === "configureFamilyCreditPin") return respond(configureFamilyCreditPin(actionPayload));
+    if (request.action === "configureFamilyCreditAuthorization") return respond(configureFamilyCreditAuthorization(actionPayload));
+    if (request.action === "getFamilyCreditAuthorizations") return respond(getFamilyCreditAuthorizations(actionPayload));
+    if (request.action === "processFamilyCreditPurchase") return respond(processFamilyCreditPurchase(actionPayload));
+    if (request.action === "getFamilyCreditSalesReconciliation") return respond(getFamilyCreditSalesReconciliation(actionPayload));
+    if (request.action === "createStoreOrder") return respond(createStoreOrder(actionPayload));
+    if (request.action === "getStoreOrders") return respond(getStoreOrders(actionPayload));
+    if (request.action === "updateStoreOrderStatus") return respond(updateStoreOrderStatus(actionPayload));
+    if (request.action === "createCafeteriaOrder") return respond(createCafeteriaOrder(actionPayload));
+    if (request.action === "getCafeteriaOrders") return respond(getCafeteriaOrders(actionPayload));
+    if (request.action === "updateCafeteriaOrderStatus") return respond(updateCafeteriaOrderStatus(actionPayload));
+    if (request.action === "getStudentAccountStatement") return respond(getStudentAccountStatement(actionPayload));
     if (request.action === "getTransportRoutes") return respond(getTransportRoutes(actionPayload));
     if (request.action === "getTransportAssignments") return respond(getTransportAssignments(actionPayload));
     if (request.action === "getTripPassengerManifest") return respond(getTripPassengerManifest(actionPayload));
@@ -5126,7 +5188,22 @@ function doPost(e) {
   } catch (error) {
     var rawCode = String(error && error.message || "").split(":")[0].trim();
     var safeCodes = {
-      PAYMENT_VOUCHER_FILE_REQUIRED: true, PAYMENT_VOUCHER_DECISION_INVALID: true,
+      FAMILY_CREDIT_GUARDIAN_ROLE_REQUIRED: true, FAMILY_CREDIT_LIMITS_INVALID: true,
+      FAMILY_CREDIT_PIN_INVALID: true, FAMILY_CREDIT_PIN_NOT_CONFIGURED: true, FAMILY_CREDIT_PIN_TEMPORARILY_LOCKED: true,
+      FAMILY_CREDIT_CURRENT_PIN_REQUIRED: true, FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED: true,
+      FAMILY_CREDIT_ACTIVE_GUARDIAN_RELATION_REQUIRED: true, FAMILY_CREDIT_STUDENT_OWNERSHIP_REQUIRED: true,
+      FAMILY_CREDIT_GUARDIAN_OWNERSHIP_REQUIRED: true, FAMILY_CREDIT_DAILY_LIMIT_EXCEEDED: true,
+      FAMILY_CREDIT_MONTHLY_LIMIT_EXCEEDED: true, FAMILY_CREDIT_APPROVAL_MODE_INVALID: true,
+      FAMILY_CREDIT_CONFIGURATION_DUPLICATE: true, FAMILY_CREDIT_REVERSAL_WRITE_FAILED: true,
+      FAMILY_CREDIT_PAYMENT_STATE_SERVER_MANAGED: true, FAMILY_CREDIT_SALES_REPORT_ROLE_NOT_ALLOWED: true,
+      FAMILY_CREDIT_PIN_INPUT_INVALID: true, FAMILY_CREDIT_AUTHORIZATION_NOT_FOUND: true,
+      FAMILY_CREDIT_AUTHORIZATION_AMBIGUOUS: true, FAMILY_CREDIT_AUTHORIZATION_EXPIRED: true,
+      FAMILY_CREDIT_ORDER_NOT_FOUND: true, FAMILY_CREDIT_PURCHASE_INVALID: true,
+      FAMILY_CREDIT_PURCHASE_AMOUNT_INVALID: true, FAMILY_CREDIT_MOVEMENT_AMBIGUOUS: true,
+      STORE_INSUFFICIENT_STOCK: true, STORE_PRODUCT_NOT_FOUND: true, STORE_PRODUCT_AMBIGUOUS: true,
+      ORDER_QUANTITY_INVALID: true, CAFETERIA_INSUFFICIENT_STOCK: true, CAFETERIA_PRODUCT_NOT_FOUND: true,
+      ORDER_ITEMS_REQUIRED: true, CAFETERIA_ITEMS_REQUIRED: true, STUDENT_ID_REQUIRED: true,
+            PAYMENT_VOUCHER_FILE_REQUIRED: true, PAYMENT_VOUCHER_DECISION_INVALID: true,
       PAYMENT_VOUCHER_SCHEMA_INVALID: true, PAYMENT_VOUCHER_SCHEMA_DUPLICATE_HEADER: true,
       PAYMENT_VOUCHER_GROUP_AMBIGUOUS: true, PAYMENT_VOUCHER_ALREADY_REVIEWED: true,
       VOUCHER_VERSION_IMMUTABLE: true, VOUCHER_VERSION_REQUIRES_OBSERVATION: true,
@@ -10065,3 +10142,462 @@ function getTransportEfficiencyMetrics(payload) {
     lock.releaseLock();
   }
 }
+
+function sanitizePayloadForLog(payload) {
+  if (!payload || typeof payload !== "object") return String(payload || "");
+  try {
+    const clean = JSON.parse(JSON.stringify(payload));
+    const sensitiveKeys = ["password", "clave", "token", "secret", "credencial", "authorization"];
+    function maskObj(obj) {
+      if (!obj || typeof obj !== "object") return;
+      for (const k in obj) {
+        if (sensitiveKeys.some(sk => k.toLowerCase().includes(sk))) {
+          obj[k] = "***MASKED***";
+        } else if (typeof obj[k] === "object") {
+          maskObj(obj[k]);
+        }
+      }
+    }
+    maskObj(clean);
+    return JSON.stringify(clean);
+  } catch (_) {
+    return "[Unserializable Payload]";
+  }
+}
+
+function createStoreOrder(payload) {
+  const { userId, compradorNombre, detalleItems, metodoPago, metodoEntrega, observaciones } = payload || {};
+  if (!userId || !Array.isArray(detalleItems) || detalleItems.length === 0) {
+    throw new Error("userId y lista de productos (detalleItems) son requeridos.");
+  }
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const prodSheet = getOrCreateSheet(ss, "TiendaProductos");
+  const orderSheet = getOrCreateSheet(ss, "TiendaOrdenes");
+  const prodsData = prodSheet.getDataRange().getValues();
+  const now = new Date();
+
+  let totalCalculado = 0;
+  const processedItems = [];
+
+  detalleItems.forEach(item => {
+    const pIdx = prodsData.findIndex(r => String(r[0]).trim() === String(item.productoId).trim());
+    if (pIdx !== -1) {
+      const pName = prodsData[pIdx][4];
+      const pPrice = parseFloat(prodsData[pIdx][5] || 0);
+      const qty = parseInt(item.cantidad || 1);
+      const sub = pPrice * qty;
+      totalCalculado += sub;
+
+      // Descontar inventario
+      const stockCur = parseInt(prodsData[pIdx][6] || 0);
+      const stockNew = Math.max(0, stockCur - qty);
+      prodSheet.getRange(pIdx + 1, 7).setValue(stockNew);
+      if (stockNew === 0) prodSheet.getRange(pIdx + 1, 9).setValue("agotado");
+
+      processedItems.push({ productoId: item.productoId, nombre: pName, precio: pPrice, cantidad: qty, subtotal: sub });
+    }
+  });
+
+  const ordenId = "ORD-" + now.getTime();
+  const pdfUrl = "https://newgeneration.edu.hn/comprobante-orden-" + ordenId + ".pdf";
+
+  orderSheet.appendRow([
+    ordenId,
+    now,
+    String(userId).trim(),
+    compradorNombre || "Comprador",
+    JSON.stringify(processedItems),
+    totalCalculado,
+    metodoPago || "Transferencia",
+    metodoPago === "CreditoFamiliar" ? "Confirmado" : "Pendiente",
+    "PendientePreparacion",
+    metodoEntrega || "RecogidaEnTienda",
+    pdfUrl,
+    observaciones || ""
+  ]);
+
+  return {
+    status: "success",
+    ordenId: ordenId,
+    totalCalculado: totalCalculado,
+    itemsProcesados: processedItems.length,
+    pdfComprobanteUrl: pdfUrl,
+    message: "Orden de tienda escolar registrada exitosamente."
+  };
+}
+
+function getStoreOrders(payload) {
+  const { userId, ordenId } = payload || {};
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const rows = getOrCreateSheet(ss, "TiendaOrdenes").getDataRange().getValues().slice(1);
+
+  let filtered = rows;
+  if (ordenId) filtered = filtered.filter(r => String(r[0]).trim() === String(ordenId).trim());
+  if (userId) filtered = filtered.filter(r => String(r[2]).trim() === String(userId).trim());
+
+  const mapped = filtered.map(r => ({
+    ordenId: r[0],
+    fecha: r[1],
+    userId: r[2],
+    compradorNombre: r[3],
+    detalleJSON: r[4],
+    montoTotal: parseFloat(r[5] || 0),
+    metodoPago: r[6],
+    estadoPago: r[7],
+    estadoEntrega: r[8],
+    metodoEntrega: r[9],
+    pdfComprobanteUrl: r[10],
+    observaciones: r[11]
+  }));
+
+  return {
+    status: "success",
+    ordenes: mapped
+  };
+}
+
+function updateStoreOrderStatus(payload) {
+  const { ordenId, estadoPago, estadoEntrega, observaciones } = payload || {};
+  if (!ordenId) throw new Error("ordenId requerido.");
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = getOrCreateSheet(ss, "TiendaOrdenes");
+  const data = sheet.getDataRange().getValues();
+
+  const idx = data.findIndex(r => String(r[0]).trim() === String(ordenId).trim());
+  if (idx === -1) throw new Error("Orden no encontrada.");
+
+  if (estadoPago) sheet.getRange(idx + 1, 8).setValue(estadoPago);
+  if (estadoEntrega) sheet.getRange(idx + 1, 9).setValue(estadoEntrega);
+  if (observaciones) sheet.getRange(idx + 1, 12).setValue(observaciones);
+
+  return {
+    status: "success",
+    ordenId: ordenId,
+    message: "Estado de orden de tienda actualizado correctamente."
+  };
+}
+
+// ---------------------------------------------------------------------------
+// FASE 4: CAFETERÍA, MENÚ DIARIO Y PEDIDOS DE ALIMENTOS
+// ---------------------------------------------------------------------------
+
+function createCafeteriaOrder(payload) {
+  const { estudianteUserId, responsableUserId, detalleItems, turnoEntrega, metodoPago, observaciones } = payload || {};
+  if (!estudianteUserId || !Array.isArray(detalleItems) || detalleItems.length === 0) {
+    throw new Error("estudianteUserId y lista de alimentos (detalleItems) son requeridos.");
+  }
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const menuSheet = getOrCreateSheet(ss, "CafeteriaMenu");
+  const orderSheet = getOrCreateSheet(ss, "CafeteriaPedidos");
+  const menuData = menuSheet.getDataRange().getValues();
+  const now = new Date();
+
+  let totalCalculado = 0;
+  const processedItems = [];
+
+  detalleItems.forEach(item => {
+    const pIdx = menuData.findIndex(r => String(r[0]).trim() === String(item.platoId).trim());
+    if (pIdx !== -1) {
+      const pName = menuData[pIdx][2];
+      const pPrice = parseFloat(menuData[pIdx][3] || 0);
+      const qty = parseInt(item.cantidad || 1);
+      const sub = pPrice * qty;
+      totalCalculado += sub;
+
+      // Descontar inventario del menú diario
+      const stockCur = parseInt(menuData[pIdx][4] || 0);
+      const stockNew = Math.max(0, stockCur - qty);
+      menuSheet.getRange(pIdx + 1, 5).setValue(stockNew);
+      if (stockNew === 0) menuSheet.getRange(pIdx + 1, 10).setValue("agotado");
+
+      processedItems.push({ platoId: item.platoId, nombre: pName, precio: pPrice, cantidad: qty, subtotal: sub });
+    }
+  });
+
+  const pedidoId = "CAF-" + now.getTime();
+
+  orderSheet.appendRow([
+    pedidoId,
+    now,
+    String(estudianteUserId).trim(),
+    responsableUserId ? String(responsableUserId).trim() : String(estudianteUserId).trim(),
+    JSON.stringify(processedItems),
+    turnoEntrega || "Almuerzo Principal",
+    totalCalculado,
+    metodoPago || "CreditoFamiliar",
+    "Confirmado",
+    observaciones || ""
+  ]);
+
+  return {
+    status: "success",
+    pedidoId: pedidoId,
+    montoTotal: totalCalculado,
+    itemsProcesados: processedItems.length,
+    message: "Pedido de cafetería registrado exitosamente."
+  };
+}
+
+function getCafeteriaOrders(payload) {
+  const { estudianteUserId, responsableUserId, pedidoId } = payload || {};
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const rows = getOrCreateSheet(ss, "CafeteriaPedidos").getDataRange().getValues().slice(1);
+
+  let filtered = rows;
+  if (pedidoId) filtered = filtered.filter(r => String(r[0]).trim() === String(pedidoId).trim());
+  if (estudianteUserId) filtered = filtered.filter(r => String(r[2]).trim() === String(estudianteUserId).trim());
+  if (responsableUserId) filtered = filtered.filter(r => String(r[3]).trim() === String(responsableUserId).trim());
+
+  const mapped = filtered.map(r => ({
+    pedidoId: r[0],
+    fecha: r[1],
+    estudianteUserId: r[2],
+    responsableUserId: r[3],
+    detalleJSON: r[4],
+    turnoEntrega: r[5],
+    montoTotal: parseFloat(r[6] || 0),
+    metodoPago: r[7],
+    estado: r[8],
+    observaciones: r[9]
+  }));
+
+  return {
+    status: "success",
+    pedidos: mapped
+  };
+}
+
+function updateCafeteriaOrderStatus(payload) {
+  const { pedidoId, nuevoEstado, observaciones } = payload || {};
+  if (!pedidoId || !nuevoEstado) throw new Error("pedidoId y nuevoEstado son requeridos.");
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = getOrCreateSheet(ss, "CafeteriaPedidos");
+  const data = sheet.getDataRange().getValues();
+
+  const idx = data.findIndex(r => String(r[0]).trim() === String(pedidoId).trim());
+  if (idx === -1) throw new Error("Pedido no encontrado.");
+
+  sheet.getRange(idx + 1, 9).setValue(nuevoEstado);
+  if (observaciones) sheet.getRange(idx + 1, 10).setValue(observaciones);
+
+  return {
+    status: "success",
+    pedidoId: pedidoId,
+    estado: nuevoEstado,
+    message: "Estado de pedido de cafetería actualizado a " + nuevoEstado
+  };
+}
+
+// ---------------------------------------------------------------------------
+// FASE 4: CRÉDITO FAMILIAR Y AUTORIZACIONES
+// ---------------------------------------------------------------------------
+
+function configureFamilyCreditAuthorization(payload) {
+  const { responsableUserId, estudianteUserId, limiteDiario, limiteMensual, fechaVencimiento, estado, observaciones } = payload || {};
+  if (!responsableUserId || !estudianteUserId) throw new Error("responsableUserId y estudianteUserId son requeridos.");
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = getOrCreateSheet(ss, "CreditoFamiliarAutorizaciones");
+  const data = sheet.getDataRange().getValues();
+  const now = new Date();
+
+  const sResp = String(responsableUserId).trim();
+  const sEst = String(estudianteUserId).trim();
+
+  let existingIndex = data.findIndex(r => String(r[2]).trim() === sResp && String(r[3]).trim() === sEst);
+  let autId;
+
+  if (existingIndex !== -1) {
+    autId = data[existingIndex][0];
+    sheet.getRange(existingIndex + 1, 1, 1, 10).setValues([[
+      autId,
+      now,
+      sResp,
+      sEst,
+      parseFloat(limiteDiario || 100),
+      parseFloat(limiteMensual || 1500),
+      parseFloat(data[existingIndex][6] || 0),
+      estado || "Activa",
+      fechaVencimiento || "",
+      observaciones || ""
+    ]]);
+  } else {
+    autId = "AUT-CRD-" + now.getTime();
+    sheet.appendRow([
+      autId,
+      now,
+      sResp,
+      sEst,
+      parseFloat(limiteDiario || 100),
+      parseFloat(limiteMensual || 1500),
+      0,
+      estado || "Activa",
+      fechaVencimiento || "",
+      observaciones || ""
+    ]);
+  }
+
+  return {
+    status: "success",
+    autorizacionId: autId,
+    message: "Autorización de crédito familiar configurada con éxito."
+  };
+}
+
+function getFamilyCreditAuthorizations(payload) {
+  const { responsableUserId, estudianteUserId } = payload || {};
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const rows = getOrCreateSheet(ss, "CreditoFamiliarAutorizaciones").getDataRange().getValues().slice(1);
+
+  let filtered = rows;
+  if (responsableUserId) filtered = filtered.filter(r => String(r[2]).trim() === String(responsableUserId).trim());
+  if (estudianteUserId) filtered = filtered.filter(r => String(r[3]).trim() === String(estudianteUserId).trim());
+
+  const mapped = filtered.map(r => ({
+    autorizacionId: r[0],
+    fecha: r[1],
+    responsableUserId: r[2],
+    estudianteUserId: r[3],
+    limiteDiario: parseFloat(r[4] || 0),
+    limiteMensual: parseFloat(r[5] || 0),
+    saldoUsado: parseFloat(r[6] || 0),
+    estado: r[7],
+    fechaVencimiento: r[8],
+    observaciones: r[9]
+  }));
+
+  return {
+    status: "success",
+    autorizaciones: mapped
+  };
+}
+
+// [TAREA 1] [Fase Contabilidad y Finanzas] - Reestructuración de convenios y planes de pago familiares con cuotas personalizadas y trazabilidad.
+
+function processFamilyCreditPurchase(payload) {
+  const { estudianteUserId, monto, establecimiento, origenRefId, observaciones } = payload || {};
+  const mnt = parseFloat(monto || 0);
+  if (!estudianteUserId || mnt <= 0) throw new Error("estudianteUserId y monto válido requeridos.");
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const authSheet = getOrCreateSheet(ss, "CreditoFamiliarAutorizaciones");
+  const movSheet = getOrCreateSheet(ss, "CreditoFamiliarMovimientos");
+  const auths = authSheet.getDataRange().getValues();
+
+  const sEst = String(estudianteUserId).trim();
+  const idx = auths.findIndex(r => String(r[3]).trim() === sEst && r[7] === "Activa");
+
+  if (idx === -1) throw new Error("El alumno no cuenta con una autorización de crédito familiar activa.");
+
+  const limDiario = parseFloat(auths[idx][4] || 0);
+  const limMensual = parseFloat(auths[idx][5] || 0);
+  const saldoUsadoCur = parseFloat(auths[idx][6] || 0);
+
+  if (mnt > limDiario) throw new Error(`La compra de L. ${mnt.toFixed(2)} excede el límite diario autorizado de L. ${limDiario.toFixed(2)}.`);
+  if (saldoUsadoCur + mnt > limMensual) throw new Error(`La compra excede el límite mensual autorizado.`);
+
+  const newSaldoUsado = saldoUsadoCur + mnt;
+  authSheet.getRange(idx + 1, 7).setValue(newSaldoUsado);
+
+  const now = new Date();
+  const movId = "MOV-CRD-" + now.getTime();
+
+  movSheet.appendRow([
+    movId,
+    now,
+    auths[idx][0],
+    sEst,
+    auths[idx][2],
+    establecimiento || "Cafetería/Tienda",
+    mnt,
+    origenRefId || "COMPRA-OK",
+    "Aprobado",
+    observaciones || ""
+  ]);
+
+  return {
+    status: "success",
+    movimientoCreditoId: movId,
+    saldoUsado: newSaldoUsado,
+    limiteMensual: limMensual,
+    message: "Compra a crédito procesada correctamente."
+  };
+}
+
+// ---------------------------------------------------------------------------
+// CONCEPTOS, MENSUALIDADES Y OBLIGACIONES DE PAGO
+// ---------------------------------------------------------------------------
+
+// [REQ-EXP-010] [Requerimientos de Expansión y Desarrollo] - Configuración de conceptos de cobro, mensualidades, recargos y estado de cuenta.
+// [TASK-001] [F15-Task01] - Configuración de conceptos de cobro con clasificación tributaria SAR completa
+
+function getStudentAccountStatement(payload) {
+  const callerRole = (payload && payload._verifiedRole) || "Estudiante";
+  let targetUserId = payload && payload.userId;
+
+  if ((callerRole === "Estudiante" || callerRole === "Alumno") && payload._verifiedUserId) {
+    targetUserId = payload._verifiedUserId;
+  }
+  if (!targetUserId && payload && payload._verifiedUserId) {
+    targetUserId = payload._verifiedUserId;
+  }
+  if (!targetUserId) throw new Error("userId requerido.");
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sUserId = String(targetUserId).trim();
+  try { applyApprovedScholarshipsToCharges({ userId: sUserId }); } catch (_) {}
+
+  const cargosRows = getOrCreateSheet(ss, "CargosEstudiante").getDataRange().getValues().slice(1);
+  const pagosRows = getOrCreateSheet(ss, "PagosAbonos").getDataRange().getValues().slice(1);
+
+  const userCargos = cargosRows.filter(r => String(r[2]).trim() === sUserId && String(r[7]) !== "Anulado").map(r => ({
+    cargoId: r[0],
+    fecha: r[1],
+    userId: r[2],
+    concepto: r[3],
+    montoBase: parseFloat(r[4] || 0),
+    descuento: parseFloat(r[5] || 0),
+    montoFinal: parseFloat(r[6] || 0),
+    estado: r[7],
+    fechaVencimiento: r[8]
+  }));
+
+  const userPagos = pagosRows.filter(r => String(r[2]).trim() === sUserId && String(r[8]) !== "Anulado").map(r => ({
+    pagoId: r[0],
+    fecha: r[1],
+    userId: r[2],
+    cargoId: r[3],
+    concepto: r[4],
+    montoAbono: parseFloat(r[5] || 0),
+    metodoPago: r[6],
+    referencia: r[7],
+    estado: r[8],
+    reciboId: r[9],
+    observaciones: r[10]
+  }));
+
+  let totalCargos = 0;
+  let totalPagado = 0;
+
+  userCargos.forEach(c => { totalCargos += c.montoFinal; });
+  userPagos.forEach(p => { totalPagado += p.montoAbono; });
+
+  const saldoPendiente = Math.max(0, totalCargos - totalPagado);
+
+  return {
+    status: "success",
+    data: {
+      userId: sUserId,
+      totalCargos: totalCargos,
+      totalPagado: totalPagado,
+      saldoPendiente: saldoPendiente,
+      cargos: userCargos,
+      pagos: userPagos
+    }
+  };
+}
+

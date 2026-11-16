@@ -80,7 +80,7 @@ const context = {
   Date, String, Object, Array, JSON, Error, console
 };
 vm.createContext(context);
-const names = ["sanitizePayloadForLog", "familyCreditPinSecret_", "familyCreditGetStatementMovements_", "familyCreditGetActiveStudentUserIdsForGuardian_", "getStoreOrders", "getCafeteriaOrders", "getStudentAccountStatement", "familyCreditEnsureConfigSheet_", "familyCreditEnsureAuthorizationSheet_", "familyCreditPinDigest_", "familyCreditConstantTimeEquals_", "familyCreditVerifyPinInConfig_", "familyCreditApprovalActor_", "familyCreditEnsurePurchaseAuthorization_", "familyCreditRequirePurchaseAuthorizationForStudent_", "familyCreditGuardianHasActiveStudentRelation_", "familyCreditGuardianCanAuthorizeStudent_", "familyCreditIsRequested_", "familyCreditIsCancellationStatus_", "familyCreditReverseApprovedOrder_", "familyCreditApplyCupoPurchase_", "getFamilyCreditSalesReconciliation", "updateStoreOrderStatus", "updateCafeteriaOrderStatus", "getFamilyCreditApprovalPreference", "configureFamilyCreditApprovalPreference", "configureFamilyCreditPin", "configureFamilyCreditAuthorization", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase", "institutionalServiceRoleKey_", "institutionalServiceIsActive_", "createStoreOrder", "createCafeteriaOrder"];
+const names = ["familyCreditApprovalPreferenceRow_","familyCreditSpentInPeriod_","familyCreditRecordDebit_","familyCreditResolveStudent_","sanitizePayloadForLog", "familyCreditPinSecret_", "familyCreditGetStatementMovements_", "familyCreditGetActiveStudentUserIdsForGuardian_", "getStoreOrders", "getCafeteriaOrders", "getStudentAccountStatement", "familyCreditEnsureConfigSheet_", "familyCreditEnsureAuthorizationSheet_", "familyCreditPinDigest_", "familyCreditConstantTimeEquals_", "familyCreditVerifyPinInConfig_", "familyCreditApprovalActor_", "familyCreditEnsurePurchaseAuthorization_", "familyCreditRequirePurchaseAuthorizationForStudent_", "familyCreditGuardianHasActiveStudentRelation_", "familyCreditGuardianCanAuthorizeStudent_", "familyCreditIsRequested_", "familyCreditIsCancellationStatus_", "familyCreditReverseApprovedOrder_", "familyCreditApplyCupoPurchase_", "getFamilyCreditSalesReconciliation", "updateStoreOrderStatus", "updateCafeteriaOrderStatus", "getFamilyCreditApprovalPreference", "configureFamilyCreditApprovalPreference", "configureFamilyCreditPin", "configureFamilyCreditAuthorization", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase", "institutionalServiceRoleKey_", "institutionalServiceIsActive_", "createStoreOrder", "createCafeteriaOrder"];
 vm.runInContext(names.map(extractFunction).join("\n"), context);
 const sanitizedPinPayload = context.sanitizePayloadForLog({ familyPin: "123456", currentPin: "654321", newPin: "111111", nested: { pinHash: "HASH-ONLY", authToken: "SESSION-TOKEN" } });
 assert.equal(sanitizedPinPayload.includes("123456"), false);
@@ -339,14 +339,14 @@ assert.match(uiSource, /approveFamilyCreditOrder/);
 assert.match(uiSource, /configureFamilyCreditPin/);
 assert.match(uiSource, /role-cfg-family-credit-new-pin/);
 assert.match(uiSource, /fetchApi\('ACCOUNTING', 'configureFamilyCreditApprovalPreference'/);
-assert.match(source, /case "getFamilyCreditApprovalPreference"/);
-assert.match(source, /case "configureFamilyCreditApprovalPreference"/);
+assert.match(source, /if \(request\.action === "getFamilyCreditApprovalPreference"\)/);
+assert.match(source, /if \(request\.action === "configureFamilyCreditApprovalPreference"\)/);
 assert.match(source, /FAMILY_CREDIT_PIN_NOT_CONFIGURED/);
 assert.match(source, /FAMILY_CREDIT_DAILY_LIMIT_EXCEEDED/);
 assert.match(source, /PendienteAprobacionFamiliar/);
 assert.match(source, /FAMILY_CREDIT_GUARDIAN_OWNERSHIP_REQUIRED/);
 assert.match(source, /FAMILY_CREDIT_STUDENT_OWNERSHIP_REQUIRED/);
-assert.match(source, /case "configureFamilyCreditPin"/);
+assert.match(source, /if \(request\.action === "configureFamilyCreditPin"\)/);
 assert.match(source, /FAMILY_CREDIT_PIN_TEMPORARILY_LOCKED/);
 assert.match(source, /safeRequestMeta/);
 assert.match(source, /pinSensitiveActions/);
