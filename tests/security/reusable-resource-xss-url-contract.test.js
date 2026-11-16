@@ -82,4 +82,24 @@ hostileFields.forEach(value => {
   assert.equal(rendered.children[rendered.children.length - 1].textContent, value,
     "curricular fields, errors and result strings are inserted as inert text");
 });
+const sheetCellContext = {};
+vm.runInNewContext(
+  extractFunction(academic, "migrationSafeCell_") + "\n" +
+  extractFunction(academic, "sanitizeReusableResourceText_") + "\n" +
+  extractFunction(academic, "sanitizeReusableResourceSheetCell_") + "\n" +
+  "this.sheetCell = sanitizeReusableResourceSheetCell_;",
+  sheetCellContext
+);
+for (const formula of [
+  '=HYPERLINK("https://evil.example","click")',
+  '+SUM(1,2)',
+  '@SUM(1,2)',
+  '-1+2'
+]) {
+  assert.equal(sheetCellContext.sheetCell(formula, 2048), "'" + formula,
+    "user-controlled spreadsheet text must be stored as literal text");
+}
+const manageResource = extractFunction(academic, "manageReusableResource");
+assert((manageResource.match(/sanitizeReusableResourceSheetCell_\(/g) || []).length >= 15,
+  "resource and project fields are formula-neutralized before appendRow");
 console.log("reusable-resource-xss-url-contract: PASS");

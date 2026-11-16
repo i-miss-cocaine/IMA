@@ -4791,6 +4791,10 @@ function getCurricularAnalyticsReport(payload) {
 }
 
 // [TAREA-18] [Fase 1 - Reutilización de Recursos] - Módulo de catálogo de recursos educativos reutilizables, etiquetado por área/materia e interdisciplinariedad.
+function sanitizeReusableResourceSheetCell_(value, maxLength) {
+  return migrationSafeCell_(sanitizeReusableResourceText_(value, maxLength));
+}
+
 function sanitizeReusableResourceText_(value, maxLength) {
   const limit = Number(maxLength) > 0 ? Number(maxLength) : 500;
   const clean = String(value === null || value === undefined ? "" : value)
@@ -4893,11 +4897,11 @@ function manageReusableResource(payload) {
     const projectSheet = getOrCreateSheet(ss, "ProyectosInterdisciplinarios");
     const projectId = recursoId || ("PROJ-INT-" + Utilities.getUuid());
     projectSheet.appendRow([
-      projectId,
-      safeTitle,
-      sanitizeReusableResourceText_(departamentosInvolucrados || "General", 160),
-      sanitizeReusableResourceText_(descripcion || "", 500),
-      String(actor.userId),
+      sanitizeReusableResourceSheetCell_(projectId, 100),
+      sanitizeReusableResourceSheetCell_(safeTitle, 160),
+      sanitizeReusableResourceSheetCell_(departamentosInvolucrados || "General", 160),
+      sanitizeReusableResourceSheetCell_(descripcion || "", 500),
+      sanitizeReusableResourceSheetCell_(String(actor.userId), 100),
       "2026",
       "Activo"
     ]);
@@ -4911,17 +4915,17 @@ function manageReusableResource(payload) {
   const resourceSheet = getOrCreateSheet(ss, "RecursosEducativosReutilizables");
   const resourceId = recursoId || ("REC-REUT-" + Utilities.getUuid());
   resourceSheet.appendRow([
-    resourceId,
-    safeTitle,
-    safeArea,
-    sanitizeReusableResourceText_(asignatura || "General", 120),
-    sanitizeReusableResourceText_(grado || "Todos", 40),
-    sanitizeReusableResourceText_(tema || "General", 160),
-    sanitizeReusableResourceText_(idioma || "Español", 40),
-    sanitizeReusableResourceText_(version || "1.0", 40),
+    sanitizeReusableResourceSheetCell_(resourceId, 100),
+    sanitizeReusableResourceSheetCell_(safeTitle, 160),
+    sanitizeReusableResourceSheetCell_(safeArea, 100),
+    sanitizeReusableResourceSheetCell_(asignatura || "General", 120),
+    sanitizeReusableResourceSheetCell_(grado || "Todos", 40),
+    sanitizeReusableResourceSheetCell_(tema || "General", 160),
+    sanitizeReusableResourceSheetCell_(idioma || "Español", 40),
+    sanitizeReusableResourceSheetCell_(version || "1.0", 40),
     "Activo",
-    String(actor.userId),
-    safeDriveUrl,
+    sanitizeReusableResourceSheetCell_(String(actor.userId), 100),
+    sanitizeReusableResourceSheetCell_(safeDriveUrl, 2048),
     esInterdisciplinario === true
   ]);
   logStructuredEvent("ACADEMIC", "manageReusableResource", "INFO", "RESOURCE_SAVED",
