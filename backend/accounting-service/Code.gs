@@ -3810,30 +3810,25 @@ function getTripPassengerManifest(payload) {
 function getEmployeeSelfServicePortal(payload) {
   var input=payload||{},actor=getVerifiedAccountingIdentity_(input);
   if(!actor||actor.authorized!==true)return{status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
-  var permission=validateRolePermission(actor,"getEmployeeSelfServicePortal");
-  if(!permission.authorized)return{status:"error",code:permission.code};
   var role=normalizeVacationRole_(actor.role),selfRoles=["empleado","profesor"],staffRoles=["recursoshumanos","director","subdirector","administrador"];
-  var targetUserId=selfRoles.indexOf(role)!==-1?String(actor.userId||""):String(input.targetUserId||input.empleadoId||"").trim();
+  var isSelf=selfRoles.indexOf(role)!==-1;
+  if(!isSelf&&staffRoles.indexOf(role)===-1)return{status:"error",code:"ROLE_NOT_ALLOWED"};
+  var targetUserId=isSelf?String(actor.userId||""):String(input.targetUserId||input.empleadoId||"").trim();
   if(!targetUserId)return{status:"error",code:"RESOURCE_NOT_FOUND"};
-  if(selfRoles.indexOf(role)===-1&&staffRoles.indexOf(role)===-1)return{status:"error",code:"ROLE_NOT_ALLOWED"};
-  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),accessIndex=getEmployeeResourceAccessIndex_(input,ss,actor);
-  if(!accessIndex.valid)return{status:"error",code:accessIndex.code};
-  var employee=accessIndex.byUserId[targetUserId];
-  if(!employee)return{status:"error",code:"RESOURCE_NOT_FOUND"};
-  var expedienteId=String(employee.expedienteId||"").trim();
-  var access=assertEmployeeExpedienteScopeAccess_(input,ss,expedienteId);
-  if(!access||access.authorized!==true)return{status:"error",code:"RESOURCE_NOT_FOUND"};
-  var employeeSheet=ss.getSheetByName("ExpedientesLaborales");
+  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),employeeSheet=ss.getSheetByName("ExpedientesLaborales");
   if(!employeeSheet)return{status:"error",code:"RESOURCE_NOT_FOUND"};
   var employeeValues=employeeSheet.getDataRange().getValues(),employeeHeaders=(employeeValues[0]||[]).map(function(v){return String(v||"").trim();});
-  var employeeRow=employee.row,employeeIndex={};
-  employeeHeaders.forEach(function(name,index){employeeIndex[name]=index;});
-  var expediente={
-    expedienteId:expedienteId,personaId:employeeRow[employeeIndex.PersonaId],puesto:employeeRow[employeeIndex.Puesto],
-    departamento:employeeRow[employeeIndex.Departamento],centroCosto:employeeRow[employeeIndex.CentroCosto],
-    fechaIngreso:employeeRow[employeeIndex.FechaIngreso],fechaSalida:employeeRow[employeeIndex.FechaSalida],
-    estadoLaboral:employeeRow[employeeIndex.EstadoLaboral]
-  };
+  var employeeIndex={};employeeHeaders.forEach(function(name,index){employeeIndex[name]=index;});
+  var requiredEmployee=["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral"];
+  if(requiredEmployee.some(function(name){return employeeIndex[name]===undefined;}))return{status:"error",code:"RESOURCE_DATA_SCHEMA_INVALID"};
+  var employees=employeeValues.slice(1).filter(function(row){return String(row[employeeIndex.UserId]||"").trim()===targetUserId;});
+  if(employees.length!==1)return{status:"error",code:"RESOURCE_NOT_FOUND"};
+  var employee=employees[0],expedienteId=String(employee[employeeIndex.ExpedienteID]||"").trim();
+  var access=assertEmployeeExpedienteScopeAccess_(input,ss,expedienteId);
+  if(!access||access.authorized!==true)return{status:"error",code:"RESOURCE_NOT_FOUND"};
+  var expediente={expedienteId:expedienteId,personaId:employee[employeeIndex.PersonaId],puesto:employee[employeeIndex.Puesto],
+    departamento:employee[employeeIndex.Departamento],centroCosto:employee[employeeIndex.CentroCosto],
+    fechaIngreso:employee[employeeIndex.FechaIngreso],fechaSalida:employee[employeeIndex.FechaSalida],estadoLaboral:employee[employeeIndex.EstadoLaboral]};
   function rowsFor(name,expectedHeaders,idColumn,filterColumn,filterValue,projector){
     var sheet=ss.getSheetByName(name);if(!sheet)return[];
     var values=sheet.getDataRange().getValues();
@@ -3843,8 +3838,7 @@ function getEmployeeSelfServicePortal(payload) {
     return rows.filter(function(row){return String(row[filterColumn]||"").trim()===String(filterValue)&&counts[String(row[idColumn]||"").trim()]===1;}).map(projector);
   }
   try{
-    return{status:"success",data:{
-      effectiveUserId:targetUserId,expediente:expediente,
+    return{status:"success",data:{effectiveUserId:targetUserId,expediente:expediente,
       contratos:rowsFor("ContratosLaborales",["ContratoID","ExpedienteID","TipoContrato","FechaInicio","FechaFin","SalarioBase","Jornada","EstadoContrato","Observaciones"],0,1,expedienteId,function(r){return{contratoId:r[0],tipoContrato:r[2],fechaInicio:r[3],fechaFin:r[4],salarioBase:r[5],jornada:r[6],estadoContrato:r[7]};}),
       solicitudesVacaciones:rowsFor("SolicitudesVacaciones",["SolicitudID","ExpedienteID","Tipo","FechaInicio","FechaFin","DiasSolicitados","Estado","AprobadoPor","Observaciones"],0,1,expedienteId,function(r){return{solicitudId:r[0],tipo:r[2],fechaInicio:r[3],fechaFin:r[4],diasSolicitados:r[5],estado:r[6]};}),
       prestamos:rowsFor("AnticiposPrestamosEmpleado",["PrestamoID","Fecha","EmpleadoId","Tipo","MontoSolicitado","MontoAprobado","PlazoCuotas","CuotaMensual","SaldoPendiente","EstadoAprobacion","AprobadoPor","Observaciones"],0,2,targetUserId,function(r){return{prestamoId:r[0],fecha:r[1],tipo:r[3],montoSolicitado:r[4],montoAprobado:r[5],plazoCuotas:r[6],cuotaMensual:r[7],saldoPendiente:r[8],estadoAprobacion:r[9]};}),
