@@ -504,7 +504,7 @@ rows.CreditoFamiliarMovimientos.push(["RPT-ORPHAN", new Date(), "AUT-1", "STU-1"
 const inconsistentReconciliation = context.getFamilyCreditSalesReconciliation({ _verifiedRole: "Contador" });
 assert.equal(inconsistentReconciliation.coincide, false);
 assert.ok(inconsistentReconciliation.discrepancias.some(item => item.codigo === "ORPHAN_APPROVED_MOVEMENT"));
-assert.match(source, /case "getFamilyCreditSalesReconciliation"/);
+assert.match(source, /if \(request\.action === "getFamilyCreditSalesReconciliation"\)/);
 const contadorPermissions = source.slice(source.indexOf('  "Contador": ['), source.indexOf('\n  "EncargadoTienda": ['));
 assert.ok(contadorPermissions.includes('"getFamilyCreditSalesReconciliation"'), "Contador must have permission to open the reconciliation report");
 const directorPermissions = source.slice(source.indexOf('  "Director": ['), source.indexOf('\n  "Subdirector": ['));
