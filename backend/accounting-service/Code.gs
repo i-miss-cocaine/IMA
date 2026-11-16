@@ -1726,6 +1726,97 @@ function manageDisciplinaryMeasure(payload) {
   finally { lock.releaseLock(); }
 }
 
+
+function ensureTrainingEnrollmentWriteSheet_(ss, sheetName, headers) {
+  var sheet = ss && ss.getSheetByName ? ss.getSheetByName(sheetName) : null;
+  if (!sheet) {
+    if (!ss || typeof ss.insertSheet !== "function") return {valid:false,code:"RESOURCE_SCHEMA_INVALID"};
+    sheet = ss.insertSheet(sheetName); sheet.appendRow(headers); return {valid:true,sheet:sheet,rows:[]};
+  }
+  var values = sheet.getDataRange().getValues();
+  if (!values || !values.length || JSON.stringify(values[0].map(function(v){return String(v||"").trim();})) !== JSON.stringify(headers)) return {valid:false,code:"RESOURCE_SCHEMA_INVALID"};
+  return {valid:true,sheet:sheet,rows:values.slice(1)};
+}
+
+function resolveTrainingEnrollmentEmployeeWriteAccess_(payload, ss, employeeId) {
+  var input=payload||{}, actor=getVerifiedAccountingIdentity_(input);
+  if(!actor||actor.authorized!==true)return {authorized:false,code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
+  if(normalizeVacationRole_(actor.role)!=="recursoshumanos")return {authorized:false,code:"ROLE_NOT_ALLOWED"};
+  var sheet=ss&&ss.getSheetByName?ss.getSheetByName("ExpedientesLaborales"):null;
+  if(!sheet)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  var values=sheet.getDataRange().getValues(),headers=values[0].map(function(v){return String(v||"").trim();});
+  var idIndex=headers.indexOf("ExpedienteID"),userIndex=headers.indexOf("UserId");
+  if(idIndex<0||userIndex<0)return {authorized:false,code:"RESOURCE_SCHEMA_INVALID"};
+  var target=String(employeeId||"").trim();
+  var matches=values.slice(1).filter(function(row){return String(row[userIndex]||"").trim()===target||String(row[idIndex]||"").trim()===target;});
+  if(matches.length!==1)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  var expedienteId=String(matches[0][idIndex]||"").trim();
+  var ownership=assertResourceOwnershipForScope_(input,ss,expedienteId);
+  if(!ownership||ownership.authorized!==true)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
+  return {authorized:true,actor:actor,employeeId:target,expedienteId:expedienteId};
+}
+
+function resolveTrainingCourseForEnrollment_(ss, courseId) {
+  var sheet=ss&&ss.getSheetByName?ss.getSheetByName("CatalogoCursosCapacitacion"):null;
+  if(!sheet)return {valid:false,code:"RESOURCE_NOT_FOUND"};
+  var values=sheet.getDataRange().getValues();
+  var headers=["CursoID","NombreCurso","Categoria","ProveedorResponsable","Modalidad","DuracionHoras","Requisitos","DirigidoA","Estado","CreadoPor","FechaCreacion","UltimaModificacion"];
+  if(!values||!values.length||JSON.stringify(values[0].map(function(v){return String(v||"").trim();}))!==JSON.stringify(headers))return {valid:false,code:"RESOURCE_SCHEMA_INVALID"};
+  var matches=values.slice(1).filter(function(row){return String(row[0]||"").trim()===String(courseId||"").trim()&&String(row[8]||"").toLowerCase()==="activo";});
+  return matches.length===1?{valid:true,course:matches[0]}:{valid:false,code:"RESOURCE_NOT_FOUND"};
+}
+
+function manageTrainingEnrollment(payload) {
+  var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+  var access=resolveTrainingEnrollmentEmployeeWriteAccess_(input,ss,input.empleadoId);
+  if(!access.authorized)return {status:"error",code:access.code};
+  var course=resolveTrainingCourseForEnrollment_(ss,input.cursoId);
+  if(!course.valid)return {status:"error",code:course.code};
+  var headers=["InscripcionID","CursoID","EmpleadoID","FechaInscripcion","EstadoInscripcion","AsistenciaPorcentaje","ResultadoNota","CertificadoDriveUrl","FechaEmisionCertificado","FechaVencimientoCertificado","Observaciones","CreadoPor","FechaCreacion","UltimaModificacion"];
+  var snapshot=ensureTrainingEnrollmentWriteSheet_(ss,"InscripcionesCapacitacion",headers);
+  if(!snapshot.valid)return {status:"error",code:snapshot.code};
+  if(input.asistenciaPorcentaje!==undefined&&input.asistenciaPorcentaje!==""&&(!isFinite(Number(input.asistenciaPorcentaje))||Number(input.asistenciaPorcentaje)<0||Number(input.asistenciaPorcentaje)>100))return {status:"error",code:"TRAINING_ATTENDANCE_INVALID"};
+  if(input.resultadoNota!==undefined&&input.resultadoNota!==""&&(!isFinite(Number(input.resultadoNota))||Number(input.resultadoNota)<0||Number(input.resultadoNota)>100))return {status:"error",code:"TRAINING_GRADE_INVALID"};
+  var enrollmentDate=input.fechaInscripcion?new Date(input.fechaInscripcion):new Date();
+  if(isNaN(enrollmentDate.getTime()))return {status:"error",code:"TRAINING_ENROLLMENT_DATE_INVALID"};
+  var issue=input.fechaEmisionCertificado?new Date(input.fechaEmisionCertificado):null;
+  var expiry=input.fechaVencimientoCertificado?new Date(input.fechaVencimientoCertificado):null;
+  if((issue&&isNaN(issue.getTime()))||(expiry&&isNaN(expiry.getTime()))||(issue&&expiry&&expiry<issue))return {status:"error",code:"TRAINING_CERTIFICATE_DATE_RANGE_INVALID"};
+  var lock=LockService.getScriptLock();
+  if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY"};
+  try {
+    var id=String(input.inscripcionId||"").trim();
+    var matches=snapshot.rows.map(function(row,index){return {row:row,index:index};}).filter(function(item){return id&&String(item.row[0]||"").trim()===id;});
+    if(id&&matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND"};
+    var now=new Date(),next;
+    if(!id){
+      id="CAP-"+String(Utilities.getUuid()).replace(/-/g,"");
+      if(snapshot.rows.some(function(row){return String(row[0]||"")===id;}))return {status:"error",code:"TRAINING_ENROLLMENT_ID_COLLISION"};
+      next=[id,String(input.cursoId),access.employeeId,enrollmentDate,String(input.estadoInscripcion||"Inscrito"),
+        input.asistenciaPorcentaje===""||input.asistenciaPorcentaje===undefined?"":Number(input.asistenciaPorcentaje),
+        input.resultadoNota===""||input.resultadoNota===undefined?"":Number(input.resultadoNota),
+        String(input.certificadoDriveUrl||""),issue||"",expiry||"",String(input.observaciones||"").slice(0,1000),
+        access.actor.userId,now,""];
+      snapshot.sheet.appendRow(next);
+    } else {
+      var old=matches[0].row.slice();
+      if(String(old[2]||"")!==access.employeeId||String(old[1]||"")!==String(input.cursoId||""))return {status:"error",code:"RESOURCE_NOT_FOUND"};
+      next=old.slice();next[3]=enrollmentDate;next[4]=String(input.estadoInscripcion||old[4]||"Inscrito");
+      if(input.asistenciaPorcentaje!==undefined)next[5]=Number(input.asistenciaPorcentaje);
+      if(input.resultadoNota!==undefined)next[6]=Number(input.resultadoNota);
+      if(input.certificadoDriveUrl!==undefined)next[7]=String(input.certificadoDriveUrl||"");
+      if(input.fechaEmisionCertificado!==undefined)next[8]=issue||"";
+      if(input.fechaVencimientoCertificado!==undefined)next[9]=expiry||"";
+      if(input.observaciones!==undefined)next[10]=String(input.observaciones).slice(0,1000);
+      next[13]=now;
+      try{snapshot.sheet.getRange(matches[0].index+2,1,1,headers.length).setValues([next]);}
+      catch(writeError){return {status:"error",code:"TRAINING_ENROLLMENT_WRITE_FAILED"};}
+    }
+    return {status:"success",inscripcionId:id};
+  } catch(error){return {status:"error",code:"TRAINING_ENROLLMENT_WRITE_FAILED"};}
+  finally{lock.releaseLock();}
+}
+
 /* Runtime configuration and fail-closed service adapters. */
 var SPREADSHEET_ID = PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID") || "";
 const MIGRATION_OWNER_SCHEMAS_={
@@ -1902,7 +1993,7 @@ const ROLE_PERMISSIONS = {
   Auditor: ["getAccountingMigrationFileAudit"],
   "Empleado": ["getEmployeeRecords", "getLeaveVacationRequests", "submitLeaveVacationRequest"],
   "Profesor": ["submitVacationRequest"],
-  "RecursosHumanos": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure"],
+  "RecursosHumanos": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment"],
   "Director": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances"],
   "Administrador": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances"]
 };
@@ -2058,6 +2149,7 @@ function doPost(e) {
       return respond({ status: "error", code: "REQUEST_SCHEMA_INVALID" });
     }
     var actionPayload = Object.assign({}, request.payload, { correlationId: correlationId });
+    if (request.action === "manageTrainingEnrollment") return respond(manageTrainingEnrollment(actionPayload));
     if (request.action === "manageLaborIncident") return respond(manageLaborIncident(actionPayload));
     if (request.action === "manageDisciplinaryMeasure") return respond(manageDisciplinaryMeasure(actionPayload));
     if (request.action === "getEmployeeRecords") return respond(getEmployeeRecords(actionPayload));
@@ -2089,6 +2181,8 @@ function doPost(e) {
       MIGRATION_WRITE_CONTRACT_INVALID: true, MIGRATION_FILE_HASH_REQUIRED: true,
       MIGRATION_FILE_HASH_AUDIT_SCHEMA_MISMATCH: true, DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED: true,
       RESOURCE_NOT_FOUND: true, RESOURCE_SCHEMA_INVALID: true, ROLE_NOT_ALLOWED: true,
+      TRAINING_ATTENDANCE_INVALID: true, TRAINING_GRADE_INVALID: true, TRAINING_ENROLLMENT_DATE_INVALID: true,
+      TRAINING_CERTIFICATE_DATE_RANGE_INVALID: true, TRAINING_ENROLLMENT_WRITE_FAILED: true, TRAINING_ENROLLMENT_ID_COLLISION: true,
       LABOR_INCIDENT_ID_COLLISION: true, LABOR_INCIDENT_WRITE_FAILED: true, LABOR_INCIDENT_DESCRIPTION_REQUIRED: true,
       LABOR_INCIDENT_BOOLEAN_INVALID: true, DISCIPLINARY_MEASURE_ID_COLLISION: true, DISCIPLINARY_DAYS_INVALID: true,
       DISCIPLINARY_BASIS_REQUIRED: true, DISCIPLINARY_WRITE_FAILED: true,
