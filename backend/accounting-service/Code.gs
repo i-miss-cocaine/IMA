@@ -10644,7 +10644,7 @@ function previewBatchMonthlyCharges(payload){
  matRows.slice(1).forEach(r=>{
   const user=String(r[mh.userid]||"").trim(),state=String(r[mh.estado]||"").trim().toLowerCase();if(!user||seen.has(user)||!allowedStates.includes(state))return;
   if(String(r[mh.anolectivo]||"").trim()!==year)return;
-  const grade=String(r[mh.nivelgrado]||"").trim(),section=String(r[mh.seccion]||"").trim();
+  const grade=String(r[mh.grado]||"").trim(),section=String(r[mh.seccion]||"").trim();
   if(p.nivelGrado&&grade.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()!==String(p.nivelGrado).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase())return;
   if(p.seccion&&section.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()!==String(p.seccion).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase())return;
   if(Array.isArray(p.studentIds)&&p.studentIds.length&&!p.studentIds.map(String).includes(user))return;
