@@ -1598,6 +1598,130 @@ function recordMedicalLeave(payload) {
   finally { lock.releaseLock(); }
 }
 
+
+function ensureLaborWriteSheet_(ss, sheetName, expectedHeaders) {
+  var sheet = ss && ss.getSheetByName ? ss.getSheetByName(sheetName) : null;
+  if (!sheet) {
+    if (!ss || typeof ss.insertSheet !== "function") return { valid: false, code: "RESOURCE_SCHEMA_INVALID" };
+    sheet = ss.insertSheet(sheetName);
+    sheet.appendRow(expectedHeaders);
+    return { valid: true, sheet: sheet, rows: [] };
+  }
+  var values = sheet.getDataRange().getValues();
+  if (!values || !values.length || JSON.stringify(values[0].map(function(v){return String(v||"").trim();})) !== JSON.stringify(expectedHeaders)) {
+    return { valid: false, code: "RESOURCE_SCHEMA_INVALID" };
+  }
+  return { valid: true, sheet: sheet, rows: values.slice(1) };
+}
+
+function parseLaborBoolean_(value) {
+  if (value === true || value === false) return value;
+  var normalized = String(value === undefined || value === null ? "" : value).trim().toLowerCase();
+  if (["true","1","si","sí","yes"].indexOf(normalized) !== -1) return true;
+  if (["false","0","no",""].indexOf(normalized) !== -1) return false;
+  return null;
+}
+
+function resolveLaborIncidentWriteAccess_(payload, ss, employeeId, action) {
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { authorized: false, code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var role = normalizeVacationRole_(actor.role);
+  if (role !== "recursoshumanos") return { authorized: false, code: role === "administrador" ? "RESOURCE_NOT_FOUND" : "ROLE_NOT_ALLOWED" };
+  var employeeSheet = ss && ss.getSheetByName ? ss.getSheetByName("ExpedientesLaborales") : null;
+  if (!employeeSheet) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  var values = employeeSheet.getDataRange().getValues();
+  if (!values || values.length < 2) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  var headers = values[0].map(function(v){return String(v||"").trim();});
+  var idIndex = headers.indexOf("ExpedienteID"), userIndex = headers.indexOf("UserId");
+  if (idIndex < 0 || userIndex < 0) return { authorized: false, code: "RESOURCE_SCHEMA_INVALID" };
+  var target = String(employeeId || "").trim();
+  var matches = values.slice(1).map(function(row){return {row:row,index:headers};}).filter(function(item){
+    return String(item.row[userIndex]||"").trim() === target || String(item.row[idIndex]||"").trim() === target;
+  });
+  if (matches.length !== 1) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  var expedienteId = String(matches[0].row[idIndex]||"").trim();
+  var access = assertResourceOwnershipForScope_(input, ss, expedienteId);
+  if (!access || access.authorized !== true) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  return { authorized: true, actor: actor, employeeId: target, expedienteId: expedienteId, access: access };
+}
+
+function manageLaborIncident(payload) {
+  var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var access = resolveLaborIncidentWriteAccess_(input, ss, input.empleadoId, "manageLaborIncident");
+  if (!access.authorized) return { status: "error", code: access.code };
+  var headers = ["IncidenciaID","EmpleadoID","Fecha","Categoria","DescripcionObjetiva","ResponsableRegistro","Estado","ResponsabilidadEstablecida","DocumentacionDriveUrl","ObservacionesAclaraciones","HistorialAclaracionesJSON","CreadoPor","FechaCreacion","UltimaModificacion"];
+  var snapshot = ensureLaborWriteSheet_(ss, "IncidenciasLaborales", headers);
+  if (!snapshot.valid) return { status: "error", code: snapshot.code };
+  var description = String(input.descripcionObjetiva || "").trim();
+  if (!description) return { status: "error", code: "LABOR_INCIDENT_DESCRIPTION_REQUIRED" };
+  var responsibility = parseLaborBoolean_(input.responsabilidadEstablecida);
+  if (responsibility === null) return { status: "error", code: "LABOR_INCIDENT_BOOLEAN_INVALID" };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
+  try {
+    var matches = snapshot.rows.map(function(row,index){return {row:row,index:index};}).filter(function(item){
+      return input.incidenciaId && String(item.row[0]||"").trim() === String(input.incidenciaId).trim();
+    });
+    if (input.incidenciaId && matches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    var now = new Date(), userId = access.actor.userId, sheet = snapshot.sheet;
+    if (!input.incidenciaId) {
+      var generated = "INC-LAB-" + String(Utilities.getUuid()).replace(/-/g,"");
+      if (snapshot.rows.some(function(row){return String(row[0]||"") === generated;})) return { status: "error", code: "LABOR_INCIDENT_ID_COLLISION" };
+      sheet.appendRow([generated,access.employeeId,now,String(input.categoria||"General").slice(0,80),description,userId,"Registrada",responsibility,
+        String(input.documentacionDriveUrl||""),String(input.observacionesAclaraciones||"").slice(0,1000),"[]",userId,now,""]);
+      return { status: "success", incidenciaId: generated };
+    }
+    var item = matches[0], old = item.row.slice();
+    if (String(old[1]||"").trim() !== access.employeeId) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    var history;
+    try { history = JSON.parse(String(old[10]||"[]")); } catch (ignored) { return { status: "error", code: "RESOURCE_SCHEMA_INVALID" }; }
+    if (!Array.isArray(history)) return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
+    history.push({modificadoPor:userId,fecha:now.toISOString(),aclaracionAnterior:String(old[9]||""),aclaracionNueva:String(input.observacionesAclaraciones||"")});
+    var next = old.slice(); next[3] = String(input.categoria||old[3]||"General").slice(0,80);
+    next[4] = description; next[7] = responsibility; next[9] = String(input.observacionesAclaraciones||"").slice(0,1000);
+    next[10] = JSON.stringify(history); next[13] = now;
+    try { sheet.getRange(item.index+2,1,1,headers.length).setValues([next]); }
+    catch (writeError) { return { status: "error", code: "LABOR_INCIDENT_WRITE_FAILED" }; }
+    return { status: "success", incidenciaId: input.incidenciaId };
+  } finally { lock.releaseLock(); }
+}
+
+function manageDisciplinaryMeasure(payload) {
+  var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var access = resolveLaborIncidentWriteAccess_(input, ss, input.empleadoId, "manageDisciplinaryMeasure");
+  if (!access.authorized) return { status: "error", code: access.code };
+  var incidentSheet = ss.getSheetByName("IncidenciasLaborales");
+  if (!incidentSheet) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  var incidentValues = incidentSheet.getDataRange().getValues();
+  var incidentMatches = incidentValues.slice(1).filter(function(row){return String(row[0]||"")===String(input.incidenciaId||"") && String(row[1]||"")===access.employeeId;});
+  if (incidentMatches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  var headers = ["MedidaID","IncidenciaID","EmpleadoID","TipoMedida","FundamentoDocumentado","FechaEfectiva","ResponsableAprobacion","EstadoMedida","DiasSuspension","ActaFirmadaDriveUrl","CreadoPor","FechaCreacion","UltimaModificacion"];
+  var snapshot = ensureLaborWriteSheet_(ss,"MedidasDisciplinarias",headers);
+  if (!snapshot.valid) return { status: "error", code: snapshot.code };
+  var days = Number(input.diasSuspension || 0);
+  if (!isFinite(days) || days < 0 || days > 365) return { status: "error", code: "DISCIPLINARY_DAYS_INVALID" };
+  if (!String(input.tipoMedida||"").trim() || !String(input.fundamentoDocumentado||"").trim()) return { status: "error", code: "DISCIPLINARY_BASIS_REQUIRED" };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
+  try {
+    var now = new Date(), id = String(input.medidaId||"").trim(), matches = snapshot.rows.map(function(row,index){return {row:row,index:index};}).filter(function(item){return id && String(item.row[0]||"")===id;});
+    if (id && matches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    if (!id) {
+      id = "MED-DISC-" + String(Utilities.getUuid()).replace(/-/g,"");
+      if (snapshot.rows.some(function(row){return String(row[0]||"")===id;})) return { status: "error", code: "DISCIPLINARY_MEASURE_ID_COLLISION" };
+      snapshot.sheet.appendRow([id,input.incidenciaId,access.employeeId,String(input.tipoMedida),String(input.fundamentoDocumentado),input.fechaEfectiva||now,
+        access.actor.userId,"Pendiente",days,String(input.actaFirmadaDriveUrl||""),access.actor.userId,now,""]);
+    } else {
+      var old = matches[0].row.slice();
+      if (String(old[2]||"") !== access.employeeId || String(old[1]||"") !== String(input.incidenciaId||"")) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+      old[3]=String(input.tipoMedida);old[4]=String(input.fundamentoDocumentado);old[5]=input.fechaEfectiva||old[5];old[8]=days;old[12]=now;
+      snapshot.sheet.getRange(matches[0].index+2,1,1,headers.length).setValues([old]);
+    }
+    return { status: "success", medidaId: id };
+  } catch (error) { return { status: "error", code: "DISCIPLINARY_WRITE_FAILED" }; }
+  finally { lock.releaseLock(); }
+}
+
 /* Runtime configuration and fail-closed service adapters. */
 var SPREADSHEET_ID = PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID") || "";
 const MIGRATION_OWNER_SCHEMAS_={
@@ -1774,7 +1898,7 @@ const ROLE_PERMISSIONS = {
   Auditor: ["getAccountingMigrationFileAudit"],
   "Empleado": ["getEmployeeRecords", "getLeaveVacationRequests", "submitLeaveVacationRequest"],
   "Profesor": ["submitVacationRequest"],
-  "RecursosHumanos": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave"],
+  "RecursosHumanos": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure"],
   "Director": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances"],
   "Administrador": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances"]
 };
@@ -1930,6 +2054,8 @@ function doPost(e) {
       return respond({ status: "error", code: "REQUEST_SCHEMA_INVALID" });
     }
     var actionPayload = Object.assign({}, request.payload, { correlationId: correlationId });
+    if (request.action === "manageLaborIncident") return respond(manageLaborIncident(actionPayload));
+    if (request.action === "manageDisciplinaryMeasure") return respond(manageDisciplinaryMeasure(actionPayload));
     if (request.action === "getEmployeeRecords") return respond(getEmployeeRecords(actionPayload));
     if (request.action === "getLeaveVacationRequests") return respond(getLeaveVacationRequests(actionPayload));
     if (request.action === "getVacationRequests") return respond(getVacationRequests(actionPayload));
@@ -1959,6 +2085,9 @@ function doPost(e) {
       MIGRATION_WRITE_CONTRACT_INVALID: true, MIGRATION_FILE_HASH_REQUIRED: true,
       MIGRATION_FILE_HASH_AUDIT_SCHEMA_MISMATCH: true, DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED: true,
       RESOURCE_NOT_FOUND: true, RESOURCE_SCHEMA_INVALID: true, ROLE_NOT_ALLOWED: true,
+      LABOR_INCIDENT_ID_COLLISION: true, LABOR_INCIDENT_WRITE_FAILED: true, LABOR_INCIDENT_DESCRIPTION_REQUIRED: true,
+      LABOR_INCIDENT_BOOLEAN_INVALID: true, DISCIPLINARY_MEASURE_ID_COLLISION: true, DISCIPLINARY_DAYS_INVALID: true,
+      DISCIPLINARY_BASIS_REQUIRED: true, DISCIPLINARY_WRITE_FAILED: true,
       REQUEST_DATE_INVALID: true, REQUEST_DURATION_INVALID: true, VACATION_REQUEST_OVERLAP: true,
       CONCURRENT_UPDATE_RETRY: true, REQUEST_STATE_INVALID: true, REQUEST_ALREADY_REVIEWED: true,
       VACATION_WRITE_FAILED: true, MEDICAL_LEAVE_WRITE_FAILED: true,
