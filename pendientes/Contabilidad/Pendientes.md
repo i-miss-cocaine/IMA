@@ -2529,7 +2529,7 @@
   - Los totales de cantidades e importes del expediente coinciden exactamente con los documentos individuales.
   - Las órdenes con entregas o facturaciones parciales reflejan con claridad los saldos pendientes.
   - El expediente mantiene protegidos los documentos confidenciales conforme al rol del usuario que consulta.
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Completada en código y CI; validación beta pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7671-7723; clave TASK-185; asignación única: Contabilidad -->
 

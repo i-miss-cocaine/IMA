@@ -57,3 +57,18 @@
 - Node CLI local: NOT RUN. Despliegue/beta Drive y Sheets: NOT RUN.
 - Siguiente tarea elegible: TASK-184 — expediente integral de compra y confirmación de proveedor.
 ===============================================================================
+
+
+===============================================================================
+## C1.791 — IMA-EXEC-20261116-0413Z-TASK184-PURCHASE-DOSSIER-01
+
+- Rama autorizada: NG_beta_0.0.0.1_work.
+- HEAD verificado: 7e906500e1d28c651adc296124a48962a78836ad.
+- Tarea: TASK-184 — expediente integral de compra y confirmación del proveedor.
+- Resultado: consulta de expediente por orden/solicitud/factura/proveedor; timeline desde solicitud, cotizaciones, adjudicación, orden, confirmación, recepción, factura, pago y asiento; métricas de cantidades e importes; documentos con allowlist HTTPS de Google Drive/Docs; redacción de documentos para Subdirección; confirmación de proveedor con lock y revalidación de orden tras adquirirlo.
+- Archivos: backend/accounting-service/Code.gs; .github/workflows/department-scope-contract.yml (contrato aislado antes del bloqueo de catálogo).
+- Verificación GitHub Actions run 43801463876, Node.js 24.22.2: “Run unified purchase dossier traceability contract” PASS.
+- Node CLI local: NOT RUN. Despliegue/beta Drive y Sheets: NOT RUN.
+- Bloqueo global vigente: después de TASK-184, “Run accounting master catalog and unit conversion contract” falla con “catalog service block missing”; no se declara CI integral verde.
+- Siguiente tarea elegible: reconciliar/implementar el servicio de catálogo e inventario requerido por su contrato antes de seguir con los módulos dependientes.
+===============================================================================
