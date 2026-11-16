@@ -2608,6 +2608,8 @@ function rollbackPrivatePaymentAttachment_(file) {
 }
 
 function createPrivatePaymentAttachment_(fileData, fileName) {
+  if (!!fileData !== !!fileName) throw new Error("ATTACHMENT_PAIR_REQUIRED");
+  if (!fileData || !String(fileName || "").trim()) throw new Error("ATTACHMENT_PAIR_REQUIRED");
   var validation = validateFileBinaryIntegrity(fileData, fileName, { maxSizeBytes: 10 * 1024 * 1024, allowedExtensions: [".pdf"] });
   var base64 = fileData.indexOf(",") >= 0 ? fileData.slice(fileData.indexOf(",") + 1) : fileData;
   var bytes = Utilities.base64Decode(base64);
@@ -2812,7 +2814,8 @@ function uploadPaymentVoucher(payload) {
     return { status: "error", code: "RESOURCE_SCOPE_DENIED" };
   }
   var fileData = input.fileData, fileName = String(input.fileName || "").trim();
-  if (typeof fileData !== "string" || !fileData.trim() || !fileName) return { status: "error", code: "PAYMENT_VOUCHER_FILE_REQUIRED" };
+  if (!!fileData !== !!fileName) throw new Error("ATTACHMENT_PAIR_REQUIRED");
+  if (!fileData || typeof fileData !== "string" || !fileData.trim() || !fileName) return { status: "error", code: "PAYMENT_VOUCHER_FILE_REQUIRED" };
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID), sheet = getOrCreateSheet(ss, "ComprobantesPago");
   var existingValues = sheet.getDataRange().getValues(), existingHeaders = (existingValues[0] || []).map(function(value) { return String(value || "").trim(); });
   var groupId = String(input.comprobanteGrupoId || "").trim();
