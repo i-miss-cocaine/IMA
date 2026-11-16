@@ -3727,18 +3727,6 @@ function registerAssetsFromPurchaseReceipt(payload) {
       if (!candidateById[itemId]) throw new Error("PURCHASE_ASSET_ITEM_NOT_ELIGIBLE");
       requestedCount[itemId] = (requestedCount[itemId] || 0) + 1;
     });
-    for (var iDuplicate = 0; iDuplicate < requestedAssets.length; iDuplicate++) {
-      var duplicateAsset = requestedAssets[iDuplicate];
-      var duplicateCode = String(duplicateAsset.codigoPatrimonial || "").trim();
-      var duplicateSerial = String(duplicateAsset.numeroSerie || "").trim();
-      if (assetsByReceipt.some(function(row) {
-        return String(row[idx("CodigoPatrimonial")] || "") === duplicateCode ||
-          String(row[idx("NumeroSerie")] || row[4] || "") === duplicateSerial;
-      })) return { status: "error", code: "ASSET_CODE_OR_SERIAL_ALREADY_EXISTS" };
-    }
-    for (var key in requestedCount) if (requestedCount[key] > candidateById[key].unidadesDisponibles) {
-      return { status: "error", code: "PURCHASE_ASSET_QUANTITY_EXCEEDED" };
-    }
     var idempotent = requestedAssets.every(function(asset) {
       var itemId = String(asset.itemId || asset.ItemId || asset.codigoItem || "").trim();
       var code = String(asset.codigoPatrimonial || "").trim(), serial = String(asset.numeroSerie || "").trim();
@@ -3752,6 +3740,18 @@ function registerAssetsFromPurchaseReceipt(payload) {
     });
     if (idempotent) return { status: "success", idempotente: true,
       activos: requestedAssets.map(function(asset) { return { codigoPatrimonial: asset.codigoPatrimonial }; }) };
+    for (var iDuplicate = 0; iDuplicate < requestedAssets.length; iDuplicate++) {
+      var duplicateAsset = requestedAssets[iDuplicate];
+      var duplicateCode = String(duplicateAsset.codigoPatrimonial || "").trim();
+      var duplicateSerial = String(duplicateAsset.numeroSerie || "").trim();
+      if (assetsByReceipt.some(function(row) {
+        return String(row[idx("CodigoPatrimonial")] || "") === duplicateCode ||
+          String(row[idx("NumeroSerie")] || row[4] || "") === duplicateSerial;
+      })) return { status: "error", code: "ASSET_CODE_OR_SERIAL_ALREADY_EXISTS" };
+    }
+    for (var key in requestedCount) if (requestedCount[key] > candidateById[key].unidadesDisponibles) {
+      return { status: "error", code: "PURCHASE_ASSET_QUANTITY_EXCEEDED" };
+    }
     for (var i = 0; i < requestedAssets.length; i++) {
       var asset = requestedAssets[i], itemId = String(asset.itemId || asset.ItemId || asset.codigoItem || "").trim();
       var code = String(asset.codigoPatrimonial || "").trim(), serial = String(asset.numeroSerie || "").trim();
