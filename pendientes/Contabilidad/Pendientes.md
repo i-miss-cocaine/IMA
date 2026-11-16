@@ -2491,7 +2491,7 @@
   - Modificar una cuenta bancaria genera una entrada de auditoría con usuario, fecha y valor anterior.
   - Se detectan posibles proveedores duplicados al validar el número de RTN (14 dígitos).
   - Un proveedor suspendido queda bloqueado para la emisión de nuevas órdenes de compra.
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Completada en código y CI; validación beta pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7632-7666; clave TASK-184; asignación única: Contabilidad -->
 

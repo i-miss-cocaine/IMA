@@ -43,3 +43,17 @@
 - Node CLI local: NOT RUN. Despliegue/beta Drive y Sheets: NOT RUN.
 - Siguiente elegible: reconciliar el servicio de catálogo/inventario que el contrato exige; después continuar los elementos pendientes de compras/proveedores/expediente documental según Plan Maestro.
 ===============================================================================
+
+
+===============================================================================
+## C1.790 — IMA-EXEC-20261116-0410Z-TASK183-SUPPLIER-PROFILE-01
+
+- Rama autorizada: NG_beta_0.0.0.1_work.
+- HEAD verificado: 5e0431dc2ad73d2599ecb00d6515ac588fe948a1.
+- Tarea: TASK-183 — expediente ampliado de proveedores.
+- Resultado: registro y actualización de proveedor con RTN validado y unicidad; contactos con historial de principalidad; direcciones; condiciones comerciales versionadas; cuentas bancarias protegidas por rol y autorización documentada; auditoría sin exponer números completos; lectura enmascarada y acceso completo restringido; bloqueo de órdenes para proveedores suspendidos.
+- Archivos: backend/accounting-service/Code.gs; .github/workflows/department-scope-contract.yml (ejecución aislada del contrato).
+- Verificación GitHub Actions run 43801463876, Node.js 24.22.2: “Run supplier profile and protected banking contract” PASS.
+- Node CLI local: NOT RUN. Despliegue/beta Drive y Sheets: NOT RUN.
+- Siguiente tarea elegible: TASK-184 — expediente integral de compra y confirmación de proveedor.
+===============================================================================
