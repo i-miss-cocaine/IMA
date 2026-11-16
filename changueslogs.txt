@@ -3961,3 +3961,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Nuevo accounting-import-file-audit.test.js comprueba hash independiente del nombre, binding institucional/preview, encabezado único, lock release y timeout sin acceso a la hoja.
 - Accounting Import Preflight Contract run 43772273147 SUCCESS; Accounting migration file audit PASS.
 - TASK-134 continúa abierto: falta beta real y persistencia real al habilitar el commit de importación después de TASK-133.
+
+
+[2026-11-16] IMA-EXEC-20261116-0128Z-IMA-01 — Continuidad C1.777
+- Revisión de seguridad documental TASK-142 y RBAC Auditor; se conserva estado parcial y se registran explícitamente los pendientes de preview/streaming y beta real.
+- Corrección de harness de accounting-auditor-migration-audit.test.js: incluye accountingHasRolePermission_ y ROLE_PERMISSIONS; commit 8bac38c827a842ae5f1b8c430c1fb00b50984ad9.
+- Accounting Import Preflight Contract run 43786496322 SUCCESS (39 pasos); no se declara PASS global de workflows transversales.

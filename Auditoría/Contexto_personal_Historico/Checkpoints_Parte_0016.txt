@@ -249,3 +249,49 @@
 - No se identificó ruta ACCOUNTING de creación/custodia de documentos físicos en Drive; no se creó un repositorio paralelo. La integración contable pendiente queda limitada al flujo documental propietario si se identifica, y a la activación segura del commit de importación.
 - TASK-135/F39-Task03 continúa bloqueada por evidencia completa de TASK-134/TASK-144 y beta de custodia. Siguiente paso: continuar TASK-133/134 con verificación beta y revisar los flujos documentales propietarios sin ampliar el alcance por suposición.
 ===============================================================================
+
+
+===============================================================================
+## C1.777 — IMA-EXEC-20261116-0128Z-IMA-01 — Reconciliación de seguridad documental y RBAC Auditor
+
+- Fecha de corte: 2026-11-16 01:28 UTC.
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base: NG_beta_0.0.0.1.
+- HEAD inicial de esta sesión: 875acbb358d1926f6a0ef7e242e9c5f77d3b7c56.
+- HEAD final de esta revisión: 8bac38c827a842ae5f1b8c430c1fb00b50984ad9.
+- HEAD de la rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59 (sin modificaciones).
+- Normativa aplicada: Normas_Desarollo.md, versión vigente NDASC 1.4.
+- Continuidad: C1.776; se revisaron 62 commits posteriores al HEAD db9b7bcc6eafa45a09d98f409deae255c4d46129 sin resetear, reescribir ni publicar en otra rama.
+
+### Reconciliación y evidencia revisada
+
+- TASK-142 / F40-01 permanece en ejecución, no completada. ACADEMIC implementa almacenamiento privado, SHA-256, metadatos sin DriveUrl, proxy despachado, token HMAC efímero de 60 segundos ligado a documento/versión/usuario/operación, consumo de un solo uso bajo ScriptLock, revalidación de identidad/ámbito/versión y auditoría de autorizaciones y denegaciones. La UI de Secretaría solicita el token y consume getSecureDocumentStream; la acción heredada getStudentDocumentFile queda bloqueada por el dispatcher.
+- El contrato tests/security/academic-student-document-private-storage.test.js cubre privacidad, hash, alteración binaria, expiración, replay, binding de usuario/documento/versión, contención del lock, rollback y ausencia de URLs directas. PASS en el workflow 43786496322.
+- Pendiente TASK-142: diferenciar explícitamente PREVIEW de DOWNLOAD (el token actual autoriza DOWNLOAD); confirmar si la respuesta base64 satisface el contrato de streaming o se requiere transporte binario; ejecutar pruebas beta reales de permisos privados de Drive, sesión anónima, revocación y descarga.
+- La única aparición encontrada de ANYONE_WITH_LINK en USER está en uploadNewsImage para Noticias_Imagenes, recurso de publicación pública; no se encontró en los flujos privados de documentos laborales/estudiantiles revisados.
+- El rol Auditor tiene allowlist de solo lectura; ACCOUNTING expone getAccountingMigrationFileAudit con verificación institucional y autorización USER. Los contratos auditor-readonly-role, internal-responsibility-rbac-contract y accounting-auditor-migration-audit pasan en el workflow vigente.
+- Se corrigió el harness de accounting-auditor-migration-audit.test.js para incluir el helper real accountingHasRolePermission_ y ROLE_PERMISSIONS. Commit: 8bac38c827a842ae5f1b8c430c1fb00b50984ad9. No se modificó código de producción en esta corrección.
+
+### Verificaciones
+
+- GitHub Actions Accounting Import Preflight Contract run 43786496322: SUCCESS; 39/39 pasos completados, Node.js 24.22.2. Incluye sintaxis ACCOUNTING/USER/ACADEMIC, router/auth, escritor con journal, binarios XLSX, auditoría SHA-256, snapshots remotos, PDF/OCR, OpenXML, preflight semántico/departamental, contratos de API, RBAC y UI.
+- El run anterior 43774839670 falló únicamente porque el harness de auditoría no extraía accountingHasRolePermission_; la corrección quedó integrada en 8bac38c827a842ae5f1b8c430c1fb00b50984ad9 y la nueva ejecución está en SUCCESS.
+- Workflows transversales aún fallidos en commits previos: Department Scope run 43774823913 por ausencia de resolveEmployeeDepartmentId_ requerida por el test de vacaciones/incapacidades; Identity mapping/transport run 43774823900 por ausencia de backend/transport-service/Code.gs; Task-Service run 43774759211 por ausencia de verifySessionToken en el servicio TASK. Son dependencias/defectos independientes, no se ocultaron ni se declararon PASS.
+- No se ejecutó Node CLI local: no hay checkout local y se conserva la instrucción previa de no clonar la rama. La verificación Node 24 se ejecutó en GitHub Actions.
+
+### TASK-133 y continuidad
+
+- TASK-133 sigue En ejecución y es la siguiente tarea P0 elegible. ACCOUNTING ya tiene doPost/doGet/textResponse, identidad verificada mediante USER, firma HMAC interservicio y acciones allowlisted. El preflight valida identidad, institución, permisos, binarios, snapshots, relaciones y hash de previsualización; la escritura vuelve a validar la previsualización.
+- El clasificador PDF conserva el comportamiento fail-closed: streams con Filter/FlateDecode quedan NO_ANALIZADA y requieren OCR/revisión, no se clasifican por suposición. Falta completar cobertura de páginas comprimidas y validar OCR real con Drive Advanced Service v2 en beta. BETA-FUNC-108 continúa pendiente.
+- TASK-134 permanece En ejecución; su avance de hash/auditoría XLSX está en C1.776, con beta/persistencia real pendientes. TASK-135 no se habilita hasta completar las dependencias declaradas.
+- No se declara completada TASK-133, TASK-134 ni TASK-142. No se han inventado evidencias de despliegue, permisos efectivos de Drive ni aceptación institucional.
+
+### Siguiente acción elegible
+
+1. Continuar TASK-133: revisar opciones seguras para streams PDF comprimidos/FlateDecode y fortalecer el contrato de OCR/revisión sin convertir NO_ANALIZADA en una clasificación positiva.
+2. Mantener la escritura ACCOUNTING ligada a preview vigente, snapshots verificados, identidad y autorización del servidor.
+3. Tras cerrar TASK-133, continuar TASK-134 y sus pruebas de persistencia/beta.
+4. Completar TASK-142 en una iteración independiente con permisos PREVIEW/DOWNLOAD y pruebas beta reales.
+5. Reconciliar los fallos transversales Department Scope, Identity/Transport y Task-Service sin modificar sus contratos para forzar verde.
+===============================================================================

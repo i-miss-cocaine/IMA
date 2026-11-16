@@ -3706,7 +3706,7 @@
   - [ ] Reutilizar un token vencido, revocado o asociado a otra versión: el servidor rechaza la solicitud.
   - [ ] Ningún proceso de carga privado vuelve a establecer `ANYONE_WITH_LINK`.
 - **Dependencias:** F40-Task01, F40-Task03.
-- **Estado:** [ ] Pendiente
+- **Estado:** [ ] En ejecución (parcial; proxy autenticado y token efímero implementados; permisos PREVIEW y beta real pendientes)
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 6176-6207; clave TASK-143; asignación única: Secretaria -->
 
