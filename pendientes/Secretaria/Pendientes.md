@@ -5540,7 +5540,9 @@
   - [ ] Los scripts o macros dentro de archivos importados son desarmados sin interrumpir el sistema.
   - [ ] Los documentos privados no se pueden descargar mediante enlaces públicos ni manipulación de identificadores.
   - [ ] Todos los accesos a documentos sensibles quedan registrados en la bitácora de seguridad.
-- **Estado:** [ ] Pendiente
+- **Estado:** [ ] En ejecución (parcial; renderizado seguro del catálogo y equivalencias, allowlist de enlaces Drive y validación binaria contractual; antimalware/cuarentena, ACL heredadas y beta real pendientes)
+- **Avance C1.783 (2026-11-16):** se corrigió XSS almacenado en el panel de migración curricular: equivalencias, mensajes y resultados ahora se insertan con textContent mediante helper DOM; se amplió reusable-resource-xss-url-contract.test.js con payloads hostiles ejecutados como texto inerte. Accounting Import Preflight run 43791459608 SUCCESS (40/40, Node 24.22.2).
+- **Límites:** no se declara antivirus ni cuarentena real; F31-Task09 continúa pendiente y la validación de ACL/Drive heredadas requiere pruebas beta.
 
 - El catálogo docente inserta titulo, area, asignatura, tema, version y urlDrive directamente en innerHTML; manageReusableResource acepta esos valores desde payload. Aplicar escape de salida por contexto y sanitización de contenido.
 - Validar urlDrive con allowlist de dominios/esquemas HTTPS y comprobar ID/ACL del archivo Drive; rechazar javascript:, data:, URLs externas no permitidas y enlaces sin permiso.

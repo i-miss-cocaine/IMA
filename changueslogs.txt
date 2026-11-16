@@ -3997,3 +3997,8 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-16] C1.782 — TASK-142 PREVIEW/DOWNLOAD autenticados
 - Academic token HMAC de un uso ahora incluye operación PREVIEW o DOWNLOAD, requiere permisos RBAC separados y audita DOCUMENT_PREVIEWED/DOCUMENT_DOWNLOADED; UI Secretaría separa Ver/Descargar. Pruebas cubren denegación, operación inválida, replay y no-escalamiento de token.
 - Se corrigieron fixture de saltos de línea PDF y expectativa de códigos de rechazo de macros OpenXML. Accounting Import Preflight run 43791013454 SUCCESS (Node 24.22.2); Department Scope run 43791013489 continúa FAIL por resolveEmployeeDepartmentId_ ausente en ACCOUNTING.
+
+
+[2026-11-16] C1.783 — TASK-296 XSS de migración curricular
+- El panel curricular ya no inserta equivalencias, resultados ni mensajes de migración mediante innerHTML; helper textContent probado con payloads XSS. Catálogo reusable conserva renderizado DOM seguro y allowlist Drive.
+- Accounting Import Preflight run 43791459608 SUCCESS (40/40, Node 24.22.2). TASK-296 permanece parcial; TASK-143/144 no se declaran elegibles por dependencias incompletas y falta de beta Drive real.

@@ -497,3 +497,43 @@
 - No se crean rutas uploadEmployeeDocument/uploadPaymentVoucher ni almacenamiento paralelo sin evidencia de propietario.
 - Siguiente: auditar prerrequisitos TASK-143/TASK-144 declarados en el Plan Maestro y elegir un alcance ejecutable; mantener el fallo de Department Scope visible y remediarlo en el propietario ACCOUNTING, no en el test.
 ===============================================================================
+
+
+===============================================================================
+## C1.783 — IMA-EXEC-20261116-0227Z-TASK296-CURRICULAR-XSS-01 — Renderizado inerte de equivalencias y resultados de migración
+
+- Fecha: 2026-11-16 02:27 UTC.
+- Rama autorizada: NG_beta_0.0.0.1_work.
+- Rama base: NG_beta_0.0.0.1.
+- HEAD inicial: c20810cde8ebaa368de00a8cf18b6fff58a137d2.
+- Commits de implementación/prueba: 7935c1ee256b2baaae0d34dc16de594aef2caaf8 y 00581e6ab8886a342b8f004be44e19203e5f2d99.
+- HEAD final antes del checkpoint: 00581e6ab8886a342b8f004be44e19203e5f2d99.
+- Continuidad: C1.782.
+
+### Implementación TASK-296
+
+- Se detectó XSS almacenado en el panel de migración curricular: nombres/códigos de asignatura, estado de equivalencia, mensaje del resultado y modo/resumen se interpolaban en migrationReportDetails.innerHTML.
+- Se sustituyó la composición HTML dinámica por appendCurricularMigrationText_, que crea nodos DIV y asigna todos los valores mediante textContent. Se aplica tanto al listado de equivalencias como al resultado de ejecución.
+- El contador de asignaturas se normaliza a número finito no negativo antes de presentarse.
+- Se amplió reusable-resource-xss-url-contract.test.js: extrae y ejecuta el helper de DOM con payloads IMG/SVG/SCRIPT/IFRAME/javascript, verifica que se preservan como texto inerte y prohíbe asignaciones a migrationReportDetails.innerHTML.
+- Revisión de subalcance existente: el catálogo reutilizable ya usa textContent, rel=noopener noreferrer, sanitización de texto y allowlist HTTPS Drive; valida archivo existente/no enviado a papelera y rechaza sharing ANYONE/ANYONE_WITH_LINK. La suite file-binary-validation-contract cubre 84 combinaciones servicio/escenario para ACADEMIC, ACCOUNTING y USER; OpenXML rechaza contenido activo/macros. No se afirma detección antivirus completa ni cuarentena operativa.
+
+### Verificación
+
+- GitHub Actions Accounting Import Preflight Contract run 43791459608: SUCCESS, 40/40 pasos; Node.js 24.22.2. Incluye reusable-resource XSS/URL, validación binaria (84 combinaciones), OpenXML, sintaxis y Academic private document SHA-256/deduplication.
+- El run previo 43791426147 sobre commit 7935c1ee falló por un defecto en el extractor de la prueba; se corrigió en 00581e6ab8886a342b8f004be44e19203e5f2d99 y el run posterior pasó completo.
+- Department Scope run 43791426199 sobre 7935c1ee: FAILURE en accounting-vacation-medical-leave-ownership.test.js por resolveEmployeeDepartmentId_ ausente en backend/accounting-service/Code.gs; no se alteró el contrato. El bloqueo es independiente del XSS.
+- Node CLI local: NOT RUN; Node 24 se ejecutó en GitHub Actions. Beta Apps Script/Drive/Sheets: NOT RUN.
+
+### Triage de dependencias TASK-143 / TASK-144
+
+- TASK-143 (PM-01/P0) continúa sin elegibilidad para remediación completa: TASK-296 ahora está parcialmente implementada; AUD-NG-158 completada en C1.781; F31-Task09 sigue Pendiente en la auditoría Fase 31; F34-Task04 está completada en código/CI (C1.753) con beta pendiente; F39-Task02 sigue parcial mediante TASK-134; AUD-NG-127 figura en la tabla del Plan Maestro pero no se localiza su bloque en pendientes/Otros/Pendientes.md. El código actual exige AUTH_TOKEN_SECRET de al menos 32 caracteres para sesiones/interservicio, pero USER aún conserva SECRET_KEY con fallback predecible en recuperación de contraseña y DEBUG_MODE=true; no se declara satisfecha esa dependencia.
+- La inspección de código encontró el único ANYONE_WITH_LINK actual en USER.uploadNewsImage, destinado a imágenes de noticias públicas; no se encontró esa asignación en flujos Academic/Accounting privados revisados. No se ejecutó inventario de Drive real ni se revocaron ACL: faltan propietario/alcance de carpetas y entorno desplegado para verificar permisos directos/heredados.
+- TASK-144 (PM-06/P0) no se selecciona aún: F39-Task02 permanece parcial y F29-Task11/15 y F27-Task03 requieren verificación focalizada antes de considerar el cierre de integridad binaria común.
+- Próximo alcance elegible: completar los subcriterios restantes de TASK-296/F31-Task09 sin afirmar antivirus, y resolver la fuente/dependencia AUD-NG-127; después revalidar si TASK-143 puede iniciar inventario dry-run seguro. No se cambió el orden maestro ni se inventó un propietario documental.
+
+### Estado
+
+- TASK-296 permanece En ejecución parcial: XSS del catálogo docente y panel de equivalencias corregido y probado; faltan validación de ACL heredadas/actor, cobertura completa de sanitización en otros paneles, cuarentena/antimalware si se exige, y beta Drive real.
+- TASK-143 y TASK-144 permanecen Pendientes según sus prerrequisitos originales.
+===============================================================================
