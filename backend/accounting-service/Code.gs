@@ -1275,7 +1275,30 @@ function resolveEmployeeDepartmentId_(ss, expedienteId) {
   return matches.length === 1 ? String(matches[0][departmentIndex] || "").trim() : "";
 }
 
-function assertResourceOwnershipForScope_(payload, ss, expedienteId) {
+function assertResourceOwnershipForScope_(payload, ss, expedienteId, resourceId, operation) {
+  if (arguments.length >= 5) {
+    var spreadsheet = payload, scope = ss, resourceType = String(expedienteId || "").trim().toUpperCase();
+    var targetId = String(resourceId || "").trim(), action = String(operation || "").trim().toUpperCase();
+    if (!spreadsheet || !scope || (scope.valid !== true && scope.authorized !== true) ||
+        resourceType !== "EXPEDIENTE_LABORAL" || action !== "WRITE" || !targetId) {
+      return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    }
+    var employeeSheet = spreadsheet.getSheetByName("ExpedientesLaborales");
+    if (!employeeSheet) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    var values = employeeSheet.getDataRange().getValues();
+    if (!values || !values.length) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    var headers = values[0].map(function(value) { return String(value || "").trim(); });
+    var idIndex = headers.indexOf("ExpedienteID"), departmentIndex = headers.indexOf("Departamento");
+    if (idIndex < 0 || departmentIndex < 0) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    var matches = values.slice(1).filter(function(row) { return String(row[idIndex] || "").trim() === targetId; });
+    if (matches.length !== 1) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    var departmentId = String(matches[0][departmentIndex] || "").trim();
+    var departments = Array.isArray(scope.departmentIds) ? scope.departmentIds.map(function(value) { return String(value || "").trim(); }) : [];
+    if (scope.institutionWide !== true && (!departmentId || departments.indexOf(departmentId) === -1)) {
+      return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    }
+    return { authorized: true, departmentId: departmentId, institutionId: String(scope.institutionId || "") };
+  }
   return assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId);
 }
 
@@ -2086,6 +2109,176 @@ function getStaffAttendanceLogs(payload) {
 }
 
 
+function resolveAttendanceCorrectionEmployeeAccess_(payload, ss, attendanceId, requestedEmployeeId, actor) {
+  var input = payload || {}, identity = actor || getVerifiedAccountingIdentity_(input);
+  if (!identity || identity.authorized !== true) return { authorized: false, code: identity && identity.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var role = String(identity.role || "").trim().toLowerCase().replace(/\s+/g, "");
+  if (["empleado","recursoshumanos","administrador"].indexOf(role) === -1) return { authorized: false, code: "ROLE_NOT_ALLOWED" };
+  var attendanceSheet = ss && ss.getSheetByName ? ss.getSheetByName("DeduccionesAsistencia") : null;
+  if (!attendanceSheet) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  var attendanceValues = attendanceSheet.getDataRange().getValues();
+  var attendanceHeaders = ["AsistenciaID","Fecha","EmpleadoId","EmpleadoNombre","HoraEntrada","HoraSalida","MinutosTardanza","EstadoAsistencia","Observaciones"];
+  if (!attendanceValues || !attendanceValues.length ||
+      JSON.stringify(attendanceValues[0].map(function(value) { return String(value || "").trim(); })) !== JSON.stringify(attendanceHeaders)) {
+    return { authorized: false, code: "RESOURCE_SCHEMA_INVALID" };
+  }
+  var attendanceIdValue = String(attendanceId || "").trim();
+  var attendanceMatches = attendanceValues.slice(1).map(function(row, index) { return { row: row, index: index }; })
+    .filter(function(item) { return String(item.row[0] || "").trim() === attendanceIdValue; });
+  if (!attendanceIdValue || attendanceMatches.length !== 1) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  var attendance = attendanceMatches[0], employeeUserId = String(attendance.row[2] || "").trim();
+  if (!employeeUserId || (role === "empleado" && employeeUserId !== String(identity.userId || "").trim())) {
+    return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  }
+  if (role !== "empleado" && requestedEmployeeId && String(requestedEmployeeId).trim() !== employeeUserId) {
+    return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  }
+  var employeeSheet = ss.getSheetByName("ExpedientesLaborales");
+  if (!employeeSheet) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  var employeeValues = employeeSheet.getDataRange().getValues();
+  if (!employeeValues || !employeeValues.length) return { authorized: false, code: "RESOURCE_SCHEMA_INVALID" };
+  var employeeHeaders = employeeValues[0].map(function(value) { return String(value || "").trim(); });
+  var userIndex = employeeHeaders.indexOf("UserId"), expedienteIndex = employeeHeaders.indexOf("ExpedienteID");
+  var departmentIndex = employeeHeaders.indexOf("Departamento"), stateIndex = employeeHeaders.indexOf("EstadoLaboral");
+  if (userIndex < 0 || expedienteIndex < 0 || departmentIndex < 0 || stateIndex < 0) {
+    return { authorized: false, code: "RESOURCE_SCHEMA_INVALID" };
+  }
+  var employees = employeeValues.slice(1).map(function(row, index) { return { row: row, index: index }; })
+    .filter(function(item) { return String(item.row[userIndex] || "").trim() === employeeUserId; });
+  if (employees.length !== 1 || String(employees[0].row[stateIndex] || "").trim().toLowerCase() !== "activo") {
+    return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  }
+  var employee = employees[0], expedienteId = String(employee.row[expedienteIndex] || "").trim();
+  if (!expedienteId) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  if (role !== "empleado") {
+    var scope = getVerifiedAccountingDepartmentScope_(input, ss, identity);
+    if (!scope || (scope.valid !== true && scope.authorized !== true)) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+    var ownership = assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_LABORAL", expedienteId, "WRITE");
+    if (!ownership || ownership.authorized !== true) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  }
+  return { authorized: true, actor: identity, role: role, employeeId: employeeUserId, expedienteId: expedienteId,
+    departmentId: String(employee.row[departmentIndex] || "").trim(), employeeRow: employee.row.slice(),
+    attendanceSheet: attendanceSheet, attendanceRow: attendance.row.slice(), attendanceIndex: attendance.index };
+}
+
+function submitAttendanceCorrection(payload) {
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), attendanceId = String(input.asistenciaId || "").trim();
+  var access = resolveAttendanceCorrectionEmployeeAccess_(input, ss, attendanceId, input.empleadoId, actor);
+  if (!access.authorized) return { status: "error", code: access.code };
+  var reason = String(input.motivo || "").trim(), requestedTime = String(input.horaSolicitada || "").trim();
+  var originalTime = String(input.horaOriginal || "").trim();
+  var timeValid = function(value) { return /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(value); };
+  if (!reason || reason.length > 500 || !timeValid(requestedTime) || !timeValid(originalTime) || requestedTime === originalTime) {
+    return { status: "error", code: "ATTENDANCE_CORRECTION_DATA_INVALID" };
+  }
+  var evidenceUrl = String(input.evidenciaUrl || "").trim();
+  if (evidenceUrl && (!/^https:\/\//i.test(evidenceUrl) || /[\\s<>]/.test(evidenceUrl))) {
+    return { status: "error", code: "EVIDENCE_URL_INVALID" };
+  }
+  var incidentDate = String(input.fechaIncidencia || access.attendanceRow[1] || "").slice(0, 10);
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(incidentDate) ||
+      incidentDate !== String(access.attendanceRow[1] || "").slice(0, 10)) {
+    return { status: "error", code: "ATTENDANCE_CORRECTION_DATA_INVALID" };
+  }
+  var entryMatches = String(access.attendanceRow[4] || "").trim() === originalTime;
+  var exitMatches = String(access.attendanceRow[5] || "").trim() === originalTime;
+  if (entryMatches === exitMatches) return { status: "error", code: "ATTENDANCE_CORRECTION_TIME_CONFLICT" };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
+  try {
+    access = resolveAttendanceCorrectionEmployeeAccess_(input, ss, attendanceId, input.empleadoId, actor);
+    if (!access.authorized) return { status: "error", code: access.code };
+    var headers = ["CorreccionID","AsistenciaID","EmpleadoId","FechaIncidencia","HoraOriginal","HoraSolicitada","Motivo","EvidenciaUrl","EstadoAprobacion","AprobadoPor","Observaciones"];
+    var sheet = getOrCreateSheet(ss, "CorreccionesAsistencia");
+    var values = sheet.getDataRange().getValues();
+    if (!values || !values.length) { sheet.appendRow(headers); values = [headers]; }
+    if (JSON.stringify(values[0].map(function(value) { return String(value || "").trim(); })) !== JSON.stringify(headers)) {
+      return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
+    }
+    var pending = values.slice(1).filter(function(row) {
+      return String(row[1] || "").trim() === attendanceId && String(row[4] || "").trim() === originalTime &&
+        String(row[8] || "").trim().toLowerCase() === "pendiente";
+    });
+    if (pending.length) return { status: "error", code: "ATTENDANCE_CORRECTION_ALREADY_PENDING" };
+    var correctionId = "CORR-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 24);
+    if (values.slice(1).some(function(row) { return String(row[0] || "").trim() === correctionId; })) {
+      return { status: "error", code: "ATTENDANCE_CORRECTION_ID_COLLISION" };
+    }
+    sheet.appendRow([correctionId, attendanceId, access.employeeId, incidentDate, originalTime, requestedTime,
+      reason, evidenceUrl, "Pendiente", "", ""]);
+    return { status: "success", correccionId: correctionId, estadoAprobacion: "Pendiente" };
+  } catch (error) {
+    return { status: "error", code: "ATTENDANCE_CORRECTION_WRITE_FAILED" };
+  } finally { lock.releaseLock(); }
+}
+
+function reviewAttendanceCorrection(payload) {
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var role = String(actor.role || "").trim().toLowerCase().replace(/\s+/g, "");
+  if (["recursoshumanos","administrador"].indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED" };
+  var newState = String(input.nuevoEstado || "").trim();
+  if (["Aprobado","Rechazado"].indexOf(newState) === -1) return { status: "error", code: "ATTENDANCE_CORRECTION_STATE_INVALID" };
+  var correctionId = String(input.correccionId || "").trim();
+  if (!correctionId) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var headers = ["CorreccionID","AsistenciaID","EmpleadoId","FechaIncidencia","HoraOriginal","HoraSolicitada","Motivo","EvidenciaUrl","EstadoAprobacion","AprobadoPor","Observaciones"];
+    var sheet = getOrCreateSheet(ss, "CorreccionesAsistencia"), values = sheet.getDataRange().getValues();
+    if (!values || !values.length || JSON.stringify(values[0].map(function(value) { return String(value || "").trim(); })) !== JSON.stringify(headers)) {
+      return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
+    }
+    var matches = values.slice(1).map(function(row, index) { return { row: row, index: index }; })
+      .filter(function(item) { return String(item.row[0] || "").trim() === correctionId; });
+    if (matches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    var correction = matches[0], row = correction.row.slice();
+    if (String(row[8] || "").trim() !== "Pendiente") return { status: "error", code: "ATTENDANCE_CORRECTION_ALREADY_REVIEWED" };
+    var access = resolveAttendanceCorrectionEmployeeAccess_(input, ss, row[1], row[2], actor);
+    if (!access.authorized) return { status: "error", code: access.code };
+    if (String(row[3] || "").slice(0, 10) !== String(access.attendanceRow[1] || "").slice(0, 10)) {
+      return { status: "error", code: "ATTENDANCE_CORRECTION_DATA_INVALID" };
+    }
+    var attendanceBefore = access.attendanceRow.slice(), attendanceAfter = attendanceBefore.slice(), changedAttendance = false;
+    if (newState === "Aprobado") {
+      var original = String(row[4] || "").trim(), replacement = String(row[5] || "").trim();
+      var isEntry = String(attendanceBefore[4] || "").trim() === original;
+      var isExit = String(attendanceBefore[5] || "").trim() === original;
+      if (isEntry === isExit || !/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(replacement)) {
+        return { status: "error", code: "ATTENDANCE_CORRECTION_DATA_INVALID" };
+      }
+      attendanceAfter[isEntry ? 4 : 5] = replacement;
+      try {
+        access.attendanceSheet.getRange(access.attendanceIndex + 2, 1, 1, attendanceAfter.length).setValues([attendanceAfter]);
+        changedAttendance = true;
+      } catch (attendanceWriteError) {
+        return { status: "error", code: "ATTENDANCE_CORRECTION_WRITE_FAILED" };
+      }
+    }
+    row[8] = newState;
+    row[9] = actor.userId;
+    row[10] = String(input.observaciones || "").trim().slice(0, 500);
+    try {
+      sheet.getRange(correction.index + 2, 1, 1, headers.length).setValues([row]);
+    } catch (correctionWriteError) {
+      if (changedAttendance) {
+        try {
+          access.attendanceSheet.getRange(access.attendanceIndex + 2, 1, 1, attendanceBefore.length).setValues([attendanceBefore]);
+        } catch (rollbackError) {
+          return { status: "error", code: "ATTENDANCE_CORRECTION_ROLLBACK_FAILED" };
+        }
+      }
+      return { status: "error", code: "ATTENDANCE_CORRECTION_WRITE_FAILED" };
+    }
+    return { status: "success", correccionId: correctionId, estadoAprobacion: newState };
+  } catch (error) {
+    return { status: "error", code: "ATTENDANCE_CORRECTION_WRITE_FAILED" };
+  } finally { lock.releaseLock(); }
+}
+
 function getEmployeeSelfServicePortal(payload) {
   var input=payload||{},actor=getVerifiedAccountingIdentity_(input);
   if(!actor||actor.authorized!==true)return {status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
@@ -2299,11 +2492,11 @@ const API_RESPONSE_VERSION = "1.0.0";
 
 const ROLE_PERMISSIONS = {
   Auditor: ["getAccountingMigrationFileAudit"],
-  "Empleado": ["getEmployeeRecords", "getLeaveVacationRequests", "submitLeaveVacationRequest", "manageProfessionalDevelopmentPlan"],
+  "Empleado": ["getEmployeeRecords", "getLeaveVacationRequests", "submitLeaveVacationRequest", "submitAttendanceCorrection", "manageProfessionalDevelopmentPlan"],
   "Profesor": ["submitVacationRequest"],
-  "RecursosHumanos": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "recordStaffCheckIn", "recordStaffAttendance", "getStaffAttendanceLogs", "getEmployeeSelfServicePortal"],
+  "RecursosHumanos": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "recordStaffCheckIn", "recordStaffAttendance", "getStaffAttendanceLogs", "getEmployeeSelfServicePortal", "submitAttendanceCorrection", "reviewAttendanceCorrection"],
   "Director": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances"],
-  "Administrador": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances"]
+  "Administrador": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection"]
 };
 
 function accountingHasRolePermission_(actor, action) {
@@ -2457,6 +2650,8 @@ function doPost(e) {
       return respond({ status: "error", code: "REQUEST_SCHEMA_INVALID" });
     }
     var actionPayload = Object.assign({}, request.payload, { correlationId: correlationId });
+    if (request.action === "submitAttendanceCorrection") return respond(submitAttendanceCorrection(actionPayload));
+    if (request.action === "reviewAttendanceCorrection") return respond(reviewAttendanceCorrection(actionPayload));
     if (request.action === "getEmployeeSelfServicePortal") return respond(getEmployeeSelfServicePortal(actionPayload));
     if (request.action === "recordStaffCheckIn") return respond(recordStaffCheckIn(actionPayload));
     if (request.action === "recordStaffAttendance") return respond(recordStaffAttendance(actionPayload));
