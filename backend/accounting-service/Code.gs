@@ -2029,7 +2029,7 @@ function recordStaffCheckIn(payload) {
     if(today.length>1)return {status:"error",code:"RESOURCE_SCHEMA_INVALID"};
     if(type==="Entrada"){
       if(today.length)return {status:"error",code:"ATTENDANCE_ALREADY_RECORDED"};
-      var id="AST-"+String(Utilities.getUuid()).replace(/-/g,"");
+      var id="AST-"+String(Utilities.getUuid());
       if(rows.some(function(row){return String(row[0]||"")===id;}))return {status:"error",code:"ATTENDANCE_ID_COLLISION"};
       sheet.appendRow([id,date,access.employeeId,String(input.empleadoNombre||access.employeeName||access.employeeId).slice(0,180),
         time,"",0,"EnJornada",String(input.observaciones||"").slice(0,500)]);
