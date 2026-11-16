@@ -3862,7 +3862,11 @@ function createPurchaseRequest(payload) {
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var access = purchaseQuotationAccess_(input, ss, true);
     if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "ROLE_NOT_ALLOWED" };
-    var department = resolveStaffingDepartmentReference_(ss, input.departamento);
+    var department = typeof resolveStaffingDepartmentReference_ === "function"
+      ? resolveStaffingDepartmentReference_(ss, input.departamento)
+      : (access.scope.institutionWide === true && String(input.departamento || "").trim()
+        ? { resolved: true, departmentId: String(input.departamento).trim(), departmentName: String(input.departamento).trim() }
+        : { resolved: false, code: "DEPARTMENT_REFERENCE_UNAVAILABLE" });
     if (!department || department.resolved !== true) return { status: "error", code: department && department.code || "DEPARTMENT_REFERENCE_INVALID" };
     var allowedDepartments = Array.isArray(access.scope.departmentIds) ? access.scope.departmentIds.map(String) : [];
     if (access.scope.institutionWide !== true && allowedDepartments.indexOf(String(department.departmentId)) === -1) {
