@@ -2950,7 +2950,11 @@ function getStaffingNeedsPlanning(payload) {
   var employeesSheet = ss.getSheetByName("ExpedientesLaborales"), employees = employeesSheet ? employeesSheet.getDataRange().getValues() : [];
   var vacanciesSheet = ss.getSheetByName("VacantesLaborales"), vacancies = vacanciesSheet ? vacanciesSheet.getDataRange().getValues() : [];
   var activeEmployees = employees.slice(1).filter(function(row) {
-    return selectedDepartments.indexOf(String(row[4] || "").trim()) >= 0 && String(row[8] || "").trim().toLowerCase() === "activo";
+    var employeeDepartment = String(row[4] || "").trim();
+    var matchesDepartment = selectedDepartments.some(function(id) {
+      return employeeDepartment === String(id) || employeeDepartment === String(deptNames[id] || "");
+    });
+    return matchesDepartment && String(row[8] || "").trim().toLowerCase() === "activo";
   });
   var activeVacancies = vacancies.slice(1).filter(function(row) {
     return selectedDepartments.indexOf(String(row[2] || "").trim()) >= 0 &&
