@@ -3724,7 +3724,8 @@ function registerAssetsFromPurchaseReceipt(payload) {
     var requestedCount = {};
     requestedAssets.forEach(function(asset) {
       var itemId = String(asset.itemId || asset.ItemId || asset.codigoItem || "").trim();
-      if (!candidateById[itemId]) throw new Error("PURCHASE_ASSET_ITEM_NOT_ELIGIBLE");
+      var sourceItem = context.items.filter(function(item) { return item.itemId === itemId; })[0];
+      if (!sourceItem || sourceItem.clasificacionInventario !== "ActivoFijo") throw new Error("PURCHASE_ASSET_ITEM_NOT_ELIGIBLE");
       requestedCount[itemId] = (requestedCount[itemId] || 0) + 1;
     });
     var idempotent = requestedAssets.every(function(asset) {
@@ -3749,7 +3750,7 @@ function registerAssetsFromPurchaseReceipt(payload) {
           String(row[idx("NumeroSerie")] || row[4] || "") === duplicateSerial;
       })) return { status: "error", code: "ASSET_CODE_OR_SERIAL_ALREADY_EXISTS" };
     }
-    for (var key in requestedCount) if (requestedCount[key] > candidateById[key].unidadesDisponibles) {
+    for (var key in requestedCount) if (!candidateById[key] || requestedCount[key] > candidateById[key].unidadesDisponibles) {
       return { status: "error", code: "PURCHASE_ASSET_QUANTITY_EXCEEDED" };
     }
     for (var i = 0; i < requestedAssets.length; i++) {
