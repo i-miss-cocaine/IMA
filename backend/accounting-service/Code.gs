@@ -10540,7 +10540,7 @@ function generatePreventiveMaintenanceOrders(p){
     const row=new Array(23).fill("");row[0]=orderId;row[1]=new Date();row[2]=target;row[3]="Preventivo";row[4]=description;row[5]=days!==null&&days<0?"Alta":"Media";row[6]=actor.userId;row[7]=r[10]||"";row[8]=String(r[13]||"[]");row[9]=Number(r[15]||0);row[10]=0;row[11]="Programado";row[13]="Generada desde plan "+r[0];row[14]=dept;row[15]=r[19]||dept;row[19]=r[0];row[20]=cycleId;row[21]=String(r[12]||"[]");row[22]=due||"";orders.appendRow(row);orderRows.push(row);generated.push({ordenMaintId:orderId,planId:r[0],activoIdUbicacion:target,fechaProgramada:due?maintenancePlanISO_(due):null,ciclo:cycleId});
    });
   });
-  return {status:"success",generadas:generated,omitidas};
+  return {status:"success",generadas:generated,omitidas:omitted};
  }finally{lock.releaseLock();}
 }
 
