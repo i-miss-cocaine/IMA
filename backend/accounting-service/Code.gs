@@ -3942,7 +3942,13 @@ function assetDeprSheet_(ss,name,headers) {
     sheet.getRange(1,1,1,headers.length).setValues([headers]);
   }
   var values = sheet.getDataRange().getValues();
-  if (!values || !values.length || JSON.stringify(values[0].map(String)) !== JSON.stringify(headers)) throw new Error("ASSET_DEPR_SCHEMA_INVALID");
+  if (!values || !values.length) throw new Error("ASSET_DEPR_SCHEMA_INVALID");
+  var actualHeaders = values[0].map(String);
+  if (name === "MejorasCapitalizablesActivos" && JSON.stringify(actualHeaders) === JSON.stringify(headers.slice(0, -1))) {
+    sheet.getRange(1, actualHeaders.length + 1).setValue(headers[headers.length - 1]);
+    actualHeaders.push(headers[headers.length - 1]);
+  }
+  if (JSON.stringify(actualHeaders) !== JSON.stringify(headers)) throw new Error("ASSET_DEPR_SCHEMA_INVALID");
   return sheet;
 }
 function assetDeprActor_(payload) {
