@@ -2714,7 +2714,7 @@ function getPaymentVouchers(payload) {
   var input=payload||{},actor=getVerifiedAccountingIdentity_(input);
   if(!actor||actor.authorized!==true)return{status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
   var ss=SpreadsheetApp.openById(SPREADSHEET_ID),schema=ensurePaymentVoucherEvidenceSchema_(ss);
-  var role=normalizeVacationRole_(actor.role),staffRoles=["secretaria","administrador","director","subdirector","recursoshumanos"];
+  var role=String(actor.role||"").trim().toLowerCase(),staffRoles=["secretaría","secretaria","administrador","director","subdirector","recursoshumanos"];
   var requestedUser=String(input.userId||"").trim();
   if(requestedUser&&staffRoles.indexOf(role)!==-1){
     var requestedAccess=assertPaymentVoucherOwnerAccess_(input,requestedUser);
