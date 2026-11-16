@@ -2875,11 +2875,11 @@ const ROLE_PERMISSIONS = {
   "Estudiante": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "Conductor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "Monitor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
-  "RecursosHumanos": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "recordStaffCheckIn", "recordStaffAttendance", "getStaffAttendanceLogs", "getEmployeeSelfServicePortal", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus"],
-  "Director": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics"],
-  "Subdirector": ["configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment"],
-  "Contador": ["configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution"],
-  "Administrador": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics"]
+  "RecursosHumanos": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "recordStaffCheckIn", "recordStaffAttendance", "getStaffAttendanceLogs", "getEmployeeSelfServicePortal", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
+  "Director": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
+  "Subdirector": ["configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
+  "Contador": ["configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
+  "Administrador": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"]
 };
 
 function accountingHasRolePermission_(actor, action) {
@@ -3041,6 +3041,10 @@ function doPost(e) {
     if (request.action === "getPayrollConceptAssignments") return respond(getPayrollConceptAssignments(actionPayload));
     if (request.action === "setPayrollConceptAssignmentStatus") return respond(setPayrollConceptAssignmentStatus(actionPayload));
     if (request.action === "calculatePayrollPeriod") return respond(calculatePayrollPeriod(actionPayload));
+    if (request.action === "getPayrollBatchPreview") return respond(getPayrollBatchPreview(actionPayload));
+    if (request.action === "getPayrollEmployeePayConfig") return respond(getPayrollEmployeePayConfig(actionPayload));
+    if (request.action === "savePayrollEmployeePayConfig") return respond(savePayrollEmployeePayConfig(actionPayload));
+    if (request.action === "recalculatePayrollEmployees") return respond(recalculatePayrollEmployees(actionPayload));
     if (request.action === "getPayrollPeriodSummary") return respond(getPayrollPeriodSummary(actionPayload));
     if (request.action === "generatePayrollPeriod") return respond(generatePayrollPeriod(actionPayload));
     if (request.action === "calculateExtraordinaryPayroll") return respond(calculateExtraordinaryPayroll(actionPayload));
@@ -3090,6 +3094,7 @@ function doPost(e) {
   } catch (error) {
     var rawCode = String(error && error.message || "").split(":")[0].trim();
     var safeCodes = {
+      PAYROLL_BATCH_PREVIEW_FAILED: true, PAYROLL_PAYMENT_CONFIG_READ_FAILED: true, PAYROLL_PAYMENT_CONFIG_INVALID: true, PAYROLL_PAYMENT_CONFIG_WRITE_FAILED: true, PAYROLL_RECALCULATION_EMPLOYEES_INVALID: true, PAYROLL_RECALCULATION_REQUIRES_DRAFT: true, PAYROLL_RECALCULATION_EMPLOYEE_NOT_FOUND: true, PAYROLL_RECALCULATION_LOAN_ALREADY_APPLIED: true, PAYROLL_RECALCULATION_FAILED: true, PAYROLL_VARIANCE_VALUE_INVALID: true, PAYROLL_EMPLOYEE_RECALCULATION_FAILED: true, PAYROLL_BATCH_RECALCULATION_FAILED: true,
       PAYROLL_LOAN_REVIEW_NOT_AUTHORIZED: true, PAYROLL_TERMINAL_STATE: true,
       PAYROLL_PERIOD_CONFLICT: true, PAYROLL_NOT_CLOSED: true,
       PAYROLL_JOURNAL_ENTRY_UNBALANCED: true, PAYROLL_JOURNAL_ENTRY_INVALID: true,
@@ -4483,7 +4488,7 @@ function validatePayrollJournalAccountMap_(ss) {
 function recordPayrollJournalEntry_(ss,planillaId,planRows,conceptSummary,actorId){
  validatePayrollJournalAccountMap_(ss);
  const sheet=ss.getSheetByName("PlanillasNomenclatura");if(!sheet)throw new Error("RESOURCE_NOT_FOUND: PlanillasNomenclatura");
- const col=ensurePayrollJournalLinkColumn_(sheet),data=sheet.getDataRange().getValues(),matches=data.slice(1).map((r,i)=>({row:r,index:i+2})).filter(x=>String(x.row[0]||"").trim()===String(planillaId).trim());
+ const col=ensurePayrollJournalLinkColumn_(sheet),data=sheet.getDataRange().getValues(),matches=data.slice(1).map((r,i)=>({row:r,index:i+2})).filter(x=>String(x.row[0]||"").trim()===String(planillaId).trim()&&String(x.row[15]||"").trim().toUpperCase()!=="REEMPLAZADA");
  if(!matches.length||matches.length!==planRows.length)throw new Error("PAYROLL_JOURNAL_PLANILLA_CHANGED");
  const ids=[...new Set(matches.map(x=>String(x.row[col-1]||"").trim()).filter(Boolean))];if(ids.length>1)throw new Error("PAYROLL_JOURNAL_LINK_AMBIGUOUS");
  const journal=getOrCreateSheet(ss,"AsientosContables"),existing=journal.getDataRange().getValues().slice(1).filter(r=>String(r[3]||"").trim()==="Planillas"&&String(r[4]||"").trim()===String(planillaId).trim());
@@ -4493,7 +4498,6 @@ function recordPayrollJournalEntry_(ss,planillaId,planRows,conceptSummary,actorI
  const built=buildPayrollJournalLines_(planRows,conceptSummary,getPayrollLoanAppliedAmountForPlanilla_(ss,planillaId)),result=recordAccountingJournalEntry({descripcion:"Contabilización integral de planilla "+planillaId+" - salarios, retenciones y obligaciones patronales",origenModulo:"Planillas",referenciaId:planillaId,creadoPor:actorId||"SYSTEM_PAYROLL",lineas:built.lineas});
  if(!result||result.status!=="success"||!result.asientoId)throw new Error("PAYROLL_JOURNAL_POST_FAILED");matches.forEach(x=>sheet.getRange(x.index,col).setValue(result.asientoId));return {status:"success",asientoId:result.asientoId,totalDebe:built.totalDebe,totalHaber:built.totalHaber,estado:result.estado,idempotent:false};
 }
-
 function recordPayrollJournalAdjustment(payload){
  const p=payload||{},actor=getVerifiedAccountingIdentity_(p);if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
  const role=String(actor.role||"").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Z0-9]/g,"");if(!["CONTADOR","ADMINISTRADOR"].includes(role))return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
@@ -4539,8 +4543,9 @@ function updatePayrollPeriodStatus(payload) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "PlanillasNomenclatura");
   const data = sheet.getDataRange().getValues();
-  const payrollMatches = data.slice(1).filter(r => String(r[0]||"").trim() === String(planillaId).trim());
-  if (payrollMatches.length !== 1) throw new Error("Planilla no encontrada o duplicada.");
+  const payrollMatches = data.slice(1).filter(r => String(r[0]||"").trim() === String(planillaId).trim() && String(r[15]||"").trim().toUpperCase() !== "REEMPLAZADA");
+  if (!payrollMatches.length || new Set(payrollMatches.map(r=>String(r[2]||"").trim())).size!==1 || new Set(payrollMatches.map(r=>String(r[3]||"").trim())).size!==payrollMatches.length) throw new Error("Planilla no encontrada, duplicada o inconsistente.");
+  if (new Set(payrollMatches.map(r=>String(r[15]||"").trim().toUpperCase())).size!==1) throw new Error("PAYROLL_BATCH_STATE_INCONSISTENT");
   const requestedState = String(nuevoEstado).trim().toUpperCase();
   const previousState = String(payrollMatches[0][15] || "").trim().toUpperCase();
   const terminalStates = ["ANULADA","ANULADO","REVERTIDA","REVERTIDO","CANCELADA","CANCELADO"];
@@ -4565,7 +4570,7 @@ function updatePayrollPeriodStatus(payload) {
   const conceptSummary = summarizePayrollConceptDetails_(ss,planillaId);
 
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim() === String(planillaId).trim()) {
+    if (String(data[i][0]).trim() === String(planillaId).trim() && String(data[i][15]||"").trim().toUpperCase() !== "REEMPLAZADA") {
       const sBase = parseFloat(data[i][6] || 0);
       const mHE = parseFloat(data[i][8] || 0);
       const bonif = parseFloat(data[i][9] || 0);
@@ -4622,7 +4627,7 @@ function updatePayrollPeriodStatus(payload) {
     asientoRes = recordPayrollJournalEntry_(ss,planillaId,payrollMatches,conceptSummary,actor && actor.authorized ? actor.userId : "SYSTEM_PAYROLL");
   }
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]||"").trim() === String(planillaId).trim()) sheet.getRange(i + 1, 16).setValue(nuevoEstado);
+    if (String(data[i][0]||"").trim() === String(planillaId).trim() && String(data[i][15]||"").trim().toUpperCase() !== "REEMPLAZADA") sheet.getRange(i + 1, 16).setValue(nuevoEstado);
   }
 
   logStructuredEvent("ACCOUNTING", "updatePayrollPeriodStatus", "INFO", "PAYROLL_STATUS_UPDATED", `Planilla ${planillaId} actualizada a estado ${nuevoEstado}`, payload, authRole);
@@ -4639,14 +4644,14 @@ function updatePayrollPeriodStatus(payload) {
     lock.releaseLock();
   }
 }
-
 function getPayrollPeriodSummary(payload) {
-  const { periodoMes, planillaId } = payload || {};
+  const { periodoMes, planillaId, employeeId, compararConPeriodo, umbralVariacion } = payload || {};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const rows = getOrCreateSheet(ss, "PlanillasNomenclatura").getDataRange().getValues().slice(1);
 
-  let filtered = rows;
+  let filtered = rows.filter(r=>!["REEMPLAZADA","ANULADA","ANULADO","REVERTIDA","REVERTIDO","CANCELADA","CANCELADO"].includes(normalizePayrollBatchValue_(r[15])));
   if (planillaId) filtered = filtered.filter(r => String(r[0]).trim() === String(planillaId).trim());
+  if (employeeId) filtered = filtered.filter(r => String(r[3]||"").trim() === String(employeeId).trim());
   if (periodoMes) filtered = filtered.filter(r => String(r[2]).trim() === String(periodoMes).trim());
 
   let totalBruto = 0;
@@ -4657,6 +4662,7 @@ function getPayrollPeriodSummary(payload) {
   let totalPatronalINFOP = 0;
   let totalPatronal = 0;
   let totalCostoLaboralInstitucional = 0;
+  const employerConceptTotals=getPayrollEmployerConceptTotalsByEmployee_(ss,[...new Set(filtered.map(r=>String(r[0]||"").trim()))]);
 
   const mapped = filtered.map(r => {
     const sBase = parseFloat(r[6] || 0);
@@ -4676,7 +4682,7 @@ function getPayrollPeriodSummary(payload) {
     const pIHSS = parseFloat(r[16] || (Math.min(sBase, 10317.38) * 0.072));
     const pRAP = parseFloat(r[17] || (Math.max(0, sBase - 10317.38) * 0.015));
     const pINFOP = parseFloat(r[18] || (sBase * 0.01));
-    const pTot = pIHSS + pRAP + pINFOP;
+    const pTot = Math.round((pIHSS + pRAP + pINFOP + Number(employerConceptTotals[String(r[3]||"").trim()]||0))*100)/100;
     const cLaboral = parseFloat(r[19] || (dev + pTot));
 
     totalBruto += dev;
@@ -4708,8 +4714,33 @@ function getPayrollPeriodSummary(payload) {
     };
   });
 
+  let comparacion = null;
+  if (compararConPeriodo) {
+    const currentPeriod=String(periodoMes||mapped[0]&&mapped[0].periodoMes||"").trim(),priorPeriod=String(compararConPeriodo).trim();
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(currentPeriod)||!/^\d{4}-(0[1-9]|1[0-2])$/.test(priorPeriod)||currentPeriod===priorPeriod) return {status:"error",code:"PAYROLL_COMPARISON_PERIOD_INVALID",message:"Seleccione dos períodos distintos con formato AAAA-MM."};
+    const priorRows=rows.filter(r=>String(r[2]||"").trim()===priorPeriod&&!["REEMPLAZADA","ANULADA","ANULADO","REVERTIDA","REVERTIDO","CANCELADA","CANCELADO"].includes(normalizePayrollBatchValue_(r[15])));
+    const priorEmployerTotals=getPayrollEmployerConceptTotalsByEmployee_(ss,[...new Set(priorRows.map(r=>String(r[0]||"").trim()))]);
+    const priorByEmployee=Object.create(null);priorRows.forEach(r=>{const id=String(r[3]||"").trim();if(id){if(priorByEmployee[id])priorByEmployee[id].duplicate=true;else priorByEmployee[id]=r;}});
+    const threshold=Number.isFinite(Number(umbralVariacion))?Number(umbralVariacion):10,employeeVariances=[];
+    mapped.forEach(employee=>{
+      const prior=priorByEmployee[String(employee.empleadoId||"").trim()];
+      if(!prior||prior.duplicate){employeeVariances.push({empleadoId:employee.empleadoId,empleadoNombre:employee.empleadoNombre,comparacionDisponible:false,motivo:prior?"REGISTRO_ANTERIOR_AMBIGUO":"SIN_REGISTRO_ANTERIOR"});return;}
+      const priorGross=Number(prior[6]||0)+Number(prior[8]||0)+Number(prior[9]||0),priorDeductions=Number(prior[10]||0)+Number(prior[11]||0)+Number(prior[12]||0)+Number(prior[13]||0);
+      const current={salarioBase:employee.salarioBase,horasExtras:Number(filtered.find(r=>String(r[3]||"")===String(employee.empleadoId))?.[7]||0),montoHorasExtras:Number(filtered.find(r=>String(r[3]||"")===String(employee.empleadoId))?.[8]||0),bonificaciones:Number(filtered.find(r=>String(r[3]||"")===String(employee.empleadoId))?.[9]||0),totalDevengado:employee.totalDevengado,deduccionIHSS:Number(filtered.find(r=>String(r[3]||"")===String(employee.empleadoId))?.[10]||0),deduccionRAP:Number(filtered.find(r=>String(r[3]||"")===String(employee.empleadoId))?.[11]||0),deduccionISR:Number(filtered.find(r=>String(r[3]||"")===String(employee.empleadoId))?.[12]||0),otrasDeducciones:Number(filtered.find(r=>String(r[3]||"")===String(employee.empleadoId))?.[13]||0),totalDeducciones:employee.totalDeducciones,salarioNeto:employee.salarioNeto,patronalIHSS:employee.patronalIHSS,patronalRAP:employee.patronalRAP,patronalINFOP:employee.patronalINFOP,totalAportacionesPatronales:employee.totalAportacionesPatronales,costoLaboralTotal:employee.costoLaboralTotal};
+      const previous={salarioBase:Number(prior[6]||0),horasExtras:Number(prior[7]||0),montoHorasExtras:Number(prior[8]||0),bonificaciones:Number(prior[9]||0),totalDevengado:priorGross,deduccionIHSS:Number(prior[10]||0),deduccionRAP:Number(prior[11]||0),deduccionISR:Number(prior[12]||0),otrasDeducciones:Number(prior[13]||0),totalDeducciones:priorDeductions,salarioNeto:Number(prior[14]||0),patronalIHSS:Number(prior[16]||0),patronalRAP:Number(prior[17]||0),patronalINFOP:Number(prior[18]||0),totalAportacionesPatronales:Math.round((Number(prior[16]||0)+Number(prior[17]||0)+Number(prior[18]||0)+Number(priorEmployerTotals[String(employee.empleadoId||"").trim()]||0))*100)/100,costoLaboralTotal:Number(prior[19]||0)};
+      const variance=buildPayrollVarianceReport_(current,previous,threshold),causas=getPayrollVarianceCauses_(ss,employee.empleadoId,currentPeriod,priorPeriod,filtered.find(r=>String(r[3]||"")===String(employee.empleadoId)),prior);
+      employee.variacion=variance;employee.causasVariacion=causas;employee.alertaVariacion=variance.alerta;
+      employeeVariances.push({empleadoId:employee.empleadoId,empleadoNombre:employee.empleadoNombre,comparacionDisponible:true,variacion:variance,causas});
+    });
+    const priorSummary={salarioBase:0,horasExtras:0,montoHorasExtras:0,bonificaciones:0,totalDevengado:0,deduccionIHSS:0,deduccionRAP:0,deduccionISR:0,otrasDeducciones:0,totalDeducciones:0,salarioNeto:0,patronalIHSS:0,patronalRAP:0,patronalINFOP:0,totalAportacionesPatronales:0,costoLaboralTotal:0};
+    priorRows.forEach(r=>{priorSummary.salarioBase+=Number(r[6]||0);priorSummary.horasExtras+=Number(r[7]||0);priorSummary.montoHorasExtras+=Number(r[8]||0);priorSummary.bonificaciones+=Number(r[9]||0);priorSummary.totalDevengado+=Number(r[6]||0)+Number(r[8]||0)+Number(r[9]||0);priorSummary.deduccionIHSS+=Number(r[10]||0);priorSummary.deduccionRAP+=Number(r[11]||0);priorSummary.deduccionISR+=Number(r[12]||0);priorSummary.otrasDeducciones+=Number(r[13]||0);priorSummary.totalDeducciones+=Number(r[10]||0)+Number(r[11]||0)+Number(r[12]||0)+Number(r[13]||0);priorSummary.salarioNeto+=Number(r[14]||0);priorSummary.patronalIHSS+=Number(r[16]||0);priorSummary.patronalRAP+=Number(r[17]||0);priorSummary.patronalINFOP+=Number(r[18]||0);priorSummary.totalAportacionesPatronales+=Number(r[16]||0)+Number(r[17]||0)+Number(r[18]||0)+Number(priorEmployerTotals[String(r[3]||"").trim()]||0);priorSummary.costoLaboralTotal+=Number(r[19]||0);});
+    const currentSummary={salarioBase:totalBruto-totalBruto+mapped.reduce((t,e)=>t+e.salarioBase,0),horasExtras:filtered.reduce((t,r)=>t+Number(r[7]||0),0),montoHorasExtras:filtered.reduce((t,r)=>t+Number(r[8]||0),0),bonificaciones:filtered.reduce((t,r)=>t+Number(r[9]||0),0),totalDevengado:totalBruto,deduccionIHSS:filtered.reduce((t,r)=>t+Number(r[10]||0),0),deduccionRAP:filtered.reduce((t,r)=>t+Number(r[11]||0),0),deduccionISR:filtered.reduce((t,r)=>t+Number(r[12]||0),0),otrasDeducciones:filtered.reduce((t,r)=>t+Number(r[13]||0),0),totalDeducciones:totalDeducciones,salarioNeto:totalNeto,patronalIHSS:totalPatronalIHSS,patronalRAP:totalPatronalRAP,patronalINFOP:totalPatronalINFOP,totalAportacionesPatronales:totalPatronal,costoLaboralTotal:totalCostoLaboralInstitucional};
+    comparacion={periodoActual:currentPeriod,periodoAnterior:priorPeriod,umbralVariacion:threshold,resumen:buildPayrollVarianceReport_(currentSummary,priorSummary,threshold),empleados:employeeVariances,empleadosConAlerta:employeeVariances.filter(x=>x.variacion&&x.variacion.alerta).length};
+  }
+
   return {
     status: "success",
+    comparacion: comparacion,
     resumen: {
       totalEmpleados: mapped.length,
       totalBruto: parseFloat(totalBruto.toFixed(2)),
@@ -4724,7 +4755,6 @@ function getPayrollPeriodSummary(payload) {
     empleados: mapped
   };
 }
-
 function generatePayrollPeriod(payload) {
   return calculatePayrollPeriod(payload);
 }
@@ -5752,4 +5782,174 @@ function getAccountingJournalEntries(payload) {
   }));
 
   return { status: "success", data: entries };
+}
+
+function getPayrollEmployeePayConfigHeaders_(){return ["EmpleadoId","ModalidadPago","FrecuenciaPago","VigenciaInicio","VigenciaFin","Estado","ActualizadoPor","ActualizadoEn"];}
+
+function ensurePayrollEmployeePayConfigSheet_(ss){
+ const headers=getPayrollEmployeePayConfigHeaders_(),sheet=ss.getSheetByName("ConfiguracionPagoEmpleado")||getOrCreateSheet(ss,"ConfiguracionPagoEmpleado");
+ let data=sheet.getDataRange().getValues();
+ if(!data.length||!data[0]||!data[0].length){sheet.getRange(1,1,1,headers.length).setValues([headers]);data=[headers];}
+ if(data[0].length!==headers.length||headers.some((h,i)=>String(data[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))throw new Error("RESOURCE_SCHEMA_INVALID: ConfiguracionPagoEmpleado");
+ return {sheet,headers,rows:data.slice(1)};
+}
+
+function normalizePayrollBatchValue_(value){return String(value==null?"":value).trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
+
+function payrollVarianceMetric_(current,previous){
+ const c=Number(current||0),p=Number(previous||0);
+ if(!Number.isFinite(c)||!Number.isFinite(p))throw new Error("PAYROLL_VARIANCE_VALUE_INVALID");
+ const difference=Math.round((c-p)*100)/100;
+ return {actual:Math.round(c*100)/100,anterior:Math.round(p*100)/100,diferencia:difference,porcentaje:p===0?(c===0?0:null):Math.round((difference/p)*10000)/100,baseCero:p===0&&c!==0};
+}
+
+function buildPayrollVarianceReport_(current,previous,threshold){
+ const fields=["salarioBase","horasExtras","montoHorasExtras","bonificaciones","totalDevengado","deduccionIHSS","deduccionRAP","deduccionISR","otrasDeducciones","totalDeducciones","salarioNeto","patronalIHSS","patronalRAP","patronalINFOP","totalAportacionesPatronales","costoLaboralTotal"];
+ const rubros={};fields.forEach(k=>rubros[k]=payrollVarianceMetric_(current[k],previous[k]));
+ const limit=Number.isFinite(Number(threshold))?Math.max(0,Math.min(1000,Number(threshold))):10;
+ const incomePct=rubros.totalDevengado.porcentaje,deductionPct=rubros.totalDeducciones.porcentaje;
+ const alertas=[];
+ if((incomePct!==null&&Math.abs(incomePct)>limit)||rubros.totalDevengado.baseCero)alertas.push({tipo:"INGRESOS",porcentaje:incomePct,umbral:limit,nuevoImporte:rubros.totalDevengado.baseCero});
+ if((deductionPct!==null&&Math.abs(deductionPct)>limit)||rubros.totalDeducciones.baseCero)alertas.push({tipo:"DEDUCCIONES",porcentaje:deductionPct,umbral:limit,nuevoImporte:rubros.totalDeducciones.baseCero});
+ return {rubros,umbralPorcentaje:limit,alerta:alertas.length>0,alertas};
+}
+
+function getPayrollEmployeePayConfig(payload){
+ const p=payload||{},access=requirePayrollConceptManager_(p);if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
+ try{
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(p,ss,access.actor);
+  if(!scope||!scope.authorized)return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"No existe un ámbito autorizado."};
+  const config=ensurePayrollEmployeePayConfigSheet_(ss),exps=getOrCreateSheet(ss,"ExpedientesLaborales").getDataRange().getValues().slice(1);
+  const allowed=scope.institutionWide?null:(scope.departmentIds||[]).map(String);
+  const employeeId=String(p.empleadoId||"").trim();
+  const employees=exps.filter(e=>(!employeeId||String(e[0]||"").trim()===employeeId)&&(!allowed||allowed.includes(String(e[4]||"").trim())));
+  return {status:"success",configuraciones:config.rows.filter(r=>employees.some(e=>String(e[0]||"").trim()===String(r[0]||"").trim())).map(r=>({empleadoId:r[0],modalidadPago:r[1],frecuenciaPago:r[2],vigenciaInicio:r[3],vigenciaFin:r[4],estado:r[5]}))};
+ }catch(e){return {status:"error",code:"PAYROLL_PAYMENT_CONFIG_READ_FAILED",message:"No fue posible consultar la configuración de pago."};}
+}
+
+function savePayrollEmployeePayConfig(payload){
+ const p=payload||{},access=requirePayrollConceptManager_(p);if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
+ const employeeId=String(p.empleadoId||"").trim(),modality=normalizePayrollBatchValue_(p.modalidadPago),frequency=normalizePayrollBatchValue_(p.frecuenciaPago);
+ const modalities=["SALARIO_FIJO","POR_HORA","COMISION","MIXTO"],frequencies=["SEMANAL","CATORCENAL","QUINCENAL","MENSUAL"];
+ const start=p.vigenciaInicio?new Date(p.vigenciaInicio):null,end=p.vigenciaFin?new Date(p.vigenciaFin):null;
+ if(!employeeId||!modalities.includes(modality)||!frequencies.includes(frequency)||start&&isNaN(start.getTime())||end&&isNaN(end.getTime())||start&&end&&start>end)return {status:"error",code:"PAYROLL_PAYMENT_CONFIG_INVALID",message:"Empleado, modalidad, frecuencia y vigencia deben ser válidos."};
+ const lock=LockService.getScriptLock();if(!lock.tryLock(10000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La configuración está ocupada."};
+ try{
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(p,ss,access.actor);
+  if(!scope||!scope.authorized)return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"No existe un ámbito autorizado."};
+  const exps=getOrCreateSheet(ss,"ExpedientesLaborales").getDataRange().getValues().slice(1),employees=exps.filter(e=>String(e[0]||"").trim()===employeeId);
+  if(employees.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Empleado no disponible."};
+  const dept=String(employees[0][4]||"").trim(),allowed=(scope.departmentIds||[]).map(String);
+  if(scope.institutionWide!==true&&!allowed.includes(dept))return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Empleado no disponible."};
+  const data=ensurePayrollEmployeePayConfigSheet_(ss),matches=data.rows.map((r,i)=>({row:r,index:i+2})).filter(x=>String(x.row[0]||"").trim()===employeeId);
+  if(matches.length>1)return {status:"error",code:"PAYROLL_PAYMENT_CONFIG_AMBIGUOUS",message:"Hay configuraciones duplicadas para el empleado."};
+  const row=[employeeId,modality,frequency,start||"",end||"","ACTIVO",access.actor.userId,new Date()];
+  if(matches.length){data.sheet.getRange(matches[0].index,1,1,row.length).setValues([row]);}
+  else data.sheet.appendRow(row);
+  return {status:"success",empleadoId:employeeId,modalidadPago:modality,frecuenciaPago:frequency,message:"Configuración de pago guardada."};
+ }catch(e){return {status:"error",code:"PAYROLL_PAYMENT_CONFIG_SAVE_FAILED",message:"No fue posible guardar la configuración de pago."};}finally{lock.releaseLock();}
+}
+
+function getPayrollBatchPreview(payload){
+ const p=payload||{},access=requirePayrollConceptManager_(p);if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
+ const period=String(p.periodoMes||"").trim();if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(period))return {status:"error",code:"PAYROLL_PERIOD_INVALID",message:"Use un período con formato AAAA-MM."};
+ try{
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(p,ss,access.actor);
+  if(!scope||!scope.authorized)return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"No existe un ámbito autorizado."};
+  const allowed=scope.institutionWide?null:(scope.departmentIds||[]).map(String),exps=getOrCreateSheet(ss,"ExpedientesLaborales").getDataRange().getValues().slice(1),contracts=getOrCreateSheet(ss,"ContratosLaborales").getDataRange().getValues().slice(1),config=ensurePayrollEmployeePayConfigSheet_(ss).rows,planRows=getOrCreateSheet(ss,"PlanillasNomenclatura").getDataRange().getValues().slice(1);
+  const start=new Date(period+"-01T00:00:00"),end=new Date(Number(period.slice(0,4)),Number(period.slice(5,7)),0,23,59,59,999),parseDate=v=>{if(!v)return null;const d=v instanceof Date?v:new Date(v);return isNaN(d.getTime())?null:d;};
+  const active=exps.filter(e=>["ACTIVE","ACTIVO","ENPERIODOPRUEBA"].includes(normalizePayrollBatchValue_(e[8]))&&(!allowed||allowed.includes(String(e[4]||"").trim())));
+  const configByEmployee=Object.create(null);config.forEach(r=>{const id=String(r[0]||"").trim();if(id){if(configByEmployee[id])configByEmployee[id].duplicate=true;else configByEmployee[id]=r;}});
+  const groups=Object.create(null),excluded=[],included=[];const filters={departamento:String(p.departamento||"").trim(),cargo:String(p.cargo||"").trim(),tipoContrato:String(p.tipoContrato||"").trim(),modalidadPago:String(p.modalidadPago||"").trim(),frecuenciaPago:String(p.frecuenciaPago||"").trim(),search:normalizePayrollBatchValue_(p.search)};
+  active.forEach(e=>{
+   const id=String(e[0]||"").trim(),name=String(e[9]||e[3]||"Empleado"),position=String(e[3]||"Personal"),department=String(e[4]||"").trim();
+   const contractsForEmployee=contracts.filter(c=>(String(c[1]||"").trim()===id||String(c[1]||"").trim()===String(e[2]||"").trim())&&!["ANULADO","INACTIVO"].includes(normalizePayrollBatchValue_(c[7]))&&(!c[3]||parseDate(c[3])&&parseDate(c[3])<=end)&&(!c[4]||parseDate(c[4])&&parseDate(c[4])>=start));
+   if(contractsForEmployee.length!==1){excluded.push({empleadoId:id,empleadoNombre:name,motivo:contractsForEmployee.length?"CONTRATOS_SUPERPUESTOS":"SIN_CONTRATO_VIGENTE"});return;}
+   const contract=contractsForEmployee[0];if(!Number.isFinite(Number(contract[5]))||Number(contract[5])<=0){excluded.push({empleadoId:id,empleadoNombre:name,motivo:"SALARIO_INVALIDO"});return;}const cfg=configByEmployee[id],cfgValid=!!(cfg&&!cfg.duplicate&&normalizePayrollBatchValue_(cfg[5])==="ACTIVO"&&(!cfg[3]||parseDate(cfg[3])&&parseDate(cfg[3])<=end)&&(!cfg[4]||parseDate(cfg[4])&&parseDate(cfg[4])>=start));
+   const modality=cfgValid?String(cfg[1]):"NO_CONFIGURADA",frequency=cfgValid?String(cfg[2]):"MENSUAL",contractType=String(contract[2]||"NO_DEFINIDO");
+   const candidate={empleadoId:id,empleadoNombre:name,puesto:position,departamento:department,tipoContrato:contractType,modalidadPago:modality,frecuenciaPago:frequency,pendienteValidacion:!cfgValid};
+   if(filters.departamento&&department!==filters.departamento||filters.cargo&&position!==filters.cargo||filters.tipoContrato&&contractType!==filters.tipoContrato||filters.modalidadPago&&modality!==filters.modalidadPago||filters.frecuenciaPago&&frequency!==filters.frecuenciaPago||filters.search&&!normalizePayrollBatchValue_(name+" "+position+" "+id).includes(filters.search))return;
+   included.push(candidate);
+   const key=[department,position,contractType,modality,frequency].join("|");
+   if(!groups[key])groups[key]={departamento:department,cargo:position,tipoContrato:contractType,modalidadPago:modality,frecuenciaPago:frequency,empleados:[],empleadoIds:[],pendientesValidacion:0};
+   groups[key].empleados.push(candidate);groups[key].empleadoIds.push(id);if(!cfgValid)groups[key].pendientesValidacion++;
+  });
+  const periodRows=planRows.filter(r=>String(r[2]||"").trim()===period&&!["REEMPLAZADA","ANULADA","ANULADO","REVERTIDA","REVERTIDO","CANCELADA","CANCELADO"].includes(normalizePayrollBatchValue_(r[15])));
+  const planIds=[...new Set(periodRows.map(r=>String(r[0]||"").trim()).filter(Boolean))];
+  const processed=new Set(periodRows.map(r=>String(r[3]||"").trim()));included.forEach(e=>e.procesado=processed.has(e.empleadoId));
+  const groupList=Object.keys(groups).sort().map(k=>{const g=groups[k];g.procesados=g.empleadoIds.filter(id=>processed.has(id)).length;g.pendientes=g.empleadoIds.length-g.procesados;g.employeeIdsPendientes=g.empleadoIds.filter(id=>!processed.has(id));return g;});
+  return {status:"success",periodoMes:period,planillaId:planIds.length===1?planIds[0]:null,planillaAmbigua:planIds.length>1,contadores:{incluidos:included.length,procesadosCorrectamente:included.filter(e=>processed.has(e.empleadoId)).length,excluidosPorIncidencias:excluded.length,pendientesValidacion:included.filter(e=>e.pendienteValidacion&&!processed.has(e.empleadoId)).length,pendientesCalculo:included.filter(e=>!processed.has(e.empleadoId)).length},incidencias:excluded,grupos:groupList,empleados:included,umbralVariacion:10};
+ }catch(e){return {status:"error",code:"PAYROLL_BATCH_PREVIEW_FAILED",message:"No fue posible preparar la segmentación de planilla."};}
+}
+
+function preparePayrollEmployeeRecalculation_(ss,planillaId,period,employeeIds,payload){
+ const ids=[...new Set((employeeIds||[]).map(x=>String(x||"").trim()).filter(Boolean))];
+ if(!ids.length||ids.length!==(employeeIds||[]).length)return {status:"error",code:"PAYROLL_RECALCULATION_EMPLOYEES_INVALID"};
+ const actor=getVerifiedAccountingIdentity_(payload||{});if(!actor||!actor.authorized)return {status:"error",code:"VERIFIED_IDENTITY_REQUIRED"};
+ const role=normalizePayrollRole_(actor.role);if(!["RECURSOSHUMANOS","ADMINISTRADOR","CONTADOR","CONTABILIDAD"].includes(role))return {status:"error",code:"ROLE_NOT_ALLOWED"};
+ const scope=getVerifiedAccountingDepartmentScope_(payload||{},ss,actor);if(!scope||!scope.authorized)return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED"};
+ const plan=getOrCreateSheet(ss,"PlanillasNomenclatura"),data=plan.getDataRange().getValues();
+ if(!data.length||!isValidPayrollPlanHeaders_(data[0]))return {status:"error",code:"RESOURCE_SCHEMA_INVALID"};
+ const rows=data.slice(1).map((r,i)=>({row:r,index:i+2})).filter(x=>String(x.row[0]||"").trim()===String(planillaId).trim()&&String(x.row[2]||"").trim()===String(period).trim()&&String(x.row[15]||"").trim().toUpperCase()!=="REEMPLAZADA");
+ if(!rows.length||rows.some(x=>normalizePayrollBatchValue_(x.row[15])!=="CALCULADA"))return {status:"error",code:"PAYROLL_RECALCULATION_REQUIRES_DRAFT",message:"Solo se pueden recalcular colaboradores de una planilla aún no aprobada."};
+ const exps=getOrCreateSheet(ss,"ExpedientesLaborales").getDataRange().getValues().slice(1);
+ const selected=rows.filter(x=>ids.includes(String(x.row[3]||"").trim()));
+ if(selected.length!==ids.length||ids.some(id=>selected.filter(x=>String(x.row[3]||"").trim()===id).length!==1))return {status:"error",code:"PAYROLL_RECALCULATION_EMPLOYEE_NOT_FOUND"};
+ const employees=ids.map(id=>{const matches=exps.filter(e=>String(e[0]||"").trim()===id);if(matches.length!==1)throw new Error("PAYROLL_RECALCULATION_EMPLOYEE_NOT_FOUND");const dept=String(matches[0][4]||"").trim();if(scope.institutionWide!==true&&!(scope.departmentIds||[]).map(String).includes(dept))throw new Error("RESOURCE_NOT_FOUND");return matches[0];});
+ const ledger=getPayrollLoanLedger_(ss),loanOwnerIds=new Set(ids.concat(employees.map(e=>String(e[2]||"").trim()).filter(Boolean))),loanRows=ledger.rows.filter(r=>String(r[2]||"").trim()===String(planillaId).trim()&&loanOwnerIds.has(String(r[4]||"").trim()));
+ const applied=loanRows.filter(r=>String(r[9]||"")==="APLICADO"),reversed=new Set(ledger.rows.filter(r=>String(r[9]||"")==="REVERSADO").map(r=>String(r[12]||"")));
+ if(applied.some(r=>!reversed.has(String(r[0]||""))))return {status:"error",code:"PAYROLL_RECALCULATION_LOAN_ALREADY_APPLIED",message:"La amortización ya fue aplicada; use un ajuste compensatorio en lugar de recalcular."};
+ const cancelEvents=loanRows.filter(r=>String(r[9]||"")==="CALCULADO"&&!ledger.rows.some(x=>String(x[9]||"")==="CANCELADO"&&String(x[12]||"")===String(r[0]||""))).map(r=>["PLM-"+Utilities.getUuid(),r[1],r[2],r[3],r[4],r[5],r[6],r[6],r[8],"CANCELADO",new Date(),actor.userId,r[0],"Recalculo controlado del colaborador"]);
+ const expIds=new Set(ids),userIds=new Set(employees.map(e=>String(e[2]||"").trim()).filter(Boolean)),ownerIds=new Set(ids.concat([...userIds]));
+ const capture=(name,predicate)=>{const sh=ss.getSheetByName(name);if(!sh)return [];const values=sh.getDataRange().getValues();return values.slice(1).map((row,i)=>({row,index:i+2})).filter(x=>predicate(x.row)).map(x=>({row:x.row.slice(),index:x.index}));};
+ const snapshot={planillaId:String(planillaId),ownerIds,loanRows:loanRows.filter(r=>String(r[9]||"")==="CALCULADO"&&!ledger.rows.some(x=>String(x[9]||"")==="CANCELADO"&&String(x[12]||"")===String(r[0]||""))).map(r=>r.slice()),planRows:selected.map(x=>({row:x.row.slice(),index:x.index})),detailRows:capture("DetalleConceptosPlanilla",r=>String(r[1]||"").trim()===String(planillaId).trim()&&ids.includes(String(r[3]||"").trim())),overtimeRows:capture("AprobacionHorasExtras",r=>(expIds.has(String(r[1]||"").trim())||userIds.has(String(r[1]||"").trim()))&&String(r[9]||"").trim()===String(planillaId).trim()),attendanceRows:capture("DeduccionesAsistencia",r=>(expIds.has(String(r[2]||"").trim())||userIds.has(String(r[2]||"").trim()))&&String(r[8]||"").includes("[PROCESADA_NOMINA_"+planillaId+"]")),vacationRows:capture("SolicitudesVacaciones",r=>(expIds.has(String(r[1]||"").trim())||userIds.has(String(r[1]||"").trim()))&&String(r[8]||"").includes("[PROCESADA_NOMINA_"+planillaId+"]")),incapacityRows:capture("IncapacidadesMedicas",r=>(expIds.has(String(r[1]||"").trim())||userIds.has(String(r[1]||"").trim()))&&String(r[8]||"").includes("[PROCESADA_NOMINA_"+planillaId+"]"))};
+ try {
+ const resetMarkers=(sheetName,idColumn,obsColumn)=>{const sh=ss.getSheetByName(sheetName);if(!sh)return;const values=sh.getDataRange().getValues();for(let i=1;i<values.length;i++){const row=values[i],owner=String(row[idColumn]||"").trim(),obs=String(row[obsColumn]||"");if(!expIds.has(owner)&&!userIds.has(owner))continue;const marker="[PROCESADA_NOMINA_"+planillaId+"]";if(obs.includes(marker))sh.getRange(i+1,obsColumn+1).setValue(obs.replace(marker,"").trim());}};
+ const overtime=ss.getSheetByName("AprobacionHorasExtras");if(overtime){const values=overtime.getDataRange().getValues();for(let i=1;i<values.length;i++){const r=values[i],owner=String(r[1]||"").trim();if((expIds.has(owner)||userIds.has(owner))&&String(r[9]||"").trim()===String(planillaId).trim()){overtime.getRange(i+1,10).setValue("");overtime.getRange(i+1,11).setValue("");}}}
+ resetMarkers("DeduccionesAsistencia",2,8);resetMarkers("SolicitudesVacaciones",1,8);resetMarkers("IncapacidadesMedicas",1,8);
+ selected.forEach(x=>plan.getRange(x.index,16).setValue("REEMPLAZADA"));
+ const details=ss.getSheetByName("DetalleConceptosPlanilla");if(details){const values=details.getDataRange().getValues();for(let i=1;i<values.length;i++)if(String(values[i][1]||"").trim()===String(planillaId).trim()&&ids.includes(String(values[i][3]||"").trim()))details.getRange(i+1,20).setValue("CANCELADO");}
+ if(cancelEvents.length)appendPayrollLoanLedgerEvents_(ss,cancelEvents);
+ return {status:"success",reemplazados:ids.length,snapshot:snapshot,actorId:actor.userId};
+ } catch(error) { try{rollbackPayrollEmployeeRecalculation_(ss,snapshot,actor.userId);}catch(rollbackError){return {status:"error",code:"PAYROLL_RECALCULATION_ROLLBACK_FAILED",message:"No fue posible restaurar la planilla tras el error."};}return {status:"error",code:"PAYROLL_RECALCULATION_PREPARE_FAILED",message:"No fue posible preparar el recálculo; los datos anteriores fueron restaurados."}; }
+}
+
+function rollbackPayrollEmployeeRecalculation_(ss,snapshot,actorId){
+ if(!snapshot)return;
+ const restore=(name,items)=>{const sh=ss.getSheetByName(name);if(!sh)return;(items||[]).forEach(x=>sh.getRange(x.index,1,1,x.row.length).setValues([x.row]));};
+ restore("PlanillasNomenclatura",snapshot.planRows);restore("DetalleConceptosPlanilla",snapshot.detailRows);restore("AprobacionHorasExtras",snapshot.overtimeRows);restore("DeduccionesAsistencia",snapshot.attendanceRows);restore("SolicitudesVacaciones",snapshot.vacationRows);restore("IncapacidadesMedicas",snapshot.incapacityRows);
+ const ledger=getPayrollLoanLedger_(ss),originalIds=new Set(snapshot.loanRows.map(r=>String(r[0]||""))),cancelled=new Set(ledger.rows.filter(r=>String(r[9]||"")==="CANCELADO").map(r=>String(r[12]||"")));
+ const fresh=ledger.rows.filter(r=>String(r[2]||"").trim()===snapshot.planillaId&&snapshot.ownerIds.has(String(r[4]||"").trim())&&String(r[9]||"")==="CALCULADO"&&!originalIds.has(String(r[0]||"")));
+ const cancelFresh=fresh.filter(r=>!cancelled.has(String(r[0]||""))).map(r=>["PLM-"+Utilities.getUuid(),r[1],r[2],r[3],r[4],r[5],r[6],r[6],r[8],"CANCELADO",new Date(),String(actorId||"SYSTEM_PAYROLL"),r[0],"Rollback de recálculo fallido"]);
+ const reissue=snapshot.loanRows.filter(r=>cancelled.has(String(r[0]||""))).map(r=>["PLM-"+Utilities.getUuid(),r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8],"CALCULADO",new Date(),String(actorId||"SYSTEM_PAYROLL"),"","Restauración de amortización por rollback"]);
+ if(cancelFresh.length)appendPayrollLoanLedgerEvents_(ss,cancelFresh);if(reissue.length)appendPayrollLoanLedgerEvents_(ss,reissue);
+}
+
+function recalculatePayrollEmployees(payload){
+ const p=payload||{},ids=Array.isArray(p.employeeIds)?p.employeeIds:[p.empleadoId].filter(Boolean);
+ if(!String(p.planillaId||"").trim()||!String(p.periodoMes||"").trim()||!ids.length)return {status:"error",code:"PAYROLL_RECALCULATION_INVALID",message:"Planilla, período y colaboradores son obligatorios."};
+ return calculatePayrollPeriod({periodoMes:p.periodoMes,planillaId:p.planillaId,recalculateEmployeeIds:ids,employeeIds:ids,sessionToken:p.sessionToken,authToken:p.authToken,token:p.token,identity:p.identity});
+}
+
+function getPayrollEmployerConceptTotalsByEmployee_(ss,planillaIds){
+ const sheet=ss.getSheetByName("DetalleConceptosPlanilla"),totals=Object.create(null);if(!sheet)return totals;
+ const headers=getPayrollConceptDetailHeaders_(),data=sheet.getDataRange().getValues();
+ if(!data.length||!data[0]||data[0].length!==headers.length||headers.some((h,i)=>String(data[0][i]||"").trim().toUpperCase()!==h.toUpperCase()))throw new Error("RESOURCE_SCHEMA_INVALID: DetalleConceptosPlanilla");
+ const ids=new Set((Array.isArray(planillaIds)?planillaIds:[planillaIds]).map(x=>String(x||"").trim()).filter(Boolean));
+ data.slice(1).forEach(r=>{if(!ids.has(String(r[1]||"").trim())||String(r[19]||"").trim().toUpperCase()==="CANCELADO"||payrollConceptPhase_(r[6])!==3)return;const employee=String(r[3]||"").trim(),amount=Number(r[10]||0);if(!employee||!Number.isFinite(amount)||amount<0)throw new Error("PAYROLL_EMPLOYER_CONCEPT_INVALID");totals[employee]=Math.round(((totals[employee]||0)+amount)*100)/100;});
+ return totals;
+}
+
+function getPayrollVarianceCauses_(ss,employeeId,currentPeriod,previousPeriod,currentRow,previousRow){
+ const causes=[],id=String(employeeId||"").trim(),period=String(currentPeriod||"").trim(),prior=String(previousPeriod||"").trim();
+ if(Number(currentRow[8]||0)>Number(previousRow[8]||0))causes.push({codigo:"HORAS_EXTRAS",descripcion:"Aumento de horas extras",monto:Number(currentRow[8]||0)-Number(previousRow[8]||0)});
+ const ledgerSheet=ss.getSheetByName("AmortizacionPrestamosNomina");if(ledgerSheet){const employeeRows=ss.getSheetByName("ExpedientesLaborales"),employee=employeeRows?employeeRows.getDataRange().getValues().slice(1).find(x=>String(x[0]||"").trim()===id):null,owners=new Set([id,String(employee&&employee[2]||"").trim()].filter(Boolean)),rows=ledgerSheet.getDataRange().getValues().slice(1),current=rows.filter(r=>String(r[3]||"").trim()===period&&owners.has(String(r[4]||"").trim())&&["CALCULADO","APLICADO"].includes(String(r[9]||""))),previous=rows.filter(r=>String(r[3]||"").trim()===prior&&owners.has(String(r[4]||"").trim())&&["CALCULADO","APLICADO"].includes(String(r[9]||"")));const a=Math.round(current.reduce((t,r)=>t+Number(r[5]||0),0)*100)/100,b=Math.round(previous.reduce((t,r)=>t+Number(r[5]||0),0)*100)/100;if(a!==b)causes.push({codigo:"AMORTIZACION_PRESTAMO",descripcion:"Cambio en amortización de préstamos",monto:a-b});}
+ const contracts=ss.getSheetByName("ContratosLaborales");
+ if(contracts){
+  const rows=contracts.getDataRange().getValues().slice(1),salaryFor=month=>{const start=new Date(month+"-01T00:00:00"),end=new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0,23,59,59,999),matches=rows.filter(r=>(String(r[1]||"").trim()===id||String(r[1]||"").trim()===String(currentRow[3]||""))&&!["ANULADO","INACTIVO"].includes(normalizePayrollBatchValue_(r[7]))&&(!r[3]||new Date(r[3])<=end)&&(!r[4]||new Date(r[4])>=start));return matches.length===1?Number(matches[0][5]||0):null;};
+  const currentSalary=salaryFor(period),priorSalary=salaryFor(prior);
+  if(currentSalary!==null&&priorSalary!==null&&currentSalary!==priorSalary)causes.push({codigo:"CAMBIO_SALARIO_CONTRACTUAL",descripcion:"Cambio del salario base contractual vigente",monto:Math.round((currentSalary-priorSalary)*100)/100});
+ }
+ const attendance=ss.getSheetByName("DeduccionesAsistencia");if(attendance){const rows=attendance.getDataRange().getValues().slice(1),count=rows.filter(r=>(String(r[2]||"").trim()===id||String(r[2]||"").trim()===String(currentRow[3]||""))&&r[1]&&String((r[1] instanceof Date||Object.prototype.toString.call(r[1])==="[object Date]"?r[1].getFullYear()+"-"+String(r[1].getMonth()+1).padStart(2,"0"):r[1])).slice(0,7)===period&&["AUSENTE","INJUSTIFICADA","AUSENCIA INJUSTIFICADA"].includes(normalizePayrollBatchValue_(r[7]))).length;if(count)causes.push({codigo:"AUSENCIAS",descripcion:"Se registraron ausencias en el período",cantidad:count});}
+ return causes;
 }
