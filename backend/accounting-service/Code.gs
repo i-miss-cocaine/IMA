@@ -3397,46 +3397,46 @@ function getWorkShiftsAndSubstitutionsHistory(payload) {
 // TAREA RH-08: Implementar la planificación de necesidades de personal
 
 function uploadEmployeeDocument(payload) {
-  const { expedienteId, categoriaDoc, tituloDocumento, fileData, fileName, observaciones, authRole } = payload || {};
-  if (!expedienteId || !tituloDocumento) throw new Error("expedienteId y tituloDocumento son requeridos.");
-
-  let archivoUrl = "";
-  if (fileData && fileName) {
-    try {
-      const folder = getOrCreateFolderNews(getParentDriveFolder(), "Documentos_Laborales");
-      const mimeType = fileData.split(',')[0].match(/:(.*?);/)[1];
-      const base64Data = fileData.split(',')[1];
-      const file = folder.createFile(Utilities.newBlob(Utilities.base64Decode(base64Data), mimeType, fileName));
-      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      archivoUrl = `https://lh3.googleusercontent.com/d/${file.getId()}`;
-    } catch (e) {
-      logDebug("Error subida archivo laboral:", e.message);
+  var input=payload||{},actor=getVerifiedAccountingIdentity_(input);
+  if(!actor||actor.authorized!==true)return{status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
+  var permission=validateRolePermission(actor,"uploadEmployeeDocument");
+  if(!permission.authorized)return{status:"error",code:permission.code};
+  var expedienteId=String(input.expedienteId||"").trim(),title=String(input.tituloDocumento||"").trim();
+  if(!expedienteId||!title)return{status:"error",code:"EMPLOYEE_DOCUMENT_INPUT_INVALID"};
+  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),access=assertEmployeeExpedienteScopeAccess_(input,ss,expedienteId);
+  if(!access||access.authorized!==true)return{status:"error",code:access&&access.code==="VERIFIED_IDENTITY_REQUIRED"?"VERIFIED_IDENTITY_REQUIRED":"RESOURCE_SCOPE_DENIED"};
+  var lock=LockService.getScriptLock();
+  if(!lock.tryLock(5000))return{status:"error",code:"CONCURRENT_UPDATE_RETRY"};
+  var createdFile=null;
+  try{
+    var headers=["DocumentoID","ExpedienteID","CategoriaDoc","TituloDocumento","ArchivoUrl","FechaCarga","CargadoPor","EstadoVisibilidad","Observaciones"];
+    var sheet=ss.getSheetByName("DocumentosLaborales");
+    if(!sheet){sheet=getOrCreateSheet(ss,"DocumentosLaborales");sheet.appendRow(headers);}
+    var values=sheet.getDataRange().getValues();
+    if(!values||!values.length||JSON.stringify(values[0].map(function(v){return String(v||"").trim();}))!==JSON.stringify(headers))return{status:"error",code:"RESOURCE_SCHEMA_INVALID"};
+    var fileUrl="";
+    if(input.fileData||input.fileName){
+      var data=String(input.fileData||""),fileName=String(input.fileName||"documento.pdf").trim();
+      var match=data.match(/^data:(application\/pdf|image\/png|image\/jpeg);base64,([A-Za-z0-9+/=]+)$/);
+      if(!match||!fileName||fileName.length>180)return{status:"error",code:"EMPLOYEE_DOCUMENT_FILE_INVALID"};
+      var bytes=Utilities.base64Decode(match[2]);
+      if(!bytes||!bytes.length||bytes.length>10*1024*1024)return{status:"error",code:"EMPLOYEE_DOCUMENT_FILE_INVALID"};
+      var folder=getOrCreateFolderNews(getParentDriveFolder(),"Documentos_Laborales");
+      if(folder.setSharing)folder.setSharing(DriveApp.Access.PRIVATE,DriveApp.Permission.NONE);
+      createdFile=folder.createFile(Utilities.newBlob(bytes,match[1],fileName));
+      createdFile.setSharing(DriveApp.Access.PRIVATE,DriveApp.Permission.NONE);
+      if(createdFile.getSharingAccess&&createdFile.getSharingAccess()!==DriveApp.Access.PRIVATE)throw new Error("EMPLOYEE_DOCUMENT_PRIVACY_ENFORCEMENT_FAILED");
+      fileUrl="https://drive.google.com/file/d/"+createdFile.getId()+"/view";
     }
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "DocumentosLaborales");
-  const now = new Date();
-  const docId = "DOC-LAB-" + now.getTime();
-
-  sheet.appendRow([
-    docId,
-    String(expedienteId).trim(),
-    categoriaDoc || "Contrato",
-    tituloDocumento,
-    archivoUrl || "https://newgeneration.edu.hn/documento-privado.pdf",
-    now,
-    authRole || "RecursosHumanos",
-    "PrivadoEmpleado",
-    observaciones || ""
-  ]);
-
-  return {
-    status: "success",
-    documentoId: docId,
-    archivoUrl: archivoUrl,
-    message: "Documento laboral privado cargado exitosamente."
-  };
+    var documentId="DOC-LAB-"+String(Utilities.getUuid()).replace(/[^A-Za-z0-9]/g,"").slice(0,24);
+    if(!documentId||values.slice(1).some(function(row){return String(row[0]||"").trim()===documentId;}))throw new Error("EMPLOYEE_DOCUMENT_ID_COLLISION");
+    sheet.appendRow([documentId,expedienteId,String(input.categoriaDoc||"Contrato").trim().slice(0,80),title.slice(0,180),
+      fileUrl,new Date(),String(actor.userId||""),"PrivadoEmpleado",String(input.observaciones||"").slice(0,500)]);
+    return{status:"success",documentoId:documentId,archivoUrl:fileUrl,message:"Documento laboral almacenado con acceso privado."};
+  }catch(error){
+    if(createdFile&&createdFile.setTrashed){try{createdFile.setTrashed(true);}catch(ignored){}}
+    return{status:"error",code:String(error&&error.message||"EMPLOYEE_DOCUMENT_WRITE_FAILED")};
+  }finally{lock.releaseLock();}
 }
 
 function getParentDriveFolder() {
