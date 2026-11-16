@@ -3279,7 +3279,7 @@ function adjudicatePurchaseQuotations(payload) {
   if (!access.authorized) return { status: "error", code: access.code };
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
-  var orderSheet, awardSheet, quoteSheet, request, createdOrders = [], createdAwardRow = 0, quoteUpdates = [];
+  var orderSheet, awardSheet, quoteSheet, request, createdOrders = [], createdAwardRow = 0, createdAwardId = "", quoteUpdates = [];
   try {
     var actor = getVerifiedAccountingIdentity_(input);
     if (!actor || actor.authorized !== true || String(actor.userId) !== String(access.actor.userId) ||
@@ -3382,10 +3382,10 @@ function adjudicatePurchaseQuotations(payload) {
       createdOrders.push(orderSheet.getLastRow());
       orderIds.push({ ordenCompraId: orderId, cotizacionId: quoteId, proveedorId: group.supplierId, montoTotal: group.amount });
     });
-    var awardId = "ACTA-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 24);
+    createdAwardId = "ACTA-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 24);
     var snapshot = { cotizaciones: snapshotQuotes, detalleCotizaciones: snapshotDetails };
     createdAwardRow = awardSheet.getLastRow() + 1;
-    awardSheet.appendRow([awardId, request.solicitudId, now, JSON.stringify(responsible), String(input.dictamen).trim(),
+    awardSheet.appendRow([createdAwardId, request.solicitudId, now, JSON.stringify(responsible), String(input.dictamen).trim(),
       String(input.justificacion).trim(), totalAward, JSON.stringify(awardLines), JSON.stringify(rejected),
       JSON.stringify(snapshot), "Aprobada", actor.userId, key, JSON.stringify(orderIds)]);
     quoteSheet = quoteSheetLocal;
@@ -3399,10 +3399,18 @@ function adjudicatePurchaseQuotations(payload) {
       quoteSheet.getRange(rowIndex + 1, 10).setValue("AdjudicadaParcial");
     });
     request.sheet.getRange(request.rowIndex, 10).setValue("Adjudicada");
-    return { status: "success", actaId: awardId, ordenes: orderIds, montoAdjudicado: totalAward };
+    return { status: "success", actaId: createdAwardId, ordenes: orderIds, montoAdjudicado: totalAward };
   } catch (error) {
     createdOrders.forEach(function(row) { try { orderSheet.getRange(row, 1, 1, PURCHASE_ORDER_HEADERS_.length).clearContent(); } catch (ignored) {} });
-    if (createdAwardRow && awardSheet) try { awardSheet.getRange(createdAwardRow, 1, 1, PURCHASE_AWARD_HEADERS_.length).clearContent(); } catch (ignored2) {}
+    if (createdAwardRow && awardSheet) {
+      try { awardSheet.getRange(createdAwardRow, 1, 1, PURCHASE_AWARD_HEADERS_.length).clearContent(); } catch (ignored2) {}
+      try {
+        var awardRowsAfterFailure = awardSheet.getDataRange().getValues();
+        awardRowsAfterFailure.forEach(function(row, index) {
+          if (String(row[0] || "") === createdAwardId) awardSheet.getRange(index + 1, 1, 1, PURCHASE_AWARD_HEADERS_.length).clearContent();
+        });
+      } catch (ignoredAwardScan) {}
+    }
     quoteUpdates.forEach(function(item) { try { quoteSheet.getRange(item.row, 10).setValue(item.state); } catch (ignored3) {} });
     return { status: "error", code: String(error && error.message || "PURCHASE_AWARD_WRITE_FAILED") };
   } finally { lock.releaseLock(); }
