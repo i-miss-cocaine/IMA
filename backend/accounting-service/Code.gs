@@ -2882,10 +2882,10 @@ const ROLE_PERMISSIONS = {
   "Conductor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "Monitor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "RecursosHumanos": [ "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "recordStaffCheckIn", "recordStaffAttendance", "getStaffAttendanceLogs", "getEmployeeSelfServicePortal", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
-  "Director": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization"],
-  "Subdirector": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization"],
+  "Director": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization", "getTransportEfficiencyMetrics"],
+  "Subdirector": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization", "getTransportEfficiencyMetrics"],
   "Contador": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport"],
-  "Administrador": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization"],
+  "Administrador": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization", "getTransportEfficiencyMetrics"],
   "Almacenista": ["getCatalogCategories", "getCatalogUnits", "getCatalogItems", "exportCatalogItems", "getInventoryKardex", "getInventoryTransfers", "getMaterialRequisitions", "getInventoryReplenishmentSuggestions", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "transferInventoryStock", "confirmTransferReceipt", "createMaterialRequisition", "manageMaterialRequisition", "deliverMaterialRequisition", "manageInventoryReplenishmentPolicy", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder"],
   "Bodeguero": ["getCatalogCategories", "getCatalogUnits", "getCatalogItems", "exportCatalogItems", "getInventoryKardex", "getInventoryTransfers", "getMaterialRequisitions", "getInventoryReplenishmentSuggestions", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "transferInventoryStock", "confirmTransferReceipt", "createMaterialRequisition", "manageMaterialRequisition", "deliverMaterialRequisition", "manageInventoryReplenishmentPolicy", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder"],
   "Encargado de Bodega": ["getCatalogCategories", "getCatalogUnits", "getCatalogItems", "exportCatalogItems", "getInventoryKardex", "getInventoryTransfers", "getMaterialRequisitions", "getInventoryReplenishmentSuggestions", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "transferInventoryStock", "confirmTransferReceipt", "createMaterialRequisition", "manageMaterialRequisition", "deliverMaterialRequisition", "manageInventoryReplenishmentPolicy", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder"]
@@ -4700,6 +4700,7 @@ function doPost(e) {
     if (request.action === "getRouteOptimizationProposals") return respond(getRouteOptimizationProposals(actionPayload));
     if (request.action === "approveRouteStopsOptimization") return respond(approveRouteStopsOptimization(actionPayload));
     if (request.action === "rejectRouteStopsOptimization") return respond(rejectRouteStopsOptimization(actionPayload));
+    if (request.action === "getTransportEfficiencyMetrics") return respond(getTransportEfficiencyMetrics(actionPayload));
     if (request.action === "getTransportRoutes") return respond(getTransportRoutes(actionPayload));
     if (request.action === "getTransportAssignments") return respond(getTransportAssignments(actionPayload));
     if (request.action === "getTripPassengerManifest") return respond(getTripPassengerManifest(actionPayload));
@@ -9350,4 +9351,288 @@ function rejectRouteStopsOptimization(payload){
   const old=item.r.slice();try{sh.getRange(item.n,12).setValue("RECHAZADA");sh.getRange(item.n,13).setValue(actor.userId);sh.getRange(item.n,14).setValue(new Date());sh.getRange(item.n,15).setValue(reason);return {status:"success",propuestaId:id,estado:"RECHAZADA",resueltoPor:actor.userId};}
   catch(e){sh.getRange(item.n,1,1,old.length).setValues([old]);throw e;}
  }finally{lock.releaseLock();}
+}
+
+// Authorized, aggregate transport operations metrics.
+function transportMetricsDateKey_(value) {
+  if (!value) return "";
+  if (value instanceof Date && isFinite(value.getTime())) {
+    return String(value.getFullYear()) + "-" +
+      String(value.getMonth() + 1).padStart(2, "0") + "-" +
+      String(value.getDate()).padStart(2, "0");
+  }
+  const raw = String(value).trim();
+  const candidate = raw.slice(0, 10);
+  if (candidate.length === 10 && candidate[4] === "-" && candidate[7] === "-" &&
+      candidate.replace(/[0-9-]/g, "") === "") return candidate;
+  const parsed = new Date(raw);
+  if (!isFinite(parsed.getTime())) return "";
+  return String(parsed.getFullYear()) + "-" +
+    String(parsed.getMonth() + 1).padStart(2, "0") + "-" +
+    String(parsed.getDate()).padStart(2, "0");
+}
+
+function transportMetricsTimeMinutes_(value) {
+  if (value instanceof Date && isFinite(value.getTime())) {
+    return value.getHours() * 60 + value.getMinutes() + value.getSeconds() / 60;
+  }
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+  const normalized = raw.toUpperCase().replace(/\./g, "").replace(/\s+/g, " ").trim();
+  const tokens = normalized.split(" ");
+  const timeParts = tokens.shift().split(":");
+  if (timeParts.length < 2 || timeParts.length > 3 ||
+      !timeParts.every(function(part) { return /^\d+$/.test(part); })) return null;
+  let hour = Number(timeParts[0]);
+  const minute = Number(timeParts[1]);
+  const second = Number(timeParts[2] || 0);
+  const suffix = tokens.join("").replace(/\s/g, "");
+  if (!Number.isInteger(hour) || !Number.isInteger(minute) || !Number.isInteger(second) ||
+      minute < 0 || minute > 59 || second < 0 || second > 59) return null;
+  if (suffix) {
+    if (hour < 1 || hour > 12) return null;
+    if (suffix === "AM" || suffix === "A") hour = hour === 12 ? 0 : hour;
+    else if (suffix === "PM" || suffix === "P") hour = hour === 12 ? 12 : hour + 12;
+    else return null;
+  } else if (hour < 0 || hour > 23) return null;
+  return hour * 60 + minute + second / 60;
+}
+
+function getTransportEfficiencyMetrics(payload) {
+  const data = payload || {};
+  let ss;
+  try {
+    ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    // Rechazar identidades no autorizadas antes de tomar el lock global.
+    const initialScope = resolveTransportAccessScope_(data, ss);
+    if (!initialScope.authorized) {
+      transportAuditDenied_("getTransportEfficiencyMetrics", data, initialScope, null);
+      return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "Se requiere una identidad verificada." };
+    }
+    if (!initialScope.management || ["Administrador", "Director", "Subdirector"].indexOf(initialScope.role) === -1) {
+      transportAuditDenied_("getTransportEfficiencyMetrics", data, initialScope, null);
+      return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", message: "La analítica agregada está reservada a Dirección." };
+    }
+  } catch (error) {
+    return { status: "error", code: "TRANSPORT_METRICS_READ_FAILED", message: String(error && error.message || error) };
+  }
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) {
+    return { status: "error", code: "LOCK_TIMEOUT", message: "No fue posible obtener una lectura consistente. Reintente." };
+  }
+
+  try {
+    // Revalidar identidad/rol dentro del lock para evitar TOCTOU durante la espera.
+    const scope = resolveTransportAccessScope_(data, ss);
+    if (!scope.authorized) {
+      transportAuditDenied_("getTransportEfficiencyMetrics", data, scope, null);
+      return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "La identidad dejó de ser válida." };
+    }
+    if (!scope.management || ["Administrador", "Director", "Subdirector"].indexOf(scope.role) === -1) {
+      transportAuditDenied_("getTransportEfficiencyMetrics", data, scope, null);
+      return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", message: "La analítica agregada está reservada a Dirección." };
+    }
+
+    const from = data.fechaDesde ? transportMetricsDateKey_(data.fechaDesde) : "";
+    const to = data.fechaHasta ? transportMetricsDateKey_(data.fechaHasta) : "";
+    if ((data.fechaDesde && !from) || (data.fechaHasta && !to) || (from && to && from > to)) {
+      return { status: "error", code: "INVALID_DATE_RANGE", message: "El rango de fechas no es válido." };
+    }
+    const requestedRoute = String(data.rutaId || "").trim();
+    const requestedJourney = String(data.jornada || "").trim().toLowerCase();
+
+    const routeRows = transportRows_(ss, "TransporteRutas");
+    const vehicleRows = transportRows_(ss, "TransporteVehiculos");
+    const assignmentRows = transportRows_(ss, "TransporteAsignaciones");
+    const tripRows = transportRows_(ss, "TransporteViajes");
+    const attendanceRows = transportRows_(ss, "TransporteAsistenciaViajes");
+
+    const routes = Object.create(null);
+    routeRows.forEach(function(row) {
+      const id = String(row[0] || "").trim();
+      if (id) routes[id] = row;
+    });
+    const capacityByUnit = Object.create(null);
+    vehicleRows.forEach(function(row) {
+      const unit = String(row[1] || "").trim();
+      const capacity = Number(row[5]);
+      if (unit && isFinite(capacity) && capacity > 0) capacityByUnit[unit] = capacity;
+    });
+
+    const activeAssignmentStates = ["active", "activa"];
+    const assignedByGroup = Object.create(null);
+    assignmentRows.forEach(function(row) {
+      const routeId = String(row[1] || "").trim();
+      const studentId = String(row[2] || "").trim();
+      const state = String(row[5] || "").trim().toLowerCase();
+      const route = routes[routeId] || [];
+      const journey = String(row[7] || route[10] || "SIN_JORNADA").trim().toLowerCase();
+      if (!routeId || !studentId || activeAssignmentStates.indexOf(state) === -1) return;
+      const key = routeId + "|" + journey;
+      if (!assignedByGroup[key]) assignedByGroup[key] = [];
+      if (assignedByGroup[key].indexOf(studentId) === -1) assignedByGroup[key].push(studentId);
+    });
+
+    const boardedByTrip = Object.create(null);
+    attendanceRows.forEach(function(row) {
+      const tripId = String(row[1] || "").trim();
+      const studentId = String(row[2] || "").trim();
+      const boardingTime = row[4];
+      const state = String(row[6] || "").trim().toUpperCase();
+      if (!tripId || !studentId || !boardingTime || ["A_BORDO", "DESCENDIDO"].indexOf(state) === -1) return;
+      if (!boardedByTrip[tripId]) boardedByTrip[tripId] = [];
+      if (boardedByTrip[tripId].indexOf(studentId) === -1) boardedByTrip[tripId].push(studentId);
+    });
+
+    const groups = Object.create(null);
+    let totalTrips = 0;
+    let punctualTrips = 0;
+    let onTimeTrips = 0;
+    let durationTotal = 0;
+    let durationTrips = 0;
+    let occupancyTotal = 0;
+    let occupancyTrips = 0;
+
+    tripRows.forEach(function(trip) {
+      const tripId = String(trip[0] || "").trim();
+      const routeId = String(trip[1] || "").trim();
+      const route = routes[routeId] || [];
+      const dateKey = transportMetricsDateKey_(trip[5]);
+      const journey = String(trip[6] || route[10] || "SIN_JORNADA").trim();
+      const journeyKey = journey.toLowerCase();
+      const status = String(trip[9] || "").trim().toLowerCase();
+      if (!tripId || !routeId || !dateKey ||
+          (from && dateKey < from) || (to && dateKey > to) ||
+          ["cancelado", "cancelada", "anulado", "anulada", "cancelled"].indexOf(status) !== -1 ||
+          (requestedRoute && routeId !== requestedRoute) ||
+          (requestedJourney && journeyKey !== requestedJourney)) return;
+
+      const key = routeId + "|" + journeyKey;
+      if (!groups[key]) {
+        const unitCode = String(route[2] || trip[2] || "").trim();
+        const routeCapacity = Number(route[4]);
+        const capacity = capacityByUnit[unitCode] ||
+          (isFinite(routeCapacity) && routeCapacity > 0 ? routeCapacity : 0);
+        groups[key] = {
+          rutaId: routeId,
+          nombreRuta: String(route[1] || routeId),
+          unidadCodigo: unitCode,
+          jornada: journey,
+          capacidadPasajeros: capacity,
+          viajes: 0,
+          ocupacionTotalPct: 0,
+          ocupacionViajes: 0,
+          abordajesReales: 0,
+          ocupacionesEstimadas: 0,
+          sobrecapacidadDetectada: false,
+          puntualidadEvaluados: 0,
+          puntualidadATiempo: 0,
+          duracionTotalMinutos: 0,
+          duracionEvaluados: 0
+        };
+      }
+      const group = groups[key];
+      group.viajes++;
+      totalTrips++;
+
+      if (group.capacidadPasajeros > 0) {
+        const actualBoardings = boardedByTrip[tripId];
+        const hasBoardingEvidence = !!(actualBoardings && actualBoardings.length);
+        const occupiedSeats = hasBoardingEvidence
+          ? actualBoardings.length
+          : ((assignedByGroup[key] || []).length);
+        const tripOccupancyPct = occupiedSeats / group.capacidadPasajeros * 100;
+        group.ocupacionTotalPct += tripOccupancyPct;
+        if (tripOccupancyPct > 100) group.sobrecapacidadDetectada = true;
+        group.ocupacionViajes++;
+        occupancyTotal += occupiedSeats / group.capacidadPasajeros * 100;
+        occupancyTrips++;
+        if (hasBoardingEvidence) group.abordajesReales++;
+        else group.ocupacionesEstimadas++;
+      }
+
+      const plannedStart = transportMetricsTimeMinutes_(route[8]);
+      const actualStart = transportMetricsTimeMinutes_(trip[7]);
+      if (plannedStart !== null && actualStart !== null) {
+        group.puntualidadEvaluados++;
+        punctualTrips++;
+        if (actualStart <= plannedStart) {
+          group.puntualidadATiempo++;
+          onTimeTrips++;
+        }
+      }
+
+      const endTime = transportMetricsTimeMinutes_(trip[8]);
+      if (actualStart !== null && endTime !== null) {
+        let duration = endTime - actualStart;
+        if (duration < 0) duration += 24 * 60;
+        if (duration > 0 && duration <= 24 * 60) {
+          group.duracionTotalMinutos += duration;
+          group.duracionEvaluados++;
+          durationTotal += duration;
+          durationTrips++;
+        }
+      }
+    });
+
+    const routeMetrics = Object.keys(groups).map(function(key) {
+      const group = groups[key];
+      const occupancyEvaluated = group.ocupacionViajes > 0;
+      const punctualityEvaluated = group.puntualidadEvaluados > 0;
+      const durationEvaluated = group.duracionEvaluados > 0;
+      return {
+        rutaId: group.rutaId,
+        nombreRuta: group.nombreRuta,
+        unidadCodigo: group.unidadCodigo,
+        jornada: group.jornada,
+        capacidadPasajeros: group.capacidadPasajeros || null,
+        viajes: group.viajes,
+        ocupacionPromedioPct: occupancyEvaluated ? Math.round(group.ocupacionTotalPct / group.ocupacionViajes * 100) / 100 : null,
+        abordajesReales: group.abordajesReales,
+        ocupacionesEstimadas: group.ocupacionesEstimadas,
+        sobrecapacidadDetectada: occupancyEvaluated && group.sobrecapacidadDetectada,
+        puntualidadPct: punctualityEvaluated ? Math.round(group.puntualidadATiempo / group.puntualidadEvaluados * 10000) / 100 : null,
+        viajesPuntualidadEvaluados: group.puntualidadEvaluados,
+        duracionPromedioMinutos: durationEvaluated ? Math.round(group.duracionTotalMinutos / group.duracionEvaluados * 100) / 100 : null,
+        viajesDuracionEvaluados: group.duracionEvaluados
+      };
+    }).sort(function(a, b) {
+      return a.nombreRuta.localeCompare(b.nombreRuta) || a.jornada.localeCompare(b.jornada);
+    });
+
+    return {
+      status: "success",
+      filtros: { fechaDesde: from, fechaHasta: to, rutaId: requestedRoute, jornada: data.jornada || "" },
+      resumen: {
+        viajesAnalizados: totalTrips,
+        ocupacionPromedioPct: occupancyTrips ? Math.round(occupancyTotal / occupancyTrips * 100) / 100 : null,
+        viajesConOcupacion: occupancyTrips,
+        puntualidadPct: punctualTrips ? Math.round(onTimeTrips / punctualTrips * 10000) / 100 : null,
+        viajesPuntualidadEvaluados: punctualTrips,
+        duracionPromedioMinutos: durationTrips ? Math.round(durationTotal / durationTrips * 100) / 100 : null,
+        viajesDuracionEvaluados: durationTrips
+      },
+      rutas: routeMetrics,
+      indicadoresNoDisponibles: {
+        costoOperativoPorEstudiante: {
+          estado: "SIN_DATOS",
+          motivo: "No existe una bitácora de combustible ni un registro de costos operativos vinculado a viajes o vehículos."
+        },
+        demandaGeograficaSinCobertura: {
+          estado: "SIN_DATOS",
+          motivo: "No existe un registro de solicitudes de transporte georreferenciadas ni una regla institucional de cobertura configurada."
+        }
+      },
+      definiciones: {
+        ocupacion: "Promedio de pasajeros abordados por capacidad vehicular; cuando falta bitácora de abordaje del viaje se usa la asignación activa como estimación y se informa por separado.",
+        puntualidad: "Un viaje es puntual si su hora real de inicio no supera la hora de inicio programada; no se aplica tolerancia no configurada.",
+        duracion: "Promedio de minutos entre HoraInicio y HoraFin de viajes con ambas horas válidas."
+      }
+    };
+  } catch (error) {
+    return { status: "error", code: "TRANSPORT_METRICS_READ_FAILED", message: String(error && error.message || error) };
+  } finally {
+    lock.releaseLock();
+  }
 }
