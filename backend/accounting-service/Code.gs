@@ -2882,10 +2882,10 @@ const ROLE_PERMISSIONS = {
   "Conductor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "Monitor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "RecursosHumanos": [ "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "recordStaffCheckIn", "recordStaffAttendance", "getStaffAttendanceLogs", "getEmployeeSelfServicePortal", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees"],
-  "Director": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt"],
-  "Subdirector": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt"],
-  "Contador": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt"],
-  "Administrador": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt"],
+  "Director": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport"],
+  "Subdirector": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport"],
+  "Contador": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport"],
+  "Administrador": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport"],
   "Almacenista": ["getCatalogCategories", "getCatalogUnits", "getCatalogItems", "exportCatalogItems", "getInventoryKardex", "getInventoryTransfers", "getMaterialRequisitions", "getInventoryReplenishmentSuggestions", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "transferInventoryStock", "confirmTransferReceipt", "createMaterialRequisition", "manageMaterialRequisition", "deliverMaterialRequisition", "manageInventoryReplenishmentPolicy", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder"],
   "Bodeguero": ["getCatalogCategories", "getCatalogUnits", "getCatalogItems", "exportCatalogItems", "getInventoryKardex", "getInventoryTransfers", "getMaterialRequisitions", "getInventoryReplenishmentSuggestions", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "transferInventoryStock", "confirmTransferReceipt", "createMaterialRequisition", "manageMaterialRequisition", "deliverMaterialRequisition", "manageInventoryReplenishmentPolicy", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder"],
   "Encargado de Bodega": ["getCatalogCategories", "getCatalogUnits", "getCatalogItems", "exportCatalogItems", "getInventoryKardex", "getInventoryTransfers", "getMaterialRequisitions", "getInventoryReplenishmentSuggestions", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "transferInventoryStock", "confirmTransferReceipt", "createMaterialRequisition", "manageMaterialRequisition", "deliverMaterialRequisition", "manageInventoryReplenishmentPolicy", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder"]
@@ -4690,6 +4690,12 @@ function doPost(e) {
     if (request.action === "returnMaterialToInventory") return respond(returnMaterialToInventory(actionPayload));
     if (request.action === "recognizeAssignedMaterialConsumption") return respond(recognizeAssignedMaterialConsumption(actionPayload));
     if (request.action === "manageMaintenanceOrder") return respond(manageMaintenanceOrder(actionPayload));
+    if (request.action === "manageServiceTariff") return respond(manageServiceTariff(actionPayload));
+    if (request.action === "getServiceTariffs") return respond(getServiceTariffs(actionPayload));
+    if (request.action === "manageTransportTariff") return respond(manageTransportTariff(actionPayload));
+    if (request.action === "generateTransportMonthlyCharges") return respond(generateTransportMonthlyCharges(actionPayload));
+    if (request.action === "cancelStudentTransportAssignment") return respond(cancelStudentTransportAssignment(actionPayload));
+    if (request.action === "assignStudentTransport") return respond(assignStudentTransport(actionPayload));
     if (request.action === "getTransportRoutes") return respond(getTransportRoutes(actionPayload));
     if (request.action === "getTransportAssignments") return respond(getTransportAssignments(actionPayload));
     if (request.action === "getTripPassengerManifest") return respond(getTripPassengerManifest(actionPayload));
@@ -4861,6 +4867,41 @@ function doPost(e) {
       MAINTENANCE_PART_DUPLICATE: true,
       MAINTENANCE_MOVEMENT_IDEMPOTENCY_CONFLICT: true,
       MAINTENANCE_PART_COST_INVALID: true,
+      MONTHLY_CHARGE_SCHEMA_INVALID: true,
+      MONTHLY_CHARGE_PERIOD_INVALID: true,
+      TRANSPORT_ASSIGNMENT_SCHEMA_INVALID: true,
+      TRANSPORT_ASSIGNMENT_SCHEMA_CONFLICT: true,
+      TRANSPORT_TARIFF_SCHEMA_CONFLICT: true,
+      TRANSPORT_BILLING_ROLE_NOT_ALLOWED: true,
+      TRANSPORT_BILLING_MODE_INVALID: true,
+      TRANSPORT_BILLING_YEAR_INVALID: true,
+      TRANSPORT_BILLING_CONCEPT_AMBIGUOUS: true,
+      TRANSPORT_BILLING_CONCEPT_INACTIVE: true,
+      SERVICE_TARIFF_SCHEMA_CONFLICT: true,
+      SERVICE_CONCEPT_AMBIGUOUS: true,
+      SERVICE_CONCEPT_INACTIVE: true,
+      SERVICE_TARIFF_PERIOD_INVALID: true,
+      SERVICE_TARIFF_INPUT_INVALID: true,
+      SERVICE_TARIFF_ROUTE_REQUIRED: true,
+      SERVICE_TARIFF_START_DATE_INVALID: true,
+      SERVICE_TARIFF_END_DATE_INVALID: true,
+      SERVICE_TARIFF_DATE_RANGE_INVALID: true,
+      SERVICE_TARIFF_CONCEPT_NOT_FOUND: true,
+      SERVICE_TARIFF_AMBIGUOUS: true,
+      TRANSPORT_TARIFF_AMBIGUOUS: true,
+      TRANSPORT_TARIFF_AMOUNT_INVALID: true,
+      TRANSPORT_TARIFF_DATE_INVALID: true,
+      TRANSPORT_TARIFF_INPUT_INVALID: true,
+      ROUTE_NOT_FOUND: true,
+      TRANSPORT_CHARGE_DEDUPE_AMBIGUOUS: true,
+      TRANSPORT_CHARGE_ADJUSTMENT_AMBIGUOUS: true,
+      TRANSPORT_ASSIGNMENT_ID_REQUIRED: true,
+      TRANSPORT_ASSIGNMENT_NOT_FOUND: true,
+      TRANSPORT_ASSIGNMENT_NOT_ACTIVE: true,
+      TRANSPORT_CANCELLATION_DATE_INVALID: true,
+      TRANSPORT_CANCELLATION_BEFORE_START: true,
+      TRANSPORT_SERVICE_START_INVALID: true,
+      TRANSPORT_VEHICLE_SCHEMA_INVALID: true,
     };
     var safeCode = Object.prototype.hasOwnProperty.call(safeCodes, rawCode) ? rawCode : "INTERNAL_ERROR";
     return respond({ status: "error", code: safeCode,
@@ -8848,4 +8889,313 @@ function inventoryResolveMaintenanceDepartment_(ss,p,assetRef,actor,existingRow)
  center=center||scoped.department.departmentName||scoped.department.departmentId;
  if(!center)throw new Error("MAINTENANCE_COST_CENTER_REQUIRED");
  return {departmentId:scoped.department.departmentId,departmentName:scoped.department.departmentName||scoped.department.departmentId,centroCosto:center,ubicacionOrigen:String(p.ubicacionOrigen||(existingRow&&existingRow[18])||"Bodega General").trim()};
+}
+
+// Restored monthly transport billing and service tariff engine.
+function monthlyChargeHeaderMap_(headers, required) {
+  const map = {};
+  (headers || []).forEach((value, index) => { map[String(value || "").trim().toLowerCase()] = index; });
+  required.forEach(name => { if (map[name.toLowerCase()] === undefined) throw new Error("MONTHLY_CHARGE_SCHEMA_INVALID:" + name); });
+  return map;
+}
+
+function normalizeMonthlyChargeMonth_(value) {
+  const raw = String(value == null ? "" : value).trim();
+  const parts = raw.split(/[-/]/), numeric = parts[parts.length - 1];
+  if (/^\d+$/.test(numeric) && (parts.length === 1 || (parts.length === 2 && parts[0].length === 4))) { const month = Number(numeric); if (month >= 1 && month <= 12) return String(month).padStart(2, "0"); }
+  const normalized = raw.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\./g, "").trim();
+  const months = { enero:1, ene:1, febrero:2, feb:2, marzo:3, mar:3, abril:4, abr:4, mayo:5, may:5, junio:6, jun:6, julio:7, jul:7, agosto:8, ago:8, septiembre:9, setiembre:9, sep:9, sept:9, octubre:10, oct:10, noviembre:11, nov:11, diciembre:12, dic:12 };
+  if (!months[normalized]) throw new Error("MONTHLY_CHARGE_PERIOD_INVALID");
+  return String(months[normalized]).padStart(2, "0");
+}
+
+function transportEnsureBillingSchema_(ss){
+ const assignments=getOrCreateSheet(ss,"TransporteAsignaciones"),headers=["AsignacionTranspID","RutaID","EstudianteUserId","ParadaNombre","HorarioPlan","Estado","FechaAsignacion","Jornada","DiasSemanaJSON","Observaciones","FechaInicioServicio","FechaFinServicio","ModalidadServicio","FechaCancelacion","TarifaMensualAplicada","ConceptoTransporteID"],a=assignments.getDataRange().getValues();
+ if(!a.length)throw new Error("TRANSPORT_ASSIGNMENT_SCHEMA_INVALID");
+ headers.forEach((h,i)=>{const v=String(a[0][i]||"").trim();if(v&&v!==h)throw new Error("TRANSPORT_ASSIGNMENT_SCHEMA_CONFLICT:"+v);if(!v)assignments.getRange(1,i+1).setValue(h);});
+ const tariffs=getOrCreateSheet(ss,"TransporteTarifas"),th=["TarifaID","RutaID","Modalidad","ConceptoID","MontoMensual","FechaVigenciaInicio","FechaVigenciaFin","Estado","ActualizadoPor","FechaActualizacion"],t=tariffs.getDataRange().getValues();
+ if(!t.length||!t[0].some(v=>String(v||"").trim()))tariffs.getRange(1,1,1,th.length).setValues([th]);else if(th.some((h,i)=>String(t[0][i]||"").trim()!==h))throw new Error("TRANSPORT_TARIFF_SCHEMA_CONFLICT");
+ const concepts=getOrCreateSheet(ss,"ConceptosCobro"),charges=getOrCreateSheet(ss,"CargosEstudiante"),serviceTariffs=serviceEnsureTariffsSheet_(ss),ch=charges.getDataRange().getValues()[0]||[];
+ monthlyChargeHeaderMap_(ch,["CargoID","Fecha","UserId","Concepto","MontoBase","Descuento","MontoFinal","Estado","FechaVencimiento","Observaciones","ClaveUnicaDedupe"]);
+ return {assignments:assignments,tariffs:tariffs,concepts:concepts,serviceTariffs:serviceTariffs,charges:charges};
+}
+
+function transportBillingActor_(p){const actor=getVerifiedAccountingIdentity_(p||{});if(!actor||actor.authorized!==true)throw new Error(actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED");const role=String(actor.role||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/[^A-Z0-9]/g,"");if(["ADMINISTRADOR","DIRECTOR","SUBDIRECTOR","CONTADOR"].indexOf(role)===-1)throw new Error("TRANSPORT_BILLING_ROLE_NOT_ALLOWED");return actor;}
+
+function transportNormalizeMode_(v){const s=String(v||"COMPLETA").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/[^A-Z]/g,"");if(["COMPLETA","IDAIVUELTA","FULL","FULLROUNDTRIP"].indexOf(s)!==-1)return "COMPLETA";if(["MEDIA","MEDIATARIFA","HALF","IDA","VUELTA"].indexOf(s)!==-1)return "MEDIA";throw new Error("TRANSPORT_BILLING_MODE_INVALID");}
+
+function transportParseDate_(v){if(v===undefined||v===null||v==="")return null;let d;if(v instanceof Date){if(!Number.isFinite(v.getTime()))return null;d=v;}else{const s=String(v).trim(),m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);d=m?new Date(Number(m[1]),Number(m[2])-1,Number(m[3])):new Date(s);}return Number.isFinite(d.getTime())?new Date(d.getFullYear(),d.getMonth(),d.getDate()):null;}
+
+function transportMonthWindow_(y,m){const year=Number(y),month=Number(normalizeMonthlyChargeMonth_(m));if(!Number.isInteger(year)||year<2000||year>2200)throw new Error("TRANSPORT_BILLING_YEAR_INVALID");const start=new Date(year,month-1,1),end=new Date(year,month,0);return {year:String(year),month:String(month).padStart(2,"0"),start:start,end:end,days:end.getDate(),dueDate:year+"-"+String(month).padStart(2,"0")+"-"+String(end.getDate()).padStart(2,"0")};}
+
+function transportActiveDays_(start,end,w){const a=transportParseDate_(start),b=transportParseDate_(end)||w.end;if(!a||!b)return 0;const from=Math.max(Date.UTC(a.getFullYear(),a.getMonth(),a.getDate()),Date.UTC(w.start.getFullYear(),w.start.getMonth(),w.start.getDate())),to=Math.min(Date.UTC(b.getFullYear(),b.getMonth(),b.getDate()),Date.UTC(w.end.getFullYear(),w.end.getMonth(),w.end.getDate()));return to<from?0:Math.floor((to-from)/86400000)+1;}
+
+function transportEnsureConcept_(ss){const sh=getOrCreateSheet(ss,"ConceptosCobro"),data=sh.getDataRange().getValues(),matches=data.slice(1).filter(r=>String(r[2]||"").trim().toLowerCase()==="transporte escolar");if(matches.length>1)throw new Error("TRANSPORT_BILLING_CONCEPT_AMBIGUOUS");if(matches.length){if(String(matches[0][6]||"Activo").toLowerCase()!=="activo")throw new Error("TRANSPORT_BILLING_CONCEPT_INACTIVE");return {id:String(matches[0][0]),name:String(matches[0][2])};}const row=new Array(Math.max(8,(data[0]||[]).length)).fill("");row[0]="CPT-TRN-SCHOOL";row[1]=new Date();row[2]="Transporte escolar";row[3]=0;row[4]="Todos";row[5]="Mensual";row[6]="Activo";row[7]="Concepto base; importe definido por ruta y modalidad.";if(row.length>=13){row[8]="Exento";row[9]=0;row[10]="EDUC-01";row[11]=new Date().toISOString().slice(0,10);row[12]="FALSE";}sh.appendRow(row);return {id:row[0],name:row[2]};}
+
+function serviceEnsureTariffsSheet_(ss){
+ const sh=getOrCreateSheet(ss,"ServiciosTarifas"),headers=["TarifaServicioID","Servicio","Modalidad","RutaID","Periodo","Monto","FechaVigenciaInicio","FechaVigenciaFin","DescuentoHermanosPct","DescuentoMaximoPct","ProrrateoAlta","ProrrateoBaja","ConceptoID","Estado","ActualizadoPor","FechaActualizacion"],data=sh.getDataRange().getValues();
+ if(!data.length||!data[0].some(v=>String(v||"").trim()))sh.getRange(1,1,1,headers.length).setValues([headers]);else if(headers.some((h,i)=>String(data[0][i]||"").trim()!==h))throw new Error("SERVICE_TARIFF_SCHEMA_CONFLICT");
+ return sh;
+}
+
+function serviceEnsureConcept_(ss,service){
+ if(String(service).toUpperCase()==="TRANSPORTE")return transportEnsureConcept_(ss);
+ const sh=getOrCreateSheet(ss,"ConceptosCobro"),rows=sh.getDataRange().getValues(),name="Servicio: "+String(service).trim(),matches=rows.slice(1).filter(r=>String(r[2]||"").trim().toLowerCase()===name.toLowerCase());
+ if(matches.length>1)throw new Error("SERVICE_CONCEPT_AMBIGUOUS:"+service);
+ if(matches.length){if(String(matches[0][6]||"Activo").toLowerCase()!=="activo")throw new Error("SERVICE_CONCEPT_INACTIVE:"+service);return {id:String(matches[0][0]),name:String(matches[0][2])};}
+ const row=new Array(Math.max(8,(rows[0]||[]).length)).fill("");row[0]="CPT-SVC-"+Utilities.getUuid();row[1]=new Date();row[2]=name;row[3]=0;row[4]="Todos";row[5]="Mensual";row[6]="Activo";row[7]="Concepto base para tarifas del catálogo de servicios.";sh.appendRow(row);return {id:row[0],name:name};
+}
+
+function serviceNormalizePeriod_(value){const p=String(value||"MENSUAL").trim().toUpperCase();if(["MENSUAL","DIARIO","ANUAL","EVENTO","POR_PERIODO"].indexOf(p)===-1)throw new Error("SERVICE_TARIFF_PERIOD_INVALID");return p;}
+
+function manageServiceTariffLocked_(ss,p,actor){
+ const service=String(p.servicio||"").trim().toUpperCase(),mode=service==="TRANSPORTE"?transportNormalizeMode_(p.modalidadServicio||p.modalidad):String(p.modalidad||"GENERAL").trim().toUpperCase(),routeId=String(p.rutaId||"").trim(),period=serviceNormalizePeriod_(p.periodo),amount=Number(p.monto),start=transportParseDate_(p.fechaVigenciaInicio)||transportParseDate_(new Date()),end=transportParseDate_(p.fechaVigenciaFin),siblingPct=Number(p.descuentoHermanosPct||0),maxPct=Number(p.descuentoMaximoPct===undefined?100:p.descuentoMaximoPct),prorateStart=p.prorrateoAlta!==false&&String(p.prorrateoAlta).toLowerCase()!=="false",prorateEnd=p.prorrateoBaja!==false&&String(p.prorrateoBaja).toLowerCase()!=="false";
+ if(!service||service.length>80||!Number.isFinite(amount)||amount<=0||!Number.isFinite(siblingPct)||siblingPct<0||siblingPct>100||!Number.isFinite(maxPct)||maxPct<0||maxPct>100)throw new Error("SERVICE_TARIFF_INPUT_INVALID");
+ if(service==="TRANSPORTE"&&!routeId)throw new Error("SERVICE_TARIFF_ROUTE_REQUIRED");
+ if(p.fechaVigenciaInicio&&!transportParseDate_(p.fechaVigenciaInicio))throw new Error("SERVICE_TARIFF_START_DATE_INVALID");
+ if(p.fechaVigenciaFin&&!end)throw new Error("SERVICE_TARIFF_END_DATE_INVALID");
+ if(end&&end.getTime()<start.getTime())throw new Error("SERVICE_TARIFF_DATE_RANGE_INVALID");
+ if(p.conceptoId){const concepts=getOrCreateSheet(ss,"ConceptosCobro").getDataRange().getValues().slice(1);if(!concepts.some(r=>String(r[0])===String(p.conceptoId)&&String(r[6]||"Activo").toLowerCase()==="activo"))throw new Error("SERVICE_TARIFF_CONCEPT_NOT_FOUND");}
+ const concept=p.conceptoId?{id:String(p.conceptoId)}:serviceEnsureConcept_(ss,service),sh=serviceEnsureTariffsSheet_(ss),rows=sh.getDataRange().getValues(),all=rows.slice(1).map((r,i)=>({r:r,n:i+2,from:transportParseDate_(r[6]),to:transportParseDate_(r[7])})).filter(x=>String(x.r[1]).toUpperCase()===service&&String(x.r[2]).toUpperCase()===mode&&String(x.r[3]||"")===routeId&&String(x.r[4]).toUpperCase()===period&&String(x.r[13]).toLowerCase()==="activo");
+ const same=all.filter(x=>x.from&&x.from.getTime()===start.getTime());if(same.length>1)throw new Error("SERVICE_TARIFF_AMBIGUOUS");
+ const values=[same.length?same[0].r[0]:"SVT-"+Utilities.getUuid(),service,mode,routeId,period,Math.round(amount*100)/100,start,end||"",siblingPct,maxPct,prorateStart,prorateEnd,concept.id,"Activo",actor.userId,new Date()];
+ if(same.length){if(!end)values[7]=same[0].r[7]||"";sh.getRange(same[0].n,1,1,values.length).setValues([values]);return {status:"success",tarifaServicioId:values[0],servicio:service,modalidad:mode,rutaId:routeId,periodo:period,monto:values[5],conceptoId:concept.id,message:"Tarifa de servicio actualizada."};}
+ const future=all.filter(x=>x.from&&x.from>start&&(!x.to||x.to>=start)).sort((a,b)=>a.from-b.from),previous=all.filter(x=>x.from&&x.from<start&&(!x.to||x.to>=start));
+ previous.forEach(x=>sh.getRange(x.n,8).setValue(new Date(start.getFullYear(),start.getMonth(),start.getDate()-1)));
+ if(future.length){const next=future[0].from,dayBefore=new Date(next.getFullYear(),next.getMonth(),next.getDate()-1);if(!values[7]||dayBefore<values[7])values[7]=dayBefore;}
+ if(values[7]&&transportParseDate_(values[7])<start)throw new Error("SERVICE_TARIFF_DATE_RANGE_INVALID");
+ sh.appendRow(values);return {status:"success",tarifaServicioId:values[0],servicio:service,modalidad:mode,rutaId:routeId,periodo:period,monto:values[5],conceptoId:concept.id,message:"Tarifa de servicio registrada con vigencia."};
+}
+
+function manageServiceTariff(payload){
+ const p=payload||{},lock=LockService.getScriptLock();lock.waitLock(15000);try{const actor=transportBillingActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=serviceEnsureTariffsSheet_(ss),snapshot=sh.getDataRange().getValues().map(r=>r.slice());try{return manageServiceTariffLocked_(ss,p,actor);}catch(e){if(snapshot.length)sh.getRange(1,1,snapshot.length,snapshot[0].length).setValues(snapshot);while(sh.getLastRow()>snapshot.length)sh.deleteRow(sh.getLastRow());throw e;}}finally{lock.releaseLock();}
+}
+
+function getServiceTariffs(payload){
+ const p=payload||{},lock=LockService.getScriptLock();lock.waitLock(15000);try{transportBillingActor_(p);const sh=serviceEnsureTariffsSheet_(SpreadsheetApp.openById(SPREADSHEET_ID)),rows=sh.getDataRange().getValues().slice(1).filter(r=>(!p.servicio||String(r[1]).toUpperCase()===String(p.servicio).toUpperCase())&&(!p.rutaId||String(r[3])===String(p.rutaId))&&(!p.estado||String(r[13]).toLowerCase()===String(p.estado).toLowerCase()));return {status:"success",tarifas:rows.map(r=>({tarifaServicioId:r[0],servicio:r[1],modalidad:r[2],rutaId:r[3],periodo:r[4],monto:Number(r[5]||0),fechaVigenciaInicio:r[6],fechaVigenciaFin:r[7],descuentoHermanosPct:Number(r[8]||0),descuentoMaximoPct:Number(r[9]===undefined?100:r[9]),prorrateoAlta:r[10]!==false&&String(r[10]).toLowerCase()!=="false",prorrateoBaja:r[11]!==false&&String(r[11]).toLowerCase()!=="false",conceptoId:r[12],estado:r[13]}))};}finally{lock.releaseLock();}
+}
+
+function serviceStudentGuardianIds_(ss,userId){
+ const users=ss.getSheetByName("Usuarios"),relations=ss.getSheetByName("RelacionesFamiliares");if(!users||!relations)return [];
+ const u=users.getDataRange().getValues().slice(1).find(r=>String(r[0]||"").trim()===String(userId).trim()),person=u?String(u[9]||"").trim():"";if(!person)return [];
+ const rows=relations.getDataRange().getValues().slice(1),now=new Date(),active=r=>{const state=String(r[4]||"").trim().toLowerCase(),from=transportParseDate_(r[5]),to=transportParseDate_(r[6]);return ["aprobado","autorizado","activo","active"].indexOf(state)!==-1&&(!from||from<=now)&&(!to||to>=now);};
+ return [...new Set(rows.filter(r=>String(r[1]||"").trim()===person&&active(r)).map(r=>String(r[2]||"").trim()).filter(Boolean))];
+}
+
+function serviceSiblingCount_(ss,userId){
+ const users=ss.getSheetByName("Usuarios"),relations=ss.getSheetByName("RelacionesFamiliares");if(!users||!relations)return 0;
+ const userRows=users.getDataRange().getValues().slice(1),own=userRows.find(r=>String(r[0]||"").trim()===String(userId).trim()),person=own?String(own[9]||"").trim():"";if(!person)return 0;
+ const guardians=new Set(serviceStudentGuardianIds_(ss,userId));if(!guardians.size)return 0;
+ const rows=relations.getDataRange().getValues().slice(1),now=new Date(),active=r=>{const state=String(r[4]||"").trim().toLowerCase(),from=transportParseDate_(r[5]),to=transportParseDate_(r[6]);return ["aprobado","autorizado","activo","active"].indexOf(state)!==-1&&(!from||from<=now)&&(!to||to>=now);};
+ const persons=new Set(rows.filter(r=>guardians.has(String(r[2]||"").trim())&&active(r)).map(r=>String(r[1]||"").trim()).filter(x=>x&&x!==person));
+ return new Set(userRows.filter(r=>persons.has(String(r[9]||"").trim())&&["estudiante","student","alumno"].indexOf(String(r[6]||"").trim().toLowerCase())!==-1&&String(r[10]||"Activo").toLowerCase()!=="inactivo").map(r=>String(r[9]||"").trim())).size;
+}
+
+function serviceApprovedScholarshipDiscount_(ss,userId,concept,base){
+ const requests=getOrCreateSheet(ss,"SolicitudesDescuentoBeca").getDataRange().getValues().slice(1),rules=getOrCreateSheet(ss,"DescuentosBecas").getDataRange().getValues().slice(1),map=Object.create(null);rules.forEach(r=>map[String(r[0]||"").trim()]=r);
+ const guardians=new Set(serviceStudentGuardianIds_(ss,userId)),eligible=requests.filter(r=>{if(String(r[8]||"").toLowerCase()!=="aprobado")return false;const target=String(r[4]||"").trim(),type=String(r[3]||"").toLowerCase();return (["estudiante","student","alumno"].indexOf(type)!==-1&&target===String(userId))||(["familia","family","responsable","tutor"].indexOf(type)!==-1&&guardians.has(target));});
+ let total=0,applied=[];
+ for(let i=0;i<eligible.length;i++){const sol=eligible[i],rule=map[String(sol[2]||"").trim()];if(!rule)continue;const state=String(rule[12]||"Aprobado").toLowerCase();if(["aprobado","activo"].indexOf(state)===-1)continue;let applies=String(sol[5]||"").trim().toLowerCase()===String(concept||"").trim().toLowerCase();if(!applies&&rule[8]){try{const list=JSON.parse(rule[8]);applies=Array.isArray(list)&&list.some(x=>String(x).trim().toLowerCase()===String(concept||"").trim().toLowerCase());}catch(_){}}if(!applies)continue;const kind=String(rule[5]||"Porcentaje"),value=Number(rule[6]||0),max=Number(rule[7]||0);let amount=kind==="Porcentaje"?base*value/100:value;if(!Number.isFinite(amount)||amount<=0)continue;if(max>0)amount=Math.min(amount,max);amount=Math.min(base-total,amount);total+=amount;applied.push(String(rule[2]||rule[0]));if(rule[10]!==true&&String(rule[10]).toLowerCase()!=="true")break;}
+ return {amount:Math.round(total*100)/100,rules:applied};
+}
+
+function serviceCalculateDiscounts_(ss,userId,concept,base,tariff){
+ const amount=Math.max(0,Number(base)||0),siblings=serviceSiblingCount_(ss,userId),siblingPct=Math.max(0,Math.min(100,Number(tariff&&tariff.descuentoHermanosPct)||0)),siblingDiscount=siblings>0?Math.round(amount*siblingPct)/100:0,scholarship=serviceApprovedScholarshipDiscount_(ss,userId,concept,amount),maxValue=!tariff||tariff.descuentoMaximoPct===undefined?100:tariff.descuentoMaximoPct,maxPct=Math.max(0,Math.min(100,Number(maxValue)||0)),cap=Math.round(amount*maxPct)/100,total=Math.min(amount,cap,Math.round((siblingDiscount+scholarship.amount)*100)/100);
+ return {hermanos:siblings,descuentoHermanos:Math.min(siblingDiscount,total),descuentoBeca:Math.max(0,total-Math.min(siblingDiscount,total)),descuentoTotal:total,montoFinal:Math.max(0,Math.round((amount-total)*100)/100),reglasBeca:scholarship.rules};
+}
+
+function transportFindTariff_(ss,routeId,mode,date){
+ const s=transportEnsureBillingSchema_(ss),d=transportParseDate_(date)||new Date(),m=transportNormalizeMode_(mode),rows=s.serviceTariffs.getDataRange().getValues().slice(1),central=rows.filter(r=>String(r[1]).toUpperCase()==="TRANSPORTE"&&String(r[2]).toUpperCase()===m&&String(r[3]||"")===String(routeId)&&String(r[4]).toUpperCase()==="MENSUAL"&&String(r[13]).toLowerCase()==="activo"&&(!transportParseDate_(r[6])||transportParseDate_(r[6])<=d)&&(!transportParseDate_(r[7])||transportParseDate_(r[7])>=d));
+ if(central.length>1)throw new Error("TRANSPORT_TARIFF_AMBIGUOUS:"+routeId+":"+m);
+ if(central.length){const r=central[0],amount=Number(r[5]);if(!Number.isFinite(amount)||amount<=0)throw new Error("TRANSPORT_TARIFF_AMOUNT_INVALID");return {id:String(r[0]),conceptId:String(r[12]),amount:Math.round(amount*100)/100,mode:m,validFrom:transportParseDate_(r[6]),validTo:transportParseDate_(r[7]),descuentoHermanosPct:Number(r[8]||0),descuentoMaximoPct:Number(r[9]===undefined?100:r[9]),prorrateoAlta:r[10]!==false&&String(r[10]).toLowerCase()!=="false",prorrateoBaja:r[11]!==false&&String(r[11]).toLowerCase()!=="false"};}
+ const rowsLegacy=s.tariffs.getDataRange().getValues().slice(1),legacy=rowsLegacy.filter(r=>String(r[1]||"").trim()===String(routeId).trim()&&String(r[2]||"")===m&&String(r[7]||"").toLowerCase()==="activo"&&(!transportParseDate_(r[5])||transportParseDate_(r[5])<=d)&&(!transportParseDate_(r[6])||transportParseDate_(r[6])>=d));
+ if(legacy.length>1)throw new Error("TRANSPORT_TARIFF_AMBIGUOUS:"+routeId+":"+m);if(!legacy.length)return null;const r=legacy[0],amount=Number(r[4]);if(!Number.isFinite(amount)||amount<=0)throw new Error("TRANSPORT_TARIFF_AMOUNT_INVALID");return {id:String(r[0]),conceptId:String(r[3]),amount:Math.round(amount*100)/100,mode:m,validFrom:transportParseDate_(r[5]),validTo:transportParseDate_(r[6]),descuentoHermanosPct:0,descuentoMaximoPct:100,prorrateoAlta:true,prorrateoBaja:true};
+}
+
+function manageTransportTariff(payload){
+ const p=payload||{},routeId=String(p.rutaId||"").trim(),mode=transportNormalizeMode_(p.modalidadServicio||p.modalidad),amount=Number(p.montoMensual),effective=transportParseDate_(p.fechaVigenciaInicio)||transportParseDate_(new Date());
+ if(p.fechaVigenciaInicio&&!transportParseDate_(p.fechaVigenciaInicio))throw new Error("TRANSPORT_TARIFF_DATE_INVALID");
+ if(!routeId||!Number.isFinite(amount)||amount<=0)throw new Error("TRANSPORT_TARIFF_INPUT_INVALID");
+ const lock=LockService.getScriptLock();lock.waitLock(15000);
+ try{const actor=transportBillingActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),route=getOrCreateSheet(ss,"TransporteRutas").getDataRange().getValues().slice(1).find(r=>String(r[0]||"").trim()===routeId);if(!route)throw new Error("ROUTE_NOT_FOUND");
+  const result=manageServiceTariffLocked_(ss,{servicio:"TRANSPORTE",modalidadServicio:mode,rutaId:routeId,periodo:"MENSUAL",monto:amount,fechaVigenciaInicio:effective,descuentoHermanosPct:p.descuentoHermanosPct||0,descuentoMaximoPct:p.descuentoMaximoPct===undefined?100:p.descuentoMaximoPct,prorrateoAlta:p.prorrateoAlta!==false,prorrateoBaja:p.prorrateoBaja!==false},actor);
+  const schema=transportEnsureBillingSchema_(ss),rows=schema.tariffs.getDataRange().getValues(),same=rows.slice(1).map((r,i)=>({r:r,n:i+2})).filter(x=>String(x.r[1])===routeId&&String(x.r[2])===mode&&transportParseDate_(x.r[5])&&transportParseDate_(x.r[5]).getTime()===effective.getTime());
+  if(!same.length)schema.tariffs.appendRow(["TRN-TAR-"+Utilities.getUuid(),routeId,mode,result.conceptoId||"CPT-TRN-SCHOOL",Math.round(amount*100)/100,effective,"","Activo",actor.userId,new Date()]);
+  return {status:"success",tarifaId:result.tarifaServicioId,rutaId:routeId,modalidad:mode,montoMensual:amount,conceptoId:result.conceptoId};
+ }finally{lock.releaseLock();}
+}
+
+function transportRecalculateStudentMonthlyChargeLocked_(ss,studentId,year,month){
+ const s=transportEnsureBillingSchema_(ss),w=transportMonthWindow_(year,month),assignments=s.assignments.getDataRange().getValues().slice(1),student=String(studentId||"").trim(),applicable=assignments.filter(r=>String(r[2]||"").trim()===student&&["active","activa","cancelled","cancelada"].indexOf(String(r[5]||"").toLowerCase())!==-1),details=[];let target=0,missing=0,siblingPct=0,maxDiscountPct=100;
+ applicable.forEach(r=>{const start=transportParseDate_(r[10]||r[6]),end=transportParseDate_(r[11]||r[13])||w.end;if(!start)return;const from=start>w.start?start:w.start,to=end<w.end?end:w.end;if(to<from)return;const route=String(r[1]||"").trim(),mode=transportNormalizeMode_(r[12]||"COMPLETA");let cursor=from,assignmentAmount=0,guard=0,firstTariff=null,lastTariff=null,firstSegmentAmount=0,lastSegmentAmount=0,segments=0;while(cursor<=to&&guard++<12){const tariff=transportFindTariff_(ss,route,mode,cursor);if(!tariff){missing++;return;}if(!firstTariff)firstTariff=tariff;lastTariff=tariff;siblingPct=Math.max(siblingPct,Number(tariff.descuentoHermanosPct||0));maxDiscountPct=Math.min(maxDiscountPct,Number(tariff.descuentoMaximoPct===undefined?100:tariff.descuentoMaximoPct));const segmentEnd=tariff.validTo&&tariff.validTo<to?tariff.validTo:to,days=transportActiveDays_(cursor,segmentEnd,w);if(days<=0){missing++;return;}const segmentAmount=Math.round(tariff.amount*days/w.days*100)/100;if(segments===0)firstSegmentAmount=segmentAmount;lastSegmentAmount=segmentAmount;segments++;assignmentAmount+=segmentAmount;details.push(route+"/"+mode+" "+days+"/"+w.days+" días @ "+tariff.amount);cursor=new Date(segmentEnd.getFullYear(),segmentEnd.getMonth(),segmentEnd.getDate()+1);}if(cursor<=to){missing++;return;}if(start>w.start&&firstTariff&&!firstTariff.prorrateoAlta)assignmentAmount+=firstTariff.amount-firstSegmentAmount;if(end<w.end&&lastTariff&&!lastTariff.prorrateoBaja&&!(segments===1&&start>w.start&&firstTariff&&!firstTariff.prorrateoAlta))assignmentAmount+=lastTariff.amount-lastSegmentAmount;target+=assignmentAmount;});
+ if(missing)return {status:"warning",missingTariff:missing,importeObjetivo:Math.round(target*100)/100};
+ const base=Math.round(target*100)/100,discount=serviceCalculateDiscounts_(ss,student,"Transporte escolar",base,{descuentoHermanosPct:siblingPct,descuentoMaximoPct:maxDiscountPct});target=discount.montoFinal;const discountAmount=discount.descuentoTotal;const data=s.charges.getDataRange().getValues(),h=monthlyChargeHeaderMap_(data[0],["CargoID","Fecha","UserId","Concepto","MontoBase","Descuento","MontoFinal","Estado","FechaVencimiento","Observaciones","ClaveUnicaDedupe"]),key="TRN-"+w.month+"-"+w.year+"-"+student,adjKey=key+"-AJUSTE",main=data.slice(1).map((r,i)=>({r:r,n:i+2})).filter(x=>String(x.r[h.claveunicadedupe]||"")===key),adj=data.slice(1).map((r,i)=>({r:r,n:i+2})).filter(x=>{const k=String(x.r[h.claveunicadedupe]||"");return k===adjKey||k.indexOf(adjKey+"-")===0;});if(main.length>1)throw new Error("TRANSPORT_CHARGE_DEDUPE_AMBIGUOUS:"+key);
+ const mainAmount=main.length?Number(main[0].r[h.montofinal]||0):0,adjAmount=adj.reduce((sum,x)=>{const state=String(x.r[h.estado]||"").toLowerCase();return ["anulado","cancelado","voided"].indexOf(state)!==-1?sum:sum+Number(x.r[h.montofinal]||0);},0),pendingAdj=adj.filter(x=>["pagado","paid","anulado","cancelado","voided"].indexOf(String(x.r[h.estado]||"").toLowerCase())===-1);if(pendingAdj.length>1)throw new Error("TRANSPORT_CHARGE_ADJUSTMENT_AMBIGUOUS:"+key);
+ if(!main.length&&target>0){const row=new Array(data[0].length).fill("");row[h.cargoid]="TRN-CARGO-"+w.year+w.month+"-"+Utilities.getUuid();row[h.fecha]=new Date();row[h.userid]=student;row[h.concepto]="Transporte escolar";row[h.montobase]=base;row[h.descuento]=discountAmount;row[h.montofinal]=target;row[h.estado]="Pendiente";row[h.fechavencimiento]=w.dueDate;row[h.observaciones]="Cargo mensual de transporte; "+details.join("; ")+"; hermanos="+discount.hermanos+"; descuento="+discountAmount.toFixed(2);row[h.claveunicadedupe]=key;const bi=data[0].findIndex(v=>String(v||"").toLowerCase()==="batchid");if(bi>=0)row[bi]="TRN-"+w.year+w.month;s.charges.appendRow(row);return {status:"success",created:true,importe:target,clave:key};}
+ if(!main.length)return {status:"success",created:false,importe:0,clave:key};
+ const delta=Math.round((target-mainAmount-adjAmount)*100)/100;if(Math.abs(delta)<0.01)return {status:"success",created:false,adjusted:false,importe:target,clave:key};
+ const width=data[0].length;if(pendingAdj.length){const r=pendingAdj[0].r.slice();r[h.montobase]=0;r[h.descuento]=0;r[h.montofinal]=delta;r[h.estado]="Pendiente";r[h.observaciones]="Ajuste de prorrateo de transporte; importe objetivo "+target.toFixed(2)+". "+details.join("; ");s.charges.getRange(pendingAdj[0].n,1,1,width).setValues([r]);return {status:"success",adjusted:true,diferencia:delta,importe:target,clave:key};}
+ const row=new Array(width).fill("");row[h.cargoid]="TRN-AJUSTE-"+w.year+w.month+"-"+Utilities.getUuid();row[h.fecha]=new Date();row[h.userid]=student;row[h.concepto]="Ajuste prorrateo transporte escolar";row[h.montobase]=0;row[h.descuento]=0;row[h.montofinal]=delta;row[h.estado]="Pendiente";row[h.fechavencimiento]=w.dueDate;row[h.observaciones]="Ajuste de prorrateo; importe objetivo "+target.toFixed(2)+". "+details.join("; ");row[h.claveunicadedupe]=adj.length?adjKey+"-"+Utilities.getUuid():adjKey;s.charges.appendRow(row);return {status:"success",adjusted:true,diferencia:delta,importe:target,clave:key};
+}
+
+function generateTransportMonthlyCharges(payload){
+ const p=payload||{},year=p.ano||p.anoLectivo,month=normalizeMonthlyChargeMonth_(p.mesPeriodo||p.mes),lock=LockService.getScriptLock();if(!lock.tryLock(30000))return {status:"error",code:"LOCK_TIMEOUT"};try{transportBillingActor_(p);const ss=SpreadsheetApp.openById(SPREADSHEET_ID),s=transportEnsureBillingSchema_(ss),rows=s.assignments.getDataRange().getValues().slice(1),students=[...new Set(rows.map(r=>String(r[2]||"").trim()).filter(Boolean))],snapshot=s.charges.getDataRange().getValues().map(r=>r.slice());let created=0,adjusted=0,missing=0,total=0;try{students.forEach(id=>{const r=transportRecalculateStudentMonthlyChargeLocked_(ss,id,year,month);if(r.missingTariff){missing+=r.missingTariff;return;}if(r.created)created++;if(r.adjusted)adjusted++;total+=Number(r.importe||0);});}catch(e){if(snapshot.length)s.charges.getRange(1,1,snapshot.length,snapshot[0].length).setValues(snapshot);while(s.charges.getLastRow()>snapshot.length)s.charges.deleteRow(s.charges.getLastRow());throw e;}return {status:missing?"warning":"success",ano:String(year),mesPeriodo:month,estudiantes:students.length,cargosCreados:created,ajustesCreados:adjusted,sinTarifa:missing,totalImporte:Math.round(total*100)/100};}finally{lock.releaseLock();}
+}
+
+function cancelStudentTransportAssignment(payload){
+ const p=payload||{},id=String(p.asignacionTranspId||p.assignmentId||"").trim();if(!id)throw new Error("TRANSPORT_ASSIGNMENT_ID_REQUIRED");const lock=LockService.getScriptLock();lock.waitLock(15000);try{transportBillingActor_(p);const ss=SpreadsheetApp.openById(SPREADSHEET_ID),s=transportEnsureBillingSchema_(ss),data=s.assignments.getDataRange().getValues(),idx=data.findIndex((r,i)=>i>0&&String(r[0]||"").trim()===id);if(idx<0)throw new Error("TRANSPORT_ASSIGNMENT_NOT_FOUND");const original=data[idx].slice(),state=String(original[5]||"").toLowerCase();if(["cancelled","cancelada"].indexOf(state)!==-1)return {status:"success",idempotent:true,asignacionTranspId:id};if(state!=="active"&&state!=="activa")throw new Error("TRANSPORT_ASSIGNMENT_NOT_ACTIVE");const date=transportParseDate_(p.fechaCancelacion)||new Date(),start=transportParseDate_(original[10]||original[6]);if(p.fechaCancelacion&&!transportParseDate_(p.fechaCancelacion))throw new Error("TRANSPORT_CANCELLATION_DATE_INVALID");if(start&&date<start)throw new Error("TRANSPORT_CANCELLATION_BEFORE_START");const chargeSnapshot=s.charges.getDataRange().getValues().map(r=>r.slice());try{const updated=original.slice();updated[5]="cancelled";updated[11]=date;updated[13]=date;s.assignments.getRange(idx+1,1,1,updated.length).setValues([updated]);const billing=transportRecalculateStudentMonthlyChargeLocked_(ss,String(original[2]),date.getFullYear(),date.getMonth()+1);return {status:billing.missingTariff?"warning":"success",asignacionTranspId:id,fechaCancelacion:date.toISOString(),facturacion:billing};}catch(e){s.assignments.getRange(idx+1,1,1,original.length).setValues([original]);if(chargeSnapshot.length)s.charges.getRange(1,1,chargeSnapshot.length,chargeSnapshot[0].length).setValues(chargeSnapshot);while(s.charges.getLastRow()>chargeSnapshot.length)s.charges.deleteRow(s.charges.getLastRow());throw e;}}finally{lock.releaseLock();}
+}
+
+function assignStudentTransport(payload) {
+  const { rutaId, estudianteUserId, paradaNombre, horarioPlan, jornada, diasSemanaJSON, observaciones, modalidadServicio, fechaInicioServicio } = payload || {};
+  if (!rutaId || !estudianteUserId) throw new Error("rutaId y estudianteUserId son requeridos.");
+
+  const lock = LockService.getScriptLock();
+  const hasLock = lock.tryLock(15000);
+  if (!hasLock) {
+    return {
+      status: "error",
+      code: "LOCK_TIMEOUT",
+      message: "Operación de asignación de transporte bloqueada por concurrencia. Por favor reintente."
+    };
+  }
+
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    getOrCreateTransportVehiclesCatalog(ss);
+    const billingSchema=transportEnsureBillingSchema_(ss);
+
+    const rutaSheet = getOrCreateSheet(ss, "TransporteRutas");
+    const asgnSheet = getOrCreateSheet(ss, "TransporteAsignaciones");
+    const vehSheet = getOrCreateSheet(ss, "TransporteVehiculos");
+
+    const rutasData = rutaSheet.getDataRange().getValues().slice(1);
+    const targetRuta = rutasData.find(r => String(r[0]).trim() === String(rutaId).trim());
+    if (!targetRuta) {
+      return { status: "error", code: "ROUTE_NOT_FOUND", message: `Ruta de transporte '${rutaId}' no encontrada.` };
+    }
+
+    const unidadCod = String(targetRuta[2]).trim();
+    const vehRows = vehSheet.getDataRange().getValues().slice(1);
+    const targetVeh = vehRows.find(v => String(v[1]).trim() === unidadCod);
+    const capAutorizada = targetVeh ? parseInt(targetVeh[5] || 0, 10) : parseInt(targetRuta[4] || 25, 10);
+
+    const asgnData = asgnSheet.getDataRange().getValues().slice(1);
+
+    // 1. Validar duplicidad de asignación para la misma ruta, estudiante y jornada [TASK-029]
+    const targetJornada = String(jornada || targetRuta[10] || "Matutina").toLowerCase().trim();
+    const isDuplicate = asgnData.some(r =>
+      String(r[2]).trim() === String(estudianteUserId).trim() &&
+      String(r[1]).trim() === String(rutaId).trim() &&
+      String(r[5] || "").toLowerCase().trim() === "active" &&
+      String(r[7] || targetJornada).toLowerCase().trim() === targetJornada
+    );
+
+    if (isDuplicate) {
+      return {
+        status: "error",
+        code: "DUPLICATE_TRANSPORT_ASSIGNMENT",
+        message: `El estudiante '${estudianteUserId}' ya cuenta con una asignación activa en la ruta '${rutaId}' para la jornada '${targetJornada}'.`
+      };
+    }
+
+    // 2. Validar colisión de horarios entre rutas distintas [TASK-029]
+    const horaIniTarget = String(targetRuta[8] || "06:30").trim();
+    const hasTimeConflict = asgnData.some(a => {
+      if (String(a[2]).trim() !== String(estudianteUserId).trim() || String(a[5] || "").toLowerCase().trim() !== "active") {
+        return false;
+      }
+      const otherRuta = rutasData.find(r => String(r[0]).trim() === String(a[1]).trim());
+      if (!otherRuta) return false;
+      const otherHoraIni = String(otherRuta[8] || "06:30").trim();
+      const otherJornada = String(otherRuta[10] || "Matutina").toLowerCase().trim();
+      return otherHoraIni === horaIniTarget && otherJornada === targetJornada;
+    });
+
+    if (hasTimeConflict) {
+      return {
+        status: "error",
+        code: "TRANSPORT_SCHEDULE_CONFLICT",
+        message: `Conflicto de horario: El estudiante '${estudianteUserId}' ya está asignado a otra ruta activa en el mismo horario (${horaIniTarget}, jornada: ${targetJornada}).`
+      };
+    }
+
+    // 3. Control estricto de cupos y aforo vehicular [TASK-029]
+    const cuposOcupados = asgnData.filter(r =>
+      String(r[1]).trim() === String(rutaId).trim() && String(r[5] || "").toLowerCase().trim() === "active"
+    ).length;
+
+    if (cuposOcupados >= capAutorizada) {
+      return {
+        status: "error",
+        code: "TRANSPORT_CAPACITY_EXCEEDED",
+        capacidadMaxima: capAutorizada,
+        cuposOcupados: cuposOcupados,
+        message: `Capacidad vehicular agotada en la ruta '${rutaId}'. Cupos autorizados: ${capAutorizada}, Cupos ocupados: ${cuposOcupados}. No es posible admitir sobrecupo.`
+      };
+    }
+
+    const now = new Date(),serviceStart=transportParseDate_(fechaInicioServicio)||now,serviceMode=transportNormalizeMode_(modalidadServicio||"COMPLETA");
+    if(fechaInicioServicio&&!transportParseDate_(fechaInicioServicio))throw new Error("TRANSPORT_SERVICE_START_INVALID");
+    const asgnId = "TRN-" + now.getTime() + "-" + Utilities.getUuid().slice(0,8);
+    const chargeSnapshot=billingSchema.charges.getDataRange().getValues().map(r=>r.slice()),assignmentStartRow=asgnSheet.getLastRow()+1;
+
+    asgnSheet.appendRow([
+      asgnId,
+      String(rutaId).trim(),
+      String(estudianteUserId).trim(),
+      paradaNombre || "Parada Principal",
+      horarioPlan || targetRuta[8] || "06:30 AM",
+      "active",
+      now.toISOString(),
+      targetJornada,
+      diasSemanaJSON ? (Array.isArray(diasSemanaJSON) ? JSON.stringify(diasSemanaJSON) : diasSemanaJSON) : "[\"Lun\",\"Mar\",\"Mie\",\"Jue\",\"Vie\"]",
+      observaciones || "",
+      serviceStart,
+      "",
+      serviceMode,
+      "",
+      "",
+      ""
+    ]);
+    let billing={status:"success",created:false,missingTariff:0};
+    try{billing=transportRecalculateStudentMonthlyChargeLocked_(ss,String(estudianteUserId).trim(),now.getFullYear(),now.getMonth()+1);}
+    catch(billingError){asgnSheet.deleteRow(assignmentStartRow);const sh=billingSchema.charges;if(chargeSnapshot.length)sh.getRange(1,1,chargeSnapshot.length,chargeSnapshot[0].length).setValues(chargeSnapshot);while(sh.getLastRow()>chargeSnapshot.length)sh.deleteRow(sh.getLastRow());throw billingError;}
+
+    logStructuredEvent(
+      "TRANSPORT",
+      "assignStudentTransport",
+      "INFO",
+      "TRANSPORT_ASSIGNMENT_CREATED",
+      `Asignación de transporte creada para estudiante ${estudianteUserId} en ruta ${rutaId}`,
+      { asignacionTranspId: asgnId, rutaId, estudianteUserId, capAutorizada, cuposOcupadosDespues: cuposOcupados + 1 },
+      (payload && payload.authUserId) || "System"
+    );
+
+    return {
+      status: "success",
+      asignacionTranspId: asgnId,
+      rutaId: rutaId,
+      cuposRestantes: capAutorizada - (cuposOcupados + 1),
+      facturacion:billing,
+      billingStatus:billing.missingTariff?"PENDIENTE_TARIFA":"PROCESADA",
+      message: billing.missingTariff?"Estudiante asignado; configure la tarifa para generar el cargo.":"Estudiante asignado y cargo mensual sincronizado."
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// [TASK-030] [F21-Task02] Protección de datos de transporte y aislamiento de consultas RBAC/ABAC
+
+function getOrCreateTransportVehiclesCatalog() {
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = getOrCreateSheet(ss, "TransporteVehiculos");
+  var headers = ["VehiculoID","CodigoUnidad","Marca","Modelo","Placa","Capacidad","Estado"];
+  var data = sheet.getDataRange().getValues();
+  if (!data.length) sheet.appendRow(headers);
+  else if (JSON.stringify(data[0].map(function(v){return String(v||"").trim();})) !== JSON.stringify(headers)) {
+    throw new Error("TRANSPORT_VEHICLE_SCHEMA_INVALID");
+  }
+  return sheet;
 }
