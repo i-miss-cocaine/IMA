@@ -1498,11 +1498,14 @@ function getVacationRequests(payload) {
   if (["recursoshumanos","director","administrador"].indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED", solicitudes: [], data: [] };
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID), snapshot = getVacationSheetSnapshot_(ss);
   if (!snapshot.valid) return { status: "error", code: snapshot.code, solicitudes: [], data: [] };
-  var names = getEmployeePersonNameIndex_(ss), requested = String(input.expedienteId || "").trim(), result = [], seenRequestIds = Object.create(null);
+  var names = getEmployeePersonNameIndex_(ss), requested = String(input.expedienteId || "").trim(), result = [], requestIdCounts = Object.create(null);
   snapshot.rows.forEach(function(row) {
     var requestId = String(row[0] || "").trim();
-    if (seenRequestIds[requestId]) return;
-    seenRequestIds[requestId] = true;
+    requestIdCounts[requestId] = (requestIdCounts[requestId] || 0) + 1;
+  });
+  snapshot.rows.forEach(function(row) {
+    var requestId = String(row[0] || "").trim();
+    if (requestIdCounts[requestId] !== 1) return;
     if (requested && String(row[1] || "").trim() !== requested) return;
     var access = resolveVacationEmployeeAccess_(input, ss, row[1], actor);
     if (!access.authorized) return;
