@@ -2287,6 +2287,285 @@ function reviewAttendanceCorrection(payload) {
   } finally { lock.releaseLock(); }
 }
 
+function transportRows_(ss, sheetName, expectedHeaders) {
+  var sheet = ss && ss.getSheetByName ? ss.getSheetByName(sheetName) : null;
+  if (!sheet) return { valid: false, missing: true, code: "TRANSPORT_RESOURCE_NOT_FOUND", rows: [], headers: [] };
+  var values = sheet.getDataRange().getValues();
+  if (!values || !values.length) return { valid: false, missing: false, code: "TRANSPORT_SCHEMA_INVALID", rows: [], headers: [] };
+  var headers = values[0].map(function(value) { return String(value || "").trim(); });
+  if (expectedHeaders && JSON.stringify(headers) !== JSON.stringify(expectedHeaders)) {
+    return { valid: false, missing: false, code: "TRANSPORT_SCHEMA_INVALID", rows: [], headers: headers };
+  }
+  return { valid: true, missing: false, sheet: sheet, headers: headers, rows: values.slice(1) };
+}
+
+function transportDateBoundary_(value) {
+  if (value === "" || value === null || value === undefined) return { valid: true, date: null };
+  var date = value instanceof Date ? value : new Date(value);
+  return isNaN(date.getTime()) ? { valid: false, date: null } : { valid: true, date: date };
+}
+
+function transportRelationshipIsCurrent_(row, headers) {
+  var statusIndex = headers.indexOf("Estado");
+  var startIndex = headers.indexOf("FechaInicio"), endIndex = headers.indexOf("FechaFin");
+  if (statusIndex < 0) return false;
+  var status = String(row[statusIndex] || "").trim().toLowerCase();
+  if (["verificada","activa","active","verified"].indexOf(status) === -1) return false;
+  var start = startIndex < 0 ? { valid: true, date: null } : transportDateBoundary_(row[startIndex]);
+  var end = endIndex < 0 ? { valid: true, date: null } : transportDateBoundary_(row[endIndex]);
+  if (!start.valid || !end.valid) return false;
+  var now = Date.now();
+  if (start.date && start.date.getTime() > now) return false;
+  if (end.date && end.date.getTime() < now) return false;
+  return true;
+}
+
+function transportEmployeeIdsForUser_(ss, userId, expectedRole) {
+  var snapshot = transportRows_(ss, "ExpedientesLaborales");
+  if (!snapshot.valid) return [];
+  var userIndex = snapshot.headers.indexOf("UserId"), idIndex = snapshot.headers.indexOf("ExpedienteID");
+  var roleIndex = snapshot.headers.indexOf("Puesto");
+  var stateIndex = snapshot.headers.indexOf("EstadoLaboral");
+  if (stateIndex < 0) stateIndex = snapshot.headers.indexOf("Estado");
+  if (userIndex < 0 || idIndex < 0 || roleIndex < 0 || stateIndex < 0) return [];
+  var role = String(expectedRole || "").trim().toLowerCase();
+  return snapshot.rows.filter(function(row) {
+    var state = String(row[stateIndex] || "").trim().toLowerCase();
+    return String(row[userIndex] || "").trim() === String(userId || "").trim() &&
+      String(row[roleIndex] || "").trim().toLowerCase() === role &&
+      ["active","activo","activa","vigente"].indexOf(state) !== -1;
+  }).map(function(row) { return String(row[idIndex] || "").trim(); }).filter(Boolean);
+}
+
+function resolveTransportAccessScope_(payload, ss) {
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { authorized: false, reason: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var role = String(actor.role || "").trim(), normalizedRole = role.toLowerCase();
+  var scope = { authorized: true, role: role, userId: actor.userId, studentIds: [], employeeIds: [], routeIds: [] };
+  if (["director","administrador"].indexOf(normalizedRole) !== -1) {
+    scope.management = true;
+    scope.studentIds = null;
+    scope.employeeIds = null;
+    scope.routeIds = null;
+    return scope;
+  }
+  if (normalizedRole === "padre") {
+    var studentSnapshot = transportRows_(ss, "ExpedientesEstudiantes");
+    if (!studentSnapshot.valid) return { authorized: false, reason: "RESOURCE_SCHEMA_INVALID" };
+    var studentExpIndex = studentSnapshot.headers.indexOf("ExpedienteID");
+    var studentUserIndex = studentSnapshot.headers.indexOf("UserId");
+    if (studentExpIndex < 0 || studentUserIndex < 0) return { authorized: false, reason: "RESOURCE_SCHEMA_INVALID" };
+    var familySheet = ss.getSheetByName("RelacionesFamiliares");
+    if (familySheet) {
+      var family = transportRows_(ss, "RelacionesFamiliares");
+      if (!family.valid) return { authorized: false, reason: "RESOURCE_SCHEMA_INVALID" };
+      var relationExpIndex = family.headers.indexOf("ExpedienteID");
+      var parentIndex = family.headers.indexOf("ResponsableUserId");
+      if (relationExpIndex < 0 || parentIndex < 0 || family.headers.indexOf("Estado") < 0) {
+        return { authorized: false, reason: "RESOURCE_SCHEMA_INVALID" };
+      }
+      family.rows.forEach(function(row) {
+        if (String(row[parentIndex] || "").trim() !== actor.userId || !transportRelationshipIsCurrent_(row, family.headers)) return;
+        var expedienteId = String(row[relationExpIndex] || "").trim();
+        var linked = studentSnapshot.rows.filter(function(student) {
+          return String(student[studentExpIndex] || "").trim() === expedienteId;
+        });
+        if (linked.length !== 1) return;
+        var studentUserId = String(linked[0][studentUserIndex] || "").trim();
+        if (expedienteId && scope.studentIds.indexOf(expedienteId) === -1) scope.studentIds.push(expedienteId);
+        if (studentUserId && scope.studentIds.indexOf(studentUserId) === -1) scope.studentIds.push(studentUserId);
+      });
+    } else {
+      var legacy = transportRows_(ss, "RelacionesEstudianteTutor");
+      if (legacy.valid) {
+        legacy.rows.forEach(function(row) {
+          var state = String(row[9] || "").trim().toLowerCase();
+          if (String(row[2] || "").trim() !== actor.userId ||
+              ["activa","active","verificada"].indexOf(state) === -1) return;
+          var linkedId = String(row[1] || "").trim();
+          var linked = studentSnapshot.rows.filter(function(student) {
+            return String(student[studentExpIndex] || "").trim() === linkedId ||
+              String(student[studentUserIndex] || "").trim() === linkedId;
+          });
+          if (linked.length !== 1) return;
+          var expedienteId = String(linked[0][studentExpIndex] || "").trim();
+          var studentUserId = String(linked[0][studentUserIndex] || "").trim();
+          if (expedienteId && scope.studentIds.indexOf(expedienteId) === -1) scope.studentIds.push(expedienteId);
+          if (studentUserId && scope.studentIds.indexOf(studentUserId) === -1) scope.studentIds.push(studentUserId);
+        });
+      }
+    }
+    scope.routeIds = getTransportRouteIdsForScope_(ss, scope);
+    return scope;
+  }
+  if (normalizedRole === "estudiante") {
+    var students = transportRows_(ss, "ExpedientesEstudiantes");
+    if (!students.valid) return { authorized: false, reason: "RESOURCE_SCHEMA_INVALID" };
+    var expIndex = students.headers.indexOf("ExpedienteID"), userIndex = students.headers.indexOf("UserId");
+    if (expIndex < 0 || userIndex < 0) return { authorized: false, reason: "RESOURCE_SCHEMA_INVALID" };
+    var own = students.rows.filter(function(row) { return String(row[userIndex] || "").trim() === actor.userId; });
+    if (own.length > 1) return { authorized: false, reason: "RESOURCE_SCHEMA_INVALID" };
+    if (own.length === 1) {
+      scope.studentIds.push(actor.userId);
+      var expedienteId = String(own[0][expIndex] || "").trim();
+      if (expedienteId) scope.studentIds.push(expedienteId);
+    }
+    scope.routeIds = getTransportRouteIdsForScope_(ss, scope);
+    return scope;
+  }
+  if (normalizedRole === "conductor" || normalizedRole === "monitor") {
+    scope.employeeIds = transportEmployeeIdsForUser_(ss, actor.userId, role);
+    scope.routeIds = getTransportRouteIdsForScope_(ss, scope);
+    return scope;
+  }
+  return { authorized: false, reason: "ROLE_NOT_ALLOWED" };
+}
+
+function transportAuditDenied_(actor, action, resourceId) {
+  try {
+    logStructuredEvent("ACCOUNTING", "transport", "WARNING", "UNAUTHORIZED_ACCESS_ATTEMPT",
+      "Intento de acceso fuera del ámbito de transporte",
+      { action: String(action || ""), resourceId: String(resourceId || ""), actorUserId: String(actor && actor.userId || "") },
+      String(actor && actor.role || "Unknown"));
+  } catch (ignored) {}
+}
+
+function getTransportRouteIdsForScope_(ss, scope) {
+  if (!scope || scope.authorized !== true) return [];
+  if (scope.management === true) return null;
+  var routes = transportRows_(ss, "TransporteRutas", ["RutaID","Nombre","Unidad","Conductor","Capacidad","Paradas","Estado"]);
+  if (!routes.valid) return [];
+  var activeRoutes = routes.rows.filter(function(row) {
+    return ["active","activo","activa","vigente"].indexOf(String(row[6] || "").trim().toLowerCase()) !== -1;
+  }).map(function(row) { return String(row[0] || "").trim(); });
+  var role = String(scope.role || "").trim().toLowerCase(), allowed = [];
+  if (role === "padre" || role === "estudiante") {
+    var assignments = transportRows_(ss, "TransporteAsignaciones", ["ID","RutaID","EstudianteUserId","Parada","Horario","Estado","Fecha","Jornada"]);
+    if (!assignments.valid) return [];
+    assignments.rows.forEach(function(row) {
+      var state = String(row[5] || "").trim().toLowerCase(), routeId = String(row[1] || "").trim();
+      if (["activa","active","activo"].indexOf(state) === -1 ||
+          scope.studentIds.indexOf(String(row[2] || "").trim()) === -1 ||
+          activeRoutes.indexOf(routeId) === -1) return;
+      if (allowed.indexOf(routeId) === -1) allowed.push(routeId);
+    });
+    return allowed;
+  }
+  if (role === "conductor" || role === "monitor") {
+    var trips = transportRows_(ss, "TransporteViajes", ["ViajeID","RutaID","Unidad","Conductor","Monitor","Fecha","Jornada","Inicio","Fin","Estado"]);
+    if (!trips.valid) return [];
+    trips.rows.forEach(function(row) {
+      var tripState = String(row[9] || "").trim().toLowerCase();
+      var employeeId = String(row[role === "conductor" ? 3 : 4] || "").trim();
+      var routeId = String(row[1] || "").trim();
+      if (["encurso","activo","active"].indexOf(tripState) === -1 ||
+          scope.employeeIds.indexOf(employeeId) === -1 || activeRoutes.indexOf(routeId) === -1) return;
+      if (allowed.indexOf(routeId) === -1) allowed.push(routeId);
+    });
+  }
+  return allowed;
+}
+
+function getTransportRoutes(payload) {
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", rutas: [] };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), scope = resolveTransportAccessScope_(input, ss);
+  if (!scope.authorized) return { status: "error", code: scope.reason || "RESOURCE_SCOPE_DENIED", rutas: [] };
+  var snapshot = transportRows_(ss, "TransporteRutas", ["RutaID","Nombre","Unidad","Conductor","Capacidad","Paradas","Estado"]);
+  if (!snapshot.valid) return { status: "error", code: "RESOURCE_SCHEMA_INVALID", rutas: [] };
+  var allowed = scope.management ? null : getTransportRouteIdsForScope_(ss, scope);
+  var requested = String(input.rutaId || "").trim();
+  if (requested && !scope.management && (!allowed || allowed.indexOf(requested) === -1)) {
+    transportAuditDenied_(actor, "getTransportRoutes", requested);
+    return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", rutas: [] };
+  }
+  var routes = snapshot.rows.filter(function(row) {
+    var routeId = String(row[0] || "").trim(), state = String(row[6] || "").trim().toLowerCase();
+    return ["active","activo","activa","vigente"].indexOf(state) !== -1 &&
+      (!requested || routeId === requested) && (scope.management || allowed.indexOf(routeId) !== -1);
+  }).map(function(row) {
+    return { rutaId: row[0], nombre: row[1], unidad: row[2],
+      conductorEmpleadoId: scope.management ? row[3] : "", capacidad: row[4], paradas: row[5], estado: row[6] };
+  });
+  return { status: "success", rutas: routes };
+}
+
+function getTransportAssignments(payload) {
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", total: 0, asignaciones: [] };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), scope = resolveTransportAccessScope_(input, ss);
+  if (!scope.authorized) return { status: "error", code: scope.reason || "RESOURCE_SCOPE_DENIED", total: 0, asignaciones: [] };
+  var snapshot = transportRows_(ss, "TransporteAsignaciones", ["ID","RutaID","EstudianteUserId","Parada","Horario","Estado","Fecha","Jornada"]);
+  if (!snapshot.valid) return { status: "error", code: "RESOURCE_SCHEMA_INVALID", total: 0, asignaciones: [] };
+  var allowedRoutes = scope.management ? null : getTransportRouteIdsForScope_(ss, scope);
+  var requestedRoute = String(input.rutaId || "").trim(), requestedStudent = String(input.estudianteUserId || "").trim();
+  if (requestedRoute && !scope.management && (!allowedRoutes || allowedRoutes.indexOf(requestedRoute) === -1)) {
+    transportAuditDenied_(actor, "getTransportAssignments", requestedRoute);
+    return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", total: 0, asignaciones: [] };
+  }
+  var role = String(scope.role || "").trim().toLowerCase();
+  if (requestedStudent && !scope.management && ["padre","estudiante"].indexOf(role) !== -1 &&
+      scope.studentIds.indexOf(requestedStudent) === -1) {
+    transportAuditDenied_(actor, "getTransportAssignments", requestedStudent);
+    return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", total: 0, asignaciones: [] };
+  }
+  var assignments = snapshot.rows.filter(function(row) {
+    var routeId = String(row[1] || "").trim(), studentId = String(row[2] || "").trim();
+    var state = String(row[5] || "").trim().toLowerCase();
+    if (["activa","active","activo"].indexOf(state) === -1) return false;
+    if (requestedRoute && routeId !== requestedRoute) return false;
+    if (requestedStudent && studentId !== requestedStudent) return false;
+    if (scope.management) return true;
+    if (!allowedRoutes || allowedRoutes.indexOf(routeId) === -1) return false;
+    if (["padre","estudiante"].indexOf(role) !== -1) return scope.studentIds.indexOf(studentId) !== -1;
+    return ["conductor","monitor"].indexOf(role) !== -1;
+  }).map(function(row) {
+    return { asignacionId: row[0], rutaId: row[1], estudianteUserId: row[2], parada: row[3],
+      horario: row[4], estado: row[5], fecha: row[6], jornada: row[7] };
+  });
+  if (requestedStudent && !scope.management && ["conductor","monitor"].indexOf(role) !== -1 &&
+      !assignments.some(function(item) { return item.estudianteUserId === requestedStudent; })) {
+    transportAuditDenied_(actor, "getTransportAssignments", requestedStudent);
+    return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", total: 0, asignaciones: [] };
+  }
+  return { status: "success", total: assignments.length, asignaciones: assignments };
+}
+
+function getTripPassengerManifest(payload) {
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", manifiestoPasajeros: [] };
+  var tripId = String(input.viajeId || "").trim();
+  if (!tripId) return { status: "error", code: "RESOURCE_NOT_FOUND", manifiestoPasajeros: [] };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), scope = resolveTransportAccessScope_(input, ss);
+  if (!scope.authorized) return { status: "error", code: scope.reason || "RESOURCE_SCOPE_DENIED", manifiestoPasajeros: [] };
+  var trips = transportRows_(ss, "TransporteViajes", ["ViajeID","RutaID","Unidad","Conductor","Monitor","Fecha","Jornada","Inicio","Fin","Estado"]);
+  if (!trips.valid) return { status: "error", code: "RESOURCE_SCHEMA_INVALID", manifiestoPasajeros: [] };
+  var matches = trips.rows.filter(function(row) { return String(row[0] || "").trim() === tripId; });
+  if (matches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND", manifiestoPasajeros: [] };
+  var trip = matches[0], role = String(scope.role || "").trim().toLowerCase();
+  var allowedRoutes = scope.management ? null : getTransportRouteIdsForScope_(ss, scope);
+  var routeId = String(trip[1] || "").trim();
+  var authorizedTrip = scope.management === true || (allowedRoutes && allowedRoutes.indexOf(routeId) !== -1);
+  if (authorizedTrip && role === "conductor") authorizedTrip = scope.employeeIds.indexOf(String(trip[3] || "").trim()) !== -1;
+  if (authorizedTrip && role === "monitor") authorizedTrip = scope.employeeIds.indexOf(String(trip[4] || "").trim()) !== -1;
+  if (!authorizedTrip) {
+    transportAuditDenied_(actor, "getTripPassengerManifest", tripId);
+    return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", manifiestoPasajeros: [] };
+  }
+  var assignments = transportRows_(ss, "TransporteAsignaciones", ["ID","RutaID","EstudianteUserId","Parada","Horario","Estado","Fecha","Jornada"]);
+  if (!assignments.valid) return { status: "error", code: "RESOURCE_SCHEMA_INVALID", manifiestoPasajeros: [] };
+  var passengers = assignments.rows.filter(function(row) {
+    var state = String(row[5] || "").trim().toLowerCase(), studentId = String(row[2] || "").trim();
+    return String(row[1] || "").trim() === routeId &&
+      ["activa","active","activo"].indexOf(state) !== -1 &&
+      (scope.management || ["conductor","monitor"].indexOf(role) !== -1 || scope.studentIds.indexOf(studentId) !== -1);
+  }).map(function(row) {
+    return { asignacionId: row[0], rutaId: row[1], estudianteUserId: row[2], parada: row[3],
+      horario: row[4], estado: row[5], fecha: row[6], jornada: row[7] };
+  });
+  return { status: "success", viajeId: tripId, rutaId: routeId, manifiestoPasajeros: passengers };
+}
+
 function getEmployeeSelfServicePortal(payload) {
   var input=payload||{},actor=getVerifiedAccountingIdentity_(input);
   if(!actor||actor.authorized!==true)return {status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
@@ -2502,6 +2781,10 @@ const ROLE_PERMISSIONS = {
   Auditor: ["getAccountingMigrationFileAudit"],
   "Empleado": ["getEmployeeRecords", "getLeaveVacationRequests", "submitLeaveVacationRequest", "submitAttendanceCorrection", "manageProfessionalDevelopmentPlan"],
   "Profesor": ["submitVacationRequest"],
+  "Padre": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
+  "Estudiante": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
+  "Conductor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
+  "Monitor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "RecursosHumanos": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "recordStaffCheckIn", "recordStaffAttendance", "getStaffAttendanceLogs", "getEmployeeSelfServicePortal", "submitAttendanceCorrection", "reviewAttendanceCorrection"],
   "Director": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances"],
   "Administrador": ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection"]
@@ -2658,6 +2941,9 @@ function doPost(e) {
       return respond({ status: "error", code: "REQUEST_SCHEMA_INVALID" });
     }
     var actionPayload = Object.assign({}, request.payload, { correlationId: correlationId });
+    if (request.action === "getTransportRoutes") return respond(getTransportRoutes(actionPayload));
+    if (request.action === "getTransportAssignments") return respond(getTransportAssignments(actionPayload));
+    if (request.action === "getTripPassengerManifest") return respond(getTripPassengerManifest(actionPayload));
     if (request.action === "submitAttendanceCorrection") return respond(submitAttendanceCorrection(actionPayload));
     if (request.action === "reviewAttendanceCorrection") return respond(reviewAttendanceCorrection(actionPayload));
     if (request.action === "getEmployeeSelfServicePortal") return respond(getEmployeeSelfServicePortal(actionPayload));

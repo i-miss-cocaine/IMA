@@ -4,28 +4,34 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const root = path.resolve(__dirname, "../..");
-const sourcePath = path.join(root, "backend/transport-service/Code.gs");
+const sourcePath = path.join(root, "backend/accounting-service/Code.gs");
 const source = fs.readFileSync(sourcePath, "utf8");
 new vm.Script(source, { filename: sourcePath });
 
-function extractFunction(name, nextName) {
+function extractFunction(name) {
   const start = source.indexOf("function " + name + "(");
-  const end = source.indexOf("function " + nextName + "(", start + 1);
-  assert.ok(start >= 0 && end > start, "extractable function " + name);
-  return source.slice(start, end);
+  assert.ok(start >= 0, "extractable function " + name);
+  const open = source.indexOf("{", start);
+  let depth = 0, quote = "", escaped = false, lineComment = false, blockComment = false;
+  for (let i = open; i < source.length; i++) {
+    const c = source[i], n = source[i + 1];
+    if (lineComment) { if (c === "\n") lineComment = false; continue; }
+    if (blockComment) { if (c === "*" && n === "/") { blockComment = false; i++; } continue; }
+    if (quote) { if (escaped) escaped = false; else if (c === "\\") escaped = true; else if (c === quote) quote = ""; continue; }
+    if (c === "/" && n === "/") { lineComment = true; i++; continue; }
+    if (c === "/" && n === "*") { blockComment = true; i++; continue; }
+    if (c === "'" || c === '"' || c === "`") { quote = c; continue; }
+    if (c === "{") depth++;
+    else if (c === "}" && --depth === 0) return source.slice(start, i + 1);
+  }
+  throw new Error("unclosed function " + name);
 }
-
-const helperSource =
-  extractFunction("transportRows_", "transportDateBoundary_") +
-  extractFunction("transportDateBoundary_", "transportRelationshipIsCurrent_") +
-  extractFunction("transportRelationshipIsCurrent_", "transportEmployeeIdsForUser_") +
-  extractFunction("transportEmployeeIdsForUser_", "resolveTransportAccessScope_") +
-  extractFunction("resolveTransportAccessScope_", "transportAuditDenied_") +
-  extractFunction("transportAuditDenied_", "getTransportRouteIdsForScope_") +
-  extractFunction("getTransportRouteIdsForScope_", "getTransportRoutes") +
-  extractFunction("getTransportRoutes", "assignStudentTransport") +
-  extractFunction("getTransportAssignments", "getOrCreateActiveTrip") +
-  extractFunction("getTripPassengerManifest", "getOrCreatePickupPersonsSheet");
+const helperNames = [
+  "getVerifiedAccountingIdentity_", "transportRows_", "transportDateBoundary_", "transportRelationshipIsCurrent_",
+  "transportEmployeeIdsForUser_", "resolveTransportAccessScope_", "transportAuditDenied_",
+  "getTransportRouteIdsForScope_", "getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"
+];
+const helperSource = helperNames.map(extractFunction).join("\n");
 
 function makeSheet(rows) {
   return { getDataRange: () => ({ getValues: () => rows }) };
@@ -37,13 +43,47 @@ function makeSpreadsheet(data) {
     }
   };
 }
+const issuedSessions = {
+  "SESSION-PARENT-01": { userId: "PARENT-01", role: "Padre" },
+  "SESSION-PARENT-99": { userId: "PARENT-99", role: "Padre" },
+  "SESSION-PARENT-03": { userId: "PARENT-03", role: "Padre" },
+  "SESSION-PARENT-04": { userId: "PARENT-04", role: "Padre" },
+  "SESSION-STU-01": { userId: "STU-01", role: "Estudiante" },
+  "SESSION-STU-02": { userId: "STU-02", role: "Estudiante" },
+  "SESSION-DRIVER-1": { userId: "DRIVER-1", role: "Conductor" },
+  "SESSION-DRIVER-2": { userId: "DRIVER-2", role: "Conductor" },
+  "SESSION-MONITOR-1": { userId: "MONITOR-1", role: "Monitor" },
+  "SESSION-MONITOR-2": { userId: "MONITOR-2", role: "Monitor" },
+  "SESSION-DIRECTOR-1": { userId: "DIRECTOR-1", role: "Director" }
+};
+function makeAuthContext(data) {
+  return {
+    requestAccountingUserAuthorization_: function(action, payload) {
+      if (action !== "verifyAccountingSession") return { status: "error", code: "AUTH_ACTION_NOT_ALLOWED" };
+      const claim = issuedSessions[String(payload && payload.sessionToken || "")];
+      if (!claim) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+      const users = (data.Usuarios || []).slice(1).filter(row => String(row[0] || "").trim() === claim.userId);
+      if (users.length !== 1 || String(users[0][10] || "").trim().toLowerCase() !== "activa" ||
+          String(users[0][6] || "").trim() !== claim.role) {
+        return { status: "error", code: "ROLE_CHANGED_OR_USER_NOT_FOUND" };
+      }
+      return { status: "success", authorized: true, userId: claim.userId, role: claim.role,
+        institutionId: "I", membershipId: "M-" + claim.userId };
+    },
+    PropertiesService: { getScriptProperties: function() { return { getProperty: function(key) { return key === "IMA_INSTITUTION_ID" ? "I" : ""; } }; } }
+  };
+}
+function sessionPayload(payload) {
+  const token = payload.sessionToken || (payload._verifiedUserId ? "SESSION-" + payload._verifiedUserId : "");
+  return Object.assign({}, payload, { sessionToken: token });
+}
 function runScope(payload, data) {
-  const context = { SPREADSHEET_ID: "isolated", console };
+  const context = Object.assign({ SPREADSHEET_ID: "isolated", console }, makeAuthContext(data));
   vm.runInNewContext(
     helperSource + "\nthis.resolveScope = resolveTransportAccessScope_; this.routeIds = getTransportRouteIdsForScope_;",
     context
   );
-  return context.resolveScope(payload, makeSpreadsheet(data));
+  return context.resolveScope(sessionPayload(payload), makeSpreadsheet(data));
 }
 
 const data = {
@@ -245,18 +285,18 @@ assert.deepEqual(Array.from(parentRouteIds), ["RUT-01"]);
 
 function runEndpoint(name, payload, spreadsheetData) {
   const events = [];
-  const context = {
+  const context = Object.assign({
     SPREADSHEET_ID: "isolated",
     SpreadsheetApp: { openById: () => makeSpreadsheet(spreadsheetData) },
     logStructuredEvent: (...args) => events.push(args),
     getOrCreateTransportVehiclesCatalog: () => {}
-  };
+  }, makeAuthContext(spreadsheetData));
   vm.runInNewContext(
     helperSource +
       "\nthis.getTransportRoutes = getTransportRoutes; this.getTransportAssignments = getTransportAssignments; this.getTripPassengerManifest = getTripPassengerManifest;",
     context
   );
-  return { result: context[name](payload), events };
+  return { result: context[name](sessionPayload(payload)), events };
 }
 
 const parentAssignments = runEndpoint("getTransportAssignments", {
@@ -363,13 +403,13 @@ assert.equal(foreignDriverTrip.result.code, "UNAUTHORIZED_ACCESS_ATTEMPT");
 assert.ok(foreignDriverTrip.events.some(x => x[3] === "UNAUTHORIZED_ACCESS_ATTEMPT"));
 
 
-assert.ok(source.includes('case "getTransportAssignments": result = getTransportAssignments(payload);'));
-assert.ok(source.includes('case "getTransportRoutes": result = getTransportRoutes(payload);'));
+assert.ok(source.includes('if (request.action === "getTransportAssignments") return respond(getTransportAssignments(actionPayload));'));
+assert.ok(source.includes('if (request.action === "getTransportRoutes") return respond(getTransportRoutes(actionPayload));'));
 
 assert.ok(source.includes('"Conductor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"]'));
 assert.ok(source.includes('"Monitor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"]'));
 
 assert.ok(source.includes('"UNAUTHORIZED_ACCESS_ATTEMPT"'));
-assert.ok(!source.includes('case "getTransportTripLiveLocation"'), "No live-GPS action is registered in this service; do not imply a protected endpoint exists.");
+assert.ok(!source.includes('request.action === "getTransportTripLiveLocation"'), "No live-GPS action is registered in this service; do not imply a protected endpoint exists.");
 
 console.log("TASK-030 transport access scope tests: PASS");
