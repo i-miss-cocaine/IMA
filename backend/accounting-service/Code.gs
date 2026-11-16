@@ -4264,7 +4264,7 @@ const SUPPLIER_BANK_AUDIT_HEADERS_=["AuditoriaID","ProveedorID","UsuarioID","Fec
 function supplierProfileAccess_(payload,ss,write) {
   var access=purchaseQuotationAccess_(payload||{},ss,write===true);
   if(!access||access.authorized!==true)return {authorized:false,code:access&&access.code||"ROLE_NOT_ALLOWED"};
-  var role=normalizePurchaseAwardRole_(access.actor&&access.actor.role);
+  var role=String(normalizePurchaseAwardRole_(access.actor&&access.actor.role)||"").toLowerCase();
   if(["contador","director","administrador","subdirector"].indexOf(role)<0)return {authorized:false,code:"SUPPLIER_ROLE_NOT_ALLOWED"};
   return {authorized:true,actor:access.actor,role:role,scope:access.scope};
 }
