@@ -10653,7 +10653,7 @@ function previewBatchMonthlyCharges(payload){
  if(p.__debug===true)return {debug:{header:matRows[0],map:mh,rows:matRows.slice(1),year:year,month:month,gradeFilter:p.nivelGrado}};
  let total=0,already=0,noTariff=0,pending=0;const breakdown=[];
  students.forEach(st=>{
-  const tariff=resolveMonthlyChargeTariff_(ss,year,st.grado,p.conceptoId),key=monthlyChargeDedupeKey_(st.userId,p.conceptoId,year,month),legacy=st.userId+"_"+conceptName.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"")+"_"+monthName+"_"+year;
+  const tariff=resolveMonthlyChargeTariff_(ss,year,st.grado,p.conceptoId),key=monthlyChargeDedupeKey_(st.userId,p.conceptoId,year,month),legacy=String(st.userId).toLowerCase()+"_"+conceptName.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"")+"_"+monthName+"_"+year;
   if(existingKeys.has(key)||existingKeys.has(legacy)){already++;breakdown.push({...st,montoBase:0,descuento:0,montoFinal:0,estado:"YaGenerado",motivo:"Cargo existente para este período."});return;}
   if(!tariff){noTariff++;breakdown.push({...st,montoBase:0,descuento:0,montoFinal:0,estado:"SinTarifa",motivo:"No existe tarifa activa para el grado, concepto y año lectivo."});return;}
   const base=tariff.montoBase,discount=Math.round(base*st.descuentoPct)/100,final=Math.max(0,Math.round((base-discount)*100)/100);total+=final;pending++;breakdown.push({...st,montoBase:base,descuento:Math.round(discount*100)/100,montoFinal:final,estado:"PendienteGenerar",fechaVencimiento:due,tarifaId:tariff.tarifaId,dedupeKey:key});
