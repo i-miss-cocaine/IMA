@@ -3221,6 +3221,14 @@ function getPurchaseQuotationMatrix(payload) {
   var snapshot = latestAward ? purchaseQuotationJsonObject_(latestAward[9]) : {};
   if (latestAward && Array.isArray(snapshot.cotizaciones)) quoteRows = snapshot.cotizaciones;
   if (latestAward && Array.isArray(snapshot.detalleCotizaciones)) details = snapshot.detalleCotizaciones;
+  if (latestAward) {
+    var awardedQuoteIds = {};
+    purchaseQuotationJsonArray_(latestAward[7]).forEach(function(line) { awardedQuoteIds[String(line.cotizacionId || "")] = true; });
+    quoteRows = quoteRows.map(function(row) {
+      if (!awardedQuoteIds[String(row[0] || "")]) return row;
+      var copy = row.slice(); copy[9] = "AdjudicadaParcial"; return copy;
+    });
+  }
   var mappedQuotes = quoteRows.map(function(row) {
     var supplier = suppliers.filter(function(s) { return String(s[0] || "").trim() === String(row[2] || "").trim(); })[0];
     var valid = purchaseQuoteIsValid_(row, now);
