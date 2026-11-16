@@ -1249,6 +1249,347 @@ function getEmployeeDocuments(payload) {
     auditEventId: authorization.auditEventId, documentos: referenceDocuments };
 }
 
+
+function normalizeVacationRole_(role) {
+  return String(role || "").trim().toLowerCase().replace(/\s+/g, "");
+}
+
+function validateRolePermission(actorOrPayload, action) {
+  var actor = actorOrPayload && actorOrPayload.authorized === true
+    ? actorOrPayload : getVerifiedAccountingIdentity_(actorOrPayload || {});
+  if (!actor || actor.authorized !== true) return { authorized: false, code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  return accountingHasRolePermission_(actor, action)
+    ? { authorized: true, actor: actor }
+    : { authorized: false, code: "ROLE_NOT_ALLOWED" };
+}
+
+function resolveEmployeeDepartmentId_(ss, expedienteId) {
+  var sheet = ss && ss.getSheetByName ? ss.getSheetByName("ExpedientesLaborales") : null;
+  if (!sheet) return "";
+  var values = sheet.getDataRange().getValues();
+  if (!values || values.length < 2) return "";
+  var headers = values[0].map(function(value) { return String(value || "").trim(); });
+  var idIndex = headers.indexOf("ExpedienteID"), departmentIndex = headers.indexOf("Departamento");
+  if (idIndex < 0 || departmentIndex < 0) return "";
+  var matches = values.slice(1).filter(function(row) { return String(row[idIndex] || "").trim() === String(expedienteId || "").trim(); });
+  return matches.length === 1 ? String(matches[0][departmentIndex] || "").trim() : "";
+}
+
+function assertResourceOwnershipForScope_(payload, ss, expedienteId) {
+  return assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId);
+}
+
+function auditEmployeeSelfServiceDenied_(actor, action) {
+  try {
+    logStructuredEvent("ACCOUNTING", "employeeSelfService", "WARNING",
+      "UNAUTHORIZED_EMPLOYEE_RESOURCE_ACCESS", "Acceso a recurso laboral denegado",
+      { action: String(action || "read"), actorUserId: String(actor && actor.userId || "") },
+      String(actor && actor.role || "Unknown"));
+  } catch (ignored) {}
+}
+
+function getVacationSheetSnapshot_(ss, sheetName) {
+  var name = sheetName || "SolicitudesVacaciones";
+  var headers = name === "IncapacidadesMedicas"
+    ? ["IncapacidadID","ExpedienteID","CentroMedico","DiagnosticoPrivadoUrl","FechaInicio","FechaFin","DiasOtorgados","EstadoIHSS","Observaciones"]
+    : ["SolicitudID","ExpedienteID","Tipo","FechaInicio","FechaFin","DiasSolicitados","Estado","AprobadoPor","Observaciones"];
+  var sheet = ss && ss.getSheetByName ? ss.getSheetByName(name) : null;
+  if (!sheet) return { valid: true, missing: true, headers: headers, rows: [], sheet: null };
+  var values = sheet.getDataRange().getValues();
+  if (!values || !values.length) return { valid: true, missing: false, headers: headers, rows: [], sheet: sheet };
+  var actual = values[0].map(function(value) { return String(value || "").trim(); });
+  if (JSON.stringify(actual) !== JSON.stringify(headers)) return { valid: false, code: "RESOURCE_SCHEMA_INVALID", rows: [], sheet: sheet };
+  var rows = values.slice(1);
+  var ids = Object.create(null);
+  for (var i = 0; i < rows.length; i++) {
+    var id = String(rows[i][0] || "").trim();
+    if (!id || ids[id]) return { valid: false, code: "RESOURCE_SCHEMA_INVALID", rows: [], sheet: sheet };
+    ids[id] = true;
+  }
+  return { valid: true, missing: false, headers: headers, rows: rows, sheet: sheet };
+}
+
+function getEmployeePersonNameIndex_(ss) {
+  var sheet = ss && ss.getSheetByName ? ss.getSheetByName("Personas") : null;
+  var result = Object.create(null);
+  if (!sheet) return result;
+  var values = sheet.getDataRange().getValues();
+  if (!values || !values.length) return result;
+  var headers = values[0].map(function(value) { return String(value || "").trim(); });
+  var idIndex = headers.indexOf("PersonaID"), firstIndex = headers.indexOf("Nombres"), lastIndex = headers.indexOf("Apellidos");
+  if (idIndex < 0 || firstIndex < 0 || lastIndex < 0) return result;
+  values.slice(1).forEach(function(row) {
+    var id = String(row[idIndex] || "").trim();
+    if (id && !Object.prototype.hasOwnProperty.call(result, id)) result[id] = [row[firstIndex], row[lastIndex]].map(function(value) { return String(value || "").trim(); }).filter(Boolean).join(" ");
+  });
+  return result;
+}
+
+function normalizeVacationRequestStatus_(status) {
+  var value = String(status || "").trim().toLowerCase();
+  if (value === "pendienteaprobacion" || value === "pending" || value === "pendiente") return "Pendiente";
+  if (value === "aprobado" || value === "approved") return "Aprobado";
+  if (value === "rechazado" || value === "rejected") return "Rechazado";
+  if (value === "cancelado" || value === "cancelled") return "Cancelado";
+  return String(status || "").trim();
+}
+
+function resolveVacationEmployeeAccess_(payload, ss, expedienteId, actor) {
+  var identity = actor || getVerifiedAccountingIdentity_(payload || {});
+  if (!identity || identity.authorized !== true) return { authorized: false, code: identity && identity.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var role = normalizeVacationRole_(identity.role);
+  var employeeSheet = ss && ss.getSheetByName ? ss.getSheetByName("ExpedientesLaborales") : null;
+  if (!employeeSheet) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  var values = employeeSheet.getDataRange().getValues();
+  if (!values || !values.length) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  var headers = values[0].map(function(value) { return String(value || "").trim(); });
+  var idx = { id: headers.indexOf("ExpedienteID"), person: headers.indexOf("PersonaId"), user: headers.indexOf("UserId"), department: headers.indexOf("Departamento"), hire: headers.indexOf("FechaIngreso"), notes: headers.indexOf("Observaciones") };
+  if (idx.id < 0 || idx.user < 0 || idx.department < 0) return { authorized: false, code: "RESOURCE_SCHEMA_INVALID" };
+  var targetId = String(expedienteId || "").trim();
+  if (role === "empleado" && !targetId) {
+    var own = values.slice(1).filter(function(row) { return String(row[idx.user] || "").trim() === identity.userId; });
+    if (own.length !== 1) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+    targetId = String(own[0][idx.id] || "").trim();
+  }
+  var matches = values.slice(1).filter(function(row) { return String(row[idx.id] || "").trim() === targetId; });
+  if (!targetId || matches.length !== 1) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  var row = matches[0];
+  if (role === "empleado") {
+    if (String(row[idx.user] || "").trim() !== identity.userId) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+    return { authorized: true, actor: identity, role: role, expedienteId: targetId, employee: row, employeeIndex: idx, accessType: "SELF" };
+  }
+  var scope = getVerifiedAccountingDepartmentScope_(payload || {}, ss, identity);
+  if (!scope || scope.valid !== true) {
+    if (scope && scope.institutionWide === true) return { authorized: true, actor: identity, role: role, expedienteId: targetId, employee: row, employeeIndex: idx, scope: scope, accessType: "INSTITUTION" };
+    return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  }
+  if (scope.institutionWide === true) return { authorized: true, actor: identity, role: role, expedienteId: targetId, employee: row, employeeIndex: idx, scope: scope, accessType: "INSTITUTION" };
+  var department = String(row[idx.department] || "").trim();
+  var permitted = (scope.departmentIds || []).map(function(value) { return String(value || "").trim(); });
+  if (!department || permitted.indexOf(department) === -1) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  return { authorized: true, actor: identity, role: role, expedienteId: targetId, employee: row, employeeIndex: idx, scope: scope, accessType: "DEPARTMENT" };
+}
+
+function assertVacationWriteAccess_(payload, ss, expedienteId, actor, allowedRoles) {
+  var access = resolveVacationEmployeeAccess_(payload, ss, expedienteId, actor);
+  if (!access.authorized) return access;
+  var allowed = allowedRoles || ["recursoshumanos","director","administrador"];
+  if (allowed.indexOf(access.role) === -1) return { authorized: false, code: "ROLE_NOT_ALLOWED" };
+  return access;
+}
+
+function getEmployeeRecords(payload) {
+  var input = payload || {};
+  var actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var permission = validateRolePermission(actor, "getEmployeeRecords");
+  if (!permission.authorized) return { status: "error", code: permission.code };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = ss.getSheetByName("ExpedientesLaborales");
+  if (!sheet) return { status: "success", data: [], expedientes: [] };
+  var values = sheet.getDataRange().getValues();
+  if (!values || !values.length) return { status: "success", data: [], expedientes: [] };
+  var headers = values[0].map(function(value) { return String(value || "").trim(); });
+  var idx = { id: headers.indexOf("ExpedienteID"), person: headers.indexOf("PersonaId"), user: headers.indexOf("UserId"), role: headers.indexOf("Puesto"), department: headers.indexOf("Departamento"), cost: headers.indexOf("CentroCosto"), hire: headers.indexOf("FechaIngreso"), exit: headers.indexOf("FechaSalida"), state: headers.indexOf("EstadoLaboral"), notes: headers.indexOf("Observaciones") };
+  if (Object.keys(idx).some(function(key) { return idx[key] < 0; })) return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
+  var names = getEmployeePersonNameIndex_(ss), role = normalizeVacationRole_(actor.role), rows = [];
+  values.slice(1).forEach(function(row) {
+    var id = String(row[idx.id] || "").trim();
+    if (!id) return;
+    if (role === "empleado") {
+      if (String(row[idx.user] || "").trim() !== actor.userId) return;
+    } else {
+      var access = resolveVacationEmployeeAccess_(input, ss, id, actor);
+      if (!access.authorized) return;
+    }
+    var item = { expedienteId: id, personaId: row[idx.person], userId: role === "empleado" ? undefined : row[idx.user],
+      puesto: row[idx.role], departamento: row[idx.department], centroCosto: row[idx.cost],
+      fechaIngreso: row[idx.hire], fechaSalida: row[idx.exit], estadoLaboral: row[idx.state],
+      empleadoNombre: names[String(row[idx.person] || "").trim()] || "" };
+    if (role !== "empleado") item.observaciones = row[idx.notes] || "";
+    rows.push(item);
+  });
+  var requestedId = String(input.expedienteId || "").trim();
+  if (requestedId && !rows.some(function(item) { return item.expedienteId === requestedId; })) {
+    auditEmployeeSelfServiceDenied_(actor, "getEmployeeRecords");
+    return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  }
+  return { status: "success", data: rows, expedientes: rows };
+}
+
+function submitVacationRequestCore_(payload, allowedRoles) {
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var role = normalizeVacationRole_(actor.role);
+  if (allowedRoles.indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED" };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var access = resolveVacationEmployeeAccess_(input, ss, input.expedienteId, actor);
+  if (!access.authorized) {
+    if (access.code === "RESOURCE_NOT_FOUND") auditEmployeeSelfServiceDenied_(actor, "submitLeaveVacationRequest");
+    return { status: "error", code: access.code };
+  }
+  var start = new Date(input.fechaInicio), end = new Date(input.fechaFin);
+  if (!input.fechaInicio || !input.fechaFin || isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return { status: "error", code: "REQUEST_DATE_INVALID" };
+  var requestedDays = Number(input.diasSolicitados === undefined ? 1 : input.diasSolicitados);
+  if (!isFinite(requestedDays) || requestedDays <= 0 || requestedDays > 365) return { status: "error", code: "REQUEST_DURATION_INVALID" };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
+  try {
+    var snapshot = getVacationSheetSnapshot_(ss);
+    if (!snapshot.valid) return { status: "error", code: snapshot.code };
+    var sheet = snapshot.sheet;
+    if (!sheet) {
+      sheet = ss.insertSheet("SolicitudesVacaciones");
+      sheet.appendRow(snapshot.headers);
+    }
+    var startTime = start.getTime(), endTime = end.getTime();
+    var overlap = snapshot.rows.some(function(row) {
+      var state = normalizeVacationRequestStatus_(row[6]);
+      if (String(row[1] || "").trim() !== access.expedienteId || ["Rechazado","Cancelado"].indexOf(state) !== -1) return false;
+      var oldStart = new Date(row[3]), oldEnd = new Date(row[4]);
+      return !isNaN(oldStart.getTime()) && !isNaN(oldEnd.getTime()) && startTime <= oldEnd.getTime() && endTime >= oldStart.getTime();
+    });
+    if (overlap) return { status: "error", code: "VACATION_REQUEST_OVERLAP" };
+    var requestId = "VAC-" + Utilities.getUuid().replace(/-/g, "").slice(0, 18);
+    sheet.appendRow([requestId, access.expedienteId, String(input.tipo || "Vacaciones"), start, end, requestedDays,
+      "PendienteAprobacion", "", String(input.motivo || input.observaciones || "").slice(0, 1000)]);
+    return { status: "success", solicitudId: requestId, estado: "PendienteAprobacion", expedienteId: access.expedienteId };
+  } catch (error) {
+    return { status: "error", code: "VACATION_WRITE_FAILED" };
+  } finally { lock.releaseLock(); }
+}
+
+function submitLeaveVacationRequest(payload) {
+  return submitVacationRequestCore_(payload, ["empleado","recursoshumanos"]);
+}
+
+function submitVacationRequest(payload) {
+  return submitVacationRequestCore_(payload, ["director","profesor","recursoshumanos"]);
+}
+
+function getLeaveVacationRequests(payload) {
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", data: [], solicitudes: [] };
+  var role = normalizeVacationRole_(actor.role);
+  if (["empleado","recursoshumanos","director","administrador"].indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED", data: [], solicitudes: [] };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), snapshot = getVacationSheetSnapshot_(ss);
+  if (!snapshot.valid) return { status: "error", code: snapshot.code, data: [], solicitudes: [] };
+  var names = getEmployeePersonNameIndex_(ss), result = [];
+  snapshot.rows.forEach(function(row) {
+    var access = resolveVacationEmployeeAccess_(input, ss, row[1], actor);
+    if (!access.authorized) return;
+    var employee = access.employee, personIndex = access.employeeIndex.person;
+    var employeeName = names[String(employee[personIndex] || "").trim()] || "";
+    var item = { solicitudId: row[0], expedienteId: row[1], tipo: row[2], tipoSolicitud: String(row[2] || "").toLowerCase().indexOf("vac") !== -1 ? "Vacaciones" : String(row[2] || ""),
+      fechaInicio: row[3], fechaFin: row[4], diasSolicitados: Number(row[5] || 0), estado: normalizeVacationRequestStatus_(row[6]),
+      estadoOriginal: row[6], empleadoNombre: employeeName };
+    if (role !== "empleado") { item.observaciones = row[8] || ""; item.aprobadoPor = row[7] || ""; }
+    result.push(item);
+  });
+  return { status: "success", total: result.length, data: result, solicitudes: result };
+}
+
+function getVacationRequests(payload) {
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", solicitudes: [], data: [] };
+  var role = normalizeVacationRole_(actor.role);
+  if (["recursoshumanos","director","administrador"].indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED", solicitudes: [], data: [] };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), snapshot = getVacationSheetSnapshot_(ss);
+  if (!snapshot.valid) return { status: "error", code: snapshot.code, solicitudes: [], data: [] };
+  var names = getEmployeePersonNameIndex_(ss), requested = String(input.expedienteId || "").trim(), result = [];
+  snapshot.rows.forEach(function(row) {
+    if (requested && String(row[1] || "").trim() !== requested) return;
+    var access = resolveVacationEmployeeAccess_(input, ss, row[1], actor);
+    if (!access.authorized) return;
+    var employee = access.employee;
+    result.push({ solicitudId: row[0], expedienteId: row[1], tipo: row[2], tipoSolicitud: String(row[2] || "").toLowerCase().indexOf("vac") !== -1 ? "Vacaciones" : String(row[2] || ""),
+      fechaInicio: row[3], fechaFin: row[4], diasSolicitados: Number(row[5] || 0), estado: normalizeVacationRequestStatus_(row[6]),
+      estadoOriginal: row[6], aprobadoPor: row[7] || "", observaciones: row[8] || "",
+      empleadoNombre: names[String(employee[access.employeeIndex.person] || "").trim()] || "" });
+  });
+  if (requested && !result.length) return { status: "error", code: "RESOURCE_NOT_FOUND", solicitudes: [], data: [] };
+  return { status: "success", solicitudes: result, data: result, total: result.length };
+}
+
+function reviewVacationRequest(payload) {
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  if (["recursoshumanos","director","administrador"].indexOf(normalizeVacationRole_(actor.role)) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED" };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID), snapshot = getVacationSheetSnapshot_(ss);
+    if (!snapshot.valid) return { status: "error", code: snapshot.code };
+    var matches = snapshot.rows.map(function(row, index) { return { row: row, index: index }; })
+      .filter(function(item) { return String(item.row[0] || "").trim() === String(input.solicitudId || "").trim(); });
+    if (matches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    var row = matches[0].row, access = resolveVacationEmployeeAccess_(input, ss, row[1], actor);
+    if (!access.authorized) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    var next = String(input.nuevoEstado || "").trim();
+    if (["Aprobado","Rechazado"].indexOf(next) === -1) return { status: "error", code: "REQUEST_STATE_INVALID" };
+    if (normalizeVacationRequestStatus_(row[6]) !== "Pendiente") return { status: "error", code: "REQUEST_ALREADY_REVIEWED" };
+    var sheet = snapshot.sheet;
+    if (!sheet) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    var rowNumber = matches[0].index + 2;
+    sheet.getRange(rowNumber, 7).setValue(next);
+    sheet.getRange(rowNumber, 8).setValue(actor.role);
+    if (input.observaciones !== undefined) sheet.getRange(rowNumber, 9).setValue(String(input.observaciones).slice(0, 1000));
+    return { status: "success", solicitudId: input.solicitudId, estado: next, aprobadoPor: actor.role };
+  } catch (error) { return { status: "error", code: "VACATION_WRITE_FAILED" }; }
+  finally { lock.releaseLock(); }
+}
+
+function reviewLeaveVacationRequest(payload) {
+  return reviewVacationRequest(payload);
+}
+
+function calculateVacationBalances(payload) {
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  if (["recursoshumanos","director","administrador"].indexOf(normalizeVacationRole_(actor.role)) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED" };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), access = resolveVacationEmployeeAccess_(input, ss, input.expedienteId, actor);
+  if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_NOT_FOUND" };
+  var hireDate = new Date(access.employee[access.employeeIndex.hire]);
+  if (isNaN(hireDate.getTime())) return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
+  var today = new Date(), years = today.getFullYear() - hireDate.getFullYear();
+  if (today.getMonth() < hireDate.getMonth() || (today.getMonth() === hireDate.getMonth() && today.getDate() < hireDate.getDate())) years--;
+  years = Math.max(0, years);
+  var entitlement = years >= 4 ? 20 : years === 3 ? 15 : years === 2 ? 12 : years === 1 ? 10 : 0;
+  var snapshot = getVacationSheetSnapshot_(ss);
+  if (!snapshot.valid) return { status: "error", code: snapshot.code };
+  var used = snapshot.rows.filter(function(row) { return String(row[1] || "").trim() === access.expedienteId && normalizeVacationRequestStatus_(row[6]) === "Aprobado"; })
+    .reduce(function(total, row) { return total + Number(row[5] || 0); }, 0);
+  return { status: "success", expedienteId: access.expedienteId, antiguedadAnos: years,
+    diasDerechoAnual: entitlement, diasGozados: used, saldoDisponible: Math.max(0, entitlement - used) };
+}
+
+function recordMedicalLeave(payload) {
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  if (normalizeVacationRole_(actor.role) !== "recursoshumanos") return { status: "error", code: "ROLE_NOT_ALLOWED" };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), access = resolveVacationEmployeeAccess_(input, ss, input.expedienteId, actor);
+  if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_NOT_FOUND" };
+  if (!input.fechaInicio || !input.fechaFin || isNaN(new Date(input.fechaInicio).getTime()) ||
+      isNaN(new Date(input.fechaFin).getTime()) || new Date(input.fechaInicio) > new Date(input.fechaFin)) {
+    return { status: "error", code: "REQUEST_DATE_INVALID" };
+  }
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
+  try {
+    var snapshot = getVacationSheetSnapshot_(ss, "IncapacidadesMedicas");
+    if (!snapshot.valid) return { status: "error", code: snapshot.code };
+    var sheet = snapshot.sheet;
+    if (!sheet) { sheet = ss.insertSheet("IncapacidadesMedicas"); sheet.appendRow(snapshot.headers); }
+    var id = "INC-" + Utilities.getUuid().replace(/-/g, "").slice(0, 18);
+    sheet.appendRow([id, access.expedienteId, String(input.centroMedico || "IHSS").slice(0, 120),
+      "PRIVADO_CONFIDENCIAL", new Date(input.fechaInicio), new Date(input.fechaFin),
+      Math.max(1, Number(input.diasOtorgados || 1)), String(input.estadoIHSS || "PendienteValidacion").slice(0, 40),
+      String(input.observaciones || "").slice(0, 500)]);
+    return { status: "success", incapacidadId: id };
+  } catch (error) { return { status: "error", code: "MEDICAL_LEAVE_WRITE_FAILED" }; }
+  finally { lock.releaseLock(); }
+}
+
 /* Runtime configuration and fail-closed service adapters. */
 var SPREADSHEET_ID = PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID") || "";
 const MIGRATION_OWNER_SCHEMAS_={
@@ -1422,7 +1763,12 @@ function migrationHash_(value) {
 const API_RESPONSE_VERSION = "1.0.0";
 
 const ROLE_PERMISSIONS = {
-  Auditor: ["getAccountingMigrationFileAudit"]
+  Auditor: ["getAccountingMigrationFileAudit"],
+  Empleado: ["getEmployeeRecords", "getLeaveVacationRequests", "submitLeaveVacationRequest"],
+  Profesor: ["submitVacationRequest"],
+  RecursosHumanos: ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave"],
+  Director: ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances"],
+  Administrador: ["getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances"]
 };
 
 function accountingHasRolePermission_(actor, action) {
@@ -1576,6 +1922,15 @@ function doPost(e) {
       return respond({ status: "error", code: "REQUEST_SCHEMA_INVALID" });
     }
     var actionPayload = Object.assign({}, request.payload, { correlationId: correlationId });
+    if (request.action === "getEmployeeRecords") return respond(getEmployeeRecords(actionPayload));
+    if (request.action === "getLeaveVacationRequests") return respond(getLeaveVacationRequests(actionPayload));
+    if (request.action === "getVacationRequests") return respond(getVacationRequests(actionPayload));
+    if (request.action === "submitLeaveVacationRequest") return respond(submitLeaveVacationRequest(actionPayload));
+    if (request.action === "submitVacationRequest") return respond(submitVacationRequest(actionPayload));
+    if (request.action === "reviewVacationRequest") return respond(reviewVacationRequest(actionPayload));
+    if (request.action === "reviewLeaveVacationRequest") return respond(reviewLeaveVacationRequest(actionPayload));
+    if (request.action === "calculateVacationBalances") return respond(calculateVacationBalances(actionPayload));
+    if (request.action === "recordMedicalLeave") return respond(recordMedicalLeave(actionPayload));
     if (request.action === "validateImportPreview") return respond(validateImportPreview(actionPayload));
     if (request.action === "getAccountingMigrationFileAudit") return respond(getAccountingMigrationFileAudit(actionPayload));
     if (request.action === "importDataWithColumnMapping") return respond(importDataWithColumnMapping(actionPayload));
@@ -1595,6 +1950,10 @@ function doPost(e) {
       MIGRATION_SCHEMA_MISMATCH: true, MIGRATION_FIELD_NOT_ALLOWED: true,
       MIGRATION_WRITE_CONTRACT_INVALID: true, MIGRATION_FILE_HASH_REQUIRED: true,
       MIGRATION_FILE_HASH_AUDIT_SCHEMA_MISMATCH: true, DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED: true,
+      RESOURCE_NOT_FOUND: true, RESOURCE_SCHEMA_INVALID: true, ROLE_NOT_ALLOWED: true,
+      REQUEST_DATE_INVALID: true, REQUEST_DURATION_INVALID: true, VACATION_REQUEST_OVERLAP: true,
+      CONCURRENT_UPDATE_RETRY: true, REQUEST_STATE_INVALID: true, REQUEST_ALREADY_REVIEWED: true,
+      VACATION_WRITE_FAILED: true, MEDICAL_LEAVE_WRITE_FAILED: true,
       MIGRATION_DESTINATION_MISMATCH: true, MIGRATION_OWNER_WRITE_FAILED: true,
       MIGRATION_IDEMPOTENCY_CONFLICT: true, MIGRATION_CELL_TYPE_INVALID: true,
       MIGRATION_WRITE_ALREADY_COMPENSATED: true, DEPARTMENT_IMPORT_PERMISSION_DENIED: true,
