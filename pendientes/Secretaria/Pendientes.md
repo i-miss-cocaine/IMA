@@ -3713,6 +3713,9 @@
   - [ ] Ningún proceso de carga privado vuelve a establecer `ANYONE_WITH_LINK`.
 - **Dependencias:** F40-Task01, F40-Task03.
 - **Estado:** [ ] En ejecución (parcial; proxy autenticado y token efímero implementados; permisos PREVIEW y beta real pendientes)
+- **Avance C1.780 (2026-11-16):** Academic ya separa PREVIEW y DOWNLOAD con permisos RBAC, tokens HMAC de un solo uso vinculados a operación/documento/versión/usuario y auditoría diferenciada; la UI muestra botones Ver y Descargar. Accounting getEmployeeDocuments deja de devolver archivoUrl y solo informa tieneArchivo, con verificación de privacidad Drive. No se localizaron uploadEmployeeDocument ni uploadPaymentVoucher ni un proxy binario Accounting en el servicio actual; no se inventó una ruta. La carga/entrega laboral autenticada y beta real permanecen pendientes.
+- **Verificación C1.780:** Accounting Import Preflight run 43788968649 SUCCESS (Node 24.22.2); Department Reference Consumers run 43789068286 SUCCESS. Department Scope run 43789068303 conserva FAIL independiente porque falta resolveEmployeeDepartmentId_ en ACCOUNTING. BETA-FUNC-110 describe la validación aislada pendiente.
+
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 6176-6207; clave TASK-143; asignación única: Secretaria -->
 

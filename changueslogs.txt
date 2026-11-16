@@ -3979,3 +3979,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-16] C1.779 — Seguridad de carga documental SHA-256
 - uploadStudentDocument revalida identidad/rol y ámbito después de adquirir ScriptLock para cerrar la ventana TOCTOU previa a las escrituras; prueba revocación de scope e identidad sin creación de archivo ni persistencia.
 - Commit 294092b43bc7bb4442b5eb27b72803bef0addc09. Accounting Import Preflight Contract run 43787956996 SUCCESS (39/39, Node 24). Department Scope run 43787956927 conserva FAIL independiente por resolveEmployeeDepartmentId_ ausente en ACCOUNTING.
+
+
+[2026-11-16] C1.780 — TASK-142, streaming documental por operación
+- Separación de PREVIEW y DOWNLOAD con permisos RBAC, claims HMAC efímeras por operación y eventos de auditoría diferenciados; UI Secretaría con botones Ver/Descargar.
+- getEmployeeDocuments deja de exponer archivoUrl; devuelve solo tieneArchivo y mantiene comprobación de privacidad Drive.
+- CI Accounting Import Preflight run 43788968649 SUCCESS; Department Reference Consumers run 43789068286 SUCCESS; Department Scope run 43789068303 FAILURE independiente por resolveEmployeeDepartmentId_ ausente en ACCOUNTING.
+- TASK-142 sigue parcial por falta de propietario/funciones de carga y proxy binario Accounting, además de beta real pendiente. BETA-FUNC-110 documenta las pruebas aisladas.

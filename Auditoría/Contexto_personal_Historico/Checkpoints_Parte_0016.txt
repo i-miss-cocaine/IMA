@@ -379,3 +379,44 @@
 - TASK-134 permanece En ejecución por integración contable aplicable y evidencia beta, sin usar beta como bloqueo de la implementación local.
 - Siguiente: revisar si existe un propietario/flujo contable documental real antes de extender el almacenamiento; si no existe, no inventar repositorio. Continuar con TASK-142 PREVIEW/DOWNLOAD y revisar las dependencias independientes elegibles.
 ===============================================================================
+
+
+===============================================================================
+## C1.780 — IMA-EXEC-20261116-0155Z-TASK142-OPERATION-BOUND-STREAM-01 — Separación de vista previa y descarga autenticadas
+
+- Fecha: 2026-11-16 01:55 UTC.
+- Rama autorizada: NG_beta_0.0.0.1_work.
+- Rama base: NG_beta_0.0.0.1.
+- HEAD inicial: 6ba6d8348aa17f8c88c9d2366aad54ee69b41c3b.
+- HEAD final de implementación antes del checkpoint: 4a57d73a1d35fdf65fc5eb398f2f8efa8ffc1296.
+- Commits principales: c128d6385b116240b2410f12545872e42639958b (separación PREVIEW/DOWNLOAD); 0d8defb2b8ce4648f778921047f300506033a169 (sintaxis del registro de auditoría); 09c9a1e4b48b097c405f0e30eea6e77fbf423ce3 (contrato Auditor); 3724259f9a02aa657bd2a4d74b4c464a8695341d (redacción de URL laboral); 27d00a757670800b06d530331be30615b1b8a7e4 y 4a57d73a1d35fdf65fc5eb398f2f8efa8ffc1296 (contratos de metadatos y referencias).
+- Normativa leída: Normas_Desarollo.md NDASC 1.4, secciones aplicables 1-16.
+- Continuidad: C1.779.
+
+### Hallazgo, implementación y revisión
+
+- TASK-142: el flujo Academic emitía siempre tokens DOWNLOAD, incluso desde el botón «Ver». Se incorporó permiso RBAC de solo lectura independiente previewStudentDocument a los roles que ya tenían getStudentDocumentFile.
+- Los tokens HMAC efímeros quedan vinculados a documento, versión, usuario y operación PREVIEW/DOWNLOAD; el servidor valida la operación reclamada, vuelve a validar permiso y alcance, consume el token de un solo uso y registra eventos diferenciados DOCUMENT_PREVIEWED / DOCUMENT_DOWNLOADED.
+- Una solicitud no puede convertir un token PREVIEW en DOWNLOAD: la operación solicitada debe coincidir con la claim firmada. Se rechazan operaciones no admitidas y metadatos no pueden emitir tokens binarios.
+- La interfaz de Secretaría ahora ofrece botones separados «Ver» (PREVIEW) y «Descargar» (DOWNLOAD); la vista previa reserva la ventana emergente antes de la llamada asíncrona y falla de forma explícita si el navegador la bloquea.
+- El contrato academic-student-document-private-storage.test.js cubre permiso PREVIEW independiente, denegación, token PREVIEW, auditoría, replay de un solo uso y downgrade/upgrade de operación. El contrato Auditor reconoce PREVIEW como permiso de solo lectura.
+- Revisión de exposición: Academic getStudentDocuments no devuelve driveUrl ni driveFileId; getSecureDocumentStream entrega bytes solo tras autorización e integridad. updateDocumentStatus valida identidad verificada y ámbito del documento.
+- Accounting getEmployeeDocuments verificaba el archivo privado pero devolvía archivoUrl; ahora solo informa tieneArchivo, y el contrato comprueba que no se filtra la URL ni se muestran documentos de otro empleado.
+- Inventario de permisos de código: no se encontró ANYONE_WITH_LINK en Academic ni Accounting. En USER permanece una asignación en uploadNewsImage, que publica imágenes de noticias, no documentos privados. No se cambió ese flujo de contenido público.
+- No existen en el backend Accounting actual las funciones uploadEmployeeDocument ni uploadPaymentVoucher indicadas por el requisito; tampoco existe un proxy binario laboral despachado. No se inventó un propietario ni se creó una ruta especulativa. La respuesta de metadatos ya no expone el enlace directo, pero la entrega binaria laboral sigue pendiente.
+- No se ejecutó despliegue real de Apps Script/Drive/Sheets; se añadió BETA-FUNC-110 para la prueba aislada.
+
+### Verificaciones
+
+- GitHub Actions Accounting Import Preflight Contract run 43788968649: SUCCESS, Node.js 24.22.2; sintaxis Academic/Accounting/User y contrato Academic SHA-256/deduplicación, RBAC Auditor y ámbito laboral pasaron.
+- GitHub Actions Department Reference Consumers run 43789068286: SUCCESS; contrato de referencia Accounting/Academic y parseo de servicios pasaron.
+- GitHub Actions Department Scope run 43789068303: FAILURE independiente en accounting-vacation-medical-leave-ownership.test.js; el test busca resolveEmployeeDepartmentId_ en backend/accounting-service/Code.gs y esa función no existe. No se modificó ni ocultó el contrato.
+- Los workflows Identity Mapping/Transport y Task-Service Security conservan los bloqueos independientes ya documentados en C1.778 (backend/transport-service/Code.gs ausente y verificación de sesión TASK pendiente); no se reejecutaron en este checkpoint.
+- Node.js 24 se ejecutó en GitHub Actions. Node CLI local y beta real no ejecutados.
+- Revisión de diff desde C1.779: seis archivos funcionales/de prueba; sin cambios en rama base ni otros módulos fuera del alcance.
+
+### Estado y siguiente acción
+
+- TASK-142 permanece En ejecución (parcial): Academic PREVIEW/DOWNLOAD y ocultación de URL laboral en metadatos implementadas; falta proxy binario Accounting, funciones de carga Accounting propietarias y validación beta real.
+- Siguiente: no inventar uploadEmployeeDocument/uploadPaymentVoucher; verificar el propietario del repositorio documental contable y las dependencias originales de TASK-143/TASK-144 para elegir el siguiente alcance elegible.
+===============================================================================

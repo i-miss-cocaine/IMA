@@ -1620,3 +1620,25 @@ El archivo maestro histórico supera el umbral de rotación de 180.000 caractere
 - **Evidencia requerida:** SHA-256, DocumentoID, DocumentoReferenciaID, ImportBatchID, DriveFileId, versión, eventos de auditoría y conteo de archivos en carpeta privada; sin PII.
 - **Estado:** Pendiente de beta real en Apps Script/Drive; no ejecutado en producción.
 ===============================================================================
+
+
+===============================================================================
+### BETA-FUNC-110 — TASK-142 — Vista previa y descarga documental con autorización por operación
+
+- **Módulos/roles:** ACADEMIC / Secretaría, Dirección, Subdirección, Auditoría y usuarios con permisos documentales explícitos; ACCOUNTING cuando se restaure el propietario del repositorio laboral.
+- **Precondiciones:** despliegue aislado de ACADEMIC; usuarios sintéticos con permisos PREVIEW, DOWNLOAD y solo metadatos; dos expedientes de prueba en ámbitos distintos; documentos PDF sintéticos privados en Drive; tokens HMAC y caché de un solo uso configurados.
+- **Pasos:**
+  1. Subir un PDF sintético y comprobar que Drive lo mantiene privado y que getStudentDocuments no devuelve driveUrl ni driveFileId.
+  2. Solicitar token PREVIEW con usuario autorizado; verificar claim de documento, versión, usuario, operación y expiración; abrirlo con getSecureDocumentStream y comprobar DOCUMENT_PREVIEWED.
+  3. Repetir con DOWNLOAD y verificar token distinto, entrega de bytes y evento DOCUMENT_DOWNLOADED.
+  4. Intentar emitir PREVIEW con un rol sin previewStudentDocument; debe denegarse sin metadatos ni token.
+  5. Intentar usar un token PREVIEW con operación DOWNLOAD, otro documento, otra versión u otro usuario; el servidor debe rechazarlo sin entregar bytes.
+  6. Reutilizar tokens PREVIEW y DOWNLOAD; comprobar rechazo por replay. Avanzar el reloj más allá del TTL y comprobar rechazo de token expirado.
+  7. Revocar el permiso o el ámbito entre emisión y consumo; comprobar que el endpoint vuelve a validar permisos y ámbito y no entrega el binario.
+  8. Usar un rol con solo consulta de metadatos; comprobar que puede consultar metadatos permitidos, pero no emitir ni consumir tokens PREVIEW/DOWNLOAD.
+  9. Probar IDs de expediente/solicitud/documento ajenos y consultas sin expedienteId/solicitudId; comprobar denegación sin contenido sensible.
+  10. En ACCOUNTING, cuando exista propietario de carga y proxy binario documentado, subir contrato laboral y comprobante de pago, verificar privacidad Drive y probar streaming autenticado sin devolver ArchivoUrl.
+- **Resultado esperado:** metadatos no entregan binarios ni URLs; PREVIEW y DOWNLOAD requieren permisos distintos, tokens efímeros vinculados a operación y autorización actual; replay, expiración, cambio de versión y alcance ajeno fallan de forma cerrada.
+- **Evidencia requerida:** IDs sintéticos, operación, versión, resultado RBAC, eventos de auditoría, hashes y estado de privacidad Drive; sin PII ni URLs compartibles.
+- **Estado:** Pendiente beta real en Apps Script/Drive/Sheets; ACCOUNTING queda pendiente de restaurar/documentar el propietario del repositorio y el proxy binario.
+===============================================================================
