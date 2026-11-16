@@ -214,6 +214,10 @@ jobs:
         run: node tests/security/accounting-purchase-asset-capitalization.test.js
       - name: Run fixed asset depreciation and double-entry contract
         run: node tests/security/accounting-asset-depreciation.test.js
+      - name: Run supplier profile and protected banking contract
+        run: node tests/security/accounting-supplier-profile.test.js
+      - name: Run unified purchase dossier traceability contract
+        run: node tests/security/accounting-purchase-dossier.test.js
       - name: Run accounting master catalog and unit conversion contract
         run: node tests/security/accounting-catalog.test.js
       - name: Run transport monthly charge, proration, cancellation and idempotency contract
