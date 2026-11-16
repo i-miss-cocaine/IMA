@@ -372,6 +372,9 @@ window.loadKardexData = function (filtroUbicacion) {
       });
       html += `</tbody></table>`;
       container.innerHTML = html;
+      const headerRow=container.querySelector("thead tr"),tableRows=container.querySelectorAll("tbody tr");
+      if(headerRow){const th=document.createElement("th");th.className="p-2";th.textContent="Acción";headerRow.appendChild(th);}
+      ords.forEach((o,i)=>{const tr=tableRows[i];if(!tr)return;const td=document.createElement("td");td.className="p-2";if(o.planMantenimientoId&&!["Resuelto","Completado"].includes(String(o.estadoOrden))){const btn=document.createElement("button");btn.type="button";btn.className="text-emerald-700 underline";btn.textContent="Completar";btn.addEventListener("click",()=>completePreventiveMaintenanceOrder(o));td.appendChild(btn);}else td.textContent="—";tr.appendChild(td);});
     })
     .catch(err => {
       container.innerHTML = `<div class="p-4 text-rose-600 font-bold text-center">Error al cargar Kardex: ${err.message}</div>`;
@@ -987,6 +990,14 @@ window.loadMantenimientoData = function () {
     });
 };
 
+window.completePreventiveMaintenanceOrder=function(order){
+ fetchApi("ACCOUNTING","getPreventiveMaintenancePlans",{}).then(p=>{
+  const plan=(p.planes||[]).find(x=>String(x.planId)===String(order.planMantenimientoId));if(!plan)throw new Error("No se encontró el plan preventivo.");
+  let reading="";if(plan.frecuenciaTipo==="HORAS_USO"){reading=prompt("Lectura actual del contador de uso (horas):",String(plan.lecturaUsoProxima||""));if(reading===null)return null;if(!Number.isFinite(Number(reading))||Number(reading)<Number(plan.lecturaUsoUltima||0))throw new Error("Lectura de uso inválida.");}
+  const payload={ordenMaintId:order.ordenMaintId,activoIdUbicacion:order.activoIdUbicacion,descripcionFalla:order.descripcionFalla,tipoMantenimiento:"Preventivo",prioridad:order.prioridad,estadoOrden:"Completado",fechaResolucion:new Date().toISOString(),departamento:order.departamento,centroCosto:order.centroCosto,planMantenimientoId:order.planMantenimientoId,cicloMantenimientoId:order.cicloMantenimientoId,checklistJSON:order.checklistJSON,fechaProgramada:order.fechaProgramada,lecturaUsoAlCompletar:reading,repuestosConsumidosJSON:[]};
+  return fetchApi("ACCOUNTING","manageMaintenanceOrder",payload);
+ }).then(result=>{if(result){alert("Intervención completada y próximo ciclo actualizado.");loadMantenimientoData();loadPreventiveMaintenanceData();}}).catch(err=>alert("No se pudo completar la orden: "+err.message));
+};
 window.handleSaveMantenimiento = function (e) {
   e.preventDefault();
   const rawParts=document.getElementById('mnt-repuestos').value.trim();let parts=[];
