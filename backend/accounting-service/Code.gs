@@ -10564,8 +10564,8 @@ function getMaintenanceOrders(p){
 function maintenancePlanComplete_(ss,orderRow,actor){
  const planId=String(orderRow[19]||"").trim();if(!planId)return null;const sh=maintenancePlanSheet_(ss,false);if(!sh)return null;const rows=sh.getDataRange().getValues(),matches=rows.map((r,i)=>({r,i})).filter(x=>x.i>0&&String(x.r[0])===planId);if(matches.length!==1)throw new Error(matches.length?"MAINTENANCE_PLAN_ID_AMBIGUOUS":"MAINTENANCE_PLAN_NOT_FOUND");
  const found=matches[0],r=found.r;if(String(r[26]||"")===String(orderRow[0]))return {planId,idempotent:true};
- const now=maintenancePlanDate_(orderRow[12]||new Date()),freq=String(r[6]),usage=freq==="HORAS_USO",reading=Number(orderRow[23]!==""&&orderRow[23]!==undefined?orderRow[23]:r[25]||0);
- if(usage&&(!Number.isFinite(reading)||reading<Number(r[24]||0)))throw new Error("MAINTENANCE_USAGE_READING_INVALID");
+ const now=maintenancePlanDate_(orderRow[12]||new Date()),freq=String(r[6]),usage=freq==="HORAS_USO",readingRaw=orderRow[23],reading=Number(readingRaw);
+ if(usage&&(readingRaw===""||readingRaw===undefined||!Number.isFinite(reading)||reading<Number(r[24]||0)))throw new Error("MAINTENANCE_USAGE_READING_INVALID");
  const next=usage?null:maintenancePlanAdd_(now,freq,r[7]),oldRow=r.slice(),hist=inventoryEnsureLedgerSheet_(ss,"MantenimientoHistorial",["EventoID","PlanID","OrdenMaintID","Fecha","TipoEvento","FechaAnterior","FechaNueva","Motivo","ActorUserId"]);
  try{sh.getRange(found.i+1,9).setValue(now);if(next)sh.getRange(found.i+1,10).setValue(next);if(usage){sh.getRange(found.i+1,25).setValue(reading);sh.getRange(found.i+1,26).setValue(reading+Number(r[7]||0));}sh.getRange(found.i+1,27).setValue(orderRow[0]);sh.getRange(found.i+1,28).setValue("");sh.getRange(found.i+1,29).setValue("");hist.appendRow(["MNH-"+Utilities.getUuid(),planId,orderRow[0],new Date(),"COMPLETADO",r[9],next||"","",actor.userId]);}
  catch(e){sh.getRange(found.i+1,1,1,oldRow.length).setValues([oldRow]);throw e;}
