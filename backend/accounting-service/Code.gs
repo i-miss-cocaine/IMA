@@ -1256,6 +1256,155 @@ function normalizeVacationRole_(role) {
   return String(role || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
 }
 
+function enrollmentBillingConfigHeaders_() {
+  return typeof ENROLLMENT_BILLING_CONFIG_HEADERS_ !== "undefined" && Array.isArray(ENROLLMENT_BILLING_CONFIG_HEADERS_)
+    ? ENROLLMENT_BILLING_CONFIG_HEADERS_
+    : ["ConfiguracionID","InstitutionID","AnoLectivo","NivelGrado","ModoGeneracion","ConceptoMatriculaID","Estado","ActualizadoPor","ActualizadoEn"];
+}
+
+function ensureEnrollmentBillingConfigSheet_(ss) {
+  if (!ss || !ss.getSheetByName) return { error: true, code: "ENROLLMENT_BILLING_CONFIG_SCHEMA_MISMATCH" };
+  var headers = enrollmentBillingConfigHeaders_(), sheet = ss.getSheetByName("ConfiguracionCargosMatricula");
+  if (!sheet && ss.insertSheet) sheet = ss.insertSheet("ConfiguracionCargosMatricula");
+  if (!sheet) return { error: true, code: "ENROLLMENT_BILLING_CONFIG_SCHEMA_MISMATCH" };
+  var values = sheet.getDataRange().getValues();
+  if (!values || !values.length || !values[0] || values[0].every(function(value) { return String(value || "").trim() === ""; })) {
+    sheet.appendRow(headers);
+    return { sheet: sheet, headers: headers, rows: [] };
+  }
+  var actual = values[0].map(function(value) { return String(value || "").trim(); });
+  if (actual.length !== headers.length || headers.some(function(value, index) { return actual[index] !== value; })) {
+    return { error: true, code: "ENROLLMENT_BILLING_CONFIG_SCHEMA_MISMATCH" };
+  }
+  return { sheet: sheet, headers: headers, rows: values.slice(1) };
+}
+
+function enrollmentBillingIdentity_(payload, requiredRole) {
+  var actor = getVerifiedAccountingIdentity_(payload || {});
+  if (!actor || actor.authorized !== true) return { error: true, code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var role = String(actor.role || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
+  var allowed = requiredRole || ["director","administrador","contador","subdirector"];
+  if (allowed.indexOf(role) === -1) return { error: true, code: "ROLE_NOT_ALLOWED" };
+  var institutionId = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim();
+  if (!institutionId) return { error: true, code: "IDENTITY_CONFIGURATION_REQUIRED" };
+  return { actor: actor, role: role, institutionId: institutionId };
+}
+
+function enrollmentBillingActiveTariffs_(ss, year, grade) {
+  var tariffSheet = ss.getSheetByName("TarifasPlanPago"), conceptSheet = ss.getSheetByName("ConceptosCobro");
+  if (!tariffSheet || !conceptSheet) return { valid: true, tarifas: [] };
+  var tariffValues = tariffSheet.getDataRange().getValues(), conceptValues = conceptSheet.getDataRange().getValues();
+  var tariffHeaders = ["TarifaID","AnoLectivo","NivelGrado","ConceptoID","MontoTotal","CuotasNum","VencimientoJSON","Estado","Observaciones"];
+  var conceptHeaders = ["ConceptoID","Fecha","NombreConcepto","MontoBase","AplicaAGrado","PeriodoVigencia","Estado","Observaciones"];
+  if (!tariffValues || !tariffValues.length || !conceptValues || !conceptValues.length ||
+      JSON.stringify(tariffValues[0].map(function(v) { return String(v || "").trim(); })) !== JSON.stringify(tariffHeaders) ||
+      JSON.stringify(conceptValues[0].map(function(v) { return String(v || "").trim(); })) !== JSON.stringify(conceptHeaders)) {
+    return { valid: false, code: "ENROLLMENT_BILLING_CONFIG_SCHEMA_MISMATCH", tarifas: [] };
+  }
+  var concepts = Object.create(null), conceptCounts = Object.create(null);
+  conceptValues.slice(1).forEach(function(row) {
+    var id = String(row[0] || "").trim();
+    if (!id) return;
+    conceptCounts[id] = (conceptCounts[id] || 0) + 1;
+    concepts[id] = row;
+  });
+  var tarifas = [];
+  tariffValues.slice(1).forEach(function(row) {
+    var id = String(row[3] || "").trim(), concept = concepts[id];
+    if (String(row[1] || "").trim() !== year || String(row[2] || "").trim() !== grade ||
+        String(row[7] || "").trim().toLowerCase() !== "activa" || !concept || conceptCounts[id] !== 1 ||
+        String(concept[6] || "").trim().toLowerCase() !== "activo") return;
+    var applies = String(concept[4] || "").trim();
+    if (applies && applies.toLowerCase() !== "todos" && applies.toLowerCase() !== grade.toLowerCase()) return;
+    var dueDates = [];
+    try { dueDates = JSON.parse(String(row[6] || "[]")); } catch (_) { return; }
+    if (!Array.isArray(dueDates)) return;
+    var amount = Number(row[4]), installments = Number(row[5]);
+    if (!isFinite(amount) || amount < 0 || !isFinite(installments) || installments < 1 || Math.floor(installments) !== installments) return;
+    tarifas.push({ tarifaId: String(row[0] || ""), anoLectivo: year, nivelGrado: grade, conceptoId: id,
+      conceptoNombre: String(concept[2] || ""), montoTotal: amount, cuotasNum: installments, vencimientos: dueDates,
+      estado: String(row[7] || "") });
+  });
+  return { valid: true, tarifas: tarifas };
+}
+
+function enrollmentBillingConfigObject_(row) {
+  if (!row) return null;
+  return { configuracionId: String(row[0] || ""), institutionId: String(row[1] || ""),
+    anoLectivo: String(row[2] || ""), nivelGrado: String(row[3] || ""), modoGeneracion: String(row[4] || ""),
+    conceptoMatriculaId: String(row[5] || ""), estado: String(row[6] || ""),
+    actualizadoPor: String(row[7] || ""), actualizadoEn: row[8] || null };
+}
+
+function getEnrollmentBillingConfiguration(payload) {
+  var input = payload || {}, identity = enrollmentBillingIdentity_(input);
+  if (identity.error) return { status: "error", code: identity.code };
+  var year = String(input.anoLectivo || "").trim(), grade = String(input.nivelGrado || "").trim();
+  if (!/^\d{4}$/.test(year) || !grade || grade.length > 80) return { status: "error", code: "ENROLLMENT_BILLING_CONFIG_INPUT_INVALID" };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), config = null;
+  var configSheet = ss.getSheetByName("ConfiguracionCargosMatricula");
+  if (configSheet) {
+    var values = configSheet.getDataRange().getValues(), headers = enrollmentBillingConfigHeaders_();
+    if (!values || !values.length || JSON.stringify(values[0].map(function(v) { return String(v || "").trim(); })) !== JSON.stringify(headers)) {
+      return { status: "error", code: "ENROLLMENT_BILLING_CONFIG_SCHEMA_MISMATCH" };
+    }
+    var matches = values.slice(1).filter(function(row) {
+      return String(row[1] || "").trim() === identity.institutionId && String(row[2] || "").trim() === year &&
+        String(row[3] || "").trim().toLowerCase() === grade.toLowerCase();
+    });
+    if (matches.length > 1) return { status: "error", code: "ENROLLMENT_BILLING_CONFIG_AMBIGUOUS" };
+    if (matches.length === 1) config = enrollmentBillingConfigObject_(matches[0]);
+  }
+  var tariffs = enrollmentBillingActiveTariffs_(ss, year, grade);
+  if (!tariffs.valid) return { status: "error", code: tariffs.code };
+  return { status: "success", config: config, tarifas: tariffs.tarifas };
+}
+
+function saveEnrollmentBillingConfiguration(payload) {
+  var input = payload || {}, identity = enrollmentBillingIdentity_(input, ["director","administrador"]);
+  if (identity.error) return { status: "error", code: identity.code };
+  var year = String(input.anoLectivo || "").trim(), grade = String(input.nivelGrado || "").trim();
+  var mode = String(input.modoGeneracion || "").trim().toUpperCase(), conceptId = String(input.conceptoMatriculaId || "").trim();
+  if (!/^\d{4}$/.test(year) || !grade || grade.length > 80) return { status: "error", code: "ENROLLMENT_BILLING_CONFIG_INPUT_INVALID" };
+  if (["MANUAL","MATRICULA_ONLY","ALL_ACTIVE_TARIFFS"].indexOf(mode) === -1) return { status: "error", code: "ENROLLMENT_BILLING_MODE_INVALID" };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), tariffs = enrollmentBillingActiveTariffs_(ss, year, grade);
+  if (!tariffs.valid) return { status: "error", code: tariffs.code };
+  if (mode === "MATRICULA_ONLY") {
+    if (!conceptId) return { status: "error", code: "ENROLLMENT_CONCEPT_REQUIRED" };
+    if (!tariffs.tarifas.some(function(item) { return item.conceptoId === conceptId; })) return { status: "error", code: "ENROLLMENT_TARIFF_NOT_CONFIGURED" };
+  } else if (mode === "ALL_ACTIVE_TARIFFS" && !tariffs.tarifas.length) {
+    return { status: "error", code: "ACTIVE_PAYMENT_TARIFFS_REQUIRED" };
+  } else if (mode === "MANUAL") conceptId = "";
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { status: "error", code: "LOCK_TIMEOUT" };
+  try {
+    var lockedIdentity = enrollmentBillingIdentity_(input, ["director","administrador"]);
+    if (lockedIdentity.error || String(lockedIdentity.actor.userId || "") !== String(identity.actor.userId || "") ||
+        lockedIdentity.institutionId !== identity.institutionId) return { status: "error", code: lockedIdentity.code || "VERIFIED_IDENTITY_CHANGED" };
+    var lockedTariffs = enrollmentBillingActiveTariffs_(ss, year, grade);
+    if (!lockedTariffs.valid) return { status: "error", code: lockedTariffs.code };
+    if (mode === "MATRICULA_ONLY" && !lockedTariffs.tarifas.some(function(item) { return item.conceptoId === conceptId; })) {
+      return { status: "error", code: "ENROLLMENT_TARIFF_NOT_CONFIGURED" };
+    }
+    if (mode === "ALL_ACTIVE_TARIFFS" && !lockedTariffs.tarifas.length) return { status: "error", code: "ACTIVE_PAYMENT_TARIFFS_REQUIRED" };
+    var prepared = ensureEnrollmentBillingConfigSheet_(ss);
+    if (prepared.error) return { status: "error", code: prepared.code };
+    var matches = prepared.rows.map(function(row, index) { return { row: row, index: index }; }).filter(function(item) {
+      return String(item.row[1] || "").trim() === identity.institutionId && String(item.row[2] || "").trim() === year &&
+        String(item.row[3] || "").trim().toLowerCase() === grade.toLowerCase();
+    });
+    if (matches.length > 1) return { status: "error", code: "ENROLLMENT_BILLING_CONFIG_AMBIGUOUS" };
+    var id = matches.length ? String(matches[0].row[0] || "") :
+      "CBM-" + new Date().getTime() + "-" + String(identity.actor.userId || "ACTOR").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 20);
+    var row = [id, identity.institutionId, year, grade, mode, conceptId, "ACTIVE", String(identity.actor.userId || ""), new Date()];
+    if (matches.length) prepared.sheet.getRange(matches[0].index + 2, 1, 1, prepared.headers.length).setValues([row]);
+    else prepared.sheet.appendRow(row);
+    return { status: "success", configuracionId: id, config: enrollmentBillingConfigObject_(row), tarifas: lockedTariffs.tarifas };
+  } catch (error) {
+    return { status: "error", code: "ENROLLMENT_BILLING_CONFIG_WRITE_FAILED" };
+  } finally { lock.releaseLock(); }
+}
+
 function validateRolePermission(actorOrPayload, action) {
   var actor = actorOrPayload && actorOrPayload.authorized === true
     ? actorOrPayload : getVerifiedAccountingIdentity_(actorOrPayload || {});
