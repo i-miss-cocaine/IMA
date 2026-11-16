@@ -67,6 +67,8 @@ const accountingSheets = {
 };
 const accountingSs = { getSheetByName: name => accountingSheets[name] || null };
 let employeeActor = { authorized: true, userId: "EMP-1", role: "Empleado", institutionId: "INST-1" };
+actor = employeeActor;
+scope = { valid: true, institutionWide: false, departmentIds: ["DEP-A"] };
 const employeeDocumentContext = {
   SPREADSHEET_ID: "IN_MEMORY",
   PropertiesService: { getScriptProperties: () => ({ getProperty: () => "IN_MEMORY" }) },
@@ -88,5 +90,6 @@ assert.equal("archivoUrl" in employeeDocuments.documentos[0], false,
   "authorized employee document metadata must not disclose a direct Drive URL");
 assert.equal("ArchivoUrl" in employeeDocuments.documentos[0], false);
 employeeActor = { authorized: true, userId: "EMP-2", role: "Empleado", institutionId: "INST-1" };
+actor = employeeActor;
 assert.equal(employeeDocumentContext.getEmployeeDocuments({ expedienteId: "EXP-1", sessionToken: "EMP-2-SESSION" }).code,
   "RESOURCE_NOT_FOUND", "cross-employee document metadata remains concealed");
