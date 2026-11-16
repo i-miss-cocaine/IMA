@@ -3053,7 +3053,7 @@ function institutionalServiceIsActive_(ss,serviceKey,year){
  var key=String(serviceKey||"").trim().toUpperCase(),yr=String(year||"").trim(),matches=rows.slice(1).filter(function(r){return String(r[1]||"").trim().toUpperCase()===key&&String(r[9]||"").trim()===yr;});
  if(matches.length>1)throw new Error("INSTITUTIONAL_SERVICE_CONFIGURATION_DUPLICATE");
  if(!matches.length)return true;
- return ["ACTIVO","ACTIVE","ACTIVA"].indexOf(String(matches[0][12]||"").trim().toUpperCase())!==-1;
+ var state=String(matches[0][12]||"").trim().toUpperCase();if(["ACTIVO","ACTIVE","ACTIVA"].indexOf(state)<0)return false;var today=new Date(),start=matches[0][10]?new Date(matches[0][10]):null,end=matches[0][11]?new Date(matches[0][11]):null;if(start&&Number.isFinite(start.getTime())&&today<start)return false;if(end&&Number.isFinite(end.getTime())&&today>end)return false;return true;
 }
 function institutionalServiceParseJSON_(value,fallback,expectArray){
  var result=value===undefined||value===null||value===""?fallback:(typeof value==="string"?JSON.parse(value):value);
@@ -3076,7 +3076,7 @@ function saveInstitutionalComplementaryService(payload){
  if(!Number.isFinite(fee)||fee<0)throw new Error("INSTITUTIONAL_SERVICE_FEE_INVALID");
  if(!/^\d{4}$/.test(year)||Number(year)<2000||Number(year)>2200)throw new Error("INSTITUTIONAL_SERVICE_YEAR_INVALID");
  if(["ACTIVO","PAUSADO","INACTIVO"].indexOf(state)<0)throw new Error("INSTITUTIONAL_SERVICE_STATE_INVALID");
- var start=String(p.fechaInicio||""),end=String(p.fechaFin||"");if(start&&end&&new Date(start)>new Date(end))throw new Error("INSTITUTIONAL_SERVICE_DATE_RANGE_INVALID");
+ var start=String(p.fechaInicio||""),end=String(p.fechaFin||""),startDate=start?new Date(start):null,endDate=end?new Date(end):null;if((startDate&&!Number.isFinite(startDate.getTime()))||(endDate&&!Number.isFinite(endDate.getTime())))throw new Error("INSTITUTIONAL_SERVICE_DATE_INVALID");if(startDate&&endDate&&startDate>endDate)throw new Error("INSTITUTIONAL_SERVICE_DATE_RANGE_INVALID");
  var lock=LockService.getScriptLock();lock.waitLock(10000);
  try{
   var ss=SpreadsheetApp.openById(SPREADSHEET_ID),catalog=ensureInstitutionalComplementaryServiceCatalog_(ss),sheet=catalog.sheet,rows=sheet.getDataRange().getValues(),byKey=rows.slice(1).map(function(r,i){return {row:r,index:i+2};}).filter(function(x){return String(x.row[1]||"").toUpperCase()===key&&String(x.row[9]||"")===year;});
