@@ -1124,7 +1124,7 @@ function assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId) {
   }
   var scope = getVerifiedAccountingDepartmentScope_(input, ss, actor);
   if (!scope || scope.valid !== true) {
-    return { authorized: false, code: scope && scope.code || "RESOURCE_SCOPE_DENIED" };
+    return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
   }
   return assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_LABORAL", targetId, "READ");
 }
