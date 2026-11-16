@@ -3967,3 +3967,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Revisión de seguridad documental TASK-142 y RBAC Auditor; se conserva estado parcial y se registran explícitamente los pendientes de preview/streaming y beta real.
 - Corrección de harness de accounting-auditor-migration-audit.test.js: incluye accountingHasRolePermission_ y ROLE_PERMISSIONS; commit 8bac38c827a842ae5f1b8c430c1fb00b50984ad9.
 - Accounting Import Preflight Contract run 43786496322 SUCCESS (39 pasos); no se declara PASS global de workflows transversales.
+
+
+[2026-11-16] TASK-133 / ACCOUNTING — C1.778 — Confirmación estricta de importación
+- importDataWithColumnMapping ahora exige previewConfirmed === true; cadenas, números, objetos y arreglos no se aceptan como confirmación.
+- accounting-import-semantic-preflight.test.js cubre valores no booleanos y confirma que no se producen escrituras; auditor-readonly-role.test.js exige el guard estricto.
+- Commits: a23d5644cc12f05b08bddbec765c3afde76d8adc y 298c13ff8b62fe149b89ca1ec5a484dbc53b5d52.
+- Accounting Import Preflight Contract run 43786954331 SUCCESS (39 pasos, Node 24). TASK-133 permanece abierto por PDF/OCR/beta.

@@ -295,3 +295,51 @@
 4. Completar TASK-142 en una iteración independiente con permisos PREVIEW/DOWNLOAD y pruebas beta reales.
 5. Reconciliar los fallos transversales Department Scope, Identity/Transport y Task-Service sin modificar sus contratos para forzar verde.
 ===============================================================================
+
+
+===============================================================================
+## C1.778 — IMA-EXEC-20261116-0133Z-TASK133-STRICT-CONFIRM-01 — Confirmación estricta del commit de importación
+
+- Fecha de corte: 2026-11-16 01:33 UTC.
+- Repositorio: i-miss-cocaine/IMA.
+- Rama autorizada: NG_beta_0.0.0.1_work.
+- Rama base: NG_beta_0.0.0.1.
+- HEAD inicial: 4af9607bf83e6961d0833da25b9fb29bbd2ca018.
+- HEAD verificado antes de checkpoint: 298c13ff8b62fe149b89ca1ec5a484dbc53b5d52.
+- HEAD de la rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Normativa: Normas_Desarollo.md / NDASC 1.4.
+- Continuidad: C1.777. No se modificó ni publicó en la rama base.
+
+### Cambio de seguridad TASK-133
+
+- Hallazgo: importDataWithColumnMapping aceptaba valores truthy distintos del booleano true en previewConfirmed. Un cliente podía enviar la cadena "false", "true", un número, un objeto o un arreglo y superar el guard de confirmación si el previewHash era vigente.
+- Corrección en backend/accounting-service/Code.gs: ahora el commit requiere input.previewConfirmed !== true como condición de rechazo; el hash de previsualización sigue comparándose con el preview recalculado por el servidor.
+- Pruebas agregadas en tests/security/accounting-import-semantic-preflight.test.js: "false", "true", 1, {} y [] se rechazan con IMPORT_PREVIEW_INVALID_OR_STALE y no generan escrituras. El flujo positivo conserva el booleano true literal.
+- Contrato estático tests/security/auditor-readonly-role.test.js actualizado para exigir el guard estricto y no la condición truthy anterior.
+- Commits de código/prueba: a23d5644cc12f05b08bddbec765c3afde76d8adc; 298c13ff8b62fe149b89ca1ec5a484dbc53b5d52.
+- No se alteraron datos, esquemas, permisos ni archivos ajenos a la confirmación y sus contratos.
+
+### Verificaciones
+
+- GitHub Actions Accounting Import Preflight Contract run 43786954331 SUCCESS en commit 298c13ff8b62fe149b89ca1ec5a484dbc53b5d52; 39/39 pasos completados, Node.js 24.22.2. Incluye sintaxis de los tres servicios, autenticación/router, writer, snapshots, XLSX SHA-256, PDF/OCR, OpenXML, preflight semántico/departamental, RBAC y UI.
+- Department Reference Consumers Local Contract run 43786905980 SUCCESS.
+- Department Scope Contract run 43786906024 FAILURE: el contrato de vacaciones/incapacidades falla durante extracción porque backend/accounting-service/Code.gs no contiene resolveEmployeeDepartmentId_ ni el conjunto de funciones de gestión laboral/vacaciones que el test espera. No se cambió el test para omitir esa funcionalidad; requiere reconciliar el alcance/implementación real.
+- Identity mapping and transport security contracts run 43786905954 FAILURE: tests/security/transport-access-scope.test.js intenta abrir backend/transport-service/Code.gs, ruta que no existe en el árbol actual.
+- Task-Service security local contracts run 43774759211 FAILURE en el último run observado: tests/security/task-service-security-contract.test.js requiere verifySessionToken en backend/task-service/Code.gs y no la encuentra.
+- Los tres fallos transversales son independientes del cambio TASK-133 y no se declararon satisfactorios.
+- Node CLI local no ejecutado: no existe checkout local; no se clonó la rama. La verificación Node 24 se realizó en GitHub Actions.
+
+### Estado TASK-133
+
+- TASK-133 sigue En ejecución, no completada. El commit exige ahora confirmación booleana explícita y mantiene previewHash ligado a la previsualización recalculada.
+- Continúan pendientes los streams PDF comprimidos/FlateDecode (se conservan como NO_ANALIZADA, fail-closed), OCR real con Drive Advanced Service v2, beta Apps Script/Drive/Sheets, accesibilidad real y validación con datos anonimizados.
+- El router autenticado ACCOUNTING ya existe; el writer vuelve a ejecutar preflight y exige snapshot/hash vigente antes de escribir. La persistencia institucional real y la integración de despliegue aún no se declaran verificadas.
+- TASK-134 sigue En ejecución y depende del cierre técnico de TASK-133 para probar la persistencia real de la auditoría de importación.
+- TASK-142 permanece parcial conforme a C1.777: PREVIEW/DOWNLOAD y beta real siguen pendientes.
+
+### Siguiente acción elegible
+
+1. Continuar TASK-133 con la cobertura fail-closed de PDF comprimido/OCR y revisión del contrato de previsualización/commit.
+2. Mantener los fallos transversales visibles y abordarlos como tareas independientes con sus requisitos originales.
+3. Después de TASK-133, continuar TASK-134 y sus pruebas de persistencia/beta.
+===============================================================================

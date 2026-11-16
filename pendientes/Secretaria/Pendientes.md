@@ -3367,6 +3367,9 @@
 - **Accesibilidad UI:** diálogo Excel con foco inicial, retorno al invocador, Tab/Shift+Tab atrapados, Escape, aria-describedby y pruebas de contrato.
 - **Verificación:** GitHub Actions Accounting Import Preflight Contract run 43771840519 SUCCESS (Node 24.22.2); sintaxis de servicios y controladores PASS y contratos de autenticación, escritores, snapshots, OCR/PDF, OpenXML, preflight, ámbito departamental, API, HMAC y UI PASS. UI Accessibility and Metadata Contract run 43771708165 SUCCESS.
 - **Pendientes:** PDF comprimido/no analizado, OCR real y Drive Advanced Service v2 en despliegue, beta Apps Script/Drive/Sheets, prueba con datos anonimizados y accesibilidad real con teclado/lector. Node CLI local no ejecutado por ausencia de checkout local; no se declara TASK-133 completada.
+- **Avance C1.778 (2026-11-16):** se corrigió importDataWithColumnMapping para exigir previewConfirmed === true; valores truthy no booleanos ("false", "true", 1, {} y []) se rechazan antes de escribir. Se añadieron pruebas negativas y se actualizó el contrato estático de RBAC para exigir la condición estricta.
+- **Verificación C1.778:** GitHub Actions Accounting Import Preflight Contract run 43786954331 SUCCESS, 39/39 pasos, Node.js 24.22.2. El test semántico confirma que valores no booleanos no generan escrituras. TASK-133 continúa En ejecución; no se declara cierre.
+
 
 
 
