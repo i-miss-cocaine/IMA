@@ -3505,7 +3505,7 @@ function recordPurchaseReceipt(payload) {
         if (!unit) throw new Error("PURCHASE_RECEIPT_UNIT_INVALID");
       });
     }
-    var receiptId = "REC-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 24);
+    var receiptId = "REC-" + String(Date.now()) + "-" + String(input.ordenCompraId || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 16) + "-" + String(receiptRows.length);
     var now = new Date();
     var inventoryResults = [];
     if (registrarInventario && overall !== "danado" && overall !== "dañado") {
