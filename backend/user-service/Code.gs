@@ -11581,7 +11581,7 @@ function getLegalDocumentAcceptances(payload) {
 }
 
 const USER_HELP_PREFERENCE_HEADERS_=["PreferenceID","UserID","InstitutionID","TourKey","StepIndex","Dismissed","TourVersion","Version","UpdatedAt"];
-const USER_HELP_TOUR_ROLES_={studentSubmission:["Estudiante"],teacherReview:["Profesor"]};
+const USER_HELP_TOUR_ROLES_={studentSubmission:["Estudiante"],teacherReview:["Profesor"],teacherTemplates:["Profesor"]};
 function getUserHelpPreferenceActor_(payload){
  var input=payload||{},token=String(input.sessionToken||"").trim(),claims=token&&typeof verifySessionToken==="function"?verifySessionToken(token):null;
  if(!claims||!claims.userId||!claims.role||!claims.institutionId)return{error:{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"}};
@@ -11623,7 +11623,7 @@ function saveUserHelpPreferences(payload){
  var resetAll=input.resetAll===true,tourKey=String(input.tourKey||"").trim(),allowed=USER_HELP_TOUR_ROLES_[tourKey]||[];
  if(!resetAll&&(!tourKey||allowed.indexOf(actor.role)===-1))return{status:"error",code:"USER_HELP_TOUR_NOT_ALLOWED"};
  var step=Number(input.stepIndex===undefined?1:input.stepIndex),dismissed=input.dismissed===true,tourVersion=String(input.tourVersion||"1").trim();
- if(!resetAll&&(!Number.isInteger(step)||step<1||step>20||!tourVersion||tourVersion.length>32))return{status:"error",code:"USER_HELP_PREFERENCE_VALUE_INVALID"};
+ if(!resetAll&&(typeof input.dismissed!=="boolean"||!Number.isInteger(step)||step<1||step>20||!tourVersion||tourVersion.length>32||input.expectedVersion===undefined||!Number.isInteger(Number(input.expectedVersion))||Number(input.expectedVersion)<0))return{status:"error",code:"USER_HELP_PREFERENCE_VALUE_INVALID"};
  var lock=LockService.getScriptLock();if(!lock.tryLock(10000))return{status:"error",code:"USER_HELP_PREFERENCE_LOCK_TIMEOUT"};
  try{
   var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=ensureUserHelpPreferencesSheet_(ss,true),rows=sh.getDataRange().getValues().slice(1),latest={};
@@ -11637,7 +11637,7 @@ function saveUserHelpPreferences(payload){
    });
    return{status:"success",resetAll:true,resetCount:keys.length};
   }
-  var current=latest[tourKey],currentVersion=current?Number(current[7]||0):0,expected=input.expectedVersion===undefined?currentVersion:Number(input.expectedVersion);
+  var current=latest[tourKey],currentVersion=current?Number(current[7]||0):0,expected=Number(input.expectedVersion);
   if(!Number.isInteger(expected)||expected!==currentVersion)return{status:"error",code:"USER_HELP_PREFERENCE_VERSION_CONFLICT",currentVersion:currentVersion};
   var version=currentVersion+1;
   sh.appendRow(["HELP-"+actor.userId+"-"+tourKey,actor.userId,actor.institutionId,tourKey,step,dismissed,tourVersion,version,new Date()]);
