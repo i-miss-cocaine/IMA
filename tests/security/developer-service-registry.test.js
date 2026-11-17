@@ -187,6 +187,11 @@ assert.deepEqual(h.sheets.CatalogoServicios.rows[0], registryHeaders);
 assert.equal(h.sheets.CatalogoServicios.rows.length, 2);
 assert.deepEqual(JSON.parse(h.sheets.CatalogoServicios.rows[1][9]), ["read"]);
 assert.equal(h.getCentralServiceRegistry({}).totalServicios, 1);
+assert.deepEqual(h.sheets.HistorialServiciosDistribuidos.rows[0], historyHeaders);
+assert.equal(h.sheets.HistorialServiciosDistribuidos.rows[1][1], "SVC-NEW");
+assert.equal(h.sheets.HistorialServiciosDistribuidos.rows[1][3], "Activo");
+assert.equal(h.sheets.HistorialServiciosDistribuidos.rows[1][4], "Registro inicial");
+assert.equal(h.sheets.HistorialServiciosDistribuidos.rows[1][5], "actor-1");
 
 h = harness({ CatalogoServicios: sheet([row("SVC-OLD","Existing legacy")]) });
 result = registerService(h,{ serviceId: "SVC-NEW", name: "New service", cuentaPropietaria: "owner@example.invalid", spreadsheetAsociado: "SHEET-NEW" });
