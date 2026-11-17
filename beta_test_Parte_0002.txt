@@ -706,3 +706,14 @@
 - **Estado:** pendiente de ejecución en Apps Script/Drive/Sheets reales y aceptación de Secretaría/Contabilidad.
 ===============================================================================
 NaN
+
+============================================================================
+### BETA-FUNC-119 — AUD-NG-080 — Historial de servicios, actor verificado y concurrencia
+- **Módulo/rol:** DEVELOPER — Administrador/Desarrollador; alta y cambio de estado en CatalogoServicios.
+- **Objetivo:** verificar en Apps Script/Sheets reales que cada alta/cambio registra el actor autenticado, que los cambios concurrentes se serializan y que un fallo de bitácora no deja el catálogo y el historial divergentes.
+- **Precondiciones:** despliegue DEVELOPER actualizado; Spreadsheet de control aislado con copia de respaldo; cuenta de prueba con sesión firmada vigente y rol Desarrollador; dos sesiones/actores sintéticos; hojas CatalogoServicios e HistorialServiciosDistribuidos; no usar datos reales.
+- **Pasos:** (1) registrar un servicio vía doPost con sesión firmada y comprobar que HistorialServiciosDistribuidos guarda el userId de claims como UpdatedBy; (2) enviar updatedBy y _verifiedUserId falsificados y comprobar que se ignoran; (3) intentar llamar directamente a los wrappers públicos registerServiceInstance/updateServiceStatus con actor falsificado y confirmar rechazo sin escrituras; (4) desde dos sesiones, enviar cambios de estado casi simultáneos al mismo ServiceID; comprobar serialización, estados previos correctos y un evento de historial por transición aceptada; (5) provocar lock ocupado/timeout y comprobar que no cambia el estado ni se agrega historial; (6) provocar fallo controlado de escritura de historial en un entorno aislado y verificar rollback del estado/alta o un error explícito SERVICE_STATUS_COMPENSATION_REQUIRED / SERVICE_REGISTRY_COMPENSATION_REQUIRED si la compensación también falla; (7) comprobar que los HistoryID son únicos y que los registros anteriores permanecen intactos.
+- **Resultado esperado:** cada mutación tiene actor de sesión verificada; no se acepta actor enviado por cliente; los locks serializan las escrituras; catálogo e historial permanecen consistentes o informan explícitamente que la compensación requiere intervención.
+- **Evidencia requerida:** IDs sintéticos, actor de claims parcialmente redactado, secuencia de estados, HistoryID, conteos antes/después, resultados de ambas solicitudes y códigos de rollback/timeout; nunca registrar tokens ni secretos.
+- **Estado:** Pendiente de ejecución en beta desplegada. El contrato Node.js 24/GitHub Actions verifica mocks y contención determinista, no la semántica real de LockService/Sheets.
+============================================================================
