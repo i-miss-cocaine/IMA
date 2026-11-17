@@ -873,7 +873,7 @@ function ensureImportMappingProfilesSheet_(ss,create){
  if(!sh&&create)sh=getOrCreateSheet(ss,"PerfilesMapeoColumnas");
  if(!sh)return null;
  var rows=sh.getDataRange().getValues(),headers=rows.length?(rows[0]||[]).map(function(v){return String(v||"").trim();}):[];
- if(!rows.length||!headers.some(Boolean)){sh.appendRow(ACCOUNTING_IMPORT_MAPPING_PROFILE_HEADERS_.slice());return sh;}
+ if(!rows.length){sh.appendRow(ACCOUNTING_IMPORT_MAPPING_PROFILE_HEADERS_.slice());return sh;}if(!headers.some(Boolean)){sh.getRange(1,1,1,ACCOUNTING_IMPORT_MAPPING_PROFILE_HEADERS_.length).setValues([ACCOUNTING_IMPORT_MAPPING_PROFILE_HEADERS_.slice()]);return sh;}
  if(ACCOUNTING_IMPORT_MAPPING_PROFILE_HEADERS_.some(function(h,i){return headers[i]!==h;}))throw new Error("IMPORT_MAPPING_PROFILE_SCHEMA_MISMATCH");
  return sh;
 }
