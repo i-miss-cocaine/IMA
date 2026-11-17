@@ -126,7 +126,7 @@ test(()=>{const x=call("addSubmissionComment","S1","DEL-1",{mensaje:"Nueva nota"
 test(()=>{const x=call("addSubmissionComment","T1","DEL-1",{mensaje:"Nota docente",autorId:"FORGED",rolAutor:"Estudiante",esPrivado:true});assert.equal(x.status,"success");const row=sheets.ComentariosEntregas.rows.at(-1);assert.equal(row[3],"TEACHER-1");assert.equal(row[4],"Profesor");assert.equal(row[6],true);});
 test(()=>{assert.throws(()=>call("addSubmissionComment","T2","DEL-1",{mensaje:"No permitido"}),/RESOURCE_NOT_FOUND/);});
 test(()=>{const x=call("getSubmissionDocumentPreviewUrl","S1","", {fileId:"FILE-1"});assert.equal(x.status,"success");});
-test(()=>{const x=call("getSubmissionDocumentPreviewUrl","S1","", {fileId:"FILE-OLD"});assert.equal(x.status,"success","a prior version file remains previewable through its authorized delivery");});
+test(()=>{const x=call("getSubmissionDocumentPreviewUrl","S1","", {fileId:"FILE-OLD"});assert.equal(x.status,"success",x.message||"a prior version file remains previewable through its authorized delivery");});
 test(()=>{const x=call("getSubmissionDocumentPreviewUrl","T1","", {fileId:"FILE-1"});assert.equal(x.status,"success");});
 test(()=>{const x=call("getSubmissionDocumentPreviewUrl","G1","", {fileId:"FILE-1"});assert.equal(x.status,"success");});
 test(()=>{const x=call("getSubmissionDocumentPreviewUrl","G1","", {fileId:"FILE-OLD"});assert.equal(x.status,"success","a linked guardian may preview the student's prior version");});
