@@ -1665,3 +1665,24 @@ El archivo maestro histórico supera el umbral de rotación de 180.000 caractere
 - **Evidencia requerida:** PlanID, OrdenMaintID, CicloMantenimientoID, eventos de historial, movimientos Kardex, AsientoID, fechas/lecturas sintéticas, resultados RBAC y capturas anonimizadas. No adjuntar datos personales ni documentos reales.
 - **Estado:** Pendiente de ejecución beta real en Apps Script/Sheets; no se declara validado en producción.
 =============================================================================
+
+
+=============================================================================
+### BETA-FUNC-112 — F25-Task02 — Perfiles persistentes de mapeo de importación
+
+- **Módulo/roles:** ACCOUNTING / importación institucional; usuarios autorizados por el permiso de importación y con sesión institucional verificada.
+- **Precondiciones:** desplegar el servicio ACCOUNTING actualizado; disponer de usuario de prueba autorizado y de dos libros XLSX sintéticos con encabezados controlados.
+- **Pasos:**
+  1. Abrir el importador, indicar sistema de origen y entidad, cargar un libro y configurar identificador y campos destino.
+  2. Guardar el mapeo con un nombre; comprobar creación de PerfilesMapeoColumnas, propietario e institución correctos, huella de esquema y versión 1.
+  3. Recargar la vista y consultar perfiles; comprobar que el perfil aparece solo para el usuario propietario y para el origen/entidad coincidentes.
+  4. Seleccionar el perfil con el mismo conjunto y orden de encabezados; comprobar que identificador y mapeos se restauran y que la previsualización vuelve a ser obligatoria.
+  5. Cargar otro libro con un encabezado cambiado, agregado, eliminado o reordenado; comprobar que el perfil se rechaza como incompatible y no altera los selectores.
+  6. Modificar un campo y guardar sobre el mismo perfil; comprobar versión 2, historial preservado y lectura de la versión más reciente.
+  7. Intentar guardar sin permiso, con sesión inválida, destino incompatible, encabezados duplicados, identificador ausente o campo requerido sin mapear; comprobar rechazo sin escritura.
+  8. Intentar leer o actualizar el profileId de otro usuario o institución; comprobar respuesta no reveladora y ausencia de cambios.
+  9. Simular contención del LockService; comprobar respuesta de ocupado y que no se agrega una versión parcial.
+- **Resultado esperado:** perfiles reutilizables y versionados, privados por usuario/institución, vinculados exactamente a encabezados y entidad, sin aplicar configuraciones obsoletas ni omitir el preflight.
+- **Evidencia requerida:** ProfileID, huella, versiones, propietario/institución sintéticos, respuestas de incompatibilidad/RBAC y capturas anonimizadas. No usar datos personales reales.
+- **Estado:** Pendiente de validación beta desplegada; el contrato Node.js no sustituye esta prueba funcional en Apps Script/Sheets.
+=============================================================================
