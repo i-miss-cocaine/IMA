@@ -89,14 +89,15 @@ function harness(initial, options) {
     "developerLogServiceRegistryIncident_", "developerEnsureServiceTable_",
     "developerDeleteRowByKey_", "developerCreateServiceHistoryId_",
     "developerParseServiceRegistryRows_", "developerMapServiceRegistryRow_",
-    "getCentralServiceRegistry", "registerServiceInstance", "updateServiceStatus", "doPost"
+    "getCentralServiceRegistry", "registerServiceInstance_", "updateServiceStatus_",
+    "registerServiceInstance", "updateServiceStatus", "doPost"
   ];
   const code = source.slice(start, end) + names.map(name => extractFunction(source, name)).join("\n");
-  const api = new Function("context", "with(context){" + code + ";return {getCentralServiceRegistry,registerServiceInstance,updateServiceStatus,doPost};}")(context);
+  const api = new Function("context", "with(context){" + code + ";return {getCentralServiceRegistry,registerServiceInstance_,updateServiceStatus_,registerServiceInstance,updateServiceStatus,doPost};}")(context);
   return { ...api, sheets, logs, context, lockState };
 }
 function registerService(h, payload) {
-  return h.registerServiceInstance(Object.assign({ _verifiedUserId: "actor-1" }, payload));
+  return h.registerServiceInstance_(payload, "actor-1");
 }
 function row(id, name, permissions) {
   return [id,name,"Academic","owner@example.invalid","https://example.invalid/exec","SHEET-1","ACADEMIC","Activo","1.0.0",permissions === undefined ? "[]" : permissions,"2026-11-17T00:00:00.000Z"];
@@ -226,7 +227,7 @@ assert.throws(() => registerService(h,{ serviceId: "SVC-DEMO", name: "Demo", cue
 assert.equal(Object.keys(h.sheets).length, 0);
 
 h = harness({ CatalogoServicios: sheet([registryHeaders, row("SVC-1","Service")]) });
-result = h.updateServiceStatus({ serviceId: "SVC-1", newState: "degradado", reason: "test", updatedBy: "spoofed", _verifiedUserId: "verified-actor" });
+result = h.updateServiceStatus_({ serviceId: "SVC-1", newState: "degradado", reason: "test", updatedBy: "spoofed" }, "verified-actor");
 assert.equal(result.status, "success");
 assert.equal(h.sheets.CatalogoServicios.rows[1][7], "degradado");
 assert.deepEqual(h.sheets.HistorialServiciosDistribuidos.rows[0], historyHeaders);
@@ -238,15 +239,16 @@ assert.equal(h.lockState.releases, 1);
 
 h = harness();
 assert.throws(() => h.registerServiceInstance({ serviceId: "SVC-NO-ACTOR", name: "No actor", cuentaPropietaria: "owner@example.invalid", spreadsheetAsociado: "SHEET-NO-ACTOR" }), /SERVICE_ACTOR_NOT_VERIFIED/);
+assert.throws(() => h.registerServiceInstance({ serviceId: "SVC-FORGED-ACTOR", name: "Forged actor", cuentaPropietaria: "owner@example.invalid", spreadsheetAsociado: "SHEET-FORGED", _verifiedUserId: "forged-user" }), /SERVICE_ACTOR_NOT_VERIFIED/);
 assert.equal(Object.keys(h.sheets).length, 0);
 
 h = harness({ CatalogoServicios: sheet([registryHeaders, row("SVC-1","Service")]) });
-assert.throws(() => h.updateServiceStatus({ serviceId: "SVC-1", newState: "degradado", updatedBy: "spoofed" }), /SERVICE_ACTOR_NOT_VERIFIED/);
+assert.throws(() => h.updateServiceStatus({ serviceId: "SVC-1", newState: "degradado", updatedBy: "spoofed", _verifiedUserId: "forged-user" }), /SERVICE_ACTOR_NOT_VERIFIED/);
 assert.equal(h.sheets.CatalogoServicios.rows[1][7], "Activo");
 assert.equal(h.lockState.attempts, 0);
 
 h = harness({ CatalogoServicios: sheet([registryHeaders, row("SVC-1","Service")]) }, { lockFail: true });
-assert.throws(() => h.updateServiceStatus({ serviceId: "SVC-1", newState: "degradado", _verifiedUserId: "verified-actor" }), /SERVICE_REGISTRY_LOCK_TIMEOUT/);
+assert.throws(() => h.updateServiceStatus_({ serviceId: "SVC-1", newState: "degradado" }, "verified-actor"), /SERVICE_REGISTRY_LOCK_TIMEOUT/);
 assert.equal(h.sheets.CatalogoServicios.rows[1][7], "Activo");
 assert.equal(h.lockState.releases, 0);
 
@@ -255,7 +257,7 @@ let reentrantError = "";
 const reentrantHarness = h;
 const originalFlush = h.context.SpreadsheetApp.flush;
 h.context.SpreadsheetApp.flush = function() {
-  try { reentrantHarness.updateServiceStatus({ serviceId: "SVC-1", newState: "suspendido", _verifiedUserId: "second-actor" }); }
+  try { reentrantHarness.updateServiceStatus_({ serviceId: "SVC-1", newState: "suspendido" }, "second-actor"); }
   catch (error) { reentrantError = error.message; }
   originalFlush();
 };
@@ -269,7 +271,7 @@ h = harness({ CatalogoServicios: sheet([registryHeaders, row("SVC-1","Service")]
 const brokenHistory = sheet([historyHeaders]);
 brokenHistory.appendRow = () => { throw new Error("history unavailable"); };
 h.sheets.HistorialServiciosDistribuidos = brokenHistory;
-assert.throws(() => h.updateServiceStatus({ serviceId: "SVC-1", newState: "degradado", _verifiedUserId: "verified-actor" }), /SERVICE_STATUS_WRITE_FAILED/);
+assert.throws(() => h.updateServiceStatus_({ serviceId: "SVC-1", newState: "degradado" }, "verified-actor"), /SERVICE_STATUS_WRITE_FAILED/);
 assert.equal(h.sheets.CatalogoServicios.rows[1][7], "Activo", "status must roll back if history append fails");
 assert.equal(brokenHistory.rows.length, 1, "failed history append must not create a phantom history row");
 
