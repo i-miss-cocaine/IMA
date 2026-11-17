@@ -86,6 +86,7 @@ function harness(initial, options) {
   assert.notEqual(start, -1); assert.notEqual(end, -1);
   const names = [
     "developerLogServiceRegistryIncident_", "developerEnsureServiceTable_",
+    "developerDeleteRowByKey_", "developerCreateServiceHistoryId_",
     "developerParseServiceRegistryRows_", "developerMapServiceRegistryRow_",
     "getCentralServiceRegistry", "registerServiceInstance", "updateServiceStatus", "doPost"
   ];
