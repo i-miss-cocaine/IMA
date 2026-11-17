@@ -28,7 +28,7 @@ function harness(opts={}){
  const sys=[sh,row("GLOBAL","global",opts.policy||{})];if(opts.institution!==false)sys.push(row("INSTITUCIONAL","institution"));if(opts.personal)sys.push(row("PERSONAL","personal"));
  const dep=[dh];if(opts.department!==false)dep.push(["OVR-1","CFG-1","feature.flag","INST-1","D-1",JSON.stringify("department"),"TEXTO","1.1","ACTIVO","created","U-DIR","updated","U-DIR","test"]);
  const sheets={ConfiguracionSistema:sheet(sys),ConfiguracionDepartamental:sheet(dep)},ss={getSheetByName:n=>sheets[n]||null},calls=[];
- const ctx={Date,Math,JSON,Number,String,Object,Array,isFinite,SpreadsheetApp:{openById:()=>ss},
+ const ctx={SPREADSHEET_ID:"TEST",Date,Math,JSON,Number,String,Object,Array,isFinite,SpreadsheetApp:{openById:()=>ss},
   getUserVerifiedRole:p=>(p._verifiedUserId=p._verifiedUserId||"U-1",opts.role||"Director"),getIdentityInstitutionId_:()=>"INST-1",
   configurationDepartmentContext_:(p,d)=>{if(!opts.departments||!opts.departments.includes(d))throw Error("CONFIGURATION_DEPARTMENT_SCOPE_DENIED");return{status:"success",departmentIds:opts.departments};},
   configurationRoleAllowed_:(s,r,k,a,sc)=>{calls.push(sc);return opts.readAllowed?opts.readAllowed(sc,r):true;},
