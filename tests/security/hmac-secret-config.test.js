@@ -52,8 +52,9 @@ function createContext(source, initialSecret, claims) {
       getUuid: () => "S1"
     },
     CacheService: { getScriptCache: () => ({ get: () => null, put: () => {} }) },
+    isSessionRevoked_: () => false,
     SpreadsheetApp: {
-      openById: () => ({ getSheetByName: () => ({ getDataRange: () => ({ getValues: () => [[], userRow] }) }) })
+      openById: () => ({ getSheetByName: name => name === "Usuarios" ? ({ getDataRange: () => ({ getValues: () => [[], userRow] }) }) : null })
     },
     SPREADSHEET_ID: "LOCAL"
   };
