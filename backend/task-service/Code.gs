@@ -1650,7 +1650,9 @@ function getTaskServiceSubmissionAccess_(payload, operation, verifiedIdentity) {
   if (!identity || !identity.authorized) throw new Error("RESOURCE_NOT_FOUND");
   const role = identity.role;
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const deliveries = getSheetOrThrow(ss, "Entregas").getDataRange().getValues().slice(1);
+  const deliveryValues = getSheetOrThrow(ss, "Entregas").getDataRange().getValues();
+  const deliveryHeaders = deliveryValues[0] || [];
+  const deliveries = deliveryValues.slice(1);
   const requestedDeliveryId = String(payload && payload.entregaId || "").trim();
   const requestedTaskId = String(payload && payload.tareaId || "").trim();
   let delivery = null;
@@ -1658,9 +1660,7 @@ function getTaskServiceSubmissionAccess_(payload, operation, verifiedIdentity) {
     delivery = deliveries.find(row => String(row[0] || "").trim() === requestedDeliveryId) || null;
     if (!delivery) throw new Error("RESOURCE_NOT_FOUND");
   }
-  if (delivery && requestedTaskId && String(delivery[1] || "").trim() !== requestedTaskId) {
-    throw new Error("RESOURCE_NOT_FOUND");
-  }
+  if (delivery && requestedTaskId && String(delivery[1] || "").trim() !== requestedTaskId) throw new Error("RESOURCE_NOT_FOUND");
   const taskId = String(delivery && delivery[1] || requestedTaskId).trim();
   if (!taskId) throw new Error("RESOURCE_NOT_FOUND");
   const task = getSheetOrThrow(ss, "Tareas").getDataRange().getValues().slice(1)
@@ -1683,13 +1683,15 @@ function getTaskServiceSubmissionAccess_(payload, operation, verifiedIdentity) {
     if (!delivery) {
       const candidates = deliveries.filter(row =>
         String(row[1] || "").trim() === taskId &&
-        allowedStudentIds.indexOf(String(row[2] || "").trim()) !== -1
+        allowedStudentIds.indexOf(String(row[2] || "").trim()) !== -1 &&
+        normalizeString(row[6]) !== "eliminada"
       );
       if (candidates.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
       delivery = candidates[0];
       studentId = String(delivery[2] || "").trim();
     }
     if (!studentId || allowedStudentIds.indexOf(studentId) === -1) throw new Error("RESOURCE_NOT_FOUND");
+    if (normalizeString(delivery[6]) === "eliminada") throw new Error("RESOURCE_NOT_FOUND");
     assertTaskServiceStudentCanAccessTask(ss, studentId, task);
   }
   return { ss, identity, role, isStaff, task, taskId, delivery, deliveries, studentId };
@@ -1747,7 +1749,8 @@ function getStudentTasks(payload) {
     }
     return true;
   }).map(task => {
-    const matching = entregasData.filter(row => String(row[1]).trim() === String(task[0]).trim() && String(row[2]).trim() === userId);
+    const canSeeDeletedSubmissions = role === "Profesor" || isTaskServiceAdministrativeRole(role);
+    const matching = entregasData.filter(row => String(row[1]).trim() === String(task[0]).trim() && String(row[2]).trim() === userId && (canSeeDeletedSubmissions || normalizeString(row[6]) !== "eliminada"));
     const entrega = matching.length ? matching[matching.length - 1] : null;
     let fechaLimite = task[8] ? new Date(task[8]).toISOString() : null;
     if (task[1] === "Credito Extra") {
@@ -1903,7 +1906,7 @@ function submitAssignment(payload) {
     const data=entregas.getDataRange().getValues(),now=new Date(),idx=data.findIndex((r,i)=>i>0&&String(r[2]).trim()===String(actorId).trim()&&String(r[1]).trim()===tareaId);
     let entregaId,versionNum=1,estado=payload.esBorrador?"borrador":"Pendiente de revisión";
     if(taskRow[8]&&!payload.esBorrador&&now.getTime()>new Date(taskRow[8]).getTime())estado="EntregadaTarde";
-    if(idx>0){entregaId=data[idx][0];const prev=data[idx];versionNum=versions.getDataRange().getValues().filter(r=>String(r[1]).trim()===String(entregaId).trim()).length+1;prev[3]=now;prev[4]=fileId||"";prev[6]=estado;prev[8]=mimeType;entregas.getRange(idx+1,1,1,prev.length).setValues([prev]);}
+    if(idx>0){entregaId=data[idx][0];const prev=data[idx],wasDeleted=normalizeString(prev[6])==="eliminada";versionNum=versions.getDataRange().getValues().filter(r=>String(r[1]).trim()===String(entregaId).trim()).length+1;prev[3]=now;prev[4]=fileId||"";prev[6]=estado;prev[8]=mimeType;if(wasDeleted){prev[5]=payload.enlaceExterno||"";prev[7]="";const headerNames=(data[0]||[]).map(normalizeString);["eliminadapor","eliminararol","eliminadaen","motivodeeliminacion"].forEach(name=>{const column=headerNames.indexOf(name);if(column>=0)prev[column]="";});}entregas.getRange(idx+1,1,1,prev.length).setValues([prev]);}
     else{entregaId="ENT-"+Utilities.getUuid();entregas.appendRow([entregaId,tareaId,actorId,now,fileId||"","",estado,payload.observaciones||"",mimeType]);}
     versions.appendRow(["VER-"+Utilities.getUuid(),entregaId,tareaId,actorId,versionNum,fileId&&mimeType!=="folder"?"https://drive.google.com/file/d/"+fileId+"/view":"",fileId||"",mimeType,payload.textoRespuesta||"",payload.enlaceExterno||"",now,estado,payload.observaciones||""]);
     return {status:"success",message:payload.esBorrador?"Borrador de tarea guardado.":"Tarea entregada y registrada en el servidor.",data:{entregaId,versionNum,submissionToken:"RECIEVED-"+Utilities.getUuid(),fechaRecepcion:now.toISOString(),estado}};
@@ -2054,7 +2057,6 @@ function withAuthorizedTaskSubmissionMutation_(payload, operation, mutation) {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("TASK_SUBMISSION_MUTATION_LOCK_TIMEOUT");
   try {
-    // Reuse the verified actor; under the lock only the task/submission relationship is rechecked.
     const access = getTaskServiceSubmissionAccess_(payload, operation || "GRADE", identity);
     if (!access || access.isStaff !== true || !access.ss || !Array.isArray(access.deliveries) ||
         !access.identity || String(access.identity.userId || "").trim() !== String(identity.userId).trim()) throw new Error("RESOURCE_NOT_FOUND");
@@ -2065,12 +2067,17 @@ function withAuthorizedTaskSubmissionMutation_(payload, operation, mutation) {
     const taskId = String(delivery[1] || "").trim();
     const studentId = String(delivery[2] || "").trim();
     if (!taskId || !studentId || String(access.taskId || "").trim() !== taskId) throw new Error("RESOURCE_NOT_FOUND");
+    const deliverySheet = getSheetOrThrow(access.ss,"Entregas");
+    const headers = deliverySheet.getDataRange().getValues()[0] || [];
+    const statusIndex = headers.findIndex(value => normalizeString(value) === "estado");
+    const stateIndex = statusIndex >= 0 ? statusIndex : 6;
+    if (normalizeString(delivery[stateIndex]) === "eliminada" && operation !== "DELETE_SUBMISSION") throw new Error("RESOURCE_NOT_FOUND");
     const taskRows = getSheetOrThrow(access.ss,"Tareas").getDataRange().getValues().slice(1);
     const taskMatches = taskRows.filter(row=>String(row[0]||"").trim()===taskId);
     if (taskMatches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
     return mutation({ss:access.ss,actor:access.identity,role:access.role,task:taskMatches[0],taskId:taskId,
       deliveryId:deliveryId,studentId:studentId,delivery:delivery,deliveryRowIndex:deliveryMatches[0].index+2,
-      deliverySheet:getSheetOrThrow(access.ss,"Entregas")});
+      deliverySheet:deliverySheet});
   } finally { try { lock.releaseLock(); } catch (_) {} }
 }
 function gradeSubmission(payload) {
@@ -2104,24 +2111,43 @@ function gradeSubmission(payload) {
 
 function deleteSubmission(payload) {
   return withAuthorizedTaskSubmissionMutation_(payload,"DELETE_SUBMISSION",context => {
-    const fileId = extractTaskServiceFileId(context.delivery[4]);
-    const mime = String(context.delivery[8] || "");
-    let file = null;
-    if (fileId) {
-      file = mime === "folder" ? DriveApp.getFolderById(fileId) : DriveApp.getFileById(fileId);
-      if (file.isTrashed()) throw new Error("No se puede eliminar: el archivo ya está en papelera.");
-      file.setTrashed(true);
+    const sheet = context.deliverySheet;
+    const data = sheet.getDataRange().getValues();
+    const headers = (data[0] || []).slice();
+    function findUniqueColumn(name) {
+      const target = normalizeString(name), matches = [];
+      headers.forEach((value,index)=>{if(normalizeString(value)===target)matches.push(index);});
+      if (matches.length > 1) throw new Error("TASK_SUBMISSION_SCHEMA_INVALID");
+      return matches.length ? matches[0] : -1;
     }
-    try {
-      context.deliverySheet.deleteRow(context.deliveryRowIndex);
-    } catch (error) {
-      if (file) {
-        try { file.setTrashed(false); }
-        catch (rollbackError) { throw new Error("SUBMISSION_DELETE_ROLLBACK_FAILED"); }
-      }
-      throw new Error("SUBMISSION_DELETE_METADATA_UPDATE_FAILED: " + error.message);
+    const statusIndex = findUniqueColumn("Estado");
+    if (statusIndex < 0) throw new Error("TASK_SUBMISSION_SCHEMA_INVALID");
+    const rowData = context.delivery.slice();
+    while (rowData.length < headers.length) rowData.push("");
+    if (normalizeString(rowData[statusIndex]) === "eliminada") {
+      return {status:"success",alreadyDeleted:true,message:"La entrega ya estaba eliminada; se conserva su historial."};
     }
-    return {status:"success",message:"Entrega eliminada correctamente."};
+    function ensureColumn(name) {
+      let index = findUniqueColumn(name);
+      if (index >= 0) return index;
+      headers.push(name);
+      return headers.length - 1;
+    }
+    const deletedByIndex = ensureColumn("EliminadaPor");
+    const deletedRoleIndex = ensureColumn("EliminadaRol");
+    const deletedAtIndex = ensureColumn("EliminadaEn");
+    const reasonIndex = ensureColumn("MotivoEliminacion");
+    if (headers.length !== data[0].length) sheet.getRange(1,1,1,headers.length).setValues([headers]);
+    while (rowData.length < headers.length) rowData.push("");
+    const deletedAt = new Date();
+    rowData[statusIndex] = "Eliminada";
+    rowData[deletedByIndex] = context.actor.userId;
+    rowData[deletedRoleIndex] = context.actor.role;
+    rowData[deletedAtIndex] = deletedAt;
+    rowData[reasonIndex] = String(payload && payload.motivo || "").trim();
+    sheet.getRange(context.deliveryRowIndex,1,1,headers.length).setValues([rowData]);
+    return {status:"success",alreadyDeleted:false,message:"Entrega eliminada lógicamente; se conservaron archivo, versiones y comentarios.",
+      data:{entregaId:context.deliveryId,estado:"Eliminada",eliminadaPor:context.actor.userId,eliminadaRol:context.actor.role,eliminadaEn:deletedAt.toISOString()}};
   });
 }
 function getTeacherActivity(payload) {
