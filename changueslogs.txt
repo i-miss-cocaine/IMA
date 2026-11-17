@@ -4101,3 +4101,14 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - No se modificó código funcional en esta iteración de diagnóstico/fixtures; los cambios fueron pruebas y workflow. No se redujo cobertura ni se silenciaron fallos.
 - HEAD de rama verificado antes del registro: 52ff472b1254a7bb9efcfdbd713a74483b072d69. Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; comparación: 3874 ahead, 0 behind.
 - Estado: AUD-NG-084 continúa En ejecución. Siguiente acción: resolver, con pruebas de contrato y compatibilidad, la gestión de secretos por servicio para tráfico de migración ACCOUNTING↔ACADEMIC y confirmar configuración desplegada solo con evidencia autorizada.
+
+
+[2026-11-17] C1.804 — AUD-NG-084: ACADEMIC replay guard y ejecución iterativa
+- Se corrigió `backend/academic-service/Code.gs`: la firma HMAC se valida antes de reservar requestId; el check-and-reserve anti-replay ahora está protegido por ScriptLock, falla cerrado ante lock contention y libera el lock en finally.
+- Se agregó `tests/security/academic-interservice-replay-guard.test.js` y se incorporó al filtro de paths y ejecución de `.github/workflows/accounting-import-preflight-contract.yml`.
+- GitHub Actions Accounting Import Preflight run 44094505790, commit probado `0cefb7d23b10dfc01f9df40283f4d926bcdfee85`: Node.js 24.22.2, 43/43 pasos SUCCESS, incluido el nuevo contrato de firma inválida, requestId no consumido, replay y lock contention.
+- Hallazgo CI independiente: Department Scope run 44094414143 falla en Phase 22 por ausencia de `configureSchoolDocumentTemplate` en ACCOUNTING; la misma falla está documentada en el run anterior 44087396968 (commit 392738ad), por lo que no se atribuye a este cambio. Se conserva como incidencia separada.
+- Persisten pendientes de AUD-NG-084: ACCOUNTING y ACADEMIC aún usan `IMA_MIGRATION_HMAC_SECRET` explícito sin evidencia de catálogo/versionado/revocación coordinada; falta inspeccionar Script Properties y deployments con acceso autorizado.
+- Node CLI local NOT RUN; Node CLI sí fue ejecutado en GitHub Actions. No se redujeron pruebas ni se alteró lógica para forzar aprobación.
+- HEAD de código/CI: `0cefb7d23b10dfc01f9df40283f4d926bcdfee85`; HEAD documental de este registro será verificado al terminar. Rama base `NG_beta_0.0.0.1`: `44d9891132332e692dbe2ba8602b41f50a508a59`; comparación previa: 3881 ahead, 0 behind.
+- Estado: AUD-NG-084 continúa En ejecución. Siguiente acción: diseñar y probar rotación/revocación versionada ACCOUNTING↔ACADEMIC sin degradar la validación HMAC ni el anti-replay; después obtener evidencia autorizada de despliegues.
