@@ -871,6 +871,7 @@ function buildImportPreview_(payload) {
     var originalIndex = validIndexes[preparedIndex];
     var rowNumber = Array.isArray(structural.dataRowNumbers) && structural.dataRowNumbers[originalIndex] ?
       Number(structural.dataRowNumbers[originalIndex]) : originalIndex + 2;
+    match.sourceRow = rowNumber;
     if (match.matchType === "POSIBLE") {
       addWarning("POSSIBLE_DUPLICATE_MATCH", "Existe una coincidencia posible por nombre; no se fusionará automáticamente.");
       addError("POSSIBLE_DUPLICATE_REQUIRES_REVIEW", "La coincidencia por nombre requiere revisión manual; la fila se excluye de la importación.");
@@ -959,6 +960,7 @@ function buildImportPreview_(payload) {
     identityResolutions: identityResolutions,
     targetExistenceSnapshot: targetSnapshot,
     duplicateMatches: duplicateMatches,
+    referenceErrors: referenceErrors,
     politicaDuplicados: duplicatePolicy,
     relatedReferenceSnapshot: relatedReferenceSnapshot,
     previewHash: previewHash,
