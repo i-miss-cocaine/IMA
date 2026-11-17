@@ -156,12 +156,15 @@ function doPost(e) {
     const action = payload.action || "ping";
     if (action === "ping") return doGet();
 
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) payload = {};
+    delete payload._verifiedUserId;
     let userRole = "SinRol";
     const token = payload && (payload.sessionToken || payload.authToken || payload.token);
     if (token) {
       const claims = verifySessionToken(token);
-      if (claims && claims.role) {
+      if (claims && claims.role && claims.userId) {
         userRole = claims.role;
+        payload._verifiedUserId = String(claims.userId);
       }
     } else if (payload && payload.authRole) {
       userRole = payload.authRole;
@@ -2530,6 +2533,28 @@ function developerEnsureServiceTable_(ss, name, headers, legacyRowValidator) {
   throw new Error("SERVICE_REGISTRY_SCHEMA_MISMATCH:" + name);
 }
 
+function developerDeleteRowByKey_(sheet, columnNumber, key) {
+  if (!sheet || typeof sheet.getDataRange !== "function") throw new Error("SERVICE_REGISTRY_COMPENSATION_UNAVAILABLE");
+  var rows = sheet.getDataRange().getValues(), match = -1;
+  for (var i = 1; i < rows.length; i++) {
+    if (String(rows[i][columnNumber - 1] || "") === String(key)) {
+      if (match !== -1) throw new Error("SERVICE_REGISTRY_COMPENSATION_AMBIGUOUS");
+      match = i + 1;
+    }
+  }
+  if (match === -1) return false;
+  if (typeof sheet.deleteRow !== "function") throw new Error("SERVICE_REGISTRY_COMPENSATION_UNAVAILABLE");
+  sheet.deleteRow(match);
+  return true;
+}
+
+function developerCreateServiceHistoryId_() {
+  var suffix = typeof Utilities !== "undefined" && Utilities && typeof Utilities.getUuid === "function"
+    ? Utilities.getUuid()
+    : String(Date.now()) + "-" + Math.random().toString(36).slice(2, 10);
+  return "HIST-SVC-" + suffix;
+}
+
 function developerParseServiceRegistryRows_(data) {
   if (!Array.isArray(data)) throw new Error("SERVICE_REGISTRY_DATA_INVALID");
   if (!data.length || !data.some(function(row) { return (row || []).some(function(value) { return value !== "" && value !== null && value !== undefined; }); })) {
@@ -2622,18 +2647,11 @@ function getCentralServiceRegistry(payload) {
 // [TASK-047] [F23-Task04] [P0] Registro de instancias y cuentas de servicio distribuidos con prevención de duplicados
 function registerServiceInstance(payload) {
   const {
-    serviceId,
-    name,
-    type,
-    departamento,
-    cuentaPropietaria,
-    endpointUrl,
-    spreadsheetAsociado,
-    dominioDatos,
-    version,
-    permisosConcedidos
+    serviceId, name, type, departamento, cuentaPropietaria, endpointUrl,
+    spreadsheetAsociado, dominioDatos, version, permisosConcedidos
   } = payload || {};
-
+  var actorId = String(payload && payload._verifiedUserId || "").trim();
+  if (!actorId) throw new Error("SERVICE_ACTOR_NOT_VERIFIED");
   if (!serviceId || !name) throw new Error("serviceId y name son requeridos.");
 
   const sId = String(serviceId).trim();
@@ -2657,103 +2675,127 @@ function registerServiceInstance(payload) {
       normalizedPermissions.push(normalized);
     });
   }
-  const now = new Date();
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const table = developerEnsureServiceTable_(ss, "CatalogoServicios", DEVELOPER_SERVICE_REGISTRY_HEADERS_, function(row) {
-    return Array.isArray(row) && row.length >= 11 && String(row[0] || "").trim() !== "" && String(row[1] || "").trim() !== "";
-  });
-  const sheet = table.sheet;
-  const data = [table.headers].concat(table.rows);
+  var lock = LockService.getScriptLock();
+  if (!lock || !lock.tryLock(30000)) throw new Error("SERVICE_REGISTRY_LOCK_TIMEOUT");
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var table = developerEnsureServiceTable_(ss, "CatalogoServicios", DEVELOPER_SERVICE_REGISTRY_HEADERS_, function(row) {
+      return Array.isArray(row) && row.length >= 11 && String(row[0] || "").trim() !== "" && String(row[1] || "").trim() !== "";
+    });
+    var sheet = table.sheet;
+    var exists = table.rows.some(function(row) { return String(row[0] || "").trim().toUpperCase() === sId.toUpperCase(); });
+    if (exists) throw new Error("DUPLICATE_SERVICE_REGISTRATION");
 
-  // Detección y rechazo de duplicados
-  const exists = table.rows.some(r => String(r[0] || "").trim().toUpperCase() === sId.toUpperCase());
-  if (exists) {
-    throw new Error(`DUPLICATE_SERVICE_REGISTRATION: Ya existe un servicio registrado con el identificador '${sId}'.`);
+    var history = developerEnsureServiceTable_(ss, "HistorialServiciosDistribuidos", DEVELOPER_SERVICE_HISTORY_HEADERS_, function(row) {
+      return Array.isArray(row) && row.length >= 7 && String(row[0] || "").indexOf("HIST-SVC-") === 0;
+    });
+    var histSheet = history.sheet;
+    var now = new Date();
+    var timestamp = now.toISOString();
+    var historyId = developerCreateServiceHistoryId_();
+    var serviceRow = [
+      sId, sName, departamento || type || "General", ownerAccount, endpointUrl || "",
+      associatedSpreadsheetId, dominioDatos || type || "Institucional", "Activo",
+      version || "v1.0.0", JSON.stringify(normalizedPermissions), timestamp
+    ];
+    var historyRow = [historyId, sId, "", "Activo", "Registro inicial", actorId, timestamp];
+
+    try {
+      sheet.appendRow(serviceRow);
+      histSheet.appendRow(historyRow);
+      if (typeof SpreadsheetApp.flush === "function") SpreadsheetApp.flush();
+    } catch (writeError) {
+      var compensationFailed = false;
+      try { developerDeleteRowByKey_(histSheet, 1, historyId); } catch (historyRestoreError) { compensationFailed = true; }
+      try { developerDeleteRowByKey_(sheet, 1, sId); } catch (serviceRestoreError) { compensationFailed = true; }
+      try { if (typeof SpreadsheetApp.flush === "function") SpreadsheetApp.flush(); } catch (flushRestoreError) { compensationFailed = true; }
+      if (compensationFailed) throw new Error("SERVICE_REGISTRY_COMPENSATION_REQUIRED");
+      throw new Error("SERVICE_REGISTRY_WRITE_FAILED");
+    }
+
+    return {
+      status: "success",
+      serviceId: sId,
+      name: sName,
+      cuentaPropietaria: ownerAccount,
+      estado: "Activo",
+      registeredAt: timestamp,
+      registeredBy: actorId,
+      message: "Microservicio " + sId + " - " + sName + " registrado exitosamente en el catálogo distribuido."
+    };
+  } finally {
+    lock.releaseLock();
   }
-
-  const permisosStr = JSON.stringify(normalizedPermissions);
-
-  sheet.appendRow([
-    sId,
-    sName,
-    departamento || type || "General",
-    ownerAccount,
-    endpointUrl || "",
-    associatedSpreadsheetId,
-    dominioDatos || type || "Institucional",
-    "Activo", // Estados: registrado, activo, degradado, desconectado, suspendido, retirado
-    version || "v1.0.0",
-    permisosStr,
-    now.toISOString()
-  ]);
-
-  return {
-    status: "success",
-    serviceId: sId,
-    name: sName,
-    cuentaPropietaria: ownerAccount,
-    estado: "Activo",
-    registeredAt: now.toISOString(),
-    message: `Microservicio ${sId} - ${sName} registrado exitosamente en el catálogo distribuido.`
-  };
 }
 
 // [TASK-047] [F23-Task04] [P0] Cambio de estado operativo, suspensión y revocación con historial auditado
 function updateServiceStatus(payload) {
-  const { serviceId, newState, reason, updatedBy } = payload || {};
+  const { serviceId, newState, reason } = payload || {};
+  var actorId = String(payload && payload._verifiedUserId || "").trim();
+  if (!actorId) throw new Error("SERVICE_ACTOR_NOT_VERIFIED");
   if (!serviceId || !newState) throw new Error("serviceId y newState son requeridos.");
 
   const validStates = ["registrado", "activo", "degradado", "desconectado", "suspendido", "retirado", "Activo", "Inactivo"];
   if (validStates.indexOf(newState) === -1) {
-    throw new Error(`ESTADO_INVALIDO: El estado '${newState}' no es válido para el ciclo de vida del servicio.`);
+    throw new Error("ESTADO_INVALIDO");
   }
 
   const sId = String(serviceId).trim();
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const table = developerEnsureServiceTable_(ss, "CatalogoServicios", DEVELOPER_SERVICE_REGISTRY_HEADERS_, function(row) {
-    return Array.isArray(row) && row.length >= 11 && String(row[0] || "").trim() !== "" && String(row[1] || "").trim() !== "";
-  });
-  const sheet = table.sheet;
-  const data = [table.headers].concat(table.rows);
-
-  const idx = data.findIndex((r, index) => index > 0 && String(r[0] || "").trim().toUpperCase() === sId.toUpperCase());
-  if (idx === -1) {
-    throw new Error(`SERVICE_NOT_FOUND: No se encontró el servicio con identificador '${sId}'.`);
-  }
-
-  // Preparar el historial antes de cambiar el estado para evitar una mutación sin trazabilidad.
-  const history = developerEnsureServiceTable_(ss, "HistorialServiciosDistribuidos", DEVELOPER_SERVICE_HISTORY_HEADERS_, function(row) {
-    return Array.isArray(row) && row.length >= 7 && String(row[0] || "").indexOf("HIST-SVC-") === 0;
-  });
-  const histSheet = history.sheet;
-  const previousState = data[idx][7];
-  const now = new Date();
+  var lock = LockService.getScriptLock();
+  if (!lock || !lock.tryLock(30000)) throw new Error("SERVICE_REGISTRY_LOCK_TIMEOUT");
   try {
-    sheet.getRange(idx + 1, 8).setValue(newState);
-    histSheet.appendRow([
-      "HIST-SVC-" + now.getTime(),
-      sId,
-      previousState,
-      newState,
-      reason || "Actualización administrativa",
-      updatedBy || "Administrador",
-      now.toISOString()
-    ]);
-    if (typeof SpreadsheetApp.flush === "function") SpreadsheetApp.flush();
-  } catch (writeError) {
-    try { sheet.getRange(idx + 1, 8).setValue(previousState); }
-    catch (restoreError) { throw new Error("SERVICE_STATUS_COMPENSATION_REQUIRED"); }
-    throw new Error("SERVICE_STATUS_WRITE_FAILED");
-  }
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var table = developerEnsureServiceTable_(ss, "CatalogoServicios", DEVELOPER_SERVICE_REGISTRY_HEADERS_, function(row) {
+      return Array.isArray(row) && row.length >= 11 && String(row[0] || "").trim() !== "" && String(row[1] || "").trim() !== "";
+    });
+    var sheet = table.sheet;
+    var matchingRows = [];
+    table.rows.forEach(function(row, index) {
+      if (String(row[0] || "").trim().toUpperCase() === sId.toUpperCase()) matchingRows.push(index + 2);
+    });
+    if (!matchingRows.length) throw new Error("SERVICE_NOT_FOUND");
+    if (matchingRows.length > 1) throw new Error("SERVICE_REGISTRY_DUPLICATE_ID");
 
-  return {
-    status: "success",
-    serviceId: sId,
-    estadoAnterior: data[idx][7],
-    newState: newState,
-    message: `Estado del microservicio ${sId} actualizado a '${newState}'. Motivo: ${reason || 'N/A'}`
-  };
+    var history = developerEnsureServiceTable_(ss, "HistorialServiciosDistribuidos", DEVELOPER_SERVICE_HISTORY_HEADERS_, function(row) {
+      return Array.isArray(row) && row.length >= 7 && String(row[0] || "").indexOf("HIST-SVC-") === 0;
+    });
+    var histSheet = history.sheet;
+    var rowNumber = matchingRows[0];
+    var serviceRow = table.rows[rowNumber - 2];
+    var previousState = serviceRow[7];
+    if (String(previousState) === String(newState)) {
+      return { status: "success", serviceId: sId, estadoAnterior: previousState, newState: newState, changed: false, updatedBy: actorId };
+    }
+
+    var now = new Date();
+    var timestamp = now.toISOString();
+    var historyId = developerCreateServiceHistoryId_();
+    var safeReason = String(reason || "Actualización administrativa").trim().slice(0, 500);
+    try {
+      sheet.getRange(rowNumber, 8).setValue(newState);
+      histSheet.appendRow([historyId, sId, previousState, newState, safeReason, actorId, timestamp]);
+      if (typeof SpreadsheetApp.flush === "function") SpreadsheetApp.flush();
+    } catch (writeError) {
+      var compensationFailed = false;
+      try { sheet.getRange(rowNumber, 8).setValue(previousState); } catch (statusRestoreError) { compensationFailed = true; }
+      try { developerDeleteRowByKey_(histSheet, 1, historyId); } catch (historyRestoreError) { compensationFailed = true; }
+      try { if (typeof SpreadsheetApp.flush === "function") SpreadsheetApp.flush(); } catch (flushRestoreError) { compensationFailed = true; }
+      if (compensationFailed) throw new Error("SERVICE_STATUS_COMPENSATION_REQUIRED");
+      throw new Error("SERVICE_STATUS_WRITE_FAILED");
+    }
+
+    return {
+      status: "success",
+      serviceId: sId,
+      estadoAnterior: previousState,
+      newState: newState,
+      updatedBy: actorId,
+      message: "Estado del microservicio " + sId + " actualizado a '" + newState + "'. Motivo: " + (safeReason || "N/A")
+    };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // [TAREA-F6-008] [Fase 6: Reestructuración en microservicios independientes] - Auditoría de llamadas inter-servicio y correlación de solicitudes (correlationId)
