@@ -80,7 +80,7 @@ const runtime = {
   releaseLock(){lockReleases++;lockHeld=false;}
  };}}
 };
-const helpers=["validateRolePermission","getVerifiedExamIdentity_","getVerifiedExamDepartmentScope_","assertExamResourceOwnershipForScope_","getAuthorizedQuestionBankReadContext_","withAuthorizedQuestionBankRead_","getQuestionBankUnlocked_","getQuestionBank"].map(name=>extractFunction(source,name)).join("\n");
+const helpers=["getRequestSessionToken_","getVerifiedRequestSessionClaims_","getCachedRequestAuthorization_","cacheRequestAuthorization_","validateRolePermission","getVerifiedExamIdentity_","getVerifiedExamDepartmentScope_","assertExamResourceOwnershipForScope_","getAuthorizedQuestionBankReadContext_","withAuthorizedQuestionBankRead_","getQuestionBankUnlocked_","getQuestionBank"].map(name=>extractFunction(source,name)).join("\n");
 vm.runInNewContext(helpers+"\nthis.getQuestionBank=getQuestionBank;",runtime);
 const teacherResult=runtime.getQuestionBank({sessionToken:"teacher-token"});
 assert.equal(teacherResult.status,"success");
