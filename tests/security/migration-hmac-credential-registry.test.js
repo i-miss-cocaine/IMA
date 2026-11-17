@@ -72,7 +72,7 @@ function makeHarness(options = {}) {
       releaseLock: () => { state.lockReleases++; }
     }) }
   };
-  const names = ["computeHmacSignature", "computeMigrationCredentialFingerprint_", "getMigrationHmacSecret_", "resolveInterServiceSecret_", "createInterServiceEnvelope", "verifyInterServiceEnvelope"];
+  const names = ["computeHmacSignature", "computeMigrationCredentialFingerprint_", "getMigrationHmacSecret_", "getMigrationHmacSecrets_", "resolveInterServiceSecret_", "createInterServiceEnvelope", "verifyInterServiceEnvelope"];
   vm.createContext(runtime);
   const bootstrap = 'const IMA_LOCAL_SERVICE_ID_ = "USER"; const IMA_CREDENTIAL_CATALOG_HEADERS_ = ' + JSON.stringify(headers) + ';';
   vm.runInContext(bootstrap + "\n" + names.map(extract).join("\n") +
@@ -214,5 +214,41 @@ const userVerificationProps = Object.assign({}, userProps, {
   const h = makeHarness({ properties: userProps });
   h.setRows([headers, row("CRED-USER-v1", "USER", "v1", "REVOKED", oldSecret)]);
   expectCode(() => h.api.create("USER", "ACADEMIC", "sampleAction", {}, TYPE), "MIGRATION_SECRET_REVOKED_OR_UNREGISTERED");
+}
+{
+  const overlapProps = {
+    IMA_MIGRATION_HMAC_SECRET: newSecret,
+    IMA_MIGRATION_HMAC_SECRET_VERSION: "v2",
+    IMA_MIGRATION_HMAC_SECRET_USER: newSecret,
+    IMA_MIGRATION_HMAC_SECRET_VERSION_USER: "v2",
+    IMA_MIGRATION_HMAC_SECRET_USER_V_v1: oldSecret
+  };
+  const h = makeHarness({
+    properties: overlapProps,
+    rows: [headers, row("CRED-USER-v1", "USER", "v1", "VERIFY_ONLY", oldSecret),
+      row("CRED-USER-v2", "USER", "v2", "ACTIVE", newSecret)]
+  });
+  const oldEnvelope = h.api.create("USER", "ACADEMIC", "sampleAction", { rotation: "overlap-old" }, TYPE);
+  const oldBody = [oldEnvelope.requestId, oldEnvelope.timestamp, oldEnvelope.correlationId, oldEnvelope.sourceService,
+    oldEnvelope.targetService, oldEnvelope.action, JSON.stringify(oldEnvelope.payload || {})].join("|");
+  oldEnvelope.hmacSignature = crypto.createHmac("sha256", oldSecret).update(oldBody).digest("hex");
+  assert.equal(h.api.verify(oldEnvelope, "ACADEMIC", TYPE).valid, true,
+    "receiver accepts the previous VERIFY_ONLY key during the overlap window");
+
+  const newEnvelope = h.api.create("USER", "ACADEMIC", "sampleAction", { rotation: "overlap-new" }, TYPE);
+  assert.equal(h.api.verify(newEnvelope, "ACADEMIC", TYPE).valid, true,
+    "receiver accepts the new ACTIVE key during the overlap window");
+
+  h.setRows([headers, row("CRED-USER-v1", "USER", "v1", "REVOKED", oldSecret, "2026-11-17T13:00:00Z", "operator-test"),
+    row("CRED-USER-v2", "USER", "v2", "ACTIVE", newSecret)]);
+  const revokedEnvelope = h.api.create("USER", "ACADEMIC", "sampleAction", { rotation: "revoked-old" }, TYPE);
+  const revokedBody = [revokedEnvelope.requestId, revokedEnvelope.timestamp, revokedEnvelope.correlationId,
+    revokedEnvelope.sourceService, revokedEnvelope.targetService, revokedEnvelope.action,
+    JSON.stringify(revokedEnvelope.payload || {})].join("|");
+  revokedEnvelope.hmacSignature = crypto.createHmac("sha256", oldSecret).update(revokedBody).digest("hex");
+  expectCode(() => h.api.verify(revokedEnvelope, "ACADEMIC", TYPE), "INVALID_INTERSERVICE_SIGNATURE");
+  assert.equal(h.state.cacheWrites, 2, "revoked signatures do not reserve replay IDs");
+  assert.equal(h.api.verify(newEnvelope, "ACADEMIC", TYPE).valid, true,
+    "revoking the previous key does not invalidate the active key");
 }
 process.stdout.write("Migration HMAC credential registry: catalog validation, version rotation, revocation, dedicated-key enforcement, HMAC verification and replay protection PASS.\n");
