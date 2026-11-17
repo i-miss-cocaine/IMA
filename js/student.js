@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </span>
                             ${totalPendiente > 0 ? `
                                 <span class="px-3 py-1 text-xs font-bold rounded-full bg-amber-50 text-amber-600 border border-amber-100">
-                                    <i class="fas fa-file-invoice-dollar mr-1"></i> Saldo: L ${totalPendiente.toFixed(2)}
+                                    <i class="fas fa-file-invoice-dollar mr-1"></i> Saldo: ${window.IMARegionalFormatters.formatCurrency(totalPendiente)}
                                 </span>
                             ` : `
                                 <span class="px-3 py-1 text-xs font-bold rounded-full bg-blue-50 text-blue-600 border border-blue-100">
@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (res && res.status === 'success') {
                     var statusBadge = res.esSolvente ?
                         '<span class="px-2.5 py-1 bg-green-100 text-green-800 rounded-full font-bold text-[10px]">SOLVENTE / PAGADO</span>' :
-                        '<span class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full font-bold text-[10px]">PENDIENTE (L ' + res.montoPendiente.toFixed(2) + ')</span>';
+                        '<span class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full font-bold text-[10px]">PENDIENTE (' + window.IMARegionalFormatters.formatCurrency(res.montoPendiente) + ')</span>';
 
                     var html = '' +
                         '<div class="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">' +
@@ -376,7 +376,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         '<p class="text-[10px] text-slate-400">Cargo ID: ' + c.cargoId + '</p>' +
                                     '</div>' +
                                     '<div class="text-right">' +
-                                        '<p class="font-bold text-slate-900 text-xs">L ' + c.montoFinal.toFixed(2) + '</p>' +
+                                        '<p class="font-bold text-slate-900 text-xs">' + window.IMARegionalFormatters.formatCurrency(c.montoFinal) + '</p>' +
                                         '<span class="text-[9px] font-bold uppercase ' + (c.estado === 'Pagado' ? 'text-green-600' : 'text-amber-600') + '">' + c.estado + '</span>' +
                                     '</div>' +
                                 '</div>';
@@ -443,11 +443,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             '</div>' +
                             '<div class="p-5 bg-amber-50 rounded-2xl border border-amber-100 space-y-1">' +
                                 '<p class="text-[10px] font-black text-amber-600 uppercase tracking-widest">Saldo Familiar Consolidado</p>' +
-                                '<p class="text-2xl font-black text-amber-900 tracking-tight">L. ' + (parseFloat(d.totalCargosPendientes) || 0).toFixed(2) + '</p>' +
+                                '<p class="text-2xl font-black text-amber-900 tracking-tight">' + window.IMARegionalFormatters.formatCurrency(d.totalCargosPendientes) + '</p>' +
                             '</div>' +
                             '<div class="p-5 bg-blue-50 rounded-2xl border border-blue-100 space-y-1">' +
                                 '<p class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Pagos en Revisión</p>' +
-                                '<p class="text-2xl font-black text-blue-900 tracking-tight">L. ' + (parseFloat(d.totalPagosRevision) || 0).toFixed(2) + '</p>' +
+                                '<p class="text-2xl font-black text-blue-900 tracking-tight">' + window.IMARegionalFormatters.formatCurrency(d.totalPagosRevision) + '</p>' +
                             '</div>' +
                         '</div>' +
 
@@ -460,14 +460,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                     if (st.tienePermisoFinanciero === false) {
                                         saldoBadge = '<span class="text-amber-600 font-bold text-[10px]"><i class="fas fa-lock mr-1"></i>Restringido (Sin Permiso Financiero)</span>';
                                     } else if (st.esSolvente) {
-                                        saldoBadge = '<span class="text-emerald-600 font-black text-[11px]"><i class="fas fa-check-circle mr-1"></i>L. 0.00 (Solvente)</span>';
+                                        saldoBadge = '<span class="text-emerald-600 font-black text-[11px]"><i class="fas fa-check-circle mr-1"></i>' + window.IMARegionalFormatters.formatCurrency(0) + ' (Solvente)</span>';
                                     } else {
-                                        saldoBadge = '<strong class="text-amber-700 font-black text-xs">L. ' + (parseFloat(st.saldoPendiente) || 0).toFixed(2) + '</strong>';
+                                        saldoBadge = '<strong class="text-amber-700 font-black text-xs">' + window.IMARegionalFormatters.formatCurrency(st.saldoPendiente) + '</strong>';
                                     }
 
                                     var pagosRevBadge = (st.tienePermisoFinanciero === false) ?
                                         '<span class="text-slate-400 text-[10px]">Restringido</span>' :
-                                        '<strong class="text-blue-600 font-black">L. ' + (parseFloat(st.pagosEnRevision) || 0).toFixed(2) + '</strong>';
+                                        '<strong class="text-blue-600 font-black">' + window.IMARegionalFormatters.formatCurrency(st.pagosEnRevision) + '</strong>';
 
                                     return '' +
                                         '<div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-3 relative hover:border-indigo-300 transition-all">' +
@@ -546,7 +546,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     '<div class="space-y-4 text-xs">' +
                         '<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">' +
                             '<div>' +
-                                '<label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Monto Total del Depósito (L.)</label>' +
+                                '<label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Monto Total del Depósito (${window.IMARegionalFormatters.getSettings().currency})</label>' +
                                 '<input type="number" step="0.01" id="joint-total-amount" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-none focus:bg-white" placeholder="0.00" oninput="window.calcJointPaymentTotal()">' +
                             '</div>' +
                             '<div>' +
@@ -567,7 +567,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         '</div>' +
                         '<div class="p-3 bg-indigo-50 rounded-xl border border-indigo-100 flex items-center justify-between text-indigo-900 font-bold">' +
                             '<span>Total Distribuido:</span>' +
-                            '<span id="joint-sum-display">L. 0.00</span>' +
+                            '<span id="joint-sum-display">${window.IMARegionalFormatters.formatCurrency(0)}</span>' +
                         '</div>' +
                     '</div>' +
                     '<div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">' +
@@ -592,7 +592,7 @@ document.addEventListener('DOMContentLoaded', function() {
             sum += parseFloat(inp.value) || 0;
         });
         var display = document.getElementById('joint-sum-display');
-        if (display) display.textContent = 'L. ' + sum.toFixed(2);
+        if (display) display.textContent = window.IMARegionalFormatters.formatCurrency(sum);
     };
 
     window.submitJointFamilyPaymentForm = function() {
@@ -611,7 +611,7 @@ document.addEventListener('DOMContentLoaded', function() {
             concepto:'Colegiatura / Servicios - '+inp.getAttribute('data-student-name'),montoAplicado:val});suma+=val;}
         });
         if(!distribuciones.length){alert('Debe asignar el monto distribuido al menos a un estudiante.');return;}
-        if(Math.abs(suma-montoTotal)>0.01){alert('La suma de las distribuciones (L. '+suma.toFixed(2)+') debe coincidir exactamente con el monto total declarado (L. '+montoTotal.toFixed(2)+').');return;}
+        if(Math.abs(suma-montoTotal)>0.01){alert('La suma de las distribuciones ('+window.IMARegionalFormatters.formatCurrency(suma)+') debe coincidir exactamente con el monto total declarado ('+window.IMARegionalFormatters.formatCurrency(montoTotal)+').');return;}
         var attachmentPromise=selectedFile?new Promise(function(resolve,reject){
           var reader=new FileReader();
           reader.onload=function(){if(!reader.result)return reject(new Error('No se pudo leer el comprobante.'));
@@ -2776,7 +2776,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 metadata.textContent = dateText + ' · ' + String(voucher.metodoPago || 'Método no indicado') + ' · Ref. ' + String(voucher.referencia || 'N/D');
                 var amount = document.createElement('p');
                 amount.className = 'text-sm font-black text-slate-800';
-                amount.textContent = 'L. ' + (parseFloat(voucher.montoReportado) || 0).toFixed(2);
+                amount.textContent = window.IMARegionalFormatters.formatCurrency(voucher.montoReportado);
                 var state = document.createElement('span');
                 state.className = 'inline-flex text-[10px] font-bold uppercase tracking-wide text-blue-700 bg-blue-50 rounded-full px-2.5 py-1';
                 state.textContent = String(voucher.estado || 'Sin estado');
