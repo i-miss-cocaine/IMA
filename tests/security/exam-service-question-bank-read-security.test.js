@@ -38,7 +38,8 @@ const bankRows = [
  ["Q-OTHER-INSTITUTION","General","","10","","Media","opcion_multiple","Otra institución","{}","F","",1,"Activo"],
  ["Q-D1-2","Ciencias","Biología","10","Célula","Difícil","opcion_multiple","Otra propia","{}","G","bio",2,"Activo"],
  ["Q-DUP-BANK","General","","10","","Media","opcion_multiple","ID duplicado","{}","H","",1,"Activo"],
- ["Q-DUP-BANK","General","","10","","Media","opcion_multiple","ID duplicado repetido","{}","I","",1,"Activo"]
+ ["Q-DUP-BANK","General","","10","","Media","opcion_multiple","ID duplicado repetido","{}","I","",1,"Activo"],
+ ["Q-BAD","Ciencias","Biología","10","Célula","Media","opcion_multiple","JSON inválido","{","A","",1,"Activo"]
 ];
 const ownershipRows = [
  ["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"],
@@ -49,7 +50,8 @@ const ownershipRows = [
  ["OWN-5","I1","BANCO_PREGUNTA","Q-INACTIVE","D1","ACTIVE","TEACHER-1","",""],
  ["OWN-6","I2","BANCO_PREGUNTA","Q-OTHER-INSTITUTION","D1","ACTIVE","OTHER","",""],
  ["OWN-7","I1","BANCO_PREGUNTA","Q-D1-2","D1","ACTIVE","TEACHER-1","",""],
- ["OWN-8","I1","BANCO_PREGUNTA","Q-DUP-BANK","D1","ACTIVE","TEACHER-1","",""]
+ ["OWN-8","I1","BANCO_PREGUNTA","Q-DUP-BANK","D1","ACTIVE","TEACHER-1","",""],
+ ["OWN-BAD","I1","BANCO_PREGUNTA","Q-BAD","D1","ACTIVE","TEACHER-1","",""]
 ];
 const scopeRows = [
  ["AssignmentID","UserID","RoleID","ScopeType","ScopeValues","Status","","","StartAt","EndAt"],
@@ -73,6 +75,7 @@ const runtime = {
  getDynamicPermissionsForRole(role,action){if(role==="Lector")return action==="getQuestionBank";return null;},
  hasActiveDelegationForAction(){return false;},
  PropertiesService:{getScriptProperties(){return {getProperty(name){return name==="IMA_INSTITUTION_ID"?"I1":null;}};}},
+ Logger:{log(){}},
  SpreadsheetApp:{openById(){return ss;}}, getSheetOrThrow(spreadsheet,name){const sheet=spreadsheet.getSheetByName(name);if(!sheet)throw Error("Missing "+name);return sheet;},
  normalizeString(value){return String(value||"").trim().toLowerCase();},
  LockService:{getScriptLock(){return {
@@ -80,7 +83,7 @@ const runtime = {
   releaseLock(){lockReleases++;lockHeld=false;}
  };}}
 };
-const helpers=["getRequestSessionToken_","getVerifiedRequestSessionClaims_","getCachedRequestAuthorization_","cacheRequestAuthorization_","validateRolePermission","getVerifiedExamIdentity_","getVerifiedExamDepartmentScope_","assertExamResourceOwnershipForScope_","getAuthorizedQuestionBankReadContext_","withAuthorizedQuestionBankRead_","getQuestionBankUnlocked_","getQuestionBank"].map(name=>extractFunction(source,name)).join("\n");
+const helpers=["parseExamQuestionJsonField_","parseExamQuestionListField_","getRequestSessionToken_","getVerifiedRequestSessionClaims_","getCachedRequestAuthorization_","cacheRequestAuthorization_","validateRolePermission","getVerifiedExamIdentity_","getVerifiedExamDepartmentScope_","assertExamResourceOwnershipForScope_","getAuthorizedQuestionBankReadContext_","withAuthorizedQuestionBankRead_","getQuestionBankUnlocked_","getQuestionBank"].map(name=>extractFunction(source,name)).join("\n");
 vm.runInNewContext(helpers+"\nthis.getQuestionBank=getQuestionBank;",runtime);
 const teacherResult=runtime.getQuestionBank({sessionToken:"teacher-token"});
 assert.equal(teacherResult.status,"success");
@@ -92,6 +95,7 @@ assert.equal(teacherResult.preguntas.some(q=>q.bancoPreguntaId==="Q-DUP"),false,
 assert.equal(teacherResult.preguntas.some(q=>q.bancoPreguntaId==="Q-INACTIVE"),false,"inactive questions are not exposed");
 assert.equal(teacherResult.preguntas.some(q=>q.bancoPreguntaId==="Q-OTHER-INSTITUTION"),false,"another institution is not exposed");
 assert.equal(teacherResult.preguntas.some(q=>q.bancoPreguntaId==="Q-DUP-BANK"),false,"duplicate question identifiers are not exposed");
+assert.equal(teacherResult.preguntas.some(q=>q.bancoPreguntaId==="Q-BAD"),false,"malformed question JSON is skipped without breaking the read response");
 const forgedScopeResult=runtime.getQuestionBank({sessionToken:"teacher-token",departmentId:"D2"});
 assert.deepEqual(Array.from(forgedScopeResult.preguntas,q=>q.bancoPreguntaId),["Q-D1","Q-D1-2"],"client-supplied department cannot widen the signed scope");
 const readerResult=runtime.getQuestionBank({sessionToken:"reader-token"});
