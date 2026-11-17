@@ -4082,3 +4082,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - AUD-NG-084 en progreso: clave HMAC interservicio exige tipo explícito dedicado; verificación HMAC precede a reserva anti-replay bajo ScriptLock; pruebas nuevas y fixtures adaptados.
 - CI de commits previos mostró fallos en fixtures de Identity Mapping, Accounting Import Preflight y Department Scope; ajustes en 392738ad pendientes de ejecución Actions. No declarar PASS todavía.
 - Checkpoint C1.801; HEAD de rama autorizada 392738ad6e39398685cb8113652ada3e6658bb83.
+
+
+[2026-11-17] C1.802 — AUD-NG-084, cobertura CI del registro HMAC
+- Se incorpora `tests/security/migration-hmac-credential-registry.test.js` al workflow Accounting Import Preflight para ejecutar con Node.js 24 la validación de catálogo, versión activa, rotación, revocación, secreto dedicado, firma HMAC y protección anti-replay.
+- Commit de configuración: 70fc694a24ed4c858211a992e43fd76a60c42f64. La referencia de rama se verificó en `NG_beta_0.0.0.1_work`; comparación con rama base: 3854 ahead, 0 behind; base HEAD 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Resultado CI para el nuevo commit: sin estados publicados al momento del registro; ejecución del workflow aún no observada. Node CLI local NOT RUN. AUD-NG-084 permanece En ejecución; no se declara PASS ni cierre.
