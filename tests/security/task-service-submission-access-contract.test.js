@@ -77,6 +77,7 @@ const denialLogs=[];
 const runtime={
   SPREADSHEET_ID:"TEST-SHEET",
   SpreadsheetApp:{openById:()=>ss},
+  LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>{}})},
   getSheetOrThrow:(_ss,name)=>{if(!sheets[name])throw new Error("missing sheet "+name);return sheets[name];},
   getVerifiedTaskIdentity_:payload=>actors[payload&&payload.sessionToken]||{authorized:false,code:"INVALID_SESSION"},
   isTaskServiceAdministrativeRole:role=>["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
