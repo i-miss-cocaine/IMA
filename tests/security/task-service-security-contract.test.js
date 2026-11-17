@@ -749,16 +749,16 @@ console.log("TASK-153 legacy document and folder-IDOR contracts passed.");
   const materialRows=[["ID","AulaID","Titulo","Descripcion","TipoRecurso","Parcial","Unidad","Tema","ArchivoUrl","DriveId","AutorID","FechaPublicacion","Estado"],
     ["MAT-OWN","CLASS-1","Own","","Documento","I","U1","T1","","","TEACHER-1",new Date(),"Activo"],
     ["MAT-OTHER","CLASS-1","Other","","Documento","I","U1","T1","","","TEACHER-2",new Date(),"Activo"]];
-  const deleteContext={
+  const materialDeleteContext={
     SPREADSHEET_ID:"LOCAL",SpreadsheetApp:{openById:()=>({})},
     getVerifiedTaskIdentity_:()=>({authorized:true,userId:"TEACHER-1",role:"Profesor"}),
     isTaskServiceAdministrativeRole:role=>["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
     getOrCreateSheet:()=>({getDataRange:()=>({getValues:()=>materialRows}),getRange:(row,col)=>({setValue:value=>{materialRows[row-1][col-1]=value;}})})
   };
-  vm.runInNewContext(extractFunction("deleteStudyMaterial")+"\nthis.run=deleteStudyMaterial;",deleteContext);
-  assert.equal(deleteContext.run({materialId:"MAT-OWN"}).status,"success");
+  vm.runInNewContext(extractFunction("deleteStudyMaterial")+"\nthis.run=deleteStudyMaterial;",materialDeleteContext);
+  assert.equal(materialDeleteContext.run({materialId:"MAT-OWN"}).status,"success");
   assert.equal(materialRows[1][12],"Eliminado","teacher can soft-delete their own material");
-  assert.throws(()=>deleteContext.run({materialId:"MAT-OTHER"}),/no pertenece al docente/);
+  assert.throws(()=>materialDeleteContext.run({materialId:"MAT-OTHER"}),/no pertenece al docente/);
   assert.equal(materialRows[2][12],"Activo","teacher cannot delete another author's material");
 }
 console.log("TASK-153 administrative content mutation scope contracts passed.");
