@@ -3159,20 +3159,23 @@ window.loadUserHelpPreferences_ = function(callback, forceRefresh) {
     if (window.__helpPreferenceCache && !forceRefresh) { if (callback) callback(window.__helpPreferenceCache); return; }
     if (window.__helpPreferenceLoading) { if (callback) window.__helpPreferenceWaiters.push(callback); return; }
     window.__helpPreferenceLoading = true;
-    if (!window.sendApiRequest) {
-        window.__helpPreferenceCache = {};
-        window.__helpPreferenceLoading = false;
-        if (callback) callback(window.__helpPreferenceCache);
-        return;
-    }
-    window.sendApiRequest('getUserHelpPreferences', {}, function(res) {
-        var map = {};
-        if (res && res.status === 'success' && Array.isArray(res.preferences)) res.preferences.forEach(function(item) { map[item.tourKey] = item; });
+    var settled = false;
+    var finish = function(map) {
+        if (settled) return;
+        settled = true;
         window.__helpPreferenceCache = map;
         window.__helpPreferenceLoading = false;
         var waiters = window.__helpPreferenceWaiters.splice(0);
         if (callback) callback(map);
         waiters.forEach(function(fn) { try { fn(map); } catch (e) { console.warn('Help preference callback failed', e); } });
+    };
+    if (!window.sendApiRequest) { finish({}); return; }
+    var fallbackTimer = setTimeout(function() { finish({}); }, 1800);
+    window.sendApiRequest('getUserHelpPreferences', {}, function(res) {
+        clearTimeout(fallbackTimer);
+        var map = {};
+        if (res && res.status === 'success' && Array.isArray(res.preferences)) res.preferences.forEach(function(item) { map[item.tourKey] = item; });
+        finish(map);
     });
 };
 window.persistHelpGuidePreference_ = function(tourKey, stepIndex, dismissed, callback, retry) {
@@ -3200,16 +3203,19 @@ window.startInteractiveGuide = function(tourKey, forceRestart, preferenceLoaded)
     tourKey = tourKey || 'studentSubmission';
     if (!preferenceLoaded && window.sendApiRequest) {
         if (forceRestart) {
-            window.persistHelpGuidePreference_(tourKey, 1, false, function(result) {
-                if (result && result.status === 'success') window.__helpPreferenceSuppressNextSave[tourKey] = true;
-                window.startInteractiveGuide(tourKey, true, true);
-            });
+            localStorage.setItem('guide_progress_' + tourKey, '1');
+            window.startInteractiveGuide(tourKey, true, true);
         } else {
-            window.loadUserHelpPreferences_(function(preferences) {
+            var started = false;
+            var startWithPreferences = function(preferences) {
+                if (started) return;
+                started = true;
                 var saved = preferences && preferences[tourKey];
                 if (saved) localStorage.setItem('guide_progress_' + tourKey, String(saved.stepIndex || 1));
                 window.startInteractiveGuide(tourKey, false, true);
-            });
+            };
+            window.loadUserHelpPreferences_(startWithPreferences);
+            setTimeout(function() { startWithPreferences(null); }, 2000);
         }
         return;
     }
