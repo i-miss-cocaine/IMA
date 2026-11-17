@@ -88,13 +88,14 @@ sheetAvailable = false;
 assert.equal(userContext.read(request).code, "IDENTITY_MAPPING_SNAPSHOT_UNAVAILABLE");
 
 const secret = "migration-transport-secret-with-more-than-32-characters";
-let captured = null, responseData = { verified: true, service: "USER", institutionId: "INST-1", entries: [], uniquenessViolations: [] };
+let captured = null, auditEvents = [], responseData = { verified: true, service: "USER", institutionId: "INST-1", entries: [], uniquenessViolations: [] };
 const accountingContext = {
   String, Array, Object, JSON, RegExp, Error, Date, Math,
   PropertiesService: { getScriptProperties: () => ({ getProperty: key => ({
     IMA_USER_SERVICE_URL: "https://user.example.test/exec", IMA_MIGRATION_HMAC_SECRET: secret
   })[key] || "" }) },
   isAccountingTrustedAppsScriptEndpoint_: url => url === "https://user.example.test/exec",
+  recordInterServiceCredentialUsage_: event => { auditEvents.push(event); return { recorded: true }; },
   createInterServiceEnvelope: () => ({}),
   resolveInterServiceSecret_: (sourceService, credentialType, purpose) => {
     assert.equal(sourceService, "ACCOUNTING");
@@ -118,6 +119,10 @@ assert.equal(remote.status, "success");
 assert.equal(captured.sourceService, "ACCOUNTING");
 assert.equal(captured.targetService, "USER");
 assert.equal(captured.action, "getMigrationIdentityMapSnapshot");
+assert.equal(auditEvents.length, 1, "outbound identity snapshot request is audited");
+assert.equal(auditEvents[0].direction, "OUTBOUND");
+assert.equal(auditEvents[0].sourceService, "ACCOUNTING");
+assert.equal(auditEvents[0].targetService, "USER");
 const signedBody = [captured.requestId, captured.timestamp, captured.correlationId, captured.sourceService,
   captured.targetService, captured.action, JSON.stringify(captured.payload)].join("|");
 assert.equal(captured.hmacSignature, crypto.createHmac("sha256", secret).update(signedBody).digest("hex"),
