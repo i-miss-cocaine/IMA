@@ -101,7 +101,7 @@ const payload=(overrides={})=>Object.assign({sessionToken:"VALID",_verifiedUserI
   h.state.userId="U-2";
   const other=h.context.getUserHelpPreferences({sessionToken:"VALID",_verifiedUserId:"U-2"});
   assert.equal(other.preferences.length,0,"preferences must remain private to the signed-in user");
-  assert.equal(h.context.saveUserHelpPreferences(payload({profileId:"HELP-U-1-studentSubmission"})).code,"USER_HELP_TOUR_NOT_ALLOWED");
+  assert.equal(h.context.saveUserHelpPreferences(payload({_verifiedUserId:"U-1"})).code,"VERIFIED_IDENTITY_REQUIRED","a client-supplied user ID cannot impersonate another account");
   h.state.institutionId="INST-2";
   assert.equal(h.context.getUserHelpPreferences({sessionToken:"VALID",_verifiedUserId:"U-2"}).preferences.length,0);
 }
