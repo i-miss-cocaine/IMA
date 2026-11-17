@@ -15,7 +15,7 @@ function ownerRuntime(source,service,handlerName,snapshotName,rows,expectedSheet
  const handler=extract(source,handlerName),snapshot=extract(source,snapshotName);
  const runtime={
   PropertiesService:{getScriptProperties:()=>({getProperty:key=>key==="IMA_MIGRATION_HMAC_SECRET"?secret:(key==="IMA_INSTITUTION_ID"?"INST-1":"")})},
-  verifyInterServiceEnvelope:(envelope,target,credential)=>{assert.equal(target,service);assert.equal(credential,service==="USER"?"IMA_MIGRATION_HMAC_SECRET":secret);return{sourceService:envelope.sourceService,action:envelope.action,payload:envelope.payload};},
+  verifyInterServiceEnvelope:(envelope,target,credential)=>{assert.equal(target,service);assert.equal(credential,"IMA_MIGRATION_HMAC_SECRET");return{sourceService:envelope.sourceService,action:envelope.action,payload:envelope.payload};},
   verifySessionToken:token=>token==="SIGNED-SESSION"?{userId:"U-1",role:"Director",institutionId:"INST-1"}:null,
   getIdentityInstitutionId_:()=>"INST-1",
   getDynamicPermissionsForRole:()=>true,
@@ -57,17 +57,22 @@ const duplicateAcademicRuntime=ownerRuntime(academic,"ACADEMIC","handleTrustedMi
 assert.equal(duplicateAcademicRuntime.handle({sourceService:"ACCOUNTING",action:"getMigrationTargetExistenceSnapshot",payload:{sessionToken:"SIGNED-SESSION",institutionId:"INST-1",entityType:"estudiante",targetIds:["EXP-1"]}}).code,"MIGRATION_SNAPSHOT_DUPLICATE_TARGET_ID");
 assert.equal(academicRuntime.handle({sourceService:"ACCOUNTING",action:"getMigrationTargetExistenceSnapshot",payload:{sessionToken:"SIGNED-SESSION",institutionId:"INST-1",entityType:"persona",targetIds:["EXP-1"]}}).code,"MIGRATION_SNAPSHOT_CONTRACT_INVALID");
 
-const accountingFunctions=["isAccountingTrustedAppsScriptEndpoint_","accountingComputeHmacSignature_","requestAccountingTrustedOwnerSnapshot_","normalizeMigrationNaturalKey_","migrationDuplicateKeyDefinitions_","buildMigrationDuplicateRequests_","buildMigrationReferenceRequests_","buildMigrationTargetExistenceSnapshot_","buildAccountingRelatedPersonExistenceSnapshot_"].map(name=>extract(accounting,name));
+const accountingFunctions=["computeMigrationCredentialFingerprint_","getMigrationHmacSecret_","resolveInterServiceSecret_","isAccountingTrustedAppsScriptEndpoint_","accountingComputeHmacSignature_","requestAccountingTrustedOwnerSnapshot_","normalizeMigrationNaturalKey_","migrationDuplicateKeyDefinitions_","buildMigrationDuplicateRequests_","buildMigrationReferenceRequests_","buildMigrationTargetExistenceSnapshot_","buildAccountingRelatedPersonExistenceSnapshot_"].map(name=>extract(accounting,name));
 let remoteData={status:"success",verified:true,service:"ACADEMIC",sheet:"ExpedientesEstudiantes",idField:"ExpedienteID",institutionId:"INST-1",existingTargetIds:["EXP-1"],targetRows:[{ExpedienteID:"EXP-1",__rowHash:"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}],duplicateMatches:[],referenceErrors:[]};
 let envelopeSeen=null;
+const credentialHeaders=["CredentialID","ServiceID","CredentialType","Version","Status","Fingerprint","CreatedAt","CreatedBy","RevokedAt","RevokedBy"];
+const credentialFingerprint=crypto.createHash("sha256").update(secret,"utf8").digest("hex");
+const credentialRows=[credentialHeaders,["CRED-ACCOUNTING-v1","ACCOUNTING","IMA_MIGRATION_HMAC_SECRET","v1","ACTIVE",credentialFingerprint,"2026-11-17T00:00:00Z","operator-test","",""]];
 const accountingRuntime={
- Date,String,JSON,Array,Object,Number,Math,RegExp,Error,
- PropertiesService:{getScriptProperties:()=>({getProperty:key=>({IMA_ACADEMIC_SERVICE_URL:"https://script.google.com/macros/s/AKfycbACADEMIC123/exec",IMA_USER_SERVICE_URL:"https://script.google.com/macros/s/AKfycbUSER123/exec",IMA_MIGRATION_HMAC_SECRET:secret})[key]||""})},
- Utilities:{MacAlgorithm:{HMAC_SHA_256:"HMAC_SHA_256"},getUuid:()=>"12345678-1234-1234-1234-123456789012",computeHmacSignature:(algorithm,message,key)=>Array.from(crypto.createHmac("sha256",key).update(String(message)).digest())},
+ Date,String,JSON,Array,Object,Number,Math,RegExp,Error,SPREADSHEET_ID:"TEST-SPREADSHEET",
+ PropertiesService:{getScriptProperties:()=>({getProperty:key=>({IMA_ACADEMIC_SERVICE_URL:"https://script.google.com/macros/s/AKfycbACADEMIC123/exec",IMA_USER_SERVICE_URL:"https://script.google.com/macros/s/AKfycbUSER123/exec",IMA_MIGRATION_HMAC_SECRET:secret,IMA_MIGRATION_HMAC_SECRET_VERSION:"v1"})[key]||"")})},
+ SpreadsheetApp:{openById:id=>{assert.equal(id,"TEST-SPREADSHEET");return{getSheetByName:name=>name==="CatalogoCredencialesServicios"?{getDataRange:()=>({getValues:()=>credentialRows.map(row=>row.slice())})}:null};}},
+ Utilities:{MacAlgorithm:{HMAC_SHA_256:"HMAC_SHA_256"},DigestAlgorithm:{SHA_256:"SHA_256"},Charset:{UTF_8:"UTF_8"},getUuid:()=>"12345678-1234-1234-1234-123456789012",computeDigest:(_algorithm,value)=>Array.from(crypto.createHash("sha256").update(String(value),"utf8").digest()).map(byte=>byte>127?byte-256:byte),computeHmacSignature:(algorithm,message,key)=>Array.from(crypto.createHmac("sha256",key).update(String(message)).digest())},
  UrlFetchApp:{fetch:(url,options)=>{envelopeSeen=JSON.parse(options.payload);return{getResponseCode:()=>200,getContentText:()=>JSON.stringify({apiVersion:"1.0.0",status:"success",data:remoteData})};}}
 };
 vm.createContext(accountingRuntime);
-vm.runInContext(accountingFunctions.join("\n")+"\nthis.api={endpoint:isAccountingTrustedAppsScriptEndpoint_,target:buildMigrationTargetExistenceSnapshot_,related:buildAccountingRelatedPersonExistenceSnapshot_};",accountingRuntime);
+const registryBootstrap='const IMA_LOCAL_SERVICE_ID_="ACCOUNTING"; const IMA_CREDENTIAL_CATALOG_HEADERS_='+JSON.stringify(credentialHeaders)+';';
+vm.runInContext(registryBootstrap+"\n"+accountingFunctions.join("\n")+"\nthis.api={endpoint:isAccountingTrustedAppsScriptEndpoint_,target:buildMigrationTargetExistenceSnapshot_,related:buildAccountingRelatedPersonExistenceSnapshot_};",accountingRuntime);
 const schema={service:"ACADEMIC",sheet:"ExpedientesEstudiantes",headers:["ExpedienteID","PersonaID"]};
 assert.equal(accountingRuntime.api.endpoint("https://script.google.com/macros/s/AKfycbACADEMIC123/exec"),true);
 assert.equal(accountingRuntime.api.endpoint("https://script.google.com/a/macros/example.edu/s/AKfycbACADEMIC123/exec"),true);
