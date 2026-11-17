@@ -95,7 +95,13 @@ const userProps = { IMA_MIGRATION_HMAC_SECRET: oldSecret, IMA_MIGRATION_HMAC_SEC
   expectCode(() => h.api.resolve("USER", "AUTH_TOKEN_SECRET", "SIGN"), "INTERSERVICE_CREDENTIAL_TYPE_INVALID");
 }
 {
-  const h = makeHarness({ properties: userProps });
+  const h = makeHarness({
+    properties: Object.assign({}, userProps, {
+      IMA_MIGRATION_HMAC_SECRET_USER: oldSecret,
+      IMA_MIGRATION_HMAC_SECRET_VERSION_USER: "v1"
+    }),
+    rows: [headers, row("CRED-USER-v1", "USER", "v1", "REVOKED", oldSecret)]
+  });
   expectCode(() => h.api.get("ACCOUNTING", "SIGN"), "MIGRATION_SECRET_SOURCE_MISMATCH");
   expectCode(() => h.api.get("EXAM", "VERIFY"), "MIGRATION_SOURCE_SERVICE_INVALID");
   expectCode(() => h.api.get("USER", "DELETE"), "MIGRATION_SECRET_PURPOSE_INVALID");
