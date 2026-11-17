@@ -83,6 +83,7 @@ const verifier = 'const IMA_LOCAL_SERVICE_ID_ = "ACADEMIC"; const IMA_CREDENTIAL
   extractFunction(source, "computeMigrationCredentialFingerprint_") + "\n" +
   extractFunction(source, "getMigrationHmacSecret_") + "\n" +
   extractFunction(source, "getMigrationHmacSecrets_") + "\n" +
+  extractFunction(source, "getMigrationHmacSecrets_") + "\n" +
   extractFunction(source, "resolveInterServiceSecret_") + "\n" +
   extractFunction(source, "computeHmacSignature") + "\n" +
   extractFunction(source, "verifyInterServiceEnvelope") +
