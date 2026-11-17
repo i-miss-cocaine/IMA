@@ -3049,9 +3049,70 @@ window.saveDashboardSettingsModal = function() {
  * FASE 29 - GUIADO INTERACTIVO, VISOR DOCUMENTAL Y COMPARADOR DE ENTREGAS
  * =========================================================================== */
 
-window.startInteractiveGuide = function(tourKey, forceRestart) {
+window.__helpPreferenceCache = null;
+window.__helpPreferenceLoading = false;
+window.__helpPreferenceWaiters = [];
+window.__helpPreferenceSuppressNextSave = {};
+window.loadUserHelpPreferences_ = function(callback, forceRefresh) {
+    if (window.__helpPreferenceCache && !forceRefresh) { if (callback) callback(window.__helpPreferenceCache); return; }
+    if (window.__helpPreferenceLoading) { if (callback) window.__helpPreferenceWaiters.push(callback); return; }
+    window.__helpPreferenceLoading = true;
+    if (!window.sendApiRequest) {
+        window.__helpPreferenceCache = {};
+        window.__helpPreferenceLoading = false;
+        if (callback) callback(window.__helpPreferenceCache);
+        return;
+    }
+    window.sendApiRequest('getUserHelpPreferences', {}, function(res) {
+        var map = {};
+        if (res && res.status === 'success' && Array.isArray(res.preferences)) res.preferences.forEach(function(item) { map[item.tourKey] = item; });
+        window.__helpPreferenceCache = map;
+        window.__helpPreferenceLoading = false;
+        var waiters = window.__helpPreferenceWaiters.splice(0);
+        if (callback) callback(map);
+        waiters.forEach(function(fn) { try { fn(map); } catch (e) { console.warn('Help preference callback failed', e); } });
+    });
+};
+window.persistHelpGuidePreference_ = function(tourKey, stepIndex, dismissed, callback, retry) {
+    if (!window.sendApiRequest) { if (callback) callback({status:'error',code:'HELP_PREFERENCE_API_UNAVAILABLE'}); return; }
+    window.loadUserHelpPreferences_(function(cache) {
+        var current = cache[tourKey] || {version:0,tourVersion:'1'};
+        var payload = {tourKey:tourKey,stepIndex:stepIndex,dismissed:!!dismissed,tourVersion:current.tourVersion||'1',expectedVersion:Number(current.version||0)};
+        window.sendApiRequest('saveUserHelpPreferences', payload, function(res) {
+            if (res && res.status === 'success') {
+                cache[tourKey] = {tourKey:tourKey,stepIndex:res.stepIndex,dismissed:res.dismissed,tourVersion:res.tourVersion,version:res.version};
+                window.__helpPreferenceCache = cache;
+                if (callback) callback(res);
+            } else if (res && res.code === 'USER_HELP_PREFERENCE_VERSION_CONFLICT' && !retry) {
+                window.__helpPreferenceCache = null;
+                window.loadUserHelpPreferences_(function() { window.persistHelpGuidePreference_(tourKey,stepIndex,dismissed,callback,true); }, true);
+            } else {
+                console.warn('No se pudo sincronizar el progreso de la guía:', res && (res.code || res.message));
+                if (callback) callback(res || {status:'error'});
+            }
+        });
+    });
+};
+
+window.startInteractiveGuide = function(tourKey, forceRestart, preferenceLoaded) {
     tourKey = tourKey || 'studentSubmission';
+    if (!preferenceLoaded && window.sendApiRequest) {
+        if (forceRestart) {
+            window.persistHelpGuidePreference_(tourKey, 1, false, function() {
+                window.__helpPreferenceSuppressNextSave[tourKey] = true;
+                window.startInteractiveGuide(tourKey, true, true);
+            });
+        } else {
+            window.loadUserHelpPreferences_(function(preferences) {
+                var saved = preferences && preferences[tourKey];
+                if (saved && !saved.dismissed) localStorage.setItem('guide_progress_' + tourKey, String(saved.stepIndex || 1));
+                window.startInteractiveGuide(tourKey, false, true);
+            });
+        }
+        return;
+    }
     var savedStep = forceRestart ? 1 : (parseInt(localStorage.getItem('guide_progress_' + tourKey) || '1', 10));
+    if (forceRestart) localStorage.setItem('guide_progress_' + tourKey, '1');
 
     var tours = {
         studentSubmission: [
@@ -3097,6 +3158,11 @@ window.startInteractiveGuide = function(tourKey, forceRestart) {
                 text: "Ingresa la nota ajustada, escribe las observaciones pedagógicas y guarda la evaluación en el registro oficial.",
                 targetSelector: "#btn-save-grade-review"
             }
+        ],
+        teacherTemplates: [
+            { title: "Paso 1: Abrir el Diseñador de Plantillas", text: "Acceda al módulo de plantillas y seleccione el documento base que desea configurar.", targetSelector: "#section-plantillas, #templates-designer" },
+            { title: "Paso 2: Configurar campos", text: "Defina etiquetas, campos rellenables y sus correspondencias con los datos institucionales.", targetSelector: "#template-fields, #btn-add-template-field" },
+            { title: "Paso 3: Revisar y generar", text: "Previsualice el documento y genere una copia derivada. El archivo base debe permanecer sin cambios.", targetSelector: "#template-preview, #btn-generate-template" }
         ]
     };
 
@@ -3135,6 +3201,8 @@ window.startInteractiveGuide = function(tourKey, forceRestart) {
         ].join('');
 
         localStorage.setItem('guide_progress_' + tourKey, stepIdx);
+        if (window.__helpPreferenceSuppressNextSave[tourKey]) delete window.__helpPreferenceSuppressNextSave[tourKey];
+        else if (window.persistHelpGuidePreference_) window.persistHelpGuidePreference_(tourKey, stepIdx, false);
 
         if (step.targetSelector) {
             var targetEl = document.querySelector(step.targetSelector);
@@ -3170,6 +3238,8 @@ window.navigateGuideStep = function(tourKey, nextStep) {
 };
 
 window.closeInteractiveGuide = function(tourKey) {
+    var step = parseInt(localStorage.getItem('guide_progress_' + tourKey) || '1', 10) || 1;
+    if (window.persistHelpGuidePreference_) window.persistHelpGuidePreference_(tourKey, step, true);
     var box = document.getElementById('interactive-guide-box');
     if (box) box.remove();
 };
@@ -3724,6 +3794,8 @@ window.startGuidedTourAction = function(guideId) {
 
     if (guideId === 'GUIDE-STUDENT-TASKS') {
         window.startInteractiveGuide('studentSubmission', true);
+    } else if (guideId === 'GUIDE-TEMPLATES-DESIGN') {
+        window.startInteractiveGuide('teacherTemplates', true);
     } else {
         window.startInteractiveGuide('teacherReview', true);
     }
