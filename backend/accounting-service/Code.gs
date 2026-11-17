@@ -6367,6 +6367,40 @@ function doGet() {
   }, null, "ACCOUNTING");
 }
 
+
+function requestHierarchicalConfigurationFromUser_(action, payload) {
+  var input = payload || {};
+  var allowedActions = ["getHierarchicalConfigurationCatalog", "resolveHierarchicalConfiguration"];
+  if (allowedActions.indexOf(String(action || "")) === -1) return { status: "error", code: "HIERARCHICAL_CONFIG_ACTION_NOT_ALLOWED" };
+  var identity = getVerifiedAccountingIdentity_(input);
+  if (!identity || identity.authorized !== true) return { status: "error", code: identity && identity.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var token = String(input.sessionToken || "");
+  var endpoint = String(PropertiesService.getScriptProperties().getProperty("IMA_USER_SERVICE_URL") || "").trim();
+  if (!token || !isAccountingTrustedAppsScriptEndpoint_(endpoint) || typeof UrlFetchApp === "undefined") return { status: "error", code: "HIERARCHICAL_CONFIG_TRANSPORT_NOT_CONFIGURED" };
+  var forwarded = { sessionToken: token };
+  if (action === "resolveHierarchicalConfiguration") {
+    var key = String(input.clave || "").trim();
+    if (!key) return { status: "error", code: "CONFIGURATION_KEY_REQUIRED" };
+    forwarded.clave = key;
+    var departmentId = String(input.activeDepartmentId || input.departamentoId || "").trim();
+    if (departmentId) forwarded.activeDepartmentId = departmentId;
+  }
+  try {
+    var response = UrlFetchApp.fetch(endpoint, { method: "post", contentType: "application/json",
+      payload: JSON.stringify({ action: action, payload: forwarded, correlationId: input.correlationId || "" }), muteHttpExceptions: true });
+    var status = response.getResponseCode(), body = {};
+    try { body = JSON.parse(response.getContentText() || "{}"); } catch (parseError) { return { status: "error", code: "HIERARCHICAL_CONFIG_RESPONSE_INVALID" }; }
+    if (status < 200 || status >= 300) return { status: "error", code: body.code || "HIERARCHICAL_CONFIG_AUTHORITY_UNAVAILABLE" };
+    if (!body || (body.status !== "success" && body.status !== "error")) return { status: "error", code: "HIERARCHICAL_CONFIG_RESPONSE_INVALID" };
+    if (body.status === "error") return { status: "error", code: body.code || "HIERARCHICAL_CONFIG_REQUEST_FAILED", message: body.message || "" };
+    if (action === "getHierarchicalConfigurationCatalog" && !Array.isArray(body.data)) return { status: "error", code: "HIERARCHICAL_CONFIG_CATALOG_INVALID" };
+    if (action === "resolveHierarchicalConfiguration" && String(body.clave || "") !== String(forwarded.clave)) return { status: "error", code: "HIERARCHICAL_CONFIG_RESPONSE_MISMATCH" };
+    return body;
+  } catch (error) { return { status: "error", code: "HIERARCHICAL_CONFIG_AUTHORITY_UNAVAILABLE" }; }
+}
+function getHierarchicalConfigurationCatalog(payload) { return requestHierarchicalConfigurationFromUser_("getHierarchicalConfigurationCatalog", payload); }
+function resolveHierarchicalConfiguration(payload) { return requestHierarchicalConfigurationFromUser_("resolveHierarchicalConfiguration", payload); }
+
 function doPost(e) {
   let correlationId = apiResponseCorrelationId_();
   const respond = function(value) { return textResponse(value, correlationId, "ACCOUNTING"); };
@@ -6387,6 +6421,7 @@ function doPost(e) {
     var safeRequestMeta = pinSensitiveActions.indexOf(request.action) !== -1
       ? { action: request.action, payload: safePayloadMeta }
       : safePayloadMeta;
+    if (request.action === "getHierarchicalConfigurationCatalog" || request.action === "resolveHierarchicalConfiguration") return respond(requestHierarchicalConfigurationFromUser_(request.action, actionPayload));
     if (request.action === "configurePaymentConcept") return respond(configurePaymentConcept(actionPayload));
     // case "getInstitutionalComplementaryServices": result = getInstitutionalComplementaryServices(actionPayload); break;
     if (request.action === "getInstitutionalComplementaryServices") return respond(getInstitutionalComplementaryServices(actionPayload));

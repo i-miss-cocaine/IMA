@@ -7,7 +7,11 @@ on:
     paths:
       - backend/user-service/Code.gs
       - backend/developer-service/Code.gs
+      - backend/academic-service/Code.gs
+      - backend/accounting-service/Code.gs
+      - js/ui-common.js
       - tests/security/user-service-hierarchical-configuration.test.js
+      - tests/security/hierarchical-configuration-consumer-integration.test.js
       - .github/workflows/hierarchical-configuration-contract.yml
 
 permissions:
@@ -29,7 +33,17 @@ jobs:
         run: node --check < backend/user-service/Code.gs
       - name: Syntax-check DEVELOPER service
         run: node --check < backend/developer-service/Code.gs
+      - name: Syntax-check ACADEMIC service
+        run: node --check < backend/academic-service/Code.gs
+      - name: Syntax-check ACCOUNTING service
+        run: node --check < backend/accounting-service/Code.gs
+      - name: Syntax-check UI common module
+        run: node --check js/ui-common.js
       - name: Syntax-check contract
         run: node --check tests/security/user-service-hierarchical-configuration.test.js
+      - name: Syntax-check consumer integration contract
+        run: node --check tests/security/hierarchical-configuration-consumer-integration.test.js
       - name: Run hierarchical configuration contract
         run: node tests/security/user-service-hierarchical-configuration.test.js
+      - name: Run consumer integration contract
+        run: node tests/security/hierarchical-configuration-consumer-integration.test.js

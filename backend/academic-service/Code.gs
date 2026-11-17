@@ -292,7 +292,7 @@ const ROLE_PERMISSIONS = {
   "Administrador": ["*"],
   "Director": [
     "getAcademicConfig", "updateAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "saveWhatsAppLink", "getQuestionBank", "saveQuestion", "generateMigrationReport", "registerStudentEnrollment", "getStudentEnrollmentHistory",
-    "getInstitutionParams", "saveInstitutionParam", "saveTeacherJustificationEvidencePolicy", "saveAbsenceJustificationPolicies", "getAcademicYears", "createAcademicYear", "updateAcademicYearStatus", "prepareNewAcademicYear",
+    "getHierarchicalConfigurationCatalog", "resolveHierarchicalConfiguration", "getInstitutionParams", "saveInstitutionParam", "saveTeacherJustificationEvidencePolicy", "saveAbsenceJustificationPolicies", "getAcademicYears", "createAcademicYear", "updateAcademicYearStatus", "prepareNewAcademicYear",
     "getAcademicPeriods", "manageAcademicPeriod", "getSubjectCatalog", "createSubjectCatalogItem", "getStudyPlans", "createStudyPlan",
     "getAcademicOffers", "createAcademicOffer", "getTeacherAssignments", "assignTeacherToClass", "createTeacherSubstitution",
     "getAcademicCalendar", "createCalendarEvent", "getClassSchedules", "createClassSchedule", "deleteClassSchedule", "getAcademicRules", "saveAcademicRule", "getDepartmentAcademicPlanning", "assignDepartmentHead", "getCurricularAnalyticsReport", "getReusableResourceCatalog", "manageReusableResource", "getCurricularEquivalences", "executeCurricularMigration", "registerCurricularAreaExtension", "runCurricularAreaServiceTests", "toggleCurricularAreaStatus", "validateApiContractsTestSuite", "getInstitutionalCatalog", "validateCatalogReference", "generateInstitutionalUUID", "validateInstitutionalIdentifier", "auditInstitutionalIdentifierCollisions", "runConcurrencyAndConsistencySuite", "getPaginatedAcademicHistory", "reconcileRestoredDataIntegrity", "evaluateTransactionalStorageMigrationNeed",
@@ -308,7 +308,7 @@ const ROLE_PERMISSIONS = {
   "Subdirector": [
     "registerSpreadsheetSource", "resolveSpreadsheetSource", "getSpreadsheetCatalog",
     "getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getQuestionBank", "registerStudentEnrollment", "getStudentEnrollmentHistory",
-    "getInstitutionParams", "getAcademicYears", "getAcademicPeriods", "getSubjectCatalog", "getStudyPlans", "getAcademicOffers",
+    "getHierarchicalConfigurationCatalog", "resolveHierarchicalConfiguration", "getInstitutionParams", "getAcademicYears", "getAcademicPeriods", "getSubjectCatalog", "getStudyPlans", "getAcademicOffers",
     "getTeacherAssignments", "assignTeacherToClass", "createTeacherSubstitution", "getAcademicCalendar", "createCalendarEvent", "getClassSchedules", "createClassSchedule", "deleteClassSchedule", "copyClassSchedules", "getTeacherTeachingLoad", "generateAutoSchedules", "recordClassSessionOutcome", "getTeachingHoursSummary", "rescheduleCancelledSession", "getPendingSessionRecoveries", "publishClassSchedules", "getIndividualCalendar", "syncAcademicScheduleIntegrity", "getAcademicAuditLogs", "getReusableResourceCatalog", "manageReusableResource",
     "getClassroomResources", "saveClassroomResource", "getStudentSchedule",
     "createAdmissionRequest", "getAdmissionRequests", "updateAdmissionStatus", "getStudentFile", "getStudentTimeline", "findDuplicateStudents",
@@ -1080,6 +1080,8 @@ function doPost(e) {
     let result;
     switch (action) {
       // Endpoints Anteriores
+      case "getHierarchicalConfigurationCatalog": result = getHierarchicalConfigurationCatalog(payload); break;
+      case "resolveHierarchicalConfiguration": result = resolveHierarchicalConfiguration(payload); break;
       case "getAcademicConfig": result = getAcademicConfig(payload); break;
       case "updateAcademicConfig": result = updateAcademicConfig(payload); break;
       case "getAcademicHistory": result = getAcademicHistory(payload); break;
@@ -3399,6 +3401,41 @@ function convertAdmissionToStudent(payload) {
 // ---------------------------------------------------------------------------
 
 // [T-GOV-02] [Fase Gobernanza y Seguridad] - Función central de validación estricta de propiedad y alcance de acceso a registros
+
+
+function requestHierarchicalConfigurationFromUser_(action, payload) {
+  var input = payload || {};
+  var allowedActions = ["getHierarchicalConfigurationCatalog", "resolveHierarchicalConfiguration"];
+  if (allowedActions.indexOf(String(action || "")) === -1) return { status: "error", code: "HIERARCHICAL_CONFIG_ACTION_NOT_ALLOWED" };
+  var identity = getVerifiedAcademicIdentity_(input);
+  if (!identity || identity.authorized !== true) return { status: "error", code: identity && identity.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var token = String(input.sessionToken || input.authToken || input.token || "");
+  if (!token || typeof PropertiesService === "undefined" || typeof UrlFetchApp === "undefined") return { status: "error", code: "HIERARCHICAL_CONFIG_TRANSPORT_UNAVAILABLE" };
+  var endpoint = String(PropertiesService.getScriptProperties().getProperty("IMA_USER_SERVICE_URL") || "").trim();
+  if (endpoint.indexOf("https://") !== 0) return { status: "error", code: "HIERARCHICAL_CONFIG_TRANSPORT_NOT_CONFIGURED" };
+  var forwarded = { sessionToken: token };
+  if (action === "resolveHierarchicalConfiguration") {
+    var key = String(input.clave || "").trim();
+    if (!key) return { status: "error", code: "CONFIGURATION_KEY_REQUIRED" };
+    forwarded.clave = key;
+    var departmentId = String(input.activeDepartmentId || input.departamentoId || "").trim();
+    if (departmentId) forwarded.activeDepartmentId = departmentId;
+  }
+  try {
+    var response = UrlFetchApp.fetch(endpoint, { method: "post", contentType: "application/json",
+      payload: JSON.stringify({ action: action, payload: forwarded, correlationId: input.correlationId || "" }), muteHttpExceptions: true });
+    var status = response.getResponseCode(), body = {};
+    try { body = JSON.parse(response.getContentText() || "{}"); } catch (parseError) { return { status: "error", code: "HIERARCHICAL_CONFIG_RESPONSE_INVALID" }; }
+    if (status < 200 || status >= 300) return { status: "error", code: body.code || "HIERARCHICAL_CONFIG_AUTHORITY_UNAVAILABLE" };
+    if (!body || (body.status !== "success" && body.status !== "error")) return { status: "error", code: "HIERARCHICAL_CONFIG_RESPONSE_INVALID" };
+    if (body.status === "error") return { status: "error", code: body.code || "HIERARCHICAL_CONFIG_REQUEST_FAILED", message: body.message || "" };
+    if (action === "getHierarchicalConfigurationCatalog" && !Array.isArray(body.data)) return { status: "error", code: "HIERARCHICAL_CONFIG_CATALOG_INVALID" };
+    if (action === "resolveHierarchicalConfiguration" && String(body.clave || "") !== String(forwarded.clave)) return { status: "error", code: "HIERARCHICAL_CONFIG_RESPONSE_MISMATCH" };
+    return body;
+  } catch (error) { return { status: "error", code: "HIERARCHICAL_CONFIG_AUTHORITY_UNAVAILABLE" }; }
+}
+function getHierarchicalConfigurationCatalog(payload) { return requestHierarchicalConfigurationFromUser_("getHierarchicalConfigurationCatalog", payload); }
+function resolveHierarchicalConfiguration(payload) { return requestHierarchicalConfigurationFromUser_("resolveHierarchicalConfiguration", payload); }
 
 function getVerifiedAcademicIdentity_(payload) {
   const token = payload && (payload.sessionToken || payload.authToken || payload.token);

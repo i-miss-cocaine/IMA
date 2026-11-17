@@ -1385,6 +1385,9 @@ window.ensureDashboardSettingsModalExists = function() {
             <button id="tab-btn-role-settings" class="settings-tab-btn py-3 px-4 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2">
                 <i class="fa-solid fa-sliders"></i> Opciones del Rol
             </button>
+            <button id="tab-btn-hierarchical-settings" class="settings-tab-btn py-3 px-4 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2 hidden" type="button">
+                <i class="fa-solid fa-diagram-project"></i> Configuración jerárquica
+            </button>
             <button id="tab-btn-help-settings" class="settings-tab-btn py-3 px-4 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2">
                 <i class="fa-solid fa-circle-question"></i> Ayuda y Guías
             </button>
@@ -1464,6 +1467,14 @@ window.ensureDashboardSettingsModalExists = function() {
 
             <div id="tab-panel-role-settings" class="space-y-6 hidden">
                 <div id="role-settings-dynamic-container" class="space-y-4"></div>
+            </div>
+
+            <div id="tab-panel-hierarchical-settings" class="space-y-6 hidden">
+                <div class="p-4 bg-blue-50 border border-blue-100 rounded-2xl">
+                    <p class="text-xs text-blue-900 leading-relaxed font-medium">Valores efectivos del catálogo central. La plataforma muestra si cada parámetro proviene del sistema, de la institución o de una excepción departamental. Los cambios se validan nuevamente en el servidor según la política, el rol y el departamento autenticado.</p>
+                </div>
+                <div id="hierarchical-config-settings-status" class="text-xs text-slate-500" role="status" aria-live="polite">Seleccione esta pestaña para consultar el catálogo.</div>
+                <div id="hierarchical-config-settings-list" class="space-y-3"></div>
             </div>
 
             <div id="tab-panel-provider-settings" class="space-y-6 hidden">
@@ -1609,12 +1620,14 @@ window.bindDashboardSettingsModalEvents = function() {
     var tab3 = document.getElementById('tab-btn-provider-settings');
     var tab4 = document.getElementById('tab-btn-visual-settings');
     var tab5 = document.getElementById('tab-btn-help-settings');
+    var tab6 = document.getElementById('tab-btn-hierarchical-settings');
 
     if (tab1) tab1.onclick = function() { window.switchSettingsTab('user'); };
     if (tab2) tab2.onclick = function() { window.switchSettingsTab('role'); };
     if (tab3) tab3.onclick = function() { window.switchSettingsTab('provider'); };
     if (tab4) tab4.onclick = function() { window.switchSettingsTab('visual'); };
     if (tab5) tab5.onclick = function() { window.switchSettingsTab('help'); };
+    if (tab6) tab6.onclick = function() { window.switchSettingsTab('hierarchical'); };
 };
 
 window.switchSettingsTab = function(tabName) {
@@ -1623,18 +1636,21 @@ window.switchSettingsTab = function(tabName) {
     var p3 = document.getElementById('tab-panel-provider-settings');
     var p4 = document.getElementById('tab-panel-visual-settings');
     var p5 = document.getElementById('tab-panel-help-settings');
+    var p6 = document.getElementById('tab-panel-hierarchical-settings');
 
     var b1 = document.getElementById('tab-btn-user-settings');
     var b2 = document.getElementById('tab-btn-role-settings');
     var b3 = document.getElementById('tab-btn-provider-settings');
     var b4 = document.getElementById('tab-btn-visual-settings');
     var b5 = document.getElementById('tab-btn-help-settings');
+    var b6 = document.getElementById('tab-btn-hierarchical-settings');
 
     if (p1) p1.classList.toggle('hidden', tabName !== 'user');
     if (p2) p2.classList.toggle('hidden', tabName !== 'role');
     if (p3) p3.classList.toggle('hidden', tabName !== 'provider');
     if (p4) p4.classList.toggle('hidden', tabName !== 'visual');
     if (p5) p5.classList.toggle('hidden', tabName !== 'help');
+    if (p6) p6.classList.toggle('hidden', tabName !== 'hierarchical');
 
     var activeClass = 'border-blue-600 text-blue-600 font-black';
     var inactiveClass = 'border-transparent text-slate-500 hover:text-slate-800';
@@ -1644,11 +1660,109 @@ window.switchSettingsTab = function(tabName) {
     if (b3) b3.className = 'settings-tab-btn py-3 px-4 border-b-2 flex items-center gap-2 ' + (tabName === 'provider' ? activeClass : inactiveClass);
     if (b4) b4.className = 'settings-tab-btn py-3 px-4 border-b-2 flex items-center gap-2 ' + (tabName === 'visual' ? activeClass : inactiveClass);
     if (b5) b5.className = 'settings-tab-btn py-3 px-4 border-b-2 flex items-center gap-2 ' + (tabName === 'help' ? activeClass : inactiveClass);
+    if (b6) b6.className = 'settings-tab-btn py-3 px-4 border-b-2 flex items-center gap-2 ' + (tabName === 'hierarchical' ? activeClass : inactiveClass);
 
     if (tabName === 'provider') {
         window.loadProviderIntegrationsInModal();
     }
     if (tabName === 'help') window.loadHelpPreferencesInSettingsPanel();
+    if (tabName === 'hierarchical') window.loadHierarchicalConfigurationSettings_();
+};
+
+
+window.loadHierarchicalConfigurationSettings_ = function() {
+    var list = document.getElementById('hierarchical-config-settings-list');
+    var status = document.getElementById('hierarchical-config-settings-status');
+    if (!list || !status) return;
+    list.textContent = '';
+    status.textContent = 'Consultando el catálogo central...';
+    var user = {};
+    try { user = JSON.parse(localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser') || localStorage.getItem('usuario_actual') || '{}'); } catch (_) {}
+    var departmentId = String(user.activeDepartmentId || user.departamentoActivoId || user.departamentoId || '').trim();
+    fetchApi('USER', 'getHierarchicalConfigurationCatalog', {}).then(function(response) {
+        if (!response || response.status !== 'success' || !Array.isArray(response.data)) {
+            status.textContent = 'No fue posible consultar el catálogo: ' + String(response && (response.code || response.message) || 'servicio no disponible'); return;
+        }
+        var catalog = response.data;
+        if (!catalog.length) { status.textContent = 'No hay parámetros jerárquicos publicados para este usuario.'; return; }
+        status.textContent = catalog.length + ' parámetro(s) disponible(s).' + (departmentId ? ' Departamento activo: ' + departmentId + '.' : ' No hay departamento activo; no se habilitan excepciones departamentales.');
+        Promise.all(catalog.map(function(item) {
+            var payload = { clave: item.clave };
+            if (departmentId) payload.activeDepartmentId = departmentId;
+            return fetchApi('USER', 'resolveHierarchicalConfiguration', payload).then(function(result) {
+                return { item: item, result: result && result.status === 'success' ? (result.data || result) : null,
+                    error: result && (result.code || result.message) || 'CONFIGURATION_RESOLUTION_FAILED' };
+            });
+        })).then(function(entries) {
+            list.textContent = '';
+            entries.forEach(function(entry) {
+                var item = entry.item, resolved = entry.result;
+                var card = document.createElement('section'); card.className = 'rounded-2xl border border-slate-200 bg-white p-4 space-y-3';
+                var heading = document.createElement('div'); heading.className = 'flex flex-wrap items-start justify-between gap-2';
+                var title = document.createElement('div'), name = document.createElement('h4');
+                name.className = 'text-sm font-black text-slate-800'; name.textContent = item.clave;
+                var description = document.createElement('p'); description.className = 'text-xs text-slate-500 mt-1';
+                description.textContent = item.descripcion || item.categoria || 'Parámetro institucional';
+                title.appendChild(name); title.appendChild(description);
+                var policy = document.createElement('span'); policy.className = 'text-[10px] font-bold uppercase rounded-lg bg-slate-100 px-2 py-1 text-slate-600';
+                policy.textContent = item.politicaAlcance || 'RESTRINGIDO'; heading.appendChild(title); heading.appendChild(policy); card.appendChild(heading);
+                if (!resolved) {
+                    var error = document.createElement('p'); error.className = 'text-xs text-rose-700';
+                    error.textContent = 'No se pudo resolver este parámetro: ' + entry.error; card.appendChild(error); list.appendChild(card); return;
+                }
+                var meta = document.createElement('p'); meta.className = 'text-[11px] text-slate-600';
+                meta.textContent = 'Origen efectivo: ' + String(resolved.origenEfectivo || 'DESCONOCIDO') + ' · Estado: ' + String(resolved.estadoHerencia || 'SIN_ESTADO') + ' · Versión: ' + String(resolved.version || item.version || '1.0');
+                var effective = document.createElement('pre'); effective.className = 'text-xs bg-slate-50 border border-slate-100 rounded-xl p-3 whitespace-pre-wrap break-words';
+                try { effective.textContent = JSON.stringify(resolved.valorEfectivo !== undefined ? resolved.valorEfectivo : resolved.valor, null, 2); }
+                catch (_) { effective.textContent = String(resolved.valorEfectivo || resolved.valor || ''); }
+                card.appendChild(meta); card.appendChild(effective);
+                if (resolved.valorInstitucional !== null && resolved.valorInstitucional !== undefined) {
+                    var source = document.createElement('p'); source.className = 'text-[11px] text-slate-500';
+                    source.textContent = 'Valor institucional de origen: ' + String(typeof resolved.valorInstitucional === 'object' ? JSON.stringify(resolved.valorInstitucional) : resolved.valorInstitucional);
+                    card.appendChild(source);
+                }
+                var canOverride = !!departmentId && Array.isArray(item.ambitosPermitidos) && item.ambitosPermitidos.indexOf('DEPARTAMENTAL') !== -1 && item.permiteSobrescritura === true;
+                if (canOverride) {
+                    var editor = document.createElement('textarea'); editor.className = 'w-full min-h-[72px] rounded-xl border border-slate-200 p-3 text-xs';
+                    editor.setAttribute('aria-label', 'Valor departamental para ' + item.clave);
+                    try { editor.value = typeof resolved.valorEfectivo === 'string' ? resolved.valorEfectivo : JSON.stringify(resolved.valorEfectivo); }
+                    catch (_) { editor.value = String(resolved.valorEfectivo || ''); }
+                    var actions = document.createElement('div'); actions.className = 'flex flex-wrap gap-2';
+                    var save = document.createElement('button'); save.type = 'button'; save.className = 'rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white'; save.textContent = 'Guardar excepción departamental';
+                    save.addEventListener('click', function() {
+                        var value = editor.value;
+                        try {
+                            var type = String(item.tipo || 'TEXTO').toUpperCase();
+                            if (['JSON','OBJETO','ARRAY'].indexOf(type) !== -1) value = JSON.parse(value);
+                            else if (['NUMERO','NUMBER','DECIMAL','ENTERO','INTEGER'].indexOf(type) !== -1) { value = Number(value); if (!Number.isFinite(value)) throw new Error('El valor numérico no es válido.'); }
+                            else if (['BOOLEANO','BOOLEAN'].indexOf(type) !== -1) { if (value !== 'true' && value !== 'false') throw new Error('Use true o false para un valor booleano.'); value = value === 'true'; }
+                        } catch (error) { status.textContent = error.message || 'El valor no coincide con el tipo del parámetro.'; return; }
+                        save.disabled = true;
+                        fetchApi('USER', 'saveSystemConfiguration', { clave: item.clave, ambito: 'DEPARTAMENTAL', departamentoId: departmentId,
+                            tipo: item.tipo || 'TEXTO', valor: value, motivo: 'Excepción departamental desde el panel de configuración jerárquica' }).then(function(saved) {
+                            if (saved && saved.status === 'success') { status.textContent = 'Excepción guardada para ' + departmentId + '.'; window.loadHierarchicalConfigurationSettings_(); }
+                            else { save.disabled = false; status.textContent = 'No se pudo guardar: ' + String(saved && (saved.code || saved.message) || 'error'); }
+                        }).catch(function() { save.disabled = false; status.textContent = 'No fue posible completar la solicitud.'; });
+                    });
+                    actions.appendChild(save);
+                    if (resolved.valorDepartamental !== null && resolved.valorDepartamental !== undefined) {
+                        var reset = document.createElement('button'); reset.type = 'button'; reset.className = 'rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700';
+                        reset.textContent = 'Restablecer herencia';
+                        reset.addEventListener('click', function() {
+                            reset.disabled = true;
+                            fetchApi('USER', 'resetSystemConfigurationOverride', { clave: item.clave, departamentoId: departmentId }).then(function(result) {
+                                if (result && result.status === 'success') { status.textContent = 'Se restableció la herencia para ' + departmentId + '.'; window.loadHierarchicalConfigurationSettings_(); }
+                                else { reset.disabled = false; status.textContent = 'No se pudo restablecer: ' + String(result && (result.code || result.message) || 'error'); }
+                            }).catch(function() { reset.disabled = false; status.textContent = 'No fue posible completar la solicitud.'; });
+                        });
+                        actions.appendChild(reset);
+                    }
+                    card.appendChild(editor); card.appendChild(actions);
+                }
+                list.appendChild(card);
+            });
+        }).catch(function() { status.textContent = 'No fue posible resolver el catálogo completo.'; });
+    }).catch(function() { status.textContent = 'No fue posible consultar el catálogo central.'; });
 };
 
 window.openDashboardSettingsModal = function() {
@@ -1676,6 +1790,12 @@ window.openDashboardSettingsModal = function() {
     if (tab4Btn) {
         var canManageVisual = (role === 'Administrador' || role === 'Director' || role === 'Desarrollador');
         tab4Btn.classList.toggle('hidden', !canManageVisual);
+    }
+
+    var hierarchyBtn = document.getElementById('tab-btn-hierarchical-settings');
+    if (hierarchyBtn) {
+        var canManageHierarchy = (role === 'Administrador' || role === 'Director' || role === 'Desarrollador' || role === 'Subdirector');
+        hierarchyBtn.classList.toggle('hidden', !canManageHierarchy);
     }
 
     var approveBtn = document.getElementById('btn-approve-palette-proposal');
