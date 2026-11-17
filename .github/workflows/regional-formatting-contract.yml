@@ -1,0 +1,78 @@
+name: Regional Formatting Contract
+
+on:
+  push:
+    branches:
+      - NG_beta_0.0.0.1_work
+    paths:
+      - "js/config.js"
+      - "js/api.js"
+      - "js/ui-common.js"
+      - "js/accounting.js"
+      - "js/secretary.js"
+      - "js/teacher.js"
+      - "js/student.js"
+      - "js/developer.js"
+      - "js/index-ui.js"
+      - "js/department-reference-admin.js"
+      - "js/destreza_teclado.js"
+      - "js/perifericos_juego.js"
+      - "js/quizpro.js"
+      - "js/webmaster_quiz_juego.js"
+      - "dashboard-recursos-humanos.html"
+      - "tests/formatting/**"
+      - ".github/workflows/regional-formatting-contract.yml"
+  pull_request:
+    branches:
+      - NG_beta_0.0.0.1
+    paths:
+      - "js/config.js"
+      - "js/api.js"
+      - "js/ui-common.js"
+      - "js/accounting.js"
+      - "js/secretary.js"
+      - "js/teacher.js"
+      - "js/student.js"
+      - "js/developer.js"
+      - "js/index-ui.js"
+      - "js/department-reference-admin.js"
+      - "js/destreza_teclado.js"
+      - "js/perifericos_juego.js"
+      - "js/quizpro.js"
+      - "js/webmaster_quiz_juego.js"
+      - "dashboard-recursos-humanos.html"
+      - "tests/formatting/**"
+      - ".github/workflows/regional-formatting-contract.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regional-formatting:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Syntax check changed browser modules
+        run: |
+          node --check js/config.js
+          node --check js/api.js
+          node --check js/ui-common.js
+          node --check js/accounting.js
+          node --check js/secretary.js
+          node --check js/teacher.js
+          node --check js/student.js
+          node --check js/developer.js
+          node --check js/index-ui.js
+          node --check js/department-reference-admin.js
+          node --check js/destreza_teclado.js
+          node --check js/perifericos_juego.js
+          node --check js/quizpro.js
+          node --check js/webmaster_quiz_juego.js
+      - name: Run regional formatting contract
+        run: node tests/formatting/regional-formatters.test.js
