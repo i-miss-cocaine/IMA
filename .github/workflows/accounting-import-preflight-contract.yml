@@ -7,6 +7,7 @@ name: Accounting Import Preflight Contract
 # Session-token regression covers only services that implement both getAuthTokenSecret and verifySessionToken.
 # Test harness provides explicit stubs for local session revocation ledgers.
 # Session-token HMAC regression includes the developer control-plane verifier's byte-signature contract.
+# Re-run the full accounting preflight after the registry-backed migration test fixture correction.
 
 on:
   push:
