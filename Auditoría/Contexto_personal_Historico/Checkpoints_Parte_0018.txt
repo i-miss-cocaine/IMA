@@ -728,3 +728,60 @@ Estado:
 - No se declara validación beta ni política de retención resuelta.
 - Siguiente tarea elegible C1.815: definir y verificar la retención de comentarios/versiones al eliminar una entrega; después ejecutar BETA-FUNC-122 en beta.
 ===============================================================================
+
+
+
+===============================================================================
+CHECKPOINT C1.815 — cierre AUD-NG-165: privacidad y trazabilidad de entregas
+===============================================================================
+Fecha: 2026-11-17
+Sesión: IMA-EXEC-20261117-AUD-NG-165-SUBMISSION-PRIVACY-02
+Rama autorizada: NG_beta_0.0.0.1_work
+Checkpoint anterior: C1.814
+HEAD inicial de esta iteración: b5fd225b43e96273bc4f24108c7d77b026e63c0c
+HEAD final de implementación y pruebas: 2ebf7ac795633554d2350a8e6e62806677ff184a
+HEAD de registro documental previo: 501e31356c54c1dd9b00a4d1ae14e2b95758804a
+
+Objetivo:
+Cerrar AUD-NG-165, derivada de TAREA-10, protegiendo comentarios privados, historial de versiones, preview documental, devoluciones y eliminación de entregas sin perder trazabilidad.
+
+Implementación:
+1. `getTaskServiceSubmissionAccess_` valida identidad, relación de estudiante/tutor, asignación docente y tarea aun cuando la consulta use entregaId. Los rechazos conservan el error externo RESOURCE_NOT_FOUND y registran operación, rol y motivo técnico sin incluir mensajes privados ni contenido de entrega.
+2. `getSubmissionComments` filtra notas privadas para estudiantes y responsables; el personal solo accede dentro de la asignación/ámbito. `addSubmissionComment` deriva autor/rol de la sesión, impide que estudiantes creen notas privadas y serializa creación de cabecera/append mediante ScriptLock.
+3. `getSubmissionVersions` valida propiedad/ámbito y no expone archivoUrl crudo. `getSubmissionDocumentPreviewUrl` acepta el archivo vigente o una versión histórica solo si EntregasVersiones enlaza fileId, tarea, estudiante y entrega única; referencias ambiguas se deniegan.
+4. `returnSubmissionForRevision` utiliza el wrapper bloqueado, verifica docente/tarea, registra comentario privado con autor real y revierte el estado si falla el append.
+5. `deleteSubmission` pasa a baja lógica idempotente: mantiene fila Entregas, archivo Drive, EntregasVersiones y ComentariosEntregas; registra Estado=Eliminada, actor, rol, fecha y motivo. No envía el archivo a papelera ni elimina evidencia.
+6. `submitAssignment` reactiva la misma EntregaID tras una baja lógica, crea una nueva versión, limpia calificación/comentario y metadatos de eliminación; el enlace externo se conserva en EntregasVersiones, no en la columna de calificación.
+7. Se añadió cobertura de lock/timeout para comentarios y reentregas, de preview de versiones antiguas, de vínculos ambiguos, de dos estudiantes/docentes y responsables vinculados/no vinculados.
+
+Archivos de código y pruebas:
+- `backend/task-service/Code.gs`
+- `tests/security/task-service-resource-ownership.test.js`
+- `tests/security/task-service-submission-mutation-contract.test.js`
+- `tests/security/task-service-submission-access-contract.test.js` (nuevo)
+- `tests/security/task-service-submission-resubmit-contract.test.js` (nuevo)
+- `tests/security/task-service-security-contract.test.js`
+
+Registros actualizados:
+- `pendientes/Docente/Pendientes.md`: AUD-NG-165 marcada completada en código/contratos locales; beta separada.
+- `Auditoría/AUDITORIA_COMPLETADAS_TAREA-10.md`: resolución y evidencia agregadas sin alterar el diagnóstico histórico.
+- `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`, `Auditoria.txt` y `changueslogs.txt`: C1.815 y resultado.
+- `beta_test.txt`: BETA-FUNC-122 en el registro canónico; caso desplegado continúa Pendiente beta. La referencia recién añadida en beta_test_Parte_0002 se trasladó al archivo canónico.
+
+Verificación local/CI:
+- GitHub Actions Task-Service security local contracts, run 44171548172: SUCCESS.
+- Node.js 22.23.4; pasaron task-service-security-contract, resource-ownership, grade-submission-history (14/14), submission-mutation (13), submission-access (30), submission-resubmit, deadline-history, upload-contract y single-auth-context.
+- `node --check js/teacher.js`: PASS. Los contratos usan `vm.Script` para parsear backend/task-service/Code.gs.
+- Task-Service backup/restore run 44171274487: SUCCESS.
+- Department Scope run 44171274513: FAILURE independiente en Phase22 porque falta `configureSchoolDocumentTemplate` en ACCOUNTING; no pertenece al alcance Task-Service.
+- No hubo checkout local en el contenedor de trabajo; las pruebas Node locales/aisladas se ejecutaron en el runner de GitHub Actions. No se declara prueba de despliegue.
+
+Hallazgos y límites:
+- BETA-FUNC-122 permanece Pendiente beta para verificar permisos efectivos de Drive/Sheets, preview, comentarios, baja lógica y reentrega en Apps Script desplegado.
+- AUD-NG-149, AUD-NG-121, AUD-NG-152 y AUD-NG-124 conservan sus requisitos independientes; no se marcan completadas por esta resolución.
+
+Estado:
+- AUD-NG-165: Completada en código y contratos locales.
+- C1.815: implementación y verificación local aprobadas; beta pendiente sin bloquear el cierre.
+- Siguiente tarea elegible: revisar TAREA-11 / AUD-NG-166 y sus dependencias técnicas antes de iniciar su alcance.
+===============================================================================
