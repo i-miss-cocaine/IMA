@@ -277,7 +277,9 @@ const registrationHistory = sheet([historyHeaders]);
 registrationHistory.appendRow = () => { throw new Error("history unavailable"); };
 h.sheets.HistorialServiciosDistribuidos = registrationHistory;
 assert.throws(() => registerService(h, { serviceId: "SVC-NEW", name: "New service", cuentaPropietaria: "owner@example.invalid", spreadsheetAsociado: "SHEET-NEW" }), /SERVICE_REGISTRY_WRITE_FAILED/);
-assert.equal(h.sheets.CatalogoServicios.rows.length, 1, "registration must roll back if its history cannot be persisted");
+assert.equal(h.sheets.CatalogoServicios.rows.length, 2, "registration must roll back if its history cannot be persisted");
+assert.equal(h.sheets.CatalogoServicios.rows[1][0], "SVC-1", "rollback must preserve the pre-existing service");
+assert.ok(!h.sheets.CatalogoServicios.rows.some(row => row[0] === "SVC-NEW"), "failed registration must not leave the new service row");
 assert.equal(registrationHistory.rows.length, 1);
 
 h = harness({
