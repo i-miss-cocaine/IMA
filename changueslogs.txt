@@ -4112,3 +4112,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Node CLI local NOT RUN; Node CLI sí fue ejecutado en GitHub Actions. No se redujeron pruebas ni se alteró lógica para forzar aprobación.
 - HEAD de código/CI: `0cefb7d23b10dfc01f9df40283f4d926bcdfee85`; HEAD documental de este registro será verificado al terminar. Rama base `NG_beta_0.0.0.1`: `44d9891132332e692dbe2ba8602b41f50a508a59`; comparación previa: 3881 ahead, 0 behind.
 - Estado: AUD-NG-084 continúa En ejecución. Siguiente acción: diseñar y probar rotación/revocación versionada ACCOUNTING↔ACADEMIC sin degradar la validación HMAC ni el anti-replay; después obtener evidencia autorizada de despliegues.
+
+[2026-11-17] C1.805 — AUD-NG-084: rotación solapada USER/ACADEMIC/DEVELOPER y credencial tipada ACCOUNTING
+- ACADEMIC corrige su identidad local de servicio a `ACADEMIC`; USER y ACADEMIC verifican sobres contra el conjunto de claves ACTIVE y VERIFY_ONLY del emisor, con propiedades versionadas `IMA_MIGRATION_HMAC_SECRET_<SERVICE>_V_<VERSION>`. La revocación excluye la versión antigua sin invalidar la clave activa.
+- ACCOUNTING valida su clave de firma contra su registro local versionado; DEVELOPER deja de aceptar `customSecret`/fallback de `AUTH_TOKEN_SECRET` para HMAC interservicio y adopta el registro dedicado. `AUTH_TOKEN_SECRET` permanece reservado para tokens de sesión.
+- Se amplían los contratos Node.js para probar transición solapada, revocación selectiva, firma inválida sin reserva de requestId y replay. GitHub Actions Accounting Import Preflight run 44099188130: Node.js 24.22.2, 44/44 pasos SUCCESS, incluido el nuevo contrato DEVELOPER. Identity Mapping run 44098993823 SUCCESS; Developer Service Registry run 44099042479 SUCCESS.
+- Se corrigieron fixtures que no modelaban el nuevo resolvedor de credenciales y una aserción estática que aún esperaba el contrato antiguo. No se eliminaron pruebas ni se redujeron aserciones.
+- Incidencia independiente: Department Scope run 44099125486 conserva el fallo histórico Phase22 por ausencia de `configureSchoolDocumentTemplate` en ACCOUNTING; no corresponde a AUD-NG-084 ni se modificó ese módulo.
+- Node CLI local: NOT RUN por falta de checkout local; los comandos Node se ejecutaron realmente en runners GitHub Actions. No se declara prueba local inexistente.
+- Pendiente: automatización/procedimiento de provisioning coordinado, auditoría de uso de credenciales y verificación autorizada de Script Properties/deployments reales. AUD-NG-084 continúa En ejecución.
+- HEAD de código/CI: 3a3a07146cf92ee738814f1a872de0e54ca58a0c; rama base NG_beta_0.0.0.1 HEAD 44d9891132332e692dbe2ba8602b41f50a508a59, comparación 3926 ahead / 0 behind.
