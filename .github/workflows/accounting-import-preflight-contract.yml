@@ -3,6 +3,7 @@ name: Accounting Import Preflight Contract
 # The accounting service syntax check covers the restored payroll and journal module.
 # Keep the migration HMAC registry contract in the push-path filter and run it before dependent accounting contracts.
 # Run session-token HMAC configuration regression alongside inter-service credential rotation coverage.
+# Keep the session verification harness fixtures aligned with current revocation and membership checks.
 
 on:
   push:
