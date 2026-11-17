@@ -23,13 +23,7 @@ const targetSheet={getDataRange(){return{getValues(){return targetRows.map(row=>
 const ss={getSheetByName(name){if(name==="CorrespondenciaIdentificadores")return sheet;if(name==="Cursos")return targetSheet;return null;}};
 const schemas={curso:{service:"ACCOUNTING",sheet:"Cursos",headers:["CursoID","NombreCurso","Nota","FechaInicio"]},estudiante:{service:"ACADEMIC",sheet:"ExpedientesEstudiantes",headers:["ExpedienteID","PersonaID"]},persona:{service:"USER",sheet:"Personas",headers:["PersonaID","Nombres","Apellidos","Identificacion","EmailContacto"]}};
 const auditRows=[],writeCalls=[],rollbackCalls=[];
-let remoteDuplicateMatches=[{rowIndex:0,targetId:"PERSONA-3",field:"Identificacion",matchType:"EXACTA"}];
-const alreadyLinked=context.preview({...personImport,politicaDuplicados:"VINCULAR"});
-assert.equal(alreadyLinked.validForImport,true,JSON.stringify(alreadyLinked));
-assert.equal(alreadyLinked.filasVinculadas,1);assert.equal(alreadyLinked.validRowIndexes.length,0);
-const linkedImport=context.import({...personImport,politicaDuplicados:"VINCULAR",previewConfirmed:true,previewHash:alreadyLinked.previewHash});
-assert.equal(linkedImport.status,"success");assert.equal(linkedImport.registrosEscritos,0);assert.equal(linkedImport.registrosVinculados,1);
-remoteDuplicateMatches=[];
+let remoteDuplicateMatches=[];
 let failWriteAt=0,runCounter=0;
 const audit={appendRow(row){auditRows.push(row);}};
 let binaryFileHash="a".repeat(64);
@@ -178,6 +172,12 @@ remoteDuplicateMatches=[{rowIndex:0,targetId:"PERSONA-OLD",field:"Identificacion
 const linkedPersonDuplicate=context.preview({...personImport,politicaDuplicados:"VINCULAR"});
 assert.equal(linkedPersonDuplicate.validForImport,false);
 assert.ok(linkedPersonDuplicate.errores.some(x=>x.codigo==="IMPORT_DUPLICATE_LINK_UNSUPPORTED"));
+remoteDuplicateMatches=[{rowIndex:0,targetId:"PERSONA-3",field:"Identificacion",matchType:"EXACTA"}];
+const alreadyLinked=context.preview({...personImport,politicaDuplicados:"VINCULAR"});
+assert.equal(alreadyLinked.validForImport,true,JSON.stringify(alreadyLinked));
+assert.equal(alreadyLinked.filasVinculadas,1);assert.equal(alreadyLinked.validRowIndexes.length,0);
+const linkedImport=context.import({...personImport,politicaDuplicados:"VINCULAR",previewConfirmed:true,previewHash:alreadyLinked.previewHash});
+assert.equal(linkedImport.status,"success");assert.equal(linkedImport.registrosEscritos,0);assert.equal(linkedImport.registrosVinculados,1);
 remoteDuplicateMatches=[];
 const orphan=context.preview({...student,filasData:[{legacyId:"EST-1",persona:"MISSING"}]});
 assert.equal(orphan.validForImport,false);assert.ok(orphan.errores.some(x=>x.codigo==="ORPHANED_REFERENCE"));
