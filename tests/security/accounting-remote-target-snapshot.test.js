@@ -19,6 +19,7 @@ function ownerRuntime(source,service,handlerName,snapshotName,rows,expectedSheet
       getProperty: key => ({
         IMA_ACADEMIC_SERVICE_URL: "https://script.google.com/macros/s/AKfycbACADEMIC123/exec",
         IMA_USER_SERVICE_URL: "https://script.google.com/macros/s/AKfycbUSER123/exec",
+        IMA_INSTITUTION_ID: "INST-1",
         IMA_MIGRATION_HMAC_SECRET: secret,
         IMA_MIGRATION_HMAC_SECRET_VERSION: "v1"
       })[key] || ""
