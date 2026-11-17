@@ -62,6 +62,12 @@ const runtime = {
   getVerifiedAccountingIdentity_: () => identity,
   accountingHasInstitutionalImportPermission_: () => permission,
   migrationHash_: value => crypto.createHash("sha256").update(String(value)).digest("hex"),
+  resolveInterServiceSecret_: (sourceService, credentialType, purpose) => {
+    assert.equal(sourceService, "ACCOUNTING");
+    assert.equal(credentialType, "IMA_MIGRATION_HMAC_SECRET");
+    assert.equal(purpose, "SIGN");
+    return secret;
+  },
   PropertiesService: { getScriptProperties: () => ({ getProperty: key => ({
     IMA_USER_SERVICE_URL: "https://script.google.com/macros/s/AKfycbUSER123/exec",
     IMA_ACADEMIC_SERVICE_URL: "https://script.google.com/macros/s/AKfycbACADEMIC123/exec",
