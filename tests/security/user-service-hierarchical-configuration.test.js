@@ -16,7 +16,7 @@ function extractFunction(name){
 }
 const cs=source.indexOf("const CONFIGURATION_SYSTEM_EXTRA_HEADERS_"),ce=source.indexOf("function configurationHeaderMap_",cs);
 assert.ok(cs>=0&&ce>cs,"hierarchy constants exist");
-const code=source.slice(cs,ce)+["configurationHeaderMap_","configurationJsonArray_","configurationPolicyFromRow_","configurationStoredValue_","configurationRows_","configurationFindUnique_","resolveHierarchicalConfiguration","validateRolePermission"].map(extractFunction).join("\n");
+const code=source.slice(cs,ce)+["configurationHeaderMap_","configurationJsonArray_","configurationPolicyFromRow_","configurationStoredValue_","configurationDepartmentStoredValue_","configurationRows_","configurationFindUnique_","resolveHierarchicalConfiguration","validateRolePermission"].map(extractFunction).join("\n");
 const sh=["ConfigID","Clave","Valor","Tipo","Categoria","Descripcion","Ambito","EditablePor","Estado","Version","UpdatedAt","UpdatedBy","InstitutionID","UserID","PoliticaAlcance","AmbitosPermitidosJSON","PermiteHerencia","PermiteSobrescritura","RolesAutorizadosJSON","DependenciasJSON","EsSensible"];
 const dh=["OverrideID","ConfigID","Clave","InstitutionID","DepartmentID","ValueJSON","ValueType","Version","Status","CreatedAt","CreatedBy","UpdatedAt","UpdatedBy","Reason"];
 function sheet(rows){return{rows:rows.map(r=>r.slice()),getLastRow(){return this.rows.length;},getDataRange(){const x=this;return{getValues:()=>x.rows.map(r=>r.slice())};}};}
