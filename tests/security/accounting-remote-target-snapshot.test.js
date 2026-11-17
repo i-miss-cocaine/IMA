@@ -53,8 +53,8 @@ const duplicateAcademicRuntime=ownerRuntime(academic,"ACADEMIC","handleTrustedMi
 assert.equal(duplicateAcademicRuntime.handle({sourceService:"ACCOUNTING",action:"getMigrationTargetExistenceSnapshot",payload:{sessionToken:"SIGNED-SESSION",institutionId:"INST-1",entityType:"estudiante",targetIds:["EXP-1"]}}).code,"MIGRATION_SNAPSHOT_DUPLICATE_TARGET_ID");
 assert.equal(academicRuntime.handle({sourceService:"ACCOUNTING",action:"getMigrationTargetExistenceSnapshot",payload:{sessionToken:"SIGNED-SESSION",institutionId:"INST-1",entityType:"persona",targetIds:["EXP-1"]}}).code,"MIGRATION_SNAPSHOT_CONTRACT_INVALID");
 
-const accountingFunctions=["isAccountingTrustedAppsScriptEndpoint_","accountingComputeHmacSignature_","requestAccountingTrustedOwnerSnapshot_","normalizeMigrationNaturalKey_","migrationDuplicateKeyDefinitions_","buildMigrationDuplicateRequests_","buildMigrationTargetExistenceSnapshot_","buildAccountingRelatedPersonExistenceSnapshot_"].map(name=>extract(accounting,name));
-let remoteData={status:"success",verified:true,service:"ACADEMIC",sheet:"ExpedientesEstudiantes",idField:"ExpedienteID",institutionId:"INST-1",existingTargetIds:["EXP-1"],targetRows:[{ExpedienteID:"EXP-1",__rowHash:"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}],duplicateMatches:[]};
+const accountingFunctions=["isAccountingTrustedAppsScriptEndpoint_","accountingComputeHmacSignature_","requestAccountingTrustedOwnerSnapshot_","normalizeMigrationNaturalKey_","migrationDuplicateKeyDefinitions_","buildMigrationDuplicateRequests_","buildMigrationReferenceRequests_","buildMigrationTargetExistenceSnapshot_","buildAccountingRelatedPersonExistenceSnapshot_"].map(name=>extract(accounting,name));
+let remoteData={status:"success",verified:true,service:"ACADEMIC",sheet:"ExpedientesEstudiantes",idField:"ExpedienteID",institutionId:"INST-1",existingTargetIds:["EXP-1"],targetRows:[{ExpedienteID:"EXP-1",__rowHash:"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}],duplicateMatches:[],referenceErrors:[]};
 let envelopeSeen=null;
 const accountingRuntime={
  Date,String,JSON,Array,Object,Number,Math,RegExp,Error,
