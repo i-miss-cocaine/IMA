@@ -4057,3 +4057,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Department Scope run 44083424646 FAILURE en Phase22 document management; los pasos previos (1–79) PASS. No se alteró el módulo ajeno.
 - CLI local NOT RUN por fallo DNS al obtener checkout; Actions sí ejecutó Node.js 24. Apps Script/Sheets/Drive real pendiente; BETA-FUNC-118.
 - Commits de código: ce07cb0..ec74039 (16 commits de implementación/corrección). Siguiente: AUD-NG-080, historial con actor verificado y concurrencia.
+
+ 
+[2026-11-17] C1.799 — AUD-NG-080, historial de servicios y actor verificado
+- doPost descarta el actor enviado por cliente y utiliza únicamente el userId de claims de sesión firmada para los escritores privados de registro y cambio de estado.
+- Alta y cambio de estado usan ScriptLock, escriben HistorialServiciosDistribuidos con actor verificado y compensan fallos coordinados; wrappers públicos rechazan actor falsificado.
+- Developer Service Registry Contract run 44084385150 SUCCESS con Node.js 24.22.2: sintaxis DEVELOPER/test y contrato PASS; incluye actor falsificado, lock timeout, contención reentrante, rollback y esquema de historial inválido.
+- Hierarchical Configuration Contract run 44084206282 SUCCESS. Department Scope run 44084206213 FAILURE en Phase22 document management después de 82 pasos PASS; 17 pasos posteriores SKIPPED. No se modificó Phase22.
+- CLI local NOT RUN por DNS al obtener checkout; Actions sí ejecutó Node 24. BETA-FUNC-119 pendiente de LockService/Sheets reales.
+- Siguiente tarea elegible: AUD-NG-082 — eliminar fallback de authRole y exigir sesión autenticada en todo el plano de control.

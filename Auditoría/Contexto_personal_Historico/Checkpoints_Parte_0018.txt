@@ -193,3 +193,24 @@ Siguiente tarea elegible: F25-Task03 — detección avanzada de duplicados e int
 - **Estado:** implementación/CI completados; beta pendiente separada. No se declara validada la infraestructura real.
 - **Siguiente tarea elegible:** AUD-NG-080 — historial de cambios del registro con actor verificado, LockService y persistencia consistente; revisar el dispatcher y contratos antes de editar.
 =============================================================================
+
+ 
+=============================================================================
+### C1.799 — IMA-EXEC-20261117-AUD-NG-080-SERVICE-HISTORY-01
+- **Checkpoint anterior:** C1.798 — AUD-NG-078, endurecimiento del registro central DEVELOPER.
+- **HEAD inicial:** 410b39f3557668ea84f3f7f79df24dc8469aa405.
+- **HEAD de cierre de código/pruebas:** bc10c9ae00a5265d1f22cbf258f41c539d621b85.
+- **HEAD de documentación beta:** 7b8a1f75176c01f34ebc5185633a02e565b86366.
+- **Tarea:** AUD-NG-080 — historial de cambios de servicios con actor verificado y persistencia consistente.
+- **Resultado:** completada en código, revisión y CI; validación real de LockService/Sheets pendiente en beta.
+- **Implementación:** doPost descarta _verifiedUserId aportado por el cliente y lo repone únicamente desde claims de una sesión firmada; el dispatcher deriva las altas/cambios a escritores privados registerServiceInstance_ y updateServiceStatus_; wrappers públicos rechazan llamadas sin actor verificado. Alta y cambio de estado adquieren ScriptLock antes de leer/modificar el catálogo, registran actor estable en HistorialServiciosDistribuidos, generan HistoryID único, y liberan el lock en finally. Escrituras coordinadas incluyen rollback compensatorio y errores explícitos cuando la compensación no puede garantizarse. Los cambios de estado sin transición son no-op sin fila duplicada.
+- **Pruebas:** Developer Service Registry Contract run 44084385150 SUCCESS (Node.js 24.22.2; sintaxis DEVELOPER y contrato; ejecución completa). Cobertura: actor de sesión firmada, actor falsificado/ausente, alta y transición, lock timeout, contención reentrante, fallo de bitácora, rollback de alta/estado, esquema de historial inválido y payload no-objeto. Hierarchical Configuration Contract run 44084206282 SUCCESS.
+- **CI transversal:** Department Scope run 44084206213 FAILURE en Run Phase 22 document management suite contract; 82 pasos anteriores PASS y 17 posteriores SKIPPED. No se modificó Phase22.
+- **CLI local:** NOT RUN; el entorno no pudo resolver github.com para obtener checkout local. GitHub Actions sí ejecutó Node.js 24 y el contrato completo.
+- **Archivos de código/prueba:** backend/developer-service/Code.gs; tests/security/developer-service-registry.test.js. **Registro beta:** beta_test_Parte_0002.txt — BETA-FUNC-119.
+- **Commits de código/pruebas:** 5e2929c4f2c0b34b4a646b906a65ab31c6305fae; e65a01e711a3450d027a0a5f7bd11ecfa91957c6; 3d86a9526930f023c141c5f1aba25e120d375e65; 496ccbd77119413a3013d9d045a2e78b75e4efd4; d284acc4cf9ba60f4e2bba8092a309f9a6698529; cbf8a56a41ee0f5ed2cde53104f8a0cd5905d8f5; 61e56ad62b1e06d85d8df4045a702c603a2f73e8; 2585cc9fd25cb55b26772c3c9e1ac03ee6e503fc; b1f631f614b25ecda4c432ec10ccf9da1889fe66; 8f0c63916d09f87862856ca2e25606c0c9f54bd7; 685955c62590527e35c89f5ee7b3b7f27daf920c; bc10c9ae00a5265d1f22cbf258f41c539d621b85.
+- **Beta:** BETA-FUNC-119 añadido; ejecución con dos sesiones y LockService/Sheets reales pendiente. No se desplegó ni modificó infraestructura productiva.
+- **Rama base:** NG_beta_0.0.0.1 HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; comparación work/base 3840 ahead, 0 behind, merge-base idéntico. Sin escrituras en rama base.
+- **Estado:** implementación y CI completados; beta real pendiente. No se afirma concurrencia real de Apps Script.
+- **Siguiente tarea elegible:** AUD-NG-082 — exigir sesión autenticada en el plano de control y rechazar roles declarados por el cliente (authRole); el fallback actual de doPost sigue siendo una superficie de confianza independiente.
+=============================================================================

@@ -5664,3 +5664,9 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - **AUD-NG-078:** endurecimiento del registro central DEVELOPER implementado y verificado por contrato Node.js 24/GitHub Actions (run 44083437083 SUCCESS). Se rechazan metadatos placeholder, permisos duplicados/wildcard, cabeceras malformadas y migraciones con filas inválidas; BETA-FUNC-118 queda Pendiente beta.
 - **CI transversal:** Department Scope run 44083424646 falla en Phase22 document management después de 79 pasos PASS; el fallo no pertenece a AUD-NG-078 y no se modificó ese módulo.
 - **Siguiente subalcance elegible:** AUD-NG-080 — historial de cambios de servicios con actor verificado y persistencia consistente; revisar el dispatcher, el contexto de sesión y la serialización bajo LockService.
+
+ 
+## Seguimiento operativo — C1.799
+- **AUD-NG-080:** historial de altas/cambios DEVELOPER implementado con actor de sesión firmada, escritores privados, LockService y compensación; contrato Node.js 24 run 44084385150 SUCCESS. BETA-FUNC-119 pendiente de concurrencia y persistencia reales.
+- **CI transversal:** Department Scope run 44084206213 falla en Phase22 document management; 82 pasos anteriores PASS. No se modificó el módulo ajeno.
+- **Siguiente tarea P0 elegible:** AUD-NG-082 — el fallback payload.authRole permite declarar un rol desde el cliente; exigir sesión firmada y derivar rol exclusivamente de claims verificados.
