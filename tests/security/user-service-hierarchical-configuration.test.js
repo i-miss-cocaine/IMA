@@ -35,6 +35,7 @@ assert.ok(cs>=0&&ce>cs,"hierarchy constants exist");
 const code=source.slice(cs,ce)+["configurationHeaderMap_","configurationJsonArray_","configurationPolicyFromRow_","configurationStoredValue_","configurationDepartmentStoredValue_","configurationRows_","configurationFindUnique_","resolveHierarchicalConfiguration","saveSystemConfiguration","resetSystemConfigurationOverride","validateRolePermission"].map(extractFunction).join("\n");
 const sh=["ConfigID","Clave","Valor","Tipo","Categoria","Descripcion","Ambito","EditablePor","Estado","Version","UpdatedAt","UpdatedBy","InstitutionID","UserID","PoliticaAlcance","AmbitosPermitidosJSON","PermiteHerencia","PermiteSobrescritura","RolesAutorizadosJSON","DependenciasJSON","EsSensible"];
 const dh=["OverrideID","ConfigID","Clave","InstitutionID","DepartmentID","ValueJSON","ValueType","Version","Status","CreatedAt","CreatedBy","UpdatedAt","UpdatedBy","Reason"];
+function assertThrowsCode(fn,code){let caught=null;try{fn();}catch(error){caught=error;}assert.ok(caught,"expected "+code);assert.equal(caught.message,code);}
 function sheet(rows){return{rows:rows.map(r=>r.slice()),getLastRow(){return this.rows.length;},getDataRange(){const x=this;return{getValues:()=>x.rows.map(r=>r.slice())};}};}
 function row(scope,value,opts={}){
  const r=new Array(sh.length).fill("");r[0]="CFG-1";r[1]="feature.flag";r[2]=value;r[3]="TEXTO";r[4]="TEST";r[5]="test";r[6]=scope;r[7]="Administrador,Director";r[8]="ACTIVO";r[9]="1.0";r[10]="2026-11-17";r[11]="U-ADMIN";r[12]=scope==="GLOBAL"?"":"INST-1";r[13]=scope==="PERSONAL"?"U-1":"";
@@ -189,17 +190,17 @@ function writeHarness(options={}){
 {
  const h=harness({departments:["D-1"]});
  h.sheets.ConfiguracionSistema.rows.push(h.sheets.ConfiguracionSistema.rows[2].slice());
- assert.throws(()=>h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag"}),/CONFIGURATION_INSTITUTION_CONFLICT/,"duplicate institutional rows fail closed");
+ assertThrowsCode(()=>h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag"}),"CONFIGURATION_INSTITUTION_CONFLICT");
 }
 {
  const h=harness({departments:["D-1"]});
  h.sheets.ConfiguracionDepartamental.rows.push(h.sheets.ConfiguracionDepartamental.rows[1].slice());
- assert.throws(()=>h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag",departamentoId:"D-1"}),/CONFIGURATION_DEPARTMENT_CONFLICT/,"duplicate departmental overrides fail closed");
+ assertThrowsCode(()=>h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag",departamentoId:"D-1"}),"CONFIGURATION_DEPARTMENT_CONFLICT");
 }
 {
  const h=harness({personal:true,departments:["D-1"]});
  h.sheets.ConfiguracionSistema.rows.push(h.sheets.ConfiguracionSistema.rows[3].slice());
- assert.throws(()=>h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag"}),/CONFIGURATION_PERSONAL_CONFLICT/,"duplicate personal overrides fail closed");
+ assertThrowsCode(()=>h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag"}),"CONFIGURATION_PERSONAL_CONFLICT");
 }
 {
  const h=harness({departments:["D-1"],policy:{inheritance:false,allowedScopes:["GLOBAL","INSTITUCIONAL","DEPARTAMENTAL"]}});
