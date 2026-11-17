@@ -39,11 +39,17 @@ jobs:
         run: node --check < backend/accounting-service/Code.gs
       - name: Syntax-check UI common module
         run: node --check js/ui-common.js
+      - name: Syntax-check UI
+        run: node --check < js/ui-common.js
       - name: Syntax-check contract
         run: node --check tests/security/user-service-hierarchical-configuration.test.js
+      - name: Syntax-check hierarchical UI contract
+        run: node --check tests/security/hierarchical-configuration-ui.test.js
       - name: Syntax-check consumer integration contract
         run: node --check tests/security/hierarchical-configuration-consumer-integration.test.js
       - name: Run hierarchical configuration contract
         run: node tests/security/user-service-hierarchical-configuration.test.js
+      - name: Run hierarchical configuration UI contract
+        run: node tests/security/hierarchical-configuration-ui.test.js
       - name: Run consumer integration contract
         run: node tests/security/hierarchical-configuration-consumer-integration.test.js
