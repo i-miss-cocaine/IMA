@@ -59,6 +59,7 @@ const comments=[
 const versions=[
   ["VersionID","EntregaID","TareaID","EstudianteID","Version","ArchivoUrl","FileId","MimeType","TextoRespuesta","EnlaceExterno","FechaEnvio","Estado","Observaciones"],
   ["V1","DEL-1","TASK-1","STU-1",1,"https://drive.google.com/file/d/FILE-1/view","FILE-1","application/pdf","v1","",new Date(),"Enviada",""],
+  ["V0","DEL-1","TASK-1","STU-1",0,"https://drive.google.com/file/d/FILE-OLD/view","FILE-OLD","application/pdf","old version","",new Date("2026-11-16T09:00:00Z"),"Enviada",""],
   ["V2","DEL-2","TASK-2","STU-2",1,"https://drive.google.com/file/d/FILE-2/view","FILE-2","application/pdf","v2","",new Date(),"Enviada",""],
   ["V3","DEL-3","TASK-1","STU-1",1,"https://drive.google.com/file/d/FILE-3/view","FILE-3","application/pdf","v3","",new Date(),"Enviada",""]
 ];
@@ -69,7 +70,8 @@ const guardianLinks={"GUARDIAN-1":["STU-1"],"GUARDIAN-2":["STU-2"],"GUARDIAN-3":
 const fileStore={
   "FILE-1":{getMimeType:()=>"application/pdf",getName:()=>"one.pdf",getSize:()=>1024},
   "FILE-2":{getMimeType:()=>"application/pdf",getName:()=>"two.pdf",getSize:()=>1024},
-  "FILE-3":{getMimeType:()=>"application/pdf",getName:()=>"three.pdf",getSize:()=>1024}
+  "FILE-3":{getMimeType:()=>"application/pdf",getName:()=>"three.pdf",getSize:()=>1024},
+  "FILE-OLD":{getMimeType:()=>"application/pdf",getName:()=>"old-version.pdf",getSize:()=>512}
 };
 const runtime={
   SPREADSHEET_ID:"TEST-SHEET",
@@ -123,10 +125,13 @@ test(()=>{const x=call("addSubmissionComment","S1","DEL-1",{mensaje:"Nueva nota"
 test(()=>{const x=call("addSubmissionComment","T1","DEL-1",{mensaje:"Nota docente",autorId:"FORGED",rolAutor:"Estudiante",esPrivado:true});assert.equal(x.status,"success");const row=sheets.ComentariosEntregas.rows.at(-1);assert.equal(row[3],"TEACHER-1");assert.equal(row[4],"Profesor");assert.equal(row[6],true);});
 test(()=>{assert.throws(()=>call("addSubmissionComment","T2","DEL-1",{mensaje:"No permitido"}),/RESOURCE_NOT_FOUND/);});
 test(()=>{const x=call("getSubmissionDocumentPreviewUrl","S1","", {fileId:"FILE-1"});assert.equal(x.status,"success");});
+test(()=>{const x=call("getSubmissionDocumentPreviewUrl","S1","", {fileId:"FILE-OLD"});assert.equal(x.status,"success","a prior version file remains previewable through its authorized delivery");});
 test(()=>{const x=call("getSubmissionDocumentPreviewUrl","T1","", {fileId:"FILE-1"});assert.equal(x.status,"success");});
 test(()=>{const x=call("getSubmissionDocumentPreviewUrl","G1","", {fileId:"FILE-1"});assert.equal(x.status,"success");});
+test(()=>{const x=call("getSubmissionDocumentPreviewUrl","G1","", {fileId:"FILE-OLD"});assert.equal(x.status,"success","a linked guardian may preview the student's prior version");});
 test(()=>{assert.equal(call("getSubmissionDocumentPreviewUrl","T2","",{fileId:"FILE-1"}).status,"error");});
 test(()=>{assert.equal(call("getSubmissionDocumentPreviewUrl","S2","",{fileId:"FILE-1"}).status,"error");});
 test(()=>{assert.equal(call("getSubmissionDocumentPreviewUrl","S1","",{fileId:"FILE-3"}).status,"error");});
+test(()=>{sheets.EntregasVersiones.rows.push(["V-AMBIG","DEL-2","TASK-2","STU-2",2,"","FILE-OLD","application/pdf","","",new Date(),"Enviada",""]);assert.equal(call("getSubmissionDocumentPreviewUrl","S1","",{fileId:"FILE-OLD"}).status,"error","a file referenced by multiple deliveries must fail closed");sheets.EntregasVersiones.rows.pop();});
 test(()=>{assert.equal(call("getSubmissionDocumentPreviewUrl","T1","",{fileId:"FILE-3"}).status,"success");});
 console.log("PASS task-service submission access contract: "+passed+" tests");

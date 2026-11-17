@@ -3124,10 +3124,35 @@ function getSubmissionDocumentPreviewUrl(payload) {
     if (!fileId) return { status:"error",code:"AUTH_PERMISSION_DENIED",message:"Archivo no vinculado a una entrega institucional." };
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const deliveries = getSheetOrThrow(ss,"Entregas").getDataRange().getValues().slice(1);
-    const matches = deliveries.filter(row => extractTaskServiceFileId(row[4]) === fileId);
-    if (matches.length !== 1) return { status:"error",code:"AUTH_PERMISSION_DENIED",message:"Archivo no vinculado a una entrega única." };
-    const delivery = matches[0];
-    const accessPayload = Object.assign({},payload,{entregaId:String(delivery[0] || "").trim()});
+    const versionsSheet = ss.getSheetByName("EntregasVersiones");
+    const versions = versionsSheet ? versionsSheet.getDataRange().getValues().slice(1) : [];
+    const candidateDeliveryIds = new Set();
+    deliveries.forEach(row => {
+      if (extractTaskServiceFileId(row[4]) === fileId) candidateDeliveryIds.add(String(row[0] || "").trim());
+    });
+    versions.forEach(row => {
+      if (extractTaskServiceFileId(row[6]) === fileId) candidateDeliveryIds.add(String(row[1] || "").trim());
+    });
+    if (candidateDeliveryIds.size !== 1 || !Array.from(candidateDeliveryIds)[0]) {
+      return { status:"error",code:"AUTH_PERMISSION_DENIED",message:"Archivo no vinculado a una entrega única." };
+    }
+    const deliveryId = Array.from(candidateDeliveryIds)[0];
+    const matchingDeliveries = deliveries.filter(row => String(row[0] || "").trim() === deliveryId);
+    if (matchingDeliveries.length !== 1) {
+      return { status:"error",code:"AUTH_PERMISSION_DENIED",message:"La entrega del documento es ambigua." };
+    }
+    const delivery = matchingDeliveries[0];
+    const isCurrentFile = extractTaskServiceFileId(delivery[4]) === fileId;
+    const isRecordedVersion = versions.some(row =>
+      String(row[1] || "").trim() === deliveryId &&
+      String(row[2] || "").trim() === String(delivery[1] || "").trim() &&
+      String(row[3] || "").trim() === String(delivery[2] || "").trim() &&
+      extractTaskServiceFileId(row[6]) === fileId
+    );
+    if (!isCurrentFile && !isRecordedVersion) {
+      return { status:"error",code:"AUTH_PERMISSION_DENIED",message:"El documento no pertenece al historial de la entrega." };
+    }
+    const accessPayload = Object.assign({},payload,{entregaId:deliveryId});
     const access = getTaskServiceSubmissionAccess_(accessPayload,"READ_CONTENT",identity);
     if (!access.delivery || String(access.delivery[0] || "").trim() !== String(delivery[0] || "").trim() ||
         extractTaskServiceFileId(access.delivery[4]) !== fileId) {
