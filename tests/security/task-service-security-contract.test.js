@@ -744,7 +744,7 @@ console.log("TASK-153 legacy document and folder-IDOR contracts passed.");
   assert.equal(materialSheetAccess,true,"assigned teacher can publish without a second RBAC/ABAC pass");
   assert.equal(assignedOfferCalls,1,"teacher assignment is checked once for the target classroom");
   assert.equal(savedMaterial[1],"CLASS-1");assert.equal(savedMaterial[10],"TEACHER-1");
-  assert.ok(savedMaterial[11] instanceof Date,"material records capture publication date and author");
+  assert.ok(Number.isFinite(Date.parse(savedMaterial[11])),"material records capture publication date and author");
 
   const materialRows=[["ID","AulaID","Titulo","Descripcion","TipoRecurso","Parcial","Unidad","Tema","ArchivoUrl","DriveId","AutorID","FechaPublicacion","Estado"],
     ["MAT-OWN","CLASS-1","Own","","Documento","I","U1","T1","","","TEACHER-1",new Date(),"Activo"],
