@@ -243,6 +243,7 @@ assert.equal(paymentCreatedFile.trashed, true, "failed accounting privacy setup 
 // Descargas privadas: autorización previa, privacidad incluso para referencias históricas y binario íntegro.
 const voucherDownloadFn = extractFunction(accounting, "getPaymentVoucherFile");
 const voucherVerificationFns = [
+  extractFunction(accounting, "paymentVoucherRowObject_"),
   extractFunction(accounting, "verifyPaymentVoucherEvidence_"),
   extractFunction(accounting, "getAccountingEvidenceIntegrityPolicy_")
 ].join("\n");
