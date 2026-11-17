@@ -15054,16 +15054,7 @@ function getStudentDocuments(payload) {
   const mapped = filtered.map(function(row) {
     const docId = String(row[0] || "");
     const fileId = String(row[5] || "").trim();
-    const expectedHash = String(row[15] || row[14] || "").trim().toLowerCase();
     const version = String(row[13] || "").trim();
-    let driveAccessible = false, integrityVerified = false;
-    if (fileId) {
-      try {
-        const verifiedFile = getVerifiedPrivateStudentDocumentFile_(fileId,expectedHash,row[4],{makePrivate:false});
-        driveAccessible = true;
-        integrityVerified = !!expectedHash && !!version && verifiedFile.sha256Hash === expectedHash;
-      } catch (_) {}
-    }
     const versions = verRows.filter(function(versionRow) {
       return String(versionRow[1] || "").trim() === docId.trim();
     }).map(function(versionRow) {
@@ -15074,8 +15065,8 @@ function getStudentDocuments(payload) {
     return {documentoId:docId,expedienteId:row[1],solicitudId:row[2],tipoDocumento:row[3],
       nombreArchivo:row[4],fechaRecepcion:row[7],fechaVencimiento:row[8],estadoRevision:row[9],
       subidoPor:row[10],validadoPor:row[11],observaciones:row[12],tieneArchivo:!!fileId,
-      driveAccessible:driveAccessible,integridadVerificada:integrityVerified,versionDocumento:version,
-      sha256Hash:expectedHash,importBatchId:String(row[16] || ""),documentoReferenciaId:String(row[17] || ""),esReferenciaSinCopia:!!String(row[17] || ""),totalVersionesPrevias:versions.length,historialVersiones:versions};
+      versionDocumento:version,importBatchId:String(row[16] || ""),documentoReferenciaId:String(row[17] || ""),
+      esReferenciaSinCopia:!!String(row[17] || ""),totalVersionesPrevias:versions.length,historialVersiones:versions};
   });
   return { status: "success", documents: mapped };
 }
@@ -15135,17 +15126,19 @@ function getStudentDocumentFile_(payload) {
   const access = assertStudentDocumentScopeAccess_(p,ss,sheet,row,expSheet);
   if (!access || access.authorized !== true) return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Documento no disponible."};
   const version = String(row[13] || "").trim();
-  const expectedHash = String(row[15] || row[14] || "").trim().toLowerCase();
-  if (!version || !/^[a-f0-9]{64}$/.test(expectedHash)) {
-    return {status:"error",code:"DOCUMENT_BINARY_METADATA_MISSING",message:"El documento no tiene versión y hash verificables."};
-  }
+  const fileId=String(row[5] || "").trim();
+  if(!fileId)return {status:"error",code:"DOCUMENT_FILE_UNAVAILABLE",message:"El documento no tiene un archivo asociado."};
   try {
-    const verified = getVerifiedPrivateStudentDocumentFile_(row[5],expectedHash,row[4],{makePrivate:false});
-    return {status:"success",documentoId:documentId,fileName:verified.fileName,mimeType:verified.validation.mimeType,
-      fileData:Utilities.base64Encode(verified.bytes),sizeBytes:verified.bytes.length,
-      versionDocumento:version,sha256Hash:verified.sha256Hash,documentoReferenciaId:String(row[17] || ""),esReferenciaSinCopia:!!String(row[17] || "")};
+    const file=DriveApp.getFileById(fileId);
+    if(file.isTrashed())return {status:"error",code:"DOCUMENT_FILE_UNAVAILABLE",message:"El documento no está disponible."};
+    if(file.getSharingAccess&&file.getSharingAccess()!==DriveApp.Access.PRIVATE)return {status:"error",code:"DOCUMENT_FILE_NOT_PRIVATE",message:"El documento no está disponible."};
+    const blob=file.getBlob(),bytes=blob.getBytes();
+    if(!bytes||!bytes.length)return {status:"error",code:"DOCUMENT_FILE_EMPTY",message:"El documento no está disponible."};
+    return {status:"success",documentoId:documentId,fileName:file.getName(),mimeType:blob.getContentType()||file.getMimeType(),
+      fileData:Utilities.base64Encode(bytes),sizeBytes:bytes.length,versionDocumento:version,
+      documentoReferenciaId:String(row[17] || ""),esReferenciaSinCopia:!!String(row[17] || "")};
   } catch (error) {
-    return {status:"error",code:String(error && error.message || "DOCUMENT_FILE_UNAVAILABLE"),message:"El documento no está disponible o no supera la verificación de integridad."};
+    return {status:"error",code:String(error && error.message || "DOCUMENT_FILE_UNAVAILABLE"),message:"El documento no está disponible."};
   }
 }
 

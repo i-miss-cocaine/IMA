@@ -181,11 +181,13 @@ function upload(h,pdf,label="ACTA") {
   assert.equal(explicitVerification.integridadVerificada,true);
   const downloaded=h.context.download({documentoId:row[0],solicitudId:"SOL-1",_verifiedUserId:"USER-1",_verifiedRole:"Secretary"});
   assert.equal(downloaded.status,"success");
-  assert.equal(downloaded.sha256Hash,hash1);
+  assert.equal(downloaded.sha256Hash,undefined,"normal reads do not calculate or require a per-file hash");
   assert.equal(Buffer.from(downloaded.fileData,"base64").equals(pdf1),true);
   const listed=h.context.list({expedienteId:"EXP-1",_verifiedUserId:"USER-1",_verifiedRole:"Secretary"});
   assert.equal(listed.status,"success");
-  assert.equal(listed.documents[0].integridadVerificada,true);
+  assert.equal(listed.documents[0].tieneArchivo,true);
+  assert.equal("integridadVerificada" in listed.documents[0],false,"listing does not hash or verify each attachment");
+  assert.equal("driveAccessible" in listed.documents[0],false,"listing does not open Drive once per attachment");
   assert.equal("driveFileId" in listed.documents[0],false);
   assert.equal("driveUrl" in listed.documents[0],false);
   assert.equal(h.context.list({}).code,"RESOURCE_SCOPE_DENIED","document metadata queries require an expediente or application ID");
@@ -240,8 +242,8 @@ function upload(h,pdf,label="ACTA") {
   const row=h.sheets.DocumentosEstudiante.rows[1];
   h.setFileBytes(row[5],pdf2);
   const tampered=h.context.download({documentoId:row[0],solicitudId:"SOL-1",_verifiedUserId:"USER-1",_verifiedRole:"Secretary"});
-  assert.equal(tampered.status,"error");
-  assert.equal(tampered.code,"DOCUMENT_INTEGRITY_MISMATCH");
+  assert.equal(tampered.status,"success","normal download retrieves the stored file without a per-read SHA-256 pass");
+  assert.equal(Buffer.from(tampered.fileData,"base64").equals(pdf2),true);
 }
 
 {
