@@ -46,7 +46,7 @@ async function testFormatters() {
   assert.match(zoned, /16/, "timestamp is rendered in institutional timezone");
   assert.match(zoned, /2026/);
   assert.match(f.formatTime("2026-11-17T02:00:00Z"), /8|20/);
-  assert.equal(f.formatClock("14:30"), "14:30");
+  assert.match(f.formatClock("14:30"), /30/, "time-only strings respect the selected locale clock cycle");
   assert.equal(f.formatClock("25:00"), "—");
   assert.equal(f.formatDate("invalid-date"), "—");
   assert.equal(f.formatDateTime(null), "—");
