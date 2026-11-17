@@ -86,7 +86,7 @@ const runtime = {
   } }
 };
 const names = [
-  "migrationStableJson_", "migrationNormalizeImportDate_", "isAccountingTrustedAppsScriptEndpoint_", "accountingComputeHmacSignature_", "createInterServiceEnvelope",
+  "migrationStableJson_", "migrationNormalizeImportDate_", "normalizeMigrationNaturalKey_", "isAccountingTrustedAppsScriptEndpoint_", "accountingComputeHmacSignature_", "createInterServiceEnvelope",
   "ensureMigrationWriterSheet_", "migrationSafeCell_", "migrationEncodeSnapshot_", "migrationDecodeSnapshot_",
   "applyTrustedAccountingMigrationWrite_", "compensateTrustedAccountingMigrationWrite_", "sendMigrationOwnerRequest_"
 ];
@@ -217,6 +217,16 @@ const payload = {
   assert.throws(() => runtime.api.write({ ...payload, idNuevoPlataforma: "CURSO-LOCK", idempotencyKey: "KEY-LOCK" }), /LOCK_TIMEOUT/);
   lockBusy = false;
   assert.deepEqual(target.rows, beforeRows, "lock contention prevents any partial row mutation");
+}
+{
+  const target = new Sheet([schemas.curso.headers,
+    ["CURSO-OLD","Curso duplicado","","","","","","","Activo","","",""]]);
+  sheets.set("Cursos", target);
+  assert.throws(() => runtime.api.write({ ...payload, idNuevoPlataforma: "CURSO-NEW", idempotencyKey: "KEY-NATURAL-DUP",
+    targetSnapshotVerified: true, expectedTargetPresent: false, expectedTargetRowHash: "",
+    datos: { NombreCurso: "Curso duplicado", Categoria: "Capacitación", Modalidad: "Virtual", Estado: "Activo" } }),
+    /MIGRATION_NATURAL_KEY_DUPLICATE/);
+  assert.equal(target.rows.length, 2, "a natural-key duplicate inserted after preview is rejected under the writer lock");
 }
 assert.equal(lockCount, releaseCount, "all acquired script locks are released, including failed write paths");
 process.stdout.write("Accounting migration writer: insert/update, idempotency, stale snapshot, compensation, lock contention, tenant/permission isolation, formula safety and USER HMAC transport PASS.\n");
