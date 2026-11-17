@@ -128,7 +128,7 @@ test(()=>{
   assert.equal(row[headers.indexOf("eliminadapor")],"PROF-1");
   assert.equal(row[headers.indexOf("eliminadarol")],"Profesor");
   assert.ok(Number.isFinite(Date.parse(row[headers.indexOf("eliminadaen")])));
-  assert.equal(row[headers.indexOf("motivodeeliminacion")],"Solicitud de corrección");
+  assert.equal(row[headers.indexOf("motivoeliminacion")],"Solicitud de corrección");
   assert.equal(x.state.fileTrashed,false,"logical deletion preserves the private Drive file");
   assert.equal(x.commentsSheet.rows.length,2,"comments remain linked to the retained delivery");
   assert.equal(x.versionsSheet.rows.length,2,"versions remain linked to the retained delivery");
