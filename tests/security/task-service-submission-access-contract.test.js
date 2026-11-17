@@ -111,12 +111,12 @@ test(()=>{assert.throws(()=>call("getSubmissionComments","T2","DEL-1"),/RESOURCE
 test(()=>{assert.throws(()=>call("getSubmissionComments","S2","DEL-1"),/RESOURCE_NOT_FOUND/);});
 test(()=>{assert.throws(()=>call("getSubmissionComments","G2","DEL-1"),/RESOURCE_NOT_FOUND/);});
 test(()=>{assert.throws(()=>call("getSubmissionComments","G3","DEL-1"),/RESOURCE_NOT_FOUND/);});
-test(()=>{const x=call("getSubmissionVersions","S1","DEL-1");assert.deepEqual(x.data.map(row=>row.versionId),["V1"]);assert.equal(Object.prototype.hasOwnProperty.call(x.data[0],"archivoUrl"),false);});
+test(()=>{const x=call("getSubmissionVersions","S1","DEL-1");assert.deepEqual(x.data.map(row=>row.versionId),["V1","V0"]);assert.equal(Object.prototype.hasOwnProperty.call(x.data[0],"archivoUrl"),false);});
 test(()=>{assert.throws(()=>call("getSubmissionVersions","S2","DEL-1"),/RESOURCE_NOT_FOUND/);});
 test(()=>{assert.throws(()=>call("getSubmissionVersions","T2","DEL-1"),/RESOURCE_NOT_FOUND/);});
-test(()=>{const x=call("getSubmissionVersions","G1","DEL-1");assert.deepEqual(x.data.map(row=>row.versionId),["V1"]);});
+test(()=>{const x=call("getSubmissionVersions","G1","DEL-1");assert.deepEqual(x.data.map(row=>row.versionId),["V1","V0"]);});
 test(()=>{assert.throws(()=>call("getSubmissionVersions","G2","DEL-1"),/RESOURCE_NOT_FOUND/);});
-test(()=>{const x=call("getSubmissionVersions","T1","DEL-1");assert.deepEqual(x.data.map(row=>row.versionId),["V1"]);});
+test(()=>{const x=call("getSubmissionVersions","T1","DEL-1");assert.deepEqual(x.data.map(row=>row.versionId),["V1","V0"]);});
 test(()=>{assert.throws(()=>call("getSubmissionComments","S1","DEL-3"),/RESOURCE_NOT_FOUND/);});
 test(()=>{assert.throws(()=>call("getSubmissionComments","G1","DEL-3"),/RESOURCE_NOT_FOUND/);});
 test(()=>{const x=call("getSubmissionComments","T1","DEL-3");assert.deepEqual(x.data.map(row=>row.comentarioId),["C5","C6"]);});
