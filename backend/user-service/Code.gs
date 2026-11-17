@@ -11114,15 +11114,21 @@ function configurationHeaderMap_(headers) {
   var map={}; (headers||[]).forEach(function(value,index){var key=String(value||"").trim();if(key)map[key]=index;}); return map;
 }
 function ensureConfigurationHierarchySchema_(ss) {
-  var system=getOrCreateSheet(ss,"ConfiguracionSistema"), values=system.getDataRange().getValues();
+  var system=getOrCreateSheet(ss,"ConfiguracionSistema");
   var legacy=["ConfigID","Clave","Valor","Tipo","Categoria","Descripcion","Ambito","EditablePor","Estado","Version","UpdatedAt","UpdatedBy"];
-  var headers=values.length?values[0].map(function(v){return String(v||"").trim();}):[];
-  if(JSON.stringify(headers.slice(0,legacy.length))!==JSON.stringify(legacy))throw new Error("CONFIGURATION_SYSTEM_SCHEMA_MISMATCH");
   var expected=legacy.concat(CONFIGURATION_SYSTEM_EXTRA_HEADERS_);
-  if(JSON.stringify(headers)!==JSON.stringify(expected)){
-    if(headers.length!==legacy.length)throw new Error("CONFIGURATION_SYSTEM_SCHEMA_MISMATCH");
-    system.getRange(1,legacy.length+1,1,CONFIGURATION_SYSTEM_EXTRA_HEADERS_.length).setValues([CONFIGURATION_SYSTEM_EXTRA_HEADERS_]);
-    headers=expected;
+  var values=system.getDataRange().getValues();
+  var headers=values.length?values[0].map(function(v){return String(v||"").trim();}):[];
+  if(system.getLastRow()===0){
+    system.getRange(1,1,1,expected.length).setValues([expected]);
+    headers=expected.slice();
+  }else{
+    if(JSON.stringify(headers.slice(0,legacy.length))!==JSON.stringify(legacy))throw new Error("CONFIGURATION_SYSTEM_SCHEMA_MISMATCH");
+    if(JSON.stringify(headers)!==JSON.stringify(expected)){
+      if(headers.length!==legacy.length)throw new Error("CONFIGURATION_SYSTEM_SCHEMA_MISMATCH");
+      system.getRange(1,legacy.length+1,1,CONFIGURATION_SYSTEM_EXTRA_HEADERS_.length).setValues([CONFIGURATION_SYSTEM_EXTRA_HEADERS_]);
+      headers=expected.slice();
+    }
   }
   var department=ss.getSheetByName("ConfiguracionDepartamental");
   if(!department)department=ss.insertSheet("ConfiguracionDepartamental");
