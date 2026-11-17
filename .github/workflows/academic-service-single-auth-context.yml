@@ -14,6 +14,7 @@ on:
       - 'js/teacher.js'
       - 'tests/security/academic-teacher-justification-abac.test.js'
       - 'tests/security/academic-absence-justification-canonical.test.js'
+      - '.github/workflows/academic-service-single-auth-context.yml'
   pull_request:
     branches: [NG_beta_0.0.0.1_work]
     paths:
