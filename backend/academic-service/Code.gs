@@ -946,7 +946,8 @@ function getTrustedAcademicMigrationTargetExistenceSnapshot_(payload) {
       !institutionId || String(claims.institutionId) !== institutionId || String(input.institutionId || "") !== institutionId) {
     return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
   }
-  if (String(input.entityType || "").toLowerCase() !== "estudiante" || !Array.isArray(input.targetIds)) {
+  if (String(input.entityType || "").toLowerCase() !== "estudiante" || !Array.isArray(input.targetIds) ||
+      (input.duplicateKeys !== undefined && (!Array.isArray(input.duplicateKeys) || input.duplicateKeys.length > 5000))) {
     return { status: "error", code: "MIGRATION_SNAPSHOT_CONTRACT_INVALID" };
   }
   var requested = {};
@@ -958,6 +959,17 @@ function getTrustedAcademicMigrationTargetExistenceSnapshot_(payload) {
     requested[id] = true;
   });
   if (invalidTargetId) return { status: "error", code: "MIGRATION_SNAPSHOT_TARGET_ID_INVALID" };
+  var duplicateRequests = [], allowedDuplicateFields = { CodigoInstitucional: "EXACTA" }, invalidDuplicate = false;
+  (input.duplicateKeys || []).forEach(function(item) {
+    if (!item || typeof item !== "object" || Array.isArray(item) ||
+        !Object.prototype.hasOwnProperty.call(allowedDuplicateFields, String(item.field || "")) ||
+        String(item.matchType || "") !== allowedDuplicateFields[String(item.field || "")] ||
+        !Number.isInteger(Number(item.rowIndex)) || Number(item.rowIndex) < 0 ||
+        typeof item.value !== "string" || !item.value.trim() || item.value.length > 180) { invalidDuplicate = true; return; }
+    duplicateRequests.push({ field: String(item.field), matchType: String(item.matchType), rowIndex: Number(item.rowIndex),
+      normalized: String(item.value).normalize ? String(item.value).normalize("NFKC").trim().toLowerCase() : String(item.value).trim().toLowerCase() });
+  });
+  if (invalidDuplicate) return { status: "error", code: "MIGRATION_SNAPSHOT_DUPLICATE_KEY_INVALID" };
   var sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("ExpedientesEstudiantes");
   if (!sheet) return { status: "error", code: "MIGRATION_SNAPSHOT_TARGET_UNAVAILABLE" };
   var values = sheet.getDataRange().getValues();
@@ -966,6 +978,8 @@ function getTrustedAcademicMigrationTargetExistenceSnapshot_(payload) {
   var existing = [];
   var targetRows = [];
   var seenExisting = {};
+  var duplicateMatches = [];
+  var columnByField = {}; headers.forEach(function(header, index) { columnByField[header] = index; });
   for (var i = 1; i < values.length; i++) {
     var id = String(values[i][0] || "").trim();
     if (id && requested[id]) {
@@ -976,9 +990,18 @@ function getTrustedAcademicMigrationTargetExistenceSnapshot_(payload) {
       headers.forEach(function(header, column) { if (header) item[header] = values[i][column]; });
       targetRows.push({ ExpedienteID: id, __rowHash: migrationHash_(migrationStableJson_(item)) });
     }
+    if (!id) continue;
+    duplicateRequests.forEach(function(request) {
+      var raw = columnByField[request.field] === undefined ? "" : String(values[i][columnByField[request.field]] || "");
+      var candidate = raw.normalize ? raw.normalize("NFKC").trim().toLowerCase() : raw.trim().toLowerCase();
+      if (candidate && candidate === request.normalized) duplicateMatches.push({
+        rowIndex: request.rowIndex, targetId: id, field: request.field, matchType: request.matchType
+      });
+    });
   }
   return { status: "success", verified: true, service: "ACADEMIC", sheet: "ExpedientesEstudiantes",
-    idField: "ExpedienteID", institutionId: institutionId, existingTargetIds: existing.sort(), targetRows: targetRows };
+    idField: "ExpedienteID", institutionId: institutionId, existingTargetIds: existing.sort(), targetRows: targetRows,
+    duplicateMatches: duplicateMatches };
 }
 function handleTrustedMigrationEnvelope_(envelope){
  const secret=String(PropertiesService.getScriptProperties().getProperty("IMA_MIGRATION_HMAC_SECRET")||"");
