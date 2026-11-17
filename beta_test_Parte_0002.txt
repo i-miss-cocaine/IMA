@@ -717,3 +717,15 @@ NaN
 - **Evidencia requerida:** IDs sintéticos, actor de claims parcialmente redactado, secuencia de estados, HistoryID, conteos antes/después, resultados de ambas solicitudes y códigos de rollback/timeout; nunca registrar tokens ni secretos.
 - **Estado:** Pendiente de ejecución en beta desplegada. El contrato Node.js 24/GitHub Actions verifica mocks y contención determinista, no la semántica real de LockService/Sheets.
 ============================================================================
+
+ 
+============================================================================
+### BETA-FUNC-120 — AUD-NG-082 — Autenticación y autorización del plano de control DEVELOPER
+- **Módulo/rol:** DEVELOPER — Administrador/Desarrollador/Director; endpoint doPost.
+- **Objetivo:** comprobar que todas las acciones distintas de ping requieren sesión firmada y que el rol autorizado procede exclusivamente de claims verificados, nunca de authRole u otros campos del cliente.
+- **Precondiciones:** despliegue DEVELOPER actualizado; secretos de firma configurados en Script Properties; usuarios sintéticos con sesiones válidas de Administrador, Desarrollador y Director; endpoint de prueba; no registrar tokens ni secretos.
+- **Pasos:** (1) enviar acción protegida sin token y con authRole=Administrador; comprobar AUTHENTICATION_REQUIRED y ausencia de escrituras; (2) enviar token inválido/expirado junto con authRole=Administrador; comprobar INVALID_SESSION_TOKEN; (3) enviar sesión válida de Director junto con authRole=Administrador para una acción exclusiva de Administrador; comprobar PERMISSION_DENIED; (4) enviar sesión válida de Desarrollador con authRole=Administrador para una acción permitida al Desarrollador y comprobar que la autorización usa el rol firmado; (5) enviar claims incompletos y comprobar INVALID_SESSION_CLAIMS; (6) enviar _verifiedUserId falsificado y comprobar que el actor auditado corresponde al userId firmado; (7) comprobar que ping continúa respondiendo sin sesión y que ninguna otra acción protegida lo hace.
+- **Resultado esperado:** ninguna acción protegida acepta roles declarados por el cliente; token ausente, inválido o claims incompletos se rechazan antes de ejecutar handlers; los permisos se derivan solo de ROLE_PERMISSIONS[claims.role].
+- **Evidencia requerida:** action, código de respuesta, rol de claims, rol declarado ignorado, conteos antes/después y actor auditado parcialmente redactado; nunca guardar token, firma ni secretos.
+- **Estado:** Pendiente de ejecución en beta desplegada. El contrato Node.js 24/GitHub Actions valida el dispatcher con sesiones sintéticas, no la configuración real de Script Properties ni el despliegue web.
+============================================================================
