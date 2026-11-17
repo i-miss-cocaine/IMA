@@ -67,7 +67,7 @@
 ---
 
 <!-- ID: F25-TASK03 | Fuentes: AUDITORIAS/AUDITORIA_FASE_25_INTEGRACIONES_EXTERNAS.md -->
-### [ ] [F25-TASK03] Detectar duplicados avanzados y validar integridad referencial antes de importar
+### [x] [F25-TASK03] Detectar duplicados avanzados y validar integridad referencial antes de importar
 - **Hallazgo de origen:** F25-004, sección F y G.3.
 - **Severidad:** Crítica. **Objetivo:** evitar duplicados de personas y relaciones huérfanas en importaciones masivas.
 - **Acción ejecutable:** ampliar `importDataWithColumnMapping` con búsqueda previa de DNI, correo y claves naturales según entidad; clasificar coincidencias exactas/posibles; validar referencias a grado, sección, departamento y expediente; ofrecer política explícita rechazar/actualizar/vincular.
@@ -75,8 +75,9 @@
 - **Dependencias/riesgos:** F25-Task02, identificadores canónicos y políticas de merge; riesgo de fusionar personas distintas o duplicar expedientes.
 - **Alcance:** detección y decisión previa; no fusionar registros automáticamente solo por nombre.
 - **Criterios de aceptación:** DNI/correo normalizados y comparados; duplicados se muestran antes de escribir; referencias foráneas existen/están activas; política de conflicto seleccionada y auditada; importación repetida es idempotente; errores no dejan escritura parcial.
-- **Prioridad:** P0. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; el informe solo acredita validación de identificador obligatorio y solicita detección avanzada.
+- **Prioridad:** P0. **Estado:** [x] Completada en código y verificaciones locales; beta pendiente sin bloqueo de implementación.
+- **Implementación:** comparación normalizada de DNI/correo y claves naturales; coincidencias exactas/posibles; revisión manual de nombres; referencias de grado/sección, departamento y expediente; políticas RECHAZAR/ACTUALIZAR/VINCULAR con vínculo solo cuando el ID canónico coincide; auditoría de política; unicidad revalidada dentro de LockService en USER/ACADEMIC/ACCOUNTING.
+- **Evidencia de cierre:** Accounting Import Preflight Contract PASS (run 44010695701); USER migration writer/identity contract PASS (run 44010128015); academic/accounting migration writer contracts PASS (runs 44009939154 y 44009952334); USER/ACADEMIC snapshot y referencias PASS (run 44010452335); UI Accessibility PASS (run 44010601192). BETA-FUNC-114 pendiente para validación desplegada.
 
 ---
 
