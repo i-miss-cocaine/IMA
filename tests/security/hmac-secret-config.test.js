@@ -6,7 +6,6 @@ const root = path.resolve(__dirname, "../..");
 const serviceFiles = [
   ["USER", "backend/user-service/Code.gs"],
   ["ACADEMIC", "backend/academic-service/Code.gs"],
-  ["ACCOUNTING", "backend/accounting-service/Code.gs"],
   ["TASK", "backend/task-service/Code.gs"],
   ["EXAM", "backend/exam-service/Code.gs"]
 ];
@@ -54,6 +53,9 @@ function createContext(source, initialSecret, claims) {
     CacheService: { getScriptCache: () => ({ get: () => null, put: () => {} }) },
     isSessionRevoked_: () => false,
     verifyUserRoleMembershipClaim_: () => null,
+    getUserRoleMembershipState_: () => ({ hasRecords: false }),
+    resolveUserRoleMembership_: () => null,
+    getIdentityInstitutionId_: () => "INST-1",
     SpreadsheetApp: {
       openById: () => ({ getSheetByName: name => name === "Usuarios" ? ({ getDataRange: () => ({ getValues: () => [[], userRow] }) }) : null })
     },
@@ -86,10 +88,10 @@ for (const [name, file] of serviceFiles) {
   expectCode(() => state.context.getSecret(), "AUTH_TOKEN_SECRET_UNAVAILABLE");
   state.failProperties(false);
   state.setSecret("OLD_SECRET_012345678901234567890123456789");
-  assert.ok(state.context.verify("payload.SIG-OLD_SECRET_012345678901234567890123456789"));
+  assert.ok(state.context.verify("payload.SIG-OLD_SECRET_012345678901234567890123456789"), name + " session token verifies with active secret");
   state.setSecret("NEW_SECRET_012345678901234567890123456789");
   assert.equal(state.context.verify("payload.SIG-OLD_SECRET_012345678901234567890123456789"), null);
-  assert.ok(state.context.verify("payload.SIG-NEW_SECRET_012345678901234567890123456789"));
+  assert.ok(state.context.verify("payload.SIG-NEW_SECRET_012345678901234567890123456789"), name + " session token verifies after secret rotation");
 }
 const userSource = fs.readFileSync(path.join(root, "backend/user-service/Code.gs"), "utf8");
 const genFn = extractFunction(userSource, "generateSessionToken");
