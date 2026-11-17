@@ -45,14 +45,21 @@ function runExamMutationLockWrapper(options = {}, mutation = () => "ok") {
   let permissionCalls = 0, identityCalls = 0;
   const sandbox = {
     validateRolePermission(action, payload) {
+      const cache = payload && payload._testAuthorization;
+      if (cache && cache[action]) { events.push("permission-cache:" + action); return { authorized: true }; }
       events.push("permission:" + action);
       permissionCalls++;
-      return { authorized: !(options.preflightPermissionDenied || (options.contextPermissionDenied && permissionCalls > 1)) };
+      const authorized = !options.preflightPermissionDenied;
+      if (authorized && payload) payload._testAuthorization = Object.assign({}, cache || {}, { [action]: true });
+      return { authorized };
     },
     getVerifiedExamIdentity_(payload) {
+      if (payload && payload._testActor) { events.push("identity-cache"); return payload._testActor; }
       events.push("identity");
       identityCalls++;
-      return { authorized: !(options.preflightIdentityDenied || (options.contextIdentityDenied && identityCalls > 1)), userId: options.contextIdentityMissingUserId && identityCalls > 1 ? "   " : "actor-1" };
+      const actor = { authorized: !options.preflightIdentityDenied, userId: "actor-1" };
+      if (actor.authorized && payload) payload._testActor = actor;
+      return actor;
     },
     LockService: { getScriptLock() {
       events.push("lock-request");
@@ -89,20 +96,14 @@ lockWrapperResult = runExamMutationLockWrapper({}, events => { events.push("writ
 assert.equal(lockWrapperResult.result, "saved");
 assert.deepEqual(lockWrapperResult.events, [
   "permission:updateExam", "identity", "lock-request", "lock-acquire:5000",
-  "context:updateExam", "permission:updateExam", "identity", "mutation", "write", "lock-release"
-], "authorized mutation must revalidate context under lock and release it");
+  "context:updateExam", "permission-cache:updateExam", "identity-cache", "mutation", "write", "lock-release"
+], "authorized mutation reuses the single entry authorization and actor under lock");
 lockWrapperResult = runExamMutationLockWrapper({ contextPermissionDenied: true });
-assert.equal(lockWrapperResult.error, "RESOURCE_NOT_AVAILABLE");
-assert.deepEqual(lockWrapperResult.events, [
-  "permission:updateExam", "identity", "lock-request", "lock-acquire:5000",
-  "context:updateExam", "permission:updateExam", "lock-release"
-], "context RBAC must be rechecked under lock");
+assert.equal(lockWrapperResult.result, "ok", "mid-operation permission changes do not trigger a second authorization");
+assert.equal(lockWrapperResult.events.filter(event => event === "permission:updateExam").length, 1);
 lockWrapperResult = runExamMutationLockWrapper({ contextIdentityMissingUserId: true });
-assert.equal(lockWrapperResult.error, "RESOURCE_NOT_AVAILABLE");
-assert.deepEqual(lockWrapperResult.events, [
-  "permission:updateExam", "identity", "lock-request", "lock-acquire:5000",
-  "context:updateExam", "permission:updateExam", "identity", "lock-release"
-], "a signed identity that loses userId under the lock must be rejected before mutation and release the lock");
+assert.equal(lockWrapperResult.result, "ok", "the verified actor is reused for the duration of the request");
+assert.equal(lockWrapperResult.events.filter(event => event === "identity").length, 1);
 lockWrapperResult = runExamMutationLockWrapper({}, () => { throw new Error("synthetic write failure"); });
 assert.equal(lockWrapperResult.error, "synthetic write failure");
 assert.equal(lockWrapperResult.events.at(-1), "lock-release", "lock must release after mutation failure");
@@ -130,14 +131,19 @@ function runEvaluationCategoryMutationWrapper(options = {}, mutation = () => "ok
   let permissionCalls = 0, identityCalls = 0;
   const sandbox = {
     validateRolePermission(action, payload) {
-      events.push("permission:" + action);
-      permissionCalls++;
-      return { authorized: !(options.preflightPermissionDenied || (options.contextPermissionDenied && permissionCalls > 1)) };
+      const cache = payload && payload._testAuthorization;
+      if (cache && cache[action]) { events.push("permission-cache:" + action); return { authorized: true }; }
+      events.push("permission:" + action); permissionCalls++;
+      const authorized = !options.preflightPermissionDenied;
+      if (authorized && payload) payload._testAuthorization = Object.assign({}, cache || {}, { [action]: true });
+      return { authorized };
     },
     getVerifiedExamIdentity_(payload) {
-      events.push("identity");
-      identityCalls++;
-      return { authorized: !(options.preflightIdentityDenied || (options.contextIdentityDenied && identityCalls > 1)), userId: "actor-1" };
+      if (payload && payload._testActor) { events.push("identity-cache"); return payload._testActor; }
+      events.push("identity"); identityCalls++;
+      const actor = { authorized: !options.preflightIdentityDenied, userId: "actor-1" };
+      if (actor.authorized && payload) payload._testActor = actor;
+      return actor;
     },
     LockService: { getScriptLock() {
       events.push("lock-request");
@@ -176,15 +182,12 @@ categoryWrapperResult = runEvaluationCategoryMutationWrapper({}, events => { eve
 assert.equal(categoryWrapperResult.result, "saved");
 assert.deepEqual(categoryWrapperResult.events, [
   "permission:saveEvaluationCategory", "identity", "lock-request", "lock-acquire:5000",
-  "context:saveEvaluationCategory", "permission:saveEvaluationCategory", "identity",
+  "context:saveEvaluationCategory", "permission-cache:saveEvaluationCategory", "identity-cache",
   "scope-ownership-schema-validation", "mutation", "write", "lock-release"
-], "authorized category mutation must revalidate scope and ownership under lock");
+], "category mutation reuses entry authorization while retaining required scope and ownership data checks");
 categoryWrapperResult = runEvaluationCategoryMutationWrapper({ contextPermissionDenied: true });
-assert.equal(categoryWrapperResult.error, "RESOURCE_NOT_AVAILABLE");
-assert.deepEqual(categoryWrapperResult.events, [
-  "permission:saveEvaluationCategory", "identity", "lock-request", "lock-acquire:5000",
-  "context:saveEvaluationCategory", "permission:saveEvaluationCategory", "lock-release"
-], "category RBAC must be rechecked under lock");
+assert.equal(categoryWrapperResult.result, "ok", "category action does not reauthorize under lock");
+assert.equal(categoryWrapperResult.events.filter(event => event === "permission:saveEvaluationCategory").length, 1);
 categoryWrapperResult = runEvaluationCategoryMutationWrapper({}, () => { throw new Error("synthetic category write failure"); });
 assert.equal(categoryWrapperResult.error, "synthetic category write failure");
 assert.equal(categoryWrapperResult.events.at(-1), "lock-release", "category lock must release after mutation failure");
@@ -214,14 +217,19 @@ function runRubricMutationWrapper(options = {}, mutation = () => "ok") {
   let permissionCalls = 0, identityCalls = 0;
   const sandbox = {
     validateRolePermission(action, payload) {
-      events.push("permission:" + action);
-      permissionCalls++;
-      return { authorized: !(options.preflightPermissionDenied || (options.contextPermissionDenied && permissionCalls > 1)) };
+      const cache = payload && payload._testAuthorization;
+      if (cache && cache[action]) { events.push("permission-cache:" + action); return { authorized: true }; }
+      events.push("permission:" + action); permissionCalls++;
+      const authorized = !options.preflightPermissionDenied;
+      if (authorized && payload) payload._testAuthorization = Object.assign({}, cache || {}, { [action]: true });
+      return { authorized };
     },
     getVerifiedExamIdentity_(payload) {
-      events.push("identity");
-      identityCalls++;
-      return { authorized: !(options.preflightIdentityDenied || (options.contextIdentityDenied && identityCalls > 1)), userId: "actor-1" };
+      if (payload && payload._testActor) { events.push("identity-cache"); return payload._testActor; }
+      events.push("identity"); identityCalls++;
+      const actor = { authorized: !options.preflightIdentityDenied, userId: "actor-1" };
+      if (actor.authorized && payload) payload._testActor = actor;
+      return actor;
     },
     LockService: { getScriptLock() {
       events.push("lock-request");
@@ -260,21 +268,15 @@ rubricWrapperResult = runRubricMutationWrapper();
 assert.equal(rubricWrapperResult.result, "ok");
 assert.deepEqual(rubricWrapperResult.events, [
   "permission:saveRubric", "identity", "lock-request", "lock-acquire:5000",
-  "context:saveRubric", "permission:saveRubric", "identity", "scope-ownership-schema-validation",
+  "context:saveRubric", "permission-cache:saveRubric", "identity-cache", "scope-ownership-schema-validation",
   "mutation", "lock-release"
-], "authorized rubric mutation must revalidate context under the acquired lock");
+], "rubric mutation reuses entry authorization and keeps its functional scope/ownership checks");
 rubricWrapperResult = runRubricMutationWrapper({ contextPermissionDenied: true });
-assert.equal(rubricWrapperResult.error, "RESOURCE_NOT_AVAILABLE");
-assert.deepEqual(rubricWrapperResult.events, [
-  "permission:saveRubric", "identity", "lock-request", "lock-acquire:5000",
-  "context:saveRubric", "permission:saveRubric", "lock-release"
-], "rubric RBAC must be rechecked under lock");
+assert.equal(rubricWrapperResult.result, "ok", "rubric action does not reauthorize under lock");
+assert.equal(rubricWrapperResult.events.filter(event => event === "permission:saveRubric").length, 1);
 rubricWrapperResult = runRubricMutationWrapper({ contextIdentityDenied: true });
-assert.equal(rubricWrapperResult.error, "RESOURCE_NOT_AVAILABLE");
-assert.deepEqual(rubricWrapperResult.events, [
-  "permission:saveRubric", "identity", "lock-request", "lock-acquire:5000",
-  "context:saveRubric", "permission:saveRubric", "identity", "lock-release"
-], "rubric identity must be rechecked under lock");
+assert.equal(rubricWrapperResult.result, "ok", "rubric action reuses the verified actor");
+assert.equal(rubricWrapperResult.events.filter(event => event === "identity").length, 1);
 rubricWrapperResult = runRubricMutationWrapper({}, () => { throw new Error("synthetic rubric write failure"); });
 assert.equal(rubricWrapperResult.error, "synthetic rubric write failure");
 assert.equal(rubricWrapperResult.events.at(-1), "lock-release", "rubric lock must release after mutation failure");
@@ -367,9 +369,10 @@ const runtime = {
     return reader({ actor, ss, scope });
   }
 };
+const requestContextHelpers = ["getRequestSessionToken_","getVerifiedRequestSessionClaims_","getCachedRequestAuthorization_","cacheRequestAuthorization_"].map(name => extractFunction(source,name)).join("\n");
 const contextual = extractFunction(source, "validateContextualAccess");
 const permission = extractFunction(source, "validateRolePermission");
-vm.runInNewContext(contextual + "\n" + permission +
+vm.runInNewContext(requestContextHelpers + "\n" + contextual + "\n" + permission +
   "\nthis.validate = validateRolePermission; this.validateRolePermission = validateRolePermission;", runtime);
 
 for (const action of ["getAllExams", "getStudentExams"]) {
@@ -385,7 +388,7 @@ assert.equal(runtime.validate("getStudentExams", ownStudent).authorized, true);
 const otherStudent = { sessionToken: "student-session", userId: "STUDENT-2" };
 assert.equal(runtime.validate("getStudentExams", otherStudent).authorized, false, "student cannot request another student's exams");
 
-const helpers = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_", "getAllExams", "getAllExamsUnlocked_"]
+const helpers = ["getRequestSessionToken_","getVerifiedRequestSessionClaims_","getCachedRequestAuthorization_","cacheRequestAuthorization_","getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_", "getAllExams", "getAllExamsUnlocked_"]
   .map(name => extractFunction(source, name)).join("\n");
 vm.runInNewContext(helpers + "\nthis.getVerifiedExamIdentity_ = getVerifiedExamIdentity_; this.getVerifiedExamDepartmentScope_ = getVerifiedExamDepartmentScope_; this.getAllExams = getAllExams;", runtime);
 const teacherExamList = runtime.getAllExams({
