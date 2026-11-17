@@ -1710,3 +1710,28 @@ El archivo maestro histórico supera el umbral de rotación de 180.000 caractere
 - **Evidencia requerida:** versiones antes/después, IDs de usuario sintéticos, respuestas de conflicto/RBAC, registro de reset, capturas anonimizadas en dos dispositivos. No usar cuentas ni datos reales.
 - **Estado:** Pendiente de validación beta desplegada; los contratos Node.js no sustituyen las pruebas de sincronización real entre dispositivos.
 =============================================================================
+
+=============================================================================
+### BETA-FUNC-114 — F25-TASK03 — Detección de duplicados e integridad referencial de importaciones
+
+- **Módulos/roles:** ACCOUNTING (importador), USER (personas), ACADEMIC (expedientes y catálogos); roles autorizados para importación institucional y responsables de datos maestros.
+- **Precondiciones:** desplegar ACCOUNTING, USER y ACADEMIC con los contratos de snapshot y escritor actualizados; configurar HMAC entre servicios; preparar hojas Personas, ExpedientesEstudiantes, Clases, DepartamentosAcademicos, Cursos y ExpedientesLaborales con encabezados canónicos; utilizar únicamente registros sintéticos.
+- **Pasos:**
+  1. Importar una persona cuyo DNI ya existe con separadores distintos; comprobar coincidencia exacta normalizada, rechazo por defecto y cero escrituras.
+  2. Repetir con correo en mayúsculas/espacios; comprobar coincidencia exacta normalizada y que el valor personal no se expone en el snapshot.
+  3. Importar una persona con nombre coincidente pero DNI/correo distintos; comprobar clasificación POSIBLE, advertencia y exclusión de la fila para revisión manual, sin fusión automática.
+  4. Importar cursos con el mismo nombre normalizado en el archivo; comprobar que se excluyen las filas duplicadas del lote antes de escribir.
+  5. Probar política RECHAZAR ante una clave natural existente; comprobar bloqueo y auditoría de la política seleccionada.
+  6. Probar ACTUALIZAR con un único match exacto cuyo ID canónico coincide; comprobar actualización con hash de fila esperado y rechazo si el ID no coincide.
+  7. Probar VINCULAR cuando la correspondencia confirmada ya apunta al mismo ID canónico; comprobar omisión de escritura, conteo de vinculados y auditoría. Probar ID diferente y coincidencias múltiples; comprobar bloqueo.
+  8. Repetir una importación confirmada y simular reintentos; comprobar idempotencia del journal y ausencia de duplicados.
+  9. Cambiar una clave natural concurrentemente después del preflight y antes de la escritura; comprobar que el escritor, bajo LockService, rechaza el duplicado sin mutación parcial.
+  10. Probar referencias Grado + Seccion válidas e inexistentes contra Clases; comprobar aceptación/rechazo de la fila.
+  11. Probar DepartamentoID inexistente/inactivo y ExpedienteReferenciaID inexistente/inactivo; comprobar rechazo sin escritura.
+  12. Probar Departamento en importación de empleados con ámbito departamental válido, inválido y mixto; comprobar que la autorización de ámbito sigue prevaleciendo.
+  13. Provocar error de escritura en un lote de varias entidades; comprobar compensación en orden inverso y que no queden filas parciales ni journal inconsistente.
+  14. Intentar consultar snapshots de otra institución y firmar solicitudes con HMAC inválido, campos no permitidos o claves de referencia malformadas; comprobar denegación sin datos personales.
+- **Resultado esperado:** detección exacta/posible, políticas explícitas, vínculo canónico sin escritura redundante, referencias activas verificadas, unicidad revalidada dentro del lock, auditoría completa e idempotencia.
+- **Evidencia requerida:** hashes de preview, filas fuente sintéticas, IDs canónicos, códigos de coincidencia sin DNI/correo en claro, IDs de journal, resultado de auditoría, referencia/catálogo activo, respuesta de RBAC/HMAC y capturas anonimizadas.
+- **Estado:** Pendiente de validación beta desplegada; contratos Node 24, sintaxis, snapshots y escritores aislados no sustituyen esta prueba real entre servicios.
+=============================================================================
