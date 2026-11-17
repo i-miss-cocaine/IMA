@@ -110,10 +110,10 @@ const payload=(overrides={})=>Object.assign({sessionToken:"VALID",_verifiedUserI
   const h=harness();
   const student=h.context.getHelpGuidesCatalog({});
   assert.equal(student.status,"success");
-  assert.deepEqual(student.guides.map(g=>g.id),["GUIDE-STUDENT-TASKS"]);
+  assert.deepEqual(Array.from(student.guides, g=>g.id),["GUIDE-STUDENT-TASKS"]);
   h.state.role="Profesor";
   const teacher=h.context.getHelpGuidesCatalog({});
-  assert.deepEqual(teacher.guides.map(g=>g.id),["GUIDE-TEACHER-GRADEBOOK","GUIDE-TEMPLATES-DESIGN"]);
+  assert.deepEqual(Array.from(teacher.guides, g=>g.id),["GUIDE-TEACHER-GRADEBOOK","GUIDE-TEMPLATES-DESIGN"]);
 }
 
 console.log("User help preferences contract PASS: signed identity, owner isolation, server persistence, append-only versions, conflict detection, reset, role filtering and lock contention.");
