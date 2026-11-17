@@ -230,7 +230,11 @@ const routeHarness = {
   createInterServiceEnvelope: (source, target, action, payload) => ({ sourceService: source, targetService: target, action, payload }),
   UrlFetchApp: { fetch: (url, options) => { routeCalls.push({ url, envelope: JSON.parse(options.payload) }); return { getResponseCode: () => 200, getContentText: () => JSON.stringify({ status: "success", ownershipId: "OWN-1" }) }; } }
 };
+const createEnvelopeStub = routeHarness.createInterServiceEnvelope;
 vm.runInNewContext(accounting.slice(routeStart, routeEnd) + "\n" + extractFunction(accounting, "sendMigrationOwnerRequest_") + "\nthis.send = sendMigrationOwnerRequest_;", routeHarness);
+// The extracted source declares the real signer in the VM global and overwrites the harness stub.
+// Restore the explicit transport stub so this departmental-scope contract stays isolated from HMAC registry setup.
+routeHarness.createInterServiceEnvelope = createEnvelopeStub;
 assert.equal(routeHarness.send("empleadoOwnership", "registerMigratedResourceOwnership", { resourceId: "EMP-1" }).status, "success");
 assert.equal(routeCalls[0].url, "https://script.google.com/macros/s/AKfycbUSER123/exec");
 assert.equal(routeCalls[0].envelope.sourceService, "ACCOUNTING");
