@@ -16,12 +16,14 @@ add("LEGACY","estudiante","EST-1","ESTUDIANTE-1");
 add("LEGACY","persona","PER-1","PERSONA-1");
 add("LEGACY","estudiante","EST-2","ESTUDIANTE-2");
 add("LEGACY","persona","PER-2","PERSONA-2");
+add("LEGACY","persona","PER-3","PERSONA-3");
 const sheet={getRange(r,c,n,m){return{getValues(){return identityRows.slice(r-1,r-1+n).map(row=>row.slice(c-1,c-1+m));}};},getDataRange(){return{getValues(){return identityRows.map(row=>row.slice());}};}};
 const targetRows=[["CursoID","NombreCurso","Nota","FechaInicio"],["CURSO-1","Historia",80,"2025-01-01"]];
 const targetSheet={getDataRange(){return{getValues(){return targetRows.map(row=>row.slice());}};}};
 const ss={getSheetByName(name){if(name==="CorrespondenciaIdentificadores")return sheet;if(name==="Cursos")return targetSheet;return null;}};
-const schemas={curso:{service:"ACCOUNTING",sheet:"Cursos",headers:["CursoID","NombreCurso","Nota","FechaInicio"]},estudiante:{service:"ACADEMIC",sheet:"ExpedientesEstudiantes",headers:["ExpedienteID","PersonaID"]}};
+const schemas={curso:{service:"ACCOUNTING",sheet:"Cursos",headers:["CursoID","NombreCurso","Nota","FechaInicio"]},estudiante:{service:"ACADEMIC",sheet:"ExpedientesEstudiantes",headers:["ExpedienteID","PersonaID"]},persona:{service:"USER",sheet:"Personas",headers:["PersonaID","Nombres","Apellidos","Identificacion","EmailContacto"]}};
 const auditRows=[],writeCalls=[],rollbackCalls=[];
+let remoteDuplicateMatches=[];
 let failWriteAt=0,runCounter=0;
 const audit={appendRow(row){auditRows.push(row);}};
 let binaryFileHash="a".repeat(64);
@@ -45,7 +47,7 @@ const context={SPREADSHEET_ID:"TEST",MIGRATION_OWNER_SCHEMAS_:schemas,
  requestAccountingTrustedOwnerSnapshot_(service,payload){
   if(!payload||!payload.sessionToken)return{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"};
   if(service==="ACADEMIC")return{status:"success",verified:true,service:"ACADEMIC",sheet:"ExpedientesEstudiantes",idField:"ExpedienteID",institutionId:"INST-1",existingTargetIds:["ESTUDIANTE-1"],targetRows:[],duplicateMatches:[]};
-  if(service==="USER")return{status:"success",verified:true,service:"USER",sheet:"Personas",idField:"PersonaID",institutionId:"INST-1",existingTargetIds:["PERSONA-1"],targetRows:[],duplicateMatches:[]};
+  if(service==="USER")return{status:"success",verified:true,service:"USER",sheet:"Personas",idField:"PersonaID",institutionId:"INST-1",existingTargetIds:["PERSONA-1"],targetRows:[],duplicateMatches:remoteDuplicateMatches};
   return{status:"error",code:"OWNER_NOT_ALLOWED"};
  },
  buildAccountingDepartmentalImportPreflight_(){return{valid:true,applicable:false,institutionId:"INST-1",rows:[]};},
@@ -160,6 +162,17 @@ assert.equal(context.preview(student).targetExistenceSnapshot.verified,true);
 assert.equal(context.preview(student).relatedReferenceSnapshot.verified,true);
 assert.deepEqual(Array.from(context.preview(student).targetExistenceSnapshot.existingTargetIds),["ESTUDIANTE-1"]);
 assert.deepEqual(Array.from(context.preview(student).relatedReferenceSnapshot.existingTargetIds),["PERSONA-1"]);
+const personImport={...base,destinoModulo:"USER",tipoEntidad:"persona",columnaMapeo:{identificador:"legacyId",campos:{Nombres:"nombres",Apellidos:"apellidos",Identificacion:"dni",EmailContacto:"email"}},filasData:[{legacyId:"PER-3",nombres:"Persona",apellidos:"Privada",dni:"0801-1999-00011",email:"persona@example.test"}]};
+remoteDuplicateMatches=[{rowIndex:0,targetId:"PERSONA-OLD",field:"NombreCompleto",matchType:"POSIBLE"}];
+const possiblePersonDuplicate=context.preview(personImport);
+assert.equal(possiblePersonDuplicate.validForImport,false);
+assert.ok(possiblePersonDuplicate.advertencias.some(x=>x.codigo==="POSSIBLE_DUPLICATE_MATCH"));
+assert.ok(possiblePersonDuplicate.errores.some(x=>x.codigo==="POSSIBLE_DUPLICATE_REQUIRES_REVIEW"));
+remoteDuplicateMatches=[{rowIndex:0,targetId:"PERSONA-OLD",field:"Identificacion",matchType:"EXACTA"}];
+const linkedPersonDuplicate=context.preview({...personImport,politicaDuplicados:"VINCULAR"});
+assert.equal(linkedPersonDuplicate.validForImport,false);
+assert.ok(linkedPersonDuplicate.errores.some(x=>x.codigo==="IMPORT_DUPLICATE_LINK_UNSUPPORTED"));
+remoteDuplicateMatches=[];
 const orphan=context.preview({...student,filasData:[{legacyId:"EST-1",persona:"MISSING"}]});
 assert.equal(orphan.validForImport,false);assert.ok(orphan.errores.some(x=>x.codigo==="ORPHANED_REFERENCE"));
 const remoteOrphanBatch=context.preview({...student,filasData:[{legacyId:"EST-1",persona:"PER-1"},{legacyId:"EST-2",persona:"PER-2"}],analisisEstructural:{dataRowNumbers:[2,3]}});
