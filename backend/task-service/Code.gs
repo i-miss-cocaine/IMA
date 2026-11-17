@@ -1924,7 +1924,7 @@ function normalizeTaskGradeScore_(value) {
 }
 
 function gradeSubmissionWithRubric(payload) {
-  return withAuthorizedTaskSubmissionMutation_(payload, "gradeSubmissionWithRubric", context => {
+  return withAuthorizedTaskSubmissionMutation_(payload, "GRADE", context => {
     const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
     const headers = context.deliverySheet.getDataRange().getValues()[0] || [];
     function findColIndex(name) { const target=normalizeString(name); const matches=[]; headers.forEach((h,i)=>{if(normalizeString(h)===target)matches.push(i);}); return matches.length===1?matches[0]:-1; }
@@ -2047,15 +2047,15 @@ function appendTaskGradeRectificationEvent_(event) {
   const matches = rows.slice(1).filter(row => String(row[0] || "").trim() === event.id);
   if (matches.length !== 1) throw new Error("TASK_GRADE_RECTIFICATION_AUDIT_WRITE_FAILED");
 }
-function withAuthorizedTaskSubmissionMutation_(payload, action, mutation) {
+function withAuthorizedTaskSubmissionMutation_(payload, operation, mutation) {
   // doPost has already checked the action's role/session permission exactly once.
   const identity = getVerifiedTaskIdentity_(payload);
   if (!identity || identity.authorized !== true || !String(identity.userId || "").trim()) throw new Error("RESOURCE_NOT_FOUND");
   const lock = LockService.getScriptLock();
-  if (!lock.tryLock(5000)) throw new Error("TASK_SUBMISSION_GRADE_LOCK_TIMEOUT");
+  if (!lock.tryLock(5000)) throw new Error("TASK_SUBMISSION_MUTATION_LOCK_TIMEOUT");
   try {
-    // Keep the lock for data consistency; reuse the verified actor and enforce resource ownership only.
-    const access = getTaskServiceSubmissionAccess_(payload, "GRADE", identity);
+    // Reuse the verified actor; under the lock only the task/submission relationship is rechecked.
+    const access = getTaskServiceSubmissionAccess_(payload, operation || "GRADE", identity);
     if (!access || access.isStaff !== true || !access.ss || !Array.isArray(access.deliveries) ||
         !access.identity || String(access.identity.userId || "").trim() !== String(identity.userId).trim()) throw new Error("RESOURCE_NOT_FOUND");
     const deliveryId = String(payload && payload.entregaId || "").trim();
@@ -2073,9 +2073,8 @@ function withAuthorizedTaskSubmissionMutation_(payload, action, mutation) {
       deliverySheet:getSheetOrThrow(access.ss,"Entregas")});
   } finally { try { lock.releaseLock(); } catch (_) {} }
 }
-
 function gradeSubmission(payload) {
-  return withAuthorizedTaskSubmissionMutation_(payload, "gradeSubmission", context => {
+  return withAuthorizedTaskSubmissionMutation_(payload, "GRADE", context => {
     const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
     const headers = context.deliverySheet.getDataRange().getValues()[0] || [];
     const calificacionCol = headers.indexOf("calificacion");
@@ -2104,19 +2103,27 @@ function gradeSubmission(payload) {
 }
 
 function deleteSubmission(payload) {
-  const actorId=payload&&payload._verifiedUserId,role=payload&&payload._verifiedRole,entregaId=String(payload&&payload.entregaId||"").trim();
-  if(!actorId||!entregaId)throw new Error("Identidad y entrega requeridas.");
-  if(role!=="Profesor"&&!isTaskServiceAdministrativeRole(role))throw new Error("Acceso denegado: solo el docente propietario o administración puede eliminar entregas.");
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getSheetOrThrow(ss,"Entregas"),data=sheet.getDataRange().getValues(),idx=data.findIndex((r,i)=>i>0&&String(r[0]).trim()===entregaId);
-  if(idx<1)throw new Error("Entrega no encontrada.");
-  const taskId=String(data[idx][1]||"").trim(),task=getSheetOrThrow(ss,"Tareas").getDataRange().getValues().slice(1).find(r=>String(r[0]).trim()===taskId);
-  if(!task)throw new Error("No se puede eliminar: la tarea asociada no existe.");
-  assertTaskServiceTeacherCanManageTask(payload,task,"DELETE_SUBMISSION");
-  const fileId=extractTaskServiceFileId(data[idx][4]),mime=String(data[idx][8]||"");
-  if(fileId){try{if(mime==="folder")DriveApp.getFolderById(fileId).setTrashed(true);else DriveApp.getFileById(fileId).setTrashed(true);}catch(e){logDebug("No se pudo eliminar archivo de entrega.",e.message);throw new Error("No se eliminó la entrega porque falló la eliminación del archivo asociado.");}}
-  sheet.deleteRow(idx+1);return {status:"success",message:"Entrega eliminada correctamente."};
+  return withAuthorizedTaskSubmissionMutation_(payload,"DELETE_SUBMISSION",context => {
+    const fileId = extractTaskServiceFileId(context.delivery[4]);
+    const mime = String(context.delivery[8] || "");
+    let file = null;
+    if (fileId) {
+      file = mime === "folder" ? DriveApp.getFolderById(fileId) : DriveApp.getFileById(fileId);
+      if (file.isTrashed()) throw new Error("No se puede eliminar: el archivo ya está en papelera.");
+      file.setTrashed(true);
+    }
+    try {
+      context.deliverySheet.deleteRow(context.deliveryRowIndex);
+    } catch (error) {
+      if (file) {
+        try { file.setTrashed(false); }
+        catch (rollbackError) { throw new Error("SUBMISSION_DELETE_ROLLBACK_FAILED"); }
+      }
+      throw new Error("SUBMISSION_DELETE_METADATA_UPDATE_FAILED: " + error.message);
+    }
+    return {status:"success",message:"Entrega eliminada correctamente."};
+  });
 }
-
 function getTeacherActivity(payload) {
   const role = payload && payload._verifiedRole, actorId = payload && payload._verifiedUserId;
   const isAdmin = ["Administrador", "Desarrollador", "Dirección", "Secretaría"].indexOf(role) !== -1;
@@ -2634,38 +2641,40 @@ function deleteStudyMaterial(payload) {
   return {status:"success",message:"Material eliminado."};
 }
 function returnSubmissionForRevision(payload) {
-  const { entregaId, comentario } = payload || {};
-  if (!entregaId) throw new Error("entregaId es requerido.");
-  assertTaskServiceSubmissionTaskOwnership_(payload, entregaId, "RETURN_FOR_REVISION");
-  const profesorId = payload && payload._verifiedUserId;
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const entregasSheet = getSheetOrThrow(ss, "Entregas");
-  const data = entregasSheet.getDataRange().getValues();
-  const idx = data.findIndex(r => String(r[0]).trim() === String(entregaId).trim());
-  if (idx === -1) throw new Error("Entrega no encontrada.");
-
-  const row = data[idx];
-  row[6] = "DevueltaCorrección";
-  if (comentario) row[7] = comentario;
-
-  entregasSheet.getRange(idx + 1, 1, 1, row.length).setValues([row]);
-
-  // Agregar comentario privado
-  if (comentario) {
-    addSubmissionComment({
-      entregaId: entregaId,
-      tareaId: row[1],
-      autorId: profesorId || "Profesor",
-      rolAutor: "Docente",
-      mensaje: comentario,
-      esPrivado: true
+  const request = payload || {};
+  const message = String(request.comentario || "").trim();
+  return withAuthorizedTaskSubmissionMutation_(request, "RETURN_FOR_REVISION", context => {
+    const headers = context.deliverySheet.getDataRange().getValues()[0] || [];
+    const statusColumns = [], commentColumns = [];
+    headers.forEach((value,index) => {
+      const name = normalizeString(value);
+      if (name === "estado") statusColumns.push(index);
+      if (name === "comentario") commentColumns.push(index);
     });
-  }
-
-  return { status: "success", message: "Tarea devuelta para corrección al estudiante." };
+    if (statusColumns.length !== 1 || commentColumns.length !== 1) throw new Error("TASK_SUBMISSION_SCHEMA_INVALID");
+    const rowData = context.delivery.slice();
+    while (rowData.length < headers.length) rowData.push("");
+    const oldRow = rowData.slice();
+    rowData[statusColumns[0]] = "DevueltaCorrección";
+    if (message) rowData[commentColumns[0]] = message;
+    context.deliverySheet.getRange(context.deliveryRowIndex,1,1,rowData.length).setValues([rowData]);
+    if (message) {
+      try {
+        const commentsSheet = getOrCreateSheet(context.ss,"ComentariosEntregas");
+        if (commentsSheet.getLastRow() === 0) {
+          commentsSheet.appendRow(["ID","EntregaID","TareaID","AutorID","RolAutor","Mensaje","EsPrivado","FechaCreacion"]);
+        }
+        commentsSheet.appendRow(["COM-" + Utilities.getUuid(),context.deliveryId,context.taskId,
+          context.actor.userId,context.actor.role,message,true,new Date()]);
+      } catch (error) {
+        try { context.deliverySheet.getRange(context.deliveryRowIndex,1,1,oldRow.length).setValues([oldRow]); }
+        catch (rollbackError) { throw new Error("TASK_SUBMISSION_RETURN_ROLLBACK_FAILED"); }
+        throw error;
+      }
+    }
+    return {status:"success",message:"Tarea devuelta para corrección al estudiante.",comentarioRegistrado:!!message};
+  });
 }
-
 function getSubmissionComments(payload) {
   const context = getTaskServiceSubmissionAccess_(payload, "READ_HISTORY");
   const sheet = getOrCreateSheet(context.ss, "ComentariosEntregas");
@@ -2741,27 +2750,12 @@ function getSubmissionVersions(payload) {
     return String(row[2] || "").trim() === context.taskId &&
       (!requestedUserId || String(row[3] || "").trim() === requestedUserId);
   }).map(row => ({
-    versionId: row[0],
-    entregaId: row[1],
-    tareaId: row[2],
-    userId: row[3],
-    versionNum: row[4],
-    archivoUrl: row[5],
-    fileId: row[6],
-    mimeType: row[7],
-    textoRespuesta: row[8],
-    enlaceExterno: row[9],
-    fechaEnvio: row[10] ? new Date(row[10]).toISOString() : null,
-    estado: row[11],
-    observaciones: row[12]
+    versionId: row[0], entregaId: row[1], tareaId: row[2], userId: row[3], versionNum: row[4],
+    fileId: row[6], mimeType: row[7], textoRespuesta: row[8], enlaceExterno: row[9],
+    fechaEnvio: row[10] ? new Date(row[10]).toISOString() : null, estado: row[11], observaciones: row[12]
   }));
   return { status: "success", data: versions };
 }
-
-// ---------------------------------------------------------------------------
-// FUNCIONES FASE 30 - CARGAS REANUDABLES, REEMPLAZO PROGRESIVO Y LECTURA
-// ---------------------------------------------------------------------------
-
 function initiateResumableUpload(payload) {
   const actorId=payload&&payload._verifiedUserId,role=payload&&payload._verifiedRole,tareaId=String(payload&&payload.tareaId||"").trim();
   const fileName=String(payload&&payload.fileName||"").trim(),fileSize=Number(payload&&payload.fileSize),totalChunks=Number(payload&&payload.totalChunks);
@@ -3095,28 +3089,30 @@ function getDriveStorageQuotaMetricsReport(payload) {
 // [F8-Task24] [F10-Task13] [TAREA-F8-OPT-01] [Fase 8: Aula Virtual y Gestión Avanzada del Aprendizaje] - Obtener URL segura de previsualización de documentos PDF adjuntos en entregas con verificación RBAC
 function getSubmissionDocumentPreviewUrl(payload) {
   try {
-    if (!payload || !payload.fileId) return { status:"error", message:"fileId es requerido." };
-    const token = payload.sessionToken || payload.authToken || payload.token;
-    const claims = getVerifiedRequestSessionClaims_(payload);
-    if (!claims || !claims.userId || !claims.role) return { status:"error", code:"AUTH_PERMISSION_DENIED", message:"Sesión no válida o expirada." };
+    if (!payload || !payload.fileId) return { status:"error",message:"fileId es requerido." };
+    const identity = getVerifiedTaskIdentity_(payload);
+    if (!identity || !identity.authorized || !identity.userId || !identity.role) {
+      return { status:"error",code:"AUTH_PERMISSION_DENIED",message:"Sesión no válida o expirada." };
+    }
     const fileId = extractTaskServiceFileId(payload.fileId);
-    if (!fileId) return { status:"error", code:"AUTH_PERMISSION_DENIED", message:"Archivo no vinculado a una entrega institucional." };
+    if (!fileId) return { status:"error",code:"AUTH_PERMISSION_DENIED",message:"Archivo no vinculado a una entrega institucional." };
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const deliveries = getSheetOrThrow(ss,"Entregas").getDataRange().getValues().slice(1);
     const matches = deliveries.filter(row => extractTaskServiceFileId(row[4]) === fileId);
-    if (matches.length !== 1) return { status:"error", code:"AUTH_PERMISSION_DENIED", message:"Archivo no vinculado a una entrega única." };
+    if (matches.length !== 1) return { status:"error",code:"AUTH_PERMISSION_DENIED",message:"Archivo no vinculado a una entrega única." };
     const delivery = matches[0];
-    const access = getTaskServiceSubmissionAccess_({ sessionToken: token, entregaId: String(delivery[0] || "").trim() }, "READ_CONTENT");
+    const accessPayload = Object.assign({},payload,{entregaId:String(delivery[0] || "").trim()});
+    const access = getTaskServiceSubmissionAccess_(accessPayload,"READ_CONTENT",identity);
     if (!access.delivery || String(access.delivery[0] || "").trim() !== String(delivery[0] || "").trim() ||
         extractTaskServiceFileId(access.delivery[4]) !== fileId) {
-      return { status:"error", code:"AUTH_PERMISSION_DENIED", message:"No tiene autorización sobre el documento solicitado." };
+      return { status:"error",code:"AUTH_PERMISSION_DENIED",message:"No tiene autorización sobre el documento solicitado." };
     }
     const file = DriveApp.getFileById(fileId), mimeType = file.getMimeType(), fileName = file.getName(), fileSize = file.getSize();
-    return { status:"success",fileId:fileId,fileName:fileName,fileSizeMb:(fileSize/(1024*1024)).toFixed(2),mimeType:mimeType,
+    return {status:"success",fileId:fileId,fileName:fileName,fileSizeMb:(fileSize/(1024*1024)).toFixed(2),mimeType:mimeType,
       isPdf:mimeType==="application/pdf"||fileName.toLowerCase().endsWith(".pdf"),
-      previewUrl:"https://drive.google.com/file/d/"+fileId+"/preview",downloadUrl:"https://drive.google.com/uc?export=download&id="+fileId };
+      previewUrl:"https://drive.google.com/file/d/"+fileId+"/preview",downloadUrl:"https://drive.google.com/uc?export=download&id="+fileId};
   } catch (error) {
     Logger.log("Error en getSubmissionDocumentPreviewUrl: "+error.message);
-    return { status:"error",message:"Error al generar URL de previsualización: "+error.message };
+    return {status:"error",message:"Error al generar URL de previsualización: "+error.message};
   }
 }
