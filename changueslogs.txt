@@ -4066,3 +4066,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Hierarchical Configuration Contract run 44084206282 SUCCESS. Department Scope run 44084206213 FAILURE en Phase22 document management después de 82 pasos PASS; 17 pasos posteriores SKIPPED. No se modificó Phase22.
 - CLI local NOT RUN por DNS al obtener checkout; Actions sí ejecutó Node 24. BETA-FUNC-119 pendiente de LockService/Sheets reales.
 - Siguiente tarea elegible: AUD-NG-082 — eliminar fallback de authRole y exigir sesión autenticada en todo el plano de control.
+
+ 
+[2026-11-17] C1.800 — AUD-NG-082, autenticación estricta del plano de control DEVELOPER
+- Se eliminó el fallback payload.authRole. Toda acción no-ping exige token firmado; rol/actor provienen solo de claims verificados.
+- Códigos estables: AUTHENTICATION_REQUIRED, INVALID_SESSION_TOKEN, INVALID_SESSION_CLAIMS y PERMISSION_DENIED. El ping de salud permanece público.
+- Developer Service Registry Contract run 44084689689 SUCCESS con Node.js 24.22.2. Hierarchical Configuration Contract run 44084661329 SUCCESS.
+- Department Scope run 44084661252 FAILURE en Phase22 document management tras 82 pasos PASS; 17 pasos SKIPPED. Sin cambios en Phase22.
+- CLI local NOT RUN por fallo DNS de checkout; Actions sí ejecutó Node 24. BETA-FUNC-120 pendiente de validación de deployment/Script Properties.
+- Siguiente: AUD-NG-084 — gestión segura de secretos por servicio, rotación y revocación.

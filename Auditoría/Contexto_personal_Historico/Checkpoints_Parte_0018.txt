@@ -214,3 +214,24 @@ Siguiente tarea elegible: F25-Task03 — detección avanzada de duplicados e int
 - **Estado:** implementación y CI completados; beta real pendiente. No se afirma concurrencia real de Apps Script.
 - **Siguiente tarea elegible:** AUD-NG-082 — exigir sesión autenticada en el plano de control y rechazar roles declarados por el cliente (authRole); el fallback actual de doPost sigue siendo una superficie de confianza independiente.
 =============================================================================
+
+ 
+=============================================================================
+### C1.800 — IMA-EXEC-20261117-AUD-NG-082-CONTROL-PLANE-AUTH-01
+- **Checkpoint anterior:** C1.799 — AUD-NG-080, historial de servicios con actor verificado.
+- **HEAD inicial:** a0f25b0167a2a0e14259e414853eb5a1925332de.
+- **HEAD de cierre de código/pruebas:** cb081cea7a6342fdb380dd05ce52b349e1d35b00.
+- **HEAD de documentación beta:** 183806acbf77cd9332a6b9953fcd3c9011f8f697.
+- **Tarea:** AUD-NG-082 — exigir sesión autenticada en el plano de control y rechazar roles declarados por el cliente.
+- **Resultado:** implementada en código, revisión y CI; validación del deployment/Script Properties pendiente en beta.
+- **Implementación:** para toda acción distinta de ping, doPost exige token; la ausencia devuelve AUTHENTICATION_REQUIRED, token inválido/expirado devuelve INVALID_SESSION_TOKEN y claims incompletos devuelven INVALID_SESSION_CLAIMS. El rol se obtiene únicamente de claims.role validado por verifySessionToken y se contrasta con ROLE_PERMISSIONS. Se descartan authRole y _verifiedUserId enviados por el cliente; _verifiedUserId se reconstruye desde claims.userId. Se eliminó el fallback que aceptaba payload.authRole. Ping permanece público.
+- **Pruebas:** Developer Service Registry Contract run 44084689689 SUCCESS (Node.js 24.22.2; sintaxis de Code.gs y test; contrato completo). Cobertura: sin token + authRole Administrador; token inválido + authRole; token Director intentando elevarse a Administrador; claims incompletos; sesión válida; actor verificado; ping público.
+- **CI transversal:** Hierarchical Configuration Contract run 44084661329 SUCCESS. Department Scope run 44084661252 FAILURE en Phase22 document management; 82 pasos PASS y 17 SKIPPED. No se modificó Phase22.
+- **CLI local:** NOT RUN; el entorno no pudo resolver github.com al intentar obtener checkout local. GitHub Actions sí ejecutó Node.js 24.
+- **Archivos de código/prueba:** backend/developer-service/Code.gs; tests/security/developer-service-registry.test.js. **Registro beta:** beta_test_Parte_0002.txt — BETA-FUNC-120.
+- **Commits:** d73b72f83704b3e7a1495480698d9b9d4cfb5fd6 (código); cb081cea7a6342fdb380dd05ce52b349e1d35b00 (pruebas); 183806acbf77cd9332a6b9953fcd3c9011f8f697 (beta).
+- **Beta:** BETA-FUNC-120 añadido; validación real de secretos de sesión y endpoint web pendiente. No se desplegó Apps Script ni se modificó infraestructura productiva.
+- **Rama base:** NG_beta_0.0.0.1 HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; comparación work/base 3844 ahead, 0 behind, merge-base idéntico. Sin escrituras en rama base.
+- **Estado:** implementación y CI completados; beta real pendiente.
+- **Siguiente tarea elegible:** AUD-NG-084 — gestión segura de secretos por servicio con rotación y revocación; revisar getAuthTokenSecret, AUTH_TOKEN_SECRET, customSecret y catálogo de credenciales antes de integrar tráfico HMAC.
+=============================================================================

@@ -5670,3 +5670,9 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - **AUD-NG-080:** historial de altas/cambios DEVELOPER implementado con actor de sesión firmada, escritores privados, LockService y compensación; contrato Node.js 24 run 44084385150 SUCCESS. BETA-FUNC-119 pendiente de concurrencia y persistencia reales.
 - **CI transversal:** Department Scope run 44084206213 falla en Phase22 document management; 82 pasos anteriores PASS. No se modificó el módulo ajeno.
 - **Siguiente tarea P0 elegible:** AUD-NG-082 — el fallback payload.authRole permite declarar un rol desde el cliente; exigir sesión firmada y derivar rol exclusivamente de claims verificados.
+
+ 
+## Seguimiento operativo — C1.800
+- **AUD-NG-082:** autenticación estricta de doPost implementada; todas las acciones no-ping requieren sesión firmada y los roles provienen únicamente de claims verificados. Node 24 run 44084689689 SUCCESS. BETA-FUNC-120 pendiente de deployment real.
+- **CI transversal:** Department Scope run 44084661252 falla en Phase22 document management; 82 pasos anteriores PASS. No se modificó el módulo ajeno.
+- **Siguiente tarea elegible:** AUD-NG-084 — gestión segura de secretos por servicio con rotación y revocación; revisar getAuthTokenSecret y customSecret antes de conectar los flujos HMAC.
