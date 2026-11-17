@@ -1121,7 +1121,9 @@ function getMigrationHmacSecret_(sourceService, purpose) {
 }
 
 function resolveInterServiceSecret_(sourceService, credentialType, purpose) {
-  if (credentialType === undefined || credentialType === null || credentialType === "") return getAuthTokenSecret();
+  if (credentialType === undefined || credentialType === null || credentialType === "") {
+    throw new Error("INTERSERVICE_CREDENTIAL_TYPE_REQUIRED");
+  }
   if (credentialType !== "IMA_MIGRATION_HMAC_SECRET") throw new Error("INTERSERVICE_CREDENTIAL_TYPE_INVALID");
   return getMigrationHmacSecret_(sourceService, purpose);
 }
@@ -1161,15 +1163,25 @@ function verifyInterServiceEnvelope(envelope, expectedTargetService, credentialT
   const now = Date.now();
   if (Math.abs(now - timestamp) > 300000) throw new Error("INTERSERVICE_REQUEST_EXPIRED: La solicitud interservicio ha expirado.");
 
-  const cache = CacheService.getScriptCache();
-  const replayKey = `REPLAY_REQ_${requestId}`;
-  if (cache.get(replayKey)) throw new Error(`INTERSERVICE_REPLAY_DETECTED: Petición repetida detectada con requestId '${requestId}'.`);
-  cache.put(replayKey, "SEEN", 300);
-
   const secret = resolveInterServiceSecret_(sourceService, credentialType, "VERIFY");
   const bodyToSign = `${requestId}|${timestamp}|${correlationId}|${sourceService}|${targetService}|${action}|${JSON.stringify(payload || {})}`;
   const expectedSig = computeHmacSignature(bodyToSign, secret);
   if (hmacSignature !== expectedSig) throw new Error("INVALID_INTERSERVICE_SIGNATURE: Firma HMAC-SHA256 interservicio inválida.");
+
+  const cache = CacheService.getScriptCache();
+  const replayKey = `REPLAY_REQ_${requestId}`;
+  const replayLock = LockService.getScriptLock();
+  try {
+    replayLock.waitLock(5000);
+  } catch (error) {
+    throw new Error("INTERSERVICE_REPLAY_CHECK_BUSY");
+  }
+  try {
+    if (cache.get(replayKey)) throw new Error(`INTERSERVICE_REPLAY_DETECTED: Petición repetida detectada con requestId '${requestId}'.`);
+    cache.put(replayKey, "SEEN", 300);
+  } finally {
+    replayLock.releaseLock();
+  }
 
   return { valid: true, sourceService, targetService, action, correlationId, requestId, payload: payload || {} };
 }
