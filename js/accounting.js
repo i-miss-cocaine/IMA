@@ -9,7 +9,7 @@
 // ---------------------------------------------------------------------------
 window.consolidateAccountingDashboardSummary = function(accountingData) {
     if (!accountingData) {
-        return { totalRevenueFormatted: "L 0.00", totalExpensesFormatted: "L 0.00", netBalanceFormatted: "L 0.00", pendingInvoicesCount: 0 };
+        return { totalRevenueFormatted: window.IMARegionalFormatters.formatCurrency(0), totalExpensesFormatted: window.IMARegionalFormatters.formatCurrency(0), netBalanceFormatted: window.IMARegionalFormatters.formatCurrency(0), pendingInvoicesCount: 0 };
     }
     var revenue = typeof accountingData.totalRevenue === 'number' ? accountingData.totalRevenue : 0;
     var expenses = typeof accountingData.totalExpenses === 'number' ? accountingData.totalExpenses : 0;
@@ -17,9 +17,9 @@ window.consolidateAccountingDashboardSummary = function(accountingData) {
     var pendingCount = typeof accountingData.pendingInvoicesCount === 'number' ? accountingData.pendingInvoicesCount : 0;
 
     return {
-        totalRevenueFormatted: "L " + revenue.toFixed(2),
-        totalExpensesFormatted: "L " + expenses.toFixed(2),
-        netBalanceFormatted: "L " + net.toFixed(2),
+        totalRevenueFormatted: window.IMARegionalFormatters.formatCurrency(revenue),
+        totalExpensesFormatted: window.IMARegionalFormatters.formatCurrency(expenses),
+        netBalanceFormatted: window.IMARegionalFormatters.formatCurrency(net),
         pendingInvoicesCount: pendingCount
     };
 };
@@ -88,7 +88,7 @@ window.loadFamilyCreditSalesReconciliation = function() {
   host.textContent = "Consultando movimientos y pedidos...";
   const escape = value => String(value === undefined || value === null ? "" : value)
     .replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const money = value => "L " + Number(value || 0).toFixed(2);
+  const money = value => window.IMARegionalFormatters.formatCurrency(value);
   fetchApi("ACCOUNTING", "getFamilyCreditSalesReconciliation", {}).then(res => {
     if (!res || res.status !== "success") throw new Error((res && res.message) || "No se pudo conciliar el crédito familiar.");
     const store = res.resumen && res.resumen.TIENDA || {};
@@ -394,8 +394,8 @@ window.loadValuatedInventoryReport = function () {
   fetchApi("ACCOUNTING","getValuatedInventoryReport",inventoryValuationPayload()).then(res=>{
     const rows=Array.isArray(res.detalle)?res.detalle:[],money=n=>window.IMARegionalFormatters.formatCurrency(n),safe=v=>String(v===undefined||v===null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
     const rec=res.conciliacion||{},summary=res.resumen||{};
-    let html='<div class="grid grid-cols-1 gap-2 sm:grid-cols-3"><div class="rounded-lg bg-white p-2"><div class="text-[10px] text-gray-500">Artículos</div><b>'+safe(summary.articulos||0)+'</b></div><div class="rounded-lg bg-white p-2"><div class="text-[10px] text-gray-500">Cantidad total</div><b>'+safe(summary.cantidad||0)+'</b></div><div class="rounded-lg bg-white p-2"><div class="text-[10px] text-gray-500">Valor total</div><b>L '+money(summary.valor)+'</b></div></div>';
-    html+='<div class="mt-2 rounded-lg '+(rec.conciliado?'bg-emerald-50 text-emerald-800':'bg-amber-50 text-amber-900')+' p-2 text-[11px] font-bold">Conciliación: '+(rec.conciliado?'Conciliado':'Pendiente de conciliación')+(rec.diferencia===null?'':' · Diferencia: L '+money(rec.diferencia))+(summary.valorIncompleto?' · Existen costos pendientes':'')+'</div>';
+    let html='<div class="grid grid-cols-1 gap-2 sm:grid-cols-3"><div class="rounded-lg bg-white p-2"><div class="text-[10px] text-gray-500">Artículos</div><b>'+safe(summary.articulos||0)+'</b></div><div class="rounded-lg bg-white p-2"><div class="text-[10px] text-gray-500">Cantidad total</div><b>'+safe(summary.cantidad||0)+'</b></div><div class="rounded-lg bg-white p-2"><div class="text-[10px] text-gray-500">Valor total</div><b>'+money(summary.valor)+'</b></div></div>';
+    html+='<div class="mt-2 rounded-lg '+(rec.conciliado?'bg-emerald-50 text-emerald-800':'bg-amber-50 text-amber-900')+' p-2 text-[11px] font-bold">Conciliación: '+(rec.conciliado?'Conciliado':'Pendiente de conciliación')+(rec.diferencia===null?'':' · Diferencia: '+money(rec.diferencia))+(summary.valorIncompleto?' · Existen costos pendientes':'')+'</div>';
     html+='<div class="mt-2 overflow-x-auto"><table class="w-full min-w-[620px] text-left text-[11px]"><thead><tr class="border-b bg-white"><th class="p-2">Código</th><th class="p-2">Artículo</th><th class="p-2">Ubicación</th><th class="p-2 text-right">Cantidad</th><th class="p-2 text-right">Costo unit.</th><th class="p-2 text-right">Valor</th><th class="p-2">Método</th></tr></thead><tbody>';
     rows.forEach(x=>{html+='<tr class="border-b border-gray-200"><td class="p-2">'+safe(x.itemCodigo)+'</td><td class="p-2">'+safe(x.itemNombre)+'</td><td class="p-2">'+safe(x.ubicacion)+'</td><td class="p-2 text-right">'+safe(x.cantidad)+'</td><td class="p-2 text-right">'+money(x.costoUnitario)+'</td><td class="p-2 text-right">'+money(x.valor)+(x.valorIncompleto?' *':'')+'</td><td class="p-2">'+safe(x.metodo)+'</td></tr>';});
     html+='</tbody></table></div>';if(!rows.length)html+='<p class="p-3 text-center text-gray-500">No hay existencias valorizadas para los filtros seleccionados.</p>';
@@ -1330,7 +1330,7 @@ function renderComprasSolicitudesView(container) {
           <td class="p-3 font-bold text-gray-900">${s.solicitudId}</td>
           <td class="p-3">${s.departamento || '-'}</td>
           <td class="p-3 max-w-xs truncate">${s.justificacion || '-'}</td>
-          <td class="p-3 font-bold text-gray-900">L ${window.IMARegionalFormatters.formatCurrency(s.montoEstimado)}</td>
+          <td class="p-3 font-bold text-gray-900">${window.IMARegionalFormatters.formatCurrency(s.montoEstimado)}</td>
           <td class="p-3"><span class="px-2 py-1 rounded-lg text-xs font-bold ${s.estadoAprobacion === 'Aprobada' ? 'bg-emerald-100 text-emerald-800' : (s.estadoAprobacion === 'Rechazada' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800')}">${s.estadoAprobacion}</span></td>
           <td class="p-3 space-x-1">
             <button onclick="viewPurchaseRequestDetails('${s.solicitudId}')" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-700 font-bold text-[10px]">Detalle</button>
@@ -1450,7 +1450,7 @@ window.submitPurchaseQuotationEntry=async function(matrix,target,button){
  const total=Math.round(details.reduce((sum,line)=>sum+line.cantidadCotizada*line.precioUnitario-line.descuento+line.impuestos+line.flete,0)*100)/100;
  const payload={solicitudId:matrix.solicitud.solicitudId,proveedorId:document.getElementById('cmp-entry-supplier-id').value.trim(),precioTotal:total,detalleItems:details,plazoEntregaDias:Number(document.getElementById('cmp-entry-delivery-days').value||5),vigenciaOferta:document.getElementById('cmp-entry-validity').value.trim(),condicionesPago:document.getElementById('cmp-entry-payment-terms').value.trim()};
  button.disabled=true;button.textContent='Registrando...';
- try{const result=await fetchBackendAccounting('submitPurchaseQuotation',payload);if(!result||result.status!=='success')throw new Error(result&&result.message||result&&result.code||'No se pudo registrar la cotización.');const message=document.createElement('div');message.className='rounded-lg bg-emerald-50 text-emerald-800 p-2 font-bold';message.textContent='Cotización '+result.cotizacionId+' registrada. Total: L '+total.toFixed(2);target.appendChild(message);window.switchComprasSubtab('cotizaciones');}
+ try{const result=await fetchBackendAccounting('submitPurchaseQuotation',payload);if(!result||result.status!=='success')throw new Error(result&&result.message||result&&result.code||'No se pudo registrar la cotización.');const message=document.createElement('div');message.className='rounded-lg bg-emerald-50 text-emerald-800 p-2 font-bold';message.textContent='Cotización '+result.cotizacionId+' registrada. Total: '+window.IMARegionalFormatters.formatCurrency(total);target.appendChild(message);window.switchComprasSubtab('cotizaciones');}
  catch(error){const message=document.createElement('div');message.className='rounded-lg bg-red-50 text-red-700 p-2';message.textContent=error.message||'Error al registrar cotización.';target.appendChild(message);button.disabled=false;button.textContent='Registrar cotización';}
 };
 
@@ -1559,7 +1559,7 @@ function renderComprasOrdenesView(container) {
         <tr class="hover:bg-gray-50">
           <td class="p-3 font-bold text-gray-900">${o.ordenId}</td>
           <td class="p-3">${o.proveedorId}</td>
-          <td class="p-3 font-bold text-gray-900">L ${window.IMARegionalFormatters.formatCurrency(o.montoTotal)}</td>
+          <td class="p-3 font-bold text-gray-900">${window.IMARegionalFormatters.formatCurrency(o.montoTotal)}</td>
           <td class="p-3">${o.fechaEntregaEstimada ? window.IMARegionalFormatters.formatDate(o.fechaEntregaEstimada) : '-'}</td>
           <td class="p-3">
             <span class="px-2 py-1 rounded-lg text-xs font-bold ${
@@ -1614,7 +1614,7 @@ window.openReceiptAssetRegistration=function(recepcionId){
     const modal=document.createElement("div");modal.id="receipt-asset-modal";modal.className="fixed inset-0 z-[110] bg-black/60 flex items-center justify-center p-3";
     const invoiceOptions=result.facturasDisponibles.map(invoice=>`<option value="${escapePurchaseAssetHtml(invoice.numeroFactura)}">${escapePurchaseAssetHtml(invoice.numeroFactura)} — ${escapePurchaseAssetHtml(invoice.estadoConciliacion)}</option>`).join("");
     const cards=rows.map((item,index)=>`<div data-asset-row data-item-id="${escapePurchaseAssetHtml(item.itemId)}" class="border rounded-xl p-3 grid grid-cols-1 md:grid-cols-4 gap-2">
-      <div class="md:col-span-4 text-xs font-bold">${escapePurchaseAssetHtml(item.descripcion)} · Partida ${escapePurchaseAssetHtml(item.itemId)} · Costo unitario ${Number(item.costo||0).toFixed(2)}</div>
+      <div class="md:col-span-4 text-xs font-bold">${escapePurchaseAssetHtml(item.descripcion)} · Partida ${escapePurchaseAssetHtml(item.itemId)} · Costo unitario ${window.IMARegionalFormatters.formatCurrency(item.costo)}</div>
       <label class="text-[10px] font-bold">Código patrimonial<input data-field="codigoPatrimonial" class="w-full mt-1 p-2 border rounded-lg" placeholder="PAT-0001"></label>
       <label class="text-[10px] font-bold">Número de serie<input data-field="numeroSerie" class="w-full mt-1 p-2 border rounded-lg" placeholder="Serie única"></label>
       <label class="text-[10px] font-bold">Categoría patrimonial<input data-field="categoriaPatrimonial" class="w-full mt-1 p-2 border rounded-lg" placeholder="Equipo computacional"></label>
@@ -2413,12 +2413,12 @@ window.loadEnrollmentBillingConfiguration = async function() {
     const config = response.config || null;
     window.currentEnrollmentBillingConfiguration_ = { anoLectivo: year, nivelGrado: grade, tarifas: tariffs, config: config };
     const options = tariffs.map(function(t) {
-      const label = (t.conceptoNombre || t.conceptoId) + " — L " + Number(t.montoTotal).toFixed(2) + " / " + Number(t.cuotasNum) + " cuota(s)";
+      const label = (t.conceptoNombre || t.conceptoId) + " — " + window.IMARegionalFormatters.formatCurrency(t.montoTotal) + " / " + Number(t.cuotasNum) + " cuota(s)";
       return '<option value="' + enrollmentBillingEscapeHtml_(t.conceptoId) + '">' + enrollmentBillingEscapeHtml_(label) + '</option>';
     }).join("");
     const summary = tariffs.length ? tariffs.map(function(t) {
       return '<li class="flex flex-wrap justify-between gap-2 border-b border-gray-100 py-2 text-sm"><span>' + enrollmentBillingEscapeHtml_(t.conceptoNombre || t.conceptoId) +
-        '</span><span class="font-semibold">L ' + Number(t.montoTotal).toFixed(2) + ' · ' + Number(t.cuotasNum) + ' cuota(s)</span></li>';
+        '</span><span class="font-semibold">' + window.IMARegionalFormatters.formatCurrency(t.montoTotal) + ' · ' + Number(t.cuotasNum) + ' cuota(s)</span></li>';
     }).join("") : '<li class="text-sm text-amber-700 py-2">No hay tarifas activas para este grado y año lectivo.</li>';
     editor.innerHTML = '<form id="enrollment-billing-save-form" class="space-y-4 border border-gray-200 rounded-2xl p-5">' +
       '<div class="flex flex-wrap justify-between gap-2"><h5 class="font-black text-gray-900 uppercase text-sm">Regla de generación</h5><span class="text-xs text-gray-500">' +
@@ -2479,7 +2479,7 @@ window.saveServiceTariff=function(){
 window.loadServiceTariffs=function(){
  const host=document.getElementById("service-tariffs-list");if(!host)return;host.textContent="Consultando tarifas...";
  fetchApi("ACCOUNTING","getServiceTariffs",{}).then(r=>{const rows=r.tarifas||[];if(!rows.length){host.textContent="No hay tarifas registradas.";return;}let h='<table class="w-full text-left border-collapse"><thead><tr class="bg-gray-50"><th class="p-2">Servicio</th><th class="p-2">Modalidad</th><th class="p-2">Ruta</th><th class="p-2">Período</th><th class="p-2">Importe</th><th class="p-2">Vigencia</th><th class="p-2">Hermanos</th><th class="p-2">Máx. descuento</th><th class="p-2">Prorrateo</th><th class="p-2">Estado</th></tr></thead><tbody>';
- rows.forEach(x=>{const start=x.fechaVigenciaInicio?window.IMARegionalFormatters.formatDate(x.fechaVigenciaInicio):"—",end=x.fechaVigenciaFin?window.IMARegionalFormatters.formatDate(x.fechaVigenciaFin):"Abierta";h+='<tr class="border-t"><td class="p-2">'+serviceTariffEscape_(x.servicio)+'</td><td class="p-2">'+serviceTariffEscape_(x.modalidad)+'</td><td class="p-2">'+serviceTariffEscape_(x.rutaId||"—")+'</td><td class="p-2">'+serviceTariffEscape_(x.periodo)+'</td><td class="p-2 font-bold">'+Number(x.monto||0).toFixed(2)+'</td><td class="p-2">'+start+' – '+end+'</td><td class="p-2">'+Number(x.descuentoHermanosPct||0)+'%</td><td class="p-2">'+Number(x.descuentoMaximoPct||0)+'%</td><td class="p-2">'+(x.prorrateoAlta?"Alta":"—")+' / '+(x.prorrateoBaja?"Baja":"—")+'</td><td class="p-2">'+serviceTariffEscape_(x.estado)+'</td></tr>';});
+ rows.forEach(x=>{const start=x.fechaVigenciaInicio?window.IMARegionalFormatters.formatDate(x.fechaVigenciaInicio):"—",end=x.fechaVigenciaFin?window.IMARegionalFormatters.formatDate(x.fechaVigenciaFin):"Abierta";h+='<tr class="border-t"><td class="p-2">'+serviceTariffEscape_(x.servicio)+'</td><td class="p-2">'+serviceTariffEscape_(x.modalidad)+'</td><td class="p-2">'+serviceTariffEscape_(x.rutaId||"—")+'</td><td class="p-2">'+serviceTariffEscape_(x.periodo)+'</td><td class="p-2 font-bold">'+window.IMARegionalFormatters.formatCurrency(x.monto)+'</td><td class="p-2">'+start+' – '+end+'</td><td class="p-2">'+Number(x.descuentoHermanosPct||0)+'%</td><td class="p-2">'+Number(x.descuentoMaximoPct||0)+'%</td><td class="p-2">'+(x.prorrateoAlta?"Alta":"—")+' / '+(x.prorrateoBaja?"Baja":"—")+'</td><td class="p-2">'+serviceTariffEscape_(x.estado)+'</td></tr>';});
  host.innerHTML=h+'</tbody></table>';
  }).catch(e=>{host.textContent=e.message||String(e);});
 };
