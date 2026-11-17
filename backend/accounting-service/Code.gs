@@ -691,7 +691,7 @@ function buildImportPreview_(payload) {
     var item = { codigo: code, mensaje: message };
     if (rowNumber !== undefined && rowNumber !== null) item.fila = rowNumber;
     errors.push(item);
-    if (["DUPLICATE_HEADERS", "UNRESOLVED_FORMULAS", "REPEATED_HEADER_ROWS", "VISIBLE_SHEET_SELECTION_REQUIRED", "TARGET_EXISTENCE_UNVERIFIED", "RELATED_REFERENCE_EXISTENCE_UNVERIFIED"].indexOf(code) !== -1) structuralBlockers.push(item);
+    if (["DUPLICATE_HEADERS", "UNRESOLVED_FORMULAS", "REPEATED_HEADER_ROWS", "VISIBLE_SHEET_SELECTION_REQUIRED", "TARGET_EXISTENCE_UNVERIFIED", "RELATED_REFERENCE_EXISTENCE_UNVERIFIED", "IMPORT_DUPLICATE_POLICY_INVALID", "IMPORT_DUPLICATE_POLICY_REQUIRED", "IMPORT_DUPLICATE_LINK_UNSUPPORTED"].indexOf(code) !== -1) structuralBlockers.push(item);
   }
   function addWarning(code, message) { warnings.push({ severity: "WARNING", codigo: code, mensaje: message }); }
   if (identitySnapshot.uniquenessViolations.length) {
@@ -784,6 +784,24 @@ function buildImportPreview_(payload) {
     }
   });
   errors = errors.concat(rowErrors);
+  var duplicatePolicy = String(input.politicaDuplicados || "RECHAZAR").trim().toUpperCase();
+  var allowedDuplicatePolicies = ["RECHAZAR", "ACTUALIZAR", "VINCULAR"];
+  if (allowedDuplicatePolicies.indexOf(duplicatePolicy) === -1) addError("IMPORT_DUPLICATE_POLICY_INVALID", "Seleccione una política válida para resolver coincidencias.");
+  var seenNaturalKeys = {};
+  preparedRows.forEach(function(row, preparedIndex) {
+    migrationDuplicateKeyDefinitions_(entityType).forEach(function(definition) {
+      var value = definition.field === "NombreCompleto" ? [row.Nombres, row.Apellidos].filter(Boolean).join(" ") : row[definition.field];
+      var normalized = normalizeMigrationNaturalKey_(definition.field, value);
+      if (!normalized) return;
+      var key = definition.field + "|" + normalized;
+      if (seenNaturalKeys[key] !== undefined) {
+        var originalIndex = validIndexes[preparedIndex];
+        var rowNumber = Array.isArray(structural.dataRowNumbers) && structural.dataRowNumbers[originalIndex] ?
+          Number(structural.dataRowNumbers[originalIndex]) : originalIndex + 2;
+        addError("DUPLICATE_NATURAL_KEY_IN_FILE", "La clave natural aparece más de una vez en el archivo.", rowNumber);
+      } else seenNaturalKeys[key] = preparedIndex;
+    });
+  });
   var relatedReferenceSnapshot = buildAccountingRelatedPersonExistenceSnapshot_(preparedRows, entityType, institutionId, input);
   if (relatedReferenceSnapshot.verified !== true) {
     addError("RELATED_REFERENCE_EXISTENCE_UNVERIFIED", "No se pudo verificar la existencia de las personas relacionadas en USER; la incorporación queda bloqueada.");
@@ -812,6 +830,43 @@ function buildImportPreview_(payload) {
   }
   var targetSnapshot = buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutionId, ss, input);
   if (targetSnapshot.verified !== true) addError("TARGET_EXISTENCE_UNVERIFIED", "No se pudo verificar el identificador de destino en el servicio propietario; la incorporación queda bloqueada.");
+  var duplicateMatches = Array.isArray(targetSnapshot.duplicateMatches) ? targetSnapshot.duplicateMatches : [];
+  var rejectedPreparedIndexes = {};
+  if (duplicateMatches.length && allowedDuplicatePolicies.indexOf(duplicatePolicy) === -1) {
+    addError("IMPORT_DUPLICATE_POLICY_REQUIRED", "Debe seleccionar una política explícita para resolver los duplicados.");
+  }
+  duplicateMatches.forEach(function(match) {
+    var preparedIndex = Number(match.rowIndex), row = preparedRows[preparedIndex] || {}, mappedId = String(row[targetIdField] || "").trim();
+    var originalIndex = validIndexes[preparedIndex];
+    var rowNumber = Array.isArray(structural.dataRowNumbers) && structural.dataRowNumbers[originalIndex] ?
+      Number(structural.dataRowNumbers[originalIndex]) : originalIndex + 2;
+    if (match.matchType === "POSIBLE") {
+      addWarning("POSSIBLE_DUPLICATE_MATCH", "Existe una coincidencia posible por nombre; no se fusionará automáticamente.");
+      if (duplicatePolicy !== "RECHAZAR") addError("POSSIBLE_DUPLICATE_REQUIRES_REVIEW", "Las coincidencias por nombre requieren revisión manual y política RECHAZAR.");
+      return;
+    }
+    if (duplicatePolicy === "RECHAZAR") {
+      addError("EXISTING_NATURAL_KEY_DUPLICATE", "El registro coincide con una clave natural existente (" + String(match.field || "") + ").", rowNumber);
+      rejectedPreparedIndexes[preparedIndex] = true;
+    } else if (duplicatePolicy === "ACTUALIZAR" && String(match.targetId || "") === mappedId) {
+      addWarning("EXISTING_NATURAL_KEY_UPDATE", "Se actualizará el registro existente con el mismo identificador canónico.");
+    } else if (duplicatePolicy === "VINCULAR") {
+      addError("IMPORT_DUPLICATE_LINK_UNSUPPORTED", "La vinculación requiere una correspondencia canónica confirmada y no se ejecuta mediante coincidencia natural.");
+      rejectedPreparedIndexes[preparedIndex] = true;
+    } else {
+      addError("IMPORT_DUPLICATE_TARGET_CONFLICT", "La coincidencia existente no corresponde al identificador canónico confirmado.", rowNumber);
+      rejectedPreparedIndexes[preparedIndex] = true;
+    }
+  });
+  if (Object.keys(rejectedPreparedIndexes).length) {
+    var retainedRows = [], retainedIndexes = [], retainedIdentities = [];
+    preparedRows.forEach(function(row, index) {
+      if (rejectedPreparedIndexes[index]) return;
+      retainedRows.push(row); retainedIndexes.push(validIndexes[index]);
+      if (identityResolutions[index]) retainedIdentities.push(identityResolutions[index]);
+    });
+    preparedRows = retainedRows; validIndexes = retainedIndexes; identityResolutions = retainedIdentities;
+  }
   var existing = targetSnapshot.existingTargetIds || [];
   var overwrites = preparedRows.filter(function(row) { return existing.indexOf(String(row[targetIdField] || "")) !== -1; });
   overwrites.forEach(function() { addWarning("TARGET_RECORD_OVERWRITE", "El identificador de destino ya existe; se requiere revisar la sobrescritura."); });
@@ -822,7 +877,8 @@ function buildImportPreview_(payload) {
     service: targetSnapshot.service,
     sheet: targetSnapshot.sheet,
     existingTargetIds: targetSnapshot.existingTargetIds,
-    targetRows: targetSnapshot.targetRows
+    targetRows: targetSnapshot.targetRows,
+    duplicateMatches: duplicateMatches
   };
   var hashInput = {
     institutionId: institutionId,
@@ -831,6 +887,7 @@ function buildImportPreview_(payload) {
     entityType: entityType,
     destination: input.destinoModulo || "",
     mapping: mapping,
+    duplicatePolicy: duplicatePolicy,
     rows: input.filasData,
     preparedRows: preparedRows,
     errors: errors,
@@ -851,6 +908,8 @@ function buildImportPreview_(payload) {
     preparedRows: preparedRows,
     identityResolutions: identityResolutions,
     targetExistenceSnapshot: targetSnapshot,
+    duplicateMatches: duplicateMatches,
+    politicaDuplicados: duplicatePolicy,
     relatedReferenceSnapshot: relatedReferenceSnapshot,
     previewHash: previewHash,
     fileHash: fileValidation.fileHash,
