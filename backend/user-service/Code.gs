@@ -11587,7 +11587,8 @@ function getUserHelpPreferenceActor_(payload){
  if(!claims||!claims.userId||!claims.role)return{error:{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"}};
  var institution="";try{institution=getIdentityInstitutionId_();}catch(e){return{error:{status:"error",code:"IDENTITY_CONFIGURATION_REQUIRED"}};}
  if(String(input._verifiedUserId||claims.userId)!==String(claims.userId))return{error:{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"}};
- return{userId:String(claims.userId),institutionId:institution,role:String(claims.role)};
+ var verifiedRole=getUserVerifiedRole(input);if(!verifiedRole||verifiedRole==="NO_ACCESS")return{error:{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"}};
+ return{userId:String(claims.userId),institutionId:institution,role:String(verifiedRole)};
 }
 function ensureUserHelpPreferencesSheet_(ss,create){
  var sh=ss.getSheetByName("PreferenciasUsuario");
