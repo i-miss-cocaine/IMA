@@ -32,12 +32,33 @@ function extractFunction(text, name) {
 }
 
 const secret = "ACADEMIC-MIGRATION-SECRET-01234567890123456789";
+const credentialType = "IMA_MIGRATION_HMAC_SECRET";
+const catalogHeaders = ["CredentialID","ServiceID","CredentialType","Version","Status","Fingerprint","CreatedAt","CreatedBy","RevokedAt","RevokedBy"];
+const fingerprint = crypto.createHash("sha256").update(secret, "utf8").digest("hex");
+let catalogRows = [catalogHeaders, ["CRED-ACCOUNTING-v1","ACCOUNTING",credentialType,"v1","ACTIVE",fingerprint,"2026-11-17T00:00:00Z","operator-test","",""]];
+const scriptProperties = {
+  IMA_MIGRATION_HMAC_SECRET_ACCOUNTING: secret,
+  IMA_MIGRATION_HMAC_SECRET_VERSION_ACCOUNTING: "v1",
+  AUTH_TOKEN_SECRET: "SESSION-SECRET-MUST-NOT-BE-USED-FOR-MIGRATION-0123456789"
+};
 const cacheValues = new Map();
 let lockBusy = false, lockWaits = 0, lockReleases = 0;
 const runtime = {
   Date, String, JSON, Array, Math, Error,
+  SPREADSHEET_ID: "TEST-SPREADSHEET",
+  PropertiesService: { getScriptProperties: () => ({ getProperty: key => scriptProperties[key] || "" }) },
+  SpreadsheetApp: { openById: id => {
+    assert.equal(id, "TEST-SPREADSHEET");
+    return { getSheetByName: name => name === "CatalogoCredencialesServicios" ? {
+      getDataRange: () => ({ getValues: () => catalogRows.map(row => row.slice()) })
+    } : null };
+  } },
   Utilities: {
     MacAlgorithm: { HMAC_SHA_256: "HMAC_SHA_256" },
+    DigestAlgorithm: { SHA_256: "SHA_256" },
+    Charset: { UTF_8: "UTF_8" },
+    computeDigest: (_algorithm, value) => Array.from(crypto.createHash("sha256").update(String(value), "utf8").digest())
+      .map(byte => byte > 127 ? byte - 256 : byte),
     computeHmacSignature: (_algorithm, message, key) =>
       Array.from(crypto.createHmac("sha256", key).update(String(message)).digest())
         .map(byte => byte > 127 ? byte - 256 : byte)
@@ -56,7 +77,12 @@ const runtime = {
   }
 };
 vm.createContext(runtime);
-const verifier = extractFunction(source, "computeHmacSignature") + "\n" +
+const verifier = 'const IMA_LOCAL_SERVICE_ID_ = "ACADEMIC"; const IMA_CREDENTIAL_CATALOG_HEADERS_ = ' +
+  JSON.stringify(catalogHeaders) + ";\n" +
+  extractFunction(source, "computeMigrationCredentialFingerprint_") + "\n" +
+  extractFunction(source, "getMigrationHmacSecret_") + "\n" +
+  extractFunction(source, "resolveInterServiceSecret_") + "\n" +
+  extractFunction(source, "computeHmacSignature") + "\n" +
   extractFunction(source, "verifyInterServiceEnvelope") +
   "\nthis.verify = verifyInterServiceEnvelope;";
 vm.runInContext(verifier, runtime);
@@ -81,13 +107,13 @@ function makeEnvelope(requestId, key = secret) {
 // A forged signature must fail before it can reserve or poison a requestId.
 const forged = makeEnvelope("REQ-FORGED");
 forged.hmacSignature = "0".repeat(64);
-assert.throws(() => runtime.verify(forged, "ACADEMIC", secret), /INVALID_INTERSERVICE_SIGNATURE/);
+assert.throws(() => runtime.verify(forged, "ACADEMIC", credentialType), /INVALID_INTERSERVICE_SIGNATURE/);
 assert.equal(cacheValues.has("REPLAY_REQ_REQ-FORGED"), false);
 assert.equal(lockWaits, 0);
 
 // The legitimate request with that same ID must still be accepted.
 const legitimate = makeEnvelope("REQ-FORGED");
-assert.equal(runtime.verify(legitimate, "ACADEMIC", secret).valid, true);
+assert.equal(runtime.verify(legitimate, "ACADEMIC", credentialType).valid, true);
 assert.equal(cacheValues.get("REPLAY_REQ_REQ-FORGED"), "SEEN");
 assert.equal(lockReleases, 1);
 
@@ -98,7 +124,7 @@ assert.equal(lockReleases, 2);
 // Lock contention fails closed without consuming the requestId; a retry can then succeed.
 const busyEnvelope = makeEnvelope("REQ-BUSY");
 lockBusy = true;
-assert.throws(() => runtime.verify(busyEnvelope, "ACADEMIC", secret), /INTERSERVICE_REPLAY_CHECK_BUSY/);
+assert.throws(() => runtime.verify(busyEnvelope, "ACADEMIC", credentialType), /INTERSERVICE_REPLAY_CHECK_BUSY/);
 assert.equal(cacheValues.has("REPLAY_REQ_REQ-BUSY"), false);
 lockBusy = false;
 assert.equal(runtime.verify(busyEnvelope, "ACADEMIC", secret).valid, true);
