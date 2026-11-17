@@ -6861,6 +6861,17 @@ function applyTrustedAccountingMigrationWrite_(payload) {
       if (String(journalRows[j][4]) === "COMPENSATED") throw new Error("MIGRATION_WRITE_ALREADY_COMPENSATED");
     }
     var rows = target.getDataRange().getValues();
+    var naturalFields = type === "curso" ? ["NombreCurso"] : (type === "empleado" ? ["PersonaId", "UserId"] : []);
+    naturalFields.forEach(function(field) {
+      var column = schema.headers.indexOf(field), raw = String(normalizedData[field] || ""), normalized = normalizeMigrationNaturalKey_(field, raw);
+      if (column < 0 || !normalized) return;
+      for (var candidateIndex = 1; candidateIndex < rows.length; candidateIndex++) {
+        var candidateId = String(rows[candidateIndex][0] || "").trim();
+        if (candidateId && candidateId !== id && normalizeMigrationNaturalKey_(field, rows[candidateIndex][column]) === normalized) {
+          throw new Error("MIGRATION_NATURAL_KEY_DUPLICATE: " + field);
+        }
+      }
+    });
     var rowNumber = -1;
     for (var r = 1; r < rows.length; r++) {
       if (String(rows[r][0] || "").trim() === id) { rowNumber = r + 1; break; }
