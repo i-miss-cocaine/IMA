@@ -264,7 +264,7 @@ const voucherDownloadContext = {
   SpreadsheetApp: { openById: () => ({}) },
   ensurePaymentVoucherEvidenceSchema_: () => ({sheet:{getDataRange:()=>({getValues:()=>[
     ["ComprobanteID","Fecha","UserId","Alumno","CargoID","MontoReportado","MetodoPago","Referencia","ComprobanteUrl","Estado","Observaciones","AprobadoPor","SolicitudID","EvidenciaID","DriveFileID","NombreOriginal","EsVersionActual","EstadoIntegridad","SHA256","VersionNumero","SizeBytes","MimeType","FechaRecepcion","DecisionIntegrityWarning","DecisionHash","DecisionState","ComprobanteGrupoID","DecisionActor","DecisionDate"],
-    ["VCH-1",new Date(),"student-1","Estudiante","GRAL",10,"Transferencia","REF","https://drive.google.com/file/d/legacy-file-id/view","En Revisión","", "", "", "", "", "evidence.pdf", true, "PENDIENTE", "", 1, 3, "application/pdf", "", false, "", "Pendiente", "GROUP-1", "", ""]
+    ["VCH-1",new Date(),"student-1","Estudiante","GRAL",10,"Transferencia","REF","https://drive.google.com/file/d/legacy-file-id/view","En Revisión","", "", "", "", "", "evidence.pdf", true, "VERIFICADO", "a".repeat(64), 1, 3, "application/pdf", "", false, "", "Pendiente", "GROUP-1", "", ""]
   ]})},map:voucherDownloadMap}),
   computeDocumentSHA256: () => "a".repeat(64),
   DriveApp: { Access: { PRIVATE: "PRIVATE" }, getFileById: () => ({
