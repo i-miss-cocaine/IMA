@@ -729,7 +729,7 @@ console.log("TASK-153 legacy document and folder-IDOR contracts passed.");
     SPREADSHEET_ID:"LOCAL",
     SpreadsheetApp:{openById:()=>({})},
     getVerifiedTaskIdentity_:()=>({authorized:true,userId:"TEACHER-1",role:"Profesor"}),
-    getTaskServiceClassroomById:id=>id==="CLASS-1"?["CLASS-1","OFFER-1","","","","","TEACHER-1","Activa"]:null,
+    getTaskServiceClassroomById:id=>id==="CLASS-1"?["CLASS-1","OFFER-1","","","","","TEACHER-1","Activa"]:id==="CLASS-OTHER"?["CLASS-OTHER","OFFER-2","","","","","TEACHER-2","Activa"]:id==="CLASS-INACTIVE"?["CLASS-INACTIVE","OFFER-1","","","","","TEACHER-1","Desactivada"]:null,
     normalizeString:value=>String(value||"").trim().toLowerCase(),
     assertTaskServiceTeacherAssignedToOffer:(userId,offerId)=>{assert.equal(userId,"TEACHER-1");assert.equal(offerId,"OFFER-1");assignedOfferCalls++;},
     isTaskServiceAdministrativeRole:role=>["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
@@ -743,8 +743,19 @@ console.log("TASK-153 legacy document and folder-IDOR contracts passed.");
   assert.equal(created.status,"success");
   assert.equal(materialSheetAccess,true,"assigned teacher can publish without a second RBAC/ABAC pass");
   assert.equal(assignedOfferCalls,1,"teacher assignment is checked once for the target classroom");
+  assert.throws(()=>materialContext.run({_verifiedUserId:"TEACHER-1",_verifiedRole:"Profesor",aulaId:"CLASS-OTHER",titulo:"Foreign class",archivoUrl:"https://example.test/file"}),/no está asignada/);
+  assert.throws(()=>materialContext.run({_verifiedUserId:"TEACHER-1",_verifiedRole:"Profesor",aulaId:"CLASS-INACTIVE",titulo:"Inactive class",archivoUrl:"https://example.test/file"}),/Aula no válida o inactiva/);
+  assert.equal(assignedOfferCalls,1,"rejected classrooms do not reach the assignment write path");
   assert.equal(savedMaterial[1],"CLASS-1");assert.equal(savedMaterial[10],"TEACHER-1");
   assert.ok(Number.isFinite(Date.parse(savedMaterial[11])),"material records capture publication date and author");
+  let adminRow=null;
+  const adminContext={SPREADSHEET_ID:"LOCAL",SpreadsheetApp:{openById:()=>({})},
+    getVerifiedTaskIdentity_:()=>({authorized:true,userId:"ADMIN-1",role:"Administrador"}),
+    isTaskServiceAdministrativeRole:role=>["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
+    getOrCreateSheet:()=>({getLastRow:()=>0,appendRow:row=>{adminRow=row;}}),Utilities:{getUuid:()=>"MAT-ADMIN"}};
+  vm.runInNewContext(extractFunction("createStudyMaterial")+"\\nthis.run=createStudyMaterial;",adminContext);
+  assert.equal(adminContext.run({_verifiedUserId:"ADMIN-1",_verifiedRole:"Administrador",aulaId:"General",titulo:"Institutional",archivoUrl:"https://example.test/general"}).status,"success");
+  assert.equal(adminRow[1],"General");assert.equal(adminRow[10],"ADMIN-1","administrative authorship is derived from the verified actor");
 
   const materialRows=[["ID","AulaID","Titulo","Descripcion","TipoRecurso","Parcial","Unidad","Tema","ArchivoUrl","DriveId","AutorID","FechaPublicacion","Estado"],
     ["MAT-OWN","CLASS-1","Own","","Documento","I","U1","T1","","","TEACHER-1",new Date(),"Activo"],
@@ -760,6 +771,8 @@ console.log("TASK-153 legacy document and folder-IDOR contracts passed.");
   assert.equal(materialRows[1][12],"Eliminado","teacher can soft-delete their own material");
   assert.throws(()=>materialDeleteContext.run({materialId:"MAT-OTHER"}),/no pertenece al docente/);
   assert.equal(materialRows[2][12],"Activo","teacher cannot delete another author's material");
+  assert.equal(materialDeleteContext.run({materialId:"MAT-OWN"}).status,"success","repeated soft-delete is idempotent");
+  assert.equal(materialRows[1][12],"Eliminado");
 }
 console.log("TASK-153 administrative content mutation scope contracts passed.");
 
