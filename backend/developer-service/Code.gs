@@ -2330,29 +2330,50 @@ function validateServiceConfigDependencies(payload) {
   const dependencies = p.configurationDependencies === undefined ? [] : p.configurationDependencies;
   const dependenciesValid = Array.isArray(dependencies) && dependencies.every(x => typeof x === "string" && x.trim() && x.length <= 128) &&
     new Set(dependencies).size === dependencies.length;
+  let spreadsheetAccessValid = !requirements[serviceKey].spreadsheet;
+  let driveFolderAccessValid = !requirements[serviceKey].drive;
+  if (requirements[serviceKey].spreadsheet && spreadsheetBindingValid) {
+    try {
+      const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
+      spreadsheetAccessValid = !!spreadsheet && String(spreadsheet.getId()) === spreadsheetId;
+    } catch (e) { spreadsheetAccessValid = false; }
+  }
+  if (requirements[serviceKey].drive && driveFolderBindingValid) {
+    try {
+      const folder = DriveApp.getFolderById(driveFolderId);
+      driveFolderAccessValid = !!folder && String(folder.getId()) === driveFolderId;
+    } catch (e) { driveFolderAccessValid = false; }
+  }
+  const permissionsRequired = requirements[serviceKey].spreadsheet || requirements[serviceKey].drive;
+  const permissionsCheck = !permissionsRequired ? "NOT_REQUIRED" :
+    (spreadsheetAccessValid && driveFolderAccessValid ? "PASS" : "FAILED");
   const missing = [];
   if (!spreadsheetBindingValid) missing.push("SPREADSHEET_BINDING");
+  else if (requirements[serviceKey].spreadsheet && !spreadsheetAccessValid) missing.push("SPREADSHEET_ACCESS");
   if (!driveFolderBindingValid) missing.push("DRIVE_FOLDER_BINDING");
+  else if (requirements[serviceKey].drive && !driveFolderAccessValid) missing.push("DRIVE_FOLDER_ACCESS");
   if (!hierarchyValid) missing.push("CONFIGURATION_HIERARCHY_CONTRACT");
   if (!dependenciesValid) missing.push("CONFIGURATION_DEPENDENCIES");
   const validationReport = {
     serviceKey: serviceKey,
     spreadsheetBindingValid: spreadsheetBindingValid,
     driveFolderBindingValid: driveFolderBindingValid,
+    spreadsheetAccessValid: spreadsheetAccessValid,
+    driveFolderAccessValid: driveFolderAccessValid,
     configurationHierarchyValid: hierarchyValid,
     configurationDependenciesValid: dependenciesValid,
     missingDependencies: missing,
-    permissionsCheck: "PENDING_RUNTIME_PERMISSION_PROBE",
+    permissionsCheck: permissionsCheck,
     obsoleteCallsDetected: 0,
     timestamp: new Date().toISOString()
   };
   return {
     status: missing.length ? "error" : "success",
-    isReadyForActivation: missing.length === 0,
+    isReadyForActivation: missing.length === 0 && (permissionsCheck === "PASS" || permissionsCheck === "NOT_REQUIRED"),
     code: missing.length ? "SERVICE_CONFIGURATION_DEPENDENCIES_MISSING" : "SERVICE_CONFIGURATION_VALID",
     validationReport: validationReport,
     message: missing.length ? "La configuración del servicio no cumple todos los requisitos declarados." :
-      "Las dependencias declaradas y el contrato de configuración jerárquica fueron validados."
+      "Las dependencias declaradas, el contrato de configuración y los permisos de recursos fueron validados."
   };
 }
 // [TAREA-F6-013] [TAREA-F6-038] [Fase 6: Versionado, Migraciones e Impacto] - Registro de versiones, esquemas, changelog y compatibilidad de contratos por microservicio

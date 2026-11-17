@@ -1,6 +1,8 @@
 const assert=require("node:assert/strict");
 const fs=require("node:fs"),path=require("node:path"),vm=require("node:vm");
 const source=fs.readFileSync(path.join(__dirname,"../../backend/user-service/Code.gs"),"utf8");
+const developerSource=fs.readFileSync(path.join(__dirname,"../../backend/developer-service/Code.gs"),"utf8");
+new vm.Script(developerSource,{filename:"backend/developer-service/Code.gs"});
 new vm.Script(source,{filename:"backend/user-service/Code.gs"});
 function extractFunction(name){
  const start=source.indexOf("function "+name+"(");assert.ok(start>=0,"function exists: "+name);
@@ -14,6 +16,19 @@ function extractFunction(name){
   if(ch==="{")depth++;else if(ch==="}"&&--depth===0)return source.slice(start,i+1);
  }throw new Error("Unbalanced function: "+name);
 }
+function extractDeveloperFunction(name){
+ const start=developerSource.indexOf("function "+name+"(");assert.ok(start>=0,"developer function exists: "+name);
+ const open=developerSource.indexOf("{",start);let depth=0,quote=null,escaped=false,line=false,block=false;
+ for(let i=open;i<developerSource.length;i++){const ch=developerSource[i],next=developerSource[i+1];
+  if(line){if(ch==="\\n")line=false;continue;}if(block){if(ch==="*"&&next==="/"){block=false;i++;}continue;}
+  if(quote){if(escaped){escaped=false;continue;}if(ch==="\\\\"){escaped=true;continue;}if(ch===quote)quote=null;continue;}
+  if(ch==="/"&&next==="/"){line=true;i++;continue;}if(ch==="/"&&next==="*"){block=true;i++;continue;}
+  if(ch==="'"||ch==='\\"'||ch===String.fromCharCode(96)){quote=ch;continue;}
+  if(ch==="{")depth++;else if(ch==="}"&&--depth===0)return developerSource.slice(start,i+1);
+ }throw new Error("Unbalanced developer function: "+name);
+}
+const developerValidationCode=extractDeveloperFunction("validateServiceConfigDependencies");
+const developerCatalogCode=extractDeveloperFunction("getCentralConfigAndContractCatalog");
 const cs=source.indexOf("const CONFIGURATION_SYSTEM_EXTRA_HEADERS_"),ce=source.indexOf("function configurationHeaderMap_",cs);
 assert.ok(cs>=0&&ce>cs,"hierarchy constants exist");
 const code=source.slice(cs,ce)+["configurationHeaderMap_","configurationJsonArray_","configurationPolicyFromRow_","configurationStoredValue_","configurationDepartmentStoredValue_","configurationRows_","configurationFindUnique_","resolveHierarchicalConfiguration","saveSystemConfiguration","resetSystemConfigurationOverride","validateRolePermission"].map(extractFunction).join("\n");
@@ -113,6 +128,12 @@ function writeHarness(options={}){
  assert.equal(h.stats().releases,1,"script lock is released after the write");
 }
 {
+ const h=writeHarness();
+ const before=JSON.stringify(h.department.rows);
+ assert.throws(()=>h.ctx.saveSystemConfiguration({clave:"feature.flag",ambito:"DEPARTAMENTAL",departamentoId:"D-1",tipo:"NUMERO",valor:7}),/CONFIGURATION_TYPE_MISMATCH/);
+ assert.equal(JSON.stringify(h.department.rows),before,"scope overrides cannot change the base configuration type");
+}
+{
  const h=writeHarness({role:"Coordinador"});
  const before=JSON.stringify({system:h.system.rows,department:h.department.rows});
  assert.throws(()=>h.ctx.saveSystemConfiguration({clave:"feature.flag",ambito:"DEPARTAMENTAL",departamentoId:"D-1",tipo:"TEXTO",valor:"forged",politicaAlcance:"PERSONALIZABLE",actualizarPolitica:true}),/CONFIGURATION_POLICY_CHANGE_FORBIDDEN/);
@@ -168,19 +189,19 @@ function writeHarness(options={}){
  const h=harness({departments:["D-1"]});
  h.sheets.ConfiguracionSistema.rows.push(h.sheets.ConfiguracionSistema.rows[2].slice());
  const result=h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag"});
- assert.equal(result.code,"CONFIGURATION_INSTITUTION_CONFLICT","duplicate institutional rows fail closed");
+ assert.throws(()=>h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag"}),/CONFIGURATION_INSTITUTION_CONFLICT/,"duplicate institutional rows fail closed");
 }
 {
  const h=harness({departments:["D-1"]});
  h.sheets.ConfiguracionDepartamental.rows.push(h.sheets.ConfiguracionDepartamental.rows[1].slice());
  const result=h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag",departamentoId:"D-1"});
- assert.equal(result.code,"CONFIGURATION_DEPARTMENT_CONFLICT","duplicate departmental overrides fail closed");
+ assert.throws(()=>h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag",departamentoId:"D-1"}),/CONFIGURATION_DEPARTMENT_CONFLICT/,"duplicate departmental overrides fail closed");
 }
 {
  const h=harness({personal:true,departments:["D-1"]});
  h.sheets.ConfiguracionSistema.rows.push(h.sheets.ConfiguracionSistema.rows[3].slice());
  const result=h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag"});
- assert.equal(result.code,"CONFIGURATION_PERSONAL_CONFLICT","duplicate personal overrides fail closed");
+ assert.throws(()=>h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag"}),/CONFIGURATION_PERSONAL_CONFLICT/,"duplicate personal overrides fail closed");
 }
 {
  const h=harness({departments:["D-1"],policy:{inheritance:false,allowedScopes:["GLOBAL","INSTITUCIONAL","DEPARTAMENTAL"]}});
@@ -196,4 +217,56 @@ function writeHarness(options={}){
 
 assert.match(source,/policyChange&&\(scope!=="GLOBAL"\|\|\["Administrador","Desarrollador"\]\.indexOf\(role\)===-1\)/);
 assert.match(source,/if\(policyChange\)\{policy=\{policy:policyName/);
+function runDeveloperValidation(payload,options={}){
+ const properties=options.properties||{};
+ const context={
+  Date,PropertiesService:{getScriptProperties:()=>({getProperty:key=>properties[key]||""})},
+  SpreadsheetApp:{openById:id=>{if(options.spreadsheetAccess===false)throw Error("SPREADSHEET_ACCESS_DENIED");return{getId:()=>id};}},
+  DriveApp:{getFolderById:id=>{if(options.driveAccess===false)throw Error("DRIVE_ACCESS_DENIED");return{getId:()=>id};}}
+ };
+ vm.runInNewContext(developerValidationCode,context);
+ return context.validateServiceConfigDependencies(payload);
+}
+{
+ const result=runDeveloperValidation({serviceKey:"USER",spreadsheetId:"SHEET_ID_1234567890"});
+ assert.equal(result.status,"success");assert.equal(result.isReadyForActivation,true);assert.equal(result.validationReport.permissionsCheck,"PASS");
+}
+{
+ const result=runDeveloperValidation({serviceKey:"USER",spreadsheetId:"SHEET_ID_1234567890"},{spreadsheetAccess:false});
+ assert.equal(result.status,"error");assert.equal(result.isReadyForActivation,false);assert.ok(result.validationReport.missingDependencies.includes("SPREADSHEET_ACCESS"));
+}
+{
+ const result=runDeveloperValidation({serviceKey:"ACADEMIC",spreadsheetId:"SHEET_ID_1234567890",driveFolderId:"DRIVE_FOLDER_1234567890"},{driveAccess:false});
+ assert.equal(result.status,"error");assert.equal(result.isReadyForActivation,false);assert.ok(result.validationReport.missingDependencies.includes("DRIVE_FOLDER_ACCESS"));
+}
+{
+ const result=runDeveloperValidation({serviceKey:"FRONTEND"});
+ assert.equal(result.status,"success");assert.equal(result.isReadyForActivation,true);assert.equal(result.validationReport.permissionsCheck,"NOT_REQUIRED");
+}
+{
+ const result=runDeveloperValidation({serviceKey:"USER",spreadsheetId:"SHEET_ID_1234567890",requireConfigurationHierarchy:true});
+ assert.equal(result.status,"error");assert.ok(result.validationReport.missingDependencies.includes("CONFIGURATION_HIERARCHY_CONTRACT"));
+}
+{
+ const hierarchy={precedence:["GLOBAL","INSTITUCIONAL","DEPARTAMENTAL","PERSONAL"],policies:["GLOBAL_OBLIGATORIO","INSTITUCIONAL","HEREDABLE","PERSONALIZABLE","RESTRINGIDO"]};
+ const result=runDeveloperValidation({serviceKey:"USER",spreadsheetId:"SHEET_ID_1234567890",requireConfigurationHierarchy:true,configurationHierarchy:hierarchy,configurationDependencies:["ConfiguracionSistema","ConfiguracionDepartamental"]});
+ assert.equal(result.status,"success");assert.equal(result.validationReport.configurationHierarchyValid,true);assert.equal(result.validationReport.configurationDependenciesValid,true);
+}
+{
+ const result=runDeveloperValidation({serviceKey:"USER",spreadsheetId:"SHEET_ID_1234567890",configurationDependencies:["A","A"]});
+ assert.equal(result.status,"error");assert.ok(result.validationReport.missingDependencies.includes("CONFIGURATION_DEPENDENCIES"));
+}
+{
+ const result=runDeveloperValidation({serviceKey:"UNKNOWN"});
+ assert.equal(result.code,"SERVICE_KEY_UNKNOWN");assert.equal(result.isReadyForActivation,false);
+}
+{
+ const catalogContext={};
+ vm.runInNewContext(developerCatalogCode,catalogContext);
+ const result=catalogContext.getCentralConfigAndContractCatalog({});
+ assert.equal(result.configurationHierarchy.precedence.join(","),"GLOBAL,INSTITUCIONAL,DEPARTAMENTAL,PERSONAL");
+ assert.ok(result.contracts.USER.actions.includes("resolveHierarchicalConfiguration"));
+ assert.ok(result.contracts.USER.actions.includes("resetSystemConfigurationOverride"));
+}
+
 console.log("USER hierarchical configuration security and precedence contract PASS.");

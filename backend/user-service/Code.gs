@@ -11307,6 +11307,7 @@ function saveSystemConfiguration(payload) {
     var ss=SpreadsheetApp.openById(SPREADSHEET_ID),schema=ensureConfigurationHierarchySchema_(ss),system=schema.system,deptSheet=schema.department,ix=schema.index;
     var data=system.getDataRange().getValues(),rows=data.slice(1),keyRows=rows.filter(function(row){return String(row[ix.Clave]||"").trim()===key;});
     var base=configurationFindUnique_(keyRows,function(row){return String(row[ix.Ambito]||"GLOBAL").toUpperCase()==="GLOBAL"&&!String(row[ix.InstitutionID]||"").trim();},"CONFIGURATION_SCOPE_CONFLICT");
+    if(base&&String(base[ix.Tipo]||"TEXTO").trim().toUpperCase()!==type)throw new Error("CONFIGURATION_TYPE_MISMATCH");
     var existingPolicy=String((base&&base[ix.PoliticaAlcance])||"RESTRINGIDO").trim().toUpperCase();
     var requestedPolicy=String(payload.politicaAlcance||"").trim().toUpperCase();
     var policyChange=!!(base&&requestedPolicy&&requestedPolicy!==existingPolicy);
