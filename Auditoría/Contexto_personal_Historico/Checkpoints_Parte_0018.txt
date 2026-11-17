@@ -256,3 +256,22 @@ Siguiente tarea elegible: F25-Task03 — detección avanzada de duplicados e int
 - **Rama base:** HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; comparación work/base 3852 ahead, 0 behind. Sin escrituras en rama base.
 - **Siguiente acción:** comprobar CI para HEAD 392738ad; corregir cualquier fallo de fixtures/consumidores y ejecutar localmente cuando haya checkout disponible; después continuar revisión de rotación/revocación y cerrar AUD-NG-084 con evidencia.
 =============================================================================
+
+
+
+=============================================================================
+### C1.802 — IMA-EXEC-20261117-AUD-NG-084-CI-WIRING-01
+- **Checkpoint anterior:** C1.801 — requisito transversal de continuidad de sesión y AUD-NG-084 en curso.
+- **HEAD inicial de esta iteración:** 568843731986fef11ad3f8aa5ef26be589abf076.
+- **HEAD de cierre del cambio técnico:** 70fc694a24ed4c858211a992e43fd76a60c42f64.
+- **Tarea:** AUD-NG-084 — gestión segura de secretos por servicio, rotación y revocación.
+- **Cambio ejecutado:** se agregó al workflow `.github/workflows/accounting-import-preflight-contract.yml` el paso Node.js 24 para ejecutar `tests/security/migration-hmac-credential-registry.test.js`. El cambio es acotado al workflow; no modifica código de aplicación ni fixtures adicionales.
+- **Revisión del código existente:** USER mantiene clave HMAC dedicada `IMA_MIGRATION_HMAC_SECRET`, tipo explícito `IMA_MIGRATION_HMAC_SECRET`, catálogo con esquema estricto, una única credencial ACTIVE por servicio, versión y huella SHA-256 concordantes; la firma HMAC se valida antes de reservar el requestId anti-replay bajo ScriptLock. El test cubre esquema, IDs duplicados, configuración ausente, fingerprint, rotación, revocación, firma inválida sin consumir requestId, replay y lock contention.
+- **Verificación del cambio:** diff del workflow revisado; inserción del paso confirmada al volver a leer el archivo desde la rama. El nuevo commit no reporta status checks y no se obtuvo evidencia de ejecución del workflow al momento del checkpoint. No se declara PASS.
+- **Pruebas:** Node CLI local NOT RUN; el entorno de esta sesión no proporciona checkout/terminal del repositorio. GitHub Actions para el nuevo commit: PENDIENTE DE OBSERVACIÓN. En el commit previo 392738ad el status combinado mostraba `ima/department-scope-contract = failure`; no se atribuye ese resultado al cambio del workflow.
+- **Archivos modificados en esta iteración:** `.github/workflows/accounting-import-preflight-contract.yml`; `changueslogs.txt`; `Auditoría/INDICE_CHECKPOINTS.md`; este checkpoint.
+- **Commits:** 70fc694a24ed4c858211a992e43fd76a60c42f64 (incorporación de prueba al workflow); 40c6bc86aef9995dbd4ba0612e5db2b2ec35639e (registro de seguimiento); 3c539cadf399de2594573822716c004096976ad8 (índice C1.802).
+- **Estado:** AUD-NG-084 permanece **En ejecución**. La cobertura CI quedó configurada, pero aún falta observar el resultado; revisar consumidores HMAC y compatibilidad de despliegue/rotación entre servicios antes de cerrar. No se modificó el comportamiento de sesión de usuario; el requisito transversal de C1.801 permanece obligatorio para futuras tareas de seguridad.
+- **Rama base:** `NG_beta_0.0.0.1` con HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; comparación verificada tras el cambio técnico: 3854 ahead, 0 behind. Sin escrituras en la rama base.
+- **Siguiente acción:** comprobar el workflow disparado por el commit 70fc694; si el contrato HMAC o los contratos consumidores fallan, corregir de forma focalizada y repetir las pruebas; después completar la auditoría de compatibilidad de rotación/revocación y documentar evidencia real.
+=============================================================================
