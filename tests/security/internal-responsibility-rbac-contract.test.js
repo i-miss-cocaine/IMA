@@ -1083,7 +1083,11 @@ const scopeClaims={userId:"U-SCOPE",role:"Director",membershipId:"MEM-SCOPE",ins
 const scopeServiceReaders=[["academic","getVerifiedAcademicDepartmentScope_"],["accounting","getVerifiedAccountingDepartmentScope_"],["task","getVerifiedTaskDepartmentScope_"],["exam","getVerifiedExamDepartmentScope_"]];
 for(const [serviceName,readerName] of scopeServiceReaders){
  const scopeCtx={Date:FixedTemporalDate,PropertiesService:{getScriptProperties:()=>({getProperty:key=>key==="IMA_INSTITUTION_ID"?"INST-1":null})},getVerifiedAccountingIdentity_:payload=>({authorized:true,userId:"U-SCOPE",role:"Director",membershipId:"MEM-SCOPE",institutionId:payload&&payload.sessionToken==="scope-wrong-tenant"?"INST-OTHER":"INST-1"}),verifySessionToken:token=>token==="scope-valid"?scopeClaims:(token==="scope-wrong-tenant"?{...scopeClaims,institutionId:"INST-OTHER"}:null)};
+ const requestSessionHelpers = serviceName === "exam"
+  ? extractFunction(consumerSources[serviceName],"getRequestSessionToken_") + "\n" + extractFunction(consumerSources[serviceName],"getVerifiedRequestSessionClaims_")
+  : "";
  const code=`
+ ${requestSessionHelpers}
  ${extractFunction(consumerSources[serviceName],"getInstitutionalResponsibilityForRoleScope_")}
  ${extractFunction(consumerSources[serviceName],"resolveInternalResponsibilityForRoleScope_")}
  ${extractFunction(consumerSources[serviceName],"getVerifiedDepartmentScopeForSession_")}
@@ -1110,7 +1114,11 @@ console.log("C1.642 cross-service scope contract: exact signed MembershipID/Inst
 // C1.643: remaining USER/ACADEMIC scope readers must not bypass membership-bound context.
 const academicContextRows=[scopeHeaders,...scopeCurrentRows.slice(1).filter(row=>row[0]!=="S-INST")];
 const academicContext={Date:FixedTemporalDate,SPREADSHEET_ID:"LOCAL",PropertiesService:{getScriptProperties:()=>({getProperty:key=>key==="IMA_INSTITUTION_ID"?"INST-1":null})},verifySessionToken:token=>token==="scope-valid"?scopeClaims:null,SpreadsheetApp:{openById:()=>({getSheetByName:name=>{const rows=name==="AsignacionesAmbitosRoles"?academicContextRows:(name==="CatalogoRolesInternos"?scopeRoleRows:(name==="ResponsabilidadesInstitucionales"?scopeResponsibilityRows:null));return rows?{getLastRow:()=>rows.length,getDataRange:()=>({getValues:()=>rows.map(row=>row.slice())})}:null;}})}};
+const academicRequestSessionHelpers = consumerSources.academic.includes("function getVerifiedRequestSessionClaims_(")
+ ? extractFunction(consumerSources.academic,"getRequestSessionToken_") + "\n" + extractFunction(consumerSources.academic,"getVerifiedRequestSessionClaims_")
+ : "";
 const academicContextCode=`
+${academicRequestSessionHelpers}
 ${extractFunction(consumerSources.academic,"getInstitutionalResponsibilityForRoleScope_")}
 ${extractFunction(consumerSources.academic,"resolveInternalResponsibilityForRoleScope_")}
 ${extractFunction(consumerSources.academic,"getVerifiedDepartmentScopeForSession_")}

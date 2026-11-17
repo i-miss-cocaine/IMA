@@ -117,6 +117,8 @@ assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",banco
 assert.equal(lockAcquires,lockBeforeMissingUser,"missing userId must be rejected before lock");
 assert.equal(sheetOpens,opensBeforeMissingUser,"missing userId must be rejected before opening Sheets");
 
+runtime.validateRolePermission=originalPermission;
+
 // La identidad verificada se reutiliza durante la misma petición; no se vuelve a consultar la sesión bajo lock.
 let identityCalls=0;
 runtime.getVerifiedExamIdentity_=(...args)=>{identityCalls++;return originalIdentity(...args);};
