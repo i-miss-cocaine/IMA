@@ -917,17 +917,17 @@ function saveImportMappingProfile(payload){
    var r=item.row;return String(r[1]||"")===institutionId&&String(r[2]||"")===String(actor.userId||"")&&
     (requestedId?String(r[0]||"")===requestedId:(String(r[3]||"").toLowerCase()===normalized.profileName.toLowerCase()&&String(r[4]||"")===normalized.sourceSystem&&String(r[5]||"")===normalized.entityType));
   });
-  if(matches.length>1)return{status:"error",code:"IMPORT_MAPPING_PROFILE_AMBIGUOUS"};
   if(requestedId&&!matches.length)return{status:"error",code:"IMPORT_MAPPING_PROFILE_NOT_FOUND"};
-  if(matches.length){
-   var old=matches[0].row;
-   if(String(old[3]||"").toLowerCase()!==normalized.profileName.toLowerCase()||String(old[4]||"")!==normalized.sourceSystem||String(old[5]||"")!==normalized.entityType)return{status:"error",code:"IMPORT_MAPPING_PROFILE_IDENTITY_IMMUTABLE"};
-  }
-  var profileId=matches.length?String(matches[0].row[0]):"IMP-PROF-"+String(Utilities.getUuid()).replace(/-/g,"").slice(0,24);
-  var version=matches.reduce(function(max,item){return Math.max(max,Number(item.row[10]||0));},0)+1,now=new Date();
+  var profileIds=matches.map(function(item){return String(item.row[0]||"");}).filter(Boolean).filter(function(id,index,all){return all.indexOf(id)===index;});
+  if(profileIds.length>1)return{status:"error",code:"IMPORT_MAPPING_PROFILE_AMBIGUOUS"};
+  if(matches.length&&matches.some(function(item){return String(item.row[4]||"")!==normalized.sourceSystem||String(item.row[5]||"")!==normalized.entityType||String(item.row[6]||"")!==normalized.destinationModule;}))return{status:"error",code:"IMPORT_MAPPING_PROFILE_IDENTITY_IMMUTABLE"};
+  var profileId=matches.length?profileIds[0]:"IMP-PROF-"+String(Utilities.getUuid()).replace(/-/g,"").slice(0,24);
+  var nameCollision=rows.slice(1).some(function(r){return String(r[1]||"")===institutionId&&String(r[2]||"")===String(actor.userId||"")&&String(r[0]||"")!==profileId&&String(r[3]||"").toLowerCase()===normalized.profileName.toLowerCase()&&String(r[4]||"")===normalized.sourceSystem&&String(r[5]||"")===normalized.entityType;});
+  if(nameCollision)return{status:"error",code:"IMPORT_MAPPING_PROFILE_NAME_CONFLICT"};
+  var version=matches.reduce(function(max,item){return Math.max(max,Number(item.row[10]||0));},0)+1,latest=matches.slice().sort(function(a,b){return Number(b.row[10]||0)-Number(a.row[10]||0);})[0],now=new Date();
   sh.appendRow([profileId,institutionId,String(actor.userId||""),normalized.profileName,normalized.sourceSystem,normalized.entityType,
    normalized.destinationModule,JSON.stringify(normalized.sourceHeaders),JSON.stringify(normalized.columnMapping),normalized.schemaFingerprint,
-   version,"ACTIVO",matches.length?matches[0].row[12]||now:now,now,String(actor.userId||"")]);
+   version,"ACTIVO",matches.length?latest.row[12]||now:now,now,String(actor.userId||"")]);
   try{logStructuredEvent("ACCOUNTING","saveImportMappingProfile","INFO","IMPORT_MAPPING_PROFILE_SAVED","Perfil de mapeo de importación guardado.",{profileId:profileId,version:version,entityType:normalized.entityType,sourceSystem:normalized.sourceSystem},actor.role);}catch(_){}
   return{status:"success",profileId:profileId,version:version,profileName:normalized.profileName,schemaFingerprint:normalized.schemaFingerprint};
  }finally{lock.releaseLock();}
