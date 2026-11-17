@@ -154,7 +154,7 @@ assert.equal(lockAcquires,lockBeforePermissionReuse+1);
 assert.equal(lockReleases,releasesBeforePermissionReuse+1);
 assert.equal(sheetOpens,opensBeforePermissionReuse+1);
 assert.notDeepEqual(bankRows,bankBeforePermissionReuse,"the authorized operation is persisted");
-assert.notDeepEqual(ownershipRows,ownershipBeforePermissionReuse,"ownership remains in sync");
+assert.deepEqual(ownershipRows,ownershipBeforePermissionReuse,"an ordinary question update must not rewrite its existing ownership row");
 runtime.validateRolePermission=originalPermission;
 runtime.getVerifiedExamIdentity_=originalIdentity;
 
