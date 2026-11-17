@@ -54,7 +54,14 @@ function harness(options) {
   };
   let held = false, releases = 0, uuid = 0;
   const lock = {
-    waitLock() { if (opts.lockFail || held) throw new Error("LOCK_TIMEOUT"); held = true; },
+    onAcquired: null,
+    waitLock() {
+      if (opts.lockFail || held) throw new Error("LOCK_TIMEOUT");
+      held = true;
+      const callback = this.onAcquired;
+      this.onAcquired = null;
+      if (callback) callback();
+    },
     releaseLock() { held = false; releases++; }
   };
   const rolePermissions = {
@@ -83,7 +90,7 @@ function harness(options) {
   const body = names.map(name => extractFunction(source, name)).join("\n");
   const exposed = new Function("context", "with(context){" + body + ";return { processLibraryLoan: processLibraryLoan, reserveLibraryBook: reserveLibraryBook };}")(context);
   Object.assign(context, exposed);
-  return { context, sheets, stats: () => ({ held, releases }) };
+  return { context, sheets, lock, stats: () => ({ held, releases }) };
 }
 
 function call(h, name, payload) { return h.context[name](Object.assign({ sessionToken: "valid-token" }, payload || {})); }
@@ -141,4 +148,49 @@ assert.equal(result.status, "success");
 result = call(h, "processLibraryLoan", { ejemplarId: "EJ-2", userId: "STUDENT-1", idempotencyKey: "SHARED-KEY-001" });
 assert.equal(result.code, "LIBRARY_IDEMPOTENCY_CONFLICT");
 
-console.log("Library circulation concurrency/idempotency contract PASS (25 assertions).");
+async function verifyLockContentionAndScheduledRaces() {
+  const h = harness();
+  let contender = null;
+  h.lock.onAcquired = () => {
+    contender = call(h, "processLibraryLoan", { ejemplarId: "EJ-1", userId: "STUDENT-2" });
+  };
+  const winner = call(h, "processLibraryLoan", { ejemplarId: "EJ-1", userId: "STUDENT-1" });
+  assert.equal(winner.status, "success");
+  assert.equal(contender.code, "LOCK_TIMEOUT", "a competing request cannot enter the critical section");
+  assert.equal(h.sheets.BibliotecaPrestamos.rows.length, 2, "lock contention must not create a second loan");
+  assert.equal(h.sheets.BibliotecaEjemplares.rows[1][6], "on_loan");
+  assert.equal(h.stats().held, false, "the winning request must release the lock");
+
+  const scheduled = harness();
+  const outcomes = await Promise.all([
+    Promise.resolve().then(() => call(scheduled, "processLibraryLoan", { ejemplarId: "EJ-1", userId: "STUDENT-1" })),
+    Promise.resolve().then(() => call(scheduled, "processLibraryLoan", { ejemplarId: "EJ-1", userId: "STUDENT-2" }))
+  ]);
+  assert.equal(outcomes.filter(item => item.status === "success").length, 1);
+  assert.equal(outcomes.filter(item => item.code === "LIBRARY_EXEMPLAR_NOT_AVAILABLE").length, 1);
+  assert.equal(scheduled.sheets.BibliotecaPrestamos.rows.length, 2);
+
+  const reservation = harness();
+  reservation.lock.onAcquired = () => {
+    contender = call(reservation, "reserveLibraryBook", { ejemplarId: "EJ-2", userId: "STUDENT-2" });
+  };
+  const reserved = call(reservation, "reserveLibraryBook", { ejemplarId: "EJ-2", userId: "STUDENT-1" });
+  assert.equal(reserved.status, "success");
+  assert.equal(contender.code, "LOCK_TIMEOUT");
+  assert.equal(reservation.sheets.BibliotecaReservas.rows.length, 2);
+  assert.equal(reservation.stats().held, false);
+
+  const reservationLockFailure = harness({ lockFail: true });
+  const failedReservation = call(reservationLockFailure, "reserveLibraryBook", { ejemplarId: "EJ-2", userId: "STUDENT-1" });
+  assert.equal(failedReservation.code, "LOCK_TIMEOUT");
+  assert.equal(reservationLockFailure.sheets.BibliotecaReservas, undefined);
+  assert.equal(reservationLockFailure.sheets.BibliotecaIdempotencia, undefined);
+  assert.equal(reservationLockFailure.stats().held, false);
+}
+
+verifyLockContentionAndScheduledRaces().then(() => {
+  console.log("Library circulation concurrency/idempotency contract PASS (39 assertions).");
+}).catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});
