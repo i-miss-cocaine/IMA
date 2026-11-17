@@ -4131,3 +4131,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Accounting Import Preflight run 44106514914: Node 24.22.2, 46/46 pasos SUCCESS. Developer Service Registry run 44106961914: 9/9 pasos SUCCESS.
 - AUD-NG-084 sigue En ejecución: falta provisioning coordinado de Script Properties/catálogos. BETA-FUNC-121 queda Pendiente beta para validar configuración real, rotación y revocación.
 - HEAD de código/CI: 67b6962fc5261ce35855f4cbfda51cb2c527a4a4. Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59; 3941 ahead / 0 behind.
+
+
+[2026-11-17] C1.807 — AUD-NG-084: provisioning de credenciales HMAC por servicio
+- Se completó el provisioning privado/editor-only en USER, ACADEMIC, ACCOUNTING y DEVELOPER, con catálogo por servicio/versión, estados PENDING/ACTIVE/VERIFY_ONLY/REVOKED, idempotencia, rotación solapada, rollback y revocación fail-closed.
+- Se amplió el contrato Node para la matriz 4×4 de emisores/receptores, además de conflictos, idempotencia, recuperación, validación y lock/reentrada.
+- Accounting Import Preflight run 44116081329, HEAD 927384b088af1a60fb1e155000a1a1ed2ef614fc, Node.js 24: SUCCESS; sintaxis de los cuatro servicios y contrato de provisioning PASS.
+- CLI local NOT RUN por fallo DNS de github.com; no se declara ejecución local. El runner Actions ejecutó los comandos Node reales.
+- AUD-NG-084 completada en código/CI. BETA-FUNC-121 permanece Pendiente beta para validar Script Properties y deployments reales con acceso autorizado.
+- Siguiente tarea elegible: AUD-NG-086, autorización por emisor/receptor/acción/versión.

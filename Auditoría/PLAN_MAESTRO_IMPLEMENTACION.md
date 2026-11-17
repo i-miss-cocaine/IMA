@@ -5702,3 +5702,10 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - **Compatibilidad aún pendiente:** ACCOUNTING firma con `IMA_MIGRATION_HMAC_SECRET` explícito y ACADEMIC verifica con la misma propiedad explícita; no se comprobó un catálogo versionado/revocación coordinada en ambos extremos. USER sí valida catálogo, versión y fingerprint. La configuración real de Script Properties y deployments no está disponible para inspección desde este repositorio.
 - **CLI local:** NOT RUN; no se afirma una ejecución local. Node CLI real ejecutado en el runner GitHub Actions.
 - **Estado:** AUD-NG-084 permanece **En ejecución** hasta completar el contrato versionado/revocación ACCOUNTING↔ACADEMIC y obtener evidencia autorizada de configuración/despliegue. Mantener separado `AUTH_TOKEN_SECRET` de los secretos de transporte. El requisito transversal C1.801 de continuidad eficiente de sesión no se altera.
+
+
+## Seguimiento operativo — C1.807 / AUD-NG-084
+- AUD-NG-084 completada en código y CI: provisioning privado/editor-only en los cuatro servicios, catálogo versionado, rotación solapada, idempotencia, rollback, revocación fail-closed y contrato de matriz 4×4.
+- Accounting Import Preflight run 44116081329 sobre HEAD 927384b088af1a60fb1e155000a1a1ed2ef614fc — Node.js 24, SUCCESS. CLI local NOT RUN por indisponibilidad DNS de github.com.
+- BETA-FUNC-121 sigue Pendiente beta para comprobar Script Properties/deployments reales; no bloquea la implementación.
+- Siguiente tarea elegible: AUD-NG-086 — autorización interservicio por emisor, receptor, acción y versión del protocolo.

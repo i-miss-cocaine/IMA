@@ -375,3 +375,22 @@ Siguiente tarea elegible: F25-Task03 — detección avanzada de duplicados e int
 - **Rama base:** `NG_beta_0.0.0.1` HEAD `44d9891132332e692dbe2ba8602b41f50a508a59`; comparación en HEAD de código: **3941 ahead, 0 behind**. Sin escrituras en rama base.
 - **Siguiente acción:** diseñar e implementar provisioning coordinado fail-closed entre los cuatro servicios, con almacenamiento versionado, rollback/idempotencia y pruebas locales de concurrencia; después verificar Script Properties/deployments mediante acceso autorizado.
 =============================================================================
+
+=============================================================================
+### C1.807 — IMA-EXEC-20261117-AUD-NG-084-PROVISIONING-MATRIX-01
+- **Checkpoint anterior:** C1.806 — auditoría de uso HMAC consultable.
+- **HEAD inicial de esta tarea:** c680b4aa31f2c05d0ac0c6b0491f0e417632ab08 (checkpoint C1.806).
+- **HEAD de código y pruebas:** 927384b088af1a60fb1e155000a1a1ed2ef614fc.
+- **Tarea:** AUD-NG-084 — gestión segura de secretos por servicio, rotación y revocación.
+- **Implementación:** provisioning privado/editor-only en USER, ACADEMIC, ACCOUNTING y DEVELOPER; registro por servicio/versión; estados PENDING, ACTIVE, VERIFY_ONLY y REVOKED; alta idempotente; rotación solapada; rollback de Script Properties y catálogo ante fallo de activación; revocación fail-closed; actor y lock; secretos nunca devueltos ni registrados.
+- **Revisión de código:** entrypoints con sufijo privado y no expuestos como acciones del dispatcher; validación de servicio/versión/secreto/esquema/IDs/estados; solo una versión ACTIVE; verificación de huella; restauración de estado anterior en fallo; revocación retira la aceptación del catálogo antes de completar limpieza. Se conserva AUTH_TOKEN_SECRET separado del secreto HMAC interservicio.
+- **Cobertura añadida:** tests/security/migration-hmac-credential-provisioning.test.js prueba los cuatro servicios, matriz receptor/emisor 4×4, ACTIVE/VERIFY_ONLY, idempotencia, conflictos de versión, rollback, revocación, inicialización de catálogo, validación de entradas y lock/reentrada. El workflow accounting-import-preflight-contract.yml ya incluye el contrato.
+- **GitHub Actions:** Accounting Import Preflight run 44116081329, HEAD 927384b088af1a60fb1e155000a1a1ed2ef614fc, Node.js 24, job SUCCESS; los cuatro node --check de servicios y el contrato de provisioning PASS. El log confirma ejecución real del comando Node y salida PASS del contrato.
+- **Verificación previa de la corrección de entrypoints:** run 44113963585 sobre 072a848ab340579221c8103ce8f0a649b1dc1a4d, SUCCESS. Department Scope run 44113963592 conserva el fallo histórico Phase22 por configureSchoolDocumentTemplate ausente en ACCOUNTING; no es introducido por AUD-NG-084 y no se alteró ese módulo.
+- **CLI local:** NOT RUN; el entorno de trabajo no pudo resolver github.com para obtener checkout. No se afirma ejecución local inexistente. Node CLI y sintaxis sí se ejecutaron en runner GitHub Actions.
+- **Archivos de implementación/prueba:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/developer-service/Code.gs; tests/security/migration-hmac-credential-provisioning.test.js; .github/workflows/accounting-import-preflight-contract.yml. El registro BETA-FUNC-121 ya existe en beta_test_Parte_0002.txt.
+- **Commits de implementación/pruebas:** 718650c97d562ce7d90b803d21097c6f6237418c; 03f27f0309917063d24f87df18867545acd647b3; 77ca5de90e5d65d375b79e001ab32482f0631d47; 072a848ab340579221c8103ce8f0a649b1dc1a4d; 927384b088af1a60fb1e155000a1a1ed2ef614fc.
+- **Estado:** AUD-NG-084 completada en código y verificaciones locales ejecutables en CI. BETA-FUNC-121 permanece Pendiente beta para comprobar Script Properties y despliegues reales mediante acceso administrativo autorizado; no bloquea el cierre de implementación.
+- **Rama base:** NG_beta_0.0.0.1 HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; comparación al HEAD de código: 3949 ahead / 0 behind. Sin escrituras en rama base.
+- **Siguiente tarea elegible:** AUD-NG-086 — autorización interservicio por emisor, receptor, acción y versión del protocolo; revisar el contrato vigente y sus consumidores antes de modificar.
+=============================================================================
