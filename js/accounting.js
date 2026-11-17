@@ -1392,7 +1392,7 @@ function renderComprasCotizacionesView(container) {
           <td class="p-3 font-bold text-gray-900">${c.cotizacionId}</td>
           <td class="p-3">${c.solicitudId}</td>
           <td class="p-3">${c.proveedorId}</td>
-          <td class="p-3 font-bold text-gray-900">L ${window.IMARegionalFormatters.formatCurrency(c.precioTotal)}</td>
+          <td class="p-3 font-bold text-gray-900">${window.IMARegionalFormatters.formatCurrency(c.precioTotal)}</td>
           <td class="p-3">${c.plazoEntregaDias ? c.plazoEntregaDias + ' días' : '-'}</td>
           <td class="p-3"><span class="px-2 py-1 rounded-lg text-xs font-bold ${c.estadoSelection === 'Adjudicada' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-700'}">${c.estadoSelection || 'Registrada'}</span></td>
         </tr>
