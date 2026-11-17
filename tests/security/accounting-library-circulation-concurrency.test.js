@@ -131,7 +131,7 @@ h = harness();
 result = h.context.processLibraryLoan({ ejemplarId: "EJ-1", userId: "STUDENT-1", accion: "Prestamo" });
 assert.equal(result.code, "VERIFIED_IDENTITY_REQUIRED");
 
-h = harness({ exemplarRows: [["EjemplarID", "Estado"], ["EJ-1", "available"]] });
+h = harness({ exemplarRows: [["Codigo", "Situacion"], ["EJ-1", "available"]] });
 result = call(h, "processLibraryLoan", { ejemplarId: "EJ-1", userId: "STUDENT-1" });
 assert.equal(result.code, "LIBRARY_SCHEMA_MISMATCH");
 
