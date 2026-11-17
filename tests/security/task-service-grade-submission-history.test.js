@@ -56,7 +56,7 @@ test(()=>{const x=fixture({badSchema:true});assert.throws(()=>x.call({...base,mo
 test(()=>{const x=fixture({denied:true});assert.throws(()=>x.call({...base,motivoRectificacion:"Cambio"}),/RESOURCE_NOT_FOUND/);assert.equal(x.deliverySheet.rows[1][5],"70");assert.equal(x.state.releases,1);});
 test(()=>{const x=fixture({isStaff:false});assert.throws(()=>x.call({...base,motivoRectificacion:"Cambio"}),/RESOURCE_NOT_FOUND/);assert.equal(x.deliverySheet.rows[1][5],"70");});
 test(()=>{const x=fixture({duplicateDelivery:true});assert.throws(()=>x.call({...base,motivoRectificacion:"Cambio"}),/RESOURCE_NOT_FOUND/);assert.equal(x.deliverySheet.rows[1][5],"70");});
-test(()=>{const x=fixture({lockTimeout:true});assert.throws(()=>x.call({...base,motivoRectificacion:"Cambio"}),/TASK_SUBMISSION_GRADE_LOCK_TIMEOUT/);assert.equal(x.deliverySheet.rows[1][5],"70");assert.equal(x.state.releases,0);});
+test(()=>{const x=fixture({lockTimeout:true});assert.throws(()=>x.call({...base,motivoRectificacion:"Cambio"}),/TASK_SUBMISSION_MUTATION_LOCK_TIMEOUT/);assert.equal(x.deliverySheet.rows[1][5],"70");assert.equal(x.state.releases,0);});
 test(()=>{const x=fixture();const r=x.callRubric({...base,motivoRectificacion:"Corrección con rúbrica",rubricaEvaluacionJSON:{criterio:1}});assert.equal(r.rectificacionRegistrada,true);assert.equal(x.history().rows[1][7],"Corrección con rúbrica");assert.equal(x.rubricSheet.rows.length,2);});
 test(()=>{const x=fixture();x.call({...base,motivoRectificacion:"Cambio",_verifiedUserId:"ATACANTE"});assert.equal(x.history().rows[1][8],"PROF-VERIFICADO");});
 test(()=>{const x=fixture({permissionDenied:true});assert.throws(()=>x.call({...base,motivoRectificacion:"Cambio"}),/RESOURCE_NOT_FOUND/);assert.equal(x.deliverySheet.rows[1][5],"70");});
@@ -74,7 +74,7 @@ test(()=>{
  };
  const result=x.call({...base,motivoRectificacion:"Corrección serializada"});
  assert.equal(result.status,"success");
- assert.equal(nestedError,"TASK_SUBMISSION_GRADE_LOCK_TIMEOUT");
+ assert.equal(nestedError,"TASK_SUBMISSION_MUTATION_LOCK_TIMEOUT");
  assert.equal(x.deliverySheet.rows[1][5],85);
  assert.equal(x.history().rows.length,2,"only the outer rectification is appended");
  assert.equal(x.state.lockAttempts,2);
