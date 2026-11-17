@@ -1216,7 +1216,7 @@ function importDataWithColumnMapping(payload) {
       estado: partial ? "partial" : "completed",
       registrosEscritos: rowsToWrite.length,
       registrosVinculados: Number(preview.filasVinculadas || 0),
-      filasOmitidasPorValidacion: Math.max(0, input.filasData.length - rowsToWrite.length),
+      filasOmitidasPorValidacion: Math.max(0, input.filasData.length - rowsToWrite.length - Number(preview.filasVinculadas || 0)),
       errores: (preview.errores || []).map(function(item) {
         return { error: item.error || item.codigo, fila: item.fila, mensaje: item.mensaje || item.codigo };
       }),
