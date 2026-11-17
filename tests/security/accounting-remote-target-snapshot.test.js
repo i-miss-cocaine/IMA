@@ -32,7 +32,6 @@ function ownerRuntime(source,service,handlerName,snapshotName,rows,expectedSheet
   migrationStableJson_:value=>JSON.stringify(value),
   migrationHash_:value=>crypto.createHash("sha256").update(String(value)).digest("hex"),
   SPREADSHEET_ID:"TEST",
-  recordInterServiceCredentialUsage_:event=>{auditEvents.push(event);return{recorded:true};},
  SpreadsheetApp:{openById:()=>({getSheetByName:name=>name===expectedSheet?{getDataRange:()=>({getValues:()=>rows.map(row=>row.slice())})}:(additionalSheets[name]||null)})}
  };
  vm.createContext(runtime);
@@ -76,6 +75,7 @@ const credentialFingerprint=crypto.createHash("sha256").update(secret,"utf8").di
 const credentialRows=[credentialHeaders,["CRED-ACCOUNTING-v1","ACCOUNTING","IMA_MIGRATION_HMAC_SECRET","v1","ACTIVE",credentialFingerprint,"2026-11-17T00:00:00Z","operator-test","",""]];
 const accountingRuntime={
  Date,String,JSON,Array,Object,Number,Math,RegExp,Error,SPREADSHEET_ID:"TEST-SPREADSHEET",
+ recordInterServiceCredentialUsage_:event=>{auditEvents.push(event);return{recorded:true};},
   PropertiesService: {
     getScriptProperties: () => ({
       getProperty: key => ({
