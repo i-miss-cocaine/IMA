@@ -2879,6 +2879,16 @@ function renderMigrationImportModule(container) {
           <p id="migration-import-profile-status" class="md:col-span-3 text-[11px] text-slate-500" role="status" aria-live="polite">Los perfiles son privados del usuario y solo se aplican si coinciden exactamente los encabezados.</p>
         </div>
       </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2 rounded-xl border border-slate-200 p-3">
+        <div class="md:col-span-1"><label for="migration-import-duplicate-policy" class="mb-1 block text-xs font-bold text-slate-700">Política de duplicados</label>
+          <select id="migration-import-duplicate-policy" class="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm">
+            <option value="RECHAZAR">Rechazar coincidencias (seguro)</option>
+            <option value="ACTUALIZAR">Actualizar solo si coincide el ID canónico</option>
+            <option value="VINCULAR">Vincular (requiere correspondencia confirmada)</option>
+          </select>
+        </div>
+        <p class="md:col-span-2 self-end text-[11px] text-slate-500">DNI/correo y claves naturales se comparan antes de escribir. Los nombres solo generan coincidencias posibles; nunca fusionan personas automáticamente.</p>
+      </div>
       <div class="flex flex-wrap items-center gap-2">
         <button id="migration-import-preview" type="button" disabled class="rounded-xl bg-indigo-700 px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40">Validar y previsualizar</button>
         <label class="flex items-center gap-2 text-xs text-slate-700"><input id="migration-import-allow-partial" type="checkbox" class="rounded border-slate-300"> Permitir importación parcial de filas válidas</label>
@@ -2897,6 +2907,7 @@ function renderMigrationImportModule(container) {
   const previewButton = document.getElementById("migration-import-preview");
   const commitButton = document.getElementById("migration-import-commit");
   const partialToggle = document.getElementById("migration-import-allow-partial");
+  const duplicatePolicySelect = document.getElementById("migration-import-duplicate-policy");
   const profileSelect = document.getElementById("migration-import-profile");
   const profileNameInput = document.getElementById("migration-import-profile-name");
   const profileSaveButton = document.getElementById("migration-import-profile-save");
@@ -3095,6 +3106,7 @@ function renderMigrationImportModule(container) {
   });
   sourceInput.addEventListener("change", loadImportMappingProfiles);
   entity.addEventListener("change", function() { loadImportMappingProfiles(); });
+  if (duplicatePolicySelect) duplicatePolicySelect.addEventListener("change", resetPreviewOnEdit);
     previewButton.addEventListener("click", async function() {
     if (!window.fetchApi || !migrationImportState.rows.length) return;
     const target = MIGRATION_IMPORT_TARGETS[entity.value];
@@ -3117,6 +3129,7 @@ function renderMigrationImportModule(container) {
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       fileDataBase64: migrationImportState.fileDataBase64,
       hojaSeleccionada: migrationImportState.sheetName,
+      politicaDuplicados: duplicatePolicySelect ? duplicatePolicySelect.value : "RECHAZAR",
       columnaMapeo: { identificador: identifier, campos: mapping },
       filasData: migrationImportState.rows,
       analisisEstructural: migrationImportState.structural
@@ -3187,7 +3200,7 @@ function renderMigrationImportResult(response) {
   const warnings = Array.isArray(response.advertencias) ? response.advertencias : [];
   const valid = Number(response.filasValidas || 0), failed = Number(response.filasFallidas || 0);
   let html = '<div class="space-y-3"><div class="grid grid-cols-2 md:grid-cols-4 gap-2">' +
-    [['Filas', response.totalFilas], ['Válidas', valid], ['Con errores', failed], ['Advertencias', warnings.length]].map(item =>
+    [['Filas', response.totalFilas], ['Válidas', valid], ['Con errores', failed], ['Coincidencias', Array.isArray(response.duplicateMatches) ? response.duplicateMatches.length : 0], ['Advertencias', warnings.length]].map(item =>
       '<div class="rounded-xl border border-slate-200 bg-white p-3"><div class="text-[10px] font-bold uppercase text-slate-500">' +
       migrationImportEscape(item[0]) + '</div><div class="mt-1 text-lg font-black text-slate-900">' + migrationImportEscape(item[1] || 0) + '</div></div>').join("") +
     '</div><p class="text-xs font-bold ' + (response.validForImport ? "text-emerald-700" : response.validForPartialImport ? "text-amber-700" : "text-rose-700") + '">' +
