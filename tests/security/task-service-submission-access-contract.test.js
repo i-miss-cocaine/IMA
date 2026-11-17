@@ -73,6 +73,7 @@ const fileStore={
   "FILE-3":{getMimeType:()=>"application/pdf",getName:()=>"three.pdf",getSize:()=>1024},
   "FILE-OLD":{getMimeType:()=>"application/pdf",getName:()=>"old-version.pdf",getSize:()=>512}
 };
+const denialLogs=[];
 const runtime={
   SPREADSHEET_ID:"TEST-SHEET",
   SpreadsheetApp:{openById:()=>ss},
