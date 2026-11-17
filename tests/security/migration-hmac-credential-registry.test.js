@@ -74,7 +74,8 @@ function makeHarness(options = {}) {
   };
   const names = ["computeMigrationCredentialFingerprint_", "getMigrationHmacSecret_", "resolveInterServiceSecret_", "createInterServiceEnvelope", "verifyInterServiceEnvelope"];
   vm.createContext(runtime);
-  vm.runInContext(names.map(extract).join("\n") +
+  const bootstrap = 'const IMA_LOCAL_SERVICE_ID_ = "USER"; const IMA_CREDENTIAL_CATALOG_HEADERS_ = ' + JSON.stringify(headers) + ';';
+  vm.runInContext(bootstrap + "\n" + names.map(extract).join("\n") +
     "\nthis.api={fingerprint:computeMigrationCredentialFingerprint_,get:getMigrationHmacSecret_,resolve:resolveInterServiceSecret_,create:createInterServiceEnvelope,verify:verifyInterServiceEnvelope};", runtime);
   return { api: runtime.api, properties, state, cache, setRows(value) { rows = value; }, setSchema(value) { schema = value; } };
 }

@@ -123,7 +123,8 @@ function runMigrationWriterFixture(source,entity){
  const code=constants+names.map(n=>extractBalancedFunction(source,n)).join(String.fromCharCode(10))+"this.apply=applyTrustedMigrationWrite_;this.compensate=compensateTrustedMigrationWrite_;this.schemas=MIGRATION_WRITER_SCHEMAS_;this.journalHeaders=MIGRATION_WRITER_JOURNAL_HEADERS_;this.stable=migrationStableJson_;this.hash=typeof migrationHash_==='function'?migrationHash_:null;";
  const sheets={},ctx={SPREADSHEET_ID:"LOCAL",SpreadsheetApp:{openById:()=>ss},LockService:{getScriptLock:()=>({waitLock:()=>{},releaseLock:()=>{}})},Utilities:{DigestAlgorithm:{SHA_256:"SHA_256"},computeDigest:(_algorithm,value)=>Array.from(crypto.createHash("sha256").update(String(value)).digest())},Date,JSON,String,Object,Array,Error};
  const ss={getSheetByName:n=>sheets[n]||null,insertSheet:n=>sheets[n]=makeMigrationSheet(n==="MigracionEscrituras"?ctx.journalHeaders:ctx.schemas[entity].headers)};
- vm.runInNewContext(code,ctx);
+ const bootstrap='const IMA_LOCAL_SERVICE_ID_ = "USER"; const IMA_CREDENTIAL_CATALOG_HEADERS_ = '+JSON.stringify(credentialHeaders)+';';
+ vm.runInNewContext(bootstrap+String.fromCharCode(10)+code,ctx);
  const schema=ctx.schemas[entity];
  const data={};schema.headers.slice(1).forEach((h,i)=>data[h]=/^Fecha/.test(h)?"2026-01-15":"v"+i);
  const input={tipoEntidad:entity,idNuevoPlataforma:"INT-001",idempotencyKey:"MIG-001",datos:data,

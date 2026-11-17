@@ -37,7 +37,7 @@ function makeUserRuntime(options = {}) {
     PropertiesService: { getScriptProperties: () => ({ getProperty: key => key === "IMA_MIGRATION_HMAC_SECRET" ? secret : "" }) },
     verifyInterServiceEnvelope(envelope, target, suppliedSecret) {
       assert.equal(target, "USER");
-      assert.equal(suppliedSecret, secret);
+      assert.equal(suppliedSecret, "IMA_MIGRATION_HMAC_SECRET");
       return { sourceService: envelope.sourceService, action: envelope.action, payload: envelope.payload };
     },
     verifySessionToken(token) {
