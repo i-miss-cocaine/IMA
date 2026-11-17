@@ -11277,16 +11277,17 @@ function resolveHierarchicalConfiguration(payload) {
   var canReadGlobal=!policy.sensitive||configurationRoleAllowed_(ss,role,key,"READ","GLOBAL",policy);
   var canReadInstitution=!policy.sensitive||configurationRoleAllowed_(ss,role,key,"READ","INSTITUCIONAL",policy);
   var canReadDepartment=!policy.sensitive||configurationRoleAllowed_(ss,role,key,"READ","DEPARTAMENTAL",policy);
-  var value=sourceScope==="DEPARTAMENTAL"?configurationDepartmentStoredValue_(effective[ix.ValueJSON],effective[ix.ValueType]):configurationStoredValue_(effective[ix.Valor],effective[ix.Tipo]);
+  var departmentIndex=departmentRow?configurationHeaderMap_(departmentSheet.getDataRange().getValues()[0]):null;
+  var value=sourceScope==="DEPARTAMENTAL"?configurationDepartmentStoredValue_(effective[departmentIndex.ValueJSON],effective[departmentIndex.ValueType]):configurationStoredValue_(effective[ix.Valor],effective[ix.Tipo]);
   return {status:"success",configId:base[ix.ConfigID],clave:key,valor:value,valorEfectivo:value,tipo:base[ix.Tipo]||"TEXTO",
     politicaAlcance:policy.policy,ambitosPermitidos:allowed,origenEfectivo:sourceScope,
     estadoHerencia:sourceScope==="DEPARTAMENTAL"||sourceScope==="PERSONAL"?"SOBRESCRITO":(sourceScope==="GLOBAL"?"PREDETERMINADO":"HEREDADO"),
     heredado:sourceScope==="GLOBAL"||sourceScope==="INSTITUCIONAL",sobrescrito:sourceScope==="DEPARTAMENTAL"||sourceScope==="PERSONAL",
     valorGlobal:canReadGlobal?configurationStoredValue_(base[ix.Valor],base[ix.Tipo]):null,
     valorInstitucional:institutionRow&&canReadInstitution?configurationStoredValue_(institutionRow[ix.Valor],institutionRow[ix.Tipo]):null,
-    valorDepartamental:departmentRow&&canReadDepartment?configurationDepartmentStoredValue_(departmentRow[configurationHeaderMap_(departmentSheet.getDataRange().getValues()[0]).ValueJSON],departmentRow[configurationHeaderMap_(departmentSheet.getDataRange().getValues()[0]).ValueType]):null,
-    version:effective[ix.Version]||"1.0",updatedAt:sourceScope==="DEPARTAMENTAL"?effective[configurationHeaderMap_(departmentSheet.getDataRange().getValues()[0]).UpdatedAt]:effective[ix.UpdatedAt],
-    updatedBy:sourceScope==="DEPARTAMENTAL"?effective[configurationHeaderMap_(departmentSheet.getDataRange().getValues()[0]).UpdatedBy]:effective[ix.UpdatedBy],
+    valorDepartamental:departmentRow&&canReadDepartment?configurationDepartmentStoredValue_(departmentRow[departmentIndex.ValueJSON],departmentRow[departmentIndex.ValueType]):null,
+    version:effective[ix.Version]||"1.0",updatedAt:sourceScope==="DEPARTAMENTAL"?effective[departmentIndex.UpdatedAt]:effective[ix.UpdatedAt],
+    updatedBy:sourceScope==="DEPARTAMENTAL"?effective[departmentIndex.UpdatedBy]:effective[ix.UpdatedBy],
     institutionId:institutionId,departmentId:departmentId||null,userId:sourceScope==="PERSONAL"?targetUser:null,
     dependencias:policy.dependencies,esSensible:policy.sensitive};
 }
