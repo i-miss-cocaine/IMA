@@ -3209,6 +3209,11 @@ function renderMigrationImportResult(response) {
     errors.slice(0, 80).map(item => '<li class="rounded-lg bg-rose-50 p-2 text-rose-800">' +
       migrationImportEscape(item.codigo || item.error || "ERROR") + (item.fila ? " · fila " + migrationImportEscape(item.fila) : "") +
       (item.mensaje ? " · " + migrationImportEscape(item.mensaje) : "") + '</li>').join("") + '</ul></div>';
+  const duplicateMatches = Array.isArray(response.duplicateMatches) ? response.duplicateMatches : [];
+  if (duplicateMatches.length) html += '<div><h4 class="mb-1 text-xs font-black uppercase text-indigo-700">Coincidencias detectadas</h4><ul class="space-y-1 text-xs">' +
+    duplicateMatches.slice(0, 80).map(item => '<li class="rounded-lg bg-indigo-50 p-2 text-indigo-900">Fila ' +
+      migrationImportEscape(item.sourceRow || Number(item.rowIndex || 0) + 2) + ' · ' + migrationImportEscape(item.field || "Clave natural") +
+      ' · ' + migrationImportEscape(item.matchType || "COINCIDENCIA") + ' · ID destino ' + migrationImportEscape(item.targetId || "no disponible") + '</li>').join("") + '</ul></div>';
   if (warnings.length) html += '<div><h4 class="mb-1 text-xs font-black uppercase text-amber-700">Advertencias</h4><ul class="space-y-1 text-xs">' +
     warnings.slice(0, 80).map(item => '<li class="rounded-lg bg-amber-50 p-2 text-amber-800">' +
       migrationImportEscape(item.codigo || "WARNING") + " · " + migrationImportEscape(item.mensaje || "") + '</li>').join("") + '</ul></div>';
