@@ -26,6 +26,7 @@ on:
       - tests/security/reusable-resource-xss-url-contract.test.js
       - tests/security/accounting-import-auth-router.test.js
       - tests/security/migration-hmac-credential-registry.test.js
+      - tests/security/interservice-credential-usage-audit.test.js
       - tests/security/academic-interservice-replay-guard.test.js
       - tests/security/developer-interservice-credential-registry.test.js
       - tests/security/hmac-secret-config.test.js
@@ -73,8 +74,12 @@ jobs:
         run: node --check < backend/user-service/Code.gs
       - name: Check ACADEMIC service syntax
         run: node --check < backend/academic-service/Code.gs
+      - name: Check DEVELOPER service syntax
+        run: node --check < backend/developer-service/Code.gs
       - name: Run session-token HMAC secret configuration and rotation regression contract
         run: node tests/security/hmac-secret-config.test.js
+      - name: Run interservice credential usage audit contract
+        run: node tests/security/interservice-credential-usage-audit.test.js
       - name: Run USER migration HMAC credential registry and replay protection contract
         run: node tests/security/migration-hmac-credential-registry.test.js
       - name: Run ACADEMIC interservice HMAC verification and replay guard contract

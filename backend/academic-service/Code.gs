@@ -645,6 +645,34 @@ function resolveInterServiceSecret_(sourceService, credentialType, purpose) {
 }
 
 // [TASK-048] [F23-Task05] [P0] Protocolo Universal de Comunicación Interservicio y Gestión de Credenciales
+
+const IMA_CREDENTIAL_USAGE_AUDIT_HEADERS_=["EventID","Direction","SourceService","TargetService","Action","RequestID","CorrelationID","CredentialType","CredentialID","CredentialVersion","OccurredAt"];
+function recordInterServiceCredentialUsage_(event,secret,lockAlreadyHeld){
+ var item=event||{},source=String(item.sourceService||"").trim().toUpperCase(),target=String(item.targetService||"").trim().toUpperCase();
+ var direction=String(item.direction||"").trim().toUpperCase(),requestId=String(item.requestId||"").trim(),correlationId=String(item.correlationId||"").trim();
+ var action=String(item.action||"").trim(),credentialType=String(item.credentialType||"").trim();
+ if(!source||!target||!action||!requestId||!correlationId||["INBOUND","OUTBOUND"].indexOf(direction)===-1||credentialType!=="IMA_MIGRATION_HMAC_SECRET"||typeof secret!=="string"||secret.length<32)throw new Error("CREDENTIAL_USAGE_AUDIT_EVENT_INVALID");
+ var spreadsheetId=String(typeof SPREADSHEET_ID!=="undefined"?SPREADSHEET_ID:"").trim();if(!spreadsheetId)throw new Error("CREDENTIAL_USAGE_AUDIT_STORAGE_NOT_CONFIGURED");
+ var lock=null;if(!lockAlreadyHeld){try{lock=LockService.getScriptLock();lock.waitLock(5000);}catch(error){throw new Error("CREDENTIAL_USAGE_AUDIT_BUSY");}}
+ try{
+  var ss=SpreadsheetApp.openById(spreadsheetId),catalog=ss.getSheetByName("CatalogoCredencialesServicios");if(!catalog)throw new Error("CREDENTIAL_USAGE_CATALOG_UNAVAILABLE");
+  var catalogRows=catalog.getDataRange().getValues();
+  if(!catalogRows.length||catalogRows[0].length!==IMA_CREDENTIAL_CATALOG_HEADERS_.length||JSON.stringify(catalogRows[0].map(String))!==JSON.stringify(IMA_CREDENTIAL_CATALOG_HEADERS_))throw new Error("CREDENTIAL_USAGE_CATALOG_SCHEMA_MISMATCH");
+  var fingerprint=computeMigrationCredentialFingerprint_(secret);
+  var matches=catalogRows.slice(1).filter(function(row){var status=String(row[4]||"").trim().toUpperCase();return String(row[1]||"").trim().toUpperCase()===source&&String(row[2]||"").trim()===credentialType&&String(row[5]||"").trim().toLowerCase()===fingerprint&&["ACTIVE","VERIFY_ONLY"].indexOf(status)!==-1&&!String(row[8]||"").trim()&&!String(row[9]||"").trim();});
+  if(matches.length!==1)throw new Error("CREDENTIAL_USAGE_CREDENTIAL_NOT_UNIQUELY_REGISTERED");
+  var credentialId=String(matches[0][0]||"").trim(),version=String(matches[0][3]||"").trim();if(!credentialId||!version)throw new Error("CREDENTIAL_USAGE_CREDENTIAL_METADATA_INVALID");
+  var audit=ss.getSheetByName("AuditoriaUsoCredenciales");if(!audit)audit=ss.insertSheet("AuditoriaUsoCredenciales");
+  var auditRows=audit.getDataRange().getValues(),hasData=auditRows.some(function(row){return(row||[]).some(function(value){return value!==""&&value!==null&&value!==undefined;});});
+  if(!hasData){audit.getRange(1,1,1,IMA_CREDENTIAL_USAGE_AUDIT_HEADERS_.length).setValues([IMA_CREDENTIAL_USAGE_AUDIT_HEADERS_.slice()]);auditRows=[IMA_CREDENTIAL_USAGE_AUDIT_HEADERS_.slice()];}
+  else if(!auditRows.length||auditRows[0].length!==IMA_CREDENTIAL_USAGE_AUDIT_HEADERS_.length||JSON.stringify(auditRows[0].map(String))!==JSON.stringify(IMA_CREDENTIAL_USAGE_AUDIT_HEADERS_))throw new Error("CREDENTIAL_USAGE_AUDIT_SCHEMA_MISMATCH");
+  var eventId=requestId+":"+direction,existing=auditRows.slice(1).filter(function(row){return String(row[0]||"")===eventId;});if(existing.length>1)throw new Error("CREDENTIAL_USAGE_AUDIT_DUPLICATE_EVENT");
+  var auditRow=[eventId,direction,source,target,action,requestId,correlationId,credentialType,credentialId,version,new Date().toISOString()];
+  if(existing.length===1){for(var i=0;i<auditRow.length-1;i++)if(String(existing[0][i]||"")!==String(auditRow[i]||""))throw new Error("CREDENTIAL_USAGE_AUDIT_EVENT_CONFLICT");return{recorded:true,duplicate:true,credentialVersion:version};}
+  audit.appendRow(auditRow);SpreadsheetApp.flush();return{recorded:true,duplicate:false,credentialVersion:version};
+ }catch(error){var message=String(error&&error.message||error);if(message.indexOf("CREDENTIAL_USAGE_")===0)throw error;throw new Error("CREDENTIAL_USAGE_AUDIT_WRITE_FAILED");}
+ finally{if(lock)lock.releaseLock();}
+}
 function createInterServiceEnvelope(sourceService, targetService, action, payload, credentialType) {
   const now = Date.now();
   const requestId = "REQ-" + now + "-" + Math.random().toString(36).substring(2, 8);
@@ -652,6 +680,7 @@ function createInterServiceEnvelope(sourceService, targetService, action, payloa
   const secret = resolveInterServiceSecret_(sourceService, credentialType, "SIGN");
   const bodyToSign = `${requestId}|${now}|${correlationId}|${sourceService}|${targetService}|${action}|${JSON.stringify(payload || {})}`;
   const hmacSignature = computeHmacSignature(bodyToSign, secret);
+  recordInterServiceCredentialUsage_({direction:"OUTBOUND",sourceService:sourceService,targetService:targetService,action:action,requestId:requestId,correlationId:correlationId,credentialType:credentialType},secret,false);
 
   return {
     sourceService: sourceService,
@@ -687,10 +716,9 @@ function verifyInterServiceEnvelope(envelope, expectedTargetService, credentialT
   if (credentialType !== "IMA_MIGRATION_HMAC_SECRET") throw new Error("INTERSERVICE_CREDENTIAL_TYPE_INVALID");
   const verificationSecrets = getMigrationHmacSecrets_(sourceService);
   const bodyToSign = `${requestId}|${timestamp}|${correlationId}|${sourceService}|${targetService}|${action}|${JSON.stringify(payload || {})}`;
-  const signatureValid = verificationSecrets.some(function(secret) {
-    return hmacSignature === computeHmacSignature(bodyToSign, secret);
-  });
-  if (!signatureValid) throw new Error("INVALID_INTERSERVICE_SIGNATURE: Firma HMAC-SHA256 interservicio inválida.");
+  var matchedSecret=null;
+  for(var secretIndex=0;secretIndex<verificationSecrets.length;secretIndex++){if(hmacSignature===computeHmacSignature(bodyToSign,verificationSecrets[secretIndex])){matchedSecret=verificationSecrets[secretIndex];break;}}
+  if(!matchedSecret)throw new Error("INVALID_INTERSERVICE_SIGNATURE: Firma HMAC-SHA256 interservicio inválida.");
 
   // Serialize the check-and-reserve pair so concurrent requests cannot both pass.
   const cache = CacheService.getScriptCache();
@@ -705,6 +733,7 @@ function verifyInterServiceEnvelope(envelope, expectedTargetService, credentialT
     if (cache.get(replayKey)) {
       throw new Error(`INTERSERVICE_REPLAY_DETECTED: Petición repetida detectada con requestId '${requestId}'.`);
     }
+    recordInterServiceCredentialUsage_({direction:"INBOUND",sourceService:sourceService,targetService:targetService,action:action,requestId:requestId,correlationId:correlationId,credentialType:credentialType},matchedSecret,true);
     cache.put(replayKey, "SEEN", 300);
   } finally {
     replayLock.releaseLock();
