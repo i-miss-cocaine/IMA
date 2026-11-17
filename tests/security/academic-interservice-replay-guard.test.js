@@ -154,7 +154,8 @@ catalogRows = [catalogHeaders,
   ["CRED-ACCOUNTING-v2","ACCOUNTING",credentialType,"v2","ACTIVE",newFingerprint,"2026-11-17T00:01:00Z","operator-test","",""]];
 const rejectedOldEnvelope = makeEnvelope("REQ-ROTATION-REVOKED", oldSecret);
 assert.throws(() => runtime.verify(rejectedOldEnvelope, "ACADEMIC", credentialType), /INVALID_INTERSERVICE_SIGNATURE/);
-assert.equal(runtime.verify(newRotationEnvelope, "ACADEMIC", credentialType).valid, true);
+const activeAfterRevocation = makeEnvelope("REQ-ROTATION-ACTIVE-AFTER-REVOKE", newSecret);
+assert.equal(runtime.verify(activeAfterRevocation, "ACADEMIC", credentialType).valid, true);
 assert.ok(source.includes('const IMA_LOCAL_ACADEMIC_ = "ACADEMIC";'),
   "ACADEMIC signer identity is bound to the ACADEMIC service name");
 
