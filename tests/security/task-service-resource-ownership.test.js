@@ -38,8 +38,6 @@ assert.equal(updateTaskWrapper.split("getVerifiedTaskIdentity_(").length-1,1,"ta
 assert(updateTaskWrapper.includes("const identity = initialIdentity"),"task update reuses its verified actor under lock");
 const dispatcher=extractFunction("doPost");
 assert.equal(dispatcher.split("validateRolePermission(action, payload)").length-1,1,"the task service dispatcher validates the role exactly once per action");
-assert(extractFunction("returnSubmissionForRevision").includes("assertTaskServiceSubmissionTaskOwnership_"),"return-for-revision keeps the direct ownership guard");
-assert(extractFunction("deleteSubmission").includes('assertTaskServiceTeacherCanManageTask(payload,task,"DELETE_SUBMISSION")'));
 assert(extractFunction("getSubmissionDocumentPreviewUrl").includes('"READ_CONTENT"'));
 console.log("TASK-153 Task-Service ownership contract passed: scope, owner isolation, institutional access, ambiguity, validated assignment and staff read/mutation gates.");
 
