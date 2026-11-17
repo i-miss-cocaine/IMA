@@ -5,6 +5,8 @@ const vm = require("node:vm");
 const source = fs.readFileSync("js/ui-common.js", "utf8");
 assert.doesNotThrow(() => new Function(source));
 assert.ok(source.includes("window.loadUserHelpPreferences_"), "guide progress must load from the server");
+assert.ok(source.includes("window.getCurrentHelpPreferenceUserKey_"), "cached progress must be scoped to the signed-in user");
+assert.ok(source.includes("__helpPreferenceCacheByUser"), "one user must not inherit another user’s cached guide state");
 assert.ok(source.includes("window.persistHelpGuidePreference_"), "guide progress must persist to the server");
 assert.ok(source.includes("saveUserHelpPreferences"), "guide progress updates must use the authenticated preference endpoint");
 assert.ok(source.includes("tab-panel-help-settings"), "user settings must expose the guide management panel");
