@@ -2650,7 +2650,7 @@ function registerServiceInstance(payload) {
     if (!Array.isArray(permisosConcedidos)) throw new Error("INVALID_SERVICE_PERMISSIONS");
     var seenPermissions = {};
     permisosConcedidos.forEach(function(value) {
-      if (typeof value !== "string" || !value.trim()) throw new Error("INVALID_SERVICE_PERMISSIONS");
+      if (typeof value !== "string" || !value.trim() || value.indexOf("*") !== -1) throw new Error("INVALID_SERVICE_PERMISSIONS");
       var normalized = value.trim(), permissionKey = "$" + normalized;
       if (seenPermissions[permissionKey]) throw new Error("INVALID_SERVICE_PERMISSIONS");
       seenPermissions[permissionKey] = true;
