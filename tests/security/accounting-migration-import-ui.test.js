@@ -19,6 +19,9 @@ assert.ok(js.includes('destination: "ACADEMIC"'), "student records are routed to
 assert.ok(js.includes('destination: "ACCOUNTING"'), "course and employee records are routed to ACCOUNTING");
 assert.ok(js.includes("fileDataBase64: migrationImportState.fileDataBase64"), "the original workbook is sent to ACCOUNTING");
 assert.ok(js.includes('fetchApi("ACCOUNTING", "validateImportPreview", payload)'), "preflight is performed by the owner service");
+assert.ok(js.includes("migration-import-duplicate-policy"), "the user selects an explicit duplicate conflict policy");
+assert.ok(js.includes("politicaDuplicados: duplicatePolicySelect ? duplicatePolicySelect.value : \"RECHAZAR\""), "the selected duplicate policy is bound to preflight and commit");
+assert.ok(js.includes("POSSIBLE_DUPLICATE_MATCH"), "possible name matches are surfaced for review without automatic merges");
 assert.ok(js.includes('fetchApi("ACCOUNTING", "importDataWithColumnMapping"'), "commit is routed through the owner service");
 assert.ok(js.includes("previewConfirmed: true, previewHash: preview.previewHash, allowPartialImport: allowPartial"), "commit is bound to the exact preview and explicit partial-import choice");
 assert.ok(js.includes("migrationImportEscape"), "all dynamic workbook and server text is escaped before HTML rendering");
