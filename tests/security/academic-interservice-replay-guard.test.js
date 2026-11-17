@@ -32,6 +32,7 @@ function extractFunction(text, name) {
 }
 
 const secret = "ACADEMIC-MIGRATION-SECRET-01234567890123456789";
+const oldSecret = "ACADEMIC-OLD-MIGRATION-SECRET-01234567890123456789";
 const credentialType = "IMA_MIGRATION_HMAC_SECRET";
 const catalogHeaders = ["CredentialID","ServiceID","CredentialType","Version","Status","Fingerprint","CreatedAt","CreatedBy","RevokedAt","RevokedBy"];
 const fingerprint = crypto.createHash("sha256").update(secret, "utf8").digest("hex");
@@ -81,6 +82,7 @@ const verifier = 'const IMA_LOCAL_SERVICE_ID_ = "ACADEMIC"; const IMA_CREDENTIAL
   JSON.stringify(catalogHeaders) + ";\n" +
   extractFunction(source, "computeMigrationCredentialFingerprint_") + "\n" +
   extractFunction(source, "getMigrationHmacSecret_") + "\n" +
+  extractFunction(source, "getMigrationHmacSecrets_") + "\n" +
   extractFunction(source, "resolveInterServiceSecret_") + "\n" +
   extractFunction(source, "computeHmacSignature") + "\n" +
   extractFunction(source, "verifyInterServiceEnvelope") +
@@ -129,5 +131,30 @@ assert.equal(cacheValues.has("REPLAY_REQ_REQ-BUSY"), false);
 lockBusy = false;
 assert.equal(runtime.verify(busyEnvelope, "ACADEMIC", credentialType).valid, true);
 assert.equal(lockReleases, 3);
+
+// Overlapping rotation: the new key signs while the previous VERIFY_ONLY key remains accepted.
+const newSecret = "ACADEMIC-NEW-MIGRATION-SECRET-01234567890123456789";
+scriptProperties.IMA_MIGRATION_HMAC_SECRET_ACCOUNTING = newSecret;
+scriptProperties.IMA_MIGRATION_HMAC_SECRET_VERSION_ACCOUNTING = "v2";
+scriptProperties.IMA_MIGRATION_HMAC_SECRET_ACCOUNTING_V_v1 = oldSecret;
+const oldFingerprint = crypto.createHash("sha256").update(oldSecret, "utf8").digest("hex");
+const newFingerprint = crypto.createHash("sha256").update(newSecret, "utf8").digest("hex");
+catalogRows = [catalogHeaders,
+  ["CRED-ACCOUNTING-v1","ACCOUNTING",credentialType,"v1","VERIFY_ONLY",oldFingerprint,"2026-11-17T00:00:00Z","operator-test","",""],
+  ["CRED-ACCOUNTING-v2","ACCOUNTING",credentialType,"v2","ACTIVE",newFingerprint,"2026-11-17T00:01:00Z","operator-test","",""]];
+const oldRotationEnvelope = makeEnvelope("REQ-ROTATION-OLD", oldSecret);
+assert.equal(runtime.verify(oldRotationEnvelope, "ACADEMIC", credentialType).valid, true);
+const newRotationEnvelope = makeEnvelope("REQ-ROTATION-NEW", newSecret);
+assert.equal(runtime.verify(newRotationEnvelope, "ACADEMIC", credentialType).valid, true);
+
+// Revocation is selective: the old signature stops working, but the active key remains valid.
+catalogRows = [catalogHeaders,
+  ["CRED-ACCOUNTING-v1","ACCOUNTING",credentialType,"v1","REVOKED",oldFingerprint,"2026-11-17T00:00:00Z","operator-test","2026-11-17T13:00:00Z","operator-test"],
+  ["CRED-ACCOUNTING-v2","ACCOUNTING",credentialType,"v2","ACTIVE",newFingerprint,"2026-11-17T00:01:00Z","operator-test","",""]];
+const rejectedOldEnvelope = makeEnvelope("REQ-ROTATION-REVOKED", oldSecret);
+assert.throws(() => runtime.verify(rejectedOldEnvelope, "ACADEMIC", credentialType), /INVALID_INTERSERVICE_SIGNATURE/);
+assert.equal(runtime.verify(newRotationEnvelope, "ACADEMIC", credentialType).valid, true);
+assert.ok(source.includes('const IMA_LOCAL_ACADEMIC_ = "ACADEMIC";'),
+  "ACADEMIC signer identity is bound to the ACADEMIC service name");
 
 console.log("Academic interservice HMAC verification order, replay atomicity, and lock-contention contract: PASS");
