@@ -33,7 +33,7 @@ const developerCatalogCode=extractDeveloperFunction("getCentralConfigAndContract
 const cs=source.indexOf("const CONFIGURATION_SYSTEM_EXTRA_HEADERS_"),ce=source.indexOf("function configurationHeaderMap_",cs);
 assert.ok(cs>=0&&ce>cs,"hierarchy constants exist");
 const schemaCode=source.slice(cs,ce)+extractFunction("configurationHeaderMap_")+extractFunction("ensureConfigurationHierarchySchema_");
-const code=source.slice(cs,ce)+["configurationHeaderMap_","configurationJsonArray_","configurationPolicyFromRow_","configurationStoredValue_","configurationDepartmentStoredValue_","configurationRows_","configurationFindUnique_","resolveHierarchicalConfiguration","saveSystemConfiguration","resetSystemConfigurationOverride","validateRolePermission"].map(extractFunction).join("\n");
+const code=source.slice(cs,ce)+["configurationHeaderMap_","configurationJsonArray_","configurationPolicyFromRow_","configurationStoredValue_","configurationDepartmentStoredValue_","configurationRows_","configurationFindUnique_","getHierarchicalConfigurationCatalog","resolveHierarchicalConfiguration","saveSystemConfiguration","resetSystemConfigurationOverride","validateRolePermission"].map(extractFunction).join("\n");
 const sh=["ConfigID","Clave","Valor","Tipo","Categoria","Descripcion","Ambito","EditablePor","Estado","Version","UpdatedAt","UpdatedBy","InstitutionID","UserID","PoliticaAlcance","AmbitosPermitidosJSON","PermiteHerencia","PermiteSobrescritura","RolesAutorizadosJSON","DependenciasJSON","EsSensible"];
 const dh=["OverrideID","ConfigID","Clave","InstitutionID","DepartmentID","ValueJSON","ValueType","Version","Status","CreatedAt","CreatedBy","UpdatedAt","UpdatedBy","Reason"];
 function assertThrowsCode(fn,code){let caught=null;try{fn();}catch(error){caught=error;}assert.ok(caught,"expected "+code);assert.equal(caught.message,code);}
@@ -182,6 +182,22 @@ function writeHarness(options={}){
  assert.equal(saved.status,"success");assert.equal(h.department.rows.length,2,"a reset override is reactivated rather than duplicated");
  assert.equal(h.department.rows[1][8],"ACTIVO");assert.equal(h.department.rows[1][7],"1.2");
  assert.equal(h.stats().releases,2);
+}
+{
+ const h=harness();
+ const catalog=h.ctx.getHierarchicalConfigurationCatalog({_verifiedUserId:"U-1"});
+ assert.equal(catalog.status,"success");assert.equal(catalog.data.length,1);
+ assert.equal(catalog.data[0].clave,"feature.flag");
+}
+{
+ const h=harness();
+ h.sheets.ConfiguracionSistema.rows.push(h.sheets.ConfiguracionSistema.rows[1].slice());
+ assertThrowsCode(()=>h.ctx.getHierarchicalConfigurationCatalog({_verifiedUserId:"U-1"}),"CONFIGURATION_SCOPE_CONFLICT");
+}
+{
+ const h=harness();
+ h.sheets.ConfiguracionSistema.rows[1][14]="UNKNOWN_POLICY";
+ assertThrowsCode(()=>h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag"}),"CONFIGURATION_POLICY_INVALID");
 }
 {
  const h=harness({personal:true,role:"Estudiante"});
