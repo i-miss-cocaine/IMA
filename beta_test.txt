@@ -1760,3 +1760,26 @@ El archivo maestro histórico supera el umbral de rotación de 180.000 caractere
 - **Evidencia requerida:** IDs sintéticos, hashes/filas antes y después, versiones por ámbito, resultados y códigos de rechazo, eventos de auditoría anonimizados, estado de permisos Spreadsheet/Drive y capturas sin datos personales.
 - **Estado:** Pendiente de validación beta desplegada; los contratos Node.js y las pruebas aisladas locales no sustituyen la comprobación real en Apps Script/Sheets/Drive.
 =============================================================================
+
+
+=============================================================================
+### BETA-FUNC-116 — TASK-060 — Integración de configuración jerárquica con ACADEMIC, ACCOUNTING y UI
+
+- **Precondiciones:** desplegar USER, ACADEMIC y ACCOUNTING con commits de integración de TASK-060; configurar IMA_USER_SERVICE_URL en ACADEMIC y ACCOUNTING con el endpoint oficial Apps Script /exec; usar cuentas, instituciones y departamentos sintéticos.
+- **Pasos:**
+  1. Iniciar sesión con perfiles de Dirección, Administración, responsable departamental y usuario sin permisos; abrir Opciones → Configuración jerárquica y comprobar catálogo filtrado por política y rol.
+  2. Consultar una clave sin departamento, luego con un ID departamental autorizado; verificar origen efectivo, estado de herencia, versión y valor institucional de origen.
+  3. Introducir un departamento ajeno o de otra institución; verificar rechazo server-side sin revelar valores ni permitir escrituras.
+  4. Modificar una clave en cada ámbito permitido (GLOBAL, INSTITUCIONAL, DEPARTAMENTAL, PERSONAL); comprobar rechazo de ámbitos no autorizados y de GLOBAL_OBLIGATORIO/RESTRINGIDO según política.
+  5. Cambiar el valor institucional; verificar actualización dinámica de departamentos que heredan y conservación de excepciones explícitas.
+  6. Restablecer la excepción desde UI; comprobar que el departamento recupera el valor heredado, la fila se desactiva y la versión aumenta.
+  7. Invocar getHierarchicalConfigurationCatalog y resolveHierarchicalConfiguration desde ACADEMIC y ACCOUNTING con sesión firmada; comprobar que ambos servicios reenvían solo el token y los parámetros de lectura permitidos.
+  8. Intentar forjar rol, userId, institución, departmentId y acciones de escritura en los wrappers consumidores; comprobar que los campos no se reenvían o la acción se rechaza.
+  9. Configurar IMA_USER_SERVICE_URL con HTTP, host HTTPS arbitrario, ruta distinta de Apps Script o endpoint no disponible; comprobar rechazo previo a la llamada o error controlado.
+  10. Confirmar que las estructuras especializadas ConfiguracionAcademica, ConfiguracionCargosMatricula, payroll y sus historiales siguen siendo la fuente de verdad de sus datos y no se duplican en ConfiguracionSistema.
+  11. Ejecutar lecturas y escrituras concurrentes con dos departamentos; comprobar aislamiento, versiones y auditoría.
+  12. Validar UI responsive, teclado, mensajes de error, valores largos/JSON y ausencia de inserción HTML de valores configurados.
+- **Resultado esperado:** USER mantiene autoridad única; consumidores ACADEMIC/ACCOUNTING consultan sin ampliar confianza; UI permite administrar ámbitos habilitados; no se duplican configuraciones de dominio; las escrituras y los resets se autorizan server-side.
+- **Evidencia requerida:** hashes/IDs de despliegue, configuración saneada de endpoint, resultados anonimizados de cada rol/departamento, códigos de rechazo, versiones y eventos de auditoría, capturas UI sin datos personales y resultados de concurrencia.
+- **Estado:** Pendiente de validación beta desplegada; los contratos Node.js y GitHub Actions PASS no prueban despliegues ni permisos reales de Apps Script/Sheets/Drive.
+=============================================================================

@@ -4026,3 +4026,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Hierarchical Configuration Contract run 44019419989 SUCCESS (Node 24.22.2; sintaxis USER/DEVELOPER/contrato y contrato de precedencia, seguridad, persistencia, migración, conflictos, reset, concurrencia y permisos). Pruebas locales aisladas sobre el código fuente: 8/8 PASS.
 - Department Scope run 44019171555 falla únicamente en Phase22 document management; el mismo paso ya fallaba en el run previo 44012050276. Los pasos anteriores del workflow pasan; no se tocó Phase22.
 - BETA-FUNC-115 pendiente de validación desplegada. TASK-060 queda como siguiente integración: consumidores ACADEMIC/ACCOUNTING y UI.
+
+
+[2026-11-17] C1.796 — TASK-060, integración jerárquica de extremo a extremo
+- ACADEMIC y ACCOUNTING incorporan wrappers de solo lectura hacia USER para catálogo y resolución; verifican sesión firmada, reenvían solo token y parámetros permitidos, rechazan acciones de escritura y validan el endpoint confiable.
+- Se endurece ACADEMIC para aceptar solo endpoints oficiales Apps Script USER; el contrato agrega prueba negativa contra un host HTTPS arbitrario.
+- La UI de Opciones incorpora edición por ámbitos autorizados, valor efectivo/origen/estado de herencia, selector de departamento, restablecimiento de herencia y renderizado seguro con textContent; el backend conserva la decisión de autorización.
+- Las configuraciones especializadas de ACADEMIC/ACCOUNTING continúan en sus estructuras de dominio para evitar duplicación de fuentes de verdad.
+- Hierarchical Configuration Contract 44078085385 SUCCESS (Node 24: sintaxis de cuatro servicios/UI/contratos, motor USER, UI y consumidores ACADEMIC/ACCOUNTING). Department Reference Consumers 44078085217 SUCCESS; UI Accessibility and Metadata 44077873551 SUCCESS.
+- Department Scope 44078085205 falla en Phase22 document management; el mismo paso ya falla en 44077873593. No se alteró Phase22.
+- BETA-FUNC-116 pendiente de validación real de despliegues, endpoint IMA_USER_SERVICE_URL, Apps Script/Sheets, roles, membresías, departamentos y concurrencia.

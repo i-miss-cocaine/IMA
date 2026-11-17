@@ -136,3 +136,23 @@ Siguiente tarea elegible: F25-Task03 — detección avanzada de duplicados e int
 - **Beta pendiente:** BETA-FUNC-115 valida Apps Script/Sheets/Drive desplegados, aislamiento real multiinstitución, RBAC, auditoría y concurrencia; no bloquea el cierre de implementación.
 - **Siguiente tarea elegible:** TASK-060 — integración del motor con ACADEMIC, ACCOUNTING y la UI administrativa; verificar consumidores y contratos antes de adaptar cada módulo.
 =============================================================================
+
+
+=============================================================================
+### C1.796 — IMA-EXEC-20261117-TASK060-02
+- **Checkpoint anterior:** C1.795 — F26-TASK01, motor central de precedencia y configuración jerárquica.
+- **HEAD al inicio de la integración UI/consumidores:** 62352f7e792c8a13cefdeb6bb0ac3147f890742c.
+- **HEAD de integración UI:** 91e5ba07166c95cfc8bf8e401433896ce374ce60.
+- **HEAD de cierre técnico:** 08de23d093549b8c2d51d34b2d421c8828aa0ed0.
+- **Tarea:** TASK-060 — gobernanza jerárquica e integración ACADEMIC/ACCOUNTING/UI.
+- **Resultado:** completada en código, revisión y CI; beta desplegada pendiente.
+- **Implementación:** ACADEMIC/ACCOUNTING delegan catálogo y resolución a USER mediante wrappers de lectura; token firmado validado en el servicio consumidor; payload interservicio minimizado; acciones de escritura bloqueadas en los wrappers. Endpoint USER restringido a Apps Script /macros/s/<deployment>/exec en ambos servicios. ACADEMIC fue endurecido durante esta iteración para rechazar cualquier host HTTPS arbitrario.
+- **UI:** pestaña jerárquica visible; selector de departamento manual (validado por USER), valores efectivos/origen/estado, ámbito editable desde la lista declarada, restablecimiento de herencia, parser tipado y mensajes de estado; valores renderizados como texto, sin interpolación HTML.
+- **Fuentes de verdad:** no se trasladaron registros de ConfiguracionAcademica, ConfiguracionCargosMatricula, nómina ni otras estructuras especializadas; los servicios conservan su persistencia de dominio.
+- **Archivos principales:** backend/academic-service/Code.gs, backend/accounting-service/Code.gs, js/ui-common.js, tests/security/hierarchical-configuration-consumer-integration.test.js, tests/security/hierarchical-configuration-ui.test.js, .github/workflows/hierarchical-configuration-contract.yml.
+- **Verificaciones:** Hierarchical Configuration Contract run 44078085385 SUCCESS; Department Reference Consumers 44078085217 SUCCESS; UI Accessibility and Metadata 44077873551 SUCCESS. Node.js 24 verificó sintaxis de USER, DEVELOPER, ACADEMIC, ACCOUNTING, UI y contratos; ejecución de contratos USER, UI y consumidores PASS. UI incluye 10 aserciones de parser; consumidores 18 verificaciones.
+- **CI transversal:** Department Scope run 44078085205 FAILURE en Phase22 document management; mismo fallo de paso en 44077873593. No se modificó ese contrato fuera del alcance.
+- **Commits de cierre:** 62352f7e792c8a13cefdeb6bb0ac3147f890742c, 91e5ba07166c95cfc8bf8e401433896ce374ce60, 08de23d093549b8c2d51d34b2d421c8828aa0ed0.
+- **Beta pendiente:** BETA-FUNC-116; validar endpoints Apps Script desplegados, permisos, ámbitos reales, auditoría y concurrencia.
+- **Siguiente revisión:** determinar próxima tarea elegible de PM-02 según dependencias vigentes; F29-TASK17 no es elegible mientras F29-Task13 permanezca pendiente.
+=============================================================================
