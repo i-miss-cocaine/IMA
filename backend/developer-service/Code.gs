@@ -153,10 +153,10 @@ function doPost(e) {
       try { payload = JSON.parse(e.postData.contents); } catch (_) {}
     }
 
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) payload = {};
     const action = payload.action || "ping";
     if (action === "ping") return doGet();
 
-    if (!payload || typeof payload !== "object" || Array.isArray(payload)) payload = {};
     delete payload._verifiedUserId;
     let userRole = "SinRol";
     const token = payload && (payload.sessionToken || payload.authToken || payload.token);
