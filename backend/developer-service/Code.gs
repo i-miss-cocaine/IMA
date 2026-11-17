@@ -178,8 +178,8 @@ function doPost(e) {
     let result;
     switch (action) {
       case "getCentralServiceRegistry": result = getCentralServiceRegistry(payload); break;
-      case "registerServiceInstance": result = registerServiceInstance(payload); break;
-      case "updateServiceStatus": result = updateServiceStatus(payload); break;
+      case "registerServiceInstance": result = registerServiceInstance_(payload, payload._verifiedUserId); break;
+      case "updateServiceStatus": result = updateServiceStatus_(payload, payload._verifiedUserId); break;
       case "auditInterServiceCalls": result = auditInterServiceCalls(payload); break;
       case "manageUserMultiRolePermissions": result = manageUserMultiRolePermissions(payload); break;
       case "getServiceHealthDiagnostics": result = getServiceHealthDiagnostics(payload); break;
@@ -2645,12 +2645,12 @@ function getCentralServiceRegistry(payload) {
 }
 
 // [TASK-047] [F23-Task04] [P0] Registro de instancias y cuentas de servicio distribuidos con prevención de duplicados
-function registerServiceInstance(payload) {
+function registerServiceInstance_(payload, verifiedActorId) {
   const {
     serviceId, name, type, departamento, cuentaPropietaria, endpointUrl,
     spreadsheetAsociado, dominioDatos, version, permisosConcedidos
   } = payload || {};
-  var actorId = String(payload && payload._verifiedUserId || "").trim();
+  var actorId = String(verifiedActorId || "").trim();
   if (!actorId) throw new Error("SERVICE_ACTOR_NOT_VERIFIED");
   if (!serviceId || !name) throw new Error("serviceId y name son requeridos.");
 
@@ -2729,10 +2729,14 @@ function registerServiceInstance(payload) {
   }
 }
 
+function registerServiceInstance(payload) {
+  return registerServiceInstance_(payload, "");
+}
+
 // [TASK-047] [F23-Task04] [P0] Cambio de estado operativo, suspensión y revocación con historial auditado
-function updateServiceStatus(payload) {
+function updateServiceStatus_(payload, verifiedActorId) {
   const { serviceId, newState, reason } = payload || {};
-  var actorId = String(payload && payload._verifiedUserId || "").trim();
+  var actorId = String(verifiedActorId || "").trim();
   if (!actorId) throw new Error("SERVICE_ACTOR_NOT_VERIFIED");
   if (!serviceId || !newState) throw new Error("serviceId y newState son requeridos.");
 
@@ -2796,6 +2800,10 @@ function updateServiceStatus(payload) {
   } finally {
     lock.releaseLock();
   }
+}
+
+function updateServiceStatus(payload) {
+  return updateServiceStatus_(payload, "");
 }
 
 // [TAREA-F6-008] [Fase 6: Reestructuración en microservicios independientes] - Auditoría de llamadas inter-servicio y correlación de solicitudes (correlationId)
