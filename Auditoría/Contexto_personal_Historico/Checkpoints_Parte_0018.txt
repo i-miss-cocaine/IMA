@@ -1,0 +1,41 @@
+===============================================================================
+CHECKPOINT C1.792 — IMA-EXEC-20261116-2330Z-TASK187-PREVENTIVE-MAINTENANCE-01
+===============================================================================
+Repositorio: i-miss-cocaine/IMA
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Tarea: TASK-187 — Programación automática y administración del mantenimiento preventivo recurrente
+Checkpoint anterior: C1.791
+
+Implementación verificada:
+- Planes preventivos por activo, categoría, ubicación e identificador de grupo.
+- Frecuencias calendario y horas de uso, con validación de fechas, lecturas y estimaciones.
+- Generación idempotente de órdenes, alertas de 30/15/7/1 días y vencidas.
+- Completar ciclo, proteger contra ciclos obsoletos y reintentos duplicados; postergación justificada e historial.
+- Validación de estado activo y ámbito departamental de activos tanto al guardar el plan como al generar órdenes.
+- Repuestos, indicadores y plantillas; UI con lecturas y estimaciones.
+- Contrato de seguridad Node.js: tests/security/accounting-preventive-maintenance.test.js PASS en GitHub Actions run 43986419534 (Node.js 24.22.2).
+- Se agregaron pruebas para límites de lectura, fechas, repuestos inválidos, reasignación departamental, activos inactivos y cambios de ámbito/estado entre planificación y generación.
+- BETA-FUNC-111 agregado a beta_test.txt; requiere validación funcional desplegada en Apps Script/Sheets. No se declara validación de producción.
+
+Correcciones de CI durante esta continuación:
+- Alineado el fixture de comprobantes privados con el esquema vigente y el contrato de descarga; file-attachment-persistence-contract.test.js pasó en run 43986419534.
+- El workflow global aún falla en tests/regression/phase22-document-management-suite-contract.test.js: el contrato espera configureSchoolDocumentTemplate en ACCOUNTING y la función no existe en la rama de trabajo. Se conserva como hallazgo abierto; no se altera ni oculta el test.
+
+Archivos de TASK-187:
+- backend/accounting-service/Code.gs
+- js/accounting.js
+- tests/security/accounting-preventive-maintenance.test.js
+- beta_test.txt
+- pendientes/Contabilidad/Pendientes.md
+
+Verificación de estado:
+- Rama: NG_beta_0.0.0.1_work
+- HEAD inicial de la iteración: bb8f4f7233898c823e0c19919ecdf7fdce41b553.
+- Commits posteriores de corrección del contrato de comprobantes privados: 848f5f5204e2f86296a6b8523f91d695bb60c52b; 1b093ad0928800170aba670186f84550f0fc6735; 656e068ba0570a779d466a6068f1b54e05c49082; 5e92af12a8d86931d2327e6c033f13b0e3b17cbd; a749c5ba15180cc50541a9715c20c59de0c9ae74; bea7770e455d0509f91d61781525392eaa066c09; 5fe01d19b88e07baa870616f660e80d161ed104f.
+- Último commit citado corresponde al contrato de pruebas; no se certifica CI global verde.
+- Sin despliegue ni acceso a hoja real; no se ejecutó prueba beta real.
+
+Siguiente tarea elegible:
+- Revisar topología de PM-04. TASK-072 (P0, orden 6) es la siguiente candidata de migración/corte financiero, pero debe resolverse su dependencia F29-Task01/02/03 y reconciliar el solapamiento circular entre TASK-072 y F29-Task02 antes de modificar saldos. TASK-270 permanece bloqueada por F29-Task01/02/03/06/13.
+===============================================================================
