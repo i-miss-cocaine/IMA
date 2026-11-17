@@ -15,7 +15,7 @@ function makeSheet(rows){
     getLastRow(){return this.rows.length;},appendRow(row){this.rows.push(row.slice());},
     getRange(row,col,numRows,numCols){return {setValues:values=>{for(let r=0;r<numRows;r++)for(let c=0;c<numCols;c++)this.rows[row-1+r][col-1+c]=values[r][c];}};}};
 }
-const deliveryHeaders=["EntregaID","TareaID","EstudianteID","FechaEnvio","ArchivoId","EnlaceExterno","Estado","Comentario","MimeType","EliminadaPor","EliminadaRol","EliminadaEn","MotivoEliminacion"];
+const deliveryHeaders=["EntregaID","TareaID","EstudianteID","FechaEnvio","ArchivoId","Calificacion","Estado","Comentario","MimeType","EliminadaPor","EliminadaRol","EliminadaEn","MotivoEliminacion"];
 const deliveryRow=["DEL-1","TASK-1","STU-1",new Date("2026-11-16T10:00:00Z"),"FILE-OLD","","Eliminada","Nota antigua","application/pdf","TEACHER-1","Profesor",new Date("2026-11-16T11:00:00Z"),"Retirada"];
 const deliverySheet=makeSheet([deliveryHeaders,deliveryRow]);
 const taskSheet=makeSheet([["TareaID","Tipo","Titulo","Descripcion","Parcial","Asignatura","Grado","Seccion","FechaLimite","Original","ProfesorID","Estado"],["TASK-1","Tarea","Tarea 1","","1","Matemáticas","6","A","","","TEACHER-1","Activa"]]);
@@ -27,7 +27,7 @@ const versionSheet=makeSheet([
   ["VER-OLD","DEL-1","TASK-1","STU-1",1,"","FILE-OLD","application/pdf","old","","2026-11-16T10:00:00Z","Enviada",""]
 ]);
 const ss={};
-let uuid=0,lockReleased=0;
+let uuid=0,lockReleased=0,lockAvailable=true;
 const runtime={
   SPREADSHEET_ID:"TEST-SHEET",
   getDriveStorageQuotaMetricsReport:()=>({status:"success",metrics:{porcentajeUso:50}}),
@@ -37,7 +37,7 @@ const runtime={
   extractTaskServiceFileId:value=>String(value||"").trim(),
   ensureTaskServiceFileMetadataSheet:()=>metadataSheet,
   getOrCreateSheet:(_ss,name)=>name==="EntregasVersiones"?versionSheet:null,
-  LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>{lockReleased++;}})},
+  LockService:{getScriptLock:()=>({tryLock:()=>lockAvailable,releaseLock:()=>{lockReleased++;}})},
   Utilities:{getUuid:()=>"NEW-"+(++uuid)},
   normalizeString:value=>String(value||"").trim().toLowerCase(),
   Logger:{log:()=>{}},
@@ -61,6 +61,13 @@ assert.equal(versionSheet.rows[2][4],2);
 assert.equal(versionSheet.rows[2][6],"FILE-NEW");
 assert.equal(versionSheet.rows[2][9],"https://example.test/new","external link belongs in version history, not the delivery grade column");
 assert.equal(lockReleased,1);
+const beforeTimeoutRow=deliverySheet.rows[1].slice(),beforeTimeoutVersions=versionSheet.rows.length;
+lockAvailable=false;
+assert.throws(()=>runtime.submit({_verifiedUserId:"STU-1",_verifiedRole:"Estudiante",userId:"STU-1",tareaId:"TASK-1",
+  fileId:"FILE-NEW",mimeType:"application/pdf",textoRespuesta:"retry",enlaceExterno:"https://example.test/retry"}),/TASK_SUBMISSION_LOCK_TIMEOUT/);
+assert.deepEqual(deliverySheet.rows[1],beforeTimeoutRow,"lock timeout leaves the active delivery unchanged");
+assert.equal(versionSheet.rows.length,beforeTimeoutVersions,"lock timeout creates no extra version");
+assert.equal(lockReleased,1,"a lock not acquired is not released");
 const getStudentTasksFn=extract("getStudentTasks");
 assert(getStudentTasksFn.includes('const canSeeDeletedSubmissions = role === "Profesor" || isTaskServiceAdministrativeRole(role);'));
 assert(getStudentTasksFn.includes('normalizeString(row[6]) !== "eliminada"'));
