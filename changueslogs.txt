@@ -4157,3 +4157,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - En pendientes/Docente/Pendientes.md, F34-TASK03 y AUD-NG-158 pasan a [ ] / Revisión requerida por C1.809; se conserva la evidencia histórica sin aceptar que cumpla el nuevo criterio.
 - Los locks de concurrencia e integridad se conservan cuando evitan duplicados o escrituras parciales. AUD-NG-084/C1.804 se mantiene limitado a sobres de migración; AUD-NG-086 no se implementa para CRUD académico.
 - Cambio documental y de estado; sin cambio de código runtime. Siguiente: inventario de callsites, baseline de llamadas/latencia y refactorización focalizada.
+
+
+[2026-11-17] C1.810 — primera implementación runtime del mandato de autorización única
+- TASK: el dispatcher mantiene una sola validación de rol/sesión por acción; las mutaciones de calificación ya no reautorizan bajo ScriptLock y reutilizan el actor verificado. updateTask reutiliza initialIdentity bajo lock.
+- ACADEMIC: uploadStudentDocument ya no revalida identidad ni ámbito después del lock y reutiliza el handle de Spreadsheet abierto para la comprobación inicial.
+- Se conservaron locks de integridad, pertenencia de entrega/tarea, historial de rectificación y rollback.
+- Task-Service security local contracts run 44144320345 SUCCESS; Academic-Service single authorization context run 44144146101 SUCCESS. CLI local NOT RUN; Apps Script/Sheets/Drive real NOT RUN.
+- Department Scope y Accounting Import Preflight mantienen fallos transversales ajenos: Phase22 pide configureSchoolDocumentTemplate ausente en ACCOUNTING; auditor-readonly-role espera formato de declaración que no coincide con el código compacto.
+- Las tareas reabiertas por C1.809 siguen en Revisión requerida; C1.810 es parcial y no cierra TASK-153/TASK-134/TASK-142/AUD-NG-158.

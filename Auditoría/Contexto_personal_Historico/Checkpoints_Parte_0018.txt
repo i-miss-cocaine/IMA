@@ -451,3 +451,51 @@ Verificaciones documentales: IDs y cierres históricos contrastados con Plan Mae
 Siguiente tarea: inventario técnico focalizado de callsites de validación en ACADEMIC/EXAM/TASK, llamadas de red y controles por adjunto; medir el baseline y luego refactorizar sin tocar los locks de integridad.
 Estado: revisión documental publicada; implementación runtime pendiente de la siguiente iteración.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.810 — IMA-EXEC-20261117-ACADEMIC-SINGLE-AUTH-IMPLEMENTATION-01
+===============================================================================
+Repositorio: i-miss-cocaine/IMA
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.809
+HEAD inicial verificado: 7dc642061d411de21686f2528766b5f46ddad596
+Tarea: primera implementación runtime del mandato de autorización única C1.808 sobre flujos TASK y ACADEMIC.
+
+Explicación del checkpoint:
+- C1.809 reabrió capacidades históricas que añadían revalidación de sesión/rol/ámbito dentro de una misma operación. C1.810 comienza a corregirlas sin borrar la lógica funcional ni los locks que protegen escrituras.
+- En TASK, doPost es el único punto de validación RBAC de la acción. La mutación de calificación ya no vuelve a llamar validateRolePermission bajo el lock; reutiliza el actor validado y conserva los controles de pertenencia de entrega/tarea. updateTask reutiliza initialIdentity después de adquirir el lock.
+- En ACADEMIC, uploadStudentDocument valida actor y ámbito una sola vez antes del lock; el bloque protegido reutiliza el mismo Spreadsheet y el contexto previamente verificado. Se retiran las comprobaciones duplicadas de identidad/ámbito bajo lock.
+- Los contratos fueron adaptados para demostrar autorización central una vez, reutilización del actor y ausencia de una segunda comprobación durante la misma ejecución. No se eliminaron los locks de concurrencia, el historial de rectificación ni el rollback.
+
+Archivos runtime/pruebas modificados en los commits de esta iteración:
+- backend/task-service/Code.gs
+- tests/security/task-service-resource-ownership.test.js
+- tests/security/task-service-grade-submission-history.test.js
+- backend/academic-service/Code.gs
+- tests/security/academic-student-document-private-storage.test.js
+
+Commits de implementación y contratos:
+- 68eebd8bfe42390e95398fccc2e4437dca5e54b0 — TASK: no reautorizar calificación bajo lock.
+- f59a625c345c06c71375db5368a566ce253c41d7 — TASK: reutilizar actor en mutaciones protegidas.
+- 32ca74bea7038b14c3d99b48871cf92f5dd9de32 — ACADEMIC: reutilizar autorización de carga documental.
+- 7dc642061d411de21686f2528766b5f46ddad596 — contrato TASK: simular validación central única y reutilización de actor.
+- Los commits intermedios e66386d0 y ecc821a6 corrigieron fixtures/assertions detectados por Actions; no se ocultaron fallos.
+
+Verificación CI:
+- Task-Service security local contracts, GitHub Actions run 44144320345, Node.js runner: SUCCESS.
+- Academic-Service single authorization context, GitHub Actions run 44144146101, Node.js runner: SUCCESS.
+- Department Scope run 44144146334: FAILURE ajeno, Phase22 solicita configureSchoolDocumentTemplate ausente en ACCOUNTING.
+- Accounting Import Preflight run 44144146146: FAILURE ajeno, expectativa regex con espacios en auditor-readonly-role.test.js no coincide con declaración compacta existente.
+- Node CLI local: NOT RUN. No se afirma ejecución local.
+- Apps Script/Sheets/Drive reales y despliegue beta: NOT RUN.
+
+Estado:
+- C1.810 es un incremento parcial aprobado por sus dos contratos focalizados; no cierra TASK-153, TASK-134, TASK-142 ni AUD-NG-158.
+- Se mantienen Revisión requerida las capacidades reabiertas por C1.809. AUD-NG-084 sigue limitado a migraciones interservicio; AUD-NG-086 no se aplica al CRUD académico.
+- La rama base no se modificó.
+
+Siguiente tarea:
+- Auditar y simplificar PREVIEW/DOWNLOAD académico: localizar todos los consumidores, retirar el doble viaje de token/stream y las comprobaciones por adjunto que no sean necesarias para guardar/recuperar, conservando RBAC de la acción y acceso funcional al expediente cuando corresponda.
+===============================================================================
