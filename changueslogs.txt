@@ -4150,3 +4150,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se conservan contraseña con hash vigente, RBAC por acción, cierre remoto/limpieza de caché, invalidación de sesión al borrar cuenta y bloqueo temporal tras varios intentos fallidos. Tutoriales fuera del flujo.
 - AUD-NG-086 descartada para flujos académicos ordinarios. AUD-NG-084 se mantiene como histórico integrado, sin extender su complejidad a CRUD académico; retirar código existente requiere rastrear consumidores.
 - Siguiente tarea: inventario y medición de flujos de registros, notas y adjuntos.
+
+
+[2026-11-17] C1.809 — reapertura de tareas afectadas por simplificación académica
+- Se reabren para revisión las subcapacidades históricas de TASK-153/AUD-NG-386 que vuelven a validar RBAC/identidad/ámbito dentro de la misma operación, junto con las rutas de evidencia/adjuntos, uploadStudentDocument, PREVIEW/DOWNLOAD y materiales docentes identificadas en C1.752–C1.755 y C1.779–C1.782.
+- En pendientes/Docente/Pendientes.md, F34-TASK03 y AUD-NG-158 pasan a [ ] / Revisión requerida por C1.809; se conserva la evidencia histórica sin aceptar que cumpla el nuevo criterio.
+- Los locks de concurrencia e integridad se conservan cuando evitan duplicados o escrituras parciales. AUD-NG-084/C1.804 se mantiene limitado a sobres de migración; AUD-NG-086 no se implementa para CRUD académico.
+- Cambio documental y de estado; sin cambio de código runtime. Siguiente: inventario de callsites, baseline de llamadas/latencia y refactorización focalizada.

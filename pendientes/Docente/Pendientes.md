@@ -461,7 +461,7 @@
 ---
 
 <!-- ID: F34-TASK03 | Fuentes: AUDITORIAS/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md -->
-### [x] [F34-TASK03] Implementar acceso contextual ABAC docente a justificaciones de sus estudiantes
+### [ ] [F34-TASK03] Implementar acceso contextual ABAC docente a justificaciones de sus estudiantes
 - **Hallazgo de origen:** F34-11 y CAR-F34-04; PT-F34-06 no aprobado.
 - **Severidad:** Crítica / P0. **Objetivo:** permitir al docente consultar solo justificaciones de estudiantes matriculados en sus asignaturas/secciones vigentes.
 - **Implementación:** getTeacherStudentJustifications deriva identidad del token verificado y valida asignación activa, oferta académica, período vigente, matrícula confirmada y sesiones exactas del docente. Se incorporó DTO mínimo, auditoría de accesos, constancias CONOCIMIENTO/CONFORMIDAD idempotentes y evidencia privada condicionada por política institucional fail-closed.
@@ -469,8 +469,9 @@
 - **Criterios verificados:** token y rol docente; separación entre profesores/asignaturas; exclusión de matrícula retirada, período vencido, oferta inactiva y alumno sin matrícula; sesiones ajenas denegadas; notas internas y datos familiares no expuestos; acceso a evidencia privada solo con política explícita; auditoría; revocación revalidada antes de escritura; lock e idempotencia.
 - **Pruebas:** tests/security/academic-teacher-justification-abac.test.js PASS en Department Scope run 43737615044 (Node.js 24.22.2); sintaxis Apps Script/JS PASS. Task-Service run 43737615057 y Department Reference Consumers run 43737615098 SUCCESS.
 - **Límites:** BETA-FUNC-102 pendiente de validación con Apps Script/Sheets/Drive desplegados. Node local NOT RUN porque el entorno no pudo resolver github.com durante el checkout. No se afirma validación productiva ni integridad SHA-256 de adjuntos (F34-Task04).
-- **Estado:** Completada en código/revisión/CI; beta pendiente.
-- **Evidencia de cierre:** commit 0c4c81d6c5a59bcc2bce78f6e0b9f9dbd4031f38; checkpoint C1.752.
+- **Estado:** Revisión requerida por C1.809; el cierre C1.752 se conserva como evidencia histórica, pero debe alinearse con el mandato de una sola autorización por acción y sin controles redundantes por evidencia.
+- **Evidencia histórica:** commit 0c4c81d6c5a59bcc2bce78f6e0b9f9dbd4031f38; checkpoint C1.752.
+- **Reapertura C1.809:** revisar el ABAC por evidencia/justificación frente al permiso del rol ya definido; conservar actor y datos de registro verificados, retirando controles adicionales que no sean necesarios para procesar el flujo.
 
 ---
 
@@ -2985,17 +2986,18 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 ---
 
 <!-- ID: AUD-NG-158 | Fuentes: Pendientes.md -->
-### [x] [AUD-NG-158] Aplicar autorización contextual a escrituras docentes y conservar historial de fechas límite
+### [ ] [AUD-NG-158] Aplicar autorización contextual a escrituras docentes y conservar historial de fechas límite
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-158 (REQ-DOC-012).
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** backend/task-service/Code.gs; backend/academic-service/Code.gs; js/api.js; pruebas de seguridad académica.
 - **Dependencias Expuestas:** validateRolePermission, validateContextualAccess, getDynamicPermissionsForRole, createTask, updateTask, createStudyMaterial, AsignacionesDocentes, _verifiedUserId, fechaLimite, historial de tareas.
 - **Descripción del Alcance:** Aplicar ABAC server-side a todas las escrituras docentes. Derivar profesorId/autorId exclusivamente de la sesión verificada y comprobar que asignatura, grado y sección pertenecen a asignaciones vigentes del docente. Verificar propiedad/ámbito antes de editar o eliminar una tarea/material. Añadir historial append-only de cambios de fecha límite con valor anterior/nuevo, actor verificado, timestamp y motivo. Coordinar con AUD-NG-001/AUD-NG-004 para token y secreto, y con TASK-085/TASK-142 para privacidad documental, sin duplicar esos alcances.
 - **Criterios de Aceptación:** Un profesor no puede crear, editar ni eliminar tareas/materiales fuera de sus asignaciones aunque manipule el payload; el servidor deriva identidad y ámbito de claims verificados; updateTask rechaza tareas de otro profesor; cada cambio de fecha límite conserva historial inmutable con actor/fecha/motivo; pruebas negativas con dos docentes y dos secciones, modificación de IDs y múltiples cambios de fecha.
-- **Estado:** [x] Completada — C1.781; CI Task-Service local contracts SUCCESS.
+- **Estado:** Revisión requerida por C1.809; C1.781 queda como evidencia histórica, no como aceptación vigente del nuevo modelo.
 
 - **Cierre C1.781 (2026-11-16):** createTask, updateTask, createStudyMaterial y deleteStudyMaterial derivan identidad de getVerifiedTaskIdentity_ y aplican propiedad/ámbito antes de mutar. updateTask revalida identidad tras adquirir ScriptLock, valida asignación vigente y conserva cada cambio de fecha límite en HistorialFechasLimiteTareas (valor anterior/nuevo, actor verificado, rol, timestamp, motivo obligatorio y correlationId). Si falla la escritura del historial, la fila de tarea se revierte; no se modifican ni eliminan filas históricas. La UI docente solicita motivo cuando cambia la fecha.
-- **Evidencia:** Task-Service security local contracts run 43789958601 SUCCESS (11/11 pasos, Node.js 22.23.4), incluyendo task-service-security-contract, resource-ownership, grade-submission-history, deadline-history y node --check js/teacher.js. Task-Service backup and restore run 43789660478 SUCCESS. Los contratos confirman dos docentes/propietarios, identidad manipulada, motivo obligatorio, múltiples cambios, lock, esquema inválido y rollback.
+- **Evidencia histórica:** Task-Service security local contracts run 43789958601 SUCCESS (11/11 pasos, Node.js 22.23.4); Task-Service backup and restore run 43789660478 SUCCESS.
+- **Reapertura C1.809:** revisar ABAC/ownership y revalidación de identidad después del lock en createTask/updateTask/createStudyMaterial/deleteStudyMaterial. Mantener la derivación del actor real y la fecha/usuario asociados al registro; eliminar únicamente las comprobaciones de autorización repetidas o privilegios adicionales que excedan la matriz de roles vigente.
 
 ---
 

@@ -411,3 +411,43 @@ Siguiente tarea elegible: F25-Task03 — detección avanzada de duplicados e int
 - **Siguiente tarea elegible:** inventario y medición focalizada de los flujos académicos de registro, notas y adjuntos; localizar sobrecarga de autorización/validación y reducirla con pruebas locales.
 - **Rama base:** sin modificaciones.
 =============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.809 — IMA-EXEC-20261117-ACADEMIC-REOPEN-IMPACTED-TASKS-01
+===============================================================================
+Repositorio: i-miss-cocaine/IMA
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.808
+HEAD inicial verificado: a7ba8d85be118c9ccb29839aadcf6eebee716aad
+Tarea: reevaluación de tareas previamente completadas que resultan afectadas por el mandato académico C1.808.
+
+Motivo y explicación del checkpoint:
+- El plan actualizado exige una sola comprobación de sesión/rol en el punto de entrada de cada acción académica y reutilización del contexto verificado. Prohíbe revalidar la misma acción mediante llamadas Apps Script/servicio adicionales y evita validaciones/autorizaciones criptográficas por cada archivo o adjunto.
+- Por ello se suspenden los cierres históricos de las subcapacidades que añadieron RBAC/identidad/scope repetidos dentro de la misma operación, pruebas de revocación de rol durante una operación ya autorizada, ABAC extra para materiales/justificaciones y controles HMAC/hash por adjunto. No significa que todo el código previo esté defectuoso: cada subalcance se revisará y solo se retirará la parte redundante.
+- Se conservan como históricamente válidas las pruebas de lock que protegen concurrencia, escritura única, versionado y rollback, salvo que se demuestre que una prueba exige también una segunda autorización.
+
+Subcapacidades marcadas Revisión requerida en el Plan Maestro:
+- TASK-153/AUD-NG-386: C1.458–C1.461, C1.471; C1.481, C1.482, C1.484, C1.488, C1.490–C1.492; C1.498–C1.505, C1.509–C1.510; C1.514, C1.520, C1.522–C1.528, C1.533–C1.547, C1.551, C1.555, C1.557, C1.560, C1.562, C1.564, C1.566, C1.568, C1.570, C1.571 y C1.579.
+- F34-TASK03/C1.752; F34-TASK04/C1.753; subflujo de evidencia TASK-105/C1.754; TASK-106/C1.755.
+- TASK-134/C1.779; TASK-142/C1.780 y C1.782; AUD-NG-158/C1.781.
+
+Backlog actualizado:
+- pendientes/Docente/Pendientes.md: F34-TASK03 y AUD-NG-158 pasan de [x] a [ ] y Estado «Revisión requerida por C1.809». Se conserva la evidencia y explicación histórica C1.781/C1.752, con nota de que el cierre queda suspendido por el nuevo mandato.
+- TASK-134 y TASK-142 permanecen abiertos en sus backlogs; solo se suspende la aceptación de sus subcapacidades históricas afectadas.
+
+No se reabren automáticamente AUD-NG-084/C1.804 (credenciales y anti-replay de sobres de migración), TASK-060/C1.796 (lectura de configuración funcional) ni pruebas de concurrencia que no reautoricen la operación. AUD-NG-086 sigue descartada para CRUD académico ordinario.
+
+Archivos modificados:
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0018.txt
+- pendientes/Docente/Pendientes.md
+- changueslogs.txt
+
+Verificaciones documentales: IDs y cierres históricos contrastados con Plan Maestro, checkpoints C1.752–C1.808 y backlogs vigentes. Normas_Desarollo.md NDASC 1.4 consultada; no modificada. No hubo cambio de código en C1.809.
+
+Siguiente tarea: inventario técnico focalizado de callsites de validación en ACADEMIC/EXAM/TASK, llamadas de red y controles por adjunto; medir el baseline y luego refactorizar sin tocar los locks de integridad.
+Estado: revisión documental publicada; implementación runtime pendiente de la siguiente iteración.
+===============================================================================

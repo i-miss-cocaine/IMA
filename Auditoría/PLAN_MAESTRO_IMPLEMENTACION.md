@@ -5767,3 +5767,35 @@ AUD-NG-084 queda como trabajo histórico ya integrado, no como requisito para ca
 ## Próxima tarea elegible
 
 Realizar un inventario focalizado de los caminos académicos de creación de registros, notas y adjuntos: localizar llamadas de adquisición/liberación, revalidaciones de sesión, llamadas encadenadas de autorización y validaciones repetidas. Medir llamadas y latencia con pruebas locales. Eliminar únicamente las sobrecargas demostradas, manteniendo el control de rol en el punto de entrada y los cinco controles de seguridad enumerados arriba.
+
+
+# Addendum de reevaluación — C1.809 / mandato académico C1.808
+
+**Estado vigente:** las subcapacidades enumeradas abajo pasan de «Completada» histórica a **Revisión requerida**. Esta marca suspende su aceptación bajo los criterios anteriores, no borra su implementación ni sus pruebas. Los checkpoints históricos se conservan íntegros; este addendum es la fuente vigente para el estado después de C1.808.
+
+## Alcance que se reabre
+
+| Tarea / evidencia histórica | Estado vigente | Motivo de reevaluación |
+|---|---|---|
+| TASK-153 / AUD-NG-386: C1.458–C1.461 y C1.471 | Revisión requerida | Revisar revalidaciones de identidad, rol, ámbito y ownership dentro de la misma operación académica; conservar las reglas de negocio y la comprobación de rol única en el punto de entrada. |
+| TASK-153 / AUD-NG-386: C1.481, C1.482, C1.484, C1.488, C1.490–C1.492 | Revisión requerida | Las rutas de lectura de exámenes/libro/recuperaciones vuelven a ejecutar RBAC/identidad/contexto dentro de wrappers tras el control de entrada. Retirar solo duplicados de autorización; conservar la consulta y los filtros funcionales necesarios. |
+| TASK-153 / AUD-NG-386: C1.498–C1.505, C1.509–C1.510 | Revisión requerida | Las mutaciones de notas, recuperaciones, cierre, revisión, reapertura, rectificación y entregas incorporan controles repetidos y/o revalidación de autorización. Reutilizar el contexto autorizado de la acción. |
+| TASK-153 / AUD-NG-386: C1.514, C1.520, C1.522–C1.528, C1.533–C1.547, C1.551, C1.555, C1.557, C1.560, C1.562, C1.564, C1.566, C1.568, C1.570, C1.571, C1.579 | Revisión requerida | Los contratos verifican pérdida/revocación de identidad o RBAC durante una misma ejecución y esperan una segunda autorización. Actualizar código y expectativas al modelo de validación única en el límite de entrada. |
+| F34-TASK03 / C1.752 | Revisión requerida | El ABAC contextual docente para justificaciones debe alinearse con los privilegios por rol ya definidos y no añadir controles por archivo/evidencia. |
+| F34-TASK04 / C1.753; TASK-105 / C1.754 (solo subflujo de evidencia); TASK-106 / C1.755 | Revisión requerida | Revisar hash, integridad y verificaciones por adjunto; conservar únicamente lo indispensable para guardar/recuperar correctamente el contenido y los requisitos funcionales explícitos. |
+| TASK-134 / C1.779 | Revisión requerida | uploadStudentDocument revalida identidad/rol y ámbito después del lock; eliminar la repetición de autorización en la misma acción, manteniendo la validación de rol al entrar y las operaciones mínimas de almacenamiento. |
+| TASK-142 / C1.780 y C1.782 | Revisión requerida | Revisar tokens HMAC de un solo uso, autorización adicional y auditoría por documento para PREVIEW/DOWNLOAD académico. Mantener el permiso de rol por acción, sin controles redundantes por archivo. |
+| AUD-NG-158 / C1.781 | Revisión requerida | createTask/updateTask/createStudyMaterial/deleteStudyMaterial aplican ABAC y revalidan identidad/ámbito después de adquirir lock. Mantener actor real, fecha y usuario asociados al registro; revisar los controles adicionales frente al modelo de rol/privilegios. |
+
+## Trabajo que no se reabre automáticamente
+
+- Los locks que protegen escrituras concurrentes, evitan filas/versiones duplicadas o permiten rollback no son, por sí mismos, una segunda autorización. Se conservan mientras sean necesarios para la integridad de los datos.
+- AUD-NG-084 y C1.804 conservan su alcance de credenciales y anti-replay para sobres de migración/interservicio; no se extienden a CRUD académico ordinario ni a adjuntos.
+- TASK-060/C1.796 conserva las consultas interservicio de configuración que recuperan datos funcionales; no son una llamada cuyo único propósito sea volver a autorizar la misma acción.
+- AUD-NG-086 continúa descartada para flujos académicos ordinarios.
+
+## Criterio de cierre de la reevaluación
+
+Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/rol una vez en el punto de entrada, reutilice el contexto durante la operación, no haga llamadas de red para adquirir/liberar autorizaciones ni encadene otra llamada solo para reautorizar, y sus pruebas demuestren acceso permitido/denegado, sesión expirada y eliminación de cuenta sin exigir revocación de rol en mitad de una operación ya autorizada. Se mantienen las comprobaciones funcionales mínimas de campos, datos y almacenamiento, sin repetirlas por adjunto.
+
+**Siguiente ejecución:** inventario de callsites y conteo de validaciones/llamadas en ACADEMIC, EXAM y TASK; después, refactorización focalizada y contratos locales de llamadas/latencia.
