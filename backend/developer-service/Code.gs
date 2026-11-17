@@ -2552,7 +2552,7 @@ function developerMapServiceRegistryRow_(row) {
   var associatedSpreadsheetId = String(row[5] || "").trim();
   if (!serviceId || !name) throw new Error("SERVICE_REGISTRY_ROW_INVALID");
   if (!ownerAccount || !associatedSpreadsheetId ||
-      ownerAccount.toLowerCase() === "sistema@institucional.edu" ||
+      ownerAccount.toLowerCase() === "sistema@institucional.edu" || /@domain\\.edu$/i.test(ownerAccount) ||
       associatedSpreadsheetId === String(SPREADSHEET_ID || "")) {
     throw new Error("SERVICE_REGISTRY_PLACEHOLDER_METADATA");
   }
@@ -2638,7 +2638,7 @@ function registerServiceInstance(payload) {
   const ownerAccount = String(cuentaPropietaria || "").trim();
   const associatedSpreadsheetId = String(spreadsheetAsociado || "").trim();
   if (!ownerAccount || !associatedSpreadsheetId ||
-      ownerAccount.toLowerCase() === "sistema@institucional.edu" ||
+      ownerAccount.toLowerCase() === "sistema@institucional.edu" || /@domain\\.edu$/i.test(ownerAccount) ||
       associatedSpreadsheetId === String(SPREADSHEET_ID || "")) {
     throw new Error("SERVICE_OWNER_AND_SPREADSHEET_REQUIRED");
   }
