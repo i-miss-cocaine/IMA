@@ -855,6 +855,7 @@ function buildImportPreview_(payload) {
   if (targetSnapshot.verified !== true) addError("TARGET_EXISTENCE_UNVERIFIED", "No se pudo verificar el identificador de destino en el servicio propietario; la incorporación queda bloqueada.");
   var duplicateMatches = Array.isArray(targetSnapshot.duplicateMatches) ? targetSnapshot.duplicateMatches : [];
   var referenceErrors = Array.isArray(targetSnapshot.referenceErrors) ? targetSnapshot.referenceErrors : [];
+  var rejectedPreparedIndexes = Object.assign({}, duplicateFilePreparedIndexes), linkedPreparedIndexes = {};
   referenceErrors.forEach(function(referenceError) {
     var preparedIndex = Number(referenceError.rowIndex), originalIndex = validIndexes[preparedIndex];
     var rowNumber = Array.isArray(structural.dataRowNumbers) && structural.dataRowNumbers[originalIndex] ?
@@ -862,7 +863,6 @@ function buildImportPreview_(payload) {
     addError(String(referenceError.code || "IMPORT_REFERENCE_INVALID"), "Una referencia académica o institucional no existe o no está activa.", rowNumber);
     rejectedPreparedIndexes[preparedIndex] = true;
   });
-  var rejectedPreparedIndexes = Object.assign({}, duplicateFilePreparedIndexes), linkedPreparedIndexes = {};
   if (duplicateMatches.length && allowedDuplicatePolicies.indexOf(duplicatePolicy) === -1) {
     addError("IMPORT_DUPLICATE_POLICY_REQUIRED", "Debe seleccionar una política explícita para resolver los duplicados.");
   }
