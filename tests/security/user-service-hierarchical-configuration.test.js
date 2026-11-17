@@ -46,7 +46,7 @@ function harness(opts={}){
  const dep=[dh];if(opts.department!==false)dep.push(["OVR-1","CFG-1","feature.flag","INST-1","D-1",JSON.stringify("department"),"TEXTO","1.1","ACTIVO","created","U-DIR","updated","U-DIR","test"]);
  const sheets={ConfiguracionSistema:sheet(sys),ConfiguracionDepartamental:sheet(dep)},ss={getSheetByName:n=>sheets[n]||null},calls=[];
  const ctx={SPREADSHEET_ID:"TEST",Date,Math,JSON,Number,String,Object,Array,isFinite,SpreadsheetApp:{openById:()=>ss},
-  getUserVerifiedRole:p=>(p._verifiedUserId=p._verifiedUserId||"U-1",opts.role||"Director"),getIdentityInstitutionId_:()=>"INST-1",
+  getUserVerifiedRole:p=>(p._verifiedUserId=p._verifiedUserId||"U-1",opts.role||p.role||"Director"),getIdentityInstitutionId_:()=>"INST-1",
   configurationDepartmentContext_:(p,d)=>{if(!opts.departments||!opts.departments.includes(d))throw Error("CONFIGURATION_DEPARTMENT_SCOPE_DENIED");return{status:"success",departmentIds:opts.departments};},
   configurationRoleAllowed_:(s,r,k,a,sc)=>{calls.push(sc);return opts.readAllowed?opts.readAllowed(sc,r):true;},
   PUBLIC_ACTIONS:[],getDynamicPermissionsForRole:(r,p)=>p==="manageDepartmentalConfiguration"&&opts.departmentManager===true,logStructuredEvent:()=>{}};
@@ -82,9 +82,14 @@ function harness(opts={}){
  assert.equal(r.status,"success");assert.equal(r.origenEfectivo,"PERSONAL");assert.equal(r.valorGlobal,null);assert.equal(r.valorInstitucional,null);assert.equal(r.valorDepartamental,null);
 }
 {
- const h=harness({departmentManager:true});
+ const h=harness({departmentManager:true,role:"Coordinador"});
  const r=h.ctx.validateRolePermission("resetSystemConfigurationOverride",{_verifiedUserId:"U-DEPT",role:"Coordinador"});
- assert.equal(r.authorized,true);
+ assert.equal(r.authorized,true,"departmental managers can reach reset through the departmental permission");
+}
+{
+ const h=harness({role:"Coordinador"});
+ const r=h.ctx.validateRolePermission("resetSystemConfigurationOverride",{_verifiedUserId:"U-DEPT",role:"Coordinador"});
+ assert.equal(r.authorized,false,"departmental reset is denied without its server permission");
 }
 function writeSheet(rows){
  const x=sheet(rows);
@@ -175,6 +180,18 @@ function writeHarness(options={}){
  const h=harness({department:false,departments:["D-1"]});
  const result=h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag",departamentoId:"D-1"});
  assert.equal(result.valor,"institution","without an explicit departmental override, the institutional value is inherited");
+}
+{
+ const h=harness({departments:["D-1","D-2"]});
+ const result=h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag",departamentoId:"D-2"});
+ assert.equal(result.valor,"institution","a D-1 override is never visible in D-2");
+ assert.equal(result.origenEfectivo,"INSTITUCIONAL");
+ assert.equal(result.valorDepartamental,null);
+}
+{
+ const h=harness({policy:{policy:"GLOBAL_OBLIGATORIO",allowedScopes:["GLOBAL"],inheritance:false,override:false}});
+ assert.equal(h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag"}).valor,"global");
+ assert.equal(h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag",departamentoId:"D-1"}).code,"CONFIGURATION_SCOPE_NOT_ALLOWED");
 }
 {
  const h=harness({institution:false,department:false});
