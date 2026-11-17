@@ -23,7 +23,7 @@ const targetSheet={getDataRange(){return{getValues(){return targetRows.map(row=>
 const ss={getSheetByName(name){if(name==="CorrespondenciaIdentificadores")return sheet;if(name==="Cursos")return targetSheet;return null;}};
 const schemas={curso:{service:"ACCOUNTING",sheet:"Cursos",headers:["CursoID","NombreCurso","Nota","FechaInicio"]},estudiante:{service:"ACADEMIC",sheet:"ExpedientesEstudiantes",headers:["ExpedienteID","PersonaID"]},persona:{service:"USER",sheet:"Personas",headers:["PersonaID","Nombres","Apellidos","Identificacion","EmailContacto"]}};
 const auditRows=[],writeCalls=[],rollbackCalls=[];
-let remoteDuplicateMatches=[];
+let remoteDuplicateMatches=[],remoteReferenceErrors=[],lastReferenceKeys=[];
 let failWriteAt=0,runCounter=0;
 const audit={appendRow(row){auditRows.push(row);}};
 let binaryFileHash="a".repeat(64);
@@ -46,7 +46,7 @@ const context={SPREADSHEET_ID:"TEST",MIGRATION_OWNER_SCHEMAS_:schemas,
  },
  requestAccountingTrustedOwnerSnapshot_(service,payload){
   if(!payload||!payload.sessionToken)return{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"};
-  if(service==="ACADEMIC")return{status:"success",verified:true,service:"ACADEMIC",sheet:"ExpedientesEstudiantes",idField:"ExpedienteID",institutionId:"INST-1",existingTargetIds:["ESTUDIANTE-1"],targetRows:[],duplicateMatches:[],referenceErrors:[]};
+  if(service==="ACADEMIC"){lastReferenceKeys=payload.referenceKeys||[];return{status:"success",verified:true,service:"ACADEMIC",sheet:"ExpedientesEstudiantes",idField:"ExpedienteID",institutionId:"INST-1",existingTargetIds:["ESTUDIANTE-1"],targetRows:[],duplicateMatches:[],referenceErrors:remoteReferenceErrors};}
   if(service==="USER")return{status:"success",verified:true,service:"USER",sheet:"Personas",idField:"PersonaID",institutionId:"INST-1",existingTargetIds:["PERSONA-1"],targetRows:[],duplicateMatches:remoteDuplicateMatches};
   return{status:"error",code:"OWNER_NOT_ALLOWED"};
  },
@@ -162,6 +162,15 @@ assert.equal(context.preview(student).targetExistenceSnapshot.verified,true);
 assert.equal(context.preview(student).relatedReferenceSnapshot.verified,true);
 assert.deepEqual(Array.from(context.preview(student).targetExistenceSnapshot.existingTargetIds),["ESTUDIANTE-1"]);
 assert.deepEqual(Array.from(context.preview(student).relatedReferenceSnapshot.existingTargetIds),["PERSONA-1"]);
+const studentWithReferences={...student,filasData:[{legacyId:"EST-1",persona:"PER-1",Grado:"1ero",Seccion:"A",DepartamentoID:"DEP-1",ExpedienteReferenciaID:"EXP-OLD"}]};
+const referencesValid=context.preview(studentWithReferences);
+assert.equal(referencesValid.validForImport,true);
+assert.deepEqual(lastReferenceKeys,[{rowIndex:0,grado:"1ero",seccion:"A",departamentoId:"DEP-1",expedienteId:"EXP-OLD"}]);
+remoteReferenceErrors=[{rowIndex:0,field:"Grado/Seccion",code:"IMPORT_REFERENCE_GRADE_SECTION_NOT_FOUND"}];
+const referencesInvalid=context.preview(studentWithReferences);
+assert.equal(referencesInvalid.validForImport,false);
+assert.ok(referencesInvalid.errores.some(x=>x.codigo==="IMPORT_REFERENCE_GRADE_SECTION_NOT_FOUND"));
+remoteReferenceErrors=[];
 const personImport={...base,destinoModulo:"USER",tipoEntidad:"persona",columnaMapeo:{identificador:"legacyId",campos:{Nombres:"nombres",Apellidos:"apellidos",Identificacion:"dni",EmailContacto:"email"}},filasData:[{legacyId:"PER-3",nombres:"Persona",apellidos:"Privada",dni:"0801-1999-00011",email:"persona@example.test"}]};
 remoteDuplicateMatches=[{rowIndex:0,targetId:"PERSONA-OLD",field:"NombreCompleto",matchType:"POSIBLE"}];
 const possiblePersonDuplicate=context.preview(personImport);
@@ -178,6 +187,9 @@ assert.equal(alreadyLinked.validForImport,true,JSON.stringify(alreadyLinked));
 assert.equal(alreadyLinked.filasVinculadas,1);assert.equal(alreadyLinked.validRowIndexes.length,0);
 const linkedImport=context.import({...personImport,politicaDuplicados:"VINCULAR",previewConfirmed:true,previewHash:alreadyLinked.previewHash});
 assert.equal(linkedImport.status,"success");assert.equal(linkedImport.registrosEscritos,0);assert.equal(linkedImport.registrosVinculados,1);
+const linkedAuditWarnings=JSON.parse(auditRows[auditRows.length-1][7]);
+assert.ok(linkedAuditWarnings.some(x=>x.codigo==="DUPLICATE_POLICY_SELECTED"&&x.politica==="VINCULAR"));
+assert.equal(linkedImport.filasOmitidasPorValidacion,0);
 remoteDuplicateMatches=[];
 const orphan=context.preview({...student,filasData:[{legacyId:"EST-1",persona:"MISSING"}]});
 assert.equal(orphan.validForImport,false);assert.ok(orphan.errores.some(x=>x.codigo==="ORPHANED_REFERENCE"));
