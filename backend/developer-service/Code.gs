@@ -2548,7 +2548,14 @@ function developerMapServiceRegistryRow_(row) {
     throw new Error("SERVICE_REGISTRY_ROW_INVALID");
   }
   var serviceId = String(row[0] || "").trim(), name = String(row[1] || "").trim();
+  var ownerAccount = String(row[3] || "").trim();
+  var associatedSpreadsheetId = String(row[5] || "").trim();
   if (!serviceId || !name) throw new Error("SERVICE_REGISTRY_ROW_INVALID");
+  if (!ownerAccount || !associatedSpreadsheetId ||
+      ownerAccount.toLowerCase() === "sistema@institucional.edu" ||
+      associatedSpreadsheetId === String(SPREADSHEET_ID || "")) {
+    throw new Error("SERVICE_REGISTRY_PLACEHOLDER_METADATA");
+  }
   var permissions = [];
   if (row[9] !== "" && row[9] !== null && row[9] !== undefined) {
     try { permissions = typeof row[9] === "string" ? JSON.parse(row[9]) : row[9]; }
@@ -2568,9 +2575,9 @@ function developerMapServiceRegistryRow_(row) {
     serviceId: serviceId,
     name: name,
     departamento: String(row[2] || ""),
-    cuentaPropietaria: String(row[3] || ""),
+    cuentaPropietaria: ownerAccount,
     endpointUrl: String(row[4] || ""),
-    spreadsheetAsociado: String(row[5] || ""),
+    spreadsheetAsociado: associatedSpreadsheetId,
     dominioDatos: String(row[6] || ""),
     state: String(row[7] || ""),
     version: String(row[8] || ""),
@@ -2630,7 +2637,11 @@ function registerServiceInstance(payload) {
   const sName = String(name).trim();
   const ownerAccount = String(cuentaPropietaria || "").trim();
   const associatedSpreadsheetId = String(spreadsheetAsociado || "").trim();
-  if (!ownerAccount || !associatedSpreadsheetId) throw new Error("SERVICE_OWNER_AND_SPREADSHEET_REQUIRED");
+  if (!ownerAccount || !associatedSpreadsheetId ||
+      ownerAccount.toLowerCase() === "sistema@institucional.edu" ||
+      associatedSpreadsheetId === String(SPREADSHEET_ID || "")) {
+    throw new Error("SERVICE_OWNER_AND_SPREADSHEET_REQUIRED");
+  }
   if (permisosConcedidos !== undefined && (!Array.isArray(permisosConcedidos) || permisosConcedidos.some(function(value) { return typeof value !== "string" || !value.trim(); }))) {
     throw new Error("INVALID_SERVICE_PERMISSIONS");
   }

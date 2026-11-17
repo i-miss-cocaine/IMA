@@ -119,6 +119,13 @@ result = h.getCentralServiceRegistry({});
 assert.equal(result.status, "error");
 assert.equal(result.code, "SERVICE_REGISTRY_SCHEMA_MISMATCH");
 
+h = harness({ CatalogoServicios: sheet([registryHeaders, row("SVC-FAKE","Placeholder")]) });
+h.sheets.CatalogoServicios.rows[1][3] = "sistema@institucional.edu";
+h.sheets.CatalogoServicios.rows[1][5] = "TEST";
+result = h.getCentralServiceRegistry({});
+assert.equal(result.status, "error");
+assert.equal(result.code, "SERVICE_REGISTRY_PLACEHOLDER_METADATA");
+
 h = harness({ CatalogoServicios: sheet([registryHeaders, row("SVC-1","One"), row("svc-1","Duplicate")]) });
 result = h.getCentralServiceRegistry({});
 assert.equal(result.status, "error");
@@ -152,6 +159,9 @@ assert.equal(Object.keys(h.sheets).length, 0, "invalid registration must not cre
 h = harness();
 assert.throws(() => h.registerServiceInstance({ serviceId: "SVC-NO-OWNER", name: "No owner" }), /SERVICE_OWNER_AND_SPREADSHEET_REQUIRED/);
 assert.equal(Object.keys(h.sheets).length, 0, "missing owner/spreadsheet must not create a fictitious registry entry");
+h = harness();
+assert.throws(() => h.registerServiceInstance({ serviceId: "SVC-FAKE", name: "Fake", cuentaPropietaria: "sistema@institucional.edu", spreadsheetAsociado: "TEST" }), /SERVICE_OWNER_AND_SPREADSHEET_REQUIRED/);
+assert.equal(Object.keys(h.sheets).length, 0);
 
 h = harness({ CatalogoServicios: sheet([registryHeaders, row("SVC-1","Service")]) });
 result = h.updateServiceStatus({ serviceId: "SVC-1", newState: "degradado", reason: "test", updatedBy: "synthetic" });
