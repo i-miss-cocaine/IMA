@@ -10,14 +10,15 @@ function extractFunction(name) {
   const next = source.indexOf("\nfunction ", start + 10);
   return source.slice(start, next < 0 ? source.length : next);
 }
-function extractConst(name, nextName) {
+function extractConst(name) {
   const start = source.indexOf("const " + name);
   assert.notEqual(start, -1, "missing const " + name);
-  const end = source.indexOf("const " + nextName, start + 10);
-  return source.slice(start, end < 0 ? source.length : end);
+  const end = source.indexOf("];", start);
+  assert.notEqual(end, -1, "missing const terminator " + name);
+  return source.slice(start, end + 2);
 }
 const profileCode = [
-  extractConst("ACCOUNTING_IMPORT_MAPPING_PROFILE_HEADERS_", "ACCOUNTING_IDENTITY_MAPPING_HEADERS_"),
+  extractConst("ACCOUNTING_IMPORT_MAPPING_PROFILE_HEADERS_"),
   extractFunction("ensureImportMappingProfilesSheet_"),
   extractFunction("importMappingProfileContext_"),
   extractFunction("normalizeImportMappingProfile_"),
