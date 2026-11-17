@@ -158,17 +158,24 @@ function doPost(e) {
     if (action === "ping") return doGet();
 
     delete payload._verifiedUserId;
-    let userRole = "SinRol";
+    delete payload.authRole;
     const token = payload && (payload.sessionToken || payload.authToken || payload.token);
-    if (token) {
-      const claims = verifySessionToken(token);
-      if (claims && claims.role && claims.userId) {
-        userRole = claims.role;
-        payload._verifiedUserId = String(claims.userId);
-      }
-    } else if (payload && payload.authRole) {
-      userRole = payload.authRole;
+    if (!token) {
+      return textResponse({ status: "error", code: "AUTHENTICATION_REQUIRED", message: "Se requiere una sesión autenticada para ejecutar esta acción." });
     }
+
+    let claims = null;
+    try { claims = verifySessionToken(token); } catch (_) { claims = null; }
+    if (!claims) {
+      return textResponse({ status: "error", code: "INVALID_SESSION_TOKEN", message: "La sesión no es válida o ha expirado." });
+    }
+
+    const userRole = typeof claims.role === "string" ? claims.role.trim() : "";
+    const verifiedUserId = typeof claims.userId === "string" ? claims.userId.trim() : "";
+    if (!userRole || !verifiedUserId) {
+      return textResponse({ status: "error", code: "INVALID_SESSION_CLAIMS", message: "La sesión no contiene una identidad y un rol válidos." });
+    }
+    payload._verifiedUserId = verifiedUserId;
 
     const permitted = ROLE_PERMISSIONS[userRole] || [];
     if (!permitted.includes("*") && !permitted.includes(action)) {
