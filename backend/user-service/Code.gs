@@ -1306,7 +1306,12 @@ function manageMigrationCredentialFromEditor_(input, revoke) {
     var isLocalSigner = service === IMA_LOCAL_SERVICE_ID_;
     var signingKey = "IMA_MIGRATION_HMAC_SECRET";
     var signingVersionKey = "IMA_MIGRATION_HMAC_SECRET_VERSION";
+    var oldActive = activeRows.length ? activeRows[0] : null;
+    var oldActiveVersion = oldActive ? String(oldActive.row[3] || "").trim() : "";
+    var oldVersionedKey = oldActive && oldActiveVersion !== version ?
+      "IMA_MIGRATION_HMAC_SECRET_" + service + "_V_" + oldActiveVersion : "";
     var propertyKeys = [versionedKey, activeVerifierKey, activeVerifierVersionKey];
+    if (oldVersionedKey) propertyKeys.push(oldVersionedKey);
     if (isLocalSigner) propertyKeys.push(signingKey, signingVersionKey);
     var previousProperties = {};
     propertyKeys.forEach(function(key) {
@@ -1379,6 +1384,9 @@ function manageMigrationCredentialFromEditor_(input, revoke) {
     }
 
     if (requestedStatus === "VERIFY_ONLY") {
+      if (String(targetItem.row[4] || "").trim().toUpperCase() === "ACTIVE") {
+        throw new Error("CREDENTIAL_PROVISIONING_ACTIVE_DEMOTION_REQUIRES_ROTATION");
+      }
       try {
         setProperty_(versionedKey, secret);
         var verifyOnlyRow = targetItem.row.slice();
@@ -1394,8 +1402,6 @@ function manageMigrationCredentialFromEditor_(input, revoke) {
       };
     }
 
-    var oldActive = activeRows.length ? activeRows[0] : null;
-    var oldActiveVersion = oldActive ? String(oldActive.row[3] || "").trim() : "";
     var oldActiveSecret = "";
     if (oldActive && oldActiveVersion !== version) {
       var oldVersionedKey = "IMA_MIGRATION_HMAC_SECRET_" + service + "_V_" + oldActiveVersion;
