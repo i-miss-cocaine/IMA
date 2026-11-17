@@ -776,7 +776,7 @@ function parseExamQuestionListField_(value) {
 function normalizeExamQuestionDefinition_(input, defaults) {
   const q = input && typeof input === "object" && !Array.isArray(input) ? input : {};
   const fallback = defaults && typeof defaults === "object" ? defaults : {};
-  let type = normalizeString(q.tipo || q.preguntaTipo || fallback.tipo || "opcion_multiple").replace(/\\s+/g, "_");
+  let type = normalizeString(q.tipo || q.preguntaTipo || fallback.tipo || "opcion_multiple").replace(/\s+/g, "_");
   if (type === "respuesta_breve" || type === "respuesta_corta") type = "completacion";
   const allowedTypes = ["opcion_multiple", "verdadero_falso", "completacion", "termino_pareado",
     "seleccion_multiple", "respuesta_extensa", "numerica", "ordenamiento", "adjunto"];
@@ -811,8 +811,8 @@ function normalizeExamQuestionDefinition_(input, defaults) {
     if (concepts.length < 2 || definitions.length < 2 || concepts.length !== definitions.length ||
         !mapping || typeof mapping !== "object" || Array.isArray(mapping)) throw new Error("QUESTION_MATCHING_SCHEMA_INVALID");
     const keys = Object.keys(mapping);
-    if (keys.length !== concepts.length || keys.some(key => !/^\\d+$/.test(key) ||
-        Number(key) >= concepts.length || !/^\\d+$/.test(String(mapping[key])) ||
+    if (keys.length !== concepts.length || keys.some(key => !/^\d+$/.test(key) ||
+        Number(key) >= concepts.length || !/^\d+$/.test(String(mapping[key])) ||
         Number(mapping[key]) >= definitions.length)) throw new Error("QUESTION_MATCHING_ANSWER_INVALID");
     answer = JSON.stringify(mapping);
   } else if (type === "seleccion_multiple") {

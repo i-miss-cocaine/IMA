@@ -73,7 +73,7 @@ const runtime={
  PropertiesService:{getScriptProperties(){return {getProperty(name){return name==="IMA_INSTITUTION_ID"?"I1":null;}};}},
  SpreadsheetApp:{openById(){sheetOpens++;return ss;}},getSheetOrThrow(spreadsheet,name){const sheet=spreadsheet.getSheetByName(name);if(!sheet)throw Error("Missing "+name);return sheet;},
  getOrCreateSheet(spreadsheet,name){const sheet=spreadsheet.getSheetByName(name);if(!sheet)throw Error("Missing "+name);return sheet;},
- normalizeString(value){return String(value||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").trim().toLowerCase();},
+ normalizeString(value){return String(value||"").trim().toLowerCase().replace(/\s+/g," ");},
  Utilities:{getUuid(){uuid++;return "UUID-"+uuid;}},
  LockService:{getScriptLock(){return {
   tryLock(){lockAcquires++;if(beforeAcquire){const fn=beforeAcquire;beforeAcquire=null;fn();}if(!lockAvailable||lockHeld)return false;lockHeld=true;return true;},
