@@ -1,0 +1,35 @@
+name: Hierarchical Configuration Contract
+
+on:
+  push:
+    branches:
+      - NG_beta_0.0.0.1_work
+    paths:
+      - backend/user-service/Code.gs
+      - backend/developer-service/Code.gs
+      - tests/security/user-service-hierarchical-configuration.test.js
+      - .github/workflows/hierarchical-configuration-contract.yml
+
+permissions:
+  contents: read
+
+jobs:
+  hierarchical-configuration-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout authorized work branch
+        uses: actions/checkout@v4
+        with:
+          ref: NG_beta_0.0.0.1_work
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Syntax-check USER service
+        run: node --check < backend/user-service/Code.gs
+      - name: Syntax-check DEVELOPER service
+        run: node --check < backend/developer-service/Code.gs
+      - name: Syntax-check contract
+        run: node --check tests/security/user-service-hierarchical-configuration.test.js
+      - name: Run hierarchical configuration contract
+        run: node tests/security/user-service-hierarchical-configuration.test.js
