@@ -114,10 +114,15 @@ assert.equal(result.code, "SERVICE_REGISTRY_PERMISSIONS_INVALID");
 assert.equal(result.totalServicios, 0);
 assert.ok(h.logs.some(value => value.includes("SERVICE_REGISTRY_PERMISSIONS_INVALID")));
 
-h = harness({ CatalogoServicios: sheet([["ServiceID","WrongHeader"], row("SVC-1","Service")]) });
+h = harness({ CatalogoServicios: sheet([["ServiceID","WrongHeader","Department","OwnerAccount","EndpointURL","SpreadsheetID","DataDomain","State","Version","PermissionsJSON","RegisteredAt"], row("SVC-1","Service")]) });
 result = h.getCentralServiceRegistry({});
 assert.equal(result.status, "error");
 assert.equal(result.code, "SERVICE_REGISTRY_SCHEMA_MISMATCH");
+
+h = harness({ CatalogoServicios: sheet([["ServiceID","WrongHeader","Department","OwnerAccount","EndpointURL","SpreadsheetID","DataDomain","State","Version","PermissionsJSON","RegisteredAt"]]) });
+const malformedHeaderBefore = h.sheets.CatalogoServicios.rows.map(row => row.slice());
+assert.throws(() => h.registerServiceInstance({ serviceId: "SVC-NEW", name: "New", cuentaPropietaria: "owner@example.invalid", spreadsheetAsociado: "SHEET-NEW" }), /SERVICE_REGISTRY_SCHEMA_MISMATCH/);
+assert.deepEqual(h.sheets.CatalogoServicios.rows, malformedHeaderBefore, "malformed header must not be migrated or rewritten");
 
 h = harness({ CatalogoServicios: sheet([registryHeaders, row("SVC-FAKE","Placeholder")]) });
 h.sheets.CatalogoServicios.rows[1][3] = "sistema@institucional.edu";
@@ -165,6 +170,9 @@ assert.deepEqual(h.sheets.CatalogoServicios.rows, [row("SVC-OLD","Existing legac
 h = harness();
 assert.throws(() => h.registerServiceInstance({ serviceId: "SVC-BAD", name: "Bad", cuentaPropietaria: "owner@example.invalid", spreadsheetAsociado: "SHEET-BAD", permisosConcedidos: "read" }), /INVALID_SERVICE_PERMISSIONS/);
 assert.equal(Object.keys(h.sheets).length, 0, "invalid registration must not create or mutate the registry");
+h = harness();
+assert.throws(() => h.registerServiceInstance({ serviceId: "SVC-DUP-PERM", name: "Duplicate permissions", cuentaPropietaria: "owner@example.invalid", spreadsheetAsociado: "SHEET-DUP", permisosConcedidos: ["read", " read "] }), /INVALID_SERVICE_PERMISSIONS/);
+assert.equal(Object.keys(h.sheets).length, 0, "duplicate normalized permissions must not create or mutate the registry");
 h = harness();
 assert.throws(() => h.registerServiceInstance({ serviceId: "SVC-NO-OWNER", name: "No owner" }), /SERVICE_OWNER_AND_SPREADSHEET_REQUIRED/);
 assert.equal(Object.keys(h.sheets).length, 0, "missing owner/spreadsheet must not create a fictitious registry entry");
