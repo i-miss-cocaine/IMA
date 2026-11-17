@@ -22,7 +22,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --check backend/academic-service/Code.gs
+      - run: node --check < backend/academic-service/Code.gs
       - run: node tests/security/academic-service-single-auth-context.test.js
       - run: node tests/security/academic-interservice-replay-guard.test.js
       - run: node tests/security/academic-migration-writer.test.js
