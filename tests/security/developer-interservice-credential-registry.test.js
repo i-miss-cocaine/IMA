@@ -50,7 +50,7 @@ const runtime = {
   Date, Math, JSON, String, Array, Object, Number, Error, RegExp,
   SPREADSHEET_ID: "TEST-SPREADSHEET",
   PropertiesService: { getScriptProperties: () => ({ getProperty: key => properties[key] || "" }) },
-  SpreadsheetApp: { openById: id => {
+  SpreadsheetApp: { flush: () => {}, openById: id => {
     assert.equal(id, "TEST-SPREADSHEET");
     return { getSheetByName: name => name === "CatalogoCredencialesServicios" ? { getDataRange: () => ({ getValues: () => rows.map(item => item.slice()) }) } : (name === "AuditoriaUsoCredenciales" ? auditSheet : null), insertSheet: name => name === "AuditoriaUsoCredenciales" ? auditSheet : null };
   } },
