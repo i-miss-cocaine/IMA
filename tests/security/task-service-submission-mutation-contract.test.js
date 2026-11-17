@@ -169,7 +169,7 @@ test(()=>{
   x.api.addSubmissionComment({entregaId:"DEL-1",mensaje:"Primero"});
   x.api.addSubmissionComment({entregaId:"DEL-1",mensaje:"Segundo"});
   assert.equal(x.commentsSheet.rows.length,3,"serialized comment writes initialize one header and append both comments");
-  assert.deepEqual(x.commentsSheet.rows[0],["ID","EntregaID","TareaID","AutorID","RolAutor","Mensaje","EsPrivado","FechaCreacion"]);
+  assert.deepEqual(Array.from(x.commentsSheet.rows[0]),["ID","EntregaID","TareaID","AutorID","RolAutor","Mensaje","EsPrivado","FechaCreacion"]);
   assert.equal(x.state.lockAttempts,2);assert.equal(x.state.releases,2);
 });
 test(()=>{
