@@ -4,6 +4,7 @@ name: Accounting Import Preflight Contract
 # Keep the migration HMAC registry contract in the push-path filter and run it before dependent accounting contracts.
 # Run session-token HMAC configuration regression alongside inter-service credential rotation coverage.
 # Keep the session verification harness fixtures aligned with current revocation and membership checks.
+# Session-token regression covers only services that implement both getAuthTokenSecret and verifySessionToken.
 
 on:
   push:
