@@ -117,7 +117,7 @@ const payload=(overrides={})=>Object.assign({sessionToken:"VALID",_verifiedUserI
   assert.equal(saved.status,"success");
   assert.equal(saved.tourKey,"teacherTemplates");
   const reset=h.context.saveUserHelpPreferences({sessionToken:"VALID",_verifiedUserId:"U-1",resetAll:true});
-  assert.equal(reset.resetCount,1);
+  assert.equal(reset.resetCount,2,"global reset also initializes the other guide available to the teacher role");
 }
 
 {
