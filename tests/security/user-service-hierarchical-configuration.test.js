@@ -32,6 +32,7 @@ const developerValidationCode=extractDeveloperFunction("validateServiceConfigDep
 const developerCatalogCode=extractDeveloperFunction("getCentralConfigAndContractCatalog");
 const cs=source.indexOf("const CONFIGURATION_SYSTEM_EXTRA_HEADERS_"),ce=source.indexOf("function configurationHeaderMap_",cs);
 assert.ok(cs>=0&&ce>cs,"hierarchy constants exist");
+const schemaCode=source.slice(cs,ce)+extractFunction("configurationHeaderMap_")+extractFunction("ensureConfigurationHierarchySchema_");
 const code=source.slice(cs,ce)+["configurationHeaderMap_","configurationJsonArray_","configurationPolicyFromRow_","configurationStoredValue_","configurationDepartmentStoredValue_","configurationRows_","configurationFindUnique_","resolveHierarchicalConfiguration","saveSystemConfiguration","resetSystemConfigurationOverride","validateRolePermission"].map(extractFunction).join("\n");
 const sh=["ConfigID","Clave","Valor","Tipo","Categoria","Descripcion","Ambito","EditablePor","Estado","Version","UpdatedAt","UpdatedBy","InstitutionID","UserID","PoliticaAlcance","AmbitosPermitidosJSON","PermiteHerencia","PermiteSobrescritura","RolesAutorizadosJSON","DependenciasJSON","EsSensible"];
 const dh=["OverrideID","ConfigID","Clave","InstitutionID","DepartmentID","ValueJSON","ValueType","Version","Status","CreatedAt","CreatedBy","UpdatedAt","UpdatedBy","Reason"];
@@ -283,6 +284,71 @@ function runDeveloperValidation(payload,options={}){
  assert.equal(result.configurationHierarchy.precedence.join(","),"GLOBAL,INSTITUCIONAL,DEPARTAMENTAL,PERSONAL");
  assert.ok(result.contracts.USER.actions.includes("resolveHierarchicalConfiguration"));
  assert.ok(result.contracts.USER.actions.includes("resetSystemConfigurationOverride"));
+}
+
+function schemaSheet(initialRows=[]){
+ const rows=initialRows.map(r=>r.slice());
+ return {
+  rows,
+  getLastRow(){return rows.length;},
+  getDataRange(){return{getValues:()=>rows.length?rows.map(r=>r.slice()):[[""]];};},
+  getRange(rowIndex,col,count,width){
+   return {
+    getValues(){const out=[];for(let i=0;i<count;i++){const r=rows[rowIndex-1+i]||[];out.push(r.slice(col-1,col-1+width));}return out;},
+    setValues(values){values.forEach((v,i)=>{while(rows.length<rowIndex+i)rows.push([]);const target=rows[rowIndex-1+i];for(let j=0;j<width;j++)target[col-1+j]=v[j];});}
+   };
+  },
+  appendRow(row){rows.push(row.slice());}
+ };
+}
+function runSchema(system,department){
+ const sheets={ConfiguracionSistema:system};if(department)sheets.ConfiguracionDepartamental=department;
+ const ss={getSheetByName:n=>sheets[n]||null,insertSheet:n=>(sheets[n]=schemaSheet(),sheets[n])};
+ const context={getOrCreateSheet:(book,name)=>book.getSheetByName(name)||book.insertSheet(name)};
+ vm.runInNewContext(schemaCode,context);
+ return{result:context.ensureConfigurationHierarchySchema_(ss),sheets};
+}
+{
+ const legacy=["ConfigID","Clave","Valor","Tipo","Categoria","Descripcion","Ambito","EditablePor","Estado","Version","UpdatedAt","UpdatedBy"];
+ const data=["CFG-LEGACY","old.key","keep-me","TEXTO","GENERAL","legacy","GLOBAL","Administrador","ACTIVO","1.0","2026-01-01","U-OLD"];
+ const system=schemaSheet([legacy,data]);
+ const run=runSchema(system,null);
+ assert.deepEqual(run.result.headers,legacy.concat(["InstitutionID","UserID","PoliticaAlcance","AmbitosPermitidosJSON","PermiteHerencia","PermiteSobrescritura","RolesAutorizadosJSON","DependenciasJSON","EsSensible"]));
+ assert.deepEqual(system.rows[1],data,"legacy data columns are preserved byte-for-byte");
+ assert.equal(run.sheets.ConfiguracionDepartamental.rows.length,1);
+ const after=JSON.stringify(system.rows);
+ runSchema(system,run.sheets.ConfiguracionDepartamental);
+ assert.equal(JSON.stringify(system.rows),after,"schema migration is idempotent");
+}
+{
+ const system=schemaSheet([]);
+ const run=runSchema(system,null);
+ assert.equal(system.rows[0][0],"ConfigID","an empty installation receives the full system schema");
+ assert.equal(system.rows[0].length,21);
+ assert.equal(run.sheets.ConfiguracionDepartamental.rows[0][0],"OverrideID");
+}
+{
+ const legacy=["ConfigID","Clave","Valor","Tipo","Categoria","Descripcion","Ambito","EditablePor","Estado","Version","UpdatedAt","UpdatedBy"];
+ const invalid=legacy.slice().reverse();
+ const system=schemaSheet([invalid]);
+ const before=JSON.stringify(system.rows);
+ assert.throws(()=>runSchema(system,null),/CONFIGURATION_SYSTEM_SCHEMA_MISMATCH/);
+ assert.equal(JSON.stringify(system.rows),before,"an unknown schema is rejected without rewriting existing columns");
+}
+{
+ const legacy=["ConfigID","Clave","Valor","Tipo","Categoria","Descripcion","Ambito","EditablePor","Estado","Version","UpdatedAt","UpdatedBy"];
+ const system=schemaSheet([legacy.concat(["UnrelatedColumn"])]);
+ const before=JSON.stringify(system.rows);
+ assert.throws(()=>runSchema(system,null),/CONFIGURATION_SYSTEM_SCHEMA_MISMATCH/);
+ assert.equal(JSON.stringify(system.rows),before,"unexpected columns are preserved and migration fails closed");
+}
+{
+ const legacy=["ConfigID","Clave","Valor","Tipo","Categoria","Descripcion","Ambito","EditablePor","Estado","Version","UpdatedAt","UpdatedBy"];
+ const system=schemaSheet([legacy.concat(["InstitutionID","UserID","PoliticaAlcance","AmbitosPermitidosJSON","PermiteHerencia","PermiteSobrescritura","RolesAutorizadosJSON","DependenciasJSON","EsSensible"])]);
+ const badDepartment=schemaSheet([["WrongHeader"]]);
+ const before=JSON.stringify(badDepartment.rows);
+ assert.throws(()=>runSchema(system,badDepartment),/CONFIGURATION_DEPARTMENT_SCHEMA_MISMATCH/);
+ assert.equal(JSON.stringify(badDepartment.rows),before);
 }
 
 console.log("USER hierarchical configuration security and precedence contract PASS.");
