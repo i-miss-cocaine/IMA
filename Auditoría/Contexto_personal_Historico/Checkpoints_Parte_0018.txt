@@ -641,3 +641,37 @@ Siguiente tarea:
 - C1.814: revisar createTask/updateTask y notas/calificaciones. Mantener RBAC de entrada, reutilizar actor/contexto y registrar fecha/usuario. Retirar validaciones o permisos dinámicos redundantes, sin eliminar asignación funcional de aula/tarea ni la integridad básica de escritura.
 ===============================================================================
 
+
+
+
+===============================================================================
+CONTINUACIÓN C1.813 — revisión de tareas docentes y justificaciones (2026-11-17)
+===============================================================================
+HEAD revisado: 73ffbd2be605bfb68bceec1f98cd84aeb0029d31
+Rama: NG_beta_0.0.0.1_work
+
+Revisión complementaria:
+- createTask: se comprobó que el actor/ProfesorID deriva de la sesión verificada, la creación exige aula y asignación docente vigentes y el registro ResourceOwnership conserva departamento, institución, lock e idempotencia. Se retiró el permiso dinámico adicional registerResourceOwnership porque el dispatcher ya autorizó createTask/createVirtualClassroom; la escritura del registro interno no constituye una segunda acción pública. Se añadió prueba con dos docentes, dos secciones y campos de identidad falsificados.
+- updateTask: revisión del flujo existente y sus pruebas; identidad reutilizada desde el contexto verificado, lock de escritura, titularidad/asignación del docente y registro append-only de cambios de fecha límite con motivo, actor, rol, timestamp y correlación. Los tests cubren cambios sucesivos, motivo obligatorio, lock ocupado, fallo de historial/rollback y otro docente.
+- createStudyMaterial/deleteStudyMaterial/getStudyMaterials: se conservan asignación activa de aula, rol administrativo para General, autoría del docente, eliminación lógica idempotente y filtro de aulas autorizadas. No se reintrodujo una validación binaria ni una consulta Drive por adjunto.
+- uploadFile: el estudiante solo puede adjuntar a una tarea accesible y el docente solo a una tarea que administra; el tipo de archivo es genérico, con límite de 50 MiB y validación mínima de nombre/extensiones ejecutables. El perfil del estudiante se reutiliza desde la comprobación de acceso; no hay lectura adicional solo para crear carpetas.
+- AUD-NG-158: revisión del alcance docente completada en código/CI. Se preservan controles de relación funcional y ownership; se eliminó el permiso dinámico redundante. No se marca como validación beta.
+- F34-TASK03: revisión C1.813 completada sin retirar las comprobaciones necesarias. La identidad se obtiene del token verificado y se cachea por payload; el resolver mantiene asignación docente, oferta, período, matrícula y sesiones exactas. El reconocimiento vuelve a resolver el ámbito bajo lock porque la revocación antes de escribir es un criterio explícito; la evidencia privada continúa condicionada por la política institucional. No se detectó una segunda validación de sesión ni un control por cada adjunto.
+
+Verificación adicional:
+- Task-Service security local contracts, run 44155426842: SUCCESS; Node 22.23.4; task-service-security-contract, task-service-resource-ownership, grade-submission-history, deadline-history, upload-contract y single-auth-context PASS.
+- Academic-Service single authorization context, run 44155827504: SUCCESS; Node 22.23.4; node --check Code.gs y contratos single-auth, teacher-justification-abac, canonical-absence-justification, interservice-replay, migration-writer, multilevel-file-validation y student-document-private-storage PASS.
+- Los intentos intermedios 44154866754, 44155190462 y 44155239003 fallaron por escapes de salto de línea/fixture en los nuevos harness; se corrigieron. La ejecución final 44155426842 pasó todos los contratos.
+- Department Scope run 44154540443: FAILURE en Phase22 porque el contrato busca configureSchoolDocumentTemplate, ausente en ACCOUNTING. La prueba específica de Task-Service pasó en su workflow propio y la de F34 se ejecutó en el workflow académico independiente.
+- Accounting Import Preflight 44152855886, Department Reference Consumers 44152616978 y Task-Service backup/restore 44154540342: SUCCESS.
+- BETA-FUNC-102 y BETA-FUNC-110 permanecen pendientes de validación desplegada. Se registra BETA-FUNC-118 para las cargas/materiales docentes.
+- Node CLI local NOT RUN; Node se ejecutó en GitHub Actions. Apps Script/Sheets/Drive reales y despliegue beta NOT RUN.
+
+Corrección de continuidad: el texto original de C1.812 indicaba que Task-Service no se había tocado. Esa frase quedó supersedida por los commits concurrentes e4ac52c/dd2abe52 ya presentes en el árbol al registrar C1.812; C1.813 revisó esos cambios y corrigió la pérdida de aislamiento de tarea/aula/autoría antes de aceptar el subalcance.
+
+Estado actualizado:
+- AUD-NG-158: revisión de código/CI completada; beta pendiente.
+- F34-TASK03: revisión de código/CI completada; BETA-FUNC-102 pendiente.
+- TASK-142/TASK-153 y las demás subcapacidades reabiertas por C1.809 siguen abiertas; no se declaran completas.
+- Siguiente tarea elegible C1.814: revisar comentarios/notas, versiones y devoluciones de entregas y calificaciones (getSubmissionComments, addSubmissionComment, getSubmissionVersions, returnSubmissionForRevision, deleteSubmission, gradeSubmission). Mantener RBAC de entrada, actor/fecha, ownership funcional, historial y lock solo donde exista escritura compartida; retirar revalidaciones redundantes sin ampliar visibilidad.
+===============================================================================

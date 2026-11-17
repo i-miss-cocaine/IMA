@@ -5901,3 +5901,12 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 
 **Siguiente tarea elegible (C1.814):** revisar createTask/updateTask y los flujos de notas/calificaciones. Mantener RBAC por acción en el dispatcher y reutilizar actor/contexto; retirar revalidaciones o permisos dinámicos redundantes, y registrar los campos del formulario, fecha y usuario. Conservar solo existencia del registro, asignación funcional y controles de integridad de escritura que sean necesarios.
 
+
+
+
+### Continuación C1.813 — cierre de revisión docente y actualización de evidencia
+- **AUD-NG-158:** revisión de createTask/updateTask/createStudyMaterial/deleteStudyMaterial y uploadFile completada en código/CI. createTask mantiene asignación docente, ámbito departamental y registro ResourceOwnership; se elimina el permiso dinámico redundante registerResourceOwnership porque la acción pública ya pasó RBAC en el dispatcher. updateTask conserva lock, actor verificado, titularidad/asignación y el historial append-only de fecha límite. Task-Service security run 44155426842 SUCCESS.
+- **F34-TASK03:** revisión completada sin retirar ABAC funcional necesario. El token/rol se verifica una vez y se reutiliza el contexto; se mantienen asignación, oferta, período, matrícula y sesiones exactas. La revalidación de ámbito dentro del lock de la constancia se conserva por el requisito de revocación antes de escribir. Academic-Service run 44155827504 SUCCESS (incluye academic-teacher-justification-abac.test.js y academic-absence-justification-canonical.test.js). BETA-FUNC-102 permanece pendiente.
+- **C1.812/C1.813 beta:** BETA-FUNC-110 se amplía para PDF/MP4, versionado/restauración sin hash obligatorio y privacidad Drive. Se añade BETA-FUNC-118 para dos docentes/dos aulas, acceso a tareas, carga genérica, materiales, autoría, soft-delete e idempotencia/lock. Ambas pendientes de despliegue beta; no bloquean la implementación local.
+- **Estado:** AUD-NG-158 y F34-TASK03 quedan revisadas/completadas en código/CI, con beta pendiente. TASK-142 y TASK-153 continúan abiertas; F34-Task04 no se declara completada ni se presume cubierta por estos cambios.
+- **Siguiente:** C1.814 — revisar comentarios/notas, versiones, devoluciones y calificaciones en Task-Service. La revisión de createTask/updateTask queda cerrada para el mandato actual; no duplicar sus pruebas.

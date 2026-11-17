@@ -469,9 +469,10 @@
 - **Criterios verificados:** token y rol docente; separación entre profesores/asignaturas; exclusión de matrícula retirada, período vencido, oferta inactiva y alumno sin matrícula; sesiones ajenas denegadas; notas internas y datos familiares no expuestos; acceso a evidencia privada solo con política explícita; auditoría; revocación revalidada antes de escritura; lock e idempotencia.
 - **Pruebas:** tests/security/academic-teacher-justification-abac.test.js PASS en Department Scope run 43737615044 (Node.js 24.22.2); sintaxis Apps Script/JS PASS. Task-Service run 43737615057 y Department Reference Consumers run 43737615098 SUCCESS.
 - **Límites:** BETA-FUNC-102 pendiente de validación con Apps Script/Sheets/Drive desplegados. Node local NOT RUN porque el entorno no pudo resolver github.com durante el checkout. No se afirma validación productiva ni integridad SHA-256 de adjuntos (F34-Task04).
-- **Estado:** Revisión requerida por C1.809; el cierre C1.752 se conserva como evidencia histórica, pero debe alinearse con el mandato de una sola autorización por acción y sin controles redundantes por evidencia.
+- **Estado:** Revisión de código/CI completada en C1.813; BETA-FUNC-102 pendiente de validación desplegada. El cierre C1.752 se conserva como evidencia histórica.
 - **Evidencia histórica:** commit 0c4c81d6c5a59bcc2bce78f6e0b9f9dbd4031f38; checkpoint C1.752.
 - **Reapertura C1.809:** revisar el ABAC por evidencia/justificación frente al permiso del rol ya definido; conservar actor y datos de registro verificados, retirando controles adicionales que no sean necesarios para procesar el flujo.
+- **Revisión C1.813:** no se retiró el ámbito funcional necesario: el token/rol se verifica y cachea una vez; el resolver conserva asignación docente, oferta, período, matrícula y sesiones exactas. La constancia revalida el ámbito dentro del lock por el requisito de revocación antes de escribir. Evidencia CI: Academic-Service run 44155827504 SUCCESS (Node 22.23.4), incluidos academic-teacher-justification-abac.test.js y academic-absence-justification-canonical.test.js. BETA-FUNC-102 continúa Pendiente beta.
 
 ---
 

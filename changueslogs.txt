@@ -4195,3 +4195,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - TASK-142, AUD-NG-158 y TASK-153 permanecen Revisión requerida; no se marcan completadas.
 - Siguiente: C1.814 createTask/updateTask y flujos de notas/calificaciones.
 
+
+
+
+[2026-11-17] C1.813 — revisión complementaria de autorización docente y contratos
+- createTask/updateTask revisados: actor verificado, asignación, ámbito, ownership, lock e historial de fecha límite preservados; permiso dinámico registerResourceOwnership redundante retirado.
+- Task-Service upload/materiales: ownership de tarea/aula/autoría conservado; carga genérica con límite 50 MiB y nombre mínimo seguro; materiales por aula, General administrativo, filtros de aula y soft-delete de autor.
+- Task-Service security local contracts 44155426842 SUCCESS; Academic-Service single authorization context 44155827504 SUCCESS (incluye justificaciones docentes y canónicas); Task-Service backup/restore 44154540342 SUCCESS.
+- Department Scope 44154540443 sigue fallando en Phase22 por configureSchoolDocumentTemplate ausente en ACCOUNTING; las pruebas de los subalcances se ejecutaron en workflows independientes.
+- AUD-NG-158 y F34-TASK03 revisión completada en código/CI; BETA-FUNC-102, BETA-FUNC-110 y BETA-FUNC-118 pendientes beta. TASK-142/TASK-153 siguen abiertos.
+- Siguiente C1.814: comentarios/notas, versiones, devoluciones y calificaciones.

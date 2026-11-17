@@ -1628,7 +1628,7 @@ El archivo maestro histórico supera el umbral de rotación de 180.000 caractere
 - **Módulos/roles:** ACADEMIC / Secretaría, Dirección, Subdirección, Auditoría y usuarios con permisos documentales explícitos; ACCOUNTING cuando se restaure el propietario del repositorio laboral.
 - **Precondiciones:** despliegue aislado de ACADEMIC; usuarios sintéticos con permisos PREVIEW, DOWNLOAD y solo metadatos; dos expedientes de prueba en ámbitos distintos; documentos PDF sintéticos privados en Drive; tokens HMAC y caché de un solo uso configurados.
 - **Pasos:**
-  1. Subir un PDF sintético y comprobar que Drive lo mantiene privado y que getStudentDocuments no devuelve driveUrl ni driveFileId.
+  1. Subir un PDF y un MP4 sintéticos; comprobar que Drive mantiene ambos privados y que getStudentDocuments no devuelve driveUrl ni driveFileId. Subir una versión nueva con bytes distintos y restaurar la anterior por su referencia/versión; verificar asociación, historial y privacidad sin exigir SHA-256 ni deduplicación binaria.
   2. Solicitar token PREVIEW con usuario autorizado; verificar claim de documento, versión, usuario, operación y expiración; abrirlo con getSecureDocumentStream y comprobar DOCUMENT_PREVIEWED.
   3. Repetir con DOWNLOAD y verificar token distinto, entrega de bytes y evento DOCUMENT_DOWNLOADED.
   4. Intentar emitir PREVIEW con un rol sin previewStudentDocument; debe denegarse sin metadatos ni token.
@@ -1801,4 +1801,24 @@ El archivo maestro histórico supera el umbral de rotación de 180.000 caractere
 - **Resultado esperado:** una única transición válida por ejemplar, reintentos idempotentes, rollback ante fallos y ausencia de doble asignación.
 - **Evidencia requerida:** IDs sintéticos, recuentos antes/después, resultados de ambas solicitudes, OperationKey parcialmente redactada, actor sintético y eventos de auditoría.
 - **Estado:** Pendiente de validación con LockService y Sheets reales en beta; los contratos Node.js locales no simulan infraestructura desplegada.
+=============================================================================
+
+
+
+=============================================================================
+### BETA-FUNC-118 — AUD-NG-158 / TASK-SERVICE — cargas y materiales docentes por aula
+- **Módulos/roles:** TASK-SERVICE / Estudiante, Profesor, Administrador y roles administrativos autorizados.
+- **Precondiciones:** deployment beta aislado de Task-Service; Spreadsheet y Drive de prueba; dos docentes (DOC-1/DOC-2) asignados a dos aulas distintas (AULA-1 sección A y AULA-2 sección B), dos estudiantes matriculados en las aulas correspondientes y un Administrador; hojas Tareas, AulasVirtuales, MaterialesEducativos, ResourceOwnership y asignaciones con datos sintéticos.
+- **Datos:** tareas propias y ajenas por docente; materiales de aula, General y de otro autor; archivos PDF, MP4, ZIP, archivo de más de 50 MiB y nombres con extensiones ejecutables/doble extensión.
+- **Pasos:**
+  1. Crear una tarea como DOC-1 para AULA-1 y como DOC-2 para AULA-2. Forjar profesorId, _verifiedUserId, _verifiedRole, grado/sección y departmentId; comprobar que el propietario se deriva de la sesión y que DOC-1 no puede crear en AULA-2.
+  2. Cargar como estudiante de AULA-1 un PDF, MP4 y ZIP menores de 50 MiB en su tarea; verificar metadatos de tarea, propietario, MIME, tamaño, carpeta y fecha. Intentar cargar en tarea de AULA-2 y comprobar denegación sin escritura en Drive.
+  3. Repetir como DOC-1 en su tarea y después en tarea de DOC-2; la segunda debe denegarse. Intentar archivo >50 MiB, ruta/caracteres de control y extensión ejecutable/doble extensión; comprobar rechazo antes de crear archivo. Simular fallo al registrar metadatos y comprobar que el archivo recién creado se envía a papelera.
+  4. Crear material como DOC-1 en AULA-1; intentar AULA-2, aula inactiva y General; comprobar denegación. Crear material General como Administrador y verificar autor y fecha derivados de la sesión.
+  5. Consultar getStudyMaterials como estudiante/docente de AULA-1 y AULA-2; comprobar que cada uno recibe solo su aula autorizada más materiales General, sin borradores futuros para estudiantes ni registros eliminados.
+  6. Eliminar como DOC-1 un material propio; intentar eliminar material de DOC-2 y comprobar denegación sin cambio. Repetir el borrado propio y comprobar idempotencia; comprobar que Administrador puede retirar material autorizado.
+  7. Simular dos registros de ResourceOwnership para el mismo recurso y un lock ocupado; comprobar idempotencia, timeout fail-closed y ausencia de filas parciales. Repetir creación de tarea concurrente y verificar que no aparecen propietarios duplicados.
+- **Resultado esperado:** RBAC del dispatcher es la única autorización de rol por acción; el backend conserva relaciones de tarea/aula/autoría y filtros de audiencia; cargas genéricas y video funcionan dentro del límite; extensiones peligrosas/rutas se rechazan; materiales no cruzan aulas; soft-delete conserva historial y autor; el lock impide registros de ownership duplicados.
+- **Evidencia requerida:** IDs sintéticos, actor/rol, aula/tarea, MIME/tamaño, IDs de Drive, estado de privacidad, filas de metadatos/ownership antes/después, respuestas allow/deny y logs saneados; sin tokens ni PII.
+- **Estado:** Pendiente de validación beta real en Apps Script/Sheets/Drive. Los contratos Node.js y GitHub Actions PASS no sustituyen esta comprobación desplegada.
 =============================================================================
