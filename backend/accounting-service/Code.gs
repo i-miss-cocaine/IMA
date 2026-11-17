@@ -843,7 +843,8 @@ function buildImportPreview_(payload) {
       Number(structural.dataRowNumbers[originalIndex]) : originalIndex + 2;
     if (match.matchType === "POSIBLE") {
       addWarning("POSSIBLE_DUPLICATE_MATCH", "Existe una coincidencia posible por nombre; no se fusionará automáticamente.");
-      if (duplicatePolicy !== "RECHAZAR") addError("POSSIBLE_DUPLICATE_REQUIRES_REVIEW", "Las coincidencias por nombre requieren revisión manual y política RECHAZAR.");
+      addError("POSSIBLE_DUPLICATE_REQUIRES_REVIEW", "La coincidencia por nombre requiere revisión manual; la fila se excluye de la importación.");
+      rejectedPreparedIndexes[preparedIndex] = true;
       return;
     }
     if (duplicatePolicy === "RECHAZAR") {
