@@ -146,6 +146,7 @@ console.log("TASK-068 migration writers: upsert idempotency, payload conflict an
 
 function extractBalancedFunction(source,name){const start=source.indexOf("function "+name+"(");assert.ok(start>=0,"function "+name+" exists");const open=source.indexOf("{",start);let depth=0,quote=null,escaped=false,line=false,block=false;for(let i=open;i<source.length;i++){const ch=source[i],next=source[i+1];if(line){if(ch==="\n")line=false;continue;}if(block){if(ch==="*"&&next==="/"){block=false;i++;}continue;}if(quote){if(escaped){escaped=false;continue;}if(ch==="\\"){escaped=true;continue;}if(ch===quote)quote=null;continue;}if(ch==="/"&&next==="/"){line=true;i++;continue;}if(ch==="/"&&next==="*"){block=true;i++;continue;}if(ch==="'"||ch==='"'||ch==="\x60"){quote=ch;continue;}if(ch==="{")depth++;else if(ch==="}"&&--depth===0)return source.slice(start,i+1);}throw new Error("unbalanced "+name);}
 function runMigrationEnvelopeFixture(source,target){
+ const auditEvents=[];
  const secret="local-fixture-secret-0123456789-abcdef",cache=new Map(),calls=[];
  const isUser=target==="USER";
  const names=["computeHmacSignature","computeMigrationCredentialFingerprint_","getMigrationHmacSecret_","getMigrationHmacSecrets_","resolveInterServiceSecret_","verifyInterServiceEnvelope","handleTrustedMigrationEnvelope_"];
@@ -166,6 +167,7 @@ function runMigrationEnvelopeFixture(source,target){
    IMA_MIGRATION_HMAC_SECRET_VERSION_ACCOUNTING:"v1"
   })[name]||""})},
   SpreadsheetApp:{openById:id=>{assert.equal(id,"TEST-SPREADSHEET");return{getSheetByName:name=>name==="CatalogoCredencialesServicios"?{getDataRange:()=>({getValues:()=>credentialRows})}:null};}},
+  recordInterServiceCredentialUsage_:event=>{auditEvents.push(event);return{recorded:true};},
   applyTrustedMigrationWrite_:p=>{calls.push(p);return{status:"success",written:true};},
   compensateTrustedMigrationWrite_:p=>{calls.push(p);return{status:"success",compensated:true};},
   Date,Math,JSON,String,Object,Array,Error
@@ -182,6 +184,10 @@ function runMigrationEnvelopeFixture(source,target){
  const envelope=makeEnvelope("ACCOUNTING","writeMigratedEntity",payload);
  assert.equal(ctx.handleTrustedMigrationEnvelope_(envelope).written,true);
  assert.equal(calls.length,1);
+ assert.equal(auditEvents.length,1,"successful inbound migration is audited once");
+ assert.equal(auditEvents[0].direction,"INBOUND");
+ assert.equal(auditEvents[0].sourceService,"ACCOUNTING");
+ assert.equal(auditEvents[0].targetService,target);
  assert.throws(()=>ctx.handleTrustedMigrationEnvelope_(envelope),/REPLAY_DETECTED/);
  const wrongSource=makeEnvelope("UNTRUSTED","writeMigratedEntity",payload);
  assert.throws(()=>ctx.handleTrustedMigrationEnvelope_(wrongSource),/MIGRATION_SOURCE_SERVICE_INVALID/);
