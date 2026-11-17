@@ -11338,16 +11338,19 @@ function saveSystemConfiguration(payload) {
     if(!configurationRoleAllowed_(ss,role,key,"WRITE",scope,policy))throw new Error("CONFIGURATION_ROLE_WRITE_DENIED");
     var value=configurationValidateValue_(payload.valor,type),dependencies=Array.isArray(payload.dependencias)?payload.dependencias:policy.dependencies;
     configurationValidateDependencies_(rows,ix,key,dependencies);
-    var now=new Date().toISOString(),configId=String((base&&base[ix.ConfigID])||"CFG-"+Utilities.getUuid()),version=String((base&&base[ix.Version])||"1.0");
-    var nextVersion=(Number(version)+0.1).toFixed(1);
+    var now=new Date().toISOString(),configId=String((base&&base[ix.ConfigID])||"CFG-"+Utilities.getUuid()),nextVersion;
     if(scope==="DEPARTAMENTAL"){
       var deptData=deptSheet.getDataRange().getValues(),deptRows=deptData.slice(1),di=configurationHeaderMap_(deptData[0]);
-      var existing=configurationFindUnique_(deptRows,function(row){return String(row[di.ConfigID]||"")===configId&&String(row[di.InstitutionID]||"")===institutionId&&String(row[di.DepartmentID]||"")===departmentId&&String(row[di.Status]||"").toUpperCase()==="ACTIVO";},"CONFIGURATION_DEPARTMENT_CONFLICT");
+      var existing=configurationFindUnique_(deptRows,function(row){return String(row[di.ConfigID]||"")===configId&&String(row[di.InstitutionID]||"")===institutionId&&String(row[di.DepartmentID]||"")===departmentId;},"CONFIGURATION_DEPARTMENT_CONFLICT");
+      var currentScopeVersion=String((existing&&existing[di.Version])||(base&&base[ix.Version])||"1.0");
+      nextVersion=(Number(currentScopeVersion)+0.1).toFixed(1);
       var newRow=[existing?existing[di.OverrideID]:"OVR-"+Utilities.getUuid(),configId,key,institutionId,departmentId,JSON.stringify(value),type,nextVersion,"ACTIVO",existing?existing[di.CreatedAt]:now,existing?existing[di.CreatedBy]:actor,now,actor,String(payload.motivo||"")];
       if(existing){var rowNumber=deptRows.indexOf(existing)+2;deptSheet.getRange(rowNumber,1,1,CONFIGURATION_DEPARTMENT_HEADERS_.length).setValues([newRow]);}
       else deptSheet.appendRow(newRow);
     }else{
       var scopeRow=configurationFindUnique_(keyRows,function(row){return String(row[ix.Ambito]||"GLOBAL").toUpperCase()===scope&&String(row[ix.InstitutionID]||"").trim()===(scope==="INSTITUCIONAL"||scope==="PERSONAL"?institutionId:"")&&String(row[ix.UserID]||"").trim()===(scope==="PERSONAL"?targetUser:"");},"CONFIGURATION_SCOPE_CONFLICT");
+      var currentScopeVersion=String((scopeRow&&scopeRow[ix.Version])||(base&&base[ix.Version])||"1.0");
+      nextVersion=(Number(currentScopeVersion)+0.1).toFixed(1);
       var row=scopeRow?scopeRow.slice():new Array(schema.headers.length).fill("");
       row[ix.ConfigID]=configId;row[ix.Clave]=key;row[ix.Valor]=typeof value==="object"?JSON.stringify(value):value;row[ix.Tipo]=type;
       row[ix.Categoria]=payload.categoria||((base&&base[ix.Categoria])||"GENERAL");row[ix.Descripcion]=payload.descripcion||((base&&base[ix.Descripcion])||"");
@@ -11391,7 +11394,7 @@ function resetSystemConfigurationOverride(payload) {
     var deptData=schema.department.getDataRange().getValues(),di=configurationHeaderMap_(deptData[0]),deptRows=deptData.slice(1);
     var existing=configurationFindUnique_(deptRows,function(row){return String(row[di.ConfigID]||"")===String(base[ix.ConfigID])&&String(row[di.InstitutionID]||"")===String(getIdentityInstitutionId_()).trim()&&String(row[di.DepartmentID]||"")===departmentId&&String(row[di.Status]||"").toUpperCase()==="ACTIVO";},"CONFIGURATION_DEPARTMENT_CONFLICT");
     if(!existing)return {status:"success",restablecida:false,message:"El departamento ya hereda el valor institucional."};
-    var rowNumber=deptRows.indexOf(existing)+2;existing[di.Status]="INACTIVO";existing[di.UpdatedAt]=new Date().toISOString();existing[di.UpdatedBy]=actor;existing[di.Reason]=String(payload.motivo||"Restablecimiento de herencia");
+    var rowNumber=deptRows.indexOf(existing)+2;existing[di.Status]="INACTIVO";existing[di.Version]=(Number(existing[di.Version]||base[ix.Version]||"1.0")+0.1).toFixed(1);existing[di.UpdatedAt]=new Date().toISOString();existing[di.UpdatedBy]=actor;existing[di.Reason]=String(payload.motivo||"Restablecimiento de herencia");
     schema.department.getRange(rowNumber,1,1,CONFIGURATION_DEPARTMENT_HEADERS_.length).setValues([existing]);
     logStructuredEvent("USER","resetSystemConfigurationOverride","INFO","CONFIGURATION_INHERITANCE_RESTORED","Se desactivó la excepción departamental y se restauró la herencia.",{configId:base[ix.ConfigID],key:key,departmentId:departmentId,actorId:actor});
     return {status:"success",restablecida:true,clave:key,departamentoId:departmentId,message:"Se restauró el valor heredado."};
