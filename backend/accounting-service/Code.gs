@@ -4578,6 +4578,16 @@ const ROLE_PERMISSIONS = {
   "Encargado de Bodega": ["getCatalogCategories", "getCatalogUnits", "getCatalogItems", "exportCatalogItems", "getInventoryKardex", "getInventoryTransfers", "getMaterialRequisitions", "getInventoryReplenishmentSuggestions", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "transferInventoryStock", "confirmTransferReceipt", "createMaterialRequisition", "manageMaterialRequisition", "deliverMaterialRequisition", "manageInventoryReplenishmentPolicy", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "managePreventiveMaintenancePlan", "getPreventiveMaintenancePlans", "getPreventiveMaintenanceTemplates", "getPreventiveMaintenanceAlerts", "generatePreventiveMaintenanceOrders", "getMaintenanceOrders"]
 };
 
+// Library circulation is managed only by a verified librarian or institutional administrator.
+ROLE_PERMISSIONS["Bibliotecario"] = ["processLibraryLoan", "reserveLibraryBook"];
+["Administrador", "Director", "Subdirector"].forEach(function(role) {
+  var current = ROLE_PERMISSIONS[role] || [];
+  ["processLibraryLoan", "reserveLibraryBook"].forEach(function(action) {
+    if (current.indexOf(action) === -1) current.push(action);
+  });
+  ROLE_PERMISSIONS[role] = current;
+});
+
 function accountingHasRolePermission_(actor, action) {
   var role = String(actor && actor.role || "");
   var permissions = ROLE_PERMISSIONS[role];
@@ -6401,6 +6411,297 @@ function requestHierarchicalConfigurationFromUser_(action, payload) {
 function getHierarchicalConfigurationCatalog(payload) { return requestHierarchicalConfigurationFromUser_("getHierarchicalConfigurationCatalog", payload); }
 function resolveHierarchicalConfiguration(payload) { return requestHierarchicalConfigurationFromUser_("resolveHierarchicalConfiguration", payload); }
 
+
+function libraryCirculationActor_(payload, action) {
+  var identity = getVerifiedAccountingIdentity_(payload || {});
+  if (!identity || identity.authorized !== true) return { error: identity && identity.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var access = validateRolePermission(identity, action);
+  if (!access || access.authorized !== true) return { error: access && access.code || "ROLE_NOT_ALLOWED" };
+  return { actor: identity };
+}
+
+function libraryEnsureSheet_(ss, name, requiredHeaders, strictSchema) {
+  var sheet = ss.getSheetByName(name);
+  if (!sheet) sheet = ss.insertSheet(name);
+  if (sheet.getLastRow() === 0) {
+    sheet.getRange(1, 1, 1, requiredHeaders.length).setValues([requiredHeaders.slice()]);
+  }
+  var data = sheet.getDataRange().getValues();
+  var headers = data.length ? data[0].map(function(value) { return String(value || "").trim(); }) : [];
+  if (strictSchema && JSON.stringify(headers) !== JSON.stringify(requiredHeaders)) {
+    throw new Error("LIBRARY_SCHEMA_MISMATCH:" + name);
+  }
+  var index = {};
+  requiredHeaders.forEach(function(header) {
+    var matches = [];
+    headers.forEach(function(actual, i) { if (actual === header) matches.push(i); });
+    if (matches.length !== 1) throw new Error("LIBRARY_SCHEMA_MISMATCH:" + name);
+    index[header] = matches[0];
+  });
+  return { sheet: sheet, headers: headers, index: index, rows: data.slice(1) };
+}
+
+function libraryOperationKey_(payload, operationType, institutionId, ejemplarId, userId, now) {
+  var supplied = String(payload && payload.idempotencyKey || "").trim();
+  if (supplied) {
+    if (supplied.length < 8 || supplied.length > 160 || !/^[A-Za-z0-9._:-]+$/.test(supplied)) {
+      throw new Error("LIBRARY_IDEMPOTENCY_KEY_INVALID");
+    }
+    return supplied;
+  }
+  var dateKey = now.toISOString().slice(0, 10);
+  try {
+    if (typeof Utilities !== "undefined" && Utilities.formatDate && typeof Session !== "undefined") {
+      dateKey = Utilities.formatDate(now, Session.getScriptTimeZone(), "yyyy-MM-dd");
+    }
+  } catch (ignored) {}
+  return ["LIB", operationType, institutionId, ejemplarId, userId, dateKey].join(":");
+}
+
+function libraryIdempotencyLookup_(ledger, key, operationType, institutionId, ejemplarId, userId) {
+  var ix = ledger.index;
+  var matches = ledger.rows.filter(function(row) { return String(row[ix.OperationKey] || "") === key; });
+  if (matches.length > 1) throw new Error("LIBRARY_IDEMPOTENCY_LEDGER_CONFLICT");
+  if (!matches.length) return null;
+  var row = matches[0];
+  if (String(row[ix.OperationType] || "") !== operationType ||
+      String(row[ix.InstitutionID] || "") !== institutionId ||
+      String(row[ix.EjemplarID] || "") !== ejemplarId ||
+      String(row[ix.UserID] || "") !== userId) {
+    throw new Error("LIBRARY_IDEMPOTENCY_CONFLICT");
+  }
+  return { entityId: String(row[ix.EntityID] || ""), row: row };
+}
+
+function libraryAppendIdempotency_(ledger, key, operationType, institutionId, ejemplarId, userId, entityId, actorId, now) {
+  ledger.sheet.appendRow([key, operationType, ejemplarId, userId, entityId, institutionId, actorId, now.toISOString()]);
+  return ledger.sheet.getLastRow();
+}
+
+function libraryRollbackRow_(sheet, rowNumber) {
+  if (!rowNumber) return true;
+  try { sheet.deleteRow(rowNumber); return true; } catch (error) { return false; }
+}
+
+function processLibraryLoan(payload) {
+  var input = payload || {};
+  var operation = String(input.accion || "Prestamo").trim().toUpperCase();
+  var operationType = operation === "PRESTAMO" ? "PRESTAMO" : (operation === "DEVOLUCION" ? "DEVOLUCION" : "");
+  if (!operationType) return { status: "error", code: "LIBRARY_ACTION_INVALID" };
+  var ejemplarId = String(input.ejemplarId || "").trim();
+  var userId = String(input.userId || "").trim();
+  if (!ejemplarId || ejemplarId.length > 120 || !userId || userId.length > 160) {
+    return { status: "error", code: "LIBRARY_LOAN_FIELDS_REQUIRED" };
+  }
+  var auth = libraryCirculationActor_(input, "processLibraryLoan");
+  if (auth.error) return { status: "error", code: auth.error };
+  var actor = auth.actor;
+  var institutionId = String(actor.institutionId || "").trim();
+  var lock = LockService.getScriptLock(), locked = false;
+  var loanRowNumber = 0, ledgerRowNumber = 0, exemplarRowNumber = 0;
+  var oldExemplarState = "", oldLoanRow = null, loanSheet = null, exemplarSheet = null, ledgerSheet = null;
+  try {
+    lock.waitLock(10000); locked = true;
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    exemplarSheet = ss.getSheetByName("BibliotecaEjemplares");
+    if (!exemplarSheet || exemplarSheet.getLastRow() < 2) return { status: "error", code: "LIBRARY_CATALOG_NOT_CONFIGURED" };
+    var exemplarData = exemplarSheet.getDataRange().getValues();
+    var exemplarHeaders = exemplarData[0].map(function(value) { return String(value || "").trim(); });
+    var exemplarIndex = {};
+    ["EjemplarID", "Estado"].forEach(function(header) {
+      var found = [];
+      exemplarHeaders.forEach(function(value, i) { if (value === header) found.push(i); });
+      if (found.length !== 1) throw new Error("LIBRARY_SCHEMA_MISMATCH:BibliotecaEjemplares");
+      exemplarIndex[header] = found[0];
+    });
+    var exemplarMatches = [];
+    for (var e = 1; e < exemplarData.length; e++) {
+      if (String(exemplarData[e][exemplarIndex.EjemplarID] || "").trim() === ejemplarId) {
+        exemplarMatches.push({ row: exemplarData[e], rowNumber: e + 1 });
+      }
+    }
+    if (exemplarMatches.length !== 1) return { status: "error", code: exemplarMatches.length ? "LIBRARY_EXEMPLAR_AMBIGUOUS" : "LIBRARY_EXEMPLAR_NOT_FOUND" };
+    exemplarRowNumber = exemplarMatches[0].rowNumber;
+    oldExemplarState = String(exemplarMatches[0].row[exemplarIndex.Estado] || "");
+    var loanHeaders = ["PrestamoID", "EjemplarID", "UserId", "FechaPrestamo", "FechaDevolucionPrevista", "FechaDevolucionReal", "Estado", "Observaciones"];
+    var reservationHeaders = ["ReservaID", "EjemplarID", "UserId", "FechaSolicitud", "FechaExpiracion", "EstadoReserva", "Observaciones"];
+    var ledgerHeaders = ["OperationKey", "OperationType", "EjemplarID", "UserID", "EntityID", "InstitutionID", "ActorID", "CreatedAt"];
+    loanSheet = libraryEnsureSheet_(ss, "BibliotecaPrestamos", loanHeaders, false);
+    var ledger = libraryEnsureSheet_(ss, "BibliotecaIdempotencia", ledgerHeaders, true);
+    ledgerSheet = ledger.sheet;
+    var now = new Date();
+    var key = libraryOperationKey_(input, operationType, institutionId, ejemplarId, userId, now);
+    var prior = libraryIdempotencyLookup_(ledger, key, operationType, institutionId, ejemplarId, userId);
+    if (prior) {
+      return { status: "success", duplicate: true, prestamoId: prior.entityId, message: "La operación ya había sido registrada." };
+    }
+    var ix = loanSheet.index;
+    var normalizedState = oldExemplarState.trim().toUpperCase().replace(/[ -]/g, "_");
+    if (operationType === "PRESTAMO") {
+      if (normalizedState !== "AVAILABLE" && normalizedState !== "DISPONIBLE") {
+        return { status: "error", code: "LIBRARY_EXEMPLAR_NOT_AVAILABLE" };
+      }
+      var activeLoans = loanSheet.rows.filter(function(row) {
+        return String(row[ix.EjemplarID] || "").trim() === ejemplarId &&
+          ["ON_LOAN", "PRESTADO", "ACTIVO"].indexOf(String(row[ix.Estado] || "").trim().toUpperCase().replace(/[ -]/g, "_")) !== -1;
+      });
+      if (activeLoans.length) return { status: "error", code: "LIBRARY_EXEMPLAR_ALREADY_LOANED" };
+      var dueDate = "";
+      if (input.fechaDevolucionPrevista) {
+        var parsedDue = new Date(input.fechaDevolucionPrevista);
+        if (isNaN(parsedDue.getTime())) return { status: "error", code: "LIBRARY_DUE_DATE_INVALID" };
+        dueDate = parsedDue.toISOString();
+      }
+      var loanId = "PREST-" + Utilities.getUuid();
+      var newLoan = new Array(loanSheet.headers.length).fill("");
+      newLoan[ix.PrestamoID] = loanId;
+      newLoan[ix.EjemplarID] = ejemplarId;
+      newLoan[ix.UserId] = userId;
+      newLoan[ix.FechaPrestamo] = now.toISOString();
+      newLoan[ix.FechaDevolucionPrevista] = dueDate;
+      newLoan[ix.FechaDevolucionReal] = "";
+      newLoan[ix.Estado] = "on_loan";
+      newLoan[ix.Observaciones] = String(input.observaciones || "").slice(0, 500);
+      loanSheet.sheet.appendRow(newLoan);
+      loanRowNumber = loanSheet.sheet.getLastRow();
+      try {
+        exemplarSheet.getRange(exemplarRowNumber, exemplarIndex.Estado + 1).setValue("on_loan");
+        ledgerRowNumber = libraryAppendIdempotency_(ledger, key, operationType, institutionId, ejemplarId, userId, loanId, actor.userId, now);
+        SpreadsheetApp.flush();
+      } catch (writeError) {
+        var exemplarRestored = true;
+        try { exemplarSheet.getRange(exemplarRowNumber, exemplarIndex.Estado + 1).setValue(oldExemplarState); } catch (restoreError) { exemplarRestored = false; }
+        var ledgerRestored = libraryRollbackRow_(ledgerSheet, ledgerRowNumber);
+        var loanRestored = libraryRollbackRow_(loanSheet.sheet, loanRowNumber);
+        if (!exemplarRestored || !ledgerRestored || !loanRestored) return { status: "error", code: "LIBRARY_LOAN_COMPENSATION_REQUIRED" };
+        return { status: "error", code: "LIBRARY_LOAN_WRITE_FAILED" };
+      }
+      return { status: "success", prestamoId: loanId, ejemplarId: ejemplarId, userId: userId, estado: "on_loan", duplicate: false, message: "Préstamo registrado exitosamente." };
+    }
+    var activeMatches = [];
+    for (var l = 0; l < loanSheet.rows.length; l++) {
+      var candidate = loanSheet.rows[l];
+      var candidateState = String(candidate[ix.Estado] || "").trim().toUpperCase().replace(/[ -]/g, "_");
+      if (String(candidate[ix.EjemplarID] || "").trim() === ejemplarId &&
+          String(candidate[ix.UserId] || "").trim() === userId &&
+          ["ON_LOAN", "PRESTADO", "ACTIVO"].indexOf(candidateState) !== -1) {
+        activeMatches.push({ row: candidate, rowNumber: l + 2 });
+      }
+    }
+    if (activeMatches.length !== 1) return { status: "error", code: activeMatches.length ? "LIBRARY_LOAN_AMBIGUOUS" : "LIBRARY_ACTIVE_LOAN_NOT_FOUND" };
+    oldLoanRow = activeMatches[0].row.slice();
+    loanRowNumber = activeMatches[0].rowNumber;
+    var returnedRow = oldLoanRow.slice();
+    returnedRow[ix.FechaDevolucionReal] = now.toISOString();
+    returnedRow[ix.Estado] = "returned";
+    loanSheet.sheet.getRange(loanRowNumber, 1, 1, loanSheet.headers.length).setValues([returnedRow]);
+    try {
+      exemplarSheet.getRange(exemplarRowNumber, exemplarIndex.Estado + 1).setValue("available");
+      var returnedId = String(returnedRow[ix.PrestamoID] || "");
+      ledgerRowNumber = libraryAppendIdempotency_(ledger, key, operationType, institutionId, ejemplarId, userId, returnedId, actor.userId, now);
+      SpreadsheetApp.flush();
+      return { status: "success", prestamoId: returnedId, ejemplarId: ejemplarId, userId: userId, estado: "returned", duplicate: false, message: "Devolución registrada." };
+    } catch (returnError) {
+      var loanRestored = true, exemplarRestored = true;
+      try { loanSheet.sheet.getRange(loanRowNumber, 1, 1, loanSheet.headers.length).setValues([oldLoanRow]); } catch (restoreLoanError) { loanRestored = false; }
+      try { exemplarSheet.getRange(exemplarRowNumber, exemplarIndex.Estado + 1).setValue(oldExemplarState); } catch (restoreExemplarError) { exemplarRestored = false; }
+      var ledgerRestored = libraryRollbackRow_(ledgerSheet, ledgerRowNumber);
+      if (!loanRestored || !exemplarRestored || !ledgerRestored) return { status: "error", code: "LIBRARY_RETURN_COMPENSATION_REQUIRED" };
+      return { status: "error", code: "LIBRARY_RETURN_WRITE_FAILED" };
+    }
+  } catch (error) {
+    var message = String(error && error.message || error);
+    return { status: "error", code: message.indexOf("LIBRARY_") === 0 ? message.split(":")[0] : (message === "LOCK_TIMEOUT" ? "LOCK_TIMEOUT" : "LIBRARY_LOAN_FAILED") };
+  } finally {
+    if (locked) lock.releaseLock();
+  }
+}
+
+function reserveLibraryBook(payload) {
+  var input = payload || {};
+  var ejemplarId = String(input.ejemplarId || "").trim();
+  var userId = String(input.userId || "").trim();
+  if (!ejemplarId || ejemplarId.length > 120 || !userId || userId.length > 160) {
+    return { status: "error", code: "LIBRARY_RESERVATION_FIELDS_REQUIRED" };
+  }
+  var auth = libraryCirculationActor_(input, "reserveLibraryBook");
+  if (auth.error) return { status: "error", code: auth.error };
+  var actor = auth.actor, institutionId = String(actor.institutionId || "").trim();
+  var lock = LockService.getScriptLock(), locked = false, reservationRowNumber = 0, ledgerRowNumber = 0;
+  var reservationSheet = null, ledgerSheet = null;
+  try {
+    lock.waitLock(10000); locked = true;
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var exemplarSheet = ss.getSheetByName("BibliotecaEjemplares");
+    if (!exemplarSheet || exemplarSheet.getLastRow() < 2) return { status: "error", code: "LIBRARY_CATALOG_NOT_CONFIGURED" };
+    var exemplarData = exemplarSheet.getDataRange().getValues();
+    var exemplarHeaders = exemplarData[0].map(function(value) { return String(value || "").trim(); });
+    var exemplarIndex = {};
+    ["EjemplarID", "Estado"].forEach(function(header) {
+      var found = [];
+      exemplarHeaders.forEach(function(value, i) { if (value === header) found.push(i); });
+      if (found.length !== 1) throw new Error("LIBRARY_SCHEMA_MISMATCH:BibliotecaEjemplares");
+      exemplarIndex[header] = found[0];
+    });
+    var exemplarMatches = [];
+    for (var e = 1; e < exemplarData.length; e++) {
+      if (String(exemplarData[e][exemplarIndex.EjemplarID] || "").trim() === ejemplarId) exemplarMatches.push({ row: exemplarData[e], rowNumber: e + 1 });
+    }
+    if (exemplarMatches.length !== 1) return { status: "error", code: exemplarMatches.length ? "LIBRARY_EXEMPLAR_AMBIGUOUS" : "LIBRARY_EXEMPLAR_NOT_FOUND" };
+    var state = String(exemplarMatches[0].row[exemplarIndex.Estado] || "").trim().toUpperCase().replace(/[ -]/g, "_");
+    if (["ON_LOAN", "PRESTADO", "RESERVED", "RESERVADO"].indexOf(state) === -1) {
+      return { status: "error", code: "LIBRARY_RESERVATION_NOT_REQUIRED" };
+    }
+    var reservationHeaders = ["ReservaID", "EjemplarID", "UserId", "FechaSolicitud", "FechaExpiracion", "EstadoReserva", "Observaciones"];
+    var ledgerHeaders = ["OperationKey", "OperationType", "EjemplarID", "UserID", "EntityID", "InstitutionID", "ActorID", "CreatedAt"];
+    reservationSheet = libraryEnsureSheet_(ss, "BibliotecaReservas", reservationHeaders, false);
+    var ledger = libraryEnsureSheet_(ss, "BibliotecaIdempotencia", ledgerHeaders, true);
+    ledgerSheet = ledger.sheet;
+    var now = new Date(), key = libraryOperationKey_(input, "RESERVA", institutionId, ejemplarId, userId, now);
+    var prior = libraryIdempotencyLookup_(ledger, key, "RESERVA", institutionId, ejemplarId, userId);
+    if (prior) return { status: "success", reservaId: prior.entityId, duplicate: true, message: "La reserva ya había sido registrada." };
+    var ri = reservationSheet.index;
+    var activeReservations = reservationSheet.rows.filter(function(row) {
+      return String(row[ri.EjemplarID] || "").trim() === ejemplarId &&
+        String(row[ri.UserId] || "").trim() === userId &&
+        ["PENDING", "PENDIENTE", "ACTIVE", "ACTIVA"].indexOf(String(row[ri.EstadoReserva] || "").trim().toUpperCase()) !== -1;
+    });
+    if (activeReservations.length > 1) return { status: "error", code: "LIBRARY_RESERVATION_AMBIGUOUS" };
+    if (activeReservations.length === 1) {
+      var existingId = String(activeReservations[0][ri.ReservaID] || "");
+      ledgerRowNumber = libraryAppendIdempotency_(ledger, key, "RESERVA", institutionId, ejemplarId, userId, existingId, actor.userId, now);
+      SpreadsheetApp.flush();
+      return { status: "success", reservaId: existingId, duplicate: true, message: "El usuario ya tiene una reserva activa para este ejemplar." };
+    }
+    var reservationId = "RES-" + Utilities.getUuid();
+    var newReservation = new Array(reservationSheet.headers.length).fill("");
+    newReservation[ri.ReservaID] = reservationId;
+    newReservation[ri.EjemplarID] = ejemplarId;
+    newReservation[ri.UserId] = userId;
+    newReservation[ri.FechaSolicitud] = now.toISOString();
+    newReservation[ri.FechaExpiracion] = input.fechaExpiracion ? String(input.fechaExpiracion) : "";
+    newReservation[ri.EstadoReserva] = "pending";
+    newReservation[ri.Observaciones] = String(input.observaciones || "").slice(0, 500);
+    reservationSheet.sheet.appendRow(newReservation);
+    reservationRowNumber = reservationSheet.sheet.getLastRow();
+    try {
+      ledgerRowNumber = libraryAppendIdempotency_(ledger, key, "RESERVA", institutionId, ejemplarId, userId, reservationId, actor.userId, now);
+      SpreadsheetApp.flush();
+    } catch (writeError) {
+      var ledgerRestored = libraryRollbackRow_(ledgerSheet, ledgerRowNumber);
+      var reservationRestored = libraryRollbackRow_(reservationSheet.sheet, reservationRowNumber);
+      if (!ledgerRestored || !reservationRestored) return { status: "error", code: "LIBRARY_RESERVATION_COMPENSATION_REQUIRED" };
+      return { status: "error", code: "LIBRARY_RESERVATION_WRITE_FAILED" };
+    }
+    return { status: "success", reservaId: reservationId, ejemplarId: ejemplarId, userId: userId, estadoReserva: "pending", duplicate: false, message: "Reserva registrada exitosamente." };
+  } catch (error) {
+    var message = String(error && error.message || error);
+    return { status: "error", code: message.indexOf("LIBRARY_") === 0 ? message.split(":")[0] : (message === "LOCK_TIMEOUT" ? "LOCK_TIMEOUT" : "LIBRARY_RESERVATION_FAILED") };
+  } finally {
+    if (locked) lock.releaseLock();
+  }
+}
+
 function doPost(e) {
   let correlationId = apiResponseCorrelationId_();
   const respond = function(value) { return textResponse(value, correlationId, "ACCOUNTING"); };
@@ -6422,6 +6723,8 @@ function doPost(e) {
       ? { action: request.action, payload: safePayloadMeta }
       : safePayloadMeta;
     if (request.action === "getHierarchicalConfigurationCatalog" || request.action === "resolveHierarchicalConfiguration") return respond(requestHierarchicalConfigurationFromUser_(request.action, actionPayload));
+    if (request.action === "processLibraryLoan") return respond(processLibraryLoan(actionPayload));
+    if (request.action === "reserveLibraryBook") return respond(reserveLibraryBook(actionPayload));
     if (request.action === "configurePaymentConcept") return respond(configurePaymentConcept(actionPayload));
     // case "getInstitutionalComplementaryServices": result = getInstitutionalComplementaryServices(actionPayload); break;
     if (request.action === "getInstitutionalComplementaryServices") return respond(getInstitutionalComplementaryServices(actionPayload));
