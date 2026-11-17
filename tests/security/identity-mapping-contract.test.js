@@ -148,9 +148,7 @@ function extractBalancedFunction(source,name){const start=source.indexOf("functi
 function runMigrationEnvelopeFixture(source,target){
  const secret="local-fixture-secret-0123456789-abcdef",cache=new Map(),calls=[];
  const isUser=target==="USER";
- const names=isUser
-  ? ["computeHmacSignature","computeMigrationCredentialFingerprint_","getMigrationHmacSecret_","resolveInterServiceSecret_","verifyInterServiceEnvelope","handleTrustedMigrationEnvelope_"]
-  : ["computeHmacSignature","verifyInterServiceEnvelope","handleTrustedMigrationEnvelope_"];
+ const names=["computeHmacSignature","computeMigrationCredentialFingerprint_","getMigrationHmacSecret_","resolveInterServiceSecret_","verifyInterServiceEnvelope","handleTrustedMigrationEnvelope_"];
  const code=names.map(n=>extractBalancedFunction(source,n)).join(String.fromCharCode(10));
  const credentialHeaders=["CredentialID","ServiceID","CredentialType","Version","Status","Fingerprint","CreatedAt","CreatedBy","RevokedAt","RevokedBy"];
  const digest=crypto.createHash("sha256").update(secret).digest("hex");
@@ -172,7 +170,7 @@ function runMigrationEnvelopeFixture(source,target){
   compensateTrustedMigrationWrite_:p=>{calls.push(p);return{status:"success",compensated:true};},
   Date,Math,JSON,String,Object,Array,Error
  };
- const bootstrap='const IMA_LOCAL_SERVICE_ID_ = "USER"; const IMA_CREDENTIAL_CATALOG_HEADERS_ = '+JSON.stringify(credentialHeaders)+';';
+ const bootstrap='const IMA_LOCAL_SERVICE_ID_ = "'+target+'"; const IMA_CREDENTIAL_CATALOG_HEADERS_ = '+JSON.stringify(credentialHeaders)+';';
  vm.runInNewContext(bootstrap+String.fromCharCode(10)+code,ctx);
  function makeEnvelope(sourceService,action,payload){
   const timestamp=Date.now(),requestId="REQ-"+timestamp+"-"+Math.random().toString(36).slice(2,8),correlationId="CORR-"+timestamp;
