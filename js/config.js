@@ -962,3 +962,249 @@ window.registerNewCurricularAreaServiceConfig = function(areaConfig) {
     }
     return true;
 };
+
+
+/**
+ * Formateo regional centralizado. Los valores de REGIONAL_SETTINGS se validan
+ * antes de aplicarse; los defaults solo cubren instalaciones sin configuración.
+ */
+(function(global) {
+    if (global.IMARegionalFormatters) return;
+
+    var defaults = {
+        locale: "es-HN",
+        currency: "HNL",
+        currencyDisplay: "symbol",
+        timeZone: "America/Tegucigalpa",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+        dateStyle: "medium",
+        timeStyle: "short"
+    };
+    var settings = Object.assign({}, defaults);
+    var allowedStyles = ["short", "medium", "long", "full"];
+
+    function validLocale(value) {
+        try {
+            var candidate = String(value || defaults.locale).trim();
+            new Intl.NumberFormat(candidate);
+            new Intl.DateTimeFormat(candidate);
+            return candidate;
+        } catch (_) {
+            return defaults.locale;
+        }
+    }
+
+    function validCurrency(value) {
+        var candidate = String(value || defaults.currency).trim().toUpperCase();
+        if (candidate === "L" || candidate === "LPS" || candidate === "LEMPIRA" || candidate === "LEMPIRAS") candidate = "HNL";
+        try {
+            new Intl.NumberFormat(settings.locale, { style: "currency", currency: candidate }).format(1);
+            return candidate;
+        } catch (_) {
+            return defaults.currency;
+        }
+    }
+
+    function validTimeZone(value) {
+        try {
+            var candidate = String(value || defaults.timeZone).trim();
+            new Intl.DateTimeFormat(settings.locale, { timeZone: candidate }).format(new Date());
+            return candidate;
+        } catch (_) {
+            return defaults.timeZone;
+        }
+    }
+
+    function boundedInteger(value, fallback, min, max) {
+        var parsed = Number(value);
+        if (!Number.isFinite(parsed) || Math.floor(parsed) !== parsed) return fallback;
+        return Math.min(max, Math.max(min, parsed));
+    }
+
+    function normalizeSettings(raw) {
+        raw = raw && typeof raw === "object" ? raw : {};
+        var locale = validLocale(raw.locale || raw.idioma || raw.localeInstitucional || settings.locale);
+        settings.locale = locale;
+        var currency = validCurrency(raw.currencyCode || raw.codigoMoneda || raw.currency || raw.moneda || settings.currency);
+        var timeZone = validTimeZone(raw.timeZone || raw.timezone || raw.zonaHoraria || raw.zonaHorariaInstitucional || settings.timeZone);
+        var minDigits = boundedInteger(raw.minimumFractionDigits !== undefined ? raw.minimumFractionDigits : raw.decimalesMoneda, settings.minimumFractionDigits, 0, 4);
+        var maxDigits = boundedInteger(raw.maximumFractionDigits !== undefined ? raw.maximumFractionDigits : raw.decimalesMoneda, settings.maximumFractionDigits, minDigits, 4);
+        var currencyDisplay = ["symbol", "narrowSymbol", "code", "name"].indexOf(raw.currencyDisplay) !== -1 ? raw.currencyDisplay : settings.currencyDisplay;
+        var dateStyle = allowedStyles.indexOf(raw.dateStyle || raw.formatoFecha) !== -1 ? (raw.dateStyle || raw.formatoFecha) : settings.dateStyle;
+        var timeStyle = allowedStyles.indexOf(raw.timeStyle || raw.formatoHora) !== -1 ? (raw.timeStyle || raw.formatoHora) : settings.timeStyle;
+        return {
+            locale: locale,
+            currency: currency,
+            currencyDisplay: currencyDisplay,
+            timeZone: timeZone,
+            minimumFractionDigits: minDigits,
+            maximumFractionDigits: maxDigits,
+            dateStyle: dateStyle,
+            timeStyle: timeStyle
+        };
+    }
+
+    function getSettings() {
+        return Object.assign({}, settings);
+    }
+
+    function setSettings(raw) {
+        settings = normalizeSettings(raw);
+        try {
+            if (typeof global.dispatchEvent === "function" && typeof global.CustomEvent === "function") {
+                global.dispatchEvent(new global.CustomEvent("ima:regional-settings-updated", { detail: getSettings() }));
+            }
+        } catch (_) {}
+        return getSettings();
+    }
+
+    function parseRegionalNumber(value, options) {
+        options = options || {};
+        if (typeof value === "number") return Number.isFinite(value) ? value : null;
+        if (value === null || value === undefined) return null;
+        var text = String(value).trim();
+        if (!text) return null;
+
+        try {
+            var numberFormat = new Intl.NumberFormat(settings.locale);
+            var parts = numberFormat.formatToParts(12345.6);
+            var group = (parts.find(function(part) { return part.type === "group"; }) || {}).value || "";
+            var decimal = (parts.find(function(part) { return part.type === "decimal"; }) || {}).value || ".";
+            var sign = (new Intl.NumberFormat(settings.locale).formatToParts(-1).find(function(part) { return part.type === "minusSign"; }) || {}).value || "-";
+            var currencyParts = new Intl.NumberFormat(settings.locale, { style: "currency", currency: settings.currency }).formatToParts(1);
+            currencyParts.filter(function(part) { return part.type === "currency"; }).forEach(function(part) {
+                if (part.value) text = text.split(part.value).join("");
+            });
+            if (options.allowCurrencySymbol !== false) text = text.replace(/[L$€£¥]/g, "");
+            if (group) text = text.split(group).join("");
+            text = text.replace(/[\s\u00A0\u202F]/g, "");
+            if (sign && sign !== "-") text = text.split(sign).join("-");
+            if (decimal && decimal !== ".") text = text.split(decimal).join(".");
+            if (!/^[+-]?(?:\d+\.?\d*|\.\d+)$/.test(text)) return null;
+            var parsed = Number(text);
+            return Number.isFinite(parsed) ? parsed : null;
+        } catch (_) {
+            var fallback = Number(text.replace(/,/g, ""));
+            return Number.isFinite(fallback) ? fallback : null;
+        }
+    }
+
+    function formatNumber(value, options) {
+        options = options || {};
+        var parsed = parseRegionalNumber(value);
+        if (parsed === null) return options.emptyValue !== undefined ? options.emptyValue : "—";
+        var formatOptions = Object.assign({
+            useGrouping: true,
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+        }, options);
+        delete formatOptions.emptyValue;
+        delete formatOptions.allowCurrencySymbol;
+        try {
+            return new Intl.NumberFormat(settings.locale, formatOptions).format(parsed);
+        } catch (_) {
+            return String(parsed);
+        }
+    }
+
+    function formatCurrency(value, options) {
+        options = options || {};
+        var parsed = parseRegionalNumber(value);
+        if (parsed === null) return options.emptyValue !== undefined ? options.emptyValue : "—";
+        var formatOptions = Object.assign({
+            style: "currency",
+            currency: settings.currency,
+            currencyDisplay: settings.currencyDisplay,
+            minimumFractionDigits: settings.minimumFractionDigits,
+            maximumFractionDigits: settings.maximumFractionDigits
+        }, options);
+        delete formatOptions.emptyValue;
+        delete formatOptions.allowCurrencySymbol;
+        try {
+            return new Intl.NumberFormat(settings.locale, formatOptions).format(parsed);
+        } catch (_) {
+            return new Intl.NumberFormat(settings.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(parsed);
+        }
+    }
+
+    function parseDateValue(value) {
+        if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : { date: value, dateOnly: false };
+        if (value === null || value === undefined || value === "") return null;
+        if (typeof value === "string") {
+            var match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (match) {
+                var y = Number(match[1]), m = Number(match[2]), d = Number(match[3]);
+                var dateOnly = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+                if (dateOnly.getUTCFullYear() !== y || dateOnly.getUTCMonth() !== m - 1 || dateOnly.getUTCDate() !== d) return null;
+                return { date: dateOnly, dateOnly: true };
+            }
+        }
+        var date = new Date(value);
+        return Number.isNaN(date.getTime()) ? null : { date: date, dateOnly: false };
+    }
+
+    function hasDateParts(options) {
+        return ["weekday", "year", "month", "day", "era"].some(function(key) { return options[key] !== undefined; });
+    }
+
+    function hasTimeParts(options) {
+        return ["hour", "minute", "second", "fractionalSecondDigits", "dayPeriod"].some(function(key) { return options[key] !== undefined; });
+    }
+
+    function formatDate(value, options) {
+        options = options || {};
+        var parsed = parseDateValue(value);
+        if (!parsed) return options.emptyValue !== undefined ? options.emptyValue : "—";
+        var formatOptions = Object.assign({ timeZone: parsed.dateOnly ? "UTC" : settings.timeZone }, options);
+        delete formatOptions.emptyValue;
+        if (!hasDateParts(options) && !options.dateStyle) formatOptions.dateStyle = settings.dateStyle;
+        if (parsed.dateOnly) formatOptions.timeZone = "UTC";
+        try {
+            return new Intl.DateTimeFormat(settings.locale, formatOptions).format(parsed.date);
+        } catch (_) {
+            return new Intl.DateTimeFormat(settings.locale, { timeZone: parsed.dateOnly ? "UTC" : settings.timeZone, dateStyle: "medium" }).format(parsed.date);
+        }
+    }
+
+    function formatDateTime(value, options) {
+        options = options || {};
+        var parsed = parseDateValue(value);
+        if (!parsed) return options.emptyValue !== undefined ? options.emptyValue : "—";
+        if (parsed.dateOnly) return formatDate(parsed.date, options);
+        var formatOptions = Object.assign({ timeZone: settings.timeZone }, options);
+        delete formatOptions.emptyValue;
+        if (!hasDateParts(options) && !options.dateStyle) formatOptions.dateStyle = settings.dateStyle;
+        if (!hasTimeParts(options) && !options.timeStyle) formatOptions.timeStyle = settings.timeStyle;
+        try {
+            return new Intl.DateTimeFormat(settings.locale, formatOptions).format(parsed.date);
+        } catch (_) {
+            return new Intl.DateTimeFormat(settings.locale, { timeZone: settings.timeZone, dateStyle: "medium", timeStyle: "short" }).format(parsed.date);
+        }
+    }
+
+    function formatTime(value, options) {
+        options = options || {};
+        var parsed = parseDateValue(value);
+        if (!parsed || parsed.dateOnly) return options.emptyValue !== undefined ? options.emptyValue : "—";
+        var formatOptions = Object.assign({ timeZone: settings.timeZone, hour: "2-digit", minute: "2-digit" }, options);
+        delete formatOptions.emptyValue;
+        try {
+            return new Intl.DateTimeFormat(settings.locale, formatOptions).format(parsed.date);
+        } catch (_) {
+            return new Intl.DateTimeFormat(settings.locale, { timeZone: settings.timeZone, hour: "2-digit", minute: "2-digit" }).format(parsed.date);
+        }
+    }
+
+    global.IMARegionalFormatters = {
+        defaults: Object.assign({}, defaults),
+        getSettings: getSettings,
+        setSettings: setSettings,
+        parseNumber: parseRegionalNumber,
+        formatNumber: formatNumber,
+        formatCurrency: formatCurrency,
+        formatDate: formatDate,
+        formatDateTime: formatDateTime,
+        formatTime: formatTime
+    };
+})(window);
