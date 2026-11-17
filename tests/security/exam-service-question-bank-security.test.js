@@ -82,6 +82,27 @@ const runtime={
 };
 const names=["parseExamQuestionJsonField_","parseExamQuestionListField_","normalizeExamQuestionDefinition_","ensureExamQuestionBankSchema_","getRequestSessionToken_","getVerifiedRequestSessionClaims_","getCachedRequestAuthorization_","cacheRequestAuthorization_","clearRequestAuthorizationContext_","getVerifiedExamIdentity_","getVerifiedExamDepartmentScope_","assertExamResourceOwnershipForScope_","validateRolePermission","getAuthorizedQuestionBankMutationContext_","withAuthorizedQuestionBankMutation_","manageQuestionBank","manageQuestionBankUnlocked_"];
 vm.runInNewContext(names.map(extract).join("\n")+"\nthis.manageQuestionBank=manageQuestionBank;",runtime);
+const typeCases=[
+ {tipo:"opcion_multiple",opcionesJSON:{A:"Uno",B:"Dos"},respuestaCorrecta:"A"},
+ {tipo:"verdadero_falso",opcionesJSON:{},respuestaCorrecta:"Verdadero"},
+ {tipo:"completacion",opcionesJSON:{},respuestaCorrecta:"Mitosis"},
+ {tipo:"termino_pareado",opcionesJSON:{concepts:["A","B"],definitions:["1","2"]},respuestaCorrecta:{0:0,1:1}},
+ {tipo:"seleccion_multiple",opcionesJSON:{A:"Uno",B:"Dos"},respuestaCorrecta:["A","B"]},
+ {tipo:"respuesta_extensa",opcionesJSON:{},respuestaCorrecta:""},
+ {tipo:"numerica",opcionesJSON:{tolerance:0.1},respuestaCorrecta:3.14},
+ {tipo:"ordenamiento",opcionesJSON:{items:["Primero","Segundo"]},respuestaCorrecta:["Segundo","Primero"]},
+ {tipo:"adjunto",opcionesJSON:{acceptedMimeTypes:["image/png","application/pdf"],maxFiles:2},respuestaCorrecta:""}
+];
+for(const definition of typeCases){
+ const normalized=runtime.normalizeExamQuestionDefinition_(Object.assign({textoPregunta:"Pregunta válida",puntosPredeterminados:2},definition));
+ assert.equal(normalized.tipo,definition.tipo);
+ assert.equal(normalized.puntosPredeterminados,2);
+}
+assert.equal(runtime.normalizeExamQuestionDefinition_({tipo:"respuesta_breve",textoPregunta:"Respuesta",respuestaCorrecta:"Breve"}).tipo,"completacion");
+assert.throws(()=>runtime.normalizeExamQuestionDefinition_({tipo:"tipo_desconocido",textoPregunta:"x"}),/QUESTION_TYPE_INVALID/);
+assert.throws(()=>runtime.normalizeExamQuestionDefinition_({tipo:"opcion_multiple",textoPregunta:"x",opcionesJSON:{A:"Única"},respuestaCorrecta:"A"}),/QUESTION_OPTIONS_REQUIRED/);
+assert.throws(()=>runtime.normalizeExamQuestionDefinition_({tipo:"numerica",textoPregunta:"x",respuestaCorrecta:"no-numérica"}),/QUESTION_NUMERIC_ANSWER_INVALID/);
+assert.deepEqual(Array.from(bankRows[0].slice(13,16)),["ObjetivosJSON","CriteriosJSON","Version"],"legacy exam-bank schema is extended without shifting its original columns");
 const created=runtime.manageQuestionBank({sessionToken:"teacher-token",departmentId:"D1",accion:"crear",areaCurricular:"Ciencias",asignatura:"Biología",grado:"10",tema:"Célula",dificultad:"Media",textoPregunta:"Nueva",opcionesJSON:{A:"Uno",B:"Dos"},respuestaCorrecta:"A",puntosPredeterminados:2,etiquetas:["mitosis"],objetivos:["Identificar"],criterios:["Precisión"]});
 assert.equal(created.status,"success");
 assert.ok(created.bancoPreguntaId.startsWith("BNK-"));
@@ -96,6 +117,8 @@ assert.equal(legacyBankRows.length,2,"exam bank writes must not create rows in t
 assert.equal(legacyBankRows[1][5],"Pregunta heredada","legacy academic question content must remain unchanged");
 const updated=runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:"BNK-D1",accion:"actualizar",textoPregunta:"Actualizada",opcionesJSON:{A:"Nueva",B:"Otra"}});
 assert.equal(updated.status,"success");
+assert.equal(updated.version,2);
+assert.equal(bankRows.find(r=>r[0]==="BNK-D1")[15],2,"updating a question increments its version");
 assert.equal(bankRows.find(r=>r[0]==="BNK-D1")[7],"Actualizada");
 assert.throws(()=>runtime.manageQuestionBank({sessionToken:"other-token",bancoPreguntaId:"BNK-D1",accion:"actualizar",textoPregunta:"Ataque"}),/RESOURCE_NOT_AVAILABLE/);
 assert.equal(bankRows.find(r=>r[0]==="BNK-D1")[7],"Actualizada");
