@@ -11,7 +11,7 @@ function extract(source,name){
  throw new Error("Unbalanced "+name);
 }
 const secret="remote-snapshot-hmac-secret-with-more-than-32-characters";
-function ownerRuntime(source,service,handlerName,snapshotName,rows,expectedSheet,idField){
+function ownerRuntime(source,service,handlerName,snapshotName,rows,expectedSheet,idField,additionalSheets={}){
  const handler=extract(source,handlerName),snapshot=extract(source,snapshotName);
  const runtime={
   PropertiesService:{getScriptProperties:()=>({getProperty:key=>key==="IMA_MIGRATION_HMAC_SECRET"?secret:(key==="IMA_INSTITUTION_ID"?"INST-1":"")})},
@@ -22,7 +22,7 @@ function ownerRuntime(source,service,handlerName,snapshotName,rows,expectedSheet
   migrationStableJson_:value=>JSON.stringify(value),
   migrationHash_:value=>crypto.createHash("sha256").update(String(value)).digest("hex"),
   SPREADSHEET_ID:"TEST",
-  SpreadsheetApp:{openById:()=>({getSheetByName:name=>name===expectedSheet?{getDataRange:()=>({getValues:()=>rows.map(row=>row.slice())})}:null})}
+  SpreadsheetApp:{openById:()=>({getSheetByName:name=>name===expectedSheet?{getDataRange:()=>({getValues:()=>rows.map(row=>row.slice())})}:(additionalSheets[name]||null)})}
  };
  vm.createContext(runtime);
  vm.runInContext(snapshot+"\n"+handler+"\nthis.handle= "+handlerName+";",runtime);
@@ -45,9 +45,13 @@ assert.equal(userRuntime.handle({sourceService:"ACCOUNTING",action:"getMigration
 assert.equal(userRuntime.handle({sourceService:"ACCOUNTING",action:"getMigrationTargetExistenceSnapshot",payload:{sessionToken:"SIGNED-SESSION",institutionId:"INST-2",entityType:"persona",targetIds:["PER-1"]}}).code,"VERIFIED_IDENTITY_REQUIRED");
 assert.throws(()=>userRuntime.handle({sourceService:"ACADEMIC",action:"getMigrationTargetExistenceSnapshot",payload:{}}),/MIGRATION_SOURCE_NOT_ALLOWED/);
 const academicRuntime=ownerRuntime(academic,"ACADEMIC","handleTrustedMigrationEnvelope_","getTrustedAcademicMigrationTargetExistenceSnapshot_",
- [["ExpedienteID","PersonaID","CodigoInstitucional"],["EXP-1","PER-1","MAT-001"],["EXP-2","PER-2","MAT-002"]],"ExpedientesEstudiantes","ExpedienteID");
+ [["ExpedienteID","PersonaID","CodigoInstitucional","FechaNacimiento","Nacionalidad","DireccionResidencia","FotografiaUrl","EstadoExpediente"],["EXP-1","PER-1","MAT-001","","","","","Activo"],["EXP-2","PER-2","MAT-002","","","","","Activo"]],"ExpedientesEstudiantes","ExpedienteID",{
+  Clases:{getDataRange:()=>({getValues:()=>[["Grado","Seccion","WhatsAppLink"],["1ero","A",""]]})},
+  DepartamentosAcademicos:{getDataRange:()=>({getValues:()=>[["DepartamentoID","Nombre","JefeUserId","Estado","FechaActualizacion","AutorizadoPor"],["DEP-1","Primaria","","Activo","",""]]})}
+ });
 const academicResult=academicRuntime.handle({sourceService:"ACCOUNTING",action:"getMigrationTargetExistenceSnapshot",payload:{sessionToken:"SIGNED-SESSION",institutionId:"INST-1",entityType:"estudiante",targetIds:["EXP-1","MISSING"]}});
-assert.equal(academicResult.verified,true);assert.deepEqual(Array.from(academicResult.existingTargetIds),["EXP-1"]);assert.equal(academicResult.targetRows.length,1);const duplicateStudentResult=academicRuntime.handle({sourceService:"ACCOUNTING",action:"getMigrationTargetExistenceSnapshot",payload:{sessionToken:"SIGNED-SESSION",institutionId:"INST-1",entityType:"estudiante",targetIds:[],duplicateKeys:[{rowIndex:0,field:"CodigoInstitucional",matchType:"EXACTA",value:"mat-001"}]}});assert.equal(duplicateStudentResult.duplicateMatches.length,1);assert.equal(duplicateStudentResult.duplicateMatches[0].targetId,"EXP-1");assert.equal(academicResult.targetRows[0].ExpedienteID,"EXP-1");assert.match(academicResult.targetRows[0].__rowHash,/^[a-f0-9]{64}$/);assert.ok(!JSON.stringify(academicResult.targetRows).includes("PER-1"),"ACADEMIC returns row hashes, not student personal data");
+assert.equal(academicResult.verified,true);assert.deepEqual(Array.from(academicResult.existingTargetIds),["EXP-1"]);assert.equal(academicResult.targetRows.length,1);const validReferences=academicRuntime.handle({sourceService:"ACCOUNTING",action:"getMigrationTargetExistenceSnapshot",payload:{sessionToken:"SIGNED-SESSION",institutionId:"INST-1",entityType:"estudiante",targetIds:[],referenceKeys:[{rowIndex:0,grado:"1ero",seccion:"A",departamentoId:"DEP-1",expedienteId:"EXP-1"}]}});assert.deepEqual(Array.from(validReferences.referenceErrors),[]);
+const invalidReferences=academicRuntime.handle({sourceService:"ACCOUNTING",action:"getMigrationTargetExistenceSnapshot",payload:{sessionToken:"SIGNED-SESSION",institutionId:"INST-1",entityType:"estudiante",targetIds:[],referenceKeys:[{rowIndex:0,grado:"2do",seccion:"B",departamentoId:"DEP-MISSING",expedienteId:"EXP-MISSING"}]}});assert.deepEqual(Array.from(invalidReferences.referenceErrors.map(x=>x.code)).sort(),["IMPORT_REFERENCE_DEPARTMENT_NOT_ACTIVE","IMPORT_REFERENCE_EXPEDIENTE_NOT_ACTIVE","IMPORT_REFERENCE_GRADE_SECTION_NOT_FOUND"].sort());const duplicateStudentResult=academicRuntime.handle({sourceService:"ACCOUNTING",action:"getMigrationTargetExistenceSnapshot",payload:{sessionToken:"SIGNED-SESSION",institutionId:"INST-1",entityType:"estudiante",targetIds:[],duplicateKeys:[{rowIndex:0,field:"CodigoInstitucional",matchType:"EXACTA",value:"mat-001"}]}});assert.equal(duplicateStudentResult.duplicateMatches.length,1);assert.equal(duplicateStudentResult.duplicateMatches[0].targetId,"EXP-1");assert.equal(academicResult.targetRows[0].ExpedienteID,"EXP-1");assert.match(academicResult.targetRows[0].__rowHash,/^[a-f0-9]{64}$/);assert.ok(!JSON.stringify(academicResult.targetRows).includes("PER-1"),"ACADEMIC returns row hashes, not student personal data");
 assert.equal(academicRuntime.handle({sourceService:"ACCOUNTING",action:"getMigrationTargetExistenceSnapshot",payload:{sessionToken:"SIGNED-SESSION",institutionId:"INST-1",entityType:"estudiante",targetIds:[""]}}).code,"MIGRATION_SNAPSHOT_TARGET_ID_INVALID");
 const duplicateAcademicRuntime=ownerRuntime(academic,"ACADEMIC","handleTrustedMigrationEnvelope_","getTrustedAcademicMigrationTargetExistenceSnapshot_",[["ExpedienteID","PersonaID"],["EXP-1","PER-1"],["EXP-1","PER-2"]],"ExpedientesEstudiantes","ExpedienteID");
 assert.equal(duplicateAcademicRuntime.handle({sourceService:"ACCOUNTING",action:"getMigrationTargetExistenceSnapshot",payload:{sessionToken:"SIGNED-SESSION",institutionId:"INST-1",entityType:"estudiante",targetIds:["EXP-1"]}}).code,"MIGRATION_SNAPSHOT_DUPLICATE_TARGET_ID");
