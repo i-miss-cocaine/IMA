@@ -92,7 +92,7 @@ function request(overrides={}){return Object.assign({expedienteId:"exp-1",sessio
 {
  const h=makeRuntime({sameDepartment:true}),r=h.context.read(request());
  assert.equal(r.status,"success");assert.equal(r.referenceOnly,undefined);assert.equal(r.documents.length,2);
- assert.equal(r.documents[0].tieneArchivo,true);assert.equal(r.documents[0].integridadVerificada,true);assert.equal("driveFileId" in r.documents[0],false);assert.equal("driveUrl" in r.documents[0],false);assert.equal(h.calls.length,0);
+ assert.equal(r.documents[0].tieneArchivo,true);assert.equal("integridadVerificada" in r.documents[0],false);assert.equal("driveAccessible" in r.documents[0],false);assert.equal("driveFileId" in r.documents[0],false);assert.equal("driveUrl" in r.documents[0],false);assert.equal(h.calls.length,0);
 }
 {
  const h=makeRuntime({referenceMode:true,response:{status:"error",authorized:false,code:"DEPARTMENT_REFERENCE_GRANT_NOT_FOUND"}});
