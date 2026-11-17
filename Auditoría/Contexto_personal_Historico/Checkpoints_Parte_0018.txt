@@ -39,3 +39,55 @@ Verificación de estado:
 Siguiente tarea elegible:
 - Revisar topología de PM-04. TASK-072 (P0, orden 6) es la siguiente candidata de migración/corte financiero, pero debe resolverse su dependencia F29-Task01/02/03 y reconciliar el solapamiento circular entre TASK-072 y F29-Task02 antes de modificar saldos. TASK-270 permanece bloqueada por F29-Task01/02/03/06/13.
 ===============================================================================
+
+===============================================================================
+CHECKPOINT C1.793 — IMA-EXEC-20261117-0028Z-F25-TASK02-IMPORT-MAPPING-PROFILES
+===============================================================================
+Repositorio: i-miss-cocaine/IMA
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Tarea/subcapacidad: F25-Task02 — Persistir perfiles reutilizables de mapeo de columnas para importaciones
+Checkpoint anterior: C1.792
+
+Implementación:
+- Hoja PerfilesMapeoColumnas con perfil, institución, propietario, origen, entidad, destino, encabezados, mapping JSON, huella de esquema, versión y fechas.
+- Endpoints getImportMappingProfiles y saveImportMappingProfile, protegidos por sesión verificada y permiso institucional de importación.
+- Aislamiento por propietario e institución; IDs no permiten actualizar perfiles ajenos.
+- Versionado append-only; editar agrega una nueva versión y conserva las anteriores.
+- Validación de entidad/destino, nombre, encabezados únicos, identificador, campos destino permitidos y campos obligatorios por entidad.
+- La UI del importador permite listar, guardar, cargar y editar perfiles; solo aplica un perfil cuando los encabezados coinciden exactamente en contenido y orden. La previsualización sigue siendo obligatoria.
+- Rutas API incorporadas y cubiertas por prueba de router.
+
+Pruebas/evidencia:
+- tests/security/accounting-import-mapping-profiles.test.js PASS en Node 24 en Department Scope run 43987696374 (step ejecutado antes del fallo independiente de Phase22).
+- tests/security/accounting-import-auth-router.test.js PASS en Accounting Import Preflight run 43987696349.
+- Accounting Import Preflight run 43987696349: PASS; incluye sintaxis de ACCOUNTING, USER, ACADEMIC, js/api.js, js/accounting.js, js/secretary.js y js/teacher.js.
+- Department Scope run 43987696374: fallo global en tests/regression/phase22-document-management-suite-contract.test.js porque configureSchoolDocumentTemplate no existe en ACCOUNTING de la rama de trabajo; no es fallo del contrato F25-Task02.
+- BETA-FUNC-112 añadido a beta_test.txt; validación desplegada en Apps Script/Sheets sigue pendiente.
+
+Archivos modificados:
+- backend/accounting-service/Code.gs
+- js/accounting.js
+- tests/security/accounting-import-mapping-profiles.test.js
+- tests/security/accounting-import-auth-router.test.js
+- .github/workflows/department-scope-contract.yml
+- beta_test.txt
+- Auditoría/AUDITORIA_FASE_25_INTEGRACIONES_EXTERNAS.md
+
+Commits de implementación/verificación:
+- f45718fed4c7300d18620f3e8b797feb7c836a25
+- 8ae7130d17bc58b5fd1f7e88979a4d2543f950e5
+- b476adf6b771c2c02905efc5ded8f77b3157c027
+- 2c6f73c7f4aef76cb89b1a6668bc5af8d58494b2
+- f2ad5fd29f856153bab454b7cedb9726c35ac668
+- 5ecb7b1fa99f51b07f5885b10d2e182793a11205
+- 696e9501b2cd1ac209fce9650c69bf40bfb4310d
+- 3b198aef8983d288970b8530a1ddeec3e6e887e2
+- 14e6047c487b902183ab57c8a382bff909a4923c
+- 598e4e0ddaf434ac9213b1b9d08457d7895e2c4f
+- 1c2f57a80d51427fd1b3f70fce5d12e21698de13
+- 0903eed7b9b4baf4168ea5213d1ebcad6fdabe99
+
+HEAD verificado: 0903eed7b9b4baf4168ea5213d1ebcad6fdabe99 en NG_beta_0.0.0.1_work.
+Siguiente tarea elegible: F25-Task03 — detección avanzada de duplicados e integridad referencial. Su dependencia F25-Task02 queda satisfecha; deben verificarse antes de implementar las políticas de identidad canónica y de merge para no fusionar personas por nombre ni escribir referencias huérfanas.
+===============================================================================
