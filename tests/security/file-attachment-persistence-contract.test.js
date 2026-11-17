@@ -247,9 +247,10 @@ const voucherVerificationFns = [
   extractFunction(accounting, "getAccountingEvidenceIntegrityPolicy_")
 ].join("\n");
 const voucherDownloadMap = {ComprobanteID:0,Fecha:1,UserId:2,Alumno:3,CargoID:4,MontoReportado:5,MetodoPago:6,
-  Referencia:7,ComprobanteUrl:8,Estado:9,Observaciones:10,ComprobanteGrupoID:11,VersionNumero:12,SHA256:13,
-  SizeBytes:14,MimeType:15,FechaRecepcionISO:16,EstadoIntegridad:17,EsVersionActual:18,DecisionHash:19,
-  DecisionTimestamp:20,DecisionBy:21,DecisionIntegrityWarning:22};
+  Referencia:7,ComprobanteUrl:8,Estado:9,Observaciones:10,AprobadoPor:11,SolicitudID:12,EvidenciaID:13,
+  DriveFileID:14,NombreOriginal:15,EsVersionActual:16,EstadoIntegridad:17,SHA256:18,VersionNumero:19,
+  SizeBytes:20,MimeType:21,FechaRecepcion:22,DecisionIntegrityWarning:23,DecisionHash:24,DecisionState:25,
+  ComprobanteGrupoID:26,DecisionActor:27,DecisionDate:28};
 const voucherVerifyFn = extractFunction(accounting, "verifyPaymentVoucherEvidence_");
 assert.match(voucherVerifyFn, /file\.getSharingAccess\(\)\s*!==\s*DriveApp\.Access\.PRIVATE/);
 assert.match(voucherVerifyFn, /validateFileBinaryIntegrity/);
@@ -260,11 +261,11 @@ const voucherDownloadContext = {
   getVerifiedAccountingIdentity_: () => ({ authorized: true, userId: "student-1", role: "Estudiante" }),
   assertPaymentVoucherOwnerAccess_: () => voucherOwnerAllowed ? ({ authorized: true }) : ({ authorized: false, code: "RESOURCE_SCOPE_DENIED" }),
   extractDriveFileId: () => "legacy-file-id",
-  SpreadsheetApp: { openById: () => ({ getSheetByName: () => ({ getDataRange: () => ({ getValues: () => [
-    ["id","fecha","userId","alumno","cargoId","monto","metodo","referencia","archivo","estado","observaciones"],
-    ["VCH-1",new Date(),"student-1","Estudiante","GRAL",10,"Transferencia","REF","https://drive.google.com/file/d/legacy-file-id/view","En Revisión",""]
-  ] }) }) }) },
-  ensurePaymentVoucherEvidenceSchema_: () => voucherDownloadMap,
+  SpreadsheetApp: { openById: () => ({}) },
+  ensurePaymentVoucherEvidenceSchema_: () => ({sheet:{getDataRange:()=>({getValues:()=>[
+    ["ComprobanteID","Fecha","UserId","Alumno","CargoID","MontoReportado","MetodoPago","Referencia","ComprobanteUrl","Estado","Observaciones","AprobadoPor","SolicitudID","EvidenciaID","DriveFileID","NombreOriginal","EsVersionActual","EstadoIntegridad","SHA256","VersionNumero","SizeBytes","MimeType","FechaRecepcion","DecisionIntegrityWarning","DecisionHash","DecisionState","ComprobanteGrupoID","DecisionActor","DecisionDate"],
+    ["VCH-1",new Date(),"student-1","Estudiante","GRAL",10,"Transferencia","REF","https://drive.google.com/file/d/legacy-file-id/view","En Revisión","", "", "", "", "", "evidence.pdf", true, "PENDIENTE", "", 1, 3, "application/pdf", "", false, "", "Pendiente", "GROUP-1", "", ""]
+  ]})},map:voucherDownloadMap}),
   computeDocumentSHA256: () => "a".repeat(64),
   DriveApp: { Access: { PRIVATE: "PRIVATE" }, getFileById: () => ({
     isTrashed: () => false,
