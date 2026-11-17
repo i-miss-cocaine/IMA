@@ -212,20 +212,18 @@ function buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutio
     headers.forEach(function(header, column) { if (header) item[header] = row[column]; });
     targetRows.push(item);
   }
-  for (var rowIndex = 0; rowIndex < (preparedRows || []).length; rowIndex++) {
-    var prepared = preparedRows[rowIndex] || {};
-    duplicateRequests.forEach(function(request) {
-      if (request.rowIndex !== rowIndex) return;
-      var column = duplicateColumns[request.field];
-      if (column === undefined) return;
-      var raw = String(values.slice(1).find(function(existingRow) {
-        return String(existingRow[idIndex] || "").trim() === String(ids[String(prepared[idField] || "")] ? prepared[idField] : "") ;
-      }) || "");
-      var candidate = normalizeMigrationNaturalKey_(request.field, raw);
-      if (candidate && candidate === request.value) duplicateMatches.push({ rowIndex: rowIndex,
-        targetId: String(prepared[idField] || ""), field: request.field, matchType: request.matchType });
-    });
-  }
+  duplicateRequests.forEach(function(request) {
+    var column = duplicateColumns[request.field];
+    if (column === undefined) return;
+    for (var targetRowIndex = 1; targetRowIndex < values.length; targetRowIndex++) {
+      var targetRow = values[targetRowIndex] || [];
+      var targetId = String(targetRow[idIndex] || "").trim();
+      var candidate = normalizeMigrationNaturalKey_(request.field, targetRow[column]);
+      if (targetId && candidate && candidate === request.value) duplicateMatches.push({
+        rowIndex: request.rowIndex, targetId: targetId, field: request.field, matchType: request.matchType
+      });
+    }
+  });
   return { verified: true, service: service, sheet: sheetName, institutionId: institutionId,
     idField: idField, existingTargetIds: Object.keys(ids).sort(), targetRows: targetRows, duplicateMatches: duplicateMatches };
 }
