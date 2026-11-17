@@ -33,7 +33,7 @@ function makeSheet(rows) { return {
   })
 }; }
 const academic = fs.readFileSync(path.resolve(__dirname, "../../backend/academic-service/Code.gs"), "utf8");
-const names = ["getRequestSessionToken_","getVerifiedRequestSessionClaims_","getVerifiedAcademicIdentity_","getVerifiedDepartmentScopeForSession_","getVerifiedAcademicDepartmentScope_","getAcademicDelegatedMembershipForScope_","resolveInternalResponsibilityForRoleScope_","getVerifiedAcademicGuardianDepartmentScope_","assertResourceOwnershipForScope_","getStudentPersonIdForUser_","getStudentIdentityForPerson_","assertStudentExpedienteScopeAccess_","assertStudentDocumentScopeAccess_","assertStudentRequestScopeAccess_","resolveAcademicRequestDepartment_","hasActiveTeacherAssignment_","validateAcademicResponsibilityAndScopeAccess","getStudentFile","ensureStudentDocumentSchema_","ensureDocumentVersionHistorySchema_","getStudentDocuments","sanitizeStudentPhotoUrl_","validateFileBinaryIntegrity","classifyPdfDocumentPages_","validateEvidenceFileAndPermissions","assertRecordOwnership","getStudentFileSummary","getStudentTimeline","restoreDocumentVersion"];
+const names = ["getRequestSessionToken_","getVerifiedRequestSessionClaims_","getVerifiedAcademicIdentity_","getVerifiedDepartmentScopeForSession_","getVerifiedAcademicDepartmentScope_","getAcademicDelegatedMembershipForScope_","resolveInternalResponsibilityForRoleScope_","getVerifiedAcademicGuardianDepartmentScope_","assertResourceOwnershipForScope_","getStudentPersonIdForUser_","getStudentIdentityForPerson_","assertStudentExpedienteScopeAccess_","assertStudentDocumentScopeAccess_","assertStudentRequestScopeAccess_","resolveAcademicRequestDepartment_","hasActiveTeacherAssignment_","validateAcademicResponsibilityAndScopeAccess","getStudentFile","ensureStudentDocumentSchema_","ensureDocumentVersionHistorySchema_","getStudentDocumentFile_","getStudentDocumentFile","getStudentDocuments","sanitizeStudentPhotoUrl_","validateFileBinaryIntegrity","classifyPdfDocumentPages_","validateEvidenceFileAndPermissions","assertRecordOwnership","getStudentFileSummary","getStudentTimeline","restoreDocumentVersion"];
 const code = "var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n" + names.map(n => extractFunction(academic, n)).join("\n");
 const claims = {
   staffA:{userId:"U-A",role:"Director"}, staffB:{userId:"U-B",role:"Director"},
@@ -113,7 +113,7 @@ const context={
   getVerifiedPrivateStudentDocumentFile_:(fileId,expectedHash,fileName)=>({fileId:fileId,fileName:fileName||"document.pdf",sha256Hash:expectedHash||"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",bytes:[1,2,3],mimeType:"application/pdf",driveAccessible:true,integrityVerified:!!expectedHash}),
   logStructuredEvent:()=>{}
 };
-vm.runInNewContext(code + "\nthis.assertStudentExpedienteScopeAccess_=assertStudentExpedienteScopeAccess_;this.assertStudentDocumentScopeAccess_=assertStudentDocumentScopeAccess_;this.assertStudentRequestScopeAccess_=assertStudentRequestScopeAccess_;this.validateAcademicResponsibilityAndScopeAccess=validateAcademicResponsibilityAndScopeAccess;this.getStudentFile=getStudentFile;this.getStudentDocuments=getStudentDocuments;this.getSecureDocumentStream=getSecureDocumentStream;this.validateEvidenceFileAndPermissions=validateEvidenceFileAndPermissions;this.assertRecordOwnership=assertRecordOwnership;",context);
+vm.runInNewContext(code + "\nthis.assertStudentExpedienteScopeAccess_=assertStudentExpedienteScopeAccess_;this.assertStudentDocumentScopeAccess_=assertStudentDocumentScopeAccess_;this.assertStudentRequestScopeAccess_=assertStudentRequestScopeAccess_;this.validateAcademicResponsibilityAndScopeAccess=validateAcademicResponsibilityAndScopeAccess;this.getStudentFile=getStudentFile;this.getStudentDocumentFile=getStudentDocumentFile;this.getStudentDocuments=getStudentDocuments;this.validateEvidenceFileAndPermissions=validateEvidenceFileAndPermissions;this.assertRecordOwnership=assertRecordOwnership;",context);
 const actor=token=>({sessionToken:token});
 const expSheet=makeSheet(rows.ExpedientesEstudiantes);
 assert.equal(context.assertStudentExpedienteScopeAccess_(actor("staffA"),ss,expSheet,rows.ExpedientesEstudiantes[1]).authorized,true);
@@ -220,9 +220,12 @@ for(const [fn,needle] of [["uploadStudentDocument","assertStudentRequestScopeAcc
 
 assert.equal(context.assertRecordOwnership("Director","U-A","U-B","DOCUMENT").authorized,false);
 assert.equal(context.assertRecordOwnership("Estudiante","U-STUDENT","U-STUDENT","DOCUMENT").authorized,true);
-assert.equal(context.getSecureDocumentStream({sessionToken:"staffA",fileId:"FILE-B"}).code,"RESOURCE_NOT_FOUND");
-assert.equal(context.getSecureDocumentStream({sessionToken:"staffA",fileId:"FILE-A"}).code,"RESOURCE_NOT_FOUND",
-  "a Drive file ID alone cannot authorize a download without a one-use document token");
+assert.equal(context.getStudentDocumentFile({sessionToken:"staffA",documentoId:"DOC-B"}).code,"RESOURCE_NOT_FOUND",
+  "the direct document read still enforces the actor's expediente scope");
+assert.equal(context.getStudentDocumentFile({sessionToken:"staffA",documentoId:"DOC-A"}).status,"success",
+  "a staff member can read a document in the authorized department with one direct request");
+assert.throws(()=>context.getStudentDocumentFile({sessionToken:"staffA",fileId:"FILE-A"}),/documentoId requerido/,
+  "a Drive file ID alone is not a document reference");
 assert.equal(context.validateEvidenceFileAndPermissions({sessionToken:"staffA",fileId:"FILE-B"}).code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.validateEvidenceFileAndPermissions({sessionToken:"staffA",fileId:"FILE-A"}).status,"success");
 assert.ok(extractFunction(academic,"getStudentFileSummary").includes("getVerifiedAcademicIdentity_"));

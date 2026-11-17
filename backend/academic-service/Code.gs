@@ -15134,7 +15134,7 @@ function getStudentDocumentFile_(payload) {
     if(file.getSharingAccess&&file.getSharingAccess()!==DriveApp.Access.PRIVATE)return {status:"error",code:"DOCUMENT_FILE_NOT_PRIVATE",message:"El documento no está disponible."};
     const blob=file.getBlob(),bytes=blob.getBytes();
     if(!bytes||!bytes.length)return {status:"error",code:"DOCUMENT_FILE_EMPTY",message:"El documento no está disponible."};
-    return {status:"success",documentoId:documentId,fileName:file.getName(),mimeType:blob.getContentType()||file.getMimeType(),
+    return {status:"success",documentoId:documentId,fileName:file.getName(),mimeType:(blob.getContentType?blob.getContentType():file.getMimeType()),
       fileData:Utilities.base64Encode(bytes),sizeBytes:bytes.length,versionDocumento:version,
       documentoReferenciaId:String(row[17] || ""),esReferenciaSinCopia:!!String(row[17] || "")};
   } catch (error) {
