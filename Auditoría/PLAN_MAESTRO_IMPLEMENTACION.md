@@ -5837,3 +5837,19 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - **Rama base:** sin escrituras ni cambios.
 
 **Siguiente tarea elegible (C1.812):** inventariar uploadStudentDocument y las cargas de materiales/archivos/imágenes/videos. Reducir SHA-256, inspección binaria, deduplicación y verificaciones repetidas por adjunto cuando no sean necesarias para guardar/recuperar; conservar solo validaciones mínimas de procesamiento/almacenamiento, rol en el punto de entrada y captura de fecha/usuario/registro. Después revisar notas y materiales docentes con el mismo criterio.
+
+# Addendum de ejecución — C1.812 / simplificación de carga documental académica
+
+**Identificador:** IMA-EXEC-20261117-ACADEMIC-UPLOAD-SIMPLIFICATION-01  
+**Checkpoint anterior:** C1.811.  
+**HEAD de partida recuperado:** c992e9c99886820c705027390c785db5e23ecca8; se preservó el avance concurrente de 15c4a91f60a4c5b803ed711602e4c6da678e.  
+**HEAD final de implementación/contratos:** a4c05140078902ebcf57d8665e4c1718b24f229e.
+
+- uploadStudentDocument deja de calcular/verificar SHA-256 y de deduplicar por contenido en el flujo ordinario. Mantiene límite de 50 MiB, decodificación Base64, inferencia MIME, almacenamiento privado, asociación al expediente/solicitud, actor/fecha/versión, ScriptLock, historial y rollback.
+- Se admite video junto con documentos e imágenes; se añadió rechazo mínimo de rutas/caracteres de control y extensiones ejecutables/doble extensión antes de escribir en Drive.
+- Se eliminó verifyDocumentIntegritySha256 del servicio, dispatcher y RBAC. La lectura/restauración usa disponibilidad y privacidad del archivo, sin exigir hash por documento; el historial legacy se conserva.
+- Pruebas: Academic-Service single authorization context run 44152560639 SUCCESS (Node 22.23.4); Accounting Import Preflight run 44152855886 SUCCESS (Node 24.22.2, 46 pasos); Department Reference Consumers run 44152616978 SUCCESS. Department Scope run 44152616945 falla en Phase22 por configureSchoolDocumentTemplate ausente en ACCOUNTING; no bloquea este incremento, cuyos contratos locales específicos pasaron.
+- Node CLI local NOT RUN; Apps Script/Sheets/Drive reales y beta NOT RUN.
+- TASK-142 permanece Revisión requerida. Este checkpoint no cierra notas/materiales docentes ni las subcapacidades reabiertas por C1.809.
+
+**Siguiente ejecución:** revisar createTask/updateTask/createStudyMaterial/deleteStudyMaterial y flujos docentes de notas/materiales frente al mandato C1.808. Mantener RBAC por acción en el dispatcher, actor/fecha/usuario reales y asignaciones funcionales; retirar solo controles ABAC o revalidaciones redundantes demostradas por contratos y consumidores.

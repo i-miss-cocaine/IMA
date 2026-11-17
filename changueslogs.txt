@@ -4176,3 +4176,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Department Reference Consumers run 44148585899 SUCCESS; Accounting Import Preflight 44148585966 SUCCESS; Department Scope 44148585716 FAILURE solo Phase22 histórico (configureSchoolDocumentTemplate ausente en ACCOUNTING); Academic single-auth 44147882353 SUCCESS.
 - CLI local, Apps Script/Sheets/Drive reales y despliegue beta NOT RUN. HEAD de código: db2dcbbcfaab05770b587853fdec0e0f727c30db.
 - Siguiente: simplificar cargas de documentos/materiales/imágenes/videos y retirar validaciones por adjunto no imprescindibles.
+
+[2026-11-17] C1.812 — simplificación de carga documental académica
+- uploadStudentDocument deja de calcular SHA-256 y deduplicar binarios; conserva límite de 50 MiB, decodificación, MIME, almacenamiento privado, actor/fecha/versión, ScriptLock, historial y rollback.
+- Se habilita video y se añade rechazo mínimo de nombres con rutas/caracteres de control y extensiones ejecutables/doble extensión.
+- Se retira verifyDocumentIntegritySha256 de la implementación, dispatcher y RBAC. La lectura/restauración no exige hash; se conserva el historial legacy.
+- Academic-Service single-auth run 44152560639 SUCCESS; Accounting Import Preflight 44152855886 SUCCESS (46/46 pasos); Department Reference Consumers 44152616978 SUCCESS. Department Scope 44152616945 falla en Phase22 por configureSchoolDocumentTemplate ausente en ACCOUNTING.
+- CLI local NOT RUN; Apps Script/Sheets/Drive real y beta NOT RUN. TASK-142 continúa Revisión requerida.
+- Siguiente: revisar autorización/ABAC redundante en createTask, updateTask, createStudyMaterial, deleteStudyMaterial y flujos de notas/materiales docentes.

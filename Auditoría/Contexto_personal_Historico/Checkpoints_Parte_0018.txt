@@ -527,3 +527,57 @@ HEAD final de código/contratos: db2dcbbcfaab05770b587853fdec0e0f727c30db.
 
 **Siguiente tarea elegible (C1.812):** inventariar uploadStudentDocument y las cargas de materiales/archivos/imágenes/videos. Reducir SHA-256, inspección binaria, deduplicación y verificaciones repetidas por adjunto cuando no sean necesarias para guardar/recuperar; conservar solo validaciones mínimas de procesamiento/almacenamiento, rol en el punto de entrada y captura de fecha/usuario/registro. Después revisar notas y materiales docentes con el mismo criterio.
 ===============================================================================
+
+===============================================================================
+CHECKPOINT C1.812 — IMA-EXEC-20261117-ACADEMIC-UPLOAD-SIMPLIFICATION-01
+===============================================================================
+Repositorio: i-miss-cocaine/IMA
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.811
+HEAD del checkpoint anterior: db2dcbbcfaab05770b587853fdec0e0f727c30db
+HEAD recuperado al iniciar la sesión: c992e9c99886820c705027390c785db5e23ecca8
+HEAD concurrente observado y preservado: 15c4a91f60a4c5b803ed711602e4c6da678e6726
+HEAD final de implementación/contratos: a4c05140078902ebcf57d8665e4c1718b24f229e
+
+Motivo y explicación del checkpoint:
+- C1.811 dejó como siguiente incremento la simplificación de uploadStudentDocument y los adjuntos académicos. Al recuperar la rama ya existían commits posteriores que habían reducido la carga documental y eliminado la verificación SHA-256 por documento; se revisaron y conservaron, sin repetir ni revertir su trabajo.
+- La carga ahora decodifica el contenido, aplica límite de 50 MiB, determina MIME para documentos/imágenes/videos (incluidos MP4, WebM, MOV, AVI, MKV y 3GP), guarda el archivo en carpeta privada y asocia expediente/solicitud, tipo, fecha, versión y actor verificado. Las actualizaciones de versión conservan ScriptLock, historial y rollback compensatorio.
+- Se retiraron el cálculo SHA-256 por archivo y la deduplicación binaria del flujo ordinario. Los metadatos hash de nuevas versiones quedan vacíos; los valores históricos existentes se conservan al archivarse. La lectura/restauración valida existencia y privacidad del archivo, sin exigir hash para la operación ordinaria.
+- Se eliminó verifyDocumentIntegritySha256 del dispatcher, la lista RBAC y la implementación. Se mantuvo getPrivateStudentDocumentFile_ para comprobar disponibilidad y privacidad del archivo.
+- Se añadió una validación mínima de nombre: rechaza rutas/caracteres de control y extensiones ejecutables (incluida doble extensión) antes de escribir en Drive. No se reintrodujo la inspección binaria avanzada ni el hash por adjunto.
+- No se tocó todavía createTask/updateTask/createStudyMaterial/deleteStudyMaterial ni los flujos de notas/materiales docentes; permanecen para el siguiente incremento. TASK-142 y las subcapacidades reabiertas por C1.809 no se marcan completadas.
+
+Archivos de implementación/prueba modificados desde C1.811:
+- backend/academic-service/Code.gs
+- tests/security/academic-student-document-private-storage.test.js
+- tests/security/auditor-readonly-role.test.js
+- tests/security/departmental-resource-access.test.js (cambio concurrente preexistente, preservado íntegramente)
+
+Commits relevantes desde C1.811:
+- 318023c710088d114badeebb33208ce2f2182bcb — simplificación de carga y soporte de videos.
+- 91d4d54459bbb8db65f39fc47bb7eb777dc28157 — corrección MIME 3GP.
+- 9626c09cf76d13791fb031a0bfa198c2201136a5 — consolidación de definiciones duplicadas.
+- dd6b8c3291d3acdbeac6ddd4164df714ce218261 — alineación del contrato de almacenamiento/versiones.
+- c992e9c99886820c705027390c785db5e23ecca8 — retirada del endpoint SHA-256 por documento.
+- 15c4a91f60a4c5b803ed711602e4c6da678e6726 — ajuste del contrato de restauración sin hash.
+- 29fffc7fb082e2f0ba2ff34d8951b1abd1809718 — validación mínima de nombre/extensiones y prueba negativa previa a escritura.
+- e3cb74266af99acc4c5340d08ae0fa99a87ab3fd — preservación del cambio concurrente en contrato de acceso departamental.
+- a4c05140078902ebcf57d8665e4c1718b24f229e — contrato Auditor alineado con la retirada del endpoint SHA-256.
+
+Verificaciones ejecutadas:
+- Academic-Service single authorization context, GitHub Actions run 44152560639: SUCCESS. Node.js 22.23.4; node --check de Code.gs y los cinco contratos Node ejecutados, incluido academic-student-document-private-storage.test.js.
+- Accounting Import Preflight, run 44152855886: SUCCESS. Node.js 24.22.2; 46 pasos ejecutados con éxito, incluido auditor-readonly-role, contratos de adjuntos, almacenamiento privado, RBAC y sintaxis.
+- Department Reference Consumers Local Contract, run 44152616978: SUCCESS; contratos ACADEMIC/ACCOUNTING, UI y sintaxis.
+- Department Scope Contract, run 44152616945: FAILURE en Phase 22 document management suite: el contrato intenta extraer configureSchoolDocumentTemplate, función ausente en ACCOUNTING. La prueba académica de almacenamiento privado y el contrato de acceso departamental se ejecutaron y pasaron antes de ese paso. Incidencia transversal preexistente documentada en C1.811; no se atribuye al cambio de carga.
+- Node CLI local: NOT RUN; no se dispuso de checkout local verificable. Node CLI sí se ejecutó en GitHub Actions.
+- Apps Script/Sheets/Drive reales y beta desplegada: NOT RUN; las comprobaciones remotas permanecen Pendiente beta.
+
+Revisión de regresión:
+- Se verificó que el dispatcher conserva la autorización RBAC de getStudentDocumentFile y que Secretary usa la lectura directa, sin token/stream adicional.
+- Contratos verifican versión e historial, restauración sin hash, archivo privado, rollback de archivo ante fallo, lock contention, asociación de expediente/solicitud, límite de tamaño, video MP4 y rechazo de doble extensión ejecutable antes de escritura.
+- El contrato Auditor se actualizó para exigir que verifyDocumentIntegritySha256 ya no sea una acción concedida ni expuesta; Accounting Import Preflight volvió a SUCCESS.
+
+Estado: incremento parcial aprobado para carga documental de expediente; no cierra TASK-142 ni las demás tareas Revisión requerida de C1.809. No se modificó la rama base.
+Siguiente acción elegible: revisar las operaciones docentes createTask/updateTask/createStudyMaterial/deleteStudyMaterial y los flujos de notas/materiales, retirar solo revalidaciones ABAC redundantes según C1.808, preservando RBAC de entrada, actor/fecha/usuario, asignación funcional y controles de integridad necesarios.
+===============================================================================
