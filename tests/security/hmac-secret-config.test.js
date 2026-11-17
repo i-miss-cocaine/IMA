@@ -53,6 +53,7 @@ function createContext(source, initialSecret, claims) {
     },
     CacheService: { getScriptCache: () => ({ get: () => null, put: () => {} }) },
     isSessionRevoked_: () => false,
+    verifyUserRoleMembershipClaim_: () => null,
     SpreadsheetApp: {
       openById: () => ({ getSheetByName: name => name === "Usuarios" ? ({ getDataRange: () => ({ getValues: () => [[], userRow] }) }) : null })
     },
