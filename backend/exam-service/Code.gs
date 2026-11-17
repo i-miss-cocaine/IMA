@@ -871,7 +871,7 @@ function normalizeExamQuestionDefinition_(input, defaults) {
   return {
     tipo: type, textoPregunta: text, opciones: options, opcionesJSON: JSON.stringify(options),
     respuestaCorrecta: answer && typeof answer === "object" ? JSON.stringify(answer) : String(answer === undefined || answer === null ? "" : answer),
-    puntosPredeterminados: points, areaCurricular, asignatura, grado, tema, dificultad,
+    puntosPredeterminados: points, areaCurricular, asignatura, grado, tema, dificultad: difficulty,
     etiquetas, objetivos, criterios
   };
 }
