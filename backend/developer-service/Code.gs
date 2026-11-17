@@ -2266,7 +2266,7 @@ function getCentralCapabilitiesCatalog(payload) {
 function getCentralConfigAndContractCatalog(payload) {
   const { serviceKey } = payload || {};
   const contracts = {
-    USER: { actions: ["ping", "getUserDynamicDashboardConfig", "getCentralCapabilitiesCatalog", "getInstitutionalResponsibilitiesCatalog", "saveInstitutionalResponsibility", "assignRoleScope", "getUserScopeConfig", "validateRoleScopeAccess", "getStudentGuardians", "getGuardianStudents", "validateContextualAccess"], version: "v8.4.0", deprecatedActions: [] },
+    USER: { actions: ["ping", "getUserDynamicDashboardConfig", "getCentralCapabilitiesCatalog", "getInstitutionalResponsibilitiesCatalog", "saveInstitutionalResponsibility", "assignRoleScope", "getUserScopeConfig", "validateRoleScopeAccess", "getStudentGuardians", "getGuardianStudents", "validateContextualAccess", "getHierarchicalConfigurationCatalog", "resolveHierarchicalConfiguration", "saveSystemConfiguration", "resetSystemConfigurationOverride"], version: "v8.4.0", deprecatedActions: [] },
     ACADEMIC: { actions: ["ping", "getStudentFile", "createStudentEnrollment", "recordStudentTransfer", "recordStudentWithdrawal", "processStudentReentry", "processStudentPromotion", "processStudentGraduation", "updateStudentLifecycleStatus", "reconcileStudentLifecycleState", "runStudentLifecycleRegressionSuite"], version: "v8.4.0", deprecatedActions: [] },
     TASK: { actions: ["ping", "getAllTasks", "submitTask", "getSubmissionDocumentPreviewUrl", "getDriveStorageQuotaMetricsReport"], version: "v8.4.0", deprecatedActions: [] },
     EXAM: { actions: ["ping", "getAllExams", "submitExam", "getExamGradeDistributionAnalytics"], version: "v8.4.0", deprecatedActions: [] },
@@ -2282,32 +2282,79 @@ function getCentralConfigAndContractCatalog(payload) {
   return {
     status: "success",
     totalServicesCataloged: Object.keys(contracts).length,
+    configurationHierarchy: {
+      schemaVersion: "1.0",
+      precedence: ["GLOBAL","INSTITUCIONAL","DEPARTAMENTAL","PERSONAL"],
+      policies: ["GLOBAL_OBLIGATORIO","INSTITUCIONAL","HEREDABLE","PERSONALIZABLE","RESTRINGIDO"],
+      requiredServerChecks: ["SIGNED_IDENTITY","INSTITUTION_MATCH","DEPARTMENT_ASSIGNMENT","ROLE_PERMISSION","POLICY_ALLOWED_SCOPE"],
+      storage: { globalInstitutionalPersonal: "ConfiguracionSistema", departmentOverrides: "ConfiguracionDepartamental", roleRules: "ConfiguracionRoles" }
+    },
     contracts: contracts
   };
 }
 
 // [TAREA-F6-014] [TAREA-F6-039] [Fase 6: Configuración e Interoperabilidad] - Validación de configuración, recursos (Spreadsheet/Drive) y dependencias previas a la activación de instancias
 function validateServiceConfigDependencies(payload) {
-  const { serviceKey, spreadsheetId, driveFolderId } = payload || {};
+  const p = payload || {};
+  const serviceKey = String(p.serviceKey || "").trim().toUpperCase();
   if (!serviceKey) throw new Error("serviceKey es requerido.");
-
+  const requirements = {
+    USER: { spreadsheet: true, drive: false },
+    ACADEMIC: { spreadsheet: true, drive: true },
+    TASK: { spreadsheet: true, drive: true },
+    EXAM: { spreadsheet: true, drive: true },
+    ACCOUNTING: { spreadsheet: true, drive: true },
+    DEVELOPER: { spreadsheet: true, drive: false },
+    FRONTEND: { spreadsheet: false, drive: false }
+  };
+  if (!Object.prototype.hasOwnProperty.call(requirements, serviceKey)) {
+    return { status: "error", isReadyForActivation: false, code: "SERVICE_KEY_UNKNOWN", serviceKey: serviceKey };
+  }
+  let properties = {};
+  try {
+    const script = PropertiesService.getScriptProperties();
+    properties.spreadsheetId = script.getProperty("SPREADSHEET_ID") || script.getProperty("IMA_SPREADSHEET_ID") || script.getProperty("CENTRAL_SPREADSHEET_ID") || "";
+    properties.driveFolderId = script.getProperty("DRIVE_FOLDER_ID") || script.getProperty("IMA_DRIVE_FOLDER_ID") || "";
+  } catch (e) {}
+  const spreadsheetId = String(p.spreadsheetId || properties.spreadsheetId || "").trim();
+  const driveFolderId = String(p.driveFolderId || properties.driveFolderId || "").trim();
+  const spreadsheetBindingValid = !requirements[serviceKey].spreadsheet || /^[A-Za-z0-9_-]{10,}$/.test(spreadsheetId);
+  const driveFolderBindingValid = !requirements[serviceKey].drive || /^[A-Za-z0-9_-]{10,}$/.test(driveFolderId);
+  const expectedPrecedence = ["GLOBAL","INSTITUCIONAL","DEPARTAMENTAL","PERSONAL"];
+  const expectedPolicies = ["GLOBAL_OBLIGATORIO","INSTITUCIONAL","HEREDABLE","PERSONALIZABLE","RESTRINGIDO"];
+  const hierarchy = p.configurationHierarchy || null;
+  const hierarchyRequired = p.requireConfigurationHierarchy === true;
+  const hierarchyValid = !hierarchyRequired || !!(hierarchy &&
+    JSON.stringify(hierarchy.precedence) === JSON.stringify(expectedPrecedence) &&
+    Array.isArray(hierarchy.policies) && expectedPolicies.every(x => hierarchy.policies.indexOf(x) !== -1));
+  const dependencies = p.configurationDependencies === undefined ? [] : p.configurationDependencies;
+  const dependenciesValid = Array.isArray(dependencies) && dependencies.every(x => typeof x === "string" && x.trim() && x.length <= 128) &&
+    new Set(dependencies).size === dependencies.length;
+  const missing = [];
+  if (!spreadsheetBindingValid) missing.push("SPREADSHEET_BINDING");
+  if (!driveFolderBindingValid) missing.push("DRIVE_FOLDER_BINDING");
+  if (!hierarchyValid) missing.push("CONFIGURATION_HIERARCHY_CONTRACT");
+  if (!dependenciesValid) missing.push("CONFIGURATION_DEPENDENCIES");
   const validationReport = {
-    serviceKey,
-    spreadsheetBindingValid: Boolean(spreadsheetId || true),
-    driveFolderBindingValid: Boolean(driveFolderId || true),
-    permissionsCheck: "PASS",
+    serviceKey: serviceKey,
+    spreadsheetBindingValid: spreadsheetBindingValid,
+    driveFolderBindingValid: driveFolderBindingValid,
+    configurationHierarchyValid: hierarchyValid,
+    configurationDependenciesValid: dependenciesValid,
+    missingDependencies: missing,
+    permissionsCheck: "PENDING_RUNTIME_PERMISSION_PROBE",
     obsoleteCallsDetected: 0,
     timestamp: new Date().toISOString()
   };
-
   return {
-    status: "success",
-    isReadyForActivation: true,
+    status: missing.length ? "error" : "success",
+    isReadyForActivation: missing.length === 0,
+    code: missing.length ? "SERVICE_CONFIGURATION_DEPENDENCIES_MISSING" : "SERVICE_CONFIGURATION_VALID",
     validationReport: validationReport,
-    message: `Configuración y dependencias para el microservicio ${serviceKey} verificadas sin llamadas obsoletas.`
+    message: missing.length ? "La configuración del servicio no cumple todos los requisitos declarados." :
+      "Las dependencias declaradas y el contrato de configuración jerárquica fueron validados."
   };
 }
-
 // [TAREA-F6-013] [TAREA-F6-038] [Fase 6: Versionado, Migraciones e Impacto] - Registro de versiones, esquemas, changelog y compatibilidad de contratos por microservicio
 function getServiceVersionChangelog(payload) {
   const { serviceId } = payload || {};
