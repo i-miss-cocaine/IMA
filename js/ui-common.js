@@ -1758,7 +1758,7 @@ window.loadHelpPreferencesInSettingsPanel = function() {
                 container.appendChild(card);
             });
             if (status) status.textContent = 'Guías filtradas por rol. Los cambios afectan solo a la cuenta activa.';
-        });
+        }, true);
     });
     if (resetAll) resetAll.onclick = function() {
         if (!window.confirm('¿Restablecer el progreso de todas las guías de tu usuario? Esta acción no modifica otras preferencias.')) return;
@@ -3895,11 +3895,11 @@ window.startGuidedTourAction = function(guideId) {
     if (modal) modal.classList.add('hidden');
 
     if (guideId === 'GUIDE-STUDENT-TASKS') {
-        window.startInteractiveGuide('studentSubmission', true);
+        window.startInteractiveGuide('studentSubmission', false);
     } else if (guideId === 'GUIDE-TEMPLATES-DESIGN') {
-        window.startInteractiveGuide('teacherTemplates', true);
+        window.startInteractiveGuide('teacherTemplates', false);
     } else {
-        window.startInteractiveGuide('teacherReview', true);
+        window.startInteractiveGuide('teacherReview', false);
     }
 };
 
