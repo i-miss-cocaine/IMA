@@ -74,7 +74,16 @@ const credentialFingerprint=crypto.createHash("sha256").update(secret,"utf8").di
 const credentialRows=[credentialHeaders,["CRED-ACCOUNTING-v1","ACCOUNTING","IMA_MIGRATION_HMAC_SECRET","v1","ACTIVE",credentialFingerprint,"2026-11-17T00:00:00Z","operator-test","",""]];
 const accountingRuntime={
  Date,String,JSON,Array,Object,Number,Math,RegExp,Error,SPREADSHEET_ID:"TEST-SPREADSHEET",
- PropertiesService:{getScriptProperties:()=>({getProperty:key=>({IMA_ACADEMIC_SERVICE_URL:"https://script.google.com/macros/s/AKfycbACADEMIC123/exec",IMA_USER_SERVICE_URL:"https://script.google.com/macros/s/AKfycbUSER123/exec",IMA_MIGRATION_HMAC_SECRET:secret,IMA_MIGRATION_HMAC_SECRET_VERSION:"v1"})[key]||"")})},
+  PropertiesService: {
+    getScriptProperties: () => ({
+      getProperty: key => ({
+        IMA_ACADEMIC_SERVICE_URL: "https://script.google.com/macros/s/AKfycbACADEMIC123/exec",
+        IMA_USER_SERVICE_URL: "https://script.google.com/macros/s/AKfycbUSER123/exec",
+        IMA_MIGRATION_HMAC_SECRET: secret,
+        IMA_MIGRATION_HMAC_SECRET_VERSION: "v1"
+      })[key] || ""
+    })
+  },
  SpreadsheetApp:{openById:id=>{assert.equal(id,"TEST-SPREADSHEET");return{getSheetByName:name=>name==="CatalogoCredencialesServicios"?{getDataRange:()=>({getValues:()=>credentialRows.map(row=>row.slice())})}:null};}},
  Utilities:{MacAlgorithm:{HMAC_SHA_256:"HMAC_SHA_256"},DigestAlgorithm:{SHA_256:"SHA_256"},Charset:{UTF_8:"UTF_8"},getUuid:()=>"12345678-1234-1234-1234-123456789012",computeDigest:(_algorithm,value)=>Array.from(crypto.createHash("sha256").update(String(value),"utf8").digest()).map(byte=>byte>127?byte-256:byte),computeHmacSignature:(algorithm,message,key)=>Array.from(crypto.createHmac("sha256",key).update(String(message)).digest())},
  UrlFetchApp:{fetch:(url,options)=>{envelopeSeen=JSON.parse(options.payload);return{getResponseCode:()=>200,getContentText:()=>JSON.stringify({apiVersion:"1.0.0",status:"success",data:remoteData})};}}
