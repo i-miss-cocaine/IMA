@@ -1,5 +1,4 @@
 const assert = require("node:assert/strict");
-const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
@@ -16,10 +15,10 @@ function extractFunction(name) {
   return source.slice(start,next<0?source.length:next);
 }
 const names=[
-  "getRequestPermissionAction_","validateFileBinaryIntegrity","computeDocumentSHA256","ensureStudentDocumentSchema_",
+  "getRequestPermissionAction_","validateFileBinaryIntegrity","ensureStudentDocumentSchema_",
   "ensureDocumentVersionHistorySchema_","getOrCreatePrivateStudentDocumentFolder_",
-  "rollbackPrivateStudentDocumentFile_","getVerifiedPrivateStudentDocumentFile_","getPrivateStudentDocumentFile_",
-  "nextStudentDocumentVersion_","uploadStudentDocument","verifyDocumentIntegritySha256","getStudentDocumentFile_","getStudentDocumentFile",
+  "rollbackPrivateStudentDocumentFile_","getPrivateStudentDocumentFile_",
+  "nextStudentDocumentVersion_","uploadStudentDocument","getStudentDocumentFile_","getStudentDocumentFile",
   "getStudentDocuments","restoreDocumentVersion"
 ];
 const functions=names.map(extractFunction);
@@ -148,7 +147,7 @@ function makeHarness(options={}) {
     logStructuredEvent:(...args)=>{state.auditEvents.push(args);},logDebug:()=>{}
   };
   vm.createContext(context);
-  vm.runInContext(functions.join("\n\n")+"\nthis.upload=uploadStudentDocument;this.verify=verifyDocumentIntegritySha256;this.download=function(payload){const action=getRequestPermissionAction_(\"getStudentDocumentFile\",payload);const permission=validateRolePermission(action,payload);if(!permission||permission.authorized!==true)return {status:\"error\",code:\"AUTH_PERMISSION_DENIED\"};return getStudentDocumentFile(payload);};this.permissionAction=getRequestPermissionAction_;this.list=getStudentDocuments;this.restore=restoreDocumentVersion;",context);
+  vm.runInContext(functions.join("\n\n")+"\nthis.upload=uploadStudentDocument;this.download=function(payload){const action=getRequestPermissionAction_(\"getStudentDocumentFile\",payload);const permission=validateRolePermission(action,payload);if(!permission||permission.authorized!==true)return {status:\"error\",code:\"AUTH_PERMISSION_DENIED\"};return getStudentDocumentFile(payload);};this.permissionAction=getRequestPermissionAction_;this.list=getStudentDocuments;this.restore=restoreDocumentVersion;",context);
   return {state,sheets,files,context,setFileBytes(id,value){const file=files.get(id);assert.ok(file);file.getBlob=()=>({getBytes:()=>Array.from(Buffer.from(value)),getContentType:()=>"application/pdf"});},
     setFileSharing(id,value){const file=files.get(id);assert.ok(file);file.getSharingAccess=()=>value;}};
 }
@@ -343,7 +342,7 @@ assert.ok(!secretary.includes("getSecureDocumentStream"));
 assert.ok(!secretary.includes("d.driveUrl"),"student-document UI must not render direct Drive URLs");
 
 assert.match(source,/case "getStudentDocumentFile": result = getStudentDocumentFile\(payload\); break;/);
-assert.doesNotMatch(source,/createStudentDocumentAccessToken|getSecureDocumentStream|studentDocumentToken/,"the one-time HMAC document stream is removed");
+assert.doesNotMatch(source,/createStudentDocumentAccessToken|getSecureDocumentStream|studentDocumentToken|verifyDocumentIntegritySha256/,"the one-time HMAC document stream is removed");
 assert.doesNotMatch(source,/driveUrl: r\[6\]/);
 assert.match(source,/function getRequestPermissionAction_\(action, payload\)[\s\S]*action !== "getStudentDocumentFile"[\s\S]*previewStudentDocument/);
 assert.match(source,/const permissionAction=getRequestPermissionAction_\(action,payload\)/);
