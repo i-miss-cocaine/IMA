@@ -11080,103 +11080,279 @@ function saveUserSettings(payload) {
   return { status: "success", message: "Preferencias guardadas exitosamente." };
 }
 
-function getSystemConfigurations(payload) {
-  const verifiedRole = getUserVerifiedRole(payload);
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const configSheet = getOrCreateSheet(ss, "ConfiguracionSistema");
-  const dashSheet = getOrCreateSheet(ss, "ConfiguracionDashboard");
-
-  const sysData = configSheet.getDataRange().getValues();
-  const dashData = dashSheet.getDataRange().getValues();
-
-  const configs = sysData.slice(1).map(r => ({
-    configId: r[0],
-    clave: r[1],
-    valor: r[2],
-    tipo: r[3],
-    categoria: r[4],
-    descripcion: r[5],
-    ambito: r[6],
-    editablePor: r[7],
-    estado: r[8]
-  }));
-
-  const dashConfigs = dashData.slice(1)
-    .filter(r => String(r[1]) === verifiedRole || String(r[1]) === "*")
-    .map(r => ({
-      dashboardConfigId: r[0],
-      roleId: r[1],
-      sectionKey: r[2],
-      optionKey: r[3],
-      optionType: r[4],
-      defaultValue: r[5],
-      visibilityRule: r[6],
-      status: r[8]
-    }));
-
-  return {
-    status: "success",
-    data: {
-      role: verifiedRole,
-      systemConfigurations: configs,
-      dashboardConfigurations: dashConfigs
-    }
-  };
+const CONFIGURATION_SYSTEM_EXTRA_HEADERS_ = ["InstitutionID","UserID","PoliticaAlcance","AmbitosPermitidosJSON","PermiteHerencia","PermiteSobrescritura","RolesAutorizadosJSON","DependenciasJSON","EsSensible"];
+const CONFIGURATION_DEPARTMENT_HEADERS_ = ["OverrideID","ConfigID","Clave","InstitutionID","DepartmentID","ValueJSON","ValueType","Version","Status","CreatedAt","CreatedBy","UpdatedAt","UpdatedBy","Reason"];
+const CONFIGURATION_POLICY_RULES_ = {
+  GLOBAL_OBLIGATORIO: { allowedScopes:["GLOBAL"], inheritance:false, override:false, roles:["Administrador","Director","Desarrollador"] },
+  INSTITUCIONAL: { allowedScopes:["GLOBAL","INSTITUCIONAL"], inheritance:true, override:false, roles:["Administrador","Director"] },
+  HEREDABLE: { allowedScopes:["GLOBAL","INSTITUCIONAL","DEPARTAMENTAL"], inheritance:true, override:true, roles:["Administrador","Director"] },
+  PERSONALIZABLE: { allowedScopes:["GLOBAL","INSTITUCIONAL","DEPARTAMENTAL","PERSONAL"], inheritance:true, override:true, roles:["Administrador","Director"] },
+  RESTRINGIDO: { allowedScopes:["GLOBAL"], inheritance:false, override:false, roles:["Administrador","Desarrollador"] }
+};
+function configurationHeaderMap_(headers) {
+  var map={}; (headers||[]).forEach(function(value,index){var key=String(value||"").trim();if(key)map[key]=index;}); return map;
 }
-
-function saveSystemConfiguration(payload) {
-  const { clave, valor, tipo, categoria, descripcion, ambito, editablePor } = payload || {};
-  const verifiedRole = getUserVerifiedRole(payload);
-  if (!clave) throw new Error("La clave de configuración es obligatoria.");
-
-  if ((!ambito || ambito === "GLOBAL") && verifiedRole !== "Administrador" && verifiedRole !== "Director") {
-    throw new Error("Solo Administrador o Director pueden modificar configuraciones globales del sistema.");
+function ensureConfigurationHierarchySchema_(ss) {
+  var system=getOrCreateSheet(ss,"ConfiguracionSistema"), values=system.getDataRange().getValues();
+  var legacy=["ConfigID","Clave","Valor","Tipo","Categoria","Descripcion","Ambito","EditablePor","Estado","Version","UpdatedAt","UpdatedBy"];
+  var headers=values.length?values[0].map(function(v){return String(v||"").trim();}):[];
+  if(JSON.stringify(headers.slice(0,legacy.length))!==JSON.stringify(legacy))throw new Error("CONFIGURATION_SYSTEM_SCHEMA_MISMATCH");
+  var expected=legacy.concat(CONFIGURATION_SYSTEM_EXTRA_HEADERS_);
+  if(JSON.stringify(headers)!==JSON.stringify(expected)){
+    if(headers.length!==legacy.length)throw new Error("CONFIGURATION_SYSTEM_SCHEMA_MISMATCH");
+    system.getRange(1,legacy.length+1,1,CONFIGURATION_SYSTEM_EXTRA_HEADERS_.length).setValues([CONFIGURATION_SYSTEM_EXTRA_HEADERS_]);
+    headers=expected;
   }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const configSheet = getOrCreateSheet(ss, "ConfiguracionSistema");
-  const data = configSheet.getDataRange().getValues();
-  const now = new Date().toISOString();
-
-  let updated = false;
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][1]) === String(clave)) {
-      configSheet.getRange(i + 1, 3, 1, 10).setValues([[
-        valor,
-        tipo || "TEXTO",
-        categoria || "GENERAL",
-        descripcion || "",
-        ambito || "GLOBAL",
-        editablePor || "Administrador",
-        "ACTIVO",
-        "1.0",
-        now,
-        verifiedRole
-      ]]);
-      updated = true;
-      break;
+  var department=ss.getSheetByName("ConfiguracionDepartamental");
+  if(!department)department=ss.insertSheet("ConfiguracionDepartamental");
+  if(department.getLastRow()===0)department.appendRow(CONFIGURATION_DEPARTMENT_HEADERS_);
+  var departmentHeaders=department.getRange(1,1,1,CONFIGURATION_DEPARTMENT_HEADERS_.length).getValues()[0].map(function(v){return String(v||"").trim();});
+  if(JSON.stringify(departmentHeaders)!==JSON.stringify(CONFIGURATION_DEPARTMENT_HEADERS_))throw new Error("CONFIGURATION_DEPARTMENT_SCHEMA_MISMATCH");
+  return {system:system,department:department,headers:headers,index:configurationHeaderMap_(headers)};
+}
+function configurationJsonArray_(value,fallback) {
+  if(Array.isArray(value))return value.slice();
+  if(value===undefined||value===null||value==="")return (fallback||[]).slice();
+  try{var parsed=JSON.parse(String(value));return Array.isArray(parsed)?parsed:(fallback||[]).slice();}catch(e){return (fallback||[]).slice();}
+}
+function configurationPolicyFromRow_(row,index) {
+  var policy=String(row[index.PoliticaAlcance]||"RESTRINGIDO").trim().toUpperCase();
+  var rule=CONFIGURATION_POLICY_RULES_[policy]||CONFIGURATION_POLICY_RULES_.RESTRINGIDO;
+  return {policy:policy,allowedScopes:configurationJsonArray_(row[index.AmbitosPermitidosJSON],rule.allowedScopes),
+    inheritance:row[index.PermiteHerencia]===true||String(row[index.PermiteHerencia]).toLowerCase()==="true",
+    override:row[index.PermiteSobrescritura]===true||String(row[index.PermiteSobrescritura]).toLowerCase()==="true",
+    roles:configurationJsonArray_(row[index.RolesAutorizadosJSON],rule.roles),
+    dependencies:configurationJsonArray_(row[index.DependenciasJSON],[]),
+    sensitive:row[index.EsSensible]===true||String(row[index.EsSensible]).toLowerCase()==="true"};
+}
+function configurationStoredValue_(value,type) {
+  var kind=String(type||"TEXTO").toUpperCase();
+  if(kind==="JSON"||kind==="LISTA"){if(typeof value==="string"){try{return JSON.parse(value);}catch(e){return null;}}return value;}
+  if(kind==="NUMERO"||kind==="NUMBER"){var n=Number(value);return Number.isFinite(n)?n:null;}
+  if(kind==="BOOLEANO"||kind==="BOOLEAN"){return value===true||String(value).toLowerCase()==="true";}
+  return value===undefined||value===null?"":value;
+}
+function configurationValidateValue_(value,type) {
+  var kind=String(type||"TEXTO").toUpperCase();
+  if(kind==="NUMERO"||kind==="NUMBER"){if(value===""||value===null||!Number.isFinite(Number(value)))throw new Error("CONFIGURATION_VALUE_TYPE_INVALID");return Number(value);}
+  if(kind==="BOOLEANO"||kind==="BOOLEAN"){if(typeof value==="boolean")return value;if(["true","false"].indexOf(String(value).toLowerCase())===-1)throw new Error("CONFIGURATION_VALUE_TYPE_INVALID");return String(value).toLowerCase()==="true";}
+  if(kind==="JSON"||kind==="LISTA"){if(typeof value==="string"){try{return JSON.parse(value);}catch(e){throw new Error("CONFIGURATION_VALUE_JSON_INVALID");}}if(value===undefined)throw new Error("CONFIGURATION_VALUE_REQUIRED");return value;}
+  if(kind==="FECHA"||kind==="DATE"){var date=new Date(value);if(!value||isNaN(date.getTime()))throw new Error("CONFIGURATION_VALUE_DATE_INVALID");return date.toISOString();}
+  if(value===undefined||value===null)throw new Error("CONFIGURATION_VALUE_REQUIRED");
+  var text=String(value);if(text.length>10000)throw new Error("CONFIGURATION_VALUE_TOO_LONG");return text;
+}
+function configurationRoleAllowed_(ss,role,key,action,scope,policy) {
+  var sheet=ss.getSheetByName("ConfiguracionRoles");
+  if(sheet&&sheet.getLastRow()>1){
+    var data=sheet.getDataRange().getValues(),headers=data[0].map(function(v){return String(v||"").trim();});
+    var required=["PermissionID","RoleId","Resource","Action","Scope","Allowed"];
+    if(required.some(function(name){return headers.indexOf(name)<0;}))return false;
+    var ix=configurationHeaderMap_(headers);
+    var matches=data.slice(1).filter(function(row){
+      var resource=String(row[ix.Resource]||"").trim(),r=String(row[ix.RoleId]||"").trim(),a=String(row[ix.Action]||"").trim().toUpperCase(),sc=String(row[ix.Scope]||"").trim().toUpperCase();
+      return (r===role||r==="*")&&(resource==="CONFIGURATION"||resource==="CONFIG:"+key)&&(a===String(action).toUpperCase()||a==="*")&&(sc===String(scope).toUpperCase()||sc==="*");
+    });
+    if(matches.length)return !matches.some(function(row){return row[ix.Allowed]===false||String(row[ix.Allowed]).toLowerCase()==="false";})&&matches.some(function(row){return row[ix.Allowed]===true||String(row[ix.Allowed]).toLowerCase()==="true";});
+  }
+  if(scope==="PERSONAL"&&policy.policy==="PERSONALIZABLE")return true;
+  return policy.roles.indexOf("*")!==-1||policy.roles.indexOf(role)!==-1;
+}
+function configurationDepartmentContext_(payload,departmentId) {
+  var context=getUserContextScope(Object.assign({},payload,{activeDepartmentId:departmentId}));
+  if(!context||context.status!=="success"||context.institutionId!==String(getIdentityInstitutionId_()).trim()||
+    !Array.isArray(context.departmentIds)||context.departmentIds.indexOf(departmentId)===-1)throw new Error("CONFIGURATION_DEPARTMENT_SCOPE_DENIED");
+  return context;
+}
+function configurationRows_(sheet) {
+  var data=sheet.getDataRange().getValues(),headers=data.length?data[0].map(function(v){return String(v||"").trim();}):[];
+  return {headers:headers,index:configurationHeaderMap_(headers),rows:data.slice(1)};
+}
+function configurationFindUnique_(rows,predicate,errorCode) {
+  var matches=rows.filter(predicate);if(matches.length>1)throw new Error(errorCode||"CONFIGURATION_SCOPE_CONFLICT");
+  return matches.length?matches[0]:null;
+}
+function configurationValidateDependencies_(rows,index,currentKey,dependencies) {
+  var keys={};rows.forEach(function(row){var key=String(row[index.Clave]||"").trim();if(key)keys[key]=configurationJsonArray_(row[index.DependenciasJSON],[]);});
+  dependencies.forEach(function(dep){var key=String(dep||"").trim();if(!key||key===currentKey||!Object.prototype.hasOwnProperty.call(keys,key))throw new Error("CONFIGURATION_DEPENDENCY_INVALID:"+key);});
+  keys[currentKey]=dependencies.slice();
+  var visiting={},visited={};
+  function visit(key){if(visiting[key])throw new Error("CONFIGURATION_DEPENDENCY_CYCLE");if(visited[key])return;visiting[key]=true;(keys[key]||[]).forEach(function(dep){if(keys[dep])visit(dep);});delete visiting[key];visited[key]=true;}
+  Object.keys(keys).forEach(visit);
+}
+function getSystemConfigurations(payload) {
+  var role=getUserVerifiedRole(payload);
+  if(["Administrador","Director","Desarrollador"].indexOf(role)===-1)throw new Error("AUTH_PERMISSION_DENIED");
+  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getOrCreateSheet(ss,"ConfiguracionSistema"),data=sheet.getDataRange().getValues();
+  var configs=data.slice(1).map(function(row){return {configId:row[0],clave:row[1],valor:row[2],tipo:row[3],categoria:row[4],descripcion:row[5],ambito:row[6],editablePor:row[7],estado:row[8],version:row[9],updatedAt:row[10],updatedBy:row[11]};});
+  var dashSheet=getOrCreateSheet(ss,"ConfiguracionDashboard"),dashData=dashSheet.getDataRange().getValues();
+  var dashConfigs=dashData.slice(1).filter(function(row){return String(row[1])===role||String(row[1])==="*";}).map(function(row){return {dashboardConfigId:row[0],roleId:row[1],sectionKey:row[2],optionKey:row[3],optionType:row[4],defaultValue:row[5],visibilityRule:row[6],status:row[8]};});
+  return {status:"success",data:{role:role,systemConfigurations:configs,dashboardConfigurations:dashConfigs}};
+}
+function getHierarchicalConfigurationCatalog(payload) {
+  var role=getUserVerifiedRole(payload),actor=String((payload&&payload._verifiedUserId)||"").trim();
+  if(!actor||role==="NO_ACCESS")return {status:"error",code:"VERIFIED_IDENTITY_REQUIRED"};
+  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("ConfiguracionSistema");
+  if(!sheet||sheet.getLastRow()<=1)return {status:"success",data:[]};
+  var snapshot=configurationRows_(sheet),ix=snapshot.index,seen={};
+  var catalog=[];
+  snapshot.rows.forEach(function(row){
+    var key=String(row[ix.Clave]||"").trim(),scope=String(row[ix.Ambito]||"GLOBAL").trim().toUpperCase();
+    if(!key||scope!=="GLOBAL"||seen[key])return;seen[key]=true;
+    var policy=configurationPolicyFromRow_(row,ix);
+    if(policy.sensitive&&["Administrador","Director","Desarrollador"].indexOf(role)===-1)return;
+    if(["Administrador","Director","Desarrollador"].indexOf(role)===-1&&
+      policy.allowedScopes.indexOf("DEPARTAMENTAL")===-1&&policy.allowedScopes.indexOf("PERSONAL")===-1)return;
+    catalog.push({configId:row[ix.ConfigID],clave:key,tipo:row[ix.Tipo]||"TEXTO",categoria:row[ix.Categoria]||"GENERAL",
+      descripcion:row[ix.Descripcion]||"",politicaAlcance:policy.policy,ambitosPermitidos:policy.allowedScopes,
+      permiteHerencia:policy.inheritance,permiteSobrescritura:policy.override,rolesAutorizados:policy.roles,
+      dependencias:policy.dependencies,esSensible:policy.sensitive,version:row[ix.Version]||"1.0",estado:row[ix.Estado]||"ACTIVO"});
+  });
+  return {status:"success",data:catalog};
+}
+function resolveHierarchicalConfiguration(payload) {
+  var role=getUserVerifiedRole(payload),actor=String((payload&&payload._verifiedUserId)||"").trim(),key=String((payload&&payload.clave)||"").trim();
+  if(!actor||role==="NO_ACCESS")return {status:"error",code:"VERIFIED_IDENTITY_REQUIRED"};
+  if(!key)return {status:"error",code:"CONFIGURATION_KEY_REQUIRED"};
+  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),system=ss.getSheetByName("ConfiguracionSistema");
+  if(!system||system.getLastRow()<=1)return {status:"error",code:"CONFIGURATION_NOT_FOUND"};
+  var snapshot=configurationRows_(system),ix=snapshot.index,rows=snapshot.rows;
+  var candidates=rows.filter(function(row){return String(row[ix.Clave]||"").trim()===key;});
+  var globalRows=candidates.filter(function(row){var scope=String(row[ix.Ambito]||"GLOBAL").trim().toUpperCase();return scope==="GLOBAL"&&!String(row[ix.InstitutionID]||"").trim();});
+  if(globalRows.length!==1)return {status:"error",code:globalRows.length?"CONFIGURATION_SCOPE_CONFLICT":"CONFIGURATION_NOT_FOUND"};
+  var base=globalRows[0],policy=configurationPolicyFromRow_(base,ix),institutionId=String(getIdentityInstitutionId_()).trim();
+  if(policy.sensitive&&!configurationRoleAllowed_(ss,role,key,"READ","GLOBAL",policy))return {status:"error",code:"CONFIGURATION_READ_FORBIDDEN"};
+  var effective=base,sourceScope="GLOBAL",institutionRow=null,departmentRow=null,personalRow=null,departmentId=String((payload&& (payload.departamentoId||payload.activeDepartmentId))||"").trim();
+  var allowed=policy.allowedScopes;
+  if(allowed.indexOf("INSTITUCIONAL")!==-1){
+    var institutional=configurationFindUnique_(candidates,function(row){return String(row[ix.Ambito]||"").toUpperCase()==="INSTITUCIONAL"&&String(row[ix.InstitutionID]||"").trim()===institutionId;},"CONFIGURATION_INSTITUTION_CONFLICT");
+    if(institutional&&String(institutional[ix.Estado]||"ACTIVO").toUpperCase()==="ACTIVO"){institutionRow=institutional;effective=institutional;sourceScope="INSTITUCIONAL";}
+  }
+  if(departmentId&&allowed.indexOf("DEPARTAMENTAL")!==-1){
+    configurationDepartmentContext_(payload,departmentId);
+    if(!policy.override)return {status:"error",code:"CONFIGURATION_OVERRIDE_FORBIDDEN"};
+    var departmentSheet=ss.getSheetByName("ConfiguracionDepartamental");
+    if(departmentSheet&&departmentSheet.getLastRow()>1){
+      var deptSnapshot=configurationRows_(departmentSheet),di=deptSnapshot.index;
+      departmentRow=configurationFindUnique_(deptSnapshot.rows,function(row){return String(row[di.ConfigID]||"")===String(base[ix.ConfigID]||"")&&String(row[di.InstitutionID]||"")===institutionId&&String(row[di.DepartmentID]||"")===departmentId&&String(row[di.Status]||"").toUpperCase()==="ACTIVO";},"CONFIGURATION_DEPARTMENT_CONFLICT");
+      if(departmentRow){effective=departmentRow;sourceScope="DEPARTAMENTAL";}
     }
+  }else if(allowed.indexOf("DEPARTAMENTAL")!==-1&&payload&&payload.requireDepartmentContext===true){
+    return {status:"error",code:"CONFIGURATION_DEPARTMENT_REQUIRED"};
   }
-
-  if (!updated) {
-    const configId = "CFG-" + Date.now();
-    configSheet.appendRow([
-      configId,
-      clave,
-      valor,
-      tipo || "TEXTO",
-      categoria || "GENERAL",
-      descripcion || "",
-      ambito || "GLOBAL",
-      editablePor || "Administrador",
-      "ACTIVO",
-      "1.0",
-      now,
-      verifiedRole
-    ]);
+  var targetUser=String((payload&&payload.userId)||actor).trim();
+  if(targetUser!==actor&&["Administrador","Director","Desarrollador"].indexOf(role)===-1)return {status:"error",code:"CONFIGURATION_PERSONAL_SCOPE_DENIED"};
+  if(allowed.indexOf("PERSONAL")!==-1&&targetUser){
+    personalRow=configurationFindUnique_(candidates,function(row){return String(row[ix.Ambito]||"").toUpperCase()==="PERSONAL"&&String(row[ix.InstitutionID]||"").trim()===institutionId&&String(row[ix.UserID]||"").trim()===targetUser;},"CONFIGURATION_PERSONAL_CONFLICT");
+    if(personalRow&&String(personalRow[ix.Estado]||"ACTIVO").toUpperCase()==="ACTIVO"){effective=personalRow;sourceScope="PERSONAL";}
   }
-
-  return { status: "success", message: `Configuración '${clave}' guardada exitosamente.` };
+  if(sourceScope!=="GLOBAL"&&!configurationRoleAllowed_(ss,role,key,"READ",sourceScope,policy)&&!policy.sensitive)return {status:"error",code:"CONFIGURATION_READ_FORBIDDEN"};
+  var value=sourceScope==="DEPARTAMENTAL"?configurationStoredValue_(effective[ix.ValueJSON],effective[ix.ValueType]):configurationStoredValue_(effective[ix.Valor],effective[ix.Tipo]);
+  return {status:"success",configId:base[ix.ConfigID],clave:key,valor:value,valorEfectivo:value,tipo:base[ix.Tipo]||"TEXTO",
+    politicaAlcance:policy.policy,ambitosPermitidos:allowed,origenEfectivo:sourceScope,
+    estadoHerencia:sourceScope==="DEPARTAMENTAL"||sourceScope==="PERSONAL"?"SOBRESCRITO":(sourceScope==="GLOBAL"?"PREDETERMINADO":"HEREDADO"),
+    heredado:sourceScope==="GLOBAL"||sourceScope==="INSTITUCIONAL",sobrescrito:sourceScope==="DEPARTAMENTAL"||sourceScope==="PERSONAL",
+    valorGlobal:configurationStoredValue_(base[ix.Valor],base[ix.Tipo]),
+    valorInstitucional:institutionRow?configurationStoredValue_(institutionRow[ix.Valor],institutionRow[ix.Tipo]):null,
+    valorDepartamental:departmentRow?configurationStoredValue_(departmentRow[configurationHeaderMap_(departmentSheet.getDataRange().getValues()[0]).ValueJSON],departmentRow[configurationHeaderMap_(departmentSheet.getDataRange().getValues()[0]).ValueType]):null,
+    version:effective[ix.Version]||"1.0",updatedAt:sourceScope==="DEPARTAMENTAL"?effective[configurationHeaderMap_(departmentSheet.getDataRange().getValues()[0]).UpdatedAt]:effective[ix.UpdatedAt],
+    updatedBy:sourceScope==="DEPARTAMENTAL"?effective[configurationHeaderMap_(departmentSheet.getDataRange().getValues()[0]).UpdatedBy]:effective[ix.UpdatedBy],
+    institutionId:institutionId,departmentId:departmentId||null,userId:sourceScope==="PERSONAL"?targetUser:null,
+    dependencias:policy.dependencies,esSensible:policy.sensitive};
+}
+function saveSystemConfiguration(payload) {
+  payload=payload||{};
+  var role=getUserVerifiedRole(payload),actor=String(payload._verifiedUserId||"").trim(),key=String(payload.clave||"").trim();
+  var scope=String(payload.ambito||"GLOBAL").trim().toUpperCase(),type=String(payload.tipo||"TEXTO").trim().toUpperCase();
+  if(!actor||role==="NO_ACCESS")throw new Error("VERIFIED_IDENTITY_REQUIRED");
+  if(!key)throw new Error("CONFIGURATION_KEY_REQUIRED");
+  if(["GLOBAL","INSTITUCIONAL","DEPARTAMENTAL","PERSONAL"].indexOf(scope)===-1)throw new Error("CONFIGURATION_SCOPE_INVALID");
+  var institutionId=String(getIdentityInstitutionId_()).trim(),departmentId=String(payload.departamentoId||payload.activeDepartmentId||"").trim();
+  var targetUser=scope==="PERSONAL"?String(payload.userId||actor).trim():"";
+  if(scope==="PERSONAL"&&targetUser!==actor)throw new Error("CONFIGURATION_PERSONAL_SCOPE_DENIED");
+  var lock=LockService.getScriptLock(),locked=false;
+  try{
+    lock.waitLock(10000);locked=true;
+    var ss=SpreadsheetApp.openById(SPREADSHEET_ID),schema=ensureConfigurationHierarchySchema_(ss),system=schema.system,deptSheet=schema.department,ix=schema.index;
+    var data=system.getDataRange().getValues(),rows=data.slice(1),keyRows=rows.filter(function(row){return String(row[ix.Clave]||"").trim()===key;});
+    var base=configurationFindUnique_(keyRows,function(row){return String(row[ix.Ambito]||"GLOBAL").toUpperCase()==="GLOBAL"&&!String(row[ix.InstitutionID]||"").trim();},"CONFIGURATION_SCOPE_CONFLICT");
+    var policyName=String((base&&base[ix.PoliticaAlcance])||payload.politicaAlcance||"RESTRINGIDO").toUpperCase();
+    var rule=CONFIGURATION_POLICY_RULES_[policyName];if(!rule)throw new Error("CONFIGURATION_POLICY_INVALID");
+    if(!base&&scope!=="GLOBAL")throw new Error("CONFIGURATION_BASE_REQUIRED");
+    var policy=base?configurationPolicyFromRow_(base,ix):{policy:policyName,allowedScopes:rule.allowedScopes,inheritance:rule.inheritance,override:rule.override,roles:rule.roles,dependencies:[],sensitive:payload.esSensible===true};
+    if(base&&payload.politicaAlcance&&String(payload.politicaAlcance).toUpperCase()!==policy.policy&&payload.actualizarPolitica!==true)throw new Error("CONFIGURATION_POLICY_CHANGE_REQUIRES_AUTHORIZED_UPDATE");
+    if(!policy.allowedScopes.length)policy.allowedScopes=rule.allowedScopes.slice();
+    if(policy.allowedScopes.indexOf(scope)===-1)throw new Error("CONFIGURATION_SCOPE_NOT_ALLOWED");
+    if(scope==="GLOBAL"||scope==="INSTITUCIONAL"){
+      if(["Administrador","Director","Desarrollador"].indexOf(role)===-1)throw new Error("AUTH_PERMISSION_DENIED");
+    }else if(scope==="DEPARTAMENTAL"){
+      if(!departmentId)throw new Error("CONFIGURATION_DEPARTMENT_REQUIRED");
+      configurationDepartmentContext_(payload,departmentId);
+      if(!policy.override||!configurationRoleAllowed_(ss,role,key,"WRITE",scope,policy))throw new Error("CONFIGURATION_DEPARTMENT_WRITE_DENIED");
+    }else if(scope==="PERSONAL"){
+      if(policy.policy!=="PERSONALIZABLE"||!configurationRoleAllowed_(ss,role,key,"WRITE",scope,policy))throw new Error("CONFIGURATION_PERSONAL_WRITE_DENIED");
+    }
+    if(!configurationRoleAllowed_(ss,role,key,"WRITE",scope,policy))throw new Error("CONFIGURATION_ROLE_WRITE_DENIED");
+    var value=configurationValidateValue_(payload.valor,type),dependencies=Array.isArray(payload.dependencias)?payload.dependencias:policy.dependencies;
+    configurationValidateDependencies_(rows,ix,key,dependencies);
+    var now=new Date().toISOString(),configId=String((base&&base[ix.ConfigID])||"CFG-"+Utilities.getUuid()),version=String((base&&base[ix.Version])||"1.0");
+    var nextVersion=(Number(version)+0.1).toFixed(1);
+    if(scope==="DEPARTAMENTAL"){
+      var deptData=deptSheet.getDataRange().getValues(),deptRows=deptData.slice(1),di=configurationHeaderMap_(deptData[0]);
+      var existing=configurationFindUnique_(deptRows,function(row){return String(row[di.ConfigID]||"")===configId&&String(row[di.InstitutionID]||"")===institutionId&&String(row[di.DepartmentID]||"")===departmentId&&String(row[di.Status]||"").toUpperCase()==="ACTIVO";},"CONFIGURATION_DEPARTMENT_CONFLICT");
+      var newRow=[existing?existing[di.OverrideID]:"OVR-"+Utilities.getUuid(),configId,key,institutionId,departmentId,JSON.stringify(value),type,nextVersion,"ACTIVO",existing?existing[di.CreatedAt]:now,existing?existing[di.CreatedBy]:actor,now,actor,String(payload.motivo||"")];
+      if(existing){var rowNumber=deptRows.indexOf(existing)+2;deptSheet.getRange(rowNumber,1,1,CONFIGURATION_DEPARTMENT_HEADERS_.length).setValues([newRow]);}
+      else deptSheet.appendRow(newRow);
+    }else{
+      var scopeRow=configurationFindUnique_(keyRows,function(row){return String(row[ix.Ambito]||"GLOBAL").toUpperCase()===scope&&String(row[ix.InstitutionID]||"").trim()===(scope==="INSTITUCIONAL"||scope==="PERSONAL"?institutionId:"")&&String(row[ix.UserID]||"").trim()===(scope==="PERSONAL"?targetUser:"");},"CONFIGURATION_SCOPE_CONFLICT");
+      var row=scopeRow?scopeRow.slice():new Array(schema.headers.length).fill("");
+      row[ix.ConfigID]=configId;row[ix.Clave]=key;row[ix.Valor]=typeof value==="object"?JSON.stringify(value):value;row[ix.Tipo]=type;
+      row[ix.Categoria]=payload.categoria||((base&&base[ix.Categoria])||"GENERAL");row[ix.Descripcion]=payload.descripcion||((base&&base[ix.Descripcion])||"");
+      row[ix.Ambito]=scope;row[ix.EditablePor]=(policy.roles||[]).join(",");row[ix.Estado]="ACTIVO";row[ix.Version]=nextVersion;row[ix.UpdatedAt]=now;row[ix.UpdatedBy]=actor;
+      row[ix.InstitutionID]=scope==="INSTITUCIONAL"||scope==="PERSONAL"?institutionId:"";row[ix.UserID]=scope==="PERSONAL"?targetUser:"";
+      if(scope==="GLOBAL"){
+        row[ix.PoliticaAlcance]=policyName;row[ix.AmbitosPermitidosJSON]=JSON.stringify(rule.allowedScopes);
+        row[ix.PermiteHerencia]=rule.inheritance;row[ix.PermiteSobrescritura]=rule.override;
+        row[ix.RolesAutorizadosJSON]=JSON.stringify(payload.rolesAutorizados||rule.roles);
+        row[ix.DependenciasJSON]=JSON.stringify(dependencies);row[ix.EsSensible]=payload.esSensible===true;
+      }else if(base){
+        row[ix.PoliticaAlcance]=base[ix.PoliticaAlcance];row[ix.AmbitosPermitidosJSON]=base[ix.AmbitosPermitidosJSON];
+        row[ix.PermiteHerencia]=base[ix.PermiteHerencia];row[ix.PermiteSobrescritura]=base[ix.PermiteSobrescritura];
+        row[ix.RolesAutorizadosJSON]=base[ix.RolesAutorizadosJSON];row[ix.DependenciasJSON]=base[ix.DependenciasJSON];row[ix.EsSensible]=base[ix.EsSensible];
+      }
+      if(scopeRow){var index=rows.indexOf(scopeRow)+2;system.getRange(index,1,1,schema.headers.length).setValues([row]);}
+      else system.appendRow(row);
+    }
+    logStructuredEvent("USER","saveSystemConfiguration","INFO","CONFIGURATION_SCOPE_UPDATED","Configuración jerárquica actualizada sin registrar valores sensibles.",{configId:configId,key:key,scope:scope,institutionId:institutionId,departmentId:departmentId||null,userId:targetUser||null,version:nextVersion,actorId:actor,actorRole:role});
+    return {status:"success",configId:configId,clave:key,ambito:scope,version:nextVersion,message:"Configuración guardada con control de ámbito y herencia."};
+  }catch(error){
+    try{logStructuredEvent("USER","saveSystemConfiguration","WARN","CONFIGURATION_SCOPE_REJECTED","Se rechazó una modificación por política o ámbito.",{key:key,scope:scope,departmentId:departmentId||null,actorId:actor,code:error.message});}catch(e){}
+    throw error;
+  }finally{if(locked)lock.releaseLock();}
+}
+function resetSystemConfigurationOverride(payload) {
+  payload=payload||{};
+  var role=getUserVerifiedRole(payload),actor=String(payload._verifiedUserId||"").trim(),key=String(payload.clave||"").trim();
+  var departmentId=String(payload.departamentoId||payload.activeDepartmentId||"").trim();
+  if(!actor||role==="NO_ACCESS")throw new Error("VERIFIED_IDENTITY_REQUIRED");
+  if(!key||!departmentId)throw new Error("CONFIGURATION_KEY_AND_DEPARTMENT_REQUIRED");
+  var lock=LockService.getScriptLock(),locked=false;
+  try{
+    lock.waitLock(10000);locked=true;
+    var ss=SpreadsheetApp.openById(SPREADSHEET_ID),schema=ensureConfigurationHierarchySchema_(ss),ix=schema.index;
+    configurationDepartmentContext_(payload,departmentId);
+    var data=schema.system.getDataRange().getValues(),rows=data.slice(1),base=configurationFindUnique_(rows,function(row){return String(row[ix.Clave]||"").trim()===key&&String(row[ix.Ambito]||"GLOBAL").toUpperCase()==="GLOBAL";},"CONFIGURATION_BASE_CONFLICT");
+    if(!base)throw new Error("CONFIGURATION_NOT_FOUND");
+    var policy=configurationPolicyFromRow_(base,ix);if(policy.allowedScopes.indexOf("DEPARTAMENTAL")===-1||!policy.override)throw new Error("CONFIGURATION_OVERRIDE_FORBIDDEN");
+    if(!configurationRoleAllowed_(ss,role,key,"RESET","DEPARTAMENTAL",policy))throw new Error("CONFIGURATION_DEPARTMENT_WRITE_DENIED");
+    var deptData=schema.department.getDataRange().getValues(),di=configurationHeaderMap_(deptData[0]),deptRows=deptData.slice(1);
+    var existing=configurationFindUnique_(deptRows,function(row){return String(row[di.ConfigID]||"")===String(base[ix.ConfigID])&&String(row[di.InstitutionID]||"")===String(getIdentityInstitutionId_()).trim()&&String(row[di.DepartmentID]||"")===departmentId&&String(row[di.Status]||"").toUpperCase()==="ACTIVO";},"CONFIGURATION_DEPARTMENT_CONFLICT");
+    if(!existing)return {status:"success",restablecida:false,message:"El departamento ya hereda el valor institucional."};
+    var rowNumber=deptRows.indexOf(existing)+2;existing[di.Status]="INACTIVO";existing[di.UpdatedAt]=new Date().toISOString();existing[di.UpdatedBy]=actor;existing[di.Reason]=String(payload.motivo||"Restablecimiento de herencia");
+    schema.department.getRange(rowNumber,1,1,CONFIGURATION_DEPARTMENT_HEADERS_.length).setValues([existing]);
+    logStructuredEvent("USER","resetSystemConfigurationOverride","INFO","CONFIGURATION_INHERITANCE_RESTORED","Se desactivó la excepción departamental y se restauró la herencia.",{configId:base[ix.ConfigID],key:key,departmentId:departmentId,actorId:actor});
+    return {status:"success",restablecida:true,clave:key,departamentoId:departmentId,message:"Se restauró el valor heredado."};
+  }catch(error){try{logStructuredEvent("USER","resetSystemConfigurationOverride","WARN","CONFIGURATION_RESET_REJECTED","Se rechazó el restablecimiento por política o ámbito.",{key:key,departmentId:departmentId,actorId:actor,code:error.message});}catch(e){}throw error;}
+  finally{if(locked)lock.releaseLock();}
 }
 
 function getProviderIntegrations(payload) {
