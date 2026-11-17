@@ -15,7 +15,7 @@ function ownerRuntime(source,service,handlerName,snapshotName,rows,expectedSheet
  const handler=extract(source,handlerName),snapshot=extract(source,snapshotName);
  const runtime={
   PropertiesService:{getScriptProperties:()=>({getProperty:key=>key==="IMA_MIGRATION_HMAC_SECRET"?secret:(key==="IMA_INSTITUTION_ID"?"INST-1":"")})},
-  verifyInterServiceEnvelope:(envelope,target,credentialType)=>{assert.equal(target,service);assert.equal(credentialType,"IMA_MIGRATION_HMAC_SECRET");return{sourceService:envelope.sourceService,action:envelope.action,payload:envelope.payload};},
+  verifyInterServiceEnvelope:(envelope,target,credential)=>{assert.equal(target,service);assert.equal(credential,service==="USER"?"IMA_MIGRATION_HMAC_SECRET":secret);return{sourceService:envelope.sourceService,action:envelope.action,payload:envelope.payload};},
   verifySessionToken:token=>token==="SIGNED-SESSION"?{userId:"U-1",role:"Director",institutionId:"INST-1"}:null,
   getIdentityInstitutionId_:()=>"INST-1",
   getDynamicPermissionsForRole:()=>true,
