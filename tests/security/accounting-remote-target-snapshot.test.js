@@ -14,7 +14,16 @@ const secret="remote-snapshot-hmac-secret-with-more-than-32-characters";
 function ownerRuntime(source,service,handlerName,snapshotName,rows,expectedSheet,idField,additionalSheets={}){
  const handler=extract(source,handlerName),snapshot=extract(source,snapshotName);
  const runtime={
-  PropertiesService:{getScriptProperties:()=>({getProperty:key=>({IMA_ACADEMIC_SERVICE_URL:"https://script.google.com/macros/s/AKfycbACADEMIC123/exec",IMA_USER_SERVICE_URL:"https://script.google.com/macros/s/AKfycbUSER123/exec",IMA_MIGRATION_HMAC_SECRET:secret,IMA_MIGRATION_HMAC_SECRET_VERSION:"v1"})[key]||""})},
+  PropertiesService: {
+    getScriptProperties: () => ({
+      getProperty: key => ({
+        IMA_ACADEMIC_SERVICE_URL: "https://script.google.com/macros/s/AKfycbACADEMIC123/exec",
+        IMA_USER_SERVICE_URL: "https://script.google.com/macros/s/AKfycbUSER123/exec",
+        IMA_MIGRATION_HMAC_SECRET: secret,
+        IMA_MIGRATION_HMAC_SECRET_VERSION: "v1"
+      })[key] || ""
+    })
+  },
   verifyInterServiceEnvelope:(envelope,target,credential)=>{assert.equal(target,service);assert.equal(credential,"IMA_MIGRATION_HMAC_SECRET");return{sourceService:envelope.sourceService,action:envelope.action,payload:envelope.payload};},
   verifySessionToken:token=>token==="SIGNED-SESSION"?{userId:"U-1",role:"Director",institutionId:"INST-1"}:null,
   getIdentityInstitutionId_:()=>"INST-1",
