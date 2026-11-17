@@ -22,9 +22,9 @@ for(const name of ["gradeSubmission","gradeSubmissionWithRubric"])assert(extract
 assert(extractFunction("withAuthorizedTaskSubmissionMutation_").includes('getTaskServiceSubmissionAccess_(payload, "GRADE")'),"grade mutation revalidates task ownership and scope");
 assert(extractFunction("withAuthorizedTaskSubmissionMutation_").includes("LockService.getScriptLock()"),"grade mutation serializes changes with ScriptLock");
 const gradeMutationWrapper=extractFunction("withAuthorizedTaskSubmissionMutation_");
-assert.equal((gradeMutationWrapper.match(/validateRolePermission\\(/g)||[]).length,1,"grade mutation authorizes the role once before acquiring the lock");
+assert.equal(gradeMutationWrapper.split("validateRolePermission(").length-1,1,"grade mutation authorizes the role once before acquiring the lock");
 assert(gradeMutationWrapper.indexOf("validateRolePermission(")<gradeMutationWrapper.indexOf("LockService.getScriptLock()"),"role authorization occurs at the request entry point before the mutation lock");
-assert(!/const permission\\s*=\\s*validateRolePermission/.test(gradeMutationWrapper),"the locked mutation reuses the already verified request context");
+assert(!gradeMutationWrapper.includes("const permission = validateRolePermission"),"the locked mutation reuses the already verified request context");
 assert(extractFunction("returnSubmissionForRevision").includes("assertTaskServiceSubmissionTaskOwnership_"),"return-for-revision keeps the direct ownership guard");
 assert(extractFunction("deleteSubmission").includes('assertTaskServiceTeacherCanManageTask(payload,task,"DELETE_SUBMISSION")'));
 assert(extractFunction("getSubmissionDocumentPreviewUrl").includes('"READ_CONTENT"'));
