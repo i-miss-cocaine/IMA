@@ -636,6 +636,267 @@ function getMigrationHmacSecrets_(sourceService) {
   return secrets;
 }
 
+
+/*
+ * Manual credential provisioning entrypoints.
+ * Invoke only from the Apps Script editor in each participating project.
+ * Never add these operations to doPost, a client dispatcher, or a browser UI.
+ * The caller supplies the same high-entropy secret out-of-band to each project;
+ * the secret is stored only in Script Properties and is never returned or logged.
+ */
+function provisionMigrationCredentialFromEditor(input) {
+  return manageMigrationCredentialFromEditor_(input, false);
+}
+
+function revokeMigrationCredentialFromEditor(input) {
+  return manageMigrationCredentialFromEditor_(input, true);
+}
+
+function manageMigrationCredentialFromEditor_(input, revoke) {
+  var request = input && typeof input === "object" && !Array.isArray(input) ? input : {};
+  var service = String(request.sourceService || "").trim().toUpperCase();
+  var version = String(request.version || "").trim();
+  var secret = typeof request.secret === "string" ? request.secret.trim() : "";
+  var requestedStatus = String(request.status || "ACTIVE").trim().toUpperCase();
+  if (["USER", "ACADEMIC", "ACCOUNTING", "DEVELOPER"].indexOf(service) === -1) {
+    throw new Error("CREDENTIAL_PROVISIONING_SERVICE_INVALID");
+  }
+  if (!/^[A-Za-z0-9._-]{1,64}$/.test(version)) {
+    throw new Error("CREDENTIAL_PROVISIONING_VERSION_INVALID");
+  }
+  if (!revoke && (secret.length < 32 || /\\s/.test(secret))) {
+    throw new Error("CREDENTIAL_PROVISIONING_SECRET_INVALID");
+  }
+  if (!revoke && ["ACTIVE", "VERIFY_ONLY"].indexOf(requestedStatus) === -1) {
+    throw new Error("CREDENTIAL_PROVISIONING_STATUS_INVALID");
+  }
+
+  var actor = "";
+  try { actor = String(Session.getActiveUser().getEmail() || "").trim().toLowerCase(); }
+  catch (actorError) { throw new Error("CREDENTIAL_PROVISIONING_ACTOR_UNAVAILABLE"); }
+  if (!actor || actor.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(actor)) {
+    throw new Error("CREDENTIAL_PROVISIONING_ACTOR_UNAVAILABLE");
+  }
+
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(10000); }
+  catch (lockError) { throw new Error("CREDENTIAL_PROVISIONING_BUSY"); }
+
+  try {
+    var spreadsheetId = String(typeof SPREADSHEET_ID !== "undefined" ? SPREADSHEET_ID : "").trim();
+    if (!spreadsheetId) throw new Error("CREDENTIAL_PROVISIONING_SPREADSHEET_UNAVAILABLE");
+    var ss;
+    try { ss = SpreadsheetApp.openById(spreadsheetId); }
+    catch (storageError) { throw new Error("CREDENTIAL_PROVISIONING_STORAGE_UNAVAILABLE"); }
+    var sheet = ss.getSheetByName("CatalogoCredencialesServicios");
+    if (!sheet) {
+      try {
+        sheet = ss.insertSheet("CatalogoCredencialesServicios");
+        sheet.getRange(1, 1, 1, IMA_CREDENTIAL_CATALOG_HEADERS_.length)
+          .setValues([IMA_CREDENTIAL_CATALOG_HEADERS_.slice()]);
+      } catch (createError) {
+        throw new Error("CREDENTIAL_PROVISIONING_CATALOG_CREATE_FAILED");
+      }
+    }
+
+    var data;
+    try { data = sheet.getDataRange().getValues(); }
+    catch (readError) { throw new Error("CREDENTIAL_PROVISIONING_CATALOG_READ_FAILED"); }
+    if (!data || !data.length || data.every(function(row) {
+      return !row || row.every(function(value) { return value === "" || value === null || value === undefined; });
+    })) {
+      sheet.getRange(1, 1, 1, IMA_CREDENTIAL_CATALOG_HEADERS_.length)
+        .setValues([IMA_CREDENTIAL_CATALOG_HEADERS_.slice()]);
+      data = [IMA_CREDENTIAL_CATALOG_HEADERS_.slice()];
+    }
+    if (data[0].length !== IMA_CREDENTIAL_CATALOG_HEADERS_.length ||
+        JSON.stringify(data[0].map(String)) !== JSON.stringify(IMA_CREDENTIAL_CATALOG_HEADERS_)) {
+      throw new Error("CREDENTIAL_PROVISIONING_CATALOG_SCHEMA_MISMATCH");
+    }
+
+    var rows = data.slice(1), ids = Object.create(null), serviceRows = [];
+    rows.forEach(function(row, index) {
+      if (!row || row.every(function(value) { return value === "" || value === null || value === undefined; })) return;
+      if (row.length !== IMA_CREDENTIAL_CATALOG_HEADERS_.length) {
+        throw new Error("CREDENTIAL_PROVISIONING_CATALOG_ROW_INVALID");
+      }
+      var id = String(row[0] || "").trim();
+      if (!id || ids[id]) throw new Error("CREDENTIAL_PROVISIONING_CATALOG_DUPLICATE_ID");
+      ids[id] = true;
+      if (String(row[1] || "").trim().toUpperCase() === service &&
+          String(row[2] || "").trim() === "IMA_MIGRATION_HMAC_SECRET") {
+        var status = String(row[4] || "").trim().toUpperCase();
+        if (["PENDING", "ACTIVE", "VERIFY_ONLY", "REVOKED"].indexOf(status) === -1) {
+          throw new Error("CREDENTIAL_PROVISIONING_CATALOG_STATUS_INVALID");
+        }
+        serviceRows.push({ row: row.slice(), rowNumber: index + 2 });
+      }
+    });
+
+    var versionRows = serviceRows.filter(function(item) {
+      return String(item.row[3] || "").trim() === version;
+    });
+    if (versionRows.length > 1) throw new Error("CREDENTIAL_PROVISIONING_VERSION_DUPLICATE");
+    var activeRows = serviceRows.filter(function(item) {
+      return String(item.row[4] || "").trim().toUpperCase() === "ACTIVE";
+    });
+    if (activeRows.length > 1) throw new Error("CREDENTIAL_PROVISIONING_ACTIVE_DUPLICATE");
+
+    var properties = PropertiesService.getScriptProperties();
+    var versionedKey = "IMA_MIGRATION_HMAC_SECRET_" + service + "_V_" + version;
+    var activeVerifierKey = "IMA_MIGRATION_HMAC_SECRET_" + service;
+    var activeVerifierVersionKey = "IMA_MIGRATION_HMAC_SECRET_VERSION_" + service;
+    var isLocalSigner = service === IMA_LOCAL_SERVICE_ID_;
+    var signingKey = "IMA_MIGRATION_HMAC_SECRET";
+    var signingVersionKey = "IMA_MIGRATION_HMAC_SECRET_VERSION";
+    var propertyKeys = [versionedKey, activeVerifierKey, activeVerifierVersionKey];
+    if (isLocalSigner) propertyKeys.push(signingKey, signingVersionKey);
+    var previousProperties = {};
+    propertyKeys.forEach(function(key) {
+      var value = properties.getProperty(key);
+      previousProperties[key] = value === null || value === undefined ? null : String(value);
+    });
+    function restoreProperties_() {
+      propertyKeys.forEach(function(key) {
+        if (previousProperties[key] === null) properties.deleteProperty(key);
+        else properties.setProperty(key, previousProperties[key]);
+      });
+    }
+    function setProperty_(key, value) {
+      properties.setProperty(key, String(value));
+    }
+    function updateCatalogRow_(item, row) {
+      sheet.getRange(item.rowNumber, 1, 1, IMA_CREDENTIAL_CATALOG_HEADERS_.length).setValues([row]);
+      item.row = row.slice();
+    }
+
+    if (revoke) {
+      if (!versionRows.length) throw new Error("CREDENTIAL_PROVISIONING_CREDENTIAL_NOT_FOUND");
+      var revokeItem = versionRows[0], revokeRow = revokeItem.row.slice();
+      if (String(revokeRow[4] || "").trim().toUpperCase() !== "REVOKED") {
+        revokeRow[4] = "REVOKED";
+        revokeRow[8] = new Date().toISOString();
+        revokeRow[9] = actor;
+        updateCatalogRow_(revokeItem, revokeRow);
+      }
+      try {
+        properties.deleteProperty(versionedKey);
+        if (String(properties.getProperty(activeVerifierVersionKey) || "") === version) {
+          properties.deleteProperty(activeVerifierKey);
+          properties.deleteProperty(activeVerifierVersionKey);
+        }
+        if (isLocalSigner && String(properties.getProperty(signingVersionKey) || "") === version) {
+          properties.deleteProperty(signingKey);
+          properties.deleteProperty(signingVersionKey);
+        }
+      } catch (deleteError) {
+        throw new Error("CREDENTIAL_PROVISIONING_REVOKED_CLEANUP_PENDING");
+      }
+      return {
+        status: "success", operation: "REVOKE", sourceService: service,
+        version: version, credentialId: String(revokeRow[0]), credentialStatus: "REVOKED"
+      };
+    }
+
+    var fingerprint = computeMigrationCredentialFingerprint_(secret);
+    var targetItem = versionRows.length ? versionRows[0] : null;
+    if (targetItem) {
+      if (String(targetItem.row[5] || "").trim().toLowerCase() !== fingerprint) {
+        throw new Error("CREDENTIAL_PROVISIONING_VERSION_CONFLICT");
+      }
+      if (String(targetItem.row[4] || "").trim().toUpperCase() === "REVOKED") {
+        throw new Error("CREDENTIAL_PROVISIONING_VERSION_REVOKED");
+      }
+    } else {
+      var credentialId = "CRED-" + service + "-" + version;
+      if (ids[credentialId]) throw new Error("CREDENTIAL_PROVISIONING_ID_CONFLICT");
+      var pendingRow = [credentialId, service, "IMA_MIGRATION_HMAC_SECRET", version, "PENDING",
+        fingerprint, new Date().toISOString(), actor, "", ""];
+      try {
+        sheet.appendRow(pendingRow);
+        var lastRow = sheet.getLastRow();
+        targetItem = { row: pendingRow.slice(), rowNumber: lastRow };
+      } catch (appendError) {
+        throw new Error("CREDENTIAL_PROVISIONING_STAGE_FAILED");
+      }
+    }
+
+    if (requestedStatus === "VERIFY_ONLY") {
+      try {
+        setProperty_(versionedKey, secret);
+        var verifyOnlyRow = targetItem.row.slice();
+        verifyOnlyRow[4] = "VERIFY_ONLY";
+        updateCatalogRow_(targetItem, verifyOnlyRow);
+      } catch (verifyOnlyError) {
+        restoreProperties_();
+        throw new Error("CREDENTIAL_PROVISIONING_VERIFY_ONLY_FAILED");
+      }
+      return {
+        status: "success", operation: "PROVISION", sourceService: service,
+        version: version, credentialId: String(targetItem.row[0]), credentialStatus: "VERIFY_ONLY"
+      };
+    }
+
+    var oldActive = activeRows.length ? activeRows[0] : null;
+    var oldActiveVersion = oldActive ? String(oldActive.row[3] || "").trim() : "";
+    var oldActiveSecret = "";
+    if (oldActive && oldActiveVersion !== version) {
+      var oldVersionedKey = "IMA_MIGRATION_HMAC_SECRET_" + service + "_V_" + oldActiveVersion;
+      var oldActiveSecret = String(properties.getProperty(oldVersionedKey) || "");
+      if (!oldActiveSecret && String(properties.getProperty(activeVerifierVersionKey) || "") === oldActiveVersion) {
+        oldActiveSecret = String(properties.getProperty(activeVerifierKey) || "");
+      }
+      if (oldActiveSecret.length < 32 ||
+          computeMigrationCredentialFingerprint_(oldActiveSecret) !== String(oldActive.row[5] || "").trim().toLowerCase()) {
+        throw new Error("CREDENTIAL_PROVISIONING_PREVIOUS_KEY_UNAVAILABLE");
+      }
+      if (isLocalSigner) {
+        var oldSigningSecret = String(properties.getProperty(signingKey) || "");
+        if (String(properties.getProperty(signingVersionKey) || "") !== oldActiveVersion ||
+            oldSigningSecret.length < 32 ||
+            computeMigrationCredentialFingerprint_(oldSigningSecret) !== String(oldActive.row[5] || "").trim().toLowerCase()) {
+          throw new Error("CREDENTIAL_PROVISIONING_SIGNING_KEY_MISMATCH");
+        }
+      }
+    }
+
+    try {
+      setProperty_(versionedKey, secret);
+      if (oldActive && oldActiveVersion !== version) {
+        setProperty_("IMA_MIGRATION_HMAC_SECRET_" + service + "_V_" + oldActiveVersion, oldActiveSecret);
+      }
+      setProperty_(activeVerifierKey, secret);
+      setProperty_(activeVerifierVersionKey, version);
+      if (isLocalSigner) {
+        setProperty_(signingKey, secret);
+        setProperty_(signingVersionKey, version);
+      }
+      var oldRowSnapshot = oldActive ? oldActive.row.slice() : null;
+      if (oldActive && oldActiveVersion !== version) {
+        var oldVerifyRow = oldActive.row.slice();
+        oldVerifyRow[4] = "VERIFY_ONLY";
+        updateCatalogRow_(oldActive, oldVerifyRow);
+      }
+      var activeRow = targetItem.row.slice();
+      activeRow[4] = "ACTIVE";
+      updateCatalogRow_(targetItem, activeRow);
+    } catch (activationError) {
+      if (oldActive && oldActiveVersion !== version && oldRowSnapshot) {
+        try { updateCatalogRow_(oldActive, oldRowSnapshot); } catch (rollbackCatalogError) {}
+      }
+      try { restoreProperties_(); } catch (rollbackPropertiesError) {}
+      throw new Error("CREDENTIAL_PROVISIONING_ACTIVATION_FAILED");
+    }
+
+    return {
+      status: "success", operation: "PROVISION", sourceService: service,
+      version: version, credentialId: String(targetItem.row[0]), credentialStatus: "ACTIVE"
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function resolveInterServiceSecret_(sourceService, credentialType, purpose) {
   if (credentialType === undefined || credentialType === null || credentialType === "") {
     throw new Error("INTERSERVICE_CREDENTIAL_TYPE_REQUIRED");
