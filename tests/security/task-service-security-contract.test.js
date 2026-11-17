@@ -616,7 +616,8 @@ assert.throws(() => studentOwnershipContext.run({}, "STUDENT-1",
   ["TASK-FOREIGN","Tarea","Foreign","","P1","Matemáticas","6","A","","","PROF-2","Activa"]), /RESOURCE_NOT_FOUND/);
 const previewContract = extractFunction("getSubmissionDocumentPreviewUrl");
 assert(previewContract.includes("getTaskServiceSubmissionAccess_"), "document preview delegates to the shared submission ownership guard");
-assert(previewContract.includes("matches.length !== 1"), "document preview rejects ambiguous file-to-delivery links");
+assert(previewContract.includes("candidateDeliveryIds.size !== 1") && previewContract.includes("matchingDeliveries.length !== 1"), "document preview rejects ambiguous file-to-delivery links");
+assert(previewContract.includes("isRecordedVersion"), "document preview validates retained version-to-delivery relationships");
 console.log("TASK-153 direct student submission and document ownership contract passed.");
 
 
