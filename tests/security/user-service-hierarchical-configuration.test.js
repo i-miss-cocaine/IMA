@@ -334,7 +334,7 @@ function runSchema(system,department){
  const data=["CFG-LEGACY","old.key","keep-me","TEXTO","GENERAL","legacy","GLOBAL","Administrador","ACTIVO","1.0","2026-01-01","U-OLD"];
  const system=schemaSheet([legacy,data]);
  const run=runSchema(system,null);
- assert.deepEqual(run.result.headers,legacy.concat(["InstitutionID","UserID","PoliticaAlcance","AmbitosPermitidosJSON","PermiteHerencia","PermiteSobrescritura","RolesAutorizadosJSON","DependenciasJSON","EsSensible"]));
+ assert.equal(JSON.stringify(run.result.headers),JSON.stringify(legacy.concat(["InstitutionID","UserID","PoliticaAlcance","AmbitosPermitidosJSON","PermiteHerencia","PermiteSobrescritura","RolesAutorizadosJSON","DependenciasJSON","EsSensible"])));
  assert.deepEqual(system.rows[1],data,"legacy data columns are preserved byte-for-byte");
  assert.equal(run.sheets.ConfiguracionDepartamental.rows.length,1);
  const after=JSON.stringify(system.rows);
