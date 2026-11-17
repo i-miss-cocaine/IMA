@@ -11584,9 +11584,8 @@ const USER_HELP_PREFERENCE_HEADERS_=["PreferenceID","UserID","InstitutionID","To
 const USER_HELP_TOUR_ROLES_={studentSubmission:["Estudiante"],teacherReview:["Profesor"],teacherTemplates:["Profesor"]};
 function getUserHelpPreferenceActor_(payload){
  var input=payload||{},token=String(input.sessionToken||"").trim(),claims=token&&typeof verifySessionToken==="function"?verifySessionToken(token):null;
- if(!claims||!claims.userId||!claims.role||!claims.institutionId)return{error:{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"}};
+ if(!claims||!claims.userId||!claims.role)return{error:{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"}};
  var institution="";try{institution=getIdentityInstitutionId_();}catch(e){return{error:{status:"error",code:"IDENTITY_CONFIGURATION_REQUIRED"}};}
- if(String(claims.institutionId)!==institution)return{error:{status:"error",code:"INSTITUTION_SCOPE_DENIED"}};
  if(String(input._verifiedUserId||claims.userId)!==String(claims.userId))return{error:{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"}};
  return{userId:String(claims.userId),institutionId:institution,role:String(claims.role)};
 }
