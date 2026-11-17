@@ -488,7 +488,7 @@ function getAuthTokenSecret() {
   return secret;
 }
 
-const IMA_LOCAL_ACADEMIC_ = "SERVICE_ID";
+const IMA_LOCAL_ACADEMIC_ = "ACADEMIC";
 const IMA_CREDENTIAL_CATALOG_HEADERS_ = ["CredentialID","ServiceID","CredentialType","Version","Status","Fingerprint","CreatedAt","CreatedBy","RevokedAt","RevokedBy"];
 
 function computeMigrationCredentialFingerprint_(secret) {
