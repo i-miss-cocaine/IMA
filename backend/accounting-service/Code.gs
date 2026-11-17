@@ -78,14 +78,99 @@ function resolveCrossReferenceIdentifier(input) {
     institutionId: actor.institutionId, estadoCorrespondencia: "CONFIRMADA" };
 }
 
+const IMA_LOCAL_SERVICE_ID_ = "ACCOUNTING";
+const IMA_CREDENTIAL_CATALOG_HEADERS_ = ["CredentialID","ServiceID","CredentialType","Version","Status","Fingerprint","CreatedAt","CreatedBy","RevokedAt","RevokedBy"];
+
+function computeMigrationCredentialFingerprint_(secret) {
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(secret), Utilities.Charset.UTF_8);
+  return digest.map(function(byte) { return ("0" + ((byte + 256) % 256).toString(16)).slice(-2); }).join("");
+}
+
+function getMigrationHmacSecret_(sourceService, purpose) {
+  var service = String(sourceService || "").trim().toUpperCase();
+  var mode = String(purpose || "VERIFY").trim().toUpperCase();
+  if (["USER", "ACADEMIC", "ACCOUNTING"].indexOf(service) === -1) throw new Error("MIGRATION_SOURCE_SERVICE_INVALID");
+  if (mode !== "SIGN" && mode !== "VERIFY") throw new Error("MIGRATION_SECRET_PURPOSE_INVALID");
+  if (mode === "SIGN" && service !== IMA_LOCAL_SERVICE_ID_) throw new Error("MIGRATION_SECRET_SOURCE_MISMATCH");
+
+  var suffix = mode === "SIGN" ? "" : "_" + service;
+  var properties, secret, version;
+  try {
+    properties = PropertiesService.getScriptProperties();
+    secret = String(properties.getProperty("IMA_MIGRATION_HMAC_SECRET" + suffix) || "").trim();
+    version = String(properties.getProperty("IMA_MIGRATION_HMAC_SECRET_VERSION" + suffix) || "").trim();
+  } catch (error) {
+    throw new Error("MIGRATION_SECRET_UNAVAILABLE");
+  }
+  if (secret.length < 32) throw new Error("MIGRATION_SECRET_NOT_CONFIGURED");
+  if (!version) throw new Error("MIGRATION_SECRET_VERSION_NOT_CONFIGURED");
+
+  var spreadsheetId = String(typeof SPREADSHEET_ID !== "undefined" ? SPREADSHEET_ID : "").trim();
+  if (!spreadsheetId) throw new Error("CREDENTIAL_CATALOG_SPREADSHEET_NOT_CONFIGURED");
+  var data;
+  try {
+    var ss = SpreadsheetApp.openById(spreadsheetId);
+    var sheet = ss.getSheetByName("CatalogoCredencialesServicios");
+    if (!sheet) throw new Error("missing catalog");
+    data = sheet.getDataRange().getValues();
+  } catch (error) {
+    throw new Error("CREDENTIAL_CATALOG_UNAVAILABLE");
+  }
+  if (!data.length || data[0].length !== IMA_CREDENTIAL_CATALOG_HEADERS_.length ||
+      JSON.stringify(data[0].map(String)) !== JSON.stringify(IMA_CREDENTIAL_CATALOG_HEADERS_)) {
+    throw new Error("CREDENTIAL_CATALOG_SCHEMA_MISMATCH");
+  }
+
+  var rows = data.slice(1), credentialIds = {};
+  rows.forEach(function(row) {
+    var id = String(row[0] || "").trim();
+    if (!id) {
+      if (row.some(function(value) { return String(value || "").trim() !== ""; })) throw new Error("CREDENTIAL_CATALOG_ROW_INVALID");
+      return;
+    }
+    if (credentialIds[id]) throw new Error("CREDENTIAL_CATALOG_DUPLICATE_ID");
+    credentialIds[id] = true;
+  });
+  var serviceRows = rows.filter(function(row) {
+    return String(row[1] || "").trim().toUpperCase() === service &&
+      String(row[2] || "").trim() === "IMA_MIGRATION_HMAC_SECRET";
+  });
+  var activeRows = serviceRows.filter(function(row) { return String(row[4] || "").trim().toUpperCase() === "ACTIVE"; });
+  if (activeRows.length !== 1) throw new Error("MIGRATION_SECRET_REVOKED_OR_UNREGISTERED");
+  var versionRows = serviceRows.filter(function(row) { return String(row[3] || "").trim() === version; });
+  if (versionRows.length !== 1 || versionRows[0] !== activeRows[0]) throw new Error("MIGRATION_SECRET_VERSION_MISMATCH");
+
+  var credential = activeRows[0];
+  if (String(credential[8] || "").trim() || String(credential[9] || "").trim()) {
+    throw new Error("MIGRATION_SECRET_REVOKED_OR_UNREGISTERED");
+  }
+  if (!String(credential[0] || "").trim() || !String(credential[6] || "").trim() || !String(credential[7] || "").trim()) {
+    throw new Error("CREDENTIAL_CATALOG_METADATA_INVALID");
+  }
+  var fingerprint = String(credential[5] || "").trim().toLowerCase();
+  if (!/^[a-f0-9]{64}$/.test(fingerprint)) throw new Error("CREDENTIAL_CATALOG_FINGERPRINT_INVALID");
+  if (fingerprint !== computeMigrationCredentialFingerprint_(secret)) throw new Error("MIGRATION_SECRET_FINGERPRINT_MISMATCH");
+  return secret;
+}
+
+function resolveInterServiceSecret_(sourceService, credentialType, purpose) {
+  if (credentialType === undefined || credentialType === null || credentialType === "") {
+    throw new Error("INTERSERVICE_CREDENTIAL_TYPE_REQUIRED");
+  }
+  if (credentialType !== "IMA_MIGRATION_HMAC_SECRET") throw new Error("INTERSERVICE_CREDENTIAL_TYPE_INVALID");
+  return getMigrationHmacSecret_(sourceService, purpose);
+}
+
 function requestAccountingTrustedOwnerSnapshot_(service, payload) {
   var target = String(service || "").toUpperCase();
   var propertyName = target === "USER" ? "IMA_USER_SERVICE_URL" : (target === "ACADEMIC" ? "IMA_ACADEMIC_SERVICE_URL" : "");
   if (!propertyName) return { status: "error", code: "MIGRATION_OWNER_SERVICE_NOT_ALLOWED" };
   var properties = PropertiesService.getScriptProperties();
   var endpoint = String(properties.getProperty(propertyName) || "").trim();
-  var secret = String(properties.getProperty("IMA_MIGRATION_HMAC_SECRET") || "").trim();
-  if (!isAccountingTrustedAppsScriptEndpoint_(endpoint) || secret.length < 32 || typeof UrlFetchApp === "undefined") {
+  var secret;
+  try { secret = resolveInterServiceSecret_("ACCOUNTING", "IMA_MIGRATION_HMAC_SECRET", "SIGN"); }
+  catch (error) { return { status: "error", code: "MIGRATION_OWNER_SERVICE_NOT_CONFIGURED" }; }
+  if (!isAccountingTrustedAppsScriptEndpoint_(endpoint) || typeof UrlFetchApp === "undefined") {
     return { status: "error", code: "MIGRATION_OWNER_SERVICE_NOT_CONFIGURED" };
   }
   var now = Date.now();
@@ -614,8 +699,10 @@ function requestAccountingIdentityMapSnapshot_(payload) {
   var input = payload || {};
   var properties = PropertiesService.getScriptProperties();
   var endpoint = String(properties.getProperty("IMA_USER_SERVICE_URL") || "").trim();
-  var secret = String(properties.getProperty("IMA_MIGRATION_HMAC_SECRET") || "").trim();
-  if (!isAccountingTrustedAppsScriptEndpoint_(endpoint) || secret.length < 32 ||
+  var secret;
+  try { secret = resolveInterServiceSecret_("ACCOUNTING", "IMA_MIGRATION_HMAC_SECRET", "SIGN"); }
+  catch (error) { return { status: "error", code: "IDENTITY_MAPPING_SNAPSHOT_UNAVAILABLE" }; }
+  if (!isAccountingTrustedAppsScriptEndpoint_(endpoint) ||
       typeof UrlFetchApp === "undefined" || typeof createInterServiceEnvelope !== "function") {
     return { status: "error", code: "IDENTITY_MAPPING_SNAPSHOT_UNAVAILABLE" };
   }
@@ -4379,9 +4466,12 @@ function accountingComputeHmacSignature_(message, secret) {
 function requestAccountingUserAuthorization_(action, payload) {
   var properties = PropertiesService.getScriptProperties();
   var endpoint = String(properties.getProperty("IMA_USER_SERVICE_URL") || "").trim();
-  var secret = String(properties.getProperty("IMA_MIGRATION_HMAC_SECRET") || "").trim();
-  if (!isAccountingTrustedAppsScriptEndpoint_(endpoint) || secret.length < 32 ||
-      typeof UrlFetchApp === "undefined") return { status: "error", code: "ACCOUNTING_AUTH_SERVICE_NOT_CONFIGURED" };
+  var secret;
+  try { secret = resolveInterServiceSecret_("ACCOUNTING", "IMA_MIGRATION_HMAC_SECRET", "SIGN"); }
+  catch (error) { return { status: "error", code: "ACCOUNTING_AUTH_SERVICE_NOT_CONFIGURED" }; }
+  if (!isAccountingTrustedAppsScriptEndpoint_(endpoint) || typeof UrlFetchApp === "undefined") {
+    return { status: "error", code: "ACCOUNTING_AUTH_SERVICE_NOT_CONFIGURED" };
+  }
   var now = Date.now();
   var requestId = "REQ-" + now + "-" + Utilities.getUuid().replace(/-/g, "").slice(0, 12);
   var correlationId = "CORR-" + Utilities.getUuid().replace(/-/g, "");
@@ -4436,7 +4526,7 @@ function getVerifiedAccountingIdentity_(payload) {
     membershipId: String(verified.membershipId || ""), institutionId: configuredInstitution };
 }
 
-function createInterServiceEnvelope(sourceService, targetService, action, payload, customSecret) {
+function createInterServiceEnvelope(sourceService, targetService, action, payload, credentialType) {
   var now = Date.now();
   var requestId = "REQ-" + now + "-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 12);
   var correlationId = String(payload && payload.correlationId || ("CORR-" + String(Utilities.getUuid()).replace(/-/g, "")));
@@ -4445,7 +4535,8 @@ function createInterServiceEnvelope(sourceService, targetService, action, payloa
   return {
     sourceService: sourceService, targetService: targetService, action: action,
     requestId: requestId, timestamp: now, correlationId: correlationId,
-    payload: body, hmacSignature: accountingComputeHmacSignature_(bodyToSign, customSecret)
+    payload: body, hmacSignature: accountingComputeHmacSignature_(bodyToSign,
+      resolveInterServiceSecret_(sourceService, credentialType, "SIGN"))
   };
 }
 
@@ -4462,12 +4553,11 @@ function sendMigrationOwnerRequest_(service, action, payload) {
   var properties = PropertiesService.getScriptProperties();
   var endpointKey = target === "ACADEMIC" ? "IMA_ACADEMIC_SERVICE_URL" : "IMA_USER_SERVICE_URL";
   var endpoint = String(properties.getProperty(endpointKey) || "").trim();
-  var signingSecret = String(properties.getProperty("IMA_MIGRATION_HMAC_SECRET") || "").trim();
-  if (!isAccountingTrustedAppsScriptEndpoint_(endpoint) || signingSecret.length < 32 ||
+  if (!isAccountingTrustedAppsScriptEndpoint_(endpoint) ||
       typeof createInterServiceEnvelope !== "function" || typeof UrlFetchApp === "undefined") {
     throw new Error("MIGRATION_OWNER_SERVICE_NOT_CONFIGURED");
   }
-  var envelope = createInterServiceEnvelope("ACCOUNTING", target, action, payload || {}, signingSecret);
+  var envelope = createInterServiceEnvelope("ACCOUNTING", target, action, payload || {}, "IMA_MIGRATION_HMAC_SECRET");
   var response = UrlFetchApp.fetch(endpoint, {
     method: "post", contentType: "application/json",
     payload: JSON.stringify(envelope), muteHttpExceptions: true
