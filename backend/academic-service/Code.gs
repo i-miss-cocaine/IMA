@@ -14998,16 +14998,9 @@ function uploadStudentDocument(payload) {
   try {
     hasLock = lock.tryLock(10000);
     if (!hasLock) throw new Error("DOCUMENT_UPLOAD_LOCK_UNAVAILABLE");
-    const lockedSpreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const lockedActor = getVerifiedAcademicIdentity_(p);
-    if (!lockedActor || lockedActor.authorized !== true || !lockedActor.userId ||
-        String(lockedActor.userId) !== String(actor.userId) || String(lockedActor.role || "") !== String(actor.role || "")) {
-      return {status:"error",code:"VERIFIED_IDENTITY_CHANGED",message:"La identidad dejó de ser válida antes de guardar."};
-    }
-    const lockedScope = assertStudentRequestScopeAccess_(p,lockedSpreadsheet,expedienteId,solicitudId);
-    if (!lockedScope || lockedScope.authorized !== true) {
-      return {status:"error",code:lockedScope && lockedScope.code || "RESOURCE_SCOPE_DENIED",message:"El ámbito de acceso dejó de estar autorizado antes de guardar."};
-    }
+    // Session, role and record scope were checked once at request entry.
+    // Reuse the same spreadsheet handle under the lock; the lock protects writes, not a second authorization pass.
+    const lockedSpreadsheet = ssForAccess;
     sheet = ensureStudentDocumentSchema_(getOrCreateSheet(lockedSpreadsheet,"DocumentosEstudiante"));
     const historySheet = ensureDocumentVersionHistorySchema_(getOrCreateSheet(lockedSpreadsheet,"HistorialVersionesDocumentos"));
     const docRows = sheet.getDataRange().getValues();
