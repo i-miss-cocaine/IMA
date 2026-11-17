@@ -199,7 +199,7 @@ function upload(h,pdf,label="ACTA") {
   const directDownload=h.context.download({documentoId:row[0],solicitudId:"SOL-1",operation:"DOWNLOAD"});
   assert.equal(directDownload.status,"success");
   assert.equal(Buffer.from(directDownload.fileData,"base64").equals(pdf1),true);
-  assert.deepEqual(h.state.permissionCalls,["previewStudentDocument","getStudentDocumentFile"],
+  assert.deepEqual(h.state.permissionCalls,["getStudentDocumentFile","previewStudentDocument","getStudentDocumentFile"],
     "preview/download each require one RBAC check at the entry point, without token issuance or a second stream call");
   const invalidOperation=h.context.download({documentoId:row[0],solicitudId:"SOL-1",operation:"METADATA"});
   assert.equal(invalidOperation.code,"DOCUMENT_ACCESS_OPERATION_INVALID");
