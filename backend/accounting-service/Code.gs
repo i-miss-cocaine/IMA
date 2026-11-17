@@ -115,25 +115,73 @@ function requestAccountingTrustedOwnerSnapshot_(service, payload) {
   }
 }
 
+function normalizeMigrationNaturalKey_(field, value) {
+  var raw = String(value === undefined || value === null ? "" : value);
+  if (raw.normalize) raw = raw.normalize("NFKC");
+  raw = raw.trim().toLowerCase();
+  if (field === "Identificacion") return raw.replace(/[^a-z0-9]/g, "");
+  if (field === "EmailContacto") return raw.replace(/\\s+/g, "");
+  if (field === "CodigoInstitucional" || field === "PersonaId" || field === "UserId") return raw.replace(/\\s+/g, "");
+  return raw.replace(/\\s+/g, " ");
+}
+function migrationDuplicateKeyDefinitions_(entityType) {
+  var definitions = {
+    persona: [{ field: "Identificacion", matchType: "EXACTA" }, { field: "EmailContacto", matchType: "EXACTA" }, { field: "NombreCompleto", matchType: "POSIBLE" }],
+    estudiante: [{ field: "CodigoInstitucional", matchType: "EXACTA" }],
+    empleado: [{ field: "PersonaId", matchType: "EXACTA" }, { field: "UserId", matchType: "EXACTA" }],
+    curso: [{ field: "NombreCurso", matchType: "EXACTA" }]
+  };
+  return definitions[String(entityType || "").toLowerCase()] || [];
+}
+function buildMigrationDuplicateRequests_(preparedRows, entityType) {
+  var definitions = migrationDuplicateKeyDefinitions_(entityType), requests = [];
+  (preparedRows || []).forEach(function(row, rowIndex) {
+    definitions.forEach(function(definition) {
+      var value = definition.field === "NombreCompleto" ?
+        [row && row.Nombres, row && row.Apellidos].filter(Boolean).join(" ") :
+        (row && row[definition.field]);
+      var normalized = normalizeMigrationNaturalKey_(definition.field, value);
+      if (normalized) requests.push({ rowIndex: rowIndex, field: definition.field, matchType: definition.matchType, value: normalized });
+    });
+  });
+  return requests;
+}
+
 function buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutionId, ss, input) {
   var service = String(schema && schema.service || "").toUpperCase();
   var sheetName = String(schema && schema.sheet || "");
   var idField = schema && schema.headers && schema.headers[0] || "";
+  var duplicateRequests = buildMigrationDuplicateRequests_(preparedRows, String(input && input.tipoEntidad || ""));
+  if (service === "USER") {
+    var userIds = (preparedRows || []).map(function(row) { return String(row && row[idField] || "").trim(); }).filter(Boolean);
+    var userResult = requestAccountingTrustedOwnerSnapshot_("USER", {
+      sessionToken: String(input && input.sessionToken || ""), institutionId: institutionId,
+      entityType: "persona", targetIds: userIds, duplicateKeys: duplicateRequests
+    });
+    if (!userResult || userResult.status !== "success" || userResult.verified !== true ||
+        userResult.service !== "USER" || userResult.sheet !== "Personas" || userResult.idField !== "PersonaID" ||
+        String(userResult.institutionId || "") !== String(institutionId) || !Array.isArray(userResult.existingTargetIds) ||
+        !Array.isArray(userResult.duplicateMatches)) return { verified: false, service: service, sheet: sheetName,
+          institutionId: institutionId, existingTargetIds: [], targetRows: [], duplicateMatches: [] };
+    return { verified: true, service: service, sheet: sheetName, institutionId: institutionId, idField: idField,
+      existingTargetIds: userResult.existingTargetIds.map(String).sort(), targetRows: [], duplicateMatches: userResult.duplicateMatches };
+  }
   if (service === "ACADEMIC") {
     var academicIds = (preparedRows || []).map(function(row) { return String(row && row[idField] || "").trim(); }).filter(Boolean);
     var academicResult = requestAccountingTrustedOwnerSnapshot_("ACADEMIC", {
       sessionToken: String(input && input.sessionToken || ""), institutionId: institutionId,
-      entityType: "estudiante", targetIds: academicIds
+      entityType: "estudiante", targetIds: academicIds, duplicateKeys: duplicateRequests
     });
     if (!academicResult || academicResult.status !== "success" || academicResult.verified !== true ||
         academicResult.service !== "ACADEMIC" || academicResult.sheet !== "ExpedientesEstudiantes" ||
         academicResult.idField !== "ExpedienteID" || String(academicResult.institutionId || "") !== String(institutionId) ||
-        !Array.isArray(academicResult.existingTargetIds)) {
+        !Array.isArray(academicResult.existingTargetIds) || !Array.isArray(academicResult.duplicateMatches)) {
       return { verified: false, service: service, sheet: sheetName, institutionId: institutionId, existingTargetIds: [], targetRows: [] };
     }
     return { verified: true, service: service, sheet: sheetName, institutionId: institutionId,
       idField: idField, existingTargetIds: academicResult.existingTargetIds.map(String).sort(),
-      targetRows: Array.isArray(academicResult.targetRows) ? academicResult.targetRows : [] };
+      targetRows: Array.isArray(academicResult.targetRows) ? academicResult.targetRows : [],
+      duplicateMatches: academicResult.duplicateMatches };
   }
   if (service !== "ACCOUNTING") {
     return { verified: false, service: service, sheet: sheetName, institutionId: institutionId, existingTargetIds: [], targetRows: [] };
@@ -151,6 +199,8 @@ function buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutio
   });
   var ids = {};
   var targetRows = [];
+  var duplicateMatches = [];
+  var duplicateColumns = {}; headers.forEach(function(header, index) { duplicateColumns[header] = index; });
   for (var i = 1; i < values.length; i++) {
     var row = values[i];
     var id = String(row[idIndex] || "").trim();
@@ -162,8 +212,22 @@ function buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutio
     headers.forEach(function(header, column) { if (header) item[header] = row[column]; });
     targetRows.push(item);
   }
+  for (var rowIndex = 0; rowIndex < (preparedRows || []).length; rowIndex++) {
+    var prepared = preparedRows[rowIndex] || {};
+    duplicateRequests.forEach(function(request) {
+      if (request.rowIndex !== rowIndex) return;
+      var column = duplicateColumns[request.field];
+      if (column === undefined) return;
+      var raw = String(values.slice(1).find(function(existingRow) {
+        return String(existingRow[idIndex] || "").trim() === String(ids[String(prepared[idField] || "")] ? prepared[idField] : "") ;
+      }) || "");
+      var candidate = normalizeMigrationNaturalKey_(request.field, raw);
+      if (candidate && candidate === request.value) duplicateMatches.push({ rowIndex: rowIndex,
+        targetId: String(prepared[idField] || ""), field: request.field, matchType: request.matchType });
+    });
+  }
   return { verified: true, service: service, sheet: sheetName, institutionId: institutionId,
-    idField: idField, existingTargetIds: Object.keys(ids).sort(), targetRows: targetRows };
+    idField: idField, existingTargetIds: Object.keys(ids).sort(), targetRows: targetRows, duplicateMatches: duplicateMatches };
 }
 
 function buildAccountingRelatedPersonExistenceSnapshot_(preparedRows, entityType, institutionId, input) {
