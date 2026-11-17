@@ -123,5 +123,13 @@ const payload = {
   assert.throws(() => runtime.api.write({ ...payload, idempotencyKey: "STUDENT-DATE-INVALID",
     datos: { PersonaID: "PER-1", FechaNacimiento: "not-a-date" } }), /MIGRATION_DATE_INVALID/);
 }
+{
+  const target = new Sheet([schema.headers, ["EXP-EXIST","PER-EXIST","CODE-DUP","","","","","Activo","","",""]]);
+  sheets.set("ExpedientesEstudiantes", target);
+  assert.throws(() => runtime.api.write({ ...payload, idNuevoPlataforma: "EXP-NEW", idempotencyKey: "STUDENT-KEY-DUP",
+    targetSnapshotVerified: true, expectedTargetPresent: false, expectedTargetRowHash: "",
+    datos: { PersonaID: "PER-NEW", CodigoInstitucional: "CODE-DUP" } }), /MIGRATION_NATURAL_KEY_DUPLICATE/);
+  assert.equal(target.rows.length, 2, "a concurrent duplicate student code cannot be inserted under the writer lock");
+}
 assert.equal(lockCount, releaseCount, "all Academic writer paths release the script lock");
 process.stdout.write("ACADEMIC student migration writer: insert/update, idempotency, compensation, date normalization, stale-write rejection and formula safety PASS.\n");
