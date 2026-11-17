@@ -15016,17 +15016,7 @@ function getStudentDocuments(payload) {
   });
   if(inconsistentBinding)return {status:"error",code:"RESOURCE_OWNER_UNRESOLVED",message:"No existen documentos disponibles."};
 
-  let requestAccess=null;
-  if(cleanExpId&&cleanSolId){
-    requestAccess=assertStudentRequestScopeAccess_(request,ss,cleanExpId,cleanSolId);
-  }else if(cleanExpId){
-    const expedienteRows=expSheet?expSheet.getDataRange().getValues().slice(1):[];
-    const matches=expedienteRows.filter(function(row){return String(row[0]||"").trim().toLowerCase()===cleanExpId;});
-    if(matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existen documentos disponibles."};
-    requestAccess=assertStudentExpedienteScopeAccess_(request,ss,expSheet,matches[0]);
-  }else{
-    requestAccess=assertStudentRequestScopeAccess_(request,ss,"",cleanSolId);
-  }
+  const requestAccess=assertStudentRequestScopeAccess_(request,ss,cleanExpId,cleanSolId);
   if(!requestAccess||requestAccess.authorized!==true){
     const hasReferenceIntent=Object.prototype.hasOwnProperty.call(request,"referenceRequestedFields")||Object.prototype.hasOwnProperty.call(request,"referenceDocumentIds");
     if(!cleanExpId||cleanSolId||!hasReferenceIntent||!candidates.length||String(requestAccess&&requestAccess.code||"")!=="RESOURCE_SCOPE_DENIED"||
