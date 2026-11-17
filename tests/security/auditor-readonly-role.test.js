@@ -82,7 +82,9 @@ const academicPermissionContext = {
   getDynamicPermissionsForRole: () => true, hasActiveDelegationForAction: () => ({ delegante: "ADMIN", delId: "D-1" }),
   logStructuredEvent: () => {}
 };
-vm.runInNewContext(extractFunction(academic.source, "validateRolePermission") +
+const academicRequestHelpers = ["getRequestSessionToken_","getRequestPermissionAction_","getVerifiedRequestSessionClaims_","getCachedRequestAuthorization_","cacheRequestAuthorization_"]
+  .map(name => extractFunction(academic.source,name)).join("\n");
+vm.runInNewContext(academicRequestHelpers + "\n" + extractFunction(academic.source, "validateRolePermission") +
   "\nthis.check = validateRolePermission;", academicPermissionContext);
 assert.equal(academicPermissionContext.check("getSecureDocumentStream", { sessionToken: "AUD-TOKEN" }).authorized, true);
 assert.equal(academicPermissionContext.check("deleteStudentDocument", { sessionToken: "AUD-TOKEN" }).authorized, false,
