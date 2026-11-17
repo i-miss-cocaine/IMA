@@ -1249,7 +1249,7 @@ window.renderUnifiedAnalyticsCard = function(containerId, gameId, stats) {
         specificHtml =
             '<div class="grid grid-cols-2 gap-4 mt-4">' +
                 '<div class="p-3 bg-blue-50 rounded-xl"> <p class="text-[7px] font-black text-blue-400 uppercase">Mejor WPM</p> <p class="text-lg font-black text-blue-700">' + Math.round(maxWPM) + '</p> </div>' +
-                '<div class="p-3 bg-indigo-50 rounded-xl"> <p class="text-[7px] font-black text-indigo-400 uppercase">XP Total</p> <p class="text-lg font-black text-indigo-700">' + Math.round(totalXP).toLocaleString() + '</p> </div>' +
+                '<div class="p-3 bg-indigo-50 rounded-xl"> <p class="text-[7px] font-black text-indigo-400 uppercase">XP Total</p> <p class="text-lg font-black text-indigo-700">' + window.IMARegionalFormatters.formatNumber(Math.round(totalXP), { maximumFractionDigits: 0 }) + '</p> </div>' +
             '</div>';
     } else if (gameId === 'perifericos') {
         specificHtml =
@@ -1906,7 +1906,7 @@ window.renderContextualRecentActivity = function(containerIdOrElement, userRole,
             var iconClass = isTask ? 'fa-solid fa-list-check text-amber-600' : 'fa-solid fa-circle-info text-blue-500';
 
             var dateObj = new Date(act.timestamp);
-            var clockTime = isNaN(dateObj.getTime()) ? '' : dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            var clockTime = isNaN(dateObj.getTime()) ? '' : window.IMARegionalFormatters.formatTime(dateObj);
 
             item.innerHTML =
                 '<div class="flex items-start gap-3 min-w-0 flex-1">' +
@@ -2088,7 +2088,7 @@ window.openInstitutionalHealthDashboardModal = function() {
             '<h4 class="font-semibold text-gray-700 mb-3">Métricas por Microservicio</h4>' +
             '<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">' + cardsHtml + '</div>' +
             '<div class="flex justify-between items-center text-xs text-gray-400 pt-3 border-t border-gray-200">' +
-                '<span>Última actualización: ' + new Date().toLocaleTimeString() + '</span>' +
+                '<span>Última actualización: ' + window.IMARegionalFormatters.formatTime(new Date()) + '</span>' +
                 '<button onclick="window.openInstitutionalHealthDashboardModal()" class="px-3 py-1 bg-indigo-100 text-indigo-700 font-semibold rounded hover:bg-indigo-200">Actualizar Mediciones</button>' +
             '</div>' +
         '</div>' +
@@ -3615,8 +3615,8 @@ window.uploadResumableFile = function(file, options, callbacks) {
 };
 
 window.openSubmissionComparer = function(subA, subB) {
-    subA = subA || { estudiante: "Estudiante A", fecha: new Date().toLocaleDateString(), respuesta: "Respuesta entregada en formato texto/digital.", calificacion: "85", adjuntoUrl: "" };
-    subB = subB || { estudiante: "Estudiante B (Referencia)", fecha: new Date().toLocaleDateString(), respuesta: "Respuesta entregada para contraste de contenido.", calificacion: "90", adjuntoUrl: "" };
+    subA = subA || { estudiante: "Estudiante A", fecha: window.IMARegionalFormatters.formatDate(new Date()), respuesta: "Respuesta entregada en formato texto/digital.", calificacion: "85", adjuntoUrl: "" };
+    subB = subB || { estudiante: "Estudiante B (Referencia)", fecha: window.IMARegionalFormatters.formatDate(new Date()), respuesta: "Respuesta entregada para contraste de contenido.", calificacion: "90", adjuntoUrl: "" };
 
     var modal = document.getElementById('modal-submission-comparer');
     if (!modal) {
@@ -4695,7 +4695,7 @@ window.renderMyTicketsList = function() {
                 '  <p class="text-xs text-slate-700 font-medium line-clamp-2"><strong>Problema:</strong> ' + (t.descripcion || '') + '</p>',
                 requiresReply ? '  <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 font-bold text-[11px] flex items-center gap-2"><i class="fa-solid fa-circle-exclamation text-amber-600"></i> El administrador requiere información adicional de su parte.</div>' : '',
                 '  <div class="flex items-center justify-between text-[10px] text-slate-400 font-medium border-t border-slate-200/60 pt-2">',
-                '    <span>Enviado: ' + new Date(t.creadoEn).toLocaleString() + '</span>',
+                '    <span>Enviado: ' + window.IMARegionalFormatters.formatDateTime(t.creadoEn) + '</span>',
                 '    <button onclick="window.toggleTicketDetail(\'' + t.ticketId + '\')" class="text-blue-600 font-bold hover:underline flex items-center gap-1">Ver Mensajes (' + (t.mensajes ? t.mensajes.length : 0) + ') <i class="fa-solid fa-chevron-down"></i></button>',
                 '  </div>',
                 '  <div id="ticket-detail-' + t.ticketId + '" class="hidden space-y-3 pt-2 border-t border-slate-200">',
@@ -4709,7 +4709,7 @@ window.renderMyTicketsList = function() {
                         '      <div class="p-2.5 rounded-xl text-xs ' + (isUser ? 'bg-blue-50 text-blue-900 border border-blue-100' : 'bg-slate-100 text-slate-800 border border-slate-200') + '">',
                         '        <div class="flex items-center justify-between text-[10px] font-bold text-slate-400 mb-1">',
                         '          <span>' + m.autorNombre + ' (' + m.tipoAutor + ')</span>',
-                        '          <span>' + new Date(m.timestamp).toLocaleTimeString() + '</span>',
+                        '          <span>' + window.IMARegionalFormatters.formatTime(m.timestamp) + '</span>',
                         '        </div>',
                         '        <p class="whitespace-pre-wrap font-medium text-xs">' + m.mensaje + '</p>',
                         '      </div>'
@@ -4908,7 +4908,7 @@ window.renderAdminTicketsUI = function() {
 
                 '  <div class="flex flex-wrap items-center justify-between text-[10px] text-slate-400 font-medium">',
                 '    <span>Sección: ' + (t.seccionPagina || 'N/D') + ' | App: ' + (t.tipoApp || 'Escritorio') + ' | Versión: v' + (t.versionGlobal || '1.0') + '</span>',
-                '    <span>Fecha: ' + new Date(t.creadoEn).toLocaleString() + '</span>',
+                '    <span>Fecha: ' + window.IMARegionalFormatters.formatDateTime(t.creadoEn) + '</span>',
                 '  </div>',
 
                 '  <div class="pt-2 border-t border-slate-200 space-y-3">',
@@ -4937,7 +4937,7 @@ window.renderAdminTicketsUI = function() {
                         '      <div class="p-2.5 rounded-xl border text-xs ' + boxClass + '">',
                         '        <div class="flex items-center justify-between text-[10px] font-bold opacity-70 mb-1">',
                         '          <span>' + m.autorNombre + ' (' + m.tipoAutor + ')' + (isInternal ? ' - [NOTA INTERNA ADMIN]' : '') + '</span>',
-                        '          <span>' + new Date(m.timestamp).toLocaleString() + '</span>',
+                        '          <span>' + window.IMARegionalFormatters.formatDateTime(m.timestamp) + '</span>',
                         '        </div>',
                         '        <p class="whitespace-pre-wrap font-medium">' + m.mensaje + '</p>',
                         '      </div>'
@@ -6211,7 +6211,7 @@ window.renderDataFreshnessBadge = function(containerIdOrElement, lastUpdatedTime
     if (diffMins >= 1 && diffMins < 60) relativeStr = 'Hace ' + diffMins + ' min';
     else if (diffMins >= 60) relativeStr = 'Hace ' + Math.floor(diffMins / 60) + ' h';
 
-    var clockTime = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    var clockTime = window.IMARegionalFormatters.formatTime(dateObj);
 
     var badge = document.createElement('div');
     badge.className = 'data-freshness-badge-element inline-flex items-center gap-2 text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 px-3 py-1 rounded-xl shadow-sm';
@@ -6502,7 +6502,7 @@ window.openSecurityAndComplianceDashboardModal = function(triggerEl) {
 
                     html += '<tr class="hover:bg-slate-50 transition-colors">' +
                         '<td class="px-4 py-2 font-mono text-[10px] text-slate-500">' + (evt.eventId || "-") + '</td>' +
-                        '<td class="px-4 py-2 whitespace-nowrap text-slate-600">' + (evt.timestamp ? new Date(evt.timestamp).toLocaleString("es-HN") : "-") + '</td>' +
+                        '<td class="px-4 py-2 whitespace-nowrap text-slate-600">' + (evt.timestamp ? window.IMARegionalFormatters.formatDateTime(evt.timestamp) : "-") + '</td>' +
                         '<td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full text-[10px] uppercase ' + typeClass + '">' + (evt.eventType || "EVENTO") + '</span></td>' +
                         '<td class="px-4 py-2 font-bold text-slate-800">' + (evt.userId || "Anónimo") + '</td>' +
                         '<td class="px-4 py-2 text-slate-600">' + (evt.module || "SYSTEM") + ' / ' + (evt.action || "-") + '</td>' +

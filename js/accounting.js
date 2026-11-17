@@ -392,7 +392,7 @@ window.loadValuatedInventoryReport = function () {
   const target=document.getElementById("inventory-valuation-results");if(!target)return;
   target.innerHTML='<div class="p-3 text-center text-gray-500">Calculando valoración…</div>';
   fetchApi("ACCOUNTING","getValuatedInventoryReport",inventoryValuationPayload()).then(res=>{
-    const rows=Array.isArray(res.detalle)?res.detalle:[],money=n=>Number(n||0).toLocaleString("es-HN",{minimumFractionDigits:2,maximumFractionDigits:2}),safe=v=>String(v===undefined||v===null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    const rows=Array.isArray(res.detalle)?res.detalle:[],money=n=>window.IMARegionalFormatters.formatCurrency(n),safe=v=>String(v===undefined||v===null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
     const rec=res.conciliacion||{},summary=res.resumen||{};
     let html='<div class="grid grid-cols-1 gap-2 sm:grid-cols-3"><div class="rounded-lg bg-white p-2"><div class="text-[10px] text-gray-500">Artículos</div><b>'+safe(summary.articulos||0)+'</b></div><div class="rounded-lg bg-white p-2"><div class="text-[10px] text-gray-500">Cantidad total</div><b>'+safe(summary.cantidad||0)+'</b></div><div class="rounded-lg bg-white p-2"><div class="text-[10px] text-gray-500">Valor total</div><b>L '+money(summary.valor)+'</b></div></div>';
     html+='<div class="mt-2 rounded-lg '+(rec.conciliado?'bg-emerald-50 text-emerald-800':'bg-amber-50 text-amber-900')+' p-2 text-[11px] font-bold">Conciliación: '+(rec.conciliado?'Conciliado':'Pendiente de conciliación')+(rec.diferencia===null?'':' · Diferencia: L '+money(rec.diferencia))+(summary.valorIncompleto?' · Existen costos pendientes':'')+'</div>';
@@ -747,7 +747,7 @@ window.viewAssetAcquisitionRecord=function(activoId){
     const existing=document.getElementById("asset-acquisition-modal");if(existing)existing.remove();
     const modal=document.createElement("div");modal.id="asset-acquisition-modal";modal.className="fixed inset-0 z-[110] bg-black/60 flex items-center justify-center p-3";
     modal.innerHTML=`<div class="bg-white rounded-2xl p-5 max-w-xl w-full space-y-3"><div class="flex justify-between"><h3 class="font-black text-sm">Expediente de adquisición</h3><button onclick="document.getElementById('asset-acquisition-modal').remove()" class="text-xl">×</button></div>
-      <dl class="grid grid-cols-2 gap-2 text-xs"><dt>Activo</dt><dd>${escapePurchaseAssetHtml(asset.nombre)}</dd><dt>Orden</dt><dd>${escapePurchaseAssetHtml(asset.ordenCompraId)}</dd><dt>Recepción</dt><dd>${escapePurchaseAssetHtml(asset.recepcionId)}</dd><dt>Proveedor</dt><dd>${escapePurchaseAssetHtml(asset.proveedorId)}</dd><dt>Factura</dt><dd>${escapePurchaseAssetHtml(asset.numeroFactura)}</dd><dt>Obligación</dt><dd>${escapePurchaseAssetHtml(asset.obligacionId)}</dd><dt>Fecha adquisición</dt><dd>${asset.fechaAdquisicion?new Date(asset.fechaAdquisicion).toLocaleDateString():"—"}</dd><dt>Costo de adquisición</dt><dd>${Number(asset.costoAdquisicion||0).toFixed(2)}</dd><dt>Número de serie</dt><dd>${escapePurchaseAssetHtml(asset.numeroSerie)}</dd></dl>
+      <dl class="grid grid-cols-2 gap-2 text-xs"><dt>Activo</dt><dd>${escapePurchaseAssetHtml(asset.nombre)}</dd><dt>Orden</dt><dd>${escapePurchaseAssetHtml(asset.ordenCompraId)}</dd><dt>Recepción</dt><dd>${escapePurchaseAssetHtml(asset.recepcionId)}</dd><dt>Proveedor</dt><dd>${escapePurchaseAssetHtml(asset.proveedorId)}</dd><dt>Factura</dt><dd>${escapePurchaseAssetHtml(asset.numeroFactura)}</dd><dt>Obligación</dt><dd>${escapePurchaseAssetHtml(asset.obligacionId)}</dd><dt>Fecha adquisición</dt><dd>${asset.fechaAdquisicion?window.IMARegionalFormatters.formatDate(asset.fechaAdquisicion):"—"}</dd><dt>Costo de adquisición</dt><dd>${window.IMARegionalFormatters.formatCurrency(asset.costoAdquisicion)}</dd><dt>Número de serie</dt><dd>${escapePurchaseAssetHtml(asset.numeroSerie)}</dd></dl>
       <button onclick="openPurchaseReceiptRecord(${purchaseAssetJsArg(asset.recepcionId)})" class="px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold">Ir a recepciones</button></div>`;
     document.body.appendChild(modal);
   }).catch(err=>alert("No se pudo abrir el expediente: "+(err.message||err)));
@@ -1266,7 +1266,7 @@ window.searchPurchaseDossier=function(){
       const card=document.createElement("div");card.className="border rounded-xl p-4 my-3";
       const title=document.createElement("h6");title.className="font-black";title.textContent=exp.orden.ordenCompraId+" · "+exp.proveedor.nombre;card.appendChild(title);
       const m=exp.metricas||{},metrics=document.createElement("p");metrics.className="text-xs my-2";metrics.textContent="Pedidas "+m.cantidadPedida+" · Recibidas "+m.cantidadRecibida+" · Facturadas "+m.cantidadFacturada+" · Pendientes "+m.cantidadPendiente+" · Autorizado L "+m.importeAutorizado+" · Facturado L "+m.importeFacturado+" · Pagado L "+m.importePagado+" · Saldo L "+m.saldoPendiente;card.appendChild(metrics);const confirmationButton=document.createElement("button");confirmationButton.className="px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold";confirmationButton.textContent="Registrar confirmación del proveedor";confirmationButton.onclick=()=>window.registerPurchaseOrderConfirmationUI(exp.orden.ordenCompraId);card.appendChild(confirmationButton);
-      (exp.timeline||[]).forEach(ev=>{const p=document.createElement("p");p.className="text-xs";p.textContent=ev.etapa+" · "+(ev.fecha?new Date(ev.fecha).toLocaleString():"Fecha no registrada")+" · "+ev.estado+" · "+ev.responsable;card.appendChild(p);});
+      (exp.timeline||[]).forEach(ev=>{const p=document.createElement("p");p.className="text-xs";p.textContent=ev.etapa+" · "+(ev.fecha?window.IMARegionalFormatters.formatDateTime(ev.fecha):"Fecha no registrada")+" · "+ev.estado+" · "+ev.responsable;card.appendChild(p);});
       (exp.documentos||[]).forEach(doc=>{const a=document.createElement("a");a.href=doc.url;a.target="_blank";a.rel="noopener noreferrer";a.className="block text-xs text-indigo-600 underline";a.textContent=doc.nombre;card.appendChild(a);});
       if(exp.documentosRestringidos){const note=document.createElement("p");note.className="text-xs text-amber-700";note.textContent="Los enlaces documentales están restringidos para este rol.";card.appendChild(note);}
       (exp.facturas||[]).forEach(f=>{const p=document.createElement("p");p.className="text-xs";p.textContent="Factura "+f.numeroFactura+" · "+f.estadoPago+" · Total "+f.total+" · Pagado "+f.pagado+" · Saldo "+f.saldo;card.appendChild(p);});
@@ -1330,7 +1330,7 @@ function renderComprasSolicitudesView(container) {
           <td class="p-3 font-bold text-gray-900">${s.solicitudId}</td>
           <td class="p-3">${s.departamento || '-'}</td>
           <td class="p-3 max-w-xs truncate">${s.justificacion || '-'}</td>
-          <td class="p-3 font-bold text-gray-900">L ${(parseFloat(s.montoEstimado || 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+          <td class="p-3 font-bold text-gray-900">L ${window.IMARegionalFormatters.formatCurrency(s.montoEstimado)}</td>
           <td class="p-3"><span class="px-2 py-1 rounded-lg text-xs font-bold ${s.estadoAprobacion === 'Aprobada' ? 'bg-emerald-100 text-emerald-800' : (s.estadoAprobacion === 'Rechazada' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800')}">${s.estadoAprobacion}</span></td>
           <td class="p-3 space-x-1">
             <button onclick="viewPurchaseRequestDetails('${s.solicitudId}')" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-700 font-bold text-[10px]">Detalle</button>
@@ -1392,7 +1392,7 @@ function renderComprasCotizacionesView(container) {
           <td class="p-3 font-bold text-gray-900">${c.cotizacionId}</td>
           <td class="p-3">${c.solicitudId}</td>
           <td class="p-3">${c.proveedorId}</td>
-          <td class="p-3 font-bold text-gray-900">L ${(parseFloat(c.precioTotal || 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+          <td class="p-3 font-bold text-gray-900">L ${window.IMARegionalFormatters.formatCurrency(c.precioTotal)}</td>
           <td class="p-3">${c.plazoEntregaDias ? c.plazoEntregaDias + ' días' : '-'}</td>
           <td class="p-3"><span class="px-2 py-1 rounded-lg text-xs font-bold ${c.estadoSelection === 'Adjudicada' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-700'}">${c.estadoSelection || 'Registrada'}</span></td>
         </tr>
@@ -1441,7 +1441,7 @@ window.renderPurchaseQuotationEntry=function(matrix,target){
 };
 window.updatePurchaseQuotationEntryTotal=function(row){
  const get=name=>Number(row.querySelector('[data-field="'+name+'"]').value||0),qty=get('cantidadCotizada'),unit=get('precioUnitario'),discount=get('descuento'),tax=get('impuestos'),freight=get('flete'),total=Math.round((qty*unit-discount+tax+freight)*100)/100;
- row.querySelector('[data-line-total]').textContent='L '+total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+ row.querySelector('[data-line-total]').textContent=window.IMARegionalFormatters.formatCurrency(total);
  const grand=[...document.querySelectorAll('#cmp-entry-lines [data-line-total]')].reduce((sum,cell)=>sum+Number(cell.closest('tr').querySelector('[data-field="cantidadCotizada"]').value||0)*Number(cell.closest('tr').querySelector('[data-field="precioUnitario"]').value||0)-Number(cell.closest('tr').querySelector('[data-field="descuento"]').value||0)+Number(cell.closest('tr').querySelector('[data-field="impuestos"]').value||0)+Number(cell.closest('tr').querySelector('[data-field="flete"]').value||0),0);
  const target=document.getElementById('cmp-entry-grand-total');if(target)target.textContent='Total ofertado: L '+Math.round(grand*100)/100;
 };
@@ -1464,10 +1464,10 @@ window.loadPurchaseQuotationMatrix=async function(){
 window.renderPurchaseQuotationMatrix=function(matrix,target){
  target.replaceChildren();
  const addText=(parent,value,tag='div',className='')=>{const el=document.createElement(tag);el.className=className;el.textContent=String(value==null?'':value);parent.appendChild(el);return el;};
- const money=value=>'L '+Number(value||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+ const money=value=>window.IMARegionalFormatters.formatCurrency(value);
  addText(target,'Solicitud '+matrix.solicitud.solicitudId+' · '+matrix.solicitud.departamento+' · '+matrix.totalCotizaciones+' cotización(es)','div','font-bold text-gray-800');
  if(matrix.advertencia)addText(target,matrix.advertencia,'div','rounded-lg bg-amber-50 text-amber-800 p-2');
- if(matrix.adjudicada){addText(target,'Esta solicitud ya tiene acta de adjudicación '+matrix.actaId+'. La matriz muestra la instantánea aprobada y queda en modo consulta.','div','rounded-lg bg-emerald-50 text-emerald-800 p-2');const award=matrix.adjudicacion||{};addText(target,'Fecha: '+(award.fecha?new Date(award.fecha).toLocaleString():'-')+' · Monto adjudicado: '+money(award.montoAdjudicado),'div','font-bold text-gray-800');addText(target,'Responsables: '+(award.responsablesEvaluacion||[]).join(', '),'div','text-gray-700');addText(target,'Dictamen: '+(award.dictamen||''),'div','text-gray-700');addText(target,'Justificación: '+(award.justificacion||''),'div','text-gray-700');(award.ordenes||[]).forEach(order=>addText(target,'Orden '+order.ordenCompraId+' · Proveedor '+order.proveedorId+' · '+money(order.montoTotal),'div','text-gray-700'));(award.ofertasDescartadas||[]).forEach(offer=>addText(target,'Oferta descartada '+offer.cotizacionId+': '+offer.motivo,'div','text-amber-700'));}
+ if(matrix.adjudicada){addText(target,'Esta solicitud ya tiene acta de adjudicación '+matrix.actaId+'. La matriz muestra la instantánea aprobada y queda en modo consulta.','div','rounded-lg bg-emerald-50 text-emerald-800 p-2');const award=matrix.adjudicacion||{};addText(target,'Fecha: '+(award.fecha?window.IMARegionalFormatters.formatDateTime(award.fecha):'-')+' · Monto adjudicado: '+money(award.montoAdjudicado),'div','font-bold text-gray-800');addText(target,'Responsables: '+(award.responsablesEvaluacion||[]).join(', '),'div','text-gray-700');addText(target,'Dictamen: '+(award.dictamen||''),'div','text-gray-700');addText(target,'Justificación: '+(award.justificacion||''),'div','text-gray-700');(award.ordenes||[]).forEach(order=>addText(target,'Orden '+order.ordenCompraId+' · Proveedor '+order.proveedorId+' · '+money(order.montoTotal),'div','text-gray-700'));(award.ofertasDescartadas||[]).forEach(offer=>addText(target,'Oferta descartada '+offer.cotizacionId+': '+offer.motivo,'div','text-amber-700'));}
  if(!matrix.cotizaciones.length){addText(target,'No hay cotizaciones registradas para esta solicitud.','div','text-gray-500');return;}
  const wrapper=document.createElement('div');wrapper.className='overflow-x-auto border border-gray-200 rounded-xl';
  const table=document.createElement('table');table.className='min-w-full text-left text-[11px]';
@@ -1559,8 +1559,8 @@ function renderComprasOrdenesView(container) {
         <tr class="hover:bg-gray-50">
           <td class="p-3 font-bold text-gray-900">${o.ordenId}</td>
           <td class="p-3">${o.proveedorId}</td>
-          <td class="p-3 font-bold text-gray-900">L ${(parseFloat(o.montoTotal || 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-          <td class="p-3">${o.fechaEntregaEstimada ? new Date(o.fechaEntregaEstimada).toLocaleDateString() : '-'}</td>
+          <td class="p-3 font-bold text-gray-900">L ${window.IMARegionalFormatters.formatCurrency(o.montoTotal)}</td>
+          <td class="p-3">${o.fechaEntregaEstimada ? window.IMARegionalFormatters.formatDate(o.fechaEntregaEstimada) : '-'}</td>
           <td class="p-3">
             <span class="px-2 py-1 rounded-lg text-xs font-bold ${
               o.estadoOrden === 'RecibidaTotal' ? 'bg-emerald-100 text-emerald-800' :
@@ -1594,7 +1594,7 @@ function renderComprasRecepcionesView(container) {
     tbody.innerHTML=list.map(r=>`<tr class="hover:bg-gray-50" data-receipt-id="${escapePurchaseAssetHtml(r.recepcionId)}">
       <td class="p-3 font-bold text-gray-900">${escapePurchaseAssetHtml(r.recepcionId)}</td>
       <td class="p-3 font-semibold text-purple-700">${escapePurchaseAssetHtml(r.ordenCompraId)}</td>
-      <td class="p-3">${r.fechaRecepcion?new Date(r.fechaRecepcion).toLocaleString():"-"}</td>
+      <td class="p-3">${r.fechaRecepcion?window.IMARegionalFormatters.formatDateTime(r.fechaRecepcion):"-"}</td>
       <td class="p-3">${escapePurchaseAssetHtml(r.receptorUserId)}</td>
       <td class="p-3">${escapePurchaseAssetHtml(r.estadoConformidad)}</td>
       <td class="p-3">${r.estadoConformidad==="Conforme"?`<button onclick="openReceiptAssetRegistration(${purchaseAssetJsArg(r.recepcionId)})" class="px-2 py-1 rounded bg-indigo-50 text-indigo-700 font-bold">Registrar activos</button>`:"—"}</td>
@@ -2062,8 +2062,8 @@ window.loadPrestamosBibData = function () {
             <td class="p-2 font-mono font-bold text-indigo-600">${l.prestamoId}</td>
             <td class="p-2 font-bold text-gray-800">${l.ejemplarId}</td>
             <td class="p-2 text-gray-600">${l.userId}</td>
-            <td class="p-2 text-gray-500">${new Date(l.fechaPrestamo).toLocaleDateString()}</td>
-            <td class="p-2 text-gray-500">${new Date(l.fechaDevolucionPrevista).toLocaleDateString()}</td>
+            <td class="p-2 text-gray-500">${window.IMARegionalFormatters.formatDate(l.fechaPrestamo)}</td>
+            <td class="p-2 text-gray-500">${window.IMARegionalFormatters.formatDate(l.fechaDevolucionPrevista)}</td>
             <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isActivo ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">${l.estado}</span></td>
             <td class="p-2 text-right">
               ${isActivo ? `<button onclick="handleDevolverLibro('${l.ejemplarId}', '${l.userId}')" class="px-2.5 py-1 bg-emerald-600 text-white rounded font-bold text-[10px] hover:bg-emerald-700 uppercase">Devolver</button>` : '<span class="text-gray-400 text-[10px]">Devuelto</span>'}
@@ -2135,7 +2135,7 @@ window.loadReservasBibData = function () {
             <td class="p-2 font-mono font-bold text-indigo-600">${r.reservaId}</td>
             <td class="p-2 font-bold text-gray-800">${r.ejemplarId}</td>
             <td class="p-2 text-gray-600">${r.userId}</td>
-            <td class="p-2 text-gray-500">${new Date(r.fechaSolicitud).toLocaleDateString()}</td>
+            <td class="p-2 text-gray-500">${window.IMARegionalFormatters.formatDate(r.fechaSolicitud)}</td>
             <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800">${r.estadoReserva}</span></td>
           </tr>
         `;
@@ -2479,7 +2479,7 @@ window.saveServiceTariff=function(){
 window.loadServiceTariffs=function(){
  const host=document.getElementById("service-tariffs-list");if(!host)return;host.textContent="Consultando tarifas...";
  fetchApi("ACCOUNTING","getServiceTariffs",{}).then(r=>{const rows=r.tarifas||[];if(!rows.length){host.textContent="No hay tarifas registradas.";return;}let h='<table class="w-full text-left border-collapse"><thead><tr class="bg-gray-50"><th class="p-2">Servicio</th><th class="p-2">Modalidad</th><th class="p-2">Ruta</th><th class="p-2">Período</th><th class="p-2">Importe</th><th class="p-2">Vigencia</th><th class="p-2">Hermanos</th><th class="p-2">Máx. descuento</th><th class="p-2">Prorrateo</th><th class="p-2">Estado</th></tr></thead><tbody>';
- rows.forEach(x=>{const start=x.fechaVigenciaInicio?new Date(x.fechaVigenciaInicio).toLocaleDateString():"—",end=x.fechaVigenciaFin?new Date(x.fechaVigenciaFin).toLocaleDateString():"Abierta";h+='<tr class="border-t"><td class="p-2">'+serviceTariffEscape_(x.servicio)+'</td><td class="p-2">'+serviceTariffEscape_(x.modalidad)+'</td><td class="p-2">'+serviceTariffEscape_(x.rutaId||"—")+'</td><td class="p-2">'+serviceTariffEscape_(x.periodo)+'</td><td class="p-2 font-bold">'+Number(x.monto||0).toFixed(2)+'</td><td class="p-2">'+start+' – '+end+'</td><td class="p-2">'+Number(x.descuentoHermanosPct||0)+'%</td><td class="p-2">'+Number(x.descuentoMaximoPct||0)+'%</td><td class="p-2">'+(x.prorrateoAlta?"Alta":"—")+' / '+(x.prorrateoBaja?"Baja":"—")+'</td><td class="p-2">'+serviceTariffEscape_(x.estado)+'</td></tr>';});
+ rows.forEach(x=>{const start=x.fechaVigenciaInicio?window.IMARegionalFormatters.formatDate(x.fechaVigenciaInicio):"—",end=x.fechaVigenciaFin?window.IMARegionalFormatters.formatDate(x.fechaVigenciaFin):"Abierta";h+='<tr class="border-t"><td class="p-2">'+serviceTariffEscape_(x.servicio)+'</td><td class="p-2">'+serviceTariffEscape_(x.modalidad)+'</td><td class="p-2">'+serviceTariffEscape_(x.rutaId||"—")+'</td><td class="p-2">'+serviceTariffEscape_(x.periodo)+'</td><td class="p-2 font-bold">'+Number(x.monto||0).toFixed(2)+'</td><td class="p-2">'+start+' – '+end+'</td><td class="p-2">'+Number(x.descuentoHermanosPct||0)+'%</td><td class="p-2">'+Number(x.descuentoMaximoPct||0)+'%</td><td class="p-2">'+(x.prorrateoAlta?"Alta":"—")+' / '+(x.prorrateoBaja?"Baja":"—")+'</td><td class="p-2">'+serviceTariffEscape_(x.estado)+'</td></tr>';});
  host.innerHTML=h+'</tbody></table>';
  }).catch(e=>{host.textContent=e.message||String(e);});
 };
