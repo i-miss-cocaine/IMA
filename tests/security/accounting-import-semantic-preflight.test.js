@@ -165,7 +165,7 @@ assert.deepEqual(Array.from(context.preview(student).relatedReferenceSnapshot.ex
 const studentWithReferences={...student,filasData:[{legacyId:"EST-1",persona:"PER-1",Grado:"1ero",Seccion:"A",DepartamentoID:"DEP-1",ExpedienteReferenciaID:"EXP-OLD"}]};
 const referencesValid=context.preview(studentWithReferences);
 assert.equal(referencesValid.validForImport,true);
-assert.deepEqual(lastReferenceKeys,[{rowIndex:0,grado:"1ero",seccion:"A",departamentoId:"DEP-1",expedienteId:"EXP-OLD"}]);
+assert.equal(JSON.stringify(lastReferenceKeys),JSON.stringify([{rowIndex:0,grado:"1ero",seccion:"A",departamentoId:"DEP-1",expedienteId:"EXP-OLD"}]));
 remoteReferenceErrors=[{rowIndex:0,field:"Grado/Seccion",code:"IMPORT_REFERENCE_GRADE_SECTION_NOT_FOUND"}];
 const referencesInvalid=context.preview(studentWithReferences);
 assert.equal(referencesInvalid.validForImport,false);
