@@ -1735,3 +1735,28 @@ El archivo maestro histórico supera el umbral de rotación de 180.000 caractere
 - **Evidencia requerida:** hashes de preview, filas fuente sintéticas, IDs canónicos, códigos de coincidencia sin DNI/correo en claro, IDs de journal, resultado de auditoría, referencia/catálogo activo, respuesta de RBAC/HMAC y capturas anonimizadas.
 - **Estado:** Pendiente de validación beta desplegada; contratos Node 24, sintaxis, snapshots y escritores aislados no sustituyen esta prueba real entre servicios.
 =============================================================================
+
+
+=============================================================================
+### BETA-FUNC-115 — F26-TASK01 — Configuración jerárquica y herencia institucional/departamental
+
+- **Módulos/roles:** USER y DEVELOPER; Administrador, Director, Desarrollador y responsables departamentales con permisos explícitos.
+- **Precondiciones:** desplegar USER y DEVELOPER con los commits de F26-TASK01; configurar las propiedades de Apps Script; preparar dos instituciones sintéticas (INST-A e INST-B), al menos dos departamentos por institución, usuarios/roles sintéticos y hojas `ConfiguracionSistema`, `ConfiguracionDepartamental` y `ConfiguracionRoles`. No usar datos reales.
+- **Pasos:**
+  1. Ejecutar la migración sobre una copia de un esquema legacy; comprobar que conserva todas las columnas/filas originales, añade los metadatos requeridos y es idempotente. Probar un esquema desconocido y comprobar rechazo sin reescritura.
+  2. Crear una clave GLOBAL con política HEREDABLE y un valor INSTITUCIONAL para INST-A; comprobar que los departamentos sin excepción resuelven el valor institucional.
+  3. Crear una excepción DEPARTAMENTAL en D-A1; comprobar que solo D-A1 la recibe y que D-A2, D-B1 y D-B2 no reciben ese valor.
+  4. Cambiar el valor INSTITUCIONAL; comprobar que D-A2 actualiza su valor efectivo y D-A1 conserva su excepción explícita.
+  5. Restablecer la herencia de D-A1; comprobar que el override queda inactivo, incrementa versión y D-A1 vuelve al valor institucional sin copiarlo manualmente.
+  6. Volver a crear la excepción; comprobar reactivación de la fila del mismo ámbito, versión monotónica, actor y fecha, sin duplicar registros.
+  7. Crear una clave PERSONALIZABLE y una preferencia personal para U-A1; comprobar que solo U-A1 la recibe y que no cambia el valor GLOBAL, INSTITUCIONAL ni DEPARTAMENTAL.
+  8. Intentar leer/guardar la preferencia de otro usuario, modificar otra institución/departamento, forjar rol/institución/departmentId, y guardar una política o tipo no permitido; comprobar rechazo server-side sin escrituras.
+  9. Intentar sobrescribir una clave GLOBAL_OBLIGATORIO y una clave RESTRINGIDA sin permiso; comprobar rechazo y registro de auditoría.
+  10. Insertar duplicados de una misma clave/ámbito, metadatos de política inválidos y dependencias inconsistentes; comprobar rechazo fail-closed sin elegir una fila arbitraria.
+  11. Ejecutar dos escrituras simultáneas y una secuencia save/reset/retry; comprobar serialización por lock, versiones monotónicas, un solo override activo y ausencia de mutaciones parciales.
+  12. Validar dependencias DEVELOPER con IDs válidos y acceso real; repetir con Spreadsheet/Drive inaccesibles y comprobar `isReadyForActivation=false`.
+  13. Revisar auditoría, actor, ámbito, versión, origen efectivo y redacción de valores sensibles; confirmar que ninguna institución/departamento observa datos de otra.
+- **Resultado esperado:** cuatro niveles deterministas, herencia dinámica, excepciones locales preservadas, reset automático, aislamiento multiinstitución/departamental, control RBAC server-side, versiones/auditoría consistentes y validación real de acceso a recursos.
+- **Evidencia requerida:** IDs sintéticos, hashes/filas antes y después, versiones por ámbito, resultados y códigos de rechazo, eventos de auditoría anonimizados, estado de permisos Spreadsheet/Drive y capturas sin datos personales.
+- **Estado:** Pendiente de validación beta desplegada; los contratos Node.js y las pruebas aisladas locales no sustituyen la comprobación real en Apps Script/Sheets/Drive.
+=============================================================================

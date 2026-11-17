@@ -82,7 +82,7 @@
 ---
 
 <!-- ID: F26-TASK01 | Fuentes: AUDITORIAS/AUDITORIA_FASE_26_CONFIGURACION_INSTITUCIONAL_PERSONALIZACION.md -->
-### [ ] [F26-TASK01] Implementar motor central de precedencia y configuración jerárquica
+### [x] [F26-TASK01] Implementar motor central de precedencia y configuración jerárquica
 - **Hallazgo de origen:** F26-002 y F26-010; secciones C.2/C.9, F.1 y G.1.
 - **Severidad:** Alta / P0. **Objetivo:** resolver configuraciones de manera determinista respetando la precedencia Global → Institucional → Departamental → Personal.
 - **Acción ejecutable:** definir un contrato único de configuración por clave, ámbito, institución, departamento y usuario; implementar resolución por capas, herencia, overrides permitidos y detección de conflictos; validar actor y ámbito en servidor; impedir que una configuración de menor alcance sobrescriba una de mayor alcance; proporcionar valores predeterminados seguros y explicar el origen efectivo de cada valor.
@@ -90,8 +90,11 @@
 - **Dependencias/riesgos:** jerarquía institucional y departamental canónica, RBAC/ABAC y contratos entre servicios; riesgo de fuga de configuración entre departamentos o escalamiento de privilegios.
 - **Alcance:** resolución y persistencia de ámbitos; no permitir que el cliente determine su rol, institución o departamento mediante valores arbitrarios del payload.
 - **Criterios de aceptación:** las cuatro capas se resuelven con precedencia documentada; claves admiten ámbitos explícitos; cada override registra actor/ámbito/versión; acceso se verifica server-side; conflictos se rechazan o resuelven con política determinista; pruebas cubren herencia, ausencia de valor, conflicto, aislamiento entre departamentos y usuario no autorizado.
-- **Prioridad:** P0. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; el informe solo identifica ámbitos GLOBAL y personal, sin una capa departamental formal ni herencia de cuatro niveles.
+- **Prioridad:** P0. **Estado:** Completada en código y verificaciones locales; beta desplegada pendiente.
+- **Evidencia de cierre:** commits de implementación y corrección en la rama autorizada, con HEAD de código/pruebas `5d53e4d69212898fc7b201cafc92e5889aab188f`. Hierarchical Configuration Contract PASS, GitHub Actions run `44019419989` (Node.js 24.22.2); sintaxis USER/DEVELOPER/contrato PASS y ejecución del contrato PASS. Verificaciones locales aisladas sobre funciones recuperadas del código: 8/8 PASS.
+- **Cierre técnico:** precedencia GLOBAL → INSTITUCIONAL → DEPARTAMENTAL → PERSONAL; políticas y ámbitos permitidos; contexto institucional/departmental validado server-side; valores departamentales decodificados con su esquema; lectura sensible autorizada por ámbito efectivo y capas no autorizadas redactadas; políticas inválidas y conflictos rechazados; tipo de override consistente con la clave base; versiones monotónicas por ámbito, reset versionado y reactivación sin duplicar filas; migración de esquema legacy preservadora e idempotente; bloqueo de escrituras concurrentes y verificación real de acceso Spreadsheet/Drive en el contrato DEVELOPER.
+- **CI transversal:** Department Scope Contract conserva un fallo ajeno en `Run Phase 22 document management suite contract` (run `44019171555`); los pasos previos del workflow pasan. El mismo paso fallaba antes de esta implementación (run `44012050276`); no se modificó Phase 22.
+- **Beta:** BETA-FUNC-115 pendiente para comprobar USER/DEVELOPER desplegados, Sheets/Drive reales, aislamiento multiinstitución/departamental, herencia, excepciones, permisos y concurrencia.
 
 ---
 

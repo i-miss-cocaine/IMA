@@ -111,3 +111,28 @@ Siguiente tarea elegible: F25-Task03 — detección avanzada de duplicados e int
 - **Revisión de seguridad:** sin fusión automática por nombre; sin exposición de DNI/correo en snapshots; escrituras duplicadas bloqueadas bajo lock; vínculo solo con identidad canónica coincidente; filas rechazadas excluidas antes de escritura; sin despliegue ni datos reales.
 - **Siguiente tarea elegible:** F26-TASK01 — motor central de precedencia y configuración jerárquica. Revisar dependencias, estado real de USER/Developer y contratos de configuración antes de editar.
 =============================================================================
+
+
+=============================================================================
+### C1.795 — IMA-EXEC-20261117-F26-TASK01-01
+- **Checkpoint anterior:** C1.794 — F25-TASK03, detección de duplicados e integridad referencial.
+- **HEAD de cierre registrado en C1.794:** 2813582fca3eafcda7352ecc668061e30ce8f61d.
+- **HEAD observado al recuperar la sesión:** c04dc0c266c56b2c3ce9dedc75436477ebe6af6c; ya contenía una implementación parcial de F26-TASK01 en tres commits de código. Se preservó ese trabajo y se continuó sobre la rama autorizada.
+- **HEAD de implementación y pruebas:** 5d53e4d69212898fc7b201cafc92e5889aab188f.
+- **Tarea:** F26-TASK01 — motor central de precedencia y configuración jerárquica.
+- **Resultado:** completada en código y verificaciones locales. La beta desplegada se mantiene separada y pendiente en BETA-FUNC-115.
+- **Implementación y decisiones:**
+  - Contrato por clave y ámbitos GLOBAL, INSTITUCIONAL, DEPARTAMENTAL y PERSONAL, con políticas GLOBAL_OBLIGATORIO, INSTITUCIONAL, HEREDABLE, PERSONALIZABLE y RESTRINGIDO.
+  - Resolución dinámica de herencia; excepciones departamentales solo para la institución/departamento validado; preferencias personales vinculadas al usuario verificado. Cambios institucionales llegan a departamentos que heredan; las excepciones explícitas se conservan.
+  - El servidor obtiene rol e institución desde identidad verificada; valida departamento con contexto institucional; el cliente no puede otorgarse rol, institución ni asignación departamental.
+  - Lectura de valores sensibles validada en el ámbito efectivo; las capas no autorizadas no se incluyen en la respuesta. Políticas inválidas, tipos incompatibles, conflictos y ámbitos prohibidos fallan de forma cerrada.
+  - Versionado por ámbito, actor/fecha, reset que incrementa versión y reactiva la herencia; guardar tras reset reactiva la fila existente sin duplicarla. LockService evita escrituras concurrentes/TOCTOU en save y reset.
+  - Migración de ConfiguracionSistema inicializa instalaciones vacías, amplía el esquema legacy solo cuando coincide exactamente y conserva datos; idempotencia y rechazo seguro de esquemas inesperados. ConfiguracionDepartamental se crea con encabezado canónico.
+  - DEVELOPER comprueba acceso real a SpreadsheetApp y DriveApp; `isReadyForActivation` es falso si un recurso requerido no es accesible.
+- **Archivos de implementación/prueba:** `backend/user-service/Code.gs`, `backend/developer-service/Code.gs`, `tests/security/user-service-hierarchical-configuration.test.js`, `.github/workflows/hierarchical-configuration-contract.yml`.
+- **Verificaciones locales/CI:** 8/8 comprobaciones aisladas sobre funciones recuperadas del código PASS. Hierarchical Configuration Contract run 44019419989 PASS con Node.js 24.22.2; syntax USER, DEVELOPER y contrato PASS; ejecución Node CLI del contrato PASS. Incluye precedencia, herencia, aislamiento entre departamentos/instituciones, usuario no autorizado, lectura sensible, conflictos, política inválida, tipo, save/reset/reactivación, versiones, bloqueo concurrente, migración legacy/idempotencia y permisos Spreadsheet/Drive.
+- **CI transversal:** Department Scope run 44019171555 falla en el paso Phase22 document management; los pasos previos de ámbito, RBAC, ACCOUNTING, ACADEMIC, documentos, UI y otros contratos ejecutados pasan. El mismo paso Phase22 ya fallaba antes del cambio en run 44012050276. Los pasos posteriores quedan skipped por el fallo; no se alteró código ajeno para ocultarlo.
+- **Commits de referencia:** d1d76aadae6702d254ca8acb1b04c3069651f70e (motor inicial), 01e4e4746707f98f75430542fa941b2c015aff37 (rutas/RBAC), c04dc0c266c56b2c3ce9dedc75436477ebe6af6c (contrato DEVELOPER), 28b286fa2f9614d8897bbc5a3377d845352b69c7 (seguridad inicial), 795103d50798cea18b1d6b99f20ff89e6750458b (schema vacío), bc606fb32ab50e560be2b7fca68283038a258929 (versionado), f60877236db870632a19ab6eaa2a09983a6da83d (contexto institucional), 4a6b571a12535a989e85eb9014b6cefbf87d3907 (política/conflictos) y 5d53e4d69212898fc7b201cafc92e5889aab188f (pruebas de herencia dinámica).
+- **Beta pendiente:** BETA-FUNC-115 valida Apps Script/Sheets/Drive desplegados, aislamiento real multiinstitución, RBAC, auditoría y concurrencia; no bloquea el cierre de implementación.
+- **Siguiente tarea elegible:** TASK-060 — integración del motor con ACADEMIC, ACCOUNTING y la UI administrativa; verificar consumidores y contratos antes de adaptar cada módulo.
+=============================================================================

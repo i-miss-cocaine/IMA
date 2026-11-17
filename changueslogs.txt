@@ -4017,3 +4017,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-16] C1.786 — Implementación incremental de ACCOUNTING HR
 - Se incorporan contratos de ownership para vacaciones/incapacidades, incidencias/medidas disciplinarias, capacitación, planes de desarrollo, analítica, asistencia y portal de autoservicio. Los siete contratos Node 24 pasan en el run Department Scope antes de alcanzar el siguiente test.
 - Pendiente: correcciones de asistencia (falta resolveAttendanceCorrectionEmployeeAccess_). Identity/transport contract falla al abrir backend/transport-service/Code.gs, ruta inexistente en el árbol actual. Accounting Import Preflight y Department Reference Consumers pasan.
+
+
+[2026-11-16] C1.795 — F26-TASK01, motor central de configuración jerárquica
+- USER resuelve GLOBAL → INSTITUCIONAL → DEPARTAMENTAL → PERSONAL según la política y ámbitos permitidos; los overrides departamentales se aíslan por institución/departamento, los personales por usuario y las capas sensibles no autorizadas se redactan.
+- Se corrigieron lectura/decodificación y tipo de valores departamentales, autorización del reset, cambio de políticas compartidas, contexto institucional requerido, políticas inválidas, conflictos, versión por ámbito, reset/reactivación y migración segura/idempotente del esquema legacy.
+- DEVELOPER valida el acceso real a Spreadsheet/Drive; no marca activación lista cuando los recursos requeridos no son accesibles.
+- Hierarchical Configuration Contract run 44019419989 SUCCESS (Node 24.22.2; sintaxis USER/DEVELOPER/contrato y contrato de precedencia, seguridad, persistencia, migración, conflictos, reset, concurrencia y permisos). Pruebas locales aisladas sobre el código fuente: 8/8 PASS.
+- Department Scope run 44019171555 falla únicamente en Phase22 document management; el mismo paso ya fallaba en el run previo 44012050276. Los pasos anteriores del workflow pasan; no se tocó Phase22.
+- BETA-FUNC-115 pendiente de validación desplegada. TASK-060 queda como siguiente integración: consumidores ACADEMIC/ACCOUNTING y UI.
