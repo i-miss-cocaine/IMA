@@ -740,7 +740,7 @@ console.log("TASK-153 legacy document and folder-IDOR contracts passed.");
   assert.equal(materialSheetAccess,true,"authorized material is persisted without another classroom check");
   assert.equal(driveAccess,false,"material registration does not make an extra Drive existence call");
   assert.equal(savedMaterial[1],"General");assert.equal(savedMaterial[10],"TEACHER-1");
-  assert.ok(savedMaterial[11] instanceof Date,"material records capture publication date and author");
+  assert.ok(Number.isFinite(Date.parse(savedMaterial[11])),"material records capture publication date and author");
 }
 console.log("TASK-153 administrative content mutation scope contracts passed.");
 
