@@ -947,7 +947,8 @@ function getTrustedAcademicMigrationTargetExistenceSnapshot_(payload) {
     return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
   }
   if (String(input.entityType || "").toLowerCase() !== "estudiante" || !Array.isArray(input.targetIds) ||
-      (input.duplicateKeys !== undefined && (!Array.isArray(input.duplicateKeys) || input.duplicateKeys.length > 5000))) {
+      (input.duplicateKeys !== undefined && (!Array.isArray(input.duplicateKeys) || input.duplicateKeys.length > 5000)) ||
+      (input.referenceKeys !== undefined && (!Array.isArray(input.referenceKeys) || input.referenceKeys.length > 5000))) {
     return { status: "error", code: "MIGRATION_SNAPSHOT_CONTRACT_INVALID" };
   }
   var requested = {};
@@ -970,6 +971,15 @@ function getTrustedAcademicMigrationTargetExistenceSnapshot_(payload) {
       normalized: (function(value){var v=String(value).normalize?String(value).normalize("NFKC").trim().toLowerCase():String(value).trim().toLowerCase();return v.replace(/\s+/g,"");})(item.value) });
   });
   if (invalidDuplicate) return { status: "error", code: "MIGRATION_SNAPSHOT_DUPLICATE_KEY_INVALID" };
+  var referenceRequests = [], invalidReference = false;
+  (input.referenceKeys || []).forEach(function(item) {
+    if (!item || typeof item !== "object" || Array.isArray(item) || !Number.isInteger(Number(item.rowIndex)) ||
+        Number(item.rowIndex) < 0 || [item.grado,item.seccion,item.departamentoId,item.expedienteId].some(function(v){return v!==undefined&&v!==null&&(typeof v!=="string"||v.length>120);})) { invalidReference = true; return; }
+    var request = { rowIndex:Number(item.rowIndex), grado:String(item.grado||"").trim(), seccion:String(item.seccion||"").trim(),
+      departamentoId:String(item.departamentoId||"").trim(), expedienteId:String(item.expedienteId||"").trim() };
+    if (request.grado || request.seccion || request.departamentoId || request.expedienteId) referenceRequests.push(request);
+  });
+  if (invalidReference) return { status: "error", code: "MIGRATION_SNAPSHOT_REFERENCE_KEY_INVALID" };
   var sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("ExpedientesEstudiantes");
   if (!sheet) return { status: "error", code: "MIGRATION_SNAPSHOT_TARGET_UNAVAILABLE" };
   var values = sheet.getDataRange().getValues();
@@ -999,9 +1009,36 @@ function getTrustedAcademicMigrationTargetExistenceSnapshot_(payload) {
       });
     });
   }
+  var referenceErrors = [];
+  var normalizeReference = function(value) { var v=String(value||"");if(v.normalize)v=v.normalize("NFKC");return v.trim().toLowerCase().replace(/\\s+/g," "); };
+  var classesSheet = referenceRequests.some(function(r){return !!(r.grado||r.seccion);}) ? SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("Clases") : null;
+  var classes = classesSheet ? classesSheet.getDataRange().getValues() : [];
+  var classHeaders = classes.length ? classes[0].map(function(v){return String(v||"").trim();}) : [];
+  var classGrade = classHeaders.indexOf("Grado"), classSection = classHeaders.indexOf("Seccion");
+  var departmentSheet = referenceRequests.some(function(r){return !!r.departamentoId;}) ? SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("DepartamentosAcademicos") : null;
+  var departments = departmentSheet ? departmentSheet.getDataRange().getValues() : [];
+  var departmentHeaders = departments.length ? departments[0].map(function(v){return String(v||"").trim();}) : [];
+  var departmentIdIndex = departmentHeaders.indexOf("DepartamentoID"), departmentStateIndex = departmentHeaders.indexOf("Estado");
+  referenceRequests.forEach(function(request) {
+    if (request.grado || request.seccion) {
+      if (!request.grado || !request.seccion || classGrade < 0 || classSection < 0 ||
+          !classes.slice(1).some(function(row){return normalizeReference(row[classGrade])===normalizeReference(request.grado)&&normalizeReference(row[classSection])===normalizeReference(request.seccion);})) {
+        referenceErrors.push({rowIndex:request.rowIndex,field:"Grado/Seccion",code:"IMPORT_REFERENCE_GRADE_SECTION_NOT_FOUND"});
+      }
+    }
+    if (request.departamentoId) {
+      var departmentMatch = departmentIdIndex < 0 || departmentStateIndex < 0 ? null :
+        departments.slice(1).find(function(row){var state=String(row[departmentStateIndex]||"").trim().toUpperCase();return String(row[departmentIdIndex]||"").trim()===request.departamentoId&&["ACTIVO","ACTIVA","TRUE"].indexOf(state)!==-1;});
+      if (!departmentMatch) referenceErrors.push({rowIndex:request.rowIndex,field:"Departamento",code:"IMPORT_REFERENCE_DEPARTMENT_NOT_ACTIVE"});
+    }
+    if (request.expedienteId) {
+      var expedienteMatch = values.slice(1).find(function(row){var state=String(row[7]||"").trim().toUpperCase();return String(row[0]||"").trim()===request.expedienteId&&["ACTIVO","ACTIVA","VIGENTE","TRUE"].indexOf(state)!==-1;});
+      if (!expedienteMatch) referenceErrors.push({rowIndex:request.rowIndex,field:"ExpedienteID",code:"IMPORT_REFERENCE_EXPEDIENTE_NOT_ACTIVE"});
+    }
+  });
   return { status: "success", verified: true, service: "ACADEMIC", sheet: "ExpedientesEstudiantes",
     idField: "ExpedienteID", institutionId: institutionId, existingTargetIds: existing.sort(), targetRows: targetRows,
-    duplicateMatches: duplicateMatches };
+    duplicateMatches: duplicateMatches, referenceErrors: referenceErrors };
 }
 function handleTrustedMigrationEnvelope_(envelope){
  const secret=String(PropertiesService.getScriptProperties().getProperty("IMA_MIGRATION_HMAC_SECRET")||"");
