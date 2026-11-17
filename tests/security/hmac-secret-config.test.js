@@ -1,10 +1,12 @@
 const assert = require("node:assert/strict");
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 const root = path.resolve(__dirname, "../..");
 const serviceFiles = [
   ["USER", "backend/user-service/Code.gs"],
+  ["DEVELOPER", "backend/developer-service/Code.gs"],
   ["ACADEMIC", "backend/academic-service/Code.gs"],
   ["TASK", "backend/task-service/Code.gs"],
   ["EXAM", "backend/exam-service/Code.gs"]
@@ -45,6 +47,8 @@ function createContext(source, initialSecret, claims) {
     },
     computeHmacSignature: (_payload, secret) => "SIG-" + secret,
     Utilities: {
+      MacAlgorithm: { HMAC_SHA_256: "HMAC_SHA_256" },
+      computeHmacSignature: (_algorithm, payload, secret) => Array.from(crypto.createHmac("sha256", secret).update(String(payload)).digest()),
       base64Decode: () => [],
       newBlob: () => ({ getDataAsString: () => JSON.stringify(claims) }),
       base64EncodeWebSafe: () => "payload",
@@ -89,10 +93,12 @@ for (const [name, file] of serviceFiles) {
   expectCode(() => state.context.getSecret(), "AUTH_TOKEN_SECRET_UNAVAILABLE");
   state.failProperties(false);
   state.setSecret("OLD_SECRET_012345678901234567890123456789");
-  assert.ok(state.context.verify("payload.SIG-OLD_SECRET_012345678901234567890123456789"), name + " session token verifies with active secret");
+  const oldSignature = name === "DEVELOPER" ? crypto.createHmac("sha256", "OLD_SECRET_012345678901234567890123456789").update("payload").digest("hex") : "SIG-OLD_SECRET_012345678901234567890123456789";
+  assert.ok(state.context.verify("payload." + oldSignature), name + " session token verifies with active secret");
   state.setSecret("NEW_SECRET_012345678901234567890123456789");
   assert.equal(state.context.verify("payload.SIG-OLD_SECRET_012345678901234567890123456789"), null);
-  assert.ok(state.context.verify("payload.SIG-NEW_SECRET_012345678901234567890123456789"), name + " session token verifies after secret rotation");
+  const newSignature = name === "DEVELOPER" ? crypto.createHmac("sha256", "NEW_SECRET_012345678901234567890123456789").update("payload").digest("hex") : "SIG-NEW_SECRET_012345678901234567890123456789";
+  assert.ok(state.context.verify("payload." + newSignature), name + " session token verifies after secret rotation");
 }
 const userSource = fs.readFileSync(path.join(root, "backend/user-service/Code.gs"), "utf8");
 const genFn = extractFunction(userSource, "generateSessionToken");
