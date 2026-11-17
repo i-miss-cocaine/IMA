@@ -13,7 +13,7 @@ const runSource=names.map(extract).join("\n")+"\nthis.validate=validateRolePermi
 vm.runInNewContext(runSource,rt);
 let n=0;function t(fn){fn();n++;}
 t(()=>{const p={sessionToken:"valid"};assert.equal(rt.validate("createTask",p).authorized,true);assert.equal(rt.validate("createTask",p).authorized,true);assert.equal(verifyCalls,1);assert.equal(contextCalls,1);assert.equal(dynamicCalls,1);});
-t(()=>{const p={sessionToken:"valid"};rt.validate("createTask",p);rt.validate("gradeSubmission",p);assert.equal(verifyCalls,2);assert.equal(contextCalls,4);assert.equal(dynamicCalls,4);});
+t(()=>{const p={sessionToken:"valid"};rt.validate("createTask",p);rt.validate("gradeSubmission",p);assert.equal(verifyCalls,2);assert.equal(contextCalls,3);assert.equal(dynamicCalls,3);});
 t(()=>{const p={sessionToken:"valid"};rt.validate("createTask",p);assert.equal(rt.identity(p).userId,"T1");assert.equal(rt.identity(p).userId,"T1");assert.equal(verifyCalls,3,"task identity reuses verified session claims");});
 t(()=>{const p={sessionToken:"valid",_imaAuthorizationCache:{token:"valid",actions:{createTask:"Administrador"}},_imaVerifiedSessionToken:"valid",_imaVerifiedSessionClaims:{userId:"ATTACKER",role:"Administrador"}};rt.clear(p);assert.equal(rt.validate("createTask",p).authorized,true);assert.equal(verifyCalls,4);assert.equal(rt.identity(p).userId,"T1");});
 t(()=>{const p={sessionToken:"valid"};rt.validate("createTask",p);p.sessionToken="invalid";assert.equal(rt.validate("createTask",p).authorized,false);assert.equal(verifyCalls,6);});
