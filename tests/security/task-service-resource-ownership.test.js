@@ -22,12 +22,16 @@ assert.doesNotMatch(create,/getDynamicPermissionsForRole\([^)]*registerResourceO
 assert.doesNotMatch(extractFunction("registerTaskServiceResourceOwnership_"),/getDynamicPermissionsForRole\([^)]*registerResourceOwnership/,"internal ownership registration does not repeat action RBAC");assert(extractFunction("registerTaskServiceResourceOwnership_").includes("ensureTaskServiceResourceOwnershipSheet_"),"registry initialization occurs inside locked registration");assert(guard.includes('assertTaskServiceResourceOwnership_(payload,"TAREA",row[0]'));
 for(const [name,fn] of [["getStudentTasks",list],["getAllTasks",all],["getTeacherActivity",activity]])assert(fn.includes('assertTaskServiceResourceOwnership_(payload, "TAREA"'),name+" filters departmental ownership");
 for(const name of ["gradeSubmission","gradeSubmissionWithRubric"])assert(extractFunction(name).includes("withAuthorizedTaskSubmissionMutation_"),name+" executes the locked, verified grade mutation wrapper");
-assert(extractFunction("withAuthorizedTaskSubmissionMutation_").includes('getTaskServiceSubmissionAccess_(payload, "GRADE", identity)'),"grade mutation reuses the verified actor while enforcing task ownership and scope");
+assert(extractFunction("withAuthorizedTaskSubmissionMutation_").includes('getTaskServiceSubmissionAccess_(payload, operation || "GRADE", identity)'),"grade mutation reuses the verified actor while enforcing task ownership and scope");
 assert(extractFunction("withAuthorizedTaskSubmissionMutation_").includes("LockService.getScriptLock()"),"grade mutation serializes changes with ScriptLock");
 const gradeMutationWrapper=extractFunction("withAuthorizedTaskSubmissionMutation_");
 assert.equal(gradeMutationWrapper.split("validateRolePermission(").length-1,0,"grade mutation wrapper must not repeat the dispatcher role authorization");
 assert(gradeMutationWrapper.indexOf("getVerifiedTaskIdentity_(payload)")<gradeMutationWrapper.indexOf("LockService.getScriptLock()"),"grade mutation reuses the request actor before acquiring the data lock");
-assert(gradeMutationWrapper.includes('getTaskServiceSubmissionAccess_(payload, "GRADE", identity)'),"grade mutation passes the already verified actor to resource access");
+assert(gradeMutationWrapper.includes('getTaskServiceSubmissionAccess_(payload, operation || "GRADE", identity)'),"grade mutation passes the already verified actor to resource access");
+assert(extractFunction("returnSubmissionForRevision").includes('withAuthorizedTaskSubmissionMutation_(request, "RETURN_FOR_REVISION"'),"return-for-revision shares the locked submission mutation boundary");
+assert(extractFunction("deleteSubmission").includes('withAuthorizedTaskSubmissionMutation_(payload,"DELETE_SUBMISSION"'),"submission deletion shares the locked mutation boundary");
+assert(extractFunction("getSubmissionVersions").includes("fileId: row[6]"));
+assert(!extractFunction("getSubmissionVersions").includes("archivoUrl:"),"version history must not return raw Drive URLs");
 assert.equal(extractFunction("getTaskServiceSubmissionAccess_").split("getVerifiedTaskIdentity_(payload)").length-1,1,"submission access only resolves identity when no verified actor was supplied");
 const updateTaskWrapper=extractFunction("updateTask");
 assert.equal(updateTaskWrapper.split("getVerifiedTaskIdentity_(").length-1,1,"task update resolves the actor once before locking");
