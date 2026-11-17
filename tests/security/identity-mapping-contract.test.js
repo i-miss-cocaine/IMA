@@ -184,7 +184,7 @@ function runMigrationEnvelopeFixture(source,target){
  assert.equal(calls.length,1);
  assert.throws(()=>ctx.handleTrustedMigrationEnvelope_(envelope),/REPLAY_DETECTED/);
  const wrongSource=makeEnvelope("UNTRUSTED","writeMigratedEntity",payload);
- assert.throws(()=>ctx.handleTrustedMigrationEnvelope_(wrongSource),isUser?/MIGRATION_SOURCE_SERVICE_INVALID/:/MIGRATION_SOURCE_NOT_ALLOWED/);
+ assert.throws(()=>ctx.handleTrustedMigrationEnvelope_(wrongSource),/MIGRATION_SOURCE_SERVICE_INVALID/);
  const tampered=makeEnvelope("ACCOUNTING","writeMigratedEntity",payload);
  tampered.payload.idNuevoPlataforma="PER-TAMPERED";
  assert.throws(()=>ctx.handleTrustedMigrationEnvelope_(tampered),/INVALID_INTERSERVICE_SIGNATURE/);
