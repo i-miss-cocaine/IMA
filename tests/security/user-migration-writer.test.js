@@ -10,7 +10,7 @@ let lockCount=0,releaseCount=0,uuid=0;
 const constants=source.slice(source.indexOf("const MIGRATION_WRITER_SCHEMAS_="),source.indexOf(";const MIGRATION_WRITER_JOURNAL_HEADERS_=")+1)+"\n"+source.slice(source.indexOf("const MIGRATION_WRITER_JOURNAL_HEADERS_="),source.indexOf(";\n",source.indexOf("const MIGRATION_WRITER_JOURNAL_HEADERS_="))+1);
 const runtime={SPREADSHEET_ID:"USER-SHEET",Date,String,JSON,Array,Object,Number,Math,RegExp,Error,
  SpreadsheetApp:{openById:id=>{assert.equal(id,"USER-SHEET");return spreadsheet;}},
- LockService:{getScriptLock:()=>({waitLock:ms=>{assert.equal(ms,10000);lockCount++;},releaseLock:()=>releaseCount++;})},
+ LockService:{getScriptLock:()=>({waitLock:ms=>{assert.equal(ms,10000);lockCount++;},releaseLock:()=>{releaseCount++;}})},
  Utilities:{getUuid:()=> "UUID-"+(++uuid)}};
 const names=["migrationStableJson_","migrationEncodeSnapshot_","migrationDecodeSnapshot_","migrationSafeCell_","ensureMigrationWriterSheet_","applyTrustedMigrationWrite_","compensateTrustedMigrationWrite_"];
 vm.createContext(runtime);vm.runInContext(constants+"\n"+names.map(extract).join("\n")+"\nthis.api={write:applyTrustedMigrationWrite_,compensate:compensateTrustedMigrationWrite_};",runtime);
