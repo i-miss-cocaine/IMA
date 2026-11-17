@@ -5683,3 +5683,10 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 ### Seguimiento — C1.801 / AUD-NG-084 en curso
 - Se registra como requisito transversal obligatorio en PLAN-IMA-001 la autenticación de credenciales al iniciar sesión y la reutilización eficiente del contexto confiable durante la sesión, sin verificaciones completas ni reconstrucción de roles/permisos por cada actividad ordinaria. Debe aplicarse en todas las futuras tareas de seguridad.
 - AUD-NG-084: endurecimiento del secreto HMAC dedicado y orden seguro HMAC→replay lock en USER; contrato nuevo y fixtures consumidores actualizados. CI de HEAD 392738ad aún pendiente; no cerrar hasta obtener evidencia de pruebas.
+
+
+### Seguimiento — C1.803 / AUD-NG-084 continúa En ejecución
+- **Pruebas:** GitHub Actions run 44090439362 en Node 24.22.2 terminó SUCCESS con 42/42 pasos, 0 fallos y 0 omitidos. Incluye el contrato de catálogo HMAC/anti-replay y la regresión de secretos HMAC de sesión en USER, DEVELOPER, ACADEMIC, TASK y EXAM.
+- **Estrategia:** ante fallos se inspeccionaron logs y se corrigieron fixtures/filtros para ejecutar la condición real; no se redujo cobertura ni se alteró código funcional para forzar PASS. CLI local no ejecutado por fallo DNS del checkout; se usó Node CLI real en runner Actions.
+- **Compatibilidad pendiente:** ACCOUNTING y ACADEMIC mantienen flujos de migración con IMA_MIGRATION_HMAC_SECRET/customSecret explícito, mientras USER ya valida catálogo y versión por servicio. Completar revisión y armonización de rotación/revocación entre emisores y receptores antes de integrar tráfico.
+- **Estado:** no cerrar AUD-NG-084 ni afirmar configuración productiva verificada hasta contar con pruebas de todos los servicios involucrados y evidencia autorizada de Script Properties/deployments.
