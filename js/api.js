@@ -155,6 +155,20 @@ function showApiToast(title, message, kind) {
 }
 
 function fetchApi(service, action, payload, retryCount, options) {
+  // La primera petición autenticada espera la configuración regional validada del servicio USER.
+  if (action !== "resolveHierarchicalConfiguration" && window.IMARegionalFormatters &&
+      typeof window.loadRegionalFormattingSettings === "function" && !window.__regionalSettingsLoaded) {
+    var storedUser = null;
+    try {
+      var rawRegionalUser = localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser");
+      if (rawRegionalUser) storedUser = JSON.parse(rawRegionalUser);
+    } catch (_) {}
+    if (storedUser && storedUser.sessionToken) {
+      return window.loadRegionalFormattingSettings().then(function() {
+        return fetchApi(service, action, payload, retryCount, options);
+      });
+    }
+  }
   var MAX_RETRIES = 2;
   retryCount = retryCount || 0;
   options = options || {};
@@ -463,3 +477,46 @@ window.getIdentityDecisionHistory = function(payload) {
     return window.fetchApi('USER', 'getIdentityDecisionHistory', payload || {});
 };
 
+
+
+/**
+ * Carga REGIONAL_SETTINGS mediante el resolver USER. La respuesta se valida
+ * de nuevo en IMARegionalFormatters; si no existe configuración, se conservan
+ * los defaults sin bloquear el inicio de sesión ni las peticiones normales.
+ */
+window.loadRegionalFormattingSettings = function() {
+  if (window.__regionalSettingsLoaded) {
+    return Promise.resolve({ status: "cached", settings: window.IMARegionalFormatters.getSettings() });
+  }
+  if (window.__regionalSettingsPromise) return window.__regionalSettingsPromise;
+  if (!window.IMARegionalFormatters) return Promise.resolve({ status: "unavailable" });
+
+  var currentUser = null;
+  try {
+    var rawUser = localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser");
+    if (rawUser) currentUser = JSON.parse(rawUser);
+  } catch (_) {}
+  if (!currentUser || !currentUser.sessionToken) {
+    return Promise.resolve({ status: "unauthenticated", settings: window.IMARegionalFormatters.getSettings() });
+  }
+
+  window.__regionalSettingsPromise = Promise.resolve()
+    .then(function() {
+      return fetchApi("USER", "resolveHierarchicalConfiguration", { clave: "REGIONAL_SETTINGS" }, 0, { silentAuthError: true });
+    })
+    .then(function(response) {
+      var data = response && response.data && typeof response.data === "object" ? response.data : response;
+      if (data && data.status === "success" && data.valor && typeof data.valor === "object") {
+        var applied = window.IMARegionalFormatters.setSettings(data.valor);
+        window.__regionalSettingsLoaded = true;
+        return { status: "success", settings: applied, source: data.origenEfectivo || "GLOBAL", version: data.version || null };
+      }
+      window.__regionalSettingsLoaded = true;
+      return { status: "fallback", code: data && data.code || "REGIONAL_SETTINGS_UNAVAILABLE", settings: window.IMARegionalFormatters.getSettings() };
+    })
+    .catch(function(error) {
+      window.__regionalSettingsLoaded = true;
+      return { status: "fallback", error: error && error.message || "REGIONAL_SETTINGS_UNAVAILABLE", settings: window.IMARegionalFormatters.getSettings() };
+    });
+  return window.__regionalSettingsPromise;
+};
