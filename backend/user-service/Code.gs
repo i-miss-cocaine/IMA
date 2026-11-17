@@ -202,6 +202,15 @@ function getSharedConfigurationsCatalog(payload) {
       minSupportedVersion: "1.0.0",
       rollbackProcedure: "Restauración de respaldo JSON con suma de verificación SHA-256 en backend/academic-service"
     },
+    configurationHierarchy: {
+      schemaVersion: "1.0",
+      precedence: ["GLOBAL","INSTITUCIONAL","DEPARTAMENTAL","PERSONAL"],
+      policies: ["GLOBAL_OBLIGATORIO","INSTITUCIONAL","HEREDABLE","PERSONALIZABLE","RESTRINGIDO"],
+      scopes: ["GLOBAL","INSTITUCIONAL","DEPARTAMENTAL","PERSONAL"],
+      actions: ["getHierarchicalConfigurationCatalog","resolveHierarchicalConfiguration","saveSystemConfiguration","resetSystemConfigurationOverride"],
+      departmentOverridesStoredSeparately: true,
+      existingSystemConfigurationRemainsValueSource: true
+    },
     timestamp: new Date().toISOString()
   };
 }
@@ -1633,6 +1642,15 @@ function validateRolePermission(action, payload) {
   if (userRole === "NO_ACCESS") {
     return { authorized: false, role: "Cuenta Inactiva/Bloqueada" };
   }
+  if (["resolveHierarchicalConfiguration","getHierarchicalConfigurationCatalog"].indexOf(action)!==-1) {
+    return { authorized: !!(payload && payload._verifiedUserId), role: userRole, userId: payload && payload._verifiedUserId };
+  }
+  if (["saveSystemConfiguration","resetSystemConfigurationOverride"].indexOf(action)!==-1) {
+    var requestedScope=String((payload&&payload.ambito)||"GLOBAL").trim().toUpperCase();
+    if(requestedScope==="PERSONAL")return {authorized:!!(payload&&payload._verifiedUserId),role:userRole,userId:payload&&payload._verifiedUserId};
+    if(requestedScope==="DEPARTAMENTAL")return {authorized:["Administrador","Director","Desarrollador"].indexOf(userRole)!==-1||getDynamicPermissionsForRole(userRole,"manageDepartmentalConfiguration")===true,role:userRole,userId:payload&&payload._verifiedUserId};
+    return {authorized:["Administrador","Director","Desarrollador"].indexOf(userRole)!==-1,role:userRole,userId:payload&&payload._verifiedUserId};
+  }
   if (["getUserHelpPreferences", "saveUserHelpPreferences"].indexOf(action) !== -1) {
     return { authorized: !!(payload && payload._verifiedUserId), role: userRole, userId: payload && payload._verifiedUserId };
   }
@@ -2325,6 +2343,9 @@ function doPost(e) {
       case "saveUserSettings": result = saveUserSettings(payload); break;
       case "getSystemConfigurations": result = getSystemConfigurations(payload); break;
       case "saveSystemConfiguration": result = saveSystemConfiguration(payload); break;
+      case "getHierarchicalConfigurationCatalog": result = getHierarchicalConfigurationCatalog(payload); break;
+      case "resolveHierarchicalConfiguration": result = resolveHierarchicalConfiguration(payload); break;
+      case "resetSystemConfigurationOverride": result = resetSystemConfigurationOverride(payload); break;
       case "saveEvidenceIntegrityPolicy": result = saveEvidenceIntegrityPolicy(payload); break;
       case "getProviderIntegrations": result = getProviderIntegrations(payload); break;
       case "configureProviderIntegration": result = configureProviderIntegration(payload); break;
@@ -11155,6 +11176,7 @@ function configurationRoleAllowed_(ss,role,key,action,scope,policy) {
     if(matches.length)return !matches.some(function(row){return row[ix.Allowed]===false||String(row[ix.Allowed]).toLowerCase()==="false";})&&matches.some(function(row){return row[ix.Allowed]===true||String(row[ix.Allowed]).toLowerCase()==="true";});
   }
   if(scope==="PERSONAL"&&policy.policy==="PERSONALIZABLE")return true;
+  if(scope==="DEPARTAMENTAL"&&(action==="WRITE"||action==="RESET")&&getDynamicPermissionsForRole(role,"manageDepartmentalConfiguration")===true)return true;
   return policy.roles.indexOf("*")!==-1||policy.roles.indexOf(role)!==-1;
 }
 function configurationDepartmentContext_(payload,departmentId) {
@@ -11280,6 +11302,7 @@ function saveSystemConfiguration(payload) {
     if(!base&&scope!=="GLOBAL")throw new Error("CONFIGURATION_BASE_REQUIRED");
     var policy=base?configurationPolicyFromRow_(base,ix):{policy:policyName,allowedScopes:rule.allowedScopes,inheritance:rule.inheritance,override:rule.override,roles:rule.roles,dependencies:[],sensitive:payload.esSensible===true};
     if(base&&payload.politicaAlcance&&String(payload.politicaAlcance).toUpperCase()!==policy.policy&&payload.actualizarPolitica!==true)throw new Error("CONFIGURATION_POLICY_CHANGE_REQUIRES_AUTHORIZED_UPDATE");
+    if(base&&payload.actualizarPolitica===true&&payload.politicaAlcance){policy={policy:policyName,allowedScopes:rule.allowedScopes,inheritance:rule.inheritance,override:rule.override,roles:Array.isArray(payload.rolesAutorizados)?payload.rolesAutorizados:rule.roles,dependencies:Array.isArray(payload.dependencias)?payload.dependencias:policy.dependencies,sensitive:payload.esSensible===true||policy.sensitive};}
     if(!policy.allowedScopes.length)policy.allowedScopes=rule.allowedScopes.slice();
     if(policy.allowedScopes.indexOf(scope)===-1)throw new Error("CONFIGURATION_SCOPE_NOT_ALLOWED");
     if(scope==="GLOBAL"||scope==="INSTITUCIONAL"){
