@@ -133,6 +133,26 @@ function migrationDuplicateKeyDefinitions_(entityType) {
   };
   return definitions[String(entityType || "").toLowerCase()] || [];
 }
+function buildMigrationReferenceRequests_(preparedRows, input, validIndexes) {
+  var sourceRows = input && Array.isArray(input.filasData) ? input.filasData : [], requests = [];
+  (preparedRows || []).forEach(function(prepared, preparedIndex) {
+    var sourceIndex = Array.isArray(validIndexes) ? validIndexes[preparedIndex] : preparedIndex;
+    var source = sourceRows[sourceIndex] || {};
+    var pick = function(names, fallback) {
+      for (var i = 0; i < names.length; i++) if (source[names[i]] !== undefined && source[names[i]] !== null && String(source[names[i]]).trim()) return String(source[names[i]]).trim();
+      return String(fallback || "").trim();
+    };
+    var grade = pick(["GradoID","Grado","GradoAcademico"], "");
+    var section = pick(["SeccionID","Seccion","Sección"], "");
+    var department = pick(["DepartamentoID","Departamento"], prepared && prepared.Departamento);
+    var expediente = pick(["ExpedienteReferenciaID","ExpedienteRelacionadoID"], "");
+    if (grade || section || department || expediente) requests.push({
+      rowIndex: preparedIndex, grado: grade, seccion: section, departamentoId: department, expedienteId: expediente
+    });
+  });
+  return requests;
+}
+
 function buildMigrationDuplicateRequests_(preparedRows, entityType) {
   var definitions = migrationDuplicateKeyDefinitions_(entityType), requests = [];
   (preparedRows || []).forEach(function(row, rowIndex) {
@@ -147,11 +167,12 @@ function buildMigrationDuplicateRequests_(preparedRows, entityType) {
   return requests;
 }
 
-function buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutionId, ss, input) {
+function buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutionId, ss, input, validIndexes) {
   var service = String(schema && schema.service || "").toUpperCase();
   var sheetName = String(schema && schema.sheet || "");
   var idField = schema && schema.headers && schema.headers[0] || "";
   var duplicateRequests = buildMigrationDuplicateRequests_(preparedRows, String(input && input.tipoEntidad || ""));
+  var referenceRequests = buildMigrationReferenceRequests_(preparedRows, input, validIndexes);
   if (service === "USER") {
     var userIds = (preparedRows || []).map(function(row) { return String(row && row[idField] || "").trim(); }).filter(Boolean);
     var userResult = requestAccountingTrustedOwnerSnapshot_("USER", {
@@ -170,18 +191,19 @@ function buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutio
     var academicIds = (preparedRows || []).map(function(row) { return String(row && row[idField] || "").trim(); }).filter(Boolean);
     var academicResult = requestAccountingTrustedOwnerSnapshot_("ACADEMIC", {
       sessionToken: String(input && input.sessionToken || ""), institutionId: institutionId,
-      entityType: "estudiante", targetIds: academicIds, duplicateKeys: duplicateRequests
+      entityType: "estudiante", targetIds: academicIds, duplicateKeys: duplicateRequests, referenceKeys: referenceRequests
     });
     if (!academicResult || academicResult.status !== "success" || academicResult.verified !== true ||
         academicResult.service !== "ACADEMIC" || academicResult.sheet !== "ExpedientesEstudiantes" ||
         academicResult.idField !== "ExpedienteID" || String(academicResult.institutionId || "") !== String(institutionId) ||
-        !Array.isArray(academicResult.existingTargetIds) || !Array.isArray(academicResult.duplicateMatches)) {
+        !Array.isArray(academicResult.existingTargetIds) || !Array.isArray(academicResult.duplicateMatches) ||
+        !Array.isArray(academicResult.referenceErrors)) {
       return { verified: false, service: service, sheet: sheetName, institutionId: institutionId, existingTargetIds: [], targetRows: [] };
     }
     return { verified: true, service: service, sheet: sheetName, institutionId: institutionId,
       idField: idField, existingTargetIds: academicResult.existingTargetIds.map(String).sort(),
       targetRows: Array.isArray(academicResult.targetRows) ? academicResult.targetRows : [],
-      duplicateMatches: academicResult.duplicateMatches };
+      duplicateMatches: academicResult.duplicateMatches, referenceErrors: academicResult.referenceErrors };
   }
   if (service !== "ACCOUNTING") {
     return { verified: false, service: service, sheet: sheetName, institutionId: institutionId, existingTargetIds: [], targetRows: [] };
@@ -829,9 +851,17 @@ function buildImportPreview_(payload) {
     validIndexes = indexesWithVerifiedReferences;
     identityResolutions = identitiesWithVerifiedReferences;
   }
-  var targetSnapshot = buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutionId, ss, input);
+  var targetSnapshot = buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutionId, ss, input, validIndexes);
   if (targetSnapshot.verified !== true) addError("TARGET_EXISTENCE_UNVERIFIED", "No se pudo verificar el identificador de destino en el servicio propietario; la incorporación queda bloqueada.");
   var duplicateMatches = Array.isArray(targetSnapshot.duplicateMatches) ? targetSnapshot.duplicateMatches : [];
+  var referenceErrors = Array.isArray(targetSnapshot.referenceErrors) ? targetSnapshot.referenceErrors : [];
+  referenceErrors.forEach(function(referenceError) {
+    var preparedIndex = Number(referenceError.rowIndex), originalIndex = validIndexes[preparedIndex];
+    var rowNumber = Array.isArray(structural.dataRowNumbers) && structural.dataRowNumbers[originalIndex] ?
+      Number(structural.dataRowNumbers[originalIndex]) : originalIndex + 2;
+    addError(String(referenceError.code || "IMPORT_REFERENCE_INVALID"), "Una referencia académica o institucional no existe o no está activa.", rowNumber);
+    rejectedPreparedIndexes[preparedIndex] = true;
+  });
   var rejectedPreparedIndexes = Object.assign({}, duplicateFilePreparedIndexes), linkedPreparedIndexes = {};
   if (duplicateMatches.length && allowedDuplicatePolicies.indexOf(duplicatePolicy) === -1) {
     addError("IMPORT_DUPLICATE_POLICY_REQUIRED", "Debe seleccionar una política explícita para resolver los duplicados.");
@@ -895,7 +925,8 @@ function buildImportPreview_(payload) {
     sheet: targetSnapshot.sheet,
     existingTargetIds: targetSnapshot.existingTargetIds,
     targetRows: targetSnapshot.targetRows,
-    duplicateMatches: duplicateMatches
+    duplicateMatches: duplicateMatches,
+    referenceErrors: referenceErrors
   };
   var hashInput = {
     institutionId: institutionId,
