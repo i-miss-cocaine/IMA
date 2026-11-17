@@ -4,6 +4,9 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 
+const secretarySource=fs.readFileSync(path.join(__dirname,"../../js/secretary.js"),"utf8");
+assert.match(secretarySource,/fetchApi\('ACADEMIC',\s*'getStudentDocumentFile'/,"secretary preview/download uses the direct document endpoint");
+assert.doesNotMatch(secretarySource,/createStudentDocumentAccessToken|getSecureDocumentStream/,"secretary no longer makes a second authorization/stream request");
 const source = fs.readFileSync(path.join(__dirname,"../../backend/academic-service/Code.gs"),"utf8");
 new vm.Script(source,{filename:"backend/academic-service/Code.gs"});
 function extractFunction(name) {
@@ -13,14 +16,11 @@ function extractFunction(name) {
   return source.slice(start,next<0?source.length:next);
 }
 const names=[
-  "validateFileBinaryIntegrity","computeDocumentSHA256","getDocumentDuplicatePolicy_","ensureStudentDocumentSchema_",
+  "getRequestPermissionAction_","validateFileBinaryIntegrity","computeDocumentSHA256","getDocumentDuplicatePolicy_","ensureStudentDocumentSchema_",
   "ensureDocumentVersionHistorySchema_","getOrCreatePrivateStudentDocumentFolder_",
   "rollbackPrivateStudentDocumentFile_","getVerifiedPrivateStudentDocumentFile_",
-  "nextStudentDocumentVersion_","uploadStudentDocument","verifyDocumentIntegritySha256","getStudentDocumentFile_",
-  "getStudentDocumentAccessTokenSecret_","studentDocumentTokenHex_","studentDocumentTokenConstantTimeEqual_",
-  "studentDocumentTokenDigest_","studentDocumentTokenSignature_","createStudentDocumentAccessToken",
-  "decodeStudentDocumentAccessToken_","logStudentDocumentAccessDecision_","studentDocumentAccessError_",
-  "consumeStudentDocumentAccessToken_","getSecureDocumentStream","getStudentDocuments","restoreDocumentVersion"
+  "nextStudentDocumentVersion_","uploadStudentDocument","verifyDocumentIntegritySha256","getStudentDocumentFile_","getStudentDocumentFile",
+  "getStudentDocuments","restoreDocumentVersion"
 ];
 const functions=names.map(extractFunction);
 const pdf1=Buffer.from("%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Name (first) >>\nendobj\nstartxref\n9\n%%EOF\n","utf8");
@@ -148,7 +148,7 @@ function makeHarness(options={}) {
     logStructuredEvent:(...args)=>{state.auditEvents.push(args);},logDebug:()=>{}
   };
   vm.createContext(context);
-  vm.runInContext(functions.join("\n\n")+"\nthis.upload=uploadStudentDocument;this.verify=verifyDocumentIntegritySha256;this.download=getStudentDocumentFile_;this.list=getStudentDocuments;this.restore=restoreDocumentVersion;this.issueToken=createStudentDocumentAccessToken;this.stream=getSecureDocumentStream;",context);
+  vm.runInContext(functions.join("\n\n")+"\nthis.upload=uploadStudentDocument;this.verify=verifyDocumentIntegritySha256;this.download=function(payload){const action=getRequestPermissionAction_(\"getStudentDocumentFile\",payload);const permission=validateRolePermission(action,payload);if(!permission||permission.authorized!==true)return {status:\"error\",code:\"AUTH_PERMISSION_DENIED\"};return getStudentDocumentFile(payload);};this.permissionAction=getRequestPermissionAction_;this.list=getStudentDocuments;this.restore=restoreDocumentVersion;",context);
   return {state,sheets,files,context,setFileBytes(id,value){const file=files.get(id);assert.ok(file);file.getBlob=()=>({getBytes:()=>Array.from(Buffer.from(value)),getContentType:()=>"application/pdf"});},
     setFileSharing(id,value){const file=files.get(id);assert.ok(file);file.getSharingAccess=()=>value;}};
 }
@@ -191,63 +191,18 @@ function upload(h,pdf,label="ACTA") {
   assert.equal(h.context.list({}).code,"RESOURCE_SCOPE_DENIED","document metadata queries require an expediente or application ID");
   const previewDenied=makeHarness({denyPreview:true});
   const previewDeniedUpload=upload(previewDenied,pdf1);
-  const deniedPreview=previewDenied.context.issueToken({documentoId:previewDeniedUpload.documentoId,solicitudId:"SOL-1",operation:"PREVIEW"});
-  assert.equal(deniedPreview.code,"AUTH_PERMISSION_DENIED","preview requires its own RBAC permission");
-  const invalidOperation=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1",operation:"METADATA"});
-  assert.equal(invalidOperation.code,"DOCUMENT_ACCESS_OPERATION_INVALID","metadata-only requests cannot mint a binary token");
-  const previewToken=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1",operation:"PREVIEW"});
-  assert.equal(previewToken.status,"success");
-  const previewStream=h.context.stream({documentoId:row[0],solicitudId:"SOL-1",operation:"PREVIEW",
-    versionDocumento:previewToken.versionDocumento,accessToken:previewToken.accessToken});
-  assert.equal(previewStream.status,"success");
-  assert.equal(Buffer.from(previewStream.fileData,"base64").equals(pdf1),true);
-  assert.equal(h.state.auditEvents.some(event=>event[3]==="DOCUMENT_PREVIEWED"),true);
-  const previewReplay=h.context.stream({documentoId:row[0],solicitudId:"SOL-1",operation:"PREVIEW",accessToken:previewToken.accessToken});
-  assert.equal(previewReplay.code,"DOCUMENT_ACCESS_TOKEN_REVOKED_OR_REPLAYED","preview tokens are one-use");
-  const operationMismatch=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1",operation:"PREVIEW"});
-  assert.equal(h.context.stream({documentoId:row[0],solicitudId:"SOL-1",operation:"DOWNLOAD",accessToken:operationMismatch.accessToken}).code,
-    "DOCUMENT_ACCESS_TOKEN_BINDING_MISMATCH","a preview token cannot be upgraded to download");
-  assert.ok(h.state.permissionCalls.includes("previewStudentDocument"));
-  const issued=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1"});
-  assert.equal(issued.status,"success");
-  assert.equal(issued.expiresInSeconds,60);
-  const streamed=h.context.stream({documentoId:row[0],solicitudId:"SOL-1",versionDocumento:issued.versionDocumento,accessToken:issued.accessToken});
-  assert.equal(streamed.status,"success");
-  assert.equal(Buffer.from(streamed.fileData,"base64").equals(pdf1),true);
-  assert.equal("downloadUrl" in streamed,false);
-  assert.equal("driveUrl" in streamed,false);
-  assert.equal(h.state.auditEvents.some(event=>event[3]==="DOCUMENT_DOWNLOADED"),true);
-  assert.equal(h.state.auditEvents.some(event=>event[3]==="DOCUMENT_ACCESS_TOKEN_ISSUED"),true);
-  const replay=h.context.stream({documentoId:row[0],solicitudId:"SOL-1",versionDocumento:issued.versionDocumento,accessToken:issued.accessToken});
-  assert.equal(replay.code,"DOCUMENT_ACCESS_TOKEN_REVOKED_OR_REPLAYED","download tokens are one-use");
-  const userBound=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1"});
-  h.state.actorUserId="USER-2";
-  assert.equal(h.context.stream({documentoId:row[0],solicitudId:"SOL-1",accessToken:userBound.accessToken}).code,
-    "DOCUMENT_ACCESS_TOKEN_BINDING_MISMATCH","a token cannot be transferred to another user");
-  h.state.actorUserId="USER-1";
-  const versionBound=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1"});
-  const currentVersion=row[13];
-  row[13]="2.0";
-  assert.equal(h.context.stream({documentoId:row[0],solicitudId:"SOL-1",accessToken:versionBound.accessToken}).code,
-    "DOCUMENT_ACCESS_TOKEN_BINDING_MISMATCH","a token cannot be reused after the document version changes");
-  row[13]=currentVersion;
-  const wrongDocument=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1"});
-  assert.equal(h.context.stream({documentoId:"DOC-OTHER",solicitudId:"SOL-1",accessToken:wrongDocument.accessToken}).code,
-    "DOCUMENT_ACCESS_TOKEN_BINDING_MISMATCH","a token cannot be transferred to another document");
-  const contentionToken=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1"});
-  h.state.lockHeld=true;
-  assert.equal(h.context.stream({documentoId:row[0],solicitudId:"SOL-1",accessToken:contentionToken.accessToken}).code,
-    "DOCUMENT_ACCESS_TOKEN_REVOKED_OR_REPLAYED","lock contention fails closed without consuming a token");
-  h.state.lockHeld=false;
-  assert.equal(h.context.stream({documentoId:row[0],solicitudId:"SOL-1",accessToken:contentionToken.accessToken}).status,"success",
-    "a token survives a lock timeout and can be consumed once the lock is available");
-  const expired=h.context.issueToken({documentoId:row[0],solicitudId:"SOL-1"});
-  h.state.now+=61000;
-  assert.equal(h.context.stream({documentoId:row[0],solicitudId:"SOL-1",accessToken:expired.accessToken}).code,
-    "DOCUMENT_ACCESS_TOKEN_INVALID","expired tokens are rejected");
-  h.state.now-=61000;
-  assert.equal(h.state.auditEvents.some(event=>event[3]==="DOCUMENT_ACCESS_DENIED"),true,
-    "invalid, expired, replayed and mismatched attempts are logged without exposing file details");
+  const deniedPreview=previewDenied.context.download({documentoId:previewDeniedUpload.documentoId,solicitudId:"SOL-1",operation:"PREVIEW"});
+  assert.equal(deniedPreview.code,"AUTH_PERMISSION_DENIED","preview uses its own role permission at the request entry");
+  const preview=h.context.download({documentoId:row[0],solicitudId:"SOL-1",operation:"PREVIEW"});
+  assert.equal(preview.status,"success");
+  assert.equal(Buffer.from(preview.fileData,"base64").equals(pdf1),true);
+  const directDownload=h.context.download({documentoId:row[0],solicitudId:"SOL-1",operation:"DOWNLOAD"});
+  assert.equal(directDownload.status,"success");
+  assert.equal(Buffer.from(directDownload.fileData,"base64").equals(pdf1),true);
+  assert.deepEqual(h.state.permissionCalls,["previewStudentDocument","getStudentDocumentFile"],
+    "preview/download each require one RBAC check at the entry point, without token issuance or a second stream call");
+  const invalidOperation=h.context.download({documentoId:row[0],solicitudId:"SOL-1",operation:"METADATA"});
+  assert.equal(invalidOperation.code,"DOCUMENT_ACCESS_OPERATION_INVALID");
 }
 
 {

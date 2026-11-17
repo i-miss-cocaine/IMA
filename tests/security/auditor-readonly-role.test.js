@@ -86,7 +86,8 @@ const academicRequestHelpers = ["getRequestSessionToken_","getRequestPermissionA
   .map(name => extractFunction(academic.source,name)).join("\n");
 vm.runInNewContext(academicRequestHelpers + "\n" + extractFunction(academic.source, "validateRolePermission") +
   "\nthis.check = validateRolePermission;", academicPermissionContext);
-assert.equal(academicPermissionContext.check("getSecureDocumentStream", { sessionToken: "AUD-TOKEN" }).authorized, true);
+assert.equal(academicPermissionContext.check("getStudentDocumentFile", { sessionToken: "AUD-TOKEN", operation: "DOWNLOAD" }).authorized, true);
+assert.equal(academicPermissionContext.check("getStudentDocumentFile", { sessionToken: "AUD-TOKEN", operation: "PREVIEW" }).authorized, true);
 assert.equal(academicPermissionContext.check("deleteStudentDocument", { sessionToken: "AUD-TOKEN" }).authorized, false,
   "dynamic permissions and delegations cannot elevate the Auditor beyond the read-only allowlist");
 assert.match(user.source,/if \(String\(claims\.role\) === "Auditor"\) return \{ status: "error", code: "IMPORT_PERMISSION_DENIED" \}/,
@@ -121,8 +122,9 @@ assert.match(user.source,/\["Director", "Administrador", "Auditor"\]\.indexOf\(r
   "institution-wide inventory access for Auditor still requires an institution-wide verified scope");
 assert.match(user.source,/if \(actorRole === "Auditor"\)[\s\S]*scope\.institutionWide !== true/,
   "global audit logs are restricted to Auditors with institution-wide verified scope");
-assert.match(academic.source,/const secureDocumentAction = \["createStudentDocumentAccessToken", "getSecureDocumentStream"\]/);
-assert.match(academic.source,/requestedDocumentOperation === "PREVIEW" \? "previewStudentDocument" : "getStudentDocumentFile"/);
+assert.match(academic.source,/function getStudentDocumentFile\(payload\)/,"ACADEMIC exposes one direct document read endpoint");
+assert.match(academic.source,/action !== "getStudentDocumentFile"/,"only the direct document endpoint maps PREVIEW to its own RBAC action");
+assert.match(academic.source,/case "getStudentDocumentFile": result = getStudentDocumentFile\(payload\); break;/,"the dispatcher routes direct document reads");
 assert.match(accounting,/request\.action === "validateImportPreview"/);
 assert.match(accounting,/request\.action === "getAccountingMigrationFileAudit"/,
   "ACCOUNTING exposes a read-only institution-bound audit endpoint for Auditor");

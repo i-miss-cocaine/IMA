@@ -1242,9 +1242,9 @@ function auditTeacherJustificationDenied_(action,payload,role,code) {
 
 function getRequestSessionToken_(payload) { return payload && (payload.sessionToken || payload.authToken || payload.token) || ""; }
 function getRequestPermissionAction_(action, payload) {
-  const secureDocumentAction=["createStudentDocumentAccessToken","getSecureDocumentStream"].indexOf(action)!==-1;
+  if (action !== "getStudentDocumentFile") return action;
   const requestedDocumentOperation=String(payload&&payload.operation||"DOWNLOAD").trim().toUpperCase();
-  return secureDocumentAction?(requestedDocumentOperation==="PREVIEW"?"previewStudentDocument":"getStudentDocumentFile"):action;
+  return requestedDocumentOperation==="PREVIEW"?"previewStudentDocument":"getStudentDocumentFile";
 }
 function getVerifiedRequestSessionClaims_(payload) {
   const token=getRequestSessionToken_(payload);if(!token)return null;
@@ -1753,9 +1753,7 @@ function doPost(e) {
       case "unlinkStudentGuardian": result = unlinkStudentGuardian(payload); break;
       case "uploadStudentDocument": result = uploadStudentDocument(payload); break;
       case "getStudentDocuments": result = getStudentDocuments(payload); break;
-      case "createStudentDocumentAccessToken": result = createStudentDocumentAccessToken(payload); break;
-      case "getSecureDocumentStream": result = getSecureDocumentStream(payload); break;
-      case "getStudentDocumentFile": result = { status: "error", code: "SECURE_DOCUMENT_STREAM_REQUIRED", message: "Use el proxy documental autenticado." }; break;
+      case "getStudentDocumentFile": result = getStudentDocumentFile(payload); break;
       case "verifyDocumentIntegritySha256": result = verifyDocumentIntegritySha256(payload); break;
       case "updateDocumentStatus": result = updateDocumentStatus(payload); break;
       case "getPendingDocumentsReport": result = getPendingDocumentsReport(payload); break;
@@ -4692,250 +4690,12 @@ function validateEvidenceFileAndPermissions(payload) {
   }
 }
 
-// [T-GOV-03] [Fase Gobernanza y Seguridad] - Proxy de descarga segura y autorización de adjuntos en Google Drive
-const STUDENT_DOCUMENT_ACCESS_TOKEN_TTL_SECONDS_ = 60;
-
-function getStudentDocumentAccessTokenSecret_() {
-  const properties = PropertiesService.getScriptProperties();
-  let secret = String(properties.getProperty("IMA_DOCUMENT_ACCESS_TOKEN_SECRET") || "").trim();
-  if (secret.length >= 32) return secret;
-  const lock = LockService.getScriptLock();
-  lock.waitLock(10000);
-  try {
-    secret = String(properties.getProperty("IMA_DOCUMENT_ACCESS_TOKEN_SECRET") || "").trim();
-    if (secret.length < 32) {
-      secret = [Utilities.getUuid(), Utilities.getUuid(), Utilities.getUuid()].join("");
-      properties.setProperty("IMA_DOCUMENT_ACCESS_TOKEN_SECRET", secret);
-    }
-    return secret;
-  } finally {
-    lock.releaseLock();
-  }
-}
-
-function studentDocumentTokenHex_(bytes) {
-  return Array.from(bytes || []).map(function(value) {
-    return ("0" + ((Number(value) + 256) % 256).toString(16)).slice(-2);
-  }).join("");
-}
-
-function studentDocumentTokenConstantTimeEqual_(left, right) {
-  const a = String(left || ""), b = String(right || "");
-  if (a.length !== b.length) return false;
-  let difference = 0;
-  for (let i = 0; i < a.length; i++) difference |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return difference === 0;
-}
-
-function studentDocumentTokenDigest_(token) {
-  return studentDocumentTokenHex_(Utilities.computeDigest(
-    Utilities.DigestAlgorithm.SHA_256, String(token || ""), Utilities.Charset.UTF_8
-  ));
-}
-
-function studentDocumentTokenSignature_(encodedClaims) {
-  const signature = Utilities.computeHmacSignature(
-    Utilities.MacAlgorithm.HMAC_SHA_256, String(encodedClaims || ""), getStudentDocumentAccessTokenSecret_()
-  );
-  return studentDocumentTokenHex_(signature);
-}
-
-function createStudentDocumentAccessToken(payload) {
-  const request = payload || {};
-  const operation = String(request.operation || "DOWNLOAD").trim().toUpperCase();
-  if (operation !== "PREVIEW" && operation !== "DOWNLOAD") {
-    return studentDocumentAccessError_(request, null, request.documentoId || request.documentId || "",
-      "DOCUMENT_ACCESS_OPERATION_INVALID", "");
-  }
-  const permissionAction = operation === "PREVIEW" ? "previewStudentDocument" : "getStudentDocumentFile";
-  const permission = validateRolePermission(permissionAction, request);
-  if (!permission || permission.authorized !== true) {
-    return studentDocumentAccessError_(request, null, request.documentoId || request.documentId || "",
-      "AUTH_PERMISSION_DENIED", "");
-  }
-  const documentId = String(request.documentoId || request.documentId || "").trim();
-  const expedienteId = String(request.expedienteId || "").trim();
-  const solicitudId = String(request.solicitudId || "").trim();
-  if (!documentId || (!expedienteId && !solicitudId)) {
-    return studentDocumentAccessError_(request, null, documentId, "RESOURCE_NOT_FOUND", "");
-  }
-  const actor = getVerifiedAcademicIdentity_(request);
-  if (!actor || actor.authorized !== true || !actor.userId) {
-    return studentDocumentAccessError_(request, actor, documentId, actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", "");
-  }
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = ss.getSheetByName("DocumentosEstudiante");
-  const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
-  if (!sheet) return studentDocumentAccessError_(request, actor, documentId, "RESOURCE_NOT_FOUND", "");
-  const matches = sheet.getDataRange().getValues().slice(1).filter(function(row) {
-    return String(row[0] || "").trim() === documentId;
-  });
-  if (matches.length !== 1) return studentDocumentAccessError_(request, actor, documentId, "RESOURCE_NOT_FOUND", "");
-  const row = matches[0];
-  if ((expedienteId && String(row[1] || "").trim() !== expedienteId) ||
-      (solicitudId && String(row[2] || "").trim() !== solicitudId)) {
-    return studentDocumentAccessError_(request, actor, documentId, "RESOURCE_NOT_FOUND", "");
-  }
-  const access = assertStudentDocumentScopeAccess_(request, ss, sheet, row, expSheet);
-  if (!access || access.authorized !== true) {
-    return studentDocumentAccessError_(request, actor, documentId, "RESOURCE_NOT_FOUND", "");
-  }
-  const version = String(row[13] || "").trim();
-  const expectedHash = String(row[15] || row[14] || "").trim().toLowerCase();
-  if (!version || !/^[a-f0-9]{64}$/.test(expectedHash) || !String(row[5] || "").trim()) {
-    return studentDocumentAccessError_(request, actor, documentId, "DOCUMENT_BINARY_METADATA_MISSING", version);
-  }
-  const issuedAt = Date.now();
-  const claims = {
-    tokenId: (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, ""),
-    documentId: documentId, version: version, userId: String(actor.userId),
-    operation: operation, issuedAt: issuedAt,
-    expiresAt: issuedAt + STUDENT_DOCUMENT_ACCESS_TOKEN_TTL_SECONDS_ * 1000
-  };
-  const encodedClaims = Utilities.base64Encode(JSON.stringify(claims)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-  const token = encodedClaims + "." + studentDocumentTokenSignature_(encodedClaims);
-  CacheService.getScriptCache().put("STUDENT_DOC_ACCESS_" + claims.tokenId, studentDocumentTokenDigest_(token),
-    STUDENT_DOCUMENT_ACCESS_TOKEN_TTL_SECONDS_);
-  try {
-    logStructuredEvent("ACADEMIC", "createStudentDocumentAccessToken", "INFO", "DOCUMENT_ACCESS_TOKEN_ISSUED",
-      "Se emitió un permiso efímero de acceso documental.", {
-        documentoId: documentId, versionDocumento: version, userId: String(actor.userId),
-        operation: operation, expiresAt: claims.expiresAt
-      }, actor.role);
-  } catch (_) {}
-  return { status: "success", accessToken: token, documentoId: documentId,
-    versionDocumento: version, expiresAt: claims.expiresAt, expiresInSeconds: STUDENT_DOCUMENT_ACCESS_TOKEN_TTL_SECONDS_ };
-}
-
-function decodeStudentDocumentAccessToken_(token) {
-  const parts = String(token || "").split(".");
-  if (parts.length !== 2 || !/^[A-Za-z0-9_-]+$/.test(parts[0]) || !/^[a-f0-9]{64}$/i.test(parts[1])) {
-    throw new Error("DOCUMENT_ACCESS_TOKEN_INVALID");
-  }
-  const expectedSignature = studentDocumentTokenSignature_(parts[0]);
-  if (!studentDocumentTokenConstantTimeEqual_(expectedSignature, parts[1].toLowerCase())) {
-    throw new Error("DOCUMENT_ACCESS_TOKEN_INVALID");
-  }
-  let base64 = parts[0].replace(/-/g, "+").replace(/_/g, "/");
-  while (base64.length % 4) base64 += "=";
-  const claimsText = Utilities.newBlob(Utilities.base64Decode(base64)).getDataAsString("UTF-8");
-  const claims = JSON.parse(claimsText);
-  const now = Date.now();
-  if (!claims || !/^[a-f0-9]{48,64}$/i.test(String(claims.tokenId || "")) ||
-      (claims.operation !== "DOWNLOAD" && claims.operation !== "PREVIEW") || !claims.documentId || !claims.version || !claims.userId ||
-      !Number.isFinite(Number(claims.issuedAt)) || !Number.isFinite(Number(claims.expiresAt)) ||
-      Number(claims.issuedAt) > now + 5000 || Number(claims.expiresAt) <= now ||
-      Number(claims.expiresAt) - Number(claims.issuedAt) > STUDENT_DOCUMENT_ACCESS_TOKEN_TTL_SECONDS_ * 1000) {
-    throw new Error("DOCUMENT_ACCESS_TOKEN_EXPIRED_OR_INVALID");
-  }
-  return claims;
-}
-
-function logStudentDocumentAccessDecision_(request, actor, documentId, version, allowed, reasonCode, operation) {
-  try {
-    const accessOperation = String(operation || request && request.operation || "DOWNLOAD").trim().toUpperCase();
-    const preview = accessOperation === "PREVIEW";
-    logStructuredEvent("ACADEMIC", "getSecureDocumentStream", allowed ? "INFO" : "WARN",
-      allowed ? (preview ? "DOCUMENT_PREVIEWED" : "DOCUMENT_DOWNLOADED") : "DOCUMENT_ACCESS_DENIED",
-      allowed ? (preview ? "Documento entregado mediante vista previa autenticada." : "Documento entregado mediante proxy autenticado.") : "Intento de acceso documental denegado.",
-      {
-        documentoId: String(documentId || ""),
-        versionDocumento: String(version || ""),
-        userId: String(actor && actor.userId || ""),
-        role: String(actor && actor.role || ""),
-        operation: accessOperation,
-        decision: allowed ? "ALLOW" : "DENY",
-        reasonCode: String(reasonCode || ""),
-        correlationId: String(request && request.correlationId || "")
-      }, String(actor && actor.role || ""));
-  } catch (_) {}
-}
-
-function studentDocumentAccessError_(request, actor, documentId, code, version) {
-  logStudentDocumentAccessDecision_(request, actor, documentId, version, false, code, request && request.operation);
-  return { status: "error", code: String(code || "RESOURCE_NOT_FOUND"), message: "Documento no disponible." };
-}
-
-function consumeStudentDocumentAccessToken_(tokenId, token) {
-  const lock = LockService.getScriptLock();
-  let acquired = false;
-  try {
-    lock.waitLock(5000);
-    acquired = true;
-    const cache = CacheService.getScriptCache();
-    const key = "STUDENT_DOC_ACCESS_" + String(tokenId || "");
-    const stored = cache.get(key);
-    if (!stored || !studentDocumentTokenConstantTimeEqual_(stored, studentDocumentTokenDigest_(token))) return false;
-    cache.remove(key);
-    return true;
-  } catch (_) {
-    return false;
-  } finally {
-    if (acquired) lock.releaseLock();
-  }
-}
-
-function getSecureDocumentStream(payload) {
-  const request = payload || {};
-  const permission = validateRolePermission("getSecureDocumentStream", request);
-  if (!permission || permission.authorized !== true) {
-    return studentDocumentAccessError_(request, null, request.documentoId || request.documentId || "",
-      "AUTH_PERMISSION_DENIED", "");
-  }
-  const documentId = String(request.documentoId || request.documentId || "").trim();
-  const token = String(request.accessToken || "").trim();
-  const expedienteId = String(request.expedienteId || "").trim();
-  const solicitudId = String(request.solicitudId || "").trim();
-  if (!documentId || !token || (!expedienteId && !solicitudId)) {
-    return studentDocumentAccessError_(request, null, documentId, "RESOURCE_NOT_FOUND", "");
-  }
-  const actor = getVerifiedAcademicIdentity_(request);
-  if (!actor || actor.authorized !== true || !actor.userId) {
-    return studentDocumentAccessError_(request, actor, documentId, actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", "");
-  }
-  let claims;
-  try { claims = decodeStudentDocumentAccessToken_(token); }
-  catch (_) { return studentDocumentAccessError_(request, actor, documentId, "DOCUMENT_ACCESS_TOKEN_INVALID", ""); }
-  const requestedOperation = String(request.operation || claims.operation || "DOWNLOAD").trim().toUpperCase();
-  if (claims.documentId !== documentId || claims.userId !== String(actor.userId) ||
-      claims.operation !== requestedOperation ||
-      (request.versionDocumento && String(request.versionDocumento) !== String(claims.version))) {
-    return studentDocumentAccessError_(request, actor, documentId, "DOCUMENT_ACCESS_TOKEN_BINDING_MISMATCH", claims.version);
-  }
-  const operationPermission = validateRolePermission(
-    claims.operation === "PREVIEW" ? "previewStudentDocument" : "getStudentDocumentFile", request
-  );
-  if (!operationPermission || operationPermission.authorized !== true) {
-    return studentDocumentAccessError_(request, actor, documentId, "AUTH_PERMISSION_DENIED", claims.version);
-  }
-  if (!consumeStudentDocumentAccessToken_(claims.tokenId, token)) {
-    return studentDocumentAccessError_(request, actor, documentId, "DOCUMENT_ACCESS_TOKEN_REVOKED_OR_REPLAYED", claims.version);
-  }
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = ss.getSheetByName("DocumentosEstudiante");
-  const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
-  if (!sheet) return studentDocumentAccessError_(request, actor, documentId, "RESOURCE_NOT_FOUND", claims.version);
-  const matches = sheet.getDataRange().getValues().slice(1).filter(function(row) {
-    return String(row[0] || "").trim() === documentId;
-  });
-  if (matches.length !== 1) return studentDocumentAccessError_(request, actor, documentId, "RESOURCE_NOT_FOUND", claims.version);
-  const row = matches[0];
-  if ((expedienteId && String(row[1] || "").trim() !== expedienteId) ||
-      (solicitudId && String(row[2] || "").trim() !== solicitudId) ||
-      String(row[13] || "").trim() !== String(claims.version)) {
-    return studentDocumentAccessError_(request, actor, documentId, "DOCUMENT_ACCESS_TOKEN_BINDING_MISMATCH", claims.version);
-  }
-  const access = assertStudentDocumentScopeAccess_(request, ss, sheet, row, expSheet);
-  if (!access || access.authorized !== true) {
-    return studentDocumentAccessError_(request, actor, documentId, "RESOURCE_NOT_FOUND", claims.version);
-  }
-  const result = getStudentDocumentFile_(Object.assign({}, request, { documentoId: documentId, versionDocumento: claims.version }));
-  if (!result || result.status !== "success" || result.versionDocumento !== claims.version) {
-    return studentDocumentAccessError_(request, actor, documentId,
-      result && result.code || "DOCUMENT_VERSION_CHANGED", claims.version);
-  }
-  logStudentDocumentAccessDecision_(request, actor, documentId, claims.version, true, "", claims.operation);
-  return result;
+// Lectura directa del documento: el dispatcher aplica el permiso RBAC una sola vez.
+function getStudentDocumentFile(payload) {
+  const request=payload||{};
+  const operation=String(request.operation||"DOWNLOAD").trim().toUpperCase();
+  if(operation!=="PREVIEW"&&operation!=="DOWNLOAD")return {status:"error",code:"DOCUMENT_ACCESS_OPERATION_INVALID",message:"Operación documental no válida."};
+  return getStudentDocumentFile_(Object.assign({},request,{operation:operation}));
 }
 
 // [REQ-EXP-001] [Fase 1: Registro y Expediente de Estudiantes] - Service backend endpoint (getStudentFile) para consulta y visualización del expediente digital del estudiante.

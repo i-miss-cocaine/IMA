@@ -339,15 +339,8 @@ window.openApplicantDocumentAction = async function(documentoId, solicitudId, op
     const previewWindow = accessOperation === 'PREVIEW' ? window.open('about:blank', '_blank') : null;
     let objectUrl = '';
     try {
-        const access = await window.fetchApi('ACADEMIC', 'createStudentDocumentAccessToken', {
+        const res = await window.fetchApi('ACADEMIC', 'getStudentDocumentFile', {
             documentoId, solicitudId, operation: accessOperation
-        });
-        if (!access || access.status !== 'success' || !access.accessToken) {
-            throw new Error((access && access.message) || 'No fue posible autorizar el acceso al documento.');
-        }
-        const res = await window.fetchApi('ACADEMIC', 'getSecureDocumentStream', {
-            documentoId, solicitudId, operation: accessOperation,
-            versionDocumento: access.versionDocumento, accessToken: access.accessToken
         });
         if (!res || res.status !== 'success' || !res.fileData) {
             throw new Error((res && res.message) || 'El documento no está disponible o no superó la verificación de integridad.');
