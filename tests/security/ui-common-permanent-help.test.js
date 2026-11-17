@@ -4,6 +4,13 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 const source = fs.readFileSync("js/ui-common.js", "utf8");
 assert.doesNotThrow(() => new Function(source));
+assert.ok(source.includes("window.loadUserHelpPreferences_"), "guide progress must load from the server");
+assert.ok(source.includes("window.persistHelpGuidePreference_"), "guide progress must persist to the server");
+assert.ok(source.includes("saveUserHelpPreferences"), "guide progress updates must use the authenticated preference endpoint");
+assert.ok(source.includes("tab-panel-help-settings"), "user settings must expose the guide management panel");
+assert.ok(source.includes("btn-reset-all-help-guides"), "the panel must expose an explicit global reset control");
+assert.ok(source.includes("teacherTemplates"), "each distinct teacher guide must have its own progress key");
+assert.ok(source.includes("USER_HELP_PREFERENCE_VERSION_CONFLICT"), "client must recover from concurrent preference updates");
 
 const start = source.indexOf("window.getUIMetadataField = function(fieldKey)");
 const end = source.indexOf("\nif (!document.getElementById(\"ima-permanent-field-help-styles\"))", start);
