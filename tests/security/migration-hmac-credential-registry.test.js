@@ -5,6 +5,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 
+const auditHeaders = ["EventID","Direction","SourceService","TargetService","Action","RequestID","CorrelationID","CredentialType","CredentialID","CredentialVersion","OccurredAt"];
+
 const source = fs.readFileSync(path.resolve(__dirname, "../../backend/user-service/Code.gs"), "utf8");
 new vm.Script(source, { filename: "backend/user-service/Code.gs" });
 
