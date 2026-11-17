@@ -180,7 +180,7 @@ console.log("TASK-153 staff/student department intersection contract passed.");
     "material publication validates its target classroom relationship");
   assert(extractFunction("createStudyMaterial").includes("assertTaskServiceTeacherAssignedToOffer"),
     "teacher publication requires an active assignment to the classroom offer");
-  assert(extractFunction("deleteStudyMaterial").includes("String(row[10] || "").trim() !== userId"),
+  assert(extractFunction("deleteStudyMaterial").includes('String(row[10] || "").trim() !== userId'),
     "teacher deletion is limited to materials authored by the verified actor");
 
   const classroomRows = [
