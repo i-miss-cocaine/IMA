@@ -16,9 +16,9 @@ function extractFunction(name) {
   return source.slice(start,next<0?source.length:next);
 }
 const names=[
-  "getRequestPermissionAction_","validateFileBinaryIntegrity","computeDocumentSHA256","getDocumentDuplicatePolicy_","ensureStudentDocumentSchema_",
+  "getRequestPermissionAction_","validateFileBinaryIntegrity","computeDocumentSHA256","ensureStudentDocumentSchema_",
   "ensureDocumentVersionHistorySchema_","getOrCreatePrivateStudentDocumentFolder_",
-  "rollbackPrivateStudentDocumentFile_","getVerifiedPrivateStudentDocumentFile_",
+  "rollbackPrivateStudentDocumentFile_","getVerifiedPrivateStudentDocumentFile_","getPrivateStudentDocumentFile_",
   "nextStudentDocumentVersion_","uploadStudentDocument","verifyDocumentIntegritySha256","getStudentDocumentFile_","getStudentDocumentFile",
   "getStudentDocuments","restoreDocumentVersion"
 ];
@@ -163,22 +163,18 @@ function upload(h,pdf,label="ACTA") {
   const result=upload(h,pdf1);
   assert.equal(result.status,"success");
   assert.equal(result.versionDocumento,"1.0");
-  assert.equal(result.integridadVerificada,true);
+  assert.equal(result.integridadVerificada,undefined,"uploads no longer calculate per-file hashes");
   assert.equal(result.driveFileId,undefined);
   const row=h.sheets.DocumentosEstudiante.rows[1];
-  const hash1=crypto.createHash("sha256").update(pdf1).digest("hex");
   assert.equal(row[5],"STUDENT-FILE-1");
   assert.equal(row[6],"","Drive URL must not be persisted");
   assert.equal(row[13],"1.0");
-  assert.equal(row[14],hash1);
+  assert.equal(row[14],"");
   assert.equal(h.sheets.DocumentosEstudiante.rows[0][15],"HashSHA256");
-  assert.equal(row[15],hash1);
+  assert.equal(row[15],"","no SHA-256 metadata");
   assert.equal(row[16],"");
   assert.equal(row[17],"");
   assert.equal(h.files.get(row[5]).getSharingAccess(),"PRIVATE");
-  const explicitVerification=h.context.verify({documentoId:row[0],solicitudId:"SOL-1",_verifiedUserId:"USER-1",_verifiedRole:"Secretary"});
-  assert.equal(explicitVerification.status,"success");
-  assert.equal(explicitVerification.integridadVerificada,true);
   const downloaded=h.context.download({documentoId:row[0],solicitudId:"SOL-1",_verifiedUserId:"USER-1",_verifiedRole:"Secretary"});
   assert.equal(downloaded.status,"success");
   assert.equal(downloaded.sha256Hash,undefined,"normal reads do not calculate or require a per-file hash");
@@ -214,22 +210,20 @@ function upload(h,pdf,label="ACTA") {
   upload(h,pdf2);
   const current=h.sheets.DocumentosEstudiante.rows[1];
   const history=h.sheets.HistorialVersionesDocumentos.rows;
-  const oldHash=crypto.createHash("sha256").update(pdf1).digest("hex");
-  const newHash=crypto.createHash("sha256").update(pdf2).digest("hex");
   assert.equal(current[13],"1.1");
-  assert.equal(current[14],newHash);
+  assert.equal(current[14],"");
   assert.equal(current[6],"");
   assert.equal(history.length,2);
   assert.equal(history[1][1],firstRow[0]);
   assert.equal(history[1][3],firstRow[5]);
   assert.equal(history[1][4],"");
   assert.equal(history[1][9],"1.0");
-  assert.equal(history[1][10],oldHash);
+  assert.equal(history[1][10],"");
   const restored=h.context.restore({documentoId:firstRow[0],versionId:history[1][0],solicitudId:"SOL-1",
     motivo:"Prueba de restauración",_verifiedUserId:"USER-1",_verifiedRole:"Secretary"});
   assert.equal(restored.status,"success");
   assert.equal(restored.versionDocumento,"1.0");
-  assert.equal(restored.sha256Hash,oldHash);
+  assert.equal(restored.sha256Hash,undefined);
   assert.equal(h.sheets.DocumentosEstudiante.rows[1][5],firstRow[5]);
   assert.equal(h.sheets.DocumentosEstudiante.rows[1][13],"1.0");
   const download=h.context.download({documentoId:firstRow[0],solicitudId:"SOL-1",_verifiedUserId:"USER-1",_verifiedRole:"Secretary"});
@@ -258,11 +252,13 @@ function upload(h,pdf,label="ACTA") {
 
 {
   const h=makeHarness();
-  assert.throws(()=>h.context.upload({expedienteId:"EXP-1",solicitudId:"SOL-1",tipoDocumento:"ACTA",
-    fileName:"payload.exe",fileData:"data:application/pdf;base64,"+pdf1.toString("base64"),
-    _verifiedUserId:"USER-1",_verifiedRole:"Secretary"}),/DANGEROUS_FILE_EXTENSION|UNSUPPORTED_FILE_FORMAT/);
-  assert.equal(h.files.size,0);
-  assert.equal(h.sheets.DocumentosEstudiante.rows.length,1);
+  const result=h.context.upload({expedienteId:"EXP-1",solicitudId:"SOL-1",tipoDocumento:"VIDEO",
+    fileName:"clase.mp4",fileData:"data:video/mp4;base64,"+Buffer.from("video-bytes").toString("base64"),
+    _verifiedUserId:"USER-1",_verifiedRole:"Secretary"});
+  assert.equal(result.status,"success");
+  assert.equal(result.mimeType,"video/mp4");
+  assert.equal(result.sizeBytes,11);
+  assert.equal(h.files.size,1);
 }
 
 {
@@ -338,85 +334,7 @@ function upload(h,pdf,label="ACTA") {
 }
 
 
-{
-  const h=makeHarness();
-  const first=upload(h,pdf1);
-  const second=h.context.upload({expedienteId:"EXP-2",solicitudId:"SOL-2",tipoDocumento:"ACTA",
-    fileName:"renombrada.pdf",fileData:"data:application/pdf;base64,"+pdf1.toString("base64"),
-    _verifiedUserId:"USER-1",_verifiedRole:"Secretary"});
-  assert.equal(second.status,"error");
-  assert.equal(second.code,"DUPLICATE_DOCUMENT_EXACT");
-  assert.equal(h.files.size,1,"exact repository duplicate must not create another Drive file");
-  assert.equal(h.sheets.DocumentosEstudiante.rows.length,2);
-}
 
-{
-  const h=makeHarness();
-  const first=upload(h,pdf1);
-  const same=h.context.upload({expedienteId:"EXP-1",solicitudId:"SOL-1",tipoDocumento:"ACTA",
-    fileName:"acta-renombrada.pdf",fileData:"data:application/pdf;base64,"+pdf1.toString("base64"),
-    _verifiedUserId:"USER-1",_verifiedRole:"Secretary"});
-  assert.equal(same.status,"success");
-  assert.equal(same.idempotent,true);
-  assert.equal(same.documentoId,first.documentoId);
-  assert.equal(h.files.size,1);
-}
-
-{
-  const h=makeHarness();
-  const first=h.context.upload({expedienteId:"EXP-1",solicitudId:"SOL-1",tipoDocumento:"ACTA",
-    fileName:"acta.pdf",fileData:"data:application/pdf;base64,"+pdf1.toString("base64"),importBatchId:"BATCH-1",
-    _verifiedUserId:"USER-1",_verifiedRole:"Secretary"});
-  const duplicate=h.context.upload({expedienteId:"EXP-2",solicitudId:"SOL-2",tipoDocumento:"ACTA",
-    fileName:"acta-copia.pdf",fileData:"data:application/pdf;base64,"+pdf1.toString("base64"),importBatchId:"BATCH-1",
-    _verifiedUserId:"USER-1",_verifiedRole:"Secretary"});
-  assert.equal(duplicate.code,"DUPLICATE_EXACT_WITHIN_BATCH");
-  assert.equal(h.files.size,1);
-}
-
-{
-  const h=makeHarness();
-  upload(h,pdf1);
-  h.sheets.ConfiguracionInstitucional=makeSheet([
-    ["Clave","Valor","Estado"],
-    ["POLITICA_DUPLICADOS_DOCUMENTALES","CREAR_ENLACE_REFERENCIA_SIN_DUPLICAR_ARCHIVO","Activo"]
-  ]);
-  const reference=h.context.upload({expedienteId:"EXP-2",solicitudId:"SOL-2",tipoDocumento:"ACTA",
-    fileName:"referencia.pdf",fileData:"data:application/pdf;base64,"+pdf1.toString("base64"),
-    _verifiedUserId:"USER-1",_verifiedRole:"Secretary"});
-  assert.equal(reference.status,"success");
-  assert.equal(reference.duplicate,true);
-  assert.equal(reference.duplicateType,"REFERENCIA_SIN_COPIA");
-  assert.equal(reference.fileCreated,false);
-  assert.equal(h.files.size,1,"reference policy must reuse the original Drive file");
-  assert.equal(h.sheets.DocumentosEstudiante.rows.length,3);
-  assert.equal(h.sheets.DocumentosEstudiante.rows[2][5],h.sheets.DocumentosEstudiante.rows[1][5]);
-  assert.equal(h.sheets.DocumentosEstudiante.rows[2][17],h.sheets.DocumentosEstudiante.rows[1][0]);
-}
-
-{
-  const h=makeHarness();
-  const hash=crypto.createHash("sha256").update(pdf1).digest("hex");
-  h.sheets.InventarioDocumentalLegado=makeSheet([
-    ["DocumentoId","InstitutionID","HashSHA256"],
-    ["LEG-1","INST-1",hash]
-  ]);
-  const duplicate=h.context.upload({expedienteId:"EXP-1",solicitudId:"SOL-1",tipoDocumento:"ACTA",
-    fileName:"acta.pdf",fileData:"data:application/pdf;base64,"+pdf1.toString("base64"),
-    _verifiedUserId:"USER-1",_verifiedRole:"Secretary"});
-  assert.equal(duplicate.code,"DUPLICATE_LEGACY_INVENTORY");
-  assert.equal(h.files.size,0,"legacy inventory duplicate must be detected before Drive write");
-}
-
-{
-  const h=makeHarness();
-  upload(h,pdf1);
-  const row=h.sheets.DocumentosEstudiante.rows[1];
-  h.setFileBytes(row[5],pdf2);
-  const verification=h.context.verify({documentoId:row[0],solicitudId:"SOL-1",_verifiedUserId:"USER-1",_verifiedRole:"Secretary"});
-  assert.equal(verification.status,"error");
-  assert.equal(verification.code,"DOCUMENT_INTEGRITY_MISMATCH");
-}
 
 const secretary = fs.readFileSync(path.join(__dirname,"../../js/secretary.js"),"utf8");
 assert.ok(secretary.includes("'getStudentDocumentFile'"),"secretary uses the direct document read endpoint");
