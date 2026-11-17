@@ -76,6 +76,7 @@ function makeUserRuntime(options = {}) {
 }
 
 const accountingFns = [
+  "computeMigrationCredentialFingerprint_", "getMigrationHmacSecret_", "resolveInterServiceSecret_",
   "isAccountingTrustedAppsScriptEndpoint_", "accountingComputeHmacSignature_", "requestAccountingUserAuthorization_",
   "getVerifiedAccountingIdentity_", "accountingHasInstitutionalImportPermission_",
   "getVerifiedDepartmentScopeForSession_", "apiResponseCorrelationId_", "apiResponsePublicMessage_",
@@ -85,16 +86,25 @@ const accountingFns = [
 let remoteResponse = { status: "success", authorized: true, userId: "U-1", role: "Director",
   membershipId: "MEM-1", institutionId: "INST-1", importPermissionVerified: true };
 let lastEnvelope = null;
+const credentialHeaders = ["CredentialID","ServiceID","CredentialType","Version","Status","Fingerprint","CreatedAt","CreatedBy","RevokedAt","RevokedBy"];
+const credentialFingerprint = crypto.createHash("sha256").update(secret, "utf8").digest("hex");
+const credentialRows = [credentialHeaders, ["CRED-ACCOUNTING-v1","ACCOUNTING","IMA_MIGRATION_HMAC_SECRET","v1","ACTIVE",credentialFingerprint,"2026-11-17T00:00:00Z","fixture","",""]];
 const accountingRuntime = {
   API_RESPONSE_VERSION: "1.0.0", Date, String, JSON, Array, Object, Number, Math, RegExp, Error,
+  SPREADSHEET_ID: "SHEET-1",
   PropertiesService: { getScriptProperties: () => ({ getProperty: key => ({
     IMA_USER_SERVICE_URL: "https://script.google.com/macros/s/AKfycbUSER123/exec",
     IMA_MIGRATION_HMAC_SECRET: secret,
+    IMA_MIGRATION_HMAC_SECRET_VERSION: "v1",
     IMA_INSTITUTION_ID: "INST-1",
     SPREADSHEET_ID: "SHEET-1"
   })[key] || "" }) },
+  SpreadsheetApp: { openById: id => { assert.equal(id, "SHEET-1"); return { getSheetByName: name => name === "CatalogoCredencialesServicios" ? { getDataRange: () => ({ getValues: () => credentialRows.map(row => row.slice()) }) } : null }; } },
   Utilities: {
     MacAlgorithm: { HMAC_SHA_256: "HMAC_SHA_256" },
+    DigestAlgorithm: { SHA_256: "SHA_256" },
+    Charset: { UTF_8: "UTF_8" },
+    computeDigest(_algorithm, value) { return Array.from(crypto.createHash("sha256").update(String(value), "utf8").digest()).map(byte => byte > 127 ? byte - 256 : byte); },
     computeHmacSignature(algorithm, message, key) {
       assert.equal(algorithm, "HMAC_SHA_256");
       return Array.from(crypto.createHmac("sha256", key).update(String(message)).digest());
@@ -122,7 +132,8 @@ const accountingRuntime = {
     return { status: "success", registrosImportados: 1 };
   }
 };
-vm.runInNewContext(accountingFns.join("\n") + "\nthis.api = { auth: getVerifiedAccountingIdentity_, permission: accountingHasInstitutionalImportPermission_, department: getVerifiedDepartmentScopeForSession_, post: doPost, get: doGet, publicMessage: apiResponsePublicMessage_ };", accountingRuntime);
+const registryBootstrap = 'const IMA_LOCAL_SERVICE_ID_ = "ACCOUNTING"; const IMA_CREDENTIAL_CATALOG_HEADERS_ = ' + JSON.stringify(credentialHeaders) + ';';
+vm.runInNewContext(registryBootstrap + "\n" + accountingFns.join("\n") + "\nthis.api = { auth: getVerifiedAccountingIdentity_, permission: accountingHasInstitutionalImportPermission_, department: getVerifiedDepartmentScopeForSession_, post: doPost, get: doGet, publicMessage: apiResponsePublicMessage_ };", accountingRuntime);
 
 {
   const identity = accountingRuntime.api.auth({ sessionToken: "SIGNED-LIVE-SESSION" });
