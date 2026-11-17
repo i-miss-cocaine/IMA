@@ -52,6 +52,7 @@ function createContext(source, initialSecret, claims) {
     },
     CacheService: { getScriptCache: () => ({ get: () => null, put: () => {} }) },
     isSessionRevoked_: () => false,
+    isSessionRevokedInSharedLedger_: () => false,
     verifyUserRoleMembershipClaim_: () => null,
     getUserRoleMembershipState_: () => ({ hasRecords: false }),
     resolveUserRoleMembership_: () => null,
