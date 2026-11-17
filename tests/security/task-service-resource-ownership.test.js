@@ -81,6 +81,7 @@ function makeSubmissionAccessFixture() {
     SPREADSHEET_ID: "LOCAL",
     SpreadsheetApp: { openById: () => ({}) },
     getSheetOrThrow: (_ss, name) => sheets[name],
+    normalizeString: value => String(value || "").trim().toLowerCase(),
     getVerifiedTaskIdentity_: payload => payload.identity || { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" },
     isTaskServiceAdministrativeRole: role => ["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
     getTaskServiceGuardianStudentIds: userId => userId === "GUARD-1" ? ["STU-1"] : [],
