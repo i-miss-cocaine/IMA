@@ -575,7 +575,6 @@ function createTask(payload) {
  if(tareaOriginalId){const orig=taskSheet.getDataRange().getValues().slice(1).find(r=>String(r[0]).trim()===String(tareaOriginalId).trim());if(!orig)throw new Error("Tarea original no encontrada.");assertTaskServiceTeacherCanManageTask(payload,orig,"CREATE_DERIVED");}
  const scope=getVerifiedTaskDepartmentScope_(payload,ss,identity);if(!scope.authorized)throw new Error(scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED");
  const department=resolveTaskServiceOwnershipDepartment_(payload,scope);if(!department.authorized)throw new Error(department.code);
- if(getDynamicPermissionsForRole(role,"registerResourceOwnership")!==true)throw new Error("AUTH_PERMISSION_DENIED");
  const id="TSK-"+Utilities.getUuid();taskSheet.appendRow([id,tipo||"Tarea",titulo,descripcion||"",parcial||"",asignatura,gradoAsignado,seccionAsignada||"",fechaLimite||"",tareaOriginalId||"",owner,"Activa",puntaje===undefined?100:puntaje,archivoUrl||"",fechaDisponible||"",tipoRecurso||"Tarea"]);
  const registered=registerTaskServiceResourceOwnership_(scope,"TAREA",id,department.departmentId,ss);
  if(!registered.authorized){try{const rows=taskSheet.getDataRange().getValues(),idx=rows.findIndex((r,n)=>n>0&&String(r[0]||"").trim()===id);if(idx>0)taskSheet.deleteRow(idx+1);}catch(_){throw new Error("RESOURCE_OWNERSHIP_ROLLBACK_FAILED");}throw new Error(registered.code||"RESOURCE_OWNERSHIP_WRITE_FAILED");}
@@ -1628,7 +1627,6 @@ function ensureTaskServiceResourceOwnershipSheet_(ss) {
 function registerTaskServiceResourceOwnership_(scope,typeValue,idValue,departmentValue,ss) {
  let lock=null;try{
   if(!scope||!scope.authorized||!scope.userId||!scope.institutionId)return {authorized:false,code:"DEPARTMENT_SCOPE_NOT_ASSIGNED"};
-  if(getDynamicPermissionsForRole(scope.role,"registerResourceOwnership")!==true)return {authorized:false,code:"AUTH_PERMISSION_DENIED"};
   const type=String(typeValue||"").trim().toUpperCase(),id=String(idValue||"").trim(),dept=String(departmentValue||"").trim();
   if(!type||!id||!dept||((scope.departmentIds||[]).map(String).indexOf(dept)===-1&&scope.institutionWide!==true))return {authorized:false,code:"RESOURCE_OWNERSHIP_FIELDS_INVALID"};
   lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {authorized:false,code:"RESOURCE_OWNERSHIP_LOCK_TIMEOUT"};
