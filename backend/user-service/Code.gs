@@ -11144,7 +11144,7 @@ function configurationJsonArray_(value,fallback) {
 }
 function configurationPolicyFromRow_(row,index) {
   var policy=String(row[index.PoliticaAlcance]||"RESTRINGIDO").trim().toUpperCase();
-  var rule=CONFIGURATION_POLICY_RULES_[policy]||CONFIGURATION_POLICY_RULES_.RESTRINGIDO;
+  var rule=CONFIGURATION_POLICY_RULES_[policy];if(!rule)throw new Error("CONFIGURATION_POLICY_INVALID");
   return {policy:policy,allowedScopes:configurationJsonArray_(row[index.AmbitosPermitidosJSON],rule.allowedScopes),
     inheritance:row[index.PermiteHerencia]===true||String(row[index.PermiteHerencia]).toLowerCase()==="true",
     override:row[index.PermiteSobrescritura]===true||String(row[index.PermiteSobrescritura]).toLowerCase()==="true",
@@ -11230,7 +11230,7 @@ function getHierarchicalConfigurationCatalog(payload) {
   var catalog=[];
   snapshot.rows.forEach(function(row){
     var key=String(row[ix.Clave]||"").trim(),scope=String(row[ix.Ambito]||"GLOBAL").trim().toUpperCase();
-    if(!key||scope!=="GLOBAL"||seen[key])return;seen[key]=true;
+    if(!key||scope!=="GLOBAL")return;if(seen[key])throw new Error("CONFIGURATION_SCOPE_CONFLICT");seen[key]=true;
     var policy=configurationPolicyFromRow_(row,ix);
     if(policy.sensitive&&["Administrador","Director","Desarrollador"].indexOf(role)===-1)return;
     if(["Administrador","Director","Desarrollador"].indexOf(role)===-1&&
