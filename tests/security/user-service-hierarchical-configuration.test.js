@@ -20,10 +20,11 @@ function extractDeveloperFunction(name){
  const start=developerSource.indexOf("function "+name+"(");assert.ok(start>=0,"developer function exists: "+name);
  const open=developerSource.indexOf("{",start);let depth=0,quote=null,escaped=false,line=false,block=false;
  for(let i=open;i<developerSource.length;i++){const ch=developerSource[i],next=developerSource[i+1];
-  if(line){if(ch==="\\n")line=false;continue;}if(block){if(ch==="*"&&next==="/"){block=false;i++;}continue;}
-  if(quote){if(escaped){escaped=false;continue;}if(ch==="\\\\"){escaped=true;continue;}if(ch===quote)quote=null;continue;}
+  if(line){if(ch==="\n")line=false;continue;}
+  if(block){if(ch==="*"&&next==="/"){block=false;i++;}continue;}
+  if(quote){if(escaped){escaped=false;continue;}if(ch==="\\"){escaped=true;continue;}if(ch===quote)quote=null;continue;}
   if(ch==="/"&&next==="/"){line=true;i++;continue;}if(ch==="/"&&next==="*"){block=true;i++;continue;}
-  if(ch==="'"||ch==='\\"'||ch===String.fromCharCode(96)){quote=ch;continue;}
+  if(ch==="'"||ch==='"'||ch===String.fromCharCode(96)){quote=ch;continue;}
   if(ch==="{")depth++;else if(ch==="}"&&--depth===0)return developerSource.slice(start,i+1);
  }throw new Error("Unbalanced developer function: "+name);
 }
