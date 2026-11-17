@@ -19,9 +19,14 @@ function makeSheet(rows,options){
     appendRow(row){if(options.failAppend)throw new Error("synthetic append failure");this.rows.push(row.slice());},
     deleteRow(row){if(options.failDeleteRow)throw new Error("synthetic delete failure");this.rows.splice(row-1,1);},
     getRange(row,col,numRows,numCols){
-      return {setValues:values=>{
+      const sheet=this;
+      return {setValues(values){
         if(options.failSetValues)throw new Error("synthetic row write failure");
-        for(let r=0;r<numRows;r++)for(let c=0;c<numCols;c++)this.rows[row-1+r][col-1+c]=values[r][c];
+        for(let r=0;r<numRows;r++){
+          const target=sheet.rows[row-1+r];
+          while(target.length<col-1+numCols)target.push("");
+          for(let c=0;c<numCols;c++)target[col-1+c]=values[r][c];
+        }
       }};
     }
   };
