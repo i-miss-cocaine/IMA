@@ -3261,7 +3261,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div>
                             <div class="flex items-center gap-2 mb-1">
                                 <span class="px-2.5 py-0.5 bg-indigo-100 text-indigo-800 text-[8px] font-black uppercase rounded">${c.categoria}</span>
-                                <span class="text-[9px] text-gray-400 font-bold">${c.fechaPublicacion ? new Date(c.fechaPublicacion).toLocaleDateString() : ''}</span>
+                                <span class="text-[9px] text-gray-400 font-bold">${c.fechaPublicacion ? window.IMARegionalFormatters.formatDate(c.fechaPublicacion) : ''}</span>
                             </div>
                             <h4 class="text-xs font-bold text-gray-900 uppercase tracking-tight">${c.titulo}</h4>
                             <p class="text-xs text-gray-600 mt-1 leading-relaxed">${c.contenido}</p>
