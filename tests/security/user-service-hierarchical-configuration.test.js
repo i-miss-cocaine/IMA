@@ -217,6 +217,16 @@ function writeHarness(options={}){
  assert.equal(result.valorDepartamental,null);
 }
 {
+ const h=harness({departments:["D-1","D-2"]});
+ const beforeException=h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag",departamentoId:"D-1"});
+ const beforeInherited=h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag",departamentoId:"D-2"});
+ assert.equal(beforeException.valor,"department");
+ assert.equal(beforeInherited.valor,"institution");
+ h.sheets.ConfiguracionSistema.rows[2][2]="institution-updated";
+ assert.equal(h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag",departamentoId:"D-2"}).valor,"institution-updated","inheriting departments receive the current institutional value");
+ assert.equal(h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag",departamentoId:"D-1"}).valor,"department","explicit department exceptions survive institutional changes");
+}
+{
  const h=harness({institutionId:"",personal:true});
  assert.equal(h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag"}).valor,"global","no institution context cannot read institution or personal overrides");
  assert.equal(h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag",departamentoId:"D-1"}).code,"CONFIGURATION_INSTITUTION_REQUIRED");
