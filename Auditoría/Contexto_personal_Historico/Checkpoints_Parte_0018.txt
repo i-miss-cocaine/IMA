@@ -347,3 +347,31 @@ Siguiente tarea elegible: F25-Task03 — detección avanzada de duplicados e int
 - **Rama base:** `NG_beta_0.0.0.1` HEAD `44d9891132332e692dbe2ba8602b41f50a508a59`; comparación verificada en HEAD de código: **3926 ahead, 0 behind**. Sin escrituras en rama base.
 - **Siguiente acción:** diseñar e implementar el flujo de provisioning/rotación coordinada y auditoría de uso sin exponer secretos al frontend ni registrar valores; añadir pruebas locales de concurrencia y revocación; después verificar Script Properties/deployments mediante acceso autorizado.
 =============================================================================
+
+
+
+=============================================================================
+### C1.806 — IMA-EXEC-20261117-AUD-NG-084-USAGE-AUDIT-READ-01
+- **Checkpoint anterior:** C1.805 — rotación solapada USER/ACADEMIC/DEVELOPER y credencial tipada ACCOUNTING.
+- **HEAD inicial de esta continuación:** 081a28793279e72a9893865e75247746ebfa68bf.
+- **HEAD de código/CI:** 67b6962fc5261ce35855f4cbfda51cb2c527a4a4.
+- **Tarea:** AUD-NG-084 — gestión segura de secretos por servicio, rotación y revocación.
+- **Alcance implementado en esta iteración:**
+  - Se incorporó el registro de utilización de credenciales HMAC en USER, ACADEMIC, ACCOUNTING y DEVELOPER: eventos INBOUND/OUTBOUND con ID de evento idempotente, dirección, emisor/receptor, acción, requestId, correlationId, tipo, CredentialID y versión; no se almacena el secreto ni su huella en la bitácora.
+  - DEVELOPER dejó de devolver una lista vacía en `auditInterServiceCalls`: ahora consulta `AuditoriaUsoCredenciales`, valida el esquema, admite filtros por correlación/solicitud/servicios/acción/dirección, limita resultados a 200 y devuelve metadatos de credencial sin material secreto.
+  - Se corrigieron fixtures que no incorporaban el nuevo colaborador de auditoría en USER, ACADEMIC, ACCOUNTING y DEVELOPER. Se añadieron aserciones de auditoría saliente/entrante y consulta autenticada en DEVELOPER.
+- **Code review:** cambio de lectura de bitácora es de solo lectura; no crea hojas, no modifica registros, no devuelve secretos/huellas y falla con error explícito ante esquema inválido o consulta fuera de límites. Se conserva el filtro de autorización del dispatcher DEVELOPER para Administrador/Desarrollador.
+- **GitHub Actions / Node.js 24.22.2:**
+  - Accounting Import Preflight run **44106514914**, commit probado `77efd22bd3e5798cc0d00f3f3a0029bf28d60b07`: **46/46 pasos SUCCESS**, incluye sintaxis de ACCOUNTING/USER/ACADEMIC/DEVELOPER, registro/auditoría de uso, HMAC registry, replay guard, rotación/revocación y contratos de importación.
+  - Developer Service Registry run **44106961914**, commit probado `67b6962fc5261ce35855f4cbfda51cb2c527a4a4`: **9/9 pasos SUCCESS**, incluye `node --check` del servicio DEVELOPER y del contrato y ejecución de pruebas de auditoría/consulta.
+  - Identity Mapping run **44105821133**, commit probado `079991c818096f2082af1b213767b316a7da1383`: SUCCESS.
+  - Hierarchical Configuration run **44106846434**, commit probado `ac7a6087977d900813c32db317759e704fbbdef9`: SUCCESS.
+  - Department Scope run **44106846490** conserva un fallo independiente en Phase 22 por ausencia de `configureSchoolDocumentTemplate` en ACCOUNTING; no fue introducido ni modificado por esta tarea y no se alteró código ajeno para silenciarlo.
+- **CLI local:** NOT RUN; no hubo checkout local disponible en esta sesión. No se declara una ejecución local inexistente. Los comandos Node se ejecutaron en runners GitHub Actions con Node 24.22.2.
+- **Archivos de código/prueba:** `backend/developer-service/Code.gs`; contratos de `tests/security/` para USER, ACADEMIC, ACCOUNTING, DEVELOPER y `interservice-credential-usage-audit.test.js`. Se conservaron los workflows existentes; no se tocaron archivos de aplicación ajenos.
+- **Commits de la continuación:** `50a5800dd26ee053457c69f928c0b41afae69178` (registro de uso); `081a28793279e72a9893865e75247746ebfa68bf` (alineación de harnesses); correcciones incrementales de fixtures y lectura de auditoría hasta `67b6962fc5261ce35855f4cbfda51cb2c527a4a4`.
+- **Estado:** AUD-NG-084 permanece **En ejecución**. La auditoría de uso ya se registra y consulta en DEVELOPER. Falta implementar el flujo de provisioning coordinado para alta/rotación/revocación de propiedades y catálogo en los proyectos de servicio. No se afirma que las Script Properties reales estén provisionadas ni que los deployments estén sincronizados.
+- **Pruebas beta:** BETA-FUNC-121 agregado a `beta_test_Parte_0002.txt`; pendiente de entorno beta desplegado y acceso administrativo seguro. Esta validación remota no bloquea el trabajo local.
+- **Rama base:** `NG_beta_0.0.0.1` HEAD `44d9891132332e692dbe2ba8602b41f50a508a59`; comparación en HEAD de código: **3941 ahead, 0 behind**. Sin escrituras en rama base.
+- **Siguiente acción:** diseñar e implementar provisioning coordinado fail-closed entre los cuatro servicios, con almacenamiento versionado, rollback/idempotencia y pruebas locales de concurrencia; después verificar Script Properties/deployments mediante acceso autorizado.
+=============================================================================

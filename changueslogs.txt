@@ -4122,3 +4122,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Node CLI local: NOT RUN por falta de checkout local; los comandos Node se ejecutaron realmente en runners GitHub Actions. No se declara prueba local inexistente.
 - Pendiente: automatización/procedimiento de provisioning coordinado, auditoría de uso de credenciales y verificación autorizada de Script Properties/deployments reales. AUD-NG-084 continúa En ejecución.
 - HEAD de código/CI: 3a3a07146cf92ee738814f1a872de0e54ca58a0c; rama base NG_beta_0.0.0.1 HEAD 44d9891132332e692dbe2ba8602b41f50a508a59, comparación 3926 ahead / 0 behind.
+
+
+[2026-11-17] C1.806 — AUD-NG-084: auditoría de uso HMAC consultable
+- Se agregó registro INBOUND/OUTBOUND de uso de credenciales HMAC en USER, ACADEMIC, ACCOUNTING y DEVELOPER, sin guardar secretos ni huellas en la bitácora.
+- DEVELOPER ahora expone consulta filtrada, paginada y de solo lectura de AuditoriaUsoCredenciales mediante la acción auditInterServiceCalls; se validan esquema y límites.
+- Se alinearon los fixtures de los consumidores y se añadieron pruebas de auditoría de llamadas y acceso autenticado.
+- Accounting Import Preflight run 44106514914: Node 24.22.2, 46/46 pasos SUCCESS. Developer Service Registry run 44106961914: 9/9 pasos SUCCESS.
+- AUD-NG-084 sigue En ejecución: falta provisioning coordinado de Script Properties/catálogos. BETA-FUNC-121 queda Pendiente beta para validar configuración real, rotación y revocación.
+- HEAD de código/CI: 67b6962fc5261ce35855f4cbfda51cb2c527a4a4. Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59; 3941 ahead / 0 behind.

@@ -729,3 +729,22 @@ NaN
 - **Evidencia requerida:** action, código de respuesta, rol de claims, rol declarado ignorado, conteos antes/después y actor auditado parcialmente redactado; nunca guardar token, firma ni secretos.
 - **Estado:** Pendiente de ejecución en beta desplegada. El contrato Node.js 24/GitHub Actions valida el dispatcher con sesiones sintéticas, no la configuración real de Script Properties ni el despliegue web.
 ============================================================================
+
+
+============================================================================
+### BETA-FUNC-121 — AUD-NG-084 — Provisioning, rotación y auditoría de credenciales HMAC interservicio
+- **Módulos/servicios:** USER, ACADEMIC, ACCOUNTING y DEVELOPER; llamadas firmadas INBOUND/OUTBOUND.
+- **Objetivo:** comprobar en un entorno aislado que las credenciales dedicadas por servicio se provisionan de forma coordinada, que la rotación solapada y revocación selectiva son efectivas y que cada uso queda consultable sin exponer secretos.
+- **Precondiciones:** desplegar versiones compatibles de los cuatro servicios; acceso administrativo seguro a Script Properties y a los catálogos de credenciales; hojas `CatalogoCredencialesServicios` y `AuditoriaUsoCredenciales` con esquema vigente; endpoints Apps Script HTTPS; cuentas y solicitudes sintéticas. No usar datos reales ni registrar/exportar secretos o huellas.
+- **Pasos:**
+  1. Provisionar una credencial v1 por servicio: propiedad de firma local, propiedades de verificación por emisor en los receptores y fila ACTIVE con CredentialID, versión, fingerprint, actor y fecha. Comprobar que ninguna propiedad de sesión AUTH_TOKEN_SECRET se reutiliza como HMAC.
+  2. Ejecutar solicitudes firmadas entre cada par de servicios aplicable; comprobar que el emisor registra OUTBOUND y el receptor INBOUND con el mismo requestId/correlationId, CredentialID y versión.
+  3. Repetir una solicitud y ejecutar dos entregas concurrentes del mismo requestId; comprobar rechazo anti-replay, una sola fila por EventID/dirección y liberación del lock.
+  4. Rotar a v2: v2 queda ACTIVE y v1 VERIFY_ONLY; verificar que los sobres firmados con ambas claves se aceptan durante la ventana y que el emisor nuevo firma con v2.
+  5. Revocar v1 y retirar su propiedad versionada cuando corresponda; comprobar que un sobre v1 se rechaza antes de reservar requestId y que v2 continúa funcionando.
+  6. Consultar `auditInterServiceCalls` desde DEVELOPER con filtros de correlationId, requestId, servicio, acción y dirección; comprobar orden reciente, límite máximo, paginación/truncamiento y que la respuesta no contiene secreto ni fingerprint.
+  7. Probar fallos de propiedad ausente/débil, versión faltante, huella incorrecta, ID/versión duplicados, esquema de catálogo/bitácora inválido, almacenamiento inaccesible y lock ocupado; comprobar fallo cerrado, ausencia de autorización y ausencia de escrituras parciales.
+- **Resultado esperado:** cada servicio firma con su clave ACTIVE; los receptores aceptan solo ACTIVE/VERIFY_ONLY del emisor esperado; la revocación es selectiva; la bitácora es idempotente, íntegra, filtrable y no contiene material secreto; errores de provisioning/auditoría no producen estados parcialmente válidos.
+- **Evidencia requerida:** commit y deployment por servicio, versiones/estados/IDs sintéticos, fingerprints solo en evidencia restringida (nunca en logs públicos), conteos antes/después, IDs de evento, respuestas HMAC/replay, resultados concurrentes y salida saneada de auditoría. No adjuntar tokens ni secretos.
+- **Estado:** Pendiente beta. Los contratos Node.js 24/GitHub Actions verifican lógica aislada y fixtures; no prueban Script Properties, LockService, Sheets ni endpoints reales desplegados.
+============================================================================
