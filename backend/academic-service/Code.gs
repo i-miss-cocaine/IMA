@@ -14955,7 +14955,7 @@ function getStudentDocuments(payload) {
     if(cleanExpId)return rowExpId===cleanExpId;
     return rowSolId===cleanSolId;
   });
-  const requestAccess=assertStudentRequestScopeAccess_(request,ss,cleanExpId,cleanSolId);
+  const requestAccess=assertStudentRequestScopeAccess_(request,ss,String(request.expedienteId||"").trim(),String(request.solicitudId||"").trim());
   if(!requestAccess||requestAccess.authorized!==true){
     return {status:"error",code:"RESOURCE_SCOPE_DENIED",message:"No existen documentos disponibles dentro del ámbito autorizado."};
   }

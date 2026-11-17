@@ -60,6 +60,6 @@ function makeRuntime(){
  assert.equal(r.status,"success");
  assert.equal(r.documents.length,2);
  assert.equal(h.calls.scope,1,"application-level listing is authorized once");
- assert.equal(h.calls.args[0].solicitudId,"sol-1");
+ assert.equal(h.calls.args[0].solicitudId,"SOL-1","original identifier casing is preserved for ownership lookup");
 }
 process.stdout.write("Academic document reference consumer: one local scope check, no interservice permission round trip (3 scenarios PASS).\n");
