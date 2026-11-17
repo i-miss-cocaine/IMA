@@ -1647,30 +1647,43 @@ function assertTaskServiceSubmissionTaskOwnership_(payload,deliveryId,operation)
 
 function getTaskServiceSubmissionAccess_(payload, operation, verifiedIdentity) {
   const identity = verifiedIdentity || getVerifiedTaskIdentity_(payload);
-  if (!identity || !identity.authorized) throw new Error("RESOURCE_NOT_FOUND");
-  const role = identity.role;
+  const role = identity && identity.role;
+  function deny(reason) {
+    try {
+      Logger.log("[TASK-SVC] SUBMISSION_ACCESS_DENIED operation=" + String(operation || "READ") +
+        " role=" + String(role || "UNKNOWN") + " reason=" + String(reason || "RESOURCE_NOT_FOUND"));
+    } catch (_) {}
+    throw new Error("RESOURCE_NOT_FOUND");
+  }
+  if (!identity || !identity.authorized) deny("identity_unverified");
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const deliveryValues = getSheetOrThrow(ss, "Entregas").getDataRange().getValues();
-  const deliveryHeaders = deliveryValues[0] || [];
   const deliveries = deliveryValues.slice(1);
   const requestedDeliveryId = String(payload && payload.entregaId || "").trim();
   const requestedTaskId = String(payload && payload.tareaId || "").trim();
   let delivery = null;
   if (requestedDeliveryId) {
     delivery = deliveries.find(row => String(row[0] || "").trim() === requestedDeliveryId) || null;
-    if (!delivery) throw new Error("RESOURCE_NOT_FOUND");
+    if (!delivery) deny("delivery_missing");
   }
-  if (delivery && requestedTaskId && String(delivery[1] || "").trim() !== requestedTaskId) throw new Error("RESOURCE_NOT_FOUND");
+  if (delivery && requestedTaskId && String(delivery[1] || "").trim() !== requestedTaskId) {
+    deny("delivery_task_mismatch");
+  }
   const taskId = String(delivery && delivery[1] || requestedTaskId).trim();
-  if (!taskId) throw new Error("RESOURCE_NOT_FOUND");
+  if (!taskId) deny("task_id_missing");
   const task = getSheetOrThrow(ss, "Tareas").getDataRange().getValues().slice(1)
     .find(row => String(row[0] || "").trim() === taskId) || null;
-  if (!task) throw new Error("RESOURCE_NOT_FOUND");
+  if (!task) deny("task_missing");
 
   const isStaff = role === "Profesor" || isTaskServiceAdministrativeRole(role);
   let studentId = delivery ? String(delivery[2] || "").trim() : "";
   if (isStaff) {
-    assertTaskServiceTeacherCanManageTask(payload, task, operation || "READ");
+    try {
+      assertTaskServiceTeacherCanManageTask(payload, task, operation || "READ");
+    } catch (error) {
+      if (error && error.message === "RESOURCE_NOT_FOUND") deny("staff_task_scope");
+      throw error;
+    }
   } else {
     let allowedStudentIds = [];
     if (role === "Estudiante" || role === "Alumno") {
@@ -1678,7 +1691,7 @@ function getTaskServiceSubmissionAccess_(payload, operation, verifiedIdentity) {
     } else if (["Padre", "Tutor", "Responsable"].indexOf(role) !== -1) {
       allowedStudentIds = getTaskServiceGuardianStudentIds(identity.userId).map(value => String(value || "").trim());
     } else {
-      throw new Error("RESOURCE_NOT_FOUND");
+      deny("role_not_allowed");
     }
     if (!delivery) {
       const candidates = deliveries.filter(row =>
@@ -1686,13 +1699,18 @@ function getTaskServiceSubmissionAccess_(payload, operation, verifiedIdentity) {
         allowedStudentIds.indexOf(String(row[2] || "").trim()) !== -1 &&
         normalizeString(row[6]) !== "eliminada"
       );
-      if (candidates.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
+      if (candidates.length !== 1) deny("student_delivery_missing_or_ambiguous");
       delivery = candidates[0];
       studentId = String(delivery[2] || "").trim();
     }
-    if (!studentId || allowedStudentIds.indexOf(studentId) === -1) throw new Error("RESOURCE_NOT_FOUND");
-    if (normalizeString(delivery[6]) === "eliminada") throw new Error("RESOURCE_NOT_FOUND");
-    assertTaskServiceStudentCanAccessTask(ss, studentId, task);
+    if (!studentId || allowedStudentIds.indexOf(studentId) === -1) deny("student_delivery_owner");
+    if (normalizeString(delivery[6]) === "eliminada") deny("student_delivery_deleted");
+    try {
+      assertTaskServiceStudentCanAccessTask(ss, studentId, task);
+    } catch (error) {
+      if (error && error.message === "RESOURCE_NOT_FOUND") deny("student_task_scope");
+      throw error;
+    }
   }
   return { ss, identity, role, isStaff, task, taskId, delivery, deliveries, studentId };
 }

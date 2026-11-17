@@ -95,7 +95,8 @@ const runtime={
   normalizeString:value=>String(value||"").trim().toLowerCase(),
   extractTaskServiceFileId:value=>String(value||"").trim(),
   DriveApp:{getFileById:id=>fileStore[id]},
-  Logger:{log:()=>{}},
+  denialLogs:[],
+  Logger:{log:message=>denialLogs.push(String(message))},
   Utilities:{getUuid:()=>"NEW-COMMENT"},
   Date,String,Error,Object,Array,Number,JSON,Math
 };
@@ -134,4 +135,6 @@ test(()=>{assert.equal(call("getSubmissionDocumentPreviewUrl","S2","",{fileId:"F
 test(()=>{assert.equal(call("getSubmissionDocumentPreviewUrl","S1","",{fileId:"FILE-3"}).status,"error");});
 test(()=>{sheets.EntregasVersiones.rows.push(["V-AMBIG","DEL-2","TASK-2","STU-2",2,"","FILE-OLD","application/pdf","","",new Date(),"Enviada",""]);assert.equal(call("getSubmissionDocumentPreviewUrl","S1","",{fileId:"FILE-OLD"}).status,"error","a file referenced by multiple deliveries must fail closed");sheets.EntregasVersiones.rows.pop();});
 test(()=>{assert.equal(call("getSubmissionDocumentPreviewUrl","T1","",{fileId:"FILE-3"}).status,"success");});
+assert(denialLogs.some(message=>message.includes("SUBMISSION_ACCESS_DENIED")&&message.includes("operation=READ_HISTORY")),"denied resource access attempts are recorded");
+assert(!denialLogs.some(message=>message.includes("Nota privada")),"denial logs never contain private comment content");
 console.log("PASS task-service submission access contract: "+passed+" tests");
