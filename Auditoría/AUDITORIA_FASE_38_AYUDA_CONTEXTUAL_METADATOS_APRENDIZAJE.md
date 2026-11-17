@@ -224,19 +224,19 @@ La evaluación abarca la ayuda contextual inmediata (tooltips/popovers), las ins
 - **Dependencias/riesgos:** F26-Task01/02 (configuración/locales), F30-Task12 (manuales); riesgo de claves inestables o de mostrar reglas diferentes entre dashboards.
 - **Alcance:** metadatos de interfaz y ayuda; no convertir el catálogo en fuente de autorización ni permitir HTML/JS arbitrario.
 - **Criterios de aceptación:** claves estables; esquema tipado; campos equivalentes consumen misma definición; ejemplos/límites visibles; validación de referencias de claves; caché versionada; pruebas de cobertura, campo desconocido y fallback.
-- **Prioridad:** P0. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; no existe catálogo central y las ayudas están dispersas en HTML/JS.
+- **Prioridad:** P0. **Estado:** Parcialmente implementada; beta pendiente.
+- **Evidencia:** `getUIMetadataCatalog` versión 1.0.0, fallback/cache en `js/ui-common.js` y `tests/security/user-service-ui-metadata.test.js` PASS. Falta completar la cobertura de metadatos y el consumo uniforme de todos los campos/dashboards; no se declara cierre total.
 
 ### [F38-Task03] Persistir preferencias y progreso de ayuda en servidor por usuario
 - **Hallazgo de origen:** F38-09; CAR-F38-09.
 - **Severidad:** Crítica / P0. **Objetivo:** sincronizar progreso de guías y consejos descartados entre dispositivos sin mezclar usuarios.
 - **Acción ejecutable:** crear `PreferenciasUsuario` y endpoints `saveUserHelpPreferences`/`getUserHelpPreferences`; almacenar tourKey, step, descartado, versión, timestamp y usuario derivado de sesión; resolver conflictos con versión.
 - **Archivos/módulos:** `backend/user-service/Code.gs`, `PreferenciasUsuario`, `js/ui-common.js`, `startInteractiveGuide`.
-- **Dependencias/riesgos:** TASK-062 (versionado/consistencia), F26-Task04 (invalidación), identidad de sesión verificada; riesgo de guardar preferencias bajo ID enviado por cliente.
+- **Dependencias/riesgos:** TASK-062 (versionado/consistencia), F26-Task04 (invalidación), identidad de sesión verificada. Se resuelve el control de versión mediante `expectedVersion`/conflicto; el endpoint no usa caché de servidor y el panel fuerza reconsulta, por lo que no requiere invalidación de caché persistente. La identidad nunca se toma del ID enviado por cliente.
 - **Alcance:** preferencias de ayuda y progreso; no guardar datos sensibles ni bloquear el uso de la plataforma si el servicio de preferencias falla.
 - **Criterios de aceptación:** usuario derivado del token; aislamiento server-side; sincronización multidispositivo; control de versión; fallback local no autoritativo; fallos no bloquean dashboard; pruebas dos usuarios/dispositivos, caché borrada y concurrencia.
-- **Prioridad:** P0. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; el progreso solo se guarda en localStorage y se pierde al cambiar de dispositivo o borrar caché.
+- **Prioridad:** P0. **Estado:** Implementada en código y verificada en CI; pendiente validación beta multidispositivo.
+- **Evidencia:** hoja `PreferenciasUsuario`; endpoints `getUserHelpPreferences`/`saveUserHelpPreferences`; identidad derivada del token; aislamiento usuario/institución; versionado append-only y conflicto optimista; fallback local no bloqueante; `tests/security/user-service-help-preferences.test.js` PASS y `tests/security/ui-common-permanent-help.test.js` PASS. `BETA-FUNC-113` pendiente.
 
 ### [F38-Task04] Añadir instrucciones permanentes y advertencias de riesgo junto a campos críticos
 - **Hallazgo de origen:** F38-01/F38-04 y requisito de mantener confirmaciones independientes; CAR-F38-01/CAR-F38-04/CAR-F38-13.
@@ -268,8 +268,8 @@ La evaluación abarca la ayuda contextual inmediata (tooltips/popovers), las ins
 - **Dependencias/riesgos:** F38-Task02/03, RBAC por rol; riesgo de resetear preferencias de otro usuario o perder el progreso al guardar.
 - **Alcance:** consulta/reset de ayuda; no modificar otras preferencias de usuario.
 - **Criterios de aceptación:** catálogo filtrado por rol; reset individual/global; confirmación clara; estado sincronizado server-side; pruebas de permisos, reset, cancelación y multi-dispositivo.
-- **Prioridad:** P1. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; se pueden reabrir guías desde soporte, pero no existe control de restablecimiento en preferencias.
+- **Prioridad:** P1. **Estado:** Implementada en código y verificada en CI; pendiente validación beta desplegada.
+- **Evidencia:** pestaña Ayuda y Guías en Opciones & Configuración; catálogo filtrado por rol, apertura de guías, restablecimiento individual/global con confirmación y persistencia server-side; `tests/security/user-service-help-preferences.test.js` y `tests/security/ui-common-permanent-help.test.js` PASS; `BETA-FUNC-113` pendiente.
 
 ### [F38-Task07] Ampliar guías especializadas para procesos administrativos y financieros
 - **Hallazgo de origen:** F38-12; CAR-F38-12.
@@ -301,7 +301,7 @@ La evaluación abarca la ayuda contextual inmediata (tooltips/popovers), las ins
 - **F38-Task07:** coordinar manuales con F30-Task12 y guías de importación/documentos F35/F31; evitar instrucciones contradictorias.
 - **Discrepancia histórica:** Auditoria.txt registra 11 IDs F38-Task01..F38-Task11 (P0 01/02/04/05, P1 03/06..10, P2 11), mientras el informe vigente describe F38-Task01..F38-Task07. No se recuperaron descripciones de Task08..Task11; no se inventan ni se consulta Pendientes.md.
 - **Subcapacidades completas preservadas:** F38-11/F38-13/F38-14; no se reejecutaron pruebas.
-- **Estado global:** F38-Task01..F38-Task07 y F38-Task12 permanecen pendientes; F38-Task08..Task11 quedan como referencias históricas sin descripción recuperable.
+- **Estado global actualizado:** F38-Task03 y F38-Task06 implementadas en código/CI, con BETA-FUNC-113 pendiente; F38-Task02 parcialmente implementada; F38-Task01/04/05/07/12 permanecen pendientes; F38-Task08..Task11 quedan como referencias históricas sin descripción recuperable.
 
 
 ## E. AVANCE C1.758 — TASK-130 (2026-11-15)
