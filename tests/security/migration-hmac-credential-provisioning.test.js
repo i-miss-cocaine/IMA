@@ -220,4 +220,33 @@ for (let index = 0; index < paths.length; index++) {
   expectCode(() => h.api.provision({ sourceService: "USER", version: "v1", secret: secret1, status: "REVOKED" }), "CREDENTIAL_PROVISIONING_STATUS_INVALID");
 }
 
+
+{
+  // Each service project keeps its own Script Properties and local catalog.
+  // Exercise the complete source-service matrix, including overlap rotation.
+  for (let receiverIndex = 0; receiverIndex < paths.length; receiverIndex++) {
+    const receiver = services[receiverIndex];
+    const source = fs.readFileSync(paths[receiverIndex], "utf8");
+    const h = harness(source, receiver);
+    const localSigningSecret = "matrix_" + receiver + "_v1_0123456789abcdef012345";
+    for (const emitter of services) {
+      const first = "matrix_" + emitter + "_v1_0123456789abcdef012345";
+      const second = "matrix_" + emitter + "_v2_abcdef0123456789abcdef012345";
+      h.api.provision({ sourceService: emitter, version: "matrix-v1", secret: first });
+      h.api.provision({ sourceService: emitter, version: "matrix-v2", secret: second, status: "VERIFY_ONLY" });
+      assert.deepEqual(Array.from(h.api.getAll(emitter)), [first, second],
+        receiver + " must verify ACTIVE and VERIFY_ONLY keys for " + emitter);
+    }
+    assert.equal(h.properties.IMA_MIGRATION_HMAC_SECRET, localSigningSecret,
+      "only the local emitter's secret becomes this project's signing key");
+    assert.equal(h.properties.IMA_MIGRATION_HMAC_SECRET_VERSION, "matrix-v1");
+    for (const emitter of services) {
+      if (emitter !== receiver) {
+        assert.equal(h.properties["IMA_MIGRATION_HMAC_SECRET_" + emitter],
+          "matrix_" + emitter + "_v1_0123456789abcdef012345");
+      }
+    }
+  }
+}
+
 process.stdout.write("Interservice credential provisioning: four-service editor-only install, version overlap, idempotency, rollback, revocation and lock contracts PASS.\n");
