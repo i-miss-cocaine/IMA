@@ -298,3 +298,27 @@ Siguiente tarea elegible: F25-Task03 — detección avanzada de duplicados e int
 - **Rama base:** `NG_beta_0.0.0.1` HEAD `44d9891132332e692dbe2ba8602b41f50a508a59`; comparación antes del registro documental: 3874 ahead, 0 behind. Sin escrituras en la rama base.
 - **Siguiente acción:** continuar AUD-NG-084 con revisión del contrato de secretos de migración en ACCOUNTING y ACADEMIC, cobertura de rotación/revocación para emisores/receptores y pruebas de compatibilidad; no integrar tráfico ni cerrar hasta verificar todos los servicios involucrados.
 =============================================================================
+
+
+
+=============================================================================
+### C1.804 — IMA-EXEC-20261117-AUD-NG-084-ACADEMIC-REPLAY-GUARD-01
+- **Checkpoint anterior:** C1.803 — contratos USER HMAC y secreto de sesión en CI; AUD-NG-084 seguía en ejecución.
+- **HEAD inicial de esta iteración:** `234b6890ec27f4a532c9a9260b02fe9e27627872`.
+- **Tarea:** AUD-NG-084 — gestión segura de secretos por servicio, rotación, revocación y anti-replay.
+- **Hallazgo de código:** ACADEMIC validaba el replay cache antes de verificar HMAC y no protegía check-and-reserve con LockService. Una firma inválida podía consumir requestId; solicitudes concurrentes podían pasar la consulta de replay antes de que cualquiera escribiera el cache.
+- **Corrección de aplicación:** en `backend/academic-service/Code.gs`, la validación de firma ahora ocurre antes de tocar el cache; el check-and-reserve se serializa mediante ScriptLock, falla cerrado con `INTERSERVICE_REPLAY_CHECK_BUSY` si el lock no se obtiene y libera en finally.
+- **Prueba nueva:** `tests/security/academic-interservice-replay-guard.test.js` cubre: firma inválida sin consumir requestId; solicitud legítima posterior con el mismo ID; rechazo de replay; lock contention fail-closed sin consumir ID; y reintento correcto después de liberar el bloqueo.
+- **Workflow:** `.github/workflows/accounting-import-preflight-contract.yml` incorpora el test tanto en `push.paths` como en los pasos Node.
+- **GitHub Actions:** Accounting Import Preflight run **44094505790**, URL `https://github.com/i-miss-cocaine/IMA/actions/runs/44094505790`, commit probado `0cefb7d23b10dfc01f9df40283f4d926bcdfee85`, Node.js 24.22.2: **43/43 pasos completados con SUCCESS; 0 fallidos**. El paso nuevo `Run ACADEMIC interservice HMAC verification and replay guard contract` terminó SUCCESS. Este es Node CLI real en runner, no una ejecución local.
+- **Otra acción CI observada:** Department Scope run **44094414143** falló en `tests/regression/phase22-document-management-suite-contract.test.js` por `missing function configureSchoolDocumentTemplate` ausente en ACCOUNTING. El mismo fallo exacto se reproduce en run previo **44087396968** sobre commit `392738ad`; se clasifica como incidencia preexistente independiente. No se alteró ese módulo ni se debilitó esa prueba.
+- **Pruebas locales:** Node CLI local NOT RUN. El checkout local no está disponible por la limitación DNS ya registrada en C1.803; se usó ejecución alternativa real en Actions, conservando la totalidad de los contratos.
+- **Compatibilidad pendiente:** ACCOUNTING firma y ACADEMIC verifica flujos de migración con `IMA_MIGRATION_HMAC_SECRET` explícito. No se acreditó catálogo/versionado/fingerprint ni revocación coordinada en ambos extremos; USER sí consulta su catálogo y versiones por servicio. La configuración real de Script Properties, Spreadsheet IDs y deployments no es observable mediante el repositorio. No afirmar que la rotación/revocación productiva está completada.
+- **Separación de secretos:** `AUTH_TOKEN_SECRET` para tokens de sesión permanece separado del secreto HMAC de transporte. No se modificó el flujo de login, roles ni continuidad de sesión C1.801.
+- **Archivos modificados en esta iteración:** `backend/academic-service/Code.gs`; `tests/security/academic-interservice-replay-guard.test.js`; `.github/workflows/accounting-import-preflight-contract.yml`; `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`; `changueslogs.txt`; `Auditoría/INDICE_CHECKPOINTS.md`; este checkpoint.
+- **Commits relevantes:** `e68f23a1cb762e810db79b27aef4c77078ad7e65` (fix ACADEMIC); `5ad21f010145cca27fd9e67ab744cba97a53f437` (test); `0cefb7d23b10dfc01f9df40283f4d926bcdfee85` (workflow); `fa4e9610d2c966433406a260820833af1e93c700` (Plan Maestro); `a1128d61ab1eaaec2a89ff8712334a2e9c0cbbaf` (changelog); `66d43692f926fe971c93b1280517b789fddd1447` (índice).
+- **Estado:** AUD-NG-084 permanece **En ejecución**. El replay guard ACADEMIC quedó corregido y probado; aún falta diseñar/probar la gestión versionada y revocación coordinada ACCOUNTING↔ACADEMIC, revisar consumidores completos y obtener evidencia autorizada de Script Properties/deployments. No se declara cerrada la tarea.
+- **HEAD de código/CI:** `0cefb7d23b10dfc01f9df40283f4d926bcdfee85`. El HEAD documental final se verificará después de este commit.
+- **Rama base:** `NG_beta_0.0.0.1` HEAD `44d9891132332e692dbe2ba8602b41f50a508a59`; comparación verificada antes del registro: 3881 ahead, 0 behind. Sin escrituras en rama base.
+- **Siguiente acción:** completar inventario de consumidores de `IMA_MIGRATION_HMAC_SECRET`, definir rotación coordinada y revocación efectiva en ambos extremos sin introducir llamadas redundantes por operación; implementar contratos de emisor/receptor, ejecutar Actions y documentar qué configuraciones requieren despliegue autorizado.
+=============================================================================
