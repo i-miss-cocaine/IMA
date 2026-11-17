@@ -297,7 +297,7 @@ function schemaSheet(initialRows=[]){
  return {
   rows,
   getLastRow(){return rows.length;},
-  getDataRange(){return{getValues:()=>rows.length?rows.map(r=>r.slice()):[[""]];};},
+  getDataRange(){return{getValues:()=>rows.length?rows.map(r=>r.slice()):[[""]]};},
   getRange(rowIndex,col,count,width){
    return {
     getValues(){const out=[];for(let i=0;i<count;i++){const r=rows[rowIndex-1+i]||[];out.push(r.slice(col-1,col-1+width));}return out;},
