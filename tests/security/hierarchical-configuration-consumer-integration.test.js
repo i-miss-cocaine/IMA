@@ -54,6 +54,12 @@ for (const service of ["ACADEMIC", "ACCOUNTING"]) {
   result = h.context.getHierarchicalConfigurationCatalog({ sessionToken: "" }); assert.equal(result.code, "VERIFIED_IDENTITY_REQUIRED"); assert.equal(h.calls.length, 0);
   h = harness(service, { endpoint: "http://untrusted.invalid" });
   result = h.context.getHierarchicalConfigurationCatalog({ sessionToken: "signed-token" }); assert.equal(result.code, "HIERARCHICAL_CONFIG_TRANSPORT_NOT_CONFIGURED"); assert.equal(h.calls.length, 0);
+  if (service === "ACADEMIC") {
+    h = harness(service, { endpoint: "https://attacker.example/macros/s/USER_DEPLOYMENT/exec" });
+    result = h.context.getHierarchicalConfigurationCatalog({ sessionToken: "signed-token" });
+    assert.equal(result.code, "HIERARCHICAL_CONFIG_TRANSPORT_NOT_CONFIGURED");
+    assert.equal(h.calls.length, 0, "Academic service must reject arbitrary HTTPS endpoints before UrlFetchApp");
+  }
   h = harness(service, { httpStatus: 503, response: { status: "error", code: "USER_UNAVAILABLE" } });
   result = h.context.getHierarchicalConfigurationCatalog({ sessionToken: "signed-token" }); assert.equal(result.code, "USER_UNAVAILABLE");
   h = harness(service, { responseText: "<html>bad gateway</html>" });

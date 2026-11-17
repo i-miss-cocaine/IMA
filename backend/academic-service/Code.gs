@@ -3412,7 +3412,9 @@ function requestHierarchicalConfigurationFromUser_(action, payload) {
   var token = String(input.sessionToken || input.authToken || input.token || "");
   if (!token || typeof PropertiesService === "undefined" || typeof UrlFetchApp === "undefined") return { status: "error", code: "HIERARCHICAL_CONFIG_TRANSPORT_UNAVAILABLE" };
   var endpoint = String(PropertiesService.getScriptProperties().getProperty("IMA_USER_SERVICE_URL") || "").trim();
-  if (endpoint.indexOf("https://") !== 0) return { status: "error", code: "HIERARCHICAL_CONFIG_TRANSPORT_NOT_CONFIGURED" };
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint)) {
+    return { status: "error", code: "HIERARCHICAL_CONFIG_TRANSPORT_NOT_CONFIGURED" };
+  }
   var forwarded = { sessionToken: token };
   if (action === "resolveHierarchicalConfiguration") {
     var key = String(input.clave || "").trim();
