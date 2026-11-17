@@ -753,7 +753,7 @@ console.log("TASK-153 legacy document and folder-IDOR contracts passed.");
     getVerifiedTaskIdentity_:()=>({authorized:true,userId:"ADMIN-1",role:"Administrador"}),
     isTaskServiceAdministrativeRole:role=>["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
     getOrCreateSheet:()=>({getLastRow:()=>0,appendRow:row=>{adminRow=row;}}),Utilities:{getUuid:()=>"MAT-ADMIN"}};
-  vm.runInNewContext(extractFunction("createStudyMaterial")+"\\nthis.run=createStudyMaterial;",adminContext);
+  vm.runInNewContext(extractFunction("createStudyMaterial")+"\nthis.run=createStudyMaterial;",adminContext);
   assert.equal(adminContext.run({_verifiedUserId:"ADMIN-1",_verifiedRole:"Administrador",aulaId:"General",titulo:"Institutional",archivoUrl:"https://example.test/general"}).status,"success");
   assert.equal(adminRow[1],"General");assert.equal(adminRow[10],"ADMIN-1","administrative authorship is derived from the verified actor");
 
