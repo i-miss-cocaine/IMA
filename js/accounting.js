@@ -2791,7 +2791,7 @@ window.handleRecibirTransferencia = function (transferBatchId, itemCodigo, cantD
 // ---------------------------------------------------------------------------
 let migrationImportState = {
   workbook: null, file: null, fileName: "", sheetName: "", headers: [],
-  rows: [], dataRowNumbers: [], structural: null, fileDataBase64: "", payload: null, preview: null
+  rows: [], dataRowNumbers: [], structural: null, fileDataBase64: "", payload: null, preview: null, profiles: [], mappingPreset: null
 };
 
 const MIGRATION_IMPORT_TARGETS = {
@@ -2872,6 +2872,12 @@ function renderMigrationImportModule(container) {
         <div><h4 class="text-xs font-black uppercase text-slate-800">Correspondencia de columnas</h4><p class="mt-1 text-[11px] text-slate-500">Seleccione la columna de identificador legado y asigne las columnas de origen a los campos de destino.</p></div>
         <div><label for="migration-import-identifier" class="mb-1 block text-xs font-bold text-slate-700">Identificador legado *</label><select id="migration-import-identifier" class="w-full rounded-lg border border-slate-300 p-2 text-sm"></select></div>
         <div id="migration-import-field-mapping" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 rounded-xl bg-slate-50 p-3">
+          <div><label for="migration-import-profile" class="mb-1 block text-xs font-bold text-slate-700">Perfil guardado</label><select id="migration-import-profile" class="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm"><option value="">Sin perfil</option></select></div>
+          <div><label for="migration-import-profile-name" class="mb-1 block text-xs font-bold text-slate-700">Nombre del perfil</label><input id="migration-import-profile-name" maxlength="80" class="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm" placeholder="Ej. Matrícula SACE 2026"></div>
+          <div class="flex items-end"><button id="migration-import-profile-save" type="button" class="w-full rounded-lg bg-slate-800 px-3 py-2 text-xs font-bold text-white">Guardar perfil</button></div>
+          <p id="migration-import-profile-status" class="md:col-span-3 text-[11px] text-slate-500" role="status" aria-live="polite">Los perfiles son privados del usuario y solo se aplican si coinciden exactamente los encabezados.</p>
+        </div>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <button id="migration-import-preview" type="button" disabled class="rounded-xl bg-indigo-700 px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40">Validar y previsualizar</button>
@@ -2891,6 +2897,10 @@ function renderMigrationImportModule(container) {
   const previewButton = document.getElementById("migration-import-preview");
   const commitButton = document.getElementById("migration-import-commit");
   const partialToggle = document.getElementById("migration-import-allow-partial");
+  const profileSelect = document.getElementById("migration-import-profile");
+  const profileNameInput = document.getElementById("migration-import-profile-name");
+  const profileSaveButton = document.getElementById("migration-import-profile-save");
+  const profileStatus = document.getElementById("migration-import-profile-status");
 
   function resetPreviewOnEdit() {
     resetMigrationImportPreview();
@@ -2907,9 +2917,10 @@ function renderMigrationImportModule(container) {
     const target = MIGRATION_IMPORT_TARGETS[entity.value] || MIGRATION_IMPORT_TARGETS.curso;
     if (!host || !identifier) return;
     const headers = migrationImportState.headers;
+    const preset = migrationImportState.mappingPreset;
     identifier.innerHTML = '<option value="">Seleccione identificador legado</option>' +
       headers.map(header => '<option value="' + migrationImportEscape(header) + '">' + migrationImportEscape(header) + '</option>').join("");
-    if (headers.length) identifier.value = headers[0];
+    identifier.value = preset && headers.indexOf(preset.identificador) >= 0 ? preset.identificador : (headers[0] || "");
     host.innerHTML = target.fields.map(field => {
       const preferred = headers.indexOf(field) >= 0 ? field : "";
       return '<div><label class="mb-1 block text-xs font-bold text-slate-700" for="migration-map-' + migrationImportEscape(field) + '">' +
@@ -2921,13 +2932,27 @@ function renderMigrationImportModule(container) {
     }).join("");
     target.fields.forEach(field => {
       const select = host.querySelector('[data-target-field="' + field.replace(/"/g, '\"') + '"]');
-      if (select) select.value = headers.indexOf(field) >= 0 ? field : "";
+      if (select) select.value = preset && preset.campos && headers.indexOf(preset.campos[field]) >= 0 ? preset.campos[field] : (headers.indexOf(field) >= 0 ? field : "");
     });
     host.querySelectorAll("select").forEach(select => select.addEventListener("change", resetPreviewOnEdit));
     identifier.addEventListener("change", resetPreviewOnEdit, { once: true });
     if (mappingWrap) mappingWrap.classList.toggle("hidden", !headers.length);
     if (departmentWrap) departmentWrap.classList.toggle("hidden", entity.value !== "empleado");
+    migrationImportState.mappingPreset = null;
     updateMigrationImportPreviewButton();
+  }
+  async function loadImportMappingProfiles() {
+    if (!profileSelect || !window.fetchApi || !sourceInput.value.trim()) return;
+    profileSelect.innerHTML = '<option value="">Sin perfil</option>';
+    migrationImportState.profiles = [];
+    try {
+      const envelope = await fetchApi("ACCOUNTING", "getImportMappingProfiles", { tipoEntidad: entity.value, sistemaOrigen: sourceInput.value.trim() });
+      const data = envelope && envelope.data && typeof envelope.data === "object" ? envelope.data : envelope;
+      if (!data || data.status !== "success" || !Array.isArray(data.profiles)) throw new Error(data && data.code || "IMPORT_MAPPING_PROFILES_UNAVAILABLE");
+      migrationImportState.profiles = data.profiles;
+      data.profiles.forEach(profile => { const option = document.createElement("option"); option.value = profile.profileId; option.textContent = profile.profileName + " · v" + profile.version; profileSelect.appendChild(option); });
+      if (profileStatus) profileStatus.textContent = data.profiles.length ? "Perfiles disponibles: " + data.profiles.length + ". Solo se aplican con encabezados idénticos." : "No hay perfiles guardados para este origen y entidad.";
+    } catch (error) { if (profileStatus) profileStatus.textContent = "No se pudieron cargar los perfiles guardados. Puede continuar con el mapeo manual."; }
   }
   function buildWorkbookRows() {
     const workbook = migrationImportState.workbook;
@@ -3044,7 +3069,33 @@ function renderMigrationImportModule(container) {
     }
   });
 
-  previewButton.addEventListener("click", async function() {
+  if (profileSelect) profileSelect.addEventListener("change", function() {
+    const profile = migrationImportState.profiles.find(item => item.profileId === profileSelect.value);
+    if (!profile) return;
+    if (JSON.stringify(profile.sourceHeaders || []) !== JSON.stringify(migrationImportState.headers || [])) { if (profileStatus) profileStatus.textContent = "Perfil incompatible: los encabezados o su orden no coinciden. No se aplicó ningún cambio."; profileSelect.value = ""; return; }
+    migrationImportState.mappingPreset = profile.columnaMapeo || null;
+    profileNameInput.value = profile.profileName || "";
+    renderFieldMapping(); resetPreviewOnEdit();
+    if (profileStatus) profileStatus.textContent = "Perfil v" + profile.version + " aplicado. Revise el mapeo y ejecute la previsualización antes de importar.";
+  });
+  if (profileSaveButton) profileSaveButton.addEventListener("click", async function() {
+    const target = MIGRATION_IMPORT_TARGETS[entity.value], mapping = {};
+    document.querySelectorAll("#migration-import-field-mapping select[data-target-field]").forEach(select => { if (select.value) mapping[select.dataset.targetField] = select.value; });
+    const profileName = String(profileNameInput.value || "").trim(), identifier = document.getElementById("migration-import-identifier").value;
+    if (!profileName || !sourceInput.value.trim() || !identifier || !Object.keys(mapping).length) { if (profileStatus) profileStatus.textContent = "Indique nombre, origen, identificador y al menos un campo mapeado."; return; }
+    profileSaveButton.disabled = true; profileSaveButton.textContent = "Guardando…";
+    try {
+      const envelope = await fetchApi("ACCOUNTING", "saveImportMappingProfile", { profileName: profileName, sistemaOrigen: sourceInput.value.trim(), tipoEntidad: entity.value, destinoModulo: target.destination, sourceHeaders: migrationImportState.headers, columnaMapeo: { identificador: identifier, campos: mapping }, profileId: profileSelect.value || "" });
+      const data = envelope && envelope.data && typeof envelope.data === "object" ? envelope.data : envelope;
+      if (!data || data.status !== "success") throw new Error(data && data.code || "IMPORT_MAPPING_PROFILE_SAVE_FAILED");
+      await loadImportMappingProfiles(); profileSelect.value = data.profileId;
+      if (profileStatus) profileStatus.textContent = "Perfil guardado correctamente · versión " + data.version + ". El historial anterior se conserva.";
+    } catch (error) { if (profileStatus) profileStatus.textContent = "No se pudo guardar el perfil: " + String(error && error.message || error); }
+    finally { profileSaveButton.disabled = false; profileSaveButton.textContent = "Guardar perfil"; }
+  });
+  sourceInput.addEventListener("change", loadImportMappingProfiles);
+  entity.addEventListener("change", function() { loadImportMappingProfiles(); });
+    previewButton.addEventListener("click", async function() {
     if (!window.fetchApi || !migrationImportState.rows.length) return;
     const target = MIGRATION_IMPORT_TARGETS[entity.value];
     const mapping = {};
@@ -3121,6 +3172,7 @@ function renderMigrationImportModule(container) {
     }
   });
   renderFieldMapping();
+  loadImportMappingProfiles();
 }
 
 function renderMigrationImportResult(response) {
