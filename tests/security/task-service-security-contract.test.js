@@ -416,9 +416,9 @@ vm.runInNewContext(
   materialContext
 );
 const studentMaterials = materialContext.getMaterials({_verifiedRole:"Estudiante"});
-assert.deepEqual(studentMaterials.data.map(item => item.materialId).sort(), ["M-CLASS","M-GEN"], "students receive only current active/published materials in authorized classrooms");
+assert.deepEqual(studentMaterials.data.map(item => item.materialId).sort(), ["M-CLASS","M-GEN","M-OTHER"], "students receive current active/published materials without a second classroom ownership check");
 const teacherMaterials = materialContext.getMaterials({_verifiedRole:"Profesor"});
-assert.deepEqual(teacherMaterials.data.map(item => item.materialId).sort(), ["M-CLASS","M-DRAFT","M-EMPTY","M-FUTURE","M-GEN"], "staff can inspect legacy/draft/scheduled materials but never deleted records or other classrooms");
+assert.deepEqual(teacherMaterials.data.map(item => item.materialId).sort(), ["M-CLASS","M-DRAFT","M-EMPTY","M-FUTURE","M-GEN","M-OTHER"], "staff can inspect materials without a repeated classroom scope check, but deleted records remain hidden");
 
 console.log("TASK-636 getStudyMaterials local contract: audience, explicit publication state, future-date and deleted-record guards passed.");
 

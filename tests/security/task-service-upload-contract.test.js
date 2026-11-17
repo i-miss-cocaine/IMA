@@ -21,7 +21,7 @@ const context={
  Utilities:{base64Decode:value=>Buffer.from(value,"base64"),newBlob:(bytes,mimeType,name)=>({bytes:Buffer.from(bytes),mimeType,name})},
  logFileMetadata:(_ss,value)=>{metadata=value;}
 };
-vm.createContext(context);vm.runInContext(upload+"\\nthis.run=uploadFile;",context);
+vm.createContext(context);vm.runInContext(upload+"\nthis.run=uploadFile;",context);
 const video=context.run({_verifiedUserId:"STUDENT-1",_verifiedRole:"Estudiante",tareaId:"TASK-1",fileName:"lesson.mp4",fileData:"data:video/mp4;base64,"+Buffer.from("video").toString("base64")});
 assert.equal(video.status,"success");assert.equal(video.data.mimeType,"video/mp4");assert.equal(video.data.fileId,"FILE-1");
 assert.equal(metadata.ownerUserId,"STUDENT-1");assert.equal(metadata.tareaId,"TASK-1");assert.equal(metadata.sizeBytes,5);
