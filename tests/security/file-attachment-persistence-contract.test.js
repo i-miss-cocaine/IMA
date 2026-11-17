@@ -108,8 +108,7 @@ assert.equal(createdFile.trashed, true, "failed privacy setup must attempt file 
 failFileSharing = false;
 
 const voucherFn = extractFunction(accounting, "uploadPaymentVoucher");
-const voucherHeaders = ["ComprobanteID","Fecha","UserId","Alumno","CargoID","MontoReportado","MetodoPago","Referencia","ComprobanteUrl","Estado","Observaciones",
-  "ComprobanteGrupoID","SolicitudID","EvidenciaID","DriveFileID","NombreOriginal","VersionNumero","SHA256","SizeBytes","MimeType","FechaRecepcionISO","EstadoIntegridad","EsVersionActual","DecisionHash","DecisionTimestamp","DecisionBy","DecisionState","DecisionIntegrityWarning"];
+const voucherHeaders = ["ComprobanteID","Fecha","UserId","Alumno","CargoID","MontoReportado","MetodoPago","Referencia","ComprobanteUrl","Estado","Observaciones","AprobadoPor","SolicitudID","EvidenciaID","DriveFileID","NombreOriginal","EsVersionActual","EstadoIntegridad","SHA256","VersionNumero","SizeBytes","MimeType","FechaRecepcion","DecisionIntegrityWarning","DecisionHash","DecisionState","ComprobanteGrupoID","DecisionActor","DecisionDate"];
 const voucherMap = Object.fromEntries(voucherHeaders.map((name,index)=>[name,index]));
 let rows = [voucherHeaders.slice()];
 let rollbackCount = 0;
@@ -126,7 +125,7 @@ const voucherSheet = {
 const voucherContext = {
   getVerifiedAccountingIdentity_: () => authorized ? ({ authorized: true, userId: "student-1", role: "Estudiante" }) : ({ authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" }),
   assertPaymentVoucherOwnerAccess_: () => ownerAllowed ? ({ authorized: true }) : ({ authorized: false, code: "RESOURCE_SCOPE_DENIED" }),
-  ensurePaymentVoucherEvidenceSchema_:()=>voucherMap,
+  ensurePaymentVoucherEvidenceSchema_:()=>({sheet:voucherSheet,map:voucherMap,headers:voucherHeaders}),
   createPrivatePaymentAttachmentWithIntegrity_: () => ({file:{getId:()=> "private-file-id"},sha256:"a".repeat(64),sizeBytes:3,mimeType:"application/pdf",receivedAt:"2026-11-15T00:00:00.000Z"}),
   rollbackPrivatePaymentAttachment_: () => { rollbackCount++; },
   LockService: { getScriptLock: () => ({ tryLock: () => lockAvailable, releaseLock: () => {} }) },
@@ -150,7 +149,7 @@ assert.equal(result.status, "success");
 assert.equal(result.tieneComprobante, true);
 assert.equal(result.comprobanteUrl, "");
 assert.equal(rows.length, 2);
-assert.equal(rows[1][8], "private-file-id");
+assert.equal(rows[1][voucherMap.ComprobanteUrl], "private-file-id");
 assert.equal(rows[1][voucherMap.SHA256], "a".repeat(64));
 assert.equal(rows[1][voucherMap.SolicitudID], rows[1][voucherMap.ComprobanteGrupoID]);
 assert.equal(rows[1][voucherMap.EvidenciaID], rows[1][voucherMap.ComprobanteID]);
