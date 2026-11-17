@@ -2750,26 +2750,32 @@ function addSubmissionComment(payload) {
   const mensaje = String(payload && payload.mensaje || "").trim();
   if (!mensaje) throw new Error("Mensaje de comentario es requerido.");
   const context = getTaskServiceSubmissionAccess_(payload, "COMMENT");
-  const sheet = getOrCreateSheet(context.ss, "ComentariosEntregas");
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["ID", "EntregaID", "TareaID", "AutorID", "RolAutor", "Mensaje", "EsPrivado", "FechaCreacion"]);
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("TASK_SUBMISSION_COMMENT_LOCK_TIMEOUT");
+  try {
+    const sheet = getOrCreateSheet(context.ss, "ComentariosEntregas");
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(["ID", "EntregaID", "TareaID", "AutorID", "RolAutor", "Mensaje", "EsPrivado", "FechaCreacion"]);
+    }
+    const comId = "COM-" + Utilities.getUuid();
+    const now = new Date();
+    // La identidad y el rol del autor siempre proceden de la sesión firmada.
+    // Los comentarios de estudiantes son visibles para el personal; solo el personal puede crear notas privadas.
+    const esPrivado = context.isStaff && payload.esPrivado !== false;
+    sheet.appendRow([
+      comId,
+      context.delivery ? String(context.delivery[0] || "").trim() : "",
+      context.taskId,
+      context.identity.userId,
+      context.identity.role,
+      mensaje,
+      esPrivado,
+      now
+    ]);
+    return { status: "success", message: "Comentario publicado.", data: { comentarioId: comId } };
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
   }
-  const comId = "COM-" + Utilities.getUuid();
-  const now = new Date();
-  // La identidad y el rol del autor siempre proceden de la sesión firmada.
-  // Los comentarios de estudiantes son visibles para el personal; solo el personal puede crear notas privadas.
-  const esPrivado = context.isStaff && payload.esPrivado !== false;
-  sheet.appendRow([
-    comId,
-    context.delivery ? String(context.delivery[0] || "").trim() : "",
-    context.taskId,
-    context.identity.userId,
-    context.identity.role,
-    mensaje,
-    esPrivado,
-    now
-  ]);
-  return { status: "success", message: "Comentario publicado.", data: { comentarioId: comId } };
 }
 
 function getSubmissionVersions(payload) {

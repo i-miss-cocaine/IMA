@@ -165,6 +165,20 @@ test(()=>{
   assert.equal(row[6],false,"students cannot create private notes");
 });
 test(()=>{
+  const x=fixture({expectedOperation:"COMMENT",actor:{authorized:true,userId:"STU-1",role:"Estudiante"},isStaff:false});
+  x.api.addSubmissionComment({entregaId:"DEL-1",mensaje:"Primero"});
+  x.api.addSubmissionComment({entregaId:"DEL-1",mensaje:"Segundo"});
+  assert.equal(x.commentsSheet.rows.length,3,"serialized comment writes initialize one header and append both comments");
+  assert.deepEqual(x.commentsSheet.rows[0],["ID","EntregaID","TareaID","AutorID","RolAutor","Mensaje","EsPrivado","FechaCreacion"]);
+  assert.equal(x.state.lockAttempts,2);assert.equal(x.state.releases,2);
+});
+test(()=>{
+  const x=fixture({expectedOperation:"COMMENT",actor:{authorized:true,userId:"STU-1",role:"Estudiante"},isStaff:false,lockTimeout:true});
+  assert.throws(()=>x.api.addSubmissionComment({entregaId:"DEL-1",mensaje:"No guardar"}),/TASK_SUBMISSION_COMMENT_LOCK_TIMEOUT/);
+  assert.equal(x.commentsSheet.rows.length,0,"lock timeout prevents partial comment/header writes");
+  assert.equal(x.state.releases,0);
+});
+test(()=>{
   const x=fixture({expectedOperation:"READ_HISTORY",actor:{authorized:true,userId:"STU-1",role:"Estudiante"},isStaff:false});
   x.commentsSheet.rows=[
     ["ID","EntregaID","TareaID","AutorID","RolAutor","Mensaje","EsPrivado","FechaCreacion"],
