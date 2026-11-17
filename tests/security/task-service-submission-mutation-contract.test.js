@@ -33,7 +33,7 @@ function fixture(options){
     ["DEL-1","TASK-1","STU-1","respuesta","FILE-1","","Enviada","Anterior","application/pdf"]
   ];
   const taskRows=[["TareaID","Titulo"],["TASK-1","Tarea de prueba"]];
-  const deliverySheet=makeSheet(deliveryRows,{failDeleteRow:options.failDeleteRow});
+  const deliverySheet=makeSheet(deliveryRows,{failDeleteRow:options.failDeleteRow,failSetValues:options.failDeleteWrite});
   const commentsSheet=makeSheet([],{failAppend:options.failCommentAppend});
   const versionsSheet=makeSheet([
     ["VersionID","EntregaID","TareaID","EstudianteID","Version","ArchivoUrl","FileId","MimeType","TextoRespuesta","EnlaceExterno","FechaEnvio","Estado","Observaciones"],
@@ -58,8 +58,9 @@ function fixture(options){
       assert.equal(operation,options.expectedOperation||"RETURN_FOR_REVISION");
       if(options.denied)throw new Error("RESOURCE_NOT_FOUND");
       const actor=verifiedIdentity||state.actor;
+      const currentDeliveries=deliverySheet.rows.slice(1);
       return {ss,identity:actor,role:actor.role,isStaff:options.isStaff!==false,task:["TASK-1","Tarea de prueba"],
-        taskId:"TASK-1",delivery:deliveryRows[1],deliveries:[deliveryRows[1]],studentId:"STU-1"};
+        taskId:"TASK-1",delivery:currentDeliveries[0],deliveries:currentDeliveries,studentId:"STU-1"};
     },
     getSheetOrThrow:(_ss,name)=>name==="Entregas"?deliverySheet:name==="Tareas"?taskSheet:null,
     getOrCreateSheet:(_ss,name)=>name==="ComentariosEntregas"?commentsSheet:versionsSheet,
@@ -112,26 +113,37 @@ test(()=>{
 });
 test(()=>{
   const x=fixture({expectedOperation:"DELETE_SUBMISSION"});
-  const result=x.api.deleteSubmission({entregaId:"DEL-1"});
-  assert.equal(result.status,"success");assert.equal(x.deliverySheet.rows.length,1);
-  assert.equal(x.state.fileTrashed,true);assert.equal(x.state.releases,1);
+  x.commentsSheet.rows=[["ID","EntregaID"],["C1","DEL-1"]];
+  const result=x.api.deleteSubmission({entregaId:"DEL-1",motivo:"Solicitud de corrección"});
+  assert.equal(result.status,"success");assert.equal(result.alreadyDeleted,false);
+  assert.equal(x.deliverySheet.rows.length,2,"logical deletion preserves the delivery row");
+  const headers=x.deliverySheet.rows[0].map(v=>String(v).toLowerCase());
+  const row=x.deliverySheet.rows[1];
+  assert.equal(row[headers.indexOf("estado")],"Eliminada");
+  assert.equal(row[headers.indexOf("eliminadapor")],"PROF-1");
+  assert.equal(row[headers.indexOf("eliminadarol")],"Profesor");
+  assert.ok(Number.isFinite(Date.parse(row[headers.indexOf("eliminadaen")])));
+  assert.equal(row[headers.indexOf("motivodeeliminacion")],"Solicitud de corrección");
+  assert.equal(x.state.fileTrashed,false,"logical deletion preserves the private Drive file");
+  assert.equal(x.commentsSheet.rows.length,2,"comments remain linked to the retained delivery");
+  assert.equal(x.versionsSheet.rows.length,2,"versions remain linked to the retained delivery");
+  const deletedAt=row[headers.indexOf("eliminadaen")];
+  const repeated=x.api.deleteSubmission({entregaId:"DEL-1",motivo:"No sobrescribir"});
+  assert.equal(repeated.alreadyDeleted,true);
+  assert.equal(x.deliverySheet.rows[1][headers.indexOf("eliminadaen")],deletedAt,"repeated delete is idempotent");
+  assert.equal(x.state.releases,2);
 });
 test(()=>{
-  const x=fixture({expectedOperation:"DELETE_SUBMISSION",failDeleteRow:true});
-  assert.throws(()=>x.api.deleteSubmission({entregaId:"DEL-1"}),/SUBMISSION_DELETE_METADATA_UPDATE_FAILED/);
-  assert.equal(x.deliverySheet.rows.length,2);
-  assert.equal(x.state.fileTrashed,false,"Drive file is restored when the delivery row cannot be removed");
+  const x=fixture({expectedOperation:"DELETE_SUBMISSION",failDeleteWrite:true});
+  assert.throws(()=>x.api.deleteSubmission({entregaId:"DEL-1"}),/synthetic row write failure/);
+  assert.equal(x.deliverySheet.rows[1][6],"Enviada");
+  assert.equal(x.state.fileTrashed,false);
   assert.equal(x.state.releases,1);
-});
-test(()=>{
-  const x=fixture({expectedOperation:"DELETE_SUBMISSION",failTrash:true});
-  assert.throws(()=>x.api.deleteSubmission({entregaId:"DEL-1"}),/synthetic Drive failure/);
-  assert.equal(x.deliverySheet.rows.length,2);assert.equal(x.state.releases,1);
 });
 test(()=>{
   const x=fixture({expectedOperation:"DELETE_SUBMISSION",lockTimeout:true});
   assert.throws(()=>x.api.deleteSubmission({entregaId:"DEL-1"}),/TASK_SUBMISSION_MUTATION_LOCK_TIMEOUT/);
-  assert.equal(x.deliverySheet.rows.length,2);assert.equal(x.state.fileTrashed,false);
+  assert.equal(x.deliverySheet.rows[1][6],"Enviada");assert.equal(x.state.fileTrashed,false);
 });
 test(()=>{
   const x=fixture({expectedOperation:"READ_HISTORY"});
