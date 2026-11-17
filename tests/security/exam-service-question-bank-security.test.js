@@ -36,7 +36,7 @@ const claims = {
  "other-token": {userId:"TEACHER-2",role:"Profesor"},
  "student-token": {userId:"STUDENT-1",role:"Estudiante"}
 };
-let failBankAppend=false, lockAvailable=true, lockHeld=false, beforeAcquire=null, lockAcquires=0, lockReleases=0, sheetOpens=0, uuid=0, persistenceHook=null;
+let failBankAppend=false, lockAvailable=true, lockHeld=false, beforeAcquire=null, lockAcquires=0, lockReleases=0, sheetOpens=0, uuid=0, persistenceHook=null, sessionVerificationCalls=0, permissionDecisionCalls=0;
 const persistenceWrites = Object.create(null);
 function recordPersistence(kind, operation) {
  const key = kind + ":" + operation;
@@ -60,8 +60,8 @@ const ss={getSheetByName(name){return sheets[name]||null;}};
 const runtime={
  SPREADSHEET_ID:"LOCAL",EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_:new WeakMap(),
  ROLE_PERMISSIONS:{Profesor:["manageQuestionBank"],Estudiante:[]},PUBLIC_ACTIONS:[],
- getDynamicPermissionsForRole(){return null;},hasActiveDelegationForAction(){return false;},
- verifySessionToken(token){return claims[token]||null;},validateContextualAccess(){return {authorized:true};},
+ getDynamicPermissionsForRole(){permissionDecisionCalls++;return null;},hasActiveDelegationForAction(){return false;},
+ verifySessionToken(token){sessionVerificationCalls++;return claims[token]||null;},validateContextualAccess(){return {authorized:true};},
  getVerifiedDepartmentScopeForSession_(payload,spreadsheet,actor){
   if(!actor||actor.authorized!==true||!actor.userId||!actor.role)return {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
   const assignments=scopeRows.slice(1).filter(row=>String(row[1]||"").trim()===actor.userId&&String(row[2]||"").trim()===actor.role&&String(row[5]||"").trim()==="ACTIVO");
@@ -77,7 +77,7 @@ const runtime={
   releaseLock(){lockReleases++;lockHeld=false;}
  };}}
 };
-const names=["getVerifiedExamIdentity_","getVerifiedExamDepartmentScope_","assertExamResourceOwnershipForScope_","validateRolePermission","getAuthorizedQuestionBankMutationContext_","withAuthorizedQuestionBankMutation_","manageQuestionBank","manageQuestionBankUnlocked_"];
+const names=["getRequestSessionToken_","getVerifiedRequestSessionClaims_","getCachedRequestAuthorization_","cacheRequestAuthorization_","clearRequestAuthorizationContext_","getVerifiedExamIdentity_","getVerifiedExamDepartmentScope_","assertExamResourceOwnershipForScope_","validateRolePermission","getAuthorizedQuestionBankMutationContext_","withAuthorizedQuestionBankMutation_","manageQuestionBank","manageQuestionBankUnlocked_"];
 vm.runInNewContext(names.map(extract).join("\n")+"\nthis.manageQuestionBank=manageQuestionBank;",runtime);
 const created=runtime.manageQuestionBank({sessionToken:"teacher-token",departmentId:"D1",accion:"crear",areaCurricular:"Ciencias",asignatura:"Biología",textoPregunta:"Nueva",opcionesJSON:{A:"Uno"},respuestaCorrecta:"A"});
 assert.equal(created.status,"success");
@@ -117,45 +117,42 @@ assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",banco
 assert.equal(lockAcquires,lockBeforeMissingUser,"missing userId must be rejected before lock");
 assert.equal(sheetOpens,opensBeforeMissingUser,"missing userId must be rejected before opening Sheets");
 
-// Revalidar dentro del lock: si la identidad cambia y pierde userId, no debe abrir Sheets.
+// La identidad verificada se reutiliza durante la misma petición; no se vuelve a consultar la sesión bajo lock.
 let identityCalls=0;
-runtime.getVerifiedExamIdentity_=()=>++identityCalls===1
-  ? {authorized:true,userId:"TEACHER-1",role:"Profesor"}
-  : {authorized:true,role:"Profesor"};
-const lockBeforeContextRecheck=lockAcquires, opensBeforeContextRecheck=sheetOpens, releasesBeforeContextRecheck=lockReleases;
-assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:"BNK-D1",accion:"actualizar"}),/RESOURCE_NOT_AVAILABLE/);
-assert.equal(identityCalls,2,"identity must be revalidated under lock");
-assert.equal(lockAcquires,lockBeforeContextRecheck+1,"valid preflight acquires lock before context revalidation");
-assert.equal(lockReleases,releasesBeforeContextRecheck+1,"context denial releases shared lock");
-assert.equal(sheetOpens,opensBeforeContextRecheck,"incomplete revalidated identity must be rejected before Sheets");
+runtime.getVerifiedExamIdentity_=(...args)=>{identityCalls++;return originalIdentity(...args);};
+const lockBeforeContextReuse=lockAcquires, opensBeforeContextReuse=sheetOpens, releasesBeforeContextReuse=lockReleases;
+const verifyBeforeContextReuse=sessionVerificationCalls, permissionBeforeContextReuse=permissionDecisionCalls;
+const contextReusePayload={sessionToken:"teacher-token",bancoPreguntaId:"BNK-D1",accion:"actualizar",textoPregunta:"Contexto reutilizado"};
+const contextReuseResult=runtime.manageQuestionBank(contextReusePayload);
+assert.equal(contextReuseResult.status,"success");
+assert.equal(identityCalls,2,"the actor helper may be requested by the wrapper and context, but it reuses the same verified actor");
+assert.equal(sessionVerificationCalls-verifyBeforeContextReuse,1,"session token must be verified once for the request");
+assert.equal(permissionDecisionCalls-permissionBeforeContextReuse,1,"role permission must be evaluated once for the action");
+assert.equal(lockAcquires,lockBeforeContextReuse+1);
+assert.equal(lockReleases,releasesBeforeContextReuse+1);
+assert.equal(sheetOpens,opensBeforeContextReuse+1);
 
 runtime.validateRolePermission=originalPermission;
 runtime.getVerifiedExamIdentity_=originalIdentity;
 
-// Revocación RBAC entre el preflight y la revalidación dentro de ScriptLock.
-const bankBeforePermissionRevocation=bankRows.map(row=>row.slice());
-const ownershipBeforePermissionRevocation=ownershipRows.map(row=>row.slice());
-const opensBeforePermissionRevocation=sheetOpens;
-const lockBeforePermissionRevocation=lockAcquires;
-const releasesBeforePermissionRevocation=lockReleases;
-let permissionCalls=0, identityCallsDuringRevocation=0;
-const permissionSequence=[true,false];
-runtime.validateRolePermission=()=>{
- permissionCalls++;
- return {authorized:permissionSequence.shift()===true};
-};
-runtime.getVerifiedExamIdentity_=(...args)=>{
- identityCallsDuringRevocation++;
- return originalIdentity(...args);
-};
-assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:"BNK-D1",accion:"actualizar",textoPregunta:"No autorizada"}),/RESOURCE_NOT_AVAILABLE/);
-assert.equal(permissionCalls,2,"RBAC must be revalidated under lock and deny the revoked permission");
-assert.equal(identityCallsDuringRevocation,1,"revoked RBAC must stop before contextual identity lookup");
-assert.equal(lockAcquires,lockBeforePermissionRevocation+1,"authorized preflight acquires the lock before RBAC revalidation");
-assert.equal(lockReleases,releasesBeforePermissionRevocation+1,"RBAC denial under lock must release the shared lock");
-assert.equal(sheetOpens,opensBeforePermissionRevocation,"revoked RBAC must be rejected before opening Sheets");
-assert.deepEqual(bankRows,bankBeforePermissionRevocation,"question bank rows must remain unchanged after RBAC revocation");
-assert.deepEqual(ownershipRows,ownershipBeforePermissionRevocation,"ownership rows must remain unchanged after RBAC revocation");
+// Una segunda invocación interna de validateRolePermission reutiliza la decisión ya tomada al entrar.
+const bankBeforePermissionReuse=bankRows.map(row=>row.slice());
+const ownershipBeforePermissionReuse=ownershipRows.map(row=>row.slice());
+const opensBeforePermissionReuse=sheetOpens,lockBeforePermissionReuse=lockAcquires,releasesBeforePermissionReuse=lockReleases;
+const verifyBeforePermissionReuse=sessionVerificationCalls,decisionBeforePermissionReuse=permissionDecisionCalls;
+let permissionFunctionCalls=0;
+runtime.validateRolePermission=(...args)=>{permissionFunctionCalls++;return originalPermission(...args);};
+const permissionReusePayload={sessionToken:"teacher-token",bancoPreguntaId:"BNK-D1",accion:"actualizar",textoPregunta:"Autorización única"};
+const permissionReuseResult=runtime.manageQuestionBank(permissionReusePayload);
+assert.equal(permissionReuseResult.status,"success");
+assert.equal(permissionFunctionCalls,2,"the wrapper and locked context consult the request-local authorization helper");
+assert.equal(permissionDecisionCalls-decisionBeforePermissionReuse,1,"the role permission decision is evaluated once");
+assert.equal(sessionVerificationCalls-verifyBeforePermissionReuse,1,"the session is verified once for the request");
+assert.equal(lockAcquires,lockBeforePermissionReuse+1);
+assert.equal(lockReleases,releasesBeforePermissionReuse+1);
+assert.equal(sheetOpens,opensBeforePermissionReuse+1);
+assert.notDeepEqual(bankRows,bankBeforePermissionReuse,"the authorized operation is persisted");
+assert.notDeepEqual(ownershipRows,ownershipBeforePermissionReuse,"ownership remains in sync");
 runtime.validateRolePermission=originalPermission;
 runtime.getVerifiedExamIdentity_=originalIdentity;
 
