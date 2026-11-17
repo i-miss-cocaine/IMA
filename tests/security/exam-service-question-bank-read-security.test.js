@@ -58,7 +58,7 @@ const scopeRows = [
 ];
 let lockAvailable = true, lockHeld = false, beforeAcquire = null, lockAcquires = 0, lockReleases = 0;
 function makeSheet(rows) { return { getDataRange() { return { getValues: () => rows.map(row => row.slice()) }; } }; }
-const sheets = { BancoPreguntas: makeSheet(bankRows), ResourceOwnership: makeSheet(ownershipRows), AsignacionesAmbitosRoles: makeSheet(scopeRows) };
+const sheets = { BancoPreguntasExamen: makeSheet(bankRows), ResourceOwnership: makeSheet(ownershipRows), AsignacionesAmbitosRoles: makeSheet(scopeRows) };
 const ss = { getSheetByName(name) { return sheets[name] || null; } };
 const runtime = {
  SPREADSHEET_ID:"LOCAL", EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_:new WeakMap(), PUBLIC_ACTIONS:[],

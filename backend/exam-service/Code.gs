@@ -29,7 +29,7 @@ function getOrCreateSheet(ss, name) {
     sheet = ss.insertSheet(name);
     if (name === "Examenes") sheet.appendRow(["ExamenID", "Titulo", "Asignatura", "Grado", "Seccion", "FechaLimite", "TiempoLimite", "Estado", "ProfesorID", "Parcial", "AreaCurricular", "DuracionMinutos", "IntentosPermitidos", "EsAleatorio"]);
     if (name === "PreguntasExamen") sheet.appendRow(["PreguntaID", "ExamenID", "Tipo", "Texto", "OpcionesJSON", "RespuestaCorrecta", "Puntos", "AreaCurricular", "Dificultad", "BancoPreguntaID"]);
-    if (name === "BancoPreguntas") sheet.appendRow(["BancoPreguntaID", "AreaCurricular", "Asignatura", "Grado", "Tema", "Dificultad", "Tipo", "TextoPregunta", "OpcionesJSON", "RespuestaCorrecta", "Etiquetas", "PuntosPredeterminados", "Estado"]);
+    if (name === "BancoPreguntasExamen") sheet.appendRow(["BancoPreguntaID", "AreaCurricular", "Asignatura", "Grado", "Tema", "Dificultad", "Tipo", "TextoPregunta", "OpcionesJSON", "RespuestaCorrecta", "Etiquetas", "PuntosPredeterminados", "Estado"]);
     if (name === "EntregasExamen") sheet.appendRow(["EntregaExamenID", "ExamenID", "UserID", "FechaEntrega", "RespuestasJSON", "NotaTotal", "Estado", "ComentarioDocente", "TemaAsociado", "AsignaturaAsociada"]);
     if (name === "CategoriasEvaluacion") sheet.appendRow(["ID", "Nombre", "Ambito", "PorcentajePonderacion", "EscalaID", "Estado"]);
     if (name === "RubricasEvaluacion") sheet.appendRow(["ID", "Titulo", "Asignatura", "Estado", "CriteriosJSON"]);
@@ -699,7 +699,7 @@ function getAuthorizedQuestionBankMutationContext_(payload) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const scope = getVerifiedExamDepartmentScope_(payload, ss, actor);
   if (!scope.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
-  const bankSheet = getOrCreateSheet(ss, "BancoPreguntas");
+  const bankSheet = getOrCreateSheet(ss, "BancoPreguntasExamen");
   const ownershipSheet = getSheetOrThrow(ss, "ResourceOwnership");
   const bankHeaders = ["BancoPreguntaID", "AreaCurricular", "Asignatura", "Grado", "Tema", "Dificultad", "Tipo", "TextoPregunta", "OpcionesJSON", "RespuestaCorrecta", "Etiquetas", "PuntosPredeterminados", "Estado"];
   const ownershipHeaders = ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"];
@@ -841,7 +841,7 @@ function getAuthorizedQuestionBankReadContext_(payload) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const scope = getVerifiedExamDepartmentScope_(p, ss, actor);
   if (!scope.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
-  const sheet = getSheetOrThrow(ss, "BancoPreguntas");
+  const sheet = getSheetOrThrow(ss, "BancoPreguntasExamen");
   const ownershipSheet = getSheetOrThrow(ss, "ResourceOwnership");
   const data = sheet.getDataRange().getValues();
   const ownershipRows = ownershipSheet.getDataRange().getValues();

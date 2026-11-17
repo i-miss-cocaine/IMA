@@ -55,7 +55,9 @@ function makeSheet(rows,kind) {
  };
 }
 const bankSheet=makeSheet(bankRows,"bank"), ownershipSheet=makeSheet(ownershipRows,"ownership");
-const sheets={BancoPreguntas:bankSheet,ResourceOwnership:ownershipSheet,AsignacionesAmbitosRoles:makeSheet(scopeRows,"scope")};
+const legacyBankRows=[["PreguntaID","Asignatura","Nivel","Tema","TipoActividad","Pregunta","OpcionA","OpcionB","OpcionC","OpcionD","RespuestaCorrecta","Explicacion","Imagen","VecesRespondida","VecesCorrecta","PorcentajeAcierto","UltimaActualizacion","Activa","DificultadCalculada"],["LEGACY-Q1","Matemáticas","10","Álgebra","opcion_multiple","Pregunta heredada","1","2","","","A","","",0,0,0,"",true,"Media"]];
+const legacyBankSheet=makeSheet(legacyBankRows,"legacy");
+const sheets={BancoPreguntasExamen:bankSheet,BancoPreguntas:legacyBankSheet,ResourceOwnership:ownershipSheet,AsignacionesAmbitosRoles:makeSheet(scopeRows,"scope")};
 const ss={getSheetByName(name){return sheets[name]||null;}};
 const runtime={
  SPREADSHEET_ID:"LOCAL",EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_:new WeakMap(),
@@ -85,6 +87,8 @@ assert.ok(created.bancoPreguntaId.startsWith("BNK-"));
 assert.equal(bankRows.find(r=>r[0]===created.bancoPreguntaId)[7],"Nueva");
 assert.equal(ownershipRows.filter(r=>r[3]===created.bancoPreguntaId&&r[2]==="BANCO_PREGUNTA").length,1);
 assert.equal(ownershipRows.find(r=>r[3]===created.bancoPreguntaId)[4],"D1");
+assert.equal(legacyBankRows.length,2,"exam bank writes must not create rows in the academic-service question bank");
+assert.equal(legacyBankRows[1][5],"Pregunta heredada","legacy academic question content must remain unchanged");
 const updated=runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:"BNK-D1",accion:"actualizar",textoPregunta:"Actualizada",opcionesJSON:{A:"Nueva"}});
 assert.equal(updated.status,"success");
 assert.equal(bankRows.find(r=>r[0]==="BNK-D1")[7],"Actualizada");
