@@ -867,6 +867,92 @@ function validateImportPreview(payload) {
 }
 
 const ACCOUNTING_IDENTITY_MAPPING_HEADERS_=["idMapeo", "sistemaOrigen", "tipoEntidad", "idOriginalLegado", "idNuevoPlataforma", "institucionId", "hashRegistroOrigen", "fechaMigracion", "versionMapeo", "estadoCorrespondencia", "metodoCoincidencia", "nivelConfianza", "migradoPor"];
+const ACCOUNTING_IMPORT_MAPPING_PROFILE_HEADERS_=["PerfilID","InstitucionID","PropietarioUserID","NombrePerfil","SistemaOrigen","TipoEntidad","DestinoModulo","EncabezadosJSON","ColumnaMapeoJSON","HuellaEsquema","Version","Estado","CreadoEn","ActualizadoEn","ActualizadoPor"];
+function ensureImportMappingProfilesSheet_(ss,create){
+ var sh=ss&&ss.getSheetByName?ss.getSheetByName("PerfilesMapeoColumnas"):null;
+ if(!sh&&create)sh=getOrCreateSheet(ss,"PerfilesMapeoColumnas");
+ if(!sh)return null;
+ var rows=sh.getDataRange().getValues(),headers=rows.length?(rows[0]||[]).map(function(v){return String(v||"").trim();}):[];
+ if(!rows.length||!headers.some(Boolean)){sh.appendRow(ACCOUNTING_IMPORT_MAPPING_PROFILE_HEADERS_.slice());return sh;}
+ if(ACCOUNTING_IMPORT_MAPPING_PROFILE_HEADERS_.some(function(h,i){return headers[i]!==h;}))throw new Error("IMPORT_MAPPING_PROFILE_SCHEMA_MISMATCH");
+ return sh;
+}
+function importMappingProfileContext_(payload){
+ var input=payload||{},actor=getVerifiedAccountingIdentity_(input);
+ if(!actor||actor.authorized!==true)return{error:{status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"}};
+ if(typeof accountingHasInstitutionalImportPermission_==="function"&&!accountingHasInstitutionalImportPermission_({roleId:actor.role||actor.roleId,userId:actor.userId,sessionToken:input.sessionToken}))return{error:{status:"error",code:"IMPORT_PERMISSION_DENIED"}};
+ var institutionId=String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID")||PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID")||"").trim();
+ if(!institutionId)return{error:{status:"error",code:"INSTITUTION_CONTEXT_REQUIRED"}};
+ return{actor:actor,institutionId:institutionId};
+}
+function normalizeImportMappingProfile_(input){
+ var p=input||{},entity=String(p.tipoEntidad||"").trim().toLowerCase(),schema=MIGRATION_OWNER_SCHEMAS_[entity];
+ if(!schema||entity==="empleadoOwnership")throw new Error("IMPORT_MAPPING_PROFILE_ENTITY_INVALID");
+ var source=String(p.sistemaOrigen||"").trim(),destination=String(p.destinoModulo||"").trim().toUpperCase(),name=String(p.profileName||p.nombrePerfil||"").trim();
+ if(!source||source.length>120||!name||name.length<2||name.length>80)throw new Error("IMPORT_MAPPING_PROFILE_FIELDS_INVALID");
+ if(destination!==String(schema.service||"").toUpperCase())throw new Error("MIGRATION_DESTINATION_MISMATCH");
+ var headers=Array.isArray(p.sourceHeaders)?p.sourceHeaders.map(function(v){return String(v||"").trim();}):[];
+ if(!headers.length||headers.length>250||headers.some(function(v){return !v||v.length>160;})||new Set(headers.map(function(v){return v.toLowerCase();})).size!==headers.length)throw new Error("IMPORT_MAPPING_PROFILE_HEADERS_INVALID");
+ var mapping=p.columnaMapeo||{},identifier=String(mapping.identificador||"").trim(),fields=mapping.campos;
+ if(!identifier||headers.indexOf(identifier)<0||!fields||typeof fields!=="object"||Array.isArray(fields))throw new Error("IMPORT_MAPPING_PROFILE_MAPPING_INVALID");
+ var allowed=(schema.headers||[]).slice(1),cleanFields={};
+ Object.keys(fields).forEach(function(target){
+  var sourceHeader=String(fields[target]||"").trim();
+  if(allowed.indexOf(target)<0||!sourceHeader||headers.indexOf(sourceHeader)<0)throw new Error("IMPORT_MAPPING_PROFILE_MAPPING_INVALID");
+  cleanFields[target]=sourceHeader;
+ });
+ if(!Object.keys(cleanFields).length)throw new Error("IMPORT_MAPPING_PROFILE_MAPPING_INVALID");
+ return{profileName:name,sourceSystem:source,entityType:entity,destinationModule:destination,sourceHeaders:headers,
+  columnMapping:{identificador:identifier,campos:cleanFields},
+  schemaFingerprint:migrationHash_(migrationStableJson_({entityType:entity,destinationModule:destination,sourceHeaders:headers}))};
+}
+function saveImportMappingProfile(payload){
+ var context=importMappingProfileContext_(payload);if(context.error)return context.error;
+ var normalized;
+ try{normalized=normalizeImportMappingProfile_(payload);}catch(error){return{status:"error",code:String(error&&error.message||"IMPORT_MAPPING_PROFILE_INVALID")};}
+ var lock=LockService.getScriptLock();if(!lock.tryLock(10000))return{status:"error",code:"IMPORT_MAPPING_PROFILE_LOCK_TIMEOUT"};
+ try{
+  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=ensureImportMappingProfilesSheet_(ss,true),rows=sh.getDataRange().getValues(),actor=context.actor,institutionId=context.institutionId;
+  var requestedId=String(payload&&payload.profileId||"").trim(),matches=rows.slice(1).map(function(row,index){return{row:row,index:index};}).filter(function(item){
+   var r=item.row;return String(r[1]||"")===institutionId&&String(r[2]||"")===String(actor.userId||"")&&
+    (requestedId?String(r[0]||"")===requestedId:(String(r[3]||"").toLowerCase()===normalized.profileName.toLowerCase()&&String(r[4]||"")===normalized.sourceSystem&&String(r[5]||"")===normalized.entityType));
+  });
+  if(matches.length>1)return{status:"error",code:"IMPORT_MAPPING_PROFILE_AMBIGUOUS"};
+  if(requestedId&&!matches.length)return{status:"error",code:"IMPORT_MAPPING_PROFILE_NOT_FOUND"};
+  if(matches.length){
+   var old=matches[0].row;
+   if(String(old[3]||"").toLowerCase()!==normalized.profileName.toLowerCase()||String(old[4]||"")!==normalized.sourceSystem||String(old[5]||"")!==normalized.entityType)return{status:"error",code:"IMPORT_MAPPING_PROFILE_IDENTITY_IMMUTABLE"};
+  }
+  var profileId=matches.length?String(matches[0].row[0]):"IMP-PROF-"+String(Utilities.getUuid()).replace(/-/g,"").slice(0,24);
+  var version=matches.reduce(function(max,item){return Math.max(max,Number(item.row[10]||0));},0)+1,now=new Date();
+  sh.appendRow([profileId,institutionId,String(actor.userId||""),normalized.profileName,normalized.sourceSystem,normalized.entityType,
+   normalized.destinationModule,JSON.stringify(normalized.sourceHeaders),JSON.stringify(normalized.columnMapping),normalized.schemaFingerprint,
+   version,"ACTIVO",matches.length?matches[0].row[12]||now:now,now,String(actor.userId||"")]);
+  try{logStructuredEvent("ACCOUNTING","saveImportMappingProfile","INFO","IMPORT_MAPPING_PROFILE_SAVED","Perfil de mapeo de importación guardado.",{profileId:profileId,version:version,entityType:normalized.entityType,sourceSystem:normalized.sourceSystem},actor.role);}catch(_){}
+  return{status:"success",profileId:profileId,version:version,profileName:normalized.profileName,schemaFingerprint:normalized.schemaFingerprint};
+ }finally{lock.releaseLock();}
+}
+function getImportMappingProfiles(payload){
+ var context=importMappingProfileContext_(payload);if(context.error)return context.error;
+ var input=payload||{},entity=String(input.tipoEntidad||"").trim().toLowerCase(),source=String(input.sistemaOrigen||"").trim();
+ if(entity&&!MIGRATION_OWNER_SCHEMAS_[entity])return{status:"error",code:"IMPORT_MAPPING_PROFILE_ENTITY_INVALID"};
+ var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=ensureImportMappingProfilesSheet_(ss,false);
+ if(!sh)return{status:"success",profiles:[]};
+ var rows=sh.getDataRange().getValues().slice(1),latest={};
+ rows.forEach(function(r){
+  if(String(r[1]||"")!==context.institutionId||String(r[2]||"")!==String(context.actor.userId||"")||
+    (entity&&String(r[5]||"")!==entity)||(source&&String(r[4]||"")!==source)||String(r[11]||"")!=="ACTIVO")return;
+  var id=String(r[0]||"");if(!id)return;
+  if(!latest[id]||Number(r[10]||0)>Number(latest[id][10]||0))latest[id]=r;
+ });
+ var profiles=Object.keys(latest).map(function(id){var r=latest[id];try{return{
+  profileId:id,profileName:String(r[3]||""),sistemaOrigen:String(r[4]||""),tipoEntidad:String(r[5]||""),destinoModulo:String(r[6]||""),
+  sourceHeaders:JSON.parse(String(r[7]||"[]")),columnaMapeo:JSON.parse(String(r[8]||"{}")),
+  schemaFingerprint:String(r[9]||""),version:Number(r[10]||1),updatedAt:r[13] instanceof Date?r[13].toISOString():String(r[13]||"")
+ };}catch(_){return null;}}).filter(Boolean);
+ profiles.sort(function(a,b){return a.profileName.localeCompare(b.profileName);});
+ return{status:"success",profiles:profiles};
+}
 
 function importDataWithColumnMapping(payload) {
   var input = payload || {};
@@ -6285,6 +6371,8 @@ function doPost(e) {
     if (request.action === "reviewLeaveVacationRequest") return respond(reviewLeaveVacationRequest(actionPayload));
     if (request.action === "calculateVacationBalances") return respond(calculateVacationBalances(actionPayload));
     if (request.action === "recordMedicalLeave") return respond(recordMedicalLeave(actionPayload));
+    if (request.action === "getImportMappingProfiles") return respond(getImportMappingProfiles(actionPayload));
+    if (request.action === "saveImportMappingProfile") return respond(saveImportMappingProfile(actionPayload));
     if (request.action === "validateImportPreview") return respond(validateImportPreview(actionPayload));
     if (request.action === "getAccountingMigrationFileAudit") return respond(getAccountingMigrationFileAudit(actionPayload));
     if (request.action === "importDataWithColumnMapping") return respond(importDataWithColumnMapping(actionPayload));
