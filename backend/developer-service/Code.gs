@@ -207,11 +207,11 @@ function getMigrationHmacSecrets_(sourceService) {
  * The caller supplies the same high-entropy secret out-of-band to each project;
  * the secret is stored only in Script Properties and is never returned or logged.
  */
-function provisionMigrationCredentialFromEditor(input) {
+function provisionMigrationCredentialFromEditor_(input) {
   return manageMigrationCredentialFromEditor_(input, false);
 }
 
-function revokeMigrationCredentialFromEditor(input) {
+function revokeMigrationCredentialFromEditor_(input) {
   return manageMigrationCredentialFromEditor_(input, true);
 }
 

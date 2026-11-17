@@ -90,14 +90,14 @@ function harness(source, localService, options = {}) {
   };
   const names = [
     "computeMigrationCredentialFingerprint_", "getMigrationHmacSecret_", "getMigrationHmacSecrets_",
-    "manageMigrationCredentialFromEditor_", "provisionMigrationCredentialFromEditor",
-    "revokeMigrationCredentialFromEditor"
+    "manageMigrationCredentialFromEditor_", "provisionMigrationCredentialFromEditor_",
+    "revokeMigrationCredentialFromEditor_"
   ];
   vm.createContext(runtime);
   const bootstrap = "const IMA_LOCAL_SERVICE_ID_ = " + JSON.stringify(localService) +
     "; const IMA_CREDENTIAL_CATALOG_HEADERS_ = " + JSON.stringify(headers) + ";";
   vm.runInContext(bootstrap + "\n" + names.map(name => extract(source, name)).join("\n") +
-    "\nthis.api={provision:provisionMigrationCredentialFromEditor,revoke:revokeMigrationCredentialFromEditor,get:getMigrationHmacSecret_,getAll:getMigrationHmacSecrets_};", runtime);
+    "\nthis.api={provision:provisionMigrationCredentialFromEditor_,revoke:revokeMigrationCredentialFromEditor_,get:getMigrationHmacSecret_,getAll:getMigrationHmacSecrets_};", runtime);
   return { api: runtime.api, properties, rows: () => rows.map(row => row.slice()), state, sheet };
 }
 
@@ -112,8 +112,8 @@ for (let index = 0; index < paths.length; index++) {
   const source = fs.readFileSync(paths[index], "utf8");
   new vm.Script(source, { filename: paths[index] });
   const localService = services[index];
-  assert.ok(source.includes("function provisionMigrationCredentialFromEditor("), localService + " provisioning entrypoint");
-  assert.ok(!source.includes('case "provisionMigrationCredentialFromEditor"'), "provisioning must not be exposed through doPost");
+  assert.ok(source.includes("function provisionMigrationCredentialFromEditor_("), localService + " provisioning entrypoint");
+  assert.ok(!source.includes('case "provisionMigrationCredentialFromEditor_"'), "provisioning must not be exposed through doPost");
   const h = harness(source, localService);
   const installed = h.api.provision({ sourceService: localService, version: "v1", secret: secret1 });
   assert.equal(installed.status, "success");

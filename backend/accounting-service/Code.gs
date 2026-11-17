@@ -154,6 +154,80 @@ function getMigrationHmacSecret_(sourceService, purpose) {
 }
 
 
+function getMigrationHmacSecrets_(sourceService) {
+  var service = String(sourceService || "").trim().toUpperCase();
+  if (["USER", "ACADEMIC", "ACCOUNTING", "DEVELOPER"].indexOf(service) === -1) throw new Error("MIGRATION_SOURCE_SERVICE_INVALID");
+  var properties;
+  try { properties = PropertiesService.getScriptProperties(); }
+  catch (error) { throw new Error("MIGRATION_SECRET_UNAVAILABLE"); }
+
+  var activeSecret = String(properties.getProperty("IMA_MIGRATION_HMAC_SECRET_" + service) || "").trim();
+  var activeVersion = String(properties.getProperty("IMA_MIGRATION_HMAC_SECRET_VERSION_" + service) || "").trim();
+  if (activeSecret.length < 32) throw new Error("MIGRATION_SECRET_NOT_CONFIGURED");
+  if (!activeVersion) throw new Error("MIGRATION_SECRET_VERSION_NOT_CONFIGURED");
+
+  var spreadsheetId = String(typeof SPREADSHEET_ID !== "undefined" ? SPREADSHEET_ID : "").trim();
+  if (!spreadsheetId) throw new Error("CREDENTIAL_CATALOG_SPREADSHEET_NOT_CONFIGURED");
+  var data;
+  try {
+    var sheet = SpreadsheetApp.openById(spreadsheetId).getSheetByName("CatalogoCredencialesServicios");
+    if (!sheet) throw new Error("missing catalog");
+    data = sheet.getDataRange().getValues();
+  } catch (error) { throw new Error("CREDENTIAL_CATALOG_UNAVAILABLE"); }
+  if (!data.length || data[0].length !== IMA_CREDENTIAL_CATALOG_HEADERS_.length ||
+      JSON.stringify(data[0].map(String)) !== JSON.stringify(IMA_CREDENTIAL_CATALOG_HEADERS_)) {
+    throw new Error("CREDENTIAL_CATALOG_SCHEMA_MISMATCH");
+  }
+
+  var rows = data.slice(1), ids = Object.create(null), versions = Object.create(null);
+  rows.forEach(function(row) {
+    var id = String(row[0] || "").trim();
+    if (!id) {
+      if (row.some(function(value) { return String(value || "").trim() !== ""; })) throw new Error("CREDENTIAL_CATALOG_ROW_INVALID");
+      return;
+    }
+    if (ids[id]) throw new Error("CREDENTIAL_CATALOG_DUPLICATE_ID");
+    ids[id] = true;
+  });
+  var serviceRows = rows.filter(function(row) {
+    return String(row[1] || "").trim().toUpperCase() === service &&
+      String(row[2] || "").trim() === "IMA_MIGRATION_HMAC_SECRET";
+  });
+  var activeRows = serviceRows.filter(function(row) { return String(row[4] || "").trim().toUpperCase() === "ACTIVE"; });
+  if (activeRows.length !== 1 || String(activeRows[0][3] || "").trim() !== activeVersion) {
+    throw new Error("MIGRATION_SECRET_REVOKED_OR_UNREGISTERED");
+  }
+  var candidates = serviceRows.filter(function(row) {
+    var status = String(row[4] || "").trim().toUpperCase();
+    return status === "ACTIVE" || status === "VERIFY_ONLY";
+  });
+  var secrets = [];
+  candidates.forEach(function(row) {
+    var version = String(row[3] || "").trim();
+    var status = String(row[4] || "").trim().toUpperCase();
+    if (!version || !/^[A-Za-z0-9._-]{1,64}$/.test(version) || versions[version]) {
+      throw new Error("CREDENTIAL_CATALOG_VERSION_INVALID");
+    }
+    versions[version] = true;
+    if (!String(row[0] || "").trim() || !String(row[6] || "").trim() || !String(row[7] || "").trim()) {
+      throw new Error("CREDENTIAL_CATALOG_METADATA_INVALID");
+    }
+    if (String(row[8] || "").trim() || String(row[9] || "").trim()) {
+      throw new Error("MIGRATION_SECRET_REVOKED_OR_UNREGISTERED");
+    }
+    var secret = version === activeVersion ? activeSecret :
+      String(properties.getProperty("IMA_MIGRATION_HMAC_SECRET_" + service + "_V_" + version) || "").trim();
+    if (secret.length < 32) throw new Error("MIGRATION_SECRET_NOT_CONFIGURED");
+    var fingerprint = String(row[5] || "").trim().toLowerCase();
+    if (!/^[a-f0-9]{64}$/.test(fingerprint)) throw new Error("CREDENTIAL_CATALOG_FINGERPRINT_INVALID");
+    if (fingerprint !== computeMigrationCredentialFingerprint_(secret)) throw new Error("MIGRATION_SECRET_FINGERPRINT_MISMATCH");
+    secrets.push(secret);
+  });
+  if (!secrets.length) throw new Error("MIGRATION_SECRET_REVOKED_OR_UNREGISTERED");
+  return secrets;
+}
+
+
 /*
  * Manual credential provisioning entrypoints.
  * Invoke only from the Apps Script editor in each participating project.
@@ -161,11 +235,11 @@ function getMigrationHmacSecret_(sourceService, purpose) {
  * The caller supplies the same high-entropy secret out-of-band to each project;
  * the secret is stored only in Script Properties and is never returned or logged.
  */
-function provisionMigrationCredentialFromEditor(input) {
+function provisionMigrationCredentialFromEditor_(input) {
   return manageMigrationCredentialFromEditor_(input, false);
 }
 
-function revokeMigrationCredentialFromEditor(input) {
+function revokeMigrationCredentialFromEditor_(input) {
   return manageMigrationCredentialFromEditor_(input, true);
 }
 
