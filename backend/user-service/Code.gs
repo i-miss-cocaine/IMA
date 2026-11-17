@@ -1633,6 +1633,9 @@ function validateRolePermission(action, payload) {
   if (userRole === "NO_ACCESS") {
     return { authorized: false, role: "Cuenta Inactiva/Bloqueada" };
   }
+  if (["getUserHelpPreferences", "saveUserHelpPreferences"].indexOf(action) !== -1) {
+    return { authorized: !!(payload && payload._verifiedUserId), role: userRole, userId: payload && payload._verifiedUserId };
+  }
   if (userRole === "Auditor" && (ROLE_PERMISSIONS.Auditor || []).indexOf(action) === -1) {
     logStructuredEvent("USER", "validateRolePermission", "WARN", "AUDITOR_READ_ONLY",
       "Acción no incluida en la lista de solo lectura del auditor.", { action: action, userId: payload && payload._verifiedUserId }, userRole);
@@ -2315,6 +2318,8 @@ function doPost(e) {
       case "acceptLegalDocument": result = acceptLegalDocument(payload); break;
       case "getLegalDocumentAcceptances": result = getLegalDocumentAcceptances(payload); break;
       case "getHelpGuidesCatalog": result = getHelpGuidesCatalog(payload); break;
+      case "getUserHelpPreferences": result = getUserHelpPreferences(payload); break;
+      case "saveUserHelpPreferences": result = saveUserHelpPreferences(payload); break;
 
       // Endpoints Nueva Fase - Tickets de Problemas y Paleta Visual
       case "submitProblemTicket": result = submitProblemTicket(payload); break;
@@ -11575,6 +11580,72 @@ function getLegalDocumentAcceptances(payload) {
   }
 }
 
+const USER_HELP_PREFERENCE_HEADERS_=["PreferenceID","UserID","InstitutionID","TourKey","StepIndex","Dismissed","TourVersion","Version","UpdatedAt"];
+const USER_HELP_TOUR_ROLES_={studentSubmission:["Estudiante"],teacherReview:["Profesor"]};
+function getUserHelpPreferenceActor_(payload){
+ var input=payload||{},token=String(input.sessionToken||"").trim(),claims=token&&typeof verifySessionToken==="function"?verifySessionToken(token):null;
+ if(!claims||!claims.userId||!claims.role||!claims.institutionId)return{error:{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"}};
+ var institution="";try{institution=getIdentityInstitutionId_();}catch(e){return{error:{status:"error",code:"IDENTITY_CONFIGURATION_REQUIRED"}};}
+ if(String(claims.institutionId)!==institution)return{error:{status:"error",code:"INSTITUTION_SCOPE_DENIED"}};
+ if(String(input._verifiedUserId||claims.userId)!==String(claims.userId))return{error:{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"}};
+ return{userId:String(claims.userId),institutionId:institution,role:String(claims.role)};
+}
+function ensureUserHelpPreferencesSheet_(ss,create){
+ var sh=ss.getSheetByName("PreferenciasUsuario");
+ if(!sh&&create)sh=getOrCreateSheet(ss,"PreferenciasUsuario");
+ if(!sh)return null;
+ var rows=sh.getDataRange().getValues(),headers=rows.length?(rows[0]||[]).map(function(v){return String(v||"").trim();}):[];
+ if(!rows.length){sh.appendRow(USER_HELP_PREFERENCE_HEADERS_.slice());return sh;}
+ if(!headers.some(Boolean)){sh.getRange(1,1,1,USER_HELP_PREFERENCE_HEADERS_.length).setValues([USER_HELP_PREFERENCE_HEADERS_.slice()]);return sh;}
+ if(USER_HELP_PREFERENCE_HEADERS_.some(function(h,i){return headers[i]!==h;}))throw new Error("USER_HELP_PREFERENCES_SCHEMA_MISMATCH");
+ return sh;
+}
+function getUserHelpPreferences(payload){
+ var actor=getUserHelpPreferenceActor_(payload);if(actor.error)return actor.error;
+ try{
+  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=ensureUserHelpPreferencesSheet_(ss,false);
+  if(!sh)return{status:"success",preferences:[],institutionId:actor.institutionId};
+  var rows=sh.getDataRange().getValues().slice(1),latest={};
+  rows.forEach(function(r){
+   if(String(r[1]||"")!==actor.userId||String(r[2]||"")!==actor.institutionId)return;
+   var key=String(r[3]||"");if(!key)return;
+   if(!latest[key]||Number(r[7]||0)>Number(latest[key][7]||0))latest[key]=r;
+  });
+  var preferences=Object.keys(latest).map(function(key){var r=latest[key];return{
+   tourKey:key,stepIndex:Math.max(1,Number(r[4]||1)),dismissed:r[5]===true||String(r[5]).toLowerCase()==="true",
+   tourVersion:String(r[6]||"1"),version:Number(r[7]||1),updatedAt:r[8] instanceof Date?r[8].toISOString():String(r[8]||"")
+  };});
+  return{status:"success",preferences:preferences,institutionId:actor.institutionId};
+ }catch(error){return{status:"error",code:String(error&&error.message||"USER_HELP_PREFERENCES_READ_FAILED")};}
+}
+function saveUserHelpPreferences(payload){
+ var input=payload||{},actor=getUserHelpPreferenceActor_(input);if(actor.error)return actor.error;
+ var resetAll=input.resetAll===true,tourKey=String(input.tourKey||"").trim(),allowed=USER_HELP_TOUR_ROLES_[tourKey]||[];
+ if(!resetAll&&(!tourKey||allowed.indexOf(actor.role)===-1))return{status:"error",code:"USER_HELP_TOUR_NOT_ALLOWED"};
+ var step=Number(input.stepIndex===undefined?1:input.stepIndex),dismissed=input.dismissed===true,tourVersion=String(input.tourVersion||"1").trim();
+ if(!resetAll&&(!Number.isInteger(step)||step<1||step>20||!tourVersion||tourVersion.length>32))return{status:"error",code:"USER_HELP_PREFERENCE_VALUE_INVALID"};
+ var lock=LockService.getScriptLock();if(!lock.tryLock(10000))return{status:"error",code:"USER_HELP_PREFERENCE_LOCK_TIMEOUT"};
+ try{
+  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=ensureUserHelpPreferencesSheet_(ss,true),rows=sh.getDataRange().getValues().slice(1),latest={};
+  rows.forEach(function(r){if(String(r[1]||"")!==actor.userId||String(r[2]||"")!==actor.institutionId)return;var key=String(r[3]||"");if(key&&(!latest[key]||Number(r[7]||0)>Number(latest[key][7]||0)))latest[key]=r;});
+  if(resetAll){
+   var keys=Object.keys(latest);
+   Object.keys(USER_HELP_TOUR_ROLES_).forEach(function(key){if(USER_HELP_TOUR_ROLES_[key].indexOf(actor.role)!==-1&&keys.indexOf(key)===-1)keys.push(key);});
+   keys.forEach(function(key){
+    var old=latest[key],version=old?Number(old[7]||0)+1:1,guideVersion=old?String(old[6]||"1"):"1";
+    sh.appendRow(["HELP-"+actor.userId+"-"+key,actor.userId,actor.institutionId,key,1,false,guideVersion,version,new Date()]);
+   });
+   return{status:"success",resetAll:true,resetCount:keys.length};
+  }
+  var current=latest[tourKey],currentVersion=current?Number(current[7]||0):0,expected=input.expectedVersion===undefined?currentVersion:Number(input.expectedVersion);
+  if(!Number.isInteger(expected)||expected!==currentVersion)return{status:"error",code:"USER_HELP_PREFERENCE_VERSION_CONFLICT",currentVersion:currentVersion};
+  var version=currentVersion+1;
+  sh.appendRow(["HELP-"+actor.userId+"-"+tourKey,actor.userId,actor.institutionId,tourKey,step,dismissed,tourVersion,version,new Date()]);
+  return{status:"success",tourKey:tourKey,stepIndex:step,dismissed:dismissed,tourVersion:tourVersion,version:version};
+ }catch(error){return{status:"error",code:String(error&&error.message||"USER_HELP_PREFERENCES_WRITE_FAILED")};}
+ finally{lock.releaseLock();}
+}
+
 function getHelpGuidesCatalog(payload) {
   try {
     const verifiedRole = getUserVerifiedRole(payload);
@@ -11620,6 +11691,7 @@ function getHelpGuidesCatalog(payload) {
     ];
 
     const filtered = guides.filter(g => {
+      if (g.role && g.role !== verifiedRole) return false;
       if (panelKey && g.panelKey !== panelKey) return false;
       return true;
     });
