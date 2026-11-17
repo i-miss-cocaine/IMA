@@ -18,6 +18,7 @@ on:
       - 'tests/security/exam-service-period-gradebook-reopen-security.test.js'
       - 'tests/security/exam-service-student-grade-rectification-security.test.js'
       - 'tests/security/exam-service-gradebook-save-security.test.js'
+      - 'tests/security/exam-service-single-auth-context.test.js'
       - 'tests/security/exam-service-evaluation-setup-copy-security.test.js'
       - 'tests/security/exam-service-create-exam-security.test.js'
       - 'tests/security/exam-service-question-bank-read-security.test.js'
@@ -88,6 +89,8 @@ jobs:
         run: node tests/security/exam-service-student-grade-rectification-security.test.js
       - name: Run gradebook save security regression
         run: node tests/security/exam-service-gradebook-save-security.test.js
+      - name: Run single authorization context regression
+        run: node tests/security/exam-service-single-auth-context.test.js
       - name: Run bulk gradebook apply security regression
         run: node tests/security/exam-service-gradebook-bulk-apply-security.test.js
       - name: Run evaluation category mutation security regression

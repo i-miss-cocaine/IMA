@@ -304,14 +304,13 @@ function verifySessionToken(tokenString) {
 // [TASK-153 / T153-S05-S06] Identidad, ámbito y propiedad departamental del recurso EXAM.
 var EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();
 function getVerifiedExamIdentity_(payload) {
-  const token = payload && (payload.sessionToken || payload.authToken || payload.token);
-  const claims = token ? verifySessionToken(token) : null;
-  if (!claims || !claims.userId || !claims.role) return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
-  if (payload && typeof payload === "object") {
-    payload._verifiedUserId = String(claims.userId).trim();
-    payload._verifiedRole = String(claims.role).trim();
-  }
-  return { authorized: true, userId: String(claims.userId).trim(), role: String(claims.role).trim() };
+  const token=getRequestSessionToken_(payload),cached=payload&&payload._imaVerifiedExamIdentity;
+  if(cached&&cached.token===token&&cached.actor)return Object.assign({},cached.actor);
+  const claims=getVerifiedRequestSessionClaims_(payload);
+  if(!claims||!claims.userId||!claims.role)return {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
+  const actor={authorized:true,userId:String(claims.userId).trim(),role:String(claims.role).trim()};
+  if(payload&&typeof payload==="object"){payload._verifiedUserId=actor.userId;payload._verifiedRole=actor.role;payload._imaVerifiedExamIdentity={token:token,actor:actor};}
+  return Object.assign({},actor);
 }
 
 function getInstitutionalResponsibilityForRoleScope_(ss, responsibilityId) {
@@ -346,7 +345,7 @@ function resolveInternalResponsibilityForRoleScope_(ss, responsibilityId) {
 }
 function getVerifiedDepartmentScopeForSession_(payload, ss, actor) {
   if(!actor||actor.authorized!==true||!actor.userId||!actor.role)return {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
-  var token=payload&&(payload.sessionToken||payload.authToken||payload.token),claims=token?verifySessionToken(token):null;
+  var claims=getVerifiedRequestSessionClaims_(payload);
   if(!claims||String(claims.userId||"").trim()!==String(actor.userId).trim()||String(claims.role||"").trim()!==String(actor.role).trim())return {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
   var institutionId="";try{institutionId=String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID")||"").trim();}catch(_){}
   if(!institutionId)return {authorized:false,code:"IDENTITY_CONFIGURATION_REQUIRED"};
@@ -453,15 +452,41 @@ function validateContextualAccess(action, payload, verifiedUserId, userRole) {
   return { authorized: true };
 }
 
+function getRequestSessionToken_(payload) {
+  return payload && (payload.sessionToken || payload.authToken || payload.token) || "";
+}
+function getVerifiedRequestSessionClaims_(payload) {
+  const token = getRequestSessionToken_(payload);
+  if (!token) return null;
+  if (payload && payload._imaVerifiedSessionToken === token && payload._imaVerifiedSessionClaims) return payload._imaVerifiedSessionClaims;
+  const claims = verifySessionToken(token);
+  if (claims && payload && typeof payload === "object") { payload._imaVerifiedSessionToken = token; payload._imaVerifiedSessionClaims = claims; }
+  return claims;
+}
+function getCachedRequestAuthorization_(action, payload) {
+  const token=getRequestSessionToken_(payload),cache=payload&&payload._imaAuthorizationCache;
+  if(!token||!cache||cache.token!==token||!cache.actions||!Object.prototype.hasOwnProperty.call(cache.actions,action))return null;
+  return {authorized:true,role:cache.actions[action]};
+}
+function cacheRequestAuthorization_(action,payload,role) {
+  const token=getRequestSessionToken_(payload);if(!token||!payload||typeof payload!=="object")return;
+  let cache=payload._imaAuthorizationCache;if(!cache||cache.token!==token||!cache.actions)cache={token:token,actions:{}};
+  cache.actions[action]=role||payload._verifiedRole||"";payload._imaAuthorizationCache=cache;
+}
+function clearRequestAuthorizationContext_(payload) {
+  if(!payload||typeof payload!=="object")return;
+  delete payload._imaVerifiedSessionToken;delete payload._imaVerifiedSessionClaims;delete payload._imaAuthorizationCache;
+  delete payload._imaVerifiedExamIdentity;delete payload._verifiedUserId;delete payload._verifiedRole;
+}
 function validateRolePermission(action, payload) {
+  const cachedAuthorization=getCachedRequestAuthorization_(action,payload);if(cachedAuthorization)return cachedAuthorization;
   if (PUBLIC_ACTIONS.indexOf(action) !== -1) return { authorized: true };
-
   let userRole = "Estudiante";
   let verifiedUserId = null;
   const token = payload && (payload.sessionToken || payload.authToken || payload.token);
 
   if (token) {
-    const claims = verifySessionToken(token);
+    const claims = getVerifiedRequestSessionClaims_(payload);
     if (!claims) {
       return { authorized: false, role: "Token Inválido/Expirado" };
     }
@@ -482,10 +507,11 @@ function validateRolePermission(action, payload) {
 
   const dynamicCheck = getDynamicPermissionsForRole(userRole, action);
   if (dynamicCheck !== null) {
-    if (dynamicCheck === true) return { authorized: true, role: userRole };
+    if (dynamicCheck === true) { cacheRequestAuthorization_(action,payload,userRole); return { authorized: true, role: userRole }; }
   } else {
     const permitted = ROLE_PERMISSIONS[userRole] || [];
     if (permitted.indexOf("*") !== -1 || permitted.indexOf(action) !== -1) {
+      cacheRequestAuthorization_(action,payload,userRole);
       return { authorized: true, role: userRole };
     }
   }
@@ -498,7 +524,7 @@ function validateRolePermission(action, payload) {
         payload._delegatedFrom = activeDel.delegante;
         payload._delegationId = activeDel.delId;
       }
-      return { authorized: true, role: userRole + " (Delegado de " + activeDel.delegante + ")" };
+      const delegatedRole=userRole+" (Delegado de "+activeDel.delegante+")";cacheRequestAuthorization_(action,payload,delegatedRole);return {authorized:true,role:delegatedRole};
     }
   }
 
@@ -594,7 +620,9 @@ function hasActiveDelegationForAction(userId, action) {
 function doPost(e) {
   try {
     if (!e || !e.postData || !e.postData.contents) return textResponse({ status: "error", message: "No se recibieron datos." });
-    const { action, payload } = JSON.parse(e.postData.contents);
+    const request = JSON.parse(e.postData.contents);
+    const { action, payload } = request;
+    clearRequestAuthorizationContext_(payload);
     const authCheck = validateRolePermission(action, payload);
     if (!authCheck.authorized) {
       return textResponse({
