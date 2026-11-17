@@ -61,6 +61,8 @@ jobs:
         run: node --check < backend/user-service/Code.gs
       - name: Check ACADEMIC service syntax
         run: node --check < backend/academic-service/Code.gs
+      - name: Run USER migration HMAC credential registry and replay protection contract
+        run: node tests/security/migration-hmac-credential-registry.test.js
       - name: Run signed import authorization and HTTP router contract
         run: node tests/security/accounting-import-auth-router.test.js
       - name: Run journaled accounting migration writer contract
