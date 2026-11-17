@@ -2065,8 +2065,8 @@ function withAuthorizedTaskSubmissionMutation_(payload, action, mutation) {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("TASK_SUBMISSION_GRADE_LOCK_TIMEOUT");
   try {
-    const permission = validateRolePermission(action, payload);
-    if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_FOUND");
+    // Role/session authorization was verified once at the request entry point.
+    // Keep the lock for data consistency; reuse the verified actor and enforce resource ownership only.
     const access = getTaskServiceSubmissionAccess_(payload, "GRADE");
     if (!access || access.isStaff !== true || !access.ss || !Array.isArray(access.deliveries) ||
         !access.identity || String(access.identity.userId || "").trim() !== String(identity.userId).trim()) throw new Error("RESOURCE_NOT_FOUND");
