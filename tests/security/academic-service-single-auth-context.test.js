@@ -9,12 +9,12 @@ const rt={PUBLIC_ACTIONS:[],ROLE_PERMISSIONS:{Profesor:["saveAcademicRecord","pr
 verifySessionToken(token){verifyCalls++;return token==="valid"?{userId:"T1",role:"Profesor",sessionId:"S1"}:null;},
 validateContextualAccess(){contextCalls++;return {authorized:true};},getDynamicPermissionsForRole(){dynamicCalls++;return null;},
 hasActiveDelegationForAction(){return false;},auditTeacherJustificationDenied_(){},logStructuredEvent(){}};
-const runSource=names.map(extract).join("\n")+"\nthis.validate=validateRolePermission;this.identity=getVerifiedAcademicIdentity_;this.clear=clearRequestAuthorizationContext_;";
+const runSource=names.map(extract).join("\n")+"\nthis.validate=validateRolePermission;this.identity=getVerifiedAcademicIdentity_;this.clear=clearRequestAuthorizationContext_;this.permissionAction=getRequestPermissionAction_;";
 vm.runInNewContext(runSource,rt);
 let n=0;function t(fn){fn();n++;}
 t(()=>{const p={sessionToken:"valid"};assert.equal(rt.validate("saveAcademicRecord",p).authorized,true);assert.equal(rt.validate("saveAcademicRecord",p).authorized,true);assert.equal(verifyCalls,1);assert.equal(contextCalls,1);assert.equal(dynamicCalls,1);});
 t(()=>{const p={sessionToken:"valid"};rt.validate("saveAcademicRecord",p);rt.validate("getStudentDocumentFile",p);assert.equal(verifyCalls,2);assert.equal(contextCalls,3);assert.equal(dynamicCalls,3);});
-t(()=>{const p={sessionToken:"valid",operation:"PREVIEW"};assert.equal(rt.validate("getStudentDocumentFile",p).authorized,true);assert.equal(rt.validate("getStudentDocumentFile",p).authorized,true);assert.equal(verifyCalls,3);assert.equal(contextCalls,4);assert.equal(dynamicCalls,4);});
+t(()=>{const p={sessionToken:"valid",operation:"PREVIEW"};assert.equal(rt.permissionAction("getStudentDocumentFile",p),"previewStudentDocument");assert.equal(rt.validate("previewStudentDocument",p).authorized,true);assert.equal(rt.validate("previewStudentDocument",p).authorized,true);assert.equal(verifyCalls,3);assert.equal(contextCalls,4);assert.equal(dynamicCalls,4);});
 t(()=>{const p={sessionToken:"valid"};rt.validate("saveAcademicRecord",p);assert.equal(rt.identity(p).userId,"T1");assert.equal(rt.identity(p).userId,"T1");assert.equal(verifyCalls,4);});
 t(()=>{const p={sessionToken:"valid",_imaAuthorizationCache:{token:"valid",actions:{saveAcademicRecord:"Administrador"}},_imaVerifiedSessionToken:"valid",_imaVerifiedSessionClaims:{userId:"ATTACKER",role:"Administrador"}};rt.clear(p);assert.equal(rt.validate("saveAcademicRecord",p).authorized,true);assert.equal(verifyCalls,5);assert.equal(rt.identity(p).userId,"T1");});
 t(()=>{const p={sessionToken:"valid"};rt.validate("saveAcademicRecord",p);p.sessionToken="invalid";assert.equal(rt.validate("saveAcademicRecord",p).authorized,false);assert.equal(verifyCalls,7);});

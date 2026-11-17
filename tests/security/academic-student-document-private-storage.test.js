@@ -417,18 +417,15 @@ function upload(h,pdf,label="ACTA") {
 }
 
 const secretary = fs.readFileSync(path.join(__dirname,"../../js/secretary.js"),"utf8");
-assert.ok(secretary.includes("createStudentDocumentAccessToken"));
-assert.ok(secretary.includes("getSecureDocumentStream"));
-assert.ok(!secretary.includes("'getStudentDocumentFile'"),"legacy direct download action is not used by the client");
+assert.ok(secretary.includes("'getStudentDocumentFile'"),"secretary uses the direct document read endpoint");
+assert.ok(!secretary.includes("createStudentDocumentAccessToken"));
+assert.ok(!secretary.includes("getSecureDocumentStream"));
 assert.ok(!secretary.includes("d.driveUrl"),"student-document UI must not render direct Drive URLs");
 
-assert.match(source,/case "getSecureDocumentStream": result = getSecureDocumentStream\(payload\); break;/);
-assert.match(source,/case "getStudentDocumentFile": result = \{ status: "error", code: "SECURE_DOCUMENT_STREAM_REQUIRED"/);
+assert.match(source,/case "getStudentDocumentFile": result = getStudentDocumentFile\(payload\); break;/);
+assert.doesNotMatch(source,/createStudentDocumentAccessToken|getSecureDocumentStream|studentDocumentToken/,"the one-time HMAC document stream is removed");
 assert.doesNotMatch(source,/driveUrl: r\[6\]/);
-assert.match(source,/case "createStudentDocumentAccessToken": result = createStudentDocumentAccessToken\(payload\); break;/);
-assert.match(source,/function getRequestPermissionAction_\(action, payload\)[\s\S]*createStudentDocumentAccessToken[\s\S]*getSecureDocumentStream/);
-assert.match(source,/requestedDocumentOperation==="PREVIEW"\?"previewStudentDocument":"getStudentDocumentFile"/);
-assert.match(source,/claims.operation !== requestedOperation/);
+assert.match(source,/function getRequestPermissionAction_\(action, payload\)[\s\S]*action !== "getStudentDocumentFile"[\s\S]*previewStudentDocument/);
 assert.match(source,/const permissionAction=getRequestPermissionAction_\(action,payload\)/);
 assert.match(source,/validateContextualAccess\(permissionAction, payload, verifiedUserId, userRole\)/);
 assert.doesNotMatch(source,/getDownloadUrl\(\)/);
