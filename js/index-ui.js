@@ -846,7 +846,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         '<div class="p-8 ' + (i === 0 ? 'md:w-1/2 flex flex-col justify-center' : 'flex-grow flex flex-col') + '">' +
                             '<div class="flex items-center gap-3 mb-4">' +
                                 '<span class="text-[9px] font-semibold uppercase tracking-[0.2em] text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">' + n.categoria + '</span>' +
-                                '<span class="text-[10px] font-medium text-gray-300 uppercase tracking-wider">' + new Date(n.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) + (n.hora ? ' • ' + n.hora.substring(0,5) : '') + '</span>' +
+                                '<span class="text-[10px] font-medium text-gray-300 uppercase tracking-wider">' + window.IMARegionalFormatters.formatDate(n.fecha, { day: 'numeric', month: 'short' }) + (n.hora ? ' • ' + window.IMARegionalFormatters.formatClock(n.hora) : '') + '</span>' +
                             '</div>' +
                             '<h3 class="' + (i === 0 ? 'text-2xl md:text-3xl' : 'text-xl') + ' font-semibold text-gray-900 mb-4 leading-tight group-hover:text-blue-600 transition-colors uppercase tracking-tighter">' + n.titulo + '</h3>' +
                             '<p class="text-gray-500 text-sm leading-relaxed mb-6 ' + (i === 0 ? 'line-clamp-4' : 'line-clamp-3') + ' font-medium">' + excerpt + '</p>' +
@@ -873,7 +873,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('news-modal-image').src = imgUrl;
         document.getElementById('news-modal-category').textContent = news.categoria;
         document.getElementById('news-modal-title').textContent = news.titulo;
-        document.getElementById('news-modal-meta').textContent = new Date(news.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) + (news.hora ? ' • ' + news.hora.substring(0,5) : '');
+        document.getElementById('news-modal-meta').textContent = window.IMARegionalFormatters.formatDate(news.fecha, { day: 'numeric', month: 'long', year: 'numeric' }) + (news.hora ? ' • ' + window.IMARegionalFormatters.formatClock(news.hora) : '');
         document.getElementById('news-modal-content').innerHTML = news.contenido;
         if (window.setupCodeCopyButtons) window.setupCodeCopyButtons();
 

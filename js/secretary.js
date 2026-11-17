@@ -96,7 +96,7 @@ window.filterAdmissionRequestsLocal = function() {
         if (r.estadoSolicitud === 'Rechazada') badgeColor = "bg-red-100 text-red-800 border border-red-200";
         if (r.estadoSolicitud === 'Convertida') badgeColor = "bg-purple-100 text-purple-800 border border-purple-200";
 
-        const fFecha = r.fechaSolicitud ? new Date(r.fechaSolicitud).toLocaleDateString('es-HN') : '-';
+        const fFecha = r.fechaSolicitud ? window.IMARegionalFormatters.formatDate(r.fechaSolicitud) : '-';
 
         return `
             <tr class="hover:bg-gray-50/80 transition-colors">
@@ -150,7 +150,7 @@ window.openAdmissionDetailModal = function(solicitudId) {
     if (titleEl) titleEl.textContent = `Solicitud de Admisión ${found.solicitudId}`;
     if (txtJust) txtJust.value = '';
 
-    const fFecha = found.fechaSolicitud ? new Date(found.fechaSolicitud).toLocaleString('es-HN') : '-';
+    const fFecha = found.fechaSolicitud ? window.IMARegionalFormatters.formatDateTime(found.fechaSolicitud) : '-';
 
     if (contentEl) {
         contentEl.innerHTML = `
@@ -1040,7 +1040,7 @@ window.loadStudentProcedureNotificationLogs = async function(expedienteId, conta
                 <p class="text-xs text-slate-600">${log.mensaje || ''}</p>
                 <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-100">
                     <span>Categoría: ${log.categoria || 'Expediente'}</span>
-                    <span>${log.fechaEmision ? new Date(log.fechaEmision).toLocaleString() : 'N/A'}</span>
+                    <span>${log.fechaEmision ? window.IMARegionalFormatters.formatDateTime(log.fechaEmision) : 'N/A'}</span>
                 </div>
             </div>
         `).join('');
@@ -1131,7 +1131,7 @@ window.loadScheduleChangeNotificationLogs = async function(horarioId) {
 
         if (res && res.status === 'success' && Array.isArray(res.data)) {
             alert(`Historial de Notificaciones de Cambio de Horario:\n\nTotal notificaciones: ${res.data.length}\n` +
-                  (res.data.length > 0 ? res.data.map(n => `[${n.estadoEntrega || 'Entregado'}] ${n.titulo} -> Destino: ${n.destinatario} (${n.fecha ? new Date(n.fecha).toLocaleDateString() : ''})`).slice(0, 5).join('\n') : 'Sin notificaciones recientes.'));
+                  (res.data.length > 0 ? res.data.map(n => `[${n.estadoEntrega || 'Entregado'}] ${n.titulo} -> Destino: ${n.destinatario} (${n.fecha ? window.IMARegionalFormatters.formatDate(n.fecha) : ''})`).slice(0, 5).join('\n') : 'Sin notificaciones recientes.'));
         } else {
             alert('Error al consultar notificaciones: ' + (res ? res.message : 'Error desconocido'));
         }
@@ -1251,7 +1251,7 @@ window.loadAdmissionAuditTrail = async function(solicitudId) {
 
             let html = `<div class="space-y-2 max-h-48 overflow-y-auto pr-1">`;
             res.data.forEach(chg => {
-                const dateStr = chg.fechaCambio ? new Date(chg.fechaCambio).toLocaleString('es-HN') : 'Sin fecha';
+                const dateStr = chg.fechaCambio ? window.IMARegionalFormatters.formatDateTime(chg.fechaCambio) : 'Sin fecha';
                 html += `
                     <div class="p-2 bg-white rounded-lg border border-gray-100 flex flex-col gap-1 shadow-sm">
                         <div class="flex justify-between items-center text-[10px]">
@@ -1422,7 +1422,7 @@ window.loadAdmissionNotificationLogs = async function(solicitudId) {
 
             let html = `<div class="space-y-2 max-h-48 overflow-y-auto pr-1">`;
             res.notificaciones.forEach(n => {
-                const dateStr = n.fechaEnvio ? new Date(n.fechaEnvio).toLocaleString('es-HN') : 'Sin fecha';
+                const dateStr = n.fechaEnvio ? window.IMARegionalFormatters.formatDateTime(n.fechaEnvio) : 'Sin fecha';
                 const isEmail = n.emailDestino || (n.canalUtilizado && n.canalUtilizado.includes('Correo'));
                 html += `
                     <div class="p-2 bg-white rounded-lg border border-gray-100 flex flex-col gap-1 shadow-sm">
@@ -1591,7 +1591,7 @@ window.loadAdmissionWaitlistStatus = async function(solicitudId) {
                             <strong class="text-gray-900">Posición #${match.posicion} (Puntaje Prioridad: ${match.puntajePrioridad} pts)</strong>
                             <span class="px-2 py-0.5 text-[9px] font-bold rounded-full border ${badgeClass}">${match.estadoOferta}</span>
                         </div>
-                        ${match.fechaExpiracionOferta ? `<p class="text-[10px] text-indigo-700">Vigencia oferta hasta: ${new Date(match.fechaExpiracionOferta).toLocaleString('es-HN')}</p>` : ''}
+                        ${match.fechaExpiracionOferta ? `<p class="text-[10px] text-indigo-700">Vigencia oferta hasta: ${window.IMARegionalFormatters.formatDateTime(match.fechaExpiracionOferta)}</p>` : ''}
                         ${match.justificacionManual ? `<p class="text-[10px] text-amber-800 bg-amber-50 p-1.5 rounded-lg">${match.justificacionManual}</p>` : ''}
                         <div class="flex gap-2 justify-end pt-1">
                             ${match.estadoOferta === 'En_Espera' ? `

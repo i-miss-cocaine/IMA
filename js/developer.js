@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const consoleEl = document.getElementById('dev-console-logs');
         if (!consoleEl) return;
         const line = document.createElement('div');
-        const timestamp = new Date().toLocaleTimeString();
+        const timestamp = window.IMARegionalFormatters.formatTime(new Date());
         let colorClass = 'text-slate-300';
         if (type === 'success') colorClass = 'text-emerald-400';
         if (type === 'warn') colorClass = 'text-amber-400';
@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     if (timestamp) {
                         const date = new Date(res.timestamp);
-                        timestamp.textContent = date.toLocaleTimeString();
+                        timestamp.textContent = window.IMARegionalFormatters.formatTime(date);
                     }
                 });
 
@@ -269,7 +269,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (log.severidad === 'ERROR') sevBadge = 'bg-rose-500/20 text-rose-400 border border-rose-500/30';
             if (log.severidad === 'CRITICAL') sevBadge = 'bg-purple-500/20 text-purple-300 border border-purple-500/30 font-black';
 
-            const timeStr = log.timestamp ? new Date(log.timestamp).toLocaleString() : '--';
+            const timeStr = log.timestamp ? window.IMARegionalFormatters.formatDateTime(log.timestamp) : '--';
 
             tr.innerHTML = `
                 <td class="p-3 text-slate-400 whitespace-nowrap text-[10px]">${timeStr}</td>
@@ -342,7 +342,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const tr = document.createElement('tr');
             tr.className = 'hover:bg-slate-700/30 transition-colors';
 
-            const timeStr = b.fechaHora ? new Date(b.fechaHora).toLocaleString() : '--';
+            const timeStr = b.fechaHora ? window.IMARegionalFormatters.formatDateTime(b.fechaHora) : '--';
             const sizeKb = b.tamanioBytes ? (b.tamanioBytes / 1024).toFixed(1) + ' KB' : 'N/A';
             const shortChecksum = b.checksum ? String(b.checksum).substring(0, 12) + '...' : 'N/A';
 

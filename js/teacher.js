@@ -1387,7 +1387,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const now = new Date().toLocaleString();
+        const now = window.IMARegionalFormatters.formatDateTime(new Date());
         const stateBadge = '<span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">DOCUMENTO OFICIAL PUBLICADO</span>';
 
         previewContainer.innerHTML = `
@@ -1743,7 +1743,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="flex items-center gap-2">
                                 <span class="font-black text-cyan-700 text-xs">${v.versionId}</span>
                                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-100 text-cyan-800">${v.anoLectivo || '2026'}</span>
-                                <span class="text-[11px] text-slate-400">${v.timestamp ? new Date(v.timestamp).toLocaleString() : ''}</span>
+                                <span class="text-[11px] text-slate-400">${v.timestamp ? window.IMARegionalFormatters.formatDateTime(v.timestamp) : ''}</span>
                             </div>
                             <p class="text-slate-600 text-xs mt-0.5">${v.descripcion || 'Versión de horarios'}</p>
                             <p class="text-[10px] text-slate-400">Total bloques: ${v.totalBloques || 0} | Creado por: ${v.creadoPor || 'Admin'}</p>
@@ -2179,7 +2179,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (timeLabel) {
                 var now = new Date();
-                timeLabel.textContent = 'Última verificación: ' + now.toLocaleTimeString();
+                timeLabel.textContent = 'Última verificación: ' + window.IMARegionalFormatters.formatTime(now);
             }
         });
     }
@@ -3499,7 +3499,7 @@ window.triggerRestoreSystemBackup = async function(fileId, fileName) {
                 </td>
                 <td class="p-4 text-[10px] font-semibold text-gray-500 uppercase tracking-widest">${item.grado} - ${item.seccion || 'Todas'}</td>
                 <td class="p-4 text-[10px] font-semibold ${new Date(item.fechaLimite) < new Date() ? 'text-red-500' : 'text-green-600'} uppercase tracking-widest">
-                    ${new Date(item.fechaLimite).toLocaleDateString()}
+                    ${window.IMARegionalFormatters.formatDate(item.fechaLimite)}
                 </td>
                 <td class="p-4 text-right flex items-center justify-end gap-1">
                     ${item.tipoReal === 'Examen' ? `
@@ -3524,7 +3524,7 @@ window.triggerRestoreSystemBackup = async function(fileId, fileName) {
         document.getElementById('detail-parcial').textContent = item.parcial || 'N/A';
         document.getElementById('detail-grado').textContent = item.grado;
         document.getElementById('detail-seccion').textContent = item.seccion || 'Todas';
-        document.getElementById('detail-fecha').textContent = new Date(item.fechaLimite).toLocaleDateString();
+        document.getElementById('detail-fecha').textContent = window.IMARegionalFormatters.formatDate(item.fechaLimite);
         document.getElementById('detail-puntaje').textContent = (item.puntaje || 100) + '%';
 
         const fileContainer = document.getElementById('detail-archivo-container');
@@ -3734,7 +3734,7 @@ window.triggerRestoreSystemBackup = async function(fileId, fileName) {
                             <div class="font-bold text-blue-700">${item.titulo}</div>
                             <div class="text-[10px] text-gray-500 font-medium">${item.asignatura} | ${item.tipo}</div>
                         </td>
-                        <td class="p-4 text-xs text-gray-600 font-medium">${new Date(item.fecha).toLocaleString()}</td>
+                        <td class="p-4 text-xs text-gray-600 font-medium">${window.IMARegionalFormatters.formatDateTime(item.fecha)}</td>
                         <td class="p-4 text-right">
                             <button class="bg-blue-600 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold hover:bg-blue-700 shadow-sm transition-all op-grade-btn" data-index="${idx}">Revisar & Calificar</button>
                         </td>
@@ -4854,8 +4854,8 @@ window.loadExamGradeDistributionData = async function (examenId) {
 
         if (entrega.fecha) {
             const dateObj = new Date(entrega.fecha);
-            if (deliveryDateEl) deliveryDateEl.textContent = dateObj.toLocaleDateString();
-            if (deliveryTimeEl) deliveryTimeEl.textContent = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            if (deliveryDateEl) deliveryDateEl.textContent = window.IMARegionalFormatters.formatDate(dateObj);
+            if (deliveryTimeEl) deliveryTimeEl.textContent = window.IMARegionalFormatters.formatTime(dateObj);
         } else {
             if (deliveryDateEl) deliveryDateEl.textContent = 'N/A';
             if (deliveryTimeEl) deliveryTimeEl.textContent = 'N/A';
@@ -5055,7 +5055,7 @@ window.loadExamGradeDistributionData = async function (examenId) {
                 <td class="p-4 font-medium text-gray-800">${p.alumnoNombre}</td>
                 <td class="p-4 text-blue-600 font-medium">${p.projectName}</td>
                 <td class="p-4 text-xs text-gray-500">${p.grado} - ${p.seccion}</td>
-                <td class="p-4 text-xs text-gray-400">${new Date(p.lastUpdated).toLocaleString()}</td>
+                <td class="p-4 text-xs text-gray-400">${window.IMARegionalFormatters.formatDateTime(p.lastUpdated)}</td>
                 <td class="p-4 text-right">
                     <button onclick="window.viewProjectCode('${p.fileId}', '${p.projectName}')" class="bg-blue-600 text-white px-3 py-1 rounded-xl text-xs font-medium">Ver Código</button>
                 </td>
@@ -5114,7 +5114,7 @@ window.loadExamGradeDistributionData = async function (examenId) {
                     <td class="p-4 text-purple-600 font-medium">${r.juego}</td>
                     <td class="p-4"><span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-semibold">${r.maxScore}</span></td>
                     <td class="p-4 text-xs italic text-gray-600">${r.lastLogro}</td>
-                    <td class="p-4 text-xs text-gray-400">${new Date(r.fecha).toLocaleString()}</td>
+                    <td class="p-4 text-xs text-gray-400">${window.IMARegionalFormatters.formatDateTime(r.fecha)}</td>
                 </tr>`).join('');
         };
 
@@ -5781,7 +5781,7 @@ function toBase64(file) {
                     <div class="p-4 bg-amber-50/50 border border-amber-100 rounded-2xl">
                         <div class="flex items-center justify-between mb-1">
                             <span class="px-2 py-0.5 bg-amber-200 text-amber-900 rounded font-bold text-[9px] uppercase">${i.tipoIncidencia}</span>
-                            <span class="text-[9px] text-gray-400 font-mono">${i.fecha ? new Date(i.fecha).toLocaleDateString() : ''}</span>
+                            <span class="text-[9px] text-gray-400 font-mono">${i.fecha ? window.IMARegionalFormatters.formatDate(i.fecha) : ''}</span>
                         </div>
                         <p class="text-xs font-semibold text-gray-800 mt-1">${i.descripcion || 'Sin detalle'}</p>
                         <div class="text-[9px] text-gray-500 mt-2">Reportado por: ${i.reportadoPor || 'Docente'} | Estado: <strong>${i.estado}</strong></div>
@@ -5889,7 +5889,7 @@ function toBase64(file) {
                     <div class="p-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:border-indigo-200 transition-all">
                         <div class="flex items-center justify-between mb-2">
                             <span class="px-2.5 py-0.5 bg-indigo-100 text-indigo-800 text-[9px] font-bold uppercase rounded-full">${c.categoria}</span>
-                            <span class="text-[9px] font-mono text-gray-400">${c.fechaPublicacion ? new Date(c.fechaPublicacion).toLocaleDateString() : ''}</span>
+                            <span class="text-[9px] font-mono text-gray-400">${c.fechaPublicacion ? window.IMARegionalFormatters.formatDate(c.fechaPublicacion) : ''}</span>
                         </div>
                         <h4 class="text-xs font-bold text-gray-900 uppercase tracking-tight mb-1">${c.titulo}</h4>
                         <p class="text-xs text-gray-600 leading-relaxed mb-3">${c.contenido}</p>
@@ -6016,7 +6016,7 @@ function toBase64(file) {
                     <div class="p-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:border-purple-200 transition-all">
                         <div class="flex items-center justify-between mb-2">
                             <span class="px-2.5 py-0.5 bg-purple-100 text-purple-800 text-[9px] font-bold uppercase rounded-full">${c.estado}</span>
-                            <span class="text-[9px] font-mono text-gray-400">Apertura: ${c.fechaApertura ? new Date(c.fechaApertura).toLocaleDateString() : ''}</span>
+                            <span class="text-[9px] font-mono text-gray-400">Apertura: ${c.fechaApertura ? window.IMARegionalFormatters.formatDate(c.fechaApertura) : ''}</span>
                         </div>
                         <h4 class="text-xs font-bold text-gray-900 uppercase tracking-tight mb-1">${c.motivoApertura}</h4>
                         <p class="text-xs text-gray-600 mb-3">${c.resumenAsistencia}</p>
@@ -6028,7 +6028,7 @@ function toBase64(file) {
                                 <div class="p-2 bg-purple-50/50 rounded-lg text-[10px] text-gray-700 border border-purple-100/50">
                                     <div class="flex justify-between font-bold text-purple-900 text-[9px]">
                                         <span>${a.autor || 'Orientación'}</span>
-                                        <span>${a.fecha ? new Date(a.fecha).toLocaleString() : ''}</span>
+                                        <span>${a.fecha ? window.IMARegionalFormatters.formatDateTime(a.fecha) : ''}</span>
                                     </div>
                                     <p class="mt-1 leading-relaxed">${a.nota || a.accion || ''}</p>
                                 </div>
@@ -6118,7 +6118,7 @@ function toBase64(file) {
                     <div class="p-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:border-emerald-200 transition-all">
                         <div class="flex items-center justify-between mb-2">
                             <span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-bold uppercase rounded-full">${s.estado}</span>
-                            <span class="text-[9px] font-mono text-gray-400">${s.fechaProgramada ? new Date(s.fechaProgramada).toLocaleDateString() : ''}</span>
+                            <span class="text-[9px] font-mono text-gray-400">${s.fechaProgramada ? window.IMARegionalFormatters.formatDate(s.fechaProgramada) : ''}</span>
                         </div>
                         <h4 class="text-xs font-bold text-gray-900 uppercase tracking-tight mb-1">${s.tipoSupervision}</h4>
                         <p class="text-xs text-gray-600 mb-2">Docente: <strong>${s.docenteUserId}</strong> | Clase: ${s.asignatura} (${s.grado} ${s.seccion})</p>
@@ -8733,7 +8733,7 @@ window.reviewOvertimeAction = function(overtimeId, accion) {
         if (!container) return;
 
         const role = (currentUser && currentUser.role) || 'General';
-        const nowStr = new Date().toLocaleString();
+        const nowStr = window.IMARegionalFormatters.formatDateTime(new Date());
 
         try {
             const isTeacher = role === 'Profesor' || role === 'Docente';
@@ -8974,7 +8974,7 @@ window.reviewOvertimeAction = function(overtimeId, accion) {
                         </div>
                         <div>
                             <div class="font-bold text-xs text-slate-800">${d.nombreArchivo || d.tipoDocumento || 'Documento'}</div>
-                            <div class="text-[10px] text-slate-500">${d.tipoDocumento || 'General'} | Fecha: ${d.fechaCarga ? new Date(d.fechaCarga).toLocaleDateString() : 'Reciente'}</div>
+                            <div class="text-[10px] text-slate-500">${d.tipoDocumento || 'General'} | Fecha: ${d.fechaCarga ? window.IMARegionalFormatters.formatDate(d.fechaCarga) : 'Reciente'}</div>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
@@ -9058,7 +9058,7 @@ window.reviewOvertimeAction = function(overtimeId, accion) {
                     <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-1">
                         <div class="flex items-center justify-between">
                             <span class="font-bold text-xs text-slate-800">${ev.tipoMovimiento || ev.evento || 'Movimiento Institucional'}</span>
-                            <span class="text-[10px] font-semibold text-slate-400">${ev.fecha ? new Date(ev.fecha).toLocaleDateString() : 'N/A'}</span>
+                            <span class="text-[10px] font-semibold text-slate-400">${ev.fecha ? window.IMARegionalFormatters.formatDate(ev.fecha) : 'N/A'}</span>
                         </div>
                         <p class="text-[11px] text-slate-600">${ev.descripcion || 'Sin descripción detallada.'}</p>
                     </div>

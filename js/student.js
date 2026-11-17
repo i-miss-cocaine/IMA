@@ -761,7 +761,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="p-4 rounded-2xl bg-indigo-50/40 border border-indigo-100/60 shadow-sm hover:border-indigo-200 transition-all">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="px-2.5 py-0.5 bg-indigo-100 text-indigo-700 text-[9px] font-bold uppercase rounded-full">${p.categoria}</span>
-                                <span class="text-[9px] text-gray-400 font-bold">${p.fechaPublicacion ? new Date(p.fechaPublicacion).toLocaleDateString() : 'Reciente'}</span>
+                                <span class="text-[9px] text-gray-400 font-bold">${p.fechaPublicacion ? window.IMARegionalFormatters.formatDate(p.fechaPublicacion) : 'Reciente'}</span>
                             </div>
                             <h5 class="text-xs font-bold text-gray-900 mb-1 uppercase tracking-tight">${p.titulo}</h5>
                             <p class="text-xs text-gray-600 leading-relaxed mb-2">${p.contenido}</p>
@@ -887,7 +887,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                var syncTimeStr = meta.lastSyncTime ? new Date(meta.lastSyncTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Ahora';
+                var syncTimeStr = meta.lastSyncTime ? window.IMARegionalFormatters.formatTime(meta.lastSyncTime) : 'Ahora';
                 var html = `
                     <div class="col-span-5 flex justify-between items-center mb-2 px-2 py-1 bg-indigo-50/60 rounded-xl border border-indigo-100 text-[10px] font-bold text-indigo-700">
                         <span><i class="fa-solid fa-rotate mr-1"></i>Sincronizado: ${syncTimeStr} (${schedules.length} clases activas)</span>
@@ -1026,7 +1026,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     ${item.observacionesAdmin ? `<p class="text-[10px] text-indigo-600 font-medium italic">Nota Secretaría: ${item.observacionesAdmin}</p>` : ''}
                                 </div>
                                 <div class="mt-3 pt-2 border-t border-gray-100 text-[9px] font-bold text-gray-400">
-                                    <span>Solicitado el: ${item.fechaSolicitud ? new Date(item.fechaSolicitud).toLocaleDateString() : 'N/A'}</span>
+                                    <span>Solicitado el: ${item.fechaSolicitud ? window.IMARegionalFormatters.formatDate(item.fechaSolicitud) : 'N/A'}</span>
                                 </div>
                             </div>
                         `;
@@ -1114,7 +1114,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                                 <div class="mt-3 pt-2 border-t border-gray-100 flex justify-between items-center text-[9px] font-bold text-gray-400">
                                     <span>Contexto: ${item.contexto || 'Rutinario'}</span>
-                                    <span>${item.fechaRegistro ? new Date(item.fechaRegistro).toLocaleDateString() : ''}</span>
+                                    <span>${item.fechaRegistro ? window.IMARegionalFormatters.formatDate(item.fechaRegistro) : ''}</span>
                                 </div>
                             </div>
                         `;
@@ -2772,7 +2772,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 var metadata = document.createElement('p');
                 metadata.className = 'text-[11px] text-slate-500';
                 var dateValue = voucher.fecha ? new Date(voucher.fecha) : null;
-                var dateText = dateValue && !isNaN(dateValue.getTime()) ? dateValue.toLocaleDateString() : 'Fecha no disponible';
+                var dateText = dateValue && !isNaN(dateValue.getTime()) ? window.IMARegionalFormatters.formatDate(dateValue) : 'Fecha no disponible';
                 metadata.textContent = dateText + ' · ' + String(voucher.metodoPago || 'Método no indicado') + ' · Ref. ' + String(voucher.referencia || 'N/D');
                 var amount = document.createElement('p');
                 amount.className = 'text-sm font-black text-slate-800';
