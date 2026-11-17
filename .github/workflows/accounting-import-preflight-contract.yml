@@ -2,6 +2,7 @@ name: Accounting Import Preflight Contract
 # Keep signed import authorization and the HTTP router contract in the backend regression gate.
 # The accounting service syntax check covers the restored payroll and journal module.
 # Keep the migration HMAC registry contract in the push-path filter and run it before dependent accounting contracts.
+# Run session-token HMAC configuration regression alongside inter-service credential rotation coverage.
 
 on:
   push:
