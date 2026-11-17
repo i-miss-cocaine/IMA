@@ -1129,10 +1129,6 @@ function getMigrationHmacSecrets_(sourceService) {
 
   var activeSecret = String(properties.getProperty("IMA_MIGRATION_HMAC_SECRET_" + service) || "").trim();
   var activeVersion = String(properties.getProperty("IMA_MIGRATION_HMAC_SECRET_VERSION_" + service) || "").trim();
-  if (service === IMA_LOCAL_SERVICE_ID_ || service === "ACADEMIC" && typeof IMA_LOCAL_ACADEMIC_ !== "undefined" && IMA_LOCAL_ACADEMIC_ === service) {
-    if (!activeSecret) activeSecret = String(properties.getProperty("IMA_MIGRATION_HMAC_SECRET") || "").trim();
-    if (!activeVersion) activeVersion = String(properties.getProperty("IMA_MIGRATION_HMAC_SECRET_VERSION") || "").trim();
-  }
   if (activeSecret.length < 32) throw new Error("MIGRATION_SECRET_NOT_CONFIGURED");
   if (!activeVersion) throw new Error("MIGRATION_SECRET_VERSION_NOT_CONFIGURED");
 
