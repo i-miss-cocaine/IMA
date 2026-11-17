@@ -1815,6 +1815,7 @@ function assertTaskServiceUploadSessionOwner(session,payload) {
 
 
 
+// RBAC is validated by doPost; this handler keeps the task-to-actor relationship check before any Drive write.
 function uploadFile(payload) {
   const request = payload || {};
   const actorId = String(request._verifiedUserId || "").trim();
@@ -2584,6 +2585,7 @@ function getStudyMaterials(payload) {
   }));
   return {status:"success",data:materials};
 }
+// RBAC is validated by doPost; only the teacher's active classroom assignment or an administrative role may publish.
 function createStudyMaterial(payload) {
   const request = payload || {};
   const identity = getVerifiedTaskIdentity_(request);
