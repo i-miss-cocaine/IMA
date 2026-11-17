@@ -47,7 +47,7 @@ function harness(opts={}){
  const dep=[dh];if(opts.department!==false)dep.push(["OVR-1","CFG-1","feature.flag","INST-1","D-1",JSON.stringify("department"),"TEXTO","1.1","ACTIVO","created","U-DIR","updated","U-DIR","test"]);
  const sheets={ConfiguracionSistema:sheet(sys),ConfiguracionDepartamental:sheet(dep)},ss={getSheetByName:n=>sheets[n]||null},calls=[];
  const ctx={SPREADSHEET_ID:"TEST",Date,Math,JSON,Number,String,Object,Array,isFinite,SpreadsheetApp:{openById:()=>ss},
-  getUserVerifiedRole:p=>(p._verifiedUserId=p._verifiedUserId||"U-1",opts.role||p.role||"Director"),getIdentityInstitutionId_:()=>Object.prototype.hasOwnProperty.call(options,"institutionId")?options.institutionId:"INST-1",
+  getUserVerifiedRole:p=>(p._verifiedUserId=p._verifiedUserId||"U-1",opts.role||p.role||"Director"),getIdentityInstitutionId_:()=>Object.prototype.hasOwnProperty.call(opts,"institutionId")?opts.institutionId:"INST-1",
   configurationDepartmentContext_:(p,d)=>{if(!opts.departments||!opts.departments.includes(d))throw Error("CONFIGURATION_DEPARTMENT_SCOPE_DENIED");return{status:"success",departmentIds:opts.departments};},
   configurationRoleAllowed_:(s,r,k,a,sc)=>{calls.push(sc);return opts.readAllowed?opts.readAllowed(sc,r):true;},
   PUBLIC_ACTIONS:[],getDynamicPermissionsForRole:(r,p)=>p==="manageDepartmentalConfiguration"&&opts.departmentManager===true,logStructuredEvent:()=>{}};
@@ -114,7 +114,7 @@ function writeHarness(options={}){
   SpreadsheetApp:{openById:()=>ss},LockService:{getScriptLock:()=>lock},
   Utilities:{getUuid:()=>"UUID-TEST"},
   getUserVerifiedRole:p=>(p._verifiedUserId="U-1",options.role||"Director"),
-  getIdentityInstitutionId_:()=>"INST-1",
+  getIdentityInstitutionId_:()=>Object.prototype.hasOwnProperty.call(options,"institutionId")?options.institutionId:"INST-1",
   ensureConfigurationHierarchySchema_:()=>schema,
   configurationDepartmentContext_:(p,d)=>{if(d!=="D-1")throw Error("CONFIGURATION_DEPARTMENT_SCOPE_DENIED");return{status:"success",departmentIds:["D-1"]};},
   configurationRoleAllowed_:()=>true,
