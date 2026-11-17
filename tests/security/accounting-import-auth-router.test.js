@@ -85,7 +85,7 @@ const accountingFns = [
 
 let remoteResponse = { status: "success", authorized: true, userId: "U-1", role: "Director",
   membershipId: "MEM-1", institutionId: "INST-1", importPermissionVerified: true };
-let lastEnvelope = null;
+let lastEnvelope = null, auditEvents = [];
 const credentialHeaders = ["CredentialID","ServiceID","CredentialType","Version","Status","Fingerprint","CreatedAt","CreatedBy","RevokedAt","RevokedBy"];
 const credentialFingerprint = crypto.createHash("sha256").update(secret, "utf8").digest("hex");
 const credentialRows = [credentialHeaders, ["CRED-ACCOUNTING-v1","ACCOUNTING","IMA_MIGRATION_HMAC_SECRET","v1","ACTIVE",credentialFingerprint,"2026-11-17T00:00:00Z","fixture","",""]];
@@ -99,7 +99,8 @@ const accountingRuntime = {
     IMA_INSTITUTION_ID: "INST-1",
     SPREADSHEET_ID: "SHEET-1"
   })[key] || "" }) },
-  SpreadsheetApp: { openById: id => { assert.equal(id, "SHEET-1"); return { getSheetByName: name => name === "CatalogoCredencialesServicios" ? { getDataRange: () => ({ getValues: () => credentialRows.map(row => row.slice()) }) } : null }; } },
+  SpreadsheetApp: { flush: () => {}, openById: id => { assert.equal(id, "SHEET-1"); return { getSheetByName: name => name === "CatalogoCredencialesServicios" ? { getDataRange: () => ({ getValues: () => credentialRows.map(row => row.slice()) }) } : null }; } },
+  recordInterServiceCredentialUsage_: event => { auditEvents.push(event); return { recorded: true }; },
   Utilities: {
     MacAlgorithm: { HMAC_SHA_256: "HMAC_SHA_256" },
     DigestAlgorithm: { SHA_256: "SHA_256" },
@@ -140,6 +141,10 @@ vm.runInNewContext(registryBootstrap + "\n" + accountingFns.join("\n") + "\nthis
   assert.equal(identity.authorized, true);
   assert.equal(identity.userId, "U-1");
   assert.equal(lastEnvelope.action, "verifyAccountingSession");
+  assert.equal(auditEvents.length, 1, "ACCOUNTING outbound authorization request is audited");
+  assert.equal(auditEvents[0].direction, "OUTBOUND");
+  assert.equal(auditEvents[0].sourceService, "ACCOUNTING");
+  assert.equal(auditEvents[0].targetService, "USER");
   const body = [lastEnvelope.requestId, lastEnvelope.timestamp, lastEnvelope.correlationId,
     lastEnvelope.sourceService, lastEnvelope.targetService, lastEnvelope.action, JSON.stringify(lastEnvelope.payload)].join("|");
   const expected = crypto.createHmac("sha256", secret).update(body).digest("hex");
