@@ -832,7 +832,7 @@ function buildImportPreview_(payload) {
   var targetSnapshot = buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutionId, ss, input);
   if (targetSnapshot.verified !== true) addError("TARGET_EXISTENCE_UNVERIFIED", "No se pudo verificar el identificador de destino en el servicio propietario; la incorporación queda bloqueada.");
   var duplicateMatches = Array.isArray(targetSnapshot.duplicateMatches) ? targetSnapshot.duplicateMatches : [];
-  var rejectedPreparedIndexes = Object.assign({}, duplicateFilePreparedIndexes);
+  var rejectedPreparedIndexes = Object.assign({}, duplicateFilePreparedIndexes), linkedPreparedIndexes = {};
   if (duplicateMatches.length && allowedDuplicatePolicies.indexOf(duplicatePolicy) === -1) {
     addError("IMPORT_DUPLICATE_POLICY_REQUIRED", "Debe seleccionar una política explícita para resolver los duplicados.");
   }
@@ -852,18 +852,32 @@ function buildImportPreview_(payload) {
       rejectedPreparedIndexes[preparedIndex] = true;
     } else if (duplicatePolicy === "ACTUALIZAR" && String(match.targetId || "") === mappedId) {
       addWarning("EXISTING_NATURAL_KEY_UPDATE", "Se actualizará el registro existente con el mismo identificador canónico.");
-    } else if (duplicatePolicy === "VINCULAR") {
-      addError("IMPORT_DUPLICATE_LINK_UNSUPPORTED", "La vinculación requiere una correspondencia canónica confirmada y no se ejecuta mediante coincidencia natural.");
-      rejectedPreparedIndexes[preparedIndex] = true;
+    } else if (duplicatePolicy === "VINCULAR" && String(match.targetId || "") === mappedId) {
+      if (linkedPreparedIndexes[preparedIndex] && linkedPreparedIndexes[preparedIndex] !== mappedId) {
+        addError("IMPORT_DUPLICATE_TARGET_CONFLICT", "Las claves naturales apuntan a registros canónicos distintos.", rowNumber);
+        rejectedPreparedIndexes[preparedIndex] = true;
+      } else {
+        linkedPreparedIndexes[preparedIndex] = mappedId;
+        addWarning("EXISTING_NATURAL_KEY_LINKED", "La correspondencia canónica ya apunta al registro existente; se omitirá una escritura duplicada.");
+      }
     } else {
-      addError("IMPORT_DUPLICATE_TARGET_CONFLICT", "La coincidencia existente no corresponde al identificador canónico confirmado.", rowNumber);
+      addError(duplicatePolicy === "VINCULAR" ? "IMPORT_DUPLICATE_LINK_UNSUPPORTED" : "IMPORT_DUPLICATE_TARGET_CONFLICT",
+        "La coincidencia existente no corresponde al identificador canónico confirmado.", rowNumber);
       rejectedPreparedIndexes[preparedIndex] = true;
     }
   });
-  if (Object.keys(rejectedPreparedIndexes).length) {
+  Object.keys(linkedPreparedIndexes).forEach(function(index) {
+    if (rejectedPreparedIndexes[index]) delete linkedPreparedIndexes[index];
+  });
+  var linkedRows = Object.keys(linkedPreparedIndexes).map(function(index) {
+    var originalIndex = validIndexes[Number(index)];
+    return { targetId: linkedPreparedIndexes[index], sourceRow: originalIndex + 2 };
+  });
+  var excludedPreparedIndexes = Object.assign({}, rejectedPreparedIndexes, linkedPreparedIndexes);
+  if (Object.keys(excludedPreparedIndexes).length) {
     var retainedRows = [], retainedIndexes = [], retainedIdentities = [];
     preparedRows.forEach(function(row, index) {
-      if (rejectedPreparedIndexes[index]) return;
+      if (excludedPreparedIndexes[index]) return;
       retainedRows.push(row); retainedIndexes.push(validIndexes[index]);
       if (identityResolutions[index]) retainedIdentities.push(identityResolutions[index]);
     });
@@ -872,8 +886,9 @@ function buildImportPreview_(payload) {
   var existing = targetSnapshot.existingTargetIds || [];
   var overwrites = preparedRows.filter(function(row) { return existing.indexOf(String(row[targetIdField] || "")) !== -1; });
   overwrites.forEach(function() { addWarning("TARGET_RECORD_OVERWRITE", "El identificador de destino ya existe; se requiere revisar la sobrescritura."); });
-  var validForImport = errors.length === 0 && validIndexes.length === input.filasData.length && preparedRows.length > 0;
-  var validForPartialImport = !structuralBlockers.length && validIndexes.length > 0 && errors.length > 0;
+  var acceptedRows = validIndexes.length + linkedRows.length;
+  var validForImport = errors.length === 0 && acceptedRows === input.filasData.length && acceptedRows > 0;
+  var validForPartialImport = !structuralBlockers.length && acceptedRows > 0 && errors.length > 0;
   var targetSnapshotForHash = {
     verified: targetSnapshot.verified,
     service: targetSnapshot.service,
@@ -905,6 +920,8 @@ function buildImportPreview_(payload) {
     validForImport: validForImport,
     validForPartialImport: validForPartialImport,
     filasValidas: validIndexes.length,
+    filasVinculadas: linkedRows.length,
+    linkedRows: linkedRows,
     totalFilas: input.filasData.length,
     validRowIndexes: validIndexes,
     preparedRows: preparedRows,
@@ -1101,6 +1118,7 @@ function importDataWithColumnMapping(payload) {
   var applied = [];
   var errors = [];
   var warnings = (preview.advertencias || []).slice();
+  warnings.push({ severity: "INFO", codigo: "DUPLICATE_POLICY_SELECTED", politica: String(preview.politicaDuplicados || "RECHAZAR"), filasVinculadas: Number(preview.filasVinculadas || 0) });
   var validIndexes = Array.isArray(preview.validRowIndexes) ? preview.validRowIndexes.slice() :
     (preview.preparedRows || []).map(function(row, index) { return index; });
   var rowsToWrite = validIndexes;
@@ -1197,6 +1215,7 @@ function importDataWithColumnMapping(payload) {
       status: "success",
       estado: partial ? "partial" : "completed",
       registrosEscritos: rowsToWrite.length,
+      registrosVinculados: Number(preview.filasVinculadas || 0),
       filasOmitidasPorValidacion: Math.max(0, input.filasData.length - rowsToWrite.length),
       errores: (preview.errores || []).map(function(item) {
         return { error: item.error || item.codigo, fila: item.fila, mensaje: item.mensaje || item.codigo };
