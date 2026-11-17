@@ -75,6 +75,7 @@ function harness(initial, options) {
     ROLE_PERMISSIONS: { Desarrollador: ["registerServiceInstance", "updateServiceStatus"] },
     verifySessionToken(token) { return token === "valid" ? { userId: "verified-user", role: "Desarrollador" } : null; },
     textResponse(value) { return value; },
+    doGet() { return { status: "success", service: "DEVELOPER" }; },
     Logger: { log: value => logs.push(String(value)) },
     console: { error: value => logs.push(String(value)) },
     Date, String, Number, Array, Object, JSON, Error,
@@ -288,6 +289,10 @@ h = harness({
 });
 assert.throws(() => h.updateServiceStatus({ serviceId: "SVC-1", newState: "degradado", _verifiedUserId: "verified-actor" }), /SERVICE_REGISTRY_SCHEMA_MISMATCH/);
 assert.equal(h.sheets.CatalogoServicios.rows[1][7], "Activo", "invalid history schema must be detected before status mutation");
+
+h = harness();
+result = h.doPost({ postData: { contents: "null" } });
+assert.equal(result.status, "success", "non-object control-plane payload must normalize to the ping response");
 
 h = harness({ CatalogoServicios: sheet([registryHeaders, row("SVC-1","Service")]) });
 result = h.doPost({ postData: { contents: JSON.stringify({ action: "updateServiceStatus", serviceId: "SVC-1", newState: "degradado", sessionToken: "valid", updatedBy: "spoofed" }) } });
