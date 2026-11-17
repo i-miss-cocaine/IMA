@@ -477,10 +477,11 @@ console.log("TASK-636 strict session claims local contract: five local-verifier 
 
 const accountingRequestAuthorization = extractFunctionFrom(accountingSource, "requestAccountingUserAuthorization_");
 const accountingHmacHelper = extractFunctionFrom(accountingSource, "accountingComputeHmacSignature_");
-assert(accountingRequestAuthorization.includes('getProperty("IMA_MIGRATION_HMAC_SECRET")') &&
-  accountingRequestAuthorization.includes("secret.length < 32") &&
+assert(accountingRequestAuthorization.includes('resolveInterServiceSecret_("ACCOUNTING", "IMA_MIGRATION_HMAC_SECRET", "SIGN")') &&
+  accountingSource.includes("secret.length < 32") &&
+  accountingSource.includes("CatalogoCredencialesServicios") &&
   accountingHmacHelper.includes("Utilities.computeHmacSignature"),
-  "Accounting signs interservice identity verification with a provisioned 32-character HMAC secret");
+  "Accounting signs interservice identity verification with a registry-backed, versioned 32-character HMAC secret");
 const hmacSecretServices = [
   ["USER", userSource],
   ["ACADEMIC", academicSource],
