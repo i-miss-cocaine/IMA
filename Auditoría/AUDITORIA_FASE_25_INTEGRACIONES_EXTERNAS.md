@@ -55,7 +55,7 @@ La Fase 25 evalúa la capacidad de la plataforma para conectarse, sincronizarse 
 | :--- | :--- | :--- | :--- | :--- |
 | **F25-001** | Catálogo Centralizado de Integraciones | P0 | Implementada parcialmente | Existen tablas aisladas (`IntegracionesPasarelas`, `CatalogoSpreadsheets`); falta un catálogo unificado `CatalogoIntegracionesExternas`. |
 | **F25-002** | Importación de Archivos Excel y CSV | P0 | Completa y verificada | Implementado en `importDataWithColumnMapping` y validación previa en `validateImportPreview`. |
-| **F25-003** | Perfiles de Mapeo de Columnas | P0 | Implementada parcialmente | Se envía `columnaMapeo` JSON dinámicamente; falta persistencia de plantillas de mapeo reutilizables en hoja dedicada. |
+| **F25-003** | Perfiles de Mapeo de Columnas | P0 | Completa en código y CI; beta pendiente | Hoja `PerfilesMapeoColumnas`, endpoints de guardado/listado, versionado append-only, aislamiento propietario/institución, validación de encabezados/huella y contrato Node 24 PASS; BETA-FUNC-112 pendiente. |
 | **F25-004** | Validación y Detección de Duplicados | P0 | Implementada parcialmente | Valida identificador obligatorio; requiere detección avanzada de duplicados por DNI/correo antes de escribir. |
 | **F25-005** | Vista Previa de Importación | P0 | Completa y verificada | Implementado en `validateImportPreview` (`totalFilas`, `filasValidas`, `filasFallidas`, muestra de errores). |
 | **F25-006** | Exportación a Excel y CSV | P0 | Completa y verificada | Implementado en `exportAcademicGradesData` y generación de estructura SACE exportable. |
@@ -122,7 +122,7 @@ La Fase 25 presenta una base sólida y madura en la generación de archivos ofic
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **F25-001** | Catálogo Integraciones | Implementada parcialmente | 100% | Sí | `accounting:5254` | Ninguno | Unificar catálogo |
 | **F25-002** | Importación Excel/CSV | Completa y verificada | 100% | Sí | `accounting:10203`| Ninguno | Mantener importador |
-| **F25-003** | Perfiles de Mapeo | Implementada parcialmente | 100% | Sí | `accounting:10167`| Ninguno | Guardar perfiles |
+| **F25-003** | Perfiles de Mapeo | Completa en código y CI | 100% | Sí | `saveImportMappingProfile`, `getImportMappingProfiles`, `accounting-import-mapping-profiles.test.js` | BETA-FUNC-112 | Validación beta desplegada |
 | **F25-004** | Validación Duplicados | Implementada parcialmente | 100% | Sí | `accounting:10175`| Ninguno | Añadir check DNI |
 | **F25-005** | Vista Previa Cargas | Completa y verificada | 100% | Sí | `accounting:10167`| Ninguno | Mantener validación |
 | **F25-006** | Exportación Excel/CSV | Completa y verificada | 100% | Sí | `accounting:10321`| Ninguno | Mantener exportación |
@@ -174,8 +174,8 @@ La Fase 25 presenta una base sólida y madura en la generación de archivos ofic
 - **Dependencias/riesgos:** importador, catálogo de columnas destino, permisos y esquema de entidad; riesgo de aplicar un perfil obsoleto a columnas distintas.
 - **Alcance:** perfiles versionados y reutilizables; no aplicar automáticamente un perfil incompatible.
 - **Criterios de aceptación:** perfiles guardan mapping JSON validado; usuario autorizado puede reutilizar/duplicar/versionar; cambios de encabezado generan incompatibilidad explícita; previsualización confirma correspondencia antes de escribir; historial de perfil preservado.
-- **Prioridad:** P0. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; el informe confirma que `columnaMapeo` se envía dinámicamente pero no se persiste en una hoja dedicada.
+- **Prioridad:** P0. **Estado:** Implementada en código y verificada en CI; pendiente validación beta desplegada.
+- **Evidencia de cierre:** `PerfilesMapeoColumnas`, `saveImportMappingProfile`, `getImportMappingProfiles`, `tests/security/accounting-import-mapping-profiles.test.js` (PASS en Node 24), `accounting-import-auth-router.test.js` (rutas PASS), `js/accounting.js` y BETA-FUNC-112.
 
 ### [F25-Task03] Detectar duplicados avanzados y validar integridad referencial antes de importar
 - **Hallazgo de origen:** F25-004, sección F y G.3.
