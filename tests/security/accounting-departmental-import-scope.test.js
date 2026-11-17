@@ -220,6 +220,12 @@ const routeHarness = {
     "12345678901234567890123456789012" }) },
   isAccountingTrustedAppsScriptEndpoint_: () => true,
   accountingComputeHmacSignature_: () => "signed-hmac",
+  resolveInterServiceSecret_: (sourceService, credentialType, purpose) => {
+    assert.equal(sourceService, "ACCOUNTING");
+    assert.equal(credentialType, "IMA_MIGRATION_HMAC_SECRET");
+    assert.equal(purpose, "SIGN");
+    return "12345678901234567890123456789012";
+  },
   Utilities: { getUuid: () => "12345678-1234-1234-1234-123456789012", MacAlgorithm: { HMAC_SHA_256: "HMAC_SHA_256" }, computeHmacSignature: () => [1,2,3] },
   createInterServiceEnvelope: (source, target, action, payload) => ({ sourceService: source, targetService: target, action, payload }),
   UrlFetchApp: { fetch: (url, options) => { routeCalls.push({ url, envelope: JSON.parse(options.payload) }); return { getResponseCode: () => 200, getContentText: () => JSON.stringify({ status: "success", ownershipId: "OWN-1" }) }; } }
