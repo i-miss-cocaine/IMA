@@ -16,7 +16,7 @@ function extractFunction(name){
 }
 const cs=source.indexOf("const CONFIGURATION_SYSTEM_EXTRA_HEADERS_"),ce=source.indexOf("function configurationHeaderMap_",cs);
 assert.ok(cs>=0&&ce>cs,"hierarchy constants exist");
-const code=source.slice(cs,ce)+["configurationHeaderMap_","configurationJsonArray_","configurationPolicyFromRow_","configurationStoredValue_","configurationDepartmentStoredValue_","configurationRows_","configurationFindUnique_","resolveHierarchicalConfiguration","validateRolePermission"].map(extractFunction).join("\n");
+const code=source.slice(cs,ce)+["configurationHeaderMap_","configurationJsonArray_","configurationPolicyFromRow_","configurationStoredValue_","configurationDepartmentStoredValue_","configurationRows_","configurationFindUnique_","resolveHierarchicalConfiguration","saveSystemConfiguration","resetSystemConfigurationOverride","validateRolePermission"].map(extractFunction).join("\n");
 const sh=["ConfigID","Clave","Valor","Tipo","Categoria","Descripcion","Ambito","EditablePor","Estado","Version","UpdatedAt","UpdatedBy","InstitutionID","UserID","PoliticaAlcance","AmbitosPermitidosJSON","PermiteHerencia","PermiteSobrescritura","RolesAutorizadosJSON","DependenciasJSON","EsSensible"];
 const dh=["OverrideID","ConfigID","Clave","InstitutionID","DepartmentID","ValueJSON","ValueType","Version","Status","CreatedAt","CreatedBy","UpdatedAt","UpdatedBy","Reason"];
 function sheet(rows){return{rows:rows.map(r=>r.slice()),getLastRow(){return this.rows.length;},getDataRange(){const x=this;return{getValues:()=>x.rows.map(r=>r.slice())};}};}
@@ -69,6 +69,131 @@ function harness(opts={}){
  const r=h.ctx.validateRolePermission("resetSystemConfigurationOverride",{_verifiedUserId:"U-DEPT",role:"Coordinador"});
  assert.equal(r.authorized,true);
 }
+function writeSheet(rows){
+ const x=sheet(rows);
+ x.getRange=function(rowIndex,col,count,width){return{setValues(values){values.forEach((v,i)=>x.rows[rowIndex-1+i].splice(col-1,width,...v));}};};
+ x.appendRow=function(row){x.rows.push(row.slice());};
+ return x;
+}
+function writeHarness(options={}){
+ const base=row("GLOBAL","global",{policy:"HEREDABLE",allowedScopes:["GLOBAL","INSTITUCIONAL","DEPARTAMENTAL"],inheritance:true,override:true});
+ const system=writeSheet([sh,base]);
+ const deptDefault=["OVR-1","CFG-1","feature.flag","INST-1","D-1",JSON.stringify("department"),"TEXTO","1.0","ACTIVO","created","U-OLD","updated","U-OLD","test"];
+ const department=writeSheet([dh,...(options.deptRows||[deptDefault])]);
+ const schema={system,department,headers:sh,index:Object.fromEntries(sh.map((v,i)=>[v,i]))};
+ let acquired=false,releases=0;
+ const lock={
+  waitLock(){if(options.lockAvailable===false||acquired)throw Error("LOCK_TIMEOUT");acquired=true;},
+  releaseLock(){if(acquired){acquired=false;releases++;}}
+ };
+ const ss={getSheetByName:n=>n==="ConfiguracionSistema"?system:n==="ConfiguracionDepartamental"?department:null};
+ const ctx={SPREADSHEET_ID:"TEST",Date,Math,JSON,Number,String,Object,Array,isFinite,
+  SpreadsheetApp:{openById:()=>ss},LockService:{getScriptLock:()=>lock},
+  Utilities:{getUuid:()=>"UUID-TEST"},
+  getUserVerifiedRole:p=>(p._verifiedUserId="U-1",options.role||"Director"),
+  getIdentityInstitutionId_:()=>"INST-1",
+  ensureConfigurationHierarchySchema_:()=>schema,
+  configurationDepartmentContext_:(p,d)=>{if(d!=="D-1")throw Error("CONFIGURATION_DEPARTMENT_SCOPE_DENIED");return{status:"success",departmentIds:["D-1"]};},
+  configurationRoleAllowed_:()=>true,
+  configurationValidateValue_:v=>v,
+  configurationValidateDependencies_:()=>{},
+  logStructuredEvent:()=>{}
+ };
+ vm.runInNewContext(code,ctx);
+ return{ctx,system,department,stats:()=>({releases,locked:acquired})};
+}
+{
+ const h=writeHarness();
+ const result=h.ctx.saveSystemConfiguration({clave:"feature.flag",ambito:"DEPARTAMENTAL",departamentoId:"D-1",tipo:"TEXTO",valor:"department-updated"});
+ assert.equal(result.status,"success");
+ assert.equal(h.department.rows.length,2,"an existing active override is updated rather than duplicated");
+ assert.equal(h.department.rows[1][5],JSON.stringify("department-updated"));
+ assert.equal(h.department.rows[1][7],"1.1");
+ assert.equal(h.department.rows[1][12],"U-1","audit actor comes from the signed session");
+ assert.equal(h.stats().releases,1,"script lock is released after the write");
+}
+{
+ const h=writeHarness({role:"Coordinador"});
+ const before=JSON.stringify({system:h.system.rows,department:h.department.rows});
+ assert.throws(()=>h.ctx.saveSystemConfiguration({clave:"feature.flag",ambito:"DEPARTAMENTAL",departamentoId:"D-1",tipo:"TEXTO",valor:"forged",politicaAlcance:"PERSONALIZABLE",actualizarPolitica:true}),/CONFIGURATION_POLICY_CHANGE_FORBIDDEN/);
+ assert.equal(JSON.stringify({system:h.system.rows,department:h.department.rows}),before,"a departmental writer cannot alter the shared policy or persist an override");
+ assert.equal(h.stats().releases,1);
+}
+{
+ const duplicate=["OVR-2","CFG-1","feature.flag","INST-1","D-1",JSON.stringify("duplicate"),"TEXTO","1.0","ACTIVO","created","U-OLD","updated","U-OLD","test"];
+ const h=writeHarness({deptRows:[["OVR-1","CFG-1","feature.flag","INST-1","D-1",JSON.stringify("department"),"TEXTO","1.0","ACTIVO","created","U-OLD","updated","U-OLD","test"],duplicate]});
+ const before=JSON.stringify(h.department.rows);
+ assert.throws(()=>h.ctx.saveSystemConfiguration({clave:"feature.flag",ambito:"DEPARTAMENTAL",departamentoId:"D-1",tipo:"TEXTO",valor:"new"}),/CONFIGURATION_DEPARTMENT_CONFLICT/);
+ assert.equal(JSON.stringify(h.department.rows),before,"duplicate active scope rows are rejected without mutation");
+ assert.equal(h.stats().releases,1);
+}
+{
+ const h=writeHarness({lockAvailable:false});
+ const before=JSON.stringify(h.department.rows);
+ assert.throws(()=>h.ctx.saveSystemConfiguration({clave:"feature.flag",ambito:"DEPARTAMENTAL",departamentoId:"D-1",tipo:"TEXTO",valor:"new"}),/LOCK_TIMEOUT/);
+ assert.equal(JSON.stringify(h.department.rows),before,"lock contention performs no partial write");
+ assert.equal(h.stats().releases,0);
+}
+{
+ const h=writeHarness();
+ const result=h.ctx.resetSystemConfigurationOverride({clave:"feature.flag",departamentoId:"D-1"});
+ assert.equal(result.status,"success");
+ assert.equal(result.restablecida,true);
+ assert.equal(h.department.rows[1][8],"INACTIVO","reset deactivates the override and restores inheritance");
+ assert.equal(h.department.rows[1][12],"U-1");
+ assert.equal(h.stats().releases,1);
+}
+{
+ const h=harness({personal:true,role:"Estudiante"});
+ const result=h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag",userId:"U-OTHER"});
+ assert.equal(result.code,"CONFIGURATION_PERSONAL_SCOPE_DENIED","a non-privileged user cannot inspect another user's personal override");
+}
+{
+ const h=harness({department:false,departments:["D-1"]});
+ const result=h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag",departamentoId:"D-1"});
+ assert.equal(result.valor,"institution","without an explicit departmental override, the institutional value is inherited");
+}
+{
+ const h=harness({institution:false,department:false});
+ const result=h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag"});
+ assert.equal(result.valor,"global","global is the safe fallback when no lower-scope value exists");
+}
+{
+ const h=harness({departments:["D-1"]});
+ h.sheets.ConfiguracionSistema.rows.push(h.sheets.ConfiguracionSistema.rows[1].slice());
+ const result=h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag"});
+ assert.equal(result.code,"CONFIGURATION_SCOPE_CONFLICT","duplicate global rows fail closed");
+}
+{
+ const h=harness({departments:["D-1"]});
+ h.sheets.ConfiguracionSistema.rows.push(h.sheets.ConfiguracionSistema.rows[2].slice());
+ const result=h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag"});
+ assert.equal(result.code,"CONFIGURATION_INSTITUTION_CONFLICT","duplicate institutional rows fail closed");
+}
+{
+ const h=harness({departments:["D-1"]});
+ h.sheets.ConfiguracionDepartamental.rows.push(h.sheets.ConfiguracionDepartamental.rows[1].slice());
+ const result=h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag",departamentoId:"D-1"});
+ assert.equal(result.code,"CONFIGURATION_DEPARTMENT_CONFLICT","duplicate departmental overrides fail closed");
+}
+{
+ const h=harness({personal:true,departments:["D-1"]});
+ h.sheets.ConfiguracionSistema.rows.push(h.sheets.ConfiguracionSistema.rows[3].slice());
+ const result=h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag"});
+ assert.equal(result.code,"CONFIGURATION_PERSONAL_CONFLICT","duplicate personal overrides fail closed");
+}
+{
+ const h=harness({departments:["D-1"],policy:{inheritance:false,allowedScopes:["GLOBAL","INSTITUCIONAL","DEPARTAMENTAL"]}});
+ const result=h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag"});
+ assert.equal(result.valor,"global","disabled inheritance does not silently apply lower-scope values");
+ assert.equal(h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag",departamentoId:"D-1"}).code,"CONFIGURATION_INHERITANCE_DISABLED");
+}
+{
+ const h=harness({departments:["D-1"]});
+ const result=h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag",requireDepartmentContext:true});
+ assert.equal(result.code,"CONFIGURATION_DEPARTMENT_REQUIRED");
+}
+
 assert.match(source,/policyChange&&\(scope!=="GLOBAL"\|\|\["Administrador","Desarrollador"\]\.indexOf\(role\)===-1\)/);
 assert.match(source,/if\(policyChange\)\{policy=\{policy:policyName/);
 console.log("USER hierarchical configuration security and precedence contract PASS.");
