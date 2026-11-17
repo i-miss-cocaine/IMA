@@ -3200,8 +3200,8 @@ window.startInteractiveGuide = function(tourKey, forceRestart, preferenceLoaded)
     tourKey = tourKey || 'studentSubmission';
     if (!preferenceLoaded && window.sendApiRequest) {
         if (forceRestart) {
-            window.persistHelpGuidePreference_(tourKey, 1, false, function() {
-                window.__helpPreferenceSuppressNextSave[tourKey] = true;
+            window.persistHelpGuidePreference_(tourKey, 1, false, function(result) {
+                if (result && result.status === 'success') window.__helpPreferenceSuppressNextSave[tourKey] = true;
                 window.startInteractiveGuide(tourKey, true, true);
             });
         } else {
