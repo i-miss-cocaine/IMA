@@ -242,6 +242,10 @@ assert.throws(() => h.registerServiceInstance({ serviceId: "SVC-NO-ACTOR", name:
 assert.throws(() => h.registerServiceInstance({ serviceId: "SVC-FORGED-ACTOR", name: "Forged actor", cuentaPropietaria: "owner@example.invalid", spreadsheetAsociado: "SHEET-FORGED", _verifiedUserId: "forged-user" }), /SERVICE_ACTOR_NOT_VERIFIED/);
 assert.equal(Object.keys(h.sheets).length, 0);
 
+h = harness({}, { lockFail: true });
+assert.throws(() => registerService(h, { serviceId: "SVC-LOCKED", name: "Locked registration", cuentaPropietaria: "owner@example.invalid", spreadsheetAsociado: "SHEET-LOCKED" }), /SERVICE_REGISTRY_LOCK_TIMEOUT/);
+assert.equal(Object.keys(h.sheets).length, 0, "lock timeout must not create registry sheets or records");
+
 h = harness({ CatalogoServicios: sheet([registryHeaders, row("SVC-1","Service")]) });
 assert.throws(() => h.updateServiceStatus({ serviceId: "SVC-1", newState: "degradado", updatedBy: "spoofed", _verifiedUserId: "forged-user" }), /SERVICE_ACTOR_NOT_VERIFIED/);
 assert.equal(h.sheets.CatalogoServicios.rows[1][7], "Activo");
@@ -295,6 +299,11 @@ assert.equal(h.sheets.CatalogoServicios.rows[1][7], "Activo", "invalid history s
 h = harness();
 result = h.doPost({ postData: { contents: "null" } });
 assert.equal(result.status, "success", "non-object control-plane payload must normalize to the ping response");
+
+h = harness();
+result = h.doPost({ postData: { contents: JSON.stringify({ action: "registerServiceInstance", serviceId: "SVC-POST", name: "Posted service", cuentaPropietaria: "owner@example.invalid", spreadsheetAsociado: "SHEET-POST", sessionToken: "valid", _verifiedUserId: "forged-user" }) } });
+assert.equal(result.status, "success");
+assert.equal(h.sheets.HistorialServiciosDistribuidos.rows[1][5], "verified-user", "initial registration must attribute the verified session actor");
 
 h = harness({ CatalogoServicios: sheet([registryHeaders, row("SVC-1","Service")]) });
 result = h.doPost({ postData: { contents: JSON.stringify({ action: "updateServiceStatus", serviceId: "SVC-1", newState: "degradado", sessionToken: "valid", updatedBy: "spoofed" }) } });
