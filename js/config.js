@@ -1171,7 +1171,7 @@ window.registerNewCurricularAreaServiceConfig = function(areaConfig) {
         options = options || {};
         var parsed = parseDateValue(value);
         if (!parsed) return options.emptyValue !== undefined ? options.emptyValue : "—";
-        if (parsed.dateOnly) return formatDate(parsed.date, options);
+        if (parsed.dateOnly) return formatDate(value, options);
         var formatOptions = Object.assign({ timeZone: settings.timeZone }, options);
         delete formatOptions.emptyValue;
         if (!hasDateParts(options) && !options.dateStyle) formatOptions.dateStyle = settings.dateStyle;
@@ -1196,6 +1196,24 @@ window.registerNewCurricularAreaServiceConfig = function(areaConfig) {
         }
     }
 
+    function formatClock(value, options) {
+        options = options || {};
+        if (value instanceof Date || (typeof value === "number" && Number.isFinite(value))) return formatTime(value, options);
+        if (typeof value !== "string") return options.emptyValue !== undefined ? options.emptyValue : "—";
+        var match = value.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+        if (!match) return options.emptyValue !== undefined ? options.emptyValue : "—";
+        var hour = Number(match[1]), minute = Number(match[2]), second = Number(match[3] || 0);
+        if (hour > 23 || minute > 59 || second > 59) return options.emptyValue !== undefined ? options.emptyValue : "—";
+        var clockDate = new Date(Date.UTC(2000, 0, 1, hour, minute, second));
+        var formatOptions = Object.assign({ timeZone: "UTC", hour: "2-digit", minute: "2-digit" }, options);
+        delete formatOptions.emptyValue;
+        try {
+            return new Intl.DateTimeFormat(settings.locale, formatOptions).format(clockDate);
+        } catch (_) {
+            return String(match[1]).padStart(2, "0") + ":" + match[2];
+        }
+    }
+
     global.IMARegionalFormatters = {
         defaults: Object.assign({}, defaults),
         getSettings: getSettings,
@@ -1205,6 +1223,7 @@ window.registerNewCurricularAreaServiceConfig = function(areaConfig) {
         formatCurrency: formatCurrency,
         formatDate: formatDate,
         formatDateTime: formatDateTime,
-        formatTime: formatTime
+        formatTime: formatTime,
+        formatClock: formatClock
     };
 })(window);
