@@ -17,10 +17,10 @@ add("LEGACY","persona","PER-1","PERSONA-1");
 add("LEGACY","estudiante","EST-2","ESTUDIANTE-2");
 add("LEGACY","persona","PER-2","PERSONA-2");
 const sheet={getRange(r,c,n,m){return{getValues(){return identityRows.slice(r-1,r-1+n).map(row=>row.slice(c-1,c-1+m));}};},getDataRange(){return{getValues(){return identityRows.map(row=>row.slice());}};}};
-const targetRows=[["CursoID","Nombre","Nota","FechaInicio"],["CURSO-1","Matemáticas",80,"2025-01-01"]];
+const targetRows=[["CursoID","NombreCurso","Nota","FechaInicio"],["CURSO-1","Matemáticas",80,"2025-01-01"]];
 const targetSheet={getDataRange(){return{getValues(){return targetRows.map(row=>row.slice());}};}};
 const ss={getSheetByName(name){if(name==="CorrespondenciaIdentificadores")return sheet;if(name==="Cursos")return targetSheet;return null;}};
-const schemas={curso:{service:"ACCOUNTING",sheet:"Cursos",headers:["CursoID","Nombre","Nota","FechaInicio"]},estudiante:{service:"ACADEMIC",sheet:"ExpedientesEstudiantes",headers:["ExpedienteID","PersonaID"]}};
+const schemas={curso:{service:"ACCOUNTING",sheet:"Cursos",headers:["CursoID","NombreCurso","Nota","FechaInicio"]},estudiante:{service:"ACADEMIC",sheet:"ExpedientesEstudiantes",headers:["ExpedienteID","PersonaID"]}};
 const auditRows=[],writeCalls=[],rollbackCalls=[];
 let failWriteAt=0,runCounter=0;
 const audit={appendRow(row){auditRows.push(row);}};
@@ -44,21 +44,21 @@ const context={SPREADSHEET_ID:"TEST",MIGRATION_OWNER_SCHEMAS_:schemas,
  },
  requestAccountingTrustedOwnerSnapshot_(service,payload){
   if(!payload||!payload.sessionToken)return{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"};
-  if(service==="ACADEMIC")return{status:"success",verified:true,service:"ACADEMIC",sheet:"ExpedientesEstudiantes",idField:"ExpedienteID",institutionId:"INST-1",existingTargetIds:["ESTUDIANTE-1"],targetRows:[]};
-  if(service==="USER")return{status:"success",verified:true,service:"USER",sheet:"Personas",idField:"PersonaID",institutionId:"INST-1",existingTargetIds:["PERSONA-1"],targetRows:[]};
+  if(service==="ACADEMIC")return{status:"success",verified:true,service:"ACADEMIC",sheet:"ExpedientesEstudiantes",idField:"ExpedienteID",institutionId:"INST-1",existingTargetIds:["ESTUDIANTE-1"],targetRows:[],duplicateMatches:[]};
+  if(service==="USER")return{status:"success",verified:true,service:"USER",sheet:"Personas",idField:"PersonaID",institutionId:"INST-1",existingTargetIds:["PERSONA-1"],targetRows:[],duplicateMatches:[]};
   return{status:"error",code:"OWNER_NOT_ALLOWED"};
  },
  buildAccountingDepartmentalImportPreflight_(){return{valid:true,applicable:false,institutionId:"INST-1",rows:[]};},
  mapMigrationRowToTarget_(row,mapping){const out={};Object.keys(mapping.campos||{}).forEach(field=>out[field]=row[mapping.campos[field]]);return out;},
  migrationStableJson_:value=>JSON.stringify(value),migrationHash_:value=>crypto.createHash("sha256").update(String(value)).digest("hex"),
  Date,String,Number,Array,Object,JSON,RegExp,Error,isFinite};
-const funcs=["buildAccountingIdentityMapSnapshot_","resolveAccountingIdentityFromSnapshot_","buildMigrationTargetExistenceSnapshot_","buildAccountingRelatedPersonExistenceSnapshot_","buildImportPreview_","validateImportPreview","importDataWithColumnMapping"].map(extract);
+const funcs=["buildAccountingIdentityMapSnapshot_","resolveAccountingIdentityFromSnapshot_","normalizeMigrationNaturalKey_","migrationDuplicateKeyDefinitions_","buildMigrationDuplicateRequests_","buildMigrationTargetExistenceSnapshot_","buildAccountingRelatedPersonExistenceSnapshot_","buildImportPreview_","validateImportPreview","importDataWithColumnMapping"].map(extract);
 vm.createContext(context);vm.runInContext(header+"\n"+funcs.join("\n")+"\nthis.preview=buildImportPreview_;this.validate=validateImportPreview;this.import=importDataWithColumnMapping;",context);
 const base={nombreArchivo:"cursos.xlsx",destinoModulo:"ACCOUNTING",sistemaOrigen:"LEGACY",tipoEntidad:"curso",sessionToken:"signed",
- columnaMapeo:{identificador:"legacyId",campos:{Nombre:"nombre",Nota:"nota",FechaInicio:"fechaInicio"}},
+ columnaMapeo:{identificador:"legacyId",campos:{NombreCurso:"nombre",Nota:"nota",FechaInicio:"fechaInicio"}},
  filasData:[{legacyId:"CUR-1",nombre:"Matemáticas",nota:90,fechaInicio:"2026-02-01"}]};
 const valid=context.preview(base);assert.equal(valid.status,"success",JSON.stringify(valid));assert.equal(valid.validForImport,true,JSON.stringify(valid));assert.equal(valid.filasValidas,1);
-assert.equal(valid.preparedRows[0].Nombre,"Matemáticas");
+assert.equal(valid.preparedRows[0].NombreCurso,"Matemáticas");
 assert.equal(valid.validRowIndexes.length,1);assert.equal(valid.identityResolutions[0].idNuevoPlataforma,"CURSO-1");assert.match(valid.previewHash,/^[a-f0-9]{64}$/);
 assert.equal(valid.targetExistenceSnapshot.verified,true);
 assert.deepEqual(Array.from(valid.targetExistenceSnapshot.existingTargetIds),["CURSO-1"]);
