@@ -184,7 +184,7 @@ rows.ResourceOwnership.push(["OWN-EXP-BLANK","INST-1","EXPEDIENTE_ESTUDIANTE","E
 assert.equal(context.assertStudentExpedienteScopeAccess_(actor("admin"),ss,noDept,["EXP-BLANK","P-X"]).code,"RESOURCE_DEPARTMENT_UNRESOLVED");
 assert.equal(context.assertStudentDocumentScopeAccess_(actor("staffA"),ss,makeSheet(rows.DocumentosEstudiante),rows.DocumentosEstudiante[1],expSheet).authorized,true);
 assert.equal(context.assertStudentDocumentScopeAccess_(actor("staffA"),ss,makeSheet(rows.DocumentosEstudiante),rows.DocumentosEstudiante[2],expSheet).code,"RESOURCE_SCOPE_DENIED");
-assert.equal(context.assertStudentDocumentScopeAccess_(actor("staffA"),ss,makeSheet(rows.DocumentosEstudiante),rows.DocumentosEstudiante[4],expSheet).code,"RESOURCE_OWNER_UNRESOLVED");
+assert.equal(context.assertStudentDocumentScopeAccess_(actor("staffA"),ss,makeSheet(rows.DocumentosEstudiante),rows.DocumentosEstudiante[5],expSheet).code,"RESOURCE_OWNER_UNRESOLVED");
 assert.equal(context.assertStudentRequestScopeAccess_(actor("staffA"),ss,"EXP-A","SOL-B").code,"RESOURCE_OWNER_UNRESOLVED");
 assert.ok(extractFunction(academic,"assertStudentExpedienteScopeAccess_").includes("assertResourceOwnershipForScope_"));
 assert.ok(extractFunction(academic,"assertStudentDocumentScopeAccess_").includes("assertResourceOwnershipForScope_"));
