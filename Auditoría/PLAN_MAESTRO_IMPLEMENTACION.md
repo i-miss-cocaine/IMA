@@ -5678,3 +5678,8 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - **AUD-NG-082:** autenticación estricta de doPost implementada; todas las acciones no-ping requieren sesión firmada y los roles provienen únicamente de claims verificados. Node 24 run 44084689689 SUCCESS. BETA-FUNC-120 pendiente de deployment real.
 - **CI transversal:** Department Scope run 44084661252 falla en Phase22 document management; 82 pasos anteriores PASS. No se modificó el módulo ajeno.
 - **Siguiente tarea elegible:** AUD-NG-084 — gestión segura de secretos por servicio con rotación y revocación; revisar getAuthTokenSecret y customSecret antes de conectar los flujos HMAC.
+
+
+### Seguimiento — C1.801 / AUD-NG-084 en curso
+- Se registra como requisito transversal obligatorio en PLAN-IMA-001 la autenticación de credenciales al iniciar sesión y la reutilización eficiente del contexto confiable durante la sesión, sin verificaciones completas ni reconstrucción de roles/permisos por cada actividad ordinaria. Debe aplicarse en todas las futuras tareas de seguridad.
+- AUD-NG-084: endurecimiento del secreto HMAC dedicado y orden seguro HMAC→replay lock en USER; contrato nuevo y fixtures consumidores actualizados. CI de HEAD 392738ad aún pendiente; no cerrar hasta obtener evidencia de pruebas.

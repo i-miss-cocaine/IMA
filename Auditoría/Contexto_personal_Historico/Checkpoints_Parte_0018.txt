@@ -235,3 +235,24 @@ Siguiente tarea elegible: F25-Task03 — detección avanzada de duplicados e int
 - **Estado:** implementación y CI completados; beta real pendiente.
 - **Siguiente tarea elegible:** AUD-NG-084 — gestión segura de secretos por servicio con rotación y revocación; revisar getAuthTokenSecret, AUTH_TOKEN_SECRET, customSecret y catálogo de credenciales antes de integrar tráfico HMAC.
 =============================================================================
+
+
+=============================================================================
+### C1.801 — IMA-EXEC-20261117-SESSION-CONTEXT-AUTH-PERFORMANCE-01
+- **Checkpoint anterior:** C1.800 — AUD-NG-082.
+- **HEAD inicial:** 20607c03280874c46f91e42cb318a4e9e82888f9.
+- **HEAD de cierre de esta iteración:** 392738ad6e39398685cb8113652ada3e6658bb83.
+- **Tarea en curso:** AUD-NG-084 — credenciales HMAC interservicio, rotación/revocación y protección contra repetición.
+- **Cambio de requisito del usuario:** autenticación de contraseña al iniciar sesión; reutilizar durante la sesión el contexto confiable ya establecido; evitar verificación completa de sesión/claims y reconstrucción de identidad/roles/permisos/responsabilidades en cada operación ordinaria. Mantener expiración, logout, revocación, integridad y controles proporcionales sin consultas repetidas ni latencia.
+- **Registro funcional:** Auditoría/PLAN-IMA-001_UNIDADES_FUNCIONALES.md, sección “Requisito transversal obligatorio — Autenticación de inicio de sesión y continuidad de sesión”; PM-01 en Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md enlaza y obliga a aplicarlo en futuras tareas de seguridad. No se modificó Normas_Desarollo.md porque este punto es requisito de producto/UX, no una nueva norma operativa.
+- **Implementación AUD-NG-084:** en backend/user-service/Code.gs se elimina fallback de AUTH_TOKEN_SECRET cuando falta el tipo explícito de credencial interservicio; el tipo debe ser IMA_MIGRATION_HMAC_SECRET. En verifyInterServiceEnvelope, HMAC se verifica antes de reservar requestId en CacheService; la reserva queda protegida por ScriptLock y timeout fail-closed.
+- **Pruebas añadidas:** tests/security/migration-hmac-credential-registry.test.js cubre catálogo, huellas, versión activa, rotación, revocación, clave dedicada, HMAC inválido sin consumir requestId, replay y lock contention.
+- **Adaptación de fixtures:** identity-mapping-contract.test.js, accounting-import-auth-router.test.js, accounting-remote-target-snapshot.test.js y user-migrated-resource-ownership-contract.test.js actualizados al contrato de credencial tipada.
+- **CI:** Node 24.22.2 y parseo de servicios pasó en runs asociados a commits anteriores. Identity Mapping, Accounting Import Preflight y Department Scope fallaron por fixtures desactualizados/constantes; se corrigieron en commit 392738ad, pero todavía no hay ejecución Actions observada para ese HEAD. No declarar PASS del cambio ni del contrato nuevo.
+- **CLI local:** NOT RUN; el entorno no pudo resolver github.com para checkout local. No se afirma ejecución local de los tests Node.
+- **Archivos de implementación/prueba:** backend/user-service/Code.gs; tests/security/migration-hmac-credential-registry.test.js; tests/security/identity-mapping-contract.test.js; tests/security/accounting-import-auth-router.test.js; tests/security/accounting-remote-target-snapshot.test.js; tests/security/user-migrated-resource-ownership-contract.test.js.
+- **Commits de esta iteración:** d1212922ed3c530a457f910780faddfa715f4d83 (código + contrato nuevo); dbdb8bbc5ef0c70a069364eeef988537e02f6f58 (primer ajuste de fixture); 1956d7bc9f74ef181c2831cf7e1ad05b24390d77 (registro del requisito); a5898d0200e0e1eaeb33a0fca62687208560e77d y 392738ad6e39398685cb8113652ada3e6658bb83 (fixtures); a9a7f068e04ed2e8afd3ebe1b45eca96f5aedfc1 (precisión del requisito).
+- **Estado:** requisito de experiencia de sesión registrado; AUD-NG-084 en progreso, no cerrada. Faltan ejecutar en el HEAD actual los contratos Node afectados, corregir los fallos restantes y revisar compatibilidad de consumidores HMAC antes de completar.
+- **Rama base:** HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; comparación work/base 3852 ahead, 0 behind. Sin escrituras en rama base.
+- **Siguiente acción:** comprobar CI para HEAD 392738ad; corregir cualquier fallo de fixtures/consumidores y ejecutar localmente cuando haya checkout disponible; después continuar revisión de rotación/revocación y cerrar AUD-NG-084 con evidencia.
+=============================================================================
