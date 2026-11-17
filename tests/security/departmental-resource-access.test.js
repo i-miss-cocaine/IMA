@@ -115,7 +115,9 @@ const context={
   logStructuredEvent:()=>{}
 };
 vm.runInNewContext(code + "\nthis.assertStudentExpedienteScopeAccess_=assertStudentExpedienteScopeAccess_;this.assertStudentDocumentScopeAccess_=assertStudentDocumentScopeAccess_;this.assertStudentRequestScopeAccess_=assertStudentRequestScopeAccess_;this.validateAcademicResponsibilityAndScopeAccess=validateAcademicResponsibilityAndScopeAccess;this.getStudentFile=getStudentFile;this.getStudentDocumentFile=getStudentDocumentFile;this.getStudentDocuments=getStudentDocuments;this.validateEvidenceFileAndPermissions=validateEvidenceFileAndPermissions;this.assertRecordOwnership=assertRecordOwnership;",context);
-const originalDocumentScopeCheck=context.assertStudentDocumentScopeAccess_;\ncontext.documentScopeAssertionCalls=0;\ncontext.assertStudentDocumentScopeAccess_=function(){context.documentScopeAssertionCalls++;return originalDocumentScopeCheck.apply(context,arguments);};
+const originalDocumentScopeCheck=context.assertStudentDocumentScopeAccess_;
+context.documentScopeAssertionCalls=0;
+context.assertStudentDocumentScopeAccess_=function(){context.documentScopeAssertionCalls++;return originalDocumentScopeCheck.apply(context,arguments);};
 const actor=token=>({sessionToken:token});
 const expSheet=makeSheet(rows.ExpedientesEstudiantes);
 assert.equal(context.assertStudentExpedienteScopeAccess_(actor("staffA"),ss,expSheet,rows.ExpedientesEstudiantes[1]).authorized,true);
