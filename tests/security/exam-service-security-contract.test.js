@@ -463,7 +463,7 @@ function makeCreationRuntime(options) {
     LockService: { getScriptLock() { lockAcquireCount++; return { tryLock() { return true; }, releaseLock() {} }; } },
     Utilities: { getUuid() { uuid++; return "UUID-" + uuid; } }
   };
-  const functions = ["validateContextualAccess", "validateRolePermission", "getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "withAuthorizedExamCreation_", "createExamUnlocked_", "createExam"]
+  const functions = ["getRequestSessionToken_","getVerifiedRequestSessionClaims_","getCachedRequestAuthorization_","cacheRequestAuthorization_","validateContextualAccess", "validateRolePermission", "getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "withAuthorizedExamCreation_", "createExamUnlocked_", "createExam"]
     .map(name => extractFunction(source, name)).join("\n");
   vm.runInNewContext(functions + "\nthis.createExam = createExam;", context);
   return { context, sheets: creationSheets, getSpreadsheetOpenCount: () => spreadsheetOpenCount,
