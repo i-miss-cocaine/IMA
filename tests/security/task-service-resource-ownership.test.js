@@ -227,4 +227,50 @@ console.log("TASK-153 staff/student department intersection contract passed.");
   assert.deepEqual(Array.from(context.list({_verifiedRole:"Administrador",_verifiedUserId:"ADMIN-1"}),row=>row[0]),["AULA-D1","AULA-D1B"],"department-scoped admin cannot see foreign classrooms");
   assert.equal(context.list({_verifiedRole:"Administrador",_verifiedUserId:"ADMIN-WIDE"}).length,3,"institution-wide admin can see all classrooms in the same institution");
 }
+
+{
+  const taskRows=[["TareaID","Tipo","Titulo","Descripcion","Parcial","Asignatura","Grado","Seccion","FechaLimite","TareaOriginalID","ProfesorID","Estado","Puntaje","ArchivoUrl","FechaDisponible","TipoRecurso"]];
+  const classroomRows=[
+    ["AulaID","OfertaID","Nombre","Grado","Seccion","Asignatura","ProfesorID","Estado"],
+    ["AULA-T1","OFFER-T1","Math 6A","6","A","Math","TEACHER-1","Activa"],
+    ["AULA-T2","OFFER-T2","Math 6B","6","B","Math","TEACHER-2","Activa"]
+  ];
+  const taskSheet={rows:taskRows,getDataRange:()=>({getValues:()=>taskRows.map(row=>row.slice())}),appendRow:row=>taskRows.push(row.slice())};
+  const classSheet={getDataRange:()=>({getValues:()=>classroomRows.map(row=>row.slice())})};
+  const ss={};
+  const registered=[];
+  let uuid=0,assignmentCalls=0,dynamicPermissionCalls=0;
+  const context={
+    SPREADSHEET_ID:"LOCAL",SpreadsheetApp:{openById:()=>ss},
+    getSheetOrThrow:(_ss,name)=>name==="Tareas"?taskSheet:name==="AulasVirtuales"?classSheet:null,
+    getVerifiedTaskIdentity_:payload=>payload&&payload.sessionToken==="T1"
+      ?{authorized:true,userId:"TEACHER-1",role:"Profesor"}
+      :payload&&payload.sessionToken==="T2"
+        ?{authorized:true,userId:"TEACHER-2",role:"Profesor"}:{authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"},
+    getVerifiedTaskDepartmentScope_:(_payload,_ss,identity)=>({authorized:true,userId:identity.userId,role:identity.role,
+      institutionId:"INST-1",departmentIds:[identity.userId==="TEACHER-1"?"D1":"D2"],institutionWide:false}),
+    assertTaskServiceTeacherAssignedToOffer:(userId,offerId)=>{assignmentCalls++;if(!((userId==="TEACHER-1"&&offerId==="OFFER-T1")||(userId==="TEACHER-2"&&offerId==="OFFER-T2")))throw new Error("TEACHER_ASSIGNMENT_DENIED");},
+    isTaskServiceAdministrativeRole:role=>["Administrador","Desarrollador"].includes(role),
+    registerTaskServiceResourceOwnership_:(scope,type,id,departmentId,_ss)=>{registered.push({userId:scope.userId,type,id,departmentId});return {authorized:true};},
+    getDynamicPermissionsForRole:()=>{dynamicPermissionCalls++;return false;},
+    normalizeString:value=>String(value||"").trim().toLowerCase(),
+    Utilities:{getUuid:()=>"TASK-"+(++uuid)}
+  };
+  vm.runInNewContext(extractFunction("resolveTaskServiceOwnershipDepartment_")+"\\n"+extractFunction("createTask")+"\\nthis.create=createTask;",context);
+  const first=context.create({sessionToken:"T1",_verifiedUserId:"TEACHER-2",_verifiedRole:"Administrador",profesorId:"TEACHER-2",
+    titulo:"Task 6A",asignatura:"Math",gradoAsignado:"6",seccionAsignada:"A",departmentId:"D1"});
+  assert.equal(first.status,"success");
+  assert.equal(taskRows[1][10],"TEACHER-1","task owner comes from the verified actor, not forged teacherId fields");
+  assert.equal(registered[0].departmentId,"D1");
+  assert.throws(()=>context.create({sessionToken:"T1",titulo:"Foreign section",asignatura:"Math",gradoAsignado:"6",seccionAsignada:"B",departmentId:"D2"}),
+    /No existe aula asignada/);
+  assert.equal(taskRows.length,2,"a teacher cannot create a task in another teacher's section");
+  const second=context.create({sessionToken:"T2",titulo:"Task 6B",asignatura:"Math",gradoAsignado:"6",seccionAsignada:"B",departmentId:"D2",profesorId:"TEACHER-1"});
+  assert.equal(second.status,"success");
+  assert.equal(taskRows[2][10],"TEACHER-2");
+  assert.equal(registered[1].departmentId,"D2");
+  assert.equal(assignmentCalls,2,"each accepted task uses the teacher's current offer assignment");
+  assert.equal(dynamicPermissionCalls,0,"createTask relies on its one dispatcher RBAC grant; registry persistence adds no extra role privilege");
+}
+
 console.log("TASK-153 classroom ownership contract passed.");
