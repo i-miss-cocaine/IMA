@@ -145,8 +145,51 @@ runMigrationWriterFixture(academic,"estudiante");
 console.log("TASK-068 migration writers: upsert idempotency, payload conflict and compensation passed.");
 
 function extractBalancedFunction(source,name){const start=source.indexOf("function "+name+"(");assert.ok(start>=0,"function "+name+" exists");const open=source.indexOf("{",start);let depth=0,quote=null,escaped=false,line=false,block=false;for(let i=open;i<source.length;i++){const ch=source[i],next=source[i+1];if(line){if(ch==="\n")line=false;continue;}if(block){if(ch==="*"&&next==="/"){block=false;i++;}continue;}if(quote){if(escaped){escaped=false;continue;}if(ch==="\\"){escaped=true;continue;}if(ch===quote)quote=null;continue;}if(ch==="/"&&next==="/"){line=true;i++;continue;}if(ch==="/"&&next==="*"){block=true;i++;continue;}if(ch==="'"||ch==='"'||ch==="\x60"){quote=ch;continue;}if(ch==="{")depth++;else if(ch==="}"&&--depth===0)return source.slice(start,i+1);}throw new Error("unbalanced "+name);}
-function runMigrationEnvelopeFixture(source,target){const secret="local-fixture-secret-0123456789-abcdef",cache=new Map(),calls=[];const names=["computeHmacSignature","createInterServiceEnvelope","verifyInterServiceEnvelope","handleTrustedMigrationEnvelope_"];const code=names.map(n=>extractBalancedFunction(source,n)).join(String.fromCharCode(10));const ctx={Utilities:{MacAlgorithm:{HMAC_SHA_256:"HMAC_SHA_256"},computeHmacSignature:(alg,msg,key)=>Array.from(crypto.createHmac("sha256",key).update(msg).digest()).map(b=>b>127?b-256:b)},CacheService:{getScriptCache:()=>({get:k=>cache.get(k)||null,put:(k,v)=>cache.set(k,v)})},PropertiesService:{getScriptProperties:()=>({getProperty:()=>secret})},applyTrustedMigrationWrite_:p=>{calls.push(p);return{status:"success",written:true};},compensateTrustedMigrationWrite_:p=>{calls.push(p);return{status:"success",compensated:true};},Date,Math,JSON,String,Object,Array,Error};vm.runInNewContext(code,ctx);const payload={tipoEntidad:"persona",idNuevoPlataforma:"PER-1",idempotencyKey:"MIG-1",datos:{Nombres:"Ana"}};const envelope=ctx.createInterServiceEnvelope("ACCOUNTING",target,"writeMigratedEntity",payload,secret);assert.equal(ctx.handleTrustedMigrationEnvelope_(envelope).written,true);assert.equal(calls.length,1);assert.throws(()=>ctx.handleTrustedMigrationEnvelope_(envelope),/REPLAY_DETECTED/);const wrongSource=ctx.createInterServiceEnvelope("UNTRUSTED",target,"writeMigratedEntity",payload,secret);assert.throws(()=>ctx.handleTrustedMigrationEnvelope_(wrongSource),/MIGRATION_SOURCE_NOT_ALLOWED/);const tampered=ctx.createInterServiceEnvelope("ACCOUNTING",target,"writeMigratedEntity",payload,secret);tampered.payload.idNuevoPlataforma="PER-TAMPERED";assert.throws(()=>ctx.handleTrustedMigrationEnvelope_(tampered),/INVALID_INTERSERVICE_SIGNATURE/);}
-
+function runMigrationEnvelopeFixture(source,target){
+ const secret="local-fixture-secret-0123456789-abcdef",cache=new Map(),calls=[];
+ const isUser=target==="USER";
+ const names=isUser
+  ? ["computeHmacSignature","computeMigrationCredentialFingerprint_","getMigrationHmacSecret_","resolveInterServiceSecret_","verifyInterServiceEnvelope","handleTrustedMigrationEnvelope_"]
+  : ["computeHmacSignature","verifyInterServiceEnvelope","handleTrustedMigrationEnvelope_"];
+ const code=names.map(n=>extractBalancedFunction(source,n)).join(String.fromCharCode(10));
+ const credentialHeaders=["CredentialID","ServiceID","CredentialType","Version","Status","Fingerprint","CreatedAt","CreatedBy","RevokedAt","RevokedBy"];
+ const digest=crypto.createHash("sha256").update(secret).digest("hex");
+ const credentialRows=[credentialHeaders,["CRED-ACCOUNTING","ACCOUNTING","IMA_MIGRATION_HMAC_SECRET","v1","ACTIVE",digest,"2026-11-17T00:00:00Z","fixture","",""]];
+ const ctx={
+  SPREADSHEET_ID:"TEST-SPREADSHEET",
+  Utilities:{MacAlgorithm:{HMAC_SHA_256:"HMAC_SHA_256"},DigestAlgorithm:{SHA_256:"SHA_256"},Charset:{UTF_8:"UTF_8"},
+   computeHmacSignature:(alg,msg,key)=>Array.from(crypto.createHmac("sha256",key).update(msg).digest()).map(b=>b>127?b-256:b),
+   computeDigest:(alg,value)=>Array.from(crypto.createHash("sha256").update(String(value),"utf8").digest())},
+  CacheService:{getScriptCache:()=>({get:k=>cache.get(k)||null,put:(k,v)=>cache.set(k,v)})},
+  LockService:{getScriptLock:()=>({waitLock:()=>{},releaseLock:()=>{}})},
+  PropertiesService:{getScriptProperties:()=>({getProperty:name=>({
+   IMA_MIGRATION_HMAC_SECRET:secret,
+   IMA_MIGRATION_HMAC_SECRET_ACCOUNTING:secret,
+   IMA_MIGRATION_HMAC_SECRET_VERSION_ACCOUNTING:"v1"
+  })[name]||""})},
+  SpreadsheetApp:{openById:id=>{assert.equal(id,"TEST-SPREADSHEET");return{getSheetByName:name=>name==="CatalogoCredencialesServicios"?{getDataRange:()=>({getValues:()=>credentialRows})}:null};}},
+  applyTrustedMigrationWrite_:p=>{calls.push(p);return{status:"success",written:true};},
+  compensateTrustedMigrationWrite_:p=>{calls.push(p);return{status:"success",compensated:true};},
+  Date,Math,JSON,String,Object,Array,Error
+ };
+ vm.runInNewContext(code,ctx);
+ function makeEnvelope(sourceService,action,payload){
+  const timestamp=Date.now(),requestId="REQ-"+timestamp+"-"+Math.random().toString(36).slice(2,8),correlationId="CORR-"+timestamp;
+  const body=[requestId,timestamp,correlationId,sourceService,target,action,JSON.stringify(payload||{})].join("|");
+  return{sourceService,targetService:target,action,requestId,timestamp,correlationId,payload:payload||{},
+   hmacSignature:crypto.createHmac("sha256",secret).update(body).digest("hex")};
+ }
+ const payload={tipoEntidad:"persona",idNuevoPlataforma:"PER-1",idempotencyKey:"MIG-1",datos:{Nombres:"Ana"}};
+ const envelope=makeEnvelope("ACCOUNTING","writeMigratedEntity",payload);
+ assert.equal(ctx.handleTrustedMigrationEnvelope_(envelope).written,true);
+ assert.equal(calls.length,1);
+ assert.throws(()=>ctx.handleTrustedMigrationEnvelope_(envelope),/REPLAY_DETECTED/);
+ const wrongSource=makeEnvelope("UNTRUSTED","writeMigratedEntity",payload);
+ assert.throws(()=>ctx.handleTrustedMigrationEnvelope_(wrongSource),isUser?/MIGRATION_SOURCE_SERVICE_INVALID/:/MIGRATION_SOURCE_NOT_ALLOWED/);
+ const tampered=makeEnvelope("ACCOUNTING","writeMigratedEntity",payload);
+ tampered.payload.idNuevoPlataforma="PER-TAMPERED";
+ assert.throws(()=>ctx.handleTrustedMigrationEnvelope_(tampered),/INVALID_INTERSERVICE_SIGNATURE/);
+}
 
 function makeMigrationOrchestrationFixture(options){
  options=options||{};const calls=[],auditRows=[],state={writes:0,uuid:0};
