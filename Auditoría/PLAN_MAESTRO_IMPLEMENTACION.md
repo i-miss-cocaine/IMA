@@ -5910,3 +5910,16 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - **C1.812/C1.813 beta:** BETA-FUNC-110 se amplía para PDF/MP4, versionado/restauración sin hash obligatorio y privacidad Drive. Se añade BETA-FUNC-118 para dos docentes/dos aulas, acceso a tareas, carga genérica, materiales, autoría, soft-delete e idempotencia/lock. Ambas pendientes de despliegue beta; no bloquean la implementación local.
 - **Estado:** AUD-NG-158 y F34-TASK03 quedan revisadas/completadas en código/CI, con beta pendiente. TASK-142 y TASK-153 continúan abiertas; F34-Task04 no se declara completada ni se presume cubierta por estos cambios.
 - **Siguiente:** C1.814 — revisar comentarios/notas, versiones, devoluciones y calificaciones en Task-Service. La revisión de createTask/updateTask queda cerrada para el mandato actual; no duplicar sus pruebas.
+
+
+
+### C1.814 — revisión y estabilización de comentarios, versiones y mutaciones de entrega
+- **Alcance:** Task-Service: `addSubmissionComment`, `getSubmissionComments`, `getSubmissionVersions`, `getSubmissionDocumentPreviewUrl`, `returnSubmissionForRevision`, `deleteSubmission`, `gradeSubmission` y `gradeSubmissionWithRubric`.
+- **Autorización:** el dispatcher sigue siendo el único punto de autorización de rol por acción. El wrapper `withAuthorizedTaskSubmissionMutation_` reutiliza la identidad verificada y recibe la operación específica; la relación tarea/entrega se verifica bajo ScriptLock, sin volver a validar la sesión.
+- **Integridad:** devolver para corrección actualiza el estado y registra comentario privado con actor real; si falla el comentario, revierte la fila. Eliminar entrega mueve el archivo a papelera y elimina la fila; si falla la fila, restaura el archivo. El preview reutiliza la identidad verificada. El historial de versiones no devuelve URL cruda de Drive.
+- **Privacidad:** comentarios privados visibles solo para personal; estudiantes no pueden forjar autor/rol ni crear notas privadas. El preview requiere vínculo único entre fileId y entrega accesible.
+- **Pruebas:** Task-Service security local contracts run 44158016729 SUCCESS (Node 22.23.4), incluidos 12 contratos nuevos de mutaciones/comentarios/versiones, historial de calificaciones/fechas, ownership, uploads y single-auth. `node --check js/teacher.js` PASS.
+- **Hallazgo no resuelto:** deleteSubmission conserva eliminación física y no realiza cascada sobre EntregasVersiones/ComentariosEntregas. No se cambia la retención sin una regla explícita; C1.815 debe decidir conservación, soft-delete o purga.
+- **Beta:** BETA-FUNC-122 pendiente para verificar permisos reales de Drive, comentarios, versiones, devolución, calificación y eliminación con rollback.
+- **Estado:** C1.814 completado en código y CI; beta y política de retención siguen pendientes.
+- **Siguiente:** C1.815 — definir la retención de historial al eliminar entregas y ejecutar BETA-FUNC-122.

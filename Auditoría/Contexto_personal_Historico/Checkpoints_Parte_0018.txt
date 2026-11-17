@@ -675,3 +675,56 @@ Estado actualizado:
 - TASK-142/TASK-153 y las demás subcapacidades reabiertas por C1.809 siguen abiertas; no se declaran completas.
 - Siguiente tarea elegible C1.814: revisar comentarios/notas, versiones y devoluciones de entregas y calificaciones (getSubmissionComments, addSubmissionComment, getSubmissionVersions, returnSubmissionForRevision, deleteSubmission, gradeSubmission). Mantener RBAC de entrada, actor/fecha, ownership funcional, historial y lock solo donde exista escritura compartida; retirar revalidaciones redundantes sin ampliar visibilidad.
 ===============================================================================
+
+
+
+===============================================================================
+CHECKPOINT C1.814 — comentarios, versiones, devolución y mutaciones de entrega
+===============================================================================
+Fecha: 2026-11-17
+Sesión: IMA-EXEC-20261117-TASK-SUBMISSION-WORKFLOW-01
+Rama autorizada: NG_beta_0.0.0.1_work
+Checkpoint anterior: C1.813
+HEAD de entrada: e2e9f006aeb77a36a5c5aea4fac3d3c5d8418219
+
+Objetivo:
+Revisar y estabilizar los flujos de comentarios, historial de versiones, devolución para corrección, eliminación y calificación de entregas, manteniendo el actor verificado, el acceso por tarea y el lock en las escrituras compartidas.
+
+Cambios:
+1. `withAuthorizedTaskSubmissionMutation_` recibe la operación concreta, reutiliza la identidad verificada por el dispatcher y ejecuta la comprobación de relación tarea/entrega dentro de ScriptLock. El lock timeout se expresa como `TASK_SUBMISSION_MUTATION_LOCK_TIMEOUT`; la autorización de rol no se repite.
+2. `returnSubmissionForRevision` utiliza el wrapper común. Actualiza el estado y, si existe comentario, lo registra como nota privada con autor/rol/fecha derivados de la identidad verificada. Si falla el registro del comentario, restaura la fila de entrega; ya no llama a `addSubmissionComment` con un payload nuevo que perdía el contexto verificado.
+3. `deleteSubmission` utiliza el mismo lock y la relación tarea/entrega verificada. Mueve el archivo a papelera y elimina la fila; si falla la eliminación de la fila, restaura el archivo. Si Drive falla, la fila no se elimina.
+4. `getSubmissionVersions` deja de devolver `archivoUrl` de Drive; conserva `fileId` como referencia para solicitar previsualización mediante la acción autorizada.
+5. `getSubmissionDocumentPreviewUrl` reutiliza `getVerifiedTaskIdentity_(payload)` y pasa esa identidad al resolver de acceso. Se elimina la segunda llamada directa a `getVerifiedRequestSessionClaims_`; se mantiene la verificación de que el archivo corresponde a una única entrega accesible.
+6. `addSubmissionComment` conserva la autoría desde la sesión; el estudiante no puede crear notas privadas. `getSubmissionComments` sigue ocultando notas privadas a estudiantes. Las acciones de calificación y rúbrica continúan usando el wrapper bloqueado y el historial append-only.
+
+Archivos modificados en el alcance:
+- `backend/task-service/Code.gs`
+- `tests/security/task-service-grade-submission-history.test.js`
+- `tests/security/task-service-submission-mutation-contract.test.js` (nuevo)
+- `tests/security/task-service-resource-ownership.test.js`
+- `tests/security/task-service-single-auth-context.test.js`
+- `.github/workflows/task-service-security-contract.yml`
+
+Verificación:
+- GitHub Actions Task-Service security local contracts, run 44158016729: SUCCESS.
+- Ejecutados: task-service-security-contract, task-service-resource-ownership, task-service-grade-submission-history, task-service-submission-mutation-contract (12 contratos), task-service-deadline-history, task-service-upload-contract y task-service-single-auth-context.
+- `node --check js/teacher.js`: PASS.
+- Node.js 22.23.4 en el runner de GitHub Actions.
+- Task-Service backup/restore run 44156994361: SUCCESS.
+- Academic-Service single authorization context run 44155827504: SUCCESS.
+- Department Scope run 44156994349: FAILURE independiente en Phase22 por `configureSchoolDocumentTemplate` ausente en ACCOUNTING. No se modificó ACCOUNTING para ocultar ese fallo.
+- Se intentó checkout local, pero el entorno no resolvió github.com (DNS); por tanto, no se declara ejecución local de Node/CLI. Las pruebas Node se ejecutaron en el runner aislado de Actions.
+
+Hallazgo residual:
+- `deleteSubmission` conserva la semántica existente de eliminación física de la fila y papelera del archivo. Los registros asociados de `EntregasVersiones` y `ComentariosEntregas` no se eliminan ni archivan en cascada. No se inventó una política de retención ni se borró historial adicional; debe decidirse si el comportamiento institucional esperado es conservar historial, soft-delete o purga explícita.
+- La URL de previsualización/descarga solo se entrega después de autorización servidor y vínculo único con la entrega; la privacidad efectiva del archivo de Drive queda pendiente de BETA-FUNC-122.
+
+Beta:
+- BETA-FUNC-122 registrado para comentarios públicos/privados, versiones, previsualización autorizada, devolución con rollback, calificación, lock y eliminación con compensación. Pendiente de ejecutar en Apps Script/Sheets/Drive reales.
+
+Estado:
+- C1.814 implementación y contratos Node/CI completados.
+- No se declara validación beta ni política de retención resuelta.
+- Siguiente tarea elegible C1.815: definir y verificar la retención de comentarios/versiones al eliminar una entrega; después ejecutar BETA-FUNC-122 en beta.
+===============================================================================

@@ -748,3 +748,21 @@ NaN
 - **Evidencia requerida:** commit y deployment por servicio, versiones/estados/IDs sintéticos, fingerprints solo en evidencia restringida (nunca en logs públicos), conteos antes/después, IDs de evento, respuestas HMAC/replay, resultados concurrentes y salida saneada de auditoría. No adjuntar tokens ni secretos.
 - **Estado:** Pendiente beta. Los contratos Node.js 24/GitHub Actions verifican lógica aislada y fixtures; no prueban Script Properties, LockService, Sheets ni endpoints reales desplegados.
 ============================================================================
+
+
+
+=============================================================================
+### BETA-FUNC-122 — TASK-SERVICE — comentarios, versiones, devolución y calificación
+- **Módulos/roles:** Task-Service / Estudiante, Profesor y Administrador.
+- **Precondiciones:** deployment beta aislado; dos docentes con aulas distintas; estudiante con entrega PDF y al menos dos versiones; tarea con rúbrica; archivos Drive privados; hojas Entregas, EntregasVersiones, ComentariosEntregas, HistorialCalificaciones y Tareas.
+- **Pasos:**
+  1. Publicar comentario como estudiante incluyendo autor/rol/EsPrivado falsificados; verificar que autor y rol salen de la sesión y que el comentario queda público. Publicar nota privada como docente; verificar que el docente ve ambas y el estudiante solo la pública.
+  2. Consultar versiones; comprobar que la respuesta no contiene archivoUrl crudo, conserva fileId/MIME/fecha y que la previsualización requiere getSubmissionDocumentPreviewUrl. Probar acceso del propietario y docente asignado, y denegación a otro docente/aula.
+  3. Devolver la entrega para corrección con comentario; verificar estado, nota privada, autor, rol y fecha. Simular fallo de append en ComentariosEntregas y lock ocupado; comprobar rollback del estado y ausencia de cambios parciales.
+  4. Calificar con nota válida y con rúbrica; comprobar rango/precisión, historial append-only con actor/rol/fecha/motivo y serialización ante dos escrituras simultáneas. Probar docente ajeno y entrega ajena: denegación sin modificar calificación.
+  5. Eliminar una entrega de prueba como docente asignado; verificar que el archivo pasa a papelera y la fila Entregas se elimina. Simular fallo de Drive y fallo de deleteRow; comprobar que no se elimina la fila o que el archivo se restaura, respectivamente. Confirmar que lock impide concurrencia con calificación/devolución.
+  6. Registrar el estado de EntregasVersiones y ComentariosEntregas tras deleteSubmission; no purgar ni modificar esos registros manualmente. Capturar si quedan referencias huérfanas para resolver la política de retención en C1.815.
+- **Resultado esperado:** actor real, privacidad de notas, versiones sin URL cruda, preview autorizado, devolución/calificación bajo lock, rollback de escrituras compuestas y eliminación compensada. Ningún docente accede a entregas de otro docente.
+- **Evidencia requerida:** IDs sintéticos, actor/rol, tarea/entrega, filas antes/después, IDs Drive y estado de papelera, resultados allow/deny, conteos de versiones/comentarios y logs saneados; nunca tokens ni PII.
+- **Estado:** Pendiente de validación beta real en Apps Script/Sheets/Drive. Los contratos Node/Actions PASS no sustituyen la prueba desplegada.
+=============================================================================
