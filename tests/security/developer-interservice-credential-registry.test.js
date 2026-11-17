@@ -42,6 +42,9 @@ const row = (id, version, status, secret, revokedAt = "", revokedBy = "") =>
 let rows = [headers, row("CRED-DEV-v1", "v1", "ACTIVE", oldSecret)];
 const properties = { AUTH_TOKEN_SECRET: "SESSION-ONLY-SECRET-012345678901234567890123456789" };
 const cache = new Map();
+const auditHeaders = ["EventID","Direction","SourceService","TargetService","Action","RequestID","CorrelationID","CredentialType","CredentialID","CredentialVersion","OccurredAt"];
+const auditRows = [auditHeaders.slice()];
+const auditSheet = { getDataRange: () => ({ getValues: () => auditRows.map(row => row.slice()) }), getRange: (r,c,n,w) => ({ setValues: values => values.forEach((row,i) => { while(auditRows.length<r+i)auditRows.push([]); for(let j=0;j<w;j++)auditRows[r-1+i][c-1+j]=row[j]; }) }), appendRow: row => auditRows.push(row.slice()) };
 let lockBusy = false, lockWaits = 0, lockReleases = 0, cacheWrites = 0;
 const runtime = {
   Date, Math, JSON, String, Array, Object, Number, Error, RegExp,
@@ -49,9 +52,7 @@ const runtime = {
   PropertiesService: { getScriptProperties: () => ({ getProperty: key => properties[key] || "" }) },
   SpreadsheetApp: { openById: id => {
     assert.equal(id, "TEST-SPREADSHEET");
-    return { getSheetByName: name => name === "CatalogoCredencialesServicios" ? {
-      getDataRange: () => ({ getValues: () => rows.map(item => item.slice()) })
-    } : null };
+    return { getSheetByName: name => name === "CatalogoCredencialesServicios" ? { getDataRange: () => ({ getValues: () => rows.map(item => item.slice()) }) } : (name === "AuditoriaUsoCredenciales" ? auditSheet : null), insertSheet: name => name === "AuditoriaUsoCredenciales" ? auditSheet : null };
   } },
   Utilities: {
     DigestAlgorithm: { SHA_256: "SHA_256" }, Charset: { UTF_8: "UTF_8" },
@@ -70,8 +71,8 @@ const runtime = {
 };
 vm.createContext(runtime);
 const names = ["computeHmacSignature","computeMigrationCredentialFingerprint_","getMigrationHmacSecret_",
-  "getMigrationHmacSecrets_","resolveInterServiceSecret_","createInterServiceEnvelope","verifyInterServiceEnvelope"];
-const bootstrap = 'const IMA_LOCAL_SERVICE_ID_ = "DEVELOPER"; const IMA_CREDENTIAL_CATALOG_HEADERS_ = ' + JSON.stringify(headers) + ';';
+  "getMigrationHmacSecrets_","resolveInterServiceSecret_","recordInterServiceCredentialUsage_","createInterServiceEnvelope","verifyInterServiceEnvelope"];
+const bootstrap = 'const IMA_LOCAL_SERVICE_ID_ = "DEVELOPER"; const IMA_CREDENTIAL_CATALOG_HEADERS_ = ' + JSON.stringify(headers) + '; const IMA_CREDENTIAL_USAGE_AUDIT_HEADERS_ = ' + JSON.stringify(auditHeaders) + ';';
 vm.runInContext(bootstrap + "\n" + names.map(extract).join("\n") +
   "\nthis.api={create:createInterServiceEnvelope,verify:verifyInterServiceEnvelope};", runtime);
 

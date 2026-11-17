@@ -43,16 +43,17 @@ const scriptProperties = {
   AUTH_TOKEN_SECRET: "SESSION-SECRET-MUST-NOT-BE-USED-FOR-MIGRATION-0123456789"
 };
 const cacheValues = new Map();
+const auditHeaders = ["EventID","Direction","SourceService","TargetService","Action","RequestID","CorrelationID","CredentialType","CredentialID","CredentialVersion","OccurredAt"];
+const auditRows = [auditHeaders.slice()];
+const auditSheet = { getDataRange: () => ({ getValues: () => auditRows.map(row => row.slice()) }), getRange: (r,c,n,w) => ({ setValues: values => values.forEach((row,i) => { while(auditRows.length<r+i)auditRows.push([]); for(let j=0;j<w;j++)auditRows[r-1+i][c-1+j]=row[j]; }) }), appendRow: row => auditRows.push(row.slice()) };
 let lockBusy = false, lockWaits = 0, lockReleases = 0;
 const runtime = {
   Date, String, JSON, Array, Math, Error,
   SPREADSHEET_ID: "TEST-SPREADSHEET",
   PropertiesService: { getScriptProperties: () => ({ getProperty: key => scriptProperties[key] || "" }) },
-  SpreadsheetApp: { openById: id => {
+  SpreadsheetApp: { flush: () => {}, openById: id => {
     assert.equal(id, "TEST-SPREADSHEET");
-    return { getSheetByName: name => name === "CatalogoCredencialesServicios" ? {
-      getDataRange: () => ({ getValues: () => catalogRows.map(row => row.slice()) })
-    } : null };
+    return { getSheetByName: name => name === "CatalogoCredencialesServicios" ? { getDataRange: () => ({ getValues: () => catalogRows.map(row => row.slice()) }) } : (name === "AuditoriaUsoCredenciales" ? auditSheet : null), insertSheet: name => name === "AuditoriaUsoCredenciales" ? auditSheet : null };
   } },
   Utilities: {
     MacAlgorithm: { HMAC_SHA_256: "HMAC_SHA_256" },
@@ -79,13 +80,14 @@ const runtime = {
 };
 vm.createContext(runtime);
 const verifier = 'const IMA_LOCAL_SERVICE_ID_ = "ACADEMIC"; const IMA_CREDENTIAL_CATALOG_HEADERS_ = ' +
-  JSON.stringify(catalogHeaders) + ";\n" +
+  JSON.stringify(catalogHeaders) + "; const IMA_CREDENTIAL_USAGE_AUDIT_HEADERS_ = " + JSON.stringify(auditHeaders) + ";\n" +
   extractFunction(source, "computeMigrationCredentialFingerprint_") + "\n" +
   extractFunction(source, "getMigrationHmacSecret_") + "\n" +
   extractFunction(source, "getMigrationHmacSecrets_") + "\n" +
   extractFunction(source, "getMigrationHmacSecrets_") + "\n" +
   extractFunction(source, "resolveInterServiceSecret_") + "\n" +
   extractFunction(source, "computeHmacSignature") + "\n" +
+  extractFunction(source, "recordInterServiceCredentialUsage_") + "\n" +
   extractFunction(source, "verifyInterServiceEnvelope") +
   "\nthis.verify = verifyInterServiceEnvelope;";
 vm.runInContext(verifier, runtime);

@@ -47,14 +47,23 @@ function makeHarness(options = {}) {
   const cache = new Map();
   const state = { lockWaits: 0, lockReleases: 0, cacheWrites: 0, lockBusy: !!options.lockBusy };
   const sheet = { getDataRange: () => ({ getValues: () => [schema.slice(), ...rows.slice(1).map(item => item.slice())] }) };
+  const auditRows = [["EventID","Direction","SourceService","TargetService","Action","RequestID","CorrelationID","CredentialType","CredentialID","CredentialVersion","OccurredAt"]];
+  const auditSheet = {
+    getDataRange: () => ({ getValues: () => auditRows.map(item => item.slice()) }),
+    getRange: (row, col, count, width) => ({ setValues: values => values.forEach((item, index) => {
+      while (auditRows.length < row + index) auditRows.push([]);
+      for (let j = 0; j < width; j++) auditRows[row - 1 + index][col - 1 + j] = item[j];
+    }) }),
+    appendRow: item => auditRows.push(item.slice())
+  };
   const runtime = {
     Date, String, JSON, Array, Object, Number, Math, RegExp, Error,
     SPREADSHEET_ID: "TEST-SPREADSHEET",
     PropertiesService: { getScriptProperties: () => ({ getProperty: key => properties[key] || "" }) },
-    SpreadsheetApp: { openById: id => {
+    SpreadsheetApp: { flush: () => {}, openById: id => {
       assert.equal(id, "TEST-SPREADSHEET");
       if (options.catalogUnavailable) throw new Error("unavailable");
-      return { getSheetByName: name => name === "CatalogoCredencialesServicios" && !options.catalogMissing ? sheet : null };
+      return { getSheetByName: name => name === "CatalogoCredencialesServicios" && !options.catalogMissing ? sheet : (name === "AuditoriaUsoCredenciales" ? auditSheet : null), insertSheet: name => name === "AuditoriaUsoCredenciales" ? auditSheet : null };
     } },
     Utilities: {
       DigestAlgorithm: { SHA_256: "SHA_256" },
@@ -72,9 +81,9 @@ function makeHarness(options = {}) {
       releaseLock: () => { state.lockReleases++; }
     }) }
   };
-  const names = ["computeHmacSignature", "computeMigrationCredentialFingerprint_", "getMigrationHmacSecret_", "getMigrationHmacSecrets_", "resolveInterServiceSecret_", "createInterServiceEnvelope", "verifyInterServiceEnvelope"];
+  const names = ["computeHmacSignature", "computeMigrationCredentialFingerprint_", "getMigrationHmacSecret_", "getMigrationHmacSecrets_", "resolveInterServiceSecret_", "recordInterServiceCredentialUsage_", "createInterServiceEnvelope", "verifyInterServiceEnvelope"];
   vm.createContext(runtime);
-  const bootstrap = 'const IMA_LOCAL_SERVICE_ID_ = "USER"; const IMA_CREDENTIAL_CATALOG_HEADERS_ = ' + JSON.stringify(headers) + ';';
+  const bootstrap = 'const IMA_LOCAL_SERVICE_ID_ = "USER"; const IMA_CREDENTIAL_CATALOG_HEADERS_ = ' + JSON.stringify(headers) + '; const IMA_CREDENTIAL_USAGE_AUDIT_HEADERS_ = ' + JSON.stringify(auditHeaders) + ';';
   vm.runInContext(bootstrap + "\n" + names.map(extract).join("\n") +
     "\nthis.api={fingerprint:computeMigrationCredentialFingerprint_,get:getMigrationHmacSecret_,resolve:resolveInterServiceSecret_,create:createInterServiceEnvelope,verify:verifyInterServiceEnvelope};", runtime);
   return { api: runtime.api, properties, state, cache, setRows(value) { rows = value; }, setSchema(value) { schema = value; } };
@@ -177,8 +186,8 @@ const userVerificationProps = Object.assign({}, userProps, {
   const envelope = h.api.create("USER", "ACADEMIC", "sampleAction", { value: 1 }, TYPE);
   assert.equal(h.api.verify(envelope, "ACADEMIC", TYPE).valid, true);
   expectCode(() => h.api.verify(envelope, "ACADEMIC", TYPE), "INTERSERVICE_REPLAY_DETECTED");
-  assert.equal(h.state.lockWaits, 2);
-  assert.equal(h.state.lockReleases, 2);
+  assert.equal(h.state.lockWaits, 3);
+  assert.equal(h.state.lockReleases, 3);
 }
 {
   const h = makeHarness({ properties: userVerificationProps });
@@ -192,11 +201,12 @@ const userVerificationProps = Object.assign({}, userProps, {
   assert.equal(h.api.verify(envelope, "ACADEMIC", TYPE).valid, true, "the valid retry can use the same request ID");
 }
 {
-  const h = makeHarness({ properties: userVerificationProps, lockBusy: true });
+  const h = makeHarness({ properties: userVerificationProps });
   const envelope = h.api.create("USER", "ACADEMIC", "sampleAction", {}, TYPE);
+  h.state.lockBusy = true;
   expectCode(() => h.api.verify(envelope, "ACADEMIC", TYPE), "INTERSERVICE_REPLAY_CHECK_BUSY");
   assert.equal(h.state.cacheWrites, 0);
-  assert.equal(h.state.lockReleases, 0);
+  assert.equal(h.state.lockReleases, 1, "outbound audit lock released; busy replay lock not acquired");
 }
 {
   const h = makeHarness({ properties: userVerificationProps });

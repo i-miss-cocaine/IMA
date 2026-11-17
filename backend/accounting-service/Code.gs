@@ -178,6 +178,7 @@ function requestAccountingTrustedOwnerSnapshot_(service, payload) {
   var correlationId = "CORR-" + Utilities.getUuid().replace(/-/g, "");
   var body = payload || {};
   var bodyToSign = [requestId, now, correlationId, "ACCOUNTING", target, "getMigrationTargetExistenceSnapshot", JSON.stringify(body)].join("|");
+  recordInterServiceCredentialUsage_({direction:"OUTBOUND",sourceService:"ACCOUNTING",targetService:target,action:"getMigrationTargetExistenceSnapshot",requestId:requestId,correlationId:correlationId,credentialType:"IMA_MIGRATION_HMAC_SECRET"},secret,false);
   var envelope = {
     sourceService: "ACCOUNTING", targetService: target, action: "getMigrationTargetExistenceSnapshot",
     requestId: requestId, timestamp: now, correlationId: correlationId, payload: body,
@@ -713,6 +714,7 @@ function requestAccountingIdentityMapSnapshot_(payload) {
     lookups: Array.isArray(input.lookups) ? input.lookups : [] };
   var bodyToSign = [requestId, now, correlationId, "ACCOUNTING", "USER",
     "getMigrationIdentityMapSnapshot", JSON.stringify(body)].join("|");
+  recordInterServiceCredentialUsage_({direction:"OUTBOUND",sourceService:"ACCOUNTING",targetService:"USER",action:"getMigrationIdentityMapSnapshot",requestId:requestId,correlationId:correlationId,credentialType:"IMA_MIGRATION_HMAC_SECRET"},secret,false);
   var envelope = {
     sourceService: "ACCOUNTING", targetService: "USER", action: "getMigrationIdentityMapSnapshot",
     requestId: requestId, timestamp: now, correlationId: correlationId, payload: body,
@@ -4477,6 +4479,7 @@ function requestAccountingUserAuthorization_(action, payload) {
   var correlationId = "CORR-" + Utilities.getUuid().replace(/-/g, "");
   var body = payload || {};
   var bodyToSign = [requestId, now, correlationId, "ACCOUNTING", "USER", String(action), JSON.stringify(body)].join("|");
+  recordInterServiceCredentialUsage_({direction:"OUTBOUND",sourceService:"ACCOUNTING",targetService:"USER",action:String(action),requestId:requestId,correlationId:correlationId,credentialType:"IMA_MIGRATION_HMAC_SECRET"},secret,false);
   var envelope = {
     sourceService: "ACCOUNTING", targetService: "USER", action: String(action),
     requestId: requestId, timestamp: now, correlationId: correlationId,
