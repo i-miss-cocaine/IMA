@@ -526,20 +526,31 @@ function verifyInterServiceEnvelope(envelope, expectedTargetService, customSecre
     throw new Error("INTERSERVICE_REQUEST_EXPIRED: La solicitud interservicio ha expirado.");
   }
 
-  // Protección anti-replay con CacheService
-  const cache = CacheService.getScriptCache();
-  const replayKey = `REPLAY_REQ_${requestId}`;
-  if (cache.get(replayKey)) {
-    throw new Error(`INTERSERVICE_REPLAY_DETECTED: Petición repetida detectada con requestId '${requestId}'.`);
-  }
-  cache.put(replayKey, "SEEN", 300);
-
+  // Authenticate the envelope before reserving its requestId: invalid signatures must not poison replay state.
   const secret = customSecret || getAuthTokenSecret();
   const bodyToSign = `${requestId}|${timestamp}|${correlationId}|${sourceService}|${targetService}|${action}|${JSON.stringify(payload || {})}`;
   const expectedSig = computeHmacSignature(bodyToSign, secret);
 
   if (hmacSignature !== expectedSig) {
     throw new Error("INVALID_INTERSERVICE_SIGNATURE: Firma HMAC-SHA256 interservicio inválida.");
+  }
+
+  // Serialize the check-and-reserve pair so concurrent requests cannot both pass.
+  const cache = CacheService.getScriptCache();
+  const replayKey = `REPLAY_REQ_${requestId}`;
+  const replayLock = LockService.getScriptLock();
+  try {
+    replayLock.waitLock(5000);
+  } catch (error) {
+    throw new Error("INTERSERVICE_REPLAY_CHECK_BUSY");
+  }
+  try {
+    if (cache.get(replayKey)) {
+      throw new Error(`INTERSERVICE_REPLAY_DETECTED: Petición repetida detectada con requestId '${requestId}'.`);
+    }
+    cache.put(replayKey, "SEEN", 300);
+  } finally {
+    replayLock.releaseLock();
   }
 
   return { valid: true, sourceService, targetService, action, correlationId, requestId, payload: payload || {} };
