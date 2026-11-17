@@ -118,7 +118,7 @@ assert.equal(cacheValues.get("REPLAY_REQ_REQ-FORGED"), "SEEN");
 assert.equal(lockReleases, 1);
 
 // A second valid delivery is rejected as a replay, and the lock is released.
-assert.throws(() => runtime.verify(legitimate, "ACADEMIC", secret), /INTERSERVICE_REPLAY_DETECTED/);
+assert.throws(() => runtime.verify(legitimate, "ACADEMIC", credentialType), /INTERSERVICE_REPLAY_DETECTED/);
 assert.equal(lockReleases, 2);
 
 // Lock contention fails closed without consuming the requestId; a retry can then succeed.
@@ -127,7 +127,7 @@ lockBusy = true;
 assert.throws(() => runtime.verify(busyEnvelope, "ACADEMIC", credentialType), /INTERSERVICE_REPLAY_CHECK_BUSY/);
 assert.equal(cacheValues.has("REPLAY_REQ_REQ-BUSY"), false);
 lockBusy = false;
-assert.equal(runtime.verify(busyEnvelope, "ACADEMIC", secret).valid, true);
+assert.equal(runtime.verify(busyEnvelope, "ACADEMIC", credentialType).valid, true);
 assert.equal(lockReleases, 3);
 
 console.log("Academic interservice HMAC verification order, replay atomicity, and lock-contention contract: PASS");
