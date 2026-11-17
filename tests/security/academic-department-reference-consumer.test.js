@@ -1,167 +1,65 @@
-const assert = require("node:assert/strict");
-const crypto = require("node:crypto");
-const fs = require("node:fs");
-const path = require("node:path");
-const vm = require("node:vm");
-const source = fs.readFileSync(path.join(__dirname, "../../backend/academic-service/Code.gs"), "utf8");
-new vm.Script(source, { filename: "backend/academic-service/Code.gs" });
-function extractFunction(name) {
-  const start = source.indexOf("function " + name + "(");
-  assert.ok(start >= 0, name + " exists");
-  const next = source.indexOf("\nfunction ", start + 10);
-  const comment = source.indexOf("\n\n// [TAREA-F6-022]", start);
-  const end = comment >= 0 && (next < 0 || comment < next) ? comment : next;
-  return source.slice(start, end < 0 ? source.length : end);
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const path=require("node:path");
+const vm=require("node:vm");
+const source=fs.readFileSync(path.join(__dirname,"../../backend/academic-service/Code.gs"),"utf8");
+new vm.Script(source,{filename:"backend/academic-service/Code.gs"});
+function extractFunction(name){
+  const start=source.indexOf("function "+name+"(");
+  assert.ok(start>=0,"missing "+name);
+  const next=source.indexOf("\nfunction ",start+10);
+  return source.slice(start,next<0?source.length:next);
 }
-const helperSource = extractFunction("authorizeDepartmentReferenceReadViaUser_");
-const readerSource = extractFunction("getStudentDocuments");
-const privateFileSource = extractFunction("getVerifiedPrivateStudentDocumentFile_");
-const hashSource = extractFunction("computeDocumentSHA256");
-const secret = "academic-reference-secret-with-more-than-32-characters";
-const defaultFields = ["tipoDocumento", "nombreArchivo"];
-const defaultDocs = ["DOC-1"];
-function makeSheet(rows) { return { getDataRange() { return { getValues() { return rows; } }; } }; }
-function makeRuntime(options = {}) {
-  const calls = [];
-  let uuidSequence = 0;
-  const fileBytesById = {
-    "PRIVATE-DRIVE-ID": Buffer.from("private document one","utf8"),
-    "PRIVATE-DRIVE-ID-2": Buffer.from("private document two","utf8")
+const reader=extractFunction("getStudentDocuments");
+assert.doesNotMatch(source,/function authorizeDepartmentReferenceReadViaUser_/,"ACADEMIC no longer contains an interservice permission requester");
+assert.doesNotMatch(reader,/UrlFetchApp|computeHmacSignature|IMA_DEPARTMENT_REFERENCE_HMAC_SECRET|authorizeDepartmentReferenceRead/,"ordinary academic document reads do not call USER to request a per-operation grant");
+function makeSheet(rows){return{getDataRange(){return{getValues(){return rows.map(row=>row.slice());}};}};}
+function makeRuntime(){
+  const calls={scope:0,network:0,args:[]};
+  const sheets={
+    DocumentosEstudiante:makeSheet([
+      ["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl","FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones","VersionDocumento","SHA256"],
+      ["DOC-1","EXP-1","SOL-1","ACTA","Acta.pdf","FILE-1","https://drive.google.com/file/FILE-1","2026-01-02","","VALIDADO","U1","","","1.0","hash"],
+      ["DOC-2","EXP-1","SOL-1","IDENTIDAD","Identidad.pdf","FILE-2","https://drive.google.com/file/FILE-2","2026-01-03","","PENDIENTE","U1","","","1.0","hash2"]
+    ])
   };
-  const hash1 = crypto.createHash("sha256").update(fileBytesById["PRIVATE-DRIVE-ID"]).digest("hex");
-  const hash2 = crypto.createHash("sha256").update(fileBytesById["PRIVATE-DRIVE-ID-2"]).digest("hex");
-  const documentRows = [
-    ["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl","FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones","VersionDocumento","SHA256"],
-    ["DOC-1","EXP-1","","ACTA","Acta de nacimiento.pdf","PRIVATE-DRIVE-ID","https://drive.google.com/private","2026-01-02","","VALIDADO","U1","U2","dato privado","1.0",hash1],
-    ["DOC-2","EXP-1","","IDENTIDAD","Identidad.pdf","PRIVATE-DRIVE-ID-2","https://drive.google.com/private2","2026-01-03","","PENDIENTE","U1","","otro dato privado","1.0",hash2]
-  ];
-  const sheets = { DocumentosEstudiante: makeSheet(documentRows), ExpedientesEstudiantes: makeSheet([["ExpedienteID","PersonaID"],["EXP-1","PERSON-1"]]) };
-  const context = {
-    Date,String,Array,Object,Number,Math,JSON,isNaN,SPREADSHEET_ID:"TEST",
+  const context={
+    SPREADSHEET_ID:"TEST",
     SpreadsheetApp:{openById(){return{getSheetByName(name){return sheets[name]||null;}};}},
-    DriveApp:{Access:{PRIVATE:"PRIVATE"},getFileById(id){
-      if(options.referenceMode)throw new Error("reference path must not touch Drive");
-      const bytes=fileBytesById[id];if(!bytes)throw new Error("FILE_NOT_FOUND");
-      return {isTrashed(){return false;},getSharingAccess(){return "PRIVATE";},getName(){return id==="PRIVATE-DRIVE-ID"?"Acta de nacimiento.pdf":"Identidad.pdf";},
-        getBlob(){return {getBytes(){return Array.from(bytes);}};}};
-    }},
-    PropertiesService:{getScriptProperties(){return{getProperty(name){
-      if(name==="IMA_USER_SERVICE_URL")return options.url===undefined?"https://user.example/exec":options.url;
-      if(name==="IMA_DEPARTMENT_REFERENCE_HMAC_SECRET")return options.secret===undefined?secret:options.secret;
-      return null;
-    }};}},
-    Utilities:{MacAlgorithm:{HMAC_SHA_256:"HMAC_SHA_256"},DigestAlgorithm:{SHA_256:"SHA_256"},getUuid(){uuidSequence++;return String(uuidSequence).padStart(12,"0")+"-1234-1234-1234-123456789012";},
-      base64Encode(value){return Buffer.from(value).toString("base64");},
-      computeDigest(_algorithm,bytes){return Array.from(crypto.createHash("sha256").update(Buffer.from(bytes)).digest());},
-      computeHmacSignature(algorithm,body,key){return Array.from(crypto.createHmac("sha256",key).update(body).digest());}},
-    UrlFetchApp:{fetch(url,request){
-      calls.push({url,request});
-      if(options.fetchError)throw new Error("network unavailable");
-      if(url!=="https://user.example/exec")throw new Error("unexpected URL");
-      const envelope=JSON.parse(request.payload);
-      assert.equal(envelope.sourceService,"ACADEMIC");assert.equal(envelope.targetService,"USER");
-      assert.equal(envelope.action,"authorizeDepartmentReferenceRead");
-      assert.equal(envelope.payload.resourceType,"EXPEDIENTE_ESTUDIANTE");assert.equal(envelope.payload.resourceId,"EXP-1");
-      assert.equal(envelope.payload.sessionToken,"signed-session-token");
-      if(options.expectedActiveDepartmentId !== undefined) assert.equal(envelope.payload.activeDepartmentId,options.expectedActiveDepartmentId);
-      if(options.expectNoActiveDepartment) assert.equal(Object.prototype.hasOwnProperty.call(envelope.payload,"activeDepartmentId"),false);
-      const body=envelope.requestId+"|"+envelope.timestamp+"|"+envelope.correlationId+"|"+envelope.sourceService+"|"+envelope.targetService+"|"+envelope.action+"|"+JSON.stringify(envelope.payload);
-      assert.equal(envelope.hmacSignature,crypto.createHmac("sha256",secret).update(body).digest("hex"));
-      if(options.httpCode)return{getResponseCode(){return options.httpCode;},getContentText(){return"{}";}};
-      if(options.malformed)return{getResponseCode(){return 200;},getContentText(){return"not-json";}};
-      const response=options.response||{status:"success",authorized:true,requiresStandardAuthorization:true,
-        approvedFields:envelope.payload.requestedFields,approvedDocumentIds:envelope.payload.requestedDocumentIds,grantId:"GRANT-1",auditEventId:"AUDIT-1"};
-      return{getResponseCode(){return 200;},getContentText(){return JSON.stringify(response);}};
-    }},
-    assertStudentDocumentScopeAccess_(){return options.sameDepartment?{authorized:true,departmentId:"DEP-A",accessType:"STAFF"}:{authorized:false,code:"RESOURCE_SCOPE_DENIED"};},
-    validateFileBinaryIntegrity(data,name){const bytes=Buffer.from(data,"base64");if(!String(name).toLowerCase().endsWith(".pdf"))throw new Error("FILE_EXTENSION_NOT_ALLOWED");return{mimeType:"application/pdf",byteLength:bytes.length};}
+    assertStudentRequestScopeAccess_(request,ss,expedienteId,solicitudId){
+      calls.scope++;calls.args.push({expedienteId,solicitudId});
+      return {authorized:request._allowScope!==false,code:"RESOURCE_SCOPE_DENIED"};
+    },
+    UrlFetchApp:{fetch(){calls.network++;throw new Error("interservice call must not happen");}},
+    String,Array,Object,Number,JSON,isNaN
   };
   vm.createContext(context);
-  vm.runInContext("const ACADEMIC_DEPARTMENT_REFERENCE_SAFE_FIELDS_=[\"tipoDocumento\",\"nombreArchivo\",\"fechaRecepcion\",\"fechaVencimiento\",\"estadoRevision\"];\n"+
-    helperSource+"\n"+hashSource+"\n"+privateFileSource+"\n"+readerSource+"\nthis.read=getStudentDocuments;",context);
+  vm.runInContext(reader+"\nthis.read=getStudentDocuments;",context);
   return{context,calls};
 }
-function request(overrides={}){return Object.assign({expedienteId:"exp-1",sessionToken:"signed-session-token",activeDepartmentId:"DEP-A",
-  referenceRequestedFields:defaultFields.slice(),referenceDocumentIds:defaultDocs.slice()},overrides);}
 {
- const h=makeRuntime({referenceMode:true,expectedActiveDepartmentId:"DEP-A"}),r=h.context.read(request());
- assert.equal(r.status,"success");assert.equal(r.referenceOnly,true);assert.equal(r.grantId,"GRANT-1");assert.equal(r.auditEventId,"AUDIT-1");
- assert.deepEqual(JSON.parse(JSON.stringify(r.documents)),[{documentoId:"DOC-1",tipoDocumento:"ACTA",nombreArchivo:"Acta de nacimiento.pdf"}]);
- assert.equal(h.calls.length,1);assert.equal(h.calls[0].request.contentType,"application/json");assert.equal(h.calls[0].request.method,"post");
+ const h=makeRuntime(),r=h.context.read({expedienteId:"EXP-1",sessionToken:"session"});
+ assert.equal(r.status,"success");
+ assert.equal(r.documents.length,2);
+ assert.equal(h.calls.scope,1,"one expediente-level check covers all attached documents");
+ assert.equal(h.calls.network,0,"no second service permission request");
+ assert.equal("driveFileId" in r.documents[0],false);
+ assert.equal("driveUrl" in r.documents[0],false);
 }
 {
- const h=makeRuntime({sameDepartment:true}),r=h.context.read(request());
- assert.equal(r.status,"success");assert.equal(r.referenceOnly,undefined);assert.equal(r.documents.length,2);
- assert.equal(r.documents[0].tieneArchivo,true);assert.equal("integridadVerificada" in r.documents[0],false);assert.equal("driveAccessible" in r.documents[0],false);assert.equal("driveFileId" in r.documents[0],false);assert.equal("driveUrl" in r.documents[0],false);assert.equal(h.calls.length,0);
+ const h=makeRuntime(),r=h.context.read({expedienteId:"EXP-1",sessionToken:"session",_allowScope:false,
+   referenceRequestedFields:["nombreArchivo"],referenceDocumentIds:["DOC-1"]});
+ assert.equal(r.status,"error");
+ assert.equal(r.code,"RESOURCE_SCOPE_DENIED");
+ assert.equal(h.calls.scope,1);
+ assert.equal(h.calls.network,0,"reference metadata cannot trigger a USER authorization round trip");
 }
 {
- const h=makeRuntime({referenceMode:true,response:{status:"error",authorized:false,code:"DEPARTMENT_REFERENCE_GRANT_NOT_FOUND"}});
- const r=h.context.read(request());assert.equal(r.status,"error");assert.equal(r.code,"RESOURCE_NOT_FOUND");assert.equal(r.documents,undefined);
+ const h=makeRuntime(),r=h.context.read({solicitudId:"SOL-1",sessionToken:"session"});
+ assert.equal(r.status,"success");
+ assert.equal(r.documents.length,2);
+ assert.equal(h.calls.scope,1,"application-level listing is authorized once");
+ assert.equal(h.calls.args[0].solicitudId,"sol-1");
 }
-{
- const h=makeRuntime({referenceMode:true,response:{status:"success",authorized:true,requiresStandardAuthorization:false,approvedFields:defaultFields,approvedDocumentIds:defaultDocs,grantId:"G",auditEventId:"A"}});
- assert.equal(h.context.read(request()).status,"error");
-}
-{
- const h=makeRuntime({referenceMode:true,response:{status:"success",authorized:true,requiresStandardAuthorization:true,approvedFields:["tipoDocumento"],approvedDocumentIds:defaultDocs,grantId:"G",auditEventId:"A"}});
- assert.equal(h.context.read(request()).status,"error");
-}
-{
- const h=makeRuntime({referenceMode:true,fetchError:true});assert.equal(h.context.read(request()).code,"RESOURCE_NOT_FOUND");
-}
-{
- const h=makeRuntime({referenceMode:true,httpCode:503});assert.equal(h.context.read(request()).status,"error");
-}
-{
- const h=makeRuntime({referenceMode:true,malformed:true});assert.equal(h.context.read(request()).status,"error");
-}
-{
- const h=makeRuntime({referenceMode:true,url:"http://user.example/exec"});assert.equal(h.context.read(request()).status,"error");assert.equal(h.calls.length,0);
-}
-{
- const h=makeRuntime({referenceMode:true,secret:"short"});assert.equal(h.context.read(request()).status,"error");assert.equal(h.calls.length,0);
-}
-{
- const h=makeRuntime({referenceMode:true}),r=h.context.read(request({referenceRequestedFields:["driveUrl"]}));
- assert.equal(r.code,"DEPARTMENT_REFERENCE_REQUEST_INVALID");assert.equal(h.calls.length,0);
-}
-{
- const h=makeRuntime({referenceMode:true}),r=h.context.read(request({referenceDocumentIds:["DOC-1","DOC-1"]}));
- assert.equal(r.code,"DEPARTMENT_REFERENCE_REQUEST_INVALID");assert.equal(h.calls.length,0);
-}
-{
- const h=makeRuntime({referenceMode:true}),r=h.context.read(request({solicitudId:"SOL-1",expedienteId:undefined}));
- assert.equal(r.status,"success");assert.equal(r.documents.length,0);assert.equal(h.calls.length,0);
-}
-{
- const h=makeRuntime({referenceMode:true}),r=h.context.read(request({referenceDocumentIds:["DOC-404"]}));
- assert.equal(r.code,"RESOURCE_NOT_FOUND");assert.equal(h.calls.length,0);
-}
-{
- const h=makeRuntime({referenceMode:true}),r=h.context.read(request({referenceDocumentIds:["DOC-1","DOC-2"]}));
- assert.equal(r.status,"success");assert.equal(r.documents.length,2);
- assert.equal(r.documents.every(d=>!("driveUrl"in d)&&!("driveFileId"in d)&&!("historialVersiones"in d)),true);
-}
-{
- const h=makeRuntime({referenceMode:true}),r=h.context.read({sessionToken:"signed-session-token"});
- assert.equal(r.status,"error");assert.equal(h.calls.length,0);
-}
-{
- const h=makeRuntime({referenceMode:true}),r=h.context.read(request({referenceRequestedFields:[]}));
- assert.equal(r.status,"error");assert.equal(h.calls.length,0);
-}
-{
- const h=makeRuntime({referenceMode:true,expectedActiveDepartmentId:"DEP-B"}),r=h.context.read(request({activeDepartmentId:"DEP-B"}));
- assert.equal(r.status,"success");assert.equal(h.calls.length,1);
-}
-{
- const h=makeRuntime({referenceMode:true,expectNoActiveDepartment:true}),r=h.context.read(request({activeDepartmentId:undefined}));
- assert.equal(r.status,"success");assert.equal(h.calls.length,1);
-}
-{
- const h=makeRuntime({referenceMode:true});
- h.context.read(request());h.context.read(request());
- const requestIds=h.calls.map(call=>JSON.parse(call.request.payload).requestId);
- assert.equal(requestIds.length,2);assert.notEqual(requestIds[0],requestIds[1]);
-}
-process.stdout.write("ACADEMIC department reference consumer contract: 20 scenarios PASS.\n");
+process.stdout.write("Academic document reference consumer: one local scope check, no interservice permission round trip (3 scenarios PASS).\n");
