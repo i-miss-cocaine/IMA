@@ -120,9 +120,9 @@ function normalizeMigrationNaturalKey_(field, value) {
   if (raw.normalize) raw = raw.normalize("NFKC");
   raw = raw.trim().toLowerCase();
   if (field === "Identificacion") return raw.replace(/[^a-z0-9]/g, "");
-  if (field === "EmailContacto") return raw.replace(/\\s+/g, "");
-  if (field === "CodigoInstitucional" || field === "PersonaId" || field === "UserId") return raw.replace(/\\s+/g, "");
-  return raw.replace(/\\s+/g, " ");
+  if (field === "EmailContacto") return raw.replace(/\s+/g, "");
+  if (field === "CodigoInstitucional" || field === "PersonaId" || field === "UserId") return raw.replace(/\s+/g, "");
+  return raw.replace(/\s+/g, " ");
 }
 function migrationDuplicateKeyDefinitions_(entityType) {
   var definitions = {
@@ -787,7 +787,7 @@ function buildImportPreview_(payload) {
   var duplicatePolicy = String(input.politicaDuplicados || "RECHAZAR").trim().toUpperCase();
   var allowedDuplicatePolicies = ["RECHAZAR", "ACTUALIZAR", "VINCULAR"];
   if (allowedDuplicatePolicies.indexOf(duplicatePolicy) === -1) addError("IMPORT_DUPLICATE_POLICY_INVALID", "Seleccione una política válida para resolver coincidencias.");
-  var seenNaturalKeys = {};
+  var seenNaturalKeys = {}, duplicateFilePreparedIndexes = {};
   preparedRows.forEach(function(row, preparedIndex) {
     migrationDuplicateKeyDefinitions_(entityType).forEach(function(definition) {
       var value = definition.field === "NombreCompleto" ? [row.Nombres, row.Apellidos].filter(Boolean).join(" ") : row[definition.field];
@@ -799,6 +799,7 @@ function buildImportPreview_(payload) {
         var rowNumber = Array.isArray(structural.dataRowNumbers) && structural.dataRowNumbers[originalIndex] ?
           Number(structural.dataRowNumbers[originalIndex]) : originalIndex + 2;
         addError("DUPLICATE_NATURAL_KEY_IN_FILE", "La clave natural aparece más de una vez en el archivo.", rowNumber);
+        duplicateFilePreparedIndexes[preparedIndex] = true;
       } else seenNaturalKeys[key] = preparedIndex;
     });
   });
@@ -831,7 +832,7 @@ function buildImportPreview_(payload) {
   var targetSnapshot = buildMigrationTargetExistenceSnapshot_(schema, preparedRows, institutionId, ss, input);
   if (targetSnapshot.verified !== true) addError("TARGET_EXISTENCE_UNVERIFIED", "No se pudo verificar el identificador de destino en el servicio propietario; la incorporación queda bloqueada.");
   var duplicateMatches = Array.isArray(targetSnapshot.duplicateMatches) ? targetSnapshot.duplicateMatches : [];
-  var rejectedPreparedIndexes = {};
+  var rejectedPreparedIndexes = Object.assign({}, duplicateFilePreparedIndexes);
   if (duplicateMatches.length && allowedDuplicatePolicies.indexOf(duplicatePolicy) === -1) {
     addError("IMPORT_DUPLICATE_POLICY_REQUIRED", "Debe seleccionar una política explícita para resolver los duplicados.");
   }
