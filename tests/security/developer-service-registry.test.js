@@ -140,7 +140,7 @@ assert.deepEqual(JSON.parse(h.sheets.CatalogoServicios.rows[1][9]), ["read"]);
 assert.equal(h.getCentralServiceRegistry({}).totalServicios, 1);
 
 h = harness({ CatalogoServicios: sheet([row("SVC-OLD","Existing legacy")]) });
-result = h.registerServiceInstance({ serviceId: "SVC-NEW", name: "New service" });
+result = h.registerServiceInstance({ serviceId: "SVC-NEW", name: "New service", cuentaPropietaria: "owner@example.invalid", spreadsheetAsociado: "SHEET-NEW" });
 assert.equal(result.status, "success");
 assert.deepEqual(h.sheets.CatalogoServicios.rows[0], registryHeaders);
 assert.equal(h.sheets.CatalogoServicios.rows[1][0], "SVC-OLD", "legacy row must be preserved");
@@ -149,6 +149,9 @@ assert.equal(h.sheets.CatalogoServicios.rows[2][0], "SVC-NEW");
 h = harness();
 assert.throws(() => h.registerServiceInstance({ serviceId: "SVC-BAD", name: "Bad", permisosConcedidos: "read" }), /INVALID_SERVICE_PERMISSIONS/);
 assert.equal(Object.keys(h.sheets).length, 0, "invalid registration must not create or mutate the registry");
+h = harness();
+assert.throws(() => h.registerServiceInstance({ serviceId: "SVC-NO-OWNER", name: "No owner" }), /SERVICE_OWNER_AND_SPREADSHEET_REQUIRED/);
+assert.equal(Object.keys(h.sheets).length, 0, "missing owner/spreadsheet must not create a fictitious registry entry");
 
 h = harness({ CatalogoServicios: sheet([registryHeaders, row("SVC-1","Service")]) });
 result = h.updateServiceStatus({ serviceId: "SVC-1", newState: "degradado", reason: "test", updatedBy: "synthetic" });

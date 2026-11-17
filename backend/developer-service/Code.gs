@@ -2628,6 +2628,9 @@ function registerServiceInstance(payload) {
 
   const sId = String(serviceId).trim();
   const sName = String(name).trim();
+  const ownerAccount = String(cuentaPropietaria || "").trim();
+  const associatedSpreadsheetId = String(spreadsheetAsociado || "").trim();
+  if (!ownerAccount || !associatedSpreadsheetId) throw new Error("SERVICE_OWNER_AND_SPREADSHEET_REQUIRED");
   if (permisosConcedidos !== undefined && (!Array.isArray(permisosConcedidos) || permisosConcedidos.some(function(value) { return typeof value !== "string" || !value.trim(); }))) {
     throw new Error("INVALID_SERVICE_PERMISSIONS");
   }
@@ -2652,9 +2655,9 @@ function registerServiceInstance(payload) {
     sId,
     sName,
     departamento || type || "General",
-    cuentaPropietaria || "sistema@institucional.edu",
+    ownerAccount,
     endpointUrl || "",
-    spreadsheetAsociado || SPREADSHEET_ID,
+    associatedSpreadsheetId,
     dominioDatos || type || "Institucional",
     "Activo", // Estados: registrado, activo, degradado, desconectado, suspendido, retirado
     version || "v1.0.0",
@@ -2666,7 +2669,7 @@ function registerServiceInstance(payload) {
     status: "success",
     serviceId: sId,
     name: sName,
-    cuentaPropietaria: cuentaPropietaria || "sistema@institucional.edu",
+    cuentaPropietaria: ownerAccount,
     estado: "Activo",
     registeredAt: now.toISOString(),
     message: `Microservicio ${sId} - ${sName} registrado exitosamente en el catálogo distribuido.`
