@@ -300,7 +300,7 @@
 
         var badgeHtml = '<div class="mt-4 flex flex-col items-center gap-2">' +
             '<span class="px-4 py-1 ' + (userRange.label === 'Leyenda' ? 'bg-amber-500 shadow-amber-200' : 'bg-indigo-600 shadow-indigo-100') + ' text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">' + userRange.label + '</span>' +
-            '<p class="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">' + currentXP.toLocaleString() + ' XP ACUMULADA</p>' +
+            '<p class="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">' + window.IMARegionalFormatters.formatNumber(currentXP, { maximumFractionDigits: 0 }) + ' XP ACUMULADA</p>' +
         '</div>';
 
         var existingBadge = document.getElementById('user-rank-badge');
@@ -1457,7 +1457,7 @@
                         '<span class="text-sm font-black ' + ((user.promedio || 0) >= 70 ? 'text-emerald-600' : 'text-gray-400') + '">' + (user.promedio || 0) + '%</span>' +
                     '</td>' +
                     '<td class="px-6 py-4 text-right">' +
-                        '<span class="text-[10px] font-bold text-gray-500">' + xp.toLocaleString() + '</span>' +
+                        '<span class="text-[10px] font-bold text-gray-500">' + window.IMARegionalFormatters.formatNumber(xp, { maximumFractionDigits: 0 }) + '</span>' +
                     '</td>' +
                 '</tr>';
             }).join('');
@@ -1570,7 +1570,7 @@
         if (elMastery) elMastery.textContent = (window.formatearMetricaPsicométrica ? window.formatearMetricaPsicométrica(latestMastery) : latestMastery.toFixed(2)) + "%";
         if (elICR) elICR.textContent = (window.formatearMetricaPsicométrica ? window.formatearMetricaPsicométrica(latestICR) : latestICR.toFixed(2)) + "%";
         if (elIA) elIA.textContent = (window.formatearMetricaPsicométrica ? window.formatearMetricaPsicométrica(latestIA) : latestIA.toFixed(2)) + "%";
-        if (elXP) elXP.textContent = Math.round(totalXP).toLocaleString();
+        if (elXP) elXP.textContent = window.IMARegionalFormatters.formatNumber(Math.round(totalXP), { maximumFractionDigits: 0 });
 
         if (calBadge) {
             if (qProLogs.length > 0 && qProLogs.length < 30) calBadge.classList.remove('hidden');

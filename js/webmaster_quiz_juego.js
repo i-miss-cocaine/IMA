@@ -681,7 +681,7 @@
                         '<span class="text-teal-700">' + (i+1) + '. ' + (u.nombre ? u.nombre.split(' ')[0] : 'Alumno') + '</span>' +
                         '<div class="flex flex-col items-end">' +
                             '<span class="text-teal-500">' + u.promedio + '%</span>' +
-                            '<span class="text-[8px] text-gray-400 font-black">' + (u.xp || 0).toLocaleString() + ' XP</span>' +
+                            '<span class="text-[8px] text-gray-400 font-black">' + window.IMARegionalFormatters.formatNumber(u.xp || 0, { maximumFractionDigits: 0 }) + ' XP</span>' +
                         '</div>' +
                     '</div>';
             }).join('');

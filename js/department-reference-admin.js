@@ -109,7 +109,7 @@
     function formatDate(value) {
         if (!value) return "—";
         var date = new Date(value);
-        return isNaN(date.getTime()) ? String(value) : date.toLocaleString();
+        return isNaN(date.getTime()) ? String(value) : window.IMARegionalFormatters.formatDateTime(date);
     }
 
     function renderGrants(grants) {
