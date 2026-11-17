@@ -1236,10 +1236,14 @@ function verifyInterServiceEnvelope(envelope, expectedTargetService, credentialT
   const now = Date.now();
   if (Math.abs(now - timestamp) > 300000) throw new Error("INTERSERVICE_REQUEST_EXPIRED: La solicitud interservicio ha expirado.");
 
-  const secret = resolveInterServiceSecret_(sourceService, credentialType, "VERIFY");
+  if (credentialType === undefined || credentialType === null || credentialType === "") throw new Error("INTERSERVICE_CREDENTIAL_TYPE_REQUIRED");
+  if (credentialType !== "IMA_MIGRATION_HMAC_SECRET") throw new Error("INTERSERVICE_CREDENTIAL_TYPE_INVALID");
+  const verificationSecrets = getMigrationHmacSecrets_(sourceService);
   const bodyToSign = `${requestId}|${timestamp}|${correlationId}|${sourceService}|${targetService}|${action}|${JSON.stringify(payload || {})}`;
-  const expectedSig = computeHmacSignature(bodyToSign, secret);
-  if (hmacSignature !== expectedSig) throw new Error("INVALID_INTERSERVICE_SIGNATURE: Firma HMAC-SHA256 interservicio inválida.");
+  const signatureValid = verificationSecrets.some(function(secret) {
+    return hmacSignature === computeHmacSignature(bodyToSign, secret);
+  });
+  if (!signatureValid) throw new Error("INVALID_INTERSERVICE_SIGNATURE: Firma HMAC-SHA256 interservicio inválida.");
 
   const cache = CacheService.getScriptCache();
   const replayKey = `REPLAY_REQ_${requestId}`;
