@@ -7,6 +7,7 @@ const upload=extract("uploadFile");
 assert.doesNotMatch(upload,/validateTaskUploadFile_|validateRolePermission|verifySessionToken/);
 assert.match(upload,/assertTaskServiceStudentCanAccessTask\(ss,actorId,taskData\)/);
 assert.match(upload,/assertTaskServiceTeacherCanManageTask\(request,taskData,"UPLOAD_FILE"\)/);
+assert.doesNotMatch(upload,/getTaskServiceUserProfile\(/,"folder placement reuses task data instead of reading the user profile again");
 assert.match(upload,/50 \* 1024 \* 1024/);
 assert.match(upload,/mp4:"video\/mp4"/);
 assert.match(upload,/application\/octet-stream/);
@@ -19,7 +20,7 @@ const context={
  getSheetOrThrow:(_ss,name)=>{assert.equal(name,"Tareas");return{getDataRange:()=>({getValues:()=>taskRows})};},
  assertTaskServiceStudentCanAccessTask:(_ss,userId,row)=>{studentChecks++;assert.equal(userId,"STUDENT-1");assert.equal(row[0],"TASK-1");return {grado:"6",seccion:"A",nombre:"Student"};},
  assertTaskServiceTeacherCanManageTask:(request,row,operation)=>{teacherChecks++;assert.equal(request._verifiedUserId,"TEACHER-1");assert.equal(row[10],"TEACHER-1");assert.equal(operation,"UPLOAD_FILE");},
- getTaskServiceUserProfile:userId=>({grado:"6",seccion:"A",nombre:userId}),
+ getTaskServiceUserProfile:()=>{throw new Error("UNNECESSARY_USER_PROFILE_READ");},
  isTaskServiceAdministrativeRole:role=>role==="Administrador",
  getOrCreateFolder:()=>{folderCalls++;return folder;},
  DriveApp:{getFolderById:id=>{assert.equal(id,"ROOT");return folder;}},

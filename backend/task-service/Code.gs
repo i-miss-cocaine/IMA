@@ -1836,15 +1836,13 @@ function uploadFile(payload) {
   const taskData = getSheetOrThrow(ss,"Tareas").getDataRange().getValues().slice(1)
     .find(row => String(row[0] || "").trim() === taskId);
   if (!taskData) throw new Error("Tarea no encontrada.");
-  let profile;
+  let profile = {grado:String(taskData[6] || "General"),seccion:String(taskData[7] || "General")};
   if (role === "Estudiante" || role === "Alumno") {
-    profile = assertTaskServiceStudentCanAccessTask(ss,actorId,taskData);
+    const studentProfile = assertTaskServiceStudentCanAccessTask(ss,actorId,taskData);
+    if (studentProfile) profile = studentProfile;
   } else if (role === "Profesor") {
     assertTaskServiceTeacherCanManageTask(request,taskData,"UPLOAD_FILE");
-    profile = getTaskServiceUserProfile(actorId);
-  } else if (isTaskServiceAdministrativeRole(role)) {
-    profile = getTaskServiceUserProfile(actorId);
-  } else {
+  } else if (!isTaskServiceAdministrativeRole(role)) {
     throw new Error("Rol no autorizado para subir archivos.");
   }
   const parts = fileData.split(",");
