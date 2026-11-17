@@ -96,6 +96,12 @@ const accountingContext = {
   })[key] || "" }) },
   isAccountingTrustedAppsScriptEndpoint_: url => url === "https://user.example.test/exec",
   createInterServiceEnvelope: () => ({}),
+  resolveInterServiceSecret_: (sourceService, credentialType, purpose) => {
+    assert.equal(sourceService, "ACCOUNTING");
+    assert.equal(credentialType, "IMA_MIGRATION_HMAC_SECRET");
+    assert.equal(purpose, "SIGN");
+    return secret;
+  },
   Utilities: { getUuid: () => "12345678-1234-1234-1234-123456789012" },
   accountingComputeHmacSignature_: (message, key) => crypto.createHmac("sha256", key).update(String(message)).digest("hex"),
   UrlFetchApp: { fetch: (url, options) => {
