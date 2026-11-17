@@ -18,6 +18,23 @@ No hubo muestra suficiente para generalizar opiniones sobre ERP/contabilidad, RR
 
 ## Paquetes, requisitos y criterios de aceptación
 
+### Requisito transversal obligatorio — Autenticación de inicio de sesión y continuidad de sesión
+**Alcance:** aplica a login, identidad, sesiones, roles, permisos, responsabilidades, middleware, guards, API y todos los servicios que participen en tareas de seguridad o rendimiento de autenticación.
+
+**Requisito de experiencia:** validar las credenciales (incluida la contraseña) en el inicio de sesión. Una vez autenticado, establecer el contexto de identidad, roles, privilegios y responsabilidades del usuario para la sesión. Durante las actividades normales no volver a solicitar la contraseña, no repetir autenticación completa ni ejecutar en cada operación consultas redundantes para reconstruir/verificar la identidad, el rol, la matriz de privilegios o las responsabilidades cuando el contexto de sesión ya está disponible. Las operaciones deben reutilizar ese contexto de forma eficiente y evitar latencia, llamadas innecesarias y bloqueos de UX.
+
+**Límites de seguridad que se conservan:** este requisito no autoriza aceptar identidad/rol/permisos enviados libremente por el cliente, omitir la integridad del contexto de sesión, permitir acceso entre instituciones o recursos ajenos, ni ignorar expiración, cierre de sesión o revocación efectiva. Los controles de integridad y autorización necesarios deben implementarse de forma ligera y reutilizando el contexto establecido; las comprobaciones adicionales deben limitarse a cambios de contexto, operaciones sensibles o eventos que invaliden la sesión, no repetirse indiscriminadamente en cada actividad.
+
+**Criterios obligatorios para futuras tareas de seguridad:**
+- separar autenticación de credenciales (inicio de sesión) de reutilización del contexto durante la sesión;
+- no revalidar contraseña ni reconstruir roles/permisos/responsabilidades en cada acción ordinaria;
+- evitar consultas repetidas a hojas/servicios, llamadas remotas y cálculos completos de permisos cuando los datos necesarios ya estén en el contexto vigente;
+- mantener protección contra suplantación, manipulación del cliente, IDOR y cruces de tenant/ámbito mediante contexto confiable y controles proporcionales;
+- invalidar o actualizar el contexto cuando exista logout, expiración, revocación, suspensión o cambio efectivo de privilegios, sin convertir ese manejo en verificaciones redundantes por operación;
+- incluir pruebas de rendimiento/contrato que demuestren reutilización del contexto y ausencia de autenticaciones/consultas redundantes, además de las pruebas de seguridad pertinentes.
+
+**Carácter:** obligatorio y transversal. Toda futura modificación de autenticación/autorización/sesiones debe revisar y cumplir este requisito. No se interpreta como autorización para eliminar los controles de seguridad necesarios.
+ 
 ### UNI-U01 — Tenants, instituciones y sedes
 **Requisitos:** tenant como frontera de seguridad; instituciones/sedes subordinadas; grupos opcionales; estado, país, zona horaria, módulos y contexto explícito en sesión/API.  
 **Aceptación:** dos tenants aislados; toda lectura/escritura/búsqueda/archivo/export/job exige tenant; IDs manipulados no cruzan datos; suspensión bloquea operaciones sin borrar historia.  

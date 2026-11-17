@@ -161,6 +161,8 @@ Las pruebas de seguridad, unidad y contrato no se posponen hasta PM-08: se ejecu
 
 **Incluye:** autenticación y claims; sesiones y revocación; RBAC/ABAC; permisos por operación; ámbitos institucionales/departamentales; roles simultáneos; propiedad de registros y archivos; aislamiento entre estudiantes, familias, docentes, departamentos e instituciones; protección de datos sensibles; auditoría de accesos.
 
+**Requisito transversal obligatorio de rendimiento/UX de sesión:** aplicar `Auditoría/PLAN-IMA-001_UNIDADES_FUNCIONALES.md` → “Autenticación de inicio de sesión y continuidad de sesión”: credenciales se validan al iniciar sesión; durante la sesión se reutiliza el contexto confiable sin repetir autenticación completa ni reconstruir roles/permisos/responsabilidades en cada operación ordinaria. Conservar integridad, expiración, logout, revocación y protección de recursos mediante controles ligeros y proporcionales.
+
 **Familias y grupos principales:** TAREA-F4; F8 (seguridad/autorización); F16 (roles y responsabilidades como modelo, separando función de permiso); F40 (seguridad documental, en su parte de autorización); TASK-068/153/636/682 y los registros AUD-NG que describen bypasses, IDOR, permisos o exposición de datos.
 
 **Puerta de salida:** todas las rutas sensibles derivan actor, rol y ámbito desde identidad verificada en servidor; ninguna autorización depende de `authRole` o IDs manipulables del payload; permisos positivos y negativos probados en cada servicio; revocación y expiración efectivas.
