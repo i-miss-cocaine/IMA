@@ -87,6 +87,10 @@ function expectCode(fn, code) {
 }
 
 const userProps = { IMA_MIGRATION_HMAC_SECRET: oldSecret, IMA_MIGRATION_HMAC_SECRET_VERSION: "v1" };
+const userVerificationProps = Object.assign({}, userProps, {
+  IMA_MIGRATION_HMAC_SECRET_USER: oldSecret,
+  IMA_MIGRATION_HMAC_SECRET_VERSION_USER: "v1"
+});
 {
   const h = makeHarness({ properties: userProps });
   assert.equal(h.api.get("USER", "SIGN"), oldSecret);
@@ -169,7 +173,7 @@ const userProps = { IMA_MIGRATION_HMAC_SECRET: oldSecret, IMA_MIGRATION_HMAC_SEC
   assert.equal(h.api.get("ACCOUNTING", "VERIFY"), oldSecret, "source-specific verification key and active version resolve");
 }
 {
-  const h = makeHarness({ properties: userProps });
+  const h = makeHarness({ properties: userVerificationProps });
   const envelope = h.api.create("USER", "ACADEMIC", "sampleAction", { value: 1 }, TYPE);
   assert.equal(h.api.verify(envelope, "ACADEMIC", TYPE).valid, true);
   expectCode(() => h.api.verify(envelope, "ACADEMIC", TYPE), "INTERSERVICE_REPLAY_DETECTED");
@@ -177,7 +181,7 @@ const userProps = { IMA_MIGRATION_HMAC_SECRET: oldSecret, IMA_MIGRATION_HMAC_SEC
   assert.equal(h.state.lockReleases, 2);
 }
 {
-  const h = makeHarness({ properties: userProps });
+  const h = makeHarness({ properties: userVerificationProps });
   const envelope = h.api.create("USER", "ACADEMIC", "sampleAction", { value: 2 }, TYPE);
   envelope.hmacSignature = "0".repeat(64);
   expectCode(() => h.api.verify(envelope, "ACADEMIC", TYPE), "INVALID_INTERSERVICE_SIGNATURE");
@@ -188,17 +192,19 @@ const userProps = { IMA_MIGRATION_HMAC_SECRET: oldSecret, IMA_MIGRATION_HMAC_SEC
   assert.equal(h.api.verify(envelope, "ACADEMIC", TYPE).valid, true, "the valid retry can use the same request ID");
 }
 {
-  const h = makeHarness({ properties: userProps, lockBusy: true });
+  const h = makeHarness({ properties: userVerificationProps, lockBusy: true });
   const envelope = h.api.create("USER", "ACADEMIC", "sampleAction", {}, TYPE);
   expectCode(() => h.api.verify(envelope, "ACADEMIC", TYPE), "INTERSERVICE_REPLAY_CHECK_BUSY");
   assert.equal(h.state.cacheWrites, 0);
   assert.equal(h.state.lockReleases, 0);
 }
 {
-  const h = makeHarness({ properties: userProps });
+  const h = makeHarness({ properties: userVerificationProps });
   const envelope = h.api.create("USER", "ACADEMIC", "sampleAction", {}, TYPE);
   h.properties.IMA_MIGRATION_HMAC_SECRET = newSecret;
   h.properties.IMA_MIGRATION_HMAC_SECRET_VERSION = "v2";
+  h.properties.IMA_MIGRATION_HMAC_SECRET_USER = newSecret;
+  h.properties.IMA_MIGRATION_HMAC_SECRET_VERSION_USER = "v2";
   h.setRows([headers, row("CRED-OLD", "USER", "v1", "REVOKED", oldSecret), row("CRED-NEW", "USER", "v2", "ACTIVE", newSecret)]);
   expectCode(() => h.api.verify(envelope, "ACADEMIC", TYPE), "INVALID_INTERSERVICE_SIGNATURE");
   const newEnvelope = h.api.create("USER", "ACADEMIC", "sampleAction", {}, TYPE);
