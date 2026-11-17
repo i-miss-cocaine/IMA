@@ -683,13 +683,14 @@ function verifyInterServiceEnvelope(envelope, expectedTargetService, credentialT
   }
 
   // Authenticate the envelope before reserving its requestId: invalid signatures must not poison replay state.
-  const secret = resolveInterServiceSecret_(sourceService, credentialType, "VERIFY");
+  if (credentialType === undefined || credentialType === null || credentialType === "") throw new Error("INTERSERVICE_CREDENTIAL_TYPE_REQUIRED");
+  if (credentialType !== "IMA_MIGRATION_HMAC_SECRET") throw new Error("INTERSERVICE_CREDENTIAL_TYPE_INVALID");
+  const verificationSecrets = getMigrationHmacSecrets_(sourceService);
   const bodyToSign = `${requestId}|${timestamp}|${correlationId}|${sourceService}|${targetService}|${action}|${JSON.stringify(payload || {})}`;
-  const expectedSig = computeHmacSignature(bodyToSign, secret);
-
-  if (hmacSignature !== expectedSig) {
-    throw new Error("INVALID_INTERSERVICE_SIGNATURE: Firma HMAC-SHA256 interservicio inválida.");
-  }
+  const signatureValid = verificationSecrets.some(function(secret) {
+    return hmacSignature === computeHmacSignature(bodyToSign, secret);
+  });
+  if (!signatureValid) throw new Error("INVALID_INTERSERVICE_SIGNATURE: Firma HMAC-SHA256 interservicio inválida.");
 
   // Serialize the check-and-reserve pair so concurrent requests cannot both pass.
   const cache = CacheService.getScriptCache();
