@@ -901,6 +901,7 @@ function normalizeImportMappingProfile_(input){
   if(allowed.indexOf(target)<0||!sourceHeader||headers.indexOf(sourceHeader)<0)throw new Error("IMPORT_MAPPING_PROFILE_MAPPING_INVALID");
   cleanFields[target]=sourceHeader;
  });
+ var requiredFields={curso:["NombreCurso"],estudiante:["PersonaID"],empleado:["PersonaId","Puesto","Departamento"]}[entity]||[];if(!requiredFields.every(function(field){return !!cleanFields[field];}))throw new Error("IMPORT_MAPPING_PROFILE_REQUIRED_FIELDS_MISSING");
  if(!Object.keys(cleanFields).length)throw new Error("IMPORT_MAPPING_PROFILE_MAPPING_INVALID");
  return{profileName:name,sourceSystem:source,entityType:entity,destinationModule:destination,sourceHeaders:headers,
   columnMapping:{identificador:identifier,campos:cleanFields},
