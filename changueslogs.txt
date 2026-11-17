@@ -4047,3 +4047,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Limitación explícita: el mock local verifica exclusión/contención y ordenamiento determinista, no el comportamiento real de LockService/Sheets desplegados. BETA-FUNC-117 pendiente.
 - Commits de implementación y pruebas: a5774ef2f16008579a48055a943d734d4c32ef37, bfa405b863386ca114c2e24a043919662aab9c8e, 034567c4f698d622de7d74f0fac27b3c00cc227b, ee53929533621905f1889ccd63dad2a3bf896230.
 - Siguiente revisión elegible PM-02: evaluar TASK-694/695/696 y F29-TASK17 contra dependencias originales; TASK-696 no elegible mientras TASK-153/T153-S01 y F29-TASK17/F37-TASK10 sigan pendientes/bloqueadas.
+
+
+[2026-11-17] C1.798 — AUD-NG-078, metadatos y permisos del registro central DEVELOPER
+- El catálogo ya no devuelve servicios ficticios por defecto; lectura fail-closed ante errores, esquemas incompatibles, IDs duplicados, permisos inválidos y metadatos placeholder.
+- El alta exige cuenta propietaria y SpreadsheetID explícitos, rechaza valores de ejemplo y evita reutilizar la hoja central del plano de control.
+- Se normalizan permisos; se rechazan entradas duplicadas y comodines tanto en alta como en lectura. La migración legacy exige que todas las filas sean válidas y rechaza cabeceras malformadas sin mutarlas.
+- Contrato Node.js 24 run 44083437083 SUCCESS: sintaxis de DEVELOPER/test y ejecución completa del contrato.
+- Department Scope run 44083424646 FAILURE en Phase22 document management; los pasos previos (1–79) PASS. No se alteró el módulo ajeno.
+- CLI local NOT RUN por fallo DNS al obtener checkout; Actions sí ejecutó Node.js 24. Apps Script/Sheets/Drive real pendiente; BETA-FUNC-118.
+- Commits de código: ce07cb0..ec74039 (16 commits de implementación/corrección). Siguiente: AUD-NG-080, historial con actor verificado y concurrencia.

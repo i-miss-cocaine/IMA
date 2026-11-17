@@ -5658,3 +5658,9 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Department Scope Contract run 43742077374 SUCCESS (Node.js 24, contratos de justificación canónica/ABAC y sintaxis Apps Script/JS/clients); Identity Mapping run 43742077382 SUCCESS.
 - TASK-105 completada en código/revisión/CI; BETA-FUNC-103 pendiente de validación real en Apps Script/Sheets/Drive beta.
 - **Siguiente P0 por orden del Plan Maestro:** TASK-106 — integridad criptográfica, versionado y protección contra sustitución de evidencias documentales.
+
+
+## Seguimiento operativo — C1.798
+- **AUD-NG-078:** endurecimiento del registro central DEVELOPER implementado y verificado por contrato Node.js 24/GitHub Actions (run 44083437083 SUCCESS). Se rechazan metadatos placeholder, permisos duplicados/wildcard, cabeceras malformadas y migraciones con filas inválidas; BETA-FUNC-118 queda Pendiente beta.
+- **CI transversal:** Department Scope run 44083424646 falla en Phase22 document management después de 79 pasos PASS; el fallo no pertenece a AUD-NG-078 y no se modificó ese módulo.
+- **Siguiente subalcance elegible:** AUD-NG-080 — historial de cambios de servicios con actor verificado y persistencia consistente; revisar el dispatcher, el contexto de sesión y la serialización bajo LockService.

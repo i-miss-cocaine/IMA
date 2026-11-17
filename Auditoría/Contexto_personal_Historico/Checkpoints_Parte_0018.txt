@@ -173,3 +173,23 @@ Siguiente tarea elegible: F25-Task03 — detección avanzada de duplicados e int
 - **Commits:** a5774ef2f16008579a48055a943d734d4c32ef37; bfa405b863386ca114c2e24a043919662aab9c8e; 034567c4f698d622de7d74f0fac27b3c00cc227b; ee53929533621905f1889ccd63dad2a3bf896230.
 - **Siguiente tarea:** continuar triage topológico PM-02. TASK-696 está bloqueada por TASK-153/T153-S01, F29-TASK17 y F37-TASK10; no iniciar su implementación ni migración tenant hasta resolver esas puertas.
 =============================================================================
+
+
+=============================================================================
+### C1.798 — IMA-EXEC-20261117-AUD-NG-078-SERVICE-REGISTRY-01
+- **Checkpoint anterior:** C1.797 — TASK-027, circulación bibliotecaria.
+- **HEAD inicial de esta iteración:** c10dda3d59bb2da9d3af5110d7a07ce046533d10 (rama NG_beta_0.0.0.1_work).
+- **HEAD de cierre de código y pruebas:** ec7403976fdbc8d04ca00f2913dc47e037a7cb15.
+- **Tarea:** AUD-NG-078 — metadatos verificados y permisos de mínimo privilegio en el registro de servicios DEVELOPER.
+- **Resultado:** alcance de código completado y contrato específico Node.js 24 PASS; prueba beta de Apps Script/Sheets pendiente.
+- **Implementación revisada:** catálogo sin servicios ficticios por defecto; lectura fail-closed ante errores, esquemas incompatibles, IDs duplicados, permisos malformados o metadatos placeholder; alta exige cuenta propietaria y hoja asociada explícitas, rechaza valores de ejemplo y la hoja del plano de control; permisos se normalizan, no admiten duplicados ni comodines; migración legacy solo cuando todas las filas son válidas y no se modifica una cabecera malformada.
+- **Correcciones de revisión:** detección de cabeceras legacy malformadas antes de insertar encabezado; rechazo de permisos duplicados tras trim; rechazo de permisos wildcard tanto al registrar como al leer registros existentes.
+- **Archivos de código/prueba:** backend/developer-service/Code.gs; tests/security/developer-service-registry.test.js; .github/workflows/developer-service-registry-contract.yml.
+- **Commits de implementación y corrección:** ce07cb099a85677fd29894ad52aca1d1b9223eb8; 1fd76e2fa33c542469ffdae98a81f92658b50fe1; 50be765e6331a5a06f7c0f8093bbe9343194b30c; 66bf7c4996d429551c02fb54e41d6091092991ac; b39dea083a88dc01e4c3f66d7d3565072d7cb1a4; e8c33e0895c14691c398c0c5ffdf78f2293ecdae; 217a172fd183d5253dfe887d421533e9d129e95e; 2865d3367bea5304fa4d4e568103b1ef9c35a0a9; 5df6314944c6d75fd01762b81d21b60c06b76f2d; defc6d7f083c92224e4a9e73ee9d244671ffcd71; 93a699e5ae33b52a2a19693882dcb04307a2a968; 3fa5a39100c0066feeac33430a27acd4a9a17f31; 286755376b7d369bd44b2743d29b4b69f010edd8; bb17a3e1f73e8ba4e92dfb4ca5309b55f394c3f4; 18d825299ae5b4c812ef0db9e0374c69d968958a; ec7403976fdbc8d04ca00f2913dc47e037a7cb15.
+- **Verificación CI:** Developer Service Registry Contract run 44083437083 SUCCESS (checkout de rama autorizada, Node.js 24, sintaxis DEVELOPER/test y ejecución del contrato). Hierarchical Configuration Contract run 44083424582 SUCCESS. Department Scope Contract run 44083424646 FAILURE exclusivamente en Phase22 document management; pasos 1–79 anteriores PASS, pasos posteriores SKIPPED. No se modificó Phase22.
+- **CLI local:** NOT RUN; el checkout local no pudo descargarse porque el entorno no resolvió github.com. La ejecución Node CLI sí está acreditada por GitHub Actions.
+- **Beta:** BETA-FUNC-118 añadido a beta_test_Parte_0002.txt; validación real de Apps Script/Sheets/Drive pendiente, sin datos reales ni despliegue ejecutado.
+- **Rama base:** NG_beta_0.0.0.1 permanece sin escrituras; compare previo 3820 ahead / 0 behind, base SHA 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Estado:** implementación/CI completados; beta pendiente separada. No se declara validada la infraestructura real.
+- **Siguiente tarea elegible:** AUD-NG-080 — historial de cambios del registro con actor verificado, LockService y persistencia consistente; revisar el dispatcher y contratos antes de editar.
+=============================================================================

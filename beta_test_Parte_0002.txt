@@ -705,3 +705,4 @@
 - **Evidencia requerida:** hashes sintéticos, códigos de validación, recuentos de páginas/filas/partes DOCX, IDs de ejecución, filas omitidas, warnings de sobrescritura y resultados de rollback. No adjuntar documentos reales ni datos personales.
 - **Estado:** pendiente de ejecución en Apps Script/Drive/Sheets reales y aceptación de Secretaría/Contabilidad.
 ===============================================================================
+NaN
