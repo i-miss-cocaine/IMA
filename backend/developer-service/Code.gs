@@ -2518,6 +2518,9 @@ function developerEnsureServiceTable_(ss, name, headers, legacyRowValidator) {
   if (JSON.stringify(first) === JSON.stringify(headers)) {
     return { sheet: sheet, headers: headers.slice(), rows: data.slice(1) };
   }
+  if (["ServiceID", "serviceId", "service_id"].indexOf(first[0]) !== -1) {
+    throw new Error("SERVICE_REGISTRY_SCHEMA_MISMATCH:" + name);
+  }
   if (legacyRowValidator && data.every(legacyRowValidator)) {
     if (typeof sheet.insertRowBefore !== "function") throw new Error("SERVICE_REGISTRY_LEGACY_MIGRATION_UNAVAILABLE");
     sheet.insertRowBefore(1);
@@ -2642,8 +2645,17 @@ function registerServiceInstance(payload) {
       associatedSpreadsheetId === String(SPREADSHEET_ID || "")) {
     throw new Error("SERVICE_OWNER_AND_SPREADSHEET_REQUIRED");
   }
-  if (permisosConcedidos !== undefined && (!Array.isArray(permisosConcedidos) || permisosConcedidos.some(function(value) { return typeof value !== "string" || !value.trim(); }))) {
-    throw new Error("INVALID_SERVICE_PERMISSIONS");
+  var normalizedPermissions = [];
+  if (permisosConcedidos !== undefined) {
+    if (!Array.isArray(permisosConcedidos)) throw new Error("INVALID_SERVICE_PERMISSIONS");
+    var seenPermissions = {};
+    permisosConcedidos.forEach(function(value) {
+      if (typeof value !== "string" || !value.trim()) throw new Error("INVALID_SERVICE_PERMISSIONS");
+      var normalized = value.trim(), permissionKey = "$" + normalized;
+      if (seenPermissions[permissionKey]) throw new Error("INVALID_SERVICE_PERMISSIONS");
+      seenPermissions[permissionKey] = true;
+      normalizedPermissions.push(normalized);
+    });
   }
   const now = new Date();
 
@@ -2660,7 +2672,7 @@ function registerServiceInstance(payload) {
     throw new Error(`DUPLICATE_SERVICE_REGISTRATION: Ya existe un servicio registrado con el identificador '${sId}'.`);
   }
 
-  const permisosStr = JSON.stringify(permisosConcedidos || []);
+  const permisosStr = JSON.stringify(normalizedPermissions);
 
   sheet.appendRow([
     sId,
