@@ -16,6 +16,10 @@ function extractConst(name) {
   assert.notEqual(end, -1, "missing const terminator " + name);
   return source.slice(start, end + 1);
 }
+assert.ok(source.includes('case "getUserHelpPreferences": result = getUserHelpPreferences(payload); break;'));
+assert.ok(source.includes('case "saveUserHelpPreferences": result = saveUserHelpPreferences(payload); break;'));
+assert.ok(source.includes('["getUserHelpPreferences", "saveUserHelpPreferences"]'), "help preference endpoints must be restricted to authenticated self-service");
+
 const code = [
   extractConst("USER_HELP_PREFERENCE_HEADERS_"),
   extractConst("USER_HELP_TOUR_ROLES_"),
@@ -104,6 +108,16 @@ const payload=(overrides={})=>Object.assign({sessionToken:"VALID",_verifiedUserI
   assert.equal(h.context.saveUserHelpPreferences(payload({_verifiedUserId:"U-1"})).code,"VERIFIED_IDENTITY_REQUIRED","a client-supplied user ID cannot impersonate another account");
   h.state.institutionId="INST-2";
   assert.equal(h.context.getUserHelpPreferences({sessionToken:"VALID",_verifiedUserId:"U-2"}).preferences.length,0);
+}
+
+{
+  const h=harness();
+  h.state.role="Profesor";
+  const saved=h.context.saveUserHelpPreferences(payload({tourKey:"teacherTemplates",stepIndex:2,expectedVersion:0}));
+  assert.equal(saved.status,"success");
+  assert.equal(saved.tourKey,"teacherTemplates");
+  const reset=h.context.saveUserHelpPreferences({sessionToken:"VALID",_verifiedUserId:"U-1",resetAll:true});
+  assert.equal(reset.resetCount,1);
 }
 
 {
