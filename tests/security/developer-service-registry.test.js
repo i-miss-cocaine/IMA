@@ -94,7 +94,7 @@ function harness(initial, options) {
   return { ...api, sheets, logs, context, lockState };
 }
 function registerService(h, payload) {
-  return registerService(h,Object.assign({ _verifiedUserId: "actor-1" }, payload));
+  return h.registerServiceInstance(Object.assign({ _verifiedUserId: "actor-1" }, payload));
 }
 function row(id, name, permissions) {
   return [id,name,"Academic","owner@example.invalid","https://example.invalid/exec","SHEET-1","ACADEMIC","Activo","1.0.0",permissions === undefined ? "[]" : permissions,"2026-11-17T00:00:00.000Z"];
