@@ -1956,7 +1956,7 @@ function getTrustedMigrationTargetExistenceSnapshot_(payload) {
         !Number.isInteger(Number(item.rowIndex)) || Number(item.rowIndex) < 0 ||
         typeof item.value !== "string" || !item.value.trim() || item.value.length > 180) { invalidDuplicate = true; return; }
     duplicateRequests.push({ field: String(item.field), matchType: String(item.matchType), rowIndex: Number(item.rowIndex),
-      normalized: (function(value,field){var v=String(value).normalize?String(value).normalize("NFKC").trim().toLowerCase():String(value).trim().toLowerCase();if(field==="Identificacion")return v.replace(/[^a-z0-9]/g,"");if(field==="EmailContacto")return v.replace(/\s+/g,"");if(field==="NombreCompleto")return v.replace(/\s+/g," ");return v;})(item.value,String(item.field) });
+      normalized: (function(value,field){var v=String(value).normalize?String(value).normalize("NFKC").trim().toLowerCase():String(value).trim().toLowerCase();if(field==="Identificacion")return v.replace(/[^a-z0-9]/g,"");if(field==="EmailContacto")return v.replace(/\s+/g,"");if(field==="NombreCompleto")return v.replace(/\s+/g," ");return v;})(item.value,String(item.field)) });
   });
   if (invalidDuplicate) return { status: "error", code: "MIGRATION_SNAPSHOT_DUPLICATE_KEY_INVALID" };
   var sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("Personas");
