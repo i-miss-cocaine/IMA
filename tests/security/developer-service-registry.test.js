@@ -72,8 +72,17 @@ function harness(initial, options) {
       }
     },
     Utilities: { getUuid() { uuidCounter++; return "UUID-" + uuidCounter; } },
-    ROLE_PERMISSIONS: { Desarrollador: ["registerServiceInstance", "updateServiceStatus"] },
-    verifySessionToken(token) { return token === "valid" ? { userId: "verified-user", role: "Desarrollador" } : null; },
+    ROLE_PERMISSIONS: {
+      Administrador: ["*"],
+      Desarrollador: ["registerServiceInstance", "updateServiceStatus"],
+      Director: ["getCentralServiceRegistry"]
+    },
+    verifySessionToken(token) {
+      if (token === "valid") return { userId: "verified-user", role: "Desarrollador" };
+      if (token === "director") return { userId: "director-user", role: "Director" };
+      if (token === "missing-claims") return { role: "Desarrollador" };
+      return null;
+    },
     textResponse(value) { return value; },
     doGet() { return { status: "success", service: "DEVELOPER" }; },
     Logger: { log: value => logs.push(String(value)) },
@@ -305,15 +314,35 @@ result = h.doPost({ postData: { contents: JSON.stringify({ action: "registerServ
 assert.equal(result.status, "success");
 assert.equal(h.sheets.HistorialServiciosDistribuidos.rows[1][5], "verified-user", "initial registration must attribute the verified session actor");
 
+h = harness();
+result = h.doPost({ postData: { contents: JSON.stringify({ action: "registerServiceInstance", authRole: "Administrador", serviceId: "SVC-NO-TOKEN", name: "No token", cuentaPropietaria: "owner@example.invalid", spreadsheetAsociado: "SHEET-NO-TOKEN" }) } });
+assert.equal(result.code, "AUTHENTICATION_REQUIRED", "client-declared Administrator role must not replace a signed session");
+assert.equal(Object.keys(h.sheets).length, 0);
+
+h = harness();
+result = h.doPost({ postData: { contents: JSON.stringify({ action: "registerServiceInstance", sessionToken: "invalid", authRole: "Administrador", serviceId: "SVC-BAD-TOKEN", name: "Bad token", cuentaPropietaria: "owner@example.invalid", spreadsheetAsociado: "SHEET-BAD-TOKEN" }) } });
+assert.equal(result.code, "INVALID_SESSION_TOKEN");
+assert.equal(Object.keys(h.sheets).length, 0);
+
+h = harness();
+result = h.doPost({ postData: { contents: JSON.stringify({ action: "registerServiceInstance", sessionToken: "director", authRole: "Administrador", serviceId: "SVC-ROLE-ESCALATION", name: "Role escalation", cuentaPropietaria: "owner@example.invalid", spreadsheetAsociado: "SHEET-ROLE-ESCALATION" }) } });
+assert.equal(result.code, "PERMISSION_DENIED", "verified Director claims must not be elevated by authRole");
+assert.equal(Object.keys(h.sheets).length, 0);
+
+h = harness();
+result = h.doPost({ postData: { contents: JSON.stringify({ action: "registerServiceInstance", sessionToken: "missing-claims", serviceId: "SVC-MISSING-CLAIMS", name: "Missing claims", cuentaPropietaria: "owner@example.invalid", spreadsheetAsociado: "SHEET-MISSING-CLAIMS" }) } });
+assert.equal(result.code, "INVALID_SESSION_CLAIMS");
+assert.equal(Object.keys(h.sheets).length, 0);
+
 h = harness({ CatalogoServicios: sheet([registryHeaders, row("SVC-1","Service")]) });
-result = h.doPost({ postData: { contents: JSON.stringify({ action: "updateServiceStatus", serviceId: "SVC-1", newState: "degradado", sessionToken: "valid", updatedBy: "spoofed" }) } });
+result = h.doPost({ postData: { contents: JSON.stringify({ action: "updateServiceStatus", serviceId: "SVC-1", newState: "degradado", sessionToken: "valid", authRole: "Administrador", updatedBy: "spoofed" }) } });
 assert.equal(result.status, "success");
 assert.equal(h.sheets.HistorialServiciosDistribuidos.rows[1][5], "verified-user");
 
 h = harness({ CatalogoServicios: sheet([registryHeaders, row("SVC-1","Service")]) });
 result = h.doPost({ postData: { contents: JSON.stringify({ action: "updateServiceStatus", serviceId: "SVC-1", newState: "degradado", sessionToken: "invalid", authRole: "Desarrollador", _verifiedUserId: "forged-user" }) } });
-assert.equal(result.status, "error");
-assert.equal(h.sheets.CatalogoServicios.rows[1][7], "Activo", "client-supplied _verifiedUserId must be discarded");
+assert.equal(result.code, "INVALID_SESSION_TOKEN");
+assert.equal(h.sheets.CatalogoServicios.rows[1][7], "Activo", "invalid session must not mutate the service state");
 assert.equal(h.sheets.HistorialServiciosDistribuidos, undefined);
 
 console.log("Developer service registry contract PASS.");
