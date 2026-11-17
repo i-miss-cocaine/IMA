@@ -1385,6 +1385,9 @@ window.ensureDashboardSettingsModalExists = function() {
             <button id="tab-btn-role-settings" class="settings-tab-btn py-3 px-4 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2">
                 <i class="fa-solid fa-sliders"></i> Opciones del Rol
             </button>
+            <button id="tab-btn-help-settings" class="settings-tab-btn py-3 px-4 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-circle-question"></i> Ayuda y Guías
+            </button>
             <button id="tab-btn-provider-settings" class="settings-tab-btn py-3 px-4 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2 hidden">
                 <i class="fa-solid fa-network-wired"></i> Proveedores & Pasarelas
             </button>
@@ -1443,6 +1446,20 @@ window.ensureDashboardSettingsModalExists = function() {
                         </select>
                     </div>
                 </div>
+            </div>
+
+            <div id="tab-panel-help-settings" class="space-y-6 hidden">
+                <div class="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl text-xs text-indigo-900 leading-relaxed">
+                    <strong>Ayuda personal sincronizada:</strong> consulte las guías disponibles para su rol y restablezca su progreso desde cualquier dispositivo. Estas acciones solo modifican sus preferencias de ayuda.
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div><h4 class="text-xs font-black uppercase text-slate-700">Guías disponibles</h4><p class="text-[11px] text-slate-500 mt-1">El progreso se guarda por usuario y se sincroniza con el servidor.</p></div>
+                    <button id="btn-reset-all-help-guides" type="button" class="px-3 py-2 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold hover:bg-rose-100">Restablecer todas</button>
+                </div>
+                <div id="help-preferences-guides" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <p class="text-xs text-slate-400">Cargando guías...</p>
+                </div>
+                <p id="help-preferences-status" class="text-[11px] text-slate-500" role="status" aria-live="polite"></p>
             </div>
 
             <div id="tab-panel-role-settings" class="space-y-6 hidden">
@@ -1591,11 +1608,13 @@ window.bindDashboardSettingsModalEvents = function() {
     var tab2 = document.getElementById('tab-btn-role-settings');
     var tab3 = document.getElementById('tab-btn-provider-settings');
     var tab4 = document.getElementById('tab-btn-visual-settings');
+    var tab5 = document.getElementById('tab-btn-help-settings');
 
     if (tab1) tab1.onclick = function() { window.switchSettingsTab('user'); };
     if (tab2) tab2.onclick = function() { window.switchSettingsTab('role'); };
     if (tab3) tab3.onclick = function() { window.switchSettingsTab('provider'); };
     if (tab4) tab4.onclick = function() { window.switchSettingsTab('visual'); };
+    if (tab5) tab5.onclick = function() { window.switchSettingsTab('help'); };
 };
 
 window.switchSettingsTab = function(tabName) {
@@ -1603,16 +1622,19 @@ window.switchSettingsTab = function(tabName) {
     var p2 = document.getElementById('tab-panel-role-settings');
     var p3 = document.getElementById('tab-panel-provider-settings');
     var p4 = document.getElementById('tab-panel-visual-settings');
+    var p5 = document.getElementById('tab-panel-help-settings');
 
     var b1 = document.getElementById('tab-btn-user-settings');
     var b2 = document.getElementById('tab-btn-role-settings');
     var b3 = document.getElementById('tab-btn-provider-settings');
     var b4 = document.getElementById('tab-btn-visual-settings');
+    var b5 = document.getElementById('tab-btn-help-settings');
 
     if (p1) p1.classList.toggle('hidden', tabName !== 'user');
     if (p2) p2.classList.toggle('hidden', tabName !== 'role');
     if (p3) p3.classList.toggle('hidden', tabName !== 'provider');
     if (p4) p4.classList.toggle('hidden', tabName !== 'visual');
+    if (p5) p5.classList.toggle('hidden', tabName !== 'help');
 
     var activeClass = 'border-blue-600 text-blue-600 font-black';
     var inactiveClass = 'border-transparent text-slate-500 hover:text-slate-800';
@@ -1620,10 +1642,13 @@ window.switchSettingsTab = function(tabName) {
     if (b1) b1.className = 'settings-tab-btn py-3 px-4 border-b-2 flex items-center gap-2 ' + (tabName === 'user' ? activeClass : inactiveClass);
     if (b2) b2.className = 'settings-tab-btn py-3 px-4 border-b-2 flex items-center gap-2 ' + (tabName === 'role' ? activeClass : inactiveClass);
     if (b3) b3.className = 'settings-tab-btn py-3 px-4 border-b-2 flex items-center gap-2 ' + (tabName === 'provider' ? activeClass : inactiveClass);
+    if (b4) b4.className = 'settings-tab-btn py-3 px-4 border-b-2 flex items-center gap-2 ' + (tabName === 'visual' ? activeClass : inactiveClass);
+    if (b5) b5.className = 'settings-tab-btn py-3 px-4 border-b-2 flex items-center gap-2 ' + (tabName === 'help' ? activeClass : inactiveClass);
 
     if (tabName === 'provider') {
         window.loadProviderIntegrationsInModal();
     }
+    if (tabName === 'help') window.loadHelpPreferencesInSettingsPanel();
 };
 
 window.openDashboardSettingsModal = function() {
@@ -1669,6 +1694,83 @@ window.openDashboardSettingsModal = function() {
 window.closeDashboardSettingsModal = function() {
     var modal = document.getElementById('modal-dashboard-settings');
     if (modal) modal.classList.add('hidden');
+};
+
+window.loadHelpPreferencesInSettingsPanel = function() {
+    var container = document.getElementById('help-preferences-guides');
+    var status = document.getElementById('help-preferences-status');
+    var resetAll = document.getElementById('btn-reset-all-help-guides');
+    if (!container) return;
+    container.innerHTML = '<p class="text-xs text-slate-400">Cargando guías...</p>';
+    if (!window.sendApiRequest) { container.textContent = 'El servicio de ayuda no está disponible. Puede continuar utilizando la ayuda local.'; return; }
+    window.sendApiRequest('getHelpGuidesCatalog', {}, function(catalog) {
+        if (!catalog || catalog.status !== 'success' || !Array.isArray(catalog.guides)) {
+            container.textContent = 'No se pudo cargar el catálogo de guías para este rol.';
+            if (status) status.textContent = catalog && (catalog.code || catalog.message) || 'Servicio no disponible.';
+            return;
+        }
+        window.loadUserHelpPreferences_(function(preferences) {
+            container.innerHTML = '';
+            var guides = catalog.guides;
+            if (!guides.length) {
+                container.textContent = 'No hay guías publicadas para el rol activo.';
+                return;
+            }
+            var tourForGuide = function(id) {
+                if (id === 'GUIDE-STUDENT-TASKS') return 'studentSubmission';
+                if (id === 'GUIDE-TEMPLATES-DESIGN') return 'teacherTemplates';
+                return 'teacherReview';
+            };
+            guides.forEach(function(guide) {
+                var tourKey = tourForGuide(guide.id), pref = preferences[tourKey];
+                var card = document.createElement('div');
+                card.className = 'rounded-2xl border border-slate-200 bg-white p-4 space-y-3';
+                var heading = document.createElement('h4');
+                heading.className = 'text-sm font-bold text-slate-800';
+                heading.textContent = guide.title || 'Guía institucional';
+                var description = document.createElement('p');
+                description.className = 'text-xs text-slate-500 leading-relaxed';
+                description.textContent = guide.description || '';
+                var state = document.createElement('p');
+                state.className = 'text-[11px] font-semibold text-indigo-700';
+                state.textContent = pref ? (pref.dismissed ? 'Guía omitida o completada · progreso guardado' : 'Progreso sincronizado · paso ' + (pref.stepIndex || 1)) : 'Sin progreso guardado';
+                var actions = document.createElement('div');
+                actions.className = 'flex flex-wrap gap-2';
+                var open = document.createElement('button');
+                open.type = 'button'; open.className = 'rounded-lg bg-indigo-600 px-3 py-2 text-xs font-bold text-white';
+                open.textContent = 'Abrir guía';
+                open.addEventListener('click', function() { window.startGuidedTourAction(guide.id); });
+                var reset = document.createElement('button');
+                reset.type = 'button'; reset.className = 'rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700';
+                reset.textContent = 'Restablecer progreso';
+                reset.addEventListener('click', function() {
+                    if (!window.confirm('¿Restablecer el progreso de esta guía para tu usuario?')) return;
+                    window.persistHelpGuidePreference_(tourKey, 1, false, function(result) {
+                        if (result && result.status === 'success') {
+                            localStorage.setItem('guide_progress_' + tourKey, '1');
+                            if (status) status.textContent = 'Progreso restablecido y sincronizado.';
+                            window.loadHelpPreferencesInSettingsPanel();
+                        } else if (status) status.textContent = 'No se pudo restablecer el progreso. Vuelve a cargar las preferencias.';
+                    });
+                });
+                actions.appendChild(open); actions.appendChild(reset);
+                card.appendChild(heading); card.appendChild(description); card.appendChild(state); card.appendChild(actions);
+                container.appendChild(card);
+            });
+            if (status) status.textContent = 'Guías filtradas por rol. Los cambios afectan solo a la cuenta activa.';
+        });
+    });
+    if (resetAll) resetAll.onclick = function() {
+        if (!window.confirm('¿Restablecer el progreso de todas las guías de tu usuario? Esta acción no modifica otras preferencias.')) return;
+        window.sendApiRequest('saveUserHelpPreferences', { resetAll: true }, function(result) {
+            if (result && result.status === 'success') {
+                ['studentSubmission','teacherReview','teacherTemplates'].forEach(function(key) { localStorage.removeItem('guide_progress_' + key); });
+                window.__helpPreferenceCache = null;
+                if (status) status.textContent = 'Se restablecieron ' + result.resetCount + ' preferencias de guía.';
+                window.loadHelpPreferencesInSettingsPanel();
+            } else if (status) status.textContent = 'No se pudo restablecer todo el progreso. Vuelve a intentarlo.';
+        });
+    };
 };
 
 window.loadUserSettingsInModal = function(user) {
