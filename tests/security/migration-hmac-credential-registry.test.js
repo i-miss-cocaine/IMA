@@ -72,7 +72,7 @@ function makeHarness(options = {}) {
       releaseLock: () => { state.lockReleases++; }
     }) }
   };
-  const names = ["computeMigrationCredentialFingerprint_", "getMigrationHmacSecret_", "resolveInterServiceSecret_", "createInterServiceEnvelope", "verifyInterServiceEnvelope"];
+  const names = ["computeHmacSignature", "computeMigrationCredentialFingerprint_", "getMigrationHmacSecret_", "resolveInterServiceSecret_", "createInterServiceEnvelope", "verifyInterServiceEnvelope"];
   vm.createContext(runtime);
   const bootstrap = 'const IMA_LOCAL_SERVICE_ID_ = "USER"; const IMA_CREDENTIAL_CATALOG_HEADERS_ = ' + JSON.stringify(headers) + ';';
   vm.runInContext(bootstrap + "\n" + names.map(extract).join("\n") +
