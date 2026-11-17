@@ -2628,6 +2628,9 @@ function registerServiceInstance(payload) {
 
   const sId = String(serviceId).trim();
   const sName = String(name).trim();
+  if (permisosConcedidos !== undefined && (!Array.isArray(permisosConcedidos) || permisosConcedidos.some(function(value) { return typeof value !== "string" || !value.trim(); }))) {
+    throw new Error("INVALID_SERVICE_PERMISSIONS");
+  }
   const now = new Date();
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -2643,9 +2646,6 @@ function registerServiceInstance(payload) {
     throw new Error(`DUPLICATE_SERVICE_REGISTRATION: Ya existe un servicio registrado con el identificador '${sId}'.`);
   }
 
-  if (permisosConcedidos !== undefined && (!Array.isArray(permisosConcedidos) || permisosConcedidos.some(function(value) { return typeof value !== "string" || !value.trim(); }))) {
-    throw new Error("INVALID_SERVICE_PERMISSIONS");
-  }
   const permisosStr = JSON.stringify(permisosConcedidos || []);
 
   sheet.appendRow([
@@ -2696,23 +2696,30 @@ function updateServiceStatus(payload) {
     throw new Error(`SERVICE_NOT_FOUND: No se encontró el servicio con identificador '${sId}'.`);
   }
 
-  sheet.getRange(idx + 1, 8).setValue(newState);
-
-  // Registrar histórico en BitacoraLogs
+  // Preparar el historial antes de cambiar el estado para evitar una mutación sin trazabilidad.
   const history = developerEnsureServiceTable_(ss, "HistorialServiciosDistribuidos", DEVELOPER_SERVICE_HISTORY_HEADERS_, function(row) {
     return Array.isArray(row) && row.length >= 7 && String(row[0] || "").indexOf("HIST-SVC-") === 0;
   });
   const histSheet = history.sheet;
+  const previousState = data[idx][7];
   const now = new Date();
-  histSheet.appendRow([
-    "HIST-SVC-" + now.getTime(),
-    sId,
-    data[idx][7], // estadoAnterior
-    newState, // nuevoEstado
-    reason || "Actualización administrativa",
-    updatedBy || "Administrador",
-    now.toISOString()
-  ]);
+  try {
+    sheet.getRange(idx + 1, 8).setValue(newState);
+    histSheet.appendRow([
+      "HIST-SVC-" + now.getTime(),
+      sId,
+      previousState,
+      newState,
+      reason || "Actualización administrativa",
+      updatedBy || "Administrador",
+      now.toISOString()
+    ]);
+    if (typeof SpreadsheetApp.flush === "function") SpreadsheetApp.flush();
+  } catch (writeError) {
+    try { sheet.getRange(idx + 1, 8).setValue(previousState); }
+    catch (restoreError) { throw new Error("SERVICE_STATUS_COMPENSATION_REQUIRED"); }
+    throw new Error("SERVICE_STATUS_WRITE_FAILED");
+  }
 
   return {
     status: "success",
