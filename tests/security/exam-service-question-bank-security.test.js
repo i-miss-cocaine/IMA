@@ -102,9 +102,9 @@ assert.equal(runtime.normalizeExamQuestionDefinition_({tipo:"respuesta_breve",te
 assert.throws(()=>runtime.normalizeExamQuestionDefinition_({tipo:"tipo_desconocido",textoPregunta:"x"}),/QUESTION_TYPE_INVALID/);
 assert.throws(()=>runtime.normalizeExamQuestionDefinition_({tipo:"opcion_multiple",textoPregunta:"x",opcionesJSON:{A:"Única"},respuestaCorrecta:"A"}),/QUESTION_OPTIONS_REQUIRED/);
 assert.throws(()=>runtime.normalizeExamQuestionDefinition_({tipo:"numerica",textoPregunta:"x",respuestaCorrecta:"no-numérica"}),/QUESTION_NUMERIC_ANSWER_INVALID/);
-assert.deepEqual(Array.from(bankRows[0].slice(13,16)),["ObjetivosJSON","CriteriosJSON","Version"],"legacy exam-bank schema is extended without shifting its original columns");
 const created=runtime.manageQuestionBank({sessionToken:"teacher-token",departmentId:"D1",accion:"crear",areaCurricular:"Ciencias",asignatura:"Biología",grado:"10",tema:"Célula",dificultad:"Media",textoPregunta:"Nueva",opcionesJSON:{A:"Uno",B:"Dos"},respuestaCorrecta:"A",puntosPredeterminados:2,etiquetas:["mitosis"],objetivos:["Identificar"],criterios:["Precisión"]});
 assert.equal(created.status,"success");
+assert.deepEqual(Array.from(bankRows[0].slice(13,16)),["ObjetivosJSON","CriteriosJSON","Version"],"legacy exam-bank schema is extended without shifting its original columns");
 assert.ok(created.bancoPreguntaId.startsWith("BNK-"));
 assert.equal(bankRows.find(r=>r[0]===created.bancoPreguntaId)[7],"Nueva");
 assert.equal(bankRows.find(r=>r[0]===created.bancoPreguntaId)[11],2);
