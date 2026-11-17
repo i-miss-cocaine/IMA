@@ -79,17 +79,21 @@ const runtime={
   releaseLock(){lockReleases++;lockHeld=false;}
  };}}
 };
-const names=["getRequestSessionToken_","getVerifiedRequestSessionClaims_","getCachedRequestAuthorization_","cacheRequestAuthorization_","clearRequestAuthorizationContext_","getVerifiedExamIdentity_","getVerifiedExamDepartmentScope_","assertExamResourceOwnershipForScope_","validateRolePermission","getAuthorizedQuestionBankMutationContext_","withAuthorizedQuestionBankMutation_","manageQuestionBank","manageQuestionBankUnlocked_"];
+const names=["parseExamQuestionJsonField_","parseExamQuestionListField_","normalizeExamQuestionDefinition_","ensureExamQuestionBankSchema_","getRequestSessionToken_","getVerifiedRequestSessionClaims_","getCachedRequestAuthorization_","cacheRequestAuthorization_","clearRequestAuthorizationContext_","getVerifiedExamIdentity_","getVerifiedExamDepartmentScope_","assertExamResourceOwnershipForScope_","validateRolePermission","getAuthorizedQuestionBankMutationContext_","withAuthorizedQuestionBankMutation_","manageQuestionBank","manageQuestionBankUnlocked_"];
 vm.runInNewContext(names.map(extract).join("\n")+"\nthis.manageQuestionBank=manageQuestionBank;",runtime);
-const created=runtime.manageQuestionBank({sessionToken:"teacher-token",departmentId:"D1",accion:"crear",areaCurricular:"Ciencias",asignatura:"Biología",textoPregunta:"Nueva",opcionesJSON:{A:"Uno"},respuestaCorrecta:"A"});
+const created=runtime.manageQuestionBank({sessionToken:"teacher-token",departmentId:"D1",accion:"crear",areaCurricular:"Ciencias",asignatura:"Biología",grado:"10",tema:"Célula",dificultad:"Media",textoPregunta:"Nueva",opcionesJSON:{A:"Uno",B:"Dos"},respuestaCorrecta:"A",puntosPredeterminados:2,etiquetas:["mitosis"],objetivos:["Identificar"],criterios:["Precisión"]});
 assert.equal(created.status,"success");
 assert.ok(created.bancoPreguntaId.startsWith("BNK-"));
 assert.equal(bankRows.find(r=>r[0]===created.bancoPreguntaId)[7],"Nueva");
+assert.equal(bankRows.find(r=>r[0]===created.bancoPreguntaId)[11],2);
+assert.equal(bankRows.find(r=>r[0]===created.bancoPreguntaId)[15],1);
+assert.equal(bankRows.find(r=>r[0]===created.bancoPreguntaId)[13],'["Identificar"]');
+assert.equal(bankRows.find(r=>r[0]===created.bancoPreguntaId)[14],'["Precisión"]');
 assert.equal(ownershipRows.filter(r=>r[3]===created.bancoPreguntaId&&r[2]==="BANCO_PREGUNTA").length,1);
 assert.equal(ownershipRows.find(r=>r[3]===created.bancoPreguntaId)[4],"D1");
 assert.equal(legacyBankRows.length,2,"exam bank writes must not create rows in the academic-service question bank");
 assert.equal(legacyBankRows[1][5],"Pregunta heredada","legacy academic question content must remain unchanged");
-const updated=runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:"BNK-D1",accion:"actualizar",textoPregunta:"Actualizada",opcionesJSON:{A:"Nueva"}});
+const updated=runtime.manageQuestionBank({sessionToken:"teacher-token",bancoPreguntaId:"BNK-D1",accion:"actualizar",textoPregunta:"Actualizada",opcionesJSON:{A:"Nueva",B:"Otra"}});
 assert.equal(updated.status,"success");
 assert.equal(bankRows.find(r=>r[0]==="BNK-D1")[7],"Actualizada");
 assert.throws(()=>runtime.manageQuestionBank({sessionToken:"other-token",bancoPreguntaId:"BNK-D1",accion:"actualizar",textoPregunta:"Ataque"}),/RESOURCE_NOT_AVAILABLE/);

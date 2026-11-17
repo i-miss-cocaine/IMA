@@ -29,7 +29,7 @@ function getOrCreateSheet(ss, name) {
     sheet = ss.insertSheet(name);
     if (name === "Examenes") sheet.appendRow(["ExamenID", "Titulo", "Asignatura", "Grado", "Seccion", "FechaLimite", "TiempoLimite", "Estado", "ProfesorID", "Parcial", "AreaCurricular", "DuracionMinutos", "IntentosPermitidos", "EsAleatorio"]);
     if (name === "PreguntasExamen") sheet.appendRow(["PreguntaID", "ExamenID", "Tipo", "Texto", "OpcionesJSON", "RespuestaCorrecta", "Puntos", "AreaCurricular", "Dificultad", "BancoPreguntaID"]);
-    if (name === "BancoPreguntasExamen") sheet.appendRow(["BancoPreguntaID", "AreaCurricular", "Asignatura", "Grado", "Tema", "Dificultad", "Tipo", "TextoPregunta", "OpcionesJSON", "RespuestaCorrecta", "Etiquetas", "PuntosPredeterminados", "Estado"]);
+    if (name === "BancoPreguntasExamen") sheet.appendRow(["BancoPreguntaID", "AreaCurricular", "Asignatura", "Grado", "Tema", "Dificultad", "Tipo", "TextoPregunta", "OpcionesJSON", "RespuestaCorrecta", "Etiquetas", "PuntosPredeterminados", "Estado", "ObjetivosJSON", "CriteriosJSON", "Version"]);
     if (name === "EntregasExamen") sheet.appendRow(["EntregaExamenID", "ExamenID", "UserID", "FechaEntrega", "RespuestasJSON", "NotaTotal", "Estado", "ComentarioDocente", "TemaAsociado", "AsignaturaAsociada"]);
     if (name === "CategoriasEvaluacion") sheet.appendRow(["ID", "Nombre", "Ambito", "PorcentajePonderacion", "EscalaID", "Estado"]);
     if (name === "RubricasEvaluacion") sheet.appendRow(["ID", "Titulo", "Asignatura", "Estado", "CriteriosJSON"]);
@@ -703,9 +703,8 @@ function getAuthorizedQuestionBankMutationContext_(payload) {
   const ownershipSheet = getSheetOrThrow(ss, "ResourceOwnership");
   const bankHeaders = ["BancoPreguntaID", "AreaCurricular", "Asignatura", "Grado", "Tema", "Dificultad", "Tipo", "TextoPregunta", "OpcionesJSON", "RespuestaCorrecta", "Etiquetas", "PuntosPredeterminados", "Estado"];
   const ownershipHeaders = ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"];
-  const bankRows = bankSheet.getDataRange().getValues();
+  let bankRows = ensureExamQuestionBankSchema_(bankSheet);
   const ownershipRows = ownershipSheet.getDataRange().getValues();
-  if (!bankRows.length || bankHeaders.some((header, index) => String(bankRows[0][index] || "").trim() !== header)) throw new Error("QUESTION_BANK_SCHEMA_INVALID");
   if (!ownershipRows.length || ownershipHeaders.some((header, index) => String(ownershipRows[0][index] || "").trim() !== header)) throw new Error("RESOURCE_OWNERSHIP_SCHEMA_INVALID");
   const requestedId = String((payload && payload.bancoPreguntaId) || "").trim();
   const action = String((payload && payload.accion) || "").trim().toLowerCase();
@@ -755,14 +754,150 @@ function withAuthorizedQuestionBankMutation_(payload, mutation) {
   }
 }
 
+function parseExamQuestionJsonField_(value, fallback, strict) {
+  if (value === null || value === undefined || value === "") return fallback;
+  if (typeof value === "object") return value;
+  if (typeof value !== "string") {
+    if (strict) throw new Error("QUESTION_OPTIONS_JSON_INVALID");
+    return fallback;
+  }
+  try { return JSON.parse(value); }
+  catch (_) {
+    if (strict) throw new Error("QUESTION_OPTIONS_JSON_INVALID");
+    return fallback;
+  }
+}
+function parseExamQuestionListField_(value) {
+  const parsed = parseExamQuestionJsonField_(value, null, false);
+  if (Array.isArray(parsed)) return parsed.map(item => String(item || "").trim()).filter(Boolean);
+  if (typeof value === "string" && value.trim()) return value.split(",").map(item => item.trim()).filter(Boolean);
+  return [];
+}
+function normalizeExamQuestionDefinition_(input, defaults) {
+  const q = input && typeof input === "object" && !Array.isArray(input) ? input : {};
+  const fallback = defaults && typeof defaults === "object" ? defaults : {};
+  let type = normalizeString(q.tipo || q.preguntaTipo || fallback.tipo).replace(/\\s+/g, "_");
+  if (type === "respuesta_breve" || type === "respuesta_corta") type = "completacion";
+  const allowedTypes = ["opcion_multiple", "verdadero_falso", "completacion", "termino_pareado",
+    "seleccion_multiple", "respuesta_extensa", "numerica", "ordenamiento", "adjunto"];
+  if (allowedTypes.indexOf(type) === -1) throw new Error("QUESTION_TYPE_INVALID");
+  const text = String(q.textoPregunta !== undefined ? q.textoPregunta : (q.texto !== undefined ? q.texto : fallback.textoPregunta || "")).trim();
+  if (!text) throw new Error("QUESTION_TEXT_REQUIRED");
+  let options = parseExamQuestionJsonField_(
+    q.opcionesJSON !== undefined ? q.opcionesJSON : (q.opciones !== undefined ? q.opciones : fallback.opcionesJSON || {}),
+    {}, true
+  );
+  if (!options || typeof options !== "object" || Array.isArray(options)) throw new Error("QUESTION_OPTIONS_INVALID");
+  let answer = q.respuestaCorrecta !== undefined ? q.respuestaCorrecta : fallback.respuestaCorrecta;
+  const optionKeys = Object.keys(options).filter(key => String(options[key] || "").trim() !== "");
+  if (type === "opcion_multiple") {
+    if (optionKeys.length < 2) throw new Error("QUESTION_OPTIONS_REQUIRED");
+    answer = String(answer === undefined || answer === null ? "" : answer).trim();
+    if (!answer || !Object.prototype.hasOwnProperty.call(options, answer)) throw new Error("QUESTION_CORRECT_ANSWER_INVALID");
+  } else if (type === "verdadero_falso") {
+    if (!optionKeys.length) options = { A: "Verdadero", B: "Falso" };
+    const choices = Object.keys(options).map(key => ({ key, value: String(options[key]) }));
+    const normalized = normalizeString(answer);
+    const match = choices.find(choice => normalizeString(choice.key) === normalized || normalizeString(choice.value) === normalized);
+    if (!match || !["verdadero", "falso"].includes(normalizeString(match.value))) throw new Error("QUESTION_CORRECT_ANSWER_INVALID");
+    answer = match.value;
+  } else if (type === "completacion") {
+    answer = String(answer === undefined || answer === null ? "" : answer).trim();
+    if (!answer) throw new Error("QUESTION_CORRECT_ANSWER_REQUIRED");
+  } else if (type === "termino_pareado") {
+    const concepts = Array.isArray(options.concepts) ? options.concepts : [];
+    const definitions = Array.isArray(options.definitions) ? options.definitions : [];
+    const mapping = parseExamQuestionJsonField_(answer, null, true);
+    if (concepts.length < 2 || definitions.length < 2 || concepts.length !== definitions.length ||
+        !mapping || typeof mapping !== "object" || Array.isArray(mapping)) throw new Error("QUESTION_MATCHING_SCHEMA_INVALID");
+    const keys = Object.keys(mapping);
+    if (keys.length !== concepts.length || keys.some(key => !/^\\d+$/.test(key) ||
+        Number(key) >= concepts.length || !/^\\d+$/.test(String(mapping[key])) ||
+        Number(mapping[key]) >= definitions.length)) throw new Error("QUESTION_MATCHING_ANSWER_INVALID");
+    answer = JSON.stringify(mapping);
+  } else if (type === "seleccion_multiple") {
+    if (optionKeys.length < 2) throw new Error("QUESTION_OPTIONS_REQUIRED");
+    answer = parseExamQuestionJsonField_(answer, null, true);
+    if (!Array.isArray(answer) || !answer.length || new Set(answer.map(String)).size !== answer.length ||
+        answer.some(key => !Object.prototype.hasOwnProperty.call(options, String(key)))) throw new Error("QUESTION_CORRECT_ANSWER_INVALID");
+    answer = JSON.stringify(answer.map(String));
+  } else if (type === "respuesta_extensa") {
+    answer = "";
+  } else if (type === "numerica") {
+    const numericAnswer = Number(answer);
+    const tolerance = Number(options.tolerance === undefined ? 0 : options.tolerance);
+    if (answer === "" || answer === null || answer === undefined || !Number.isFinite(numericAnswer) ||
+        !Number.isFinite(tolerance) || tolerance < 0) throw new Error("QUESTION_NUMERIC_ANSWER_INVALID");
+    answer = String(numericAnswer);
+    options.tolerance = tolerance;
+  } else if (type === "ordenamiento") {
+    const items = Array.isArray(options.items) ? options.items.map(String) : [];
+    answer = parseExamQuestionJsonField_(answer, null, true);
+    if (items.length < 2 || !Array.isArray(answer) || answer.length !== items.length ||
+        new Set(items).size !== items.length || new Set(answer.map(String)).size !== items.length ||
+        answer.some(item => items.indexOf(String(item)) === -1)) throw new Error("QUESTION_ORDER_SCHEMA_INVALID");
+    answer = JSON.stringify(answer.map(String));
+  } else if (type === "adjunto") {
+    const accepted = Array.isArray(options.acceptedMimeTypes) ? options.acceptedMimeTypes.map(v => String(v).trim()).filter(Boolean) : [];
+    const maxFiles = Number(options.maxFiles === undefined ? 1 : options.maxFiles);
+    if (!accepted.length || !Number.isSafeInteger(maxFiles) || maxFiles < 1) throw new Error("QUESTION_ATTACHMENT_SCHEMA_INVALID");
+    options.acceptedMimeTypes = accepted;
+    options.maxFiles = maxFiles;
+    answer = "";
+  }
+  const pointsRaw = q.puntosPredeterminados !== undefined ? q.puntosPredeterminados :
+    (q.puntos !== undefined ? q.puntos : (fallback.puntosPredeterminados !== undefined ? fallback.puntosPredeterminados : 1));
+  const points = Number(pointsRaw);
+  if (!Number.isFinite(points) || points <= 0) throw new Error("QUESTION_POINTS_INVALID");
+  const difficulty = String(q.dificultad !== undefined ? q.dificultad : (fallback.dificultad || "Media")).trim();
+  if (!difficulty) throw new Error("QUESTION_DIFFICULTY_REQUIRED");
+  const toList = (value, name) => {
+    if (Array.isArray(value)) return value.map(item => String(item || "").trim()).filter(Boolean);
+    if (typeof value === "string" && value.trim()) {
+      const parsed = parseExamQuestionJsonField_(value, null, false);
+      if (Array.isArray(parsed)) return parsed.map(item => String(item || "").trim()).filter(Boolean);
+      return value.split(",").map(item => item.trim()).filter(Boolean);
+    }
+    if (value === undefined || value === null || value === "") return [];
+    throw new Error(name + "_INVALID");
+  };
+  const etiquetas = toList(q.etiquetas !== undefined ? q.etiquetas : fallback.etiquetas, "QUESTION_TAGS");
+  const objetivos = toList(q.objetivos !== undefined ? q.objetivos : (q.objetivosJSON !== undefined ? q.objetivosJSON : fallback.objetivos), "QUESTION_OBJECTIVES");
+  const criterios = toList(q.criterios !== undefined ? q.criterios : (q.criteriosJSON !== undefined ? q.criteriosJSON : fallback.criterios), "QUESTION_CRITERIA");
+  const areaCurricular = String(q.areaCurricular !== undefined ? q.areaCurricular : fallback.areaCurricular || "").trim();
+  const asignatura = String(q.asignatura !== undefined ? q.asignatura : fallback.asignatura || "").trim();
+  const grado = String(q.grado !== undefined ? q.grado : fallback.grado || "").trim();
+  const tema = String(q.tema !== undefined ? q.tema : fallback.tema || "").trim();
+  return {
+    tipo: type, textoPregunta: text, opciones: options, opcionesJSON: JSON.stringify(options),
+    respuestaCorrecta: answer && typeof answer === "object" ? JSON.stringify(answer) : String(answer === undefined || answer === null ? "" : answer),
+    puntosPredeterminados: points, areaCurricular, asignatura, grado, tema, dificultad,
+    etiquetas, objetivos, criterios
+  };
+}
+function ensureExamQuestionBankSchema_(bankSheet) {
+  const legacyHeaders = ["BancoPreguntaID", "AreaCurricular", "Asignatura", "Grado", "Tema", "Dificultad", "Tipo",
+    "TextoPregunta", "OpcionesJSON", "RespuestaCorrecta", "Etiquetas", "PuntosPredeterminados", "Estado"];
+  const currentHeaders = legacyHeaders.concat(["ObjetivosJSON", "CriteriosJSON", "Version"]);
+  const rows = bankSheet.getDataRange().getValues();
+  const headers = rows.length ? (rows[0] || []).map(value => String(value || "").trim()) : [];
+  if (JSON.stringify(headers) === JSON.stringify(currentHeaders)) return rows;
+  if (JSON.stringify(headers) === JSON.stringify(legacyHeaders)) {
+    bankSheet.getRange(1, 14, 1, 3).setValues([currentHeaders.slice(13)]);
+    return bankSheet.getDataRange().getValues();
+  }
+  throw new Error("QUESTION_BANK_SCHEMA_INVALID");
+}
+
 function manageQuestionBankUnlocked_(payload, context) {
   const p = payload || {};
   const action = String(p.accion || "").trim().toLowerCase();
   const bankSheet = context.bankSheet;
   if (context.bankRow) {
     const rowNumber = context.bankRow.rowIndex + 1;
+    const existing = context.bankRow.row;
     if (action === "eliminar") {
-      const oldBankStatus = context.bankRow.row[12];
+      const oldBankStatus = existing[12];
       const oldOwnershipStatus = context.ownership.row[5];
       try {
         context.ownershipSheet.getRange(context.ownership.rowIndex + 1, 6).setValue("INACTIVE");
@@ -774,15 +909,39 @@ function manageQuestionBankUnlocked_(payload, context) {
         if (rollbackFailed) throw new Error("QUESTION_BANK_DELETE_ROLLBACK_FAILED");
         throw error;
       }
-      return { status: "success", message: "Pregunta desactivada en el banco de preguntas." };
+      return { status: "success", message: "Pregunta desactivada en el banco de exámenes." };
     }
-    const opcStr = typeof p.opcionesJSON === "object" ? JSON.stringify(p.opcionesJSON) : (p.opcionesJSON || "{}");
-    bankSheet.getRange(rowNumber, 2, 1, 12).setValues([[
-      p.areaCurricular || "General", p.asignatura || "", p.grado || "", p.tema || "",
-      p.dificultad || "Media", p.tipo || "opcion_multiple", p.textoPregunta || "", opcStr,
-      p.respuestaCorrecta || "", p.etiquetas || "", p.puntosPredeterminados || 1, "Activo"
+    const existingDefinition = {
+      areaCurricular: existing[1], asignatura: existing[2], grado: existing[3], tema: existing[4],
+      dificultad: existing[5], tipo: existing[6], textoPregunta: existing[7], opcionesJSON: existing[8],
+      respuestaCorrecta: existing[9], etiquetas: existing[10], puntosPredeterminados: existing[11],
+      objetivos: existing[13] || "[]", criterios: existing[14] || "[]"
+    };
+    const merged = {};
+    Object.keys(existingDefinition).forEach(key => { merged[key] = Object.prototype.hasOwnProperty.call(p, key) ? p[key] : existingDefinition[key]; });
+    if (Object.prototype.hasOwnProperty.call(p, "opciones")) merged.opcionesJSON = p.opciones;
+    if (Object.prototype.hasOwnProperty.call(p, "objetivosJSON")) merged.objetivos = p.objetivosJSON;
+    if (Object.prototype.hasOwnProperty.call(p, "criteriosJSON")) merged.criterios = p.criteriosJSON;
+    const normalized = normalizeExamQuestionDefinition_(merged, existingDefinition);
+    if (!normalized.areaCurricular || !normalized.asignatura || !normalized.grado || !normalized.tema) {
+      throw new Error("QUESTION_BANK_CURRICULAR_REFERENCE_REQUIRED");
+    }
+    const currentVersion = Number(existing[15] || 1);
+    if (!Number.isSafeInteger(currentVersion) || currentVersion < 1) throw new Error("QUESTION_BANK_VERSION_INVALID");
+    const nextVersion = currentVersion + 1;
+    bankSheet.getRange(rowNumber, 2, 1, 15).setValues([[
+      normalized.areaCurricular, normalized.asignatura, normalized.grado, normalized.tema,
+      normalized.dificultad, normalized.tipo, normalized.textoPregunta, normalized.opcionesJSON,
+      normalized.respuestaCorrecta, JSON.stringify(normalized.etiquetas), normalized.puntosPredeterminados,
+      "Activo", JSON.stringify(normalized.objetivos), JSON.stringify(normalized.criterios), nextVersion
     ]]);
-    return { status: "success", bancoPreguntaId: String(context.bankRow.row[0]), message: "Pregunta del banco actualizada correctamente." };
+    return { status: "success", bancoPreguntaId: String(existing[0]), version: nextVersion,
+      message: "Pregunta del banco actualizada correctamente." };
+  }
+  if (action !== "crear") throw new Error("QUESTION_BANK_ACTION_INVALID");
+  const normalized = normalizeExamQuestionDefinition_(p);
+  if (!normalized.areaCurricular || !normalized.asignatura || !normalized.grado || !normalized.tema) {
+    throw new Error("QUESTION_BANK_CURRICULAR_REFERENCE_REQUIRED");
   }
   const qId = "BNK-" + Utilities.getUuid();
   if (context.bankRows.slice(1).some(row => String(row[0] || "").trim() === qId) ||
@@ -790,20 +949,18 @@ function manageQuestionBankUnlocked_(payload, context) {
         String(row[2] || "").trim().toUpperCase() === "BANCO_PREGUNTA" && String(row[3] || "").trim() === qId)) {
     throw new Error("QUESTION_BANK_ID_COLLISION");
   }
-  const opcStr = typeof p.opcionesJSON === "object" ? JSON.stringify(p.opcionesJSON) : (p.opcionesJSON || "{}");
   const now = new Date().toISOString();
   const ownershipId = "OWN-" + Utilities.getUuid();
-  const bankRow = [qId, p.areaCurricular || "General", p.asignatura || "", p.grado || "", p.tema || "",
-    p.dificultad || "Media", p.tipo || "opcion_multiple", p.textoPregunta || "", opcStr,
-    p.respuestaCorrecta || "", p.etiquetas || "", p.puntosPredeterminados || 1, "Activo"];
+  const bankRow = [qId, normalized.areaCurricular, normalized.asignatura, normalized.grado, normalized.tema,
+    normalized.dificultad, normalized.tipo, normalized.textoPregunta, normalized.opcionesJSON,
+    normalized.respuestaCorrecta, JSON.stringify(normalized.etiquetas), normalized.puntosPredeterminados,
+    "Activo", JSON.stringify(normalized.objetivos), JSON.stringify(normalized.criterios), 1];
   try {
     context.ownershipSheet.appendRow([ownershipId, context.scope.institutionId, "BANCO_PREGUNTA", qId,
       context.departmentId, "ACTIVE", context.actor.userId, now, now]);
     bankSheet.appendRow(bankRow);
   } catch (error) {
     let rollbackFailed = false;
-    // Re-scan both sheets even when appendRow threw: a provider may persist the
-    // row and still report an error, so local flags cannot prove no write occurred.
     try {
       const rows = bankSheet.getDataRange().getValues();
       for (let i = rows.length - 1; i >= 1; i--) if (String(rows[i][0] || "").trim() === qId) bankSheet.deleteRow(i + 1);
@@ -815,7 +972,7 @@ function manageQuestionBankUnlocked_(payload, context) {
     if (rollbackFailed) throw new Error("QUESTION_BANK_CREATE_ROLLBACK_FAILED");
     throw error;
   }
-  return { status: "success", bancoPreguntaId: qId, message: "Pregunta añadida exitosamente al banco." };
+  return { status: "success", bancoPreguntaId: qId, version: 1, message: "Pregunta añadida al banco de exámenes." };
 }
 function getQuestionBank(payload) {
   return withAuthorizedQuestionBankRead_(payload, context => getQuestionBankUnlocked_(payload, context));
@@ -847,7 +1004,11 @@ function getAuthorizedQuestionBankReadContext_(payload) {
   const ownershipRows = ownershipSheet.getDataRange().getValues();
   const bankHeaders = ["BancoPreguntaID", "AreaCurricular", "Asignatura", "Grado", "Tema", "Dificultad", "Tipo", "TextoPregunta", "OpcionesJSON", "RespuestaCorrecta", "Etiquetas", "PuntosPredeterminados", "Estado"];
   const ownershipHeaders = ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"];
-  if (!data.length || bankHeaders.some((header, index) => String(data[0][index] || "").trim() !== header)) throw new Error("QUESTION_BANK_SCHEMA_INVALID");
+  const legacyBankHeaders = bankHeaders;
+  const extendedBankHeaders = bankHeaders.concat(["ObjetivosJSON", "CriteriosJSON", "Version"]);
+  const actualBankHeaders = data.length ? (data[0] || []).map(value => String(value || "").trim()) : [];
+  if (JSON.stringify(actualBankHeaders) !== JSON.stringify(legacyBankHeaders) &&
+      JSON.stringify(actualBankHeaders) !== JSON.stringify(extendedBankHeaders)) throw new Error("QUESTION_BANK_SCHEMA_INVALID");
   if (!ownershipRows.length || ownershipHeaders.some((header, index) => String(ownershipRows[0][index] || "").trim() !== header)) throw new Error("RESOURCE_OWNERSHIP_SCHEMA_INVALID");
   if (p && typeof p === "object") {
     try { EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_.set(p, ownershipRows); } catch (_) {}
@@ -877,15 +1038,20 @@ function getQuestionBankUnlocked_(payload, context) {
     if (p.dificultad && normalizeString(row[5]) !== normalizeString(p.dificultad)) return false;
     return assertExamResourceOwnershipForScope_(context.ss, context.scope, "BANCO_PREGUNTA", resourceId, "READ", p).authorized === true;
   }).map(row => {
+    let opciones = {};
+    try { opciones = parseExamQuestionJsonField_(row[8] || "{}", {}, true); }
+    catch (_) { Logger.log("[EXAM] QUESTION_BANK_ROW_SKIPPED reason=OPTIONS_JSON_INVALID"); return null; }
+    if (!opciones || typeof opciones !== "object" || Array.isArray(opciones)) return null;
     const question = {
       bancoPreguntaId: row[0], areaCurricular: row[1], asignatura: row[2], grado: row[3],
       tema: row[4], dificultad: row[5], tipo: row[6], textoPregunta: row[7],
-      opciones: JSON.parse(row[8] || "{}"), etiquetas: row[10],
-      puntosPredeterminados: parseFloat(row[11]) || 1
+      opciones, etiquetas: parseExamQuestionListField_(row[10]),
+      objetivos: parseExamQuestionListField_(row[13]), criterios: parseExamQuestionListField_(row[14]),
+      version: Number(row[15] || 1), puntosPredeterminados: parseFloat(row[11]) || 1
     };
     if (context.canReadAnswerKey) question.respuestaCorrecta = row[9];
     return question;
-  });
+  }).filter(Boolean);
   return { status: "success", preguntas };
 }
 function createExam(p) {
