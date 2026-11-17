@@ -17,6 +17,7 @@ on:
       - backend/accounting-service/Code.gs
       - backend/user-service/Code.gs
       - backend/academic-service/Code.gs
+      - backend/developer-service/Code.gs
       - tests/security/accounting-remote-target-snapshot.test.js
       - tests/security/academic-pdf-ocr-contract.test.js
       - tests/security/academic-pdf-page-classifier.test.js
@@ -26,6 +27,7 @@ on:
       - tests/security/accounting-import-auth-router.test.js
       - tests/security/migration-hmac-credential-registry.test.js
       - tests/security/academic-interservice-replay-guard.test.js
+      - tests/security/developer-interservice-credential-registry.test.js
       - tests/security/hmac-secret-config.test.js
       - tests/security/accounting-migration-writer.test.js
       - tests/security/accounting-import-file-envelope.test.js
@@ -77,6 +79,8 @@ jobs:
         run: node tests/security/migration-hmac-credential-registry.test.js
       - name: Run ACADEMIC interservice HMAC verification and replay guard contract
         run: node tests/security/academic-interservice-replay-guard.test.js
+      - name: Run DEVELOPER interservice credential registry, rotation and revocation contract
+        run: node tests/security/developer-interservice-credential-registry.test.js
       - name: Run signed import authorization and HTTP router contract
         run: node tests/security/accounting-import-auth-router.test.js
       - name: Run journaled accounting migration writer contract
