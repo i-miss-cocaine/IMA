@@ -618,12 +618,8 @@ function updateTask(payload) {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(10000)) throw new Error("TASK_UPDATE_LOCK_UNAVAILABLE");
   try {
-    const identity = getVerifiedTaskIdentity_(request);
-    if (!identity || identity.authorized !== true || !identity.userId ||
-        String(identity.userId) !== String(initialIdentity.userId) ||
-        String(identity.role || "") !== String(initialIdentity.role || "")) {
-      throw new Error("VERIFIED_IDENTITY_CHANGED");
-    }
+    // Reuse the actor verified at the request entry point; the lock protects the write, not a second session check.
+    const identity = initialIdentity;
     const taskId = String(request.tareaId || "").trim();
     if (!taskId) throw new Error("Identidad y tarea requeridas.");
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -1651,8 +1647,8 @@ function assertTaskServiceSubmissionTaskOwnership_(payload,deliveryId,operation)
  if(!task)throw new Error("RESOURCE_NOT_FOUND");assertTaskServiceTeacherCanManageTask(payload,task,operation||"MANAGE");return {delivery,task};
 }
 
-function getTaskServiceSubmissionAccess_(payload, operation) {
-  const identity = getVerifiedTaskIdentity_(payload);
+function getTaskServiceSubmissionAccess_(payload, operation, verifiedIdentity) {
+  const identity = verifiedIdentity || getVerifiedTaskIdentity_(payload);
   if (!identity || !identity.authorized) throw new Error("RESOURCE_NOT_FOUND");
   const role = identity.role;
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -2058,16 +2054,14 @@ function appendTaskGradeRectificationEvent_(event) {
   if (matches.length !== 1) throw new Error("TASK_GRADE_RECTIFICATION_AUDIT_WRITE_FAILED");
 }
 function withAuthorizedTaskSubmissionMutation_(payload, action, mutation) {
-  const preflight = validateRolePermission(action, payload);
-  if (!preflight || preflight.authorized !== true) throw new Error("RESOURCE_NOT_FOUND");
+  // doPost has already checked the action's role/session permission exactly once.
   const identity = getVerifiedTaskIdentity_(payload);
   if (!identity || identity.authorized !== true || !String(identity.userId || "").trim()) throw new Error("RESOURCE_NOT_FOUND");
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("TASK_SUBMISSION_GRADE_LOCK_TIMEOUT");
   try {
-    // Role/session authorization was verified once at the request entry point.
     // Keep the lock for data consistency; reuse the verified actor and enforce resource ownership only.
-    const access = getTaskServiceSubmissionAccess_(payload, "GRADE");
+    const access = getTaskServiceSubmissionAccess_(payload, "GRADE", identity);
     if (!access || access.isStaff !== true || !access.ss || !Array.isArray(access.deliveries) ||
         !access.identity || String(access.identity.userId || "").trim() !== String(identity.userId).trim()) throw new Error("RESOURCE_NOT_FOUND");
     const deliveryId = String(payload && payload.entregaId || "").trim();

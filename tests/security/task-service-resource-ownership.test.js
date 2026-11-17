@@ -22,9 +22,15 @@ for(const name of ["gradeSubmission","gradeSubmissionWithRubric"])assert(extract
 assert(extractFunction("withAuthorizedTaskSubmissionMutation_").includes('getTaskServiceSubmissionAccess_(payload, "GRADE")'),"grade mutation revalidates task ownership and scope");
 assert(extractFunction("withAuthorizedTaskSubmissionMutation_").includes("LockService.getScriptLock()"),"grade mutation serializes changes with ScriptLock");
 const gradeMutationWrapper=extractFunction("withAuthorizedTaskSubmissionMutation_");
-assert.equal(gradeMutationWrapper.split("validateRolePermission(").length-1,1,"grade mutation authorizes the role once before acquiring the lock");
-assert(gradeMutationWrapper.indexOf("validateRolePermission(")<gradeMutationWrapper.indexOf("LockService.getScriptLock()"),"role authorization occurs at the request entry point before the mutation lock");
-assert(!gradeMutationWrapper.includes("const permission = validateRolePermission"),"the locked mutation reuses the already verified request context");
+assert.equal(gradeMutationWrapper.split("validateRolePermission(").length-1,0,"grade mutation wrapper must not repeat the dispatcher role authorization");
+assert(gradeMutationWrapper.indexOf("getVerifiedTaskIdentity_(payload)")<gradeMutationWrapper.indexOf("LockService.getScriptLock()"),"grade mutation reuses the request actor before acquiring the data lock");
+assert(gradeMutationWrapper.includes('getTaskServiceSubmissionAccess_(payload, "GRADE", identity)'),"grade mutation passes the already verified actor to resource access");
+assert.equal(extractFunction("getTaskServiceSubmissionAccess_").split("getVerifiedTaskIdentity_(payload)").length-1,1,"submission access only resolves identity when no verified actor was supplied");
+const updateTaskWrapper=extractFunction("updateTask");
+assert.equal(updateTaskWrapper.split("getVerifiedTaskIdentity_(").length-1,1,"task update resolves the actor once before locking");
+assert(updateTaskWrapper.includes("const identity = initialIdentity"),"task update reuses its verified actor under lock");
+const dispatcher=extractFunction("doPost");
+assert.equal(dispatcher.split("validateRolePermission(action, payload)").length-1,1,"the task service dispatcher validates the role exactly once per action");
 assert(extractFunction("returnSubmissionForRevision").includes("assertTaskServiceSubmissionTaskOwnership_"),"return-for-revision keeps the direct ownership guard");
 assert(extractFunction("deleteSubmission").includes('assertTaskServiceTeacherCanManageTask(payload,task,"DELETE_SUBMISSION")'));
 assert(extractFunction("getSubmissionDocumentPreviewUrl").includes('"READ_CONTENT"'));
