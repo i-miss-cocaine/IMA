@@ -3207,7 +3207,7 @@ window.startInteractiveGuide = function(tourKey, forceRestart, preferenceLoaded)
         } else {
             window.loadUserHelpPreferences_(function(preferences) {
                 var saved = preferences && preferences[tourKey];
-                if (saved && !saved.dismissed) localStorage.setItem('guide_progress_' + tourKey, String(saved.stepIndex || 1));
+                if (saved) localStorage.setItem('guide_progress_' + tourKey, String(saved.stepIndex || 1));
                 window.startInteractiveGuide(tourKey, false, true);
             });
         }
@@ -3323,6 +3323,7 @@ window.startInteractiveGuide = function(tourKey, forceRestart, preferenceLoaded)
 
 window.navigateGuideStep = function(tourKey, nextStep) {
     if (nextStep === 'finish') {
+        localStorage.setItem('guide_progress_' + tourKey, '1');
         window.closeInteractiveGuide(tourKey);
         if (window.Swal) {
             Swal.fire({
